@@ -1,0 +1,461 @@
+# The reading of PEM text, kept out of `pem`'s face: where a block begins,
+# its two boundary lines, the headers of RFC 1421's form, and the base 64
+# between, by RFC 7468's lax and strict grammars. Every position is a byte
+# index of the text, and a line ends at LF, CR LF or CR. Every loop moves at
+# least one byte a pass or returns, and the text is cut only at bytes below
+# 0x80, so no slice splits a character.
+
+use bytes
+use strings
+
+# The code of a block that is broken.
+constant INVALID: str
+    "invalid"
+
+# The code of a text with no BEGIN line where one was sought.
+constant NOT_FOUND: str
+    "not_found"
+
+# What a BEGIN line opens with.
+constant BEGIN: str
+    "-----BEGIN "
+
+# What an END line opens with.
+constant END: str
+    "-----END "
+
+# What closes a boundary line's label.
+constant DASHES: str
+    "-----"
+
+# A block read, with where it stands in the text: the face turns it into a
+# `pem.Found`.
+record Piece
+    # The label.
+    label: str
+    # The headers' names, in order.
+    names: [str]
+    # The headers' values, one for each name.
+    values: [str]
+    # The bytes the base 64 holds.
+    data: [u8]
+    # Where the BEGIN line begins.
+    start: i64
+    # Past the END line's line end.
+    end: i64
+
+# Whether `c` is a label's character: printable ASCII but the hyphen.
+function is_label_char(c: u8) -> bool
+    return c >= 0x21 && c <= 0x7e && c != '-'
+
+# Whether `s` is a label RFC 7468 allows: its characters printable ASCII but
+# the hyphen, a single hyphen or space allowed between two of them, or empty.
+function is_label(s: str) -> bool
+    if s.len() == 0
+        return true
+
+    if !is_label_char(s[0]) || !is_label_char(s[s.len() - 1])
+        return false
+
+    for i in range(from: 1, to: s.len() - 1)
+        c = s[i]
+
+        if c == '-' || c == ' '
+            if !is_label_char(s[i + 1])
+                return false
+        else if !is_label_char(c)
+            return false
+
+    return true
+
+# Whether `c` is white space inside a line, as RFC 7468's `W` reads it: a
+# space, a tab, a vertical tab or a form feed.
+function is_blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 0x0b || c == 0x0c
+
+# Whether `c` is a character of base 64's standard alphabet, padding aside.
+function is_base64_char(c: u8) -> bool
+    return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '+' || c == '/'
+
+# Where the line holding `at` ends: the first byte of its line end, or the
+# length of `text`.
+function line_end(text: str, at: i64) -> i64
+    i @= at
+
+    while i < text.len() && text[i] != '\n' && text[i] != '\r'
+        i @ i + 1
+
+    return i
+
+# Past the line end that begins at `at`, which `line_end` answered: one byte
+# for LF or CR, two for CR LF, and `at` itself at the end of `text`.
+function past_end(text: str, at: i64) -> i64
+    if at >= text.len()
+        return at
+
+    if text[at] == '\r' && at + 1 < text.len() && text[at + 1] == '\n'
+        return at + 2
+    return at + 1
+
+# The first index from `from` up to `to` holding no blank of a line.
+function skip_blanks(text: str, from: i64, to: i64) -> i64
+    i @= from
+
+    while i < to && is_blank(text[i])
+        i @ i + 1
+
+    return i
+
+# The last index after `from` and up to `to` such that every byte from it to
+# `to` is a blank of a line: where a line's trailing white space begins.
+function trim_blanks_end(text: str, from: i64, to: i64) -> i64
+    i @= to
+
+    while i > from && is_blank(text[i - 1])
+        i @ i - 1
+
+    return i
+
+# Whether `text` holds `word` at `at`.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+
+    for k in range(from: 0, to: word.len())
+        if text[at + k] != word[k]
+            return false
+
+    return true
+
+# The label of the boundary line from `from` to `to` that opens with `open`,
+# its closing dashes the line's last bytes. Fails `invalid` where the line
+# does not close with five dashes or its label is not one RFC 7468 allows.
+function label_of_line(text: str, from: i64, to: i64, open: str) -> str?
+    if to - from < open.len() + DASHES.len() || !holds_at(text: text, at: to - DASHES.len(), word: DASHES)
+        return fail(code: INVALID, msg: f"byte {from}: the boundary line does not end with \"-----\"")
+
+    label_end = to - DASHES.len()
+    label_start = from + open.len()
+
+    for k in range(from: label_start, to: label_end)
+        if text[k] >= 0x80
+            return fail(code: INVALID, msg: f"byte {k}: a label holds ASCII alone")
+
+    label = text.slice(from: label_start, to: label_end)
+
+    if !is_label(label)
+        return fail(code: INVALID, msg: f"byte {label_start}: \"{label}\" is not a label RFC 7468 allows")
+    return ok(label)
+
+# Where the first BEGIN line from `from` on begins, white space before it on
+# its line allowed where `strict` is false. Fails `not_found` where none
+# stands there.
+function begin_at(text: str, from: i64, strict: bool) -> i64?
+    at @= from
+
+    while at < text.len()
+        e = line_end(text: text, at: at)
+
+        s = if strict
+            at
+        else
+            skip_blanks(text: text, from: at, to: e)
+
+        if holds_at(text: text, at: s, word: BEGIN)
+            return ok(at)
+        at @ past_end(text: text, at: e)
+
+    return fail(code: NOT_FOUND, msg: f"no \"-----BEGIN \" line from byte {from} on")
+
+# The headers of RFC 1421's form from the line at `at`, which holds a colon,
+# to the blank line after them, written into `names` and `values`; answers
+# the index past that blank line.
+function read_headers(text: str, at: i64, @names: [str], @values: [str]) -> i64?
+    line @= at
+
+    while true
+        if line >= text.len()
+            return fail(code: INVALID, msg: f"byte {line}: the text ends inside the headers, before their blank line")
+
+        e = line_end(text: text, at: line)
+        s = skip_blanks(text: text, from: line, to: e)
+
+        if s == e
+            return ok(past_end(text: text, at: e))
+
+        if s > line
+            if names.len() == 0
+                return fail(code: INVALID, msg: f"byte {line}: a header's continuation with no header before it")
+            last = values.len() - 1
+            values[last] @ values[last] + " " + text.slice(from: s, to: trim_blanks_end(text: text, from: s, to: e))
+        else
+            colon @= s
+
+            while colon < e && text[colon] != ':'
+                colon @ colon + 1
+
+            if colon == e
+                return fail(code: INVALID, msg: f"byte {line}: a header line with no colon")
+            name = strings.trim(text.slice(from: s, to: colon))
+
+            if name.len() == 0
+                return fail(code: INVALID, msg: f"byte {line}: a header with no name")
+            names @ names.push(name)
+            values @ values.push(strings.trim(text.slice(from: colon + 1, to: e)))
+        line @ past_end(text: text, at: e)
+
+    return fail(code: INVALID, msg: "unreachable")
+
+# The base 64 of a line from `from` to `to` read by the lax grammar: its runs
+# of base 64 characters pushed onto `pieces`, its blanks passed over. Fails
+# `invalid` at a byte that is neither.
+function lax_line(text: str, from: i64, to: i64, @pieces: [str]) -> ()?
+    i @= from
+
+    while i < to
+        if is_blank(text[i])
+            i @ i + 1
+        else
+            run_start = i
+
+            while i < to && (is_base64_char(text[i]) || text[i] == '=')
+                i @ i + 1
+
+            if i == run_start
+                return fail(code: INVALID, msg: f"byte {i}: a byte that is not base 64 inside a block")
+            pieces @ pieces.push(text.slice(from: run_start, to: i))
+
+    return ok()
+
+# The bytes `pieces`, base 64 read by the lax grammar, write: padded where
+# their length is a multiple of 4, unpadded otherwise.
+function lax_bytes(pieces: [str], at: i64) -> [u8]?
+    joined = pieces.join("")
+
+    data = if joined.len() % 4 == 0
+        bytes.parse_base64(joined)
+    else
+        bytes.parse_base64_unpadded(joined)
+
+    match data
+        .ok d  => return ok(d)
+        .err e => return fail(code: INVALID, msg: f"byte {at}: the block's base 64 is broken: {e.msg}")
+
+# Whether a strict line of base 64 from `from` to `to` is well formed: every
+# byte of the alphabet, `=` only at its end. Fails `invalid` naming the byte.
+function strict_line(text: str, from: i64, to: i64) -> ()?
+    for i in range(from: from, to: to)
+        c = text[i]
+
+        if !is_base64_char(c) && !(c == '=' && to - i <= 2)
+            return fail(code: INVALID, msg: f"byte {i}: strict PEM holds base 64 alone between its boundary lines")
+
+    return ok()
+
+# The block whose BEGIN line begins at `at`, read by the strict grammar
+# where `strict` is true and by the lax one otherwise.
+function read_block(text: str, at: i64, strict: bool) -> Piece?
+    e = line_end(text: text, at: at)
+    s = skip_blanks(text: text, from: at, to: e)
+
+    t = if strict
+        e
+    else
+        trim_blanks_end(text: text, from: s, to: e)
+    label = label_of_line(text: text, from: s, to: t, open: BEGIN)?
+
+    if e == text.len()
+        return fail(code: INVALID, msg: f"byte {e}: the text ends after the BEGIN line of \"{label}\"")
+    names: [str] @= []
+    values: [str] @= []
+    line @= past_end(text: text, at: e)
+    first_end = line_end(text: text, at: line)
+
+    if !strict
+        colon @= line
+
+        while colon < first_end && text[colon] != ':'
+            colon @ colon + 1
+
+        if colon < first_end && !holds_at(text: text, at: skip_blanks(text: text, from: line, to: first_end), word: DASHES)
+            line @ read_headers(text: text, at: line, names: @names, values: @values)?
+    pieces: [str] @= []
+    body_start = line
+    short_seen @= false
+
+    while true
+        if line >= text.len()
+            return fail(code: INVALID, msg: f"byte {line}: no \"-----END {label}-----\" line closes the block")
+
+        le = line_end(text: text, at: line)
+
+        ls = if strict
+            line
+        else
+            skip_blanks(text: text, from: line, to: le)
+
+        if holds_at(text: text, at: ls, word: END)
+            lt = if strict
+                le
+            else
+                trim_blanks_end(text: text, from: ls, to: le)
+            closing = label_of_line(text: text, from: ls, to: lt, open: END)?
+
+            if closing != label
+                return fail(code: INVALID, msg: f"byte {ls}: the block opened as \"{label}\" closes as \"{closing}\"")
+
+            data = if strict
+                strict_bytes(text: text, pieces: pieces, at: body_start)?
+            else
+                lax_bytes(pieces: pieces, at: body_start)?
+            return ok(
+                Piece(label: label, names: names, values: values, data: data, start: at, end: past_end(text: text, at: le))
+            )
+
+        if strict
+            if short_seen
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {line}: strict PEM's lines of base 64 are 64 characters long but the last"
+                )
+
+            if le - line > 64 || le == line
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {line}: strict PEM's lines of base 64 are 64 characters long but the last"
+                )
+
+            if le - line < 64
+                short_seen @ true
+            strict_line(text: text, from: line, to: le)?
+            pieces @ pieces.push(text.slice(from: line, to: le))
+        else
+            lax_line(text: text, from: line, to: le, pieces: @pieces)?
+        line @ past_end(text: text, at: le)
+
+    return fail(code: INVALID, msg: "unreachable")
+
+# The bytes `pieces`, strict lines of base 64, write: padded.
+function strict_bytes(text: str, pieces: [str], at: i64) -> [u8]?
+    joined = pieces.join("")
+
+    if joined.len() % 4 != 0
+        return fail(code: INVALID, msg: f"byte {at}: strict PEM's base 64 is padded to a multiple of 4 characters")
+
+    match bytes.parse_base64(joined)
+        .ok d => return ok(d)
+        .err e => return fail(
+            code: INVALID,
+            msg: f"byte {at}: the block's base 64 is broken: {e.msg} ({text.len()} bytes of text)"
+        )
+
+# The next block from `from`, read by the strict grammar where `strict` is
+# true. Fails `not_found` where no BEGIN line stands from `from` on.
+function next_block(text: str, from: i64, strict: bool) -> Piece?
+    at = begin_at(text: text, from: from, strict: strict)?
+    return read_block(text: text, at: at, strict: strict)
+
+# Whether a header named `name` with `value` can be written: a name of
+# printable ASCII with no colon and no white space, not empty, and a value
+# with no control character but the tab. Fails `invalid` naming the fault.
+function check_header(name: str, value: str) -> ()?
+    if name.len() == 0
+        return fail(code: INVALID, msg: "a header with no name cannot be written")
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+
+        if c < 0x21 || c > 0x7e || c == ':'
+            return fail(
+                code: INVALID,
+                msg: f"the header name \"{name}\" holds a byte other than printable ASCII without a colon, at {i}"
+            )
+
+    for i in range(from: 0, to: value.len())
+        c = value[i]
+
+        if c < 0x20 && c != '\t' || c == 0x7f
+            return fail(code: INVALID, msg: f"the value of the header \"{name}\" holds a control character at byte {i}")
+
+    return ok()
+
+test "is_label: empty, one character, words with spaces and hyphens, and what is refused"
+    assert is_label("")
+    assert is_label("X")
+    assert is_label("RSA PRIVATE KEY")
+    assert is_label("X-509")
+    assert !is_label(" X")
+    assert !is_label("X ")
+    assert !is_label("-X")
+    assert !is_label("X--Y")
+    assert !is_label("X  Y")
+    assert !is_label("X -Y")
+    assert !is_label("CAFé")
+
+test "line_end and past_end: LF, CR LF, CR, and a last line with none"
+    text = "ab\ncd\r\nef\rgh"
+    assert line_end(text: text, at: 0) == 2
+    assert past_end(text: text, at: 2) == 3
+    assert line_end(text: text, at: 3) == 5
+    assert past_end(text: text, at: 5) == 7
+    assert line_end(text: text, at: 7) == 9
+    assert past_end(text: text, at: 9) == 10
+    assert line_end(text: text, at: 10) == 12
+    assert past_end(text: text, at: 12) == 12
+
+test "begin_at: at the start, after text, after blanks only where lax, and absent"
+    assert begin_at(text: "-----BEGIN X-----\n", from: 0, strict: true).must() == 0
+    assert begin_at(text: "hello\n-----BEGIN X-----\n", from: 0, strict: true).must() == 6
+    assert begin_at(text: "  -----BEGIN X-----\n", from: 0, strict: false).must() == 0
+    assert begin_at(text: "  -----BEGIN X-----\n", from: 0, strict: true).is_err()
+    assert begin_at(text: "say -----BEGIN X-----\n", from: 0, strict: false).is_err()
+    assert begin_at(text: "", from: 0, strict: false).is_err()
+
+test "read_block: lax line ends, blanks inside the base 64, and no padding"
+    a = read_block(text: "-----BEGIN M-----\r\nZ3Jv\r\n dW5k \r\n\r\n-----END M-----\r\n", at: 0, strict: false).must()
+    assert a.data == bytes.from_text("ground")
+    assert a.end == 52
+    b = read_block(text: "-----BEGIN M-----\rQQ\r-----END M-----", at: 0, strict: false).must()
+    assert b.data == bytes.from_text("A")
+    assert b.end == 36
+
+test "read_block: headers, a folded value, and a header line with no colon"
+    text = "-----BEGIN K-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,\n  0102\n\nQQ==\n-----END K-----\n"
+    p = read_block(text: text, at: 0, strict: false).must()
+    assert p.names == ["Proc-Type", "DEK-Info"]
+    assert p.values == ["4,ENCRYPTED", "AES-128-CBC, 0102"]
+    assert p.data == bytes.from_text("A")
+    assert read_block(
+        text: "-----BEGIN K-----\nA: 1\nno colon\n\nQQ==\n-----END K-----\n",
+        at: 0,
+        strict: false
+    ).is_err()
+    assert read_block(text: "-----BEGIN K-----\nA: 1\n", at: 0, strict: false).is_err()
+
+test "read_block: an END of another label, none, a broken byte, and a text ending after BEGIN"
+    assert read_block(text: "-----BEGIN A-----\nQQ==\n-----END B-----\n", at: 0, strict: false).is_err()
+    assert read_block(text: "-----BEGIN A-----\nQQ==\n", at: 0, strict: false).is_err()
+    assert read_block(text: "-----BEGIN A-----\nQ*Q=\n-----END A-----\n", at: 0, strict: false).is_err()
+    assert read_block(text: "-----BEGIN A-----", at: 0, strict: false).is_err()
+    assert read_block(text: "-----BEGIN A----\nQQ==\n-----END A-----\n", at: 0, strict: false).is_err()
+
+test "read_block: strict lines of 64, a short line before the last, white space, and padding"
+    full = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    good = read_block(text: f"-----BEGIN X-----\n{full}\nQQ==\n-----END X-----\n", at: 0, strict: true).must()
+    assert good.data.len() == 49
+    assert read_block(text: "-----BEGIN X-----\nQQ==\nQQ==\n-----END X-----\n", at: 0, strict: true).is_err()
+    assert read_block(text: "-----BEGIN X-----\n QQ==\n-----END X-----\n", at: 0, strict: true).is_err()
+    assert read_block(text: "-----BEGIN X-----\nQQ\n-----END X-----\n", at: 0, strict: true).is_err()
+    assert read_block(text: "-----BEGIN X-----\nK: v\n\nQQ==\n-----END X-----\n", at: 0, strict: true).is_err()
+    assert read_block(text: "-----BEGIN X-----  \nQQ==\n-----END X-----\n", at: 0, strict: true).is_err()
+    assert read_block(text: "-----BEGIN X-----\n\nQQ==\n-----END X-----\n", at: 0, strict: true).is_err()
+    empty = read_block(text: "-----BEGIN X-----\n-----END X-----\n", at: 0, strict: true).must()
+    assert empty.data.len() == 0
+
+test "check_header: a good pair, an empty name, a colon, a space, and a line end in the value"
+    assert !check_header(name: "Proc-Type", value: "4,ENCRYPTED").is_err()
+    assert check_header(name: "", value: "x").is_err()
+    assert check_header(name: "A:B", value: "x").is_err()
+    assert check_header(name: "A B", value: "x").is_err()
+    assert check_header(name: "A", value: "x\ny").is_err()
+    assert !check_header(name: "A", value: "x\ty").is_err()

@@ -1,0 +1,15 @@
+# Reaches Rebel's `asn1`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). It prints the object
+# identifier that a DER element holds: RSA's arc, `1.2.840.113549`.
+
+use <rebel>/asn1
+
+function main()
+    data: [u8] = [0x06, 0x06, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d]
+
+    match asn1.decode_der(data)
+        .ok v =>
+            match asn1.oid_of(v)
+                .ok oid => print(oid.dotted)
+                .err e  => print(f"{e.code}: {e.msg}")
+        .err e => print(f"{e.code}: {e.msg}")

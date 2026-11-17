@@ -1,0 +1,44 @@
+# An attribute's value written into RFC 4514's text of a name, escaped as
+# Python's `cryptography` escapes it in `rfc4514_string` (observed on
+# fourteen values, 2026-11-17): a backslash before `\`, `"`, `+`, `,`, `;`,
+# `<` and `>`, before a `#` or a space that begins the value and a space
+# that ends it, and a NUL written `\00`. Every other character is itself.
+
+# `value` escaped for RFC 4514's text.
+function escaped(value: str) -> str
+    pieces: [str] @= []
+    count = value.len()
+    start @= 0
+
+    for i in range(from: 0, to: count)
+        c = value[i]
+        special = c == '\\' || c == '"' || c == '+' || c == ',' || c == ';' || c == '<' || c == '>'
+        edge = i == 0 && (c == '#' || c == ' ') || i == count - 1 && c == ' '
+
+        if special || edge || c == 0
+            pieces @ pieces.push(value.slice(from: start, to: i))
+
+            if c == 0
+                pieces @ pieces.push("\\00")
+            else
+                pieces @ pieces.push("\\" + value.slice(from: i, to: i + 1))
+            start @ i + 1
+
+    pieces @ pieces.push(value.slice(from: start, to: count))
+    return pieces.join("")
+
+test "escaped: Python's answers on the characters RFC 4514 names, at either end and inside"
+    assert escaped(" lead") == "\\ lead"
+    assert escaped("trail ") == "trail\\ "
+    assert escaped("#hash") == "\\#hash"
+    assert escaped("mid#dle") == "mid#dle"
+    assert escaped("a+b") == "a\\+b"
+    assert escaped("q\"u") == "q\\\"u"
+    assert escaped("semi;colon") == "semi\\;colon"
+    assert escaped("back\\slash") == "back\\\\slash"
+    assert escaped("<>") == "\\<\\>"
+    assert escaped("a=b") == "a=b"
+    assert escaped("café") == "café"
+    assert escaped("a,b") == "a\\,b"
+    assert escaped("  ") == "\\ \\ "
+    assert escaped("") == ""

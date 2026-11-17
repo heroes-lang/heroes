@@ -1,0 +1,88 @@
+# A value's elements, flat in the order their tags stand (pre-order), written
+# as DER: each element's encoding made after its elements', on a stack this
+# module holds, so no element is written by recursion. A SET's elements are
+# ordered by their encodings, X.690 § 11.6's order of a SET OF. Each
+# encoding is copied once into the one holding it.
+
+use asn1/internal/header
+use bytes
+use lists
+
+# One element to write: its tag, and its content where it is primitive.
+record Piece
+    # The class, 0 to 3.
+    kind: i64
+    # The tag's number.
+    number: i64
+    # Whether its content is the elements after it.
+    constructed: bool
+    # A primitive element's content; empty for a constructed one.
+    content: [u8]
+    # How many elements it directly holds, 0 for a primitive one.
+    children: i64
+    # Whether its elements are ordered by their encodings.
+    sorted: bool
+
+# Whether `a` comes before `b` in the order of DER's SET OF: their bytes
+# compared, a shorter prefix first.
+function is_before(a: [u8], b: [u8]) -> bool
+    return bytes.compare(a: a, b: b) < 0
+
+# The DER of the pieces `pieces`, one element and its elements in pre-order.
+function write(pieces: [Piece]) -> [u8]
+    done: [[u8]] @= []
+    top @= 0
+    at @= pieces.len()
+
+    while at > 0
+        at @ at - 1
+        p = pieces[at]
+        content @= p.content
+
+        if p.constructed
+            held: [[u8]] @= []
+
+            for k in range(from: 0, to: p.children)
+                held @ held.push(done[top - 1 - k])
+
+            if p.sorted
+                held @ lists.sort_by(xs: held, less: is_before)
+            content @ bytes.concat(held)
+            top @ top - p.children
+        out: [u8] @= []
+        header.write_header(
+            out: @out,
+            kind: p.kind,
+            number: p.number,
+            constructed: p.constructed,
+            length: content.len()
+        )
+        bytes.push_all(to: @out, from: content)
+
+        if top == done.len()
+            done @ done.push(out)
+        else
+            done[top] @ out
+        top @ top + 1
+
+    return done[0]
+
+test "write: a primitive alone, a SEQUENCE of two, and nested empties"
+    one = write([Piece(kind: 0, number: 2, constructed: false, content: [0x05], children: 0, sorted: false)])
+    assert one == [0x02, 0x01, 0x05]
+    seq = [
+        Piece(kind: 0, number: 16, constructed: true, content: [], children: 2, sorted: false)
+        Piece(kind: 0, number: 2, constructed: false, content: [0x01], children: 0, sorted: false)
+        Piece(kind: 0, number: 16, constructed: true, content: [], children: 1, sorted: false)
+        Piece(kind: 0, number: 5, constructed: false, content: [], children: 0, sorted: false)
+    ]
+    assert write(seq) == [0x30, 0x07, 0x02, 0x01, 0x01, 0x30, 0x02, 0x05, 0x00]
+
+test "write: a SET's elements ordered by their encodings, a SEQUENCE's kept"
+    set = [
+        Piece(kind: 0, number: 17, constructed: true, content: [], children: 3, sorted: true)
+        Piece(kind: 0, number: 2, constructed: false, content: [0x02], children: 0, sorted: false)
+        Piece(kind: 0, number: 2, constructed: false, content: [0x01], children: 0, sorted: false)
+        Piece(kind: 0, number: 2, constructed: false, content: [0x01, 0x00], children: 0, sorted: false)
+    ]
+    assert write(set) == [0x31, 0x0a, 0x02, 0x01, 0x01, 0x02, 0x01, 0x02, 0x02, 0x02, 0x01, 0x00]

@@ -1,0 +1,2693 @@
+# Certificates of X.509 read as RFC 5280 writes them: the subject and the
+# issuer with their attributes, the validity, the serial, the public key, the
+# signature's algorithm and bytes, and every common extension decoded, an
+# unknown one kept with its criticality; certificate requests (PKCS #10, RFC
+# 2986) and revocation lists (RFC 5280 § 5) read; a signature checked by the
+# system's own cryptography through `crypto/keypairs`; a chain put in order
+# from a leaf and a pool, and checked; a host name and an address matched
+# against a certificate as RFC 6125 says.
+#
+# **Every structure is read as DER**, every canonical rule `asn1` checks,
+# and a certificate whose two signature algorithms differ, whose extension
+# stands twice, or whose known extension is malformed is refused whole.
+#
+# **A signature is checked by `crypto/keypairs`**: RSA PKCS #1 v1.5 and
+# RSA-PSS over SHA-256, SHA-384 and SHA-512 (PSS with MGF1 over the same hash
+# and a salt as long as it), ECDSA on P-256 and P-384 over SHA-256 and
+# SHA-384, and Ed25519. Any other algorithm fails `unsupported`, SHA-1's
+# among them, and so does Ed25519 on macOS and Windows, whose own
+# cryptography lacks it for a program in C (measured 2026-11-17, see
+# `crypto/keypairs`).
+#
+# **A moment is a `time.DateTime`**, so RFC 5280's `99991231235959Z`, the
+# validity that does not end, is read: a `time.Instant` ends in 2262.
+#
+# It does not write a certificate, a request or a list (each needs a
+# signature made by `crypto/keypairs` and is pending), process certificate
+# policies in `verify_chain`, fetch a list or ask OCSP (`http`), read the
+# system's store of roots (`tls` checks a connection by it), or read a key
+# (`crypto/keypairs`). It fails with `invalid`, `not_found`, `not_text`,
+# `does_not_fit` and `unsupported`.
+
+use asn1
+use big
+use bytes
+use crypto/keypairs
+use net
+use pem
+use time
+use x509/internal/dn
+use x509/internal/hosts
+use x509/internal/known
+use x509/internal/samples
+use x509/internal/shapes
+
+## Codes
+
+# A structure that is not what RFC 5280 says, a chain that does not hold, or
+# a signature's parameters its RFC forbids: the message says which part.
+constant INVALID: str
+    "invalid"
+
+# No such thing where one was asked for: `text_of`, `extension_of`,
+# `revoked_of`, `parse_certificate`, `parse_request`, `parse_crl`.
+constant NOT_FOUND: str
+    "not_found"
+
+# A signature or a key of an algorithm `crypto/keypairs` does not check on
+# this platform: `scheme_of`, `kind_of`, `verify_signature`, `is_signed_by`,
+# `is_request_signed`, `is_crl_signed_by`, `verify_chain`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A string in a name or an extension whose characters are not its type's:
+# every reader, as `asn1` says it.
+constant NOT_TEXT: str
+    "not_text"
+
+# A number outside its type where a structure is read, as `asn1` says it: a
+# REAL, an ENUMERATED or a time's offset; every reader.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+## Identifiers
+
+# The attribute `commonName`, `2.5.4.3`.
+constant COMMON_NAME: str
+    "2.5.4.3"
+
+# The attribute `countryName`, `2.5.4.6`.
+constant COUNTRY_NAME: str
+    "2.5.4.6"
+
+# The attribute `organizationName`, `2.5.4.10`.
+constant ORGANIZATION_NAME: str
+    "2.5.4.10"
+
+# The attribute `organizationalUnitName`, `2.5.4.11`.
+constant ORGANIZATIONAL_UNIT_NAME: str
+    "2.5.4.11"
+
+# The attribute `localityName`, `2.5.4.7`.
+constant LOCALITY_NAME: str
+    "2.5.4.7"
+
+# The attribute `stateOrProvinceName`, `2.5.4.8`.
+constant STATE_OR_PROVINCE_NAME: str
+    "2.5.4.8"
+
+# The attribute `serialNumber` of a name, `2.5.4.5`.
+constant SERIAL_NUMBER: str
+    "2.5.4.5"
+
+# The attribute `domainComponent`, `0.9.2342.19200300.100.1.25`.
+constant DOMAIN_COMPONENT: str
+    "0.9.2342.19200300.100.1.25"
+
+# The attribute `emailAddress` of PKCS #9, `1.2.840.113549.1.9.1`.
+constant EMAIL_ADDRESS: str
+    "1.2.840.113549.1.9.1"
+
+# The extension `subjectAltName`, `2.5.29.17`.
+constant SUBJECT_ALT_NAME: str
+    "2.5.29.17"
+
+# The extension `issuerAltName`, `2.5.29.18`.
+constant ISSUER_ALT_NAME: str
+    "2.5.29.18"
+
+# The extension `keyUsage`, `2.5.29.15`.
+constant KEY_USAGE: str
+    "2.5.29.15"
+
+# The extension `extKeyUsage`, `2.5.29.37`.
+constant EXTENDED_KEY_USAGE: str
+    "2.5.29.37"
+
+# The extension `basicConstraints`, `2.5.29.19`.
+constant BASIC_CONSTRAINTS: str
+    "2.5.29.19"
+
+# The extension `subjectKeyIdentifier`, `2.5.29.14`.
+constant SUBJECT_KEY_ID: str
+    "2.5.29.14"
+
+# The extension `authorityKeyIdentifier`, `2.5.29.35`.
+constant AUTHORITY_KEY_ID: str
+    "2.5.29.35"
+
+# The extension `cRLDistributionPoints`, `2.5.29.31`.
+constant CRL_DISTRIBUTION_POINTS: str
+    "2.5.29.31"
+
+# The extension `freshestCRL`, `2.5.29.46`.
+constant FRESHEST_CRL: str
+    "2.5.29.46"
+
+# The extension `authorityInfoAccess`, `1.3.6.1.5.5.7.1.1`.
+constant AUTHORITY_INFO_ACCESS: str
+    "1.3.6.1.5.5.7.1.1"
+
+# The extension `subjectInfoAccess`, `1.3.6.1.5.5.7.1.11`.
+constant SUBJECT_INFO_ACCESS: str
+    "1.3.6.1.5.5.7.1.11"
+
+# The extension `certificatePolicies`, `2.5.29.32`.
+constant CERTIFICATE_POLICIES: str
+    "2.5.29.32"
+
+# The extension `policyMappings`, `2.5.29.33`.
+constant POLICY_MAPPINGS: str
+    "2.5.29.33"
+
+# The extension `policyConstraints`, `2.5.29.36`.
+constant POLICY_CONSTRAINTS: str
+    "2.5.29.36"
+
+# The extension `inhibitAnyPolicy`, `2.5.29.54`.
+constant INHIBIT_ANY_POLICY: str
+    "2.5.29.54"
+
+# The extension `nameConstraints`, `2.5.29.30`.
+constant NAME_CONSTRAINTS: str
+    "2.5.29.30"
+
+# A revocation list's extension `cRLNumber`, `2.5.29.20`.
+constant CRL_NUMBER: str
+    "2.5.29.20"
+
+# A revocation list's extension `deltaCRLIndicator`, `2.5.29.27`.
+constant DELTA_CRL_INDICATOR: str
+    "2.5.29.27"
+
+# A revocation list's extension `issuingDistributionPoint`, `2.5.29.28`.
+constant ISSUING_DISTRIBUTION_POINT: str
+    "2.5.29.28"
+
+# A revoked entry's extension `reasonCode`, `2.5.29.21`.
+constant REASON_CODE: str
+    "2.5.29.21"
+
+# A revoked entry's extension `invalidityDate`, `2.5.29.24`.
+constant INVALIDITY_DATE: str
+    "2.5.29.24"
+
+# A revoked entry's extension `certificateIssuer`, `2.5.29.29`.
+constant CERTIFICATE_ISSUER: str
+    "2.5.29.29"
+
+# The purpose `serverAuth`, `1.3.6.1.5.5.7.3.1`: a TLS server.
+constant SERVER_AUTH: str
+    "1.3.6.1.5.5.7.3.1"
+
+# The purpose `clientAuth`, `1.3.6.1.5.5.7.3.2`: a TLS client.
+constant CLIENT_AUTH: str
+    "1.3.6.1.5.5.7.3.2"
+
+# The purpose `codeSigning`, `1.3.6.1.5.5.7.3.3`.
+constant CODE_SIGNING: str
+    "1.3.6.1.5.5.7.3.3"
+
+# The purpose `emailProtection`, `1.3.6.1.5.5.7.3.4`.
+constant EMAIL_PROTECTION: str
+    "1.3.6.1.5.5.7.3.4"
+
+# The purpose `timeStamping`, `1.3.6.1.5.5.7.3.8`.
+constant TIME_STAMPING: str
+    "1.3.6.1.5.5.7.3.8"
+
+# The purpose `OCSPSigning`, `1.3.6.1.5.5.7.3.9`.
+constant OCSP_SIGNING: str
+    "1.3.6.1.5.5.7.3.9"
+
+# The purpose `anyExtendedKeyUsage`, `2.5.29.37.0`: every purpose.
+constant ANY_EXTENDED_KEY_USAGE: str
+    "2.5.29.37.0"
+
+# The access method `id-ad-ocsp`, `1.3.6.1.5.5.7.48.1`: where OCSP answers.
+constant OCSP: str
+    "1.3.6.1.5.5.7.48.1"
+
+# The access method `id-ad-caIssuers`, `1.3.6.1.5.5.7.48.2`: where the
+# issuer's certificate is.
+constant CA_ISSUERS: str
+    "1.3.6.1.5.5.7.48.2"
+
+# The policy `anyPolicy`, `2.5.29.32.0`.
+constant ANY_POLICY: str
+    "2.5.29.32.0"
+
+# The policy qualifier `id-qt-cps`, `1.3.6.1.5.5.7.2.1`: a URI.
+constant CPS_QUALIFIER: str
+    "1.3.6.1.5.5.7.2.1"
+
+# The policy qualifier `id-qt-unotice`, `1.3.6.1.5.5.7.2.2`: a notice.
+constant USER_NOTICE_QUALIFIER: str
+    "1.3.6.1.5.5.7.2.2"
+
+# A request's attribute `extensionRequest` of PKCS #9,
+# `1.2.840.113549.1.9.14`: the extensions asked for.
+constant EXTENSION_REQUEST: str
+    "1.2.840.113549.1.9.14"
+
+# A request's attribute `challengePassword` of PKCS #9,
+# `1.2.840.113549.1.9.7`.
+constant CHALLENGE_PASSWORD: str
+    "1.2.840.113549.1.9.7"
+
+## Names
+
+# One attribute of a name, `CN=example.com`: its type and its value.
+record Attribute
+    # The attribute's type: `COMMON_NAME`'s identifier and the others.
+    oid: asn1.Oid
+    # Its value as ASN.1 holds it, most often a string: `asn1.text_of`
+    # reads it.
+    value: asn1.Value
+
+# A distinguished name: relative names in the order the certificate writes
+# them, the least specific first, each one attribute or more. Read by
+# `to_name`.
+record Name
+    # The relative names, each a list of one attribute or more.
+    rdns: [[Attribute]]
+    # The name's own DER, which two names are compared by.
+    der: [u8]
+
+# The name `v` holds, an RDNSequence.
+#
+# - `v`: the ASN.1 value of a name, as `asn1.decode_der` reads it.
+#
+# Fails `invalid` where `v` is no name or holds an empty relative name, the
+# message saying which part. See also `format_name`, `text_of`.
+function to_name(v: asn1.Value) -> Name?
+    rdns: [[Attribute]] @= []
+
+    for rdn in shapes.sequence_of(v: v, least: 0, most: shapes.MAX_ITEMS, what: "a name")?
+        attributes: [Attribute] @= []
+
+        for pair in shapes.set_of(v: rdn, what: "a name's relative name")?
+            parts = shapes.sequence_of(v: pair, least: 2, most: 2, what: "a name's attribute")?
+            oid = shapes.within(r: asn1.oid_of(parts[0]), what: "a name's attribute")?
+            attributes @ attributes.push(Attribute(oid: oid, value: parts[1]))
+
+        if attributes.len() == 0
+            return fail(code: INVALID, msg: "a name holds a relative name with no attribute")
+        rdns @ rdns.push(attributes)
+
+    return ok(Name(rdns: rdns, der: asn1.encode_der(v)?))
+
+# `n` as RFC 4514's text, the most specific relative name first, as Python's
+# `rfc4514_string` writes it: `CN=example.com,O=Heroes Test,C=IT`.
+#
+# - `n`: the name; an empty one writes the empty text.
+#
+# The nine short names of RFC 4514 (`CN`, `L`, `ST`, `O`, `OU`, `C`,
+# `STREET`, `DC`, `UID`), any other type by its dotted identifier; a value
+# that is no string as `#` and its DER in hexadecimal. See also `to_name`.
+function format_name(n: Name) -> str
+    rdns: [str] @= []
+    k @= n.rdns.len() - 1
+
+    while k >= 0
+        pairs: [str] @= []
+
+        for a in n.rdns[k]
+            short = known.short_name(a.oid.dotted)
+
+            label = if short.len() > 0
+                short
+            else
+                a.oid.dotted
+
+            value = match asn1.text_of(a.value)
+                .ok s  => dn.escaped(s)
+                .err _ => "#" + bytes.format_hex(asn1.encode_der(a.value).default([]))
+
+            pairs @ pairs.push(label + "=" + value)
+
+        rdns @ rdns.push(pairs.join("+"))
+        k @ k - 1
+
+    return rdns.join(",")
+
+# The characters of the first attribute of `n` whose type is `oid`: the
+# common name of a subject, its organization.
+#
+# - `n`: the name searched, the least specific relative name first.
+# - `oid`: the attribute's dotted identifier, `COMMON_NAME` and the others.
+#
+# Fails `not_found` where `n` holds no such attribute, and `invalid` where
+# its value is no string. See also `format_name`.
+function text_of(n: Name, oid: str) -> str?
+    for rdn in n.rdns
+        for a in rdn
+            if a.oid.dotted == oid
+                return shapes.within(r: asn1.text_of(a.value), what: f"the attribute {oid}")
+
+    return fail(code: NOT_FOUND, msg: f"no attribute {oid} in \"{format_name(n)}\"")
+
+## General names
+
+# A name of another kind than a distinguished one, as RFC 5280 § 4.2.1.6
+# lists them: what an alternative name, an access location and a name
+# constraint hold.
+variant GeneralName
+    # `otherName`: a name of a type identified by an identifier.
+    other_name
+        # The type's identifier.
+        type_id: asn1.Oid
+        # The value.
+        value: asn1.Value
+    # `rfc822Name`: an email address, `ops@example.com`.
+    email
+        # The address, ASCII.
+        address: str
+    # `dNSName`: a host name, `example.com`, or a wildcard,
+    # `*.example.com`.
+    dns
+        # The name, ASCII.
+        name: str
+    # `x400Address`, kept as its DER, `[3]` included.
+    x400_address
+        # The DER.
+        der: [u8]
+    # `directoryName`: a distinguished name.
+    directory
+        # The name.
+        name: Name
+    # `ediPartyName`, kept as its DER, `[5]` included.
+    edi_party
+        # The DER.
+        der: [u8]
+    # `uniformResourceIdentifier`: `https://example.com/`.
+    uri
+        # The URI, ASCII.
+        uri: str
+    # `iPAddress` of four or sixteen bytes: an address.
+    ip
+        # The address, with no zone and no port.
+        address: net.Address
+    # `iPAddress` of eight or thirty-two bytes, as a name constraint holds
+    # one: an address and its mask.
+    ip_network
+        # The network; its address as the certificate writes it.
+        network: net.Network
+    # `registeredID`: an identifier.
+    registered_id
+        # The identifier.
+        oid: asn1.Oid
+
+# The general name `v` holds, its IMPLICIT tag read.
+#
+# - `v`: the ASN.1 value of a general name, `[0]` to `[8]`.
+#
+# Fails `invalid` for another tag, an address of another length than 4, 8,
+# 16 or 32 bytes, a mask that is not ones then zeros; `not_text` for a name
+# whose characters are not ASCII. See also `GeneralName`.
+function to_general_name(v: asn1.Value) -> GeneralName?
+    number = shapes.context_number(v)
+
+    if number == 1
+        return ok(.email(address: shapes.implicit_ia5(v: v, what: "an rfc822Name")?))
+
+    if number == 2
+        return ok(.dns(name: shapes.implicit_ia5(v: v, what: "a dNSName")?))
+
+    if number == 6
+        return ok(.uri(uri: shapes.implicit_ia5(v: v, what: "a uniformResourceIdentifier")?))
+
+    if number == 7
+        octets = shapes.within(r: asn1.octets_of(shapes.implicit(v: v, number: asn1.OCTET_STRING, what: "an iPAddress")?), what: "an iPAddress")?
+
+        if octets.len() == 4 || octets.len() == 16
+            return ok(.ip(address: net.from_bytes(octets)?))
+
+        if octets.len() != 8 && octets.len() != 32
+            return fail(code: INVALID, msg: f"an iPAddress of {octets.len()} bytes, where it holds 4, 8, 16 or 32")
+        half = octets.len() / 2
+        address = net.from_bytes(octets.slice(from: 0, to: half))?
+        mask = net.from_bytes(octets.slice(from: half, to: octets.len()))?
+        bits = shapes.within(r: net.mask_length(mask), what: "an iPAddress's mask")?
+        return ok(.ip_network(network: net.network_of(a: address, bits: bits)?))
+
+    if number == 8
+        return ok(
+            .registered_id(oid: shapes.within(r: asn1.oid_of(shapes.implicit(v: v, number: asn1.OBJECT_IDENTIFIER, what: "a registeredID")?), what: "a registeredID")?)
+        )
+
+    if number == 0
+        parts = shapes.tagged_items(v: v, what: "an otherName")?
+
+        if parts.len() != 2
+            return fail(code: INVALID, msg: f"an otherName of {parts.len()} elements, where it holds 2")
+        type_id = shapes.within(r: asn1.oid_of(parts[0]), what: "an otherName")?
+        return ok(
+            .other_name(type_id: type_id, value: shapes.within(r: asn1.untagged(v: parts[1], number: 0), what: "an otherName")?)
+        )
+
+    if number == 4
+        parts = shapes.tagged_items(v: v, what: "a directoryName")?
+
+        if parts.len() != 1
+            return fail(code: INVALID, msg: "a directoryName holding other than one name")
+        return ok(.directory(name: to_name(parts[0])?))
+
+    if number == 3
+        return ok(.x400_address(der: asn1.encode_der(v)?))
+
+    if number == 5
+        return ok(.edi_party(der: asn1.encode_der(v)?))
+    return fail(
+        code: INVALID,
+        msg: f"a general name of the tag {asn1.format_tag(asn1.tag_of(v))}, where RFC 5280 writes [0] to [8]"
+    )
+
+## Algorithms and keys
+
+# An AlgorithmIdentifier: the algorithm and its parameters, which some
+# algorithms leave out and others write as NULL.
+record Algorithm
+    # The algorithm's identifier: `1.2.840.113549.1.1.11` for
+    # sha256WithRSAEncryption.
+    oid: asn1.Oid
+    # Whether the parameters are written.
+    has_parameters: bool
+    # The parameters where they are written, NULL otherwise.
+    parameters: asn1.Value
+
+# A subject's public key as a certificate holds it: SubjectPublicKeyInfo.
+record PublicKey
+    # The key's algorithm: rsaEncryption, id-ecPublicKey with its curve,
+    # Ed25519.
+    algorithm: Algorithm
+    # The key's bytes, the BIT STRING's: an RSA key's DER, an EC point, an
+    # Ed25519 key's 32 bytes.
+    key: [u8]
+    # The SubjectPublicKeyInfo's own DER, which `crypto/keypairs` reads.
+    der: [u8]
+
+# The algorithm `v` holds, an AlgorithmIdentifier.
+#
+# - `v`: the ASN.1 value, a SEQUENCE of an identifier and its parameters.
+#
+# Fails `invalid` where `v` is no AlgorithmIdentifier. See also `scheme_of`.
+function to_algorithm(v: asn1.Value) -> Algorithm?
+    items = shapes.sequence_of(v: v, least: 1, most: 2, what: "an AlgorithmIdentifier")?
+    oid = shapes.within(r: asn1.oid_of(items[0]), what: "an AlgorithmIdentifier")?
+
+    if items.len() == 2
+        return ok(Algorithm(oid: oid, has_parameters: true, parameters: items[1]))
+    return ok(Algorithm(oid: oid, has_parameters: false, parameters: .null_value))
+
+# The scheme of `crypto/keypairs` that checks a signature of `algorithm`.
+#
+# - `algorithm`: the signature's algorithm, as a certificate, a request or a
+#   list names it.
+#
+# Fails `unsupported` for an algorithm it does not check (SHA-1's, SHA-224's,
+# DSA, Ed448, RSA-PSS with another salt or mask), naming it; `invalid` for
+# parameters its RFC forbids. See also `verify_signature`.
+function scheme_of(algorithm: Algorithm) -> keypairs.Scheme?
+    name = known.scheme_name(dotted: algorithm.oid.dotted, has_parameters: algorithm.has_parameters, parameters: algorithm.parameters)?
+    return keypairs.parse_scheme(name)
+
+# The public key DER `der` holds, a SubjectPublicKeyInfo.
+#
+# - `der`: the bytes, as a certificate holds them or `crypto/keypairs`
+#   writes them.
+#
+# Fails `invalid` where `der` is no SubjectPublicKeyInfo, or its key's bits
+# are not whole bytes. See also `kind_of`, `verify_signature`.
+function decode_public_key(der: [u8]) -> PublicKey?
+    v = shapes.within(r: asn1.decode_der(der), what: "a SubjectPublicKeyInfo")?
+    items = shapes.sequence_of(v: v, least: 2, most: 2, what: "a SubjectPublicKeyInfo")?
+    algorithm = to_algorithm(items[0])?
+    bits = shapes.within(r: asn1.bits_of(items[1]), what: "a SubjectPublicKeyInfo's key")?
+
+    if bits.bit_len % 8 != 0
+        return fail(code: INVALID, msg: f"a public key of {bits.bit_len} bits, not whole bytes")
+    return ok(PublicKey(algorithm: algorithm, key: bits.bytes, der: der))
+
+# The kind of `key` as `crypto/keypairs` names it, an RSA key's modulus
+# measured.
+#
+# - `key`: the public key.
+#
+# Fails `unsupported` for a kind `crypto/keypairs` lacks (P-521, Ed448, DSA),
+# `invalid` for a key that is not its algorithm's form. See also
+# `keypairs.parse_public_der`.
+function kind_of(key: PublicKey) -> keypairs.Kind?
+    facts = known.key_facts(dotted: key.algorithm.oid.dotted, has_parameters: key.algorithm.has_parameters, parameters: key.algorithm.parameters, key: key.key)?
+
+    kind: keypairs.Kind = match facts.name
+        "ed25519" => .ed25519
+        "x25519"  => .x25519
+        "p256"    => .p256
+        "p384"    => .p384
+        _         => .rsa(bits: facts.bits)
+
+    return ok(kind)
+
+# Whether `signature` is the signature of `message` by `algorithm` of the
+# key `key`.
+#
+# - `key`: the signer's public key.
+# - `algorithm`: the signature's algorithm.
+# - `message`: the bytes signed: a certificate's `tbs`, a request's `info`, a
+#   list's `tbs`.
+# - `signature`: the signature's bytes.
+#
+# False, never a failure, for a signature that does not hold. Fails as
+# `scheme_of` does, `invalid` where the key is not of the algorithm's kind,
+# and `unsupported` where this platform lacks the kind (Ed25519 on macOS and
+# Windows). See also `is_signed_by`, `keypairs.verify_der`.
+function verify_signature(key: PublicKey, algorithm: Algorithm, message: [u8], signature: [u8]) -> bool?
+    scheme = scheme_of(algorithm)?
+    return keypairs.verify_der(public_der: key.der, scheme: scheme, message: message, signature: signature)
+
+## Extensions
+
+# One extension as written: its identifier, whether it is critical, and its
+# value's DER, decoded or not.
+record Extension
+    # The extension's identifier: `SUBJECT_ALT_NAME` and the others.
+    oid: asn1.Oid
+    # Whether a reader that does not know it must refuse the certificate.
+    critical: bool
+    # The DER inside the extension's OCTET STRING.
+    value: [u8]
+
+# The key usages of `keyUsage` (RFC 5280 § 4.2.1.3), one for each bit.
+record KeyUsage
+    # Bit 0: signatures other than on certificates and lists.
+    digital_signature: bool
+    # Bit 1, once `nonRepudiation`.
+    content_commitment: bool
+    # Bit 2: keys encrypted to it.
+    key_encipherment: bool
+    # Bit 3: data encrypted to it.
+    data_encipherment: bool
+    # Bit 4: key agreement.
+    key_agreement: bool
+    # Bit 5: certificates signed.
+    key_cert_sign: bool
+    # Bit 6: revocation lists signed.
+    crl_sign: bool
+    # Bit 7: agreement for encryption alone.
+    encipher_only: bool
+    # Bit 8: agreement for decryption alone.
+    decipher_only: bool
+
+# `basicConstraints` (RFC 5280 § 4.2.1.9).
+record BasicConstraints
+    # Whether the subject is a certificate authority.
+    is_ca: bool
+    # Whether a path length is set.
+    has_path_len: bool
+    # The most intermediates that may follow it, 0 or more; 0 where unset.
+    path_len: i64
+
+# `authorityKeyIdentifier` (RFC 5280 § 4.2.1.1).
+record AuthorityKeyId
+    # Whether the issuer's key identifier is written.
+    has_key_id: bool
+    # The identifier of the issuer's key; empty where unwritten.
+    key_id: [u8]
+    # The issuer's issuer's names, empty where unwritten.
+    issuer: [GeneralName]
+    # Whether the issuer's serial is written.
+    has_serial: bool
+    # The issuer's serial; 0 where unwritten.
+    serial: big.Integer
+
+# Why a certificate was revoked (RFC 5280 § 5.3.1), and the reasons a list
+# covers.
+variant Reason
+    # `unspecified`, code 0; in a list's reasons, bit 0, `unused`.
+    unspecified
+    # `keyCompromise`, code 1.
+    key_compromise
+    # `cACompromise`, code 2.
+    ca_compromise
+    # `affiliationChanged`, code 3.
+    affiliation_changed
+    # `superseded`, code 4.
+    superseded
+    # `cessationOfOperation`, code 5.
+    cessation_of_operation
+    # `certificateHold`, code 6.
+    certificate_hold
+    # `removeFromCRL`, code 8, in a delta list alone.
+    remove_from_crl
+    # `privilegeWithdrawn`, code 9.
+    privilege_withdrawn
+    # `aACompromise`, code 10.
+    aa_compromise
+
+# Where a revocation list is: a point of `cRLDistributionPoints` or
+# `freshestCRL` (RFC 5280 § 4.2.1.13).
+record DistributionPoint
+    # The list's names, most often URIs; empty where unwritten.
+    full_name: [GeneralName]
+    # A name relative to the list's issuer, its attributes; empty where
+    # unwritten.
+    relative_name: [Attribute]
+    # Whether the point covers some reasons alone.
+    has_reasons: bool
+    # The reasons it covers where `has_reasons`.
+    reasons: [Reason]
+    # The list's issuer where it is not the certificate's; empty otherwise.
+    crl_issuer: [GeneralName]
+
+# One access of `authorityInfoAccess` or `subjectInfoAccess` (RFC 5280
+# §§ 4.2.2.1, 4.2.2.2).
+record AccessDescription
+    # The method: `OCSP`, `CA_ISSUERS`.
+    method: asn1.Oid
+    # Where: most often a URI.
+    location: GeneralName
+
+# One qualifier of a policy (RFC 5280 § 4.2.1.4).
+record PolicyQualifier
+    # The qualifier's identifier: `CPS_QUALIFIER`, `USER_NOTICE_QUALIFIER`.
+    oid: asn1.Oid
+    # The URI of a CPS qualifier; empty otherwise.
+    cps_uri: str
+    # A user notice's organization; empty where unwritten.
+    organization: str
+    # A user notice's numbers; empty where unwritten.
+    notice_numbers: [i64]
+    # A user notice's text; empty where unwritten.
+    explicit_text: str
+    # The qualifier's value as written, NULL where it has none.
+    value: asn1.Value
+
+# One policy of `certificatePolicies` (RFC 5280 § 4.2.1.4).
+record Policy
+    # The policy's identifier, `ANY_POLICY` among them.
+    oid: asn1.Oid
+    # Its qualifiers, in order.
+    qualifiers: [PolicyQualifier]
+
+# One mapping of `policyMappings` (RFC 5280 § 4.2.1.5).
+record PolicyMapping
+    # The issuer's policy.
+    issuer_domain: asn1.Oid
+    # The subject's policy it stands for.
+    subject_domain: asn1.Oid
+
+# `policyConstraints` (RFC 5280 § 4.2.1.11).
+record PolicyConstraints
+    # Whether `requireExplicitPolicy` is written.
+    has_require_explicit: bool
+    # How many certificates may follow before a policy is required.
+    require_explicit: i64
+    # Whether `inhibitPolicyMapping` is written.
+    has_inhibit_mapping: bool
+    # How many certificates may follow before mappings stop.
+    inhibit_mapping: i64
+
+# A subtree of a name constraint: a base name and the distances it covers.
+record Subtree
+    # The base: a DNS name, an email's host, a network, a URI's host, a
+    # directory name.
+    base: GeneralName
+    # `minimum`, 0 by RFC 5280.
+    minimum: i64
+    # Whether `maximum` is written; RFC 5280 says it is not.
+    has_maximum: bool
+    # `maximum` where written.
+    maximum: i64
+
+# `nameConstraints` (RFC 5280 § 4.2.1.10).
+record NameConstraints
+    # The subtrees every name below must fall in, by kind.
+    permitted: [Subtree]
+    # The subtrees no name below may fall in.
+    excluded: [Subtree]
+
+# `issuingDistributionPoint` of a revocation list (RFC 5280 § 5.2.5).
+record IssuingDistributionPoint
+    # The list's names; empty where unwritten.
+    full_name: [GeneralName]
+    # A name relative to the issuer; empty where unwritten.
+    relative_name: [Attribute]
+    # Whether the list holds end entities' certificates alone.
+    only_user_certs: bool
+    # Whether it holds authorities' alone.
+    only_ca_certs: bool
+    # Whether it covers some reasons alone.
+    has_only_some_reasons: bool
+    # Those reasons.
+    only_some_reasons: [Reason]
+    # Whether it lists certificates of other issuers too.
+    indirect_crl: bool
+    # Whether it holds attribute certificates alone.
+    only_attribute_certs: bool
+
+# The extensions of a certificate, a request, a list or a revoked entry:
+# every one as written, the ones this package knows decoded, each with
+# whether it was there. Made by `to_extensions`.
+record Extensions
+    # Every extension, in order.
+    list: [Extension]
+    # The extensions not decoded below, with their criticality.
+    unknown: [Extension]
+    # Whether `subjectAltName` is there.
+    has_alt_names: bool
+    # The subject's alternative names.
+    alt_names: [GeneralName]
+    # Whether `issuerAltName` is there.
+    has_issuer_alt_names: bool
+    # The issuer's alternative names.
+    issuer_alt_names: [GeneralName]
+    # Whether `keyUsage` is there.
+    has_key_usage: bool
+    # The key's usages; every one false where absent.
+    key_usage: KeyUsage
+    # Whether `extKeyUsage` is there.
+    has_extended_key_usage: bool
+    # The purposes: `SERVER_AUTH` and the others.
+    extended_key_usage: [asn1.Oid]
+    # Whether `basicConstraints` is there.
+    has_basic_constraints: bool
+    # The constraints; not a CA where absent.
+    basic_constraints: BasicConstraints
+    # Whether `subjectKeyIdentifier` is there.
+    has_subject_key_id: bool
+    # The subject's key identifier.
+    subject_key_id: [u8]
+    # Whether `authorityKeyIdentifier` is there.
+    has_authority_key_id: bool
+    # The issuer's key identifier and more.
+    authority_key_id: AuthorityKeyId
+    # Whether `cRLDistributionPoints` is there.
+    has_crl_distribution_points: bool
+    # Where the revocation lists are.
+    crl_distribution_points: [DistributionPoint]
+    # Whether `freshestCRL` is there.
+    has_freshest_crl: bool
+    # Where the delta lists are.
+    freshest_crl: [DistributionPoint]
+    # Whether `authorityInfoAccess` is there.
+    has_authority_info_access: bool
+    # Where OCSP answers and the issuer's certificate is.
+    authority_info_access: [AccessDescription]
+    # Whether `subjectInfoAccess` is there.
+    has_subject_info_access: bool
+    # The subject's own services.
+    subject_info_access: [AccessDescription]
+    # Whether `certificatePolicies` is there.
+    has_policies: bool
+    # The policies.
+    policies: [Policy]
+    # Whether `policyMappings` is there.
+    has_policy_mappings: bool
+    # The mappings.
+    policy_mappings: [PolicyMapping]
+    # Whether `policyConstraints` is there.
+    has_policy_constraints: bool
+    # The constraints.
+    policy_constraints: PolicyConstraints
+    # Whether `inhibitAnyPolicy` is there.
+    has_inhibit_any_policy: bool
+    # How many certificates may follow before `anyPolicy` stops counting.
+    inhibit_any_policy: i64
+    # Whether `nameConstraints` is there.
+    has_name_constraints: bool
+    # The constraints on the names below.
+    name_constraints: NameConstraints
+    # Whether a list's `cRLNumber` is there.
+    has_crl_number: bool
+    # The list's number.
+    crl_number: big.Integer
+    # Whether a list's `deltaCRLIndicator` is there.
+    has_delta_crl_indicator: bool
+    # The number of the base list a delta list completes.
+    delta_crl_indicator: big.Integer
+    # Whether a list's `issuingDistributionPoint` is there.
+    has_issuing_distribution_point: bool
+    # What the list covers.
+    issuing_distribution_point: IssuingDistributionPoint
+    # Whether a revoked entry's `reasonCode` is there.
+    has_reason: bool
+    # Why it was revoked; `unspecified` where absent.
+    reason: Reason
+    # Whether a revoked entry's `invalidityDate` is there.
+    has_invalidity_date: bool
+    # When its key is known or suspected to have been compromised.
+    invalidity_date: time.DateTime
+    # Whether a revoked entry's `certificateIssuer` is there.
+    has_certificate_issuer: bool
+    # The issuer of the revoked certificate, in an indirect list.
+    certificate_issuer: [GeneralName]
+
+# The extension `v` holds, as written, undecoded.
+#
+# - `v`: the ASN.1 value, a SEQUENCE of an identifier, a criticality that
+#   defaults to false, and an OCTET STRING.
+#
+# Fails `invalid` where `v` is no extension. See also `to_extensions`.
+function to_extension(v: asn1.Value) -> Extension?
+    items = shapes.sequence_of(v: v, least: 2, most: 3, what: "an extension")?
+    oid = shapes.within(r: asn1.oid_of(items[0]), what: "an extension")?
+    critical @= false
+
+    if items.len() == 3
+        critical @ shapes.within(r: asn1.bool_of(items[1]), what: f"the extension {oid.dotted}")?
+    value = shapes.within(r: asn1.octets_of(items[items.len() - 1]), what: f"the extension {oid.dotted}")?
+    return ok(Extension(oid: oid, critical: critical, value: value))
+
+# The extensions `list`, the ones this package knows decoded.
+#
+# - `list`: the extensions, in order, as `to_extension` reads them.
+#
+# Fails `invalid` where an extension stands twice or a known one is
+# malformed, the message naming it. See also `extension_of`.
+function to_extensions(list: [Extension]) -> Extensions?
+    known_ids = [
+        SUBJECT_ALT_NAME
+        ISSUER_ALT_NAME
+        KEY_USAGE
+        EXTENDED_KEY_USAGE
+        BASIC_CONSTRAINTS
+        SUBJECT_KEY_ID
+        AUTHORITY_KEY_ID
+        CRL_DISTRIBUTION_POINTS
+        FRESHEST_CRL
+        AUTHORITY_INFO_ACCESS
+        SUBJECT_INFO_ACCESS
+        CERTIFICATE_POLICIES
+        POLICY_MAPPINGS
+        POLICY_CONSTRAINTS
+        INHIBIT_ANY_POLICY
+        NAME_CONSTRAINTS
+        CRL_NUMBER
+        DELTA_CRL_INDICATOR
+        ISSUING_DISTRIBUTION_POINT
+        REASON_CODE
+        INVALIDITY_DATE
+        CERTIFICATE_ISSUER
+    ]
+    seen: {str: bool} @= {}
+    unknown: [Extension] @= []
+    no_names: [GeneralName] = []
+    no_points: [DistributionPoint] = []
+    no_access: [AccessDescription] = []
+    no_oids: [asn1.Oid] = []
+    no_attributes: [Attribute] = []
+    no_reasons: [Reason] = []
+    no_subtrees: [Subtree] = []
+    no_policies: [Policy] = []
+    no_mappings: [PolicyMapping] = []
+    no_bytes: [u8] = []
+    has_alt_names @= false
+    alt_names @= no_names
+    has_issuer_alt_names @= false
+    issuer_alt_names @= no_names
+    has_certificate_issuer @= false
+    certificate_issuer @= no_names
+    has_key_usage @= false
+    key_usage @= KeyUsage(
+        digital_signature: false,
+        content_commitment: false,
+        key_encipherment: false,
+        data_encipherment: false,
+        key_agreement: false,
+        key_cert_sign: false,
+        crl_sign: false,
+        encipher_only: false,
+        decipher_only: false
+    )
+    has_extended_key_usage @= false
+    extended_key_usage @= no_oids
+    has_basic_constraints @= false
+    basic_constraints @= BasicConstraints(is_ca: false, has_path_len: false, path_len: 0)
+    has_subject_key_id @= false
+    subject_key_id @= no_bytes
+    has_authority_key_id @= false
+    authority_key_id @= AuthorityKeyId(
+        has_key_id: false,
+        key_id: no_bytes,
+        issuer: no_names,
+        has_serial: false,
+        serial: big.from_int(0)
+    )
+    has_crl_distribution_points @= false
+    crl_distribution_points @= no_points
+    has_freshest_crl @= false
+    freshest_crl @= no_points
+    has_authority_info_access @= false
+    authority_info_access @= no_access
+    has_subject_info_access @= false
+    subject_info_access @= no_access
+    has_policies @= false
+    policies @= no_policies
+    has_policy_mappings @= false
+    policy_mappings @= no_mappings
+    has_policy_constraints @= false
+    policy_constraints @= PolicyConstraints(
+        has_require_explicit: false,
+        require_explicit: 0,
+        has_inhibit_mapping: false,
+        inhibit_mapping: 0
+    )
+    has_inhibit_any_policy @= false
+    inhibit_any_policy @= 0
+    has_name_constraints @= false
+    name_constraints @= NameConstraints(permitted: no_subtrees, excluded: no_subtrees)
+    has_crl_number @= false
+    crl_number @= big.from_int(0)
+    has_delta_crl_indicator @= false
+    delta_crl_indicator @= big.from_int(0)
+    has_issuing_distribution_point @= false
+    issuing_distribution_point @= IssuingDistributionPoint(
+        full_name: no_names,
+        relative_name: no_attributes,
+        only_user_certs: false,
+        only_ca_certs: false,
+        has_only_some_reasons: false,
+        only_some_reasons: no_reasons,
+        indirect_crl: false,
+        only_attribute_certs: false
+    )
+    has_reason @= false
+    reason: Reason @= .unspecified
+    has_invalidity_date @= false
+    invalidity_date @= time.DateTime(year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    flags: [Reason] = [
+        .unspecified
+        .key_compromise
+        .ca_compromise
+        .affiliation_changed
+        .superseded
+        .cessation_of_operation
+        .certificate_hold
+        .privilege_withdrawn
+        .aa_compromise
+    ]
+    codes: [Reason] = [
+        .unspecified
+        .key_compromise
+        .ca_compromise
+        .affiliation_changed
+        .superseded
+        .cessation_of_operation
+        .certificate_hold
+        .unspecified
+        .remove_from_crl
+        .privilege_withdrawn
+        .aa_compromise
+    ]
+
+    for e in list
+        id = e.oid.dotted
+        what = f"the extension {id}"
+
+        if seen[id].default(false)
+            return fail(code: INVALID, msg: f"{what} stands twice")
+        seen[id] @ true
+        is_known @= false
+
+        for k in known_ids
+            if k == id
+                is_known @ true
+
+        if !is_known
+            unknown @ unknown.push(e)
+            continue
+        v = shapes.within(r: asn1.decode_der(e.value), what: what)?
+
+        if id == SUBJECT_ALT_NAME || id == ISSUER_ALT_NAME || id == CERTIFICATE_ISSUER
+            names: [GeneralName] @= []
+
+            for item in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                names @ names.push(shapes.within(r: to_general_name(item), what: what)?)
+
+            if id == SUBJECT_ALT_NAME
+                has_alt_names @ true
+                alt_names @ names
+            else if id == ISSUER_ALT_NAME
+                has_issuer_alt_names @ true
+                issuer_alt_names @ names
+            else
+                has_certificate_issuer @ true
+                certificate_issuer @ names
+        else if id == KEY_USAGE
+            bits = shapes.within(r: asn1.bits_of(v), what: what)?
+            has_key_usage @ true
+            key_usage @ KeyUsage(
+                digital_signature: asn1.bit_at(b: bits, index: 0),
+                content_commitment: asn1.bit_at(b: bits, index: 1),
+                key_encipherment: asn1.bit_at(b: bits, index: 2),
+                data_encipherment: asn1.bit_at(b: bits, index: 3),
+                key_agreement: asn1.bit_at(b: bits, index: 4),
+                key_cert_sign: asn1.bit_at(b: bits, index: 5),
+                crl_sign: asn1.bit_at(b: bits, index: 6),
+                encipher_only: asn1.bit_at(b: bits, index: 7),
+                decipher_only: asn1.bit_at(b: bits, index: 8)
+            )
+        else if id == EXTENDED_KEY_USAGE
+            purposes: [asn1.Oid] @= []
+
+            for item in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                purposes @ purposes.push(shapes.within(r: asn1.oid_of(item), what: what)?)
+
+            has_extended_key_usage @ true
+            extended_key_usage @ purposes
+        else if id == BASIC_CONSTRAINTS
+            is_ca @= false
+            has_length @= false
+            length @= 0
+
+            for item in shapes.sequence_of(v: v, least: 0, most: 2, what: what)?
+                if asn1.tag_of(item) == asn1.Tag(kind: .universal, number: asn1.BOOLEAN, constructed: false)
+                    is_ca @ shapes.within(r: asn1.bool_of(item), what: what)?
+                else
+                    has_length @ true
+                    length @ shapes.count_of(v: item, what: what)?
+
+            has_basic_constraints @ true
+            basic_constraints @ BasicConstraints(is_ca: is_ca, has_path_len: has_length, path_len: length)
+        else if id == SUBJECT_KEY_ID
+            has_subject_key_id @ true
+            subject_key_id @ shapes.within(r: asn1.octets_of(v), what: what)?
+        else if id == AUTHORITY_KEY_ID
+            has_key_id @= false
+            key_id @= no_bytes
+            issuer_names: [GeneralName] @= []
+            has_serial @= false
+            serial @= big.from_int(0)
+
+            for part in shapes.sequence_of(v: v, least: 0, most: 3, what: what)?
+                n = shapes.context_number(part)
+
+                if n == 0
+                    has_key_id @ true
+                    key_id @ shapes.within(r: asn1.octets_of(shapes.implicit(v: part, number: asn1.OCTET_STRING, what: what)?), what: what)?
+                else if n == 1
+                    for item in shapes.tagged_items(v: part, what: what)?
+                        issuer_names @ issuer_names.push(shapes.within(r: to_general_name(item), what: what)?)
+                else if n == 2
+                    has_serial @ true
+                    serial @ shapes.within(r: asn1.integer_of(shapes.implicit(v: part, number: asn1.INTEGER, what: what)?), what: what)?
+                else
+                    return fail(code: INVALID, msg: f"{what}: an element of no tag 0 to 2")
+
+            has_authority_key_id @ true
+            authority_key_id @ AuthorityKeyId(
+                has_key_id: has_key_id,
+                key_id: key_id,
+                issuer: issuer_names,
+                has_serial: has_serial,
+                serial: serial
+            )
+        else if id == CRL_DISTRIBUTION_POINTS || id == FRESHEST_CRL
+            points: [DistributionPoint] @= []
+
+            for point in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                full: [GeneralName] @= []
+                relative: [Attribute] @= []
+                has_reasons @= false
+                reasons: [Reason] @= []
+                crl_issuer: [GeneralName] @= []
+
+                for part in shapes.sequence_of(v: point, least: 0, most: 3, what: what)?
+                    n = shapes.context_number(part)
+
+                    if n == 0
+                        inner = shapes.within(r: asn1.untagged(v: part, number: 0), what: what)?
+                        m = shapes.context_number(inner)
+
+                        if m == 0
+                            for item in shapes.tagged_items(v: inner, what: what)?
+                                full @ full.push(shapes.within(r: to_general_name(item), what: what)?)
+                        else if m == 1
+                            for pair in shapes.tagged_items(v: inner, what: what)?
+                                pp = shapes.sequence_of(v: pair, least: 2, most: 2, what: what)?
+                                relative @ relative.push(
+                                    Attribute(oid: shapes.within(r: asn1.oid_of(pp[0]), what: what)?, value: pp[1])
+                                )
+                        else
+                            return fail(code: INVALID, msg: f"{{what}}: a distribution point's name of no tag 0 or 1")
+                    else if n == 1
+                        bits = shapes.within(r: asn1.bits_of(shapes.implicit(v: part, number: asn1.BIT_STRING, what: what)?), what: what)?
+                        has_reasons @ true
+
+                        for k in range(from: 0, to: flags.len())
+                            if asn1.bit_at(b: bits, index: k)
+                                reasons @ reasons.push(flags[k])
+                    else if n == 2
+                        for item in shapes.tagged_items(v: part, what: what)?
+                            crl_issuer @ crl_issuer.push(shapes.within(r: to_general_name(item), what: what)?)
+                    else
+                        return fail(code: INVALID, msg: f"{what}: an element of no tag 0 to 2")
+
+                points @ points.push(
+                    DistributionPoint(full_name: full, relative_name: relative, has_reasons: has_reasons, reasons: reasons, crl_issuer: crl_issuer)
+                )
+
+            if id == CRL_DISTRIBUTION_POINTS
+                has_crl_distribution_points @ true
+                crl_distribution_points @ points
+            else
+                has_freshest_crl @ true
+                freshest_crl @ points
+        else if id == AUTHORITY_INFO_ACCESS || id == SUBJECT_INFO_ACCESS
+            access: [AccessDescription] @= []
+
+            for item in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                pair = shapes.sequence_of(v: item, least: 2, most: 2, what: what)?
+                method = shapes.within(r: asn1.oid_of(pair[0]), what: what)?
+                access @ access.push(
+                    AccessDescription(method: method, location: shapes.within(r: to_general_name(pair[1]), what: what)?)
+                )
+
+            if id == AUTHORITY_INFO_ACCESS
+                has_authority_info_access @ true
+                authority_info_access @ access
+            else
+                has_subject_info_access @ true
+                subject_info_access @ access
+        else if id == CERTIFICATE_POLICIES
+            found: [Policy] @= []
+
+            for info in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                parts = shapes.sequence_of(v: info, least: 1, most: 2, what: what)?
+                qualifiers: [PolicyQualifier] @= []
+
+                if parts.len() == 2
+                    for q in shapes.sequence_of(v: parts[1], least: 1, most: shapes.MAX_ITEMS, what: what)?
+                        qp = shapes.sequence_of(v: q, least: 1, most: 2, what: what)?
+                        qid = shapes.within(r: asn1.oid_of(qp[0]), what: what)?
+
+                        value: asn1.Value = if qp.len() == 2
+                            qp[1]
+                        else
+                            .null_value
+                        cps @= ""
+                        organization @= ""
+                        numbers: [i64] @= []
+                        explicit_text @= ""
+
+                        if qid.dotted == CPS_QUALIFIER
+                            cps @ shapes.within(r: asn1.text_of(value), what: what)?
+                        else if qid.dotted == USER_NOTICE_QUALIFIER && qp.len() == 2
+                            for part in shapes.sequence_of(v: value, least: 0, most: 2, what: what)?
+                                if asn1.tag_of(part) == asn1.Tag(kind: .universal, number: asn1.SEQUENCE, constructed: true)
+                                    reference = shapes.sequence_of(v: part, least: 2, most: 2, what: what)?
+                                    organization @ shapes.within(r: asn1.text_of(reference[0]), what: what)?
+
+                                    for number in shapes.sequence_of(v: reference[1], least: 0, most: shapes.MAX_ITEMS, what: what)?
+                                        numbers @ numbers.push(shapes.within(r: asn1.int_of(number), what: what)?)
+                                else
+                                    explicit_text @ shapes.within(r: asn1.text_of(part), what: what)?
+                        qualifiers @ qualifiers.push(
+                            PolicyQualifier(oid: qid, cps_uri: cps, organization: organization, notice_numbers: numbers, explicit_text: explicit_text, value: value)
+                        )
+
+                found @ found.push(
+                    Policy(oid: shapes.within(r: asn1.oid_of(parts[0]), what: what)?, qualifiers: qualifiers)
+                )
+
+            has_policies @ true
+            policies @ found
+        else if id == POLICY_MAPPINGS
+            mappings: [PolicyMapping] @= []
+
+            for item in shapes.sequence_of(v: v, least: 1, most: shapes.MAX_ITEMS, what: what)?
+                pair = shapes.sequence_of(v: item, least: 2, most: 2, what: what)?
+                from_policy = shapes.within(r: asn1.oid_of(pair[0]), what: what)?
+                mappings @ mappings.push(
+                    PolicyMapping(issuer_domain: from_policy, subject_domain: shapes.within(r: asn1.oid_of(pair[1]), what: what)?)
+                )
+
+            has_policy_mappings @ true
+            policy_mappings @ mappings
+        else if id == POLICY_CONSTRAINTS
+            has_require @= false
+            require @= 0
+            has_inhibit @= false
+            inhibit @= 0
+
+            for part in shapes.sequence_of(v: v, least: 0, most: 2, what: what)?
+                n = shapes.context_number(part)
+                count = shapes.count_of(v: shapes.implicit(v: part, number: asn1.INTEGER, what: what)?, what: what)?
+
+                if n == 0
+                    has_require @ true
+                    require @ count
+                else if n == 1
+                    has_inhibit @ true
+                    inhibit @ count
+                else
+                    return fail(code: INVALID, msg: f"{what}: an element of no tag 0 or 1")
+
+            has_policy_constraints @ true
+            policy_constraints @ PolicyConstraints(
+                has_require_explicit: has_require,
+                require_explicit: require,
+                has_inhibit_mapping: has_inhibit,
+                inhibit_mapping: inhibit
+            )
+        else if id == INHIBIT_ANY_POLICY
+            has_inhibit_any_policy @ true
+            inhibit_any_policy @ shapes.count_of(v: v, what: what)?
+        else if id == NAME_CONSTRAINTS
+            permitted @= no_subtrees
+            excluded @= no_subtrees
+
+            for part in shapes.sequence_of(v: v, least: 0, most: 2, what: what)?
+                n = shapes.context_number(part)
+
+                if n != 0 && n != 1
+                    return fail(code: INVALID, msg: f"{what}: an element of no tag 0 or 1")
+                trees: [Subtree] @= []
+
+                for tree in shapes.tagged_items(v: part, what: what)?
+                    tp = shapes.sequence_of(v: tree, least: 1, most: 3, what: what)?
+                    base = shapes.within(r: to_general_name(tp[0]), what: what)?
+                    minimum @= 0
+                    has_maximum @= false
+                    maximum @= 0
+
+                    for k in range(from: 1, to: tp.len())
+                        distance = shapes.count_of(v: shapes.implicit(v: tp[k], number: asn1.INTEGER, what: what)?, what: what)?
+                        m = shapes.context_number(tp[k])
+
+                        if m == 0
+                            minimum @ distance
+                        else if m == 1
+                            has_maximum @ true
+                            maximum @ distance
+                        else
+                            return fail(code: INVALID, msg: f"{what}: a subtree's distance of no tag 0 or 1")
+
+                    trees @ trees.push(
+                        Subtree(base: base, minimum: minimum, has_maximum: has_maximum, maximum: maximum)
+                    )
+
+                if n == 0
+                    permitted @ trees
+                else
+                    excluded @ trees
+
+            has_name_constraints @ true
+            name_constraints @ NameConstraints(permitted: permitted, excluded: excluded)
+        else if id == CRL_NUMBER || id == DELTA_CRL_INDICATOR
+            number = shapes.within(r: asn1.integer_of(v), what: what)?
+
+            if big.sign(number) < 0
+                return fail(code: INVALID, msg: f"{what}: a number below 0")
+
+            if id == CRL_NUMBER
+                has_crl_number @ true
+                crl_number @ number
+            else
+                has_delta_crl_indicator @ true
+                delta_crl_indicator @ number
+        else if id == ISSUING_DISTRIBUTION_POINT
+            full: [GeneralName] @= []
+            relative: [Attribute] @= []
+            switches: [bool] @= [false, false, false, false, false, false]
+            has_some @= false
+            some: [Reason] @= []
+
+            for part in shapes.sequence_of(v: v, least: 0, most: 6, what: what)?
+                n = shapes.context_number(part)
+
+                if n == 0
+                    inner = shapes.within(r: asn1.untagged(v: part, number: 0), what: what)?
+                    m = shapes.context_number(inner)
+
+                    if m == 0
+                        for item in shapes.tagged_items(v: inner, what: what)?
+                            full @ full.push(shapes.within(r: to_general_name(item), what: what)?)
+                    else if m == 1
+                        for pair in shapes.tagged_items(v: inner, what: what)?
+                            pp = shapes.sequence_of(v: pair, least: 2, most: 2, what: what)?
+                            relative @ relative.push(
+                                Attribute(oid: shapes.within(r: asn1.oid_of(pp[0]), what: what)?, value: pp[1])
+                            )
+                    else
+                        return fail(code: INVALID, msg: f"{{what}}: a distribution point's name of no tag 0 or 1")
+                else if n == 3
+                    bits = shapes.within(r: asn1.bits_of(shapes.implicit(v: part, number: asn1.BIT_STRING, what: what)?), what: what)?
+                    has_some @ true
+
+                    for k in range(from: 0, to: flags.len())
+                        if asn1.bit_at(b: bits, index: k)
+                            some @ some.push(flags[k])
+                else if n == 1 || n == 2 || n == 4 || n == 5
+                    switches[n] @ shapes.within(r: asn1.bool_of(shapes.implicit(v: part, number: asn1.BOOLEAN, what: what)?), what: what)?
+                else
+                    return fail(code: INVALID, msg: f"{what}: an element of no tag 0 to 5")
+
+            has_issuing_distribution_point @ true
+            issuing_distribution_point @ IssuingDistributionPoint(
+                full_name: full,
+                relative_name: relative,
+                only_user_certs: switches[1],
+                only_ca_certs: switches[2],
+                has_only_some_reasons: has_some,
+                only_some_reasons: some,
+                indirect_crl: switches[4],
+                only_attribute_certs: switches[5]
+            )
+        else if id == REASON_CODE
+            if asn1.tag_of(v) != asn1.Tag(kind: .universal, number: asn1.ENUMERATED, constructed: false)
+                return fail(code: INVALID, msg: f"{what}: a reason that is no ENUMERATED")
+            code = shapes.within(r: asn1.int_of(v), what: what)?
+
+            if code < 0 || code > 10 || code == 7
+                return fail(code: INVALID, msg: f"{what}: the reason {code}, which RFC 5280 does not define")
+            has_reason @ true
+            reason @ codes[code]
+        else
+            has_invalidity_date @ true
+            invalidity_date @ shapes.time_of(v: v, what: what)?
+
+    return ok(
+        Extensions(list: list, unknown: unknown, has_alt_names: has_alt_names, alt_names: alt_names, has_issuer_alt_names: has_issuer_alt_names, issuer_alt_names: issuer_alt_names, has_key_usage: has_key_usage, key_usage: key_usage, has_extended_key_usage: has_extended_key_usage, extended_key_usage: extended_key_usage, has_basic_constraints: has_basic_constraints, basic_constraints: basic_constraints, has_subject_key_id: has_subject_key_id, subject_key_id: subject_key_id, has_authority_key_id: has_authority_key_id, authority_key_id: authority_key_id, has_crl_distribution_points: has_crl_distribution_points, crl_distribution_points: crl_distribution_points, has_freshest_crl: has_freshest_crl, freshest_crl: freshest_crl, has_authority_info_access: has_authority_info_access, authority_info_access: authority_info_access, has_subject_info_access: has_subject_info_access, subject_info_access: subject_info_access, has_policies: has_policies, policies: policies, has_policy_mappings: has_policy_mappings, policy_mappings: policy_mappings, has_policy_constraints: has_policy_constraints, policy_constraints: policy_constraints, has_inhibit_any_policy: has_inhibit_any_policy, inhibit_any_policy: inhibit_any_policy, has_name_constraints: has_name_constraints, name_constraints: name_constraints, has_crl_number: has_crl_number, crl_number: crl_number, has_delta_crl_indicator: has_delta_crl_indicator, delta_crl_indicator: delta_crl_indicator, has_issuing_distribution_point: has_issuing_distribution_point, issuing_distribution_point: issuing_distribution_point, has_reason: has_reason, reason: reason, has_invalidity_date: has_invalidity_date, invalidity_date: invalidity_date, has_certificate_issuer: has_certificate_issuer, certificate_issuer: certificate_issuer)
+    )
+
+# The extension of `extensions` whose identifier is `oid`, known or not.
+#
+# - `extensions`: the extensions searched.
+# - `oid`: the dotted identifier: `SUBJECT_ALT_NAME` and the others.
+#
+# Fails `not_found` where none is. See also `Extensions`.
+function extension_of(extensions: Extensions, oid: str) -> Extension?
+    for e in extensions.list
+        if e.oid.dotted == oid
+            return ok(e)
+
+    return fail(code: NOT_FOUND, msg: f"no extension {oid}")
+
+## Certificates
+
+# A certificate read (RFC 5280 § 4.1). Made by `decode_certificate` and the
+# other readers.
+record Certificate
+    # The certificate's own DER.
+    der: [u8]
+    # The DER of its tbsCertificate: the bytes its issuer signed.
+    tbs: [u8]
+    # The version: 1, 2 or 3.
+    version: i64
+    # The serial number, of any size; RFC 5280 asks at most 20 bytes, and
+    # a negative one is read as written.
+    serial: big.Integer
+    # The signature's algorithm, the same inside the tbsCertificate and out.
+    signature_algorithm: Algorithm
+    # The issuer.
+    issuer: Name
+    # The first moment it is valid, in UTC.
+    not_before: time.DateTime
+    # The last moment it is valid, in UTC; `99991231235959Z` where it does
+    # not end.
+    not_after: time.DateTime
+    # The subject; empty where its names are all alternative ones.
+    subject: Name
+    # The subject's public key.
+    public_key: PublicKey
+    # Whether `issuerUniqueID` is written, in a version 2 or 3.
+    has_issuer_unique_id: bool
+    # The issuer's unique identifier where written.
+    issuer_unique_id: asn1.BitString
+    # Whether `subjectUniqueID` is written.
+    has_subject_unique_id: bool
+    # The subject's unique identifier where written.
+    subject_unique_id: asn1.BitString
+    # The extensions, every one as written and the known ones decoded.
+    extensions: Extensions
+    # The signature's bytes.
+    signature: [u8]
+
+# The certificate DER `der` holds.
+#
+# - `der`: the bytes of one certificate, nothing after them.
+#
+# Fails `invalid` where `der` is no certificate of RFC 5280: a version past
+# 3, extensions in a version below 3, two signature algorithms that differ, a
+# signature of bits that are not whole bytes, an extension twice, a known
+# extension malformed, the message saying which part; `not_text` for a
+# string whose characters are not its type's. See also `parse_certificate`.
+function decode_certificate(der: [u8]) -> Certificate?
+    what = "a certificate"
+    v = shapes.within(r: asn1.decode_der(der), what: what)?
+    parts = shapes.sequence_of(v: v, least: 3, most: 3, what: what)?
+    options = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    whole = asn1.element_at(data: der, at: 0, options: options)?
+    spans = asn1.elements_of(data: der, element: whole, options: options)?
+    signed = der.slice(from: spans[0].start, to: spans[0].end)
+    tbs = shapes.sequence_of(v: parts[0], least: 6, most: 10, what: "a certificate's tbsCertificate")?
+    first @= 0
+    version @= 1
+
+    if shapes.context_number(tbs[0]) == 0
+        written = shapes.within(r: asn1.untagged(v: tbs[0], number: 0), what: "a certificate's version")?
+        version @ shapes.count_of(v: written, what: "a certificate's version")? + 1
+        first @ 1
+
+    if version > 3
+        return fail(code: INVALID, msg: f"a certificate of version {version}, where RFC 5280 has 1 to 3")
+
+    if tbs.len() < first + 6
+        return fail(code: INVALID, msg: "a certificate's tbsCertificate holds too few elements")
+    serial = shapes.within(r: asn1.integer_of(tbs[first]), what: "a certificate's serial")?
+    inner = shapes.within(r: to_algorithm(tbs[first + 1]), what: "a certificate's signature algorithm")?
+    issuer = shapes.within(r: to_name(tbs[first + 2]), what: "a certificate's issuer")?
+    validity = shapes.sequence_of(v: tbs[first + 3], least: 2, most: 2, what: "a certificate's validity")?
+    not_before = shapes.time_of(v: validity[0], what: "a certificate's notBefore")?
+    not_after = shapes.time_of(v: validity[1], what: "a certificate's notAfter")?
+    subject = shapes.within(r: to_name(tbs[first + 4]), what: "a certificate's subject")?
+    public_key = shapes.within(r: decode_public_key(asn1.encode_der(tbs[first + 5])?), what: "a certificate's subjectPublicKeyInfo")?
+    no_bits = asn1.BitString(bytes: [], bit_len: 0)
+    has_issuer_id @= false
+    issuer_id @= no_bits
+    has_subject_id @= false
+    subject_id @= no_bits
+    list: [Extension] @= []
+    last @= 0
+
+    for k in range(from: first + 6, to: tbs.len())
+        n = shapes.context_number(tbs[k])
+
+        if n <= last || n > 3
+            return fail(
+                code: INVALID,
+                msg: "a certificate's tbsCertificate holds an element out of place after its key"
+            )
+        last @ n
+
+        if n == 3
+            if version < 3
+                return fail(
+                    code: INVALID,
+                    msg: f"a certificate of version {version} with extensions, which version 3 alone holds"
+                )
+            written = shapes.within(r: asn1.untagged(v: tbs[k], number: 3), what: "a certificate's extensions")?
+
+            for item in shapes.sequence_of(v: written, least: 1, most: shapes.MAX_ITEMS, what: "a certificate's extensions")?
+                list @ list.push(to_extension(item)?)
+        else
+            if version < 2
+                return fail(code: INVALID, msg: "a certificate of version 1 with a unique identifier")
+            id = shapes.within(r: asn1.bits_of(shapes.implicit(v: tbs[k], number: asn1.BIT_STRING, what: "a unique identifier")?), what: "a unique identifier")?
+
+            if n == 1
+                has_issuer_id @ true
+                issuer_id @ id
+            else
+                has_subject_id @ true
+                subject_id @ id
+
+    extensions = shapes.within(r: to_extensions(list), what: what)?
+    outer = shapes.within(r: to_algorithm(parts[1]), what: "a certificate's signature algorithm")?
+
+    if outer != inner
+        return fail(
+            code: INVALID,
+            msg: "a certificate whose signature algorithm outside its tbsCertificate is not the one inside"
+        )
+    signature = shapes.within(r: asn1.bits_of(parts[2]), what: "a certificate's signature")?
+
+    if signature.bit_len % 8 != 0
+        return fail(code: INVALID, msg: "a certificate's signature of bits that are not whole bytes")
+    return ok(
+        Certificate(der: der, tbs: signed, version: version, serial: serial, signature_algorithm: inner, issuer: issuer, not_before: not_before, not_after: not_after, subject: subject, public_key: public_key, has_issuer_unique_id: has_issuer_id, issuer_unique_id: issuer_id, has_subject_unique_id: has_subject_id, subject_unique_id: subject_id, extensions: extensions, signature: signature.bytes)
+    )
+
+# Every certificate of `der`, certificates' DER written one after another,
+# as a TLS server sends its chain.
+#
+# - `der`: the bytes; empty holds no certificate.
+#
+# Fails as `decode_certificate` does for the first it refuses. See also
+# `parse_certificates`.
+function decode_certificates(der: [u8]) -> [Certificate]?
+    certs: [Certificate] @= []
+    options = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    at @= 0
+
+    while at < der.len()
+        e = shapes.within(r: asn1.element_at(data: der, at: at, options: options), what: f"the certificate at byte {at}")?
+        certs @ certs.push(
+            shapes.within(r: decode_certificate(der.slice(from: e.start, to: e.end)), what: f"the certificate at byte {at}")?
+        )
+        at @ e.end
+
+    return ok(certs)
+
+# The certificate of the first `CERTIFICATE` block of PEM in `text`.
+#
+# - `text`: PEM; blocks of other labels and the text around them passed
+#   over.
+#
+# Fails `not_found` where `text` holds no such block, `invalid` where the PEM
+# is broken, and as `decode_certificate` does. See also `parse_certificates`,
+# `format_certificate`.
+function parse_certificate(text: str) -> Certificate?
+    for block in pem.parse_all(text)?
+        if block.label == "CERTIFICATE"
+            return decode_certificate(block.data)
+
+    return fail(code: NOT_FOUND, msg: "no CERTIFICATE block in the text")
+
+# The certificates of every `CERTIFICATE` block of PEM in `text`, in order:
+# a bundle of roots, a chain.
+#
+# - `text`: PEM; blocks of other labels passed over.
+#
+# The empty list where `text` holds none. Fails as `parse_certificate` does
+# for a block it refuses. See also `parse_certificate`.
+function parse_certificates(text: str) -> [Certificate]?
+    certs: [Certificate] @= []
+
+    for block in pem.parse_all(text)?
+        if block.label == "CERTIFICATE"
+            certs @ certs.push(decode_certificate(block.data)?)
+
+    return ok(certs)
+
+# `cert` as a `CERTIFICATE` block of PEM, lines of 64 characters each ending
+# in `\n`.
+#
+# - `cert`: the certificate; its `der` is written.
+#
+# See also `parse_certificate`.
+function format_certificate(cert: Certificate) -> str
+    return pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: cert.der)).must()
+
+# Whether `at` falls inside `cert`'s validity, both ends included.
+#
+# - `cert`: the certificate.
+# - `at`: the moment asked about.
+#
+# See also `verify_chain`.
+function is_valid_at(cert: Certificate, at: time.Instant) -> bool
+    now = time.to_date_time(at)
+    return shapes.compare_date_times(a: cert.not_before, b: now) <= 0 && shapes.compare_date_times(a: now, b: cert.not_after) <= 0
+
+# Whether `cert` names itself as its issuer: a root, or a certificate an
+# authority issued to itself.
+#
+# - `cert`: the certificate; its two names compared by their DER.
+#
+# See also `chain_of`.
+function is_self_issued(cert: Certificate) -> bool
+    return cert.subject.der == cert.issuer.der
+
+# Whether `issuer`'s key signed `cert`.
+#
+# - `cert`: the certificate whose signature is checked.
+# - `issuer`: the certificate whose public key checks it; its name is not
+#   compared, which `verify_chain` does.
+#
+# Fails as `verify_signature` does. See also `verify_chain`.
+function is_signed_by(cert: Certificate, issuer: Certificate) -> bool?
+    return verify_signature(
+        key: issuer.public_key,
+        algorithm: cert.signature_algorithm,
+        message: cert.tbs,
+        signature: cert.signature
+    )
+
+## Requests
+
+# One attribute of a certificate request: its type and its values.
+record RequestAttribute
+    # The attribute's type: `EXTENSION_REQUEST`, `CHALLENGE_PASSWORD`.
+    oid: asn1.Oid
+    # Its values, a SET's elements.
+    values: [asn1.Value]
+
+# A certificate request of PKCS #10 (RFC 2986), read by `decode_request` or
+# `parse_request`.
+record Request
+    # The request's own DER.
+    der: [u8]
+    # The DER of its certificationRequestInfo: the bytes its key signed.
+    info: [u8]
+    # The version: 1, the one PKCS #10 has (written 0).
+    version: i64
+    # The subject asked for.
+    subject: Name
+    # The subject's public key, which signed the request.
+    public_key: PublicKey
+    # The attributes, the extension request among them.
+    attributes: [RequestAttribute]
+    # The extensions asked for, from `extensionRequest`.
+    extensions: Extensions
+    # The signature's algorithm.
+    signature_algorithm: Algorithm
+    # The signature's bytes.
+    signature: [u8]
+
+# The certificate request DER `der` holds.
+#
+# - `der`: the bytes of one request, nothing after them.
+#
+# Fails `invalid` where `der` is no request of PKCS #10, a version other than
+# 0 among them, and as `decode_certificate` does for its parts. See also
+# `parse_request`, `is_request_signed`.
+function decode_request(der: [u8]) -> Request?
+    what = "a certificate request"
+    v = shapes.within(r: asn1.decode_der(der), what: what)?
+    parts = shapes.sequence_of(v: v, least: 3, most: 3, what: what)?
+    options = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    whole = asn1.element_at(data: der, at: 0, options: options)?
+    spans = asn1.elements_of(data: der, element: whole, options: options)?
+    signed = der.slice(from: spans[0].start, to: spans[0].end)
+    info = shapes.sequence_of(v: parts[0], least: 4, most: 4, what: "a request's certificationRequestInfo")?
+
+    if shapes.count_of(v: info[0], what: "a request's version")? != 0
+        return fail(code: INVALID, msg: "a request of a version other than PKCS #10's, written 0")
+    subject = shapes.within(r: to_name(info[1]), what: "a request's subject")?
+    public_key = shapes.within(r: decode_public_key(asn1.encode_der(info[2])?), what: "a request's subjectPKInfo")?
+
+    if shapes.context_number(info[3]) != 0
+        return fail(code: INVALID, msg: "a request whose attributes are not tagged [0]")
+    attributes: [RequestAttribute] @= []
+    list: [Extension] @= []
+
+    for item in shapes.tagged_items(v: info[3], what: "a request's attributes")?
+        pair = shapes.sequence_of(v: item, least: 2, most: 2, what: "a request's attribute")?
+        oid = shapes.within(r: asn1.oid_of(pair[0]), what: "a request's attribute")?
+        values = shapes.set_of(v: pair[1], what: f"the request's attribute {oid.dotted}")?
+        attributes @ attributes.push(RequestAttribute(oid: oid, values: values))
+
+        if oid.dotted == EXTENSION_REQUEST
+            if values.len() != 1
+                return fail(code: INVALID, msg: "a request's extension request holding other than one value")
+
+            for e in shapes.sequence_of(v: values[0], least: 0, most: shapes.MAX_ITEMS, what: "a request's extensions")?
+                list @ list.push(to_extension(e)?)
+
+    extensions = shapes.within(r: to_extensions(list), what: what)?
+    algorithm = shapes.within(r: to_algorithm(parts[1]), what: "a request's signature algorithm")?
+    signature = shapes.within(r: asn1.bits_of(parts[2]), what: "a request's signature")?
+
+    if signature.bit_len % 8 != 0
+        return fail(code: INVALID, msg: "a request's signature of bits that are not whole bytes")
+    return ok(
+        Request(der: der, info: signed, version: 1, subject: subject, public_key: public_key, attributes: attributes, extensions: extensions, signature_algorithm: algorithm, signature: signature.bytes)
+    )
+
+# The request of the first `CERTIFICATE REQUEST` block of PEM in `text`, or
+# of OpenSSL's older `NEW CERTIFICATE REQUEST`.
+#
+# - `text`: PEM; other blocks passed over.
+#
+# Fails `not_found` where `text` holds no such block, and as
+# `decode_request` does. See also `decode_request`.
+function parse_request(text: str) -> Request?
+    for block in pem.parse_all(text)?
+        if block.label == "CERTIFICATE REQUEST" || block.label == "NEW CERTIFICATE REQUEST"
+            return decode_request(block.data)
+
+    return fail(code: NOT_FOUND, msg: "no CERTIFICATE REQUEST block in the text")
+
+# Whether `request` is signed by its own subject's key, as a request must
+# be.
+#
+# - `request`: the request.
+#
+# Fails as `verify_signature` does. See also `decode_request`.
+function is_request_signed(request: Request) -> bool?
+    return verify_signature(
+        key: request.public_key,
+        algorithm: request.signature_algorithm,
+        message: request.info,
+        signature: request.signature
+    )
+
+## Revocation lists
+
+# One certificate a list revokes.
+record Revoked
+    # The revoked certificate's serial.
+    serial: big.Integer
+    # When it was revoked, in UTC.
+    date: time.DateTime
+    # The entry's extensions: its reason, its invalidity date, its issuer.
+    extensions: Extensions
+
+# A certificate revocation list (RFC 5280 § 5), read by `decode_crl` or
+# `parse_crl`.
+record RevocationList
+    # The list's own DER.
+    der: [u8]
+    # The DER of its tbsCertList: the bytes its issuer signed.
+    tbs: [u8]
+    # The version: 1 or 2.
+    version: i64
+    # The signature's algorithm, the same inside and out.
+    signature_algorithm: Algorithm
+    # The issuer.
+    issuer: Name
+    # When it was issued, in UTC.
+    this_update: time.DateTime
+    # Whether the next issue's date is written.
+    has_next_update: bool
+    # When the next one will be, in UTC.
+    next_update: time.DateTime
+    # The certificates revoked, in order.
+    revoked: [Revoked]
+    # The list's extensions: its number, its issuer's key, its scope.
+    extensions: Extensions
+    # The signature's bytes.
+    signature: [u8]
+
+# The revocation list DER `der` holds.
+#
+# - `der`: the bytes of one list, nothing after them.
+#
+# Fails `invalid` where `der` is no list of RFC 5280, and as
+# `decode_certificate` does for its parts. See also `parse_crl`,
+# `revoked_of`.
+function decode_crl(der: [u8]) -> RevocationList?
+    what = "a revocation list"
+    v = shapes.within(r: asn1.decode_der(der), what: what)?
+    parts = shapes.sequence_of(v: v, least: 3, most: 3, what: what)?
+    options = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    whole = asn1.element_at(data: der, at: 0, options: options)?
+    spans = asn1.elements_of(data: der, element: whole, options: options)?
+    signed = der.slice(from: spans[0].start, to: spans[0].end)
+    tbs = shapes.sequence_of(v: parts[0], least: 3, most: 7, what: "a list's tbsCertList")?
+    i @= 0
+    version @= 1
+
+    if asn1.tag_of(tbs[0]) == asn1.Tag(kind: .universal, number: asn1.INTEGER, constructed: false)
+        if shapes.count_of(v: tbs[0], what: "a list's version")? != 1
+            return fail(code: INVALID, msg: "a list whose written version is not 1, which stands for version 2")
+        version @ 2
+        i @ 1
+
+    if tbs.len() < i + 3
+        return fail(code: INVALID, msg: "a list's tbsCertList holds too few elements")
+    inner = shapes.within(r: to_algorithm(tbs[i]), what: "a list's signature algorithm")?
+    issuer = shapes.within(r: to_name(tbs[i + 1]), what: "a list's issuer")?
+    this_update = shapes.time_of(v: tbs[i + 2], what: "a list's thisUpdate")?
+    i @ i + 3
+    has_next @= false
+    next_update @= this_update
+
+    if i < tbs.len() && shapes.is_time(tbs[i])
+        has_next @ true
+        next_update @ shapes.time_of(v: tbs[i], what: "a list's nextUpdate")?
+        i @ i + 1
+    revoked: [Revoked] @= []
+
+    if i < tbs.len() && asn1.tag_of(tbs[i]) == asn1.Tag(kind: .universal, number: asn1.SEQUENCE, constructed: true)
+        for entry in shapes.sequence_of(v: tbs[i], least: 0, most: shapes.MAX_ITEMS, what: "a list's revoked certificates")?
+            ep = shapes.sequence_of(v: entry, least: 2, most: 3, what: "a revoked entry")?
+            serial = shapes.within(r: asn1.integer_of(ep[0]), what: "a revoked entry's serial")?
+            date = shapes.time_of(v: ep[1], what: "a revoked entry's date")?
+            entry_list: [Extension] @= []
+
+            if ep.len() == 3
+                for x in shapes.sequence_of(v: ep[2], least: 1, most: shapes.MAX_ITEMS, what: "a revoked entry's extensions")?
+                    entry_list @ entry_list.push(to_extension(x)?)
+
+            entry_extensions = shapes.within(r: to_extensions(entry_list), what: "a revoked entry")?
+            revoked @ revoked.push(Revoked(serial: serial, date: date, extensions: entry_extensions))
+
+        i @ i + 1
+    list: [Extension] @= []
+
+    if i < tbs.len() && shapes.context_number(tbs[i]) == 0
+        written = shapes.within(r: asn1.untagged(v: tbs[i], number: 0), what: "a list's extensions")?
+
+        for x in shapes.sequence_of(v: written, least: 1, most: shapes.MAX_ITEMS, what: "a list's extensions")?
+            list @ list.push(to_extension(x)?)
+
+        i @ i + 1
+
+    if i != tbs.len()
+        return fail(code: INVALID, msg: "a list's tbsCertList holds an element out of place")
+
+    if version == 1 && list.len() > 0
+        return fail(code: INVALID, msg: "a list of version 1 with extensions, which version 2 alone holds")
+    extensions = shapes.within(r: to_extensions(list), what: what)?
+    outer = shapes.within(r: to_algorithm(parts[1]), what: "a list's signature algorithm")?
+
+    if outer != inner
+        return fail(
+            code: INVALID,
+            msg: "a list whose signature algorithm outside its tbsCertList is not the one inside"
+        )
+    signature = shapes.within(r: asn1.bits_of(parts[2]), what: "a list's signature")?
+
+    if signature.bit_len % 8 != 0
+        return fail(code: INVALID, msg: "a list's signature of bits that are not whole bytes")
+    return ok(
+        RevocationList(der: der, tbs: signed, version: version, signature_algorithm: inner, issuer: issuer, this_update: this_update, has_next_update: has_next, next_update: next_update, revoked: revoked, extensions: extensions, signature: signature.bytes)
+    )
+
+# The list of the first `X509 CRL` block of PEM in `text`.
+#
+# - `text`: PEM; other blocks passed over.
+#
+# Fails `not_found` where `text` holds no such block, and as `decode_crl`
+# does. See also `decode_crl`.
+function parse_crl(text: str) -> RevocationList?
+    for block in pem.parse_all(text)?
+        if block.label == "X509 CRL"
+            return decode_crl(block.data)
+
+    return fail(code: NOT_FOUND, msg: "no X509 CRL block in the text")
+
+# Whether `issuer`'s key signed `crl`.
+#
+# - `crl`: the list whose signature is checked.
+# - `issuer`: the certificate whose public key checks it.
+#
+# Fails as `verify_signature` does. See also `revoked_of`.
+function is_crl_signed_by(crl: RevocationList, issuer: Certificate) -> bool?
+    return verify_signature(
+        key: issuer.public_key,
+        algorithm: crl.signature_algorithm,
+        message: crl.tbs,
+        signature: crl.signature
+    )
+
+# The entry of `crl` that revokes the serial `serial`.
+#
+# - `crl`: the list.
+# - `serial`: the serial sought, as a certificate's `serial` holds it.
+#
+# Fails `not_found` where `crl` does not revoke it. It walks the list. See
+# also `decode_crl`.
+function revoked_of(crl: RevocationList, serial: big.Integer) -> Revoked?
+    for entry in crl.revoked
+        if big.compare(a: entry.serial, b: serial) == 0
+            return ok(entry)
+
+    return fail(code: NOT_FOUND, msg: f"the serial {big.format_base(n: serial, base: 16)} is not revoked")
+
+## Chains
+
+# What `verify_chain` holds a chain to.
+record Verification
+    # The certificates trusted: a chain ends at one of them, or at a
+    # certificate one of them signed.
+    roots: [Certificate]
+    # The moment every certificate of the chain must be valid at.
+    at: time.Instant
+    # A purpose the leaf must be for, `SERVER_AUTH` and the others, or ""
+    # for any.
+    purpose: str
+    # A host the leaf must be for, as `is_for_host` reads it, or "" for
+    # none.
+    host: str
+
+# `leaf` and its issuers from `pool`, in order: the leaf, the certificate
+# that issued it, the one that issued that, up to a self-issued certificate
+# or one whose issuer `pool` does not hold.
+#
+# - `leaf`: the certificate the chain begins with.
+# - `pool`: the certificates the issuers are sought in, roots and
+#   intermediates, in any order.
+#
+# An issuer is a certificate whose subject is the issuer's name, its key
+# identifier agreeing where both are written, preferring one whose
+# signature holds; none stands twice, and the chain holds at most 16. It
+# orders and does not judge: `verify_chain` does. See also `verify_chain`.
+function chain_of(leaf: Certificate, pool: [Certificate]) -> [Certificate]
+    chain: [Certificate] @= [leaf]
+    current @= leaf
+
+    while chain.len() < 16 && !is_self_issued(current)
+        chosen @= -1
+        fallback @= -1
+
+        for k in range(from: 0, to: pool.len())
+            candidate = pool[k]
+            fits @= candidate.subject.der == current.issuer.der
+
+            for held in chain
+                if held.der == candidate.der
+                    fits @ false
+
+            asked = current.extensions.authority_key_id
+
+            if fits && asked.has_key_id && candidate.extensions.has_subject_key_id && asked.key_id != candidate.extensions.subject_key_id
+                fits @ false
+
+            if fits
+                match is_signed_by(cert: current, issuer: candidate)
+                    .ok holds =>
+                        if holds
+                            chosen @ k
+                    .err _ =>
+                        if fallback < 0
+                            fallback @ k
+
+            if chosen >= 0
+                break
+
+        if chosen < 0
+            chosen @ fallback
+
+        if chosen < 0
+            break
+        current @ pool[chosen]
+        chain @ chain.push(current)
+
+    return chain
+
+# Whether `chain` holds under `options`: each certificate issued by the next
+# and signed by its key, the last a root of `options.roots` or issued by one,
+# every one valid at `options.at`, every issuer a certificate authority whose
+# key may sign certificates and whose path length allows what follows it, no
+# critical extension this package does not read, every name below an issuer
+# within its name constraints, and the leaf for `options.purpose` and
+# `options.host` where they are not empty.
+#
+# - `chain`: the leaf first, then its issuers in order, as `chain_of`
+#   answers them; the root may end it or be left out.
+# - `options`: the roots, the moment, the purpose and the host.
+#
+# Certificate policies are not processed. Fails `invalid` at the first
+# thing that does not hold, saying which certificate and what, and as
+# `verify_signature` does. See also `chain_of`.
+function verify_chain(chain: [Certificate], options: Verification) -> ()?
+    if chain.len() == 0
+        return fail(code: INVALID, msg: "an empty chain")
+    options_der = asn1.Options(encoding: .der, max_depth: asn1.DEFAULT_MAX_DEPTH)
+    path: [Certificate] @= chain
+    last = chain[chain.len() - 1]
+    anchored @= false
+
+    for root in options.roots
+        if root.der == last.der
+            anchored @ true
+
+    if !anchored
+        for root in options.roots
+            if !anchored && root.subject.der == last.issuer.der && is_signed_by(cert: last, issuer: root)?
+                path @ path.push(root)
+                anchored @ true
+
+    if !anchored
+        return fail(
+            code: INVALID,
+            msg: f"none of the {options.roots.len()} roots issued \"{format_name(last.issuer)}\""
+        )
+    count = path.len()
+
+    for i in range(from: 0, to: count)
+        c = path[i]
+        label = f"certificate {i} of the chain, \"{format_name(c.subject)}\""
+
+        if !is_valid_at(cert: c, at: options.at)
+            return fail(code: INVALID, msg: f"{label} is not valid at {time.format(t: options.at, layout: .rfc3339)}")
+
+        for e in c.extensions.unknown
+            if e.critical
+                return fail(
+                    code: INVALID,
+                    msg: f"{label} holds the critical extension {e.oid.dotted}, which this package does not read"
+                )
+
+        if i + 1 < count
+            if c.issuer.der != path[i + 1].subject.der
+                return fail(
+                    code: INVALID,
+                    msg: f"{label} names an issuer that is not the subject of certificate {i + 1}"
+                )
+
+            if !is_signed_by(cert: c, issuer: path[i + 1])?
+                return fail(
+                    code: INVALID,
+                    msg: f"{label}'s signature does not hold under the key of certificate {i + 1}"
+                )
+
+        if i > 0
+            ext = c.extensions
+
+            if (c.version == 3 || i < count - 1) && !(ext.has_basic_constraints && ext.basic_constraints.is_ca)
+                return fail(code: INVALID, msg: f"{label} issues a certificate and is no certificate authority")
+
+            if ext.has_key_usage && !ext.key_usage.key_cert_sign
+                return fail(code: INVALID, msg: f"{label}'s key may not sign certificates")
+
+            if ext.has_basic_constraints && ext.basic_constraints.has_path_len
+                below @= 0
+
+                for j in range(from: 1, to: i)
+                    if !is_self_issued(path[j])
+                        below @ below + 1
+
+                if below > ext.basic_constraints.path_len
+                    return fail(
+                        code: INVALID,
+                        msg: f"{label} allows {ext.basic_constraints.path_len} intermediates after it, and {below} follow"
+                    )
+
+            if ext.has_name_constraints
+                permitted_kinds: [i64] @= []
+                permitted_texts: [str] @= []
+                excluded_kinds: [i64] @= []
+                excluded_texts: [str] @= []
+
+                for tree in ext.name_constraints.permitted
+                    base_kind @= -1
+                    base_text @= ""
+
+                    match tree.base
+                        .email m =>
+                            base_kind @ 1
+                            base_text @ m.address
+                        .dns d =>
+                            base_kind @ 2
+                            base_text @ d.name
+                        .directory d =>
+                            base_kind @ 4
+                            base_text @ bytes.format_hex(
+                                d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
+                            )
+                        .uri u =>
+                            base_kind @ 6
+                            base_text @ u.uri
+                        .ip a =>
+                            base_kind @ 7
+                            base_text @ net.format_address(a.address)
+                        .ip_network n =>
+                            base_kind @ 7
+                            base_text @ net.format_network(n.network)
+                        .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+
+                    permitted_kinds @ permitted_kinds.push(base_kind)
+                    permitted_texts @ permitted_texts.push(base_text)
+
+                for tree in ext.name_constraints.excluded
+                    base_kind @= -1
+                    base_text @= ""
+
+                    match tree.base
+                        .email m =>
+                            base_kind @ 1
+                            base_text @ m.address
+                        .dns d =>
+                            base_kind @ 2
+                            base_text @ d.name
+                        .directory d =>
+                            base_kind @ 4
+                            base_text @ bytes.format_hex(
+                                d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
+                            )
+                        .uri u =>
+                            base_kind @ 6
+                            base_text @ u.uri
+                        .ip a =>
+                            base_kind @ 7
+                            base_text @ net.format_address(a.address)
+                        .ip_network n =>
+                            base_kind @ 7
+                            base_text @ net.format_network(n.network)
+                        .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+
+                    excluded_kinds @ excluded_kinds.push(base_kind)
+                    excluded_texts @ excluded_texts.push(base_text)
+
+                for j in range(from: 0, to: i)
+                    below_cert = path[j]
+                    names: [GeneralName] @= below_cert.extensions.alt_names
+
+                    if below_cert.subject.rdns.len() > 0 && !(j > 0 && is_self_issued(below_cert))
+                        names @ names.push(.directory(name: below_cert.subject))
+
+                    for name in names
+                        name_kind @= -1
+                        name_text @= ""
+
+                        match name
+                            .email m =>
+                                name_kind @ 1
+                                name_text @ m.address
+                            .dns d =>
+                                name_kind @ 2
+                                name_text @ d.name
+                            .directory d =>
+                                name_kind @ 4
+                                name_text @ bytes.format_hex(
+                                    d.name.der.slice(from: asn1.element_at(data: d.name.der, at: 0, options: options_der).must().content_start, to: d.name.der.len())
+                                )
+                            .uri u =>
+                                name_kind @ 6
+                                name_text @ u.uri
+                            .ip a =>
+                                name_kind @ 7
+                                name_text @ net.format_address(a.address)
+                            .ip_network n =>
+                                name_kind @ 7
+                                name_text @ net.format_network(n.network)
+                            .other_name _ | .x400_address _ | .edi_party _ | .registered_id _ => _ = 0
+
+                        if name_kind >= 0
+                            checked = hosts.check_constraint(
+                                kind: name_kind,
+                                name: name_text,
+                                permitted_kinds: permitted_kinds,
+                                permitted_texts: permitted_texts,
+                                excluded_kinds: excluded_kinds,
+                                excluded_texts: excluded_texts
+                            )
+
+                            match checked
+                                .ok _ => _ = 0
+                                .err e => return fail(
+                                    code: INVALID,
+                                    msg: f"certificate {j} of the chain: {e.msg}, under the name constraints of {label}"
+                                )
+
+    leaf = path[0]
+
+    if options.purpose != ""
+        for i in range(from: 0, to: count - 1)
+            ext = path[i].extensions
+
+            if ext.has_extended_key_usage
+                allowed @= false
+
+                for p in ext.extended_key_usage
+                    if p.dotted == options.purpose || p.dotted == ANY_EXTENDED_KEY_USAGE
+                        allowed @ true
+
+                if !allowed
+                    return fail(
+                        code: INVALID,
+                        msg: f"certificate {i} of the chain is not for the purpose {options.purpose}"
+                    )
+
+    if options.host != "" && !is_for_host(cert: leaf, host: options.host)
+        return fail(code: INVALID, msg: f"the leaf is not for the host \"{options.host}\"")
+    return ok()
+
+## Hosts
+
+# Whether `cert` is for the host `host`, as RFC 6125 § 6.4 says: one of its
+# DNS names matches it, ASCII case ignored, a wildcard standing for the
+# whole first label alone; an IP literal is matched as `is_for_address`
+# matches an address.
+#
+# - `cert`: the certificate; its subject's common name is never read, as
+#   RFC 9525 and Go read none.
+# - `host`: a host name in ASCII, one trailing dot allowed, or an IP
+#   address, an IPv6 one in brackets or not.
+#
+# See also `is_for_address`, `verify_chain`.
+function is_for_host(cert: Certificate, host: str) -> bool
+    match hosts.host_address(host)
+        .ok address => return is_for_address(cert: cert, address: address)
+        .err _      => _ = 0
+
+    for g in cert.extensions.alt_names
+        match g
+            .dns d =>
+                if hosts.host_matches(pattern: d.name, host: host)
+                    return true
+            .other_name _ | .email _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip _ | .ip_network _ | .registered_id _ => _ = 0
+
+    return false
+
+# Whether `cert` is for the address `address`: one of its IP addresses is
+# it, an IPv4 address and the IPv6 address that maps it being one.
+#
+# - `cert`: the certificate.
+# - `address`: the address; its zone and port are not compared.
+#
+# See also `is_for_host`.
+function is_for_address(cert: Certificate, address: net.Address) -> bool
+    for g in cert.extensions.alt_names
+        match g
+            .ip a =>
+                if hosts.same_address(a: a.address, b: address)
+                    return true
+            .other_name _ | .email _ | .dns _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip_network _ | .registered_id _ => _ = 0
+
+    return false
+
+## Tests
+
+# The three certificates of the samples' chain, read as Python's
+# `cryptography` and Go read them (2026-11-17).
+test "decode_certificate: the chain's three certificates, their names, serials, lengths and algorithms"
+    root = parse_certificate(samples.root()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    assert format_name(root.subject) == "CN=Heroes Root CA,O=Heroes Test,C=IT"
+    assert format_name(inter.subject) == "CN=Heroes Intermediate,OU=Ground\\, Control,O=Heroes Test,C=IT"
+    assert format_name(leaf.subject) == "1.2.840.113549.1.9.1=ops@example.com,CN=example.com"
+    assert leaf.issuer.der == inter.subject.der
+    assert root.version == 3 && leaf.version == 3
+    assert big.format_base(n: leaf.serial, base: 16) == "fedcba98765432100123456789abcdef"
+    assert big.format_base(n: inter.serial, base: 16) == "1234"
+    assert [root.der.len(), inter.der.len(), leaf.der.len()] == [493, 1090, 851]
+    assert [root.tbs.len(), inter.tbs.len(), leaf.tbs.len()] == [371, 968, 571]
+    assert [root.signature.len(), inter.signature.len(), leaf.signature.len()] == [103, 103, 256]
+    assert root.signature_algorithm.oid.dotted == "1.2.840.10045.4.3.3"
+    assert leaf.signature_algorithm.oid.dotted == "1.2.840.113549.1.1.11"
+    assert leaf.signature_algorithm.has_parameters
+    assert !root.signature_algorithm.has_parameters
+    assert leaf.not_before == time.DateTime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert leaf.not_after.year == 2027
+    assert !leaf.has_issuer_unique_id && !leaf.has_subject_unique_id
+
+test "decode_certificate: the extensions of the root and the leaf, an unknown one kept"
+    root = parse_certificate(samples.root()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    assert root.extensions.has_basic_constraints && root.extensions.basic_constraints.is_ca
+    assert root.extensions.basic_constraints.path_len == 1
+    assert root.extensions.key_usage.key_cert_sign && root.extensions.key_usage.crl_sign
+    assert !root.extensions.key_usage.digital_signature
+    assert bytes.format_hex(root.extensions.subject_key_id) == "0c0981435940ee87770f300619d3d100cf3c39ef"
+    ext = leaf.extensions
+    assert ext.has_basic_constraints && !ext.basic_constraints.is_ca && !ext.basic_constraints.has_path_len
+    assert ext.key_usage.digital_signature && !ext.key_usage.key_cert_sign
+    assert ext.extended_key_usage == [asn1.Oid(dotted: SERVER_AUTH), asn1.Oid(dotted: CLIENT_AUTH)]
+    assert bytes.format_hex(ext.authority_key_id.key_id) == "a3228554f157035feca224e54a38ebd49579c98b"
+    assert ext.alt_names.len() == 6
+    assert ext.alt_names[0] == .dns(name: "example.com")
+    assert ext.alt_names[1] == .dns(name: "*.app.example.com")
+    assert ext.alt_names[2] == .ip(address: net.parse_address("192.0.2.1").must())
+    assert ext.alt_names[4] == .email(address: "ops@example.com")
+    assert ext.alt_names[5] == .uri(uri: "https://example.com/")
+    assert ext.unknown.len() == 1
+    assert ext.unknown[0].oid.dotted == "1.3.6.1.4.1.55555.1" && !ext.unknown[0].critical
+    assert ext.list.len() == 7
+
+test "decode_certificate: the intermediate's points, access, policies and name constraints"
+    ext = parse_certificate(samples.intermediate()).must().extensions
+    assert ext.basic_constraints.path_len == 0
+    assert ext.crl_distribution_points[0].full_name == [.uri(uri: "http://crl.example.com/root.crl")]
+    assert !ext.crl_distribution_points[0].has_reasons
+    assert ext.authority_info_access.len() == 2
+    assert ext.authority_info_access[0].method.dotted == OCSP
+    assert ext.authority_info_access[1].location == .uri(uri: "http://ca.example.com/root.der")
+    policy = ext.policies[0]
+    assert policy.oid.dotted == "2.23.140.1.2.1"
+    assert policy.qualifiers[0].cps_uri == "https://cps.example.com"
+    assert policy.qualifiers[1].organization == "Heroes"
+    assert policy.qualifiers[1].notice_numbers == [1, 2]
+    assert policy.qualifiers[1].explicit_text == "Explicit text"
+    assert ext.name_constraints.permitted.len() == 3
+    assert ext.name_constraints.permitted[1].base == .ip_network(network: net.parse_network("192.0.2.0/24").must())
+    assert ext.name_constraints.excluded[0].base == .dns(name: "bad.example.com")
+    assert ext.unknown.len() == 0
+
+test "decode_certificate: every cut of the leaf fails, every byte changed reads or fails, never aborts"
+    der = parse_certificate(samples.leaf()).must().der
+    step = 7
+
+    for n in range(from: 0, to: der.len() / step)
+        assert decode_certificate(der.slice(from: 0, to: n * step)).is_err()
+
+    changes: [u8] = [0x00, 0x80, 0xff]
+
+    for at in range(from: 0, to: der.len())
+        for changed in changes
+            mutated @= der
+            mutated[at] @ changed
+
+            match decode_certificate(mutated)
+                .ok _  => _ = 0
+                .err e => assert e.code == INVALID || e.code == NOT_TEXT || e.code == DOES_NOT_FIT
+
+test "decode_certificate: bytes after it, and nothing"
+    der @= parse_certificate(samples.root()).must().der
+    der @ der.push(0)
+    assert decode_certificate(der).is_err()
+    assert decode_certificate([]).is_err()
+
+test "is_signed_by: ECDSA over P-384, RSA PKCS #1, RSA-PSS, a key of another kind, and Ed25519 where the platform has it"
+    root = parse_certificate(samples.root()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    assert is_signed_by(cert: root, issuer: root).must()
+    assert is_signed_by(cert: inter, issuer: root).must()
+    assert is_signed_by(cert: leaf, issuer: inter).must()
+    assert is_signed_by(cert: parse_certificate(samples.pss()).must(), issuer: inter).must()
+    assert is_signed_by(cert: leaf, issuer: root).is_err()
+    ed = parse_certificate(samples.ed25519()).must()
+
+    if keypairs.is_available(.ed25519)
+        assert is_signed_by(cert: ed, issuer: ed).must()
+    else
+        match is_signed_by(cert: ed, issuer: ed)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+test "verify_signature: a byte of the message changed is false, never a failure"
+    inter = parse_certificate(samples.intermediate()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    changed @= leaf.tbs
+    changed[100] @ 0x00
+    assert !verify_signature(key: inter.public_key, algorithm: leaf.signature_algorithm, message: changed, signature: leaf.signature).must()
+
+test "scheme_of and kind_of: each certificate's"
+    assert scheme_of(parse_certificate(samples.root()).must().signature_algorithm).must() == .ecdsa_sha384
+    assert scheme_of(parse_certificate(samples.pss()).must().signature_algorithm).must() == .rsa_pss_sha256
+    assert kind_of(parse_certificate(samples.root()).must().public_key).must() == .p384
+    assert kind_of(parse_certificate(samples.intermediate()).must().public_key).must() == .rsa(bits: 2048)
+    assert kind_of(parse_certificate(samples.leaf()).must().public_key).must() == .p256
+    assert kind_of(parse_certificate(samples.ed25519()).must().public_key).must() == .ed25519
+
+test "is_valid_at: inside, at both ends, outside, and the validity that does not end"
+    leaf = parse_certificate(samples.leaf()).must()
+    assert is_valid_at(cert: leaf, at: time.date(year: 2026, month: 6, day: 1).must())
+    assert is_valid_at(cert: leaf, at: time.date(year: 2026, month: 1, day: 1).must())
+    assert is_valid_at(cert: leaf, at: time.date(year: 2027, month: 1, day: 1).must())
+    assert !is_valid_at(cert: leaf, at: time.date(year: 2027, month: 1, day: 2).must())
+    assert !is_valid_at(cert: leaf, at: time.date(year: 2025, month: 12, day: 31).must())
+    ed = parse_certificate(samples.ed25519()).must()
+    assert ed.not_after == time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert is_valid_at(cert: ed, at: time.max_instant())
+
+test "is_for_host: Go's answers on the leaf's names"
+    leaf = parse_certificate(samples.leaf()).must()
+    yes = [
+        "example.com"
+        "EXAMPLE.com"
+        "example.com."
+        "a.app.example.com"
+        "192.0.2.1"
+        "2001:db8::1"
+        "[2001:db8::1]"
+        "2001:0db8:0:0:0:0:0:1"
+        "::ffff:192.0.2.1"
+    ]
+    no = [
+        "a.example.com"
+        "a.b.example.com"
+        "app.example.com"
+        "x.y.app.example.com"
+        ".example.com"
+        "xexample.com"
+        "example.org"
+        "192.0.2.2"
+        "*.example.com"
+        ""
+        "a..example.com"
+        "_srv.example.com"
+        "a.example.com.."
+        "localhost"
+    ]
+
+    for h in yes
+        assert is_for_host(cert: leaf, host: h)
+
+    for h in no
+        assert !is_for_host(cert: leaf, host: h)
+
+test "is_for_address: both families, a mapped IPv4, and an address not named"
+    leaf = parse_certificate(samples.leaf()).must()
+    assert is_for_address(cert: leaf, address: net.parse_address("2001:db8::1").must())
+    assert is_for_address(cert: leaf, address: net.parse_address("::ffff:192.0.2.1").must())
+    assert !is_for_address(cert: leaf, address: net.parse_address("192.0.2.2").must())
+
+test "chain_of: the leaf to its root from a pool in another order, a self-issued leaf, and an empty pool"
+    root = parse_certificate(samples.root()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    ed = parse_certificate(samples.ed25519()).must()
+    chain = chain_of(leaf: leaf, pool: [ed, root, leaf, inter])
+    assert chain.len() == 3
+    assert chain[1].der == inter.der && chain[2].der == root.der
+    assert chain_of(leaf: ed, pool: [root, inter]).len() == 1
+    assert chain_of(leaf: leaf, pool: []).len() == 1
+
+test "verify_chain: Go's and Python's answers on the samples"
+    root = parse_certificate(samples.root()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    leaf = parse_certificate(samples.leaf()).must()
+    june = time.date(year: 2026, month: 6, day: 1).must()
+    good = Verification(roots: [root], at: june, purpose: SERVER_AUTH, host: "a.app.example.com")
+    assert !verify_chain(chain: [leaf, inter], options: good).is_err()
+    assert !verify_chain(chain: [leaf, inter, root], options: good).is_err()
+    late = Verification(roots: [root], at: time.date(year: 2027, month: 6, day: 1).must(), purpose: "", host: "")
+    assert verify_chain(chain: [leaf, inter], options: late).is_err()
+    assert verify_chain(chain: [leaf], options: good).is_err()
+    signing = Verification(roots: [root], at: june, purpose: CODE_SIGNING, host: "")
+    assert verify_chain(chain: [leaf, inter], options: signing).is_err()
+    elsewhere = Verification(roots: [root], at: june, purpose: "", host: "a.example.com")
+    assert verify_chain(chain: [leaf, inter], options: elsewhere).is_err()
+    plain = Verification(roots: [root], at: june, purpose: "", host: "")
+
+    for text in [samples.excluded(), samples.outside(), samples.outside_ip()]
+        match verify_chain(chain: [parse_certificate(text).must(), inter], options: plain)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert verify_chain(chain: [], options: plain).is_err()
+    assert verify_chain(chain: [inter, leaf], options: plain).is_err()
+
+test "decode_request: the request's subject, attributes, extensions and signature"
+    request = parse_request(samples.request()).must()
+    assert format_name(request.subject) == "O=Heroes Test,CN=request.example.com"
+    assert request.version == 1
+    assert request.attributes.len() == 2
+    assert request.attributes[0].oid.dotted == CHALLENGE_PASSWORD
+    assert request.attributes[1].oid.dotted == EXTENSION_REQUEST
+    assert request.extensions.alt_names == [.dns(name: "request.example.com")]
+    assert is_request_signed(request).must()
+    assert parse_request("no request").is_err()
+
+test "decode_crl: the list's dates, number, entries and signature"
+    crl = parse_crl(samples.crl()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    assert crl.version == 2
+    assert crl.issuer.der == inter.subject.der
+    assert crl.this_update.year == 2026 && crl.this_update.month == 1
+    assert crl.has_next_update && crl.next_update.month == 2
+    assert crl.extensions.has_crl_number && big.int_of(crl.extensions.crl_number).must() == 42
+    assert crl.extensions.has_authority_key_id
+    assert crl.revoked.len() == 2
+    first = crl.revoked[0]
+    assert big.int_of(first.serial).must() == 0x1001
+    assert first.date.day == 2
+    assert first.extensions.has_reason && first.extensions.reason == .key_compromise
+    assert first.extensions.invalidity_date == time.DateTime(year: 2025, month: 12, day: 31, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert !crl.revoked[1].extensions.has_reason
+    assert is_crl_signed_by(crl: crl, issuer: inter).must()
+    assert revoked_of(crl: crl, serial: big.from_int(0x1002)).must().date.day == 3
+
+    match revoked_of(crl: crl, serial: big.from_int(0x9999))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "to_extensions: an extension twice, and a known one malformed"
+    twice = [
+        Extension(oid: asn1.Oid(dotted: SUBJECT_KEY_ID), critical: false, value: [0x04, 0x00])
+        Extension(oid: asn1.Oid(dotted: SUBJECT_KEY_ID), critical: false, value: [0x04, 0x00])
+    ]
+    assert to_extensions(twice).is_err()
+    assert to_extensions([Extension(oid: asn1.Oid(dotted: KEY_USAGE), critical: true, value: [0x05, 0x00])]).is_err()
+    assert to_extensions(
+        [Extension(oid: asn1.Oid(dotted: REASON_CODE), critical: false, value: [0x0a, 0x01, 0x07])]
+    ).is_err()
+
+test "to_general_name: a mask that is not ones then zeros, an address of 5 bytes, and a tag past 8"
+    assert to_general_name(
+        .primitive(tag: asn1.Tag(kind: .context_specific, number: 7, constructed: false), content: [192, 0, 2, 0, 255, 0, 255, 0])
+    ).is_err()
+    assert to_general_name(
+        .primitive(tag: asn1.Tag(kind: .context_specific, number: 7, constructed: false), content: [1, 2, 3, 4, 5])
+    ).is_err()
+    assert to_general_name(
+        .primitive(tag: asn1.Tag(kind: .context_specific, number: 9, constructed: false), content: [])
+    ).is_err()
+    assert to_general_name(.null_value).is_err()
+
+test "text_of: an attribute present, one absent, and a name with none"
+    leaf = parse_certificate(samples.leaf()).must()
+    assert text_of(n: leaf.subject, oid: EMAIL_ADDRESS).must() == "ops@example.com"
+
+    match text_of(n: leaf.subject, oid: COUNTRY_NAME)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "parse_certificates: a bundle with another block and text between"
+    text = "Roots:\n" + samples.root() + samples.request() + "and\n" + samples.intermediate()
+    certs = parse_certificates(text).must()
+    assert certs.len() == 2
+    assert parse_certificates("none here").must().len() == 0
+    assert parse_certificate(samples.request()).is_err()
+
+## Examples
+
+# The subject of a certificate read from PEM, as RFC 4514 writes a name.
+test "to_name: a subject read from its ASN.1"
+    cert = parse_certificate(samples.root()).must()
+    name = to_name(asn1.decode_der(cert.subject.der).must()).must()
+    assert name.rdns.len() == 3
+
+# A name written as RFC 4514 writes it, the most specific part first.
+test "format_name: an issuer"
+    cert = parse_certificate(samples.leaf()).must()
+    assert format_name(cert.issuer) == "CN=Heroes Intermediate,OU=Ground\\, Control,O=Heroes Test,C=IT"
+
+# The common name of a certificate's subject.
+test "text_of: a common name"
+    cert = parse_certificate(samples.root()).must()
+    assert text_of(n: cert.subject, oid: COMMON_NAME).must() == "Heroes Root CA"
+
+# A DNS name read from its ASN.1, the IMPLICIT `[2]`.
+test "to_general_name: a dNSName"
+    assert to_general_name(asn1.decode_der([0x82, 0x03, 0x61, 0x2e, 0x62]).must()).must() == .dns(name: "a.b")
+
+# The algorithm of a signature, read from its ASN.1.
+test "to_algorithm: sha256WithRSAEncryption"
+    v = asn1.decode_der(
+        asn1.encode_der(.sequence(items: [.oid(v: asn1.Oid(dotted: "1.2.840.113549.1.1.11")), .null_value])).must()
+    ).must()
+    algorithm = to_algorithm(v).must()
+    assert algorithm.oid.dotted == "1.2.840.113549.1.1.11" && algorithm.has_parameters
+
+# The scheme `crypto/keypairs` checks a certificate's signature with.
+test "scheme_of: a leaf's RSA signature"
+    assert scheme_of(parse_certificate(samples.leaf()).must().signature_algorithm).must() == .rsa_pkcs1_sha256
+
+# A public key read from the SubjectPublicKeyInfo a certificate holds.
+test "decode_public_key: the leaf's key"
+    key = decode_public_key(parse_certificate(samples.leaf()).must().public_key.der).must()
+    assert key.algorithm.oid.dotted == "1.2.840.10045.2.1" && key.key.len() == 65
+
+# The kind of a certificate's key.
+test "kind_of: an RSA key's bits"
+    assert kind_of(parse_certificate(samples.intermediate()).must().public_key).must() == .rsa(bits: 2048)
+
+# A certificate's signature checked against its issuer's key by hand.
+test "verify_signature: a leaf and its issuer's key"
+    leaf = parse_certificate(samples.leaf()).must()
+    inter = parse_certificate(samples.intermediate()).must()
+    assert verify_signature(
+        key: inter.public_key,
+        algorithm: leaf.signature_algorithm,
+        message: leaf.tbs,
+        signature: leaf.signature
+    ).must()
+
+# An extension read as written, before it is decoded.
+test "to_extension: a critical basic constraints"
+    v = asn1.decode_der(
+        [0x30, 0x0f, 0x06, 0x03, 0x55, 0x1d, 0x13, 0x01, 0x01, 0xff, 0x04, 0x05, 0x30, 0x03, 0x01, 0x01, 0xff]
+    ).must()
+    e = to_extension(v).must()
+    assert e.oid.dotted == BASIC_CONSTRAINTS && e.critical
+
+# Extensions decoded from what was written.
+test "to_extensions: a CA's basic constraints"
+    e = Extension(oid: asn1.Oid(dotted: BASIC_CONSTRAINTS), critical: true, value: [0x30, 0x03, 0x01, 0x01, 0xff])
+    assert to_extensions([e]).must().basic_constraints.is_ca
+
+# An extension this package does not decode, found by its identifier.
+test "extension_of: an extension nobody knows"
+    leaf = parse_certificate(samples.leaf()).must()
+    assert extension_of(extensions: leaf.extensions, oid: "1.3.6.1.4.1.55555.1").must().value == [0x04, 0x02, 0x68, 0x69]
+
+# A certificate read from its DER.
+test "decode_certificate: the root's DER"
+    der = parse_certificate(samples.root()).must().der
+    assert format_name(decode_certificate(der).must().subject) == "CN=Heroes Root CA,O=Heroes Test,C=IT"
+
+# Certificates written one after another, read in order.
+test "decode_certificates: a chain's DER"
+    der @= parse_certificate(samples.leaf()).must().der
+    bytes.push_all(to: @der, from: parse_certificate(samples.intermediate()).must().der)
+    assert decode_certificates(der).must().len() == 2
+
+# The first certificate of a PEM text.
+test "parse_certificate: a PEM certificate"
+    assert parse_certificate(samples.leaf()).must().version == 3
+
+# Every certificate of a bundle.
+test "parse_certificates: a bundle of two"
+    assert parse_certificates(samples.root() + samples.intermediate()).must().len() == 2
+
+# A certificate written back as PEM.
+test "format_certificate: read back"
+    cert = parse_certificate(samples.root()).must()
+    assert parse_certificate(format_certificate(cert)).must().der == cert.der
+
+# Whether a certificate is valid on a day.
+test "is_valid_at: a day of 2026"
+    assert is_valid_at(
+        cert: parse_certificate(samples.leaf()).must(),
+        at: time.date(year: 2026, month: 3, day: 1).must()
+    )
+
+# A root names itself as its issuer.
+test "is_self_issued: a root"
+    assert is_self_issued(parse_certificate(samples.root()).must())
+
+# A certificate's signature checked against its issuer's.
+test "is_signed_by: an intermediate signed by its root"
+    root = parse_certificate(samples.root()).must()
+    assert is_signed_by(cert: parse_certificate(samples.intermediate()).must(), issuer: root).must()
+
+# A certificate request read from its DER.
+test "decode_request: a request's DER"
+    der = parse_request(samples.request()).must().der
+    assert decode_request(der).must().subject.rdns.len() == 2
+
+# A certificate request read from PEM.
+test "parse_request: a PEM request"
+    assert text_of(n: parse_request(samples.request()).must().subject, oid: COMMON_NAME).must() == "request.example.com"
+
+# A request checked against its own key.
+test "is_request_signed: a request signed by its key"
+    assert is_request_signed(parse_request(samples.request()).must()).must()
+
+# A revocation list read from its DER.
+test "decode_crl: a list's DER"
+    der = parse_crl(samples.crl()).must().der
+    assert decode_crl(der).must().revoked.len() == 2
+
+# A revocation list read from PEM.
+test "parse_crl: a PEM list"
+    assert parse_crl(samples.crl()).must().version == 2
+
+# A list checked against its issuer's key.
+test "is_crl_signed_by: a list and its issuer"
+    assert is_crl_signed_by(
+        crl: parse_crl(samples.crl()).must(),
+        issuer: parse_certificate(samples.intermediate()).must()
+    ).must()
+
+# Whether a serial is revoked, and why.
+test "revoked_of: a serial revoked for a key compromised"
+    entry = revoked_of(crl: parse_crl(samples.crl()).must(), serial: big.from_int(0x1001)).must()
+    assert entry.extensions.reason == .key_compromise
+
+# A leaf's chain put in order from the certificates a server sent.
+test "chain_of: a leaf and its issuers"
+    pool = parse_certificates(samples.root() + samples.intermediate()).must()
+    assert chain_of(leaf: parse_certificate(samples.leaf()).must(), pool: pool).len() == 3
+
+# A chain checked for a TLS server's name at a moment.
+test "verify_chain: a server's chain"
+    root = parse_certificate(samples.root()).must()
+    chain = [parse_certificate(samples.leaf()).must(), parse_certificate(samples.intermediate()).must()]
+    options = Verification(
+        roots: [root],
+        at: time.date(year: 2026, month: 6, day: 1).must(),
+        purpose: SERVER_AUTH,
+        host: "example.com"
+    )
+    assert !verify_chain(chain: chain, options: options).is_err()
+
+# Whether a certificate is for a host a client connects to.
+test "is_for_host: a wildcard's one label"
+    assert is_for_host(cert: parse_certificate(samples.leaf()).must(), host: "www.app.example.com")
+
+# Whether a certificate is for an address.
+test "is_for_address: an IPv4 address"
+    assert is_for_address(
+        cert: parse_certificate(samples.leaf()).must(),
+        address: net.parse_address("192.0.2.1").must()
+    )

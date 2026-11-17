@@ -1,0 +1,301 @@
+# The ledger of `x509`: what RFC 5280's certificates and lists, RFC 2986's
+# requests and RFC 6125's host names let a program do, one block per
+# capability, and what Rebel answers. Go 1.27's `crypto/x509` and
+# `crypto/x509/pkix` are censused (`go doc -all`, 2026-11-17). Rust 1.100's
+# `std` has none; the `rust` lines name the crates `rustls-pki-types` 1.15.1
+# and `rustls-webpki` 0.103.16 of this machine's cargo registry (public names
+# listed, their source not read). Python 3.15's standard library holds a
+# little in `ssl`; the `python` lines name `cryptography.x509` of
+# `cryptography` 50.0.2, installed here, which is the oracle of the tests.
+# The census the author asked of other libraries, their public names listed
+# on this machine on 2026-11-17: Odin's `core:crypto/x509` (`parse`,
+# `verify_signature`, `verify_chain`, `verify_hostname`, `valid_at`,
+# `dn_get`, `dn_string`, `serial_string`, and writers `marshal_certificate`,
+# `marshal_csr`, `marshal_spki`, `marshal_pkcs8`, `marshal_dn`,
+# `marshal_ext_*`), each a capability below; Zig 0.15.2's
+# `std.crypto.Certificate` (`parse`, `verify`, `verifyHostName`,
+# `Bundle.rescan`, `Bundle.addCertsFromFile`), the same; Java and .NET are
+# not installed here (`java` finds no runtime, `dotnet` is absent), so their
+# census is UNRUN. The samples were made by `cryptography` on 2026-11-17 and
+# read by it and by Go: names, serials, lengths, extensions, signatures,
+# chains and host names compared.
+
+capability x509/read-der  a certificate read from its DER
+  heroes  x509.decode_certificate, x509.Certificate
+  go      x509.ParseCertificate, x509.Certificate
+  rust    webpki::EndEntityCert, rustls_pki_types::CertificateDer
+  python  x509.load_der_x509_certificate, x509.Certificate
+  note    every structure read as DER; two signature algorithms that differ, an extension twice, a known extension malformed, extensions in a version below 3 are refused. A known extension's criticality written FALSE, which DER leaves out, is read (Go's and Python's answers on these four shapes UNRUN). Every byte of the sample leaf changed to 0x00, 0x80 and 0xff reads or fails, never aborts (2553 changes, tested)
+
+capability x509/read-pem  a certificate read from PEM
+  heroes  x509.parse_certificate
+  go      pem.Decode then x509.ParseCertificate
+  rust    rustls_pki_types::CertificateDer (its PemObject)
+  python  x509.load_pem_x509_certificate, ssl.PEM_cert_to_DER_cert
+
+capability x509/read-many  several certificates read: DER one after another, or a bundle of PEM
+  heroes  x509.decode_certificates, x509.parse_certificates
+  go      x509.ParseCertificates, x509.CertPool.AppendCertsFromPEM
+  rust    -
+  python  x509.load_pem_x509_certificates
+  note    a bundle's blocks of other labels are passed over; a broken certificate fails the whole, where Go's `AppendCertsFromPEM` reports only whether any certificate was parsed (its documentation)
+
+capability x509/write-pem  a certificate written as PEM
+  heroes  x509.format_certificate
+  go      pem.EncodeToMemory
+  rust    -
+  python  x509.Certificate.public_bytes, ssl.DER_cert_to_PEM_cert
+
+capability x509/fields  a certificate's version, serial, validity, the bytes its issuer signed, its signature, its unique identifiers
+  heroes  x509.Certificate, x509.is_valid_at
+  go      x509.Certificate (Version, SerialNumber, NotBefore, NotAfter, RawTBSCertificate, Signature, Raw)
+  rust    -
+  python  x509.Certificate.version, x509.Certificate.serial_number, x509.Certificate.not_valid_before_utc, x509.Certificate.not_valid_after_utc, x509.Certificate.not_valid_before, x509.Certificate.not_valid_after, x509.Certificate.tbs_certificate_bytes, x509.Certificate.signature, x509.Version, x509.InvalidVersion
+  note    the validity is a `time.DateTime`, so `99991231235959Z` is read and compared; an `Instant` ends in 2262. A serial of any size, past 64 bits read as Python and Go read it
+
+capability x509/names  a distinguished name's attributes read, written as RFC 4514's text, an attribute's value found
+  heroes  x509.Name, x509.Attribute, x509.to_name, x509.format_name, x509.text_of, x509.COMMON_NAME
+  go      pkix.Name, pkix.RDNSequence, pkix.RelativeDistinguishedNameSET, pkix.AttributeTypeAndValue, pkix.AttributeTypeAndValueSET, pkix.Name.FillFromRDNSequence, pkix.Name.String, pkix.RDNSequence.String
+  rust    -
+  python  x509.Name, x509.NameAttribute, x509.RelativeDistinguishedName, x509.Name.rfc4514_string, x509.Name.get_attributes_for_oid, x509.Name.rdns, x509.NameOID, x509.AttributeNotFound
+  note    written as Python writes it, on the samples and fourteen values of its escapes: the most specific relative name first, the nine short names of RFC 4514, any other type by its dotted identifier; Go puts the attributes it knows in its own order, `CN=example.com,1.2.840.113549.1.9.1=ops@example.com` where Python and Rebel write `1.2.840.113549.1.9.1=ops@example.com,CN=example.com` (observed on the leaf). Two names are the same where their DER is; RFC 5280 § 7.1's comparison by RFC 4518's preparation is not made
+
+capability x509/name-parse  RFC 4514's text read into a name
+  heroes  pending
+  go      -
+  rust    -
+  python  x509.Name.from_rfc4514_string
+
+capability x509/general-names  the general names of RFC 5280 § 4.2.1.6 read
+  heroes  x509.GeneralName, x509.to_general_name
+  go      x509.Certificate (DNSNames, EmailAddresses, IPAddresses, URIs)
+  rust    webpki::EndEntityCert::valid_dns_names, webpki::EndEntityCert::valid_uri_names
+  python  x509.GeneralName, x509.GeneralNames, x509.DNSName, x509.RFC822Name, x509.UniformResourceIdentifier, x509.IPAddress, x509.DirectoryName, x509.RegisteredID, x509.OtherName, x509.UnsupportedGeneralNameType
+  note    every kind read; an x400Address and an ediPartyName are kept as their DER; an iPAddress of 8 or 32 bytes is a network, its mask checked to be ones then zeros
+
+capability x509/public-key  the subject's public key read, its kind and an RSA modulus's bits
+  heroes  x509.PublicKey, x509.decode_public_key, x509.kind_of
+  go      x509.ParsePKIXPublicKey, x509.PublicKeyAlgorithm, x509.PublicKeyAlgorithm.String, x509.Certificate (PublicKey, PublicKeyAlgorithm, RawSubjectPublicKeyInfo)
+  rust    webpki::EndEntityCert::subject_public_key_info, rustls_pki_types::SubjectPublicKeyInfoDer
+  python  x509.Certificate.public_key, x509.Certificate.public_key_algorithm_oid, x509.PublicKeyAlgorithmOID
+  note    the key's kinds are `crypto/keypairs`' (RSA, P-256, P-384, Ed25519, X25519), another `unsupported`; a key a program uses is `keypairs.parse_public_der` of `der`
+
+capability x509/signature-algorithm  a signature's algorithm and its parameters read, and the scheme that checks it
+  heroes  x509.Algorithm, x509.to_algorithm, x509.scheme_of
+  go      x509.SignatureAlgorithm, x509.SignatureAlgorithm.String, pkix.AlgorithmIdentifier, x509.InsecureAlgorithmError, x509.ErrUnsupportedAlgorithm
+  rust    -
+  python  x509.Certificate.signature_algorithm_oid, x509.Certificate.signature_hash_algorithm, x509.Certificate.signature_algorithm_parameters, x509.SignatureAlgorithmOID
+  note    RSASSA-PSS's parameters read: SHA-256, SHA-384 or SHA-512, MGF1 over the same hash, a salt as long as it, which is what `crypto/keypairs` checks; another salt is `unsupported`
+
+capability x509/check-signature  a signature checked against a key: a certificate's against its issuer's
+  heroes  x509.verify_signature, x509.is_signed_by
+  go      x509.Certificate.CheckSignature, x509.Certificate.CheckSignatureFrom
+  rust    webpki::EndEntityCert::verify_signature
+  python  x509.Certificate.verify_directly_issued_by
+  note    by `keypairs.verify_der`, the system's own cryptography: RSA PKCS #1 v1.5 and PSS over SHA-2, ECDSA over P-256 and P-384, Ed25519. Ed25519 is `unsupported` on macOS and Windows, which lack it for C (crypto/keypairs, 2026-11-17): the samples' Ed25519 certificate is checked on Linux and refused saying so here. SHA-1 and SHA-224 are `unsupported`, as `crypto/keypairs` offers neither
+
+capability x509/extensions  every extension read as written, unknown ones kept with their criticality, one found by its identifier
+  heroes  x509.Extension, x509.Extensions, x509.to_extension, x509.to_extensions, x509.extension_of
+  go      x509.Certificate (Extensions, ExtraExtensions, UnhandledCriticalExtensions), pkix.Extension, x509.UnhandledCriticalExtension
+  rust    -
+  python  x509.Extensions, x509.Extension, x509.ExtensionType, x509.UnrecognizedExtension, x509.Extensions.get_extension_for_oid, x509.Extensions.get_extension_for_class, x509.ExtensionNotFound, x509.DuplicateExtension, x509.ExtensionOID
+  note    the twenty-two extensions RFC 5280 defines are decoded into one record, each with whether it was there; the others stand in `unknown`, which `verify_chain` refuses where critical
+
+capability x509/alt-names  the subject's and the issuer's alternative names
+  heroes  x509.Extensions, x509.SUBJECT_ALT_NAME, x509.ISSUER_ALT_NAME
+  go      x509.Certificate (DNSNames, EmailAddresses, IPAddresses, URIs)
+  rust    -
+  python  x509.SubjectAlternativeName, x509.IssuerAlternativeName
+
+capability x509/key-usage  the key's usages
+  heroes  x509.KeyUsage
+  go      x509.KeyUsage, x509.KeyUsage.String, x509.KeyUsageDigitalSignature, x509.KeyUsageContentCommitment, x509.KeyUsageKeyEncipherment, x509.KeyUsageDataEncipherment, x509.KeyUsageKeyAgreement, x509.KeyUsageCertSign, x509.KeyUsageCRLSign, x509.KeyUsageEncipherOnly, x509.KeyUsageDecipherOnly
+  rust    webpki::KeyUsage
+  python  x509.KeyUsage
+
+capability x509/extended-key-usage  the purposes a key is for
+  heroes  x509.Extensions, x509.SERVER_AUTH, x509.CLIENT_AUTH, x509.CODE_SIGNING, x509.EMAIL_PROTECTION, x509.TIME_STAMPING, x509.OCSP_SIGNING, x509.ANY_EXTENDED_KEY_USAGE
+  go      x509.ExtKeyUsage, x509.ExtKeyUsage.OID, x509.ExtKeyUsage.String, x509.Certificate (ExtKeyUsage, UnknownExtKeyUsage)
+  rust    webpki::KeyPurposeId, webpki::ExtendedKeyUsageValidator
+  python  x509.ExtendedKeyUsage, x509.ExtendedKeyUsageOID
+  note    every purpose is an identifier, as Python holds them, so Go's split into known and unknown purposes is one list
+
+capability x509/basic-constraints  whether the subject is an authority, and its path length
+  heroes  x509.BasicConstraints
+  go      x509.Certificate (BasicConstraintsValid, IsCA, MaxPathLen, MaxPathLenZero)
+  rust    -
+  python  x509.BasicConstraints
+
+capability x509/key-ids  the subject's and the authority's key identifiers
+  heroes  x509.Extensions, x509.AuthorityKeyId
+  go      x509.Certificate (SubjectKeyId, AuthorityKeyId)
+  rust    -
+  python  x509.SubjectKeyIdentifier, x509.AuthorityKeyIdentifier
+
+capability x509/distribution-points  where the revocation lists and the delta lists are
+  heroes  x509.DistributionPoint, x509.Reason
+  go      x509.Certificate (CRLDistributionPoints)
+  rust    -
+  python  x509.CRLDistributionPoints, x509.FreshestCRL, x509.DistributionPoint, x509.ReasonFlags
+
+capability x509/information-access  where OCSP answers and the issuer is, and the subject's own services
+  heroes  x509.AccessDescription, x509.OCSP, x509.CA_ISSUERS
+  go      x509.Certificate (OCSPServer, IssuingCertificateURL)
+  rust    -
+  python  x509.AuthorityInformationAccess, x509.SubjectInformationAccess, x509.AccessDescription, x509.AuthorityInformationAccessOID
+
+capability x509/policies  certificate policies, their qualifiers, mappings and constraints read
+  heroes  x509.Policy, x509.PolicyQualifier, x509.PolicyMapping, x509.PolicyConstraints, x509.ANY_POLICY, x509.CPS_QUALIFIER, x509.USER_NOTICE_QUALIFIER
+  go      x509.Certificate (Policies, PolicyIdentifiers, PolicyMappings, RequireExplicitPolicy, RequireExplicitPolicyZero, InhibitPolicyMapping, InhibitPolicyMappingZero, InhibitAnyPolicy, InhibitAnyPolicyZero), x509.PolicyMapping, x509.OID
+  rust    -
+  python  x509.CertificatePolicies, x509.PolicyInformation, x509.UserNotice, x509.NoticeReference, x509.PolicyConstraints, x509.InhibitAnyPolicy, x509.CertificatePoliciesOID
+
+capability x509/name-constraints  the constraints an authority puts on the names below it, read
+  heroes  x509.NameConstraints, x509.Subtree
+  go      x509.Certificate (PermittedDNSDomainsCritical, PermittedDNSDomains, ExcludedDNSDomains, PermittedIPRanges, ExcludedIPRanges, PermittedEmailAddresses, ExcludedEmailAddresses, PermittedURIDomains, ExcludedURIDomains)
+  rust    -
+  python  x509.NameConstraints
+
+capability x509/other-extensions  the extensions of other documents decoded: CT's SCT list and poison, TLS feature, OCSP no-check, Microsoft's template, admissions, subject directory attributes, private key usage period
+  heroes  pending
+  go      -
+  rust    -
+  python  x509.PrecertificateSignedCertificateTimestamps, x509.SignedCertificateTimestamps, x509.PrecertPoison, x509.TLSFeature, x509.TLSFeatureType, x509.OCSPNoCheck, x509.OCSPNonce, x509.OCSPAcceptableResponses, x509.MSCertificateTemplate, x509.Admissions, x509.Admission, x509.NamingAuthority, x509.ProfessionInfo, x509.PrivateKeyUsagePeriod, x509.certificate_transparency, x509.Certificate.tbs_precertificate_bytes
+  note    each is kept in `unknown` with its value's DER and its criticality, which a program decodes with `asn1`
+
+capability x509/request-read  a certificate request read: its subject, key, attributes and the extensions asked for
+  heroes  x509.decode_request, x509.parse_request, x509.Request, x509.RequestAttribute, x509.EXTENSION_REQUEST, x509.CHALLENGE_PASSWORD
+  go      x509.ParseCertificateRequest, x509.CertificateRequest
+  rust    rustls_pki_types::CertificateSigningRequestDer
+  python  x509.load_der_x509_csr, x509.load_pem_x509_csr, x509.CertificateSigningRequest, x509.Attribute, x509.Attributes
+
+capability x509/request-signature  a request checked against its own key
+  heroes  x509.is_request_signed
+  go      x509.CertificateRequest.CheckSignature
+  rust    -
+  python  x509.CertificateSigningRequest.is_signature_valid
+
+capability x509/crl-read  a revocation list read: its issuer, dates, entries and extensions
+  heroes  x509.decode_crl, x509.parse_crl, x509.RevocationList, x509.Revoked
+  go      x509.ParseRevocationList, x509.RevocationList, x509.RevocationListEntry, x509.ParseCRL, x509.ParseDERCRL, pkix.CertificateList, pkix.TBSCertificateList, pkix.RevokedCertificate, pkix.CertificateList.HasExpired
+  rust    webpki::BorrowedCertRevocationList, webpki::OwnedCertRevocationList, webpki::BorrowedRevokedCert, webpki::OwnedRevokedCert, rustls_pki_types::CertificateRevocationListDer
+  python  x509.load_der_x509_crl, x509.load_pem_x509_crl, x509.CertificateRevocationList, x509.RevokedCertificate
+  note    the list's number, delta indicator and issuing point, and an entry's reason, invalidity date and issuer decoded; Go's deprecated `ParseCRL` and `ParseDERCRL` are this one function
+
+capability x509/crl-extensions  a list's and an entry's extensions decoded
+  heroes  x509.Extensions, x509.IssuingDistributionPoint, x509.Reason, x509.CRL_NUMBER, x509.REASON_CODE
+  go      x509.RevocationList (Number, Extensions), x509.RevocationListEntry (ReasonCode, Extensions)
+  rust    webpki::RevocationReason
+  python  x509.CRLNumber, x509.DeltaCRLIndicator, x509.IssuingDistributionPoint, x509.CRLReason, x509.InvalidityDate, x509.CertificateIssuer, x509.CRLEntryExtensionOID
+
+capability x509/crl-signature  a list checked against its issuer's key
+  heroes  x509.is_crl_signed_by
+  go      x509.RevocationList.CheckSignatureFrom, x509.Certificate.CheckCRLSignature
+  rust    -
+  python  x509.CertificateRevocationList.is_signature_valid
+
+capability x509/crl-lookup  whether a serial is revoked, and why
+  heroes  x509.revoked_of
+  go      -
+  rust    webpki::CertRevocationList::find_serial
+  python  x509.CertificateRevocationList.get_revoked_certificate_by_serial_number
+
+capability x509/chain-build  a chain put in order from a leaf and a pool
+  heroes  x509.chain_of
+  go      x509.Certificate.Verify, x509.NewCertPool, x509.CertPool, x509.CertPool.AddCert, x509.CertPool.AddCertWithConstraint, x509.CertPool.Clone, x509.CertPool.Equal, x509.CertPool.Subjects
+  rust    webpki::EndEntityCert::verify_for_usage, webpki::VerifiedPath
+  python  x509.verification.PolicyBuilder
+  note    the pool is a list, as a program holds it; an issuer chosen by name, key identifier and a signature that holds, greedily, never by backtracking: of two issuers that both sign, the first whose signature holds is taken, where Go's `Verify` builds "one or more chains" (its documentation)
+
+capability x509/chain-verify  a chain checked: names, signatures, validity, authority, path length, key usage, critical extensions, name constraints, purpose, host
+  heroes  x509.verify_chain, x509.Verification
+  go      x509.Certificate.Verify, x509.VerifyOptions, x509.CertificateInvalidError, x509.InvalidReason, x509.UnknownAuthorityError, x509.ConstraintViolationError, x509.HostnameError, x509.SystemRootsError
+  rust    webpki::EndEntityCert::verify_for_usage, webpki::KeyUsage, webpki::RequiredEkuNotFoundContext
+  python  x509.verification.PolicyBuilder, x509.verification.Store, x509.verification.ServerVerifier, x509.verification.ClientVerifier, x509.verification.VerificationError
+  note    Go's and Python's answers on the samples held: the chain at its moment, after it and without its intermediate; a code-signing purpose; a host it is not for; a leaf the excluded `bad.example.com` covers, one outside the permitted DNS names, one outside the permitted addresses. Name constraints are checked on DNS names (a wildcard excluded where any name it stands for would be, as both refuse it), email addresses, URIs' hosts, addresses and directory names; an otherName's are not. Revocation is not asked: `revoked_of` answers for a list a program fetched
+
+capability x509/policy-processing  RFC 5280 § 6.1's processing of certificate policies over a chain
+  heroes  pending
+  go      x509.VerifyOptions (CertificatePolicies)
+  rust    -
+  python  -
+  note    the policies are read; their tree over a chain is not built, so `verify_chain` answers as if every policy were acceptable
+
+capability x509/host  whether a certificate is for a host name, as RFC 6125 says
+  heroes  x509.is_for_host
+  go      x509.Certificate.VerifyHostname
+  rust    webpki::EndEntityCert::verify_is_valid_for_subject_name, rustls_pki_types::ServerName, rustls_pki_types::DnsName
+  python  -
+  note    Go's answers on twenty-three hosts held: case and one trailing dot ignored, a wildcard the whole first label and one label alone, an IP literal matched by address, an IPv4 address and the IPv6 one mapping it one. A host holding a `*` is no host, where Go matches `*.example.com` against the same pattern (observed); the common name is never read, as RFC 9525 and Go read none. Python 3.15's `ssl` holds no `match_hostname` (its names listed)
+
+capability x509/address  whether a certificate is for an IP address
+  heroes  x509.is_for_address
+  go      x509.Certificate.VerifyHostname
+  rust    rustls_pki_types::IpAddr
+  python  -
+
+capability x509/system-roots  the system's own store of trusted roots read
+  heroes  pending
+  go      x509.SystemCertPool, x509.SetFallbackRoots, x509.SystemRootsError
+  rust    rustls_native_certs::load_native_certs
+  python  ssl.SSLContext.load_default_certs, ssl.get_default_verify_paths
+  note    `tls` checks a connection by the system's store; reading the store's certificates needs a floor on each platform's own store
+
+capability x509/create-certificate  a certificate made and signed
+  heroes  pending
+  go      x509.CreateCertificate, x509.Certificate.CreateCRL
+  rust    -
+  python  x509.CertificateBuilder, x509.random_serial_number
+  note    the signature is `keypairs.sign`'s; the structure is `asn1`'s to write. Not done in this round
+
+capability x509/create-request  a certificate request made and signed
+  heroes  pending
+  go      x509.CreateCertificateRequest
+  rust    -
+  python  x509.CertificateSigningRequestBuilder
+
+capability x509/create-crl  a revocation list made and signed
+  heroes  pending
+  go      x509.CreateRevocationList
+  rust    -
+  python  x509.CertificateRevocationListBuilder, x509.RevokedCertificateBuilder
+
+capability x509/fingerprint  a certificate's fingerprint
+  heroes  crypto.sha256
+  go      -
+  rust    -
+  python  x509.Certificate.fingerprint, x509.CertificateRevocationList.fingerprint
+  note    the digest of `der`, `crypto.sha256(cert.der)`, which needs no function of its own
+
+capability x509/equal  two certificates compared
+  heroes  built-in ==
+  go      x509.Certificate.Equal
+  rust    -
+  python  -
+  note    `a.der == b.der`, as Go's `Equal` compares them
+
+capability x509/private-keys  private and public keys read and written in their forms
+  heroes  keypairs.parse_private_der
+  go      x509.ParsePKCS8PrivateKey, x509.MarshalPKCS8PrivateKey, x509.MarshalPKIXPublicKey, x509.ParsePKCS1PrivateKey, x509.MarshalPKCS1PrivateKey, x509.ParsePKCS1PublicKey, x509.MarshalPKCS1PublicKey, x509.ParseECPrivateKey, x509.MarshalECPrivateKey
+  rust    rustls_pki_types::PrivateKeyDer, rustls_pki_types::PrivatePkcs8KeyDer, rustls_pki_types::PrivatePkcs1KeyDer, rustls_pki_types::PrivateSec1KeyDer
+  python  -
+  note    `crypto/keypairs`' capability: PKCS #8 and SubjectPublicKeyInfo read and written there, PKCS #1 and SEC 1 refused there saying so
+
+capability x509/encrypted-pem  a PEM block encrypted by RFC 1421 decrypted
+  heroes  refused: `pem` refuses it, its key derived from a password by one round of MD5
+  go      x509.DecryptPEMBlock, x509.EncryptPEMBlock, x509.IsEncryptedPEMBlock, x509.PEMCipher, x509.IncorrectPasswordError
+  rust    -
+  python  -
+
+capability x509/oid  an object identifier of any size read, written and compared
+  heroes  asn1.Oid
+  go      x509.OID, x509.OIDFromInts, x509.OIDFromASN1OID, x509.ParseOID, x509.OID.Equal, x509.OID.EqualASN1OID, x509.OID.String, x509.OID.MarshalBinary, x509.OID.UnmarshalBinary, x509.OID.MarshalText, x509.OID.UnmarshalText, x509.OID.AppendBinary, x509.OID.AppendText
+  rust    webpki::KeyPurposeId::to_decoded_oid
+  python  x509.ObjectIdentifier
+  note    `asn1`'s, its arcs of any size, its text its form
+
+dropped
+  go      x509.Certificate (Raw, RawIssuer, RawSubject, RawSubjectPublicKeyInfo): the bytes are `der`, `issuer.der`, `subject.der`, `public_key.der`
+  python  x509.Certificate.issuer, x509.Certificate.subject, x509.Certificate.extensions, x509.Certificate.public_bytes: fields of the record here
+  python  x509.Version, x509.annotations, x509.base, x509.extensions, x509.general_name, x509.name, x509.oid, x509.verification: the modules' own plumbing
+  rust    webpki::CrlsRequired, webpki::ExpirationPolicy, webpki::RevocationCheckDepth, webpki::RevocationOptions, webpki::RevocationOptionsBuilder, webpki::UnknownStatusPolicy: revocation inside path building, which `verify_chain` leaves to the program with `revoked_of`

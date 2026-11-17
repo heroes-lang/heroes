@@ -1,0 +1,274 @@
+# The tag and the length of one element, read and written by X.690 § 8.1,
+# and the names of the universal types for messages. A class is a number
+# here, 0 universal, 1 application, 2 context-specific, 3 private, since the
+# face's types cannot be named from a private module. No length is trusted
+# before the bytes that would fill it are there.
+
+# The code of bytes that are not an element.
+constant INVALID: str
+    "invalid"
+
+# The tag and the length of one element, read.
+record Header
+    # The class, 0 to 3.
+    kind: i64
+    # The tag's number.
+    number: i64
+    # Whether the content is made of elements.
+    constructed: bool
+    # The byte index where the content begins.
+    content_start: i64
+    # The content's length in bytes, or -1 for an indefinite length.
+    length: i64
+
+# The name of the universal type numbered `number` as ASN.1's notation writes
+# it, or "" for a number that names none.
+function universal_name(number: i64) -> str
+    names = [
+        "end-of-contents"
+        "BOOLEAN"
+        "INTEGER"
+        "BIT STRING"
+        "OCTET STRING"
+        "NULL"
+        "OBJECT IDENTIFIER"
+        "ObjectDescriptor"
+        "EXTERNAL"
+        "REAL"
+        "ENUMERATED"
+        "EMBEDDED PDV"
+        "UTF8String"
+        "RELATIVE-OID"
+        "TIME"
+        ""
+        "SEQUENCE"
+        "SET"
+        "NumericString"
+        "PrintableString"
+        "TeletexString"
+        "VideotexString"
+        "IA5String"
+        "UTCTime"
+        "GeneralizedTime"
+        "GraphicString"
+        "VisibleString"
+        "GeneralString"
+        "UniversalString"
+        "CHARACTER STRING"
+        "BMPString"
+        "DATE"
+        "TIME-OF-DAY"
+        "DATE-TIME"
+        "DURATION"
+        "OID-IRI"
+        "RELATIVE-OID-IRI"
+    ]
+
+    if number < 0 || number >= names.len()
+        return ""
+    return names[number]
+
+# A tag as a message names it: a universal type by its name, another as
+# `[0]`, `[APPLICATION 1]` or `[PRIVATE 2]`.
+function tag_name(kind: i64, number: i64) -> str
+    if kind == 0
+        name = universal_name(number)
+
+        if name.len() > 0 && number > 0
+            return name
+        return f"[UNIVERSAL {number}]"
+
+    if kind == 1
+        return f"[APPLICATION {number}]"
+
+    if kind == 3
+        return f"[PRIVATE {number}]"
+    return f"[{number}]"
+
+# The tag and the length of the element whose tag begins at `at`, by DER's
+# rules where `der` is true and BER's otherwise. Fails `invalid` where they
+# are broken, or the content would run past `data`.
+function read_header(data: [u8], at: i64, der: bool) -> Header?
+    if at >= data.len()
+        return fail(code: INVALID, msg: f"byte {at}: the data ends where an element was expected")
+    first = to_i64(data[at]).must()
+    kind = first >> 6
+    constructed = first & 0x20 != 0
+    number @= first & 0x1f
+    i @= at + 1
+
+    if number == 0x1f
+        number @ 0
+        groups @= 0
+        more @= true
+
+        while more
+            if i >= data.len()
+                return fail(code: INVALID, msg: f"byte {at}: the data ends inside a tag")
+            c = to_i64(data[i]).must()
+
+            if groups == 0 && c == 0x80
+                return fail(code: INVALID, msg: f"byte {i}: a tag number that begins with a group of zero bits")
+
+            if groups == 8
+                return fail(code: INVALID, msg: f"byte {at}: a tag number of more than 56 bits")
+            number @ number * 128 + (c & 0x7f)
+            groups @ groups + 1
+            more @ c & 0x80 != 0
+            i @ i + 1
+
+        if number < 31
+            return fail(
+                code: INVALID,
+                msg: f"byte {at}: the tag number {number} in the long form, which a number below 31 never takes"
+            )
+
+    if i >= data.len()
+        return fail(code: INVALID, msg: f"byte {i}: the data ends where a length was expected")
+    l = to_i64(data[i]).must()
+    i @ i + 1
+    length @= 0
+
+    if l < 0x80
+        length @ l
+    else if l == 0x80
+        if der
+            return fail(code: INVALID, msg: f"byte {i - 1}: an indefinite length, which DER never writes")
+
+        if !constructed
+            return fail(code: INVALID, msg: f"byte {at}: a primitive element with an indefinite length")
+        length @ -1
+    else if l == 0xff
+        return fail(code: INVALID, msg: f"byte {i - 1}: the length byte 0xff, which X.690 reserves")
+    else
+        count = l & 0x7f
+
+        if count > data.len() - i
+            return fail(code: INVALID, msg: f"byte {i - 1}: the data ends inside a length of {count} bytes")
+
+        if der && data[i] == 0
+            return fail(code: INVALID, msg: f"byte {i}: a length not in its fewest bytes, as DER writes it")
+
+        for k in range(from: 0, to: count)
+            if length > data.len()
+                return fail(code: INVALID, msg: f"byte {at}: a length past the {data.len()} bytes of the data")
+            length @ length * 256 + to_i64(data[i + k]).must()
+
+        i @ i + count
+
+        if der && length < 0x80
+            return fail(
+                code: INVALID,
+                msg: f"byte {at}: a length below 128 in the long form, which DER writes in one byte"
+            )
+
+    if length > data.len() - i
+        return fail(
+            code: INVALID,
+            msg: f"byte {at}: an element of {length} bytes runs past the data, which holds {data.len() - i} after its length"
+        )
+    return ok(Header(kind: kind, number: number, constructed: constructed, content_start: i, length: length))
+
+# The tag and the definite length of an element pushed onto `out` in DER:
+# each in its fewest bytes.
+function write_header(@out: [u8], kind: i64, number: i64, constructed: bool, length: i64)
+    first @= kind << 6
+
+    if constructed
+        first @ first | 0x20
+
+    if number < 31
+        out @ out.push(to_u8(first | number).must())
+    else
+        out @ out.push(to_u8(first | 0x1f).must())
+        groups: [i64] @= []
+        n @= number
+
+        while n > 0
+            groups @ groups.push(n & 0x7f)
+            n @ n >> 7
+
+        k @= groups.len() - 1
+
+        while k >= 0
+            mark = if k > 0
+                0x80
+            else
+                0
+            out @ out.push(to_u8(groups[k] | mark).must())
+            k @ k - 1
+
+    if length < 0x80
+        out @ out.push(to_u8(length).must())
+    else
+        digits: [i64] @= []
+        n @= length
+
+        while n > 0
+            digits @ digits.push(n & 0xff)
+            n @ n >> 8
+
+        out @ out.push(to_u8(0x80 | digits.len()).must())
+        k @= digits.len() - 1
+
+        while k >= 0
+            out @ out.push(to_u8(digits[k]).must())
+            k @ k - 1
+
+test "universal_name and tag_name: every class, a number with no type, and end-of-contents"
+    assert universal_name(2) == "INTEGER"
+    assert universal_name(36) == "RELATIVE-OID-IRI"
+    assert universal_name(15) == ""
+    assert universal_name(37) == ""
+    assert universal_name(-1) == ""
+    assert tag_name(kind: 0, number: 16) == "SEQUENCE"
+    assert tag_name(kind: 0, number: 0) == "[UNIVERSAL 0]"
+    assert tag_name(kind: 0, number: 99) == "[UNIVERSAL 99]"
+    assert tag_name(kind: 1, number: 1) == "[APPLICATION 1]"
+    assert tag_name(kind: 2, number: 0) == "[0]"
+    assert tag_name(kind: 3, number: 7) == "[PRIVATE 7]"
+
+test "read_header: the short form, the long form of tag and length, and the indefinite length"
+    a = read_header(data: [0x02, 0x01, 0x05], at: 0, der: true).must()
+    assert a.kind == 0 && a.number == 2 && !a.constructed && a.content_start == 2 && a.length == 1
+    long: [u8] @= [0x30, 0x81, 0x80]
+
+    for _ in range(from: 0, to: 128)
+        long @ long.push(0)
+
+    b = read_header(data: long, at: 0, der: true).must()
+    assert b.constructed && b.number == 16 && b.length == 128 && b.content_start == 3
+    c = read_header(data: [0xbf, 0x81, 0x00, 0x00], at: 0, der: true).must()
+    assert c.kind == 2 && c.number == 128 && c.length == 0
+    d = read_header(data: [0x30, 0x80, 0x00, 0x00], at: 0, der: false).must()
+    assert d.length == -1
+
+test "read_header: what DER refuses and BER reads"
+    assert read_header(data: [0x30, 0x80, 0x00, 0x00], at: 0, der: true).is_err()
+    assert read_header(data: [0x04, 0x81, 0x01, 0x00], at: 0, der: true).is_err()
+    assert read_header(data: [0x04, 0x81, 0x01, 0x00], at: 0, der: false).must().length == 1
+    assert read_header(data: [0x04, 0x82, 0x00, 0x01, 0x00], at: 0, der: true).is_err()
+    assert read_header(data: [0x04, 0x82, 0x00, 0x01, 0x00], at: 0, der: false).must().length == 1
+
+test "read_header: refused in every encoding"
+    assert read_header(data: [], at: 0, der: false).is_err()
+    assert read_header(data: [0x04], at: 0, der: false).is_err()
+    assert read_header(data: [0x04, 0x05, 0x00], at: 0, der: false).is_err()
+    assert read_header(data: [0x04, 0x80], at: 0, der: false).is_err()
+    assert read_header(data: [0x04, 0xff], at: 0, der: false).is_err()
+    assert read_header(data: [0x9f, 0x80, 0x01, 0x00], at: 0, der: false).is_err()
+    assert read_header(data: [0x9f, 0x1e, 0x00], at: 0, der: false).is_err()
+    assert read_header(data: [0x9f, 0x81], at: 0, der: false).is_err()
+    assert read_header(data: [0x04, 0x88, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0, der: false).is_err()
+    assert read_header(data: [0x04, 0x84, 0x01], at: 0, der: false).is_err()
+
+test "write_header: short and long tags and lengths, read back"
+    out: [u8] @= []
+    write_header(out: @out, kind: 0, number: 2, constructed: false, length: 1)
+    assert out == [0x02, 0x01]
+    out @ []
+    write_header(out: @out, kind: 2, number: 128, constructed: true, length: 300)
+    assert out == [0xbf, 0x81, 0x00, 0x82, 0x01, 0x2c]
+    out @ []
+    write_header(out: @out, kind: 3, number: 31, constructed: false, length: 127)
+    assert out == [0xdf, 0x1f, 0x7f]

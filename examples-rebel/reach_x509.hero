@@ -1,0 +1,19 @@
+# Reaches Rebel's `x509`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). It reads the
+# certificates of a PEM file named on the command line and prints each
+# one's subject and the last day it is valid.
+
+use <rebel>/x509
+
+function main()
+    for path in args()
+        match read_file(path)
+            .ok text =>
+                match x509.parse_certificates(text)
+                    .ok certs =>
+                        for cert in certs
+                            print(
+                                f"{x509.format_name(cert.subject)} until {cert.not_after.year}-{cert.not_after.month}-{cert.not_after.day}"
+                            )
+                    .err e => print(f"{e.code}: {e.msg}")
+            .err e => print(f"{e.code}: {e.msg}")

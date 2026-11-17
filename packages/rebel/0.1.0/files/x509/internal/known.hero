@@ -1,0 +1,292 @@
+# The identifiers `x509` reads the meaning of: RFC 4514's short names of a
+# name's attributes, as Python's `cryptography` writes them; the signature
+# algorithms `crypto/keypairs` checks, by the names its `parse_scheme`
+# reads, RSA-PSS's parameters among them; and the public keys it reads, by
+# their kind and an RSA modulus's bits. An identifier is its dotted text.
+
+use asn1
+use big
+use x509/internal/shapes
+
+# The code of an algorithm's parameters that are not what its RFC says.
+constant INVALID: str
+    "invalid"
+
+# The code of an algorithm `crypto/keypairs` does not check.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What `key_facts` answers: the kind of a public key by `keypairs`' name, and
+# an RSA modulus's bits.
+record KeyFacts
+    # `ed25519`, `x25519`, `p256`, `p384` or `rsa`.
+    name: str
+    # The modulus's bits for RSA, 0 otherwise.
+    bits: i64
+
+# The short name RFC 4514 gives the attribute `dotted`, or "" where it gives
+# none: the nine of its § 3, the ones Python's `rfc4514_string` writes.
+function short_name(dotted: str) -> str
+    pairs = [
+        "2.5.4.3"
+        "CN"
+        "2.5.4.7"
+        "L"
+        "2.5.4.8"
+        "ST"
+        "2.5.4.10"
+        "O"
+        "2.5.4.11"
+        "OU"
+        "2.5.4.6"
+        "C"
+        "2.5.4.9"
+        "STREET"
+        "0.9.2342.19200300.100.1.25"
+        "DC"
+        "0.9.2342.19200300.100.1.1"
+        "UID"
+    ]
+    k @= 0
+
+    while k < pairs.len()
+        if pairs[k] == dotted
+            return pairs[k + 1]
+        k @ k + 2
+
+    return ""
+
+# The name a person reads of the algorithm `dotted`: RFC 3279's, 4055's and
+# 8410's, or the dotted text itself.
+function algorithm_name(dotted: str) -> str
+    pairs = [
+        "1.2.840.113549.1.1.1"
+        "rsaEncryption"
+        "1.2.840.113549.1.1.4"
+        "md5WithRSAEncryption"
+        "1.2.840.113549.1.1.5"
+        "sha1WithRSAEncryption"
+        "1.2.840.113549.1.1.10"
+        "RSASSA-PSS"
+        "1.2.840.113549.1.1.11"
+        "sha256WithRSAEncryption"
+        "1.2.840.113549.1.1.12"
+        "sha384WithRSAEncryption"
+        "1.2.840.113549.1.1.13"
+        "sha512WithRSAEncryption"
+        "1.2.840.113549.1.1.14"
+        "sha224WithRSAEncryption"
+        "1.2.840.10045.2.1"
+        "id-ecPublicKey"
+        "1.2.840.10045.4.1"
+        "ecdsa-with-SHA1"
+        "1.2.840.10045.4.3.1"
+        "ecdsa-with-SHA224"
+        "1.2.840.10045.4.3.2"
+        "ecdsa-with-SHA256"
+        "1.2.840.10045.4.3.3"
+        "ecdsa-with-SHA384"
+        "1.2.840.10045.4.3.4"
+        "ecdsa-with-SHA512"
+        "1.3.101.110"
+        "X25519"
+        "1.3.101.112"
+        "Ed25519"
+        "1.3.101.113"
+        "Ed448"
+    ]
+    k @= 0
+
+    while k < pairs.len()
+        if pairs[k] == dotted
+            return pairs[k + 1]
+        k @ k + 2
+
+    return dotted
+
+# Whether `v` is the NULL an algorithm's parameters may be, or absent.
+function is_null_or_absent(has_parameters: bool, parameters: asn1.Value) -> bool
+    return !has_parameters || parameters == .null_value
+
+# The name of the hash `dotted` names, "" for one RSA-PSS is not checked
+# with here.
+function digest_of(dotted: str) -> str
+    if dotted == "2.16.840.1.101.3.4.2.1"
+        return "sha256"
+
+    if dotted == "2.16.840.1.101.3.4.2.2"
+        return "sha384"
+
+    if dotted == "2.16.840.1.101.3.4.2.3"
+        return "sha512"
+    return ""
+
+# The scheme RSASSA-PSS's `parameters` name (RFC 4055 § 3.1): its hash
+# SHA-256, SHA-384 or SHA-512, MGF1 over the same hash, a salt as long as
+# the hash, the trailer 1, which is what `crypto/keypairs` checks.
+function pss_scheme(parameters: asn1.Value) -> str?
+    items = shapes.sequence_of(v: parameters, least: 0, most: 4, what: "RSASSA-PSS's parameters")?
+    hash @= "sha1"
+    mask_hash @= "sha1"
+    salt @= 20
+    trailer @= 1
+
+    for item in items
+        number = shapes.context_number(item)
+        inner = shapes.within(r: asn1.untagged(v: item, number: number), what: "RSASSA-PSS's parameters")?
+
+        if number == 0
+            parts = shapes.sequence_of(v: inner, least: 1, most: 2, what: "RSASSA-PSS's hash")?
+            hash @ digest_of(shapes.within(r: asn1.oid_of(parts[0]), what: "RSASSA-PSS's hash")?.dotted)
+        else if number == 1
+            parts = shapes.sequence_of(v: inner, least: 2, most: 2, what: "RSASSA-PSS's mask")?
+
+            if shapes.within(r: asn1.oid_of(parts[0]), what: "RSASSA-PSS's mask")?.dotted != "1.2.840.113549.1.1.8"
+                return fail(code: UNSUPPORTED, msg: "RSASSA-PSS with a mask other than MGF1")
+            under = shapes.sequence_of(v: parts[1], least: 1, most: 2, what: "RSASSA-PSS's mask")?
+            mask_hash @ digest_of(shapes.within(r: asn1.oid_of(under[0]), what: "RSASSA-PSS's mask")?.dotted)
+        else if number == 2
+            salt @ shapes.count_of(v: inner, what: "RSASSA-PSS's salt")?
+        else if number == 3
+            trailer @ shapes.count_of(v: inner, what: "RSASSA-PSS's trailer")?
+        else
+            return fail(code: INVALID, msg: "RSASSA-PSS's parameters hold an element of no tag 0 to 3")
+
+    if hash == "" || hash == "sha1" || mask_hash != hash || trailer != 1
+        return fail(
+            code: UNSUPPORTED,
+            msg: "RSASSA-PSS with a hash other than SHA-256, SHA-384 or SHA-512 and MGF1 over it, which crypto/keypairs does not check"
+        )
+
+    wanted = if hash == "sha256"
+        32
+    else if hash == "sha384"
+        48
+    else
+        64
+
+    if salt != wanted
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"RSASSA-PSS with a salt of {salt} bytes over {hash}, where crypto/keypairs checks {wanted}"
+        )
+    return ok(f"rsa_pss_{hash}")
+
+# The name `crypto/keypairs` gives the signature algorithm `dotted` with its
+# parameters. Fails `unsupported` for one it does not check, naming it, and
+# `invalid` for parameters its RFC forbids.
+function scheme_name(dotted: str, has_parameters: bool, parameters: asn1.Value) -> str?
+    rsa = [
+        "1.2.840.113549.1.1.11"
+        "rsa_pkcs1_sha256"
+        "1.2.840.113549.1.1.12"
+        "rsa_pkcs1_sha384"
+        "1.2.840.113549.1.1.13"
+        "rsa_pkcs1_sha512"
+    ]
+    k @= 0
+
+    while k < rsa.len()
+        if rsa[k] == dotted
+            if !is_null_or_absent(has_parameters: has_parameters, parameters: parameters)
+                return fail(code: INVALID, msg: f"{algorithm_name(dotted)} with parameters other than NULL")
+            return ok(rsa[k + 1])
+        k @ k + 2
+
+    if dotted == "1.2.840.10045.4.3.2" || dotted == "1.2.840.10045.4.3.3" || dotted == "1.3.101.112"
+        if has_parameters
+            return fail(code: INVALID, msg: f"{algorithm_name(dotted)} with parameters, which it has none of")
+
+        if dotted == "1.3.101.112"
+            return ok("ed25519")
+
+        if dotted == "1.2.840.10045.4.3.2"
+            return ok("ecdsa_sha256")
+        return ok("ecdsa_sha384")
+
+    if dotted == "1.2.840.113549.1.1.10"
+        if !has_parameters
+            return fail(code: INVALID, msg: "RSASSA-PSS with no parameters")
+        return pss_scheme(parameters)
+    return fail(
+        code: UNSUPPORTED,
+        msg: f"the signature algorithm {algorithm_name(dotted)}, which crypto/keypairs does not check"
+    )
+
+# The kind of the public key of algorithm `dotted`, its parameters and its
+# key's bytes. Fails `unsupported` for a kind `crypto/keypairs` lacks.
+function key_facts(dotted: str, has_parameters: bool, parameters: asn1.Value, key: [u8]) -> KeyFacts?
+    if dotted == "1.3.101.112"
+        return ok(KeyFacts(name: "ed25519", bits: 0))
+
+    if dotted == "1.3.101.110"
+        return ok(KeyFacts(name: "x25519", bits: 0))
+
+    if dotted == "1.2.840.10045.2.1"
+        if !has_parameters
+            return fail(code: INVALID, msg: "an EC key with no curve named")
+        curve = shapes.within(r: asn1.oid_of(parameters), what: "an EC key's curve")?.dotted
+
+        if curve == "1.2.840.10045.3.1.7"
+            return ok(KeyFacts(name: "p256", bits: 0))
+
+        if curve == "1.3.132.0.34"
+            return ok(KeyFacts(name: "p384", bits: 0))
+        return fail(code: UNSUPPORTED, msg: f"an EC key on the curve {curve}, which crypto/keypairs lacks")
+
+    if dotted == "1.2.840.113549.1.1.1"
+        numbers = shapes.sequence_of(v: shapes.within(r: asn1.decode_der(key), what: "an RSA key")?, least: 2, most: 2, what: "an RSA key")?
+        modulus = shapes.within(r: asn1.integer_of(numbers[0]), what: "an RSA key's modulus")?
+        return ok(KeyFacts(name: "rsa", bits: big.bit_len(modulus)))
+    return fail(code: UNSUPPORTED, msg: f"a key of the algorithm {algorithm_name(dotted)}, which crypto/keypairs lacks")
+
+test "short_name and algorithm_name: the nine of RFC 4514, one it lacks, and a name of no algorithm"
+    assert short_name("2.5.4.3") == "CN"
+    assert short_name("0.9.2342.19200300.100.1.1") == "UID"
+    assert short_name("2.5.4.5") == ""
+    assert algorithm_name("1.2.840.113549.1.1.11") == "sha256WithRSAEncryption"
+    assert algorithm_name("1.2.3") == "1.2.3"
+
+test "scheme_name: every scheme checked, the parameters RFC 5758 forbids, and SHA-1 refused"
+    assert scheme_name(dotted: "1.2.840.113549.1.1.11", has_parameters: true, parameters: .null_value).must() == "rsa_pkcs1_sha256"
+    assert scheme_name(dotted: "1.2.840.113549.1.1.13", has_parameters: false, parameters: .null_value).must() == "rsa_pkcs1_sha512"
+    assert scheme_name(dotted: "1.2.840.10045.4.3.3", has_parameters: false, parameters: .null_value).must() == "ecdsa_sha384"
+    assert scheme_name(dotted: "1.2.840.10045.4.3.2", has_parameters: true, parameters: .null_value).is_err()
+    assert scheme_name(dotted: "1.3.101.112", has_parameters: false, parameters: .null_value).must() == "ed25519"
+
+    match scheme_name(dotted: "1.2.840.113549.1.1.5", has_parameters: true, parameters: .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "pss_scheme: SHA-256 with its salt, the defaults of SHA-1, and a salt of another length"
+    sha256 = asn1.decode_der(
+        asn1.encode_der(.sequence(items: [asn1.tagged(v: .sequence(items: [.oid(v: asn1.Oid(dotted: "2.16.840.1.101.3.4.2.1"))]), number: 0), asn1.tagged(v: .sequence(items: [.oid(v: asn1.Oid(dotted: "1.2.840.113549.1.1.8")), .sequence(items: [.oid(v: asn1.Oid(dotted: "2.16.840.1.101.3.4.2.1"))])]), number: 1), asn1.tagged(v: .integer(v: 32), number: 2)])).must()
+    ).must()
+    assert pss_scheme(sha256).must() == "rsa_pss_sha256"
+    assert pss_scheme(.sequence(items: [])).is_err()
+
+test "key_facts: each kind, an RSA modulus's bits, and P-521 refused"
+    assert key_facts(dotted: "1.3.101.112", has_parameters: false, parameters: .null_value, key: []).must().name == "ed25519"
+    p256 = key_facts(
+        dotted: "1.2.840.10045.2.1",
+        has_parameters: true,
+        parameters: .oid(v: asn1.Oid(dotted: "1.2.840.10045.3.1.7")),
+        key: []
+    )
+    assert p256.must().name == "p256"
+    assert key_facts(
+        dotted: "1.2.840.10045.2.1",
+        has_parameters: true,
+        parameters: .oid(v: asn1.Oid(dotted: "1.3.132.0.35")),
+        key: []
+    ).is_err()
+    rsa_key = asn1.encode_der(
+        .sequence(items: [.big_integer(v: big.shift_left(n: big.from_int(1), count: 2047)), .integer(v: 65537)])
+    ).must()
+    facts = key_facts(
+        dotted: "1.2.840.113549.1.1.1",
+        has_parameters: true,
+        parameters: .null_value,
+        key: rsa_key
+    ).must()
+    assert facts.name == "rsa" && facts.bits == 2048

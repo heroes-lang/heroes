@@ -1,0 +1,294 @@
+# A host name matched against a certificate's DNS names as RFC 6125 § 6.4
+# says and as Go's `VerifyHostname` answers (observed 2026-11-17): ASCII case
+# ignored, one trailing dot ignored on either side, a wildcard only as the
+# whole first label of a name and standing for exactly one label, and no
+# fallback to the common name, which RFC 9525 removed and Go makes none of
+# (observed on a certificate holding a common name alone). And the names of RFC 5280's name constraints: a DNS name, an email
+# address, a URI's host and an IP address within a constraint. Names are
+# ASCII here; an internationalized name is compared in its A-label form.
+
+use net
+use strings
+
+# Whether `c` is a byte a label of a host name holds: a letter, a digit, a
+# hyphen or an underscore, as Go accepts.
+function is_label_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-' || c == '_'
+
+# `s` with one trailing dot removed.
+function without_dot(s: str) -> str
+    if s.len() > 0 && s[s.len() - 1] == '.'
+        return s.slice(from: 0, to: s.len() - 1)
+    return s
+
+# Whether `s` is a host name: labels of letters, digits, hyphens and
+# underscores, none empty, one trailing dot allowed.
+function is_host_name(s: str) -> bool
+    name = without_dot(s)
+
+    if name.len() == 0
+        return false
+    label @= 0
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+
+        if c == '.'
+            if label == 0
+                return false
+            label @ 0
+        else if is_label_byte(c)
+            label @ label + 1
+        else
+            return false
+
+    return label > 0
+
+# Whether the DNS name `pattern` of a certificate matches `host`.
+function host_matches(pattern: str, host: str) -> bool
+    if !is_host_name(host)
+        return false
+    h = strings.to_lower_ascii(without_dot(host))
+    p = strings.to_lower_ascii(without_dot(pattern))
+
+    if strings.has_prefix(s: p, prefix: "*.")
+        rest = p.slice(from: 2, to: p.len())
+
+        if !is_host_name(rest)
+            return false
+
+        match strings.index_of(s: h, substr: ".")
+            .ok dot => return dot > 0 && h.slice(from: dot + 1, to: h.len()) == rest
+            .err _  => return false
+    return is_host_name(p) && p == h
+
+# Whether the DNS name `name` is within the constraint `base` (RFC 5280
+# § 4.2.1.10): `base` itself or a name with labels added on its left; a
+# `base` that begins with a dot takes only the names with labels added.
+function dns_within(name: str, base: str) -> bool
+    n = strings.to_lower_ascii(without_dot(name))
+    b = strings.to_lower_ascii(base)
+
+    if b.len() == 0
+        return true
+
+    if b[0] == '.'
+        return strings.has_suffix(s: n, suffix: b)
+    return n == b || strings.has_suffix(s: n, suffix: "." + b)
+
+# Whether the DNS name `name` of a certificate, a wildcard among them, falls
+# under the excluded constraint `base`: a wildcard is excluded where any name
+# it stands for would be, as Go and Python refuse it.
+function dns_excluded(name: str, base: str) -> bool
+    if strings.has_prefix(s: name, prefix: "*.")
+        stem = name.slice(from: 2, to: name.len())
+        return dns_within(name: "x." + stem, base: base) || dns_within(name: base, base: stem)
+    return dns_within(name: name, base: base)
+
+# Whether the DNS name `name` of a certificate, a wildcard among them, is
+# within the permitted constraint `base`: every name a wildcard stands for.
+function dns_permitted(name: str, base: str) -> bool
+    if strings.has_prefix(s: name, prefix: "*.")
+        return dns_within(name: "x." + name.slice(from: 2, to: name.len()), base: base)
+    return dns_within(name: name, base: base)
+
+# Whether the email address `address` is within the constraint `base`: one
+# mailbox where `base` holds an `@`, every mailbox of a host, or of every
+# host below a domain where `base` begins with a dot.
+function email_within(address: str, base: str) -> bool
+    match strings.index_of_last(s: address, substr: "@")
+        .ok at =>
+            host = strings.to_lower_ascii(address.slice(from: at + 1, to: address.len()))
+
+            match strings.index_of_last(s: base, substr: "@")
+                .ok b =>
+                    same_box = address.slice(from: 0, to: at) == base.slice(from: 0, to: b)
+                    return same_box && host == strings.to_lower_ascii(base.slice(from: b + 1, to: base.len()))
+                .err _ => _ = 0
+
+            lowered = strings.to_lower_ascii(base)
+
+            if strings.has_prefix(s: lowered, prefix: ".")
+                return strings.has_suffix(s: host, suffix: lowered)
+            return host == lowered
+        .err _ => return false
+
+# The host of `uri`, `scheme://user@host:port/path`, in lower case. Fails
+# `not_found` where `uri` has no authority, or its host is an IP literal in
+# brackets, which a URI constraint cannot hold.
+function uri_host(uri: str) -> str?
+    match strings.index_of(s: uri, substr: "://")
+        .ok at =>
+            start = at + 3
+            stop @= start
+
+            while stop < uri.len() && uri[stop] != '/' && uri[stop] != '?' && uri[stop] != '#'
+                stop @ stop + 1
+
+            authority = uri.slice(from: start, to: stop)
+            host @= authority
+
+            match strings.index_of_last(s: host, substr: "@")
+                .ok u  => host @ host.slice(from: u + 1, to: host.len())
+                .err _ => _ = 0
+
+            if host.len() > 0 && host[0] == '['
+                return fail(code: "not_found", msg: f"the URI \"{uri}\" names its host by an IP address")
+
+            match strings.index_of(s: host, substr: ":")
+                .ok c  => host @ host.slice(from: 0, to: c)
+                .err _ => _ = 0
+
+            if host.len() == 0
+                return fail(code: "not_found", msg: f"the URI \"{uri}\" names no host")
+            return ok(strings.to_lower_ascii(host))
+        .err _ => return fail(code: "not_found", msg: f"the URI \"{uri}\" has no authority")
+
+# Whether `uri` is within the URI constraint `base`: its host, as
+# `dns_within` reads a host but with no labels added unless `base` begins
+# with a dot.
+function uri_within(uri: str, base: str) -> bool
+    match uri_host(uri)
+        .ok host =>
+            b = strings.to_lower_ascii(base)
+
+            if strings.has_prefix(s: b, prefix: ".")
+                return strings.has_suffix(s: host, suffix: b)
+            return host == b
+        .err _ => return false
+
+# The address `host` writes as an IP literal, brackets around an IPv6
+# address allowed. Fails `invalid` where it is no address.
+function host_address(host: str) -> net.Address?
+    if host.len() > 1 && host[0] == '[' && host[host.len() - 1] == ']'
+        return net.parse_address(host.slice(from: 1, to: host.len() - 1))
+    return net.parse_address(host)
+
+# Whether `a` and `b` are one address, an IPv4 address and the IPv6 address
+# that maps it being one, as Go's `IP.Equal` reads them.
+function same_address(a: net.Address, b: net.Address) -> bool
+    return net.unmap(a).bytes == net.unmap(b).bytes
+
+# Whether `name`, a name of `kind`, is within `base`, a constraint of the
+# same kind: 1 an email address, 2 a DNS name, 4 a directory name as the
+# hexadecimal of its relative names' DER, 6 a URI, 7 an address within a
+# network. A DNS wildcard is read as `dns_excluded` reads it where
+# `excluded` is true and as `dns_permitted` does otherwise.
+function is_within(kind: i64, name: str, base: str, excluded: bool) -> bool
+    if kind == 1
+        return email_within(address: name, base: base)
+
+    if kind == 2
+        if excluded
+            return dns_excluded(name: name, base: base)
+        return dns_permitted(name: name, base: base)
+
+    if kind == 4
+        return strings.has_prefix(s: name, prefix: base)
+
+    if kind == 6
+        return uri_within(uri: name, base: base)
+
+    match net.parse_address(name)
+        .ok address =>
+            match net.parse_network(base)
+                .ok network => return net.contains(n: network, a: address)
+                .err _      => return false
+        .err _ => return false
+
+# Whether the name `name` of `kind` holds under the constraints: within no
+# excluded one of its kind, and within a permitted one of its kind where any
+# is permitted. Fails `invalid` saying which name and which constraint.
+function check_constraint(kind: i64, name: str, permitted_kinds: [i64], permitted_texts: [str], excluded_kinds: [i64], excluded_texts: [str]) -> ()?
+    for k in range(from: 0, to: excluded_kinds.len())
+        if excluded_kinds[k] == kind && is_within(kind: kind, name: name, base: excluded_texts[k], excluded: true)
+            return fail(code: "invalid", msg: f"the name \"{name}\" falls under the excluded \"{excluded_texts[k]}\"")
+
+    of_kind @= false
+    allowed @= false
+
+    for k in range(from: 0, to: permitted_kinds.len())
+        if permitted_kinds[k] == kind
+            of_kind @ true
+
+            if is_within(kind: kind, name: name, base: permitted_texts[k], excluded: false)
+                allowed @ true
+
+    if of_kind && !allowed
+        return fail(code: "invalid", msg: f"the name \"{name}\" is within no permitted constraint of its kind")
+    return ok()
+
+test "host_matches: Go's answers on the leaf's names"
+    assert host_matches(pattern: "example.com", host: "example.com")
+    assert host_matches(pattern: "example.com", host: "EXAMPLE.com")
+    assert host_matches(pattern: "example.com", host: "example.com.")
+    assert host_matches(pattern: "*.app.example.com", host: "a.app.example.com")
+    assert !host_matches(pattern: "*.app.example.com", host: "app.example.com")
+    assert !host_matches(pattern: "*.app.example.com", host: "x.y.app.example.com")
+    assert !host_matches(pattern: "example.com", host: ".example.com")
+    assert !host_matches(pattern: "example.com", host: "xexample.com")
+    assert !host_matches(pattern: "*.app.example.com", host: "*.app.example.com")
+    assert !host_matches(pattern: "example.com", host: "")
+    assert !host_matches(pattern: "example.com", host: "example.com..")
+    assert !host_matches(pattern: "f*.example.com", host: "foo.example.com")
+
+test "is_host_name: labels, an underscore, an empty label, a star, and a character of two bytes"
+    assert is_host_name("_srv.example.com")
+    assert is_host_name("a.")
+    assert !is_host_name("a..b")
+    assert !is_host_name("*.a")
+    assert !is_host_name("é.a")
+
+test "dns_within, dns_excluded and dns_permitted: a base, a dotted base, and wildcards"
+    assert dns_within(name: "example.com", base: "example.com")
+    assert dns_within(name: "a.example.com", base: "Example.com")
+    assert !dns_within(name: "badexample.com", base: "example.com")
+    assert !dns_within(name: "example.com", base: ".example.com")
+    assert dns_within(name: "a.example.com", base: ".example.com")
+    assert dns_within(name: "anything", base: "")
+    assert dns_excluded(name: "*.example.com", base: "bad.example.com")
+    assert !dns_excluded(name: "*.app.example.com", base: "bad.example.com")
+    assert dns_permitted(name: "*.example.com", base: ".example.com")
+
+test "email_within: a mailbox, a host, a domain, and an address with no @"
+    assert email_within(address: "ops@example.com", base: "ops@EXAMPLE.com")
+    assert !email_within(address: "Ops@example.com", base: "ops@example.com")
+    assert email_within(address: "ops@Example.com", base: "example.com")
+    assert !email_within(address: "ops@a.example.com", base: "example.com")
+    assert email_within(address: "ops@a.example.com", base: ".example.com")
+    assert !email_within(address: "ops", base: "example.com")
+
+test "uri_host and uri_within: a user and a port, an IP literal, and no authority"
+    assert uri_host("https://user@Example.com:8443/path?q").must() == "example.com"
+    assert uri_host("https://[2001:db8::1]/").is_err()
+    assert uri_host("mailto:ops@example.com").is_err()
+    assert uri_within(uri: "https://a.example.com/", base: ".example.com")
+    assert !uri_within(uri: "https://a.example.com/", base: "example.com")
+
+test "host_address and same_address: brackets, a mapped IPv4, and a name"
+    assert same_address(a: host_address("[2001:db8::1]").must(), b: net.parse_address("2001:0db8:0:0:0:0:0:1").must())
+    assert same_address(a: host_address("::ffff:192.0.2.1").must(), b: net.parse_address("192.0.2.1").must())
+    assert host_address("example.com").is_err()
+
+test "is_within and check_constraint: each kind, an excluded wildcard, and a name of no permitted kind"
+    assert is_within(kind: 7, name: "192.0.2.1", base: "192.0.2.0/24", excluded: false)
+    assert !is_within(kind: 7, name: "2001:db8::1", base: "192.0.2.0/24", excluded: false)
+    assert is_within(kind: 4, name: "3011300f", base: "3011", excluded: false)
+    assert check_constraint(
+        kind: 2,
+        name: "bad.example.com",
+        permitted_kinds: [2],
+        permitted_texts: ["example.com"],
+        excluded_kinds: [2],
+        excluded_texts: ["bad.example.com"]
+    ).is_err()
+    assert !check_constraint(kind: 2, name: "*.app.example.com", permitted_kinds: [2], permitted_texts: ["example.com"], excluded_kinds: [2], excluded_texts: ["bad.example.com"]).is_err()
+    assert check_constraint(
+        kind: 7,
+        name: "198.51.100.1",
+        permitted_kinds: [7],
+        permitted_texts: ["192.0.2.0/24"],
+        excluded_kinds: [],
+        excluded_texts: []
+    ).is_err()
+    assert !check_constraint(kind: 1, name: "ops@example.com", permitted_kinds: [2], permitted_texts: ["example.com"], excluded_kinds: [], excluded_texts: []).is_err()

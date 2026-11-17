@@ -1,0 +1,215 @@
+# The certificates, the request and the revocation list the tests read,
+# made by Python's `cryptography` 50.0.2 on 2026-11-17 (the script, and what
+# Python and Go answered of them, are in the scratch folder's `x509`). Each
+# is a function that only the tests call: about 12 KB of text a program
+# using `x509` holds where its linker keeps what nothing calls.
+
+# The root of the samples' chain: a P-384 key, self-signed by ECDSA over SHA-384, a CA with a path length of 1.
+function root() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIB6TCCAW+gAwIBAgIBATAKBggqhkjOPQQDAzA8MQswCQYDVQQGEwJJVDEUMBIG"
+        "A1UECgwLSGVyb2VzIFRlc3QxFzAVBgNVBAMMDkhlcm9lcyBSb290IENBMB4XDTI2"
+        "MDEwMTAwMDAwMFoXDTM2MDEwMTAwMDAwMFowPDELMAkGA1UEBhMCSVQxFDASBgNV"
+        "BAoMC0hlcm9lcyBUZXN0MRcwFQYDVQQDDA5IZXJvZXMgUm9vdCBDQTB2MBAGByqG"
+        "SM49AgEGBSuBBAAiA2IABMAmydMDFl/aLZ2AI4agZOTzLOFRzfczKOQP3c/RyRgS"
+        "2fEBwEVIFo26591JXHSVm8bmYWyp5UUA+SSYJlcQomZ4xg0iPJY8HguOXx2Qdh6R"
+        "xBkMkKsLPo+0rTyCliPmgqNFMEMwEgYDVR0TAQH/BAgwBgEB/wIBATAOBgNVHQ8B"
+        "Af8EBAMCAQYwHQYDVR0OBBYEFAwJgUNZQO6Hdw8wBhnT0QDPPDnvMAoGCCqGSM49"
+        "BAMDA2gAMGUCMCSEUlqhGYT+LKXFKNVeDLl68tpftnOMqEr2hfOd0yWLfQt8EbAa"
+        "F2fJbdH5cbXPigIxAMIXLsfqHhaSEUMqicxwWYxwkRti3hQNuc7wRHVJYzwEBu29"
+        "jKGU71l2MDqK0KmdoQ=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# The intermediate of the chain: an RSA key of 2048 bits signed by the root, a CA with a path length of 0, with distribution points, access, policies and name constraints (`example.com`, `192.0.2.0/24`, `2001:db8::/32` permitted, `bad.example.com` excluded).
+function intermediate() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIEPjCCA8SgAwIBAgICEjQwCgYIKoZIzj0EAwMwPDELMAkGA1UEBhMCSVQxFDAS"
+        "BgNVBAoMC0hlcm9lcyBUZXN0MRcwFQYDVQQDDA5IZXJvZXMgUm9vdCBDQTAeFw0y"
+        "NjAxMDEwMDAwMDBaFw0zNjAxMDEwMDAwMDBaMFsxCzAJBgNVBAYTAklUMRQwEgYD"
+        "VQQKDAtIZXJvZXMgVGVzdDEYMBYGA1UECwwPR3JvdW5kLCBDb250cm9sMRwwGgYD"
+        "VQQDDBNIZXJvZXMgSW50ZXJtZWRpYXRlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A"
+        "MIIBCgKCAQEAnGgrMTxrrHOaZAl/S3L5vr7R07XdMUPBYdjpLJw0WYg/iz5SOECO"
+        "o6nxIvNV0Qxxftuz12dR6qN0QKx3VtksnQSZnaMLbE3/w3ja816yXCdMgpRl5RMM"
+        "HmRqkUf8W1PeUgGsj3pM19HAlH1lqNItOA9h1NHRubOA60EhuENqrwoUdgUjuHl+"
+        "bB2nlyQ4ofjDbAwuiYaIrInGqiJxUiXHJAFnN7QoT1RANOIjnqMvNC8hlF+PcQJN"
+        "vbmR0S8T/rEFgCB+X+El7/ffYzheDC6JDagA5RLrw+6X7u+MxEDhLTaAcR244Dfp"
+        "SOJR19JqnKdUYTCRaIxSDphfNfEFc8tGywIDAQABo4IByjCCAcYwEgYDVR0TAQH/"
+        "BAgwBgEB/wIBADAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0OBBYEFKMihVTxVwNf7KIk"
+        "5Uo469SVecmLMB8GA1UdIwQYMBaAFAwJgUNZQO6Hdw8wBhnT0QDPPDnvMDAGA1Ud"
+        "HwQpMCcwJaAjoCGGH2h0dHA6Ly9jcmwuZXhhbXBsZS5jb20vcm9vdC5jcmwwXwYI"
+        "KwYBBQUHAQEEUzBRMCMGCCsGAQUFBzABhhdodHRwOi8vb2NzcC5leGFtcGxlLmNv"
+        "bTAqBggrBgEFBQcwAoYeaHR0cDovL2NhLmV4YW1wbGUuY29tL3Jvb3QuZGVyMGkG"
+        "A1UdIARiMGAwXgYGZ4EMAQIBMFQwIwYIKwYBBQUHAgEWF2h0dHBzOi8vY3BzLmV4"
+        "YW1wbGUuY29tMC0GCCsGAQUFBwICMCEwEAwGSGVyb2VzMAYCAQECAQIMDUV4cGxp"
+        "Y2l0IHRleHQwYgYDVR0eAQH/BFgwVqA/MA2CC2V4YW1wbGUuY29tMAqHCMAAAgD/"
+        "//8AMCKHICABDbgAAAAAAAAAAAAAAAD/////AAAAAAAAAAAAAAAAoRMwEYIPYmFk"
+        "LmV4YW1wbGUuY29tMAoGCCqGSM49BAMDA2gAMGUCMQD7H1ibI0L/AuUcL7Pf+/Ac"
+        "+cdU/vuFjY/tJVh4eN5KOAcY2nGr8XkDJjxbBRJz6+sCMDF4O4kFFZgL1y95a80n"
+        "GJu6VjyeHZPKGIEzNHy7KfTjfIbUDhxS7Hg87TnaqAtPxA=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# The leaf of the chain: a P-256 key signed by the intermediate with RSA over SHA-256, for `example.com`, `*.app.example.com`, `192.0.2.1` and `2001:db8::1`, valid in 2026, its serial past 64 bits, with an extension nobody knows.
+function leaf() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIDTzCCAjegAwIBAgIRAP7cuph2VDIQASNFZ4mrze8wDQYJKoZIhvcNAQELBQAw"
+        "WzELMAkGA1UEBhMCSVQxFDASBgNVBAoMC0hlcm9lcyBUZXN0MRgwFgYDVQQLDA9H"
+        "cm91bmQsIENvbnRyb2wxHDAaBgNVBAMME0hlcm9lcyBJbnRlcm1lZGlhdGUwHhcN"
+        "MjYwMTAxMDAwMDAwWhcNMjcwMTAxMDAwMDAwWjA2MRQwEgYDVQQDDAtleGFtcGxl"
+        "LmNvbTEeMBwGCSqGSIb3DQEJARYPb3BzQGV4YW1wbGUuY29tMFkwEwYHKoZIzj0C"
+        "AQYIKoZIzj0DAQcDQgAEDd2xWcrLPjBrBKIEJHPP5ejVwIG1P/YbYX6YaWTLUz/a"
+        "4bkqLEZfh85eB+79wlJjRItkgzcbhPiY+I3OtmF7l6OB/TCB+jBoBgNVHREEYTBf"
+        "ggtleGFtcGxlLmNvbYIRKi5hcHAuZXhhbXBsZS5jb22HBMAAAgGHECABDbgAAAAA"
+        "AAAAAAAAAAGBD29wc0BleGFtcGxlLmNvbYYUaHR0cHM6Ly9leGFtcGxlLmNvbS8w"
+        "DAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMCB4AwHQYDVR0lBBYwFAYIKwYBBQUH"
+        "AwEGCCsGAQUFBwMCMB0GA1UdDgQWBBSoZbcco2Uyno0pw9cE6xqkpDfD2DAfBgNV"
+        "HSMEGDAWgBSjIoVU8VcDX+yiJOVKOOvUlXnJizARBgkrBgEEAYOyAwEEBAQCaGkw"
+        "DQYJKoZIhvcNAQELBQADggEBABUEI6tyWXRnmHYS638p5vbp5I9RfkTO68yoCm44"
+        "td+qR1avzN4XoqCBSJdf+W9HPh890wg8sclOv8a/P5wH+qGhiKBRMwgSA8g3T5FG"
+        "oPtgdYdGE956c/ixU7bvsbeInxXM3IpM09jIIQqOz4HLLm61UGIHZ8SvldIWkhKl"
+        "AckMq5G0FkJUso8gEA9bC760p7skC+ShW5mYoYSK0Kdu875abWkT1Ti7cUZyknmS"
+        "sERI6/L+HU714CUHwY8iQ5YsjHwk0bkhgpb9BKgKBn3EDcFTzLST9y4OpA/Zw20m"
+        "2mz+SIsAYSZY3gu5iYD0Agk80ZtpWKdnya35JuhI0btv+mw="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A self-signed Ed25519 certificate valid until `99991231235959Z`.
+function ed25519() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIHxMIGkoAMCAQICAQcwBQYDK2VwMBcxFTATBgNVBAMMDEVkMjU1MTkgU2VsZjAg"
+        "Fw0yNjAxMDEwMDAwMDBaGA85OTk5MTIzMTIzNTk1OVowFzEVMBMGA1UEAwwMRWQy"
+        "NTUxOSBTZWxmMCowBQYDK2VwAyEANPwnXZLevYOY2aSHzQEDjTaRH8mMBnkHyn6V"
+        "j0wcrr2jEzARMA8GA1UdEwEB/wQFMAMBAf8wBQYDK2VwA0EAvB3fafbD03AWDpwG"
+        "L6OVr45918r8W6EBmvP86NpxJFttX7zArSXDknjddCVPKLpMvgpQsWMYFSvAFO63"
+        "iiuzAA=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A certificate the intermediate signed by RSA-PSS over SHA-256, its salt 32 bytes.
+function pss() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIIChDCCATigAwIBAgIBYzBBBgkqhkiG9w0BAQowNKAPMA0GCWCGSAFlAwQCAQUA"
+        "oRwwGgYJKoZIhvcNAQEIMA0GCWCGSAFlAwQCAQUAogMCASAwWzELMAkGA1UEBhMC"
+        "SVQxFDASBgNVBAoMC0hlcm9lcyBUZXN0MRgwFgYDVQQLDA9Hcm91bmQsIENvbnRy"
+        "b2wxHDAaBgNVBAMME0hlcm9lcyBJbnRlcm1lZGlhdGUwHhcNMjYwMTAxMDAwMDAw"
+        "WhcNMzYwMTAxMDAwMDAwWjATMREwDwYDVQQDDAhQU1MgTGVhZjBZMBMGByqGSM49"
+        "AgEGCCqGSM49AwEHA0IABA3dsVnKyz4wawSiBCRzz+Xo1cCBtT/2G2F+mGlky1M/"
+        "2uG5KixGX4fOXgfu/cJSY0SLZIM3G4T4mPiNzrZhe5cwQQYJKoZIhvcNAQEKMDSg"
+        "DzANBglghkgBZQMEAgEFAKEcMBoGCSqGSIb3DQEBCDANBglghkgBZQMEAgEFAKID"
+        "AgEgA4IBAQCRYQbPI9oEHgSO7mVfXzswcmF3lZcR72IaERVZpkKmvXgzxeeUv4Ht"
+        "cEu3gWkw6tndmr+t4zf275J4QeOOBeyfm2jEiZFRUOQ4GnFySaSnCNl/sNs4qgAh"
+        "oYJgWyELYjHrATczXThhkTDWsP+P7tsKuQ3aK6MZiXtnELb5oQZ4cEoOdxFtcBMt"
+        "YnYFcg/tC9ruvULQwDveHEyBzgMMcqEKSrWVnD1E2Zpco8QI3qampfkZNRVmm/7a"
+        "lXCx6gkj5uzfL/IFteKF83M+QzDmLBoqGwIFgWeXWsbOeAKVEr57jZUU+BZqBkJh"
+        "80AlopT+/FU6TzlKKvoebavXU+HrGfml"
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A certificate request for `request.example.com`, with a challenge password and a subject alternative name requested.
+function request() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE REQUEST-----"
+        "MIIBNzCB3gIBADA0MRwwGgYDVQQDDBNyZXF1ZXN0LmV4YW1wbGUuY29tMRQwEgYD"
+        "VQQKDAtIZXJvZXMgVGVzdDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABA3dsVnK"
+        "yz4wawSiBCRzz+Xo1cCBtT/2G2F+mGlky1M/2uG5KixGX4fOXgfu/cJSY0SLZIM3"
+        "G4T4mPiNzrZhe5egSDAVBgkqhkiG9w0BCQcxCAwGc2VjcmV0MC8GCSqGSIb3DQEJ"
+        "DjEiMCAwHgYDVR0RBBcwFYITcmVxdWVzdC5leGFtcGxlLmNvbTAKBggqhkjOPQQD"
+        "AgNIADBFAiEA3KN85VHF77I0A8IziRwxV3ru1m88FtILbOLqvG9zCiMCIE0T4g2G"
+        "AtdxDEIBZ0MzjeKeTKoudndPWKy503ww7LXJ"
+        "-----END CERTIFICATE REQUEST-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# The intermediate's revocation list: number 42, two serials revoked, the first for a key compromised.
+function crl() -> str
+    lines = [
+        "-----BEGIN X509 CRL-----"
+        "MIICKjCCARICAQEwDQYJKoZIhvcNAQELBQAwWzELMAkGA1UEBhMCSVQxFDASBgNV"
+        "BAoMC0hlcm9lcyBUZXN0MRgwFgYDVQQLDA9Hcm91bmQsIENvbnRyb2wxHDAaBgNV"
+        "BAMME0hlcm9lcyBJbnRlcm1lZGlhdGUXDTI2MDEwMTAwMDAwMFoXDTI2MDIwMTAw"
+        "MDAwMFowUjA7AgIQARcNMjYwMTAyMDAwMDAwWjAmMAoGA1UdFQQDCgEBMBgGA1Ud"
+        "GAQRGA8yMDI1MTIzMTAwMDAwMFowEwICEAIXDTI2MDEwMzAwMDAwMFqgLzAtMAoG"
+        "A1UdFAQDAgEqMB8GA1UdIwQYMBaAFKMihVTxVwNf7KIk5Uo469SVecmLMA0GCSqG"
+        "SIb3DQEBCwUAA4IBAQBkK4kvsMCJe6bz0eMFqm82dwczS8ZwyXg0YXH3lQMho19I"
+        "pyuzIOSEhTcYV6wcM/yLd5UprRyztWfpe7EjVqMxQyeK4aZtQn0Zb9zZ48QYJ8Ie"
+        "8CBZk3BYNyW0hxeH/H5lmaLjZkuOa/M5KdRlgiYf0I1oq6XL+O0EkK1+c3bRMH3o"
+        "1Gnd8hlfFalEn+rSvbLXqnfCeJ+OnQQcE2wVZoGL6a8kc3PoRqG0T7g3/7qvupXc"
+        "aXtt2VpAjgdrc0IL3PyNNLSaXkRmHSzCqIz/b1/eTZUrvDpUjEXg8lg0YqBewijf"
+        "3+y5f02EUQFLWmRXdp8mTuTk835xrjKqXINSc2zL"
+        "-----END X509 CRL-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A leaf for `bad.example.com`, which the intermediate's constraints exclude.
+function excluded() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIICWDCCAUCgAwIBAgIBDDANBgkqhkiG9w0BAQsFADBbMQswCQYDVQQGEwJJVDEU"
+        "MBIGA1UECgwLSGVyb2VzIFRlc3QxGDAWBgNVBAsMD0dyb3VuZCwgQ29udHJvbDEc"
+        "MBoGA1UEAwwTSGVyb2VzIEludGVybWVkaWF0ZTAeFw0yNjAxMDEwMDAwMDBaFw0y"
+        "NzAxMDEwMDAwMDBaMBoxGDAWBgNVBAMMD2JhZC5leGFtcGxlLmNvbTBZMBMGByqG"
+        "SM49AgEGCCqGSM49AwEHA0IABA3dsVnKyz4wawSiBCRzz+Xo1cCBtT/2G2F+mGlk"
+        "y1M/2uG5KixGX4fOXgfu/cJSY0SLZIM3G4T4mPiNzrZhe5ejMzAxMBoGA1UdEQQT"
+        "MBGCD2JhZC5leGFtcGxlLmNvbTATBgNVHSUEDDAKBggrBgEFBQcDATANBgkqhkiG"
+        "9w0BAQsFAAOCAQEAhX7MBmBO85B1ffSRavUoStiwAhnowaREsCH6jR+tQP3K5f/E"
+        "Axbt8VaVx/EWyj2cJUccPaG8+ctHDiAcotaQLeo4759FOUxKcsMyyn+j5qwlXdnR"
+        "5oSTzl65v+jHfymdlOR4JCDan9lP8AO+7nE3J4TzWRFn9MQ/0vgcE8iyORes4OeH"
+        "QJ0JPPbHFUBia29iskl33uIS5Pri6ZcyEbwA+JzpqUpaJTS0kzUx1aOj1O5lAbD+"
+        "xPQx7kIRuEDY4k5dj10L2LsLTwth1wGs/Fg0sWVYBGxd0EMMhnwT5X+G7KQBODNY"
+        "WJYpalghT3ggGmmX3Hof9SB5shDgOfs7y6XrjA=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A leaf for `example.org`, which the intermediate's constraints do not permit.
+function outside() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIICUDCCATigAwIBAgIBCzANBgkqhkiG9w0BAQsFADBbMQswCQYDVQQGEwJJVDEU"
+        "MBIGA1UECgwLSGVyb2VzIFRlc3QxGDAWBgNVBAsMD0dyb3VuZCwgQ29udHJvbDEc"
+        "MBoGA1UEAwwTSGVyb2VzIEludGVybWVkaWF0ZTAeFw0yNjAxMDEwMDAwMDBaFw0y"
+        "NzAxMDEwMDAwMDBaMBYxFDASBgNVBAMMC2V4YW1wbGUub3JnMFkwEwYHKoZIzj0C"
+        "AQYIKoZIzj0DAQcDQgAEDd2xWcrLPjBrBKIEJHPP5ejVwIG1P/YbYX6YaWTLUz/a"
+        "4bkqLEZfh85eB+79wlJjRItkgzcbhPiY+I3OtmF7l6MvMC0wFgYDVR0RBA8wDYIL"
+        "ZXhhbXBsZS5vcmcwEwYDVR0lBAwwCgYIKwYBBQUHAwEwDQYJKoZIhvcNAQELBQAD"
+        "ggEBAJYEzIWPqlRNOrhkvGFezwxF0QuoWjvEzyQJL95b0FtB+J7c/FINBV+LFdsC"
+        "h93FMoZ5Fczp7h8tulmaf/d5LAWFfab+KKpCK1nH4+uDNPBdCjUUOHXOHK4Wh54E"
+        "yFU+zHtWj3X0LqVhogQTKheoS4slMISKEn55Rdswj1R3GRSeJjxmAitQNDv+lJqL"
+        "/H+5J2A6W83K4SZpxmGoorIYFPYWv/b34ZiLRxVEmWBxVeIT9XV4+l9IpCdLIbOq"
+        "gMVkeKqzUW5A44JxerrDKgKi1PPygm37TQ1SeFTVh7a55EmuUwraKLR930qFNoVI"
+        "3gZNiU/hYCU1Re3erQt3RixuKXw="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"
+
+# A leaf for `198.51.100.1`, which the intermediate's constraints do not permit.
+function outside_ip() -> str
+    lines = [
+        "-----BEGIN CERTIFICATE-----"
+        "MIICQDCCASigAwIBAgIBDjANBgkqhkiG9w0BAQsFADBbMQswCQYDVQQGEwJJVDEU"
+        "MBIGA1UECgwLSGVyb2VzIFRlc3QxGDAWBgNVBAsMD0dyb3VuZCwgQ29udHJvbDEc"
+        "MBoGA1UEAwwTSGVyb2VzIEludGVybWVkaWF0ZTAeFw0yNjAxMDEwMDAwMDBaFw0y"
+        "NzAxMDEwMDAwMDBaMA0xCzAJBgNVBAMMAmlwMFkwEwYHKoZIzj0CAQYIKoZIzj0D"
+        "AQcDQgAEDd2xWcrLPjBrBKIEJHPP5ejVwIG1P/YbYX6YaWTLUz/a4bkqLEZfh85e"
+        "B+79wlJjRItkgzcbhPiY+I3OtmF7l6MoMCYwDwYDVR0RBAgwBocExjNkATATBgNV"
+        "HSUEDDAKBggrBgEFBQcDATANBgkqhkiG9w0BAQsFAAOCAQEAKutJkd2VPt5Tw1yB"
+        "TbNdPoyqdjDZXoAP1IuXDeguo4mj8bCTH5Oc682wyedMDybF9EEjSAHYjB4SGIqs"
+        "DPDNNuWlchfrYbdj3CT993xwqZUuCV1MAdZOONwHkHmjVELuV4iQBFxqVXEhsNSG"
+        "TfEertJjL/ej3tnO3qfpsfND0iYyS5fex1qfkpBjTXUk9pO1Cf4xWvMmNkwygZgs"
+        "dFbJ5B51esQ+E8t18Cha7icktdNOqi5puM0+wFsVBFvtin3/t3/gl6lwaxJmp0DQ"
+        "FYqtRCpKpdqkHpdAsf3u8GZuER3LsCSSxuc3kyAW2ivJoTlu+7vYMwwo9nDQzfuk"
+        "C7G9kA=="
+        "-----END CERTIFICATE-----"
+    ]
+    return lines.join("\n") + "\n"

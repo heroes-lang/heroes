@@ -1,0 +1,442 @@
+# PEM, the text that carries binary data between a `-----BEGIN <label>-----`
+# line and a `-----END <label>-----` line, read and written by RFC 7468:
+# certificates, keys, requests, any DER a program keeps as text. A text may
+# hold several blocks and any explanatory text around them, which is passed
+# over; the headers of RFC 1421's older form (`Proc-Type`, `DEK-Info`) are
+# read and kept in order.
+#
+# **Lax and strict reading.** `parse`, `parse_all` and `.lax` read RFC 7468's
+# lax grammar: white space before a boundary line and after it, base 64 broken
+# anywhere by spaces, tabs and blank lines, padding left out, line ends LF,
+# CR LF or CR, and RFC 1421's headers. `parse_strict` and `.strict` read its
+# strict grammar: the boundary lines alone on their lines, base 64 in lines of
+# exactly 64 characters but the last, padded, and no header. Both refuse a
+# block whose END line names another label, or whose base 64 is broken, saying
+# where: a broken block is never passed over in silence, as Go's
+# `pem.Decode` passes it.
+#
+# `format` writes the strict form, lines of 64 characters each ending in
+# `\n`, which both readings accept.
+#
+# It does not decrypt the encrypted blocks of RFC 1421 (their headers are
+# read, the data is left as it is), read the DER inside a block (`asn1`,
+# `x509`, `crypto/keypairs`), or read a stream (`io` reads the text). It fails
+# with `invalid` and `not_found`.
+
+use bytes
+use pem/internal/scan
+use strings
+
+## Codes
+
+# The text is not PEM where a block was expected, or a block cannot be
+# written: `parse`, `parse_all`, `parse_strict`, `parse_next`, `format`,
+# `format_all`. The message says at which byte.
+constant INVALID: str
+    "invalid"
+
+# No block where one was asked for: `parse`, `parse_strict`, `parse_next`;
+# and no header of the name asked: `header_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+## Blocks
+
+# One header of RFC 1421's form, `Proc-Type: 4,ENCRYPTED`, as a block read
+# holds it.
+record Header
+    # The name, before the colon, its white space trimmed: `DEK-Info`.
+    name: str
+    # The value, after the colon, its white space trimmed; a value folded
+    # over several lines is joined with one space where each line broke.
+    value: str
+
+# One PEM block: its label, its headers, and the bytes its base 64 holds.
+# Built directly; `format` refuses a label or a header PEM cannot hold.
+record Block
+    # The label between `-----BEGIN ` and `-----`: `CERTIFICATE`,
+    # `PRIVATE KEY`; printable ASCII, spaces and hyphens between its
+    # characters, and empty allowed.
+    label: str
+    # The headers of RFC 1421's form, in the order the text holds them;
+    # empty for RFC 7468's form, which has none.
+    headers: [Header]
+    # The bytes the block carries, of any length.
+    data: [u8]
+
+# A block found by `parse_next`, with where it stands in the text.
+record Found
+    # The block read.
+    block: Block
+    # The byte index where its BEGIN line begins, white space before it on
+    # that line included.
+    start: i64
+    # The byte index past its END line's line end: where the next search
+    # begins.
+    end: i64
+
+# Which of RFC 7468's two grammars a block is read by.
+variant Reading
+    # The lax grammar: white space and blank lines anywhere in the base 64,
+    # white space around the boundary lines, padding left out, and RFC 1421's
+    # headers.
+    lax
+    # The strict grammar: boundary lines alone, base 64 in lines of 64
+    # characters but the last, padded, no white space and no header.
+    strict
+
+## Reading
+
+# The first PEM block in `text`, read by the lax grammar; text before and
+# after it passed over.
+#
+# - `text`: any text; a block begins on a line of its own.
+#
+# Fails `not_found` where `text` holds no BEGIN line, and `invalid` where the
+# first block is broken: its END line missing or naming another label, its
+# label not one RFC 7468 allows, its base 64 not base 64, a header line with
+# no colon. See also `parse_all`, `parse_strict`, `parse_next`.
+function parse(text: str) -> Block?
+    found = parse_next(text: text, from: 0, reading: .lax)?
+    return ok(found.block)
+
+# Every PEM block in `text`, in order, read by the lax grammar.
+#
+# - `text`: any text; the text between blocks is passed over.
+#
+# The empty list where `text` holds no BEGIN line. Fails `invalid` where a
+# block is broken, as `parse` says, the message saying at which byte. See
+# also `parse`, `format_all`.
+function parse_all(text: str) -> [Block]?
+    blocks: [Block] @= []
+    at @= 0
+
+    while at < text.len()
+        match parse_next(text: text, from: at, reading: .lax)
+            .ok found =>
+                blocks @ blocks.push(found.block)
+                at @ found.end
+            .err e =>
+                if e.code == NOT_FOUND
+                    return ok(blocks)
+                return fail(code: e.code, msg: e.msg)
+
+    return ok(blocks)
+
+# The first PEM block in `text`, read by the strict grammar.
+#
+# - `text`: any text; the block's BEGIN and END lines stand alone on their
+#   lines, with nothing before them.
+#
+# Fails `not_found` where `text` holds no BEGIN line, and `invalid` where the
+# block is not strict: a line of base 64 other than 64 characters before the
+# last, white space in it, padding missing, a header, or anything `parse`
+# refuses. See also `parse`.
+function parse_strict(text: str) -> Block?
+    found = parse_next(text: text, from: 0, reading: .strict)?
+    return ok(found.block)
+
+# The next PEM block in `text` from byte `from`, read by `reading`, with
+# where it begins and ends.
+#
+# - `text`: any text.
+# - `from`: the byte index where the search begins, 0 to the length of
+#   `text`, read as the start of a line: 0, or a `Found`'s `end`.
+# - `reading`: the grammar the block is read by.
+#
+# Fails `not_found` where no BEGIN line stands from `from` on, and `invalid`
+# where the block found is broken for `reading`. Aborts where `from` is
+# negative or past the length of `text`. See also `parse`, `parse_all`.
+function parse_next(text: str, from: i64, reading: Reading) -> Found?
+    assert from >= 0 && from <= text.len()
+
+    strict = match reading
+        .lax    => false
+        .strict => true
+
+    piece = scan.next_block(text: text, from: from, strict: strict)?
+    headers: [Header] @= []
+
+    for k in range(from: 0, to: piece.names.len())
+        headers @ headers.push(Header(name: piece.names[k], value: piece.values[k]))
+
+    block = Block(label: piece.label, headers: headers, data: piece.data)
+    return ok(Found(block: block, start: piece.start, end: piece.end))
+
+# The value of the first header of `block` named `name`, the names compared
+# with ASCII case ignored, as RFC 1421's names are.
+#
+# - `block`: a block read, or built.
+# - `name`: the header's name: `Proc-Type`, `DEK-Info`.
+#
+# Fails `not_found` where `block` has no such header. See also `Header`.
+function header_of(block: Block, name: str) -> str?
+    for h in block.headers
+        if strings.equals_ignoring_case_ascii(a: h.name, b: name)
+            return ok(h.value)
+
+    return fail(code: NOT_FOUND, msg: f"no header \"{name}\" in the block \"{block.label}\"")
+
+# Whether `s` is a label RFC 7468 allows: printable ASCII but the hyphen,
+# with single hyphens or spaces between its characters, or empty.
+#
+# - `s`: the label, without `-----BEGIN ` and `-----`.
+#
+# See also `format`.
+function is_label(s: str) -> bool
+    return scan.is_label(s)
+
+## Writing
+
+# `block` written as PEM: its BEGIN line, its headers and a blank line where
+# it has any, its data in base 64 in lines of 64 characters, its END line,
+# each line ending in `\n`.
+#
+# - `block`: the block; empty data writes no line between the boundaries.
+#
+# The headers are written in their order. Fails `invalid` where the label is
+# not one `is_label` accepts, where a header's name is empty or holds a colon,
+# white space or a byte outside printable ASCII, and where a value holds a
+# line end or another control character. See also `parse`, `format_all`.
+function format(block: Block) -> str?
+    if !scan.is_label(block.label)
+        return fail(code: INVALID, msg: f"\"{block.label}\" is not a label RFC 7468 allows")
+    lines: [str] @= [scan.BEGIN + block.label + scan.DASHES]
+
+    for h in block.headers
+        scan.check_header(name: h.name, value: h.value)?
+        lines @ lines.push(h.name + ": " + h.value)
+
+    if block.headers.len() > 0
+        lines @ lines.push("")
+    encoded = bytes.format_base64(block.data)
+    at @= 0
+
+    while at < encoded.len()
+        stop = if encoded.len() - at > 64
+            at + 64
+        else
+            encoded.len()
+        lines @ lines.push(encoded.slice(from: at, to: stop))
+        at @ stop
+
+    lines @ lines.push(scan.END + block.label + scan.DASHES)
+    lines @ lines.push("")
+    return ok(lines.join("\n"))
+
+# Every block of `blocks` written by `format`, one after the other.
+#
+# - `blocks`: the blocks, in order; none writes the empty text.
+#
+# Fails as `format` does for the first block it refuses. See also
+# `parse_all`.
+function format_all(blocks: [Block]) -> str?
+    texts: [str] @= []
+
+    for block in blocks
+        texts @ texts.push(format(block)?)
+
+    return ok(texts.join(""))
+
+## Tests
+
+test "parse: a block alone, text around it, and no block"
+    text = "-----BEGIN MESSAGE-----\nZ3JvdW5kIGNvbnRyb2w=\n-----END MESSAGE-----\n"
+    block = parse(text).must()
+    assert block.label == "MESSAGE"
+    assert block.headers.len() == 0
+    assert block.data == bytes.from_text("ground control")
+    around = parse("café before\n" + text + "and after").must()
+    assert around == block
+
+    match parse("no block here\n")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match parse("")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "parse: an empty label, empty data, and an END line ending the text"
+    a = parse("-----BEGIN -----\nQQ==\n-----END -----\n").must()
+    assert a.label == ""
+    assert a.data == bytes.from_text("A")
+    b = parse("-----BEGIN X-----\n-----END X-----\n").must()
+    assert b.data.len() == 0
+    c = parse("-----BEGIN X-----\nQQ==\n-----END X-----").must()
+    assert c.data == bytes.from_text("A")
+
+test "parse: what Go refuses and RFC 7468's lax grammar reads: CR alone, no padding, white space before BEGIN"
+    assert parse("-----BEGIN M-----\rQQ==\r-----END M-----\r").must().data == bytes.from_text("A")
+    assert parse("-----BEGIN M-----\nQQ\n-----END M-----\n").must().data == bytes.from_text("A")
+    assert parse("  -----BEGIN M-----\nQQ==\n  -----END M-----  \n").must().data == bytes.from_text("A")
+
+test "parse: a broken block is refused, never passed over"
+    match parse("-----BEGIN A-----\nQQ==\n-----END B-----\n-----BEGIN C-----\nQQ==\n-----END C-----\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "parse_all: none, two with text between, and a broken second"
+    assert parse_all("").must().len() == 0
+    assert parse_all("plain text\n").must().len() == 0
+    text = "before\n-----BEGIN A-----\nQQ==\n-----END A-----\nbetween\n-----BEGIN B-----\nQg==\n-----END B-----\n"
+    blocks = parse_all(text).must()
+    assert blocks.len() == 2
+    assert blocks[0].label == "A"
+    assert blocks[1].data == bytes.from_text("B")
+    assert parse_all("-----BEGIN A-----\nQQ==\n-----END A-----\n-----BEGIN B-----\n").is_err()
+
+test "parse_next: where a block begins and ends, and a search from its end"
+    text = "x\n-----BEGIN A-----\nQQ==\n-----END A-----\n"
+    found = parse_next(text: text, from: 0, reading: .lax).must()
+    assert found.start == 2
+    assert found.end == text.len()
+    assert parse_next(text: text, from: found.end, reading: .lax).is_err()
+
+test "parse_strict: lines of 64, and a block the lax grammar reads and the strict one refuses"
+    data: [u8] @= []
+
+    for k in range(from: 0, to: 100)
+        data @ data.push(to_u8(k).must())
+
+    text = format(Block(label: "DATA", headers: [], data: data)).must()
+    assert parse_strict(text).must().data == data
+    assert parse_strict("-----BEGIN M-----\nQQ\n-----END M-----\n").is_err()
+    assert parse_strict("-----BEGIN M-----\n QQ==\n-----END M-----\n").is_err()
+
+test "header_of: case ignored, the first of two, and absent"
+    block = Block(
+        label: "K",
+        headers: [Header(name: "DEK-Info", value: "a"), Header(name: "dek-info", value: "b")],
+        data: []
+    )
+    assert header_of(block: block, name: "dek-INFO").must() == "a"
+
+    match header_of(block: block, name: "Proc-Type")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "format: no data, 48 bytes on one line of 64, headers in their order, and refusals"
+    assert format(Block(label: "X", headers: [], data: [])).must() == "-----BEGIN X-----\n-----END X-----\n"
+    zeros: [u8] = [
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+        0
+    ]
+    line = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    assert format(Block(label: "X", headers: [], data: zeros)).must() == f"-----BEGIN X-----\n{line}\n-----END X-----\n"
+    headed = Block(
+        label: "X",
+        headers: [Header(name: "B", value: "2"), Header(name: "A", value: "1")],
+        data: bytes.from_text("hello")
+    )
+    assert format(headed).must() == "-----BEGIN X-----\nB: 2\nA: 1\n\naGVsbG8=\n-----END X-----\n"
+    assert parse(format(headed).must()).must() == headed
+    assert format(Block(label: "-X", headers: [], data: [])).is_err()
+    assert format(Block(label: "X", headers: [Header(name: "A:B", value: "")], data: [])).is_err()
+
+test "format_all: none, and two blocks read back"
+    assert format_all([]).must() == ""
+    blocks = [Block(label: "A", headers: [], data: [1]), Block(label: "B", headers: [], data: [2, 3])]
+    assert parse_all(format_all(blocks).must()).must() == blocks
+
+test "is_label: the labels RFC 7468 names, and a label with a trailing space"
+    assert is_label("CERTIFICATE")
+    assert is_label("ENCRYPTED PRIVATE KEY")
+    assert !is_label("CERTIFICATE ")
+
+## Examples
+
+# The bytes of a block read from a text that says more around it.
+test "parse: a block inside a longer text"
+    text = "A message:\n-----BEGIN MESSAGE-----\nZ3JvdW5kIGNvbnRyb2w=\n-----END MESSAGE-----\nEnd.\n"
+    block = parse(text).must()
+    assert block.label == "MESSAGE"
+    assert bytes.to_text(block.data).must() == "ground control"
+
+# Every certificate of a bundle, in order.
+test "parse_all: two blocks of one text"
+    text = "-----BEGIN A-----\nQQ==\n-----END A-----\n-----BEGIN B-----\nQg==\n-----END B-----\n"
+    labels: [str] @= []
+
+    for block in parse_all(text).must()
+        labels @ labels.push(block.label)
+
+    assert labels == ["A", "B"]
+
+# A block written as `format` writes it, read by the strict grammar.
+test "parse_strict: a block written by format"
+    text = format(Block(label: "DATA", headers: [], data: [1, 2, 3])).must()
+    assert parse_strict(text).must().data == [1, 2, 3]
+
+# The blocks of a text walked one after the other, by their ends.
+test "parse_next: a walk through a text"
+    text = "-----BEGIN A-----\nQQ==\n-----END A-----\n-----BEGIN B-----\nQg==\n-----END B-----\n"
+    first = parse_next(text: text, from: 0, reading: .strict).must()
+    second = parse_next(text: text, from: first.end, reading: .strict).must()
+    assert second.block.label == "B"
+    assert second.end == text.len()
+
+# The cipher an old encrypted key names in its headers.
+test "header_of: the DEK-Info of an encrypted key"
+    text = "-----BEGIN RSA PRIVATE KEY-----\nProc-Type: 4,ENCRYPTED\nDEK-Info: AES-128-CBC,00FF\n\nQQ==\n-----END RSA PRIVATE KEY-----\n"
+    assert header_of(block: parse(text).must(), name: "DEK-Info").must() == "AES-128-CBC,00FF"
+
+# A label checked before it is written.
+test "is_label: a label and a text that is not one"
+    assert is_label("PRIVATE KEY")
+    assert !is_label("PRIVATE--KEY")
+
+# Bytes written as a block.
+test "format: bytes as PEM"
+    assert format(Block(label: "MESSAGE", headers: [], data: bytes.from_text("ground control"))).must() == "-----BEGIN MESSAGE-----\nZ3JvdW5kIGNvbnRyb2w=\n-----END MESSAGE-----\n"
+
+# Two blocks written one after the other.
+test "format_all: a bundle of two"
+    text = format_all([Block(label: "A", headers: [], data: [65]), Block(label: "B", headers: [], data: [66])]).must()
+    assert text == "-----BEGIN A-----\nQQ==\n-----END A-----\n-----BEGIN B-----\nQg==\n-----END B-----\n"

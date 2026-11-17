@@ -1,0 +1,12 @@
+# Reaches Rebel's `pem`, so that `heroes test` on this file runs the
+# package's own tests and its examples (spec § 12). It prints the label and
+# the length of a block read from a text.
+
+use <rebel>/pem
+
+function main()
+    text = "-----BEGIN MESSAGE-----\nZ3JvdW5kIGNvbnRyb2w=\n-----END MESSAGE-----\n"
+
+    match pem.parse(text)
+        .ok block => print(f"{block.label}: {block.data.len()} bytes")
+        .err e    => print(f"{e.code}: {e.msg}")

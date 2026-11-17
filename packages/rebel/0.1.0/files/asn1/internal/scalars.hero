@@ -1,0 +1,446 @@
+# The content of the primitive types that hold a number or bits, read and
+# written: BOOLEAN (X.690 § 8.2), INTEGER and ENUMERATED (§§ 8.3, 8.4), BIT
+# STRING (§ 8.6), OBJECT IDENTIFIER and RELATIVE-OID (§§ 8.19, 8.20). An
+# integer of more than eight bytes and an arc of more than 56 bits go through
+# `big`, so neither has a size limit but the data's. The expected bytes of the
+# tests were observed from OpenSSL 4.1's `asn1parse -genstr`.
+
+use big
+
+# The code of content that is not of its type.
+constant INVALID: str
+    "invalid"
+
+# The code of an arc past 64 bits asked for as a `u64`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The bits of a BIT STRING read.
+record Bits
+    # The bits packed eight to a byte, those past `bit_len` zero.
+    bytes: [u8]
+    # How many bits.
+    bit_len: i64
+
+# The truth value of a BOOLEAN's content: one byte, which DER writes 0x00 or
+# 0xff and BER any.
+function boolean(content: [u8], der: bool) -> bool?
+    if content.len() != 1
+        return fail(code: INVALID, msg: f"a BOOLEAN of {content.len()} bytes, where it has one")
+
+    if der && content[0] != 0 && content[0] != 0xff
+        return fail(code: INVALID, msg: f"a BOOLEAN of the byte {content[0]}, where DER writes 0 or 255")
+    return ok(content[0] != 0)
+
+# Whether an INTEGER's or an ENUMERATED's content is one: at least one byte,
+# in its fewest, as BER and DER both ask. Fails `invalid` naming `what`.
+function check_integer(content: [u8], what: str) -> ()?
+    if content.len() == 0
+        return fail(code: INVALID, msg: f"an {what} with no byte")
+
+    if content.len() > 1
+        if content[0] == 0 && content[1] < 0x80 || content[0] == 0xff && content[1] >= 0x80
+            return fail(code: INVALID, msg: f"an {what} not in its fewest bytes")
+    return ok()
+
+# The integer of a checked content of at most eight bytes, two's complement.
+function small_integer(content: [u8]) -> i64
+    first = to_i64(content[0]).must()
+
+    n @= if first >= 0x80
+        first - 256
+    else
+        first
+
+    for k in range(from: 1, to: content.len())
+        n @ n * 256 + to_i64(content[k]).must()
+
+    return n
+
+# The content of the INTEGER `n`: its fewest bytes in two's complement.
+function integer_content(n: i64) -> [u8]
+    reversed: [u8] @= []
+    v @= n
+    more @= true
+
+    while more
+        b = v & 0xff
+        reversed @ reversed.push(to_u8(b).must())
+        v @ v >> 8
+        more @ !(v == 0 && b < 0x80 || v == -1 && b >= 0x80)
+
+    out: [u8] @= []
+    k @= reversed.len() - 1
+
+    while k >= 0
+        out @ out.push(reversed[k])
+        k @ k - 1
+
+    return out
+
+# The content of the INTEGER `n` of any size.
+function big_content(n: big.Integer) -> [u8]
+    b = big.to_bytes_signed(n: n, order: .big_endian)
+
+    if b.len() == 0
+        return [0]
+    return b
+
+# The bits of a BIT STRING's content: its first byte the count of unused
+# bits in its last, 0 to 7, which DER writes zero and BER may not, so BER's
+# are cleared here.
+function bits(content: [u8], der: bool) -> Bits?
+    if content.len() == 0
+        return fail(code: INVALID, msg: "a BIT STRING with no byte")
+    unused = to_i64(content[0]).must()
+
+    if unused > 7
+        return fail(code: INVALID, msg: f"a BIT STRING with {unused} unused bits, more than 7")
+
+    if content.len() == 1 && unused != 0
+        return fail(code: INVALID, msg: f"an empty BIT STRING with {unused} unused bits")
+    data @= content.slice(from: 1, to: content.len())
+
+    if unused > 0
+        last = data.len() - 1
+        mask = (1 << unused) - 1
+        held = to_i64(data[last]).must()
+
+        if held & mask != 0
+            if der
+                return fail(code: INVALID, msg: "a BIT STRING whose unused bits are not zero, as DER writes them")
+            data[last] @ to_u8(held & ~mask).must()
+    return ok(Bits(bytes: data, bit_len: data.len() * 8 - unused))
+
+# The content of the bits `data`, `bit_len` of them. Fails `invalid` where
+# `data` holds another number of bytes or bits past `bit_len` are set.
+function bits_content(data: [u8], bit_len: i64) -> [u8]?
+    if bit_len < 0 || data.len() != (bit_len + 7) / 8
+        return fail(code: INVALID, msg: f"a BIT STRING of {bit_len} bits held in {data.len()} bytes")
+    unused = data.len() * 8 - bit_len
+
+    if unused > 0 && to_i64(data[data.len() - 1]).must() & (1 << unused) - 1 != 0
+        return fail(code: INVALID, msg: "a BIT STRING whose bits past its length are set")
+    out: [u8] @= [to_u8(unused).must()]
+
+    for b in data
+        out @ out.push(b)
+
+    return ok(out)
+
+# The dotted text of an OBJECT IDENTIFIER's content, or of a RELATIVE-OID's
+# where `relative` is true: each arc in base 128, its last byte's top bit
+# clear, no group of zero bits first.
+function oid_text(content: [u8], relative: bool) -> str?
+    what = if relative
+        "RELATIVE-OID"
+    else
+        "OBJECT IDENTIFIER"
+
+    if content.len() == 0
+        return fail(code: INVALID, msg: f"an {what} with no byte")
+
+    if content[content.len() - 1] >= 0x80
+        return fail(code: INVALID, msg: f"an {what} that ends inside an arc")
+    arcs: [str] @= []
+    i @= 0
+
+    while i < content.len()
+        if content[i] == 0x80
+            return fail(code: INVALID, msg: f"an {what} with an arc that begins with a group of zero bits, at byte {i}")
+        j @= i
+
+        while content[j] >= 0x80
+            j @ j + 1
+
+        if j - i < 8
+            v @= 0
+
+            for k in range(from: i, to: j + 1)
+                v @ v * 128 + (to_i64(content[k]).must() & 0x7f)
+
+            if !relative && arcs.len() == 0
+                first = if v < 40
+                    0
+                else if v < 80
+                    1
+                else
+                    2
+                arcs @ arcs.push(to_str(first))
+                arcs @ arcs.push(to_str(v - first * 40))
+            else
+                arcs @ arcs.push(to_str(v))
+        else
+            v @= big.from_int(0)
+
+            for k in range(from: i, to: j + 1)
+                v @ big.add(
+                    a: big.multiply(a: v, b: big.from_int(128)),
+                    b: big.from_int(to_i64(content[k]).must() & 0x7f)
+                )
+
+            if !relative && arcs.len() == 0
+                arcs @ arcs.push("2")
+                arcs @ arcs.push(big.format(big.subtract(a: v, b: big.from_int(80))))
+            else
+                arcs @ arcs.push(big.format(v))
+        i @ j + 1
+
+    return ok(arcs.join("."))
+
+# The arcs of the dotted text `dotted`, each checked: digits alone, no zero
+# before a digit, at least one. Fails `invalid` naming the fault.
+function arcs_text(dotted: str) -> [str]?
+    arcs: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: dotted.len() + 1)
+        if i == dotted.len() || dotted[i] == '.'
+            if i == start
+                return fail(code: INVALID, msg: f"\"{dotted}\" holds an empty arc")
+
+            if dotted[start] == '0' && i - start > 1
+                return fail(code: INVALID, msg: f"\"{dotted}\" holds an arc with a zero before a digit")
+            arcs @ arcs.push(dotted.slice(from: start, to: i))
+            start @ i + 1
+        else if dotted[i] < '0' || dotted[i] > '9'
+            return fail(code: INVALID, msg: f"\"{dotted}\" holds a byte other than a digit or a dot")
+
+    return ok(arcs)
+
+# Whether `dotted` is an OBJECT IDENTIFIER's text, or a RELATIVE-OID's where
+# `relative` is true: two arcs or more, the first 0, 1 or 2, the second
+# below 40 under 0 or 1; any arcs at all for a relative one.
+function check_oid(dotted: str, relative: bool) -> ()?
+    arcs = arcs_text(dotted)?
+
+    if relative
+        return ok()
+
+    if arcs.len() < 2
+        return fail(code: INVALID, msg: f"\"{dotted}\" holds fewer than two arcs")
+
+    if arcs[0] != "0" && arcs[0] != "1" && arcs[0] != "2"
+        return fail(code: INVALID, msg: f"\"{dotted}\" begins with an arc other than 0, 1 or 2")
+
+    if arcs[0] != "2" && (arcs[1].len() > 2 || to_i64_text(arcs[1]) >= 40)
+        return fail(code: INVALID, msg: f"\"{dotted}\" has a second arc above 39 under a first of {arcs[0]}")
+    return ok()
+
+# The value of the digits `s`, at most eighteen of them.
+function to_i64_text(s: str) -> i64
+    v @= 0
+
+    for k in range(from: 0, to: s.len())
+        v @ v * 10 + to_i64(s[k] - '0').must()
+
+    return v
+
+# The arc whose digits are `s` pushed onto `out` in base 128.
+function push_arc(@out: [u8], s: str)
+    if s.len() <= 18
+        push_small_arc(out: @out, n: to_i64_text(s))
+        return
+    push_big_arc(out: @out, n: big.parse(s).must())
+
+# The arc `n`, 0 or more, pushed onto `out` in base 128.
+function push_small_arc(@out: [u8], n: i64)
+    groups: [i64] @= []
+    v @= n
+    more @= true
+
+    while more
+        groups @ groups.push(v & 0x7f)
+        v @ v >> 7
+        more @ v > 0
+
+    k @= groups.len() - 1
+
+    while k >= 0
+        mark = if k > 0
+            0x80
+        else
+            0
+        out @ out.push(to_u8(groups[k] | mark).must())
+        k @ k - 1
+
+# The arc `n` of any size, 0 or more, pushed onto `out` in base 128.
+function push_big_arc(@out: [u8], n: big.Integer)
+    count @= (big.bit_len(n) + 6) / 7
+
+    if count == 0
+        count @ 1
+    k @= count - 1
+
+    while k >= 0
+        group = big.int_of(big.bit_and(a: big.shift_right(n: n, count: 7 * k), b: big.from_int(0x7f))).must()
+
+        mark = if k > 0
+            0x80
+        else
+            0
+        out @ out.push(to_u8(group | mark).must())
+        k @ k - 1
+
+# The content of the identifier `dotted`, or of the relative one where
+# `relative` is true. Fails `invalid` as `check_oid` does.
+function oid_content(dotted: str, relative: bool) -> [u8]?
+    check_oid(dotted: dotted, relative: relative)?
+    arcs = arcs_text(dotted)?
+    out: [u8] @= []
+    from @= 0
+
+    if !relative
+        first = to_i64_text(arcs[0])
+
+        if arcs[1].len() <= 17
+            push_small_arc(out: @out, n: first * 40 + to_i64_text(arcs[1]))
+        else
+            push_big_arc(out: @out, n: big.add(a: big.parse(arcs[1]).must(), b: big.from_int(first * 40)))
+        from @ 2
+
+    for k in range(from: from, to: arcs.len())
+        push_arc(out: @out, s: arcs[k])
+
+    return ok(out)
+
+# The arcs of the dotted text `dotted` as numbers. Fails `does_not_fit` for an
+# arc past 64 bits.
+function arcs_u64(dotted: str) -> [u64]?
+    out: [u64] @= []
+
+    for arc in arcs_text(dotted)?
+        v: u64 @= 0
+
+        for k in range(from: 0, to: arc.len())
+            digit = to_u64(arc[k] - '0').must()
+
+            if v > (18446744073709551615 - digit) / 10
+                return fail(code: DOES_NOT_FIT, msg: f"the arc {arc} of \"{dotted}\" is past 64 bits")
+            v @ v * 10 + digit
+
+        out @ out.push(v)
+
+    return ok(out)
+
+test "boolean: the two of DER, BER's other true, and the wrong length"
+    assert boolean(content: [0xff], der: true).must()
+    assert !boolean(content: [0x00], der: true).must()
+    assert boolean(content: [0x01], der: true).is_err()
+    assert boolean(content: [0x01], der: false).must()
+    assert boolean(content: [], der: false).is_err()
+    assert boolean(content: [0xff, 0xff], der: false).is_err()
+
+test "check_integer and small_integer: zero, the ends of the i64, and padding refused"
+    assert !check_integer(content: [0x00], what: "INTEGER").is_err()
+    assert check_integer(content: [], what: "INTEGER").is_err()
+    assert check_integer(content: [0x00, 0x7f], what: "INTEGER").is_err()
+    assert check_integer(content: [0xff, 0x80], what: "INTEGER").is_err()
+    assert !check_integer(content: [0x00, 0x80], what: "INTEGER").is_err()
+    assert small_integer([0x00]) == 0
+    assert small_integer([0x80]) == -128
+    assert small_integer([0xff, 0x7f]) == -129
+    assert small_integer([0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]) == 9223372036854775807
+    assert small_integer([0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]) == -9223372036854775807 - 1
+
+test "integer_content: as OpenSSL writes 0, 127, 128, -128, -129 and the ends of the i64"
+    assert integer_content(0) == [0x00]
+    assert integer_content(127) == [0x7f]
+    assert integer_content(128) == [0x00, 0x80]
+    assert integer_content(-128) == [0x80]
+    assert integer_content(-129) == [0xff, 0x7f]
+    assert integer_content(9223372036854775807) == [0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert integer_content(-9223372036854775807 - 1) == [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+test "big_content: zero and 2^63, as OpenSSL writes them"
+    assert big_content(big.from_int(0)) == [0x00]
+    assert big_content(big.parse("9223372036854775808").must()) == [0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+
+test "bits: empty, whole bytes, unused bits, and what DER refuses"
+    assert bits(content: [0x00], der: true).must().bit_len == 0
+    whole = bits(content: [0x00, 0x41], der: true).must()
+    assert whole.bytes == [0x41] && whole.bit_len == 8
+    assert bits(content: [0x04, 0xf0], der: true).must().bit_len == 4
+    assert bits(content: [0x04, 0xf1], der: true).is_err()
+    assert bits(content: [0x04, 0xf1], der: false).must().bytes == [0xf0]
+    assert bits(content: [0x08, 0x00], der: false).is_err()
+    assert bits(content: [0x01], der: false).is_err()
+    assert bits(content: [], der: false).is_err()
+
+test "bits_content: whole bytes, a part byte, and the wrong count"
+    assert bits_content(data: [0x41], bit_len: 8).must() == [0x00, 0x41]
+    assert bits_content(data: [0xf0], bit_len: 4).must() == [0x04, 0xf0]
+    assert bits_content(data: [], bit_len: 0).must() == [0x00]
+    assert bits_content(data: [0xf1], bit_len: 4).is_err()
+    assert bits_content(data: [0xf0, 0x00], bit_len: 4).is_err()
+
+test "oid_text: RSA's arc, a first arc of 2, an arc past 64 bits, and the broken"
+    assert oid_text(content: [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d], relative: false).must() == "1.2.840.113549"
+    assert oid_text(content: [0x88, 0x37, 0x03], relative: false).must() == "2.999.3"
+    assert oid_text(content: [0x27], relative: false).must() == "0.39"
+    uuid: [u8] = [
+        0x69
+        0x83
+        0xf0
+        0x9d
+        0xa7
+        0xeb
+        0xcf
+        0xde
+        0xe0
+        0xc7
+        0xa1
+        0xa7
+        0xb2
+        0xc0
+        0x94
+        0x8c
+        0xc8
+        0xf9
+        0xd7
+        0x76
+    ]
+    assert oid_text(content: uuid, relative: false).must() == "2.25.329800735698586629295641978511506172918"
+    assert oid_text(content: [0x2a, 0x86], relative: false).is_err()
+    assert oid_text(content: [0x2a, 0x80, 0x01], relative: false).is_err()
+    assert oid_text(content: [], relative: false).is_err()
+    assert oid_text(content: [0x01, 0x02], relative: true).must() == "1.2"
+
+test "oid_content: the texts read back, and the refused"
+    assert oid_content(dotted: "1.2.840.113549", relative: false).must() == [0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d]
+    assert oid_content(dotted: "2.999.3", relative: false).must() == [0x88, 0x37, 0x03]
+    uuid: [u8] = [
+        0x69
+        0x83
+        0xf0
+        0x9d
+        0xa7
+        0xeb
+        0xcf
+        0xde
+        0xe0
+        0xc7
+        0xa1
+        0xa7
+        0xb2
+        0xc0
+        0x94
+        0x8c
+        0xc8
+        0xf9
+        0xd7
+        0x76
+    ]
+    assert oid_content(dotted: "2.25.329800735698586629295641978511506172918", relative: false).must() == uuid
+    assert oid_content(dotted: "1.40", relative: false).is_err()
+    assert oid_content(dotted: "3.1", relative: false).is_err()
+    assert oid_content(dotted: "1", relative: false).is_err()
+    assert oid_content(dotted: "1..2", relative: false).is_err()
+    assert oid_content(dotted: "1.02", relative: false).is_err()
+    assert oid_content(dotted: "1.2.", relative: false).is_err()
+    assert oid_content(dotted: "1.2a", relative: false).is_err()
+    assert oid_content(dotted: "5", relative: true).must() == [0x05]
+
+test "arcs_u64: the largest arc, and one past it"
+    assert arcs_u64("2.18446744073709551615").must() == [2, 18446744073709551615]
+    assert arcs_u64("2.18446744073709551616").is_err()

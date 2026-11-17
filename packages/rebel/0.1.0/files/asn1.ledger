@@ -1,0 +1,206 @@
+# The ledger of `asn1`: what X.680's values in X.690's encodings let a program
+# do, one block per capability, and what Rebel answers. Go 1.27's
+# `encoding/asn1` is the one standard library of the three with a package
+# for it (`go doc -all encoding/asn1`, 2026-11-17). Rust 1.100's `std` has
+# none, and no crate of ASN.1 is in this machine's cargo registry. Python
+# 3.15's standard library has none; the `python` lines name the module
+# `cryptography.hazmat.asn1` of `cryptography` 50.0.2, installed here, whose
+# public names were listed. The census the author asked of other libraries,
+# their public names listed on this machine on 2026-11-17: Odin's
+# `core:encoding/asn1` (a cursor read element by element: `read_any`,
+# `read_sequence`, `read_set`, `read_explicit`, `read_integer_bytes`,
+# `read_i64`, `read_oid`, `read_bit_string`, `read_octet_string`,
+# `read_boolean`, `read_null`, `read_utc_time`, `read_generalized_time`,
+# `read_time`, `peek_tag`, `skip`; values built by `sequence`, `set`,
+# `set_of`, `context_explicit`, `context_primitive`, `integer_raw`,
+# `object_identifier`, `utc_time`, `generalized_time` and written by
+# `marshal`, `encode`, `encoded_len`), each a capability below; Zig 0.15.2's
+# `std.crypto.Certificate.der` (`Element`, `Element.parse`, `Tag`, `Class`,
+# `Identifier`), DER read for certificates alone; Java and .NET are not
+# installed here (`java` finds no runtime, `dotnet` is absent), so their
+# census is UNRUN. The expected bytes of the tests were observed from OpenSSL
+# 4.1's `asn1parse -genstr` and `-genconf` (2026-11-17); REAL's, which no
+# library on this machine reads, are X.690's arithmetic worked by hand.
+
+capability asn1/decode-der  one element of DER read into a value a program matches on, every canonical rule checked
+  heroes  asn1.decode_der, asn1.Value
+  go      asn1.Unmarshal, asn1.RawValue
+  rust    -
+  python  cryptography.hazmat.asn1.decode_der
+  note    DER's rules enforced: definite lengths and tag numbers in their fewest bytes, BOOLEAN 0x00 or 0xff, integers in their fewest bytes, unused bits zero, strings and times primitive, UTCTime `YYMMDDHHMMSSZ`, GeneralizedTime with seconds, a point, no trailing zero and `Z`, a SET in either of DER's orders (its encodings ascending, as a SET OF's, or its tags ascending, as a SET's), since a reader with no schema cannot know which it is. Go's `Unmarshal` reads into a type the program declares; this reads the tree a schema then walks
+
+capability asn1/decode-ber  one element of BER read: indefinite lengths, constructed strings, the other forms of time
+  heroes  asn1.decode_ber, asn1.Encoding
+  go      -
+  rust    -
+  python  -
+  note    a constructed string's segments are joined into one value as they are read, a BIT STRING's unused bits allowed in its last segment alone; under an IMPLICIT tag, `to_universal` joins them, each segment having been read as its own string first, so a UTF8String cut inside a character by BER's segments is refused there. Go reads DER and refuses an indefinite length
+
+capability asn1/limits  how deep a reading goes, the rest of the machine's stack never reached
+  heroes  asn1.decode_with, asn1.Options, asn1.DEFAULT_MAX_DEPTH
+  go      -
+  rust    -
+  python  -
+  note    64 constructed elements by default; every element is read and written on stacks this package holds. A value nested many thousands deep, made by a program, is still compared, copied and freed by the code the compiler writes, on the machine's stack
+
+capability asn1/next  elements written one after another read in turn, and where each ends
+  heroes  asn1.decode_next, asn1.Decoded
+  go      asn1.Unmarshal (its `rest`)
+  rust    -
+  python  -
+
+capability asn1/raw  where an element and its parts stand in the bytes, its content unread: the exact bytes a signature covers
+  heroes  asn1.element_at, asn1.elements_of, asn1.Element
+  go      asn1.RawValue, asn1.RawContent
+  rust    -
+  python  cryptography.hazmat.asn1.TLV
+  note    Odin's cursor (`peek_tag`, `skip`, `read_any`) and Zig's `der.Element` are this capability
+
+capability asn1/encode-der  a value written as DER
+  heroes  asn1.encode_der
+  go      asn1.Marshal, asn1.MarshalWithParams
+  rust    -
+  python  cryptography.hazmat.asn1.encode_der
+  note    a SET's elements are ordered by their encodings (X.690 § 11.6), which is also a SET's order of tags but where a constructed element's lower tag stands beside a primitive's higher one; a SET in its tags' order is written as a `constructed` of the universal tag 17, in the order given. The OpenSSL SEQUENCE of fourteen kinds is written back to its bytes
+
+capability asn1/content  the content octets of a type read and written alone
+  heroes  asn1.decode_content, asn1.encode_content
+  go      asn1.RawValue
+  rust    -
+  python  -
+
+capability asn1/implicit  an IMPLICIT tag written, and read back as the type a schema gives it
+  heroes  asn1.with_tag, asn1.to_universal
+  go      asn1.MarshalWithParams, asn1.UnmarshalWithParams
+  rust    -
+  python  cryptography.hazmat.asn1.Implicit
+  note    Go's `tag:N`, `application`, `private` parameters; Odin's `context_primitive`. A SET under an IMPLICIT tag is put in DER's order by `with_tag`
+
+capability asn1/explicit  an EXPLICIT tag written and read
+  heroes  asn1.tagged, asn1.untagged
+  go      asn1.MarshalWithParams, asn1.UnmarshalWithParams
+  rust    -
+  python  cryptography.hazmat.asn1.Explicit
+  note    Go's `explicit` parameter; Odin's `context_explicit`, `read_explicit`. The context-specific class, the one an EXPLICIT tag takes in practice; another class's is a `constructed` matched by hand
+
+capability asn1/tags  a tag's class and number, the universal numbers, and a tag named
+  heroes  asn1.Tag, asn1.Class, asn1.format_tag, asn1.tag_of, asn1.BOOLEAN, asn1.INTEGER, asn1.SEQUENCE
+  go      asn1.TagBoolean, asn1.TagInteger, asn1.TagBitString, asn1.TagOctetString, asn1.TagNull, asn1.TagOID, asn1.TagEnum, asn1.TagUTF8String, asn1.TagSequence, asn1.TagSet, asn1.TagNumericString, asn1.TagPrintableString, asn1.TagT61String, asn1.TagIA5String, asn1.TagUTCTime, asn1.TagGeneralizedTime, asn1.TagGeneralString, asn1.TagBMPString, asn1.ClassUniversal, asn1.ClassApplication, asn1.ClassContextSpecific, asn1.ClassPrivate
+  rust    -
+  python  -
+  note    every universal number of X.680, 1 to 36; a tag number up to 56 bits, longer refused
+
+capability asn1/boolean  a BOOLEAN read and written
+  heroes  asn1.bool_of
+  go      asn1.Unmarshal (into a bool), asn1.Flag
+  rust    -
+  python  -
+  note    Go's `Flag` is a field present or absent, which a schema walk reads from the number of elements
+
+capability asn1/integer  an INTEGER of any size read and written
+  heroes  asn1.int_of, asn1.integer_of, asn1.from_integer
+  go      asn1.Unmarshal (into an int, an int64 or a *big.Int)
+  rust    -
+  python  -
+  note    an `i64` where it fits, a `big.Integer` where it does not, as the author asked; a padded integer is refused in BER too, as X.690 § 8.3.2 and Go refuse it. 0, ±127, 128, -129, the ends of the `i64` and 2^63 written as OpenSSL writes them
+
+capability asn1/enumerated  an ENUMERATED read and written
+  heroes  asn1.int_of
+  go      asn1.Enumerated
+  rust    -
+  python  -
+
+capability asn1/real  a REAL read and written
+  heroes  asn1.decode_der, asn1.encode_der
+  go      -
+  rust    -
+  python  -
+  note    read: the binary form in base 2, 8 or 16 with its scale, held where an `f64` holds it exactly, `does_not_fit` otherwise; ISO 6093's three decimal forms rounded to the nearest `f64`; the infinities, a nan, minus zero. Written in DER's form, base 2, the mantissa odd. DER's rules for a decimal REAL (X.690 § 11.3.2) are not checked on reading DER: the decimal forms are read as BER reads them
+
+capability asn1/bit-string  a BIT STRING read and written, and a bit of it asked
+  heroes  asn1.BitString, asn1.bits_of, asn1.bit_at
+  go      asn1.BitString, asn1.BitString.At
+  rust    -
+  python  cryptography.hazmat.asn1.BitString
+  note    BER's unused bits that are not zero are cleared on reading, DER's refused
+
+capability asn1/octet-string  an OCTET STRING read and written
+  heroes  asn1.octets_of
+  go      asn1.Unmarshal (into a []byte)
+  rust    -
+  python  -
+
+capability asn1/null  a NULL read and written
+  heroes  asn1.Value
+  go      asn1.NullBytes, asn1.NullRawValue
+  rust    -
+  python  cryptography.hazmat.asn1.Null
+
+capability asn1/oid  an OBJECT IDENTIFIER read from and written to its text and its arcs, of any size
+  heroes  asn1.Oid, asn1.parse_oid, asn1.from_arcs, asn1.arcs_of, asn1.oid_of
+  go      asn1.ObjectIdentifier, asn1.ObjectIdentifier.Equal, asn1.ObjectIdentifier.String
+  rust    -
+  python  -
+  note    held as its dotted text, so an arc past 64 bits (a UUID's, `2.25.…`) is read and written, as OpenSSL writes it; Go's `ObjectIdentifier` holds `int` arcs and refuses it, which Go's `x509.OID` reads. Two identifiers are the same where their texts are `==`
+
+capability asn1/relative-oid  a RELATIVE-OID read and written
+  heroes  asn1.Value
+  go      -
+  rust    -
+  python  -
+
+capability asn1/strings  every character string type read into a `str` and written from one, its alphabet checked
+  heroes  asn1.TextKind, asn1.text_of
+  go      asn1.Unmarshal (into a string, with `utf8`, `ia5`, `printable`, `numeric`)
+  rust    -
+  python  cryptography.hazmat.asn1.IA5String, cryptography.hazmat.asn1.PrintableString
+  note    TeletexString, VideotexString, GraphicString, GeneralString and ObjectDescriptor are read one byte a character of ISO 8859-1, as Python's `cryptography` reads TeletexString, so their bytes come back unchanged; a BMPString's surrogate pairs are read, as Go and Python read them, and a character outside the Basic Multilingual Plane is never written. A character a type lacks is `not_text` on reading and `invalid` on writing
+
+capability asn1/times  UTCTime and GeneralizedTime read to a `time.DateTime` and written from one
+  heroes  asn1.time_of, asn1.Value
+  go      asn1.Unmarshal (into a time.Time, with `utc` or `generalized`)
+  rust    -
+  python  cryptography.hazmat.asn1.UTCTime, cryptography.hazmat.asn1.GeneralizedTime
+  note    a `time.DateTime` and not an `Instant`, so RFC 5280's `99991231235959Z` is read: an `Instant` ends in 2262. A two-digit year is 1950 to 2049 (RFC 5280, Go, Python). BER's forms are read, a local time with no zone refused as a moment nobody can know; an offset or a fraction of an hour or a minute is applied through an `Instant`, `does_not_fit` outside it. A leap second has no `time.DateTime` and is refused
+
+capability asn1/constructed  SEQUENCE, SET and every other constructed element walked as lists
+  heroes  asn1.items_of, asn1.Value
+  go      asn1.Unmarshal (into a struct or a slice, with `set`)
+  rust    -
+  python  cryptography.hazmat.asn1.sequence, cryptography.hazmat.asn1.set, cryptography.hazmat.asn1.SetOf
+
+capability asn1/x680-2008  X.680's types of 2008 read into values: TIME, DATE, TIME-OF-DAY, DATE-TIME, DURATION, OID-IRI, RELATIVE-OID-IRI
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    each is read as a `primitive` holding its content, which `encode_der` writes back unchanged; their own forms are not read
+
+capability asn1/records  a record of the program filled from a SEQUENCE by its field names, or written to one
+  heroes  refused: the language has no reflection; a program walks the value by its schema with the `x_of` functions, which fail `invalid` with what they found, and builds the `Value` it writes, as `x509` does
+  go      asn1.Marshal, asn1.Unmarshal, asn1.MarshalWithParams, asn1.UnmarshalWithParams (their struct tags `optional`, `default`, `omitempty`, `tag`, `explicit`, `application`, `private`, `set`, `utf8`, `ia5`, `printable`, `numeric`, `utc`, `generalized`)
+  rust    -
+  python  cryptography.hazmat.asn1.sequence, cryptography.hazmat.asn1.Default, cryptography.hazmat.asn1.Size, cryptography.hazmat.asn1.Variant, cryptography.hazmat.asn1.value_set
+
+capability asn1/write-ber  a value written in BER or CER
+  heroes  refused: DER is BER, so every reader of BER reads what `encode_der` writes; CER's indefinite lengths serve a writer that does not know a length beforehand, which a value held whole always knows
+  go      -
+  rust    -
+  python  -
+
+capability asn1/dump  a value written as text for a person, as OpenSSL's `asn1parse` prints it
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability asn1/schema  a module of ASN.1's notation read and compiled
+  heroes  refused: a compiler of a notation is a tool apart; a program writes its schema's walk
+  go      -
+  rust    -
+  python  -
+
+dropped
+  go      asn1.StructuralError, asn1.SyntaxError: the failures, which are `T?` here, `invalid` with a message
+  go      asn1.BitString.RightAlign: the bits shifted to the end of their last byte, for reading a number out of bits; a program reads them by `bit_at`
+  python  cryptography.hazmat.asn1.annotations, cryptography.hazmat.asn1.asn1: the module's own plumbing

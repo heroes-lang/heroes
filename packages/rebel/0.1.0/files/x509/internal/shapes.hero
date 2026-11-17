@@ -1,0 +1,150 @@
+# The ASN.1 shapes the structures of RFC 5280 are made of, read from `asn1`
+# values below `x509`'s own types: a SEQUENCE of so many elements, a
+# context-specific tag and its number, a Time, an IA5String under an
+# IMPLICIT tag, and a failure given the place it happened. Two moments of
+# the calendar compared, since a certificate's `99991231235959Z` holds no
+# `time.Instant`.
+
+use asn1
+use time
+
+# The code of a structure that is not what RFC 5280 says.
+constant INVALID: str
+    "invalid"
+
+# The most elements a SEQUENCE OF is read with: no limit but the data's.
+constant MAX_ITEMS: i64
+    9223372036854775807
+
+# `r`, its failure's message beginning with `what`, the place it happened.
+function within<T>(r: T?, what: str) -> T?
+    match r
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: f"{what}: {e.msg}")
+
+# The elements of `v`, a SEQUENCE of `least` to `most` of them, named `what`
+# in a refusal.
+function sequence_of(v: asn1.Value, least: i64, most: i64, what: str) -> [asn1.Value]?
+    match v
+        .sequence s =>
+            if s.items.len() < least || s.items.len() > most
+                return fail(
+                    code: INVALID,
+                    msg: f"{what}: a SEQUENCE of {s.items.len()} elements, where it holds {least} to {most}"
+                )
+            return ok(s.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .set _ | .primitive _ | .constructed _ =>
+            return fail(
+                code: INVALID,
+                msg: f"{what}: a SEQUENCE was expected, and {asn1.format_tag(asn1.tag_of(v))} was found"
+            )
+
+# The elements of `v`, a SET, named `what` in a refusal.
+function set_of(v: asn1.Value, what: str) -> [asn1.Value]?
+    match v
+        .set s => return ok(s.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .primitive _ | .constructed _ =>
+            return fail(
+                code: INVALID,
+                msg: f"{what}: a SET was expected, and {asn1.format_tag(asn1.tag_of(v))} was found"
+            )
+
+# The number of `v`'s context-specific tag, or -1 where its tag is of
+# another class.
+function context_number(v: asn1.Value) -> i64
+    tag = asn1.tag_of(v)
+
+    if tag.kind == .context_specific
+        return tag.number
+    return -1
+
+# The elements of `v`, a constructed context-specific `[number]` under an
+# IMPLICIT tag: what a SEQUENCE OF so tagged holds.
+function tagged_items(v: asn1.Value, what: str) -> [asn1.Value]?
+    match v
+        .constructed c => return ok(c.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ =>
+            return fail(code: INVALID, msg: f"{what}: a constructed {asn1.format_tag(asn1.tag_of(v))} was expected")
+
+# The value `v`, under an IMPLICIT tag, read as the universal type `number`
+# by DER.
+function implicit(v: asn1.Value, number: i64, what: str) -> asn1.Value?
+    return within(r: asn1.to_universal(v: v, number: number, encoding: .der), what: what)
+
+# The characters of `v`, an IA5String under an IMPLICIT tag.
+function implicit_ia5(v: asn1.Value, what: str) -> str?
+    return within(r: asn1.text_of(implicit(v: v, number: asn1.IA5_STRING, what: what)?), what: what)
+
+# Whether `v` is a Time: a UTCTime or a GeneralizedTime.
+function is_time(v: asn1.Value) -> bool
+    tag = asn1.tag_of(v)
+    return tag.kind == .universal && (tag.number == asn1.UTC_TIME || tag.number == asn1.GENERALIZED_TIME)
+
+# The moment of `v`, a Time.
+function time_of(v: asn1.Value, what: str) -> time.DateTime?
+    return within(r: asn1.time_of(v), what: what)
+
+# The integer of `v`, 0 or more and fitting an `i64`.
+function count_of(v: asn1.Value, what: str) -> i64?
+    n = within(r: asn1.int_of(v), what: what)?
+
+    if n < 0
+        return fail(code: INVALID, msg: f"{what}: {n}, below 0")
+    return ok(n)
+
+# Below 0 where `a` comes before `b`, 0 where they are the same moment, above
+# 0 where it comes after: each field compared in turn.
+function compare_date_times(a: time.DateTime, b: time.DateTime) -> i64
+    left = [a.year, a.month, a.day, a.hour, a.minute, a.second, a.nanosecond]
+    right = [b.year, b.month, b.day, b.hour, b.minute, b.second, b.nanosecond]
+
+    for k in range(from: 0, to: left.len())
+        if left[k] < right[k]
+            return -1
+
+        if left[k] > right[k]
+            return 1
+
+    return 0
+
+test "within: a value kept, a failure given its place"
+    good: i64? = ok(1)
+    assert within(r: good, what: "x").must() == 1
+    bad: i64? = fail(code: "invalid", msg: "no")
+
+    match within(r: bad, what: "the place")
+        .ok _  => assert false
+        .err e => assert e.msg == "the place: no" && e.code == "invalid"
+
+test "sequence_of and set_of: the counts allowed, too few, and another case"
+    seq: asn1.Value = .sequence(items: [.null_value])
+    assert sequence_of(v: seq, least: 1, most: 2, what: "x").must().len() == 1
+    assert sequence_of(v: seq, least: 2, most: 2, what: "x").is_err()
+    assert sequence_of(v: .null_value, least: 0, most: 2, what: "x").is_err()
+    assert set_of(v: .set(items: []), what: "x").must().len() == 0
+    assert set_of(v: seq, what: "x").is_err()
+
+test "context_number, tagged_items, implicit_ia5: a tag of each kind"
+    tagged = asn1.decode_der([0x82, 0x01, 0x61]).must()
+    assert context_number(tagged) == 2
+    assert context_number(.null_value) == -1
+    assert implicit_ia5(v: tagged, what: "x").must() == "a"
+    assert tagged_items(v: tagged, what: "x").is_err()
+    assert tagged_items(v: asn1.tagged(v: .null_value, number: 0), what: "x").must().len() == 1
+
+test "is_time, time_of and count_of: both times, a negative count, and another case"
+    utc = asn1.decode_der(
+        [0x17, 0x0d, 0x32, 0x36, 0x30, 0x31, 0x30, 0x31, 0x30, 0x30, 0x30, 0x30, 0x30, 0x30, 0x5a]
+    ).must()
+    assert is_time(utc)
+    assert !is_time(.null_value)
+    assert time_of(v: utc, what: "x").must().year == 2026
+    assert count_of(v: .integer(v: 3), what: "x").must() == 3
+    assert count_of(v: .integer(v: -1), what: "x").is_err()
+
+test "compare_date_times: before, the same, after, and a year an Instant does not hold"
+    a = time.DateTime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    b = time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert compare_date_times(a: a, b: b) < 0
+    assert compare_date_times(a: a, b: a) == 0
+    assert compare_date_times(a: b, b: a) > 0

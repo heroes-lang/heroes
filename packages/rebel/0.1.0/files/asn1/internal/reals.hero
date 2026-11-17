@@ -1,0 +1,266 @@
+# The content of a REAL (X.690 § 8.5), read into an `f64` and written from
+# one. Read: the binary form in base 2, 8 or 16 with its scale and an
+# exponent of up to eight bytes, held only where an `f64` holds the value
+# exactly; ISO 6093's decimal forms NR1, NR2 and NR3, rounded to the nearest
+# `f64` as `numbers.parse_float` reads the text; the four special values.
+# Written: DER's form (§ 11.3.1), base 2, no scale, the mantissa odd, the
+# exponent in its fewest bytes. No library on this machine reads a REAL
+# (Go, Python, OpenSSL, and no pyasn1 or asn1tools installed), so the tests'
+# bytes are X.690's arithmetic, worked by hand.
+
+use asn1/internal/scalars
+use big
+use math
+use numbers
+
+# The code of content that is no REAL.
+constant INVALID: str
+    "invalid"
+
+# The code of a REAL no `f64` holds exactly.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The number of a REAL's content, by DER's rules where `der` is true.
+function read_real(content: [u8], der: bool) -> f64?
+    if content.len() == 0
+        return ok(0.0)
+    first = to_i64(content[0]).must()
+
+    if first & 0x80 != 0
+        return read_binary(content: content, der: der)
+
+    if first & 0xc0 == 0x40
+        if content.len() != 1
+            return fail(code: INVALID, msg: "a special REAL of more than one byte")
+
+        if first == 0x40
+            return ok(1.0 / 0.0)
+
+        if first == 0x41
+            return ok(-1.0 / 0.0)
+
+        if first == 0x42
+            return ok(0.0 / 0.0)
+
+        if first == 0x43
+            return ok(-0.0)
+        return fail(code: INVALID, msg: f"the special REAL {first}, which X.690 does not define")
+    return read_decimal(content)
+
+# The number of a REAL's content in the binary form.
+function read_binary(content: [u8], der: bool) -> f64?
+    first = to_i64(content[0]).must()
+    negative = first & 0x40 != 0
+    base_code = first >> 4 & 3
+    scale_f = first >> 2 & 3
+    form = first & 3
+
+    if base_code == 3
+        return fail(code: INVALID, msg: "a REAL whose base is the reserved code 3")
+
+    if der && (base_code != 0 || scale_f != 0)
+        return fail(code: INVALID, msg: "a REAL in base 8 or 16 or with a scale, where DER writes base 2 alone")
+    i @= 1
+    exponent_len @= form + 1
+
+    if form == 3
+        if content.len() < 2
+            return fail(code: INVALID, msg: "a REAL that ends before its exponent's length")
+        exponent_len @ to_i64(content[1]).must()
+        i @ 2
+
+        if exponent_len == 0
+            return fail(code: INVALID, msg: "a REAL whose exponent has no byte")
+
+    if i + exponent_len >= content.len()
+        return fail(code: INVALID, msg: "a REAL that ends inside its exponent or before its mantissa")
+    exponent_bytes = content.slice(from: i, to: i + exponent_len)
+
+    if der && exponent_len > 1
+        scalars.check_integer(content: exponent_bytes, what: "exponent")?
+
+    if exponent_len > 8
+        return fail(code: DOES_NOT_FIT, msg: "a REAL whose exponent is past 64 bits")
+    exponent = scalars.small_integer(exponent_bytes)
+    mantissa = big.from_bytes(b: content.slice(from: i + exponent_len, to: content.len()), order: .big_endian)
+
+    if big.sign(mantissa) == 0
+        if der
+            return fail(code: INVALID, msg: "a REAL zero in the binary form, which DER writes with no content")
+        return ok(0.0)
+
+    if der && !big.bit(n: mantissa, index: 0)
+        return fail(code: INVALID, msg: "a REAL whose mantissa is even, where DER writes it odd")
+
+    if exponent > 1000000000000 || exponent < -1000000000000
+        return fail(code: DOES_NOT_FIT, msg: "a REAL whose exponent no `f64` reaches")
+
+    base_bits = if base_code == 0
+        1
+    else if base_code == 1
+        3
+    else
+        4
+    zeros = big.trailing_zero_bits(mantissa)
+    odd = big.shift_right(n: mantissa, count: zeros)
+
+    if big.bit_len(odd) > 53
+        return fail(code: DOES_NOT_FIT, msg: "a REAL whose mantissa has more bits than an `f64` holds")
+    power = scale_f + exponent * base_bits + zeros
+    x = to_f64(big.int_of(odd).must())
+    value = math.scale(x: x, exponent: power)
+
+    if math.is_inf(value) || value == 0.0 || math.scale(x: value, exponent: -power) != x
+        return fail(code: DOES_NOT_FIT, msg: "a REAL no `f64` holds exactly")
+
+    if negative
+        return ok(-value)
+    return ok(value)
+
+# The number of a REAL's content in a decimal form of ISO 6093.
+function read_decimal(content: [u8]) -> f64?
+    form = to_i64(content[0]).must()
+
+    if form < 1 || form > 3
+        return fail(code: INVALID, msg: f"a decimal REAL of the form {form}, where ISO 6093 has 1, 2 and 3")
+    kept: [u8] @= []
+    i @= 1
+
+    while i < content.len() && content[i] == ' '
+        i @ i + 1
+
+    while i < content.len()
+        c = content[i]
+
+        if c >= '0' && c <= '9' || c == '+' || c == '-'
+            kept @ kept.push(c)
+        else if (c == '.' || c == ',') && form >= 2
+            kept @ kept.push('.')
+        else if (c == 'E' || c == 'e') && form == 3
+            kept @ kept.push('E')
+        else
+            return fail(code: INVALID, msg: f"a decimal REAL holding the byte {c}, which its form does not")
+        i @ i + 1
+
+    if kept.len() == 0
+        return fail(code: INVALID, msg: "a decimal REAL with no digit")
+    text: [str] @= []
+
+    for b in kept
+        text @ text.push(to_str_byte(b))
+
+    match numbers.parse_float(text.join(""))
+        .ok x  => return ok(x)
+        .err _ => return fail(code: INVALID, msg: f"a decimal REAL \"{text.join("")}\" that is no number")
+
+# The one-character text of the ASCII byte `b`.
+function to_str_byte(b: u8) -> str
+    marks = "0123456789+-.E"
+
+    for k in range(from: 0, to: marks.len())
+        if marks[k] == b
+            return marks.slice(from: k, to: k + 1)
+
+    return "?"
+
+# The content of the REAL `x` in DER's form.
+function write_real(x: f64) -> [u8]
+    if x != x
+        return [0x42]
+
+    if math.is_inf(x)
+        if x > 0.0
+            return [0x40]
+        return [0x41]
+
+    if x == 0.0
+        if math.has_minus_sign(x)
+            return [0x43]
+        return []
+    scaled = math.to_scaled(x)
+
+    size = if scaled.fraction < 0.0
+        -scaled.fraction
+    else
+        scaled.fraction
+    mantissa @= to_i64(math.scale(x: size, exponent: 53)).must()
+    exponent @= scaled.exponent - 53
+
+    while mantissa % 2 == 0
+        mantissa @ mantissa / 2
+        exponent @ exponent + 1
+
+    exponent_bytes = scalars.integer_content(exponent)
+    first @= 0x80 | exponent_bytes.len() - 1
+
+    if x < 0.0
+        first @ first | 0x40
+    out: [u8] @= [to_u8(first).must()]
+
+    for b in exponent_bytes
+        out @ out.push(b)
+
+    digits: [u8] @= []
+
+    while mantissa > 0
+        digits @ digits.push(to_u8(mantissa & 0xff).must())
+        mantissa @ mantissa >> 8
+
+    k @= digits.len() - 1
+
+    while k >= 0
+        out @ out.push(digits[k])
+        k @ k - 1
+
+    return out
+
+test "write_real: one, a half, minus two and a half, the specials, and both zeros"
+    assert write_real(1.0) == [0x80, 0x00, 0x01]
+    assert write_real(0.5) == [0x80, 0xff, 0x01]
+    assert write_real(-2.5) == [0xc0, 0xff, 0x05]
+    assert write_real(1.0 / 0.0) == [0x40]
+    assert write_real(-1.0 / 0.0) == [0x41]
+    assert write_real(0.0 / 0.0) == [0x42]
+    assert write_real(0.0).len() == 0
+    assert write_real(-0.0) == [0x43]
+    assert write_real(1024.0) == [0x80, 0x0a, 0x01]
+
+test "read_real: what write_real writes, read back, at the ends of the f64"
+    largest = math.scale(x: 1.9999999999999998, exponent: 1023)
+    smallest = math.scale(x: 1.0, exponent: -1074)
+    tiny = math.scale(x: -3.0, exponent: -1000)
+
+    for x in [1.0, 0.5, -2.5, 1024.0, 0.1, largest, smallest, tiny]
+        assert read_real(content: write_real(x), der: true).must() == x
+
+    assert read_real(content: [0x43], der: true).must() == 0.0
+    nan = read_real(content: [0x42], der: true).must()
+    assert nan != nan
+
+test "read_real: BER's bases and scale, and what DER refuses"
+    assert read_real(content: [0x90, 0x01, 0x01], der: false).must() == 8.0
+    assert read_real(content: [0xa0, 0x01, 0x01], der: false).must() == 16.0
+    assert read_real(content: [0x84, 0x00, 0x01], der: false).must() == 2.0
+    assert read_real(content: [0x90, 0x01, 0x01], der: true).is_err()
+    assert read_real(content: [0x80, 0x00, 0x02], der: true).is_err()
+    assert read_real(content: [0x80, 0x00, 0x02], der: false).must() == 2.0
+    assert read_real(content: [0x81, 0x00, 0x01, 0x01], der: true).is_err()
+    assert read_real(content: [0x83, 0x01, 0x01, 0x01], der: false).must() == 2.0
+
+test "read_real: the broken and the inexact"
+    assert read_real(content: [0xb0, 0x00, 0x01], der: false).is_err()
+    assert read_real(content: [0x80, 0x00], der: false).is_err()
+    assert read_real(content: [0x83, 0x00, 0x01], der: false).is_err()
+    assert read_real(content: [0x44], der: false).is_err()
+    assert read_real(content: [0x40, 0x00], der: false).is_err()
+    assert read_real(content: [0x82, 0x7f, 0xff, 0x01], der: false).is_err()
+    assert read_real(content: [0x80, 0x00, 0x3f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], der: false).is_err()
+
+test "read_decimal: NR1, NR2 with a comma, NR3, and bytes a form refuses"
+    assert read_real(content: [0x01, 0x20, 0x2d, 0x31, 0x32], der: false).must() == -12.0
+    assert read_real(content: [0x02, 0x31, 0x2c, 0x35], der: false).must() == 1.5
+    assert read_real(content: [0x03, 0x31, 0x2e, 0x35, 0x45, 0x2b, 0x32], der: false).must() == 150.0
+    assert read_real(content: [0x01, 0x31, 0x2e, 0x35], der: false).is_err()
+    assert read_real(content: [0x04, 0x31], der: false).is_err()
+    assert read_real(content: [0x03], der: false).is_err()

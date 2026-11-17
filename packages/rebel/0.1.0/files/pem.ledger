@@ -1,0 +1,87 @@
+# The ledger of `pem`: what RFC 7468 (and RFC 1421's older headers) let a
+# program do with PEM text, one block per capability, and what Rebel answers.
+# Go 1.27's `encoding/pem` is the one standard library of the three with a
+# package for it (`go doc -all encoding/pem`, 2026-11-17). Rust 1.100's `std`
+# has none; the `rust` lines name the crate `rustls-pki-types` 1.15.1 of this
+# machine's cargo registry, its `pem` module (public names listed, its
+# source not read). Python 3.15's standard library holds two functions in
+# `ssl` and nothing else. The census the author asked of other libraries,
+# their public names listed on this machine on 2026-11-17: Odin's
+# `core:encoding/pem` (`decode`, `encode`, `Block`, `block_bytes`,
+# `block_delete`, `parse_eb`, `sanitize_and_delete`, `get_line`, `Error`,
+# `Decode_Error`), each a capability below; Zig 0.15.2's standard library has no
+# PEM module of its own (its certificate bundle reads PEM inside
+# `std.crypto.Certificate.Bundle.addCertsFromFile`); Java and .NET are not
+# installed here (`java` finds no runtime, `dotnet` is absent), so their
+# census is UNRUN. Go's answers were observed on 16 texts, 2026-11-17.
+
+capability pem/read  the first block of a text read: its label, its headers, its bytes
+  heroes  pem.parse, pem.Block, pem.Header
+  go      pem.Decode, pem.Block
+  rust    rustls_pki_types::pem::PemObject::from_pem_slice, rustls_pki_types::pem::SectionKind
+  python  ssl.PEM_cert_to_DER_cert
+  note    the lax grammar of RFC 7468 § 3: Go refuses three texts that grammar reads (a line ended by CR alone, base 64 with no padding, white space before the BEGIN line), observed; `pem` reads them. Python's function reads a `CERTIFICATE` alone, its first and last lines compared as text
+
+capability pem/read-all  every block of a text, in order
+  heroes  pem.parse_all
+  go      pem.Decode (called again on its `rest`)
+  rust    rustls_pki_types::pem::PemObject::pem_slice_iter, rustls_pki_types::pem::SliceIter
+  python  -
+  note    a broken block (its END line missing or of another label, its base 64 broken) fails `invalid` saying where: Go's `Decode` passes it over and reads on, observed on an END of another label, so a bundle loses a certificate in silence there
+
+capability pem/read-next  the next block from a place in a text, and where it ends
+  heroes  pem.parse_next, pem.Found
+  go      pem.Decode (its `rest`)
+  rust    rustls_pki_types::pem::PemObject::from_buf, rustls_pki_types::pem::ReadIter
+  python  -
+  note    the place is a byte index into the whole text, so where a block stood is known, which Go's `rest` does not say
+
+capability pem/strict  a block read by RFC 7468's strict grammar
+  heroes  pem.parse_strict, pem.Reading
+  go      -
+  rust    -
+  python  -
+  note    lines of exactly 64 characters but the last, padding, no white space, no header; an empty block, which `format` writes and the grammar has no form for, is read
+
+capability pem/headers  the headers of RFC 1421's form read, folded values joined
+  heroes  pem.header_of, pem.Header
+  go      pem.Block.Headers
+  rust    -
+  python  -
+  note    kept as a list in the text's order, where Go keeps a map; a value folded over several lines is read, which Go refuses (observed); names compared with ASCII case ignored
+
+capability pem/write  a block written as PEM
+  heroes  pem.format
+  go      pem.Encode, pem.EncodeToMemory
+  rust    -
+  python  ssl.DER_cert_to_PEM_cert
+  note    the same bytes as Go for a block with no header, observed on empty data and on 48 bytes (one line of 64); headers are written in the block's order, where Go puts `Proc-Type` first and sorts the rest
+
+capability pem/write-all  several blocks written one after the other
+  heroes  pem.format_all
+  go      pem.Encode (called for each)
+  rust    -
+  python  -
+
+capability pem/label  whether a text is a label PEM can carry
+  heroes  pem.is_label
+  go      -
+  rust    -
+  python  -
+  note    RFC 7468 § 3's `label`; Go writes any type and fails only a header name holding a colon
+
+capability pem/encrypted  a block encrypted by RFC 1421's `Proc-Type: 4,ENCRYPTED` decrypted or encrypted
+  heroes  refused: its key is derived from a password by one round of MD5 (OpenSSL's `EVP_BytesToKey`), which Go deprecated in 1.16 as insecure by design; the headers are read and the data left as it is, and PKCS #8's encrypted form is the form to use
+  go      x509.DecryptPEMBlock, x509.EncryptPEMBlock, x509.IsEncryptedPEMBlock, x509.PEMCipher
+  rust    -
+  python  -
+
+capability pem/stream  blocks read from and written to a stream as they come
+  heroes  refused: `io` reads the text whole or by lines, and `pem` takes a `str`; Go's `Encode` to an `io.Writer` is `format` and a write
+  go      pem.Encode
+  rust    rustls_pki_types::pem::PemObject::pem_reader_iter
+  python  -
+
+dropped
+  python  ssl.PEM_HEADER, ssl.PEM_FOOTER: the two lines of a `CERTIFICATE`, which `format` writes
+  rust    rustls_pki_types::pem::Error: the failure, which is `T?` here

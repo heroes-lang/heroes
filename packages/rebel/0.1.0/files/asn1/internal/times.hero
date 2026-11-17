@@ -1,0 +1,332 @@
+# The content of UTCTime and GeneralizedTime (X.680 §§ 46, 47; X.690
+# § 11.7, 11.8), read into a `time.DateTime` in UTC and written from one.
+# DER's one form each: `YYMMDDHHMMSSZ`, and `YYYYMMDDHHMMSS` with a fraction
+# of the second that ends in no zero, then `Z`. BER's others: the seconds
+# left out, an offset from UTC, and for GeneralizedTime the minutes left out,
+# a fraction of the last unit written, with a comma or a point. A local time
+# with no zone is refused, its moment being unknown. A two-digit year is
+# 1950 to 2049, the rule of RFC 5280 § 4.1.2.5.1 and of Go and Python.
+#
+# A time read whole to the second is kept as written, any year; one whose
+# offset or fraction of a minute or an hour must be added goes through a
+# `time.Instant`, so it fails `does_not_fit` outside 1677 to 2262.
+
+use time
+
+# The code of content that is no time of its type.
+constant INVALID: str
+    "invalid"
+
+# The value of `count` digits of `content` from `from`. Fails `invalid` at a
+# byte that is not a digit, or past the end.
+function digits(content: [u8], from: i64, count: i64) -> i64?
+    if from + count > content.len()
+        return fail(code: INVALID, msg: "a time that ends too soon")
+    n @= 0
+
+    for k in range(from: from, to: from + count)
+        c = content[k]
+
+        if c < '0' || c > '9'
+            return fail(code: INVALID, msg: f"a time with the byte {c} where a digit belongs, at {k}")
+        n @ n * 10 + to_i64(c - '0').must()
+
+    return ok(n)
+
+# Whether the byte at `at` of `content` is a digit; false past the end.
+function is_digit_at(content: [u8], at: i64) -> bool
+    return at < content.len() && content[at] >= '0' && content[at] <= '9'
+
+# Whether each field of `dt` is in its range and its day exists. Fails
+# `invalid` naming the field.
+function check_date_time(dt: time.DateTime) -> ()?
+    if dt.month < 1 || dt.month > 12
+        return fail(code: INVALID, msg: f"a time in the month {dt.month}")
+    days = time.days_in_month(year: dt.year, month: dt.month).must()
+
+    if dt.day < 1 || dt.day > days
+        return fail(code: INVALID, msg: f"a time on the day {dt.day} of a month of {days} days")
+
+    if dt.hour < 0 || dt.hour > 23
+        return fail(code: INVALID, msg: f"a time at the hour {dt.hour}")
+
+    if dt.minute < 0 || dt.minute > 59
+        return fail(code: INVALID, msg: f"a time at the minute {dt.minute}")
+
+    if dt.second < 0 || dt.second > 59
+        return fail(code: INVALID, msg: f"a time at the second {dt.second}, where a leap second has no `time.DateTime`")
+
+    if dt.nanosecond < 0 || dt.nanosecond > 999999999
+        return fail(code: INVALID, msg: f"a time with {dt.nanosecond} nanoseconds")
+    return ok()
+
+# The offset in minutes of the zone of `content` from `at`, its last part:
+# `Z` is 0, `+hhmm` or `-hhmm` east or west of UTC, `+hh` too where
+# `hours_alone` is true. Fails `invalid` for anything else, a local time
+# with no zone among them.
+function zone_at(content: [u8], at: i64, hours_alone: bool) -> i64?
+    if at == content.len()
+        return fail(code: INVALID, msg: "a local time with no zone, whose moment is unknown")
+
+    if content[at] == 'Z' && at + 1 == content.len()
+        return ok(0)
+
+    if content[at] != '+' && content[at] != '-'
+        return fail(code: INVALID, msg: f"a time with the byte {content[at]} where its zone belongs, at {at}")
+    hours = digits(content: content, from: at + 1, count: 2)?
+    minutes @= 0
+
+    if at + 3 == content.len()
+        if !hours_alone
+            return fail(code: INVALID, msg: "a UTCTime whose offset has no minutes")
+    else if at + 5 == content.len()
+        minutes @ digits(content: content, from: at + 3, count: 2)?
+    else
+        return fail(code: INVALID, msg: "a time whose offset is not `hh` or `hhmm`")
+
+    if hours > 23 || minutes > 59
+        return fail(code: INVALID, msg: f"a time with the offset {hours}:{minutes}")
+
+    sign = if content[at] == '-'
+        -1
+    else
+        1
+    return ok(sign * (hours * 60 + minutes))
+
+# `dt` moved by `nanoseconds` and back by `offset` minutes: a local time
+# written with an offset, made UTC. Fails `does_not_fit` outside an
+# `Instant`.
+function moved(dt: time.DateTime, nanoseconds: i64, offset: i64) -> time.DateTime?
+    t = time.from_date_time(dt)?
+    shift = time.minutes(-offset)?
+    later = time.add(t: time.add(t: t, d: time.nanoseconds(nanoseconds))?, d: shift)?
+    return ok(time.to_date_time(later))
+
+# The moment of a UTCTime's content, by DER's one form where `der` is true.
+function read_utc(content: [u8], der: bool) -> time.DateTime?
+    if der && (content.len() != 13 || content[12] != 'Z')
+        return fail(code: INVALID, msg: "a UTCTime not in DER's one form, YYMMDDHHMMSSZ")
+    yy = digits(content: content, from: 0, count: 2)?
+
+    year = if yy >= 50
+        1900 + yy
+    else
+        2000 + yy
+    month = digits(content: content, from: 2, count: 2)?
+    day = digits(content: content, from: 4, count: 2)?
+    hour = digits(content: content, from: 6, count: 2)?
+    minute = digits(content: content, from: 8, count: 2)?
+    i @= 10
+    second @= 0
+
+    if is_digit_at(content: content, at: 10)
+        second @ digits(content: content, from: 10, count: 2)?
+        i @ 12
+    offset = zone_at(content: content, at: i, hours_alone: false)?
+    dt = time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: 0)
+    check_date_time(dt)?
+
+    if offset == 0
+        return ok(dt)
+    return moved(dt: dt, nanoseconds: 0, offset: offset)
+
+# The moment of a GeneralizedTime's content, by DER's one form where `der`
+# is true. Fails `does_not_fit` for a fraction of a second past the
+# nanosecond that is not zero, and where an offset or a fraction of a minute
+# or an hour moves it outside an `Instant`.
+function read_generalized(content: [u8], der: bool) -> time.DateTime?
+    year = digits(content: content, from: 0, count: 4)?
+    month = digits(content: content, from: 4, count: 2)?
+    day = digits(content: content, from: 6, count: 2)?
+    hour = digits(content: content, from: 8, count: 2)?
+    minute @= 0
+    second @= 0
+    unit @= 3600
+    i @= 10
+
+    if is_digit_at(content: content, at: i)
+        minute @ digits(content: content, from: i, count: 2)?
+        unit @ 60
+        i @ i + 2
+
+        if is_digit_at(content: content, at: i)
+            second @ digits(content: content, from: i, count: 2)?
+            unit @ 1
+            i @ i + 2
+
+    if der && unit != 1
+        return fail(code: INVALID, msg: "a GeneralizedTime without its seconds, which DER writes")
+    fraction @= 0
+    places @= 0
+
+    if i < content.len() && (content[i] == '.' || content[i] == ',')
+        if der && content[i] == ','
+            return fail(
+                code: INVALID,
+                msg: "a GeneralizedTime whose fraction follows a comma, where DER writes a point"
+            )
+        i @ i + 1
+        start = i
+
+        while is_digit_at(content: content, at: i)
+            if i - start < 9
+                fraction @ fraction * 10 + to_i64(content[i] - '0').must()
+                places @ places + 1
+            else if content[i] != '0'
+                return fail(code: DOES_NOT_FIT, msg: "a GeneralizedTime whose fraction goes past the nanosecond")
+            i @ i + 1
+
+        if i == start
+            return fail(code: INVALID, msg: "a GeneralizedTime with a point and no digit after it")
+
+        if der && content[i - 1] == '0'
+            return fail(code: INVALID, msg: "a GeneralizedTime whose fraction ends in zero, which DER leaves out")
+
+    offset = if der
+        if i + 1 != content.len() || content[i] != 'Z'
+            return fail(code: INVALID, msg: "a GeneralizedTime not in DER's form, its last byte `Z`")
+        0
+    else
+        zone_at(content: content, at: i, hours_alone: true)?
+    scale @= 1
+
+    for _ in range(from: places, to: 9)
+        scale @ scale * 10
+
+    nanoseconds = fraction * scale
+
+    whole = if unit == 1
+        nanoseconds
+    else
+        0
+    dt = time.DateTime(
+        year: year,
+        month: month,
+        day: day,
+        hour: hour,
+        minute: minute,
+        second: second,
+        nanosecond: whole
+    )
+    check_date_time(dt)?
+
+    if offset == 0 && unit == 1
+        return ok(dt)
+    return moved(dt: dt, nanoseconds: nanoseconds * unit - whole * unit, offset: offset)
+
+# The constant this module fails with where a number does not fit.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# `n` in decimal, padded with zeros to `width` digits.
+function padded(n: i64, width: i64) -> str
+    s = to_str(n)
+
+    if s.len() >= width
+        return s
+    return repeat("0", to_u64(width - s.len()).must()) + s
+
+# The content of the UTCTime `dt`. Fails `invalid` where a field is out of
+# its range, the year is outside 1950 to 2049, or the second has a fraction.
+function write_utc(dt: time.DateTime) -> [u8]?
+    check_date_time(dt)?
+
+    if dt.year < 1950 || dt.year > 2049
+        return fail(code: INVALID, msg: f"a UTCTime in {dt.year}, outside the years 1950 to 2049 it writes")
+
+    if dt.nanosecond != 0
+        return fail(code: INVALID, msg: "a UTCTime with a fraction of a second, which it does not hold")
+    text = padded(n: dt.year % 100, width: 2) + padded(n: dt.month, width: 2) + padded(n: dt.day, width: 2) + padded(n: dt.hour, width: 2) + padded(n: dt.minute, width: 2) + padded(n: dt.second, width: 2) + "Z"
+    return ok(text_bytes(text))
+
+# The content of the GeneralizedTime `dt`: its fraction's trailing zeros left
+# out. Fails `invalid` where a field is out of its range or the year is
+# outside 0 to 9999.
+function write_generalized(dt: time.DateTime) -> [u8]?
+    check_date_time(dt)?
+
+    if dt.year < 0 || dt.year > 9999
+        return fail(code: INVALID, msg: f"a GeneralizedTime in {dt.year}, outside the years 0 to 9999 it writes")
+    parts: [str] @= [
+        padded(n: dt.year, width: 4)
+        padded(n: dt.month, width: 2)
+        padded(n: dt.day, width: 2)
+        padded(n: dt.hour, width: 2)
+        padded(n: dt.minute, width: 2)
+        padded(n: dt.second, width: 2)
+    ]
+
+    if dt.nanosecond > 0
+        fraction = padded(n: dt.nanosecond, width: 9)
+        stop @= 9
+
+        while fraction[stop - 1] == '0'
+            stop @ stop - 1
+
+        parts @ parts.push("." + fraction.slice(from: 0, to: stop))
+    parts @ parts.push("Z")
+    return ok(text_bytes(parts.join("")))
+
+# The bytes of the ASCII text `s`.
+function text_bytes(s: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        out @ out.push(s[i])
+
+    return out
+
+test "read_utc: DER's form, the pivot year, and what DER refuses"
+    a = read_utc(content: text_bytes("491231235959Z"), der: true).must()
+    assert a == time.DateTime(year: 2049, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert read_utc(content: text_bytes("500101000000Z"), der: true).must().year == 1950
+    assert read_utc(content: text_bytes("5001010000Z"), der: true).is_err()
+    assert read_utc(content: text_bytes("500101000000+0100"), der: true).is_err()
+    assert read_utc(content: text_bytes("500101000000"), der: true).is_err()
+
+test "read_utc: BER's seconds left out and an offset, and dates that do not exist"
+    assert read_utc(content: text_bytes("2601171200Z"), der: false).must().second == 0
+    moved_back = read_utc(content: text_bytes("260117120000+0130"), der: false).must()
+    assert moved_back.hour == 10 && moved_back.minute == 30
+    assert read_utc(content: text_bytes("260117120000"), der: false).is_err()
+    assert read_utc(content: text_bytes("250229120000Z"), der: false).is_err()
+    assert read_utc(content: text_bytes("261317120000Z"), der: false).is_err()
+    assert read_utc(content: text_bytes("260117126000Z"), der: false).is_err()
+    assert read_utc(content: text_bytes("2601171200+01"), der: false).is_err()
+
+test "read_generalized: the year 9999, a fraction, and what DER refuses"
+    far = read_generalized(content: text_bytes("99991231235959Z"), der: true).must()
+    assert far.year == 9999 && far.second == 59
+    half = read_generalized(content: text_bytes("20260117120000.5Z"), der: true).must()
+    assert half.nanosecond == 500000000
+    assert read_generalized(content: text_bytes("20260117120000.50Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("20260117120000,5Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("202601171200Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("20260117120000.Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("20240229235960Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("20260117120000.1234567891Z"), der: true).is_err()
+    assert read_generalized(content: text_bytes("20260117120000.1234567890Z"), der: false).must().nanosecond == 123456789
+
+test "read_generalized: BER's fractions of an hour and a minute, offsets, and a local time"
+    a = read_generalized(content: text_bytes("2026011712.5Z"), der: false).must()
+    assert a.hour == 12 && a.minute == 30
+    b = read_generalized(content: text_bytes("202601171230,25Z"), der: false).must()
+    assert b.minute == 30 && b.second == 15
+    c = read_generalized(content: text_bytes("20260117120000-05"), der: false).must()
+    assert c.hour == 17
+    assert read_generalized(content: text_bytes("20260117120000"), der: false).is_err()
+    assert read_generalized(content: text_bytes("99991231235959+0100"), der: false).is_err()
+
+test "write_utc and write_generalized: as OpenSSL writes them, and the refused"
+    dt = time.DateTime(year: 2049, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)
+    assert write_utc(dt).must() == text_bytes("491231235959Z")
+    assert write_utc(time.DateTime(year: 2050, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)).is_err()
+    assert write_utc(time.DateTime(year: 2026, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 1)).is_err()
+    assert write_generalized(time.DateTime(year: 2026, month: 1, day: 17, hour: 12, minute: 0, second: 0, nanosecond: 500000000)).must() == text_bytes("20260117120000.5Z")
+    assert write_generalized(time.DateTime(year: 9999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 0)).must() == text_bytes("99991231235959Z")
+    assert write_generalized(
+        time.DateTime(year: 10000, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).is_err()
+    assert write_generalized(
+        time.DateTime(year: 2026, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    ).is_err()

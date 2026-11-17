@@ -1,0 +1,1554 @@
+# ASN.1 values read and written in the encodings of ITU-T X.690: DER read
+# and written exactly, BER read. A value is a tree a program matches on, every
+# universal type of X.680 read into its own case: BOOLEAN, INTEGER (an `i64`,
+# or a `big.Integer` where it does not fit), ENUMERATED, REAL, BIT STRING,
+# OCTET STRING, NULL, OBJECT IDENTIFIER and RELATIVE-OID, every character
+# string type checked against its alphabet, UTCTime and GeneralizedTime as a
+# `time.DateTime`, SEQUENCE and SET walked as lists; an element of another
+# class (application, context-specific, private) is kept with its tag, its
+# content or its elements, and read again by the type a schema gives it with
+# `to_universal` and `untagged`.
+#
+# **DER's canonical rules are enforced on reading DER**: definite lengths in
+# their fewest bytes, tag numbers in their fewest, BOOLEAN as 0x00 or 0xff,
+# integers in their fewest bytes, a BIT STRING's unused bits zero, strings and
+# times primitive, UTCTime and GeneralizedTime in their one form, the elements
+# of a SET in order. BER is read with its indefinite lengths, its constructed
+# strings joined, its other forms of time and its longer lengths.
+#
+# **Nothing follows the data with recursion**: an element is read and written
+# on stacks this package holds, and `decode_der` and `decode_ber` read no
+# deeper than `DEFAULT_MAX_DEPTH` constructed elements unless `decode_with`
+# is asked for more. No length is trusted before the bytes that would fill it
+# are there. A value nested many thousands deep, which a program can build,
+# is still compared with `==`, copied and freed by the machine's stack.
+#
+# A record is not filled from a SEQUENCE by its field names, since the
+# language has no reflection: a program walks the value by its schema with
+# `items_of`, `int_of`, `oid_of` and the others, each failing `invalid` with
+# what it found. X.680's types of 2008 (TIME, DATE, TIME-OF-DAY, DATE-TIME,
+# DURATION, OID-IRI, RELATIVE-OID-IRI) are kept as their content, unread.
+#
+# It does not read or write a schema in ASN.1's notation, write BER or CER,
+# or read PEM (`pem`) or a certificate (`x509`). It fails with `invalid`,
+# `not_text` and `does_not_fit`.
+
+use asn1/internal/header
+use asn1/internal/reals
+use asn1/internal/scalars
+use asn1/internal/texts
+use asn1/internal/times
+use asn1/internal/walk
+use asn1/internal/writer
+use big
+use bytes
+use lists
+use time
+
+## Codes
+
+# Bytes that are not an element of the encoding read, or a value that has no
+# DER form: every reading and writing function, the message saying at which
+# byte or of what.
+constant INVALID: str
+    "invalid"
+
+# A UTF8String whose bytes are not UTF-8, or a string of another type whose
+# characters are not its type's: `decode_der`, `decode_ber`, `decode_with`,
+# `decode_next`, `decode_content`, `to_universal`.
+constant NOT_TEXT: str
+    "not_text"
+
+# A number outside the type asked for: an ENUMERATED or an arc of an OBJECT
+# IDENTIFIER past 64 bits, a REAL no `f64` holds exactly, a BER time whose
+# offset moves it outside an `Instant`; and `int_of` and `arcs_of`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+## Tags
+
+# The class of a tag, X.690 § 8.1.2.2.
+variant Class
+    # The types X.680 itself defines: INTEGER, SEQUENCE and the others.
+    universal
+    # A tag an application gives its own types, `[APPLICATION 1]`.
+    application
+    # A tag that tells the elements of one SEQUENCE, SET or CHOICE apart,
+    # `[0]`.
+    context_specific
+    # A tag an organisation gives its own types, `[PRIVATE 1]`.
+    private
+
+# The tag of an element: its class, its number, and whether its content is
+# made of elements. Built directly; a number is 0 or more.
+record Tag
+    # The class.
+    kind: Class
+    # The number within the class, 0 or more.
+    number: i64
+    # Whether the content is made of elements (constructed) or is the value's
+    # own bytes (primitive).
+    constructed: bool
+
+# The universal number of BOOLEAN.
+constant BOOLEAN: i64
+    1
+
+# The universal number of INTEGER.
+constant INTEGER: i64
+    2
+
+# The universal number of BIT STRING.
+constant BIT_STRING: i64
+    3
+
+# The universal number of OCTET STRING.
+constant OCTET_STRING: i64
+    4
+
+# The universal number of NULL.
+constant NULL: i64
+    5
+
+# The universal number of OBJECT IDENTIFIER.
+constant OBJECT_IDENTIFIER: i64
+    6
+
+# The universal number of ObjectDescriptor.
+constant OBJECT_DESCRIPTOR: i64
+    7
+
+# The universal number of EXTERNAL, kept as a constructed element.
+constant EXTERNAL: i64
+    8
+
+# The universal number of REAL.
+constant REAL: i64
+    9
+
+# The universal number of ENUMERATED.
+constant ENUMERATED: i64
+    10
+
+# The universal number of EMBEDDED PDV, kept as a constructed element.
+constant EMBEDDED_PDV: i64
+    11
+
+# The universal number of UTF8String.
+constant UTF8_STRING: i64
+    12
+
+# The universal number of RELATIVE-OID.
+constant RELATIVE_OID: i64
+    13
+
+# The universal number of TIME, kept as its content.
+constant TIME: i64
+    14
+
+# The universal number of SEQUENCE and SEQUENCE OF.
+constant SEQUENCE: i64
+    16
+
+# The universal number of SET and SET OF.
+constant SET: i64
+    17
+
+# The universal number of NumericString.
+constant NUMERIC_STRING: i64
+    18
+
+# The universal number of PrintableString.
+constant PRINTABLE_STRING: i64
+    19
+
+# The universal number of TeletexString, also called T61String.
+constant TELETEX_STRING: i64
+    20
+
+# The universal number of VideotexString.
+constant VIDEOTEX_STRING: i64
+    21
+
+# The universal number of IA5String.
+constant IA5_STRING: i64
+    22
+
+# The universal number of UTCTime.
+constant UTC_TIME: i64
+    23
+
+# The universal number of GeneralizedTime.
+constant GENERALIZED_TIME: i64
+    24
+
+# The universal number of GraphicString.
+constant GRAPHIC_STRING: i64
+    25
+
+# The universal number of VisibleString.
+constant VISIBLE_STRING: i64
+    26
+
+# The universal number of GeneralString.
+constant GENERAL_STRING: i64
+    27
+
+# The universal number of UniversalString.
+constant UNIVERSAL_STRING: i64
+    28
+
+# The universal number of CHARACTER STRING, kept as a constructed element.
+constant CHARACTER_STRING: i64
+    29
+
+# The universal number of BMPString.
+constant BMP_STRING: i64
+    30
+
+# The universal number of DATE, kept as its content.
+constant DATE: i64
+    31
+
+# The universal number of TIME-OF-DAY, kept as its content.
+constant TIME_OF_DAY: i64
+    32
+
+# The universal number of DATE-TIME, kept as its content.
+constant DATE_TIME: i64
+    33
+
+# The universal number of DURATION, kept as its content.
+constant DURATION: i64
+    34
+
+# The universal number of OID-IRI, kept as its content.
+constant OID_IRI: i64
+    35
+
+# The universal number of RELATIVE-OID-IRI, kept as its content.
+constant RELATIVE_OID_IRI: i64
+    36
+
+# `tag` as ASN.1's notation writes it: a universal type by its name,
+# `INTEGER`, `SEQUENCE`; another as `[0]`, `[APPLICATION 1]`, `[PRIVATE 2]`;
+# a universal number with no type as `[UNIVERSAL 99]`.
+#
+# - `tag`: any tag; whether it is constructed is not written.
+#
+# See also `tag_of`.
+function format_tag(tag: Tag) -> str
+    kind = match tag.kind
+        .universal        => 0
+        .application      => 1
+        .context_specific => 2
+        .private          => 3
+
+    return header.tag_name(kind: kind, number: tag.number)
+
+# The tag `v` is written with by `encode_der`.
+#
+# - `v`: any value.
+#
+# A SEQUENCE and a SET are constructed, the others primitive but where the
+# case holds its own tag. See also `format_tag`.
+function tag_of(v: Value) -> Tag
+    return match v
+        .boolean _      => Tag(kind: .universal, number: BOOLEAN, constructed: false)
+        .integer _      => Tag(kind: .universal, number: INTEGER, constructed: false)
+        .big_integer _  => Tag(kind: .universal, number: INTEGER, constructed: false)
+        .enumerated _   => Tag(kind: .universal, number: ENUMERATED, constructed: false)
+        .real _         => Tag(kind: .universal, number: REAL, constructed: false)
+        .bit_string _   => Tag(kind: .universal, number: BIT_STRING, constructed: false)
+        .octet_string _ => Tag(kind: .universal, number: OCTET_STRING, constructed: false)
+        .null_value     => Tag(kind: .universal, number: NULL, constructed: false)
+        .oid _          => Tag(kind: .universal, number: OBJECT_IDENTIFIER, constructed: false)
+        .relative_oid _ => Tag(kind: .universal, number: RELATIVE_OID, constructed: false)
+        .text t =>
+            number = match t.kind
+                .utf8              => UTF8_STRING
+                .numeric           => NUMERIC_STRING
+                .printable         => PRINTABLE_STRING
+                .teletex           => TELETEX_STRING
+                .videotex          => VIDEOTEX_STRING
+                .ia5               => IA5_STRING
+                .graphic           => GRAPHIC_STRING
+                .visible           => VISIBLE_STRING
+                .general           => GENERAL_STRING
+                .universal         => UNIVERSAL_STRING
+                .bmp               => BMP_STRING
+                .object_descriptor => OBJECT_DESCRIPTOR
+
+            Tag(kind: .universal, number: number, constructed: false)
+        .utc_time _         => Tag(kind: .universal, number: UTC_TIME, constructed: false)
+        .generalized_time _ => Tag(kind: .universal, number: GENERALIZED_TIME, constructed: false)
+        .sequence _         => Tag(kind: .universal, number: SEQUENCE, constructed: true)
+        .set _              => Tag(kind: .universal, number: SET, constructed: true)
+        .primitive p        => p.tag
+        .constructed c      => c.tag
+
+## Values
+
+# One ASN.1 value. A `match` on it answers all seventeen cases.
+#
+# Decoding gives each universal type its case; an element of another class,
+# or of a universal type kept unread, is `primitive` or `constructed` with its
+# tag, and a program that knows its type reads it again with `to_universal`
+# (an IMPLICIT tag) or `untagged` (an EXPLICIT one).
+variant Value
+    # A BOOLEAN.
+    boolean
+        # The truth value.
+        v: bool
+    # An INTEGER that fits an `i64`; `decode_der` and `decode_ber` answer this
+    # case for every such integer.
+    integer
+        # The integer.
+        v: i64
+    # An INTEGER of any size; decoding answers it for an integer outside the
+    # `i64`, and `from_integer` picks between the two.
+    big_integer
+        # The integer.
+        v: big.Integer
+    # An ENUMERATED.
+    enumerated
+        # Its number.
+        v: i64
+    # A REAL.
+    real
+        # The number: any float, the infinities, a nan and minus zero
+        # included.
+        v: f64
+    # A BIT STRING.
+    bit_string
+        # The bits.
+        v: BitString
+    # An OCTET STRING.
+    octet_string
+        # The bytes, of any length.
+        v: [u8]
+    # A NULL.
+    null_value
+    # An OBJECT IDENTIFIER.
+    oid
+        # The identifier.
+        v: Oid
+    # A RELATIVE-OID: arcs that follow an identifier known from elsewhere.
+    relative_oid
+        # The arcs, written as an `Oid`'s are, one arc or more.
+        v: Oid
+    # A character string of one of the twelve string types.
+    text
+        # Its type.
+        kind: TextKind
+        # Its characters.
+        v: str
+    # A UTCTime: a date and time in UTC with a year of two digits, 1950 to
+    # 2049.
+    utc_time
+        # The moment, in UTC, its nanoseconds 0.
+        v: time.DateTime
+    # A GeneralizedTime: a date and time in UTC, the year 0 to 9999, the
+    # second's fraction to the nanosecond.
+    generalized_time
+        # The moment, in UTC.
+        v: time.DateTime
+    # A SEQUENCE or SEQUENCE OF.
+    sequence
+        # Its elements, in order.
+        items: [Value]
+    # A SET or SET OF.
+    set
+        # Its elements, in the order read or given; `encode_der` orders them.
+        items: [Value]
+    # A primitive element no other case reads: a tag of another class, or a
+    # universal type kept unread.
+    primitive
+        # Its tag; `constructed` is false.
+        tag: Tag
+        # Its content, the bytes after its length.
+        content: [u8]
+    # A constructed element no other case reads: an EXPLICIT tag, a SEQUENCE
+    # under an IMPLICIT tag, EXTERNAL, EMBEDDED PDV, CHARACTER STRING.
+    constructed
+        # Its tag; `constructed` is true.
+        tag: Tag
+        # Its elements, in order.
+        items: [Value]
+
+# The type of a character string, and the characters it holds.
+variant TextKind
+    # UTF8String: any UTF-8.
+    utf8
+    # NumericString: the digits and the space.
+    numeric
+    # PrintableString: letters, digits, the space and `'()+,-./:=?`.
+    printable
+    # TeletexString (T61String): each byte read as the character of ISO
+    # 8859-1 it numbers, as Python's `cryptography` reads it.
+    teletex
+    # VideotexString: each byte one character of ISO 8859-1.
+    videotex
+    # IA5String: ASCII, its control characters included.
+    ia5
+    # GraphicString: each byte one character of ISO 8859-1.
+    graphic
+    # VisibleString: printable ASCII and the space.
+    visible
+    # GeneralString: each byte one character of ISO 8859-1.
+    general
+    # UniversalString: UCS-4, four bytes a character.
+    universal
+    # BMPString: UCS-2, two bytes a character of the Basic Multilingual
+    # Plane; a pair of surrogates is read as the character it makes, as Go
+    # and Python read one, and never written.
+    bmp
+    # ObjectDescriptor: a GraphicString, each byte one character of ISO
+    # 8859-1.
+    object_descriptor
+
+# The bits of a BIT STRING. Built directly: `bytes` holds `bit_len` bits,
+# the first bit the most significant of the first byte, and the bits past
+# `bit_len` in the last byte zero, which `encode_der` checks.
+record BitString
+    # The bits packed eight to a byte, as many bytes as `bit_len` needs.
+    bytes: [u8]
+    # How many bits, 0 or more.
+    bit_len: i64
+
+# An OBJECT IDENTIFIER, held as its dotted text: `1.2.840.113549`. An arc may
+# be of any size. Built by `parse_oid` or `from_arcs`, or directly, where
+# `encode_der` checks the text.
+record Oid
+    # The arcs in decimal with dots between, no zero before a digit: the
+    # first arc 0, 1 or 2, the second below 40 where the first is 0 or 1.
+    dotted: str
+
+## Reading
+
+# How bytes are read.
+variant Encoding
+    # The Distinguished Encoding Rules: one encoding for each value, every
+    # canonical rule checked.
+    der
+    # The Basic Encoding Rules: indefinite lengths, constructed strings and
+    # the other forms of a time read too.
+    ber
+
+# How `decode_with` and `decode_next` read.
+record Options
+    # The rules read by.
+    encoding: Encoding
+    # The deepest nesting of constructed elements accepted, 1 or more: a
+    # SEQUENCE holding an INTEGER is 1 deep, a SEQUENCE in it 2.
+    max_depth: i64
+
+# What `decode_next` answers: the value read and where the next element
+# begins.
+record Decoded
+    # The value read.
+    value: Value
+    # The byte index past the element read.
+    next: i64
+
+# The deepest nesting `decode_der` and `decode_ber` read: 64 constructed
+# elements, where a certificate nests about ten.
+constant DEFAULT_MAX_DEPTH: i64
+    64
+
+# The value DER `data` holds: one element and nothing after it.
+#
+# - `data`: the bytes of one element, DER.
+#
+# Fails `invalid` where `data` is not one element of DER, every canonical rule
+# checked, or holds bytes after it, the message saying at which byte;
+# `not_text` where a string's characters are not its type's; `does_not_fit` as
+# that code says. See also `decode_ber`, `decode_with`, `encode_der`.
+function decode_der(data: [u8]) -> Value?
+    return decode_with(data: data, options: Options(encoding: .der, max_depth: DEFAULT_MAX_DEPTH))
+
+# The value BER `data` holds: one element and nothing after it.
+#
+# - `data`: the bytes of one element, BER; DER is BER too.
+#
+# Indefinite lengths and constructed strings are read, a constructed
+# string's segments joined into one value. Fails as `decode_der` does, with
+# BER's rules. See also `decode_der`.
+function decode_ber(data: [u8]) -> Value?
+    return decode_with(data: data, options: Options(encoding: .ber, max_depth: DEFAULT_MAX_DEPTH))
+
+# The value `data` holds, read as `options` says: one element and nothing
+# after it.
+#
+# - `data`: the bytes of one element.
+# - `options`: the rules, and the nesting allowed.
+#
+# Fails as `decode_der` does, and `invalid` where the nesting is deeper than
+# `options` allows. Aborts where `options.max_depth` is below 1. See also
+# `decode_next`.
+function decode_with(data: [u8], options: Options) -> Value?
+    got = decode_next(data: data, from: 0, options: options)?
+
+    if got.next != data.len()
+        return fail(code: INVALID, msg: f"byte {got.next}: {data.len() - got.next} bytes follow the element")
+    return ok(got.value)
+
+# The element that begins at byte `from` of `data`, and where the next
+# begins: the way through elements written one after another.
+#
+# - `data`: the bytes holding the element, and anything after it.
+# - `from`: the byte index where it begins, 0 to the length of `data`; at the
+#   length there is no element, and it fails.
+# - `options`: as `decode_with` reads them.
+#
+# Fails as `decode_with` does, bytes after the element excepted. Aborts where
+# `from` is negative or past the length of `data`. See also `element_at`.
+function decode_next(data: [u8], from: i64, options: Options) -> Decoded?
+    assert from >= 0 && from <= data.len()
+    assert options.max_depth >= 1
+
+    der = match options.encoding
+        .der => true
+        .ber => false
+
+    read = walk.read(data: data, from: from, der: der, max_depth: options.max_depth)?
+
+    # Each value made, the last element first: a constructed element takes
+    # its elements off the top of `done`, which holds `top` of them.
+    done: [Value] @= []
+    top @= 0
+    at @= read.nodes.len()
+
+    while at > 0
+        at @ at - 1
+        node = read.nodes[at]
+        count = read.counts[at]
+        held: [Value] @= []
+
+        for k in range(from: 0, to: count)
+            held @ held.push(done[top - 1 - k])
+
+        top @ top - count
+
+        kind: Class = if node.kind == 0
+            .universal
+        else if node.kind == 1
+            .application
+        else if node.kind == 2
+            .context_specific
+        else
+            .private
+
+        made: Value = if node.constructed
+            if node.kind == 0 && node.number == SEQUENCE
+                .sequence(items: held)
+            else if node.kind == 0 && node.number == SET
+                .set(items: held)
+            else
+                .constructed(tag: Tag(kind: kind, number: node.number, constructed: true), items: held)
+        else if node.kind == 0
+            match decode_content(number: node.number, content: node.content, encoding: options.encoding)
+                .ok v  => v
+                .err e => return fail(code: e.code, msg: f"byte {node.start}: {e.msg}")
+        else
+            .primitive(tag: Tag(kind: kind, number: node.number, constructed: false), content: node.content)
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    return ok(Decoded(value: done[0], next: read.next))
+
+# The value of the universal type numbered `number` whose content octets are
+# `content`: what an IMPLICIT tag hides.
+#
+# - `number`: a universal number of a primitive type, `INTEGER`,
+#   `IA5_STRING`; SEQUENCE and SET have no primitive content, and a number of
+#   no type read here answers `primitive` with the universal tag.
+# - `content`: the content octets, the bytes after an element's length.
+# - `encoding`: the rules the content is read by.
+#
+# Fails as `decode_der` does for the content. See also `to_universal`,
+# `encode_content`.
+function decode_content(number: i64, content: [u8], encoding: Encoding) -> Value?
+    der = match encoding
+        .der => true
+        .ber => false
+
+    if number == BOOLEAN
+        return ok(.boolean(v: scalars.boolean(content: content, der: der)?))
+
+    if number == INTEGER
+        scalars.check_integer(content: content, what: "INTEGER")?
+
+        if content.len() <= 8
+            return ok(.integer(v: scalars.small_integer(content)))
+        return ok(.big_integer(v: big.from_bytes_signed(b: content, order: .big_endian)))
+
+    if number == ENUMERATED
+        scalars.check_integer(content: content, what: "ENUMERATED")?
+
+        if content.len() > 8
+            return fail(code: DOES_NOT_FIT, msg: f"an ENUMERATED of {content.len()} bytes, past the i64")
+        return ok(.enumerated(v: scalars.small_integer(content)))
+
+    if number == REAL
+        return ok(.real(v: reals.read_real(content: content, der: der)?))
+
+    if number == BIT_STRING
+        b = scalars.bits(content: content, der: der)?
+        return ok(.bit_string(v: BitString(bytes: b.bytes, bit_len: b.bit_len)))
+
+    if number == OCTET_STRING
+        return ok(.octet_string(v: content))
+
+    if number == NULL
+        if content.len() != 0
+            return fail(code: INVALID, msg: f"a NULL of {content.len()} bytes, where it has none")
+        return ok(.null_value)
+
+    if number == OBJECT_IDENTIFIER
+        return ok(.oid(v: Oid(dotted: scalars.oid_text(content: content, relative: false)?)))
+
+    if number == RELATIVE_OID
+        return ok(.relative_oid(v: Oid(dotted: scalars.oid_text(content: content, relative: true)?)))
+
+    if number == UTC_TIME
+        return ok(.utc_time(v: times.read_utc(content: content, der: der)?))
+
+    if number == GENERALIZED_TIME
+        return ok(.generalized_time(v: times.read_generalized(content: content, der: der)?))
+
+    if texts.is_text_type(number)
+        s = texts.read_text(number: number, content: content)?
+
+        kind: TextKind = if number == UTF8_STRING
+            .utf8
+        else if number == NUMERIC_STRING
+            .numeric
+        else if number == PRINTABLE_STRING
+            .printable
+        else if number == TELETEX_STRING
+            .teletex
+        else if number == VIDEOTEX_STRING
+            .videotex
+        else if number == IA5_STRING
+            .ia5
+        else if number == GRAPHIC_STRING
+            .graphic
+        else if number == VISIBLE_STRING
+            .visible
+        else if number == GENERAL_STRING
+            .general
+        else if number == UNIVERSAL_STRING
+            .universal
+        else if number == BMP_STRING
+            .bmp
+        else
+            .object_descriptor
+        return ok(.text(kind: kind, v: s))
+
+    if walk.is_always_constructed(number)
+        return fail(
+            code: INVALID,
+            msg: f"{header.universal_name(number)} is always constructed and has no primitive content"
+        )
+    return ok(.primitive(tag: Tag(kind: .universal, number: number, constructed: false), content: content))
+
+## Elements
+
+# Where one element stands in some bytes, read without its content: the way
+# to the exact bytes of a part, as a signature covers them.
+record Element
+    # Its tag.
+    tag: Tag
+    # The byte index where its tag begins.
+    start: i64
+    # The byte index where its content begins.
+    content_start: i64
+    # The byte index where its content ends: for an indefinite length, where
+    # its end-of-contents begins.
+    content_end: i64
+    # The byte index past the element, its end-of-contents included.
+    end: i64
+
+# The element that begins at byte `at` of `data`: its tag and where its parts
+# stand, its content unread.
+#
+# - `data`: the bytes holding the element.
+# - `at`: the byte index of its tag, 0 to the length of `data`.
+# - `options`: the rules of its tag and length, and for an indefinite length
+#   the nesting its end is sought through.
+#
+# Only the tag and the length are checked, and for an indefinite length the
+# tags and lengths inside it. Fails `invalid` where they are broken or the
+# element runs past `data`. Aborts where `at` is negative or past the length
+# of `data`. See also `elements_of`, `decode_next`.
+function element_at(data: [u8], at: i64, options: Options) -> Element?
+    assert at >= 0 && at <= data.len()
+
+    der = match options.encoding
+        .der => true
+        .ber => false
+
+    h = header.read_header(data: data, at: at, der: der)?
+    end = walk.end_of(data: data, at: at, der: der, max_depth: options.max_depth)?
+
+    content_end = if h.length >= 0
+        h.content_start + h.length
+    else
+        end - 2
+
+    kind: Class = if h.kind == 0
+        .universal
+    else if h.kind == 1
+        .application
+    else if h.kind == 2
+        .context_specific
+    else
+        .private
+    tag = Tag(kind: kind, number: h.number, constructed: h.constructed)
+    return ok(Element(tag: tag, start: at, content_start: h.content_start, content_end: content_end, end: end))
+
+# The elements inside the constructed `element` of `data`, in order.
+#
+# - `data`: the bytes `element` was read from.
+# - `element`: a constructed element read by `element_at`.
+# - `options`: as `element_at` reads them.
+#
+# Fails `invalid` where `element` is primitive or its content is not
+# elements end to end. See also `element_at`.
+function elements_of(data: [u8], element: Element, options: Options) -> [Element]?
+    if !element.tag.constructed
+        return fail(
+            code: INVALID,
+            msg: f"byte {element.start}: {format_tag(element.tag)} is primitive and holds no element"
+        )
+
+    der = match options.encoding
+        .der => true
+        .ber => false
+
+    starts = walk.starts_between(data: data, from: element.content_start, to: element.content_end, der: der, max_depth: options.max_depth)?
+    out: [Element] @= []
+
+    for s in starts
+        out @ out.push(element_at(data: data, at: s, options: options)?)
+
+    return ok(out)
+
+## Writing
+
+# `v` encoded in DER.
+#
+# - `v`: the value; a `big_integer` that fits an `i64` writes the bytes the
+#   `integer` would.
+#
+# A SET's elements are ordered by their encodings, as DER orders a SET OF
+# (X.690 § 11.6); a SET whose order is its tags' is written as a
+# `constructed` of the universal tag 17 in that order. Fails `invalid` where
+# `v` has no DER form: a string with a character its type lacks, a bit
+# string whose bytes do not match its `bit_len`, a malformed `Oid`, a time
+# outside its type's years or a date that does not exist, a `primitive` or
+# `constructed` whose tag says the other. See also `decode_der`,
+# `encode_content`.
+function encode_der(v: Value) -> [u8]?
+    pieces: [writer.Piece] @= []
+    stack: [Value] @= [v]
+    top @= 1
+    empty: [Value] = []
+
+    while top > 0
+        top @ top - 1
+        x = stack[top]
+        tag = tag_of(x)
+
+        if tag.number < 0
+            return fail(code: INVALID, msg: f"the tag number {tag.number}, below 0")
+
+        kind = match tag.kind
+            .universal        => 0
+            .application      => 1
+            .context_specific => 2
+            .private          => 3
+
+        shape = match x
+            .sequence _ => 1
+            .set _      => 2
+            .constructed c =>
+                if c.tag.constructed
+                    3
+                else
+                    -1
+            .primitive p =>
+                if p.tag.constructed
+                    -1
+                else
+                    0
+            .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ => 0
+
+        if shape < 0
+            return fail(
+                code: INVALID,
+                msg: f"a value whose case and tag {format_tag(tag)} disagree on whether it is constructed"
+            )
+
+        if shape == 0
+            content = encode_content(x)?
+            pieces @ pieces.push(
+                writer.Piece(kind: kind, number: tag.number, constructed: false, content: content, children: 0, sorted: false)
+            )
+        else
+            items = match x
+                .sequence s    => s.items
+                .set s         => s.items
+                .constructed c => c.items
+                .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .primitive _ => empty
+
+            pieces @ pieces.push(
+                writer.Piece(kind: kind, number: tag.number, constructed: true, content: [], children: items.len(), sorted: shape == 2)
+            )
+            k @= items.len() - 1
+
+            while k >= 0
+                if top == stack.len()
+                    stack @ stack.push(items[k])
+                else
+                    stack[top] @ items[k]
+                top @ top + 1
+                k @ k - 1
+
+    return ok(writer.write(pieces))
+
+# The content octets of `v` in DER: its encoding without its tag and length,
+# what an IMPLICIT tag keeps.
+#
+# - `v`: the value; for a SEQUENCE, a SET or a `constructed`, its elements
+#   encoded one after another.
+#
+# Fails as `encode_der` does. See also `with_tag`, `decode_content`.
+function encode_content(v: Value) -> [u8]?
+    tag = tag_of(v)
+
+    if tag.constructed
+        full = encode_der(v)?
+        h = header.read_header(data: full, at: 0, der: true).must()
+        return ok(full.slice(from: h.content_start, to: full.len()))
+    none: [u8] = []
+
+    return match v
+        .boolean b =>
+            if b.v
+                ok([0xff])
+            else
+                ok([0x00])
+        .integer n           => ok(scalars.integer_content(n.v))
+        .big_integer n       => ok(scalars.big_content(n.v))
+        .enumerated n        => ok(scalars.integer_content(n.v))
+        .real r              => ok(reals.write_real(r.v))
+        .bit_string b        => scalars.bits_content(data: b.v.bytes, bit_len: b.v.bit_len)
+        .octet_string o      => ok(o.v)
+        .null_value          => ok(none)
+        .oid o               => scalars.oid_content(dotted: o.v.dotted, relative: false)
+        .relative_oid o      => scalars.oid_content(dotted: o.v.dotted, relative: true)
+        .text t              => texts.write_text(number: tag.number, s: t.v)
+        .utc_time d          => times.write_utc(d.v)
+        .generalized_time d  => times.write_generalized(d.v)
+        .primitive p         => ok(p.content)
+        .constructed _       => fail(code: INVALID, msg: f"a `constructed` whose tag {format_tag(tag)} says primitive")
+        .sequence _ | .set _ => fail(code: INVALID, msg: "a SEQUENCE or a SET read as primitive")
+
+# `v` written under `tag` in place of its own: ASN.1's IMPLICIT tagging.
+#
+# - `v`: the value whose tag is replaced.
+# - `tag`: the new tag; its `constructed` is taken from `v`.
+#
+# A `primitive` holding `v`'s content, or a `constructed` holding its
+# elements. Fails as `encode_content` does. See also `to_universal`,
+# `tagged`.
+function with_tag(v: Value, tag: Tag) -> Value?
+    own = tag_of(v)
+
+    if !own.constructed
+        return ok(
+            .primitive(tag: Tag(kind: tag.kind, number: tag.number, constructed: false), content: encode_content(v)?)
+        )
+    empty: [Value] = []
+
+    items = match v
+        .sequence s    => s.items
+        .constructed c => c.items
+        .set s =>
+            # A SET under another tag keeps no order of its own, so its
+            # elements are put in DER's here: by their encodings.
+            encoded: [[u8]] @= []
+
+            for item in s.items
+                encoded @ encoded.push(encode_der(item)?)
+
+            ordered: [Value] @= []
+
+            for e in lists.sort_by(xs: encoded, less: writer.is_before)
+                ordered @ ordered.push(decode_der(e)?)
+
+            ordered
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .primitive _ => empty
+
+    return ok(.constructed(tag: Tag(kind: tag.kind, number: tag.number, constructed: true), items: items))
+
+# `v` inside the context-specific tag `[number]`: ASN.1's EXPLICIT tagging.
+#
+# - `v`: the value wrapped.
+# - `number`: the tag's number, 0 or more.
+#
+# See also `untagged`, `with_tag`.
+function tagged(v: Value, number: i64) -> Value
+    return .constructed(tag: Tag(kind: .context_specific, number: number, constructed: true), items: [v])
+
+## Walking a value
+
+# The elements of `v`, a SEQUENCE or a SET.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case, naming what it is. See also
+# `untagged`.
+function items_of(v: Value) -> [Value]?
+    return match v
+        .sequence s => ok(s.items)
+        .set s      => ok(s.items)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"a SEQUENCE or a SET was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The truth value of `v`, a BOOLEAN.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `items_of`.
+function bool_of(v: Value) -> bool?
+    return match v
+        .boolean b => ok(b.v)
+        .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"a BOOLEAN was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The integer `v` holds, an INTEGER or an ENUMERATED that fits an `i64`.
+#
+# - `v`: the value.
+#
+# Fails `does_not_fit` for an INTEGER outside the `i64`, `invalid` where `v`
+# is of another case. See also `integer_of`.
+function int_of(v: Value) -> i64?
+    return match v
+        .integer n     => ok(n.v)
+        .enumerated n  => ok(n.v)
+        .big_integer n => fail(code: DOES_NOT_FIT, msg: f"the INTEGER {big.format(n.v)} is outside the i64")
+        .boolean _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"an INTEGER was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The integer `v` holds, an INTEGER of any size.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `int_of`,
+# `from_integer`.
+function integer_of(v: Value) -> big.Integer?
+    return match v
+        .integer n     => ok(big.from_int(n.v))
+        .big_integer n => ok(n.v)
+        .boolean _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"an INTEGER was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The INTEGER `n`: an `integer` where it fits an `i64`, a `big_integer`
+# otherwise, as decoding answers it.
+#
+# - `n`: any integer.
+#
+# See also `integer_of`.
+function from_integer(n: big.Integer) -> Value
+    return match big.int_of(n)
+        .ok small => .integer(v: small)
+        .err _    => .big_integer(v: n)
+
+# The bytes of `v`, an OCTET STRING.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `bits_of`.
+function octets_of(v: Value) -> [u8]?
+    return match v
+        .octet_string o => ok(o.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"an OCTET STRING was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The bits of `v`, a BIT STRING.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `bit_at`.
+function bits_of(v: Value) -> BitString?
+    return match v
+        .bit_string b => ok(b.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"a BIT STRING was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The identifier `v` holds, an OBJECT IDENTIFIER.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `parse_oid`.
+function oid_of(v: Value) -> Oid?
+    return match v
+        .oid o => ok(o.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"an OBJECT IDENTIFIER was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The characters of `v`, a string of any of the twelve types.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` is of another case. See also `TextKind`.
+function text_of(v: Value) -> str?
+    return match v
+        .text t => ok(t.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"a character string was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The moment `v` holds, a UTCTime or a GeneralizedTime, in UTC.
+#
+# - `v`: the value.
+#
+# A date past 2262 holds no `time.Instant`: `time.from_date_time` says so.
+# Fails `invalid` where `v` is of another case. See also `time.from_date_time`.
+function time_of(v: Value) -> time.DateTime?
+    return match v
+        .utc_time d         => ok(d.v)
+        .generalized_time d => ok(d.v)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .sequence _ | .set _ | .primitive _ | .constructed _ => fail(
+            code: INVALID,
+            msg: f"a UTCTime or a GeneralizedTime was expected, and {format_tag(tag_of(v))} was found"
+        )
+
+# The value inside `v`, the context-specific tag `[number]` around one
+# value: ASN.1's EXPLICIT tagging read.
+#
+# - `v`: the value read.
+# - `number`: the tag's number.
+#
+# Fails `invalid` where `v` is not a `constructed` of the tag `[number]`
+# holding one value. See also `tagged`, `to_universal`.
+function untagged(v: Value, number: i64) -> Value?
+    match v
+        .constructed c =>
+            if c.tag.kind == .context_specific && c.tag.number == number && c.items.len() == 1
+                return ok(c.items[0])
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ => _ = 0
+
+    return fail(code: INVALID, msg: f"[{number}] around one value was expected, and {format_tag(tag_of(v))} was found")
+
+# `v`, read under an IMPLICIT tag, read again as the universal type numbered
+# `number`: a `primitive`'s content decoded, or a `constructed`'s elements
+# made a SEQUENCE or a SET, or under BER a constructed string's segments
+# joined.
+#
+# - `v`: a `primitive` or a `constructed`, of any tag.
+# - `number`: the universal number of the type the schema gives it.
+# - `encoding`: the rules `v` was read by.
+#
+# Fails `invalid` where `v` is of another case or its content is not of the
+# type, and as `decode_content` does. See also `with_tag`, `untagged`.
+function to_universal(v: Value, number: i64, encoding: Encoding) -> Value?
+    match v
+        .primitive p =>
+            return decode_content(number: number, content: p.content, encoding: encoding)
+        .constructed c =>
+            if number == SEQUENCE
+                return ok(.sequence(items: c.items))
+
+            if number == SET
+                return ok(.set(items: c.items))
+
+            if !walk.is_string_type(number)
+                return fail(
+                    code: INVALID,
+                    msg: f"{format_tag(c.tag)} is constructed, and {header.universal_name(number)} is always primitive"
+                )
+
+            if encoding == .der
+                return fail(
+                    code: INVALID,
+                    msg: f"{format_tag(c.tag)} holds a {header.universal_name(number)} in segments, which DER writes primitive"
+                )
+            joined: [u8] @= []
+            unused @= 0
+
+            for item in c.items
+                if unused != 0
+                    return fail(code: INVALID, msg: "a segment of a BIT STRING after one with unused bits")
+
+                if number == BIT_STRING
+                    b = bits_of(item)?
+                    bytes.push_all(to: @joined, from: b.bytes)
+                    unused @ b.bytes.len() * 8 - b.bit_len
+                else
+                    if tag_of(item) != Tag(kind: .universal, number: number, constructed: false)
+                        return fail(
+                            code: INVALID,
+                            msg: f"a segment of a {header.universal_name(number)} that is {format_tag(tag_of(item))}"
+                        )
+                    bytes.push_all(to: @joined, from: encode_content(item)?)
+
+            if number != BIT_STRING
+                return decode_content(number: number, content: joined, encoding: encoding)
+            content: [u8] @= [to_u8(unused).must()]
+            bytes.push_all(to: @content, from: joined)
+            return decode_content(number: number, content: content, encoding: encoding)
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ =>
+            return fail(
+                code: INVALID,
+                msg: f"an element of another tag was expected, and {format_tag(tag_of(v))} was found"
+            )
+
+## Object identifiers
+
+# The identifier `s` writes: arcs in decimal with dots between, `2.5.4.3`.
+#
+# - `s`: the dotted text; an arc may be of any size.
+#
+# Fails `invalid` where `s` holds fewer than two arcs, an empty arc, a byte
+# other than a digit or a dot, a zero before a digit, a first arc above 2, or
+# a second arc above 39 under a first of 0 or 1. See also `from_arcs`,
+# `arcs_of`.
+function parse_oid(s: str) -> Oid?
+    scalars.check_oid(dotted: s, relative: false)?
+    return ok(Oid(dotted: s))
+
+# The identifier of the arcs `arcs`.
+#
+# - `arcs`: two arcs or more, the first 0, 1 or 2.
+#
+# Fails `invalid` as `parse_oid` does. See also `parse_oid`.
+function from_arcs(arcs: [u64]) -> Oid?
+    written: [str] @= []
+
+    for arc in arcs
+        written @ written.push(to_str(arc))
+
+    return parse_oid(written.join("."))
+
+# The arcs of `oid`, in order.
+#
+# - `oid`: the identifier.
+#
+# Fails `does_not_fit` where an arc is past 64 bits, as the arcs of a UUID's
+# identifier (`2.25.…`) are, and `invalid` where `oid` is malformed. See also
+# `from_arcs`.
+function arcs_of(oid: Oid) -> [u64]?
+    scalars.check_oid(dotted: oid.dotted, relative: false)?
+    return scalars.arcs_u64(oid.dotted)
+
+## Bit strings
+
+# Whether the bit at `index` of `b` is set, the first bit 0.
+#
+# - `b`: the bits.
+# - `index`: 0 or more; past `bit_len` every bit is clear.
+#
+# Aborts where `index` is negative. See also `bits_of`.
+function bit_at(b: BitString, index: i64) -> bool
+    assert index >= 0
+
+    if index >= b.bit_len
+        return false
+    byte = to_i64(b.bytes[index / 8]).must()
+    return byte >> 7 - index % 8 & 1 == 1
+
+## Tests
+
+# The SEQUENCE OpenSSL 4.1's `asn1parse -genconf` wrote of fourteen elements,
+# one of each kind, observed 2026-11-17.
+test "decode_der: OpenSSL's SEQUENCE of fourteen kinds, read and written back to its bytes"
+    data = bytes.parse_hex(
+        "306a0101000202fed406035504030c07636166c383c2a9130e47726f756e6420436f6e74726f6c170d3236303131373132303030305a181232303236303131373132303030302e32355a3106020101020102a0030201078103614062050003020041040568656c6c6f0a0102"
+    ).must()
+    v = decode_der(data).must()
+    items = items_of(v).must()
+    assert items.len() == 14
+    assert !bool_of(items[0]).must()
+    assert int_of(items[1]).must() == -300
+    assert oid_of(items[2]).must().dotted == "2.5.4.3"
+    assert items[3] == .text(kind: .utf8, v: "cafÃ©")
+    assert items[4] == .text(kind: .printable, v: "Ground Control")
+    assert items[5] == .utc_time(v: time.DateTime(year: 2026, month: 1, day: 17, hour: 12, minute: 0, second: 0, nanosecond: 0))
+    assert time_of(items[6]).must().nanosecond == 250000000
+    assert items_of(items[7]).must() == [.integer(v: 1), .integer(v: 2)]
+    assert int_of(untagged(v: items[8], number: 0).must()).must() == 7
+    assert text_of(to_universal(v: items[9], number: IA5_STRING, encoding: .der).must()).must() == "a@b"
+    assert items[10] == .null_value
+    assert bits_of(items[11]).must() == BitString(bytes: [0x41], bit_len: 8)
+    assert octets_of(items[12]).must() == bytes.from_text("hello")
+    assert items[13] == .enumerated(v: 2)
+    assert encode_der(v).must() == data
+
+test "decode_der: nothing, bytes after the element, and the ends of the i64 and past them"
+    assert decode_der([]).is_err()
+    assert decode_der([0x05, 0x00, 0x00]).is_err()
+    assert decode_der([0x02, 0x08, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).must() == .integer(v: -9223372036854775807 - 1)
+    past = decode_der([0x02, 0x09, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]).must()
+    assert integer_of(past).must() == big.parse("9223372036854775808").must()
+
+    match int_of(past)
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "decode_der: the codes of a broken UTF-8, a character PrintableString lacks, and a wrong length"
+    match decode_der([0x0c, 0x01, 0xc3])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    match decode_der([0x13, 0x01, 0x40])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+    match decode_der([0x30, 0x05, 0x05, 0x00])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "decode_der: every cut of OpenSSL's SEQUENCE fails, and every byte changed reads or fails, never aborts"
+    data = bytes.parse_hex(
+        "306a0101000202fed406035504030c07636166c383c2a9130e47726f756e6420436f6e74726f6c170d3236303131373132303030305a181232303236303131373132303030302e32355a3106020101020102a0030201078103614062050003020041040568656c6c6f0a0102"
+    ).must()
+
+    for n in range(from: 0, to: data.len())
+        assert decode_der(data.slice(from: 0, to: n)).is_err()
+        assert decode_ber(data.slice(from: 0, to: n)).is_err()
+
+    read @= 0
+
+    for at in range(from: 0, to: data.len())
+        changes: [u8] = [0x00, 0x80, 0xff]
+
+        for changed in changes
+            mutated @= data
+            mutated[at] @ changed
+
+            match decode_ber(mutated)
+                .ok _  => read @ read + 1
+                .err _ => read @ read + 0
+
+    assert read > 0
+
+test "decode_ber: an indefinite length and a constructed OCTET STRING, read as their DER"
+    data: [u8] = [0x30, 0x80, 0x24, 0x80, 0x04, 0x01, 0x61, 0x04, 0x01, 0x62, 0x00, 0x00, 0x01, 0x01, 0x01, 0x00, 0x00]
+    v = decode_ber(data).must()
+    assert v == .sequence(items: [.octet_string(v: bytes.from_text("ab")), .boolean(v: true)])
+    assert encode_der(v).must() == [0x30, 0x07, 0x04, 0x02, 0x61, 0x62, 0x01, 0x01, 0xff]
+    assert decode_der(data).is_err()
+
+test "decode_ber: BER's other times, and a local time refused"
+    assert time_of(decode_ber([0x17, 0x0b, 0x32, 0x36, 0x30, 0x31, 0x31, 0x37, 0x31, 0x32, 0x30, 0x30, 0x5a]).must()).must().hour == 12
+    local: [u8] = [0x18, 0x0e, 0x32, 0x30, 0x32, 0x36, 0x30, 0x31, 0x31, 0x37, 0x31, 0x32, 0x30, 0x30, 0x30, 0x30]
+    assert decode_ber(local).is_err()
+
+test "decode_with: the default depth refuses 65 levels, a deeper limit reads them"
+    deep: [u8] @= []
+
+    for _ in range(from: 0, to: 65)
+        deep @ deep.push(0x30)
+        deep @ deep.push(0x80)
+
+    for _ in range(from: 0, to: 130)
+        deep @ deep.push(0x00)
+
+    assert decode_ber(deep).is_err()
+    assert !decode_with(data: deep, options: Options(encoding: .ber, max_depth: 65)).is_err()
+
+test "decode_next: from a place, at the end, and the next place"
+    data: [u8] = [0x02, 0x01, 0x01, 0x05, 0x00]
+    first = decode_next(data: data, from: 0, options: Options(encoding: .der, max_depth: 4)).must()
+    assert first.next == 3
+    assert decode_next(data: data, from: first.next, options: Options(encoding: .der, max_depth: 4)).must().value == .null_value
+    assert decode_next(data: data, from: 5, options: Options(encoding: .der, max_depth: 4)).is_err()
+
+test "decode_content: SEQUENCE refused, a type kept unread, and BER's BOOLEAN"
+    assert decode_content(number: SEQUENCE, content: [], encoding: .der).is_err()
+    assert decode_content(number: DATE, content: [0x31], encoding: .der).must() == .primitive(tag: Tag(kind: .universal, number: DATE, constructed: false), content: [0x31])
+    assert decode_content(number: BOOLEAN, content: [0x01], encoding: .ber).must() == .boolean(v: true)
+    assert decode_content(number: BOOLEAN, content: [0x01], encoding: .der).is_err()
+    assert decode_content(number: NULL, content: [0x00], encoding: .ber).is_err()
+
+test "element_at and elements_of: the spans of a SEQUENCE's parts, definite and indefinite"
+    der: [u8] = [0x30, 0x06, 0x02, 0x01, 0x07, 0x04, 0x01, 0x61]
+    options = Options(encoding: .der, max_depth: 8)
+    top = element_at(data: der, at: 0, options: options).must()
+    assert top.content_start == 2 && top.content_end == 8 && top.end == 8
+    parts = elements_of(data: der, element: top, options: options).must()
+    assert parts.len() == 2
+    assert parts[1].start == 5 && parts[1].content_start == 7
+    assert elements_of(data: der, element: parts[0], options: options).is_err()
+    ber: [u8] = [0x30, 0x80, 0x02, 0x01, 0x07, 0x00, 0x00]
+    loose = element_at(data: ber, at: 0, options: Options(encoding: .ber, max_depth: 8)).must()
+    assert loose.end == 7 && loose.content_end == 5
+    assert elements_of(data: ber, element: loose, options: Options(encoding: .ber, max_depth: 8)).must().len() == 1
+
+test "encode_der: a SET ordered, a SET in its own order under the universal tag, and every refusal"
+    set: Value = .set(items: [.integer(v: 2), .integer(v: 1)])
+    assert encode_der(set).must() == [0x31, 0x06, 0x02, 0x01, 0x01, 0x02, 0x01, 0x02]
+    kept: Value = .constructed(
+        tag: Tag(kind: .universal, number: SET, constructed: true),
+        items: [.integer(v: 2), .integer(v: 1)]
+    )
+    assert encode_der(kept).must() == [0x31, 0x06, 0x02, 0x01, 0x02, 0x02, 0x01, 0x01]
+    assert encode_der(.text(kind: .printable, v: "a@b")).is_err()
+    assert encode_der(.bit_string(v: BitString(bytes: [0xff], bit_len: 4))).is_err()
+    assert encode_der(.oid(v: Oid(dotted: "1.40"))).is_err()
+    assert encode_der(
+        .utc_time(v: time.DateTime(year: 2050, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0))
+    ).is_err()
+    assert encode_der(.primitive(tag: Tag(kind: .context_specific, number: 0, constructed: true), content: [])).is_err()
+    assert encode_der(
+        .constructed(tag: Tag(kind: .context_specific, number: 0, constructed: false), items: [])
+    ).is_err()
+    assert encode_der(
+        .primitive(tag: Tag(kind: .context_specific, number: -1, constructed: false), content: [])
+    ).is_err()
+
+test "encode_der: a big_integer that fits writes the integer's bytes, REAL and RELATIVE-OID read back"
+    assert encode_der(.big_integer(v: big.from_int(-300))).must() == [0x02, 0x02, 0xfe, 0xd4]
+
+    values: [Value] = [
+        .real(v: -2.5)
+        .relative_oid(v: Oid(dotted: "5.6"))
+        .generalized_time(v: time.DateTime(year: 1, month: 2, day: 3, hour: 4, minute: 5, second: 6, nanosecond: 7))
+    ]
+
+    for v in values
+        assert decode_der(encode_der(v).must()).must() == v
+
+test "encode_content and with_tag: an IMPLICIT INTEGER, an IMPLICIT SEQUENCE, and an IMPLICIT SET ordered"
+    assert encode_content(.integer(v: 128)).must() == [0x00, 0x80]
+    assert encode_content(.sequence(items: [.null_value])).must() == [0x05, 0x00]
+    implicit = with_tag(v: .integer(v: 5), tag: Tag(kind: .context_specific, number: 2, constructed: true)).must()
+    assert encode_der(implicit).must() == [0x82, 0x01, 0x05]
+    seq = with_tag(
+        v: .sequence(items: [.null_value]),
+        tag: Tag(kind: .application, number: 1, constructed: false)
+    ).must()
+    assert encode_der(seq).must() == [0x61, 0x02, 0x05, 0x00]
+    set = with_tag(
+        v: .set(items: [.integer(v: 2), .integer(v: 1)]),
+        tag: Tag(kind: .context_specific, number: 0, constructed: true)
+    ).must()
+    assert encode_der(set).must() == [0xa0, 0x06, 0x02, 0x01, 0x01, 0x02, 0x01, 0x02]
+
+test "untagged and to_universal: the wrong number, two values, a primitive, and BER's segments under a tag"
+    wrapped = tagged(v: .null_value, number: 3)
+    assert untagged(v: wrapped, number: 3).must() == .null_value
+    assert untagged(v: wrapped, number: 4).is_err()
+    assert untagged(
+        v: .constructed(tag: Tag(kind: .context_specific, number: 3, constructed: true), items: [.null_value, .null_value]),
+        number: 3
+    ).is_err()
+    assert untagged(v: .null_value, number: 3).is_err()
+    segments = decode_ber([0xa1, 0x80, 0x04, 0x01, 0x61, 0x04, 0x01, 0x62, 0x00, 0x00]).must()
+    assert to_universal(v: segments, number: OCTET_STRING, encoding: .ber).must() == .octet_string(v: bytes.from_text("ab"))
+    assert to_universal(v: segments, number: OCTET_STRING, encoding: .der).is_err()
+    assert to_universal(v: segments, number: INTEGER, encoding: .ber).is_err()
+    assert to_universal(v: .null_value, number: INTEGER, encoding: .ber).is_err()
+
+test "the walking functions: each refuses a value of another case, naming it"
+    match items_of(.integer(v: 1))
+        .ok _  => assert false
+        .err e => assert e.msg == "a SEQUENCE or a SET was expected, and INTEGER was found"
+
+    assert bool_of(.null_value).is_err()
+    assert int_of(.text(kind: .utf8, v: "1")).is_err()
+    assert integer_of(.enumerated(v: 1)).is_err()
+    assert octets_of(.bit_string(v: BitString(bytes: [], bit_len: 0))).is_err()
+    assert bits_of(.octet_string(v: [])).is_err()
+    assert oid_of(.relative_oid(v: Oid(dotted: "1"))).is_err()
+    assert text_of(.octet_string(v: [])).is_err()
+    assert time_of(.integer(v: 0)).is_err()
+
+test "parse_oid, from_arcs and arcs_of: the edges of the first two arcs, and an arc past 64 bits"
+    assert parse_oid("0.39").must().dotted == "0.39"
+    assert parse_oid("2.999").must().dotted == "2.999"
+    assert parse_oid("0.40").is_err()
+    assert parse_oid("").is_err()
+    assert from_arcs([1, 2, 840]).must() == Oid(dotted: "1.2.840")
+    assert from_arcs([3]).is_err()
+
+    match arcs_of(Oid(dotted: "2.25.329800735698586629295641978511506172918"))
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "bit_at: the first bit, the last, and past the length"
+    b = BitString(bytes: [0x80, 0x01], bit_len: 16)
+    assert bit_at(b: b, index: 0)
+    assert !bit_at(b: b, index: 1)
+    assert bit_at(b: b, index: 15)
+    assert !bit_at(b: b, index: 16)
+
+test "format_tag and tag_of: every class, and the string kinds"
+    assert format_tag(Tag(kind: .universal, number: SEQUENCE, constructed: true)) == "SEQUENCE"
+    assert format_tag(Tag(kind: .private, number: 9, constructed: false)) == "[PRIVATE 9]"
+    assert tag_of(.text(kind: .bmp, v: "")) == Tag(kind: .universal, number: BMP_STRING, constructed: false)
+    assert tag_of(.text(kind: .object_descriptor, v: "")).number == OBJECT_DESCRIPTOR
+    assert tag_of(.set(items: [])).constructed
+
+## Examples
+
+# An INTEGER read from its DER.
+test "decode_der: an INTEGER"
+    assert decode_der([0x02, 0x02, 0x01, 0x2c]).must() == .integer(v: 300)
+
+# A SEQUENCE of indefinite length read by BER.
+test "decode_ber: an indefinite length"
+    assert decode_ber([0x30, 0x80, 0x05, 0x00, 0x00, 0x00]).must() == .sequence(items: [.null_value])
+
+# A value nested deeper than the default, read with a higher limit.
+test "decode_with: a deeper limit"
+    options = Options(encoding: .der, max_depth: 100)
+    assert decode_with(data: [0x30, 0x02, 0x30, 0x00], options: options).must() == .sequence(items: [.sequence(items: [])])
+
+# Two elements written one after the other, read in turn.
+test "decode_next: two elements in a row"
+    data: [u8] = [0x01, 0x01, 0xff, 0x05, 0x00]
+    options = Options(encoding: .der, max_depth: DEFAULT_MAX_DEPTH)
+    first = decode_next(data: data, from: 0, options: options).must()
+    second = decode_next(data: data, from: first.next, options: options).must()
+    assert [first.value, second.value] == [.boolean(v: true), .null_value]
+
+# The content an IMPLICIT tag hid, read as the INTEGER the schema says.
+test "decode_content: an INTEGER's content"
+    assert decode_content(number: INTEGER, content: [0x05], encoding: .der).must() == .integer(v: 5)
+
+# Where the parts of an element stand, for the exact bytes a signature covers.
+test "element_at: a SEQUENCE's span"
+    e = element_at(data: [0x30, 0x03, 0x02, 0x01, 0x01], at: 0, options: Options(encoding: .der, max_depth: 8)).must()
+    assert e.content_start == 2 && e.end == 5
+
+# The elements inside a SEQUENCE, each with its span.
+test "elements_of: the parts of a SEQUENCE"
+    data: [u8] = [0x30, 0x05, 0x05, 0x00, 0x01, 0x01, 0x00]
+    options = Options(encoding: .der, max_depth: 8)
+    parts = elements_of(
+        data: data,
+        element: element_at(data: data, at: 0, options: options).must(),
+        options: options
+    ).must()
+    assert parts[1].tag.number == BOOLEAN
+
+# A SEQUENCE of an identifier and a string written as DER.
+test "encode_der: a SEQUENCE"
+    v: Value = .sequence(items: [.oid(v: parse_oid("2.5.4.3").must()), .text(kind: .utf8, v: "x")])
+    assert encode_der(v).must() == [0x30, 0x08, 0x06, 0x03, 0x55, 0x04, 0x03, 0x0c, 0x01, 0x78]
+
+# The content of a value, its tag and length left out.
+test "encode_content: an OCTET STRING's content"
+    assert encode_content(.octet_string(v: [1, 2])).must() == [1, 2]
+
+# An IA5String written under the IMPLICIT tag `[2]`, as a DNS name is.
+test "with_tag: an IMPLICIT [2] IA5String"
+    name = with_tag(
+        v: .text(kind: .ia5, v: "a.b"),
+        tag: Tag(kind: .context_specific, number: 2, constructed: false)
+    ).must()
+    assert encode_der(name).must() == [0x82, 0x03, 0x61, 0x2e, 0x62]
+
+# An INTEGER inside the EXPLICIT tag `[0]`, as a certificate's version is.
+test "tagged: an EXPLICIT [0] INTEGER"
+    assert encode_der(tagged(v: .integer(v: 2), number: 0)).must() == [0xa0, 0x03, 0x02, 0x01, 0x02]
+
+# The elements of a SEQUENCE, walked.
+test "items_of: a SEQUENCE's elements"
+    assert items_of(.sequence(items: [.null_value])).must().len() == 1
+
+# The truth value of a BOOLEAN.
+test "bool_of: a BOOLEAN"
+    assert bool_of(.boolean(v: true)).must()
+
+# The integer of an INTEGER that fits an `i64`.
+test "int_of: an INTEGER"
+    assert int_of(.integer(v: -1)).must() == -1
+
+# The integer of an INTEGER past the `i64`, as a serial number may be.
+test "integer_of: a large serial number"
+    serial = decode_der(bytes.parse_hex("021100fedcba98765432100123456789abcdef").must()).must()
+    assert big.format_base(n: integer_of(serial).must(), base: 16) == "fedcba98765432100123456789abcdef"
+
+# The case an integer is held in, as decoding picks it.
+test "from_integer: a small and a large integer"
+    assert from_integer(big.from_int(7)) == .integer(v: 7)
+    assert from_integer(big.parse("18446744073709551616").must()) == .big_integer(v: big.parse("18446744073709551616").must())
+
+# The bytes of an OCTET STRING.
+test "octets_of: an OCTET STRING"
+    assert octets_of(.octet_string(v: [7])).must() == [7]
+
+# The bits of a BIT STRING read from DER.
+test "bits_of: a BIT STRING of four bits"
+    assert bits_of(decode_der([0x03, 0x02, 0x04, 0xa0]).must()).must().bit_len == 4
+
+# The identifier of an OBJECT IDENTIFIER.
+test "oid_of: commonName's identifier"
+    assert oid_of(decode_der([0x06, 0x03, 0x55, 0x04, 0x03]).must()).must().dotted == "2.5.4.3"
+
+# The characters of a BMPString.
+test "text_of: a BMPString"
+    assert text_of(decode_der([0x1e, 0x04, 0x00, 0x68, 0x00, 0x69]).must()).must() == "hi"
+
+# The moment of a GeneralizedTime past the years an `Instant` holds.
+test "time_of: the year 9999"
+    v = decode_der(bytes.parse_hex("180f39393939313233313233353935395a").must()).must()
+    assert time_of(v).must().year == 9999
+
+# A certificate's version read from inside its EXPLICIT `[0]`.
+test "untagged: an EXPLICIT [0]"
+    assert untagged(v: decode_der([0xa0, 0x03, 0x02, 0x01, 0x02]).must(), number: 0).must() == .integer(v: 2)
+
+# A `[2]` read as the IA5String a schema says it is.
+test "to_universal: an IMPLICIT [2] IA5String"
+    hidden = decode_der([0x82, 0x03, 0x61, 0x2e, 0x62]).must()
+    assert to_universal(v: hidden, number: IA5_STRING, encoding: .der).must() == .text(kind: .ia5, v: "a.b")
+
+# An identifier read from its dotted text.
+test "parse_oid: RSA's arc"
+    assert parse_oid("1.2.840.113549").must().dotted == "1.2.840.113549"
+
+# An identifier made from its arcs.
+test "from_arcs: commonName"
+    assert from_arcs([2, 5, 4, 3]).must().dotted == "2.5.4.3"
+
+# The arcs of an identifier.
+test "arcs_of: commonName"
+    assert arcs_of(Oid(dotted: "2.5.4.3")).must() == [2, 5, 4, 3]
+
+# A key usage's bit read: `digitalSignature` is bit 0.
+test "bit_at: the first bit of a key usage"
+    assert bit_at(b: BitString(bytes: [0x80], bit_len: 1), index: 0)
+
+# A tag as ASN.1 writes it.
+test "format_tag: a context-specific tag"
+    assert format_tag(Tag(kind: .context_specific, number: 3, constructed: true)) == "[3]"
+
+# The tag a value is written with.
+test "tag_of: a UTF8String"
+    assert tag_of(.text(kind: .utf8, v: "x")) == Tag(kind: .universal, number: UTF8_STRING, constructed: false)

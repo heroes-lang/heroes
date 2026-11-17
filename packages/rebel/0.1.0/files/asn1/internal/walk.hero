@@ -1,0 +1,431 @@
+# One element read whole into the flat list of its elements in the order
+# their tags stand (pre-order), each with its tag and its content, the face
+# making the tree from it; the end of an element found, and the elements
+# inside one listed. The elements still open wait on stacks this module
+# holds, so the nesting a caller allows is a number it sets and never the
+# machine's stack. Under BER a constructed string's segments are joined into
+# one element as they are read; under DER a SET's elements are checked in
+# order. Every pass of every loop moves at least two bytes, closes an
+# element, or returns.
+
+use asn1/internal/header
+use bytes
+
+# The code of bytes that are not an element.
+constant INVALID: str
+    "invalid"
+
+# One element read: its tag, and its content where it is primitive or a
+# string joined from segments.
+record Node
+    # The class, 0 to 3.
+    kind: i64
+    # The tag's number.
+    number: i64
+    # Whether its content is elements, which follow it in the list.
+    constructed: bool
+    # A primitive element's content, or a constructed string's segments
+    # joined, a BIT STRING's unused bits before them; empty otherwise.
+    content: [u8]
+    # The byte index where its tag begins.
+    start: i64
+
+# What `read` answers.
+record Read
+    # The elements, in pre-order.
+    nodes: [Node]
+    # How many elements each element directly holds, one for each node.
+    counts: [i64]
+    # The byte index past the element read.
+    next: i64
+
+# Whether the universal type `number` is a string BER may write in segments:
+# BIT STRING, OCTET STRING, the character strings, UTCTime and
+# GeneralizedTime.
+function is_string_type(number: i64) -> bool
+    return number == 3 || number == 4 || number == 7 || number == 12 || number >= 18 && number <= 28 || number == 30
+
+# Whether the universal type `number` is never constructed.
+function is_always_primitive(number: i64) -> bool
+    return number == 1 || number == 2 || number == 5 || number == 6 || number == 9 || number == 10 || number == 13 || number == 14 || number >= 31
+
+# Whether the universal type `number` is always constructed.
+function is_always_constructed(number: i64) -> bool
+    return number == 8 || number == 11 || number == 16 || number == 17 || number == 29
+
+# An element opened: its node, or -1 for a segment of a string, and where it
+# ends, or -1 for an indefinite length, kept at depth `top` of the two stacks.
+function open(@nodes_open: [i64], @ends: [i64], top: i64, node: i64, end: i64)
+    if top == nodes_open.len()
+        nodes_open @ nodes_open.push(node)
+        ends @ ends.push(end)
+    else
+        nodes_open[top] @ node
+        ends[top] @ end
+
+# Whether the elements of a SET from `from` to `to` of `data`, DER, stand in
+# one of DER's two orders: their encodings ascending, as a SET OF's, or their
+# tags strictly ascending, as a SET's.
+function is_set_ordered(data: [u8], from: i64, to: i64) -> bool
+    by_bytes @= true
+    by_tags @= true
+    previous_start @= -1
+    previous_end @= -1
+    at @= from
+
+    while at < to
+        h = header.read_header(data: data, at: at, der: true).must()
+        end = h.content_start + h.length
+
+        if previous_start >= 0
+            before = data.slice(from: previous_start, to: previous_end)
+            here = data.slice(from: at, to: end)
+
+            if bytes.compare(a: before, b: here) > 0
+                by_bytes @ false
+            p = header.read_header(data: data, at: previous_start, der: true).must()
+
+            if p.kind > h.kind || p.kind == h.kind && p.number >= h.number
+                by_tags @ false
+        previous_start @ at
+        previous_end @ end
+        at @ end
+
+    return by_bytes || by_tags
+
+# The element that begins at `from` of `data`, read whole: DER's rules where
+# `der` is true and BER's otherwise, no deeper than `max_depth` constructed
+# elements.
+function read(data: [u8], from: i64, der: bool, max_depth: i64) -> Read?
+    nodes: [Node] @= []
+    counts: [i64] @= []
+    open_node: [i64] @= []
+    open_end: [i64] @= []
+    top @= 0
+    gathered: [u8] @= []
+    gather_number @= 0
+    gather_open @= 0
+    unused @= -1
+    at @= from
+    done @= false
+
+    while !done
+        if top > 0
+            t = top - 1
+            end = open_end[t]
+            closes @= false
+
+            if end >= 0
+                closes @ at == end
+            else if at + 1 < data.len() && data[at] == 0 && data[at + 1] == 0
+                at @ at + 2
+                closes @ true
+            else if at >= data.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: the data ends before an indefinite length's end-of-contents"
+                )
+
+            if closes
+                node = open_node[t]
+
+                if gather_open > 0
+                    gather_open @ gather_open - 1
+
+                    if gather_open == 0
+                        content: [u8] @= []
+
+                        if gather_number == 3
+                            last_unused = if unused < 0
+                                0
+                            else
+                                unused
+                            content @ content.push(to_u8(last_unused).must())
+                        bytes.push_all(to: @content, from: gathered)
+                        nodes[node] @ Node(
+                            kind: 0,
+                            number: gather_number,
+                            constructed: false,
+                            content: content,
+                            start: nodes[node].start
+                        )
+                else if der && nodes[node].kind == 0 && nodes[node].number == 17
+                    first_byte = header.read_header(data: data, at: nodes[node].start, der: true).must().content_start
+
+                    if !is_set_ordered(data: data, from: first_byte, to: at)
+                        return fail(
+                            code: INVALID,
+                            msg: f"byte {nodes[node].start}: a SET whose elements stand in neither of DER's orders"
+                        )
+                top @ top - 1
+
+                if top > 0 && open_end[top - 1] >= 0 && at > open_end[top - 1]
+                    return fail(
+                        code: INVALID,
+                        msg: f"byte {at}: an element runs past the end of the element holding it"
+                    )
+
+                if top == 0
+                    done @ true
+                continue
+        h = header.read_header(data: data, at: at, der: der)?
+
+        if h.kind == 0 && h.number == 0
+            return fail(code: INVALID, msg: f"byte {at}: an end-of-contents where no indefinite length is open")
+
+        element_end = if h.length >= 0
+            h.content_start + h.length
+        else
+            -1
+
+        if top > 0 && open_end[top - 1] >= 0
+            limit = open_end[top - 1]
+
+            if h.content_start > limit || element_end > limit
+                return fail(code: INVALID, msg: f"byte {at}: an element runs past the end of the element holding it")
+
+        if gather_open > 0
+            if h.kind != 0 || h.number != gather_number
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: a segment of a constructed {header.universal_name(gather_number)} that is of another type"
+                )
+
+            if h.constructed
+                if top >= max_depth
+                    return fail(code: INVALID, msg: f"byte {at}: elements nested deeper than {max_depth}")
+                open(nodes_open: @open_node, ends: @open_end, top: top, node: -1, end: element_end)
+                top @ top + 1
+                gather_open @ gather_open + 1
+                at @ h.content_start
+            else
+                if gather_number == 3
+                    if unused > 0
+                        return fail(
+                            code: INVALID,
+                            msg: f"byte {at}: a segment of a BIT STRING after one with unused bits"
+                        )
+
+                    if h.length == 0
+                        return fail(code: INVALID, msg: f"byte {at}: a segment of a BIT STRING with no byte")
+                    u = to_i64(data[h.content_start]).must()
+
+                    if u > 7 || h.length == 1 && u != 0
+                        return fail(code: INVALID, msg: f"byte {at}: a segment of a BIT STRING with {u} unused bits")
+                    unused @ u
+                    bytes.push_all(to: @gathered, from: data.slice(from: h.content_start + 1, to: element_end))
+                else
+                    bytes.push_all(to: @gathered, from: data.slice(from: h.content_start, to: element_end))
+                at @ element_end
+            continue
+        is_root = top == 0
+
+        if top > 0
+            parent = open_node[top - 1]
+            counts[parent] @ counts[parent] + 1
+
+        if h.constructed
+            if top >= max_depth
+                return fail(code: INVALID, msg: f"byte {at}: elements nested deeper than {max_depth}")
+
+            if h.kind == 0 && is_always_primitive(h.number)
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: a constructed {header.universal_name(h.number)}, which is always primitive"
+                )
+            index = nodes.len()
+
+            if h.kind == 0 && is_string_type(h.number)
+                if der
+                    return fail(
+                        code: INVALID,
+                        msg: f"byte {at}: a {header.universal_name(h.number)} in segments, which DER writes primitive"
+                    )
+                nodes @ nodes.push(Node(kind: 0, number: h.number, constructed: false, content: [], start: at))
+                gather_number @ h.number
+                gather_open @ 1
+                gathered @ []
+                unused @ -1
+            else
+                nodes @ nodes.push(Node(kind: h.kind, number: h.number, constructed: true, content: [], start: at))
+            counts @ counts.push(0)
+            open(nodes_open: @open_node, ends: @open_end, top: top, node: index, end: element_end)
+            top @ top + 1
+            at @ h.content_start
+        else
+            if h.kind == 0 && is_always_constructed(h.number)
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {at}: a primitive {header.universal_name(h.number)}, which is always constructed"
+                )
+            content = data.slice(from: h.content_start, to: element_end)
+            nodes @ nodes.push(Node(kind: h.kind, number: h.number, constructed: false, content: content, start: at))
+            counts @ counts.push(0)
+            at @ element_end
+
+            if is_root
+                done @ true
+
+    return ok(Read(nodes: nodes, counts: counts, next: at))
+
+# The byte index past the element that begins at `at` of `data`: its tags
+# and lengths checked along every indefinite length, no deeper than
+# `max_depth`.
+function end_of(data: [u8], at: i64, der: bool, max_depth: i64) -> i64?
+    first = header.read_header(data: data, at: at, der: der)?
+
+    if first.length >= 0
+        return ok(first.content_start + first.length)
+    ends: [i64] @= [-1]
+    top @= 1
+    here @= first.content_start
+
+    while true
+        t = top - 1
+
+        if ends[t] >= 0 && here == ends[t]
+            top @ top - 1
+
+            if top == 0
+                return ok(here)
+            continue
+
+        if ends[t] < 0
+            if here + 1 < data.len() && data[here] == 0 && data[here + 1] == 0
+                here @ here + 2
+                top @ top - 1
+
+                if top > 0 && ends[top - 1] >= 0 && here > ends[top - 1]
+                    return fail(
+                        code: INVALID,
+                        msg: f"byte {here}: an element runs past the end of the element holding it"
+                    )
+
+                if top == 0
+                    return ok(here)
+                continue
+
+            if here >= data.len()
+                return fail(
+                    code: INVALID,
+                    msg: f"byte {here}: the data ends before an indefinite length's end-of-contents"
+                )
+        h = header.read_header(data: data, at: here, der: der)?
+
+        if h.kind == 0 && h.number == 0
+            return fail(code: INVALID, msg: f"byte {here}: an end-of-contents where no indefinite length is open")
+
+        if ends[t] >= 0 && (h.content_start > ends[t] || h.length >= 0 && h.content_start + h.length > ends[t])
+            return fail(code: INVALID, msg: f"byte {here}: an element runs past the end of the element holding it")
+
+        if h.length >= 0
+            here @ h.content_start + h.length
+        else
+            if top >= max_depth
+                return fail(code: INVALID, msg: f"byte {here}: elements nested deeper than {max_depth}")
+
+            if top == ends.len()
+                ends @ ends.push(-1)
+            else
+                ends[top] @ -1
+            top @ top + 1
+            here @ h.content_start
+
+    return fail(code: INVALID, msg: "unreachable")
+
+# The byte indices where the elements from `from` to `to` of `data` begin,
+# end to end.
+function starts_between(data: [u8], from: i64, to: i64, der: bool, max_depth: i64) -> [i64]?
+    starts: [i64] @= []
+    at @= from
+
+    while at < to
+        end = end_of(data: data, at: at, der: der, max_depth: max_depth)?
+
+        if end > to
+            return fail(code: INVALID, msg: f"byte {at}: an element runs past the end of the element holding it")
+        starts @ starts.push(at)
+        at @ end
+
+    return ok(starts)
+
+test "read: a primitive alone, a SEQUENCE of two, and the counts"
+    one = read(data: [0x02, 0x01, 0x05], from: 0, der: true, max_depth: 8).must()
+    assert one.nodes.len() == 1 && one.next == 3
+    assert one.nodes[0].content == [0x05]
+    seq = read(data: [0x30, 0x06, 0x02, 0x01, 0x01, 0x30, 0x01, 0x05], from: 0, der: false, max_depth: 8)
+    assert seq.is_err()
+    two = read(data: [0x30, 0x07, 0x02, 0x01, 0x01, 0x30, 0x00, 0x05, 0x00], from: 0, der: true, max_depth: 8).must()
+    assert two.next == 9
+    assert two.counts == [3, 0, 0, 0]
+    assert two.nodes[2].constructed
+
+test "read: BER's indefinite lengths and a constructed OCTET STRING joined"
+    data: [u8] = [
+        0x30
+        0x80
+        0x24
+        0x80
+        0x04
+        0x01
+        0x61
+        0x24
+        0x03
+        0x04
+        0x01
+        0x62
+        0x00
+        0x00
+        0x05
+        0x00
+        0x00
+        0x00
+    ]
+    r = read(data: data, from: 0, der: false, max_depth: 8).must()
+    assert r.next == data.len()
+    assert r.counts == [2, 0, 0]
+    assert r.nodes[1].number == 4 && !r.nodes[1].constructed
+    assert r.nodes[1].content == [0x61, 0x62]
+    assert read(data: data, from: 0, der: true, max_depth: 8).is_err()
+
+test "read: a constructed BIT STRING joined, and unused bits before the last segment refused"
+    good: [u8] = [0x23, 0x80, 0x03, 0x02, 0x00, 0xff, 0x03, 0x02, 0x04, 0xf0, 0x00, 0x00]
+    r = read(data: good, from: 0, der: false, max_depth: 8).must()
+    assert r.nodes[0].content == [0x04, 0xff, 0xf0]
+    bad: [u8] = [0x23, 0x80, 0x03, 0x02, 0x04, 0xf0, 0x03, 0x02, 0x00, 0xff, 0x00, 0x00]
+    assert read(data: bad, from: 0, der: false, max_depth: 8).is_err()
+
+test "read: the nesting limit, a child past its parent, and an end-of-contents out of place"
+    deep: [u8] @= []
+
+    for _ in range(from: 0, to: 10)
+        deep @ deep.push(0x30)
+        deep @ deep.push(0x80)
+
+    for _ in range(from: 0, to: 20)
+        deep @ deep.push(0x00)
+
+    assert !read(data: deep, from: 0, der: false, max_depth: 10).is_err()
+    assert read(data: deep, from: 0, der: false, max_depth: 9).is_err()
+    assert read(data: [0x30, 0x02, 0x04, 0x02, 0x00, 0x00], from: 0, der: false, max_depth: 8).is_err()
+    assert read(data: [0x00, 0x00], from: 0, der: false, max_depth: 8).is_err()
+    assert read(data: [0x30, 0x80, 0x05, 0x00], from: 0, der: false, max_depth: 8).is_err()
+    assert read(data: [0x02, 0x80, 0x00, 0x00], from: 0, der: false, max_depth: 8).is_err()
+    assert read(data: [0x10, 0x00], from: 0, der: false, max_depth: 8).is_err()
+
+test "read: a DER SET in either of its orders, and in neither"
+    by_bytes: [u8] = [0x31, 0x06, 0x02, 0x01, 0x01, 0x02, 0x01, 0x02]
+    assert !read(data: by_bytes, from: 0, der: true, max_depth: 8).is_err()
+    by_tags: [u8] = [0x31, 0x05, 0xa0, 0x00, 0x81, 0x01, 0x00]
+    assert !read(data: by_tags, from: 0, der: true, max_depth: 8).is_err()
+    neither: [u8] = [0x31, 0x06, 0x02, 0x01, 0x02, 0x02, 0x01, 0x01]
+    assert read(data: neither, from: 0, der: true, max_depth: 8).is_err()
+    assert !read(data: neither, from: 0, der: false, max_depth: 8).is_err()
+
+test "end_of and starts_between: definite, indefinite, and nested indefinite"
+    data: [u8] = [0x30, 0x80, 0x30, 0x80, 0x05, 0x00, 0x00, 0x00, 0x02, 0x01, 0x07, 0x00, 0x00]
+    assert end_of(data: data, at: 0, der: false, max_depth: 8).must() == 13
+    assert end_of(data: data, at: 2, der: false, max_depth: 8).must() == 8
+    assert starts_between(data: data, from: 2, to: 11, der: false, max_depth: 8).must() == [2, 8]
+    assert end_of(data: [0x30, 0x80, 0x05, 0x00], at: 0, der: false, max_depth: 8).is_err()
+    assert end_of(data: data, at: 0, der: false, max_depth: 1).is_err()
