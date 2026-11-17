@@ -1,0 +1,136 @@
+# A `resolv.conf` read as glibc and Go read it (resolv.conf(5)): its
+# `nameserver`, `domain`, `search` and `options` lines, every other line
+# skipped, never failing, since a resolver must start whatever the file holds.
+
+use net
+use strings
+
+# The most servers glibc reads from the file (MAXNS).
+constant MOST_SERVERS: i64
+    3
+
+# What the file says, and the defaults where it says nothing.
+record Conf
+    # The servers' addresses, without ports, in the file's order: the
+    # loopback addresses where the file names none.
+    servers: [net.Address]
+    # The search list, absolute names; none where the file names none.
+    search: [str]
+    # Whether a `search` or `domain` line was read, even one naming none.
+    has_search: bool
+    # `ndots:`, 1 by default, at most 15.
+    ndots: i64
+    # `timeout:` in seconds, 5 by default, 1 to 30.
+    timeout_s: i64
+    # `attempts:`, 2 by default, 1 to 5.
+    attempts: i64
+    # `rotate`.
+    rotate: bool
+    # `use-vc`, every question over TCP.
+    tcp: bool
+
+# What `text` says, a `resolv.conf`'s content.
+function read(text: str) -> Conf
+    servers: [net.Address] @= []
+    search: [str] @= []
+    has_search: bool @= false
+    ndots: i64 @= 1
+    timeout_s: i64 @= 5
+    attempts: i64 @= 2
+    rotate: bool @= false
+    tcp: bool @= false
+
+    for line in strings.lines(text)
+        words = strings.words(line)
+
+        if words.len() == 0 || words[0][0] == '#' || words[0][0] == ';'
+            continue
+        key = words[0]
+
+        if key == "nameserver" && words.len() >= 2 && servers.len() < MOST_SERVERS
+            match net.parse_address(words[1])
+                .ok a  => servers @ servers.push(a)
+                .err _ => _ = 0
+        else if key == "domain" && words.len() >= 2
+            search @ rooted([words[1]])
+            has_search @ true
+        else if key == "search"
+            search @ rooted(words.slice(from: 1, to: words.len()))
+            has_search @ true
+        else if key == "options"
+            for option in words.slice(from: 1, to: words.len())
+                if option == "rotate"
+                    rotate @ true
+                else if option == "use-vc" || option == "usevc" || option == "tcp"
+                    tcp @ true
+                else if strings.has_prefix(s: option, prefix: "ndots:")
+                    ndots @ bounded(option.slice(from: 6, to: option.len()), low: 0, high: 15, otherwise: ndots)
+                else if strings.has_prefix(s: option, prefix: "timeout:")
+                    timeout_s @ bounded(option.slice(from: 8, to: option.len()), low: 1, high: 30, otherwise: timeout_s)
+                else if strings.has_prefix(s: option, prefix: "attempts:")
+                    attempts @ bounded(option.slice(from: 9, to: option.len()), low: 1, high: 5, otherwise: attempts)
+
+    if servers.len() == 0
+        servers @ [net.loopback_v4(), net.loopback_v6()]
+    return Conf(
+        servers: servers,
+        search: search,
+        has_search: has_search,
+        ndots: ndots,
+        timeout_s: timeout_s,
+        attempts: attempts,
+        rotate: rotate,
+        tcp: tcp
+    )
+
+# `domains` each made absolute, the root and a comment's words left out.
+function rooted(domains: [str]) -> [str]
+    out: [str] @= []
+
+    for d in domains
+        if d[0] == '#' || d[0] == ';'
+            return out
+
+        if d == "."
+            continue
+
+        if d[d.len() - 1] == '.'
+            out @ out.push(d)
+        else
+            out @ out.push(d + ".")
+
+    return out
+
+# The number `digits` writes, held between `low` and `high` as glibc holds an
+# option's number, or `otherwise` where `digits` is not a number.
+function bounded(digits: str, low: i64, high: i64, otherwise: i64) -> i64
+    if digits.len() == 0 || digits.len() > 6
+        return otherwise
+    value: i64 @= 0
+
+    for c in digits.chars()
+        if c[0] < '0' || c[0] > '9'
+            return otherwise
+        value @ value * 10 + (to_i64(c[0]).must() - 48)
+
+    if value < low
+        return low
+
+    if value > high
+        return high
+    return value
+
+test "read: the servers, at most three and none that is no address, the search list, and the options"
+    text = "# a comment\nnameserver 192.0.2.1\nnameserver bad\nnameserver 2001:db8::1\n; another\nnameserver 192.0.2.3\nnameserver 192.0.2.4\nsearch example.com corp.example. # end\noptions ndots:2 timeout:1 attempts:9 rotate use-vc edns0\n"
+    c = read(text)
+    assert c.servers.len() == 3 && net.format_address(c.servers[1]) == "2001:db8::1" && net.format_address(c.servers[2]) == "192.0.2.3"
+    assert c.search == ["example.com.", "corp.example."] && c.has_search
+    assert c.ndots == 2 && c.timeout_s == 1 && c.attempts == 5 && c.rotate && c.tcp
+
+test "read: an empty file takes the defaults, the loopback servers among them, and the last of domain and search counts"
+    c = read("")
+    assert c.servers.len() == 2 && net.is_loopback(c.servers[0]) && net.is_v6(c.servers[1])
+    assert c.search.len() == 0 && !c.has_search && c.ndots == 1 && c.timeout_s == 5 && c.attempts == 2 && !c.rotate && !c.tcp
+    assert read("search a.example\ndomain b.example\n").search == ["b.example."]
+    assert read("domain b.example\nsearch .\n").search.len() == 0
+    assert read("options ndots:x timeout:0 attempts:\n").timeout_s == 1

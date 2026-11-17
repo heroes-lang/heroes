@@ -1,0 +1,2452 @@
+# A DNS client: messages of RFC 1035 read from their bytes and written to
+# them exactly, every common kind of record as a value, and questions asked
+# of name servers over UDP, and over TCP where an answer comes truncated,
+# with a deadline on every try. A name is text in the form dig writes it,
+# `mail.example.com.`, its labels' special bytes escaped (`\.`, `\DDD`); a
+# name answered is absolute and ends with its dot.
+#
+# **What it does not do.** The system's own resolver, its hosts file and its
+# cache, is `net.lookup`'s and `net.name_of`'s; this package asks name
+# servers itself. It keeps no cache, since it holds no state between calls.
+# It does not check DNSSEC signatures: it asks for them and reads them as
+# data. It does not read a zone file's text, sign an update, or turn a name
+# of Unicode letters into its ASCII form. DNS over TLS is a stream the
+# program opens with `tls` and hands to `exchange_stream`; DNS over HTTPS is a
+# message `encode` writes, sent by `http` (a package of a layer above this
+# one) as the body of a POST of type `application/dns-message`, its answer
+# read by `decode` (RFC 8484).
+#
+# **A deadline on every try**: a resolver's `timeout_ms` bounds each try of
+# each server, a datagram awaited or a connection made and read, so a lookup
+# takes at most `attempts` times its servers times three times `timeout_ms`.
+#
+# **Nothing a server sends can end the program**: a message is read within
+# its bytes, a name within 255 bytes and 127 compression pointers each
+# pointing before the part it continues, and every count a message states is
+# checked against the bytes it holds.
+#
+# The codes it fails with: `invalid`, `not_found`, `not_text`, `failed`,
+# `unsupported`, and, from the connection, `closed`, `timeout`, `stopped` and
+# `limit`.
+
+use bytes
+use dns/internal/canned
+use dns/internal/codec_read
+use dns/internal/codec_write
+use dns/internal/conf
+use dns/internal/failure
+use dns/internal/model
+use dns/internal/names
+use dns/internal/present
+use dns/internal/rdata
+use dns/internal/svc
+use dns/internal/transport
+use dns/internal/wire
+use io
+use net
+use os
+use strings
+use threads
+
+## Codes
+
+# A name that names nothing, a name with no record of the type asked, or a
+# parameter or a type absent from what was searched.
+constant NOT_FOUND: str
+    failure.NOT_FOUND
+
+# The input is not what the function reads: a name too long or holding an
+# empty label, a message cut short or whose counts its bytes do not hold, a
+# compression pointer that does not point back, a field outside its range;
+# the message says where.
+constant INVALID: str
+    failure.INVALID
+
+# A text read from a message that is not UTF-8, where a function answers it
+# as `str`.
+constant NOT_TEXT: str
+    failure.NOT_TEXT
+
+# A server answered that it failed (`SERVFAIL`), refused (`REFUSED`) or
+# could not do what was asked (`NOTIMP`, `FORMERR`), or answered with another
+# code a lookup cannot read as an answer; the message names the code.
+constant FAILED: str
+    failure.FAILED
+
+# This system holds its name servers where this package cannot read them:
+# Windows, where no file names them.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
+
+# No server answered in the time allowed, on any try.
+constant TIMEOUT: str
+    failure.TIMEOUT
+
+# The connection was closed or refused by the server.
+constant CLOSED: str
+    failure.CLOSED
+
+# The program was asked to stop while a call waited (`net.catch_stop`).
+constant STOPPED: str
+    failure.STOPPED
+
+# The system has no socket, descriptor or memory left.
+constant LIMIT: str
+    failure.LIMIT
+
+## Ports and sizes
+
+# The port a name server listens on, UDP and TCP.
+constant PORT: i64
+    53
+
+# The size of a datagram a query offers to read, 1,232 bytes, the size of DNS
+# Flag Day 2020, which fits a path of IPv6 without fragments.
+constant DEFAULT_UDP_SIZE: i64
+    1232
+
+## Record types
+
+# The type of an IPv4 address (A).
+constant TYPE_A: i64
+    1
+
+# The type of a name server of a zone (NS).
+constant TYPE_NS: i64
+    2
+
+# The type of an alias, the canonical name it stands for (CNAME).
+constant TYPE_CNAME: i64
+    5
+
+# The type of a zone's start of authority (SOA).
+constant TYPE_SOA: i64
+    6
+
+# The type of a name an address or another name points to (PTR).
+constant TYPE_PTR: i64
+    12
+
+# The type of a host's processor and system (HINFO, RFC 8482).
+constant TYPE_HINFO: i64
+    13
+
+# The type of a mail exchanger (MX).
+constant TYPE_MX: i64
+    15
+
+# The type of texts (TXT).
+constant TYPE_TXT: i64
+    16
+
+# The type of an IPv6 address (AAAA).
+constant TYPE_AAAA: i64
+    28
+
+# The type of a service's server (SRV, RFC 2782).
+constant TYPE_SRV: i64
+    33
+
+# The type of a naming authority pointer (NAPTR, RFC 3403).
+constant TYPE_NAPTR: i64
+    35
+
+# The type of an alias for a whole subtree (DNAME, RFC 6672).
+constant TYPE_DNAME: i64
+    39
+
+# The type of EDNS(0)'s pseudo-record (OPT, RFC 6891), which `decode` reads
+# into a message's `edns` and never into a `Record`.
+constant TYPE_OPT: i64
+    41
+
+# The type of a delegation signer (DS, RFC 4034).
+constant TYPE_DS: i64
+    43
+
+# The type of an SSH key's fingerprint (SSHFP, RFC 4255).
+constant TYPE_SSHFP: i64
+    44
+
+# The type of a signature over a set of records (RRSIG, RFC 4034).
+constant TYPE_RRSIG: i64
+    46
+
+# The type of the next name of a signed zone (NSEC, RFC 4034).
+constant TYPE_NSEC: i64
+    47
+
+# The type of a zone's public key (DNSKEY, RFC 4034).
+constant TYPE_DNSKEY: i64
+    48
+
+# The type of a TLS certificate's association (TLSA, RFC 6698).
+constant TYPE_TLSA: i64
+    52
+
+# The type of a service binding (SVCB, RFC 9460).
+constant TYPE_SVCB: i64
+    64
+
+# The type of a service binding for HTTPS (HTTPS, RFC 9460).
+constant TYPE_HTTPS: i64
+    65
+
+# The type of a question asking for a whole zone (AXFR).
+constant TYPE_AXFR: i64
+    252
+
+# The type of a question asking for every record of a name (ANY, `*`),
+# which many servers answer with one record alone (RFC 8482).
+constant TYPE_ANY: i64
+    255
+
+# The type of the authorities allowed to issue a certificate (CAA, RFC 8659).
+constant TYPE_CAA: i64
+    257
+
+## Classes
+
+# The class of the Internet (IN), every class but a handful of tools use.
+constant CLASS_IN: i64
+    1
+
+# The class of Chaos (CH), where servers answer questions about themselves:
+# `version.bind.` and `id.server.`.
+constant CLASS_CH: i64
+    3
+
+# The class of Hesiod (HS).
+constant CLASS_HS: i64
+    4
+
+# The class of none, in a dynamic update (RFC 2136).
+constant CLASS_NONE: i64
+    254
+
+# The class of any, in a question (`*`).
+constant CLASS_ANY: i64
+    255
+
+## Response codes
+
+# The answer is what was asked (NOERROR).
+constant RCODE_NO_ERROR: i64
+    0
+
+# The server could not read the query (FORMERR).
+constant RCODE_FORMAT_ERROR: i64
+    1
+
+# The server failed to answer (SERVFAIL).
+constant RCODE_SERVER_FAILURE: i64
+    2
+
+# The name asked names nothing (NXDOMAIN).
+constant RCODE_NAME_ERROR: i64
+    3
+
+# The server does not do what was asked (NOTIMP).
+constant RCODE_NOT_IMPLEMENTED: i64
+    4
+
+# The server refuses to answer (REFUSED).
+constant RCODE_REFUSED: i64
+    5
+
+# A name that should not exist does, in an update (YXDOMAIN).
+constant RCODE_NAME_EXISTS: i64
+    6
+
+# A set of records that should not exist does, in an update (YXRRSET).
+constant RCODE_RRSET_EXISTS: i64
+    7
+
+# A set of records that should exist does not, in an update (NXRRSET).
+constant RCODE_RRSET_MISSING: i64
+    8
+
+# The server is not authoritative for the zone (NOTAUTH).
+constant RCODE_NOT_AUTHORITATIVE: i64
+    9
+
+# A name of an update is outside its zone (NOTZONE).
+constant RCODE_NOT_IN_ZONE: i64
+    10
+
+# The server does not speak the EDNS version asked (BADVERS, RFC 6891).
+constant RCODE_BAD_VERSION: i64
+    16
+
+# The server refused the client's cookie (BADCOOKIE, RFC 7873).
+constant RCODE_BAD_COOKIE: i64
+    23
+
+## Operation codes
+
+# A query, the operation of every question here (QUERY).
+constant OPCODE_QUERY: i64
+    0
+
+# A question about the server's state (STATUS).
+constant OPCODE_STATUS: i64
+    2
+
+# A zone's change told to its secondaries (NOTIFY, RFC 1996).
+constant OPCODE_NOTIFY: i64
+    4
+
+# A dynamic update (UPDATE, RFC 2136).
+constant OPCODE_UPDATE: i64
+    5
+
+## Service binding parameters
+
+# The keys a client must understand to use the binding (`mandatory`).
+constant SVC_MANDATORY: i64
+    0
+
+# The application protocols offered, `h2`, `h3` (`alpn`).
+constant SVC_ALPN: i64
+    1
+
+# That the default protocol is not offered (`no-default-alpn`).
+constant SVC_NO_DEFAULT_ALPN: i64
+    2
+
+# The port to connect to (`port`).
+constant SVC_PORT: i64
+    3
+
+# IPv4 addresses the target may be reached at (`ipv4hint`).
+constant SVC_IPV4_HINT: i64
+    4
+
+# An encrypted ClientHello's configuration (`ech`).
+constant SVC_ECH: i64
+    5
+
+# IPv6 addresses the target may be reached at (`ipv6hint`).
+constant SVC_IPV6_HINT: i64
+    6
+
+# The path of a DNS over HTTPS template (`dohpath`, RFC 9461).
+constant SVC_DOH_PATH: i64
+    7
+
+## EDNS options
+
+# The server's identifier, asked by an empty option (NSID, RFC 5001).
+constant EDNS_NSID: i64
+    3
+
+# The client's subnet (ECS, RFC 7871).
+constant EDNS_CLIENT_SUBNET: i64
+    8
+
+# A cookie (RFC 7873).
+constant EDNS_COOKIE: i64
+    10
+
+# Padding, zeros that hide a message's length (RFC 7830).
+constant EDNS_PADDING: i64
+    12
+
+# An extended error: a code and a text saying why (EDE, RFC 8914).
+constant EDNS_EXTENDED_ERROR: i64
+    15
+
+## Messages
+
+# A DNS message, a query or a response, as RFC 1035 § 4 lays it out. Built
+# directly, or by `new_query` and `reply_to`; `encode` writes one and
+# checks every field's range, and `decode` reads one.
+record Message
+    # The identifier that pairs a response with its query, 0 to 65535;
+    # `exchange` replaces it with a fresh one from the system's generator.
+    id: i64
+    # Whether the message is a response (QR).
+    response: bool
+    # The operation, 0 to 15: `OPCODE_QUERY` and the other `OPCODE_`
+    # constants.
+    opcode: i64
+    # Whether the server answering is an authority for the name (AA).
+    authoritative: bool
+    # Whether the message was cut to fit a datagram (TC).
+    truncated: bool
+    # Whether the server is asked to follow the question to its answer (RD).
+    recursion_desired: bool
+    # Whether the server follows questions to their answers (RA).
+    recursion_available: bool
+    # Whether the server checked the answer's signatures (AD, RFC 4035).
+    authenticated_data: bool
+    # Whether the server is asked not to check them (CD, RFC 4035).
+    checking_disabled: bool
+    # The response code: 0 to 15, or to 4095 with `has_edns`, whose record
+    # carries its upper eight bits; `RCODE_NO_ERROR` and the other `RCODE_`
+    # constants.
+    rcode: i64
+    # The questions, one in every query this package makes.
+    questions: [Question]
+    # The answer section.
+    answers: [Record]
+    # The authority section: the zone's name servers, or its SOA where the
+    # name or the type has no record.
+    authorities: [Record]
+    # The additional section, without the OPT pseudo-record, which is
+    # `edns`.
+    additionals: [Record]
+    # Whether the message carries EDNS(0)'s OPT record.
+    has_edns: bool
+    # What that record holds; ignored where `has_edns` is false.
+    edns: Edns
+
+# A question: a name, a type, a class.
+record Question
+    # The name asked, absolute, with its last dot.
+    name: str
+    # The type asked, a `TYPE_` constant or any number 0 to 65535.
+    type_code: i64
+    # The class asked, `CLASS_IN` nearly always.
+    class_code: i64
+
+# What EDNS(0)'s OPT record carries (RFC 6891).
+record Edns
+    # The largest datagram the sender reads, 512 to 65535 bytes as written;
+    # a smaller number read is taken as 512.
+    udp_size: i64
+    # The version of EDNS, 0.
+    version: i64
+    # Whether the sender wants DNSSEC's records with the answer (DO).
+    dnssec_ok: bool
+    # The options, in the order written.
+    options: [EdnsOption]
+
+# One option of an OPT record.
+record EdnsOption
+    # Its code, an `EDNS_` constant or any number 0 to 65535.
+    code: i64
+    # Its bytes, as the option's own RFC lays them out.
+    data: [u8]
+
+# A resource record: an owner name, a class, a time to live and the data,
+# whose case says the record's type (`type_of`).
+record Record
+    # The owner name, absolute, with its last dot.
+    name: str
+    # The class, `CLASS_IN` nearly always.
+    class_code: i64
+    # Seconds the record may be kept, 0 to 4,294,967,295.
+    ttl: i64
+    # What the record says, by its type.
+    data: Data
+
+# What a record says, one case per type. A case of class IN alone, `a`,
+# `aaaa`, `srv`, `naptr`, `svcb` and `https`, is read only in class IN, and
+# in any other class the data stays `unknown`, as RFC 3597 § 5 asks.
+variant Data
+    # An IPv4 address (A).
+    a
+        # The address, four bytes, no port.
+        address: net.Address
+    # An IPv6 address (AAAA).
+    aaaa
+        # The address, sixteen bytes, no port.
+        address: net.Address
+    # A name server of the zone (NS).
+    ns
+        # The server's name.
+        host: str
+    # An alias (CNAME).
+    cname
+        # The canonical name the owner stands for.
+        target: str
+    # An alias for every name under the owner (DNAME).
+    dname
+        # The name that replaces the owner in every name under it.
+        target: str
+    # A pointer to another name (PTR), the answer of a reverse lookup.
+    ptr
+        # The name pointed to.
+        target: str
+    # A mail exchanger (MX).
+    mx
+        # Its preference, 0 to 65535, the lowest tried first.
+        preference: i64
+        # The exchanger's name.
+        exchange: str
+    # Texts (TXT).
+    txt
+        # Its character strings, each 0 to 255 bytes, which need not be UTF-8.
+        texts: [[u8]]
+    # A service's server (SRV).
+    srv
+        # Its priority, 0 to 65535, the lowest tried first.
+        priority: i64
+        # Its weight among servers of one priority, 0 to 65535.
+        weight: i64
+        # The port the service listens on, 0 to 65535.
+        port: i64
+        # The server's name; `.` says the service is not offered.
+        target: str
+    # A zone's start of authority (SOA).
+    soa
+        # The zone's primary name server (MNAME).
+        primary: str
+        # The mailbox of the person in charge, its `@` written as the first
+        # dot (RNAME).
+        mailbox: str
+        # The zone's version number, 0 to 4,294,967,295.
+        serial: i64
+        # Seconds between a secondary's checks.
+        refresh: i64
+        # Seconds before a failed check is tried again.
+        retry: i64
+        # Seconds after which a secondary that cannot check stops answering.
+        expire: i64
+        # Seconds a name or a type found absent may be remembered so.
+        minimum: i64
+    # A host's processor and system (HINFO).
+    hinfo
+        # The processor, a character string.
+        cpu: [u8]
+        # The system, a character string.
+        system: [u8]
+    # An authority allowed to issue certificates (CAA).
+    caa
+        # Its flags, 0 to 255; 128 says a reader that does not know `tag` must
+        # not issue.
+        flags: i64
+        # The property, ASCII letters and digits: `issue`, `issuewild`,
+        # `iodef`.
+        tag: str
+        # The property's value, as bytes.
+        value: [u8]
+    # A naming authority's rule (NAPTR).
+    naptr
+        # Its order, 0 to 65535, the lowest applied first.
+        order: i64
+        # Its preference among rules of one order, 0 to 65535.
+        preference: i64
+        # Its flags, a character string: `S`, `A`, `U`, `P`.
+        flags: [u8]
+        # The services it offers, a character string: `SIP+D2U`.
+        services: [u8]
+        # The rewriting expression, a character string, empty where
+        # `replacement` is used.
+        regexp: [u8]
+        # The name it rewrites to, `.` where `regexp` is used.
+        replacement: str
+    # A service binding (SVCB).
+    svcb
+        # 0 for an alias form, 1 to 65535 for a service form, the lowest
+        # preferred.
+        priority: i64
+        # The target's name; `.` is the owner itself in the service form.
+        target: str
+        # The parameters, by ascending key, none twice.
+        params: [SvcParam]
+    # A service binding for HTTPS (HTTPS), as `svcb`.
+    https
+        # As `svcb`'s.
+        priority: i64
+        # As `svcb`'s.
+        target: str
+        # As `svcb`'s.
+        params: [SvcParam]
+    # A delegation signer (DS): the digest of a child zone's key.
+    ds
+        # The tag of the key it names, 0 to 65535 (`key_tag_of`).
+        key_tag: i64
+        # The key's algorithm, 0 to 255: 8 is RSA with SHA-256, 13 ECDSA P-256.
+        algorithm: i64
+        # The digest's algorithm, 0 to 255: 2 is SHA-256.
+        digest_type: i64
+        # The digest.
+        digest: [u8]
+    # A zone's public key (DNSKEY).
+    dnskey
+        # Its flags, 0 to 65535: 256 a zone key, 257 a key signing key.
+        flags: i64
+        # 3, the only protocol.
+        protocol: i64
+        # Its algorithm, 0 to 255.
+        algorithm: i64
+        # The public key's bytes.
+        key: [u8]
+    # A signature over a set of records (RRSIG).
+    rrsig
+        # The type of the records signed.
+        type_covered: i64
+        # The signature's algorithm, 0 to 255.
+        algorithm: i64
+        # How many labels the owner had when signed, 0 to 255.
+        labels: i64
+        # The records' time to live when signed.
+        original_ttl: i64
+        # When the signature ends, seconds since 1970 as 32 bits.
+        expiration: i64
+        # When the signature begins, seconds since 1970 as 32 bits.
+        inception: i64
+        # The tag of the key that signed, 0 to 65535.
+        key_tag: i64
+        # The zone that signed.
+        signer: str
+        # The signature.
+        signature: [u8]
+    # The next name of a signed zone, and the types its owner holds (NSEC).
+    nsec
+        # The next owner name in the zone's order.
+        next: str
+        # The types the owner holds, ascending, none twice.
+        types: [i64]
+    # A TLS certificate's association (TLSA).
+    tlsa
+        # How the association is used, 0 to 255.
+        usage: i64
+        # Which part of the certificate is matched, 0 to 255.
+        selector: i64
+        # How it is matched, 0 to 255: 0 whole, 1 SHA-256, 2 SHA-512.
+        matching_type: i64
+        # The bytes matched against.
+        association: [u8]
+    # An SSH key's fingerprint (SSHFP).
+    sshfp
+        # The key's algorithm, 0 to 255.
+        algorithm: i64
+        # The fingerprint's digest, 0 to 255: 1 SHA-1, 2 SHA-256.
+        fingerprint_type: i64
+        # The fingerprint.
+        fingerprint: [u8]
+    # A record of a type this package does not read, or of a class its type
+    # is not read in, kept byte for byte (RFC 3597).
+    unknown
+        # Its type, 0 to 65535.
+        type_code: i64
+        # Its data's bytes.
+        data: [u8]
+
+# One parameter of a service binding.
+record SvcParam
+    # Its key, an `SVC_` constant or any number 0 to 65535.
+    key: i64
+    # Its value's bytes, as RFC 9460 § 7 lays them out; `alpn_of`, `port_of`
+    # and `hints_of` read the common ones.
+    value: [u8]
+
+# A query for `name` and `type_code` in class IN, recursion desired and
+# EDNS(0) offering `DEFAULT_UDP_SIZE`, its ID 0 as RFC 8484 asks of DNS
+# over HTTPS.
+#
+# - `name`: the name asked, with or without its last dot, taken as absolute.
+# - `type_code`: the type asked, 0 to 65535.
+#
+# Fails `invalid` where `name` is not a name (`canonical_name` says how) or
+# `type_code` is outside its range. See also `query`, `exchange`.
+function new_query(name: str, type_code: i64) -> Message?
+    p = names.from_text(name)?
+    wire.in_range(value: type_code, low: 0, high: 65535, field: f"the type asked of \"{name}\"")?
+    return ok(
+        Message(id: 0, response: false, opcode: OPCODE_QUERY, authoritative: false, truncated: false, recursion_desired: true, recursion_available: false, authenticated_data: false, checking_disabled: false, rcode: RCODE_NO_ERROR, questions: [Question(name: names.to_text(p.labels), type_code: type_code, class_code: CLASS_IN)], answers: [], authorities: [], additionals: [], has_edns: true, edns: Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: false, options: []))
+    )
+
+# A response begun for `asked`: its ID, operation, questions and wish for
+# recursion copied, its sections empty, its code `RCODE_NO_ERROR`, and EDNS
+# where the query had it, at `DEFAULT_UDP_SIZE`.
+#
+# - `asked`: the query answered.
+#
+# See also `new_query`.
+function reply_to(asked: Message) -> Message
+    return Message(
+        id: asked.id,
+        response: true,
+        opcode: asked.opcode,
+        authoritative: false,
+        truncated: false,
+        recursion_desired: asked.recursion_desired,
+        recursion_available: false,
+        authenticated_data: false,
+        checking_disabled: asked.checking_disabled,
+        rcode: RCODE_NO_ERROR,
+        questions: asked.questions,
+        answers: [],
+        authorities: [],
+        additionals: [],
+        has_edns: asked.has_edns,
+        edns: Edns(udp_size: DEFAULT_UDP_SIZE, version: 0, dnssec_ok: asked.edns.dnssec_ok, options: [])
+    )
+
+# The message `data` holds, its names decompressed.
+#
+# - `data`: the bytes of one message, nothing before or after it.
+#
+# Fails `invalid` where the bytes end inside the message or hold bytes past
+# its end, where a count of records is more than the bytes hold, a name is
+# longer than 255 bytes or uses a label kind other than a length or a
+# pointer, a compression pointer points at or after the part of the name it
+# continues or 127 of them are followed, a record's data is not its type's
+# form, or two OPT records stand, or one stands outside the additional
+# section; the message names the byte. See also `encode`.
+function decode(data: [u8]) -> Message?
+    f = codec_read.decode(data)?
+    questions: [Question] @= []
+
+    for q in f.questions
+        questions @ questions.push(Question(name: q.name, type_code: q.type_code, class_code: q.class_code))
+
+    answers: [Record] @= []
+    authorities: [Record] @= []
+    additionals: [Record] @= []
+
+    # The one place a record's flat data becomes its case: `codec_read`
+    # read each form, so every index below is there.
+    for item in f.items
+        s = item.data
+        t = s.type_code
+        n = s.numbers
+        b = s.blobs
+        d: Data @= .unknown(type_code: t, data: [])
+
+        if s.opaque
+            d @ .unknown(type_code: t, data: b[0])
+        else if t == TYPE_A
+            d @ .a(address: net.from_bytes(b[0]).must())
+        else if t == TYPE_AAAA
+            d @ .aaaa(address: net.from_bytes(b[0]).must())
+        else if t == TYPE_NS
+            d @ .ns(host: s.names[0])
+        else if t == TYPE_CNAME
+            d @ .cname(target: s.names[0])
+        else if t == TYPE_DNAME
+            d @ .dname(target: s.names[0])
+        else if t == TYPE_PTR
+            d @ .ptr(target: s.names[0])
+        else if t == TYPE_MX
+            d @ .mx(preference: n[0], exchange: s.names[0])
+        else if t == TYPE_TXT
+            d @ .txt(texts: b)
+        else if t == TYPE_SRV
+            d @ .srv(priority: n[0], weight: n[1], port: n[2], target: s.names[0])
+        else if t == TYPE_SOA
+            d @ .soa(
+                primary: s.names[0],
+                mailbox: s.names[1],
+                serial: n[0],
+                refresh: n[1],
+                retry: n[2],
+                expire: n[3],
+                minimum: n[4]
+            )
+        else if t == TYPE_HINFO
+            d @ .hinfo(cpu: b[0], system: b[1])
+        else if t == TYPE_CAA
+            d @ .caa(flags: n[0], tag: bytes.to_text_lossy(b[0]), value: b[1])
+        else if t == TYPE_NAPTR
+            d @ .naptr(
+                order: n[0],
+                preference: n[1],
+                flags: b[0],
+                services: b[1],
+                regexp: b[2],
+                replacement: s.names[0]
+            )
+        else if t == TYPE_SVCB || t == TYPE_HTTPS
+            params: [SvcParam] @= []
+
+            for k in range(from: 0, to: b.len())
+                params @ params.push(SvcParam(key: n[k + 1], value: b[k]))
+
+            if t == TYPE_SVCB
+                d @ .svcb(priority: n[0], target: s.names[0], params: params)
+            else
+                d @ .https(priority: n[0], target: s.names[0], params: params)
+        else if t == TYPE_DS
+            d @ .ds(key_tag: n[0], algorithm: n[1], digest_type: n[2], digest: b[0])
+        else if t == TYPE_DNSKEY
+            d @ .dnskey(flags: n[0], protocol: n[1], algorithm: n[2], key: b[0])
+        else if t == TYPE_RRSIG
+            d @ .rrsig(
+                type_covered: n[0],
+                algorithm: n[1],
+                labels: n[2],
+                original_ttl: n[3],
+                expiration: n[4],
+                inception: n[5],
+                key_tag: n[6],
+                signer: s.names[0],
+                signature: b[0]
+            )
+        else if t == TYPE_NSEC
+            d @ .nsec(next: s.names[0], types: n)
+        else if t == TYPE_TLSA
+            d @ .tlsa(usage: n[0], selector: n[1], matching_type: n[2], association: b[0])
+        else if t == TYPE_SSHFP
+            d @ .sshfp(algorithm: n[0], fingerprint_type: n[1], fingerprint: b[0])
+        r = Record(name: item.name, class_code: item.class_code, ttl: item.ttl, data: d)
+
+        if item.section == 1
+            answers @ answers.push(r)
+        else if item.section == 2
+            authorities @ authorities.push(r)
+        else
+            additionals @ additionals.push(r)
+
+    options: [EdnsOption] @= []
+
+    for o in f.options
+        options @ options.push(EdnsOption(code: o.code, data: o.data))
+
+    flags = f.flags
+    return ok(
+        Message(id: f.id, response: flags & 0x8000 != 0, opcode: flags >> 11 & 15, authoritative: flags & 0x0400 != 0, truncated: flags & 0x0200 != 0, recursion_desired: flags & 0x0100 != 0, recursion_available: flags & 0x0080 != 0, authenticated_data: flags & 0x0020 != 0, checking_disabled: flags & 0x0010 != 0, rcode: f.rcode, questions: questions, answers: answers, authorities: authorities, additionals: additionals, has_edns: f.has_edns, edns: Edns(udp_size: f.udp_size, version: f.version, dnssec_ok: f.dnssec_ok, options: options))
+    )
+
+# The bytes of `m`, its names compressed where RFC 3597 § 4 allows it.
+#
+# - `m`: the message; every number is checked against its field's range.
+#
+# Fails `invalid` where a name is not a name, a number is outside its
+# field's range, a record's data does not fit its form (an `a` without four
+# bytes, a character string past 255 bytes, a parameter twice), a code past
+# 15 stands without EDNS, or the message comes to more than 65,535 bytes.
+# See also `decode`.
+function encode(m: Message) -> [u8]?
+    wire.in_range(value: m.opcode, low: 0, high: 15, field: "the message's operation")?
+    flags: i64 @= m.opcode << 11
+
+    if m.response
+        flags @ flags | 0x8000
+
+    if m.authoritative
+        flags @ flags | 0x0400
+
+    if m.truncated
+        flags @ flags | 0x0200
+
+    if m.recursion_desired
+        flags @ flags | 0x0100
+
+    if m.recursion_available
+        flags @ flags | 0x0080
+
+    if m.authenticated_data
+        flags @ flags | 0x0020
+
+    if m.checking_disabled
+        flags @ flags | 0x0010
+    questions: [model.Ask] @= []
+
+    for q in m.questions
+        questions @ questions.push(model.Ask(name: q.name, type_code: q.type_code, class_code: q.class_code))
+
+    items: [model.Item] @= []
+
+    # The one place a record's case becomes its flat data, in the form
+    # `codec_write` writes.
+    for section in range(from: 1, to: 4)
+        records: [Record] @= m.additionals
+
+        if section == 1
+            records @ m.answers
+        else if section == 2
+            records @ m.authorities
+
+        for r in records
+            s = match r.data
+                .a x     => model.of(TYPE_A, numbers: [], texts: [], blobs: [x.address.bytes])
+                .aaaa x  => model.of(TYPE_AAAA, numbers: [], texts: [], blobs: [x.address.bytes])
+                .ns x    => model.of(TYPE_NS, numbers: [], texts: [x.host], blobs: [])
+                .cname x => model.of(TYPE_CNAME, numbers: [], texts: [x.target], blobs: [])
+                .dname x => model.of(TYPE_DNAME, numbers: [], texts: [x.target], blobs: [])
+                .ptr x   => model.of(TYPE_PTR, numbers: [], texts: [x.target], blobs: [])
+                .mx x    => model.of(TYPE_MX, numbers: [x.preference], texts: [x.exchange], blobs: [])
+                .txt x   => model.of(TYPE_TXT, numbers: [], texts: [], blobs: x.texts)
+                .srv x   => model.of(TYPE_SRV, numbers: [x.priority, x.weight, x.port], texts: [x.target], blobs: [])
+                .soa x => model.of(
+                    TYPE_SOA,
+                    numbers: [x.serial, x.refresh, x.retry, x.expire, x.minimum],
+                    texts: [x.primary, x.mailbox],
+                    blobs: []
+                )
+                .hinfo x => model.of(TYPE_HINFO, numbers: [], texts: [], blobs: [x.cpu, x.system])
+                .caa x   => model.of(TYPE_CAA, numbers: [x.flags], texts: [], blobs: [bytes.from_text(x.tag), x.value])
+                .naptr x => model.of(
+                    TYPE_NAPTR,
+                    numbers: [x.order, x.preference],
+                    texts: [x.replacement],
+                    blobs: [x.flags, x.services, x.regexp]
+                )
+                .svcb x =>
+                    numbered: [i64] @= [x.priority]
+                    values: [[u8]] @= []
+
+                    for p in x.params
+                        numbered @ numbered.push(p.key)
+                        values @ values.push(p.value)
+
+                    model.of(TYPE_SVCB, numbers: numbered, texts: [x.target], blobs: values)
+                .https x =>
+                    numbered: [i64] @= [x.priority]
+                    values: [[u8]] @= []
+
+                    for p in x.params
+                        numbered @ numbered.push(p.key)
+                        values @ values.push(p.value)
+
+                    model.of(TYPE_HTTPS, numbers: numbered, texts: [x.target], blobs: values)
+                .ds x => model.of(
+                    TYPE_DS,
+                    numbers: [x.key_tag, x.algorithm, x.digest_type],
+                    texts: [],
+                    blobs: [x.digest]
+                )
+                .dnskey x => model.of(
+                    TYPE_DNSKEY,
+                    numbers: [x.flags, x.protocol, x.algorithm],
+                    texts: [],
+                    blobs: [x.key]
+                )
+                .rrsig x => model.of(
+                    TYPE_RRSIG,
+                    numbers: [x.type_covered, x.algorithm, x.labels, x.original_ttl, x.expiration, x.inception, x.key_tag],
+                    texts: [x.signer],
+                    blobs: [x.signature]
+                )
+                .nsec x => model.of(TYPE_NSEC, numbers: x.types, texts: [x.next], blobs: [])
+                .tlsa x => model.of(
+                    TYPE_TLSA,
+                    numbers: [x.usage, x.selector, x.matching_type],
+                    texts: [],
+                    blobs: [x.association]
+                )
+                .sshfp x => model.of(
+                    TYPE_SSHFP,
+                    numbers: [x.algorithm, x.fingerprint_type],
+                    texts: [],
+                    blobs: [x.fingerprint]
+                )
+                .unknown x => model.opaque(type_code: x.type_code, data: x.data)
+
+            items @ items.push(
+                model.Item(section: section, name: r.name, class_code: r.class_code, ttl: r.ttl, data: s)
+            )
+
+    options: [model.Option] @= []
+
+    for o in m.edns.options
+        options @ options.push(model.Option(code: o.code, data: o.data))
+
+    return codec_write.encode(
+        model.Frame(id: m.id, flags: flags, rcode: m.rcode, questions: questions, items: items, has_edns: m.has_edns, udp_size: m.edns.udp_size, version: m.edns.version, dnssec_ok: m.edns.dnssec_ok, options: options)
+    )
+
+## Names
+
+# `name` in the form two names are compared by: absolute, its ASCII letters
+# in lower case, its escapes as dig writes them.
+#
+# - `name`: labels separated by dots, the last dot optional, `\.` a dot
+#   inside a label, `\\` a backslash and `\DDD` the byte of three decimal
+#   digits; `.` is the root.
+#
+# Fails `invalid` where `name` is "", holds an empty label, a label past 63
+# bytes, a broken escape, or comes to more than 255 bytes as a message holds
+# it. See also `labels_of`, `is_subdomain`.
+function canonical_name(name: str) -> str?
+    p = names.from_text(name)?
+    return ok(names.to_text(names.lowered(p.labels)))
+
+# The labels of `name`, each written as a name writes it, from the first:
+# none for the root.
+#
+# - `name`: a name, as `canonical_name` reads it.
+#
+# Fails as `canonical_name` fails. See also `canonical_name`.
+function labels_of(name: str) -> [str]?
+    p = names.from_text(name)?
+    out: [str] @= []
+
+    for label in p.labels
+        out @ out.push(names.label_text(label))
+
+    return ok(out)
+
+# Whether `name` is `of` or a name under it, their letters compared without
+# case. A text that is no name is under nothing and has nothing under it.
+#
+# - `name`: the name that may be under `of`.
+# - `of`: the name that may hold it; the root holds every name.
+#
+# See also `canonical_name`.
+function is_subdomain(name: str, of: str) -> bool
+    match names.from_text(name)
+        .ok inner =>
+            match names.from_text(of)
+                .ok outer => return names.is_under(name: inner.labels, of: outer.labels)
+                .err _    => return false
+        .err _ => return false
+
+# The address the reverse name `name` names, as `net.to_reverse_name` writes
+# one: `4.3.2.1.in-addr.arpa.` or 32 hexadecimal digits under `ip6.arpa.`.
+#
+# - `name`: the name, with or without its last dot, in either case.
+#
+# Fails `invalid` where `name` is under neither, or holds other than four
+# decimal labels 0 to 255 or 32 labels of one hexadecimal digit. See also
+# `net.to_reverse_name`, `lookup_reverse`.
+function parse_reverse_name(name: str) -> net.Address?
+    p = names.from_text(name)?
+    low = names.lowered(p.labels)
+    count = low.len()
+
+    if count == 6 && names.to_text(low.slice(from: 4, to: 6)) == "in-addr.arpa."
+        parts: [str] @= []
+
+        for k in range(from: 0, to: 4)
+            parts @ parts.push(names.label_text(low[3 - k]))
+
+        match net.parse_address(parts.join("."))
+            .ok a => return ok(a)
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"\"{name}\": its four labels under in-addr.arpa. are not each a number 0 to 255"
+            )
+
+    if count == 34 && names.to_text(low.slice(from: 32, to: 34)) == "ip6.arpa."
+        out: [u8] @= []
+
+        for k in range(from: 0, to: 16)
+            high = present.nibble(low[31 - 2 * k])
+            low_half = present.nibble(low[30 - 2 * k])
+
+            if high < 0 || low_half < 0
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{name}\": a label under ip6.arpa. that is not one hexadecimal digit"
+                )
+            out @ out.push(to_u8(high << 4 | low_half).must())
+
+        return net.from_bytes(out)
+    return fail(code: INVALID, msg: f"\"{name}\": neither four labels under in-addr.arpa. nor 32 under ip6.arpa.")
+
+## Types, classes and codes as text
+
+# The type of a record, which its data's case says: `TYPE_MX` for an `mx`,
+# the type kept for an `unknown`.
+#
+# - `r`: the record.
+function type_of(r: Record) -> i64
+    return match r.data
+        .a _       => TYPE_A
+        .aaaa _    => TYPE_AAAA
+        .ns _      => TYPE_NS
+        .cname _   => TYPE_CNAME
+        .dname _   => TYPE_DNAME
+        .ptr _     => TYPE_PTR
+        .mx _      => TYPE_MX
+        .txt _     => TYPE_TXT
+        .srv _     => TYPE_SRV
+        .soa _     => TYPE_SOA
+        .hinfo _   => TYPE_HINFO
+        .caa _     => TYPE_CAA
+        .naptr _   => TYPE_NAPTR
+        .svcb _    => TYPE_SVCB
+        .https _   => TYPE_HTTPS
+        .ds _      => TYPE_DS
+        .dnskey _  => TYPE_DNSKEY
+        .rrsig _   => TYPE_RRSIG
+        .nsec _    => TYPE_NSEC
+        .tlsa _    => TYPE_TLSA
+        .sshfp _   => TYPE_SSHFP
+        .unknown x => x.type_code
+
+# The mnemonic of the record type `type_code`, `MX`, or `TYPE` and its
+# number where it has none here, `TYPE65280` (RFC 3597 § 5).
+#
+# - `type_code`: the type, any number.
+#
+# See also `parse_type`.
+function type_name(type_code: i64) -> str
+    return present.type_name(type_code)
+
+# The record type `s` names: a mnemonic `type_name` writes, in either case,
+# or `TYPE` and a number 0 to 65535.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is neither. See also `type_name`.
+function parse_type(s: str) -> i64?
+    upper = strings.to_upper_ascii(s)
+    known = present.type_named(upper)
+
+    if known >= 0
+        return ok(known)
+
+    if strings.has_prefix(s: upper, prefix: "TYPE")
+        n = present.number_of(upper.slice(from: 4, to: upper.len()))
+
+        if n >= 0 && n <= 65535
+            return ok(n)
+    return fail(code: INVALID, msg: f"\"{s}\" names no record type: a mnemonic, or TYPE and a number 0 to 65535")
+
+# The mnemonic of the class `class_code`, `IN`, `CH`, `HS`, `NONE`, `ANY`,
+# or `CLASS` and its number (RFC 3597 § 5).
+#
+# - `class_code`: the class, any number.
+#
+# See also `parse_class`.
+function class_name(class_code: i64) -> str
+    return present.class_name(class_code)
+
+# The class `s` names: a mnemonic `class_name` writes, in either case, or
+# `CLASS` and a number 0 to 65535.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is neither. See also `class_name`.
+function parse_class(s: str) -> i64?
+    upper = strings.to_upper_ascii(s)
+
+    for c in [CLASS_IN, CLASS_CH, CLASS_HS, CLASS_NONE, CLASS_ANY]
+        if present.class_name(c) == upper
+            return ok(c)
+
+    if strings.has_prefix(s: upper, prefix: "CLASS")
+        n = present.number_of(upper.slice(from: 5, to: upper.len()))
+
+        if n >= 0 && n <= 65535
+            return ok(n)
+    return fail(code: INVALID, msg: f"\"{s}\" names no class: a mnemonic, or CLASS and a number 0 to 65535")
+
+# The mnemonic of the response code `rcode`, `NXDOMAIN`, or `RESERVED` and
+# its number where it has none, as dig writes it.
+#
+# - `rcode`: the code, any number.
+function rcode_name(rcode: i64) -> str
+    return present.rcode_name(rcode)
+
+## Records as text
+
+# `r` as a zone file writes it and dig prints it, its fields parted by one
+# space: `example.com. 300 IN MX 10 mail.example.com.`.
+#
+# - `r`: the record.
+#
+# The data is written as `format_data` writes it. Fails `invalid` where `r`
+# cannot be written, as `encode` fails. See also `format_data`.
+function format_record(r: Record) -> str?
+    m @= new_query(".", type_code: TYPE_A).must()
+    m.answers @ [r]
+    item = codec_read.decode(encode(m)?)?.items[0]
+    data = rdata.text_of(item.data)
+    return ok(
+        f"{item.name} {item.ttl} {present.class_name(item.class_code)} {present.type_name(item.data.type_code)} {data}"
+    )
+
+# The data `d` as a zone file writes it: a character string in quotes with
+# `"` and `\` escaped and every byte outside printable ASCII as `\DDD`, keys
+# and signatures in base 64, digests in upper-case hexadecimal, an RRSIG's
+# times as `YYYYMMDDHHmmSS` in UTC, and an `unknown` as `\# <length> <hex>`
+# (RFC 3597 § 5).
+#
+# - `d`: the data, written as in class IN: an `unknown` of a type read in
+#   class IN is written by that type's form.
+#
+# Fails `invalid` where `d` cannot be written, as `encode` fails. See also
+# `format_record`.
+function format_data(d: Data) -> str?
+    m @= new_query(".", type_code: TYPE_A).must()
+    m.answers @ [Record(name: ".", class_code: CLASS_IN, ttl: 0, data: d)]
+    return ok(rdata.text_of(codec_read.decode(encode(m)?)?.items[0].data))
+
+## Service binding parameters
+
+# The value of the parameter `key` among `params`.
+#
+# - `params`: the parameters of an `svcb` or an `https`.
+# - `key`: the key searched, an `SVC_` constant.
+#
+# Fails `not_found` where none has that key. See also `alpn_of`, `port_of`,
+# `hints_of`.
+function param_of(params: [SvcParam], key: i64) -> [u8]?
+    for p in params
+        if p.key == key
+            return ok(p.value)
+
+    return fail(code: NOT_FOUND, msg: f"no service parameter {svc.key_name(key)} among {params.len()}")
+
+# The protocol identifiers an `alpn` value lists, `h2` and `h3`, in order.
+#
+# - `value`: the value of an `SVC_ALPN` parameter.
+#
+# Fails `invalid` where the value is not a list of identifiers of 1 to 255
+# bytes, and `not_text` where one is not UTF-8. See also `alpn_param`.
+function alpn_of(value: [u8]) -> [str]?
+    out: [str] @= []
+
+    for id in svc.ids_of(value)?
+        out @ out.push(bytes.to_text(id)?)
+
+    return ok(out)
+
+# The port a `port` value holds.
+#
+# - `value`: the value of an `SVC_PORT` parameter.
+#
+# Fails `invalid` where it is not two bytes. See also `port_param`.
+function port_of(value: [u8]) -> i64?
+    return svc.port_of(value)
+
+# The addresses an `ipv4hint` or an `ipv6hint` value lists, in order.
+#
+# - `value`: the value of an `SVC_IPV4_HINT` or an `SVC_IPV6_HINT`
+#   parameter: four bytes an address, or sixteen.
+# - `v6`: true to read sixteen-byte addresses, false four.
+#
+# Fails `invalid` where the value is empty or not a whole count of
+# addresses. See also `hints_param`.
+function hints_of(value: [u8], v6: bool) -> [net.Address]?
+    return svc.hints_of(value, v6: v6)
+
+# The `alpn` parameter listing `ids`.
+#
+# - `ids`: the protocol identifiers, `h2`, `h3`, each 1 to 255 bytes.
+#
+# Fails `invalid` where `ids` is empty or one of them is "" or longer. See
+# also `alpn_of`.
+function alpn_param(ids: [str]) -> SvcParam?
+    raw: [[u8]] @= []
+
+    for id in ids
+        raw @ raw.push(bytes.from_text(id))
+
+    return ok(SvcParam(key: SVC_ALPN, value: svc.alpn_value(raw)?))
+
+# The `port` parameter for `port`.
+#
+# - `port`: 0 to 65535.
+#
+# Fails `invalid` where `port` is outside that range. See also `port_of`.
+function port_param(port: i64) -> SvcParam?
+    wire.in_range(value: port, low: 0, high: 65535, field: "the port of a service binding")?
+    return ok(SvcParam(key: SVC_PORT, value: [to_u8(port >> 8).must(), to_u8(port & 255).must()]))
+
+# The `ipv4hint` or `ipv6hint` parameter listing `addresses`, of one kind.
+#
+# - `addresses`: IPv4 addresses alone, or IPv6 alone; ports are ignored.
+#
+# Fails `invalid` where `addresses` is empty or mixes the two kinds. See
+# also `hints_of`.
+function hints_param(addresses: [net.Address]) -> SvcParam?
+    value = svc.hints_value(addresses)?
+    key: i64 @= SVC_IPV4_HINT
+
+    if net.is_v6(addresses[0])
+        key @ SVC_IPV6_HINT
+    return ok(SvcParam(key: key, value: value))
+
+## DNSSEC as data
+
+# The key tag of a DNSKEY's data, the number a DS and an RRSIG name it by
+# (RFC 4034 appendix B).
+#
+# - `d`: the data, a `dnskey`.
+#
+# Fails `invalid` where `d` is not a `dnskey` or a field is outside its
+# range. See also `Data`.
+function key_tag_of(d: Data) -> i64?
+    r = Record(name: ".", class_code: CLASS_IN, ttl: 0, data: d)
+    t = type_of(r)
+
+    if t != TYPE_DNSKEY
+        return fail(code: INVALID, msg: f"a key tag is a DNSKEY's, and this data is of type {type_name(t)}")
+    m @= new_query(".", type_code: TYPE_A).must()
+    m.answers @ [r]
+    s = codec_read.decode(encode(m)?)?.items[0].data
+
+    if s.opaque
+        return fail(code: INVALID, msg: "a DNSKEY's data kept as bytes")
+    return ok(present.key_tag(numbers: s.numbers, key: s.blobs[0]))
+
+## Resolvers
+
+# How questions are asked: of which servers, under which search list, within
+# which time. Made by `system`, `parse_resolv_conf` or `resolver`, or built
+# directly.
+record Resolver
+    # The servers asked, in order, each an address with a port.
+    servers: [net.Address]
+    # The domains a name with fewer than `ndots` dots and no last dot is
+    # tried under first, in order.
+    search: [str]
+    # The count of dots from which a name is tried as it is before the
+    # search list, 1 by default, 0 to 15.
+    ndots: i64
+    # Milliseconds each try of each server may take, 1 or more: a datagram
+    # awaited, or a connection made, and its answer read within as much
+    # again.
+    timeout_ms: i64
+    # How many times the servers are tried in turn, 1 or more.
+    attempts: i64
+    # Whether each lookup begins at a server drawn at random, rather than at
+    # the first.
+    rotate: bool
+    # Whether every question goes over TCP, never over UDP.
+    tcp: bool
+    # The size of a datagram the queries offer to read with EDNS(0), 512 to
+    # 65535 bytes, or 0 to send no OPT record.
+    udp_size: i64
+    # Whether the queries ask for DNSSEC's records (the DO bit), which needs
+    # `udp_size`.
+    dnssec_ok: bool
+    # Whether the servers are asked to follow a question to its answer (RD):
+    # true for a recursive resolver, false to ask an authority.
+    recursion: bool
+
+# The resolver the system is configured with: on POSIX systems what
+# `/etc/resolv.conf` says, as `parse_resolv_conf` reads it, and the loopback
+# servers `127.0.0.1` and `::1` where the file is not there, as Go and glibc
+# take them. Where the file names no search list, the domain of the
+# machine's own name is one, as glibc and Go take it: `local.` for
+# `mac.local`.
+#
+# Fails `unsupported` on Windows, which keeps its servers in the registry
+# and no file: name them with `resolver`. Fails `not_text` where the file is
+# not UTF-8, `failed` where it cannot be read. See also `resolver`,
+# `parse_resolv_conf`.
+function system() -> Resolver?
+    match os.family()
+        .windows =>
+            return fail(
+                code: UNSUPPORTED,
+                msg: "Windows keeps its name servers in the registry and in no file this package reads: name them with dns.resolver"
+            )
+        .posix => _ = 0
+
+    content: str @= ""
+
+    match read_file("/etc/resolv.conf")
+        .ok t => content @ t
+        .err e =>
+            if e.code == NOT_TEXT
+                return fail(code: NOT_TEXT, msg: "/etc/resolv.conf is not UTF-8: " + e.msg)
+
+            if e.code != "file_not_found"
+                return fail(code: FAILED, msg: "/etc/resolv.conf cannot be read: " + e.msg)
+
+    r @= parse_resolv_conf(content)
+
+    # Where no search list is written, the domain of the machine's own name,
+    # as glibc and Go take it.
+    if !conf.read(content).has_search
+        match os.host_name()
+            .ok host =>
+                match strings.split_once(s: host, sep: ".")
+                    .ok halves =>
+                        match names.from_text(halves.after)
+                            .ok domain => r.search @ [names.to_text(domain.labels)]
+                            .err _     => _ = 0
+                    .err _ => _ = 0
+            .err _ => _ = 0
+    return ok(r)
+
+# The resolver `text`, the content of a `resolv.conf`, describes: its
+# `nameserver` lines, at most three, as glibc reads them; its `search` or
+# `domain` line, the last one counting; and its `options` `ndots:`,
+# `timeout:` (seconds), `attempts:`, `rotate`, `use-vc` and `edns0`. A line
+# it does not read is skipped, as glibc skips it, and so is a server that is
+# no address.
+#
+# - `text`: the file's content; `#` and `;` begin a comment.
+#
+# The defaults stand where the text says nothing: the loopback servers, no
+# search list, `ndots:1`, five seconds, two attempts, and
+# `DEFAULT_UDP_SIZE`. See also `system`.
+function parse_resolv_conf(text: str) -> Resolver
+    c = conf.read(text)
+    servers: [net.Address] @= []
+
+    for a in c.servers
+        servers @ servers.push(net.with_port(a, port: PORT).must())
+
+    return Resolver(
+        servers: servers,
+        search: c.search,
+        ndots: c.ndots,
+        timeout_ms: c.timeout_s * 1000,
+        attempts: c.attempts,
+        rotate: c.rotate,
+        tcp: c.tcp,
+        udp_size: DEFAULT_UDP_SIZE,
+        dnssec_ok: false,
+        recursion: true
+    )
+
+# A resolver asking `servers` with the defaults `parse_resolv_conf` takes:
+# no search list, `ndots:1`, five seconds a try, two attempts, recursion
+# desired, EDNS(0) at `DEFAULT_UDP_SIZE`.
+#
+# - `servers`: one or more addresses, each as `net.parse_address` reads it,
+#   or with a port as `net.parse_address_port` reads it, `[::1]:5353`;
+#   without one, port 53.
+#
+# Fails `invalid` where `servers` is empty or one of them is no address.
+# See also `system`.
+function resolver(servers: [str]) -> Resolver?
+    if servers.len() == 0
+        return fail(code: INVALID, msg: "a resolver asks one server or more, and none was named")
+    out: [net.Address] @= []
+
+    for s in servers
+        match net.parse_address(s)
+            .ok a => out @ out.push(net.with_port(a, port: PORT).must())
+            .err _ =>
+                match net.parse_address_port(s)
+                    .ok a  => out @ out.push(a)
+                    .err _ => return fail(code: INVALID, msg: f"\"{s}\" is no address, with or without a port")
+
+    return ok(
+        Resolver(servers: out, search: [], ndots: 1, timeout_ms: 5000, attempts: 2, rotate: false, tcp: false, udp_size: DEFAULT_UDP_SIZE, dnssec_ok: false, recursion: true)
+    )
+
+## Asking
+
+# The answer to `m` from the servers of `r`: sent over UDP, and again over
+# TCP where the answer comes truncated, or over TCP alone where `r.tcp`
+# says so, each server tried in turn `r.attempts` times, each try within
+# `r.timeout_ms`.
+#
+# - `r`: the resolver whose servers and limits are used; its search list,
+#   `udp_size`, `dnssec_ok` and `recursion` are not, since `m` is sent as it
+#   is.
+# - `m`: the message sent, its `id` replaced by a fresh one from the
+#   system's generator.
+#
+# A server answering `SERVFAIL`, `REFUSED` or `NOTIMP` is passed for the
+# next, and the last such answer is answered where no server gave another;
+# any other code is answered as it comes. A datagram from another address,
+# with another ID or question, that is no response or no message, is passed
+# over as a forged one would be. Fails `timeout` where no server answers in
+# time, `closed` where the last server tried refused, `invalid` where an
+# answer over TCP is not a message that answers `m` or `m` cannot be
+# written, `stopped` and `limit` as `net` fails, at once. See also `query`,
+# `exchange_stream`.
+function exchange(r: Resolver, m: Message) -> Message?
+    if r.servers.len() == 0 || r.timeout_ms < 1 || r.attempts < 1
+        return fail(
+            code: INVALID,
+            msg: f"a resolver asks one server or more, 1 ms or more a try, 1 attempt or more: not {r.servers.len()} servers, {r.timeout_ms} ms, {r.attempts} attempts"
+        )
+
+    for a in r.servers
+        if !a.has_port
+            return fail(code: INVALID, msg: f"the server {net.format_address(a)} has no port")
+
+    asked = encode(m)?
+    first: i64 @= 0
+
+    if r.rotate
+        draw = os.random_bytes(2)?
+        first @ (to_i64(draw[0]).must() << 8 | to_i64(draw[1]).must()) % r.servers.len()
+    plan = transport.Plan(servers: r.servers, timeout_ms: r.timeout_ms, attempts: r.attempts, first: first, tcp: r.tcp)
+    return decode(transport.exchange(asked, plan: plan)?)
+
+# The answer to `m` over `s`, a stream the program opened to a server and
+# closes: DNS over TLS, `tls.connect` to port 853 (RFC 7858), or any stream
+# that frames messages as TCP does, each after its length in two bytes.
+#
+# - `s`: the stream, read and written; the deadline is the stream's own,
+#   set when it was made.
+# - `m`: the message sent, as it is.
+#
+# Fails `invalid` where the answer is not a message or its ID is not
+# `m`'s, and where the stream fails, with its code. See also `exchange`.
+function exchange_stream(s: io.Stream, m: Message) -> Message?
+    asked = encode(m)?
+    return decode(transport.framed_answer(s, query: asked)?)
+
+# The answer of `r`'s servers to the question `name` and `type_code` in
+# class IN, whatever its code: `name` is asked as it is, absolute, with no
+# search list, as `r` says to ask it.
+#
+# - `r`: the resolver.
+# - `name`: the name asked, with or without its last dot.
+# - `type_code`: the type asked.
+#
+# A server that answers `FORMERR` to a query with EDNS and none of its own is
+# asked again without it, as glibc asks. Fails as `new_query` and
+# `exchange` fail. See also `lookup`.
+function query(r: Resolver, name: str, type_code: i64) -> Message?
+    m @= new_query(name, type_code: type_code)?
+    m.recursion_desired @ r.recursion
+
+    if r.udp_size == 0
+        m.has_edns @ false
+    else
+        wire.in_range(value: r.udp_size, low: 512, high: 65535, field: "the resolver's datagram size")?
+        m.edns @ Edns(udp_size: r.udp_size, version: 0, dnssec_ok: r.dnssec_ok, options: [])
+    answer = exchange(r, m: m)?
+
+    if answer.rcode == RCODE_FORMAT_ERROR && m.has_edns && !answer.has_edns
+        m.has_edns @ false
+        return exchange(r, m: m)
+    return ok(answer)
+
+# What a lookup found: the name that answered, the end of its aliases, and
+# the records.
+record Answer
+    # The name asked that answered, absolute: `name` itself, or `name` under
+    # one of the search list's domains.
+    name: str
+    # The name the records belong to, once every CNAME of the answer is
+    # followed from `name`: `name` itself where there is none.
+    canonical: str
+    # The records of the type asked, owned by `canonical`, in the server's
+    # order.
+    records: [Record]
+    # The whole response, its sections and time to live included.
+    message: Message
+
+# The records of type `type_code` that `name` has, asked of `r`'s servers
+# through its search list, the aliases of the answer followed.
+#
+# - `r`: the resolver.
+# - `name`: the name; with its last dot it is asked alone, and without it
+#   it is tried under each domain of `r.search` too, as `as is first` where
+#   it holds `r.ndots` dots or more and last otherwise.
+# - `type_code`: the type asked.
+#
+# Fails `not_found` where no name tried has records of the type, the
+# message saying whether the name exists; `failed` where a server answered
+# another code than success and `NXDOMAIN`, which ends the search at once;
+# and as `query` fails. See also `query`, `lookup_addresses`.
+function lookup(r: Resolver, name: str, type_code: i64) -> Answer?
+    p = names.from_text(name)?
+    as_is = names.to_text(p.labels)
+    tried: [str] @= []
+
+    if p.absolute
+        tried @ [as_is]
+    else
+        under: [str] @= []
+
+        for d in r.search
+            match names.from_text(d)
+                .ok domain =>
+                    joined: [[u8]] @= p.labels
+
+                    for label in domain.labels
+                        joined @ joined.push(label)
+
+                    match names.from_text(names.to_text(joined))
+                        .ok _  => under @ under.push(names.to_text(joined))
+                        .err _ => _ = 0
+                .err _ => _ = 0
+
+        if p.labels.len() - 1 >= r.ndots
+            tried @ [as_is]
+
+        for u in under
+            tried @ tried.push(u)
+
+        if p.labels.len() - 1 < r.ndots
+            tried @ tried.push(as_is)
+    missing: str @= ""
+
+    for candidate in tried
+        m = query(r, name: candidate, type_code: type_code)?
+
+        if m.rcode == RCODE_NAME_ERROR
+            if missing == ""
+                missing @ f"{candidate} names nothing (NXDOMAIN)"
+            continue
+
+        if m.rcode != RCODE_NO_ERROR
+            return fail(
+                code: FAILED,
+                msg: f"the name server answered {rcode_name(m.rcode)} to {candidate} {type_name(type_code)}"
+            )
+        canonical: str @= candidate
+        records: [Record] @= []
+        hops: i64 @= 0
+
+        while hops <= 16
+            low = strings.to_lower_ascii(canonical)
+            next: str @= ""
+
+            for rec in m.answers
+                if strings.to_lower_ascii(rec.name) == low
+                    t = type_of(rec)
+
+                    if t == type_code || type_code == TYPE_ANY
+                        records @ records.push(rec)
+                    else if t == TYPE_CNAME
+                        next @ match rec.data
+                            .cname c => c.target
+                            .a _ | .aaaa _ | .ns _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => ""
+
+            if records.len() > 0 || next == ""
+                break
+            canonical @ next
+            hops @ hops + 1
+
+        if records.len() > 0
+            return ok(Answer(name: candidate, canonical: canonical, records: records, message: m))
+
+        if missing == ""
+            missing @ f"{candidate} has no record of type {type_name(type_code)}"
+
+    return fail(code: NOT_FOUND, msg: missing)
+
+# The IPv4 and IPv6 addresses of `name`, asked of `r`'s servers: its A
+# records then its AAAA records, none twice, without ports.
+#
+# - `r`: the resolver.
+# - `name`: the host's name, as `lookup` reads it.
+#
+# Fails `not_found` where it has neither, and as `lookup` fails. See also
+# `net.lookup`, which asks the system's own resolver.
+function lookup_addresses(r: Resolver, name: str) -> [net.Address]?
+    out: [net.Address] @= []
+    missing: str @= ""
+
+    for t in [TYPE_A, TYPE_AAAA]
+        match lookup(r, name: name, type_code: t)
+            .ok answer =>
+                for rec in answer.records
+                    got: [net.Address] @= []
+
+                    match rec.data
+                        .a x => got @ [x.address]
+                        .aaaa x => got @ [x.address]
+                        .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+                    for a in got
+                        seen: bool @= false
+
+                        for b in out
+                            if b == a
+                                seen @ true
+
+                        if !seen
+                            out @ out.push(a)
+            .err e =>
+                if e.code != NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+
+                if missing == ""
+                    missing @ e.msg
+
+    if out.len() == 0
+        return fail(code: NOT_FOUND, msg: f"{name} has no address: {missing}")
+    return ok(out)
+
+# A mail exchanger, as `lookup_mx` answers it.
+record Mx
+    # The exchanger's name, absolute.
+    host: str
+    # Its preference, the lowest tried first.
+    preference: i64
+
+# The mail exchangers of `name`, by preference from the lowest, in the
+# server's order within one.
+#
+# - `r`: the resolver.
+# - `name`: the domain, as `lookup` reads it.
+#
+# Fails as `lookup` fails. See also `lookup`.
+function lookup_mx(r: Resolver, name: str) -> [Mx]?
+    answer = lookup(r, name: name, type_code: TYPE_MX)?
+    out: [Mx] @= []
+
+    for rec in answer.records
+        match rec.data
+            .mx x =>
+                at: i64 @= out.len()
+                out @ out.push(Mx(host: x.exchange, preference: x.preference))
+
+                while at > 0 && out[at - 1].preference > out[at].preference
+                    held = out[at - 1]
+                    out[at - 1] @ out[at]
+                    out[at] @ held
+                    at @ at - 1
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    return ok(out)
+
+# The texts of `name`, one for each TXT record, its character strings joined
+# with nothing between them, as Go's `LookupTXT` joins them.
+#
+# - `r`: the resolver.
+# - `name`: the name, as `lookup` reads it.
+#
+# Fails `not_text` where a record's bytes are not UTF-8, and as `lookup`
+# fails. See also `lookup`.
+function lookup_txt(r: Resolver, name: str) -> [str]?
+    answer = lookup(r, name: name, type_code: TYPE_TXT)?
+    out: [str] @= []
+
+    for rec in answer.records
+        match rec.data
+            .txt x => out @ out.push(bytes.to_text(bytes.concat(x.texts))?)
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    return ok(out)
+
+# A server of a service, as `lookup_srv` answers it.
+record Srv
+    # The server's name, absolute.
+    target: str
+    # The port the service listens on.
+    port: i64
+    # Its priority, the lowest tried first.
+    priority: i64
+    # Its weight among servers of one priority.
+    weight: i64
+
+# The servers of the service `service` over `proto` for `name`, asked as
+# `_service._proto.name`, by priority from the lowest and within one by
+# weight from the largest. A sole record whose target is `.` says the
+# service is not offered, and answers none.
+#
+# - `r`: the resolver.
+# - `service`: the service, `xmpp-server`, without its underscore; "" asks
+#   `name` itself.
+# - `proto`: the protocol, `tcp` or `udp`, without its underscore; ""
+#   with `service` "".
+# - `name`: the domain, as `lookup` reads it.
+#
+# Fails as `lookup` fails. See also `lookup`.
+function lookup_srv(r: Resolver, service: str, proto: str, name: str) -> [Srv]?
+    asked: str @= name
+
+    if service != "" || proto != ""
+        asked @ "_" + service + "._" + proto + "." + name
+    answer = lookup(r, name: asked, type_code: TYPE_SRV)?
+    out: [Srv] @= []
+
+    for rec in answer.records
+        match rec.data
+            .srv x =>
+                at: i64 @= out.len()
+                out @ out.push(Srv(target: x.target, port: x.port, priority: x.priority, weight: x.weight))
+
+                while at > 0 && (out[at - 1].priority > out[at].priority || out[at - 1].priority == out[at].priority && out[at - 1].weight < out[at].weight)
+                    held = out[at - 1]
+                    out[at - 1] @ out[at]
+                    out[at] @ held
+                    at @ at - 1
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    if out.len() == 1 && out[0].target == "."
+        return ok([])
+    return ok(out)
+
+# The names of the name servers of the zone `name`, in the server's order.
+#
+# - `r`: the resolver.
+# - `name`: the zone, as `lookup` reads it.
+#
+# Fails as `lookup` fails. See also `lookup`.
+function lookup_ns(r: Resolver, name: str) -> [str]?
+    answer = lookup(r, name: name, type_code: TYPE_NS)?
+    out: [str] @= []
+
+    for rec in answer.records
+        match rec.data
+            .ns x => out @ out.push(x.host)
+            .a _ | .aaaa _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    return ok(out)
+
+# The canonical name of `name`, every alias followed: `name` itself, made
+# absolute, where it is no alias but has addresses.
+#
+# - `r`: the resolver.
+# - `name`: the host's name, as `lookup` reads it.
+#
+# Fails `not_found` where the name has neither an alias nor an address, and
+# as `lookup` fails. See also `lookup`.
+function lookup_cname(r: Resolver, name: str) -> str?
+    for t in [TYPE_A, TYPE_AAAA]
+        match lookup(r, name: name, type_code: t)
+            .ok answer => return ok(answer.canonical)
+            .err e =>
+                if e.code != NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+
+    return fail(code: NOT_FOUND, msg: f"{name} is neither an alias nor a name with an address")
+
+# The names the address `a` has by its PTR records, asked under
+# `in-addr.arpa.` or `ip6.arpa.`, in the server's order.
+#
+# - `r`: the resolver.
+# - `a`: the address; its port and zone are left out.
+#
+# Fails as `lookup` fails. See also `net.name_of`, which asks the system's
+# own resolver, and `parse_reverse_name`.
+function lookup_reverse(r: Resolver, a: net.Address) -> [str]?
+    reverse: str @= net.to_reverse_name(a)
+
+    if !strings.has_suffix(s: reverse, suffix: ".")
+        reverse @ reverse + "."
+    answer = lookup(r, name: reverse, type_code: TYPE_PTR)?
+    out: [str] @= []
+
+    for rec in answer.records
+        match rec.data
+            .ptr x => out @ out.push(x.target)
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .caa _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ => _ = 0
+
+    return ok(out)
+
+# The records of the zone `zone`, asked of the first of `r`'s servers over
+# TCP (AXFR, RFC 5936), in the order the server sends them: the zone's SOA
+# first and last.
+#
+# - `r`: the resolver; its first server is asked, and the connection is made
+#   within `r.timeout_ms` and the whole zone read within `r.timeout_ms`
+#   times `r.attempts`.
+# - `zone`: the zone's name, taken as absolute.
+#
+# Fails `failed` where the server refuses (most refuse a transfer to anyone
+# but their secondaries), `invalid` where a message of the transfer has
+# another ID, is no message, or does not begin with the SOA, or where more
+# than 100,000 messages come, `timeout` where the time passes, and as
+# `exchange` fails. See also `lookup`.
+function transfer(r: Resolver, zone: str) -> [Record]?
+    if r.servers.len() == 0 || r.timeout_ms < 1 || r.attempts < 1
+        return fail(
+            code: INVALID,
+            msg: "a zone transfer asks a resolver of one server or more, 1 ms or more, 1 attempt or more"
+        )
+    q @= new_query(zone, type_code: TYPE_AXFR)?
+    q.recursion_desired @ false
+    q.has_edns @ false
+    fresh = os.random_bytes(2)?
+    q.id @ to_i64(fresh[0]).must() << 8 | to_i64(fresh[1]).must()
+    asked = encode(q)?
+    server = r.servers[0]
+    host = net.format_address(net.without_port(server))
+    c @= net.connect_timeout(host, port: server.port, timeout_ms: r.timeout_ms, deadline_ms: r.timeout_ms * r.attempts)?
+    got = transport.transfer(c.stream, query: asked)
+
+    match io.close(@c.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    out: [Record] @= []
+
+    for message in got?
+        for rec in decode(message)?.answers
+            out @ out.push(rec)
+
+    return ok(out)
+
+## Tests
+
+test "the face's constants are the protocol's numbers"
+    assert TYPE_A == 1 && TYPE_AAAA == 28 && TYPE_SVCB == 64 && TYPE_CAA == 257
+    assert RCODE_NAME_ERROR == 3 && OPCODE_UPDATE == 5 && SVC_IPV6_HINT == 6 && EDNS_EXTENDED_ERROR == 15
+
+test "encode and decode: a record of every kind, written and read back to the same message"
+    digest: [u8] = [1, 2, 3, 4, 5, 6, 7, 8]
+    m @= reply_to(new_query("example.", type_code: TYPE_A).must())
+    m.authoritative @ true
+    m.recursion_available @ true
+    m.edns @ Edns(
+        udp_size: 4096,
+        version: 0,
+        dnssec_ok: true,
+        options: [EdnsOption(code: EDNS_NSID, data: []), EdnsOption(code: EDNS_COOKIE, data: digest)]
+    )
+    m.answers @ [
+        Record(name: "example.", class_code: CLASS_IN, ttl: 0, data: .a(address: net.parse_address("192.0.2.1").must()))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 4_294_967_295, data: .aaaa(address: net.parse_address("2001:db8::1").must()))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .ns(host: "ns.example."))
+        Record(name: "www.example.", class_code: CLASS_IN, ttl: 1, data: .cname(target: "example."))
+        Record(name: "old.example.", class_code: CLASS_IN, ttl: 1, data: .dname(target: "new.example."))
+        Record(name: "1.2.0.192.in-addr.arpa.", class_code: CLASS_IN, ttl: 1, data: .ptr(target: "example."))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .mx(preference: 65535, exchange: "mail.example."))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .txt(texts: [[], [0, 255], bytes.from_text("v=spf1 -all")]))
+        Record(name: "_sip._udp.example.", class_code: CLASS_IN, ttl: 1, data: .srv(priority: 0, weight: 5, port: 5060, target: "sip.example."))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .soa(primary: "ns.example.", mailbox: "admin.example.", serial: 4_294_967_295, refresh: 1, retry: 2, expire: 3, minimum: 4))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .hinfo(cpu: [], system: bytes.from_text("é")))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .caa(flags: 128, tag: "issuewild", value: []))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .naptr(order: 1, preference: 2, flags: bytes.from_text("S"), services: [], regexp: [], replacement: "_sip._tcp.example."))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .svcb(priority: 0, target: "svc.example.", params: []))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .https(priority: 1, target: ".", params: [SvcParam(key: SVC_MANDATORY, value: [0, 1]), alpn_param(["h3"]).must(), SvcParam(key: SVC_NO_DEFAULT_ALPN, value: []), port_param(8443).must(), SvcParam(key: 65535, value: [9])]))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .ds(key_tag: 65535, algorithm: 255, digest_type: 2, digest: digest))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .dnskey(flags: 256, protocol: 3, algorithm: 15, key: digest))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .rrsig(type_covered: TYPE_TXT, algorithm: 13, labels: 1, original_ttl: 3600, expiration: 4_294_967_295, inception: 0, key_tag: 1, signer: "example.", signature: digest))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .nsec(next: "\\000.example.", types: [0, 255, 256, 65535]))
+        Record(name: "_443._tcp.example.", class_code: CLASS_IN, ttl: 1, data: .tlsa(usage: 3, selector: 1, matching_type: 1, association: digest))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .sshfp(algorithm: 4, fingerprint_type: 2, fingerprint: digest))
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .unknown(type_code: 65280, data: [1, 2]))
+        Record(name: "example.", class_code: CLASS_CH, ttl: 1, data: .unknown(type_code: TYPE_A, data: [10, 0, 0, 1]))
+        Record(name: "version.bind.", class_code: CLASS_CH, ttl: 1, data: .txt(texts: [bytes.from_text("9.18")]))
+    ]
+    m.authorities @ [Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .ns(host: "ns2.example."))]
+    m.additionals @ [
+        Record(name: "ns2.example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_address("192.0.2.2").must()))
+    ]
+    data = encode(m).must()
+    assert decode(data).must() == m
+    assert encode(decode(data).must()).must() == data
+
+test "format_record: every kind dig 9.10.6 knows, as it printed the same bytes, and SVCB as RFC 9460 writes it"
+    digest: [u8] @= []
+
+    for k in range(from: 0, to: 32)
+        digest @ digest.push(to_u8(k).must())
+
+    key: [u8] @= []
+
+    for k in range(from: 0, to: 64)
+        key @ key.push(to_u8(k).must())
+
+    signature: [u8] @= []
+
+    for k in range(from: 100, to: 164)
+        signature @ signature.push(to_u8(k).must())
+
+    owner = "example."
+    seen = [
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .txt(texts: [bytes.from_text("say \"hi\" \\ back"), [], [0, 127, 195, 169, 9, ';']]))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .soa(primary: "ns.example.com.", mailbox: "host\\.master.example.com.", serial: 2_024_010_101, refresh: 7200, retry: 3600, expire: 1_209_600, minimum: 300))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .caa(flags: 128, tag: "iodef", value: [109, 34, 1]))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .naptr(order: 100, preference: 10, flags: bytes.from_text("U"), services: bytes.from_text("E2U+sip"), regexp: bytes.from_text("!^.*$!sip:info@example.com!"), replacement: "."))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .ds(key_tag: 2371, algorithm: 13, digest_type: 2, digest: digest))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .dnskey(flags: 257, protocol: 3, algorithm: 13, key: key))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .rrsig(type_covered: TYPE_A, algorithm: 13, labels: 2, original_ttl: 300, expiration: 1_735_689_600, inception: 1_733_011_200, key_tag: 2371, signer: "example.com.", signature: signature))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .nsec(next: "next.example.com.", types: [1, 15, 46, 47, 257]))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .unknown(type_code: 65280, data: []))).must()
+        format_record(Record(name: "a\\.b.x\\032y.\\(.\\195\\169.example", class_code: CLASS_IN, ttl: 300, data: .a(address: net.parse_address("192.0.2.1").must()))).must()
+        format_record(Record(name: owner, class_code: CLASS_IN, ttl: 300, data: .https(priority: 1, target: ".", params: [alpn_param(["h2", "h3"]).must(), port_param(443).must()]))).must()
+    ]
+    assert seen[0] == "example. 300 IN TXT \"say \\\"hi\\\" \\\\ back\" \"\" \"\\000\\127\\195\\169\\009;\""
+    assert seen[1] == "example. 300 IN SOA ns.example.com. host\\.master.example.com. 2024010101 7200 3600 1209600 300"
+    assert seen[2] == "example. 300 IN CAA 128 iodef \"m\\\"\\001\""
+    assert seen[3] == "example. 300 IN NAPTR 100 10 \"U\" \"E2U+sip\" \"!^.*$!sip:info@example.com!\" ."
+    assert seen[4] == "example. 300 IN DS 2371 13 2 000102030405060708090A0B0C0D0E0F101112131415161718191A1B 1C1D1E1F"
+    assert seen[5] == "example. 300 IN DNSKEY 257 3 13 AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygp KissLS4vMDEyMzQ1Njc4OTo7PD0+Pw=="
+    assert seen[6] == "example. 300 IN RRSIG A 13 2 300 20250101000000 20241201000000 2371 example.com. ZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yN jo+QkZKTlJWWl5iZmpucnZ6foKGiow=="
+    assert seen[7] == "example. 300 IN NSEC next.example.com. A MX RRSIG NSEC CAA"
+    assert seen[8] == "example. 300 IN TYPE65280 \\# 0"
+    assert seen[9] == "a\\.b.x\\032y.\\(.\\195\\169.example. 300 IN A 192.0.2.1"
+    assert seen[10] == "example. 300 IN HTTPS 1 . alpn=\"h2,h3\" port=443"
+
+test "new_query and encode: the bytes Go's resolver sent for the same question, but the ID"
+    sent = bytes.parse_hex(
+        "e8930100000100000000000105616c696173076578616d706c6500000f000100002904d0000000000000"
+    ).must()
+    mine = encode(new_query("alias.example", type_code: TYPE_MX).must()).must()
+    assert mine.slice(from: 2, to: mine.len()) == sent.slice(from: 2, to: sent.len())
+
+test "decode: the query dig 9.10.6 sent, its AD bit and its EDNS of 4,096 bytes"
+    m = decode(
+        bytes.parse_hex("467a01200001000000000001076578616d706c6500000100010000291000000000000000").must()
+    ).must()
+    assert m.id == 0x467a && !m.response && m.recursion_desired && m.authenticated_data && !m.checking_disabled
+    assert m.questions == [Question(name: "example.", type_code: TYPE_A, class_code: CLASS_IN)]
+    assert m.has_edns && m.edns.udp_size == 4096 && !m.edns.dnssec_ok && m.edns.options.len() == 0 && m.additionals.len() == 0
+
+test "decode: a compression loop, a pointer forward, two OPT records, an OPT among the answers, and an extended code"
+    head: [u8] = [0, 1, 0x81, 0x80, 0, 0, 0, 1, 0, 0, 0, 0]
+    looped: [u8] @= head
+    bytes.push_all(to: @looped, from: [0xc0, 14, 0xc0, 12, 0, 1, 0, 1, 0, 0, 0, 0, 0, 4, 1, 2, 3, 4])
+
+    match decode(looped)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "compression pointer")
+
+    forward: [u8] @= head
+    bytes.push_all(to: @forward, from: [0xc0, 20, 0, 1, 0, 1, 0, 0, 0, 0, 0, 4, 1, 2, 3, 4])
+    assert decode(forward).is_err()
+    opt: [u8] = [0, 0, 41, 4, 208, 0, 0, 0, 0, 0, 0]
+    twice: [u8] @= [0, 1, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 2]
+    bytes.push_all(to: @twice, from: opt)
+    bytes.push_all(to: @twice, from: opt)
+    assert decode(twice).is_err()
+    answered: [u8] @= [0, 1, 0x81, 0x80, 0, 0, 0, 1, 0, 0, 0, 0]
+    bytes.push_all(to: @answered, from: opt)
+    assert decode(answered).is_err()
+    extended: [u8] @= [0, 1, 0x81, 0x87, 0, 0, 0, 0, 0, 0, 0, 1]
+    bytes.push_all(to: @extended, from: [0, 0, 41, 1, 0, 1, 0, 0x80, 0, 0, 0])
+    m = decode(extended).must()
+    assert m.rcode == RCODE_BAD_COOKIE && m.edns.udp_size == 512 && m.edns.dnssec_ok
+
+test "encode: a name past 255 bytes, an address of the wrong kind, a parameter twice, a class-bound kind outside IN, and a message past 65,535 bytes"
+    m @= reply_to(new_query("example.", type_code: TYPE_A).must())
+    m.answers @ [
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .a(address: net.parse_address("::1").must()))
+    ]
+    assert encode(m).is_err()
+    m.answers @ [
+        Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .https(priority: 1, target: ".", params: [port_param(1).must(), port_param(2).must()]))
+    ]
+    assert encode(m).is_err()
+    m.answers @ [
+        Record(name: "example.", class_code: CLASS_CH, ttl: 1, data: .srv(priority: 1, weight: 1, port: 1, target: "."))
+    ]
+    assert encode(m).is_err()
+    m.answers @ [Record(name: "example.", class_code: CLASS_IN, ttl: -1, data: .ns(host: "."))]
+    assert encode(m).is_err()
+    long: [u8] @= []
+
+    for _ in range(from: 0, to: 255)
+        long @ long.push('x')
+
+    many: [[u8]] @= []
+
+    for _ in range(from: 0, to: 300)
+        many @ many.push(long)
+
+    m.answers @ [Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .txt(texts: many))]
+    assert encode(m).is_err()
+    assert new_query(repeat("a.", 128), type_code: TYPE_A).is_err()
+
+test "exchange: a datagram answered, a truncated answer asked again over TCP, a lost one tried again, and a forged one passed over"
+    q = new_query("example.com", type_code: TYPE_A).must()
+    full @= reply_to(q)
+    full.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+    ]
+    cut @= reply_to(q)
+    cut.truncated @ true
+    server @= canned.start(
+        [canned.udp(encode(full).must()), canned.udp(encode(cut).must()), canned.tcp(encode(full).must()), canned.dropped(), canned.udp(encode(full).must()), canned.spoofed(encode(full).must())]
+    )
+    r @= resolver([f"127.0.0.1:{server.port}"]).must()
+    r.timeout_ms @ 400
+    first = exchange(r, m: q).must()
+    assert first.response && first.answers == full.answers && first.id != 0
+    assert exchange(r, m: q).must().answers == full.answers
+    assert exchange(r, m: q).must().answers == full.answers
+    assert exchange(r, m: q).must().answers == full.answers
+    seen = threads.wait_text(@server.thread)
+    assert seen == "udp example.com. 1\nudp example.com. 1\ntcp example.com. 1\nudp example.com. 1\nudp example.com. 1\nudp example.com. 1"
+
+test "exchange: SERVFAIL passed for the next server, every try lost, and a resolver of no server"
+    q = new_query("example.com.", type_code: TYPE_MX).must()
+    failed @= reply_to(q)
+    failed.rcode @ RCODE_SERVER_FAILURE
+    full @= reply_to(q)
+    full.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .mx(preference: 1, exchange: "mx.example.com."))
+    ]
+    server @= canned.start(
+        [canned.udp(encode(failed).must()), canned.udp(encode(full).must()), canned.udp(encode(failed).must()), canned.udp(encode(failed).must()), canned.dropped(), canned.dropped()]
+    )
+    two @= resolver([f"127.0.0.1:{server.port}", f"127.0.0.1:{server.port}"]).must()
+    two.timeout_ms @ 300
+    two.attempts @ 1
+    assert exchange(two, m: q).must().answers == full.answers
+    assert exchange(two, m: q).must().rcode == RCODE_SERVER_FAILURE
+
+    match exchange(two, m: q)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    _ = threads.wait_text(@server.thread)
+    none @= two
+    none.servers @ []
+    assert exchange(none, m: q).is_err()
+
+test "lookup: the search list tried in order past a name that names nothing, a name with no record of the type, and a server's failure"
+    first = new_query("host.a.example.", type_code: TYPE_A).must()
+    nothing @= reply_to(first)
+    nothing.rcode @ RCODE_NAME_ERROR
+    second = new_query("host.b.example.", type_code: TYPE_A).must()
+    found @= reply_to(second)
+    found.answers @ [
+        Record(name: "HOST.b.example.", class_code: CLASS_IN, ttl: 5, data: .a(address: net.parse_address("192.0.2.9").must()))
+    ]
+    empty = reply_to(new_query("bare.example.", type_code: TYPE_A).must())
+    refused @= reply_to(new_query("bare.example.", type_code: TYPE_A).must())
+    refused.rcode @ RCODE_REFUSED
+    server @= canned.start(
+        [canned.udp(encode(nothing).must()), canned.udp(encode(found).must()), canned.udp(encode(empty).must()), canned.udp(encode(refused).must())]
+    )
+    r @= resolver([f"127.0.0.1:{server.port}"]).must()
+    r.search @ ["a.example.", "b.example"]
+    r.timeout_ms @ 2000
+    r.attempts @ 1
+    got = lookup(r, name: "host", type_code: TYPE_A).must()
+    assert got.name == "host.b.example." && got.canonical == "host.b.example." && got.records == found.answers
+
+    match lookup(r, name: "bare.example.", type_code: TYPE_A)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && strings.contains(s: e.msg, substr: "no record of type A")
+
+    match lookup(r, name: "bare.example.", type_code: TYPE_A)
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && strings.contains(s: e.msg, substr: "REFUSED")
+
+    assert threads.wait_text(@server.thread) == "udp host.a.example. 1\nudp host.b.example. 1\nudp bare.example. 1\nudp bare.example. 1"
+
+test "lookup_mx: the aliases followed and the exchangers ordered, as Go's LookupMX read the same answer"
+    answer = bytes.parse_hex(
+        "e8938180000100030000000005616c696173076578616d706c6500000f0001c00c000500010000012c000c096d61696c2d686f7374c012c02b000f00010000012c00070014026d32c012c02b000f00010000012c0007000a026d31c012"
+    ).must()
+    server @= canned.start([canned.udp(answer), canned.udp(answer)])
+    r = resolver([f"127.0.0.1:{server.port}"]).must()
+    assert lookup_mx(r, name: "alias.example.").must() == [Mx(host: "m1.example.", preference: 10), Mx(host: "m2.example.", preference: 20)]
+    chain = lookup(r, name: "alias.example.", type_code: TYPE_MX).must()
+    assert chain.canonical == "mail-host.example." && chain.records.len() == 2
+    _ = threads.wait_text(@server.thread)
+
+test "parse_reverse_name: both kinds back from net.to_reverse_name, in capitals, and names that are neither"
+    for text in ["192.0.2.1", "2001:db8::1", "::", "255.255.255.255"]
+        a = net.parse_address(text).must()
+        assert parse_reverse_name(net.to_reverse_name(a)).must() == a
+
+    assert net.format_address(parse_reverse_name("1.0.0.127.IN-ADDR.ARPA.").must()) == "127.0.0.1"
+    assert parse_reverse_name("1.0.0.in-addr.arpa").is_err() && parse_reverse_name("256.0.0.1.in-addr.arpa").is_err()
+    assert parse_reverse_name("example.com").is_err() && parse_reverse_name("g.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa").is_err()
+
+test "parse_type and parse_class: mnemonics in either case, the RFC 3597 forms, and the edges"
+    assert parse_type("mx").must() == TYPE_MX && parse_type("TYPE65535").must() == 65535 && parse_type("type15").must() == TYPE_MX
+    assert parse_type("TYPE65536").is_err() && parse_type("TYPE").is_err() && parse_type("").is_err() && parse_type("NOPE").is_err()
+    assert parse_class("ch").must() == CLASS_CH && parse_class("CLASS0").must() == 0 && parse_class("CLASS65536").is_err()
+
+test "key_tag_of: the tags dig 9.10.6 gave three keys, one of RSA/MD5, and data that is no key"
+    first: [u8] @= []
+
+    for k in range(from: 0, to: 64)
+        first @ first.push(to_u8(k).must())
+
+    second: [u8] @= []
+
+    for k in range(from: 200, to: 256)
+        second @ second.push(to_u8(k).must())
+
+    for k in range(from: 0, to: 77)
+        second @ second.push(to_u8(k).must())
+
+    assert key_tag_of(.dnskey(flags: 257, protocol: 3, algorithm: 13, key: first)).must() == 59409
+    assert key_tag_of(.dnskey(flags: 256, protocol: 3, algorithm: 8, key: second)).must() == 49338
+    assert key_tag_of(.dnskey(flags: 256, protocol: 3, algorithm: 1, key: [1, 2, 3, 4, 5, 6, 7, 8])).must() == 1543
+    assert key_tag_of(.ds(key_tag: 1, algorithm: 1, digest_type: 1, digest: [])).is_err()
+
+test "query: a public resolver asked, or a line saying it was skipped where the network is down"
+    r @= resolver(["1.1.1.1"]).must()
+    r.timeout_ms @ 1500
+    r.attempts @ 1
+
+    match query(r, name: "example.com.", type_code: TYPE_A)
+        .ok m => assert m.response && m.rcode == RCODE_NO_ERROR
+        .err e => print(
+            f"dns: SKIPPED the live query to 1.1.1.1, the network is down or closed to it ({e.code}: {e.msg})"
+        )
+
+test "transfer: a zone in two messages, a refusal, and a transfer that does not begin with its SOA"
+    q = new_query("example.", type_code: TYPE_AXFR).must()
+    soa = Record(
+        name: "example.",
+        class_code: CLASS_IN,
+        ttl: 60,
+        data: .soa(primary: "ns.example.", mailbox: "admin.example.", serial: 1, refresh: 2, retry: 3, expire: 4, minimum: 5)
+    )
+    host = Record(
+        name: "www.example.",
+        class_code: CLASS_IN,
+        ttl: 60,
+        data: .a(address: net.parse_address("192.0.2.1").must())
+    )
+    first @= reply_to(q)
+    first.has_edns @ false
+    first.answers @ [soa, host]
+    last @= reply_to(q)
+    last.has_edns @ false
+    last.questions @ []
+    last.answers @ [Record(name: "example.", class_code: CLASS_IN, ttl: 60, data: .ns(host: "ns.example.")), soa]
+    refused @= reply_to(q)
+    refused.rcode @ RCODE_REFUSED
+    wrong @= reply_to(q)
+    wrong.answers @ [host, soa]
+    server @= canned.start(
+        [canned.tcp_all([encode(first).must(), encode(last).must()]), canned.tcp(encode(refused).must()), canned.tcp(encode(wrong).must())]
+    )
+    r @= resolver([f"127.0.0.1:{server.port}"]).must()
+    r.timeout_ms @ 2000
+    zone = transfer(r, zone: "example.").must()
+    assert zone.len() == 4 && zone[0] == soa && zone[3] == soa && zone[1] == host
+
+    match transfer(r, zone: "example.")
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && strings.contains(s: e.msg, substr: "REFUSED")
+
+    match transfer(r, zone: "example.")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert threads.wait_text(@server.thread) == "tcp example. 252\ntcp example. 252\ntcp example. 252"
+
+## Examples
+
+# A query for the mail exchangers of a domain, as `exchange` sends it.
+test "new_query: a question for MX, recursion desired"
+    q = new_query("example.com", type_code: TYPE_MX).must()
+    assert q.questions[0].name == "example.com." && q.recursion_desired && q.has_edns
+
+# A server's answer begun from the query it answers.
+test "reply_to: the question copied, the answer to fill"
+    r = reply_to(new_query("example.com.", type_code: TYPE_A).must())
+    assert r.response && r.questions[0].type_code == TYPE_A && r.answers.len() == 0
+
+# The bytes of a message read back.
+test "decode: a query read from its bytes"
+    m = decode(encode(new_query("example.com.", type_code: TYPE_TXT).must()).must()).must()
+    assert m.questions[0].type_code == TYPE_TXT
+
+# A query written as the 40 bytes a datagram carries, the 11 of its EDNS
+# record among them.
+test "encode: a query's bytes"
+    assert encode(new_query("example.com.", type_code: TYPE_A).must()).must().len() == 40
+
+# Two spellings of one name compared.
+test "canonical_name: one name written two ways"
+    assert canonical_name("WWW.Example.COM").must() == canonical_name("www.example.com.").must()
+
+# The labels of a name, an escaped dot kept inside its label.
+test "labels_of: three labels"
+    assert labels_of("a\\.b.example.com").must() == ["a\\.b", "example", "com"]
+
+# Whether a host belongs to a domain.
+test "is_subdomain: a host under its domain"
+    assert is_subdomain(name: "www.example.com", of: "Example.COM.") && !is_subdomain(name: "example.com", of: "www.example.com")
+
+# The address a PTR question was about.
+test "parse_reverse_name: an IPv4 address back from its reverse name"
+    assert net.format_address(parse_reverse_name("1.2.0.192.in-addr.arpa.").must()) == "192.0.2.1"
+
+# The type a record's data says.
+test "type_of: an MX record's type"
+    assert type_of(Record(name: "example.", class_code: CLASS_IN, ttl: 1, data: .mx(preference: 1, exchange: "mx.example."))) == TYPE_MX
+
+# A type's mnemonic, and a number's.
+test "type_name: HTTPS, and a type with no mnemonic"
+    assert type_name(TYPE_HTTPS) == "HTTPS" && type_name(65280) == "TYPE65280"
+
+# A type read from a command's argument.
+test "parse_type: AAAA in lower case"
+    assert parse_type("aaaa").must() == TYPE_AAAA
+
+# A class's mnemonic.
+test "class_name: the Internet's class"
+    assert class_name(CLASS_IN) == "IN"
+
+# A class read from text.
+test "parse_class: Chaos"
+    assert parse_class("CH").must() == CLASS_CH
+
+# A response code told to a person.
+test "rcode_name: a name that names nothing"
+    assert rcode_name(RCODE_NAME_ERROR) == "NXDOMAIN"
+
+# A record printed as dig prints it.
+test "format_record: a mail exchanger"
+    r = Record(
+        name: "example.com.",
+        class_code: CLASS_IN,
+        ttl: 300,
+        data: .mx(preference: 10, exchange: "mail.example.com.")
+    )
+    assert format_record(r).must() == "example.com. 300 IN MX 10 mail.example.com."
+
+# A record's data alone, as text.
+test "format_data: two strings of a TXT record"
+    assert format_data(.txt(texts: [bytes.from_text("v=spf1"), bytes.from_text("-all")])).must() == "\"v=spf1\" \"-all\""
+
+# A parameter found among a binding's.
+test "param_of: the port of a service binding"
+    params = [alpn_param(["h2"]).must(), port_param(8443).must()]
+    assert port_of(param_of(params, key: SVC_PORT).must()).must() == 8443
+
+# The protocols an HTTPS record offers.
+test "alpn_of: h2 and h3"
+    assert alpn_of(alpn_param(["h2", "h3"]).must().value).must() == ["h2", "h3"]
+
+# The port a binding names.
+test "port_of: 443 from its two bytes"
+    assert port_of([1, 187]).must() == 443
+
+# The addresses a binding hints at.
+test "hints_of: two IPv4 addresses"
+    hints = hints_of([192, 0, 2, 1, 192, 0, 2, 2], v6: false).must()
+    assert net.format_address(hints[1]) == "192.0.2.2"
+
+# The parameter listing the protocols offered.
+test "alpn_param: h3 alone"
+    assert alpn_param(["h3"]).must() == SvcParam(key: SVC_ALPN, value: [2, 104, 51])
+
+# The parameter naming a port.
+test "port_param: 8443"
+    assert port_param(8443).must().value == [32, 251]
+
+# The parameter hinting at an IPv6 address.
+test "hints_param: one IPv6 address"
+    assert hints_param([net.parse_address("2001:db8::1").must()]).must().key == SVC_IPV6_HINT
+
+# The tag a DS record names a key by.
+test "key_tag_of: a key of RSA/MD5, its tag read from its last bytes"
+    assert key_tag_of(.dnskey(flags: 256, protocol: 3, algorithm: 1, key: [1, 2, 3, 4, 5, 6, 7, 8])).must() == 1543
+
+# The resolver this machine is configured with.
+test "system: this machine's name servers"
+    match system()
+        .ok r  => assert r.servers.len() >= 1 && r.attempts >= 1
+        .err e => assert e.code == UNSUPPORTED
+
+# A resolver read from a file's text.
+test "parse_resolv_conf: two servers and a search list"
+    r = parse_resolv_conf("nameserver 192.0.2.53\nnameserver ::1\nsearch example.com\noptions ndots:2\n")
+    assert net.format_address(r.servers[0]) == "192.0.2.53:53" && r.search == ["example.com."] && r.ndots == 2
+
+# A resolver asking a server the program names, on a port of its own.
+test "resolver: a server on port 5353"
+    r = resolver(["[::1]:5353", "192.0.2.53"]).must()
+    assert r.servers[0].port == 5353 && r.servers[1].port == PORT && r.timeout_ms == 5000
+
+# A query sent and its answer read.
+test "exchange: an address asked of a local server"
+    q = new_query("example.com.", type_code: TYPE_A).must()
+    a @= reply_to(q)
+    a.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    answer = exchange(resolver([f"127.0.0.1:{server.port}"]).must(), m: q).must()
+    assert answer.answers == a.answers
+    _ = threads.wait_text(@server.thread)
+
+# A query over a stream the program opened, here one end of a local pair.
+test "exchange_stream: a query and its answer framed over a stream"
+    both = net.pair(5000).must()
+    client @= both.first
+    peer @= both.second
+    q = new_query("example.com.", type_code: TYPE_A).must()
+    answer = encode(reply_to(q)).must()
+    io.write(peer.stream, data: [0, to_u8(answer.len()).must()]).must()
+    io.write(peer.stream, data: answer).must()
+    assert exchange_stream(client.stream, m: q).must().response
+    io.close(@client.stream).must()
+    io.close(@peer.stream).must()
+
+# One question asked as it is.
+test "query: an address asked of a local server"
+    a = reply_to(new_query("example.com.", type_code: TYPE_A).must())
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert query(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com", type_code: TYPE_A).must().rcode == RCODE_NO_ERROR
+    _ = threads.wait_text(@server.thread)
+
+# A name's records through the search list.
+test "lookup: a host's address under the search list"
+    a @= reply_to(new_query("www.example.com.", type_code: TYPE_A).must())
+    a.answers @ [
+        Record(name: "www.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    r @= resolver([f"127.0.0.1:{server.port}"]).must()
+    r.search @ ["example.com."]
+    assert lookup(r, name: "www", type_code: TYPE_A).must().name == "www.example.com."
+    _ = threads.wait_text(@server.thread)
+
+# A host's addresses, IPv4 and IPv6.
+test "lookup_addresses: one of each kind"
+    four @= reply_to(new_query("example.com.", type_code: TYPE_A).must())
+    four.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+    ]
+    six @= reply_to(new_query("example.com.", type_code: TYPE_AAAA).must())
+    six.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .aaaa(address: net.parse_address("2001:db8::7").must()))
+    ]
+    server @= canned.start([canned.udp(encode(four).must()), canned.udp(encode(six).must())])
+    found = lookup_addresses(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com.").must()
+    assert found.len() == 2 && net.format_address(found[1]) == "2001:db8::7"
+    _ = threads.wait_text(@server.thread)
+
+# A domain's mail exchangers, by preference.
+test "lookup_mx: two exchangers, the preferred first"
+    a @= reply_to(new_query("example.com.", type_code: TYPE_MX).must())
+    a.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .mx(preference: 20, exchange: "b.example.com."))
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .mx(preference: 10, exchange: "a.example.com."))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert lookup_mx(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com.").must()[0].host == "a.example.com."
+    _ = threads.wait_text(@server.thread)
+
+# A domain's texts, each record's strings joined.
+test "lookup_txt: one record of two strings"
+    a @= reply_to(new_query("example.com.", type_code: TYPE_TXT).must())
+    a.answers @ [
+        Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .txt(texts: [bytes.from_text("v=spf1 "), bytes.from_text("-all")]))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert lookup_txt(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com.").must() == ["v=spf1 -all"]
+    _ = threads.wait_text(@server.thread)
+
+# A service's servers, by priority and then by weight.
+test "lookup_srv: the servers of a SIP service"
+    a @= reply_to(new_query("_sip._udp.example.com.", type_code: TYPE_SRV).must())
+    a.answers @ [
+        Record(name: "_sip._udp.example.com.", class_code: CLASS_IN, ttl: 60, data: .srv(priority: 10, weight: 5, port: 5060, target: "b.example.com."))
+        Record(name: "_sip._udp.example.com.", class_code: CLASS_IN, ttl: 60, data: .srv(priority: 10, weight: 50, port: 5060, target: "a.example.com."))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    found = lookup_srv(
+        resolver([f"127.0.0.1:{server.port}"]).must(),
+        service: "sip",
+        proto: "udp",
+        name: "example.com."
+    ).must()
+    assert found[0].target == "a.example.com." && found[1].weight == 5
+    _ = threads.wait_text(@server.thread)
+
+# A zone's name servers.
+test "lookup_ns: the name server of a zone"
+    a @= reply_to(new_query("example.com.", type_code: TYPE_NS).must())
+    a.answers @ [Record(name: "example.com.", class_code: CLASS_IN, ttl: 60, data: .ns(host: "ns.example.com."))]
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert lookup_ns(resolver([f"127.0.0.1:{server.port}"]).must(), name: "example.com.").must() == ["ns.example.com."]
+    _ = threads.wait_text(@server.thread)
+
+# The canonical name of an alias.
+test "lookup_cname: an alias followed to its canonical name"
+    a @= reply_to(new_query("www.example.com.", type_code: TYPE_A).must())
+    a.answers @ [
+        Record(name: "www.example.com.", class_code: CLASS_IN, ttl: 60, data: .cname(target: "web.example.com."))
+        Record(name: "web.example.com.", class_code: CLASS_IN, ttl: 60, data: .a(address: net.parse_address("192.0.2.7").must()))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert lookup_cname(resolver([f"127.0.0.1:{server.port}"]).must(), name: "www.example.com.").must() == "web.example.com."
+    _ = threads.wait_text(@server.thread)
+
+# The names of an address, by its PTR records.
+test "lookup_reverse: the name of 192.0.2.7"
+    a @= reply_to(new_query("7.2.0.192.in-addr.arpa.", type_code: TYPE_PTR).must())
+    a.answers @ [
+        Record(name: "7.2.0.192.in-addr.arpa.", class_code: CLASS_IN, ttl: 60, data: .ptr(target: "host.example.com."))
+    ]
+    server @= canned.start([canned.udp(encode(a).must())])
+    assert lookup_reverse(resolver([f"127.0.0.1:{server.port}"]).must(), a: net.parse_address("192.0.2.7").must()).must() == ["host.example.com."]
+    _ = threads.wait_text(@server.thread)
+
+# A whole zone, asked of its server.
+test "transfer: a zone of its SOA alone"
+    q = new_query("example.", type_code: TYPE_AXFR).must()
+    whole @= reply_to(q)
+    soa = Record(
+        name: "example.",
+        class_code: CLASS_IN,
+        ttl: 60,
+        data: .soa(primary: "ns.example.", mailbox: "admin.example.", serial: 1, refresh: 2, retry: 3, expire: 4, minimum: 5)
+    )
+    whole.answers @ [soa, soa]
+    server @= canned.start([canned.tcp(encode(whole).must())])
+    assert transfer(resolver([f"127.0.0.1:{server.port}"]).must(), zone: "example.").must().len() == 2
+    _ = threads.wait_text(@server.thread)

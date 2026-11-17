@@ -1,0 +1,329 @@
+# A `model.Frame` written to a message's bytes: names compressed where RFC
+# 3597 § 4 allows it (owners, questions, and the names in the data of NS,
+# CNAME, SOA, PTR and MX), every number checked against its field's range,
+# and each record's data written by the form `codec_read` reads.
+
+use dns/internal/failure
+use dns/internal/model
+use dns/internal/names
+use dns/internal/wire
+
+# The largest number of four bytes.
+constant MOST_U32: i64
+    4_294_967_295
+
+# The bytes of `f`. Fails `invalid` where a name is not one, a number is
+# outside its field, a record's data does not fit its form, the records are
+# not in the order of their sections, or the message passes 65,535 bytes.
+function encode(f: model.Frame) -> [u8]?
+    wire.in_range(value: f.id, low: 0, high: 65535, field: "the message's id")?
+    wire.in_range(value: f.flags, low: 0, high: 65535, field: "the message's flags")?
+
+    if f.has_edns
+        wire.in_range(value: f.rcode, low: 0, high: 4095, field: "the response code")?
+        wire.in_range(value: f.udp_size, low: 0, high: 65535, field: "the EDNS datagram size")?
+        wire.in_range(value: f.version, low: 0, high: 255, field: "the EDNS version")?
+    else
+        wire.in_range(value: f.rcode, low: 0, high: 15, field: "the response code without EDNS")?
+    counts: [i64] @= [f.questions.len(), 0, 0, 0]
+    last: i64 @= 1
+
+    for item in f.items
+        if item.section < last || item.section > 3
+            return failure.wrong(
+                field: f"the record of {item.name}",
+                what: "the records are not in the order of their sections"
+            )
+        counts[item.section] @ counts[item.section] + 1
+        last @ item.section
+
+    if f.has_edns
+        counts[3] @ counts[3] + 1
+
+    for count in counts
+        wire.in_range(value: count, low: 0, high: 65535, field: "a section's count of records")?
+
+    out: [u8] @= []
+    wire.push_u16(@out, n: f.id)
+    wire.push_u16(@out, n: f.flags & 0xfff0 | f.rcode & 15)
+
+    for count in counts
+        wire.push_u16(@out, n: count)
+
+    table: {str: i64} @= {}
+
+    for q in f.questions
+        put_name(@out, name: q.name, @table, compress: true)?
+        wire.in_range(value: q.type_code, low: 0, high: 65535, field: f"the type asked of {q.name}")?
+        wire.in_range(value: q.class_code, low: 0, high: 65535, field: f"the class asked of {q.name}")?
+        wire.push_u16(@out, n: q.type_code)
+        wire.push_u16(@out, n: q.class_code)
+
+    for item in f.items
+        put_item(@out, item: item, @table)?
+
+    if f.has_edns
+        wire.push_u8(@out, n: 0)
+        wire.push_u16(@out, n: 41)
+        wire.push_u16(@out, n: f.udp_size)
+        flag: i64 @= 0
+
+        if f.dnssec_ok
+            flag @ 0x8000
+        wire.push_u32(@out, n: f.rcode >> 4 << 24 | f.version << 16 | flag)
+        start = out.len()
+        wire.push_u16(@out, n: 0)
+
+        for o in f.options
+            wire.in_range(value: o.code, low: 0, high: 65535, field: "an EDNS option's code")?
+            wire.in_range(value: o.data.len(), low: 0, high: 65535, field: "an EDNS option's length")?
+            wire.push_u16(@out, n: o.code)
+            wire.push_u16(@out, n: o.data.len())
+            wire.push_all(out: @out, data: o.data)
+
+        patch_length(@out, at: start)?
+
+    if out.len() > 65535
+        return failure.wrong(field: "the message", what: f"{out.len()} bytes, past the 65,535 one may hold")
+    return ok(out)
+
+# Writes the name `name` to `out`, compressed against `table` where
+# `compress` says so. Fails `invalid` where it is not a name.
+function put_name(@out: [u8], name: str, @table: {str: i64}, compress: bool) -> ()?
+    p = names.from_text(name)?
+    names.write(@out, labels: p.labels, @table, compress: compress)
+    return ok()
+
+# Writes the length of what follows the two bytes at `at` into them. Fails
+# `invalid` where it passes 65,535.
+function patch_length(@out: [u8], at: i64) -> ()?
+    length = out.len() - at - 2
+    wire.in_range(value: length, low: 0, high: 65535, field: "a record's data length")?
+    out[at] @ to_u8(length >> 8).must()
+    out[at + 1] @ to_u8(length & 255).must()
+    return ok()
+
+# Writes the record `item` to `out`.
+function put_item(@out: [u8], item: model.Item, @table: {str: i64}) -> ()?
+    s = item.data
+    what = f"the {s.type_code} record of {item.name}"
+    put_name(@out, name: item.name, @table, compress: true)?
+    wire.in_range(value: s.type_code, low: 0, high: 65535, field: what)?
+    wire.in_range(value: item.class_code, low: 0, high: 65535, field: what + "'s class")?
+    wire.in_range(value: item.ttl, low: 0, high: MOST_U32, field: what + "'s time to live")?
+
+    if s.type_code == 41
+        return failure.wrong(field: what, what: "an OPT record is the message's `edns`, never a record")
+    wire.push_u16(@out, n: s.type_code)
+    wire.push_u16(@out, n: item.class_code)
+    wire.push_u32(@out, n: item.ttl)
+    start = out.len()
+    wire.push_u16(@out, n: 0)
+    put_data(@out, s: s, class_code: item.class_code, @table, what: what)?
+    return patch_length(@out, at: start)
+
+# Writes the data `s` by its type's form. Fails `invalid` where a number is
+# outside its field or a byte field does not fit.
+function put_data(@out: [u8], s: model.Slots, class_code: i64, @table: {str: i64}, what: str) -> ()?
+    t = s.type_code
+
+    if s.opaque
+        wire.push_all(out: @out, data: s.blobs[0])
+        return ok()
+
+    if !model.is_read(type_code: t, class_code: class_code)
+        return failure.wrong(
+            field: what,
+            what: f"its type is read in class IN alone, and in class {class_code} its data is written as `unknown` bytes"
+        )
+    n = s.numbers
+    b = s.blobs
+    compress = t == 2 || t == 5 || t == 6 || t == 12 || t == 15
+
+    if t == 1 || t == 28
+        width: i64 @= 4
+
+        if t == 28
+            width @ 16
+
+        if b[0].len() != width
+            return failure.wrong(field: what, what: f"an address of {b[0].len()} bytes, not {width}")
+        wire.push_all(out: @out, data: b[0])
+    else if t == 2 || t == 5 || t == 12 || t == 39
+        put_name(@out, name: s.names[0], @table, compress: compress)?
+    else if t == 15
+        put_number(@out, value: n[0], width: 2, what: what)?
+        put_name(@out, name: s.names[0], @table, compress: true)?
+    else if t == 16
+        for text in b
+            wire.push_string(out: @out, s: text, field: what)?
+    else if t == 33
+        for k in range(from: 0, to: 3)
+            put_number(@out, value: n[k], width: 2, what: what)?
+
+        put_name(@out, name: s.names[0], @table, compress: false)?
+    else if t == 6
+        put_name(@out, name: s.names[0], @table, compress: true)?
+        put_name(@out, name: s.names[1], @table, compress: true)?
+
+        for k in range(from: 0, to: 5)
+            put_number(@out, value: n[k], width: 4, what: what)?
+    else if t == 13
+        wire.push_string(out: @out, s: b[0], field: what)?
+        wire.push_string(out: @out, s: b[1], field: what)?
+    else if t == 257
+        put_number(@out, value: n[0], width: 1, what: what)?
+
+        if b[0].len() == 0 || !is_tag(b[0])
+            return failure.wrong(field: what, what: "a CAA tag is one or more ASCII letters and digits")
+        wire.push_string(out: @out, s: b[0], field: what)?
+        wire.push_all(out: @out, data: b[1])
+    else if t == 35
+        put_number(@out, value: n[0], width: 2, what: what)?
+        put_number(@out, value: n[1], width: 2, what: what)?
+
+        for k in range(from: 0, to: 3)
+            wire.push_string(out: @out, s: b[k], field: what)?
+
+        put_name(@out, name: s.names[0], @table, compress: false)?
+    else if t == 64 || t == 65
+        put_number(@out, value: n[0], width: 2, what: what)?
+        put_name(@out, name: s.names[0], @table, compress: false)?
+        last: i64 @= -1
+
+        for k in range(from: 0, to: b.len())
+            key = n[k + 1]
+            put_number(@out, value: key, width: 2, what: what)?
+
+            if key <= last
+                return failure.wrong(
+                    field: what,
+                    what: f"the service parameter key {key} after {last}, where keys rise and none stands twice"
+                )
+            wire.in_range(value: b[k].len(), low: 0, high: 65535, field: what + "'s parameter")?
+            wire.push_u16(@out, n: b[k].len())
+            wire.push_all(out: @out, data: b[k])
+            last @ key
+    else if t == 43 || t == 48
+        put_number(@out, value: n[0], width: 2, what: what)?
+        put_number(@out, value: n[1], width: 1, what: what)?
+        put_number(@out, value: n[2], width: 1, what: what)?
+        wire.push_all(out: @out, data: b[0])
+    else if t == 46
+        put_number(@out, value: n[0], width: 2, what: what)?
+        put_number(@out, value: n[1], width: 1, what: what)?
+        put_number(@out, value: n[2], width: 1, what: what)?
+
+        for k in range(from: 3, to: 6)
+            put_number(@out, value: n[k], width: 4, what: what)?
+
+        put_number(@out, value: n[6], width: 2, what: what)?
+        put_name(@out, name: s.names[0], @table, compress: false)?
+        wire.push_all(out: @out, data: b[0])
+    else if t == 47
+        put_name(@out, name: s.names[0], @table, compress: false)?
+        put_bitmap(@out, types: n, what: what)?
+    else if t == 52
+        for k in range(from: 0, to: 3)
+            put_number(@out, value: n[k], width: 1, what: what)?
+
+        wire.push_all(out: @out, data: b[0])
+    else if t == 44
+        put_number(@out, value: n[0], width: 1, what: what)?
+        put_number(@out, value: n[1], width: 1, what: what)?
+        wire.push_all(out: @out, data: b[0])
+    return ok()
+
+# Writes `value` in `width` bytes, 1, 2 or 4. Fails `invalid` where it does
+# not fit them.
+function put_number(@out: [u8], value: i64, width: i64, what: str) -> ()?
+    high: i64 @= MOST_U32
+
+    if width == 1
+        high @ 255
+    else if width == 2
+        high @ 65535
+    wire.in_range(value: value, low: 0, high: high, field: what)?
+
+    if width == 1
+        wire.push_u8(@out, n: value)
+    else if width == 2
+        wire.push_u16(@out, n: value)
+    else
+        wire.push_u32(@out, n: value)
+    return ok()
+
+# Writes `types` as an NSEC type bitmap (RFC 4034 § 4.1.2). Fails `invalid`
+# where they do not rise or one is outside 0 to 65535.
+function put_bitmap(@out: [u8], types: [i64], what: str) -> ()?
+    last: i64 @= -1
+
+    for t in types
+        wire.in_range(value: t, low: 0, high: 65535, field: what + "'s type")?
+
+        if t <= last
+            return failure.wrong(field: what, what: f"the type {t} after {last}, where an NSEC's types rise")
+        last @ t
+
+    at: i64 @= 0
+
+    while at < types.len()
+        window = types[at] >> 8
+        bits: [i64] @= []
+
+        while at < types.len() && types[at] >> 8 == window
+            low = types[at] & 255
+            index = low / 8
+
+            while bits.len() <= index
+                bits @ bits.push(0)
+
+            bits[index] @ bits[index] | 128 >> low % 8
+            at @ at + 1
+
+        wire.push_u8(@out, n: window)
+        wire.push_u8(@out, n: bits.len())
+
+        for b in bits
+            wire.push_u8(@out, n: b)
+
+    return ok()
+
+# Whether `tag` is ASCII letters and digits alone.
+function is_tag(tag: [u8]) -> bool
+    for c in tag
+        if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')
+            return false
+
+    return true
+
+test "encode: a header alone, an id and a code out of range, and a code past 15 without EDNS"
+    frame = model.Frame(
+        id: 0x1234,
+        flags: 0x0100,
+        rcode: 0,
+        questions: [],
+        items: [],
+        has_edns: false,
+        udp_size: 0,
+        version: 0,
+        dnssec_ok: false,
+        options: []
+    )
+    assert encode(frame).must() == [0x12, 0x34, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert encode(
+        model.Frame(id: 65536, flags: 0, rcode: 0, questions: [], items: [], has_edns: false, udp_size: 0, version: 0, dnssec_ok: false, options: [])
+    ).is_err()
+    assert encode(
+        model.Frame(id: 1, flags: 0, rcode: 16, questions: [], items: [], has_edns: false, udp_size: 0, version: 0, dnssec_ok: false, options: [])
+    ).is_err()
+
+test "put_bitmap: types in two windows, as dig read them back, and types that do not rise"
+    out: [u8] @= []
+    put_bitmap(@out, types: [1, 15, 46, 47, 257], what: "nsec").must()
+    assert out == [0, 6, 0x40, 0x01, 0, 0, 0, 0x03, 1, 1, 0x40]
+    again: [u8] @= []
+    assert put_bitmap(@again, types: [2, 1], what: "nsec").is_err()
+    empty: [u8] @= []
+    put_bitmap(@empty, types: [], what: "nsec").must()
+    assert empty.len() == 0

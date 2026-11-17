@@ -1,0 +1,148 @@
+# A name server for this package's tests alone, run on a thread of its own
+# while the test's thread is the client: on 127.0.0.1, UDP and TCP on one
+# port the system chooses, it answers the queries it reads with messages
+# written ahead, each with the query's ID, and gives back what it was asked.
+# Nothing outside the tests calls it.
+
+use bytes
+use dns/internal/codec_read
+use io
+use net
+use strings
+use threads
+
+# What parts the pieces of a script and of `serve`'s answer.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# A server running on a thread of its own, and its port.
+record Started
+    # The port it listens on, UDP and TCP.
+    port: i64
+    # Its thread, whose answer `threads.wait_text` gives: a line for each
+    # query read, `udp` or `tcp`, its name and its type.
+    thread: threads.TextThread
+
+# The step that answers the next query over UDP with `answer`'s bytes.
+function udp(answer: [u8]) -> str
+    return "udp " + bytes.format_base64(answer)
+
+# The step that answers the next query over TCP with `answer`'s bytes.
+function tcp(answer: [u8]) -> str
+    return "tcp " + bytes.format_base64(answer)
+
+# The step that answers the next query over TCP with each of `answers`, in
+# order, on one connection, as a zone transfer comes.
+function tcp_all(answers: [[u8]]) -> str
+    parts: [str] @= []
+
+    for a in answers
+        parts @ parts.push(bytes.format_base64(a))
+
+    return "tcp " + parts.join(",")
+
+# The step that sends `answer` with another ID, then with the query's.
+function spoofed(answer: [u8]) -> str
+    return "spoof " + bytes.format_base64(answer)
+
+# The step that reads the next query over UDP and answers nothing.
+function dropped() -> str
+    return "drop"
+
+# `serve` started on a thread with `steps`, and the port it tells back read
+# from a control listener of this thread, so no port is assumed free.
+function start(steps: [str]) -> Started
+    control @= net.listen("127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + steps.join(SEPARATOR))
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = strings.trim(io.read_rest_text(@r).must())
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: net.parse_port(port).must(), thread: t)
+
+# Binds UDP and TCP on one port of 127.0.0.1, tells it to the control port
+# `arg` names first, and plays each step of the script after it, each within
+# 10 s. Gives back a line for each query read.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    socket @= net.open_udp("127.0.0.1", port: 0).must()
+    listener @= net.listen("127.0.0.1", port: socket.address.port).must()
+    c @= net.connect("127.0.0.1", port: net.parse_port(parts[0]).must(), deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: f"{socket.address.port}").must()
+    io.close(@c.stream).must()
+    net.set_udp_deadline(socket, ms: 10_000).must()
+    net.set_accept_deadline(listener, ms: 10_000).must()
+    seen: [str] @= []
+
+    for step in parts.slice(from: 1, to: parts.len())
+        words = strings.split(s: step, sep: " ")
+        pieces: [[u8]] @= []
+
+        if words.len() == 2
+            for piece in strings.split(s: words[1], sep: ",")
+                pieces @ pieces.push(bytes.parse_base64(piece).must())
+
+        canned: [u8] @= []
+
+        if pieces.len() > 0
+            canned @ pieces[0]
+
+        if words[0] == "tcp"
+            match net.accept(listener, deadline_ms: 10_000)
+                .ok conn =>
+                    served @= conn
+                    seen @ seen.push("tcp " + over_tcp(served.stream, answers: pieces))
+                    io.close(@served.stream).must()
+                .err _ => seen @ seen.push("tcp none")
+        else
+            match net.receive(socket)
+                .ok d =>
+                    seen @ seen.push("udp " + asked(d.data))
+
+                    if words[0] == "spoof"
+                        wrong: [u8] @= with_id(canned: canned, query: d.data)
+                        wrong[0] @ to_u8(to_i64(wrong[0]).must() ^ 0xff).must()
+                        net.send_to(socket, data: wrong, to: d.sender).must()
+
+                    if words[0] != "drop"
+                        net.send_to(socket, data: with_id(canned: canned, query: d.data), to: d.sender).must()
+                .err _ => seen @ seen.push("udp none")
+
+    net.close_udp(@socket).must()
+    net.close_listener(@listener).must()
+    return seen.join("\n")
+
+# Reads one framed query from `s`, answers it with each of `answers`, and
+# says what it asked.
+function over_tcp(s: io.Stream, answers: [[u8]]) -> str
+    head = io.read_exact(s, count: 2).must()
+    length = to_i64(head[0]).must() << 8 | to_i64(head[1]).must()
+    query = io.read_exact(s, count: length).must()
+
+    for canned in answers
+        answer = with_id(canned: canned, query: query)
+        framed: [u8] @= [to_u8(answer.len() >> 8).must(), to_u8(answer.len() & 255).must()]
+
+        for b in answer
+            framed @ framed.push(b)
+
+        io.write(s, data: framed).must()
+
+    return asked(query)
+
+# `canned` with the ID of `query`.
+function with_id(canned: [u8], query: [u8]) -> [u8]
+    out: [u8] @= canned
+    out[0] @ query[0]
+    out[1] @ query[1]
+    return out
+
+# The first question of `query`, its name and its type number.
+function asked(query: [u8]) -> str
+    match codec_read.decode(query)
+        .ok f =>
+            if f.questions.len() == 0
+                return "no question"
+            return f"{f.questions[0].name} {f.questions[0].type_code}"
+        .err e => return "unreadable: " + e.msg

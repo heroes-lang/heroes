@@ -1,0 +1,102 @@
+# A message as this package's private modules hold it: the face's types
+# flattened, since a private module cannot name its face's types. A record's
+# data is a `Slots`, its numbers, names and byte fields in the order its
+# type's form lays them out (`codec_read` and `codec_write` say each form),
+# and the face turns a `Slots` into its `Data` case and back, once each way.
+
+# A question.
+record Ask
+    # The name, absolute text.
+    name: str
+    # The type, 0 to 65535.
+    type_code: i64
+    # The class, 0 to 65535.
+    class_code: i64
+
+# A record's data, flattened.
+record Slots
+    # The record's type.
+    type_code: i64
+    # Whether the data is kept as bytes alone, in `blobs[0]` (RFC 3597).
+    opaque: bool
+    # Its numbers, in its form's order.
+    numbers: [i64]
+    # Its names, absolute text, in its form's order.
+    names: [str]
+    # Its byte fields and character strings, in its form's order.
+    blobs: [[u8]]
+
+# A resource record, and the section it stands in.
+record Item
+    # 1 the answer section, 2 the authority section, 3 the additional one.
+    section: i64
+    # The owner name, absolute text.
+    name: str
+    # The class.
+    class_code: i64
+    # The time to live, in seconds.
+    ttl: i64
+    # The data.
+    data: Slots
+
+# One option of an OPT record.
+record Option
+    # Its code.
+    code: i64
+    # Its bytes.
+    data: [u8]
+
+# A whole message, flattened.
+record Frame
+    # The ID.
+    id: i64
+    # The flags' sixteen bits, the code's four lowest among them.
+    flags: i64
+    # The response code, all twelve bits.
+    rcode: i64
+    # The questions.
+    questions: [Ask]
+    # The records of the three sections, in order.
+    items: [Item]
+    # Whether an OPT record stands.
+    has_edns: bool
+    # Its datagram size, as written.
+    udp_size: i64
+    # Its version.
+    version: i64
+    # Its DO bit.
+    dnssec_ok: bool
+    # Its options.
+    options: [Option]
+
+# Slots of nothing, of type `type_code`, to be filled.
+function empty(type_code: i64) -> Slots
+    return Slots(type_code: type_code, opaque: false, numbers: [], names: [], blobs: [])
+
+# Slots of `type_code` holding `numbers`, `texts` as its names and `blobs`.
+function of(type_code: i64, numbers: [i64], texts: [str], blobs: [[u8]]) -> Slots
+    return Slots(type_code: type_code, opaque: false, numbers: numbers, names: texts, blobs: blobs)
+
+# Slots holding `data` as the bytes of type `type_code` (RFC 3597).
+function opaque(type_code: i64, data: [u8]) -> Slots
+    return Slots(type_code: type_code, opaque: true, numbers: [], names: [], blobs: [data])
+
+# The types read in class IN alone, as RFC 3597 § 5 has a reader treat a
+# type of one class in another: A, AAAA, SRV, NAPTR, SVCB, HTTPS.
+function is_class_bound(type_code: i64) -> bool
+    return type_code == 1 || type_code == 28 || type_code == 33 || type_code == 35 || type_code == 64 || type_code == 65
+
+# Whether a record of `type_code` in `class_code` is read by its fields.
+function is_read(type_code: i64, class_code: i64) -> bool
+    if is_class_bound(type_code) && class_code != 1
+        return false
+
+    return match type_code
+        1 | 2 | 5 | 6 | 12 | 13 | 15 | 16 | 28 | 33 | 35 | 39 | 43 | 44 | 46 | 47 | 48 | 52 | 64 | 65 | 257 => true
+        _                                                                                                   => false
+
+test "is_read: the types read by their fields, a class-bound one outside class IN, and a type of none"
+    assert is_read(type_code: 1, class_code: 1) && is_read(type_code: 16, class_code: 3) && is_read(type_code: 257, class_code: 255)
+    assert !is_read(type_code: 1, class_code: 3) && !is_read(type_code: 33, class_code: 4)
+    assert !is_read(type_code: 65280, class_code: 1) && !is_read(type_code: 41, class_code: 1)
+    assert empty(15).numbers.len() == 0 && opaque(type_code: 99, data: [1]).blobs == [[1]]

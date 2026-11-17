@@ -1,0 +1,9 @@
+# Reaches Rebel's package `dns`, so that `heroes test` on this file runs the
+# tests of its face, its private modules and the floors under them (spec
+# § 12). It prints the mnemonic of the type of a mail exchanger, `MX`, on
+# every run, touching no network.
+
+use <rebel>/dns
+
+function main()
+    print(dns.type_name(dns.TYPE_MX))

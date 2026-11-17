@@ -1,0 +1,37 @@
+# The codes `dns` fails with, and the failures its modules build: every
+# message says what was asked and what was found (README § A4).
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant FAILED: str
+    "failed"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant CLOSED: str
+    "closed"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+# A failure `invalid` of a message read: `what` went wrong at byte `at`.
+function at_byte<T>(at: i64, what: str) -> T?
+    return fail(code: INVALID, msg: f"byte {at} of the message: {what}")
+
+# A failure `invalid` of a value written: `what` is wrong with `field`.
+function wrong<T>(field: str, what: str) -> T?
+    return fail(code: INVALID, msg: f"{field}: {what}")

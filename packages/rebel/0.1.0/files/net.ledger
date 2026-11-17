@@ -401,6 +401,7 @@ capability name/records  DNS records other than addresses
   go      net.LookupCNAME, net.LookupMX, net.LookupNS, net.LookupSRV, net.LookupTXT, net.Resolver.LookupCNAME, net.Resolver.LookupMX, net.Resolver.LookupNS, net.Resolver.LookupSRV, net.Resolver.LookupTXT, net.MX, net.NS, net.SRV
   rust    -
   python  -
+  note    That package is `dns` (the author's decision of 2026-11-17): `dns.lookup_mx`, `dns.lookup_txt`, `dns.lookup_srv`, `dns.lookup_ns`, `dns.lookup_cname` and `dns.lookup_reverse`, and `dns.lookup` for every other type; its ledger holds these entries again
 
 capability name/host  the machine's own name
   heroes  os.host_name

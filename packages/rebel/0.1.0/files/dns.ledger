@@ -1,0 +1,398 @@
+# The ledger of `dns`: what Go's `net` (its DNS lookups) and Go's own message
+# reader `golang.org/x/net/dns/dnsmessage` (vendored in Go 1.27's tree, read
+# with `go doc -all vendor/golang.org/x/net/dns/dnsmessage`) let a program
+# do, one block per capability, and what Rebel answers. Python's and Rust's
+# standard libraries have no DNS client beyond the system's resolver, which
+# is `net`'s (`net.lookup`, `net.name_of`). The task named dnspython, Rust's
+# hickory-dns and Java's `jdk.naming.dns` as the yardstick: none of the three
+# is on this machine (2026-11-17: `import dns` fails, no hickory crate in
+# Cargo's registry, no Java runtime), so their `python` and `rust` entries
+# below are recalled from their documentation, never listed here, and a
+# question rather than a measurement; Java's provider answers records as JNDI
+# attributes by type name, which every `lookup` block covers. The wire
+# behaviour was observed instead from `dig` 9.10.6 (BIND), the one DNS tool
+# on this machine, answering canned messages of a local server.
+
+capability message/value  a DNS message as a value: header, flags, and its four sections
+  heroes  dns.Message
+  go      dnsmessage.Message, dnsmessage.Header, dnsmessage.Message.GoString, dnsmessage.Header.GoString
+  rust    hickory_proto::op::Message, hickory_proto::op::Header, Message::id, Message::message_type, Message::op_code, Message::response_code, Message::queries, Message::answers, Message::name_servers, Message::additionals
+  python  dns.message.Message, Message.id, Message.flags, Message.question, Message.answer, Message.authority, Message.additional
+  note    One record whose flags are fields, as Go's `Header` holds them; the extended code an OPT record carries is folded into `rcode`, as dnspython's `Message.rcode()` answers it
+
+capability message/decode  a message read from its bytes, names decompressed
+  heroes  dns.decode
+  go      dnsmessage.Message.Unpack, dnsmessage.Parser, dnsmessage.Parser.Start, dnsmessage.Parser.AllQuestions, dnsmessage.Parser.AllAnswers, dnsmessage.Parser.AllAuthorities, dnsmessage.Parser.AllAdditionals, dnsmessage.Parser.Question, dnsmessage.Parser.Answer, dnsmessage.Parser.Authority, dnsmessage.Parser.Additional, dnsmessage.Parser.AnswerHeader, dnsmessage.Parser.AuthorityHeader, dnsmessage.Parser.AdditionalHeader
+  rust    Message::from_vec, Message::from_bytes, BinDecodable::read
+  python  dns.message.from_wire
+  note    A compression pointer must point before the name part it continues, which makes a loop impossible, as dnspython requires; at most 127 pointers in one name, where Go allows 10
+
+capability message/decode-skip  sections skipped without reading them
+  heroes  refused: a message is read whole into a value; a cursor that skips sections is plumbing for a reader that allocates nothing, and every message here fits 65,535 bytes
+  go      dnsmessage.Parser.SkipQuestion, dnsmessage.Parser.SkipAllQuestions, dnsmessage.Parser.SkipAnswer, dnsmessage.Parser.SkipAllAnswers, dnsmessage.Parser.SkipAuthority, dnsmessage.Parser.SkipAllAuthorities, dnsmessage.Parser.SkipAdditional, dnsmessage.Parser.SkipAllAdditionals
+  rust    -
+  python  dns.message.from_wire(question_only=True)
+  note    Go's parser is a cursor for a program that reads a message without allocating; here a message is read whole
+
+capability message/encode  a message written to its bytes, names compressed
+  heroes  dns.encode
+  go      dnsmessage.Message.Pack, dnsmessage.Message.AppendPack, dnsmessage.Builder, dnsmessage.NewBuilder, dnsmessage.Builder.EnableCompression, dnsmessage.Builder.StartQuestions, dnsmessage.Builder.StartAnswers, dnsmessage.Builder.StartAuthorities, dnsmessage.Builder.StartAdditionals, dnsmessage.Builder.Question, dnsmessage.Builder.Finish
+  rust    Message::to_vec, BinEncodable::emit, BinEncoder
+  python  Message.to_wire
+  note    Names compressed where RFC 3597 § 4 allows it, owners, questions and the names of NS, CNAME, SOA, PTR and MX, never those of SRV, NAPTR, SVCB, RRSIG, NSEC or DNAME
+
+capability message/query  a query made for a name and a type
+  heroes  dns.new_query
+  go      -
+  rust    Message::query, Message::add_query, hickory_proto::op::Query, Query::query
+  python  dns.message.make_query
+  note    Recursion desired and EDNS(0) at 1,232 bytes, the size of DNS Flag Day 2020, as dnspython's `use_edns=0` with its payload
+
+capability message/response  a response begun from the query it answers
+  heroes  dns.reply_to
+  go      -
+  rust    Message::response_from_request
+  python  dns.message.make_response
+
+capability message/question  a question: a name, a type, a class
+  heroes  dns.Question
+  go      dnsmessage.Question, dnsmessage.Question.GoString
+  rust    Query, Query::name, Query::query_type, Query::query_class
+  python  dns.rrset.RRset as a question, Message.find_rrset
+
+capability message/rcode  the response codes as constants and as text
+  heroes  dns.rcode_name, dns.RCODE_NO_ERROR and the other `RCODE_` constants
+  go      dnsmessage.RCode, dnsmessage.RCode.String, dnsmessage.RCode.GoString, dnsmessage.RCodeSuccess, dnsmessage.RCodeFormatError, dnsmessage.RCodeServerFailure, dnsmessage.RCodeNameError, dnsmessage.RCodeNotImplemented, dnsmessage.RCodeRefused
+  rust    ResponseCode, ResponseCode::to_str
+  python  dns.rcode.Rcode, dns.rcode.to_text, dns.rcode.from_text, dns.rcode.NOERROR, dns.rcode.NXDOMAIN, dns.rcode.SERVFAIL
+  note    The text is the IANA mnemonic, `NXDOMAIN`, as dig and dnspython write it, and `RCODE23` for a code with none
+
+capability message/opcode  the operation codes
+  heroes  dns.OPCODE_QUERY and the other `OPCODE_` constants, dns.Message.opcode
+  go      dnsmessage.OpCode, dnsmessage.OpCode.GoString
+  rust    OpCode
+  python  dns.opcode.Opcode, dns.opcode.QUERY, dns.opcode.NOTIFY, dns.opcode.UPDATE
+
+capability message/edns  EDNS(0): the size of a datagram, the DNSSEC bit, the extended code and the options
+  heroes  dns.Edns, dns.EdnsOption, dns.Message.has_edns
+  go      dnsmessage.OPTResource, dnsmessage.Option, dnsmessage.Option.GoString, dnsmessage.ResourceHeader.SetEDNS, dnsmessage.ResourceHeader.DNSSECAllowed, dnsmessage.ResourceHeader.ExtendedRCode, dnsmessage.Builder.OPTResource, dnsmessage.Parser.OPTResource, dnsmessage.TypeOPT
+  rust    hickory_proto::op::Edns, Edns::max_payload, Edns::dnssec_ok, Edns::options, EdnsOption
+  python  Message.use_edns, Message.edns, Message.payload, Message.ednsflags, Message.options, dns.edns.Option, dns.edns.GenericOption
+  note    One OPT at most, in the additional section alone, as RFC 6891 § 6.1.1 says; the reserved flag bits are ignored as it asks of a receiver
+
+capability message/edns-option-kinds  an option read by its kind: client subnet, cookie, extended error, NSID, padding
+  heroes  pending
+  go      -
+  rust    ClientSubnet, EdnsCode
+  python  dns.edns.ECSOption, dns.edns.EDEOption, dns.edns.CookieOption, dns.edns.NSIDOption
+  note    An option is its code and its bytes (`dns.EdnsOption`); the fields of a client subnet, a cookie and an extended error are not read from them yet
+
+capability name/text  a name read from text and written back, escapes and all
+  heroes  dns.canonical_name, and every function that takes or answers a name
+  go      dnsmessage.Name, dnsmessage.NewName, dnsmessage.MustNewName, dnsmessage.Name.String, dnsmessage.Name.GoString
+  rust    hickory_proto::rr::Name, Name::from_ascii, Name::from_str, Name::to_ascii, Display for Name
+  python  dns.name.from_text, dns.name.Name.to_text, dns.name.Name
+  note    `\.`, `\\` and `\DDD` read and written as dig writes them; a name answered is absolute, with its last dot
+
+capability name/canonical  a name in the form two names are compared by: lower case and absolute
+  heroes  dns.canonical_name
+  go      -
+  rust    Name::to_lowercase, Name::eq_case, Name::cmp_with_f
+  python  Name.canonicalize, Name.__eq__
+  note    ASCII letters alone are folded, RFC 4343
+
+capability name/labels  the labels of a name
+  heroes  dns.labels_of
+  go      -
+  rust    Name::iter, Name::num_labels
+  python  Name.labels, Name.split
+
+capability name/subdomain  whether a name is under another
+  heroes  dns.is_subdomain
+  go      -
+  rust    Name::zone_of
+  python  Name.is_subdomain, Name.is_superdomain
+
+capability name/reverse  the name of a reverse lookup and the address it names
+  heroes  dns.parse_reverse_name, net.to_reverse_name
+  go      -
+  rust    Name::from(IpAddr), Name::parse_arpa_name
+  python  dns.reversename.from_address, dns.reversename.to_address
+  note    The name of an address is `net.to_reverse_name`'s; this package reads one back
+
+capability name/idna  a name of Unicode letters asked as its ASCII form (IDNA)
+  heroes  pending
+  go      -
+  rust    Name::from_utf8, Name::to_utf8
+  python  dns.name.from_unicode, Name.to_unicode, dns.name.IDNA_2003, dns.name.IDNA_2008
+  note    Punycode (RFC 3492) and UTS #46's mapping are in no package of Rebel yet; a name's bytes beyond ASCII are sent as they are, escaped as `\DDD` in its text
+
+capability type/text  a record type and a class as numbers, constants and text
+  heroes  dns.type_name, dns.parse_type, dns.class_name, dns.parse_class, and the `TYPE_` and `CLASS_` constants
+  go      dnsmessage.Type, dnsmessage.Type.String, dnsmessage.Type.GoString, dnsmessage.Class, dnsmessage.Class.String, dnsmessage.Class.GoString, dnsmessage.TypeA, dnsmessage.TypeNS, dnsmessage.TypeCNAME, dnsmessage.TypeSOA, dnsmessage.TypePTR, dnsmessage.TypeMX, dnsmessage.TypeTXT, dnsmessage.TypeAAAA, dnsmessage.TypeSRV, dnsmessage.TypeSVCB, dnsmessage.TypeHTTPS, dnsmessage.TypeWKS, dnsmessage.TypeHINFO, dnsmessage.TypeMINFO, dnsmessage.TypeAXFR, dnsmessage.TypeALL, dnsmessage.ClassINET, dnsmessage.ClassCSNET, dnsmessage.ClassCHAOS, dnsmessage.ClassHESIOD, dnsmessage.ClassANY
+  rust    RecordType, RecordType::from_str, Display for RecordType, DNSClass
+  python  dns.rdatatype.RdataType, dns.rdatatype.to_text, dns.rdatatype.from_text, dns.rdataclass.to_text, dns.rdataclass.from_text
+  note    `TYPE65280` and `CLASS4000` for a number with no mnemonic, RFC 3597 § 5, read back too
+
+capability record/value  a resource record: its owner, class, time to live and data
+  heroes  dns.Record, dns.Data, dns.type_of
+  go      dnsmessage.Resource, dnsmessage.ResourceHeader, dnsmessage.ResourceBody, dnsmessage.Resource.GoString, dnsmessage.ResourceHeader.GoString
+  rust    hickory_proto::rr::Record, Record::name, Record::record_type, Record::dns_class, Record::ttl, Record::data, RData
+  python  dns.rrset.RRset, dns.rdata.Rdata, dns.rdataset.Rdataset
+  note    The type is the data's own, so a record whose type and data disagree cannot be built
+
+capability record/address  A and AAAA
+  heroes  dns.Data.a, dns.Data.aaaa
+  go      dnsmessage.AResource, dnsmessage.AAAAResource, dnsmessage.Builder.AResource, dnsmessage.Builder.AAAAResource, dnsmessage.Parser.AResource, dnsmessage.Parser.AAAAResource, AResource.GoString, AAAAResource.GoString
+  rust    rdata::A, rdata::AAAA
+  python  dns.rdtypes.IN.A.A, dns.rdtypes.IN.AAAA.AAAA
+  note    Read as addresses in class IN alone, as dnspython's types of class IN are; in another class they stay bytes
+
+capability record/names  CNAME, NS, PTR and DNAME: one name
+  heroes  dns.Data.cname, dns.Data.ns, dns.Data.ptr, dns.Data.dname
+  go      dnsmessage.CNAMEResource, dnsmessage.NSResource, dnsmessage.PTRResource, dnsmessage.Builder.CNAMEResource, dnsmessage.Builder.NSResource, dnsmessage.Builder.PTRResource, dnsmessage.Parser.CNAMEResource, dnsmessage.Parser.NSResource, dnsmessage.Parser.PTRResource, CNAMEResource.GoString, NSResource.GoString, PTRResource.GoString
+  rust    rdata::CNAME, rdata::NS, rdata::PTR, rdata::DNAME (hickory's `ANAME` aside)
+  python  dns.rdtypes.ANY.CNAME, dns.rdtypes.ANY.NS, dns.rdtypes.ANY.PTR, dns.rdtypes.ANY.DNAME
+
+capability record/mx  MX
+  heroes  dns.Data.mx
+  go      dnsmessage.MXResource, dnsmessage.Builder.MXResource, dnsmessage.Parser.MXResource, MXResource.GoString
+  rust    rdata::MX
+  python  dns.rdtypes.ANY.MX
+
+capability record/txt  TXT: its character strings, as bytes
+  heroes  dns.Data.txt
+  go      dnsmessage.TXTResource, dnsmessage.Builder.TXTResource, dnsmessage.Parser.TXTResource, TXTResource.GoString
+  rust    rdata::TXT, TXT::txt_data
+  python  dns.rdtypes.ANY.TXT, TXT.strings
+  note    Each string kept as bytes, as all three keep them; `lookup_txt` joins a record's strings as Go's LookupTXT does
+
+capability record/srv  SRV
+  heroes  dns.Data.srv
+  go      dnsmessage.SRVResource, dnsmessage.Builder.SRVResource, dnsmessage.Parser.SRVResource, SRVResource.GoString
+  rust    rdata::SRV
+  python  dns.rdtypes.IN.SRV
+
+capability record/soa  SOA
+  heroes  dns.Data.soa
+  go      dnsmessage.SOAResource, dnsmessage.Builder.SOAResource, dnsmessage.Parser.SOAResource, SOAResource.GoString
+  rust    rdata::SOA
+  python  dns.rdtypes.ANY.SOA
+
+capability record/hinfo  HINFO
+  heroes  dns.Data.hinfo
+  go      dnsmessage.TypeHINFO
+  rust    rdata::HINFO
+  python  dns.rdtypes.ANY.HINFO
+
+capability record/caa  CAA
+  heroes  dns.Data.caa
+  go      -
+  rust    rdata::CAA
+  python  dns.rdtypes.ANY.CAA
+
+capability record/naptr  NAPTR
+  heroes  dns.Data.naptr
+  go      -
+  rust    rdata::NAPTR
+  python  dns.rdtypes.IN.NAPTR
+
+capability record/svcb  SVCB and HTTPS, their parameters read and written
+  heroes  dns.Data.svcb, dns.Data.https, dns.SvcParam, dns.param_of, dns.alpn_of, dns.port_of, dns.hints_of, dns.alpn_param, dns.port_param, dns.hints_param
+  go      dnsmessage.SVCBResource, dnsmessage.HTTPSResource, dnsmessage.SVCParam, dnsmessage.SVCParamKey, dnsmessage.SVCParamKey.String, dnsmessage.SVCParamKey.GoString, dnsmessage.SVCBResource.GetParam, dnsmessage.SVCBResource.SetParam, dnsmessage.SVCBResource.DeleteParam, dnsmessage.Builder.SVCBResource, dnsmessage.Builder.HTTPSResource, dnsmessage.Parser.SVCBResource, dnsmessage.Parser.HTTPSResource, dnsmessage.SVCParamMandatory, dnsmessage.SVCParamALPN, dnsmessage.SVCParamNoDefaultALPN, dnsmessage.SVCParamPort, dnsmessage.SVCParamIPv4Hint, dnsmessage.SVCParamECH, dnsmessage.SVCParamIPv6Hint, dnsmessage.SVCParamDOHPath, dnsmessage.SVCParamOHTTP, dnsmessage.SVCParamTLSSupportedGroups, SVCBResource.GoString, HTTPSResource.GoString, SVCParam.GoString
+  rust    rdata::SVCB, rdata::HTTPS, SvcParamKey, SvcParamValue, Alpn, Mandatory, IpHint
+  python  dns.rdtypes.svcbbase.SVCBBase, dns.rdtypes.IN.SVCB, dns.rdtypes.IN.HTTPS, dns.rdtypes.svcbbase.ParamKey
+  note    RFC 9460: the keys in ascending order, none twice, as its § 2.2 asks of a reader and a writer
+
+capability record/dnssec-data  DS, DNSKEY, RRSIG and NSEC read and written as data
+  heroes  dns.Data.ds, dns.Data.dnskey, dns.Data.rrsig, dns.Data.nsec
+  go      -
+  rust    hickory_proto::dnssec::rdata::DS, DNSKEY, RRSIG, NSEC
+  python  dns.rdtypes.ANY.DS, dns.rdtypes.ANY.DNSKEY, dns.rdtypes.ANY.RRSIG, dns.rdtypes.ANY.NSEC
+
+capability record/key-tag  the key tag of a DNSKEY
+  heroes  dns.key_tag_of
+  go      -
+  rust    DNSKEY::calculate_key_tag
+  python  dns.dnssec.key_id
+
+capability record/tlsa-sshfp  TLSA and SSHFP
+  heroes  dns.Data.tlsa, dns.Data.sshfp
+  go      -
+  rust    rdata::TLSA, rdata::SSHFP
+  python  dns.rdtypes.ANY.TLSA, dns.rdtypes.ANY.SSHFP
+
+capability record/unknown  a record of a type this package does not read, kept as its bytes
+  heroes  dns.Data.unknown
+  go      dnsmessage.UnknownResource, dnsmessage.Builder.UnknownResource, dnsmessage.Parser.UnknownResource, UnknownResource.GoString
+  rust    rdata::NULL, RData::Unknown
+  python  dns.rdata.GenericRdata
+  note    RFC 3597: read and written byte for byte, never decompressed
+
+capability record/rarer-kinds  the rarer kinds read by their fields: NSEC3, NSEC3PARAM, CDS, CDNSKEY, URI, LOC, CERT, OPENPGPKEY, ZONEMD and the obsolete ones
+  heroes  pending
+  go      -
+  rust    rdata::NSEC3, rdata::NSEC3PARAM, rdata::CDS, rdata::CDNSKEY, rdata::OPENPGPKEY, rdata::CERT
+  python  dns.rdtypes.ANY.NSEC3, NSEC3PARAM, CDS, CDNSKEY, URI, LOC, CERT, OPENPGPKEY, ZONEMD, and dnspython's other forty
+  note    Each is kept as `dns.Data.unknown`, its bytes read and written back exactly and written as text in the RFC 3597 form, but its fields are not read
+
+capability record/text  a record and its data written as a zone file writes them
+  heroes  dns.format_record, dns.format_data
+  go      -
+  rust    Display for Record, Display for RData
+  python  Rdata.to_text, RRset.to_text, Rdataset.to_text
+  note    dig's text for every kind dig 9.10.6 knows, observed; RFC 9460's for SVCB and HTTPS, which that dig writes as unknown
+
+capability record/parse-text  a record read from a zone file's text
+  heroes  pending
+  go      -
+  rust    hickory_proto::serialize::txt::Parser
+  python  dns.rdata.from_text, dns.rrset.from_text, dns.zone.from_text
+  note    The master file format (RFC 1035 § 5), its `$ORIGIN`, `$TTL`, parentheses and relative names, is not read
+
+capability message/text  a whole message written as dig or dnspython writes it
+  heroes  pending
+  go      -
+  rust    Display for Message
+  python  Message.to_text
+  note    No tool on this machine writes a whole message's text to be observed: dnspython is absent, and dig's sections carry comments and timings of its own
+
+capability client/resolver  a resolver: its servers, search list, deadline, tries and options
+  heroes  dns.Resolver, dns.resolver
+  go      net.Resolver, net.Resolver.PreferGo, net.Resolver.StrictErrors, net.DefaultResolver
+  rust    hickory_resolver::Resolver, ResolverConfig, ResolverOpts, NameServerConfig
+  python  dns.resolver.Resolver, Resolver.nameservers, Resolver.search, Resolver.ndots, Resolver.timeout, Resolver.lifetime, Resolver.rotate, Resolver.use_edns
+  note    `StrictErrors` is the one behaviour: a failure that is not `not_found` ends a search at once
+
+capability client/system-config  the system's resolvers read: /etc/resolv.conf
+  heroes  dns.system, dns.parse_resolv_conf
+  go      net's reading of /etc/resolv.conf (internal)
+  rust    hickory_resolver::system_conf::read_system_conf, system_conf::parse_resolv_conf
+  python  dns.resolver.Resolver(configure=True), Resolver.read_resolv_conf
+  note    glibc's and Go's defaults: two tries, five seconds each, `ndots:1`, and the loopback servers where the file names none
+
+capability client/system-config-windows  the system's resolvers on Windows, which no file holds
+  heroes  pending
+  go      net's reading of GetAdaptersAddresses (internal)
+  rust    system_conf on Windows (ipconfig)
+  python  dns.resolver.Resolver on Windows (the registry, WMI)
+  note    Windows keeps its servers in the registry and in its adapters' settings, and no file holds them; reading them needs a member of the floor (GetAdaptersAddresses in `hero_net.h`), which this package may not write. `dns.system` fails `unsupported` there and a program names its servers with `dns.resolver`
+
+capability client/exchange  a message sent to a server and its answer read: UDP, TCP where it was truncated, tries, a deadline each
+  heroes  dns.exchange
+  go      net.Resolver.Dial
+  rust    hickory_client::Client, DnsHandle::send, UdpClientStream, TcpClientStream
+  python  dns.query.udp, dns.query.tcp, dns.query.udp_with_fallback, dns.query.send_udp, dns.query.receive_udp, dns.query.send_tcp, dns.query.receive_tcp
+  note    The ID is fresh from the system's generator on every send and the port is the system's choice, RFC 5452; a datagram whose sender, ID or question differs is ignored, never taken
+
+capability client/stream  a message exchanged over a stream the program opened: DNS over TLS through `tls`
+  heroes  dns.exchange_stream
+  go      -
+  rust    hickory's `TlsClientStream`
+  python  dns.query.tls
+
+capability client/doh  DNS over HTTPS
+  heroes  refused: `http` stands a layer above `dns` (README § A1), so this package cannot send one; a program does, in three calls: `dns.encode` of a `dns.new_query` (its ID 0) as the body of an `http` POST of type `application/dns-message`, and `dns.decode` of the answer's body (RFC 8484)
+  go      -
+  rust    hickory's `HttpsClientStream`
+  python  dns.query.https
+
+capability client/query  one name asked, one type, no search
+  heroes  dns.query
+  go      -
+  rust    Resolver::lookup
+  python  dns.resolver.Resolver.resolve(search=False), dns.resolver.resolve_at
+
+capability client/lookup  a name looked up through the search list, its aliases followed
+  heroes  dns.lookup, dns.Answer
+  go      net.Resolver.LookupCNAME's chain
+  rust    Resolver::lookup, Lookup, Lookup::record_iter, Lookup::query
+  python  dns.resolver.resolve, dns.resolver.Resolver.resolve, dns.resolver.Answer, Answer.canonical_name, Answer.rrset, Answer.response, Answer.qname
+
+capability client/addresses  the addresses of a name, IPv4 and IPv6
+  heroes  dns.lookup_addresses
+  go      net.LookupHost, net.LookupIP, net.Resolver.LookupHost, net.Resolver.LookupIP, net.Resolver.LookupIPAddr, net.Resolver.LookupNetIP
+  rust    Resolver::lookup_ip, Resolver::ipv4_lookup, Resolver::ipv6_lookup
+  python  dns.resolver.resolve_name, Resolver.resolve_name
+  note    Asked of the name servers; the system's own resolver, its hosts file and its cache included, is `net.lookup`
+
+capability client/mx  the mail exchangers of a domain, by preference
+  heroes  dns.lookup_mx, dns.Mx
+  go      net.LookupMX, net.Resolver.LookupMX, net.MX
+  rust    Resolver::mx_lookup
+  python  resolve(name, "MX")
+  note    Ordered by preference and kept in the server's order within one, where Go shuffles within one
+
+capability client/txt  the texts of a name
+  heroes  dns.lookup_txt
+  go      net.LookupTXT, net.Resolver.LookupTXT
+  rust    Resolver::txt_lookup
+  python  resolve(name, "TXT")
+
+capability client/srv  the servers of a service, by priority
+  heroes  dns.lookup_srv, dns.Srv
+  go      net.LookupSRV, net.Resolver.LookupSRV, net.SRV
+  rust    Resolver::srv_lookup
+  python  resolve(name, "SRV")
+  note    Ordered by priority, then by weight from the largest, where Go draws by weight at random (RFC 2782); a program that wants the draw has the weights
+
+capability client/ns  the name servers of a domain
+  heroes  dns.lookup_ns
+  go      net.LookupNS, net.Resolver.LookupNS, net.NS
+  rust    Resolver::ns_lookup
+  python  resolve(name, "NS")
+
+capability client/cname  the canonical name of a host, its aliases followed
+  heroes  dns.lookup_cname
+  go      net.LookupCNAME, net.Resolver.LookupCNAME
+  rust    Lookup::query's name after the chain
+  python  Answer.canonical_name, dns.resolver.canonical_name
+
+capability client/reverse  the names of an address, by PTR
+  heroes  dns.lookup_reverse
+  go      net.LookupAddr, net.Resolver.LookupAddr
+  rust    Resolver::reverse_lookup
+  python  dns.resolver.resolve_address
+
+capability client/cache  answers kept for their time to live
+  heroes  refused: a resolver here holds no state between calls, and an answer kept for its time to live needs a clock, `time`'s (about 2 MB a program); a program keeps answers in `containers/cache`, whose time to live it gives from a record's `ttl`
+  go      -
+  rust    hickory_resolver's DnsLru cache
+  python  dns.resolver.Cache, dns.resolver.LRUCache
+
+capability client/zone-transfer  a whole zone asked of its server (AXFR)
+  heroes  dns.transfer
+  go      dnsmessage.TypeAXFR
+  rust    hickory_client::Client::zone_transfer
+  python  dns.query.xfr, dns.query.inbound_xfr, dns.zone.from_xfr
+
+capability client/update  a dynamic update (RFC 2136) and its signature (TSIG)
+  heroes  pending
+  go      -
+  rust    hickory_client::Client::create, append, delete_rrset, update; TSigner
+  python  dns.update.UpdateMessage, dns.tsig, dns.tsigkeyring
+  note    An update is a message `dns.encode` writes (`dns.OPCODE_UPDATE`, RFC 2136's zone, prerequisites and updates in `questions`, `answers` and `authorities`) and `dns.exchange` sends, but its signature (TSIG, RFC 8945, an HMAC of `crypto`) is not written
+
+capability dnssec/ask  signatures asked for with the answer (the DO bit)
+  heroes  dns.Resolver.dnssec_ok, dns.Edns.dnssec_ok
+  go      dnsmessage.ResourceHeader.DNSSECAllowed
+  rust    ResolverOpts::validate's request half
+  python  Message.want_dnssec, Resolver.use_edns(ednsflags=dns.flags.DO)
+
+capability dnssec/validate  an answer's signatures checked up to a trust anchor
+  heroes  pending
+  go      -
+  rust    hickory's `dnssec` feature, DnssecDnsHandle
+  python  dns.dnssec.validate, dns.dnssec.validate_rrsig, dns.dnssec.make_ds
+  note    The chain of trust from the root's key, each algorithm's signature checked by `crypto/keypairs`, RFC 4034's canonical order of records and the proofs of absence (NSEC, NSEC3) are not written; this package asks for the signatures and reads them as data
+
+dropped  a form printed for Go's own debugging, an error type or an exception: a failure here is a code and a message (README § A4), and a value is written as text by `dns.format_record`
+  go      dnsmessage.Header.GoString, dnsmessage.Message.GoString, dnsmessage.Question.GoString, dnsmessage.Resource.GoString, dnsmessage.ResourceHeader.GoString, dnsmessage.Name.GoString, dnsmessage.Option.GoString, dnsmessage.OpCode.GoString, dnsmessage.Type.GoString, dnsmessage.Class.GoString, dnsmessage.RCode.GoString, dnsmessage.SVCParamKey.GoString, dnsmessage.SVCParam.GoString, and the GoString of each resource type, dnsmessage.ResourceBody (an interface), net.DNSError (dropped in `net`'s ledger)
+  rust    hickory_resolver::ResolveError, hickory_proto::ProtoError, and the traits each type repeats
+  python  dns.exception.DNSException, dns.exception.FormError, dns.exception.Timeout, dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.resolver.NoNameservers, dns.resolver.LifetimeTimeout, dns.name.BadPointer, dns.message.TrailingJunk
+
+dropped  a socket, a dialer or a context handed in: a resolver here is a value, its servers addresses, and the connection `net`'s
+  go      net.Resolver.Dial (whose use, a stream of the program's, is `dns.exchange_stream`), context.Context of every Resolver method
+  rust    hickory's `RuntimeProvider`, `ConnectionProvider`, `TokioRuntimeProvider`
+  python  dns.query's `sock`, `source`, `source_port`, `af`, `backend` arguments
+

@@ -1,0 +1,131 @@
+# Numbers and character strings read from a message's bytes and written to
+# them, the highest byte first as RFC 1035 § 2.3.2 orders them: every read
+# checked against the bytes there are, every write against its field's range.
+
+use dns/internal/failure
+
+# A number read, and the index the reading goes on from.
+record Number
+    # The number, 0 to 4,294,967,295.
+    value: i64
+    # The index just past it.
+    next: i64
+
+# Bytes read, and the index the reading goes on from.
+record Chunk
+    # The bytes.
+    data: [u8]
+    # The index just past them.
+    next: i64
+
+# The byte of `data` at `at`, as a number. Fails `invalid` where the message
+# ends before it.
+function byte_at(data: [u8], at: i64) -> i64?
+    if at >= data.len()
+        return failure.at_byte(at: at, what: "the message ends where a number stands")
+    return ok(to_i64(data[at]).must())
+
+# The number of two bytes of `data` from `at`. Fails `invalid` where the
+# message ends first.
+function u16_at(data: [u8], at: i64) -> i64?
+    if at + 2 > data.len()
+        return failure.at_byte(at: at, what: "the message ends inside a number of two bytes")
+    return ok(to_i64(data[at]).must() << 8 | to_i64(data[at + 1]).must())
+
+# The number of four bytes of `data` from `at`. Fails `invalid` where the
+# message ends first.
+function u32_at(data: [u8], at: i64) -> i64?
+    if at + 4 > data.len()
+        return failure.at_byte(at: at, what: "the message ends inside a number of four bytes")
+    high = to_i64(data[at]).must() << 24 | to_i64(data[at + 1]).must() << 16
+    return ok(high | to_i64(data[at + 2]).must() << 8 | to_i64(data[at + 3]).must())
+
+# The character string of `data` at `at`, a length byte and that many bytes
+# (RFC 1035 § 3.3), which must end by `end`. Fails `invalid` where it does
+# not.
+function string_at(data: [u8], at: i64, end: i64) -> Chunk?
+    if at >= end
+        return failure.at_byte(at: at, what: "a character string is missing from the record's data")
+    count = to_i64(data[at]).must()
+
+    if at + 1 + count > end
+        return failure.at_byte(at: at, what: f"a character string of {count} bytes runs past the record's data")
+    return ok(Chunk(data: data.slice(from: at + 1, to: at + 1 + count), next: at + 1 + count))
+
+# Writes the low byte of `n` to `out`.
+function push_u8(@out: [u8], n: i64)
+    out @ out.push(to_u8(n & 255).must())
+
+# Writes the low two bytes of `n` to `out`, the higher first.
+function push_u16(@out: [u8], n: i64)
+    out @ out.push(to_u8(n >> 8 & 255).must())
+    out @ out.push(to_u8(n & 255).must())
+
+# Writes the low four bytes of `n` to `out`, the highest first.
+function push_u32(@out: [u8], n: i64)
+    out @ out.push(to_u8(n >> 24 & 255).must())
+    out @ out.push(to_u8(n >> 16 & 255).must())
+    out @ out.push(to_u8(n >> 8 & 255).must())
+    out @ out.push(to_u8(n & 255).must())
+
+# Writes every byte of `data` to `out`.
+function push_all(@out: [u8], data: [u8])
+    for b in data
+        out @ out.push(b)
+
+# Writes `s` to `out` as a character string, its length first. Fails
+# `invalid` where it is longer than 255 bytes, `field` naming it.
+function push_string(@out: [u8], s: [u8], field: str) -> ()?
+    if s.len() > 255
+        return failure.wrong(field: field, what: f"a character string holds 255 bytes at most, not {s.len()}")
+    push_u8(@out, n: s.len())
+    push_all(out: @out, data: s)
+    return ok()
+
+# Nothing, where `value` stands from `low` to `high`. Fails `invalid`
+# otherwise, `field` naming it.
+function in_range(value: i64, low: i64, high: i64, field: str) -> ()?
+    if value < low || value > high
+        return failure.wrong(field: field, what: f"{value} is outside {low} to {high}")
+    return ok()
+
+test "u16_at and u32_at: the highest byte first, the largest values, and a message cut short"
+    data: [u8] = [0, 1, 255, 255, 255, 255, 18, 52]
+    assert u16_at(data, at: 0).must() == 1
+    assert u16_at(data, at: 2).must() == 65535
+    assert u32_at(data, at: 2).must() == 4_294_967_295
+    assert u32_at(data, at: 4).must() == 0xffff_1234
+    assert u16_at(data, at: 7).is_err() && u32_at(data, at: 5).is_err() && byte_at(data, at: 8).is_err()
+    assert byte_at(data, at: 7).must() == 52
+
+test "push_u16 and push_u32: written back to the bytes they were read from"
+    out: [u8] @= []
+    push_u16(@out, n: 65535)
+    push_u32(@out, n: 0x0102_0304)
+    push_u8(@out, n: 0)
+    assert out == [255, 255, 1, 2, 3, 4, 0]
+
+test "string_at and push_string: empty, 255 bytes, one past, and a string past the data's end"
+    out: [u8] @= []
+    push_string(out: @out, s: [], field: "t").must()
+    long: [u8] @= []
+
+    for _ in range(from: 0, to: 255)
+        long @ long.push('x')
+
+    push_string(out: @out, s: long, field: "t").must()
+    assert out.len() == 257
+    first = string_at(out, at: 0, end: out.len()).must()
+    assert first.data.len() == 0 && first.next == 1
+    second = string_at(out, at: 1, end: out.len()).must()
+    assert second.data == long && second.next == 257
+    assert string_at(out, at: 1, end: 200).is_err() && string_at(out, at: 257, end: 257).is_err()
+    long @ long.push('y')
+
+    match push_string(out: @out, s: long, field: "t")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "in_range: the two edges in, one past each out"
+    assert !in_range(value: 0, low: 0, high: 65535, field: "f").is_err() && !in_range(value: 65535, low: 0, high: 65535, field: "f").is_err()
+    assert in_range(value: -1, low: 0, high: 65535, field: "f").is_err() && in_range(value: 65536, low: 0, high: 65535, field: "f").is_err()

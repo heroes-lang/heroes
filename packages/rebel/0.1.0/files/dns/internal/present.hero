@@ -1,0 +1,326 @@
+# The pieces of a record's text, as dig 9.10.6 writes them (observed on
+# 2026-11-17 against canned answers): the mnemonics of types, classes and
+# codes, character strings in quotes, bytes in hexadecimal and in base 64 cut
+# into pieces of 56 characters, and an RRSIG's times.
+
+use bytes
+use dns/internal/names
+
+# How many characters of hexadecimal or base 64 dig writes before a space.
+constant PIECE: i64
+    56
+
+# The mnemonic of the record type `type_code`, or `TYPE` and its number
+# (RFC 3597 § 5). The names are dig 9.10.6's, and RFC 8976's and RFC 9460's
+# for 63, 64 and 65, which that dig does not know.
+function type_name(type_code: i64) -> str
+    return match type_code
+        1     => "A"
+        2     => "NS"
+        3     => "MD"
+        4     => "MF"
+        5     => "CNAME"
+        6     => "SOA"
+        7     => "MB"
+        8     => "MG"
+        9     => "MR"
+        10    => "NULL"
+        11    => "WKS"
+        12    => "PTR"
+        13    => "HINFO"
+        14    => "MINFO"
+        15    => "MX"
+        16    => "TXT"
+        17    => "RP"
+        18    => "AFSDB"
+        19    => "X25"
+        20    => "ISDN"
+        21    => "RT"
+        22    => "NSAP"
+        23    => "NSAP-PTR"
+        24    => "SIG"
+        25    => "KEY"
+        26    => "PX"
+        27    => "GPOS"
+        28    => "AAAA"
+        29    => "LOC"
+        30    => "NXT"
+        31    => "EID"
+        32    => "NIMLOC"
+        33    => "SRV"
+        34    => "ATMA"
+        35    => "NAPTR"
+        36    => "KX"
+        37    => "CERT"
+        38    => "A6"
+        39    => "DNAME"
+        40    => "SINK"
+        41    => "OPT"
+        42    => "APL"
+        43    => "DS"
+        44    => "SSHFP"
+        45    => "IPSECKEY"
+        46    => "RRSIG"
+        47    => "NSEC"
+        48    => "DNSKEY"
+        49    => "DHCID"
+        50    => "NSEC3"
+        51    => "NSEC3PARAM"
+        52    => "TLSA"
+        53    => "SMIMEA"
+        55    => "HIP"
+        56    => "NINFO"
+        57    => "RKEY"
+        58    => "TALINK"
+        59    => "CDS"
+        60    => "CDNSKEY"
+        61    => "OPENPGPKEY"
+        62    => "CSYNC"
+        63    => "ZONEMD"
+        64    => "SVCB"
+        65    => "HTTPS"
+        99    => "SPF"
+        100   => "UINFO"
+        101   => "UID"
+        102   => "GID"
+        103   => "UNSPEC"
+        104   => "NID"
+        105   => "L32"
+        106   => "L64"
+        107   => "LP"
+        108   => "EUI48"
+        109   => "EUI64"
+        249   => "TKEY"
+        250   => "TSIG"
+        251   => "IXFR"
+        252   => "AXFR"
+        253   => "MAILB"
+        254   => "MAILA"
+        255   => "ANY"
+        256   => "URI"
+        257   => "CAA"
+        258   => "AVC"
+        32768 => "TA"
+        32769 => "DLV"
+        _     => f"TYPE{type_code}"
+
+# The type whose mnemonic is `upper`, a text in capitals, or -1 where none
+# is: the numbers `type_name` names are 0 to 258, 32768 and 32769.
+function type_named(upper: str) -> i64
+    for k in range(from: 0, to: 259)
+        if type_name(k) == upper
+            return k
+
+    if upper == "TA"
+        return 32768
+
+    if upper == "DLV"
+        return 32769
+    return -1
+
+# The mnemonic of the class `class_code`, or `CLASS` and its number.
+function class_name(class_code: i64) -> str
+    return match class_code
+        1   => "IN"
+        3   => "CH"
+        4   => "HS"
+        254 => "NONE"
+        255 => "ANY"
+        _   => f"CLASS{class_code}"
+
+# The mnemonic of the response code `rcode`, or `RESERVED` and its number,
+# as dig writes it.
+function rcode_name(rcode: i64) -> str
+    return match rcode
+        0  => "NOERROR"
+        1  => "FORMERR"
+        2  => "SERVFAIL"
+        3  => "NXDOMAIN"
+        4  => "NOTIMP"
+        5  => "REFUSED"
+        6  => "YXDOMAIN"
+        7  => "YXRRSET"
+        8  => "NXRRSET"
+        9  => "NOTAUTH"
+        10 => "NOTZONE"
+        16 => "BADVERS"
+        17 => "BADKEY"
+        18 => "BADTIME"
+        19 => "BADMODE"
+        20 => "BADNAME"
+        21 => "BADALG"
+        22 => "BADTRUNC"
+        23 => "BADCOOKIE"
+        _  => f"RESERVED{rcode}"
+
+# `s` as a character string of a zone file: in quotes, `"` and `\` after a
+# backslash, and every byte outside printable ASCII as `\DDD`.
+function quoted(s: [u8]) -> str
+    out: [u8] @= ['"']
+
+    for b in s
+        if b < ' ' || b >= 127
+            push_decimal(@out, b: b)
+        else
+            if b == '"' || b == '\\'
+                out @ out.push('\\')
+            out @ out.push(b)
+
+    out @ out.push('"')
+    return names.ascii_text(out)
+
+# Writes `\DDD`, the byte `b` in three decimal digits, to `out`.
+function push_decimal(@out: [u8], b: u8)
+    n = to_i64(b).must()
+    out @ out.push('\\')
+    out @ out.push(to_u8(n / 100).must() + '0')
+    out @ out.push(to_u8(n / 10 % 10).must() + '0')
+    out @ out.push(to_u8(n % 10).must() + '0')
+
+# `text` cut into pieces of `PIECE` characters parted by a space; `text` is
+# ASCII, so every cut falls between characters.
+function in_pieces(text: str) -> str
+    parts: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        end: i64 @= at + PIECE
+
+        if end > text.len()
+            end @ text.len()
+        parts @ parts.push(text.slice(from: at, to: end))
+        at @ end
+
+    return parts.join(" ")
+
+# `data` in upper-case hexadecimal, in pieces.
+function hex(data: [u8]) -> str
+    return in_pieces(bytes.format_hex_upper(data))
+
+# `data` in base 64, in pieces.
+function base64(data: [u8]) -> str
+    return in_pieces(bytes.format_base64(data))
+
+# `seconds` since 1970 in UTC as `YYYYMMDDHHmmSS` (RFC 4034 § 3.2), for a
+# number 0 to 4,294,967,295.
+function stamp(seconds: i64) -> str
+    days = seconds / 86400
+    of_day = seconds % 86400
+    z = days + 719_468
+    era = z / 146_097
+    of_era = z - era * 146_097
+    year_of_era = (of_era - of_era / 1460 + of_era / 36_524 - of_era / 146_096) / 365
+    of_year = of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100)
+    shifted = (5 * of_year + 2) / 153
+    day = of_year - (153 * shifted + 2) / 5 + 1
+    month: i64 @= shifted + 3
+
+    if shifted >= 10
+        month @ shifted - 9
+    year: i64 @= year_of_era + era * 400
+
+    if month <= 2
+        year @ year + 1
+    hour = of_day / 3600
+    minute = of_day / 60 % 60
+    second = of_day % 60
+    return f"{year}{two(month)}{two(day)}{two(hour)}{two(minute)}{two(second)}"
+
+# `n`, 0 to 99, in two digits.
+function two(n: i64) -> str
+    if n < 10
+        return f"0{n}"
+    return f"{n}"
+
+# The value of `label` where it is one hexadecimal digit, in either case, and
+# -1 where it is not.
+function nibble(label: [u8]) -> i64
+    if label.len() != 1
+        return -1
+    c = to_i64(label[0]).must()
+
+    if c >= '0' && c <= '9'
+        return c - '0'
+
+    if c >= 'a' && c <= 'f'
+        return c - 'a' + 10
+
+    if c >= 'A' && c <= 'F'
+        return c - 'A' + 10
+    return -1
+
+# The number `digits` writes, one to five decimal digits, or -1 where it is
+# not one.
+function number_of(digits: str) -> i64
+    if digits.len() == 0 || digits.len() > 5
+        return -1
+    value: i64 @= 0
+
+    for k in range(from: 0, to: digits.len())
+        c = to_i64(digits[k]).must()
+
+        if c < '0' || c > '9'
+            return -1
+        value @ value * 10 + c - '0'
+
+    return value
+
+# The key tag of a DNSKEY whose `numbers` are its flags, protocol and
+# algorithm and whose bytes are `key` (RFC 4034 appendix B): for algorithm
+# 1 the key's third and second bytes from its end, and for every other the
+# sum of its data's bytes taken two at a time, its carry folded once.
+function key_tag(numbers: [i64], key: [u8]) -> i64
+    if numbers[2] == 1
+        if key.len() < 3
+            return 0
+        return to_i64(key[key.len() - 3]).must() << 8 | to_i64(key[key.len() - 2]).must()
+    data: [i64] @= [numbers[0] >> 8, numbers[0] & 255, numbers[1], numbers[2]]
+
+    for b in key
+        data @ data.push(to_i64(b).must())
+
+    sum: i64 @= 0
+
+    for k in range(from: 0, to: data.len())
+        if k % 2 == 0
+            sum @ sum + (data[k] << 8)
+        else
+            sum @ sum + data[k]
+
+    sum @ sum + (sum >> 16 & 0xffff)
+    return sum & 0xffff
+
+test "type_name and type_named: known, unknown in the RFC 3597 form, and back"
+    assert type_name(15) == "MX" && type_name(65) == "HTTPS" && type_name(32769) == "DLV"
+    assert type_name(0) == "TYPE0" && type_name(65280) == "TYPE65280" && type_name(54) == "TYPE54"
+    assert type_named("NSAP-PTR") == 23 && type_named("CAA") == 257 && type_named("TA") == 32768
+    assert type_named("TYPE5") == -1 && type_named("NOPE") == -1
+
+test "class_name and rcode_name: the mnemonics, and a number with none"
+    assert class_name(1) == "IN" && class_name(3) == "CH" && class_name(4000) == "CLASS4000"
+    assert rcode_name(3) == "NXDOMAIN" && rcode_name(23) == "BADCOOKIE" && rcode_name(12) == "RESERVED12"
+
+test "quoted: a quote, a backslash, a tab, bytes outside ASCII, and the empty string, as dig wrote them"
+    assert quoted(bytes.from_text("say \"hi\" \\ back")) == "\"say \\\"hi\\\" \\\\ back\""
+    assert quoted([0, 127, 195, 169, 9, ';']) == "\"\\000\\127\\195\\169\\009;\""
+    assert quoted([]) == "\"\""
+
+test "hex and base64: in pieces of 56 characters, as dig wrote a DS digest and a DNSKEY"
+    data: [u8] @= []
+
+    for k in range(from: 0, to: 32)
+        data @ data.push(to_u8(k).must())
+
+    assert hex(data) == "000102030405060708090A0B0C0D0E0F101112131415161718191A1B 1C1D1E1F"
+    key: [u8] @= []
+
+    for k in range(from: 0, to: 64)
+        key @ key.push(to_u8(k).must())
+
+    assert base64(key) == "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8gISIjJCUmJygp KissLS4vMDEyMzQ1Njc4OTo7PD0+Pw=="
+    assert hex([]) == "" && base64([]) == ""
+
+test "stamp: the two times dig wrote, the first second, the last of 32 bits, and a leap day"
+    assert stamp(1_735_689_600) == "20250101000000" && stamp(1_733_011_200) == "20241201000000"
+    assert stamp(0) == "19700101000000" && stamp(4_294_967_295) == "21060207062815"
+    assert stamp(951_825_599) == "20000229115959"

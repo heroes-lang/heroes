@@ -1,0 +1,260 @@
+# A query's bytes sent to name servers and an answer's bytes read back: over
+# UDP from a fresh socket on a port the system chooses, and over TCP where
+# the answer comes truncated or TCP is asked; every try under a fresh ID from
+# the system's generator (RFC 5452) and within its own deadline. A datagram
+# from another address, with another ID or question, or that is no message,
+# is passed over, never taken.
+
+use dns/internal/codec_read
+use dns/internal/failure
+use dns/internal/present
+use io
+use net
+use os
+
+# How a set of servers is asked.
+record Plan
+    # The servers, each an address with a port.
+    servers: [net.Address]
+    # Milliseconds a try may take.
+    timeout_ms: i64
+    # How many times the servers are tried in turn.
+    attempts: i64
+    # The index of the server asked first.
+    first: i64
+    # Whether every try goes over TCP.
+    tcp: bool
+
+# The answer of `plan`'s servers to `query`, a message's bytes whose ID is
+# replaced on each try. An answer whose code is SERVFAIL, NOTIMP or REFUSED
+# passes to the next server, and the last such is answered where none gave
+# another. Fails with the last try's code where no server answered, and
+# `stopped` or `limit` at once.
+function exchange(query: [u8], plan: Plan) -> [u8]?
+    kept: [u8] @= []
+    last_code: str @= failure.TIMEOUT
+    last_msg: str @= "no server was tried"
+    tries: i64 @= 0
+
+    while tries < plan.attempts * plan.servers.len()
+        server = plan.servers[(plan.first + tries) % plan.servers.len()]
+        tries @ tries + 1
+
+        match try_once(query, server: server, timeout_ms: plan.timeout_ms, tcp: plan.tcp)
+            .ok answer =>
+                code = to_i64(answer[3]).must() & 15
+
+                if code != 2 && code != 4 && code != 5
+                    return ok(answer)
+                kept @ answer
+            .err e =>
+                if e.code == failure.STOPPED || e.code == failure.LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                last_code @ e.code
+                last_msg @ e.msg
+
+    if kept.len() > 0
+        return ok(kept)
+    return fail(code: last_code, msg: f"no name server answered in {tries} tries, the last: {last_msg}")
+
+# One try of `query` at `server`: over UDP, then over TCP where the answer is
+# truncated, or over TCP alone where `tcp` says so. The answer is a message
+# that answers the query.
+function try_once(query: [u8], server: net.Address, timeout_ms: i64, tcp: bool) -> [u8]?
+    fresh = os.random_bytes(2)?
+    asked: [u8] @= query
+    asked[0] @ fresh[0]
+    asked[1] @ fresh[1]
+
+    if !tcp
+        answer = over_udp(asked, server: server, timeout_ms: timeout_ms)?
+
+        if to_i64(answer[2]).must() & 2 == 0
+            return ok(answer)
+    return over_tcp(asked, server: server, timeout_ms: timeout_ms)
+
+# The answer to `query` from `server` over UDP, within `timeout_ms`.
+function over_udp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
+    # "0.0.0.0" and not "": on Darwin, 2026-11-17, a socket `net.open_udp`
+    # opened on "" refused to send to an IPv4 address (`invalid`), though
+    # `net` says "" is IPv4.
+    host: str @= "0.0.0.0"
+
+    if net.is_v6(server)
+        host @ "::"
+    socket @= net.open_udp(host, port: 0)?
+    got = udp_answer(socket, query: query, server: server, timeout_ms: timeout_ms)
+
+    match net.close_udp(@socket)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    return got
+
+# The first datagram `socket` receives from `server` that answers `query`,
+# after sending it, every datagram before it passed over. Fails `timeout`
+# where none comes within `timeout_ms`.
+function udp_answer(socket: net.UdpSocket, query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
+    net.set_udp_deadline(socket, ms: timeout_ms)?
+    net.send_to(socket, data: query, to: server)?
+
+    while true
+        d = net.receive(socket)?
+
+        if d.sender.bytes == server.bytes && d.sender.port == server.port && answers(query: query, answer: d.data)
+            return ok(d.data)
+
+# The answer to `query` from `server` over TCP: the connection made within
+# `timeout_ms`, and the answer read within as much again.
+function over_tcp(query: [u8], server: net.Address, timeout_ms: i64) -> [u8]?
+    c @= net.connect_timeout(net.format_address(net.without_port(server)), port: server.port, timeout_ms: timeout_ms, deadline_ms: timeout_ms)?
+    got = framed_answer(c.stream, query: query)
+
+    match io.close(@c.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    return got
+
+# The answer to `query` over `s`, each message after its length in two
+# bytes (RFC 1035 § 4.2.2). Fails `invalid` where the answer does not answer
+# the query, and as the stream fails.
+function framed_answer(s: io.Stream, query: [u8]) -> [u8]?
+    if query.len() > 65535
+        return fail(code: failure.INVALID, msg: f"a query of {query.len()} bytes, past the 65,535 a message holds")
+    framed: [u8] @= [to_u8(query.len() >> 8).must(), to_u8(query.len() & 255).must()]
+
+    for b in query
+        framed @ framed.push(b)
+
+    io.write(s, data: framed)?
+    head = io.read_exact(s, count: 2)?
+    length = to_i64(head[0]).must() << 8 | to_i64(head[1]).must()
+    answer = io.read_exact(s, count: length)?
+
+    if !answers(query: query, answer: answer)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the answer read over {s.name} does not answer the query: another ID or question, or no message"
+        )
+    return ok(answer)
+
+# The most messages a zone transfer may come in: past them the server is
+# taken to send without end.
+constant MOST_MESSAGES: i64
+    100_000
+
+# The messages of a zone transfer asked by `query`, an AXFR's bytes, over
+# `s` (RFC 5936): read until the zone's SOA has come twice, first and last.
+# Fails `invalid` where a message has another ID, is no message, or the
+# first record is no SOA, or more than `MOST_MESSAGES` come; `failed` where
+# the server answers another code than success; and as the stream fails.
+function transfer(s: io.Stream, query: [u8]) -> [[u8]]?
+    framed: [u8] @= [to_u8(query.len() >> 8).must(), to_u8(query.len() & 255).must()]
+
+    for b in query
+        framed @ framed.push(b)
+
+    io.write(s, data: framed)?
+    messages: [[u8]] @= []
+    soas: i64 @= 0
+
+    while soas < 2
+        if messages.len() >= MOST_MESSAGES
+            return fail(code: failure.INVALID, msg: f"a zone transfer of more than {MOST_MESSAGES} messages")
+        head = io.read_exact(s, count: 2)?
+        length = to_i64(head[0]).must() << 8 | to_i64(head[1]).must()
+        body = io.read_exact(s, count: length)?
+
+        if length < 12 || body[0] != query[0] || body[1] != query[1]
+            return fail(
+                code: failure.INVALID,
+                msg: f"message {messages.len() + 1} of the zone transfer has another ID than its query"
+            )
+        f = codec_read.decode(body)?
+
+        if f.rcode != 0
+            return fail(
+                code: failure.FAILED,
+                msg: f"the server answered {present.rcode_name(f.rcode)} to the zone transfer"
+            )
+
+        for item in f.items
+            if item.section == 1
+                if soas == 0 && item.data.type_code != 6
+                    return fail(code: failure.INVALID, msg: "a zone transfer whose first record is no SOA")
+
+                if item.data.type_code == 6
+                    soas @ soas + 1
+
+        if messages.len() == 0 && soas == 0
+            return fail(code: failure.INVALID, msg: "a zone transfer whose first message holds no record")
+        messages @ messages.push(body)
+
+    return ok(messages)
+
+# Whether `answer` answers `query`: a response with its ID, its question
+# alone without regard to the case of letters (or none, beside a code that
+# is not success), and a message `codec_read` reads whole.
+function answers(query: [u8], answer: [u8]) -> bool
+    if answer.len() < 12 || query.len() < 12
+        return false
+
+    if answer[0] != query[0] || answer[1] != query[1] || to_i64(answer[2]).must() & 0x80 == 0
+        return false
+    asked = to_i64(answer[4]).must() << 8 | to_i64(answer[5]).must()
+
+    if asked == 0
+        if to_i64(answer[3]).must() & 15 == 0
+            return false
+    else
+        if answer[4] != query[4] || answer[5] != query[5]
+            return false
+        end = question_end(query)
+
+        if end > answer.len()
+            return false
+
+        for k in range(from: 12, to: end)
+            if lower(answer[k]) != lower(query[k])
+                return false
+
+    return !codec_read.decode(answer).is_err()
+
+# The index just past the questions of `query`, a message this package
+# wrote, whose question names hold no pointer.
+function question_end(query: [u8]) -> i64
+    at: i64 @= 12
+    count = to_i64(query[4]).must() << 8 | to_i64(query[5]).must()
+
+    for _ in range(from: 0, to: count)
+        while at < query.len() && query[at] != 0
+            at @ at + 1 + to_i64(query[at]).must()
+
+        at @ at + 5
+
+    if at > query.len()
+        return query.len()
+    return at
+
+# `b` with an ASCII capital in lower case.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+test "answers: its ID and question in another case, another ID, a query, another question, and an error with no question"
+    query: [u8] = [1, 2, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 97, 0, 0, 1, 0, 1]
+    good: [u8] = [1, 2, 0x81, 0x80, 0, 1, 0, 0, 0, 0, 0, 0, 1, 65, 0, 0, 1, 0, 1]
+    assert answers(query: query, answer: good)
+    other_id: [u8] = [1, 3, 0x81, 0x80, 0, 1, 0, 0, 0, 0, 0, 0, 1, 97, 0, 0, 1, 0, 1]
+    assert !answers(query: query, answer: other_id)
+    assert !answers(query: query, answer: query)
+    other_name: [u8] = [1, 2, 0x81, 0x80, 0, 1, 0, 0, 0, 0, 0, 0, 1, 98, 0, 0, 1, 0, 1]
+    assert !answers(query: query, answer: other_name)
+    refused: [u8] = [1, 2, 0x81, 0x85, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert answers(query: query, answer: refused)
+    empty_ok: [u8] = [1, 2, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert !answers(query: query, answer: empty_ok)
+    assert !answers(query: query, answer: [1, 2])
+    assert question_end(query) == 19

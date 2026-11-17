@@ -1,0 +1,355 @@
+# A message read from its bytes into a `model.Frame`: the header, the
+# questions, every record with its data read by its type's form, and the OPT
+# record into the frame's EDNS fields. Every count and length is checked
+# against the bytes there are, and nothing is read past them.
+#
+# The forms, as `model.Slots` holds them: A and AAAA a blob of the address;
+# NS, CNAME, PTR and DNAME a name; MX a number and a name; TXT a blob per
+# string; SRV three numbers and a name; SOA two names and five numbers;
+# HINFO two blobs; CAA a number and two blobs, the tag and the value; NAPTR
+# two numbers, three blobs and a name; SVCB and HTTPS the priority then each
+# key as numbers, the target as a name and each value as a blob; DS and
+# DNSKEY three numbers and a blob; RRSIG seven numbers, a name and a blob;
+# NSEC a name and its types as numbers; TLSA three numbers and a blob; SSHFP
+# two numbers and a blob.
+
+use dns/internal/failure
+use dns/internal/model
+use dns/internal/names
+use dns/internal/wire
+
+# The message `data` holds. Fails `invalid` where it is not one, the message
+# naming the byte.
+function decode(data: [u8]) -> model.Frame?
+    if data.len() < 12
+        return fail(code: failure.INVALID, msg: f"a message of {data.len()} bytes, shorter than the 12 of its header")
+    id = wire.u16_at(data, at: 0)?
+    flags = wire.u16_at(data, at: 2)?
+    asked = wire.u16_at(data, at: 4)?
+    answered = wire.u16_at(data, at: 6)?
+    authorities = wire.u16_at(data, at: 8)?
+    additionals = wire.u16_at(data, at: 10)?
+    at: i64 @= 12
+    questions: [model.Ask] @= []
+    k: i64 @= 0
+
+    while k < asked
+        n = names.read(data, at: at)?
+        type_code = wire.u16_at(data, at: n.next)?
+        class_code = wire.u16_at(data, at: n.next + 2)?
+        questions @ questions.push(
+            model.Ask(name: names.to_text(n.labels), type_code: type_code, class_code: class_code)
+        )
+        at @ n.next + 4
+        k @ k + 1
+
+    items: [model.Item] @= []
+    options: [model.Option] @= []
+    has_edns: bool @= false
+    udp_size: i64 @= 0
+    version: i64 @= 0
+    dnssec_ok: bool @= false
+    rcode: i64 @= flags & 15
+    total = answered + authorities + additionals
+    j: i64 @= 0
+
+    while j < total
+        section: i64 @= 3
+
+        if j < answered
+            section @ 1
+        else if j < answered + authorities
+            section @ 2
+        n = names.read(data, at: at)?
+        type_code = wire.u16_at(data, at: n.next)?
+        class_code = wire.u16_at(data, at: n.next + 2)?
+        ttl = wire.u32_at(data, at: n.next + 4)?
+        length = wire.u16_at(data, at: n.next + 8)?
+        from = n.next + 10
+        to = from + length
+
+        if to > data.len()
+            return failure.at_byte(
+                at: n.next + 8,
+                what: f"a record's data of {length} bytes runs past the message's end"
+            )
+
+        if type_code == 41
+            if section != 3
+                return failure.at_byte(at: at, what: "an OPT record outside the additional section")
+
+            if has_edns
+                return failure.at_byte(at: at, what: "a second OPT record")
+
+            if n.labels.len() != 0
+                return failure.at_byte(at: at, what: "an OPT record whose owner is not the root")
+            has_edns @ true
+            udp_size @ class_code
+
+            if udp_size < 512
+                udp_size @ 512
+            version @ ttl >> 16 & 255
+            dnssec_ok @ ttl & 0x8000 != 0
+            rcode @ ttl >> 24 << 4 | flags & 15
+            read_options(data, from: from, to: to, @options)?
+        else
+            slots = slots_at(data, type_code: type_code, class_code: class_code, from: from, to: to)?
+            items @ items.push(
+                model.Item(section: section, name: names.to_text(n.labels), class_code: class_code, ttl: ttl, data: slots)
+            )
+        at @ to
+        j @ j + 1
+
+    if at != data.len()
+        return failure.at_byte(at: at, what: f"{data.len() - at} bytes stand past the message's last record")
+    return ok(
+        model.Frame(id: id, flags: flags, rcode: rcode, questions: questions, items: items, has_edns: has_edns, udp_size: udp_size, version: version, dnssec_ok: dnssec_ok, options: options)
+    )
+
+# Reads the options of an OPT record's data, from `from` to `to`, into
+# `options`. Fails `invalid` where one runs past the data.
+function read_options(data: [u8], from: i64, to: i64, @options: [model.Option]) -> ()?
+    at: i64 @= from
+
+    while at < to
+        code = wire.u16_at(data, at: at)?
+        length = wire.u16_at(data, at: at + 2)?
+
+        if at + 4 > to || at + 4 + length > to
+            return failure.at_byte(at: at, what: f"an EDNS option of {length} bytes runs past the OPT record's data")
+        options @ options.push(model.Option(code: code, data: data.slice(from: at + 4, to: at + 4 + length)))
+        at @ at + 4 + length
+
+    return ok()
+
+# The data of a record of `type_code` in `class_code`, the bytes of `data`
+# from `from` to `to`, read by its type's form, or kept whole where the type
+# is not read in that class. Fails `invalid` where the bytes are not the form,
+# or hold more than it.
+function slots_at(data: [u8], type_code: i64, class_code: i64, from: i64, to: i64) -> model.Slots?
+    if !model.is_read(type_code: type_code, class_code: class_code)
+        return ok(model.opaque(type_code: type_code, data: data.slice(from: from, to: to)))
+    numbers: [i64] @= []
+    texts: [str] @= []
+    blobs: [[u8]] @= []
+    at: i64 @= from
+
+    if type_code == 1 || type_code == 28
+        width: i64 @= 4
+
+        if type_code == 28
+            width @ 16
+
+        if to - from != width
+            return failure.at_byte(at: from, what: f"an address record's data of {to - from} bytes, not {width}")
+        rest(data, at: @at, to: to, @blobs)
+    else if type_code == 2 || type_code == 5 || type_code == 12 || type_code == 39
+        name_in(data, at: @at, to: to, @texts)?
+    else if type_code == 15
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        name_in(data, at: @at, to: to, @texts)?
+    else if type_code == 16
+        while at < to
+            string_in(data, at: @at, to: to, @blobs)?
+    else if type_code == 33
+        for _ in range(from: 0, to: 3)
+            number_in(data, at: @at, to: to, width: 2, @numbers)?
+
+        name_in(data, at: @at, to: to, @texts)?
+    else if type_code == 6
+        name_in(data, at: @at, to: to, @texts)?
+        name_in(data, at: @at, to: to, @texts)?
+
+        for _ in range(from: 0, to: 5)
+            number_in(data, at: @at, to: to, width: 4, @numbers)?
+    else if type_code == 13
+        string_in(data, at: @at, to: to, @blobs)?
+        string_in(data, at: @at, to: to, @blobs)?
+    else if type_code == 257
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        string_in(data, at: @at, to: to, @blobs)?
+
+        if !is_tag(blobs[0])
+            return failure.at_byte(at: from + 1, what: "a CAA tag that is not one or more ASCII letters and digits")
+        rest(data, at: @at, to: to, @blobs)
+    else if type_code == 35
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+
+        for _ in range(from: 0, to: 3)
+            string_in(data, at: @at, to: to, @blobs)?
+
+        name_in(data, at: @at, to: to, @texts)?
+    else if type_code == 64 || type_code == 65
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        name_in(data, at: @at, to: to, @texts)?
+        params_in(data, at: @at, to: to, @numbers, @blobs)?
+    else if type_code == 43 || type_code == 48
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        rest(data, at: @at, to: to, @blobs)
+    else if type_code == 46
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+
+        for _ in range(from: 0, to: 3)
+            number_in(data, at: @at, to: to, width: 4, @numbers)?
+
+        number_in(data, at: @at, to: to, width: 2, @numbers)?
+        name_in(data, at: @at, to: to, @texts)?
+        rest(data, at: @at, to: to, @blobs)
+    else if type_code == 47
+        name_in(data, at: @at, to: to, @texts)?
+        bitmap_in(data, at: @at, to: to, @numbers)?
+    else if type_code == 52
+        for _ in range(from: 0, to: 3)
+            number_in(data, at: @at, to: to, width: 1, @numbers)?
+
+        rest(data, at: @at, to: to, @blobs)
+    else if type_code == 44
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        number_in(data, at: @at, to: to, width: 1, @numbers)?
+        rest(data, at: @at, to: to, @blobs)
+
+    if at != to
+        return failure.at_byte(at: at, what: f"{to - at} bytes stand past the form of a record of type {type_code}")
+    return ok(model.Slots(type_code: type_code, opaque: false, numbers: numbers, names: texts, blobs: blobs))
+
+# Reads a number of `width` bytes at `at`, before `to`, into `numbers`.
+function number_in(data: [u8], @at: i64, to: i64, width: i64, @numbers: [i64]) -> ()?
+    if at + width > to
+        return failure.at_byte(at: at, what: f"a record's data ends inside a number of {width} bytes")
+    value: i64 @= 0
+
+    for k in range(from: 0, to: width)
+        value @ value << 8 | to_i64(data[at + k]).must()
+
+    numbers @ numbers.push(value)
+    at @ at + width
+    return ok()
+
+# Reads a name at `at`, which must end by `to`, into `texts`.
+function name_in(data: [u8], @at: i64, to: i64, @texts: [str]) -> ()?
+    if at >= to
+        return failure.at_byte(at: at, what: "a record's data ends where a name stands")
+    n = names.read(data, at: at)?
+
+    if n.next > to
+        return failure.at_byte(at: at, what: "a name runs past its record's data")
+    texts @ texts.push(names.to_text(n.labels))
+    at @ n.next
+    return ok()
+
+# Reads a character string at `at`, which must end by `to`, into `blobs`.
+function string_in(data: [u8], @at: i64, to: i64, @blobs: [[u8]]) -> ()?
+    got = wire.string_at(data, at: at, end: to)?
+    blobs @ blobs.push(got.data)
+    at @ got.next
+    return ok()
+
+# Reads every byte from `at` to `to` into `blobs`.
+function rest(data: [u8], @at: i64, to: i64, @blobs: [[u8]])
+    blobs @ blobs.push(data.slice(from: at, to: to))
+    at @ to
+
+# Reads the parameters of a service binding from `at` to `to`: each key into
+# `numbers` and each value into `blobs`. Fails `invalid` where a key is not
+# above the one before it (RFC 9460 § 2.2) or a value runs past the data.
+function params_in(data: [u8], @at: i64, to: i64, @numbers: [i64], @blobs: [[u8]]) -> ()?
+    last: i64 @= -1
+
+    while at < to
+        key = wire.u16_at(data, at: at)?
+        length = wire.u16_at(data, at: at + 2)?
+
+        if at + 4 > to || at + 4 + length > to
+            return failure.at_byte(at: at, what: f"a service parameter of {length} bytes runs past its record's data")
+
+        if key <= last
+            return failure.at_byte(at: at, what: f"the service parameter key {key} after {last}, where keys rise")
+        numbers @ numbers.push(key)
+        blobs @ blobs.push(data.slice(from: at + 4, to: at + 4 + length))
+        last @ key
+        at @ at + 4 + length
+
+    return ok()
+
+# Reads an NSEC type bitmap from `at` to `to` (RFC 4034 § 4.1.2) into
+# `numbers`, ascending. Fails `invalid` where a window is not above the one
+# before it, its length is not 1 to 32, or it runs past the data.
+function bitmap_in(data: [u8], @at: i64, to: i64, @numbers: [i64]) -> ()?
+    last: i64 @= -1
+
+    while at < to
+        if at + 2 > to
+            return failure.at_byte(at: at, what: "a type bitmap ends inside a window's head")
+        window = to_i64(data[at]).must()
+        length = to_i64(data[at + 1]).must()
+
+        if window <= last
+            return failure.at_byte(at: at, what: f"the type window {window} after {last}, where windows rise")
+
+        if length < 1 || length > 32 || at + 2 + length > to
+            return failure.at_byte(at: at, what: f"a type window of {length} bytes")
+
+        for k in range(from: 0, to: length)
+            b = to_i64(data[at + 2 + k]).must()
+
+            for bit in range(from: 0, to: 8)
+                if b >> 7 - bit & 1 == 1
+                    numbers @ numbers.push(window * 256 + k * 8 + bit)
+
+        last @ window
+        at @ at + 2 + length
+
+    return ok()
+
+# Whether `tag` is one or more ASCII letters and digits, as a CAA tag is.
+function is_tag(tag: [u8]) -> bool
+    if tag.len() == 0
+        return false
+
+    for b in tag
+        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z')
+            return false
+
+    return true
+
+test "decode: the smallest message, a header too short, bytes past the end, and a count the bytes do not hold"
+    header: [u8] = [0x12, 0x34, 0x81, 0x80, 0, 0, 0, 0, 0, 0, 0, 0]
+    f = decode(header).must()
+    assert f.id == 0x1234 && f.flags == 0x8180 && f.rcode == 0 && f.questions.len() == 0 && f.items.len() == 0
+    assert decode([0, 1, 2]).is_err()
+    long: [u8] @= header
+    long @ long.push(0)
+    assert decode(long).is_err()
+    counted: [u8] = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+    assert decode(counted).is_err()
+    many: [u8] = [0, 0, 0, 0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0]
+    assert decode(many).is_err()
+
+test "slots_at: an address of the wrong length, a name past its data, bytes past a form, and a type kept whole"
+    assert slots_at([1, 2, 3], type_code: 1, class_code: 1, from: 0, to: 3).is_err()
+    assert slots_at([1, 2, 3, 4], type_code: 1, class_code: 1, from: 0, to: 4).must().blobs == [[1, 2, 3, 4]]
+    assert slots_at([3, 99, 111, 109, 0], type_code: 5, class_code: 1, from: 0, to: 3).is_err()
+    assert slots_at([0, 10, 0, 7], type_code: 15, class_code: 1, from: 0, to: 4).is_err()
+    kept = slots_at([1, 2, 3], type_code: 1, class_code: 3, from: 0, to: 3).must()
+    assert kept.opaque && kept.blobs == [[1, 2, 3]]
+
+test "bitmap_in and params_in: types read from windows, and keys and windows that do not rise refused"
+    data: [u8] = [0, 6, 0x40, 0x01, 0, 0, 0, 0x03, 1, 1, 0x40]
+    at: i64 @= 0
+    types: [i64] @= []
+    bitmap_in(data, at: @at, to: data.len(), @types).must()
+    assert types == [1, 15, 46, 47, 257] && at == data.len()
+    bad: [u8] = [1, 1, 0x40, 0, 1, 0x40]
+    again: i64 @= 0
+    none: [i64] @= []
+    assert bitmap_in(bad, at: @again, to: bad.len(), @none).is_err()
+    params: [u8] = [0, 3, 0, 2, 1, 187, 0, 1, 0, 3, 2, 104, 50]
+    p: i64 @= 0
+    found_keys: [i64] @= []
+    values: [[u8]] @= []
+    assert params_in(params, at: @p, to: params.len(), @found_keys, @values).is_err()

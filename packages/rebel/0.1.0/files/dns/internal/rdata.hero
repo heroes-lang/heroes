@@ -1,0 +1,106 @@
+# A record's data written as a zone file writes it, from its `model.Slots`:
+# the form `present` and `svc` give each piece, the pieces parted by one
+# space, as dig 9.10.6 wrote every kind it knows (observed 2026-11-17).
+
+use dns/internal/model
+use dns/internal/names
+use dns/internal/present
+use dns/internal/svc
+use net
+
+# The text of the data `s`.
+function text_of(s: model.Slots) -> str
+    t = s.type_code
+    n = s.numbers
+    b = s.blobs
+    parts: [str] @= []
+
+    if s.opaque
+        parts @ parts.push("\\#")
+        parts @ parts.push(f"{b[0].len()}")
+
+        if b[0].len() > 0
+            parts @ parts.push(present.hex(b[0]))
+    else if t == 1 || t == 28
+        parts @ parts.push(net.format_address(net.from_bytes(b[0]).must()))
+    else if t == 2 || t == 5 || t == 12 || t == 39
+        parts @ parts.push(s.names[0])
+    else if t == 15
+        parts @ parts.push(f"{n[0]}")
+        parts @ parts.push(s.names[0])
+    else if t == 16 || t == 13
+        for text in b
+            parts @ parts.push(present.quoted(text))
+    else if t == 33
+        parts @ parts.push(f"{n[0]} {n[1]} {n[2]}")
+        parts @ parts.push(s.names[0])
+    else if t == 6
+        parts @ parts.push(s.names[0])
+        parts @ parts.push(s.names[1])
+        parts @ parts.push(f"{n[0]} {n[1]} {n[2]} {n[3]} {n[4]}")
+    else if t == 257
+        parts @ parts.push(f"{n[0]}")
+        parts @ parts.push(names.ascii_text(b[0]))
+        parts @ parts.push(present.quoted(b[1]))
+    else if t == 35
+        parts @ parts.push(f"{n[0]} {n[1]}")
+
+        for k in range(from: 0, to: 3)
+            parts @ parts.push(present.quoted(b[k]))
+
+        parts @ parts.push(s.names[0])
+    else if t == 64 || t == 65
+        parts @ parts.push(f"{n[0]}")
+        parts @ parts.push(s.names[0])
+
+        for k in range(from: 0, to: b.len())
+            parts @ parts.push(svc.text_of(key: n[k + 1], value: b[k]))
+    else if t == 43 || t == 52
+        for k in range(from: 0, to: n.len())
+            parts @ parts.push(f"{n[k]}")
+
+        if b[0].len() > 0
+            parts @ parts.push(present.hex(b[0]))
+    else if t == 44
+        parts @ parts.push(f"{n[0]} {n[1]}")
+
+        if b[0].len() > 0
+            parts @ parts.push(present.hex(b[0]))
+    else if t == 48
+        parts @ parts.push(f"{n[0]} {n[1]} {n[2]}")
+
+        if b[0].len() > 0
+            parts @ parts.push(present.base64(b[0]))
+    else if t == 46
+        parts @ parts.push(present.type_name(n[0]))
+        parts @ parts.push(f"{n[1]} {n[2]} {n[3]}")
+        parts @ parts.push(present.stamp(n[4]))
+        parts @ parts.push(present.stamp(n[5]))
+        parts @ parts.push(f"{n[6]}")
+        parts @ parts.push(s.names[0])
+
+        if b[0].len() > 0
+            parts @ parts.push(present.base64(b[0]))
+    else if t == 47
+        parts @ parts.push(s.names[0])
+
+        for type_code in n
+            parts @ parts.push(present.type_name(type_code))
+
+    return parts.join(" ")
+
+test "data_text: an unknown type empty and not, an MX, a TXT of two strings, and an NSEC, as dig wrote them"
+    assert text_of(model.opaque(type_code: 65280, data: [10, 0, 0, 1])) == "\\# 4 0A000001"
+    assert text_of(model.opaque(type_code: 65280, data: [])) == "\\# 0"
+    mx = model.Slots(type_code: 15, opaque: false, numbers: [10], names: ["mail.example.com."], blobs: [])
+    assert text_of(mx) == "10 mail.example.com."
+    txt = model.Slots(type_code: 16, opaque: false, numbers: [], names: [], blobs: [[104, 105], []])
+    assert text_of(txt) == "\"hi\" \"\""
+    nsec = model.Slots(
+        type_code: 47,
+        opaque: false,
+        numbers: [1, 15, 46, 47, 257],
+        names: ["next.example.com."],
+        blobs: []
+    )
+    assert text_of(nsec) == "next.example.com. A MX RRSIG NSEC CAA"
