@@ -1,0 +1,120 @@
+# Adler-32, RFC 1950's checksum: two sums modulo 65521, `a` of the bytes
+# plus one and `b` of every `a` on the way, held as `b * 65536 + a`. Every
+# function here takes and answers the finished checksum of what came before,
+# so feeding in pieces and feeding at once are the same.
+
+use hash/internal/word
+
+# The largest prime below 2^16, the modulus of both sums.
+constant MODULUS: i64
+    65521
+
+# How many bytes are summed before the two sums are taken modulo
+# `MODULUS`: after 2^20 bytes `a` is below 2^29 and `b` below 2^49, so
+# neither can overflow an `i64`, and the division is paid once a megabyte.
+constant RUN: i64
+    1048576
+
+# The Adler-32 of what came before and then `data`, from `sum`, the Adler-32
+# of what came before. Each half of `sum` is taken modulo 65521 first, as
+# Python's `zlib.adler32` takes a value whose halves are past it.
+function feed(sum: i64, data: [u8] lent) -> i64
+    a: i64 @= (sum & 0xffff) % MODULUS
+    b: i64 @= (sum >> 16) % MODULUS
+    at: i64 @= 0
+
+    while at < data.len()
+        end = min_of(a: at + RUN, b: data.len())
+
+        while at < end
+            a @ a + to_i64(data[at]).must()
+            b @ b + a
+            at @ at + 1
+
+        a @ a % MODULUS
+        b @ b % MODULUS
+
+    return b << 16 | a
+
+# What `feed` answers for the bytes of `s`, read where they stand.
+function feed_text(sum: i64, s: str lent) -> i64
+    a: i64 @= (sum & 0xffff) % MODULUS
+    b: i64 @= (sum >> 16) % MODULUS
+    at: i64 @= 0
+
+    while at < s.len()
+        end = min_of(a: at + RUN, b: s.len())
+
+        while at < end
+            a @ a + to_i64(s[at]).must()
+            b @ b + a
+            at @ at + 1
+
+        a @ a % MODULUS
+        b @ b % MODULUS
+
+    return b << 16 | a
+
+# The Adler-32 of two pieces one after the other, from `first`'s Adler-32,
+# `second`'s and `second_len`, the length of the second in bytes. The second
+# piece's `a` starts at 1 where it now starts at `first`'s, so the sum `a`
+# gains `first`'s less one, and each of its `second_len` steps adds that to
+# `b`.
+function combine(first: i64, second: i64, second_len: u64) -> i64
+    steps = to_i64(second_len % 65521).must()
+    first_a = (first & 0xffff) % MODULUS
+    first_b = (first >> 16) % MODULUS
+    a = (first_a + (second & 0xffff) % MODULUS + MODULUS - 1) % MODULUS
+    b = (first_b + (second >> 16) % MODULUS + steps * first_a + MODULUS - steps) % MODULUS
+    return b << 16 | a
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# Go's `adler32.Checksum` and Python's `zlib.adler32` answered these on
+# 2026-11-15.
+test "adler feed: empty, one byte, a zero byte, the check text, every byte, a thousand bytes of 0xff, and a text of several bytes per character"
+    t = word.bytes_of
+    assert feed(sum: 1, data: []) == 1
+    assert feed(sum: 1, data: t("a")) == 6422626
+    assert feed(sum: 1, data: [0]) == 65537
+    assert feed(sum: 1, data: t("123456789")) == 152961502
+    assert feed_text(sum: 1, s: "héros ☃") == 487392582
+    every: [u8] @= []
+
+    for i in range(from: 0, to: 256)
+        every @ every.push(to_u8(i).must())
+
+    assert feed(sum: 1, data: every) == 2918612865
+    ones: [u8] @= []
+
+    for _ in range(from: 0, to: 1000)
+        ones @ ones.push(0xff)
+
+    assert feed(sum: 1, data: ones) == 3874088006
+    assert feed_text(sum: 1, s: "") == 1
+
+# Python's `zlib.adler32` with the value 0xffffffff, whose halves are past
+# 65521, answered these on 2026-11-15.
+test "adler feed: from a value whose halves are past the modulus, with nothing, one byte and a hundred"
+    assert feed(sum: 0xffffffff, data: []) == 917518
+    assert feed_text(sum: 0xffffffff, s: "a") == 8192111
+    assert feed_text(sum: 0xffffffff, s: "a".repeat(100)) == 2137597426
+    half = feed_text(sum: 1, s: "1234")
+    assert feed_text(sum: half, s: "56789") == 152961502
+
+# Python's `zlib.adler32_combine` answered these on 2026-11-15.
+test "adler combine: two pieces, a second piece of no bytes, and a length past 2^32"
+    hello = feed_text(sum: 1, s: "hello, ")
+    world = feed_text(sum: 1, s: "world")
+    assert combine(first: hello, second: world, second_len: 5) == 492045449
+    assert combine(first: 123, second: 456, second_len: 0) == 578
+    assert combine(first: 0xdeadbeef, second: 0x12345678, second_len: 1000000000000) == 3928561013
+
+test "adler min_of: either side, and both alike"
+    assert min_of(a: 1, b: 2) == 1
+    assert min_of(a: 2, b: 1) == 1
+    assert min_of(a: 3, b: 3) == 3

@@ -1,0 +1,82 @@
+# SHA-256's compression function, FIPS 180-4 6.2, which SHA-224 shares with
+# other starting words: eight words of 32 bits carried from block to block,
+# each block of 64 bytes read as sixteen words with the first byte the highest
+# and stretched to sixty-four.
+
+use crypto/internal/rounds
+use crypto/internal/word
+
+# The eight words SHA-256 starts from: the first 32 bits of the fractional
+# parts of the square roots of the first eight primes (FIPS 180-4 5.3.3).
+constant START256: [i64]
+    [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]
+
+# The eight words SHA-224 starts from: the second 32 bits of the fractional
+# parts of the square roots of the ninth to the sixteenth primes (FIPS 180-4
+# 5.3.2).
+constant START224: [i64]
+    [0xc1059ed8, 0x367cd507, 0x3070dd17, 0xf70e5939, 0xffc00b31, 0x68581511, 0x64f98fa7, 0xbefa4fa4]
+
+# The eight words after the block of 64 bytes of `data` that begins at `at`,
+# from `words`, the eight words before it.
+function compress(words: [i64], data: [u8] lent, at: i64) -> [i64]
+    w: [i64] @= []
+    t: i64 @= 0
+
+    while t < 16
+        w @ w.push(word.load32_big(data, at + 4 * t))
+        t @ t + 1
+
+    while t < 64
+        x = w[t - 15]
+        y = w[t - 2]
+        low = word.rotate_right32(x: x, n: 7) ^ word.rotate_right32(x: x, n: 18) ^ x >> 3
+        high = word.rotate_right32(x: y, n: 17) ^ word.rotate_right32(x: y, n: 19) ^ y >> 10
+        w @ w.push(w[t - 16] + low + w[t - 7] + high & word.LOW32)
+        t @ t + 1
+
+    k = rounds.SHA256_ROUNDS
+    a: i64 @= words[0]
+    b: i64 @= words[1]
+    c: i64 @= words[2]
+    d: i64 @= words[3]
+    e: i64 @= words[4]
+    f: i64 @= words[5]
+    g: i64 @= words[6]
+    h: i64 @= words[7]
+    t @ 0
+
+    while t < 64
+        big_e = word.rotate_right32(x: e, n: 6) ^ word.rotate_right32(x: e, n: 11) ^ word.rotate_right32(x: e, n: 25)
+        choice = e & f ^ ~e & g
+        first = h + big_e + choice + k[t] + w[t] & word.LOW32
+        big_a = word.rotate_right32(x: a, n: 2) ^ word.rotate_right32(x: a, n: 13) ^ word.rotate_right32(x: a, n: 22)
+        majority = a & b ^ a & c ^ b & c
+        second = big_a + majority & word.LOW32
+        h @ g
+        g @ f
+        f @ e
+        e @ d + first & word.LOW32
+        d @ c
+        c @ b
+        b @ a
+        a @ first + second & word.LOW32
+        t @ t + 1
+
+    after: [i64] = [a, b, c, d, e, f, g, h]
+    out: [i64] @= []
+
+    for i in range(from: 0, to: 8)
+        out @ out.push(words[i] + after[i] & word.LOW32)
+
+    return out
+
+test "sha256 compress: the one block of the message abc, from SHA-256's words and from SHA-224's"
+    block: [u8] @= [0x61, 0x62, 0x63, 0x80]
+
+    while block.len() < 63
+        block @ block.push(0)
+
+    block @ block.push(24)
+    assert compress(START256, block, 0) == [0xba7816bf, 0x8f01cfea, 0x414140de, 0x5dae2223, 0xb00361a3, 0x96177a9c, 0xb410ff61, 0xf20015ad]
+    assert compress(START224, block, 0).slice(from: 0, to: 2) == [0x23097d22, 0x3405d822]

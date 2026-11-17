@@ -1,0 +1,62 @@
+# The functions the tests of `maps` hand to it, kept out of its face because
+# no program calls them: a function there would be a name of the package. The
+# language has no anonymous function, so each one a test passes is declared
+# here, named as the type that receives it names its parameters.
+
+# Whether `value` is above two, whatever the key.
+function above_two(_: str, value: i64) -> bool
+    return value > 2
+
+# Whether `key` is one byte long, whatever the value.
+function short_key(key: str, _: i64) -> bool
+    return key.len() == 1
+
+# Whether a key stands under itself: a key and a value of one type, which
+# only their names tell apart.
+function under_itself(key: str, value: str) -> bool
+    return key == value
+
+# `n` twice.
+function double(n: i64) -> i64
+    return n * 2
+
+# How many bytes `s` holds.
+function byte_length(s: str) -> i64
+    return s.len()
+
+# The sum of the two.
+function add(left: i64, right: i64) -> i64
+    return left + right
+
+# The two with a mark between them, so a test reads which came as which.
+function left_then_right(left: str, right: str) -> str
+    return left + "<" + right
+
+# Whether the two are as many bytes long.
+function same_length(left: str, right: str) -> bool
+    return left.len() == right.len()
+
+# Whether `right` is `left` written as text.
+function written_as(left: i64, right: str) -> bool
+    return to_str(left) == right
+
+# Whether `n` is odd, as 1 or 0.
+function oddness(n: i64) -> i64
+    if n % 2 == 0
+        return 0
+    return 1
+
+## Tests
+
+test "samples: the questions of an entry"
+    assert above_two("a", 3) && !above_two("a", 2)
+    assert short_key("a", 0) && !short_key("ab", 0) && !short_key("è", 0)
+    assert under_itself(key: "a", value: "a") && !under_itself(key: "a", value: "b")
+
+test "samples: the functions of one value and of two"
+    assert double(21) == 42 && byte_length("caffè") == 6
+    assert add(left: 2, right: 3) == 5
+    assert left_then_right(left: "a", right: "b") == "a<b"
+    assert same_length(left: "One", right: "one") && !same_length(left: "a", right: "")
+    assert written_as(1, "1") && !written_as(1, "one")
+    assert oddness(3) == 1 && oddness(4) == 0 && oddness(-3) == 1

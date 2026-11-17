@@ -1,0 +1,285 @@
+# Many floats at once: the sum rounded once, the product, the sum of products,
+# the length of a vector, and the smallest and the largest.
+#
+# The sum keeps Shewchuk's partials: a list of floats whose exact sum is the
+# exact sum of what has been read, no two of them overlapping in their bits.
+# Each new float is added into them with the two-sum, which gives a sum and the
+# exact error of rounding it, and only the last step rounds.
+
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+use math/libm
+
+# The sum of `xs` rounded once.
+#
+# - `xs`: the floats.
+function sum(xs: [f64]) -> f64?
+    partials: [f64] @= []
+    special: f64 @= 0.0
+    overflowed: bool @= false
+
+    for x in xs
+        if !floats.is_finite(x)
+            special @ special + x
+            continue
+        kept: [f64] @= []
+        running: f64 @= x
+
+        for partial in partials
+            big: f64 @= running
+            small: f64 @= partial
+
+            if floats.abs(big) < floats.abs(small)
+                big @ partial
+                small @ running
+            high = big + small
+            low = small - (high - big)
+
+            if low != 0.0
+                kept @ kept.push(low)
+            running @ high
+
+        if !floats.is_finite(running)
+            overflowed @ true
+            running @ 0.0
+        kept @ kept.push(running)
+        partials @ kept
+
+    if special != 0.0
+        return ok(special)
+
+    if overflowed
+        return fail(code: limits.DOES_NOT_FIT, msg: f"the sum of {xs.len()} floats passes the largest float on the way")
+    return ok(rounded(partials))
+
+# The exact sum of `partials`, non-overlapping and smallest first, rounded once
+# to the nearest float, a half to the even one.
+#
+# - `partials`: what `sum` keeps.
+function rounded(partials: [f64]) -> f64
+    if partials.len() == 0
+        return 0.0
+    at: i64 @= partials.len() - 1
+    high: f64 @= partials[at]
+    low: f64 @= 0.0
+
+    while at > 0
+        at @ at - 1
+        before = high
+        high @ before + partials[at]
+        low @ partials[at] - (high - before)
+
+        if low != 0.0
+            break
+
+    if at > 0 && (low < 0.0 && partials[at - 1] < 0.0 || low > 0.0 && partials[at - 1] > 0.0)
+        twice = low * 2.0
+        nudged = high + twice
+
+        if nudged - high == twice
+            high @ nudged
+
+    if high == 0.0
+        return 0.0
+    return high
+
+# The product of `xs` in their order.
+#
+# - `xs`: the floats.
+function product(xs: [f64]) -> f64
+    total: f64 @= 1.0
+
+    for x in xs
+        total @ total * x
+
+    return total
+
+# The sum of the products of `a` and `b` in pairs, rounded once: each product
+# is a float and its exact error, `mul_add` of the factors less the product,
+# and `sum` adds them all.
+#
+# - `a`: the first floats.
+# - `b`: the second floats, as many.
+function dot(a: [f64], b: [f64]) -> f64?
+    assert a.len() == b.len()
+    terms: [f64] @= []
+    at: i64 @= 0
+
+    while at < a.len()
+        product_here = a[at] * b[at]
+        terms @ terms.push(product_here)
+
+        if floats.is_finite(product_here)
+            terms @ terms.push(parts.mul_add(x: a[at], times: b[at], plus: -product_here))
+        else if floats.is_finite(a[at]) && floats.is_finite(b[at])
+            return fail(code: limits.DOES_NOT_FIT, msg: f"the product of {a[at]} and {b[at]} passes the largest float")
+        at @ at + 1
+
+    return sum(terms)
+
+# The length of the vector `xs`: each coordinate scaled by the power of two of
+# the largest, so no square overflows or vanishes, the squares summed once
+# with their exact errors, the root corrected once by what its own square
+# leaves of that exact sum, and scaled back. The correction makes it the
+# nearest float where rounding the sum and then its root would miss by one.
+#
+# - `xs`: the coordinates.
+function norm(xs: [f64]) -> f64
+    largest: f64 @= 0.0
+    nan_seen: bool @= false
+
+    for x in xs
+        size = floats.abs(x)
+
+        if floats.is_nan(size)
+            nan_seen @ true
+        else if floats.is_inf(size)
+            return size
+        else if size > largest
+            largest @ size
+
+    if nan_seen
+        return limits.NAN
+
+    if largest == 0.0
+        return 0.0
+    power = parts.exponent_of(largest).must()
+    squares: [f64] @= []
+
+    for x in xs
+        scaled = parts.scale(x: x, exponent: -power)
+        square = scaled * scaled
+        squares @ squares.push(square)
+        squares @ squares.push(parts.mul_add(x: scaled, times: scaled, plus: -square))
+
+    root = libm.c_sqrt(sum(squares).must())
+    square = root * root
+    squares @ squares.push(-square)
+    squares @ squares.push(-parts.mul_add(x: root, times: root, plus: -square))
+    residual = sum(squares).must()
+    return parts.scale(x: root + residual / (2.0 * root), exponent: power)
+
+# The distance between the points `a` and `b`.
+#
+# - `a`: one point's coordinates.
+# - `b`: the other's, as many.
+function dist(a: [f64], b: [f64]) -> f64
+    assert a.len() == b.len()
+    differences: [f64] @= []
+    at: i64 @= 0
+
+    while at < a.len()
+        differences @ differences.push(a[at] - b[at])
+        at @ at + 1
+
+    return norm(differences)
+
+# The smallest of `xs`.
+#
+# - `xs`: the floats.
+function min_of(xs: [f64]) -> f64?
+    if xs.len() == 0
+        return fail(code: limits.NOT_FOUND, msg: "an empty list has no smallest float")
+    smallest: f64 @= xs[0]
+
+    for x in xs
+        smallest @ floats.min(a: smallest, b: x)
+
+    return ok(smallest)
+
+# The largest of `xs`.
+#
+# - `xs`: the floats.
+function max_of(xs: [f64]) -> f64?
+    if xs.len() == 0
+        return fail(code: limits.NOT_FOUND, msg: "an empty list has no largest float")
+    largest: f64 @= xs[0]
+
+    for x in xs
+        largest @ floats.max(a: largest, b: x)
+
+    return ok(largest)
+
+## Tests
+
+# Python's `math.fsum`, run on 2026-11-16; it answers a positive zero for a
+# sum of zeros, and so does `sum`.
+test "sum: empty, ten tenths, a cancellation, the zeros, a half to even, a subnormal left after the largest cancels"
+    nothing: [f64] = []
+    assert sum(nothing).must() == 0.0
+    assert sum([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]).must() == 1.0
+    big = parts.scale(x: 1.0, exponent: 332)
+    assert sum([big, 1.0, -big]).must() == 1.0
+    assert !floats.has_minus_sign(sum([-0.0]).must())
+    assert !floats.has_minus_sign(sum([-0.0, -0.0]).must())
+    assert sum([1.0, 0.0000000000000001, 0.0000000000000001]).must() == 1.0000000000000002
+    half_ulp = parts.scale(x: 1.0, exponent: -53)
+    assert sum([1.0, half_ulp]).must() == 1.0
+    assert sum([1.0, half_ulp, parts.scale(x: 1.0, exponent: -106)]).must() == 1.0000000000000002
+    assert sum([limits.MAX_F64, -limits.MAX_F64, limits.SMALLEST_F64]).must() == limits.SMALLEST_F64
+
+test "sum: an infinity, both infinities, a nan"
+    assert sum([limits.INF, 1.0]).must() == limits.INF
+    assert sum([limits.INF, limits.MAX_F64, limits.MAX_F64]).must() == limits.INF
+    assert floats.is_nan(sum([limits.INF, -limits.INF]).must())
+    assert floats.is_nan(sum([limits.NAN, 1.0]).must())
+
+test "sum fails does_not_fit where finite floats pass the largest on the way"
+    for xs in [[limits.MAX_F64, limits.MAX_F64, -limits.MAX_F64], [limits.MAX_F64, limits.MAX_F64]]
+        match sum(xs)
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit"
+
+test "product: empty, three tenths, an infinity times zero"
+    nothing: [f64] = []
+    assert product(nothing) == 1.0
+    assert product([0.1, 0.2, 0.3]) == 0.006000000000000001
+    assert floats.is_nan(product([2.0, limits.INF, 0.0]))
+
+# Python's `math.sumprod`, run on 2026-11-16. It answers an infinity where a
+# product overflows; `dot` fails, as `sum` does.
+test "dot: empty, a cancellation, ten tenths squared rounded once, a product past the largest"
+    nothing: [f64] = []
+    assert dot(a: nothing, b: nothing).must() == 0.0
+    assert dot(a: [0.1, 0.2, 0.3], b: [1.0, 1.0, 1.0]).must() == 0.6
+    assert dot(a: [10000000000000000.0, 1.0, -10000000000000000.0], b: [1.0, 1.0, 1.0]).must() == 1.0
+    tenths = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    assert dot(a: tenths, b: tenths).must() == 0.1
+    assert dot(a: [limits.INF], b: [2.0]).must() == limits.INF
+
+    match dot(a: [limits.MAX_F64], b: [10.0])
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+# Python's `math.hypot` of many arguments and `math.dist`, run on 2026-11-16.
+test "norm and dist: empty, 3-4-12, the largest twice, a subnormal pair, an infinity beside a nan, a nan"
+    nothing: [f64] = []
+    assert norm(nothing) == 0.0
+    assert norm([3.0, 4.0, 12.0]) == 13.0
+    assert norm([-3.0]) == 3.0
+    assert norm([1.0, 1.0, 1.0]) == 1.7320508075688772
+    assert norm([0.1, 0.2, 0.3, 0.4]) == 0.5477225575051661
+    assert norm([limits.MAX_F64, limits.MAX_F64]) == limits.INF
+    tiny = limits.SMALLEST_F64 * 2024.0
+    assert norm([tiny, tiny]) == limits.SMALLEST_F64 * 2862.0
+    assert norm([limits.NAN, limits.INF]) == limits.INF
+    assert floats.is_nan(norm([limits.NAN, 1.0]))
+    assert dist(a: [1.0, 2.0], b: [4.0, 6.0]) == 5.0
+    assert dist(a: nothing, b: nothing) == 0.0
+    assert dist(a: [0.1, 0.2], b: [0.3, 0.5]) == 0.3605551275463989
+
+test "min_of and max_of: empty, one, the zeros, a nan, the infinities"
+    nothing: [f64] = []
+
+    match min_of(nothing)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    assert max_of(nothing).is_err()
+    assert min_of([2.5]).must() == 2.5
+    assert floats.has_minus_sign(min_of([3.0, -0.0, 0.0]).must())
+    assert !floats.has_minus_sign(max_of([-0.0, 0.0]).must())
+    assert floats.is_nan(max_of([1.0, limits.NAN, 2.0]).must())
+    assert min_of([1.0, -limits.INF]).must() == -limits.INF
+    assert max_of([-1.0, limits.INF]).must() == limits.INF

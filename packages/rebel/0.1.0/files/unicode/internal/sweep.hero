@@ -1,0 +1,57 @@
+# What the tests of `classes` and `casing` read a whole block of code points
+# by: one number that folds what a question answers for every code point of
+# the block, so that a test holds a thousand answers to the reference
+# libraries' in one comparison.
+#
+# The fold is `h = (h * 31 + v) % 1000000007` over the block in order, `v`
+# being the answer as a number, 1 for true and 0 for false; the expected
+# numbers are what the same fold over Python's and Go's answers gives.
+
+# The modulus of the fold, a prime.
+constant MODULUS: i64
+    1000000007
+
+# The fold of `question`'s answers for every code point from `first` to
+# `past`, `past` left out, true counting 1 and false 0.
+function folded_bools(question: (function(i64) -> bool), first: i64, past: i64) -> i64
+    h: i64 @= 0
+    n: i64 @= first
+
+    while n < past
+        v: i64 @= 0
+
+        if question(n)
+            v @ 1
+        h @ (h * 31 + v) % MODULUS
+        n @ n + 1
+
+    return h
+
+# The fold of `question`'s answers, numbers that are not negative, for every
+# code point from `first` to `past`, `past` left out.
+function folded_numbers(question: (function(i64) -> i64), first: i64, past: i64) -> i64
+    h: i64 @= 0
+    n: i64 @= first
+
+    while n < past
+        h @ (h * 31 + question(n) % MODULUS) % MODULUS
+        n @ n + 1
+
+    return h
+
+## Tests
+
+# A question that answers true for an even number, so its fold can be worked
+# out by hand.
+function is_even(n: i64) -> bool
+    return n % 2 == 0
+
+# A question that answers the number itself.
+function itself(n: i64) -> i64
+    return n
+
+test "folded_bools and folded_numbers: an empty block and one worked by hand"
+    assert folded_bools(question: is_even, first: 5, past: 5) == 0
+    assert folded_bools(question: is_even, first: 0, past: 3) == 962
+    assert folded_numbers(question: itself, first: 1, past: 4) == 1026
+    assert folded_numbers(question: itself, first: 1000000007, past: 1000000008) == 0

@@ -1,0 +1,136 @@
+# The floors' fill form, asked until the answer fits: a door is handed a
+# buffer and its count, answers how long the whole answer is, and where that
+# is longer than the buffer it is asked again with that many, since what it
+# reads (the environment, a folder's name) may grow between two calls.
+
+use os/hero_disk
+use os/hero_sys
+use os/internal/codes
+
+# Which door answers by the fill form.
+variant Door
+    host_name
+    home
+    cache
+    settings
+    environment
+    temp
+    version
+    user_name
+
+# How many times a door is asked before an answer that keeps growing is a
+# failure: two calls suffice where nothing changes between them.
+constant TRIES: i64
+    16
+
+# What `door` answers, in the words a message names it by.
+function named(door: Door) -> str
+    return match door
+        .host_name   => "the host name"
+        .home        => "the home folder"
+        .cache       => "the cache folder"
+        .settings    => "the settings folder"
+        .environment => "the environment"
+        .temp        => "the folder for temporary files"
+        .version     => "the system's version"
+        .user_name   => "the user's name"
+
+# One call of `door` into `buffer`, `n` bytes long: the length of the whole
+# answer, or -1.
+function called(door: Door, @buffer: [u8], n: u64) -> i64
+    return match door
+        .host_name   => hero_sys.host_name(@buffer, n: n)
+        .home        => hero_sys.home_folder(@buffer, n: n)
+        .cache       => hero_sys.cache_folder(@buffer, n: n)
+        .settings    => hero_sys.settings_folder(@buffer, n: n)
+        .environment => hero_sys.environment(@buffer, n: n)
+        .temp        => hero_disk.temp_folder(@buffer, n: n)
+        .version     => hero_sys.system_version(@buffer, n: n)
+        .user_name   => hero_sys.user_name(@buffer, n: n)
+
+# The whole answer of `door` as bytes. Fails with the floor's code where the
+# door refuses, and `failed` where the answer grew on every one of `TRIES`
+# readings.
+function bytes_of(door: Door) -> [u8]?
+    room: i64 @= 0
+    tries: i64 @= 0
+
+    while tries < TRIES
+        buffer: [u8] @= []
+        got = called(door, @buffer, n: room.to_u64().must())
+
+        if got < 0
+            return match door
+                .temp => codes.disk_failed(asked: named(door))
+                .host_name | .home | .cache | .settings | .environment | .version | .user_name =>
+                    codes.sys_failed(asked: named(door))
+
+        if got <= room
+            return ok(buffer.slice(from: 0, to: got))
+        room @ got
+        tries @ tries + 1
+
+    return fail(code: codes.FAILED, msg: f"{named(door)} grew on each of {TRIES} readings")
+
+# The whole answer of `door` as text. Fails as `bytes_of` does, and
+# `not_text` where its bytes are not UTF-8.
+function text_of(door: Door) -> str?
+    bytes = bytes_of(door)?
+
+    match bytes.validated_bytes()
+        .ok text => return ok(text)
+        .err _   => return fail(code: codes.NOT_TEXT, msg: f"{named(door)} is not UTF-8: {bytes.len()} bytes")
+
+# The ids of the other groups the process belongs to, by the fill form of
+# ids. Fails `unsupported` on Windows, and as `bytes_of` does.
+function group_ids() -> [i64]?
+    room: i64 @= 0
+    tries: i64 @= 0
+
+    while tries < TRIES
+        ids: [i64] @= []
+        got = hero_sys.groups(@ids, n: room.to_u64().must())
+
+        if got < 0
+            return codes.sys_failed(asked: "the process's groups")
+
+        if got <= room
+            return ok(ids.slice(from: 0, to: got))
+        room @ got
+        tries @ tries + 1
+
+    return fail(code: codes.FAILED, msg: f"the process's groups grew on each of {TRIES} readings")
+
+## Tests
+
+test "bytes_of and text_of: every door answers, its bytes are its text, and none ends with a zero byte but the environment"
+    doors: [Door] = [.host_name, .home, .cache, .settings, .temp, .version, .user_name]
+
+    for door in doors
+        bytes = bytes_of(door).must()
+        assert bytes.len() > 0 && bytes[bytes.len() - 1] != 0
+        assert text_of(door).must().len() == bytes.len()
+
+    every = bytes_of(.environment).must()
+    assert every.len() > 0 && every[every.len() - 1] == 0
+
+test "named: each door is named apart"
+    names = [
+        named(.host_name)
+        named(.home)
+        named(.cache)
+        named(.settings)
+        named(.environment)
+        named(.temp)
+        named(.version)
+        named(.user_name)
+    ]
+    assert sort(names).len() == 8
+    assert named(.temp) == "the folder for temporary files"
+
+test "group_ids: a list of ids at or above 0 on POSIX, or unsupported"
+    match group_ids()
+        .ok ids =>
+            for id in ids
+                assert id >= 0
+        .err e => assert e.code == codes.UNSUPPORTED

@@ -1,0 +1,365 @@
+# Sets of values, kept in a `{K: bool}`: the language has no set type, and a
+# map's keys are already distinct and found by hashing, so a set is a map whose
+# keys are its elements, each under `true`. Written by hand it is a map like
+# any other: `s: {str: bool} @= {}`, then `s["a"] @ true`.
+#
+# Every function answers a new set and leaves the ones it was given as they
+# were, and every set it answers holds `true` under each key. A key under
+# `false` is no element: every function here reads it as absent and leaves it
+# out of what it answers. The built-in `len` and `==` count keys, so they
+# answer a set's size and its equality where every value is `true`, as in
+# every set this package answers.
+#
+# A set keeps its elements in the order they were first added, as a map keeps
+# its keys, so each function says what order its answer is in; the order never
+# counts for `==` or for any question here. The union is `union_of`, because
+# `union` is a word the compiler keeps from C and refuses as a name.
+#
+# It does not order the elements: `sort(sets.to_list(s))` does for numbers,
+# texts and booleans, and `lists.sort_by` for any other type. It does not count
+# how often a value occurs, which is `maps.counts`.
+#
+# Nothing here fails on what it is given, so no function answers a `T?` and the
+# package has no code. A function that puts an element into a map aborts where
+# it is a `nan`, which no map can hold; the float `0.0` and `-0.0` are one
+# element, as `==` says.
+
+use sets/internal/algebra
+use sets/internal/members
+use sets/internal/samples
+
+## Building and reading
+
+# A set of the elements of `elements`.
+#
+# - `elements`: the values to hold, of any type a map takes as a key; one that
+#   occurs twice is held once, and an empty list gives the empty set.
+#
+# The elements stand in the order they first occur in `elements`. Aborts where
+# one is a `nan`. See also `to_list`, `add_all`.
+function from_list<K>(elements: [K]) -> {K: bool}
+    return members.from_list(elements: elements)
+
+# Whether `s` holds `element`.
+#
+# - `s`: the set to ask; a key under `false` is no element.
+# - `element`: the value to look for, compared by `==`.
+#
+# It is one lookup by hashing, whatever the size of `s`. See also `is_subset`.
+function contains<K>(s: {K: bool}, element: K) -> bool
+    return members.contains(s: s, element: element)
+
+# The elements of `s` as a list, in the order they were first added.
+#
+# - `s`: the set to read; a key under `false` is left out.
+#
+# An empty set gives an empty list. Its length is the number of elements, which
+# is `s.len()` where every value is `true`. See also `from_list`.
+function to_list<K>(s: {K: bool}) -> [K]
+    return members.to_list(s: s)
+
+## Adding and removing
+
+# `s` with `element` added.
+#
+# - `s`: the set to add to.
+# - `element`: the value to add; one `s` holds already changes nothing.
+#
+# An element `s` holds keeps its place, and a new one stands last. Aborts where
+# `element` is a `nan`. It copies `s`, so adding many elements one call at a
+# time is quadratic: `add_all` takes them in one pass. See also `remove`.
+function add<K>(s: {K: bool}, element: K) -> {K: bool}
+    return members.add(s: s, element: element)
+
+# `s` with every element of `elements` added.
+#
+# - `s`: the set to add to.
+# - `elements`: the values to add; an empty list changes nothing, and one `s`
+#   holds already, or one listed twice, is held once.
+#
+# The elements of `s` stand first, in their order, then the new ones in the
+# order they first occur in `elements`. Aborts where one is a `nan`. See also
+# `union_of`, `remove_all`.
+function add_all<K>(s: {K: bool}, elements: [K]) -> {K: bool}
+    return members.add_all(s: s, elements: elements)
+
+# `s` without `element`.
+#
+# - `s`: the set to remove from.
+# - `element`: the value to remove; one `s` does not hold is no failure, and
+#   the answer then holds what `s` holds.
+#
+# The other elements keep their order. It copies `s`, so removing many
+# elements one call at a time is quadratic: `remove_all` takes them in one
+# pass. See also `add`, `difference`.
+function remove<K>(s: {K: bool}, element: K) -> {K: bool}
+    return members.remove(s: s, element: element)
+
+# `s` without any element of `elements`.
+#
+# - `s`: the set to remove from.
+# - `elements`: the values to remove; an empty list changes nothing, and one
+#   `s` does not hold, or one listed twice, is no failure.
+#
+# The elements that stay keep their order. It is one pass over `elements` and
+# one over `s`, however many go. See also `difference`, `add_all`.
+function remove_all<K>(s: {K: bool}, elements: [K]) -> {K: bool}
+    return members.remove_all(s: s, elements: elements)
+
+# The elements of `s` that `keeps` accepts.
+#
+# - `s`: the set to read.
+# - `keeps`: called once for each element of `s`, in their order; an element
+#   stays where it answers `true`.
+#
+# The elements that stay keep their order. See also `remove_where`.
+function keep_where<K>(s: {K: bool}, keeps: (function(K) -> bool)) -> {K: bool}
+    return members.keep_where(s: s, keeps: keeps)
+
+# `s` without the elements `removes` accepts.
+#
+# - `s`: the set to read.
+# - `removes`: called once for each element of `s`, in their order; an element
+#   goes where it answers `true`.
+#
+# The elements that stay keep their order. See also `keep_where`.
+function remove_where<K>(s: {K: bool}, removes: (function(K) -> bool)) -> {K: bool}
+    return members.remove_where(s: s, removes: removes)
+
+## Combining two sets
+
+# The union of `s` and `other`: every element either holds.
+#
+# - `s`: the first set; its elements stand first.
+# - `other`: the second set.
+#
+# The elements of `s` stand first, in their order, then those only `other`
+# holds, in theirs. It copies `s` and adds each element of `other`. See also
+# `union_all`, `add_all`.
+function union_of<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    return algebra.union_of(s: s, other: other)
+
+# The intersection of `s` and `other`: the elements both hold.
+#
+# - `s`: the first set; the answer keeps its order.
+# - `other`: the second set.
+#
+# The elements stand in the order of `s`; an empty set where the two share
+# none. It is one lookup in `other` for each element of `s`. See also
+# `intersection_all`, `is_disjoint`.
+function intersection<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    return algebra.intersection(s: s, other: other)
+
+# The difference of `s` and `other`: the elements of `s` that `other` does not
+# hold.
+#
+# - `s`: the set to take from; the answer keeps its order.
+# - `other`: the elements to leave out; one `s` does not hold changes nothing.
+#
+# The elements stand in the order of `s`. See also `difference_all`,
+# `remove_all`, `symmetric_difference`.
+function difference<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    return algebra.difference(s: s, other: other)
+
+# The symmetric difference of `s` and `other`: the elements one holds and the
+# other does not.
+#
+# - `s`: the first set; its elements stand first.
+# - `other`: the second set.
+#
+# The elements only `s` holds stand first, in its order, then those only
+# `other` holds, in theirs; an empty set where the two are equal. See also
+# `difference`, `union_of`.
+function symmetric_difference<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    return algebra.symmetric_difference(s: s, other: other)
+
+## Combining many sets
+
+# The union of `s` and every set of `others`: every element any of them holds.
+#
+# - `s`: the first set; its elements stand first.
+# - `others`: the other sets, in order; an empty list gives the elements of
+#   `s`.
+#
+# The elements of `s` stand first, in their order, then each new element in the
+# order the sets of `others` first hold it. See also `union_of`.
+function union_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    return algebra.union_all(s: s, others: others)
+
+# The intersection of `s` and every set of `others`: the elements all of them
+# hold.
+#
+# - `s`: the first set; the answer keeps its order.
+# - `others`: the other sets; an empty list gives the elements of `s`.
+#
+# The elements stand in the order of `s`. It asks each set of `others` about
+# each element of `s` until one does not hold it. See also `intersection`.
+function intersection_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    return algebra.intersection_all(s: s, others: others)
+
+# The elements of `s` that no set of `others` holds.
+#
+# - `s`: the set to take from; the answer keeps its order.
+# - `others`: the sets whose elements are left out; an empty list gives the
+#   elements of `s`.
+#
+# The elements stand in the order of `s`. See also `difference`.
+function difference_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    return algebra.difference_all(s: s, others: others)
+
+## Comparing two sets
+
+# Whether every element of `s` is an element of `other`.
+#
+# - `s`: the set that may be the smaller; the empty set is a subset of every
+#   set.
+# - `other`: the set that may hold it; every set is a subset of itself.
+#
+# It is one lookup in `other` for each element of `s`, and stops at the first
+# that `other` does not hold. See also `is_proper_subset`, `is_superset`.
+function is_subset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return algebra.is_subset(s: s, other: other)
+
+# Whether every element of `other` is an element of `s`.
+#
+# - `s`: the set that may be the larger; every set is a superset of itself.
+# - `other`: the set it may hold; every set is a superset of the empty set.
+#
+# See also `is_proper_superset`, `is_subset`.
+function is_superset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return algebra.is_superset(s: s, other: other)
+
+# Whether `s` is a subset of `other` and `other` holds an element `s` does not.
+#
+# - `s`: the set that may be the smaller; no set is a proper subset of itself.
+# - `other`: the set that may hold it and more.
+#
+# See also `is_subset`.
+function is_proper_subset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return algebra.is_proper_subset(s: s, other: other)
+
+# Whether `s` is a superset of `other` and holds an element `other` does not.
+#
+# - `s`: the set that may be the larger; no set is a proper superset of
+#   itself.
+# - `other`: the set it may hold.
+#
+# See also `is_superset`.
+function is_proper_superset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return algebra.is_proper_superset(s: s, other: other)
+
+# Whether `s` and `other` share no element.
+#
+# - `s`: the first set; the empty set is disjoint from every set, itself
+#   included.
+# - `other`: the second set.
+#
+# It walks the smaller of the two and stops at the first element they share.
+# See also `intersection`.
+function is_disjoint<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return algebra.is_disjoint(s: s, other: other)
+
+## Examples
+
+# A list of words made a set: each word once, in the order it first came.
+test "from_list: the distinct words of a sentence"
+    assert to_list(from_list("to be or not to be".chars())) == ["t", "o", " ", "b", "e", "r", "n"]
+
+# Asking a set of names whether it holds one.
+test "contains: a name present and a name absent"
+    names = from_list(["ada", "grace"])
+    assert contains(names, "ada")
+    assert !contains(names, "linus")
+
+# A set read back as a list, sorted with the built-in where the order matters.
+test "to_list: the elements in the order they were added, then sorted"
+    s = from_list([3, 1, 2])
+    assert to_list(s) == [3, 1, 2]
+    assert sort(to_list(s)) == [1, 2, 3]
+
+# An element added to a set.
+test "add: a new element stands last"
+    assert to_list(add(from_list(["a", "b"]), "c")) == ["a", "b", "c"]
+
+# Several elements added at once.
+test "add_all: the new ones in their order"
+    assert to_list(add_all(from_list([1, 2]), [2, 3, 4])) == [1, 2, 3, 4]
+
+# An element removed from a set.
+test "remove: one element out"
+    assert to_list(remove(from_list(["a", "b", "c"]), "b")) == ["a", "c"]
+
+# Several elements removed at once.
+test "remove_all: two elements out, one absent"
+    assert to_list(remove_all(from_list([1, 2, 3, 4]), [4, 1, 9])) == [2, 3]
+
+# The elements a function accepts.
+test "keep_where: the even numbers of a set"
+    assert to_list(keep_where(from_list([1, 2, 3, 4]), samples.is_even)) == [2, 4]
+
+# A set without the elements a function accepts.
+test "remove_where: the even numbers left out"
+    assert to_list(remove_where(from_list([1, 2, 3, 4]), samples.is_even)) == [1, 3]
+
+# The tags of two posts, together.
+test "union_of: the tags of two posts"
+    first = from_list(["go", "rust"])
+    second = from_list(["rust", "zig"])
+    assert to_list(union_of(s: first, other: second)) == ["go", "rust", "zig"]
+
+# The tags two posts share.
+test "intersection: the tags two posts share"
+    first = from_list(["go", "rust", "c"])
+    second = from_list(["c", "zig", "rust"])
+    assert to_list(intersection(s: first, other: second)) == ["rust", "c"]
+
+# What one list of guests has that the other has not.
+test "difference: the guests who did not answer"
+    invited = from_list(["ada", "grace", "linus"])
+    answered = from_list(["grace"])
+    assert to_list(difference(s: invited, other: answered)) == ["ada", "linus"]
+
+# The elements of exactly one of two sets.
+test "symmetric_difference: the numbers in one set only"
+    assert to_list(symmetric_difference(s: from_list([1, 2, 3]), other: from_list([3, 4]))) == [1, 2, 4]
+
+# The union of several sets.
+test "union_all: the letters of three words"
+    words = [from_list("cab".chars()), from_list("bed".chars())]
+    assert to_list(union_all(from_list("ace".chars()), words)) == ["a", "c", "e", "b", "d"]
+
+# The intersection of several sets.
+test "intersection_all: the days three people are free"
+    free = from_list(["mon", "tue", "wed"])
+    others = [from_list(["tue", "wed"]), from_list(["wed", "tue", "fri"])]
+    assert to_list(intersection_all(free, others)) == ["tue", "wed"]
+
+# A set without the elements of several others.
+test "difference_all: the numbers in neither of two sets"
+    assert to_list(difference_all(from_list([1, 2, 3, 4, 5]), [from_list([2]), from_list([4, 9])])) == [1, 3, 5]
+
+# Whether a set lies inside another.
+test "is_subset: the letters of a word inside the alphabet's first five"
+    assert is_subset(s: from_list("bad".chars()), other: from_list("abcde".chars()))
+    assert !is_subset(s: from_list("fad".chars()), other: from_list("abcde".chars()))
+
+# Whether a set holds another.
+test "is_superset: the first five letters hold the letters of a word"
+    assert is_superset(s: from_list("abcde".chars()), other: from_list("bad".chars()))
+
+# Whether a set lies inside another and is smaller.
+test "is_proper_subset: a smaller set inside, and a set inside itself"
+    small = from_list([1, 2])
+    assert is_proper_subset(s: small, other: from_list([1, 2, 3]))
+    assert !is_proper_subset(s: small, other: small)
+
+# Whether a set holds another and more.
+test "is_proper_superset: a larger set around, and a set around itself"
+    large = from_list([1, 2, 3])
+    assert is_proper_superset(s: large, other: from_list([1, 3]))
+    assert !is_proper_superset(s: large, other: large)
+
+# Whether two sets share nothing.
+test "is_disjoint: the odd and the even numbers"
+    assert is_disjoint(s: from_list([1, 3, 5]), other: from_list([2, 4]))
+    assert !is_disjoint(s: from_list([1, 2]), other: from_list([2, 4]))

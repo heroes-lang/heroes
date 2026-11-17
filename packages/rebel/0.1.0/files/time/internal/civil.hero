@@ -1,0 +1,424 @@
+# The proleptic Gregorian calendar as arithmetic on counts: a day as the days
+# since 1970-01-01, a moment as the nanoseconds since 1970-01-01T00:00:00Z,
+# and the civil parts of each. The calendar's rules are carried back before
+# 1582, and every day is 86,400 seconds: there are no leap seconds.
+#
+# A day is counted in eras of 400 years, the period after which the Gregorian
+# calendar repeats (146,097 days), with each year begun on March 1, so that a
+# leap day is the last day of its year and no month's length depends on it.
+
+use time/internal/arith
+
+# The code of a field outside its range.
+constant INVALID: str
+    "invalid"
+
+# The code of a moment outside an `i64` of nanoseconds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# Nanoseconds in a day.
+constant DAY: i64
+    86_400_000_000_000
+
+# Nanoseconds in an hour.
+constant HOUR: i64
+    3_600_000_000_000
+
+# Nanoseconds in a minute.
+constant MINUTE: i64
+    60_000_000_000
+
+# The first year an `i64` of nanoseconds reaches, in part.
+constant FIRST_YEAR: i64
+    1677
+
+# The last year an `i64` of nanoseconds reaches, in part.
+constant LAST_YEAR: i64
+    2262
+
+# Days in an era of 400 years.
+constant ERA_DAYS: i64
+    146_097
+
+# Days from 0000-03-01, the start of the era that holds 1970, to 1970-01-01.
+constant EPOCH_SHIFT: i64
+    719_468
+
+# What a moment's every part is, in UTC.
+record Civil
+    # The year, 1970 for 1970.
+    year: i64
+    # The month, 1 to 12.
+    month: i64
+    # The day of the month, 1 to 31.
+    day: i64
+    # The hour, 0 to 23.
+    hour: i64
+    # The minute, 0 to 59.
+    minute: i64
+    # The second, 0 to 59.
+    second: i64
+    # The nanosecond within the second.
+    nanosecond: i64
+
+# A day of the calendar.
+record Date
+    # The year.
+    year: i64
+    # The month, 1 to 12.
+    month: i64
+    # The day of the month.
+    day: i64
+
+# An ISO 8601 week.
+record Week
+    # The year the week belongs to.
+    year: i64
+    # The week of that year, 1 to 53.
+    week: i64
+
+# Whether `year` is a leap year: divisible by 4, and not by 100 unless by 400.
+function is_leap(year: i64) -> bool
+    return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+
+# How many days `year` has.
+function days_in_year(year: i64) -> i64
+    if is_leap(year)
+        return 366
+    return 365
+
+# How many days the month `month` of `year` has. Aborts where `month` is
+# outside 1 to 12, which every caller has checked.
+function days_in_month(year: i64, month: i64) -> i64
+    assert month >= 1 && month <= 12
+
+    if month == 2
+        if is_leap(year)
+            return 29
+        return 28
+
+    if month == 4 || month == 6 || month == 9 || month == 11
+        return 30
+    return 31
+
+# The leap years counted from a fixed year up to `year`, `year` not counted,
+# so that two of them subtracted count the leap years between: the year
+# before `year` is divided rounding toward the past, and the year before is
+# never computed, so the smallest `i64` does not abort.
+function leaps_before(year: i64) -> i64
+    return before_by(year: year, by: 4) - before_by(year: year, by: 100) + before_by(year: year, by: 400)
+
+# `year - 1` divided by `by`, rounding toward the past, computed without
+# `year - 1`.
+function before_by(year: i64, by: i64) -> i64
+    if arith.floor_mod(a: year, b: by) == 0
+        return arith.floor_div(a: year, b: by) - 1
+    return arith.floor_div(a: year, b: by)
+
+# How many leap years there are from `from` up to `to`, `to` not counted.
+function leap_years_between(from: i64, to: i64) -> i64
+    return leaps_before(to) - leaps_before(from)
+
+# The days from 1970-01-01 to `year`-`month`-`day`. Aborts where `month` is
+# outside 1 to 12; exact for any year within a million of 1970, which every
+# caller has checked.
+function days_from_date(year: i64, month: i64, day: i64) -> i64
+    assert month >= 1 && month <= 12
+    shifted: i64 @= year
+
+    if month <= 2
+        shifted @ year - 1
+    era = arith.floor_div(a: shifted, b: 400)
+    year_of_era = shifted - era * 400
+    month_from_march = (month + 9) % 12
+    day_of_shifted_year = (153 * month_from_march + 2) / 5 + day - 1
+    day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_shifted_year
+    return era * ERA_DAYS + day_of_era - EPOCH_SHIFT
+
+# The day `days` after 1970-01-01, before it where negative; exact for any
+# count within a million years.
+function date_from_days(days: i64) -> Date
+    shifted = days + EPOCH_SHIFT
+    era = arith.floor_div(a: shifted, b: ERA_DAYS)
+    day_of_era = shifted - era * ERA_DAYS
+    year_of_era = (day_of_era - day_of_era / 1460 + day_of_era / 36_524 - day_of_era / 146_096) / 365
+    day_of_shifted_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100)
+    month_from_march = (5 * day_of_shifted_year + 2) / 153
+    day = day_of_shifted_year - (153 * month_from_march + 2) / 5 + 1
+    month: i64 @= month_from_march + 3
+
+    if month_from_march >= 10
+        month @ month_from_march - 9
+    year: i64 @= year_of_era + era * 400
+
+    if month <= 2
+        year @ year + 1
+    return Date(year: year, month: month, day: day)
+
+# The ISO 8601 number of the weekday of the day `days` after 1970-01-01: 1 for
+# Monday to 7 for Sunday. 1970-01-01 was a Thursday.
+function weekday(days: i64) -> i64
+    return arith.floor_mod(a: days + 3, b: 7) + 1
+
+# The day of its year `year`-`month`-`day` is, from 1.
+function day_of_year(year: i64, month: i64, day: i64) -> i64
+    return days_from_date(year: year, month: month, day: day) - days_from_date(year: year, month: 1, day: 1) + 1
+
+# How many ISO 8601 weeks `year` has: 53 where it begins on a Thursday, or is
+# a leap year beginning on a Wednesday, and 52 otherwise.
+function weeks_in_year(year: i64) -> i64
+    first = weekday(days_from_date(year: year, month: 1, day: 1))
+
+    if first == 4 || first == 3 && is_leap(year)
+        return 53
+    return 52
+
+# The ISO 8601 week `year`-`month`-`day` falls in.
+function iso_week(year: i64, month: i64, day: i64) -> Week
+    day_number = weekday(days_from_date(year: year, month: month, day: day))
+    week = (day_of_year(year: year, month: month, day: day) - day_number + 10) / 7
+
+    if week < 1
+        return Week(year: year - 1, week: weeks_in_year(year - 1))
+
+    if week > weeks_in_year(year)
+        return Week(year: year + 1, week: 1)
+    return Week(year: year, week: week)
+
+# The days from 1970-01-01 to the weekday `day_number`, 1 for Monday, of the
+# ISO 8601 week `week` of `year`. Fails `invalid` where the week or the day
+# does not exist, and `does_not_fit` where the year is outside 1677 to 2262.
+function days_from_iso_week(year: i64, week: i64, day_number: i64) -> i64?
+    if week < 1 || week > 53
+        return fail(code: INVALID, msg: f"the week {week} is outside 1 to 53")
+
+    if day_number < 1 || day_number > 7
+        return fail(code: INVALID, msg: f"the weekday {day_number} is outside 1 to 7")
+    in_range(year)?
+
+    if week > weeks_in_year(year)
+        return fail(code: INVALID, msg: f"{year} has 52 ISO weeks, and no week 53")
+    fourth = days_from_date(year: year, month: 1, day: 4)
+    first_monday = fourth - weekday(fourth) + 1
+    return ok(first_monday + (week - 1) * 7 + day_number - 1)
+
+# Nothing, where `year` is one an `i64` of nanoseconds reaches. Fails
+# `does_not_fit` otherwise.
+function in_range(year: i64) -> ()?
+    if year < FIRST_YEAR || year > LAST_YEAR
+        return fail(code: DOES_NOT_FIT, msg: f"the year {year} is outside 1677 to 2262, the years an instant reaches")
+    return ok()
+
+# Every part of the moment `nanoseconds` after 1970-01-01T00:00:00Z.
+function from_nanoseconds(nanoseconds: i64) -> Civil
+    date = date_from_days(arith.floor_div(a: nanoseconds, b: DAY))
+    within_day = arith.floor_mod(a: nanoseconds, b: DAY)
+    within_minute = within_day % MINUTE
+    return Civil(
+        year: date.year,
+        month: date.month,
+        day: date.day,
+        hour: within_day / HOUR,
+        minute: within_day % HOUR / MINUTE,
+        second: within_minute / arith.SECOND,
+        nanosecond: within_minute % arith.SECOND
+    )
+
+# Nothing, where every part of `c` is within its range. Fails `invalid`
+# naming the first part that is not.
+function check(c: Civil) -> ()?
+    if c.month < 1 || c.month > 12
+        return fail(code: INVALID, msg: f"the month {c.month} is outside 1 to 12")
+    last = days_in_month(year: c.year, month: c.month)
+
+    if c.day < 1 || c.day > last
+        return fail(code: INVALID, msg: f"the day {c.day} is outside 1 to {last} in month {c.month} of {c.year}")
+
+    if c.hour < 0 || c.hour > 23
+        return fail(code: INVALID, msg: f"the hour {c.hour} is outside 0 to 23")
+
+    if c.minute < 0 || c.minute > 59
+        return fail(code: INVALID, msg: f"the minute {c.minute} is outside 0 to 59")
+
+    if c.second < 0 || c.second > 59
+        return fail(code: INVALID, msg: f"the second {c.second} is outside 0 to 59: there are no leap seconds")
+
+    if c.nanosecond < 0 || c.nanosecond > 999_999_999
+        return fail(code: INVALID, msg: f"the nanosecond {c.nanosecond} is outside 0 to 999999999")
+    return ok()
+
+# The nanoseconds from 1970-01-01T00:00:00Z to the moment `c` names on a clock
+# `offset` seconds ahead of UTC, so that the answer is UTC's. Fails `invalid`
+# where a part of `c` is outside its range, and `does_not_fit` where the
+# moment is outside an `i64` of nanoseconds. `offset` is within a day.
+function to_nanoseconds(c: Civil, offset: i64) -> i64?
+    check(c)?
+    in_range(c.year)?
+    days = days_from_date(year: c.year, month: c.month, day: c.day)
+    seconds = days * 86_400 + c.hour * 3_600 + c.minute * 60 + c.second - offset
+
+    match arith.from_parts(seconds: seconds, nanoseconds: c.nanosecond)
+        .ok n => return ok(n)
+        .err _ => return fail(
+            code: DOES_NOT_FIT,
+            msg: f"{c.year}, month {c.month}, day {c.day}, {c.hour}:{c.minute}:{c.second} and {c.nanosecond} nanoseconds is outside what an instant holds, 1677-09-21T00:12:43.145224192Z to 2262-04-11T23:47:16.854775807Z"
+        )
+
+# The moment `nanoseconds` moved by `months` calendar months, the time of day
+# kept and a day the target month lacks made its last. Fails `does_not_fit`
+# where the result is outside an `i64` of nanoseconds.
+function add_months(nanoseconds: i64, months: i64) -> i64?
+    c = from_nanoseconds(nanoseconds)
+    index = arith.add(a: c.year * 12 + c.month - 1, b: months)?
+    year = arith.floor_div(a: index, b: 12)
+    in_range(year)?
+    month = arith.floor_mod(a: index, b: 12) + 1
+    last = days_in_month(year: year, month: month)
+    day: i64 @= c.day
+
+    if day > last
+        day @ last
+    return to_nanoseconds(
+        c: Civil(year: year, month: month, day: day, hour: c.hour, minute: c.minute, second: c.second, nanosecond: c.nanosecond),
+        offset: 0
+    )
+
+## Tests
+
+# Expected values observed with Python's `calendar.isleap` and
+# `calendar.leapdays`, 2026-11-15.
+test "is_leap and leap_years_between: 1900, 2000, 2100, 1600, years before 1, and either order"
+    assert !is_leap(1900)
+    assert is_leap(2000)
+    assert !is_leap(2100)
+    assert is_leap(2024)
+    assert is_leap(1600)
+    assert is_leap(0)
+    assert is_leap(-4)
+    assert leap_years_between(from: 1970, to: 2000) == 7
+    assert leap_years_between(from: 2000, to: 1970) == -7
+    assert leap_years_between(from: 1600, to: 1601) == 1
+    assert leap_years_between(from: -4, to: 1) == 2
+    assert leap_years_between(from: arith.MIN, to: arith.MAX) == 4_473_335_437_874_566_266
+
+test "days_in_month and days_in_year: February in a leap year, a century and a fourth century"
+    assert days_in_month(year: 2000, month: 2) == 29
+    assert days_in_month(year: 1900, month: 2) == 28
+    assert days_in_month(year: 2100, month: 2) == 28
+    assert days_in_month(year: 2024, month: 12) == 31
+    assert days_in_month(year: 2024, month: 4) == 30
+    assert days_in_year(2000) == 366
+    assert days_in_year(1900) == 365
+
+# Expected days observed with Go's `time.Date(...).Unix() / 86400`, 2026-11-15.
+test "days_from_date and date_from_days: 1970-01-01, the day before, leap days, and both ends of an instant"
+    assert days_from_date(year: 1970, month: 1, day: 1) == 0
+    assert days_from_date(year: 1969, month: 12, day: 31) == -1
+    assert days_from_date(year: 2000, month: 2, day: 29) == 11_016
+    assert days_from_date(year: 1900, month: 3, day: 1) == -25_508
+    assert days_from_date(year: 2100, month: 2, day: 28) == 47_540
+    assert days_from_date(year: 2262, month: 4, day: 11) == 106_751
+    assert date_from_days(-106_752) == Date(year: 1677, month: 9, day: 21)
+    assert date_from_days(-1) == Date(year: 1969, month: 12, day: 31)
+    assert date_from_days(11_016) == Date(year: 2000, month: 2, day: 29)
+    assert date_from_days(11_017) == Date(year: 2000, month: 3, day: 1)
+    assert date_from_days(-25_509) == Date(year: 1900, month: 2, day: 28)
+
+test "days_from_date and date_from_days agree on every day from 1677 to 2262"
+    days: i64 @= -106_753
+
+    while days <= 106_752
+        date = date_from_days(days)
+        assert days_from_date(year: date.year, month: date.month, day: date.day) == days
+        days @ days + 1
+
+# Expected values observed with Python's `date.isocalendar()` and Go's
+# `Time.ISOWeek()`, 2026-11-15.
+test "weekday, day_of_year and iso_week: a week 53, a week 1 in December, and January in last year's week"
+    assert weekday(0) == 4
+    assert weekday(-1) == 3
+    assert day_of_year(year: 2004, month: 12, day: 31) == 366
+    assert day_of_year(year: 2000, month: 2, day: 29) == 60
+    assert day_of_year(year: 1900, month: 3, day: 1) == 60
+    assert iso_week(year: 2004, month: 12, day: 31) == Week(year: 2004, week: 53)
+    assert iso_week(year: 2008, month: 12, day: 29) == Week(year: 2009, week: 1)
+    assert iso_week(year: 2010, month: 1, day: 3) == Week(year: 2009, week: 53)
+    assert iso_week(year: 2021, month: 1, day: 3) == Week(year: 2020, week: 53)
+    assert iso_week(year: 1677, month: 9, day: 21) == Week(year: 1677, week: 38)
+    assert iso_week(year: 1970, month: 1, day: 1) == Week(year: 1970, week: 1)
+    assert weeks_in_year(2004) == 53
+    assert weeks_in_year(2010) == 52
+
+# Expected values observed with Python's `date.fromisocalendar`, 2026-11-15.
+test "days_from_iso_week: a week 53, week 1 beginning in December, and a week 53 that does not exist"
+    assert days_from_iso_week(year: 2009, week: 53, day_number: 7).must() == days_from_date(year: 2010, month: 1, day: 3)
+    assert days_from_iso_week(year: 2004, week: 53, day_number: 5).must() == days_from_date(year: 2004, month: 12, day: 31)
+    assert days_from_iso_week(year: 2009, week: 1, day_number: 1).must() == days_from_date(year: 2008, month: 12, day: 29)
+
+    match days_from_iso_week(year: 2010, week: 53, day_number: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "2010 has 52 ISO weeks, and no week 53"
+
+    assert days_from_iso_week(year: 2010, week: 0, day_number: 1).is_err()
+    assert days_from_iso_week(year: 2010, week: 1, day_number: 8).is_err()
+
+    match days_from_iso_week(year: 9_000_000_000, week: 1, day_number: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+# Expected values observed with Go's `time.Unix(0, n).UTC()`, 2026-11-15.
+test "from_nanoseconds: 0, -1, the last nanosecond of 1999, and both ends of an i64"
+    assert from_nanoseconds(0) == Civil(year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert from_nanoseconds(-1) == Civil(year: 1969, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 999_999_999)
+    assert from_nanoseconds(946_684_799_999_999_999) == Civil(year: 1999, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 999_999_999)
+    assert from_nanoseconds(arith.MIN) == Civil(year: 1677, month: 9, day: 21, hour: 0, minute: 12, second: 43, nanosecond: 145_224_192)
+    assert from_nanoseconds(arith.MAX) == Civil(year: 2262, month: 4, day: 11, hour: 23, minute: 47, second: 16, nanosecond: 854_775_807)
+
+test "to_nanoseconds: both ends of an i64 and one past them, an offset, and each part out of range"
+    low = Civil(year: 1677, month: 9, day: 21, hour: 0, minute: 12, second: 43, nanosecond: 145_224_192)
+    assert to_nanoseconds(c: low, offset: 0).must() == arith.MIN
+    early = Civil(year: 1677, month: 9, day: 21, hour: 0, minute: 12, second: 43, nanosecond: 145_224_191)
+    assert to_nanoseconds(c: early, offset: 0).is_err()
+    high = Civil(year: 2262, month: 4, day: 11, hour: 23, minute: 47, second: 16, nanosecond: 854_775_807)
+    assert to_nanoseconds(c: high, offset: 0).must() == arith.MAX
+    ahead = Civil(year: 2262, month: 4, day: 12, hour: 1, minute: 0, second: 0, nanosecond: 0)
+    assert to_nanoseconds(c: ahead, offset: 7_200).must() == 9_223_369_200_000_000_000
+    assert to_nanoseconds(c: ahead, offset: 0).is_err()
+    leap = Civil(year: 2006, month: 2, day: 30, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+    match to_nanoseconds(c: leap, offset: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the day 30 is outside 1 to 28 in month 2 of 2006"
+
+    second = Civil(year: 2006, month: 1, day: 2, hour: 15, minute: 4, second: 60, nanosecond: 0)
+
+    match to_nanoseconds(c: second, offset: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the second 60 is outside 0 to 59: there are no leap seconds"
+
+    far = Civil(year: arith.MAX, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+    match to_nanoseconds(c: far, offset: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    month = Civil(year: 2006, month: 13, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert to_nanoseconds(c: month, offset: 0).is_err()
+
+test "add_months: the 31st into a short month, a leap day a year on, backwards, and out of range"
+    jan31 = to_nanoseconds(
+        c: Civil(year: 2001, month: 1, day: 31, hour: 10, minute: 0, second: 0, nanosecond: 5),
+        offset: 0
+    ).must()
+    assert from_nanoseconds(add_months(nanoseconds: jan31, months: 1).must()) == Civil(year: 2001, month: 2, day: 28, hour: 10, minute: 0, second: 0, nanosecond: 5)
+    assert from_nanoseconds(add_months(nanoseconds: jan31, months: 37).must()) == Civil(year: 2004, month: 2, day: 29, hour: 10, minute: 0, second: 0, nanosecond: 5)
+    assert from_nanoseconds(add_months(nanoseconds: jan31, months: -2).must()) == Civil(year: 2000, month: 11, day: 30, hour: 10, minute: 0, second: 0, nanosecond: 5)
+    leap_day = to_nanoseconds(
+        c: Civil(year: 2000, month: 2, day: 29, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        offset: 0
+    ).must()
+    assert from_nanoseconds(add_months(nanoseconds: leap_day, months: 12).must()).day == 28
+    assert add_months(nanoseconds: 0, months: arith.MAX).is_err()
+    assert add_months(nanoseconds: arith.MAX, months: 1).is_err()
+    assert add_months(nanoseconds: 0, months: 0).must() == 0

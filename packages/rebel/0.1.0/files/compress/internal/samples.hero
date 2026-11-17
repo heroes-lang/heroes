@@ -1,0 +1,182 @@
+# Streams to test with: made by hand bit by bit, or by Python's `zlib` and
+# `gzip` (3.15), written as hexadecimal text, with what Python answers for
+# each. Made by a script outside the tree on 2026-11-16; no program calls it.
+
+use bytes
+
+# The text the streams of Python hold: 500 words, ASCII and `été`.
+constant TEXT: str
+    "été good ziggy guitar with mars guitar with jamming weird and ziggy jamming good gilly from guitar and played mars with and spiders with good été from gilly weird good mars played été with spiders good and ziggy played gilly spiders ziggy spiders spiders from spiders jamming weird jamming guitar and good été weird and good spiders weird good with mars good and from ziggy mars played with été été spiders and gilly ziggy ziggy and with jamming guitar jamming with mars ziggy and with played good spiders and mars with gilly jamming spiders good with jamming spiders with from mars weird and été from good weird gilly guitar played jamming guitar spiders été with weird jamming from and good with guitar guitar gilly mars and from guitar and good jamming played and with gilly gilly jamming guitar ziggy spiders guitar from mars with weird ziggy ziggy and jamming ziggy mars weird guitar good from from été spiders guitar guitar from été and with spiders good ziggy played gilly mars and ziggy mars jamming guitar played from mars ziggy played gilly mars and and with ziggy good weird weird weird with from mars from with jamming été good with gilly from played and gilly good played with with played guitar gilly played from spiders and mars mars jamming ziggy spiders played with gilly weird with with jamming mars guitar mars weird played spiders jamming jamming played from spiders with with jamming played played gilly played weird mars jamming ziggy été été from guitar ziggy mars guitar weird spiders spiders good jamming jamming jamming and and ziggy from ziggy played and mars with spiders été and with played gilly ziggy spiders from and spiders weird played weird played weird with gilly été guitar good from spiders ziggy good and jamming spiders weird jamming with gilly with good ziggy guitar with played ziggy played guitar gilly ziggy from spiders and gilly spiders from with from with spiders and with jamming with guitar gilly and gilly ziggy and jamming guitar guitar played with played jamming spiders and spiders spiders from jamming guitar good from guitar été from mars played played spiders guitar ziggy gilly guitar played gilly good été mars gilly good good with gilly jamming from gilly with good ziggy ziggy gilly played weird weird mars mars jamming guitar mars from gilly été jamming guitar good été with from été good été weird été guitar weird from guitar été spiders weird and from gilly and été with from played weird guitar and weird spiders jamming ziggy from guitar from gilly good good spiders gilly weird weird good jamming and été weird weird mars spiders from spiders guitar été and spiders weird ziggy spiders played été guitar guitar été ziggy gilly played from from weird from guitar guitar and with gilly weird good spiders été played with from jamming gilly guitar weird from mars été été gilly jamming played guitar jamming from gilly with and good spiders and guitar ziggy good mars jamming"
+
+# The preset dictionary `ZLIB_DICT` was made with: the text's first 200 bytes.
+constant DICTIONARY_LEN: i64
+    200
+
+# A raw stream made by hand (type3); Python's zlib: refuses: Error -3 while decompressing data: invalid block type.
+constant RAW_TYPE3: str
+    "07"
+
+# A raw stream made by hand (stored_nlen); Python's zlib: refuses: Error -3 while decompressing data: invalid stored block lengths.
+constant RAW_STORED_NLEN: str
+    "0105000000"
+
+# A raw stream made by hand (stored_cut); Python's zlib: refuses: Error -5 while decompressing data: incomplete or truncated stream.
+constant RAW_STORED_CUT: str
+    "010500faff6162"
+
+# A raw stream made by hand (lit286); Python's zlib: refuses: Error -3 while decompressing data: invalid literal/length code.
+constant RAW_LIT286: str
+    "1b03"
+
+# A raw stream made by hand (dist30); Python's zlib: refuses: Error -3 while decompressing data: invalid distance code.
+constant RAW_DIST30: str
+    "4b043e"
+
+# A raw stream made by hand (too_far); Python's zlib: refuses: Error -3 while decompressing data: invalid distance too far back.
+constant RAW_TOO_FAR: str
+    "4b044200"
+
+# A raw stream made by hand (far_first); Python's zlib: refuses: Error -3 while decompressing data: invalid distance too far back.
+constant RAW_FAR_FIRST: str
+    "030200"
+
+# A raw stream made by hand (fixed_ok); Python's zlib: accepts, 4 bytes out.
+constant RAW_FIXED_OK: str
+    "4b040200"
+
+# A raw stream made by hand (dyn_ok); Python's zlib: accepts, 1 bytes out.
+constant RAW_DYN_OK: str
+    "05e0050900000000206cf5ff0915"
+
+# A raw stream made by hand (cl_oversubscribed); Python's zlib: refuses: Error -3 while decompressing data: invalid code lengths set.
+constant RAW_CL_OVERSUBSCRIBED: str
+    "05e08104000000001000"
+
+# A raw stream made by hand (cl_incomplete); Python's zlib: refuses: Error -3 while decompressing data: invalid code lengths set.
+constant RAW_CL_INCOMPLETE: str
+    "05e00109000000002000"
+
+# A raw stream made by hand (lit_incomplete); Python's zlib: refuses: Error -3 while decompressing data: invalid literal/lengths set.
+constant RAW_LIT_INCOMPLETE: str
+    "05e0010900000080206cadff239200"
+
+# A raw stream made by hand (repeat_first); Python's zlib: refuses: Error -3 while decompressing data: invalid bit length repeat.
+constant RAW_REPEAT_FIRST: str
+    "05e00509000000002004"
+
+# A raw stream made by hand (no_end); Python's zlib: refuses: Error -3 while decompressing data: invalid code -- missing end-of-block.
+constant RAW_NO_END: str
+    "05e0050900000000206cd5ff2704"
+
+# A raw stream made by hand (hlit287); Python's zlib: refuses: Error -3 while decompressing data: too many length or distance symbols.
+constant RAW_HLIT287: str
+    "f500000000000000000000000000000000000000000000000000000000000000000000000000000000"
+
+# The text at zlib level 6, by Python's `zlib.compress`.
+constant ZLIB_6: str
+    "789c7d565b6ec2400cbc4aae1629344d4500052a446fc43972b12a7ece78b7fd09b0ec8eed197b36fbfbb1bf87f97a9d869f659e5fc3fcbd3cc66d782e8fcf611db73b2d7c8debba5ce6e1795ab669182f7ec8d705675ecee7d7f0b15d573f7b6cbc9dc7d7695248c13a16efb7653af9821cde251f3d2c381a4afe93b386a3fbe49c83c89eccc9362a8aefd1bffc977f4a38ffc13546655909e4993cc862949339038f9e9e44d344b022d9a9b0fa743481972af4903e8f55d2c4328cf42370d9efbc60c2c79fa98c067320a29722927a529562042928a69c565e04ded2b56c4a118e0c2ab31c8219bc6bd67ad43f2488e4139c570d1dcc7208862c4162c1ce72ffd822949e9956ad1c0884373a2ce12323419207b700d7061b226752a93300c104c42fb5d9feace63f98086cae91f2d2933b43be510bed693f40bdec03554c9063170e0bb533ca8e95342d4ea5b39e088eee93d1fc1c3a23686900d54a4aa3515e2db6ed22de3d3389d2a9007d037b1dd4761f1788ea80340ff5d3f55630b02f9028db9f67b7b11d3032b25fba0e90ccce0f10c81aa8ce10fb7d586fe35c642aa87b5c48edad68a9f07460fb014fad8753d1391f445de3ed647002532f05ac8edd029bbab82dc6ebde891531f8b5056838bccaca18502ff6dc1fe65b11b56173b51a045d037dc5301a374fce50cf05d3a8b0c17a44c0e5048edcbc1d5087ea524b213764de58a1750d4625c1c5c6e3cd268161013e190ec1d0fbf25d06fd002b0446bb6f5454693be75d0fe6b946808eb0796db6fc2237d5d7a96845c769e111c0be85305236da2f7728fbc35f7ddbbc41ca028d4dbc001bc62fc0e782aa"
+
+# How many bytes it decompresses to, as Python answers.
+constant ZLIB_6_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant ZLIB_6_CRC: i64
+    13033868
+
+# The text's first 300 bytes at zlib level 0, stored blocks, by Python.
+constant ZLIB_0: str
+    "7801012c01d3fec3a974c3a920676f6f64207a69676779206775697461722077697468206d617273206775697461722077697468206a616d6d696e6720776569726420616e64207a69676779206a616d6d696e6720676f6f642067696c6c792066726f6d2067756974617220616e6420706c61796564206d617273207769746820616e642073706964657273207769746820676f6f6420c3a974c3a92066726f6d2067696c6c7920776569726420676f6f64206d61727320706c6179656420c3a974c3a92077697468207370696465727320676f6f6420616e64207a6967677920706c617965642067696c6c792073706964657273207a69676779207370696465727320737069646572732066726f6d2073706964657273206a616d6d696e67207765697264206a616d6d696e6720677569744409739d"
+
+# How many bytes it decompresses to, as Python answers.
+constant ZLIB_0_LEN: i64
+    300
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant ZLIB_0_CRC: i64
+    2513249123
+
+# The text as raw DEFLATE at level 9, by Python (`wbits=-15`).
+constant RAW_9: str
+    "7d565b6ec2400cbc4aae1629344d4500052a446fc43972b12a7ece78b7fd09b0ec8eed197b36fbfbb1bf87f97a9d869f659e5fc3fcbd3cc66d782e8fcf611db73b2d7c8debba5ce6e1795ab669182f7ec8d705675ecee7d7f0b15d573f7b6cbc9dc7d7695248c13a16efb7653af9821cde251f3d2c381a4afe93b386a3fbe49c83c89eccc9362a8aefd1bffc977f4a38ffc13546655909e4993cc862949339038f9e9e44d344b022d9a9b0fa743481972af4903e8f55d2c4328cf42370d9efbc60c2c79fa98c067320a29722927a529562042928a69c565e04ded2b56c4a118e0c2ab31c8219bc6bd67ad43f2488e4139c570d1dcc7208862c4162c1ce72ffd822949e9956ad1c0884373a2ce12323419207b700d7061b226752a93300c104c42fb5d9feace63f98086cae91f2d2933b43be510bed693f40bdec03554c9063170e0bb533ca8e95342d4ea5b39e088eee93d1fc1c3a23686900d54a4aa3515e2db6ed22de3d3389d2a9007d037b1dd4761f1788ea80340ff5d3f55630b02f9028db9f67b7b11d3032b25fba0e90ccce0f10c81aa8ce10fb7d586fe35c642aa87b5c48edad68a9f07460fb014fad8753d1391f445de3ed647002532f05ac8edd029bbab82dc6ebde891531f8b5056838bccaca18502ff6dc1fe65b11b56173b51a045d037dc5301a374fce50cf05d3a8b0c17a44c0e5048edcbc1d5087ea524b213764de58a1750d4625c1c5c6e3cd268161013e190ec1d0fbf25d06fd002b0446bb6f5454693be75d0fe6b946808eb0796db6fc2237d5d7a96845c769e111c0be85305236da2f7728fbc35f7ddbbc41ca028d4dbc001bc62f"
+
+# How many bytes it decompresses to, as Python answers.
+constant RAW_9_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant RAW_9_CRC: i64
+    13033868
+
+# The text as gzip with a name and a time, by Python's `gzip.GzipFile`.
+constant GZIP_NAMED: str
+    "1f8b080800f1536500ff7a696767792de974e92e747874007d565b6ec2400cbc4aae1629344d4500052a446fc43972b12a7ece78b7fd09b0ec8eed197b36fbfbb1bf87f97a9d869f659e5fc3fcbd3cc66d782e8fcf611db73b2d7c8debba5ce6e1795ab669182f7ec8d705675ecee7d7f0b15d573f7b6cbc9dc7d7695248c13a16efb7653af9821cde251f3d2c381a4afe93b386a3fbe49c83c89eccc9362a8aefd1bffc977f4a38ffc13546655909e4993cc862949339038f9e9e44d344b022d9a9b0fa743481972af4903e8f55d2c4328cf42370d9efbc60c2c79fa98c067320a29722927a529562042928a69c565e04ded2b56c4a118e0c2ab31c8219bc6bd67ad43f2488e4139c570d1dcc7208862c4162c1ce72ffd822949e9956ad1c0884373a2ce12323419207b700d7061b226752a93300c104c42fb5d9feace63f98086cae91f2d2933b43be510bed693f40bdec03554c9063170e0bb533ca8e95342d4ea5b39e088eee93d1fc1c3a23686900d54a4aa3515e2db6ed22de3d3389d2a9007d037b1dd4761f1788ea80340ff5d3f55630b02f9028db9f67b7b11d3032b25fba0e90ccce0f10c81aa8ce10fb7d586fe35c642aa87b5c48edad68a9f07460fb014fad8753d1391f445de3ed647002532f05ac8edd029bbab82dc6ebde891531f8b5056838bccaca18502ff6dc1fe65b11b56173b51a045d037dc5301a374fce50cf05d3a8b0c17a44c0e5048edcbc1d5087ea524b213764de58a1750d4625c1c5c6e3cd268161013e190ec1d0fbf25d06fd002b0446bb6f5454693be75d0fe6b946808eb0796db6fc2237d5d7a96845c769e111c0be85305236da2f7728fbc35f7ddbbc41ca028d4dbc001bc62f8ce1c600b90b0000"
+
+# How many bytes it decompresses to, as Python answers.
+constant GZIP_NAMED_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant GZIP_NAMED_CRC: i64
+    13033868
+
+# The text as two gzip members and four zero bytes of padding, by Python.
+constant GZIP_MEMBERS: str
+    "1f8b08000000000000ff6d53410e83300cfb4abf5609d675823131a689fd68efe063539d384dd02e45a4b1633b707cb7e39bcab20ce9534bd95379d52dafe95db76b9af3fa0c855b9ee77a2fe93dd67548f94e10ebe029759af674599799d8d6f898f23e0e4209ae567c3eea30b200f0013d02068f8cc21db0ca237dc091043d5d93360a0b7be48a6f7c621c5fa24773d69d389d3d0714cd4ed7ec72a43c4c1321de113a85564eb2811e2e042467ab869da842936f834ffdccc50b6e977d33328c4421de30316c0fae84c342f1cb045a7201bdca5535271364765b8eeb00a7e52eaa05ca0786408f657ede21c9548325a402430a8a8ddf8f169df5aef4bc2b12b9c56b1c2ab82902138ef809446faec134872dfdf9017e1ace6dbce80300001f8b08000000000002ff75545b6ec3300cbb8aaf16a099e721698a34c5d0dda8e7e8c536bd6cd2f13ef292154aa228add37e4fd3f5927e4acecfb4cae7d7b4aee59a537e9463dad36d999ef3257decdb6ae7e6eae65c96c5ff1318b9becbf1e94e79dbfebee7b27777f16880faa6b608fd7e1def97ff2d768ba27e1e57029955bddcaace7a8bf4ac06f3c44aeeb772993d694d824ab7ecc307c10d09caa0bc15c463eabb393a40e085773c47799db1dd8b788fcc34caa002e3d1ee0aefb941b7dd6210113d9eca6d9f6e3ca3df06a6f0248d4aad961190964cd50995c3b42ba238564e90ccc10734c805e4dd972a885d50a704888a385058b1effa2abf3982930795f074a0fc8027549f1d52d16d3e88ba4a1a6786311aa045c3eac291c61a53ef6940ee29bf1eb1f2eb06109c0a80a55bc5855af459a6dc60be0dd104dbacfd8288bc2c9761c7301a8ba7cdd0680bb64585021b116127ad85b0cbfc48239142cd74a6900529fd8014e4b30f46253994ca86c69b97048605f8c6706d18ee3e8b80fb01f2e91925f574fd6f0b81ab1dee609e6b04183456a3d9189df8456efabd4e451b3a4e0b8f00ea16c268d9b87e59a1bc1ffed3ad4e3326a3061a1b3945bdfe022ab96ef4d107000000000000"
+
+# How many bytes it decompresses to, as Python answers.
+constant GZIP_MEMBERS_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant GZIP_MEMBERS_CRC: i64
+    13033868
+
+# The text at zlib level 6 with the preset dictionary `DICTIONARY`, by Python.
+constant ZLIB_DICT: str
+    "78bb75184dd2dd965b96c3300843f7bfae6e6c8e795e01ed02e627695c478004723effa48e97e8dbd339c54647c93dfe573ee5ddc2e583d658957525c8b379b0c52aa773068f999e45f3445891ed7458bf269ac15b15fe925fdfaa68121956fa1578ec4f5e98f0fbb395f1600924f44a4451cfaa728c228562dadbce8bc147ba91cd282291a1b2ca6198c5bb67edafe6cd82583ec5f9d430c122876228121416e25ded9f5844e99de9d42a81207cd01109bf8c0cc92eda025a1b3654cea2d23100c504e28fda627f57f30ba602876bb4bc72d5ceb05fd242b01f506ffba04a08f2767158a49d293b2b592d2ea5ab9e04a7fb74b47c8fce082d03605ac96834c96b63c72ee13d33b3284705f40df63ad44e1f3788e980320ff39e7a3b18ec0b1275fbebec2edb819189fdca7140328f0708140d346748fdbeac773997980a75af03699f8a918a4e07db0f3c6d0f97a27b3e84bae5ed627006330f0556a76ec1a61e6ecb78e79938118bdf5840c3f1281b6320bd78b93fe6db11bd617b751a841c03b7628ca6cdd33374b9601b151bec220287131c797d1d4887fad2a6501bb24facd27a06939270b0e978ab49302ce09be1128cded7df32f403560846cf2f2aa974cff9e9c13ad7043884ed6373f34b6ea6af4bd18ece69d11160df228c954dfbd50e557ff8d6b7eb0bd216646cea033830fe00c0e782aa"
+
+# How many bytes it decompresses to, as Python answers.
+constant ZLIB_DICT_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant ZLIB_DICT_CRC: i64
+    13033868
+
+# The text at zlib level 6, a sync or full flush every 500 bytes, by Python.
+constant ZLIB_FLUSHED: str
+    "789c5c51db0dc320105be5564322a55741402455946e9439b258858fe3911f10c6f6d9705ffb7d918bd1d28f9d3bc97d7937990ededf144cde26e06342e0d5d1b170b6645615290e1fc7de9ff4ca31a8b6109337e762c5125e05dc12db4501886fe411317c6414eea0ad3ec2834e4dc0e9992a515c9423577ad21de3f430776ccd7a9321677f0780ad4ecf3cbca3c6c33409323602536c655537d8a38588642de8f42735618bdf063ff8c9ff010000ffff5c91d10dc3200c4457f16a4850ea0a4244a82aba51e6c8622d3e1c487e00d9bee7b331d559f22959da56b62e6f64164bd1fc1f1f2e4ff21c42a5978991177fd68840f2f78c041f39c5ce709cad208fbd1c3b32504b0678ffe66232adc134378aec512503207c68b54e98adc570d5a57a4913f1d3cae001a953a6b0eea1c5a7f9af5be8da2f7b5fc74a109c461f4e5189b3911584c8b42835dc1c09490e4c7e6b34f743c1e9f9f24be8d1c7c21c3f000000ffff7c934b0e00210c42ef7feb514af5a16636c618c2a7d43509e81fd98cdf69fe68967081506f9cb919bac50a550a942815e1d08a0b9928bfd6a0e7d1f6583b935c2b1ed1b34f92171362846f9158135d9aa0f91a7d2c5af8bab98d8ab9b733a93c12d41cf9df86b70f0000ffff6c90eb0dc3200c845761354b50d7158488504574a3cc91c55afc6840ed8f0872b6bff301c5bd08b1b9046573f8a40ac5ed818a77db4a3e7c443b3167ef1e90122df873c2e2f913d8ade4a4d735420b52638b9deafd8b3c8f7a1e5c63597b91626c3a6e9d4cec8d26c88e3af1e78781421217cdc6299866243162bd1b58a2d9c8d4012bd73ea6047dbc21c9f404b6c0906edaa39b4b710acdbceb3676b3306f367a5c4071b3746f000000ffff6c52410e002008faffaf9b8009d6c5163924a4babb91473b67d2b70dee7de8db8cd75f01741f0802207e1d375c6c9693109dda84153b1919d841516c3dad8b5abe1bf369191e544c40597f0466bc14f433822fb34245d19e3029124ae8b5300359fb300975ddc3fc4b070000ffff5490d10dc3200c4457f16a4850ea0a4244882aba51e6c8622d3ebb821f84ecbb679f299edc5c25b7797a07ae9e8e9d7da807bd5ccebc45fa708c9d1eb564522dfe9c52a7588ac76336d481c22b6da38d39f7d5ee6b9164f7731a41f07f1c46c232ccd68011cb596d4fae07e3ab7301408e15552cd3e401710e3adf86db73c9b684065d8922158c85d65b81368d91d8f0eace22349bf2d467d5e9fa32696cb72c23057834efe8ca2c30be000000ffff4a07000000ffff0300c0e782aa"
+
+# How many bytes it decompresses to, as Python answers.
+constant ZLIB_FLUSHED_LEN: i64
+    3001
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant ZLIB_FLUSHED_CRC: i64
+    13033868
+
+# A million zero bytes at zlib level 9, by Python: a small input that expands a thousandfold.
+constant ZLIB_ZEROS: str
+    "78daedc101010000008220ffaf6e4840010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000af0643210001"
+
+# How many bytes it decompresses to, as Python answers.
+constant ZLIB_ZEROS_LEN: i64
+    1000000
+
+# The CRC-32 of what it decompresses to, as Python's `zlib.crc32` answers.
+constant ZLIB_ZEROS_CRC: i64
+    309971870
+
+# The bytes of the hexadecimal text `hex`, which is one.
+function of(hex: str) -> [u8]
+    # Every constant above is hexadecimal, written by the script.
+    return bytes.parse_hex(hex).must()
+
+# The bytes of `TEXT`.
+function text() -> [u8]
+    return bytes.from_text(TEXT)
+
+# The bytes of the preset dictionary.
+function dictionary() -> [u8]
+    return text().slice(from: 0, to: DICTIONARY_LEN)

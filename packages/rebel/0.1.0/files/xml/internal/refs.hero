@@ -1,0 +1,239 @@
+# References and attribute values: `&lt;` and the four other predefined
+# entities, character references, an attribute's value read and normalised as
+# XML 1.0 section 3.3.3 says, and line ends read as section 2.11 says.
+#
+# Every index this module stops at is an ASCII byte, so every slice it cuts
+# falls between two characters.
+
+use strings
+use unicode
+use xml/internal/characters
+use xml/internal/scan
+
+# What a reader of a piece answers: the characters read, and the byte index
+# past what it read.
+record Piece
+    # The characters, references read.
+    value: str
+    # The byte index past the piece.
+    end: i64
+
+# `s` with its line ends read as XML 1.0 reads them: a carriage return and a
+# line feed, and a carriage return alone, are each one line feed.
+function normalized(s: str) -> str
+    for at in range(from: 0, to: s.len())
+        if s[at] == '\r'
+            return strings.replace_all(s: strings.replace_all(s: s, old: "\r\n", new: "\n"), old: "\r", new: "\n")
+
+    return s
+
+# The reference that begins with the `&` at byte `at` of `text`, read: one of
+# `&lt;`, `&gt;`, `&amp;`, `&quot;` and `&apos;`, or a character reference.
+# Fails `invalid` on any other, and the message says why: no DTD is read, so
+# no other entity is declared.
+function read_reference(text: str, at: i64) -> Piece?
+    i = at + 1
+
+    if i < text.len() && text[i] == '#'
+        return read_char_reference(text: text, at: at)
+    end = characters.name_end(text: text, at: i)
+
+    if end == i
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "a name or `#` after `&`"))
+
+    if end >= text.len() || text[end] != ';'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: end, what: "`;`, which ends the reference"))
+    name = text.slice(from: i, to: end)
+
+    value = match name
+        "lt"   => "<"
+        "gt"   => ">"
+        "amp"  => "&"
+        "quot" => "\""
+        "apos" => "'"
+        _ =>
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: at, what: f"the entity `&{name};` is none of `&lt;`, `&gt;`, `&amp;`, `&quot;` and `&apos;`, and no DTD that could declare it is read")
+            )
+
+    return ok(Piece(value: value, end: end + 1))
+
+# The character reference `&#N;` or `&#xH;` that begins at byte `at` of
+# `text`, read. Fails `invalid` where it is not one, or names a character XML
+# cannot hold.
+function read_char_reference(text: str, at: i64) -> Piece?
+    i: i64 @= at + 2
+    base: i64 @= 10
+
+    if i < text.len() && text[i] == 'x'
+        base @ 16
+        i @ i + 1
+    first = i
+    n: i64 @= 0
+
+    while i < text.len() && digit_of(b: text[i], base: base) >= 0
+        # Past U+10FFFF the number names nothing, so it grows no further and
+        # cannot overflow however many digits follow.
+        if n <= 0x10ffff
+            n @ n * base + digit_of(b: text[i], base: base)
+        i @ i + 1
+
+    if i == first
+        what = if base == 16
+            "a hexadecimal digit after `&#x`"
+        else
+            "a digit or `x` after `&#`"
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: what))
+
+    if i >= text.len() || text[i] != ';'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "`;`, which ends the reference"))
+    written = text.slice(from: at, to: i + 1)
+
+    if !characters.is_char(n)
+        named = if n > 0x10ffff
+            "a number past U+10FFFF"
+        else
+            scan.code_name(n)
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at, what: f"`{written}` names {named}, a character XML cannot hold")
+        )
+
+    return ok(Piece(value: unicode.from_code_point(n).must(), end: i + 1))
+
+# The value of the digit `b` in `base`, 10 or 16, or -1 where it is none: only
+# lowercase and uppercase `a` to `f` are hexadecimal digits past `9`.
+function digit_of(b: u8, base: i64) -> i64
+    if b >= '0' && b <= '9'
+        return to_i64(b - '0').must()
+
+    if base == 16 && b >= 'a' && b <= 'f'
+        return to_i64(b - 'a').must() + 10
+
+    if base == 16 && b >= 'A' && b <= 'F'
+        return to_i64(b - 'A').must() + 10
+    return -1
+
+# The attribute value whose opening quote stands at byte `at` of `text`, read
+# and normalised: its references read, and each tab, line feed and carriage
+# return written in it, a carriage return and line feed counting as one, read
+# as a space; a character reference to one of them is kept. Fails `invalid`
+# where a `<` stands in it, a reference is not one, or no closing quote
+# follows.
+function read_value(text: str, at: i64) -> Piece?
+    quote = text[at]
+    pieces: [str] @= []
+    i: i64 @= at + 1
+    run: i64 @= i
+
+    while true
+        if i >= text.len()
+            what = if quote == '"'
+                "`\"`, which ends the attribute's value"
+            else
+                "`'`, which ends the attribute's value"
+            return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: what))
+        b = text[i]
+
+        if b == quote
+            break
+
+        if b == '<'
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: i, what: "`<` stands in an attribute's value, where XML refuses it: write it `&lt;`")
+            )
+
+        if b == '&' || b == '\t' || b == '\n' || b == '\r'
+            if i > run
+                pieces @ pieces.push(text.slice(from: run, to: i))
+
+            if b == '&'
+                got = read_reference(text: text, at: i)?
+                pieces @ pieces.push(got.value)
+                i @ got.end
+            else
+                pieces @ pieces.push(" ")
+
+                i @ if b == '\r' && i + 1 < text.len() && text[i + 1] == '\n'
+                    i + 2
+                else
+                    i + 1
+
+            run @ i
+        else
+            i @ i + 1
+
+    if i > run
+        pieces @ pieces.push(text.slice(from: run, to: i))
+    return ok(Piece(value: pieces.join(""), end: i + 1))
+
+## Tests
+
+test "normalized: none, a carriage return and line feed, one alone, and two in a row"
+    assert normalized("") == ""
+    assert normalized("a\nb") == "a\nb"
+    assert normalized("a\r\nb") == "a\nb"
+    assert normalized("a\rb") == "a\nb"
+    assert normalized("\r\r\n") == "\n\n"
+
+test "read_reference: the five entities, as Python's ElementTree reads them"
+    assert read_reference(text: "&lt;", at: 0).must() == Piece(value: "<", end: 4)
+    assert read_reference(text: "x&gt;", at: 1).must() == Piece(value: ">", end: 5)
+    assert read_reference(text: "&amp;", at: 0).must().value == "&"
+    assert read_reference(text: "&quot;", at: 0).must().value == "\""
+    assert read_reference(text: "&apos;", at: 0).must().value == "'"
+
+test "read_reference: an entity no DTD declares, refused as both refuse it, and a reference cut short"
+    match read_reference(text: "&foo;", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 1: the entity `&foo;` is none of `&lt;`, `&gt;`, `&amp;`, `&quot;` and `&apos;`, and no DTD that could declare it is read"
+
+    match read_reference(text: "&lt", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: expected `;`, which ends the reference, found the end of the text"
+
+    match read_reference(text: "& x", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2: expected a name or `#` after `&`, found a space"
+
+test "read_char_reference: decimal, hexadecimal either case, past U+FFFF, and what XML cannot hold"
+    assert read_reference(text: "&#65;", at: 0).must().value == "A"
+    assert read_reference(text: "&#x42;", at: 0).must().value == "B"
+    assert read_reference(text: "&#x1F600;", at: 0).must().value == "😀"
+    assert read_reference(text: "&#xe9;", at: 0).must().value == "é"
+    assert read_reference(text: "&#10;", at: 0).must().value == "\n"
+
+    for text in ["&#0;", "&#1;", "&#xD800;", "&#xFFFE;", "&#x110000;", "&#99999999999999999999999;", "&#X41;", "&#;", "&#x;", "&#6a;"]
+        match read_reference(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match read_reference(text: "&#1;", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: `&#1;` names U+0001, a character XML cannot hold"
+
+test "digit_of: decimal digits, hexadecimal letters either case, and none"
+    assert digit_of(b: '0', base: 10) == 0 && digit_of(b: '9', base: 10) == 9
+    assert digit_of(b: 'a', base: 10) == -1
+    assert digit_of(b: 'a', base: 16) == 10 && digit_of(b: 'F', base: 16) == 15
+    assert digit_of(b: 'g', base: 16) == -1
+
+test "read_value: empty, either quote, references, white space normalised as Python reads it, and a character reference kept"
+    assert read_value(text: "\"\"", at: 0).must() == Piece(value: "", end: 2)
+    assert read_value(text: "'a\"b'", at: 0).must().value == "a\"b"
+    assert read_value(text: "\"1&#10;2\t3\r\n4\n5&#9;6\"", at: 0).must().value == "1\n2 3 4 5\t6"
+    assert read_value(text: "\"&lt;é&amp;\"", at: 0).must().value == "<é&"
+    assert read_value(text: "x=\"a\rb\" ", at: 2).must() == Piece(value: "a b", end: 7)
+
+test "read_value: a `<`, a value never closed, and a reference that is not one"
+    match read_value(text: "\"<\"", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2: `<` stands in an attribute's value, where XML refuses it: write it `&lt;`"
+
+    match read_value(text: "'abc", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 5: expected `'`, which ends the attribute's value, found the end of the text"
+
+    assert read_value(text: "\"&x;\"", at: 0).is_err()

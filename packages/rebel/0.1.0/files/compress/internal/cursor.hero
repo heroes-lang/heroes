@@ -1,0 +1,116 @@
+# The bits of a DEFLATE stream read as RFC 1951 section 3.1.1 packs them, from
+# input held in memory. A cursor is a value: a reader saves one before a step
+# and puts it back where the input ran out in the middle, so a step either
+# happens whole or not at all, and the next call takes it again with more
+# input. Nothing here reads past the input or waits for more.
+
+# Where reading stands in an input.
+record Cursor
+    # The index of the first byte of the input not yet taken into `bits`.
+    pos: i64
+    # The bits taken from the input and not used, the next one lowest.
+    bits: i64
+    # How many there are: 0 to 23.
+    count: i64
+
+# A cursor at the first bit of an input.
+function start() -> Cursor
+    return Cursor(pos: 0, bits: 0, count: 0)
+
+# Whether `c` holds `n` bits, taking whole bytes of `input` until it does.
+# Where the input runs out first it answers false, the bytes taken kept, so
+# that fewer bits can still be read. `n` is 0 to 16.
+function fill(@c: Cursor, input: [u8] lent, n: i64) -> bool
+    while c.count < n
+        if c.pos >= input.len()
+            return false
+        c.bits @ c.bits | to_i64(input[c.pos]).must() << c.count
+        c.pos @ c.pos + 1
+        c.count @ c.count + 8
+
+    return true
+
+# The next `n` bits of `c` as a number, the first lowest, which `fill` has
+# made sure are there.
+function take(@c: Cursor, n: i64) -> i64
+    value = c.bits & (1 << n) - 1
+    c.bits @ c.bits >> n
+    c.count @ c.count - n
+    return value
+
+# Drops the bits left in the byte being read, so that the next bit read is
+# the first of a byte.
+function align(@c: Cursor)
+    _ = take(@c, n: c.count % 8)
+
+# The next byte of `c`, which is on a byte boundary, or -1 where the input
+# has no more.
+function next_byte(@c: Cursor, input: [u8] lent) -> i64
+    if c.count >= 8
+        return take(@c, n: 8)
+
+    if c.pos >= input.len()
+        return -1
+    byte = to_i64(input[c.pos]).must()
+    c.pos @ c.pos + 1
+    return byte
+
+# How many bytes of the input are behind `c`, on a byte boundary: those
+# taken less those whose bits it still holds.
+function used(c: Cursor) -> i64
+    return c.pos - c.count / 8
+
+# The index of the byte that held the last bit `c` read, or 0 before any:
+# where a message says the input went wrong.
+function last_byte(c: Cursor) -> i64
+    read = c.pos * 8 - c.count
+
+    if read == 0
+        return 0
+    return (read - 1) / 8
+
+# How many bytes of `input` are past `c`, those whose bits it holds included.
+function left(c: Cursor, input: [u8] lent) -> i64
+    return input.len() - c.pos + c.count / 8
+
+test "fill and take: bits lowest first, across bytes, and an input that runs out"
+    input: [u8] = [0b1010_1101, 0xff]
+    c @= start()
+    assert fill(@c, input, n: 3)
+    assert take(@c, n: 3) == 0b101
+    assert take(@c, n: 5) == 0b10101
+    assert fill(@c, input, n: 8)
+    assert !fill(@c, input, n: 9)
+    assert c.count == 8
+    assert take(@c, n: 8) == 0xff
+
+test "fill: an empty input, and nothing asked"
+    empty: [u8] = []
+    c @= start()
+    assert fill(@c, empty, n: 0)
+    assert !fill(@c, empty, n: 1)
+    assert c.count == 0
+
+test "align, next_byte and used: whole bytes after the bits of a block"
+    input: [u8] = [0x01, 0x02, 0x03]
+    c @= start()
+    assert fill(@c, input, n: 12)
+    _ = take(@c, n: 3)
+    align(@c)
+    assert c.count == 8
+    assert used(c) == 1
+    assert next_byte(@c, input) == 2
+    assert next_byte(@c, input) == 3
+    assert next_byte(@c, input) == -1
+    assert used(c) == 3
+
+test "last_byte: nothing read, inside the first byte, at the start of the second"
+    input: [u8] = [0, 0]
+    c @= start()
+    assert last_byte(c) == 0
+    assert fill(@c, input, n: 9)
+    _ = take(@c, n: 8)
+    assert last_byte(c) == 0
+    _ = take(@c, n: 1)
+    assert last_byte(c) == 1
+    assert left(c, input) == 0

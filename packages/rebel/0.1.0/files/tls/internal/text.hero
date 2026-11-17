@@ -1,0 +1,86 @@
+# The text `tls` hands to C, checked before C reads it: a host or a list of
+# application protocols (ALPN) with a zero byte would abort at `cstr()`, and
+# input from outside the program never aborts (README § A4); a protocol's
+# name with a `,` would be split by the floor, which joins the list with
+# that byte.
+
+use bytes
+use tls/internal/failure
+
+# Whether `s` holds a zero byte, which C would read as its end.
+function has_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+# `ok()` where `s`, called `what` in the message, holds no zero byte; fails
+# `invalid` where it does.
+function no_zero(s: str, what: str, asked: str) -> ()?
+    if has_zero(s)
+        return failure.of(code: failure.INVALID, asked: asked, why: what + " holds a zero byte")
+    return ok()
+
+# The list of application protocols as the floor reads it, the names joined
+# by `,`. Fails `invalid` where a name is empty, longer than 255 bytes, or
+# holds a `,` or a zero byte, which ALPN or the floor cannot carry.
+function protocols_text(protocols: [str], asked: str) -> str?
+    for name in protocols
+        if name.len() == 0 || name.len() > 255
+            return failure.of(
+                code: failure.INVALID,
+                asked: asked,
+                why: "the application protocol \"" + name + "\" is empty or longer than 255 bytes"
+            )
+        at: i64 @= 0
+
+        while at < name.len()
+            if name[at] == ',' || name[at] == 0
+                return failure.of(
+                    code: failure.INVALID,
+                    asked: asked,
+                    why: "the application protocol \"" + name + "\" holds a `,` or a zero byte"
+                )
+            at @ at + 1
+
+    return ok(protocols.join(","))
+
+## Tests
+
+test "has_zero: empty, none, at the start, at the end, and after a character of two bytes"
+    assert !has_zero("")
+    assert !has_zero("localhost")
+    assert has_zero(bytes.to_text([0, 104]).must())
+    assert has_zero(bytes.to_text([104, 0]).must())
+    assert has_zero(bytes.to_text([195, 169, 0]).must())
+    assert !has_zero("été")
+
+test "protocols_text: none, one, two joined by a comma, an empty name, a name with a comma, names of 255 and 256 bytes"
+    assert protocols_text([], asked: "t").must() == ""
+    assert protocols_text(["http/1.1"], asked: "t").must() == "http/1.1"
+    assert protocols_text(["h2", "http/1.1"], asked: "t").must() == "h2,http/1.1"
+    assert protocols_text([""], asked: "t").is_err()
+    comma = protocols_text(["a,b"], asked: "offering")
+
+    match comma
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "offering: the application protocol \"a,b\" holds a `,` or a zero byte"
+
+    assert protocols_text([repeat("a", 255)], asked: "t").must().len() == 255
+    assert protocols_text([repeat("a", 256)], asked: "t").is_err()
+
+test "no_zero: a text with none passes, one with a zero byte fails invalid naming what it is"
+    assert !no_zero(s: "example.com", what: "the host", asked: "t").is_err()
+    held = no_zero(s: bytes.to_text([97, 0, 98]).must(), what: "the host", asked: "connecting")
+
+    match held
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "connecting: the host holds a zero byte"

@@ -1,0 +1,152 @@
+# Varints written and read: seven bits of a number to a byte, the lowest
+# seven first, the highest bit of every byte but the last set (LEB128, the
+# form of Go's `encoding/binary` and of protocol buffers), and the zig-zag
+# order that makes a signed number near zero small. A number travels as an
+# `i64` holding its 64 bits, as in `binary`.
+
+use bytes/internal/binary
+use bytes/internal/codes
+
+# The largest `i64`, whose 63 low bits are set: a right shift that copies the
+# sign is made one that brings in zeros by masking with it.
+constant I64_MAX: i64
+    9_223_372_036_854_775_807
+
+# What `decoded` answers: the 64 bits of the number read, and how many bytes
+# it took.
+record Read
+    # The number's 64 bits; a `u64` above the largest `i64` is negative here.
+    bits: i64
+    # How many bytes it took, from 1 to 10.
+    width: i64
+
+# The varint of the 64 bits `bits`, read as a `u64`: one byte for 0 to 127, ten
+# for a number whose highest bit is set.
+function encoded(bits: i64) -> [u8]
+    out: [u8] @= []
+    rest: i64 @= bits
+
+    while true
+        low = rest & 127
+        rest @ rest >> 7 & I64_MAX >> 6
+
+        if rest == 0
+            out @ out.push(to_u8(low).must())
+            break
+        out @ out.push(to_u8(low | 128).must())
+
+    return out
+
+# The varint that begins at index `at` of `s`. A form longer than the shortest
+# is read, as Go's `binary.Uvarint` reads it. Fails `invalid` where the bytes
+# end before a byte with its highest bit clear, `at` outside `s` included, and
+# `does_not_fit` where the number needs more than 64 bits: a tenth byte above
+# 1, which is also every tenth byte with its highest bit set.
+function decoded(s: [u8], at: i64) -> Read?
+    binary.in_reach(s, at: at, width: 1, asked: "a varint")?
+    value: i64 @= 0
+    k: i64 @= 0
+
+    while true
+        if at + k >= s.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"a varint from the index {at} is cut short: its byte at {at + k - 1} asks for another, and the {s.len()} bytes end there"
+            )
+        b = to_i64(s[at + k]).must()
+
+        if k == 9 && b > 1
+            return fail(
+                code: codes.DOES_NOT_FIT,
+                msg: f"the varint from the index {at} holds more than 64 bits: its tenth byte is {b}, and only 0 or 1 fits"
+            )
+        value @ value | (b & 127) << 7 * k
+
+        if b < 128
+            return ok(Read(bits: value, width: k + 1))
+        k @ k + 1
+
+# The zig-zag order of `n`: 0, -1, 1, -2, 2 become 0, 1, 2, 3, 4, as the 64
+# bits of a `u64`.
+function zig_zag(n: i64) -> i64
+    return n << 1 ^ n >> 63
+
+# The number whose zig-zag order is the 64 bits `bits`: `zig_zag` read back.
+function unzig_zag(bits: i64) -> i64
+    return bits >> 1 & I64_MAX ^ -(bits & 1)
+
+# Go's `binary.AppendUvarint` answered every list on 2026-11-16.
+test "encoded: zero, 127 and 128, 300, 16,383 and 16,384, the largest u32, 2 to the 63, and the largest u64"
+    assert encoded(0) == [0x00]
+    assert encoded(1) == [0x01]
+    assert encoded(127) == [0x7f]
+    assert encoded(128) == [0x80, 0x01]
+    assert encoded(300) == [0xac, 0x02]
+    assert encoded(16_383) == [0xff, 0x7f]
+    assert encoded(16_384) == [0x80, 0x80, 0x01]
+    assert encoded(4_294_967_295) == [0xff, 0xff, 0xff, 0xff, 0x0f]
+    assert encoded(binary.I64_MIN) == [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x01]
+    assert encoded(-1) == [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01]
+
+# Go's `binary.Uvarint` answered each: 300 in 2 of 3 bytes, 0 in 2, the largest
+# u64 in 10, and nine 0x80 then 0x00 as 0 in 10.
+test "decoded: one byte, two of three, a longer form than the shortest, ten bytes, and from the middle"
+    first = decoded([0x00], at: 0).must()
+    assert first.bits == 0 && first.width == 1
+    three = decoded([0xac, 0x02, 0x99], at: 0).must()
+    assert three.bits == 300 && three.width == 2
+    long = decoded([0x80, 0x00], at: 0).must()
+    assert long.bits == 0 && long.width == 2
+    largest = decoded([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01], at: 0).must()
+    assert largest.bits == -1 && largest.width == 10
+    zeros = decoded([0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x00], at: 0).must()
+    assert zeros.bits == 0 && zeros.width == 10
+    middle = decoded([0x05, 0x80, 0x01, 0x05], at: 1).must()
+    assert middle.bits == 128 && middle.width == 2
+
+# Go's `binary.Uvarint` answered 0 bytes read for the cut ones, -10 for a tenth
+# byte of 2 and -11 for an eleventh byte; for ten bytes of 0xff it answered 0,
+# too short, where no byte after them could make 64 bits: that one is
+# `does_not_fit` here.
+test "decoded fails: nothing, a byte asking for another, a tenth byte of 2, ten bytes of 0xff, eleven bytes, and a negative index"
+    nothing: [u8] = []
+    assert decoded(nothing, at: 0).is_err()
+
+    match decoded([0x80], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "a varint from the index 0 is cut short: its byte at 0 asks for another, and the 1 bytes end there"
+
+    match decoded([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x02], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == codes.DOES_NOT_FIT && e.msg == "the varint from the index 0 holds more than 64 bits: its tenth byte is 2, and only 0 or 1 fits"
+
+    match decoded([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == codes.DOES_NOT_FIT
+
+    match decoded([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00], at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == codes.DOES_NOT_FIT
+
+    match decoded([0x01], at: -1)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+# Go's `binary.AppendVarint` answered the order: 0, -1, 1, -2, 2 as 0 to 4, 63
+# as 126, -64 as 127, and either end of an i64 as the two largest u64.
+test "zig_zag and unzig_zag: zero, either side of it, the edge of one byte, and both ends of an i64"
+    assert zig_zag(0) == 0
+    assert zig_zag(-1) == 1
+    assert zig_zag(1) == 2
+    assert zig_zag(-2) == 3
+    assert zig_zag(63) == 126
+    assert zig_zag(-64) == 127
+    assert zig_zag(64) == 128
+    assert zig_zag(9_223_372_036_854_775_807) == -2
+    assert zig_zag(binary.I64_MIN) == -1
+    assert unzig_zag(0) == 0
+    assert unzig_zag(1) == -1
+    assert unzig_zag(4) == 2
+    assert unzig_zag(127) == -64
+    assert unzig_zag(-2) == 9_223_372_036_854_775_807
+    assert unzig_zag(-1) == binary.I64_MIN

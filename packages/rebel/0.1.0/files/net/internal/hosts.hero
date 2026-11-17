@@ -1,0 +1,184 @@
+# A host and a port as text, `host:port` and `[host]:port`: split, joined,
+# and the port read alone. The host is not read further, as Go's
+# `SplitHostPort` does not read it; the port is read as a number.
+
+use net/internal/failure
+use net/internal/scan
+
+# The parts `split` answers, which the face makes a `net.HostPort`.
+record Split
+    # The host, without its brackets.
+    host: str
+    # The port, 0 to 65535.
+    port: i64
+
+# The host and the port of `s`.
+#
+# - `s`: the text, `host:port`, or `[host]:port` where the host holds a `:`;
+#   the host may be "", the port is digits alone.
+#
+# Fails `invalid` where `s` has no `:` outside brackets, a `:` in a host
+# without brackets, a bracket anywhere else, or no port of 0 to 65535.
+function split(s: str) -> Split?
+    asked = f"splitting \"{s}\" into a host and a port"
+    last: i64 @= -1
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == ':'
+            last @ at
+        at @ at + 1
+
+    if last < 0
+        return scan.bad(asked: asked, at: s.len(), why: "a `:` and a port follow the host")
+    host_from: i64 @= 0
+    host_to: i64 @= last
+
+    if s.len() > 0 && s[0] == '['
+        close = byte_in(s, byte: ']', from: 0, to: s.len())
+
+        if close < 0
+            return scan.bad(asked: asked, at: 0, why: "the `[` is never closed")
+
+        if close + 1 != last
+            return scan.bad(asked: asked, at: close + 1, why: "a `:` and a port follow the `]`")
+        host_from @ 1
+        host_to @ close
+    else if scan.colon_in(s, from: 0, to: last) >= 0
+        return scan.bad(
+            asked: asked,
+            at: scan.colon_in(s, from: 0, to: last),
+            why: "a host that holds a `:` stands in brackets"
+        )
+
+    brackets: [u8] = ['[', ']']
+
+    for wrong in brackets
+        found = byte_in(s, byte: wrong, from: host_from, to: s.len())
+
+        if found >= 0 && found != host_to
+            return scan.bad(asked: asked, at: found, why: "a bracket stands only around the host")
+
+    port = scan.port_in(s: s, from: last + 1, to: s.len(), asked: asked)?
+    return ok(Split(host: s.slice(from: host_from, to: host_to), port: port))
+
+# `host:port`, brackets around a host that holds a `:`.
+#
+# - `host`: a name or an address, "" included, written as it is.
+# - `port`: the port, 0 to 65535.
+#
+# Aborts where `port` is outside 0 to 65535.
+function joined(host: str, port: i64) -> str
+    assert port >= 0 && port <= 65535
+
+    if scan.colon_in(host, from: 0, to: host.len()) >= 0
+        return f"[{host}]:{port}"
+    return f"{host}:{port}"
+
+# The port `s` writes.
+#
+# - `s`: digits alone, zeros before them read, 0 to 65535.
+#
+# Fails `invalid` where `s` is anything else.
+function read_port(s: str) -> i64?
+    return scan.port_in(s: s, from: 0, to: s.len(), asked: f"reading \"{s}\" as a port")
+
+# The port `port` itself, failing where it is outside 0 to 65535.
+#
+# - `port`: the number a caller handed.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `port` is below 0 or above 65535.
+function checked(port: i64, asked: str) -> i64?
+    if port < 0 || port > 65535
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the port {port} is outside 0 to 65535")
+    return ok(port)
+
+# `()` where `host` names something: neither "" nor holding a zero byte.
+#
+# - `host`: the name or address handed.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `host` is "" or holds a zero byte.
+function checked_host(host: str, asked: str) -> ()?
+    if host == ""
+        return failure.of(code: failure.INVALID, asked: asked, why: "the host is empty")
+    return checked_zero(text: host, asked: asked)
+
+# `()` where `text` holds no zero byte, which C cannot read.
+#
+# - `text`: the text to hand C.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `text` holds a zero byte.
+function checked_zero(text: str, asked: str) -> ()?
+    if byte_in(text, byte: 0, from: 0, to: text.len()) >= 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the text holds a zero byte")
+    return ok()
+
+# The byte index of the first `byte` of `s` from `from` to `to`, or -1.
+#
+# - `s`: the text.
+# - `byte`: the byte looked for.
+# - `from`: the byte index the search begins at.
+# - `to`: the byte index just past where it ends.
+function byte_in(s: str, byte: u8, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at < to
+        if s[at] == byte
+            return at
+        at @ at + 1
+
+    return -1
+
+## Tests
+
+test "split: Go's answers for a name, an address in brackets, an empty host, a zone"
+    assert split("a:80").must() == Split(host: "a", port: 80)
+    assert split("[::1]:80").must() == Split(host: "::1", port: 80)
+    assert split(":80").must() == Split(host: "", port: 80)
+    assert split("[]:80").must() == Split(host: "", port: 80)
+    assert split("[a]:80").must() == Split(host: "a", port: 80)
+    assert split("[a:b]:65535").must() == Split(host: "a:b", port: 65535)
+    assert split("[::1%eth0]:0").must() == Split(host: "::1%eth0", port: 0)
+    assert split("café.example:8080").must().host == "café.example"
+
+test "split: no port, too many colons, brackets elsewhere, and a port that is no number"
+    for refused in ["", "a", "a:b:80", "[a]x:80", "a]:80", "[a:80", "a[:80", "[a]:", "a:", "x:y", "a:65536", "a:-1", "[a]]:80"]
+        match split(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "joined: brackets where the host holds a colon, none otherwise, as Go writes them"
+    assert joined("a", port: 80) == "a:80"
+    assert joined("::1", port: 80) == "[::1]:80"
+    assert joined("", port: 0) == ":0"
+    assert joined("fe80::1%eth0", port: 65535) == "[fe80::1%eth0]:65535"
+    assert joined("[::1]", port: 80) == "[[::1]]:80"
+
+test "read_port: zeros read, the edges, a sign and a name refused"
+    assert read_port("0").must() == 0
+    assert read_port("65535").must() == 65535
+    assert read_port("080").must() == 80
+    assert read_port("").is_err() && read_port("+80").is_err() && read_port("http").is_err() && read_port("65536").is_err() && read_port(" 80").is_err()
+
+test "checked: 0 and 65535 kept, -1 and 65536 refused with the number"
+    assert checked(0, asked: "x").must() == 0
+    assert checked(65535, asked: "x").must() == 65535
+
+    match checked(-1, asked: "listening")
+        .ok _  => assert false
+        .err e => assert e.msg == "listening: the port -1 is outside 0 to 65535"
+
+    assert checked(65536, asked: "x").is_err()
+
+test "byte_in: found, absent, and outside the range"
+    assert byte_in("a]b]", byte: ']', from: 0, to: 4) == 1
+    assert byte_in("a]b]", byte: ']', from: 2, to: 4) == 3
+    assert byte_in("a]b]", byte: ']', from: 2, to: 3) == -1
+
+test "checked_host, checked_zero: empty, a zero byte, and a name kept"
+    assert checked_host(host: "", asked: "x").is_err() && !checked_host(host: "a", asked: "x").is_err()
+    nul: [u8] = [97, 0]
+    assert checked_zero(text: nul.validated_bytes().must(), asked: "x").is_err() && !checked_zero(text: "", asked: "x").is_err()

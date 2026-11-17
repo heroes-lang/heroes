@@ -1,0 +1,8 @@
+# Reaches Rebel's floor over the platform layer's TLS, `hero_tls.h`, so that
+# `heroes test` on this file runs the floor's own tests (spec § 12, § 13). It
+# prints whether this machine has the platform's TLS library, 1 or 0.
+
+use <rebel>/tls/hero_tls
+
+function main()
+    print(hero_tls.available())

@@ -1,0 +1,7 @@
+# Reaches Rebel's `stats`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the mean of four readings, 2.5.
+
+use <rebel>/stats
+
+function main()
+    print(stats.mean([1.0, 2.0, 3.0, 4.0]).must())

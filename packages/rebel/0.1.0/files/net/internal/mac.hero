@@ -1,0 +1,108 @@
+# Hardware addresses as text, IEEE 802's MAC-48, EUI-64 and the twenty bytes
+# of an InfiniBand address: read from pairs or groups of four hexadecimal
+# digits, and written as pairs with colons.
+
+use net/internal/failure
+use net/internal/scan
+use numbers
+use strings
+
+# The bytes of the hardware address `s` writes.
+#
+# - `s`: six, eight or twenty pairs of hexadecimal digits separated by one
+#   `:` or one `-` throughout, or groups of four separated by `.`.
+#
+# Fails `invalid` where `s` is anything else.
+function read(s: str) -> [u8]?
+    asked = f"reading \"{s}\" as a hardware address"
+
+    if s.len() < 3
+        return failure.of(code: failure.INVALID, asked: asked, why: "it is too short")
+
+    if s[2] == ':' || s[2] == '-'
+        return groups(s: s, width: 2, sep: s[2], asked: asked)
+
+    if s.len() >= 5 && s[4] == '.'
+        return groups(s: s, width: 4, sep: '.', asked: asked)
+    return failure.of(code: failure.INVALID, asked: asked, why: "groups are separated by `:`, `-` or `.`")
+
+# The bytes of `s` read as groups of `width` hexadecimal digits, each pair one
+# byte, separated by `sep`.
+#
+# - `s`: the text.
+# - `width`: the digits of a group, 2 or 4.
+# - `sep`: the byte between two groups.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where a group has another count of digits, a byte is no
+# hexadecimal digit, another separator stands between two groups, or the
+# bytes are not six, eight or twenty.
+function groups(s: str, width: i64, sep: u8, asked: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while true
+        for _ in range(from: 0, to: width / 2)
+            if at + 2 > s.len() || !scan.is_hex(s[at]) || !scan.is_hex(s[at + 1])
+                return scan.bad(asked: asked, at: at, why: f"a group is {width} hexadecimal digits")
+            out @ out.push(to_u8(scan.hex_of(s[at]) * 16 + scan.hex_of(s[at + 1])).must())
+            at @ at + 2
+
+        if at == s.len()
+            break
+
+        if s[at] != sep
+            return scan.bad(asked: asked, at: at, why: "one separator stands between all the groups")
+        at @ at + 1
+
+    if out.len() != 6 && out.len() != 8 && out.len() != 20
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: f"a hardware address has 6, 8 or 20 bytes, and this one {out.len()}"
+        )
+    return ok(out)
+
+# The hardware address `b` as pairs of lower-case hexadecimal digits
+# separated by `:`.
+#
+# - `b`: six, eight or twenty bytes.
+#
+# Aborts where `b` holds another count.
+function write(b: [u8]) -> str
+    assert b.len() == 6 || b.len() == 8 || b.len() == 20
+    pairs: [str] @= []
+
+    for byte in b
+        pairs @ pairs.push(
+            strings.pad_start(s: numbers.format_int(n: to_i64(byte).must(), base: 16), width: 2, pad: "0")
+        )
+
+    return pairs.join(":")
+
+## Tests
+
+test "read: Go's three forms at six, eight and twenty bytes, in either case"
+    mac48: [u8] = [0x00, 0x00, 0x5e, 0x00, 0x53, 0x01]
+    assert read("00:00:5e:00:53:01").must() == mac48
+    assert read("00-00-5E-00-53-01").must() == mac48
+    assert read("0000.5e00.5301").must() == mac48
+    assert read("02:00:5e:10:00:00:00:01").must() == [0x02, 0x00, 0x5e, 0x10, 0, 0, 0, 0x01]
+    assert read("0200.5e10.0000.0001").must().len() == 8
+    assert read("00:00:00:00:fe:80:00:00:00:00:00:00:02:00:5e:10:00:00:00:01").must().len() == 20
+
+test "read: one digit, too few or too many groups, mixed separators, a stray byte, as Go refuses them"
+    for refused in ["", "0:0:5e:0:53:1", "00:00:5e:00:53", "00:00:5e:00:53:01:02", "00:00-5e:00:53:01", "000.05e00.5301", "00:00:5e:00:53:0g", "0000.5e00.530", "0000.5e00", "00:00:5e:00:53:01:", "00005e005301", "éé:00:5e:00:53:01"]
+        match read(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "groups: a short text read alone, and the count of bytes refused"
+    assert groups(s: "ab-cd-ef-01-23-45", width: 2, sep: '-', asked: "x").must()[0] == 0xab
+    assert groups(s: "abcd.ef01", width: 4, sep: '.', asked: "x").is_err()
+
+test "write: lower case and colons at six, eight and twenty bytes"
+    assert write([0x00, 0x00, 0x5e, 0x00, 0x53, 0x01]) == "00:00:5e:00:53:01"
+    assert write([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]) == "ff:ff:ff:ff:ff:ff:ff:ff"
+    twenty: [u8] = [0, 0, 0, 0, 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 2, 0, 0x5e, 0x10, 0, 0, 0, 1]
+    assert write(twenty) == "00:00:00:00:fe:80:00:00:00:00:00:00:02:00:5e:10:00:00:00:01"

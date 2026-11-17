@@ -1,0 +1,279 @@
+# A text's letters in another case, the questions about its case, and two
+# texts compared ignoring case. The case of each character is the package
+# `unicode`'s; what reads a character's neighbours, the sigma that ends a
+# word, is here.
+
+use strings/internal/scan
+use unicode
+
+# Whether, after the character `c`, a sigma has a cased letter before it
+# past the case-ignorable characters between: `c` cased says yes, a
+# case-ignorable `c` keeps what was known, any other says no.
+function cased_after(c: str, before: bool) -> bool
+    if unicode.is_cased(c)
+        return true
+
+    if unicode.is_case_ignorable(c)
+        return before
+    return false
+
+# Whether the sigma that ends at byte `end` of `s` ends a word, by Unicode's
+# Final_Sigma: a cased letter before it, `before`, and none after it past
+# the case-ignorable characters between.
+function ends_word(s: str, end: i64, before: bool) -> bool
+    if !before
+        return false
+    at: i64 @= end
+
+    while at < s.len()
+        next = scan.next_at(s, at)
+        c = s.slice(from: at, to: next)
+
+        if unicode.is_cased(c)
+            return false
+
+        if !unicode.is_case_ignorable(c)
+            return true
+        at @ next
+
+    return true
+
+# The lower case of `c`, the character of `s` that ends at byte `end`, its
+# sigma written as the one that ends a word where it does.
+function lower_at(s: str, c: str, end: i64, before: bool) -> str
+    if c == "Σ" && ends_word(s: s, end: end, before: before)
+        return "ς"
+    return unicode.to_lower(c)
+
+# `s` in lower case.
+function to_lower(s: str) -> str
+    out: [str] @= []
+    before: bool @= false
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+        c = s.slice(from: at, to: end)
+        out @ out.push(lower_at(s: s, c: c, end: end, before: before))
+        before @ cased_after(c: c, before: before)
+        at @ end
+
+    return out.join("")
+
+# `s` in upper case.
+function to_upper(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        out @ out.push(unicode.to_upper(c))
+
+    return out.join("")
+
+# `s` with the first cased letter of each run of them in title case and the
+# others in lower case.
+function to_title(s: str) -> str
+    out: [str] @= []
+    before: bool @= false
+    previous_cased: bool @= false
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+        c = s.slice(from: at, to: end)
+
+        if previous_cased
+            out @ out.push(lower_at(s: s, c: c, end: end, before: before))
+        else
+            out @ out.push(unicode.to_title(c))
+        previous_cased @ unicode.is_cased(c)
+        before @ cased_after(c: c, before: before)
+        at @ end
+
+    return out.join("")
+
+# `s` with its first character in title case and the others in lower case.
+function capitalize(s: str) -> str
+    if s.len() == 0
+        return s
+    first_end = scan.next_at(s, 0)
+    first = s.slice(from: 0, to: first_end)
+    out: [str] @= [unicode.to_title(first)]
+    before: bool @= cased_after(c: first, before: false)
+    at: i64 @= first_end
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+        c = s.slice(from: at, to: end)
+        out @ out.push(lower_at(s: s, c: c, end: end, before: before))
+        before @ cased_after(c: c, before: before)
+        at @ end
+
+    return out.join("")
+
+# `s` with its upper case letters in lower case and its lower case ones in
+# upper case.
+function swap_case(s: str) -> str
+    out: [str] @= []
+    before: bool @= false
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+        c = s.slice(from: at, to: end)
+
+        if unicode.is_upper(c)
+            out @ out.push(lower_at(s: s, c: c, end: end, before: before))
+        else if unicode.is_lower(c)
+            out @ out.push(unicode.to_upper(c))
+        else
+            out @ out.push(c)
+        before @ cased_after(c: c, before: before)
+        at @ end
+
+    return out.join("")
+
+# `s` folded, the form two texts share where they differ only in case.
+function to_casefold(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        out @ out.push(unicode.to_casefold(c))
+
+    return out.join("")
+
+# Whether `s` holds a cased letter and none upper or title case.
+function is_lower(s: str) -> bool
+    cased: bool @= false
+
+    for c in s.chars()
+        if unicode.is_upper(c) || unicode.is_title(c)
+            return false
+
+        if unicode.is_lower(c)
+            cased @ true
+
+    return cased
+
+# Whether `s` holds a cased letter and none lower or title case.
+function is_upper(s: str) -> bool
+    cased: bool @= false
+
+    for c in s.chars()
+        if unicode.is_lower(c) || unicode.is_title(c)
+            return false
+
+        if unicode.is_upper(c)
+            cased @ true
+
+    return cased
+
+# Whether every upper or title case letter of `s` follows a character with
+# no case, every lower case one follows a cased one, and there is one.
+function is_title(s: str) -> bool
+    cased: bool @= false
+    previous_cased: bool @= false
+
+    for c in s.chars()
+        if unicode.is_upper(c) || unicode.is_title(c)
+            if previous_cased
+                return false
+            previous_cased @ true
+            cased @ true
+        else if unicode.is_lower(c)
+            if !previous_cased
+                return false
+            previous_cased @ true
+            cased @ true
+        else
+            previous_cased @ false
+
+    return cased
+
+# Whether `a` and `b` are the same once their case is folded.
+function equals_ignoring_case(a: str, b: str) -> bool
+    return to_casefold(a) == to_casefold(b)
+
+test "to_lower: plain letters, accents, the sigma that ends a word and the one that does not, and a letter that lowers to two characters"
+    assert to_lower("") == ""
+    assert to_lower("Hello") == "hello"
+    assert to_lower("ÀÉ") == "àé"
+    assert to_lower("ΟΔΟΣ") == "οδος"
+    assert to_lower("ΟΔΟΣ ΟΔΟΣ.") == "οδος οδος."
+    assert to_lower("Σ") == "σ"
+    assert to_lower("AΣB") == "aσb"
+    assert to_lower("AΣ'") == "aς'"
+    assert to_lower("AΣ'B") == "aσ'b"
+    assert to_lower("İ") == "i̇"
+
+test "to_upper: a letter that uppers to two, a title case letter, a ligature, and accents"
+    assert to_upper("") == ""
+    assert to_upper("straße") == "STRASSE"
+    assert to_upper("ǆ") == "Ǆ"
+    assert to_upper("ŉ") == "ʼN"
+    assert to_upper("ﬁ") == "FI"
+    assert to_upper("città") == "CITTÀ"
+
+test "to_title: words ended by an apostrophe, an underscore and a digit, a title case letter, a final sigma, and an empty text"
+    assert to_title("they're hello wORLD x_y 3d") == "They'Re Hello World X_Y 3D"
+    assert to_title("ǆungla") == "ǅungla"
+    assert to_title("ΟΔΟΣ ΟΔΟΣ") == "Οδος Οδος"
+    assert to_title("ßa") == "Ssa"
+    assert to_title("città è") == "Città È"
+    assert to_title("") == ""
+
+test "capitalize: the rest lowered, a title case letter, a digit first, a letter that titles to two, and a final sigma"
+    assert capitalize("hELLO wORLD") == "Hello world"
+    assert capitalize("ǆabc") == "ǅabc"
+    assert capitalize("1abc ABC") == "1abc abc"
+    assert capitalize("ßX") == "Ssx"
+    assert capitalize("ΟΔΟΣ") == "Οδος"
+    assert capitalize("") == ""
+
+test "swap_case: both cases, a letter that uppers to two, a title case letter, a final sigma, and signs that have a case"
+    assert swap_case("Hello ß ǅ") == "hELLO SS ǅ"
+    assert swap_case("ΟΔΟΣ") == "οδος"
+    assert swap_case("àÉ") == "Àé"
+    assert swap_case("Ⅰⓐ") == "ⅰⒶ"
+    assert swap_case("") == ""
+
+test "to_casefold: a letter that folds to two, a final sigma, a ligature, and a dotted capital"
+    assert to_casefold("Straße ΟΔΟΣ") == "strasse οδοσ"
+    assert to_casefold("ﬁ") == "fi"
+    assert to_casefold("İ") == "i̇"
+    assert to_casefold("") == ""
+
+test "is_lower, is_upper: digits passed over, no cased letter, a title case letter, accents, and signs that have a case"
+    assert is_lower("abc1")
+    assert !is_lower("1")
+    assert is_lower("città")
+    assert !is_lower("ǅ")
+    assert !is_lower("Ⅰ")
+    assert is_lower("ⓐ")
+    assert is_lower("ª")
+    assert is_upper("ABC1")
+    assert !is_upper("")
+    assert is_upper("CITTÀ")
+    assert !is_upper("ǅ")
+    assert is_upper("Ⅰ")
+    assert !is_upper("ⓐ")
+
+test "is_title: words, a lower case word, an apostrophe, a digit, an empty text, accents, and a title case letter"
+    assert is_title("Hello World")
+    assert !is_title("Hello world")
+    assert is_title("They'Re")
+    assert !is_title("A1b")
+    assert !is_title("")
+    assert is_title("Città È")
+    assert is_title("ǅungla")
+    assert !is_title("ǅUngla")
+
+test "equals_ignoring_case: full folding, the Kelvin sign, the long s, the two sigmas, the dotless i, and a ligature"
+    assert equals_ignoring_case(a: "Straße", b: "STRASSE")
+    assert equals_ignoring_case(a: "K", b: "k")
+    assert equals_ignoring_case(a: "ſ", b: "S")
+    assert equals_ignoring_case(a: "Σ", b: "ς")
+    assert !equals_ignoring_case(a: "ı", b: "i")
+    assert equals_ignoring_case(a: "é", b: "É")
+    assert !equals_ignoring_case(a: "a", b: "b")
+    assert equals_ignoring_case(a: "", b: "")
+    assert equals_ignoring_case(a: "ﬁ", b: "FI")

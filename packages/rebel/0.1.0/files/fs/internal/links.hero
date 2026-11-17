@@ -1,0 +1,136 @@
+# A link's target read, a path resolved through its links, and a path made
+# absolute by its text: what `fs.read_link`, `fs.resolve` and `fs.to_abs`
+# do, and what a walk asks to tell a link that loops.
+
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use os
+use os/hero_disk
+use os/hero_os
+use path
+
+# The bytes `link_target` first gives a target.
+constant FIRST_ROOM: i64
+    256
+
+# The target the symbolic link `at` holds, as it holds it.
+#
+# - `at`: the link's path.
+#
+# Fails `file_not_found`, `invalid` where `at` is no link, `not_text` where
+# the target is not UTF-8.
+function target_of(at: str) -> str?
+    asked = f"reading the link \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    buffer: [u8] @= []
+    room: i64 @= FIRST_ROOM
+
+    while true
+        answer = hero_disk.link_target(at, @buffer, n: room.to_u64().must())
+
+        if answer < 0
+            return codes.disk_failed(asked: asked)
+
+        if answer <= room
+            match buffer.slice(from: 0, to: answer).validated_bytes()
+                .ok text => return ok(text)
+                .err _   => return fail(code: codes.NOT_TEXT, msg: f"{asked}: its target is not UTF-8")
+        room @ answer
+
+# The absolute, cleaned path `at` names, every link followed.
+#
+# - `at`: the path.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `file_not_found` where it names nothing, a link to nothing included,
+# `not_text` where the answer is not UTF-8.
+function resolved(at: str, asked: str) -> str?
+    if facts.presence(at: at, through: true, asked: asked)? == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is there")
+    status: i64 @= -1
+    marks: i64 @= -1
+    answer = hero_os.resolved_shown(at, status: @status, marks: @marks)
+
+    if status == hero_os.HERO_OS_NOT_TEXT
+        return fail(code: codes.NOT_TEXT, msg: f"{asked}: the path it resolves to is not UTF-8")
+
+    if status != hero_os.HERO_OS_OK
+        return fail(code: codes.FAILED, msg: f"{asked}: the system refused it, its number {hero_os.fs_why()}")
+    return ok(path.clean(answer))
+
+# `at` made absolute against the working folder and cleaned, no link read.
+#
+# - `at`: the path; an absolute one is only cleaned, the empty one is the
+#   working folder.
+#
+# Fails where the working folder cannot be read.
+function absolute(at: str) -> str?
+    codes.checked(path: at, asked: f"making \"{at}\" absolute")?
+
+    if path.is_abs(at)
+        return ok(path.clean(at))
+    here = os.working_dir()?
+    return ok(path.clean(path.join_all([here, at])))
+
+## Tests
+
+test "target_of: a relative target, an absolute one, a long one, no link, and nothing there"
+    dir = fixture.folder("target")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    long = repeat("t", 300)
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        assert target_of(dir + "/l").must() == "f"
+
+        # An absolute target as the system writes one: Windows keeps a
+        # link's target with its own separator, `\`.
+        rooted: str @= "/a/b"
+
+        if os.family() == .windows
+            rooted @ "\\a\\b"
+
+        assert fixture.linked(target: rooted, name: dir + "/abs")
+        assert target_of(dir + "/abs").must() == rooted
+        assert fixture.linked(target: long + "é", name: dir + "/long")
+        assert target_of(dir + "/long").must() == long + "é"
+
+    match target_of(dir + "/f")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    match target_of(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "resolved: a relative path made absolute, a chain of links, `..` after a link, and a link to nothing"
+    dir = fixture.folder("resolved")
+    assert hero_disk.make_folder(dir + "/real", permission: 0o755) == 0
+    assert !write_file(path: dir + "/real/f", text: "x").is_err()
+    whole = resolved(at: dir + "/real/f", asked: "a").must()
+    assert path.is_abs(whole) && path.has_tail(path: whole, tail: "real/f")
+    assert resolved(at: dir + "/real/../real/f", asked: "a").must() == whole
+
+    if fixture.linked(target: "real", name: dir + "/one")
+        assert fixture.linked(target: "one", name: dir + "/two")
+        assert resolved(at: dir + "/two/f", asked: "a").must() == whole
+        assert fixture.linked(target: "nothing", name: dir + "/dangling")
+
+        match resolved(at: dir + "/dangling", asked: "a")
+            .ok _  => assert false
+            .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    match resolved(at: dir + "/none", asked: "resolving")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "resolving: nothing is there"
+
+    assert fixture.cleared(dir)
+
+test "absolute: relative, empty, `..` taken by the text, and absolute only cleaned"
+    here = os.working_dir().must()
+    assert absolute("a/b").must() == path.join_all([here, "a", "b"])
+    assert absolute("").must() == here
+    assert absolute("a/../b").must() == path.join_all([here, "b"])
+    assert absolute(here + "/x/./y/").must() == path.join_all([here, "x", "y"])

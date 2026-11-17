@@ -1,0 +1,43 @@
+# The failure codes `archive` answers, which the face names its constants
+# from, since a private module cannot `use` the face; and how a message about
+# an entry is made.
+
+# An archive that is not what its format says, or an entry refused.
+constant INVALID: str
+    "invalid"
+
+# Data that would pass the limit the caller set.
+constant LIMIT: str
+    "limit"
+
+# No entry of that name.
+constant NOT_FOUND: str
+    "not_found"
+
+# Something this package does not read: an encrypted member, a method
+# other than stored and deflated, a sparse file.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A failure of code `invalid` about the archive at byte `at`.
+function invalid_at<T>(at: i64, why: str) -> T?
+    return fail(code: INVALID, msg: f"not a valid archive at byte {at}: {why}")
+
+# A failure of code `invalid` about the entry `name`, refused for `why`.
+function refused<T>(name: str, why: str) -> T?
+    return fail(code: INVALID, msg: f"the entry \"{name}\" is refused: {why}")
+
+test "invalid_at and refused: the code and the message"
+    bad: i64? = invalid_at(at: 512, why: "a header whose checksum does not match")
+
+    match bad
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid archive at byte 512: a header whose checksum does not match"
+
+    out: i64? = refused(name: "../x", why: "it would land outside the folder")
+
+    match out
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "the entry \"../x\" is refused: it would land outside the folder"

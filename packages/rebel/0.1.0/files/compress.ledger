@@ -1,0 +1,194 @@
+# The ledger of `compress`: what Go's `compress/flate`, `compress/zlib` and
+# `compress/gzip` (Go 1.27, with `compress/bzip2` and `compress/lzw` beside
+# them) and Python's `zlib` and `gzip` (3.15; `compression.zlib` and
+# `compression.gzip` are the same modules again) let a program do, one block
+# per capability, and what Rebel answers. Rust's standard library has no
+# compression, so its line is `-` in every block. The lists are this
+# machine's, 2026-11-16: `go doc -all` on each package, `dir()` of each
+# Python module and of its objects, and `inspect.signature`. Every stream in
+# the package's tests was made by Python or by hand and given to Python
+# first; the cross-check in the scratch folder read 152 of Python's streams
+# and had Python read 312 of Rebel's, all alike.
+
+capability compress/at-once  bytes compressed whole into one stream
+  heroes  compress.compress
+  go      flate.NewWriter, zlib.NewWriter, gzip.NewWriter, Writer.Write, Writer.Close (into a bytes.Buffer)
+  rust    -
+  python  zlib.compress, gzip.compress
+  note    Go has no call that compresses a `[]byte` whole; a writer over a buffer does it. Python's `gzip.compress` writes an mtime of 0 by default since 3.15, as `defaults` does, so the same bytes give the same stream
+
+capability compress/decompress-at-once  a stream decompressed whole, under a limit
+  heroes  compress.decompress
+  go      flate.NewReader, zlib.NewReader, gzip.NewReader, Reader.Read, io.ReadAll
+  rust    -
+  python  zlib.decompress, gzip.decompress
+  note    a `limit` is required, where neither Go nor Python asks for one: a few bytes expand to gigabytes. Bytes after a raw or zlib stream fail `invalid`, where Python's `zlib.decompress` ignores them; `decompress_leading` is the call that allows them. After a gzip member, zero bytes are padding and another member may follow, as Python's `gzip.decompress` reads them; an empty input fails `invalid` as Go's `gzip.NewReader` fails, where Python answers no bytes
+
+capability compress/leading  a stream at the start of other bytes, and where it ended
+  heroes  compress.decompress_leading, compress.unused
+  go      gzip.Reader.Multistream
+  rust    -
+  python  zlib.decompressobj, Decompress.unused_data, Decompress.eof
+  note    what zip needs where a member's sizes come after its data. A gzip member is read alone here, as Go's `Multistream(false)` and Python's `decompressobj(wbits=31)` read it
+
+capability compress/formats  what wraps the data: raw DEFLATE, zlib, gzip
+  heroes  compress.Format
+  go      compress/flate, compress/zlib, compress/gzip
+  rust    -
+  python  zlib.compress(wbits=), zlib.decompress(wbits=), zlib.MAX_WBITS, zlib.DEFLATED
+  note    Python chooses the wrapping and the window by the sign and the size of one number, `wbits`; here they are a variant and a field
+
+capability compress/detect  zlib told from gzip by the first bytes
+  heroes  compress.format_of
+  go      -
+  rust    -
+  python  zlib.decompress(wbits=47), zlib.decompressobj(wbits=47)
+  note    Python decompresses whichever it finds; here the format is asked, then named. Raw DEFLATE has no header and is never told
+
+capability compress/levels  how hard the compressor works
+  heroes  compress.Options, compress.NO_COMPRESSION, compress.BEST_SPEED, compress.DEFAULT_LEVEL, compress.BEST_COMPRESSION
+  go      flate.NoCompression, flate.BestSpeed, flate.BestCompression, flate.DefaultCompression, zlib.NoCompression, zlib.BestSpeed, zlib.BestCompression, zlib.DefaultCompression, gzip.NoCompression, gzip.BestSpeed, gzip.BestCompression, gzip.DefaultCompression, zlib.NewWriterLevel, gzip.NewWriterLevel
+  rust    -
+  python  zlib.Z_NO_COMPRESSION, zlib.Z_BEST_SPEED, zlib.Z_BEST_COMPRESSION, zlib.Z_DEFAULT_COMPRESSION, compress(level=), gzip.compress(compresslevel=), GzipFile(compresslevel=), gzip.open(compresslevel=)
+  note    0 to 9 as in both; the default is 6 by number, where Go and Python say -1. A level out of 0 to 9 fails `invalid`, as Go's `NewWriterLevel` errs and Python raises. What each level tries is Rebel's own: 4 to 4,096 earlier places per byte, lazy matching from level 4
+
+capability compress/strategy  how repeats are looked for, beside the level
+  heroes  compress.Strategy
+  go      flate.HuffmanOnly, zlib.HuffmanOnly, gzip.HuffmanOnly
+  rust    -
+  python  zlib.Z_DEFAULT_STRATEGY, zlib.Z_FILTERED, zlib.Z_HUFFMAN_ONLY, zlib.Z_RLE, zlib.Z_FIXED, compressobj(strategy=)
+  note    Go has only Huffman-only, as a level; Python's five are here. `filtered` writes repeats shorter than 6 bytes as bytes, which is how zlib's manual describes its effect; `fixed` may still write a stored block where that is smaller
+
+capability compress/window  the farthest a repeat reaches back
+  heroes  compress.Options, compress.MAX_WINDOW_BITS, compress.MIN_WINDOW_BITS
+  go      -
+  rust    -
+  python  compressobj(wbits=), zlib.MAX_WBITS
+  note    9 to 15, as Python takes them; zlib's header says it. A reader keeps 32,768 bytes whatever the header says
+
+capability compress/dictionary  a preset dictionary written with and read with
+  heroes  compress.Options, compress.with_dictionary
+  go      flate.NewWriterDict, flate.NewReaderDict, zlib.NewWriterLevelDict, zlib.NewReaderDict, zlib.ErrDictionary
+  rust    -
+  python  compressobj(zdict=), decompressobj(zdict=)
+  note    raw and zlib only, as in both; gzip refuses one. A zlib stream that needs one names its Adler-32, and a missing or different dictionary fails `invalid`; a dictionary given to a zlib stream that names none is not used, as Go does
+
+capability compress/in-memory  a stream compressed piece by piece without a stream to write to
+  heroes  compress.Compressor, compress.compressor, compress.compress_part, compress.compress_end, compress.is_ended
+  go      -
+  rust    -
+  python  zlib.compressobj, Compress.compress, Compress.flush, zlib.Z_NO_FLUSH, zlib.Z_FINISH
+  note    Go writes into a buffer through its writer; Heroes has no stream held in memory, so this is the engine the `Writer` uses, and a program may hold it alone. Fed after its end it aborts, which `is_ended` asks first
+
+capability compress/in-memory-read  a stream decompressed piece by piece, at most so many bytes a call
+  heroes  compress.Decompressor, compress.decompressor, compress.decompress_part, compress.is_done
+  go      -
+  rust    -
+  python  zlib.decompressobj, Decompress.decompress, Decompress.decompress(max_length=), Decompress.flush, Decompress.unconsumed_tail, Decompress.eof
+  note    the input not yet read is held inside, so there is no unconsumed tail to hand back; `is_done` is Python's `eof`, true only once every byte is handed out
+
+capability compress/flush  what was written made readable before the end
+  heroes  compress.compress_flush, compress.flush, compress.Flush
+  go      flate.Writer.Flush, zlib.Writer.Flush, gzip.Writer.Flush
+  rust    -
+  python  Compress.flush, zlib.Z_SYNC_FLUSH, zlib.Z_FULL_FLUSH, GzipFile.flush
+  note    `sync` is Go's Flush and Python's Z_SYNC_FLUSH; `full` is Z_FULL_FLUSH, which Go does not have
+
+capability compress/partial-flush  flushes that end a block without aligning, or stop between blocks
+  heroes  refused: they serve zlib's own callers (PNG writers, inflateBack); `sync` makes everything readable, at most five bytes dearer
+  go      -
+  rust    -
+  python  zlib.Z_PARTIAL_FLUSH, zlib.Z_BLOCK, zlib.Z_TREES
+  note    -
+
+capability compress/copy-state  a compressor or decompressor copied, each going on apart
+  heroes  built-in =
+  go      -
+  rust    -
+  python  Compress.copy, Decompress.copy
+  note    a `Compressor` and a `Decompressor` hold no handle, so `=` copies them
+
+capability compress/write-stream  compressed bytes written to a stream as they come
+  heroes  compress.Writer, compress.writer, compress.write, compress.finish
+  go      flate.NewWriter, flate.Writer.Write, flate.Writer.Close, zlib.NewWriter, zlib.Writer.Write, zlib.Writer.Close, gzip.NewWriter, gzip.Writer.Write, gzip.Writer.Close, gzip.Writer.Header
+  rust    -
+  python  gzip.GzipFile(mode="wb", fileobj=), GzipFile.write, GzipFile.writelines, GzipFile.close
+  note    `finish` writes the end and leaves the stream open, for its owner to close (Go's `Close` does the same to its `io.Writer`); a write after it fails `closed`
+
+capability compress/read-stream  decompressed bytes read from a stream as they are needed
+  heroes  compress.Reader, compress.reader, compress.read, compress.read_rest
+  go      flate.NewReader, zlib.NewReader, gzip.NewReader, gzip.Reader.Read, gzip.Reader.Close, flate.Reader, flate.ReadError
+  rust    -
+  python  gzip.GzipFile(mode="rb", fileobj=), GzipFile.read, GzipFile.read1, GzipFile.readinto, GzipFile.readinto1, GzipFile.peek
+  note    the reader reads its stream 65,536 bytes at a time and only when it needs a byte, so it never waits for bytes after the end of a stream; every gzip member is read, as Go's and Python's readers read them
+
+capability compress/copy-streams  one stream compressed or decompressed into another
+  heroes  compress.compress_stream, compress.decompress_stream
+  go      io.Copy through a Writer or a Reader
+  rust    -
+  python  shutil.copyfileobj through a GzipFile
+  note    each answers how many bytes it wrote
+
+capability compress/limit  a bound on what an input may expand to
+  heroes  compress.decompress, compress.decompressor, compress.reader, compress.LIMIT
+  go      io.LimitReader (around a Reader)
+  rust    -
+  python  Decompress.decompress(max_length=)
+  note    every function that decompresses takes one and fails `limit` before it would write past it; Python's `max_length` bounds one call and not the stream
+
+capability compress/corrupt  an input that is not what it says, told with where
+  heroes  compress.INVALID
+  go      flate.CorruptInputError, flate.InternalError, zlib.ErrChecksum, zlib.ErrHeader, gzip.ErrChecksum, gzip.ErrHeader
+  rust    -
+  python  zlib.error, gzip.BadGzipFile
+  note    one code, the message naming the byte, as Go's CorruptInputError gives an offset. Each refusal Python's zlib makes on the fifteen streams made by hand for the tests is made here too: block type 3, a stored length and its complement, symbols 286, 287, 30 and 31, a repeat before the start, a code length code or a literal code over-subscribed or incomplete, a repeat before the first length, no code for the end of a block, more than 286 codes
+
+capability compress/gzip-header  what a gzip member says of its file, written and read
+  heroes  compress.Header, compress.header_of, compress.read_header, compress.Options
+  go      gzip.Header, gzip.Header.Name, gzip.Header.Comment, gzip.Header.Extra, gzip.Header.ModTime, gzip.Header.OS, gzip.Reader.Header, gzip.Writer.Header
+  rust    -
+  python  GzipFile(filename=), GzipFile(mtime=), GzipFile.mtime, gzip.compress(mtime=)
+  note    the name and the comment are Latin-1 as RFC 1952 says, so a character past U+00FF fails `invalid` when written, as Go errs; when read, a name or comment past 65,535 bytes fails `invalid` (Go refuses 512 bytes or more, Python none; measured). The header's own CRC is checked where it has one, as Go checks it and Python skips it. The time is seconds since 1970 as the format holds it, never a `time.Instant`
+
+capability compress/gzip-members  several gzip members read as one
+  heroes  compress.decompress, compress.reader, compress.decompress_leading
+  go      gzip.Reader.Multistream
+  rust    -
+  python  gzip.decompress, GzipFile.read
+  note    `decompress` and a `Reader` read every member; `decompress_leading` and a `Decompressor` read one
+
+capability compress/gzip-file  a gzip file opened by its path
+  heroes  refused: a path is `fs`'s, a package of the same layer; `fs.open` answers the stream `reader` and `writer` take
+  go      -
+  rust    -
+  python  gzip.open, GzipFile(filename=, mode="ab"), GzipFile(mode="xb"), gzip.open(encoding=, errors=, newline=), GzipFile.name, GzipFile.myfileobj, gzip.READ, gzip.WRITE
+  note    appending a member is a `Writer` over a stream opened to append
+
+capability compress/lines  a compressed text read line by line
+  heroes  refused: lines are `io`'s, over an `io.Stream`, and a `Reader` is not one (Heroes has no interfaces, README A6); a text read whole is cut by `bytes.lines`
+  go      -
+  rust    -
+  python  GzipFile.readline, GzipFile.readlines, GzipFile.__iter__
+  note    -
+
+capability compress/seek  a position in the decompressed bytes
+  heroes  refused: seeking in a compressed stream is decompressing it again from the start, which a program does by making a new `Reader`
+  go      -
+  rust    -
+  python  GzipFile.seek, GzipFile.tell, GzipFile.rewind, GzipFile.seekable
+  note    -
+
+capability compress/other-formats  bzip2, LZW, LZMA, Zstandard
+  heroes  refused: not DEFLATE; this package is DEFLATE and its two wrappers (README A1)
+  go      compress/bzip2, bzip2.NewReader, bzip2.StructuralError, compress/lzw, lzw.NewReader, lzw.NewWriter, lzw.Order, lzw.LSB, lzw.MSB, lzw.Reader, lzw.Writer
+  rust    -
+  python  bz2, lzma, compression.bz2, compression.lzma, compression.zstd
+  note    -
+
+dropped
+  go      flate.Writer.Reset, zlib.Writer.Reset, gzip.Writer.Reset, gzip.Reader.Reset, flate.Resetter, zlib.Resetter: reusing a writer's or reader's memory for another stream; here a new one is made
+  go      flate.WriteError, flate.ReadError.Offset, flate.WriteError.Offset: errors of the stream underneath, which are `io`'s codes here
+  python  zlib.crc32, zlib.adler32, zlib.crc32_combine, zlib.adler32_combine: checksums, `hash.crc32`, `hash.adler32`, `hash.crc32_combine`, `hash.adler32_combine`
+  python  zlib.compressobj(memLevel=), zlib.DEF_MEM_LEVEL, zlib.DEF_BUF_SIZE, zlib.decompress(bufsize=), compressobj(method=): memory and buffer sizes of zlib's C library, and a method that has one value
+  python  zlib.ZLIB_VERSION, zlib.ZLIB_RUNTIME_VERSION, zlib._ZlibDecompressor: which C library Python links; Rebel stands on none
+  python  GzipFile.fileno, GzipFile.isatty, GzipFile.readable, GzipFile.writable, GzipFile.closed, GzipFile.detach, GzipFile.truncate: what every Python file object has

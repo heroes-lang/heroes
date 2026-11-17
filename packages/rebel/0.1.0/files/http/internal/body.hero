@@ -1,0 +1,372 @@
+# A message's body, RFC 9112 §§ 6 and 7: how its length is known from its
+# head, and the body read by that length, as chunks, or to the connection's
+# end, within a limit; and a body written as chunks.
+
+use http/internal/syntax
+use http/internal/wire
+use io
+
+# The code of a transfer coding this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The most bytes of a chunk's size line, its extensions included, and of a
+# trailer's line.
+constant CHUNK_LINE_BYTES: i64
+    4_096
+
+# How a body's end is known.
+variant Framing
+    # There is no body.
+    none
+    # The body is `n` bytes.
+    length
+        # How many, 0 or more.
+        n: i64
+    # The body comes as chunks, the last of size 0.
+    chunked
+    # The body runs to the connection's end.
+    to_end
+
+# How the body after a request's head `h` ends. Fails `invalid` where both
+# `Content-Length` and `Transfer-Encoding` stand, or the lengths differ or
+# are no number; `limit` where a length is past an `i64`; `unsupported` for a
+# transfer coding other than chunked.
+function of_request(h: wire.Head) -> Framing?
+    match of_fields(h.fields)?
+        .to_end   => return ok(.none)
+        .none     => return ok(.none)
+        .length l => return ok(.length(n: l.n))
+        .chunked  => return ok(.chunked)
+
+# How the body after a response's head `h` ends, the request's method being
+# `method`: none for `HEAD`, 1xx, 204 and 304; else as the fields say, and to
+# the connection's end where they say nothing. Fails as `of_request` does.
+function of_response(h: wire.Head, method: str) -> Framing?
+    if method == "HEAD" || h.status < 200 || h.status == 204 || h.status == 304
+        return ok(.none)
+    return of_fields(h.fields)
+
+# How the fields `fields` frame a body, `to_end` where they say nothing.
+function of_fields(fields: [wire.Field]) -> Framing?
+    codings = wire.values_of(fields, name: "Transfer-Encoding")
+    lengths = wire.values_of(fields, name: "Content-Length")
+
+    if codings.len() > 0
+        if lengths.len() > 0
+            return fail(
+                code: syntax.INVALID,
+                msg: "reading a message: it has both `Content-Length` and `Transfer-Encoding`, which RFC 9112 forbids"
+            )
+        members: [str] @= []
+
+        for value in codings
+            for member in syntax.members(value)
+                members @ members.push(member)
+
+        if members.len() == 1 && syntax.same_name(a: members[0], b: "chunked")
+            return ok(.chunked)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"reading a message: the transfer coding {syntax.shown(codings.join(", "))} is not chunked alone, the one this package reads"
+        )
+
+    if lengths.len() == 0
+        return ok(.to_end)
+    n: i64 @= -1
+
+    for value in lengths
+        for member in strings_of(value)
+            m = syntax.decimal(s: member, what: "reading `Content-Length`")?
+
+            if n >= 0 && m != n
+                return fail(code: syntax.INVALID, msg: f"reading a message: `Content-Length` says both {n} and {m}")
+            n @ m
+
+    if n < 0
+        return fail(code: syntax.INVALID, msg: "reading a message: `Content-Length` is empty")
+    return ok(.length(n: n))
+
+# The comma-separated members of `value`, each trimmed, the empty ones kept
+# so a length of "" is read and refused.
+function strings_of(value: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at <= value.len()
+        if at == value.len() || value[at] == ','
+            out @ out.push(syntax.trim_ows(value.slice(from: from, to: at)))
+            from @ at + 1
+        at @ at + 1
+
+    return out
+
+# The body `framing` says follows in `r`, at most `bounds.body_bytes` bytes,
+# a chunked body's trailer read, checked and dropped. Fails `limit` past the
+# bounds or a chunk's line past `CHUNK_LINE_BYTES`, `invalid` where the
+# stream ends inside the body or a chunk is malformed, and as `io` fails.
+function read(@r: io.Reader, framing: Framing, bounds: wire.Bounds) -> [u8]?
+    match framing
+        .none => return ok([])
+        .length l =>
+            if l.n > bounds.body_bytes
+                return fail(
+                    code: syntax.LIMIT,
+                    msg: f"reading a body: its {l.n} bytes are past the limit of {bounds.body_bytes}"
+                )
+            got = io.read_n(@r, n: l.n)?
+
+            if got.len() < l.n
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"reading a body of {l.n} bytes: the stream ended after {got.len()}"
+                )
+            return ok(got)
+        .chunked => return chunks(@r, bounds: bounds)
+        .to_end =>
+            out: [u8] @= []
+
+            while true
+                part = io.read_n(@r, n: 65_536)?
+
+                if out.len() + part.len() > bounds.body_bytes
+                    return fail(
+                        code: syntax.LIMIT,
+                        msg: f"reading a body to the connection's end: it is past the limit of {bounds.body_bytes} bytes"
+                    )
+
+                for b in part
+                    out @ out.push(b)
+
+                if part.len() < 65_536
+                    return ok(out)
+
+# A chunked body of `r`, its chunks joined, and its trailer read and dropped.
+function chunks(@r: io.Reader, bounds: wire.Bounds) -> [u8]?
+    out: [u8] @= []
+
+    while true
+        line = wire.text_of(text_line(@r)?)
+        cut = strings_before(line, stop: ';')
+        size = syntax.hexadecimal(s: syntax.trim_ows(cut), what: "reading a chunk's size")?
+
+        if size > bounds.body_bytes - out.len()
+            return fail(
+                code: syntax.LIMIT,
+                msg: f"reading a chunked body: it is past the limit of {bounds.body_bytes} bytes"
+            )
+
+        if size == 0
+            trailer(@r, most: bounds.field_count)?
+            return ok(out)
+        data = io.read_n(@r, n: size)?
+
+        if data.len() < size
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading a chunk of {size} bytes: the stream ended after {data.len()}"
+            )
+
+        for b in data
+            out @ out.push(b)
+
+        end_of_chunk(@r)?
+
+# `s` up to its first `stop`, or whole.
+function strings_before(s: str, stop: u8) -> str
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == stop
+            return s.slice(from: 0, to: at)
+        at @ at + 1
+
+    return s
+
+# Reads the line end after a chunk's data: a carriage return and a line
+# feed, or a line feed alone. Fails `invalid` where anything else stands.
+function end_of_chunk(@r: io.Reader) -> ()?
+    b = io.read_n(@r, n: 1)?
+
+    if b.len() == 1 && b[0] == '\n'
+        return ok()
+
+    if b.len() == 1 && b[0] == '\r'
+        c = io.read_n(@r, n: 1)?
+
+        if c.len() == 1 && c[0] == '\n'
+            return ok()
+    return fail(code: syntax.INVALID, msg: "reading a chunked body: a chunk's data is not followed by a line end")
+
+# Reads the trailer's field lines up to its empty line, checking each and
+# keeping none. Fails `limit` past `most` fields.
+function trailer(@r: io.Reader, most: i64) -> ()?
+    count: i64 @= 0
+
+    while true
+        line = text_line(@r)?
+
+        if line.len() == 0
+            return ok()
+        count @ count + 1
+
+        if count > most
+            return fail(code: syntax.LIMIT, msg: f"reading a chunked body's trailer: it holds more than {most} fields")
+        _ = wire.field_of(line, number: count)?
+
+# The next line of `r`, read a byte at a time, without its line end:
+# a line feed, with or without a carriage return before it. Fails `limit`
+# past `CHUNK_LINE_BYTES`, `invalid` where the stream ends first or the line
+# holds a carriage return of its own.
+function text_line(@r: io.Reader) -> [u8]?
+    line: [u8] @= []
+
+    while true
+        b = io.read_n(@r, n: 1)?
+
+        if b.len() == 0
+            return fail(code: syntax.INVALID, msg: "reading a chunked body: the stream ended inside it")
+
+        if b[0] == '\n'
+            if line.len() > 0 && line[line.len() - 1] == '\r'
+                line @ line.slice(from: 0, to: line.len() - 1)
+
+            for x in line
+                if x == '\r' || x == 0
+                    return fail(
+                        code: syntax.INVALID,
+                        msg: f"reading a chunked body: the line {syntax.shown_bytes(line)} holds a carriage return or a zero byte"
+                    )
+
+            return ok(line)
+        line @ line.push(b[0])
+
+        if line.len() > CHUNK_LINE_BYTES
+            return fail(code: syntax.LIMIT, msg: f"reading a chunked body: a line is past {CHUNK_LINE_BYTES} bytes")
+
+# `data` as a chunked body: one chunk holding it, where it holds a byte, and
+# the last chunk with an empty trailer.
+function chunked(data: [u8]) -> [u8]
+    out: [u8] @= []
+
+    if data.len() > 0
+        for b in hex(data.len())
+            out @ out.push(b)
+
+        out @ out.push('\r')
+        out @ out.push('\n')
+
+        for b in data
+            out @ out.push(b)
+
+        out @ out.push('\r')
+        out @ out.push('\n')
+
+    last: [u8] = ['0', '\r', '\n', '\r', '\n']
+
+    for b in last
+        out @ out.push(b)
+
+    return out
+
+# The digits of `n`, 1 or more, in lower-case hexadecimal.
+function hex(n: i64) -> [u8]
+    digits = "0123456789abcdef"
+    out: [u8] @= []
+    left: i64 @= n
+
+    while left > 0
+        out @ out.push(digits[left % 16])
+        left @ left / 16
+
+    reversed: [u8] @= []
+    at: i64 @= out.len() - 1
+
+    while at >= 0
+        reversed @ reversed.push(out[at])
+        at @ at - 1
+
+    return reversed
+
+## Tests
+
+test "of_fields: none, a length, the same length twice, two lengths, chunked, both, another coding"
+    assert of_fields([]).must() == .to_end
+    assert of_fields([wire.Field(name: "content-length", value: "12")]).must() == .length(n: 12)
+    assert of_fields([wire.Field(name: "Content-Length", value: "3, 3"), wire.Field(name: "Content-Length", value: "3")]).must() == .length(n: 3)
+    assert of_fields([wire.Field(name: "Transfer-Encoding", value: "Chunked")]).must() == .chunked
+
+    for bad in [[wire.Field(name: "Content-Length", value: "3, 4")], [wire.Field(name: "Content-Length", value: "")], [wire.Field(name: "Content-Length", value: "-1")], [wire.Field(name: "Content-Length", value: "3,")], [wire.Field(name: "Content-Length", value: "1"), wire.Field(name: "Transfer-Encoding", value: "chunked")]]
+        match of_fields(bad)
+            .ok _  => assert false
+            .err e => assert e.code == syntax.INVALID
+
+    for other in ["gzip", "gzip, chunked", "chunked, chunked", "identity"]
+        match of_fields([wire.Field(name: "Transfer-Encoding", value: other)])
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+test "of_response: HEAD, 1xx, 204 and 304 have none; a request with no field has none"
+    h = wire.Head(
+        method: "",
+        target: "",
+        status: 200,
+        reason: "",
+        major: 1,
+        minor: 1,
+        fields: [wire.Field(name: "Content-Length", value: "5")]
+    )
+    assert of_response(h, method: "GET").must() == .length(n: 5)
+    assert of_response(h, method: "HEAD").must() == .none
+
+    for status in [100, 199, 204, 304]
+        changed @= h
+        changed.status @ status
+        assert of_response(changed, method: "GET").must() == .none
+
+    plain @= h
+    plain.fields @ []
+    assert of_response(plain, method: "GET").must() == .to_end
+    assert of_request(plain).must() == .none
+
+test "read: a length, a short stream, past the limit, to the end"
+    bounds = wire.Bounds(head_bytes: 100, field_count: 2, body_bytes: 5)
+    r @= wire.fixture("abcdefg")
+    assert read(@r, framing: .length(n: 3), bounds: bounds).must() == [97, 98, 99]
+
+    match read(@r, framing: .length(n: 6), bounds: bounds)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.LIMIT
+
+    match read(@r, framing: .length(n: 5), bounds: bounds)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.INVALID
+
+    wire.done(@r)
+    whole @= wire.fixture("abcde")
+    assert read(@whole, framing: .to_end, bounds: bounds).must().len() == 5
+    wire.done(@whole)
+    over @= wire.fixture("abcdef")
+    assert read(@over, framing: .to_end, bounds: bounds).is_err()
+    wire.done(@over)
+
+test "read: chunks with extensions, a trailer, bare line feeds, and what is malformed"
+    bounds = wire.Bounds(head_bytes: 100, field_count: 1, body_bytes: 100)
+    r @= wire.fixture("4;x=1\r\nWiki\r\n5\r\npedia\r\nE \r\n in\r\n\r\nchunks.\r\n0\r\nExpires: x\r\n\r\nrest")
+    assert wire.text_of(read(@r, framing: .chunked, bounds: bounds).must()) == "Wikipedia in\r\n\r\nchunks."
+    assert io.read_rest_text(@r).must() == "rest"
+    wire.done(@r)
+    bare @= wire.fixture("1\na\n0\n\n")
+    assert read(@bare, framing: .chunked, bounds: bounds).must() == [97]
+    wire.done(@bare)
+
+    for bad in ["x\r\n", "1\r\nab\r\n0\r\n\r\n", "1\r\na", "", "0\r\n", "0\r\nno colon\r\n\r\n", "0\r\na: 1\r\nb: 2\r\n\r\n", "8000000000000000\r\n", "65\r\n"]
+        bad_reader @= wire.fixture(bad)
+        assert read(@bad_reader, framing: .chunked, bounds: bounds).is_err()
+        wire.done(@bad_reader)
+
+test "chunked and hex: one chunk and the last, none for no data"
+    assert wire.text_of(chunked([104, 105])) == "2\r\nhi\r\n0\r\n\r\n"
+    assert wire.text_of(chunked([])) == "0\r\n\r\n"
+    assert hex(255) == [102, 102] && hex(1) == [49] && hex(4_096) == [49, 48, 48, 48]

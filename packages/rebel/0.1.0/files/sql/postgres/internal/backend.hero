@@ -1,0 +1,363 @@
+# The messages a server sends, read off the connection and decoded as the
+# protocol's documentation (version 3.0, "Message Formats") lays each out.
+# A message of a kind it does not know is kept as `other`, and the caller
+# decides; a body shorter than its fields fails `invalid`.
+
+use io
+use sql/postgres/internal/wire
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+# The longest body a message may have here: the server's own limit on a
+# value is 1 GiB, and a length past it is a connection out of step.
+constant MOST_BODY: i64
+    1073741824
+
+# A failure or a notice the server reported, its fields by name; a field the
+# server left out is "".
+record Report
+    # The severity in English (field `V`), or as localized (`S`) where the
+    # server is older than 9.6: `ERROR`, `FATAL`, `PANIC`, `WARNING`.
+    severity: str
+    # The SQLSTATE (`C`).
+    code: str
+    # The primary message (`M`).
+    message: str
+    # The detail (`D`).
+    detail: str
+    # The hint (`H`).
+    hint: str
+    # The position in the statement, in characters from 1, as text (`P`).
+    position: str
+
+# One column of a RowDescription.
+record Field
+    # The column's name.
+    name: str
+    # The column's type, as its number in `pg_type`.
+    type_oid: i64
+
+# One value of a DataRow.
+variant Cell
+    # SQL's NULL.
+    null_cell
+    # A value's bytes, in the format the Bind asked for.
+    given
+        # The bytes.
+        data: [u8]
+
+# A message of the server, decoded.
+variant Message
+    # An Authentication message: its code, 0 for done, and what follows it.
+    authentication
+        # 0 done, 3 a cleartext password, 5 an MD5 one, 10 SASL, 11 SASL's
+        # next step, 12 SASL's last; others name methods not spoken here.
+        code: i64
+        # The salt of an MD5 request, the mechanisms or the server's SASL
+        # message.
+        data: [u8]
+    # BackendKeyData: what a cancel request names.
+    backend_key
+        # The server process's id.
+        process_id: i64
+        # The secret key.
+        secret: [u8]
+    # ParameterStatus: a run-time parameter's value.
+    parameter_status
+        # The parameter's name.
+        name: str
+        # Its value.
+        value: str
+    # ReadyForQuery: the server waits for the next request.
+    ready
+        # `I` idle, `T` in a transaction, `E` in a failed one.
+        status: u8
+    # RowDescription: the columns of the rows that follow.
+    row_description
+        # The columns, in order.
+        fields: [Field]
+    # DataRow: one row.
+    data_row
+        # Its values, in the columns' order.
+        cells: [Cell]
+    # CommandComplete: a statement ended.
+    command_complete
+        # Its tag: `INSERT 0 1`, `SELECT 3`, `CREATE TABLE`.
+        tag: str
+    # ErrorResponse.
+    error_response
+        # The failure.
+        report: Report
+    # NoticeResponse.
+    notice_response
+        # The notice.
+        report: Report
+    # EmptyQueryResponse: the statement was empty.
+    empty_query
+    # ParseComplete.
+    parse_complete
+    # BindComplete.
+    bind_complete
+    # CloseComplete.
+    close_complete
+    # NoData: the statement answers no rows.
+    no_data
+    # PortalSuspended: Execute's row limit was reached.
+    portal_suspended
+    # ParameterDescription: the types of a statement's placeholders.
+    parameter_description
+        # Each placeholder's type, as its number in `pg_type`.
+        types: [i64]
+    # NotificationResponse: a `NOTIFY` on a channel this session listens to.
+    notification
+        # The channel.
+        channel: str
+    # NegotiateProtocolVersion: the server speaks an older minor version.
+    negotiate_version
+        # The newest minor version it speaks.
+        minor: i64
+    # CopyInResponse: the server waits for `COPY ... FROM STDIN`'s rows.
+    copy_in
+    # CopyOutResponse: `COPY ... TO STDOUT`'s rows follow.
+    copy_out
+    # CopyBothResponse, of replication.
+    copy_both
+    # CopyData.
+    copy_data
+    # CopyDone.
+    copy_done
+    # A message of a kind not known here.
+    other
+        # Its kind's byte.
+        kind: u8
+
+# The next message on `r`, read whole and decoded.
+#
+# - `r`: the reader over the connection, moved past the message.
+#
+# Fails `closed` where the connection ends before the message does,
+# `invalid` where its length is below 4 or past `MOST_BODY` or its body does
+# not decode, and as `io.read_n` fails.
+function read(@r: io.Reader) -> Message?
+    head = io.read_n(@r, 5)?
+
+    if head.len() < 5
+        return fail(code: CLOSED, msg: "the server closed the connection")
+    length = wire.u32_at(head, at: 1)
+
+    if length < 4 || length - 4 > MOST_BODY
+        return fail(
+            code: INVALID,
+            msg: f"the server sent a message of kind {head[0]} and length {length}, which no message has"
+        )
+    body = io.read_n(@r, length - 4)?
+
+    if body.len() < length - 4
+        return fail(code: CLOSED, msg: "the server closed the connection in the middle of a message")
+    return decode(kind: head[0], body: body)
+
+# The message of kind `kind` whose body is `body`.
+#
+# - `kind`: the message's byte.
+# - `body`: what follows its length.
+#
+# Fails `invalid` where the body is shorter than the kind's fields.
+function decode(kind: u8, body: [u8]) -> Message?
+    c @= wire.cursor(body)
+
+    if kind == 'R'
+        code = wire.read_i32(@c)?
+        return ok(.authentication(code: code, data: wire.read_rest(@c)))
+
+    if kind == 'K'
+        id = wire.read_i32(@c)?
+        return ok(.backend_key(process_id: id, secret: wire.read_rest(@c)))
+
+    if kind == 'S'
+        name = wire.read_cstr(@c)?
+        return ok(.parameter_status(name: name, value: wire.read_cstr(@c)?))
+
+    if kind == 'Z'
+        return ok(.ready(status: wire.read_u8(@c)?))
+
+    if kind == 'T'
+        return ok(.row_description(fields: fields(@c)?))
+
+    if kind == 'D'
+        return ok(.data_row(cells: cells(@c)?))
+
+    if kind == 'C'
+        return ok(.command_complete(tag: wire.read_cstr(@c)?))
+
+    if kind == 'E'
+        return ok(.error_response(report: report(@c)?))
+
+    if kind == 'N'
+        return ok(.notice_response(report: report(@c)?))
+
+    if kind == 't'
+        count = wire.read_i16(@c)?
+        types: [i64] @= []
+
+        for _ in range(from: 0, to: count)
+            types @ types.push(wire.read_u32(@c)?)
+
+        return ok(.parameter_description(types: types))
+
+    if kind == 'A'
+        _ = wire.read_i32(@c)?
+        return ok(.notification(channel: wire.read_cstr(@c)?))
+
+    if kind == 'v'
+        return ok(.negotiate_version(minor: wire.read_i32(@c)?))
+    return ok(bare(kind))
+
+# A message whose kind alone says everything here.
+#
+# - `kind`: the message's byte.
+function bare(kind: u8) -> Message
+    return match kind
+        'I' => .empty_query
+        '1' => .parse_complete
+        '2' => .bind_complete
+        '3' => .close_complete
+        'n' => .no_data
+        's' => .portal_suspended
+        'G' => .copy_in
+        'H' => .copy_out
+        'W' => .copy_both
+        'd' => .copy_data
+        'c' => .copy_done
+        _   => .other(kind: kind)
+
+# The columns of a RowDescription's body.
+#
+# - `c`: the cursor at the count of columns.
+function fields(@c: wire.Cursor) -> [Field]?
+    count = wire.read_i16(@c)?
+    out: [Field] @= []
+
+    for _ in range(from: 0, to: count)
+        name = wire.read_cstr(@c)?
+        _ = wire.read_u32(@c)?
+        _ = wire.read_i16(@c)?
+        type_oid = wire.read_u32(@c)?
+        _ = wire.read_i16(@c)?
+        _ = wire.read_i32(@c)?
+        _ = wire.read_i16(@c)?
+        out @ out.push(Field(name: name, type_oid: type_oid))
+
+    return ok(out)
+
+# The values of a DataRow's body.
+#
+# - `c`: the cursor at the count of values.
+function cells(@c: wire.Cursor) -> [Cell]?
+    count = wire.read_i16(@c)?
+    out: [Cell] @= []
+
+    for _ in range(from: 0, to: count)
+        length = wire.read_i32(@c)?
+
+        if length < 0
+            out @ out.push(.null_cell)
+        else
+            out @ out.push(.given(data: wire.read_n(@c, length)?))
+
+    return ok(out)
+
+# The fields of an ErrorResponse's or a NoticeResponse's body, up to the zero
+# byte that ends them; a field not named in `Report` is read and dropped.
+#
+# - `c`: the cursor at the first field.
+function report(@c: wire.Cursor) -> Report?
+    found @= Report(severity: "", code: "", message: "", detail: "", hint: "", position: "")
+    localized: str @= ""
+
+    while true
+        kind = wire.read_u8(@c)?
+
+        if kind == 0
+            break
+        value = wire.read_cstr(@c)?
+
+        if kind == 'S'
+            localized @ value
+        else if kind == 'V'
+            found.severity @ value
+        else if kind == 'C'
+            found.code @ value
+        else if kind == 'M'
+            found.message @ value
+        else if kind == 'D'
+            found.detail @ value
+        else if kind == 'H'
+            found.hint @ value
+        else if kind == 'P'
+            found.position @ value
+
+    if found.severity == ""
+        found.severity @ localized
+    return ok(found)
+
+test "decode: ReadyForQuery in each state, AuthenticationOk, and a body cut short"
+    assert decode(kind: 'Z', body: ['I']).must() == .ready(status: 'I')
+    assert decode(kind: 'Z', body: ['E']).must() == .ready(status: 'E')
+    assert decode(kind: 'R', body: [0, 0, 0, 0]).must() == .authentication(code: 0, data: [])
+    assert decode(kind: 'R', body: [0, 0, 0, 5, 1, 2, 3, 4]).must() == .authentication(code: 5, data: [1, 2, 3, 4])
+    assert decode(kind: 'Z', body: []).is_err()
+    assert decode(kind: 'R', body: [0, 0]).is_err()
+
+test "decode: BackendKeyData, ParameterStatus and CommandComplete"
+    assert decode(kind: 'K', body: [0, 0, 48, 57, 1, 2, 3, 4]).must() == .backend_key(process_id: 12345, secret: [1, 2, 3, 4])
+    assert decode(kind: 'S', body: ['T', 'i', 'm', 'e', 'Z', 'o', 'n', 'e', 0, 'U', 'T', 'C', 0]).must() == .parameter_status(name: "TimeZone", value: "UTC")
+    assert decode(kind: 'C', body: ['I', 'N', 'S', 'E', 'R', 'T', ' ', '0', ' ', '1', 0]).must() == .command_complete(tag: "INSERT 0 1")
+
+test "decode: a RowDescription of two columns, its types unsigned"
+    body: [u8] @= [0, 2]
+    wire.push_cstr(@body, "id")
+    wire.push_all(out: @body, data: [0, 0, 64, 0, 0, 1, 0, 0, 0, 23, 0, 4, 255, 255, 255, 255, 0, 0])
+    wire.push_cstr(@body, "n")
+    wire.push_all(out: @body, data: [0, 0, 0, 0, 0, 0, 255, 255, 255, 254, 255, 255, 255, 255, 255, 255, 0, 0])
+    assert decode(kind: 'T', body: body).must() == .row_description(fields: [Field(name: "id", type_oid: 23), Field(name: "n", type_oid: 4294967294)])
+    assert decode(kind: 'T', body: [0, 0]).must() == .row_description(fields: [])
+
+test "decode: a DataRow with a value, a NULL and an empty value, and one cut short"
+    assert decode(kind: 'D', body: [0, 3, 0, 0, 0, 1, '7', 255, 255, 255, 255, 0, 0, 0, 0]).must() == .data_row(cells: [.given(data: ['7']), .null_cell, .given(data: [])])
+    assert decode(kind: 'D', body: [0, 1, 0, 0, 0, 5, 'a']).is_err()
+
+test "decode: an ErrorResponse with both severities, a code, a message, a detail and a field not kept"
+    body: [u8] @= []
+
+    for pair in [["S", "ERREUR"], ["V", "ERROR"], ["C", "23505"], ["M", "duplicate key"], ["D", "Key (id)=(1) already exists."], ["n", "t_pkey"]]
+        body @ body.push(pair[0][0])
+        wire.push_cstr(@body, pair[1])
+
+    body @ body.push(0)
+    want = Report(
+        severity: "ERROR",
+        code: "23505",
+        message: "duplicate key",
+        detail: "Key (id)=(1) already exists.",
+        hint: "",
+        position: ""
+    )
+    assert decode(kind: 'E', body: body).must() == .error_response(report: want)
+    old = decode(kind: 'N', body: ['S', 'W', 'A', 'R', 'N', 'I', 'N', 'G', 0, 'M', 'x', 0, 0]).must()
+    assert old == .notice_response(report: Report(severity: "WARNING", code: "", message: "x", detail: "", hint: "", position: ""))
+    assert decode(kind: 'E', body: ['M', 'x', 0]).is_err()
+
+test "decode: ParameterDescription, the bare kinds, and a kind not known"
+    assert decode(kind: 't', body: [0, 2, 0, 0, 0, 20, 0, 0, 0, 25]).must() == .parameter_description(types: [20, 25])
+    assert decode(kind: '1', body: []).must() == .parse_complete
+    assert decode(kind: '2', body: []).must() == .bind_complete
+    assert decode(kind: 'n', body: []).must() == .no_data
+    assert decode(kind: 'I', body: []).must() == .empty_query
+    assert decode(kind: 'G', body: [0, 0, 0]).must() == .copy_in
+    assert decode(kind: '?', body: []).must() == .other(kind: '?')
+    assert decode(kind: 'v', body: [0, 0, 0, 0, 0, 0, 0, 0]).must() == .negotiate_version(minor: 0)
+    assert decode(kind: 'A', body: [0, 0, 0, 1, 'c', 0, 'p', 0]).must() == .notification(channel: "c")

@@ -1,0 +1,48 @@
+# Rules several insertion modes share: the generic RCDATA and raw text
+# algorithms (13.2.6.2), closing a `p` element (13.2.6.4.7), and cutting a run
+# of characters at its first character that is not white space, since the
+# modes treat white space and the rest apart.
+
+use html/internal/ascii
+use html/internal/builder
+use html/internal/insert
+use html/internal/token
+
+# Follows the generic RCDATA or raw text element parsing algorithm for `t`,
+# `state` being `builder.SWITCH_RCDATA` or `builder.SWITCH_RAWTEXT`.
+function text_element(@b: builder.Builder, t: token.Token lent, state: i64) -> builder.Step
+    _ = insert.element_for(@b, t, 0)
+    b.switch_to @ state
+    b.original @ b.mode
+    b.mode @ .text
+    return .done
+
+# Closes a `p` element: implied end tags but `p`'s, then pops up to the `p`.
+function close_p(@b: builder.Builder, t: token.Token lent)
+    builder.generate_implied_end_tags(@b, "p")
+
+    if !builder.current_is(b, "p")
+        builder.error(@b, "unclosed-element", t)
+    builder.pop_until(@b, "p")
+
+# Closes a `p` element where one is in button scope.
+function close_p_in_button_scope(@b: builder.Builder, t: token.Token lent)
+    if builder.in_scope(b, "p", builder.BUTTON_SCOPE)
+        close_p(@b, t)
+
+# The white space a run of characters `t` opens with, which it no longer
+# holds.
+function take_white(@t: token.Token) -> str
+    end = ascii.skip_white(t.data, 0)
+    white = t.data.slice(from: 0, to: end)
+    t.data @ t.data.slice(from: end, to: t.data.len())
+    return white
+
+## Tests
+
+test "take_white: a prefix taken, none, and all of it"
+    t: token.Token @= token.run(data: " \n a b", at: 0)
+    assert take_white(@t) == " \n " && t.data == "a b"
+    assert take_white(@t) == "" && t.data == "a b"
+    whole: token.Token @= token.run(data: "\t", at: 0)
+    assert take_white(@whole) == "\t" && whole.data == ""

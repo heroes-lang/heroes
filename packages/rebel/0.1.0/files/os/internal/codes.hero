@@ -1,0 +1,143 @@
+# The codes `os` fails with, and the failure each floor's kinds become: the
+# one place a kind of `hero_sys.h` or `hero_disk.h` is turned into a code and
+# a message, read right after the call that failed, before any other call of
+# that floor on the thread.
+
+use os/hero_disk
+use os/hero_sys
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant PERMISSION: str
+    "permission"
+
+constant INVALID: str
+    "invalid"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant FAILED: str
+    "failed"
+
+# The code of the kind `hero_sys` last failed with on this thread.
+function sys_code() -> str
+    kind = hero_sys.last_error()
+
+    if kind == hero_sys.HERO_SYS_INVALID
+        return INVALID
+
+    if kind == hero_sys.HERO_SYS_NOT_FOUND
+        return NOT_FOUND
+
+    if kind == hero_sys.HERO_SYS_DENIED
+        return PERMISSION
+
+    if kind == hero_sys.HERO_SYS_LIMIT
+        return LIMIT
+
+    if kind == hero_sys.HERO_SYS_UNSUPPORTED
+        return UNSUPPORTED
+    return FAILED
+
+# The failure of `asked` where a door of `hero_sys` answered -1: its kind as a
+# code, and the system's own number in the message.
+function sys_failed<T>(asked: str) -> T?
+    code = sys_code()
+    return fail(code: code, msg: f"{asked}: the system refused it ({code}, its number {hero_sys.last_os_error()})")
+
+# `answer`, a number a door of `hero_sys` gave, or that door's failure where
+# it answered below 0.
+function sys_number(answer: i64, asked: str) -> i64?
+    if answer < 0
+        return sys_failed(asked: asked)
+    return ok(answer)
+
+# The code of the kind `hero_disk` last failed with on this thread, for a
+# path: a path that names nothing is `file_not_found`, never `not_found`.
+function disk_code() -> str
+    kind = hero_disk.last_error()
+
+    if kind == hero_disk.HERO_DISK_INVALID || kind == hero_disk.HERO_DISK_NOT_TEXT
+        return INVALID
+
+    if kind == hero_disk.HERO_DISK_NOT_FOUND
+        return FILE_NOT_FOUND
+
+    if kind == hero_disk.HERO_DISK_DENIED
+        return PERMISSION
+
+    if kind == hero_disk.HERO_DISK_NOT_A_DIRECTORY
+        return NOT_A_DIRECTORY
+
+    if kind == hero_disk.HERO_DISK_LIMIT
+        return LIMIT
+
+    if kind == hero_disk.HERO_DISK_UNSUPPORTED
+        return UNSUPPORTED
+    return FAILED
+
+# The failure of `asked` where a door of `hero_disk` answered -1, as
+# `sys_failed` writes it.
+function disk_failed<T>(asked: str) -> T?
+    code = disk_code()
+    return fail(code: code, msg: f"{asked}: the system refused it ({code}, its number {hero_disk.last_os_error()})")
+
+# Whether `s` holds a zero byte, which C reads as its end, so a `str` holding
+# one names nothing C can be handed.
+function has_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "sys_code and disk_code: a call that did not fail leaves `failed` as the fallback, never a kind it did not have"
+    assert hero_sys.page_size() > 0
+    assert sys_code() == FAILED
+    assert hero_disk.enter(".") == 0
+    assert disk_code() == FAILED
+
+test "sys_failed: a refused door's code and message"
+    assert hero_sys.user_id() >= -1
+    refused: [u8] @= []
+    _ = hero_sys.random(@refused, n: 0)
+    failure: i64? = sys_failed(asked: "a test")
+
+    match failure
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && e.msg == "a test: the system refused it (failed, its number 0)"
+
+test "disk_failed: a folder that is not there is file_not_found"
+    assert hero_disk.enter("rebel-os-codes-never-there") == -1
+    failure: ()? = disk_failed(asked: "entering")
+
+    match failure
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+test "has_zero: none, at the start, at the end, and a text of more than one byte"
+    assert !has_zero("")
+    assert !has_zero("héllo")
+    zero_first: [u8] = [0, 'a']
+    zero_last: [u8] = ['a', 0]
+    assert has_zero(zero_first.validated_bytes().must())
+    assert has_zero(zero_last.validated_bytes().must())

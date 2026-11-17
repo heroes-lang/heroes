@@ -1,0 +1,16 @@
+# Reaches Rebel's `html`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a broken page as a browser does,
+# finds its links by a CSS selector, and writes the list back.
+
+use <rebel>/html
+
+function main()
+    doc = html.parse("<ul class=albums><li><a href=/ziggy>Ziggy<li><a href=/low>Low</ul>")
+
+    match html.select_all(doc, html.ROOT, "ul.albums > li > a[href^=\"/\"]")
+        .err e => print(e.code, ": ", e.msg)
+        .ok links =>
+            for a in links
+                print(html.attribute(doc, a, "href").default("?"), " ", html.text_of(doc, a))
+
+    print(html.format_node(doc, html.select(doc, html.ROOT, "ul").default(html.ROOT)))

@@ -1,0 +1,63 @@
+# The loopback tests' certificates and keys, made with OpenSSL 4.1 on
+# 2026-11-16 (`rebel-scratch/tls/certs`, its commands in that session's
+# record) and kept here as text, so that no test needs a tool or a network.
+# They are test data and nothing else: every key below is public.
+
+# The test authority's certificate, EC on P-256, `CN=Heroes Test Root`,
+# valid from 2019-01-01 to 2125-12-31: the one root the loopback tests
+# trust.
+constant ROOT: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIIBezCCASKgAwIBAgIUU+ux0vHDTtiXyMZoOL9TTtaBJ/AwCgYIKoZIzj0EAwIw\n" + "GzEZMBcGA1UEAwwQSGVyb2VzIFRlc3QgUm9vdDAgFw0xOTAxMDEwMDAwMDBaGA8y\n" + "MTI1MTIzMTAwMDAwMFowGzEZMBcGA1UEAwwQSGVyb2VzIFRlc3QgUm9vdDBZMBMG\n" + "ByqGSM49AgEGCCqGSM49AwEHA0IABMzbCCYGc15K/OxmW2JGd5uJ8GR5SAzsKAX4\n" + "IsRj9KlqEvAe4IokRPCJm64JYTeukLR1U9zFwnrhWCZIz162lf+jQjBAMA8GA1Ud\n" + "EwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMB0GA1UdDgQWBBSTPamNrWDohiTj\n" + "yYvPi3wVJGUMzTAKBggqhkjOPQQDAgNHADBEAiBTncZGSj9iEGzP/Mn8/6rF55jy\n" + "brNvIftHCYrtIe2wxgIgKhThdSqplX0er7CrZ0HD9SGRx/aPT0u4z64cQ3YtFQg=\n" + "-----END CERTIFICATE-----\n"
+
+# A certificate for `localhost`, `127.0.0.1` and `::1` the test authority
+# signed, EC on P-256, valid from 2019-06-01 to 2125-12-31. Its first day
+# stands before 2019-07-01 because macOS refuses, under any root, a server
+# certificate issued after that day that is valid for more than 825 days
+# (measured 2026-11-16: "not standards compliant").
+constant LOCALHOST_CHAIN: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIIBpTCCAUygAwIBAgIBAjAKBggqhkjOPQQDAjAbMRkwFwYDVQQDDBBIZXJvZXMg\n" + "VGVzdCBSb290MCAXDTE5MDYwMTAwMDAwMFoYDzIxMjUxMjMxMDAwMDAwWjAUMRIw\n" + "EAYDVQQDDAlsb2NhbGhvc3QwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATO79nj\n" + "NbopvreBu82h4GCHrmvyaJa1zIG1LQeKEoEMzZkW+mPGiY8SJ1FSHcYreIqIkI9n\n" + "gihslNCiOCwV0j01o4GFMIGCMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWg\n" + "MBMGA1UdJQQMMAoGCCsGAQUFBwMBMCwGA1UdEQQlMCOCCWxvY2FsaG9zdIcEfwAA\n" + "AYcQAAAAAAAAAAAAAAAAAAAAATAfBgNVHSMEGDAWgBSTPamNrWDohiTjyYvPi3wV\n" + "JGUMzTAKBggqhkjOPQQDAgNHADBEAiAP1F0TEI7otH8UxVt3nyIHyyeJaBXFPu2c\n" + "QoF1uUJSZAIgeAYxh1TM5z2UBLpthzV+YMMUkk3Z8Z5xTtDOuuN4+nE=\n" + "-----END CERTIFICATE-----\n"
+
+# `LOCALHOST_CHAIN`'s private key, as PKCS #8 (`PRIVATE KEY`).
+constant LOCALHOST_KEY: str
+    "-----BEGIN PRIVATE KEY-----\n" + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg5ifBmeK8qwBRK+2E\n" + "gvXhhtbB7EoeX1Jt2XvVrTvh0+WhRANCAATO79njNbopvreBu82h4GCHrmvyaJa1\n" + "zIG1LQeKEoEMzZkW+mPGiY8SJ1FSHcYreIqIkI9ngihslNCiOCwV0j01\n" + "-----END PRIVATE KEY-----\n"
+
+# The same key in EC's own form, SEC 1 (`EC PRIVATE KEY`).
+constant LOCALHOST_SEC1_KEY: str
+    "-----BEGIN EC PRIVATE KEY-----\n" + "MHcCAQEEIOYnwZnivKsAUSvthIL14YbWwexKHl9Sbdl71a074dPloAoGCCqGSM49\n" + "AwEHoUQDQgAEzu/Z4zW6Kb63gbvNoeBgh65r8miWtcyBtS0HihKBDM2ZFvpjxomP\n" + "EidRUh3GK3iKiJCPZ4IobJTQojgsFdI9NQ==\n" + "-----END EC PRIVATE KEY-----\n"
+
+# A certificate for `localhost` with an RSA key of 2048 bits, signed by the
+# test authority, valid as `LOCALHOST_CHAIN` is.
+constant RSA_CHAIN: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIICcjCCAhegAwIBAgIBAzAKBggqhkjOPQQDAjAbMRkwFwYDVQQDDBBIZXJvZXMg\n" + "VGVzdCBSb290MCAXDTE5MDYwMTAwMDAwMFoYDzIxMjUxMjMxMDAwMDAwWjAUMRIw\n" + "EAYDVQQDDAlsb2NhbGhvc3QwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB\n" + "AQDIiAFG7B2Otvyb1cqBfFE8elZlLtuZtFJAkBrqxW4Fq50rpvRRfm+iSVp/PX+u\n" + "gWs+YRyFOh70EUbiIoCXSDrbz2flNN7R6wlweZsNw0OY+D6A7kK0bW94AWq/7R3X\n" + "ilARBp/zLOxMhmlEmCxsCZ8mszBCG925etW8nhTLmLp1VGosYef386XFY/LqhlvM\n" + "egCjbX0r3YMIQa6j198jbjuxBY0JNF5r9jar1PciVWmbKzQrM50068cUgKtZca9N\n" + "mOs4QpNhlf5I+FnP4/oC6NaoYJINg+gCH5chKli2FmE+R29vTFgABpE/jwtLgiLw\n" + "/2Egaq7hVyi9lrhwRegPQ5XXAgMBAAGjgYUwgYIwDAYDVR0TAQH/BAIwADAOBgNV\n" + "HQ8BAf8EBAMCBaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwLAYDVR0RBCUwI4IJbG9j\n" + "YWxob3N0hwR/AAABhxAAAAAAAAAAAAAAAAAAAAABMB8GA1UdIwQYMBaAFJM9qY2t\n" + "YOiGJOPJi8+LfBUkZQzNMAoGCCqGSM49BAMCA0kAMEYCIQC6pOifu7E2dqNjy2mK\n" + "BGGE/7gNvh/AJNJ8ed1moa9cqwIhAKL+6jH+lvs3exxDKUsvo95gk2knlMNHzg/2\n" + "Dy1XMah6\n" + "-----END CERTIFICATE-----\n"
+
+# `RSA_CHAIN`'s private key, in RSA's own form, PKCS #1 (`RSA PRIVATE KEY`).
+constant RSA_KEY: str
+    "-----BEGIN RSA PRIVATE KEY-----\n" + "MIIEogIBAAKCAQEAyIgBRuwdjrb8m9XKgXxRPHpWZS7bmbRSQJAa6sVuBaudK6b0\n" + "UX5voklafz1/roFrPmEchToe9BFG4iKAl0g6289n5TTe0esJcHmbDcNDmPg+gO5C\n" + "tG1veAFqv+0d14pQEQaf8yzsTIZpRJgsbAmfJrMwQhvduXrVvJ4Uy5i6dVRqLGHn\n" + "9/OlxWPy6oZbzHoAo219K92DCEGuo9ffI247sQWNCTRea/Y2q9T3IlVpmys0KzOd\n" + "NOvHFICrWXGvTZjrOEKTYZX+SPhZz+P6AujWqGCSDYPoAh+XISpYthZhPkdvb0xY\n" + "AAaRP48LS4Ii8P9hIGqu4VcovZa4cEXoD0OV1wIDAQABAoIBAAxETZeyD+jQBsnd\n" + "nSKooSuK7EgKQsK3RiTO6+aapy1PnzCxaNanXlrWE+QetfXN0uqg9CauNICHogdp\n" + "RuZ6M6eIm3lo74x1zUEFH1gLLtJntSMb8BarbxsvMwGElsO9oUI5XoV4pQfVXREm\n" + "IemF+Sdb5MLWg4y6F+MO5ITD1fwhTuUHene4yL41+gouYb4LMBoFzHOyU+JK+q+C\n" + "75ZiBOdg7t87R0V7CygrTkfnZjw4QyudTR7joVXzERMKwhoraomJUn/7u0mA4XL0\n" + "u2BhpxyHBsfcGQk30XJ5dsCYZPXZOeilAH7fsn7hjooMdhiPCMR6RAK7LNVb7m75\n" + "vsUfGEECgYEA/7R51sJUD7REV93KWHaE8E7mzExfNzPZco0cOsXl3+82GU3sTtzF\n" + "AUeNOmK14roBtoIvXycolRm3DeJDEEP2rsB8o25P6lxSkAqDkFdBVLzPZW9fOjXM\n" + "DYeGJMeCOnJwt4X48l28VQetnUA6A4/TLT7/2if7bkMM+o8rkoESKDcCgYEAyMM7\n" + "r/GJVaLcil+HdtMewLAaO4mOiuFQm/g72/a/xHS/BmYmwm+w4Wg1s3nZPn2kY622\n" + "OhUfMqUhaoBTApggwRm4x9Q5i3LMjU87GXWxoRIQSuSVpbtp6JmE9m89ZjCn7V4P\n" + "kpjDWNpT5bxrTFVJfevS4rVzgsMHrfwqokFh72ECgYBUna1f4uicVcPz66IFChtN\n" + "xl5bpr4vb0n6vTVlQY2jP+6ACygypJ3QoZPbiUS1JWZhtczlSPkF9f98aa5VmJfu\n" + "FiZokp2BaVGs9r24qxckamKbJ3K0uY6vv3QlgZvXqX0hTgUmdtxWqvbJvbI08Ygp\n" + "Rdq2n1p1j1yhIXWCwpF2mwKBgD7r0X0nOl+4l15W6mH3cR/7EX2vcxlb3KPFfR1H\n" + "jHrKDES5J1SxJMLAonQJsGjBgBAtlXtGu2xoDL0QUvPxMfLTWPJoNVDbPfjb6C3m\n" + "kTFmM+0FD1HOFzdrRhzmaFvqy/a9ECxl7HOgmcLa9tYJtOreSk37iKRm87U33zTT\n" + "QRqBAoGADs5U1K1+M6uhLYKu09pHnygydYbWMPFE8a7p8E0Trcui6udLCZ3QeZRG\n" + "9QNiXt62hXYfNCNR3U6/fx0OZw9+1d5+mw7lzRS5rTARakgKSUwZUQlHuOymevmq\n" + "lmdMtJn1KExev7tIuOL2Nm2MqGDd7xjJOjT2d25ph5CeaaEznFM=\n" + "-----END RSA PRIVATE KEY-----\n"
+
+# A certificate the test authority signed for `wrong.example` alone, which a
+# client of `localhost` refuses for its host.
+constant WRONG_CHAIN: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIIBlDCCATqgAwIBAgIBBDAKBggqhkjOPQQDAjAbMRkwFwYDVQQDDBBIZXJvZXMg\n" + "VGVzdCBSb290MCAXDTE5MDYwMTAwMDAwMFoYDzIxMjUxMjMxMDAwMDAwWjAYMRYw\n" + "FAYDVQQDDA13cm9uZy5leGFtcGxlMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\n" + "ZAGDH0NBLxHkAbY5ei+1gm8EIw9edJDYNNm2U9y6mYxx3jUYBWfd/q7/tjhvuBaE\n" + "uZ4e+oda/vmph7jKiJL5D6NwMG4wDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8EBAMC\n" + "BaAwEwYDVR0lBAwwCgYIKwYBBQUHAwEwGAYDVR0RBBEwD4INd3JvbmcuZXhhbXBs\n" + "ZTAfBgNVHSMEGDAWgBSTPamNrWDohiTjyYvPi3wVJGUMzTAKBggqhkjOPQQDAgNI\n" + "ADBFAiBtgBCCJKrP+iQ1c6BKgQytmDYPOYRazXPWuTR9CK80LgIhAL/WPRkq8baW\n" + "x/GpoGMZ0Lqd92ZYAUWLUJRTpzG3E4+7\n" + "-----END CERTIFICATE-----\n"
+
+# `WRONG_CHAIN`'s private key.
+constant WRONG_KEY: str
+    "-----BEGIN PRIVATE KEY-----\n" + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQghNuGDEChlIKSdtui\n" + "kCR9cn7kNPHYU34CsjjmMpnLvEGhRANCAARkAYMfQ0EvEeQBtjl6L7WCbwQjD150\n" + "kNg02bZT3LqZjHHeNRgFZ93+rv+2OG+4FoS5nh76h1r++amHuMqIkvkP\n" + "-----END PRIVATE KEY-----\n"
+
+# A certificate for `localhost` the test authority signed, valid from
+# 2020-01-01 to 2021-01-01 only, which a client refuses as past its last
+# day.
+constant EXPIRED_CHAIN: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIIBpDCCAUqgAwIBAgIBBTAKBggqhkjOPQQDAjAbMRkwFwYDVQQDDBBIZXJvZXMg\n" + "VGVzdCBSb290MB4XDTIwMDEwMTAwMDAwMFoXDTIxMDEwMTAwMDAwMFowFDESMBAG\n" + "A1UEAwwJbG9jYWxob3N0MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvZicNcs6\n" + "dy5tw9p8uhnpc1T9yhOOHu0p9SwYzPSd4i4343BgHETx5gh6cCwjga6vO9kb0BEU\n" + "gJXVBBZW/NiazqOBhTCBgjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIFoDAT\n" + "BgNVHSUEDDAKBggrBgEFBQcDATAsBgNVHREEJTAjgglsb2NhbGhvc3SHBH8AAAGH\n" + "EAAAAAAAAAAAAAAAAAAAAAEwHwYDVR0jBBgwFoAUkz2pja1g6IYk48mLz4t8FSRl\n" + "DM0wCgYIKoZIzj0EAwIDSAAwRQIgYMDnHoS7zwM8feqMHA5PJEbY1eWY4y4qS0vp\n" + "BqLc7wICIQCsDJOGDa/s+CJr7NzUb4SGzzhuAlcSzu0Th1yZXxgaEQ==\n" + "-----END CERTIFICATE-----\n"
+
+# `EXPIRED_CHAIN`'s private key.
+constant EXPIRED_KEY: str
+    "-----BEGIN PRIVATE KEY-----\n" + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQguguKUCPP3HqpGxZw\n" + "yivT/9gw4Dz0kFw7QvT382wHslahRANCAAS9mJw1yzp3Lm3D2ny6GelzVP3KE44e\n" + "7Sn1LBjM9J3iLjfjcGAcRPHmCHpwLCOBrq872RvQERSAldUEFlb82JrO\n" + "-----END PRIVATE KEY-----\n"
+
+# A certificate for `localhost` signed by its own key, which no authority
+# vouches for.
+constant SELF_CHAIN: str
+    "-----BEGIN CERTIFICATE-----\n" + "MIIBkDCCATWgAwIBAgIUOHkw1YMTyF/0DBA1f37PHtqgvUwwCgYIKoZIzj0EAwIw\n" + "FDESMBAGA1UEAwwJbG9jYWxob3N0MCAXDTE5MDYwMTAwMDAwMFoYDzIxMjUxMjMx\n" + "MDAwMDAwWjAUMRIwEAYDVQQDDAlsb2NhbGhvc3QwWTATBgcqhkjOPQIBBggqhkjO\n" + "PQMBBwNCAAS9XhnJ1gRrLPW6hPZ5NqJD16hSc0Q8031R3OTLGKehbGnMretPD7By\n" + "RN8EFNTsqkofLPBJCQ2h4t60LkX2woejo2MwYTAMBgNVHRMBAf8EAjAAMA4GA1Ud\n" + "DwEB/wQEAwIFoDATBgNVHSUEDDAKBggrBgEFBQcDATAsBgNVHREEJTAjgglsb2Nh\n" + "bGhvc3SHBH8AAAGHEAAAAAAAAAAAAAAAAAAAAAEwCgYIKoZIzj0EAwIDSQAwRgIh\n" + "ALXwx5xb9c54FETRs+Pxho6cpKlJu0bfNhKnEAKJpxUIAiEA3g5QQBlGkiAz8gkP\n" + "EFWH6Ris9FJ6R/zZBtye6TLEv+s=\n" + "-----END CERTIFICATE-----\n"
+
+# `SELF_CHAIN`'s private key.
+constant SELF_KEY: str
+    "-----BEGIN PRIVATE KEY-----\n" + "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgu2J0kDfLVm+1zNt9\n" + "QGedPNN4ZF8F3WZUgN0hCV8TbHuhRANCAAS9XhnJ1gRrLPW6hPZ5NqJD16hSc0Q8\n" + "031R3OTLGKehbGnMretPD7ByRN8EFNTsqkofLPBJCQ2h4t60LkX2woej\n" + "-----END PRIVATE KEY-----\n"

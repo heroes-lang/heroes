@@ -1,0 +1,91 @@
+# What a search recorded about one match: where each group of the pattern
+# began and ended in the text. The face's `Match` holds one, and its functions
+# read it.
+
+use regex/internal/codes
+use regex/internal/parse as regex_parse
+use regex/internal/program
+use regex/internal/simulate
+
+# The groups of one match, and the text they are cut from.
+record Groups
+    # The text that was searched, whole.
+    source: str
+    # Two entries for each group, the whole match first: the byte index where
+    # it began and the one where it ended, or -1 twice for a group that took
+    # no part in the match.
+    slots: [i64]
+    # The name of each group, "" for one without; the entry 0 is "".
+    names: [str]
+    # The number of the group that closed last, or 0 where none took part.
+    last: i64
+
+# The groups of the match `search` finds in `s`.
+#
+# - `pattern`: the pattern as written, for the message.
+# - `prog`: the program it compiled to.
+# - `s`: the text.
+# - `search`: where and how to search.
+#
+# Fails `not_found` where `s` holds no such match.
+function search_groups(pattern: str, prog: program.Program lent, s: str, search: simulate.Search) -> Groups?
+    match simulate.run_once(prog, s: s, search: search)
+        .ok slots => return ok(groups_of(s: s, prog: prog, slots: slots))
+        .err _    => return fail(code: codes.NOT_FOUND, msg: f"no match of \"{pattern}\" in {told(s)}")
+
+# The groups `slots` records, as a search answers them, of a match in `s`.
+#
+# - `s`: the text.
+# - `prog`: the program.
+# - `slots`: two for each group, then the group that closed last.
+function groups_of(s: str, prog: program.Program lent, slots: [i64]) -> Groups
+    width = 2 * prog.groups + 2
+    return Groups(source: s, slots: slots.slice(from: 0, to: width), names: prog.names, last: slots[width])
+
+# The number of the group of `g` named `name`.
+#
+# - `g`: the groups of a match.
+# - `name`: a group's name.
+#
+# Fails `invalid` where no group has that name.
+function number_of(g: Groups lent, name: str) -> i64?
+    for i in range(from: 1, to: g.names.len())
+        if name != "" && g.names[i] == name
+            return ok(i)
+
+    return fail(code: codes.INVALID, msg: f"the pattern has no group named \"{name}\"")
+
+# A text as a message tells it: quoted where it is short, its length where it
+# is not.
+#
+# - `s`: the text.
+function told(s: str) -> str
+    if s.len() > codes.QUOTED_MAX
+        return f"a text of {s.len()} bytes"
+    return f"\"{s}\""
+
+## Tests
+
+test "groups_of: the slots cut to the groups and the last group closed"
+    prog = regex_parse.compile("(a)(b)?").must()
+    g = groups_of(s: "a", prog: prog, slots: [0, 1, 0, 1, -1, -1, 1])
+    assert g.slots == [0, 1, 0, 1, -1, -1] && g.last == 1 && g.names == ["", "", ""] && g.source == "a"
+
+test "search_groups: a match, and none with the message saying what was asked"
+    prog = regex_parse.compile("b+").must()
+    search = simulate.Search(from: 0, anchored: false, whole: false, not_empty_at: -1, groups: true)
+    assert search_groups(pattern: "b+", prog: prog, s: "abbc", search: search).must().slots == [1, 3]
+
+    match search_groups(pattern: "b+", prog: prog, s: "ac", search: search)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no match of \"b+\" in \"ac\""
+
+test "number_of: a name, one not there, and the empty name"
+    g = Groups(source: "", slots: [0, 0, 0, 0, 0, 0], names: ["", "x", ""], last: 0)
+    assert number_of(g, "x").must() == 1
+    assert number_of(g, "y").is_err()
+    assert number_of(g, "").is_err()
+
+test "told: a short text quoted, a long one by its length"
+    assert told("ab") == "\"ab\""
+    assert told(repeat("é", 31)) == "a text of 62 bytes"

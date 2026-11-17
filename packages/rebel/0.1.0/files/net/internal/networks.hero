@@ -1,0 +1,315 @@
+# The bits of address bytes: a network's first bits compared, kept, cleared
+# or set, a mask built and read, a count of addresses, and one address after
+# another. Bitwise operators take `i64` alone (spec § 7), so each byte is
+# widened, worked on and narrowed back.
+
+# Whether the first `bits` bits of `bytes` are those of `prefix`, both of one
+# length.
+#
+# - `prefix`: the network's address bytes, four or sixteen.
+# - `bits`: how many first bits name the network, 0 to the bytes' bits; 0
+#   holds every address of that length.
+# - `bytes`: the address asked about; of another length, it is not held.
+function holds(prefix: [u8], bits: i64, bytes: [u8]) -> bool
+    if prefix.len() != bytes.len()
+        return false
+    whole = bits / 8
+
+    for i in range(from: 0, to: whole)
+        if prefix[i] != bytes[i]
+            return false
+
+    rest = bits % 8
+
+    if rest == 0
+        return true
+    keep = top_bits(rest)
+    return wide(prefix[whole]) & keep == wide(bytes[whole]) & keep
+
+# `bytes` with every bit past its first `bits` cleared, or set where `set`.
+#
+# - `bytes`: the address bytes, four or sixteen.
+# - `bits`: how many first bits are kept, 0 to the bytes' bits.
+# - `set`: true sets the other bits, false clears them.
+function past(bytes: [u8], bits: i64, set: bool) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: bytes.len())
+        keep = kept_of(bits: bits, i: i)
+        b = wide(bytes[i]) & keep
+
+        if set
+            out @ out.push(narrow(b | 0xff & ~keep))
+        else
+            out @ out.push(narrow(b))
+
+    return out
+
+# The mask of `count` bytes whose first `bits` bits are set, the others
+# clear, or the opposite where `inverted`.
+#
+# - `count`: how many bytes, four or sixteen.
+# - `bits`: how many first bits are set, 0 to `count` times 8.
+# - `inverted`: true clears the first bits and sets the others.
+function mask(count: i64, bits: i64, inverted: bool) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: count)
+        keep = kept_of(bits: bits, i: i)
+
+        if inverted
+            out @ out.push(narrow(0xff & ~keep))
+        else
+            out @ out.push(narrow(keep))
+
+    return out
+
+# How many first bits the mask `bytes` sets, or -1 where a clear bit stands
+# before a set one.
+#
+# - `bytes`: the mask's bytes, any count.
+function mask_length(bytes: [u8]) -> i64
+    count: i64 @= 0
+    ended: bool @= false
+
+    for b in bytes
+        bit: i64 @= 0x80
+
+        while bit > 0
+            if wide(b) & bit != 0
+                if ended
+                    return -1
+                count @ count + 1
+            else
+                ended @ true
+            bit @ bit >> 1
+
+    return count
+
+# How many addresses a network of `bits` first bits holds among addresses of
+# `count` bytes.
+#
+# - `count`: how many bytes an address has, four or sixteen.
+# - `bits`: the network's bits, from `count` times 8 less 63 to `count` times
+#   8.
+#
+# Aborts where 64 bits or more are free, a count past `u64`: the face asks
+# first.
+function size(count: i64, bits: i64) -> u64
+    free = count * 8 - bits
+    assert free >= 0 && free < 64
+
+    if free == 63
+        return 9223372036854775808
+    return to_u64(1 << free).must()
+
+# `bytes` read as one unsigned number with `by` added, -1 meaning one less,
+# or [] where the answer would be past the last or before the first.
+#
+# - `bytes`: the address's bytes, the first the highest.
+# - `by`: how many addresses to step, negative stepping back; 0 answers
+#   `bytes`.
+function step(bytes: [u8], by: i64) -> [u8]
+    out: [u8] @= bytes
+    carry: i64 @= 0
+    rest: i64 @= by
+    at: i64 @= bytes.len() - 1
+
+    while at >= 0
+        part: i64 @= 0
+
+        if rest >= 0
+            part @ rest % 256
+            rest @ rest / 256
+        else
+            # The low byte of a negative count, and the rest toward zero: -1
+            # is 255 here and -1 above, the borrow the byte above pays.
+            part @ (rest % 256 + 256) % 256
+            rest @ (rest - part) / 256
+        sum = wide(bytes[at]) + part + carry
+        out[at] @ narrow(sum & 0xff)
+        carry @ sum >> 8
+        at @ at - 1
+
+    if rest + carry != 0
+        return []
+    return out
+
+# `bytes` read as one unsigned number with 2 to the power `power` added, or
+# [] where the answer is past the largest such number.
+#
+# - `bytes`: the address's bytes, the first the highest.
+# - `power`: which bit is added, 0 for the lowest, below the bytes' bits.
+#
+# Aborts where `power` is below 0 or not below the bytes' bits.
+function add_power(bytes: [u8], power: i64) -> [u8]
+    assert power >= 0 && power < bytes.len() * 8
+    out: [u8] @= bytes
+    at: i64 @= bytes.len() - 1 - power / 8
+    carry: i64 @= 1 << power % 8
+
+    while at >= 0 && carry > 0
+        sum = wide(bytes[at]) + carry
+        out[at] @ narrow(sum & 0xff)
+        carry @ sum >> 8
+        at @ at - 1
+
+    if carry > 0
+        return []
+    return out
+
+# -1 where `a` read as one unsigned number is below `b`, 0 where they are
+# equal, 1 where it is above.
+#
+# - `a`: bytes, the first the highest.
+# - `b`: as many bytes as `a`.
+function order_of(a: [u8], b: [u8]) -> i64
+    for i in range(from: 0, to: a.len())
+        if a[i] != b[i]
+            return sign(wide(a[i]) - wide(b[i]))
+
+    return 0
+
+# How many of the lowest bits of `bytes` are clear: all of them where every
+# byte is 0.
+#
+# - `bytes`: bytes, the first the highest.
+function low_zeros(bytes: [u8]) -> i64
+    count: i64 @= 0
+    at: i64 @= bytes.len() - 1
+
+    while at >= 0 && bytes[at] == 0
+        count @ count + 8
+        at @ at - 1
+
+    if at < 0
+        return count
+    b: i64 @= wide(bytes[at])
+
+    while b & 1 == 0
+        count @ count + 1
+        b @ b >> 1
+
+    return count
+
+# -1 where `n` is below 0, 0 where it is 0, 1 where it is above.
+#
+# - `n`: a difference.
+function sign(n: i64) -> i64
+    if n < 0
+        return -1
+
+    if n > 0
+        return 1
+    return 0
+
+# The bits of byte `i` of a mask whose first `bits` bits are set.
+#
+# - `bits`: the mask's set bits, 0 or more.
+# - `i`: the byte's index, 0 or more.
+function kept_of(bits: i64, i: i64) -> i64
+    if bits >= (i + 1) * 8
+        return 0xff
+
+    if bits <= i * 8
+        return 0
+    return top_bits(bits - i * 8)
+
+# A byte whose first `n` bits are set.
+#
+# - `n`: how many, 0 to 8.
+function top_bits(n: i64) -> i64
+    return 0xff << 8 - n & 0xff
+
+# `b` as an `i64`, for the bitwise operators.
+#
+# - `b`: the byte.
+function wide(b: u8) -> i64
+    return to_i64(b).must()
+
+# The low byte of `n`, which the caller has kept within 0 to 255.
+#
+# - `n`: the value, 0 to 255.
+#
+# Aborts where `n` is outside 0 to 255.
+function narrow(n: i64) -> u8
+    return to_u8(n).must()
+
+## Tests
+
+test "holds: no bits, every bit, a part of a byte, and the other length"
+    assert holds(prefix: [10, 0, 0, 0], bits: 0, bytes: [99, 1, 2, 3])
+    assert holds(prefix: [10, 0, 0, 0], bits: 8, bytes: [10, 255, 255, 255])
+    assert !holds(prefix: [10, 0, 0, 0], bits: 8, bytes: [11, 0, 0, 0])
+    assert holds(prefix: [172, 16, 0, 0], bits: 12, bytes: [172, 31, 255, 255])
+    assert !holds(prefix: [172, 16, 0, 0], bits: 12, bytes: [172, 32, 0, 0])
+    assert holds(prefix: [1, 2, 3, 4], bits: 32, bytes: [1, 2, 3, 4])
+    assert !holds(prefix: [1, 2, 3, 4], bits: 32, bytes: [1, 2, 3, 5])
+    assert !holds(prefix: [0, 0, 0, 0], bits: 0, bytes: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+test "past: cleared and set at 0, a part of a byte, and every bit"
+    assert past([10, 1, 2, 3], bits: 8, set: false) == [10, 0, 0, 0]
+    assert past([10, 1, 2, 3], bits: 8, set: true) == [10, 255, 255, 255]
+    assert past([192, 168, 7, 9], bits: 20, set: false) == [192, 168, 0, 0]
+    assert past([192, 168, 7, 9], bits: 20, set: true) == [192, 168, 15, 255]
+    assert past([1, 2, 3, 4], bits: 0, set: false) == [0, 0, 0, 0]
+    assert past([1, 2, 3, 4], bits: 32, set: true) == [1, 2, 3, 4]
+
+test "mask: a /24, a /0, a /32, a part of a byte, and inverted"
+    assert mask(count: 4, bits: 24, inverted: false) == [255, 255, 255, 0]
+    assert mask(count: 4, bits: 24, inverted: true) == [0, 0, 0, 255]
+    assert mask(count: 4, bits: 0, inverted: false) == [0, 0, 0, 0]
+    assert mask(count: 4, bits: 32, inverted: false) == [255, 255, 255, 255]
+    assert mask(count: 4, bits: 12, inverted: false) == [255, 240, 0, 0]
+    assert mask(count: 16, bits: 32, inverted: false)[3] == 255 && mask(count: 16, bits: 32, inverted: false)[4] == 0
+
+test "mask_length: every bit, none, a part of a byte, and a clear bit before a set one"
+    assert mask_length([255, 255, 255, 255]) == 32
+    assert mask_length([0, 0, 0, 0]) == 0
+    assert mask_length([255, 255, 255, 0]) == 24
+    assert mask_length([255, 240, 0, 0]) == 12
+    assert mask_length([255, 255, 0, 255]) == -1
+    assert mask_length([254, 1, 0, 0]) == -1
+
+test "size: one address, the whole IPv4 space, and IPv6 at 62 and 63 free bits"
+    assert size(count: 4, bits: 32) == 1
+    assert size(count: 4, bits: 0) == 4294967296
+    assert size(count: 16, bits: 120) == 256
+    assert size(count: 16, bits: 66) == 4611686018427387904
+    assert size(count: 16, bits: 65) == 9223372036854775808
+
+test "step: forward and back across a byte, at both ends, and by 0"
+    assert step([1, 2, 3, 255], by: 1) == [1, 2, 4, 0]
+    assert step([1, 2, 4, 0], by: -1) == [1, 2, 3, 255]
+    assert step([255, 255, 255, 255], by: 1) == []
+    assert step([0, 0, 0, 0], by: -1) == []
+    assert step([0, 0, 0, 0], by: 0) == [0, 0, 0, 0]
+    assert step([0, 0, 0, 0], by: 4294967295) == [255, 255, 255, 255]
+    assert step([255, 255, 255, 255], by: -4294967295) == [0, 0, 0, 0]
+    assert step([0, 0, 0, 0], by: 4294967296) == []
+
+test "step: an IPv6 address by the largest and the smallest i64"
+    zero: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    top = step(zero, by: 9223372036854775807)
+    assert top == [0, 0, 0, 0, 0, 0, 0, 0, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert step(top, by: -9223372036854775807) == zero
+    assert step(zero, by: -9223372036854775807 - 1) == []
+    full: [u8] = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+    assert step(full, by: -9223372036854775807 - 1) == [255, 255, 255, 255, 255, 255, 255, 255, 0x7f, 255, 255, 255, 255, 255, 255, 255]
+
+test "kept_of, top_bits, wide, narrow, sign: the edges of a byte and of a sign"
+    assert sign(-9223372036854775807 - 1) == -1 && sign(0) == 0 && sign(9223372036854775807) == 1
+    assert kept_of(bits: 24, i: 2) == 0xff && kept_of(bits: 24, i: 3) == 0 && kept_of(bits: 20, i: 2) == 0xf0
+    assert top_bits(0) == 0 && top_bits(8) == 0xff && top_bits(1) == 0x80
+    assert wide(255) == 255 && narrow(0) == 0 && narrow(255) == 255
+
+test "add_power: the lowest bit, a carry across bytes, the highest bit, and past the end"
+    assert add_power([1, 2, 3, 255], power: 0) == [1, 2, 4, 0]
+    assert add_power([0, 0, 0, 0], power: 31) == [128, 0, 0, 0]
+    assert add_power([0, 0, 255, 255], power: 8) == [0, 1, 0, 255]
+    assert add_power([128, 0, 0, 0], power: 31) == []
+    assert add_power([255, 255, 255, 255], power: 0) == []
+
+test "order_of and low_zeros: equal, below, above; no bit, some bits, every bit"
+    assert order_of(a: [1, 2], b: [1, 2]) == 0 && order_of(a: [1, 2], b: [1, 3]) == -1 && order_of(a: [2, 0], b: [1, 255]) == 1
+    assert low_zeros([0, 0, 0, 1]) == 0 && low_zeros([0, 0, 1, 0]) == 8 && low_zeros([0, 0, 0, 0]) == 32 && low_zeros([128, 0, 0, 0]) == 31

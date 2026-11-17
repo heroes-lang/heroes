@@ -1,0 +1,351 @@
+# A tree walked into a list, and the paths that match a pattern: what
+# `fs.walk`, `fs.walk_following_links` and `fs.glob` do.
+#
+# The walk is depth first, each folder's entries by their names' bytes, and
+# holds what is left to visit in a stack of its own, so no tree is too deep
+# for it. Where links are followed, every folder entered has a frame: its
+# resolved path and the frame of the folder it was entered from. A link to a
+# folder whose resolved path is a frame on its own chain would lead back into
+# a folder the walk is inside; it is listed as a link and never entered, so a
+# tree that loops is walked once and the walk ends.
+
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use fs/internal/links
+use fs/internal/listing
+use fs/internal/tree
+use path
+
+# An entry waiting on the stack of `walked`.
+record Step
+    # Its path below the root.
+    rel: str
+    # Its path as the caller writes it.
+    full: str
+    # Its own name, the last part.
+    name: str
+    # `facts.FILE` to `facts.OTHER`, the link itself where it is one.
+    kind: i64
+    # 1 for an entry of the root, one more for each folder below.
+    depth: i64
+    # The frame of its folder, -1 where links are not followed.
+    parent: i64
+
+# A folder the walk entered, where links are followed.
+record Frame
+    # Its absolute path, every link followed.
+    resolved: str
+    # The frame of the folder it was entered from, -1 for the root.
+    parent: i64
+
+# Whether `place` is the resolved path of `from` or of a frame above it.
+#
+# - `frames`: every frame so far.
+# - `from`: the frame to start at, -1 for none.
+# - `place`: a resolved path.
+function loops(frames: [Frame] lent, from: i64, place: str) -> bool
+    at: i64 @= from
+
+    while at >= 0
+        if frames[at].resolved == place
+            return true
+        at @ frames[at].parent
+
+    return false
+
+# The entries of the folder `dir` as steps, in the reverse of their order, so
+# that popping them visits them in order.
+#
+# - `dir`: the folder's path as the caller writes it.
+# - `rel`: its path below the root, "" for the root.
+# - `depth`: the depth of its entries.
+# - `frame`: its frame, -1 where links are not followed.
+# - `asked`: what a failure's message says was asked.
+function steps_of(dir: str, rel: str, depth: i64, frame: i64, asked: str) -> [Step]?
+    entries = listing.listed(dir: dir, asked: f"{asked}: reading \"{dir}\"")?
+    steps: [Step] @= []
+    left: i64 @= entries.len()
+
+    while left > 0
+        left @ left - 1
+        entry = entries[left]
+        below: str @= entry.name
+
+        if rel != ""
+            below @ path.join_all([rel, entry.name])
+        steps @ steps.push(
+            Step(rel: below, full: path.join_all([dir, entry.name]), name: entry.name, kind: entry.kind, depth: depth, parent: frame)
+        )
+
+    return ok(steps)
+
+# Every path under the folder `root`, depth first.
+#
+# - `root`: the folder; it is followed where it is a link.
+# - `follow`: whether links below it are followed.
+# - `most_depth`: the deepest entries listed, 1 for the root's own, -1 for
+#   no bound.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `file_not_found`, `not_a_directory`, and on the first folder it
+# cannot read.
+function walked(root: str, follow: bool, most_depth: i64, asked: str) -> [listing.Found]?
+    codes.checked(path: root, asked: asked)?
+    kind = facts.presence(at: root, through: true, asked: asked)?
+
+    if kind == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is there")
+
+    if kind != facts.DIRECTORY
+        return fail(code: codes.NOT_A_DIRECTORY, msg: f"{asked}: it is no folder")
+    frames: [Frame] @= []
+    root_frame: i64 @= -1
+
+    if follow
+        frames @ frames.push(Frame(resolved: links.resolved(at: root, asked: asked)?, parent: -1))
+        root_frame @ 0
+    stack: [Step] @= steps_of(dir: root, rel: "", depth: 1, frame: root_frame, asked: asked)?
+    count: i64 @= stack.len()
+    out: [listing.Found] @= []
+
+    while count > 0
+        count @ count - 1
+        step = stack[count]
+        seen: i64 @= step.kind
+        enter: bool @= false
+        frame: i64 @= -1
+
+        if follow && step.kind == facts.LINK
+            target = facts.presence(at: step.full, through: true, asked: asked)?
+
+            if target == facts.DIRECTORY
+                place = links.resolved(at: step.full, asked: asked)?
+
+                if !loops(frames, from: step.parent, place: place)
+                    frames @ frames.push(Frame(resolved: place, parent: step.parent))
+                    frame @ frames.len() - 1
+                    seen @ facts.DIRECTORY
+                    enter @ true
+            else if target != facts.NOTHING
+                seen @ target
+        else if step.kind == facts.DIRECTORY
+            enter @ true
+
+            if follow
+                frames @ frames.push(
+                    Frame(resolved: path.join_all([frames[step.parent].resolved, step.name]), parent: step.parent)
+                )
+                frame @ frames.len() - 1
+        out @ out.push(listing.Found(name: step.rel, kind: seen))
+
+        if enter && (most_depth < 0 || step.depth < most_depth)
+            for next in steps_of(dir: step.full, rel: step.rel, depth: step.depth + 1, frame: frame, asked: asked)?
+                if count < stack.len()
+                    stack[count] @ next
+                else
+                    stack @ stack.push(next)
+                count @ count + 1
+
+    return ok(out)
+
+# Where `pattern` first holds a character that is no character of a name, or
+# -1: `*`, `?`, `[`, and `\` where it does not separate.
+#
+# - `pattern`: the pattern, by the system's rules.
+function first_special(pattern: str) -> i64
+    escapes = !path.is_sep("\\")
+    at: i64 @= 0
+
+    while at < pattern.len()
+        c = pattern[at]
+
+        if c == '*' || c == '?' || c == '[' || escapes && c == '\\'
+            return at
+        at @ at + 1
+
+    return -1
+
+# The paths that match `pattern`, sorted, written as the pattern begins.
+#
+# - `pattern`: `path.matches`'s pattern, by the system's rules.
+#
+# Fails `invalid` where it is malformed, and on the first folder it cannot
+# read; a folder it begins with that is not there answers no paths.
+function globbed(pattern: str) -> [str]?
+    asked = f"globbing \"{pattern}\""
+    codes.checked(path: pattern, asked: asked)?
+    _ = path.matches(path: "", pattern: pattern)?
+    special = first_special(pattern)
+
+    if special < 0
+        if facts.presence(at: pattern, through: false, asked: asked)? == facts.NOTHING
+            return ok([])
+        return ok([pattern])
+    cut: i64 @= special - 1
+
+    while cut >= 0 && !path.is_sep(pattern.slice(from: cut, to: cut + 1))
+        cut @ cut - 1
+
+    prefix = pattern.slice(from: 0, to: cut + 1)
+    rest = pattern.slice(from: cut + 1, to: pattern.len())
+    base: str @= prefix
+
+    if prefix == ""
+        base @ "."
+
+    if facts.presence(at: base, through: true, asked: asked)? != facts.DIRECTORY
+        return ok([])
+    depth: i64 @= 1
+
+    for c in rest.chars()
+        if path.is_sep(c)
+            depth @ depth + 1
+
+    if rest.len() >= 2 && rest_holds_any_depth(rest)
+        depth @ -1
+    matched: [str] @= []
+
+    for found in walked(root: base, follow: true, most_depth: depth, asked: asked)?
+        candidate = prefix + found.name
+
+        if path.matches(path: candidate, pattern: pattern)?
+            matched @ matched.push(candidate)
+
+    return ok(sort(matched))
+
+# Whether `rest` holds `**`, which stands for any number of parts.
+#
+# - `rest`: the part of a pattern after its folder.
+function rest_holds_any_depth(rest: str) -> bool
+    at: i64 @= 0
+
+    while at + 1 < rest.len()
+        if rest[at] == '*' && rest[at + 1] == '*'
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "walked: depth first, each folder by bytes, the root not listed, and the empty folder"
+    dir = fixture.folder("walked")
+    nothing: [listing.Found] = []
+    assert walked(root: dir, follow: false, most_depth: -1, asked: "a").must() == nothing
+    assert !write_file(path: dir + "/b", text: "x").is_err()
+    assert !write_file(path: dir + "/a-c", text: "x").is_err()
+    assert !tree.made_all(dir + "/a/d").is_err()
+    assert !write_file(path: dir + "/a/z", text: "x").is_err()
+    got = walked(root: dir, follow: false, most_depth: -1, asked: "a").must()
+    names: [str] @= []
+
+    for f in got
+        names @ names.push(f.name)
+
+    assert names == ["a", path.join_all(["a", "d"]), path.join_all(["a", "z"]), "a-c", "b"]
+    assert got[0].kind == facts.DIRECTORY && got[2].kind == facts.FILE
+    shallow = walked(root: dir, follow: false, most_depth: 1, asked: "a").must()
+    assert shallow.len() == 3
+    assert fixture.cleared(dir)
+
+test "walked: a root not there, a root that is a file, and a root reached through a link"
+    dir = fixture.folder("walkroot")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    match walked(root: dir + "/none", follow: false, most_depth: -1, asked: "walking")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "walking: nothing is there"
+
+    match walked(root: dir + "/f", follow: false, most_depth: -1, asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY
+
+    if fixture.linked(target: ".", name: dir + "/here")
+        through = walked(root: dir + "/here", follow: false, most_depth: -1, asked: "a").must()
+        assert through.len() == 2 && through[0].name == "f" && through[1].name == "here"
+        assert through[1].kind == facts.LINK
+    assert fixture.cleared(dir)
+
+test "walked: links not followed are listed as links; followed, a link to a folder is entered, to nothing and back up are not"
+    dir = fixture.folder("walklinks")
+    assert !tree.made_all(dir + "/d").is_err()
+    assert !write_file(path: dir + "/d/f", text: "x").is_err()
+
+    if fixture.linked(target: "d", name: dir + "/l")
+        assert fixture.linked(target: "..", name: dir + "/d/up")
+        assert fixture.linked(target: "none", name: dir + "/x")
+        plain = walked(root: dir, follow: false, most_depth: -1, asked: "a").must()
+        assert plain.len() == 5
+        assert plain[3].name == "l" && plain[3].kind == facts.LINK
+        followed = walked(root: dir, follow: true, most_depth: -1, asked: "a").must()
+        names: [str] @= []
+        kinds: [i64] @= []
+
+        for f in followed
+            names @ names.push(f.name)
+            kinds @ kinds.push(f.kind)
+
+        d_f = path.join_all(["d", "f"])
+        d_up = path.join_all(["d", "up"])
+        l_f = path.join_all(["l", "f"])
+        l_up = path.join_all(["l", "up"])
+        assert names == ["d", d_f, d_up, "l", l_f, l_up, "x"]
+        assert kinds == [facts.DIRECTORY, facts.FILE, facts.LINK, facts.DIRECTORY, facts.FILE, facts.LINK, facts.LINK]
+    assert fixture.cleared(dir)
+
+test "walked: a link to itself and a ring of two links are walked once, and the walk ends"
+    dir = fixture.folder("walkring")
+    assert !tree.made_all(dir + "/a").is_err()
+    assert !tree.made_all(dir + "/b").is_err()
+
+    if fixture.linked(target: "../b", name: dir + "/a/to_b")
+        assert fixture.linked(target: "../a", name: dir + "/b/to_a")
+        assert fixture.linked(target: ".", name: dir + "/a/me")
+        followed = walked(root: dir, follow: true, most_depth: -1, asked: "a").must()
+        names: [str] @= []
+
+        for f in followed
+            names @ names.push(f.name)
+
+        a = path.join_all(["a", "me"])
+        a_b = path.join_all(["a", "to_b"])
+        a_b_a = path.join_all(["a", "to_b", "to_a"])
+        b_a = path.join_all(["b", "to_a"])
+        b_a_me = path.join_all(["b", "to_a", "me"])
+        b_a_b = path.join_all(["b", "to_a", "to_b"])
+        assert names == ["a", a, a_b, a_b_a, "b", b_a, b_a_me, b_a_b]
+    assert fixture.cleared(dir)
+
+test "first_special and rest_holds_any_depth: no special character, each one, and `**`"
+    assert first_special("a/b.txt") == -1
+    assert first_special("a/*.txt") == 2
+    assert first_special("ab?") == 2
+    assert first_special("[a]") == 0
+    assert first_special("") == -1
+    assert rest_holds_any_depth("**/x")
+    assert rest_holds_any_depth("a/**")
+    assert !rest_holds_any_depth("*/*")
+    assert !rest_holds_any_depth("")
+
+test "globbed: one part, a dot name matched by `*`, a part deep, `**`, no special character, a folder not there, and a malformed pattern"
+    dir = fixture.folder("glob")
+    assert !tree.made_all(dir + "/src/x").is_err()
+    assert !write_file(path: dir + "/a.txt", text: "x").is_err()
+    assert !write_file(path: dir + "/.h.txt", text: "x").is_err()
+    assert !write_file(path: dir + "/src/m.hero", text: "x").is_err()
+    assert !write_file(path: dir + "/src/x/n.hero", text: "x").is_err()
+    sep = path.sep()
+    assert globbed(dir + "/*.txt").must() == [dir + "/" + ".h.txt", dir + "/" + "a.txt"]
+    assert globbed(dir + "/*/*.hero").must() == [dir + "/src" + sep + "m.hero"]
+    assert globbed(dir + "/**/*.hero").must() == [dir + "/src" + sep + "m.hero", dir + "/src" + sep + "x" + sep + "n.hero"]
+    assert globbed(dir + "/a.txt").must() == [dir + "/a.txt"]
+    nothing: [str] = []
+    assert globbed(dir + "/none.txt").must() == nothing
+    assert globbed(dir + "/none/*").must() == nothing
+
+    match globbed(dir + "/[a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)

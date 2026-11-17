@@ -1,0 +1,692 @@
+# The platform layer's child processes, `hero_proc.h`, bound thin: one function
+# per C function, in C's order, each answering what C answers. The floor of
+# `process`: where a call fails its handle is `nullptr` or its number -1, and
+# `last_error` then the kind, which `process` turns into a code.
+#
+# A process started here is LIVE: `start` returns at once with its handle, and
+# the program writes to it, reads from it, asks whether it has ended, waits
+# for it or stops it. The layer is C of the language's own beside the runtime,
+# so this group names its header and no `link`, no platform type reaches it,
+# and the same lines bind it on every platform. Every mark below is the
+# header's own promise: a process `start` hands out is begun by the call and
+# ended by `hero_proc_release`, and the end of a pipe `pipe` hands out is a
+# stream of `io/hero_stream`, ended by that floor's `close`.
+#
+# A list crosses as bytes: each argument, or each `NAME=value`, followed by
+# one zero byte. Nothing is quoted and no shell reads it.
+
+use io/hero_stream
+
+extern "hero_proc.h"
+    # A process the layer started and the program holds. It is a handle the
+    # layer issues and checks: one released already, `nullptr`, or one it
+    # never issued is `HERO_PROC_NOT_OPEN`, never a read of freed memory and
+    # never a signal sent to another process.
+    record Proc tag hero_proc
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, and `hero_stream.h`'s number where it has the kind.
+    constant HERO_PROC_OK: i64
+    constant HERO_PROC_INVALID: i64
+    constant HERO_PROC_NOT_OPEN: i64
+    constant HERO_PROC_NOT_FOUND: i64
+    constant HERO_PROC_DENIED: i64
+    constant HERO_PROC_NOT_A_DIRECTORY: i64
+    constant HERO_PROC_LIMIT: i64
+    constant HERO_PROC_UNSUPPORTED: i64
+    constant HERO_PROC_OTHER: i64
+    constant HERO_PROC_RUNNING: i64
+    constant HERO_PROC_NOT_A_PROGRAM: i64
+    # What each of the child's input, output and error is: the parent's own,
+    # the null device, a new pipe, or a stream the program holds.
+    constant HERO_PROC_STDIO_PARENT: i64
+    constant HERO_PROC_STDIO_NOTHING: i64
+    constant HERO_PROC_STDIO_PIPE: i64
+    constant HERO_PROC_STDIO_STREAM: i64
+    # What the child's environment is: this process's, or exactly a list.
+    constant HERO_PROC_ENV_PARENT: i64
+    constant HERO_PROC_ENV_GIVEN: i64
+    # Which of the child's three streams, for `pipe`.
+    constant HERO_PROC_INPUT: i64
+    constant HERO_PROC_OUTPUT: i64
+    constant HERO_PROC_ERROR: i64
+    function hero_proc_start(program: cstr lent, @arguments: [u8] counted_by arguments_count lent, arguments_count: u64, environment_kind: i64, @environment: [u8] counted_by environment_count lent, environment_count: u64, folder: cstr lent, input_kind: i64, input: hero_stream.Stream, output_kind: i64, output: hero_stream.Stream, error_kind: i64, error: hero_stream.Stream) -> Proc acquires hero_proc_release
+    function hero_proc_pipe(p: Proc, which: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_proc_wait(p: Proc, @code: i64, @by_signal: i64) -> i64
+    function hero_proc_ended(p: Proc) -> i64
+    function hero_proc_terminate(p: Proc) -> i64
+    function hero_proc_kill(p: Proc) -> i64
+    function hero_proc_id(p: Proc) -> i64
+    function hero_proc_cpu(p: Proc, @user_ns: i64, @system_ns: i64) -> i64
+    function hero_proc_release(p: Proc consumes) -> i64
+    function hero_proc_last_error() -> i64
+    function hero_proc_last_os_error() -> i64
+    # `hero_stream.h`'s own, which this header includes: the call that ends
+    # the stream `hero_proc_pipe` begins, declared here because a mark names
+    # a call of its own module. A program closes one through `io/hero_stream`.
+    function hero_stream_close(s: hero_stream.Stream consumes) -> i64
+
+# What the tests below need of the runtime, and nothing else here does: a
+# folder made and removed, this process's number, which keeps two runs'
+# folders apart, and the suffix that tells Windows from the rest.
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    function hero_os_pid() -> i64
+    function hero_run_exe_suffix() -> str
+
+# The process `program` started as, or `nullptr`; no process was started
+# where it is `nullptr`. `program` is a path where it holds a separator, else
+# a name looked for in this process's `PATH`; `arguments` holds each argument
+# followed by a zero byte, `arguments_count` bytes in all; `environment_kind`
+# is `HERO_PROC_ENV_PARENT`, or `HERO_PROC_ENV_GIVEN` with each `NAME=value`
+# of `environment` followed by a zero byte; `folder` is the child's working
+# folder, "" for this process's own; and each kind is one of
+# `HERO_PROC_STDIO_*`, its stream read only for `HERO_PROC_STDIO_STREAM`. A
+# program that is not there is `HERO_PROC_NOT_FOUND`, told here. It aborts
+# where `program` or `folder` holds a zero byte, which C cannot read.
+function start(program: str, @arguments: [u8], arguments_count: u64, environment_kind: i64, @environment: [u8], environment_count: u64, folder: str, in_kind: i64, in_stream: hero_stream.Stream, out_kind: i64, out_stream: hero_stream.Stream, err_kind: i64, err_stream: hero_stream.Stream) -> Proc
+    return hero_proc_start(
+        program: program.cstr(),
+        arguments: @arguments,
+        arguments_count: arguments_count,
+        environment_kind: environment_kind,
+        environment: @environment,
+        environment_count: environment_count,
+        folder: folder.cstr(),
+        input_kind: in_kind,
+        input: in_stream,
+        output_kind: out_kind,
+        output: out_stream,
+        error_kind: err_kind,
+        error: err_stream
+    )
+
+# The program's end of the pipe that is the child's `which`, or `nullptr`.
+# `which` is `HERO_PROC_INPUT`, `HERO_PROC_OUTPUT` or `HERO_PROC_ERROR`; the
+# end is taken once and is the program's from then, closed by
+# `hero_stream.close`. It is `nullptr` with `HERO_PROC_INVALID` where that
+# stream was not started as a pipe or its end was taken already.
+function pipe(p: Proc, which: i64) -> hero_stream.Stream
+    return hero_proc_pipe(p, which)
+
+# 0 once `p` has ended, waiting for it, or -1. `code` is then its exit code
+# and `by_signal` 0, or `code` -1 and `by_signal` the signal that ended it;
+# on Windows `by_signal` is always 0. Asked again it answers the same.
+function wait(p: Proc, @code: i64, @by_signal: i64) -> i64
+    return hero_proc_wait(p, code: @code, by_signal: @by_signal)
+
+# 1 where `p` has ended, 0 where it still runs, or -1. It never waits.
+function ended(p: Proc) -> i64
+    return hero_proc_ended(p)
+
+# 0 once `p` is asked to end, or -1. It sends SIGTERM, and nothing to a
+# process that has ended already; on Windows it answers -1 with
+# `HERO_PROC_UNSUPPORTED` and touches nothing, since Windows has no such
+# request.
+function terminate(p: Proc) -> i64
+    return hero_proc_terminate(p)
+
+# 0 once `p` is ended at once, or -1. It sends SIGKILL, or on Windows ends
+# the process with the exit code 1, and nothing to one that has ended already.
+function kill(p: Proc) -> i64
+    return hero_proc_kill(p)
+
+# The system's own number for `p`, or -1. It is a number to show: the handle
+# names the process, never the number.
+function id(p: Proc) -> i64
+    return hero_proc_id(p)
+
+# 0 with the CPU time `p` used in `user_ns` and `system_ns`, in nanoseconds,
+# or -1 with both -1. It answers only once `p` has ended, and
+# `HERO_PROC_RUNNING` before.
+function cpu(p: Proc, @user_ns: i64, @system_ns: i64) -> i64
+    return hero_proc_cpu(p, user_ns: @user_ns, system_ns: @system_ns)
+
+# 0, or -1 where `p` named no process; `p` is given back either way. A
+# process that still runs keeps running and leaves no zombie, and the ends of
+# its pipes never taken are closed.
+function release(@p: Proc) -> i64
+    return hero_proc_release(p)
+
+# The kind of the last call's failure on this thread. It is `HERO_PROC_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_proc_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# refused.
+function last_os_error() -> i64
+    return hero_proc_last_os_error()
+
+# For the test of the handle tag alone (2026-11-16): a socket made and
+# closed through `ptr`, and a stream's door bound with `ptr`, so a test can
+# hand one table's handle to another's, which no typed binding lets a
+# program do.
+extern "hero_net.h"
+    function hero_net_udp(address: cstr lent, port: i64) -> ptr
+    function hero_net_close(s: ptr) -> i64
+
+extern "hero_stream.h"
+    constant HERO_STREAM_NOT_OPEN: i64
+    function hero_stream_kind(s: ptr) -> i64
+    function hero_stream_last_error() -> i64
+
+## Tests
+
+# Whether the tests run on Windows, asked of the runtime as the compiler asks
+# it: the one system whose programs need `.exe` to be started.
+function on_windows() -> bool
+    return hero_run_exe_suffix() == ".exe"
+
+# The words as the one list C reads: each followed by a zero byte.
+function packed(words: [str]) -> [u8]
+    out: [u8] @= []
+
+    for word in words
+        for i in range(from: 0, to: word.len())
+            out @ out.push(word[i])
+
+        out @ out.push(0)
+
+    return out
+
+# Everything `s` holds up to its end.
+function drained(s: hero_stream.Stream) -> [u8]
+    out: [u8] @= []
+    part: [u8] @= []
+
+    while true
+        got = hero_stream.read(s, @part, n: 256)
+
+        if got <= 0
+            return out
+
+        for i in range(from: 0, to: got)
+            out @ out.push(part[i])
+
+# The bytes as text, without the line ending a child printed after it, which
+# is two bytes on Windows.
+function line(bytes: [u8]) -> str
+    end: i64 @= bytes.len()
+
+    while end > 0 && (bytes[end - 1] == 10 || bytes[end - 1] == 13)
+        end @ end - 1
+
+    return bytes.slice(from: 0, to: end).validated_bytes().must()
+
+# Whether `text` ends with `tail`.
+function ends_with(text: str, tail: str) -> bool
+    return text.len() >= tail.len() && text.slice(from: text.len() - tail.len(), to: text.len()) == tail
+
+# The three kinds of a child the tests neither feed nor read.
+function quiet() -> [i64]
+    return [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
+
+# A child with its lists already bytes and no stream of the program's.
+function begun(program: str, arguments: [u8], environment_kind: i64, environment: [u8], folder: str, kinds: [i64]) -> Proc
+    words: [u8] @= arguments
+    variables: [u8] @= environment
+    return start(
+        program: program,
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: environment_kind,
+        environment: @variables,
+        environment_count: variables.len().to_u64().must(),
+        folder: folder,
+        in_kind: kinds[0],
+        in_stream: nullptr,
+        out_kind: kinds[1],
+        out_stream: nullptr,
+        err_kind: kinds[2],
+        err_stream: nullptr
+    )
+
+# A child of `program` with `words`, this process's environment, and `folder`.
+function child(program: str, words: [str], folder: str, kinds: [i64]) -> Proc
+    none: [u8] = []
+    return begun(
+        program: program,
+        arguments: packed(words),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: folder,
+        kinds: kinds
+    )
+
+# The system's own shell, which the tests' children are: `sh`, and on
+# Windows `cmd.exe`.
+function shell_program() -> str
+    if on_windows()
+        return "cmd.exe"
+
+    return "sh"
+
+# The shell's arguments for one command of `words`: `-c` and the command as
+# one word, and on Windows `/c` and each word, which `cmd.exe` joins itself.
+function shell_words(words: [str]) -> [str]
+    if on_windows()
+        out: [str] @= ["/c"]
+
+        for word in words
+            out @ out.push(word)
+
+        return out
+
+    return ["-c", join(words, " ")]
+
+# The shell running one command.
+function shell(words: [str], folder: str, kinds: [i64]) -> Proc
+    return child(program: shell_program(), words: shell_words(words), folder: folder, kinds: kinds)
+
+# The system's own program that copies its input to its output and ends when
+# the input does: `cat`, and on Windows `sort`, which one line passes through
+# unchanged. With a pipe nobody closes as its input it runs until it is ended.
+function echoer() -> str
+    if on_windows()
+        return "sort"
+
+    return "cat"
+
+# The folder a test works in, made new under `build/` of the folder the tests
+# run from, and its name, which holds this process's number.
+function scratch_name(name: str) -> str
+    return f"rebel-hero_proc-{hero_os_pid()}-{name}"
+
+# The folder of that name, made.
+function scratch(name: str) -> str
+    folder = "build/" + scratch_name(name)
+    _ = hero_fs_mkdir_all(folder.cstr())
+    return folder
+
+# Whether `folder` is gone, removed with everything a test left in it.
+function cleared(folder: str) -> bool
+    return hero_dir_remove_tree(folder.cstr()) == HERO_OS_OK
+
+# The edge the language itself shuts first: a process released is a name the
+# compiler refuses to read again, so what reaches C as no process is `nullptr`.
+test "nullptr is no process: every door answers -1 or nullptr with HERO_PROC_NOT_OPEN, the layer's own refusal"
+    none: Proc @= nullptr
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(none, code: @code, by_signal: @by) == -1
+    assert code == -1 && by == 0
+    assert last_error() == HERO_PROC_NOT_OPEN
+    assert last_os_error() == 0
+    assert ended(none) == -1
+    assert terminate(none) == -1
+    assert kill(none) == -1
+    assert id(none) == -1
+    assert last_error() == HERO_PROC_NOT_OPEN
+    user: i64 @= 7
+    system: i64 @= 7
+    assert cpu(none, user_ns: @user, system_ns: @system) == -1
+    assert user == -1 && system == -1
+    end = pipe(none, HERO_PROC_OUTPUT)
+    assert end == nullptr
+    assert last_error() == HERO_PROC_NOT_OPEN
+    assert release(@none) == -1
+    assert last_error() == HERO_PROC_NOT_OPEN
+
+test "what the layer refuses before any child: no program, a list with no zero at its end, a variable with no `=`, and kinds that are none"
+    none: [u8] = []
+    no_program = begun(
+        program: "",
+        arguments: none,
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: "",
+        kinds: quiet()
+    )
+    assert no_program == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    assert last_os_error() == 0
+    unended = begun(
+        program: echoer(),
+        arguments: [97],
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: "",
+        kinds: quiet()
+    )
+    assert unended == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    bare = begun(
+        program: echoer(),
+        arguments: none,
+        environment_kind: HERO_PROC_ENV_GIVEN,
+        environment: [65, 0],
+        folder: "",
+        kinds: quiet()
+    )
+    assert bare == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    no_such_environment = begun(
+        program: echoer(),
+        arguments: none,
+        environment_kind: 2,
+        environment: none,
+        folder: "",
+        kinds: quiet()
+    )
+    assert no_such_environment == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    no_such_kind = begun(
+        program: echoer(),
+        arguments: none,
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: "",
+        kinds: [4, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
+    )
+    assert no_such_kind == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    assert last_error() != HERO_PROC_OK
+
+test "the largest list: one argument past 4,096 is HERO_PROC_LIMIT, and no child is started"
+    many: [u8] @= []
+
+    for _ in range(from: 0, to: 4097)
+        many @ many.push(0)
+
+    none: [u8] = []
+    refused = begun(
+        program: echoer(),
+        arguments: many,
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: none,
+        folder: "",
+        kinds: quiet()
+    )
+    assert refused == nullptr
+    assert last_error() == HERO_PROC_LIMIT
+    assert last_os_error() == 0
+
+test "a stream that is none, handed as the child's input: nullptr with HERO_PROC_NOT_OPEN, and no child is started"
+    words: [u8] @= []
+    variables: [u8] @= []
+    refused = start(
+        program: echoer(),
+        arguments: @words,
+        arguments_count: 0,
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_STREAM,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr
+    )
+    assert refused == nullptr
+    assert last_error() == HERO_PROC_NOT_OPEN
+
+test "a program that is not there: nullptr with HERO_PROC_NOT_FOUND at the start, by name and by path"
+    no_words: [str] = []
+    by_name = child(program: "rebel-no-such-program", words: no_words, folder: "", kinds: quiet())
+    assert by_name == nullptr
+    assert last_error() == HERO_PROC_NOT_FOUND
+    assert last_os_error() != 0
+    by_path = child(program: "build/rebel-no-such-folder/program", words: no_words, folder: "", kinds: quiet())
+    assert by_path == nullptr
+    assert last_error() == HERO_PROC_NOT_FOUND
+    assert last_os_error() != 0
+
+test "a folder that is not there: nullptr with HERO_PROC_NOT_A_DIRECTORY, never a missing program's kind"
+    no_words: [str] = []
+    lost = child(program: echoer(), words: no_words, folder: "build/rebel-no-such-folder", kinds: quiet())
+    assert lost == nullptr
+    assert last_error() == HERO_PROC_NOT_A_DIRECTORY
+    assert last_os_error() != 0
+
+test "a child's output read through a pipe: its bytes, then the end, and its exit code 0"
+    p @= shell(
+        words: ["echo", "hello"],
+        folder: "",
+        kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    assert last_error() == HERO_PROC_OK
+    assert id(p) > 0
+    out @= pipe(p, HERO_PROC_OUTPUT)
+    assert out != nullptr
+    assert line(drained(out)) == "hello"
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 0 && by == 0
+    assert hero_stream.close(@out) == 0
+    assert release(@p) == 0
+
+test "a pipe's end is taken once: taken again, never asked for, or of no such stream, it is nullptr with HERO_PROC_INVALID"
+    p @= shell(
+        words: ["echo", "hello"],
+        folder: "",
+        kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
+    )
+    out @= pipe(p, HERO_PROC_OUTPUT)
+    assert out != nullptr
+    again = pipe(p, HERO_PROC_OUTPUT)
+    assert again == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    never = pipe(p, HERO_PROC_ERROR)
+    assert never == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    no_such = pipe(p, 3)
+    assert no_such == nullptr
+    assert last_error() == HERO_PROC_INVALID
+    assert line(drained(out)) == "hello"
+    assert hero_stream.close(@out) == 0
+    assert release(@p) == 0
+
+test "text written to a child's input comes back from its output, and closing the input ends the child"
+    no_words: [str] = []
+    p @= child(
+        program: echoer(),
+        words: no_words,
+        folder: "",
+        kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    input @= pipe(p, HERO_PROC_INPUT)
+    output @= pipe(p, HERO_PROC_OUTPUT)
+    assert input != nullptr && output != nullptr
+    text: [u8] @= [114, 101, 98, 101, 108, 10]
+    assert hero_stream.write(input, @text, n: 6) == 6
+    assert hero_stream.close(@input) == 0
+    assert line(drained(output)) == "rebel"
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 0 && by == 0
+    assert hero_stream.close(@output) == 0
+    assert release(@p) == 0
+
+test "an exit code that is not zero is the code, and no signal"
+    p @= shell(words: ["exit", "3"], folder: "", kinds: quiet())
+    assert p != nullptr
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 3 && by == 0
+    assert release(@p) == 0
+
+test "a wait asked twice answers the same, and ended answers 1 after it"
+    p @= shell(words: ["exit", "5"], folder: "", kinds: quiet())
+    assert p != nullptr
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 5 && by == 0
+    code @ 7
+    by @ 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 5 && by == 0
+    assert ended(p) == 1
+    assert release(@p) == 0
+
+# The child reads a pipe nobody writes to or closes, so it runs until it is
+# ended; the pipe's end is closed only after.
+test "a child ended at once: its wait answers the signal, or on Windows the kill's code, and stopping it again sends nothing"
+    no_words: [str] = []
+    p @= child(
+        program: echoer(),
+        words: no_words,
+        folder: "",
+        kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    assert ended(p) == 0
+    user: i64 @= 7
+    system: i64 @= 7
+    assert cpu(p, user_ns: @user, system_ns: @system) == -1
+    assert last_error() == HERO_PROC_RUNNING
+    assert user == -1 && system == -1
+    assert kill(p) == 0
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+
+    if on_windows()
+        assert code == 1 && by == 0
+    else
+        assert code == -1 && by == 9
+    assert ended(p) == 1
+    assert kill(p) == 0
+    assert terminate(p) == 0
+    assert cpu(p, user_ns: @user, system_ns: @system) == 0
+    assert user >= 0 && system >= 0
+    held @= pipe(p, HERO_PROC_INPUT)
+    assert hero_stream.close(@held) == 0
+    assert release(@p) == 0
+
+test "a request to end: SIGTERM ends the child, and on Windows it is HERO_PROC_UNSUPPORTED and the child runs on until it is killed"
+    no_words: [str] = []
+    p @= child(
+        program: echoer(),
+        words: no_words,
+        folder: "",
+        kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    asked = terminate(p)
+
+    if on_windows()
+        assert asked == -1
+        assert last_error() == HERO_PROC_UNSUPPORTED
+        assert ended(p) == 0
+        assert kill(p) == 0
+    else
+        assert asked == 0
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+
+    if on_windows()
+        assert code == 1 && by == 0
+    else
+        assert code == -1 && by == 15
+    assert release(@p) == 0
+
+test "a child given a working folder prints it, and this process's folder is not moved"
+    folder = scratch("folder")
+    command: str @= "pwd"
+
+    if on_windows()
+        command @ "cd"
+    p @= shell(
+        words: [command],
+        folder: folder,
+        kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    out @= pipe(p, HERO_PROC_OUTPUT)
+    assert ends_with(text: line(drained(out)), tail: scratch_name("folder"))
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 0 && by == 0
+    assert hero_stream.close(@out) == 0
+    assert release(@p) == 0
+    assert cleared(folder)
+
+test "a given environment is the child's own: it reads the variable it was handed"
+    variable: str @= "$REBEL_WORD"
+
+    if on_windows()
+        variable @ "%REBEL_WORD%"
+    p @= begun(
+        program: shell_program(),
+        arguments: packed(shell_words(["echo", variable])),
+        environment_kind: HERO_PROC_ENV_GIVEN,
+        environment: packed(["REBEL_WORD=bowie"]),
+        folder: "",
+        kinds: [HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    out @= pipe(p, HERO_PROC_OUTPUT)
+    assert line(drained(out)) == "bowie"
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 0 && by == 0
+    assert hero_stream.close(@out) == 0
+    assert release(@p) == 0
+
+test "a stream the program holds is the child's output and its error: a pipe of the program's own, read once the child has ended"
+    reader: hero_stream.Stream @= nullptr
+    writer: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @reader, writer: @writer) == 0
+    words: [u8] @= packed(shell_words(["echo", "hello"]))
+    variables: [u8] @= []
+    p @= start(
+        program: shell_program(),
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_STREAM,
+        out_stream: writer,
+        err_kind: HERO_PROC_STDIO_STREAM,
+        err_stream: writer
+    )
+    assert p != nullptr
+    assert hero_stream.close(@writer) == 0
+    assert line(drained(reader)) == "hello"
+    code: i64 @= 7
+    by: i64 @= 7
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert code == 0 && by == 0
+    assert hero_stream.close(@reader) == 0
+    assert release(@p) == 0
+
+# The release closes the pipe's end the test never took, which is the child's
+# input: the child reads its end and ends by itself, and the layer waits for
+# it, so nothing outlives the test.
+test "a process released while it runs is given back at once, and its pipe never taken is closed"
+    no_words: [str] = []
+    p @= child(
+        program: echoer(),
+        words: no_words,
+        folder: "",
+        kinds: [HERO_PROC_STDIO_PIPE, HERO_PROC_STDIO_NOTHING, HERO_PROC_STDIO_NOTHING]
+    )
+    assert p != nullptr
+    assert ended(p) == 0
+    assert release(@p) == 0
+    assert last_error() == HERO_PROC_OK
+
+test "a socket handed to a stream's door is one the streams never issued, not open, never a slot of theirs"
+    here = "127.0.0.1"
+    socket = hero_net_udp(address: here.cstr(), port: 0)
+    assert socket != nullptr
+    assert hero_stream_kind(socket) == -1
+    assert hero_stream_last_error() == HERO_STREAM_NOT_OPEN
+    assert hero_net_close(socket) == 0

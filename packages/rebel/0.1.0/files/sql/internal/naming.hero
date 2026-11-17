@@ -1,0 +1,144 @@
+# Names written into a statement's text, quoted as standard SQL quotes an
+# identifier, and the bracketed database code a failure's message opens
+# with. It works on text alone.
+
+use bytes
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+# `name` inside double quotes, each double quote in it doubled.
+#
+# - `name`: the identifier as it should be stored.
+# - `which`: how a message names it: `the identifier`, `part 1 of the name`.
+#
+# Fails `invalid` where `name` is empty or holds a zero byte.
+function quoted(name: str, which: str) -> str?
+    if name.len() == 0
+        return fail(code: INVALID, msg: which + " is empty, and no database keeps an empty name")
+    pieces: [str] @= ["\""]
+    at: i64 @= 0
+
+    for c in name.chars()
+        if c[0] == 0
+            return fail(
+                code: INVALID,
+                msg: f"{which} holds a zero byte at byte {at}, which no database keeps in a name"
+            )
+
+        if c == "\""
+            pieces @ pieces.push("\"\"")
+        else
+            pieces @ pieces.push(c)
+        at @ at + c.len()
+
+    pieces @ pieces.push("\"")
+    return ok(pieces.join(""))
+
+# Each of `parts` quoted, joined by dots.
+#
+# - `parts`: the parts, outermost first.
+#
+# Fails `invalid` where `parts` is empty, or as `quoted` does, naming the
+# part by its place from 0.
+function qualified(parts: [str]) -> str?
+    if parts.len() == 0
+        return fail(code: INVALID, msg: "a qualified name has at least one part, and none was given")
+    out: [str] @= []
+    at: i64 @= 0
+
+    for p in parts
+        out @ out.push(quoted(name: p, which: f"part {at} of the name")?)
+        at @ at + 1
+
+    return ok(out.join("."))
+
+# Whether `code` may stand inside the brackets of a failure's message: not
+# empty, no space, no `]`.
+#
+# - `code`: the database's code.
+function is_code(code: str) -> bool
+    if code.len() == 0
+        return false
+
+    for c in code.chars()
+        if c == " " || c == "]"
+            return false
+
+    return true
+
+# The code between the brackets `msg` opens with.
+#
+# - `msg`: a failure's message.
+#
+# Fails `not_found` where `msg` does not open with `[`, a code and `]`.
+function code_in(msg: str) -> str?
+    if msg.len() > 0 && msg[0] == '['
+        at: i64 @= 1
+
+        while at < msg.len() && msg[at] != ']' && msg[at] != ' '
+            at @ at + 1
+
+        if at > 1 && at < msg.len() && msg[at] == ']'
+            return ok(msg.slice(from: 1, to: at))
+    return fail(code: NOT_FOUND, msg: "the message opens with no database code in brackets")
+
+test "quoted: a quote doubled, a name of more than one byte, a keyword, a space, a quote alone"
+    assert quoted(name: "a\"b", which: "x").must() == "\"a\"\"b\""
+    assert quoted(name: "Stardust \"Spiders\"", which: "x").must() == "\"Stardust \"\"Spiders\"\"\""
+    assert quoted(name: "città", which: "x").must() == "\"città\""
+    assert quoted(name: "select", which: "x").must() == "\"select\""
+    assert quoted(name: " ", which: "x").must() == "\" \""
+    assert quoted(name: "\"", which: "x").must() == "\"\"\"\""
+
+test "quoted: empty, and a zero byte at either end and inside"
+    match quoted(name: "", which: "the identifier")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the identifier is empty, and no database keeps an empty name"
+
+    nul = bytes.to_text([0]).must()
+
+    match quoted(name: "ab" + nul, which: "the identifier")
+        .ok _  => assert false
+        .err e => assert e.msg == "the identifier holds a zero byte at byte 2, which no database keeps in a name"
+
+    match quoted(name: nul + "é", which: "the identifier")
+        .ok _  => assert false
+        .err e => assert e.msg == "the identifier holds a zero byte at byte 0, which no database keeps in a name"
+
+    match quoted(name: "é" + nul, which: "x")
+        .ok _  => assert false
+        .err e => assert e.msg == "x holds a zero byte at byte 2, which no database keeps in a name"
+
+test "qualified: one part, two parts, a quote in a part, none, and an empty part"
+    assert qualified(["t"]).must() == "\"t\""
+    assert qualified(["main", "t\"x"]).must() == "\"main\".\"t\"\"x\""
+    assert qualified(["a", "b", "c"]).must() == "\"a\".\"b\".\"c\""
+
+    match qualified([])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a qualified name has at least one part, and none was given"
+
+    match qualified(["app", ""])
+        .ok _  => assert false
+        .err e => assert e.msg == "part 1 of the name is empty, and no database keeps an empty name"
+
+test "is_code: a SQLSTATE, an SQLite name with its number, empty, a space, a bracket"
+    assert is_code("23505")
+    assert is_code("SQLITE_CONSTRAINT_UNIQUE/2067")
+    assert !is_code("")
+    assert !is_code("a b")
+    assert !is_code("a]")
+
+test "code_in: a code, none, an empty pair, a space inside, an unclosed bracket"
+    assert code_in("[23505] duplicate key").must() == "23505"
+    assert code_in("[X]").must() == "X"
+    assert code_in("connection refused").is_err()
+    assert code_in("").is_err()
+    assert code_in("[] x").is_err()
+    assert code_in("[a b] x").is_err()
+    assert code_in("[23505").is_err()
+    assert code_in(" [23505] x").is_err()

@@ -1,0 +1,298 @@
+# A zip archive's members written to a stream (APPNOTE.TXT 6.3): each
+# member's local header and data, whole when the data is in hand and with a
+# data descriptor after it when it is streamed, ZIP64's extra field where a
+# size passes 32 bits. Names and comments are written in UTF-8, flagged so
+# where they are not ASCII; every member says it was made on Unix, with its
+# mode. `zip_end` writes the central directory and the end records.
+
+use archive/internal/codes
+use archive/internal/zip_read
+use archive/internal/zip_time
+use bytes
+use compress
+use hash
+use io
+use time
+
+# The largest value a 32-bit field holds: ZIP64 begins past it.
+constant ZIP64_AT: i64
+    0xffff_ffff
+
+# The signature of a data descriptor.
+constant DESCRIPTOR: i64
+    0x08074b50
+
+# The flag of a data descriptor after the data.
+constant FLAG_DESCRIPTOR: i64
+    8
+
+# What the central directory says of a member written.
+record Written
+    # Its name's bytes.
+    name: [u8]
+    # Its comment's bytes.
+    comment: [u8]
+    # Its flags.
+    flags: i64
+    # Its method, 0 or 8.
+    method: i64
+    # Its DOS date and time.
+    dos: zip_time.Dos
+    # The seconds of its time, for the extended timestamp.
+    seconds: i64
+    # The CRC-32 of its data.
+    crc: i64
+    # Its compressed size.
+    compressed: i64
+    # Its size.
+    size: i64
+    # Where its local header begins.
+    offset: i64
+    # Its external attributes.
+    external: i64
+
+# A zip archive being written.
+record Sink
+    # The stream, owned by the caller.
+    stream: io.Stream
+    # How many bytes have been written.
+    written: i64
+    # The members written.
+    members: [Written]
+    # Where ZIP64 begins: `ZIP64_AT`, lower only in a test.
+    zip64_at: i64
+    # Whether the end has been written.
+    ended: bool
+
+# A sink writing to `stream`.
+function start(stream: io.Stream, zip64_at: i64) -> Sink
+    return Sink(stream: stream, written: 0, members: [], zip64_at: zip64_at, ended: false)
+
+# Writes `data` and counts it.
+function put(@sink: Sink, data: [u8]) -> ()?
+    io.write(sink.stream, data: data)?
+    sink.written @ sink.written + data.len()
+    return ok()
+
+# Adds `w` to the members written: the list is lent, so it grows in place
+# and is not copied for each member.
+function remember(@members: [Written], w: Written)
+    members @ members.push(w)
+
+# Adds `value` as `width` bytes, the lowest first; bytes past the eighth
+# are zeros.
+function add(@out: [u8], value: i64, width: i64)
+    for i in range(from: 0, to: width)
+        if i < 8
+            out @ out.push(to_u8(value >> 8 * i & 255).must())
+        else
+            out @ out.push(0)
+
+# Adds the bytes of `more`.
+function add_bytes(@out: [u8], more: [u8] lent)
+    for b in more
+        out @ out.push(b)
+
+# The extended timestamp field of `seconds`, or nothing where 32 signed
+# bits cannot hold them.
+function time_field(seconds: i64) -> [u8]
+    out: [u8] @= []
+
+    if seconds < -0x8000_0000 || seconds > 0x7fff_ffff
+        return out
+    add(@out, value: zip_time.EXTENDED_TIME, width: 2)
+    add(@out, value: 5, width: 2)
+    out @ out.push(1)
+    add(@out, value: seconds & 0xffff_ffff, width: 4)
+    return out
+
+# The flags of a member named `name` with `comment`: UTF-8 where either is
+# not ASCII, a descriptor where `streamed`.
+function flags_of(name: [u8] lent, comment: [u8] lent, streamed: bool) -> i64
+    flags: i64 @= 0
+
+    for b in name
+        if b >= 0x80
+            flags @ zip_read.FLAG_UTF8
+
+    for b in comment
+        if b >= 0x80
+            flags @ zip_read.FLAG_UTF8
+
+    if streamed
+        flags @ flags | FLAG_DESCRIPTOR
+    return flags
+
+# The local header of `w`, its sizes and CRC-32 stated where `known`, and
+# ZIP64's field with both sizes where `zip64`.
+function local_header(w: Written lent, known: bool, zip64: bool) -> [u8]
+    out: [u8] @= []
+    add(@out, value: zip_read.LOCAL, width: 4)
+    version: i64 @= 20
+
+    if zip64
+        version @ 45
+    add(@out, value: version, width: 2)
+    add(@out, value: w.flags, width: 2)
+    add(@out, value: w.method, width: 2)
+    add(@out, value: w.dos.clock, width: 2)
+    add(@out, value: w.dos.date, width: 2)
+    extra: [u8] @= time_field(w.seconds)
+
+    if zip64
+        add(@extra, value: zip_read.ZIP64_EXTRA, width: 2)
+        add(@extra, value: 16, width: 2)
+
+        if known
+            add(@extra, value: w.size, width: 8)
+            add(@extra, value: w.compressed, width: 8)
+        else
+            add(@extra, value: 0, width: 8)
+            add(@extra, value: 0, width: 8)
+
+    if !known
+        add(@out, value: 0, width: 12)
+    else if zip64
+        add(@out, value: w.crc, width: 4)
+        add(@out, value: 0xffff_ffff, width: 4)
+        add(@out, value: 0xffff_ffff, width: 4)
+    else
+        add(@out, value: w.crc, width: 4)
+        add(@out, value: w.compressed, width: 4)
+        add(@out, value: w.size, width: 4)
+    add(@out, value: w.name.len(), width: 2)
+    add(@out, value: extra.len(), width: 2)
+    add_bytes(out: @out, more: w.name)
+    add_bytes(out: @out, more: extra)
+    return out
+
+# The external attributes of a member of Unix `mode` and type `kind`: 0 a
+# file, 1 a folder, 2 a symbolic link.
+function external_of(mode: i64, kind: i64) -> i64
+    if kind == 1
+        return (0o040000 | mode & 0o7777) << 16 | 0x10
+
+    if kind == 2
+        return (0o120000 | mode & 0o7777) << 16
+    return (0o100000 | mode & 0o7777) << 16
+
+# Writes a member whose `data` is in hand: compressed by `method` (0 or 8,
+# deflated at `level`), its local header stating sizes and CRC-32. Fails
+# `invalid` where the name or the comment passes 65,535 bytes, and as the
+# stream fails.
+function add_whole(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, data: [u8]) -> ()?
+    raw_name = bytes.from_text(name)
+    raw_comment = bytes.from_text(comment)
+    check_lengths(name, raw_name: raw_name, raw_comment: raw_comment)?
+    stored @= data
+
+    if method == zip_read.DEFLATED
+        o @= compress.defaults(.raw)
+        o.level @ level
+        stored @ compress.compress(data, o)?
+    w = Written(
+        name: raw_name,
+        comment: raw_comment,
+        flags: flags_of(name: raw_name, comment: raw_comment, streamed: false),
+        method: method,
+        dos: zip_time.to_dos(modified),
+        seconds: time.unix_seconds(modified),
+        crc: to_i64(hash.crc32(data)).must(),
+        compressed: stored.len(),
+        size: data.len(),
+        offset: sink.written,
+        external: external
+    )
+    put(@sink, data: local_header(w, known: true, zip64: w.size >= sink.zip64_at || w.compressed >= sink.zip64_at))?
+    put(@sink, data: stored)?
+    remember(members: @sink.members, w: w)
+    return ok()
+
+# Fails `invalid` where `raw_name` or `raw_comment` passes 65,535 bytes.
+function check_lengths(name: str, raw_name: [u8] lent, raw_comment: [u8] lent) -> ()?
+    if raw_name.len() > 0xffff || raw_comment.len() > 0xffff
+        return codes.refused(name: name, why: "its name or comment passes the 65,535 bytes a zip header holds")
+    return ok()
+
+# Writes a member whose data is read from `from` to its end, `expected`
+# bytes (ZIP64 from the start where they pass 32 bits), compressed by
+# `method` as it is read, and a data descriptor after it. Fails `invalid`
+# where `from` holds more than `expected` past 32 bits allows, and as the
+# streams fail.
+function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, from: io.Stream, expected: i64) -> ()?
+    raw_name = bytes.from_text(name)
+    raw_comment = bytes.from_text(comment)
+    check_lengths(name, raw_name: raw_name, raw_comment: raw_comment)?
+    zip64 = expected >= sink.zip64_at
+    w @= Written(
+        name: raw_name,
+        comment: raw_comment,
+        flags: flags_of(name: raw_name, comment: raw_comment, streamed: true),
+        method: method,
+        dos: zip_time.to_dos(modified),
+        seconds: time.unix_seconds(modified),
+        crc: 0,
+        compressed: 0,
+        size: 0,
+        offset: sink.written,
+        external: external
+    )
+    put(@sink, data: local_header(w, known: false, zip64: zip64))?
+    o @= compress.defaults(.raw)
+    o.level @ level
+    c @= compress.compressor(o)?
+    check @= hash.start32(.crc32)
+
+    while true
+        got = io.read(from, most: 65536)?
+
+        if got.len() == 0
+            break
+        hash.update32(@check, got)
+        w.size @ w.size + got.len()
+        out @= got
+
+        if method == zip_read.DEFLATED
+            out @ compress.compress_part(@c, data: got)
+
+        if out.len() > 0
+            put(@sink, data: out)?
+            w.compressed @ w.compressed + out.len()
+
+    if method == zip_read.DEFLATED
+        last = compress.compress_end(@c)
+        put(@sink, data: last)?
+        w.compressed @ w.compressed + last.len()
+
+    if !zip64 && (w.size >= sink.zip64_at || w.compressed >= sink.zip64_at)
+        return codes.refused(
+            name: name,
+            why: f"it grew to {w.size} bytes while it was read, past the 32-bit sizes its header was written with"
+        )
+    w.crc @ to_i64(check.value).must()
+    tail: [u8] @= []
+    add(@tail, value: DESCRIPTOR, width: 4)
+    add(@tail, value: w.crc, width: 4)
+    width: i64 @= 4
+
+    if zip64
+        width @ 8
+    add(@tail, value: w.compressed, width: width)
+    add(@tail, value: w.size, width: width)
+    put(@sink, data: tail)?
+    remember(members: @sink.members, w: w)
+    return ok()
+
+test "time_field: a time 32 bits hold, and one they do not"
+    assert time_field(1700000000).len() == 9
+    assert time_field(0x1_0000_0000).len() == 0
+
+test "external_of: a file, a folder, a link"
+    assert external_of(mode: 0o644, kind: 0) == 0o100644 << 16
+    assert external_of(mode: 0o755, kind: 1) == 0o040755 << 16 | 0x10
+    assert external_of(mode: 0o777, kind: 2) == 0o120777 << 16
+
+test "flags_of: ASCII, a name past ASCII, and a stream"
+    assert flags_of(name: [0x61], comment: [], streamed: false) == 0
+    assert flags_of(name: [0xc3, 0xa9], comment: [], streamed: false) == zip_read.FLAG_UTF8
+    assert flags_of(name: [0x61], comment: [], streamed: true) == FLAG_DESCRIPTOR

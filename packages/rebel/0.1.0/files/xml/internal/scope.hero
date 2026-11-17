@@ -1,0 +1,182 @@
+# The namespaces in scope where an element stands, as Namespaces in XML 1.0
+# reads them: each declaration an element makes stands for it and everything
+# inside it, and hides one of the same prefix made further out.
+#
+# A scope is four lists the caller holds as plain names and lends with `@`, so
+# that none is copied: the prefix and the namespace of each declaration, the
+# declaration of the same prefix each one hides, and a count of those in use.
+# The lists never shrink; leaving an element sets the count back. A map gives
+# each prefix's innermost declaration, so finding one costs no search.
+
+use xml/internal/scan
+
+# The namespace the prefix `xml` stands for in every document.
+constant XML_SPACE: str
+    "http://www.w3.org/XML/1998/namespace"
+
+# The namespace of a declaration's own name.
+constant XMLNS_SPACE: str
+    "http://www.w3.org/2000/xmlns/"
+
+# Adds the declaration of `prefix` for `space` to the scope, after the `count`
+# in use, hiding any of the same prefix.
+#
+# - `prefixes`, `spaces`, `hidden`: the scope's lists, one entry a declaration.
+# - `innermost`: each prefix's innermost declaration, an index of the lists.
+# - `count`: the declarations in use, one more after the call.
+# - `prefix`, `space`: the declaration.
+function declare(@prefixes: [str], @spaces: [str], @hidden: [i64], @innermost: {str: i64}, @count: i64, prefix: str, space: str)
+    hides = innermost[prefix].default(-1)
+
+    if count == prefixes.len()
+        prefixes @ prefixes.push(prefix)
+        spaces @ spaces.push(space)
+        hidden @ hidden.push(hides)
+    else
+        prefixes[count] @ prefix
+        spaces[count] @ space
+        hidden[count] @ hides
+
+    innermost[prefix] @ count
+    count @ count + 1
+
+# Takes off the scope every declaration after the first `mark`, each prefix's
+# innermost declaration becoming the one it hid.
+function leave(prefixes: [str] lent, hidden: [i64] lent, @innermost: {str: i64}, @count: i64, mark: i64)
+    while count > mark
+        count @ count - 1
+        innermost[prefixes[count]] @ hidden[count]
+
+# The namespace `prefix` stands for in the scope: `XML_SPACE` for `xml`,
+# the empty text for the empty prefix where no default namespace is declared.
+# Fails `not_found` where `prefix` is declared nowhere in scope.
+function space_of(spaces: [str] lent, innermost: {str: i64} lent, prefix: str) -> str?
+    if prefix == "xml"
+        return ok(XML_SPACE)
+    at = innermost[prefix].default(-1)
+
+    if at >= 0
+        return ok(spaces[at])
+
+    if prefix == ""
+        return ok("")
+    return fail(code: "not_found", msg: f"the prefix `{prefix}` is not declared")
+
+# Whether declaring `prefix` for `space` is one Namespaces in XML 1.0 allows,
+# and why not where it is not: `xmlns` is never declared, `xml` stands for
+# `XML_SPACE` alone and nothing else does, `XMLNS_SPACE` is never declared, and
+# a prefix is never declared for the empty namespace. Fails `invalid`.
+function check_declaration(prefix: str, space: str) -> ()?
+    if prefix == "xmlns"
+        return fail(code: scan.INVALID, msg: "the prefix `xmlns` is never declared")
+
+    if prefix == "xml" && space != XML_SPACE
+        return fail(
+            code: scan.INVALID,
+            msg: f"the prefix `xml` stands for \"{XML_SPACE}\" alone, and here for \"{space}\""
+        )
+
+    if prefix != "xml" && space == XML_SPACE
+        return fail(
+            code: scan.INVALID,
+            msg: f"\"{XML_SPACE}\" is the prefix `xml`'s alone, and here `{declared_as(prefix)}` declares it"
+        )
+
+    if space == XMLNS_SPACE
+        return fail(
+            code: scan.INVALID,
+            msg: f"\"{XMLNS_SPACE}\" is never declared, and here `{declared_as(prefix)}` declares it"
+        )
+
+    if prefix != "" && space == ""
+        return fail(
+            code: scan.INVALID,
+            msg: f"`xmlns:{prefix}=\"\"` would undeclare a prefix, which Namespaces in XML 1.0 does not allow"
+        )
+    return ok()
+
+# The attribute that declares `prefix`: `xmlns`, or `xmlns:` and the prefix.
+function declared_as(prefix: str) -> str
+    if prefix == ""
+        return "xmlns"
+    return "xmlns:" + prefix
+
+## Tests
+
+test "declare, space_of and leave: nothing declared, one, one hidden by another and found again"
+    prefixes: [str] @= []
+    spaces: [str] @= []
+    hidden: [i64] @= []
+    innermost: {str: i64} @= {}
+    count: i64 @= 0
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "").must() == ""
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "p").is_err()
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "xml").must() == XML_SPACE
+
+    declare(
+        prefixes: @prefixes,
+        spaces: @spaces,
+        hidden: @hidden,
+        innermost: @innermost,
+        count: @count,
+        prefix: "p",
+        space: "u"
+    )
+    declare(
+        prefixes: @prefixes,
+        spaces: @spaces,
+        hidden: @hidden,
+        innermost: @innermost,
+        count: @count,
+        prefix: "",
+        space: "d"
+    )
+    mark = count
+    declare(
+        prefixes: @prefixes,
+        spaces: @spaces,
+        hidden: @hidden,
+        innermost: @innermost,
+        count: @count,
+        prefix: "p",
+        space: "v"
+    )
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "p").must() == "v"
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "").must() == "d"
+
+    leave(prefixes: prefixes, hidden: hidden, innermost: @innermost, count: @count, mark: mark)
+    assert count == 2
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "p").must() == "u"
+
+    declare(
+        prefixes: @prefixes,
+        spaces: @spaces,
+        hidden: @hidden,
+        innermost: @innermost,
+        count: @count,
+        prefix: "q",
+        space: "w"
+    )
+    assert prefixes.len() == 3 && prefixes[2] == "q"
+    leave(prefixes: prefixes, hidden: hidden, innermost: @innermost, count: @count, mark: 0)
+    assert count == 0
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "p").is_err()
+    assert space_of(spaces: spaces, innermost: innermost, prefix: "q").is_err()
+
+test "check_declaration: the allowed, and each refusal of Namespaces in XML 1.0, as Python refuses them"
+    assert !check_declaration(prefix: "p", space: "u").is_err()
+    assert !check_declaration(prefix: "", space: "").is_err()
+    assert !check_declaration(prefix: "xml", space: XML_SPACE).is_err()
+
+    for refused in [["xmlns", "u"], ["xml", "u"], ["p", XML_SPACE], ["", XML_SPACE], ["p", XMLNS_SPACE], ["", XMLNS_SPACE], ["p", ""]]
+        match check_declaration(prefix: refused[0], space: refused[1])
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match check_declaration(prefix: "p", space: "")
+        .ok _  => assert false
+        .err e => assert e.msg == "`xmlns:p=\"\"` would undeclare a prefix, which Namespaces in XML 1.0 does not allow"
+
+test "declared_as: the default namespace and a prefix"
+    assert declared_as("") == "xmlns"
+    assert declared_as("p") == "xmlns:p"

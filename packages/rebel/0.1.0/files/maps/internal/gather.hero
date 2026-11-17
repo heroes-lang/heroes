@@ -1,0 +1,66 @@
+# Positions gathered by group, in one pass and with no list grown through an
+# index: what `maps` stands on to rank counts and to group a list. A list
+# reached through an index grows by copy, so a group is never pushed to where
+# it sits in a list of groups; the positions are laid out in one flat list
+# instead, each group's run after the one before it.
+
+# Where each group's run begins in what `by_group` answers: a list one longer
+# than `groups`, group g holding the positions from index `starts[g]` to
+# `starts[g + 1]` excluded. `group_of[i]` is the group of position i. Aborts
+# where a group is outside 0 to `groups` excluded.
+function starts(group_of: [i64], groups: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: groups + 1)
+        out @ out.push(0)
+
+    for g in group_of
+        out[g + 1] @ out[g + 1] + 1
+
+    for g in range(from: 0, to: groups)
+        out[g + 1] @ out[g + 1] + out[g]
+
+    return out
+
+# The positions 0 to `group_of.len()` excluded, gathered by group: those of
+# group 0 first, then of group 1, and so on, the positions of one group in
+# rising order. `group_of[i]` is the group of position i. Aborts where a group
+# is outside 0 to `groups` excluded.
+function by_group(group_of: [i64], groups: i64) -> [i64]
+    slot: [i64] @= starts(group_of, groups)
+    out: [i64] @= range(from: 0, to: group_of.len())
+    at: i64 @= 0
+
+    while at < group_of.len()
+        g = group_of[at]
+        out[slot[g]] @ at
+        slot[g] @ slot[g] + 1
+        at @ at + 1
+
+    return out
+
+## Tests
+
+test "starts: no position and no group, one group, and a group that holds nothing"
+    nothing: [i64] = []
+    assert starts(nothing, 0) == [0]
+    assert starts([0, 0, 0], 1) == [0, 3]
+    assert starts([2, 0, 2], 3) == [0, 1, 1, 3]
+    assert starts(nothing, 2) == [0, 0, 0]
+
+test "by_group: no position, one, every position its own group, and one group's positions rising"
+    nothing: [i64] = []
+    assert by_group(nothing, 0) == nothing
+    assert by_group([0], 1) == [0]
+    assert by_group([2, 1, 0], 3) == [2, 1, 0]
+    assert by_group([1, 0, 1, 0, 1], 2) == [1, 3, 0, 2, 4]
+    assert by_group([0, 0, 0], 1) == [0, 1, 2]
+
+test "by_group and starts: a group's run lies between two starts"
+    group_of = [1, 2, 1, 0, 2, 2]
+    order = by_group(group_of, 3)
+    bounds = starts(group_of, 3)
+    assert order == [3, 0, 2, 1, 4, 5]
+    assert order.slice(from: bounds[0], to: bounds[1]) == [3]
+    assert order.slice(from: bounds[1], to: bounds[2]) == [0, 2]
+    assert order.slice(from: bounds[2], to: bounds[3]) == [1, 4, 5]

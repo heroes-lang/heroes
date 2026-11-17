@@ -1,0 +1,142 @@
+# What every call of the face asks of a connection before it runs: that it
+# opened, that it is not closed, that a prepared statement is its own and not
+# closed; and the one statement word a transaction is made of, run through
+# the connection's kept statements.
+
+use sql
+use sql/sqlite/hero_sqlite3
+use sql/sqlite/internal/codes
+use sql/sqlite/internal/running
+use sql/sqlite/internal/statements
+use sql/sqlite/internal/values
+
+# A connection SQLite opened, which the face wraps in its `Db`.
+record Opened
+    # SQLite's connection, which the caller owes a `hero_sqlite3.close`.
+    connection: hero_sqlite3.Connection
+
+# A connection to `path` opened with `flags`, waiting for another
+# connection's lock up to `wait_ms`.
+#
+# - `path`: the path, as the face's `open` reads it.
+# - `flags`: `sqlite3_open_v2`'s flags.
+# - `wait_ms`: the busy timeout, in milliseconds, from 0.
+#
+# Fails as the face's `open` does; a connection SQLite hands back from a
+# failed open is closed here.
+function open_connection(path: str, flags: i64, wait_ms: i64) -> Opened?
+    match values.zero_at(path)
+        .ok at => return fail(code: sql.INVALID, msg: f"the path holds a zero byte at byte {at}")
+        .err _ => _ = 0
+
+    connection: hero_sqlite3.Connection @= nullptr
+    rc = hero_sqlite3.open(path, @connection, flags)
+
+    if rc != hero_sqlite3.SQLITE_OK
+        r = codes.refusal_opening(connection, rc: rc, path: path)
+        _ = hero_sqlite3.close(@connection)
+        return fail(code: r.code, msg: r.msg)
+    _ = hero_sqlite3.busy_timeout(connection, wait_ms)
+    return ok(Opened(connection: connection))
+
+# Fails `closed` where `connection` is `nullptr`, which the face's `close`
+# leaves in its place.
+#
+# - `connection`: the connection asked about.
+# - `path`: the path it was opened with, as the message names it.
+function live(connection: hero_sqlite3.Connection, path: str) -> ()?
+    if connection == nullptr
+        return fail(code: sql.CLOSED, msg: f"the connection to \"{path}\" is closed")
+    return ok()
+
+# Fails as the face's `exec_prepared` does where `compiled` cannot run on
+# `connection`: either closed, or `compiled` another connection's.
+#
+# - `connection`: the connection.
+# - `path`: the path it was opened with, as a message names it.
+# - `compiled`: the prepared statement, `nullptr` once closed.
+# - `text`: its text, as a message names it.
+function usable(connection: hero_sqlite3.Connection, path: str, compiled: hero_sqlite3.Compiled, text: str) -> ()?
+    live(connection, path: path)?
+
+    if compiled == nullptr
+        return fail(code: sql.CLOSED, msg: f"the statement \"{text}\" is closed")
+
+    if hero_sqlite3.owner(compiled) != connection
+        return fail(code: sql.INVALID, msg: f"the statement \"{text}\" belongs to another connection than \"{path}\"")
+    return ok()
+
+# Runs `word`, `BEGIN`, `COMMIT` or `ROLLBACK`, through the statements
+# `cached` keeps.
+#
+# - `cached`: the connection's kept statements.
+# - `connection`: the connection.
+# - `word`: the statement.
+#
+# Fails with SQLite's failure.
+function run_word(@cached: [statements.Cached], connection: hero_sqlite3.Connection, word: str) -> ()?
+    kept = statements.take(@cached, connection, word)?
+    _ = running.run(connection, kept.compiled, [])?
+    return ok()
+
+## Tests
+
+test "open_connection, live and usable: a connection made and closed, a zero byte, a foreign statement"
+    first = open_connection(
+        ":memory:",
+        flags: hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE,
+        wait_ms: 0
+    ).must()
+    other = open_connection(
+        "",
+        flags: hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE,
+        wait_ms: 10
+    ).must()
+    a @= first.connection
+    b @= other.connection
+    assert !live(a, path: ":memory:").is_err()
+    cached: [statements.Cached] @= []
+    kept = statements.take(@cached, b, "SELECT 1").must()
+    assert !usable(b, path: "", compiled: kept.compiled, text: "SELECT 1").is_err()
+
+    match usable(a, path: ":memory:", compiled: kept.compiled, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the statement \"SELECT 1\" belongs to another connection than \":memory:\""
+
+    match usable(a, path: ":memory:", compiled: nullptr, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == sql.CLOSED && e.msg == "the statement \"SELECT 1\" is closed"
+
+    match live(nullptr, path: "x.db")
+        .ok _  => assert false
+        .err e => assert e.code == sql.CLOSED && e.msg == "the connection to \"x.db\" is closed"
+
+    zero: [u8] = [0]
+
+    match open_connection("a" + zero.validated_bytes().must(), flags: hero_sqlite3.SQLITE_OPEN_READWRITE, wait_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the path holds a zero byte at byte 1"
+
+    statements.give_back(@cached)
+    assert hero_sqlite3.close(@a) == hero_sqlite3.SQLITE_OK
+    assert hero_sqlite3.close(@b) == hero_sqlite3.SQLITE_OK
+
+test "run_word: a transaction begun and rolled back, and a word SQLite refuses"
+    first = open_connection(
+        ":memory:",
+        flags: hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE | hero_sqlite3.SQLITE_OPEN_EXRESCODE,
+        wait_ms: 0
+    ).must()
+    c @= first.connection
+    cached: [statements.Cached] @= []
+    assert !run_word(@cached, c, "BEGIN").is_err()
+    assert hero_sqlite3.autocommit(c) == 0
+
+    match run_word(@cached, c, "BEGIN")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "[1] cannot start a transaction within a transaction"
+
+    assert !run_word(@cached, c, "ROLLBACK").is_err()
+    assert hero_sqlite3.autocommit(c) != 0
+    statements.give_back(@cached)
+    assert hero_sqlite3.close(@c) == hero_sqlite3.SQLITE_OK

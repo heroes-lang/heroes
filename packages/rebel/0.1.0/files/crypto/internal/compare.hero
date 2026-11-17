@@ -1,0 +1,29 @@
+# Two lists of bytes compared in a time that their lengths decide and their
+# contents do not: every byte pair is visited, the differences are gathered
+# by `|` into one number, and only that number is asked at the end. No branch
+# of this code and no early exit depends on a byte's value. What the C
+# compiler makes of it is not proven here, which is why the package offers no
+# cipher (its module comment says so).
+
+# Whether `a` and `b` are the same bytes. Lists of different lengths answer
+# false at once, so the time tells the lengths, as Go's and Python's do.
+function equals(a: [u8] lent, b: [u8] lent) -> bool
+    if a.len() != b.len()
+        return false
+    difference: i64 @= 0
+    at: i64 @= 0
+
+    while at < a.len()
+        difference @ difference | to_i64(a[at]).must() ^ to_i64(b[at]).must()
+        at @ at + 1
+
+    return difference == 0
+
+# Python's `hmac.compare_digest` answered the first four on 2026-11-16.
+test "compare equals: empty, different lengths, the same, one byte apart, and the last byte apart"
+    assert equals(a: [], b: [])
+    assert !equals(a: [0x61], b: [0x61, 0x62])
+    assert equals(a: [0x61, 0x62], b: [0x61, 0x62])
+    assert !equals(a: [0x61, 0x62], b: [0x61, 0x63])
+    assert !equals(a: [0, 0, 0, 0], b: [0, 0, 0, 0x80])
+    assert !equals(a: [0xff], b: [0x7f])

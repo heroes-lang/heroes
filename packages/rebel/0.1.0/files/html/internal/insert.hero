@@ -1,0 +1,293 @@
+# Creating and inserting nodes (13.2.6.1): the appropriate place for
+# inserting a node, foster parenting, a template's contents, elements, text,
+# comments and instructions, and the adjustments of a foreign element's names.
+# A text node grows by pieces joined once, so a text broken by many
+# references costs its length and no more.
+#
+# Past the builder's `max_depth`, a node is put in the parent of the element
+# that would hold it, as Chromium does past 512: the tree stays that deep and
+# nothing is dropped.
+
+use html/internal/builder
+use html/internal/dom
+use html/internal/tables
+use html/internal/token
+
+# Where a node goes: inside `parent`, before `before`, or last where `before`
+# is `dom.NONE`.
+record Place
+    parent: i64
+    before: i64
+
+# The contents of the template element `template`: the fragment it holds.
+function contents_of(t: dom.Tree lent, template: i64) -> i64
+    child: i64 @= t.firsts[template]
+
+    while child != dom.NONE
+        if t.kinds[child] == dom.FRAGMENT
+            return child
+        child @ t.nexts[child]
+
+    return template
+
+# Whether `node` is an HTML element foster parenting redirects from.
+function is_table_like(t: dom.Tree lent, node: i64) -> bool
+    if t.kinds[node] != dom.ELEMENT || t.spaces[node] != dom.HTML
+        return false
+
+    return match t.names[node]
+        "table" | "tbody" | "tfoot" | "thead" | "tr" => true
+        _                                            => false
+
+# The appropriate place for inserting a node, in `override` where it is not
+# `dom.NONE`, else in the current node, with foster parenting where enabled.
+function appropriate_place(b: builder.Builder lent, override: i64) -> Place
+    target: i64 @= if override != dom.NONE
+        override
+    else
+        builder.current(b)
+
+    if target == dom.NONE
+        return Place(parent: 0, before: dom.NONE)
+
+    if b.foster && is_table_like(b.tree, target)
+        last_template: i64 @= -1
+        last_table: i64 @= -1
+
+        for i in range(from: 0, to: b.depth)
+            if dom.is_html(b.tree, b.open[i], "template")
+                last_template @ i
+            else if dom.is_html(b.tree, b.open[i], "table")
+                last_table @ i
+
+        if last_template < 0 && last_table < 0
+            return Place(parent: b.open[0], before: dom.NONE)
+
+        if last_template > last_table
+            target @ b.open[last_template]
+        else
+            table = b.open[last_table]
+            holder = b.tree.parents[table]
+
+            if holder != dom.NONE
+                return Place(parent: holder, before: table)
+            target @ b.open[last_table - 1]
+
+    if dom.is_html(b.tree, target, "template")
+        return Place(parent: contents_of(b.tree, target), before: dom.NONE)
+    return Place(parent: target, before: dom.NONE)
+
+# `place`, moved up to the parent of its parent where the stack is deeper
+# than the builder allows.
+function within_depth(b: builder.Builder lent, place: Place) -> Place
+    if b.depth <= b.max_depth
+        return place
+    above = b.tree.parents[place.parent]
+
+    if above == dom.NONE || b.tree.kinds[above] == dom.DOCUMENT
+        return place
+    return Place(parent: above, before: dom.NONE)
+
+# Puts `node`, held by nothing, at `place`; an element is not put in a
+# document that has one already.
+function put(@b: builder.Builder, node: i64, place: Place)
+    if b.tree.kinds[place.parent] == dom.DOCUMENT && b.tree.kinds[node] == dom.ELEMENT
+        child: i64 @= b.tree.firsts[place.parent]
+
+        while child != dom.NONE
+            if b.tree.kinds[child] == dom.ELEMENT
+                return
+            child @ b.tree.nexts[child]
+
+    dom.insert_before(@b.tree, parent: place.parent, child: node, before: place.before)
+
+# A new element of `space` named `name`, held by nothing; an HTML template
+# gets its contents.
+function create(@b: builder.Builder, space: i64, name: str, attributes: [dom.Attr]) -> i64
+    node = dom.add_element(@b.tree, space: space, name: name, attributes: attributes)
+
+    if space == dom.HTML && name == "template"
+        none: [dom.Attr] = []
+        contents = dom.add(@b.tree, kind: dom.FRAGMENT, space: dom.HTML, name: "", attributes: none, data: "")
+        dom.append_child(@b.tree, parent: node, child: contents)
+    return node
+
+# Inserts an element of `space` for the tag `t` at the appropriate place and
+# pushes it on the stack; its number.
+function element_for(@b: builder.Builder, t: token.Token lent, space: i64) -> i64
+    place = within_depth(b, appropriate_place(b, dom.NONE))
+    node = create(@b, space: space, name: t.name, attributes: t.attributes)
+    put(@b, node: node, place: place)
+    builder.push_open(@b, node)
+    return node
+
+# Inserts an HTML element named `name`, with no attributes, at the
+# appropriate place and pushes it on the stack; its number.
+function element_named(@b: builder.Builder, name: str) -> i64
+    none: [dom.Attr] = []
+    return element_for(@b, token.tag(kind: token.START, name: name, attributes: none, at: 0), dom.HTML)
+
+# Writes the text the builder holds in pieces into its node.
+function flush_text(@b: builder.Builder)
+    if b.text_node != dom.NONE
+        b.tree.data[b.text_node] @ b.text_pieces.join("")
+        b.text_node @ dom.NONE
+        b.text_pieces @ []
+
+# Inserts the characters `s` at the appropriate place: after the text node
+# there, where there is one, else in a new one. Nothing where the place is
+# the document.
+function text(@b: builder.Builder, s: str)
+    if s == ""
+        return
+    place = within_depth(b, appropriate_place(b, dom.NONE))
+
+    if b.tree.kinds[place.parent] == dom.DOCUMENT
+        return
+
+    previous = if place.before == dom.NONE
+        b.tree.lasts[place.parent]
+    else
+        b.tree.previouses[place.before]
+
+    if previous != dom.NONE && b.tree.kinds[previous] == dom.TEXT
+        if b.text_node != previous
+            flush_text(@b)
+            b.text_node @ previous
+            b.text_pieces @ [b.tree.data[previous]]
+        b.text_pieces @ b.text_pieces.push(s)
+        return
+    flush_text(@b)
+    node = dom.add_data(@b.tree, kind: dom.TEXT, data: "")
+    put(@b, node: node, place: place)
+    b.text_node @ node
+    b.text_pieces @ [s]
+
+# Inserts a comment holding `data` last in `parent`, or at the appropriate
+# place where `parent` is `dom.NONE`.
+function comment(@b: builder.Builder, data: str, parent: i64)
+    place = if parent == dom.NONE
+        within_depth(b, appropriate_place(b, dom.NONE))
+    else
+        Place(parent: parent, before: dom.NONE)
+    node = dom.add_data(@b.tree, kind: dom.COMMENT, data: data)
+    put(@b, node: node, place: place)
+
+# Inserts a processing instruction for `t` last in `parent`, or at the
+# appropriate place where `parent` is `dom.NONE`.
+function instruction(@b: builder.Builder, t: token.Token lent, parent: i64)
+    place = if parent == dom.NONE
+        within_depth(b, appropriate_place(b, dom.NONE))
+    else
+        Place(parent: parent, before: dom.NONE)
+    none: [dom.Attr] = []
+    node = dom.add(@b.tree, kind: dom.INSTRUCTION, space: dom.HTML, name: t.name, attributes: none, data: t.data)
+    put(@b, node: node, place: place)
+
+## Foreign names
+
+# `attributes` with `definitionurl` written `definitionURL` (13.2.6.1).
+function adjust_mathml(attributes: [dom.Attr]) -> [dom.Attr]
+    out: [dom.Attr] @= attributes
+
+    for i in range(from: 0, to: out.len())
+        if out[i].name == "definitionurl"
+            out[i].name @ "definitionURL"
+
+    return out
+
+# `attributes` with the SVG names of mixed case written so (13.2.6.1).
+function adjust_svg(attributes: [dom.Attr]) -> [dom.Attr]
+    out: [dom.Attr] @= attributes
+
+    for i in range(from: 0, to: out.len())
+        for k in range(from: 0, to: tables.SVG_ATTRIBUTES_LOWER.len())
+            if out[i].name == tables.SVG_ATTRIBUTES_LOWER[k]
+                out[i].name @ tables.SVG_ATTRIBUTES[k]
+                break
+
+    return out
+
+# `attributes` with `xlink:`, `xml:` and `xmlns` put in their namespaces
+# (13.2.6.1).
+function adjust_foreign(attributes: [dom.Attr]) -> [dom.Attr]
+    out: [dom.Attr] @= attributes
+
+    for i in range(from: 0, to: out.len())
+        name = out[i].name
+
+        match name
+            "xlink:actuate" | "xlink:arcrole" | "xlink:href" | "xlink:role" | "xlink:show" | "xlink:title" | "xlink:type" =>
+                out[i].space @ dom.XLINK
+                out[i].name @ name.slice(from: 6, to: name.len())
+            "xml:lang" | "xml:space" =>
+                out[i].space @ dom.XML
+                out[i].name @ name.slice(from: 4, to: name.len())
+            "xmlns" =>
+                out[i].space @ dom.XMLNS
+            "xmlns:xlink" =>
+                out[i].space @ dom.XMLNS
+                out[i].name @ "xlink"
+            _ => _ = 0
+
+    return out
+
+# The SVG element name `name` is read as, in mixed case where the standard's
+# table says (13.2.6.5).
+function svg_name(name: str) -> str
+    for k in range(from: 0, to: tables.SVG_ELEMENTS_LOWER.len())
+        if name == tables.SVG_ELEMENTS_LOWER[k]
+            return tables.SVG_ELEMENTS[k]
+
+    return name
+
+## Tests
+
+test "appropriate_place: the current node, a template's contents, and a table's text fostered before it"
+    b: builder.Builder @= builder.start(scripting: true, max_depth: 512)
+    html = create(@b, space: dom.HTML, name: "html", attributes: [])
+    dom.append_child(@b.tree, parent: 0, child: html)
+    builder.push_open(@b, html)
+    assert appropriate_place(b, dom.NONE) == Place(parent: html, before: dom.NONE)
+    table = element_named(@b, "table")
+    b.foster @ true
+    assert appropriate_place(b, dom.NONE) == Place(parent: html, before: table)
+    template = element_named(@b, "template")
+    assert appropriate_place(b, dom.NONE) == Place(parent: contents_of(b.tree, template), before: dom.NONE)
+
+test "text: runs joined into one node, nothing in the document, and a node made after an element"
+    b: builder.Builder @= builder.start(scripting: true, max_depth: 512)
+    text(@b, "x")
+    assert b.tree.kinds.len() == 1
+    p = create(@b, space: dom.HTML, name: "p", attributes: [])
+    dom.append_child(@b.tree, parent: 0, child: p)
+    builder.push_open(@b, p)
+    text(@b, "a")
+    text(@b, "b")
+    flush_text(@b)
+    assert dom.children(b.tree, p).len() == 1 && b.tree.data[b.tree.firsts[p]] == "ab"
+    _ = element_named(@b, "br")
+    builder.pop(@b)
+    text(@b, "c")
+    flush_text(@b)
+    assert dom.children(b.tree, p).len() == 3
+
+test "within_depth: past the limit a node is put in the parent of its parent"
+    b: builder.Builder @= builder.start(scripting: true, max_depth: 2)
+    html = create(@b, space: dom.HTML, name: "html", attributes: [])
+    dom.append_child(@b.tree, parent: 0, child: html)
+    builder.push_open(@b, html)
+    body = element_named(@b, "body")
+    div = element_named(@b, "div")
+    span = element_named(@b, "span")
+    assert b.tree.parents[div] == body && b.tree.parents[span] == body
+
+test "adjust_svg, adjust_mathml, adjust_foreign and svg_name: the standard's tables"
+    got = adjust_foreign(
+        adjust_svg([dom.Attr(space: dom.NO_SPACE, name: "viewbox", value: ""), dom.Attr(space: dom.NO_SPACE, name: "xlink:href", value: "#a")])
+    )
+    assert got[0].name == "viewBox" && got[1].space == dom.XLINK && got[1].name == "href"
+    assert adjust_mathml([dom.Attr(space: dom.NO_SPACE, name: "definitionurl", value: "")])[0].name == "definitionURL"
+    assert svg_name("foreignobject") == "foreignObject" && svg_name("circle") == "circle"
+    xmlns = adjust_foreign([dom.Attr(space: dom.NO_SPACE, name: "xmlns:xlink", value: "")])
+    assert xmlns[0].space == dom.XMLNS && xmlns[0].name == "xlink"

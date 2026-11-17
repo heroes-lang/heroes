@@ -1,0 +1,14 @@
+# Reaches Rebel's `sql`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). It builds the row a query could answer, reads two of
+# its columns by name, and quotes a table's name for a statement's text.
+
+use <rebel>/sql
+
+function main()
+    row = sql.Row(names: ["id", "name"], values: [.integer(v: 7), .text(v: "Ziggy")])
+
+    match sql.text_named(row, "name")
+        .err e => print(e.code, ": ", e.msg)
+        .ok name =>
+            print(name, " has id ", sql.integer_named(row, "id").default(0))
+            print(sql.quote_identifier("Stardust \"Spiders\"").default("?"))

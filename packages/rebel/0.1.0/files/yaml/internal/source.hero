@@ -1,0 +1,278 @@
+# The characters of a YAML stream: which bytes are white space, breaks and
+# indicators, which characters may stand in it, the stream's line breaks made
+# one, and the message of a failure, which says the line and the column, what
+# was expected and what was found.
+#
+# Every index this module answers is a character's first byte: the bytes it
+# stops at are ASCII, and none of them continues a character of more than one
+# byte.
+
+use numbers
+use strings
+use unicode
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+## Bytes
+
+# Whether `b` is white space inside a line: a space or a tab.
+function is_white(b: u8) -> bool
+    return b == ' ' || b == '\t'
+
+# Whether byte `at` of `text` ends a token: white space, a line break, or the
+# end of the text.
+function is_blank_at(text: str, at: i64) -> bool
+    return at >= text.len() || text[at] == ' ' || text[at] == '\t' || text[at] == '\n'
+
+# Whether `b` is one of the five characters that shape a flow collection.
+function is_flow_indicator(b: u8) -> bool
+    return b == ',' || b == '[' || b == ']' || b == '{' || b == '}'
+
+# Whether `b` is one of YAML's indicators, which a plain scalar may not begin
+# with: `-?:,[]{}#&*!|>'"%@` and the backquote.
+function is_indicator(b: u8) -> bool
+    return b == '-' || b == '?' || b == ':' || is_flow_indicator(b) || b == '#' || b == '&' || b == '*' || b == '!' || b == '|' || b == '>' || b == '\'' || b == '"' || b == '%' || b == '@' || b == '`'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` is an ASCII hexadecimal digit, in either case.
+function is_hex_digit(b: u8) -> bool
+    return is_digit(b) || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# Whether `b` may stand in a tag handle's name: an ASCII letter, a digit or `-`.
+function is_word_char(b: u8) -> bool
+    return is_digit(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '-'
+
+# Whether `b` may stand in a URI as YAML reads one: a word character, `%`, or
+# one of `#;/?:@&=+$,_.!~*'()[]`.
+function is_uri_char(b: u8) -> bool
+    return is_word_char(b) || b == '%' || b == '#' || b == ';' || b == '/' || b == '?' || b == ':' || b == '@' || b == '&' || b == '=' || b == '+' || b == '$' || b == ',' || b == '_' || b == '.' || b == '!' || b == '~' || b == '*' || b == '\'' || b == '(' || b == ')' || b == '[' || b == ']'
+
+# Whether `text` holds `word` from `at` on.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at < 0 || at + word.len() > text.len()
+        return false
+    i: i64 @= 0
+
+    while i < word.len()
+        if text[at + i] != word[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# The index of the line break that ends the line holding byte `at`, or the
+# text's length.
+function line_end(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && text[i] != '\n'
+        i @ i + 1
+
+    return i
+
+# Whether the line beginning at `line_start` holds `---` or `...` at its start,
+# followed by white space, a break or the end: a document's marker.
+function is_marker_at(text: str, line_start: i64) -> bool
+    if !holds_at(text: text, at: line_start, word: "---") && !holds_at(text: text, at: line_start, word: "...")
+        return false
+    return is_blank_at(text, line_start + 3)
+
+## Characters
+
+# Whether the character at byte `at` of `text` may stand in a YAML stream
+# outside a quoted scalar: not U+007F, not U+0080 to U+009F but U+0085, and not
+# U+FFFE or U+FFFF. The controls below U+0020 are refused by `first_control`.
+function is_printable_at(text: str, at: i64) -> bool
+    b = text[at]
+
+    if b < 0x7f
+        return true
+
+    if b == 0x7f
+        return false
+
+    if b != 0xc2 && b != 0xef
+        return true
+    n = unicode.code_point_at(text, at)
+    return !(n >= 0x80 && n <= 0x9f && n != 0x85) && n != 0xfffe && n != 0xffff
+
+# The index of the first control character of `text` that YAML allows
+# nowhere, U+0000 to U+001F but a tab and a line feed, or the text's length.
+function first_control(text: str) -> i64
+    i: i64 @= 0
+
+    while i < text.len()
+        b = text[i]
+
+        if b < 0x20 && b != '\t' && b != '\n'
+            return i
+        i @ i + 1
+
+    return text.len()
+
+# `text` with each `\r\n` and each `\r` made one `\n`, the line breaks YAML
+# reads as one; a text with no `\r` is answered as it is.
+function with_line_feeds(text: str) -> str
+    if !strings.contains(s: text, substr: "\r")
+        return text
+    pieces: [str] @= []
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < text.len()
+        if text[i] == '\r'
+            pieces @ pieces.push(text.slice(from: start, to: i))
+            pieces @ pieces.push("\n")
+
+            if i + 1 < text.len() && text[i + 1] == '\n'
+                i @ i + 1
+            start @ i + 1
+        i @ i + 1
+
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces.join("")
+
+## Messages
+
+# Where byte `at` of `text` stands, as `line L, column C`, both counted from
+# 1: a line ends at a line feed, and the column counts characters.
+function position(text: str, at: i64) -> str
+    line: i64 @= 1
+    line_start: i64 @= 0
+    i: i64 @= 0
+
+    while i < at && i < text.len()
+        if text[i] == '\n'
+            line @ line + 1
+            line_start @ i + 1
+        i @ i + 1
+
+    column: i64 @= 1
+    j: i64 @= line_start
+
+    while j < at && j < text.len()
+        if !unicode.is_continuation(text[j])
+            column @ column + 1
+        j @ j + 1
+
+    return f"line {line}, column {column}"
+
+# What stands at byte `at` of `text`, for a message: the end of the text, a
+# line break, a tab, a run of word characters as a word, one character between
+# quotes, or one that cannot be seen named by its code point, `U+FEFF`.
+function found(text: str, at: i64) -> str
+    if at >= text.len()
+        return "the end of the text"
+
+    if text[at] == '\n'
+        return "a line break"
+
+    if text[at] == '\t'
+        return "a tab"
+
+    if text[at] == ' '
+        return "a space"
+    end: i64 @= at
+
+    while end < text.len() && end - at < 16 && is_word_char(text[end]) && text[end] != '-'
+        end @ end + 1
+
+    if end > at
+        return f"\"{text.slice(from: at, to: end)}\""
+    width = unicode.width_at(text, at)
+    c = text.slice(from: at, to: at + width)
+
+    if c == "\"" || c == "`"
+        return f"'{c}'"
+
+    if unicode.is_graphic(c)
+        return f"`{c}`"
+    return code_name(unicode.code_point_at(text, at))
+
+# The name of the code point `n`, `U+` and at least four hexadecimal digits in
+# upper case, as Unicode writes it: `U+000A`, `U+1F600`.
+function code_name(n: i64) -> str
+    digits = strings.to_upper(numbers.format_int(n: n, base: 16))
+    return "U+" + strings.pad_start(s: digits, width: 4, pad: "0")
+
+# The message of a failure at byte `at` of `text`: where, what was expected,
+# and what was found there.
+function expected(text: str, at: i64, what: str) -> str
+    return f"{position(text, at)}: expected {what}, found {found(text, at)}"
+
+# The message of a failure at byte `at` of `text` that says `what` happened.
+function said(text: str, at: i64, what: str) -> str
+    return f"{position(text, at)}: {what}"
+
+## Tests
+
+test "is_blank_at, is_indicator and is_flow_indicator: each class, and the end of the text"
+    assert is_blank_at("a b", 1) && is_blank_at("a\tb", 1) && is_blank_at("a\n", 1) && is_blank_at("a", 1)
+    assert !is_blank_at("ab", 1)
+
+    for b in "-?:,[]{}#&*!|>'\"%@`".chars()
+        assert is_indicator(b[0])
+
+    assert !is_indicator('a') && !is_indicator('.') && !is_indicator('~')
+    assert is_flow_indicator(',') && is_flow_indicator('}') && !is_flow_indicator(':')
+
+test "is_word_char and is_uri_char: letters, digits, the dash, and what a URI allows"
+    assert is_word_char('a') && is_word_char('Z') && is_word_char('7') && is_word_char('-')
+    assert !is_word_char('!') && !is_word_char('_')
+    assert is_uri_char(':') && is_uri_char('%') && is_uri_char('~') && is_uri_char('[')
+    assert !is_uri_char(' ') && !is_uri_char('{') && !is_uri_char('"') && !is_uri_char('<')
+
+test "holds_at and line_end: inside, at the end, past it, and a line with no break"
+    assert holds_at(text: "a---b", at: 1, word: "---")
+    assert !holds_at(text: "a--", at: 1, word: "---")
+    assert !holds_at(text: "abc", at: -1, word: "a")
+    assert line_end("ab\ncd", 0) == 2 && line_end("ab\ncd", 3) == 5 && line_end("", 0) == 0
+
+test "is_marker_at: three dashes or dots alone or before a space, and before anything else"
+    assert is_marker_at("---", 0) && is_marker_at("--- a", 0) && is_marker_at("...\n", 0)
+    assert is_marker_at("a\n---\n", 2)
+    assert !is_marker_at("---a", 0) && !is_marker_at("--", 0) && !is_marker_at(" ---", 0)
+
+test "is_printable_at: ASCII, the delete, the C1 controls but the next line, and U+FFFE"
+    assert is_printable_at("a", 0) && is_printable_at("é", 0) && is_printable_at("😀", 0)
+    assert !is_printable_at("\u{7f}", 0)
+    assert !is_printable_at("\u{80}", 0) && !is_printable_at("\u{9f}", 0)
+    assert is_printable_at("\u{85}", 0) && is_printable_at(unicode.from_code_point(0xa0).must(), 0)
+    assert !is_printable_at(unicode.from_code_point(0xfffe).must(), 0)
+    assert !is_printable_at(unicode.from_code_point(0xffff).must(), 0)
+    assert is_printable_at(unicode.from_code_point(0xfffd).must(), 0)
+
+test "first_control: none, a tab and a break allowed, and U+0001 found"
+    assert first_control("") == 0
+    assert first_control("a\tb\nc") == 5
+    assert first_control("ab\u{1}c") == 2
+    nul: [u8] = [0x61, 0]
+    assert first_control(nul.validated_bytes().must()) == 1
+
+test "with_line_feeds: no carriage return, CR LF, a lone CR, and one at the end"
+    assert with_line_feeds("a\nb") == "a\nb"
+    assert with_line_feeds("a\r\nb\rc\r") == "a\nb\nc\n"
+    assert with_line_feeds("\r\r\n") == "\n\n"
+    assert with_line_feeds("") == ""
+
+test "position: the first byte, after a break, and a column counted in characters"
+    assert position("abc", 0) == "line 1, column 1"
+    assert position("ab\ncd", 4) == "line 2, column 2"
+    assert position("éé: x", 6) == "line 1, column 5"
+    assert position("a\n", 2) == "line 2, column 1"
+
+test "found: the end, a break, a tab, a word, a quote, a character and an invisible one"
+    assert found("a", 1) == "the end of the text"
+    assert found("a\n", 1) == "a line break"
+    assert found("\tx", 0) == "a tab"
+    assert found("key: v", 0) == "\"key\""
+    assert found("\"a\"", 0) == "'\"'"
+    assert found("-x", 0) == "`-`"
+    assert found(unicode.from_code_point(0xfeff).must(), 0) == "U+FEFF"
+    assert expected(text: "[a", at: 2, what: "`]`") == "line 1, column 3: expected `]`, found the end of the text"
+    assert said(text: "a", at: 0, what: "a tab") == "line 1, column 1: a tab"

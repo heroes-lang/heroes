@@ -1,0 +1,179 @@
+# The characters of XML 1.0 (fifth edition): which ones a document may hold,
+# which begin and continue a name, the white space between tokens, and the
+# names Namespaces in XML 1.0 reads, with no colon or with one.
+#
+# Every index this module takes or answers is a character's first byte.
+
+use unicode
+
+# Whether `b` is white space as XML 1.0 reads it between tokens: a space, a
+# tab, a line feed or a carriage return, and nothing else.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r'
+
+# Whether every byte of `s` is white space, as `is_space` reads it; the empty
+# text is.
+function is_white(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if !is_space(s[at])
+            return false
+
+    return true
+
+# Whether `n` is a character a document may hold, the production `Char`: tab,
+# line feed, carriage return, U+0020 to U+D7FF, U+E000 to U+FFFD and
+# U+10000 to U+10FFFF.
+function is_char(n: i64) -> bool
+    if n >= 0x20
+        return n <= 0xd7ff || n >= 0xe000 && n <= 0xfffd || n >= 0x10000 && n <= 0x10ffff
+    return n == 0x9 || n == 0xa || n == 0xd
+
+# The byte index of the first character of `s` a document may not hold, or the
+# length of `s` where there is none. Past ASCII only U+FFFE and U+FFFF are
+# refused, since a `str` holds no surrogate, so it reads their three bytes
+# and decodes nothing.
+function bad_char_index(s: str) -> i64
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b < 0x20 && b != '\t' && b != '\n' && b != '\r'
+            return i
+
+        if b == 0xef && i + 2 < s.len() && s[i + 1] == 0xbf && (s[i + 2] == 0xbe || s[i + 2] == 0xbf)
+            return i
+        i @ i + 1
+
+    return s.len()
+
+# Whether `n` may begin a name, the production `NameStartChar`, the colon
+# included.
+function is_name_start(n: i64) -> bool
+    if n < 0x80
+        return n >= 'a' && n <= 'z' || n >= 'A' && n <= 'Z' || n == '_' || n == ':'
+    return n >= 0xc0 && n <= 0xd6 || n >= 0xd8 && n <= 0xf6 || n >= 0xf8 && n <= 0x2ff || n >= 0x370 && n <= 0x37d || n >= 0x37f && n <= 0x1fff || n >= 0x200c && n <= 0x200d || n >= 0x2070 && n <= 0x218f || n >= 0x2c00 && n <= 0x2fef || n >= 0x3001 && n <= 0xd7ff || n >= 0xf900 && n <= 0xfdcf || n >= 0xfdf0 && n <= 0xfffd || n >= 0x10000 && n <= 0xeffff
+
+# Whether `n` may continue a name, the production `NameChar`.
+function is_name_char(n: i64) -> bool
+    if is_name_start(n)
+        return true
+    return n >= '0' && n <= '9' || n == '-' || n == '.' || n == 0xb7 || n >= 0x300 && n <= 0x36f || n >= 0x203f && n <= 0x2040
+
+# The byte index past the name that begins at `at` of `text`, or `at` itself
+# where no name begins there. Aborts where `at` is not a character's first
+# byte or is past the end.
+function name_end(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len()
+        b = text[i]
+
+        n = if b < 0x80
+            to_i64(b).must()
+        else
+            unicode.code_point_at(text, i)
+
+        accepted = if i == at
+            is_name_start(n)
+        else
+            is_name_char(n)
+
+        if !accepted
+            return i
+
+        i @ if b < 0x80
+            i + 1
+        else
+            i + unicode.width_at(text, i)
+
+    return i
+
+# Whether `s` is one whole name, the production `Name`; the empty text is not.
+function is_name(s: str) -> bool
+    return s.len() > 0 && name_end(text: s, at: 0) == s.len()
+
+# Whether `s` is a name holding no colon, the production `NCName` of
+# Namespaces in XML 1.0: a prefix, a local name, a target.
+function is_ncname(s: str) -> bool
+    if !is_name(s)
+        return false
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == ':'
+            return false
+
+    return true
+
+# Where the colon of `s` stands, the one between a prefix and a local name, or
+# the length of `s` where it holds none.
+function colon_index(s: str) -> i64
+    for at in range(from: 0, to: s.len())
+        if s[at] == ':'
+            return at
+
+    return s.len()
+
+# Whether `s` is a name Namespaces in XML 1.0 reads as an element's or an
+# attribute's: one name holding no colon, or two around one colon.
+function is_qname(s: str) -> bool
+    at = colon_index(s)
+
+    if at == s.len()
+        return is_ncname(s)
+    return is_ncname(s.slice(from: 0, to: at)) && is_ncname(s.slice(from: at + 1, to: s.len()))
+
+## Tests
+
+test "is_space: the four white space bytes, and a no-break space's first byte"
+    assert is_space(' ') && is_space('\t') && is_space('\n') && is_space('\r')
+    assert !is_space('a')
+    assert !is_space(0xc2)
+
+test "is_white: empty, the four bytes, and one other among them"
+    assert is_white("") && is_white(" \t\r\n")
+    assert !is_white(" x ")
+
+test "is_char: the edges of each range, U+0000, the surrogates, U+FFFE and past U+10FFFF"
+    assert is_char(0x9) && is_char(0xa) && is_char(0xd)
+    assert !is_char(0) && !is_char(0x1) && !is_char(0x8) && !is_char(0x1f)
+    assert is_char(0x20) && is_char(0xd7ff) && !is_char(0xd800) && !is_char(0xdfff)
+    assert is_char(0xe000) && is_char(0xfffd) && !is_char(0xfffe) && !is_char(0xffff)
+    assert is_char(0x10000) && is_char(0x10ffff) && !is_char(0x110000)
+    assert !is_char(-1)
+
+test "bad_char_index: none, a control byte, U+FFFE and U+FFFF, and characters of more than one byte"
+    assert bad_char_index("") == 0
+    assert bad_char_index("a\tb\r\nc") == 6
+    assert bad_char_index("ab\u{1}") == 2
+    fffe: [u8] = [0xc3, 0xa9, 0xef, 0xbf, 0xbe]
+    assert bad_char_index(fffe.validated_bytes().must()) == 2
+    ffff: [u8] = [0xef, 0xbf, 0xbf]
+    assert bad_char_index(ffff.validated_bytes().must()) == 0
+    assert bad_char_index("�😀") == 7
+
+test "is_name_start and is_name_char: letters, the colon, digits, a dot, a combining mark and the edges"
+    assert is_name_start('a') && is_name_start('Z') && is_name_start('_') && is_name_start(':')
+    assert !is_name_start('0') && !is_name_start('-') && !is_name_start('.') && !is_name_start(0xb7)
+    assert is_name_char('0') && is_name_char('-') && is_name_char('.') && is_name_char(0xb7)
+    assert is_name_start(0xc0) && !is_name_start(0xd7) && is_name_start(0xeffff) && !is_name_start(0xf0000)
+    assert !is_name_start(0x300) && is_name_char(0x300)
+    assert !is_name_char(' ') && !is_name_char('<')
+
+test "name_end: an ASCII name, a name of more than one byte, a name cut by a space, and none"
+    assert name_end(text: "abc", at: 0) == 3
+    assert name_end(text: "<città x", at: 1) == 7
+    assert name_end(text: "a b", at: 0) == 1
+    assert name_end(text: "1a", at: 0) == 0
+    assert name_end(text: "", at: 0) == 0
+
+test "is_name, is_ncname and is_qname: empty, a colon at either end, one colon, two"
+    assert !is_name("") && is_name("a") && is_name(":a") && is_name("a:b:c")
+    assert is_ncname("a.b-c") && !is_ncname("a:b") && !is_ncname("")
+    assert is_qname("a") && is_qname("p:a") && is_qname("città:é")
+    assert !is_qname(":a") && !is_qname("a:") && !is_qname("a:b:c") && !is_qname("1a")
+
+test "colon_index: none, one, and the first of two"
+    assert colon_index("abc") == 3
+    assert colon_index("p:a") == 1
+    assert colon_index("a:b:c") == 1

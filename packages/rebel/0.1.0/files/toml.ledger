@@ -1,0 +1,132 @@
+# The ledger of `toml`: what TOML 1.0.0 (toml.io) asks of a reader and what
+# Python's `tomllib` (3.15) lets a program do, one block per capability, and
+# what Rebel answers. Neither Go's nor Rust's standard library reads TOML, so
+# their lines are `-` in every block; Python's reads and does not write. The
+# list is this machine's, 2026-11-16: `dir(tomllib)`,
+# `dir(tomllib.TOMLDecodeError)`, the signatures `inspect.signature` prints,
+# and an instance's attributes. Every expected value of the package's tests
+# that tomllib answers was observed from it the same day; where 3.15's
+# tomllib reads TOML 1.1.0 and 1.0.0 refuses, 1.0.0 was followed, and the note
+# says so.
+
+capability toml/parse  a TOML text read into a tree of values a program matches on
+  heroes  toml.parse, toml.Value
+  go      -
+  rust    -
+  python  tomllib.loads, dict, list, str, int, float, bool, datetime.datetime, datetime.date, datetime.time
+  note    a document is a `table`; its members keep the order they were defined in, as a Python dict does; ten cases, one per kind TOML 1.0.0 names
+
+capability toml/load  a TOML file read
+  heroes  built-in read_file, toml.parse
+  go      -
+  rust    -
+  python  tomllib.load
+  note    the program reads the file, failing `not_text` where it is not UTF-8, and parses its text
+
+capability toml/strings  the four forms of string and their escapes
+  heroes  toml.parse
+  go      -
+  rust    -
+  python  tomllib.loads
+  note    basic, literal, and each across lines, up to two quotes before the closing three, a backslash ending a line; CR LF inside a string read as LF, as tomllib reads it. `\x41` and `\e` are TOML 1.1's and refused, where tomllib reads them; a control character, a lone CR and an escape of no Unicode scalar value are refused as both refuse them
+
+capability toml/integers  integers in decimal, hexadecimal, octal and binary, with underscores
+  heroes  toml.parse, toml.DOES_NOT_FIT
+  go      -
+  rust    -
+  python  tomllib.loads
+  note    an integer past an `i64` fails `does_not_fit`, as TOML 1.0.0 requires; tomllib reads it, a Python integer having no bound. A leading zero, a sign before a prefix, `0X` and a lone or doubled underscore are refused as tomllib refuses them
+
+capability toml/floats  floats with a fraction, an exponent, underscores, `inf` and `nan`
+  heroes  toml.parse
+  go      -
+  rust    -
+  python  tomllib.loads
+  note    read as the nearest `f64`; an underscore between the exponent's digits is read, as tomllib reads it
+
+capability toml/float-reader  floats read by a function of the program's, a decimal type
+  heroes  refused: a float is the nearest `f64`, and a reader inside the parse would need a function value and a failure of its own; a program that wants a float's digits writes the value as a string
+  go      -
+  rust    -
+  python  tomllib.loads(parse_float=), tomllib.load(parse_float=)
+  note    -
+
+capability toml/dates  dates and times in their four forms, as `time` values
+  heroes  toml.Value, time.DateTime, time.Duration
+  go      -
+  rust    -
+  python  datetime.datetime, datetime.date, datetime.time, datetime.timezone
+  note    a date and time with an offset is held as written, with its offset in minutes, so that every year from 0 to 9999 is held; a fraction keeps nine digits, the rest cut, where tomllib keeps six. A time with no seconds is TOML 1.1's and refused, where tomllib reads it; a second of 60 is refused, as tomllib refuses it, `time` having no leap second; the year 0 is read, as RFC 3339 allows, where tomllib refuses it for Python's calendar
+
+capability toml/instant  the instant a date and time with an offset names
+  heroes  toml.instant_of
+  go      -
+  rust    -
+  python  datetime.datetime.timestamp, datetime.datetime.astimezone
+  note    fails `does_not_fit` outside what a `time.Instant` holds, 1677 to 2262
+
+capability toml/tables  tables, arrays of tables, dotted keys and inline tables, with the rules of their definition
+  heroes  toml.parse
+  go      -
+  rust    -
+  python  tomllib.loads
+  note    a header names a table once, a super-table may follow its child, a dotted key adds no key to a table a header defined nor, past the next header, to one it defined itself, and an inline table or an array written whole takes nothing more: each refused as tomllib refuses it, the message naming the table's whole path
+
+capability toml/inline-tables-1.1  an inline table across lines, or with a comma before its end
+  heroes  refused: TOML 1.0.0 keeps an inline table on one line with no comma before its end; both are TOML 1.1's, which tomllib reads
+  go      -
+  rust    -
+  python  tomllib.loads
+  note    -
+
+capability toml/errors  a text that is not TOML, with its line and column
+  heroes  toml.INVALID
+  go      -
+  rust    -
+  python  tomllib.TOMLDecodeError, TOMLDecodeError.msg, TOMLDecodeError.doc, TOMLDecodeError.pos, TOMLDecodeError.lineno, TOMLDecodeError.colno
+  note    the message opens `line L, column C:`, the column in characters, then says what was expected and what was found; a byte order mark is refused, as tomllib refuses it
+
+capability toml/depth  nesting bounded, so that no walk of a value runs out of stack
+  heroes  toml.MAX_DEPTH
+  go      -
+  rust    -
+  python  -
+  note    512 levels, the keys of a path and the arrays and inline tables around a value counted together; `parse` and `format` refuse a deeper one, where tomllib recurses until Python's own limit
+
+capability toml/lookup  a value reached by a path of keys
+  heroes  toml.value_at
+  go      -
+  rust    -
+  python  dict.__getitem__, dict.get
+  note    a key absent fails `not_found`; a key asked of a value that is not a table fails `invalid`
+
+capability toml/write  a tree of values written as TOML text that reads back as the same tree
+  heroes  toml.format
+  go      -
+  rust    -
+  python  -
+  note    tomllib writes nothing; each table's plain keys first, then its tables under headers and its arrays of tables under `[[...]]`, every other value inline, a float in the fewest digits that read back; a date, a time or an offset outside its range fails `invalid`
+
+capability toml/comments-kept  a document's comments and layout kept from read to write
+  heroes  refused: the tree holds values, as tomllib's does; a document edited with its comments kept is a text edited as text
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability toml/to-json  a TOML document or value crossed to a JSON value
+  heroes  toml.to_json
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-16 by the author's answer on serde, the part of it Heroes can say; tables become objects in their keys' order and arrays lists; a date or a time crosses as the RFC 3339 text `format` writes for it, `1979-05-27T07:32:00-07:00`, its kind lost on the way; a `nan` or an infinity fails `unsupported` and an integer past 2^53 - 1 `does_not_fit`, each with its JSON pointer, never rounded in silence
+
+capability toml/from-json  a JSON value crossed to a TOML value, a document where it is an object
+  heroes  toml.from_json
+  go      -
+  rust    -
+  python  -
+  note    a whole number from -2^63 to 2^63 - 1 becomes an `integer`, every other number, `-0.0` included, a `float`; a string stays a `text` even where it reads as a date, since JSON names none; JSON's `null` fails `unsupported` with its JSON pointer, TOML having no such value
+
+dropped
+  python  TOMLDecodeError.add_note, TOMLDecodeError.args, TOMLDecodeError.with_traceback: what every Python exception has

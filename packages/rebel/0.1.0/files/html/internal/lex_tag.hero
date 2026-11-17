@@ -1,0 +1,235 @@
+# The tokenizer's states of a tag's attributes (13.2.5.32 to 13.2.5.40): a
+# name, `=`, a value quoted or not, and `/>`. Each step reads at least one
+# byte or switches to a state that will; a run of ordinary bytes is read at
+# once.
+
+use html/internal/ascii
+use html/internal/lexer
+use unicode
+
+# 13.2.5.32, before an attribute's name.
+function before_name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lx.state @ .after_attribute_name
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '/' || b == '>'
+        lx.state @ .after_attribute_name
+    else if b == '='
+        lexer.error_here(@lx, "unexpected-equals-sign-before-attribute-name")
+        lexer.start_attribute(@lx, "=")
+        lx.at @ lx.at + 1
+        lx.state @ .attribute_name
+    else
+        lexer.start_attribute(@lx, "")
+        lx.state @ .attribute_name
+
+# 13.2.5.33, an attribute's name.
+function name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.leave_attribute_name(@lx)
+        lx.state @ .after_attribute_name
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b) || b == '/' || b == '>'
+        lexer.leave_attribute_name(@lx)
+        lx.state @ .after_attribute_name
+    else if b == '='
+        lexer.leave_attribute_name(@lx)
+        lx.at @ lx.at + 1
+        lx.state @ .before_attribute_value
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.attribute_name @ lx.attribute_name.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else if b == '"' || b == '\'' || b == '<'
+        lexer.error_here(@lx, "unexpected-character-in-attribute-name")
+        lx.attribute_name @ lx.attribute_name.push(lx.text.slice(from: lx.at, to: lx.at + 1))
+        lx.at @ lx.at + 1
+    else
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && is_name_byte(lx.text[end])
+            end @ end + 1
+
+        lx.attribute_name @ lx.attribute_name.push(lexer.take(@lx, end: end, lower: true))
+
+# Whether `b` goes on an attribute's name with nothing more to do.
+function is_name_byte(b: u8) -> bool
+    return !ascii.is_white(b) && b != '/' && b != '>' && b != '=' && b != 0 && b != '"' && b != '\'' && b != '<'
+
+# 13.2.5.34, after an attribute's name.
+function after_name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '/'
+        lx.at @ lx.at + 1
+        lx.state @ .self_closing_start_tag
+    else if b == '='
+        lx.at @ lx.at + 1
+        lx.state @ .before_attribute_value
+    else if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else
+        lexer.start_attribute(@lx, "")
+        lx.state @ .attribute_name
+
+# 13.2.5.35, before an attribute's value.
+function before_value(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lx.state @ .attribute_value_unquoted
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '"'
+        lx.at @ lx.at + 1
+        lx.state @ .attribute_value_double
+    else if b == '\''
+        lx.at @ lx.at + 1
+        lx.state @ .attribute_value_single
+    else if b == '>'
+        lexer.error_here(@lx, "missing-attribute-value")
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else
+        lx.state @ .attribute_value_unquoted
+
+# 13.2.5.36 and 13.2.5.37, a value between `"` or `'`.
+function quoted(@lx: lexer.Lexer)
+    quote: u8 = if lx.state == .attribute_value_double
+        '"'
+    else
+        '\''
+
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == quote
+        lx.at @ lx.at + 1
+        lx.state @ .after_attribute_value
+    else if b == '&'
+        lexer.reference(@lx, true)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.attribute_value @ lx.attribute_value.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else
+        lx.attribute_value @ lx.attribute_value.push(
+            lexer.take(@lx, end: lexer.run_end(lx, stop_a: quote, stop_b: '&', stop_c: quote), lower: false)
+        )
+
+# 13.2.5.38, a value with no quotes.
+function unquoted(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+        lx.state @ .before_attribute_name
+    else if b == '&'
+        lexer.reference(@lx, true)
+    else if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.attribute_value @ lx.attribute_value.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else if b == '"' || b == '\'' || b == '<' || b == '=' || b == '`'
+        lexer.error_here(@lx, "unexpected-character-in-unquoted-attribute-value")
+        lx.attribute_value @ lx.attribute_value.push(lx.text.slice(from: lx.at, to: lx.at + 1))
+        lx.at @ lx.at + 1
+    else
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && is_unquoted_byte(lx.text[end])
+            end @ end + 1
+
+        lx.attribute_value @ lx.attribute_value.push(lexer.take(@lx, end: end, lower: false))
+
+# Whether `b` goes on an unquoted value with nothing more to do.
+function is_unquoted_byte(b: u8) -> bool
+    return !ascii.is_white(b) && b != '&' && b != '>' && b != 0 && b != '"' && b != '\'' && b != '<' && b != '=' && b != '`'
+
+# 13.2.5.39, after a quoted value.
+function after_value(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+        lx.state @ .before_attribute_name
+    else if b == '/'
+        lx.at @ lx.at + 1
+        lx.state @ .self_closing_start_tag
+    else if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else
+        lexer.error_here(@lx, "missing-whitespace-between-attributes")
+        lx.state @ .before_attribute_name
+
+# 13.2.5.40, a tag's `/`.
+function self_closing(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+
+    if lexer.byte(lx) == '>'
+        lx.self_closing @ true
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else
+        lexer.error_here(@lx, "unexpected-solidus-in-tag")
+        lx.state @ .before_attribute_name
+
+## Tests
+
+test "name and quoted: a name lower-cased, a quoted value with a reference, and the tag emitted"
+    lx: lexer.Lexer @= lexer.start("<a HREF=\"x&amp;y\">")
+    lx.at @ 3
+    lexer.new_tag(@lx, kind: 2, at: 0)
+    lx.name @ ["a"]
+    lx.state @ .before_attribute_name
+    before_name(@lx)
+    name(@lx)
+    name(@lx)
+    before_value(@lx)
+
+    while lx.state == .attribute_value_double
+        quoted(@lx)
+
+    after_value(@lx)
+    assert lx.queue.len() == 1 && lx.queue[0].attributes[0].name == "href" && lx.queue[0].attributes[0].value == "x&y"
+
+test "is_name_byte and is_unquoted_byte: the bytes that end each"
+    assert is_name_byte('a') && !is_name_byte('=') && !is_name_byte('<') && is_name_byte(0xc3)
+    assert is_unquoted_byte('a') && !is_unquoted_byte('`') && !is_unquoted_byte(' ') && is_unquoted_byte('/')

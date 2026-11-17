@@ -1,0 +1,371 @@
+# A template's own text read as HTML from a context: the context it leaves
+# the page in, and the text rewritten as Go's `html/template` rewrites it,
+# its HTML comments dropped, a script's and a style sheet's comments dropped,
+# and a `<` that opens no tag written `&lt;`. An attribute's value is kept as
+# written, and read with its character references decoded, so that `&#39;` in
+# an event handler opens a string as `'` would. A script or a style sheet ends
+# at its closing tag wherever that stands, as a browser ends it.
+
+use strings
+use template/internal/context
+use template/internal/lex
+use template/internal/names
+use template/internal/references
+use template/internal/scan_css
+use template/internal/scan_js
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` is HTML's white space.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 0x0c
+
+# `b` in lower case where it is an ASCII capital.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# Where the byte `b` first stands in `s` from `from`, or the end of `s`.
+function next_byte(s: str, from: i64, b: u8) -> i64
+    at: i64 @= from
+
+    while at < s.len() && s[at] != b
+        at @ at + 1
+
+    return at
+
+# Where `</name` first begins in `s` from `from`, `name` in any case, with
+# white space, `/`, `>` or the end of `s` after it; or the end of `s`.
+function closing_tag(s: str, from: i64, name: str) -> i64
+    at: i64 @= next_byte(s, from: from, b: '<')
+
+    while at < s.len()
+        after = at + 2 + name.len()
+
+        if after <= s.len() && s[at + 1] == '/'
+            same: bool @= true
+
+            for k in range(from: 0, to: name.len())
+                if lower(s[at + 2 + k]) != name[k]
+                    same @ false
+
+            if same && (after == s.len() || is_space(s[after]) || s[after] == '/' || s[after] == '>')
+                return at
+        at @ next_byte(s, from: at + 1, b: '<')
+
+    return s.len()
+
+# The context after a tag's `>`: the content of the element it opened.
+function after_tag(c: context.Context lent) -> context.Context
+    next: context.Context @= context.initial()
+    element = c.element
+
+    if element == names.ELEMENT_SCRIPT
+        next.state @ context.JS
+        next.element @ element
+    else if element == names.ELEMENT_STYLE
+        next.state @ context.CSS
+        next.element @ element
+    else if element == names.ELEMENT_TEXTAREA || element == names.ELEMENT_TITLE
+        next.state @ context.RCDATA
+        next.element @ element
+    return next
+
+# The context after an attribute's value ends: back between the tag's
+# attributes, a script whose `type` is not JavaScript's taking HTML content.
+function after_value(c: context.Context lent) -> context.Context
+    next: context.Context @= context.with_state(context.initial(), context.TAG)
+    next.element @ c.element
+
+    if c.attr == names.ATTR_SCRIPT_TYPE && !names.is_script_type(c.word)
+        next.element @ names.ELEMENT_SCRIPT_OTHER
+    return next
+
+# `c`, inside an attribute's value, after the characters `decoded`. Fails
+# where a script's `/` there may begin either a division or a regular
+# expression.
+function inside_value(c: context.Context, decoded: str) -> context.Context?
+    next: context.Context @= c
+    state = c.state
+
+    if context.is_js(state)
+        got = scan_js.scan(decoded, from: 0, to: decoded.len(), start: c, emit: false)
+
+        if got.fault != ""
+            return fail(code: "invalid", msg: got.fault)
+        return ok(got.ctx)
+
+    if context.is_css(state)
+        return ok(scan_css.scan(decoded, from: 0, to: decoded.len(), start: c, emit: false).ctx)
+
+    if state == context.VALUE && c.attr == names.ATTR_SCRIPT_TYPE
+        next.word @ c.word + decoded
+        return ok(next)
+
+    for at in range(from: 0, to: decoded.len())
+        b = decoded[at]
+
+        if next.state == context.URL
+            next.url_part @ context.url_after(next.url_part, b)
+        else if next.state == context.VALUE && next.attr == names.ATTR_META_CONTENT && !is_space(b)
+            piece = if b < 0x80
+                strings.to_lower_ascii(decoded.slice(from: at, to: at + 1))
+            else
+                "?"
+            joined = next.word + piece
+
+            seen = if joined.len() > 4
+                joined.slice(from: joined.len() - 4, to: joined.len())
+            else
+                joined
+            next.word @ seen
+
+            if strings.has_suffix(s: seen, suffix: "url=")
+                next.state @ context.URL
+                next.url_part @ context.URL_NONE
+                next.word @ ""
+
+    return ok(next)
+
+# `text` read as HTML from `start`, where `text` begins at `place`: the text
+# rewritten and the context it leaves the page in. Fails `invalid`, at the
+# place it found it, where an unquoted attribute value holds a quote, `<`,
+# `=` or a backtick, a declaration is not whole, or a script's `/` may begin
+# either a division or a regular expression.
+function scan(text: str, start: context.Context, place: lex.Place) -> context.Scanned?
+    out: [str] @= []
+    c: context.Context @= start
+    at: i64 @= 0
+
+    while at < text.len()
+        state = c.state
+        b = text[at]
+
+        if c.delim != context.NO_DELIM && state >= context.VALUE && state <= context.CSS_LINE_COMMENT
+            end: i64 @= at
+
+            if c.delim == context.UNQUOTED
+                while end < text.len() && !is_space(text[end]) && text[end] != '>'
+                    bad = text[end]
+
+                    if bad == '"' || bad == '\'' || bad == '<' || bad == '=' || bad == '`'
+                        where = lex.advance(text, from: 0, to: end, start: place)
+                        return fail(
+                            code: "invalid",
+                            msg: lex.located(where, f"`{text.slice(from: end, to: end + 1)}` in an attribute value with no quotes around it: write the value between quotes")
+                        )
+                    end @ end + 1
+            else
+                quote: u8 = if c.delim == context.DOUBLE
+                    '"'
+                else
+                    '\''
+                end @ next_byte(text, from: at, b: quote)
+            chunk = text.slice(from: at, to: end)
+            out @ out.push(chunk)
+
+            match inside_value(c, references.unescape(chunk))
+                .ok next => c @ next
+                .err e => return fail(
+                    code: "invalid",
+                    msg: lex.located(lex.advance(text, from: 0, to: at, start: place), e.msg)
+                )
+
+            at @ end
+
+            if end < text.len()
+                if c.delim != context.UNQUOTED
+                    out @ out.push(text.slice(from: end, to: end + 1))
+                    at @ end + 1
+                c @ after_value(c)
+        else if state == context.TEXT
+            j = next_byte(text, from: at, b: '<')
+
+            if j > at
+                out @ out.push(text.slice(from: at, to: j))
+                at @ j
+                continue
+
+            next: u8 = if at + 1 < text.len()
+                text[at + 1]
+            else
+                0
+
+            after: u8 = if at + 2 < text.len()
+                text[at + 2]
+            else
+                0
+
+            if scan_js.holds(s: text, at: at, to: text.len(), what: "<!--")
+                c.state @ context.HTML_COMMENT
+                at @ at + 4
+            else if is_letter(next)
+                out @ out.push("<")
+                c.state @ context.TAG_NAME
+                c.word @ ""
+                at @ at + 1
+            else if next == '/' && is_letter(after)
+                out @ out.push("</")
+                c.state @ context.TAG_NAME
+                c.word @ "/"
+                at @ at + 2
+            else if next == '!' && is_letter(after)
+                close = next_byte(text, from: at, b: '>')
+
+                if close == text.len()
+                    return fail(
+                        code: "invalid",
+                        msg: lex.located(lex.advance(text, from: 0, to: at, start: place), "a declaration `<!...>` is written whole in the template, its `>` included")
+                    )
+                out @ out.push(text.slice(from: at, to: close + 1))
+                at @ close + 1
+            else
+                out @ out.push("&lt;")
+                at @ at + 1
+        else if state == context.RCDATA
+            name = if c.element == names.ELEMENT_TITLE
+                "title"
+            else
+                "textarea"
+            j = next_byte(text, from: at, b: '<')
+
+            if j > at
+                out @ out.push(text.slice(from: at, to: j))
+                at @ j
+            else if closing_tag(s: text, from: at, name: name) == at
+                out @ out.push("</")
+                c @ context.with_state(context.initial(), context.TAG_NAME)
+                c.word @ "/"
+                at @ at + 2
+            else
+                out @ out.push("&lt;")
+                at @ at + 1
+        else if state == context.HTML_COMMENT
+            close: i64 @= at
+
+            while close < text.len() && !scan_js.holds(s: text, at: close, to: text.len(), what: "-->")
+                close @ close + 1
+
+            if close == text.len()
+                at @ close
+            else
+                at @ close + 3
+                c.state @ context.TEXT
+        else if state == context.TAG_NAME || state == context.ATTR_NAME
+            end: i64 @= at
+
+            while end < text.len() && !is_space(text[end]) && text[end] != '/' && text[end] != '>' && !(state == context.ATTR_NAME && text[end] == '=')
+                end @ end + 1
+
+            run = text.slice(from: at, to: end)
+            out @ out.push(run)
+            c.word @ c.word + strings.to_lower_ascii(run)
+            at @ end
+
+            if end < text.len()
+                if state == context.ATTR_NAME
+                    c.attr @ names.attr_of(c.word, element: c.element)
+                    c.state @ context.AFTER_NAME
+                else if strings.has_prefix(s: c.word, prefix: "/")
+                    c.element @ names.ELEMENT_NONE
+                    c.state @ context.TAG
+                else
+                    c.element @ names.element_of(c.word)
+                    c.state @ context.TAG
+                c.word @ ""
+        else if state == context.TAG || state == context.AFTER_NAME || state == context.BEFORE_VALUE
+            if is_space(b)
+                out @ out.push(text.slice(from: at, to: at + 1))
+                at @ at + 1
+            else if b == '>'
+                out @ out.push(">")
+                c @ after_tag(c)
+                at @ at + 1
+            else if state == context.AFTER_NAME && b == '='
+                out @ out.push("=")
+                c.state @ context.BEFORE_VALUE
+                at @ at + 1
+            else if state == context.BEFORE_VALUE && (b == '"' || b == '\'')
+                out @ out.push(text.slice(from: at, to: at + 1))
+
+                delim = if b == '"'
+                    context.DOUBLE
+                else
+                    context.SINGLE
+                c @ context.value_start(c, delim: delim)
+                at @ at + 1
+            else if state == context.BEFORE_VALUE
+                c @ context.value_start(c, delim: context.UNQUOTED)
+            else if b == '/'
+                out @ out.push("/")
+                c.state @ context.TAG
+                at @ at + 1
+            else
+                c.state @ context.ATTR_NAME
+                c.attr @ names.ATTR_PLAIN
+                c.word @ ""
+        else
+            # The content of a script or a style sheet, to its closing tag.
+            script = context.is_js(state)
+
+            name = if script
+                "script"
+            else
+                "style"
+            end = closing_tag(s: text, from: at, name: name)
+
+            got = if script
+                scan_js.scan(text, from: at, to: end, start: c, emit: true)
+            else
+                scan_css.scan(text, from: at, to: end, start: c, emit: true)
+
+            if got.fault != ""
+                return fail(
+                    code: "invalid",
+                    msg: lex.located(lex.advance(text, from: 0, to: got.fault_at, start: place), got.fault)
+                )
+            out @ out.push(got.text)
+            c @ got.ctx
+            at @ end
+
+            if end < text.len()
+                out @ out.push("</")
+                c @ context.with_state(context.initial(), context.TAG_NAME)
+                c.word @ "/"
+                at @ end + 2
+
+    return ok(context.Scanned(text: out.join(""), ctx: c, fault: "", fault_at: -1))
+
+# `text` read as HTML from text, for the tests: what it writes, or `ERR` and
+# the message.
+function read(text: str) -> str
+    match scan(text, start: context.initial(), place: lex.Place(line: 1, column: 1))
+        .ok got => return got.text
+        .err e  => return "ERR " + e.msg
+
+test "scan: comments of HTML dropped, a lone < written &lt;, declarations and tags kept"
+    assert read("a<!-- c -->b") == "ab" && read("a<!-- c") == "a"
+    assert read("a < b </ c <?x") == "a &lt; b &lt;/ c &lt;?x"
+    assert read("<!DOCTYPE html><p class=\"a<b\">x</p>") == "<!DOCTYPE html><p class=\"a<b\">x</p>"
+    assert read("<title>a<b></title>c") == "<title>a&lt;b></title>c"
+
+test "scan: a script and a style sheet to their closing tags, in any case, their comments dropped"
+    assert read("<script>a /* c */ b</SCRIPT>/* d */") == "<script>a   b</SCRIPT>/* d */"
+    assert read("<style>p{} /* c */</style >x") == "<style>p{}  </style >x"
+    assert read("<script type=\"text/plain\">/* c */<b></script>") == "<script type=\"text/plain\">/* c */<b></script>"
+
+test "scan: an unquoted value holding a quote or an equals sign, and a declaration cut short, with where they stand"
+    assert read("<a title=x\"y>") == "ERR line 1, column 11: `\"` in an attribute value with no quotes around it: write the value between quotes"
+    assert read("<a\nhref=/x?q=1>") == "ERR line 2, column 10: `=` in an attribute value with no quotes around it: write the value between quotes"
+    assert read("<!DOCTYPE html") == "ERR line 1, column 1: a declaration `<!...>` is written whole in the template, its `>` included"
+
+test "scan: the context a tag, an attribute and a value leave the page in"
+    tag = scan("<a href=\"/x?", start: context.initial(), place: lex.Place(line: 1, column: 1)).must().ctx
+    assert tag.state == context.URL && tag.url_part == context.URL_QUERY && tag.delim == context.DOUBLE
+    handler = scan("<a onclick='x = &quot;", start: context.initial(), place: lex.Place(line: 1, column: 1)).must().ctx
+    assert handler.state == context.JS_DOUBLE && handler.delim == context.SINGLE
+    meta = scan("<meta content=\"0; URL = ", start: context.initial(), place: lex.Place(line: 1, column: 1)).must().ctx
+    assert meta.state == context.URL && meta.url_part == context.URL_NONE

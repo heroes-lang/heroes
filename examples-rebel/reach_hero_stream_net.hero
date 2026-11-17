@@ -1,0 +1,18 @@
+# Reaches Rebel's floor that makes a connected socket a stream,
+# `hero_stream_net.h`, so that `heroes test` on this file runs the floor's own
+# tests (spec § 12, § 13). It hands the floor a listener, which has no peer,
+# so no stream is made and the listener stays the program's; it prints 1.
+
+use <rebel>/io/hero_stream
+use <rebel>/net/hero_net
+use <rebel>/net/hero_stream_net
+
+function main()
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    stream @= hero_stream_net.of(@listener)
+
+    if stream == nullptr
+        print(1)
+        _ = hero_net.close(@listener)
+    else
+        _ = hero_stream.close(@stream)

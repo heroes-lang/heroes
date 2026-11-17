@@ -1,0 +1,88 @@
+# A line's fields flattened into the steps both forms write: a value with its
+# key, a group opened under its key, a group closed. The face walks its fields
+# into these, since a private module may not name the face's types; the keys
+# every line opens with are here for the same reason.
+
+use json
+
+# The key of a line's time in the JSON form.
+constant TIME_KEY: str
+    "time"
+
+# The key of a line's level in the JSON form.
+constant LEVEL_KEY: str
+    "level"
+
+# The key of a line's message in the JSON form.
+constant MESSAGE_KEY: str
+    "msg"
+
+# A step that writes a value.
+constant VALUE: i64
+    0
+
+# A step that opens a group: the values up to its `CLOSE` are its members.
+constant OPEN: i64
+    1
+
+# A step that closes the group opened last.
+constant CLOSE: i64
+    2
+
+# One step of a line's fields.
+record Piece
+    # `VALUE`, `OPEN` or `CLOSE`.
+    kind: i64
+    # The value's or the group's key; empty for `CLOSE`.
+    key: str
+    # The value as text, before any quoting; empty for a group's steps.
+    text: str
+    # Whether the JSON form writes `text` as a string rather than bare, as a
+    # number or a boolean is written.
+    is_string: bool
+
+# The step that writes `text` under `key`.
+function value(key: str, text: str, is_string: bool) -> Piece
+    return Piece(kind: VALUE, key: key, text: text, is_string: is_string)
+
+# The step that opens a group under `key`.
+function open(key: str) -> Piece
+    return Piece(kind: OPEN, key: key, text: "", is_string: false)
+
+# The step that closes the group opened last.
+function close() -> Piece
+    return Piece(kind: CLOSE, key: "", text: "", is_string: false)
+
+# The step that writes the number `x` under `key`: JSON's shortest digits that
+# read back as `x`, the same in both forms, or `nan`, `inf` or `-inf`, which
+# the JSON form writes as strings since JSON has no such number.
+function number(key: str, x: f64) -> Piece
+    if x != x
+        return value(key: key, text: "nan", is_string: true)
+
+    if x - x != 0.0
+        if x > 0.0
+            return value(key: key, text: "inf", is_string: true)
+        return value(key: key, text: "-inf", is_string: true)
+
+    # A finite number is the one value `json.format` never refuses.
+    return value(key: key, text: json.format(.number(v: x)).must(), is_string: false)
+
+# Each expected text below is what Go 1.27's slog JSONHandler wrote for the
+# same number, 2026-11-16.
+test "number: an integer, a fraction, both exponents, zero, nan and both infinities"
+    assert number(key: "f", x: 1.0).text == "1"
+    assert number(key: "f", x: 1.5).text == "1.5"
+    assert number(key: "f", x: 1000000000000000000000.0).text == "1e+21"
+    assert number(key: "f", x: 0.0000001).text == "1e-7"
+    assert number(key: "f", x: 0.0).text == "0"
+    assert !number(key: "f", x: 1.5).is_string
+    nan = 0.0 / 0.0
+    assert number(key: "f", x: nan) == value(key: "f", text: "nan", is_string: true)
+    assert number(key: "f", x: 1.0 / 0.0) == value(key: "f", text: "inf", is_string: true)
+    assert number(key: "f", x: -1.0 / 0.0) == value(key: "f", text: "-inf", is_string: true)
+
+test "value, open and close: the three kinds of step"
+    assert value(key: "k", text: "v", is_string: true).kind == VALUE
+    assert open("g") == Piece(kind: OPEN, key: "g", text: "", is_string: false)
+    assert close().kind == CLOSE

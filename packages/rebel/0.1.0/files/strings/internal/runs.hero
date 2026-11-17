@@ -1,0 +1,220 @@
+# A text cut at runs of white space, at runs of characters a function
+# accepts, and at the ends of its lines. White space is Unicode's
+# White_Space, which the package `unicode` answers for each character.
+
+use strings/internal/scan
+use unicode
+
+# Whether the character of `s` from byte `at` up to `end` is white space.
+function space_between(s: str, at: i64, end: i64) -> bool
+    return unicode.is_space(s.slice(from: at, to: end))
+
+# Where the run of white space that begins at byte `at` of `s` ends.
+function after_space(s: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < s.len()
+        end = scan.next_at(s, here)
+
+        if !space_between(s: s, at: here, end: end)
+            return here
+        here @ end
+
+    return here
+
+# Where the run of characters that are not white space beginning at `at`
+# ends.
+function after_word(s: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < s.len()
+        end = scan.next_at(s, here)
+
+        if space_between(s: s, at: here, end: end)
+            return here
+        here @ end
+
+    return here
+
+# Where the run of white space that ends at byte `end` of `s` begins.
+function before_space(s: str, end: i64) -> i64
+    here: i64 @= end
+
+    while here > 0
+        at = scan.previous_at(s, here)
+
+        if !space_between(s: s, at: at, end: here)
+            return here
+        here @ at
+
+    return here
+
+# Where the run of characters that are not white space ending at `end`
+# begins.
+function before_word(s: str, end: i64) -> i64
+    here: i64 @= end
+
+    while here > 0
+        at = scan.previous_at(s, here)
+
+        if space_between(s: s, at: at, end: here)
+            return here
+        here @ at
+
+    return here
+
+# The words of `s`, between its runs of white space.
+function words(s: str) -> [str]
+    return words_n(s: s, n: 18446744073709551615)
+
+# The pieces of `s` between its runs of characters that `separates`
+# accepts, none of them empty.
+function words_where(s: str, separates: (function(str) -> bool)) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if separates(s.slice(from: at, to: end))
+            if at > from
+                out @ out.push(s.slice(from: from, to: at))
+            from @ end
+        at @ end
+
+    if s.len() > from
+        out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+# At most `n` words of `s`, read from the start; the last holds the rest of
+# `s` from where its word begins, white space at its end kept.
+function words_n(s: str, n: u64) -> [str]
+    limit = scan.limit_of(n)
+    out: [str] @= []
+
+    if limit == 0
+        return out
+    at: i64 @= after_space(s: s, at: 0)
+
+    while at < s.len()
+        if out.len() + 1 == limit
+            out @ out.push(s.slice(from: at, to: s.len()))
+            return out
+        end = after_word(s: s, at: at)
+        out @ out.push(s.slice(from: at, to: end))
+        at @ after_space(s: s, at: end)
+
+    return out
+
+# At most `n` words of `s`, read from the end, in the order of the text;
+# the first holds the rest of `s` up to where its word ends, white space at
+# its start kept.
+function words_n_last(s: str, n: u64) -> [str]
+    limit = scan.limit_of(n)
+    backwards: [str] @= []
+
+    if limit == 0
+        return backwards
+    end: i64 @= before_space(s: s, end: s.len())
+
+    while end > 0
+        if backwards.len() + 1 == limit
+            backwards @ backwards.push(s.slice(from: 0, to: end))
+            end @ 0
+        else
+            at = before_word(s: s, end: end)
+            backwards @ backwards.push(s.slice(from: at, to: end))
+            end @ before_space(s: s, end: at)
+
+    out: [str] @= []
+    i: i64 @= backwards.len() - 1
+
+    while i >= 0
+        out @ out.push(backwards[i])
+        i @ i - 1
+
+    return out
+
+# The lines of `s`, each without its "\n" or "\r\n".
+function lines(s: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\n'
+            end: i64 @= at
+
+            if end > from && s[end - 1] == '\r'
+                end @ end - 1
+            out @ out.push(s.slice(from: from, to: end))
+            from @ at + 1
+        at @ at + 1
+
+    if from < s.len()
+        out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+## Tests
+
+# Whether `c`, one character, is an ASCII digit.
+function is_digit(c: str) -> bool
+    return c[0] >= '0' && c[0] <= '9'
+
+# Whether `c`, one character, takes more than one byte.
+function is_wide(c: str) -> bool
+    return c.len() > 1
+
+# U+00A0 and U+3000 built from their bytes: a source may not hold an
+# invisible character as itself.
+test "words: runs at both ends, white space alone, Unicode's white space, and a separator that is not white space"
+    no_break: [u8] = [0xc2, 0xa0]
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    hard = no_break.validated_bytes().must()
+    wide = ideographic.validated_bytes().must()
+    nothing: [str] = []
+    assert words("") == nothing
+    assert words(" \t\n ") == nothing
+    assert words("a") == ["a"]
+    assert words("  a  b  ") == ["a", "b"]
+    assert words("caffè latte") == ["caffè", "latte"]
+    assert words("a" + hard + "b" + wide + "c\u{85}d\u{2028}e") == ["a", "b", "c", "d", "e"]
+    assert words("c\u{1c}d") == ["c\u{1c}d"]
+
+test "words_where: separators side by side, at both ends, alone, and characters of more than one byte"
+    nothing: [str] = []
+    assert words_where(s: "a1b22c", separates: is_digit) == ["a", "b", "c"]
+    assert words_where(s: "", separates: is_digit) == nothing
+    assert words_where(s: "11", separates: is_digit) == nothing
+    assert words_where(s: "èxé", separates: is_wide) == ["x"]
+
+test "words_n: no word, one holding the rest, two, every one, white space alone, and characters of more than one byte"
+    nothing: [str] = []
+    assert words_n(s: "  a  b  c  ", n: 0) == nothing
+    assert words_n(s: "  a  b  c  ", n: 1) == ["a  b  c  "]
+    assert words_n(s: "  a  b  c  ", n: 2) == ["a", "b  c  "]
+    assert words_n(s: "a b c", n: 99) == ["a", "b", "c"]
+    assert words_n(s: "a  ", n: 2) == ["a"]
+    assert words_n(s: "   ", n: 2) == nothing
+    assert words_n(s: "", n: 1) == nothing
+    assert words_n(s: "è  ù  à", n: 2) == ["è", "ù  à"]
+
+test "words_n_last: no word, one holding the rest, two, white space alone, and characters of more than one byte"
+    nothing: [str] = []
+    assert words_n_last(s: "  a  b  c  ", n: 0) == nothing
+    assert words_n_last(s: "  a  b  c  ", n: 1) == ["  a  b  c"]
+    assert words_n_last(s: "  a  b  c  ", n: 2) == ["  a  b", "c"]
+    assert words_n_last(s: "  a", n: 2) == ["a"]
+    assert words_n_last(s: "   ", n: 1) == nothing
+    assert words_n_last(s: "è  ù  à", n: 2) == ["è  ù", "à"]
+
+test "lines: no lines, one, a last line with and without its end, CR LF, a lone CR, and an empty line"
+    nothing: [str] = []
+    assert lines("") == nothing
+    assert lines("a") == ["a"]
+    assert lines("\n") == [""]
+    assert lines("a\n\n") == ["a", ""]
+    assert lines("a\nb\r\nc\rd") == ["a", "b", "c\rd"]
+    assert lines("a\r") == ["a\r"]
+    assert lines("città\r\nè") == ["città", "è"]

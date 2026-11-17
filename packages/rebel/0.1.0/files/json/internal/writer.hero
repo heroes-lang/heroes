@@ -1,0 +1,459 @@
+# The flat list of a value's events written as JSON text: on one line or over
+# several, a string with the escapes RFC 8259 obliges and those a caller asks
+# for, a number in the shortest digits that read back as the same `f64`. It
+# walks the list once and keeps only a count of the open containers, so no
+# nesting is too deep for it.
+
+use json/internal/event
+use numbers
+use strings
+use unicode
+
+# The code of a value that has no JSON.
+constant INVALID: str
+    "invalid"
+
+# How the events are written: the fields of `json.FormatOptions`, and one of
+# RFC 8785's own.
+record Layout
+    # Whether each element and member stands on its own line.
+    multiline: bool
+    # The text that indents one level, on a line of its own.
+    indent: str
+    # The text that begins every line after the first.
+    prefix: str
+    # Whether a space follows each `,` and `:` on one line.
+    spaced: bool
+    # Whether every character past ASCII, and U+007F, is written as `\uXXXX`.
+    ascii_only: bool
+    # Whether `<`, `>` and `&` are written as escapes.
+    escape_html: bool
+    # Whether U+2028 and U+2029 are written as escapes.
+    escape_js: bool
+    # Whether `nan` and the infinities are written as Python writes them.
+    non_finite: bool
+    # Whether a negative zero is written `0`, as RFC 8785 writes it.
+    unsigned_zero: bool
+
+# The layout of the shortest text: one line, no white space, and no escape
+# RFC 8259 does not oblige.
+function flat() -> Layout
+    return Layout(
+        multiline: false,
+        indent: "",
+        prefix: "",
+        spaced: false,
+        ascii_only: false,
+        escape_html: false,
+        escape_js: false,
+        non_finite: false,
+        unsigned_zero: false
+    )
+
+# `events`, the events of one value, written as `layout` says. A number or a
+# string that keeps its text as written is written so. Fails `invalid` where a
+# number is `nan` or an infinity and `layout.non_finite` does not ask for
+# them.
+function render(events: [event.Event] lent, layout: Layout) -> str?
+    out: [str] @= []
+    depth: i64 @= 0
+
+    # Whether the next element is the first of its container, and whether the
+    # last event written was a key, whose value follows with no separator.
+    first: bool @= true
+    after_key: bool @= false
+    at: i64 @= 0
+
+    while at < events.len()
+        e = events[at]
+
+        if e.kind == event.END_LIST || e.kind == event.END_OBJECT
+            depth @ depth - 1
+
+            if layout.multiline
+                out @ out.push(line_start(layout: layout, depth: depth))
+            out @ out.push(closing_of(e.kind))
+            first @ false
+        else
+            if depth > 0 && !after_key
+                if !first
+                    out @ out.push(",")
+
+                    if layout.spaced && !layout.multiline
+                        out @ out.push(" ")
+
+                if layout.multiline
+                    out @ out.push(line_start(layout: layout, depth: depth))
+            first @ false
+            after_key @ false
+
+            if e.kind == event.KEY
+                out @ out.push(string_text(e: e, layout: layout))
+                out @ out.push(":")
+
+                if layout.spaced || layout.multiline
+                    out @ out.push(" ")
+                after_key @ true
+            else if e.kind == event.BEGIN_LIST || e.kind == event.BEGIN_OBJECT
+                closed = if e.kind == event.BEGIN_LIST
+                    event.END_LIST
+                else
+                    event.END_OBJECT
+
+                if at + 1 < events.len() && events[at + 1].kind == closed
+                    out @ out.push(opening_of(e.kind) + closing_of(closed))
+                    at @ at + 1
+                else
+                    out @ out.push(opening_of(e.kind))
+                    depth @ depth + 1
+                    first @ true
+            else
+                out @ out.push(scalar_text(e: e, layout: layout)?)
+        at @ at + 1
+
+    return ok(out.join(""))
+
+# The bracket that opens a container of `kind`.
+function opening_of(kind: i64) -> str
+    if kind == event.BEGIN_OBJECT
+        return "{"
+    return "["
+
+# The bracket that closes a container of `kind`.
+function closing_of(kind: i64) -> str
+    if kind == event.END_OBJECT
+        return "}"
+    return "]"
+
+# What begins a line at `depth`: a line feed, the prefix, and the indent once
+# for each level.
+function line_start(layout: Layout, depth: i64) -> str
+    return "\n" + layout.prefix + repeat(layout.indent, depth.to_u64().must())
+
+# A key or a string written as JSON: as written where it kept its text.
+function string_text(e: event.Event, layout: Layout) -> str
+    if e.raw != ""
+        return e.raw
+    return quote(s: e.text, layout: layout)
+
+# A value that is no container written as JSON.
+function scalar_text(e: event.Event, layout: Layout) -> str?
+    if e.kind == event.NULL_VALUE
+        return ok("null")
+
+    if e.kind == event.BOOLEAN
+        if e.flag
+            return ok("true")
+        return ok("false")
+
+    if e.kind == event.NUMBER
+        if e.raw == "-0" && layout.unsigned_zero
+            return ok("0")
+
+        if e.raw != ""
+            return ok(e.raw)
+        return number_text(x: e.number, layout: layout)
+    return ok(string_text(e: e, layout: layout))
+
+## Numbers
+
+# `x` as a JSON number: the shortest digits that read back as `x`, laid out
+# as Go and ECMAScript lay them, with no point on an integer, and an exponent
+# only from 1e+21 up and from 1e-7 down. Fails `invalid` on `nan` and the
+# infinities, unless `layout.non_finite` asks for Python's `NaN`, `Infinity`
+# and `-Infinity`.
+function number_text(x: f64, layout: Layout) -> str?
+    if x != x || x - x != 0.0
+        if !layout.non_finite
+            return fail(code: INVALID, msg: f"the number {x} has no JSON: a JSON text writes only finite numbers")
+
+        if x != x
+            return ok("NaN")
+
+        if x > 0.0
+            return ok("Infinity")
+        return ok("-Infinity")
+    written = numbers.format_float_exp_shortest(x)
+
+    if x == 0.0
+        if written[0] == '-' && !layout.unsigned_zero
+            return ok("-0")
+        return ok("0")
+    return ok(laid_out(written))
+
+# A number written in exponent form, `-1.5e+20`, laid out as ECMAScript lays
+# it: plain where its exponent is from -7 to 20, in exponent form with no
+# zero before the exponent's digits otherwise.
+function laid_out(written: str) -> str
+    sign = if written[0] == '-'
+        "-"
+    else
+        ""
+    start = sign.len()
+    e_at: i64 @= start
+
+    while written[e_at] != 'e'
+        e_at @ e_at + 1
+
+    mantissa = written.slice(from: start, to: e_at)
+
+    digits = if mantissa.len() > 1
+        mantissa.slice(from: 0, to: 1) + mantissa.slice(from: 2, to: mantissa.len())
+    else
+        mantissa
+    exponent = numbers.parse_int(written.slice(from: e_at + 1, to: written.len())).must()
+    count = digits.len()
+
+    if exponent > -7 && exponent < 21
+        if exponent >= count - 1
+            return sign + digits + repeat("0", (exponent - count + 1).to_u64().must())
+
+        if exponent >= 0
+            whole = digits.slice(from: 0, to: exponent + 1)
+            return sign + whole + "." + digits.slice(from: exponent + 1, to: count)
+        return sign + "0." + repeat("0", (0 - exponent - 1).to_u64().must()) + digits
+
+    rest = if count > 1
+        "." + digits.slice(from: 1, to: count)
+    else
+        ""
+
+    if exponent > 0
+        return f"{sign}{digits.slice(from: 0, to: 1)}{rest}e+{exponent}"
+    return f"{sign}{digits.slice(from: 0, to: 1)}{rest}e{exponent}"
+
+## Strings
+
+# `s` as a JSON string between its quotes: `"` and `\` escaped, a character
+# below U+0020 written `\b`, `\t`, `\n`, `\f`, `\r` or `\u00XX` in lower case,
+# and the escapes `layout` asks for besides.
+function quote(s: str, layout: Layout) -> str
+    pieces: [str] @= ["\""]
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        width = if b < 0x80
+            1
+        else
+            unicode.width_at(s, i)
+        escape = escape_of(s: s, at: i, layout: layout)
+
+        if escape != ""
+            pieces @ pieces.push(s.slice(from: run, to: i))
+            pieces @ pieces.push(escape)
+            run @ i + width
+        i @ i + width
+
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# The escape that writes the character at `at` of `s`, or "" where it is
+# written as itself.
+function escape_of(s: str, at: i64, layout: Layout) -> str
+    b = s[at]
+
+    if b == '"'
+        return "\\\""
+
+    if b == '\\'
+        return "\\\\"
+
+    if b < 0x20
+        return control_escape(b)
+
+    if layout.escape_html && (b == '<' || b == '>' || b == '&')
+        return "\\u" + hex_unit(b.to_i64().must())
+
+    if layout.ascii_only && b >= 0x7f
+        units: [str] @= []
+
+        for unit in unicode.to_utf16(unicode.code_point_at(s, at)).must()
+            units @ units.push("\\u" + hex_unit(unit.to_i64().must()))
+
+        return units.join("")
+
+    if layout.escape_js && b == 0xe2 && s[at + 1] == 0x80 && (s[at + 2] == 0xa8 || s[at + 2] == 0xa9)
+        return "\\u" + hex_unit(unicode.code_point_at(s, at))
+    return ""
+
+# The escape of a control character, U+0000 to U+001F.
+function control_escape(b: u8) -> str
+    if b == 0x08
+        return "\\b"
+
+    if b == '\t'
+        return "\\t"
+
+    if b == '\n'
+        return "\\n"
+
+    if b == 0x0c
+        return "\\f"
+
+    if b == '\r'
+        return "\\r"
+    return "\\u" + hex_unit(b.to_i64().must())
+
+# `n`, a UTF-16 unit, as four hexadecimal digits in lower case.
+function hex_unit(n: i64) -> str
+    return strings.pad_start(s: numbers.format_int(n: n, base: 16), width: 4, pad: "0")
+
+# `text` with `<`, `>`, `&`, U+2028 and U+2029 written as the escapes that
+# write them in a JSON string, wherever they stand.
+function html_safe(text: str) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < text.len()
+        b = text[i]
+        width: i64 @= 1
+        escape: str @= ""
+
+        if b == '<' || b == '>' || b == '&'
+            escape @ "\\u" + hex_unit(b.to_i64().must())
+        else if b == 0xe2 && i + 2 < text.len() && text[i + 1] == 0x80 && (text[i + 2] == 0xa8 || text[i + 2] == 0xa9)
+            escape @ "\\u" + hex_unit(unicode.code_point_at(text, i))
+            width @ 3
+
+        if escape != ""
+            pieces @ pieces.push(text.slice(from: run, to: i))
+            pieces @ pieces.push(escape)
+            run @ i + width
+        i @ i + width
+
+    pieces @ pieces.push(text.slice(from: run, to: text.len()))
+    return pieces.join("")
+
+## Tests
+
+# The text `x` is written as in the shortest layout.
+function shortest(x: f64) -> str
+    return number_text(x: x, layout: flat()).must()
+
+# The number `s` spells, read by `numbers`.
+function read(s: str) -> f64
+    return numbers.parse_float(s).must()
+
+test "number_text: integers, fractions, and the edges of plain and exponent form, as Go writes them"
+    assert shortest(1.0) == "1"
+    assert shortest(100.0) == "100"
+    assert shortest(0.1) == "0.1"
+    assert shortest(1.5) == "1.5"
+    assert shortest(-2.5) == "-2.5"
+    assert shortest(read("1e15")) == "1000000000000000"
+    assert shortest(read("1e16")) == "10000000000000000"
+    assert shortest(read("1e20")) == "100000000000000000000"
+    assert shortest(read("1e21")) == "1e+21"
+    assert shortest(read("1e22")) == "1e+22"
+    assert shortest(read("1e-6")) == "0.000001"
+    assert shortest(read("1e-7")) == "1e-7"
+    assert shortest(read("0.000123")) == "0.000123"
+    assert shortest(read("123456789012345680000")) == "123456789012345680000"
+    assert shortest(read("5e-324")) == "5e-324"
+    assert shortest(read("1.7976931348623157e308")) == "1.7976931348623157e+308"
+    assert shortest(read("-1.25e-10")) == "-1.25e-10"
+    assert shortest(0.1 + 0.2) == "0.30000000000000004"
+
+test "number_text: zero, a negative zero, and RFC 8785's unsigned zero"
+    assert shortest(0.0) == "0"
+    assert shortest(read("-0")) == "-0"
+    canonical: Layout @= flat()
+    canonical.unsigned_zero @ true
+    assert number_text(x: read("-0"), layout: canonical).must() == "0"
+
+test "number_text: nan and the infinities fail, and are written as Python writes them when asked"
+    nan = read("nan")
+    inf = read("inf")
+
+    match number_text(x: nan, layout: flat())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the number nan has no JSON: a JSON text writes only finite numbers"
+
+    assert number_text(x: inf, layout: flat()).is_err()
+    assert number_text(x: 0.0 - inf, layout: flat()).is_err()
+    python: Layout @= flat()
+    python.non_finite @ true
+    assert number_text(x: nan, layout: python).must() == "NaN"
+    assert number_text(x: inf, layout: python).must() == "Infinity"
+    assert number_text(x: 0.0 - inf, layout: python).must() == "-Infinity"
+
+test "quote: the obligatory escapes alone, as jsontext.AppendQuote writes them"
+    assert quote(s: "", layout: flat()) == "\"\""
+    assert quote(s: "a\"b\\c/d", layout: flat()) == "\"a\\\"b\\\\c/d\""
+    assert quote(s: "\u{8}\u{c}\n\r\t\u{1f}\u{7f}", layout: flat()) == "\"\\b\\f\\n\\r\\t\\u001f\u{7f}\""
+    nul: [u8] = [0]
+    assert quote(s: nul.validated_bytes().must(), layout: flat()) == "\"\\u0000\""
+    assert quote(s: "é \u{2028} 😀 <>&", layout: flat()) == "\"é \u{2028} 😀 <>&\""
+
+test "quote: every character past ASCII escaped, as Python's ensure_ascii writes it"
+    ascii: Layout @= flat()
+    ascii.ascii_only @ true
+    assert quote(s: "\u{7f} é \u{2028} 😀", layout: ascii) == "\"\\u007f \\u00e9 \\u2028 \\ud83d\\ude00\""
+
+test "quote: the HTML and JavaScript escapes, as Go's Marshal writes them"
+    go: Layout @= flat()
+    go.escape_html @ true
+    go.escape_js @ true
+    assert quote(s: "<b>&\u{2028}\u{2029}é", layout: go) == "\"\\u003cb\\u003e\\u0026\\u2028\\u2029é\""
+
+test "html_safe: the five escaped anywhere, and every other byte kept"
+    assert html_safe("") == ""
+    assert html_safe("{\"a\":\"<b>&\u{2028}\u{2029}\"}") == "{\"a\":\"\\u003cb\\u003e\\u0026\\u2028\\u2029\"}"
+    assert html_safe("é<") == "é\\u003c"
+    assert html_safe("plain") == "plain"
+
+test "render: compact, spaced and multiline layouts of one value, as Python and Go write them"
+    events = [
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "b")
+        event.mark(event.BEGIN_LIST)
+        event.number(1.0)
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "c")
+        event.mark(event.NULL_VALUE)
+        event.mark(event.END_OBJECT)
+        event.mark(event.END_LIST)
+        event.text(kind: event.KEY, s: "a")
+        event.mark(event.BEGIN_OBJECT)
+        event.mark(event.END_OBJECT)
+        event.text(kind: event.KEY, s: "t")
+        event.boolean(true)
+        event.mark(event.END_OBJECT)
+    ]
+    assert render(events: events, layout: flat()).must() == "{\"b\":[1,{\"c\":null}],\"a\":{},\"t\":true}"
+    spaced: Layout @= flat()
+    spaced.spaced @ true
+    assert render(events: events, layout: spaced).must() == "{\"b\": [1, {\"c\": null}], \"a\": {}, \"t\": true}"
+    indented: Layout @= flat()
+    indented.multiline @ true
+    indented.indent @ "  "
+    want = "{\n  \"b\": [\n    1,\n    {\n      \"c\": null\n    }\n  ],\n  \"a\": {},\n  \"t\": true\n}"
+    assert render(events: events, layout: indented).must() == want
+    indented.indent @ ""
+    assert render(events: events, layout: indented).must() == "{\n\"b\": [\n1,\n{\n\"c\": null\n}\n],\n\"a\": {},\n\"t\": true\n}"
+
+test "render: a scalar alone, empty containers, and a prefix on every line but the first"
+    assert render(events: [event.text(kind: event.TEXT, s: "x")], layout: flat()).must() == "\"x\""
+    empty = [event.mark(event.BEGIN_LIST), event.mark(event.END_LIST)]
+    indented: Layout @= flat()
+    indented.multiline @ true
+    indented.indent @ "\t"
+    assert render(events: empty, layout: indented).must() == "[]"
+    nested = [
+        event.mark(event.BEGIN_LIST)
+        event.mark(event.BEGIN_LIST)
+        event.mark(event.END_LIST)
+        event.mark(event.END_LIST)
+    ]
+    assert render(events: nested, layout: indented).must() == "[\n\t[]\n]"
+    indented.prefix @ ">"
+    assert render(events: nested, layout: indented).must() == "[\n>\t[]\n>]"
+
+test "render: a number that has no JSON fails, wherever it stands"
+    bad = [event.mark(event.BEGIN_LIST), event.number(read("inf")), event.mark(event.END_LIST)]
+    assert render(events: bad, layout: flat()).is_err()

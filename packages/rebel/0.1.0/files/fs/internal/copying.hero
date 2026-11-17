@@ -1,0 +1,320 @@
+# A file copied, a tree copied, and a path moved across volumes: what
+# `fs.copy_file`, `fs.copy_tree` and `fs.move` do.
+#
+# A copy that makes a file gives it its original's permission bits, since it
+# is made with them; no door of the floors sets bits afterwards, so a file
+# there already keeps its own. A tree is walked whole and checked before
+# anything is written, and a file moved across volumes is copied to a new
+# name beside its destination and renamed into place, so `to` is never seen
+# half written and `from` is removed only once the copy is whole.
+
+use fs/internal/changes
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use fs/internal/temporary
+use fs/internal/tree
+use fs/internal/walking
+use fs/internal/whole
+use io
+use io/hero_stream
+use os/hero_disk
+use path
+use time
+
+# A folder `copied_tree` made, whose times it sets once its content is
+# copied.
+record Made
+    # The original.
+    from: str
+    # The copy.
+    to: str
+
+# Copies the file `from` to `to` and answers how many bytes it copied.
+#
+# - `from`: the original, links followed.
+# - `to`: the copy's path.
+# - `keep_times`: whether the copy takes the original's times.
+# - `access`: `hero_stream.HERO_STREAM_ACCESS_WRITE`, or `..._CREATE` where
+#   `to` must be new.
+#
+# Fails `file_not_found`, `is_a_directory` where either is a folder,
+# `invalid` where the two are one file, `exists` for a new `to` that is
+# there.
+function copied_file(from: str, to: str, keep_times: bool, access: i64) -> i64?
+    asked = f"copying \"{from}\" to \"{to}\""
+    codes.checked(path: to, asked: asked)?
+    source = facts.of(at: from, through: true, asked: asked)?
+
+    if source.kind == facts.DIRECTORY
+        return fail(code: codes.IS_A_DIRECTORY, msg: f"{asked}: \"{from}\" is a folder")
+
+    match changes.same(first: from, second: to)
+        .ok one =>
+            if one
+                return fail(code: codes.INVALID, msg: f"{asked}: the two name one file, which the copy would empty")
+        .err _ => _ = 0
+
+    reading @= whole.opened(at: from, access: hero_stream.HERO_STREAM_ACCESS_READ, permission: 0, asked: asked)?
+
+    match whole.opened(at: to, access: access, permission: source.permission & 0o777, asked: asked)
+        .err e =>
+            lost: i64? = fail(code: e.code, msg: e.msg)
+            return whole.first_of(value: lost, closed: io.close(@reading))
+        .ok opened =>
+            writing @= opened
+            counted = io.copy(from: reading, to: writing)
+            closed_writing = io.close(@writing)
+            closed_reading = io.close(@reading)
+            count = whole.first_of(value: counted, closed: closed_writing)?
+            closed_reading?
+
+            if keep_times
+                changes.timed(to, written: source.written, read: source.read)?
+            return ok(count)
+
+# Copies the folder `from` with all it holds to a new folder `to`.
+#
+# - `from`: the original folder, links followed.
+# - `to`: the copy's path, which must not be there.
+# - `keep_times`: whether each copy takes its original's times.
+#
+# Fails `exists`, `not_a_directory`, and before anything is written,
+# `file_not_found` for a link to nothing, `invalid` for a link that loops,
+# `unsupported` for what is neither a file nor a folder. Each folder takes
+# its original's bits with this user's own read, write and search added, so
+# its content can be copied in.
+function copied_tree(from: str, to: str, keep_times: bool) -> ()?
+    asked = f"copying the folder \"{from}\" to \"{to}\""
+    codes.checked(path: to, asked: asked)?
+    kind = facts.presence(at: from, through: true, asked: asked)?
+
+    if kind == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is at \"{from}\"")
+
+    if kind != facts.DIRECTORY
+        return fail(code: codes.NOT_A_DIRECTORY, msg: f"{asked}: \"{from}\" is no folder")
+
+    if facts.presence(at: to, through: false, asked: asked)? != facts.NOTHING
+        return fail(code: codes.EXISTS, msg: f"{asked}: \"{to}\" is there already")
+    found = walking.walked(root: from, follow: true, most_depth: -1, asked: asked)?
+
+    for entry in found
+        where = path.join_all([from, entry.name])
+
+        if entry.kind == facts.LINK
+            if facts.presence(at: where, through: true, asked: asked)? == facts.NOTHING
+                return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: the link \"{where}\" names nothing")
+            return fail(code: codes.INVALID, msg: f"{asked}: the link \"{where}\" leads back into a folder it is in")
+
+        if entry.kind == facts.OTHER
+            return fail(code: codes.UNSUPPORTED, msg: f"{asked}: \"{where}\" is neither a file nor a folder")
+
+    top = facts.of(at: from, through: true, asked: asked)?
+    changes.made_dir(to, permission: top.permission | 0o700)?
+    folders: [Made] @= [Made(from: from, to: to)]
+
+    for entry in found
+        original = path.join_all([from, entry.name])
+        copy = path.join_all([to, entry.name])
+
+        if entry.kind == facts.DIRECTORY
+            bits = facts.of(at: original, through: true, asked: asked)?.permission
+            changes.made_dir(copy, permission: bits | 0o700)?
+            folders @ folders.push(Made(from: original, to: copy))
+        else
+            _ = copied_file(from: original, to: copy, keep_times: keep_times, access: hero_stream.HERO_STREAM_ACCESS_CREATE)?
+
+    if keep_times
+        left: i64 @= folders.len()
+
+        while left > 0
+            left @ left - 1
+            folder = folders[left]
+            times = facts.of(at: folder.from, through: true, asked: asked)?
+            changes.timed(folder.to, written: times.written, read: times.read)?
+
+    return ok()
+
+# Moves `from` to `to`, by a rename where both stand on one volume.
+#
+# - `from`: the path moved.
+# - `to`: its new path.
+#
+# Fails as `changes.renamed` does but for the volumes.
+function moved(from: str, to: str) -> ()?
+    asked = f"moving \"{from}\" to \"{to}\""
+    codes.checked(path: from, asked: asked)?
+    codes.checked(path: to, asked: asked)?
+
+    if hero_disk.rename(from: from, to: to) == 0
+        return ok()
+
+    if !codes.last_was(hero_disk.HERO_DISK_CROSS_DEVICE)
+        return codes.disk_failed(asked: asked)
+    return moved_across(from: from, to: to)
+
+# Moves `from` to `to` by a copy and a removal: a folder copied whole with
+# its times, a file copied with its times to a new name beside `to` and
+# renamed into place.
+#
+# - `from`: the path moved; a link or a special file is `unsupported`.
+# - `to`: its new path; a folder there is `is_a_directory` for a file, and
+#   anything there is `exists` for a folder, as a rename answers.
+function moved_across(from: str, to: str) -> ()?
+    asked = f"moving \"{from}\" to \"{to}\" across volumes"
+    kind = facts.presence(at: from, through: false, asked: asked)?
+
+    if kind == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is at \"{from}\"")
+
+    if kind == facts.DIRECTORY
+        copied_tree(from: from, to: to, keep_times: true)?
+        return tree.removed_all(from)
+
+    if kind != facts.FILE
+        return fail(code: codes.UNSUPPORTED, msg: f"{asked}: a link or a special file is not moved across volumes")
+
+    if facts.presence(at: to, through: true, asked: asked)? == facts.DIRECTORY
+        return fail(code: codes.IS_A_DIRECTORY, msg: f"{asked}: \"{to}\" is a folder")
+    pieces = temporary.Pieces(prefix: ".moving-", suffix: "")
+    beside = path.parent(to)
+    tries: i64 @= 1
+
+    while true
+        staged = temporary.candidate(beside, pieces: pieces)?
+
+        match copied_file(from: from, to: staged, keep_times: true, access: hero_stream.HERO_STREAM_ACCESS_CREATE)
+            .err e =>
+                if e.code != codes.EXISTS || tries >= temporary.TRIES
+                    return fail(code: e.code, msg: e.msg)
+                tries @ tries + 1
+            .ok _ =>
+                match changes.renamed(from: staged, to: to)
+                    .err e =>
+                        cleaned = changes.removed(staged)
+                        lost: ()? = fail(code: e.code, msg: e.msg)
+                        return whole.first_of(value: lost, closed: cleaned)
+                    .ok _ => return changes.removed(from)
+
+## Tests
+
+test "copied_file: bytes and permission, onto a file there, onto itself, from a folder, to a folder, and from nothing"
+    dir = fixture.folder("copyfile")
+    assert !whole.written(at: dir + "/a", data: [1, 0, 255], access: hero_stream.HERO_STREAM_ACCESS_WRITE, asked: "a").is_err()
+    write = hero_stream.HERO_STREAM_ACCESS_WRITE
+    assert copied_file(from: dir + "/a", to: dir + "/b", keep_times: false, access: write).must() == 3
+    assert whole.read_all(dir + "/b").must() == [1, 0, 255]
+    assert !write_file(path: dir + "/c", text: "a longer text").is_err()
+    assert copied_file(from: dir + "/a", to: dir + "/c", keep_times: false, access: write).must() == 3
+    assert whole.read_all(dir + "/c").must() == [1, 0, 255]
+
+    match copied_file(from: dir + "/a", to: dir + "/./a", keep_times: false, access: write)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert whole.read_all(dir + "/a").must() == [1, 0, 255]
+
+    match copied_file(from: dir, to: dir + "/d", keep_times: false, access: write)
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    assert !changes.made_dir(dir + "/sub", permission: 0o755).is_err()
+
+    match copied_file(from: dir + "/a", to: dir + "/sub", keep_times: false, access: write)
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    match copied_file(from: dir + "/none", to: dir + "/e", keep_times: false, access: write)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "copied_file keeps the times where asked, and an empty file copies none"
+    dir = fixture.folder("copytimes")
+    assert !write_file(path: dir + "/a", text: "").is_err()
+    assert !changes.timed(dir + "/a", written: time.Instant(unix_nanoseconds: 1_000_000_000_000_000_000), read: time.Instant(unix_nanoseconds: 1_000_000_000_000_000_000)).is_err()
+    assert copied_file(from: dir + "/a", to: dir + "/b", keep_times: true, access: hero_stream.HERO_STREAM_ACCESS_CREATE).must() == 0
+    assert facts.of(at: dir + "/b", through: true, asked: "a").must().written.unix_nanoseconds == 1_000_000_000_000_000_000
+
+    match copied_file(from: dir + "/a", to: dir + "/b", keep_times: true, access: hero_stream.HERO_STREAM_ACCESS_CREATE)
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS
+
+    assert fixture.cleared(dir)
+
+test "copied_tree: folders and files at every depth, an empty folder, a destination there, and a source that is a file"
+    dir = fixture.folder("copytree")
+    assert !tree.made_all(dir + "/t/a/b").is_err()
+    assert !tree.made_all(dir + "/t/empty").is_err()
+    assert !write_file(path: dir + "/t/f", text: "one").is_err()
+    assert !write_file(path: dir + "/t/a/b/g", text: "two").is_err()
+    assert !copied_tree(from: dir + "/t", to: dir + "/u", keep_times: false).is_err()
+    assert read_file(dir + "/u/f").must() == "one"
+    assert read_file(dir + "/u/a/b/g").must() == "two"
+    assert facts.presence(at: dir + "/u/empty", through: false, asked: "a").must() == facts.DIRECTORY
+
+    match copied_tree(from: dir + "/t", to: dir + "/u", keep_times: false)
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS
+
+    match copied_tree(from: dir + "/t/f", to: dir + "/v", keep_times: false)
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY
+
+    assert fixture.cleared(dir)
+
+test "copied_tree follows a link to a file and to a folder, and refuses a link to nothing and one that loops before writing"
+    dir = fixture.folder("copylinks")
+    assert !tree.made_all(dir + "/t/d").is_err()
+    assert !write_file(path: dir + "/t/d/f", text: "x").is_err()
+
+    if fixture.linked(target: "d/f", name: dir + "/t/lf")
+        assert fixture.linked(target: "d", name: dir + "/t/ld")
+        assert !copied_tree(from: dir + "/t", to: dir + "/u", keep_times: false).is_err()
+        assert facts.presence(at: dir + "/u/lf", through: false, asked: "a").must() == facts.FILE
+        assert read_file(dir + "/u/ld/f").must() == "x"
+        assert fixture.linked(target: "none", name: dir + "/t/x")
+
+        match copied_tree(from: dir + "/t", to: dir + "/v", keep_times: false)
+            .ok _  => assert false
+            .err e => assert e.code == codes.FILE_NOT_FOUND
+
+        assert facts.presence(at: dir + "/v", through: false, asked: "a").must() == facts.NOTHING
+        assert hero_disk.remove(dir + "/t/x") == 0
+        assert fixture.linked(target: "..", name: dir + "/t/d/up")
+
+        match copied_tree(from: dir + "/t", to: dir + "/w", keep_times: false)
+            .ok _  => assert false
+            .err e => assert e.code == codes.INVALID
+
+        assert facts.presence(at: dir + "/w", through: false, asked: "a").must() == facts.NOTHING
+    assert fixture.cleared(dir)
+
+test "moved and moved_across: a file and a folder renamed, a file over a file across, a folder across, and a file onto a folder"
+    dir = fixture.folder("moved")
+    assert !write_file(path: dir + "/a", text: "one").is_err()
+    assert !moved(from: dir + "/a", to: dir + "/b").is_err()
+    assert read_file(dir + "/b").must() == "one"
+    assert !write_file(path: dir + "/c", text: "two").is_err()
+    assert !changes.timed(dir + "/c", written: time.Instant(unix_nanoseconds: 1_200_000_000_000_000_000), read: time.Instant(unix_nanoseconds: 1_200_000_000_000_000_000)).is_err()
+    assert !moved_across(from: dir + "/c", to: dir + "/b").is_err()
+    assert read_file(dir + "/b").must() == "two"
+    assert facts.presence(at: dir + "/c", through: false, asked: "a").must() == facts.NOTHING
+    assert facts.of(at: dir + "/b", through: true, asked: "a").must().written.unix_nanoseconds == 1_200_000_000_000_000_000
+    assert !tree.made_all(dir + "/t/s").is_err()
+    assert !write_file(path: dir + "/t/s/f", text: "x").is_err()
+    assert !moved_across(from: dir + "/t", to: dir + "/u").is_err()
+    assert read_file(dir + "/u/s/f").must() == "x"
+    assert facts.presence(at: dir + "/t", through: false, asked: "a").must() == facts.NOTHING
+
+    match moved_across(from: dir + "/b", to: dir + "/u")
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    match moved(from: dir + "/none", to: dir + "/x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)

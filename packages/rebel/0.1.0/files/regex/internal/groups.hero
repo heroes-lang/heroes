@@ -1,0 +1,225 @@
+# What follows a `(` in a pattern: a group, numbered or named or neither, a
+# change of flags, or one of the constructs this package refuses, each by its
+# name.
+
+use regex/internal/codes
+
+# The flags a part of a pattern is read under.
+record Flags
+    # `i`: case is ignored.
+    fold: bool
+    # `s`: `.` reads a line feed too.
+    dot_all: bool
+    # `m`: `^` and `$` hold at the start and the end of every line.
+    multi_line: bool
+
+# What a `(` opens.
+variant Kind
+    # A group the match records.
+    capture
+        # Its name, or "" for a group with a number alone.
+        name: str
+    # A group that records nothing.
+    plain
+    # No group: the flags change from here to the end of the group around.
+    flags_only
+
+# What a `(` opens, the flags read inside it, and where the pattern goes on.
+record Opening
+    # What it opens.
+    kind: Kind
+    # The flags inside the group, or from here on for `flags_only`.
+    flags: Flags
+    # The byte after what opened it: after `(`, `(?:`, `(?<name>` or `(?i)`.
+    next: i64
+
+# What the `(` at the byte `at` of `pattern` opens.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `(`.
+# - `flags`: the flags in force where it stands.
+#
+# Fails `invalid` where it opens what this package refuses: look-around and
+# a back-reference by name, which no automaton matches in linear time, an
+# atomic group, a comment, a condition, a flag other than `i`, `m` and `s`, or
+# a name that is not one.
+function open_at(pattern: str, at: i64, flags: Flags) -> Opening?
+    from = at + 1
+
+    if from >= pattern.len() || pattern[from] != '?'
+        return ok(Opening(kind: .capture(name: ""), flags: flags, next: from))
+
+    if from + 1 >= pattern.len()
+        return codes.invalid(pattern: pattern, at: at, why: "`(?` ends the pattern")
+    b = pattern[from + 1]
+    after: u8 @= 0
+
+    if from + 2 < pattern.len()
+        after @ pattern[from + 2]
+
+    if b == ':'
+        return ok(Opening(kind: .plain, flags: flags, next: from + 2))
+
+    if b == 'P' && after == '<'
+        return name_at(pattern: pattern, at: at, from: from + 3, flags: flags)
+
+    if b == '<' && after != '=' && after != '!'
+        return name_at(pattern: pattern, at: at, from: from + 2, flags: flags)
+
+    if b == 'i' || b == 'm' || b == 's' || b == '-'
+        return flags_at(pattern: pattern, at: at, flags: flags)
+    return codes.invalid(pattern: pattern, at: at, why: refusal(b: b, after: after))
+
+# Why the construct `(?` then `b` then `after` opens is not read.
+#
+# - `b`: the byte after `(?`.
+# - `after`: the byte after that, or 0 at the end of the pattern.
+function refusal(b: u8, after: u8) -> str
+    if b == '=' || b == '!'
+        return "look-ahead `(?=` and `(?!` is refused: not matchable in linear time"
+
+    if b == '<'
+        return "look-behind `(?<=` and `(?<!` is refused: not matchable in linear time"
+
+    if b == 'P' && after == '='
+        return "a back-reference `(?P=name)` is refused: not matchable in linear time"
+
+    if b == '>'
+        return "an atomic group `(?>` is refused: a group that gives nothing back is not this package's"
+
+    if b == '#'
+        return "a comment `(?#` is not read"
+
+    if b == '('
+        return "a condition `(?(` is refused: not matchable in linear time"
+
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+        return "a flag this package does not read: the flags are i, m and s"
+    return "`(?` opens nothing this package reads: `(?:`, `(?P<name>`, `(?<name>` and the flags i, m and s are what it reads"
+
+# The group `(?P<name>` or `(?<name>` opens, its name beginning at `from`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `(`.
+# - `from`: the byte where the name begins.
+# - `flags`: the flags in force, which the group keeps.
+#
+# Fails `invalid` where the name is empty, holds a character other than an
+# ASCII letter, digit or `_`, begins with a digit, or is not closed by `>`.
+function name_at(pattern: str, at: i64, from: i64, flags: Flags) -> Opening?
+    pos: i64 @= from
+
+    while pos < pattern.len() && is_name_byte(pattern[pos])
+        pos @ pos + 1
+
+    if pos >= pattern.len() || pattern[pos] != '>'
+        return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: "a group's name is ASCII letters, digits and `_`, closed by `>`"
+        )
+
+    if pos == from || pattern[from] >= '0' && pattern[from] <= '9'
+        return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: "a group's name is not empty and does not begin with a digit"
+        )
+    return ok(Opening(kind: .capture(name: pattern.slice(from: from, to: pos)), flags: flags, next: pos + 1))
+
+# Whether `b` may stand in a group's name: an ASCII letter, a digit or `_`.
+#
+# - `b`: a byte.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+# The flags `(?im-s)` or `(?im-s:` sets, its `(` being the byte `at`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `(`.
+# - `flags`: the flags in force, which it changes.
+#
+# Fails `invalid` where a letter is no flag of `i`, `m` and `s`, where a `-`
+# stands twice or clears nothing, and where no `)` or `:` ends it.
+function flags_at(pattern: str, at: i64, flags: Flags) -> Opening?
+    pos: i64 @= at + 2
+    clearing: bool @= false
+    named: i64 @= 0
+    out: Flags @= flags
+
+    while pos < pattern.len() && pattern[pos] != ')' && pattern[pos] != ':'
+        b = pattern[pos]
+
+        if b == '-' && !clearing
+            clearing @ true
+            named @ 0
+        else if b == 'i'
+            out.fold @ !clearing
+        else if b == 'm'
+            out.multi_line @ !clearing
+        else if b == 's'
+            out.dot_all @ !clearing
+        else
+            return codes.invalid(
+                pattern: pattern,
+                at: pos,
+                why: "a flag this package does not read: the flags are i, m and s"
+            )
+
+        if b != '-'
+            named @ named + 1
+        pos @ pos + 1
+
+    if pos >= pattern.len()
+        return codes.invalid(pattern: pattern, at: at, why: "flags `(?` that no `)` or `:` ends")
+
+    if named == 0
+        return codes.invalid(pattern: pattern, at: at, why: "flags `(?` that name no flag")
+
+    if pattern[pos] == ':'
+        return ok(Opening(kind: .plain, flags: out, next: pos + 1))
+    return ok(Opening(kind: .flags_only, flags: out, next: pos + 1))
+
+## Tests
+
+test "open_at: a numbered group, a plain one, a named one in both spellings"
+    plain = Flags(fold: false, dot_all: false, multi_line: false)
+    numbered = open_at(pattern: "(a)", at: 0, flags: plain).must()
+    assert numbered.kind == .capture(name: "") && numbered.next == 1
+    assert open_at(pattern: "(?:a)", at: 0, flags: plain).must() == Opening(kind: .plain, flags: plain, next: 3)
+    assert open_at(pattern: "(?P<year>1)", at: 0, flags: plain).must() == Opening(kind: .capture(name: "year"), flags: plain, next: 9)
+    assert open_at(pattern: "(?<y_2>1)", at: 0, flags: plain).must().kind == .capture(name: "y_2")
+
+test "open_at: flags alone, flags over a group, cleared, and several at once"
+    plain = Flags(fold: false, dot_all: false, multi_line: false)
+    folded = open_at(pattern: "(?i)a", at: 0, flags: plain).must()
+    assert folded == Opening(kind: .flags_only, flags: Flags(fold: true, dot_all: false, multi_line: false), next: 4)
+    every = Flags(fold: true, dot_all: true, multi_line: true)
+    assert open_at(pattern: "(?s-i:a)", at: 0, flags: every).must() == Opening(kind: .plain, flags: Flags(fold: false, dot_all: true, multi_line: true), next: 6)
+    assert open_at(pattern: "(?im)", at: 0, flags: plain).must().flags == Flags(fold: true, dot_all: false, multi_line: true)
+
+test "open_at refuses look-around, a back-reference by name, and what it does not read"
+    plain = Flags(fold: false, dot_all: false, multi_line: false)
+
+    match open_at(pattern: "(?=a)", at: 0, flags: plain)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "look-ahead `(?=` and `(?!` is refused: not matchable in linear time, at byte 0 of \"(?=a)\""
+
+    match open_at(pattern: "(?<!a)", at: 0, flags: plain)
+        .ok _  => assert false
+        .err e => assert e.msg == "look-behind `(?<=` and `(?<!` is refused: not matchable in linear time, at byte 0 of \"(?<!a)\""
+
+    match open_at(pattern: "(?P=n)", at: 0, flags: plain)
+        .ok _  => assert false
+        .err e => assert e.msg == "a back-reference `(?P=name)` is refused: not matchable in linear time, at byte 0 of \"(?P=n)\""
+
+    assert open_at(pattern: "(?>a)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?#c)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?(1)a)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?x)a", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?i", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?-)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?P<1a>b)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?<>b)", at: 0, flags: plain).is_err()
+    assert open_at(pattern: "(?<é>b)", at: 0, flags: plain).is_err()

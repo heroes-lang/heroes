@@ -1,0 +1,12 @@
+# Reaches Rebel's package `hash`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the CRC-32 and the FNV-1a hash of
+# a word, at once and in steps.
+
+use <rebel>/hash
+
+function main()
+    print(hash.crc32_text("Heroes"))
+    state @= hash.start64(.fnv1a_64)
+    hash.update_text64(@state, "Her")
+    hash.update_text64(@state, "oes")
+    print(state.value)

@@ -1,0 +1,452 @@
+capability char/code-point  the code point of a character
+  heroes  unicode.code_point
+  go      utf8.DecodeRuneInString
+  rust    From<char> for u32, From<char> for u64, From<char> for u128, TryFrom<char> for u8, TryFrom<char> for u16, TryFrom<char> for usize, char::to_u32
+  python  ord
+  note    Rust's narrowing conversions to `u8` and `u16` are `to_u8(unicode.code_point(c))`, failing `does_not_fit`
+
+capability char/from-code-point  the character of a code point
+  heroes  unicode.from_code_point
+  go      -
+  rust    char::from_u32, std::char::from_u32, TryFrom<u32> for char, From<u8> for char, CharTryFromError, TryFromCharError
+  python  chr
+  note    a number that is no scalar value fails `invalid`, where Rust answers None and Python raises ValueError; Python's `chr` accepts a surrogate, which no `str` can hold here
+
+capability char/code-points-of-text  the code points of a whole text, in order
+  heroes  unicode.code_points
+  go      -
+  rust    str::chars, Chars
+  python  -
+
+capability char/text-of-code-points  the text a list of code points writes
+  heroes  unicode.from_code_points
+  go      -
+  rust    FromIterator<char> for String, FromIterator<&char> for String, FromIterator<char> for Box<str>, FromIterator<&char> for Box<str>, Extend<char> for String, Extend<&char> for String, From<char> for String
+  python  -
+  note    a text of characters is `join` of them, the built-in
+
+capability char/is-scalar-value  whether a number is a code point a character can have
+  heroes  unicode.is_scalar_value
+  go      utf8.ValidRune
+  rust    -
+  python  -
+
+capability char/largest  the largest code point
+  heroes  unicode.MAX_CODE_POINT
+  go      unicode.MaxRune, utf8.MaxRune
+  rust    char::MAX, std::char::MAX
+  python  -
+
+capability char/replacement  the character that stands for one that could not be read
+  heroes  unicode.REPLACEMENT_CHARACTER
+  go      unicode.ReplacementChar, utf8.RuneError
+  rust    char::REPLACEMENT_CHARACTER, std::char::REPLACEMENT_CHARACTER
+  python  -
+  note    Go answers it in place of a character it cannot read; a function here fails instead (README A4)
+
+capability tables/version  the version of Unicode the tables hold
+  heroes  unicode.UNICODE_VERSION
+  go      unicode.Version
+  rust    char::UNICODE_VERSION, std::char::UNICODE_VERSION
+  python  unicodedata.unidata_version
+  note    the tables are Python 3.15.2's unicodedata, 17.0.0, as Go 1.27.3's are; Rust 1.100 holds 18.0.0: over every scalar value its is_alphabetic differs on 12,833 code points, all unassigned in 17.0.0, and its to_uppercase on 21, four of them assigned (U+0277, U+027C, U+AB4B, U+AB4C); on the 297,334 code points assigned in 17.0.0 its is_lowercase, is_uppercase, is_numeric and to_lowercase agree with these tables
+
+capability class/letter  whether a character is a letter
+  heroes  unicode.is_letter
+  go      unicode.IsLetter, unicode.Letter, unicode.L
+  rust    -
+  python  str.isalpha
+  note    Go's IsLetter and Python's isalpha agree with category L on every code point, measured
+
+capability class/alphabetic  whether a character is alphabetic, a letter or what a script writes as part of one
+  heroes  unicode.is_alphabetic
+  go      unicode.Other_Alphabetic
+  rust    char::is_alphabetic
+  python  -
+
+capability class/digit  whether a character is a decimal digit
+  heroes  unicode.is_digit
+  go      unicode.IsDigit, unicode.Digit, unicode.Nd
+  rust    -
+  python  str.isdecimal
+  note    category Nd, Go's IsDigit and Python's isdecimal, which agree on every code point; Python's isdigit also takes superscripts and is the block number/numeric-value
+
+capability class/number  whether a character is a number of any kind
+  heroes  unicode.is_number
+  go      unicode.IsNumber, unicode.Number, unicode.N
+  rust    char::is_numeric
+  python  -
+
+capability class/alphanumeric  whether a character is alphabetic or a number
+  heroes  unicode.is_alphanumeric
+  go      -
+  rust    char::is_alphanumeric
+  python  str.isalnum
+  note    Rust's, alphabetic or a number; Python's isalnum reads a letter as category L and so leaves out 1,510 code points assigned in 17.0.0 that Rust counts, vowel signs and combining letters among them
+
+capability class/space  whether a character is white space
+  heroes  unicode.is_space
+  go      unicode.IsSpace, unicode.White_Space
+  rust    char::is_whitespace
+  python  str.isspace
+  note    the White_Space property, Go's and Rust's; Python's isspace also takes U+001C to U+001F, the four code points where the three disagree, measured over every code point
+
+capability class/upper  whether a character is upper case
+  heroes  unicode.is_upper
+  go      unicode.IsUpper, unicode.Upper, unicode.Lu, unicode.Other_Uppercase
+  rust    char::is_uppercase
+  python  str.isupper
+  note    the Uppercase property, Rust's and Python's isupper; Go's IsUpper is category Lu alone, which `unicode.category(c) == unicode.UPPERCASE_LETTER` asks
+
+capability class/lower  whether a character is lower case
+  heroes  unicode.is_lower
+  go      unicode.IsLower, unicode.Lower, unicode.Ll, unicode.Other_Lowercase
+  rust    char::is_lowercase
+  python  str.islower
+  note    the Lowercase property, Rust's and Python's islower; Go's IsLower is category Ll alone, which `unicode.category(c) == unicode.LOWERCASE_LETTER` asks
+
+capability class/title  whether a character is a title case letter
+  heroes  unicode.is_title
+  go      unicode.IsTitle, unicode.Title, unicode.Lt
+  rust    char::is_titlecase
+  python  str.istitle
+  note    category Lt, Go's and Rust's; Python's istitle asks a text whether its words are title cased, and of one character answers true for 2,006 that are not Lt, upper case letters among them: that question is a text's
+
+capability class/cased  whether a character has a case at all
+  heroes  unicode.is_cased
+  go      unicode.LC
+  rust    char::is_cased, char::case, CharCase
+  python  -
+  note    the Cased property, Rust's; Go's LC is the categories Lu, Ll and Lt, which `unicode.category` answers
+
+capability class/case-ignorable  whether a character is passed over when the letters around it are asked their case
+  heroes  unicode.is_case_ignorable
+  go      -
+  rust    char::is_case_ignorable
+  python  -
+  note    read from Python by asking which characters let a final sigma stay final, and held to that for every code point
+
+capability class/punctuation  whether a character is punctuation
+  heroes  unicode.is_punctuation
+  go      unicode.IsPunct, unicode.Punct, unicode.P
+  rust    -
+  python  -
+
+capability class/symbol  whether a character is a symbol
+  heroes  unicode.is_symbol
+  go      unicode.IsSymbol, unicode.Symbol, unicode.S
+  rust    -
+  python  -
+
+capability class/mark  whether a character is a mark that combines with the one before it
+  heroes  unicode.is_mark
+  go      unicode.IsMark, unicode.Mark, unicode.M
+  rust    -
+  python  -
+
+capability class/control  whether a character is a control code
+  heroes  unicode.is_control
+  go      unicode.IsControl, unicode.Cc
+  rust    char::is_control
+  python  -
+
+capability class/graphic  whether a character is drawn or leaves a space
+  heroes  unicode.is_graphic
+  go      unicode.IsGraphic, unicode.GraphicRanges
+  rust    -
+  python  -
+
+capability class/printable  whether a character may be printed as itself
+  heroes  unicode.is_printable
+  go      unicode.IsPrint, unicode.PrintRanges
+  rust    -
+  python  str.isprintable
+  note    Go's IsPrint and Python's isprintable agree on every code point, measured
+
+capability class/ascii  whether a character is ASCII
+  heroes  unicode.is_ascii
+  go      unicode.MaxASCII, utf8.RuneSelf
+  rust    char::is_ascii, char::as_ascii
+  python  str.isascii
+
+capability class/ascii-classes  the classes of ASCII alone: its letters, digits, punctuation, white space
+  heroes  refused: each is `unicode.is_ascii(c)` and the class of the same name, but two of Rust's are other sets, its punctuation being `is_punctuation(c) || is_symbol(c)` there and its white space leaving out U+000B; a program names the set it means
+  go      -
+  rust    char::is_ascii_alphabetic, char::is_ascii_alphanumeric, char::is_ascii_control, char::is_ascii_digit, char::is_ascii_graphic, char::is_ascii_hexdigit, char::is_ascii_lowercase, char::is_ascii_octdigit, char::is_ascii_punctuation, char::is_ascii_uppercase, char::is_ascii_whitespace
+  python  -
+
+capability class/general-category  the general category of a character, one of Unicode's thirty
+  heroes  unicode.category
+  go      unicode.Categories, unicode.CategoryAliases, unicode.Is, unicode.In, unicode.IsOneOf, unicode.Other, unicode.C, unicode.Cf, unicode.Cn, unicode.Co, unicode.Cs, unicode.Lm, unicode.Lo, unicode.Mc, unicode.Me, unicode.Mn, unicode.Nl, unicode.No, unicode.Pc, unicode.Pd, unicode.Pe, unicode.Pf, unicode.Pi, unicode.Po, unicode.Ps, unicode.Sc, unicode.Sk, unicode.Sm, unicode.So, unicode.Space, unicode.Z, unicode.Zl, unicode.Zp, unicode.Zs
+  rust    char::is_assigned, char::is_private_use
+  python  unicodedata.category
+  note    with a constant for each of the thirty categories but Cs, which no `str` holds; Rust's is_assigned is `category(c) != UNASSIGNED` and is_private_use `category(c) == PRIVATE_USE`; Go's Is, In and IsOneOf over a table of its own wait for class/property and class/script
+
+capability class/identifier  whether a character may begin a name, or go on inside one
+  heroes  pending
+  go      unicode.Other_ID_Start, unicode.Other_ID_Continue
+  rust    -
+  python  unicodedata.isxidstart, unicodedata.isxidcontinue, str.isidentifier
+
+capability class/default-ignorable  whether a character is drawn as nothing where no font knows it
+  heroes  pending
+  go      unicode.Other_Default_Ignorable_Code_Point, unicode.Variation_Selector
+  rust    char::is_default_ignorable
+  python  -
+
+capability class/property  whether a character has one of the properties Unicode lists by name
+  heroes  pending
+  go      unicode.Properties, unicode.ASCII_Hex_Digit, unicode.Bidi_Control, unicode.Dash, unicode.Deprecated, unicode.Diacritic, unicode.Extender, unicode.Hex_Digit, unicode.Hyphen, unicode.IDS_Binary_Operator, unicode.IDS_Trinary_Operator, unicode.IDS_Unary_Operator, unicode.ID_Compat_Math_Continue, unicode.ID_Compat_Math_Start, unicode.Ideographic, unicode.Join_Control, unicode.Logical_Order_Exception, unicode.Modifier_Combining_Mark, unicode.Noncharacter_Code_Point, unicode.Other_Grapheme_Extend, unicode.Other_Math, unicode.Pattern_Syntax, unicode.Pattern_White_Space, unicode.Prepended_Concatenation_Mark, unicode.Quotation_Mark, unicode.Radical, unicode.Regional_Indicator, unicode.STerm, unicode.Sentence_Terminal, unicode.Soft_Dotted, unicode.Terminal_Punctuation, unicode.Unified_Ideograph
+  rust    -
+  python  -
+
+capability class/script  the script a character belongs to
+  heroes  pending
+  go      unicode.Scripts, the 174 script tables from unicode.Adlam to unicode.Zanabazar_Square, unicode.FoldScript
+  rust    -
+  python  -
+
+capability class/block  the block a character stands in
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.block
+
+capability number/decimal-value  the value of a decimal digit, 0 to 9
+  heroes  unicode.digit_value
+  go      -
+  rust    -
+  python  unicodedata.decimal
+  note    a character that is no decimal digit fails `invalid`, where Python raises ValueError or answers its default
+
+capability number/numeric-value  the number a character writes, a fraction included
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.numeric, unicodedata.digit, str.isnumeric, str.isdigit
+
+capability number/digit-in-base  a digit of a base up to thirty-six read from a character, and written as one
+  heroes  unicode.to_digit, unicode.from_digit
+  go      -
+  rust    char::to_digit, char::is_digit, char::from_digit, std::char::from_digit
+  python  -
+  note    a base outside 2 to 36 aborts in both, as Rust's to_digit does; Rust's from_digit answers '0' for base 1, observed, and that one case was not taken
+
+capability case/upper  the upper case of a character
+  heroes  unicode.to_upper
+  go      unicode.ToUpper, unicode.To, unicode.UpperCase
+  rust    char::to_uppercase, ToUppercase
+  python  str.upper
+  note    the full mapping, Python's upper and Rust's to_uppercase, which agree on every code point assigned in 17.0.0 but four (tables/version)
+
+capability case/lower  the lower case of a character
+  heroes  unicode.to_lower
+  go      unicode.ToLower, unicode.LowerCase
+  rust    char::to_lowercase, ToLowercase
+  python  str.lower
+  note    the full mapping of one character; a final sigma is told by its neighbours, which a character alone does not know: `strings` lowers a text
+
+capability case/title  the title case of a character
+  heroes  unicode.to_title
+  go      unicode.ToTitle, unicode.TitleCase
+  rust    char::to_titlecase, ToTitlecase
+  python  str.title
+  note    the full mapping, Python's title of one character; Rust's to_titlecase is unstable in 1.100
+
+capability case/fold  the form of a character under which texts are compared ignoring case
+  heroes  unicode.to_casefold
+  go      -
+  rust    char::to_casefold_unnormalized, ToCasefold
+  python  str.casefold
+  note    full case folding, Python's casefold; Rust's to_casefold_unnormalized is unstable in 1.100
+
+capability case/simple-fold  the next code point that is the same letter ignoring case, one to one
+  heroes  unicode.simple_fold
+  go      unicode.SimpleFold, unicode.FoldCategory
+  rust    -
+  python  -
+  note    Go's SimpleFold, held to it for every code point
+
+capability case/one-to-one  the upper, lower and title case of a code point that is always one code point
+  heroes  unicode.simple_upper, unicode.simple_lower, unicode.simple_title
+  go      unicode.ToUpper, unicode.ToLower, unicode.ToTitle, unicode.CaseRanges, unicode.MaxCase, unicode.UpperLower
+  rust    -
+  python  -
+  note    Go's ToUpper, ToLower and ToTitle, held to them for every code point; Go's To with a case number is the three
+
+capability case/ascii  the case of ASCII letters alone changed, every other character left
+  heroes  refused: `unicode.is_ascii(c)` and `unicode.to_upper(c)` say it, and comparing texts ignoring the case of ASCII is a text's question, `strings`'s
+  go      -
+  rust    char::to_ascii_uppercase, char::to_ascii_lowercase, char::make_ascii_uppercase, char::make_ascii_lowercase, char::eq_ignore_ascii_case
+  python  -
+
+capability case/of-a-language  the case of a character by the rules of Turkish and Azeri
+  heroes  pending
+  go      unicode.SpecialCase, unicode.TurkishCase, unicode.AzeriCase, SpecialCase.ToUpper, SpecialCase.ToLower, SpecialCase.ToTitle
+  rust    -
+  python  -
+
+capability utf8/encode  the bytes that write a code point in UTF-8
+  heroes  unicode.to_utf8
+  go      utf8.AppendRune, utf8.EncodeRune
+  rust    char::encode_utf8
+  python  -
+  note    a number that is no scalar value fails `invalid`, where Go writes U+FFFD in its place
+
+capability utf8/encoded-length  how many bytes a code point takes in UTF-8
+  heroes  unicode.utf8_len
+  go      utf8.RuneLen
+  rust    char::len_utf8
+  python  -
+  note    fails `invalid` where Go answers -1
+
+capability utf8/longest  the most bytes a character takes in UTF-8
+  heroes  unicode.MAX_UTF8_LEN
+  go      utf8.UTFMax
+  rust    char::MAX_LEN_UTF8
+  python  -
+
+capability utf8/width-from-first-byte  how many bytes a character takes, read from its first byte
+  heroes  unicode.utf8_width
+  go      -
+  rust    -
+  python  -
+
+capability utf8/decode-all  the code points that bytes write in UTF-8
+  heroes  unicode.from_utf8
+  go      -
+  rust    -
+  python  -
+
+capability utf8/bytes-to-text  bytes checked to be UTF-8 and read as a text
+  heroes  built-in validated_bytes
+  go      -
+  rust    std::str::from_utf8, str::from_utf8, std::str::from_utf8_mut, str::from_utf8_mut
+  python  -
+
+capability utf8/decode-one  the code point that begins at an index of bytes, and how many bytes it takes
+  heroes  unicode.decode_at
+  go      utf8.DecodeRune
+  rust    -
+  python  -
+  note    fails `not_text` where Go answers U+FFFD of width 1; agrees with Go on which bytes those are, and with Python's decode on 1,638,656 byte sequences
+
+capability utf8/decode-last  the code point that ends at an index of bytes, and how many bytes it takes
+  heroes  unicode.decode_before
+  go      utf8.DecodeLastRune, utf8.DecodeLastRuneInString
+  rust    -
+  python  -
+  note    fails `not_text` where Go answers U+FFFD of width 1
+
+capability utf8/walk-a-text  the code point at an index of a text, and where the next character begins
+  heroes  unicode.code_point_at, unicode.width_at
+  go      utf8.DecodeRuneInString
+  rust    str::char_indices, CharIndices
+  python  -
+  note    an index that begins no character aborts, as a slice there would
+
+capability utf8/valid  whether bytes are UTF-8
+  heroes  unicode.is_utf8
+  go      utf8.Valid, utf8.ValidString
+  rust    Utf8Error
+  python  -
+
+capability utf8/valid-prefix  how many bytes at the start are whole characters of UTF-8
+  heroes  unicode.utf8_prefix_len
+  go      -
+  rust    Utf8Error::valid_up_to, Utf8Chunks, Utf8Chunk
+  python  -
+  note    agrees with Rust's valid_up_to and with Python's error start on 1,638,656 byte sequences, measured
+
+capability utf8/cut-short  whether bytes stop inside a character that more bytes could complete
+  heroes  unicode.is_utf8_prefix
+  go      utf8.FullRune, utf8.FullRuneInString
+  rust    Utf8Error::error_len
+  python  -
+  note    Rust's error_len and Go's FullRune, the other way round: bytes that begin a surrogate, ED A0 to ED BF, are wrong and not cut short; Python's incremental decoder waits after them, where it refuses E0 80, and those are the only 32 of 1,638,656 sequences on which it differs
+
+capability utf8/count  how many characters a text holds
+  heroes  unicode.char_count
+  go      utf8.RuneCount, utf8.RuneCountInString
+  rust    -
+  python  -
+  note    the built-ins answer it too, `s.chars().len()`, by building a list of every character; this builds nothing
+
+capability utf8/boundary  whether an index of a text is where a character begins
+  heroes  unicode.is_char_boundary, unicode.is_continuation
+  go      utf8.RuneStart
+  rust    str::is_char_boundary
+  python  -
+  note    Rust's, the end of the text a boundary; Go's RuneStart is `!unicode.is_continuation(b)`
+
+capability utf8/nearest-boundary  the nearest index at or before, or at or after, where a character begins
+  heroes  unicode.floor_char_boundary, unicode.ceil_char_boundary
+  go      -
+  rust    str::floor_char_boundary, str::ceil_char_boundary
+  python  -
+  note    Rust's, an index past the end answering the length, observed
+
+capability utf16/encode  the units that write a code point in UTF-16
+  heroes  unicode.to_utf16
+  go      -
+  rust    char::encode_utf16, char::len_utf16, char::MAX_LEN_UTF16
+  python  -
+  note    Rust's len_utf16 is the length of the units, and MAX_LEN_UTF16 is 2
+
+capability utf16/decode  the code points that units write in UTF-16
+  heroes  unicode.from_utf16, unicode.from_surrogates
+  go      -
+  rust    char::decode_utf16, std::char::decode_utf16, DecodeUtf16, DecodeUtf16Error
+  python  -
+  note    a surrogate with no partner fails `invalid`, where Rust's iterator yields an error in its place
+
+capability char/escape  a character written as an escape of a program's source
+  heroes  refused: an escape is the grammar of one language's source, Rust's here; a program writing Heroes, JSON or C writes that language's own
+  go      -
+  rust    char::escape_debug, char::escape_default, char::escape_unicode, std::char::EscapeDebug, std::char::EscapeDefault, std::char::EscapeUnicode
+  python  -
+
+capability char/name  the name Unicode gives a character, and the character a name gives
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.name, unicodedata.lookup
+
+capability text/normal-form  a text in one of Unicode's four normal forms, and whether it is in one
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.normalize, unicodedata.is_normalized, unicodedata.decomposition
+
+capability class/combining  the combining class of a character, which orders the marks after a letter
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.combining
+
+capability text/graphemes  a text cut into what a reader sees as one character
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.iter_graphemes, unicodedata.grapheme_cluster_break, unicodedata.indic_conjunct_break, unicodedata.extended_pictographic
+
+capability class/width  how wide a character is drawn in a grid of East Asian text
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.east_asian_width
+
+capability class/direction  the direction class of a character, and whether it is mirrored in text written right to left
+  heroes  pending
+  go      -
+  rust    -
+  python  unicodedata.bidirectional, unicodedata.mirrored
+
+dropped
+  go      unicode.MaxLatin1  the edge of a fast path inside Go's own lookups
+  go      unicode.Range16, unicode.Range32, unicode.RangeTable, unicode.CaseRange  the shapes Go's tables are held in; a table here is private data
+  rust    char::MIN  the code point 0, which is the number
+  rust    char::from_u32_unchecked, std::char::from_u32_unchecked, std::str::from_utf8_unchecked, std::str::from_utf8_unchecked_mut, str::from_utf8_unchecked, str::from_utf8_unchecked_mut, std::str::from_boxed_utf8_unchecked, char::as_ascii_unchecked  unchecked variants
+  rust    std::str::from_raw_parts, std::str::from_raw_parts_mut  a text built from an address
+  rust    Clone, Copy, Default, Debug, Display, Eq, PartialEq, Ord, PartialOrd, Hash, FromStr, ParseCharError, Step, Pattern, AsciiExt, ConstParamTy_, the marker traits of char  what an interface would have needed; two characters are compared with `==` and ordered by their code points
+  python  unicodedata.UCD, unicodedata.ucd_3_2_0  the tables of Unicode 3.2.0, a second version held for one protocol

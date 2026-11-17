@@ -1,0 +1,142 @@
+# The text of a URL written from its parts by RFC 3986 § 5.3, each part
+# escaped by its own set, so that what is written is a URL and reads back to
+# the same parts.
+
+use url/internal/classes
+use url/internal/escapes
+use url/internal/hosts
+use url/internal/parts
+
+# Whether the first segment of `path` holds a ":", which a reference with no
+# scheme would read as one.
+function colon_first(path: str) -> bool
+    at: i64 @= 0
+
+    while at < path.len() && path[at] != '/'
+        if path[at] == ':'
+            return true
+        at @ at + 1
+
+    return false
+
+# The text of `p`. Aborts where the scheme is not one or the port is not
+# digits alone, since no escape writes either.
+function format(p: parts.Parts) -> str
+    pieces: [str] @= []
+
+    if p.scheme != ""
+        if !classes.is_scheme(p.scheme)
+            classes.abort_with(
+                f"the scheme {classes.shown(p.scheme)} is not a letter, then letters, digits, \"+\", \"-\" and \".\", and no escape writes a scheme"
+            )
+        pieces @ pieces.push(p.scheme + ":")
+    authority = parts.has_authority(p)
+
+    if authority
+        pieces @ pieces.push("//")
+
+        if p.user != "" || p.password != "" || p.empty_password
+            pieces @ pieces.push(escapes.escape(s: p.user, keeps: classes.in_name, plus: false))
+
+            if p.password != "" || p.empty_password
+                pieces @ pieces.push(":" + escapes.escape(s: p.password, keeps: classes.in_name, plus: false))
+            pieces @ pieces.push("@")
+        else if p.empty_userinfo
+            pieces @ pieces.push("@")
+        pieces @ pieces.push(hosts.format(host: p.host, port: p.port))
+    path = escapes.escape_raw(s: p.path, keeps: classes.in_path)
+
+    if authority && path != "" && path[0] != '/'
+        pieces @ pieces.push("/")
+    else if !authority && path.len() >= 2 && path[0] == '/' && path[1] == '/'
+        pieces @ pieces.push("/.")
+    else if !authority && p.scheme == "" && colon_first(path)
+        pieces @ pieces.push("./")
+    pieces @ pieces.push(path)
+
+    if p.query != "" || p.empty_query
+        pieces @ pieces.push("?" + escapes.escape_raw(s: p.query, keeps: classes.in_query))
+
+    if p.fragment != "" || p.empty_fragment
+        pieces @ pieces.push("#" + escapes.escape_raw(s: p.fragment, keeps: classes.in_query))
+    return pieces.join("")
+
+# The path and the query as the first line of an HTTP request writes them:
+# the path escaped as `format` does, "/" where it is empty and a "/" before
+# it where it begins with none, then "?" and the query where there is one.
+function request_target(path: str, query: str, empty_query: bool) -> str
+    written: str @= escapes.escape_raw(s: path, keeps: classes.in_path)
+
+    if written == "" || written[0] != '/'
+        written @ "/" + written
+
+    if query != "" || empty_query
+        return written + "?" + escapes.escape_raw(s: query, keeps: classes.in_query)
+    return written
+
+## Tests
+
+test "format: the empty reference, a whole URL, and the empty parts kept"
+    assert format(parts.empty()) == ""
+    p @= parts.empty()
+    p.scheme @ "https"
+    p.user @ "us@er"
+    p.password @ "p:w"
+    p.host @ "example.com"
+    p.port @ "8080"
+    p.path @ "/a%20b/c"
+    p.query @ "q=1"
+    p.fragment @ "top"
+    assert format(p) == "https://us%40er:p%3Aw@example.com:8080/a%20b/c?q=1#top"
+    q @= parts.empty()
+    q.scheme @ "http"
+    q.host @ "h"
+    q.empty_query @ true
+    q.empty_fragment @ true
+    assert format(q) == "http://h?#"
+    r @= parts.empty()
+    r.scheme @ "file"
+    r.empty_authority @ true
+    r.path @ "/etc"
+    assert format(r) == "file:///etc"
+
+test "format: what a part may not hold escaped, an IPv6 host, the three paths that need a prefix"
+    p @= parts.empty()
+    p.scheme @ "http"
+    p.host @ "::1"
+    p.path @ "a b/café?"
+    p.query @ "x#y[1]"
+    p.fragment @ "50%"
+    assert format(p) == "http://[::1]/a%20b/caf%C3%A9%3F?x%23y%5B1%5D#50%25"
+    q @= parts.empty()
+    q.path @ "//a"
+    assert format(q) == "/.//a"
+    r @= parts.empty()
+    r.path @ "a:b/c"
+    assert format(r) == "./a:b/c"
+    t @= parts.empty()
+    t.scheme @ "urn"
+    t.path @ "a:b"
+    assert format(t) == "urn:a:b"
+
+test "format: the user alone, an empty password, an empty user before a password, an empty userinfo"
+    p @= parts.empty()
+    p.host @ "h"
+    p.user @ "u"
+    assert format(p) == "//u@h"
+    p.empty_password @ true
+    assert format(p) == "//u:@h"
+    q @= parts.empty()
+    q.host @ "h"
+    q.password @ "pw"
+    assert format(q) == "//:pw@h"
+    r @= parts.empty()
+    r.host @ "h"
+    r.empty_userinfo @ true
+    assert format(r) == "//@h"
+
+test "request_target: an empty path, a relative one, a query, an empty query"
+    assert request_target(path: "", query: "", empty_query: false) == "/"
+    assert request_target(path: "a/b", query: "", empty_query: false) == "/a/b"
+    assert request_target(path: "/a b", query: "q=1", empty_query: false) == "/a%20b?q=1"
+    assert request_target(path: "/", query: "", empty_query: true) == "/?"

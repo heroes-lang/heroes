@@ -1,0 +1,42 @@
+# The failure codes `compress` answers, and how its messages are made: the
+# face names its constants from these, since a private module cannot `use`
+# the face.
+
+# An input that is not what its format says, or options no compressor takes.
+constant INVALID: str
+    "invalid"
+
+# An output that would pass the limit the caller set.
+constant LIMIT: str
+    "limit"
+
+# A writer used after it was finished.
+constant CLOSED: str
+    "closed"
+
+# A failure of code `invalid` whose message names the byte `at` of the input
+# and says `why`.
+function invalid_at<T>(at: i64, why: str) -> T?
+    return fail(code: INVALID, msg: f"not a valid compressed stream at byte {at}: {why}")
+
+# A failure of code `limit`: the output would pass `limit` bytes; `at` is the
+# byte of the input being read.
+function past_limit<T>(limit: i64, at: i64) -> T?
+    return fail(code: LIMIT, msg: f"the output would pass the limit of {limit} bytes, reading byte {at} of the input")
+
+test "invalid_at and past_limit: the code, and the byte in the message"
+    bad: i64? = invalid_at(at: 7, why: "a block of type 3")
+
+    match bad
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "not a valid compressed stream at byte 7: a block of type 3"
+
+    big: i64? = past_limit(limit: 10, at: 3)
+
+    match big
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "limit"
+            assert e.msg == "the output would pass the limit of 10 bytes, reading byte 3 of the input"

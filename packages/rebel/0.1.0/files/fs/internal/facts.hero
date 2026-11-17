@@ -1,0 +1,145 @@
+# The facts of a path, read from `hero_disk`: what `fs.info` and its kin
+# build their answers from. A kind is answered as an index, `FILE` to
+# `OTHER`, which the face reads into its own `Kind`; `NOTHING` says no path
+# is there.
+
+use fs/internal/codes
+use fs/internal/fixture
+use os/hero_disk
+use time
+
+# The index of a file.
+constant FILE: i64
+    0
+
+# The index of a folder.
+constant DIRECTORY: i64
+    1
+
+# The index of a symbolic link.
+constant LINK: i64
+    2
+
+# The index of anything else.
+constant OTHER: i64
+    3
+
+# What `presence` answers where nothing is there.
+constant NOTHING: i64
+    -1
+
+# The facts of one path, as `hero_disk.facts` fills them.
+record Facts
+    # `FILE` to `OTHER`.
+    kind: i64
+    # The length in bytes.
+    size: i64
+    # The permission bits.
+    permission: i64
+    # The last write.
+    written: time.Instant
+    # The last read.
+    read: time.Instant
+    # The count of names.
+    links: i64
+
+# The index of `kind`, one of `hero_disk`'s `HERO_DISK_KIND_...`.
+#
+# - `kind`: the floor's kind; one it does not name is `OTHER`.
+function index_of_kind(kind: i64) -> i64
+    if kind == hero_disk.HERO_DISK_KIND_FILE
+        return FILE
+
+    if kind == hero_disk.HERO_DISK_KIND_DIRECTORY
+        return DIRECTORY
+
+    if kind == hero_disk.HERO_DISK_KIND_LINK
+        return LINK
+    return OTHER
+
+# The facts of what `at` names.
+#
+# - `at`: the path.
+# - `through`: whether every link is followed, or the link itself is read.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails with the floor's code, `file_not_found` where nothing is there.
+function of(at: str, through: bool, asked: str) -> Facts?
+    codes.checked(path: at, asked: asked)?
+    numbers: [i64] @= []
+    room = hero_disk.HERO_DISK_FACTS.to_u64().must()
+    answer: i64 @= 0
+
+    if through
+        answer @ hero_disk.facts_through(at, @numbers, n: room)
+    else
+        answer @ hero_disk.facts(at, @numbers, n: room)
+
+    if answer < 0
+        return codes.disk_failed(asked: asked)
+    return ok(
+        Facts(kind: index_of_kind(numbers[hero_disk.HERO_DISK_FACT_KIND]), size: numbers[hero_disk.HERO_DISK_FACT_SIZE], permission: numbers[hero_disk.HERO_DISK_FACT_PERMISSION], written: time.Instant(unix_nanoseconds: numbers[hero_disk.HERO_DISK_FACT_WRITTEN]), read: time.Instant(unix_nanoseconds: numbers[hero_disk.HERO_DISK_FACT_READ]), links: numbers[hero_disk.HERO_DISK_FACT_LINKS])
+    )
+
+# The kind of what `at` names, or `NOTHING` where nothing is there or a part
+# on its way is no folder.
+#
+# - `at`: the path.
+# - `through`: whether every link is followed, so a link to nothing is
+#   `NOTHING`.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails where the system will not say, never answering `NOTHING` for it.
+function presence(at: str, through: bool, asked: str) -> i64?
+    match of(at: at, through: through, asked: asked)
+        .ok found => return ok(found.kind)
+        .err e =>
+            if e.code == codes.FILE_NOT_FOUND || e.code == codes.NOT_A_DIRECTORY
+                return ok(NOTHING)
+            return fail(code: e.code, msg: e.msg)
+
+## Tests
+
+test "of: a file's kind, size and times, a folder, through a link and of the link, and nothing there"
+    dir = fixture.folder("facts")
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    file = of(at: dir + "/f", through: true, asked: "a").must()
+    assert file.kind == FILE && file.size == 5 && file.links == 1
+    assert file.permission & 0o400 != 0
+    assert file.written.unix_nanoseconds > 1_577_836_800_000_000_000
+    assert of(at: dir, through: false, asked: "a").must().kind == DIRECTORY
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        assert of(at: dir + "/l", through: true, asked: "a").must().kind == FILE
+        assert of(at: dir + "/l", through: false, asked: "a").must().kind == LINK
+
+    match of(at: dir + "/none", through: true, asked: "reading \"none\"")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "reading \"none\": nothing is there"
+
+    assert fixture.cleared(dir)
+
+test "presence: nothing there, a file on the way, a link to nothing followed and not, and a zero byte"
+    dir = fixture.folder("presence")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert presence(at: dir + "/none", through: true, asked: "a").must() == NOTHING
+    assert presence(at: dir + "/f/below", through: true, asked: "a").must() == NOTHING
+    assert presence(at: dir + "/f", through: false, asked: "a").must() == FILE
+
+    if fixture.linked(target: "none", name: dir + "/dangling")
+        assert presence(at: dir + "/dangling", through: true, asked: "a").must() == NOTHING
+        assert presence(at: dir + "/dangling", through: false, asked: "a").must() == LINK
+    zero: [u8] = ['a', 0]
+
+    match presence(at: zero.validated_bytes().must(), through: true, asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)
+
+test "index_of_kind: each kind of the floor, and the kind it would not say"
+    assert index_of_kind(hero_disk.HERO_DISK_KIND_FILE) == FILE
+    assert index_of_kind(hero_disk.HERO_DISK_KIND_DIRECTORY) == DIRECTORY
+    assert index_of_kind(hero_disk.HERO_DISK_KIND_LINK) == LINK
+    assert index_of_kind(hero_disk.HERO_DISK_KIND_OTHER) == OTHER
+    assert index_of_kind(hero_disk.HERO_DISK_KIND_UNKNOWN) == OTHER

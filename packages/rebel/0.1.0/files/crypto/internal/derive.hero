@@ -1,0 +1,121 @@
+# Keys derived from a secret by an HMAC: HKDF's expansion (RFC 5869 2.3) and
+# PBKDF2 (RFC 8018 5.2). Each takes `keyed`, the work of an HMAC keyed and fed
+# nothing yet, and copies it for every tag, so the key is hashed once however
+# many tags are made. The face checks the lengths and the count before it
+# calls; here they are taken as given.
+
+use bytes
+use crypto/internal/engine
+use crypto/internal/word
+
+# The first `length` bytes of T(1), T(2) and on, each T(i) the tag of the
+# one before, `info` and the byte i. `length` is at most 255 tags.
+function expand(keyed: engine.Run, info: [u8], length: i64) -> [u8]
+    out: [u8] @= []
+    previous: [u8] @= []
+    counter: i64 @= 1
+
+    while out.len() < length
+        step @= keyed
+        engine.absorb(@step, previous)
+        engine.absorb(@step, info)
+        engine.absorb(@step, [to_u8(counter).must()])
+        previous @ engine.finish(step)
+
+        for b in previous
+            out @ out.push(b)
+
+        counter @ counter + 1
+
+    return out.slice(from: 0, to: length)
+
+# The first `length` bytes of PBKDF2's blocks T(1), T(2) and on, each the
+# exclusive or of `iterations` tags: the first of `salt` and the block's
+# number in four bytes, each next of the one before. `iterations` and
+# `length` are 1 or more.
+function pbkdf2(keyed: engine.Run, salt: [u8], iterations: i64, length: i64) -> [u8]
+    out: [u8] @= []
+    index: i64 @= 1
+
+    while out.len() < length
+        first @= keyed
+        engine.absorb(@first, salt)
+        number: [u8] @= []
+        word.push_big(@number, x: index, count: 4)
+        engine.absorb(@first, number)
+        tag @= engine.finish(first)
+        sum: [i64] @= []
+
+        for b in tag
+            sum @ sum.push(to_i64(b).must())
+
+        round: i64 @= 1
+
+        while round < iterations
+            next @= keyed
+            engine.absorb(@next, tag)
+            tag @ engine.finish(next)
+            at: i64 @= 0
+
+            while at < tag.len()
+                sum[at] @ sum[at] ^ to_i64(tag[at]).must()
+                at @ at + 1
+
+            round @ round + 1
+
+        for x in sum
+            out @ out.push(to_u8(x).must())
+
+        index @ index + 1
+
+    return out.slice(from: 0, to: length)
+
+# The HMAC of `data` under `key` by `kind`, for the tests.
+function tag_of(kind: engine.Kind, key: [u8], data: [u8]) -> [u8]
+    run @= engine.begin_keyed(kind, key)
+    engine.absorb(@run, data)
+    return engine.finish(run)
+
+# Go's `crypto/hkdf` answered these on 2026-11-16 for RFC 5869's own inputs.
+test "derive expand: RFC 5869's cases 1, 3 and 4, a length of 0, and 200 bytes by SHA-512"
+    salt: [u8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c]
+    info: [u8] = [0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9]
+    prk = tag_of(kind: .sha256, key: salt, data: bytes.repeated([0x0b], 22))
+    assert bytes.format_hex(prk) == "077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5"
+    okm = expand(keyed: engine.begin_keyed(.sha256, prk), info: info, length: 42)
+    assert bytes.format_hex(okm) == "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+    prk3 = tag_of(kind: .sha256, key: [], data: bytes.repeated([0x0b], 22))
+    assert bytes.format_hex(prk3) == "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04"
+    okm3 = expand(keyed: engine.begin_keyed(.sha256, prk3), info: [], length: 42)
+    assert bytes.format_hex(okm3) == "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
+    prk4 = tag_of(kind: .sha1, key: salt, data: bytes.repeated([0x0b], 11))
+    okm4 = expand(keyed: engine.begin_keyed(.sha1, prk4), info: info, length: 42)
+    assert bytes.format_hex(okm4) == "085a01ea1b10f36933068b56efa5ad81a4f14b822f5b091568a9cdd4f155fda2c22e422478d305f3f896"
+    assert expand(keyed: engine.begin_keyed(.sha256, prk), info: info, length: 0).len() == 0
+    long = expand(
+        keyed: engine.begin_keyed(.sha512, bytes.repeated([0x01], 64)),
+        info: bytes.from_text("info"),
+        length: 200
+    )
+    assert bytes.format_hex(long) == "1acefc53718e34cb41576fd48d9b8fdf6303881d5f740a38d9859ae72c31e3e2a23fbaeaf533ed0f2fea71f6551463d50cb5191565c510f5b22a924a943656e6d5e209864a3f20163c2b61f7251d4c4efcb386ef2e4eab3869a5b1d8d2bdf10814897fd09d2958e5bd0c1ee52b164c152f3370859efada4102e9149f796e51ca3f6a2d22578eb208eb65e87456f6caeef303d065e2179a609adbbf48c24efa0efda10cd83600232aadc04d43100eef17421c952e792e30233d97cd3b177db025189c5561b6b46e9d"
+
+# Python's `hashlib.pbkdf2_hmac` answered these on 2026-11-16 for RFC 6070's
+# own inputs.
+test "derive pbkdf2: RFC 6070's cases by SHA-1, one, two and 4096 iterations, a long password and salt, and zero bytes inside both"
+    password = engine.begin_keyed(.sha1, bytes.from_text("password"))
+    salt = bytes.from_text("salt")
+    assert bytes.format_hex(pbkdf2(keyed: password, salt: salt, iterations: 1, length: 20)) == "0c60c80f961f0e71f3a9b524af6012062fe037a6"
+    assert bytes.format_hex(pbkdf2(keyed: password, salt: salt, iterations: 2, length: 20)) == "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957"
+    assert bytes.format_hex(pbkdf2(keyed: password, salt: salt, iterations: 4096, length: 20)) == "4b007901b765489abead49d926f721d065a429c1"
+    long = engine.begin_keyed(.sha1, bytes.from_text("passwordPASSWORDpassword"))
+    long_salt = bytes.from_text("saltSALTsaltSALTsaltSALTsaltSALTsalt")
+    assert bytes.format_hex(pbkdf2(keyed: long, salt: long_salt, iterations: 4096, length: 25)) == "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038"
+    zero = engine.begin_keyed(.sha1, bytes.concat([bytes.from_text("pass"), [0], bytes.from_text("word")]))
+    zero_salt = bytes.concat([bytes.from_text("sa"), [0], bytes.from_text("lt")])
+    assert bytes.format_hex(pbkdf2(keyed: zero, salt: zero_salt, iterations: 4096, length: 16)) == "56fa6aa75548099dcc37d7f03425e0c3"
+
+test "derive pbkdf2: RFC 7914's first case by SHA-256, and 130 bytes by SHA-512 over three blocks"
+    passwd = engine.begin_keyed(.sha256, bytes.from_text("passwd"))
+    assert bytes.format_hex(pbkdf2(keyed: passwd, salt: bytes.from_text("salt"), iterations: 1, length: 64)) == "55ac046e56e3089fec1691c22544b605f94185216dde0465e68b9d57c20dacbc49ca9cccf179b645991664b39d77ef317c71b845b1e30bd509112041d3a19783"
+    pw = engine.begin_keyed(.sha512, bytes.from_text("pw"))
+    assert bytes.format_hex(pbkdf2(keyed: pw, salt: [], iterations: 3, length: 130)) == "b05483454c45ae1d6a2a420c5da462b8e57c54e732acf96ea4699a5c5f25ac2899a584b03ff7f27d974b625eeca782d124d342a8db0ef3ce9dd0e33de6d084bdf710816029a86b5c6db43f84f0c5cf43d074760195566732a8b91225aeac39aedb9b160ea7a4adcaccea5ad9e89208b09f801265cb360f8fe5d77de4a7131ba68a9b"

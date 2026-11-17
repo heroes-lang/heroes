@@ -1,0 +1,94 @@
+# The platform layer's clocks and its sleep, `hero_time.h`, bound thin: one
+# function per C function, in C's order, each answering what C answers. The
+# floor of `time`: where the wall clock or the sleep fails its answer is -1
+# and `last_error` then the kind, which `time` turns into a code. The clock
+# that never goes back answers -1 and names no kind, as the header says.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. UTC
+# only: no function here knows a time zone.
+
+extern "hero_time.h"
+    # The kinds of failure `last_error` answers for the wall clock and the
+    # sleep. They are the same numbers on every platform.
+    constant HERO_TIME_OK: i64
+    constant HERO_TIME_INVALID: i64
+    constant HERO_TIME_OTHER: i64
+    function hero_time_monotonic_ns() -> i64
+    function hero_time_wall_ns() -> i64
+    function hero_time_sleep_ns(ns: i64) -> i64
+    function hero_time_last_error() -> i64
+    function hero_time_last_os_error() -> i64
+
+# Nanoseconds on a clock that never goes back, or -1. Its start is not named,
+# so only the difference of two readings means anything, and it sets no kind.
+function monotonic_ns() -> i64
+    return hero_time_monotonic_ns()
+
+# Nanoseconds since 1970-01-01 00:00:00 UTC on the machine's wall clock, or
+# -1. The clock may be set either way between two readings, so a span is
+# measured with `monotonic_ns`.
+function wall_ns() -> i64
+    return hero_time_wall_ns()
+
+# 0, once at least `ns` nanoseconds have passed on the clock `monotonic_ns`
+# reads, or -1 with `HERO_TIME_INVALID` where `ns` is below 0. A signal does
+# not cut it short, and 0 returns at once.
+function sleep_ns(ns: i64) -> i64
+    return hero_time_sleep_ns(ns)
+
+# The kind of the last failure of `wall_ns` or `sleep_ns` on this thread. It
+# is `HERO_TIME_OK` after a call of either that did not fail.
+function last_error() -> i64
+    return hero_time_last_error()
+
+# The platform's own number for that failure, 0 where the layer refused.
+function last_os_error() -> i64
+    return hero_time_last_os_error()
+
+## Tests
+
+test "sleep_ns: a count below 0 is refused with HERO_TIME_INVALID, the smallest too, and 0 returns at once"
+    assert sleep_ns(-1) == -1
+    assert last_error() == HERO_TIME_INVALID
+    assert last_os_error() == 0
+    assert sleep_ns(-9223372036854775807 - 1) == -1
+    assert last_error() == HERO_TIME_INVALID
+    assert sleep_ns(0) == 0
+    assert last_error() == HERO_TIME_OK
+    assert sleep_ns(1) == 0
+    assert last_error() == HERO_TIME_OK
+
+test "sleep_ns: ten milliseconds take at least ten by the monotonic clock"
+    before = monotonic_ns()
+    assert before >= 0
+    assert sleep_ns(10000000) == 0
+    after = monotonic_ns()
+    assert after - before >= 10000000
+
+test "monotonic_ns: two readings do not go back"
+    first = monotonic_ns()
+    second = monotonic_ns()
+    assert first >= 0
+    assert second >= first
+
+test "wall_ns: after 2026-01-01 and before 2100-01-01, UTC"
+    now = wall_ns()
+    assert last_error() == HERO_TIME_OK
+    assert last_os_error() == 0
+    assert now > 1767225600 * 1000000000
+    assert now < 4102444800 * 1000000000
+
+test "wall_ns: two readings do not go back by more than a second"
+    first = wall_ns()
+    second = wall_ns()
+    assert first > 0 && second > 0
+    assert second - first > -1000000000
+
+test "last_error: a refusal is kept until the next call of the two, and the kinds are three numbers"
+    assert sleep_ns(-5) == -1
+    assert monotonic_ns() >= 0
+    assert last_error() == HERO_TIME_INVALID
+    assert wall_ns() > 0
+    assert last_error() == HERO_TIME_OK
+    assert [HERO_TIME_OK, HERO_TIME_INVALID, HERO_TIME_OTHER] == [0, 1, 12]

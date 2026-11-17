@@ -1,0 +1,1586 @@
+# XML read, walked, built and written: a text read by XML 1.0 (fifth edition)
+# and Namespaces in XML 1.0 into a tree a program matches on, the tree walked
+# by names, built by a program, and written back as text. Nothing here follows
+# the data with recursion: a document nested deeper than its reading allows is
+# a failure the program is told, and a tree built deeper is written and walked
+# on a stack this package holds itself.
+#
+# It reads no DTD and fetches nothing: a document whose internal subset
+# declares an entity or an attribute list is refused, never expanded, so no
+# document can make the reader grow without end. It reads and writes UTF-8
+# alone. It reads a whole text: a stream is read with `io` and its text given
+# to `parse`. It reads no XPath: a path here is names and `/`. A record is not
+# filled from XML by its field names, since the language has no reflection.
+#
+# It fails `invalid` on a text that is not well-formed XML, a tree that would
+# not read back as itself, and a path that is not one; `not_text` on bytes that
+# are not UTF-8; `unsupported` on a declaration naming another encoding;
+# `limit` on a text past the depth or the size its reading allows; `not_found`
+# on a name an element does not hold.
+
+use numbers
+use strings
+use unicode
+use xml/internal/characters
+use xml/internal/escape
+use xml/internal/event
+use xml/internal/reader
+use xml/internal/scan
+use xml/internal/stack
+use xml/internal/steps
+use xml/internal/writer
+
+## The tree
+
+# A name as XML writes it, and the namespace it stands in.
+#
+# `parse` resolves every name it reads: `space` is the namespace its prefix,
+# or the default namespace for an element written with none, is declared to.
+# An attribute written with no prefix is in no namespace. A declaration,
+# `xmlns` or `xmlns:p`, is an attribute whose `space` is `XMLNS_SPACE`. Built
+# directly, or by `element`, `element_in`, `with_attribute` and
+# `with_attribute_in`.
+record Name
+    # The prefix written before the colon, `p` in `p:item`; empty where the
+    # name is written with none.
+    prefix: str
+    # The name after the colon, or the whole name where it has no prefix.
+    local: str
+    # The namespace the name stands in, a URI as the document declares it;
+    # empty where the name stands in none.
+    space: str
+
+# One attribute of an element: its name and its value, the value's references
+# read and its white space normalised as XML 1.0 says.
+record Attribute
+    # The attribute's name.
+    name: Name
+    # The value, the characters themselves: `&lt;` is read as `<`.
+    value: str
+
+# One element: its name, its attributes in the order they were written, and
+# what it holds in order.
+#
+# Built directly, or by `element` or `element_in` and the `with_` functions.
+# A program building an element of many children collects them in a `[Node]`
+# of its own and gives it to `children` once, since each `with_child` copies
+# the element.
+record Element
+    # The element's name.
+    name: Name
+    # Its attributes in the order they were written, namespace declarations
+    # included; no two of one name.
+    attributes: [Attribute]
+    # What it holds, in order: elements, text, comments and instructions.
+    children: [Node]
+
+# One thing an element holds. A `match` on it answers all four cases.
+#
+# A CDATA section is read as text, and text side by side, a reference or a
+# CDATA section among it, is read as one text, so `parse` never answers two
+# text cases side by side.
+variant Node
+    # An element inside the element.
+    element
+        # The element.
+        v: Element
+    # Text, its references read and its line ends read as `\n`; white space
+    # between two elements is text too.
+    text
+        # The characters.
+        v: str
+    # A comment, `<!--` and `-->` taken off.
+    comment
+        # The characters between them.
+        v: str
+    # A processing instruction, `<?target data?>`.
+    instruction
+        # The name after `<?`.
+        target: str
+        # What follows the white space after the target, up to `?>`; empty
+        # where nothing does.
+        data: str
+
+# What may stand before and after a document's root: a comment or a processing
+# instruction. White space there is not kept.
+variant Misc
+    # A comment, `<!--` and `-->` taken off.
+    comment
+        # The characters between them.
+        v: str
+    # A processing instruction, `<?target data?>`.
+    instruction
+        # The name after `<?`.
+        target: str
+        # What follows the white space after the target, up to `?>`.
+        data: str
+
+# Whether a document opens with an XML declaration, `<?xml version="1.0"?>`,
+# and what it says.
+variant Declaration
+    # No declaration: the document opens with its first comment, instruction
+    # or its root.
+    absent
+    # A declaration, each pseudo-attribute as it was written.
+    present
+        # The version, `1.0`, or another `1.` and digits, read as 1.0.
+        version: str
+        # The encoding named, `UTF-8` in any case; empty where none is.
+        encoding: str
+        # `yes` or `no`; empty where the declaration says nothing of it.
+        standalone: str
+
+# A whole document: its declaration, the comments and instructions around its
+# one root, and the root.
+#
+# A document type declaration is read and checked by `parse` and not kept,
+# since nothing in it changes the document read.
+record Document
+    # The XML declaration, or `absent`.
+    declaration: Declaration
+    # The comments and instructions between the declaration and the root, in
+    # order.
+    before: [Misc]
+    # The one element every other stands in.
+    root: Element
+    # The comments and instructions after the root, in order.
+    after: [Misc]
+
+## Codes and limits
+
+# The code of a text that is not well-formed XML, of a tree that would not
+# read back as itself, and of a path that is not one: `parse`, `format`,
+# `element_at` and the escapes fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of bytes that are not UTF-8: `parse_bytes` fails with it.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of a declaration naming another encoding than UTF-8: `parse` fails
+# with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a text past the depth or the size its reading allows: `parse`
+# fails with it.
+constant LIMIT: str
+    "limit"
+
+# The code of a name an element does not hold: `child`, `child_in`,
+# `element_at`, `attribute` and `attribute_in` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The deepest nesting `parse` reads: the root is 1 deep, an element inside it
+# 2. `==` on two trees follows their nesting, so on trees nested deep enough
+# it runs out of stack and aborts; two trees 512 deep compare in a build with
+# `--sanitize`, measured on arm64 macOS on 2026-11-16.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# The longest text `parse` reads, in bytes: 64 MiB. No entity is expanded, so
+# the text's length bounds what reading it costs, and a program reading
+# documents from outside sets the bound it can afford; a larger document is
+# read only where the program raises it.
+constant DEFAULT_MAX_BYTES: i64
+    67108864
+
+# The namespace the prefix `xml` stands for, in every document, declared or
+# not.
+constant XML_SPACE: str
+    "http://www.w3.org/XML/1998/namespace"
+
+# The namespace of a declaration's own name, `xmlns` and `xmlns:p`.
+constant XMLNS_SPACE: str
+    "http://www.w3.org/2000/xmlns/"
+
+## Reading a text
+
+# How a text is read: XML 1.0 is read whole either way, and these are the
+# limits the caller sets.
+record ParseOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it. A
+    # text nested deeper fails `limit`.
+    max_depth: i64
+    # The longest text accepted, in bytes. A longer one fails `limit`.
+    max_bytes: i64
+
+# The options `parse` reads with: `DEFAULT_MAX_DEPTH` and `DEFAULT_MAX_BYTES`.
+function default_options() -> ParseOptions
+    return ParseOptions(max_depth: DEFAULT_MAX_DEPTH, max_bytes: DEFAULT_MAX_BYTES)
+
+# The document `text` writes, read with `default_options`.
+#
+# - `text`: the whole document; a byte order mark may open it.
+#
+# Fails `invalid` where `text` is not well-formed XML, and the message opens
+# `line L, column C:`, both counted from 1 and the column in characters, then
+# says what was expected and what was found. Fails `unsupported` where its
+# declaration names another encoding than UTF-8. Fails `limit` where it is
+# nested deeper than `DEFAULT_MAX_DEPTH` or longer than `DEFAULT_MAX_BYTES`.
+#
+# A document type declaration whose internal subset declares an entity or an
+# attribute list, or names a parameter entity, is `invalid`: no DTD is read,
+# and nothing it names is fetched.
+#
+# See also `parse_with`, `parse_bytes`.
+function parse(text: str) -> Document?
+    return parse_with(text, default_options())
+
+# The document `text` writes, read with the limits `options` set.
+#
+# - `text`: the whole document; a byte order mark may open it.
+# - `options`: the limits; `default_options()` gives `parse`'s.
+#
+# Fails as `parse` does, `limit` at the limits `options` set.
+#
+# It holds its own stack, so the deepest nesting it reads is
+# `options.max_depth` and never what the machine's stack allows.
+function parse_with(text: str, options: ParseOptions) -> Document?
+    if text.len() > options.max_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"a text of {text.len()} bytes, past {options.max_bytes}, the most this reading allows"
+        )
+    got = reader.read(text: text, max_depth: options.max_depth)?
+    before: [Misc] @= []
+    after: [Misc] @= []
+
+    # The open element's children; the elements that hold it wait on the
+    # stacks below, `depth` of them, each with its name and attributes.
+    kids: [Node] @= []
+    held_kids: [[Node]] @= []
+    names: [Name] @= []
+    held_attributes: [[Attribute]] @= []
+    depth: i64 @= 0
+    root: Element @= element("")
+    rooted: bool @= false
+
+    for e in got.events
+        if e.kind == event.START
+            attributes: [Attribute] @= []
+
+            for a in e.attributes
+                attributes @ attributes.push(
+                    Attribute(name: Name(prefix: a.prefix, local: a.local, space: a.space), value: a.value)
+                )
+
+            stack.put(items: @held_kids, top: depth, item: kids)
+            stack.put(items: @names, top: depth, item: Name(prefix: e.prefix, local: e.local, space: e.space))
+            stack.put(items: @held_attributes, top: depth, item: attributes)
+            kids @ []
+            depth @ depth + 1
+        else if e.kind == event.END
+            depth @ depth - 1
+            done = Element(name: names[depth], attributes: held_attributes[depth], children: kids)
+            kids @ held_kids[depth]
+            held_kids[depth] @ []
+            held_attributes[depth] @ []
+
+            if depth == 0
+                root @ done
+                rooted @ true
+            else
+                kids @ kids.push(.element(v: done))
+        else if depth > 0
+            node: Node = if e.kind == event.TEXT
+                .text(v: e.text)
+            else if e.kind == event.COMMENT
+                .comment(v: e.text)
+            else
+                .instruction(target: e.target, data: e.text)
+            kids @ kids.push(node)
+        else
+            misc: Misc = if e.kind == event.COMMENT
+                .comment(v: e.text)
+            else
+                .instruction(target: e.target, data: e.text)
+
+            if rooted
+                after @ after.push(misc)
+            else
+                before @ before.push(misc)
+
+    declaration: Declaration = if got.prolog.declared
+        .present(version: got.prolog.version, encoding: got.prolog.encoding, standalone: got.prolog.standalone)
+    else
+        .absent
+    return ok(Document(declaration: declaration, before: before, root: root, after: after))
+
+# The document `bytes` write, read with the limits `options` set.
+#
+# - `bytes`: the whole document, which should be UTF-8; a byte order mark may
+#   open it.
+# - `options`: the limits; `default_options()` gives `parse`'s.
+#
+# Fails `not_text` where `bytes` are not UTF-8, and the message says the line
+# and column of the first byte that is not; otherwise fails as `parse_with`
+# does.
+function parse_bytes(bytes: [u8], options: ParseOptions) -> Document?
+    if bytes.len() > options.max_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"a text of {bytes.len()} bytes, past {options.max_bytes}, the most this reading allows"
+        )
+
+    match bytes.validated_bytes()
+        .ok text => return parse_with(text, options)
+        .err _ =>
+            valid = unicode.utf8_prefix_len(bytes)
+            before = bytes.slice(from: 0, to: valid).validated_bytes().must()
+            return fail(
+                code: NOT_TEXT,
+                msg: f"{scan.position(text: before, at: valid)}: expected UTF-8, found the byte 0x{strings.pad_zeros(strings.to_upper(numbers.format_int(n: to_i64(bytes[valid]).must(), base: 16)), 2)}"
+            )
+
+# Whether `text` is well-formed XML: true exactly where `parse` succeeds.
+#
+# - `text`: the whole document.
+function is_well_formed(text: str) -> bool
+    return !parse(text).is_err()
+
+## Writing a tree
+
+# How a tree is written. `compact` answers the options of the shortest text; a
+# program changes the fields it needs.
+record FormatOptions
+    # Whether each element whose children are elements, comments and
+    # instructions, with white space between them or none, puts each child on
+    # its own line, indented by `indent` once for each level. An element that
+    # holds other text is written on one line as it is, so no text changes.
+    multiline: bool
+    # The text that indents one level where `multiline` is set: spaces and
+    # tabs only.
+    indent: str
+    # Whether an element with no children is written `<a/>`; `<a></a>` where
+    # not.
+    self_closing: bool
+
+# The options of the shortest text: one line, no white space added, and an
+# element with no children written `<a/>`.
+function compact() -> FormatOptions
+    return FormatOptions(multiline: false, indent: "", self_closing: true)
+
+# `doc` as XML on one line, with no white space added.
+#
+# - `doc`: the document, nested as deep as it is.
+#
+# Fails `invalid` where `doc` would not read back as itself: a name that is not
+# one, a prefix not declared where it stands or declared to another namespace,
+# an attribute written twice, a character XML cannot hold, a comment holding
+# `--` or ending in `-`, an instruction whose target is `xml` or whose data
+# holds `?>`, or a declaration naming another encoding than UTF-8. The message
+# says what and where.
+#
+# The same tree always gives the same bytes: attributes in their order, `"`
+# around each value, and the escapes `&amp;`, `&lt;`, `&gt;`, `&quot;` and
+# `&#9;`, `&#10;`, `&#13;` where a value needs them. It holds its own stack, so
+# no nesting is too deep for it.
+#
+# See also `format_indented`, `format_with`, `format_element`.
+function format(doc: Document) -> str?
+    return format_with(doc, compact())
+
+# `doc` as XML over several lines, each element of element content on its own
+# line.
+#
+# - `doc`: the document.
+# - `width`: the spaces that indent each level, 0 or more; 0 breaks the lines
+#   and indents nothing.
+#
+# Fails `invalid` where `width` is below 0, and where `format` fails.
+#
+# The declaration, each comment and instruction around the root, and the root
+# each begin a line; no line break ends the text. An element holding text that
+# is not white space is written on one line as it is.
+function format_indented(doc: Document, width: i64) -> str?
+    if width < 0
+        return fail(code: INVALID, msg: f"an indent of {width} spaces: the width is 0 or more")
+    options: FormatOptions @= compact()
+    options.multiline @ true
+    options.indent @ repeat(" ", width.to_u64().must())
+    return format_with(doc, options)
+
+# `doc` as XML, written as `options` say.
+#
+# - `doc`: the document.
+# - `options`: how it is written; `compact()` writes the shortest text.
+#
+# Fails `invalid` where `format` fails, and where `options.indent` holds
+# anything but spaces and tabs.
+function format_with(doc: Document, options: FormatOptions) -> str?
+    walked: [event.Event] @= []
+
+    for m in doc.before
+        written = match m
+            .comment c     => event.of_text(kind: event.COMMENT, s: c.v)
+            .instruction i => event.instruction(target: i.target, data: i.data)
+
+        walked @ walked.push(written)
+
+    # What is left to walk, the next on top: a node, or the end of an element
+    # whose children were put above it, as `closing` says.
+    left: [Node] @= [.element(v: doc.root)]
+    closing: [bool] @= [false]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        here = left[top]
+        left[top] @ .text(v: "")
+
+        if closing[top]
+            walked @ walked.push(event.of_text(kind: event.END, s: ""))
+        else
+            match here
+                .text t =>
+                    if t.v != ""
+                        walked @ walked.push(event.of_text(kind: event.TEXT, s: t.v))
+                .comment c     => walked @ walked.push(event.of_text(kind: event.COMMENT, s: c.v))
+                .instruction i => walked @ walked.push(event.instruction(target: i.target, data: i.data))
+                .element x =>
+                    e = x.v
+                    attributes: [event.Attr] @= []
+
+                    for a in e.attributes
+                        attributes @ attributes.push(
+                            event.Attr(prefix: a.name.prefix, local: a.name.local, space: a.name.space, value: a.value)
+                        )
+
+                    # Laid out one child to a line where some child is not text
+                    # and every text is white space, as `FormatOptions` says.
+                    markup: bool @= false
+                    mixed: bool @= false
+
+                    for c in e.children
+                        match c
+                            .text t                                  => mixed @ mixed || !characters.is_white(t.v)
+                            .element _ | .comment _ | .instruction _ => markup @ true
+
+                    walked @ walked.push(
+                        event.start(prefix: e.name.prefix, local: e.name.local, space: e.name.space, attributes: attributes, laid: markup && !mixed)
+                    )
+                    stack.put(items: @left, top: top, item: .text(v: ""))
+                    stack.put(items: @closing, top: top, item: true)
+                    top @ top + 1
+                    at: i64 @= e.children.len()
+
+                    while at > 0
+                        at @ at - 1
+                        stack.put(items: @left, top: top, item: e.children[at])
+                        stack.put(items: @closing, top: top, item: false)
+                        top @ top + 1
+
+    for m in doc.after
+        written = match m
+            .comment c     => event.of_text(kind: event.COMMENT, s: c.v)
+            .instruction i => event.instruction(target: i.target, data: i.data)
+
+        walked @ walked.push(written)
+
+    prolog = match doc.declaration
+        .absent    => event.undeclared()
+        .present d => event.Prolog(declared: true, version: d.version, encoding: d.encoding, standalone: d.standalone)
+
+    layout = writer.Layout(multiline: options.multiline, indent: options.indent, self_closing: options.self_closing)
+    return writer.render(prolog: prolog, events: walked, layout: layout)
+
+# `e` alone as XML, with no declaration, written as `options` say.
+#
+# - `e`: the element; every prefix it and its descendants use must be declared
+#   on them, since nothing above it is written.
+# - `options`: how it is written; `compact()` writes the shortest text.
+#
+# Fails `invalid` where `format_with` fails on a document of it, a prefix
+# declared only above `e` included.
+function format_element(e: Element, options: FormatOptions) -> str?
+    no_misc: [Misc] = []
+    return format_with(Document(declaration: .absent, before: no_misc, root: e, after: no_misc), options)
+
+# `n` as XML writes it: `prefix:local`, or `local` where it has no prefix.
+#
+# - `n`: the name; its namespace is not written.
+function format_name(n: Name) -> str
+    if n.prefix == ""
+        return n.local
+    return n.prefix + ":" + n.local
+
+# `s` escaped to stand as an element's text: `&`, `<` and `>` written
+# `&amp;`, `&lt;` and `&gt;`, and a carriage return `&#13;`, so that reading
+# gives back `s` itself.
+#
+# - `s`: any text, the empty one included.
+#
+# Fails `invalid` where `s` holds a character XML cannot hold, U+0000 to
+# U+001F but tab, line feed and carriage return, or U+FFFE or U+FFFF, and the
+# message names it and its byte index.
+#
+# See also `quote_attribute`, `unescape`.
+function escape_text(s: str) -> str?
+    return escape.text_escaped(s)
+
+# `s` between `"` as an attribute's value: `&`, `<`, `>` and `"` written
+# `&amp;`, `&lt;`, `&gt;` and `&quot;`, and tab, line feed and carriage return
+# `&#9;`, `&#10;` and `&#13;`, so that reading gives back `s` itself.
+#
+# - `s`: any text, the empty one included.
+#
+# Fails `invalid` where `s` holds a character XML cannot hold, as
+# `escape_text` says.
+function quote_attribute(s: str) -> str?
+    return ok("\"" + escape.value_escaped(s)? + "\"")
+
+# `s` with its references read: `&lt;`, `&gt;`, `&amp;`, `&quot;` and
+# `&apos;`, and every character reference, `&#65;` and `&#x41;`.
+#
+# - `s`: escaped text; every other character is kept as it is, `<` included.
+#
+# Fails `invalid` where an `&` begins no reference of those, or a character
+# reference names a character XML cannot hold; the message says where.
+function unescape(s: str) -> str?
+    return escape.unescaped(s)
+
+## Building a tree
+
+# A document of `root` alone, opening with `<?xml version="1.0"
+# encoding="UTF-8"?>`.
+#
+# - `root`: the root element.
+function document(root: Element) -> Document
+    no_misc: [Misc] = []
+    return Document(
+        declaration: .present(version: "1.0", encoding: "UTF-8", standalone: ""),
+        before: no_misc,
+        root: root,
+        after: no_misc
+    )
+
+# An element named `name`, in no namespace, with no attributes and no
+# children.
+#
+# - `name`: the name, with no prefix; `format` fails on one that is not an XML
+#   name.
+#
+# See also `element_in`.
+function element(name: str) -> Element
+    none: [Attribute] = []
+    nothing: [Node] = []
+    return Element(name: Name(prefix: "", local: name, space: ""), attributes: none, children: nothing)
+
+# An element named `name` in the namespace `space`, with no attributes and no
+# children.
+#
+# - `space`: the namespace, a URI; it must be declared for the prefix where the
+#   element stands, by `with_namespace` on it or above it, or `format` fails.
+# - `name`: `prefix:local`, or `local` alone for the default namespace.
+function element_in(space: str, name: str) -> Element
+    colon = characters.colon_index(name)
+    e: Element @= element(name)
+
+    if colon < name.len()
+        e.name @ Name(
+            prefix: name.slice(from: 0, to: colon),
+            local: name.slice(from: colon + 1, to: name.len()),
+            space: space
+        )
+    else
+        e.name @ Name(prefix: "", local: name, space: space)
+    return e
+
+# A copy of `e` with the attribute `name` set to `value`: in its place where
+# `e` has one of that name, after the others where not.
+#
+# - `e`: the element.
+# - `name`: the attribute's name, with no prefix, so in no namespace.
+# - `value`: the value, any text; `format` escapes it.
+#
+# See also `with_attribute_in`, `without_attribute`.
+function with_attribute(e: Element, name: str, value: str) -> Element
+    return with_attribute_in(e, space: "", name: name, value: value)
+
+# A copy of `e` with the attribute `name` of the namespace `space` set to
+# `value`: in its place where `e` has one of that namespace and local name,
+# after the others where not.
+#
+# - `e`: the element.
+# - `space`: the namespace, declared for the prefix where `e` stands.
+# - `name`: `prefix:local`; an attribute in a namespace has a prefix, or
+#   `format` fails.
+# - `value`: the value, any text.
+function with_attribute_in(e: Element, space: str, name: str, value: str) -> Element
+    colon = characters.colon_index(name)
+
+    named = if colon < name.len()
+        Name(prefix: name.slice(from: 0, to: colon), local: name.slice(from: colon + 1, to: name.len()), space: space)
+    else
+        Name(prefix: "", local: name, space: space)
+    attributes: [Attribute] @= e.attributes
+    replaced: bool @= false
+
+    for k in range(from: 0, to: attributes.len())
+        if attributes[k].name.space == space && attributes[k].name.local == named.local
+            attributes[k] @ Attribute(name: named, value: value)
+            replaced @ true
+            break
+
+    if !replaced
+        attributes @ attributes.push(Attribute(name: named, value: value))
+    out: Element @= e
+    out.attributes @ attributes
+    return out
+
+# A copy of `e` without its attribute `name`: `e` itself where it has none.
+#
+# - `e`: the element.
+# - `name`: the attribute's name as written, `p:local` or `local`.
+function without_attribute(e: Element, name: str) -> Element
+    kept: [Attribute] @= []
+
+    for a in e.attributes
+        if format_name(a.name) != name
+            kept @ kept.push(a)
+
+    out: Element @= e
+    out.attributes @ kept
+    return out
+
+# A copy of `e` declaring `prefix` for the namespace `space`: `xmlns:prefix`,
+# or `xmlns` for the empty prefix, in its place where `e` declares that prefix
+# already, after its attributes where not.
+#
+# - `e`: the element; the declaration stands for it and everything inside it.
+# - `prefix`: the prefix declared; the empty one declares the default
+#   namespace.
+# - `space`: the namespace, a URI; empty only for the default namespace,
+#   where it declares none.
+function with_namespace(e: Element, prefix: str, space: str) -> Element
+    declared = if prefix == ""
+        "xmlns"
+    else
+        "xmlns:" + prefix
+    return with_attribute_in(e, space: XMLNS_SPACE, name: declared, value: space)
+
+# A copy of `e` with `text` after its children.
+#
+# - `e`: the element.
+# - `text`: the characters; `format` escapes them.
+#
+# It copies `e`: an element of many children is built by collecting them in a
+# list first.
+function with_text(e: Element, text: str) -> Element
+    children: [Node] @= e.children
+    children @ children.push(.text(v: text))
+    out: Element @= e
+    out.children @ children
+    return out
+
+# A copy of `e` with `inner` after its children.
+#
+# - `e`: the element.
+# - `inner`: the element added, as the last child.
+#
+# It copies `e`: an element of many children is built by collecting them in a
+# list first.
+function with_child(e: Element, inner: Element) -> Element
+    children: [Node] @= e.children
+    children @ children.push(.element(v: inner))
+    out: Element @= e
+    out.children @ children
+    return out
+
+## Walking a tree
+
+# The first child element of `e` named `name`.
+#
+# - `e`: the element whose children are looked at, and not deeper.
+# - `name`: the name as written, `p:local` or `local`, compared byte for byte.
+#
+# Fails `not_found` where `e` has no such child, and the message names the
+# children it has.
+#
+# See also `child_in`, `children_named`, `element_at`.
+function child(e: Element, name: str) -> Element?
+    names: [str] @= []
+    seen: {str: bool} @= {}
+
+    for c in e.children
+        match c
+            .element x =>
+                if format_name(x.v.name) == name
+                    return ok(x.v)
+                written = format_name(x.v.name)
+
+                if seen[written].is_err()
+                    seen[written] @ true
+                    names @ names.push(written)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no <{name}> in <{format_name(e.name)}>, whose child elements are named {scan.listed(names)}"
+    )
+
+# The first child element of `e` of the namespace `space` and the local name
+# `local`, whatever its prefix.
+#
+# - `e`: the element whose children are looked at.
+# - `space`: the namespace; empty for an element in none.
+# - `local`: the local name.
+#
+# Fails `not_found` where `e` has no such child.
+function child_in(e: Element, space: str, local: str) -> Element?
+    names: [str] @= []
+    seen: {str: bool} @= {}
+
+    for c in e.children
+        match c
+            .element x =>
+                if x.v.name.space == space && x.v.name.local == local
+                    return ok(x.v)
+                written = format_name(x.v.name)
+
+                if seen[written].is_err()
+                    seen[written] @ true
+                    names @ names.push(written)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no element `{local}` of the namespace \"{space}\" in <{format_name(e.name)}>, whose child elements are named {scan.listed(names)}"
+    )
+
+# Every child element of `e` named `name`, in order.
+#
+# - `e`: the element whose children are looked at.
+# - `name`: the name as written, `p:local` or `local`.
+#
+# Empty where `e` has none.
+function children_named(e: Element, name: str) -> [Element]
+    found: [Element] @= []
+
+    for c in e.children
+        match c
+            .element x =>
+                if format_name(x.v.name) == name
+                    found @ found.push(x.v)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return found
+
+# Every child element of `e` of the namespace `space` and the local name
+# `local`, whatever its prefix, in order.
+#
+# - `e`: the element whose children are looked at.
+# - `space`: the namespace; empty for elements in none.
+# - `local`: the local name.
+#
+# Empty where `e` has none.
+function children_in(e: Element, space: str, local: str) -> [Element]
+    found: [Element] @= []
+
+    for c in e.children
+        match c
+            .element x =>
+                if x.v.name.space == space && x.v.name.local == local
+                    found @ found.push(x.v)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return found
+
+# Every child element of `e`, in order, its text, comments and instructions
+# left out.
+#
+# - `e`: the element.
+function elements_of(e: Element) -> [Element]
+    found: [Element] @= []
+
+    for c in e.children
+        match c
+            .element x                            => found @ found.push(x.v)
+            .text _ | .comment _ | .instruction _ => _ = 0
+
+    return found
+
+# Every element inside `e` named `name`, at any depth, in document order: an
+# element before the elements inside it.
+#
+# - `e`: the element looked inside; it is not among the answers.
+# - `name`: the name as written, `p:local` or `local`.
+#
+# Empty where there is none. It holds its own stack.
+function descendants(e: Element, name: str) -> [Element]
+    found: [Element] @= []
+
+    for d in descendants_of(e)
+        if format_name(d.name) == name
+            found @ found.push(d)
+
+    return found
+
+# Every element inside `e` of the namespace `space` and the local name
+# `local`, at any depth, in document order.
+#
+# - `e`: the element looked inside; it is not among the answers.
+# - `space`: the namespace; empty for elements in none.
+# - `local`: the local name.
+#
+# Empty where there is none.
+function descendants_in(e: Element, space: str, local: str) -> [Element]
+    found: [Element] @= []
+
+    for d in descendants_of(e)
+        if d.name.space == space && d.name.local == local
+            found @ found.push(d)
+
+    return found
+
+# Every element inside `e`, at any depth, in document order.
+#
+# - `e`: the element looked inside; it is not among the answers.
+#
+# Empty where `e` has no child element.
+function descendants_of(e: Element) -> [Element]
+    found: [Element] @= []
+
+    # The elements left to visit, the next on top.
+    left: [Element] @= []
+    top: i64 @= 0
+    kids = elements_of(e)
+    at: i64 @= kids.len()
+
+    while at > 0
+        at @ at - 1
+        stack.put(items: @left, top: top, item: kids[at])
+        top @ top + 1
+
+    while top > 0
+        top @ top - 1
+        here = left[top]
+        left[top] @ e
+        found @ found.push(here)
+        inner = elements_of(here)
+        k: i64 @= inner.len()
+
+        while k > 0
+            k @ k - 1
+            stack.put(items: @left, top: top, item: inner[k])
+            top @ top + 1
+
+    return found
+
+# The first element, in document order, that `path` reaches from `e`.
+#
+# - `e`: the element the path starts from.
+# - `path`: names as written, separated by `/`: `item/title` is every `title`
+#   child of every `item` child of `e`. The empty path reaches `e` itself.
+#
+# Fails `invalid` where `path` is not names and `/`: an empty name, as in `a//b`
+# or `/a`, or XPath's `*`, `.`, `..`, `@` or `[`, which are not read. Fails
+# `not_found` where it reaches nothing, and the message says how far it went.
+#
+# See also `elements_at`, `child`.
+function element_at(e: Element, path: str) -> Element?
+    names = steps.names_of(path)?
+    reached: [Element] @= [e]
+    went: [str] @= []
+
+    for name in names
+        next: [Element] @= []
+
+        for r in reached
+            for c in children_named(r, name)
+                next @ next.push(c)
+
+        if next.len() == 0
+            where = if went.len() == 0
+                f"in <{format_name(e.name)}>"
+            else
+                f"in any element \"{went.join("/")}\" reaches from <{format_name(e.name)}>"
+            return fail(code: NOT_FOUND, msg: f"\"{path}\" reaches nothing: no <{name}> {where}")
+        reached @ next
+        went @ went.push(name)
+
+    return ok(reached[0])
+
+# Every element `path` reaches from `e`, in document order.
+#
+# - `e`: the element the path starts from.
+# - `path`: names as written, separated by `/`, as `element_at` reads it.
+#
+# Fails `invalid` where `path` is not names and `/`, as `element_at` says.
+#
+# Empty where it reaches nothing.
+function elements_at(e: Element, path: str) -> [Element]?
+    names = steps.names_of(path)?
+    reached: [Element] @= [e]
+
+    for name in names
+        next: [Element] @= []
+
+        for r in reached
+            for c in children_named(r, name)
+                next @ next.push(c)
+
+        reached @ next
+
+    return ok(reached)
+
+# The value of the attribute of `e` named `name`.
+#
+# - `e`: the element.
+# - `name`: the name as written, `p:local` or `local`; `xmlns:p` names a
+#   declaration.
+#
+# Fails `not_found` where `e` has no such attribute, and the message names the
+# ones it has.
+#
+# See also `attribute_in`, `has_attribute`.
+function attribute(e: Element, name: str) -> str?
+    written: [str] @= []
+
+    for a in e.attributes
+        if format_name(a.name) == name
+            return ok(a.value)
+        written @ written.push(format_name(a.name))
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no attribute `{name}` on <{format_name(e.name)}>, whose attributes are {scan.listed(written)}"
+    )
+
+# The value of the attribute of `e` of the namespace `space` and the local name
+# `local`, whatever its prefix.
+#
+# - `e`: the element.
+# - `space`: the namespace; empty for an attribute written with no prefix.
+# - `local`: the local name.
+#
+# Fails `not_found` where `e` has no such attribute.
+function attribute_in(e: Element, space: str, local: str) -> str?
+    written: [str] @= []
+
+    for a in e.attributes
+        if a.name.space == space && a.name.local == local
+            return ok(a.value)
+        written @ written.push(format_name(a.name))
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no attribute `{local}` of the namespace \"{space}\" on <{format_name(e.name)}>, whose attributes are {scan.listed(written)}"
+    )
+
+# Whether `e` has an attribute named `name`.
+#
+# - `e`: the element.
+# - `name`: the name as written, `p:local` or `local`.
+function has_attribute(e: Element, name: str) -> bool
+    return !attribute(e, name).is_err()
+
+# Every text inside `e`, at any depth, in document order and joined:
+# `<p>a <b>b</b> c</p>` holds `a b c`.
+#
+# - `e`: the element.
+#
+# Comments and instructions are left out; empty where `e` holds no text.
+function text_of(e: Element) -> str
+    pieces: [str] @= []
+
+    # The nodes left to read, the next on top.
+    left: [Node] @= []
+    top: i64 @= 0
+    at: i64 @= e.children.len()
+
+    while at > 0
+        at @ at - 1
+        stack.put(items: @left, top: top, item: e.children[at])
+        top @ top + 1
+
+    while top > 0
+        top @ top - 1
+        here = left[top]
+        left[top] @ .text(v: "")
+
+        match here
+            .text t => pieces @ pieces.push(t.v)
+            .element x =>
+                k: i64 @= x.v.children.len()
+
+                while k > 0
+                    k @ k - 1
+                    stack.put(items: @left, top: top, item: x.v.children[k])
+                    top @ top + 1
+            .comment _ | .instruction _ => _ = 0
+
+    return pieces.join("")
+
+## Tests
+
+test "parse: a root's attributes in order, its text, comment, instruction and child, as minidom reads them"
+    doc = parse("<a z=\"1\" b=\"2\">t<!--c--><?p d?><b/></a>").must()
+    assert doc.declaration == .absent && doc.before.len() == 0 && doc.after.len() == 0
+    assert doc.root.name == Name(prefix: "", local: "a", space: "")
+    assert doc.root.attributes == [Attribute(name: Name(prefix: "", local: "z", space: ""), value: "1"), Attribute(name: Name(prefix: "", local: "b", space: ""), value: "2")]
+    want: [Node] = [.text(v: "t"), .comment(v: "c"), .instruction(target: "p", data: "d"), .element(v: element("b"))]
+    assert doc.root.children == want
+
+test "parse: the declaration, and the comments and instructions around the root, white space between them not kept"
+    doc = parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--c-->\n<a/>\n<?p d?>\n").must()
+    assert doc.declaration == .present(version: "1.0", encoding: "UTF-8", standalone: "")
+    before: [Misc] = [.comment(v: "c")]
+    after: [Misc] = [.instruction(target: "p", data: "d")]
+    assert doc.before == before && doc.after == after
+    assert parse("<?xml version='1.1' standalone='yes'?><a/>").must().declaration == .present(version: "1.1", encoding: "", standalone: "yes")
+
+test "parse: references, a CDATA section and line ends read as one text, as ElementTree reads them"
+    want: [Node] = [.text(v: "x<A😀<y>&amp;\nz")]
+    assert parse("<a>x&lt;&#65;&#x1F600;<![CDATA[<y>&amp;]]>\r\nz</a>").must().root.children == want
+    spaced: [Node] = [.text(v: "\n  "), .element(v: element("b")), .text(v: "\n")]
+    assert parse("<a>\n  <b/>\n</a>").must().root.children == spaced
+    assert parse("<a><![CDATA[]]></a>").must().root.children.len() == 0
+
+test "parse: an attribute's value normalised, a reference to a line feed kept, as ElementTree reads it"
+    doc = parse("<a x=\"1&#10;2\t3\r\n4\n5&#9;6\" y='&quot;&apos;'/>").must()
+    assert attribute(doc.root, "x").must() == "1\n2 3 4 5\t6"
+    assert attribute(doc.root, "y").must() == "\"'"
+
+test "parse: names resolved to their namespaces, a declaration's own name included, as minidom reads them"
+    doc = parse("<a xmlns=\"d\" xmlns:p=\"u\" p:x=\"1\" y=\"2\" xml:lang=\"it\"><p:b/><c/></a>").must()
+    assert doc.root.name == Name(prefix: "", local: "a", space: "d")
+    want = [
+        Attribute(name: Name(prefix: "", local: "xmlns", space: XMLNS_SPACE), value: "d")
+        Attribute(name: Name(prefix: "xmlns", local: "p", space: XMLNS_SPACE), value: "u")
+        Attribute(name: Name(prefix: "p", local: "x", space: "u"), value: "1")
+        Attribute(name: Name(prefix: "", local: "y", space: ""), value: "2")
+        Attribute(name: Name(prefix: "xml", local: "lang", space: XML_SPACE), value: "it")
+    ]
+    assert doc.root.attributes == want
+    kids = elements_of(doc.root)
+    assert kids[0].name == Name(prefix: "p", local: "b", space: "u") && kids[1].name == Name(prefix: "", local: "c", space: "d")
+
+test "parse: the texts ElementTree refuses, each with its line and column"
+    for text in ["", "x", "<a>", "<a></b>", "<a/><b/>", "<a/>x", "<a>&foo;</a>", "<a>]]></a>", "<a x=\"1\" x=\"2\"/>", "<p:a/>", "<a xmlns:p=\"\"/>", "<a><!-- a -- b --></a>", "<a>\u{1}</a>", "<a>&#1;</a>", "<a x=\"<\"/>", "<a:b:c xmlns:a=\"u\"/>", "<1a/>", " <?xml version=\"1.0\"?><a/>", "<a><?xml version=\"1.0\"?></a>", "<a x=\"1\"y=\"2\"/>"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 5) == "line "
+
+    match parse("<a>\n  <b>&nbsp;</b></a>")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 6: the entity `&nbsp;` is none of `&lt;`, `&gt;`, `&amp;`, `&quot;` and `&apos;`, and no DTD that could declare it is read"
+
+    match parse("<a>\n<b></a>")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 4: `</a>` closes <b>, opened at line 2, column 1: expected `</b>`"
+
+test "parse: a document type read and not kept, and an entity and an attribute list refused where ElementTree applies them"
+    doc = parse("<!DOCTYPE a SYSTEM \"a.dtd\"><!--c--><a/>").must()
+    assert doc.root == element("a") && doc.before.len() == 1
+
+    for text in ["<!DOCTYPE a [<!ENTITY e \"hi\">]><a>&e;</a>", "<!DOCTYPE a [<!ATTLIST a x CDATA \"d\">]><a/>"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "parse: the billion laughs refused at its first declaration, nothing expanded"
+    lines: [str] @= ["<?xml version=\"1.0\"?>", "<!DOCTYPE lolz [", " <!ENTITY lol \"lol\">"]
+
+    for n in range(from: 1, to: 10)
+        lines @ lines.push(f" <!ENTITY lol{n} \"{repeat(f"&lol{n - 1};", 10)}\">")
+
+    lines @ lines.push("]>")
+    lines @ lines.push("<lolz>&lol9;</lolz>")
+
+    match parse(lines.join("\n"))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 18) == "line 3, column 2: "
+
+test "parse: another encoding unsupported where ElementTree reads Latin-1, and version 2.0 refused as Go refuses it"
+    match parse("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><a>é</a>")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    match parse("<?xml version=\"2.0\"?><a/>")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert !parse("<?xml version=\"1.0\" encoding=\"utf-8\"?><a/>").is_err()
+
+test "parse: a byte order mark opens a text, and stands nowhere else"
+    bom: [u8] = [0xef, 0xbb, 0xbf, '<', 'a', '/', '>']
+    assert parse(bom.validated_bytes().must()).must().root == element("a")
+    inside: [u8] = ['<', 'a', '>', 0xef, 0xbb, 0xbf, '<', '/', 'a', '>']
+    assert parse(inside.validated_bytes().must()).must().root.children.len() == 1
+    twice: [u8] = [0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf, '<', 'a', '/', '>']
+    assert parse(twice.validated_bytes().must()).is_err()
+
+test "parse: the nesting allowed, one level past it, and `==` on two trees of that depth"
+    d512 = repeat("<a>", 512) + repeat("</a>", 512)
+    assert parse(d512).must() == parse(d512).must()
+
+    match parse(repeat("<a>", 513) + repeat("</a>", 513))
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "line 1, column 1537: nested deeper than 512 levels, the most this reading allows"
+
+test "parse_with: a depth and a size of the caller's, at them and one past"
+    two: ParseOptions @= default_options()
+    two.max_depth @ 2
+    assert !parse_with("<a><b/></a>", two).is_err()
+
+    match parse_with("<a><b><c/></b></a>", two)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "line 1, column 7: nested deeper than 2 levels, the most this reading allows"
+
+    small: ParseOptions @= default_options()
+    small.max_bytes @ 4
+    assert !parse_with("<a/>", small).is_err()
+
+    match parse_with("<a />", small)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "a text of 5 bytes, past 4, the most this reading allows"
+
+test "parse_with: a hundred thousand deep when asked, read and written on the package's own stack"
+    deep = repeat("<a>", 100000) + repeat("</a>", 100000)
+    wide: ParseOptions @= default_options()
+    wide.max_depth @ 100000
+    doc = parse_with(deep, wide).must()
+    assert format_element(doc.root, compact()).must() == repeat("<a>", 99999) + "<a/>" + repeat("</a>", 99999)
+    assert descendants_of(doc.root).len() == 99999
+    assert text_of(doc.root) == ""
+
+test "parse_bytes: UTF-8 with a byte order mark, and a byte that is not UTF-8 with its line and column"
+    good: [u8] = [0xef, 0xbb, 0xbf, '<', 'a', '>', 0xc3, 0xa9, '<', '/', 'a', '>']
+    assert text_of(parse_bytes(good, default_options()).must().root) == "é"
+    bad: [u8] = ['<', 'a', '>', '\n', 0xff, '<', '/', 'a', '>']
+
+    match parse_bytes(bad, default_options())
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "line 2, column 1: expected UTF-8, found the byte 0xFF"
+
+    cut: [u8] = ['<', 'a', '>', 0xe2, 0x82]
+    assert parse_bytes(cut, default_options()).is_err()
+    nothing: [u8] = []
+    assert parse_bytes(nothing, default_options()).is_err()
+    small: ParseOptions @= default_options()
+    small.max_bytes @ 3
+
+    match parse_bytes(good, small)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+test "is_well_formed: a document, nothing, two roots, and an entity no DTD declares"
+    assert is_well_formed("<a><b/></a>")
+    assert !is_well_formed("")
+    assert !is_well_formed("<a/><b/>")
+    assert !is_well_formed("<a>&e;</a>")
+
+test "format: every kind on one line, as minidom's toxml writes them, the declaration as read"
+    text = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!--c--><?p d?><a x=\"1\">t<!--k--><b/></a><!--z-->"
+    assert format(parse(text).must()).must() == text
+
+test "format: the same tree gives the same bytes, and reading them gives back the tree"
+    doc = parse(
+        "<?xml version=\"1.0\"?><!--c--><r xmlns=\"d\" xmlns:p=\"u\"><p:a p:x=\"&lt;&#13;\">x &amp; y<![CDATA[<z>]]></p:a><b/>\n</r>"
+    ).must()
+    once = format(doc).must()
+    assert format(doc).must() == once
+    assert parse(once).must() == doc
+
+test "format: text and values escaped so that they read back, where ElementTree writes a carriage return raw"
+    s = "a<b>&c\"d'e\r\nf\tg]]>h"
+    e = element("x").with_attribute(name: "k", value: s).with_text(s)
+    written = format_element(e, compact()).must()
+    assert written == "<x k=\"a&lt;b&gt;&amp;c&quot;d'e&#13;&#10;f&#9;g]]&gt;h\">a&lt;b&gt;&amp;c\"d'e&#13;\nf\tg]]&gt;h</x>"
+    assert parse(written).must().root == e
+
+test "format: a tree that would not read back as itself, refused where ElementTree writes it"
+    nothing: [Misc] = []
+    bad_comment = Element(
+        name: Name(prefix: "", local: "a", space: ""),
+        attributes: [],
+        children: [.comment(v: "a--b")]
+    )
+    bad_text = element("a").with_text("\u{1}")
+    bad_name = element("1a")
+    bad_space = element_in(space: "u", name: "p:a")
+    bad_target = Document(
+        declaration: .absent,
+        before: [.instruction(target: "xml", data: "")],
+        root: element("a"),
+        after: nothing
+    )
+    latin = Document(
+        declaration: .present(version: "1.0", encoding: "ISO-8859-1", standalone: ""),
+        before: nothing,
+        root: element("a"),
+        after: nothing
+    )
+
+    for doc in [document(bad_comment), document(bad_text), document(bad_name), document(bad_space), bad_target, latin]
+        match format(doc)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match format_element(bad_space, compact())
+        .ok _  => assert false
+        .err e => assert e.msg == "/p:a: the prefix `p` of <p:a> is not declared where it stands: declare it for \"u\" with `with_namespace`"
+
+test "format_indented: by 2 and by 0, as ElementTree's indent lays them out, mixed content kept on its line"
+    doc = parse("<r>\n  <a x=\"1\">t</a><b><c/></b><m>mixed <i>x</i> y</m><e>   </e></r>").must()
+    two = "<r>\n  <a x=\"1\">t</a>\n  <b>\n    <c/>\n  </b>\n  <m>mixed <i>x</i> y</m>\n  <e>   </e>\n</r>"
+    assert format_indented(doc, 2).must() == two
+    zero = "<r>\n<a x=\"1\">t</a>\n<b>\n<c/>\n</b>\n<m>mixed <i>x</i> y</m>\n<e>   </e>\n</r>"
+    assert format_indented(doc, 0).must() == zero
+    assert format_indented(doc, -1).is_err()
+
+test "format_indented: the declaration and each comment around the root on their own lines, and no line break at the end"
+    doc = parse("<?xml version=\"1.0\"?><!--c--><a><b/><!--k--></a><?p d?>").must()
+    assert format_indented(doc, 2).must() == "<?xml version=\"1.0\"?>\n<!--c-->\n<a>\n  <b/>\n  <!--k-->\n</a>\n<?p d?>"
+    assert format_indented(parse("<a/>").must(), 4).must() == "<a/>"
+
+test "format_with: an empty element opened and closed as Go writes it, a tab, and an indent of other characters refused"
+    doc = parse("<a><b/></a>").must()
+    open_close: FormatOptions @= compact()
+    open_close.self_closing @ false
+    assert format_with(doc, open_close).must() == "<a><b></b></a>"
+    tabbed: FormatOptions @= compact()
+    tabbed.multiline @ true
+    tabbed.indent @ "\t"
+    assert format_with(doc, tabbed).must() == "<a>\n\t<b/>\n</a>"
+    dotted: FormatOptions @= tabbed
+    dotted.indent @ "-"
+    assert format_with(doc, dotted).is_err()
+
+test "format_element: an element alone, and one whose namespace is declared only above it"
+    doc = parse("<r xmlns=\"d\"><a x=\"1\"/></r>").must()
+    inner = elements_of(doc.root)[0]
+    assert format_element(doc.root, compact()).must() == "<r xmlns=\"d\"><a x=\"1\"/></r>"
+    assert format_element(inner, compact()).is_err()
+    assert format_element(inner.with_namespace(prefix: "", space: "d"), compact()).must() == "<a x=\"1\" xmlns=\"d\"/>"
+
+test "format_name: no prefix, a prefix, and the namespace never written"
+    assert format_name(Name(prefix: "", local: "a", space: "")) == "a"
+    assert format_name(Name(prefix: "p", local: "città", space: "u")) == "p:città"
+
+test "escape_text: as saxutils' escape, but a carriage return, which reading would change"
+    assert escape_text("").must() == ""
+    assert escape_text("a<b>&c\"d'e\r\nf\tg]]>h").must() == "a&lt;b&gt;&amp;c\"d'e&#13;\nf\tg]]&gt;h"
+    assert escape_text("\u{1}").is_err()
+
+test "quote_attribute: as saxutils' quoteattr, but always between double quotes"
+    assert quote_attribute("").must() == "\"\""
+    assert quote_attribute("a<b>&c\"d'e\r\nf\tg]]>h").must() == "\"a&lt;b&gt;&amp;c&quot;d'e&#13;&#10;f&#9;g]]&gt;h\""
+    assert quote_attribute("a\"b").must() == "\"a&quot;b\""
+    assert quote_attribute("\u{1}").is_err()
+
+test "unescape: the five entities and character references, where saxutils reads three, and an undeclared entity refused"
+    assert unescape("").must() == ""
+    assert unescape("&lt;&gt;&amp;&quot;&apos;&#65;").must() == "<>&\"'A"
+    assert unescape("a<b").must() == "a<b"
+    assert unescape("&foo;").is_err()
+    assert unescape("&").is_err()
+
+test "document and element: the standard declaration, Go's Header, and an element of nothing"
+    assert format(document(element("a"))).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a/>"
+    assert element("a").attributes.len() == 0 && element("a").children.len() == 0
+
+test "element_in: a prefix, the default namespace, and a name with no colon"
+    assert element_in(space: "u", name: "p:a").name == Name(prefix: "p", local: "a", space: "u")
+    assert element_in(space: "d", name: "a").name == Name(prefix: "", local: "a", space: "d")
+
+test "with_attribute and without_attribute: appended, replaced in its place, removed, and none to remove"
+    e = element("a").with_attribute(name: "x", value: "1").with_attribute(name: "y", value: "2").with_attribute(
+        name: "x",
+        value: "3"
+    )
+    assert format_element(e, compact()).must() == "<a x=\"3\" y=\"2\"/>"
+    assert format_element(e.without_attribute("x"), compact()).must() == "<a y=\"2\"/>"
+    assert e.without_attribute("z") == e
+
+test "with_attribute_in and with_namespace: a namespaced attribute, a declaration replaced, and the default namespace"
+    e = element("a").with_namespace(prefix: "p", space: "v").with_namespace(prefix: "p", space: "u").with_attribute_in(
+        space: "u",
+        name: "p:x",
+        value: "1"
+    )
+    assert format_element(e, compact()).must() == "<a xmlns:p=\"u\" p:x=\"1\"/>"
+    assert attribute_in(e, space: "u", local: "x").must() == "1"
+    d = element_in(space: "d", name: "a").with_namespace(prefix: "", space: "d")
+    assert format_element(d, compact()).must() == "<a xmlns=\"d\"/>"
+    assert parse(format_element(d, compact()).must()).must().root == d
+
+test "with_text and with_child: appended in order"
+    e = element("a").with_text("x").with_child(inner: element("b")).with_text("y")
+    assert format_element(e, compact()).must() == "<a>x<b/>y</a>"
+
+test "with_child: a tree a hundred thousand deep, written and walked on the package's own stack"
+    deep: Element @= element("a")
+
+    for _ in range(from: 0, to: 100000)
+        deep @ element("a").with_child(inner: deep)
+
+    assert format_element(deep, compact()).must() == repeat("<a>", 100000) + "<a/>" + repeat("</a>", 100000)
+    assert descendants_of(deep).len() == 100000
+    assert text_of(deep.with_text("t")) == "t"
+
+test "child and child_in: the first of a name, and none, with the names there are"
+    root = parse("<r xmlns:p=\"u\"><a i=\"1\"/><b/><a i=\"2\"/><p:a i=\"3\"/></r>").must().root
+    assert attribute(child(root, "a").must(), "i").must() == "1"
+    assert attribute(child_in(root, space: "u", local: "a").must(), "i").must() == "3"
+
+    match child(root, "c")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no <c> in <r>, whose child elements are named `a`, `b`, `p:a`"
+
+    assert child_in(root, space: "", local: "c").is_err()
+    assert child(element("a"), "b").is_err()
+
+test "children_named, children_in and elements_of: in order, text left out, and none"
+    root = parse("<r xmlns:p=\"u\">t<a/><b/><a/><p:a/><!--c--></r>").must().root
+    assert children_named(root, "a").len() == 2
+    assert children_in(root, space: "u", local: "a").len() == 1
+    assert children_in(root, space: "", local: "a").len() == 2
+    assert elements_of(root).len() == 4
+    assert children_named(root, "z").len() == 0 && elements_of(element("a")).len() == 0
+
+test "descendants, descendants_in and descendants_of: document order as ElementTree's iter, the element itself left out as minidom leaves it"
+    root = parse("<r><a><b/><c/></a><d xmlns=\"u\"><b/></d></r>").must().root
+    names: [str] @= []
+
+    for d in descendants_of(root)
+        names @ names.push(format_name(d.name))
+
+    assert names == ["a", "b", "c", "d", "b"]
+    assert descendants(root, "b").len() == 2
+    assert descendants_in(root, space: "u", local: "b").len() == 1
+    assert descendants(root, "r").len() == 0
+
+test "element_at and elements_at: as ElementTree's find and findall, the empty path, and XPath refused"
+    root = parse("<r><a/><a><b>1</b><b>2</b></a><a><b>3</b></a></r>").must().root
+    assert text_of(element_at(root, "a/b").must()) == "1"
+    texts: [str] @= []
+
+    for b in elements_at(root, "a/b").must()
+        texts @ texts.push(text_of(b))
+
+    assert texts == ["1", "2", "3"]
+    assert element_at(root, "").must() == root
+    assert elements_at(root, "a/c").must().len() == 0
+
+    match element_at(root, "a/c")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "\"a/c\" reaches nothing: no <c> in any element \"a\" reaches from <r>"
+
+    match element_at(root, "z")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"z\" reaches nothing: no <z> in <r>"
+
+    for path in ["a//b", "/a", "a/*", ".//b", "a[1]"]
+        match elements_at(root, path)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "attribute, attribute_in and has_attribute: by name, by namespace, a declaration, and absent where ElementTree answers None"
+    a = parse("<a x=\"1\" p:y=\"2\" xmlns:p=\"u\"/>").must().root
+    assert attribute(a, "x").must() == "1" && attribute(a, "p:y").must() == "2" && attribute(a, "xmlns:p").must() == "u"
+    assert attribute_in(a, space: "u", local: "y").must() == "2"
+    assert attribute_in(a, space: "", local: "x").must() == "1"
+    assert has_attribute(a, "x") && !has_attribute(a, "y")
+
+    match attribute(a, "z")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no attribute `z` on <a>, whose attributes are `x`, `p:y`, `xmlns:p`"
+
+    match attribute(element("b"), "z")
+        .ok _  => assert false
+        .err e => assert e.msg == "no attribute `z` on <b>, whose attributes are none"
+
+    assert attribute_in(a, space: "v", local: "y").is_err()
+
+test "text_of: as ElementTree's itertext joined, comments and instructions left out, and none"
+    assert text_of(parse("<p>a <b>b</b> c<!--x--><?t d?></p>").must().root) == "a b c"
+    assert text_of(element("a")) == ""
+    assert text_of(parse("<a><![CDATA[x]]>&amp;</a>").must().root) == "x&"
+
+test "default_options and compact: their fields"
+    assert default_options() == ParseOptions(max_depth: 512, max_bytes: 67108864)
+    assert compact() == FormatOptions(multiline: false, indent: "", self_closing: true)
+
+## Examples
+
+# The default limits: 512 levels and 64 MiB.
+test "default_options: the limits parse reads with"
+    assert default_options().max_depth == DEFAULT_MAX_DEPTH
+
+# A document read, its root's name and its first child's text.
+test "parse: a small document"
+    doc = parse("<note><to>Ana</to></note>").must()
+    assert format_name(doc.root.name) == "note"
+    assert text_of(child(doc.root, "to").must()) == "Ana"
+
+# A deeper document read where the caller raises the depth.
+test "parse_with: a limit of the caller's"
+    options: ParseOptions @= default_options()
+    options.max_depth @ 1000
+    assert !parse_with(repeat("<a>", 600) + repeat("</a>", 600), options).is_err()
+
+# Bytes read from outside, checked as UTF-8 first.
+test "parse_bytes: bytes from outside"
+    bytes: [u8] = ['<', 'a', '/', '>']
+    assert parse_bytes(bytes, default_options()).must().root == element("a")
+
+# A text asked whether it is XML.
+test "is_well_formed: one document, and two roots"
+    assert is_well_formed("<a/>")
+    assert !is_well_formed("<a/><b/>")
+
+# The options of the shortest text, one field changed.
+test "compact: the options changed"
+    options: FormatOptions @= compact()
+    options.self_closing @ false
+    assert format_element(element("a"), options).must() == "<a></a>"
+
+# A document read and written back on one line.
+test "format: a document written back"
+    assert format(parse("<a  x='1' ><b/></a>").must()).must() == "<a x=\"1\"><b/></a>"
+
+# A document written over several lines.
+test "format_indented: two spaces a level"
+    assert format_indented(parse("<a><b/></a>").must(), 2).must() == "<a>\n  <b/>\n</a>"
+
+# A document written with a tab for each level.
+test "format_with: a tab a level"
+    options: FormatOptions @= compact()
+    options.multiline @ true
+    options.indent @ "\t"
+    assert format_with(parse("<a><b/></a>").must(), options).must() == "<a>\n\t<b/>\n</a>"
+
+# One element written alone, with no declaration.
+test "format_element: an element built"
+    assert format_element(element("a").with_text("x"), compact()).must() == "<a>x</a>"
+
+# A name as a document writes it.
+test "format_name: a prefixed name"
+    assert format_name(Name(prefix: "p", local: "a", space: "u")) == "p:a"
+
+# Text escaped to stand inside an element.
+test "escape_text: markup in a text"
+    assert escape_text("1 < 2 & 3").must() == "1 &lt; 2 &amp; 3"
+
+# A value quoted to stand as an attribute's.
+test "quote_attribute: a value with a quote"
+    assert quote_attribute("say \"hi\"").must() == "\"say &quot;hi&quot;\""
+
+# Escaped text read back.
+test "unescape: references read"
+    assert unescape("1 &lt; 2 &#38; 3").must() == "1 < 2 & 3"
+
+# A document of one element, with the standard declaration.
+test "document: a root wrapped"
+    assert format(document(element("a"))).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\"?><a/>"
+
+# An element built, then given an attribute and text.
+test "element: built and written"
+    assert format_element(element("p").with_attribute(name: "id", value: "1").with_text("hi"), compact()).must() == "<p id=\"1\">hi</p>"
+
+# An element of a namespace, its prefix declared on it.
+test "element_in: a prefixed element"
+    e = element_in(space: "urn:x", name: "x:item").with_namespace(prefix: "x", space: "urn:x")
+    assert format_element(e, compact()).must() == "<x:item xmlns:x=\"urn:x\"/>"
+
+# An attribute set, then set again in its place.
+test "with_attribute: set twice"
+    e = element("a").with_attribute(name: "k", value: "1").with_attribute(name: "k", value: "2")
+    assert attribute(e, "k").must() == "2"
+
+# An attribute of a namespace declared on the element.
+test "with_attribute_in: a namespaced attribute"
+    e = element("a").with_namespace(prefix: "p", space: "urn:p").with_attribute_in(
+        space: "urn:p",
+        name: "p:k",
+        value: "1"
+    )
+    assert format_element(e, compact()).must() == "<a xmlns:p=\"urn:p\" p:k=\"1\"/>"
+
+# An attribute taken off.
+test "without_attribute: one taken off"
+    assert !element("a").with_attribute(name: "k", value: "1").without_attribute("k").has_attribute("k")
+
+# The default namespace declared on a root of that namespace.
+test "with_namespace: the default namespace"
+    e = element_in(space: "urn:d", name: "feed").with_namespace(prefix: "", space: "urn:d")
+    assert format_element(e, compact()).must() == "<feed xmlns=\"urn:d\"/>"
+
+# Text added after the children.
+test "with_text: text added"
+    assert text_of(element("a").with_text("x").with_text("y")) == "xy"
+
+# A child added after the others.
+test "with_child: a child added"
+    assert format_element(element("ul").with_child(inner: element("li")), compact()).must() == "<ul><li/></ul>"
+
+# The first child element of a name.
+test "child: the first of a name"
+    root = parse("<list><item>1</item><item>2</item></list>").must().root
+    assert text_of(child(root, "item").must()) == "1"
+
+# The first child of a namespace, whatever its prefix.
+test "child_in: by namespace"
+    root = parse("<r xmlns:a=\"urn:a\"><a:x>1</a:x></r>").must().root
+    assert text_of(child_in(root, space: "urn:a", local: "x").must()) == "1"
+
+# Every child of a name.
+test "children_named: every item"
+    root = parse("<list><item/><other/><item/></list>").must().root
+    assert children_named(root, "item").len() == 2
+
+# Every child of a namespace.
+test "children_in: every child of a namespace"
+    root = parse("<r xmlns:a=\"urn:a\"><a:x/><x/><a:x/></r>").must().root
+    assert children_in(root, space: "urn:a", local: "x").len() == 2
+
+# Every child element, text left out.
+test "elements_of: the child elements"
+    assert elements_of(parse("<a>t<b/>u<c/></a>").must().root).len() == 2
+
+# Every element of a name, at any depth.
+test "descendants: every title"
+    root = parse("<lib><book><title>A</title></book><book><title>B</title></book></lib>").must().root
+    assert descendants(root, "title").len() == 2
+
+# Every element of a namespace, at any depth.
+test "descendants_in: every element of a namespace"
+    root = parse("<r xmlns:a=\"urn:a\"><x><a:y/></x><a:y/></r>").must().root
+    assert descendants_in(root, space: "urn:a", local: "y").len() == 2
+
+# Every element inside another.
+test "descendants_of: every element inside"
+    assert descendants_of(parse("<a><b><c/></b></a>").must().root).len() == 2
+
+# The first element a path of names reaches.
+test "element_at: a path of names"
+    root = parse("<lib><book><title>A</title></book></lib>").must().root
+    assert text_of(element_at(root, "book/title").must()) == "A"
+
+# Every element a path of names reaches.
+test "elements_at: every element a path reaches"
+    root = parse("<lib><book><title>A</title></book><book><title>B</title></book></lib>").must().root
+    assert elements_at(root, "book/title").must().len() == 2
+
+# An attribute's value by its name.
+test "attribute: a value by name"
+    assert attribute(parse("<a href=\"x\"/>").must().root, "href").must() == "x"
+
+# An attribute's value by its namespace.
+test "attribute_in: a value by namespace"
+    root = parse("<a xmlns:l=\"urn:l\" l:href=\"x\"/>").must().root
+    assert attribute_in(root, space: "urn:l", local: "href").must() == "x"
+
+# Whether an element has an attribute.
+test "has_attribute: there and not"
+    root = parse("<a x=\"1\"/>").must().root
+    assert has_attribute(root, "x") && !has_attribute(root, "y")
+
+# The text inside an element, its children's included.
+test "text_of: text at every depth"
+    assert text_of(parse("<p>Hello <b>World</b>!</p>").must().root) == "Hello World!"

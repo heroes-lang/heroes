@@ -1,0 +1,178 @@
+# What a MessagePack object is between the decoder, the encoder and the face:
+# a flat list of events in the order the bytes hold them, each container's
+# event carrying how many objects follow it, as the format's own header does.
+#
+# The package's private modules work on this list and never on
+# `msgpack.Value`, which only the face can name: a module the face uses may
+# not use the face. The face turns the list into a value and a value into the
+# list, each on a stack of its own, so that no function follows the data with
+# recursion.
+
+# `nil`.
+constant NIL_VALUE: i64
+    0
+
+# `false` or `true`, in `flag`.
+constant BOOLEAN: i64
+    1
+
+# An integer from 0 up, in `arg`.
+constant UNSIGNED: i64
+    2
+
+# An integer below 0, in `signed`.
+constant NEGATIVE: i64
+    3
+
+# A float, in `number`.
+constant FLOAT: i64
+    4
+
+# A string, its characters in `text`.
+constant TEXT: i64
+    5
+
+# A binary, its bytes in `data`.
+constant BINARY: i64
+    6
+
+# An array: `arg` objects follow.
+constant LIST: i64
+    7
+
+# A map: `arg` entries follow, each a key then its value.
+constant PAIRS: i64
+    8
+
+# An extension: its type in `signed`, its bytes in `data`.
+constant EXTENSION: i64
+    9
+
+# One event: a kind and the fields that kind reads, the others at their zero.
+record Event
+    # One of the kinds above.
+    kind: i64
+    # An unsigned integer, or a container's count.
+    arg: u64
+    # A negative integer, or an extension's type.
+    signed: i64
+    # A binary's or an extension's bytes.
+    data: [u8]
+    # A string's characters.
+    text: str
+    # A float's value.
+    number: f64
+    # A boolean's value.
+    flag: bool
+    # The byte index where the object began in the bytes decoded, -1 where
+    # the event was made from a value.
+    at: i64
+
+# The event of `kind` with every field given.
+function make(kind: i64, arg: u64, signed: i64, data: [u8], text: str, number: f64, flag: bool) -> Event
+    return Event(
+        kind: kind,
+        arg: arg,
+        signed: signed,
+        data: data,
+        text: text,
+        number: number,
+        flag: flag,
+        at: -1
+    )
+
+# An event of `kind` with `arg`, its other fields at their zero.
+function of_kind(kind: i64, arg: u64) -> Event
+    return make(kind: kind, arg: arg, signed: 0, data: [], text: "", number: 0.0, flag: false)
+
+# The event of a negative integer.
+function of_negative(n: i64) -> Event
+    return make(kind: NEGATIVE, arg: 0, signed: n, data: [], text: "", number: 0.0, flag: false)
+
+# The event of a binary.
+function of_binary(data: [u8]) -> Event
+    return make(kind: BINARY, arg: 0, signed: 0, data: data, text: "", number: 0.0, flag: false)
+
+# The event of an extension of type `type_code`.
+function of_extension(type_code: i64, data: [u8]) -> Event
+    return make(kind: EXTENSION, arg: 0, signed: type_code, data: data, text: "", number: 0.0, flag: false)
+
+# The event of a string.
+function of_text(text: str) -> Event
+    return make(kind: TEXT, arg: 0, signed: 0, data: [], text: text, number: 0.0, flag: false)
+
+# The event of a float.
+function of_float(number: f64) -> Event
+    return make(kind: FLOAT, arg: 0, signed: 0, data: [], text: "", number: number, flag: false)
+
+# The event of a boolean.
+function of_boolean(flag: bool) -> Event
+    return make(kind: BOOLEAN, arg: 0, signed: 0, data: [], text: "", number: 0.0, flag: flag)
+
+# `e` with `at` as the byte index where its object began.
+function placed(e: Event, at: i64) -> Event
+    return Event(
+        kind: e.kind,
+        arg: e.arg,
+        signed: e.signed,
+        data: e.data,
+        text: e.text,
+        number: e.number,
+        flag: e.flag,
+        at: at
+    )
+
+# Where `e`'s object began, as a message opens, `byte B: `, or nothing where
+# it was made from a value.
+function where(e: Event) -> str
+    if e.at < 0
+        return ""
+    return f"byte {e.at}: "
+
+# How many objects follow `e` and belong to it: a list's, twice a map's
+# entries, none for any other kind. Aborts where a count is past an `i64`,
+# which no list held in memory reaches.
+function children_of(e: Event) -> i64
+    if e.kind == LIST
+        return to_i64(e.arg).must()
+    else if e.kind == PAIRS
+        return to_i64(e.arg).must() * 2
+    return 0
+
+# The name of the kind of `e`, as a message says it.
+function kind_name(e: Event) -> str
+    names = [
+        "nil"
+        "a boolean"
+        "an unsigned integer"
+        "a negative integer"
+        "a float"
+        "a string"
+        "a binary"
+        "an array"
+        "a map"
+        "an extension"
+    ]
+    return names[e.kind]
+
+test "of_kind and make: the fields each sets, the others at their zero"
+    e = of_kind(kind: UNSIGNED, arg: 18446744073709551615)
+    assert e.arg == 18446744073709551615 && e.signed == 0 && e.at == -1 && e.text == ""
+    assert of_negative(-9223372036854775808).signed == -9223372036854775808
+    x = of_extension(type_code: -128, data: [1])
+    assert x.kind == EXTENSION && x.signed == -128 && x.data == [1]
+    assert of_binary([]).kind == BINARY
+    assert of_text("é").text == "é"
+    assert of_float(-0.5).number == -0.5
+    assert of_boolean(true).flag
+
+test "placed and where: a byte index set, and an event made from a value"
+    assert where(placed(e: of_text("a"), at: 3)) == "byte 3: "
+    assert where(of_text("a")) == ""
+
+test "children_of and kind_name: a list, a map, a scalar; the first and last names"
+    assert children_of(of_kind(kind: LIST, arg: 3)) == 3
+    assert children_of(of_kind(kind: PAIRS, arg: 2)) == 4
+    assert children_of(of_kind(kind: UNSIGNED, arg: 9)) == 0
+    assert kind_name(of_kind(kind: NIL_VALUE, arg: 0)) == "nil"
+    assert kind_name(of_extension(type_code: 1, data: [])) == "an extension"

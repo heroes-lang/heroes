@@ -1,0 +1,367 @@
+# The head of a message, RFC 9112 §§ 2 to 5: its bytes read from a reader up
+# to and through its empty line, within a limit, and its first line and field
+# lines read into a `Head`. The face turns a `Head` into its own records.
+
+use bytes
+use http/internal/syntax
+use io
+
+# The code of a stream that ended before a message began.
+constant CLOSED: str
+    "closed"
+
+# A field of a head: a name and its value, as read or to be written.
+record Field
+    # The name, a token.
+    name: str
+    # The value, without the spaces around it.
+    value: str
+
+# How much of a message is read: the face's `Limits`, field for field.
+record Bounds
+    # The most bytes of a head, its line ends included.
+    head_bytes: i64
+    # The most field lines of a head, and of a trailer.
+    field_count: i64
+    # The most bytes of a body, its chunks joined.
+    body_bytes: i64
+
+# What a head holds, a request's or a response's.
+record Head
+    # A request's method; "" in a response's.
+    method: str
+    # A request's target as its first line writes it; "" in a response's.
+    target: str
+    # A response's status, 100 to 999; 0 in a request's.
+    status: i64
+    # A response's reason, as read; "" in a request's.
+    reason: str
+    # The version's major digit.
+    major: i64
+    # The version's minor digit.
+    minor: i64
+    # The field lines, in their order.
+    fields: [Field]
+
+# The bytes of the next head `r` holds, from its first byte through its empty
+# line. Empty lines before the first line are kept in it, and skipped by
+# `lines_of`. Fails `closed` where the stream ends before a byte of a line,
+# `invalid` where it ends inside the head, `limit` where the head would pass
+# `most` bytes. It reads no byte past the empty line, and holds at once only
+# what the reader has read, so a peer sending a byte at a time costs a byte
+# of work at a time.
+function read_bytes(@r: io.Reader, most: i64) -> [u8]?
+    out: [u8] @= []
+    line: i64 @= 0
+    started: bool @= false
+
+    while true
+        ahead = io.peek(@r, n: 1)?
+
+        if ahead.len() == 0
+            if !started
+                return fail(code: CLOSED, msg: "reading a message: the stream ended before it began")
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading a message: the stream ended inside its head, after {out.len()} bytes"
+            )
+        held = io.buffered(r)
+        at: i64 @= 0
+        end: i64 @= -1
+
+        while end < 0 && at < held.len()
+            b = held[at]
+            at @ at + 1
+
+            if b == '\n'
+                if line == 0 && started
+                    end @ at
+                line @ 0
+            else if b != '\r'
+                line @ line + 1
+                started @ true
+
+        if out.len() + at > most
+            return fail(code: syntax.LIMIT, msg: f"reading a message: its head is past {most} bytes")
+        taken = io.read_n(@r, n: at)?
+
+        for b in taken
+            out @ out.push(b)
+
+        if end >= 0
+            return ok(out)
+
+# The lines of `head`, each without its line feed and the carriage return
+# before it, the empty lines before the first and the empty line that ends
+# it left out.
+function lines_of(head: [u8]) -> [[u8]]
+    out: [[u8]] @= []
+    line: [u8] @= []
+
+    for b in head
+        if b == '\n'
+            if line.len() > 0 && line[line.len() - 1] == '\r'
+                line @ line.slice(from: 0, to: line.len() - 1)
+
+            if line.len() > 0
+                out @ out.push(line)
+            line @ []
+        else
+            line @ line.push(b)
+
+    return out
+
+# `b` as text: its UTF-8 where it is UTF-8, else each byte read as Latin-1,
+# the character of that number, as Python reads a field.
+function text_of(b: [u8]) -> str
+    match bytes.to_text(b)
+        .ok s => return s
+        .err _ =>
+            out: [u8] @= []
+
+            for x in b
+                if x < 128
+                    out @ out.push(x)
+                else
+                    out @ out.push(192 + x / 64)
+                    out @ out.push(128 + x % 64)
+
+            return bytes.to_text(out).must()
+
+# The version `s` writes, `HTTP/` then a digit, a `.` and a digit, as
+# `major * 10 + minor`. Fails `invalid` where it is anything else.
+function version_of(s: [u8], where: str) -> i64?
+    if s.len() != 8 || !bytes.has_prefix(s: s, prefix: bytes.from_text("HTTP/")) || s[6] != '.' || s[5] < '0' || s[5] > '9' || s[7] < '0' || s[7] > '9'
+        return fail(code: syntax.INVALID, msg: f"{where}: {syntax.shown_bytes(s)} is no HTTP version, `HTTP/1.1`")
+    return ok(syntax.widen(s[5] - '0') * 10 + syntax.widen(s[7] - '0'))
+
+# Fails `invalid` where `line`, the line numbered `number` from 1, holds a
+# carriage return or a zero byte, which no line of a head may.
+function plain(line: [u8], number: i64) -> ()?
+    for b in line
+        if b == '\r' || b == 0
+            return fail(
+                code: syntax.INVALID,
+                msg: f"line {number} of the head: {syntax.shown_bytes(line)} holds a carriage return or a zero byte"
+            )
+
+    return ok()
+
+# The head of a request, `head` its bytes as `read_bytes` answers them. Fails
+# `invalid` where its first line is not a method, a target and a version
+# parted by single spaces, or a field line is not one; `limit` past
+# `most_fields` fields.
+function parse_request(head: [u8], most_fields: i64) -> Head?
+    lines = lines_of(head)
+
+    if lines.len() == 0
+        return fail(code: syntax.INVALID, msg: "reading a request: its head holds no line")
+    first = lines[0]
+    plain(first, number: 1)?
+    parts = bytes.split(s: first, sep: [' '])
+    where = "the request line " + syntax.shown_bytes(first)
+
+    if parts.len() != 3
+        return fail(
+            code: syntax.INVALID,
+            msg: f"{where}: it is not a method, a target and a version parted by single spaces"
+        )
+    method = text_of(parts[0])
+
+    if !syntax.is_token(method)
+        return fail(code: syntax.INVALID, msg: f"{where}: the method is no token")
+
+    if parts[1].len() == 0
+        return fail(code: syntax.INVALID, msg: f"{where}: the target is empty")
+
+    for b in parts[1]
+        if b < 33 || b == 127
+            return fail(code: syntax.INVALID, msg: f"{where}: the target holds a control byte")
+
+    version = version_of(parts[2], where: where)?
+    fields = fields_of(lines, from: 1, most: most_fields)?
+    return ok(
+        Head(method: method, target: text_of(parts[1]), status: 0, reason: "", major: version / 10, minor: version % 10, fields: fields)
+    )
+
+# The head of a response, `head` its bytes as `read_bytes` answers them.
+# Fails `invalid` where its first line is not a version, a status of three
+# digits from 100 and a reason, or a field line is not one; `limit` past
+# `most_fields` fields. A status line with no space after the status is read
+# with an empty reason, as Python reads it.
+function parse_response(head: [u8], most_fields: i64) -> Head?
+    lines = lines_of(head)
+
+    if lines.len() == 0
+        return fail(code: syntax.INVALID, msg: "reading a response: its head holds no line")
+    first = lines[0]
+    plain(first, number: 1)?
+    where = "the status line " + syntax.shown_bytes(first)
+
+    if first.len() < 12 || first[8] != ' ' || first.len() > 12 && first[12] != ' '
+        return fail(code: syntax.INVALID, msg: f"{where}: it is not a version, a status of three digits and a reason")
+    version = version_of(first.slice(from: 0, to: 8), where: where)?
+    status: i64 @= 0
+
+    for b in first.slice(from: 9, to: 12)
+        if b < '0' || b > '9'
+            return fail(code: syntax.INVALID, msg: f"{where}: the status is not three digits")
+        status @ status * 10 + syntax.widen(b - '0')
+
+    if status < 100
+        return fail(code: syntax.INVALID, msg: f"{where}: the status is below 100")
+    reason: [u8] @= []
+
+    if first.len() > 12
+        reason @ first.slice(from: 13, to: first.len())
+
+    for b in reason
+        if !syntax.is_value_byte(b)
+            return fail(code: syntax.INVALID, msg: f"{where}: the reason holds a control byte")
+
+    fields = fields_of(lines, from: 1, most: most_fields)?
+    return ok(
+        Head(method: "", target: "", status: status, reason: text_of(reason), major: version / 10, minor: version % 10, fields: fields)
+    )
+
+# The fields of `lines` from the one at `from`, each `name: value`. Fails
+# `invalid` where a line has no `:`, a name that is no token (a space before
+# the `:` among them), a value with a control byte, or begins with a space or
+# a tab, which RFC 9112 § 5.2 refuses as a folded line; `limit` past `most`
+# fields.
+function fields_of(lines: [[u8]], from: i64, most: i64) -> [Field]?
+    out: [Field] @= []
+    at: i64 @= from
+
+    while at < lines.len()
+        out @ out.push(field_of(lines[at], number: at + 1)?)
+
+        if out.len() > most
+            return fail(code: syntax.LIMIT, msg: f"reading a head: it holds more than {most} fields")
+        at @ at + 1
+
+    return ok(out)
+
+# The field the line `line` writes, numbered `number` in its head. Fails as
+# `fields_of` says.
+function field_of(line: [u8], number: i64) -> Field?
+    where = f"line {number} of the head, " + syntax.shown_bytes(line)
+    plain(line, number: number)?
+
+    if line[0] == ' ' || line[0] == '\t'
+        return fail(code: syntax.INVALID, msg: f"{where}: a field folded onto the line above, which RFC 9112 refuses")
+    colon = bytes.index_of(s: line, substr: [':']).default(-1)
+
+    if colon < 0
+        return fail(code: syntax.INVALID, msg: f"{where}: no `:` after a field's name")
+    name = text_of(line.slice(from: 0, to: colon))
+
+    if !syntax.is_token(name)
+        return fail(code: syntax.INVALID, msg: f"{where}: the field's name is no token")
+    raw = line.slice(from: colon + 1, to: line.len())
+
+    for b in raw
+        if !syntax.is_value_byte(b)
+            return fail(code: syntax.INVALID, msg: f"{where}: the field's value holds a control byte")
+
+    return ok(Field(name: name, value: syntax.trim_ows(text_of(raw))))
+
+# The value of every field of `fields` named `name`, in any case.
+function values_of(fields: [Field], name: str) -> [str]
+    out: [str] @= []
+
+    for f in fields
+        if syntax.same_name(a: f.name, b: name)
+            out @ out.push(f.value)
+
+    return out
+
+## Tests
+
+# A reader over a pipe that holds `text` and then ends.
+function fixture(text: str) -> io.Reader
+    p = io.pipe().must()
+    io.write_text(p.writer, text: text).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    return io.reader(p.reader)
+
+# Closes the stream `r` reads.
+function done(@r: io.Reader)
+    io.close(@r.stream).must()
+
+test "read_bytes: an empty stream, one ended inside, a head past its limit, and the bytes after it kept"
+    r @= fixture("")
+
+    match read_bytes(@r, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    done(@r)
+    cut @= fixture("GET / HTTP/1.1\r\nHost: a\r\n")
+
+    match read_bytes(@cut, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.INVALID
+
+    done(@cut)
+    exact @= fixture("GET / HTTP/1.1\r\nHost: a\r\n\r\n")
+    assert read_bytes(@exact, most: 27).must().len() == 27
+    done(@exact)
+    big @= fixture("GET / HTTP/1.1\r\nHost: a\r\n\r\n")
+
+    match read_bytes(@big, most: 26)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.LIMIT
+
+    done(@big)
+    two @= fixture("\r\n\nGET / HTTP/1.1\nHost: a\n\nrest")
+    assert bytes.to_text(read_bytes(@two, most: 36).must()).must() == "\r\n\nGET / HTTP/1.1\nHost: a\n\n"
+    assert io.read_rest_text(@two).must() == "rest"
+    done(@two)
+
+test "read_bytes: only empty lines is a stream that ended before a message"
+    r @= fixture("\r\n\r\n")
+
+    match read_bytes(@r, most: 100)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    done(@r)
+
+test "text_of: UTF-8 kept, Latin-1 read where the bytes are not UTF-8"
+    assert text_of([]) == "" && text_of(bytes.from_text("café")) == "café"
+    assert text_of([99, 97, 102, 233]) == "café" && text_of([255]) == "ÿ"
+
+test "parse_request: a request line and fields, Go's and Python's edges"
+    h = parse_request(
+        bytes.from_text("GET /a?b HTTP/1.1\r\nHost: x\r\nX-A:  1 \t\r\nx-a: 2\r\n\r\n"),
+        most_fields: 10
+    ).must()
+    assert h.method == "GET" && h.target == "/a?b" && h.major == 1 && h.minor == 1
+    assert h.fields.len() == 3 && h.fields[1].value == "1" && values_of(h.fields, name: "X-A") == ["1", "2"]
+    assert parse_request(bytes.from_text("OPTIONS * HTTP/1.0\n\n"), most_fields: 0).must().minor == 0
+    assert parse_request(bytes.from_text("GET / HTTP/2.0\r\n\r\n"), most_fields: 0).must().major == 2
+
+test "parse_request: what is no request, each invalid"
+    for bad in ["GET  / HTTP/1.1", "GET / HTTP/1.1 ", "GET /", "G@T / HTTP/1.1", "GET / http/1.1", "GET / HTTP/1.10", "GET / HTTP/1", "GET /\u{1}a HTTP/1.1", "GET / HTTP/1.1\r\n x: 1", "GET / HTTP/1.1\r\nx : 1", "GET / HTTP/1.1\r\nnocolon", "GET / HTTP/1.1\r\n: 1", "GET / HTTP/1.1\r\nx: a\rb", "GET / HTTP/1.1\r\nx: \u{1}"]
+        match parse_request(bytes.from_text(bad + "\r\n\r\n"), most_fields: 10)
+            .ok _  => assert false
+            .err e => assert e.code == syntax.INVALID
+
+    match parse_request(bytes.from_text("GET / HTTP/1.1\r\na: 1\r\nb: 2\r\n\r\n"), most_fields: 1)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.LIMIT
+
+test "parse_response: a status, its reason, an empty reason with or without its space"
+    h = parse_response(bytes.from_text("HTTP/1.1 404 Not Found\r\nA: b\r\n\r\n"), most_fields: 5).must()
+    assert h.status == 404 && h.reason == "Not Found" && h.fields[0].name == "A"
+    assert parse_response(bytes.from_text("HTTP/1.0 200\r\n\r\n"), most_fields: 5).must().reason == ""
+    assert parse_response(bytes.from_text("HTTP/1.1 200 \r\n\r\n"), most_fields: 5).must().reason == ""
+    assert parse_response(bytes.from_text("HTTP/1.1 999 x y\r\n\r\n"), most_fields: 5).must().reason == "x y"
+
+test "parse_response: a status below 100, of two or four digits, no version"
+    for bad in ["HTTP/1.1 099 x", "HTTP/1.1 20 OK", "HTTP/1.1 2000 OK", "HTTP/1.1 20x OK", "ICY 200 OK", "HTTP/1.1  200 OK", "HTTP/1.1 200\u{1}"]
+        match parse_response(bytes.from_text(bad + "\r\n\r\n"), most_fields: 5)
+            .ok _  => assert false
+            .err e => assert e.code == syntax.INVALID

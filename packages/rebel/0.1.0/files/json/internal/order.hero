@@ -1,0 +1,158 @@
+# The members of every object in a list of events put in the order RFC 8785
+# gives them: by the UTF-16 code units of their keys. It walks the list on a
+# stack of ranges this module holds, so no nesting is too deep for it.
+
+use json/internal/event
+use json/internal/stack
+use numbers
+use strings
+use unicode
+
+# The text whose bytes order as the UTF-16 code units of `key` order: each
+# unit written as four hexadecimal digits. The two orders part only between a
+# character above U+FFFF and one from U+E000 to U+FFFF, which UTF-16 writes
+# after it and UTF-8 before.
+function utf16_key(key: str) -> str
+    units: [str] @= []
+
+    for point in unicode.code_points(key)
+        for unit in unicode.to_utf16(point).must()
+            digits = numbers.format_int(n: unit.to_i64().must(), base: 16)
+            units @ units.push(strings.pad_start(s: digits, width: 4, pad: "0"))
+
+    return units.join("")
+
+# For each event of `events` that opens a container, the index of the event
+# that closes it; for every other event, its own index.
+function closers(events: [event.Event] lent) -> [i64]
+    out: [i64] @= []
+    open: [i64] @= []
+    depth: i64 @= 0
+
+    for at in range(from: 0, to: events.len())
+        out @ out.push(at)
+        kind = events[at].kind
+
+        if kind == event.BEGIN_LIST || kind == event.BEGIN_OBJECT
+            stack.put(items: @open, top: depth, item: at)
+            depth @ depth + 1
+        else if kind == event.END_LIST || kind == event.END_OBJECT
+            depth @ depth - 1
+            out[open[depth]] @ at
+
+    return out
+
+# `events`, the events of one value whose objects hold each key once, with
+# every object's members in the order of their keys' UTF-16 code units.
+function canonical(events: [event.Event] lent) -> [event.Event]
+    ends = closers(events)
+    out: [event.Event] @= []
+
+    # The ranges of events still to write, the next on top.
+    starts: [i64] @= [0]
+    stops: [i64] @= [events.len()]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        stop = stops[top]
+        at: i64 @= starts[top]
+
+        while at < stop
+            e = events[at]
+            out @ out.push(e)
+
+            if e.kind == event.BEGIN_OBJECT && ends[at] > at + 1
+                # The rest of this range, from the object's closing on, is
+                # written after its members, which are written key by key.
+                stack.put(items: @starts, top: top, item: ends[at])
+                stack.put(items: @stops, top: top, item: stop)
+                top @ top + 1
+                member_at: {str: i64} @= {}
+                member_end: {str: i64} @= {}
+                key_at: i64 @= at + 1
+
+                while key_at < ends[at]
+                    value_end = ends[key_at + 1] + 1
+                    sort_key = utf16_key(events[key_at].text)
+                    member_at[sort_key] @ key_at
+                    member_end[sort_key] @ value_end
+                    key_at @ value_end
+
+                ordered = sort(keys(member_at))
+                back: i64 @= ordered.len()
+
+                while back > 0
+                    back @ back - 1
+                    stack.put(items: @starts, top: top, item: member_at[ordered[back]].must())
+                    stack.put(items: @stops, top: top, item: member_end[ordered[back]].must())
+                    top @ top + 1
+
+                at @ stop
+            else
+                at @ at + 1
+
+    return out
+
+## Tests
+
+# The keys of `events`, in order.
+function keys_of(events: [event.Event]) -> [str]
+    out: [str] @= []
+
+    for e in events
+        if e.kind == event.KEY
+            out @ out.push(e.text)
+
+    return out
+
+test "utf16_key: the empty key, ASCII, and the two that UTF-8 orders the other way"
+    assert utf16_key("") == ""
+    assert utf16_key("ab") == "00610062"
+    assert utf16_key("😀") == "d83dde00"
+    assert utf16_key("") == "e000"
+
+test "closers: a scalar, an empty list, and nested containers"
+    assert closers([event.number(1.0)]) == [0]
+    assert closers([event.mark(event.BEGIN_LIST), event.mark(event.END_LIST)]) == [1, 1]
+    nested = [
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "a")
+        event.mark(event.BEGIN_LIST)
+        event.mark(event.END_LIST)
+        event.mark(event.END_OBJECT)
+    ]
+    assert closers(nested) == [4, 1, 3, 3, 4]
+
+test "canonical: keys by UTF-16 code units, at every depth, as Go's Canonicalize orders them"
+    events = [
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "b")
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "")
+        event.number(2.0)
+        event.text(kind: event.KEY, s: "😀")
+        event.number(1.0)
+        event.mark(event.END_OBJECT)
+        event.text(kind: event.KEY, s: "a")
+        event.mark(event.BEGIN_LIST)
+        event.mark(event.BEGIN_OBJECT)
+        event.text(kind: event.KEY, s: "z")
+        event.mark(event.NULL_VALUE)
+        event.text(kind: event.KEY, s: "y")
+        event.mark(event.NULL_VALUE)
+        event.mark(event.END_OBJECT)
+        event.mark(event.END_LIST)
+        event.mark(event.END_OBJECT)
+    ]
+    ordered = canonical(events)
+    assert ordered.len() == events.len()
+    assert keys_of(ordered) == ["a", "y", "z", "b", "😀", ""]
+    assert ordered[ordered.len() - 1].kind == event.END_OBJECT
+
+test "canonical: a scalar, an empty object, and a list left in its order"
+    assert canonical([event.boolean(true)]).len() == 1
+    empty = [event.mark(event.BEGIN_OBJECT), event.mark(event.END_OBJECT)]
+    assert canonical(empty).len() == 2
+    listed = [event.mark(event.BEGIN_LIST), event.number(2.0), event.number(1.0), event.mark(event.END_LIST)]
+    assert canonical(listed)[1].number == 2.0

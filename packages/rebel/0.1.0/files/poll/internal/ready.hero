@@ -1,0 +1,96 @@
+# One wait on a set, and its answer read: the floor writes three numbers per
+# event into a buffer the size of the set's entries, at most `ROOM` events,
+# and this module turns them into records the face copies into its `Event`s.
+
+use poll/hero_poll
+use poll/internal/failure
+
+# The most events one wait answers; the rest are told by the next wait, the
+# set being level-triggered.
+constant ROOM: i64
+    1024
+
+# One event as the floor wrote it, its bits read.
+record Ready
+    # The entry's key.
+    key: i64
+    # The READ bit: bytes, the end of stream, or a connection to accept.
+    readable: bool
+    # The WRITE bit: room to write.
+    writable: bool
+    # The HANGUP bit: the peer closed its side, or the connection is gone.
+    hangup: bool
+    # The ERROR bit: a failure waits on the socket.
+    error: bool
+    # The times a timer fell due, 0 for every other entry.
+    due: i64
+
+# How many events a wait on a set of `entries` entries makes room for: one
+# per entry, at least one, at most `ROOM`.
+function room_for(entries: i64) -> i64
+    if entries < 1
+        return 1
+
+    if entries > ROOM
+        return ROOM
+    return entries
+
+# The events of the first `n` found in `numbers`, three numbers each, in the
+# order the floor wrote them.
+function read_events(numbers: [i64] lent, n: i64) -> [Ready]
+    found: [Ready] @= []
+
+    for i in range(from: 0, to: n)
+        bits = numbers[i * 3 + 1]
+        found @ found.push(
+            Ready(key: numbers[i * 3], readable: bits & hero_poll.HERO_POLL_READ != 0, writable: bits & hero_poll.HERO_POLL_WRITE != 0, hangup: bits & hero_poll.HERO_POLL_HANGUP != 0, error: bits & hero_poll.HERO_POLL_ERROR != 0, due: numbers[i * 3 + 2])
+        )
+
+    return found
+
+# The events of one wait on `handle` of at most `limit_ns` nanoseconds, -1
+# for no limit; empty where the limit passed. Fails as the floor's wait
+# names, `closed` where the set is.
+function wait(handle: hero_poll.Set, limit_ns: i64) -> [Ready]?
+    entries = hero_poll.count(handle)
+
+    if entries < 0
+        return failure.last(asked: "waiting on a set")
+    room = room_for(entries) * 3
+    numbers: [i64] @= []
+
+    for _ in range(from: 0, to: room)
+        numbers @ numbers.push(0)
+
+    n = hero_poll.wait(handle, limit_ns: limit_ns, @numbers, n: to_u64(room).must())
+
+    if n < 0
+        return failure.last(asked: "waiting on a set")
+    return ok(read_events(numbers, n: n))
+
+test "room_for: none and one make room for one, a large set for ROOM, and between the count itself"
+    assert room_for(0) == 1
+    assert room_for(-5) == 1
+    assert room_for(1) == 1
+    assert room_for(700) == 700
+    assert room_for(ROOM) == ROOM
+    assert room_for(ROOM + 1) == ROOM
+    assert room_for(65535) == ROOM
+
+test "read_events: no event is an empty list, and each event's bits are read apart"
+    assert read_events([], n: 0).len() == 0
+    both = hero_poll.HERO_POLL_READ | hero_poll.HERO_POLL_HANGUP
+    found = read_events([7, both, 0, 9, hero_poll.HERO_POLL_DUE, 3, 1, 1, 1], n: 2)
+    assert found.len() == 2
+    assert found[0] == Ready(key: 7, readable: true, writable: false, hangup: true, error: false, due: 0)
+    assert found[1] == Ready(key: 9, readable: false, writable: false, hangup: false, error: false, due: 3)
+
+test "wait: a closed set is closed, and a set of one timer due now answers it"
+    assert wait(nullptr, limit_ns: 0).is_err()
+    set @= hero_poll.make(1)
+    key = hero_poll.add_timer(set, first_ns: 0, every_ns: 0)
+    found = wait(set, limit_ns: 0).must()
+    assert found.len() == 1
+    assert found[0].key == key
+    assert found[0].due == 1
+    assert hero_poll.close(@set) == 0

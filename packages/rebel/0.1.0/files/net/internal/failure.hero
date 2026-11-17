@@ -1,0 +1,138 @@
+# The codes `net` fails with, and the one place a kind of the floor
+# `net/hero_net` becomes one: every failure of a socket call is built here,
+# its message saying what was asked and what the system answered (README
+# § A4). A failure of a connection's stream is `io`'s, through
+# `io.last_failure`.
+
+use net/hero_net
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant INVALID: str
+    "invalid"
+
+constant EXISTS: str
+    "exists"
+
+constant PERMISSION: str
+    "permission"
+
+constant CLOSED: str
+    "closed"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant LIMIT: str
+    "limit"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_NET_*`, the platform's own
+# number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_net.HERO_NET_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_net.HERO_NET_NOT_OPEN
+        return Told(code: CLOSED, why: "the socket is closed")
+
+    if kind == hero_net.HERO_NET_ADDRESS
+        return Told(code: INVALID, why: "the address names nothing this machine can reach or listen on")
+
+    if kind == hero_net.HERO_NET_IN_USE
+        return Told(code: EXISTS, why: "something listens on that address and port already")
+
+    if kind == hero_net.HERO_NET_REFUSED
+        return Told(code: CLOSED, why: "nothing listens there, the connection was refused")
+
+    if kind == hero_net.HERO_NET_RESET
+        return Told(code: CLOSED, why: "the peer closed or reset the connection")
+
+    if kind == hero_net.HERO_NET_TIMED_OUT
+        return Told(code: TIMEOUT, why: "the time allowed ran out")
+
+    if kind == hero_net.HERO_NET_UNREACHABLE
+        return Told(
+            code: FAILED,
+            why: f"no route reaches it, the network or the host is unreachable (error {os_error})"
+        )
+
+    if kind == hero_net.HERO_NET_LIMIT
+        return Told(code: LIMIT, why: "the system has no socket, descriptor or memory left")
+
+    if kind == hero_net.HERO_NET_DENIED
+        return Told(code: PERMISSION, why: "the system refuses it to the program")
+
+    if kind == hero_net.HERO_NET_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+
+    if kind == hero_net.HERO_NET_TOO_LONG
+        return Told(code: INVALID, why: "the datagram is longer than one can be")
+
+    if kind == hero_net.HERO_NET_NOT_FOUND
+        return Told(code: NOT_FOUND, why: "the resolver knows no address for it")
+    return Told(code: FAILED, why: f"the system failed, its error {os_error} (kind {kind})")
+
+# The failure the floor's last call on this thread left, its message `asked`
+# and what the system answered. Called right after the call that failed.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_net.last_error(), os_error: hero_net.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` whose message is `asked` and `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+## Tests
+
+test "told: every kind of the floor is a code of the closed list, the unknown one failed with its numbers"
+    assert told(kind: hero_net.HERO_NET_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_net.HERO_NET_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_net.HERO_NET_ADDRESS, os_error: 0).code == INVALID
+    assert told(kind: hero_net.HERO_NET_IN_USE, os_error: 48).code == EXISTS
+    assert told(kind: hero_net.HERO_NET_REFUSED, os_error: 61).code == CLOSED
+    assert told(kind: hero_net.HERO_NET_RESET, os_error: 54).code == CLOSED
+    assert told(kind: hero_net.HERO_NET_TIMED_OUT, os_error: 0).code == TIMEOUT
+    assert told(kind: hero_net.HERO_NET_UNREACHABLE, os_error: 65).code == FAILED
+    assert told(kind: hero_net.HERO_NET_LIMIT, os_error: 24).code == LIMIT
+    assert told(kind: hero_net.HERO_NET_DENIED, os_error: 13).code == PERMISSION
+    assert told(kind: hero_net.HERO_NET_STOPPED, os_error: 0).code == STOPPED
+    assert told(kind: hero_net.HERO_NET_TOO_LONG, os_error: 40).code == INVALID
+    assert told(kind: hero_net.HERO_NET_NOT_FOUND, os_error: 0).code == NOT_FOUND
+    other = told(kind: hero_net.HERO_NET_OTHER, os_error: 99)
+    assert other.code == FAILED
+    assert other.why == "the system failed, its error 99 (kind 11)"
+
+test "last and of: the message is what was asked, a colon, and why"
+    failed: i64? = of(code: INVALID, asked: "reading \"x\"", why: "no number")
+
+    match failed
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "reading \"x\": no number"
+
+    assert hero_net.of(12345) == nullptr
+    gone: i64? = last(asked: "taking back 12345")
+
+    match gone
+        .ok _ => assert false
+        .err e =>
+            assert e.code == CLOSED
+            assert e.msg == "taking back 12345: the socket is closed"

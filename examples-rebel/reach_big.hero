@@ -1,0 +1,12 @@
+# Reaches Rebel's `big`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It multiplies two integers past 64 bits,
+# divides a decimal to two places and writes both.
+
+use <rebel>/big
+
+function main()
+    a = big.parse("123456789012345678901234567890").default(big.from_int(0))
+    print(big.format(big.multiply(a: a, b: a)))
+    price = big.parse_decimal("10.00").default(big.Decimal(unscaled: big.from_int(0), scale: 0))
+    three = big.Decimal(unscaled: big.from_int(3), scale: 0)
+    print(big.format_decimal(big.divide_decimal(n: price, by: three, scale: 2, rounding: .half_even)))

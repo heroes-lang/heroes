@@ -1,0 +1,226 @@
+# The small readings the steps before and after a handler share: a field's
+# media type, an `Accept-Encoding`'s answer for gzip, a `Vary` field grown, a
+# quoted string, a Bearer token's syntax, an origin's host, an address
+# without its port, and a file name for `Content-Disposition`.
+
+use http
+use strings
+use url
+
+# The media type of a `Content-Type` value: before its first `;`, trimmed, in
+# lower case; "" for none.
+function media_type(value: str) -> str
+    before = strings.split_once(s: value, sep: ";").default(strings.Halves(before: value, after: "")).before
+    return strings.to_lower_ascii(strings.trim(before))
+
+# Whether a qvalue `q` is zero: `0`, `0.`, and `0.` with up to three zeros.
+function is_zero_weight(q: str) -> bool
+    return q == "0" || q == "0." || q == "0.0" || q == "0.00" || q == "0.000"
+
+# Whether the `Accept-Encoding` values `values` take gzip, RFC 9110 § 12.5.3:
+# `gzip` or `x-gzip` with a weight above 0, else `*` with one; a coding named
+# with a weight of 0 is refused even where `*` is there.
+function accepts_gzip(values: [str]) -> bool
+    named: i64 @= 0
+    star: i64 @= 0
+
+    for value in values
+        for item in strings.split(s: value, sep: ",")
+            parts = strings.split(s: item, sep: ";")
+            coding = strings.to_lower_ascii(strings.trim(parts[0]))
+            weight: i64 @= 1
+
+            for i in range(from: 1, to: parts.len())
+                p = strings.trim(parts[i])
+
+                if strings.has_prefix(s: strings.to_lower_ascii(p), prefix: "q=") && is_zero_weight(strings.trim(p.slice(from: 2, to: p.len())))
+                    weight @ -1
+
+            if coding == "gzip" || coding == "x-gzip"
+                named @ weight
+            else if coding == "*"
+                star @ weight
+
+    if named != 0
+        return named > 0
+    return star > 0
+
+# `headers` with `name` in their `Vary` field, once: added to the field there,
+# or a field of its own.
+function with_vary(headers: [http.Header], name: str) -> [http.Header]
+    held = http.values_of(headers, name: "Vary")
+
+    for value in held
+        for item in strings.split(s: value, sep: ",")
+            t = strings.trim(item)
+
+            if t == "*" || strings.to_lower_ascii(t) == strings.to_lower_ascii(name)
+                return headers
+
+    if held.len() == 0
+        return http.with_header(headers, name: "Vary", value: name)
+    return http.with_header(headers, name: "Vary", value: held.join(", ") + ", " + name)
+
+# `s` as a quoted string of RFC 9110, each `"` and `\` escaped.
+function quoted(s: str) -> str
+    return "\"" + strings.replace_all(s: strings.replace_all(s: s, old: "\\", new: "\\\\"), old: "\"", new: "\\\"") + "\""
+
+# Whether `s` is a token of RFC 6750's `b64token`: letters, digits, `-`, `.`,
+# `_`, `~`, `+` and `/`, at least one, then `=` signs.
+function is_b64token(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len() && is_token68(s[at])
+        at @ at + 1
+
+    if at == 0
+        return false
+
+    while at < s.len() && s[at] == '='
+        at @ at + 1
+
+    return at == s.len()
+
+# Whether `c` stands in a `b64token` before its `=` signs.
+function is_token68(c: u8) -> bool
+    alnum = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+    return alnum || c == '-' || c == '.' || c == '_' || c == '~' || c == '+' || c == '/'
+
+# What an `Authorization` value `value` holds after its scheme `scheme`,
+# compared without case: the text after the scheme and its spaces. Fails
+# `not_found` where the value is of another scheme.
+function credentials_of(value: str, scheme: str) -> str?
+    halves = strings.split_once(s: strings.trim(value), sep: " ").default(
+        strings.Halves(before: strings.trim(value), after: "")
+    )
+
+    if strings.to_lower_ascii(halves.before) != strings.to_lower_ascii(scheme)
+        return fail(code: "not_found", msg: f"the `Authorization` field is not of the scheme {scheme}")
+    return ok(strings.trim(halves.after))
+
+# The host and port an `Origin` value names, as written after its `://`;
+# "" for `null` or a value with none.
+function origin_host(origin: str) -> str
+    match strings.split_once(s: origin, sep: "://")
+        .ok h  => return h.after
+        .err _ => return ""
+
+# The address of `remote`, as `net.format_address` writes one, without its
+# port: `192.0.2.1` for `192.0.2.1:5000`, `::1` for `[::1]:80`.
+function host_of(remote: str) -> str
+    match url.parse_host_port(remote)
+        .ok hp => return hp.host
+        .err _ => return remote
+
+# Whether `origin` is one of `origins`, or `*` is, compared without case.
+function is_allowed(origin: str, origins: [str]) -> bool
+    for o in origins
+        if o == "*" || strings.to_lower_ascii(o) == strings.to_lower_ascii(origin)
+            return true
+
+    return false
+
+# `filename` as the ASCII `filename` of RFC 6266: each character outside
+# printable ASCII, and each `"` and `\`, written `_`.
+function ascii_name(filename: str) -> str
+    out: [str] @= []
+
+    for c in filename.chars()
+        b = c[0]
+
+        if c.len() > 1 || b < 32 || b == 127 || b == '"' || b == '\\'
+            out @ out.push("_")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# Whether every byte of `s` is printable ASCII.
+function is_printable_ascii(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] < 33 || s[i] > 126
+            return false
+
+    return true
+
+# Whether `item` is one of `list`, compared as written.
+function is_listed(item: str, list: [str]) -> bool
+    for each in list
+        if each == item
+            return true
+
+    return false
+
+# `headers` with `Access-Control-Allow-Origin` for `origin`, which `origins`
+# allows: `*` where `origins` holds it and no credentials go, else the origin
+# itself; and `Access-Control-Allow-Credentials: true` where they go.
+function with_allow_origin(headers: [http.Header], origin: str, origins: [str], credentials: bool) -> [http.Header]
+    value: str @= origin
+
+    if is_listed("*", list: origins) && !credentials
+        value @ "*"
+    out @= http.with_header(headers, name: "Access-Control-Allow-Origin", value: value)
+
+    if credentials
+        out @ http.with_header(out, name: "Access-Control-Allow-Credentials", value: "true")
+    return out
+
+test "is_listed: there, in another case, empty"
+    assert is_listed("a", list: ["b", "a"]) && !is_listed("A", list: ["a"]) && !is_listed("a", list: [])
+
+test "with_allow_origin: a star without credentials, the origin with them, the origin where listed"
+    assert with_allow_origin([], origin: "https://a", origins: ["*"], credentials: false)[0].value == "*"
+    both = with_allow_origin([], origin: "https://a", origins: ["*"], credentials: true)
+    assert both[0].value == "https://a" && both[1] == http.Header(name: "Access-Control-Allow-Credentials", value: "true")
+    assert with_allow_origin([], origin: "https://a", origins: ["https://a"], credentials: false)[0].value == "https://a"
+
+test "media_type: parameters and spaces dropped, case lowered, none"
+    assert media_type("Application/JSON ; charset=utf-8") == "application/json"
+    assert media_type("") == "" && media_type("text/html") == "text/html"
+
+test "is_zero_weight: the zeros and a weight above"
+    assert is_zero_weight("0") && is_zero_weight("0.000") && !is_zero_weight("0.001") && !is_zero_weight("1")
+
+test "accepts_gzip: named, weighted out, a star, a star refused by a named zero, none"
+    assert accepts_gzip(["gzip, deflate"]) && accepts_gzip(["deflate", "GZIP;q=0.5"])
+    assert !accepts_gzip(["gzip;q=0"]) && accepts_gzip(["*"]) && !accepts_gzip(["*;q=0"])
+    assert !accepts_gzip(["*, gzip;q=0"]) && !accepts_gzip([]) && !accepts_gzip(["br"]) && accepts_gzip(["x-gzip"])
+
+test "with_vary: added, grown, held already, a star"
+    assert with_vary([], name: "Origin") == [http.Header(name: "Vary", value: "Origin")]
+    assert with_vary([http.Header(name: "Vary", value: "Accept")], name: "Origin")[0].value == "Accept, Origin"
+    assert with_vary([http.Header(name: "Vary", value: "origin")], name: "Origin")[0].value == "origin"
+    assert with_vary([http.Header(name: "Vary", value: "*")], name: "Origin")[0].value == "*"
+
+test "quoted: plain, a quote and a backslash"
+    assert quoted("a b") == "\"a b\"" && quoted("a\"b\\c") == "\"a\\\"b\\\\c\""
+
+test "is_b64token: a token, padding, empty, a space, padding inside"
+    assert is_b64token("mF_9.B5f-4.1JqM") && is_b64token("abc==") && is_b64token("a/b+c~")
+    assert !is_b64token("") && !is_b64token("a b") && !is_b64token("a=b") && !is_b64token("==")
+
+test "is_token68: a letter, a slash, a space"
+    assert is_token68('a') && is_token68('/') && !is_token68(' ') && !is_token68('=')
+
+test "credentials_of: the scheme in any case, another scheme, nothing after"
+    assert credentials_of(value: "bearer  abc", scheme: "Bearer").must() == "abc"
+    assert credentials_of(value: "Basic abc", scheme: "Bearer").is_err()
+    assert credentials_of(value: "Bearer", scheme: "Bearer").must() == ""
+
+test "origin_host: a host and port, null"
+    assert origin_host("https://example.com:8443") == "example.com:8443" && origin_host("null") == ""
+
+test "host_of: an IPv4 address and port, an IPv6 one, a text with no port"
+    assert host_of("192.0.2.1:5000") == "192.0.2.1" && host_of("[::1]:80") == "::1"
+    assert host_of("") == ""
+
+test "is_allowed: listed in another case, a star, absent"
+    assert is_allowed("https://A.example", origins: ["https://a.example"]) && is_allowed("x", origins: ["*"])
+    assert !is_allowed("https://b.example", origins: ["https://a.example"]) && !is_allowed("x", origins: [])
+
+test "ascii_name: plain, a quote, a backslash, a character above ASCII, a control byte"
+    assert ascii_name("report.pdf") == "report.pdf"
+    assert ascii_name("a\"b\\c") == "a_b_c" && ascii_name("café.txt") == "caf_.txt" && ascii_name("a\tb") == "a_b"
+
+test "is_printable_ascii: plain, a space, above ASCII, empty"
+    assert is_printable_ascii("abc-1") && !is_printable_ascii("a b") && !is_printable_ascii("é") && is_printable_ascii("")

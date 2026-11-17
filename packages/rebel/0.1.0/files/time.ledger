@@ -1,0 +1,597 @@
+capability clock/now  what time it is, on the wall clock
+  heroes  time.now
+  go      time.Now
+  rust    SystemTime::now
+  python  time.time, time.time_ns, time.clock_gettime, time.clock_gettime_ns, time.CLOCK_REALTIME, datetime.datetime.now, datetime.datetime.utcnow, datetime.datetime.today, datetime.date.today
+  note    an instant in nanoseconds, where Python's `time()` is a float of seconds; `now()` and `today()` without a zone are local in Python and UTC here; the local time is `time.to_date_time_in(time.now()?, zone: time.local_zone()?)`
+
+capability clock/since  how long ago an instant was, by the wall clock
+  heroes  time.since
+  go      time.Since
+  rust    SystemTime::elapsed
+  python  -
+
+capability clock/until  how long until an instant, by the wall clock
+  heroes  time.until
+  go      time.Until
+  rust    -
+  python  -
+
+capability clock/monotonic  a reading of the clock that never goes back
+  heroes  time.mark
+  go      time.Now (the monotonic reading it carries)
+  rust    Instant::now
+  python  time.monotonic, time.monotonic_ns, time.perf_counter, time.perf_counter_ns, time.CLOCK_MONOTONIC, time.CLOCK_MONOTONIC_RAW, time.CLOCK_MONOTONIC_RAW_APPROX, time.CLOCK_UPTIME_RAW, time.CLOCK_UPTIME_RAW_APPROX
+  note    one monotonic clock, the floor's (`CLOCK_UPTIME_RAW` on Darwin, `CLOCK_MONOTONIC` on Linux, `QueryPerformanceCounter` on Windows), a reading of its own type, `time.Mark`, so it is never mixed with an instant; Python's several clocks are that one here
+
+capability clock/elapsed  how long has passed since a monotonic reading
+  heroes  time.elapsed
+  go      time.Since (on a time carrying a monotonic reading)
+  rust    Instant::elapsed
+  python  -
+  note    a deadline is a start and a duration, asked as `elapsed(start)` against it: no reading is moved, so Rust's `Instant + Duration` has no counterpart here
+
+capability clock/between-marks  how long passed between two monotonic readings
+  heroes  time.between_marks
+  go      Time.Sub (on two times carrying monotonic readings)
+  rust    Instant::duration_since, Instant::checked_duration_since, Instant::saturating_duration_since, Instant::sub (an instant), Instant::checked_add, Instant::checked_sub, Instant::add, Instant::add_assign, Instant::sub (a duration), Instant::sub_assign
+  python  -
+  note    signed, so a reading taken first gives a negative duration where Rust's `duration_since` gives zero; a reading moved by a duration is the deadline of clock/elapsed
+
+capability clock/resolution  how fine a clock's readings are
+  heroes  pending
+  go      -
+  rust    -
+  python  time.clock_getres, time.get_clock_info
+  note    the floor, `hero_time.h`, offers no resolution
+
+capability clock/cpu-time  the processor time the process or the thread has used
+  heroes  pending
+  go      -
+  rust    -
+  python  time.process_time, time.process_time_ns, time.thread_time, time.thread_time_ns, time.CLOCK_PROCESS_CPUTIME_ID, time.CLOCK_THREAD_CPUTIME_ID
+  note    the floor, `hero_time.h`, offers no processor clock
+
+capability clock/set  set the wall clock
+  heroes  refused: the clock is read and never set; setting it is the machine owner's act, not a library's
+  go      -
+  rust    -
+  python  time.clock_settime, time.clock_settime_ns
+
+capability sleep/sleep  wait for a duration
+  heroes  time.sleep
+  go      time.Sleep
+  rust    std::thread::sleep
+  python  time.sleep
+  note    a duration of zero or below returns at once, as Go's; Python refuses a negative one. It waits on the monotonic clock, and a signal does not cut it short
+
+capability instant/epoch  1970-01-01T00:00:00Z
+  heroes  time.epoch
+  go      -
+  rust    std::time::UNIX_EPOCH, SystemTime::UNIX_EPOCH
+  python  calendar.EPOCH
+  note    an `Instant` built with no other value is this one; Go's zero time, year 1, and its `IsZero` have no counterpart: `t == time.epoch()` asks it
+
+capability instant/range  the earliest and the latest instant
+  heroes  time.min_instant, time.max_instant
+  go      -
+  rust    SystemTime::MIN, SystemTime::MAX
+  python  datetime.datetime.min, datetime.datetime.max, datetime.date.min, datetime.date.max, datetime.MINYEAR, datetime.MAXYEAR
+  note    1677-09-21 to 2262-04-11, what an `i64` of nanoseconds holds, as Go's `UnixNano`; Python reaches the years 1 to 9999 with microseconds
+
+capability instant/from-unix  an instant from seconds and nanoseconds since 1970
+  heroes  time.from_unix
+  go      time.Unix
+  rust    SystemTime::checked_add (to UNIX_EPOCH)
+  python  datetime.datetime.fromtimestamp, datetime.datetime.utcfromtimestamp, datetime.date.fromtimestamp, time.gmtime
+  note    nanoseconds past a second or negative are carried, as Go's; a result outside an instant fails `does_not_fit` where Go wraps. Python's float timestamp is `from_seconds_float` added to `epoch()`
+
+capability instant/from-unix-milliseconds  an instant from milliseconds since 1970
+  heroes  time.from_unix_milliseconds
+  go      time.UnixMilli
+  rust    -
+  python  -
+
+capability instant/from-unix-microseconds  an instant from microseconds since 1970
+  heroes  time.from_unix_microseconds
+  go      time.UnixMicro
+  rust    -
+  python  -
+
+capability instant/from-unix-nanoseconds  an instant from nanoseconds since 1970
+  heroes  built-in the record's construction, `time.Instant(unix_nanoseconds: n)`
+  go      time.Unix (with 0 seconds), time.Time
+  rust    -
+  python  -
+
+capability instant/to-unix  the seconds since 1970 of an instant
+  heroes  time.unix_seconds
+  go      Time.Unix
+  rust    SystemTime::duration_since (UNIX_EPOCH)
+  python  datetime.datetime.timestamp, calendar.timegm
+  note    rounded toward the past, as Go's, so the nanoseconds left are never negative; Python's `timestamp` is a float, `to_float(between(epoch(), t), .second)` here
+
+capability instant/to-unix-milliseconds  the milliseconds since 1970 of an instant
+  heroes  time.unix_milliseconds
+  go      Time.UnixMilli
+  rust    -
+  python  -
+
+capability instant/to-unix-microseconds  the microseconds since 1970 of an instant
+  heroes  time.unix_microseconds
+  go      Time.UnixMicro
+  rust    -
+  python  -
+
+capability instant/to-unix-nanoseconds  the nanoseconds since 1970 of an instant
+  heroes  built-in the field `unix_nanoseconds`
+  go      Time.UnixNano
+  rust    -
+  python  -
+
+capability instant/add  an instant moved by a duration
+  heroes  time.add
+  go      Time.Add
+  rust    SystemTime::checked_add, SystemTime::checked_sub, SystemTime::add, SystemTime::add_assign, SystemTime::sub, SystemTime::sub_assign
+  python  datetime.datetime.__add__, datetime.datetime.__radd__, datetime.datetime.__sub__ (a timedelta), datetime.date.__add__, datetime.date.__radd__, datetime.date.__sub__ (a timedelta)
+  note    one way, a negative duration moving back; outside an instant fails `does_not_fit`, where Go wraps
+
+capability instant/saturating  an instant moved and held at the end of the range
+  heroes  refused: a result held at the end of the range is a wrong value that says nothing; it fails `does_not_fit`
+  go      -
+  rust    SystemTime::saturating_add, SystemTime::saturating_sub, SystemTime::saturating_duration_since
+  python  -
+
+capability instant/between  the duration from one instant to another
+  heroes  time.between
+  go      Time.Sub
+  rust    SystemTime::duration_since, SystemTimeError, SystemTimeError::duration
+  python  datetime.datetime.__sub__ (a datetime), datetime.datetime.__rsub__, datetime.date.__sub__ (a date), datetime.date.__rsub__
+  note    signed, so an earlier `to` is a negative duration where Rust answers an error carrying the duration; two instants more than 292 years apart fail `does_not_fit`, where Go answers the longest duration
+
+capability instant/compare  which of two instants is the earlier
+  heroes  time.is_before, time.is_after
+  go      Time.Before, Time.After, Time.Compare
+  rust    SystemTime::cmp, SystemTime::partial_cmp, SystemTime::lt, SystemTime::le, SystemTime::gt, SystemTime::ge, SystemTime::max, SystemTime::min, SystemTime::clamp, SystemTime::clamp_to, Instant::cmp, Instant::partial_cmp, Instant::lt, Instant::le, Instant::gt, Instant::ge, Instant::max, Instant::min, Instant::clamp, Instant::clamp_to
+  python  datetime.datetime.__lt__, datetime.datetime.__le__, datetime.datetime.__gt__, datetime.datetime.__ge__, datetime.date.__lt__, datetime.date.__le__, datetime.date.__gt__, datetime.date.__ge__
+  note    `is_before(a:, b:)` has the shape `lists.sort_by` takes, so instants sort with it; the earlier of two is an `if` on it
+
+capability instant/equal  whether two instants are the same moment
+  heroes  built-in ==
+  go      Time.Equal
+  rust    SystemTime::eq, SystemTime::ne, Instant::eq, Instant::ne
+  python  datetime.datetime.__eq__, datetime.datetime.__ne__, datetime.date.__eq__, datetime.date.__ne__
+  note    every instant is UTC and has no other part, so `==` is Go's `Equal`
+
+capability instant/truncate  an instant cut to a multiple of a duration
+  heroes  time.truncate
+  go      Time.Truncate
+  rust    -
+  python  -
+  note    counted from 1970 where Go counts from the year 1: the same cut for every unit that divides a day, and a week cut at Thursdays; a unit not above zero fails `invalid` where Go answers the instant
+
+capability instant/round  an instant moved to the nearest multiple of a duration
+  heroes  time.round
+  go      Time.Round
+  rust    -
+  python  -
+  note    a tie goes toward the future, as Go's
+
+capability duration/units  the length of one unit
+  heroes  time.duration_of
+  go      time.Nanosecond, time.Microsecond, time.Millisecond, time.Second, time.Minute, time.Hour
+  rust    Duration::NANOSECOND, Duration::MICROSECOND, Duration::MILLISECOND, Duration::SECOND, Duration::MINUTE, Duration::HOUR, Duration::DAY, Duration::WEEK
+  python  datetime.timedelta.resolution
+  note    a unit is the closed variant `time.Unit`, nanosecond to week; a constant cannot hold a record in Heroes, so the lengths are a function's answer
+
+capability duration/from-count  a duration of so many units
+  heroes  time.nanoseconds, time.microseconds, time.milliseconds, time.seconds, time.minutes, time.hours, time.days, time.weeks
+  go      time.Duration (a count times a unit constant)
+  rust    Duration::from_nanos, Duration::from_micros, Duration::from_millis, Duration::from_secs, Duration::from_mins, Duration::from_hours, Duration::from_days, Duration::from_weeks, Duration::new
+  python  datetime.timedelta (its days, seconds, microseconds, milliseconds, minutes, hours and weeks)
+  note    each fails `does_not_fit` past the range, where Rust panics; Rust's `new(secs, nanos)` and Python's several arguments are `sum` of two of these
+
+capability duration/from-float  a duration from a float of seconds
+  heroes  time.from_seconds_float
+  go      -
+  rust    Duration::from_secs_f64, Duration::from_secs_f32, Duration::try_from_secs_f64, Duration::try_from_secs_f32, TryFromFloatSecsError
+  python  datetime.timedelta (a float of seconds)
+  note    the nanosecond nearest the float's exact value, a tie to the even one, as Rust's (observed: 0.0009765625 is 976562); Python rounds to the microsecond. An `f32` is widened with `to_f64` first, exactly
+
+capability duration/range  the longest and the most negative duration, and zero
+  heroes  time.max_duration, time.min_duration
+  go      -
+  rust    Duration::MAX, Duration::ZERO, Duration::is_zero, Duration::default
+  python  datetime.timedelta.max, datetime.timedelta.min, datetime.timedelta.__bool__
+  note    a duration is signed, as Go's and Python's, within about 292 years either way; Rust's is never negative and reaches 2^64 seconds. Zero is `nanoseconds(0)`, asked with `==`
+
+capability duration/sum  two durations added
+  heroes  time.sum
+  go      - (the `+` of `int64`)
+  rust    Duration::checked_add, Duration::add, Duration::add_assign, Duration::sum
+  python  datetime.timedelta.__add__, datetime.timedelta.__radd__
+  note    past the range fails `does_not_fit`, where Go wraps and Rust panics; a list is summed with the built-in `fold` over `sum`'s answer
+
+capability duration/difference  one duration less another
+  heroes  time.difference
+  go      - (the `-` of `int64`)
+  rust    Duration::checked_sub, Duration::sub, Duration::sub_assign, Duration::abs_diff
+  python  datetime.timedelta.__sub__, datetime.timedelta.__rsub__
+  note    Rust's `abs_diff` is `abs(difference(...))`
+
+capability duration/negate  a duration running the other way
+  heroes  time.negate
+  go      -
+  rust    -
+  python  datetime.timedelta.__neg__, datetime.timedelta.__pos__
+
+capability duration/abs  a duration with its sign dropped
+  heroes  time.abs
+  go      Duration.Abs
+  rust    -
+  python  datetime.timedelta.__abs__
+  note    the most negative duration fails `does_not_fit`, where Go answers the longest one
+
+capability duration/scale  a duration times an integer
+  heroes  time.scale
+  go      - (the `*` of `int64`)
+  rust    Duration::checked_mul, Duration::mul, Duration::mul_assign
+  python  datetime.timedelta.__mul__, datetime.timedelta.__rmul__ (an integer)
+
+capability duration/scale-float  a duration times or over a float
+  heroes  pending
+  go      -
+  rust    Duration::mul_f64, Duration::mul_f32, Duration::div_f64, Duration::div_f32
+  python  datetime.timedelta.__mul__ (a float), datetime.timedelta.__truediv__ (a float)
+  note    rounding exactly needs the product of an `i64` and a float's 53 bits, wider than any integer Heroes has; not written until it can be written exactly
+
+capability duration/divide  a duration cut into equal parts
+  heroes  time.divide
+  go      - (the `/` of `int64`)
+  rust    Duration::checked_div, Duration::div, Duration::div_assign
+  python  datetime.timedelta.__floordiv__ (an integer), datetime.timedelta.__truediv__ (an integer)
+  note    toward zero, as Go's; Python's `//` floors and its `/` rounds to the microsecond
+
+capability duration/count  how many whole units a duration holds
+  heroes  time.to_units
+  go      Duration.Nanoseconds, Duration.Microseconds, Duration.Milliseconds
+  rust    Duration::as_nanos, Duration::as_micros, Duration::as_millis, Duration::as_secs, Duration::div_duration_floor, Duration::div_duration_ceil
+  python  datetime.timedelta.__floordiv__ (a timedelta), datetime.timedelta.__rfloordiv__, datetime.timedelta.__divmod__, datetime.timedelta.__rdivmod__, datetime.timedelta.days, datetime.timedelta.seconds, datetime.timedelta.microseconds
+  note    toward zero, as Go's; Python floors, and keeps days, seconds and microseconds normalised, which `to_units` and `remainder` give; the ceiling is one more where the remainder is not zero
+
+capability duration/remainder  what is left of a duration after its whole units
+  heroes  time.remainder
+  go      - (the `%` of `int64`)
+  rust    Duration::subsec_nanos, Duration::subsec_micros, Duration::subsec_millis
+  python  datetime.timedelta.__mod__, datetime.timedelta.__rmod__
+  note    with the sign of the duration, as Go's `%`; Python's has the sign of the divisor
+
+capability duration/as-float  a duration counted in a unit as a float
+  heroes  time.to_float
+  go      Duration.Hours, Duration.Minutes, Duration.Seconds
+  rust    Duration::as_secs_f64, Duration::as_secs_f32, Duration::as_millis_f64, Duration::as_millis_f32, Duration::div_duration_f64, Duration::div_duration_f32
+  python  datetime.timedelta.total_seconds, datetime.timedelta.__truediv__ (a timedelta), datetime.timedelta.__rtruediv__
+  note    the whole units plus the rest over the unit, Go's two roundings, so it answers what Go answers; an `f32` is `to_f32` of it
+
+capability duration/compare  which of two durations is the shorter
+  heroes  time.is_shorter, time.is_longer
+  go      - (the comparisons of `int64`)
+  rust    Duration::cmp, Duration::partial_cmp, Duration::lt, Duration::le, Duration::gt, Duration::ge, Duration::max, Duration::min, Duration::clamp, Duration::clamp_to, Duration::eq, Duration::ne
+  python  datetime.timedelta.__lt__, datetime.timedelta.__le__, datetime.timedelta.__gt__, datetime.timedelta.__ge__, datetime.timedelta.__eq__, datetime.timedelta.__ne__
+  note    equality is the built-in `==`
+
+capability duration/truncate  a duration cut toward zero to a multiple of another
+  heroes  time.truncate_duration
+  go      Duration.Truncate
+  rust    -
+  python  -
+  note    a unit not above zero fails `invalid`, where Go answers the duration
+
+capability duration/round  a duration moved to the nearest multiple of another
+  heroes  time.round_duration
+  go      Duration.Round
+  rust    -
+  python  -
+  note    a tie away from zero, as Go's; past the range fails `does_not_fit`, where Go answers the longest or the most negative duration
+
+capability duration/saturating  arithmetic held at the end of the range
+  heroes  refused: a result held at the end of the range is a wrong value that says nothing; it fails `does_not_fit`
+  go      -
+  rust    Duration::saturating_add, Duration::saturating_sub, Duration::saturating_mul
+  python  -
+
+capability calendar/to-parts  the year, month, day, hour, minute, second and nanosecond of an instant
+  heroes  time.to_date_time
+  go      Time.Date, Time.Clock, Time.Year, Time.Month, Time.Day, Time.Hour, Time.Minute, Time.Second, Time.Nanosecond
+  rust    -
+  python  time.gmtime, time.struct_time, time.struct_time.tm_year, time.struct_time.tm_mon, time.struct_time.tm_mday, time.struct_time.tm_hour, time.struct_time.tm_min, time.struct_time.tm_sec, time.struct_time.tm_wday, datetime.date.year, datetime.date.month, datetime.date.day, datetime.datetime.utctimetuple, datetime.datetime.timetuple, datetime.date.timetuple, datetime.datetime.year, datetime.datetime.month, datetime.datetime.day, datetime.datetime.hour, datetime.datetime.minute, datetime.datetime.second, datetime.datetime.microsecond, datetime.datetime.date, datetime.datetime.time, datetime.date, datetime.time, datetime.time.hour, datetime.time.minute, datetime.time.second, datetime.time.microsecond, datetime.time.min, datetime.time.max, datetime.time.resolution, datetime.date.resolution, datetime.datetime.resolution
+  note    one record, `time.DateTime`, for the date, the time of day and both; proleptic Gregorian, so its rules hold before 1582 too, as Go's and Python's
+
+capability calendar/from-parts  the instant a year, month, day, hour, minute, second and nanosecond name
+  heroes  time.from_date_time
+  go      time.Date
+  rust    -
+  python  datetime.datetime, datetime.datetime.combine, calendar.timegm
+  note    a part outside its range fails `invalid` naming it, as Python refuses it; Go normalises it, October 32 becoming November 1, a wrong value where the part was a mistake
+
+capability calendar/date  midnight at the start of a day
+  heroes  time.date
+  go      time.Date (with zeros)
+  rust    -
+  python  datetime.date (its constructor)
+
+capability calendar/replace  an instant with one part of its date changed
+  heroes  built-in the field write, `dt.day @ 1` on a `DateTime` cell, then `time.from_date_time`
+  go      -
+  rust    -
+  python  datetime.datetime.replace, datetime.date.replace, datetime.time.replace
+
+capability calendar/weekday  the day of the week of an instant
+  heroes  time.weekday_of
+  go      Time.Weekday
+  rust    -
+  python  datetime.date.weekday, datetime.datetime.weekday, calendar.weekday
+  note    the closed variant `time.Weekday`, Monday first as ISO 8601 counts, so no number is guessed
+
+capability calendar/weekday-number  the number of a weekday
+  heroes  time.weekday_number
+  go      time.Weekday (an `int`, Sunday 0)
+  rust    -
+  python  datetime.date.isoweekday, datetime.datetime.isoweekday
+  note    ISO 8601's, 1 for Monday to 7 for Sunday, as Python's `isoweekday`; Go counts Sunday as 0 and Python's `weekday` Monday as 0
+
+capability calendar/weekday-name  the name of a weekday
+  heroes  time.weekday_name
+  go      Weekday.String, time.Sunday, time.Monday, time.Tuesday, time.Wednesday, time.Thursday, time.Friday, time.Saturday
+  rust    -
+  python  calendar.day_name, calendar.day_abbr, calendar.Day, calendar.MONDAY, calendar.TUESDAY, calendar.WEDNESDAY, calendar.THURSDAY, calendar.FRIDAY, calendar.SATURDAY, calendar.SUNDAY
+  note    English; the three-letter forms are the names' first three letters. A locale's names are refused, calendar/locale
+
+capability calendar/month-name  the name of a month
+  heroes  time.month_name
+  go      time.Month, Month.String, time.January, time.February, time.March, time.April, time.May, time.June, time.July, time.August, time.September, time.October, time.November, time.December
+  rust    -
+  python  calendar.month_name, calendar.month_abbr, calendar.standalone_month_name, calendar.standalone_month_abbr, calendar.Month, calendar.JANUARY, calendar.FEBRUARY, calendar.MARCH, calendar.APRIL, calendar.MAY, calendar.JUNE, calendar.JULY, calendar.AUGUST, calendar.SEPTEMBER, calendar.OCTOBER, calendar.NOVEMBER, calendar.DECEMBER, calendar.IllegalMonthError
+  note    a month is its number, 1 to 12; outside that range fails `invalid`, Python's `IllegalMonthError`
+
+capability calendar/day-of-year  the day of its year an instant falls on
+  heroes  time.day_of_year
+  go      Time.YearDay
+  rust    -
+  python  time.struct_time.tm_yday
+
+capability calendar/iso-week  the ISO 8601 week of an instant
+  heroes  time.iso_week
+  go      Time.ISOWeek
+  rust    -
+  python  datetime.date.isocalendar, datetime.datetime.isocalendar
+
+capability calendar/from-iso-week  the day an ISO 8601 year, week and weekday name
+  heroes  time.from_iso_week
+  go      -
+  rust    -
+  python  datetime.date.fromisocalendar, datetime.datetime.fromisocalendar
+  note    a week 53 the year lacks fails `invalid`, as Python's
+
+capability calendar/leap-year  whether a year is a leap year
+  heroes  time.is_leap_year
+  go      -
+  rust    -
+  python  calendar.isleap
+
+capability calendar/leap-count  how many leap years lie between two years
+  heroes  time.leap_years_between
+  go      -
+  rust    -
+  python  calendar.leapdays
+  note    observed: 7 from 1970 to 2000, -7 the other way, 2 from -4 to 1, as Python's
+
+capability calendar/month-length  how many days a month has
+  heroes  time.days_in_month
+  go      -
+  rust    -
+  python  calendar.monthrange, calendar.mdays
+  note    `monthrange`'s first weekday is `weekday_of(date(...))`
+
+capability calendar/year-length  how many days a year has
+  heroes  time.days_in_year
+  go      -
+  rust    -
+  python  -
+
+capability calendar/add-months  an instant moved by calendar months
+  heroes  time.add_months
+  go      Time.AddDate (months)
+  rust    -
+  python  -
+  note    a day the target month lacks becomes its last: January 31 and a month is February 28 or 29, where Go's `AddDate` answers March 3 or 2 (observed: 2001-03-03); a month never slips into the next one
+
+capability calendar/add-years  an instant moved by calendar years
+  heroes  time.add_years
+  go      Time.AddDate (years)
+  rust    -
+  python  -
+  note    February 29 and a year is February 28, where Go answers March 1 (observed)
+
+capability calendar/add-days  an instant moved by days
+  heroes  time.add
+  go      Time.AddDate (days)
+  rust    -
+  python  datetime.timedelta (days)
+  note    a day in UTC is always 24 hours, so `add(t, days(n)?)` is it
+
+capability calendar/ordinal  a day as its count from 0001-01-01
+  heroes  refused: an instant does not reach the year 1; the days between two instants are `to_units(between(...)?, .day)`
+  go      -
+  rust    -
+  python  datetime.date.toordinal, datetime.date.fromordinal, datetime.datetime.toordinal, datetime.datetime.fromordinal
+
+capability calendar/printed  a month or a year laid out as a printed calendar
+  heroes  refused: a printed calendar is layout, not arithmetic; its cells are `weekday_of` and `days_in_month`
+  go      -
+  rust    -
+  python  calendar.calendar, calendar.month, calendar.prcal, calendar.prmonth, calendar.prweek, calendar.monthcalendar, calendar.week, calendar.weekheader, calendar.format, calendar.formatstring, calendar.setfirstweekday, calendar.firstweekday, calendar.Calendar, calendar.TextCalendar, calendar.HTMLCalendar, calendar.IllegalWeekdayError, calendar.main
+
+capability calendar/locale  names and layouts in another language
+  heroes  refused: no locale data; the names are English and the layouts are the standards'
+  go      -
+  rust    -
+  python  calendar.different_locale, calendar.LocaleTextCalendar, calendar.LocaleHTMLCalendar
+
+capability text/rfc3339-write  an instant written as RFC 3339
+  heroes  time.format
+  go      time.RFC3339, time.RFC3339Nano, Time.Format, Time.String, Time.MarshalText, Time.MarshalJSON, Time.AppendText, Time.AppendFormat
+  rust    -
+  python  datetime.datetime.isoformat, datetime.date.isoformat, datetime.time.isoformat, datetime.datetime.__str__
+  note    five layouts: the fraction as needed (Go's `RFC3339Nano`), none (`RFC3339`), and 3, 6 or 9 digits always, cut toward the past; `Z` always, where Python writes `+00:00`. Go's `String` adds a zone name, and the debug text is this one here
+
+capability text/rfc3339-read  an instant read from RFC 3339
+  heroes  time.parse
+  go      time.Parse (RFC3339), Time.UnmarshalText, Time.UnmarshalJSON, time.ParseError, ParseError.Error
+  rust    -
+  python  datetime.datetime.fromisoformat, datetime.date.fromisoformat, datetime.time.fromisoformat
+  note    read exactly: `T` or `t` and `Z` or `z` as RFC 3339 allows (Go refuses the lower case), a fraction of any length cut after nine digits (as Go), an offset moved to UTC and one past 23:59 refused (Go accepts `+24:00`); a space for the `T` is refused, which Python reads. A failure is `invalid` with its byte in the message, Go's `ParseError`; an instant past the range is `does_not_fit`, where Go wraps
+
+capability text/layouts  an instant written and read in the other common layouts
+  heroes  time.format, time.parse
+  go      time.DateTime, time.DateOnly, time.TimeOnly, time.RFC1123, time.RFC1123Z, time.RFC850, time.ANSIC, time.Layout
+  rust    -
+  python  time.asctime, time.ctime, datetime.datetime.ctime, datetime.date.ctime
+  note    the closed variant `time.Layout`; the HTTP date writes `GMT` as RFC 9110 asks, where Go's `RFC1123` and `RFC850` write `UTC` (observed). A weekday written must be the date's (Go and Python ignore it); names are read in their written case only; a two-digit year below 69 is of the 2000s, as Go and POSIX read it; a `time_only` text is a time of 1970-01-01, where Python's `strptime` takes 1900 and Go the year 0 (both observed)
+
+capability text/other-layouts  the layouts left out of the closed set
+  heroes  refused: `Kitchen` is a 12-hour clock; the `Stamp`s have no year, so they name no instant; `UnixDate` and `RubyDate` write a zone's abbreviation, and `RFC822` a two-digit year that RFC 5322's `email` layout replaced
+  go      time.Kitchen, time.Stamp, time.StampMilli, time.StampMicro, time.StampNano, time.UnixDate, time.RubyDate, time.RFC822, time.RFC822Z
+  rust    -
+  python  -
+
+capability text/patterns  an instant written and read by a pattern the program writes
+  heroes  refused: a pattern is a second grammar in a string, which no compiler checks; the layouts are a closed variant instead
+  go      Time.Format (any layout), time.Parse (any layout)
+  rust    -
+  python  time.strftime, time.strptime, datetime.datetime.strftime, datetime.datetime.strptime, datetime.date.strftime, datetime.date.strptime, datetime.time.strftime, datetime.time.strptime, datetime.datetime.__format__
+
+capability text/duration-write  a duration written as text
+  heroes  time.format_duration
+  go      Duration.String
+  rust    Duration::fmt (Debug)
+  python  datetime.timedelta.__str__
+  note    Go's text, observed: `1h30m0s`, `250ms`, `1.5µs` with U+00B5; Python writes `1:30:00` and Rust `5400s`
+
+capability text/duration-read  a duration read from text
+  heroes  time.parse_duration
+  go      time.ParseDuration
+  rust    -
+  python  -
+  note    Go's grammar, its units `ns`, `us`, `µs`, `μs`, `ms`, `s`, `m`, `h`; the fraction is counted exactly digit by digit where Go rounds it through a float, and a duration past the range fails `does_not_fit` where Go says `invalid`
+
+capability zone/utc  an instant in UTC
+  heroes  time.to_date_time
+  go      time.UTC, Time.UTC
+  rust    -
+  python  datetime.UTC, datetime.timezone.utc
+  note    every instant here is UTC, so moving one to UTC changes nothing
+
+capability zone/by-name  a time zone by its name in the IANA database
+  heroes  time.load_zone
+  go      time.LoadLocation, time.Location, Location.String
+  rust    -
+  python  zoneinfo.ZoneInfo, zoneinfo.ZoneInfo.key, zoneinfo.TZPATH
+  note    the system's files first, in the order of Python's `TZPATH` on this Mac, then the IANA data Rebel carries (`time.ZONE_DATA_VERSION`, Go's `time/tzdata`), which Windows reads always; a name is a normalized relative path, Python's rule. Each call reads the file again. Read through `io`'s stream and not `fs`, whose package uses `time`: the compiler refuses the cycle
+
+capability zone/search-path  where the zone files are looked for, set by the program
+  heroes  refused: the system's directories are fixed; a file elsewhere is read with `fs.read_bytes` and given to `time.decode_tzif`
+  go      -
+  rust    -
+  python  zoneinfo.reset_tzpath, zoneinfo.InvalidTZPathWarning
+
+capability zone/from-data  a zone from the bytes of a TZif file
+  heroes  time.decode_tzif
+  go      time.LoadLocationFromTZData
+  rust    -
+  python  zoneinfo.ZoneInfo.from_file
+  note    RFC 9636, versions 1 to 4, every count and index held to the bytes; a file counting leap seconds is `unsupported`, where Go and Python read past them, since an `Instant` counts none. The footer's rule decides from the last transition on, as both do. Python ends a rule's zero-based day one day early (`300/4` on October 27); Go and the C library answer October 28, POSIX's day 300, which is taken
+
+capability zone/names  every zone name the database holds
+  heroes  time.zone_names, time.ZONE_DATA_VERSION
+  go      -
+  rust    -
+  python  zoneinfo.available_timezones
+  note    the 598 names of the data Rebel carries, the same Python lists from this Mac's files; a system may hold a name the list lacks
+
+capability zone/local  the zone the machine's clocks keep
+  heroes  time.local_zone
+  go      time.Local, Time.Local
+  rust    -
+  python  time.localtime, time.tzset, time.timezone, time.altzone, time.daylight, time.tzname
+  note    `TZ`, then `/etc/localtime`, as Go reads them; a `TZ` holding a POSIX rule is read as the C library reads it, where Go falls back to UTC, and one that reads as nothing fails `invalid` where Go falls back too. Read at every call, so Python's `tzset` has nothing to do; Python's `timezone`, `altzone`, `daylight` and `tzname` are `time.offset_at` of the local zone. Windows without `TZ` fails `unsupported`: its registry names its zones otherwise
+
+capability zone/fixed  a zone that keeps one offset
+  heroes  time.fixed_zone, time.utc_zone
+  go      time.FixedZone
+  rust    -
+  python  datetime.timezone, datetime.timezone.utcoffset, datetime.timezone.dst, datetime.timezone.tzname, datetime.timezone.fromutc, datetime.timezone.min, datetime.timezone.max
+  note    whole seconds within a day either way, Python's bound; Go takes any offset. Python's `min` and `max` are `hours(-24)` and `hours(24)` less a second
+
+capability zone/offset-at  the offset, its abbreviation and its daylight flag at an instant
+  heroes  time.offset_at
+  go      Time.Zone, Time.IsDST
+  rust    -
+  python  datetime.tzinfo, datetime.tzinfo.utcoffset, datetime.tzinfo.dst, datetime.tzinfo.tzname, datetime.datetime.utcoffset, datetime.datetime.dst, datetime.datetime.tzname, zoneinfo.ZoneInfo.utcoffset, zoneinfo.ZoneInfo.dst, zoneinfo.ZoneInfo.tzname, time.struct_time.tm_zone, time.struct_time.tm_gmtoff, time.struct_time.tm_isdst
+  note    the daylight flag is the data's own; Python's `dst()` answers an amount of time, which the data does not hold and Python infers, so none is offered. Judged against Python over 117,098 changes of 553 zones from 1850 to 2240 and a sample a month between them
+
+capability zone/bounds  when the offset in force began and when it ends
+  heroes  time.previous_change, time.next_change
+  go      Time.ZoneBounds
+  rust    -
+  python  -
+
+capability zone/to-local  an instant as the date and time on a zone's clocks
+  heroes  time.to_date_time_in
+  go      Time.In, Time.Location
+  rust    -
+  python  datetime.datetime.astimezone, datetime.datetime.tzinfo, datetime.datetime.timetz, datetime.tzinfo.fromutc, zoneinfo.ZoneInfo.fromutc, datetime.time.tzinfo, datetime.time.utcoffset, datetime.time.dst, datetime.time.tzname
+  note    an `Instant` carries no zone, where Go's `Time` and Python's `datetime` carry one: a `DateTime` is made for a zone when it is asked for
+
+capability zone/from-local  a zone's local date and time as an instant, a gap and an overlap decided
+  heroes  time.from_date_time_in, time.Disambiguation
+  go      time.ParseInLocation
+  rust    -
+  python  time.mktime, datetime.datetime.fold, datetime.time.fold
+  note    `.compatible` is Python's `fold=0`; its `fold=1` is `.later` in an overlap and `.earlier` in a gap, judged at the middle of every change of 553 zones from 1850 to 2240. Go's `Date` with a location says only that it answers one of the two. `ParseInLocation` is `time.parse` of a layout without an offset, `time.to_date_time`, then this
+
+capability zone/cache  zones kept between loads
+  heroes  refused: `load_zone` reads its file at every call, so a zone follows the system's update; a program keeps the `Zone` it loaded
+  go      -
+  rust    -
+  python  zoneinfo.ZoneInfo.no_cache, zoneinfo.ZoneInfo.clear_cache
+
+dropped zone-errors  a failure is a code and a message, `not_found` for a name nothing holds, and no type of its own
+  go      -
+  rust    -
+  python  zoneinfo.ZoneInfoNotFoundError
+
+dropped  a timer delivers on a channel or calls a closure later; Heroes has neither, and a thread that sleeps is the program's own
+  go      time.After, time.Tick, time.NewTicker, time.Ticker, Ticker.Reset, Ticker.Stop, time.AfterFunc, time.NewTimer, time.Timer, Timer.Reset, Timer.Stop
+  rust    -
+  python  -
+
+dropped  an encoding an interface would have needed: an instant is an `i64` and is written as one
+  go      Time.MarshalBinary, Time.UnmarshalBinary, Time.AppendBinary, Time.GobEncode, Time.GobDecode, Time.GoString
+  rust    -
+  python  datetime.datetime_CAPI
+
+dropped  what a trait would have needed, or a copy: every value is a copy already, and Heroes has no traits
+  go      -
+  rust    Duration::clone, Duration::clone_from, Duration::clone_into, Duration::clone_to_uninit, Duration::to_owned, Duration::borrow, Duration::borrow_mut, Duration::from, Duration::into, Duration::try_from, Duration::try_into, Duration::type_id, Duration::hash, Duration::hash_slice, Instant::clone, Instant::clone_from, Instant::clone_into, Instant::clone_to_uninit, Instant::to_owned, Instant::borrow, Instant::borrow_mut, Instant::from, Instant::into, Instant::try_from, Instant::try_into, Instant::type_id, Instant::hash, Instant::hash_slice, Instant::fmt, SystemTime::clone, SystemTime::clone_from, SystemTime::clone_into, SystemTime::clone_to_uninit, SystemTime::to_owned, SystemTime::borrow, SystemTime::borrow_mut, SystemTime::from, SystemTime::into, SystemTime::try_from, SystemTime::try_into, SystemTime::type_id, SystemTime::hash, SystemTime::hash_slice, SystemTime::fmt, SystemTimeError::fmt, SystemTimeError::to_string, SystemTimeError::clone, SystemTimeError::clone_from, SystemTimeError::clone_into, SystemTimeError::clone_to_uninit, SystemTimeError::to_owned, SystemTimeError::borrow, SystemTimeError::borrow_mut, SystemTimeError::from, SystemTimeError::into, SystemTimeError::try_from, SystemTimeError::try_into, SystemTimeError::type_id, SystemTimeError::description, SystemTimeError::cause, SystemTimeError::source, SystemTimeError::provide, TryFromFloatSecsError::fmt, TryFromFloatSecsError::to_string, TryFromFloatSecsError::eq, TryFromFloatSecsError::ne, TryFromFloatSecsError::clone, TryFromFloatSecsError::clone_from, TryFromFloatSecsError::clone_into, TryFromFloatSecsError::clone_to_uninit, TryFromFloatSecsError::to_owned, TryFromFloatSecsError::borrow, TryFromFloatSecsError::borrow_mut, TryFromFloatSecsError::from, TryFromFloatSecsError::into, TryFromFloatSecsError::try_from, TryFromFloatSecsError::try_into, TryFromFloatSecsError::type_id, TryFromFloatSecsError::description, TryFromFloatSecsError::cause, TryFromFloatSecsError::source, TryFromFloatSecsError::provide
+  python  time.struct_time.count, time.struct_time.index, time.struct_time.n_fields, time.struct_time.n_sequence_fields, time.struct_time.n_unnamed_fields
+
+dropped  a 128-bit count: Heroes has no `u128`, and an `i64` of nanoseconds is the whole range here
+  go      -
+  rust    Duration::from_nanos_u128
+  python  -
+
+dropped  a module a module imports, or its plumbing
+  go      -
+  rust    -
+  python  calendar.c, calendar.datetime, calendar.sys, calendar.repeat, calendar.IntEnum, calendar.global_enum, calendar.error

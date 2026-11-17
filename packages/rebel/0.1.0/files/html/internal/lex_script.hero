@@ -1,0 +1,204 @@
+# The tokenizer's states inside a script (13.2.5.15 to 13.2.5.31): what `<!--`
+# and `<script>` written inside a script's text do to where its end tag is
+# found. Every character read here is emitted as text; only the end tag of
+# the script is a token. Each step reads at least one byte or switches to a
+# state that will.
+
+use html/internal/ascii
+use html/internal/lexer
+use unicode
+
+# 13.2.5.15, script data's `<`.
+function less_than(@lx: lexer.Lexer)
+    if !lexer.at_end(lx) && lexer.byte(lx) == '/'
+        lx.temp @ []
+        lx.at @ lx.at + 1
+        lx.back @ .script_data
+        lx.state @ .raw_end_tag_open
+    else if !lexer.at_end(lx) && lexer.byte(lx) == '!'
+        lexer.text_out(@lx, s: "<!", at: lx.at - 1)
+        lx.at @ lx.at + 1
+        lx.state @ .script_escape_start
+    else
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lx.state @ .script_data
+
+# 13.2.5.18 and 13.2.5.19: the `-` and `--` after `<!`.
+function escape_start(@lx: lexer.Lexer)
+    if !lexer.at_end(lx) && lexer.byte(lx) == '-'
+        lexer.text_out(@lx, s: "-", at: lx.at)
+        lx.at @ lx.at + 1
+
+        lx.state @ if lx.state == .script_escape_start
+            .script_escape_start_dash
+        else
+            .script_escaped_dash_dash
+    else
+        lx.state @ .script_data
+
+# 13.2.5.20 to 13.2.5.22 and 13.2.5.27 to 13.2.5.29: escaped and double
+# escaped text, after none, one or two `-`.
+function escaped(@lx: lexer.Lexer)
+    double = lx.state == .script_double_escaped || lx.state == .script_double_escaped_dash || lx.state == .script_double_escaped_dash_dash
+
+    dashes = if lx.state == .script_escaped_dash || lx.state == .script_double_escaped_dash
+        1
+    else if lx.state == .script_escaped_dash_dash || lx.state == .script_double_escaped_dash_dash
+        2
+    else
+        0
+
+    plain: lexer.State = if double
+        .script_double_escaped
+    else
+        .script_escaped
+
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-script-html-comment-like-text")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '-'
+        lexer.text_out(@lx, s: "-", at: lx.at)
+        lx.at @ lx.at + 1
+
+        if dashes == 0
+            lx.state @ if double
+                .script_double_escaped_dash
+            else
+                .script_escaped_dash
+        else
+            lx.state @ if double
+                .script_double_escaped_dash_dash
+            else
+                .script_escaped_dash_dash
+    else if b == '<'
+        if double
+            lexer.text_out(@lx, s: "<", at: lx.at)
+            lx.state @ .script_double_escaped_less_than
+        else
+            lx.state @ .script_escaped_less_than
+        lx.at @ lx.at + 1
+    else if b == '>' && dashes == 2
+        lexer.text_out(@lx, s: ">", at: lx.at)
+        lx.at @ lx.at + 1
+        lx.state @ .script_data
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lexer.text_out(@lx, s: unicode.REPLACEMENT_CHARACTER, at: lx.at)
+        lx.at @ lx.at + 1
+        lx.state @ plain
+    else if dashes == 0
+        at = lx.at
+        lexer.text_out(
+            @lx,
+            s: lexer.take(@lx, end: lexer.run_end(lx, stop_a: '-', stop_b: '<', stop_c: '<'), lower: false),
+            at: at
+        )
+    else
+        lexer.text_out(@lx, s: lexer.current(lx), at: lx.at)
+        lx.at @ lx.at + lexer.width(lx)
+        lx.state @ plain
+
+# 13.2.5.23, an escaped script's `<`.
+function escaped_less_than(@lx: lexer.Lexer)
+    if !lexer.at_end(lx) && lexer.byte(lx) == '/'
+        lx.temp @ []
+        lx.at @ lx.at + 1
+        lx.back @ .script_escaped
+        lx.state @ .raw_end_tag_open
+    else if !lexer.at_end(lx) && ascii.is_alpha(lexer.byte(lx))
+        lx.temp @ []
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lx.state @ .script_double_escape_start
+    else
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lx.state @ .script_escaped
+
+# 13.2.5.26 and 13.2.5.31: the name after `<` or `</` inside escaped text,
+# which enters or leaves the double escape where it is `script`.
+function double_escape_edge(@lx: lexer.Lexer)
+    entering = lx.state == .script_double_escape_start
+
+    otherwise: lexer.State = if entering
+        .script_escaped
+    else
+        .script_double_escaped
+
+    if lexer.at_end(lx)
+        lx.state @ otherwise
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b) || b == '/' || b == '>'
+        is_script = lx.temp.join("") == "script"
+
+        lx.state @ if is_script == entering
+            .script_double_escaped
+        else
+            .script_escaped
+        lexer.text_out(@lx, s: lx.text.slice(from: lx.at, to: lx.at + 1), at: lx.at)
+        lx.at @ lx.at + 1
+    else if ascii.is_alpha(b)
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && ascii.is_alpha(lx.text[end])
+            end @ end + 1
+
+        at = lx.at
+        written = lexer.take(@lx, end: end, lower: false)
+        lx.temp @ lx.temp.push(ascii.to_lower(written))
+        lexer.text_out(@lx, s: written, at: at)
+    else
+        lx.state @ otherwise
+
+# 13.2.5.30, a double escaped script's `<`.
+function double_escaped_less_than(@lx: lexer.Lexer)
+    if !lexer.at_end(lx) && lexer.byte(lx) == '/'
+        lx.temp @ []
+        lexer.text_out(@lx, s: "/", at: lx.at)
+        lx.at @ lx.at + 1
+        lx.state @ .script_double_escape_end
+    else
+        lx.state @ .script_double_escaped
+
+## Tests
+
+test "less_than and escape_start: `<!--` entering the escaped state, `<!-x` going back, and `</` an end tag"
+    lx: lexer.Lexer @= lexer.start("<!--")
+    lx.at @ 1
+    less_than(@lx)
+    escape_start(@lx)
+    escape_start(@lx)
+    assert lx.state == .script_escaped_dash_dash && lx.pending == ["<!", "-", "-"]
+    back: lexer.Lexer @= lexer.start("<!-x")
+    back.at @ 1
+    less_than(@back)
+    escape_start(@back)
+    escape_start(@back)
+    assert back.state == .script_data && back.at == 3
+
+test "escaped: `-->` leaving the escape, and a zero byte replaced"
+    lx: lexer.Lexer @= lexer.start("a-->")
+    lx.state @ .script_escaped
+
+    while lx.at < 4
+        escaped(@lx)
+
+    assert lx.state == .script_data && lx.pending.join("") == "a-->"
+
+test "double_escape_edge: `<script>` inside escaped text entering the double escape, and `</script>` leaving it"
+    lx: lexer.Lexer @= lexer.start("<script>x</script>")
+    lx.state @ .script_escaped_less_than
+    lx.at @ 1
+    escaped_less_than(@lx)
+    double_escape_edge(@lx)
+    double_escape_edge(@lx)
+    assert lx.state == .script_double_escaped
+    escaped(@lx)
+    escaped(@lx)
+    double_escaped_less_than(@lx)
+    double_escape_edge(@lx)
+    double_escape_edge(@lx)
+    assert lx.state == .script_escaped && lx.pending.join("") == "<script>x</script>"

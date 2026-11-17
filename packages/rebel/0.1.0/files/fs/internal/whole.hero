@@ -1,0 +1,192 @@
+# A file opened as an `io.Stream`, and a file read or written whole through
+# one: what `fs.open`, `fs.read_bytes`, `fs.write_bytes` and their kin do. A
+# stream opened here is closed here on every path, and a failure of the work
+# is told before a failure of the close.
+
+use fs/internal/codes
+use fs/internal/fixture
+use io
+use io/hero_stream
+use os/hero_disk
+use time
+
+# The file at `at` opened for `access`, as a stream the caller closes.
+#
+# - `at`: the path.
+# - `access`: one of `hero_stream.HERO_STREAM_ACCESS_...`.
+# - `permission`: the bits of a file the call makes, 0 to 0o777.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails with the stream floor's code, `file_not_found` where nothing is there.
+function opened(at: str, access: i64, permission: i64, asked: str) -> io.Stream?
+    codes.checked(path: at, asked: asked)?
+    handle = hero_stream.open(at, access: access, perm: permission)
+
+    if handle == nullptr
+        return io.last_failure(asked: asked)
+    return ok(io.of_handle(handle, name: f"\"{at}\""))
+
+# `value`, or the failure of `closed` where `value` is no failure: the work's
+# failure is told before the close's. It answers `value` itself and never
+# `ok` of its value, since a generic `ok(v)` of a `()` builds no C (a defect
+# of the compiler, in the package's report).
+#
+# - `value`: what the work answered.
+# - `closed`: what closing its stream answered.
+function first_of<T>(value: T?, closed: ()?) -> T?
+    match value
+        .err _ => return value
+        .ok _ =>
+            match closed
+                .err c => return fail(code: c.code, msg: c.msg)
+                .ok _  => return value
+
+# The bytes of the file at `at`, all of them.
+#
+# - `at`: the path.
+#
+# Fails `file_not_found` where nothing is there, `is_a_directory` for a
+# folder.
+function read_all(at: str) -> [u8]?
+    s @= opened(at: at, access: hero_stream.HERO_STREAM_ACCESS_READ, permission: 0, asked: f"reading \"{at}\"")?
+    data = io.read_all(s)
+    return first_of(value: data, closed: io.close(@s))
+
+# Writes `data` to the file at `at`, opened for `access`, then closes it.
+#
+# - `at`: the path.
+# - `data`: the bytes, all of them written.
+# - `access`: one of `hero_stream.HERO_STREAM_ACCESS_...` that writes.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails as `opened` does, and where the write or the close fails.
+function written(at: str, data: [u8], access: i64, asked: str) -> ()?
+    s @= opened(at: at, access: access, permission: 0o666, asked: asked)?
+    done = io.write(s, data)
+    return first_of(value: done, closed: io.close(@s))
+
+# Writes `text` as `written` writes bytes.
+#
+# - `at`: the path.
+# - `text`: the text, all of it written.
+# - `access`: one of `hero_stream.HERO_STREAM_ACCESS_...` that writes.
+# - `asked`: what a failure's message says was asked.
+function written_text(at: str, text: str, access: i64, asked: str) -> ()?
+    s @= opened(at: at, access: access, permission: 0o666, asked: asked)?
+    done = io.write_text(s, text)
+    return first_of(value: done, closed: io.close(@s))
+
+# Makes an empty file at `at` where nothing is there, or sets the times of
+# what is there to now.
+#
+# - `at`: the path.
+#
+# Fails `file_not_found` where the folder it would stand in is not there.
+function touched(at: str) -> ()?
+    asked = f"touching \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    handle = hero_stream.open(at, access: hero_stream.HERO_STREAM_ACCESS_CREATE, perm: 0o666)
+
+    if handle != nullptr
+        made @= io.of_handle(handle, name: f"\"{at}\"")
+        return io.close(@made)
+
+    if hero_stream.last_error() != hero_stream.HERO_STREAM_EXISTS
+        return io.last_failure(asked: asked)
+    now = time.now()?
+    nanoseconds = now.unix_nanoseconds
+
+    if hero_disk.set_times(at, written: nanoseconds, read: nanoseconds) != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+## Tests
+
+test "read_all: an empty file, a file of bytes that are no text, nothing there, and a folder"
+    dir = fixture.folder("read")
+    assert !write_file(path: dir + "/empty", text: "").is_err()
+    nothing: [u8] = []
+    assert read_all(dir + "/empty").must() == nothing
+    assert !written(at: dir + "/raw", data: [0xff, 0, 0xc3], access: hero_stream.HERO_STREAM_ACCESS_WRITE, asked: "a").is_err()
+    assert read_all(dir + "/raw").must() == [0xff, 0, 0xc3]
+
+    match read_all(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    match read_all(dir)
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    assert fixture.cleared(dir)
+
+test "written: made, emptied before a shorter write, appended, made only where absent, and under a folder not there"
+    dir = fixture.folder("written")
+    write = hero_stream.HERO_STREAM_ACCESS_WRITE
+    assert !written(at: dir + "/f", data: [1, 2, 3], access: write, asked: "a").is_err()
+    assert !written(at: dir + "/f", data: [9], access: write, asked: "a").is_err()
+    assert read_all(dir + "/f").must() == [9]
+    assert !written(at: dir + "/f", data: [8, 7], access: hero_stream.HERO_STREAM_ACCESS_APPEND, asked: "a").is_err()
+    assert read_all(dir + "/f").must() == [9, 8, 7]
+    assert !written(at: dir + "/g", data: [1], access: hero_stream.HERO_STREAM_ACCESS_APPEND, asked: "a").is_err()
+    assert read_all(dir + "/g").must() == [1]
+
+    match written(at: dir + "/f", data: [5], access: hero_stream.HERO_STREAM_ACCESS_CREATE, asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS
+
+    assert read_all(dir + "/f").must() == [9, 8, 7]
+
+    match written(at: dir + "/no/f", data: [5], access: write, asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "written_text: text of more than one byte a character, and the empty text"
+    dir = fixture.folder("text")
+    write = hero_stream.HERO_STREAM_ACCESS_WRITE
+    assert !written_text(at: dir + "/t", text: "caffè\n", access: write, asked: "a").is_err()
+    assert read_file(dir + "/t").must() == "caffè\n"
+    assert !written_text(at: dir + "/t", text: "", access: write, asked: "a").is_err()
+    assert read_file(dir + "/t").must() == ""
+    assert fixture.cleared(dir)
+
+test "opened: a zero byte in the path is invalid and never reaches C"
+    zero: [u8] = ['a', 0, 'b']
+
+    match opened(at: zero.validated_bytes().must(), access: hero_stream.HERO_STREAM_ACCESS_READ, permission: 0, asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+test "touched: a file made empty, its times moved to now, a folder's times, and a folder not there"
+    dir = fixture.folder("touch")
+    assert !touched(dir + "/t").is_err()
+    assert read_file(dir + "/t").must() == ""
+    assert hero_disk.set_times(dir + "/t", written: 0, read: 0) == 0
+    assert !touched(dir + "/t").is_err()
+    numbers: [i64] @= []
+    assert hero_disk.facts(dir + "/t", @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+    assert numbers[hero_disk.HERO_DISK_FACT_WRITTEN] > 1_577_836_800_000_000_000
+    assert !touched(dir).is_err()
+
+    match touched(dir + "/no/t")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "first_of: the work's failure before the close's, the close's alone, and both whole"
+    done: i64? = ok(3)
+    closed: ()? = ok()
+    broken: ()? = fail(code: "closed", msg: "closing")
+    lost: i64? = fail(code: "failed", msg: "work")
+    assert first_of(value: done, closed: closed).must() == 3
+
+    match first_of(value: lost, closed: broken)
+        .ok _  => assert false
+        .err e => assert e.msg == "work"
+
+    match first_of(value: done, closed: broken)
+        .ok _  => assert false
+        .err e => assert e.msg == "closing"

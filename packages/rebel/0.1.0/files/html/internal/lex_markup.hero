@@ -1,0 +1,350 @@
+# The tokenizer's states of what `<!` and `<?` open (13.2.5.41 to 13.2.5.52
+# and 13.2.5.69 to 13.2.5.76): a comment, a bogus comment, a CDATA section and
+# a processing instruction. Each step reads at least one byte, switches to a
+# state that will, or hands on the characters waiting before a CDATA section
+# so that tree construction has seen them before it is asked where it stands.
+
+use html/internal/ascii
+use html/internal/lexer
+use html/internal/token
+use unicode
+
+# 13.2.5.41, the bogus comment state.
+function bogus_comment(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.emit_comment(@lx)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_comment(@lx)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.data @ lx.data.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else
+        lx.data @ lx.data.push(
+            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '>', stop_b: '>', stop_c: '>'), lower: false)
+        )
+
+# 13.2.5.42, the markup declaration open state; `<!` is read.
+function declaration_open(@lx: lexer.Lexer)
+    text = lx.text
+    at = lx.at
+
+    if at + 1 < text.len() && text[at] == '-' && text[at + 1] == '-'
+        lx.at @ at + 2
+        lexer.new_comment(@lx, first: "", at: lx.begun)
+        lx.state @ .comment_start
+    else if ascii.has_word_at(s: text, at: at, word: "doctype")
+        lx.at @ at + 7
+        lx.state @ .doctype
+    else if is_cdata_at(text, at)
+        # Whether a CDATA section is one depends on where tree construction
+        # stands, which the characters before it may move: they go first.
+        if lx.pending.len() > 0
+            lexer.flush_chars(@lx)
+            return
+        lx.at @ at + 7
+
+        if lx.foreign
+            lx.state @ .cdata_section
+        else
+            lexer.error(@lx, code: "cdata-in-html-content", at: lx.begun)
+            lexer.new_comment(@lx, first: "[CDATA[", at: lx.begun)
+            lx.state @ .bogus_comment
+    else
+        lexer.error(@lx, code: "incorrectly-opened-comment", at: lx.begun)
+        lexer.new_comment(@lx, first: "", at: lx.begun)
+        lx.state @ .bogus_comment
+
+# Whether `[CDATA[`, in that case, stands at `at` in `text`.
+function is_cdata_at(text: str, at: i64) -> bool
+    word = "[CDATA["
+
+    if at + word.len() > text.len()
+        return false
+
+    for i in range(from: 0, to: word.len())
+        if text[at + i] != word[i]
+            return false
+
+    return true
+
+# 13.2.5.43 and 13.2.5.44: the start of a comment, after `<!--` and `<!---`.
+function comment_start(@lx: lexer.Lexer)
+    dash = lx.state == .comment_start_dash
+
+    if lexer.at_end(lx)
+        if dash
+            lexer.error_here(@lx, "eof-in-comment")
+            lexer.emit_comment(@lx)
+            lexer.emit_eof(@lx)
+        else
+            lx.state @ .comment
+        return
+    b = lexer.byte(lx)
+
+    if b == '-'
+        lx.at @ lx.at + 1
+
+        lx.state @ if dash
+            .comment_end
+        else
+            .comment_start_dash
+    else if b == '>'
+        lexer.error_here(@lx, "abrupt-closing-of-empty-comment")
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_comment(@lx)
+    else
+        if dash
+            lx.data @ lx.data.push("-")
+        lx.state @ .comment
+
+# 13.2.5.45, the comment state.
+function comment(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-comment")
+        lexer.emit_comment(@lx)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '<'
+        lx.data @ lx.data.push("<")
+        lx.at @ lx.at + 1
+        lx.state @ .comment_less_than
+    else if b == '-'
+        lx.at @ lx.at + 1
+        lx.state @ .comment_end_dash
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.data @ lx.data.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else
+        lx.data @ lx.data.push(
+            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '<', stop_b: '-', stop_c: '-'), lower: false)
+        )
+
+# 13.2.5.46 to 13.2.5.49: `<`, `<!`, `<!-` and `<!--` inside a comment.
+function comment_less_than(@lx: lexer.Lexer)
+    b: u8 = if lexer.at_end(lx)
+        0
+    else
+        lexer.byte(lx)
+    ended = lexer.at_end(lx)
+
+    if lx.state == .comment_less_than
+        if !ended && b == '!'
+            lx.data @ lx.data.push("!")
+            lx.at @ lx.at + 1
+            lx.state @ .comment_less_than_bang
+        else if !ended && b == '<'
+            lx.data @ lx.data.push("<")
+            lx.at @ lx.at + 1
+        else
+            lx.state @ .comment
+    else if lx.state == .comment_less_than_bang
+        if !ended && b == '-'
+            lx.at @ lx.at + 1
+            lx.state @ .comment_less_than_bang_dash
+        else
+            lx.state @ .comment
+    else if lx.state == .comment_less_than_bang_dash
+        if !ended && b == '-'
+            lx.at @ lx.at + 1
+            lx.state @ .comment_less_than_bang_dash_dash
+        else
+            lx.state @ .comment_end_dash
+    else
+        if !ended && b != '>'
+            lexer.error_here(@lx, "nested-comment")
+        lx.state @ .comment_end
+
+# 13.2.5.50 to 13.2.5.52: `-`, `--` and `--!` inside a comment.
+function comment_end(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-comment")
+        lexer.emit_comment(@lx)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if lx.state == .comment_end_dash
+        if b == '-'
+            lx.at @ lx.at + 1
+            lx.state @ .comment_end
+        else
+            lx.data @ lx.data.push("-")
+            lx.state @ .comment
+    else if lx.state == .comment_end
+        if b == '>'
+            lx.at @ lx.at + 1
+            lx.state @ .data
+            lexer.emit_comment(@lx)
+        else if b == '!'
+            lx.at @ lx.at + 1
+            lx.state @ .comment_end_bang
+        else if b == '-'
+            lx.data @ lx.data.push("-")
+            lx.at @ lx.at + 1
+        else
+            lx.data @ lx.data.push("--")
+            lx.state @ .comment
+    else
+        if b == '-'
+            lx.data @ lx.data.push("--!")
+            lx.at @ lx.at + 1
+            lx.state @ .comment_end_dash
+        else if b == '>'
+            lexer.error_here(@lx, "incorrectly-closed-comment")
+            lx.at @ lx.at + 1
+            lx.state @ .data
+            lexer.emit_comment(@lx)
+        else
+            lx.data @ lx.data.push("--!")
+            lx.state @ .comment
+
+# 13.2.5.69 to 13.2.5.71: a CDATA section, its characters emitted as text up
+# to `]]>`.
+function cdata(@lx: lexer.Lexer)
+    if lx.state == .cdata_section
+        if lexer.at_end(lx)
+            lexer.error_here(@lx, "eof-in-cdata")
+            lexer.emit_eof(@lx)
+        else if lexer.byte(lx) == ']'
+            lx.at @ lx.at + 1
+            lx.state @ .cdata_section_bracket
+        else
+            at = lx.at
+            end: i64 @= lx.at
+
+            while end < lx.text.len() && lx.text[end] != ']'
+                end @ end + 1
+
+            lexer.text_out(@lx, s: lexer.take(@lx, end: end, lower: false), at: at)
+    else if lx.state == .cdata_section_bracket
+        if !lexer.at_end(lx) && lexer.byte(lx) == ']'
+            lx.at @ lx.at + 1
+            lx.state @ .cdata_section_end
+        else
+            lexer.text_out(@lx, s: "]", at: lx.at - 1)
+            lx.state @ .cdata_section
+    else if !lexer.at_end(lx) && lexer.byte(lx) == ']'
+        lexer.text_out(@lx, s: "]", at: lx.at - 2)
+        lx.at @ lx.at + 1
+    else if !lexer.at_end(lx) && lexer.byte(lx) == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+    else
+        lexer.text_out(@lx, s: "]]", at: lx.at - 2)
+        lx.state @ .cdata_section
+
+# 13.2.5.72 and 13.2.5.73: `<?` and an instruction's target; a target that
+# is none, or is `xml` or `xml-stylesheet`, makes a bogus comment of `?` and
+# what was read.
+function instruction_target(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-processing-instruction")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if lx.state == .instruction_open
+        if ascii.is_alpha(b) || b == '_'
+            lx.state @ .instruction_target
+        else
+            lexer.error_here(@lx, "invalid-first-character-of-processing-instruction-target")
+            lexer.new_comment(@lx, first: "?", at: lx.begun)
+            lx.state @ .bogus_comment
+    else if ascii.is_white(b) || b == '?' || b == '>'
+        target = lx.temp.join("")
+
+        if ascii.equals_ignoring_case(a: target, b: "xml") || ascii.equals_ignoring_case(a: target, b: "xml-stylesheet")
+            lexer.error_here(@lx, "disallowed-processing-instruction-target")
+            lexer.new_comment(@lx, first: "?" + target, at: lx.begun)
+            lx.state @ .bogus_comment
+        else
+            lx.name @ [target]
+            lx.data @ []
+            lx.state @ .after_instruction_target
+    else if ascii.is_alnum(b) || b == '-' || b == '_'
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && (ascii.is_alnum(lx.text[end]) || lx.text[end] == '-' || lx.text[end] == '_')
+            end @ end + 1
+
+        lx.temp @ lx.temp.push(lexer.take(@lx, end: end, lower: false))
+    else
+        lexer.error_here(@lx, "invalid-processing-instruction-target")
+        lexer.new_comment(@lx, first: "?" + lx.temp.join(""), at: lx.begun)
+        lx.state @ .bogus_comment
+
+# 13.2.5.74 to 13.2.5.76: an instruction's data, up to `>` or `?>`.
+function instruction_data(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-processing-instruction")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if lx.state == .after_instruction_target
+        if ascii.is_white(b)
+            lx.at @ lx.at + 1
+        else
+            lx.state @ .instruction_data
+    else if lx.state == .instruction_questionable && b != '>'
+        lx.data @ lx.data.push("?")
+        lx.state @ .instruction_data
+    else if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        t: token.Token @= token.empty(kind: token.INSTRUCTION, at: lx.begun)
+        t.name @ lx.name.join("")
+        t.data @ lx.data.join("")
+        lexer.emit(@lx, t)
+    else if b == '?'
+        lx.at @ lx.at + 1
+        lx.state @ .instruction_questionable
+    else
+        lx.data @ lx.data.push(
+            lexer.take(@lx, end: lexer.run_end(lx, stop_a: '?', stop_b: '>', stop_c: '>'), lower: false)
+        )
+
+## Tests
+
+test "declaration_open: a comment, a doctype in any case, CDATA outside foreign content, and anything else"
+    lx: lexer.Lexer @= lexer.start("<!--")
+    lx.at @ 2
+    declaration_open(@lx)
+    assert lx.state == .comment_start && lx.at == 4
+    up: lexer.Lexer @= lexer.start("<!DocType")
+    up.at @ 2
+    declaration_open(@up)
+    assert up.state == .doctype && up.at == 9
+    html: lexer.Lexer @= lexer.start("<![CDATA[x")
+    html.at @ 2
+    declaration_open(@html)
+    assert html.state == .bogus_comment && html.data == ["[CDATA["] && html.codes == ["cdata-in-html-content"]
+    other: lexer.Lexer @= lexer.start("<!x")
+    other.at @ 2
+    declaration_open(@other)
+    assert other.state == .bogus_comment && other.at == 2 && other.codes == ["incorrectly-opened-comment"]
+
+test "declaration_open: characters waiting before a CDATA section handed on first, nothing read"
+    lx: lexer.Lexer @= lexer.start("a<![CDATA[")
+    lexer.text_out(@lx, s: "a", at: 0)
+    lx.at @ 3
+    lx.state @ .markup_declaration_open
+    declaration_open(@lx)
+    assert lx.queue.len() == 1 && lx.at == 3 && lx.state == .markup_declaration_open
+    lx.foreign @ true
+    declaration_open(@lx)
+    assert lx.state == .cdata_section && lx.at == 10
+
+test "is_cdata_at: the exact case only, and past the end"
+    assert is_cdata_at("[CDATA[", 0) && !is_cdata_at("[cdata[", 0) && !is_cdata_at("[CDATA", 0)

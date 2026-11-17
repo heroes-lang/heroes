@@ -1,0 +1,133 @@
+# A YAML stream read whole: its line breaks made one, a byte order mark at its
+# start left out, then cut into tokens, read as events and built into values.
+
+use json
+use yaml/internal/composer
+use yaml/internal/parser
+use yaml/internal/scanner
+use yaml/internal/source
+use yaml/internal/writer
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# `text` as the scanner reads it: each `\r\n` and `\r` a `\n`, and a byte
+# order mark at its start left out, so that a message's column counts what a
+# reader sees.
+function prepared(text: str) -> str
+    t = source.with_line_feeds(text)
+
+    if t.len() >= 3 && t[0] == 0xef && t[1] == 0xbb && t[2] == 0xbf
+        return t.slice(from: 3, to: t.len())
+    return t
+
+# The documents of `text`, read within `limits`, with the prepared text their
+# positions count in.
+function documents(text: str, limits: composer.Limits) -> [composer.Document]?
+    tokens = scanner.scan(text)?
+    events = parser.parse(tokens, text)?
+    return composer.compose(events, text, limits)
+
+# The values of every document of `text`, read within `limits`.
+function many(text: str, limits: composer.Limits) -> [json.Value]?
+    read = documents(prepared(text), limits)?
+    values: [json.Value] @= []
+
+    for d in read
+        values @ values.push(d.value)
+
+    return ok(values)
+
+# The value of the one document of `text`, read within `limits`: `null` where
+# it holds none. Fails `invalid` where it holds more than one.
+function one(text: str, limits: composer.Limits) -> json.Value?
+    ready = prepared(text)
+    read = documents(ready, limits)?
+
+    if read.len() == 0
+        return ok(.null_value)
+
+    if read.len() > 1
+        return fail(
+            code: INVALID,
+            msg: source.said(text: ready, at: read[1].at, what: "a second document, where one is read: `parse_all` reads every document of a stream")
+        )
+    return ok(read[0].value)
+
+## Tests
+
+# The limits of a strict reading.
+function strict_limits() -> composer.Limits
+    return composer.Limits(max_depth: 512, max_expanded: 1000000, duplicate_keys: false)
+
+# The examples of chapter 2 of YAML 1.2.2 that the JSON schema holds, each
+# with its values in JSON, as `gopkg.in/yaml.v3` reads them; where the two
+# schemas differ, the values the JSON schema gives, and that oracle's noted.
+function spec_examples() -> {str: [str]}
+    return {
+        "- Mark McGwire\n- Sammy Sosa\n- Ken Griffey\n": ["[\"Mark McGwire\",\"Sammy Sosa\",\"Ken Griffey\"]"]
+        "hr:  65    # Home runs\navg: 0.278 # Batting average\nrbi: 147   # Runs Batted In\n": ["{\"avg\":0.278,\"hr\":65,\"rbi\":147}"]
+        "american:\n- Boston Red Sox\n- Detroit Tigers\n- New York Yankees\nnational:\n- New York Mets\n- Chicago Cubs\n- Atlanta Braves\n": ["{\"american\":[\"Boston Red Sox\",\"Detroit Tigers\",\"New York Yankees\"],\"national\":[\"New York Mets\",\"Chicago Cubs\",\"Atlanta Braves\"]}"]
+        "-\n  name: Mark McGwire\n  hr:   65\n  avg:  0.278\n-\n  name: Sammy Sosa\n  hr:   63\n  avg:  0.288\n": ["[{\"avg\":0.278,\"hr\":65,\"name\":\"Mark McGwire\"},{\"avg\":0.288,\"hr\":63,\"name\":\"Sammy Sosa\"}]"]
+        "- [name        , hr, avg  ]\n- [Mark McGwire, 65, 0.278]\n- [Sammy Sosa  , 63, 0.288]\n": ["[[\"name\",\"hr\",\"avg\"],[\"Mark McGwire\",65,0.278],[\"Sammy Sosa\",63,0.288]]"]
+        "Mark McGwire: {hr: 65, avg: 0.278}\nSammy Sosa: {\n    hr: 63,\n    avg: 0.288,\n  }\n": ["{\"Mark McGwire\":{\"avg\":0.278,\"hr\":65},\"Sammy Sosa\":{\"avg\":0.288,\"hr\":63}}"]
+        "# Ranking of 1998 home runs\n---\n- Mark McGwire\n- Sammy Sosa\n- Ken Griffey\n\n# Team ranking\n---\n- Chicago Cubs\n- St Louis Cardinals\n": ["[\"Mark McGwire\",\"Sammy Sosa\",\"Ken Griffey\"]", "[\"Chicago Cubs\",\"St Louis Cardinals\"]"]
+        "---\ntime: 20:03:20\nplayer: Sammy Sosa\naction: strike (miss)\n...\n---\ntime: 20:03:47\nplayer: Sammy Sosa\naction: grand slam\n...\n": ["{\"action\":\"strike (miss)\",\"player\":\"Sammy Sosa\",\"time\":\"20:03:20\"}", "{\"action\":\"grand slam\",\"player\":\"Sammy Sosa\",\"time\":\"20:03:47\"}"]
+        "---\nhr: # 1998 hr ranking\n- Mark McGwire\n- Sammy Sosa\n# 1998 rbi ranking\nrbi:\n- Sammy Sosa\n- Ken Griffey\n": ["{\"hr\":[\"Mark McGwire\",\"Sammy Sosa\"],\"rbi\":[\"Sammy Sosa\",\"Ken Griffey\"]}"]
+        "---\nhr:\n- Mark McGwire\n# Following node labeled SS\n- &SS Sammy Sosa\nrbi:\n- *SS # Subsequent occurrence\n- Ken Griffey\n": ["{\"hr\":[\"Mark McGwire\",\"Sammy Sosa\"],\"rbi\":[\"Sammy Sosa\",\"Ken Griffey\"]}"]
+        "---\n# Products purchased\n- item    : Super Hoop\n  quantity: 1\n- item    : Basketball\n  quantity: 4\n- item    : Big Shoes\n  quantity: 1\n": ["[{\"item\":\"Super Hoop\",\"quantity\":1},{\"item\":\"Basketball\",\"quantity\":4},{\"item\":\"Big Shoes\",\"quantity\":1}]"]
+        "# ASCII Art\n--- |\n  \\//||\\/||\n  // ||  ||__\n": ["\"\\\\//||\\\\/||\\n// ||  ||__\\n\""]
+        "--- >\n  Mark McGwire's\n  year was crippled\n  by a knee injury.\n": ["\"Mark McGwire's year was crippled by a knee injury.\\n\""]
+        "--- >\n Sammy Sosa completed another\n fine season with great stats.\n\n   63 Home Runs\n   0.288 Batting Average\n\n What a year!\n": ["\"Sammy Sosa completed another fine season with great stats.\\n\\n  63 Home Runs\\n  0.288 Batting Average\\n\\nWhat a year!\\n\""]
+        "name: Mark McGwire\naccomplishment: >\n  Mark set a major league\n  home run record in 1998.\nstats: |\n  65 Home Runs\n  0.278 Batting Average\n": ["{\"accomplishment\":\"Mark set a major league home run record in 1998.\\n\",\"name\":\"Mark McGwire\",\"stats\":\"65 Home Runs\\n0.278 Batting Average\\n\"}"]
+        "unicode: \"Sosa did fine.\\u263A\"\ncontrol: \"\\b1998\\t1999\\t2000\\n\"\nhex esc: \"\\x0d\\x0a is \\r\\n\"\n\nsingle: '\"Howdy!\" he cried.'\nquoted: ' # Not a ''comment''.'\ntie-fighter: '|\\-*-/|'\n": ["{\"control\":\"\\b1998\\t1999\\t2000\\n\",\"hex esc\":\"\\r\\n is \\r\\n\",\"quoted\":\" # Not a 'comment'.\",\"single\":\"\\\"Howdy!\\\" he cried.\",\"tie-fighter\":\"|\\\\-*-/|\",\"unicode\":\"Sosa did fine.☺\"}"]
+        "plain:\n  This unquoted scalar\n  spans many lines.\n\nquoted: \"So does this\n  quoted scalar.\\n\"\n": ["{\"plain\":\"This unquoted scalar spans many lines.\",\"quoted\":\"So does this quoted scalar.\\n\"}"]
+        "canonical: 12345\ndecimal: +12345\noctal: 0o14\nhexadecimal: 0xC\n": ["{\"canonical\":12345,\"decimal\":\"+12345\",\"octal\":\"0o14\",\"hexadecimal\":\"0xC\"}"]
+        "canonical: 1.23015e+3\nexponential: 12.3015e+02\nfixed: 1230.15\nnegative infinity: -.inf\nnot a number: .nan\n": ["{\"canonical\":1230.15,\"exponential\":1230.15,\"fixed\":1230.15,\"negative infinity\":\"-.inf\",\"not a number\":\".nan\"}"]
+        "canonical: 2001-12-15T02:59:43.1Z\niso8601: 2001-12-14t21:59:43.10-05:00\nspaced: 2001-12-14 21:59:43.10 -5\ndate: 2002-12-14\n": ["{\"canonical\":\"2001-12-15T02:59:43.1Z\",\"iso8601\":\"2001-12-14t21:59:43.10-05:00\",\"spaced\":\"2001-12-14 21:59:43.10 -5\",\"date\":\"2002-12-14\"}"]
+        "---\nTime: 2001-11-23 15:01:42 -5\nUser: ed\nWarning:\n  This is an error message\n  for the log file\n---\nTime: 2001-11-23 15:02:31 -5\nUser: ed\nWarning:\n  A slightly different error\n  message.\n---\nDate: 2001-11-23 15:03:17 -5\nUser: ed\nFatal:\n  Unknown variable \"bar\"\nStack:\n- file: TopClass.py\n  line: 23\n  code: |\n    x = MoreObject(\"345\\n\")\n- file: MoreClass.py\n  line: 58\n  code: |-\n    foo = bar\n": ["{\"Time\":\"2001-11-23 15:01:42 -5\",\"User\":\"ed\",\"Warning\":\"This is an error message for the log file\"}", "{\"Time\":\"2001-11-23 15:02:31 -5\",\"User\":\"ed\",\"Warning\":\"A slightly different error message.\"}", "{\"Date\":\"2001-11-23 15:03:17 -5\",\"Fatal\":\"Unknown variable \\\"bar\\\"\",\"Stack\":[{\"code\":\"x = MoreObject(\\\"345\\\\n\\\")\\n\",\"file\":\"TopClass.py\",\"line\":23},{\"code\":\"foo = bar\",\"file\":\"MoreClass.py\",\"line\":58}],\"User\":\"ed\"}"]
+    }
+
+# The examples of chapter 2 that this reader refuses, each with its code.
+function spec_refusals() -> {str: str}
+    return {
+        "? - Detroit Tigers\n  - Chicago cubs\n: - 2001-07-23\n\n? [ New York Yankees,\n    Atlanta Braves ]\n: [ 2001-07-02, 2001-08-12,\n    2001-08-14 ]\n": "invalid"
+        "null:\nbooleans: [ true, false ]\nstring: '012345'\n": "invalid"
+        "---\nnot-date: !!str 2002-04-28\n\npicture: !!binary |\n R0lGODlhDAAMAIQAAP//9/X\n\napplication specific tag: !something |\n The semantics of the tag\n above may be different for\n different documents.\n": "unsupported"
+        "%TAG ! tag:clarkevans.com,2002:\n--- !shape\n  # Use the ! handle for presenting\n  # tag:clarkevans.com,2002:circle\n- !circle\n  center: &ORIGIN {x: 73, y: 129}\n  radius: 7\n": "unsupported"
+        "# Sets are represented as a\n# Mapping where each key is\n# associated with a null value\n--- !!set\n? Mark McGwire\n? Sammy Sosa\n? Ken Griffey\n": "unsupported"
+    }
+
+test "many: the examples of YAML 1.2.2 chapter 2 the JSON schema holds, read, then written and read back"
+    examples = spec_examples()
+
+    for text in keys(examples)
+        docs = many(text, strict_limits()).must()
+        want: [json.Value] @= []
+
+        for w in examples[text].must()
+            want @ want.push(json.parse(w).must())
+
+        assert docs == want
+
+        for v in docs
+            assert many(writer.document(v).must(), strict_limits()).must() == [v]
+
+test "many: the examples of chapter 2 refused, keys that are a list or null, and tags of no core kind"
+    refusals = spec_refusals()
+
+    for text in keys(refusals)
+        match many(text, strict_limits())
+            .ok _  => assert false
+            .err e => assert e.code == refusals[text].must()
+
+test "many: example 2.16's keys kept in the order they are written"
+    doc = many("name: Mark McGwire\naccomplishment: >\n  Mark set a major league\n  home run record in 1998.\nstats: |\n  65 Home Runs\n  0.278 Batting Average\n", strict_limits()).must()[0]
+    assert keys(json.members_of(doc).must()) == ["name", "accomplishment", "stats"]
+
+test "prepared: carriage returns, a byte order mark at the start, and neither"
+    bom: [u8] = [0xef, 0xbb, 0xbf, 0x61, 0x0d, 0x0a]
+    assert prepared(bom.validated_bytes().must()) == "a\n"
+    assert prepared("a\rb") == "a\nb"
+    assert prepared("") == ""

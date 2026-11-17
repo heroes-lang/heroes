@@ -1,0 +1,330 @@
+# A body's media type guessed from its first bytes, by the WHATWG's MIME
+# Sniffing standard with scripts sniffed, as Go's `DetectContentType` reads it:
+# HTML and XML first, then PDF, PostScript and the byte-order marks, images,
+# audio and video, fonts, archives, WebAssembly, and text where no byte is a
+# binary one.
+
+# The bytes read: the standard's resource header.
+constant HEADER_BYTES: i64
+    512
+
+# The type of the bytes `data` begins with.
+function sniff(data: [u8]) -> str
+    head: [u8] @= data
+
+    if data.len() > HEADER_BYTES
+        head @ data.slice(from: 0, to: HEADER_BYTES)
+    at = after_space(head)
+
+    for tag in html_tags()
+        if has_tag(head, at: at, tag: tag)
+            return "text/html; charset=utf-8"
+
+    if has_folded(head, at: at, text: "<?XML")
+        return "text/xml; charset=utf-8"
+    exact = by_prefix(head)
+
+    if exact != ""
+        return exact
+
+    if is_mp4(head)
+        return "video/mp4"
+
+    if head.len() >= 36 && head[34] == 'L' && head[35] == 'P'
+        return "application/vnd.ms-fontobject"
+
+    for b in head
+        if is_binary(b)
+            return "application/octet-stream"
+
+    return "text/plain; charset=utf-8"
+
+# The tags that make bytes HTML, each followed by a space or a `>`.
+function html_tags() -> [str]
+    return [
+        "<!DOCTYPE HTML"
+        "<HTML"
+        "<HEAD"
+        "<SCRIPT"
+        "<IFRAME"
+        "<H1"
+        "<DIV"
+        "<FONT"
+        "<TABLE"
+        "<A"
+        "<STYLE"
+        "<TITLE"
+        "<B"
+        "<BODY"
+        "<BR"
+        "<P"
+        "<!--"
+    ]
+
+# Where the bytes of `head` begin after the white space before them.
+function after_space(head: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < head.len() && is_space(head[at])
+        at @ at + 1
+
+    return at
+
+# Whether `b` is white space as the standard counts it before a tag.
+function is_space(b: u8) -> bool
+    return b == 9 || b == 10 || b == 12 || b == 13 || b == 32
+
+# Whether `head` holds `text`, written in upper case, at `at`, its ASCII
+# letters in either case.
+function has_folded(head: [u8], at: i64, text: str) -> bool
+    if at + text.len() > head.len()
+        return false
+
+    for i in range(from: 0, to: text.len())
+        if upper(head[at + i]) != text[i]
+            return false
+
+    return true
+
+# `b` with an ASCII lower-case letter made upper case.
+function upper(b: u8) -> u8
+    if b >= 'a' && b <= 'z'
+        return b - 32
+    return b
+
+# Whether `head` holds the tag `tag` at `at`, then a space or a `>`.
+function has_tag(head: [u8], at: i64, tag: str) -> bool
+    end = at + tag.len()
+    return has_folded(head, at: at, text: tag) && end < head.len() && (head[end] == ' ' || head[end] == '>')
+
+# Whether `head` begins with `prefix`, byte for byte.
+function begins(head: [u8], prefix: [u8]) -> bool
+    if prefix.len() > head.len()
+        return false
+
+    for i in range(from: 0, to: prefix.len())
+        if head[i] != prefix[i]
+            return false
+
+    return true
+
+# Whether `head` holds `text`'s bytes at `at`.
+function holds_at(head: [u8], at: i64, text: str) -> bool
+    if at + text.len() > head.len()
+        return false
+
+    for i in range(from: 0, to: text.len())
+        if head[at + i] != text[i]
+            return false
+
+    return true
+
+# The type a fixed signature at the start of `head` names, "" for none.
+function by_prefix(head: [u8]) -> str
+    if holds_at(head, at: 0, text: "%PDF-")
+        return "application/pdf"
+
+    if holds_at(head, at: 0, text: "%!PS-Adobe-")
+        return "application/postscript"
+
+    if begins(head: head, prefix: [254, 255])
+        return "text/plain; charset=utf-16be"
+
+    if begins(head: head, prefix: [255, 254])
+        return "text/plain; charset=utf-16le"
+
+    if begins(head: head, prefix: [239, 187, 191])
+        return "text/plain; charset=utf-8"
+    image = image_of(head)
+
+    if image != ""
+        return image
+    media = media_of(head)
+
+    if media != ""
+        return media
+    return archive_of(head)
+
+# The image type `head` begins with, "" for none.
+function image_of(head: [u8]) -> str
+    if holds_at(head, at: 0, text: "GIF87a") || holds_at(head, at: 0, text: "GIF89a")
+        return "image/gif"
+
+    if begins(head: head, prefix: [137, 80, 78, 71, 13, 10, 26, 10])
+        return "image/png"
+
+    if begins(head: head, prefix: [255, 216, 255])
+        return "image/jpeg"
+
+    if holds_at(head, at: 0, text: "BM")
+        return "image/bmp"
+
+    if holds_at(head, at: 0, text: "RIFF") && holds_at(head, at: 8, text: "WEBPVP")
+        return "image/webp"
+
+    if begins(head: head, prefix: [0, 0, 1, 0]) || begins(head: head, prefix: [0, 0, 2, 0])
+        return "image/x-icon"
+    return ""
+
+# The audio or video type `head` begins with, "" for none; MP4 is `is_mp4`'s.
+function media_of(head: [u8]) -> str
+    if holds_at(head, at: 0, text: "RIFF") && holds_at(head, at: 8, text: "WAVE")
+        return "audio/wave"
+
+    if holds_at(head, at: 0, text: "RIFF") && holds_at(head, at: 8, text: "AVI ")
+        return "video/avi"
+
+    if holds_at(head, at: 0, text: "FORM") && holds_at(head, at: 8, text: "AIFF")
+        return "audio/aiff"
+
+    if holds_at(head, at: 0, text: "ID3")
+        return "audio/mpeg"
+
+    if begins(head: head, prefix: [79, 103, 103, 83, 0])
+        return "application/ogg"
+
+    if begins(head: head, prefix: [77, 84, 104, 100, 0, 0, 0, 6])
+        return "audio/midi"
+
+    if begins(head: head, prefix: [26, 69, 223, 163])
+        return "video/webm"
+    return ""
+
+# The font, archive or WebAssembly type `head` begins with, "" for none.
+function archive_of(head: [u8]) -> str
+    if begins(head: head, prefix: [0, 1, 0, 0])
+        return "font/ttf"
+
+    for pair in [["OTTO", "font/otf"], ["ttcf", "font/collection"], ["wOFF", "font/woff"], ["wOF2", "font/woff2"]]
+        if holds_at(head, at: 0, text: pair[0])
+            return pair[1]
+
+    if begins(head: head, prefix: [31, 139, 8])
+        return "application/x-gzip"
+
+    if begins(head: head, prefix: [80, 75, 3, 4])
+        return "application/zip"
+
+    if begins(head: head, prefix: [82, 97, 114, 33, 26, 7, 0]) || begins(head: head, prefix: [82, 97, 114, 33, 26, 7, 1, 0])
+        return "application/x-rar-compressed"
+
+    if begins(head: head, prefix: [0, 97, 115, 109])
+        return "application/wasm"
+    return ""
+
+# Whether `head` is an MP4 file by the standard: a first box `ftyp` whose
+# size fits, and `mp4` as its major brand or one of its brands.
+function is_mp4(head: [u8]) -> bool
+    if head.len() < 12
+        return false
+    size = to_i64(head[0]).must() * 16_777_216 + to_i64(head[1]).must() * 65_536 + to_i64(head[2]).must() * 256 + to_i64(head[3]).must()
+
+    if size > head.len() || size % 4 != 0 || size < 12 || !holds_at(head, at: 4, text: "ftyp")
+        return false
+
+    if holds_at(head, at: 8, text: "mp4")
+        return true
+    at: i64 @= 16
+
+    while at + 3 <= size
+        if holds_at(head, at: at, text: "mp4")
+            return true
+        at @ at + 4
+
+    return false
+
+# Whether `b` is a byte the standard counts binary: 0 to 8, 11, 14 to 26 and
+# 28 to 31.
+function is_binary(b: u8) -> bool
+    return b <= 8 || b == 11 || b >= 14 && b <= 26 || b >= 28 && b <= 31
+
+# The bytes of `s`, for the tests.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        out @ out.push(s[i])
+
+    return out
+
+test "sniff: empty, plain text, text above ASCII, bytes that are no UTF-8, as Go answers"
+    assert sniff([]) == "text/plain; charset=utf-8"
+    assert sniff(bytes_of("hello")) == "text/plain; charset=utf-8"
+    assert sniff(bytes_of("café")) == "text/plain; charset=utf-8"
+    assert sniff([255, 255, 255]) == "text/plain; charset=utf-8"
+
+test "sniff: a zero byte is binary, an escape and a form feed are not"
+    assert sniff([97, 0, 98]) == "application/octet-stream"
+    assert sniff([97, 27, 98]) == "text/plain; charset=utf-8"
+    assert sniff([97, 12, 98]) == "text/plain; charset=utf-8"
+
+test "sniff: HTML after white space, in any case, only before a space or a closing bracket"
+    assert sniff(bytes_of(" \n\t<!DOCTYPE html><p>")) == "text/html; charset=utf-8"
+    assert sniff(bytes_of("<!doctype HTML>")) == "text/html; charset=utf-8"
+    assert sniff(bytes_of("<!DOCTYPE htmlx")) == "text/plain; charset=utf-8"
+    assert sniff(bytes_of("<html")) == "text/plain; charset=utf-8"
+    assert sniff(bytes_of("<HTML>")) == "text/html; charset=utf-8"
+    assert sniff(bytes_of("<!--x")) == "text/plain; charset=utf-8"
+    assert sniff(bytes_of("<!-- x")) == "text/html; charset=utf-8"
+    assert sniff(bytes_of("<pre>")) == "text/plain; charset=utf-8"
+
+test "sniff: each HTML tag"
+    for t in ["<p>", "<br>", "<b>", "<a href>", "<SCRIPT>", "<iframe ", "<h1>", "<div>", "<font>", "<table>", "<style>", "<title>", "<body>", "<head>", "<!-->"]
+        assert sniff(bytes_of(t)) == "text/html; charset=utf-8"
+
+test "sniff: XML, PDF, PostScript and the three byte-order marks"
+    assert sniff(bytes_of("  <?xml")) == "text/xml; charset=utf-8"
+    assert sniff(bytes_of("%PDF-1.4")) == "application/pdf"
+    assert sniff(bytes_of("%!PS-Adobe-3.0")) == "application/postscript"
+    assert sniff([254, 255, 97, 98]) == "text/plain; charset=utf-16be"
+    assert sniff([255, 254, 97, 98]) == "text/plain; charset=utf-16le"
+    assert sniff([239, 187, 191, 97]) == "text/plain; charset=utf-8"
+
+test "sniff: images"
+    assert sniff(bytes_of("GIF87a")) == "image/gif" && sniff(bytes_of("GIF89a")) == "image/gif"
+    assert sniff([137, 80, 78, 71, 13, 10, 26, 10, 120]) == "image/png"
+    assert sniff([255, 216, 255, 120]) == "image/jpeg"
+    assert sniff(bytes_of("BMxx")) == "image/bmp"
+    assert sniff([82, 73, 70, 70, 0, 0, 0, 0, 87, 69, 66, 80, 86, 80]) == "image/webp"
+    assert sniff([0, 0, 1, 0]) == "image/x-icon" && sniff([0, 0, 2, 0]) == "image/x-icon"
+
+test "sniff: audio and video"
+    assert sniff([82, 73, 70, 70, 0, 0, 0, 0, 87, 65, 86, 69]) == "audio/wave"
+    assert sniff([82, 73, 70, 70, 0, 0, 0, 0, 65, 86, 73, 32]) == "video/avi"
+    assert sniff([70, 79, 82, 77, 0, 0, 0, 0, 65, 73, 70, 70]) == "audio/aiff"
+    assert sniff(bytes_of("ID3")) == "audio/mpeg"
+    assert sniff([79, 103, 103, 83, 0]) == "application/ogg"
+    assert sniff([77, 84, 104, 100, 0, 0, 0, 6]) == "audio/midi"
+    assert sniff([26, 69, 223, 163]) == "video/webm"
+
+test "sniff: MP4 by its major brand and by a later brand, a box past the bytes refused"
+    assert sniff([0, 0, 0, 24, 102, 116, 121, 112, 109, 112, 52, 50, 0, 0, 0, 0, 109, 112, 52, 50, 105, 115, 111, 109]) == "video/mp4"
+    assert sniff([0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109, 0, 0, 0, 0, 109, 112, 52, 49]) == "video/mp4"
+    assert sniff([0, 0, 0, 64, 102, 116, 121, 112, 109, 112, 52, 50]) == "application/octet-stream"
+
+test "sniff: fonts, archives and WebAssembly"
+    assert sniff([0, 1, 0, 0]) == "font/ttf"
+    assert sniff(bytes_of("OTTO")) == "font/otf" && sniff(bytes_of("ttcf")) == "font/collection"
+    assert sniff(bytes_of("wOFF")) == "font/woff" && sniff(bytes_of("wOF2")) == "font/woff2"
+    assert sniff([31, 139, 8]) == "application/x-gzip"
+    assert sniff([80, 75, 3, 4]) == "application/zip"
+    assert sniff([82, 97, 114, 33, 26, 7, 0]) == "application/x-rar-compressed"
+    assert sniff([82, 97, 114, 33, 26, 7, 1, 0]) == "application/x-rar-compressed"
+    assert sniff([0, 97, 115, 109, 1]) == "application/wasm"
+    eot: [u8] @= []
+
+    for _ in range(from: 0, to: 40)
+        eot @ eot.push(0)
+
+    eot[34] @ 'L'
+    eot[35] @ 'P'
+    assert sniff(eot) == "application/vnd.ms-fontobject"
+
+test "sniff: only the first 512 bytes read"
+    data: [u8] @= []
+
+    for _ in range(from: 0, to: 600)
+        data @ data.push(97)
+
+    data[550] @ 0
+    assert sniff(data) == "text/plain; charset=utf-8"

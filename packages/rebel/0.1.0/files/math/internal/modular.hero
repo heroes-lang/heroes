@@ -1,0 +1,120 @@
+# Arithmetic modulo a number: a power, a product and an inverse, each kept
+# below the modulus at every step, so a modulus as large as `MAX_I64` never
+# overflows on the way.
+
+use math/internal/checked
+use math/internal/integers
+use math/internal/limits
+
+# The largest whole number whose square fits in an `i64`.
+constant ROOT_OF_MAX: i64
+    3037000499
+
+# `base` raised to `exponent` modulo `modulus`, by squaring, each product
+# taken modulo by doubling and halving so that no step leaves `modulus`.
+#
+# - `base`: any `i64`.
+# - `exponent`: any `i64`.
+# - `modulus`: 1 or more.
+function pow_mod(base: i64, exponent: i64, modulus: i64) -> i64?
+    if modulus < 1
+        return fail(code: limits.INVALID, msg: f"{modulus} is no modulus: a modulus is 1 or more")
+
+    if modulus == 1
+        return ok(0)
+    factor: i64 @= integers.rem_euclid_i64(x: base, by: modulus)
+
+    if exponent < 0
+        factor @ inverse_mod(x: factor, modulus: modulus)?
+    left: u64 @= checked.abs_diff(a: exponent, b: 0)
+    result: i64 @= 1
+
+    while left > 0
+        if left % 2 == 1
+            result @ mul_mod(a: result, b: factor, modulus: modulus)
+        left @ left / 2
+
+        if left > 0
+            factor @ mul_mod(a: factor, b: factor, modulus: modulus)
+
+    return ok(result)
+
+# `a` plus `b` modulo `modulus`, both below it, compared before they are added
+# so the sum never passes `MAX_I64`.
+#
+# - `a`: from 0 below `modulus`.
+# - `b`: from 0 below `modulus`.
+# - `modulus`: 1 or more.
+function add_mod(a: i64, b: i64, modulus: i64) -> i64
+    if a >= modulus - b
+        return a - (modulus - b)
+    return a + b
+
+# `a` times `b` modulo `modulus`, both below it: directly where the product
+# fits, else by doubling `a` and halving `b`.
+#
+# - `a`: from 0 below `modulus`.
+# - `b`: from 0 below `modulus`.
+# - `modulus`: 1 or more.
+function mul_mod(a: i64, b: i64, modulus: i64) -> i64
+    if a <= ROOT_OF_MAX && b <= ROOT_OF_MAX
+        return a * b % modulus
+    result: i64 @= 0
+    doubled: i64 @= a
+    left: i64 @= b
+
+    while left > 0
+        if left & 1 == 1
+            result @ add_mod(a: result, b: doubled, modulus: modulus)
+        doubled @ add_mod(a: doubled, b: doubled, modulus: modulus)
+        left @ left >> 1
+
+    return result
+
+# The inverse of `x` modulo `modulus`, by Euclid's algorithm extended, its
+# coefficients kept modulo `modulus` so none overflows.
+#
+# - `x`: from 0 below `modulus`.
+# - `modulus`: 2 or more.
+function inverse_mod(x: i64, modulus: i64) -> i64?
+    before: i64 @= x
+    now: i64 @= modulus
+    before_coefficient: i64 @= 1
+    coefficient: i64 @= 0
+
+    while now != 0
+        quotient = before / now
+        next = before - quotient * now
+        before @ now
+        now @ next
+        product = mul_mod(a: quotient % modulus, b: coefficient, modulus: modulus)
+        next_coefficient = add_mod(a: before_coefficient, b: modulus - product, modulus: modulus) % modulus
+        before_coefficient @ coefficient
+        coefficient @ next_coefficient
+
+    if before != 1
+        return fail(code: limits.INVALID, msg: f"{x} has no inverse modulo {modulus}: they share the divisor {before}")
+    return ok(before_coefficient)
+
+## Tests
+
+# Python's three-argument `pow`, run on 2026-11-16.
+test "pow_mod: an inverse, small powers, modulus one, a negative base, the largest numbers, the smallest base and exponent"
+    assert pow_mod(base: 3, exponent: -1, modulus: 7).must() == 5
+    assert pow_mod(base: 2, exponent: 10, modulus: 1000).must() == 24
+    assert pow_mod(base: 0, exponent: 0, modulus: 1).must() == 0
+    assert pow_mod(base: 0, exponent: -1, modulus: 1).must() == 0
+    assert pow_mod(base: 5, exponent: 0, modulus: 7).must() == 1
+    assert pow_mod(base: -3, exponent: 3, modulus: 7).must() == 1
+    assert pow_mod(base: limits.MAX_I64, exponent: limits.MAX_I64, modulus: limits.MAX_I64 - 1).must() == 1
+    assert pow_mod(base: 2, exponent: limits.MAX_I64, modulus: limits.MAX_I64).must() == 128
+    assert pow_mod(base: 3, exponent: -5, modulus: limits.MAX_I64).must() == 8729940611014808377
+    assert pow_mod(base: limits.MIN_I64, exponent: 3, modulus: 1000000007).must() == 523193634
+    assert pow_mod(base: 5, exponent: limits.MIN_I64, modulus: limits.MAX_I64).must() == 7322334274368016500
+
+test "pow_mod fails invalid on a modulus below one and on a base with no inverse"
+    assert pow_mod(base: 2, exponent: 3, modulus: 0).is_err()
+
+    match pow_mod(base: 2, exponent: -1, modulus: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

@@ -1,0 +1,126 @@
+# The plain moves every other module of `bytes` makes: a byte read as a
+# number, the bytes of a text, bytes added to a list the caller owns, and
+# bytes shown in a message. It uses no other module.
+
+# The hexadecimal digits in lower case, a value from 0 to 15 indexing its
+# digit.
+constant LOWER_DIGITS: str
+    "0123456789abcdef"
+
+# The hexadecimal digits in upper case.
+constant UPPER_DIGITS: str
+    "0123456789ABCDEF"
+
+# The byte `c` as an `i64`, which every `u8` fits: an index into a text or a
+# list is an `i64`, and a byte is often one.
+function widened(c: u8) -> i64
+    return to_i64(c).must()
+
+# The bytes of `s`, which are its UTF-8.
+function of_text(s: str) -> [u8]
+    out: [u8] @= []
+    push_text(@out, s)
+    return out
+
+# Adds the bytes of `s` at the end of `to`, which the caller owns.
+function push_text(@to: [u8], s: str)
+    at: i64 @= 0
+
+    while at < s.len()
+        to @ to.push(s[at])
+        at @ at + 1
+
+# Adds the bytes of `from` at the end of `to`, which the caller owns.
+function push_all(@to: [u8], from: [u8])
+    for c in from
+        to @ to.push(c)
+
+# Adds the bytes of `s` from index `from` up to `to`, which is left out, at
+# the end of `out`, which the caller owns. It cuts no slice on the way.
+function push_range(@out: [u8], s: [u8], from: i64, to: i64)
+    at: i64 @= from
+
+    while at < to
+        out @ out.push(s[at])
+        at @ at + 1
+
+# `s` as ASCII text that a reader sees whole: a printable ASCII byte as
+# itself; tab, line feed and carriage return as `\t`, `\n` and `\r`; `\`,
+# `"` and `'` behind a `\`; every other byte as `\x` and two hexadecimal
+# digits in lower case. It is Rust's `escape_ascii`, observed.
+function escaped(s: [u8]) -> str
+    out: [u8] @= []
+
+    for c in s
+        if c == '\t'
+            push_text(@out, "\\t")
+        else if c == '\n'
+            push_text(@out, "\\n")
+        else if c == '\r'
+            push_text(@out, "\\r")
+        else if c == '\\' || c == '"' || c == '\''
+            out @ out.push('\\')
+            out @ out.push(c)
+        else if c >= 32 && c < 127
+            out @ out.push(c)
+        else
+            push_text(@out, "\\x")
+            out @ out.push(LOWER_DIGITS[widened(c / 16)])
+            out @ out.push(LOWER_DIGITS[widened(c % 16)])
+
+    return out.validated_bytes().must()
+
+# `s` for a message: between double quotes and escaped as `escaped` writes
+# it, or its length alone where it is longer than 32 bytes, so that a message
+# stays one short line whatever it was asked about.
+function quoted(s: [u8]) -> str
+    if s.len() > 32
+        return f"{s.len()} bytes"
+    return "\"" + escaped(s) + "\""
+
+# The byte `c` for a message: a printable ASCII byte as `quoted` shows it,
+# any other as `0x` and two hexadecimal digits.
+function byte_shown(c: u8) -> str
+    if c >= 32 && c < 127
+        return quoted([c])
+    digits: [u8] = [LOWER_DIGITS[widened(c / 16)], LOWER_DIGITS[widened(c % 16)]]
+    return "0x" + digits.validated_bytes().must()
+
+## Tests
+
+test "widened: the smallest byte and the largest"
+    assert widened(0) == 0
+    assert widened(255) == 255
+
+test "of_text: the empty text, ASCII, and a character of two bytes"
+    nothing: [u8] = []
+    assert of_text("") == nothing
+    assert of_text("ab") == [0x61, 0x62]
+    assert of_text("é") == [0xc3, 0xa9]
+
+test "push_text, push_all and push_range add at the end and keep what was there"
+    out: [u8] @= [0x00]
+    push_text(@out, "")
+    push_text(@out, "a")
+    push_all(to: @out, from: [0xff])
+    nothing: [u8] = []
+    push_all(to: @out, from: nothing)
+    push_range(out: @out, s: of_text("wxyz"), from: 1, to: 3)
+    push_range(out: @out, s: of_text("wxyz"), from: 2, to: 2)
+    assert out == [0x00, 0x61, 0xff, 0x78, 0x79]
+
+# The expected text is what Rust's `escape_ascii` printed for the same bytes
+# on 2026-11-15: `a\t\n\r\\\"\'\x00\x7f\xff z`.
+test "escaped: printable, the three named escapes, the quotes, and bytes shown in hexadecimal"
+    nothing: [u8] = []
+    assert escaped(nothing) == ""
+    mixed: [u8] = [0x61, 9, 10, 13, 0x5c, 0x22, 0x27, 0x00, 0x7f, 0xff, 0x20, 0x7a]
+    assert escaped(mixed) == "a\\t\\n\\r\\\\\\\"\\'\\x00\\x7f\\xff z"
+
+test "quoted and byte_shown: short bytes between quotes, long ones by their length"
+    assert quoted(of_text("ab")) == "\"ab\""
+    assert quoted(of_text("0123456789012345678901234567890123")) == "34 bytes"
+    assert byte_shown('z') == "\"z\""
+    assert byte_shown(' ') == "\" \""
+    assert byte_shown(0x00) == "0x00"
+    assert byte_shown(0xff) == "0xff"

@@ -1,0 +1,802 @@
+# The parse: a list of arguments read against a declaration, left to right,
+# once. Options and positionals may stand in any order; `--` ends the
+# options; a subcommand's name hands every argument after it to that
+# subcommand. A failure's message says what was wrong, then the usage.
+
+use flags/internal/decl
+use flags/internal/page
+use flags/internal/suggest
+use strings
+
+# What a parse found for one command.
+record Got
+    # The declaration read.
+    spec: decl.Spec
+    # The command's name as the usage writes it, its parents' before it:
+    # `tool remote add`.
+    path: str
+    # For each argument of `spec.wants`, in its order, the values given, in
+    # the order given.
+    values: [[str]]
+    # For each argument, how many times it was given since it was last turned
+    # off by its negation.
+    counts: [i64]
+    # For each argument, whether it was given at all.
+    given: [bool]
+    # The options the declaration does not name, as written, where the parse
+    # keeps them; empty otherwise.
+    unknown: [str]
+    # Whether `-h` or `--help` was given to this command.
+    help: bool
+    # Whether `-V` or `--version` was given to this command.
+    version: bool
+    # For each argument, whether its values came from its environment
+    # variable.
+    from_env: [bool]
+    # The word naming another program's command and every argument after it,
+    # where the declaration takes one; empty otherwise.
+    external: [str]
+    # The subcommand chosen and what was found for it: one or none.
+    sub: [Got]
+
+# What an argument's values, counts and presence are while a parse runs.
+record Tally
+    # As `Got.values`.
+    values: [[str]]
+    # As `Got.counts`.
+    counts: [i64]
+    # As `Got.given`.
+    given: [bool]
+    # As `Got.from_env`.
+    from_env: [bool]
+
+# What one argument that opens with `-` did.
+record Step
+    # Whether it asked for the help.
+    help: bool
+    # Whether it asked for the version.
+    version: bool
+    # Whether it took the argument after it as its value.
+    took_next: bool
+
+# A tally of `count` arguments, none given.
+function empty_tally(count: i64) -> Tally
+    values: [[str]] @= []
+    counts: [i64] @= []
+    given: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        values @ values.push([])
+        counts @ counts.push(0)
+        given @ given.push(false)
+
+    return Tally(values: values, counts: counts, given: given, from_env: given)
+
+# Records the argument at `at` as given once more.
+function turn_on(@t: Tally, at: i64)
+    t.counts[at] @ t.counts[at] + 1
+    t.given[at] @ true
+
+# Records the flag at `at` as turned off by its negation.
+function turn_off(@t: Tally, at: i64)
+    t.counts[at] @ 0
+    t.given[at] @ true
+
+# The failure of a parse: `what` was wrong, then the usage of the command
+# read.
+function wrong<T>(spec: decl.Spec lent, path: str, what: str) -> T?
+    return fail(code: decl.INVALID, msg: what + "\n" + page.usage_line(spec, path))
+
+# `names` as a sentence lists them: `a`, `a and b`, `a, b and c`.
+function listed(names: [str]) -> str
+    if names.len() == 1
+        return names[0]
+    head = names.slice(from: 0, to: names.len() - 1)
+    return head.join(", ") + " and " + names[names.len() - 1]
+
+# What an unknown name was, and the declared name nearest to it where one is
+# near enough.
+function unknown_name(what: str, asked: str, names: [str]) -> str
+    match suggest.closest(asked: asked, names: names)
+        .ok near => return f"unknown {what} \"{asked}\"; did you mean \"{near}\"?"
+        .err _   => return f"unknown {what} \"{asked}\""
+
+# Every long option `spec` reads, each with its `--`.
+function long_names(spec: decl.Spec lent) -> [str]
+    names: [str] @= []
+
+    if spec.help
+        names @ names.push("--help")
+
+    if spec.version != ""
+        names @ names.push("--version")
+
+    for w in spec.wants
+        if !w.positional && w.long != ""
+            names @ names.push("--" + w.long)
+
+            if w.negatable
+                names @ names.push("--no-" + w.long)
+
+        for alias in w.aliases
+            names @ names.push("--" + alias)
+
+    return names
+
+# Records `value` for the argument at `index`, read as it reads values.
+function accept(spec: decl.Spec lent, @t: Tally, index: i64, value: str, path: str) -> ()?
+    w = spec.wants[index]
+    pieces: [str] @= [value]
+
+    if w.delimiter != ""
+        pieces @ strings.split(s: value, sep: w.delimiter)
+
+    for piece in pieces
+        match decl.check_value(w, piece)
+            .ok _  => t.values[index] @ t.values[index].push(piece)
+            .err e => return wrong(spec, path: path, what: e.msg)
+
+    turn_on(@t, index)
+    return ok()
+
+# The option at `index`, written as `arguments[at]`, given `attached` after an
+# `=` where `has_attached` says so, else the next argument where it takes a
+# value.
+function take(spec: decl.Spec lent, @t: Tally, arguments: [str] lent, at: i64, index: i64, attached: str, has_attached: bool, path: str) -> Step?
+    w = spec.wants[index]
+
+    if !w.takes_value
+        if has_attached
+            return wrong(spec, path: path, what: f"{decl.shown(w)} takes no value, and \"{arguments[at]}\" gives one")
+        turn_on(@t, index)
+        return ok(Step(help: false, version: false, took_next: false))
+
+    if has_attached
+        accept(spec, @t, index, value: attached, path: path)?
+        return ok(Step(help: false, version: false, took_next: false))
+
+    if w.missing.len() > 0
+        for value in w.missing
+            accept(spec, @t, index, value: value, path: path)?
+
+        return ok(Step(help: false, version: false, took_next: false))
+
+    if at + 1 >= arguments.len()
+        return wrong(spec, path: path, what: f"{decl.shown(w)} needs a value")
+    accept(spec, @t, index, value: arguments[at + 1], path: path)?
+    return ok(Step(help: false, version: false, took_next: true))
+
+# Reads `arguments[at]`, which opens with `--` and holds more.
+function read_long(spec: decl.Spec lent, @t: Tally, @unknown: [str], arguments: [str] lent, at: i64, known: bool, path: str) -> Step?
+    a = arguments[at]
+    body = a.slice(from: 2, to: a.len())
+    eq = strings.index_of(s: body, substr: "=").default(body.len())
+    name = body.slice(from: 0, to: eq)
+    has_attached = eq < body.len()
+    attached: str @= ""
+
+    if has_attached
+        attached @ body.slice(from: eq + 1, to: body.len())
+
+    if spec.help && name == "help" || spec.version != "" && name == "version"
+        if has_attached
+            return wrong(spec, path: path, what: f"--{name} takes no value, and \"{a}\" gives one")
+        return ok(Step(help: name == "help", version: name == "version", took_next: false))
+
+    match decl.index_of_long(spec, name)
+        .ok index => return take(
+            spec,
+            @t,
+            arguments,
+            at: at,
+            index: index,
+            attached: attached,
+            has_attached: has_attached,
+            path: path
+        )
+        .err _ => _ = 0
+
+    match decl.index_of_negation(spec, name)
+        .ok index =>
+            if has_attached
+                return wrong(spec, path: path, what: f"--{name} takes no value, and \"{a}\" gives one")
+            turn_off(@t, index)
+            return ok(Step(help: false, version: false, took_next: false))
+        .err _ => _ = 0
+
+    if known
+        unknown @ unknown.push(a)
+        return ok(Step(help: false, version: false, took_next: false))
+    return wrong(spec, path: path, what: unknown_name(what: "option", asked: "--" + name, names: long_names(spec)))
+
+# Whether every character of the cluster `a` names an option of `spec`, up to
+# the first that takes a value, which takes the rest.
+function is_cluster_known(spec: decl.Spec lent, a: str) -> bool
+    j @= 1
+
+    while j < a.len()
+        end = strings.ceil_boundary(s: a, at: j + 1)
+        c = a.slice(from: j, to: end)
+
+        if !(spec.help && c == "h") && !(spec.version != "" && c == "V")
+            match decl.index_of_short(spec, c)
+                .err _ => return false
+                .ok index =>
+                    if spec.wants[index].takes_value
+                        return true
+        j @ end
+
+    return true
+
+# Reads `arguments[at]`, a cluster of short options: `-v`, `-vq`, `-m5`,
+# `-m=5`, `-vm5`, or `-m` with its value in the next argument.
+function read_shorts(spec: decl.Spec lent, @t: Tally, @unknown: [str], arguments: [str] lent, at: i64, known: bool, path: str) -> Step?
+    a = arguments[at]
+
+    if known && !is_cluster_known(spec, a)
+        unknown @ unknown.push(a)
+        return ok(Step(help: false, version: false, took_next: false))
+    j @= 1
+
+    while j < a.len()
+        end = strings.ceil_boundary(s: a, at: j + 1)
+        c = a.slice(from: j, to: end)
+
+        if spec.help && c == "h"
+            return ok(Step(help: true, version: false, took_next: false))
+
+        if spec.version != "" && c == "V"
+            return ok(Step(help: false, version: true, took_next: false))
+
+        index = match decl.index_of_short(spec, c)
+            .ok found => found
+            .err _ =>
+                in_cluster = if a.len() > end || j > 1
+                    f" in \"{a}\""
+                else
+                    ""
+                return wrong(spec, path: path, what: f"unknown option \"-{c}\"{in_cluster}")
+
+        w = spec.wants[index]
+
+        if !w.takes_value
+            if end < a.len() && a[end] == '='
+                return wrong(spec, path: path, what: f"{decl.shown(w)} takes no value, and \"{a}\" gives one")
+            turn_on(@t, index)
+            j @ end
+            continue
+        rest @= a.slice(from: end, to: a.len())
+
+        if rest != ""
+            if rest[0] == '='
+                rest @ rest.slice(from: 1, to: rest.len())
+            accept(spec, @t, index, value: rest, path: path)?
+            return ok(Step(help: false, version: false, took_next: false))
+
+        if w.missing.len() > 0
+            for value in w.missing
+                accept(spec, @t, index, value: value, path: path)?
+
+            return ok(Step(help: false, version: false, took_next: false))
+
+        if at + 1 >= arguments.len()
+            return wrong(spec, path: path, what: f"{decl.shown(w)} needs a value")
+        accept(spec, @t, index, value: arguments[at + 1], path: path)?
+        return ok(Step(help: false, version: false, took_next: true))
+
+    return ok(Step(help: false, version: false, took_next: false))
+
+# Whether `a` reads as a negative number, `-5` or `-1.5`, where no short
+# option of `spec` is a digit: such an argument is a positional.
+function is_negative_number(spec: decl.Spec lent, a: str) -> bool
+    if a.len() < 2 || a[0] != '-'
+        return false
+    digits: i64 @= 0
+    points: i64 @= 0
+
+    for k in range(from: 1, to: a.len())
+        b = a[k]
+
+        if b >= '0' && b <= '9'
+            digits @ digits + 1
+        else if b == '.'
+            points @ points + 1
+        else
+            return false
+
+    if digits == 0 || points > 1
+        return false
+
+    for w in spec.wants
+        if w.short != "" && w.short[0] >= '0' && w.short[0] <= '9'
+            return false
+
+    return true
+
+# Gives the argument at `index` the value its environment variable holds
+# in `env`, where it has one, was not given and `env` holds it: an option's
+# or a positional's value read as the command line's, a flag's a boolean
+# word, `1`, `true`, `yes`, `on`, `y` or `t` turning it on and `0`,
+# `false`, `no`, `off`, `n`, `f` or "" off, in any case.
+function from_variable(spec: decl.Spec lent, @t: Tally, index: i64, env: {str: str}, path: str) -> ()?
+    w = spec.wants[index]
+
+    if w.env == "" || t.given[index]
+        return ok()
+
+    match env[w.env]
+        .err _ => return ok()
+        .ok value =>
+            if !w.takes_value
+                word = strings.to_lower_ascii(value)
+
+                if word == "1" || word == "true" || word == "yes" || word == "on" || word == "y" || word == "t"
+                    turn_on(@t, index)
+                else if word == "0" || word == "false" || word == "no" || word == "off" || word == "n" || word == "f" || word == ""
+                    turn_off(@t, index)
+                else
+                    return wrong(
+                        spec,
+                        path: path,
+                        what: f"the variable {w.env} holds \"{value}\", where {decl.shown(w)} reads a boolean"
+                    )
+            else
+                match accept(spec, @t, index, value: value, path: path)
+                    .ok _  => _ = 0
+                    .err e => return fail(code: e.code, msg: f"from the variable {w.env}, {e.msg}")
+            t.from_env[index] @ true
+            return ok()
+
+# Gives each positional of `spec` its values out of `loose`, in order: each
+# takes as many as it may while every one after it can still take its
+# fewest. Answers the names of the positionals left short.
+function assign(spec: decl.Spec lent, @t: Tally, loose: [str], env: {str: str}, path: str) -> [str]?
+    order: [i64] @= []
+
+    for at in range(from: 0, to: spec.wants.len())
+        if spec.wants[at].positional
+            order @ order.push(at)
+
+    least_total: i64 @= 0
+
+    for index in order
+        least_total @ least_total + spec.wants[index].least
+
+    after: i64 @= least_total
+    next: i64 @= 0
+    missing: [str] @= []
+
+    for index in order
+        w = spec.wants[index]
+        after @ after - w.least
+        left = loose.len() - next
+        taking: i64 @= w.least
+
+        if loose.len() >= least_total
+            taking @ left - after
+
+            if taking > w.most
+                taking @ w.most
+        else if taking > left
+            taking @ left
+
+        for k in range(from: next, to: next + taking)
+            accept(spec, @t, index, value: loose[k], path: path)?
+
+        next @ next + taking
+
+        if taking == 0
+            from_variable(spec, @t, index, env, path)?
+
+        if t.values[index].len() < w.least
+            missing @ missing.push(w.value_name)
+
+    if next < loose.len()
+        extra: [str] @= []
+
+        for k in range(from: next, to: loose.len())
+            extra @ extra.push(f"\"{loose[k]}\"")
+
+        if extra.len() == 1
+            return wrong(spec, path: path, what: f"unexpected argument {extra[0]}")
+        return wrong(spec, path: path, what: f"unexpected arguments {extra.join(", ")}")
+    return ok(missing)
+
+# The checks once every argument of one command is read: no two options of a
+# group, every required option and positional given.
+function check(spec: decl.Spec lent, @t: Tally, loose: [str], env: {str: str}, path: str) -> ()?
+    for at in range(from: 0, to: spec.wants.len())
+        if !spec.wants[at].positional
+            from_variable(spec, @t, at, env, path)?
+
+    missing: [str] @= []
+
+    for g in spec.groups
+        present: [str] @= []
+
+        for key in g.members
+            at = decl.index_of_key(spec, key).must()
+
+            if t.given[at]
+                present @ present.push(decl.shown(spec.wants[at]))
+
+        if present.len() > 1
+            return wrong(spec, path: path, what: f"{present[0]} and {present[1]} cannot be used together")
+
+        if g.required && present.len() == 0
+            shown: [str] @= []
+
+            for key in g.members
+                shown @ shown.push(decl.shown(spec.wants[decl.index_of_key(spec, key).must()]))
+
+            missing @ missing.push("one of " + shown.join(", "))
+
+    for at in range(from: 0, to: spec.wants.len())
+        w = spec.wants[at]
+
+        if !w.positional && w.required && !t.given[at]
+            missing @ missing.push(decl.shown(w))
+
+    short = assign(spec, @t, loose, env, path)?
+
+    for name in short
+        missing @ missing.push(name)
+
+    if missing.len() > 0
+        return wrong(spec, path: path, what: "missing " + listed(missing))
+
+    for r in spec.requirements
+        member = decl.index_of_key(spec, r.member).must()
+        needs = decl.index_of_key(spec, r.needs).must()
+
+        if t.given[member] && !t.given[needs]
+            return wrong(
+                spec,
+                path: path,
+                what: f"{decl.shown(spec.wants[member])} needs {decl.shown(spec.wants[needs])} given with it"
+            )
+
+    return ok()
+
+# What `arguments`, from index `from` on, give the command `spec`, called
+# `path`. Options the declaration does not name fail, unless `known` keeps
+# them.
+function read(spec: decl.Spec, arguments: [str], from: i64, known: bool, path: str, env: {str: str}) -> Got?
+    t @= empty_tally(spec.wants.len())
+    loose: [str] @= []
+    unknown: [str] @= []
+    asked_help @= spec.help && spec.help_on_empty && from >= arguments.len()
+    asked_version @= false
+    ended @= false
+    at @= from
+
+    while at < arguments.len() && !asked_help
+        a = arguments[at]
+
+        if ended
+            loose @ loose.push(a)
+        else if a == "--"
+            ended @ true
+        else if strings.has_prefix(s: a, prefix: "--") || a.len() > 1 && a[0] == '-' && !is_negative_number(spec, a)
+            step @= Step(help: false, version: false, took_next: false)
+
+            if strings.has_prefix(s: a, prefix: "--")
+                step @ read_long(spec, @t, unknown: @unknown, arguments: arguments, at: at, known: known, path: path)?
+            else
+                step @ read_shorts(spec, @t, unknown: @unknown, arguments: arguments, at: at, known: known, path: path)?
+
+            if step.help || step.version
+                asked_help @ step.help
+                asked_version @ step.version
+                break
+
+            if step.took_next
+                at @ at + 1
+        else if spec.subs.len() > 0
+            match sub_named(spec, name: a, path: path)
+                .ok chosen =>
+                    inner = read(spec.subs[chosen], arguments, at + 1, known, path + " " + spec.subs[chosen].name, env)?
+
+                    if !inner.help && !inner.version
+                        check(spec, @t, [], env, path)?
+                    return ok(
+                        Got(spec: spec, path: path, values: t.values, counts: t.counts, given: t.given, unknown: unknown, help: false, version: false, from_env: t.from_env, external: [], sub: [inner])
+                    )
+                .err e =>
+                    if !spec.external
+                        return fail(code: e.code, msg: e.msg)
+                    check(spec, @t, [], env, path)?
+                    return ok(
+                        Got(spec: spec, path: path, values: t.values, counts: t.counts, given: t.given, unknown: unknown, help: false, version: false, from_env: t.from_env, external: arguments.slice(from: at, to: arguments.len()), sub: [])
+                    )
+        else
+            loose @ loose.push(a)
+
+            if spec.options_first
+                ended @ true
+        at @ at + 1
+
+    if !asked_help && !asked_version
+        if spec.subs.len() > 0
+            names: [str] @= []
+
+            for s in spec.subs
+                names @ names.push(s.name)
+
+            return wrong(spec, path: path, what: "missing a command: one of " + decl.quoted_list(names))
+        check(spec, @t, loose, env, path)?
+    return ok(
+        Got(spec: spec, path: path, values: t.values, counts: t.counts, given: t.given, unknown: unknown, help: asked_help, version: asked_version, from_env: t.from_env, external: [], sub: [])
+    )
+
+# Where the subcommand named `name` stands among those of `spec`. Fails
+# `invalid` with the nearest name where none is so named.
+function sub_named(spec: decl.Spec lent, name: str, path: str) -> i64?
+    names: [str] @= []
+
+    for at in range(from: 0, to: spec.subs.len())
+        if spec.subs[at].name == name || decl.has_word(spec.subs[at].aliases, name)
+            return ok(at)
+        names @ names.push(spec.subs[at].name)
+
+    return wrong(spec, path: path, what: unknown_name(what: "command", asked: name, names: names))
+
+# The command most tests read: `tool` with a flag `-v`, an option of an
+# integer `-m`, an option `-o`, a choice `--color`, a negatable `--cache`, a
+# positional `PATTERN` and any number of `FILE`.
+function sample() -> decl.Spec
+    s @= decl.new_spec(name: "tool", about: "")
+    decl.add_want(@s, decl.flag_want(long: "verbose", short: "v", help: ""))
+    m @= decl.option_want(long: "max", short: "m", value_name: "NUM", help: "")
+    m.kind @ decl.INTEGER
+    decl.add_want(@s, m)
+    decl.add_want(@s, decl.option_want(long: "output", short: "o", value_name: "FILE", help: ""))
+    color @= decl.option_want(long: "color", short: "", value_name: "WHEN", help: "")
+    color.kind @ decl.CHOICE
+    color.choices @ ["auto", "always", "never"]
+    decl.add_want(@s, color)
+    cache @= decl.flag_want(long: "cache", short: "", help: "")
+    cache.negatable @ true
+    decl.add_want(@s, cache)
+    decl.add_want(@s, decl.positional_want(name: "PATTERN", help: ""))
+    files @= decl.positional_want(name: "FILE", help: "")
+    files.least @ 0
+    files.most @ decl.UNBOUNDED
+    decl.add_want(@s, files)
+    return s
+
+# What `arguments` give `sample`, aborting where they fail.
+function got_of(arguments: [str]) -> Got
+    return read(sample(), arguments, 0, false, "tool", {}).must()
+
+# What `arguments` give `sample` with unknown options kept.
+function known_of(arguments: [str]) -> Got
+    return read(sample(), arguments, 0, true, "tool", {}).must()
+
+# The first line of the message of what `arguments` give `spec`, "" where
+# they succeed.
+function failure_in(spec: decl.Spec, arguments: [str]) -> str
+    match read(spec, arguments, 0, false, spec.name, {})
+        .ok _  => return ""
+        .err e => return page.first_line(e.msg)
+
+# `failure_in` for `sample`.
+function failure_of(arguments: [str]) -> str
+    return failure_in(sample(), arguments)
+
+# A command `git` with the subcommands `add`, taking one `NAME`, and
+# `remove`, and a required group of `--json` and `--text`.
+function with_subs() -> decl.Spec
+    add @= decl.new_spec(name: "add", about: "")
+    decl.add_want(@add, decl.positional_want(name: "NAME", help: ""))
+    s @= decl.new_spec(name: "git", about: "")
+    decl.add_want(@s, decl.flag_want(long: "json", short: "", help: ""))
+    decl.add_want(@s, decl.flag_want(long: "text", short: "", help: ""))
+    decl.add_group(@s, members: ["json", "text"], required: true)
+    decl.add_sub(spec: @s, sub: add)
+    decl.add_sub(spec: @s, sub: decl.new_spec(name: "remove", about: ""))
+    return s
+
+test "read: a value after =, joined to a short, after -m=, and in the next argument"
+    assert got_of(["-m=5", "x"]).values[1] == ["5"]
+    assert got_of(["-m5", "x"]).values[1] == ["5"]
+    assert got_of(["--max=3", "x"]).values[1] == ["3"]
+    assert got_of(["--max", "3", "x"]).values[1] == ["3"]
+    assert got_of(["--output=", "x"]).values[2] == [""]
+
+test "read: a cluster of flags, a flag thrice, and an option last in a cluster"
+    g = got_of(["-vm7", "x"])
+    assert g.counts[0] == 1 && g.values[1] == ["7"]
+    assert got_of(["-vvv", "x"]).counts[0] == 3
+    assert got_of(["x", "-v", "-v"]).counts[0] == 2
+
+test "read: a negative number is a positional; an option's value is the next argument, a dash or -- included"
+    assert got_of(["-5"]).values[5] == ["-5"]
+    assert got_of(["x", "-1.5"]).values[6] == ["-1.5"]
+    assert got_of(["x", "-o", "-v"]).values[2] == ["-v"]
+    assert got_of(["x", "-o", "--"]).values[2] == ["--"]
+    assert got_of(["x", "-o", "-v"]).counts[0] == 0
+
+test "read: -- ends the options, - alone is a positional, options after positionals"
+    assert got_of(["x", "--", "-v", "--max"]).values[6] == ["-v", "--max"]
+    g = got_of(["-", "-v"])
+    assert g.values[5] == ["-"] && g.counts[0] == 1
+    h = got_of(["x", "a", "-v", "b"])
+    assert h.values[6] == ["a", "b"] && h.counts[0] == 1
+
+test "read: unknown options, long with the nearest name, short in a cluster and alone"
+    assert failure_of(["--colour", "x"]) == "unknown option \"--colour\"; did you mean \"--color\"?"
+    assert failure_of(["--no-cach", "x"]) == "unknown option \"--no-cach\"; did you mean \"--no-cache\"?"
+    assert failure_of(["--zzzzz"]) == "unknown option \"--zzzzz\""
+    assert failure_of(["-vq", "x"]) == "unknown option \"-q\" in \"-vq\""
+    assert failure_of(["-q"]) == "unknown option \"-q\""
+    assert failure_of(["-é"]) == "unknown option \"-é\""
+
+test "read: a value missing, of the wrong kind or outside the choices, and a flag given one"
+    assert failure_of(["--max"]) == "--max needs a value"
+    assert failure_of(["x", "-m"]) == "--max needs a value"
+    assert failure_of(["x", "--max", "abc"]) == "--max: \"abc\" is not an integer"
+    assert failure_of(["x", "-m", "99999999999999999999"]) == "--max: \"99999999999999999999\" is past what an i64 holds"
+    assert failure_of(["x", "--color", "blue"]) == "--color: \"blue\" is not one of \"auto\", \"always\", \"never\""
+    assert failure_of(["x", "--verbose=3"]) == "--verbose takes no value, and \"--verbose=3\" gives one"
+    assert failure_of(["x", "-v=3"]) == "--verbose takes no value, and \"-v=3\" gives one"
+    assert failure_of(["x", "--help=1"]) == "--help takes no value, and \"--help=1\" gives one"
+
+test "read: a positional missing, and one or two left over"
+    assert failure_of([]) == "missing PATTERN"
+    one @= decl.new_spec(name: "one", about: "")
+    decl.add_want(@one, decl.positional_want(name: "A", help: ""))
+    decl.add_want(@one, decl.positional_want(name: "B", help: ""))
+    assert failure_in(one, ["x"]) == "missing B"
+    assert failure_in(one, ["x", "y", "z"]) == "unexpected argument \"z\""
+    assert failure_in(one, ["x", "y", "z", "w"]) == "unexpected arguments \"z\", \"w\""
+    assert failure_in(decl.new_spec(name: "none", about: ""), ["x"]) == "unexpected argument \"x\""
+
+test "read: positionals of every arity take what argparse gives them"
+    s @= decl.new_spec(name: "t", about: "")
+    decl.add_want(@s, decl.positional_want(name: "A", help: ""))
+    many @= decl.positional_want(name: "B", help: "")
+    many.least @ 0
+    many.most @ decl.UNBOUNDED
+    decl.add_want(@s, many)
+    decl.add_want(@s, decl.positional_want(name: "C", help: ""))
+    g = read(s, ["1", "2", "3", "4"], 0, false, "t", {}).must()
+    assert g.values == [["1"], ["2", "3"], ["4"]]
+    o @= decl.new_spec(name: "t", about: "")
+    first @= decl.positional_want(name: "A", help: "")
+    first.least @ 0
+    decl.add_want(@o, first)
+    decl.add_want(@o, decl.positional_want(name: "B", help: ""))
+    assert read(o, ["x"], 0, false, "t", {}).must().values == [[], ["x"]]
+    p @= decl.new_spec(name: "t", about: "")
+    plus @= decl.positional_want(name: "A", help: "")
+    plus.most @ decl.UNBOUNDED
+    decl.add_want(@p, plus)
+    second @= decl.positional_want(name: "B", help: "")
+    second.most @ decl.UNBOUNDED
+    decl.add_want(@p, second)
+    assert read(p, ["1", "2", "3"], 0, false, "t", {}).must().values == [["1", "2"], ["3"]]
+
+test "read: a negation turns a flag off, the last given winning, and takes no value"
+    off = got_of(["x", "--cache", "--no-cache"])
+    assert off.counts[4] == 0 && off.given[4]
+    assert got_of(["x", "--no-cache", "--cache"]).counts[4] == 1
+    assert !got_of(["x"]).given[4]
+    assert failure_of(["x", "--no-cache=1"]) == "--no-cache takes no value, and \"--no-cache=1\" gives one"
+
+test "read: the help stops the parse, after a cluster's flags and before a missing positional"
+    assert got_of(["-h"]).help
+    assert got_of(["--help", "--zzzzz"]).help
+    assert got_of(["-vh"]).help
+    assert got_of(["-o", "-h", "x"]).values[2] == ["-h"]
+    assert failure_of(["--zzzzz", "-h"]) == "unknown option \"--zzzzz\""
+
+test "read: subcommands chosen, unknown, missing, and the help on either side"
+    g = read(with_subs(), ["--json", "add", "origin"], 0, false, "git", {}).must()
+    assert g.sub.len() == 1 && g.sub[0].path == "git add" && g.sub[0].values[0] == ["origin"]
+    assert failure_in(with_subs(), ["--json", "ad"]) == "unknown command \"ad\"; did you mean \"add\"?"
+    assert failure_in(with_subs(), ["--json"]) == "missing a command: one of \"add\", \"remove\""
+    assert read(with_subs(), ["-h", "add"], 0, false, "git", {}).must().help
+    inner = read(with_subs(), ["add", "-h"], 0, false, "git", {}).must()
+    assert !inner.help && inner.sub[0].help
+    assert failure_in(with_subs(), ["add"]) == "missing NAME"
+
+test "read: a group of which one is required, and two of it given"
+    assert failure_in(with_subs(), ["remove"]) == "missing one of --json, --text"
+    assert failure_in(with_subs(), ["--json", "--text", "remove"]) == "--json and --text cannot be used together"
+
+test "read: options first makes every argument from the first positional on a positional"
+    s @= sample()
+    s.options_first @ true
+    g = read(s, ["-v", "x", "-v", "--max"], 0, false, "tool", {}).must()
+    assert g.counts[0] == 1 && g.values[5] == ["x"] && g.values[6] == ["-v", "--max"]
+
+test "read: unknown options kept, alone, with a value, and a cluster kept whole"
+    g = known_of(["--jobs=4", "-vq", "x", "-z"])
+    assert g.unknown == ["--jobs=4", "-vq", "-z"]
+    assert g.counts[0] == 0 && g.values[5] == ["x"]
+    assert known_of(["-vm5", "x"]).values[1] == ["5"]
+
+test "read: the failure's second line is the usage"
+    match read(sample(), [], 0, false, "tool", {})
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "missing PATTERN\nusage: tool [-h] [-v] [-m NUM] [-o FILE] [--color WHEN] [--cache | --no-cache]\n            PATTERN [FILE...]"
+
+test "read: three levels of subcommands, a subcommand chosen by its alias, the help of the deepest"
+    leaf @= decl.new_spec(name: "add", about: "")
+    decl.add_want(@leaf, decl.positional_want(name: "NAME", help: ""))
+    leaf.aliases @ ["a"]
+    middle @= decl.new_spec(name: "remote", about: "")
+    decl.add_sub(spec: @middle, sub: leaf)
+    root @= decl.new_spec(name: "git", about: "")
+    decl.add_sub(spec: @root, sub: middle)
+    g = read(root, ["remote", "a", "x"], 0, false, "git", {}).must()
+    assert g.sub[0].sub[0].path == "git remote add" && g.sub[0].sub[0].values[0] == ["x"]
+    assert read(root, ["remote", "add", "-h"], 0, false, "git", {}).must().sub[0].sub[0].help
+
+test "read: the environment for an option, a flag and a positional, under the command line, and values it refuses"
+    s @= decl.new_spec(name: "t", about: "")
+    m @= decl.option_want(long: "max", short: "", value_name: "N", help: "")
+    m.kind @ decl.INTEGER
+    m.env @ "MAX"
+    decl.add_want(@s, m)
+    f @= decl.flag_want(long: "debug", short: "", help: "")
+    f.env @ "DEBUG"
+    decl.add_want(@s, f)
+    p @= decl.positional_want(name: "FILE", help: "")
+    p.least @ 0
+    p.env @ "FILE"
+    decl.add_want(@s, p)
+    g = read(s, [], 0, false, "t", {"MAX": "5", "DEBUG": "On", "FILE": "x"}).must()
+    assert g.values[0] == ["5"] && g.from_env[0] && g.counts[1] == 1 && g.values[2] == ["x"]
+    h = read(s, ["--max", "7", "y"], 0, false, "t", {"MAX": "5", "FILE": "x"}).must()
+    assert h.values[0] == ["7"] && !h.from_env[0] && h.values[2] == ["y"]
+    off = read(s, [], 0, false, "t", {"DEBUG": "0"}).must()
+    assert off.counts[1] == 0 && off.given[1]
+
+    match read(s, [], 0, false, "t", {"MAX": "five"})
+        .ok _  => assert false
+        .err e => assert page.first_line(e.msg) == "from the variable MAX, --max: \"five\" is not an integer"
+
+    match read(s, [], 0, false, "t", {"DEBUG": "maybe"})
+        .ok _  => assert false
+        .err e => assert page.first_line(e.msg) == "the variable DEBUG holds \"maybe\", where --debug reads a boolean"
+
+test "read: --version and -V stop the parse, a value given alone, values split, a range and a requirement"
+    s @= decl.new_spec(name: "t", about: "")
+    s.version @ "1.0"
+    c @= decl.option_want(long: "color", short: "c", value_name: "WHEN", help: "")
+    c.missing @ ["always"]
+    decl.add_want(@s, c)
+    tags @= decl.option_want(long: "tag", short: "", value_name: "T", help: "")
+    tags.delimiter @ ","
+    decl.add_want(@s, tags)
+    port @= decl.option_want(long: "port", short: "", value_name: "P", help: "")
+    port.kind @ decl.INTEGER
+    port.ranged @ true
+    port.lowest @ 1
+    port.highest @ 10
+    decl.add_want(@s, port)
+    decl.add_requirement(@s, member: "tag", needs: "port")
+    assert read(s, ["-V", "--zzz"], 0, false, "t", {}).must().version
+    assert read(s, ["--version"], 0, false, "t", {}).must().version
+    g = read(s, ["-c", "--tag", "a,,b", "--port", "10"], 0, false, "t", {}).must()
+    assert g.values[0] == ["always"] && g.values[1] == ["a", "", "b"]
+    assert read(s, ["-cnever"], 0, false, "t", {}).must().values[0] == ["never"]
+    assert failure_in(s, ["--port", "0"]) == "--port: 0 is outside 1 to 10"
+    assert failure_in(s, ["--tag", "a"]) == "--tag needs --port given with it"
+    assert failure_in(s, ["--versio"]) == "unknown option \"--versio\"; did you mean \"--version\"?"
+    assert failure_in(s, ["--version=2"]) == "--version takes no value, and \"--version=2\" gives one"
+
+test "read: no argument asking for the help, and another program's command kept with what follows it"
+    s @= decl.new_spec(name: "t", about: "")
+    s.help_on_empty @ true
+    assert read(s, [], 0, false, "t", {}).must().help
+    assert failure_in(s, ["x"]) == "unexpected argument \"x\""
+    git @= decl.new_spec(name: "git", about: "")
+    git.external @ true
+    decl.add_sub(spec: @git, sub: decl.new_spec(name: "init", about: ""))
+    assert read(git, ["foo", "-x"], 0, false, "git", {}).must().external == ["foo", "-x"]
+    assert failure_in(git, ["--zz", "foo"]) == "unknown option \"--zz\""

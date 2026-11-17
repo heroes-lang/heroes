@@ -1,0 +1,448 @@
+# How `sql`'s values travel: a parameter given its type and its bytes for a
+# Bind message, and a column's text, as the server writes it, read back by
+# its type. The module comment of `sql/postgres` states both tables; this is
+# where they are kept.
+
+use bytes
+use numbers
+use sql
+use sql/postgres/internal/frontend
+use time
+
+constant INVALID: str
+    "invalid"
+
+constant BOOL: i64
+    16
+
+constant BYTEA: i64
+    17
+
+constant INT8: i64
+    20
+
+constant INT2: i64
+    21
+
+constant INT4: i64
+    23
+
+constant OID: i64
+    26
+
+constant FLOAT4: i64
+    700
+
+constant FLOAT8: i64
+    701
+
+constant DATE: i64
+    1082
+
+constant TIMESTAMP: i64
+    1114
+
+constant TIMESTAMPTZ: i64
+    1184
+
+# A parameter as a Bind message carries it.
+record Encoded
+    # The type named in the Parse message, 0 to let the server choose.
+    type_oid: i64
+    # 0 for text, 1 for binary.
+    format: i64
+    # The value's bytes, or NULL.
+    arg: frontend.Arg
+
+# `v` as a parameter: its type, its format and its bytes.
+#
+# - `v`: the value.
+function encode(v: sql.Value) -> Encoded
+    return match v
+        .null_value => Encoded(type_oid: 0, format: 0, arg: .absent)
+        .boolean b  => text_of(type_oid: BOOL, s: bool_text(b.v))
+        .integer n  => text_of(type_oid: integer_type(n.v), s: to_str(n.v))
+        .float x    => text_of(type_oid: FLOAT8, s: float_text(x.v))
+        .text t     => text_of(type_oid: 0, s: t.v)
+        .blob b     => Encoded(type_oid: BYTEA, format: 1, arg: .given(data: b.v))
+        .instant t  => text_of(type_oid: TIMESTAMPTZ, s: time.format(t.v, .rfc3339))
+
+# How PostgreSQL's text format writes `b`: `t` or `f`.
+#
+# - `b`: the truth value.
+function bool_text(b: bool) -> str
+    if b
+        return "t"
+    return "f"
+
+# A parameter in text format.
+#
+# - `type_oid`: its type, 0 for none.
+# - `s`: its text.
+function text_of(type_oid: i64, s: str) -> Encoded
+    return Encoded(type_oid: type_oid, format: 0, arg: .given(data: bytes.from_text(s)))
+
+# The smallest of `int2`, `int4` and `int8` that holds `n`.
+#
+# - `n`: the integer.
+function integer_type(n: i64) -> i64
+    if n >= -32768 && n <= 32767
+        return INT2
+
+    if n >= -2147483648 && n <= 2147483647
+        return INT4
+    return INT8
+
+# `x` as PostgreSQL reads a `float8`: `NaN`, `Infinity`, `-Infinity`, or the
+# digits `to_str` writes, which read back as `x`.
+#
+# - `x`: the number.
+function float_text(x: f64) -> str
+    if x != x
+        return "NaN"
+
+    if x - x != x - x
+        if x > 0.0
+            return "Infinity"
+        return "-Infinity"
+    return to_str(x)
+
+# The value the server's text `data` writes for a column of type `type_oid`.
+#
+# - `type_oid`: the column's type.
+# - `data`: the text the server sent, in its text format.
+#
+# Fails `invalid` where `data` is not what the type writes: the server and
+# this reader are out of step.
+function decode(type_oid: i64, data: [u8]) -> sql.Value?
+    if type_oid == BYTEA
+        return ok(.blob(v: bytea_of(data)?))
+
+    match bytes.to_text(data)
+        .err _ => return ok(.blob(v: data))
+        .ok s  => return decode_text(type_oid: type_oid, s: s)
+
+# The value `s` writes for a column of type `type_oid`, `s` being text.
+#
+# - `type_oid`: the column's type.
+# - `s`: the server's text.
+#
+# Fails `invalid` as `decode` does.
+function decode_text(type_oid: i64, s: str) -> sql.Value?
+    if type_oid == BOOL
+        if s == "t"
+            return ok(.boolean(v: true))
+
+        if s == "f"
+            return ok(.boolean(v: false))
+        return fail(code: INVALID, msg: f"the server sent \"{s}\" for a bool, which writes t or f")
+
+    if type_oid == INT2 || type_oid == INT4 || type_oid == INT8 || type_oid == OID
+        match numbers.parse_int(s)
+            .ok n => return ok(.integer(v: n))
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the server sent \"{s}\" for an integer of type {type_name(type_oid)}"
+            )
+
+    if type_oid == FLOAT4 || type_oid == FLOAT8
+        match numbers.parse_float(s)
+            .ok x => return ok(.float(v: x))
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the server sent \"{s}\" for a float of type {type_name(type_oid)}"
+            )
+
+    if type_oid == DATE || type_oid == TIMESTAMP || type_oid == TIMESTAMPTZ
+        match instant_of(s)
+            .ok t  => return ok(.instant(v: t))
+            .err _ => return ok(.text(v: s))
+    return ok(.text(v: s))
+
+# The bytes a `bytea`'s text writes: `\x` and two hexadecimal digits a byte,
+# or the older escape format, where `\\` is a backslash, `\` and three octal
+# digits a byte, and every other byte itself.
+#
+# - `data`: the server's text.
+#
+# Fails `invalid` where it is neither.
+function bytea_of(data: [u8]) -> [u8]?
+    if data.len() >= 2 && data[0] == '\\' && data[1] == 'x'
+        match bytes.to_text(data.slice(from: 2, to: data.len()))
+            .err _ => return fail(code: INVALID, msg: "the server sent a bytea in hexadecimal that is not text")
+            .ok hex =>
+                match bytes.parse_hex(hex)
+                    .ok b  => return ok(b)
+                    .err _ => return fail(code: INVALID, msg: "the server sent a bytea whose hexadecimal does not read")
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        if data[at] != '\\'
+            out @ out.push(data[at])
+            at @ at + 1
+        else if at + 1 < data.len() && data[at + 1] == '\\'
+            out @ out.push('\\')
+            at @ at + 2
+        else if at + 3 < data.len() && is_octal(data[at + 1]) && is_octal(data[at + 2]) && is_octal(data[at + 3])
+            n = (to_i64(data[at + 1]).must() - 48) * 64 + (to_i64(data[at + 2]).must() - 48) * 8 + to_i64(data[at + 3]).must() - 48
+
+            match to_u8(n)
+                .ok b  => out @ out.push(b)
+                .err _ => return fail(code: INVALID, msg: f"the server sent a bytea escape at byte {at} past 255")
+
+            at @ at + 4
+        else
+            return fail(code: INVALID, msg: f"the server sent a bytea with a lone backslash at byte {at}")
+
+    return ok(out)
+
+# Whether `c` is an octal digit.
+#
+# - `c`: the byte.
+function is_octal(c: u8) -> bool
+    return c >= '0' && c <= '7'
+
+# The moment the ISO text `s` names, as PostgreSQL writes a `date`, a
+# `timestamp` or a `timestamptz` with `DateStyle` ISO: `2006-01-02`,
+# `2006-01-02 15:04:05.123456`, `2006-01-02 15:04:05.123456+05:30`.
+#
+# - `s`: the server's text; a date alone is its midnight, a time with no
+#   offset is UTC.
+#
+# Fails `invalid` where `s` is not in that form, as `infinity` and a date
+# `BC` are not, and `does_not_fit` where the moment is outside an `Instant`.
+function instant_of(s: str) -> time.Instant?
+    c @= Digits(s: s, at: 0)
+    year = digits_of(@c, least: 4, most: 9)?
+    expect(@c, '-')?
+    month = digits_of(@c, least: 2, most: 2)?
+    expect(@c, '-')?
+    day = digits_of(@c, least: 2, most: 2)?
+    hour: i64 @= 0
+    minute: i64 @= 0
+    second: i64 @= 0
+    nano: i64 @= 0
+    offset: i64 @= 0
+
+    if c.at < s.len()
+        expect(@c, ' ')?
+        hour @ digits_of(@c, least: 2, most: 2)?
+        expect(@c, ':')?
+        minute @ digits_of(@c, least: 2, most: 2)?
+        expect(@c, ':')?
+        second @ digits_of(@c, least: 2, most: 2)?
+
+        if c.at < s.len() && s[c.at] == '.'
+            c.at @ c.at + 1
+            start = c.at
+            fraction = digits_of(@c, least: 1, most: 9)?
+            scale: i64 @= fraction
+
+            for _ in range(from: c.at - start, to: 9)
+                scale @ scale * 10
+
+            nano @ scale
+
+        if c.at < s.len() && (s[c.at] == '+' || s[c.at] == '-')
+            sign: i64 = if s[c.at] == '-'
+                -1
+            else
+                1
+            c.at @ c.at + 1
+            seconds: i64 @= digits_of(@c, least: 2, most: 2)? * 3600
+
+            if c.at < s.len() && s[c.at] == ':'
+                c.at @ c.at + 1
+                seconds @ seconds + digits_of(@c, least: 2, most: 2)? * 60
+
+                if c.at < s.len() && s[c.at] == ':'
+                    c.at @ c.at + 1
+                    seconds @ seconds + digits_of(@c, least: 2, most: 2)?
+            offset @ sign * seconds
+
+    if c.at != s.len()
+        return fail(code: INVALID, msg: f"\"{s}\" goes on past its time at byte {c.at}")
+    t = time.from_date_time(time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: nano))?
+    return time.add(t, time.seconds(-offset)?)
+
+# A place in a text of digits being read.
+record Digits
+    # The text.
+    s: str
+    # The byte index of the next byte.
+    at: i64
+
+# The number the next run of `least` to `most` digits of `c` writes.
+#
+# - `c`: the place, moved past them.
+# - `least`: the fewest digits accepted.
+# - `most`: the most read.
+function digits_of(@c: Digits, least: i64, most: i64) -> i64?
+    n: i64 @= 0
+    count: i64 @= 0
+
+    while count < most && c.at < c.s.len() && c.s[c.at] >= '0' && c.s[c.at] <= '9'
+        n @ n * 10 + to_i64(c.s[c.at]).must() - 48
+        c.at @ c.at + 1
+        count @ count + 1
+
+    if count < least
+        return fail(code: INVALID, msg: f"\"{c.s}\" holds no {least} digits at byte {c.at}")
+    return ok(n)
+
+# Moves `c` past the byte `b`.
+#
+# - `c`: the place.
+# - `b`: the byte due there.
+#
+# Fails `invalid` where another byte, or none, stands there.
+function expect(@c: Digits, b: u8) -> ()?
+    if c.at >= c.s.len() || c.s[c.at] != b
+        return fail(code: INVALID, msg: f"\"{c.s}\" holds no '{to_str(b)}' at byte {c.at}")
+    c.at @ c.at + 1
+    return ok()
+
+# The name `pg_type` gives the type `oid`, for the types PostgreSQL makes
+# itself; its number as text for any other, which a program's own types are.
+#
+# - `oid`: the type's number.
+function type_name(oid: i64) -> str
+    names: {i64: str} = {
+        16: "bool"
+        17: "bytea"
+        18: "char"
+        19: "name"
+        20: "int8"
+        21: "int2"
+        23: "int4"
+        24: "regproc"
+        25: "text"
+        26: "oid"
+        114: "json"
+        142: "xml"
+        600: "point"
+        650: "cidr"
+        700: "float4"
+        701: "float8"
+        705: "unknown"
+        774: "macaddr8"
+        790: "money"
+        829: "macaddr"
+        869: "inet"
+        1000: "_bool"
+        1001: "_bytea"
+        1005: "_int2"
+        1007: "_int4"
+        1009: "_text"
+        1015: "_varchar"
+        1016: "_int8"
+        1021: "_float4"
+        1022: "_float8"
+        1042: "bpchar"
+        1043: "varchar"
+        1082: "date"
+        1083: "time"
+        1114: "timestamp"
+        1115: "_timestamp"
+        1182: "_date"
+        1184: "timestamptz"
+        1185: "_timestamptz"
+        1186: "interval"
+        1231: "_numeric"
+        1266: "timetz"
+        1560: "bit"
+        1562: "varbit"
+        1700: "numeric"
+        2249: "record"
+        2278: "void"
+        2950: "uuid"
+        2951: "_uuid"
+        3802: "jsonb"
+        3807: "_jsonb"
+        3614: "tsvector"
+        3904: "int4range"
+        3926: "int8range"
+        4072: "jsonpath"
+    }
+    return names[oid].default(to_str(oid))
+
+test "encode: each kind's type, format and bytes"
+    assert encode(.null_value) == Encoded(type_oid: 0, format: 0, arg: .absent)
+    assert encode(.boolean(v: true)) == Encoded(type_oid: 16, format: 0, arg: .given(data: ['t']))
+    assert encode(.text(v: "é")) == Encoded(type_oid: 0, format: 0, arg: .given(data: [195, 169]))
+    assert encode(.text(v: "")) == Encoded(type_oid: 0, format: 0, arg: .given(data: []))
+    assert encode(.blob(v: [0, 255])) == Encoded(type_oid: 17, format: 1, arg: .given(data: [0, 255]))
+    assert encode(.integer(v: -1)) == Encoded(type_oid: 21, format: 0, arg: .given(data: ['-', '1']))
+    when = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456000).must()
+    assert encode(.instant(v: when)) == text_of(type_oid: 1184, s: "2006-01-02T15:04:05.123456Z")
+
+test "integer_type: the edges of int2, int4 and int8"
+    assert integer_type(0) == 21 && integer_type(32767) == 21 && integer_type(-32768) == 21
+    assert integer_type(32768) == 23 && integer_type(-32769) == 23 && integer_type(2147483647) == 23 && integer_type(-2147483648) == 23
+    assert integer_type(2147483648) == 20 && integer_type(-2147483649) == 20
+    assert integer_type(9223372036854775807) == 20 && integer_type(-9223372036854775808) == 20
+
+test "float_text: nan, both infinities, negative zero, and a value that reads back"
+    nan = numbers.parse_float("nan").must()
+    inf = numbers.parse_float("inf").must()
+    assert float_text(nan) == "NaN"
+    assert float_text(inf) == "Infinity"
+    assert float_text(-inf) == "-Infinity"
+    assert numbers.parse_float(float_text(-0.0)).must() == 0.0
+    assert numbers.parse_float(float_text(0.1)).must() == 0.1
+    largest = numbers.parse_float("1.7976931348623157e308").must()
+    assert numbers.parse_float(float_text(largest)).must() == largest
+
+test "decode: bool, the integers at their edges, oid, and a word that is none"
+    assert decode(type_oid: 16, data: ['t']).must() == .boolean(v: true)
+    assert decode(type_oid: 16, data: ['f']).must() == .boolean(v: false)
+    assert decode(type_oid: 16, data: ['x']).is_err()
+    assert decode(type_oid: 20, data: bytes.from_text("-9223372036854775808")).must() == .integer(v: -9223372036854775808)
+    assert decode(type_oid: 20, data: bytes.from_text("9223372036854775807")).must() == .integer(v: 9223372036854775807)
+    assert decode(type_oid: 26, data: bytes.from_text("4294967295")).must() == .integer(v: 4294967295)
+
+    match decode(type_oid: 23, data: ['a'])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the server sent \"a\" for an integer of type int4"
+
+test "decode: floats as PostgreSQL writes them, NaN and the infinities included"
+    assert decode(type_oid: 701, data: bytes.from_text("1.5")).must() == .float(v: 1.5)
+    assert decode(type_oid: 701, data: bytes.from_text("1e+300")).must() == .float(v: numbers.parse_float("1e300").must())
+    assert decode(type_oid: 700, data: bytes.from_text("-Infinity")).must() == .float(v: -numbers.parse_float("inf").must())
+
+    match decode(type_oid: 701, data: bytes.from_text("NaN")).must()
+        .float x                                                               => assert x != x
+        .null_value | .boolean _ | .integer _ | .text _ | .blob _ | .instant _ => assert false
+
+test "decode: bytea in hexadecimal and in the escape format, empty, and broken"
+    assert decode(type_oid: 17, data: bytes.from_text("\\x00ff10")).must() == .blob(v: [0, 255, 16])
+    assert decode(type_oid: 17, data: bytes.from_text("\\x")).must() == .blob(v: [])
+    assert decode(type_oid: 17, data: bytes.from_text("a\\\\b\\000\\377")).must() == .blob(v: ['a', '\\', 'b', 0, 255])
+    assert decode(type_oid: 17, data: []).must() == .blob(v: [])
+    assert decode(type_oid: 17, data: bytes.from_text("\\xzz")).is_err()
+    assert decode(type_oid: 17, data: bytes.from_text("\\4")).is_err()
+    assert decode(type_oid: 17, data: bytes.from_text("\\400")).is_err()
+
+test "decode: dates and timestamps, an offset, a fraction, infinity and BC kept as text"
+    assert decode(type_oid: 1082, data: bytes.from_text("2006-01-02")).must() == .instant(v: time.date(year: 2006, month: 1, day: 2).must())
+    t = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456000).must()
+    assert decode(type_oid: 1114, data: bytes.from_text("2006-01-02 15:04:05.123456")).must() == .instant(v: t)
+    assert decode(type_oid: 1184, data: bytes.from_text("2006-01-02 15:04:05.123456+00")).must() == .instant(v: t)
+    assert decode(type_oid: 1184, data: bytes.from_text("2006-01-02 20:34:05.123456+05:30")).must() == .instant(v: t)
+    assert decode(type_oid: 1184, data: bytes.from_text("2006-01-02 15:00:00-00:04:05")).must() == .instant(v: time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 0).must())
+    assert decode(type_oid: 1184, data: bytes.from_text("infinity")).must() == .text(v: "infinity")
+    assert decode(type_oid: 1082, data: bytes.from_text("0044-03-15 BC")).must() == .text(v: "0044-03-15 BC")
+    assert decode(type_oid: 1082, data: bytes.from_text("10000-01-01")).must() == .text(v: "10000-01-01")
+    assert decode(type_oid: 1082, data: bytes.from_text("1600-01-01")).must() == .text(v: "1600-01-01")
+
+test "decode: other types as text, text of more than one byte, bytes that are not UTF-8"
+    assert decode(type_oid: 1700, data: bytes.from_text("3.14159265358979323846")).must() == .text(v: "3.14159265358979323846")
+    assert decode(type_oid: 25, data: bytes.from_text("città")).must() == .text(v: "città")
+    assert decode(type_oid: 25, data: []).must() == .text(v: "")
+    assert decode(type_oid: 25, data: [255]).must() == .blob(v: [255])
+
+test "type_name: a known type, an array, and a type of the program's own"
+    assert type_name(23) == "int4"
+    assert type_name(1007) == "_int4"
+    assert type_name(16385) == "16385"

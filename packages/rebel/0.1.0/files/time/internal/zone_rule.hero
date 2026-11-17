@@ -1,0 +1,401 @@
+# The rule of POSIX's `TZ` text, as a TZif file's footer and the environment
+# variable write it, read and turned into the changes of offset it makes year
+# by year: `CET-1CEST,M3.5.0,M10.5.0/3` is one hour ahead of UTC, two from the
+# last Sunday of March at 02:00 to the last Sunday of October at 03:00. An
+# offset in the text counts hours WEST of Greenwich; here, as in a TZif file,
+# an offset counts seconds ahead of UTC.
+
+use time/internal/civil
+use time/internal/tzif
+
+# The code of a text that is no rule.
+constant INVALID: str
+    "invalid"
+
+# The most hours a time of day in a rule reaches either way, RFC 9636's
+# version 3 extension.
+constant MOST_RULE_HOURS: i64
+    167
+
+# Where in a year a change falls, one of POSIX's three forms.
+variant Day
+    # `Jn`: the day `n` of the year, 1 to 365, February 29 never counted.
+    julian
+        n: i64
+    # `n`: the day `n` of the year from 0, February 29 counted, 0 to 365.
+    counted
+        n: i64
+    # `Mm.w.d`: the weekday `day`, 0 for Sunday, of the week `week`, 1 to 5
+    # and 5 meaning the last, of the month `month`.
+    weekday
+        month: i64
+        week: i64
+        day: i64
+
+# A change of a rule: its day, and the time of that day, local, it falls at.
+record When
+    # The day.
+    day: Day
+    # Seconds from that day's midnight, from -167 to 167 hours.
+    time: i64
+
+# A rule: one offset all year, or two and the two changes between them.
+variant Rule
+    # One offset, no daylight saving time.
+    fixed
+        kind: tzif.Kind
+    # Standard and daylight saving time, and when each begins.
+    seasonal
+        standard: tzif.Kind
+        daylight: tzif.Kind
+        start: When
+        end: When
+
+# One change: its instant in seconds since 1970, and the type it begins.
+record Step
+    # Seconds since 1970.
+    at: i64
+    # The type from `at` on.
+    kind: tzif.Kind
+
+# Where a reading of the text stands.
+record Cursor
+    # The text.
+    text: str
+    # The byte the reading has reached.
+    at: i64
+
+# The rule `text` writes. Fails `invalid` naming the byte where it does not
+# read one, a daylight time without its rule among them: POSIX leaves that
+# default to the system.
+function parse(text: str) -> Rule?
+    c: Cursor @= Cursor(text: text, at: 0)
+    standard_name = name(@c)?
+    standard = -signed_time(@c, most: 24, what: "the offset")?
+
+    if c.at == text.len()
+        return ok(.fixed(kind: tzif.Kind(offset: standard, daylight: false, abbreviation: standard_name)))
+    daylight_name = name(@c)?
+    daylight: i64 @= standard + 3_600
+
+    if c.at < text.len() && text[c.at] != ','
+        daylight @ -signed_time(@c, most: 24, what: "the daylight offset")?
+
+    if c.at == text.len()
+        return fail(code: INVALID, msg: f"\"{text}\" names a daylight time and no rule for it")
+    expect(@c, byte: ',')?
+    start = when(@c)?
+    expect(@c, byte: ',')?
+    end = when(@c)?
+
+    if c.at != text.len()
+        return fail(code: INVALID, msg: f"\"{text}\" goes on at byte {c.at} after its rule")
+    return ok(
+        .seasonal(standard: tzif.Kind(offset: standard, daylight: false, abbreviation: standard_name), daylight: tzif.Kind(offset: daylight, daylight: true, abbreviation: daylight_name), start: start, end: end)
+    )
+
+# A name at the cursor: three letters or more, or `<` and letters, digits,
+# `+` or `-` up to `>`, which is left out.
+function name(@c: Cursor) -> str?
+    from = c.at
+
+    if c.at < c.text.len() && c.text[c.at] == '<'
+        c.at @ c.at + 1
+
+        while c.at < c.text.len() && is_quoted_byte(c.text[c.at])
+            c.at @ c.at + 1
+
+        if c.at == c.text.len() || c.text[c.at] != '>' || c.at == from + 1
+            return fail(
+                code: INVALID,
+                msg: f"the name at byte {from} of \"{c.text}\" opens with < and is not letters, digits, + or - closed by >"
+            )
+        c.at @ c.at + 1
+        return ok(c.text.slice(from: from + 1, to: c.at - 1))
+
+    while c.at < c.text.len() && is_letter(c.text[c.at])
+        c.at @ c.at + 1
+
+    if c.at - from < 3
+        return fail(code: INVALID, msg: f"the name at byte {from} of \"{c.text}\" is not three letters or more")
+    return ok(c.text.slice(from: from, to: c.at))
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` may stand inside `<` and `>`.
+function is_quoted_byte(b: u8) -> bool
+    return is_letter(b) || b >= '0' && b <= '9' || b == '+' || b == '-'
+
+# `[+-]h[h][:m[m][:s[s]]]` at the cursor, in seconds, its hours at most
+# `most`. `what` names it in a message.
+function signed_time(@c: Cursor, most: i64, what: str) -> i64?
+    sign: i64 @= 1
+
+    if c.at < c.text.len() && (c.text[c.at] == '+' || c.text[c.at] == '-')
+        if c.text[c.at] == '-'
+            sign @ -1
+        c.at @ c.at + 1
+    from = c.at
+    hours = number(@c, what: what)?
+
+    if hours > most
+        return fail(code: INVALID, msg: f"{what} at byte {from} of \"{c.text}\" is {hours} hours, above {most}")
+    seconds: i64 @= hours * 3_600
+
+    if c.at < c.text.len() && c.text[c.at] == ':'
+        c.at @ c.at + 1
+        seconds @ seconds + sixty(@c, what: what)? * 60
+
+        if c.at < c.text.len() && c.text[c.at] == ':'
+            c.at @ c.at + 1
+            seconds @ seconds + sixty(@c, what: what)?
+    return ok(sign * seconds)
+
+# One or two digits at the cursor, from 0 to 59.
+function sixty(@c: Cursor, what: str) -> i64?
+    from = c.at
+    n = number(@c, what: what)?
+
+    if n > 59
+        return fail(code: INVALID, msg: f"{what} at byte {from} of \"{c.text}\" has {n} minutes or seconds, above 59")
+    return ok(n)
+
+# One to three digits at the cursor, as a number.
+function number(@c: Cursor, what: str) -> i64?
+    from = c.at
+    n: i64 @= 0
+
+    while c.at < c.text.len() && c.at - from < 3 && c.text[c.at] >= '0' && c.text[c.at] <= '9'
+        n @ n * 10 + to_i64(c.text[c.at] - '0').must()
+        c.at @ c.at + 1
+
+    if c.at == from
+        return fail(code: INVALID, msg: f"{what} at byte {from} of \"{c.text}\" has no digit")
+    return ok(n)
+
+# Nothing, where the byte at the cursor is `byte`, which it passes. Fails
+# `invalid` otherwise.
+function expect(@c: Cursor, byte: u8) -> ()?
+    if c.at >= c.text.len() || c.text[c.at] != byte
+        return fail(code: INVALID, msg: f"\"{c.text}\" lacks a {to_str(byte)} at byte {c.at}")
+    c.at @ c.at + 1
+    return ok()
+
+# A change at the cursor: a day in one of the three forms, then `/` and a
+# time, 02:00 where there is none.
+function when(@c: Cursor) -> When?
+    from = c.at
+    day: Day @= .counted(n: 0)
+
+    if c.at < c.text.len() && c.text[c.at] == 'J'
+        c.at @ c.at + 1
+        n = number(@c, what: "the day")?
+
+        if n < 1 || n > 365
+            return fail(code: INVALID, msg: f"the day J{n} at byte {from} of \"{c.text}\" is outside 1 to 365")
+        day @ .julian(n: n)
+    else if c.at < c.text.len() && c.text[c.at] == 'M'
+        c.at @ c.at + 1
+        month = number(@c, what: "the month")?
+        expect(@c, byte: '.')?
+        week = number(@c, what: "the week")?
+        expect(@c, byte: '.')?
+        weekday = number(@c, what: "the weekday")?
+
+        if month < 1 || month > 12 || week < 1 || week > 5 || weekday > 6
+            return fail(
+                code: INVALID,
+                msg: f"the day M{month}.{week}.{weekday} at byte {from} of \"{c.text}\" names no month 1 to 12, week 1 to 5 and weekday 0 to 6"
+            )
+        day @ .weekday(month: month, week: week, day: weekday)
+    else
+        n = number(@c, what: "the day")?
+
+        if n > 365
+            return fail(code: INVALID, msg: f"the day {n} at byte {from} of \"{c.text}\" is above 365")
+        day @ .counted(n: n)
+    time: i64 @= 7_200
+
+    if c.at < c.text.len() && c.text[c.at] == '/'
+        c.at @ c.at + 1
+        time @ signed_time(@c, most: MOST_RULE_HOURS, what: "the time")?
+    return ok(When(day: day, time: time))
+
+# The days from 1970-01-01 to the day `day` names in `year`.
+function day_in(day: Day, year: i64) -> i64
+    first = civil.days_from_date(year: year, month: 1, day: 1)
+
+    match day
+        .julian j =>
+            if civil.is_leap(year) && j.n >= 60
+                return first + j.n
+            return first + j.n - 1
+        .counted n => return first + n.n
+        .weekday w =>
+            month_first = civil.days_from_date(year: year, month: w.month, day: 1)
+
+            iso = if w.day == 0
+                7
+            else
+                w.day
+            date: i64 @= 1 + (iso - civil.weekday(month_first) + 7) % 7 + (w.week - 1) * 7
+
+            while date > civil.days_in_month(year: year, month: w.month)
+                date @ date - 7
+
+            return month_first + date - 1
+
+# The changes `rule` makes in the years `from` to `to`, both counted, in the
+# order of their instants, each a change from the type before it; one where
+# both fall at an instant is the later of the two, so a rule of daylight time
+# all year makes only its first and its last.
+function steps(rule: Rule, from: i64, to: i64) -> [Step]
+    match rule
+        .fixed _ => return []
+        .seasonal s =>
+            events: [Step] @= []
+            year: i64 @= from
+
+            while year <= to
+                begins = Step(
+                    at: day_in(day: s.start.day, year: year) * 86_400 + s.start.time - s.standard.offset,
+                    kind: s.daylight
+                )
+                ends = Step(
+                    at: day_in(day: s.end.day, year: year) * 86_400 + s.end.time - s.daylight.offset,
+                    kind: s.standard
+                )
+                placed(@events, step: begins)
+                placed(@events, step: ends)
+                year @ year + 1
+
+            return changing(events)
+
+# Adds `step` to `events`, which is in the order of the instants, at its
+# place: after every step at or before its instant.
+function placed(@events: [Step], step: Step)
+    events @ events.push(step)
+    k: i64 @= events.len() - 1
+
+    while k > 0 && events[k - 1].at > step.at
+        events[k] @ events[k - 1]
+        k @ k - 1
+
+    events[k] @ step
+
+# The steps of `events` that change the type: of steps at one instant only
+# the last, and a step to the type the step before it began left out. The
+# first is kept whatever it begins, since the type before it is not known
+# here: in the south a year begins in daylight time.
+function changing(events: [Step]) -> [Step]
+    kept: [Step] @= []
+    k: i64 @= 0
+
+    while k < events.len()
+        if k + 1 < events.len() && events[k + 1].at == events[k].at
+            k @ k + 1
+            continue
+
+        if kept.len() == 0 || events[k].kind != kept[kept.len() - 1].kind
+            kept @ kept.push(events[k])
+        k @ k + 1
+
+    return kept
+
+# The type `rule` keeps at the second `at`: the type of its last change at or
+# before it, counted from the year before.
+function kind_at(rule: Rule, at: i64) -> tzif.Kind
+    match rule
+        .fixed f => return f.kind
+        .seasonal s =>
+            year = civil.date_from_days(at / 86_400).year
+            kind: tzif.Kind @= s.standard
+
+            for step in steps(rule, from: year - 1, to: year + 1)
+                if step.at <= at
+                    kind @ step.kind
+
+            return kind
+
+test "parse: a seasonal rule, a quoted name with minutes, a daylight offset written out, and every day form"
+    match parse("CET-1CEST,M3.5.0,M10.5.0/3").must()
+        .fixed _ => assert false
+        .seasonal s =>
+            assert s.standard == tzif.Kind(offset: 3_600, daylight: false, abbreviation: "CET")
+            assert s.daylight == tzif.Kind(offset: 7_200, daylight: true, abbreviation: "CEST")
+            assert s.start == When(day: .weekday(month: 3, week: 5, day: 0), time: 7_200)
+            assert s.end == When(day: .weekday(month: 10, week: 5, day: 0), time: 10_800)
+
+    match parse("<+0530>-5:30").must()
+        .fixed f    => assert f.kind == tzif.Kind(offset: 19_800, daylight: false, abbreviation: "+0530")
+        .seasonal _ => assert false
+
+    match parse("IST-1GMT0,M10.5.0,M3.5.0/1").must()
+        .fixed _    => assert false
+        .seasonal s => assert s.daylight.offset == 0 && s.end.time == 3_600
+
+    match parse("XXX3YYY,J60/2,300/-4:30").must()
+        .fixed _ => assert false
+        .seasonal s =>
+            assert s.start == When(day: .julian(n: 60), time: 7_200)
+            assert s.end == When(day: .counted(n: 300), time: -16_200)
+
+test "parse fails: a short name, daylight without a rule, 25 hours, month 13, a missing change, an empty quoted name, text after the rule, 60 minutes"
+    assert parse("AB").is_err()
+
+    match parse("CET-1CEST")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"CET-1CEST\" names a daylight time and no rule for it"
+
+    match parse("CET-25")
+        .ok _  => assert false
+        .err e => assert e.msg == "the offset at byte 4 of \"CET-25\" is 25 hours, above 24"
+
+    assert parse("CET-1CEST,M13.1.0,M10.5.0").is_err()
+    assert parse("CET-1CEST,M3.5.0").is_err()
+    assert parse("<>5").is_err()
+    assert parse("CET-1CEST,M3.5.0,M10.5.0/3x").is_err()
+    assert parse("CET-1:60").is_err()
+    assert parse("").is_err()
+
+# Python's `date` counted the days: 2030-03-31 is 22,004 after 1970-01-01.
+test "day_in: the last Sunday of a month, J60 in a leap year, day 59 and day 365"
+    assert day_in(day: .weekday(month: 3, week: 5, day: 0), year: 2030) == 22_004
+    assert day_in(day: .weekday(month: 10, week: 5, day: 0), year: 2030) == 22_214
+    assert day_in(day: .weekday(month: 2, week: 1, day: 0), year: 2026) == 20_485
+    assert day_in(day: .julian(n: 60), year: 2032) == 22_705
+    assert day_in(day: .counted(n: 59), year: 2032) == 22_704
+    assert day_in(day: .counted(n: 365), year: 2030) == 22_280
+
+# Python's `ZoneInfo.from_file`, on a file holding each rule alone, answered
+# every instant and type of 2030 but one: it ends `300/4` on October 27, where
+# POSIX's day 300 counted from 0 is October 28, and Go's
+# `LoadLocationFromTZData` and the C library's `localtime` both answered
+# 1,919,397,600, which this takes.
+test "steps: Europe's, the south's, a negative daylight time, times before midnight, and Julian days, all in 2030"
+    cet = steps(parse("CET-1CEST,M3.5.0,M10.5.0/3").must(), from: 2030, to: 2030)
+    assert cet.len() == 2 && cet[0].at == 1_901_149_200 && cet[0].kind.abbreviation == "CEST" && cet[1].at == 1_919_293_200
+    south = steps(parse("AEST-10AEDT,M10.1.0,M4.1.0/3").must(), from: 2030, to: 2030)
+    assert south.len() == 2 && south[0].at == 1_901_721_600 && south[0].kind.abbreviation == "AEST" && south[1].at == 1_917_446_400
+    dublin = steps(parse("IST-1GMT0,M10.5.0,M3.5.0/1").must(), from: 2030, to: 2030)
+    assert dublin[0].at == 1_901_149_200 && dublin[0].kind.abbreviation == "IST" && dublin[1].at == 1_919_293_200 && dublin[1].kind.offset == 0
+    early = steps(parse("<-03>3<-02>,M3.5.0/-2,M10.5.0/-1").must(), from: 2030, to: 2030)
+    assert early[0].at == 1_901_149_200 && early[0].kind.offset == -7_200 && early[1].at == 1_919_293_200
+    julian = steps(parse("XXX3YYY,J60/2,300/4").must(), from: 2030, to: 2030)
+    assert julian[0].at == 1_898_571_600 && julian[0].kind.abbreviation == "YYY" && julian[1].at == 1_919_397_600
+    fixed = steps(parse("<+0530>-5:30").must(), from: 2030, to: 2030)
+    assert fixed.len() == 0
+
+# Python answered EDT for every instant of 2030 under this rule.
+test "steps and kind_at: daylight time all year makes no change between its first and its last"
+    rule = parse("EST5EDT,0/0,J365/25").must()
+    years = steps(rule, from: 2030, to: 2032)
+    assert years.len() == 2 && years[0].kind.abbreviation == "EDT" && years[1].kind.abbreviation == "EST"
+    assert years[0].at == 1_893_474_000 && years[1].at == 1_988_168_400
+    assert kind_at(rule, at: 1_893_473_999).abbreviation == "EDT"
+    assert kind_at(rule, at: 1_906_000_000).abbreviation == "EDT"
+    cet = parse("CET-1CEST,M3.5.0,M10.5.0/3").must()
+    assert kind_at(cet, at: 1_901_149_199).abbreviation == "CET"
+    assert kind_at(cet, at: 1_901_149_200).abbreviation == "CEST"

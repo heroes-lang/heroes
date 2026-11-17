@@ -1,0 +1,354 @@
+capability env/read  the value of one environment variable
+  heroes  os.env
+  go      os.Getenv, os.LookupEnv
+  rust    env::var
+  python  os.getenv, os.environ (an item read)
+  note    unset is `not_found` and never "", where Go's Getenv answers "" for both; a default is `.default(v)`. An empty name, or one holding `=` or a zero byte, is `invalid`: all three answer absent (observed), but no system can hold such a name, so asking for one is a mistake the caller can see
+
+capability env/read-bytes  the value of one environment variable as the bytes the system holds
+  heroes  os.env_bytes
+  go      -
+  rust    env::var_os
+  python  os.getenvb, os.environb (an item read)
+  note    `env` fails `not_text` for a value that is not UTF-8; this one never does
+
+capability env/read-all  every variable of the environment at once, in the system's order
+  heroes  os.env_all
+  go      os.Environ
+  rust    env::vars
+  python  os.environ
+  note    a map in the system's order; an entry with no `=`, or with an empty name (Windows' `=C:`), is left out as Rust and Python leave it, where Go's Environ hands every entry as it stands; a name standing twice keeps its first value, the one `env` reads. A name or value that is not UTF-8 is `not_text`, where Rust's vars panics
+
+capability env/read-all-bytes  every variable of the environment as the bytes the system holds
+  heroes  os.env_all_bytes
+  go      -
+  rust    env::vars_os
+  python  os.environb
+  note    a list of `os.RawVariable`, left out and kept as `env_all` leaves and keeps them
+
+capability env/set  a variable of the process's environment set
+  heroes  refused: undefined beside another thread
+  go      os.Setenv
+  rust    env::set_var
+  python  os.putenv, os.environ (an item written)
+  note    in C a write of the environment beside another thread's read is undefined; a child is given its own variables through the package `process`
+
+capability env/remove  a variable of the process's environment removed
+  heroes  refused: undefined beside another thread
+  go      os.Unsetenv
+  rust    env::remove_var
+  python  os.unsetenv, os.environ (an item deleted)
+
+capability env/clear  every variable of the process's environment removed
+  heroes  refused: undefined beside another thread
+  go      os.Clearenv
+  rust    -
+  python  os.environ.clear
+
+capability env/expand  `$NAME` and `${NAME}` in a text replaced by what a function answers
+  heroes  os.expand
+  go      os.Expand
+  rust    -
+  python  -
+  note    a name is ASCII letters, digits and `_`; `$$` writes one `$` (Go reads it as the variable `$`, observed "$$HOME" -> "HOME"; Python keeps it, "$/h"); a `$` before anything else stays (all agree on "$ x" and "a$"); a `${` with no `}`, `${}` and `${A-B}` are `invalid`, where Go writes "HOME", "" and "" and Python keeps them as written; the function's own failure is the call's
+
+capability env/expand-env  `$NAME` and `${NAME}` in a text replaced by the environment's values
+  heroes  os.expand_env
+  go      os.ExpandEnv
+  rust    -
+  python  os.path.expandvars
+  note    a variable that is not set fails `not_found` naming it: Go writes it as "" (observed "x  y") and Python leaves it as written; both hide the mistake a path such as "$HOME/x" makes when HOME is unset
+
+capability env/path-list-split  a list of paths such as PATH cut into its paths
+  heroes  path.split_list
+  go      -
+  rust    env::split_paths
+  python  -
+  note    the package `path`'s, beside its `list_sep`
+
+capability env/path-list-join  a list of paths such as PATH built, refusing a path that holds the separator
+  heroes  pending
+  go      -
+  rust    env::join_paths
+  python  -
+  note    the package `path`'s area, beside `split_list`; `join` with `path.list_sep()` builds the list but does not refuse a path holding the separator, as Rust's join_paths does
+
+capability process/args  the program's arguments
+  heroes  built-in args
+  go      os.Args
+  rust    env::args, env::args_os
+  python  sys.argv, sys.orig_argv
+  note    `args_checked` for arguments that may not be UTF-8
+
+capability process/exit  the program ended with a status
+  heroes  built-in exit
+  go      os.Exit
+  rust    -
+  python  sys.exit
+
+capability process/abort  the program ended at once by a fault
+  heroes  refused: the language's own, `assert false` ends the program at once and says why
+  go      -
+  rust    -
+  python  os.abort
+
+capability dir/working  the working folder
+  heroes  os.working_dir
+  go      os.Getwd
+  rust    env::current_dir
+  python  os.getcwd, os.getcwdb
+  note    absolute with every link followed, as Rust's and Python's getcwd answer here (observed, the same path as Go's); Go's Getwd may answer any path that reaches the folder through links, its documentation says. A path that is not UTF-8 is `not_text`, and its bytes are not offered: no package of Rebel takes a path as bytes
+
+capability dir/change  the working folder changed
+  heroes  os.change_dir
+  go      os.Chdir
+  rust    env::set_current_dir
+  python  os.chdir
+  note    offered, unlike a write of the environment: chdir is one system call, the folder one for every thread, and a thread reading a relative path beside it reads one folder or the other, never undefined behaviour; the doc comment says so
+
+capability dir/temp  the system's folder for temporary files
+  heroes  os.temp_dir
+  go      os.TempDir
+  rust    env::temp_dir
+  python  tempfile.gettempdir
+  note    TMPDIR where set and not empty, else /tmp, with no separator at its end as Python answers (observed ".../T"); Go and Rust keep TMPDIR's own (".../T/")
+
+capability dir/home  the user's home folder
+  heroes  os.home_dir
+  go      os.UserHomeDir
+  rust    env::home_dir
+  python  -
+  note    HOME, else the system's record of the user; Go fails where HOME is unset (observed, "$HOME is not defined")
+
+capability dir/cache  the folder every program keeps what it can make again in
+  heroes  os.cache_dir
+  go      os.UserCacheDir
+  rust    -
+  python  -
+
+capability dir/config  the folder every program keeps its settings in
+  heroes  os.config_dir
+  go      os.UserConfigDir
+  rust    -
+  python  -
+
+capability process/executable  the path of the program's own executable
+  heroes  os.executable_path
+  go      os.Executable
+  rust    env::current_exe
+  python  sys.executable
+  note    links followed on every system; never a guess from the first argument where the machine gives none, `not_found` there
+
+capability process/id  the process's own id
+  heroes  os.pid
+  go      os.Getpid
+  rust    -
+  python  os.getpid
+
+capability process/parent-id  the id of the process that started this one
+  heroes  os.parent_pid
+  go      os.Getppid
+  rust    -
+  python  os.getppid
+
+capability user/id  the id of the user who started the process
+  heroes  os.user_id
+  go      os.Getuid
+  rust    -
+  python  os.getuid
+  note    `unsupported` on Windows, where Go's documentation says it answers -1 (unrun: no Windows here)
+
+capability user/effective-id  the id of the user whose rights the process has
+  heroes  os.effective_user_id
+  go      os.Geteuid
+  rust    -
+  python  os.geteuid
+
+capability user/group-id  the id of the group the process was started in
+  heroes  os.group_id
+  go      os.Getgid
+  rust    -
+  python  os.getgid
+
+capability user/effective-group-id  the id of the group whose rights the process has
+  heroes  os.effective_group_id
+  go      os.Getegid
+  rust    -
+  python  os.getegid
+
+capability user/groups  the other groups the process belongs to
+  heroes  os.group_ids
+  go      os.Getgroups
+  rust    -
+  python  os.getgroups
+
+capability user/groups-of  the groups a named user belongs to
+  heroes  pending
+  go      -
+  rust    -
+  python  os.getgrouplist
+  note    no door of `hero_sys.h` reads the system's record of another user
+
+capability user/name  the name of the user the process runs as
+  heroes  os.user_name
+  go      -
+  rust    -
+  python  getpass.getuser, os.getlogin
+  note    the system's record of the effective user first (`getpwuid_r`), and `USER` only where no record names one; Python's getuser reads LOGNAME, USER and USERNAME first, which any program's parent may set to anything. On Windows `GetUserNameW`, the name without its domain. `not_found` where neither names one
+
+capability user/change  the user or the groups the process runs as changed
+  heroes  pending
+  go      -
+  rust    -
+  python  os.setuid, os.seteuid, os.setgid, os.setegid, os.setgroups, os.setregid, os.setreuid, os.initgroups
+  note    no floor door changes who the process runs as, and every thread of the process is changed at once
+
+capability user/password  a secret read from the terminal without echoing it
+  heroes  pending
+  go      -
+  rust    -
+  python  getpass.getpass
+  note    no floor door turns a terminal's echo off
+
+capability machine/host-name  the machine's host name
+  heroes  os.host_name
+  go      os.Hostname
+  rust    -
+  python  platform.node
+
+capability machine/page-size  the bytes of one page of memory
+  heroes  os.page_size
+  go      os.Getpagesize
+  rust    -
+  python  -
+  note    Python asks `os.sysconf("SC_PAGESIZE")`, in the block of the system's limits; 16384 on this Mac, all three agree
+
+capability machine/processors  how many processors the program may run on at once
+  heroes  os.processor_count
+  go      -
+  rust    -
+  python  os.process_cpu_count, os.cpu_count
+  note    the ones the process may use, Python's process_cpu_count; cpu_count, the machine's, is the same on Darwin (8 and 8 here) and may be more on Linux under a set of processors
+
+capability machine/limits  a limit or a setting of the system asked by its name
+  heroes  pending
+  go      -
+  rust    -
+  python  os.sysconf, os.confstr, os.sysconf_names, os.confstr_names
+  note    no floor door asks a limit by name; the page size is `os.page_size`
+
+capability machine/load  the system's load averages
+  heroes  os.load_average
+  go      -
+  rust    -
+  python  os.getloadavg
+  note    the three as a record of integers in thousandths (`getloadavg` read once), where Python answers three floats; `unsupported` on Windows, which keeps no such average; Python's documentation gives getloadavg for Unix alone (unrun on Windows)
+
+capability machine/family  whether the system is Windows or keeps POSIX's rules
+  heroes  os.family
+  go      -
+  rust    env::consts::FAMILY
+  python  os.name
+  note    told by the floor's `hero_run_exe_suffix`, ".exe" on Windows alone, as the package `path` tells its rules
+
+capability machine/system-name  which system the program runs on: Linux, Darwin, Windows, another
+  heroes  os.system
+  go      -
+  rust    env::consts::OS
+  python  sys.platform, platform.system, platform.platform
+  note    a variant, `darwin`, `linux`, `windows` or `other`, where Rust and Python answer text; the platform layer's own arm answers it as it is compiled (`__APPLE__`, `__linux__`, `_WIN32`), so it never fails and reads no convention XDG_CACHE_HOME could imitate. `family` stays, the question of the path rules
+
+capability machine/system-version  the system's release and version
+  heroes  os.system_version
+  go      -
+  rust    -
+  python  os.uname, platform.uname, platform.release, platform.version, platform.mac_ver, platform.win32_ver, platform.win32_edition, platform.win32_is_iot, platform.android_ver, platform.ios_ver, platform.freedesktop_os_release, platform.libc_ver
+  note    one text: on POSIX `uname`'s release, the kernel's, Python's platform.release (observed "27.2.0", the same as `uname -r`); on Darwin that is the kernel's number, not macOS's own, which Python's mac_ver answers (observed "27.2"); on Windows `major.minor.build` from `RtlGetVersion`, which no manifest changes. The rest of `uname`, the edition, the distribution's release file and the C library's version are not offered
+
+capability machine/architecture  the processor's architecture and byte order
+  heroes  os.architecture
+  go      -
+  rust    env::consts::ARCH
+  python  platform.machine, platform.processor, platform.architecture, sys.byteorder
+  note    the architecture the program was built for, as Rust's ARCH, a variant `x86_64`, `arm64` or `other`; Python's machine answers the running system's own name for it (observed "arm64"). The byte order is not offered: both architectures named are little-endian
+
+capability machine/executable-suffix  the suffix an executable's file takes
+  heroes  os.executable_suffix
+  go      -
+  rust    env::consts::EXE_SUFFIX, env::consts::EXE_EXTENSION
+  python  -
+  note    Rust's EXE_EXTENSION is the same without its dot
+
+capability machine/library-names  the prefix and suffix of a shared library's file
+  heroes  pending
+  go      -
+  rust    env::consts::DLL_PREFIX, env::consts::DLL_SUFFIX, env::consts::DLL_EXTENSION
+  python  -
+  note    `.dylib` on Darwin and `.so` on Linux, so it waits on machine/system-name
+
+capability random/bytes  bytes from the system's generator for keys
+  heroes  os.random_bytes
+  go      -
+  rust    -
+  python  os.urandom
+  note    a count below 0 is `invalid`; Python raises ValueError for it
+
+capability terminal/size  the size of the terminal the process writes to
+  heroes  os.terminal_size
+  go      -
+  rust    -
+  python  os.get_terminal_size, os.terminal_size
+  note    `unsupported` where the output is no terminal, as Python's OSError; Python's shutil fallback to COLUMNS and LINES is not taken
+
+capability terminal/is-terminal  whether the process's output is a terminal
+  heroes  pending
+  go      -
+  rust    -
+  python  os.isatty
+  note    a question about a stream, `hero_stream_is_terminal`, so the package `io`'s, a layer `os` may not use; `terminal_size` failing `unsupported` cannot answer it, since a terminal may tell no size
+
+capability process/times  the processor time the process has spent
+  heroes  os.process_times
+  go      -
+  rust    -
+  python  os.times, os.times_result
+  note    the process's own user and system time in integer nanoseconds (`getrusage` of the process; `GetProcessTimes` on Windows); Python's times answers floats in seconds and adds the children's time and the time elapsed, which are not offered
+
+capability process/priority  the process's scheduling priority, read or changed
+  heroes  pending
+  go      -
+  rust    -
+  python  os.getpriority, os.setpriority, os.nice
+  note    no floor door reads it
+
+capability process/umask  the mask of permissions a new file is made without
+  heroes  pending
+  go      -
+  rust    -
+  python  os.umask
+  note    no floor door; POSIX reads it only by changing it, process-wide, the shape refused for the environment
+
+dropped plumbing  a type a value is carried in, where here it is a list, a map, a record or a code
+  go      -
+  rust    env::Args, env::ArgsOs, env::Vars, env::VarsOs, env::SplitPaths, env::JoinPathsError, env::VarError
+  python  os.error, os.strerror, getpass.GetPassWarning, platform.uname_result, platform.AndroidVer, platform.IOSVersionInfo
+
+dropped cached  nothing is cached: every read asks the system, and a text is UTF-8 or `not_text`
+  go      -
+  rust    -
+  python  os.reload_environ, os.supports_bytes_environ, sys.getfilesystemencoding, sys.getfilesystemencodeerrors
+
+dropped handle  a working folder entered by a handle: a folder is entered by its path
+  go      os.File.Chdir
+  rust    -
+  python  os.fchdir
+
+dropped interpreter  the interpreter's or the module's own names, no capability of the process's world
+  go      -
+  rust    -
+  python  platform.python_branch, platform.python_build, platform.python_compiler, platform.python_implementation, platform.python_revision, platform.python_version, platform.python_version_tuple, platform.system_alias, platform.invalidate_caches, platform.collections, platform.functools, platform.itertools, platform.re, platform.os, platform.sys, getpass.contextlib, getpass.io, getpass.os, getpass.sys, getpass.termios, getpass.fallback_getpass, getpass.unix_getpass, getpass.win_getpass, sys.maxsize
+
+dropped elsewhere  near this area and another package's: `path`'s separators, `io`'s streams and terminals, `fs`'s files, `process`'s programs and process groups
+  go      os.IsPathSeparator, os.PathSeparator, os.PathListSeparator, os.DevNull, os.Stdin, os.Stdout, os.Stderr
+  rust    -
+  python  os.sep, os.altsep, os.extsep, os.pathsep, os.curdir, os.pardir, os.defpath, os.devnull, os.linesep, os.ttyname, os.ctermid, os.get_exec_path, os.getpgid, os.getpgrp, os.getsid, os.setpgid, os.setpgrp, os.setsid, os.tcgetpgrp, os.tcsetpgrp, sys.stdin, sys.stdout, sys.stderr

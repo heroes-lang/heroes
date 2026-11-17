@@ -1,0 +1,186 @@
+# A list cut into pieces: of one size from either end, every run of
+# neighbours of one length, around or after the elements a test accepts, and
+# where two neighbours stop belonging together. Each piece is a new list.
+
+use lists/internal/samples
+
+# `xs` in pieces of `size` from its start, the last holding what is left;
+# aborts where `size` is below one.
+function chunks<T>(xs: [T], size: i64) -> [[T]]
+    assert size >= 1
+    out: [[T]] @= []
+    from: i64 @= 0
+
+    while from < xs.len()
+        to: i64 @= xs.len()
+
+        if size < xs.len() - from
+            to @ from + size
+        out @ out.push(xs.slice(from: from, to: to))
+        from @ to
+
+    return out
+
+# `xs` in pieces of `size` from its end, the piece that ends the list first;
+# aborts where `size` is below one.
+function chunks_last<T>(xs: [T], size: i64) -> [[T]]
+    assert size >= 1
+    out: [[T]] @= []
+    to: i64 @= xs.len()
+
+    while to > 0
+        from: i64 @= 0
+
+        if size < to
+            from @ to - size
+        out @ out.push(xs.slice(from: from, to: to))
+        to @ from
+
+    return out
+
+# Every run of `size` neighbours of `xs`, in order; aborts where `size` is
+# below one.
+function windows<T>(xs: [T], size: i64) -> [[T]]
+    assert size >= 1
+    out: [[T]] @= []
+
+    if size > xs.len()
+        return out
+    from: i64 @= 0
+
+    while from <= xs.len() - size
+        out @ out.push(xs.slice(from: from, to: from + size))
+        from @ from + 1
+
+    return out
+
+# The pieces of `xs` between the elements `accepts` accepts, at most `limit`
+# of them, the last holding the rest whole; `limit` is at least one.
+function split_limited<T>(xs: [T], accepts: (function(T) -> bool), limit: i64) -> [[T]]
+    out: [[T]] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < xs.len() && out.len() < limit - 1
+        if accepts(xs[at])
+            out @ out.push(xs.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(xs.slice(from: from, to: xs.len()))
+    return out
+
+# The pieces of `xs` between the elements `accepts` accepts, which are left
+# out: one more piece than there are such elements.
+function split_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [[T]]
+    return split_limited(xs, accepts, xs.len() + 1)
+
+# The pieces `split_where` answers, at most `n`, the last holding the rest
+# whole; none where `n` is zero; aborts where `n` is below zero.
+function split_where_n<T>(xs: [T], accepts: (function(T) -> bool), n: i64) -> [[T]]
+    assert n >= 0
+
+    if n == 0
+        return []
+    return split_limited(xs, accepts, n)
+
+# `xs` cut after each element `accepts` accepts, nothing left out and no
+# piece empty.
+function split_after_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [[T]]
+    out: [[T]] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < xs.len()
+        if accepts(xs[at])
+            out @ out.push(xs.slice(from: from, to: at + 1))
+            from @ at + 1
+        at @ at + 1
+
+    if from < xs.len()
+        out @ out.push(xs.slice(from: from, to: xs.len()))
+    return out
+
+# The runs of `xs`, cut between two neighbours wherever `same` refuses them,
+# the earlier as `left`.
+function runs_by<T>(xs: [T], same: (function(left: T, right: T) -> bool)) -> [[T]]
+    out: [[T]] @= []
+
+    if xs.len() == 0
+        return out
+    from: i64 @= 0
+    at: i64 @= 1
+
+    while at < xs.len()
+        if !same(left: xs[at - 1], right: xs[at])
+            out @ out.push(xs.slice(from: from, to: at))
+            from @ at
+        at @ at + 1
+
+    out @ out.push(xs.slice(from: from, to: xs.len()))
+    return out
+
+## Tests
+
+test "chunks: an exact cut, a short last piece, one piece, an empty list, and the largest size"
+    nothing: [i64] = []
+    no_pieces: [[i64]] = []
+    assert chunks([1, 2, 3, 4], 2) == [[1, 2], [3, 4]]
+    assert chunks([1, 2, 3, 4, 5], 2) == [[1, 2], [3, 4], [5]]
+    assert chunks([1, 2, 3], 1) == [[1], [2], [3]]
+    assert chunks([1, 2, 3], 9) == [[1, 2, 3]]
+    assert chunks(nothing, 2) == no_pieces
+    assert chunks([1, 2], 9_223_372_036_854_775_807) == [[1, 2]]
+
+test "chunks_last: from the end, an exact cut, one piece, an empty list, and the largest size"
+    nothing: [str] = []
+    no_pieces: [[str]] = []
+    assert chunks_last([1, 2, 3, 4, 5], 2) == [[4, 5], [2, 3], [1]]
+    assert chunks_last([1, 2, 3, 4], 2) == [[3, 4], [1, 2]]
+    assert chunks_last(["a", "é"], 9) == [["a", "é"]]
+    assert chunks_last(nothing, 2) == no_pieces
+    assert chunks_last([1, 2], 9_223_372_036_854_775_807) == [[1, 2]]
+
+test "windows: pairs, the whole list, longer than the list, one, an empty list, the largest size"
+    nothing: [i64] = []
+    no_pieces: [[i64]] = []
+    assert windows([1, 2, 3, 4], 2) == [[1, 2], [2, 3], [3, 4]]
+    assert windows([1, 2, 3], 3) == [[1, 2, 3]]
+    assert windows([1], 2) == no_pieces
+    assert windows([1, 2], 1) == [[1], [2]]
+    assert windows(nothing, 1) == no_pieces
+    assert windows([1, 2], 9_223_372_036_854_775_807) == no_pieces
+
+test "split_where: separators at both ends and side by side, none, and an empty list"
+    nothing: [i64] = []
+    assert split_where([0, 1, 0, 0, 2, 0], samples.is_zero) == [nothing, [1], nothing, [2], nothing]
+    assert split_where([1, 2], samples.is_zero) == [[1, 2]]
+    assert split_where(nothing, samples.is_zero) == [nothing]
+    assert split_where([0], samples.is_zero) == [nothing, nothing]
+    assert split_where(["a", ",", "é"], samples.is_comma) == [["a"], ["é"]]
+
+test "split_where_n: zero, one, two, more than there are pieces, and the largest count"
+    xs = [1, 0, 2, 0, 3]
+    no_pieces: [[i64]] = []
+    assert split_where_n(xs, samples.is_zero, 0) == no_pieces
+    assert split_where_n(xs, samples.is_zero, 1) == [[1, 0, 2, 0, 3]]
+    assert split_where_n(xs, samples.is_zero, 2) == [[1], [2, 0, 3]]
+    assert split_where_n(xs, samples.is_zero, 9) == [[1], [2], [3]]
+    assert split_where_n(xs, samples.is_zero, 9_223_372_036_854_775_807) == [[1], [2], [3]]
+
+test "split_after_where: a separator at the end, inside, side by side, none, and an empty list"
+    nothing: [i64] = []
+    no_pieces: [[i64]] = []
+    assert split_after_where([1, 0, 2, 0], samples.is_zero) == [[1, 0], [2, 0]]
+    assert split_after_where([1, 0, 2], samples.is_zero) == [[1, 0], [2]]
+    assert split_after_where([0, 0], samples.is_zero) == [[0], [0]]
+    assert split_after_where([1, 2], samples.is_zero) == [[1, 2]]
+    assert split_after_where(nothing, samples.is_zero) == no_pieces
+
+test "runs_by: runs of equals, an order between neighbours, one element, and an empty list"
+    nothing: [i64] = []
+    no_pieces: [[i64]] = []
+    assert runs_by([1, 1, 2, 3, 3, 3, 1], samples.same_number) == [[1, 1], [2], [3, 3, 3], [1]]
+    assert runs_by([1, 2, 3, 4, 10], samples.near) == [[1, 2, 3, 4], [10]]
+    assert runs_by([5], samples.same_number) == [[5]]
+    assert runs_by(nothing, samples.same_number) == no_pieces

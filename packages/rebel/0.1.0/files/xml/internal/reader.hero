@@ -1,0 +1,154 @@
+# A whole document read into its prolog and its events: a byte order mark, the
+# XML declaration, the comments, instructions and document type declaration
+# before the root, the root and everything inside it, and the comments and
+# instructions after it. Every character is checked first, so that no later
+# step meets one XML cannot hold.
+
+use xml/internal/characters
+use xml/internal/content
+use xml/internal/doctype
+use xml/internal/event
+use xml/internal/markup
+use xml/internal/scan
+
+# What `read` answers: the declaration, and every event in document order,
+# the comments and instructions around the root included.
+record Reading
+    # What the XML declaration said, or that there is none.
+    prolog: event.Prolog
+    # The events, those before the root's start and after its end being
+    # comments and instructions alone.
+    events: [event.Event]
+
+# The document `text` writes. Fails `invalid` where it is not well-formed,
+# `unsupported` where its declaration names another encoding than UTF-8, and
+# `limit` where it is nested deeper than `max_depth` elements.
+function read(text: str, max_depth: i64) -> Reading?
+    bad = characters.bad_char_index(text)
+
+    if bad < text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: bad, what: f"{scan.found(text: text, at: bad)} is a character XML cannot hold")
+        )
+    i: i64 @= 0
+
+    if text.len() >= 3 && text[0] == 0xef && text[1] == 0xbb && text[2] == 0xbf
+        i @ 3
+    prolog: event.Prolog @= event.undeclared()
+
+    if markup.holds_at(text: text, at: i, word: "<?xml") && i + 5 < text.len() && characters.is_space(text[i + 5])
+        declared = markup.read_declaration(text: text, at: i)?
+        prolog @ event.Prolog(
+            declared: true,
+            version: declared.version,
+            encoding: declared.encoding,
+            standalone: declared.standalone
+        )
+        i @ declared.end
+    events: [event.Event] @= []
+    typed: bool @= false
+
+    while true
+        next = markup.skip_space(text: text, at: i)
+
+        if markup.holds_at(text: text, at: next, word: "<!--")
+            got = markup.read_comment(text: text, at: next)?
+            events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
+            i @ got.end
+        else if markup.holds_at(text: text, at: next, word: "<?")
+            got = markup.read_instruction(text: text, at: next)?
+            events @ events.push(event.instruction(target: got.target, data: got.data))
+            i @ got.end
+        else if markup.holds_at(text: text, at: next, word: "<!DOCTYPE")
+            if typed
+                return fail(
+                    code: scan.INVALID,
+                    msg: scan.said(text: text, at: next, what: "a second document type declaration, where a document has one at most")
+                )
+            i @ doctype.read_doctype(text: text, at: next)?
+            typed @ true
+        else if next + 1 < text.len() && text[next] == '<' && text[next + 1] != '!' && text[next + 1] != '/'
+            i @ next
+            break
+        else
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: next, what: "the root element, a comment or an instruction")
+            )
+
+    i @ content.read_element(text: text, at: i, max_depth: max_depth, events: @events)?
+
+    while true
+        next = markup.skip_space(text: text, at: i)
+
+        if next >= text.len()
+            break
+
+        if markup.holds_at(text: text, at: next, word: "<!--")
+            got = markup.read_comment(text: text, at: next)?
+            events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
+            i @ got.end
+        else if markup.holds_at(text: text, at: next, word: "<?")
+            got = markup.read_instruction(text: text, at: next)?
+            events @ events.push(event.instruction(target: got.target, data: got.data))
+            i @ got.end
+        else
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: next, what: "the end of the text, a comment or an instruction after the root")
+            )
+
+    return ok(Reading(prolog: prolog, events: events))
+
+## Tests
+
+test "read: a root alone, a byte order mark, and white space around it"
+    got = read(text: "<a/>", max_depth: 4).must()
+    assert !got.prolog.declared && got.events.len() == 2
+    bom: [u8] = [0xef, 0xbb, 0xbf, '<', 'a', '/', '>', '\n']
+    assert read(text: bom.validated_bytes().must(), max_depth: 4).must().events.len() == 2
+    assert read(text: "\n <a/> \n", max_depth: 4).must().events.len() == 2
+
+test "read: a declaration, a document type, and comments and instructions on both sides, in order"
+    text = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!--c--><!DOCTYPE a SYSTEM \"a.dtd\"><?p d?>\n<a/><!--z-->"
+    got = read(text: text, max_depth: 4).must()
+    assert got.prolog == event.Prolog(declared: true, version: "1.0", encoding: "UTF-8", standalone: "")
+    kinds: [i64] @= []
+
+    for e in got.events
+        kinds @ kinds.push(e.kind)
+
+    assert kinds == [event.COMMENT, event.INSTRUCTION, event.START, event.END, event.COMMENT]
+
+test "read: the texts Python's ElementTree refuses, with line and column"
+    for text in ["", " ", "x", "<a/><b/>", "<a/>x", "<a>", "</a>", " <?xml version=\"1.0\"?><a/>", "<a/><?xml version=\"1.0\"?>", "<!DOCTYPE a><!DOCTYPE a><a/>", "<a/><!DOCTYPE a>", "<![CDATA[x]]><a/>", "<a>\u{1}</a>", "<!-- a -- b --><a/>"]
+        match read(text: text, max_depth: 4)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 5) == "line "
+
+    match read(text: "<a/><b/>", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 5: expected the end of the text, a comment or an instruction after the root, found \"<\""
+
+    match read(text: "", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: expected the root element, a comment or an instruction, found the end of the text"
+
+    match read(text: "<a>\u{1}</a>", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: U+0001 is a character XML cannot hold"
+
+test "read: another encoding, unsupported, and the declaration only at the start"
+    match read(text: "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><a/>", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    match read(text: "<a><?xml version=\"1.0\"?></a>", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 19) == "line 1, column 4: `"
+
+test "read: a document type whose subset declares an entity, refused before the entity is ever read"
+    match read(text: "<!DOCTYPE a [<!ENTITY e \"hi\">]><a>&e;</a>", max_depth: 4)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 18) == "line 1, column 14:"

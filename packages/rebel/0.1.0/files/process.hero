@@ -1,0 +1,1285 @@
+# Another program run, fed, read and waited for: a command built as a record,
+# run to its end with what it writes captured, or started as a child whose
+# pipes are `io.Stream`s, waited for, asked to end or ended at once; a program
+# looked up on PATH; a text quoted for a POSIX shell. The face stands on the
+# floor `process/hero_proc`, the thin binding of `hero_proc.h`.
+#
+# **No shell reads a command.** A program and its arguments are a list, and
+# each argument reaches the child whole, spaces, quotes and `$` included.
+# `shell` is the one door through the system's shell, and its comment says
+# what that costs.
+#
+# **Nothing a function here starts outlives it.** `run` and `capture` wait
+# for their child, and end it at once where a failure stops them; `start`
+# hands the child to the program, which ends it with `wait` or gives it up
+# with `release`. A child nobody gives back is told when `main` returns, as
+# every handle is (spec § 13).
+#
+# **A time is nanoseconds on the monotonic clock**, which never goes back.
+
+use io
+use os
+use process/hero_proc
+use process/internal/clock
+use process/internal/codes
+use process/internal/ending
+use process/internal/environment
+use process/internal/fixture
+use process/internal/launch
+use process/internal/quoting
+use process/internal/search
+use process/internal/temporary
+use strings
+
+## Codes
+
+# A program that is not there: a name in no folder of PATH, or a path that
+# names nothing that runs.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# A command's working folder names nothing.
+constant FILE_NOT_FOUND: str
+    codes.FILE_NOT_FOUND
+
+# A command's working folder names what is no folder.
+constant NOT_A_DIRECTORY: str
+    codes.NOT_A_DIRECTORY
+
+# The system will not run the program for this one.
+constant PERMISSION: str
+    codes.PERMISSION
+
+# The input is not what the function reads: a zero byte in a word, a
+# variable's name that names none, a time limit not above 0, a child given up
+# already, a file that is no program; the message says which.
+constant INVALID: str
+    codes.INVALID
+
+# A stream given to a child is closed.
+constant CLOSED: str
+    codes.CLOSED
+
+# A child ran past its command's time limit and was ended.
+constant TIMEOUT: str
+    codes.TIMEOUT
+
+# The system has no process or descriptor left, or a command holds more than
+# 4,096 arguments or variables.
+constant LIMIT: str
+    codes.LIMIT
+
+# This platform has no such thing: a request to end a child on Windows, a
+# script holding `"` for Windows' shell.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+# A child's output read as text is not UTF-8.
+constant NOT_TEXT: str
+    codes.NOT_TEXT
+
+# A child did not end with the exit code 0, or the system refused for a
+# reason none of the other codes names; the message says which.
+constant FAILED: str
+    codes.FAILED
+
+## A command
+
+# What a child's input is: this process's, nothing, a pipe, a stream the
+# program holds, or bytes given whole.
+variant Input
+    # This process's own input, which the child reads beside it.
+    parent
+    # Nothing: the system's null device, whose end the child reads at once.
+    nothing
+    # A new pipe: `start` hands its writing end to the program as the child's
+    # `input`, and `run` closes it at once, so the child reads its end.
+    pipe
+    # A stream the program holds and keeps: the child reads its own copy.
+    stream
+        # The stream, open to read; the program still closes it.
+        stream: io.Stream
+    # These bytes, then the end.
+    bytes
+        # The bytes the child reads; none is an input whose end comes at once.
+        data: [u8]
+    # This text as its UTF-8 bytes, then the end.
+    text
+        # The text the child reads.
+        text: str
+
+# Where a child's output or its error goes: this process's, nowhere, a pipe,
+# or a stream the program holds.
+variant Output
+    # This process's own output, or its own error.
+    parent
+    # Nowhere: the system's null device.
+    nothing
+    # A new pipe: `start` hands its reading end to the program as the child's
+    # `output` or `error`, and `run` answers every byte the child wrote to it.
+    pipe
+    # A stream the program holds and keeps: the child writes to its own copy.
+    stream
+        # The stream, open to write; the program still closes it.
+        stream: io.Stream
+
+# How long a child may run: without end, or a number of nanoseconds.
+variant Limit
+    # As long as it runs.
+    none
+    # This many nanoseconds from its start; past them it is ended at once.
+    after
+        # The nanoseconds it may run, above 0.
+        nanoseconds: i64
+
+# A program to run, with its arguments, its environment, its working folder,
+# what each of its three standard streams is and how long it may run.
+# `command` builds one, and each `with_` function answers a copy with one
+# thing changed.
+record Command
+    # The program: a path where it holds a separator (`/`, or `\` on
+    # Windows), else a name looked for in the folders of PATH.
+    program: str
+    # The arguments after the program, each reaching the child whole.
+    arguments: [str]
+    # Whether the child's variables start from this process's, `true`, or
+    # from none at all.
+    env_inherited: bool
+    # Variables set for the child over those it starts from, name to value.
+    env_set: {str: str}
+    # Names taken out of the variables the child starts from.
+    env_removed: [str]
+    # The child's working folder, "" for this process's own.
+    dir: str
+    # What the child's input is.
+    input: Input
+    # Where the child's output goes.
+    output: Output
+    # Where the child's error goes, unless `error_to_output`.
+    error: Output
+    # Whether the child's error goes where its output goes, the two
+    # interleaved in the order the child writes them.
+    error_to_output: bool
+    # How long the child may run.
+    time_limit: Limit
+
+## How a child ended
+
+# How a child ended: by itself with an exit code, by a signal on POSIX, or at
+# its command's time limit.
+variant Status
+    # It ended by itself.
+    exited
+        # Its exit code: 0 to 255 on POSIX, and the code the system keeps on
+        # Windows; 0 means success by convention.
+        code: i64
+    # A signal ended it, which happens on POSIX alone.
+    signaled
+        # The signal's number: 9 is SIGKILL and 15 is SIGTERM.
+        signal: i64
+    # Its command's time limit ran out and it was ended at once.
+    timed_out
+
+# The CPU time a child used once it has ended: its own, and on POSIX that of
+# the children it waited for.
+record CpuTime
+    # Nanoseconds spent running its own code.
+    user_nanoseconds: i64
+    # Nanoseconds the system spent working for it.
+    system_nanoseconds: i64
+
+# What `run` answers: how the child ended, what it wrote where its command
+# asked for a pipe, and the CPU time it used.
+record Finished
+    # How the child ended.
+    status: Status
+    # Every byte the child wrote to its output, where the command's output is
+    # `.pipe`, and its error too where `error_to_output`; empty otherwise.
+    output: [u8]
+    # Every byte the child wrote to its error, where the command's error is
+    # `.pipe` and not sent to its output; empty otherwise.
+    error: [u8]
+    # The CPU time the child used.
+    cpu: CpuTime
+
+## A started child
+
+# Where a started child stands: running, or seen to have ended.
+variant State
+    # It runs, or it ended and neither `wait` nor `has_ended` has seen it.
+    running
+    # `wait` or `has_ended` saw it end.
+    ended
+        # How it ended.
+        status: Status
+        # The CPU time it used.
+        cpu: CpuTime
+
+# A child `start` began: its process, the program's ends of its pipes, and
+# what is known of its end. `wait` ends it; `release` gives it up.
+record Child
+    # The floor's handle of the process, `nullptr` once `wait` or `release`
+    # has given it back.
+    handle: hero_proc.Proc
+    # The command it was started from.
+    command: Command
+    # The system's number for the process, to show: the handle names the
+    # process, never the number.
+    id: i64
+    # The writing end of the pipe that is the child's input, where its
+    # command's input is `.pipe`; else a closed place, every call through
+    # which fails `closed`.
+    input: io.Stream
+    # The reading end of the pipe that is the child's output, where its
+    # command's output is `.pipe`; else a closed place.
+    output: io.Stream
+    # The reading end of the pipe that is the child's error, where its
+    # command's error is `.pipe` and not sent to its output; else a closed
+    # place.
+    error: io.Stream
+    # When it started, in nanoseconds on the monotonic clock: where its time
+    # limit counts from.
+    started: i64
+    # Where it stands.
+    state: State
+
+## Building a command
+
+# A command that runs `program` with `arguments`, with this process's
+# variables, working folder and three standard streams, and no time limit.
+#
+# - `program`: a path where it holds a separator (`/`, or `\` on Windows),
+#   read from this process's working folder where it is relative; else a name
+#   looked for in the folders of this process's PATH when the command starts.
+# - `arguments`: the arguments after the program, in order, each reaching the
+#   child whole, an empty one included; empty for none.
+#
+# Nothing is checked here: a program that is not there fails `not_found` when
+# the command starts.
+function command(program: str, arguments: [str]) -> Command
+    return Command(
+        program: program,
+        arguments: arguments,
+        env_inherited: true,
+        env_set: {},
+        env_removed: [],
+        dir: "",
+        input: .parent,
+        output: .parent,
+        error: .parent,
+        error_to_output: false,
+        time_limit: .none
+    )
+
+# A command that runs `script` through the system's shell: `/bin/sh -c
+# script` on POSIX, and `cmd.exe /d /s /c script` on Windows.
+#
+# - `script`: the text the shell reads, as it would read a line typed to it;
+#   empty runs nothing and ends with the code 0.
+#
+# Fails `unsupported` on Windows where `script` holds `"`, which the line
+# Windows hands a child cannot carry to `cmd.exe` unchanged.
+#
+# What it costs: the shell reads every byte of `script`, so a space splits
+# words, `$`, `*`, `;`, `|`, `&`, quotes and backquotes mean what the shell
+# says, and a word from outside the program written into `script` can run any
+# program it names. Run a program with `command` and a list wherever that can
+# be done; where a shell is needed, put each outside word through `quote`. The
+# shells of POSIX and of Windows read the same script differently.
+function shell(script: str) -> Command?
+    if os.family() == .posix
+        return ok(command("/bin/sh", ["-c", script]))
+
+    for i in range(from: 0, to: script.len())
+        if script[i] == '"'
+            return codes.of(
+                code: codes.UNSUPPORTED,
+                asked: "running a script through cmd.exe",
+                why: "it holds `\"`, which the line Windows hands a child cannot carry to cmd.exe unchanged"
+            )
+
+    program: str @= os.env("ComSpec").default("")
+
+    if program == ""
+        program @ "cmd.exe"
+    return ok(command(program, ["/d", "/s", "/c", script]))
+
+# `c` with `arguments` in place of its own.
+#
+# - `c`: the command to copy.
+# - `arguments`: the arguments after the program, in order, each reaching the
+#   child whole; empty for none.
+function with_arguments(c: Command, arguments: [str]) -> Command
+    changed @= c
+    changed.arguments @ arguments
+    return changed
+
+# `c` with the variable `name` set to `value` for its child, over the
+# variables the child starts from, in place of one of that name.
+#
+# - `c`: the command to copy.
+# - `name`: the variable's name, compared without its ASCII case on Windows as
+#   the system compares it; one that is empty or holds `=` or a zero byte
+#   fails `invalid` when the command starts.
+# - `value`: its value, empty for a variable set empty; one holding a zero
+#   byte fails `invalid` when the command starts.
+function with_env(c: Command, name: str, value: str) -> Command
+    folding = environment.folds()
+    changed @= c
+    changed.env_set @ environment.set_one(c.env_set, name: name, value: value, folding: folding)
+    changed.env_removed @ environment.names_without(c.env_removed, name: name, folding: folding)
+    return changed
+
+# `c` with every one of `variables` set for its child as `with_env`
+# sets one, in the map's order.
+#
+# - `c`: the command to copy.
+# - `variables`: names to values, each held to `with_env`'s rules; an empty
+#   map changes nothing.
+function with_env_all(c: Command, variables: {str: str}) -> Command
+    changed @= c
+
+    for name in keys(variables)
+        changed @ with_env(changed, name: name, value: variables[name].must())
+
+    return changed
+
+# `c` with the variable `name` out of its child's environment, whether
+# `with_env` set it or it would come from this process's.
+#
+# - `c`: the command to copy.
+# - `name`: the variable's name, compared as `with_env` compares it; a name no
+#   variable holds changes nothing.
+function with_env_removed(c: Command, name: str) -> Command
+    folding = environment.folds()
+    changed @= c
+    changed.env_set @ environment.set_without(c.env_set, name: name, folding: folding)
+    changed.env_removed @ environment.names_with(c.env_removed, name: name, folding: folding)
+    return changed
+
+# `c` whose child starts with no variable at all but those `with_env`
+# sets after this call.
+#
+# - `c`: the command to copy.
+#
+# The command's own program is still looked for in this process's PATH.
+function with_env_cleared(c: Command) -> Command
+    changed @= c
+    changed.env_inherited @ false
+    changed.env_set @ {}
+    changed.env_removed @ []
+    return changed
+
+# The variables `c`'s child would start with, name to value: this
+# process's as they stand now, or none, with the command's changes made.
+#
+# - `c`: the command to read.
+#
+# Fails `not_text` where a variable it would take from this process is not
+# UTF-8, and with the system's code where the environment cannot be read.
+#
+# The variables this process holds come first in its order, then those the
+# command sets, in theirs.
+function env_of(c: Command) -> {str: str}?
+    return environment.listed(inherited: c.env_inherited, set: c.env_set, removed: c.env_removed)
+
+# `c` with its child working in `dir`.
+#
+# - `c`: the command to copy.
+# - `dir`: the child's working folder, read from this process's where it is
+#   relative, "" for this process's own. One that names nothing fails
+#   `file_not_found` when the command starts, one that names no folder
+#   `not_a_directory`, and one holding a zero byte `invalid`.
+#
+# This process's own working folder never moves.
+function with_dir(c: Command, dir: str) -> Command
+    changed @= c
+    changed.dir @ dir
+    return changed
+
+# `c` with `from` as its child's input.
+#
+# - `c`: the command to copy.
+# - `from`: what the child reads.
+function with_input(c: Command, from: Input) -> Command
+    changed @= c
+    changed.input @ from
+    return changed
+
+# `c` with its child's output going to `to`.
+#
+# - `c`: the command to copy.
+# - `to`: where the child's output goes.
+function with_output(c: Command, to: Output) -> Command
+    changed @= c
+    changed.output @ to
+    return changed
+
+# `c` with its child's error going to `to`, and no longer to its output.
+#
+# - `c`: the command to copy.
+# - `to`: where the child's error goes.
+function with_error(c: Command, to: Output) -> Command
+    changed @= c
+    changed.error @ to
+    changed.error_to_output @ false
+    return changed
+
+# `c` with its child's error going wherever its output goes, the two
+# interleaved in the order the child writes them.
+#
+# - `c`: the command to copy.
+#
+# Both reach one pipe, one stream, or one capture of `run`; `with_error`
+# parts them again.
+function with_error_to_output(c: Command) -> Command
+    changed @= c
+    changed.error_to_output @ true
+    return changed
+
+# `c` whose child may run `nanoseconds` from its start, and is ended at
+# once past them.
+#
+# - `c`: the command to copy.
+# - `nanoseconds`: how long, on the monotonic clock; one of 0 or below fails
+#   `invalid` when the command starts.
+#
+# `run`, `capture`, `wait` and `has_ended` keep the limit, and a child ended
+# for it reports `.timed_out`. A read of a started child's pipe waits as long
+# as the child keeps the pipe open, past the limit too: read through `run`,
+# or ask `has_ended` between reads.
+function with_time_limit(c: Command, nanoseconds: i64) -> Command
+    changed @= c
+    changed.time_limit @ .after(nanoseconds: nanoseconds)
+    return changed
+
+## Running a command to its end
+
+# How `c`'s child ended and what it wrote, once it has ended: started,
+# fed, waited for, and what it wrote to its pipes read whole.
+#
+# - `c`: the command to run. Where its input is `.pipe` the child reads
+#   its end at once; where its output or its error is `.pipe`, every byte
+#   written there is answered.
+#
+# Fails `not_found` where the program is not there; `file_not_found` or
+# `not_a_directory` for its working folder; `permission` where the system
+# will not run it; `invalid` where a word holds a zero byte, a variable's
+# name names none, the time limit is not above 0 or the file is no program;
+# `closed` where a stream given to the child is closed; `limit` where the
+# system has no process or descriptor left or the command holds more than
+# 4,096 arguments or variables; and `failed`, with the system's number, where
+# it refuses for another reason. A child that ends with another code than 0
+# is no failure: its status says so.
+#
+# What the child writes to a pipe passes through a temporary file in the
+# system's temporary folder, removed before `run` answers, so a child that
+# writes much is never stopped by a full pipe and its time limit is kept
+# whatever it writes; the bytes are held in memory once it ends. A failure
+# after the start ends the child at once, so nothing it started outlives it.
+function run(c: Command) -> Finished?
+    files @= temporary.prepared(output: c.output == .pipe, error: c.error == .pipe && !c.error_to_output)?
+    plan @= c
+
+    if c.input == .pipe
+        plan.input @ .nothing
+
+    if files.output
+        plan.output @ .stream(stream: files.output_file.stream)
+
+    if files.error
+        plan.error @ .stream(stream: files.error_file.stream)
+
+    match start(plan)
+        .err e =>
+            temporary.discarded(@files)
+            return fail(code: e.code, msg: e.msg)
+        .ok begun =>
+            child @= begun
+            temporary.written(@files)
+
+            match wait(@child)
+                .err e =>
+                    _ = hero_proc.kill(child.handle)
+                    _ = hero_proc.release(@child.handle)
+                    child.handle @ nullptr
+                    launch.dropped(@child.input)
+                    launch.dropped(@child.output)
+                    launch.dropped(@child.error)
+                    temporary.discarded(@files)
+                    return fail(code: e.code, msg: e.msg)
+                .ok status =>
+                    got = temporary.collected(@files)?
+                    return ok(Finished(status: status, output: got.output, error: got.error, cpu: cpu_of(child)?))
+
+# The text `c`'s child writes to its output, once it has ended with the
+# exit code 0.
+#
+# - `c`: the command to run; its output is captured whatever it says,
+#   and its input and its error are as it says.
+#
+# Fails as `run` does; `failed` where the child ends with another code or by
+# a signal, the message saying how and holding what it wrote to its error
+# where that is `.pipe`; `timeout` where its time limit ran out; `not_text`
+# where its output is not UTF-8.
+#
+# The text is every byte written, the last line's end included.
+function capture(c: Command) -> str?
+    finished = run(with_output(c, to: .pipe))?
+    asked = f"capturing the output of \"{c.program}\""
+
+    if finished.status == .timed_out
+        return codes.of(code: codes.TIMEOUT, asked: asked, why: "it ran past its time limit and was ended")
+
+    if !is_success(finished.status)
+        return codes.of(
+            code: codes.FAILED,
+            asked: asked,
+            why: codes.told(f"it {format_status(finished.status)}", error: finished.error)
+        )
+
+    match finished.output.validated_bytes()
+        .ok text => return ok(text)
+        .err _   => return codes.of(code: codes.NOT_TEXT, asked: asked, why: "its output is not UTF-8")
+
+## A started child
+
+# A child running `c`, begun and not waited for: the program writes to
+# its input and reads its output and its error through the `io.Stream`s of
+# the answer, then ends it with `wait`, or gives it up with `release`.
+#
+# - `c`: the command to start. Where its input is `.bytes` or `.text`,
+#   the bytes pass through a temporary file, removed before `start` answers.
+#
+# Fails as `run` does.
+#
+# The time limit counts from here. A child whose output and error are both
+# `.pipe` is read on both: one full while the program waits on the other
+# stops the child, and the program with it; `with_error_to_output`, or `run`,
+# leaves nothing to interleave.
+function start(c: Command) -> Child?
+    asked = f"starting \"{c.program}\""
+
+    match c.time_limit
+        .none => _ = 0
+        .after limit =>
+            if limit.nanoseconds <= 0
+                return codes.of(
+                    code: codes.INVALID,
+                    asked: asked,
+                    why: f"its time limit is {limit.nanoseconds} nanoseconds, where a limit is above 0"
+                )
+
+    env = environment.given(inherited: c.env_inherited, set: c.env_set, removed: c.env_removed, asked: asked)?
+    fed: [u8] @= []
+    feeding: bool @= false
+
+    input = match c.input
+        .parent      => launch.plain(hero_proc.HERO_PROC_STDIO_PARENT)
+        .nothing     => launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+        .pipe        => launch.plain(hero_proc.HERO_PROC_STDIO_PIPE)
+        .stream held => launch.End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: held.stream.handle)
+        .bytes given =>
+            fed @ given.data
+            feeding @ true
+            launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+        .text given =>
+            fed @ strings.to_bytes(given.text)
+            feeding @ true
+            launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+
+    output = match c.output
+        .parent      => launch.plain(hero_proc.HERO_PROC_STDIO_PARENT)
+        .nothing     => launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+        .pipe        => launch.plain(hero_proc.HERO_PROC_STDIO_PIPE)
+        .stream held => launch.End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: held.stream.handle)
+
+    error = match c.error
+        .parent      => launch.plain(hero_proc.HERO_PROC_STDIO_PARENT)
+        .nothing     => launch.plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+        .pipe        => launch.plain(hero_proc.HERO_PROC_STDIO_PIPE)
+        .stream held => launch.End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: held.stream.handle)
+
+    began = clock.now()?
+    begun = launch.started(program: c.program, arguments: c.arguments, env: env, dir: c.dir, input: input, output: output, error: error, fed: fed, feeding: feeding, merged: c.error_to_output)?
+    return ok(
+        Child(handle: begun.proc, command: c, id: hero_proc.id(begun.proc), input: begun.input, output: begun.output, error: begun.error, started: began, state: .running)
+    )
+
+# How `child` ended, waiting for it. Its input's end is closed first, so a
+# child reading it to the end goes on; once it has ended, every end of its
+# pipes the program did not close is closed and its process is given back.
+#
+# - `child`: the child to wait for. Asked again, it answers the same at once.
+#
+# Fails `invalid` where `child` was given up by `release`, and `failed` with
+# the system's number where it cannot be waited for; the child is then still
+# the program's, to `kill` and `release`.
+#
+# Read the child's pipes to their end before waiting: they are closed here,
+# so a read after `wait` fails `closed`, and a child that fills a pipe nobody
+# reads never ends. Past its command's time limit the child is ended at once
+# and its status is `.timed_out`.
+function wait(@child: Child) -> Status?
+    asked = f"waiting for \"{child.command.program}\""
+
+    if child.state == .running
+        if child.handle == nullptr
+            return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+        launch.dropped(@child.input)
+
+        limit = match child.command.time_limit
+            .none        => 0
+            .after given => given.nanoseconds
+
+        seen = ending.waited(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
+
+        status: Status = if seen.timed_out
+            .timed_out
+        else if seen.signal != 0
+            .signaled(signal: seen.signal)
+        else
+            .exited(code: seen.code)
+        child.state @ .ended(
+            status: status,
+            cpu: CpuTime(user_nanoseconds: seen.user_ns, system_nanoseconds: seen.system_ns)
+        )
+    launch.dropped(@child.input)
+    launch.dropped(@child.output)
+    launch.dropped(@child.error)
+
+    if child.handle != nullptr
+        _ = hero_proc.release(@child.handle)
+        child.handle @ nullptr
+
+    match child.state
+        .ended seen => return ok(seen.status)
+        .running    => return codes.of(code: codes.INVALID, asked: asked, why: "the child was not seen to end")
+
+# Whether `child` has ended, never waiting for it: `true` once it has, its
+# status kept for `wait`.
+#
+# - `child`: the child to ask. Past its command's time limit it is ended at
+#   once and `true` is answered.
+#
+# Fails as `wait` does.
+function has_ended(@child: Child) -> bool?
+    asked = f"asking whether \"{child.command.program}\" has ended"
+
+    if child.state != .running
+        return ok(true)
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    limit = match child.command.time_limit
+        .none        => 0
+        .after given => given.nanoseconds
+
+    seen = ending.looked(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
+
+    if !seen.ended
+        return ok(false)
+
+    status: Status = if seen.timed_out
+        .timed_out
+    else if seen.signal != 0
+        .signaled(signal: seen.signal)
+    else
+        .exited(code: seen.code)
+    child.state @ .ended(
+        status: status,
+        cpu: CpuTime(user_nanoseconds: seen.user_ns, system_nanoseconds: seen.system_ns)
+    )
+    return ok(true)
+
+# Asks `child` to end: SIGTERM on POSIX, which a program may catch to end
+# cleanly, or not end at all.
+#
+# - `child`: the child to ask. One that has ended already is sent nothing.
+#
+# Fails `unsupported` on Windows, which has no such request for a console
+# program, so `kill` ends it there; `invalid` where `child` was given up by
+# `release`.
+function terminate(child: Child) -> ()?
+    asked = f"asking \"{child.command.program}\" to end"
+
+    if child.state != .running
+        return ok()
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    if hero_proc.terminate(child.handle) < 0
+        return codes.last(asked: asked, program: child.command.program, dir: "")
+    return ok()
+
+# Ends `child` at once: SIGKILL on POSIX, and on Windows the end of its
+# process with the exit code 1.
+#
+# - `child`: the child to end. One that has ended already is sent nothing.
+#
+# Fails `invalid` where `child` was given up by `release`, and `failed` with
+# the system's number where it cannot be ended.
+#
+# The child may not have ended yet when this answers: `wait` for it.
+function kill(child: Child) -> ()?
+    asked = f"ending \"{child.command.program}\" at once"
+
+    if child.state != .running
+        return ok()
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    if hero_proc.kill(child.handle) < 0
+        return codes.last(asked: asked, program: child.command.program, dir: "")
+    return ok()
+
+# Gives `child` up: every end of its pipes the program did not close is
+# closed and its process given back, so nothing of it is the program's.
+#
+# - `child`: the child to give up. One `wait` ended, or given up already, is
+#   no failure.
+#
+# Fails with the code of the first end that could not be closed; the rest is
+# given up either way.
+#
+# A child that still runs runs on, and the system keeps no record of it once
+# it ends.
+function release(@child: Child) -> ()?
+    closed = launch.closed_all(input: @child.input, output: @child.output, error: @child.error)
+
+    if child.handle != nullptr
+        _ = hero_proc.release(@child.handle)
+        child.handle @ nullptr
+    return closed
+
+# The CPU time `child` used, once `wait` or `has_ended` has seen it end.
+#
+# - `child`: the child to ask.
+#
+# Fails `invalid` where it has not been seen to end.
+function cpu_of(child: Child) -> CpuTime?
+    match child.state
+        .ended seen => return ok(seen.cpu)
+        .running =>
+            return codes.of(
+                code: codes.INVALID,
+                asked: f"reading the CPU time of \"{child.command.program}\"",
+                why: "it has not been seen to end; `wait` for it"
+            )
+
+## Asking how a child ended
+
+# Whether `status` says the child ended by itself with the exit code 0.
+#
+# - `status`: how the child ended.
+function is_success(status: Status) -> bool
+    return status == .exited(code: 0)
+
+# The exit code `status` holds.
+#
+# - `status`: how the child ended.
+#
+# Fails `not_found` where a signal or the time limit ended the child.
+function code_of(status: Status) -> i64?
+    match status
+        .exited e => return ok(e.code)
+        .signaled _ | .timed_out =>
+            return codes.of(
+                code: codes.NOT_FOUND,
+                asked: "reading an exit code",
+                why: f"the child {format_status(status)}"
+            )
+
+# The number of the signal that ended the child, on POSIX.
+#
+# - `status`: how the child ended.
+#
+# Fails `not_found` where the child ended by itself or at its time limit.
+function signal_of(status: Status) -> i64?
+    match status
+        .signaled s => return ok(s.signal)
+        .exited _ | .timed_out =>
+            return codes.of(
+                code: codes.NOT_FOUND,
+                asked: "reading the signal that ended a child",
+                why: f"the child {format_status(status)}"
+            )
+
+# Nothing, where `status` says the child ended by itself with the exit code
+# 0.
+#
+# - `status`: how the child ended.
+#
+# Fails `failed` where it ended with another code or by a signal, and
+# `timeout` where its time limit ended it; the message says which.
+function require_success(status: Status) -> ()?
+    if status == .timed_out
+        return codes.of(
+            code: codes.TIMEOUT,
+            asked: "asking a child's success",
+            why: "it ran past its time limit and was ended"
+        )
+
+    if !is_success(status)
+        return codes.of(
+            code: codes.FAILED,
+            asked: "asking a child's success",
+            why: f"it {format_status(status)}, where the code 0 was asked"
+        )
+    return ok()
+
+# `status` as words to show: `exited with code 3`, `ended by signal 9`, or
+# `ended at its time limit`.
+#
+# - `status`: how the child ended.
+function format_status(status: Status) -> str
+    return match status
+        .exited e   => f"exited with code {e.code}"
+        .signaled s => f"ended by signal {s.signal}"
+        .timed_out  => "ended at its time limit"
+
+## Finding a program
+
+# Where `start` finds `program`: `program` itself where it holds a separator
+# and names a file that runs, else the first file named `program` that runs
+# in the folders the search reads.
+#
+# - `program`: a path, or a name; on Windows a name with no extension is
+#   looked for with `.exe`.
+#
+# Fails `not_found` where no such file is there, and `invalid` where
+# `program` is empty or holds a zero byte.
+#
+# On POSIX the folders are those of PATH in its order, an empty entry being
+# this process's working folder, and `/usr/bin` then `/bin` where PATH is not
+# set; a file runs where it is a file, its links followed, and a permission
+# bit lets someone run it. On Windows they are this program's folder, the
+# working folder, the system's folders, then PATH; a file runs where it is a
+# file. A file found may still be refused at the start: by the rights of the
+# user who runs it, or on Windows as a batch file.
+function path_of(program: str) -> str?
+    return search.located(program)
+
+## Quoting for a POSIX shell
+
+# `word` as a POSIX shell reads it back whole: as it is where it holds only
+# ASCII letters, digits and `@%+=:,./-_`, else between single quotes, each
+# `'` in it written `'"'"'`.
+#
+# - `word`: any text; empty is `''`.
+#
+# For `sh` and the shells that keep its rules, never for Windows' `cmd.exe`.
+function quote(word: str) -> str
+    return quoting.quoted(word)
+
+# Every one of `words` put through `quote`, joined with one space: a line a
+# POSIX shell reads back as those words.
+#
+# - `words`: the words, in order; none is "".
+function quote_all(words: [str]) -> str
+    return quoting.quoted_all(words)
+
+## Tests
+
+test "command: what it holds before any change"
+    c = command("cat", ["-u"])
+    assert c.program == "cat" && c.arguments == ["-u"]
+    assert c.env_inherited && keys(c.env_set).len() == 0 && c.env_removed.len() == 0
+    assert c.dir == "" && c.input == .parent && c.output == .parent && c.error == .parent
+    assert !c.error_to_output && c.time_limit == .none
+
+test "the with_ functions: each changes one thing, and with_error parts what with_error_to_output joined"
+    none: [str] = []
+    c = command("cat", none)
+    assert with_arguments(c, arguments: ["a", ""]).arguments == ["a", ""]
+    assert with_arguments(c, arguments: none) == c
+    assert with_dir(c, dir: "/tmp").dir == "/tmp"
+    assert with_input(c, from: .nothing).input == .nothing
+    assert with_input(c, from: .text(text: "")).input == .text(text: "")
+    assert with_output(c, to: .pipe).output == .pipe
+    assert with_error(c, to: .nothing).error == .nothing
+    joined = with_error_to_output(c)
+    assert joined.error_to_output
+    assert !with_error(joined, to: .pipe).error_to_output
+    assert with_time_limit(c, nanoseconds: 5).time_limit == .after(nanoseconds: 5)
+    assert c.dir == "" && c.output == .parent
+
+test "with_env, with_env_all, with_env_removed and with_env_cleared, read back by env_of"
+    none: [str] = []
+    c = command("cat", none)
+    set = with_env(c, name: "REBEL_WORD", value: "bowie")
+    assert env_of(set).must()["REBEL_WORD"].must() == "bowie"
+    again = with_env(set, name: "REBEL_WORD", value: "")
+    assert again.env_set["REBEL_WORD"].must() == ""
+    assert keys(again.env_set) == ["REBEL_WORD"]
+    removed = with_env_removed(again, name: "REBEL_WORD")
+    assert keys(removed.env_set).len() == 0
+    assert removed.env_removed == ["REBEL_WORD"]
+    assert env_of(removed).must()["REBEL_WORD"].is_err()
+    assert env_of(with_env_removed(c, name: "PATH")).must()["PATH"].is_err()
+    assert env_of(with_env_removed(c, name: "REBEL_NOT_SET")).must() == env_of(c).must()
+    cleared = with_env_cleared(with_env(c, name: "A", value: "1"))
+    assert keys(env_of(cleared).must()).len() == 0
+    many = with_env_all(cleared, variables: {"A": "1", "B": "2"})
+    assert keys(env_of(many).must()) == ["A", "B"]
+    empty: {str: str} = {}
+    assert with_env_all(c, variables: empty) == c
+
+test "run: an exit code of 0 and of 3, nothing captured where no pipe was asked for, and the CPU time"
+    zero = run(with_output(shell(fixture.exit_script(0)).must(), to: .nothing)).must()
+    assert zero.status == .exited(code: 0)
+    assert zero.output.len() == 0 && zero.error.len() == 0
+    assert zero.cpu.user_nanoseconds >= 0 && zero.cpu.system_nanoseconds >= 0
+    three = run(shell(fixture.exit_script(3)).must()).must()
+    assert three.status == .exited(code: 3)
+
+test "run: the output captured, the error captured, and both joined in the order written"
+    out = run(with_output(shell("echo hello").must(), to: .pipe)).must()
+    assert fixture.line(out.output) == "hello" && out.error.len() == 0
+    err = run(with_error(shell(fixture.error_script("oops")).must(), to: .pipe)).must()
+    assert fixture.line(err.error) == "oops" && err.output.len() == 0
+    both_script = fixture.both_script(first: "one", second: "two")
+    parted = run(with_error(with_output(shell(both_script).must(), to: .pipe), to: .pipe)).must()
+    assert fixture.line(parted.output) == "one" && fixture.line(parted.error) == "two"
+    joined = run(with_error_to_output(with_output(shell(both_script).must(), to: .pipe))).must()
+    assert fixture.unix_lines(fixture.line(joined.output)) == "one\ntwo"
+    assert joined.error.len() == 0
+
+test "run: input as bytes, as text of more than one byte a character, none, and a pipe whose end comes at once"
+    none: [str] = []
+    copy = with_output(command(fixture.copier(), none), to: .pipe)
+    bytes = run(with_input(copy, from: .bytes(data: [114, 101, 98, 101, 108, 10]))).must()
+    assert fixture.line(bytes.output) == "rebel"
+    text = run(with_input(copy, from: .text(text: "héros\n"))).must()
+    assert fixture.line(text.output) == "héros"
+    empty: [u8] = []
+    nothing = run(with_input(copy, from: .bytes(data: empty))).must()
+    assert nothing.output.len() == 0 && nothing.status == .exited(code: 0)
+    piped = run(with_input(copy, from: .pipe)).must()
+    assert piped.output.len() == 0 && piped.status == .exited(code: 0)
+    silent = run(with_input(copy, from: .nothing)).must()
+    assert silent.output.len() == 0
+
+# POSIX alone: a megabyte from `head`, more than any pipe holds, which would
+# stop a child writing into a pipe nobody reads.
+test "run: a megabyte of output and a megabyte of input pass whole, with no pipe to fill"
+    if !fixture.on_windows()
+        big = run(with_output(shell("head -c 1048576 /dev/zero").must(), to: .pipe)).must()
+        assert big.output.len() == 1048576
+        data: [u8] @= []
+
+        for i in range(from: 0, to: 1048576)
+            data @ data.push((i % 251).to_u8().must())
+
+        none: [str] = []
+        back = run(with_output(with_input(command(fixture.copier(), none), from: .bytes(data: data)), to: .pipe)).must()
+        assert back.output == data
+
+test "run: a working folder, and one that names nothing or names a file"
+    here = run(with_output(with_dir(shell(fixture.folder_script()).must(), dir: fixture.a_folder()), to: .pipe)).must()
+    assert fixture.same_path(a: fixture.line(here.output), b: fixture.a_folder())
+
+    match run(with_dir(shell("echo").must(), dir: "build/rebel-process-no-such-folder"))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FILE_NOT_FOUND
+            assert e.msg == f"starting \"{fixture.shell_program()}\": the working folder \"build/rebel-process-no-such-folder\" names nothing"
+
+    match run(with_dir(shell("echo").must(), dir: fixture.shell_program()))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_A_DIRECTORY
+
+test "run: a program that is not there, a zero byte, an empty program, and a variable's name that names none"
+    none: [str] = []
+
+    match run(command("rebel-no-such-program", none))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "starting \"rebel-no-such-program\": no program \"rebel-no-such-program\" in the folders of PATH"
+
+    match run(command("build/rebel-no-such-folder/program", none))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    zero_bytes: [u8] = [97, 0]
+    zero = zero_bytes.validated_bytes().must()
+
+    match run(command("/bin/echo", [zero]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match run(command("", none))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match run(with_env(command("/bin/echo", none), name: "A=B", value: "x"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match run(with_env(command("/bin/echo", none), name: "", value: "x"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "run: a time limit of 0, of -1, and one a quick child never meets"
+    quick = shell(fixture.exit_script(0)).must()
+
+    match run(with_time_limit(quick, nanoseconds: 0))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == f"starting \"{fixture.shell_program()}\": its time limit is 0 nanoseconds, where a limit is above 0"
+
+    match run(with_time_limit(quick, nanoseconds: -1))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert run(with_time_limit(quick, nanoseconds: 60_000_000_000)).must().status == .exited(code: 0)
+    assert run(with_time_limit(quick, nanoseconds: 9_223_372_036_854_775_807)).must().status == .exited(code: 0)
+
+test "run: a child past its time limit of 200 ms is ended, and its status says so"
+    sleepy = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 200_000_000)
+    ended = run(with_output(sleepy, to: .nothing)).must()
+    assert ended.status == .timed_out
+
+test "run: a stream the program holds, as the child's output and as its input, and one that is closed"
+    pair @= io.pipe().must()
+    wrote = run(with_output(shell("echo held").must(), to: .stream(stream: pair.writer))).must()
+    assert wrote.status == .exited(code: 0)
+    io.close(@pair.writer).must()
+    assert fixture.line(io.read_all(pair.reader).must()) == "held"
+    io.close(@pair.reader).must()
+    shut @= io.pipe().must()
+    io.close(@shut.reader).must()
+    none: [str] = []
+
+    match run(with_input(command(fixture.copier(), none), from: .stream(stream: shut.reader)))
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@shut.writer).must()
+
+test "shell: an empty script, a script that the shell reads, and a word quoted for it"
+    assert run(shell("").must()).must().status == .exited(code: 0)
+
+    # `cmd.exe` parts two commands with `&` and ends a line with CR LF; `quote`
+    # writes for POSIX's shells alone, so no shell of Windows reads it back.
+    if fixture.on_windows()
+        assert capture(shell("echo a& echo b").must()).must() == "a\r\nb\r\n"
+    else
+        assert capture(shell("echo a; echo b").must()).must() == "a\nb\n"
+        word = "it's $HOME; *"
+        assert capture(shell("printf %s " + quote(word)).must()).must() == word
+
+test "capture: the output as text, a failure holding the error's text, a time limit, and bytes that are no text"
+    hello = capture(shell("echo hello").must()).must()
+
+    if fixture.on_windows()
+        assert hello == "hello\r\n"
+    else
+        assert hello == "hello\n"
+
+    assert capture(shell("").must()).must() == ""
+    failing = with_error(shell(fixture.error_script("broken") + " && " + fixture.exit_script(2)).must(), to: .pipe)
+
+    match capture(failing)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FAILED
+            assert e.msg == f"capturing the output of \"{fixture.shell_program()}\": it exited with code 2; its error ends: broken"
+
+    match capture(with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 100_000_000))
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    match capture(shell(fixture.no_text_script()).must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT
+
+test "start: text written to a child's input comes back from its output, and wait answers its end"
+    none: [str] = []
+    child @= start(with_output(with_input(command(fixture.copier(), none), from: .pipe), to: .pipe)).must()
+    assert child.id > 0
+    assert child.state == .running
+    assert io.is_closed(child.error)
+    io.write_text(child.input, text: "rebel\n").must()
+    io.close(@child.input).must()
+    assert fixture.line(io.read_all(child.output).must()) == "rebel"
+    assert wait(@child).must() == .exited(code: 0)
+    assert child.handle == nullptr
+    assert io.is_closed(child.output)
+    assert wait(@child).must() == .exited(code: 0)
+    assert cpu_of(child).must().user_nanoseconds >= 0
+    release(@child).must()
+
+test "start: wait closes the input first, so a child reading to its end goes on, and every end after"
+    none: [str] = []
+    child @= start(with_output(with_input(command(fixture.copier(), none), from: .pipe), to: .pipe)).must()
+    io.write_text(child.input, text: "x\n").must()
+    assert wait(@child).must() == .exited(code: 0)
+    assert io.is_closed(child.input) && io.is_closed(child.output)
+
+    match io.read_all(child.output)
+        .ok _  => assert false
+        .err e => assert e.code == io.CLOSED
+
+test "start: kill ends a child at once, terminate asks one to end, and neither sends anything to one that ended"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+    assert !has_ended(@child).must()
+    assert cpu_of(child).is_err()
+    kill(child).must()
+    status = wait(@child).must()
+
+    if fixture.on_windows()
+        assert status == .exited(code: 1)
+    else
+        assert status == .signaled(signal: 9)
+    kill(child).must()
+    terminate(child).must()
+    asked @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+
+    match terminate(asked)
+        .ok _ => assert wait(@asked).must() == .signaled(signal: 15)
+        .err e =>
+            assert fixture.on_windows() && e.code == UNSUPPORTED
+            kill(asked).must()
+            assert wait(@asked).must() == .exited(code: 1)
+
+test "start: has_ended answers false while the child runs, true once it ended, and the status then waits for nobody"
+    child @= start(shell(fixture.exit_script(4)).must()).must()
+
+    while !has_ended(@child).must()
+        _ = 0
+
+    assert child.state != .running
+    assert child.handle != nullptr
+    assert wait(@child).must() == .exited(code: 4)
+    assert child.handle == nullptr
+
+test "start: has_ended and wait past a time limit end the child, and its status says so"
+    sleepy = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), nanoseconds: 100_000_000)
+    polled @= start(sleepy).must()
+
+    while !has_ended(@polled).must()
+        _ = 0
+
+    assert wait(@polled).must() == .timed_out
+    waited @= start(sleepy).must()
+    assert wait(@waited).must() == .timed_out
+
+test "start: the output and the error joined into one pipe, and the error alone a pipe of its own"
+    both_script = fixture.both_script(first: "one", second: "two")
+    joined @= start(with_error_to_output(with_output(shell(both_script).must(), to: .pipe))).must()
+    assert io.is_closed(joined.error)
+    assert fixture.unix_lines(fixture.line(io.read_all(joined.output).must())) == "one\ntwo"
+    assert wait(@joined).must() == .exited(code: 0)
+    parted @= start(with_error(shell(both_script).must(), to: .pipe)).must()
+    assert io.is_closed(parted.output)
+    assert fixture.line(io.read_all(parted.error).must()) == "two"
+    assert wait(@parted).must() == .exited(code: 0)
+
+test "start: one child's output is another's input, a pipeline with no shell"
+    none: [str] = []
+    first @= start(with_output(shell("echo rebel").must(), to: .pipe)).must()
+    second @= start(
+        with_output(with_input(command(fixture.copier(), none), from: .stream(stream: first.output)), to: .pipe)
+    ).must()
+    io.close(@first.output).must()
+    assert fixture.line(io.read_all(second.output).must()) == "rebel"
+    assert wait(@first).must() == .exited(code: 0)
+    assert wait(@second).must() == .exited(code: 0)
+
+test "start: input as text through a temporary file, a program that is not there, and a time limit not above 0"
+    none: [str] = []
+    child @= start(
+        with_output(with_input(command(fixture.copier(), none), from: .text(text: "fed\n")), to: .pipe)
+    ).must()
+    assert fixture.line(io.read_all(child.output).must()) == "fed"
+    assert wait(@child).must() == .exited(code: 0)
+    assert start(command("rebel-no-such-program", none)).is_err()
+    assert start(with_time_limit(command("cat", none), nanoseconds: 0)).is_err()
+
+test "release: a child that still runs is given up and runs on unseen; wait, kill and terminate then refuse it"
+    none: [str] = []
+    child @= start(with_output(with_input(command(fixture.copier(), none), from: .pipe), to: .pipe)).must()
+    release(@child).must()
+    assert child.handle == nullptr
+    assert io.is_closed(child.input) && io.is_closed(child.output)
+    release(@child).must()
+
+    match wait(@child)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == f"waiting for \"{fixture.copier()}\": the child was given up by `release`"
+
+    assert kill(child).is_err()
+    assert terminate(child).is_err()
+    assert has_ended(@child).is_err()
+    assert cpu_of(child).is_err()
+
+test "release after wait: nothing is left, and no failure"
+    child @= start(shell(fixture.exit_script(0)).must()).must()
+    assert wait(@child).must() == .exited(code: 0)
+    release(@child).must()
+
+test "is_success, code_of, signal_of and format_status: an exit of 0 and of 255, a signal, and a time out"
+    assert is_success(.exited(code: 0))
+    assert !is_success(.exited(code: 255)) && !is_success(.signaled(signal: 9)) && !is_success(.timed_out)
+    assert code_of(.exited(code: 255)).must() == 255
+    assert code_of(.signaled(signal: 9)).is_err() && code_of(.timed_out).is_err()
+
+    match code_of(.timed_out)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "reading an exit code: the child ended at its time limit"
+
+    assert signal_of(.signaled(signal: 15)).must() == 15
+    assert signal_of(.exited(code: 0)).is_err() && signal_of(.timed_out).is_err()
+    assert format_status(.exited(code: 3)) == "exited with code 3"
+    assert format_status(.signaled(signal: 9)) == "ended by signal 9"
+    assert format_status(.timed_out) == "ended at its time limit"
+
+test "require_success: a success, an exit code, a signal, and a time out"
+    require_success(.exited(code: 0)).must()
+
+    match require_success(.exited(code: 1))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FAILED
+            assert e.msg == "asking a child's success: it exited with code 1, where the code 0 was asked"
+
+    match require_success(.signaled(signal: 9))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    match require_success(.timed_out)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+test "path_of: the system's shell by name and by path, a folder, a name nowhere, and an empty name"
+    found = path_of(fixture.shell_name()).must()
+    assert strings.has_suffix(s: found, suffix: fixture.shell_ending())
+    assert path_of(fixture.shell_program()).must() == fixture.shell_program()
+    assert path_of(fixture.a_folder()).is_err()
+
+    match path_of("rebel-no-such-program")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match path_of("")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "quote and quote_all: the empty word, a plain word, a quote inside, no words, and a word left empty among others"
+    assert quote("") == "''"
+    assert quote("abc") == "abc"
+    assert quote("it's") == "'it'\"'\"'s'"
+    assert quote("é") == "'é'"
+    none: [str] = []
+    assert quote_all(none) == ""
+    assert quote_all(["a", "b c", ""]) == "a 'b c' ''"

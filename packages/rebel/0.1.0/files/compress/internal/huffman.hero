@@ -1,0 +1,348 @@
+# Huffman codes for DEFLATE. For the compressor: the code lengths that make
+# the shortest output for some counts with no code longer than a limit,
+# found by the package-merge method, and the canonical codes of RFC 1951
+# section 3.2.2 for those lengths. For the decompressor: the table a code is
+# read with, built only from lengths that make a code a decoder can trust.
+
+use compress/internal/codes
+use compress/internal/cursor
+
+# How many bits a decoding table looks up at once; a longer code is read bit
+# by bit.
+constant FAST_BITS: i64
+    9
+
+# What `decode` answers where the input runs out inside a code.
+constant STARVED: i64
+    -1
+
+# What `decode` answers where the bits are no code of the table.
+constant NO_CODE: i64
+    -2
+
+# A code as a decoder reads it.
+record Table
+    # How many codes have each length, by the length 0 to 15; index 0 is 0.
+    counts: [i64]
+    # The symbols that have a code, in the order of their codes.
+    symbols: [i64]
+    # By the next `FAST_BITS` bits of input, the first lowest: a symbol times
+    # 16 plus its code's length, for a code of `FAST_BITS` bits or fewer, and
+    # 0 where the code is longer or no code begins so.
+    fast: [i64]
+    # How many symbols have a code.
+    used: i64
+
+# A list of `n` zeros.
+function zeros(n: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# The code lengths for symbols that occur `counts` times, none longer than
+# `limit` bits, that make the sum of count times length least. A symbol that
+# never occurs gets 0. Where one symbol occurs, it and the lowest other
+# symbol get 1, so that every code written is complete; where none occurs,
+# every length is 0. `counts` has at most 2^`limit` symbols.
+function lengths_for(counts: [i64] lent, limit: i64) -> [i64]
+    lengths @= zeros(counts.len())
+    entries: [i64] @= []
+
+    for symbol in range(from: 0, to: counts.len())
+        if counts[symbol] > 0
+            entries @ entries.push(counts[symbol] * 1024 + symbol)
+
+    if entries.len() == 0
+        return lengths
+
+    if entries.len() == 1
+        only = entries[0] % 1024
+        lengths[only] @ 1
+
+        if only == 0
+            lengths[1] @ 1
+        else
+            lengths[0] @ 1
+        return lengths
+    leaves = sort(entries)
+    weight: [i64] @= []
+    leaf: [i64] @= []
+    left: [i64] @= []
+    right: [i64] @= []
+
+    for key in leaves
+        weight @ weight.push(key / 1024)
+        leaf @ leaf.push(key % 1024)
+        left @ left.push(-1)
+        right @ right.push(-1)
+
+    current: [i64] @= range(from: 0, to: leaves.len())
+
+    for _ in range(from: 1, to: limit)
+        packages: [i64] @= []
+        i: i64 @= 0
+
+        while i + 1 < current.len()
+            packages @ packages.push(weight.len())
+            weight @ weight.push(weight[current[i]] + weight[current[i + 1]])
+            leaf @ leaf.push(-1)
+            left @ left.push(current[i])
+            right @ right.push(current[i + 1])
+            i @ i + 2
+
+        merged: [i64] @= []
+        a: i64 @= 0
+        b: i64 @= 0
+
+        while a < leaves.len() || b < packages.len()
+            if b >= packages.len() || a < leaves.len() && weight[a] <= weight[packages[b]]
+                merged @ merged.push(a)
+                a @ a + 1
+            else
+                merged @ merged.push(packages[b])
+                b @ b + 1
+
+        current @ merged
+
+    stack @= zeros(2 * limit + 2)
+    depth: i64 @= 0
+
+    for k in range(from: 0, to: 2 * leaves.len() - 2)
+        stack[0] @ current[k]
+        depth @ 1
+
+        while depth > 0
+            depth @ depth - 1
+            node = stack[depth]
+
+            if leaf[node] >= 0
+                lengths[leaf[node]] @ lengths[leaf[node]] + 1
+            else
+                stack[depth] @ left[node]
+                stack[depth + 1] @ right[node]
+                depth @ depth + 2
+
+    return lengths
+
+# `code`'s `bits` lowest bits in the other order: how a Huffman code, read
+# first bit highest, is written into a stream read first bit lowest.
+function reversed(code: i64, bits: i64) -> i64
+    out: i64 @= 0
+    rest: i64 @= code
+
+    for _ in range(from: 0, to: bits)
+        out @ out << 1 | rest & 1
+        rest @ rest >> 1
+
+    return out
+
+# The canonical code of each symbol for `lengths` (RFC 1951 section 3.2.2),
+# each reversed for writing; 0 for a symbol of length 0. The lengths are 0 to
+# 15 and make a code no symbol of which is a prefix of another.
+function codes_for(lengths: [i64] lent) -> [i64]
+    per_length @= zeros(16)
+
+    for bits in lengths
+        if bits > 0
+            per_length[bits] @ per_length[bits] + 1
+
+    next @= zeros(17)
+    code: i64 @= 0
+
+    for bits in range(from: 1, to: 16)
+        code @ code + per_length[bits - 1] << 1
+        next[bits] @ code
+
+    made @= zeros(lengths.len())
+
+    for symbol in range(from: 0, to: lengths.len())
+        bits = lengths[symbol]
+
+        if bits > 0
+            made[symbol] @ reversed(code: next[bits], bits: bits)
+            next[bits] @ next[bits] + 1
+
+    return made
+
+# The table that reads the code `lengths` make, each 0 to 15. Fails with a
+# message saying why where the lengths give some bits two meanings
+# (over-subscribed), or leave some bits no meaning (incomplete) and are not
+# the one case RFC 1951 allows: a single code of one bit. Lengths all 0 make
+# an empty table, which reads no code.
+function table_for(lengths: [i64] lent) -> Table?
+    counts @= zeros(16)
+    used: i64 @= 0
+
+    for bits in lengths
+        if bits > 0
+            counts[bits] @ counts[bits] + 1
+            used @ used + 1
+
+    room: i64 @= 1
+
+    for bits in range(from: 1, to: 16)
+        room @ room * 2 - counts[bits]
+
+        if room < 0
+            return fail(code: codes.INVALID, msg: "has more codes of some length than its bits allow")
+
+    if used > 0 && room > 0 && !(used == 1 && counts[1] == 1)
+        return fail(code: codes.INVALID, msg: "leaves some bits meaning nothing")
+    offsets @= zeros(17)
+
+    for bits in range(from: 1, to: 16)
+        offsets[bits + 1] @ offsets[bits] + counts[bits]
+
+    symbols @= zeros(used)
+
+    for symbol in range(from: 0, to: lengths.len())
+        bits = lengths[symbol]
+
+        if bits > 0
+            symbols[offsets[bits]] @ symbol
+            offsets[bits] @ offsets[bits] + 1
+
+    fast @= zeros(1 << FAST_BITS)
+    made = codes_for(lengths)
+
+    for symbol in range(from: 0, to: lengths.len())
+        bits = lengths[symbol]
+
+        if bits > 0 && bits <= FAST_BITS
+            at: i64 @= made[symbol]
+
+            while at < fast.len()
+                fast[at] @ symbol * 16 + bits
+                at @ at + (1 << bits)
+
+    return ok(Table(counts: counts, symbols: symbols, fast: fast, used: used))
+
+# The next symbol of `t` in `input` from `c`, or `STARVED` where the input
+# ends inside its code, or `NO_CODE` where no code of `t` begins there. Only
+# bits of a code are used: where it answers a symbol, `c` stands just past
+# its code; otherwise the caller puts back the cursor it saved.
+function decode(t: Table lent, @c: cursor.Cursor, input: [u8] lent) -> i64
+    if t.used == 0
+        return NO_CODE
+
+    if cursor.fill(@c, input, n: FAST_BITS)
+        entry = t.fast[c.bits & (1 << FAST_BITS) - 1]
+
+        if entry != 0
+            _ = cursor.take(@c, n: entry & 15)
+            return entry >> 4
+    code: i64 @= 0
+    first: i64 @= 0
+    index: i64 @= 0
+
+    for bits in range(from: 1, to: 16)
+        if !cursor.fill(@c, input, n: 1)
+            return STARVED
+        code @ code | cursor.take(@c, n: 1)
+        count = t.counts[bits]
+
+        if code - first < count
+            return t.symbols[index + code - first]
+        index @ index + count
+        first @ first + count << 1
+        code @ code << 1
+
+    return NO_CODE
+
+# The total of count times length: how many bits the symbols take.
+function cost(counts: [i64] lent, lengths: [i64] lent) -> i64
+    total: i64 @= 0
+
+    for symbol in range(from: 0, to: counts.len())
+        total @ total + counts[symbol] * lengths[symbol]
+
+    return total
+
+# Whether `lengths` make a complete code: every string of bits begins one.
+function is_complete(lengths: [i64] lent) -> bool
+    room: i64 @= 1 << 15
+
+    for bits in lengths
+        if bits > 0
+            room @ room - (1 << 15 - bits)
+
+    return room == 0
+
+test "lengths_for: no symbol, one symbol, two symbols"
+    assert lengths_for([0, 0, 0], limit: 15) == [0, 0, 0]
+    assert lengths_for([0, 0, 5], limit: 15) == [1, 0, 1]
+    assert lengths_for([4, 0, 0], limit: 15) == [1, 1, 0]
+    assert lengths_for([3, 9], limit: 15) == [1, 1]
+
+test "lengths_for: the textbook counts, and a code made complete"
+    lengths = lengths_for([5, 9, 12, 13, 16, 45], limit: 15)
+    assert lengths == [4, 4, 3, 3, 3, 1]
+    assert is_complete(lengths)
+    assert cost(counts: [5, 9, 12, 13, 16, 45], lengths: lengths) == 224
+
+test "lengths_for: counts that would make codes past the limit are held to it"
+    counts: [i64] @= []
+    weight: i64 @= 1
+
+    for _ in range(from: 0, to: 20)
+        counts @ counts.push(weight)
+        weight @ weight * 2
+
+    unlimited = lengths_for(counts, limit: 20)
+    assert unlimited[0] == 19
+    held = lengths_for(counts, limit: 7)
+
+    for bits in held
+        assert bits >= 1 && bits <= 7
+
+    assert is_complete(held)
+
+test "codes_for: RFC 1951's example of lengths 3 3 3 3 3 2 4 4, reversed"
+    made = codes_for([3, 3, 3, 3, 3, 2, 4, 4])
+    assert made == [reversed(code: 2, bits: 3), reversed(code: 3, bits: 3), reversed(code: 4, bits: 3), reversed(code: 5, bits: 3), reversed(code: 6, bits: 3), 0, reversed(code: 14, bits: 4), reversed(code: 15, bits: 4)]
+    assert reversed(code: 0b0011, bits: 4) == 0b1100
+
+test "table_for: over-subscribed, incomplete, one code of one bit, and none"
+    match table_for([1, 1, 1])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match table_for([2, 2, 2])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    one = table_for([0, 1]).must()
+    assert one.used == 1
+    none = table_for([0, 0]).must()
+    assert none.used == 0
+
+test "decode: each symbol of a small code, a long code, and an input that ends"
+    lengths: [i64] = [2, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 15]
+    t = table_for(lengths).must()
+    made = codes_for(lengths)
+    assert is_complete(lengths)
+
+    for symbol in range(from: 0, to: lengths.len())
+        input: [u8] = [to_u8(made[symbol] & 255).must(), to_u8(made[symbol] >> 8).must()]
+        c @= cursor.start()
+        assert decode(t, @c, input) == symbol
+        assert c.pos * 8 - c.count == lengths[symbol]
+
+    cut: [u8] = [0xff]
+    c @= cursor.start()
+    assert decode(t, @c, cut) == STARVED
+
+test "decode: an empty table reads no code, a single one-bit code reads only 0"
+    empty = table_for([0, 0]).must()
+    zero: [u8] = [0]
+    c @= cursor.start()
+    assert decode(empty, @c, zero) == NO_CODE
+    single = table_for([0, 1]).must()
+    c @ cursor.start()
+    assert decode(single, @c, zero) == 1
+    ones: [u8] = [0xff, 0xff]
+    c @ cursor.start()
+    assert decode(single, @c, ones) == NO_CODE

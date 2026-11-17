@@ -1,0 +1,761 @@
+# TLS: a connection whose bytes are encrypted and whose peer is checked, as
+# an `io.Stream` that `io` reads, writes and closes like any other, so
+# `http`, `sql/postgres` and any program use it unchanged. The work is the
+# system's own library on each platform, the route of Rust's `native-tls`,
+# so a certificate is checked against the system's own store of authorities
+# and a security update of the system reaches every program: SChannel on
+# Windows, Network.framework and the Security framework on macOS, OpenSSL 3
+# on Linux, opened when a program first asks for TLS.
+#
+# **TLS 1.2 at the least, on both sides, and nothing weaker**; TLS 1.3
+# where both ends offer it. No function takes a version, a cipher or an
+# option that turns a check off, but `connect_unchecked_for_tests`, whose
+# name says what it is for. A certificate is checked for its authority, its
+# dates and its host; revocation is the platform's own affair (macOS asks
+# for it, Windows and Linux do not), and nothing here adds to it.
+#
+# It does not make a plain connection, look a name up or listen for one
+# (`net`), read or write the bytes of a stream (`io`), speak HTTP (`http`)
+# or Postgres (`sql/postgres`), or read a certificate's fields: a
+# certificate is handed and checked as PEM, and never opened here.
+#
+# **On macOS TLS runs only over a connection Network.framework makes**:
+# `connect` and `accept` work everywhere, and `client_over` and
+# `server_over`, which begin TLS over a stream the program already holds
+# (Postgres's `sslmode`, a proxy's tunnel), fail `unsupported` there, since
+# Apple's one API for that, Secure Transport, is deprecated since macOS
+# 10.15. A Linux machine with no `libssl.so.3` fails `unsupported` at every
+# call, and `is_available` says so before.
+#
+# It fails with `invalid` (an argument refused; a certificate refused, the
+# message saying why), `closed` (nothing listens there, the peer closed, a
+# stream or listener closed), `not_found` (a host name with no address),
+# `timeout`, `stopped`, `exists` (a port in use), `permission`, `limit`,
+# `unsupported` and `failed` (a handshake the peer broke off, no route).
+
+use bytes
+use io
+use net
+use threads
+use tls/hero_tls
+use tls/internal/connections
+use tls/internal/failure
+use tls/internal/fixture
+use tls/internal/loopback
+
+## Codes
+
+# An argument the layer refuses, or a certificate the client refused:
+# every function that takes text, `connect` and `client_over` for a
+# certificate.
+constant INVALID: str
+    "invalid"
+
+# Nothing listens there, the peer closed the connection, or the stream or
+# the listener is closed: `connect`, `accept`, `close_listener`,
+# `client_over`, `server_over`, `version_of`, `protocol_of`.
+constant CLOSED: str
+    "closed"
+
+# A host name with no address: `connect`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The time allowed ran out: `connect`, `accept`.
+constant TIMEOUT: str
+    "timeout"
+
+# The program was asked to stop while the call waited (`net.ask_stop`):
+# `connect`, `accept`.
+constant STOPPED: str
+    "stopped"
+
+# Something listens at that address and port already: `listen`.
+constant EXISTS: str
+    "exists"
+
+# The system refuses the address or the port to this program: `listen`.
+constant PERMISSION: str
+    "permission"
+
+# The system has no memory, socket or stream left: every function that
+# makes a connection or a listener.
+constant LIMIT: str
+    "limit"
+
+# This platform has no such thing: TLS over a stream the program holds on
+# macOS, or no TLS library on a Linux machine.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The handshake failed, or no route reaches the host; the message carries
+# the system's own words.
+constant FAILED: str
+    "failed"
+
+## Certificates for tests
+
+# FOR TESTS ONLY: a test authority's certificate, EC on P-256, valid from
+# 2019 to 2125, which signed every certificate below but `TEST_SELF_CHAIN`.
+# Its key and theirs are public, in this package's source: a program that is
+# not a test never trusts it. A client trusting it alone is
+# `Client(roots: TEST_ROOT, protocols: [])`.
+constant TEST_ROOT: str
+    fixture.ROOT
+
+# FOR TESTS ONLY: a certificate for `localhost`, `127.0.0.1` and `::1`
+# signed by `TEST_ROOT`. Its first day stands before 2019-07-01 because
+# macOS refuses any server certificate issued after that day that is valid
+# for more than 825 days.
+constant TEST_LOCALHOST_CHAIN: str
+    fixture.LOCALHOST_CHAIN
+
+# FOR TESTS ONLY: `TEST_LOCALHOST_CHAIN`'s key, as PKCS #8.
+constant TEST_LOCALHOST_KEY: str
+    fixture.LOCALHOST_KEY
+
+# FOR TESTS ONLY: a certificate for `wrong.example` alone, signed by
+# `TEST_ROOT`, which a client of `localhost` refuses for its host.
+constant TEST_WRONG_CHAIN: str
+    fixture.WRONG_CHAIN
+
+# FOR TESTS ONLY: `TEST_WRONG_CHAIN`'s key.
+constant TEST_WRONG_KEY: str
+    fixture.WRONG_KEY
+
+# FOR TESTS ONLY: a certificate for `localhost` signed by `TEST_ROOT` and
+# valid in 2020 alone, which a client refuses as past its last day.
+constant TEST_EXPIRED_CHAIN: str
+    fixture.EXPIRED_CHAIN
+
+# FOR TESTS ONLY: `TEST_EXPIRED_CHAIN`'s key.
+constant TEST_EXPIRED_KEY: str
+    fixture.EXPIRED_KEY
+
+# FOR TESTS ONLY: a certificate for `localhost` signed by its own key, which
+# no authority vouches for.
+constant TEST_SELF_CHAIN: str
+    fixture.SELF_CHAIN
+
+# FOR TESTS ONLY: `TEST_SELF_CHAIN`'s key.
+constant TEST_SELF_KEY: str
+    fixture.SELF_KEY
+
+## Settings
+
+# What a client trusts and offers. Built directly: `Client(roots: "",
+# protocols: ["http/1.1"])` trusts the system's own store and offers HTTP/1.1.
+record Client
+    # The PEM of the only authorities trusted, one certificate or several
+    # one after the other; "" trusts the system's own store of authorities.
+    roots: str
+    # The application protocols offered (ALPN), the preferred first, each
+    # 1 to 255 bytes with no `,`; [] offers none.
+    protocols: [str]
+
+# What a server presents. Built directly from PEM text, as OpenSSL, Go and
+# Python write it.
+record Server
+    # The PEM of the server's certificate first, then of the authorities
+    # that signed it, which the server sends to its clients.
+    chain: str
+    # The PEM of the certificate's private key, not encrypted: PKCS #8
+    # (`PRIVATE KEY`), or RSA's or EC's own form; RSA, or ECDSA on P-256,
+    # P-384 or P-521.
+    key: str
+    # The application protocols taken (ALPN), the preferred first; the first
+    # of them a client offers is chosen, and none where it offers none of
+    # them.
+    protocols: [str]
+
+# One step of an exchange in plain text before TLS begins on the same
+# connection, as Postgres's SSLRequest, SMTP's and IMAP's STARTTLS and a
+# proxy's CONNECT need: `connect_after` and `listen_after` run a list of
+# them, in order, and TLS begins once the last is met.
+variant Step
+    # Bytes written to the peer.
+    send
+        # The bytes, 1 to 65536 of them.
+        data: [u8]
+    # Bytes the peer must answer, exactly these and as many.
+    expect
+        # The bytes expected, 1 to 65536 of them.
+        answer: [u8]
+    # A line the peer must answer, read up to and with its `\n`, which must
+    # begin with `prefix`. A line that begins with it and then `-` is a
+    # continuation, as SMTP's `250-`, read past until the line that does not.
+    # A line is read up to 4096 bytes and the step up to 65536, every line
+    # of it, so a peer that never ends a line is told and never followed.
+    expect_line
+        # The line's first bytes, 1 to 64 of them, as text: `"250"`.
+        prefix: str
+
+# A socket listening for TLS connections, made only by `listen`. It holds
+# a handle: `close_listener` closes it, and one nobody closes is told when
+# `main` returns. On Windows its key is kept in the user's key store, under
+# a name of its own, while it is open.
+record Listener
+    # The floor's listener, `nullptr` once `close_listener` has emptied this
+    # place.
+    handle: hero_tls.Listener
+    # The port it listens on, the one the system chose where 0 was asked.
+    port: i64
+
+## The platform
+
+# Whether this machine has the platform's TLS library: false only on a
+# Linux machine with no `libssl.so.3`, where every other function fails
+# `unsupported`.
+#
+# See also `connect`.
+function is_available() -> bool
+    return hero_tls.available() == 1
+
+## A client
+
+# A TLS connection to `host` at `port`, its peer's certificate checked
+# against `client`'s roots and `host`.
+#
+# - `host`: a name or an address without brackets (`example.com`,
+#   `127.0.0.1`, `::1`); the name is looked up, sent to the server (SNI, never
+#   for an address) and must be one the certificate names.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds the connection and its handshake may
+#   take together; 0 for no limit. Reads and writes of the stream answered
+#   then wait as long as the peer takes.
+# - `client`: the authorities trusted and the protocols offered.
+#
+# The stream answered is the caller's to close with `io.close`, which
+# sends the peer TLS's end (close_notify) first. A read answers its end
+# where the peer closes, with or without TLS's end before it, as Python's
+# `ssl` does by default: a protocol that counts its bytes sees what is
+# missing.
+#
+# Fails `invalid` where `host` is "" or holds a zero byte, `port` or
+# `deadline_ms` is out of range, a protocol's name is empty, longer than 255
+# bytes or holds a `,`, the roots hold no certificate, or the certificate is
+# refused (the message says why: past its dates, for other hosts, signed by
+# no authority trusted, revoked); `closed` where nothing listens there or
+# the peer closes during the handshake; `not_found` where the name has no
+# address; `timeout`, `stopped`; `failed` where the handshake fails or no
+# route reaches the host; `unsupported` on a Linux machine with no OpenSSL.
+#
+# On Windows a closed port on the loopback address is refused after about
+# two seconds per address, the system's own retries. See also
+# `client_over`, `version_of`, `protocol_of`.
+function connect(host: str, port: i64, deadline_ms: i64, client: Client) -> io.Stream?
+    return connections.connect(
+        host: host,
+        port: port,
+        deadline_ms: deadline_ms,
+        roots: client.roots,
+        protocols: client.protocols,
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+# FOR TESTS ONLY: a TLS connection to `host` at `port` whose peer's
+# certificate is not checked at all, neither its authority, nor its dates,
+# nor its host, so anybody between the two ends reads and changes every
+# byte. A program that is not a test never calls it.
+#
+# - `host`: a name or an address, as `connect` takes it.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: as `connect` takes it.
+# - `protocols`: the application protocols offered, as `Client`'s.
+#
+# Fails as `connect` does, but never for a certificate. See also `connect`.
+function connect_unchecked_for_tests(host: str, port: i64, deadline_ms: i64, protocols: [str]) -> io.Stream?
+    return connections.connect(
+        host: host,
+        port: port,
+        deadline_ms: deadline_ms,
+        roots: "",
+        protocols: protocols,
+        checks: hero_tls.HERO_TLS_CHECK_NOTHING_FOR_TESTS
+    )
+
+# TLS as the client of `host` over `inner`, a stream already connected to
+# it: what Postgres's `sslmode` and a proxy's tunnel need, where a protocol
+# of their own comes before TLS.
+#
+# - `inner`: the connection, a `net.Conn`'s stream; from a TLS stream
+#   answered, the TLS stream owns it and closes it, and this place is
+#   emptied. Where none is answered it stays the caller's, open, to close:
+#   after a handshake begun and failed it is good for nothing else.
+# - `host`: the name the server's certificate must name, as `connect`
+#   checks it.
+# - `client`: the authorities trusted and the protocols offered.
+#
+# Fails as `connect` does once the connection is made, `closed` where
+# `inner` is closed, `invalid` where it is one of the process's own three
+# streams; reads and writes wait as `inner`'s deadline says. On macOS it
+# fails `unsupported` and leaves `inner` as it was: Apple's one API for TLS
+# over a stream a program holds is deprecated. See also `connect`,
+# `server_over`.
+function client_over(@inner: io.Stream, host: str, client: Client) -> io.Stream?
+    return connections.client_over(
+        @inner,
+        host: host,
+        roots: client.roots,
+        protocols: client.protocols,
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+# A TLS connection to `host` at `port` whose `steps` are run in plain text
+# on the connection before TLS begins, as Postgres's SSLRequest or SMTP's
+# STARTTLS: on every platform, macOS included, since the exchange runs
+# below TLS inside the connection this call makes.
+#
+# - `host`: as `connect` takes it.
+# - `port`: 1 to 65535.
+# - `deadline_ms`: the milliseconds the connection, the steps and the
+#   handshake may take together; 0 for no limit.
+# - `client`: the authorities trusted and the protocols offered.
+# - `steps`: the exchange, at most 64 steps, met in order; [] is `connect`.
+#
+# No byte of TLS is sent before the last step is met, and no byte the peer
+# sends after it is read as the exchange's. The stream is the caller's to
+# close.
+#
+# Fails `invalid` where a step is empty or past its bound or there are more
+# than 64, where the peer answers other bytes than a step expects (the
+# message shows the bytes expected and the bytes heard, escaped: `step 2:
+# expected "S", heard "N"`), or where a line or a step passes its bound;
+# `closed` where the peer closes during the exchange, its message showing
+# what it sent; `timeout` where `deadline_ms` passes first; and as `connect`
+# fails otherwise. See also `connect`, `listen_after`, `Step`.
+function connect_after(host: str, port: i64, deadline_ms: i64, client: Client, steps: [Step]) -> io.Stream?
+    plain: [connections.Plain] @= []
+
+    for step in steps
+        one = match step
+            .send s   => connections.Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: s.data)
+            .expect e => connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: e.answer)
+            .expect_line l => connections.Plain(
+                kind: hero_tls.HERO_TLS_STEP_EXPECT_LINE,
+                bytes: bytes.from_text(l.prefix)
+            )
+
+        plain @ plain.push(one)
+
+    return connections.connect_after(
+        host: host,
+        port: port,
+        deadline_ms: deadline_ms,
+        roots: client.roots,
+        protocols: client.protocols,
+        checks: hero_tls.HERO_TLS_CHECK_ALL,
+        steps: plain
+    )
+
+## A server
+
+# A socket listening for TLS connections on `host` at `port`, each
+# presenting `server`'s chain and key.
+#
+# - `host`: `127.0.0.1`, `::1`, or "" for every address of the machine.
+# - `port`: 0 to 65535, 0 asking the system for a free one, which the
+#   listener's `port` tells.
+# - `server`: the chain, the key and the protocols taken.
+#
+# Fails `invalid` where `host` holds a zero byte or is no address of this
+# machine, `port` is out of range, the chain holds no certificate, the key
+# no private key, an encrypted one or one that is not the certificate's;
+# `exists` where something listens there already; `permission` where the
+# system refuses the port; `unsupported` on a Linux machine with no OpenSSL.
+#
+# On Windows SChannel takes a server's key only from the key store, so the
+# key is stored under a name of its own until `close_listener`, and a
+# process killed meanwhile leaves it there. See also `accept`,
+# `close_listener`, `server_over`.
+function listen(host: str, port: i64, server: Server) -> Listener?
+    b = connections.listen(host: host, port: port, chain: server.chain, key: server.key, protocols: server.protocols)?
+    return ok(Listener(handle: b.handle, port: b.port))
+
+# A socket listening for TLS connections on `host` at `port`, each running
+# `steps` from the server's side in plain text before TLS begins: a server
+# that speaks Postgres's or SMTP's exchange before its TLS.
+#
+# - `host`: `127.0.0.1`, `::1`, or "" for every address of the machine.
+# - `port`: 0 to 65535, 0 asking the system for a free one.
+# - `server`: the chain, the key and the protocols taken.
+# - `steps`: the exchange each connection runs, at most 64 steps.
+#
+# `accept` runs them on each connection within its own time; one whose
+# exchange fails is closed and its failure answered, as one whose handshake
+# fails is. Fails as `listen` does, and `invalid` where a step is empty or
+# past its bound. See also `listen`, `connect_after`, `Step`.
+function listen_after(host: str, port: i64, server: Server, steps: [Step]) -> Listener?
+    plain: [connections.Plain] @= []
+
+    for step in steps
+        one = match step
+            .send s   => connections.Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: s.data)
+            .expect e => connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: e.answer)
+            .expect_line l => connections.Plain(
+                kind: hero_tls.HERO_TLS_STEP_EXPECT_LINE,
+                bytes: bytes.from_text(l.prefix)
+            )
+
+        plain @ plain.push(one)
+
+    b = connections.listen_after(host: host, port: port, chain: server.chain, key: server.key, protocols: server.protocols, steps: plain)?
+    return ok(Listener(handle: b.handle, port: b.port))
+
+# The next connection `l` holds, once its handshake has ended, as a stream.
+#
+# - `l`: the listener, which stays open.
+# - `deadline_ms`: the milliseconds the handshake may take once a client
+#   has connected, 0 for no limit; the wait for a client has none.
+#
+# The stream answered is the caller's to close. A client whose handshake
+# fails is closed and its failure answered: the caller accepts again.
+#
+# Fails `closed` where `l` is closed, or closed on another thread while
+# this waits, or the client closes during the handshake; `timeout` where
+# the handshake takes longer than `deadline_ms`; `stopped`; `failed` where
+# the handshake fails. On Windows a client that refuses this server's
+# certificate does so after the handshake, so its accept succeeds and the
+# stream's first read finds the client gone. See also `listen`.
+function accept(l: Listener, deadline_ms: i64) -> io.Stream?
+    if deadline_ms < 0
+        return failure.of(
+            code: INVALID,
+            asked: "accepting a TLS connection on port " + to_str(l.port),
+            why: "the deadline is below 0"
+        )
+    return connections.accept(
+        l.handle,
+        deadline_ms: deadline_ms,
+        asked: "accepting a TLS connection on port " + to_str(l.port)
+    )
+
+# Closes `l` and empties the place, so every later call through it fails
+# `closed`; an `accept` another thread waits in ends at once.
+#
+# - `l`: the caller's listener, closed by this call; the streams accepted
+#   from it stay open.
+#
+# Fails `closed` where it is closed already. See also `listen`.
+function close_listener(@l: Listener) -> ()?
+    return connections.close_listener(@l.handle, asked: "closing the TLS listener on port " + to_str(l.port))
+
+# TLS as the server over `inner`, a stream already connected to a client,
+# presenting `server`'s chain and key.
+#
+# - `inner`: the connection; its life passes as `client_over`'s does.
+# - `server`: the chain, the key and the protocols taken.
+#
+# Fails as `listen` does for the chain and the key and as `accept` does for
+# the handshake; `closed` where `inner` is closed. On macOS it fails
+# `unsupported` and leaves `inner` as it was. See also `client_over`,
+# `listen`.
+function server_over(@inner: io.Stream, server: Server) -> io.Stream?
+    return connections.server_over(@inner, chain: server.chain, key: server.key, protocols: server.protocols)
+
+## Time
+
+# Makes every later and waiting read and write of `s` end by `ms`
+# milliseconds from now, failing `timeout`, as `net.set_deadline` does for a
+# connection's stream.
+#
+# - `s`: a stream `connect`, `connect_after`, `accept`, `client_over` or
+#   `server_over` answered.
+# - `ms`: milliseconds from now, 0 to take the deadline away.
+#
+# A read the deadline ended loses nothing: the next read goes on where it
+# stopped. A write it ended may have sent part of a record, and every later
+# write then fails `failed`: the stream is good for nothing but reading what
+# is left and closing, as Go rules of its own TLS. Fails `invalid` where
+# `ms` is below 0, `closed` where `s` is closed or no TLS stream,
+# `unsupported` where it runs over a stream that is no socket. On macOS a
+# read already waiting takes the new deadline within about 50 ms. See also
+# `set_accept_deadline`.
+function set_deadline(s: io.Stream, ms: i64) -> ()?
+    return connections.set_deadline(s, ms: ms, asked: "setting a deadline on " + s.name)
+
+# Makes every `accept` on `l` waiting for a client, and every later one, end
+# by `ms` milliseconds from now, failing `timeout`; a handshake's own time
+# stays `accept`'s.
+#
+# - `l`: the listener.
+# - `ms`: milliseconds from now, 0 to take the deadline away.
+#
+# Fails `invalid` where `ms` is below 0, `closed` where `l` is closed. See
+# also `accept`, `set_deadline`.
+function set_accept_deadline(l: Listener, ms: i64) -> ()?
+    return connections.set_accept_deadline(
+        l.handle,
+        ms: ms,
+        asked: "setting a deadline on the TLS listener on port " + to_str(l.port)
+    )
+
+## What a connection chose
+
+# The version of TLS `s` speaks: 12 for TLS 1.2, 13 for TLS 1.3.
+#
+# - `s`: a stream `connect`, `accept`, `client_over` or `server_over`
+#   answered.
+#
+# Fails `closed` where `s` is closed or is no TLS stream. See also
+# `protocol_of`.
+function version_of(s: io.Stream) -> i64?
+    return connections.version_of(s)
+
+# The application protocol the two ends chose (ALPN), "" where none was.
+#
+# - `s`: a stream `connect`, `accept`, `client_over` or `server_over`
+#   answered.
+#
+# Fails `closed` where `s` is closed or is no TLS stream; `not_text` where
+# the peer chose a name that is not UTF-8. See also `version_of`.
+function protocol_of(s: io.Stream) -> str?
+    return connections.protocol_of(s)
+
+## Examples
+
+# Where this machine has no TLS library, every call fails `unsupported`,
+# which `is_available` tells before any is made.
+test "is_available: asked before a connection is made"
+    if !is_available()
+        made = connect(host: "localhost", port: 443, deadline_ms: 1000, client: Client(roots: "", protocols: []))
+
+        match made
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+# A connection to a server of the Internet, checked by the system's own
+# store: where this machine has no network the failure is a value, and
+# never a certificate refused.
+test "connect: example.com at port 443, offering HTTP/1.1"
+    made = connect(
+        host: "example.com",
+        port: 443,
+        deadline_ms: 10000,
+        client: Client(roots: "", protocols: ["http/1.1"])
+    )
+
+    match made
+        .ok s =>
+            stream @= s
+            assert version_of(stream).must() >= 12
+            io.close(@stream).must()
+        .err e => assert e.code != INVALID
+
+# The same connection with nothing checked, as a test reaches a server
+# whose certificate nobody signed.
+test "connect_unchecked_for_tests: example.com, its certificate not looked at"
+    made = connect_unchecked_for_tests(host: "example.com", port: 443, deadline_ms: 10000, protocols: [])
+
+    match made
+        .ok s =>
+            stream @= s
+            io.close(@stream).must()
+        .err e => assert e.code != INVALID
+
+# TLS begun over a TCP connection `net` made, as Postgres's `sslmode`
+# begins it after its own request; on macOS it fails `unsupported` and the
+# connection stays the caller's.
+test "client_over: example.com over a connection of net"
+    made = net.connect(host: "example.com", port: 443, deadline_ms: 10000)
+
+    match made
+        .err e => assert e.code != INVALID
+        .ok c =>
+            inner @= c.stream
+            secured = client_over(@inner, host: "example.com", client: Client(roots: "", protocols: []))
+
+            match secured
+                .ok s =>
+                    stream @= s
+                    io.close(@stream).must()
+                .err e => assert e.code != INVALID
+
+            if !io.is_closed(inner)
+                io.close(@inner).must()
+
+# A server presenting a certificate for `localhost` on a port the system
+# chooses, and a client of this process on a thread of its own reaching it.
+test "listen: on the loopback address, a port the system chooses"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"])
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
+        assert threads.wait_text(@client) == "ok http/1.1 pong"
+        close_listener(@l).must()
+
+# A connection accepted, read and written through `io` like any stream,
+# and closed.
+test "accept: one client, four bytes each way"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        s @= accept(l, deadline_ms: 10000).must()
+        assert io.read_exact(s, count: 4).must() == [112, 105, 110, 103]
+        io.write_text(s, text: "pong").must()
+        io.close(@s).must()
+        assert threads.wait_text(@client) == "ok  pong"
+        close_listener(@l).must()
+
+# A listener closed: every later call through it fails `closed`.
+test "close_listener: then accept fails closed"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
+        ).must()
+        close_listener(@l).must()
+        late = accept(l, deadline_ms: 0)
+
+        match late
+            .ok _  => assert false
+            .err e => assert e.code == CLOSED
+
+# TLS begun by the server over a connection `net` accepted, the client on
+# a thread of its own beginning it too; macOS answers `unsupported` to both.
+test "server_over: a connection of net made a TLS server's"
+    if is_available()
+        l @= net.listen(host: "127.0.0.1", port: 0).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "over " + to_str(l.address.port))
+        c = net.accept(l, deadline_ms: 10000).must()
+        inner @= c.stream
+        secured = server_over(
+            @inner,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"])
+        )
+        loopback.closed_or_given(@inner)
+        heard = loopback.heard_on(secured)
+        said = threads.wait_text(@client)
+        net.close_listener(@l).must()
+        assert heard == "ping" || loopback.is_unsupported(said)
+        assert said == "ok http/1.1 pong" || loopback.is_unsupported(said)
+
+# The version a connection accepted speaks.
+test "version_of: TLS 1.2 or 1.3, never less"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: [])
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        s @= accept(l, deadline_ms: 10000).must()
+        version = version_of(s).must()
+        assert version == 12 || version == 13
+        assert loopback.answer_once(s).must() == "ping"
+        io.close(@s).must()
+        assert threads.wait_text(@client) == "ok  pong"
+        close_listener(@l).must()
+
+# The protocol chosen: the server takes `h2` and `http/1.1`, the client
+# offers `http/1.1` alone.
+test "protocol_of: http/1.1 chosen of the server's two"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "checked " + to_str(l.port))
+        s @= accept(l, deadline_ms: 10000).must()
+        assert protocol_of(s).must() == "http/1.1"
+        assert loopback.answer_once(s).must() == "ping"
+        io.close(@s).must()
+        assert threads.wait_text(@client) == "ok http/1.1 pong"
+        close_listener(@l).must()
+
+# A Postgres client's exchange before TLS, the SSLRequest answered `S`, then
+# TLS: the server is of this process, on a thread of its own.
+test "connect_after: Postgres's SSLRequest, then TLS"
+    if is_available()
+        port = loopback.free_port()
+        server @= threads.spawn_text(body: loopback.serve_after, arg: "postgres " + to_str(port))
+        loopback.until_listening(port)
+        request: [u8] = [0, 0, 0, 8, 4, 210, 22, 47]
+        s @= connect_after(
+            host: "localhost",
+            port: port,
+            deadline_ms: 10000,
+            client: Client(roots: fixture.ROOT, protocols: []),
+            steps: [.send(data: request), .expect(answer: [83])]
+        ).must()
+        io.write_text(s, text: "ping").must()
+        assert io.read_exact(s, count: 4).must() == [112, 111, 110, 103]
+        io.close(@s).must()
+        assert threads.wait_text(@server) == "ping"
+
+# A server speaking SMTP's exchange before its TLS: a banner, the lines
+# that answer `EHLO`, and `220` to `STARTTLS`.
+test "listen_after: an SMTP server's STARTTLS, then TLS"
+    if is_available()
+        hello = bytes.from_text("250-hello\r\n250 STARTTLS\r\n")
+        steps: [Step] = [
+            .send(data: bytes.from_text("220 ready\r\n"))
+            .expect_line(prefix: "EHLO")
+            .send(data: hello)
+            .expect(answer: bytes.from_text("STARTTLS\r\n"))
+            .send(data: bytes.from_text("220 go\r\n"))
+        ]
+        l @= listen_after(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, protocols: ["http/1.1"]),
+            steps: steps
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "smtp " + to_str(l.port))
+        assert loopback.heard_on(accept(l, deadline_ms: 10000)) == "ping"
+        assert threads.wait_text(@client) == "ok http/1.1 pong"
+        close_listener(@l).must()
+
+# A server's read bounded by a deadline: the client waits before it speaks,
+# the read ends `timeout`, and the bytes arrive once the deadline is gone.
+test "set_deadline: a server's read ended, then the client's bytes read"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: TEST_LOCALHOST_CHAIN, key: TEST_LOCALHOST_KEY, protocols: [])
+        ).must()
+        client @= threads.spawn_text(body: loopback.client_side, arg: "late " + to_str(l.port))
+        s @= accept(l, deadline_ms: 10000).must()
+        set_deadline(s, ms: 300).must()
+        early = io.read(s, most: 4)
+
+        match early
+            .ok _  => assert false
+            .err e => assert e.code == TIMEOUT
+
+        set_deadline(s, ms: 0).must()
+        assert loopback.answer_once(s).must() == "ping"
+        io.close(@s).must()
+        assert threads.wait_text(@client) == "ok  pong"
+        close_listener(@l).must()
+
+# A server that waits for a client a fifth of a second at most.
+test "set_accept_deadline: no client within 200 ms"
+    if is_available()
+        l @= listen(
+            host: "127.0.0.1",
+            port: 0,
+            server: Server(chain: TEST_LOCALHOST_CHAIN, key: TEST_LOCALHOST_KEY, protocols: [])
+        ).must()
+        set_accept_deadline(l, ms: 200).must()
+        nobody = accept(l, deadline_ms: 0)
+
+        match nobody
+            .ok s =>
+                stream @= s
+                io.close(@stream).must()
+                assert false
+            .err e => assert e.code == TIMEOUT
+
+        close_listener(@l).must()

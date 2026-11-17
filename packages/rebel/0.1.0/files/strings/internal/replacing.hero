@@ -1,0 +1,126 @@
+# A text with what it holds replaced: every occurrence of a text, the first
+# n, the last, or several texts each by its own in one pass. The pieces are
+# collected in a list and joined once, so no replacement is quadratic.
+
+use strings/internal/scan
+use strings/internal/search
+
+# `s` with at most `limit` occurrences of `old` replaced by `new`, taken
+# from the start.
+function replace_up_to(s: str, old: str, new: str, limit: i64) -> str
+    out: [str] @= []
+    done: i64 @= 0
+
+    if old.len() == 0
+        at: i64 @= 0
+
+        while done < limit
+            out @ out.push(new)
+            done @ done + 1
+
+            if at == s.len()
+                break
+            end = scan.next_at(s, at)
+            out @ out.push(s.slice(from: at, to: end))
+            at @ end
+
+        out @ out.push(s.slice(from: at, to: s.len()))
+        return out.join("")
+    found = scan.finder(old)
+    from: i64 @= 0
+
+    while done < limit
+        match scan.first_from(found, s, from)
+            .ok here =>
+                out @ out.push(s.slice(from: from, to: here))
+                out @ out.push(new)
+                from @ here + old.len()
+                done @ done + 1
+            .err _ => break
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# `s` with every `old` replaced by `new`.
+function replace_all(s: str, old: str, new: str) -> str
+    return replace_up_to(s: s, old: old, new: new, limit: scan.NO_LIMIT)
+
+# `s` with its first `n` occurrences of `old` replaced by `new`.
+function replace_n(s: str, old: str, new: str, n: u64) -> str
+    return replace_up_to(s: s, old: old, new: new, limit: scan.limit_of(n))
+
+# `s` with its last `old` replaced by `new`.
+function replace_last(s: str, old: str, new: str) -> str
+    match search.index_of_last(s: s, substr: old)
+        .ok at => return s.slice(from: 0, to: at) + new + s.slice(from: at + old.len(), to: s.len())
+        .err _ => return s
+
+# `s` with each key of `pairs` replaced by its value in one pass, the first
+# key in the map's order that stands at a position winning there.
+function replace_pairs(s: str, pairs: {str: str}) -> str
+    olds = keys(pairs)
+    news: [str] @= []
+
+    for old in olds
+        news @ news.push(pairs[old].must())
+
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        replaced: bool @= false
+        i: i64 @= 0
+
+        while i < olds.len() && !replaced
+            if olds[i].len() > 0 && search.has_prefix_at(s: s, prefix: olds[i], at: at)
+                out @ out.push(s.slice(from: from, to: at))
+                out @ out.push(news[i])
+                at @ at + olds[i].len()
+                from @ at
+                replaced @ true
+            i @ i + 1
+
+        if !replaced
+            at @ scan.next_at(s, at)
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+## Tests
+
+test "replace_all: occurrences that would overlap, absent, the empty text sought, a long pattern, and characters of more than one byte"
+    assert replace_all(s: "aaaa", old: "aa", new: "b") == "bb"
+    assert replace_all(s: "abc", old: "x", new: "y") == "abc"
+    assert replace_all(s: "abc", old: "", new: "X") == "XaXbXcX"
+    assert replace_all(s: "", old: "", new: "X") == "X"
+    assert replace_all(s: "èè", old: "", new: "-") == "-è-è-"
+    assert replace_all(s: "città città", old: "à", new: "a") == "citta citta"
+    assert replace_all(s: "abc", old: "b", new: "") == "ac"
+    long = repeat("ab", 9)
+    assert replace_all(s: "x" + long + "y" + long, old: long, new: "-") == "x-y-"
+
+test "replace_n: none, the first two, every one, the empty text sought, and characters of more than one byte"
+    assert replace_n(s: "abc", old: "b", new: "X", n: 0) == "abc"
+    assert replace_n(s: "a.b.c.d", old: ".", new: "/", n: 2) == "a/b/c.d"
+    assert replace_n(s: "a.b", old: ".", new: "/", n: 18446744073709551615) == "a/b"
+    assert replace_n(s: "abc", old: "", new: "X", n: 2) == "XaXbc"
+    assert replace_n(s: "é.è.à", old: ".", new: "-", n: 1) == "é-è.à"
+
+test "replace_last: the last of several, absent, the empty text sought, overlapping repeats, and characters of more than one byte"
+    assert replace_last(s: "a.b.c", old: ".", new: "/") == "a.b/c"
+    assert replace_last(s: "abc", old: "x", new: "y") == "abc"
+    assert replace_last(s: "abc", old: "", new: "X") == "abcX"
+    assert replace_last(s: "aaa", old: "aa", new: "b") == "ab"
+    assert replace_last(s: "città", old: "à", new: "a") == "citta"
+
+test "replace_pairs: the map's order at one position, a swap, escapes, an empty key, no pairs, and characters of more than one byte"
+    assert replace_pairs(s: "aab", pairs: {"a": "1", "aa": "2", "b": "3"}) == "113"
+    assert replace_pairs(s: "aaab", pairs: {"aa": "2", "a": "1"}) == "21b"
+    assert replace_pairs(s: "abba", pairs: {"a": "b", "b": "a"}) == "baab"
+    assert replace_pairs(s: "a<b>&c", pairs: {"<": "&lt;", ">": "&gt;", "&": "&amp;"}) == "a&lt;b&gt;&amp;c"
+    assert replace_pairs(s: "abc", pairs: {"": "X", "b": "Y"}) == "aYc"
+    assert replace_pairs(s: "abc", pairs: {"a": "1", "b": "", "c": "xyz"}) == "1xyz"
+    none: {str: str} = {}
+    assert replace_pairs(s: "abc", pairs: none) == "abc"
+    assert replace_pairs(s: "città è", pairs: {"è": "e", "à": "a"}) == "citta e"

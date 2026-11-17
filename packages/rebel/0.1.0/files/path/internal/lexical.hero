@@ -1,0 +1,383 @@
+# A path cleaned, joined and taken apart by its text: its parts, its parent,
+# its ancestors, its last name and that name's extensions. Nothing here reads
+# a disk; a rules value reaches it as `windows`.
+
+use path/internal/codes
+use path/internal/roots
+use path/internal/scan
+
+# The shortest path that names what `path` names by its text: repeated
+# separators become one, `.` parts go, a `..` goes with the name before it and
+# at a root, and the separators are the rules'. The empty path is `.`, and a
+# volume alone is itself.
+function clean(path: str, windows: bool) -> str
+    anchor = roots.split(path, windows)
+    start = roots.start_of(anchor, windows)
+    rooted = roots.has_root(anchor)
+    kept: [str] @= []
+    count: i64 @= 0
+
+    for piece in scan.names_in(anchor.rest, windows)
+        if piece != ".."
+            kept @ put(kept, at: count, piece: piece)
+            count @ count + 1
+        else if count > 0 && kept[count - 1] != ".."
+            count @ count - 1
+        else if !rooted
+            kept @ put(kept, at: count, piece: piece)
+            count @ count + 1
+
+    body = kept.slice(from: 0, to: count).join(scan.separator(windows))
+
+    if start == "" && body == ""
+        return "."
+    return start + body
+
+# `pieces` with `piece` at `at`, which is at most its length: the list grows by
+# one there, and is written in place below it.
+function put(pieces: [str], at: i64, piece: str) -> [str]
+    out: [str] @= pieces
+
+    if at == out.len()
+        out @ out.push(piece)
+    else
+        out[at] @ piece
+    return out
+
+# `paths` joined, each read from the one before: an empty one adds nothing, one
+# that begins at a root starts the path over, and by Windows' rules one with a
+# root and no volume keeps the volume so far, and one with another volume
+# starts over, while one with the same volume and no root goes on from it.
+function join_paths(paths: [str], windows: bool) -> str
+    if !windows
+        return join_posix(paths)
+    volume: str @= ""
+    root: str @= ""
+    pieces: [str] @= []
+    ends_sep: bool @= false
+
+    for path in paths
+        if path == ""
+            continue
+        anchor = roots.split(path, true)
+
+        if anchor.root != ""
+            if anchor.volume != "" || volume == ""
+                volume @ anchor.volume
+            root @ anchor.root
+            pieces @ []
+            ends_sep @ false
+        else if anchor.volume != "" && !scan.same(a: anchor.volume, b: volume, windows: true)
+            volume @ anchor.volume
+            root @ ""
+            pieces @ []
+            ends_sep @ false
+        else if anchor.volume != ""
+            volume @ anchor.volume
+
+        if anchor.rest != ""
+            if pieces.len() > 0 && !ends_sep
+                pieces @ pieces.push("\\")
+            pieces @ pieces.push(anchor.rest)
+            ends_sep @ scan.is_sep(anchor.rest[anchor.rest.len() - 1], true)
+
+    rest = pieces.join("")
+
+    between = if rest != "" && root == "" && volume != "" && !scan.is_sep(volume[volume.len() - 1], true) && volume[volume.len() - 1] != ':'
+        "\\"
+    else
+        ""
+
+    return volume + root + between + rest
+
+# `paths` joined by POSIX's rules: one that begins with `/` starts over.
+function join_posix(paths: [str]) -> str
+    pieces: [str] @= []
+    ends_sep: bool @= false
+
+    for path in paths
+        if path == ""
+            continue
+
+        if path[0] == '/'
+            pieces @ []
+        else if pieces.len() > 0 && !ends_sep
+            pieces @ pieces.push("/")
+        pieces @ pieces.push(path)
+        ends_sep @ path[path.len() - 1] == '/'
+
+    return pieces.join("")
+
+# Every part of `path`: its start where it has one, then each name and each
+# `..`, the empty parts and the `.` parts left out.
+function parts(path: str, windows: bool) -> [str]
+    reading = roots.read(path, windows)
+
+    if reading.start == ""
+        return reading.names
+    out: [str] @= [reading.start]
+
+    for piece in reading.names
+        out @ out.push(piece)
+
+    return out
+
+# The path made of the start of `reading` and its first `count` names, `.`
+# where both are empty.
+function prefix(reading: roots.Reading, count: i64, windows: bool) -> str
+    body = reading.names.slice(from: 0, to: count).join(scan.separator(windows))
+
+    if reading.start == "" && body == ""
+        return "."
+    return reading.start + body
+
+# `path` without its last part; a path with no part after its start answers
+# that start, or `.` where it has none.
+function parent(path: str, windows: bool) -> str
+    reading = roots.read(path, windows)
+
+    if reading.names.len() == 0
+        return prefix(reading, count: 0, windows: windows)
+    return prefix(reading, count: reading.names.len() - 1, windows: windows)
+
+# Every path above `path`, nearest first, to its start or to `.`.
+function ancestors(path: str, windows: bool) -> [str]
+    reading = roots.read(path, windows)
+    out: [str] @= []
+    count: i64 @= reading.names.len() - 1
+
+    while count >= 0
+        out @ out.push(prefix(reading, count: count, windows: windows))
+        count @ count - 1
+
+    return out
+
+# The last part of `path` where it is a name, failing `not_found` where it ends
+# in none: no part after its start, or a last part `..`.
+function last_name(path: str, windows: bool) -> str?
+    names = roots.read(path, windows).names
+
+    if names.len() == 0 || names[names.len() - 1] == ".."
+        return fail(code: codes.NOT_FOUND, msg: f"\"{path}\" ends in no name")
+    return ok(names[names.len() - 1])
+
+# How many dots `name` begins with.
+function leading_dots(name: str) -> i64
+    at: i64 @= 0
+
+    while at < name.len() && name[at] == '.'
+        at @ at + 1
+
+    return at
+
+# Where each extension of `name` begins: at each dot after the first byte that
+# is not a dot.
+function dots_of(name: str) -> [i64]
+    out: [i64] @= []
+    at: i64 @= leading_dots(name) + 1
+
+    while at < name.len()
+        if name[at] == '.'
+            out @ out.push(at)
+        at @ at + 1
+
+    return out
+
+# The extension of `name`, failing `not_found` where it has none.
+function ext_of_name(name: str) -> str?
+    dots = dots_of(name)
+
+    if dots.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: f"the name \"{name}\" has no extension")
+    return ok(name.slice(from: dots[dots.len() - 1], to: name.len()))
+
+# The extension of the name of `path`.
+function ext(path: str, windows: bool) -> str?
+    return ext_of_name(last_name(path, windows)?)
+
+# The name of `path` without its extension.
+function stem(path: str, windows: bool) -> str?
+    name = last_name(path, windows)?
+    dots = dots_of(name)
+
+    if dots.len() == 0
+        return ok(name)
+    return ok(name.slice(from: 0, to: dots[dots.len() - 1]))
+
+# The name of `path` without any of its extensions.
+function stem_all(path: str, windows: bool) -> str?
+    name = last_name(path, windows)?
+    dots = dots_of(name)
+
+    if dots.len() == 0
+        return ok(name)
+    return ok(name.slice(from: 0, to: dots[0]))
+
+# Every extension of the name of `path`, in order; none where it has no name.
+function ext_all(path: str, windows: bool) -> [str]
+    out: [str] @= []
+
+    match last_name(path, windows)
+        .err _ => return out
+        .ok name =>
+            dots = dots_of(name)
+            at: i64 @= 0
+
+            while at < dots.len()
+                end = if at + 1 < dots.len()
+                    dots[at + 1]
+                else
+                    name.len()
+
+                out @ out.push(name.slice(from: dots[at], to: end))
+                at @ at + 1
+
+    return out
+
+## Tests
+
+test "clean by POSIX's rules, the answers Go's `path.Clean` gave on 2026-11-15"
+    assert clean("", false) == "."
+    assert clean(".", false) == "." && clean("..", false) == ".."
+    assert clean("/", false) == "/" && clean("//", false) == "/" && clean("///", false) == "/"
+    assert clean("a/", false) == "a" && clean("a//", false) == "a"
+    assert clean("//a", false) == "/a" && clean("///a", false) == "/a"
+    assert clean("a//b", false) == "a/b" && clean("a/./b", false) == "a/b"
+    assert clean("a/../b", false) == "b" && clean("../a", false) == "../a"
+    assert clean("a/..", false) == "." && clean("/..", false) == "/" && clean("/../a", false) == "/a"
+    assert clean("./a", false) == "a" && clean("a/.", false) == "a"
+    assert clean("../../a/../b", false) == "../../b"
+    assert clean("a\\b", false) == "a\\b"
+    assert clean("a b/cè.txt/", false) == "a b/cè.txt"
+
+test "clean by Windows' rules, the answers Python's `ntpath.normpath` gave on 2026-11-15"
+    assert clean("", true) == "."
+    assert clean("C:", true) == "C:" && clean("C:x", true) == "C:x"
+    assert clean("C:\\", true) == "C:\\" && clean("C:/x", true) == "C:\\x"
+    assert clean("c:\\x\\..\\y", true) == "c:\\y"
+    assert clean("C:x\\..\\..\\y", true) == "C:..\\y"
+    assert clean("C:\\..\\y", true) == "C:\\y"
+    assert clean("\\", true) == "\\" && clean("/x", true) == "\\x"
+    assert clean("x/y\\z", true) == "x\\y\\z" && clean("x\\", true) == "x"
+    assert clean("C:.", true) == "C:" && clean("C:..", true) == "C:.." && clean("C:.\\x", true) == "C:x"
+    assert clean(".\\x", true) == "x" && clean("x\\\\y", true) == "x\\y"
+
+test "clean by Windows' rules: shares and devices, whole and incomplete"
+    assert clean("\\\\host\\share", true) == "\\\\host\\share"
+    assert clean("\\\\host\\share\\", true) == "\\\\host\\share\\"
+    assert clean("//host/share/x", true) == "\\\\host\\share\\x"
+    assert clean("\\\\host\\share\\..\\x", true) == "\\\\host\\share\\x"
+    assert clean("\\\\host", true) == "\\\\host" && clean("\\\\host\\", true) == "\\\\host\\"
+    assert clean("\\\\", true) == "\\\\" && clean("\\\\\\x", true) == "\\\\\\x"
+    assert clean("\\\\?\\C:\\x\\..\\y", true) == "\\\\?\\C:\\y"
+    assert clean("\\\\.\\NUL", true) == "\\\\.\\NUL"
+
+test "join_paths by POSIX's rules: none, empty ones, a root that starts over, nothing cleaned"
+    nothing: [str] = []
+    assert join_paths(nothing, false) == ""
+    assert join_paths([""], false) == "" && join_paths(["", ""], false) == ""
+    assert join_paths(["a"], false) == "a" && join_paths(["a", "b"], false) == "a/b"
+    assert join_paths(["a", ""], false) == "a" && join_paths(["", "a"], false) == "a"
+    assert join_paths(["a", "/b"], false) == "/b" && join_paths(["/a", "b"], false) == "/a/b"
+    assert join_paths(["a/", "b"], false) == "a/b" && join_paths(["a//", "b"], false) == "a//b"
+    assert join_paths(["a", "../b"], false) == "a/../b" && join_paths(["/", "a"], false) == "/a"
+    assert join_paths(["a", "b", "c"], false) == "a/b/c"
+    assert join_paths(["caffè", "è"], false) == "caffè/è"
+
+test "join_paths by Windows' rules, the answers Python's `ntpath.join` gave on 2026-11-15"
+    assert join_paths(["C:\\a", "C:b"], true) == "C:\\a\\b"
+    assert join_paths(["C:\\a", "D:b"], true) == "D:b"
+    assert join_paths(["C:\\a", "c:b"], true) == "c:\\a\\b"
+    assert join_paths(["C:\\a", "\\b"], true) == "C:\\b"
+    assert join_paths(["C:", "x"], true) == "C:x"
+    assert join_paths(["\\\\h\\s", "x"], true) == "\\\\h\\s\\x"
+    assert join_paths(["a", "C:\\b"], true) == "C:\\b"
+    assert join_paths(["a/", "b"], true) == "a/b"
+    assert join_paths(["C:\\a", "\\\\h\\s\\x"], true) == "\\\\h\\s\\x"
+    assert join_paths(["a", "b", ""], true) == "a\\b"
+
+test "parts by both rules: none, a root, repeated separators, a dot-dot kept"
+    nothing: [str] = []
+    assert parts("", false) == nothing && parts(".", false) == nothing
+    assert parts("..", false) == [".."] && parts("/", false) == ["/"] && parts("//", false) == ["/"]
+    assert parts("/usr//lib/", false) == ["/", "usr", "lib"]
+    assert parts("/../a", false) == ["/", "..", "a"] && parts("./a", false) == ["a"]
+    assert parts("C:", true) == ["C:"] && parts("C:x", true) == ["C:", "x"]
+    assert parts("C:/x", true) == ["C:\\", "x"] && parts("x/y\\z", true) == ["x", "y", "z"]
+    assert parts("//host/share/x", true) == ["\\\\host\\share\\", "x"]
+    assert parts("\\\\host\\share", true) == ["\\\\host\\share"]
+    assert parts("C:..", true) == ["C:", ".."]
+
+test "parent by POSIX's rules, the answers Python's `PurePosixPath.parent` gave on 2026-11-15"
+    assert parent("", false) == "." && parent(".", false) == "." && parent("..", false) == "."
+    assert parent("/", false) == "/" && parent("a", false) == "." && parent("a/", false) == "."
+    assert parent("/a", false) == "/" && parent("a/b", false) == "a" && parent("a/b/", false) == "a"
+    assert parent("a/./b", false) == "a" && parent("a/../b", false) == "a/.."
+    assert parent("a/..", false) == "a" && parent("/..", false) == "/" && parent("/../a", false) == "/.."
+    assert parent("a/.", false) == "." && parent("a b/cè.txt", false) == "a b"
+
+test "parent by Windows' rules, the answers Python's `PureWindowsPath.parent` gave on 2026-11-15"
+    assert parent("C:", true) == "C:" && parent("C:x", true) == "C:"
+    assert parent("C:\\x", true) == "C:\\" && parent("C:/x", true) == "C:\\"
+    assert parent("x/y\\z", true) == "x\\y" && parent("x\\", true) == "."
+    assert parent("\\\\host\\share\\x", true) == "\\\\host\\share\\"
+    assert parent("\\\\.\\NUL", true) == "\\\\.\\NUL" && parent("C:.\\x", true) == "C:"
+    assert parent("C:x\\..\\..\\y", true) == "C:x\\..\\.."
+
+test "ancestors by both rules: none at a root or a volume, nearest first"
+    nothing: [str] = []
+    assert ancestors("", false) == nothing && ancestors("/", false) == nothing
+    assert ancestors("a/b", false) == ["a", "."] && ancestors("/a/b", false) == ["/a", "/"]
+    assert ancestors("..", false) == ["."]
+    assert ancestors("a/../b", false) == ["a/..", "a", "."]
+    assert ancestors("C:\\", true) == nothing && ancestors("C:", true) == nothing
+    assert ancestors("C:x\\..\\..\\y", true) == ["C:x\\..\\..", "C:x\\..", "C:x", "C:"]
+    assert ancestors("\\\\h\\s\\x", true) == ["\\\\h\\s\\"]
+    assert ancestors("x/y\\z", true) == ["x\\y", "x", "."]
+
+test "last_name: separators at the end, a dot skipped, and no name to answer"
+    assert last_name("a/b.txt", false).must() == "b.txt"
+    assert last_name("a/b/", false).must() == "b" && last_name("git/", false).must() == "git"
+    assert last_name("a/.", false).must() == "a"
+    assert last_name("a b/cè.txt", false).must() == "cè.txt"
+    assert last_name("a\\b", false).must() == "a\\b" && last_name("a\\b", true).must() == "b"
+    assert last_name("C:x", true).must() == "x" && last_name("x:y:z", true).must() == "y:z"
+    assert last_name("x\\", true).must() == "x"
+
+    for path in ["", ".", "/", "..", "a/..", "//"]
+        match last_name(path, false)
+            .ok _  => assert false
+            .err e => assert e.code == "not_found" && e.msg == f"\"{path}\" ends in no name"
+
+    for path in ["C:", "C:\\", "\\\\h\\s", "\\\\.\\NUL"]
+        assert last_name(path, true).is_err()
+
+test "ext, stem and stem_all: the answers Python's `PurePath` gave on 2026-11-15"
+    assert ext("a.tar.gz", false).must() == ".gz" && stem("a.tar.gz", false).must() == "a.tar"
+    assert stem_all("a.tar.gz", false).must() == "a"
+    assert ext("a.", false).must() == "." && stem("a.", false).must() == "a"
+    assert ext("a..", false).must() == "." && stem("a..", false).must() == "a."
+    assert ext(".a.b", false).must() == ".b" && stem(".a.b", false).must() == ".a"
+    assert stem_all(".config.toml", false).must() == ".config"
+    assert ext("x/cè.txt", false).must() == ".txt" && stem("x/cè.txt", false).must() == "cè"
+    assert ext("a.b/", false).must() == ".b"
+    assert ext("x.y\\", false).must() == ".y\\" && ext("x.y\\", true).must() == ".y"
+
+test "ext fails where the name has no extension, and stem is then the name"
+    for name in ["a", ".bashrc", "..a", "...", "a/b.c/d"]
+        match ext(name, false)
+            .ok _  => assert false
+            .err e => assert e.code == "not_found"
+
+    assert stem(".bashrc", false).must() == ".bashrc" && stem_all(".bashrc", false).must() == ".bashrc"
+    assert stem("..a", false).must() == "..a" && stem_all("..a", false).must() == "..a"
+    assert stem("", false).is_err() && stem_all("..", false).is_err()
+    assert ext("a/..", false).is_err()
+
+test "ext_all: the answers Python's `PurePath.suffixes` gave on 2026-11-15"
+    nothing: [str] = []
+    assert ext_all("a.tar.gz", false) == [".tar", ".gz"]
+    assert ext_all("a.", false) == ["."] && ext_all("a..", false) == [".", "."]
+    assert ext_all(".bashrc", false) == nothing && ext_all("..a", false) == nothing
+    assert ext_all(".a.b", false) == [".b"] && ext_all("", false) == nothing
+    assert ext_all("C:\\x\\b.tar.gz", true) == [".tar", ".gz"]

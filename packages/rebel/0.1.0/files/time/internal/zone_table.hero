@@ -1,0 +1,124 @@
+# A zone's changes of offset made from a TZif file: its own transitions, then
+# the ones the rule of its footer computes up to the last second an `Instant`
+# reaches. The rule decides from the file's last transition on, the instant
+# of it included, as Python's `zoneinfo` and Go's `time` read a file; a
+# change to the type already in force is left out, and the changes before
+# the first second an `Instant` reaches only set the type it begins with.
+
+use time/internal/civil
+use time/internal/tzif
+use time/internal/zone_files
+use time/internal/zone_rule
+
+# The first whole second an `Instant` reaches, since 1970.
+constant FIRST_SECOND: i64
+    -9_223_372_036
+
+# The last whole second an `Instant` reaches, since 1970.
+constant LAST_SECOND: i64
+    9_223_372_036
+
+# A zone as seconds: the type before every change, and the changes.
+record Built
+    # The type before the first change.
+    first: tzif.Kind
+    # The changes, each after the one before, all from `FIRST_SECOND` to
+    # `LAST_SECOND`.
+    changes: [zone_rule.Step]
+
+# The zone the TZif file `data` describes. Fails as `tzif.read` does, and
+# `invalid` where its footer is no rule.
+function from_tzif(data: [u8]) -> Built?
+    table = tzif.read(data)?
+    events: [zone_rule.Step] @= []
+    k: i64 @= 0
+
+    while k < table.times.len()
+        events @ events.push(zone_rule.Step(at: table.times[k], kind: table.kinds[table.indices[k]]))
+        k @ k + 1
+
+    if table.footer != ""
+        rule = zone_rule.parse(table.footer)?
+        from: i64 @= civil.FIRST_YEAR - 1
+
+        if events.len() > 0
+            last = events[events.len() - 1].at
+            events[events.len() - 1] @ zone_rule.Step(at: last, kind: zone_rule.kind_at(rule, at: last))
+            from @ civil.date_from_days(last / 86_400).year - 1
+        else
+            events @ events.push(
+                zone_rule.Step(at: FIRST_SECOND - 1, kind: zone_rule.kind_at(rule, at: FIRST_SECOND - 1))
+            )
+
+        for step in zone_rule.steps(rule, from: from, to: civil.LAST_YEAR + 1)
+            if step.at > events[events.len() - 1].at
+                events @ events.push(step)
+    return ok(within(events, first: table.kinds[0]))
+
+# The changes of `all`, in order, that an `Instant` reaches and that change
+# the type, `first` being the type before them all.
+function within(events: [zone_rule.Step], first: tzif.Kind) -> Built
+    before: tzif.Kind @= first
+    kept: [zone_rule.Step] @= []
+
+    for step in events
+        if step.at < FIRST_SECOND
+            before @ step.kind
+        else if step.at <= LAST_SECOND
+            current: tzif.Kind @= before
+
+            if kept.len() > 0
+                current @ kept[kept.len() - 1].kind
+
+            if step.kind != current
+                kept @ kept.push(step)
+
+    return Built(first: before, changes: kept)
+
+# The index of the change of `changes` at second `at`, or -1.
+function index_at(changes: [zone_rule.Step], at: i64) -> i64
+    k: i64 @= 0
+
+    while k < changes.len()
+        if changes[k].at == at
+            return k
+        k @ k + 1
+
+    return -1
+
+# Python's `zoneinfo` read the same file: LMT at +0:49:56 in 1850, CEST from
+# 1,774,746,000 and CET from 1,792,890,000, and CEST on 2262-04-11.
+test "from_tzif: Rome's data, its first type, two changes of 2026, and the last change an Instant reaches"
+    rome = from_tzif(zone_files.carried("Europe/Rome").must()).must()
+    assert rome.first == tzif.Kind(offset: 2_996, daylight: false, abbreviation: "LMT")
+    spring = index_at(rome.changes, at: 1_774_746_000)
+    assert spring > 0 && rome.changes[spring].kind == tzif.Kind(offset: 7_200, daylight: true, abbreviation: "CEST")
+    assert rome.changes[spring + 1].at == 1_792_890_000 && rome.changes[spring + 1].kind.abbreviation == "CET"
+    last = rome.changes[rome.changes.len() - 1]
+    assert last.at <= LAST_SECOND && last.at > 9_200_000_000 && last.kind.abbreviation == "CEST"
+    k: i64 @= 1
+
+    while k < rome.changes.len()
+        assert rome.changes[k].at > rome.changes[k - 1].at && rome.changes[k].kind != rome.changes[k - 1].kind
+        k @ k + 1
+
+# Python answered EDT for every instant under the first rule; under the
+# second, 1677-09-21 is in summer time.
+test "from_tzif: a rule alone, daylight all year, and a rule whose first instant is in summer"
+    all_year = from_tzif(zone_files.rule_file("EST5EDT,0/0,J365/25").must()).must()
+    assert all_year.first.abbreviation == "EDT" && all_year.changes.len() == 0
+    cet = from_tzif(zone_files.rule_file("CET-1CEST,M3.5.0,M10.5.0/3").must()).must()
+    assert cet.first.abbreviation == "CEST" && cet.changes[0].kind.abbreviation == "CET"
+    assert cet.changes[0].at < -9_200_000_000
+    utc = from_tzif(zone_files.rule_file("UTC0").must()).must()
+    assert utc.first == tzif.Kind(offset: 0, daylight: false, abbreviation: "UTC") && utc.changes.len() == 0
+
+test "within: changes before the first second set the first type, one past the last is left out, and a repeat is dropped"
+    a = tzif.Kind(offset: 0, daylight: false, abbreviation: "A")
+    b = tzif.Kind(offset: 60, daylight: false, abbreviation: "B")
+    built = within(
+        [zone_rule.Step(at: FIRST_SECOND - 5, kind: b), zone_rule.Step(at: 0, kind: b), zone_rule.Step(at: 10, kind: a), zone_rule.Step(at: LAST_SECOND + 1, kind: b)],
+        first: a
+    )
+    assert built.first == b
+    assert built.changes == [zone_rule.Step(at: 10, kind: a)]

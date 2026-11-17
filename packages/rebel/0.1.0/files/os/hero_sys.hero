@@ -1,0 +1,444 @@
+# The platform layer's questions about the machine and the process,
+# `hero_sys.h`, bound thin: one function per C function, in C's order, each
+# answering what C answers. The floor of `os`: where a call fails its answer
+# is -1 and `last_error` then the kind, which `os` turns into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. A
+# function that answers bytes is the header's fill form: it leaves `buffer`
+# `n` bytes long and answers how many bytes the whole answer has; where that
+# is above `n` the buffer was too short and holds nothing to read, and the
+# caller asks again with that many. No function here writes the environment.
+
+extern "hero_sys.h"
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, `HERO_SYS_UNSUPPORTED` where a platform has no such
+    # thing, a user id on Windows.
+    constant HERO_SYS_OK: i64
+    constant HERO_SYS_INVALID: i64
+    constant HERO_SYS_NOT_FOUND: i64
+    constant HERO_SYS_DENIED: i64
+    constant HERO_SYS_LIMIT: i64
+    constant HERO_SYS_UNSUPPORTED: i64
+    constant HERO_SYS_OTHER: i64
+    function hero_sys_host_name(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_parent_pid() -> i64
+    function hero_sys_user_id() -> i64
+    function hero_sys_effective_user_id() -> i64
+    function hero_sys_group_id() -> i64
+    function hero_sys_effective_group_id() -> i64
+    function hero_sys_groups(@ids: [i64] counted_by n lent, n: u64) -> i64
+    function hero_sys_page_size() -> i64
+    function hero_sys_processor_count() -> i64
+    function hero_sys_home_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_cache_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_settings_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_environment(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_random(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_terminal_size(@columns: i64, @rows: i64) -> i64
+    # The systems `hero_sys_system` tells apart.
+    constant HERO_SYS_SYSTEM_OTHER: i64
+    constant HERO_SYS_SYSTEM_DARWIN: i64
+    constant HERO_SYS_SYSTEM_LINUX: i64
+    constant HERO_SYS_SYSTEM_WINDOWS: i64
+    function hero_sys_system() -> i64
+    # The architectures `hero_sys_architecture` tells apart.
+    constant HERO_SYS_ARCH_OTHER: i64
+    constant HERO_SYS_ARCH_X86_64: i64
+    constant HERO_SYS_ARCH_ARM64: i64
+    function hero_sys_architecture() -> i64
+    function hero_sys_system_version(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_user_name(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_process_times(@user_ns: i64, @system_ns: i64) -> i64
+    function hero_sys_load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
+    function hero_sys_last_error() -> i64
+    function hero_sys_last_os_error() -> i64
+
+# How many bytes the machine's host name has, or -1. The name is written into
+# `buffer` where `n` bytes hold it: the kernel's name on POSIX, the computer's
+# DNS name on Windows.
+function host_name(@buffer: [u8], n: u64) -> i64
+    return hero_sys_host_name(@buffer, n: n)
+
+# The id of the process that started this one, or -1. On Windows it is the id
+# recorded when this process was made, which may by now name another process.
+function parent_pid() -> i64
+    return hero_sys_parent_pid()
+
+# The id of the user the process was started by, or -1 with
+# `HERO_SYS_UNSUPPORTED` on Windows.
+function user_id() -> i64
+    return hero_sys_user_id()
+
+# The id of the user whose rights the process has, or -1 with
+# `HERO_SYS_UNSUPPORTED` on Windows.
+function effective_user_id() -> i64
+    return hero_sys_effective_user_id()
+
+# The id of the group the process was started in, or -1 with
+# `HERO_SYS_UNSUPPORTED` on Windows.
+function group_id() -> i64
+    return hero_sys_group_id()
+
+# The id of the group whose rights the process has, or -1 with
+# `HERO_SYS_UNSUPPORTED` on Windows.
+function effective_group_id() -> i64
+    return hero_sys_effective_group_id()
+
+# How many other groups the process belongs to, or -1 with
+# `HERO_SYS_UNSUPPORTED` on Windows. Their ids are written into `ids` where
+# `n` of them fit, and `ids` is left `n` long.
+function groups(@ids: [i64], n: u64) -> i64
+    return hero_sys_groups(@ids, n: n)
+
+# The bytes of one page of memory, or -1.
+function page_size() -> i64
+    return hero_sys_page_size()
+
+# How many processors the program may run on at once, at least 1, or -1.
+function processor_count() -> i64
+    return hero_sys_processor_count()
+
+# How many bytes the path of the user's home folder has, or -1 with
+# `HERO_SYS_NOT_FOUND` where the machine names none. The path is written into
+# `buffer` where `n` bytes hold it.
+function home_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_home_folder(@buffer, n: n)
+
+# How many bytes the path of the folder for what a program can make again has,
+# or -1. It is the platform's own: `Library/Caches` on Darwin,
+# `$XDG_CACHE_HOME` or `.cache` on Linux, the local application data on
+# Windows.
+function cache_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_cache_folder(@buffer, n: n)
+
+# How many bytes the path of the folder for a program's settings has, or -1.
+# It is the platform's own: `Library/Application Support` on Darwin,
+# `$XDG_CONFIG_HOME` or `.config` on Linux, the roaming application data on
+# Windows.
+function settings_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_settings_folder(@buffer, n: n)
+
+# How many bytes every variable of the environment takes, or -1. Each is
+# written into `buffer` as its name, `=` and its value, then one zero byte.
+function environment(@buffer: [u8], n: u64) -> i64
+    return hero_sys_environment(@buffer, n: n)
+
+# `n`, once `buffer` holds `n` random bytes fit for a key, or -1.
+function random(@buffer: [u8], n: u64) -> i64
+    return hero_sys_random(@buffer, n: n)
+
+# 0, once `columns` and `rows` hold the size of the terminal the program
+# writes to, or -1 with `HERO_SYS_UNSUPPORTED` where its output is not one.
+# The two are then left as they were.
+function terminal_size(@columns: i64, @rows: i64) -> i64
+    return hero_sys_terminal_size(columns: @columns, rows: @rows)
+
+# Which system the program was built for and runs on, one of the four
+# `HERO_SYS_SYSTEM_` numbers: `HERO_SYS_SYSTEM_OTHER` is a POSIX system that is
+# neither Darwin nor Linux. It never fails.
+function system() -> i64
+    return hero_sys_system()
+
+# The processor architecture the program was built for, one of the three
+# `HERO_SYS_ARCH_` numbers. It never fails.
+function architecture() -> i64
+    return hero_sys_architecture()
+
+# How many bytes the system's version has, or -1. It is written into `buffer`
+# where `n` bytes hold it: the kernel's release `uname` answers on POSIX,
+# `major.minor.build` on Windows.
+function system_version(@buffer: [u8], n: u64) -> i64
+    return hero_sys_system_version(@buffer, n: n)
+
+# How many bytes the name of the user the process runs as has, or -1 with
+# `HERO_SYS_NOT_FOUND` where the machine names none. It is written into
+# `buffer` where `n` bytes hold it: the system's record of the effective user,
+# or `USER`, on POSIX; the thread's user on Windows.
+function user_name(@buffer: [u8], n: u64) -> i64
+    return hero_sys_user_name(@buffer, n: n)
+
+# 0, once `user_ns` and `system_ns` hold the processor time the process has
+# spent in its own code and in the system's, in nanoseconds, or -1 with the
+# two left as they were.
+function process_times(@user_ns: i64, @system_ns: i64) -> i64
+    return hero_sys_process_times(user_ns: @user_ns, system_ns: @system_ns)
+
+# 0, once `one`, `five` and `fifteen` hold the system's load averages over that
+# many minutes, each multiplied by 1000, or -1 with `HERO_SYS_UNSUPPORTED` on
+# Windows. The three are left as they were where it fails.
+function load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
+    return hero_sys_load_average(one: @one, five: @five, fifteen: @fifteen)
+
+# The kind of the last call's failure on this thread. It is `HERO_SYS_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_sys_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# refused.
+function last_os_error() -> i64
+    return hero_sys_last_os_error()
+
+## Tests
+
+test "host_name: no buffer measures, one byte is too few or enough, the right count is filled, a large one too"
+    none: [u8] @= []
+    need = host_name(@none, n: 0)
+    assert need > 0
+    assert none.len() == 0
+    assert last_error() == HERO_SYS_OK
+    assert last_os_error() == 0
+    one: [u8] @= []
+    assert host_name(@one, n: 1) == need
+    assert one.len() == 1
+    name: [u8] @= []
+    assert host_name(@name, n: need.to_u64().must()) == need
+    assert name.len() == need
+    assert name[0] != 0 && name[need - 1] != 0
+    large: [u8] @= []
+    assert host_name(@large, n: 65536) == need
+    assert large.len() == 65536
+    assert large[0] == name[0] && large[need] == 0
+
+test "parent_pid: a process has one, above 0"
+    assert parent_pid() > 0
+    assert last_error() == HERO_SYS_OK
+
+test "user_id, effective_user_id, group_id, effective_group_id: a number, or -1 with HERO_SYS_UNSUPPORTED"
+    uid = user_id()
+    assert uid >= 0 || uid == -1 && last_error() == HERO_SYS_UNSUPPORTED
+    euid = effective_user_id()
+    assert euid >= 0 || euid == -1 && last_error() == HERO_SYS_UNSUPPORTED
+    gid = group_id()
+    assert gid >= 0 || gid == -1 && last_error() == HERO_SYS_UNSUPPORTED
+    egid = effective_group_id()
+    assert egid >= 0 || egid == -1 && last_error() == HERO_SYS_UNSUPPORTED
+    assert last_os_error() == 0
+
+test "groups: no room measures, the count asked is filled with ids, or -1 with HERO_SYS_UNSUPPORTED"
+    none: [i64] @= []
+    need = groups(@none, n: 0)
+    assert none.len() == 0
+
+    if need == -1
+        assert last_error() == HERO_SYS_UNSUPPORTED
+    else
+        assert need >= 0
+        ids: [i64] @= []
+        assert groups(@ids, n: need.to_u64().must()) == need
+        assert ids.len() == need
+
+        for id in ids
+            assert id >= 0
+
+        more: [i64] @= []
+        assert groups(@more, n: (need + 3).to_u64().must()) == need
+        assert more.len() == need + 3
+        assert more.slice(from: 0, to: need) == ids
+        assert more[need] == 0
+
+test "page_size: above 0 and a power of two"
+    page = page_size()
+    assert page > 0
+    assert page & page - 1 == 0
+
+test "processor_count: at least one"
+    assert processor_count() >= 1
+    assert last_error() == HERO_SYS_OK
+
+test "home_folder, cache_folder, settings_folder: measured, then filled with a path, the three not one path"
+    none: [u8] @= []
+    home_need = home_folder(@none, n: 0)
+    cache_need = cache_folder(@none, n: 0)
+    settings_need = settings_folder(@none, n: 0)
+    assert home_need > 0 && cache_need > 0 && settings_need > 0
+    assert none.len() == 0
+    home: [u8] @= []
+    assert home_folder(@home, n: home_need.to_u64().must()) == home_need
+    assert home.len() == home_need && home[0] != 0
+    cache: [u8] @= []
+    assert cache_folder(@cache, n: cache_need.to_u64().must()) == cache_need
+    assert cache.len() == cache_need && cache[cache_need - 1] != 0
+    settings: [u8] @= []
+    assert settings_folder(@settings, n: settings_need.to_u64().must()) == settings_need
+    assert settings.len() == settings_need && settings[settings_need - 1] != 0
+    assert home != cache && home != settings && cache != settings
+    short: [u8] @= []
+    assert home_folder(@short, n: 1) == home_need
+    assert short.len() == 1
+
+test "environment: measured, then filled, every variable ended by a zero byte, PATH among them"
+    none: [u8] @= []
+    need = environment(@none, n: 0)
+    assert need > 0
+    block: [u8] @= []
+    assert environment(@block, n: need.to_u64().must()) == need
+    assert block.len() == need
+    assert block[need - 1] == 0
+    found: bool @= false
+    start: i64 @= 0
+    at: i64 @= 0
+
+    # Windows writes the name `Path`, and reads it in any case.
+    while at < need
+        if block[at] == 0
+            assert at > start
+
+            if at - start >= 5 && (block[start] == 'P' || block[start] == 'p') && (block[start + 1] == 'A' || block[start + 1] == 'a') && (block[start + 2] == 'T' || block[start + 2] == 't') && (block[start + 3] == 'H' || block[start + 3] == 'h') && block[start + 4] == '='
+                found @ true
+            start @ at + 1
+        at @ at + 1
+
+    assert found
+    short: [u8] @= []
+    assert environment(@short, n: 4) == need
+    assert short.len() == 4
+
+test "random: no bytes is 0, two readings of 32 bytes differ, and 65536 bytes are filled to the last chunk"
+    none: [u8] @= []
+    assert random(@none, n: 0) == 0
+    assert none.len() == 0
+    first: [u8] @= []
+    second: [u8] @= []
+    assert random(@first, n: 32) == 32
+    assert random(@second, n: 32) == 32
+    assert first.len() == 32 && second.len() == 32
+    assert first != second
+    one: [u8] @= []
+    assert random(@one, n: 1) == 1
+    odd: [u8] @= []
+    assert random(@odd, n: 257) == 257
+    assert odd.len() == 257
+    large: [u8] @= []
+    assert random(@large, n: 65536) == 65536
+    assert large.len() == 65536
+    filled: i64 @= 0
+
+    # The last 64 bytes all zero would be one reading in 2^512.
+    for i in range(from: 65536 - 64, to: 65536)
+        if large[i] != 0
+            filled @ filled + 1
+
+    assert filled > 0
+    assert last_error() == HERO_SYS_OK
+
+test "terminal_size: columns and rows above 0, or -1 with HERO_SYS_UNSUPPORTED and the two left as they were"
+    columns: i64 @= 0
+    rows: i64 @= 0
+
+    if terminal_size(columns: @columns, rows: @rows) == 0
+        assert columns > 0 && rows > 0
+        assert last_error() == HERO_SYS_OK
+    else
+        assert last_error() == HERO_SYS_UNSUPPORTED
+        assert columns == 0 && rows == 0
+
+test "last_error: HERO_SYS_OK and 0 after a call that did not fail, and the kinds are seven numbers"
+    assert page_size() > 0
+    assert last_error() == HERO_SYS_OK
+    assert last_os_error() == 0
+    kinds = [
+        HERO_SYS_OK
+        HERO_SYS_INVALID
+        HERO_SYS_NOT_FOUND
+        HERO_SYS_DENIED
+        HERO_SYS_LIMIT
+        HERO_SYS_UNSUPPORTED
+        HERO_SYS_OTHER
+    ]
+    assert kinds == [0, 1, 3, 5, 8, 11, 12]
+
+test "system and architecture: one of their numbers, the same on a second call, and Windows exactly where a user id is unsupported"
+    systems = [HERO_SYS_SYSTEM_OTHER, HERO_SYS_SYSTEM_DARWIN, HERO_SYS_SYSTEM_LINUX, HERO_SYS_SYSTEM_WINDOWS]
+    assert systems == [0, 1, 2, 3]
+    named = system()
+    assert last_error() == HERO_SYS_OK
+    assert named == system() && named >= 0 && named <= 3
+
+    if named == HERO_SYS_SYSTEM_WINDOWS
+        assert user_id() == -1
+    else
+        assert user_id() >= 0
+    architectures = [HERO_SYS_ARCH_OTHER, HERO_SYS_ARCH_X86_64, HERO_SYS_ARCH_ARM64]
+    assert architectures == [0, 1, 2]
+    built = architecture()
+    assert last_error() == HERO_SYS_OK
+    assert built == architecture() && built >= 0 && built <= 2
+
+test "system_version: no buffer measures, one byte is too few, the right count is filled with digits and a dot, a large one too"
+    none: [u8] @= []
+    need = system_version(@none, n: 0)
+    assert need > 0
+    assert none.len() == 0
+    assert last_error() == HERO_SYS_OK
+    one: [u8] @= []
+    assert system_version(@one, n: 1) == need
+    assert one.len() == 1
+    version: [u8] @= []
+    assert system_version(@version, n: need.to_u64().must()) == need
+    assert version.len() == need
+    assert version[0] >= '0' && version[0] <= '9'
+    dots: i64 @= 0
+
+    for b in version
+        assert b != 0
+
+        if b == '.'
+            dots @ dots + 1
+
+    assert dots >= 1
+    large: [u8] @= []
+    assert system_version(@large, n: 4096) == need
+    assert large.len() == 4096
+    assert large.slice(from: 0, to: need) == version && large[need] == 0
+
+test "user_name: no buffer measures, one byte is too few, the right count is filled with a name holding no zero byte"
+    none: [u8] @= []
+    need = user_name(@none, n: 0)
+    assert need > 0
+    assert last_error() == HERO_SYS_OK
+    one: [u8] @= []
+    assert user_name(@one, n: 1) == need
+    assert one.len() == 1
+    name: [u8] @= []
+    assert user_name(@name, n: need.to_u64().must()) == need
+    assert name.len() == need
+
+    for b in name
+        assert b != 0
+
+    large: [u8] @= []
+    assert user_name(@large, n: 4096) == need
+    assert large.slice(from: 0, to: need) == name && large[need] == 0
+
+test "process_times: two readings at or above 0, the second never below the first"
+    user_first: i64 @= -1
+    system_first: i64 @= -1
+    assert process_times(user_ns: @user_first, system_ns: @system_first) == 0
+    assert last_error() == HERO_SYS_OK
+    assert user_first >= 0 && system_first >= 0
+    spent: i64 @= 0
+
+    for i in range(from: 0, to: 200000)
+        spent @ spent + i % 7
+
+    assert spent > 0
+    user_second: i64 @= -1
+    system_second: i64 @= -1
+    assert process_times(user_ns: @user_second, system_ns: @system_second) == 0
+    assert user_second >= user_first && system_second >= system_first
+
+test "load_average: three averages at or above 0, or on Windows -1 with HERO_SYS_UNSUPPORTED and the three left as they were"
+    one: i64 @= -1
+    five: i64 @= -1
+    fifteen: i64 @= -1
+    answer = load_average(one: @one, five: @five, fifteen: @fifteen)
+    kind = last_error()
+
+    if system() == HERO_SYS_SYSTEM_WINDOWS
+        assert answer == -1 && kind == HERO_SYS_UNSUPPORTED
+        assert one == -1 && five == -1 && fifteen == -1
+    else
+        assert answer == 0 && kind == HERO_SYS_OK
+        assert one >= 0 && five >= 0 && fifteen >= 0

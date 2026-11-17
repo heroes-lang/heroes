@@ -1,0 +1,82 @@
+# A lock on a whole file held through an open stream, what `fs.lock`,
+# `fs.try_lock` and `fs.unlock` do (round 3, 2026-11-16): one door of
+# `hero_disk` each, the stream's floor handle handed to it.
+
+use fs/internal/codes
+use fs/internal/fixture
+use fs/internal/whole
+use io
+use io/hero_stream
+use os/hero_disk
+
+# Whether the lock was given: true once `s` holds it, false where `wait` is
+# false and another holds a lock that excludes it.
+#
+# - `s`: the stream, open on a file.
+# - `exclusive`: true for a lock nothing stands beside, false for a shared
+#   one.
+# - `wait`: whether to wait until it is given, as long as that takes.
+#
+# Fails `closed` where `s` is closed, `unsupported` where it stands on no
+# file of the system.
+function locked(s: io.Stream, exclusive: bool, wait: bool) -> bool?
+    asked = f"locking {s.name}"
+
+    if s.handle == nullptr
+        return fail(code: codes.CLOSED, msg: f"{asked}: the stream is closed")
+    how: i64 @= hero_disk.HERO_DISK_LOCK_SHARED
+
+    if exclusive
+        how @ hero_disk.HERO_DISK_LOCK_EXCLUSIVE
+    waits: i64 @= 0
+
+    if wait
+        waits @ 1
+
+    if hero_disk.lock(s.handle, how: how, wait: waits) == 0
+        return ok(true)
+
+    if !wait && codes.last_was(hero_disk.HERO_DISK_BUSY)
+        return ok(false)
+    return codes.disk_failed(asked: asked)
+
+# Lets go the lock `s` holds, also where it holds none.
+#
+# - `s`: the stream.
+#
+# Fails `closed` where `s` is closed.
+function unlocked(s: io.Stream) -> ()?
+    asked = f"unlocking {s.name}"
+
+    if s.handle == nullptr
+        return fail(code: codes.CLOSED, msg: f"{asked}: the stream is closed")
+
+    if hero_disk.unlock(s.handle) != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+## Tests
+
+test "locked and unlocked: an exclusive lock refused beside a shared one without a wait, given once let go, and a closed stream"
+    dir = fixture.folder("locks")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    read = hero_stream.HERO_STREAM_ACCESS_READ
+    a @= whole.opened(at: dir + "/f", access: read, permission: 0, asked: "a").must()
+    b @= whole.opened(at: dir + "/f", access: read, permission: 0, asked: "b").must()
+    assert locked(a, exclusive: false, wait: true).must()
+    assert !locked(b, exclusive: true, wait: false).must()
+    assert !unlocked(a).is_err()
+    assert locked(b, exclusive: true, wait: false).must()
+    assert !unlocked(b).is_err()
+    assert !io.close(@a).is_err()
+
+    match locked(a, exclusive: false, wait: true)
+        .ok _  => assert false
+        .err e => assert e.code == codes.CLOSED
+
+    match unlocked(a)
+        .ok _  => assert false
+        .err e => assert e.code == codes.CLOSED
+
+    assert !io.close(@b).is_err()
+    assert fixture.cleared(dir)

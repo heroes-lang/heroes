@@ -1,0 +1,283 @@
+# The tokenizer's doctype states (13.2.5.53 to 13.2.5.68): the name, the
+# keywords `PUBLIC` and `SYSTEM`, the two identifiers, and the bogus doctype
+# that swallows what does not fit. Each step reads at least one byte or
+# switches to a state that will.
+
+use html/internal/ascii
+use html/internal/lexer
+use unicode
+
+# Ends the doctype at the end of the text: an eof-in-doctype parse error, the
+# doctype emitted in quirks mode, then the end.
+function ended(@lx: lexer.Lexer)
+    lexer.error_here(@lx, "eof-in-doctype")
+    lexer.emit_doctype(@lx, true)
+    lexer.emit_eof(@lx)
+
+# Ends the doctype at `>`, emitted with the force-quirks flag set where
+# `quirks`.
+function closed(@lx: lexer.Lexer, quirks: bool)
+    lx.at @ lx.at + 1
+    lx.state @ .data
+    lexer.emit_doctype(@lx, quirks)
+
+# 13.2.5.53 and 13.2.5.54: after `<!DOCTYPE`, and before the name.
+function before_name(@lx: lexer.Lexer)
+    if lx.state == .doctype
+        if lexer.at_end(lx)
+            lexer.new_doctype(@lx)
+            ended(@lx)
+            return
+        b = lexer.byte(lx)
+
+        if ascii.is_white(b)
+            lx.at @ lx.at + 1
+        else if b != '>'
+            lexer.error_here(@lx, "missing-whitespace-before-doctype-name")
+        lx.state @ .before_doctype_name
+        return
+    lexer.new_doctype(@lx)
+
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '>'
+        lexer.error_here(@lx, "missing-doctype-name")
+        closed(@lx, true)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.name @ [unicode.REPLACEMENT_CHARACTER]
+        lx.at @ lx.at + 1
+        lx.state @ .doctype_name
+    else
+        lx.name @ [ascii.to_lower(lexer.current(lx))]
+        lx.at @ lx.at + lexer.width(lx)
+        lx.state @ .doctype_name
+
+# 13.2.5.55, the doctype's name.
+function name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+        lx.state @ .after_doctype_name
+    else if b == '>'
+        closed(@lx, false)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.name @ lx.name.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && !ascii.is_white(lx.text[end]) && lx.text[end] != '>' && lx.text[end] != 0
+            end @ end + 1
+
+        lx.name @ lx.name.push(lexer.take(@lx, end: end, lower: true))
+
+# 13.2.5.56, after the name: `PUBLIC`, `SYSTEM`, or nothing that fits.
+function after_name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '>'
+        closed(@lx, false)
+    else if ascii.has_word_at(s: lx.text, at: lx.at, word: "public")
+        lx.at @ lx.at + 6
+        lx.state @ .after_doctype_public_keyword
+    else if ascii.has_word_at(s: lx.text, at: lx.at, word: "system")
+        lx.at @ lx.at + 6
+        lx.state @ .after_doctype_system_keyword
+    else
+        lexer.error_here(@lx, "invalid-character-sequence-after-doctype-name")
+        lx.force_quirks @ true
+        lx.state @ .bogus_doctype
+
+# 13.2.5.57, 13.2.5.58, 13.2.5.63 and 13.2.5.64: after a keyword, and before
+# its identifier, where a quote opens the identifier.
+function before_id(@lx: lexer.Lexer)
+    system = lx.state == .after_doctype_system_keyword || lx.state == .before_doctype_system_id
+    keyword = lx.state == .after_doctype_public_keyword || lx.state == .after_doctype_system_keyword
+
+    which = if system
+        "system"
+    else
+        "public"
+
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+
+        if keyword
+            lx.state @ if system
+                .before_doctype_system_id
+            else
+                .before_doctype_public_id
+    else if b == '"' || b == '\''
+        if keyword
+            lexer.error_here(@lx, f"missing-whitespace-after-doctype-{which}-keyword")
+        open_id(@lx, system: system, quote: b)
+    else if b == '>'
+        lexer.error_here(@lx, f"missing-doctype-{which}-identifier")
+        closed(@lx, true)
+    else
+        lexer.error_here(@lx, f"missing-quote-before-doctype-{which}-identifier")
+        lx.force_quirks @ true
+        lx.state @ .bogus_doctype
+
+# Opens an identifier, empty and no longer missing, between `quote`s.
+function open_id(@lx: lexer.Lexer, system: bool, quote: u8)
+    lx.at @ lx.at + 1
+
+    if system
+        lx.has_system @ true
+        lx.system @ []
+
+        lx.state @ if quote == '"'
+            .doctype_system_id_double
+        else
+            .doctype_system_id_single
+    else
+        lx.has_public @ true
+        lx.data @ []
+
+        lx.state @ if quote == '"'
+            .doctype_public_id_double
+        else
+            .doctype_public_id_single
+
+# 13.2.5.59, 13.2.5.60, 13.2.5.65 and 13.2.5.66: an identifier between
+# quotes.
+function id(@lx: lexer.Lexer)
+    system = lx.state == .doctype_system_id_double || lx.state == .doctype_system_id_single
+
+    quote: u8 = if lx.state == .doctype_public_id_double || lx.state == .doctype_system_id_double
+        '"'
+    else
+        '\''
+
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == quote
+        lx.at @ lx.at + 1
+
+        lx.state @ if system
+            .after_doctype_system_id
+        else
+            .after_doctype_public_id
+    else if b == '>'
+        if system
+            lexer.error_here(@lx, "abrupt-doctype-system-identifier")
+        else
+            lexer.error_here(@lx, "abrupt-doctype-public-identifier")
+        closed(@lx, true)
+    else
+        piece = if b == 0
+            lexer.error_here(@lx, "unexpected-null-character")
+            lx.at @ lx.at + 1
+            unicode.REPLACEMENT_CHARACTER
+        else
+            lexer.take(@lx, end: lexer.run_end(lx, stop_a: quote, stop_b: '>', stop_c: '>'), lower: false)
+
+        if system
+            lx.system @ lx.system.push(piece)
+        else
+            lx.data @ lx.data.push(piece)
+
+# 13.2.5.61 and 13.2.5.62: after the public identifier, where a system one
+# may follow.
+function after_public_id(@lx: lexer.Lexer)
+    between = lx.state == .between_doctype_ids
+
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+        lx.state @ .between_doctype_ids
+    else if b == '>'
+        closed(@lx, false)
+    else if b == '"' || b == '\''
+        if !between
+            lexer.error_here(@lx, "missing-whitespace-between-doctype-public-and-system-identifiers")
+        open_id(@lx, system: true, quote: b)
+    else
+        lexer.error_here(@lx, "missing-quote-before-doctype-system-identifier")
+        lx.force_quirks @ true
+        lx.state @ .bogus_doctype
+
+# 13.2.5.67, after the system identifier.
+function after_system_id(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        ended(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+    else if b == '>'
+        closed(@lx, false)
+    else
+        lexer.error_here(@lx, "unexpected-character-after-doctype-system-identifier")
+        lx.state @ .bogus_doctype
+
+# 13.2.5.68, the bogus doctype state: everything up to `>` is dropped.
+function bogus(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.emit_doctype(@lx, false)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '>'
+        closed(@lx, false)
+    else
+        if b == 0
+            lexer.error_here(@lx, "unexpected-null-character")
+        lx.at @ lexer.run_end(lx, stop_a: '>', stop_b: '>', stop_c: '>')
+
+        if lx.at < lx.text.len() && lx.text[lx.at] == 0
+            lx.at @ lx.at + 1
+
+## Tests
+
+test "before_name, name and after_name: a doctype lower-cased, and one with no name"
+    lx: lexer.Lexer @= lexer.start(" HTML>")
+    lx.state @ .doctype
+    before_name(@lx)
+    before_name(@lx)
+    name(@lx)
+    name(@lx)
+    assert lx.queue.len() == 1 && lx.queue[0].name == "html" && !lx.queue[0].force_quirks
+    none: lexer.Lexer @= lexer.start(">")
+    none.state @ .doctype
+    before_name(@none)
+    before_name(@none)
+    assert none.queue[0].force_quirks && none.codes == ["missing-doctype-name"]
+
+test "bogus: every byte up to `>` dropped, a zero byte among them, and the end"
+    lx: lexer.Lexer @= lexer.start("ab>")
+    lx.state @ .bogus_doctype
+    bogus(@lx)
+    bogus(@lx)
+    assert lx.queue.len() == 1 && lx.at == 3

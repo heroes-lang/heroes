@@ -1,0 +1,322 @@
+# A float written as text with a precision: a count of digits after the
+# point, in exponent form, to a count of significant digits, and as a
+# percentage; and the pieces every form of a float's text is laid out with.
+#
+# Every form here is made from the float's exact digits, rounded half to even
+# by `exact`, so no digit is the rounding of a rounding.
+
+use numbers/internal/exact
+use numbers/internal/near
+
+# Past this many places after the point, a float's exact digits are all
+# written already, and rounding there changes nothing.
+constant PLACES_MAX: i64
+    1100
+
+# What a float that is no finite number is written as, "nan", "inf" or
+# "-inf", and "" for a finite one.
+function named(x: f64) -> str
+    if x != x
+        return "nan"
+
+    if x == near.infinity()
+        return "inf"
+
+    if x == -near.infinity()
+        return "-inf"
+    return ""
+
+# Whether `x`, a number, carries a minus: below zero, or the zero written
+# "-0.0".
+function is_negative(x: f64) -> bool
+    return x < 0.0 || x == 0.0 && 1.0 / x < 0.0
+
+# `x` without its sign.
+function size_of(x: f64) -> f64
+    if is_negative(x)
+        return -x
+    return x
+
+# Appends the bytes of `s` to `out`.
+function push_text(@out: [u8], s: str)
+    at: i64 @= 0
+
+    while at < s.len()
+        out @ out.push(s[at])
+        at @ at + 1
+
+# The digit of `d` at `at`, counted from its first, and `0` past either end.
+function digit_at(d: exact.Digits, at: i64) -> u8
+    if at >= 0 && at < d.digits.len()
+        return d.digits[at]
+    return '0'
+
+# Appends `count` zeros to `out`.
+function push_zeros(@out: [u8], count: i64)
+    left: i64 @= count
+
+    while left > 0
+        out @ out.push('0')
+        left @ left - 1
+
+# Appends `e`, then the sign of `exponent` and at least two of its digits.
+function push_exponent(@out: [u8], exponent: i64)
+    out @ out.push('e')
+
+    if exponent < 0
+        out @ out.push('-')
+    else
+        out @ out.push('+')
+    size: i64 @= exponent
+
+    if exponent < 0
+        size @ 0 - exponent
+
+    if size < 10
+        out @ out.push('0')
+    push_text(@out, to_str(size))
+
+# Appends `d` with `places` digits after the point, zeros where `d` has none,
+# and no point where `places` is 0.
+function push_fixed(@out: [u8], d: exact.Digits, places: i64)
+    if d.point <= 0
+        out @ out.push('0')
+    at: i64 @= 0
+
+    while at < d.point
+        out @ out.push(digit_at(d: d, at: at))
+        at @ at + 1
+
+    if places > 0
+        out @ out.push('.')
+        place: i64 @= 0
+
+        while place < places
+            out @ out.push(digit_at(d: d, at: d.point + place))
+            place @ place + 1
+
+# Appends `d` with no exponent and no zero after its last digit, and `.0`
+# after a whole number where `whole_point` asks for it.
+function push_plain(@out: [u8], d: exact.Digits, whole_point: bool)
+    if d.point <= 0
+        push_text(@out, "0.")
+        push_zeros(@out, 0 - d.point)
+
+        for c in d.digits
+            out @ out.push(c)
+
+        if d.digits.len() == 0
+            out @ out.push('0')
+    else if d.point >= d.digits.len()
+        for c in d.digits
+            out @ out.push(c)
+
+        push_zeros(@out, d.point - d.digits.len())
+
+        if whole_point
+            push_text(@out, ".0")
+    else
+        at: i64 @= 0
+
+        while at < d.digits.len()
+            if at == d.point
+                out @ out.push('.')
+            out @ out.push(d.digits[at])
+            at @ at + 1
+
+# Appends `d` in exponent form with no zero after its last digit: its first
+# digit, a point and the rest where there is a rest, and its exponent.
+function push_exponent_form(@out: [u8], d: exact.Digits)
+    if d.digits.len() == 0
+        push_text(@out, "0e+00")
+        return
+    out @ out.push(d.digits[0])
+
+    if d.digits.len() > 1
+        out @ out.push('.')
+
+        at: i64 @= 1
+
+        while at < d.digits.len()
+            out @ out.push(d.digits[at])
+            at @ at + 1
+
+    push_exponent(@out, d.point - 1)
+
+# The text `out` holds, which is ASCII.
+function text_of(out: [u8]) -> str
+    return out.validated_bytes().must()
+
+# `x` with `precision` digits after the point.
+function fixed(x: f64, precision: i64) -> str
+    assert precision >= 0
+    name = named(x)
+
+    if name != ""
+        return name
+    out: [u8] @= []
+
+    if is_negative(x)
+        out @ out.push('-')
+    held = exact.of(size_of(x))
+
+    places = if precision > PLACES_MAX
+        PLACES_MAX
+    else
+        precision
+    push_fixed(@out, exact.rounded(d: held, keep: held.point + places), precision)
+    return text_of(out)
+
+# `x` as a percentage with `precision` digits after the point and a `%`.
+function percent(x: f64, precision: i64) -> str
+    assert precision >= 0
+    name = named(x)
+
+    if name != ""
+        return name + "%"
+    out: [u8] @= []
+
+    if is_negative(x)
+        out @ out.push('-')
+    held = exact.of(size_of(x))
+    hundred: exact.Digits @= held
+
+    if held.digits.len() > 0
+        hundred @ exact.Digits(digits: held.digits, point: held.point + 2)
+
+    places = if precision > PLACES_MAX
+        PLACES_MAX
+    else
+        precision
+    push_fixed(@out, exact.rounded(d: hundred, keep: hundred.point + places), precision)
+    out @ out.push('%')
+    return text_of(out)
+
+# `x` in exponent form with `precision` digits after the point.
+function scientific(x: f64, precision: i64) -> str
+    assert precision >= 0
+    name = named(x)
+
+    if name != ""
+        return name
+    out: [u8] @= []
+
+    if is_negative(x)
+        out @ out.push('-')
+    held = exact.of(size_of(x))
+
+    places = if precision > PLACES_MAX
+        PLACES_MAX
+    else
+        precision
+    d = exact.rounded(d: held, keep: places + 1)
+    out @ out.push(digit_at(d: d, at: 0))
+
+    if precision > 0
+        out @ out.push('.')
+        place: i64 @= 1
+
+        while place <= precision
+            out @ out.push(digit_at(d: d, at: place))
+            place @ place + 1
+
+    exponent: i64 @= 0
+
+    if d.digits.len() > 0
+        exponent @ d.point - 1
+    push_exponent(@out, exponent)
+    return text_of(out)
+
+# `x` to `digits` significant digits, with no exponent where its exponent is
+# -4 or more and under `digits`, in exponent form otherwise, and no zero
+# after its last digit.
+function general(x: f64, digits: i64) -> str
+    assert digits >= 1
+    name = named(x)
+
+    if name != ""
+        return name
+    out: [u8] @= []
+
+    if is_negative(x)
+        out @ out.push('-')
+    held = exact.of(size_of(x))
+
+    if held.digits.len() == 0
+        out @ out.push('0')
+        return text_of(out)
+
+    keep = if digits > PLACES_MAX
+        PLACES_MAX
+    else
+        digits
+    d = exact.rounded(d: held, keep: keep)
+    exponent = d.point - 1
+
+    if exponent >= -4 && exponent < digits
+        push_plain(@out, d, false)
+    else
+        push_exponent_form(@out, d)
+    return text_of(out)
+
+## Tests
+
+test "named and is_negative: the three names, a number, and both zeros"
+    zero: f64 = 0.0
+    assert named(zero / zero) == "nan"
+    assert named(near.infinity()) == "inf"
+    assert named(-near.infinity()) == "-inf"
+    assert named(1.5) == ""
+    assert !is_negative(zero)
+    assert is_negative(-zero)
+    assert is_negative(-1.5)
+    assert size_of(-2.5) == 2.5
+
+test "push_exponent: zero, one digit, two, three, and below zero"
+    for pair in [[0, 0], [5, 1], [-5, 2], [21, 3], [-324, 4], [308, 5]]
+        out: [u8] @= []
+        push_exponent(@out, pair[0])
+        expected = ["e+00", "e+05", "e-05", "e+21", "e-324", "e+308"]
+        assert text_of(out) == expected[pair[1]]
+
+test "fixed: precision 0, a tie to even, nines that carry, a value below the last place, and the names"
+    assert fixed(x: 2.5, precision: 0) == "2"
+    assert fixed(x: 3.5, precision: 0) == "4"
+    assert fixed(x: 0.125, precision: 2) == "0.12"
+    assert fixed(x: 0.375, precision: 2) == "0.38"
+    assert fixed(x: 9.999, precision: 2) == "10.00"
+    assert fixed(x: -0.0001, precision: 2) == "-0.00"
+    assert fixed(x: 0.1, precision: 20) == "0.10000000000000000555"
+    assert fixed(x: 1.0, precision: 3) == "1.000"
+    assert fixed(x: 123.456, precision: 1) == "123.5"
+    assert fixed(x: near.infinity(), precision: 2) == "inf"
+    zero: f64 = 0.0
+    assert fixed(x: -zero, precision: 1) == "-0.0"
+
+test "percent: a ratio, a tie, and the names"
+    assert percent(x: 0.125, precision: 1) == "12.5%"
+    assert percent(x: 0.5, precision: 0) == "50%"
+    assert percent(x: 0.00125, precision: 1) == "0.1%"
+    assert percent(x: -near.infinity(), precision: 1) == "-inf%"
+    assert percent(x: 0.0, precision: 2) == "0.00%"
+    assert percent(x: 1000000000000000000000.0, precision: 0) == "100000000000000000000000%"
+
+test "scientific: zero, precision 0, a carry into the exponent, and the smallest float"
+    assert scientific(x: 0.0, precision: 2) == "0.00e+00"
+    assert scientific(x: 1.5, precision: 0) == "2e+00"
+    assert scientific(x: 2.5, precision: 0) == "2e+00"
+    assert scientific(x: 9.96, precision: 1) == "1.0e+01"
+    assert scientific(x: 1234.5, precision: 3) == "1.234e+03"
+    assert scientific(x: -0.000123, precision: 2) == "-1.23e-04"
+    assert scientific(x: near.pow2(-1074), precision: 3) == "4.941e-324"
+
+test "general: either form, the edges of the plain one, zero, and many digits"
+    assert general(x: 1234.5, digits: 3) == "1.23e+03"
+    assert general(x: 1234.5, digits: 6) == "1234.5"
+    assert general(x: 0.0001, digits: 3) == "0.0001"
+    assert general(x: 0.00001, digits: 3) == "1e-05"
+    assert general(x: 100.0, digits: 3) == "100"
+    assert general(x: 1000.0, digits: 3) == "1e+03"
+    assert general(x: 0.0, digits: 3) == "0"
+    assert general(x: 0.1, digits: 17) == "0.10000000000000001"
+    assert general(x: 2.5, digits: 1) == "2"

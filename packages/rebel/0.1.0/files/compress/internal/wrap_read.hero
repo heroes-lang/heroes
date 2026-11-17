@@ -1,0 +1,326 @@
+# zlib's and gzip's headers read, and the numbers of their trailers: a byte
+# at a time from a cursor, a header either whole or not at all. Where the
+# input ends inside one, the cursor is put back and the answer says it is
+# not complete; a header that is not one fails `invalid` at its byte.
+
+use compress/internal/bitout
+use compress/internal/codes
+use compress/internal/cursor
+use compress/internal/latin
+use compress/internal/wrapping
+use hash
+
+# What reading a zlib header found.
+record ZlibHead
+    # Whether the whole header was there; the rest is meaningful only then.
+    complete: bool
+    # Whether the stream was made with a preset dictionary.
+    has_dictionary: bool
+    # That dictionary's Adler-32, 0 where there is none.
+    dictionary_id: i64
+
+# What reading a gzip header found.
+record GzipHead
+    # Whether the whole header was there; `header` is meaningful only then.
+    complete: bool
+    # The header.
+    header: wrapping.Gzip
+
+# The number of `width` bytes at `c`, the highest first where `big`, or -1
+# where the input ends first; the cursor then stands where the bytes ran out.
+function read_number(@c: cursor.Cursor, input: [u8] lent, width: i64, big: bool) -> i64
+    value: i64 @= 0
+
+    for i in range(from: 0, to: width)
+        byte = cursor.next_byte(@c, input)
+
+        if byte < 0
+            return -1
+
+        if big
+            value @ value << 8 | byte
+        else
+            value @ value | byte << 8 * i
+
+    return value
+
+# The zlib header at `c`, which stands on a byte; `base` is the index in the
+# whole input of `input`'s first byte, for messages. Where the input ends
+# inside the header, `c` is put back and the answer is not complete. Fails
+# `invalid` where the check bits do not hold, the method is not 8 or the
+# window passes 32,768 bytes.
+function read_zlib(@c: cursor.Cursor, input: [u8] lent, base: i64) -> ZlibHead?
+    saved = c
+    none = ZlibHead(complete: false, has_dictionary: false, dictionary_id: 0)
+    method = cursor.next_byte(@c, input)
+    flags = cursor.next_byte(@c, input)
+
+    if flags < 0
+        c @ saved
+        return ok(none)
+    at = base + cursor.used(saved)
+
+    if (method * 256 + flags) % 31 != 0
+        return codes.invalid_at(at: at + 1, why: "a zlib header whose check bits do not hold")
+
+    if method & 15 != 8
+        return codes.invalid_at(at: at, why: f"a zlib header of method {method & 15}, where DEFLATE is 8")
+
+    if method >> 4 > 7
+        return codes.invalid_at(
+            at: at,
+            why: f"a zlib window of 2^{(method >> 4) + 8} bytes, past the 32,768 DEFLATE allows"
+        )
+
+    if flags & 32 == 0
+        return ok(ZlibHead(complete: true, has_dictionary: false, dictionary_id: 0))
+    id = read_number(@c, input, width: 4, big: true)
+
+    if id < 0
+        c @ saved
+        return ok(none)
+    return ok(ZlibHead(complete: true, has_dictionary: true, dictionary_id: id))
+
+# The bytes up to the next 0 at `c`, the 0 read and left out, or `complete`
+# false where the input ends first. Fails `invalid` where they pass `most`
+# bytes.
+function read_field(@c: cursor.Cursor, input: [u8] lent, @seen: [u8], most: i64, at: i64) -> GzipField?
+    field: [u8] @= []
+
+    while true
+        byte = cursor.next_byte(@c, input)
+
+        if byte < 0
+            return ok(GzipField(complete: false, bytes: field))
+        seen @ seen.push(to_u8(byte).must())
+
+        if byte == 0
+            return ok(GzipField(complete: true, bytes: field))
+
+        if field.len() >= most
+            return codes.invalid_at(
+                at: at + seen.len() - 1,
+                why: f"a gzip name or comment longer than the {most} bytes this reader takes"
+            )
+        field @ field.push(to_u8(byte).must())
+
+# What `read_field` read: a name's or a comment's bytes.
+record GzipField
+    # Whether the 0 that ends it was there.
+    complete: bool
+    # Its bytes, the 0 left out.
+    bytes: [u8]
+
+# The gzip header at `c`, which stands on a byte; `base` is the index in the
+# whole input of `input`'s first byte, for messages. Where the input ends
+# inside the header, `c` is put back and the answer is not complete. A name
+# or a comment longer than `most` bytes fails `invalid`. Fails `invalid` where
+# the magic bytes are not 1f 8b, the method is not 8, a reserved flag is set,
+# or the header's own CRC does not match.
+function read_gzip(@c: cursor.Cursor, input: [u8] lent, base: i64, most: i64) -> GzipHead?
+    saved = c
+    none = GzipHead(complete: false, header: wrapping.empty_gzip())
+    at = base + cursor.used(saved)
+    seen: [u8] @= []
+
+    for _ in range(from: 0, to: 10)
+        byte = cursor.next_byte(@c, input)
+
+        if byte < 0
+            c @ saved
+            return ok(none)
+        seen @ seen.push(to_u8(byte).must())
+
+    if seen[0] != 0x1f || seen[1] != 0x8b
+        return codes.invalid_at(
+            at: at,
+            why: f"gzip begins with 1f 8b, and this begins with {hex(seen[0])} {hex(seen[1])}"
+        )
+
+    if seen[2] != 8
+        return codes.invalid_at(at: at + 2, why: f"a gzip member of method {seen[2]}, where DEFLATE is 8")
+    flags = to_i64(seen[3]).must()
+
+    if flags & 0xe0 != 0
+        return codes.invalid_at(
+            at: at + 3,
+            why: f"a gzip header with the reserved flags {hex(to_u8(flags & 0xe0).must())} set"
+        )
+    modified: i64 @= 0
+
+    for i in range(from: 0, to: 4)
+        modified @ modified | to_i64(seen[4 + i]).must() << 8 * i
+
+    extra: [u8] @= []
+
+    if flags & wrapping.FLAG_EXTRA != 0
+        size = read_number(@c, input, width: 2, big: false)
+
+        if size < 0
+            c @ saved
+            return ok(none)
+        bitout.put_little(@seen, value: size, width: 2)
+
+        for _ in range(from: 0, to: size)
+            byte = cursor.next_byte(@c, input)
+
+            if byte < 0
+                c @ saved
+                return ok(none)
+            extra @ extra.push(to_u8(byte).must())
+            seen @ seen.push(to_u8(byte).must())
+    name: [u8] @= []
+
+    if flags & wrapping.FLAG_NAME != 0
+        field = read_field(@c, input: input, seen: @seen, most: most, at: at)?
+
+        if !field.complete
+            c @ saved
+            return ok(none)
+        name @ field.bytes
+    comment: [u8] @= []
+
+    if flags & wrapping.FLAG_COMMENT != 0
+        field = read_field(@c, input: input, seen: @seen, most: most, at: at)?
+
+        if !field.complete
+            c @ saved
+            return ok(none)
+        comment @ field.bytes
+
+    if flags & wrapping.FLAG_HEADER_CRC != 0
+        check = read_number(@c, input, width: 2, big: false)
+
+        if check < 0
+            c @ saved
+            return ok(none)
+        expected = to_i64(hash.crc32(seen)).must() & 0xffff
+
+        if check != expected
+            return codes.invalid_at(
+                at: at + seen.len(),
+                why: f"a gzip header whose CRC is {check} where its bytes give {expected}"
+            )
+    header = wrapping.Gzip(
+        name: latin.from_latin(name),
+        comment: latin.from_latin(comment),
+        modified: to_u32(modified).must(),
+        extra: extra,
+        os: seen[9],
+        is_text: flags & wrapping.FLAG_TEXT != 0
+    )
+    return ok(GzipHead(complete: true, header: header))
+
+# `b` as two hexadecimal digits, for a message.
+function hex(b: u8) -> str
+    digits = "0123456789abcdef"
+    value = to_i64(b).must()
+    high = value >> 4
+    low = value & 15
+    return digits.slice(from: high, to: high + 1) + digits.slice(from: low, to: low + 1)
+
+test "read_zlib: a header that zlib_header wrote, a dictionary's id written and read back"
+    head = wrapping.zlib_header(level: 6, window_bits: 15, dictionary: [0x61, 0x62, 0x63])
+    assert head.len() == 6
+    c @= cursor.start()
+    found = read_zlib(@c, head, base: 0).must()
+    assert found.complete && found.has_dictionary
+    assert found.dictionary_id == to_i64(hash.adler32([0x61, 0x62, 0x63])).must()
+
+test "read_zlib: cut short, a bad check, another method, too wide a window"
+    c @= cursor.start()
+    short: [u8] = [0x78]
+    assert !read_zlib(@c, short, base: 0).must().complete
+    assert c.pos == 0
+    bad: [u8] = [0x78, 0x9d]
+
+    match read_zlib(@c, bad, base: 5)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 6: a zlib header whose check bits do not hold"
+
+    c @ cursor.start()
+    method: [u8] = [0x79, 0x18]
+
+    match read_zlib(@c, method, base: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 0: a zlib header of method 9, where DEFLATE is 8"
+
+    c @ cursor.start()
+    wide: [u8] = [0x88, 0x98]
+
+    match read_zlib(@c, wide, base: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 0: a zlib window of 2^16 bytes, past the 32,768 DEFLATE allows"
+
+test "read_gzip: a header that gzip_header wrote, every field written and read back, byte by byte"
+    g = wrapping.Gzip(
+        name: "héros.txt",
+        comment: "a note",
+        modified: 1700000000,
+        extra: [0x41, 0x42, 2, 0, 7, 8],
+        os: 3,
+        is_text: true
+    )
+    head = wrapping.gzip_header(g, level: 6).must()
+    c @= cursor.start()
+    found = read_gzip(@c, head, base: 0, most: 100).must()
+    assert found.complete
+    assert found.header == g
+    assert cursor.used(c) == head.len()
+
+    for cut in range(from: 0, to: head.len())
+        part = head.slice(from: 0, to: cut)
+        c @ cursor.start()
+        assert !read_gzip(@c, part, base: 0, most: 100).must().complete
+        assert c.pos == 0
+
+test "read_gzip: wrong magic, method, reserved flags, a header CRC, a name past the bound"
+    c @= cursor.start()
+    magic: [u8] = [0x1f, 0x8c, 8, 0, 0, 0, 0, 0, 0, 0xff]
+
+    match read_gzip(@c, magic, base: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 0: gzip begins with 1f 8b, and this begins with 1f 8c"
+
+    c @ cursor.start()
+    method: [u8] = [0x1f, 0x8b, 7, 0, 0, 0, 0, 0, 0, 0xff]
+
+    match read_gzip(@c, method, base: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 2: a gzip member of method 7, where DEFLATE is 8"
+
+    c @ cursor.start()
+    reserved: [u8] = [0x1f, 0x8b, 8, 0x20, 0, 0, 0, 0, 0, 0xff]
+
+    match read_gzip(@c, reserved, base: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 3: a gzip header with the reserved flags 20 set"
+
+    plain: [u8] = [0x1f, 0x8b, 8, 2, 0, 0, 0, 0, 0, 0xff]
+    good = to_i64(hash.crc32(plain)).must() & 0xffff
+    checked: [u8] @= plain
+    bitout.put_little(@checked, value: good, width: 2)
+    c @ cursor.start()
+    assert read_gzip(@c, checked, base: 0, most: 10).must().complete
+    wrong: [u8] @= plain
+    bitout.put_little(@wrong, value: good ^ 1, width: 2)
+    c @ cursor.start()
+
+    match read_gzip(@c, wrong, base: 0, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    named: [u8] = [0x1f, 0x8b, 8, 8, 0, 0, 0, 0, 0, 0xff, 0x61, 0x62, 0x63, 0]
+    c @ cursor.start()
+
+    match read_gzip(@c, named, base: 0, most: 2)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid compressed stream at byte 12: a gzip name or comment longer than the 2 bytes this reader takes"
+
+test "read_number: both orders, and an input that ends"
+    input: [u8] = [1, 2, 3]
+    c @= cursor.start()
+    assert read_number(@c, input, width: 2, big: true) == 0x0102
+    c @ cursor.start()
+    assert read_number(@c, input, width: 2, big: false) == 0x0201
+    assert read_number(@c, input, width: 2, big: false) == -1

@@ -1,0 +1,721 @@
+# Cryptographic digests, the HMAC over each, keys derived from a secret, and
+# the comparison of two byte lists in constant time: MD5, SHA-1, SHA-224,
+# SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4 and RFC
+# 1321), all at once or in steps; HMAC (RFC 2104); HKDF (RFC 5869); and
+# PBKDF2 (RFC 8018). A text is digested as its UTF-8 bytes, and a digest is
+# its bytes: `bytes.format_hex` writes them as hexadecimal.
+#
+# There is no encryption here, no cipher and no signature: a cipher must
+# compute in a time that its key and its text do not decide, and nothing in
+# this wave proves that of the C the compiler makes. A digest needs no such
+# proof; the comparison `equals_constant_time` is written with no branch on
+# the bytes, and says how far that goes. Checksums that are not cryptographic
+# are the package `hash`'s, and random bytes, a key's or a salt's, are the
+# package `random`'s.
+#
+# MD5 and SHA-1 are broken for security: two inputs that answer alike can be
+# made. They are kept for the formats and protocols that name them, never to
+# stand for an input against someone who chooses it.
+#
+# It fails with `invalid` alone, where a length or a count is outside what a
+# derivation can make, or a name names no algorithm.
+
+use bytes
+use crypto/internal/compare
+use crypto/internal/derive
+use crypto/internal/engine
+use crypto/internal/vectors
+
+## Codes
+
+# The code a function fails with where its input is not what it reads: a
+# length or a count `hkdf_expand`, `hkdf` or `pbkdf2` cannot make, or a name
+# `parse_algorithm` does not know.
+constant INVALID: str
+    "invalid"
+
+## Algorithms
+
+# Which digest a function computes.
+variant Algorithm
+    # MD5 (RFC 1321), 16 bytes; broken for security, kept for compatibility.
+    md5
+    # SHA-1, 20 bytes; broken for security, kept for compatibility.
+    sha1
+    # SHA-224, 28 bytes: SHA-256 from other starting words, cut short.
+    sha224
+    # SHA-256, 32 bytes.
+    sha256
+    # SHA-384, 48 bytes: SHA-512 from other starting words, cut short.
+    sha384
+    # SHA-512, 64 bytes.
+    sha512
+    # SHA-512/224, 28 bytes: SHA-512 from its own starting words, cut short.
+    sha512_224
+    # SHA-512/256, 32 bytes: SHA-512 from its own starting words, cut short.
+    sha512_256
+
+# The length of a digest by `algorithm`, in bytes: Python's `digest_size`.
+#
+# - `algorithm`: the digest asked about.
+#
+# See also `block_size`.
+function digest_size(algorithm: Algorithm) -> i64
+    return match algorithm
+        .md5                  => 16
+        .sha1                 => 20
+        .sha224 | .sha512_224 => 28
+        .sha256 | .sha512_256 => 32
+        .sha384               => 48
+        .sha512               => 64
+
+# The length of the blocks `algorithm` digests, in bytes: 64 for MD5, SHA-1,
+# SHA-224 and SHA-256, 128 for the others. An HMAC pads its key to it.
+#
+# - `algorithm`: the digest asked about.
+#
+# See also `digest_size`.
+function block_size(algorithm: Algorithm) -> i64
+    return match algorithm
+        .md5 | .sha1 | .sha224 | .sha256              => 64
+        .sha384 | .sha512 | .sha512_224 | .sha512_256 => 128
+
+# The name of `algorithm` as Python's `hashlib` writes it: `md5`, `sha1`,
+# `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224` or `sha512_256`.
+#
+# - `algorithm`: the digest to name.
+#
+# See also `parse_algorithm`, which reads the name back.
+function format_algorithm(algorithm: Algorithm) -> str
+    return match algorithm
+        .md5        => "md5"
+        .sha1       => "sha1"
+        .sha224     => "sha224"
+        .sha256     => "sha256"
+        .sha384     => "sha384"
+        .sha512     => "sha512"
+        .sha512_224 => "sha512_224"
+        .sha512_256 => "sha512_256"
+
+# The algorithm `s` names, as `format_algorithm` writes it.
+#
+# - `s`: the name, in lower case and exactly as written there; `SHA-256` and
+#   `SHA256` name nothing.
+#
+# Fails `invalid` where `s` names no algorithm; the message lists the names.
+# See also `format_algorithm`.
+function parse_algorithm(s: str) -> Algorithm?
+    return match s
+        "md5"        => ok(.md5)
+        "sha1"       => ok(.sha1)
+        "sha224"     => ok(.sha224)
+        "sha256"     => ok(.sha256)
+        "sha384"     => ok(.sha384)
+        "sha512"     => ok(.sha512)
+        "sha512_224" => ok(.sha512_224)
+        "sha512_256" => ok(.sha512_256)
+        _ => fail(
+            code: INVALID,
+            msg: f"no algorithm named \"{s}\": the names are md5, sha1, sha224, sha256, sha384, sha512, sha512_224 and sha512_256"
+        )
+
+## Digests
+
+# The MD5 digest of `data`, 16 bytes. MD5 is broken for security: two inputs
+# that answer alike are made in seconds, so it is for the formats that name
+# it, never to stand for an input someone chooses.
+#
+# - `data`: the bytes to digest; no bytes have a digest too.
+#
+# See also `md5_text` and `sha256`.
+function md5(data: [u8]) -> [u8]
+    state @= start(.md5)
+    update(@state, data)
+    return digest(state)
+
+# The MD5 digest of the bytes of `s`, what `md5` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `md5`.
+function md5_text(s: str) -> [u8]
+    state @= start(.md5)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-1 digest of `data`, 20 bytes. SHA-1 is broken for security: two
+# inputs that answer alike have been made since 2017, so it is for the
+# formats that name it, Git's among them, never to stand for an input someone
+# chooses.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha1_text` and `sha256`.
+function sha1(data: [u8]) -> [u8]
+    state @= start(.sha1)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-1 digest of the bytes of `s`, what `sha1` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha1`.
+function sha1_text(s: str) -> [u8]
+    state @= start(.sha1)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-224 digest of `data`, 28 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha224_text`.
+function sha224(data: [u8]) -> [u8]
+    state @= start(.sha224)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-224 digest of the bytes of `s`, what `sha224` answers for its
+# UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha224`.
+function sha224_text(s: str) -> [u8]
+    state @= start(.sha224)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-256 digest of `data`, 32 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha256_text`, `hmac` and `start`.
+function sha256(data: [u8]) -> [u8]
+    state @= start(.sha256)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-256 digest of the bytes of `s`, what `sha256` answers for its
+# UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha256`.
+function sha256_text(s: str) -> [u8]
+    state @= start(.sha256)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-384 digest of `data`, 48 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha384_text`.
+function sha384(data: [u8]) -> [u8]
+    state @= start(.sha384)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-384 digest of the bytes of `s`, what `sha384` answers for its
+# UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha384`.
+function sha384_text(s: str) -> [u8]
+    state @= start(.sha384)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-512 digest of `data`, 64 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha512_text`.
+function sha512(data: [u8]) -> [u8]
+    state @= start(.sha512)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-512 digest of the bytes of `s`, what `sha512` answers for its
+# UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha512`.
+function sha512_text(s: str) -> [u8]
+    state @= start(.sha512)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-512/224 digest of `data`, 28 bytes: SHA-512's work from its own
+# starting words, so not SHA-512's digest cut short.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha512_224_text`.
+function sha512_224(data: [u8]) -> [u8]
+    state @= start(.sha512_224)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-512/224 digest of the bytes of `s`, what `sha512_224` answers for
+# its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha512_224`.
+function sha512_224_text(s: str) -> [u8]
+    state @= start(.sha512_224)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA-512/256 digest of `data`, 32 bytes: SHA-512's work from its own
+# starting words, so not SHA-512's digest cut short.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha512_256_text`.
+function sha512_256(data: [u8]) -> [u8]
+    state @= start(.sha512_256)
+    update(@state, data)
+    return digest(state)
+
+# The SHA-512/256 digest of the bytes of `s`, what `sha512_256` answers for
+# its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha512_256`.
+function sha512_256_text(s: str) -> [u8]
+    state @= start(.sha512_256)
+    update_text(@state, s)
+    return digest(state)
+
+## Steps
+
+# A digest or an HMAC computed in steps: the caller holds it, feeds it piece
+# by piece with `update` and `update_text`, and reads `digest` whenever it
+# wants, which answers what feeding all the pieces at once would. It is made
+# by `start` or `start_hmac` and copied with `=` like any value, so two
+# digests can go on from one beginning.
+record State
+    # Which digest it computes, alone or under an HMAC.
+    algorithm: Algorithm
+    # The work so far: the chaining words, the bytes of an unfinished block,
+    # the length, and for an HMAC the words its outer digest starts from.
+    # Only this package reads it.
+    run: engine.Run
+
+# A state of `algorithm` that has been fed nothing.
+#
+# - `algorithm`: the digest it computes.
+#
+# See also `update`, `digest` and `start_hmac`.
+function start(algorithm: Algorithm) -> State
+    kind: engine.Kind = match algorithm
+        .md5        => .md5
+        .sha1       => .sha1
+        .sha224     => .sha224
+        .sha256     => .sha256
+        .sha384     => .sha384
+        .sha512     => .sha512
+        .sha512_224 => .sha512_224
+        .sha512_256 => .sha512_256
+
+    return State(algorithm: algorithm, run: engine.begin(kind))
+
+# A state of the HMAC of `algorithm` under `key` that has been fed nothing
+# of the message: `digest` answers the tag.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `key`: the secret key, of any length; one longer than `block_size` is
+#   replaced by its digest first, as RFC 2104 says, and the empty key is a
+#   key.
+#
+# See also `hmac`.
+function start_hmac(algorithm: Algorithm, key: [u8]) -> State
+    plain = start(algorithm)
+    return State(algorithm: algorithm, run: engine.begin_keyed(plain.run.kind, key))
+
+# Feeds `data` to `state`, whose digest then covers what it was fed before
+# and then `data`.
+#
+# - `state`: the state fed, which the caller holds.
+# - `data`: the bytes fed; no bytes change nothing.
+#
+# It copies at most a block of `data`; whole blocks are digested where they
+# stand. See also `update_text` and `digest`.
+function update(@state: State, data: [u8])
+    engine.absorb(@state.run, data)
+
+# Feeds the bytes of `s` to `state`, as `update` feeds its UTF-8.
+#
+# - `state`: the state fed, which the caller holds.
+# - `s`: the text fed, copied 4096 bytes at a time; the empty text changes
+#   nothing.
+#
+# See also `update`.
+function update_text(@state: State, s: str)
+    engine.absorb_text(@state.run, s)
+
+# The digest of every byte `state` was fed, or for an HMAC its tag:
+# `digest_size` bytes. `state` is a copy, so the caller's state can be fed
+# further and read again.
+#
+# - `state`: the state read.
+#
+# See also `update`.
+function digest(state: State) -> [u8]
+    return engine.finish(state.run)
+
+## HMAC
+
+# The HMAC of `data` under `key` by `algorithm` (RFC 2104): a tag of
+# `digest_size` bytes that only a holder of the key can make. Compare a tag
+# received with `equals_constant_time`, never with `==`.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `key`: the secret key, of any length; the empty key is a key.
+# - `data`: the message.
+#
+# See also `hmac_text` and `start_hmac`.
+function hmac(algorithm: Algorithm, key: [u8], data: [u8]) -> [u8]
+    state @= start_hmac(algorithm: algorithm, key: key)
+    update(@state, data)
+    return digest(state)
+
+# The HMAC of the bytes of `s` under `key` by `algorithm`, what `hmac`
+# answers for its UTF-8.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `key`: the secret key, of any length.
+# - `s`: the message, read where it stands.
+#
+# See also `hmac`.
+function hmac_text(algorithm: Algorithm, key: [u8], s: str) -> [u8]
+    state @= start_hmac(algorithm: algorithm, key: key)
+    update_text(@state, s)
+    return digest(state)
+
+# Whether `a` and `b` are the same bytes, in a time their contents do not
+# decide: every byte pair is visited and no branch of the code depends on a
+# byte's value. Lists of different lengths answer false at once, so the time
+# tells the lengths, as Go's `subtle.ConstantTimeCompare` and Python's
+# `hmac.compare_digest` do. It is for a tag or a secret received; what the C
+# compiler makes of the loop is not proven here.
+#
+# - `a`: one list, a tag received for instance.
+# - `b`: the other, the tag computed.
+#
+# See also `hmac`.
+function equals_constant_time(a: [u8], b: [u8]) -> bool
+    return compare.equals(a: a, b: b)
+
+## Keys from secrets
+
+# HKDF's extraction (RFC 5869 2.2): a pseudorandom key of `digest_size`
+# bytes made from `secret`, which may be unevenly random, the HMAC of
+# `secret` under `salt`.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `secret`: the input keying material.
+# - `salt`: a value that need not be secret; the empty salt stands for
+#   `digest_size` zero bytes, as the RFC says.
+#
+# See also `hkdf_expand` and `hkdf`.
+function hkdf_extract(algorithm: Algorithm, secret: [u8], salt: [u8]) -> [u8]
+    return hmac(algorithm: algorithm, key: salt, data: secret)
+
+# HKDF's expansion (RFC 5869 2.3): `length` bytes of keying material made
+# from `key`, bound to `info`.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `key`: a pseudorandom key, as `hkdf_extract` makes it.
+# - `info`: what the material is for, which tells two uses apart; it may be
+#   empty.
+# - `length`: how many bytes to make, from 0 to 255 times `digest_size`; 0
+#   makes none.
+#
+# Fails `invalid` where `length` is below 0 or above 255 times
+# `digest_size`. See also `hkdf`.
+function hkdf_expand(algorithm: Algorithm, key: [u8], info: [u8], length: i64) -> [u8]?
+    most = 255 * digest_size(algorithm)
+
+    if length < 0 || length > most
+        return fail(
+            code: INVALID,
+            msg: f"a length of {length} bytes, where HKDF by {format_algorithm(algorithm)} makes 0 to {most}"
+        )
+    keyed = start_hmac(algorithm: algorithm, key: key)
+    return ok(derive.expand(keyed: keyed.run, info: info, length: length))
+
+# HKDF whole (RFC 5869): `length` bytes of keying material made from
+# `secret`, extracted with `salt` and expanded with `info`.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `secret`: the input keying material.
+# - `salt`: a value that need not be secret; it may be empty.
+# - `info`: what the material is for; it may be empty.
+# - `length`: how many bytes to make, from 0 to 255 times `digest_size`.
+#
+# Fails `invalid` where `length` is below 0 or above 255 times
+# `digest_size`. See also `hkdf_extract` and `hkdf_expand`.
+function hkdf(algorithm: Algorithm, secret: [u8], salt: [u8], info: [u8], length: i64) -> [u8]?
+    key = hkdf_extract(algorithm: algorithm, secret: secret, salt: salt)
+    return hkdf_expand(algorithm: algorithm, key: key, info: info, length: length)
+
+# PBKDF2 (RFC 8018 5.2) with the HMAC of `algorithm`: `length` bytes of key
+# made from a password, slowed by `iterations` so that each guess of it costs
+# as much.
+#
+# - `algorithm`: the digest the HMAC is made of.
+# - `password`: the password, its UTF-8 for a text (`bytes.from_text`).
+# - `salt`: a value of the caller's, unique to the password it goes with.
+# - `iterations`: how many HMACs each block of the key costs, 1 or more.
+# - `length`: how many bytes to make, 1 or more.
+#
+# Fails `invalid` where `iterations` or `length` is below 1, or `length` is
+# above `digest_size` times 2^32 - 1. Go's answers a key for no iterations
+# and Python refuses it; it is refused here, the RFC asking a positive count.
+# It costs `iterations` times two compressions for each `digest_size` bytes
+# of key. See also `hkdf`.
+function pbkdf2(algorithm: Algorithm, password: [u8], salt: [u8], iterations: i64, length: i64) -> [u8]?
+    if iterations < 1
+        return fail(code: INVALID, msg: f"an iteration count of {iterations}, where PBKDF2 takes 1 or more")
+    most = 4294967295 * digest_size(algorithm)
+
+    if length < 1 || length > most
+        return fail(
+            code: INVALID,
+            msg: f"a length of {length} bytes, where PBKDF2 by {format_algorithm(algorithm)} makes 1 to {most}"
+        )
+    keyed = start_hmac(algorithm: algorithm, key: password)
+    return ok(derive.pbkdf2(keyed: keyed.run, salt: salt, iterations: iterations, length: length))
+
+## Tests
+
+test "the code is the vocabulary's word"
+    assert INVALID == "invalid"
+
+# The published vectors of FIPS 180-4, RFC 1321, RFC 2202 and RFC 4231 are
+# run by `crypto/internal/vectors` against the work these functions do.
+test "the vectors' digest is the one-shot function's"
+    assert vectors.hex_digest(.sha256, []) == bytes.format_hex(sha256([]))
+
+test "parse_algorithm and format_algorithm: every name both ways, and names that are not one"
+    every: [Algorithm] = [.md5, .sha1, .sha224, .sha256, .sha384, .sha512, .sha512_224, .sha512_256]
+
+    for a in every
+        assert parse_algorithm(format_algorithm(a)).must() == a
+        assert digest(start(a)).len() == digest_size(a)
+
+    match parse_algorithm("SHA-256")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg.len() > 0
+
+    assert parse_algorithm("").is_err()
+    assert parse_algorithm("sha256 ").is_err()
+
+test "a state: copied, both copies fed apart, and read twice"
+    first @= start(.sha256)
+    update_text(@first, "ab")
+    second @= first
+    update_text(@first, "c")
+    update_text(@second, "d")
+    assert first.run != second.run
+    assert digest(first) == sha256_text("abc")
+    assert digest(second) == sha256_text("abd")
+    assert digest(first) == digest(first)
+
+test "an HMAC state fed by text and by bytes alike, and the empty key"
+    by_text @= start_hmac(algorithm: .sha512, key: [])
+    update_text(@by_text, "héros ☃")
+    assert digest(by_text) == hmac(algorithm: .sha512, key: [], data: bytes.from_text("héros ☃"))
+    assert hmac_text(algorithm: .md5, key: [], s: "") == bytes.parse_hex("74e6f7298a9c2d168935f58c001bad88").must()
+
+# Go's `crypto/hkdf` answered the lengths: 0 and 8160 made, 8161 refused.
+test "hkdf_expand and hkdf: the edges of the length, below 0, 0, the most and one more"
+    key = bytes.repeated([0x01], 32)
+    assert hkdf_expand(algorithm: .sha256, key: key, info: [], length: 0).must().len() == 0
+    assert hkdf_expand(algorithm: .sha256, key: key, info: [], length: 8160).must().len() == 8160
+
+    match hkdf_expand(algorithm: .sha256, key: key, info: [], length: 8161)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a length of 8161 bytes, where HKDF by sha256 makes 0 to 8160"
+
+    assert hkdf_expand(algorithm: .md5, key: key, info: [], length: -1).is_err()
+    assert hkdf(algorithm: .sha1, secret: [], salt: [], info: [], length: 5101).is_err()
+
+# Python refused both with ValueError on 2026-11-16.
+test "pbkdf2: no iterations, a length of 0, and a negative count"
+    match pbkdf2(algorithm: .sha256, password: [0x70], salt: [0x73], iterations: 0, length: 10)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "an iteration count of 0, where PBKDF2 takes 1 or more"
+
+    assert pbkdf2(algorithm: .sha256, password: [0x70], salt: [0x73], iterations: 1, length: 0).is_err()
+    assert pbkdf2(algorithm: .sha256, password: [0x70], salt: [0x73], iterations: -1, length: 10).is_err()
+
+## Examples
+
+# The MD5 digest of three bytes, RFC 1321's own example.
+test "md5: the digest of abc"
+    assert bytes.format_hex(md5(bytes.from_text("abc"))) == "900150983cd24fb0d6963f7d28e17f72"
+
+# The MD5 digest of the empty text.
+test "md5_text: the empty text"
+    assert bytes.format_hex(md5_text("")) == "d41d8cd98f00b204e9800998ecf8427e"
+
+# The SHA-1 digest of three bytes, FIPS 180-4's example.
+test "sha1: the digest of abc"
+    assert bytes.format_hex(sha1(bytes.from_text("abc"))) == "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+# The SHA-1 digest of the empty text.
+test "sha1_text: the empty text"
+    assert bytes.format_hex(sha1_text("")) == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+
+# The SHA-224 digest of three bytes.
+test "sha224: the digest of abc"
+    assert bytes.format_hex(sha224(bytes.from_text("abc"))) == "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"
+
+# The SHA-224 digest of a text of several bytes per character.
+test "sha224_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha224_text("héros ☃")) == "0394a398fb99bd702366de8f822315cc7c4259e72e5c392d97f4e97c"
+
+# The SHA-256 digest of no bytes.
+test "sha256: the digest of no bytes"
+    assert bytes.format_hex(sha256([])) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+# The SHA-256 digest of a text, as `sha256sum` writes it.
+test "sha256_text: the digest of abc"
+    assert bytes.format_hex(sha256_text("abc")) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+# The SHA-384 digest of three bytes.
+test "sha384: the digest of abc"
+    assert bytes.format_hex(sha384(bytes.from_text("abc"))) == "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"
+
+# The SHA-384 digest of a text of several bytes per character.
+test "sha384_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha384_text("héros ☃")) == "cc507f2c75e176cc6d85782ef1ca4c1ab80d646edb2a69fb5d78d7597f3729a0469477863288c92f1bc5666a570a20c0"
+
+# The SHA-512 digest of no bytes.
+test "sha512: the digest of no bytes"
+    assert bytes.format_hex(sha512([])) == "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
+
+# The SHA-512 digest of a text.
+test "sha512_text: the digest of abc"
+    assert bytes.format_hex(sha512_text("abc")) == "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+
+# The SHA-512/224 digest of three bytes.
+test "sha512_224: the digest of abc"
+    assert bytes.format_hex(sha512_224(bytes.from_text("abc"))) == "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa"
+
+# The SHA-512/224 digest of a text of several bytes per character.
+test "sha512_224_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha512_224_text("héros ☃")) == "8762c9f3f4c4aec358e8c750614e1195fefd8f75c037197d5cf8a972"
+
+# The SHA-512/256 digest of three bytes.
+test "sha512_256: the digest of abc"
+    assert bytes.format_hex(sha512_256(bytes.from_text("abc"))) == "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23"
+
+# The SHA-512/256 digest of a text of several bytes per character.
+test "sha512_256_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha512_256_text("héros ☃")) == "a256fafd283abbc19860e567a0e9c672713d9cc0e6554cd4378c6067d39ec94f"
+
+# How long a SHA-256 digest is.
+test "digest_size: SHA-256's"
+    assert digest_size(.sha256) == 32
+
+# How long SHA-512's blocks are.
+test "block_size: SHA-512's"
+    assert block_size(.sha512) == 128
+
+# The name of an algorithm, to write in a file or a log.
+test "format_algorithm: SHA-512/256's name"
+    assert format_algorithm(.sha512_256) == "sha512_256"
+
+# An algorithm named in a file, read back.
+test "parse_algorithm: a name read from a file"
+    assert parse_algorithm("sha256").must() == .sha256
+
+# A digest begun, fed in two pieces, and read.
+test "start: a SHA-256 fed in two pieces"
+    state @= start(.sha256)
+    update_text(@state, "a")
+    update_text(@state, "bc")
+    assert digest(state) == sha256_text("abc")
+
+# An HMAC fed piece by piece, RFC 4231's second case.
+test "start_hmac: an HMAC-SHA-256 fed in steps"
+    state @= start_hmac(algorithm: .sha256, key: bytes.from_text("Jefe"))
+    update_text(@state, "what do ya want ")
+    update_text(@state, "for nothing?")
+    assert bytes.format_hex(digest(state)) == "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+
+# A file's bytes fed as they arrive.
+test "update: a SHA-1 fed bytes in two pieces"
+    state @= start(.sha1)
+    update(@state, [0x61, 0x62])
+    update(@state, [0x63])
+    assert bytes.format_hex(digest(state)) == "a9993e364706816aba3e25717850c26c9cd0d89d"
+
+# Lines fed one by one.
+test "update_text: an MD5 fed line by line"
+    state @= start(.md5)
+    update_text(@state, "message ")
+    update_text(@state, "digest")
+    assert bytes.format_hex(digest(state)) == "f96b697d7cb7938d525a2f31aaf161d0"
+
+# A digest read, and the same state fed further and read again.
+test "digest: read, fed further, and read again"
+    state @= start(.sha256)
+    assert digest(state) == sha256([])
+    update_text(@state, "abc")
+    assert digest(state) == sha256_text("abc")
+
+# RFC 4231's second case: the HMAC-SHA-256 of a question under the key Jefe.
+test "hmac: RFC 4231's second case"
+    tag = hmac(algorithm: .sha256, key: bytes.from_text("Jefe"), data: bytes.from_text("what do ya want for nothing?"))
+    assert bytes.format_hex(tag) == "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+
+# RFC 2202's second case: the HMAC-SHA-1 of a text.
+test "hmac_text: RFC 2202's second case"
+    tag = hmac_text(algorithm: .sha1, key: bytes.from_text("Jefe"), s: "what do ya want for nothing?")
+    assert bytes.format_hex(tag) == "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
+
+# A tag received checked against the tag computed.
+test "equals_constant_time: a tag received and the tag computed"
+    computed = hmac_text(algorithm: .sha256, key: bytes.from_text("key"), s: "message")
+    assert equals_constant_time(a: computed, b: computed)
+    assert !equals_constant_time(a: computed, b: computed.slice(from: 0, to: 31))
+
+# RFC 5869's first case: the pseudorandom key.
+test "hkdf_extract: RFC 5869's first case"
+    salt: [u8] = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c]
+    key = hkdf_extract(algorithm: .sha256, secret: bytes.repeated([0x0b], 22), salt: salt)
+    assert bytes.format_hex(key) == "077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5"
+
+# RFC 5869's first case: 42 bytes from the pseudorandom key.
+test "hkdf_expand: RFC 5869's first case"
+    key = bytes.parse_hex("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5").must()
+    info: [u8] = [0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9]
+    out = hkdf_expand(algorithm: .sha256, key: key, info: info, length: 42).must()
+    assert bytes.format_hex(out) == "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+
+# RFC 5869's third case: no salt and no info.
+test "hkdf: RFC 5869's third case, with no salt and no info"
+    out = hkdf(algorithm: .sha256, secret: bytes.repeated([0x0b], 22), salt: [], info: [], length: 42).must()
+    assert bytes.format_hex(out) == "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
+
+# RFC 6070's second case: a key from a password, slowed by two iterations.
+test "pbkdf2: RFC 6070's second case"
+    key = pbkdf2(
+        algorithm: .sha1,
+        password: bytes.from_text("password"),
+        salt: bytes.from_text("salt"),
+        iterations: 2,
+        length: 20
+    ).must()
+    assert bytes.format_hex(key) == "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957"

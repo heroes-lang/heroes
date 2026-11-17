@@ -1,0 +1,60 @@
+# The text form of a line: the time, the level, the message, then each value
+# as `key=value`, a value in a group keyed by the group's keys and its own
+# joined with `.`, as Go's slog TextHandler keys it.
+
+use log/internal/piece
+use log/internal/quote
+
+# The line, without its line feed: `time_text`, `level_name`, `message` quoted
+# only where it is empty or holds a quote, an `=` or an escaped character, then
+# every value of `pieces` in order, a key or a value quoted where it is empty or
+# holds a space, a quote, an `=` or an escaped character.
+function line(time_text: str, level_name: str, message: str, pieces: [piece.Piece]) -> str
+    parts: [str] @= [time_text, " ", level_name, " ", quote.written(s: message, space_counts: false)]
+    path: [str] @= []
+
+    for p in pieces
+        if p.kind == piece.OPEN
+            path @ path.push(p.key)
+        else if p.kind == piece.CLOSE
+            path @ path.slice(from: 0, to: path.len() - 1)
+        else
+            key = if path.len() == 0
+                p.key
+            else
+                path.join(".") + "." + p.key
+            parts @ parts.push(" ")
+            parts @ parts.push(quote.written(s: key, space_counts: true))
+            parts @ parts.push("=")
+            parts @ parts.push(quote.written(s: p.text, space_counts: true))
+
+    return parts.join("")
+
+test "line: no fields, an empty message, and a message with spaces left bare"
+    assert line(time_text: "T", level_name: "INFO", message: "", pieces: []) == "T INFO \"\""
+    assert line(time_text: "T", level_name: "INFO", message: "hello world", pieces: []) == "T INFO hello world"
+
+test "line: a message holding an equals sign, a quote and a line feed is quoted"
+    assert line(time_text: "T", level_name: "WARN", message: "msg=with eq", pieces: []) == "T WARN \"msg=with eq\""
+    assert line(time_text: "T", level_name: "WARN", message: "a \"b\"", pieces: []) == "T WARN \"a \\\"b\\\"\""
+    assert line(time_text: "T", level_name: "WARN", message: "two\nlines", pieces: []) == "T WARN \"two\\nlines\""
+
+# The keys and values below are those Go 1.27's slog TextHandler wrote,
+# 2026-11-16: `""=emptykey "a b"=spacekey "k="=eqkey g.x=1 g.h.y=true`.
+test "line: keys and values quoted, a nested group's keys joined, and an empty group writing nothing"
+    pieces = [
+        piece.value(key: "", text: "emptykey", is_string: true)
+        piece.value(key: "a b", text: "spacekey", is_string: true)
+        piece.value(key: "k=", text: "", is_string: true)
+        piece.open("g")
+        piece.value(key: "x", text: "1", is_string: false)
+        piece.open("h")
+        piece.value(key: "y", text: "true", is_string: false)
+        piece.close()
+        piece.close()
+        piece.open("empty")
+        piece.close()
+        piece.value(key: "after", text: "é ok", is_string: true)
+    ]
+    want = "T INFO m \"\"=emptykey \"a b\"=spacekey \"k=\"=\"\" g.x=1 g.h.y=true after=\"é ok\""
+    assert line(time_text: "T", level_name: "INFO", message: "m", pieces: pieces) == want

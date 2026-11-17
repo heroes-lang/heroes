@@ -1,0 +1,1087 @@
+# JSON read and written: the text of RFC 8259 read into a tree a program
+# matches on, the tree written back as text, and the functions that read a
+# value out of it. Nothing here follows the data with recursion: a text nested
+# a hundred thousand deep is a failure the program is told, and a value built
+# that deep is written and walked on a stack this package holds itself.
+#
+# A record is not filled from JSON by its field names, since the language has
+# no reflection: a program reads each member out of the tree and builds its own
+# type from it.
+
+use json/internal/event
+use json/internal/order
+use json/internal/pointers
+use json/internal/reader
+use json/internal/scan
+use json/internal/stack
+use json/internal/writer
+
+## The value
+
+# One JSON value. A `match` on it answers all six cases.
+#
+# A number is an `f64`, so an integer is held exactly only up to
+# `MAX_EXACT_INT`: `9007199254740993` is read as `9007199254740992.0`, and
+# nothing says so unless `ParseOptions.exact_integers` asks. `int_of` answers
+# the integer of a number that is one.
+#
+# An object is a map, so it holds each key once, finds a member without a
+# search and keeps the order its members were written in: `keys` gives them in
+# that order. `==` compares two values whatever the order of their members; it
+# follows their nesting, so on two values nested many thousands deep it runs
+# out of stack and aborts, which is why `parse` reads no deeper than
+# `DEFAULT_MAX_DEPTH` unless it is asked to.
+variant Value
+    # JSON's `null`, a word the language keeps for itself.
+    null_value
+    # `true` or `false`.
+    boolean
+        v: bool
+    # A number, never `nan` or an infinity in a value `parse` answers.
+    number
+        v: f64
+    # A string, with its escapes read: the characters themselves.
+    text
+        v: str
+    # An array: its elements in order.
+    list
+        items: [Value]
+    # An object: its members by key, in the order they were written.
+    object
+        members: {str: Value}
+
+## Codes and limits
+
+# The code of a text that is not JSON, of a value that is not of the kind
+# asked for, and of a pointer that is not one.
+constant INVALID: str
+    "invalid"
+
+# The code of a key an object does not hold and of an index past a list's end.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a number past what its type holds: a number in a text that no
+# `f64` reaches, an integer past `MAX_EXACT_INT` where an exact one was asked.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The deepest nesting `parse` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2.
+# Measured on arm64 macOS on 2026-11-15, `==` on two objects nested 5,800 deep
+# exhausts an 8 MiB stack in a build with `--sanitize`, and 512 levels cost it
+# under 1 MiB there.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# The largest integer an `f64` holds with no other integer reading to the same
+# `f64`: 2^53 - 1. Past it, in either direction, two integers written
+# differently are one number.
+constant MAX_EXACT_INT: i64
+    9007199254740991
+
+## Reading a text
+
+# How a text is read. `strict` answers the options of RFC 8259 and nothing
+# wider; a program widens the fields it needs.
+record ParseOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it. A
+    # text nested deeper fails `invalid`.
+    max_depth: i64
+    # Whether a key written twice in one object is accepted: the last value
+    # then stands at the first one's place. Refused, it fails `invalid`.
+    duplicate_keys: bool
+    # Whether a raw control character, U+0000 to U+001F, may stand inside a
+    # string, a line break included.
+    control_characters: bool
+    # Whether an escape that is half a surrogate pair, `\ud800` with no
+    # `\udc00` to `\udfff` after it or one of those alone, is read as U+FFFD.
+    # Refused, it fails `invalid`: no text can hold half a pair.
+    lone_surrogates: bool
+    # Whether `NaN`, `Infinity` and `-Infinity` are read as numbers, as
+    # Python writes them. No JSON says them, so `format` fails on the value
+    # unless `FormatOptions.non_finite` asks the same.
+    non_finite: bool
+    # Whether an integer written with no fraction and no exponent, and past
+    # `MAX_EXACT_INT` in either direction, fails `does_not_fit` instead of
+    # being read as the nearest `f64`.
+    exact_integers: bool
+
+# What `parse_next` answers.
+record Parsed
+    # The value read.
+    value: Value
+    # The byte index past the value and the white space that follows it: the
+    # text's length where nothing else follows.
+    next: i64
+
+# The options that read RFC 8259 and nothing wider: nesting no deeper than
+# `DEFAULT_MAX_DEPTH`, and every other field `false`.
+function strict() -> ParseOptions
+    return ParseOptions(
+        max_depth: DEFAULT_MAX_DEPTH,
+        duplicate_keys: false,
+        control_characters: false,
+        lone_surrogates: false,
+        non_finite: false,
+        exact_integers: false
+    )
+
+# The value `text` writes, read as `strict` reads.
+#
+# - `text`: the JSON text, white space allowed before and after the value; a
+#   byte order mark is not white space.
+#
+# Fails `invalid` where `text` is not JSON, and the message opens `line L,
+# column C:`, both counted from 1 and the column in characters, then says what
+# was expected and what was found. Fails `does_not_fit` where a number is past
+# what an `f64` holds, as `1e400` is.
+#
+# Nothing may follow the value but white space; a key written twice in one
+# object, a number with a leading zero, a raw control character in a string,
+# half a surrogate pair, `NaN` and a byte order mark are all `invalid`.
+function parse(text: str) -> Value?
+    return parse_with(text, strict())
+
+# The value `text` writes, read as `options` say.
+#
+# - `text`: the JSON text, white space allowed before and after the value.
+# - `options`: how it is read; `strict()` reads RFC 8259 and nothing wider.
+#
+# Fails `invalid` where `text` is not JSON as `options` read it, with the
+# message `parse` gives. Fails `does_not_fit` where a number is past what an
+# `f64` holds, or where `options.exact_integers` meets an integer past
+# `MAX_EXACT_INT`.
+#
+# It holds its own stack, so the deepest nesting it reads is
+# `options.max_depth` and never what the machine's stack allows.
+function parse_with(text: str, options: ParseOptions) -> Value?
+    parsed = parse_next(text: text, from: 0, options: options)?
+
+    if parsed.next != text.len()
+        return fail(code: INVALID, msg: scan.expected(text: text, at: parsed.next, what: "the end of the text"))
+    return ok(parsed.value)
+
+# The one value that begins at byte `from` of `text`, after any white space,
+# and where the next begins.
+#
+# - `text`: a text holding values one after another, with white space between
+#   them or none.
+# - `from`: the byte index to read from, 0 to the text's length; an index
+#   inside a character fails `invalid`, as the text there is no value.
+# - `options`: how each value is read.
+#
+# Fails as `parse_with` does, and `invalid` where nothing but white space is
+# left from `from` on.
+#
+# Aborts where `from` is below 0 or past the text's length.
+#
+# Values written one after another are read in a loop, each call given the last
+# one's `next`, until `next` is the text's length.
+function parse_next(text: str, from: i64, options: ParseOptions) -> Parsed?
+    assert from >= 0 && from <= text.len()
+    reading = reader.Reading(
+        max_depth: options.max_depth,
+        duplicate_keys: options.duplicate_keys,
+        control_characters: options.control_characters,
+        lone_surrogates: options.lone_surrogates,
+        non_finite: options.non_finite,
+        exact_integers: options.exact_integers,
+        read_numbers: true,
+        keep_raw: false
+    )
+    got = reader.read(text: text, from: from, reading: reading)?
+
+    # The open container's values and, in an object, its keys; the containers
+    # that hold it wait on the two stacks below, `depth` of them.
+    items: [Value] @= []
+    names: [str] @= []
+    held_items: [[Value]] @= []
+    held_names: [[str]] @= []
+    depth: i64 @= 0
+
+    for e in got.events
+        if e.kind == event.BEGIN_LIST || e.kind == event.BEGIN_OBJECT
+            stack.put(items: @held_items, top: depth, item: items)
+            stack.put(items: @held_names, top: depth, item: names)
+            items @ []
+            names @ []
+            depth @ depth + 1
+        else if e.kind == event.KEY
+            names @ names.push(e.text)
+        else
+            done: Value @= .null_value
+
+            if e.kind == event.END_LIST
+                done @ .list(items: items)
+            else if e.kind == event.END_OBJECT
+                members: {str: Value} @= {}
+
+                for at in range(from: 0, to: names.len())
+                    members[names[at]] @ items[at]
+
+                done @ .object(members: members)
+            else if e.kind == event.BOOLEAN
+                done @ .boolean(v: e.flag)
+            else if e.kind == event.NUMBER
+                done @ .number(v: e.number)
+            else if e.kind == event.TEXT
+                done @ .text(v: e.text)
+
+            if e.kind == event.END_LIST || e.kind == event.END_OBJECT
+                depth @ depth - 1
+                items @ held_items[depth]
+                names @ held_names[depth]
+                held_items[depth] @ []
+                held_names[depth] @ []
+            items @ items.push(done)
+
+    return ok(Parsed(value: items[0], next: got.next))
+
+# Whether `text` is JSON: true exactly where `parse` succeeds.
+#
+# - `text`: the text asked about, white space allowed before and after the
+#   value.
+#
+# A text holding a key twice in one object is not JSON here, as Go's jsontext
+# answers.
+function is_valid(text: str) -> bool
+    return !parse(text).is_err()
+
+## Writing a value
+
+# How a value is written. `compact` answers the options of the shortest text;
+# a program changes the fields it needs.
+record FormatOptions
+    # Whether each element and each member stands on its own line, indented by
+    # `indent` once for each level, with `": "` after a key. An empty list is
+    # `[]` and an empty object `{}` either way.
+    multiline: bool
+    # The text that indents one level where `multiline` is set. It should be
+    # spaces or tabs: anything else writes a text that is not JSON.
+    indent: str
+    # The text that begins every line after the first where `multiline` is
+    # set, before the indent. White space, for the same reason.
+    prefix: str
+    # Whether a space follows each `,` and each `:` of a text on one line.
+    spaced: bool
+    # Whether an object's members are written in the order of their keys'
+    # bytes, which is the order of their characters' code points, instead of
+    # the order the object holds them in.
+    sort_keys: bool
+    # Whether every character past ASCII, and U+007F, is written as `\uXXXX`,
+    # one past U+FFFF as the two of its surrogate pair, as Python's
+    # `ensure_ascii` writes them.
+    ascii_only: bool
+    # Whether `<`, `>` and `&` are written as `\u003c`, `\u003e` and `\u0026`.
+    escape_html: bool
+    # Whether U+2028 and U+2029 are written as `\u2028` and `\u2029`.
+    escape_js: bool
+    # Whether `nan` and the infinities are written `NaN`, `Infinity` and
+    # `-Infinity`, as Python writes them, where no JSON says them.
+    non_finite: bool
+
+# The options of the shortest text: one line, no white space, the members in
+# the order the object holds them, and no escape RFC 8259 does not oblige.
+function compact() -> FormatOptions
+    return FormatOptions(
+        multiline: false,
+        indent: "",
+        prefix: "",
+        spaced: false,
+        sort_keys: false,
+        ascii_only: false,
+        escape_html: false,
+        escape_js: false,
+        non_finite: false
+    )
+
+# `v` as JSON on one line with no white space.
+#
+# - `v`: the value to write, nested as deep as it is.
+#
+# Fails `invalid` where `v` holds a `nan` or an infinity, which no JSON says.
+#
+# The same value always gives the same bytes: an object's members are written
+# in the order it holds them, and a number as the shortest digits that read
+# back as the same `f64`, with no `.0` on an integer and an exponent only from
+# `1e+21` up and from `1e-7` down. It holds its own stack, so no nesting is too
+# deep for it.
+function format(v: Value) -> str?
+    return format_with(v, compact())
+
+# `v` as JSON over several lines, one element or member a line and `": "` after
+# a key.
+#
+# - `v`: the value to write.
+# - `width`: the spaces that indent each level, 0 or more; 0 breaks the lines
+#   and indents nothing.
+#
+# Fails `invalid` where `width` is below 0, and where `v` holds a `nan` or an
+# infinity.
+#
+# No line break ends the text, and an empty list or object is written `[]` or
+# `{}`.
+function format_indented(v: Value, width: i64) -> str?
+    if width < 0
+        return fail(code: INVALID, msg: f"an indent of {width} spaces: the width is 0 or more")
+    options: FormatOptions @= compact()
+    options.multiline @ true
+    options.indent @ repeat(" ", width.to_u64().must())
+    return format_with(v, options)
+
+# `v` as JSON, written as `options` say.
+#
+# - `v`: the value to write.
+# - `options`: how it is written; `compact()` writes the shortest text.
+#
+# Fails `invalid` where `v` holds a `nan` or an infinity and
+# `options.non_finite` does not ask for them.
+function format_with(v: Value, options: FormatOptions) -> str?
+    walked: [event.Event] @= []
+
+    # What is left to write, the next on top: a value to walk, or a key or a
+    # closing bracket, as its mark says.
+    left: [Value] @= [v]
+    marks: [i64] @= [event.WALK]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        mark = marks[top]
+        here = left[top]
+        left[top] @ .null_value
+
+        if mark == event.KEY
+            walked @ walked.push(event.text(kind: event.KEY, s: text_of(here).must()))
+        else if mark != event.WALK
+            walked @ walked.push(event.mark(mark))
+        else
+            match here
+                .null_value => walked @ walked.push(event.mark(event.NULL_VALUE))
+                .boolean b  => walked @ walked.push(event.boolean(b.v))
+                .number n   => walked @ walked.push(event.number(n.v))
+                .text t     => walked @ walked.push(event.text(kind: event.TEXT, s: t.v))
+                .list l =>
+                    walked @ walked.push(event.mark(event.BEGIN_LIST))
+                    stack.put(items: @left, top: top, item: .null_value)
+                    stack.put(items: @marks, top: top, item: event.END_LIST)
+                    top @ top + 1
+                    at: i64 @= l.items.len()
+
+                    while at > 0
+                        at @ at - 1
+                        stack.put(items: @left, top: top, item: l.items[at])
+                        stack.put(items: @marks, top: top, item: event.WALK)
+                        top @ top + 1
+                .object o =>
+                    walked @ walked.push(event.mark(event.BEGIN_OBJECT))
+                    stack.put(items: @left, top: top, item: .null_value)
+                    stack.put(items: @marks, top: top, item: event.END_OBJECT)
+                    top @ top + 1
+
+                    names = if options.sort_keys
+                        sort(keys(o.members))
+                    else
+                        keys(o.members)
+                    at: i64 @= names.len()
+
+                    while at > 0
+                        at @ at - 1
+                        stack.put(items: @left, top: top, item: o.members[names[at]].must())
+                        stack.put(items: @marks, top: top, item: event.WALK)
+                        stack.put(items: @left, top: top + 1, item: .text(v: names[at]))
+                        stack.put(items: @marks, top: top + 1, item: event.KEY)
+                        top @ top + 2
+
+    layout = writer.Layout(
+        multiline: options.multiline,
+        indent: options.indent,
+        prefix: options.prefix,
+        spaced: options.spaced,
+        ascii_only: options.ascii_only,
+        escape_html: options.escape_html,
+        escape_js: options.escape_js,
+        non_finite: options.non_finite,
+        unsigned_zero: false
+    )
+    return writer.render(events: walked, layout: layout)
+
+# `v` as the one text RFC 8785 gives it, so that two programs that hold equal
+# values write equal bytes.
+#
+# - `v`: the value to write.
+#
+# Fails `invalid` where `v` holds a `nan` or an infinity.
+#
+# The text is one line with no white space, the members in the order of their
+# keys' UTF-16 code units, and a negative zero written `0`. It writes the value
+# and reads that text once more, so it costs about twice `format`.
+function format_canonical(v: Value) -> str?
+    text = format(v)?
+    got = reader.read(text: text, from: 0, reading: reader.respacing())?
+    layout: writer.Layout @= writer.flat()
+    layout.unsigned_zero @ true
+    return writer.render(events: order.canonical(got.events), layout: layout)
+
+# `s` as a JSON string, between its quotes.
+#
+# - `s`: any text, the empty one included.
+#
+# The escapes are those RFC 8259 obliges and no other: `"`, `\` and the
+# characters below U+0020.
+function quote(s: str) -> str
+    return writer.quote(s: s, layout: writer.flat())
+
+# The text a JSON string writes, its quotes taken off and its escapes read.
+#
+# - `token`: one whole JSON string, from its opening quote to its closing one.
+#
+# Fails `invalid` where `token` is not one whole JSON string, as `parse` would
+# on it; white space around the quotes is not accepted.
+function unquote(token: str) -> str?
+    if token.len() == 0 || token[0] != '"'
+        return fail(code: INVALID, msg: scan.expected(text: token, at: 0, what: "`\"`, which begins a JSON string"))
+    lexeme = scan.read_string(text: token, at: 0, control_characters: false, lone_surrogates: false)?
+
+    if lexeme.end != token.len()
+        return fail(code: INVALID, msg: scan.expected(text: token, at: lexeme.end, what: "the end of the string"))
+    return ok(lexeme.value)
+
+## A text respaced
+
+# `text` on one line with no white space between its tokens, each token kept as
+# it was written.
+#
+# - `text`: a JSON text, white space allowed before and after the value.
+#
+# Fails `invalid` where `text` is not JSON by RFC 8259's grammar, with
+# `parse`'s message.
+#
+# A number's digits and a string's escapes are kept. The text is not read into
+# a value, so a key written twice is not looked for, and no number is too
+# large.
+function to_compact(text: str) -> str?
+    got = reader.read(text: text, from: 0, reading: reader.respacing())?
+
+    if got.next != text.len()
+        return fail(code: INVALID, msg: scan.expected(text: text, at: got.next, what: "the end of the text"))
+    return writer.render(events: got.events, layout: writer.flat())
+
+# `text` over several lines, laid out as `format_indented` lays a value out,
+# each token kept as it was written.
+#
+# - `text`: a JSON text, white space allowed before and after the value.
+# - `width`: the spaces that indent each level, 0 or more; 0 breaks the lines
+#   and indents nothing.
+#
+# Fails `invalid` where `text` is not JSON by RFC 8259's grammar, or `width` is
+# below 0.
+function to_indented(text: str, width: i64) -> str?
+    if width < 0
+        return fail(code: INVALID, msg: f"an indent of {width} spaces: the width is 0 or more")
+    got = reader.read(text: text, from: 0, reading: reader.respacing())?
+
+    if got.next != text.len()
+        return fail(code: INVALID, msg: scan.expected(text: text, at: got.next, what: "the end of the text"))
+    layout: writer.Layout @= writer.flat()
+    layout.multiline @ true
+    layout.indent @ repeat(" ", width.to_u64().must())
+    return writer.render(events: got.events, layout: layout)
+
+# `text` with `<`, `>`, `&`, U+2028 and U+2029 written as `\u003c`, `\u003e`,
+# `\u0026`, `\u2028` and `\u2029`, so that it may stand inside an HTML
+# script element.
+#
+# - `text`: any text, JSON or not.
+#
+# In JSON those characters stand only inside a string, where the escape means
+# the character, so a JSON text means what it meant. It reads no grammar and
+# never fails: a text that is not JSON has them replaced too.
+function to_html_safe(text: str) -> str
+    return writer.html_safe(text)
+
+## Reading a value out
+
+# The name of the kind `v` is: `null`, `boolean`, `number`, `text`, `list` or
+# `object`.
+#
+# - `v`: any value.
+function kind_of(v: Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "boolean"
+        .number _   => "number"
+        .text _     => "text"
+        .list _     => "list"
+        .object _   => "object"
+
+# Whether `v` is JSON's `null`.
+#
+# - `v`: any value.
+function is_null(v: Value) -> bool
+    return kind_of(v) == "null"
+
+# The `bool` of a boolean.
+#
+# - `v`: the value read, expected to be a boolean.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the kind
+# it is.
+function bool_of(v: Value) -> bool?
+    match v
+        .boolean b => return ok(b.v)
+        .null_value | .number _ | .text _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: f"expected a boolean, found {scan.with_article(kind_of(v))}")
+
+# The `f64` of a number.
+#
+# - `v`: the value read, expected to be a number.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the kind
+# it is.
+function number_of(v: Value) -> f64?
+    match v
+        .number n => return ok(n.v)
+        .null_value | .boolean _ | .text _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: f"expected a number, found {scan.with_article(kind_of(v))}")
+
+# The integer of a number that is one.
+#
+# - `v`: the value read, expected to be a number with no fraction, from
+#   `-MAX_EXACT_INT` to `MAX_EXACT_INT`.
+#
+# Fails `invalid` where `v` is not a number, or is one with a fraction, a `nan`
+# or an infinity. Fails `does_not_fit` where it is past `MAX_EXACT_INT` in
+# either direction: the `f64` is an integer there, but not always the one the
+# text wrote.
+#
+# A caller who knows it is the one asks `to_i64` of `number_of`.
+function int_of(v: Value) -> i64?
+    x = number_of(v)?
+
+    if x != x || x - x != 0.0
+        return fail(code: INVALID, msg: f"expected an integer, found {x}")
+
+    if x > 9007199254740991.0 || x < -9007199254740991.0
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"the number {x} is past {MAX_EXACT_INT}, the largest integer an f64 holds exactly"
+        )
+    whole = x.to_i64().must()
+
+    if to_f64(whole) != x
+        return fail(code: INVALID, msg: f"expected an integer, found {x}, which has a fraction")
+    return ok(whole)
+
+# The `str` of a text.
+#
+# - `v`: the value read, expected to be a text.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the kind
+# it is.
+function text_of(v: Value) -> str?
+    match v
+        .text t => return ok(t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: f"expected a text, found {scan.with_article(kind_of(v))}")
+
+# The elements of a list, in order.
+#
+# - `v`: the value read, expected to be a list.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the kind
+# it is.
+function items_of(v: Value) -> [Value]?
+    match v
+        .list l => return ok(l.items)
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return fail(code: INVALID, msg: f"expected a list, found {scan.with_article(kind_of(v))}")
+
+# The members of an object by key, `keys` giving them in the order they were
+# written.
+#
+# - `v`: the value read, expected to be an object.
+#
+# Fails `invalid` where `v` is of another kind, and the message names the kind
+# it is.
+function members_of(v: Value) -> {str: Value}?
+    match v
+        .object o => return ok(o.members)
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: f"expected an object, found {scan.with_article(kind_of(v))}")
+
+# The member of the object `v` whose key is `key`.
+#
+# - `v`: the value read, expected to be an object.
+# - `key`: the key, compared byte for byte; the empty key is a key like any
+#   other.
+#
+# Fails `not_found` where the object holds no such key, and the message names
+# the keys it holds. Fails `invalid` where `v` is not an object, and the
+# message names the kind it is.
+function member(v: Value, key: str) -> Value?
+    members = members_of(v)?
+
+    match members[key]
+        .ok found => return ok(found)
+        .err _ =>
+            return fail(code: NOT_FOUND, msg: f"no key \"{key}\" in an object holding {scan.keys_named(keys(members))}")
+
+# The element of the list `v` at `index`.
+#
+# - `v`: the value read, expected to be a list.
+# - `index`: counted from 0; a negative one names nothing.
+#
+# Fails `not_found` where `index` is below 0 or past the last element, and the
+# message says how many elements the list holds. Fails `invalid` where `v` is
+# not a list, and the message names the kind it is.
+function element(v: Value, index: i64) -> Value?
+    items = items_of(v)?
+
+    if index < 0 || index >= items.len()
+        return fail(code: NOT_FOUND, msg: f"no element at {index} in a list of {items.len()}")
+    return ok(items[index])
+
+# The value inside `v` that `pointer` reaches.
+#
+# - `v`: the value to walk into.
+# - `pointer`: a path in RFC 6901's text: each token after a `/`, naming a key
+#   where it meets an object and an index, counted from 0, where it meets a
+#   list; the empty pointer names `v` itself.
+#
+# Fails `not_found` where a key or an index names nothing, `-` included. Fails
+# `invalid` where `pointer` is not one, where a token that meets a list is not
+# an index, and where a token meets a value that holds nothing. Each message
+# says how far the path went and what was there.
+function value_at(v: Value, pointer: str) -> Value?
+    tokens = pointers.tokens_of(pointer)?
+    here: Value @= v
+    went: [str] @= []
+
+    for token in tokens
+        match here
+            .object o =>
+                match o.members[token]
+                    .ok found => here @ found
+                    .err _ =>
+                        named = scan.keys_named(keys(o.members))
+                        return fail(
+                            code: NOT_FOUND,
+                            msg: f"no key \"{token}\" in the object at \"{pointers.of(went)}\", which holds {named}"
+                        )
+            .list l =>
+                match pointers.list_index(token)
+                    .err e => return fail(code: e.code, msg: f"{e.msg}, in the list at \"{pointers.of(went)}\"")
+                    .ok index =>
+                        if index >= l.items.len()
+                            return fail(
+                                code: NOT_FOUND,
+                                msg: f"no element at {index} in the list at \"{pointers.of(went)}\", which holds {l.items.len()}"
+                            )
+                        here @ l.items[index]
+            .null_value | .boolean _ | .number _ | .text _ =>
+                kind = scan.with_article(kind_of(here))
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{pointer}\" goes on past \"{pointers.of(went)}\", which is {kind} and holds nothing"
+                )
+
+        went @ went.push(token)
+
+    return ok(here)
+
+# The number `n` as a value.
+#
+# - `n`: the integer, from `-MAX_EXACT_INT` to `MAX_EXACT_INT`.
+#
+# Fails `does_not_fit` where `n` is past `MAX_EXACT_INT` in either direction,
+# since the `f64` nearest it may be another integer.
+#
+# `int_of` reads back every value this answers.
+function from_int(n: i64) -> Value?
+    if n > MAX_EXACT_INT || n < 0 - MAX_EXACT_INT
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"the integer {n} is past {MAX_EXACT_INT}, the largest an f64 holds exactly"
+        )
+    return ok(.number(v: to_f64(n)))
+
+## Pointers
+
+# The pointer whose tokens are `tokens`, in RFC 6901's text.
+#
+# - `tokens`: the keys and indices in order, each any text, the empty one
+#   included; none gives ``, the pointer to the whole value.
+#
+# Each token is written after a `/`, its `~` written `~0` and its `/` written
+# `~1`.
+function pointer_of(tokens: [str]) -> str
+    return pointers.of(tokens)
+
+# The tokens of `pointer`, its escapes read.
+#
+# - `pointer`: a pointer in RFC 6901's text; `` names the whole value and gives
+#   no token.
+#
+# Fails `invalid` where `pointer` is not empty and does not begin with `/`, or
+# holds a `~` that neither `0` nor `1` follows.
+function pointer_tokens(pointer: str) -> [str]?
+    return pointers.tokens_of(pointer)
+
+## Tests
+
+test "parse: each kind alone, white space around it, and the values it holds"
+    assert parse("null").must() == .null_value
+    assert parse(" true ").must() == .boolean(v: true)
+    assert parse("false").must() == .boolean(v: false)
+    assert parse("-1.5").must() == .number(v: -1.5)
+    assert parse("\"città\"").must() == .text(v: "città")
+    assert parse("[]").must() == .list(items: [])
+    assert parse("{}").must() == .object(members: {})
+    assert parse("\n[1, \"a\", null]\r\n").must() == .list(items: [.number(v: 1.0), .text(v: "a"), .null_value])
+
+test "parse: an object keeps the order its members were written in, as Python's dict does"
+    doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
+    assert keys(members_of(doc).must()) == ["b", "a", "e", "t", "s"]
+    assert member(doc, "t").must() == .boolean(v: true)
+    inner = element(member(doc, "b").must(), 2).must()
+    assert member(inner, "c").must() == .null_value
+
+test "parse: the texts Python's json and Go's Unmarshal refuse, with line and column"
+    for text in ["", " ", "nul", "NaN", "Infinity", "01", "-", "1.", ".5", "1e", "+1", "[1,]", "{\"a\":1,}", "[1 2]", "{a:1}", "'a'", "\"abc", "[", "]", "{,}", "[,1]"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 5) == "line "
+
+    match parse("true false")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 6: expected the end of the text, found \"false\""
+
+    match parse("2 3")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 3: expected the end of the text, found \"3\""
+
+    match parse("[\n1,\n  x]")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 3, column 3: expected a value, found \"x\""
+
+    bom: [u8] = [0xef, 0xbb, 0xbf, 0x31]
+
+    match parse(bom.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: expected a value, found U+FEFF"
+
+test "parse: a raw control character in a string, refused as both refuse it, read when asked"
+    for text in ["\"a\tb\"", "\"a\nb\""]
+        assert parse(text).is_err()
+
+    wide: ParseOptions @= strict()
+    wide.control_characters @ true
+    assert parse_with("\"a\tb\"", wide).must() == .text(v: "a\tb")
+
+test "parse: escapes, a pair above U+FFFF, U+0000, and the escaped slash"
+    assert parse("\"\\ud83d\\ude00\"").must() == .text(v: "😀")
+    assert parse("\"\\/\"").must() == .text(v: "/")
+    assert parse("\"\\u00e9\\u0041\"").must() == .text(v: "éA")
+    nul: [u8] = [0]
+    assert parse("\"\\u0000\"").must() == .text(v: nul.validated_bytes().must())
+    assert parse("\"\\x\"").is_err()
+    assert parse("\"\\u12g4\"").is_err()
+
+test "parse: half a surrogate pair, refused, and read as U+FFFD as Go's Unmarshal reads it"
+    assert parse("\"\\ud800\"").is_err()
+    assert parse("\"\\udc00\"").is_err()
+    wide: ParseOptions @= strict()
+    wide.lone_surrogates @ true
+    assert parse_with("\"\\ud800\"", wide).must() == .text(v: "�")
+
+test "parse: a key written twice, refused as jsontext refuses it, the last kept as Python keeps it"
+    match parse("{\"a\":1,\"b\":2,\"a\":3}")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 14: the key \"a\" is written twice in one object, first at line 1, column 2"
+
+    wide: ParseOptions @= strict()
+    wide.duplicate_keys @ true
+    doc = parse_with("{\"a\":1,\"b\":2,\"a\":3}", wide).must()
+    assert keys(members_of(doc).must()) == ["a", "b"]
+    assert member(doc, "a").must() == .number(v: 3.0)
+
+test "parse: numbers as Go reads them, past an f64, below its least, and past 2 to the 53rd"
+    assert parse("-0").must() == .number(v: 0.0)
+    assert parse("0e0").must() == .number(v: 0.0)
+    assert parse("1E+2").must() == .number(v: 100.0)
+    assert parse("1e-400").must() == .number(v: 0.0)
+    assert parse("9007199254740993").must() == .number(v: 9007199254740992.0)
+
+    for text in ["1e400", "-1e400"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == "does_not_fit"
+
+    exact: ParseOptions @= strict()
+    exact.exact_integers @ true
+
+    match parse_with("9007199254740993", exact)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    assert int_of(parse_with("-9007199254740991", exact).must()).must() == -9007199254740991
+
+test "parse: NaN and the infinities, refused, and read as Python reads them when asked"
+    wide: ParseOptions @= strict()
+    wide.non_finite @ true
+    nan = number_of(parse_with("NaN", wide).must()).must()
+    assert nan != nan
+    assert number_of(parse_with("[Infinity, -Infinity]", wide).must().items_of().must()[1]).must() < -1.0
+    assert parse("[NaN]").is_err()
+
+test "parse: the nesting allowed, one level past it, and a hundred thousand when asked"
+    assert !parse(repeat("[", 512) + repeat("]", 512)).is_err()
+
+    match parse(repeat("[", 513) + repeat("]", 513))
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 513: nested deeper than 512 levels, the most this reading allows"
+
+    deep = repeat("[", 100000) + repeat("]", 100000)
+    wide: ParseOptions @= strict()
+    wide.max_depth @ 100000
+    value = parse_with(deep, wide).must()
+    assert kind_of(value) == "list"
+    assert format(value).must() == deep
+
+test "parse_next: values one after another, white space between, and nothing left"
+    text = "1 [2]{\"a\":3}  "
+    first = parse_next(text: text, from: 0, options: strict()).must()
+    assert first.value == .number(v: 1.0) && first.next == 2
+    second = parse_next(text: text, from: first.next, options: strict()).must()
+    assert second.value == .list(items: [.number(v: 2.0)]) && second.next == 5
+    third = parse_next(text: text, from: second.next, options: strict()).must()
+    assert third.next == text.len()
+    assert parse_next(text: text, from: third.next, options: strict()).is_err()
+
+test "is_valid: JSON, a key twice as jsontext answers, and a value with more after it"
+    assert is_valid("{\"a\":[1,2]}")
+    assert is_valid(" 3 ")
+    assert !is_valid("{\"a\":1,\"a\":2}")
+    assert !is_valid("[1] x")
+    assert !is_valid("")
+
+test "format: compact, every kind, as Python writes with separators (',', ':')"
+    doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
+    assert format(doc).must() == "{\"b\":[1,2,{\"c\":null}],\"a\":{},\"e\":[],\"t\":true,\"s\":\"x\"}"
+    assert format(.null_value).must() == "null"
+    assert format(.text(v: "a\"b\\é\n")).must() == "\"a\\\"b\\\\é\\n\""
+    assert format(.number(v: -0.0)).must() == "-0"
+    assert format(.list(items: [.number(v: 1.5), .boolean(v: false)])).must() == "[1.5,false]"
+
+test "format: nan and the infinities fail, where Python's default writes them"
+    nan = number_of(
+        parse_with("NaN", ParseOptions(max_depth: 1, duplicate_keys: false, control_characters: false, lone_surrogates: false, non_finite: true, exact_integers: false)).must()
+    ).must()
+
+    match format(.list(items: [.number(v: nan)]))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    python: FormatOptions @= compact()
+    python.non_finite @ true
+    assert format_with(.list(items: [.number(v: nan)]), python).must() == "[NaN]"
+
+test "format_indented: by 2 and by 0, and empty containers, as Python's indent writes them"
+    doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
+    two = "{\n  \"b\": [\n    1,\n    2,\n    {\n      \"c\": null\n    }\n  ],\n  \"a\": {},\n  \"e\": [],\n  \"t\": true,\n  \"s\": \"x\"\n}"
+    assert format_indented(doc, 2).must() == two
+    zero = "{\n\"b\": [\n1,\n2,\n{\n\"c\": null\n}\n],\n\"a\": {},\n\"e\": [],\n\"t\": true,\n\"s\": \"x\"\n}"
+    assert format_indented(doc, 0).must() == zero
+    assert format_indented(.list(items: []), 2).must() == "[]"
+    assert format_indented(.object(members: {}), 2).must() == "{}"
+    assert format_indented(.list(items: [.list(items: [])]), 1).must() == "[\n []\n]"
+    assert format_indented(.null_value, -1).is_err()
+
+test "format_with: sorted keys as Python's sort_keys and Go's Marshal write them, spaced, and a prefix"
+    doc = parse("{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}").must()
+    sorted: FormatOptions @= compact()
+    sorted.sort_keys @ true
+    assert format_with(doc, sorted).must() == "{\"a\":{},\"b\":[1,2,{\"c\":null}],\"e\":[],\"s\":\"x\",\"t\":true}"
+    spaced: FormatOptions @= compact()
+    spaced.spaced @ true
+    assert format_with(doc, spaced).must() == "{\"b\": [1, 2, {\"c\": null}], \"a\": {}, \"e\": [], \"t\": true, \"s\": \"x\"}"
+    prefixed: FormatOptions @= compact()
+    prefixed.multiline @ true
+    prefixed.indent @ "\t"
+    prefixed.prefix @ ">"
+    assert format_with(.list(items: [.number(v: 1.0)]), prefixed).must() == "[\n>\t1\n>]"
+
+test "format_with: the escapes of Python's ensure_ascii and of Go's Marshal"
+    s: Value = .text(v: "é \u{2028} 😀 <>&")
+    ascii: FormatOptions @= compact()
+    ascii.ascii_only @ true
+    assert format_with(s, ascii).must() == "\"\\u00e9 \\u2028 \\ud83d\\ude00 <>&\""
+    go: FormatOptions @= compact()
+    go.escape_html @ true
+    go.escape_js @ true
+    assert format_with(s, go).must() == "\"é \\u2028 😀 \\u003c\\u003e\\u0026\""
+
+test "format: a list and an object nested a hundred thousand deep, on the package's own stack"
+    deep: Value @= .null_value
+    nested: Value @= .number(v: 1.0)
+
+    for _ in range(from: 0, to: 100000)
+        deep @ .list(items: [deep])
+        members: {str: Value} @= {}
+        members["k"] @ nested
+        nested @ .object(members: members)
+
+    assert format(deep).must() == repeat("[", 100000) + "null" + repeat("]", 100000)
+    assert format(nested).must() == repeat("{\"k\":", 100000) + "1" + repeat("}", 100000)
+
+test "format_canonical: Go's Canonicalize of the same value, byte for byte"
+    doc = parse("{\"b\":1e2,\"a\":[1.0,-0.0,\"\\u00e9\\/\"],\"\\ud83d\\ude00\":1,\"\\ue000\":2}").must()
+    assert format_canonical(doc).must() == "{\"a\":[1,0,\"é/\"],\"b\":100,\"😀\":1,\"\":2}"
+    assert format_canonical(.null_value).must() == "null"
+    assert format_canonical(.number(v: -0.0)).must() == "0"
+
+test "quote and unquote: the obligatory escapes, back again, and what is not one string"
+    assert quote("") == "\"\""
+    assert quote("a\"b\\c/d\tè") == "\"a\\\"b\\\\c/d\\tè\""
+    assert unquote("\"a\\u00e9\\n\\/\"").must() == "aé\n/"
+    assert unquote(quote("città \"x\"")).must() == "città \"x\""
+
+    for token in ["", "a", " \"a\"", "\"a\" ", "\"a\"x", "\"a", "\"\\ud800\""]
+        match unquote(token)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "to_compact: every token kept as written, where Go's Compact keeps them too"
+    text = " { \"a\" : [ 1.0 , 2e2, [] , {} ] , \"a\":\"\\u00e9/\\/\" } "
+    assert to_compact(text).must() == "{\"a\":[1.0,2e2,[],{}],\"a\":\"\\u00e9/\\/\"}"
+    assert to_compact(" 1e400 ").must() == "1e400"
+    assert to_compact("[1,]").is_err()
+    assert to_compact("[1] 2").is_err()
+
+test "to_indented: every token kept, laid out as format_indented lays a value out"
+    text = " { \"a\" : [ 1.0 , 2e2, [] , {} ] , \"b\":\"\\u00e9\" } "
+    want = "{\n  \"a\": [\n    1.0,\n    2e2,\n    [],\n    {}\n  ],\n  \"b\": \"\\u00e9\"\n}"
+    assert to_indented(text, 2).must() == want
+    assert to_indented("[]", -1).is_err()
+    assert to_indented("{", 2).is_err()
+
+test "to_html_safe: Go's HTMLEscape of the same text"
+    text = "{\"a\":\"<b>&\\u2028\u{2028}\u{2029}\"}"
+    assert to_html_safe(text) == "{\"a\":\"\\u003cb\\u003e\\u0026\\u2028\\u2028\\u2029\"}"
+    assert to_html_safe("") == ""
+
+test "kind_of and is_null: each of the six kinds"
+    assert kind_of(.null_value) == "null" && is_null(.null_value)
+    assert kind_of(.boolean(v: true)) == "boolean" && !is_null(.boolean(v: false))
+    assert kind_of(.number(v: 0.0)) == "number"
+    assert kind_of(.text(v: "")) == "text"
+    assert kind_of(.list(items: [])) == "list"
+    assert kind_of(.object(members: {})) == "object"
+
+test "bool_of, number_of, text_of, items_of and members_of: the value, and the kind found instead"
+    assert bool_of(.boolean(v: true)).must()
+    assert number_of(.number(v: 2.5)).must() == 2.5
+    assert text_of(.text(v: "é")).must() == "é"
+    assert items_of(.list(items: [.null_value])).must().len() == 1
+    assert keys(members_of(.object(members: {"k": .null_value})).must()) == ["k"]
+
+    match text_of(.number(v: 1.0))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "expected a text, found a number"
+
+    match bool_of(.null_value)
+        .ok _  => assert false
+        .err e => assert e.msg == "expected a boolean, found null"
+
+    match members_of(.list(items: []))
+        .ok _  => assert false
+        .err e => assert e.msg == "expected an object, found a list"
+
+    assert number_of(.text(v: "1")).is_err()
+    assert items_of(.object(members: {})).is_err()
+
+test "int_of: integers, a fraction, the edges of 2 to the 53rd, a negative zero, and not a number"
+    assert int_of(.number(v: 3.0)).must() == 3
+    assert int_of(.number(v: -0.0)).must() == 0
+    assert int_of(.number(v: 9007199254740991.0)).must() == MAX_EXACT_INT
+    assert int_of(.number(v: -9007199254740991.0)).must() == -9007199254740991
+
+    match int_of(.number(v: 9007199254740992.0))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match int_of(.number(v: 1.5))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "expected an integer, found 1.5, which has a fraction"
+
+    assert int_of(.text(v: "1")).is_err()
+
+test "from_int: zero, the largest exact integers either way, and one past them"
+    assert from_int(0).must() == .number(v: 0.0)
+    assert int_of(from_int(MAX_EXACT_INT).must()).must() == MAX_EXACT_INT
+    assert int_of(from_int(0 - MAX_EXACT_INT).must()).must() == 0 - MAX_EXACT_INT
+
+    match from_int(MAX_EXACT_INT + 1)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    assert from_int(-9223372036854775807).is_err()
+
+test "member and element: found, absent with what is there, and the wrong kind"
+    doc = parse("{\"a\": [10, 20], \"b\": null}").must()
+    assert element(member(doc, "a").must(), 1).must() == .number(v: 20.0)
+
+    match member(doc, "x")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no key \"x\" in an object holding the keys \"a\", \"b\""
+
+    match element(member(doc, "a").must(), 2)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no element at 2 in a list of 2"
+
+    assert element(member(doc, "a").must(), -1).is_err()
+    assert member(.object(members: {}), "a").is_err()
+
+    match member(.list(items: []), "a")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "value_at: the whole value, keys, indices, escapes, and each way a path fails"
+    doc = parse("{\"users\": [{\"name\": \"Ana\"}], \"a/b\": 1, \"m~n\": 2, \"\": 3}").must()
+    assert value_at(doc, "").must() == doc
+    assert value_at(doc, "/users/0/name").must() == .text(v: "Ana")
+    assert value_at(doc, "/a~1b").must() == .number(v: 1.0)
+    assert value_at(doc, "/m~0n").must() == .number(v: 2.0)
+    assert value_at(doc, "/").must() == .number(v: 3.0)
+
+    match value_at(doc, "/users/1")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no element at 1 in the list at \"/users\", which holds 1"
+
+    match value_at(doc, "/users/0/age")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no key \"age\" in the object at \"/users/0\", which holds the keys \"name\""
+
+    match value_at(doc, "/a~1b/c")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"/a~1b/c\" goes on past \"/a~1b\", which is a number and holds nothing"
+
+    match value_at(doc, "/users/x")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match value_at(doc, "/users/-")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    assert value_at(doc, "users").is_err()
+
+test "pointer_of and pointer_tokens: each the other's inverse, escapes included"
+    tokens = ["a/b", "m~n", "", "0", "città"]
+    assert pointer_of(tokens) == "/a~1b/m~0n//0/città"
+    assert pointer_tokens(pointer_of(tokens)).must() == tokens
+    nothing: [str] = []
+    assert pointer_of(nothing) == ""
+    assert pointer_tokens("").must() == nothing
+    assert pointer_tokens("x").is_err()

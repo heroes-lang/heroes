@@ -1,0 +1,202 @@
+# A failure changed on its way up, and several joined into one: context
+# written before a message, a code replaced, a value dropped, a list of
+# results joined or collected. A value passes through every function as it
+# is; only a failure is rebuilt.
+
+# `r` with `what` and `": "` written before its message, where it fails.
+function context<T>(r: T?, what: str) -> T?
+    return match r
+        .ok _  => r
+        .err e => fail(code: e.code, msg: f"{what}: {e.msg}")
+
+# `r` with `describe(subject)` written before its message, where it fails;
+# `describe` is called only then.
+function context_by<T, A>(r: T?, describe: (function(A) -> str), subject: A) -> T?
+    return match r
+        .ok _  => r
+        .err e => fail(code: e.code, msg: f"{describe(subject)}: {e.msg}")
+
+# `r` with `code` in place of its code, where it fails.
+function with_code<T>(r: T?, code: str) -> T?
+    return match r
+        .ok _  => r
+        .err e => fail(code: code, msg: e.msg)
+
+# `ok()` where `r` holds a value, its failure where it fails.
+function discard_value<T>(r: T?) -> ()?
+    return match r
+        .ok _  => ok()
+        .err e => fail(code: e.code, msg: e.msg)
+
+# The message of the failures whose codes are `codes` and whose messages are
+# `msgs`, two lists of one length: the one message where there is one, else
+# `<n> failures (<code>: <message>; ...)`.
+function joined_message(codes: [str], msgs: [str]) -> str
+    if codes.len() == 1
+        return msgs[0]
+
+    pieces: [str] @= []
+
+    for at in range(from: 0, to: codes.len())
+        pieces @ pieces.push(f"{codes[at]}: {msgs[at]}")
+
+    return f"{codes.len()} failures ({pieces.join("; ")})"
+
+# The failures of `results` joined into one, `ok()` where none fails.
+function combine<T>(results: [T?]) -> ()?
+    codes: [str] @= []
+    msgs: [str] @= []
+
+    for r in results
+        match r
+            .ok _ => _ = 0
+            .err e =>
+                codes @ codes.push(e.code)
+                msgs @ msgs.push(e.msg)
+
+    if codes.len() == 0
+        return ok()
+    return fail(code: codes[0], msg: joined_message(codes: codes, msgs: msgs))
+
+# Every value of `results`, or their failures joined as `combine` joins them.
+function collect<T>(results: [T?]) -> [T]?
+    values: [T] @= []
+    codes: [str] @= []
+    msgs: [str] @= []
+
+    for r in results
+        match r
+            .ok v => values @ values.push(v)
+            .err e =>
+                codes @ codes.push(e.code)
+                msgs @ msgs.push(e.msg)
+
+    if codes.len() == 0
+        return ok(values)
+    return fail(code: codes[0], msg: joined_message(codes: codes, msgs: msgs))
+
+test "context: a value passes, a failure grows, an empty what, a message of more than one byte"
+    held: i64? = ok(7)
+    assert context(held, what: "reading").must() == 7
+    r: str? = fail(code: "not_found", msg: "no \"x\"")
+
+    match context(r, what: "reading \"app.toml\"")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_found"
+            assert e.msg == "reading \"app.toml\": no \"x\""
+
+    match context(r, what: "")
+        .ok _  => assert false
+        .err e => assert e.msg == ": no \"x\""
+
+    accented: i64? = fail(code: "invalid", msg: "città")
+
+    match context(accented, what: "lettura")
+        .ok _  => assert false
+        .err e => assert e.msg == "lettura: città"
+
+test "context: three layers read back in the order anyhow chains them"
+    r: i64? = fail(code: "not_found", msg: "no \"x\" in \"a: b\"")
+    told = context(context(r, what: "opening x.toml"), what: "reading the configuration")
+
+    match told
+        .ok _  => assert false
+        .err e => assert e.msg == "reading the configuration: opening x.toml: no \"x\" in \"a: b\""
+
+# Counts its calls in what it answers, so a test sees whether it ran.
+function called(times: i64) -> str
+    return f"called {times + 1}"
+
+test "context_by: not called for a value, called once for a failure"
+    held: i64? = ok(1)
+    assert context_by(held, describe: called, subject: 0).must() == 1
+    r: i64? = fail(code: "invalid", msg: "x")
+
+    match context_by(r, describe: called, subject: 0)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "called 1: x"
+
+test "with_code: a value passes, a failure's code changes and its message stays"
+    held: str? = ok("a")
+    assert with_code(held, code: "invalid").must() == "a"
+    r: str? = fail(code: "file_not_found", msg: "reading: no file")
+
+    match with_code(r, code: "invalid")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "reading: no file"
+
+test "discard_value: a value of a list, a failure of a record's type"
+    held: [i64]? = ok([1, 2])
+    assert !discard_value(held).is_err()
+    r: [str]? = fail(code: "closed", msg: "the pipe closed")
+
+    match discard_value(r)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "closed"
+            assert e.msg == "the pipe closed"
+
+test "joined_message: one failure, two, and a message holding a quoted mark"
+    assert joined_message(codes: ["invalid"], msgs: ["no digit"]) == "no digit"
+    assert joined_message(codes: ["a", "b"], msgs: ["x", "y"]) == "2 failures (a: x; b: y)"
+    assert joined_message(codes: ["a", "b"], msgs: ["no \";\"", "z"]) == "2 failures (a: no \";\"; b: z)"
+
+test "combine: empty, every result a value, one failure, three failures"
+    none: [i64?] = []
+    assert !combine(none).is_err()
+    values: [i64?] = [ok(1), ok(2)]
+    assert !combine(values).is_err()
+    one: [i64?] = [ok(1), fail(code: "invalid", msg: "no digit")]
+
+    match combine(one)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "no digit"
+
+    three: [()?] = [
+        fail(code: "not_found", msg: "a")
+        ok()
+        fail(code: "invalid", msg: "b: c")
+        fail(code: "not_found", msg: "d")
+    ]
+
+    match combine(three)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_found"
+            assert e.msg == "3 failures (not_found: a; invalid: b: c; not_found: d)"
+
+test "combine: a joined failure joined again keeps its list inside one part"
+    inner: [()?] = [fail(code: "a", msg: "x"), fail(code: "b", msg: "y")]
+    outer: [()?] = [combine(inner), fail(code: "c", msg: "z")]
+
+    match combine(outer)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "a"
+            assert e.msg == "2 failures (a: 2 failures (a: x; b: y); c: z)"
+
+test "collect: empty, every value, one failure, two failures"
+    none: [str?] = []
+    assert collect(none).must().len() == 0
+    values: [str?] = [ok("a"), ok("é")]
+    assert collect(values).must() == ["a", "é"]
+    one: [str?] = [ok("a"), fail(code: "invalid", msg: "x")]
+
+    match collect(one)
+        .ok _  => assert false
+        .err e => assert e.msg == "x"
+
+    two: [str?] = [fail(code: "invalid", msg: "x"), ok("a"), fail(code: "closed", msg: "y")]
+
+    match collect(two)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "2 failures (invalid: x; closed: y)"

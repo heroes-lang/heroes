@@ -1,0 +1,195 @@
+# What `path` reads byte by byte: which byte separates, a letter's case set
+# aside, a character's width and number, and the names between separators.
+#
+# Every position this module answers is beside a separator, which is one ASCII
+# byte, or at a character's first byte, so a slice cut there never splits a
+# character (spec § 10). A rules value reaches it as `windows`, true for
+# Windows' rules and false for POSIX's.
+
+# Whether the byte `b` separates the parts of a path: `/` by both rules, and
+# `\` too by Windows'.
+function is_sep(b: u8, windows: bool) -> bool
+    return b == '/' || windows && b == '\\'
+
+# The separator the rules write: `\` by Windows', `/` by POSIX's.
+function separator(windows: bool) -> str
+    if windows
+        return "\\"
+    return "/"
+
+# Whether `s` holds a separator of the rules anywhere.
+function has_sep(s: str, windows: bool) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if is_sep(s[at], windows)
+            return true
+        at @ at + 1
+
+    return false
+
+# The byte `b` with an ASCII capital letter written small; every other byte is
+# itself. Windows sets case aside for these 26 letters alone here (the ledger's
+# note on `path/is-same` says why).
+function fold_case(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# Whether `a` and `b` are the same text, ASCII letters compared without their
+# case where `windows` is true, and every byte as itself where it is not.
+function same(a: str, b: str, windows: bool) -> bool
+    return order(a: a, b: b, windows: windows) == 0
+
+# Which of `a` and `b` orders first by their bytes: -1 where `a` does, 1 where
+# `b` does, 0 where they are the same. ASCII letters are ordered as small ones
+# where `windows` is true. A text orders before every longer text that begins
+# with it.
+function order(a: str, b: str, windows: bool) -> i64
+    at: i64 @= 0
+
+    while at < a.len() && at < b.len()
+        x: u8 @= a[at]
+        y: u8 @= b[at]
+
+        if windows
+            x @ fold_case(x)
+            y @ fold_case(y)
+
+        if x < y
+            return -1
+
+        if x > y
+            return 1
+        at @ at + 1
+
+    if a.len() < b.len()
+        return -1
+
+    if a.len() > b.len()
+        return 1
+    return 0
+
+# The width in bytes of the character that begins at `at` in `s`, read from
+# its first byte; `s` is UTF-8, so the width is one of 1 to 4.
+function width_at(s: str, at: i64) -> i64
+    first = s[at]
+
+    if first < 0x80
+        return 1
+
+    if first < 0xe0
+        return 2
+
+    if first < 0xf0
+        return 3
+    return 4
+
+# The number Unicode gives the one character `c`, decoded from its UTF-8
+# bytes. It aborts where `c` is empty.
+function code_point(c: str) -> i64
+    lead: i64 @= to_i64(c[0]).must()
+    width = width_at(c, 0)
+
+    if width == 2
+        lead @ lead & 0x1f
+    else if width == 3
+        lead @ lead & 0x0f
+    else if width == 4
+        lead @ lead & 0x07
+    value: i64 @= lead
+    at: i64 @= 1
+
+    while at < width
+        value @ value << 6 | to_i64(c[at]).must() & 0x3f
+        at @ at + 1
+
+    return value
+
+# The names in `rest`, the part of a path after its volume and its root, cut
+# at every separator of the rules: an empty name, where separators repeat or
+# end the path, and a `.` are left out, and a `..` is kept.
+function names_in(rest: str, windows: bool) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= rest.len()
+        if at == rest.len() || is_sep(rest[at], windows)
+            piece = rest.slice(from: start, to: at)
+
+            if piece != "" && piece != "."
+                out @ out.push(piece)
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# `path` with every separator of the rules written `to`.
+function with_seps(path: str, to: str, windows: bool) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < path.len()
+        if is_sep(path[at], windows)
+            pieces @ pieces.push(path.slice(from: start, to: at))
+            pieces @ pieces.push(to)
+            start @ at + 1
+        at @ at + 1
+
+    pieces @ pieces.push(path.slice(from: start, to: path.len()))
+    return pieces.join("")
+
+## Tests
+
+test "is_sep: the slash by both rules, the backslash by Windows' alone"
+    assert is_sep('/', false) && is_sep('/', true)
+    assert !is_sep('\\', false) && is_sep('\\', true)
+    assert !is_sep('a', true) && !is_sep(':', true)
+
+test "has_sep: none in the empty text, a backslash by each rules, one at either end"
+    assert !has_sep("", true)
+    assert !has_sep("a\\b", false) && has_sep("a\\b", true)
+    assert has_sep("/a", false) && has_sep("a/", false)
+    assert !has_sep("caffè", true)
+
+test "fold_case: the 26 capitals written small, every other byte itself"
+    assert fold_case('A') == 'a' && fold_case('Z') == 'z'
+    assert fold_case('a') == 'a' && fold_case('@') == '@' && fold_case('[') == '['
+    assert fold_case(0xc3) == 0xc3
+
+test "order and same: by bytes, a prefix first, and the case set aside by Windows' rules"
+    assert order(a: "", b: "", windows: false) == 0
+    assert order(a: "a", b: "b", windows: false) == -1
+    assert order(a: "b", b: "a", windows: false) == 1
+    assert order(a: "ab", b: "a", windows: false) == 1
+    assert order(a: "A", b: "a", windows: false) == -1
+    assert order(a: "A", b: "a", windows: true) == 0
+    assert order(a: "_", b: "a", windows: true) == -1
+    assert same(a: "C:\\Users", b: "c:\\USERS", windows: true)
+    assert !same(a: "C:\\Users", b: "c:\\USERS", windows: false)
+    assert !same(a: "É", b: "é", windows: true)
+
+test "width_at and code_point: one byte to four"
+    assert width_at("a", 0) == 1 && code_point("a") == 97
+    assert width_at("é", 0) == 2 && code_point("é") == 0xe9
+    assert width_at("€", 0) == 3 && code_point("€") == 0x20ac
+    assert width_at("😀", 0) == 4 && code_point("😀") == 0x1f600
+    assert width_at("aé", 1) == 2
+
+test "names_in: none, repeated separators, a dot left out, a dot-dot kept"
+    nothing: [str] = []
+    assert names_in("", false) == nothing
+    assert names_in(".", false) == nothing
+    assert names_in("a//b/./c/", false) == ["a", "b", "c"]
+    assert names_in("../a/..", false) == ["..", "a", ".."]
+    assert names_in("a\\b/c", false) == ["a\\b", "c"]
+    assert names_in("a\\b/c", true) == ["a", "b", "c"]
+    assert names_in("caffè/è", true) == ["caffè", "è"]
+
+test "with_seps: every separator of the rules, at either end, and none"
+    assert with_seps(path: "", to: "/", windows: true) == ""
+    assert with_seps(path: "a\\b/c\\", to: "/", windows: true) == "a/b/c/"
+    assert with_seps(path: "a\\b/c", to: "\\", windows: false) == "a\\b\\c"
+    assert with_seps(path: "caffè", to: "/", windows: true) == "caffè"

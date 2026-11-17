@@ -1,0 +1,207 @@
+# A failure's message read back as text: cut into the links of a chain at each
+# `": "` outside double quotes and brackets, and a joined failure's link,
+# `<n> failures (<code>: <message>; ...)`, cut into its parts. Every function
+# compares bytes and cuts only beside ASCII bytes, so it never splits a
+# character, and nothing here follows the data with recursion.
+
+# One failure read out of a joined one: its code and its message.
+record Part
+    # The code, lower-case letters, digits and `_`.
+    code: str
+    # The message, as `combine` wrote it.
+    msg: str
+
+# A joined failure's link read back: the words before its list, and its parts.
+record Joined
+    # `<n> failures`, the link without its bracketed list.
+    head: str
+    # The parts, in the order the list holds them; at least two.
+    parts: [Part]
+
+# The pieces of `text` between each `mark` followed by a space that stands
+# outside double quotes and outside round and square brackets. A quote or a
+# bracket left open keeps the rest of `text` in its last piece, and a closing
+# bracket with none open is read as text. The pieces joined by `mark` and a
+# space give `text` back.
+function cut(text: str, mark: u8) -> [str]
+    pieces: [str] @= []
+    start: i64 @= 0
+    depth: i64 @= 0
+    quoted: bool @= false
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == '"'
+            quoted @ !quoted
+        else if quoted
+            _ = 0
+        else if b == '(' || b == '['
+            depth @ depth + 1
+        else if b == ')' || b == ']'
+            if depth > 0
+                depth @ depth - 1
+        else if b == mark && depth == 0 && at + 1 < text.len() && text[at + 1] == ' '
+            pieces @ pieces.push(text.slice(from: start, to: at))
+            start @ at + 2
+            at @ at + 1
+        at @ at + 1
+
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces
+
+# Whether every bracket of `text` outside double quotes closes inside it, none
+# closes before it opens, and no quote is left open.
+function is_balanced(text: str) -> bool
+    depth: i64 @= 0
+    quoted: bool @= false
+
+    for at in range(from: 0, to: text.len())
+        b = text[at]
+
+        if b == '"'
+            quoted @ !quoted
+        else if !quoted && (b == '(' || b == '[')
+            depth @ depth + 1
+        else if !quoted && (b == ')' || b == ']')
+            if depth == 0
+                return false
+            depth @ depth - 1
+
+    return depth == 0 && !quoted
+
+# Whether `text` is a code: one byte or more, each a lower-case ASCII letter,
+# a digit or `_`.
+function is_code(text: str) -> bool
+    if text.len() == 0
+        return false
+
+    for at in range(from: 0, to: text.len())
+        b = text[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '_')
+            return false
+
+    return true
+
+# The count a joined link opens with, the number before ` failures (`: two or
+# more, written with no leading zero and no more than nine digits, so its
+# digits are `to_str` of it. Fails `not_found` where `text` opens otherwise.
+function count_of(text: str) -> i64?
+    digits: i64 @= 0
+    count: i64 @= 0
+
+    while digits < text.len() && digits < 10 && text[digits] >= '0' && text[digits] <= '9'
+        count @ count * 10 + to_i64(text[digits] - '0').must()
+        digits @ digits + 1
+
+    if digits == 0 || digits > 9 || text[0] == '0' || count < 2
+        return fail(code: "not_found", msg: f"no count of two or more opens \"{text}\"")
+    return ok(count)
+
+# `link` read as a joined failure's, `<n> failures (<code>: <message>; ...)`
+# holding exactly `n` parts, each a code then `": "` then its message. Fails
+# `not_found` where `link` is not one.
+function joined_of(link: str) -> Joined?
+    count = count_of(link)?
+    digits = to_str(count).len()
+    words = " failures ("
+    opens = digits + words.len()
+
+    if link.len() < opens + 1 || link.slice(from: digits, to: opens) != words || link[link.len() - 1] != ')'
+        return fail(code: "not_found", msg: f"\"{link}\" lists no failures")
+
+    body = link.slice(from: opens, to: link.len() - 1)
+
+    if !is_balanced(body)
+        return fail(code: "not_found", msg: f"the list of \"{link}\" does not close at its end")
+
+    pieces = cut(text: body, mark: ';')
+
+    if pieces.len() != count
+        return fail(code: "not_found", msg: f"\"{link}\" says {count} failures and lists {pieces.len()}")
+
+    parts: [Part] @= []
+
+    for piece in pieces
+        halves = cut(text: piece, mark: ':')
+
+        if halves.len() < 2 || !is_code(halves[0])
+            return fail(code: "not_found", msg: f"\"{piece}\" opens with no code")
+        rest = piece.slice(from: halves[0].len() + 2, to: piece.len())
+        parts @ parts.push(Part(code: halves[0], msg: rest))
+
+    return ok(Joined(head: link.slice(from: 0, to: opens - 2), parts: parts))
+
+test "cut: the empty text, no mark, a mark at either end, two in a row"
+    assert cut(text: "", mark: ':') == [""]
+    assert cut(text: "no port", mark: ':') == ["no port"]
+    assert cut(text: ": a", mark: ':') == ["", "a"]
+    assert cut(text: "a: ", mark: ':') == ["a", ""]
+    assert cut(text: "a: : b", mark: ':') == ["a", "", "b"]
+    assert cut(text: "a:b: c", mark: ':') == ["a:b", "c"]
+
+test "cut: a mark inside quotes, inside brackets, and after a closing bracket"
+    assert cut(text: "no \"a: b\" in \"x\"", mark: ':') == ["no \"a: b\" in \"x\""]
+    assert cut(text: "3 failures (a: b; c: d): e", mark: ':') == ["3 failures (a: b; c: d)", "e"]
+    assert cut(text: "[a: b]: c", mark: ':') == ["[a: b]", "c"]
+    assert cut(text: "a; b; c", mark: ';') == ["a", "b", "c"]
+
+test "cut: a quote or a bracket left open keeps the rest, a stray closer is text"
+    assert cut(text: "a: \"b: c", mark: ':') == ["a", "\"b: c"]
+    assert cut(text: "a: (b: c", mark: ':') == ["a", "(b: c"]
+    assert cut(text: "a): b: c", mark: ':') == ["a)", "b", "c"]
+
+test "cut: characters of more than one byte on either side of a mark"
+    assert cut(text: "lettura è fallita: perché ü", mark: ':') == ["lettura è fallita", "perché ü"]
+    assert cut(text: "日本: 語", mark: ':') == ["日本", "語"]
+
+test "is_balanced: empty, closed, closed before opening, left open, quoted brackets"
+    assert is_balanced("")
+    assert is_balanced("a (b [c]) d")
+    assert !is_balanced(")(")
+    assert !is_balanced("(a")
+    assert !is_balanced("\"a")
+    assert is_balanced("\")\"")
+
+test "is_code: empty, snake case, digits, upper case, a space, a byte past ASCII"
+    assert !is_code("")
+    assert is_code("not_found")
+    assert is_code("e2big")
+    assert !is_code("NotFound")
+    assert !is_code("not found")
+    assert !is_code("é")
+
+test "count_of: two, ten, one, zero, a leading zero, no digit, ten digits"
+    assert count_of("2 failures").must() == 2
+    assert count_of("10 failures").must() == 10
+    assert count_of("1 failure").is_err()
+    assert count_of("0 failures").is_err()
+    assert count_of("02 failures").is_err()
+    assert count_of("failures").is_err()
+    assert count_of("1234567890 failures").is_err()
+    assert count_of("123456789 failures").must() == 123456789
+
+test "joined_of: two parts, a message holding a quoted mark, a nested list"
+    two = joined_of("2 failures (invalid: no digit at 3; not_found: no \"x\")").must()
+    assert two.head == "2 failures"
+    assert two.parts == [Part(code: "invalid", msg: "no digit at 3"), Part(code: "not_found", msg: "no \"x\"")]
+    quoted = joined_of("2 failures (a: no \"x; y\"; b: in \"p: q\")").must()
+    assert quoted.parts == [Part(code: "a", msg: "no \"x; y\""), Part(code: "b", msg: "in \"p: q\"")]
+    nested = joined_of("2 failures (a: 2 failures (b: x; c: y); d: z)").must()
+    assert nested.parts == [Part(code: "a", msg: "2 failures (b: x; c: y)"), Part(code: "d", msg: "z")]
+
+test "joined_of: a count that differs, a part with no code, an open list, a list closed early"
+    assert joined_of("3 failures (a: x; b: y)").is_err()
+    assert joined_of("2 failures (a: x; y)").is_err()
+    assert joined_of("2 failures (A: x; b: y)").is_err()
+    assert joined_of("2 failures (a: x; b: y").is_err()
+    assert joined_of("2 failures (a: x) and (b: y)").is_err()
+    assert joined_of("2 failures").is_err()
+    assert joined_of("2 failures ()").is_err()
+    assert joined_of("").is_err()
+
+test "joined_of: a part whose message is empty, and one holding context"
+    j = joined_of("2 failures (a: ; b: reading: no x)").must()
+    assert j.parts == [Part(code: "a", msg: ""), Part(code: "b", msg: "reading: no x")]

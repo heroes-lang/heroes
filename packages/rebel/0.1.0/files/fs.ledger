@@ -1,0 +1,452 @@
+capability fs/read-bytes  a file's whole content, as bytes
+  heroes  fs.read_bytes
+  go      os.ReadFile
+  rust    fs::read
+  python  Path.read_bytes
+  note    -
+
+capability fs/read-text  a file's whole content, as text checked to be UTF-8
+  heroes  built-in read_file
+  go      -
+  rust    fs::read_to_string
+  python  Path.read_text
+  note    the language's own, failing `file_not_found`, `not_text` or `read_failed`
+
+capability fs/write-text  a file written whole from a text, made or emptied first
+  heroes  built-in write_file
+  go      -
+  rust    -
+  python  Path.write_text
+  note    the language's own, failing `write_failed`
+
+capability fs/write-bytes  a file written whole from bytes, made or emptied first
+  heroes  fs.write_bytes
+  go      os.WriteFile
+  rust    fs::write
+  python  Path.write_bytes
+  note    Go takes the permission of a file it makes; here it is 0o666 less the process's mask, as Rust's and Python's
+
+capability fs/append  text or bytes added at a file's end, the file made where it is not there
+  heroes  fs.append_text, fs.append_bytes
+  go      os.O_APPEND
+  rust    OpenOptions::append
+  python  -
+  note    Python appends through `open(path, "a")`, a stream
+
+capability fs/write-new  a file written whole only where nothing is there yet
+  heroes  fs.write_new_text, fs.write_new_bytes
+  go      os.O_EXCL
+  rust    File::create_new, OpenOptions::create_new
+  python  -
+  note    Python's `open(path, "x")`; the test that nothing is there and the making are one step of the system, never two
+
+capability fs/touch  a file made empty where it is not there, its times set to now where it is
+  heroes  fs.touch
+  go      -
+  rust    -
+  python  Path.touch
+  note    -
+
+capability fs/open-read  a file opened as a stream to read
+  heroes  fs.open
+  go      os.Open
+  rust    File::open, File::open_buffered
+  python  Path.open, os.open
+  note    the stream is `io.Stream`; a buffered reader over it is `io.reader`
+
+capability fs/create  a file opened as a stream to write, made or emptied first
+  heroes  fs.create
+  go      os.Create
+  rust    File::create, File::create_buffered
+  python  -
+  note    -
+
+capability fs/open-with  a file opened as a stream for an access named, with the permission of a file it makes
+  heroes  fs.open_with
+  go      os.OpenFile, os.O_RDONLY, os.O_WRONLY, os.O_RDWR, os.O_CREATE, os.O_TRUNC
+  rust    File::options, OpenOptions::new, OpenOptions::read, OpenOptions::write, OpenOptions::create, OpenOptions::truncate, OpenOptions::open, OpenOptions::mode
+  python  os.O_RDONLY, os.O_WRONLY, os.O_RDWR, os.O_CREAT, os.O_TRUNC
+  note    the accesses are the five the platform layer offers, a variant, never bits to combine, so no combination means nothing
+
+capability fs/info  the facts of what a path names, links followed: kind, size, permission bits, times, count of names
+  heroes  fs.info
+  go      os.Stat, os.FileInfo, os.FileMode, FileMode.IsDir, FileMode.IsRegular, FileMode.Perm
+  rust    fs::metadata, Metadata::len, Metadata::file_type, Metadata::is_dir, Metadata::is_file, Metadata::permissions, Metadata::modified, Metadata::accessed, Permissions::mode, Permissions::readonly, FileType::is_dir, FileType::is_file
+  python  os.stat, Path.stat, Path.info, os.path.getsize, os.path.getmtime, os.path.getatime
+  note    times are `time.Instant`s, as fine as the volume keeps them
+
+capability fs/link-info  the same facts of a link itself
+  heroes  fs.link_info
+  go      os.Lstat
+  rust    fs::symlink_metadata, Metadata::is_symlink, FileType::is_symlink
+  python  os.lstat, Path.lstat
+  note    -
+
+capability fs/created-time  when a file was made, or its facts last changed
+  heroes  fs.created
+  go      -
+  rust    Metadata::created
+  python  os.path.getctime
+  note    the time of making, links followed (`hero_disk_made`, round 3): Darwin's `st_birthtime`, Linux's `statx` where the volume keeps one, Windows' creation time, else `unsupported`. Python's `getctime` is the last change of the facts on POSIX, which this does not answer
+
+capability fs/owner-read  who owns what a path names
+  heroes  fs.owner, fs.link_owner
+  go      -
+  rust    -
+  python  Path.owner, Path.group
+  note    by number, the user and the group (`hero_disk_owner`, round 3); Windows names no owner by number and fails `unsupported`, where Python answers names
+
+capability fs/kind-other  which of the other kinds a path is: a pipe, a socket, a device, a mount point, a junction
+  heroes  fs.other_kind
+  go      os.ModeNamedPipe, os.ModeSocket, os.ModeDevice, os.ModeCharDevice
+  rust    FileType::is_symlink_dir, FileType::is_symlink_file
+  python  Path.is_fifo, Path.is_socket, Path.is_block_device, Path.is_char_device, Path.is_mount, Path.is_junction, os.path.ismount, os.path.isjunction, os.path.isdevdrive
+  note    a pipe, a socket, a character or a block device, or one the list does not name (`hero_disk_other_kind`, round 3); Windows tells a pipe and a character device and calls a socket's file a file. A mount point and a junction are not told here: a junction is a link to `fs.link_info`
+
+capability fs/exists  whether a path names something, links followed
+  heroes  fs.exists
+  go      -
+  rust    fs::exists
+  python  os.path.exists, os.path.lexists, Path.exists
+  note    Rust's: a link to nothing is not there, and a path the system will not say of fails rather than answer false as Python does
+
+capability fs/is-kind  whether a path names a file, a folder or a link
+  heroes  fs.is_file, fs.is_dir, fs.is_link
+  go      -
+  rust    -
+  python  os.path.isfile, os.path.isdir, os.path.islink, Path.is_file, Path.is_dir, Path.is_symlink
+  note    false where nothing is there; a path the system will not say of fails, where Python answers false
+
+capability fs/same-file  whether two paths name one file
+  heroes  fs.is_same_file
+  go      os.SameFile
+  rust    -
+  python  os.path.samefile, Path.samefile, os.path.samestat
+  note    -
+
+capability fs/space  the bytes free and the size of the volume a path stands on
+  heroes  fs.space
+  go      -
+  rust    -
+  python  shutil.disk_usage, os.statvfs
+  note    Python's `used` is the size less the bytes free to anybody; here the bytes free are this user's, so `used` is not offered
+
+capability fs/make-dir  one folder made, its parent there already
+  heroes  fs.make_dir
+  go      os.Mkdir
+  rust    fs::create_dir, DirBuilder::new, DirBuilder::create
+  python  os.mkdir, Path.mkdir
+  note    -
+
+capability fs/make-dir-permission  one folder made with the permission bits named
+  heroes  fs.make_dir_with
+  go      os.Mkdir
+  rust    DirBuilder::mode
+  python  os.mkdir
+  note    the process's mask takes its bits away, as on every system
+
+capability fs/make-dir-all  a folder made with every folder above it that is not there
+  heroes  fs.make_dir_all
+  go      os.MkdirAll
+  rust    fs::create_dir_all, DirBuilder::recursive
+  python  os.makedirs, Path.mkdir
+  note    a folder there already is no failure; a file where the folder must stand is `not_a_directory`, as Go answers, where Python answers `exists`
+
+capability fs/read-dir  a folder's entries, each a name and a kind
+  heroes  fs.read_dir
+  go      os.ReadDir, os.DirEntry, File.ReadDir, File.Readdir, File.Readdirnames
+  rust    fs::read_dir, fs::ReadDir, DirEntry::file_name, DirEntry::file_type, DirEntry::path, DirEntry::metadata
+  python  os.listdir, os.scandir, Path.iterdir
+  note    sorted by name, as Go sorts; Rust and Python answer the system's order. A name that is not UTF-8 fails `not_text`
+
+capability fs/remove  a file, a link or an empty folder removed
+  heroes  fs.remove
+  go      os.Remove
+  rust    fs::remove_file, fs::remove_dir
+  python  os.remove, os.unlink, os.rmdir, Path.unlink, Path.rmdir
+  note    one function for the three, as Go's; a link is removed, never what it names
+
+capability fs/remove-parents  a folder removed and then each folder above it that is left empty
+  heroes  refused: it removes folders the caller never named and stops at the first that holds something, silently; `remove` on each parent says what is removed
+  go      -
+  rust    -
+  python  os.removedirs
+  note    -
+
+capability fs/remove-all  a folder removed with everything it holds
+  heroes  fs.remove_all
+  go      os.RemoveAll
+  rust    fs::remove_dir_all
+  python  shutil.rmtree
+  note    nothing there fails `file_not_found`, as Rust and Python answer, where Go answers nil; links inside are removed, never followed; a name inside that is not UTF-8 fails `not_text`, since no path a program holds can name it
+
+capability fs/rename  a path given another name on the same volume, replacing a file there
+  heroes  fs.rename
+  go      os.Rename
+  rust    fs::rename
+  python  os.rename, os.replace, Path.rename, Path.replace
+  note    a file takes the place of a file and never of a folder, and a folder of nothing, on every system
+
+capability fs/rename-making-parents  a rename that first makes the folders the new name needs
+  heroes  refused: two calls a program writes, `make_dir_all` of the parent and `rename`, which say which folders are made
+  go      -
+  rust    -
+  python  os.renames
+  note    -
+
+capability fs/move  a path moved, across volumes too
+  heroes  fs.move
+  go      -
+  rust    -
+  python  shutil.move, Path.move, Path.move_into
+  note    rename's rules for what is there; across volumes the bytes are copied, with their times, to a new name beside `to` and renamed into place, then the original removed; a link or a special file is not moved across volumes (`unsupported`), since no floor makes a link. Python's `shutil.move` into a folder that is there puts it inside; here a folder is never entered
+
+capability fs/copy-file  a file's bytes copied to another path
+  heroes  fs.copy_file
+  go      -
+  rust    fs::copy
+  python  shutil.copyfile, shutil.copy, Path.copy, Path.copy_into
+  note    a file the copy makes takes the original's permission bits less the process's mask; one there keeps its own. A file copied onto itself fails `invalid`, as Python's `SameFileError`, where Rust may empty it
+
+capability fs/copy-facts  a file's permission bits and times copied onto another
+  heroes  fs.copy_permission, fs.copy_facts, fs.copy_file_with_facts
+  go      -
+  rust    -
+  python  shutil.copymode, shutil.copystat, shutil.copy2
+  note    the permission bits, and with them the two times (Python's `copymode`, `copystat`, `copy2`); `copystat`'s flags and extended attributes are not copied
+
+capability fs/copy-tree  a folder copied with everything it holds
+  heroes  fs.copy_tree
+  go      os.CopyFS
+  rust    -
+  python  shutil.copytree, shutil.ignore_patterns
+  note    the destination must not be there, as Python's; links are followed, as Python's default, and one to nothing or one that loops fails before anything is written. Each folder takes its original's bits with this user's read, write and search added, since no door sets bits once its content is in
+
+capability fs/walk  every path under a folder, depth first, each folder's entries by name
+  heroes  fs.walk, fs.walk_following_links
+  go      filepath.Walk, filepath.WalkDir, filepath.WalkFunc, filepath.SkipDir, filepath.SkipAll
+  rust    -
+  python  os.walk, os.fwalk, Path.walk
+  note    a list, since no callback can hold state; links are not followed unless asked, and a link that leads back into a folder the walk is inside is never entered. A folder the walk cannot read fails it, where Python passes over it
+
+capability fs/glob  the paths that match a pattern
+  heroes  fs.glob
+  go      filepath.Glob
+  rust    -
+  python  glob.glob, glob.iglob, Path.glob, Path.rglob
+  note    the pattern is `path.matches`'s, `**` included; `*` matches a name beginning with a dot, as Go's, where Python's leaves it out; links are followed, a tree that loops walked once. Sorted. A folder that cannot be read fails, where Go and Python pass over it; Python's `dir/**` lists `dir/` itself and this does not
+
+capability fs/read-link  the target a symbolic link holds
+  heroes  fs.read_link
+  go      os.Readlink
+  rust    fs::read_link
+  python  os.readlink, Path.readlink
+  note    -
+
+capability fs/resolve  the absolute path a path names, every link followed
+  heroes  fs.resolve
+  go      filepath.EvalSymlinks
+  rust    fs::canonicalize
+  python  os.path.realpath, Path.resolve
+  note    absolute, as Rust's and Python's, where Go keeps a relative path relative; nothing there fails `file_not_found`
+
+capability fs/abs  a path made absolute against the working folder, links not read
+  heroes  fs.to_abs
+  go      filepath.Abs
+  rust    path::absolute
+  python  os.path.abspath, Path.absolute
+  note    cleaned, as Go's and Python's, where Rust's keeps `..`
+
+capability fs/hard-link  a second name for a file
+  heroes  fs.hard_link
+  go      os.Link
+  rust    fs::hard_link
+  python  os.link, Path.hardlink_to
+  note    a link `existing` names is itself given the second name (`linkat` with no flag, `CreateHardLinkW`), as Python's `follow_symlinks=False`; a folder fails `is_a_directory` on every system
+
+capability fs/symlink  a symbolic link made
+  heroes  fs.symlink
+  go      os.Symlink
+  rust    fs::soft_link
+  python  os.symlink, Path.symlink_to
+  note    `hero_disk_symlink` (round 3), where the path is UTF-8 on Windows too; Windows makes one for an administrator or in developer mode, else `permission`, and makes a folder's link where the target names a folder when it is made
+
+capability fs/permission  the permission bits of what a path names set
+  heroes  fs.set_permission, fs.permission_of
+  go      os.Chmod
+  rust    fs::set_permissions, Permissions::set_mode, Permissions::set_readonly, Permissions::from_mode
+  python  os.chmod, Path.chmod
+  note    set as given, no mask taking any away, as Go and Python; Windows keeps read-only alone, set where no bit of 0o222 is. `hero_os.h`'s `hero_fs_set_mode` is bound in `os/hero_os` and not used: it answers no kind and its Windows arm reads a path in the code page
+
+capability fs/link-permission  the permission bits of a link itself set
+  heroes  fs.set_link_permission
+  go      -
+  rust    fs::set_permissions_nofollow
+  python  os.lchmod, Path.lchmod
+  note    Darwin and Windows set a link's own bits; Linux keeps none and fails `unsupported`, as Python's `lchmod` is missing there
+
+capability fs/owner  the user and group that own what a path names set
+  heroes  fs.set_owner
+  go      os.Chown
+  rust    -
+  python  os.chown, shutil.chown
+  note    by number; Windows has none and fails `unsupported`
+
+capability fs/link-owner  the user and group that own a link itself set
+  heroes  fs.set_link_owner
+  go      os.Lchown
+  rust    -
+  python  os.lchown
+  note    -
+
+capability fs/times  the times of the last write and the last read of what a path names set
+  heroes  fs.set_times
+  go      os.Chtimes
+  rust    fs::set_times, fs::FileTimes, FileTimes::new, FileTimes::set_accessed, FileTimes::set_modified, FileTimes::set_created
+  python  os.utime
+  note    both times are given; Windows' time of making is not set
+
+capability fs/link-times  the times of a link itself set
+  heroes  fs.set_link_times
+  go      -
+  rust    fs::set_times_nofollow
+  python  -
+  note    `utimensat` with `AT_SYMLINK_NOFOLLOW`; on Windows the link opened itself
+
+capability fs/truncate  a file made a given length, cut or grown with zeros
+  heroes  fs.truncate
+  go      os.Truncate
+  rust    -
+  python  os.truncate
+  note    a stream's own is `io.truncate`
+
+capability fs/temp-dir-made  a new folder with a name nobody has, for temporary use
+  heroes  fs.make_temp_dir
+  go      os.MkdirTemp
+  rust    -
+  python  tempfile.mkdtemp, tempfile.TemporaryDirectory
+  note    Go's pattern, its last `*` the unique part; the unique part is 64 bits of `os.random_bytes` as hexadecimal, where Go writes decimal digits and Python letters; the folder is 0o700. No folder removes itself: the caller removes it
+
+capability fs/temp-file-made  a new file with a name nobody has, open to write
+  heroes  fs.make_temp_file
+  go      os.CreateTemp
+  rust    -
+  python  tempfile.mkstemp, tempfile.NamedTemporaryFile, tempfile.TemporaryFile
+  note    as `fs/temp-dir-made`, the file 0o600 and its stream open to write, since the platform layer's access that makes a file only writes, where Go and Python open it to read too; Python's files that remove themselves on close need a destructor Heroes has not
+
+capability fs/temp-folder-named  the system's folder for temporary files
+  heroes  os.temp_dir
+  go      os.TempDir
+  rust    -
+  python  tempfile.gettempdir
+  note    `os`'s, since it names a folder of the process's world and makes nothing
+
+capability fs/temp-name-unmade  a temporary name returned without making anything
+  heroes  refused: a name not made is a race another program wins; `make_temp_file` makes it in the same step
+  go      -
+  rust    -
+  python  tempfile.mktemp
+  note    -
+
+capability fs/spooled  a temporary file held in memory until it grows
+  heroes  refused: a buffer's policy and no file; a program holds `[u8]` or makes a temporary file
+  go      -
+  rust    -
+  python  tempfile.SpooledTemporaryFile
+  note    -
+
+capability fs/access-check  whether this user may read, write or run a path
+  heroes  refused: asking before doing is a race the answer cannot survive; the call that reads or writes fails `permission`
+  go      -
+  rust    -
+  python  os.access
+  note    Python's own documentation says the same
+
+capability fs/confined  operations held inside one folder, links unable to leave it
+  heroes  pending
+  go      os.OpenRoot, os.OpenInRoot, os.Root, Root.Chmod, Root.Chown, Root.Chtimes, Root.Close, Root.Create, Root.FS, Root.Lchown, Root.Link, Root.Lstat, Root.Mkdir, Root.MkdirAll, Root.Name, Root.Open, Root.OpenFile, Root.OpenRoot, Root.ReadFile, Root.Readlink, Root.Remove, Root.RemoveAll, Root.Rename, Root.Stat, Root.Symlink, Root.WriteFile
+  rust    fs::Dir
+  python  -
+  note    it needs doors that work relative to a folder held open (`openat` and its kin on POSIX, a handle-relative `NtCreateFile` on Windows), each refusing a link that leaves the folder; round 3 (2026-11-16) did not write them on the three systems
+
+capability fs/lock  a file locked against other processes
+  heroes  fs.lock, fs.try_lock, fs.unlock
+  go      -
+  rust    File::lock, File::lock_shared, File::try_lock, File::try_lock_shared, File::unlock, fs::TryLockError
+  python  -
+  note    a whole file through its stream (`flock`, `LockFileEx`); `try_lock`'s false is Rust's `TryLockError::WouldBlock`. Advisory on POSIX, enforced on Windows, where a shared lock refuses a write through its own stream too
+
+capability fs/special-files  a named pipe or a device file made
+  heroes  refused: what Windows has not, and what a device needs the administrator for
+  go      -
+  rust    -
+  python  os.mkfifo, os.mknod, os.makedev, os.major, os.minor
+  note    -
+
+capability fs/flags  the flags of a BSD file, beside its permission bits
+  heroes  refused: BSD's alone, which Linux and Windows have not
+  go      -
+  rust    -
+  python  os.chflags, os.lchflags
+  note    -
+
+capability fs/sync-all  every volume of the machine flushed
+  heroes  refused: the whole machine's and no program's; a stream is flushed by `io.sync`
+  go      -
+  rust    -
+  python  os.sync
+  note    -
+
+capability fs/archives  folders packed into an archive and unpacked
+  heroes  refused: an archive is a format, a package of its own, not a file system's
+  go      -
+  rust    -
+  python  shutil.make_archive, shutil.unpack_archive, shutil.get_archive_formats, shutil.register_archive_format, shutil.unregister_archive_format, shutil.get_unpack_formats, shutil.register_unpack_format, shutil.unregister_unpack_format
+  note    -
+
+capability fs/change-root  the process's root folder changed
+  heroes  refused: the process's, and the administrator's alone
+  go      -
+  rust    -
+  python  os.chroot
+  note    -
+
+dropped streams  a file once open is an `io.Stream`, read, written, sought, cut, flushed and closed by `io`
+  go      File.Read, File.ReadAt, File.Write, File.WriteAt, File.WriteString, File.ReadFrom, File.WriteTo, File.Seek, File.Truncate, File.Sync, File.Close, File.Stat, File.Chmod, File.Chown, File.Chdir, File.Name, File.SetDeadline, File.SetReadDeadline, File.SetWriteDeadline, File.SyscallConn, os.File, os.Pipe
+  rust    fs::File, File::read, File::write, File::seek, File::set_len, File::sync_all, File::sync_data, File::metadata, File::set_permissions, File::set_times, File::set_modified, File::try_clone, File::is_terminal, File::read_at, File::write_at, File::seek_read, File::seek_write
+  python  os.read, os.write, os.lseek, os.close, os.fsync, os.ftruncate, os.fstat, os.fchmod, os.fchown, os.fchdir, os.fdopen, os.pread, os.pwrite, os.readv, os.writev, os.sendfile, os.fstatvfs, shutil.copyfileobj, shutil.COPY_BUFSIZE
+
+dropped descriptors  a raw descriptor or handle is a number no Heroes program can be trusted with
+  go      os.NewFile, File.Fd
+  rust    File::as_fd, File::as_raw_fd, File::from_raw_fd, File::into_raw_fd, File::as_handle, File::as_raw_handle, File::from_raw_handle, File::into_raw_handle
+  python  os.dup, os.dup2, os.get_inheritable, os.set_inheritable, os.get_blocking, os.set_blocking
+
+dropped error-types  a failure is a code and a message, and a code is compared with `fs.EXISTS` and its kin
+  go      os.IsExist, os.IsNotExist, os.IsPermission, os.IsTimeout, os.PathError, os.LinkError, os.SyscallError, os.NewSyscallError, os.ErrExist, os.ErrNotExist, os.ErrPermission, os.ErrClosed
+  rust    -
+  python  shutil.Error, shutil.SameFileError, shutil.SpecialFileError, shutil.ReadError, shutil.RegistryError
+
+dropped raw-facts  the facts are `fs.Info`'s fields; the numbers one platform keeps beside them are not offered
+  go      os.ModeDir, os.ModeSymlink, os.ModeIrregular, os.ModeAppend, os.ModeExclusive, os.ModeTemporary, os.ModeSetuid, os.ModeSetgid, os.ModeSticky, os.ModeType, os.ModePerm, FileMode.String, FileMode.Type, FileInfo.Sys
+  rust    fs::FileType, fs::Permissions, Metadata::as_raw_stat, Metadata::dev, Metadata::ino, Metadata::blksize, Metadata::blocks, Metadata::rdev, Metadata::file_attributes, Metadata::volume_serial_number, Permissions::set_file_attributes
+  python  os.stat_result, os.statvfs_result, os.pathconf, os.fpathconf
+
+dropped interfaces  an interface over a file system is what Heroes has not; the functions here act on the system's own
+  go      os.DirFS, fs.FS, fs.Sub, fs.ValidPath, fs.ReadDirFS, fs.ReadFileFS, fs.StatFS, fs.GlobFS, fs.SubFS, fs.ReadLinkFS
+  rust    -
+  python  -
+
+dropped iterators  a list is answered, never an iterator to drive
+  go      -
+  rust    fs::ReadDir
+  python  glob.iglob, os.scandir
+
+dropped bytes-paths  a path is a `str`, so no form of bytes is offered
+  go      -
+  rust    -
+  python  tempfile.gettempdirb, tempfile.gettempprefixb, os.fsencode, os.fsdecode, os.fspath
+
+dropped elsewhere  what another package of Rebel owns: the working and home folders `os`'s, a URI `url`'s, a program found on PATH `process`'s, a pattern as text `path`'s, a prefix the caller's pattern
+  go      os.Chdir, os.Getwd, os.TempDir
+  rust    -
+  python  os.chdir, os.getcwd, Path.cwd, Path.home, Path.expanduser, os.path.expanduser, Path.from_uri, shutil.which, shutil.get_terminal_size, glob.escape, glob.has_magic, glob.translate, tempfile.gettempprefix, tempfile.template, tempfile.tempdir

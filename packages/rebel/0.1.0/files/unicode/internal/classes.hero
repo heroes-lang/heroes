@@ -1,0 +1,513 @@
+# The classes of a code point: its general category, read from the runs of
+# `category_table`, and the properties a category does not tell, read from
+# the sets of `property_tables`. Every function takes a code point from 0 to
+# U+10FFFF, a surrogate included, and reads about thirteen entries of a table.
+
+use unicode/internal/category_table
+use unicode/internal/property_tables
+use unicode/internal/search
+use unicode/internal/sweep
+use unicode/internal/utf8
+use unicode/internal/written
+
+# The index of the category `Lu`, an upper case letter, in `NAMES`; the
+# indices of the other categories follow it in `NAMES`' order.
+constant LU: i64
+    0
+
+# The index of `Ll`, a lower case letter.
+constant LL: i64
+    1
+
+# The index of `Lt`, a title case letter.
+constant LT: i64
+    2
+
+# The index of `Lm`, a modifier letter.
+constant LM: i64
+    3
+
+# The index of `Lo`, the last of the letters.
+constant LO: i64
+    4
+
+# The index of `Mn`, the first of the marks.
+constant MN: i64
+    5
+
+# The index of `Me`, the last of the marks.
+constant ME: i64
+    7
+
+# The index of `Nd`, a decimal digit, the first of the numbers.
+constant ND: i64
+    8
+
+# The index of `Nl`, a number written as a letter.
+constant NL: i64
+    9
+
+# The index of `No`, the last of the numbers.
+constant NO: i64
+    10
+
+# The index of `Pc`, the first of the punctuation.
+constant PC: i64
+    11
+
+# The index of `Po`, the last of the punctuation.
+constant PO: i64
+    17
+
+# The index of `Sm`, the first of the symbols.
+constant SM: i64
+    18
+
+# The index of `Sk`, a modifier symbol.
+constant SK: i64
+    20
+
+# The index of `So`, the last of the symbols.
+constant SO: i64
+    21
+
+# The index of `Zs`, a space.
+constant ZS: i64
+    22
+
+# The index of `Cc`, a control code.
+constant CC: i64
+    25
+
+# The index of `Cf`, a format character.
+constant CF: i64
+    26
+
+# The run of `category_table.RUNS` that holds `n`: its first code point
+# shifted left by 5, and its category's index.
+function run_of(n: i64) -> i64
+    return category_table.RUNS[search.count_at_or_below(category_table.RUNS, n << 5 | 31) - 1]
+
+# The index in `category_table.NAMES` of the general category of `n`.
+function category_of(n: i64) -> i64
+    return run_of(n) & 31
+
+# The two letters of the general category of `n`.
+function name_of(n: i64) -> str
+    return category_table.NAMES[category_of(n)]
+
+# Whether `n` is a letter, a category that begins with `L`.
+function is_letter(n: i64) -> bool
+    return category_of(n) <= LO
+
+# Whether `n` is alphabetic: a letter, `Nl`, or in `OTHER_ALPHABETIC`.
+function is_alphabetic(n: i64) -> bool
+    k = category_of(n)
+    return k <= LO || k == NL || search.in_set(property_tables.OTHER_ALPHABETIC, n)
+
+# Whether `n` is a decimal digit, `Nd`.
+function is_digit(n: i64) -> bool
+    return category_of(n) == ND
+
+# Whether `n` is a number, a category that begins with `N`.
+function is_number(n: i64) -> bool
+    k = category_of(n)
+    return k >= ND && k <= NO
+
+# Whether `n` is alphabetic or a number.
+function is_alphanumeric(n: i64) -> bool
+    return is_alphabetic(n) || is_number(n)
+
+# Whether `n` is white space.
+function is_space(n: i64) -> bool
+    return search.in_set(property_tables.WHITE_SPACE, n)
+
+# Whether `n` is upper case: `Lu`, or in `OTHER_UPPERCASE`.
+function is_upper(n: i64) -> bool
+    return category_of(n) == LU || search.in_set(property_tables.OTHER_UPPERCASE, n)
+
+# Whether `n` is lower case: `Ll`, or in `OTHER_LOWERCASE`.
+function is_lower(n: i64) -> bool
+    return category_of(n) == LL || search.in_set(property_tables.OTHER_LOWERCASE, n)
+
+# Whether `n` is a title case letter, `Lt`.
+function is_title(n: i64) -> bool
+    return category_of(n) == LT
+
+# Whether `n` has a case: upper, lower or title.
+function is_cased(n: i64) -> bool
+    return is_upper(n) || is_lower(n) || is_title(n)
+
+# Whether `n` is passed over in casing: `Mn`, `Me`, `Cf`, `Lm` or `Sk`, or in
+# `OTHER_CASE_IGNORABLE`.
+function is_case_ignorable(n: i64) -> bool
+    k = category_of(n)
+    return k == MN || k == ME || k == CF || k == LM || k == SK || search.in_set(property_tables.OTHER_CASE_IGNORABLE, n)
+
+# Whether `n` is punctuation, a category that begins with `P`.
+function is_punctuation(n: i64) -> bool
+    k = category_of(n)
+    return k >= PC && k <= PO
+
+# Whether `n` is a symbol, a category that begins with `S`.
+function is_symbol(n: i64) -> bool
+    k = category_of(n)
+    return k >= SM && k <= SO
+
+# Whether `n` is a mark, a category that begins with `M`.
+function is_mark(n: i64) -> bool
+    k = category_of(n)
+    return k >= MN && k <= ME
+
+# Whether `n` is a control code, `Cc`.
+function is_control(n: i64) -> bool
+    return category_of(n) == CC
+
+# Whether `n` is graphic: a letter, a mark, a number, punctuation, a symbol or
+# `Zs`, which are the categories up to `Zs` in `NAMES`' order.
+function is_graphic(n: i64) -> bool
+    return category_of(n) <= ZS
+
+# Whether `n` is printable: graphic, with U+0020 the only space.
+function is_printable(n: i64) -> bool
+    return category_of(n) <= SO || n == 0x20
+
+# The value of `n`, a decimal digit, 0 to 9: Unicode writes every script's ten
+# digits in a run of their own from zero, so the value is how far `n` stands
+# from the start of its run, by tens. Fails `invalid` where `n` is no decimal
+# digit.
+function digit_value(n: i64) -> i64?
+    run = run_of(n)
+
+    if run & 31 != ND
+        return fail(
+            code: utf8.INVALID,
+            msg: f"{written.code_point(n)} is no decimal digit: its category is {category_table.NAMES[run & 31]}"
+        )
+    return ok((n - (run >> 5)) % 10)
+
+## Tests
+
+# The expected numbers are the fold of `sweep` over what Python 3.15.2's
+# `unicodedata` and `str` methods and Go 1.27.3's `unicode` answer for the
+# same code points, observed 2026-11-15, both reading Unicode 17.0.0; the
+# seven blocks are Latin to Latin Extended-B (U+0000 to U+024F), Greek and
+# Cyrillic (U+0370 to U+052F), General Punctuation to Number Forms (U+2000
+# to U+218F), CJK Symbols and Punctuation, Hiragana and Katakana (U+3000 to
+# U+30FF), the Halfwidth and Fullwidth Forms (U+FF00 to U+FFEF), Deseret to
+# Osage (U+10400 to U+104FF) and the Mathematical Alphanumeric Symbols
+# (U+1D400 to U+1D7FF): 3,216 code points for each question.
+
+# The digit value of `n` plus one, 0 where it has none: what the fold reads.
+function digit_or_none(n: i64) -> i64
+    return digit_value(n).default(-1) + 1
+
+test "is_letter: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_letter, first: 0x0, past: 0x250) == 58580588
+    assert sweep.folded_bools(question: is_letter, first: 0x370, past: 0x530) == 623373750
+    assert sweep.folded_bools(question: is_letter, first: 0x2000, past: 0x2190) == 960675244
+    assert sweep.folded_bools(question: is_letter, first: 0x3000, past: 0x3100) == 70186979
+    assert sweep.folded_bools(question: is_letter, first: 0xff00, past: 0xfff0) == 504997193
+    assert sweep.folded_bools(question: is_letter, first: 0x10400, past: 0x10500) == 616087772
+    assert sweep.folded_bools(question: is_letter, first: 0x1d400, past: 0x1d800) == 252712748
+
+test "is_alphabetic: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x0, past: 0x250) == 58580588
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x370, past: 0x530) == 623373750
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x2000, past: 0x2190) == 481284353
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x3000, past: 0x3100) == 442577600
+    assert sweep.folded_bools(question: is_alphabetic, first: 0xff00, past: 0xfff0) == 504997193
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x10400, past: 0x10500) == 616087772
+    assert sweep.folded_bools(question: is_alphabetic, first: 0x1d400, past: 0x1d800) == 252712748
+
+test "is_digit: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_digit, first: 0x0, past: 0x250) == 565214106
+    assert sweep.folded_bools(question: is_digit, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_bools(question: is_digit, first: 0x2000, past: 0x2190) == 0
+    assert sweep.folded_bools(question: is_digit, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_digit, first: 0xff00, past: 0xfff0) == 319429077
+    assert sweep.folded_bools(question: is_digit, first: 0x10400, past: 0x10500) == 559581346
+    assert sweep.folded_bools(question: is_digit, first: 0x1d400, past: 0x1d800) == 337120067
+
+test "is_number: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_number, first: 0x0, past: 0x250) == 739871270
+    assert sweep.folded_bools(question: is_number, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_bools(question: is_number, first: 0x2000, past: 0x2190) == 363306792
+    assert sweep.folded_bools(question: is_number, first: 0x3000, past: 0x3100) == 372390621
+    assert sweep.folded_bools(question: is_number, first: 0xff00, past: 0xfff0) == 319429077
+    assert sweep.folded_bools(question: is_number, first: 0x10400, past: 0x10500) == 559581346
+    assert sweep.folded_bools(question: is_number, first: 0x1d400, past: 0x1d800) == 337120067
+
+test "is_alphanumeric: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x0, past: 0x250) == 798451858
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x370, past: 0x530) == 623373750
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x2000, past: 0x2190) == 323982029
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x3000, past: 0x3100) == 442577600
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0xff00, past: 0xfff0) == 824426270
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x10400, past: 0x10500) == 175669111
+    assert sweep.folded_bools(question: is_alphanumeric, first: 0x1d400, past: 0x1d800) == 589832815
+
+test "is_space: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_space, first: 0x0, past: 0x250) == 987374207
+    assert sweep.folded_bools(question: is_space, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_bools(question: is_space, first: 0x2000, past: 0x2190) == 302741334
+    assert sweep.folded_bools(question: is_space, first: 0x3000, past: 0x3100) == 462411792
+    assert sweep.folded_bools(question: is_space, first: 0xff00, past: 0xfff0) == 0
+    assert sweep.folded_bools(question: is_space, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_space, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_upper: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_upper, first: 0x0, past: 0x250) == 522034364
+    assert sweep.folded_bools(question: is_upper, first: 0x370, past: 0x530) == 35389251
+    assert sweep.folded_bools(question: is_upper, first: 0x2000, past: 0x2190) == 195925672
+    assert sweep.folded_bools(question: is_upper, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_upper, first: 0xff00, past: 0xfff0) == 790465464
+    assert sweep.folded_bools(question: is_upper, first: 0x10400, past: 0x10500) == 369371947
+    assert sweep.folded_bools(question: is_upper, first: 0x1d400, past: 0x1d800) == 202145562
+
+test "is_lower: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_lower, first: 0x0, past: 0x250) == 362912247
+    assert sweep.folded_bools(question: is_lower, first: 0x370, past: 0x530) == 937885363
+    assert sweep.folded_bools(question: is_lower, first: 0x2000, past: 0x2190) == 128346600
+    assert sweep.folded_bools(question: is_lower, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_lower, first: 0xff00, past: 0xfff0) == 464115939
+    assert sweep.folded_bools(question: is_lower, first: 0x10400, past: 0x10500) == 117343580
+    assert sweep.folded_bools(question: is_lower, first: 0x1d400, past: 0x1d800) == 50567186
+
+test "is_title: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_title, first: 0x0, past: 0x250) == 732999685
+    assert sweep.folded_bools(question: is_title, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_bools(question: is_title, first: 0x2000, past: 0x2190) == 0
+    assert sweep.folded_bools(question: is_title, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_title, first: 0xff00, past: 0xfff0) == 0
+    assert sweep.folded_bools(question: is_title, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_title, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_cased: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_cased, first: 0x0, past: 0x250) == 617946289
+    assert sweep.folded_bools(question: is_cased, first: 0x370, past: 0x530) == 973274614
+    assert sweep.folded_bools(question: is_cased, first: 0x2000, past: 0x2190) == 324272272
+    assert sweep.folded_bools(question: is_cased, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_cased, first: 0xff00, past: 0xfff0) == 254581396
+    assert sweep.folded_bools(question: is_cased, first: 0x10400, past: 0x10500) == 486715527
+    assert sweep.folded_bools(question: is_cased, first: 0x1d400, past: 0x1d800) == 252712748
+
+test "is_case_ignorable: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x0, past: 0x250) == 894083431
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x370, past: 0x530) == 941701564
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x2000, past: 0x2190) == 671300857
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x3000, past: 0x3100) == 352629502
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0xff00, past: 0xfff0) == 265332481
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_case_ignorable, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_punctuation: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_punctuation, first: 0x0, past: 0x250) == 515505089
+    assert sweep.folded_bools(question: is_punctuation, first: 0x370, past: 0x530) == 229966954
+    assert sweep.folded_bools(question: is_punctuation, first: 0x2000, past: 0x2190) == 671777134
+    assert sweep.folded_bools(question: is_punctuation, first: 0x3000, past: 0x3100) == 481550709
+    assert sweep.folded_bools(question: is_punctuation, first: 0xff00, past: 0xfff0) == 830935528
+    assert sweep.folded_bools(question: is_punctuation, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_punctuation, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_symbol: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_symbol, first: 0x0, past: 0x250) == 213915370
+    assert sweep.folded_bools(question: is_symbol, first: 0x370, past: 0x530) == 105034102
+    assert sweep.folded_bools(question: is_symbol, first: 0x2000, past: 0x2190) == 561393133
+    assert sweep.folded_bools(question: is_symbol, first: 0x3000, past: 0x3100) == 382757013
+    assert sweep.folded_bools(question: is_symbol, first: 0xff00, past: 0xfff0) == 684491150
+    assert sweep.folded_bools(question: is_symbol, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_symbol, first: 0x1d400, past: 0x1d800) == 362685302
+
+test "is_mark: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_mark, first: 0x0, past: 0x250) == 0
+    assert sweep.folded_bools(question: is_mark, first: 0x370, past: 0x530) == 163113053
+    assert sweep.folded_bools(question: is_mark, first: 0x2000, past: 0x2190) == 393299648
+    assert sweep.folded_bools(question: is_mark, first: 0x3000, past: 0x3100) == 349411636
+    assert sweep.folded_bools(question: is_mark, first: 0xff00, past: 0xfff0) == 0
+    assert sweep.folded_bools(question: is_mark, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_mark, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_control: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_control, first: 0x0, past: 0x250) == 856911153
+    assert sweep.folded_bools(question: is_control, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_bools(question: is_control, first: 0x2000, past: 0x2190) == 0
+    assert sweep.folded_bools(question: is_control, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_bools(question: is_control, first: 0xff00, past: 0xfff0) == 0
+    assert sweep.folded_bools(question: is_control, first: 0x10400, past: 0x10500) == 0
+    assert sweep.folded_bools(question: is_control, first: 0x1d400, past: 0x1d800) == 0
+
+test "is_graphic: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_graphic, first: 0x0, past: 0x250) == 132610567
+    assert sweep.folded_bools(question: is_graphic, first: 0x370, past: 0x530) == 121487852
+    assert sweep.folded_bools(question: is_graphic, first: 0x2000, past: 0x2190) == 847601313
+    assert sweep.folded_bools(question: is_graphic, first: 0x3000, past: 0x3100) == 118708736
+    assert sweep.folded_bools(question: is_graphic, first: 0xff00, past: 0xfff0) == 339852934
+    assert sweep.folded_bools(question: is_graphic, first: 0x10400, past: 0x10500) == 175669111
+    assert sweep.folded_bools(question: is_graphic, first: 0x1d400, past: 0x1d800) == 952518117
+
+test "is_printable: every code point of seven blocks, against Python and Go"
+    assert sweep.folded_bools(question: is_printable, first: 0x0, past: 0x250) == 672334729
+    assert sweep.folded_bools(question: is_printable, first: 0x370, past: 0x530) == 121487852
+    assert sweep.folded_bools(question: is_printable, first: 0x2000, past: 0x2190) == 950451937
+    assert sweep.folded_bools(question: is_printable, first: 0x3000, past: 0x3100) == 656296951
+    assert sweep.folded_bools(question: is_printable, first: 0xff00, past: 0xfff0) == 339852934
+    assert sweep.folded_bools(question: is_printable, first: 0x10400, past: 0x10500) == 175669111
+    assert sweep.folded_bools(question: is_printable, first: 0x1d400, past: 0x1d800) == 952518117
+
+test "category_of: every code point of seven blocks, against Python"
+    assert sweep.folded_numbers(question: category_of, first: 0x0, past: 0x250) == 431352910
+    assert sweep.folded_numbers(question: category_of, first: 0x370, past: 0x530) == 952603230
+    assert sweep.folded_numbers(question: category_of, first: 0x2000, past: 0x2190) == 901215924
+    assert sweep.folded_numbers(question: category_of, first: 0x3000, past: 0x3100) == 940418982
+    assert sweep.folded_numbers(question: category_of, first: 0xff00, past: 0xfff0) == 515875004
+    assert sweep.folded_numbers(question: category_of, first: 0x10400, past: 0x10500) == 307352380
+    assert sweep.folded_numbers(question: category_of, first: 0x1d400, past: 0x1d800) == 380171841
+
+test "digit_value: every code point of seven blocks, against Python"
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x0, past: 0x250) == 497995270
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x370, past: 0x530) == 0
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x2000, past: 0x2190) == 0
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x3000, past: 0x3100) == 0
+    assert sweep.folded_numbers(question: digit_or_none, first: 0xff00, past: 0xfff0) == 972735288
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x10400, past: 0x10500) == 489955938
+    assert sweep.folded_numbers(question: digit_or_none, first: 0x1d400, past: 0x1d800) == 185239231
+
+test "classes of U+0000, the smallest code point, against Python and Go"
+    assert !is_letter(0x0)
+    assert !is_alphabetic(0x0)
+    assert !is_digit(0x0)
+    assert !is_number(0x0)
+    assert !is_alphanumeric(0x0)
+    assert !is_space(0x0)
+    assert !is_upper(0x0)
+    assert !is_lower(0x0)
+    assert !is_title(0x0)
+    assert !is_cased(0x0)
+    assert !is_case_ignorable(0x0)
+    assert !is_punctuation(0x0)
+    assert !is_symbol(0x0)
+    assert !is_mark(0x0)
+    assert is_control(0x0)
+    assert !is_graphic(0x0)
+    assert !is_printable(0x0)
+    assert name_of(0x0) == "Cc"
+    assert digit_value(0x0).is_err()
+
+test "classes of U+007F, the last of ASCII, against Python and Go"
+    assert !is_letter(0x7f)
+    assert !is_alphabetic(0x7f)
+    assert !is_digit(0x7f)
+    assert !is_number(0x7f)
+    assert !is_alphanumeric(0x7f)
+    assert !is_space(0x7f)
+    assert !is_upper(0x7f)
+    assert !is_lower(0x7f)
+    assert !is_title(0x7f)
+    assert !is_cased(0x7f)
+    assert !is_case_ignorable(0x7f)
+    assert !is_punctuation(0x7f)
+    assert !is_symbol(0x7f)
+    assert !is_mark(0x7f)
+    assert is_control(0x7f)
+    assert !is_graphic(0x7f)
+    assert !is_printable(0x7f)
+    assert name_of(0x7f) == "Cc"
+    assert digit_value(0x7f).is_err()
+
+test "classes of U+0080, the first past ASCII, against Python and Go"
+    assert !is_letter(0x80)
+    assert !is_alphabetic(0x80)
+    assert !is_digit(0x80)
+    assert !is_number(0x80)
+    assert !is_alphanumeric(0x80)
+    assert !is_space(0x80)
+    assert !is_upper(0x80)
+    assert !is_lower(0x80)
+    assert !is_title(0x80)
+    assert !is_cased(0x80)
+    assert !is_case_ignorable(0x80)
+    assert !is_punctuation(0x80)
+    assert !is_symbol(0x80)
+    assert !is_mark(0x80)
+    assert is_control(0x80)
+    assert !is_graphic(0x80)
+    assert !is_printable(0x80)
+    assert name_of(0x80) == "Cc"
+    assert digit_value(0x80).is_err()
+
+test "classes of U+D7FF, the last before the surrogates, against Python and Go"
+    assert !is_letter(0xd7ff)
+    assert !is_alphabetic(0xd7ff)
+    assert !is_digit(0xd7ff)
+    assert !is_number(0xd7ff)
+    assert !is_alphanumeric(0xd7ff)
+    assert !is_space(0xd7ff)
+    assert !is_upper(0xd7ff)
+    assert !is_lower(0xd7ff)
+    assert !is_title(0xd7ff)
+    assert !is_cased(0xd7ff)
+    assert !is_case_ignorable(0xd7ff)
+    assert !is_punctuation(0xd7ff)
+    assert !is_symbol(0xd7ff)
+    assert !is_mark(0xd7ff)
+    assert !is_control(0xd7ff)
+    assert !is_graphic(0xd7ff)
+    assert !is_printable(0xd7ff)
+    assert name_of(0xd7ff) == "Cn"
+    assert digit_value(0xd7ff).is_err()
+
+test "classes of U+E000, the first after the surrogates, against Python and Go"
+    assert !is_letter(0xe000)
+    assert !is_alphabetic(0xe000)
+    assert !is_digit(0xe000)
+    assert !is_number(0xe000)
+    assert !is_alphanumeric(0xe000)
+    assert !is_space(0xe000)
+    assert !is_upper(0xe000)
+    assert !is_lower(0xe000)
+    assert !is_title(0xe000)
+    assert !is_cased(0xe000)
+    assert !is_case_ignorable(0xe000)
+    assert !is_punctuation(0xe000)
+    assert !is_symbol(0xe000)
+    assert !is_mark(0xe000)
+    assert !is_control(0xe000)
+    assert !is_graphic(0xe000)
+    assert !is_printable(0xe000)
+    assert name_of(0xe000) == "Co"
+    assert digit_value(0xe000).is_err()
+
+test "classes of U+10FFFF, the largest code point, against Python and Go"
+    assert !is_letter(0x10ffff)
+    assert !is_alphabetic(0x10ffff)
+    assert !is_digit(0x10ffff)
+    assert !is_number(0x10ffff)
+    assert !is_alphanumeric(0x10ffff)
+    assert !is_space(0x10ffff)
+    assert !is_upper(0x10ffff)
+    assert !is_lower(0x10ffff)
+    assert !is_title(0x10ffff)
+    assert !is_cased(0x10ffff)
+    assert !is_case_ignorable(0x10ffff)
+    assert !is_punctuation(0x10ffff)
+    assert !is_symbol(0x10ffff)
+    assert !is_mark(0x10ffff)
+    assert !is_control(0x10ffff)
+    assert !is_graphic(0x10ffff)
+    assert !is_printable(0x10ffff)
+    assert name_of(0x10ffff) == "Cn"
+    assert digit_value(0x10ffff).is_err()
+
+test "classes of a surrogate, U+D800 and U+DFFF: category Cs, and in no class"
+    assert name_of(0xd800) == "Cs" && name_of(0xdfff) == "Cs"
+    assert !is_graphic(0xd800) && !is_printable(0xdfff) && !is_letter(0xd800) && !is_control(0xdfff)
+
+test "digit_value: the digits of two scripts, and a letter refused with its category"
+    assert digit_value(0x30).must() == 0 && digit_value(0x39).must() == 9
+    assert digit_value(0x667).must() == 7
+    assert digit_value(0x1d7ff).must() == 9
+
+    match digit_value(0x41)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "U+0041 is no decimal digit: its category is Lu"

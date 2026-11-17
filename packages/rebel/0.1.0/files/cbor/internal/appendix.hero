@@ -1,0 +1,120 @@
+# The examples of RFC 8949's appendix A, its table 6, every row in its order,
+# as the package's tests read them: the bytes, the item in diagnostic notation
+# as `format_diagnostic` writes it, and the bytes the deterministic encoding
+# writes for that item, the same bytes where the row is already deterministic.
+#
+# The diagnostic differs from the RFC's own column in three ways, each a
+# decision of the package: a float is written as `to_str` writes it, `1e+300`
+# for the RFC's `1.0e+300` and the exact `5.9604644775390625e-08` for its
+# shortest `5.960464477539063e-8`; a text is written in UTF-8, where the RFC
+# escapes a character past ASCII as `\u` and its code; and no indefinite
+# length is shown, since a value keeps none. A bignum is shown as the number
+# it stands for, as the RFC shows it.
+
+# One row of the table.
+record Row
+    # The encoded item, in hexadecimal.
+    encoded: str
+    # The item in diagnostic notation.
+    diagnostic: str
+    # The deterministic encoding of the item, in hexadecimal.
+    written: str
+
+# A row whose bytes are already the deterministic encoding.
+function same(encoded: str, diagnostic: str) -> Row
+    return Row(encoded: encoded, diagnostic: diagnostic, written: encoded)
+
+# Every row of the table, in its order.
+function rows() -> [Row]
+    one_to_25 = "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]"
+    list_25 = "98190102030405060708090a0b0c0d0e0f101112131415161718181819"
+    nested = "[1, [2, 3], [4, 5]]"
+    return [
+        same(encoded: "00", diagnostic: "0")
+        same(encoded: "01", diagnostic: "1")
+        same(encoded: "0a", diagnostic: "10")
+        same(encoded: "17", diagnostic: "23")
+        same(encoded: "1818", diagnostic: "24")
+        same(encoded: "1819", diagnostic: "25")
+        same(encoded: "1864", diagnostic: "100")
+        same(encoded: "1903e8", diagnostic: "1000")
+        same(encoded: "1a000f4240", diagnostic: "1000000")
+        same(encoded: "1b000000e8d4a51000", diagnostic: "1000000000000")
+        same(encoded: "1bffffffffffffffff", diagnostic: "18446744073709551615")
+        same(encoded: "c249010000000000000000", diagnostic: "18446744073709551616")
+        same(encoded: "3bffffffffffffffff", diagnostic: "-18446744073709551616")
+        same(encoded: "c349010000000000000000", diagnostic: "-18446744073709551617")
+        same(encoded: "20", diagnostic: "-1")
+        same(encoded: "29", diagnostic: "-10")
+        same(encoded: "3863", diagnostic: "-100")
+        same(encoded: "3903e7", diagnostic: "-1000")
+        same(encoded: "f90000", diagnostic: "0.0")
+        same(encoded: "f98000", diagnostic: "-0.0")
+        same(encoded: "f93c00", diagnostic: "1.0")
+        same(encoded: "fb3ff199999999999a", diagnostic: "1.1")
+        same(encoded: "f93e00", diagnostic: "1.5")
+        same(encoded: "f97bff", diagnostic: "65504.0")
+        same(encoded: "fa47c35000", diagnostic: "100000.0")
+        same(encoded: "fa7f7fffff", diagnostic: "3.4028234663852886e+38")
+        same(encoded: "fb7e37e43c8800759c", diagnostic: "1e+300")
+        same(encoded: "f90001", diagnostic: "5.9604644775390625e-08")
+        same(encoded: "f90400", diagnostic: "6.103515625e-05")
+        same(encoded: "f9c400", diagnostic: "-4.0")
+        same(encoded: "fbc010666666666666", diagnostic: "-4.1")
+        same(encoded: "f97c00", diagnostic: "Infinity")
+        same(encoded: "f97e00", diagnostic: "NaN")
+        same(encoded: "f9fc00", diagnostic: "-Infinity")
+        Row(encoded: "fa7f800000", diagnostic: "Infinity", written: "f97c00")
+        Row(encoded: "fa7fc00000", diagnostic: "NaN", written: "f97e00")
+        Row(encoded: "faff800000", diagnostic: "-Infinity", written: "f9fc00")
+        Row(encoded: "fb7ff0000000000000", diagnostic: "Infinity", written: "f97c00")
+        Row(encoded: "fb7ff8000000000000", diagnostic: "NaN", written: "f97e00")
+        Row(encoded: "fbfff0000000000000", diagnostic: "-Infinity", written: "f9fc00")
+        same(encoded: "f4", diagnostic: "false")
+        same(encoded: "f5", diagnostic: "true")
+        same(encoded: "f6", diagnostic: "null")
+        same(encoded: "f7", diagnostic: "undefined")
+        same(encoded: "f0", diagnostic: "simple(16)")
+        same(encoded: "f8ff", diagnostic: "simple(255)")
+        same(encoded: "c074323031332d30332d32315432303a30343a30305a", diagnostic: "0(\"2013-03-21T20:04:00Z\")")
+        same(encoded: "c11a514b67b0", diagnostic: "1(1363896240)")
+        same(encoded: "c1fb41d452d9ec200000", diagnostic: "1(1363896240.5)")
+        same(encoded: "d74401020304", diagnostic: "23(h'01020304')")
+        same(encoded: "d818456449455446", diagnostic: "24(h'6449455446')")
+        same(encoded: "d82076687474703a2f2f7777772e6578616d706c652e636f6d", diagnostic: "32(\"http://www.example.com\")")
+        same(encoded: "40", diagnostic: "h''")
+        same(encoded: "4401020304", diagnostic: "h'01020304'")
+        same(encoded: "60", diagnostic: "\"\"")
+        same(encoded: "6161", diagnostic: "\"a\"")
+        same(encoded: "6449455446", diagnostic: "\"IETF\"")
+        same(encoded: "62225c", diagnostic: "\"\\\"\\\\\"")
+        same(encoded: "62c3bc", diagnostic: "\"ü\"")
+        same(encoded: "63e6b0b4", diagnostic: "\"水\"")
+        same(encoded: "64f0908591", diagnostic: "\"𐅑\"")
+        same(encoded: "80", diagnostic: "[]")
+        same(encoded: "83010203", diagnostic: "[1, 2, 3]")
+        same(encoded: "8301820203820405", diagnostic: nested)
+        same(encoded: list_25, diagnostic: one_to_25)
+        same(encoded: "a0", diagnostic: "{}")
+        same(encoded: "a201020304", diagnostic: "{1: 2, 3: 4}")
+        same(encoded: "a26161016162820203", diagnostic: "{\"a\": 1, \"b\": [2, 3]}")
+        same(encoded: "826161a161626163", diagnostic: "[\"a\", {\"b\": \"c\"}]")
+        same(encoded: "a56161614161626142616361436164614461656145", diagnostic: "{\"a\": \"A\", \"b\": \"B\", \"c\": \"C\", \"d\": \"D\", \"e\": \"E\"}")
+        Row(encoded: "5f42010243030405ff", diagnostic: "h'0102030405'", written: "450102030405")
+        Row(encoded: "7f657374726561646d696e67ff", diagnostic: "\"streaming\"", written: "6973747265616d696e67")
+        Row(encoded: "9fff", diagnostic: "[]", written: "80")
+        Row(encoded: "9f018202039f0405ffff", diagnostic: nested, written: "8301820203820405")
+        Row(encoded: "9f01820203820405ff", diagnostic: nested, written: "8301820203820405")
+        Row(encoded: "83018202039f0405ff", diagnostic: nested, written: "8301820203820405")
+        Row(encoded: "83019f0203ff820405", diagnostic: nested, written: "8301820203820405")
+        Row(encoded: "9f0102030405060708090a0b0c0d0e0f101112131415161718181819ff", diagnostic: one_to_25, written: list_25)
+        Row(encoded: "bf61610161629f0203ffff", diagnostic: "{\"a\": 1, \"b\": [2, 3]}", written: "a26161016162820203")
+        Row(encoded: "826161bf61626163ff", diagnostic: "[\"a\", {\"b\": \"c\"}]", written: "826161a161626163")
+        Row(encoded: "bf6346756ef563416d7421ff", diagnostic: "{\"Fun\": true, \"Amt\": -2}", written: "a263416d74216346756ef5")
+    ]
+
+test "rows: the table's 81 rows, its first and its last"
+    table = rows()
+    assert table.len() == 81
+    assert table[0] == same(encoded: "00", diagnostic: "0")
+    assert table[80].written == "a263416d74216346756ef5"

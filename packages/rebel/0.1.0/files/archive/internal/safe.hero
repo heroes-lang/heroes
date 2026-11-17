@@ -1,0 +1,112 @@
+# What keeps an archive inside the folder it is extracted to. An entry's
+# name becomes path parts below the folder or is refused: an absolute path,
+# a drive, a `..` part anywhere, a zero byte. A link's target is refused
+# where it is absolute or climbs out of the folder from where the link
+# stands. And a path is refused where it would pass through a link already
+# on the disk, which could lead anywhere.
+
+use archive/internal/codes
+use fs
+use path
+
+# The parts of `name` below the folder: `/` and `\` both separate, empty
+# and `.` parts are dropped. Fails `invalid` where `name` is absolute,
+# names a drive, holds a `..` part or a zero byte; an answer of no parts is
+# the folder itself.
+function parts_of(name: str) -> [str]?
+    for i in range(from: 0, to: name.len())
+        if name[i] == 0
+            return codes.refused(name: name, why: "its name holds a zero byte")
+
+    if name.len() > 0 && (name[0] == '/' || name[0] == '\\')
+        return codes.refused(name: name, why: "its name is an absolute path")
+
+    if name.len() >= 2 && name[1] == ':' && (name[0] >= 'a' && name[0] <= 'z' || name[0] >= 'A' && name[0] <= 'Z')
+        return codes.refused(name: name, why: "its name begins with a drive")
+    parts: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: name.len() + 1)
+        if i == name.len() || name[i] == '/' || name[i] == '\\'
+            part = name.slice(from: start, to: i)
+
+            if part == ".."
+                return codes.refused(name: name, why: "a `..` in its name would climb out of the folder")
+
+            if part != "" && part != "."
+                parts @ parts.push(part)
+            start @ i + 1
+
+    return ok(parts)
+
+# Fails `invalid` where a symbolic link standing at `parts` with the target
+# `target` would point outside the folder: an absolute target, or one whose
+# `..` parts climb above the folder from the link's own folder.
+function check_link(name: str, parts: [str], target: str) -> ()?
+    if target.len() > 0 && (target[0] == '/' || target[0] == '\\')
+        return codes.refused(name: name, why: "it is a link to an absolute path")
+
+    if target.len() >= 2 && target[1] == ':'
+        return codes.refused(name: name, why: "it is a link to a drive")
+    stack: [str] @= parts.slice(from: 0, to: parts.len() - 1)
+    start: i64 @= 0
+
+    for i in range(from: 0, to: target.len() + 1)
+        if i == target.len() || target[i] == '/' || target[i] == '\\'
+            part = target.slice(from: start, to: i)
+
+            if part == ".."
+                if stack.len() == 0
+                    return codes.refused(name: name, why: f"it is a link to \"{target}\", outside the folder")
+                stack @ stack.slice(from: 0, to: stack.len() - 1)
+            else if part != "" && part != "."
+                stack @ stack.push(part)
+            start @ i + 1
+
+    return ok()
+
+# The path of `parts` below `root`.
+function joined(root: str, parts: [str]) -> str
+    pieces: [str] @= [root]
+
+    for part in parts
+        pieces @ pieces.push(part)
+
+    return path.join_all(pieces)
+
+# Fails `invalid` where a folder on the way to `parts` below `root`, the
+# last part left out, is a symbolic link on the disk, or is not a folder.
+# Parts not on the disk yet end the check.
+function check_way(name: str, root: str, parts: [str]) -> ()?
+    for i in range(from: 1, to: parts.len())
+        on_way = joined(root, parts: parts.slice(from: 0, to: i))
+
+        match fs.link_info(on_way)
+            .err _ => return ok()
+            .ok info =>
+                match info.kind
+                    .link => return codes.refused(name: name, why: f"it would pass through the link \"{on_way}\"")
+                    .directory => _ = 0
+                    .file | .other => return codes.refused(name: name, why: f"\"{on_way}\" is not a folder")
+
+    return ok()
+
+test "parts_of: plain names, dots, both separators, and every refusal"
+    assert parts_of("a/b/c.txt").must() == ["a", "b", "c.txt"]
+    assert parts_of("./a//b/").must() == ["a", "b"]
+    assert parts_of("a\\b").must() == ["a", "b"]
+    assert parts_of("").must().len() == 0
+    assert parts_of("été/ünï").must() == ["été", "ünï"]
+
+    for bad in ["/etc/passwd", "\\x", "C:/x", "c:x", "../x", "a/../../x", "a/..", "a\\..\\b"]
+        match parts_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "check_link: inside, at the edge, and outside"
+    assert !check_link(name: "a/l", parts: ["a", "l"], target: "../b").is_err()
+    assert !check_link(name: "a/l", parts: ["a", "l"], target: "c/./d").is_err()
+    assert check_link(name: "a/l", parts: ["a", "l"], target: "../../b").is_err()
+    assert check_link(name: "l", parts: ["l"], target: "..").is_err()
+    assert check_link(name: "l", parts: ["l"], target: "/etc").is_err()
+    assert check_link(name: "l", parts: ["l"], target: "C:\\x").is_err()

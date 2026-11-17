@@ -1,0 +1,67 @@
+# What the tests of `io` read from: a pipe already fed and shut, a file
+# written whole, and the bytes a test asks for, made through the floor alone,
+# so that a test of a function of `io` does not lean on another of its
+# functions to build its input. No program calls it.
+
+use io/hero_stream
+
+# The reading end of a pipe that holds `data` and whose writer is closed, so
+# a read answers `data` and then the end. `data` fits in the pipe: at most
+# 16,384 bytes, which every platform's pipe holds without a reader.
+function fed(data: [u8]) -> hero_stream.Stream
+    reader: hero_stream.Stream @= nullptr
+    writer: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @reader, writer: @writer) == 0
+    assert data.len() <= 16384
+    room: [u8] @= data
+
+    if room.len() > 0
+        assert hero_stream.write(writer, @room, n: room.len().to_u64().must()) == room.len()
+    assert hero_stream.close(@writer) == 0
+    return reader
+
+# The bytes of `s`, each its byte as `s[i]` reads it.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        out @ out.push(s[i])
+
+    return out
+
+# The file `path` written to hold `data` whole, and opened again to read.
+function file_of(path: str, data: [u8]) -> hero_stream.Stream
+    out @= hero_stream.open(path, access: hero_stream.HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert out != nullptr
+    room: [u8] @= data
+    written: i64 @= 0
+
+    while written < data.len()
+        sent = hero_stream.write(out, @room, n: room.len().to_u64().must())
+        assert sent > 0
+        written @ written + sent
+        room @ room.slice(from: sent, to: room.len())
+
+    assert hero_stream.close(@out) == 0
+    back = hero_stream.open(path, access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+    assert back != nullptr
+    return back
+
+# `n` bytes, each `i % 251` for its index `i`: a pattern no run of a chunk's
+# size repeats in step with.
+function pattern(n: i64) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: n)
+        out @ out.push((i % 251).to_u8().must())
+
+    return out
+
+# `n` copies of `b`.
+function run_of(b: u8, n: i64) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(b)
+
+    return out

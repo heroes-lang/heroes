@@ -1,0 +1,67 @@
+# MD5's compression function, RFC 1321: four words of 32 bits carried from
+# block to block, each block of 64 bytes read as sixteen words with the first
+# byte the lowest, in four rounds of sixteen steps. MD5 is broken for
+# security: two inputs that answer alike are made in seconds. It is here for
+# the formats and protocols that name it, never to stand for an input.
+
+use crypto/internal/rounds
+use crypto/internal/word
+
+# The four words MD5 starts from, A, B, C and D.
+constant START: [i64]
+    [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476]
+
+# How far each step rotates, four amounts for each round of sixteen steps.
+constant SHIFTS: [i64]
+    [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21]
+
+# The four words after the block of 64 bytes of `data` that begins at `at`,
+# from `words`, the four words before it.
+function compress(words: [i64], data: [u8] lent, at: i64) -> [i64]
+    m: [i64] @= []
+    i: i64 @= 0
+
+    while i < 16
+        m @ m.push(word.load32_little(data, at + 4 * i))
+        i @ i + 1
+
+    a: i64 @= words[0]
+    b: i64 @= words[1]
+    c: i64 @= words[2]
+    d: i64 @= words[3]
+    t = rounds.MD5_ROUNDS
+    step: i64 @= 0
+
+    while step < 64
+        mixed: i64 @= 0
+        g: i64 @= 0
+
+        if step < 16
+            mixed @ b & c | ~b & d
+            g @ step
+        else if step < 32
+            mixed @ d & b | ~d & c
+            g @ (5 * step + 1) % 16
+        else if step < 48
+            mixed @ b ^ c ^ d
+            g @ (3 * step + 5) % 16
+        else
+            mixed @ c ^ (b | ~d & word.LOW32)
+            g @ 7 * step % 16
+        sum = mixed + a + t[step] + m[g] & word.LOW32
+        a @ d
+        d @ c
+        c @ b
+        b @ b + word.rotate_left32(x: sum, n: SHIFTS[step / 16 * 4 + step % 4]) & word.LOW32
+        step @ step + 1
+
+    return [words[0] + a & word.LOW32, words[1] + b & word.LOW32, words[2] + c & word.LOW32, words[3] + d & word.LOW32]
+
+test "md5 compress: the one block of the empty message, padded as MD5 pads it"
+    block: [u8] @= [0x80]
+
+    while block.len() < 64
+        block @ block.push(0)
+
+    out = compress(START, block, 0)
+    assert out == [0xd98c1dd4, 0x04b2008f, 0x980980e9, 0x7e42f8ec]

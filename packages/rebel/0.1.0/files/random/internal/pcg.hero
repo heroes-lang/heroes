@@ -1,0 +1,82 @@
+# PCG with 128 bits of state and the DXSM output (O'Neill, 2014 and 2019):
+# the state is a linear congruential generator modulo 2^128, and each number
+# is mixed from the state just reached. The multiplier and the increment are
+# PCG's own defaults for 128 bits, and they were read back from Go's
+# `math/rand/v2.PCG`, whose states `MarshalBinary` shows, on 2026-11-16: three
+# states in a row fix both. The tests hold the numbers to the ones Go answers
+# from the same state.
+
+use random/internal/wide
+
+# The high word of the multiplier, 0x2360ed051fc65da4.
+constant MULTIPLIER_HIGH: i64
+    2549297995355413924
+
+# The low word of the multiplier, 0x4385df649fccf645.
+constant MULTIPLIER_LOW: i64
+    4865540595714422341
+
+# The high word of the increment, 0x5851f42d4c957f2d.
+constant INCREMENT_HIGH: i64
+    6364136223846793005
+
+# The low word of the increment, 0x14057b7ef767814f.
+constant INCREMENT_LOW: i64
+    1442695040888963407
+
+# The multiplier of the DXSM output, 0xda942042e4dd58b5, as the word that
+# holds its bits.
+constant CHEAP: i64
+    -2696494805208442699
+
+# The next number of the generator whose state is `high` and `low`, which
+# the caller holds: the state steps once and the number is mixed from the new
+# state.
+function next(@high: u64, @low: u64) -> u64
+    h = wide.from_unsigned(high)
+    l = wide.from_unsigned(low)
+    p = wide.product(a: l, b: MULTIPLIER_LOW)
+    new_low = wide.add(a: p.low, b: INCREMENT_LOW)
+    carry: i64 @= 0
+
+    if wide.is_below(a: new_low, b: p.low)
+        carry @ 1
+    cross = wide.add(a: wide.times(a: h, b: MULTIPLIER_LOW), b: wide.times(a: l, b: MULTIPLIER_HIGH))
+    new_high = wide.add(a: wide.add(a: p.high, b: cross), b: INCREMENT_HIGH + carry)
+    high @ wide.unsigned(new_high)
+    low @ wide.unsigned(new_low)
+    return wide.unsigned(mixed(high: new_high, low: new_low))
+
+# DXSM: the high word is folded on itself, multiplied, folded again, and
+# multiplied by the low word made odd.
+function mixed(high: i64, low: i64) -> i64
+    x: i64 @= high ^ wide.shift_right(x: high, n: 32)
+    x @ wide.times(a: x, b: CHEAP)
+    x @ x ^ wide.shift_right(x: x, n: 48)
+    return wide.times(a: x, b: low | 1)
+
+# Go's `rand.NewPCG(1, 2)` answered these, and its `MarshalBinary` the states,
+# on 2026-11-16.
+test "pcg next: the first four numbers from the state 1 and 2, and the states between"
+    high: u64 @= 1
+    low: u64 @= 2
+    assert next(high: @high, low: @low) == 14192431797130687760
+    assert high == 0xe299ad9c2bef30ba && low == 0x9b113a4837016dd9
+    assert next(high: @high, low: @low) == 11371241257079532652
+    assert next(high: @high, low: @low) == 14470142590855381128
+    assert high == 0x7866c7ac11847119 && low == 0x17738ad64ee76a4b
+    assert next(high: @high, low: @low) == 14694613213362438554
+
+test "pcg next: from the zero state, and from two words with every bit in use"
+    high: u64 @= 0
+    low: u64 @= 0
+    assert next(high: @high, low: @low) == 4107282207882862730
+    assert next(high: @high, low: @low) == 12464933722704884221
+    big_high: u64 @= 0x123456789abcdef0
+    big_low: u64 @= 0xfedcba9876543210
+    seen: [u64] @= []
+
+    for _ in range(from: 0, to: 5)
+        seen @ seen.push(next(high: @big_high, low: @big_low))
+
+    assert seen == [429979023125170307, 3345952571801445409, 967379444433837131, 5543228592064885233, 13290878729532076559]

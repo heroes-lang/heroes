@@ -1,0 +1,14 @@
+# Reaches Rebel's `yaml`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small document, takes one value
+# out of it with `json`, and writes the document back.
+
+use <rebel>/json
+use <rebel>/yaml
+
+function main()
+    match yaml.parse("name: Ziggy\nalbums:\n  - 1972\n  - 1973\n")
+        .err e => print(e.code, ": ", e.msg)
+        .ok doc =>
+            first = json.value_at(doc, "/albums/0")
+            print(json.kind_of(first.default(.null_value)))
+            print(yaml.format(doc).default("?"))

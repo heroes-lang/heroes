@@ -1,0 +1,146 @@
+# A list edited by position: elements put in, taken out or replaced between
+# two indices, two exchanged, the whole reversed or rotated. Every answer is a
+# new list built in one pass; an index outside the list is a broken
+# precondition, and each function asserts it before it reads one.
+
+# `xs` with the elements of `new` in place of those from `from` up to `to`;
+# aborts where the two are not a range of `xs`.
+function replace_range<T>(xs: [T], from: i64, to: i64, new: [T]) -> [T]
+    assert from >= 0 && from <= to && to <= xs.len()
+    out: [T] @= xs.slice(from: 0, to: from)
+
+    for x in new
+        out @ out.push(x)
+
+    at: i64 @= to
+
+    while at < xs.len()
+        out @ out.push(xs[at])
+        at @ at + 1
+
+    return out
+
+# `xs` with `value` put in at `at`; aborts where `at` is below zero or past
+# the length.
+function insert<T>(xs: [T], at: i64, value: T) -> [T]
+    return replace_range(xs: xs, from: at, to: at, new: [value])
+
+# `xs` with the elements of `new` put in at `at`; aborts where `at` is below
+# zero or past the length.
+function insert_all<T>(xs: [T], at: i64, new: [T]) -> [T]
+    return replace_range(xs: xs, from: at, to: at, new: new)
+
+# `xs` without the element at `at`; aborts where `at` names no element.
+function remove_at<T>(xs: [T], at: i64) -> [T]
+    assert at >= 0 && at < xs.len()
+    return replace_range(xs: xs, from: at, to: at + 1, new: [])
+
+# `xs` without the elements from `from` up to `to`; aborts where the two are
+# not a range of `xs`.
+function remove_range<T>(xs: [T], from: i64, to: i64) -> [T]
+    return replace_range(xs: xs, from: from, to: to, new: [])
+
+# `xs` with the elements at `at` and `with` exchanged; aborts where either
+# names no element.
+function swap<T>(xs: [T], at: i64, with: i64) -> [T]
+    out: [T] @= xs
+    out[at] @ xs[with]
+    out[with] @ xs[at]
+    return out
+
+# The elements of `xs` from the last to the first.
+function reverse<T>(xs: [T]) -> [T]
+    out: [T] @= []
+    at: i64 @= xs.len()
+
+    while at > 0
+        at @ at - 1
+        out @ out.push(xs[at])
+
+    return out
+
+# `xs` with its first `by` elements moved to its end; aborts where `by` is
+# below zero or past the length.
+function rotate_left<T>(xs: [T], by: i64) -> [T]
+    assert by >= 0 && by <= xs.len()
+    out: [T] @= xs.slice(from: by, to: xs.len())
+    at: i64 @= 0
+
+    while at < by
+        out @ out.push(xs[at])
+        at @ at + 1
+
+    return out
+
+# `xs` with its last `by` elements moved to its front; aborts where `by` is
+# below zero or past the length.
+function rotate_right<T>(xs: [T], by: i64) -> [T]
+    assert by >= 0 && by <= xs.len()
+    return rotate_left(xs, xs.len() - by)
+
+## Tests
+
+test "replace_range: by more, by fewer, by none, an empty range, the whole list, and at the end"
+    nothing: [i64] = []
+    xs = [1, 2, 3, 4, 5]
+    assert replace_range(xs: xs, from: 1, to: 3, new: [9, 9, 9]) == [1, 9, 9, 9, 4, 5]
+    assert replace_range(xs: xs, from: 1, to: 4, new: [7]) == [1, 7, 5]
+    assert replace_range(xs: xs, from: 1, to: 3, new: nothing) == [1, 4, 5]
+    assert replace_range(xs: [1, 2], from: 1, to: 1, new: [7, 8]) == [1, 7, 8, 2]
+    assert replace_range(xs: xs, from: 0, to: 5, new: nothing) == nothing
+    assert replace_range(xs: xs, from: 5, to: 5, new: [6]) == [1, 2, 3, 4, 5, 6]
+    assert replace_range(xs: nothing, from: 0, to: 0, new: nothing) == nothing
+
+test "insert: inside, at the start, at the length, into an empty list, and texts of more than one byte"
+    nothing: [str] = []
+    assert insert([1, 3], 1, 2) == [1, 2, 3]
+    assert insert([1, 2], 0, 0) == [0, 1, 2]
+    assert insert([1, 2], 2, 3) == [1, 2, 3]
+    assert insert(nothing, 0, "é") == ["é"]
+
+test "insert_all: several inside, none, at either end, and into an empty list"
+    nothing: [i64] = []
+    assert insert_all(xs: [1, 2], at: 1, new: [7, 8]) == [1, 7, 8, 2]
+    assert insert_all(xs: [1, 2], at: 1, new: nothing) == [1, 2]
+    assert insert_all(xs: [1, 2], at: 0, new: [0]) == [0, 1, 2]
+    assert insert_all(xs: [1, 2], at: 2, new: [3, 4]) == [1, 2, 3, 4]
+    assert insert_all(xs: nothing, at: 0, new: [1]) == [1]
+
+test "remove_at: inside, the first, the last, and the only element"
+    nothing: [i64] = []
+    assert remove_at([1, 2, 3], 1) == [1, 3]
+    assert remove_at([1, 2, 3], 0) == [2, 3]
+    assert remove_at([1, 2, 3], 2) == [1, 2]
+    assert remove_at([1], 0) == nothing
+
+test "remove_range: inside, empty, the whole list, and from an empty list"
+    nothing: [i64] = []
+    assert remove_range([1, 2, 3, 4, 5], from: 1, to: 3) == [1, 4, 5]
+    assert remove_range([1, 2], from: 1, to: 1) == [1, 2]
+    assert remove_range([1, 2], from: 0, to: 2) == nothing
+    assert remove_range(nothing, from: 0, to: 0) == nothing
+
+test "swap: the two ends, neighbours, and one index with itself"
+    assert swap([1, 2, 3], at: 0, with: 2) == [3, 2, 1]
+    assert swap([1, 2, 3], at: 1, with: 0) == [2, 1, 3]
+    assert swap(["é"], at: 0, with: 0) == ["é"]
+
+test "reverse: several, one, and an empty list"
+    nothing: [i64] = []
+    assert reverse([1, 2, 3]) == [3, 2, 1]
+    assert reverse([1]) == [1]
+    assert reverse(nothing) == nothing
+
+test "rotate_left: by some, by none, by the length, and an empty list"
+    nothing: [i64] = []
+    assert rotate_left([1, 2, 3, 4, 5], 2) == [3, 4, 5, 1, 2]
+    assert rotate_left([1, 2, 3], 0) == [1, 2, 3]
+    assert rotate_left([1, 2, 3], 3) == [1, 2, 3]
+    assert rotate_left(nothing, 0) == nothing
+
+test "rotate_right: by some, by none, by the length, and an empty list"
+    nothing: [i64] = []
+    assert rotate_right([1, 2, 3, 4, 5], 2) == [4, 5, 1, 2, 3]
+    assert rotate_right([1, 2, 3], 0) == [1, 2, 3]
+    assert rotate_right([1, 2, 3], 3) == [1, 2, 3]
+    assert rotate_right(nothing, 0) == nothing

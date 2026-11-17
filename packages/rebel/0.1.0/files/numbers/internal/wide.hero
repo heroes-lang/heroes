@@ -1,0 +1,166 @@
+# Whole numbers under 2 to the 120th in two `i64`s, with no list: the product
+# of a number under 2 to the 61st and one under 2 to the 53rd, a shift, and a
+# comparison. It is what `side` compares with where the power of ten is at
+# most the 22nd, since 5 to the 22nd is under 2 to the 53rd, so its whole
+# numbers are products of that size; `big` takes the rest.
+#
+# Every step is written so that no intermediate reaches 2 to the 63rd: a
+# factor is cut in halves of 30 bits, and a part is masked before it moves.
+
+# The bits of one half of a number: `high` and `low` each hold 60.
+constant HALF_BITS: i64
+    60
+
+# 2 to the 60th, less one.
+constant HALF_MASK: i64
+    1152921504606846975
+
+# 2 to the 30th, less one.
+constant QUARTER_MASK: i64
+    1073741823
+
+# The largest power of five `five_to` gives: under 2 to the 53rd.
+constant FIVES_MAX: i64
+    22
+
+# A whole number, `high` times 2 to the 60th plus `low`, each from 0 to 2 to
+# the 60th less one.
+record Wide
+    high: i64
+    low: i64
+
+# Five to the `k`th, for `k` from 0 to `FIVES_MAX`.
+function five_to(k: i64) -> i64
+    assert k >= 0 && k <= FIVES_MAX
+    result: i64 @= 1
+    left: i64 @= k
+
+    # A `while` and not a `for` over `range`, which would make a list.
+    while left > 0
+        result @ result * 5
+        left @ left - 1
+
+    return result
+
+# `a` times `b`, `a` from 0 to 2 to the 61st less one and `b` from 0 to 2 to
+# the 53rd less one: each partial product of halves stays under 2 to the
+# 62nd.
+function product(a: i64, b: i64) -> Wide
+    assert a >= 0 && a < 1 << 61 && b >= 0 && b < 1 << 53
+    a_high = a >> 30
+    a_low = a & QUARTER_MASK
+    b_high = b >> 30
+    b_low = b & QUARTER_MASK
+    middle = a_high * b_low + a_low * b_high
+    low = a_low * b_low + ((middle & QUARTER_MASK) << 30)
+    return Wide(high: a_high * b_high + (middle >> 30) + (low >> HALF_BITS), low: low & HALF_MASK)
+
+# The bits of `n`, from 0 to 2 to the 62nd: 0 for zero.
+function bits_of(n: i64) -> i64
+    count: i64 @= 0
+    rest: i64 @= n
+    step: i64 @= 32
+
+    while step > 0
+        if rest >> step > 0
+            rest @ rest >> step
+            count @ count + step
+        step @ step / 2
+
+    if rest > 0
+        count @ count + 1
+    return count
+
+# The bits of `v`: 0 for zero.
+function length(v: Wide) -> i64
+    if v.high > 0
+        return HALF_BITS + bits_of(v.high)
+    return bits_of(v.low)
+
+# `v` times 2 to the `k`th, `k` from 0 to 119, where the result is under 2 to
+# the 120th: each half is masked to what stays in it before it moves.
+function shifted(v: Wide, k: i64) -> Wide
+    assert k >= 0 && length(v) + k <= 2 * HALF_BITS
+
+    if k == 0
+        return v
+
+    if k >= HALF_BITS
+        return Wide(high: v.low << k - HALF_BITS, low: 0)
+    kept = (1 << HALF_BITS - k) - 1
+    return Wide(high: v.high << k | v.low >> HALF_BITS - k, low: (v.low & kept) << k)
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it.
+function compare(a: Wide, b: Wide) -> i64
+    if a.high != b.high
+        if a.high < b.high
+            return -1
+        return 1
+
+    if a.low != b.low
+        if a.low < b.low
+            return -1
+        return 1
+    return 0
+
+# The sign of `a` times 2 to the `twos`th less `b`: -1, 0 or 1. The lengths
+# decide where they differ, so a shift only ever brings one to the other's
+# length, under 2 to the 120th.
+function compare_shifted(a: Wide, twos: i64, b: Wide) -> i64
+    a_bits = length(a)
+    b_bits = length(b)
+
+    if a_bits == 0 || b_bits == 0
+        if a_bits == b_bits
+            return 0
+
+        if a_bits == 0
+            return -1
+        return 1
+
+    if a_bits + twos != b_bits
+        if a_bits + twos < b_bits
+            return -1
+        return 1
+
+    if twos >= 0
+        return compare(a: shifted(v: a, k: twos), b: b)
+    return compare(a: a, b: shifted(v: b, k: 0 - twos))
+
+## Tests
+
+test "five_to and bits_of: the ends of their ranges"
+    assert five_to(0) == 1
+    assert five_to(22) == 2384185791015625
+    assert bits_of(0) == 0
+    assert bits_of(1) == 1
+    assert bits_of(255) == 8
+    assert bits_of(1 << 62) == 63
+
+test "product: zero, one, and the largest factors"
+    assert product(a: 0, b: 12345) == Wide(high: 0, low: 0)
+    assert product(a: 7, b: 1) == Wide(high: 0, low: 7)
+    largest = product(a: (1 << 61) - 1, b: (1 << 53) - 1)
+
+    # (2^61 - 1)(2^53 - 1) = 2^114 - 2^61 - 2^53 + 1, a borrow from the high half
+    assert largest.high == (1 << 54) - 3
+    assert largest.low == HALF_MASK - (1 << 53) + 2
+    assert product(a: 1 << 60, b: 1) == Wide(high: 1, low: 0)
+
+test "shifted: by nothing, inside a half, across, and by a whole half"
+    one = Wide(high: 0, low: 1)
+    assert shifted(v: one, k: 0) == one
+    assert shifted(v: one, k: 59) == Wide(high: 0, low: 1 << 59)
+    assert shifted(v: one, k: 60) == Wide(high: 1, low: 0)
+    assert shifted(v: Wide(high: 1, low: 3 << 58), k: 2) == Wide(high: 7, low: 0)
+    assert shifted(v: one, k: 119) == Wide(high: 1 << 59, low: 0)
+
+test "compare_shifted: by length, by bits, equal, and zero"
+    three = Wide(high: 0, low: 3)
+    assert compare_shifted(a: three, twos: 2, b: Wide(high: 0, low: 12)) == 0
+    assert compare_shifted(a: three, twos: 2, b: Wide(high: 0, low: 13)) < 0
+    assert compare_shifted(a: three, twos: 2, b: Wide(high: 0, low: 11)) > 0
+    assert compare_shifted(a: three, twos: -200, b: three) < 0
+    assert compare_shifted(a: three, twos: 200, b: three) > 0
+    assert compare_shifted(a: Wide(high: 0, low: 12), twos: -2, b: three) == 0
+    assert compare_shifted(a: Wide(high: 0, low: 0), twos: 5, b: three) < 0

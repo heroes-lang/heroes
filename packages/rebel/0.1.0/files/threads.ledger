@@ -1,0 +1,119 @@
+capability thread/start  a function run on a thread of its own, on one value
+  heroes  threads.spawn
+  go      WaitGroup.Go
+  rust    thread::spawn, Builder::new, Builder::spawn, Builder::spawn_unchecked
+  python  threading.Thread, Thread.start, Thread.run
+  note    one `i64` in and one back, spec § 13; Go's `go` statement and Python's and Rust's closures carry anything, which here would be shared memory. A refusal of the system is `limit`, where Rust's Builder answers an error and the others raise or panic
+
+capability thread/start-sized  a thread with a stack of a chosen size
+  heroes  threads.spawn_sized
+  go      -
+  rust    Builder::stack_size
+  python  threading.stack_size
+  note    a least size in bytes for this thread alone, where Python's sets it for every later thread; 0 is the runtime's own floor, at least the main thread's
+
+capability thread/wait  a thread waited for, its answer read
+  heroes  threads.wait
+  go      WaitGroup.Wait, WaitGroup.Add, WaitGroup.Done
+  rust    JoinHandle::join, ScopedJoinHandle::join
+  python  Thread.join, Future.result
+  note    a thread is a value the program owes a wait: one never waited for stops the program when `main` returns, saying how many (observed), where Python and Go let it run on and Rust detaches it; waited for twice, itself or a copy, stops it at the second wait (observed). The count is the language's own count of C lives, so the place it names is inside the package
+
+capability thread/text  a function run on a thread on one text, a copy each way
+  heroes  threads.spawn_text
+  go      -
+  rust    -
+  python  -
+  note    `threads.wait_text` waits for it; its own record, `TextThread`, so a wait by the door of the other kind is a compile error rather than the runtime's panic. The runtime's text door answers no refusal, so a refusal of the system aborts
+
+capability thread/run-many  a function run over a list of values on several threads, the answers in order
+  heroes  threads.run_all
+  go      -
+  rust    thread::scope, Scope::spawn, Builder::spawn_scoped
+  python  concurrent.futures.ThreadPoolExecutor, Executor.map, ThreadPoolExecutor.map, ThreadPoolExecutor.submit, ThreadPoolExecutor.shutdown, concurrent.futures.wait, concurrent.futures.ALL_COMPLETED
+  note    the answers in the order of the values, as Python's `map` answers; at most `workers` at once, bounded by the runtime's ceiling so the call never meets its panic (observed: 300 values with 1,000 workers). Every thread is waited for before it answers, which is what Rust's scope promises
+
+capability thread/run-many-text  a function run over a list of texts on several threads, the answers in order
+  heroes  threads.run_all_text
+  go      -
+  rust    -
+  python  -
+  note    texts of more than one byte and the empty text cross whole, observed
+
+capability thread/ceiling  how many threads may run at once
+  heroes  threads.max_running
+  go      -
+  rust    -
+  python  -
+  note    the runtime's own ceiling, the same on every platform; past it a start aborts, which Python and Go leave to the system
+
+capability thread/processors  how many processors the program may run on, the usual number of workers
+  heroes  os.processor_count
+  go      -
+  rust    thread::available_parallelism
+  python  -
+  note    the package `os` asks the system; Python's `os.cpu_count` stands in `os`'s own ledger
+
+capability thread/sleep  the current thread made to wait a while
+  heroes  time.sleep
+  go      -
+  rust    thread::sleep, thread::sleep_ms, thread::sleep_until, thread::park_timeout, thread::park_timeout_ms
+  python  threading.Timer
+  note    the package `time`; Python's Timer runs a function after a delay, which is a thread whose body sleeps first
+
+capability thread/is-finished  whether a thread has ended, asked without waiting for it, or a wait bounded in time
+  heroes  pending
+  go      -
+  rust    JoinHandle::is_finished, ScopedJoinHandle::is_finished
+  python  Thread.is_alive, Thread.join, Future.done, Future.running, concurrent.futures.as_completed, concurrent.futures.FIRST_COMPLETED, concurrent.futures.FIRST_EXCEPTION, threading.TIMEOUT_MAX
+  note    the runtime's doors answer nothing about a thread but its wait, which blocks without a limit; it needs a door of the runtime that asks a thread's state, which this package cannot write. Answers in the order threads end, Python's `as_completed`, wait for the same door
+
+capability thread/cancel  a running thread asked to stop
+  heroes  refused: nothing crosses into a running thread, so nothing can ask it to stop; a body that must end early is given a bound in its value
+  go      -
+  rust    -
+  python  Future.cancel, Future.cancelled
+
+capability thread/identity  which thread this is, its name or number, the threads running
+  heroes  refused: a body is given one value and nothing else, so a thread that needs to know which it is is given that as its value; a started thread's number is its record's `handle`
+  go      -
+  rust    thread::current, thread::current_id, Thread::id, Thread::name, Thread::os_id, JoinHandle::thread, ScopedJoinHandle::thread, Builder::name, ThreadId
+  python  threading.current_thread, threading.currentThread, threading.main_thread, threading.get_ident, threading.get_native_id, threading.enumerate, threading.active_count, threading.activeCount, Thread.name, Thread.ident, Thread.native_id, Thread.getName, Thread.setName
+
+capability thread/detach  a thread the program need not wait for
+  heroes  refused: every thread is waited for, which is how one forgotten is told; a thread left running past `main` would be cut off with its work half done
+  go      -
+  rust    -
+  python  Thread.daemon, Thread.isDaemon, Thread.setDaemon
+
+capability thread/shared-state  locks, conditions, channels, once-only values and memory several threads reach
+  heroes  refused: threads share nothing in Heroes, so no value is held by two threads and nothing needs a lock
+  go      Mutex, Mutex.Lock, Mutex.TryLock, Mutex.Unlock, RWMutex, RWMutex.Lock, RWMutex.RLock, RWMutex.RLocker, RWMutex.RUnlock, RWMutex.TryLock, RWMutex.TryRLock, RWMutex.Unlock, Locker, Cond, NewCond, Cond.Broadcast, Cond.Signal, Cond.Wait, Once, Once.Do, OnceFunc, OnceValue, OnceValues, Map and its Clear, CompareAndDelete, CompareAndSwap, Delete, Load, LoadAndDelete, LoadOrStore, Range, Store and Swap, Pool, Pool.Get, Pool.Put
+  rust    thread::park, Thread::unpark, thread::yield_now, LocalKey, AccessError
+  python  threading.Lock, threading.RLock, threading.Condition, threading.Semaphore, threading.BoundedSemaphore, threading.Event, threading.Barrier, threading.BrokenBarrierError, threading.local, threading.WeakSet, threading.concurrent_tee, threading.serialize_iterator, threading.synchronized_iterator, threading.ThreadError
+
+capability thread/failure  a failure inside a thread carried to the one that waits
+  heroes  refused: an abort in a body ends the program, as everywhere in the language, and an error is a value the body writes into its answer; there is no exception to carry
+  go      -
+  rust    thread::panicking, thread::Result
+  python  threading.excepthook, threading.ExceptHookArgs, Future.exception
+
+dropped executor-plumbing  what a future and an executor need to be built by hand: here a pool is one call
+  go      -
+  rust    -
+  python  concurrent.futures.Executor, concurrent.futures.Future, Future.add_done_callback, Future.set_result, Future.set_exception, Future.set_running_or_notify_cancel, ThreadPoolExecutor.prepare_context, ThreadPoolExecutor.BROKEN, concurrent.futures.BrokenExecutor, concurrent.futures.InvalidStateError, concurrent.futures.CancelledError, concurrent.futures.TimeoutError
+
+dropped other-workers  workers that are processes or interpreters, the package `process`'s ground
+  go      -
+  rust    -
+  python  concurrent.futures.ProcessPoolExecutor, concurrent.futures.InterpreterPoolExecutor
+
+dropped tracing  hooks into every thread's start and every call: a debugger's, not a program's
+  go      -
+  rust    thread::add_spawn_hook, Builder::no_hooks
+  python  threading.settrace, threading.settrace_all_threads, threading.gettrace, threading.setprofile, threading.setprofile_all_threads, threading.getprofile
+
+dropped raw-handles-and-traits  the system's own thread handle and what a trait gives every type: the handle here is the runtime's index, never the system's
+  go      -
+  rust    JoinHandle::as_handle, JoinHandle::as_pthread_t, JoinHandle::as_raw_handle, JoinHandle::into_pthread_t, JoinHandle::into_raw_handle, Thread::from_raw, Thread::into_raw, and on every type `fmt`, `borrow`, `borrow_mut`, `clone`, `clone_from`, `clone_into`, `clone_to_uninit`, `from`, `into`, `to_owned`, `try_from`, `try_into`, `type_id`
+  python  -

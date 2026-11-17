@@ -1,0 +1,94 @@
+# A `Content-Type` read for its media type and its `charset`, and a body's
+# bytes read as text in that charset: UTF-8, US-ASCII and ISO-8859-1 by
+# their names and the aliases Python's codecs take, the three every server
+# names.
+
+use bytes
+use http/internal/syntax
+use strings
+
+# The code of a charset this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of bytes that are not text in the charset named.
+constant NOT_TEXT: str
+    "not_text"
+
+# The media type of `content_type`, `type/subtype` in lower case, its
+# parameters left out: "" where it is "".
+function media_type(content_type: str) -> str
+    cut = strings.split_once(s: content_type, sep: ";").default(strings.Halves(before: content_type, after: ""))
+    return strings.to_lower_ascii(syntax.trim_ows(cut.before))
+
+# The `charset` parameter of `content_type`, in lower case, its quotes taken
+# off; "" where it names none.
+function of(content_type: str) -> str
+    pieces = strings.split(s: content_type, sep: ";")
+
+    for piece in pieces.slice(from: 1, to: pieces.len())
+        pair = strings.split_once(s: piece, sep: "=").default(strings.Halves(before: piece, after: ""))
+
+        if syntax.same_name(a: syntax.trim_ows(pair.before), b: "charset")
+            value = syntax.trim_ows(pair.after)
+
+            if value.len() >= 2 && value[0] == '"' && value[value.len() - 1] == '"'
+                return strings.to_lower_ascii(value.slice(from: 1, to: value.len() - 1))
+            return strings.to_lower_ascii(value)
+
+    return ""
+
+# `data` as text in the charset `name`, "" read as UTF-8. Fails `not_text`
+# where the bytes are not text in it, `unsupported` for another charset.
+function decode(data: [u8], name: str) -> str?
+    return match name
+        "" | "utf-8" | "utf8" | "u8" | "utf" | "cp65001" => bytes.to_text(data)
+        "us-ascii" | "ascii" | "646" | "us"              => ascii(data)
+        "iso-8859-1" | "iso8859-1" | "iso_8859-1" | "8859" | "cp819" | "latin" | "latin1" | "latin-1" | "l1" => ok(
+            latin1(data)
+        )
+        _ => fail(
+            code: UNSUPPORTED,
+            msg: f"reading a body as text: the charset {syntax.shown(name)} is not UTF-8, US-ASCII or ISO-8859-1, the ones this package reads"
+        )
+
+# `data` as ASCII. Fails `not_text` at the first byte above 127.
+function ascii(data: [u8]) -> str?
+    at: i64 @= 0
+
+    while at < data.len()
+        if data[at] > 127
+            return fail(code: NOT_TEXT, msg: f"reading a body as US-ASCII: the byte at {at} is above 127")
+        at @ at + 1
+
+    return bytes.to_text(data)
+
+# `data` as ISO-8859-1: each byte the character of its number.
+function latin1(data: [u8]) -> str
+    out: [u8] @= []
+
+    for b in data
+        if b < 128
+            out @ out.push(b)
+        else
+            out @ out.push(192 + b / 64)
+            out @ out.push(128 + b % 64)
+
+    return bytes.to_text(out).must()
+
+## Tests
+
+test "media_type and of: case, parameters, quotes, none"
+    assert media_type("Text/HTML; Charset=\"UTF-8\"") == "text/html" && media_type("") == ""
+    assert of("text/html; Charset=\"UTF-8\"") == "utf-8" && of("text/plain;format=flowed; charset=ISO-8859-1") == "iso-8859-1"
+    assert of("text/plain") == "" && of("") == ""
+
+test "decode: UTF-8 by default, ASCII refusing a high byte, Latin-1 every byte, another charset unsupported"
+    assert decode(bytes.from_text("café"), name: "").must() == "café"
+    assert decode([255], name: "utf-8").is_err()
+    assert decode([104, 105], name: "us-ascii").must() == "hi" && decode([200], name: "ascii").is_err()
+    assert decode([99, 97, 102, 233], name: "latin-1").must() == "café" && decode([], name: "iso-8859-1").must() == ""
+
+    match decode([104], name: "shift_jis")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED

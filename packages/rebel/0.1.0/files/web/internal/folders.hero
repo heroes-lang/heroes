@@ -1,0 +1,513 @@
+# Files answered from the disk: one file a program names, or the files of a
+# folder that a request names, nothing outside it. A file is answered with
+# its type, its date and its length; a request that holds a fresh copy is
+# answered 304, and one range of it 206, as RFC 9110 asks.
+
+use bytes
+use fs
+use http
+use path
+use strings
+use template
+use time
+use url
+use web/internal/extensions
+use web/internal/fixture
+use web/internal/sniffing
+
+# What a `Range` field asks of a file of a given length.
+variant Ranges
+    # The whole file: no range asked, a unit other than bytes, several ranges.
+    whole
+    # One range, from `first` to `last`, both included.
+    one
+        # The first byte.
+        first: i64
+        # The last byte, below the file's length.
+        last: i64
+    # No range the file can give: answered 416.
+    unsatisfiable
+
+# A response of `status` with a text body of its own words, as the file
+# server writes its refusals.
+function plain(status: i64, text: str) -> http.Response
+    return http.respond_text(status, text: text + "\n")
+
+# 405 for a method other than `GET` and `HEAD`.
+function not_allowed() -> http.Response
+    out @= plain(http.STATUS_METHOD_NOT_ALLOWED, text: "Method Not Allowed")
+    out.headers @ http.with_header(out.headers, name: "Allow", value: "GET, HEAD")
+    return out
+
+# Whether `method` is one a file is answered to.
+function is_read(method: str) -> bool
+    return method == http.METHOD_GET || method == http.METHOD_HEAD
+
+# The answer to a failure `code` of `fs` reading a file a request named.
+function refusal(code: str) -> http.Response
+    if code == "file_not_found" || code == "not_a_directory" || code == "is_a_directory" || code == "not_found"
+        return plain(http.STATUS_NOT_FOUND, text: "404 page not found")
+
+    if code == "permission"
+        return plain(http.STATUS_FORBIDDEN, text: "403 Forbidden")
+    return plain(http.STATUS_INTERNAL_SERVER_ERROR, text: "500 Internal Server Error")
+
+# The answer to `r` from the file `file`: see the face's `serve_file`.
+function serve_file(r: http.Request, file: str) -> http.Response
+    if !is_read(r.method)
+        return not_allowed()
+
+    match fs.info(file)
+        .err e => return refusal(e.code)
+        .ok info =>
+            match info.kind
+                .file                       => _ = 0
+                .directory | .link | .other => return refusal("file_not_found")
+
+            match fs.read_bytes(file)
+                .err e   => return refusal(e.code)
+                .ok data => return file_answer(r, name: file, data: data, written: info.written)
+
+# The answer to `r` from `data`, the bytes of the file `name` last written at
+# `written`: its type, `Last-Modified`, `Accept-Ranges`, 304, 412, 206 or 416
+# as its fields ask.
+function file_answer(r: http.Request, name: str, data: [u8], written: time.Instant) -> http.Response
+    seconds = time.from_unix(whole_seconds: time.unix_seconds(written), extra_nanoseconds: 0).must()
+    date = http.format_date(seconds)
+
+    match http.value_of(r.headers, name: "If-Unmodified-Since")
+        .err _ => _ = 0
+        .ok said =>
+            match http.parse_date(said)
+                .ok at =>
+                    if seconds.unix_nanoseconds > at.unix_nanoseconds
+                        out @= http.respond_status(http.STATUS_PRECONDITION_FAILED)
+                        out.headers @ [http.Header(name: "Last-Modified", value: date)]
+                        return out
+                .err _ => _ = 0
+
+    if is_fresh(r, seconds: seconds)
+        out @= http.respond_status(http.STATUS_NOT_MODIFIED)
+        out.headers @ [http.Header(name: "Last-Modified", value: date)]
+        return out
+    kind: str @= extensions.type_of(path.ext(name).default(""))
+
+    if kind == ""
+        kind @ sniffing.sniff(data)
+    out @= http.respond(http.STATUS_OK, content_type: kind, body: data)
+    out.headers @ http.with_header(out.headers, name: "Last-Modified", value: date)
+    out.headers @ http.with_header(out.headers, name: "Accept-Ranges", value: "bytes")
+    asked = http.value_of(r.headers, name: "Range").default("")
+
+    if asked == "" || !if_range_holds(r, date: date)
+        return out
+
+    match ranges_of(asked, size: data.len())
+        .whole => return out
+        .unsatisfiable =>
+            refused @= plain(http.STATUS_RANGE_NOT_SATISFIABLE, text: "416 Range Not Satisfiable")
+            refused.headers @ http.with_header(refused.headers, name: "Content-Range", value: f"bytes */{data.len()}")
+            return refused
+        .one span =>
+            out.status @ http.STATUS_PARTIAL_CONTENT
+            out.reason @ http.status_text(http.STATUS_PARTIAL_CONTENT).default("")
+            out.body @ data.slice(from: span.first, to: span.last + 1)
+            out.headers @ http.with_header(
+                out.headers,
+                name: "Content-Range",
+                value: f"bytes {span.first}-{span.last}/{data.len()}"
+            )
+            return out
+
+# Whether the client holds the file as it is, by `If-None-Match` or else by
+# `If-Modified-Since`, RFC 9110 § 13.2.2: a file with no entity tag matches
+# only `*`, and a date not older than `seconds` is fresh.
+function is_fresh(r: http.Request, seconds: time.Instant) -> bool
+    match http.value_of(r.headers, name: "If-None-Match")
+        .ok tags => return strings.trim(tags) == "*"
+        .err _   => _ = 0
+
+    match http.value_of(r.headers, name: "If-Modified-Since")
+        .err _ => return false
+        .ok said =>
+            match http.parse_date(said)
+                .ok at => return seconds.unix_nanoseconds <= at.unix_nanoseconds
+                .err _ => return false
+
+# Whether `r`'s `Range` is to be read: it has no `If-Range`, or one equal to
+# the file's `date`; an entity tag never is, the file having none.
+function if_range_holds(r: http.Request, date: str) -> bool
+    match http.value_of(r.headers, name: "If-Range")
+        .err _   => return true
+        .ok said => return strings.trim(said) == date
+
+# What the `Range` value `value` asks of a file of `size` bytes. A unit other
+# than `bytes` is the whole file, as RFC 9110 § 14.2 lets a server ignore it;
+# a range that does not read is unsatisfiable, as Go answers it; ranges past
+# the end are dropped, and where more than one is left the file is answered
+# whole.
+function ranges_of(value: str, size: i64) -> Ranges
+    if !strings.has_prefix(s: value, prefix: "bytes=")
+        return .whole
+    kept: [Ranges] @= []
+
+    for piece in strings.split(s: value.slice(from: 6, to: value.len()), sep: ",")
+        spec = strings.trim(piece)
+
+        if spec != ""
+            got = range_of(spec, size: size)
+
+            match got
+                .whole         => return .unsatisfiable
+                .unsatisfiable => _ = 0
+                .one _         => kept @ kept.push(got)
+
+    if kept.len() == 0
+        return .unsatisfiable
+
+    if kept.len() > 1
+        return .whole
+    return kept[0]
+
+# One range `spec` of a file of `size` bytes: `.one`, `.unsatisfiable` where
+# it lies past the end or asks no byte, and `.whole` where it does not read.
+function range_of(spec: str, size: i64) -> Ranges
+    halves = match strings.split_once(s: spec, sep: "-")
+        .ok h  => h
+        .err _ => return .whole
+
+    before = strings.trim(halves.before)
+    after = strings.trim(halves.after)
+
+    if before == ""
+        if !is_digits(after)
+            return .whole
+        n = number_or_most(after)
+
+        if n == 0 || size == 0
+            return .unsatisfiable
+
+        if n >= size
+            return .one(first: 0, last: size - 1)
+        return .one(first: size - n, last: size - 1)
+
+    if !is_digits(before) || after != "" && !is_digits(after)
+        return .whole
+    first = number_or_most(before)
+    last: i64 @= size - 1
+
+    if after != ""
+        end = number_or_most(after)
+
+        if end < first
+            return .whole
+
+        if end < last
+            last @ end
+
+    if first >= size
+        return .unsatisfiable
+    return .one(first: first, last: last)
+
+# Whether `s` is one ASCII digit or more.
+function is_digits(s: str) -> bool
+    if s == ""
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return false
+
+    return true
+
+# The number the digits `s` write, or the largest `i64` where it holds none
+# so large, which every file is shorter than.
+function number_or_most(s: str) -> i64
+    n: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        digit = to_i64(s[i] - '0').must()
+
+        if n > (9_223_372_036_854_775_807 - digit) / 10
+            return 9_223_372_036_854_775_807
+        n @ n * 10 + digit
+
+    return n
+
+# Why a name of a request's path may not be read from a folder, "" where it
+# may: `.` and `..`, a `\`, a zero byte, a `:` on Windows, and a name
+# beginning with `.` unless `hidden`.
+function refused_name(name: str, hidden: bool) -> str
+    if name == "." || name == ".."
+        return "a dot segment"
+
+    if strings.contains(s: name, substr: "\\")
+        return "a backslash"
+
+    for i in range(from: 0, to: name.len())
+        if name[i] == 0
+            return "a zero byte"
+
+        if name[i] == ':' && path.system_rules() == .windows
+            return "a colon"
+
+    if !hidden && name != "" && name[0] == '.'
+        return "a hidden name"
+    return ""
+
+# The answer to `r` from the folder `root` for the path `rest` under it: see
+# the face's `serve_folder`.
+function serve_folder(r: http.Request, root: str, index: str, listing: bool, hidden: bool, rest: str) -> http.Response
+    if !is_read(r.method)
+        return not_allowed()
+    names: [str] @= []
+
+    for name in strings.split(s: rest, sep: "/")
+        if refused_name(name, hidden: hidden) != ""
+            return refusal("file_not_found")
+
+        if name != ""
+            names @ names.push(name)
+
+    base = match fs.resolve(root)
+        .ok got => got
+        .err e  => return refusal(e.code)
+
+    joined: [str] @= [base]
+
+    for name in names
+        joined @ joined.push(name)
+
+    real = match fs.resolve(path.join_all(joined))
+        .ok got => got
+        .err e  => return refusal(e.code)
+
+    if !path.is_under(path: real, root: base)
+        return refusal("file_not_found")
+
+    info = match fs.info(real)
+        .ok got => got
+        .err e  => return refusal(e.code)
+
+    slash = strings.has_suffix(s: r.url.path, suffix: "/")
+    last = last_name(r.url.path)
+
+    match info.kind
+        .directory =>
+            if !slash
+                return moved(to: last + "/", query: r.url.query)
+            return folder_answer(r, dir: real, base: base, index: index, listing: listing, hidden: hidden)
+        .file =>
+            if slash
+                return moved(to: "../" + last_name(strings.trim_suffix(s: r.url.path, suffix: "/")), query: r.url.query)
+
+            if index != "" && names.len() > 0 && names[names.len() - 1] == index
+                return moved(to: "./", query: r.url.query)
+
+            match fs.read_bytes(real)
+                .ok data => return file_answer(r, name: real, data: data, written: info.written)
+                .err e   => return refusal(e.code)
+        .link | .other => return refusal("file_not_found")
+
+# The last name of the raw path `p`, as written: what a relative `Location`
+# names it by.
+function last_name(p: str) -> str
+    match strings.index_of_last(s: p, substr: "/")
+        .ok at => return p.slice(from: at + 1, to: p.len())
+        .err _ => return p
+
+# 301 to the relative reference `to`, the query kept.
+function moved(to: str, query: str) -> http.Response
+    if query == ""
+        return http.respond_redirect(http.STATUS_MOVED_PERMANENTLY, location: to)
+    return http.respond_redirect(http.STATUS_MOVED_PERMANENTLY, location: to + "?" + query)
+
+# The answer for the folder `dir`, under `base`: its index where it has one,
+# else its listing where asked, else 404.
+function folder_answer(r: http.Request, dir: str, base: str, index: str, listing: bool, hidden: bool) -> http.Response
+    if index != ""
+        match fs.resolve(path.join_all([dir, index]))
+            .err _ => _ = 0
+            .ok found =>
+                if path.is_under(path: found, root: base)
+                    match fs.info(found)
+                        .err _ => _ = 0
+                        .ok info =>
+                            match info.kind
+                                .file =>
+                                    match fs.read_bytes(found)
+                                        .ok data => return file_answer(
+                                            r,
+                                            name: found,
+                                            data: data,
+                                            written: info.written
+                                        )
+                                        .err e => return refusal(e.code)
+                                .directory | .link | .other => _ = 0
+
+    if !listing
+        return refusal("file_not_found")
+
+    match fs.read_dir(dir)
+        .err e      => return refusal(e.code)
+        .ok entries => return listing_page(entries, hidden: hidden)
+
+# The page listing `entries`, as Go's file server writes it: each name
+# sorted by its bytes, a folder's ending in `/`, its link escaped as a
+# segment and its text as HTML; a name beginning with `.` only where `hidden`.
+function listing_page(entries: [fs.Entry], hidden: bool) -> http.Response
+    folders: {str: bool} @= {}
+    names: [str] @= []
+
+    for e in entries
+        if hidden || e.name == "" || e.name[0] != '.'
+            names @ names.push(e.name)
+
+            match e.kind
+                .directory             => folders[e.name] @ true
+                .file | .link | .other => _ = 0
+
+    lines: [str] @= ["<!doctype html>", "<meta name=\"viewport\" content=\"width=device-width\">", "<pre>"]
+
+    for name in sort(names)
+        tail: str @= ""
+
+        if folders[name].default(false)
+            tail @ "/"
+        lines @ lines.push(
+            f"<a href=\"{template.escape_html(url.escape_segment(name))}{tail}\">{template.escape_html(name)}{tail}</a>"
+        )
+
+    lines @ lines.push("</pre>")
+    return http.respond(
+        http.STATUS_OK,
+        content_type: "text/html; charset=utf-8",
+        body: bytes.from_text(lines.join("\n") + "\n")
+    )
+
+test "ranges_of: one range, a suffix, an open end, past the end, several, another unit, a range that does not read"
+    assert ranges_of("bytes=0-4", size: 11) == .one(first: 0, last: 4)
+    assert ranges_of("bytes=-3", size: 11) == .one(first: 8, last: 10)
+    assert ranges_of("bytes=6-", size: 11) == .one(first: 6, last: 10)
+    assert ranges_of("bytes=20-, 0-1", size: 11) == .one(first: 0, last: 1)
+    assert ranges_of("bytes=20-", size: 11) == .unsatisfiable
+    assert ranges_of("bytes=0-1,3-4", size: 11) == .whole
+    assert ranges_of("items=0-1", size: 11) == .whole
+    assert ranges_of("bytes=x", size: 11) == .unsatisfiable && ranges_of("bytes=", size: 11) == .unsatisfiable
+
+test "range_of: a suffix of 0, a suffix past the size, an empty file, an end before its start, a number past i64"
+    assert range_of("-0", size: 11) == .unsatisfiable && range_of("-20", size: 11) == .one(first: 0, last: 10)
+    assert range_of("0-", size: 0) == .unsatisfiable && range_of("3-1", size: 11) == .whole
+    assert range_of("0-99999999999999999999999", size: 11) == .one(first: 0, last: 10)
+    assert range_of("99999999999999999999999-", size: 11) == .unsatisfiable && range_of("1-2-3", size: 11) == .whole
+
+test "is_digits: empty, digits, a sign, a space"
+    assert !is_digits("") && is_digits("0123") && !is_digits("+1") && !is_digits("1 ")
+
+test "number_or_most: zero, the largest i64, one past it"
+    assert number_or_most("0") == 0 && number_or_most("9223372036854775807") == 9_223_372_036_854_775_807
+    assert number_or_most("9223372036854775808") == 9_223_372_036_854_775_807
+
+test "refused_name: a name, an empty one, dots, a backslash, a zero byte, a hidden name shown and not"
+    assert refused_name("a.txt", hidden: false) == "" && refused_name("", hidden: false) == ""
+    assert refused_name("..", hidden: true) != "" && refused_name(".", hidden: true) != "" && refused_name("a\\b", hidden: true) != ""
+    assert refused_name(".git", hidden: false) != "" && refused_name(".git", hidden: true) == ""
+
+    match bytes.to_text([97, 0, 98])
+        .ok zero => assert refused_name(zero, hidden: true) == "a zero byte"
+        .err _   => assert false
+
+test "last_name: a path, a folder's, the root, no slash"
+    assert last_name("/static/a.txt") == "a.txt" && last_name("/static/sub/") == "" && last_name("/") == "" && last_name("x") == "x"
+
+test "moved: a relative path, the query kept"
+    assert http.value_of(moved(to: "sub/", query: "").headers, name: "Location").must() == "sub/"
+    assert http.value_of(moved(to: "sub/", query: "a=1").headers, name: "Location").must() == "sub/?a=1" && moved(to: "x", query: "").status == 301
+
+test "is_read: GET and HEAD, and POST"
+    assert is_read("GET") && is_read("HEAD") && !is_read("POST") && !is_read("get")
+
+test "refusal: not there, refused, anything else"
+    assert refusal("file_not_found").status == 404 && refusal("not_a_directory").status == 404
+    assert refusal("permission").status == 403 && refusal("failed").status == 500
+
+test "not_allowed: 405 and the two methods"
+    assert not_allowed().status == 405 && http.value_of(not_allowed().headers, name: "Allow").must() == "GET, HEAD"
+
+test "plain: the text and its line end"
+    assert http.text_of(plain(404, text: "x")).must() == "x\n"
+
+test "is_fresh: none, a date not older, an older one, a star, a tag"
+    at = time.from_unix(whole_seconds: 100, extra_nanoseconds: 0).must()
+    date = http.format_date(at)
+    assert !is_fresh(fixture.request_of(method: "GET", target: "/", headers: []), seconds: at)
+    assert is_fresh(
+        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-Modified-Since", value: date)]),
+        seconds: at
+    )
+    assert !is_fresh(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-Modified-Since", value: http.format_date(time.from_unix(whole_seconds: 99, extra_nanoseconds: 0).must()))]), seconds: at)
+    assert is_fresh(
+        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-None-Match", value: " * ")]),
+        seconds: at
+    )
+    assert !is_fresh(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-None-Match", value: "\"a\""), http.Header(name: "If-Modified-Since", value: date)]), seconds: at)
+
+test "if_range_holds: none, the date, another date, a tag"
+    date = "Sun, 06 Nov 1994 08:49:37 GMT"
+    assert if_range_holds(fixture.request_of(method: "GET", target: "/", headers: []), date: date)
+    assert if_range_holds(
+        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-Range", value: date)]),
+        date: date
+    )
+    assert !if_range_holds(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "If-Range", value: "\"tag\"")]), date: date)
+
+test "file_answer: its type by name, else by its bytes, and its date to the second"
+    at = time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 999_000_000).must()
+    got = file_answer(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        name: "x.unknown",
+        data: [137, 80, 78, 71, 13, 10, 26, 10],
+        written: at
+    )
+    assert http.value_of(got.headers, name: "Content-Type").must() == "image/png" && http.value_of(got.headers, name: "Last-Modified").must() == "Sun, 06 Nov 1994 08:49:37 GMT"
+    assert http.value_of(file_answer(fixture.request_of(method: "GET", target: "/", headers: []), name: "a.css", data: [], written: at).headers, name: "Content-Type").must() == "text/css; charset=utf-8"
+
+test "listing_page: none, a hidden name left out and shown, names sorted, a folder's slash"
+    entries = [
+        fs.Entry(name: "b", kind: .file)
+        fs.Entry(name: ".h", kind: .file)
+        fs.Entry(name: "a", kind: .directory)
+    ]
+    hidden_out = bytes.to_text(listing_page(entries, hidden: false).body).must()
+    assert hidden_out == "<!doctype html>\n<meta name=\"viewport\" content=\"width=device-width\">\n<pre>\n<a href=\"a/\">a/</a>\n<a href=\"b\">b</a>\n</pre>\n"
+    assert strings.contains(
+        s: bytes.to_text(listing_page(entries, hidden: true).body).must(),
+        substr: "<a href=\".h\">.h</a>"
+    )
+    assert bytes.to_text(listing_page([], hidden: false).body).must() == "<!doctype html>\n<meta name=\"viewport\" content=\"width=device-width\">\n<pre>\n</pre>\n"
+
+test "serve_file: a file and a folder, here and in the face"
+    root = fixture.lay_out()
+    assert serve_file(fixture.request_of(method: "GET", target: "/", headers: []), file: path.join_all([root, "a.txt"])).status == 200
+    assert serve_file(fixture.request_of(method: "GET", target: "/", headers: []), file: path.join_all([root, "sub"])).status == 404
+    fixture.remove(root)
+
+test "serve_folder: the root of the folder named by an empty rest, and its index"
+    root = fixture.lay_out()
+    assert serve_folder(fixture.request_of(method: "GET", target: "/static", headers: []), root: root, index: "index.html", listing: false, hidden: false, rest: "").status == 301
+    assert serve_folder(fixture.request_of(method: "GET", target: "/static/", headers: []), root: root, index: "index.html", listing: false, hidden: false, rest: "").status == 404
+    assert http.text_of(serve_folder(fixture.request_of(method: "GET", target: "/s/idx/", headers: []), root: root, index: "index.html", listing: false, hidden: false, rest: "idx/")).must() == "IDX"
+    fixture.remove(root)
+
+test "folder_answer: an index that is a folder is no index"
+    root = fixture.lay_out()
+    got = folder_answer(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        dir: root,
+        base: root,
+        index: "sub",
+        listing: false,
+        hidden: false
+    )
+    assert got.status == 404
+    fixture.remove(root)

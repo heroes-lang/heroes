@@ -1,0 +1,176 @@
+# How the text form writes a key, a value and a message: bare where it reads
+# back as it is, between double quotes with Go's escapes where it does not.
+# The characters escaped are those that could end a line, drive a terminal or
+# reorder what a reader sees: C0 controls, DEL, C1 controls, U+2028, U+2029 and
+# the bidirectional controls U+202A to U+202E and U+2066 to U+2069. So no value
+# can write a second line, and a bare text holds no escape at all.
+
+# The bytes of the character at `at` in `s` that is written escaped, or 0 where
+# the character there is written as it is. `at` is the first byte of a
+# character, or any byte: a continuation byte answers 0.
+function escaped_len(s: str, at: i64) -> i64
+    b = s[at]
+
+    if b < 0x20 || b == 0x7f
+        return 1
+
+    if b == 0xc2 && at + 1 < s.len()
+        next = s[at + 1]
+
+        if next >= 0x80 && next <= 0x9f
+            return 2
+        return 0
+
+    if b == 0xe2 && at + 2 < s.len()
+        second = s[at + 1]
+        third = s[at + 2]
+
+        if second == 0x80 && third >= 0xa8 && third <= 0xae
+            return 3
+
+        if second == 0x81 && third >= 0xa6 && third <= 0xa9
+            return 3
+    return 0
+
+# Whether `s` is written between quotes: where it is empty, holds a double
+# quote, an `=`, a character `escaped_len` escapes, or, where `space_counts`,
+# a space.
+function needs_quotes(s: str, space_counts: bool) -> bool
+    if s.len() == 0
+        return true
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '"' || b == '=' || space_counts && b == ' '
+            return true
+
+        if escaped_len(s: s, at: at) > 0
+            return true
+        at @ at + 1
+
+    return false
+
+# `b` as two lowercase hexadecimal digits.
+function hex2(b: u8) -> str
+    digits = "0123456789abcdef"
+    high = (b / 16).to_i64().must()
+    low = (b % 16).to_i64().must()
+    return digits.slice(from: high, to: high + 1) + digits.slice(from: low, to: low + 1)
+
+# The escape of the character of `count` bytes at `at` in `s`, as Go's
+# `strconv.Quote` writes it.
+function escape(s: str, at: i64, count: i64) -> str
+    b = s[at]
+
+    if count == 2
+        return "\\u00" + hex2(s[at + 1])
+
+    if count == 3
+        # U+2028 to U+202E have 0x80 as their second byte, U+2066 to U+2069
+        # 0x81; the third byte's low six bits are the code's last two digits.
+        if s[at + 1] == 0x80
+            return "\\u20" + hex2(s[at + 2] - 0x80)
+        return "\\u20" + hex2(s[at + 2] - 0x80 + 0x40)
+
+    return match b
+        0x07 => "\\a"
+        0x08 => "\\b"
+        0x09 => "\\t"
+        0x0a => "\\n"
+        0x0b => "\\v"
+        0x0c => "\\f"
+        0x0d => "\\r"
+        _    => "\\x" + hex2(b)
+
+# `s` between double quotes, a quote and a backslash written with a backslash
+# before them and every character `escaped_len` names escaped.
+function quoted(s: str) -> str
+    parts: [str] @= ["\""]
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+        count = escaped_len(s: s, at: at)
+
+        if count > 0 || b == '"' || b == '\\'
+            parts @ parts.push(s.slice(from: from, to: at))
+
+            if b == '"'
+                parts @ parts.push("\\\"")
+            else if b == '\\'
+                parts @ parts.push("\\\\")
+            else
+                parts @ parts.push(escape(s: s, at: at, count: count))
+
+            at @ at + if count > 0
+                count
+            else
+                1
+            from @ at
+        else
+            at @ at + 1
+
+    parts @ parts.push(s.slice(from: from, to: s.len()))
+    parts @ parts.push("\"")
+    return parts.join("")
+
+# `s` as the text form writes it: `quoted` where `needs_quotes` says so, else
+# as it is.
+function written(s: str, space_counts: bool) -> str
+    if needs_quotes(s: s, space_counts: space_counts)
+        return quoted(s)
+    return s
+
+test "escaped_len: ASCII, controls, C1, line separators, bidirectional controls and a continuation byte"
+    assert escaped_len(s: "a", at: 0) == 0
+    assert escaped_len(s: "\n", at: 0) == 1
+    assert escaped_len(s: "\u{7f}", at: 0) == 1
+    assert escaped_len(s: "\u{85}", at: 0) == 2
+    assert escaped_len(s: "¡", at: 0) == 0
+    assert escaped_len(s: "\u{2028}", at: 0) == 3
+    assert escaped_len(s: "\u{2029}", at: 0) == 3
+    assert escaped_len(s: "\u{202e}", at: 0) == 3
+    assert escaped_len(s: "‰", at: 0) == 0
+    assert escaped_len(s: "\u{2066}", at: 0) == 3
+    assert escaped_len(s: "\u{2069}", at: 0) == 3
+    assert escaped_len(s: "⁰", at: 0) == 0
+    assert escaped_len(s: "⁄", at: 0) == 0
+    assert escaped_len(s: "‧", at: 0) == 0
+    assert escaped_len(s: "\u{2028}", at: 1) == 0
+
+test "needs_quotes: empty, a space with and without counting, a quote, an equals sign and an escape"
+    assert needs_quotes(s: "", space_counts: false)
+    assert !needs_quotes(s: "plain", space_counts: true)
+    assert needs_quotes(s: "a b", space_counts: true)
+    assert !needs_quotes(s: "a b", space_counts: false)
+    assert needs_quotes(s: "say \"hi\"", space_counts: false)
+    assert needs_quotes(s: "x=y", space_counts: false)
+    assert needs_quotes(s: "esc\u{1b}z", space_counts: false)
+    assert !needs_quotes(s: "back\\slash", space_counts: true)
+    assert !needs_quotes(s: "é ok", space_counts: false)
+
+# Each expected text below is what Go 1.27's slog TextHandler wrote for the
+# same value, 2026-11-16.
+test "quoted: the empty text, quotes, a backslash, Go's short escapes, other controls, C1, U+2028 and a bidirectional control"
+    assert quoted("") == "\"\""
+    assert quoted("say \"hi\"") == "\"say \\\"hi\\\"\""
+    assert quoted("a\\b") == "\"a\\\\b\""
+    assert quoted("tab\there") == "\"tab\\there\""
+    assert quoted("\u{7}\u{8}\u{b}\u{c}\r\n") == "\"\\a\\b\\v\\f\\r\\n\""
+    assert quoted("esc\u{1b}z") == "\"esc\\x1bz\""
+    assert quoted("\u{7f}") == "\"\\x7f\""
+    assert quoted("nel\u{85}x") == "\"nel\\u0085x\""
+    assert quoted("line\u{2028}sep") == "\"line\\u2028sep\""
+    assert quoted("bidi\u{202e}x") == "\"bidi\\u202ex\""
+    assert quoted("iso\u{2066}x") == "\"iso\\u2066x\""
+    assert quoted("é 😀") == "\"é 😀\""
+
+test "written: bare, quoted for a space only where spaces count, and the empty text"
+    assert written(s: "plain", space_counts: true) == "plain"
+    assert written(s: "a b", space_counts: true) == "\"a b\""
+    assert written(s: "a b", space_counts: false) == "a b"
+    assert written(s: "", space_counts: false) == "\"\""
+    assert written(s: "x=y", space_counts: true) == "\"x=y\""

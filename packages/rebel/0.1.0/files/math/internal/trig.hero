@@ -1,0 +1,240 @@
+# Angles and the functions of them: circular, inverse, hyperbolic, the turn
+# between radians and degrees, and the special functions erf and gamma; each
+# C's own function but the two turns, which are one product.
+#
+# As in `elementary`, an edge is held to the bit and a value inside the range
+# to within two units of the last place of Python's `math` on this machine.
+
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+use math/libm
+
+# The sine of `x`.
+#
+# - `x`: an angle in radians.
+function sin(x: f64) -> f64
+    return libm.c_sin(x)
+
+# The cosine of `x`.
+#
+# - `x`: an angle in radians.
+function cos(x: f64) -> f64
+    return libm.c_cos(x)
+
+# The tangent of `x`.
+#
+# - `x`: an angle in radians.
+function tan(x: f64) -> f64
+    return libm.c_tan(x)
+
+# The angle whose sine is `x`.
+#
+# - `x`: a sine.
+function asin(x: f64) -> f64
+    return libm.c_asin(x)
+
+# The angle whose cosine is `x`.
+#
+# - `x`: a cosine.
+function acos(x: f64) -> f64
+    return libm.c_acos(x)
+
+# The angle whose tangent is `x`.
+#
+# - `x`: a tangent.
+function atan(x: f64) -> f64
+    return libm.c_atan(x)
+
+# The angle of the point (`x`, `y`).
+#
+# - `y`: the point's height.
+# - `x`: the point's distance along the axis.
+function atan2(y: f64, x: f64) -> f64
+    return libm.c_atan2(y: y, x: x)
+
+# `x` radians in degrees: `x` times the nearest float to 180 over pi, as
+# Python's `math.degrees` computes it.
+#
+# - `x`: an angle in radians.
+function to_degrees(x: f64) -> f64
+    return x * (180.0 / limits.PI)
+
+# `x` degrees in radians: `x` times the nearest float to pi over 180, as
+# Python's `math.radians` computes it.
+#
+# - `x`: an angle in degrees.
+function to_radians(x: f64) -> f64
+    return x * (limits.PI / 180.0)
+
+# The hyperbolic sine of `x`.
+#
+# - `x`: any float.
+function sinh(x: f64) -> f64
+    return libm.c_sinh(x)
+
+# The hyperbolic cosine of `x`.
+#
+# - `x`: any float.
+function cosh(x: f64) -> f64
+    return libm.c_cosh(x)
+
+# The hyperbolic tangent of `x`.
+#
+# - `x`: any float.
+function tanh(x: f64) -> f64
+    return libm.c_tanh(x)
+
+# The inverse hyperbolic sine of `x`.
+#
+# - `x`: any float.
+function asinh(x: f64) -> f64
+    return libm.c_asinh(x)
+
+# The inverse hyperbolic cosine of `x`.
+#
+# - `x`: 1.0 or more.
+function acosh(x: f64) -> f64
+    return libm.c_acosh(x)
+
+# The inverse hyperbolic tangent of `x`.
+#
+# - `x`: from -1.0 to 1.0.
+function atanh(x: f64) -> f64
+    return libm.c_atanh(x)
+
+# The error function of `x`.
+#
+# - `x`: any float.
+function erf(x: f64) -> f64
+    return libm.c_erf(x)
+
+# The complementary error function of `x`.
+#
+# - `x`: any float.
+function erfc(x: f64) -> f64
+    return libm.c_erfc(x)
+
+# The gamma function of `x`.
+#
+# - `x`: any float.
+function gamma(x: f64) -> f64
+    return libm.c_tgamma(x)
+
+# The natural logarithm of the size of the gamma function of `x`.
+#
+# - `x`: any float.
+function ln_gamma(x: f64) -> f64
+    return libm.c_lgamma(x)
+
+## Tests
+
+test "sin, cos and tan: minus zero, an infinity, pi, a huge angle, one"
+    assert floats.has_minus_sign(sin(-0.0)) && cos(-0.0) == 1.0 && floats.has_minus_sign(tan(-0.0))
+    assert floats.is_nan(sin(limits.INF)) && floats.is_nan(cos(-limits.INF)) && floats.is_nan(tan(limits.INF))
+    assert parts.within_ulps(x: sin(limits.PI), expected: 0.00000000000000012246467991473532, ulps: 2.0)
+    assert cos(limits.PI) == -1.0
+    assert parts.within_ulps(x: sin(10000000000000000000000.0), expected: -0.8522008497671888, ulps: 2.0)
+    assert parts.within_ulps(x: cos(10000000000000000000000.0), expected: 0.523214785395139, ulps: 2.0)
+    assert parts.within_ulps(x: tan(10000000000000000000000.0), expected: -1.6287782256068988, ulps: 2.0)
+    assert parts.within_ulps(x: sin(1.0), expected: 0.8414709848078965, ulps: 2.0)
+    assert parts.within_ulps(x: tan(limits.PI / 4.0), expected: 0.9999999999999999, ulps: 2.0)
+
+test "asin, acos and atan: the ends of the range, a hair past them, minus zero, the infinities"
+    assert asin(1.0) == limits.PI / 2.0 && asin(-1.0) == -limits.PI / 2.0
+    assert floats.is_nan(asin(1.0000001)) && floats.is_nan(acos(-1.0000001))
+    assert floats.has_minus_sign(asin(-0.0))
+    assert acos(1.0) == 0.0 && acos(-1.0) == limits.PI && acos(0.0) == limits.PI / 2.0
+    assert atan(limits.INF) == limits.PI / 2.0 && atan(-limits.INF) == -limits.PI / 2.0
+    assert floats.has_minus_sign(atan(-0.0))
+    assert parts.within_ulps(x: atan(1.0), expected: 0.7853981633974483, ulps: 2.0)
+
+# Go's `math.Atan2`, which follows C's table of the signed zeros.
+test "atan2: the four signed zeros, each quadrant, the infinities, a nan"
+    assert atan2(y: 0.0, x: 0.0) == 0.0 && !floats.has_minus_sign(atan2(y: 0.0, x: 0.0))
+    assert floats.has_minus_sign(atan2(y: -0.0, x: 0.0))
+    assert atan2(y: 0.0, x: -0.0) == limits.PI
+    assert atan2(y: -0.0, x: -0.0) == -limits.PI
+    assert parts.within_ulps(x: atan2(y: 1.0, x: -1.0), expected: 2.356194490192345, ulps: 2.0)
+    assert parts.within_ulps(x: atan2(y: -1.0, x: -1.0), expected: -2.356194490192345, ulps: 2.0)
+    assert parts.within_ulps(x: atan2(y: limits.INF, x: limits.INF), expected: 0.7853981633974483, ulps: 2.0)
+    assert atan2(y: 1.0, x: -limits.INF) == limits.PI
+    assert floats.is_nan(atan2(y: limits.NAN, x: 1.0))
+
+# Python's `math.degrees` and `math.radians`, run on 2026-11-16.
+test "to_degrees and to_radians: pi, one, a half turn, a negative angle, the infinity, a nan"
+    assert to_degrees(limits.PI) == 180.0
+    assert to_degrees(1.0) == 57.29577951308232
+    assert to_degrees(-0.5) == -28.64788975654116
+    assert to_degrees(limits.PI / 2.0) == 90.0
+    assert to_radians(180.0) == limits.PI
+    assert to_radians(1.0) == 0.017453292519943295
+    assert to_radians(90.0) == 1.5707963267948966
+    assert to_radians(-45.0) == -0.7853981633974483
+    assert to_radians(360.0) == limits.TAU
+    assert to_degrees(limits.INF) == limits.INF && floats.is_nan(to_radians(limits.NAN))
+
+test "sinh, cosh and tanh: minus zero, the infinities, one, past the overflow"
+    assert floats.has_minus_sign(sinh(-0.0)) && cosh(-0.0) == 1.0 && floats.has_minus_sign(tanh(-0.0))
+    assert sinh(limits.INF) == limits.INF && sinh(-limits.INF) == -limits.INF
+    assert cosh(-limits.INF) == limits.INF
+    assert tanh(limits.INF) == 1.0 && tanh(-limits.INF) == -1.0 && tanh(20.0) == 1.0
+    assert parts.within_ulps(x: sinh(1.0), expected: 1.1752011936438014, ulps: 2.0)
+    assert parts.within_ulps(x: cosh(1.0), expected: 1.5430806348152437, ulps: 2.0)
+    assert parts.within_ulps(x: tanh(0.5), expected: 0.46211715726000974, ulps: 2.0)
+    assert sinh(711.0) == limits.INF && cosh(711.0) == limits.INF
+
+test "asinh, acosh and atanh: the infinities, minus zero, the ends of the range, a hair outside"
+    assert asinh(-limits.INF) == -limits.INF && floats.has_minus_sign(asinh(-0.0))
+    assert parts.within_ulps(x: asinh(1.0), expected: 0.881373587019543, ulps: 2.0)
+    assert floats.is_nan(acosh(0.5)) && acosh(1.0) == 0.0 && acosh(limits.INF) == limits.INF
+    assert parts.within_ulps(x: acosh(2.0), expected: 1.3169578969248166, ulps: 2.0)
+    assert atanh(1.0) == limits.INF && atanh(-1.0) == -limits.INF
+    assert floats.is_nan(atanh(1.5)) && floats.has_minus_sign(atanh(-0.0))
+    assert parts.within_ulps(x: atanh(0.5), expected: 0.5493061443340549, ulps: 2.0)
+
+test "erf and erfc: the infinities, the zeros, a half, far in the tail"
+    assert erf(-limits.INF) == -1.0 && erf(limits.INF) == 1.0 && floats.has_minus_sign(erf(-0.0))
+    assert erf(6.0) == 1.0
+    assert erfc(-limits.INF) == 2.0 && erfc(limits.INF) == 0.0 && erfc(0.0) == 1.0
+    assert parts.within_ulps(x: erf(0.5), expected: 0.5204998778130465, ulps: 2.0)
+    assert parts.within_ulps(x: erfc(0.5), expected: 0.4795001221869535, ulps: 2.0)
+    assert parts.within_ulps(
+        x: erfc(27.0),
+        expected: 0.000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000523705,
+        ulps: 2.0
+    )
+    assert erfc(28.0) == 0.0
+
+test "gamma: the two zeros, a negative whole number, the infinities, whole numbers, halves, a hair below the overflow"
+    assert gamma(0.0) == limits.INF && gamma(-0.0) == -limits.INF
+    assert floats.is_nan(gamma(-1.0)) && floats.is_nan(gamma(-limits.INF))
+    assert gamma(limits.INF) == limits.INF && floats.is_nan(gamma(limits.NAN))
+    assert gamma(5.0) == 24.0
+    assert parts.within_ulps(x: gamma(0.5), expected: 1.7724538509055159, ulps: 2.0)
+    assert parts.within_ulps(x: gamma(-0.5), expected: -3.544907701811032, ulps: 2.0)
+    assert gamma(171.7) == limits.INF
+    assert parts.within_ulps(
+        x: gamma(171.6),
+        expected: 158589690966725634721867472464422977582405101063760436358029503849694936861174880942103709921708001707700820673331567728958250038435465479643875603154341215615847271553321096501050079793056279980857335028945599367489899936106578698791637927459362785995528656948244346108700067862783414643973262467140035805184.0,
+        ulps: 16.0
+    )
+
+# The expected values of `ln_gamma` are the true ones, computed to forty
+# digits with Python's `decimal` from gamma(0.5) = sqrt(pi) and gamma(-2.5) =
+# sqrt(pi) / -1.875, on 2026-11-16. Python's own `lgamma` stands 75 units of
+# the last place from the second and C's on this machine 10: it lies near a
+# zero of the function, where every library loses digits.
+test "ln_gamma: the zeros, a negative whole number, both infinities, one and two, a half, past the overflow"
+    assert ln_gamma(0.0) == limits.INF && ln_gamma(-0.0) == limits.INF
+    assert ln_gamma(-1.0) == limits.INF
+    assert ln_gamma(limits.INF) == limits.INF && ln_gamma(-limits.INF) == limits.INF
+    assert ln_gamma(1.0) == 0.0 && ln_gamma(2.0) == 0.0
+    assert parts.within_ulps(x: ln_gamma(0.5), expected: 0.5723649429247001, ulps: 2.0)
+    assert parts.within_ulps(x: ln_gamma(-2.5), expected: -0.05624371649767405, ulps: 64.0)
+    assert ln_gamma(scale_up()) == limits.INF
+
+# 2 to the 1017, about 1.4 times 10 to the 306, whose `ln_gamma` passes the
+# largest float.
+function scale_up() -> f64
+    return parts.scale(x: 1.0, exponent: 1017)

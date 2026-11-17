@@ -1,0 +1,10 @@
+# Reaches Rebel's package `bytes`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes the bytes of a word as
+# hexadecimal and as base 64, and prints both.
+
+use <rebel>/bytes
+
+function main()
+    word = bytes.from_text("Heroes")
+    print(bytes.format_hex(word))
+    print(bytes.format_base64(word))

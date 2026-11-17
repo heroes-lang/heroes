@@ -1,0 +1,10 @@
+# Reaches Rebel's package `url`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads one URL and prints its host and
+# the text built back from its parts.
+
+use <rebel>/url
+
+function main()
+    match url.parse("https://example.com/a%20b?q=1#top")
+        .ok u  => print(u.host, " ", url.format(u))
+        .err e => print(e.code, ": ", e.msg)

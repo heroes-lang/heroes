@@ -1,0 +1,121 @@
+# The quotient and remainder of two magnitudes, by Knuth's algorithm D (The
+# Art of Computer Programming, volume 2, 4.3.1): the divisor is shifted until
+# its top limb has its top bit set, then each limb of the quotient is guessed
+# from the top two limbs of what remains and corrected at most twice. The cost
+# is the product of the two lengths.
+
+use big/internal/limbs
+use big/internal/product
+
+# What `divide` answers: `n` is `quotient` times the divisor plus `remainder`,
+# which is below the divisor.
+record Division
+    quotient: [i64]
+    remainder: [i64]
+
+# `n` divided by `by`, which is not zero.
+function divide(n: [i64], by: [i64]) -> Division
+    assert by.len() > 0
+
+    if limbs.compare(a: n, b: by) < 0
+        return Division(quotient: [], remainder: n)
+
+    if by.len() == 1
+        d = limbs.divided_small(a: n, d: by[0])
+        return Division(quotient: d.quotient, remainder: limbs.of(d.remainder))
+    shift = limbs.BITS - limbs.bit_len([by[by.len() - 1]])
+    v = limbs.shift_left(a: by, count: shift)
+    u: [i64] @= limbs.shift_left(a: n, count: shift)
+
+    while u.len() <= n.len()
+        u @ u.push(0)
+
+    size = v.len()
+    q: [i64] @= limbs.zeros(u.len() - size)
+    top = v[size - 1]
+    next = v[size - 2]
+    j: i64 @= u.len() - size - 1
+
+    while j >= 0
+        q[j] @ step(u: @u, v: v, at: j, top: top, next: next)
+        j @ j - 1
+
+    return Division(
+        quotient: limbs.trimmed(q),
+        remainder: limbs.shift_right(a: limbs.part(a: u, from: 0, to: size), count: shift)
+    )
+
+# One limb of the quotient: what `v` times 2^(30 `at`) goes into the top of
+# `u`, which is left holding the rest. `top` and `next` are the top two limbs
+# of `v`.
+function step(@u: [i64], v: [i64], at: i64, top: i64, next: i64) -> i64
+    size = v.len()
+    high = u[at + size] * limbs.BASE + u[at + size - 1]
+    guess: i64 @= high / top
+    rest: i64 @= high % top
+
+    while rest < limbs.BASE && (guess >= limbs.BASE || guess * next > rest * limbs.BASE + u[at + size - 2])
+        guess @ guess - 1
+        rest @ rest + top
+
+    borrow: i64 @= 0
+    carry: i64 @= 0
+    i: i64 @= 0
+
+    while i < size
+        p = guess * v[i] + carry
+        carry @ p >> limbs.BITS
+        t: i64 @= u[at + i] - (p & limbs.MASK) - borrow
+        borrow @ 0
+
+        if t < 0
+            t @ t + limbs.BASE
+            borrow @ 1
+        u[at + i] @ t
+        i @ i + 1
+
+    left: i64 @= u[at + size] - carry - borrow
+
+    if left < 0
+        guess @ guess - 1
+        back: i64 @= 0
+        k: i64 @= 0
+
+        while k < size
+            s = u[at + k] + v[k] + back
+            u[at + k] @ s & limbs.MASK
+            back @ s >> limbs.BITS
+            k @ k + 1
+
+        left @ left + back
+    assert left == 0
+    u[at + size] @ 0
+    return guess
+
+## Tests
+
+test "divide: below the divisor, by one limb, exact, and with a remainder"
+    nothing: [i64] = []
+    small = divide(n: [5], by: [7])
+    assert small.quotient == nothing
+    assert small.remainder == [5]
+    one = divide(n: [0, 1], by: [3])
+    assert one.quotient == [357913941]
+    assert one.remainder == [1]
+    zero = divide(n: nothing, by: [0, 1])
+    assert zero.quotient == nothing
+    assert zero.remainder == nothing
+    exact = divide(n: [0, 0, 1], by: [0, 1])
+    assert exact.quotient == [0, 1]
+    assert exact.remainder == nothing
+
+test "divide: a guess corrected, the add back, and many limbs held to the product"
+    a = [123456789, 987654321, 1073741823, 5, 1073741823, 77]
+    b = [1073741823, 1073741823, 1]
+    d = divide(n: a, by: b)
+    assert limbs.add(a: product.multiply(a: d.quotient, b: b), b: d.remainder) == a
+    assert limbs.compare(a: d.remainder, b: b) < 0
+    c = [0, 0, 0, 536870912]
+    e = [1, 0, 536870912]
+    f = divide(n: c, by: e)
+    assert limbs.add(a: product.multiply(a: f.quotient, b: e), b: f.remainder) == c

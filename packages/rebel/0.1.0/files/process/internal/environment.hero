@@ -1,0 +1,271 @@
+# The variables a child starts with: the changes a command records, and the
+# list the floor is handed, read from this process's environment as its raw
+# bytes, so a variable that is not UTF-8 reaches the child unchanged.
+
+use os
+use process/hero_proc
+use process/internal/codes
+
+# What the floor is handed for a child's variables.
+record Given
+    # `HERO_PROC_ENV_PARENT`, or `HERO_PROC_ENV_GIVEN`.
+    kind: i64
+    # Each `NAME=value` followed by one zero byte, for `HERO_PROC_ENV_GIVEN`.
+    bytes: [u8]
+
+# Whether names compare without their ASCII case, as Windows compares them.
+function folds() -> bool
+    return os.family() == .windows
+
+# The ASCII upper case of `b`, any other byte as it is.
+function upper(b: u8) -> u8
+    if b >= 'a' && b <= 'z'
+        return b - 32
+    return b
+
+# Whether `a` and `b` name one variable: the same bytes, or where `folding`
+# the same but for their ASCII case.
+function same_name(a: [u8], b: [u8], folding: bool) -> bool
+    if a.len() != b.len()
+        return false
+
+    for i in range(from: 0, to: a.len())
+        if a[i] != b[i] && !(folding && upper(a[i]) == upper(b[i]))
+            return false
+
+    return true
+
+# The bytes of `text`.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    return out
+
+# Whether `a` and `b`, two names as text, name one variable.
+function same_text(a: str, b: str, folding: bool) -> bool
+    return same_name(a: bytes_of(a), b: bytes_of(b), folding: folding)
+
+# `set` with `name` set to `value`, in the place of the first name that names
+# the same variable, or after the others.
+function set_one(set: {str: str}, name: str, value: str, folding: bool) -> {str: str}
+    out: {str: str} @= {}
+    placed: bool @= false
+
+    for key in keys(set)
+        if same_text(a: key, b: name, folding: folding)
+            if !placed
+                out[name] @ value
+                placed @ true
+        else
+            out[key] @ set[key].must()
+
+    if !placed
+        out[name] @ value
+    return out
+
+# `set` without the variable `name`.
+function set_without(set: {str: str}, name: str, folding: bool) -> {str: str}
+    out: {str: str} @= {}
+
+    for key in keys(set)
+        if !same_text(a: key, b: name, folding: folding)
+            out[key] @ set[key].must()
+
+    return out
+
+# `names` without `name`.
+function names_without(names: [str], name: str, folding: bool) -> [str]
+    out: [str] @= []
+
+    for one in names
+        if !same_text(a: one, b: name, folding: folding)
+            out @ out.push(one)
+
+    return out
+
+# `names` with `name`, where no name of it names that variable.
+function names_with(names: [str], name: str, folding: bool) -> [str]
+    out = names_without(names, name: name, folding: folding)
+    return out.push(name)
+
+# Whether a variable `name` of this process stays out of the child's: removed,
+# or set anew.
+function held_out(name: [u8], set: {str: str}, removed: [str], folding: bool) -> bool
+    for one in removed
+        if same_name(a: name, b: bytes_of(one), folding: folding)
+            return true
+
+    for key in keys(set)
+        if same_name(a: name, b: bytes_of(key), folding: folding)
+            return true
+
+    return false
+
+# Nothing, where every variable `set` holds can be handed to a child: a name
+# that is not empty and holds no `=` or zero byte, and a value with no zero
+# byte. Fails `invalid` where one cannot, the message naming it.
+function checked(set: {str: str}, asked: str) -> ()?
+    for name in keys(set)
+        if name.len() == 0
+            return codes.of(code: codes.INVALID, asked: asked, why: "a variable's name is empty")
+
+        for i in range(from: 0, to: name.len())
+            if name[i] == '=' || name[i] == 0
+                return codes.of(
+                    code: codes.INVALID,
+                    asked: asked,
+                    why: f"the variable's name \"{name}\" holds `=` or a zero byte"
+                )
+
+        value = set[name].must()
+
+        for i in range(from: 0, to: value.len())
+            if value[i] == 0
+                return codes.of(code: codes.INVALID, asked: asked, why: f"the value of \"{name}\" holds a zero byte")
+
+    return ok()
+
+# Adds `name`, `=`, `value` and a zero byte to `out`.
+function add_variable(@out: [u8], name: [u8], value: [u8])
+    for b in name
+        out @ out.push(b)
+
+    out @ out.push('=')
+
+    for b in value
+        out @ out.push(b)
+
+    out @ out.push(0)
+
+# What the floor is handed for a child whose variables start from this
+# process's where `inherited`, else from none, with `removed` taken out and
+# `set` set. Fails `invalid` as `checked` does, and with the system's code
+# where this process's environment cannot be read.
+function given(inherited: bool, set: {str: str}, removed: [str], asked: str) -> Given?
+    checked(set, asked: asked)?
+
+    if inherited && keys(set).len() == 0 && removed.len() == 0
+        none: [u8] = []
+        return ok(Given(kind: hero_proc.HERO_PROC_ENV_PARENT, bytes: none))
+    folding = folds()
+    out: [u8] @= []
+
+    if inherited
+        for variable in os.env_all_bytes()?
+            if !held_out(variable.name, set: set, removed: removed, folding: folding)
+                add_variable(out: @out, name: variable.name, value: variable.value)
+
+    for name in keys(set)
+        add_variable(out: @out, name: bytes_of(name), value: bytes_of(set[name].must()))
+
+    return ok(Given(kind: hero_proc.HERO_PROC_ENV_GIVEN, bytes: out))
+
+# The variables a child would start with, name to value, as `given` makes
+# them. Fails `not_text` where one it would take from this process is not
+# UTF-8, and with the system's code where the environment cannot be read.
+function listed(inherited: bool, set: {str: str}, removed: [str]) -> {str: str}?
+    folding = folds()
+    out: {str: str} @= {}
+
+    if inherited
+        every = os.env_all()?
+
+        for name in keys(every)
+            if !held_out(bytes_of(name), set: set, removed: removed, folding: folding)
+                out[name] @ every[name].must()
+
+    for name in keys(set)
+        out[name] @ set[name].must()
+
+    return ok(out)
+
+test "same_name: the same bytes, another case with and without folding, and two lengths"
+    assert same_name(a: bytes_of("PATH"), b: bytes_of("PATH"), folding: false)
+    assert !same_name(a: bytes_of("Path"), b: bytes_of("PATH"), folding: false)
+    assert same_name(a: bytes_of("Path"), b: bytes_of("PATH"), folding: true)
+    assert !same_name(a: bytes_of("PATHS"), b: bytes_of("PATH"), folding: true)
+    assert same_name(a: bytes_of(""), b: bytes_of(""), folding: false)
+    assert !same_name(a: bytes_of("é"), b: bytes_of("É"), folding: true)
+
+test "set_one and set_without: a new name, a name set again in its place, another case where names fold, and a name not there"
+    empty: {str: str} = {}
+    one = set_one(empty, name: "A", value: "1", folding: false)
+    assert keys(one) == ["A"]
+    two = set_one(one, name: "B", value: "2", folding: false)
+    again = set_one(two, name: "A", value: "3", folding: false)
+    assert keys(again) == ["A", "B"]
+    assert again["A"].must() == "3"
+    folded = set_one(again, name: "a", value: "4", folding: true)
+    assert keys(folded) == ["a", "B"]
+    assert folded["a"].must() == "4"
+    kept = set_one(again, name: "a", value: "4", folding: false)
+    assert keys(kept) == ["A", "B", "a"]
+    assert keys(set_without(again, name: "A", folding: false)) == ["B"]
+    assert keys(set_without(again, name: "b", folding: true)) == ["A"]
+    assert keys(set_without(again, name: "Z", folding: false)) == ["A", "B"]
+
+test "names_with and names_without: an empty list, a name twice, and another case where names fold"
+    none: [str] = []
+    assert names_with(none, name: "A", folding: false) == ["A"]
+    assert names_with(["A"], name: "A", folding: false) == ["A"]
+    assert names_with(["A"], name: "a", folding: true) == ["a"]
+    assert names_with(["A"], name: "a", folding: false) == ["A", "a"]
+    assert names_without(["A", "B"], name: "A", folding: false) == ["B"]
+    assert names_without(none, name: "A", folding: false) == none
+
+test "checked: no variable, an empty name, a name with `=`, a zero byte in a name and in a value, and a value set empty"
+    empty: {str: str} = {}
+    assert !checked(empty, asked: "t").is_err()
+    assert checked({"": "x"}, asked: "t").is_err()
+    assert checked({"A=B": "x"}, asked: "t").is_err()
+    zero_bytes: [u8] = [65, 0]
+    zero = zero_bytes.validated_bytes().must()
+    assert checked({zero: "x"}, asked: "t").is_err()
+    assert checked({"A": zero}, asked: "t").is_err()
+    assert !checked({"A": ""}, asked: "t").is_err()
+
+    match checked({"A=B": "x"}, asked: "t")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == codes.INVALID
+            assert e.msg == "t: the variable's name \"A=B\" holds `=` or a zero byte"
+
+test "given: this process's own where nothing changes, and exactly the variables set where none is inherited"
+    empty: {str: str} = {}
+    none: [str] = []
+    parent = given(inherited: true, set: empty, removed: none, asked: "t").must()
+    assert parent.kind == hero_proc.HERO_PROC_ENV_PARENT
+    assert parent.bytes.len() == 0
+    nothing = given(inherited: false, set: empty, removed: none, asked: "t").must()
+    assert nothing.kind == hero_proc.HERO_PROC_ENV_GIVEN
+    assert nothing.bytes.len() == 0
+    exact = given(inherited: false, set: {"A": "1", "B": ""}, removed: none, asked: "t").must()
+    assert exact.bytes == [65, 61, 49, 0, 66, 61, 0]
+
+    match given(inherited: false, set: {"A=": "1"}, removed: none, asked: "t")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+test "given and listed: an inherited variable taken out, and one set over what is inherited"
+    empty: {str: str} = {}
+    every = listed(inherited: true, set: empty, removed: ["PATH"]).must()
+    assert every["PATH"].is_err()
+    over = listed(inherited: true, set: {"PATH": "/rebel"}, removed: []).must()
+    assert over["PATH"].must() == "/rebel"
+    none = listed(inherited: false, set: empty, removed: []).must()
+    assert keys(none).len() == 0
+    out = given(inherited: true, set: {"PATH": "/rebel"}, removed: [], asked: "t").must()
+    assert out.kind == hero_proc.HERO_PROC_ENV_GIVEN
+    found: i64 @= 0
+    tail = bytes_of("PATH=/rebel")
+    at: i64 @= 0
+
+    while at + tail.len() <= out.bytes.len()
+        if out.bytes.slice(from: at, to: at + tail.len()) == tail
+            found @ found + 1
+        at @ at + 1
+
+    assert found == 1

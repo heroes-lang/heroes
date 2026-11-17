@@ -1,0 +1,322 @@
+# How a text is written as a scalar: plain where a plain scalar reads back as
+# that same text, in YAML 1.2 under any of its schemas and in YAML 1.1; between
+# double quotes with YAML's escapes otherwise; and as a literal block where it
+# holds several lines and its characters allow one.
+
+use numbers
+use strings
+use unicode
+use yaml/internal/schema
+use yaml/internal/source
+
+## Plain
+
+# Whether `s` may be written as a plain scalar of a block context and read
+# back as the same text by any YAML reader: one line, no character that needs
+# an escape, no indicator first, no white space first or last, no `: ` or
+# ` #` inside and no `:` last, and no spelling any schema reads as another
+# kind.
+function is_plain_safe(s: str) -> bool
+    if s == "" || needs_escape_somewhere(s) || source.is_indicator(s[0])
+        return false
+
+    if s[0] == ' ' || s[s.len() - 1] == ' ' || s[s.len() - 1] == ':'
+        return false
+
+    if strings.contains(s: s, substr: ": ") || strings.contains(s: s, substr: " #") || strings.has_prefix(s: s, prefix: "...")
+        return false
+    return !looks_typed(s)
+
+# Whether a YAML reader of some schema reads the plain scalar `s` as something
+# other than text: JSON's `null`, `true`, `false` and numbers; the core
+# schema's `~`, cased words, `.inf`, `.nan` and numbers in other bases; YAML
+# 1.1's booleans, `=`, `<<`, numbers with `_` or `:` and timestamps.
+function looks_typed(s: str) -> bool
+    if s == "null" || s == "true" || s == "false" || schema.is_float(s)
+        return true
+    words = [
+        "~"
+        "Null"
+        "NULL"
+        "True"
+        "TRUE"
+        "False"
+        "FALSE"
+        "yes"
+        "Yes"
+        "YES"
+        "no"
+        "No"
+        "NO"
+        "on"
+        "On"
+        "ON"
+        "off"
+        "Off"
+        "OFF"
+        "y"
+        "Y"
+        "n"
+        "N"
+        "="
+        "<<"
+    ]
+
+    for w in words
+        if s == w
+            return true
+
+    unsigned = if s[0] == '+' || s[0] == '-'
+        s.slice(from: 1, to: s.len())
+    else
+        s
+    lower = strings.to_lower_ascii(unsigned)
+
+    if lower == ".inf" || lower == ".nan"
+        return true
+
+    if s.len() >= 5 && source.is_digit(s[0]) && source.is_digit(s[1]) && source.is_digit(s[2]) && source.is_digit(s[3]) && s[4] == '-'
+        return true
+
+    if unsigned == ""
+        return false
+    leads = source.is_digit(unsigned[0]) || unsigned[0] == '.' && unsigned.len() > 1 && source.is_digit(unsigned[1])
+
+    if !leads
+        return false
+
+    for c in s.chars()
+        if !strings.contains(s: "0123456789abcdefABCDEFxXoO_.:+-", substr: c)
+            return false
+
+    return true
+
+## Quoted
+
+# Whether some character of `s` cannot stand in a plain scalar or a literal
+# block: a control, U+007F, the C1 controls, U+2028, U+2029, U+FEFF, U+FFFE,
+# U+FFFF, or a tab.
+function needs_escape_somewhere(s: str) -> bool
+    i: i64 @= 0
+
+    while i < s.len()
+        if is_unwritable(s: s, at: i) || s[i] == '\t'
+            return true
+        i @ i + unicode.width_at(s, i)
+
+    return false
+
+# Whether the character at byte `at` of `s` stands only as an escape between
+# double quotes, wherever it is written: every character `escape_of` escapes
+# but `"` and `\`.
+function is_unwritable(s: str, at: i64) -> bool
+    return s[at] != '"' && s[at] != '\\' && escape_of(s: s, at: at) != ""
+
+# The escape that writes the character at byte `at` of `s` between double
+# quotes, or the empty text where it stands as itself.
+function escape_of(s: str, at: i64) -> str
+    b = s[at]
+
+    if b == '"'
+        return "\\\""
+
+    if b == '\\'
+        return "\\\\"
+
+    if b < 0x20 || b == 0x7f
+        return control_escape(b)
+
+    if b < 0x80
+        return ""
+    n = unicode.code_point_at(s, at)
+
+    if n == 0x85
+        return "\\N"
+
+    if n >= 0x80 && n <= 0x9f
+        return "\\x" + hex(n: n, width: 2)
+
+    if n == 0x2028
+        return "\\L"
+
+    if n == 0x2029
+        return "\\P"
+
+    if n == 0xfeff || n == 0xfffe || n == 0xffff
+        return "\\u" + hex(n: n, width: 4)
+    return ""
+
+# The escape of the ASCII control `b`: one letter where YAML has one, `\xXX`
+# otherwise.
+function control_escape(b: u8) -> str
+    if b == 0
+        return "\\0"
+
+    if b == 0x07
+        return "\\a"
+
+    if b == 0x08
+        return "\\b"
+
+    if b == '\t'
+        return "\\t"
+
+    if b == '\n'
+        return "\\n"
+
+    if b == 0x0b
+        return "\\v"
+
+    if b == 0x0c
+        return "\\f"
+
+    if b == '\r'
+        return "\\r"
+
+    if b == 0x1b
+        return "\\e"
+    return "\\x" + hex(n: to_i64(b).must(), width: 2)
+
+# `n` in upper case hexadecimal digits, `width` of them at least.
+function hex(n: i64, width: i64) -> str
+    return strings.pad_start(s: strings.to_upper(numbers.format_int(n: n, base: 16)), width: width, pad: "0")
+
+# `s` between double quotes, every character that needs it escaped: `"`,
+# `\`, the controls, U+007F, the C1 controls, U+2028, U+2029, U+FEFF, U+FFFE
+# and U+FFFF; a tab is `\t`.
+function quoted(s: str) -> str
+    pieces: [str] @= ["\""]
+    start: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        escape = escape_of(s: s, at: i)
+        width = unicode.width_at(s, i)
+
+        if escape != ""
+            pieces @ pieces.push(s.slice(from: start, to: i))
+            pieces @ pieces.push(escape)
+            start @ i + width
+        i @ i + width
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# `s` as one scalar on one line: plain where it may be, quoted otherwise.
+function one_line(s: str) -> str
+    if is_plain_safe(s)
+        return s
+    return quoted(s)
+
+## Literal
+
+# Whether `s` may be written as a literal block: it holds a line break, a
+# character other than a space, a line break and a tab, and nothing that needs
+# an escape.
+function literal_fits(s: str) -> bool
+    if !strings.contains(s: s, substr: "\n")
+        return false
+    seen: bool @= false
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b != '\n' && b != '\t' && is_unwritable(s: s, at: i)
+            return false
+
+        if b != '\n' && b != ' ' && b != '\t'
+            seen @ true
+        i @ i + unicode.width_at(s, i)
+
+    return seen
+
+# Whether a literal block of `s` needs an indentation indicator: a line up to
+# its first that holds a character other than a space begins with a space, so
+# a reader would take its spaces for the indentation.
+function needs_indicator(s: str) -> bool
+    for line in strings.split(s: s, sep: "\n")
+        if line != "" && line[0] == ' '
+            return true
+
+        if strings.trim_start_any(s: line, set: " ") != ""
+            return false
+
+    return false
+
+# `s` as a literal block: its header, `|` with an indentation indicator where
+# `needs_indicator` asks one and a chomping indicator, then each line indented
+# by `content` spaces, an empty line written empty.
+function literal(s: str, content: i64) -> str
+    trailing: i64 @= 0
+
+    while trailing < s.len() && s[s.len() - 1 - trailing] == '\n'
+        trailing @ trailing + 1
+
+    chomp = if trailing == 0
+        "-"
+    else if trailing == 1
+        ""
+    else
+        "+"
+
+    indicator = if needs_indicator(s)
+        "2"
+    else
+        ""
+    pieces: [str] @= [f"|{indicator}{chomp}\n"]
+    margin = repeat(" ", content.to_u64().must())
+
+    for line in strings.split(s: s.slice(from: 0, to: s.len() - trailing), sep: "\n")
+        if line == ""
+            pieces @ pieces.push("\n")
+        else
+            pieces @ pieces.push(margin + line + "\n")
+
+    if trailing > 1
+        pieces @ pieces.push(repeat("\n", (trailing - 1).to_u64().must()))
+    return pieces.join("")
+
+## Tests
+
+test "is_plain_safe: ordinary text, and each reason to quote"
+    quoted_instead: [str] @= []
+
+    for s in ["a", "a b", "città", "http://x.org/a#b", "a:b", "a, b", "2nd", "1.2.3-beta", "a'b\"c", "x-1"]
+        if !is_plain_safe(s)
+            quoted_instead @ quoted_instead.push(s)
+
+    assert quoted_instead == []
+
+    for s in ["", " a", "a ", "- a", "-1", "? a", ": a", "a: b", "a:", "a #b", "#a", "[a", "{a", "&a", "*a", "!a", "|", ">", "'a", "\"a", "%a", "@a", "`a", ",a", "...", "a\tb", "a\nb", "\u{85}"]
+        assert !is_plain_safe(s)
+
+test "looks_typed: JSON's kinds, the core schema's, YAML 1.1's, and text"
+    for s in ["null", "true", "false", "0", "-1", "1.5", "1e3", "~", "Null", "TRUE", "yes", "No", "on", "OFF", "y", "N", "=", "<<", ".inf", "-.Inf", ".NaN", "+1", ".5", "0x1F", "0o17", "1_000", "1:30", "2001-12-14", "1.2.3", "007"]
+        assert looks_typed(s)
+
+    for s in ["a", "yes!", "nope", "2nd", "Infinity", "nan", "x1", "1st", "1 2", "--"]
+        assert !looks_typed(s)
+
+test "quoted: the empty text, quotes, backslashes, each control, the C1 ones, and the separators"
+    assert quoted("") == "\"\""
+    assert quoted("a\"b\\c") == "\"a\\\"b\\\\c\""
+    nul: [u8] = [0x00, 0x01, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x1b, 0x1f, 0x7f]
+    assert quoted(nul.validated_bytes().must()) == "\"\\0\\x01\\a\\b\\t\\n\\v\\f\\r\\e\\x1F\\x7F\""
+    assert quoted("\u{85}\u{80}\u{2028}\u{2029}é😀") == "\"\\N\\x80\\L\\Pé😀\""
+    assert quoted(unicode.from_code_point(0xfeff).must()) == "\"\\uFEFF\""
+
+test "one_line: plain where it may be, quoted where it may not"
+    assert one_line("Ziggy") == "Ziggy" && one_line("007") == "\"007\"" && one_line("yes") == "\"yes\""
+
+test "literal_fits and needs_indicator: lines, one line, white space alone, an escape, and a leading space"
+    assert literal_fits("a\nb") && literal_fits("a\n") && literal_fits("\ta\n") && literal_fits("\"a\\\"\nb")
+    assert !literal_fits("ab") && !literal_fits("\n\n") && !literal_fits("  \n ") && !literal_fits("a\r\nb") && !literal_fits("a\n\u{85}")
+    assert !needs_indicator("a\n b") && needs_indicator(" a\nb") && needs_indicator("\n  \n a") && !needs_indicator("\n\na")
+
+test "literal: stripped, clipped, kept, an indicator, and empty lines written empty"
+    assert literal(s: "a\nb", content: 2) == "|-\n  a\n  b\n"
+    assert literal(s: "a\n\nb\n", content: 4) == "|\n    a\n\n    b\n"
+    assert literal(s: "a\n\n\n", content: 2) == "|+\n  a\n\n\n"
+    assert literal(s: " a\nb", content: 2) == "|2-\n   a\n  b\n"

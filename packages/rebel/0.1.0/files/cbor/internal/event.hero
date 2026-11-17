@@ -1,0 +1,281 @@
+# What a CBOR item is between the decoder, the encoder and the face: a flat
+# list of events in the order the encoding writes them, each container's
+# event carrying how many items follow it, as the encoding's own head does.
+#
+# The package's private modules work on this list and never on `cbor.Value`,
+# which only the face can name: a module the face uses may not use the face.
+# The face turns the list into a value and a value into the list, each on a
+# stack of its own, so that no function follows the data with recursion.
+
+# An integer from 0 up: its value in `arg`.
+constant UNSIGNED: i64
+    0
+
+# A negative integer, -1 - `arg`.
+constant NEGATIVE: i64
+    1
+
+# A byte string: its bytes in `data`.
+constant BINARY: i64
+    2
+
+# A text string: its characters in `text`.
+constant TEXT: i64
+    3
+
+# An array: `arg` items follow.
+constant LIST: i64
+    4
+
+# A map: `arg` entries follow, each a key then its value.
+constant PAIRS: i64
+    5
+
+# A tag: its number in `arg`, then `count` items, one in a valid item.
+constant TAG: i64
+    6
+
+# A float: its value in `number`.
+constant FLOAT: i64
+    7
+
+# `false` or `true`, in `flag`.
+constant BOOLEAN: i64
+    8
+
+# `null`.
+constant NULL_VALUE: i64
+    9
+
+# `undefined`.
+constant UNDEFINED: i64
+    10
+
+# A simple value with no name: its number in `arg`.
+constant SIMPLE: i64
+    11
+
+# One event: a kind and the fields that kind reads, the others left at their
+# zero.
+record Event
+    # One of the kinds above.
+    kind: i64
+    # The integer's argument, a container's count, a tag's number or a simple
+    # value's number.
+    arg: u64
+    # A tag's count of items: 1 in a valid item, any other where a value was
+    # built so.
+    count: i64
+    # A byte string's bytes.
+    data: [u8]
+    # A text string's characters.
+    text: str
+    # A float's value.
+    number: f64
+    # A boolean's value.
+    flag: bool
+    # The byte index where the item began in the bytes decoded, -1 where the
+    # event was made from a value.
+    at: i64
+
+# An event of `kind` with `arg`, its other fields at their zero.
+function of_kind(kind: i64, arg: u64) -> Event
+    return Event(
+        kind: kind,
+        arg: arg,
+        count: 0,
+        data: [],
+        text: "",
+        number: 0.0,
+        flag: false,
+        at: -1
+    )
+
+# The event of a byte string.
+function of_binary(data: [u8]) -> Event
+    blank = of_kind(kind: BINARY, arg: 0)
+    return Event(
+        kind: BINARY,
+        arg: 0,
+        count: 0,
+        data: data,
+        text: "",
+        number: 0.0,
+        flag: false,
+        at: blank.at
+    )
+
+# The event of a text string.
+function of_text(text: str) -> Event
+    return Event(
+        kind: TEXT,
+        arg: 0,
+        count: 0,
+        data: [],
+        text: text,
+        number: 0.0,
+        flag: false,
+        at: -1
+    )
+
+# The event of a tag numbered `tag` holding `count` items.
+function of_tag(tag: u64, count: i64) -> Event
+    return Event(
+        kind: TAG,
+        arg: tag,
+        count: count,
+        data: [],
+        text: "",
+        number: 0.0,
+        flag: false,
+        at: -1
+    )
+
+# The event of a float.
+function of_float(number: f64) -> Event
+    return Event(
+        kind: FLOAT,
+        arg: 0,
+        count: 0,
+        data: [],
+        text: "",
+        number: number,
+        flag: false,
+        at: -1
+    )
+
+# The event of a boolean.
+function of_boolean(flag: bool) -> Event
+    return Event(
+        kind: BOOLEAN,
+        arg: 0,
+        count: 0,
+        data: [],
+        text: "",
+        number: 0.0,
+        flag: flag,
+        at: -1
+    )
+
+# How many items follow `e` and belong to it: a list's items, twice a map's
+# entries, a tag's count, none for any other kind. Aborts where a count is past
+# an `i64`, which no list held in memory reaches.
+function children_of(e: Event) -> i64
+    if e.kind == LIST
+        return to_i64(e.arg).must()
+    else if e.kind == PAIRS
+        return to_i64(e.arg).must() * 2
+    else if e.kind == TAG
+        return e.count
+    return 0
+
+# `e` with `at` as the byte index where its item began.
+function placed(e: Event, at: i64) -> Event
+    return Event(
+        kind: e.kind,
+        arg: e.arg,
+        count: e.count,
+        data: e.data,
+        text: e.text,
+        number: e.number,
+        flag: e.flag,
+        at: at
+    )
+
+# Where `e`'s item began, as a message opens, `byte B: `, or nothing where it
+# was made from a value.
+function where(e: Event) -> str
+    if e.at < 0
+        return ""
+    return f"byte {e.at}: "
+
+# Whether `tag` and the event after it, `child`, are a bignum: tag 2 or 3
+# holding one byte string.
+function is_bignum(tag: Event, child: Event) -> bool
+    return tag.kind == TAG && (tag.arg == 2 || tag.arg == 3) && tag.count == 1 && child.kind == BINARY
+
+# The bytes of a bignum's magnitude, its leading zero bytes left out.
+function magnitude_of(data: [u8]) -> [u8]
+    first: i64 @= 0
+
+    while first < data.len() && data[first] == 0
+        first @ first + 1
+
+    return data.slice(from: first, to: data.len())
+
+# The number at most eight bytes spell, the most significant first. Aborts
+# where `data` holds more than eight.
+function u64_of(data: [u8]) -> u64
+    assert data.len() <= 8
+    n: u64 @= 0
+
+    for b in data
+        n @ n * 256 + to_u64(b).must()
+
+    return n
+
+# The name of the kind of `e`, as a message says it.
+function kind_name(e: Event) -> str
+    names = [
+        "an unsigned integer"
+        "a negative integer"
+        "a byte string"
+        "a text string"
+        "an array"
+        "a map"
+        "a tag"
+        "a float"
+        "a boolean"
+        "null"
+        "undefined"
+        "a simple value"
+    ]
+    return names[e.kind]
+
+test "of_kind: every field but the two at its zero"
+    e = of_kind(kind: UNSIGNED, arg: 18446744073709551615)
+    assert e.kind == UNSIGNED && e.arg == 18446744073709551615 && e.count == 0
+    assert e.data.len() == 0 && e.text == "" && e.number == 0.0 && !e.flag && e.at == -1
+
+test "of_binary, of_text, of_tag, of_float, of_boolean: the field each fills"
+    assert of_binary([1, 2]).data == [1, 2]
+    assert of_binary([]).kind == BINARY
+    assert of_text("é").text == "é"
+    t = of_tag(tag: 1, count: 1)
+    assert t.kind == TAG && t.arg == 1 && t.count == 1
+    assert of_float(-0.5).number == -0.5
+    assert of_boolean(true).flag
+
+test "children_of: a list, a map, a tag, a scalar"
+    assert children_of(of_kind(kind: LIST, arg: 3)) == 3
+    assert children_of(of_kind(kind: PAIRS, arg: 2)) == 4
+    assert children_of(of_tag(tag: 0, count: 1)) == 1
+    assert children_of(of_kind(kind: UNSIGNED, arg: 5)) == 0
+    assert children_of(of_kind(kind: LIST, arg: 0)) == 0
+
+test "kind_name: the first kind and the last"
+    assert kind_name(of_kind(kind: UNSIGNED, arg: 0)) == "an unsigned integer"
+    assert kind_name(of_kind(kind: SIMPLE, arg: 0)) == "a simple value"
+
+test "placed and where: a byte index set, and an event made from a value"
+    e = placed(e: of_text("a"), at: 7)
+    assert e.at == 7 && e.text == "a" && e.kind == TEXT
+    assert where(e) == "byte 7: "
+    assert where(of_text("a")) == ""
+
+test "is_bignum: tags 2 and 3 holding bytes, another tag, a tag holding no bytes"
+    bytes_event = of_binary([1])
+    assert is_bignum(tag: of_tag(tag: 2, count: 1), child: bytes_event)
+    assert is_bignum(tag: of_tag(tag: 3, count: 1), child: bytes_event)
+    assert !is_bignum(tag: of_tag(tag: 4, count: 1), child: bytes_event)
+    assert !is_bignum(tag: of_tag(tag: 2, count: 1), child: of_text("1"))
+    assert !is_bignum(tag: of_kind(kind: UNSIGNED, arg: 2), child: bytes_event)
+
+test "magnitude_of and u64_of: leading zeros, none at all, eight bytes"
+    assert magnitude_of([0, 0, 5]) == [5]
+    assert magnitude_of([0, 0]).len() == 0
+    assert magnitude_of([]).len() == 0
+    assert magnitude_of([1, 0]) == [1, 0]
+    assert u64_of([]) == 0
+    assert u64_of([1, 0]) == 256
+    assert u64_of([0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]) == 18446744073709551615

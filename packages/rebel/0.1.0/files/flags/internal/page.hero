@@ -1,0 +1,273 @@
+# The usage line and the help page a declaration makes of itself. Both are
+# derived from the declaration alone, so they say what the parse reads and
+# cannot fall out of step with it.
+
+use flags/internal/decl
+use strings
+
+# The column a usage line is wrapped at.
+constant WIDTH: i64
+    80
+
+# How the usage writes an option: `[-v]`, `[-m NUM]`, `--name NAME` where it
+# is required, `[--color | --no-color]` where it is negatable.
+function option_part(w: decl.Want) -> str
+    name: str @= "--" + w.long
+
+    if w.short != ""
+        name @ "-" + w.short
+    body: str @= name
+
+    if w.takes_value && w.missing.len() > 0
+        body @ name + "[=" + w.value_name + "]"
+    else if w.takes_value
+        body @ name + " " + w.value_name
+
+    if w.negatable
+        body @ "--" + w.long + " | --no-" + w.long
+
+    if w.required
+        return body
+    return "[" + body + "]"
+
+# How the usage writes a positional: `NAME`, `[NAME]`, `[NAME...]`,
+# `NAME...`.
+function positional_part(w: decl.Want) -> str
+    if w.most == 1
+        if w.least == 1
+            return w.value_name
+        return "[" + w.value_name + "]"
+
+    if w.least == 0
+        return "[" + w.value_name + "...]"
+    return w.value_name + "..."
+
+# The usage of `spec`, called `path`: `usage: `, the path, then each argument
+# the help does not hide, wrapped before the column `WIDTH` with the lines
+# after the first indented under the first argument.
+function usage_line(spec: decl.Spec lent, path: str) -> str
+    parts: [str] @= []
+
+    if spec.help
+        parts @ parts.push("[-h]")
+
+    if spec.version != ""
+        parts @ parts.push("[-V]")
+
+    for w in spec.wants
+        if !w.hidden && !w.positional
+            parts @ parts.push(option_part(w))
+
+    for w in spec.wants
+        if !w.hidden && w.positional
+            parts @ parts.push(positional_part(w))
+
+    if spec.subs.len() > 0
+        parts @ parts.push("COMMAND ...")
+    head = "usage: " + path
+    indent = repeat(" ", to_u64(head.len() + 1).must())
+    lines: [str] @= []
+    line @= head
+    holds_part @= false
+
+    for part in parts
+        if holds_part && line.len() + 1 + part.len() > WIDTH
+            lines @ lines.push(line)
+            line @ indent + part
+        else
+            line @ line + " " + part
+        holds_part @ true
+
+    lines @ lines.push(line)
+    return lines.join("\n")
+
+# What the left column of the help says of an option: `-m, --max NUM`,
+# `-v`, `    --color, --no-color`.
+function option_left(w: decl.Want) -> str
+    names: [str] @= []
+
+    if w.short != ""
+        names @ names.push("-" + w.short)
+
+    if w.long != ""
+        names @ names.push("--" + w.long)
+
+    if w.negatable
+        names @ names.push("--no-" + w.long)
+    left: str @= names.join(", ")
+
+    if w.short == ""
+        left @ "    " + left
+
+    if w.takes_value && w.missing.len() > 0
+        left @ left + "[=" + w.value_name + "]"
+    else if w.takes_value
+        left @ left + " " + w.value_name
+    return left
+
+# What the help says after an argument's own line: its default and the words
+# it takes.
+function extras(w: decl.Want) -> str
+    said: [str] @= []
+
+    if w.kind == decl.CHOICE
+        said @ said.push("one of: " + w.choices.join(", "))
+
+    if w.ranged
+        said @ said.push(f"from {w.lowest} to {w.highest}")
+
+    if w.missing.len() > 0
+        said @ said.push("alone: " + w.missing.join(", "))
+
+    if w.defaults.len() > 0
+        said @ said.push("default: " + w.defaults.join(", "))
+
+    if w.env != ""
+        said @ said.push("env: " + w.env)
+
+    if w.aliases.len() > 0
+        spelled: [str] @= []
+
+        for alias in w.aliases
+            spelled @ spelled.push("--" + alias)
+
+        said @ said.push("aliases: " + spelled.join(", "))
+
+    if w.short_aliases.len() > 0
+        spelled: [str] @= []
+
+        for alias in w.short_aliases
+            spelled @ spelled.push("-" + alias)
+
+        said @ said.push("short aliases: " + spelled.join(", "))
+
+    if said.len() == 0
+        return ""
+    return "(" + said.join("; ") + ")"
+
+# One row of the help: `left` in a column `width` wide, then `text`.
+function row(left: str, text: str, width: i64) -> str
+    if text == ""
+        return "  " + left
+    return "  " + strings.pad_end(s: left, width: width, pad: " ") + text
+
+# What the help says of `w`: its line and what `extras` adds.
+function said_of(w: decl.Want) -> str
+    more = extras(w)
+
+    if w.help == ""
+        return more
+
+    if more == ""
+        return w.help
+    return w.help + " " + more
+
+# The first line of `text`.
+function first_line(text: str) -> str
+    match strings.index_of(s: text, substr: "\n")
+        .ok at => return text.slice(from: 0, to: at)
+        .err _ => return text
+
+# The help page of `spec`, called `path`: the usage, what the command says of
+# itself, its positionals, its options under their headings, its subcommands
+# and its epilog, a blank line between each two, with no line break at the
+# end.
+function help_page(spec: decl.Spec lent, path: str) -> str
+    width: i64 @= 0
+
+    if spec.help
+        width @ "-h, --help".len()
+
+    if spec.version != ""
+        width @ "-V, --version".len()
+
+    for w in spec.wants
+        left = if w.positional
+            w.value_name
+        else
+            option_left(w)
+
+        if !w.hidden && left.len() > width
+            width @ left.len()
+
+    for s in spec.subs
+        if s.name.len() > width
+            width @ s.name.len()
+
+    width @ width + 2
+    blocks: [str] @= [usage_line(spec, path)]
+
+    if spec.about != ""
+        blocks @ blocks.push(spec.about)
+    arguments: [str] @= ["Arguments:"]
+
+    for w in spec.wants
+        if w.positional && !w.hidden
+            arguments @ arguments.push(row(left: w.value_name, text: said_of(w), width: width))
+
+    if arguments.len() > 1
+        blocks @ blocks.push(arguments.join("\n"))
+    sections: [str] @= [""]
+
+    for w in spec.wants
+        if !w.positional && !w.hidden && w.section != "" && !decl.has_word(sections, w.section)
+            sections @ sections.push(w.section)
+
+    for section in sections
+        heading: str @= "Options:"
+
+        if section != ""
+            heading @ section + ":"
+        rows: [str] @= [heading]
+
+        if section == "" && spec.help
+            rows @ rows.push(row(left: "-h, --help", text: "show this help", width: width))
+
+        if section == "" && spec.version != ""
+            rows @ rows.push(row(left: "-V, --version", text: "show the version", width: width))
+
+        for w in spec.wants
+            if !w.positional && !w.hidden && w.section == section
+                rows @ rows.push(row(left: option_left(w), text: said_of(w), width: width))
+
+        if rows.len() > 1
+            blocks @ blocks.push(rows.join("\n"))
+
+    if spec.subs.len() > 0
+        commands: [str] @= ["Commands:"]
+
+        for s in spec.subs
+            if s.hidden
+                continue
+            text: str @= first_line(s.about)
+
+            if s.aliases.len() > 0
+                text @ strings.trim(text + " (aliases: " + s.aliases.join(", ") + ")")
+            commands @ commands.push(row(left: s.name, text: text, width: width))
+
+        blocks @ blocks.push(commands.join("\n"))
+
+    if spec.epilog != ""
+        blocks @ blocks.push(spec.epilog)
+    return blocks.join("\n\n")
+
+test "help_page: a version, an option given alone, its variable and alias, and a command's alias"
+    s @= decl.new_spec(name: "t", about: "")
+    s.version @ "1.0"
+    c @= decl.option_want(long: "color", short: "", value_name: "WHEN", help: "colour")
+    c.missing @ ["always"]
+    c.env @ "COLOR"
+    c.aliases @ ["colour"]
+    decl.add_want(@s, c)
+    sub @= decl.new_spec(name: "remove", about: "drops one")
+    sub.aliases @ ["rm"]
+    decl.add_sub(spec: @s, sub: sub)
+    assert help_page(s, "t") == "usage: t [-h] [-V] [--color[=WHEN]] COMMAND ...\n\nOptions:\n  -h, --help          show this help\n  -V, --version       show the version\n      --color[=WHEN]  colour (alone: always; env: COLOR; aliases: --colour)\n\nCommands:\n  remove              drops one (aliases: rm)"
+
+test "usage_line: wrapped before column 80, the lines after the first under the first argument"
+    s @= decl.new_spec(name: "tool", about: "")
+
+    for k in range(from: 0, to: 9)
+        decl.add_want(@s, decl.option_want(long: f"option{k}", short: "", value_name: "VALUE", help: ""))
+
+    assert usage_line(s, "tool") == "usage: tool [-h] [--option0 VALUE] [--option1 VALUE] [--option2 VALUE]\n            [--option3 VALUE] [--option4 VALUE] [--option5 VALUE]\n            [--option6 VALUE] [--option7 VALUE] [--option8 VALUE]"

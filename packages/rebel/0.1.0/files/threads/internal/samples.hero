@@ -1,0 +1,30 @@
+# The thread bodies the tests and the examples of `threads` hand to it: a
+# body must be a top-level function, and the face declares nothing a program
+# does not write. No other function here is part of the package.
+
+# `n` times itself.
+function square(n: i64) -> i64
+    return n * n
+
+# `n` as it came, to show a value crosses whole.
+function same(n: i64) -> i64
+    return n
+
+# The sum of 0 to `n` less one, a body that takes a while.
+function sum_below(n: i64) -> i64
+    total: i64 @= 0
+    at: i64 @= 0
+
+    while at < n
+        total @ total + at
+        at @ at + 1
+
+    return total
+
+# `s` followed by an exclamation mark.
+function shout(s: str) -> str
+    return s + "!"
+
+# `s` as it came, to show a text crosses whole.
+function same_text(s: str) -> str
+    return s

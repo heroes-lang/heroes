@@ -1,0 +1,142 @@
+# Where a row's column stands, by its place or by its name, and the words a
+# read of a missing column or of a value of another kind fails with. It works
+# on the row's names and counts alone; the face reads the values.
+
+constant NOT_FOUND: str
+    "not_found"
+
+# The place `index` names in a row of `count` columns, checked.
+#
+# - `count`: the row's columns, 0 or more.
+# - `index`: the place asked for.
+#
+# Fails `not_found` where `index` is below 0 or not below `count`.
+function checked_index(count: i64, index: i64) -> i64?
+    if index < 0 || index >= count
+        return fail(code: NOT_FOUND, msg: f"no column {index} in a row of {count_words(count)}")
+    return ok(index)
+
+# The place of the first of `names` that is `name`, byte for byte.
+#
+# - `names`: the row's column names, in order.
+# - `name`: the name asked for.
+#
+# Fails `not_found` where none is, the message listing the names there are.
+function index_named(names: [str], name: str) -> i64?
+    at: i64 @= 0
+
+    while at < names.len()
+        if names[at] == name
+            return ok(at)
+        at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: f"no column \"{name}\" in a row of {names_words(names)}")
+
+# How a message names the column at `index`, which is named `name`:
+# `column 1 ("name")`.
+#
+# - `index`: the column's place, from 0.
+# - `name`: the column's name.
+function at_words(index: i64, name: str) -> str
+    return f"column {index} (\"{name}\")"
+
+# How a message names the column called `name`: `column "name"`.
+#
+# - `name`: the column's name.
+function named_words(name: str) -> str
+    return f"column \"{name}\""
+
+# The message of a read that found a value of another kind: `column "age" is
+# null, not an integer`.
+#
+# - `column`: how the column is named, as `at_words` or `named_words` says.
+# - `found`: the kind the value is, as `sql.kind_of` names it.
+# - `wanted`: the kind the read asked for, named the same way.
+function wrong_kind(column: str, found: str, wanted: str) -> str
+    return f"{column} is {with_article(found)}, not {with_article(wanted)}"
+
+# A kind's name as a sentence says it: `an integer`, `a blob`, and `null` and
+# `text` bare.
+#
+# - `kind`: a kind's name, as `sql.kind_of` gives it.
+function with_article(kind: str) -> str
+    if kind == "null" || kind == "text"
+        return kind
+
+    if kind == "integer" || kind == "instant"
+        return "an " + kind
+    return "a " + kind
+
+# `count` columns in words: `no columns`, `1 column`, `3 columns`.
+#
+# - `count`: 0 or more.
+function count_words(count: i64) -> str
+    if count == 0
+        return "no columns"
+
+    if count == 1
+        return "1 column"
+    return f"{count} columns"
+
+# The names of a row's columns as a message lists them: `the columns "id",
+# "name"`, or `no columns`.
+#
+# - `names`: the names, in order.
+function names_words(names: [str]) -> str
+    if names.len() == 0
+        return "no columns"
+    quoted: [str] @= []
+
+    for n in names
+        quoted @ quoted.push(f"\"{n}\"")
+
+    lead = if names.len() == 1
+        "the column "
+    else
+        "the columns "
+    return lead + quoted.join(", ")
+
+test "checked_index: below 0, at 0, the last, one past, and an empty row"
+    assert checked_index(count: 3, index: 0).must() == 0
+    assert checked_index(count: 3, index: 2).must() == 2
+
+    match checked_index(count: 3, index: 3)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no column 3 in a row of 3 columns"
+
+    match checked_index(count: 1, index: -1)
+        .ok _  => assert false
+        .err e => assert e.msg == "no column -1 in a row of 1 column"
+
+    match checked_index(count: 0, index: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "no column 0 in a row of no columns"
+
+test "checked_index: the largest and the smallest i64"
+    assert checked_index(count: 9223372036854775807, index: 9223372036854775806).must() == 9223372036854775806
+    assert checked_index(count: 2, index: -9223372036854775808).is_err()
+    assert checked_index(count: 2, index: 9223372036854775807).is_err()
+
+test "index_named: the first of two of one name, case kept, a name of more than one byte, absent"
+    names = ["a", "a", "Id", "città"]
+    assert index_named(names, name: "a").must() == 0
+    assert index_named(names, name: "Id").must() == 2
+    assert index_named(names, name: "città").must() == 3
+
+    match index_named(names, name: "id")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no column \"id\" in a row of the columns \"a\", \"a\", \"Id\", \"città\""
+
+    match index_named(["x"], name: "")
+        .ok _  => assert false
+        .err e => assert e.msg == "no column \"\" in a row of the column \"x\""
+
+    match index_named([], name: "x")
+        .ok _  => assert false
+        .err e => assert e.msg == "no column \"x\" in a row of no columns"
+
+test "wrong_kind: by place and by name, every article"
+    assert wrong_kind(column: at_words(index: 1, name: "age"), found: "null", wanted: "integer") == "column 1 (\"age\") is null, not an integer"
+    assert wrong_kind(column: named_words("t"), found: "text", wanted: "instant") == "column \"t\" is text, not an instant"
+    assert wrong_kind(column: named_words(""), found: "blob", wanted: "boolean") == "column \"\" is a blob, not a boolean"
+    assert wrong_kind(column: named_words("f"), found: "float", wanted: "text") == "column \"f\" is a float, not text"

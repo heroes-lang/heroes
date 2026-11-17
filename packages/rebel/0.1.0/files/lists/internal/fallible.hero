@@ -1,0 +1,54 @@
+# A list of fallible values turned into a list of values: all of them or
+# the first error, or only those that are not errors.
+
+use lists/internal/samples
+
+# The values of `results`, in order, where none is an error.
+#
+# - `results`: the fallible values, as `map` of a fallible function answers
+#   them; an empty list answers an empty list.
+#
+# Fails with the first error among `results`, its code and its message as
+# they were.
+function all_ok<T>(results: [T?]) -> [T]?
+    out: [T] @= []
+
+    for result in results
+        out @ out.push(result?)
+
+    return ok(out)
+
+# The values of `results` that are not errors, in order.
+#
+# - `results`: the fallible values; their errors are left out and nothing
+#   says how many there were.
+function only_ok<T>(results: [T?]) -> [T]
+    out: [T] @= []
+
+    for result in results
+        match result
+            .ok value => out @ out.push(value)
+            .err _    => _ = 0
+
+    return out
+
+## Tests
+
+test "all_ok: every value, the first error kept whole, and an empty list"
+    nothing: [str] = []
+    assert all_ok(["one", "two"].map(samples.parse_small)).must() == [1, 2]
+
+    match all_ok(["one", "three", "four"].map(samples.parse_small))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"three\" is not one or two"
+
+    no_numbers: [i64] = []
+    assert all_ok(nothing.map(samples.parse_small)).must() == no_numbers
+
+test "only_ok: errors left out, all errors, none, and an empty list"
+    nothing: [str] = []
+    no_numbers: [i64] = []
+    assert only_ok(["one", "x", "two"].map(samples.parse_small)) == [1, 2]
+    assert only_ok(["x", "y"].map(samples.parse_small)) == no_numbers
+    assert only_ok(["two"].map(samples.parse_small)) == [2]
+    assert only_ok(nothing.map(samples.parse_small)) == no_numbers

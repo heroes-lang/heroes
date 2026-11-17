@@ -1,0 +1,172 @@
+# What a connection and a datagram socket are asked after they are made, and
+# a connection made within a time (round 3, 2026-11-16): a connection's
+# deadline moved, one direction closed and its options set, all through its
+# stream, which owns the socket (`net/hero_stream_net`); a datagram socket's
+# broadcast and its multicast groups (`net/hero_net`). A failure of a stream's
+# call is `io`'s, through `io.last_failure`; of a socket's call `failure`'s.
+
+use io
+use net/hero_net
+use net/hero_stream_net
+use net/internal/failure
+use net/internal/hosts
+use net/internal/sockets
+
+# A TCP connection to `host` at `port` made within `timeout_ms`.
+#
+# - `host`: a name or an address without brackets; "" or a zero byte is
+#   refused.
+# - `port`: 0 to 65535.
+# - `timeout_ms`: milliseconds by which the connection must be made, every
+#   address of the name tried within them; 0 for no limit, below 0 refused.
+# - `deadline_ms`: as `sockets.connect` takes it.
+#
+# Fails `timeout` where the time passes first, `not_found` where the name has
+# no address, and as `sockets.connect` fails.
+function connected_within(host: str, port: i64, timeout_ms: i64, deadline_ms: i64) -> sockets.Ends?
+    asked = f"connecting to {hosts.joined(host, port: sockets.clamped(port))} within {timeout_ms} ms"
+    hosts.checked_host(host: host, asked: asked)?
+    _ = hosts.checked(port, asked: asked)?
+    sockets.checked_deadline(deadline_ms, asked: asked)?
+
+    if timeout_ms < 0
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the time {timeout_ms} ms is below 0")
+    s @= hero_net.connect_within(address: host, port: port, ms: timeout_ms)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return sockets.stream_of(@s, deadline_ms: deadline_ms, name: "the connection to", asked: asked)
+
+# `()` where `s` is open, or `closed`.
+#
+# - `s`: a connection's stream.
+# - `asked`: what the message of a failure begins with.
+function open_stream(s: io.Stream, asked: str) -> ()?
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the connection is closed")
+    return ok()
+
+# Moves the deadline of the connection under `s` to `ms` milliseconds from
+# now, 0 taking it away.
+#
+# - `s`: the connection's stream.
+# - `ms`: 0 or more; below 0 refused.
+# - `asked`: what the message of a failure begins with.
+function deadline_moved(s: io.Stream, ms: i64, asked: str) -> ()?
+    sockets.checked_deadline(ms, asked: asked)?
+    open_stream(s, asked: asked)?
+
+    if hero_stream_net.set_deadline(s.handle, ms: ms) != 0
+        return io.last_failure(asked: asked)
+    return ok()
+
+# Closes one direction of the connection under `s`.
+#
+# - `s`: the connection's stream.
+# - `how`: one of `hero_net.HERO_NET_SHUT_...`.
+# - `asked`: what the message of a failure begins with.
+function shut(s: io.Stream, how: i64, asked: str) -> ()?
+    open_stream(s, asked: asked)?
+
+    if hero_stream_net.shutdown(s.handle, how: how) != 0
+        return io.last_failure(asked: asked)
+    return ok()
+
+# Sets an option of the connection under `s` on or off.
+#
+# - `s`: the connection's stream.
+# - `option`: one of `hero_net.HERO_NET_OPTION_...` a connection has.
+# - `on`: whether it is on.
+# - `asked`: what the message of a failure begins with.
+function option_set(s: io.Stream, option: i64, on: bool, asked: str) -> ()?
+    open_stream(s, asked: asked)?
+    value: i64 @= 0
+
+    if on
+        value @ 1
+
+    if hero_stream_net.set_option(s.handle, option: option, value: value) != 0
+        return io.last_failure(asked: asked)
+    return ok()
+
+# Whether an option of the connection under `s` is on.
+#
+# - `s`: the connection's stream.
+# - `option`: one of `hero_net.HERO_NET_OPTION_...` a connection has.
+# - `asked`: what the message of a failure begins with.
+function option_read(s: io.Stream, option: i64, asked: str) -> bool?
+    open_stream(s, asked: asked)?
+    value = hero_stream_net.option_of(s.handle, option: option)
+
+    if value < 0
+        return io.last_failure(asked: asked)
+    return ok(value == 1)
+
+# Sets the broadcast of the datagram socket `s` on or off.
+#
+# - `s`: the socket, `nullptr` once closed.
+# - `on`: whether datagrams may go to a broadcast address.
+# - `asked`: what the message of a failure begins with.
+function broadcast_set(s: hero_net.Socket, on: bool, asked: str) -> ()?
+    value: i64 @= 0
+
+    if on
+        value @ 1
+
+    if hero_net.set_option(s, option: hero_net.HERO_NET_OPTION_BROADCAST, value: value) != 0
+        return failure.last(asked: asked)
+    return ok()
+
+# Whether the broadcast of the datagram socket `s` is on.
+#
+# - `s`: the socket.
+# - `asked`: what the message of a failure begins with.
+function broadcast_read(s: hero_net.Socket, asked: str) -> bool?
+    value = hero_net.option_of(s, option: hero_net.HERO_NET_OPTION_BROADCAST)
+
+    if value < 0
+        return failure.last(asked: asked)
+    return ok(value == 1)
+
+# The datagram socket `s` joins, or leaves, a multicast group.
+#
+# - `s`: the socket.
+# - `group`: the group's address as text, with no port.
+# - `interface_index`: the interface's index, 0 for the system's choice.
+# - `joining`: true to join, false to leave.
+# - `asked`: what the message of a failure begins with.
+function grouped(s: hero_net.Socket, group: str, interface_index: i64, joining: bool, asked: str) -> ()?
+    hosts.checked_zero(text: group, asked: asked)?
+    answer: i64 @= 0
+
+    if joining
+        answer @ hero_net.join_group(s, group: group, interface_index: interface_index)
+    else
+        answer @ hero_net.leave_group(s, group: group, interface_index: interface_index)
+
+    if answer != 0
+        return failure.last(asked: asked)
+    return ok()
+
+# Sets an option of the datagram socket `s`.
+#
+# - `s`: the socket, `nullptr` once closed.
+# - `option`: one of `hero_net.HERO_NET_OPTION_...` a datagram socket has.
+# - `value`: 0 or 1, or the option's number.
+# - `asked`: what the message of a failure begins with.
+function datagram_option_set(s: hero_net.Socket, option: i64, value: i64, asked: str) -> ()?
+    if hero_net.set_option(s, option: option, value: value) != 0
+        return failure.last(asked: asked)
+    return ok()
+
+# The value of an option of the datagram socket `s`.
+#
+# - `s`: the socket.
+# - `option`: one of `hero_net.HERO_NET_OPTION_...` a datagram socket has.
+# - `asked`: what the message of a failure begins with.
+function datagram_option_read(s: hero_net.Socket, option: i64, asked: str) -> i64?
+    value = hero_net.option_of(s, option: option)
+
+    if value < 0
+        return failure.last(asked: asked)
+    return ok(value)

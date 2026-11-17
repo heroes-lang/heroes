@@ -1,0 +1,10 @@
+# Reaches Rebel's `time`, so that `heroes test` on this file runs the tests of
+# the package and of its private modules (spec § 12). It prints the day of the
+# week of 2000-02-29 and a duration's text, which are the same on every run.
+
+use <rebel>/time
+
+function main()
+    leap_day = time.date(year: 2000, month: 2, day: 29).must()
+    print(time.weekday_name(time.weekday_of(leap_day)))
+    print(time.format_duration(time.minutes(90).must()))

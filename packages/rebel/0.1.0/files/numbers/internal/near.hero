@@ -1,0 +1,179 @@
+# The binary float nearest to an exact ratio of two natural numbers, ties going
+# to the even one: the last step of reading a float from text, decimal or
+# hexadecimal, for either width.
+#
+# The ratio is scaled by a power of two until its whole part has one bit more
+# than the float's significand, the guard bit; what the division leaves says
+# whether anything lies below it. Those two bits decide the rounding exactly,
+# with no estimate of the value ever trusted.
+
+use numbers/internal/big
+
+# The shape of a binary float, and the decimal exponents past which a value
+# cannot be finite or cannot be above zero.
+record Format
+    # The bits of the significand, its leading one included: 53 or 24.
+    bits: i64
+    # The power of two of the smallest value above zero: -1074 or -149.
+    min_exp: i64
+    # The power of two of the largest finite value's leading bit: 1023 or 127.
+    max_exp: i64
+    # A value whose first decimal digit stands at a power of ten above this
+    # is infinite.
+    max_lead: i64
+    # A value whose first decimal digit stands at a power of ten below this
+    # rounds to zero.
+    min_lead: i64
+
+# What a division answered: the quotient, and whether anything was left.
+record Quotient
+    # The quotient, under 2 to the 59th.
+    q: i64
+    # Whether the division left a remainder.
+    inexact: bool
+
+# The shape of an `f64`.
+function f64_format() -> Format
+    return Format(bits: 53, min_exp: -1074, max_exp: 1023, max_lead: 309, min_lead: -325)
+
+# The shape of an `f32`.
+function f32_format() -> Format
+    return Format(bits: 24, min_exp: -149, max_exp: 127, max_lead: 39, min_lead: -47)
+
+# Positive infinity.
+function infinity() -> f64
+    zero: f64 = 0.0
+    return 1.0 / zero
+
+# A float that is no number.
+function not_a_number() -> f64
+    zero: f64 = 0.0
+    return zero / zero
+
+# 2 to the `k`th as an `f64`, exactly, for `k` from -1074 to 1023: every
+# factor and every partial product is a power of two in range.
+function pow2(k: i64) -> f64
+    assert k >= -1074 && k <= 1023
+    result: f64 @= 1.0
+    base: f64 @= 2.0
+    left: i64 @= k
+
+    if k < 0
+        base @ 0.5
+        left @ 0 - k
+
+    while left > 0
+        if left & 1 == 1
+            result @ result * base
+        left @ left >> 1
+
+        if left > 0
+            base @ base * base
+
+    return result
+
+# The quotient of `a` times 2 to the `s`th by `b`, which must be under 2 to the
+# 59th, and whether it left a remainder. `b` is not zero.
+function divided(a: [i64], b: [i64], s: i64) -> Quotient
+    top = 58
+    rest: [i64] @= a
+    divisor: [i64] @= b
+
+    if s >= 0
+        rest @ big.shifted(a: a, k: s)
+    else
+        divisor @ big.shifted(a: b, k: 0 - s)
+
+    assert big.compare(a: rest, b: big.shifted(a: divisor, k: top + 1)) < 0
+    step: [i64] @= big.shifted(a: divisor, k: top)
+    q: i64 @= 0
+    at: i64 @= top
+
+    while at >= 0
+        if big.compare(a: rest, b: step) >= 0
+            rest @ big.minus(a: rest, b: step)
+            q @ q + (1 << at)
+        step @ big.halved(step)
+        at @ at - 1
+
+    return Quotient(q: q, inexact: rest.len() > 0)
+
+# The float of `format` nearest to `a` divided by `b`, as an `f64`, ties going
+# to the even one, and infinity past the largest finite value. Neither `a`
+# nor `b` is zero.
+function nearest(a: [i64], b: [i64], format: Format) -> f64
+    low = 1 << format.bits
+    high = low << 1
+    s: i64 @= format.bits - (big.bit_len(a) - big.bit_len(b))
+
+    while true
+        if 1 - s < format.min_exp
+            s @ 1 - format.min_exp
+        trial = divided(a: a, b: b, s: s)
+
+        if trial.q >= high
+            s @ s - 1
+        else if trial.q < low && 1 - s > format.min_exp
+            s @ s + 1
+        else
+            return rounded(trial: trial, step: 1 - s, format: format)
+
+# The float `trial` stands for, its last bit the guard bit, the step of its
+# significand 2 to the `step`th: rounded to even on the guard bit and the
+# remainder, and infinity where it is past the largest finite value.
+function rounded(trial: Quotient, step: i64, format: Format) -> f64
+    significand: i64 @= trial.q >> 1
+    exp: i64 @= step
+
+    if trial.q & 1 == 1 && (trial.inexact || significand & 1 == 1)
+        significand @ significand + 1
+
+    if significand == 1 << format.bits
+        significand @ significand >> 1
+        exp @ exp + 1
+
+    if significand == 0
+        return 0.0
+
+    if exp + format.bits - 1 > format.max_exp
+        return infinity()
+    return to_f64(significand) * pow2(exp)
+
+## Tests
+
+test "pow2: zero, both ends, and one step inside each"
+    assert pow2(0) == 1.0
+    assert pow2(1) == 2.0
+    assert pow2(-1) == 0.5
+    assert pow2(1023) / pow2(1022) == 2.0
+    assert pow2(-1074) > 0.0
+    assert pow2(-1074) / 2.0 == 0.0
+    assert pow2(-1073) == pow2(-1074) * 2.0
+    assert to_str(pow2(-1074)) == "5e-324"
+    assert to_str(pow2(1023)) == "8.98846567431158e+307"
+
+test "divided: exact, with a remainder, and scaled either way"
+    assert divided(a: [10], b: [3], s: 0) == Quotient(q: 3, inexact: true)
+    assert divided(a: [12], b: [3], s: 0) == Quotient(q: 4, inexact: false)
+    assert divided(a: [1], b: [3], s: 4) == Quotient(q: 5, inexact: true)
+    assert divided(a: [64], b: [1], s: -3) == Quotient(q: 8, inexact: false)
+
+test "nearest: a whole number, one third, ties both ways, and past the largest"
+    f64s = f64_format()
+    assert nearest(a: [3], b: [1], format: f64s) == 3.0
+    assert to_str(nearest(a: [1], b: [3], format: f64s)) == "0.3333333333333333"
+    two53 = big.shifted(a: [1], k: 53)
+    assert nearest(a: big.times_add(a: two53, factor: 1, add: 1), b: [1], format: f64s) == 9007199254740992.0
+    assert nearest(a: big.times_add(a: two53, factor: 1, add: 3), b: [1], format: f64s) == 9007199254740996.0
+    assert nearest(a: big.shifted(a: [1], k: 1024), b: [1], format: f64s) == infinity()
+    assert to_str(nearest(a: [1], b: big.shifted(a: [1], k: 1074), format: f64s)) == "5e-324"
+    assert nearest(a: [1], b: big.shifted(a: [1], k: 1075), format: f64s) == 0.0
+    assert to_str(nearest(a: [3], b: big.shifted(a: [1], k: 1076), format: f64s)) == "5e-324"
+
+test "nearest: the f32 shape rounds at 24 bits and stops at 2 to the -149th"
+    f32s = f32_format()
+    assert nearest(a: big.of(16777217), b: [1], format: f32s) == 16777216.0
+    assert nearest(a: big.of(16777219), b: [1], format: f32s) == 16777220.0
+    assert nearest(a: [1], b: big.shifted(a: [1], k: 149), format: f32s) == pow2(-149)
+    assert nearest(a: [1], b: big.shifted(a: [1], k: 150), format: f32s) == 0.0
+    assert nearest(a: big.shifted(a: [1], k: 128), b: [1], format: f32s) == infinity()

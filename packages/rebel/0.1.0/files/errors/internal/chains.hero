@@ -1,0 +1,118 @@
+# A failure read back out of its message: the links of its chain, the parts of
+# a joined failure, and whether a code stands anywhere in it. Joined failures
+# nested in joined failures are walked on a list this module holds, never by
+# recursion, so a message nested deep costs memory and not stack.
+
+use errors/internal/links
+
+# The links of the message of `r`, the outermost first; a value has none.
+function chain_of<T>(r: T?) -> [str]
+    none: [str] = []
+
+    return match r
+        .ok _  => none
+        .err e => links.cut(text: e.msg, mark: ':')
+
+# The failure of `part`.
+function failure_of(part: links.Part) -> ()?
+    return fail(code: part.code, msg: part.msg)
+
+# The parts `msg` joins, read from the last link of its chain; fails
+# `not_found` where that link is no joined failure's.
+function parts_in(msg: str) -> [links.Part]?
+    chain = links.cut(text: msg, mark: ':')
+    joined = links.joined_of(chain[chain.len() - 1])?
+    return ok(joined.parts)
+
+# The failures `r` joins, or `r` alone where it joins none; a value has none.
+function parts_of<T>(r: T?) -> [()?]
+    none: [()?] = []
+
+    return match r
+        .ok _ => none
+        .err e =>
+            match parts_in(e.msg)
+                .ok parts => parts.map(failure_of)
+                .err _    => [fail(code: e.code, msg: e.msg)]
+
+# Whether `r` fails with `code` or joins, at any depth, a failure that does.
+function has_code<T>(r: T?, code: str) -> bool
+    return match r
+        .ok _  => false
+        .err e => code_in(first: links.Part(code: e.code, msg: e.msg), code: code)
+
+# Whether `first` or a part it joins, at any depth, has `code`: every part
+# waits in `waiting` and is read once.
+function code_in(first: links.Part, code: str) -> bool
+    waiting: [links.Part] @= [first]
+    at: i64 @= 0
+
+    while at < waiting.len()
+        part = waiting[at]
+
+        if part.code == code
+            return true
+
+        match parts_in(part.msg)
+            .ok parts =>
+                for p in parts
+                    waiting @ waiting.push(p)
+            .err _ => _ = 0
+
+        at @ at + 1
+
+    return false
+
+test "chain_of: a value, an empty message, one link, a trailing mark"
+    held: i64? = ok(1)
+    assert chain_of(held).len() == 0
+    empty: i64? = fail(code: "invalid", msg: "")
+    assert chain_of(empty) == [""]
+    one: i64? = fail(code: "invalid", msg: "no digit at 3")
+    assert chain_of(one) == ["no digit at 3"]
+    trailing: i64? = fail(code: "invalid", msg: "reading: ")
+    assert chain_of(trailing) == ["reading", ""]
+
+test "chain_of: the links joined give the message back, a joined failure is one link"
+    msg = "loading: 2 failures (a: reading: x; b: \"p: q\"): after"
+    r: i64? = fail(code: "a", msg: msg)
+    assert chain_of(r) == ["loading", "2 failures (a: reading: x; b: \"p: q\")", "after"]
+    assert chain_of(r).join(": ") == msg
+
+test "parts_of: a value, a failure that joins nothing, a joined one under context"
+    held: i64? = ok(1)
+    assert parts_of(held).len() == 0
+    alone: i64? = fail(code: "invalid", msg: "reading: no digit")
+    expected_alone: [()?] = [fail(code: "invalid", msg: "reading: no digit")]
+    assert parts_of(alone) == expected_alone
+    joined: i64? = fail(code: "a", msg: "loading: 2 failures (a: reading: x; b: y)")
+    expected_joined: [()?] = [fail(code: "a", msg: "reading: x"), fail(code: "b", msg: "y")]
+    assert parts_of(joined) == expected_joined
+
+test "parts_of: a list that only looks joined is one part"
+    fake: i64? = fail(code: "a", msg: "3 failures (a: x; b: y)")
+    expected_fake: [()?] = [fail(code: "a", msg: "3 failures (a: x; b: y)")]
+    assert parts_of(fake) == expected_fake
+    before: i64? = fail(code: "a", msg: "2 failures (a: x; b: y): after")
+    assert parts_of(before).len() == 1
+
+test "parts_of: the parts of a nested list stay joined, one level read"
+    r: i64? = fail(code: "a", msg: "2 failures (a: 2 failures (a: x; b: y); c: z)")
+    expected_r: [()?] = [fail(code: "a", msg: "2 failures (a: x; b: y)"), fail(code: "c", msg: "z")]
+    assert parts_of(r) == expected_r
+
+test "has_code: a value, the failure's own code, a code absent"
+    held: i64? = ok(1)
+    assert !has_code(held, code: "invalid")
+    r: i64? = fail(code: "invalid", msg: "x")
+    assert has_code(r, code: "invalid")
+    assert !has_code(r, code: "not_found")
+    assert !has_code(r, code: "")
+
+test "has_code: a code three lists deep, and one in a list that only looks joined"
+    deep: i64? = fail(code: "a", msg: "2 failures (a: 2 failures (b: x; c: 2 failures (d: p; e: q)); f: z)")
+    assert has_code(deep, code: "e")
+    assert has_code(deep, code: "f")
+    assert !has_code(deep, code: "g")
+    fake: i64? = fail(code: "a", msg: "2 failures (a: x; b: y; c: z)")
+    assert !has_code(fake, code: "b")

@@ -1,0 +1,436 @@
+# The inside of one action read: a value by its path or a literal, the
+# filters after it, a condition, and the words that open a block. A variable
+# is found among the loops around the action when it is read, so a name no
+# loop binds is a failure of the text, never of a run.
+
+use json
+use template/internal/lex
+use template/internal/program
+
+# The variables of the loops around an action, innermost last: each name with
+# its slot.
+record Scope
+    names: [str]
+    slots: [i64]
+
+# A reader of one action's inside, where `start` is the place of its first
+# character.
+record Reader
+    text: str
+    at: i64
+    start: lex.Place
+
+# A reader at the start of `text`, which begins at `start`.
+function reader(text: str, start: lex.Place) -> Reader
+    return Reader(text: text, at: 0, start: start)
+
+# The message `what`, at the place `r` has read to.
+function failure(r: Reader lent, what: str) -> str
+    return lex.located(lex.advance(r.text, from: 0, to: r.at, start: r.start), what)
+
+# Moves `r` past white space.
+function skip_space(@r: Reader)
+    while r.at < r.text.len() && lex.is_space(r.text[r.at])
+        r.at @ r.at + 1
+
+# Whether nothing but white space is left in `r`; `r` moves past it.
+function at_end(@r: Reader) -> bool
+    skip_space(@r)
+    return r.at == r.text.len()
+
+# What stands next in `r`, for a message: a word, one character, or the end.
+function found(r: Reader lent) -> str
+    if r.at >= r.text.len()
+        return "the end of the action"
+    k: i64 @= r.at
+
+    while k < r.text.len() && program.is_name_byte(r.text[k])
+        k @ k + 1
+
+    if k == r.at
+        k @ r.at + 1
+
+        while k < r.text.len() && r.text[k] >= 0x80 && r.text[k] < 0xc0
+            k @ k + 1
+    return f"\"{r.text.slice(from: r.at, to: k)}\""
+
+# The name that stands at `r`, which moves past it; "" where none does.
+function name(@r: Reader) -> str
+    from = r.at
+
+    while r.at < r.text.len() && program.is_name_byte(r.text[r.at])
+        r.at @ r.at + 1
+
+    return r.text.slice(from: from, to: r.at)
+
+# The word that stands next in `r`, after white space, without moving `r`
+# past it.
+function peek_word(r: Reader lent) -> str
+    k: i64 @= r.at
+
+    while k < r.text.len() && lex.is_space(r.text[k])
+        k @ k + 1
+
+    from = k
+
+    while k < r.text.len() && program.is_name_byte(r.text[k])
+        k @ k + 1
+
+    return r.text.slice(from: from, to: k)
+
+# Moves `r` past white space and the word `word`, which stands there.
+function take_word(@r: Reader, word: str)
+    skip_space(@r)
+    r.at @ r.at + word.len()
+
+# A string literal at `r`, its escapes read. Fails `invalid` where none
+# stands there or it holds an escape it does not read.
+function string_literal(@r: Reader) -> str?
+    skip_space(@r)
+
+    if r.at >= r.text.len() || r.text[r.at] != '"'
+        return fail(code: "invalid", msg: failure(r, f"expected a string between quotes, found {found(r)}"))
+    pieces: [str] @= []
+    r.at @ r.at + 1
+    kept: i64 @= r.at
+
+    while r.at < r.text.len() && r.text[r.at] != '"'
+        if r.text[r.at] != '\\'
+            r.at @ r.at + 1
+            continue
+        pieces @ pieces.push(r.text.slice(from: kept, to: r.at))
+
+        escape: u8 = if r.at + 1 < r.text.len()
+            r.text[r.at + 1]
+        else
+            0
+
+        read = match escape
+            '"'  => "\""
+            '\\' => "\\"
+            'n'  => "\n"
+            't'  => "\t"
+            'r'  => "\r"
+            _    => ""
+
+        if read == ""
+            return fail(
+                code: "invalid",
+                msg: failure(r, "a string reads the escapes `\\\"`, `\\\\`, `\\n`, `\\t` and `\\r` alone")
+            )
+        pieces @ pieces.push(read)
+        r.at @ r.at + 2
+        kept @ r.at
+
+    if r.at >= r.text.len()
+        return fail(code: "invalid", msg: failure(r, "a string ends with `\"` before the action does"))
+    pieces @ pieces.push(r.text.slice(from: kept, to: r.at))
+    r.at @ r.at + 1
+    return ok(pieces.join(""))
+
+# A number literal at `r`, as JSON writes one. Fails `invalid` where the
+# characters there are not one.
+function number_literal(@r: Reader) -> json.Value?
+    from = r.at
+
+    while r.at < r.text.len()
+        b = r.text[r.at]
+
+        if !(b >= '0' && b <= '9' || b == '-' || b == '+' || b == '.' || b == 'e' || b == 'E')
+            break
+        r.at @ r.at + 1
+
+    written = r.text.slice(from: from, to: r.at)
+
+    match json.parse(written)
+        .ok v =>
+            if json.kind_of(v) == "number"
+                return ok(v)
+        .err _ => _ = 0
+
+    r.at @ from
+    return fail(code: "invalid", msg: failure(r, f"a number is written as JSON writes one, found \"{written}\""))
+
+# The keys and indices after a path's root, `r` standing after the root.
+# `after_dot` says the root was `.`, which a key may follow at once.
+function segments(@r: Reader, after_dot: bool) -> [str]?
+    found_keys: [str] @= []
+
+    if after_dot && r.at < r.text.len()
+        if program.is_name_byte(r.text[r.at])
+            found_keys @ found_keys.push(name(@r))
+        else if r.text[r.at] == '.'
+            return fail(code: "invalid", msg: failure(r, "expected a key after `.`, found \".\""))
+
+    while r.at < r.text.len()
+        b = r.text[r.at]
+
+        if b == '.'
+            r.at @ r.at + 1
+            key = name(@r)
+
+            if key == ""
+                return fail(code: "invalid", msg: failure(r, f"expected a key after `.`, found {found(r)}"))
+            found_keys @ found_keys.push(key)
+        else if b == '['
+            r.at @ r.at + 1
+            key = string_literal(@r)?
+
+            if r.at >= r.text.len() || r.text[r.at] != ']'
+                return fail(code: "invalid", msg: failure(r, f"expected `]` after the key, found {found(r)}"))
+            r.at @ r.at + 1
+            found_keys @ found_keys.push(key)
+        else
+            break
+
+    return ok(found_keys)
+
+# The slot of the variable `name` among the loops of `scope`, or -1.
+function slot_of(scope: Scope lent, variable: str) -> i64
+    at: i64 @= scope.names.len()
+
+    while at > 0
+        at @ at - 1
+
+        if scope.names[at] == variable
+            return scope.slots[at]
+
+    return -1
+
+# An operand at `r`: a path, a variable's path, or a literal. Fails `invalid`
+# where none stands there, or a variable is not one `scope` holds.
+function operand(@r: Reader, scope: Scope lent) -> program.Operand?
+    skip_space(@r)
+
+    if r.at >= r.text.len()
+        return fail(code: "invalid", msg: failure(r, "expected a value, found the end of the action"))
+    b = r.text[r.at]
+
+    if b == '.'
+        r.at @ r.at + 1
+        walked = segments(@r, true)?
+        return ok(
+            program.Operand(kind: program.FROM_DOT, slot: -1, segments: walked, literal: .null_value, written: program.path_text(".", walked))
+        )
+
+    if b == '$'
+        at_dollar = r.at
+        r.at @ r.at + 1
+        variable = name(@r)
+
+        if variable == ""
+            return fail(code: "invalid", msg: failure(r, f"expected a variable's name after `$`, found {found(r)}"))
+        slot = slot_of(scope, variable)
+
+        if slot < 0
+            r.at @ at_dollar
+            return fail(code: "invalid", msg: failure(r, f"no loop here binds `${variable}`"))
+        walked = segments(@r, false)?
+        return ok(
+            program.Operand(kind: program.FROM_VARIABLE, slot: slot, segments: walked, literal: .null_value, written: program.path_text("$" + variable, walked))
+        )
+
+    if b == '"'
+        from = r.at
+        text = string_literal(@r)?
+        return ok(
+            program.Operand(kind: program.FROM_LITERAL, slot: -1, segments: [], literal: .text(v: text), written: r.text.slice(from: from, to: r.at))
+        )
+
+    if b == '-' || b >= '0' && b <= '9'
+        from = r.at
+        number = number_literal(@r)?
+        return ok(
+            program.Operand(kind: program.FROM_LITERAL, slot: -1, segments: [], literal: number, written: r.text.slice(from: from, to: r.at))
+        )
+    word = peek_word(r)
+    literal: json.Value @= .null_value
+
+    if word == "true"
+        literal @ .boolean(v: true)
+    else if word == "false"
+        literal @ .boolean(v: false)
+    else if word != "null"
+        what = if word == ""
+            found(r)
+        else
+            f"\"{word}\""
+        return fail(
+            code: "invalid",
+            msg: failure(r, f"expected a value, found {what}: a path begins with `.` and a variable with `$`")
+        )
+    take_word(@r, word)
+    return ok(program.Operand(kind: program.FROM_LITERAL, slot: -1, segments: [], literal: literal, written: word))
+
+# A value and its filters at `r`. Fails `invalid` where either is not one,
+# where `default` does not stand at once after a path, and where `escape`
+# stands in the HTML mode.
+function pipe(@r: Reader, scope: Scope lent, html: bool) -> program.Pipe?
+    first = operand(@r, scope)?
+    filters: [program.Filter] @= []
+
+    while true
+        skip_space(@r)
+
+        if r.at >= r.text.len() || r.text[r.at] != '|'
+            break
+        r.at @ r.at + 1
+        skip_space(@r)
+        at_filter = r.at
+        filter_name = name(@r)
+
+        kind = match filter_name
+            "escape"  => program.ESCAPE
+            "upper"   => program.UPPER
+            "lower"   => program.LOWER
+            "join"    => program.JOIN
+            "default" => program.DEFAULT
+            "length"  => program.LENGTH
+            _         => -1
+
+        if kind < 0
+            r.at @ at_filter
+
+            if filter_name == ""
+                return fail(code: "invalid", msg: failure(r, f"expected a filter after `|`, found {found(r)}"))
+            return fail(
+                code: "invalid",
+                msg: failure(r, f"no filter \"{filter_name}\": the filters are escape, upper, lower, join, default and length")
+            )
+        arg: json.Value @= .null_value
+
+        if kind == program.ESCAPE && html
+            r.at @ at_filter
+            return fail(
+                code: "invalid",
+                msg: failure(r, "the HTML mode escapes every value by its place, so `escape` would escape it twice")
+            )
+
+        if kind == program.JOIN
+            arg @ .text(v: string_literal(@r)?)
+
+        if kind == program.DEFAULT
+            if filters.len() > 0 || first.kind == program.FROM_LITERAL
+                r.at @ at_filter
+                return fail(
+                    code: "invalid",
+                    msg: failure(r, "`default` stands at once after the path whose value it replaces")
+                )
+            given = operand(@r, Scope(names: [], slots: []))?
+
+            if given.kind != program.FROM_LITERAL
+                return fail(
+                    code: "invalid",
+                    msg: failure(r, "`default` is given a literal: a text, a number, true, false or null")
+                )
+            arg @ given.literal
+        filters @ filters.push(program.Filter(kind: kind, arg: arg))
+
+    return ok(program.Pipe(operand: first, filters: filters))
+
+# A condition at `r`: `not` and a value, or a value and `==` or `!=` and
+# another. Fails `invalid` where it is not one.
+function condition(@r: Reader, scope: Scope lent, html: bool) -> program.Cond?
+    if peek_word(r) == "not"
+        take_word(@r, "not")
+        return ok(
+            program.Cond(negate: true, left: pipe(@r, scope, html)?, compare: program.COMPARE_NONE, right: program.empty_pipe())
+        )
+    left = pipe(@r, scope, html)?
+    skip_space(@r)
+    compare: i64 @= program.COMPARE_NONE
+
+    if r.at + 1 < r.text.len() && r.text[r.at + 1] == '='
+        if r.text[r.at] == '='
+            compare @ program.COMPARE_EQUAL
+        else if r.text[r.at] == '!'
+            compare @ program.COMPARE_NOT_EQUAL
+
+    if compare == program.COMPARE_NONE
+        return ok(program.only(left))
+    r.at @ r.at + 2
+    right = pipe(@r, scope, html)?
+    return ok(program.Cond(negate: false, left: left, compare: compare, right: right))
+
+# Fails `invalid` where anything but white space is left in `r`.
+function finish(@r: Reader) -> ()?
+    if !at_end(@r)
+        return fail(code: "invalid", msg: failure(r, f"expected the end of the action, found {found(r)}"))
+    return ok()
+
+test "operand: paths, keys in brackets, indices, variables and literals, as they are written"
+    scope = Scope(names: ["item"], slots: [0])
+    start = lex.Place(line: 1, column: 1)
+    r: Reader @= reader(" .user.name ", start)
+    path = operand(@r, scope).must()
+    assert path.kind == program.FROM_DOT && path.segments == ["user", "name"] && path.written == ".user.name"
+    dot: Reader @= reader(".", start)
+    assert operand(@dot, scope).must().segments.len() == 0
+    bracket: Reader @= reader(".[\"a b\"].0[\"c\"]", start)
+    bracketed = operand(@bracket, scope).must()
+    assert bracketed.segments == ["a b", "0", "c"] && bracketed.written == ".[\"a b\"].0.c"
+    variable: Reader @= reader("$item.id", start)
+    v = operand(@variable, scope).must()
+    assert v.kind == program.FROM_VARIABLE && v.slot == 0 && v.written == "$item.id"
+    text: Reader @= reader("\"a\\\"b\\n\"", start)
+    assert operand(@text, scope).must().literal == .text(v: "a\"b\n")
+    number: Reader @= reader("-1.5e2", start)
+    assert operand(@number, scope).must().literal == .number(v: -150.0)
+    word: Reader @= reader("false", start)
+    assert operand(@word, scope).must().literal == .boolean(v: false)
+
+test "operand: a word that is no value, a variable no loop binds, a malformed number and path"
+    scope = Scope(names: [], slots: [])
+    start = lex.Place(line: 2, column: 3)
+    bare: Reader @= reader(" name", start)
+
+    match operand(@bare, scope)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 4: expected a value, found \"name\": a path begins with `.` and a variable with `$`"
+
+    missing: Reader @= reader("$x", start)
+
+    match operand(@missing, scope)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 3: no loop here binds `$x`"
+
+    for text in ["01", "1.", "..a", ".a.", ".[1]", "\"\\x\"", "", "|"]
+        r: Reader @= reader(text, start)
+        assert operand(@r, scope).is_err()
+
+test "pipe: filters with their arguments, default first, escape refused in the HTML mode, a filter unknown"
+    scope = Scope(names: [], slots: [])
+    start = lex.Place(line: 1, column: 1)
+    r: Reader @= reader(".a | default \"x\" | upper | join \", \" | length", start)
+    p = pipe(@r, scope, false).must()
+    assert p.filters.len() == 4 && p.filters[0].arg == .text(v: "x") && p.filters[2].arg == .text(v: ", ")
+
+    for text in [".a | upper | default 1", "\"a\" | default 1", ".a | default .b", ".a | trim", ".a |"]
+        bad: Reader @= reader(text, start)
+        assert pipe(@bad, scope, false).is_err()
+
+    plain: Reader @= reader(".a | escape", start)
+    assert !pipe(@plain, scope, false).is_err()
+    page: Reader @= reader(".a | escape", start)
+
+    match pipe(@page, scope, true)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 6: the HTML mode escapes every value by its place, so `escape` would escape it twice"
+
+test "condition: a value, not, equal and not equal, and what is left after it"
+    scope = Scope(names: [], slots: [])
+    start = lex.Place(line: 1, column: 1)
+    plain: Reader @= reader(" .ready ", start)
+    assert condition(@plain, scope, false).must().compare == program.COMPARE_NONE
+    negated: Reader @= reader("not .ready", start)
+    assert condition(@negated, scope, false).must().negate
+    equal: Reader @= reader(".n == 0", start)
+    assert condition(@equal, scope, false).must().compare == program.COMPARE_EQUAL
+    unequal: Reader @= reader(".s!=\"a\"", start)
+    assert condition(@unequal, scope, false).must().right.operand.literal == .text(v: "a")
+    rest: Reader @= reader(".a .b", start)
+    _ = condition(@rest, scope, false).must()
+
+    match finish(@rest)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: expected the end of the action, found \".\""

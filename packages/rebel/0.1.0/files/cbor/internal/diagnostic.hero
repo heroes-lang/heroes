@@ -1,0 +1,124 @@
+# One CBOR item written in the diagnostic notation of RFC 8949 section 8, the
+# text a person reads. The events are walked from the last to the first, so
+# each container finds its items' text already made on top of a stack this
+# module holds.
+
+use big
+use bytes
+use cbor/internal/appendix
+use cbor/internal/decoder
+use cbor/internal/event
+use json
+
+# The text of a scalar event.
+function scalar_text(e: event.Event) -> str
+    if e.kind == event.UNSIGNED
+        return to_str(e.arg)
+    else if e.kind == event.NEGATIVE && e.arg == 18446744073709551615
+        return "-18446744073709551616"
+    else if e.kind == event.NEGATIVE
+        return f"-{e.arg + 1}"
+    else if e.kind == event.BINARY
+        return f"h'{bytes.format_hex(e.data)}'"
+    else if e.kind == event.TEXT
+        return json.quote(e.text)
+    else if e.kind == event.FLOAT && e.number != e.number
+        return "NaN"
+    else if e.kind == event.FLOAT && e.number == 1.0 / 0.0
+        return "Infinity"
+    else if e.kind == event.FLOAT && e.number == -1.0 / 0.0
+        return "-Infinity"
+    else if e.kind == event.FLOAT
+        return to_str(e.number)
+    else if e.kind == event.BOOLEAN && e.flag
+        return "true"
+    else if e.kind == event.BOOLEAN
+        return "false"
+    else if e.kind == event.NULL_VALUE
+        return "null"
+    else if e.kind == event.UNDEFINED
+        return "undefined"
+    return f"simple({e.arg})"
+
+# The CBOR item `data` holds, in diagnostic notation. Fails `invalid` where
+# `data` is not one well-formed item.
+function format(data: [u8]) -> str?
+    got = decoder.read(data: data, from: 0, reading: decoder.lenient())?
+    done: [str] @= []
+    top: i64 @= 0
+    at: i64 @= got.events.len()
+
+    while at > 0
+        at @ at - 1
+        e = got.events[at]
+        count = event.children_of(e)
+        made: str @= ""
+
+        if e.kind == event.LIST
+            items: [str] @= []
+
+            for k in range(from: 0, to: count)
+                items @ items.push(done[top - 1 - k])
+
+            made @ f"[{items.join(", ")}]"
+        else if e.kind == event.PAIRS
+            entries: [str] @= []
+
+            for k in range(from: 0, to: count / 2)
+                entries @ entries.push(f"{done[top - 1 - 2 * k]}: {done[top - 2 - 2 * k]}")
+
+            made @ f"{{{entries.join(", ")}}}"
+        else if e.kind == event.TAG && event.is_bignum(tag: e, child: got.events[at + 1])
+            n = big.from_bytes(b: got.events[at + 1].data, order: .big_endian)
+
+            if e.arg == 2
+                made @ big.format(n)
+            else
+                made @ big.format(big.bit_not(n))
+        else if e.kind == event.TAG
+            made @ f"{e.arg}({done[top - 1]})"
+        else
+            made @ scalar_text(e)
+        top @ top - count
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    return ok(done[0])
+
+test "scalar_text: integers at both ends, bytes, a text, the named values"
+    assert scalar_text(event.of_kind(kind: event.UNSIGNED, arg: 18446744073709551615)) == "18446744073709551615"
+    assert scalar_text(event.of_kind(kind: event.NEGATIVE, arg: 0)) == "-1"
+    assert scalar_text(event.of_kind(kind: event.NEGATIVE, arg: 18446744073709551615)) == "-18446744073709551616"
+    assert scalar_text(event.of_binary([])) == "h''"
+    assert scalar_text(event.of_binary([0x01, 0xab])) == "h'01ab'"
+    assert scalar_text(event.of_text("\"\\")) == "\"\\\"\\\\\""
+    assert scalar_text(event.of_kind(kind: event.UNDEFINED, arg: 0)) == "undefined"
+    assert scalar_text(event.of_kind(kind: event.SIMPLE, arg: 255)) == "simple(255)"
+
+test "scalar_text: floats, the infinities and nan as the RFC writes them"
+    assert scalar_text(event.of_float(1.5)) == "1.5"
+    assert scalar_text(event.of_float(0.0 / 0.0)) == "NaN"
+    assert scalar_text(event.of_float(1.0 / 0.0)) == "Infinity"
+    assert scalar_text(event.of_float(-1.0 / 0.0)) == "-Infinity"
+
+test "format: empty containers, nested ones, a tag, ill-formed bytes"
+    assert format([0x80]).must() == "[]"
+    assert format([0xa0]).must() == "{}"
+    assert format([0x82, 0x61, 0x61, 0xa1, 0x61, 0x62, 0x61, 0x63]).must() == "[\"a\", {\"b\": \"c\"}]"
+    assert format([0xd8, 0x20, 0x61, 0x61]).must() == "32(\"a\")"
+    assert format([0x82, 0x01]).is_err()
+
+test "format: every example of RFC 8949 appendix A in diagnostic notation"
+    for row in appendix.rows()
+        assert format(bytes.parse_hex(row.encoded).must()).must() == row.diagnostic
+
+test "format: bignums as the numbers they stand for, leading zeros and none"
+    assert format([0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]).must() == "18446744073709551616"
+    assert format([0xc3, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]).must() == "-18446744073709551617"
+    assert format([0xc2, 0x40]).must() == "0"
+    assert format([0xc3, 0x43, 0, 0, 0]).must() == "-1"
+    assert format([0xc2, 0x61, 0x31]).must() == "2(\"1\")"

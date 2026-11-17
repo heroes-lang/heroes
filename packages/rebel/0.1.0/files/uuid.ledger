@@ -1,0 +1,105 @@
+capability uuid/value  a UUID as a value: its 128 bits, compared and ordered
+  heroes  uuid.Uuid, uuid.compare
+  go      -
+  rust    -
+  python  uuid.UUID, uuid.UUID.int, uuid.UUID.is_safe, uuid.SafeUUID, uuid.int_
+  note    two halves of 64 bits, every pair a UUID; `==` is the built-in's, and `compare` orders by bytes as Python's `<` does. Python's `is_safe` reports how `uuid1` was made, which is not made here
+
+capability uuid/v4  a new random UUID, version 4
+  heroes  uuid.new_v4
+  go      -
+  rust    -
+  python  uuid.uuid4
+  note    its 122 bits come from `random.secure_below`, the system's generator for keys, as RFC 9562 asks; Python's `uuid4` reads `os.urandom` alike
+
+capability uuid/v7  a new UUID ordered by time, version 7
+  heroes  uuid.new_v7, uuid.new_v7_at
+  go      -
+  rust    -
+  python  uuid.uuid7
+  note    RFC 9562 A.6's moment, 1645557742000, makes `017f22e2-79b0-7…` as its example does. Python keeps a counter so that two made within one millisecond still sort in order; no counter is kept here, so they sort in no order, and the face says so
+
+capability uuid/v7-monotonic  UUIDs of version 7 that sort in the order made within one millisecond
+  heroes  pending
+  go      -
+  rust    -
+  python  uuid.uuid7
+  note    it needs a state the caller holds and advances, RFC 9562 6.2's counter, which is not yet designed
+
+capability uuid/nil-max  the nil and the max UUID
+  heroes  uuid.nil_uuid, uuid.max_uuid
+  go      -
+  rust    -
+  python  uuid.NIL, uuid.MAX
+  note    functions, since a constant's body may not build a record; `nil` alone is a word the compiler refuses as a name
+
+capability uuid/parse  a UUID read from text
+  heroes  uuid.parse
+  go      -
+  rust    -
+  python  uuid.UUID
+  note    the standard form in either case, the 32 digits, either within braces, and `urn:uuid:` before the standard form, as Python reads them; Python also drops a hyphen anywhere, which is refused here as RFC 9562's form puts four in their places, and it reads the URN only in lower case, as this does
+
+capability uuid/format  a UUID written as text
+  heroes  uuid.format, uuid.format_urn, uuid.format_hex
+  go      -
+  rust    -
+  python  uuid.UUID.__str__, uuid.UUID.urn, uuid.UUID.hex
+  note    lower case, as Python and RFC 9562 write it
+
+capability uuid/bytes  a UUID read from and written as its 16 bytes
+  heroes  uuid.from_bytes, uuid.to_bytes
+  go      -
+  rust    -
+  python  uuid.UUID.bytes, uuid.bytes_
+  note    the first byte the highest, RFC 9562's order
+
+capability uuid/bytes-le  a UUID's bytes in Microsoft's mixed order
+  heroes  pending
+  go      -
+  rust    -
+  python  uuid.UUID.bytes_le
+
+capability uuid/version  a UUID's version and variant
+  heroes  uuid.version_of, uuid.variant_of, uuid.Variant
+  go      -
+  rust    -
+  python  uuid.UUID.version, uuid.UUID.variant, uuid.RESERVED_NCS, uuid.RFC_4122, uuid.RESERVED_MICROSOFT, uuid.RESERVED_FUTURE
+  note    the version is its four bits whatever the variant, the nil UUID 0 and the max 15, where Python answers no version outside RFC 4122's variant; the variant is a case of `Variant`, where Python's is a text
+
+capability uuid/time  the moment a UUID of version 7 was made
+  heroes  uuid.time_of
+  go      -
+  rust    -
+  python  uuid.UUID.time
+  note    for version 7 alone, where Python's `time` also reads versions 1 and 6's counts of 100 nanoseconds since 1582
+
+capability uuid/fields  the fields of RFC 4122's version 1 layout
+  heroes  pending
+  go      -
+  rust    -
+  python  uuid.UUID.fields, uuid.UUID.time_low, uuid.UUID.time_mid, uuid.UUID.time_hi_version, uuid.UUID.clock_seq, uuid.UUID.clock_seq_hi_variant, uuid.UUID.clock_seq_low, uuid.UUID.node
+
+capability uuid/name-based  UUIDs of versions 3 and 5, made from a namespace and a name
+  heroes  pending
+  go      -
+  rust    -
+  python  uuid.uuid3, uuid.uuid5, uuid.NAMESPACE_DNS, uuid.NAMESPACE_OID, uuid.NAMESPACE_URL, uuid.NAMESPACE_X500
+  note    they need MD5 and SHA-1, which are the package `crypto`'s, and A1's row for `uuid` names `random`, `time` and `bytes` alone
+
+capability uuid/time-based  UUIDs of versions 1 and 6, made from a time, a clock sequence and a node
+  heroes  refused: they put the machine's hardware address in every identifier, and RFC 9562 6.10 advises version 7 in their place
+  go      -
+  rust    -
+  python  uuid.uuid1, uuid.uuid6, uuid.getnode
+
+capability uuid/v8  a UUID of version 8, its bits the caller's
+  heroes  pending
+  go      -
+  rust    -
+  python  uuid.uuid8
+
+dropped modules  names Python's module holds because it imports them, which are not its interface
+  go      -
+  rust    -
+  python  uuid.Enum, uuid.os, uuid.sys, uuid.time, uuid.main

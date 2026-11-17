@@ -1,0 +1,117 @@
+# The steps of a document as the reader meets them and the writer writes them:
+# an element opened and closed, text, a comment, an instruction. The reader
+# answers a list of them and the face builds its tree from it; the face walks
+# its tree into a list of them and the writer writes it. Names here are already
+# resolved: each carries the namespace it stands in.
+
+# The kind of an event that opens an element.
+constant START: i64
+    1
+
+# The kind of an event that closes the element opened last.
+constant END: i64
+    2
+
+# The kind of an event of text, its references read.
+constant TEXT: i64
+    3
+
+# The kind of an event of a comment.
+constant COMMENT: i64
+    4
+
+# The kind of an event of a processing instruction.
+constant INSTRUCTION: i64
+    5
+
+# One attribute of an element that opens: its name, resolved, and its value.
+record Attr
+    # The prefix, empty where none was written.
+    prefix: str
+    # The local name.
+    local: str
+    # The namespace, empty where none.
+    space: str
+    # The value, its references read.
+    value: str
+
+# One step of a document. Each kind reads only the fields its comment names.
+record Event
+    # `START`, `END`, `TEXT`, `COMMENT` or `INSTRUCTION`.
+    kind: i64
+    # `START`: the element's prefix, empty where none.
+    prefix: str
+    # `START`: the element's local name.
+    local: str
+    # `START`: the element's namespace, empty where none.
+    space: str
+    # `START`: the element's attributes, in order.
+    attributes: [Attr]
+    # `TEXT` and `COMMENT`: the characters; `INSTRUCTION`: the data.
+    text: str
+    # `INSTRUCTION`: the target.
+    target: str
+    # `START`, for the writer: whether the element's children are laid out
+    # one to a line where the layout asks for lines.
+    laid: bool
+
+# What the writer reads of a document's XML declaration, and what the reader
+# found.
+record Prolog
+    # Whether the document has a declaration.
+    declared: bool
+    # The version as written; empty where none.
+    version: str
+    # The encoding as written; empty where none was named.
+    encoding: str
+    # `yes`, `no`, or empty where none was said.
+    standalone: str
+
+# The event that opens the element of that name with those attributes.
+function start(prefix: str, local: str, space: str, attributes: [Attr], laid: bool) -> Event
+    return Event(
+        kind: START,
+        prefix: prefix,
+        local: local,
+        space: space,
+        attributes: attributes,
+        text: "",
+        target: "",
+        laid: laid
+    )
+
+# An event of `kind` that holds `s` as its characters: `END` with the empty
+# text, `TEXT` or `COMMENT`.
+function of_text(kind: i64, s: str) -> Event
+    none: [Attr] = []
+    return Event(kind: kind, prefix: "", local: "", space: "", attributes: none, text: s, target: "", laid: false)
+
+# The event of the instruction `<?target data?>`.
+function instruction(target: str, data: str) -> Event
+    none: [Attr] = []
+    return Event(
+        kind: INSTRUCTION,
+        prefix: "",
+        local: "",
+        space: "",
+        attributes: none,
+        text: data,
+        target: target,
+        laid: false
+    )
+
+# The prolog of a document with no declaration.
+function undeclared() -> Prolog
+    return Prolog(declared: false, version: "", encoding: "", standalone: "")
+
+## Tests
+
+test "start, of_text and instruction: each kind holds what it is given"
+    a = Attr(prefix: "", local: "x", space: "", value: "1")
+    e = start(prefix: "p", local: "a", space: "u", attributes: [a], laid: true)
+    assert e.kind == START && e.prefix == "p" && e.local == "a" && e.space == "u" && e.attributes == [a] && e.laid
+    assert of_text(kind: TEXT, s: "é").text == "é"
+    assert of_text(kind: END, s: "").kind == END
+    i = instruction(target: "t", data: "d")
+    assert i.kind == INSTRUCTION && i.target == "t" && i.text == "d"
+    assert !undeclared().declared

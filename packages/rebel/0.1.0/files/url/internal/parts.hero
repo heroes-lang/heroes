@@ -1,0 +1,74 @@
+# The parts of a URL as the package's private modules pass them: field for
+# field the face's `Url`, which they cannot name, since the face uses them and
+# a module may not use the face back. The face copies one into the other.
+
+# A URL in its parts, read and written as the face's `Url` says of each
+# field.
+record Parts
+    # The scheme, in lower case; "" in a relative reference.
+    scheme: str
+    # The user name, unescaped.
+    user: str
+    # The password, unescaped.
+    password: str
+    # The host, unescaped, in lower case, an IPv6 address without brackets.
+    host: str
+    # The port's digits.
+    port: str
+    # The path, raw.
+    path: str
+    # The query without its "?", raw.
+    query: str
+    # The fragment without its "#", raw.
+    fragment: str
+    # Whether "//" is written with nothing of an authority after it.
+    empty_authority: bool
+    # Whether an "@" is written with nothing before it.
+    empty_userinfo: bool
+    # Whether a password's ":" is written with no password.
+    empty_password: bool
+    # Whether a "?" is written with no query.
+    empty_query: bool
+    # Whether a "#" is written with no fragment.
+    empty_fragment: bool
+
+# The parts of the empty reference, "".
+function empty() -> Parts
+    return Parts(
+        scheme: "",
+        user: "",
+        password: "",
+        host: "",
+        port: "",
+        path: "",
+        query: "",
+        fragment: "",
+        empty_authority: false,
+        empty_userinfo: false,
+        empty_password: false,
+        empty_query: false,
+        empty_fragment: false
+    )
+
+# Whether `p` writes an authority, the "//" and what follows it.
+function has_authority(p: Parts) -> bool
+    return p.user != "" || p.password != "" || p.host != "" || p.port != "" || p.empty_authority || p.empty_userinfo || p.empty_password
+
+## Tests
+
+test "has_authority: none, a host, a port alone, and each flag"
+    p @= empty()
+    assert !has_authority(p)
+    p.empty_query @ true
+    assert !has_authority(p)
+    p.host @ "h"
+    assert has_authority(p)
+    q @= empty()
+    q.port @ "80"
+    assert has_authority(q)
+    r @= empty()
+    r.empty_authority @ true
+    assert has_authority(r)
+    t @= empty()
+    t.empty_password @ true
+    assert has_authority(t)

@@ -1,0 +1,318 @@
+# The marks a node or a document carries before its content: an anchor's or
+# an alias's name, a tag with its handle and its suffix, its `%` escapes read,
+# and a directive, `%YAML` with its version or `%TAG` with its handle and its
+# prefix. What a tag means is the parser's; this module reads its characters.
+
+use numbers
+use unicode
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# What `read_tag` answers.
+record Tag
+    # `!`, `!!` or `!name!`; empty for a verbatim tag, `!<uri>`.
+    handle: str
+    # What follows the handle, its `%` escapes read; for a verbatim tag the
+    # whole URI. Empty with the handle `!` for the non-specific tag.
+    suffix: str
+    # The byte index past the tag.
+    end: i64
+
+# What `read_directive` answers.
+record Directive
+    # `YAML`, `TAG`, or the name of a directive YAML reserves and no reader
+    # reads.
+    name: str
+    # The version of `%YAML`, or the handle of `%TAG`; empty otherwise.
+    first: str
+    # The prefix of `%TAG`, its `%` escapes read; empty otherwise.
+    second: str
+    # The byte index of the line break that ends the directive's line, or the
+    # text's length.
+    end: i64
+
+# The name after the `&` or `*` at byte `at` of `text`, and the byte index past
+# it: every character up to white space, a line break or a flow indicator.
+# Fails `invalid` where no character stands there.
+function read_name(text: str, at: i64) -> token.Lexeme?
+    i: i64 @= at + 1
+
+    while i < text.len() && !source.is_blank_at(text, i) && !source.is_flow_indicator(text[i])
+        if !source.is_printable_at(text, i)
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: i, what: f"{source.code_name(unicode.code_point_at(text, i))} stands in a name, which holds no such character")
+            )
+        i @ i + unicode.width_at(text, i)
+
+    if i == at + 1
+        sign = text.slice(from: at, to: at + 1)
+        return fail(code: INVALID, msg: source.expected(text: text, at: i, what: f"a name after `{sign}`"))
+    return ok(token.Lexeme(value: text.slice(from: at + 1, to: i), end: i))
+
+# The tag that begins with the `!` at byte `at` of `text`.
+#
+# - `in_flow`: whether it stands in a flow collection, where a flow indicator
+#   may end it as white space does.
+#
+# Fails `invalid` where it is not one: a verbatim tag never closed or empty, a
+# named handle with no suffix, a `%` escape that is not one, or no white space
+# after it.
+function read_tag(text: str, at: i64, in_flow: bool) -> Tag?
+    if at + 1 < text.len() && text[at + 1] == '<'
+        i: i64 @= at + 2
+
+        while i < text.len() && text[i] != '>'
+            if !source.is_uri_char(text[i])
+                return fail(
+                    code: INVALID,
+                    msg: source.expected(text: text, at: i, what: "a URI's character, or the `>` that ends a verbatim tag")
+                )
+            i @ i + 1
+
+        if i >= text.len() || i == at + 2
+            return fail(
+                code: INVALID,
+                msg: source.expected(text: text, at: i, what: "a URI and the `>` that ends a verbatim tag")
+            )
+        ends_tag(text: text, at: i + 1, in_flow: in_flow)?
+        return ok(Tag(handle: "", suffix: decoded(text: text, from: at + 2, to: i)?, end: i + 1))
+    j: i64 @= at + 1
+
+    while j < text.len() && source.is_word_char(text[j])
+        j @ j + 1
+
+    handle: str @= "!"
+    start: i64 @= at + 1
+
+    if j < text.len() && text[j] == '!'
+        handle @ text.slice(from: at, to: j + 1)
+        start @ j + 1
+    k: i64 @= start
+
+    while k < text.len() && is_tag_char(text[k])
+        k @ k + 1
+
+    if k == start && handle != "!"
+        return fail(code: INVALID, msg: source.expected(text: text, at: k, what: f"a tag's suffix after `{handle}`"))
+    ends_tag(text: text, at: k, in_flow: in_flow)?
+    return ok(Tag(handle: handle, suffix: decoded(text: text, from: start, to: k)?, end: k))
+
+# Whether `b` may stand in a tag's suffix: a URI's character, but `!` and a
+# flow indicator.
+function is_tag_char(b: u8) -> bool
+    return source.is_uri_char(b) && b != '!' && !source.is_flow_indicator(b)
+
+# Fails `invalid` where byte `at` of `text`, after a tag, is not white space, a
+# line break, the end, or in a flow collection a flow indicator.
+function ends_tag(text: str, at: i64, in_flow: bool) -> ()?
+    if source.is_blank_at(text, at) || in_flow && source.is_flow_indicator(text[at])
+        return ok()
+    return fail(code: INVALID, msg: source.expected(text: text, at: at, what: "white space after the tag"))
+
+# The text bytes `from` to `to` of `text` write, each `%` and two hexadecimal
+# digits read as the byte they name. Fails `invalid` where a `%` has no two
+# digits after it, or the bytes are not UTF-8.
+function decoded(text: str, from: i64, to: i64) -> str?
+    if !has_percent(text: text, from: from, to: to)
+        return ok(text.slice(from: from, to: to))
+    bytes: [u8] @= []
+    i: i64 @= from
+
+    while i < to
+        if text[i] == '%'
+            if i + 2 >= to || !source.is_hex_digit(text[i + 1]) || !source.is_hex_digit(text[i + 2])
+                return fail(
+                    code: INVALID,
+                    msg: source.expected(text: text, at: i, what: "two hexadecimal digits after `%`")
+                )
+            n = numbers.parse_int_base(text.slice(from: i + 1, to: i + 3), base: 16)?
+            bytes @ bytes.push(n.to_u8().must())
+            i @ i + 3
+        else
+            bytes @ bytes.push(text[i])
+            i @ i + 1
+
+    match bytes.validated_bytes()
+        .ok s => return ok(s)
+        .err _ =>
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: from, what: "the `%` escapes of this tag write bytes that are not UTF-8")
+            )
+
+# Whether a `%` stands from byte `from` to `to` of `text`.
+function has_percent(text: str, from: i64, to: i64) -> bool
+    i: i64 @= from
+
+    while i < to
+        if text[i] == '%'
+            return true
+        i @ i + 1
+
+    return false
+
+# The directive whose `%` is at byte `at` of `text`, which begins a line.
+#
+# Fails `invalid` where it has no name, where `%YAML` has no version of two
+# numbers, where `%TAG` has no handle or prefix, and where anything but white
+# space and a comment follows them on the line. A directive YAML reserves is
+# read past, as YAML says.
+function read_directive(text: str, at: i64) -> Directive?
+    i: i64 @= at + 1
+
+    while !source.is_blank_at(text, i)
+        i @ i + 1
+
+    name = text.slice(from: at + 1, to: i)
+
+    if name == ""
+        return fail(code: INVALID, msg: source.expected(text: text, at: i, what: "a directive's name after `%`"))
+
+    if name == "YAML"
+        j = white_after(text: text, at: i, what: "white space and a version after `%YAML`")?
+        k: i64 @= j
+
+        while k < text.len() && (source.is_digit(text[k]) || text[k] == '.')
+            k @ k + 1
+
+        version = text.slice(from: j, to: k)
+
+        if !is_version(version)
+            return fail(
+                code: INVALID,
+                msg: source.expected(text: text, at: j, what: "a version after `%YAML`: two numbers and a point between them, as `1.2`")
+            )
+        return ok(Directive(name: name, first: version, second: "", end: line_tail(text, k)?))
+
+    if name == "TAG"
+        j = white_after(text: text, at: i, what: "white space and a tag handle after `%TAG`")?
+        k: i64 @= j
+
+        while !source.is_blank_at(text, k)
+            k @ k + 1
+
+        handle = text.slice(from: j, to: k)
+
+        if !is_handle(handle)
+            return fail(
+                code: INVALID,
+                msg: source.expected(text: text, at: j, what: "a tag handle after `%TAG`: `!`, `!!`, or `!`, a name and `!`, as `!e!`")
+            )
+        m = white_after(text: text, at: k, what: "white space and a tag prefix after the handle")?
+        p: i64 @= m
+
+        while p < text.len() && source.is_uri_char(text[p])
+            p @ p + 1
+
+        if p == m || text[m] != '!' && source.is_flow_indicator(text[m])
+            return fail(
+                code: INVALID,
+                msg: source.expected(text: text, at: m, what: "a tag prefix: a URI, or `!` and a URI")
+            )
+        return ok(
+            Directive(name: name, first: handle, second: decoded(text: text, from: m, to: p)?, end: line_tail(text, p)?)
+        )
+    return ok(Directive(name: name, first: "", second: "", end: source.line_end(text, i)))
+
+# The byte index past the white space from byte `at` of `text`. Fails
+# `invalid`, expecting `what`, where none stands there.
+function white_after(text: str, at: i64, what: str) -> i64?
+    j: i64 @= at
+
+    while j < text.len() && source.is_white(text[j])
+        j @ j + 1
+
+    if j == at || j >= text.len() || text[j] == '\n'
+        return fail(code: INVALID, msg: source.expected(text: text, at: j, what: what))
+    return ok(j)
+
+# The byte index of the line break that ends a directive's line from byte `at`
+# of `text`, or the text's length. Fails `invalid` where anything but white
+# space and a comment stands there.
+function line_tail(text: str, at: i64) -> i64?
+    j: i64 @= at
+
+    while j < text.len() && source.is_white(text[j])
+        j @ j + 1
+
+    if j < text.len() && text[j] == '#' && j > at
+        return ok(source.line_end(text, j))
+
+    if j < text.len() && text[j] != '\n'
+        return fail(code: INVALID, msg: source.expected(text: text, at: j, what: "the end of the directive's line"))
+    return ok(j)
+
+# Whether `version` is two numbers with a point between them.
+function is_version(version: str) -> bool
+    point: i64 @= -1
+
+    for at in range(from: 0, to: version.len())
+        if version[at] == '.'
+            if point >= 0
+                return false
+            point @ at
+        else if !source.is_digit(version[at])
+            return false
+
+    return point > 0 && point < version.len() - 1
+
+# Whether `handle` is a tag handle: `!`, `!!`, or `!`, word characters and `!`.
+function is_handle(handle: str) -> bool
+    if handle == "!" || handle == "!!"
+        return true
+
+    if handle.len() < 3 || handle[0] != '!' || handle[handle.len() - 1] != '!'
+        return false
+
+    for at in range(from: 1, to: handle.len() - 1)
+        if !source.is_word_char(handle[at])
+            return false
+
+    return true
+
+## Tests
+
+test "read_name: to white space, to a flow indicator, to the end, and none"
+    assert read_name(text: "&a1 x", at: 0).must() == token.Lexeme(value: "a1", end: 3)
+    assert read_name(text: "*città]", at: 0).must() == token.Lexeme(value: "città", end: 7)
+    assert read_name(text: "&a:b", at: 0).must().value == "a:b"
+
+    match read_name(text: "& x", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2: expected a name after `&`, found a space"
+
+test "read_tag: the core handle, a local tag, a named handle, a verbatim one and the non-specific"
+    assert read_tag(text: "!!str a", at: 0, in_flow: false).must() == Tag(handle: "!!", suffix: "str", end: 5)
+    assert read_tag(text: "!foo a", at: 0, in_flow: false).must() == Tag(handle: "!", suffix: "foo", end: 4)
+    assert read_tag(text: "!e!tag%21 a", at: 0, in_flow: false).must() == Tag(handle: "!e!", suffix: "tag!", end: 9)
+    assert read_tag(text: "!<tag:yaml.org,2002:str> a", at: 0, in_flow: false).must().suffix == "tag:yaml.org,2002:str"
+    assert read_tag(text: "! a", at: 0, in_flow: false).must() == Tag(handle: "!", suffix: "", end: 1)
+    assert read_tag(text: "!!str]", at: 0, in_flow: true).must().end == 5
+
+test "read_tag: a named handle with no suffix, an escape that is none, and no white space after"
+    for text in ["!e! a", "!!%2 a", "!!str]", "!<> a", "!<a", "!!a%ff b"]
+        match read_tag(text: text, at: 0, in_flow: false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "read_directive: YAML, TAG, a comment after it, a reserved one, and what is not one"
+    assert read_directive(text: "%YAML 1.2\n", at: 0).must() == Directive(name: "YAML", first: "1.2", second: "", end: 9)
+    tag = read_directive(text: "%TAG !e! tag:e.com,2000: # c\n", at: 0).must()
+    assert tag.first == "!e!" && tag.second == "tag:e.com,2000:" && tag.end == 28
+    assert read_directive(text: "%FOO bar baz\nx", at: 0).must() == Directive(name: "FOO", first: "", second: "", end: 12)
+
+    for text in ["% x", "%YAML", "%YAML 1", "%YAML 1.2 x", "%TAG ! ", "%TAG e! tag:", "%YAML 1.2#c"]
+        match read_directive(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "is_version and is_handle: each shape and its neighbours"
+    assert is_version("1.2") && is_version("10.20")
+    assert !is_version("1") && !is_version(".2") && !is_version("1.") && !is_version("1.2.3")
+    assert is_handle("!") && is_handle("!!") && is_handle("!e-1!")
+    assert !is_handle("!e") && !is_handle("e!") && !is_handle("!e_!") && !is_handle("!!!")

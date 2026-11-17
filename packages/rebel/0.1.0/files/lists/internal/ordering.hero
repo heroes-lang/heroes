@@ -1,0 +1,308 @@
+# A list ordered by the caller's order, `less(a:, b:)`, true where `a` goes
+# before `b`: a stable sort, whether a list is sorted, its smallest and its
+# largest element, and two lists compared element by element.
+#
+# The sort is a merge sort: runs of `RUN` elements are first ordered by
+# insertion, then merged in pairs of runs twice as long until one run is the
+# list. An element is moved past another only where `less` says it goes
+# before it, so equal elements keep their places. Every index it reads is
+# bounded by the counts of its loops and never by what `less` answers, so an
+# order that contradicts itself gives a list in no promised order and never
+# an index past the end.
+
+use lists/internal/codes
+use lists/internal/samples
+
+# How many elements `sort_by` orders by insertion before it starts merging:
+# below this a merge costs more than the moves it saves.
+constant RUN: i64
+    16
+
+# Orders the elements of `xs` from `from` up to `to` by insertion, in place.
+#
+# - `xs`: the caller's list, written in place.
+# - `from`: the index of the first element ordered, inside `xs`.
+# - `to`: the index after the last, from `from` to the length.
+# - `less`: the order, true where `a` goes before `b`.
+function insertion_sort<T>(@xs: [T], from: i64, to: i64, less: (function(a: T, b: T) -> bool))
+    at: i64 @= from + 1
+
+    while at < to
+        moving = xs[at]
+        place: i64 @= at
+
+        while place > from && less(a: moving, b: xs[place - 1])
+            xs[place] @ xs[place - 1]
+            place @ place - 1
+
+        xs[place] @ moving
+        at @ at + 1
+
+# Merges two ordered runs of `src` into the same places of `dst`.
+#
+# - `src`: the list holding the two runs, read only.
+# - `dst`: the caller's list written from `from` up to `to`, as long as `src`.
+# - `from`: the index where the first run begins.
+# - `mid`: the index where the first run ends and the second begins.
+# - `to`: the index where the second run ends, at most the length.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# The second run's element goes first only where `less` says so, which is
+# what keeps the sort stable.
+function merge<T>(src: [T] lent, @dst: [T], from: i64, mid: i64, to: i64, less: (function(a: T, b: T) -> bool))
+    left: i64 @= from
+    right: i64 @= mid
+    at: i64 @= from
+
+    while at < to
+        if right < to && (left >= mid || less(a: src[right], b: src[left]))
+            dst[at] @ src[right]
+            right @ right + 1
+        else
+            dst[at] @ src[left]
+            left @ left + 1
+        at @ at + 1
+
+# The elements of `xs` in the order `less` gives, equal ones in their places.
+#
+# - `xs`: the list to sort; any length.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# It calls `less` about n times the logarithm of n for a list of n.
+function sort_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> [T]
+    sorted: [T] @= xs
+    count = xs.len()
+    start: i64 @= 0
+
+    while start < count
+        end: i64 @= count
+
+        if RUN < count - start
+            end @ start + RUN
+        insertion_sort(@sorted, from: start, to: end, less: less)
+        start @ end
+
+    spare: [T] @= xs
+    width: i64 @= RUN
+
+    while width < count
+        from: i64 @= 0
+
+        while from < count
+            mid: i64 @= count
+            to: i64 @= count
+
+            if width < count - from
+                mid @ from + width
+
+            if width < count - mid
+                to @ mid + width
+            merge(src: sorted, dst: @spare, from: from, mid: mid, to: to, less: less)
+            from @ to
+
+        sorted @ spare
+        width @ width * 2
+
+    return sorted
+
+# Whether no element of `xs` goes before the one that precedes it.
+#
+# - `xs`: the list asked about; one of fewer than two elements is sorted.
+# - `less`: the order, true where `a` goes before `b`.
+function is_sorted_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> bool
+    at: i64 @= 1
+
+    while at < xs.len()
+        if less(a: xs[at], b: xs[at - 1])
+            return false
+        at @ at + 1
+
+    return true
+
+# The smallest element of `xs` by `less`, the first of equals.
+#
+# - `xs`: the list searched.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# Fails `not_found` where `xs` is empty.
+function min_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?
+    if xs.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no smallest element in an empty list")
+    best: T @= xs[0]
+
+    for x in xs
+        if less(a: x, b: best)
+            best @ x
+
+    return ok(best)
+
+# The largest element of `xs` by `less`, the first of equals.
+#
+# - `xs`: the list searched.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# Fails `not_found` where `xs` is empty.
+function max_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?
+    if xs.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no largest element in an empty list")
+    best: T @= xs[0]
+
+    for x in xs
+        if less(a: best, b: x)
+            best @ x
+
+    return ok(best)
+
+# Whether the list `a` goes before the list `b`, element by element.
+#
+# - `a`: the list asked about.
+# - `b`: the list it is compared with; where one begins the other, the shorter
+#   goes first.
+# - `less`: the order of the elements, true where `a` goes before `b`.
+function is_before<T>(a: [T], b: [T], less: (function(a: T, b: T) -> bool)) -> bool
+    at: i64 @= 0
+
+    while at < a.len() && at < b.len()
+        if less(a: a[at], b: b[at])
+            return true
+
+        if less(a: b[at], b: a[at])
+            return false
+        at @ at + 1
+
+    return a.len() < b.len()
+
+## Tests
+
+# A list of numbers from 0 to 999 in an order no sort gave them.
+#
+# - `count`: how many, zero or more.
+function scrambled(count: i64) -> [i64]
+    out: [i64] @= []
+    seed: i64 @= 12_345
+
+    while out.len() < count
+        seed @ (seed * 1_103 + 12_345) % 1_000_003
+        out @ out.push(seed % 1_000)
+
+    return out
+
+# Keys that repeat, each with its place in the list, for a sort to keep.
+#
+# - `count`: how many, zero or more.
+function placed_keys(count: i64) -> [samples.Placed]
+    out: [samples.Placed] @= []
+
+    for n in scrambled(count)
+        out @ out.push(samples.Placed(key: n % 7, place: out.len()))
+
+    return out
+
+# Whether `xs` is ordered by key and, among equal keys, by place.
+#
+# - `xs`: the sorted list asked about.
+function kept_places(xs: [samples.Placed]) -> bool
+    at: i64 @= 1
+
+    while at < xs.len()
+        before = xs[at - 1]
+        here = xs[at]
+
+        if before.key > here.key || before.key == here.key && before.place > here.place
+            return false
+        at @ at + 1
+
+    return true
+
+# The suit of a card, for the tests' `map`.
+#
+# - `card`: the card read.
+function suit_of(card: samples.Card) -> str
+    return card.suit
+
+test "sort_by: equal ranks keep their places, ascending and descending, as Python's sorted"
+    cards = [
+        samples.Card(rank: 3, suit: "c")
+        samples.Card(rank: 1, suit: "s")
+        samples.Card(rank: 3, suit: "d")
+        samples.Card(rank: 2, suit: "h")
+        samples.Card(rank: 1, suit: "h")
+    ]
+    assert sort_by(cards, samples.by_rank).map(suit_of) == ["s", "h", "h", "c", "d"]
+    assert sort_by(cards, samples.by_rank_descending).map(suit_of) == ["c", "d", "h", "s", "h"]
+    assert sort_by(["ccc", "a", "bb", "dd", "e"], samples.by_length) == ["a", "e", "bb", "dd", "ccc"]
+
+test "sort_by: empty, one, two, and the lengths around a run and a merge, against the built-in sort"
+    nothing: [i64] = []
+    assert sort_by(nothing, samples.ascending) == nothing
+    assert sort_by([5], samples.ascending) == [5]
+    assert sort_by([2, 1], samples.ascending) == [1, 2]
+
+    for count in [15, 16, 17, 31, 32, 33, 100, 1_000]
+        xs = scrambled(count)
+        assert sort_by(xs, samples.ascending) == sort(xs)
+
+test "sort_by: a thousand repeated keys keep their places"
+    sorted = sort_by(placed_keys(1_000), samples.by_key)
+    assert sorted.len() == 1_000
+    assert kept_places(sorted)
+
+test "sort_by: the extreme values, floats, descending, and an order that contradicts itself"
+    smallest: i64 = -9_223_372_036_854_775_808
+    largest: i64 = 9_223_372_036_854_775_807
+    assert sort_by([largest, smallest, 0], samples.ascending) == [smallest, 0, largest]
+    assert sort_by([2.5, -0.5, 1.5], samples.ascending_float) == [-0.5, 1.5, 2.5]
+    assert sort_by([1, 3, 2], samples.descending) == [3, 2, 1]
+    xs = scrambled(100)
+    nonsense = sort_by(xs, samples.always)
+    assert nonsense.len() == 100
+    assert sort(nonsense) == sort(xs)
+
+test "is_sorted_by: sorted with repeats, unsorted, one, and an empty list"
+    nothing: [i64] = []
+    assert is_sorted_by([1, 2, 2, 3], samples.ascending)
+    assert !is_sorted_by([2, 1], samples.ascending)
+    assert is_sorted_by([2, 1], samples.descending)
+    assert is_sorted_by([7], samples.ascending)
+    assert is_sorted_by(nothing, samples.ascending)
+
+test "min_by: the first of equal smallest, the extreme values, one, and an empty list"
+    cards = [
+        samples.Card(rank: 3, suit: "c")
+        samples.Card(rank: 1, suit: "s")
+        samples.Card(rank: 3, suit: "d")
+        samples.Card(rank: 1, suit: "h")
+    ]
+    assert min_by(cards, samples.by_rank).must().suit == "s"
+    assert min_by([0, 9_223_372_036_854_775_807, -9_223_372_036_854_775_808], samples.ascending).must() == -9_223_372_036_854_775_808
+    assert min_by([4], samples.ascending).must() == 4
+    nothing: [i64] = []
+
+    match min_by(nothing, samples.ascending)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no smallest element in an empty list"
+
+test "max_by: the first of equal largest, as Go and Python, one, and an empty list"
+    cards = [
+        samples.Card(rank: 3, suit: "c")
+        samples.Card(rank: 1, suit: "s")
+        samples.Card(rank: 3, suit: "d")
+        samples.Card(rank: 1, suit: "h")
+    ]
+    assert max_by(cards, samples.by_rank).must().suit == "c"
+    assert max_by([0, 9_223_372_036_854_775_807, -9_223_372_036_854_775_808], samples.ascending).must() == 9_223_372_036_854_775_807
+    assert max_by(["é"], samples.by_length).must() == "é"
+    nothing: [i64] = []
+
+    match max_by(nothing, samples.ascending)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no largest element in an empty list"
+
+test "is_before: a prefix, a larger element, the empty list, equal lists, and a longer one"
+    nothing: [i64] = []
+    assert is_before(a: [1, 2], b: [1, 2, 3], less: samples.ascending)
+    assert !is_before(a: [1, 3], b: [1, 2, 3], less: samples.ascending)
+    assert is_before(a: nothing, b: [1], less: samples.ascending)
+    assert !is_before(a: [1, 2], b: [1, 2], less: samples.ascending)
+    assert !is_before(a: [1, 2, 3], b: [1, 2], less: samples.ascending)
+    assert !is_before(a: nothing, b: nothing, less: samples.ascending)

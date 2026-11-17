@@ -1,0 +1,211 @@
+# A replacement's template, `$1` and `${name}` among its text, read once
+# against a pattern's groups and then filled from each match.
+
+use regex/internal/codes
+
+# One piece of a template.
+variant Piece
+    # Text written as it is.
+    text
+        # The text.
+        value: str
+    # The text a group matched.
+    group
+        # The group's number, 0 for the whole match.
+        number: i64
+
+# The pieces of `template`, every `$` read against the groups.
+#
+# - `template`: the template; `$1`, `${1}`, `$name`, `${name}` and `$0` name
+#   groups, and `$$` is one `$`.
+# - `names`: the pattern's group names, the entry 0 for the whole match.
+#
+# Fails `invalid` where a `$` names no group of the pattern, is followed by
+# nothing a `$` reads, or a number runs on into a letter or `_`.
+function pieces_of(template: str, names: [str] lent) -> [Piece]?
+    out: [Piece] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < template.len()
+        if template[at] != '$'
+            at @ at + 1
+            continue
+
+        if at > start
+            out @ out.push(.text(value: template.slice(from: start, to: at)))
+
+        if at + 1 >= template.len()
+            return wrong(template: template, at: at, why: "a `$` ends the template: write `$$` for a `$`")
+        b = template[at + 1]
+        end: i64 @= at + 2
+
+        if b == '$'
+            out @ out.push(.text(value: "$"))
+        else if b == '{'
+            while end < template.len() && template[end] != '}'
+                end @ end + 1
+
+            if end >= template.len()
+                return wrong(template: template, at: at, why: "a `${` that no `}` closes")
+            number = group_of(template: template, at: at, reference: template.slice(from: at + 2, to: end), names: names)?
+            out @ out.push(.group(number: number))
+            end @ end + 1
+        else if is_name_byte(b)
+            while end < template.len() && is_name_byte(template[end])
+                end @ end + 1
+
+            reference = template.slice(from: at + 1, to: end)
+
+            if is_digit(b) && !all_digits(reference)
+                return wrong(
+                    template: template,
+                    at: at,
+                    why: f"`${reference}` reads two ways: write `${{{leading_digits(reference)}}}` and the rest after it, or name a group that does not begin with a digit"
+                )
+            number = group_of(template: template, at: at, reference: reference, names: names)?
+            out @ out.push(.group(number: number))
+        else
+            return wrong(
+                template: template,
+                at: at,
+                why: "a `$` names no group: write `$1`, `${name}`, or `$$` for a `$`"
+            )
+        at @ end
+        start @ end
+
+    if at > start
+        out @ out.push(.text(value: template.slice(from: start, to: at)))
+    return ok(out)
+
+# The text `pieces` write for one match.
+#
+# - `pieces`: a template's pieces.
+# - `slots`: the match's slots, two for each group.
+# - `source`: the text the match was found in.
+function fill(pieces: [Piece] lent, slots: [i64] lent, source: str) -> str
+    out: [str] @= []
+
+    for piece in pieces
+        match piece
+            .text t => out @ out.push(t.value)
+            .group g =>
+                if slots[2 * g.number] >= 0
+                    out @ out.push(source.slice(from: slots[2 * g.number], to: slots[2 * g.number + 1]))
+
+    return out.join("")
+
+# The number of the group `reference` names, by its number or its name.
+#
+# - `template`: the template, for the message.
+# - `at`: the byte of the `$`, for the message.
+# - `reference`: the number or the name written after the `$`.
+# - `names`: the pattern's group names.
+#
+# Fails `invalid` where the pattern has no such group.
+function group_of(template: str, at: i64, reference: str, names: [str] lent) -> i64?
+    if reference.len() > 0 && all_digits(reference)
+        if reference.len() <= 4
+            number = to_i64(reference.chars().fold(0, add_digit)).must()
+
+            if number < names.len()
+                return ok(number)
+        return wrong(template: template, at: at, why: f"the pattern has no group {reference}: it has {names.len() - 1}")
+
+    for i in range(from: 1, to: names.len())
+        if reference != "" && names[i] == reference
+            return ok(i)
+
+    return wrong(template: template, at: at, why: f"the pattern has no group named \"{reference}\"")
+
+# `acc` with the digit `item` written after it.
+#
+# - `acc`: the number so far.
+# - `item`: one decimal digit.
+function add_digit(acc: i64, item: str) -> i64
+    return acc * 10 + codes.wide(item[0]) - '0'
+
+# The digits `reference` begins with.
+#
+# - `reference`: a text beginning with a digit.
+function leading_digits(reference: str) -> str
+    end: i64 @= 0
+
+    while end < reference.len() && is_digit(reference[end])
+        end @ end + 1
+
+    return reference.slice(from: 0, to: end)
+
+# Whether every byte of `s` is a decimal digit, and there is one at least.
+#
+# - `s`: the text.
+function all_digits(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if !is_digit(s[i])
+            return false
+
+    return true
+
+# Whether `b` is a decimal digit.
+#
+# - `b`: a byte.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` may stand in a name after `$`: an ASCII letter, digit or `_`.
+#
+# - `b`: a byte.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || is_digit(b) || b == '_'
+
+# A failure `invalid` of a template: what is wrong, then where.
+#
+# - `template`: the template read.
+# - `at`: the byte where the fault begins.
+# - `why`: what is wrong there.
+function wrong<T>(template: str, at: i64, why: str) -> T?
+    return fail(code: codes.INVALID, msg: f"{why}, in the template {codes.place(template, at)}")
+
+## Tests
+
+test "pieces_of: text alone, nothing, numbers and names in both forms, the whole match and a dollar"
+    names = ["", "y", ""]
+    assert pieces_of("plain", names).must() == [.text(value: "plain")]
+    none: [Piece] = []
+    assert pieces_of("", names).must() == none
+    assert pieces_of("[$1]", names).must() == [.text(value: "["), .group(number: 1), .text(value: "]")]
+    assert pieces_of("${2}x$y${y}$0", names).must() == [.group(number: 2), .text(value: "x"), .group(number: 1), .group(number: 1), .group(number: 0)]
+    assert pieces_of("$$5", names).must() == [.text(value: "$"), .text(value: "5")]
+    assert pieces_of("é$1é", names).must() == [.text(value: "é"), .group(number: 1), .text(value: "é")]
+
+test "pieces_of refuses a lone dollar, a group not there, a number run into a name, and an open brace"
+    names = ["", "y"]
+
+    match pieces_of("a$", names)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a `$` ends the template: write `$$` for a `$`, in the template at byte 1 of \"a$\""
+
+    match pieces_of("$1x", names)
+        .ok _  => assert false
+        .err e => assert e.msg == "`$1x` reads two ways: write `${1}` and the rest after it, or name a group that does not begin with a digit, in the template at byte 0 of \"$1x\""
+
+    match pieces_of("$2", names)
+        .ok _  => assert false
+        .err e => assert e.msg == "the pattern has no group 2: it has 1, in the template at byte 0 of \"$2\""
+
+    match pieces_of("$nope", names)
+        .ok _  => assert false
+        .err e => assert e.msg == "the pattern has no group named \"nope\", in the template at byte 0 of \"$nope\""
+
+    assert pieces_of("${y", names).is_err()
+    assert pieces_of("${}", names).is_err()
+    assert pieces_of("$-", names).is_err()
+    assert pieces_of("$99999999999999999999", names).is_err()
+
+test "fill: groups that took part, one that did not, and the whole match"
+    pieces = pieces_of("<$1|$2|$0>", ["", "", ""]).must()
+    assert fill(pieces, slots: [1, 3, 1, 2, -1, -1], source: "xaby") == "<a||ab>"
+    assert fill(pieces, slots: [0, 0, 0, 0, 0, 0], source: "") == "<||>"

@@ -1,0 +1,124 @@
+# A text padded to a width counted in characters, on either side or both,
+# with zeros after a number's sign, or with its tabs expanded to the next
+# tab stop. A width compares before it subtracts, so no width overflows.
+
+use strings/internal/scan
+use unicode
+
+# `count` characters of `pad`, written again and again and cut after a
+# character; `pad` is not empty and `count` is not below 0.
+function cycled(pad: str, count: i64) -> str
+    letters = pad.chars()
+    whole = count / letters.len()
+    part = count % letters.len()
+    return repeat(pad, to_u64(whole).must()) + letters.slice(from: 0, to: part).join("")
+
+# `s` with `pad` before it to `width` characters.
+function pad_start(s: str, width: i64, pad: str) -> str
+    count = unicode.char_count(s)
+
+    if width <= count || pad.len() == 0
+        return s
+    return cycled(pad: pad, count: width - count) + s
+
+# `s` with `pad` after it to `width` characters.
+function pad_end(s: str, width: i64, pad: str) -> str
+    count = unicode.char_count(s)
+
+    if width <= count || pad.len() == 0
+        return s
+    return s + cycled(pad: pad, count: width - count)
+
+# `s` with `pad` on both sides to `width` characters, the odd one after.
+function center(s: str, width: i64, pad: str) -> str
+    count = unicode.char_count(s)
+
+    if width <= count || pad.len() == 0
+        return s
+    need = width - count
+    before = need / 2
+    return cycled(pad: pad, count: before) + s + cycled(pad: pad, count: need - before)
+
+# `s` with zeros after its sign, or at its start, to `width` characters.
+function pad_zeros(s: str, width: i64) -> str
+    count = unicode.char_count(s)
+
+    if width <= count
+        return s
+    zeros = repeat("0", to_u64(width - count).must())
+
+    if s.len() > 0 && (s[0] == '+' || s[0] == '-')
+        return s.slice(from: 0, to: 1) + zeros + s.slice(from: 1, to: s.len())
+    return zeros + s
+
+# `s` with each tab replaced by the spaces that reach the next tab stop.
+function expand_tabs(s: str, tab_width: i64) -> str
+    out: [str] @= []
+    from: i64 @= 0
+    column: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\t'
+            out @ out.push(s.slice(from: from, to: at))
+
+            if tab_width > 0
+                spaces = tab_width - column % tab_width
+                out @ out.push(repeat(" ", to_u64(spaces).must()))
+                column @ column + spaces
+            at @ at + 1
+            from @ at
+        else if s[at] == '\n' || s[at] == '\r'
+            column @ 0
+            at @ at + 1
+        else
+            column @ column + 1
+            at @ scan.next_at(s, at)
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+## Tests
+
+test "pad_start: already wide, a width below 0, an empty pad, a pad of several characters, and characters of more than one byte"
+    assert pad_start(s: "è", width: 3, pad: "ù") == "ùùè"
+    assert pad_start(s: "abc", width: 2, pad: "*") == "abc"
+    assert pad_start(s: "abc", width: 0 - 1, pad: "*") == "abc"
+    assert pad_start(s: "abc", width: 0 - 9223372036854775807 - 1, pad: "*") == "abc"
+    assert pad_start(s: "abc", width: 9, pad: "") == "abc"
+    assert pad_start(s: "7", width: 6, pad: "ab") == "ababa7"
+    assert pad_start(s: "", width: 2, pad: "é") == "éé"
+
+test "pad_end: already wide, an empty pad, a pad of several characters, and characters of more than one byte"
+    assert pad_end(s: "è", width: 3, pad: "*") == "è**"
+    assert pad_end(s: "abc", width: 3, pad: "*") == "abc"
+    assert pad_end(s: "abc", width: 9, pad: "") == "abc"
+    assert pad_end(s: "7", width: 6, pad: "ab") == "7ababa"
+
+test "center: even and odd padding, already wide, a pad of several characters, and characters of more than one byte"
+    assert center(s: "ab", width: 5, pad: "*") == "*ab**"
+    assert center(s: "abc", width: 6, pad: "*") == "*abc**"
+    assert center(s: "a", width: 4, pad: "*") == "*a**"
+    assert center(s: "abc", width: 2, pad: "*") == "abc"
+    assert center(s: "x", width: 6, pad: "ab") == "abxaba"
+    assert center(s: "è", width: 3, pad: "·") == "·è·"
+
+test "pad_zeros: a sign of either kind, none, an empty text, a sign alone, two signs, already wide, and a character of more than one byte"
+    assert pad_zeros(s: "-42", width: 5) == "-0042"
+    assert pad_zeros(s: "+42", width: 5) == "+0042"
+    assert pad_zeros(s: "42", width: 5) == "00042"
+    assert pad_zeros(s: "", width: 3) == "000"
+    assert pad_zeros(s: "-", width: 3) == "-00"
+    assert pad_zeros(s: "--1", width: 5) == "-00-1"
+    assert pad_zeros(s: "abc", width: 2) == "abc"
+    assert pad_zeros(s: "è", width: 3) == "00è"
+
+test "expand_tabs: stops reached, a tab at a stop, new lines, a width of 0 and below, and characters of more than one byte"
+    assert expand_tabs(s: "a\tbc\td", tab_width: 4) == "a   bc  d"
+    assert expand_tabs(s: "abcd\te", tab_width: 4) == "abcd    e"
+    assert expand_tabs(s: "a\tb\nc\td", tab_width: 4) == "a   b\nc   d"
+    assert expand_tabs(s: "a\rb\tc", tab_width: 4) == "a\rb   c"
+    assert expand_tabs(s: "è\tb", tab_width: 4) == "è   b"
+    assert expand_tabs(s: "a\tb", tab_width: 0) == "ab"
+    assert expand_tabs(s: "a\tb", tab_width: 0 - 1) == "ab"
+    assert expand_tabs(s: "", tab_width: 8) == ""

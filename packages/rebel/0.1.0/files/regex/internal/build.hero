@@ -1,0 +1,176 @@
+# The pieces of an automaton's program built from smaller ones: a
+# repetition, a choice between alternatives, a group that records where it
+# matched. Every jump in a piece is relative, so a piece means the same
+# wherever it is placed, and building one never rewrites another.
+
+use regex/internal/program
+
+# Adds the instructions of `from` at the end of `to`.
+#
+# - `to`: the piece being built; where it is empty it takes `from` whole and
+#   copies nothing.
+# - `from`: the piece added.
+function append(@to: [program.Inst], from: [program.Inst] lent)
+    if to.len() == 0
+        to @ from
+        return
+
+    for inst in from
+        to @ to.push(inst)
+
+# The choice between going into a piece and going past it.
+#
+# - `lazy`: whether going past is preferred.
+# - `into`: how far the way into the piece is.
+# - `past`: how far the way past it is.
+function choice(lazy: bool, into: i64, past: i64) -> program.Inst
+    if lazy
+        return .split(first: past, second: into)
+    return .split(first: into, second: past)
+
+# `x` or nothing, `x` preferred unless `lazy`.
+#
+# - `x`: the piece.
+# - `lazy`: whether nothing is preferred.
+function quest(x: [program.Inst], lazy: bool) -> [program.Inst]
+    out: [program.Inst] @= [choice(lazy: lazy, into: 1, past: x.len() + 1)]
+    append(to: @out, from: x)
+    return out
+
+# `x` once or more, as many as can be unless `lazy`.
+#
+# - `x`: the piece.
+# - `lazy`: whether as few as can be are preferred.
+function plus(x: [program.Inst], lazy: bool) -> [program.Inst]
+    out: [program.Inst] @= x
+    out @ out.push(choice(lazy: lazy, into: -x.len(), past: 1))
+    return out
+
+# `x` any number of times, built as `(x+)?`, so that an `x` that can match
+# nothing is entered once and records what it matched.
+#
+# - `x`: the piece.
+# - `lazy`: whether as few as can be are preferred.
+function star(x: [program.Inst], lazy: bool) -> [program.Inst]
+    return quest(plus(x, lazy), lazy)
+
+# `x` from `least` to `most` times: `least` copies, then the rest nested, each
+# entered only after the one before it, so the piece grows linearly.
+#
+# - `x`: the piece.
+# - `least`: the fewest times, 0 or more.
+# - `most`: the most times, not below `least`, or -1 for no most.
+# - `lazy`: whether as few as can be are preferred.
+function repeat_of(x: [program.Inst], least: i64, most: i64, lazy: bool) -> [program.Inst]
+    out: [program.Inst] @= []
+
+    if most < 0
+        if least == 0
+            return star(x, lazy)
+
+        for _ in range(from: 1, to: least)
+            append(to: @out, from: x)
+
+        append(to: @out, from: plus(x, lazy))
+        return out
+
+    for _ in range(from: 0, to: least)
+        append(to: @out, from: x)
+
+    optional = most - least
+
+    for k in range(from: 0, to: optional)
+        out @ out.push(choice(lazy: lazy, into: 1, past: (optional - k) * (x.len() + 1)))
+        append(to: @out, from: x)
+
+    return out
+
+# How many instructions `repeat_of` builds, asked before it builds them.
+#
+# - `n`: how many instructions the piece repeated holds.
+# - `least`: the fewest times.
+# - `most`: the most times, or -1 for no most.
+function size_of(n: i64, least: i64, most: i64) -> i64
+    if most < 0
+        if least == 0
+            return n + 2
+        return least * n + 1
+    return least * n + (most - least) * (n + 1)
+
+# The first of `alts` that matches, the earlier preferred.
+#
+# - `alts`: the alternatives, one at least; one alone is answered as it is.
+function alternate(alts: [[program.Inst]]) -> [program.Inst]
+    if alts.len() == 1
+        return alts[0]
+    total: i64 @= -2
+
+    for alt in alts
+        total @ total + alt.len() + 2
+
+    out: [program.Inst] @= []
+
+    for i in range(from: 0, to: alts.len())
+        if i + 1 < alts.len()
+            out @ out.push(.split(first: 1, second: alts[i].len() + 2))
+            append(to: @out, from: alts[i])
+            out @ out.push(.jump(by: total - out.len()))
+        else
+            append(to: @out, from: alts[i])
+
+    return out
+
+# `x` recording where it begins and ends as the group `group`.
+#
+# - `x`: the piece.
+# - `group`: the group's number, 1 or more.
+function capture(x: [program.Inst], group: i64) -> [program.Inst]
+    out: [program.Inst] @= [.save(slot: 2 * group)]
+    append(to: @out, from: x)
+    out @ out.push(.save(slot: 2 * group + 1))
+    return out
+
+## Tests
+
+test "append: to an empty piece, nothing to a piece, and one after another"
+    a: [program.Inst] = [.char(code: 'a')]
+    none: [program.Inst] = []
+    out: [program.Inst] @= []
+    append(to: @out, from: a)
+    assert out == a
+    append(to: @out, from: none)
+    assert out == a
+    append(to: @out, from: a)
+    assert out == [.char(code: 'a'), .char(code: 'a')]
+
+test "quest, plus and star, greedy and lazy"
+    a: [program.Inst] = [.char(code: 'a')]
+    assert quest(a, false) == [.split(first: 1, second: 2), .char(code: 'a')]
+    assert quest(a, true) == [.split(first: 2, second: 1), .char(code: 'a')]
+    assert plus(a, false) == [.char(code: 'a'), .split(first: -1, second: 1)]
+    assert plus(a, true) == [.char(code: 'a'), .split(first: 1, second: -1)]
+    assert star(a, false) == [.split(first: 1, second: 3), .char(code: 'a'), .split(first: -1, second: 1)]
+
+test "repeat_of: none, exact, between, at least, and its size asked before"
+    a: [program.Inst] = [.char(code: 'a')]
+    none: [program.Inst] = []
+    assert repeat_of(x: a, least: 0, most: 0, lazy: false) == none
+    assert repeat_of(x: a, least: 2, most: 2, lazy: false) == [.char(code: 'a'), .char(code: 'a')]
+    assert repeat_of(x: a, least: 1, most: 3, lazy: false) == [.char(code: 'a'), .split(first: 1, second: 4), .char(code: 'a'), .split(first: 1, second: 2), .char(code: 'a')]
+    assert repeat_of(x: a, least: 2, most: -1, lazy: false) == [.char(code: 'a'), .char(code: 'a'), .split(first: -1, second: 1)]
+
+    for c in [[0, -1], [1, -1], [3, -1], [0, 0], [2, 2], [1, 4], [0, 1000]]
+        built = repeat_of(x: [.char(code: 'a'), .any], least: c[0], most: c[1], lazy: false)
+        assert built.len() == size_of(n: 2, least: c[0], most: c[1])
+
+test "alternate: one alone, three, and an empty alternative"
+    a: [program.Inst] = [.char(code: 'a')]
+    none: [program.Inst] = []
+    assert alternate([a]) == a
+    assert alternate([a, [.char(code: 'b')], [.char(code: 'c')]]) == [.split(first: 1, second: 3), .char(code: 'a'), .jump(by: 5), .split(first: 1, second: 3), .char(code: 'b'), .jump(by: 2), .char(code: 'c')]
+    assert alternate([none, a]) == [.split(first: 1, second: 2), .jump(by: 2), .char(code: 'a')]
+
+test "capture: the group's two slots around the piece"
+    assert capture(x: [.any], group: 1) == [.save(slot: 2), .any, .save(slot: 3)]
+    none: [program.Inst] = []
+    assert capture(x: none, group: 7) == [.save(slot: 14), .save(slot: 15)]

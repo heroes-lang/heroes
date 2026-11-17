@@ -1,0 +1,64 @@
+# What the tests of `fs` stand on, and nothing else here calls: a folder each
+# test makes under `build/` and removes, and a symbolic link made, which no
+# floor of `fs` binds. It binds `hero_os.h` itself, so that a test of the
+# modules that make and remove trees does not lean on what it tests.
+
+use os
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
+    function hero_os_pid() -> i64
+    function hero_run_exe_suffix() -> str
+
+# The path of a new, empty folder for one test, under `build/` of the folder
+# the tests run from.
+#
+# - `name`: the test's own word; with this process's number it keeps two
+#   tests and two runs apart.
+function folder(name: str) -> str
+    made = f"build/rebel-fs-{hero_os_pid()}-{name}"
+    _ = hero_dir_remove_tree(made.cstr())
+    assert hero_fs_mkdir_all(made.cstr()) == HERO_OS_OK
+    return made
+
+# Whether `made` is gone, with everything a test left in it.
+#
+# - `made`: a folder `folder` answered.
+function cleared(made: str) -> bool
+    return hero_dir_remove_tree(made.cstr()) == HERO_OS_OK
+
+# Whether a symbolic link called `name` was made, holding `target`. False
+# where this user may make none, which Windows may answer; a test then leaves
+# its link out.
+#
+# - `target`: the text the link holds.
+# - `name`: the link's own path.
+function linked(target: str, name: str) -> bool
+    return hero_fs_symlink(target: target.cstr(), name: name.cstr()) == HERO_OS_OK
+
+# Whether the tests run on Windows, whose answers differ where a function's
+# comment says so (round 3, 2026-11-16).
+function windows() -> bool
+    return hero_run_exe_suffix() == ".exe"
+
+# The size `link_info` answers for a symbolic link holding `target`: the
+# target's length in bytes on POSIX, and 0 on Windows, which gives a link's
+# own size as none (`hero_disk.h`, `HERO_DISK_FACT_SIZE`).
+#
+# - `target`: the text the link holds.
+function link_size(target: str) -> i64
+    if os.family() == .windows
+        return 0
+    return target.len()
+
+## Tests
+
+test "folder, linked and cleared: a folder made empty, a link in it, and both gone"
+    made = folder("fixture")
+    assert !write_file(path: made + "/f", text: "x").is_err()
+    _ = linked(target: "f", name: made + "/l")
+    assert cleared(made)
+    assert read_file(made + "/f").is_err()

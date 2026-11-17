@@ -1,0 +1,398 @@
+# A template's values while it runs: a path walked into the value, the filters
+# applied, a value's text, the truth `if` asks, and two values compared. A key
+# or an element that is not there fails `not_found` and a value of the wrong
+# kind `invalid`, each message naming the path as the template writes it and
+# what stood there.
+
+use json
+use strings
+use template/internal/escape_text
+use template/internal/program
+use unicode
+
+# The most keys a message lists of an object.
+constant LISTED_KEYS: i64
+    10
+
+# The kind of `v` with its article, for a message: `null`, `a boolean`, `a
+# number`, `a text`, `a list` or `an object`.
+function kind_named(v: json.Value lent) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "a boolean"
+        .number _   => "a number"
+        .text _     => "a text"
+        .list _     => "a list"
+        .object _   => "an object"
+
+# The keys of `members` for a message, at most `LISTED_KEYS` of them.
+function keys_named(members: {str: json.Value} lent) -> str
+    names = keys(members)
+
+    if names.len() == 0
+        return "no key"
+    shown: [str] @= []
+
+    for at in range(from: 0, to: names.len())
+        if at == LISTED_KEYS
+            shown @ shown.push(f"and {names.len() - LISTED_KEYS} more")
+            break
+        shown @ shown.push(json.quote(names[at]))
+
+    return "the keys " + shown.join(", ")
+
+# The root of `operand` as it is written: `.`, or `$` and its variable's name.
+function root_of(operand: program.Operand lent) -> str
+    if operand.kind == program.FROM_DOT
+        return "."
+    at: i64 @= 1
+
+    while at < operand.written.len() && program.is_name_byte(operand.written[at])
+        at @ at + 1
+
+    return operand.written.slice(from: 0, to: at)
+
+# Whether `key` is a run of digits short enough to be an index.
+function is_index(key: str) -> bool
+    if key.len() == 0 || key.len() > 18
+        return false
+
+    for at in range(from: 0, to: key.len())
+        if key[at] < '0' || key[at] > '9'
+            return false
+
+    return true
+
+# The value `operand`'s path reaches from `start`. Fails `not_found` where a
+# key or an element is not there, and `invalid` where a step meets a value that
+# holds no keys or a list meets a key that is no index.
+function walk(start: json.Value, operand: program.Operand lent) -> json.Value?
+    here: json.Value @= start
+    root = root_of(operand)
+
+    for at in range(from: 0, to: operand.segments.len())
+        key = operand.segments[at]
+        path = program.path_text(root, operand.segments.slice(from: 0, to: at))
+
+        match here
+            .object o =>
+                match o.members[key]
+                    .ok found => here @ found
+                    .err _ =>
+                        return fail(
+                            code: "not_found",
+                            msg: f"no key {json.quote(key)} in {path}, an object holding {keys_named(o.members)}"
+                        )
+            .list l =>
+                if !is_index(key)
+                    return fail(code: "invalid", msg: f"{path} is a list, and {json.quote(key)} is no index of one")
+                index = parse_index(key)
+
+                if index >= l.items.len()
+                    return fail(code: "not_found", msg: f"no element {key} in {path}, a list of {l.items.len()}")
+                here @ l.items[index]
+            .null_value | .boolean _ | .number _ | .text _ =>
+                return fail(code: "invalid", msg: f"{path} is {kind_named(here)}, which holds no key {json.quote(key)}")
+
+    return ok(here)
+
+# The number a run of at most 18 digits writes.
+function parse_index(key: str) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: key.len())
+        n @ n * 10 + (key[at] - '0').to_i64().must()
+
+    return n
+
+# The text of `v` where it is written: a text itself, a number as JSON writes
+# it, a boolean as `true` or `false`. Fails `invalid` for null, a list and an
+# object, `written` naming where it came from, and for a `nan` or an infinity.
+function scalar_text(v: json.Value, written: str) -> str?
+    return match v
+        .text t    => ok(t.v)
+        .boolean b => ok(boolean_text(b.v))
+        .number _ =>
+            match json.format(v)
+                .ok text => ok(text)
+                .err _ => fail(
+                    code: "invalid",
+                    msg: f"{written} is a number no text writes, an infinity or not a number"
+                )
+        .null_value => fail(code: "invalid", msg: f"{written} is null, which writes no text: `default` gives one")
+        .list _ => fail(
+            code: "invalid",
+            msg: f"{written} is a list, which is written only inside a script: `join` or `for` writes it"
+        )
+        .object _ => fail(
+            code: "invalid",
+            msg: f"{written} is an object, which is written only inside a script: `for` writes it"
+        )
+
+# `true` or `false`.
+function boolean_text(b: bool) -> str
+    if b
+        return "true"
+    return "false"
+
+# Whether `if` takes `v` as true: all but `false`, `0`, `null`, `""`, `[]`
+# and `{}`.
+function is_true(v: json.Value lent) -> bool
+    return match v
+        .null_value => false
+        .boolean b  => b.v
+        .number n   => n.v != 0.0
+        .text t     => t.v != ""
+        .list l     => l.items.len() > 0
+        .object o   => keys(o.members).len() > 0
+
+# `v` through the filter `filter`, `written` naming where it came from. Fails
+# `invalid` where it is not of the kind the filter takes.
+function apply(given: program.Filter, v: json.Value, written: str) -> json.Value?
+    kind = given.kind
+
+    if kind == program.ESCAPE
+        return ok(.text(v: escape_text.html_plain(scalar_text(v, written)?)))
+
+    if kind == program.UPPER || kind == program.LOWER
+        match v
+            .text t =>
+                if kind == program.UPPER
+                    return ok(.text(v: strings.to_upper(t.v)))
+                return ok(.text(v: strings.to_lower(t.v)))
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                word = if kind == program.UPPER
+                    "upper"
+                else
+                    "lower"
+                return fail(code: "invalid", msg: f"`{word}` takes a text, and {written} is {kind_named(v)}")
+
+    if kind == program.JOIN
+        match v
+            .list l =>
+                texts: [str] @= []
+
+                for item in l.items
+                    match item
+                        .text _ | .number _ | .boolean _ => texts @ texts.push(scalar_text(item, written)?)
+                        .null_value | .list _ | .object _ =>
+                            return fail(
+                                code: "invalid",
+                                msg: f"`join` joins texts, numbers and booleans, and {written} holds {kind_named(item)}"
+                            )
+
+                return ok(.text(v: texts.join(scalar_text(given.arg, "the separator")?)))
+            .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+                return fail(code: "invalid", msg: f"`join` takes a list, and {written} is {kind_named(v)}")
+
+    if kind == program.LENGTH
+        count = match v
+            .text t                              => unicode.char_count(t.v)
+            .list l                              => l.items.len()
+            .object o                            => keys(o.members).len()
+            .null_value | .boolean _ | .number _ => -1
+
+        if count < 0
+            return fail(
+                code: "invalid",
+                msg: f"`length` takes a text, a list or an object, and {written} is {kind_named(v)}"
+            )
+        return ok(.number(v: to_f64(count)))
+    return ok(v)
+
+# The value `pipe` makes, its operand read from `dot` or from `slots` past
+# `base`, then its filters applied. `default`, first, stands for a value that
+# is not there or is null. Fails as `walk` and `apply` do.
+function evaluate(pipe: program.Pipe lent, dot: json.Value lent, slots: [json.Value] lent, base: i64) -> json.Value?
+    operand = pipe.operand
+    defaulted = pipe.filters.len() > 0 && pipe.filters[0].kind == program.DEFAULT
+    found: json.Value? @= ok(operand.literal)
+
+    if operand.kind == program.FROM_DOT
+        found @ walk(dot, operand)
+    else if operand.kind == program.FROM_VARIABLE
+        found @ walk(slots[base + operand.slot], operand)
+    value: json.Value @= .null_value
+
+    match found
+        .ok v => value @ v
+        .err e =>
+            if !(defaulted && e.code == "not_found")
+                return fail(code: e.code, msg: e.msg)
+            value @ pipe.filters[0].arg
+
+    if defaulted && json.is_null(value)
+        value @ pipe.filters[0].arg
+
+    for at in range(from: 0, to: pipe.filters.len())
+        if !(at == 0 && defaulted)
+            value @ apply(pipe.filters[at], value, operand.written)?
+
+    return ok(value)
+
+# Whether a value may be compared: a text, a number, a boolean or null.
+function is_scalar(v: json.Value lent) -> bool
+    return match v
+        .list _ | .object _                            => false
+        .null_value | .boolean _ | .number _ | .text _ => true
+
+# Whether `cond` holds, its values read as `evaluate` reads them. Fails as
+# `evaluate` does, and `invalid` where a comparison meets a list or an object.
+function truth(cond: program.Cond lent, dot: json.Value lent, slots: [json.Value] lent, base: i64) -> bool?
+    left = evaluate(cond.left, dot, slots, base)?
+
+    if cond.compare == program.COMPARE_NONE
+        return ok(is_true(left) != cond.negate)
+    right = evaluate(cond.right, dot, slots, base)?
+
+    for side in [left, right]
+        if !is_scalar(side)
+            return fail(
+                code: "invalid",
+                msg: f"`==` and `!=` compare texts, numbers, booleans and null, and one side is {kind_named(side)}"
+            )
+
+    if cond.compare == program.COMPARE_EQUAL
+        return ok(left == right)
+    return ok(left != right)
+
+# An operand reading `keys` from `.`, for the tests.
+function dot_path(walked: [str]) -> program.Operand
+    return program.Operand(
+        kind: program.FROM_DOT,
+        slot: -1,
+        segments: walked,
+        literal: .null_value,
+        written: program.path_text(".", walked)
+    )
+
+test "walk: keys, an index, the root, and each way a step fails with what stood there"
+    doc = json.parse("{\"users\": [{\"name\": \"Ana\"}], \"n\": 1, \"a b\": true}").must()
+    assert walk(doc, dot_path(["users", "0", "name"])).must() == .text(v: "Ana")
+    assert walk(doc, dot_path([])).must() == doc
+    assert walk(doc, dot_path(["a b"])).must() == .boolean(v: true)
+
+    match walk(doc, dot_path(["user"]))
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no key \"user\" in ., an object holding the keys \"users\", \"n\", \"a b\""
+
+    match walk(doc, dot_path(["users", "1"]))
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no element 1 in .users, a list of 1"
+
+    match walk(doc, dot_path(["users", "x"]))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == ".users is a list, and \"x\" is no index of one"
+
+    match walk(doc, dot_path(["n", "x"]))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == ".n is a number, which holds no key \"x\""
+
+    assert walk(doc, dot_path(["users", "99999999999999999999"])).is_err()
+
+test "keys_named: none, a few, and more than ten"
+    assert keys_named({}) == "no key"
+    many: {str: json.Value} @= {}
+
+    for n in range(from: 0, to: 12)
+        many[f"k{n}"] @ .null_value
+
+    assert keys_named(many) == "the keys \"k0\", \"k1\", \"k2\", \"k3\", \"k4\", \"k5\", \"k6\", \"k7\", \"k8\", \"k9\", and 2 more"
+
+test "scalar_text: each kind, numbers as JSON writes them, and what writes no text"
+    assert scalar_text(.text(v: "é"), ".a").must() == "é"
+    assert scalar_text(.number(v: 100000000.0), ".a").must() == "100000000"
+    assert scalar_text(.number(v: 0.000001), ".a").must() == "0.000001"
+    assert scalar_text(.number(v: 2.5), ".a").must() == "2.5" && scalar_text(.boolean(v: false), ".a").must() == "false"
+
+    match scalar_text(.null_value, ".a")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == ".a is null, which writes no text: `default` gives one"
+
+    assert scalar_text(.list(items: []), ".a").is_err() && scalar_text(.object(members: {}), ".a").is_err()
+
+test "is_true: the six false values and their true neighbours"
+    falses: [json.Value] = [
+        .null_value
+        .boolean(v: false)
+        .number(v: 0.0)
+        .number(v: -0.0)
+        .text(v: "")
+        .list(items: [])
+        .object(members: {})
+    ]
+
+    for v in falses
+        assert !is_true(v)
+
+    truths: [json.Value] = [
+        .boolean(v: true)
+        .number(v: -1.0)
+        .text(v: " ")
+        .list(items: [.null_value])
+        .object(members: {"a": .null_value})
+    ]
+
+    for v in truths
+        assert is_true(v)
+
+test "apply: each filter on what it takes, characters counted, and each on what it does not"
+    assert apply(program.Filter(kind: program.UPPER, arg: .null_value), .text(v: "straße"), ".a").must() == .text(v: "STRASSE")
+    assert apply(program.Filter(kind: program.LOWER, arg: .null_value), .text(v: "ÀB"), ".a").must() == .text(v: "àb")
+    items = json.parse("[\"a\", 1.5, true]").must()
+    assert apply(program.Filter(kind: program.JOIN, arg: .text(v: ", ")), items, ".a").must() == .text(v: "a, 1.5, true")
+    assert apply(program.Filter(kind: program.LENGTH, arg: .null_value), .text(v: "héllo"), ".a").must() == .number(v: 5.0)
+    assert apply(program.Filter(kind: program.LENGTH, arg: .null_value), items, ".a").must() == .number(v: 3.0)
+    assert apply(program.Filter(kind: program.ESCAPE, arg: .null_value), .text(v: "<a href='x'>&\"+"), ".a").must() == .text(v: "&lt;a href=&#39;x&#39;&gt;&amp;&#34;+")
+
+    match apply(program.Filter(kind: program.UPPER, arg: .null_value), .number(v: 1.0), ".a")
+        .ok _  => assert false
+        .err e => assert e.msg == "`upper` takes a text, and .a is a number"
+
+    assert apply(program.Filter(kind: program.JOIN, arg: .text(v: ",")), json.parse("[null]").must(), ".a").is_err()
+    assert apply(program.Filter(kind: program.JOIN, arg: .text(v: ",")), .text(v: "a"), ".a").is_err()
+    assert apply(program.Filter(kind: program.LENGTH, arg: .null_value), .null_value, ".a").is_err()
+
+test "evaluate and truth: default for a value not there and for null, a missing value failing, and comparisons"
+    doc = json.parse("{\"a\": null, \"n\": 0, \"s\": \"x\", \"l\": [1]}").must()
+    defaulted = program.Pipe(
+        operand: dot_path(["b"]),
+        filters: [program.Filter(kind: program.DEFAULT, arg: .text(v: "none"))]
+    )
+    assert evaluate(defaulted, doc, [], 0).must() == .text(v: "none")
+    nulled = program.Pipe(
+        operand: dot_path(["a"]),
+        filters: [program.Filter(kind: program.DEFAULT, arg: .number(v: 2.0))]
+    )
+    assert evaluate(nulled, doc, [], 0).must() == .number(v: 2.0)
+    kept = program.Pipe(
+        operand: dot_path(["s"]),
+        filters: [program.Filter(kind: program.DEFAULT, arg: .text(v: "none")), program.Filter(kind: program.UPPER, arg: .null_value)]
+    )
+    assert evaluate(kept, doc, [], 0).must() == .text(v: "X")
+
+    match evaluate(program.Pipe(operand: dot_path(["b"]), filters: []), doc, [], 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    equal = program.Cond(
+        negate: false,
+        left: program.Pipe(operand: dot_path(["n"]), filters: []),
+        compare: program.COMPARE_EQUAL,
+        right: program.Pipe(operand: program.Operand(kind: program.FROM_LITERAL, slot: -1, segments: [], literal: .number(v: 0.0), written: "0"), filters: [])
+    )
+    assert truth(equal, doc, [], 0).must()
+    negated = program.Cond(
+        negate: true,
+        left: program.Pipe(operand: dot_path(["n"]), filters: []),
+        compare: program.COMPARE_NONE,
+        right: program.empty_pipe()
+    )
+    assert truth(negated, doc, [], 0).must()
+    lists = program.Cond(
+        negate: false,
+        left: program.Pipe(operand: dot_path(["l"]), filters: []),
+        compare: program.COMPARE_NOT_EQUAL,
+        right: program.Pipe(operand: dot_path(["s"]), filters: [])
+    )
+    assert truth(lists, doc, [], 0).is_err()

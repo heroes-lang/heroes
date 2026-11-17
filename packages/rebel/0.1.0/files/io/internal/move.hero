@@ -1,0 +1,105 @@
+# The bytes moved between a program and a stream: a read of what is there,
+# capped so a count asked from outside never sizes a buffer, the loops that
+# read a count or everything, the loop that writes every byte where the
+# system takes fewer, and copying. Each takes the floor's handle and the
+# stream's name for its messages; the face `io` holds the stream.
+
+use io/hero_stream
+use io/internal/failure
+
+# The most bytes one read of a stream asks for: a read never sizes its buffer
+# by a count it was handed.
+constant CHUNK: i64
+    65536
+
+# Up to `most` bytes of `handle`, at most `CHUNK`, waiting for one: an empty
+# list at the end. `most` is at least 1.
+function some(handle: hero_stream.Stream, name: str, most: i64) -> [u8]?
+    wanted: i64 @= most
+
+    if wanted > CHUNK
+        wanted @ CHUNK
+    room: [u8] @= []
+    got = hero_stream.read(handle, @room, n: wanted.to_u64().must())
+
+    if got < 0
+        return failure.last(asked: "reading " + name)
+
+    if got == wanted
+        return ok(room)
+    return ok(room.slice(from: 0, to: got))
+
+# Adds every byte of `part` to `onto`, which the caller owns.
+function add(@onto: [u8], part: [u8] lent)
+    for b in part
+        onto @ onto.push(b)
+
+# Exactly `count` bytes of `handle`, failing `closed` where it ends first.
+function exactly(handle: hero_stream.Stream, name: str, count: i64) -> [u8]?
+    out: [u8] @= []
+
+    while out.len() < count
+        part = some(handle, name, most: count - out.len())?
+
+        if part.len() == 0
+            return failure.of(
+                code: failure.CLOSED,
+                asked: f"reading {count} bytes of {name}",
+                why: f"the stream ended after {out.len()}"
+            )
+        add(onto: @out, part: part)
+
+    return ok(out)
+
+# Every byte of `handle` to its end.
+function to_end(handle: hero_stream.Stream, name: str) -> [u8]?
+    out: [u8] @= []
+
+    while true
+        part = some(handle, name, most: CHUNK)?
+
+        if part.len() == 0
+            return ok(out)
+        add(onto: @out, part: part)
+
+# Writes every byte of `data` to `handle`, as many times as the system needs.
+function every(handle: hero_stream.Stream, name: str, data: [u8]) -> ()?
+    rest: [u8] @= data
+
+    while rest.len() > 0
+        sent = hero_stream.write(handle, @rest, n: rest.len().to_u64().must())
+
+        if sent < 0
+            return failure.last(asked: "writing " + name)
+
+        if sent == 0
+            return failure.of(
+                code: failure.FAILED,
+                asked: "writing " + name,
+                why: f"the system took none of {rest.len()} bytes"
+            )
+
+        if sent == rest.len()
+            return ok()
+        rest @ rest.slice(from: sent, to: rest.len())
+
+    return ok()
+
+# Copies at most `limit` bytes of `from` into `to`, a `limit` below 0 meaning
+# all of it, and answers how many.
+function across(from: hero_stream.Stream, from_name: str, to: hero_stream.Stream, to_name: str, limit: i64) -> i64?
+    moved: i64 @= 0
+
+    while limit < 0 || moved < limit
+        most: i64 @= CHUNK
+
+        if limit >= 0 && limit - moved < most
+            most @ limit - moved
+        part = some(from, name: from_name, most: most)?
+
+        if part.len() == 0
+            return ok(moved)
+        every(to, name: to_name, data: part)?
+        moved @ moved + part.len()
+
+    return ok(moved)

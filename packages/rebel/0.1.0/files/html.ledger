@@ -1,0 +1,330 @@
+# The ledger of `html`: what Python's `html`, `html.entities` and
+# `html.parser` (3.15.2), Go's `html` (1.27.3) and `golang.org/x/net/html`
+# (v0.49.0, read from this machine's module cache with `go doc -all`, no
+# network) let a program do, and BeautifulSoup 4 and html5lib, the yardstick
+# the author named on 2026-11-16, one block per capability, and what Rebel
+# answers. Rust's standard library has no HTML, so its line is `-` in every
+# block. The Python and Go lists are this machine's, 2026-11-16: `dir` of the
+# three modules and of `HTMLParser`, and `go doc -all` of the two packages.
+# BeautifulSoup and html5lib are not installed on this machine and nothing was
+# installed: their entries are their documented API, named as their
+# documentation names them, and none of their answers was observed.
+#
+# The parser is written from the WHATWG HTML Living Standard's text, fetched
+# from html.spec.whatwg.org on 2026-11-16 (parsing.html, scripting.html,
+# semantics-other.html). That text has moved past what Go's x/net/html and
+# html5lib implement: processing instructions are read as nodes, `select` holds
+# whatever it is given (the "in select" modes are gone), `search` is special.
+# The tests were written by hand from the standard, its own examples of
+# 13.2.10 among them, in html5lib-tests' tree format, since html5lib is not
+# importable here. Beside them, 179 inputs (misnested formatting, tables and
+# foster parenting, templates, frameset, foreign content and its breakouts,
+# doctypes, references) were read by this package and by Go's x/net/html
+# v0.49.0, run offline from the module cache, and the two trees compared in
+# that format on 2026-11-16: 177 agree, and the 2 that differ are where Go
+# departs from the standard's text (it keeps a repeated attribute, 13.2.5.33
+# drops it; it reads `</>` as a comment, 13.2.5.7 reads it as nothing). Inputs
+# where the 2026 standard moved past Go (`select`, processing instructions)
+# were left out of that comparison and are tested by hand.
+
+capability html/tree  a document held as a tree of nodes a program can match on and walk
+  heroes  html.Document, html.Node, html.Space, html.AttributeSpace, html.Attribute, html.node_of, html.is_element, html.ROOT
+  go      x/net/html: Node, Node.Type, Node.Data, Node.DataAtom, Node.Namespace, Node.Attr, NodeType, ErrorNode, TextNode, DocumentNode, ElementNode, CommentNode, DoctypeNode, RawNode, Attribute, Attribute.Namespace, Attribute.Key, Attribute.Val
+  rust    -
+  python  BeautifulSoup, Tag, Tag.name, Tag.attrs, NavigableString, Comment, Doctype, ProcessingInstruction, CData, Declaration; html5lib's etree and dom trees
+  note    the tree is held flat and its nodes numbered, as Go links its nodes; a `match` on a `Node` answers its seven cases. A template's contents are a `fragment` node, its one child, as html5lib-tests print them. `==` compares two documents with no recursion. Decided 2026-11-16
+
+capability html/parse  a whole page read as a browser reads it, never failing
+  heroes  html.parse, html.default_options, html.parse_with, html.ParseOptions, html.Parsed
+  go      x/net/html: Parse, ParseWithOptions, ParseOption
+  rust    -
+  python  BeautifulSoup(markup, "html5lib"), html5lib.parse, html5lib.HTMLParser, HTMLParser.parse
+  note    the standard's tokenizer and tree construction, every insertion mode, the adoption agency and foster parenting, as the 2026 standard writes them. Go's Parse refuses a page nested past 512; here nothing fails on what a text holds. Python's `html.parser.HTMLParser` builds no tree and recovers by its own rules, not the standard's
+
+capability html/parse-fragment  markup read inside an element, as `innerHTML` reads it
+  heroes  html.parse_fragment, html.ParseOptions
+  go      x/net/html: ParseFragment, ParseFragmentWithOptions
+  rust    -
+  python  html5lib.parseFragment, HTMLParser.parseFragment
+  note    the context element by name and namespace; the tokenizer starts in the state the standard gives that element, so inside `title` or `textarea` all is text
+
+capability html/parse-errors  every parse error of a page, with where it stands
+  heroes  html.parse_with, html.ParseError
+  go      -
+  rust    -
+  python  html5lib HTMLParser.errors, HTMLParser(strict=True)
+  note    the tokenizer's errors by the standard's own names; tree construction's, which the standard does not name, by eight names of the package's own; each with its line and column, the column in characters. A strict reading that fails at the first error is not offered: a program reads `errors.len() == 0`
+
+capability html/parse-limits  the length and depth a reading allows, set by the caller
+  heroes  html.ParseOptions, html.LIMIT, html.DEFAULT_MAX_DEPTH
+  go      x/net/html: Tokenizer.SetMaxBuf, ErrBufferExceeded
+  rust    -
+  python  -
+  note    past `max_bytes` the reading fails `limit`, the standard saying nothing of length; past `max_depth` an element is put beside its parent, as Chromium does past 512, since the standard leaves the depth to the browser. Go fails a page past 512 deep
+
+capability html/scripting  a page read as with scripting enabled or disabled
+  heroes  html.ParseOptions
+  go      x/net/html: ParseOptionEnableScripting
+  rust    -
+  python  html5lib HTMLParser.parse(scripting=...)
+  note    enabled by default, as Go's, as a browser loading a page reads it: `noscript` holds its text as written. Disabled, as `DOMParser` reads, `noscript` holds markup
+
+capability html/quirks  the mode a page's doctype sets
+  heroes  html.quirks_of, html.Quirks
+  go      -
+  rust    -
+  python  -
+  note    the standard's lists of public and system identifiers, read from its text by a program into `html/internal/tables.hero`
+
+capability html/encoding  bytes of another encoding than UTF-8 read, the encoding sniffed from a meta tag
+  heroes  refused: Rebel reads text as UTF-8 everywhere and has no decoders of the Encoding Standard; a program turns bytes into text before reading, and Go's Parse assumes UTF-8 too
+  go      -
+  rust    -
+  python  BeautifulSoup(from_encoding=...), BeautifulSoup.original_encoding, UnicodeDammit, html5lib HTMLParser.documentEncoding
+
+capability html/tokenize  the tokens of a page read one by one, with no tree
+  heroes  refused: tokens without tree construction are not what a browser reads (`</br>`, a `p` inside a `p` and a table's stray text mean other things once built), and the tree is read in one pass of the text's length; a token stream would be a second way to read with none of the standard's recovery
+  go      x/net/html: Tokenizer, NewTokenizer, NewTokenizerFragment, Tokenizer.Next, Tokenizer.Token, Tokenizer.TagName, Tokenizer.TagAttr, Tokenizer.Text, Tokenizer.Raw, Tokenizer.Err, Tokenizer.AllowCDATA, Tokenizer.Buffered, Tokenizer.NextIsNotRawText, Token, Token.Type, Token.Data, Token.DataAtom, Token.Attr, Token.String, TokenType, ErrorToken, TextToken, StartTagToken, EndTagToken, SelfClosingTagToken, CommentToken, DoctypeToken, TokenType.String
+  rust    -
+  python  html.parser.HTMLParser, HTMLParser.feed, HTMLParser.close, HTMLParser.reset, HTMLParser.getpos, HTMLParser.get_starttag_text, HTMLParser.handle_starttag, HTMLParser.handle_endtag, HTMLParser.handle_startendtag, HTMLParser.handle_data, HTMLParser.handle_entityref, HTMLParser.handle_charref, HTMLParser.handle_comment, HTMLParser.handle_decl, HTMLParser.handle_pi, HTMLParser.unknown_decl, HTMLParser.convert_charrefs
+
+capability html/name  an element's name, and whether it has one
+  heroes  html.name_of, html.is_named
+  go      x/net/html: Node.Data, Node.DataAtom
+  rust    -
+  python  Tag.name
+  note    an HTML element's name in lower case and compared in any case, an SVG or MathML element's in the standard's own case (`foreignObject`) and compared exactly, as a browser's selectors compare them
+
+capability html/attributes  an element's attributes, one by name, and whether it has one
+  heroes  html.attribute, html.has_attribute, html.attributes_of
+  go      x/net/html: Node.Attr
+  rust    -
+  python  Tag.attrs, Tag.get, Tag[name], Tag.has_attr, Tag.get_attribute_list
+  note    a name compared in any case on an HTML element, as the DOM's getAttribute; `xlink:href` by its written name. BeautifulSoup's `class` as a list is `classes_of`
+
+capability html/classes  an element's classes, and whether it has one
+  heroes  html.classes_of, html.has_class
+  go      -
+  rust    -
+  python  Tag["class"] (a list in BeautifulSoup), Tag.get_attribute_list
+  note    the `class` attribute split at ASCII white space, as the DOM's classList
+
+capability html/parent  the node holding another, and every node above it
+  heroes  html.parent, html.ancestors
+  go      x/net/html: Node.Parent, Node.Ancestors
+  rust    -
+  python  Tag.parent, Tag.parents, Tag.find_parent, Tag.find_parents
+  note    `find_parent` by a name or selector is `closest`
+
+capability html/children  the nodes inside another, the children and every descendant
+  heroes  html.children, html.child_elements, html.first_child, html.last_child, html.descendants
+  go      x/net/html: Node.FirstChild, Node.LastChild, Node.ChildNodes, Node.Descendants
+  rust    -
+  python  Tag.contents, Tag.children, Tag.descendants, Tag.index
+  note    `descendants` in document order, as Go's and BeautifulSoup's; an index among the children is found in `children`
+
+capability html/siblings  the nodes beside another
+  heroes  html.next_sibling, html.previous_sibling, html.next_siblings, html.previous_siblings
+  go      x/net/html: Node.NextSibling, Node.PrevSibling
+  rust    -
+  python  Tag.next_sibling, Tag.previous_sibling, Tag.next_siblings, Tag.previous_siblings, Tag.find_next_sibling, Tag.find_next_siblings, Tag.find_previous_sibling, Tag.find_previous_siblings
+  note    `previous_siblings` the nearest first, as BeautifulSoup's; finding among siblings by a selector is `select` with `+` and `~`
+
+capability html/document-order  the nodes after or before one in document order
+  heroes  html.descendants
+  go      -
+  rust    -
+  python  Tag.next_element, Tag.previous_element, Tag.next_elements, Tag.previous_elements, Tag.find_next, Tag.find_all_next, Tag.find_previous, Tag.find_all_previous
+  note    `descendants(doc, ROOT)` is the whole document in order; a node's place in it gives what is after and before
+
+capability html/text  the text inside a node, joined, one by one, and stripped
+  heroes  html.text_of, html.texts_of, html.stripped_texts_of
+  go      -
+  rust    -
+  python  Tag.get_text, Tag.text, Tag.string, Tag.strings, Tag.stripped_strings
+  note    stripped of ASCII white space, the standard's, where Python strips a no-break space too; a separator is the built-in `join` over `stripped_texts_of`
+
+capability html/find-by-name  the first and every element of a name
+  heroes  html.element_named, html.elements_named
+  go      -
+  rust    -
+  python  Tag.find(name), Tag.find_all(name), Tag.name as an attribute (soup.title), SoupStrainer
+  note    -
+
+capability html/find-by-attribute  the first and every element whose attribute has a value
+  heroes  html.element_with_attribute, html.elements_with_attribute
+  go      -
+  rust    -
+  python  Tag.find(attrs=...), Tag.find_all(attrs=...)
+  note    the value compared exactly; an attribute's presence alone, a prefix or a list are `select`'s `[a]`, `[a^=v]` and `[a~=v]`
+
+capability html/find-by-class  the first and every element of a class
+  heroes  html.element_with_class, html.elements_with_class
+  go      -
+  rust    -
+  python  Tag.find(class_=...), Tag.find_all(class_=...)
+  note    -
+
+capability html/find-by-id  the element of an identifier
+  heroes  html.element_with_id
+  go      -
+  rust    -
+  python  Tag.find(id=...)
+  note    -
+
+capability html/find-by-function  the elements a program's own function accepts
+  heroes  built-in filter
+  go      -
+  rust    -
+  python  Tag.find_all(function), Tag.find_all(re.compile(...)), Tag.find_all(True), Tag.find_all(limit=..., recursive=...)
+  note    `filter` over `descendants` or `children` with the program's function; a limit is a slice of the answer
+
+capability html/select  elements found by a CSS selector
+  heroes  html.select, html.select_all
+  go      -
+  rust    -
+  python  Tag.select, Tag.select_one, Tag.css
+  note    type, `*`, `.class`, `#id`, the seven attribute tests with `i` and `s`, the four combinators, the structural pseudo-classes, `:not`, `:is`, `:where`, `:empty`, `:root`, lists by `,`; attribute values the HTML standard lists in any case (4.16.2), ids and classes in any case in quirks mode. Not read: namespaces (`svg|rect`), `:has()`, the pseudo-classes of state (`:hover`, `:checked`) and pseudo-elements, which a static tree cannot answer or which match no node; each is refused `invalid` with its byte
+
+capability html/match  whether an element matches a selector, and the nearest one that does
+  heroes  html.is_match, html.closest
+  go      -
+  rust    -
+  python  Tag.css.match, Tag.css.closest
+  note    -
+
+capability html/set-attribute  an attribute set or removed
+  heroes  html.set_attribute, html.remove_attribute
+  go      x/net/html: Node.Attr
+  rust    -
+  python  Tag[name] = value, del Tag[name]
+  note    an HTML element's name written in lower case, as setAttribute writes it
+
+capability html/create  an element, a text or a comment made
+  heroes  html.create_element, html.create_element_in, html.create_text, html.create_comment
+  go      x/net/html: Node (built directly)
+  rust    -
+  python  BeautifulSoup.new_tag, BeautifulSoup.new_string
+  note    -
+
+capability html/insert  a node put in another, last, before or after a sibling
+  heroes  html.append_child, html.insert_before, html.insert_after
+  go      x/net/html: Node.AppendChild, Node.InsertBefore
+  rust    -
+  python  Tag.append, Tag.extend, Tag.insert, Tag.insert_before, Tag.insert_after
+  note    a node is taken from where it stood, as the DOM does, where Go panics on a node that has a parent; a node put inside itself fails `invalid`. A position among the children is `insert_before` its child there
+
+capability html/remove  a node taken out, or every child of one
+  heroes  html.remove, html.remove_children
+  go      x/net/html: Node.RemoveChild
+  rust    -
+  python  Tag.extract, Tag.decompose, Tag.clear
+  note    a node taken out keeps its number and may be put back, as `extract`; nothing is destroyed, as `decompose` would, since the tree is one value
+
+capability html/replace  a node replaced by another, or by its children
+  heroes  html.replace_node, html.unwrap
+  go      -
+  rust    -
+  python  Tag.replace_with, Tag.unwrap, Tag.wrap
+  note    `wrap` is `insert_before` of the wrapper and `append_child` of the node into it
+
+capability html/set-text  a node's text set
+  heroes  html.set_text
+  go      -
+  rust    -
+  python  Tag.string = ...
+  note    -
+
+capability html/inner-html  markup read into an element in place of its children
+  heroes  html.set_inner_html
+  go      -
+  rust    -
+  python  Tag.clear with Tag.append(BeautifulSoup(markup))
+  note    the element's name and namespace are the fragment's context, as `innerHTML` reads it
+
+capability html/copy  a node and everything inside it copied, within a document or from another
+  heroes  html.copy_node, html.copy_from
+  go      -
+  rust    -
+  python  copy.copy(Tag)
+  note    -
+
+capability html/merge-texts  text nodes side by side made one, after changes
+  heroes  pending
+  go      -
+  rust    -
+  python  Tag.smooth
+  note    reading never puts two texts side by side; only a program's changes can, and `format` writes them the same either way
+
+capability html/format  a tree written as HTML by the standard's serialisation
+  heroes  html.format, html.format_node, html.format_inner
+  go      x/net/html: Render
+  rust    -
+  python  str(Tag), Tag.decode, Tag.decode_contents, Tag.encode, html5lib.serialize, html5lib HTMLSerializer
+  note    the standard's algorithm: `&`, a no-break space, `<` and `>` escaped in text and values, `"` in values, void elements with no end tag, raw text kept. Go's Render writes `<br/>` and escapes otherwise; BeautifulSoup writes `<br/>` too. Bytes are `strings.to_bytes`, a stream `io`
+
+capability html/format-options  the serialisation changed: optional tags left out, attributes sorted, another quote
+  heroes  refused: the standard's serialisation writes one form, and the same tree gives the same bytes; leaving out optional tags or sorting attributes is a policy no reading needs
+  go      -
+  rust    -
+  python  HTMLSerializer(quote_attr_values, quote_char, use_best_quote_char, omit_optional_tags, minimize_boolean_attributes, use_trailing_solidus, space_before_trailing_solidus, escape_lt_in_attrs, escape_rcdata, resolve_entities, alphabetical_attributes, inject_meta_charset, strip_whitespace), BeautifulSoup formatter
+
+capability html/prettify  a tree written indented, one element to a line
+  heroes  refused: white space added between elements is text a browser shows, inside `pre`, `textarea` and every inline element, so an indented page is another page
+  go      -
+  rust    -
+  python  Tag.prettify
+
+capability html/sanitize  markup cleaned of what a policy forbids
+  heroes  refused: a sanitizer is a policy of its own, the standard's Sanitizer API included; this package reads and writes what the markup says, and `template` escapes by context
+  go      -
+  rust    -
+  python  html5lib filters.sanitizer
+
+capability html/escape  text escaped to stand in a page
+  heroes  html.escape, html.escape_text, html.escape_attribute
+  go      html.EscapeString, x/net/html: EscapeString
+  rust    -
+  python  html.escape
+  note    `escape` writes the five as Go's EscapeString does, `'` as `&#39;`, where Python writes `&#x27;`; the other two are the standard serialisation's own
+
+capability html/unescape  character references read, in text or in an attribute's value
+  heroes  html.unescape, html.unescape_attribute
+  go      html.UnescapeString, x/net/html: UnescapeString
+  rust    -
+  python  html.unescape
+  note    the tokenizer's own reading (13.2.5.77 to 13.2.5.84), shared with the parser: the longest name, the old names without `;`, numeric references with the standard's replacements; in an attribute an old name before `=` or a letter is kept, which Python's unescape does not do
+
+capability html/named-references  the standard's table of named character references
+  heroes  html.named_reference, html.named_references
+  go      -
+  rust    -
+  python  html.entities.html5
+  note    all 2,231, generated by a program from Python's `html.entities.html5`, the standard's `entities.json` not being on this machine; `template` carries a second copy of the same table, and the coordinator was told that `html` should own it
+
+capability html/html4-names  HTML 4's 252 names and their code points
+  heroes  refused: they are among the standard's 2,231, with their `;` and without; a second table of a superseded standard is a second way
+  go      -
+  rust    -
+  python  html.entities.name2codepoint, html.entities.codepoint2name, html.entities.entitydefs
+
+capability html/template-patching  a `<template for>` streaming its contents between processing instruction markers
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    added to the standard in 2026 ("prepare content patching", scripting.html); here a `<template for>` is read as an ordinary template, the standard's own path where no marker is found
+
+capability html/shadow-roots  a `<template shadowrootmode>` read as a declarative shadow root
+  heroes  refused: a shadow root is not part of the tree a page's markup gives back, and `DOMParser` and `innerHTML` read the template as a template, as here
+  go      -
+  rust    -
+  python  -
+
+dropped
+  go      x/net/html/atom: the interned tag names, an optimisation of comparing names
+  go      Node.DataAtom, Token.DataAtom: the same atoms; names here are text
+  python  html.parser's module names attr_charref, attrfind_tolerant, charref, commentabruptclose, commentclose, endendtag, endtagfind, endtagopen, entityref, html5_entities, incomplete, incomplete_charref, interesting_normal, locatestarttagend_tolerant, locatetagend, piclose, re, starttagopen, tagfind_tolerant, unescape: the parser's regular expressions and imports
+  python  HTMLParser.CDATA_CONTENT_ELEMENTS, RCDATA_CONTENT_ELEMENTS, set_cdata_mode, clear_cdata_mode, check_for_whole_start_tag, goahead, parse_bogus_comment, parse_comment, parse_declaration, parse_endtag, parse_html_declaration, parse_marked_section, parse_pi, parse_starttag, updatepos: the parser's own steps
+  python  html5lib getTreeBuilder, getTreeWalker, treeadapters, treebuilders, treewalkers, constants, HTMLParser(tree=..., namespaceHTMLElements=..., debug=...): plumbing between html5lib and other libraries' trees
+  python  BeautifulSoup(features=...), builder registry: the choice of a parser; there is one here

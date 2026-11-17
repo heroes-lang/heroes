@@ -1,0 +1,209 @@
+# A server for this package's tests alone, run on a thread of its own while
+# the test's thread is the client: it answers the requests it reads, one
+# connection each, with responses written ahead, and gives back what it read.
+# Nothing outside the tests calls it.
+
+use bytes
+use http/internal/body as framing
+use http/internal/read
+use http/internal/syntax
+use http/internal/wire
+use io
+use net
+use strings
+use threads
+use tls
+
+# What parts the pieces of `script` and of `serve`'s answer.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# The script `serve` reads: each response's bytes as text, in order.
+function script(responses: [str]) -> str
+    return responses.join(SEPARATOR)
+
+# A server running on a thread of its own, and the port it listens on.
+record Started
+    # The port the server listens on, which it chose (port 0) and told.
+    port: i64
+    # The server's thread, whose answer `threads.wait_text` gives.
+    thread: threads.TextThread
+
+# `serve` started on a thread of its own with `text`, a `script`: the
+# server listens on a port the system chooses and tells it back over a
+# connection to a listener of this thread, so no port is assumed free.
+function start(text: str) -> Started
+    return started(body: serve, text: text)
+
+# `serve_tls` started as `start` starts `serve`, `text` a `script_tls`.
+function start_tls(text: str) -> Started
+    return started(body: serve_tls, text: text)
+
+# `body` started on a thread with the port of a control listener and
+# `text`, and the port it tells back read.
+function started(body: (function(str) -> str), text: str) -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: body, arg: f"{control.address.port}" + SEPARATOR + text)
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = syntax.decimal(s: io.read_rest_text(@r).must(), what: "the port told").must()
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# Tells `port` to the control listener at `control` and closes.
+function tell(control: i64, port: i64)
+    c @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(c.stream, text: f"{port}").must()
+    io.close(@c.stream).must()
+
+# A response of `head` and `body` as a piece of a script: `b64:` and the
+# base 64 of their bytes, so a body that is no text can travel in one.
+function binary(head: str, body: [u8]) -> str
+    whole: [u8] @= bytes.from_text(head)
+
+    for b in body
+        whole @ whole.push(b)
+
+    return "b64:" + bytes.format_base64(whole)
+
+# A chunked response of `head` and `data` as a piece of a script: `head`
+# ends with its fields' line end and no empty line, and the empty line and
+# `data` as chunks follow it.
+function chunked(head: str, data: [u8]) -> str
+    return binary(head: head + "Transfer-Encoding: chunked\r\n\r\n", body: framing.chunked(data))
+
+# Writes `piece` to `s`: the bytes of `binary`'s form, or the text itself.
+function sent(s: io.Stream, piece: str) -> ()?
+    if strings.has_prefix(s: piece, prefix: "b64:")
+        return io.write(s, data: bytes.parse_base64(piece.slice(from: 4, to: piece.len())).must())
+    return io.write_text(s, text: piece)
+
+# Listens on a port the system chooses, tells it to the control port `arg`
+# names first, and answers each request it
+# reads with the script's next response, closing each connection after;
+# a connection that sends no request, as `wait_listening`'s, is closed
+# unanswered. Gives back each request read, `method target`, its fields as
+# `name: value`, an empty line and its body, parted by `SEPARATOR`, once
+# every response is written or 10 s pass with no connection.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = syntax.decimal(s: parts[0], what: "the control port").must()
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    tell(control: control, port: l.address.port)
+    net.set_accept_deadline(l, ms: 10_000).must()
+    seen: [str] @= []
+    at: i64 @= 1
+
+    while at < parts.len()
+        match net.accept(l, deadline_ms: 10_000)
+            .err _ => break
+            .ok c =>
+                r @= io.reader(c.stream)
+
+                match read.request(@r, bounds: wire.Bounds(head_bytes: 65_536, field_count: 100, body_bytes: 1_048_576))
+                    .ok m =>
+                        lines: [str] @= [m.head.method + " " + m.head.target]
+
+                        for f in m.head.fields
+                            lines @ lines.push(f.name + ": " + f.value)
+
+                        seen @ seen.push(lines.join("\n") + "\n\n" + wire.text_of(m.content))
+
+                        match sent(r.stream, piece: parts[at])
+                            .ok _  => _ = 0
+                            .err _ => _ = 0
+
+                        at @ at + 1
+                    .err _ => _ = 0
+
+                io.close(@r.stream).must()
+
+    net.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
+# The script `serve_tls` reads: the certificate it presents, `localhost` or
+# `wrong` (one for `wrong.example`), how many connections it accepts, then
+# each response.
+function script_tls(chain: str, accepts: i64, responses: [str]) -> str
+    return chain + SEPARATOR + f"{accepts}" + SEPARATOR + responses.join(SEPARATOR)
+
+# What `serve` does, over TLS: listens on 127.0.0.1 at a port it tells
+# with the test authority's certificate for `localhost` or for
+# `wrong.example`, accepts the script's count of connections, a handshake
+# that fails counted, and answers each request read with the next response.
+# Gives back what it read, as `serve` does.
+function serve_tls(arg: str) -> str
+    parts = strings.split(s: arg, sep: SEPARATOR)
+    control = syntax.decimal(s: parts[0], what: "the control port").must()
+    accepts = syntax.decimal(s: parts[2], what: "the count").must()
+    chain: str @= tls.TEST_LOCALHOST_CHAIN
+    key: str @= tls.TEST_LOCALHOST_KEY
+
+    if parts[1] == "wrong"
+        chain @ tls.TEST_WRONG_CHAIN
+        key @ tls.TEST_WRONG_KEY
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: chain, key: key, protocols: ["http/1.1"])
+    ).must()
+    tell(control: control, port: l.port)
+    seen: [str] @= []
+    at: i64 @= 3
+    taken: i64 @= 0
+
+    while taken < accepts
+        taken @ taken + 1
+
+        match tls.accept(l, deadline_ms: 10_000)
+            .err _ => _ = 0
+            .ok s =>
+                r @= io.reader(s)
+
+                match read.request(@r, bounds: wire.Bounds(head_bytes: 65_536, field_count: 100, body_bytes: 1_048_576))
+                    .ok m =>
+                        lines: [str] @= [m.head.method + " " + m.head.target]
+
+                        for f in m.head.fields
+                            lines @ lines.push(f.name + ": " + f.value)
+
+                        seen @ seen.push(lines.join("\n") + "\n\n" + wire.text_of(m.content))
+
+                        if at < parts.len()
+                            match sent(r.stream, piece: parts[at])
+                                .ok _  => _ = 0
+                                .err _ => _ = 0
+
+                        at @ at + 1
+                    .err _ => _ = 0
+
+                match io.close(@r.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+    tls.close_listener(@l).must()
+    return seen.join(SEPARATOR)
+
+# A TLS client on a thread of its own: connects to `localhost` at the port
+# `arg` names before `SEPARATOR`, trusting the test authority alone, writes
+# what follows it, and gives back every byte read to the end as text, or
+# `"<code>: <message>"`.
+function ask_tls(arg: str) -> str
+    halves = strings.split_once(s: arg, sep: SEPARATOR).must()
+    port = syntax.decimal(s: halves.before, what: "the port").must()
+
+    match tls.connect("localhost", port: port, deadline_ms: 10_000, client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
+        .err e => return e.code + ": " + e.msg
+        .ok s =>
+            stream @= s
+
+            heard = match io.write_text(stream, text: halves.after)
+                .err e => e.code + ": " + e.msg
+                .ok _ =>
+                    match io.read_all_text(stream)
+                        .ok text => text
+                        .err e   => e.code + ": " + e.msg
+
+            io.close(@stream).must()
+            return heard

@@ -1,0 +1,235 @@
+# What a float is, its sign and its size: the questions every other module of
+# `math` asks before it orders a float.
+#
+# Ordering a nan aborts (spec § 7), so every function here that compares with
+# `<` asks `is_nan` first; `==` never aborts, and a nan equals nothing, so
+# `x != x` is the question itself.
+
+use math/internal/limits
+use math/libm
+
+# Whether `x` is a nan.
+#
+# - `x`: any float.
+function is_nan(x: f64) -> bool
+    return x != x
+
+# Whether `x` is an infinity of either sign.
+#
+# - `x`: any float.
+function is_inf(x: f64) -> bool
+    return x == limits.INF || x == -limits.INF
+
+# Whether `x` is neither an infinity nor a nan.
+#
+# - `x`: any float.
+function is_finite(x: f64) -> bool
+    return !is_nan(x) && !is_inf(x)
+
+# Whether `x` holds its full precision.
+#
+# - `x`: any float.
+function is_normal(x: f64) -> bool
+    return is_finite(x) && abs(x) >= limits.SMALLEST_NORMAL_F64
+
+# Whether `x` is a float other than zero below the normal ones.
+#
+# - `x`: any float.
+function is_subnormal(x: f64) -> bool
+    return is_finite(x) && x != 0.0 && abs(x) < limits.SMALLEST_NORMAL_F64
+
+# Whether `x`'s sign bit is set.
+#
+# - `x`: any float.
+function has_minus_sign(x: f64) -> bool
+    return libm.c_copysign(x: 1.0, y: x) < 0.0
+
+# `x` without its sign.
+#
+# - `x`: any float.
+function abs(x: f64) -> f64
+    return libm.c_fabs(x)
+
+# -1.0, 1.0, or `x` where it is a zero or a nan.
+#
+# - `x`: any float.
+function sign(x: f64) -> f64
+    if is_nan(x) || x == 0.0
+        return x
+
+    if x > 0.0
+        return 1.0
+    return -1.0
+
+# The size of `x` with the sign of `of`.
+#
+# - `x`: any float.
+# - `of`: any float.
+function with_sign(x: f64, of: f64) -> f64
+    return libm.c_copysign(x: x, y: of)
+
+# The smaller of two floats, a nan on either side answering a nan.
+#
+# - `a`: any float.
+# - `b`: any float.
+function min(a: f64, b: f64) -> f64
+    if is_nan(a) || is_nan(b)
+        return a + b
+
+    if a == b
+        if has_minus_sign(a)
+            return a
+        return b
+
+    if a < b
+        return a
+    return b
+
+# The larger of two floats, a nan on either side answering a nan.
+#
+# - `a`: any float.
+# - `b`: any float.
+function max(a: f64, b: f64) -> f64
+    if is_nan(a) || is_nan(b)
+        return a + b
+
+    if a == b
+        if has_minus_sign(a)
+            return b
+        return a
+
+    if a > b
+        return a
+    return b
+
+# `x` held between `low` and `high`.
+#
+# - `x`: any float; a nan answers itself.
+# - `low`: the smallest answer.
+# - `high`: the largest answer.
+function clamp(x: f64, low: f64, high: f64) -> f64
+    assert !is_nan(low) && !is_nan(high)
+    assert low <= high
+
+    if is_nan(x)
+        return x
+
+    if x < low
+        return low
+
+    if x > high
+        return high
+    return x
+
+# The float halfway between `a` and `b`.
+#
+# - `a`: any float.
+# - `b`: any float.
+function midpoint(a: f64, b: f64) -> f64
+    if is_nan(a) || is_nan(b)
+        return a + b
+    half = limits.MAX_F64 / 2.0
+
+    if abs(a) <= half && abs(b) <= half
+        return (a + b) / 2.0
+    return a / 2.0 + b / 2.0
+
+# Whether `a` and `b` are within `relative` of their larger size, or within
+# `absolute`.
+#
+# - `a`: any float.
+# - `b`: any float.
+# - `relative`: a fraction, 0.0 or more.
+# - `absolute`: a size, 0.0 or more.
+function is_close(a: f64, b: f64, relative: f64, absolute: f64) -> bool
+    assert !is_nan(relative) && !is_nan(absolute)
+    assert relative >= 0.0 && absolute >= 0.0
+
+    if a == b
+        return true
+
+    if !is_finite(a) || !is_finite(b)
+        return false
+    difference = abs(a - b)
+    return difference <= relative * abs(a) || difference <= relative * abs(b) || difference <= absolute
+
+## Tests
+
+test "is_nan, is_inf and is_finite: the zeros, the infinities, the nan and the extremes"
+    assert is_nan(limits.NAN)
+    assert !is_nan(limits.INF) && !is_nan(0.0) && !is_nan(-0.0)
+    assert is_inf(limits.INF) && is_inf(-limits.INF)
+    assert !is_inf(limits.NAN) && !is_inf(limits.MAX_F64)
+    assert is_finite(0.0) && is_finite(-0.0) && is_finite(limits.MAX_F64) && is_finite(limits.SMALLEST_F64)
+    assert !is_finite(limits.INF) && !is_finite(-limits.INF) && !is_finite(limits.NAN)
+
+test "is_normal and is_subnormal: zero, the smallest of each kind, and a hair below the normal ones"
+    assert !is_normal(0.0) && !is_subnormal(0.0)
+    assert !is_normal(-0.0) && !is_subnormal(-0.0)
+    assert is_normal(1.0) && is_normal(-1.5) && is_normal(limits.MAX_F64)
+    assert is_normal(limits.SMALLEST_NORMAL_F64) && !is_subnormal(limits.SMALLEST_NORMAL_F64)
+    assert is_subnormal(limits.SMALLEST_F64) && !is_normal(limits.SMALLEST_F64)
+    assert is_subnormal(limits.SMALLEST_NORMAL_F64 / 2.0)
+    assert is_subnormal(-limits.SMALLEST_F64)
+    assert !is_normal(limits.INF) && !is_subnormal(limits.INF) && !is_normal(limits.NAN) && !is_subnormal(limits.NAN)
+
+test "has_minus_sign: the two zeros, the two infinities, and the numbers"
+    assert has_minus_sign(-0.0) && !has_minus_sign(0.0)
+    assert has_minus_sign(-limits.INF) && !has_minus_sign(limits.INF)
+    assert has_minus_sign(-1.5) && !has_minus_sign(limits.SMALLEST_F64)
+    assert has_minus_sign(with_sign(x: limits.NAN, of: -1.0))
+    assert !has_minus_sign(with_sign(x: limits.NAN, of: 1.0))
+
+test "abs and sign: the two zeros, the infinities, the nan"
+    assert abs(-1.5) == 1.5 && abs(limits.MAX_F64) == limits.MAX_F64
+    assert !has_minus_sign(abs(-0.0))
+    assert abs(-limits.INF) == limits.INF
+    assert is_nan(abs(limits.NAN))
+    assert sign(2.5) == 1.0 && sign(-limits.SMALLEST_F64) == -1.0
+    assert sign(-limits.INF) == -1.0 && sign(limits.INF) == 1.0
+    assert sign(0.0) == 0.0 && !has_minus_sign(sign(0.0))
+    assert has_minus_sign(sign(-0.0))
+    assert is_nan(sign(limits.NAN))
+
+test "with_sign: a size given the sign of a zero, an infinity and a number"
+    assert with_sign(x: 3.0, of: -0.0) == -3.0
+    assert with_sign(x: -3.0, of: 0.0) == 3.0
+    assert has_minus_sign(with_sign(x: 0.0, of: -limits.INF))
+    assert with_sign(x: limits.INF, of: -1.0) == -limits.INF
+
+test "min and max: a nan on either side, the two zeros, the infinities"
+    assert min(a: 1.0, b: 2.0) == 1.0 && max(a: 1.0, b: 2.0) == 2.0
+    assert min(a: -limits.INF, b: limits.MAX_F64) == -limits.INF
+    assert max(a: limits.INF, b: limits.MAX_F64) == limits.INF
+    assert is_nan(min(a: limits.NAN, b: 1.0)) && is_nan(min(a: 1.0, b: limits.NAN))
+    assert is_nan(max(a: limits.NAN, b: limits.INF)) && is_nan(max(a: limits.INF, b: limits.NAN))
+    assert has_minus_sign(min(a: 0.0, b: -0.0)) && has_minus_sign(min(a: -0.0, b: 0.0))
+    assert !has_minus_sign(max(a: 0.0, b: -0.0)) && !has_minus_sign(max(a: -0.0, b: 0.0))
+
+# Rust's `clamp` answers the same for these, and keeps minus zero within
+# [0.0, 1.0], since -0.0 is not below 0.0.
+test "clamp: below, above, inside, minus zero at the low end, a nan, an infinity"
+    assert clamp(x: 2.0, low: -1.0, high: 1.0) == 1.0
+    assert clamp(x: -limits.INF, low: -1.0, high: 1.0) == -1.0
+    assert clamp(x: 0.5, low: -1.0, high: 1.0) == 0.5
+    assert has_minus_sign(clamp(x: -0.0, low: 0.0, high: 1.0))
+    assert is_nan(clamp(x: limits.NAN, low: 0.0, high: 1.0))
+    assert clamp(x: 3.0, low: 2.0, high: 2.0) == 2.0
+
+test "midpoint: the largest twice, the two extremes, the two infinities, the smallest"
+    assert midpoint(a: limits.MAX_F64, b: limits.MAX_F64) == limits.MAX_F64
+    assert midpoint(a: -limits.MAX_F64, b: limits.MAX_F64) == 0.0
+    assert midpoint(a: 1.0, b: 2.0) == 1.5
+    assert midpoint(a: limits.SMALLEST_F64, b: 0.0) == 0.0
+    assert is_nan(midpoint(a: limits.INF, b: -limits.INF))
+    assert midpoint(a: limits.INF, b: 1.0) == limits.INF
+    assert is_nan(midpoint(a: limits.NAN, b: 1.0))
+
+test "is_close: nine equal digits, eight, zero against a tiny number, the infinities, the nan"
+    assert is_close(a: 1.0, b: 1.0000000001, relative: 0.000000001, absolute: 0.0)
+    assert !is_close(a: 1.0, b: 1.00000001, relative: 0.000000001, absolute: 0.0)
+    assert is_close(a: 0.0, b: 0.0000000001, relative: 0.000000001, absolute: 0.000000001)
+    assert is_close(a: -limits.INF, b: -limits.INF, relative: 0.000000001, absolute: 0.0)
+    assert !is_close(a: limits.MAX_F64, b: limits.INF, relative: 1.0, absolute: 0.0)
+    assert is_close(a: 0.0, b: -0.0, relative: 0.0, absolute: 0.0)
+    assert !is_close(a: limits.NAN, b: limits.NAN, relative: 1.0, absolute: 1.0)

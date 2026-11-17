@@ -1,0 +1,108 @@
+# A scripted server for the tests: the server's answers written into a pipe
+# before the client reads, that pipe's writing end closed so that a missing
+# answer ends the read instead of waiting, and the client's requests kept in
+# another pipe to be compared with the bytes the documentation lays out.
+
+use io
+use sql/postgres/internal/frontend
+use sql/postgres/internal/session
+use sql/postgres/internal/wire
+
+# A session whose server is a script: its answers written into a pipe before
+# the client reads, that pipe's writing end closed so a missing answer ends
+# the read, and the client's requests kept in another pipe.
+record Script
+    # The client's session.
+    session: session.Session
+    # The reading end of what the client wrote.
+    requests: io.Stream
+    # The reading end the client's answers come from, closed by `finish`.
+    answers: io.Stream
+
+# A session over a server that answers `server`, bytes written beforehand.
+#
+# - `server`: every byte the server sends, whole messages.
+function scripted(server: [u8]) -> Script
+    to_server = io.pipe().must()
+    to_client = io.pipe().must()
+    io.write(to_client.writer, data: server).must()
+    end @= to_client.writer
+    io.close(@end).must()
+    return Script(
+        session: session.over(out: to_server.writer, input: to_client.reader, target: "test:5432/db"),
+        requests: to_server.reader,
+        answers: to_client.reader
+    )
+
+# Closes the script's ends and answers every byte the client wrote, its
+# Terminate included where the session was not over.
+#
+# - `t`: the script, every end closed.
+function finish(@t: Script) -> [u8]
+    _ = session.close(@t.session).is_err()
+    written = io.read_all(t.requests).must()
+    io.close(@t.requests).must()
+    io.close(@t.answers).must()
+    return written
+
+# A server's message of kind `kind`.
+#
+# - `kind`: its byte.
+# - `body`: its body.
+function msg(kind: u8, body: [u8]) -> [u8]
+    return wire.framed(kind: kind, body: body)
+
+# An Authentication message of `code`, followed by `data`.
+#
+# - `code`: the request.
+# - `data`: what follows it.
+function auth_msg(code: i64, data: [u8]) -> [u8]
+    body: [u8] @= []
+    wire.push_i32(@body, code)
+    wire.push_all(out: @body, data: data)
+    return msg(kind: 'R', body: body)
+
+# A report's body: each field's letter and text, then a zero byte.
+#
+# - `fields`: pairs of a letter and a text.
+function report_body(fields: [[str]]) -> [u8]
+    body: [u8] @= []
+
+    for f in fields
+        body @ body.push(f[0][0])
+        wire.push_cstr(@body, f[1])
+
+    body @ body.push(0)
+    return body
+
+# A Query message, for the tests of the face.
+#
+# - `text`: the statements.
+function frontend_query(text: str) -> [u8]
+    return frontend.query(text)
+
+# A Terminate message, for the tests of the face.
+function frontend_terminate() -> [u8]
+    return frontend.terminate()
+
+# Each of `parts` as a C string, one after the other.
+#
+# - `parts`: the texts, with no zero byte.
+function cstrs(parts: [str]) -> [u8]
+    out: [u8] @= []
+
+    for p in parts
+        wire.push_cstr(@out, p)
+
+    return out
+
+# The bytes of several messages, in order.
+#
+# - `parts`: the messages.
+function joined(parts: [[u8]]) -> [u8]
+    out: [u8] @= []
+
+    for p in parts
+        wire.push_all(out: @out, data: p)
+
+    return out

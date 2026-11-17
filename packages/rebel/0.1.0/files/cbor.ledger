@@ -1,0 +1,159 @@
+# The ledger of `cbor`: what RFC 8949 (CBOR) and RFC 8742 (CBOR sequences) let
+# a program do, one block per capability, and what Rebel answers. None of the
+# three reference libraries holds CBOR in its standard library: `go doc -all`
+# lists no CBOR package in Go 1.27, Rust 1.100's `std` has none, and Python
+# 3.15 has no `cbor` module, nor `cbor2` installed on this machine
+# (2026-11-16). So every block's `go`, `rust` and `python` lines are `-`, and
+# the capabilities are the RFC's own, read from its text, which the package's
+# tests follow: every row of its appendix A decoded, written in diagnostic
+# notation and encoded again, and every example of its appendix F refused.
+# Floats' bits were observed from Python's `struct` (`>e`, `>f`, `>d`).
+# Bignums and decimal fractions use `big` (layer 2), which README section A1's
+# row for `cbor` does not name yet.
+
+capability cbor/decode  one encoded item read into a value a program matches on
+  heroes  cbor.decode, cbor.Value, cbor.Entry
+  go      -
+  rust    -
+  python  -
+  note    the value keeps every item of the generic data model: integers from -2^64 to 2^64 - 1 exactly, byte strings, texts, arrays, maps with keys of any kind, tags, floats, `false`, `true`, `null`, `undefined` and the unnamed simple values
+
+capability cbor/decode-options  how strictly bytes are read: depth, a key twice, the deterministic encoding
+  heroes  cbor.decode_with, cbor.strict, cbor.DecodeOptions
+  go      -
+  rust    -
+  python  -
+  note    `strict` reads well-formed and valid items (RFC 8949 sections 3 and 5.3.1), nesting to `DEFAULT_MAX_DEPTH`; a key twice is refused by default because a map holding one is not valid, and two keys are one where their deterministic encodings are, so `1` and `0x1801` are the same key and `0.0` and `-0.0` are not
+
+capability cbor/sequence  the items of a CBOR sequence read one after another
+  heroes  cbor.decode_next, cbor.Decoded
+  go      -
+  rust    -
+  python  -
+  note    RFC 8742; `decode` refuses bytes after its item, RFC 8949's first kind of well-formedness error, and names where they begin
+
+capability cbor/indefinite-read  byte strings, texts, arrays and maps of indefinite length read
+  heroes  cbor.decode
+  go      -
+  rust    -
+  python  -
+  note    read and not kept: the value holds the items, not the form of their length, so writing it again gives definite lengths
+
+capability cbor/encode  a value written as one item in the deterministic encoding
+  heroes  cbor.encode
+  go      -
+  rust    -
+  python  -
+  note    RFC 8949 section 4.2.1: shortest arguments, every float as the shortest of half, single and double that holds it exactly, definite lengths, a map's keys in the bytewise order of their encodings, a bignum without leading zeros and as a plain integer where 64 bits hold it; a map holding one key twice, a tag holding other than one item and a simple value from 20 to 31 fail `invalid`
+
+capability cbor/encode-key-order  a map's keys in another order: length first, or as written
+  heroes  cbor.encode_with, cbor.KeyOrder
+  go      -
+  rust    -
+  python  -
+  note    `.length_first` is section 4.2.3's order, RFC 7049's canonical CBOR; `.as_written` keeps the value's own order and writes a key twice as it stands, which is well-formed and not valid
+
+capability cbor/indefinite-write  an item written with an indefinite length, before its count is known
+  heroes  refused: the deterministic encoding forbids it, a value is whole before it is written so its every count is known, and a writer that streams would need a stream `cbor` does not take
+  go      -
+  rust    -
+  python  -
+
+capability cbor/integers  every CBOR integer held, made from and read as an `i64`
+  heroes  cbor.from_int, cbor.int_of
+  go      -
+  rust    -
+  python  -
+  note    `.unsigned` and `.negative` hold the whole range; `int_of` fails `does_not_fit` past an `i64` and `invalid` on a float, which is never an integer here
+
+capability cbor/floats  halves, singles and doubles read and written at their shortest
+  heroes  cbor.Value
+  go      -
+  rust    -
+  python  -
+  note    every float is held as an `f64`, which holds every half and single exactly; the language has no cast between a float and its bits, so they are made by exact arithmetic on powers of two (`internal/floats`), every value checked against Python's `struct`
+
+capability cbor/nan-payload  a NaN's payload and sign kept
+  heroes  refused: the language reads no float's bits, so no payload can be seen to be kept; every NaN is read as the one NaN and written `0xf97e00`, the encoding RFC 8949 section 4.2.2 recommends
+  go      -
+  rust    -
+  python  -
+
+capability cbor/tags  a tag number and the item it holds, kept
+  heroes  cbor.Value
+  go      -
+  rust    -
+  python  -
+  note    `.tagged` keeps any tag from 0 to 2^64 - 1 with its item, as a generic decoder does (RFC 8949 section 5.3.2 leaves a tag's validity to the program)
+
+capability cbor/bignums  the integers of tags 2 and 3 read as numbers past 64 bits, and written from them
+  heroes  cbor.integer_of, cbor.from_integer
+  go      -
+  rust    -
+  python  -
+  note    done 2026-11-17 once `big` was written: `big.Integer` both ways, tag 3 holding -1 - n; `from_integer` writes the preferred serialization, a plain integer where 64 bits hold it, and `encode` writes a tag 2 or 3 holding bytes without their leading zeros and as a plain integer where it fits (RFC 8949 section 3.4.3), so the deterministic encoding never holds a bignum 64 bits would; the appendix's two bignum rows, a round trip of 1000 digits and a tag 2 with leading zero bytes are its tests
+
+capability cbor/decimal-fractions  tag 4, a mantissa times ten to an exponent, read as an exact decimal and written from one
+  heroes  cbor.decimal_of, cbor.from_decimal
+  go      -
+  rust    -
+  python  -
+  note    `big.Decimal` both ways, the scale the exponent's negation; the scale is kept as written, so 1.50 stays `4([-2, 150])`; an exponent that is a bignum is refused, as RFC 8949 section 3.4.4 refuses it, and RFC 8949's own `4([-2, 27315])` is the example
+
+capability cbor/bigfloats  tag 5, a mantissa times two to an exponent, read as a number
+  heroes  refused: its exact value is a fraction whose denominator, or a numerator whose size, is two to the exponent, which an item from outside could ask as large as memory; the tag is kept, and its exponent and mantissa are read with `cbor.int_of` and `cbor.integer_of`
+  go      -
+  rust    -
+  python  -
+
+capability cbor/dates  the times of tags 0 and 1 read as instants
+  heroes  refused: a tag's meaning is the program's; tag 1's item is read with `cbor.int_of` or as a float and given to `time`, tag 0's text to `time`'s parser, and `cbor` uses no `time`
+  go      -
+  rust    -
+  python  -
+
+capability cbor/simple-values  `undefined` and the unnamed simple values held
+  heroes  cbor.Value
+  go      -
+  rust    -
+  python  -
+  note    `.undefined` and `.simple`, 0 to 19 and 32 to 255; 24 to 31 written in two bytes are not well-formed and refused
+
+capability cbor/json  a CBOR item crossed to a JSON value and back
+  heroes  cbor.to_json, cbor.from_json
+  go      -
+  rust    -
+  python  -
+  note    what JSON cannot hold, a byte string, a tag, `undefined`, a simple value, a key that is not text, a `nan` or an infinity, fails `unsupported` with the JSON pointer of the item, and an integer past 2^53 - 1 fails `does_not_fit`, a bignum included, never rounded in silence where `big.float_of` would round it; a JSON number that is a whole number from -2^64 to 2^64 - 1 becomes an integer and every other one a float, the first rule of RFC 8949 section 4.2.2
+
+capability cbor/member  a map's value read by its text key
+  heroes  cbor.member
+  go      -
+  rust    -
+  python  -
+  note    the first entry where a key is written twice, as `.as_written` keeps it
+
+capability cbor/diagnostic  an item written in diagnostic notation for a person
+  heroes  cbor.format_diagnostic
+  go      -
+  rust    -
+  python  -
+  note    RFC 8949 section 8; floats as `to_str` writes them (the exact `5.9604644775390625e-08` where the RFC writes the shortest `5.960464477539063e-8`), texts in UTF-8, a bignum as the number it stands for with `big.format`, as the RFC's appendix writes it, no encoding indicator; it fails `invalid` on a value no item holds, since it writes what `encode_with(.as_written)` writes
+
+capability cbor/diagnostic-read  diagnostic notation read back into a value
+  heroes  refused: the notation is written for people, and its extended grammar is RFC 8610's appendix G, another document; a program builds the value or reads bytes
+  go      -
+  rust    -
+  python  -
+
+capability cbor/records  a record of the program written to and read from a map by its field names
+  heroes  refused: the language has no reflection; a record is written by hand with its `Record::field` names (spec § 9), which the compiler checks, as `cbor`'s example of `encode` shows, and a generator of those functions would be a verb of `heroes`, which needs a design sitting
+  go      -
+  rust    -
+  python  -
+
+capability cbor/stream  items read from and written to a stream as they come
+  heroes  refused: `io` reads the bytes and writes them; `decode_next` walks a sequence held whole, and `cbor` takes no stream
+  go      -
+  rust    -
+  python  -

@@ -1,0 +1,1864 @@
+# HTML read as a browser reads it: any text, however broken, read into the
+# tree a browser builds from it, by the WHATWG HTML Living Standard's
+# tokenizer and tree construction (insertion modes, the adoption agency
+# algorithm, foster parenting, implied end tags), as fetched from
+# html.spec.whatwg.org on 2026-11-16. The tree is searched by tag name,
+# attribute, class and CSS selectors, walked to a node's parent, children,
+# siblings and ancestors, changed, and written back by the standard's
+# serialisation algorithm. Every named character reference of the standard is
+# read and written.
+#
+# Reading never fails on what a text holds: a parse error is a fact the
+# standard names and recovers from, listed with its line and column by
+# `parse_with` for a program that asks. Nothing here follows the data with
+# recursion: the tree is held flat, its nodes numbered, so no document is too
+# deep to read, compare, search or write.
+#
+# It reads a whole text, UTF-8 alone: a stream is read with `io`, bytes in
+# another encoding are turned into text before. It runs no script and fetches
+# nothing; a `script` element's text is kept as it is. It reads no XML: `xml`
+# does, and refuses what HTML recovers from. It does not lay out or render a
+# page, and does not pretty-print one, since white space added changes the text
+# a browser shows.
+#
+# It fails `invalid` on a selector that cannot be read and on a change that
+# would put a node inside itself; `not_found` on a search that finds nothing, a
+# node with no parent or sibling, and an attribute an element does not hold;
+# `limit` on a text longer than the reading allows.
+
+use html/internal/ascii
+use html/internal/dom
+use html/internal/dump
+use html/internal/edit
+use html/internal/entities
+use html/internal/parser
+use html/internal/query
+use html/internal/refs
+use html/internal/select_match
+use html/internal/select_parse
+use html/internal/write
+use strings
+
+## The tree
+
+# Which namespace an element stands in: HTML, or the SVG or MathML a document
+# holds inside an `svg` or a `math` element.
+variant Space
+    # The HTML namespace, `http://www.w3.org/1999/xhtml`.
+    html
+    # The SVG namespace, `http://www.w3.org/2000/svg`.
+    svg
+    # The MathML namespace, `http://www.w3.org/1998/Math/MathML`.
+    mathml
+
+# Which namespace an attribute stands in: none, or one of the three the
+# standard gives an attribute of an SVG or MathML element.
+variant AttributeSpace
+    # No namespace: every attribute of an HTML element, and most of the others.
+    none
+    # XLink, `http://www.w3.org/1999/xlink`, as `xlink:href` on an SVG element.
+    xlink
+    # XML, `http://www.w3.org/XML/1998/namespace`, as `xml:lang`.
+    xml
+    # XMLNS, `http://www.w3.org/2000/xmlns/`, as `xmlns` and `xmlns:xlink`.
+    xmlns
+
+# One attribute of an element: its namespace, its local name and its value.
+#
+# Reading writes an HTML element's attribute names in lower case and keeps the
+# first of two of one name. Built directly; `set_attribute` sets one on an
+# element.
+record Attribute
+    # The attribute's namespace; `none` for every attribute of an HTML element.
+    space: AttributeSpace
+    # The local name: `href` for both `href` and `xlink:href`; `xmlns` for the
+    # attribute `xmlns` itself.
+    name: str
+    # The value, its character references read.
+    value: str
+
+# How a document is laid out by a browser, which its doctype decides: the
+# standard's three modes. Reading sets it; it changes no node.
+variant Quirks
+    # The doctype is `<!DOCTYPE html>` or another the standard reads as modern.
+    no_quirks
+    # No doctype, or one of the old ones the standard lists.
+    quirks
+    # One of the transitional doctypes the standard lists.
+    limited_quirks
+
+# One node of a tree. A `match` on it answers all seven cases.
+#
+# Text side by side is read as one text node; a text node is never empty after
+# reading. A `template` element holds one child, a `fragment` holding what it
+# contains, as the standard's template contents.
+variant Node
+    # The document, node `ROOT` of a document `parse` reads.
+    document
+    # A fragment: node `ROOT` of a tree `parse_fragment` reads, and the
+    # contents of a `template` element.
+    fragment
+    # A document type, `<!DOCTYPE html>`.
+    doctype
+        # The name, in lower case: `html`; empty where the doctype names none.
+        name: str
+        # The public identifier; empty where there is none.
+        public_id: str
+        # The system identifier; empty where there is none.
+        system_id: str
+    # An element.
+    element
+        # Its namespace.
+        space: Space
+        # Its local name: lower case for an HTML element, and the standard's
+        # own case for SVG and MathML, as `foreignObject`.
+        name: str
+        # Its attributes in the order they were written.
+        attributes: [Attribute]
+    # Text, its character references read.
+    text
+        # The characters.
+        v: str
+    # A comment, `<!--` and `-->` taken off.
+    comment
+        # The characters between them.
+        v: str
+    # A processing instruction, `<?target data?>`, which the standard reads
+    # since 2025.
+    instruction
+        # The name after `<?`.
+        target: str
+        # What follows the white space after the target.
+        data: str
+
+# A document or a fragment: its nodes, each named by its number.
+#
+# Made by `parse` and `parse_fragment`, and changed only by the functions of
+# this package, which keep every node's links true. A node stays numbered for
+# as long as the document lives: one removed is held apart, and may be put
+# back. `==` compares two documents node by node and holds no recursion.
+record Document
+    # The nodes and their links, held by the package itself: a program reads
+    # them through `node_of` and the functions below, and changes them
+    # through the functions of `## Changing a tree`.
+    tree: dom.Tree
+
+# What `parse_with` answers: the document, and every parse error met reading
+# it, in the order they were met.
+record Parsed
+    # The document read.
+    document: Document
+    # The parse errors, empty where the text is conforming as far as reading
+    # can tell.
+    errors: [ParseError]
+
+# One parse error: where the text breaks a rule of the standard, which reading
+# recovered from.
+record ParseError
+    # The standard's name for an error of the input stream or the tokenizer,
+    # `unexpected-null-character`, and for a `/>` no rule acknowledged,
+    # `non-void-html-element-start-tag-with-trailing-solidus`; for an error of
+    # tree construction, which the standard does not name, one of
+    # `unexpected-doctype`, `unexpected-start-tag`, `unexpected-end-tag`,
+    # `unexpected-text`, `unexpected-end-of-file`, `missing-doctype`,
+    # `misnested-tag` and `unclosed-element`, or `unexpected-null-character`
+    # for a zero byte the body drops.
+    code: str
+    # The tag name the error is about, in lower case; empty for a tokenizer's
+    # error.
+    tag: str
+    # The line, counted from 1; a line ends at a line feed, a carriage return,
+    # or both together.
+    line: i64
+    # The column, counted from 1 in characters.
+    column: i64
+
+## Codes and limits
+
+# The code of a selector that cannot be read, and of a change that would put a
+# node inside itself: `select`, `select_all`, `is_match`, `closest`,
+# `append_child`, `insert_before`, `insert_after` and `replace_node` fail with
+# it.
+constant INVALID: str
+    "invalid"
+
+# The code of a search that finds nothing, a node with no parent or sibling,
+# and an attribute an element does not hold: `select`, `closest`, the
+# `element_` searches, `name_of`, `attribute`, `parent`, `first_child`,
+# `last_child`, `next_sibling` and `previous_sibling` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a text longer than the reading allows: `parse_with` fails with
+# it.
+constant LIMIT: str
+    "limit"
+
+# The number of the document node of a tree `parse` reads, and of the fragment
+# node of one `parse_fragment` reads: 0.
+constant ROOT: i64
+    0
+
+# How deep an element nests before reading keeps what is deeper flat: 512, as
+# Chromium reads. The standard sets no limit and lets a browser set one; past
+# it, an element is put beside the element that would have held it, so the
+# tree stays 512 deep and nothing is lost.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+## Reading a text
+
+# How a text is read: the limits the caller sets, the scripting flag, and the
+# element a fragment is read inside.
+record ParseOptions
+    # How deep an element nests, the document's element 1 deep; deeper ones
+    # are kept flat, as `DEFAULT_MAX_DEPTH` says. 1 or more.
+    max_depth: i64
+    # The longest text read, in bytes; a longer one fails `limit`.
+    max_bytes: i64
+    # Whether a browser would run scripts: where it would, `noscript` holds
+    # its text as it is written, as a browser reads a page; where not, its
+    # text is read as markup.
+    scripting: bool
+    # The name of the element a fragment is read inside, as `innerHTML` reads
+    # it: `div`, `tr`, `title`; empty to read a whole document.
+    context: str
+    # The namespace of `context`.
+    context_space: Space
+
+# The options `parse` reads with: `DEFAULT_MAX_DEPTH`, no limit on the
+# length, scripting set as in a browser, and a whole document.
+function default_options() -> ParseOptions
+    return ParseOptions(
+        max_depth: DEFAULT_MAX_DEPTH,
+        max_bytes: 9223372036854775807,
+        scripting: true,
+        context: "",
+        context_space: .html
+    )
+
+# The document `text` writes, read as a browser reads it.
+#
+# - `text`: the whole page, any text at all; a byte order mark may open it.
+#
+# Never fails: a text that breaks the standard's rules is read as the
+# standard says a browser recovers, so `<p>a<p>b` is two paragraphs and a
+# missing `<html>`, `<head>` or `<body>` is put in. An element nested deeper
+# than `DEFAULT_MAX_DEPTH` is put beside its parent.
+#
+# See also `parse_with`, `parse_fragment`.
+function parse(text: str) -> Document
+    # The default options set no limit on the length, so this reading cannot
+    # fail.
+    return parse_with(text, default_options()).must().document
+
+# A fragment `text` writes, read inside an HTML element named `context`, as a
+# browser reads it into an element's `innerHTML`.
+#
+# - `text`: the markup, any text at all.
+# - `context`: the name of the HTML element it is read inside, as `div`, `tr`
+#   or `textarea`; in `title` or `textarea` it is all text. A name the
+#   standard does not know is read as an ordinary element's, as `div` is.
+#
+# Never fails. The answer's node `ROOT` is a `fragment` holding what was read.
+function parse_fragment(text: str, context: str) -> Document
+    options: ParseOptions @= default_options()
+    options.context @ strings.to_lower_ascii(context)
+    return parse_with(text, options).must().document
+
+# The document or fragment `text` writes, read as `options` say, with every
+# parse error met.
+#
+# - `text`: the whole page, or a fragment where `options.context` names an
+#   element.
+# - `options`: the limits and the context; `default_options()` gives
+#   `parse`'s.
+#
+# Fails `limit` where `text` is longer than `options.max_bytes`. Fails
+# nowhere else.
+#
+# The errors are in the order reading met them, which is the order of the
+# text but where tree construction finds one at the end, as an element left
+# open.
+function parse_with(text: str, options: ParseOptions) -> Parsed?
+    if text.len() > options.max_bytes
+        return fail(
+            code: LIMIT,
+            msg: f"a text of {text.len()} bytes, past {options.max_bytes}, the most this reading allows"
+        )
+
+    space = match options.context_space
+        .html   => dom.HTML
+        .svg    => dom.SVG
+        .mathml => dom.MATHML
+
+    depth = if options.max_depth < 1
+        1
+    else
+        options.max_depth
+    got = parser.run(
+        text: text,
+        scripting: options.scripting,
+        max_depth: depth,
+        context: options.context,
+        context_space: space
+    )
+    errors: [ParseError] @= []
+
+    for i in range(from: 0, to: got.codes.len())
+        errors @ errors.push(
+            ParseError(code: got.codes[i], tag: got.tags[i], line: got.lines[i], column: got.columns[i])
+        )
+
+    return ok(Parsed(document: Document(tree: got.tree), errors: errors))
+
+# The mode the doctype of `doc` set.
+#
+# - `doc`: the document; a fragment is in `no_quirks`.
+function quirks_of(doc: Document) -> Quirks
+    if doc.tree.quirks == dom.QUIRKS
+        return .quirks
+
+    if doc.tree.quirks == dom.LIMITED_QUIRKS
+        return .limited_quirks
+    return .no_quirks
+
+## Reading a node
+
+# What node number `node` of `doc` is.
+#
+# - `doc`: the document.
+# - `node`: the node's number, as a search or a walk answers it.
+#
+# Aborts where `node` is not a number `doc` gave, below 0 or past its last.
+function node_of(doc: Document, node: i64) -> Node
+    kind = doc.tree.kinds[node]
+
+    if kind == dom.DOCUMENT
+        return .document
+
+    if kind == dom.FRAGMENT
+        return .fragment
+
+    if kind == dom.DOCTYPE
+        return .doctype(name: doc.tree.names[node], public_id: doc.tree.data[node], system_id: doc.tree.systems[node])
+
+    if kind == dom.TEXT
+        return .text(v: doc.tree.data[node])
+
+    if kind == dom.COMMENT
+        return .comment(v: doc.tree.data[node])
+
+    if kind == dom.INSTRUCTION
+        return .instruction(target: doc.tree.names[node], data: doc.tree.data[node])
+    attributes: [Attribute] @= []
+
+    for a in doc.tree.attributes[node]
+        in_space: AttributeSpace = if a.space == dom.XLINK
+            .xlink
+        else if a.space == dom.XML
+            .xml
+        else if a.space == dom.XMLNS
+            .xmlns
+        else
+            .none
+        attributes @ attributes.push(Attribute(space: in_space, name: a.name, value: a.value))
+
+    space: Space = if doc.tree.spaces[node] == dom.SVG
+        .svg
+    else if doc.tree.spaces[node] == dom.MATHML
+        .mathml
+    else
+        .html
+    return .element(space: space, name: doc.tree.names[node], attributes: attributes)
+
+# Whether node `node` of `doc` is an element.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+function is_element(doc: Document, node: i64) -> bool
+    return doc.tree.kinds[node] == dom.ELEMENT
+
+# The local name of the element `node`: `p`, `svg`, `foreignObject`.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` is not an element. See also `is_named`.
+function name_of(doc: Document, node: i64) -> str?
+    if doc.tree.kinds[node] != dom.ELEMENT
+        return fail(code: NOT_FOUND, msg: f"node {node} is not an element, so it has no name")
+    return ok(doc.tree.names[node])
+
+# Whether `node` is an element named `name`.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a node that is not an element is named nothing.
+# - `name`: the name; an HTML element's is compared in any ASCII case, an SVG
+#   or MathML element's exactly.
+function is_named(doc: Document, node: i64, name: str) -> bool
+    return query.is_named(doc.tree, node, name)
+
+# The value of the attribute `name` of the element `node`.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+# - `name`: the name as written: `href`, `xlink:href`, `xml:lang`; an HTML
+#   element's is compared in any ASCII case.
+#
+# Fails `not_found` where `node` is not an element or has no such attribute,
+# and the message names the attributes it has.
+#
+# See also `has_attribute`, `attributes_of`.
+function attribute(doc: Document, node: i64, name: str) -> str?
+    if doc.tree.kinds[node] != dom.ELEMENT
+        return fail(code: NOT_FOUND, msg: f"no attribute `{name}`: node {node} is not an element")
+    at = query.attribute_index(doc.tree, node: node, name: name)
+
+    if at < 0
+        return fail(
+            code: NOT_FOUND,
+            msg: f"no attribute `{name}` on <{doc.tree.names[node]}>, whose attributes are {query.attribute_names(doc.tree, node)}"
+        )
+    return ok(doc.tree.attributes[node][at].value)
+
+# Whether the element `node` has an attribute `name`.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a node that is not an element has none.
+# - `name`: the name as written, compared as `attribute` compares it.
+function has_attribute(doc: Document, node: i64, name: str) -> bool
+    return query.attribute_index(doc.tree, node: node, name: name) >= 0
+
+# Every attribute of the element `node`, in the order they were written.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` has none or is not an element.
+function attributes_of(doc: Document, node: i64) -> [Attribute]
+    none: [Attribute] = []
+
+    return match node_of(doc, node)
+        .element e                                                                 => e.attributes
+        .document | .fragment | .doctype _ | .text _ | .comment _ | .instruction _ => none
+
+# The classes of the element `node`: its `class` attribute split at ASCII
+# white space, in order, a class written twice kept twice.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` has no `class` or is not an element.
+function classes_of(doc: Document, node: i64) -> [str]
+    return query.classes(doc.tree, node)
+
+# Whether the element `node` has the class `name`.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a node that is not an element has none.
+# - `name`: the class, compared exactly, as in a no-quirks document.
+function has_class(doc: Document, node: i64, name: str) -> bool
+    return query.has_class(doc.tree, node: node, name: name)
+
+## Walking a tree
+
+# The node that holds `node`.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` is `ROOT` or was removed.
+function parent(doc: Document, node: i64) -> i64?
+    above = doc.tree.parents[node]
+
+    if above == dom.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no parent: it is the root, or was removed")
+    return ok(above)
+
+# Every child of `node`, in order: elements, text, comments and the rest.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` has none. A `template`'s one child is its contents'
+# `fragment`.
+#
+# See also `child_elements`.
+function children(doc: Document, node: i64) -> [i64]
+    return dom.children(doc.tree, node)
+
+# Every child of `node` that is an element, in order.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` has none.
+function child_elements(doc: Document, node: i64) -> [i64]
+    return query.child_elements(doc.tree, node)
+
+# The first child of `node`.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` has no child.
+function first_child(doc: Document, node: i64) -> i64?
+    child = doc.tree.firsts[node]
+
+    if child == dom.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no child")
+    return ok(child)
+
+# The last child of `node`.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` has no child.
+function last_child(doc: Document, node: i64) -> i64?
+    child = doc.tree.lasts[node]
+
+    if child == dom.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no child")
+    return ok(child)
+
+# The node after `node`, held by the same parent.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` is its parent's last child or has no parent.
+function next_sibling(doc: Document, node: i64) -> i64?
+    after = doc.tree.nexts[node]
+
+    if after == dom.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no next sibling")
+    return ok(after)
+
+# The node before `node`, held by the same parent.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Fails `not_found` where `node` is its parent's first child or has no parent.
+function previous_sibling(doc: Document, node: i64) -> i64?
+    before = doc.tree.previouses[node]
+
+    if before == dom.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no previous sibling")
+    return ok(before)
+
+# Every node after `node` held by the same parent, the nearest first.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` is the last or has no parent.
+function next_siblings(doc: Document, node: i64) -> [i64]
+    found: [i64] @= []
+    at: i64 @= doc.tree.nexts[node]
+
+    while at != dom.NONE
+        found @ found.push(at)
+        at @ doc.tree.nexts[at]
+
+    return found
+
+# Every node before `node` held by the same parent, the nearest first.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` is the first or has no parent.
+function previous_siblings(doc: Document, node: i64) -> [i64]
+    found: [i64] @= []
+    at: i64 @= doc.tree.previouses[node]
+
+    while at != dom.NONE
+        found @ found.push(at)
+        at @ doc.tree.previouses[at]
+
+    return found
+
+# Every node that holds `node`, its parent first and `ROOT` last.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` is `ROOT` or was removed; a removed node's own
+# descendants answer up to it.
+function ancestors(doc: Document, node: i64) -> [i64]
+    found: [i64] @= []
+    at: i64 @= doc.tree.parents[node]
+
+    while at != dom.NONE
+        found @ found.push(at)
+        at @ doc.tree.parents[at]
+
+    return found
+
+# Every node inside `node`, at any depth, in document order: a node before the
+# nodes inside it.
+#
+# - `doc`: the document.
+# - `node`: the node's number; it is not among the answers.
+#
+# Empty where `node` has no child.
+function descendants(doc: Document, node: i64) -> [i64]
+    return query.descendants(doc.tree, node)
+
+# Every text inside `node`, at any depth, in document order and joined:
+# `<p>a <b>b</b> c</p>` holds `a b c`.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a text node answers its own text.
+#
+# Comments, instructions and the doctype are left out, the text of `script`
+# and `style` is not. Empty where `node` holds no text.
+#
+# See also `texts_of`, `stripped_texts_of`.
+function text_of(doc: Document, node: i64) -> str
+    return query.texts(doc.tree, node).join("")
+
+# Every text node inside `node`, at any depth, in document order, each as it
+# is.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# Empty where `node` holds no text.
+function texts_of(doc: Document, node: i64) -> [str]
+    return query.texts(doc.tree, node)
+
+# Every text node inside `node`, at any depth, in document order, ASCII white
+# space taken off both ends, and those left empty left out.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+#
+# A no-break space is not white space here, as in the standard. Empty where
+# `node` holds no text but white space.
+function stripped_texts_of(doc: Document, node: i64) -> [str]
+    found: [str] @= []
+
+    for s in query.texts(doc.tree, node)
+        trimmed = ascii.trim_white(s)
+
+        if trimmed != ""
+            found @ found.push(trimmed)
+
+    return found
+
+## Searching a tree
+
+# The first element inside `within` named `name`, in document order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the name, compared as `is_named` compares it.
+#
+# Fails `not_found` where there is none.
+#
+# See also `elements_named`, `select`.
+function element_named(doc: Document, within: i64, name: str) -> i64?
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if query.is_named(doc.tree, at, name)
+            return ok(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return fail(code: NOT_FOUND, msg: f"no element <{name}> inside node {within}")
+
+# Every element inside `within` named `name`, in document order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the name, compared as `is_named` compares it.
+#
+# Empty where there is none.
+function elements_named(doc: Document, within: i64, name: str) -> [i64]
+    found: [i64] @= []
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if query.is_named(doc.tree, at, name)
+            found @ found.push(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return found
+
+# The first element inside `within` whose attribute `name` is `value`, in
+# document order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the attribute's name, compared as `attribute` compares it.
+# - `value`: the value, compared exactly.
+#
+# Fails `not_found` where there is none.
+function element_with_attribute(doc: Document, within: i64, name: str, value: str) -> i64?
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        index = query.attribute_index(doc.tree, node: at, name: name)
+
+        if index >= 0 && doc.tree.attributes[at][index].value == value
+            return ok(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return fail(code: NOT_FOUND, msg: f"no element inside node {within} whose `{name}` is \"{value}\"")
+
+# Every element inside `within` whose attribute `name` is `value`, in
+# document order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the attribute's name, compared as `attribute` compares it.
+# - `value`: the value, compared exactly.
+#
+# Empty where there is none.
+function elements_with_attribute(doc: Document, within: i64, name: str, value: str) -> [i64]
+    found: [i64] @= []
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        index = query.attribute_index(doc.tree, node: at, name: name)
+
+        if index >= 0 && doc.tree.attributes[at][index].value == value
+            found @ found.push(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return found
+
+# The first element inside `within` that has the class `name`, in document
+# order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the class, compared exactly.
+#
+# Fails `not_found` where there is none.
+function element_with_class(doc: Document, within: i64, name: str) -> i64?
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if query.has_class(doc.tree, node: at, name: name)
+            return ok(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return fail(code: NOT_FOUND, msg: f"no element of the class `{name}` inside node {within}")
+
+# Every element inside `within` that has the class `name`, in document order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `name`: the class, compared exactly.
+#
+# Empty where there is none.
+function elements_with_class(doc: Document, within: i64, name: str) -> [i64]
+    found: [i64] @= []
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if query.has_class(doc.tree, node: at, name: name)
+            found @ found.push(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return found
+
+# The first element of `doc` whose `id` is `id`, in document order.
+#
+# - `doc`: the document, searched whole.
+# - `id`: the identifier, compared exactly.
+#
+# Fails `not_found` where there is none.
+function element_with_id(doc: Document, id: str) -> i64?
+    at: i64 @= query.next_in(doc.tree, root: ROOT, node: ROOT)
+
+    while at != dom.NONE
+        index = query.attribute_index(doc.tree, node: at, name: "id")
+
+        if index >= 0 && doc.tree.attributes[at][index].value == id
+            return ok(at)
+        at @ query.next_in(doc.tree, root: ROOT, node: at)
+
+    return fail(code: NOT_FOUND, msg: f"no element whose `id` is \"{id}\"")
+
+# The first element inside `within` that `selector` matches, in document
+# order.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers, but its
+#   ancestors count, as in `querySelector`.
+# - `selector`: a CSS selector list: type and `*`, `.class`, `#id`, the
+#   attribute tests `[a]`, `[a=v]`, `[a~=v]`, `[a|=v]`, `[a^=v]`, `[a$=v]`,
+#   `[a*=v]` with an `i` or `s` flag, the combinators ` `, `>`, `+` and `~`,
+#   `:first-child`, `:last-child`, `:only-child`, `:first-of-type`,
+#   `:last-of-type`, `:only-of-type`, `:nth-child()`, `:nth-last-child()`,
+#   `:nth-of-type()`, `:nth-last-of-type()` with `an+b`, `odd` or `even`,
+#   `:not()`, `:is()`, `:where()`, `:empty` and `:root`, groups joined by
+#   `,`.
+#
+# Fails `invalid` where `selector` cannot be read, and the message gives the
+# byte index where reading stopped and what it found there; fails `not_found`
+# where nothing matches.
+#
+# See also `select_all`, `is_match`.
+function select(doc: Document, within: i64, selector: str) -> i64?
+    sel = select_parse.parse(selector)?
+    memo: {i64: bool} @= {}
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if select_match.matches(doc.tree, sel, at, @memo)
+            return ok(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return fail(code: NOT_FOUND, msg: f"nothing inside node {within} matches \"{selector}\"")
+
+# Every element inside `within` that `selector` matches, in document order,
+# each once.
+#
+# - `doc`: the document.
+# - `within`: the node searched inside; it is not among the answers.
+# - `selector`: a CSS selector list, as `select` reads it.
+#
+# Fails `invalid` where `selector` cannot be read. Empty where nothing
+# matches.
+function select_all(doc: Document, within: i64, selector: str) -> [i64]?
+    sel = select_parse.parse(selector)?
+    memo: {i64: bool} @= {}
+    found: [i64] @= []
+    at: i64 @= query.next_in(doc.tree, root: within, node: within)
+
+    while at != dom.NONE
+        if select_match.matches(doc.tree, sel, at, @memo)
+            found @ found.push(at)
+        at @ query.next_in(doc.tree, root: within, node: at)
+
+    return ok(found)
+
+# Whether `selector` matches the element `node`.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a node that is not an element matches nothing.
+# - `selector`: a CSS selector list, as `select` reads it.
+#
+# Fails `invalid` where `selector` cannot be read.
+function is_match(doc: Document, node: i64, selector: str) -> bool?
+    sel = select_parse.parse(selector)?
+    memo: {i64: bool} @= {}
+    return ok(select_match.matches(doc.tree, sel, node, @memo))
+
+# The nearest element, `node` itself first and then its ancestors, that
+# `selector` matches.
+#
+# - `doc`: the document.
+# - `node`: the node's number.
+# - `selector`: a CSS selector list, as `select` reads it.
+#
+# Fails `invalid` where `selector` cannot be read, `not_found` where neither
+# `node` nor an ancestor matches.
+function closest(doc: Document, node: i64, selector: str) -> i64?
+    sel = select_parse.parse(selector)?
+    memo: {i64: bool} @= {}
+    at: i64 @= node
+
+    while at != dom.NONE
+        if select_match.matches(doc.tree, sel, at, @memo)
+            return ok(at)
+        at @ doc.tree.parents[at]
+
+    return fail(code: NOT_FOUND, msg: f"neither node {node} nor an element holding it matches \"{selector}\"")
+
+## Changing a tree
+
+# Sets the attribute `name` of the element `node` to `value`: in its place
+# where it has one of that name, after the others where not.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the element's number.
+# - `name`: the name as written; an HTML element's is written in lower case,
+#   and `xlink:`, `xml:` and `xmlns:` on another element give its namespace.
+# - `value`: the value, any text; writing escapes it.
+#
+# Aborts where `node` is not an element, which `is_element` says.
+function set_attribute(@doc: Document, node: i64, name: str, value: str)
+    assert doc.tree.kinds[node] == dom.ELEMENT
+    edit.set_attribute(@doc.tree, node: node, name: name, value: value)
+
+# Removes the attribute `name` of the element `node`; nothing where it has
+# none or is not an element.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the element's number.
+# - `name`: the name as written, compared as `attribute` compares it.
+function remove_attribute(@doc: Document, node: i64, name: str)
+    if doc.tree.kinds[node] == dom.ELEMENT
+        edit.remove_attribute(@doc.tree, node: node, name: name)
+
+# A new HTML element named `name`, with no attribute and no child, held by
+# nothing until it is put in.
+#
+# - `doc`: the document it is made in, which grows by one node.
+# - `name`: the name, written in lower case as an HTML element's is.
+#
+# See also `create_element_in`, `append_child`.
+function create_element(@doc: Document, name: str) -> i64
+    return edit.new_element(@doc.tree, space: dom.HTML, name: name)
+
+# A new element of the namespace `space` named `name`, held by nothing until it
+# is put in.
+#
+# - `doc`: the document it is made in.
+# - `space`: the namespace.
+# - `name`: the local name, as written for SVG and MathML (`foreignObject`), in
+#   lower case for HTML.
+function create_element_in(@doc: Document, space: Space, name: str) -> i64
+    in_space = match space
+        .html   => dom.HTML
+        .svg    => dom.SVG
+        .mathml => dom.MATHML
+
+    return edit.new_element(@doc.tree, space: in_space, name: name)
+
+# A new text node holding `text`, held by nothing until it is put in.
+#
+# - `doc`: the document it is made in.
+# - `text`: the characters, any text; writing escapes them.
+function create_text(@doc: Document, text: str) -> i64
+    return dom.add_data(@doc.tree, kind: dom.TEXT, data: text)
+
+# A new comment holding `text`, held by nothing until it is put in.
+#
+# - `doc`: the document it is made in.
+# - `text`: the characters; a comment holding `-->` is written as it is, and
+#   reading the written text ends the comment there.
+function create_comment(@doc: Document, text: str) -> i64
+    return dom.add_data(@doc.tree, kind: dom.COMMENT, data: text)
+
+# Puts `child` last among the children of `to`, taking it from where it
+# stood.
+#
+# - `doc`: the document, changed in place.
+# - `to`: the node that will hold it: an element, a fragment or the
+#   document.
+# - `child`: the node put in; not the document, nor a fragment.
+#
+# Fails `invalid` where `to` cannot hold children, where `child` is `ROOT`
+# or a fragment, or where `child` is `to` or holds it.
+#
+# See also `insert_before`, `insert_after`.
+function append_child(@doc: Document, to: i64, child: i64) -> ()?
+    why = edit.place(@doc.tree, parent: to, child: child, before: dom.NONE)
+
+    if why != ""
+        return fail(code: INVALID, msg: f"node {child} cannot go into node {to}: {why}")
+    return ok()
+
+# Puts `node` just before `sibling`, in the parent of `sibling`, taking it from
+# where it stood.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node put in; not the document, nor a fragment.
+# - `sibling`: the node it goes before.
+#
+# Fails `invalid` where `sibling` has no parent, where `node` is `ROOT` or a
+# fragment, or where `node` holds `sibling`.
+function insert_before(@doc: Document, node: i64, sibling: i64) -> ()?
+    holder = doc.tree.parents[sibling]
+
+    if holder == dom.NONE
+        return fail(code: INVALID, msg: f"node {sibling} has no parent, so nothing goes before it")
+    why = edit.place(@doc.tree, parent: holder, child: node, before: sibling)
+
+    if why != ""
+        return fail(code: INVALID, msg: f"node {node} cannot go before node {sibling}: {why}")
+    return ok()
+
+# Puts `node` just after `sibling`, in the parent of `sibling`, taking it from
+# where it stood.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node put in; not the document, nor a fragment.
+# - `sibling`: the node it goes after.
+#
+# Fails `invalid` as `insert_before` fails.
+function insert_after(@doc: Document, node: i64, sibling: i64) -> ()?
+    holder = doc.tree.parents[sibling]
+
+    if holder == dom.NONE
+        return fail(code: INVALID, msg: f"node {sibling} has no parent, so nothing goes after it")
+
+    if node == sibling
+        return ok()
+    why = edit.refusal(doc.tree, parent: holder, child: node)
+
+    if why != ""
+        return fail(code: INVALID, msg: f"node {node} cannot go after node {sibling}: {why}")
+    dom.detach(@doc.tree, node)
+    dom.insert_before(@doc.tree, parent: holder, child: node, before: doc.tree.nexts[sibling])
+    return ok()
+
+# Takes `node` out of its parent, with everything inside it; nothing where it
+# has no parent.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node taken out; it keeps its number and may be put back.
+function remove(@doc: Document, node: i64)
+    dom.detach(@doc.tree, node)
+
+# Puts `new` where `old` stands and takes `old` out.
+#
+# - `doc`: the document, changed in place.
+# - `old`: the node taken out; it keeps its number.
+# - `new`: the node put in its place, taken from where it stood.
+#
+# Fails `invalid` where `old` has no parent, where `new` is `ROOT` or a
+# fragment, or where `new` holds `old`; nothing changes where `new` is `old`.
+function replace_node(@doc: Document, old: i64, new: i64) -> ()?
+    if new == old
+        return ok()
+    holder = doc.tree.parents[old]
+
+    if holder == dom.NONE
+        return fail(code: INVALID, msg: f"node {old} has no parent, so nothing takes its place")
+    why = edit.refusal(doc.tree, parent: holder, child: new)
+
+    if why != ""
+        return fail(code: INVALID, msg: f"node {new} cannot take the place of node {old}: {why}")
+    dom.detach(@doc.tree, new)
+    dom.insert_before(@doc.tree, parent: holder, child: new, before: old)
+    dom.detach(@doc.tree, old)
+    return ok()
+
+# Puts the children of `node` where `node` stands, in order, and takes `node`
+# out; nothing where it has no parent.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node taken out, left with no children.
+function unwrap(@doc: Document, node: i64)
+    holder = doc.tree.parents[node]
+
+    if holder == dom.NONE
+        return
+    source = write.holder(doc.tree, node)
+
+    for child in dom.children(doc.tree, source)
+        if edit.refusal(doc.tree, parent: holder, child: child) == ""
+            dom.detach(@doc.tree, child)
+            dom.insert_before(@doc.tree, parent: holder, child: child, before: node)
+
+    dom.detach(@doc.tree, node)
+
+# Sets the text of `node`: an element's or a fragment's children replaced by
+# one text node, or a text's, a comment's or an instruction's characters
+# replaced.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node; a document or a doctype is left as it is.
+# - `text`: the characters; an element is left with no children where it is
+#   empty.
+function set_text(@doc: Document, node: i64, text: str)
+    kind = doc.tree.kinds[node]
+
+    if kind == dom.ELEMENT || kind == dom.FRAGMENT
+        edit.clear(@doc.tree, node)
+
+        if text != ""
+            made = dom.add_data(@doc.tree, kind: dom.TEXT, data: text)
+            dom.append_child(@doc.tree, parent: write.holder(doc.tree, node), child: made)
+    else if kind == dom.TEXT || kind == dom.COMMENT || kind == dom.INSTRUCTION
+        doc.tree.data[node] @ text
+
+# Takes every child of `node` out.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the node emptied; its children keep their numbers.
+function remove_children(@doc: Document, node: i64)
+    edit.clear(@doc.tree, node)
+
+# Reads `text` as a fragment inside the element `node`, as setting
+# `innerHTML` does, and puts what it reads in place of the children of
+# `node`.
+#
+# - `doc`: the document, changed in place.
+# - `node`: the element; its name and namespace are the fragment's context.
+# - `text`: the markup, any text at all.
+#
+# Aborts where `node` is not an element. Its old children keep their numbers.
+function set_inner_html(@doc: Document, node: i64, text: str)
+    assert doc.tree.kinds[node] == dom.ELEMENT
+    got = parser.run(
+        text: text,
+        scripting: doc.tree.scripting,
+        max_depth: DEFAULT_MAX_DEPTH,
+        context: doc.tree.names[node],
+        context_space: doc.tree.spaces[node]
+    )
+    edit.clear(@doc.tree, node)
+    target = write.holder(doc.tree, node)
+
+    for child in dom.children(got.tree, 0)
+        made = edit.copy_across(t: @doc.tree, source: got.tree, node: child)
+        dom.append_child(@doc.tree, parent: target, child: made)
+
+# A copy of `node` and everything inside it, held by nothing until it is put
+# in.
+#
+# - `doc`: the document, which grows by the nodes copied.
+# - `node`: the node copied; copying `ROOT` gives a fragment.
+#
+# See also `copy_from`.
+function copy_node(@doc: Document, node: i64) -> i64
+    return edit.copy_within(@doc.tree, node)
+
+# A copy, in `doc`, of the node `node` of `source` and everything inside it,
+# held by nothing until it is put in.
+#
+# - `doc`: the document the copy is made in.
+# - `source`: the document copied from, which does not change.
+# - `node`: the node of `source` copied; copying its `ROOT` gives a fragment.
+#
+# Aborts where `node` is not a number `source` gave.
+function copy_from(@doc: Document, source: Document, node: i64) -> i64
+    return edit.copy_across(t: @doc.tree, source: source.tree, node: node)
+
+## Writing a tree
+
+# `doc` as HTML, by the standard's serialisation algorithm: its doctype,
+# comments and elements in order.
+#
+# - `doc`: the document or fragment.
+#
+# The same tree always gives the same bytes: attributes in their order between
+# `"`, the void elements (`br`, `img`) with no end tag, text escaped but inside
+# `script`, `style` and the other elements of raw text. Reading the answer may
+# not give back the same tree where the tree was changed into one no reading
+# makes, as a `p` inside a `p`: the standard says the same.
+#
+# See also `format_node`, `format_inner`.
+function format(doc: Document) -> str
+    return write.written(doc.tree, ROOT, true)
+
+# `node` as HTML, itself and everything inside it, as `outerHTML` writes it.
+#
+# - `doc`: the document.
+# - `node`: the node's number; `ROOT` writes what `format` writes.
+function format_node(doc: Document, node: i64) -> str
+    return write.written(doc.tree, node, false)
+
+# What `node` holds as HTML, without itself, as `innerHTML` writes it.
+#
+# - `doc`: the document.
+# - `node`: the node's number; a `template` writes its contents.
+#
+# Empty where `node` holds nothing or is a void element.
+function format_inner(doc: Document, node: i64) -> str
+    return write.written(doc.tree, node, true)
+
+## Characters
+
+# `s` with `&`, `<`, `>`, `"` and `'` written `&amp;`, `&lt;`, `&gt;`,
+# `&quot;` and `&#39;`, so that it stands as text or as a quoted attribute
+# value anywhere.
+#
+# - `s`: any text, the empty one included.
+#
+# See also `escape_text`, `escape_attribute`, `unescape`.
+function escape(s: str) -> str
+    return refs.escaped_all(s)
+
+# `s` escaped as the standard's serialisation escapes text: `&`, a no-break
+# space, `<` and `>` written `&amp;`, `&nbsp;`, `&lt;` and `&gt;`.
+#
+# - `s`: any text.
+function escape_text(s: str) -> str
+    return refs.escaped(s, false)
+
+# `s` escaped as the standard's serialisation escapes an attribute's value: as
+# `escape_text`, and `"` written `&quot;`.
+#
+# - `s`: any text; it stands between `"`.
+function escape_attribute(s: str) -> str
+    return refs.escaped(s, true)
+
+# `s` with its character references read as reading reads them in text:
+# every named reference of the standard, `&amp;` and the old ones written
+# without `;` as `&amp`, and numeric ones, `&#65;` and `&#x41;`.
+#
+# - `s`: escaped text; an `&` that begins no reference is kept as it is.
+#
+# A numeric reference to nothing a text can hold is read as the standard
+# says: 0, a surrogate or past U+10FFFF as U+FFFD, and 0x80 to 0x9F as the
+# Windows-1252 character it names.
+#
+# See also `unescape_attribute`.
+function unescape(s: str) -> str
+    return refs.unescaped(s, false)
+
+# `s` with its character references read as reading reads them in an
+# attribute's value: as `unescape`, but an old reference written without `;`
+# and followed by a letter, a digit or `=` is kept as it is, so `?a=1&copy=2`
+# keeps its `&copy`.
+#
+# - `s`: an attribute's escaped value.
+function unescape_attribute(s: str) -> str
+    return refs.unescaped(s, true)
+
+# The characters the named character reference `name` stands for: `amp;`
+# stands for `&`.
+#
+# - `name`: the name as the standard's table writes it, `&` left off: with its
+#   `;`, or one of the old names written without it, as `amp`.
+#
+# Fails `not_found` where the table has no such name, compared exactly.
+#
+# See also `named_references`.
+function named_reference(name: str) -> str?
+    found = refs.name_index(text: name, from: 0, to: name.len())
+
+    if found < 0
+        return fail(
+            code: NOT_FOUND,
+            msg: f"no named character reference `{name}`: a name is written as the table writes it, `amp;` or the old `amp`"
+        )
+    return ok(refs.chars_of(entities.POINTS[found]))
+
+# Every named character reference of the standard, 2,231, each name as the
+# table writes it (`amp;`, and the old `amp`) to the characters it stands for.
+function named_references() -> {str: str}
+    table: {str: str} @= {}
+
+    for i in range(from: 0, to: entities.NAMES.len())
+        table[entities.NAMES[i]] @ refs.chars_of(entities.POINTS[i])
+
+    return table
+
+## Tests
+
+test "parse: two paragraphs, the second closing the first, and the elements put in"
+    want = ["| <html>", "|   <head>", "|   <body>", "|     <p>", "|       \"a\"", "|     <p>", "|       \"b\""]
+    assert dump.lines_of(parse("<p>a<p>b").tree) == want
+
+test "parse: the standard's 13.2.10.1, `<b><i></b></i>` mended by the adoption agency"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <p>"
+        "|       \"1\""
+        "|       <b>"
+        "|         \"2\""
+        "|         <i>"
+        "|           \"3\""
+        "|       <i>"
+        "|         \"4\""
+        "|       \"5\""
+    ]
+    assert dump.lines_of(parse("<p>1<b>2<i>3</b>4</i>5</p>").tree) == want
+
+test "parse: the standard's 13.2.10.2, `<b><p></b></p>` with a furthest block"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <b>"
+        "|       \"1\""
+        "|     <p>"
+        "|       <b>"
+        "|         \"2\""
+        "|       \"3\""
+    ]
+    assert dump.lines_of(parse("<b>1<p>2</b>3</p>").tree) == want
+
+test "parse: the standard's 13.2.10.3, a `b` and its text foster parented before the table"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <b>"
+        "|     <b>"
+        "|       \"bbb\""
+        "|     <table>"
+        "|       <tbody>"
+        "|         <tr>"
+        "|           <td>"
+        "|             \"aaa\""
+        "|     <b>"
+        "|       \"ccc\""
+    ]
+    assert dump.lines_of(parse("<table><b><tr><td>aaa</td></tr>bbb</table>ccc").tree) == want
+
+test "parse: the standard's 13.2.10.6, unclosed formatting elements reopened, three of a kind at most"
+    text = "<!DOCTYPE html>\n<p><b class=x><b class=x><b><b class=x><b class=x><b>X\n<p>X\n<p><b><b class=x><b>X\n<p></b></b></b></b></b></b>X\n"
+    first = "<p><b class=\"x\"><b class=\"x\"><b><b class=\"x\"><b class=\"x\"><b>X\n</b></b></b></b></b></b></p>"
+    second = "<p><b class=\"x\"><b><b class=\"x\"><b class=\"x\"><b>X\n</b></b></b></b></b></p>"
+    third = "<p><b class=\"x\"><b><b class=\"x\"><b class=\"x\"><b><b><b class=\"x\"><b>X\n</b></b></b></b></b></b></b></b></p>"
+    assert format(parse(text)) == "<!DOCTYPE html><html><head></head><body>" + first + second + third + "<p>X\n</p></body></html>"
+
+test "parse: the head's elements, a title's text, and text after them opening the body"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|     <title>"
+        "|       \"T<b>\""
+        "|     <meta>"
+        "|       charset=\"utf-8\""
+        "|   <body>"
+        "|     \"text\""
+    ]
+    assert dump.lines_of(parse("<title>T<b></title><meta charset=utf-8>text").tree) == want
+
+test "parse: SVG and MathML, names and attributes in their case, an integration point holding HTML"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <svg svg>"
+        "|       viewBox=\"0 0 1 1\""
+        "|       <svg foreignObject>"
+        "|         <p>"
+        "|           \"x\""
+        "|       <svg circle>"
+        "|         xlink href=\"#a\""
+        "|     <math math>"
+        "|       <math mi>"
+        "|         \"y\""
+    ]
+    got = parse(
+        "<svg viewbox='0 0 1 1'><foreignobject><p>x</p></foreignobject><circle xlink:href=#a /></svg><math><mi>y</mi></math>"
+    )
+    assert dump.lines_of(got.tree) == want
+
+test "parse: a paragraph start tag breaking out of SVG, and CDATA read in SVG alone"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <svg svg>"
+        "|       \"a<b>\""
+        "|     <p>"
+        "|       <!-- [CDATA[c]] -->"
+    ]
+    assert dump.lines_of(parse("<svg><![CDATA[a<b>]]><p><![CDATA[c]]>").tree) == want
+
+test "parse: text foster parented before a table, and white space kept in it"
+    assert dump.lines_of(parse("<table> x<tr><td>1</table>").tree) == ["| <html>", "|   <head>", "|   <body>", "|     \" x\"", "|     <table>", "|       <tbody>", "|         <tr>", "|           <td>", "|             \"1\""]
+    assert dump.lines_of(parse("<table>x <tr><td>1</table>").tree)[3] == "|     \"x \""
+    assert dump.lines_of(parse("<table> <!--c-->x<tr><td>1</table>").tree)[3] == "|     \"x\""
+
+test "parse: a template's contents, a cell read in a row's mode inside it"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|     <template>"
+        "|       content"
+        "|         <td>"
+        "|           \"x\""
+        "|   <body>"
+    ]
+    assert dump.lines_of(parse("<template><td>x</td></template>").tree) == want
+
+test "parse: a select holding a div and its option closed by `</select>`, as the 2026 standard reads it"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <select>"
+        "|       <option>"
+        "|         \"a\""
+        "|         <div>"
+        "|           \"b\""
+        "|     \"c\""
+    ]
+    assert dump.lines_of(parse("<select><option>a<div>b</div></select>c").tree) == want
+
+test "parse: a processing instruction before the document element, and a comment after it"
+    want = ["| <?php x>", "| <html>", "|   lang=\"en\"", "|   <head>", "|   <body>", "|     <p>", "| <!-- c -->"]
+    assert dump.lines_of(parse("<?php x?><html lang=en><p></html><!--c-->").tree) == want
+
+test "parse: a frameset, and a doctype with its identifiers"
+    want = [
+        "| <!DOCTYPE html \"-//W3C//DTD HTML 4.01 Frameset//EN\" \"\">"
+        "| <html>"
+        "|   <head>"
+        "|   <frameset>"
+        "|     <frame>"
+    ]
+    got = parse("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Frameset//EN\"><frameset><frame></frameset>")
+    assert dump.lines_of(got.tree) == want && quirks_of(got) == .quirks
+
+test "parse: a second `a` closing the first, `</p>` with no `p`, and an old reference in a value"
+    want = [
+        "| <html>"
+        "|   <head>"
+        "|   <body>"
+        "|     <a>"
+        "|       href=\"?a=1&copy=2\""
+        "|       \"x\""
+        "|     <a>"
+        "|       href=\"2\""
+        "|       \"y\""
+        "|       <p>"
+    ]
+    assert dump.lines_of(parse("<a href=\"?a=1&copy=2\">x<a href=2>y</p>").tree) == want
+
+test "parse: the line feed after `pre` and `textarea` dropped once, and a script's text raw"
+    assert format(parse("<pre>\n\ny</pre>")) == "<html><head></head><body><pre>\ny</pre></body></html>"
+    assert format(parse("<textarea>\nx</textarea>")) == "<html><head></head><body><textarea>x</textarea></body></html>"
+    assert format(parse("<script>a<b && c</script>")) == "<html><head><script>a<b && c</script></head><body></body></html>"
+
+test "parse: `noscript` as text with scripting, as markup without"
+    assert format(parse("<noscript><p>x</p></noscript>")) == "<html><head><noscript><p>x</p></noscript></head><body></body></html>"
+    options: ParseOptions @= default_options()
+    options.scripting @ false
+    off = parse_with("<noscript><p>x</p></noscript>", options).must().document
+    assert format(off) == "<html><head><noscript></noscript></head><body><p>x</p></body></html>"
+
+test "parse: zero bytes dropped from text, carriage returns read as line feeds, and characters of four bytes"
+    zero: [u8] = [0]
+    nul = zero.validated_bytes().must()
+    assert format(parse("<p>a" + nul + "b")) == "<html><head></head><body><p>ab</p></body></html>"
+    assert format(parse("\r<p>a\r\nb\rc")) == "<html><head></head><body><p>a\nb\nc</p></body></html>"
+    assert text_of(parse("<p>😀 é</p>"), ROOT) == "😀 é"
+
+test "parse_with: the errors the standard names, each with its line and column"
+    got = parse_with("<!DOCTYPE html>\n<p></p x>&#0;</b>", default_options()).must()
+    codes: [str] @= []
+
+    for e in got.errors
+        codes @ codes.push(e.code)
+
+    assert codes == ["end-tag-with-attributes", "null-character-reference", "unexpected-end-tag"]
+    assert got.errors[0].line == 2 && got.errors[0].column == 4 && got.errors[2].tag == "b"
+
+test "parse_with: a byte past the limit fails `limit`, the limit itself does not"
+    options: ParseOptions @= default_options()
+    options.max_bytes @ 3
+
+    match parse_with("<p>x", options)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    assert !parse_with("<p>", options).is_err()
+
+test "parse: a hundred thousand elements deep read flat past 512, compared and written with no recursion"
+    text = repeat("<div>", 100000) + "x"
+    doc = parse(text)
+    all_nodes = descendants(doc, ROOT)
+    assert all_nodes.len() == 100004 && ancestors(doc, all_nodes[all_nodes.len() - 1]).len() <= DEFAULT_MAX_DEPTH + 3
+    assert doc == parse(text) && format(doc).len() > 1000000
+
+test "parse: every truncated and twisted form ends with a tree and no guard firing"
+    for text in ["<", "</", "<!", "<!-", "<!--", "<?", "<a", "<a b='", "<table><tr><td><table><tr><td></table>", "<frameset></frameset><p>", "<math><mi><svg><foreignObject><p></math>", "</html><p>", "<template><template><tr></template>", "<select><select><input>", "<body><body foo=1><html bar=2>", "a&#x110000;&#xD800;&#128;&nbsp", "<b><table><b></table></b>", "<plaintext></plaintext>", "<svg><script>a</script><desc><b></svg>", "<a><b><c><d><e><f><g><a>", "<p><table></p>"]
+        got = parser.run(
+            text: text,
+            scripting: true,
+            max_depth: DEFAULT_MAX_DEPTH,
+            context: "",
+            context_space: dom.HTML
+        )
+        assert got.stalls == 0 && got.stuck == 0 && got.tree.kinds.len() > 1
+
+test "parse_fragment: a row in a body of a table, a title's text, and a template's contents"
+    assert format(parse_fragment(text: "<td>a<td>b", context: "tr")) == "<td>a</td><td>b</td>"
+    assert format(parse_fragment(text: "<b>x</title>", context: "title")) == "&lt;b&gt;x&lt;/title&gt;"
+    assert format(parse_fragment(text: "<tr><td>1", context: "template")) == "<tr><td>1</td></tr>"
+
+test "select: a selector that cannot be read fails `invalid`, and nothing matched fails `not_found`"
+    doc = parse("<p>")
+
+    match select(doc, ROOT, "p[")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match select(doc, ROOT, "div")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "append_child: a node inside itself and text in the document refused, a node moved from where it stood"
+    doc: Document @= parse("<div><p>a</p></div><span></span>")
+    div = select(doc, ROOT, "div").must()
+    p = select(doc, ROOT, "p").must()
+    assert append_child(@doc, to: p, child: div).is_err() && append_child(@doc, to: ROOT, child: create_text(@doc, "x")).is_err()
+    append_child(@doc, to: select(doc, ROOT, "span").must(), child: p).must()
+    assert format_inner(doc, select(doc, ROOT, "body").must()) == "<div></div><span><p>a</p></span>"
+
+test "format: a template's contents, an SVG element's attributes, and a no-break space"
+    doc = parse("<template><b>x</b></template><svg><use xlink:href=#a></use></svg>" + unescape("&nbsp;"))
+    assert format(doc) == "<html><head><template><b>x</b></template></head><body><svg><use xlink:href=\"#a\"></use></svg>&nbsp;</body></html>"
+
+## Examples
+
+# The options a page is read with.
+test "default_options: as a browser reads a page"
+    options = default_options()
+    assert options.max_depth == DEFAULT_MAX_DEPTH && options.scripting && options.context == ""
+
+# A page with nothing but a paragraph, read as a browser reads it.
+test "parse: the missing elements put in"
+    assert format(parse("<p>Hi")) == "<html><head></head><body><p>Hi</p></body></html>"
+
+# A table row read inside a table body, as `innerHTML` reads it.
+test "parse_fragment: a row inside tbody"
+    assert format(parse_fragment(text: "<tr><td>1</td></tr>", context: "tbody")) == "<tr><td>1</td></tr>"
+
+# A page read with its parse errors listed.
+test "parse_with: the errors of a page"
+    got = parse_with("<!DOCTYPE html><p></p x>", default_options()).must()
+    assert got.errors.len() == 1 && got.errors[0].code == "end-tag-with-attributes"
+
+# The mode a doctype sets.
+test "quirks_of: with a doctype and without"
+    assert quirks_of(parse("<!DOCTYPE html><p>")) == .no_quirks
+    assert quirks_of(parse("<p>")) == .quirks
+
+# A node matched on.
+test "node_of: an element's name and attributes"
+    doc = parse("<a href=x>y</a>")
+    a = select(doc, ROOT, "a").must()
+    want: [Attribute] = [Attribute(space: .none, name: "href", value: "x")]
+    assert node_of(doc, a) == .element(space: .html, name: "a", attributes: want)
+
+# Whether a node is an element.
+test "is_element: an element and its text"
+    doc = parse("<b>x</b>")
+    b = select(doc, ROOT, "b").must()
+    assert is_element(doc, b) && !is_element(doc, first_child(doc, b).must())
+
+# An element's name, in lower case.
+test "name_of: an element written in upper case"
+    doc = parse("<DIV></DIV>")
+    assert name_of(doc, select(doc, ROOT, "div").must()).must() == "div"
+
+# Whether an element has a name.
+test "is_named: a paragraph"
+    doc = parse("<p>")
+    assert is_named(doc, select(doc, ROOT, "p").must(), "P")
+
+# An attribute's value.
+test "attribute: a link's href"
+    doc = parse("<a href=\"/home\">Home</a>")
+    assert attribute(doc, select(doc, ROOT, "a").must(), "href").must() == "/home"
+
+# Whether an element has an attribute.
+test "has_attribute: a checked box"
+    doc = parse("<input type=checkbox checked>")
+    assert has_attribute(doc, select(doc, ROOT, "input").must(), "checked")
+
+# An element's attributes, in order.
+test "attributes_of: two attributes"
+    doc = parse("<img src=a.png alt=A>")
+    got = attributes_of(doc, select(doc, ROOT, "img").must())
+    assert got.len() == 2 && got[0].name == "src" && got[1].value == "A"
+
+# An element's classes.
+test "classes_of: a class attribute split"
+    doc = parse("<p class=\" a  b \">")
+    assert classes_of(doc, select(doc, ROOT, "p").must()) == ["a", "b"]
+
+# Whether an element has a class.
+test "has_class: one of two"
+    doc = parse("<p class=\"note warn\">")
+    assert has_class(doc, select(doc, ROOT, "p").must(), "warn")
+
+# The element that holds another.
+test "parent: a list item's list"
+    doc = parse("<ul><li>a</ul>")
+    ul = select(doc, ROOT, "ul").must()
+    assert parent(doc, select(doc, ROOT, "li").must()).must() == ul
+
+# The children of an element, text among them.
+test "children: an element and text"
+    doc = parse("<p>a<b>b</b></p>")
+    assert children(doc, select(doc, ROOT, "p").must()).len() == 2
+
+# The child elements of a list.
+test "child_elements: three items"
+    doc = parse("<ul><li>a<li>b<li>c</ul>")
+    assert child_elements(doc, select(doc, ROOT, "ul").must()).len() == 3
+
+# The first child of a paragraph.
+test "first_child: a text"
+    doc = parse("<p>a<b>b</b></p>")
+    assert node_of(doc, first_child(doc, select(doc, ROOT, "p").must()).must()) == .text(v: "a")
+
+# The last child of a paragraph.
+test "last_child: an element"
+    doc = parse("<p>a<b>b</b></p>")
+    assert last_child(doc, select(doc, ROOT, "p").must()).must() == select(doc, ROOT, "b").must()
+
+# The node after a list item.
+test "next_sibling: the next item"
+    doc = parse("<ul><li id=a><li id=b></ul>")
+    assert next_sibling(doc, element_with_id(doc, "a").must()).must() == element_with_id(doc, "b").must()
+
+# The node before a list item.
+test "previous_sibling: the item before"
+    doc = parse("<ul><li id=a><li id=b></ul>")
+    assert previous_sibling(doc, element_with_id(doc, "b").must()).must() == element_with_id(doc, "a").must()
+
+# Every node after a list item.
+test "next_siblings: the items after the first"
+    doc = parse("<ul><li id=a><li><li></ul>")
+    assert next_siblings(doc, element_with_id(doc, "a").must()).len() == 2
+
+# Every node before a list item, the nearest first.
+test "previous_siblings: the items before the last"
+    doc = parse("<ul><li><li id=b><li id=c></ul>")
+    got = previous_siblings(doc, element_with_id(doc, "c").must())
+    assert got.len() == 2 && got[0] == element_with_id(doc, "b").must()
+
+# Every node holding a cell, up to the document.
+test "ancestors: a cell's table"
+    doc = parse("<table><tr><td>x</table>")
+    names: [str] @= []
+
+    for a in ancestors(doc, select(doc, ROOT, "td").must())
+        names @ names.push(name_of(doc, a).default("#document"))
+
+    assert names == ["tr", "tbody", "table", "body", "html", "#document"]
+
+# Every node inside an element, in document order.
+test "descendants: an element and its text"
+    doc = parse("<div><p>a</p></div>")
+    assert descendants(doc, select(doc, ROOT, "div").must()).len() == 2
+
+# The text of an element, at every depth.
+test "text_of: a paragraph with bold text"
+    doc = parse("<p>a <b>b</b> c</p>")
+    assert text_of(doc, select(doc, ROOT, "p").must()) == "a b c"
+
+# Each text of an element, as it is.
+test "texts_of: three texts"
+    doc = parse("<p>a <b>b</b> c</p>")
+    assert texts_of(doc, select(doc, ROOT, "p").must()) == ["a ", "b", " c"]
+
+# Each text of a list, white space taken off and empty ones left out.
+test "stripped_texts_of: the items of a list"
+    doc = parse("<ul>\n  <li> one </li>\n  <li>two</li>\n</ul>")
+    assert stripped_texts_of(doc, select(doc, ROOT, "ul").must()) == ["one", "two"]
+
+# The first element of a name.
+test "element_named: the title"
+    doc = parse("<title>Ziggy</title>")
+    assert text_of(doc, element_named(doc, ROOT, "title").must()) == "Ziggy"
+
+# Every element of a name.
+test "elements_named: every link"
+    doc = parse("<a href=1>x</a><a href=2>y</a>")
+    assert elements_named(doc, ROOT, "a").len() == 2
+
+# The first element with an attribute's value.
+test "element_with_attribute: an input by name"
+    doc = parse("<input name=q value=bowie>")
+    assert attribute(doc, element_with_attribute(doc, ROOT, name: "name", value: "q").must(), "value").must() == "bowie"
+
+# Every element with an attribute's value.
+test "elements_with_attribute: every text input"
+    doc = parse("<input type=text><input type=text><input type=submit>")
+    assert elements_with_attribute(doc, ROOT, name: "type", value: "text").len() == 2
+
+# The first element with a class.
+test "element_with_class: the first note"
+    doc = parse("<p class=note>a</p><p class=note>b</p>")
+    assert text_of(doc, element_with_class(doc, ROOT, "note").must()) == "a"
+
+# Every element with a class.
+test "elements_with_class: every note"
+    doc = parse("<p class=note>a</p><p class=\"x note\">b</p>")
+    assert elements_with_class(doc, ROOT, "note").len() == 2
+
+# The element with an identifier.
+test "element_with_id: a heading"
+    doc = parse("<h1 id=top>Hi</h1>")
+    assert text_of(doc, element_with_id(doc, "top").must()) == "Hi"
+
+# The first element a selector matches.
+test "select: a link inside a list"
+    doc = parse("<a>0</a><ul><li><a href=1>1</a></ul>")
+    assert text_of(doc, select(doc, ROOT, "ul a[href]").must()) == "1"
+
+# Every element a selector matches.
+test "select_all: every other row"
+    doc = parse("<table><tr><td>1<tr><td>2<tr><td>3</table>")
+    assert select_all(doc, ROOT, "tr:nth-child(odd)").must().len() == 2
+
+# Whether a selector matches an element.
+test "is_match: a paragraph of a class"
+    doc = parse("<p class=x>")
+    assert is_match(doc, select(doc, ROOT, "p").must(), "p.x").must()
+
+# The nearest element a selector matches.
+test "closest: the table of a cell"
+    doc = parse("<table id=t><tr><td>x</table>")
+    assert closest(doc, select(doc, ROOT, "td").must(), "table").must() == element_with_id(doc, "t").must()
+
+# An attribute set on an element.
+test "set_attribute: a link's target"
+    doc: Document @= parse("<a href=x>y</a>")
+    a = select(doc, ROOT, "a").must()
+    set_attribute(@doc, node: a, name: "target", value: "_blank")
+    assert format_node(doc, a) == "<a href=\"x\" target=\"_blank\">y</a>"
+
+# An attribute taken off an element.
+test "remove_attribute: a style taken off"
+    doc: Document @= parse("<p style=\"color: red\">x</p>")
+    p = select(doc, ROOT, "p").must()
+    remove_attribute(@doc, node: p, name: "style")
+    assert format_node(doc, p) == "<p>x</p>"
+
+# An element made and put in.
+test "create_element: a paragraph added to the body"
+    doc: Document @= parse("")
+    p = create_element(@doc, "p")
+    append_child(@doc, to: select(doc, ROOT, "body").must(), child: p).must()
+    assert format(doc) == "<html><head></head><body><p></p></body></html>"
+
+# An SVG element made.
+test "create_element_in: an SVG circle"
+    doc: Document @= parse("")
+    c = create_element_in(@doc, space: .svg, name: "circle")
+    assert format_node(doc, c) == "<circle></circle>"
+
+# A text made and put in.
+test "create_text: text added to a paragraph"
+    doc: Document @= parse("<p></p>")
+    t = create_text(@doc, "1 < 2")
+    p = select(doc, ROOT, "p").must()
+    append_child(@doc, to: p, child: t).must()
+    assert format_node(doc, p) == "<p>1 &lt; 2</p>"
+
+# A comment made.
+test "create_comment: a comment written"
+    doc: Document @= parse("")
+    c = create_comment(@doc, " note ")
+    assert format_node(doc, c) == "<!-- note -->"
+
+# A node put last in another.
+test "append_child: an item added to a list"
+    doc: Document @= parse("<ul><li>a</ul>")
+    li = create_element(@doc, "li")
+    ul = select(doc, ROOT, "ul").must()
+    append_child(@doc, to: ul, child: li).must()
+    assert format_node(doc, ul) == "<ul><li>a</li><li></li></ul>"
+
+# A node put before another.
+test "insert_before: a heading before a paragraph"
+    doc: Document @= parse("<p>x</p>")
+    h = create_element(@doc, "h1")
+    insert_before(@doc, node: h, sibling: select(doc, ROOT, "p").must()).must()
+    assert format_inner(doc, select(doc, ROOT, "body").must()) == "<h1></h1><p>x</p>"
+
+# A node put after another.
+test "insert_after: a rule after a paragraph"
+    doc: Document @= parse("<p>x</p>")
+    hr = create_element(@doc, "hr")
+    insert_after(@doc, node: hr, sibling: select(doc, ROOT, "p").must()).must()
+    assert format_inner(doc, select(doc, ROOT, "body").must()) == "<p>x</p><hr>"
+
+# A node taken out.
+test "remove: every script taken out"
+    doc: Document @= parse("<p>a</p><script>x()</script>")
+
+    for s in select_all(doc, ROOT, "script").must()
+        remove(@doc, s)
+
+    assert format_inner(doc, select(doc, ROOT, "body").must()) == "<p>a</p>"
+
+# A node put in another's place.
+test "replace_node: bold made strong"
+    doc: Document @= parse("<p><b>x</b></p>")
+    b = select(doc, ROOT, "b").must()
+    strong = create_element(@doc, "strong")
+    replace_node(@doc, old: b, new: strong).must()
+    append_child(@doc, to: strong, child: first_child(doc, b).must()).must()
+    assert format_node(doc, select(doc, ROOT, "p").must()) == "<p><strong>x</strong></p>"
+
+# An element replaced by its children.
+test "unwrap: a span taken away and its text kept"
+    doc: Document @= parse("<p>a<span>b</span>c</p>")
+    unwrap(@doc, select(doc, ROOT, "span").must())
+    assert format_node(doc, select(doc, ROOT, "p").must()) == "<p>abc</p>"
+
+# An element's text set.
+test "set_text: a heading's text replaced"
+    doc: Document @= parse("<h1>Old <i>title</i></h1>")
+    h = select(doc, ROOT, "h1").must()
+    set_text(@doc, node: h, text: "New")
+    assert format_node(doc, h) == "<h1>New</h1>"
+
+# An element emptied.
+test "remove_children: a list emptied"
+    doc: Document @= parse("<ul><li>a<li>b</ul>")
+    ul = select(doc, ROOT, "ul").must()
+    remove_children(@doc, ul)
+    assert format_node(doc, ul) == "<ul></ul>"
+
+# Markup read into an element.
+test "set_inner_html: a list's items replaced"
+    doc: Document @= parse("<ul><li>a</ul>")
+    ul = select(doc, ROOT, "ul").must()
+    set_inner_html(@doc, node: ul, text: "<li>x<li>y")
+    assert format_node(doc, ul) == "<ul><li>x</li><li>y</li></ul>"
+
+# An element copied and put in twice.
+test "copy_node: a row copied"
+    doc: Document @= parse("<table><tr><td>1</table>")
+    tr = select(doc, ROOT, "tr").must()
+    copy = copy_node(@doc, tr)
+    append_child(@doc, to: parent(doc, tr).must(), child: copy).must()
+    assert select_all(doc, ROOT, "td").must().len() == 2
+
+# A fragment read apart, copied into a page.
+test "copy_from: a parsed fragment put in a page"
+    doc: Document @= parse("<div></div>")
+    part = parse_fragment(text: "<em>x</em>", context: "div")
+    em = copy_from(doc: @doc, source: part, node: first_child(part, ROOT).must())
+    append_child(@doc, to: select(doc, ROOT, "div").must(), child: em).must()
+    assert format_inner(doc, select(doc, ROOT, "body").must()) == "<div><em>x</em></div>"
+
+# A page written back.
+test "format: a page read and written"
+    assert format(parse("<!DOCTYPE html><title>A&B</title>")) == "<!DOCTYPE html><html><head><title>A&amp;B</title></head><body></body></html>"
+
+# An element written with itself.
+test "format_node: a link"
+    doc = parse("<a href='x'>y</a>")
+    assert format_node(doc, select(doc, ROOT, "a").must()) == "<a href=\"x\">y</a>"
+
+# What an element holds, written.
+test "format_inner: a paragraph's content"
+    doc = parse("<p>a<br>b</p>")
+    assert format_inner(doc, select(doc, ROOT, "p").must()) == "a<br>b"
+
+# Text made safe to stand in a page.
+test "escape: a text with markup and quotes"
+    assert escape("<a href=\"x\">'</a>") == "&lt;a href=&quot;x&quot;&gt;&#39;&lt;/a&gt;"
+
+# Text escaped as the serialisation escapes it.
+test "escape_text: an ampersand and a tag"
+    assert escape_text("a & <b>") == "a &amp; &lt;b&gt;"
+
+# A value escaped as the serialisation escapes it.
+test "escape_attribute: a quote"
+    assert escape_attribute("say \"hi\"") == "say &quot;hi&quot;"
+
+# References read in text.
+test "unescape: named, old and numeric references"
+    assert unescape("&lt;p&gt; &copy &#169; &#xA9;") == "<p> © © ©"
+
+# References read in an attribute's value.
+test "unescape_attribute: a query string kept"
+    assert unescape_attribute("?a=1&copy=2&amp;b") == "?a=1&copy=2&b"
+
+# What a named reference stands for.
+test "named_reference: an arrow"
+    assert named_reference("rarr;").must() == "→"
+
+# The whole table of named references.
+test "named_references: its size"
+    assert named_references().len() == 2231

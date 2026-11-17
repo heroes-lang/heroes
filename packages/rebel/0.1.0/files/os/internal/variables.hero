@@ -1,0 +1,229 @@
+# The environment read: one variable by its name, as text or as the bytes the
+# system holds, and every variable at once. Nothing here writes it.
+#
+# One variable is read by the runtime's shown read, whose answer for bytes that
+# are not UTF-8 opens with marks naming each replaced byte, so the bytes are
+# given back exactly. Every variable is read in one reading of the platform
+# layer, each entry `name=value` and a zero byte.
+
+use os/hero_os
+use os/internal/codes
+use os/internal/filled
+
+# The names and the values of the environment, as bytes, the one at an index
+# of `names` holding the value at that index of `values`.
+record Entries
+    # Each name, never empty and holding no `=`.
+    names: [[u8]]
+    # Each value.
+    values: [[u8]]
+
+# What a shown read answered: the text, and how it ended.
+record Shown
+    # The text, opening with `marks` bytes where `status` is not text.
+    text: str
+    # One of `hero_os`'s statuses.
+    status: i64
+    # How many bytes of `text` are marks.
+    marks: i64
+
+# Whether `name` can name a variable: not empty, and holding no `=` and no
+# zero byte. Fails `invalid` saying which.
+function checked(name: str) -> ()?
+    if name == ""
+        return fail(code: codes.INVALID, msg: "an empty name names no variable")
+
+    if codes.has_zero(name)
+        return fail(code: codes.INVALID, msg: "a name holding a zero byte names no variable")
+    at: i64 @= 0
+
+    while at < name.len()
+        if name[at] == '='
+            return fail(code: codes.INVALID, msg: f"\"{name}\" names no variable: a name holds no \"=\"")
+        at @ at + 1
+
+    return ok()
+
+# The shown read of `name`, once it is checked.
+function read(name: str) -> Shown?
+    checked(name)?
+    status: i64 @= -1
+    marks: i64 @= -1
+    text = hero_os.env_shown(name, status: @status, marks: @marks)
+
+    if status == hero_os.HERO_OS_NOT_FOUND
+        return fail(code: codes.NOT_FOUND, msg: f"the variable \"{name}\" is not set")
+
+    if status != hero_os.HERO_OS_OK && status != hero_os.HERO_OS_NOT_TEXT
+        return fail(code: codes.FAILED, msg: f"the variable \"{name}\" could not be read (status {status})")
+    return ok(Shown(text: text, status: status, marks: marks))
+
+# The value of `name` as text. Fails `invalid` for a name that names no
+# variable, `not_found` where it is not set, `not_text` where its value is
+# not UTF-8.
+function value_of(name: str) -> str?
+    shown = read(name)?
+
+    if shown.status == hero_os.HERO_OS_NOT_TEXT
+        return fail(code: codes.NOT_TEXT, msg: f"the value of \"{name}\" is not UTF-8")
+    return ok(shown.text)
+
+# The value of `name` as the bytes the system holds. Fails as `value_of`
+# does, but never `not_text`.
+function bytes_of(name: str) -> [u8]?
+    shown = read(name)?
+
+    if shown.status == hero_os.HERO_OS_NOT_TEXT
+        return ok(unshown(shown.text, marks: shown.marks))
+    return ok(bytes_in(shown.text, from: 0))
+
+# The bytes of `s` from `from` to its end.
+function bytes_in(s: str, from: i64) -> [u8]
+    out: [u8] @= []
+    at: i64 @= from
+
+    while at < s.len()
+        out @ out.push(s[at])
+        at @ at + 1
+
+    return out
+
+# The value of one hexadecimal digit as the marks write it, `0` to `9` and
+# `A` to `F`.
+function digit(c: u8) -> u8
+    if c >= '0' && c <= '9'
+        return c - '0'
+    return c - 'A' + 10
+
+# The bytes a shown read was made from: `shown` opens with `marks` bytes, two
+# for each U+FFFD of the text after them, the byte it replaced in hexadecimal
+# or `--` for a U+FFFD the bytes held.
+function unshown(shown: str, marks: i64) -> [u8]
+    out: [u8] @= []
+    mark: i64 @= 0
+    at: i64 @= marks
+
+    while at < shown.len()
+        replaced = at + 2 < shown.len() && shown[at] == 0xef && shown[at + 1] == 0xbf && shown[at + 2] == 0xbd
+
+        if replaced && mark < marks
+            if shown[mark] == '-'
+                out @ out.push(0xef)
+                out @ out.push(0xbf)
+                out @ out.push(0xbd)
+            else
+                out @ out.push(digit(shown[mark]) * 16 + digit(shown[mark + 1]))
+            mark @ mark + 2
+            at @ at + 3
+        else
+            out @ out.push(shown[at])
+            at @ at + 1
+
+    return out
+
+# Every variable of the environment in the system's order, as bytes. An entry
+# with no `=`, or with nothing before its first `=`, is left out; where a name
+# stands twice its first value is kept. Fails with the floor's code where the
+# environment cannot be read.
+function entries() -> Entries?
+    block = filled.bytes_of(.environment)?
+    names: [[u8]] @= []
+    values: [[u8]] @= []
+    seen: {[u8]: bool} @= {}
+    start: i64 @= 0
+    equals: i64 @= -1
+    at: i64 @= 0
+
+    while at < block.len()
+        if block[at] == '=' && equals < 0
+            equals @ at
+        else if block[at] == 0
+            if equals > start
+                name = block.slice(from: start, to: equals)
+
+                if seen[name].is_err()
+                    seen[name] @ true
+                    names @ names.push(name)
+                    values @ values.push(block.slice(from: equals + 1, to: at))
+            start @ at + 1
+            equals @ -1
+        at @ at + 1
+
+    return ok(Entries(names: names, values: values))
+
+# Every variable of the environment as text, name to value, in the system's
+# order, left out and kept as `entries` leaves and keeps them. Fails
+# `not_text` naming the first variable whose name or value is not UTF-8.
+function as_map() -> {str: str}?
+    every = entries()?
+    out: {str: str} @= {}
+    at: i64 @= 0
+
+    while at < every.names.len()
+        name = match every.names[at].validated_bytes()
+            .ok text => text
+            .err _ => return fail(
+                code: codes.NOT_TEXT,
+                msg: f"the name of variable {at + 1} of the environment is not UTF-8"
+            )
+
+        value = match every.values[at].validated_bytes()
+            .ok text => text
+            .err _   => return fail(code: codes.NOT_TEXT, msg: f"the value of \"{name}\" is not UTF-8")
+
+        out[name] @ value
+        at @ at + 1
+
+    return ok(out)
+
+## Tests
+
+test "checked: a plain name, the empty one, one holding = at either end, and a zero byte"
+    assert !checked("PATH").is_err()
+    assert !checked("ä_1").is_err()
+    assert checked("").is_err()
+    assert checked("=A").is_err()
+    assert checked("A=").is_err()
+    zero: [u8] = ['A', 0]
+    assert checked(zero.validated_bytes().must()).is_err()
+
+test "value_of: a set variable, an unset one, and names that name none"
+    assert value_of("PATH").must().len() > 0
+
+    match value_of("REBEL_OS_NEVER_SET")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND && e.msg == "the variable \"REBEL_OS_NEVER_SET\" is not set"
+
+    match value_of("A=B")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+test "unshown: no marks, a replaced byte at either end, a U+FFFD the bytes held, and both"
+    assert unshown("abc", marks: 0) == ['a', 'b', 'c']
+    assert unshown("FF�a", marks: 2) == [0xff, 'a']
+    assert unshown("80a�", marks: 2) == ['a', 0x80]
+    assert unshown("--�", marks: 2) == [0xef, 0xbf, 0xbd]
+    assert unshown("C3--�é�", marks: 4) == [0xc3, 0xc3, 0xa9, 0xef, 0xbf, 0xbd]
+    assert unshown("", marks: 0) == []
+
+test "bytes_in and digit: from the start, from the middle, past the end, and every digit's edge"
+    assert bytes_in("é", from: 0) == [0xc3, 0xa9]
+    assert bytes_in("ab", from: 1) == ['b']
+    assert bytes_in("ab", from: 2) == []
+    assert digit('0') == 0 && digit('9') == 9 && digit('A') == 10 && digit('F') == 15
+
+test "entries and as_map: PATH among them, every name not empty and with no =, as many names as values"
+    every = entries().must()
+    assert every.names.len() == every.values.len() && every.names.len() > 0
+
+    for name in every.names
+        assert name.len() > 0
+        assert !name.any(is_equals)
+
+    read_all = as_map().must()
+    assert read_all["PATH"].must() == value_of("PATH").must()
+    assert keys(read_all).len() == every.names.len()
+
+# Whether `b` is the byte of `=`.
+function is_equals(b: u8) -> bool
+    return b == '='

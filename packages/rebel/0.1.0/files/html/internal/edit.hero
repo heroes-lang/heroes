@@ -1,0 +1,237 @@
+# Changing a tree as a program asks: attributes set and removed, nodes made,
+# the checks that keep a node out of itself and the document to one element,
+# and subtrees copied, within one tree or from another, by a walk with no
+# stack. A template's children go into its contents, where the standard keeps
+# them.
+
+use html/internal/ascii
+use html/internal/dom
+use html/internal/query
+use html/internal/write
+
+# The attribute `name` set to `value`, as `set_attribute` writes it on an
+# element of `space`: lower case on an HTML element, and the namespace its
+# prefix names on another.
+function attribute_named(space: i64, name: str, value: str) -> dom.Attr
+    if space == dom.HTML
+        return dom.Attr(space: dom.NO_SPACE, name: ascii.to_lower(name), value: value)
+
+    if name == "xmlns"
+        return dom.Attr(space: dom.XMLNS, name: name, value: value)
+
+    for prefix in ["xlink:", "xml:", "xmlns:"]
+        if name.len() > prefix.len() && name.slice(from: 0, to: prefix.len()) == prefix
+            local = name.slice(from: prefix.len(), to: name.len())
+
+            in_space = if prefix == "xlink:"
+                dom.XLINK
+            else if prefix == "xml:"
+                dom.XML
+            else
+                dom.XMLNS
+            return dom.Attr(space: in_space, name: local, value: value)
+
+    return dom.Attr(space: dom.NO_SPACE, name: name, value: value)
+
+# Sets the attribute `name` of the element `node`, in its place where it has
+# one written so, last where not.
+function set_attribute(@t: dom.Tree, node: i64, name: str, value: str)
+    at = query.attribute_index(t, node: node, name: name)
+    made = attribute_named(t.spaces[node], name: name, value: value)
+    attributes: [dom.Attr] @= t.attributes[node]
+
+    if at >= 0
+        attributes[at] @ made
+    else
+        attributes @ attributes.push(made)
+    t.attributes[node] @ attributes
+
+# Removes the attribute `name` of `node`; nothing where it has none.
+function remove_attribute(@t: dom.Tree, node: i64, name: str)
+    at = query.attribute_index(t, node: node, name: name)
+
+    if at < 0
+        return
+    kept: [dom.Attr] @= []
+    attributes = t.attributes[node]
+
+    for i in range(from: 0, to: attributes.len())
+        if i != at
+            kept @ kept.push(attributes[i])
+
+    t.attributes[node] @ kept
+
+# A new element of `space` named `name`, held by nothing; a template gets its
+# contents.
+function new_element(@t: dom.Tree, space: i64, name: str) -> i64
+    none: [dom.Attr] = []
+
+    written = if space == dom.HTML
+        ascii.to_lower(name)
+    else
+        name
+    node = dom.add_element(@t, space: space, name: written, attributes: none)
+
+    if space == dom.HTML && written == "template"
+        contents = dom.add(@t, kind: dom.FRAGMENT, space: dom.HTML, name: "", attributes: none, data: "")
+        dom.append_child(@t, parent: node, child: contents)
+    return node
+
+# Why `child` may not go into `parent`, or the empty text where it may.
+function refusal(t: dom.Tree lent, parent: i64, child: i64) -> str
+    holder_kind = t.kinds[parent]
+    kind = t.kinds[child]
+
+    if holder_kind != dom.ELEMENT && holder_kind != dom.FRAGMENT && holder_kind != dom.DOCUMENT
+        return "a text, a comment, an instruction or a doctype holds no children"
+
+    if kind == dom.DOCUMENT || kind == dom.FRAGMENT
+        return "the document and a fragment go inside nothing"
+
+    if dom.holds(t, ancestor: child, node: parent)
+        return "a node may not go inside itself or what it holds"
+
+    if kind == dom.DOCTYPE && holder_kind != dom.DOCUMENT
+        return "a doctype goes in the document alone"
+
+    if holder_kind == dom.DOCUMENT && kind == dom.TEXT
+        return "the document holds no text"
+
+    if holder_kind == dom.DOCUMENT && kind == dom.ELEMENT
+        for other in dom.children(t, parent)
+            if t.kinds[other] == dom.ELEMENT && other != child
+                return "the document holds one element"
+
+    return ""
+
+# Puts `child` in `parent` before `before`, or last where it is `dom.NONE`,
+# taking it from where it stood; the empty text, or why it may not.
+function place(@t: dom.Tree, parent: i64, child: i64, before: i64) -> str
+    target = if before == dom.NONE
+        write.holder(t, parent)
+    else
+        parent
+    why = refusal(t, parent: target, child: child)
+
+    if why != ""
+        return why
+
+    if child == before
+        return ""
+    dom.detach(@t, child)
+    dom.insert_before(@t, parent: target, child: child, before: before)
+    return ""
+
+# Takes every child of what `node` holds out.
+function clear(@t: dom.Tree, node: i64)
+    target = write.holder(t, node)
+
+    while t.firsts[target] != dom.NONE
+        dom.detach(@t, t.firsts[target])
+
+# A new node of `t` like `node` of `source`, held by nothing; the document
+# copied as a fragment.
+function copy_one(@t: dom.Tree, source: dom.Tree lent, node: i64) -> i64
+    kind = if source.kinds[node] == dom.DOCUMENT
+        dom.FRAGMENT
+    else
+        source.kinds[node]
+    made = dom.add(
+        @t,
+        kind: kind,
+        space: source.spaces[node],
+        name: source.names[node],
+        attributes: source.attributes[node],
+        data: source.data[node]
+    )
+    t.systems[made] @ source.systems[node]
+    return made
+
+# A copy in `t` of `node` of `source` and everything inside it, held by
+# nothing.
+function copy_across(@t: dom.Tree, source: dom.Tree lent, node: i64) -> i64
+    copies: {i64: i64} @= {}
+    root = copy_one(t: @t, source: source, node: node)
+    copies[node] @ root
+    at: i64 @= query.next_in(source, root: node, node: node)
+
+    while at != dom.NONE
+        made = copy_one(t: @t, source: source, node: at)
+        copies[at] @ made
+        dom.append_child(@t, parent: copies[source.parents[at]].must(), child: made)
+        at @ query.next_in(source, root: node, node: at)
+
+    return root
+
+# A copy in `t` of its own `node` and everything inside it, held by nothing.
+# The nodes copied are read before any is made, so the copy never meets
+# itself.
+function copy_within(@t: dom.Tree, node: i64) -> i64
+    order: [i64] @= [node]
+
+    for d in query.descendants(t, node)
+        order @ order.push(d)
+
+    copies: {i64: i64} @= {}
+
+    for old in order
+        kind = if t.kinds[old] == dom.DOCUMENT
+            dom.FRAGMENT
+        else
+            t.kinds[old]
+        made = dom.add(
+            @t,
+            kind: kind,
+            space: t.spaces[old],
+            name: t.names[old],
+            attributes: t.attributes[old],
+            data: t.data[old]
+        )
+        t.systems[made] @ t.systems[old]
+        copies[old] @ made
+
+        if old != node
+            dom.append_child(@t, parent: copies[t.parents[old]].must(), child: made)
+
+    return copies[node].must()
+
+## Tests
+
+test "attribute_named: HTML in lower case, and the three prefixes of a foreign element"
+    assert attribute_named(dom.HTML, name: "HREF", value: "x") == dom.Attr(space: dom.NO_SPACE, name: "href", value: "x")
+    assert attribute_named(dom.SVG, name: "xlink:href", value: "#a").space == dom.XLINK && attribute_named(dom.SVG, name: "viewBox", value: "").name == "viewBox"
+    assert attribute_named(dom.SVG, name: "xmlns", value: "").space == dom.XMLNS && attribute_named(dom.SVG, name: "xmlns:xlink", value: "").name == "xlink"
+
+test "set_attribute and remove_attribute: replaced in place, appended, removed, and none to remove"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    a = new_element(@t, space: dom.HTML, name: "A")
+    set_attribute(@t, node: a, name: "x", value: "1")
+    set_attribute(@t, node: a, name: "y", value: "2")
+    set_attribute(@t, node: a, name: "X", value: "3")
+    assert t.names[a] == "a" && t.attributes[a].len() == 2 && t.attributes[a][0].value == "3"
+    remove_attribute(@t, node: a, name: "x")
+    remove_attribute(@t, node: a, name: "none")
+    assert t.attributes[a].len() == 1 && t.attributes[a][0].name == "y"
+
+test "place and refusal: a node inside itself, a second element in the document, and text in the document refused"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    html = new_element(@t, space: dom.HTML, name: "html")
+    div = new_element(@t, space: dom.HTML, name: "div")
+    assert place(@t, parent: 0, child: html, before: dom.NONE) == "" && place(@t, parent: html, child: div, before: dom.NONE) == ""
+    assert place(@t, parent: div, child: html, before: dom.NONE) != "" && place(@t, parent: div, child: div, before: dom.NONE) != ""
+    other = new_element(@t, space: dom.HTML, name: "html")
+    assert place(@t, parent: 0, child: other, before: dom.NONE) != ""
+    assert place(@t, parent: 0, child: dom.add_data(@t, kind: dom.TEXT, data: "x"), before: dom.NONE) != ""
+
+test "copy_within and copy_across: a subtree copied whole, held by nothing"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    div = new_element(@t, space: dom.HTML, name: "div")
+    p = new_element(@t, space: dom.HTML, name: "p")
+    dom.append_child(@t, parent: 0, child: div)
+    dom.append_child(@t, parent: div, child: p)
+    dom.append_child(@t, parent: p, child: dom.add_data(@t, kind: dom.TEXT, data: "x"))
+    copy = copy_within(@t, div)
+    assert t.parents[copy] == dom.NONE && write.written(t, copy, false) == "<div><p>x</p></div>"
+    other: dom.Tree @= dom.new_tree(dom.FRAGMENT)
+    moved = copy_across(t: @other, source: t, node: 0)
+    assert other.kinds[moved] == dom.FRAGMENT && write.written(other, moved, true) == "<div><p>x</p></div>"

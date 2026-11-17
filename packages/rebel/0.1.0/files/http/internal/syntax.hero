@@ -1,0 +1,248 @@
+# The characters of HTTP/1.1's grammar (RFC 9110 § 5.6, RFC 9112): what a
+# token and a field's value may hold, names compared without case, the lists a
+# value holds, the numbers a length and a chunk's size write, and the way a
+# message shows a piece of what it read.
+
+use bytes
+use strings
+
+# The code of a message or a value that is not what HTTP/1.1 allows.
+constant INVALID: str
+    "invalid"
+
+# The code of a message past a stated limit.
+constant LIMIT: str
+    "limit"
+
+# Whether `b` may stand in a token: a letter, a digit or one of
+# ``!#$%&'*+-.^_`|~``.
+function is_tchar(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+
+    return match b
+        '!' | '#' | '$' | '%' | '&' | '\'' | '*' | '+' | '-' | '.' | '^' | '_' | '`' | '|' | '~' => true
+        _                                                                                        => false
+
+# Whether `s` is a token: one byte or more, each `is_tchar`.
+function is_token(s: str) -> bool
+    if s.len() == 0
+        return false
+    at: i64 @= 0
+
+    while at < s.len()
+        if !is_tchar(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether `b` may stand in a field's value: a visible ASCII byte, a space, a
+# tab, or a byte above ASCII (RFC 9110's obs-text).
+function is_value_byte(b: u8) -> bool
+    return b == '\t' || b >= 32 && b != 127
+
+# Whether `s` may be written as a field's value: every byte `is_value_byte`,
+# so no line end and no zero byte.
+function is_value(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if !is_value_byte(s[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# `b` as an `i64`, which it always fits.
+function widen(b: u8) -> i64
+    return to_i64(b).must()
+
+# `b` in lower case where it is an ASCII letter, `A` to `Z`; else `b`.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# Whether `a` and `b` are one name, the case of their ASCII letters set
+# aside, every other byte the same.
+function same_name(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    at: i64 @= 0
+
+    while at < a.len()
+        if lower(a[at]) != lower(b[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# `name` with its first letter and each letter after a `-` upper case, the
+# others lower case; a name that is not a token answered as it is, as Go's
+# `CanonicalHeaderKey` answers it.
+function canonical(name: str) -> str
+    if !is_token(name)
+        return name
+    out: [u8] @= []
+    upper: bool @= true
+
+    for b in bytes.from_text(name)
+        if upper && b >= 'a' && b <= 'z'
+            out @ out.push(b - 32)
+        else if !upper && b >= 'A' && b <= 'Z'
+            out @ out.push(b + 32)
+        else
+            out @ out.push(b)
+        upper @ b == '-'
+
+    return bytes.to_text(out).must()
+
+# `s` without the spaces and tabs at either end, RFC 9110's OWS.
+function trim_ows(s: str) -> str
+    from: i64 @= 0
+    to: i64 @= s.len()
+
+    while from < to && (s[from] == ' ' || s[from] == '\t')
+        from @ from + 1
+
+    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t')
+        to @ to - 1
+
+    return s.slice(from: from, to: to)
+
+# The members of the comma-separated list `value`, each trimmed, the empty
+# ones dropped, as RFC 9110 § 5.6.1 asks a reader to.
+function members(value: str) -> [str]
+    out: [str] @= []
+
+    for piece in strings.split(s: value, sep: ",")
+        member = trim_ows(piece)
+
+        if member != ""
+            out @ out.push(member)
+
+    return out
+
+# Whether a member of the lists `values` hold is `token`, in any case:
+# `Connection: keep-alive, close` holds `close`.
+function has_member(values: [str], token: str) -> bool
+    for value in values
+        for member in members(value)
+            if same_name(a: member, b: token)
+                return true
+
+    return false
+
+# The number `s` writes in decimal, one digit or more and nothing else.
+# Fails `invalid` where it is anything else, `limit` past an `i64`.
+function decimal(s: str, what: str) -> i64?
+    if s.len() == 0
+        return fail(code: INVALID, msg: f"{what}: no digits")
+    n: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < '0' || b > '9'
+            return fail(code: INVALID, msg: f"{what}: {shown(s)} is not digits alone")
+
+        if n > (9_223_372_036_854_775_807 - widen(b - '0')) / 10
+            return fail(code: LIMIT, msg: f"{what}: {shown(s)} is past the largest number this package holds")
+        n @ n * 10 + widen(b - '0')
+        at @ at + 1
+
+    return ok(n)
+
+# The number `s` writes in hexadecimal, either case, one digit or more and
+# nothing else. Fails `invalid` where it is anything else, `limit` past an
+# `i64`.
+function hexadecimal(s: str, what: str) -> i64?
+    if s.len() == 0
+        return fail(code: INVALID, msg: f"{what}: no digits")
+    n: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = lower(s[at])
+        digit: i64 @= 0
+
+        if b >= '0' && b <= '9'
+            digit @ widen(b - '0')
+        else if b >= 'a' && b <= 'f'
+            digit @ widen(b - 'a') + 10
+        else
+            return fail(code: INVALID, msg: f"{what}: {shown(s)} is not hexadecimal digits alone")
+
+        if n > (9_223_372_036_854_775_807 - digit) / 16
+            return fail(code: LIMIT, msg: f"{what}: {shown(s)} is past the largest number this package holds")
+        n @ n * 16 + digit
+        at @ at + 1
+
+    return ok(n)
+
+# `s` quoted for a message, its bytes escaped as `bytes.format_escaped`
+# writes them and cut after 60 with `...`.
+function shown(s: str) -> str
+    return shown_bytes(bytes.from_text(s))
+
+# The bytes `b` quoted for a message, as `shown` writes a text.
+function shown_bytes(b: [u8]) -> str
+    if b.len() > 60
+        return "\"" + bytes.format_escaped(b.slice(from: 0, to: 60)) + "...\""
+    return "\"" + bytes.format_escaped(b) + "\""
+
+## Tests
+
+test "is_token: letters, digits and the marks; nothing, a space, a colon or a byte above ASCII is none"
+    assert !is_token("")
+    assert is_token("Content-Type") && is_token("!#$%&'*+-.^_`|~09az")
+    assert !is_token("a b") && !is_token("a:") && !is_token("café") && !is_token("a\"")
+
+test "is_value: a tab, a space and bytes above ASCII; never a line end, a zero byte or DEL"
+    assert is_value("") && is_value("a\tb c") && is_value("café")
+    assert !is_value("a\r\nb") && !is_value("a\nb") && !is_value("\u{7f}") && !is_value("a\u{1}b")
+
+test "same_name: ASCII case set aside, other bytes compared, lengths first"
+    assert same_name(a: "Content-Type", b: "content-type") && same_name(a: "", b: "")
+    assert !same_name(a: "a", b: "ab") && !same_name(a: "é", b: "É")
+
+test "canonical: as Go's CanonicalHeaderKey writes each, a name with a space kept"
+    assert canonical("content-type") == "Content-Type"
+    assert canonical("X-FORWARDED-FOR") == "X-Forwarded-For"
+    assert canonical("www-authenticate") == "Www-Authenticate"
+    assert canonical("-a--b-") == "-A--B-"
+    assert canonical("foo bar") == "foo bar"
+    assert canonical("") == ""
+
+test "trim_ows and members: spaces and tabs at the ends, empty members dropped"
+    assert trim_ows(" \t a b \t") == "a b" && trim_ows("") == "" && trim_ows("  ") == ""
+    assert members(" a ,, b,c ,") == ["a", "b", "c"]
+    nothing: [str] = []
+    assert members("") == nothing && members(" , ") == nothing
+    assert has_member(["keep-alive, Close"], token: "close") && !has_member(["closed"], token: "close")
+
+test "decimal: digits alone, zeros before, the largest i64, one past it, a sign or a space"
+    assert decimal(s: "0", what: "x").must() == 0 && decimal(s: "007", what: "x").must() == 7
+    assert decimal(s: "9223372036854775807", what: "x").must() == 9_223_372_036_854_775_807
+
+    match decimal(s: "9223372036854775808", what: "x")
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    for bad in ["", "+1", "-1", " 1", "1 ", "1a", "١"]
+        match decimal(s: bad, what: "x")
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "hexadecimal: either case, the largest i64, one past it, and what is no digit"
+    assert hexadecimal(s: "0", what: "x").must() == 0 && hexadecimal(s: "1aF", what: "x").must() == 431
+    assert hexadecimal(s: "7fffffffffffffff", what: "x").must() == 9_223_372_036_854_775_807
+    assert hexadecimal(s: "8000000000000000", what: "x").is_err()
+    assert hexadecimal(s: "", what: "x").is_err() && hexadecimal(s: "g", what: "x").is_err() && hexadecimal(s: "0x1", what: "x").is_err()
+
+test "shown and shown_bytes: escaped, quoted, cut after 60 bytes"
+    assert shown("a\r\n") == "\"a\\r\\n\""
+    assert shown("x".repeat(61)) == "\"" + "x".repeat(60) + "...\""
+    assert shown_bytes([0, 255]) == "\"\\x00\\xff\""

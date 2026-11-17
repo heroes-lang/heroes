@@ -1,0 +1,307 @@
+# Numbers drawn at random from a seeded generator the caller holds: whole
+# numbers below a bound or in a range without bias, floats in [0, 1), bytes,
+# a list shuffled, an element chosen, a sample drawn without replacement, and
+# a choice by weights; and a number below a bound from the system's generator
+# for keys.
+#
+# The generator is PCG with 128 bits of state and the DXSM output (O'Neill,
+# 2014 and 2019), the one Go's `math/rand/v2.PCG` runs: from the same two
+# words it answers the same numbers, and `below`, `next_f64` and `shuffle`
+# draw from them as Go's `Uint64N` and `Float64` do. It is fast
+# and its numbers are well spread, and anyone who sees a few of them can
+# tell the next: a key, a token or a salt comes from `os.random_bytes` or
+# `secure_below`, never from a `Generator`. Bytes made into a digest are the
+# package `crypto`'s, and the mean or the spread of numbers the package
+# `stats`'s.
+#
+# It fails with `invalid` where a list or weights cannot be drawn from, and
+# `from_system` and `secure_below` with the codes of `os.random_bytes`.
+
+use os
+use random/internal/codes
+use random/internal/pcg
+use random/internal/pick
+use random/internal/wide
+
+## Codes
+
+# The code `choose`, `sample` and `choose_weighted` fail with where the list
+# or the weights cannot be drawn from.
+constant INVALID: str
+    codes.INVALID
+
+## The generator
+
+# A generator of numbers that look random: PCG's state of 128 bits, which
+# the caller holds and every draw advances with `@`. Every two words are a
+# valid state, so a generator is built directly, `Generator(high: 1, low:
+# 2)`, and the same two words answer the same numbers every time, as Go's
+# `rand.NewPCG(1, 2)` does; `from_system` builds one from the system's
+# generator. Copied with `=`, the copy answers what the original would.
+record Generator
+    # The high 64 bits of the state, Go's first seed.
+    high: u64
+    # The low 64 bits of the state, Go's second seed.
+    low: u64
+
+# A generator whose state is 16 bytes of the system's generator for keys,
+# different on every call: for numbers that need not repeat from one run to
+# the next. Its numbers are no secret once some are seen.
+#
+# Fails with the code of `os.random_bytes` where the system's generator
+# refuses. See also `Generator` and `secure_below`.
+function from_system() -> Generator?
+    seed = os.random_bytes(16)?
+    high: u64 @= 0
+    low: u64 @= 0
+
+    for at in range(from: 0, to: 8)
+        high @ high * 256 + to_u64(seed[at]).must()
+        low @ low * 256 + to_u64(seed[at + 8]).must()
+
+    return ok(Generator(high: high, low: low))
+
+## Numbers
+
+# The next number of `generator`, any `u64` as likely as any other.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one step.
+#
+# See also `below` and `next_f64`.
+function next_u64(@generator: Generator) -> u64
+    return pcg.next(high: @generator.high, low: @generator.low)
+
+# A float from 0 to 1, 0 included and 1 left out, every multiple of 2^-53 in
+# it as likely: the low 53 bits of the next number, divided by 2^53, as Go's
+# `Float64` takes them.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one step.
+#
+# See also `next_u64`.
+function next_f64(@generator: Generator) -> f64
+    return pick.fraction(high: @generator.high, low: @generator.low)
+
+# `count` bytes from `generator`, eight from each number, its lowest byte
+# first.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one step for each eight bytes or part of them.
+# - `count`: how many bytes, 0 or more; 0 draws nothing.
+#
+# Aborts where `count` is below 0. They are no secret: a key's bytes come
+# from `os.random_bytes`.
+function next_bytes(@generator: Generator, count: i64) -> [u8]
+    assert count >= 0
+    return pick.bytes_of(high: @generator.high, low: @generator.low, count)
+
+# A number from 0 to `n` - 1, every one as likely: the low bits of a number
+# for a power of two, else Lemire's method. Go's `Uint64N` draws both ways
+# alike, so it answers Go's numbers from the same state.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one step, and very rarely by more.
+# - `n`: the bound, which is never answered; 1 answers 0.
+#
+# Aborts where `n` is 0, which has no number below it. See also `int_in`.
+function below(@generator: Generator, n: u64) -> u64
+    assert n > 0
+    return pick.below(high: @generator.high, low: @generator.low, n: n)
+
+# A whole number from `from` to `to`, `to` left out as the built-in `range`
+# leaves it, every one as likely.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `from`: the smallest number answered, any `i64`.
+# - `to`: one past the largest, above `from`; the whole width of `i64` is
+#   allowed.
+#
+# Aborts where `to` is not above `from`. A die is `int_in(@g, from: 1, to:
+# 7)`. See also `below`.
+function int_in(@generator: Generator, from: i64, to: i64) -> i64
+    assert to > from
+    width = wide.add(a: wide.add(a: to, b: ~from), b: 1)
+    drawn = pick.below(high: @generator.high, low: @generator.low, n: wide.unsigned(width))
+    return wide.add(a: from, b: wide.from_unsigned(drawn))
+
+## Lists
+
+# Puts the elements of `xs` in an order drawn at random, every order as
+# likely, by Fisher and Yates's method; Go's `Shuffle` puts them in another
+# order from the same state.
+#
+# - `generator`: the generator drawn from, which the caller holds; one step
+#   for each element but the first.
+# - `xs`: the list shuffled, which the caller holds; an empty list and a
+#   list of one stay as they are.
+#
+# See also `sample`.
+function shuffle<T>(@generator: Generator, @xs: [T])
+    pick.shuffle(high: @generator.high, low: @generator.low, @xs)
+
+# An element of `xs` drawn at random, every place as likely.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `xs`: the list chosen from.
+#
+# Fails `invalid` where `xs` is empty. See also `choose_weighted` and
+# `sample`.
+function choose<T>(@generator: Generator, xs: [T]) -> T?
+    if xs.len() == 0
+        return fail(code: INVALID, msg: "an element chosen from an empty list")
+    at = pick.below(high: @generator.high, low: @generator.low, n: to_u64(xs.len()).must())
+    return ok(xs[to_i64(at).must()])
+
+# `count` elements of `xs` drawn without replacement, in the order drawn: no
+# place of `xs` is drawn twice, though two places may hold equal values.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `xs`: the list drawn from, which is not changed.
+# - `count`: how many, from 0 to `xs.len()`; 0 answers the empty list and
+#   `xs.len()` a shuffled copy.
+#
+# Fails `invalid` where `count` is below 0 or above `xs.len()`. It copies
+# `xs` once. See also `choose`.
+function sample<T>(@generator: Generator, xs: [T], count: i64) -> [T]?
+    if count < 0 || count > xs.len()
+        return fail(code: INVALID, msg: f"{count} elements drawn from a list of {xs.len()}")
+    return ok(pick.sample(high: @generator.high, low: @generator.low, xs, count))
+
+# An element of `xs` drawn as likely as its weight: one of weight 2 twice as
+# often as one of weight 1, one of weight 0 never.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `xs`: the list chosen from.
+# - `weights`: one weight for each element of `xs`, in its order, each
+#   finite and 0 or more; they need not add up to 1.
+#
+# Fails `invalid` where `weights` is not as long as `xs`, where `xs` is
+# empty, and where a weight is below 0 or not finite or the weights add up to
+# 0 or to more than a float holds; the message says which. See also `choose`.
+function choose_weighted<T>(@generator: Generator, xs: [T], weights: [f64]) -> T?
+    if weights.len() != xs.len()
+        return fail(code: INVALID, msg: f"{weights.len()} weights for {xs.len()} elements")
+    at = pick.weighted(high: @generator.high, low: @generator.low, weights)?
+    return ok(xs[at])
+
+## The system's generator
+
+# A number from 0 to `n` - 1, every one as likely, drawn from the system's
+# generator for keys and not from a `Generator`: Python's `secrets.randbelow`.
+# It is for a token, a code sent by mail or a choice someone must not guess.
+#
+# - `n`: the bound, which is never answered; 1 answers 0.
+#
+# Fails with the code of `os.random_bytes` where the system's generator
+# refuses. Aborts where `n` is 0. See also `from_system`.
+function secure_below(n: u64) -> u64?
+    assert n > 0
+    return pick.secure_below(n)
+
+## Tests
+
+test "the code is the vocabulary's word"
+    assert INVALID == "invalid"
+
+test "int_in: the whole width of i64, a range of one, and a range of negative numbers"
+    g @= Generator(high: 1, low: 2)
+
+    for _ in range(from: 0, to: 20)
+        assert int_in(@g, from: -3, to: -2) == -3
+        x = int_in(@g, from: -10, to: -5)
+        assert x >= -10 && x < -5
+
+    wide_draw = int_in(@g, from: -9223372036854775807 - 1, to: 9223372036854775807)
+    assert wide_draw < 9223372036854775807
+
+# Go's `Int64N(1 << 40)` from `NewPCG(7, 9)` answered the first two.
+test "int_in: from 0, as Go's Int64N answers"
+    g @= Generator(high: 7, low: 9)
+    assert int_in(@g, from: 0, to: 1099511627776) == 786218216041
+    assert int_in(@g, from: 0, to: 1099511627776) == 869885112157
+
+test "choose, sample and choose_weighted: the edges refused, and the message"
+    g @= Generator(high: 1, low: 2)
+    none: [str] = []
+    assert choose(@g, none).is_err()
+
+    match sample(@g, ["a", "b"], 3)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "3 elements drawn from a list of 2"
+
+    assert sample(@g, ["a", "b"], -1).is_err()
+    assert choose_weighted(@g, ["a", "b"], weights: [1.0]).is_err()
+    assert choose_weighted(@g, none, weights: []).is_err()
+
+test "from_system: two generators that differ, and draw"
+    first @= from_system().must()
+    second = from_system().must()
+    assert first != second
+    assert next_f64(@first) < 1.0
+
+test "a generator copied answers what the original answers"
+    original @= Generator(high: 3, low: 4)
+    copy @= original
+    assert next_u64(@original) == next_u64(@copy)
+    assert next_u64(@original) == next_u64(@copy)
+
+## Examples
+
+# The first number from the state Go's `rand.NewPCG(1, 2)` makes.
+test "next_u64: the first number from a seeded generator"
+    g @= Generator(high: 1, low: 2)
+    assert next_u64(@g) == 14192431797130687760
+
+# A float in [0, 1), Go's first from the same state.
+test "next_f64: the first float from a seeded generator"
+    g @= Generator(high: 1, low: 2)
+    assert next_f64(@g) == 0.6764556596678251
+
+# Three bytes drawn, the first number's lowest three.
+test "next_bytes: three bytes from a seeded generator"
+    g @= Generator(high: 1, low: 2)
+    assert next_bytes(@g, 3) == [0x10, 0xf5, 0xee]
+
+# A number below ten, as Go's `Uint64N(10)` draws it.
+test "below: a digit from a seeded generator"
+    g @= Generator(high: 1, low: 2)
+    assert below(@g, 10) == 7
+
+# A die thrown: a number from 1 to 6.
+test "int_in: a die thrown"
+    g @= Generator(high: 7, low: 9)
+    assert int_in(@g, from: 1, to: 7) == 2
+
+# Ten numbers shuffled: the same ten, in another order.
+test "shuffle: ten numbers"
+    g @= Generator(high: 1, low: 2)
+    xs: [i64] @= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    shuffle(@g, @xs)
+    assert sort(xs) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# A card drawn from a list.
+test "choose: one of ten names"
+    g @= Generator(high: 1, low: 2)
+    names = ["ann", "bob", "cid", "dee", "eve", "fay", "gus", "hal", "ivy", "jon"]
+    assert choose(@g, names).must() == "hal"
+
+# Three winners drawn from five, none twice.
+test "sample: three of five, none twice"
+    g @= Generator(high: 5, low: 6)
+    winners = sample(@g, ["a", "b", "c", "d", "e"], 3).must()
+    assert winners.len() == 3 && winners[0] != winners[1] && winners[1] != winners[2] && winners[0] != winners[2]
+
+# A weight of 0 is never drawn.
+test "choose_weighted: a weight of zero never drawn"
+    g @= Generator(high: 1, low: 2)
+    assert choose_weighted(@g, ["never", "always"], weights: [0.0, 1.0]).must() == "always"
+
+# A code of six digits for a message, which nobody must guess.
+test "secure_below: a code of six digits"
+    assert secure_below(1000000).must() < 1000000
+
+# A generator seeded by the system, different on every run.
+test "from_system: a generator for one run"
+    g @= from_system().must()
+    assert next_f64(@g) >= 0.0

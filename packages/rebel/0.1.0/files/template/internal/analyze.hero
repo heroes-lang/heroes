@@ -1,0 +1,705 @@
+# The HTML mode's reading of a compiled set: each template read from the
+# context its run begins in, step by step on a list of the steps left to read,
+# the contexts joined where two ways through it meet, until no context moves;
+# then each text step rewritten as HTML reads it and each value given the
+# escaper of the place it lands in. A template an `include` runs in another
+# context is read again in that context, as a part of its own, so that its
+# values are escaped where they land there. Every template run by its name
+# begins and ends in text.
+
+use json
+use template/internal/assemble
+use template/internal/context
+use template/internal/lex
+use template/internal/program
+use template/internal/run
+use template/internal/scan_html
+
+# The deepest the reading follows `include` into a template not read yet in
+# its context.
+constant MAX_INCLUDES: i64
+    1000
+
+# The state of a reading: the text mode's parts, the parts written, and what
+# is known of each part's end.
+record Pass
+    source: program.Program
+    parts: [program.Part]
+    index: {str: i64}
+    # The context each part read ends in, by its key.
+    ends: {str: context.Context}
+    # Whether each part is being read.
+    reading: {str: bool}
+    # Whether an `include` of a part being read took its end as its start.
+    assumed: {str: bool}
+
+# The key of the template `name` read from `start`: its name alone from text.
+function key_for(name: str, start: context.Context) -> str
+    if start == context.initial()
+        return name
+    return name + "\u{1}" + context.key_of(start)
+
+# `msg` at the place of `step` in the text `source`.
+function at_step(source: str, step: program.Step lent, msg: str) -> str
+    return lex.of_text(source: source, msg: lex.located(lex.Place(line: step.line, column: step.column), msg))
+
+# The context the template `name` ends in when read from `start`; its part is
+# written to `pass` on the way. Fails `invalid` where its HTML leaves a
+# value's place unknown or two ways meet in different places.
+function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -> context.Context?
+    key = key_for(name, start)
+
+    match pass.ends[key]
+        .ok finished => return ok(finished)
+        .err _       => _ = 0
+
+    if pass.reading[key].default(false)
+        pass.assumed[key] @ true
+        return ok(start)
+    part = pass.source.parts[pass.source.index[name].must()]
+
+    if depth > MAX_INCLUDES
+        return fail(
+            code: "invalid",
+            msg: lex.of_text(source: part.source, msg: f"`include` reaches deeper than {MAX_INCLUDES} templates, each read in a new place of the page")
+        )
+    pass.reading[key] @ true
+    steps = part.steps
+    contexts: [context.Context] @= []
+    known: [bool] @= []
+
+    for _ in steps
+        contexts @ contexts.push(start)
+        known @ known.push(false)
+
+    known[0] @ true
+    work: [i64] @= [0]
+    end: context.Context @= start
+    ended: bool @= false
+
+    while work.len() > 0
+        i = work[work.len() - 1]
+        work @ work.slice(from: 0, to: work.len() - 1)
+        c = contexts[i]
+        s = steps[i]
+        targets: [i64] @= []
+        reached: [context.Context] @= []
+
+        if s.kind == program.TEXT
+            match scan_html.scan(s.text, start: c, place: lex.Place(line: s.line, column: s.column))
+                .err e => return fail(code: e.code, msg: lex.of_text(source: part.source, msg: e.msg))
+                .ok got =>
+                    targets @ targets.push(i + 1)
+                    reached @ reached.push(got.ctx)
+        else if s.kind == program.OUTPUT
+            match context.escaper_for(c)
+                .err e => return fail(code: e.code, msg: at_step(source: part.source, step: s, msg: e.msg))
+                .ok choice =>
+                    targets @ targets.push(i + 1)
+                    reached @ reached.push(choice.after)
+        else if s.kind == program.JUMP || s.kind == program.BREAK
+            targets @ targets.push(s.target)
+            reached @ reached.push(c)
+        else if s.kind == program.JUMP_UNLESS || s.kind == program.FOR_BEGIN || s.kind == program.FOR_NEXT
+            targets @ targets.push(i + 1)
+            reached @ reached.push(c)
+            targets @ targets.push(s.target)
+            reached @ reached.push(c)
+        else if s.kind == program.INCLUDE
+            after = read_part(@pass, s.callee, start: c, depth: depth + 1)?
+            targets @ targets.push(i + 1)
+            reached @ reached.push(after)
+        else if ended
+            match context.meet(a: end, b: c)
+                .err e => return fail(
+                    code: e.code,
+                    msg: lex.of_text(source: part.source, msg: f"at the end of the template {json.quote(name)}, {e.msg}")
+                )
+                .ok joined => end @ joined
+        else
+            end @ c
+            ended @ true
+
+        for k in range(from: 0, to: targets.len())
+            j = targets[k]
+
+            if !known[j]
+                contexts[j] @ reached[k]
+                known[j] @ true
+                work @ work.push(j)
+            else
+                match context.meet(a: contexts[j], b: reached[k])
+                    .err e => return fail(code: e.code, msg: at_step(source: part.source, step: steps[j], msg: e.msg))
+                    .ok joined =>
+                        if joined != contexts[j]
+                            contexts[j] @ joined
+                            work @ work.push(j)
+
+    written: [program.Step] @= []
+
+    for i in range(from: 0, to: steps.len())
+        s: program.Step @= steps[i]
+
+        if known[i]
+            c = contexts[i]
+
+            if s.kind == program.TEXT
+                got = scan_html.scan(s.text, start: c, place: lex.Place(line: s.line, column: s.column))?
+                s.text @ got.text
+            else if s.kind == program.OUTPUT
+                choice = context.escaper_for(c)?
+                s.escaper @ choice.escaper
+                s.delim @ choice.delim
+            else if s.kind == program.INCLUDE
+                s.callee @ key_for(s.callee, start: c)
+        written @ written.push(s)
+
+    pass.index[key] @ pass.parts.len()
+    pass.parts @ pass.parts.push(program.Part(name: name, source: part.source, steps: written, slots: part.slots))
+    pass.ends[key] @ end
+    pass.reading[key] @ false
+
+    if pass.assumed[key].default(false) && end != start
+        return fail(
+            code: "invalid",
+            msg: lex.of_text(source: part.source, msg: f"the template {json.quote(name)} runs itself, and ends in another place of the page than it begins: {context.describe(end)}, where it began in {context.describe(start)}")
+        )
+    return ok(end)
+
+# `compiled`, the set of `names` in the text mode, read as HTML: each template
+# from text, each value escaped by its place. Fails `invalid` where a
+# template's HTML leaves a value's place unknown, two ways through it meet in
+# different places, or it ends elsewhere than in text.
+function html(compiled: program.Program, names: [str]) -> program.Program?
+    pass: Pass @= Pass(source: compiled, parts: [], index: {}, ends: {}, reading: {}, assumed: {})
+
+    for name in names
+        end = read_part(@pass, name, start: context.initial(), depth: 0)?
+
+        if end.state != context.TEXT
+            source = compiled.parts[compiled.index[name].must()].source
+            return fail(
+                code: "invalid",
+                msg: lex.of_text(source: source, msg: f"the template {json.quote(name)} ends inside {context.describe(end)}: a template closes what its text opens")
+            )
+
+    return ok(program.Program(parts: pass.parts, index: pass.index))
+
+# The page `text` makes of `value` in the HTML mode, or `ERR` and the
+# failure's code, for the tests.
+function rendered(text: str, value: json.Value) -> str
+    texts: {str: str} @= {}
+    texts[""] @ text
+
+    match assemble.compile(texts, left: "{{", right: "}}", html: true)
+        .err e => return "ERR " + e.code
+        .ok got =>
+            match html(got.compiled, names: got.names)
+                .err e => return "ERR " + e.code
+                .ok compiled =>
+                    match run.render(compiled, entry: compiled.index[""].must(), value: value)
+                        .err e   => return "ERR " + e.code
+                        .ok page => return page
+
+test "html: text, a title, a textarea, quoted and unquoted attribute values, and an attribute's name, as Go's html/template writes it"
+    value: json.Value = .text(v: "O'Reilly: How are <i>you</i>? \"a\" & b + c")
+    cases: {str: str} = {
+        "{{.}}": "O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c"
+        "<a title='{{.}}'>": "<a title='O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c'>"
+        "<a title=\"{{.}}\">": "<a title=\"O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c\">"
+        "<a title={{.}}>": "<a title=O&#39;Reilly:&#32;How&#32;are&#32;&lt;i&gt;you&lt;/i&gt;?&#32;&#34;a&#34;&#32;&amp;&#32;b&#32;&#43;&#32;c>"
+        "<title>{{.}}</title>": "<title>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</title>"
+        "<textarea>{{.}}</textarea>": "<textarea>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</textarea>"
+        "<TEXTAREA>{{.}}</TEXTAREA>": "<TEXTAREA>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</TEXTAREA>"
+        "<p>{{.}}</P>": "<p>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</P>"
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a href=x {{.}}>": "<a href=x ZrebelZ>"
+        "<iframe srcdoc=\"{{.}}\">": "<iframe srcdoc=\"O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c\">"
+        "<a title= {{.}}>": "<a title= O&#39;Reilly:&#32;How&#32;are&#32;&lt;i&gt;you&lt;/i&gt;?&#32;&#34;a&#34;&#32;&amp;&#32;b&#32;&#43;&#32;c>"
+        "<a title {{.}}>": "<a title ZrebelZ>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: URLs from their start, in their path and in their query, in every attribute that holds one, as Go's html/template writes it"
+    value: json.Value = .text(v: "O'Reilly: How are <i>you</i>? \"a\" & b + c")
+    cases: {str: str} = {
+        "<a href=\"{{.}}\">": "<a href=\"#ZrebelZ\">"
+        "<a href=\"/{{.}}\">": "<a href=\"/O%27Reilly:%20How%20are%20%3ci%3eyou%3c/i%3e?%20%22a%22%20&amp;%20b%20&#43;%20c\">"
+        "<a href=\"?q={{.}}\">": "<a href=\"?q=O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c\">"
+        "<a href=\"x#{{.}}\">": "<a href=\"x#O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c\">"
+        "<a href={{.}}>": "<a href=#ZrebelZ>"
+        "<img src='{{.}}'>": "<img src='#ZrebelZ'>"
+        "<form action=\"{{.}}\">": "<form action=\"#ZrebelZ\">"
+        "<a href=\"javascript:{{.}}\">": "<a href=\"javascript:O%27Reilly:%20How%20are%20%3ci%3eyou%3c/i%3e?%20%22a%22%20&amp;%20b%20&#43;%20c\">"
+        "<a data-href=\"{{.}}\">": "<a data-href=\"#ZrebelZ\">"
+        "<a xlink:href=\"{{.}}\">": "<a xlink:href=\"#ZrebelZ\">"
+        "<a href=\"{{.}}{{.}}\">": "<a href=\"#ZrebelZ#ZrebelZ\">"
+        "<a href=\"?a=1&amp;b={{.}}\">": "<a href=\"?a=1&amp;b=O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c\">"
+        "<a href=\"&#106;avascript:{{.}}\">": "<a href=\"&#106;avascript:O%27Reilly:%20How%20are%20%3ci%3eyou%3c/i%3e?%20%22a%22%20&amp;%20b%20&#43;%20c\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a URL whose scheme is refused, in every place one is read, as Go's html/template writes it"
+    value: json.Value = .text(v: "javascript:alert(1)")
+    cases: {str: str} = {
+        "<a href=\"{{.}}\">": "<a href=\"#ZrebelZ\">"
+        "<a HREF='{{.}}'>": "<a HREF='#ZrebelZ'>"
+        "<a srcurl=\"{{.}}\">": "<a srcurl=\"#ZrebelZ\">"
+        "<a xmlns=\"{{.}}\">": "<a xmlns=\"#ZrebelZ\">"
+        "<a foo=\"{{.}}\">": "<a foo=\"javascript:alert(1)\">"
+        "<meta content=\"0; url={{.}}\">": "<meta content=\"0; url=#ZrebelZ\">"
+        "<meta content=\"0; URL = {{.}}\">": "<meta content=\"0; URL = #ZrebelZ\">"
+        "<meta name=\"x\" content=\"{{.}}\">": "<meta name=\"x\" content=\"javascript:alert(1)\">"
+        "<div content=\"0; url={{.}}\">": "<div content=\"0; url=javascript:alert(1)\">"
+        "<style>p { background: url({{.}}) }</style>": "<style>p { background: url(#ZrebelZ) }</style>"
+        "<style>@import \"{{.}}\";</style>": "<style>@import \"#ZrebelZ\";</style>"
+        "<img srcset=\"{{.}}\">": "<img srcset=\"#ZrebelZ\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the schemes a URL may have, and URLs with none, as Go's html/template writes it"
+    value: json.Value = .text(v: "HTTPS://x.org/a b?c=d")
+    cases: {str: str} = {
+        "<a href=\"{{.}}\">": "<a href=\"HTTPS://x.org/a%20b?c=d\">"
+        "<a href='/{{.}}'>": "<a href='/HTTPS://x.org/a%20b?c=d'>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a value in a script's code, strings, template literal and regular expression, in an element and in an event handler, as Go's html/template writes it"
+    value: json.Value = .text(v: "O'Reilly: How are <i>you</i>? \"a\" & b + c")
+    cases: {str: str} = {
+        "<script>var x = {{.}};</script>": "<script>var x = \"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\";</script>"
+        "<script>var x = '{{.}}';</script>": "<script>var x = 'O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c';</script>"
+        "<script>var x = \"{{.}}\";</script>": "<script>var x = \"O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c\";</script>"
+        "<script>var x = `{{.}}`;</script>": "<script>var x = `O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c`;</script>"
+        "<script>var x = /{{.}}/;</script>": "<script>var x = /O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e\\? \\u0022a\\u0022 \\u0026 b \\u002b c/;</script>"
+        "<a onx='f(\"{{.}}\")'>": "<a onx='f(\"O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c\")'>"
+        "<a onx='f({{.}})'>": "<a onx='f(&#34;O&#39;Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\&#34;a\\&#34; \\u0026 b &#43; c&#34;)'>"
+        "<a onx='pattern = /{{.}}/;'>": "<a onx='pattern = /O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e\\? \\u0022a\\u0022 \\u0026 b \\u002b c/;'>"
+        "<a onclick={{.}}>": "<a onclick=&#34;O&#39;Reilly:&#32;How&#32;are&#32;\\u003ci\\u003eyou\\u003c/i\\u003e?&#32;\\&#34;a\\&#34;&#32;\\u0026&#32;b&#32;&#43;&#32;c&#34;>"
+        "<a onclick=\"x=&#39;{{.}}&#39;\">": "<a onclick=\"x=&#39;O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c&#39;\">"
+        "<a onclick=\"x=&quot;{{.}}&quot;\">": "<a onclick=\"x=&quot;O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c&quot;\">"
+        "<script type=\"text/javascript\">{{.}}</script>": "<script type=\"text/javascript\">\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<script type=\"module\">{{.}}</script>": "<script type=\"module\">\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<script type=\"\">{{.}}</script>": "<script type=\"\">\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<script type=\"TEXT/JavaScript; charset=utf-8\">{{.}}</script>": "<script type=\"TEXT/JavaScript; charset=utf-8\">\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<script type=\"text/template\">{{.}}</script>": "<script type=\"text/template\">O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</script>"
+        "<script type=\"text/plain\">{{.}}</script>": "<script type=\"text/plain\">O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c</script>"
+        "<script >{{.}}</script>": "<script >\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<script/x>{{.}}</script>": "<script/x>\"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\"</script>"
+        "<scriptx>{{.}}": "<scriptx>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c"
+        "<script>x</SCRIPT>{{.}}": "<script>x</SCRIPT>O&#39;Reilly: How are &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c"
+        "<script>`${ {{.}} }`</script>": "<script>`${ \"O'Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\\"a\\\" \\u0026 b + c\" }`</script>"
+        "<script>`${ \"{{.}}\" }`</script>": "<script>`${ \"O\\u0027Reilly: How are \\u003ci\\u003eyou\\u003c\\/i\\u003e? \\u0022a\\u0022 \\u0026 b \\u002b c\" }`</script>"
+        "<a onclick='{{.}}'>": "<a onclick='&#34;O&#39;Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\&#34;a\\&#34; \\u0026 b &#43; c&#34;'>"
+        "<a svg:onload=\"{{.}}\">": "<a svg:onload=\"&#34;O&#39;Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\&#34;a\\&#34; \\u0026 b &#43; c&#34;\">"
+        "<a data-onclick=\"{{.}}\">": "<a data-onclick=\"&#34;O&#39;Reilly: How are \\u003ci\\u003eyou\\u003c/i\\u003e? \\&#34;a\\&#34; \\u0026 b &#43; c&#34;\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a slash after each kind of token, a division or a regular expression, as Go's html/template writes it"
+    value: json.Value = .text(v: "a")
+    cases: {str: str} = {
+        "<script>return /{{.}}/</script>": "<script>return /a/</script>"
+        "<script>x=y)/{{.}}/</script>": "<script>x=y)/\"a\"/</script>"
+        "<script>x=y]/{{.}}/</script>": "<script>x=y]/\"a\"/</script>"
+        "<script>}/{{.}}/</script>": "<script>}/a/</script>"
+        "<script>x++/{{.}}/</script>": "<script>x++/\"a\"/</script>"
+        "<script>x=1/{{.}}/</script>": "<script>x=1/\"a\"/</script>"
+        "<script>typeof /{{.}}/</script>": "<script>typeof /a/</script>"
+        "<script>x.return /{{.}}/</script>": "<script>x.return /\"a\"/</script>"
+        "<script>x=a/b;/{{.}}/</script>": "<script>x=a/b;/a/</script>"
+        "<script>new /{{.}}/</script>": "<script>new /\"a\"/</script>"
+        "<script>x - /{{.}}/</script>": "<script>x - /\"a\"/</script>"
+        "<script>x < /{{.}}/</script>": "<script>x < /\"a\"/</script>"
+        "<script>x + + /{{.}}/</script>": "<script>x + + /a/</script>"
+        "<script>x`t`/{{.}}/</script>": "<script>x`t`/a/</script>"
+        "<script>{{.}}/{{.}}</script>": "<script>\"a\"/\"a\"</script>"
+        "<script>x=/[/]{{.}}/</script>": "<script>x=/[/]a/</script>"
+        "<script>x=\"a\\\\\"+{{.}}</script>": "<script>x=\"a\\\\\"+\"a\"</script>"
+        "<script>if (x) /{{.}}/</script>": "<script>if (x) /\"a\"/</script>"
+        "<script>x='a'+{{.}}</script>": "<script>x='a'+\"a\"</script>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: comments of HTML, of scripts and of style sheets dropped with the values in them, as Go's html/template writes it"
+    value: json.Value = .text(v: "a")
+    cases: {str: str} = {
+        "<!-- {{.}} -->x": "x"
+        "a<!-- c -->b{{.}}": "aba"
+        "<script>// {{.}}\nx</script>": "<script>\nx</script>"
+        "<script>/* {{.}} */x</script>": "<script>  x</script>"
+        "<script><!-- {{.}}\nx</script>": "<script>\nx</script>"
+        "<style>/* {{.}} */p{}</style>": "<style>  p{}</style>"
+        "<style>// {{.}}\np{}</style>": "<style>\np{}</style>"
+        "<script>/* c */ var a = 1; // d\n</script>": "<script>  var a = 1; \n</script>"
+        "<a onclick=\"x=1 /* c */;\">": "<a onclick=\"x=1 /* c */;\">"
+        "<a onclick=\"/* {{.}} */\">": "<a onclick=\"/*  */\">"
+        "<a style=\"a:1 /* c */;b:2\">": "<a style=\"a:1 /* c */;b:2\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a value in a style sheet, its strings and its url(), in an element and in a style attribute, as Go's html/template writes it"
+    value: json.Value = .text(v: "O'Reilly: How are <i>you</i>? \"a\" & b + c")
+    cases: {str: str} = {
+        "<style>p { color: {{.}} }</style>": "<style>p { color: ZrebelZ }</style>"
+        "<style>p { font-family: \"{{.}}\" }</style>": "<style>p { font-family: \"#ZrebelZ\" }</style>"
+        "<style>p{font:\"x{{.}}\"}</style>": "<style>p{font:\"xO\\27Reilly\\3a  How are \\3ci\\3eyou\\3c\\2fi\\3e? \\22 a\\22  \\26  b \\2b  c\"}</style>"
+        "<style>p{font:'x{{.}}'}</style>": "<style>p{font:'xO\\27Reilly\\3a  How are \\3ci\\3eyou\\3c\\2fi\\3e? \\22 a\\22  \\26  b \\2b  c'}</style>"
+        "<style>p{font:\"x?{{.}}\"}</style>": "<style>p{font:\"x?O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c\"}</style>"
+        "<style>p{font:\"x#{{.}}\"}</style>": "<style>p{font:\"x#O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c\"}</style>"
+        "<style>p{background:url(x{{.}})}</style>": "<style>p{background:url(xO%27Reilly:%20How%20are%20%3ci%3eyou%3c/i%3e?%20%22a%22%20&%20b%20+%20c)}</style>"
+        "<style>p{background:url('x?{{.}}')}</style>": "<style>p{background:url('x?O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%22a%22%20%26%20b%20%2b%20c')}</style>"
+        "<p style=\"color: {{.}}\">": "<p style=\"color: ZrebelZ\">"
+        "<a style=color:{{.}}>": "<a style=color:ZrebelZ>"
+        "<a style=\"font:&quot;{{.}}&quot;\">": "<a style=\"font:&quot;#ZrebelZ&quot;\">"
+        "<style media=\"x\">{{.}}</style>": "<style media=\"x\">ZrebelZ</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a plain style value kept, as Go's html/template writes it"
+    value: json.Value = .text(v: "red")
+    cases: {str: str} = {
+        "<style>p { color: {{.}} }</style>": "<style>p { color: red }</style>"
+        "<p style=\"color: {{.}}\">": "<p style=\"color: red\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `10px`, as Go's html/template writes it"
+    value: json.Value = .text(v: "10px")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:10px}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `#fff`, as Go's html/template writes it"
+    value: json.Value = .text(v: "#fff")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:#fff}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `a-b_c#d.e,f:g%h!`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a-b_c#d.e,f:g%h!")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:a-b_c#d.e,f:g%h!}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `expression(x)`, as Go's html/template writes it"
+    value: json.Value = .text(v: "expression(x)")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:ZrebelZ}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `-moz-binding`, as Go's html/template writes it"
+    value: json.Value = .text(v: "-moz-binding")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:ZrebelZ}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `rgb(1,2,3)`, as Go's html/template writes it"
+    value: json.Value = .text(v: "rgb(1,2,3)")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:ZrebelZ}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `a\\3a b`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a\\3a b")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:a:b}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the style value `a\\z`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a\\z")
+    cases: {str: str} = {
+        "<style>p{color:{{.}}}</style>": "<style>p{color:az}</style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `a.png 1x, b.png 2x`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a.png 1x, b.png 2x")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\"a.png 1x, b.png 2x\">"
+        "<img srcset={{.}}>": "<img srcset=a.png&#32;1x,&#32;b.png&#32;2x>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\"a.png 1x, b.png 2x\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `a.png 1x , javascript:x`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a.png 1x , javascript:x")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\"a.png 1x ,#ZrebelZ\">"
+        "<img srcset={{.}}>": "<img srcset=a.png&#32;1x&#32;,#ZrebelZ>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\"a.png 1x ,#ZrebelZ\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `a.png 1.5x`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a.png 1.5x")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\"#ZrebelZ\">"
+        "<img srcset={{.}}>": "<img srcset=#ZrebelZ>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\"#ZrebelZ\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `a.png <x`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a.png <x")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\"#ZrebelZ\">"
+        "<img srcset={{.}}>": "<img srcset=#ZrebelZ>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\"#ZrebelZ\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `,a`, as Go's html/template writes it"
+    value: json.Value = .text(v: ",a")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\",a\">"
+        "<img srcset={{.}}>": "<img srcset=,a>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\",a\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the list of images `a b,c d`, as Go's html/template writes it"
+    value: json.Value = .text(v: "a b,c d")
+    cases: {str: str} = {
+        "<img srcset=\"{{.}}\">": "<img srcset=\"a b,c d\">"
+        "<img srcset={{.}}>": "<img srcset=a&#32;b,c&#32;d>"
+        "<img data-srcset=\"{{.}}\">": "<img data-srcset=\"a b,c d\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `title`, as Go's html/template writes it"
+    value: json.Value = .text(v: "title")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a title>"
+        "<a {{.}}=\"x\">": "<a title=\"x\">"
+        "<a {{.}}={{.}}>": "<a title=title>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `Title`, as Go's html/template writes it"
+    value: json.Value = .text(v: "Title")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a title>"
+        "<a {{.}}=\"x\">": "<a title=\"x\">"
+        "<a {{.}}={{.}}>": "<a title=Title>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `onclick`, as Go's html/template writes it"
+    value: json.Value = .text(v: "onclick")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=onclick>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `href`, as Go's html/template writes it"
+    value: json.Value = .text(v: "href")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=href>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `style`, as Go's html/template writes it"
+    value: json.Value = .text(v: "style")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=style>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `src`, as Go's html/template writes it"
+    value: json.Value = .text(v: "src")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=src>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `srcset`, as Go's html/template writes it"
+    value: json.Value = .text(v: "srcset")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=srcset>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `xurl`, as Go's html/template writes it"
+    value: json.Value = .text(v: "xurl")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=xurl>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `data-x`, as Go's html/template writes it"
+    value: json.Value = .text(v: "data-x")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=data-x>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name `name2`, as Go's html/template writes it"
+    value: json.Value = .text(v: "name2")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a name2>"
+        "<a {{.}}=\"x\">": "<a name2=\"x\">"
+        "<a {{.}}={{.}}>": "<a name2=name2>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: the attribute name ``, as Go's html/template writes it"
+    value: json.Value = .text(v: "")
+    cases: {str: str} = {
+        "<a {{.}}>": "<a ZrebelZ>"
+        "<a {{.}}=\"x\">": "<a ZrebelZ=\"x\">"
+        "<a {{.}}={{.}}>": "<a ZrebelZ=ZrebelZ>"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: an empty value in an unquoted attribute, refused, and quoted, kept, as Go's html/template writes it"
+    value: json.Value = .text(v: "")
+    cases: {str: str} = {
+        "<input value={{.}}>": "<input value=ZrebelZ>"
+        "<a title=x{{.}}>": "<a title=xZrebelZ>"
+        "<a href={{.}}>": "<a href=ZrebelZ>"
+        "<a onclick={{.}}>": "<a onclick=&#34;&#34;>"
+        "<input value=\"{{.}}\">": "<input value=\"\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: a lone < in text and in a title written &lt;, and declarations kept, as Go's html/template writes it"
+    value: json.Value = .text(v: "<b>")
+    cases: {str: str} = {
+        "a < b {{.}}": "a &lt; b &lt;b&gt;"
+        "<{{.}}>": "&lt;&lt;b&gt;>"
+        "a </{{.}}": "a &lt;/&lt;b&gt;"
+        "<?xml version=\"1.0\"?>{{.}}": "&lt;?xml version=\"1.0\"?>&lt;b&gt;"
+        "<title>a < b {{.}}</title>": "<title>a &lt; b &lt;b&gt;</title>"
+        "<textarea><b>{{.}}</b></textarea>": "<textarea>&lt;b>&lt;b&gt;&lt;/b></textarea>"
+        "<!DOCTYPE html>{{.}}": "<!DOCTYPE html>&lt;b&gt;"
+        "<![CDATA[ {{.}} ]]>": "&lt;![CDATA[ &lt;b&gt; ]]>"
+        "<a href=\"x\"/>{{.}}": "<a href=\"x\"/>&lt;b&gt;"
+        "<title>a</title>{{.}}": "<title>a</title>&lt;b&gt;"
+        "<style>p{}</style>{{.}}": "<style>p{}</style>&lt;b&gt;"
+        "<textarea>{{.}}</textarea >": "<textarea>&lt;b&gt;</textarea >"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: branches that meet in one place, and a loop's body in an attribute, as Go's html/template writes it"
+    value: json.Value = .text(v: "x")
+    cases: {str: str} = {
+        "<a href=\"{{.}}\"{{if .}} title=\"x\"{{end}}>": "<a href=\"x\" title=\"x\">"
+        "<p {{if .}}title=\"a\"{{else}}id=\"b\"{{end}}>": "<p title=\"a\">"
+        "<p title=\"{{if .}}a{{else}}b{{end}}\">": "<p title=\"a\">"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()
+
+test "html: templates refused: branches in different places, a URL part unknown, a template ending inside a tag, and unquoted values holding a quote or =, as Go's html/template writes it"
+    value: json.Value = .text(v: "x")
+    cases: {str: str} = {
+        "{{if .}}<a href=\"{{else}}<b>{{end}}\">": "ERR invalid"
+        "<a href=\"{{if .}}/x{{else}}?{{end}}{{.}}\">": "ERR invalid"
+        "<a href=\"{{.}}": "ERR invalid"
+        "<a title=\"{{.}}": "ERR invalid"
+        "<script>x": "ERR invalid"
+        "<a href=/x?q={{.}}>": "ERR invalid"
+        "<a title=x\"y>": "ERR invalid"
+        "<a title=x'y>": "ERR invalid"
+        "<a title=x`y>": "ERR invalid"
+        "<a title=x<y>": "ERR invalid"
+    }
+
+    for written in keys(cases)
+        assert rendered(written, value) == cases[written].must()

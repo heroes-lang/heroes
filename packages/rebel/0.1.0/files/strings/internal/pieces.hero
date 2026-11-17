@@ -1,0 +1,260 @@
+# A text cut into pieces at a separator, a character of a set, or a
+# character a function accepts. Every cut stands where a character begins or
+# ends, since a separator's match does, so no piece splits a character.
+
+use strings/internal/scan
+
+# The text of `s` from `from` to its end.
+function rest(s: str, from: i64) -> str
+    return s.slice(from: from, to: s.len())
+
+# `pieces` in the opposite order.
+function reversed(pieces: [str]) -> [str]
+    out: [str] @= []
+    at: i64 @= pieces.len() - 1
+
+    while at >= 0
+        out @ out.push(pieces[at])
+        at @ at - 1
+
+    return out
+
+# At most `limit` characters of `s` as pieces, cut from the start, the last
+# holding the rest; none for the empty text.
+function characters_n(s: str, limit: i64) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < s.len() && out.len() + 1 < limit
+        end = scan.next_at(s, at)
+        out @ out.push(s.slice(from: at, to: end))
+        at @ end
+
+    if at < s.len()
+        out @ out.push(rest(s: s, from: at))
+    return out
+
+# The pieces of `s` between its `sep`s.
+function split(s: str, sep: str) -> [str]
+    return split_up_to(s: s, sep: sep, limit: scan.NO_LIMIT)
+
+# At most `limit` pieces of `s` between its `sep`s, cut from the start; one
+# at least, where `limit` is.
+function split_up_to(s: str, sep: str, limit: i64) -> [str]
+    if limit <= 0
+        return []
+
+    if sep.len() == 0
+        return characters_n(s: s, limit: limit)
+    found = scan.finder(sep)
+    out: [str] @= []
+    from: i64 @= 0
+
+    while out.len() + 1 < limit
+        match scan.first_from(found, s, from)
+            .ok at =>
+                out @ out.push(s.slice(from: from, to: at))
+                from @ at + sep.len()
+            .err _ => break
+
+    out @ out.push(rest(s: s, from: from))
+    return out
+
+# At most `n` pieces of `s` between its `sep`s, cut from the start.
+function split_n(s: str, sep: str, n: u64) -> [str]
+    return split_up_to(s: s, sep: sep, limit: scan.limit_of(n))
+
+# At most `n` pieces of `s` between its `sep`s, cut from the end, in the
+# order of the text.
+function split_n_last(s: str, sep: str, n: u64) -> [str]
+    limit = scan.limit_of(n)
+
+    if limit == 0
+        return []
+    backwards: [str] @= []
+    end: i64 @= s.len()
+
+    if sep.len() == 0
+        while end > 0 && backwards.len() + 1 < limit
+            at = scan.previous_at(s, end)
+            backwards @ backwards.push(s.slice(from: at, to: end))
+            end @ at
+
+        if end > 0
+            backwards @ backwards.push(s.slice(from: 0, to: end))
+        return reversed(backwards)
+    found = scan.finder(sep)
+
+    while backwards.len() + 1 < limit
+        match scan.last_before(found, s, end)
+            .ok at =>
+                backwards @ backwards.push(s.slice(from: at + sep.len(), to: end))
+                end @ at
+            .err _ => break
+
+    backwards @ backwards.push(s.slice(from: 0, to: end))
+    return reversed(backwards)
+
+# The pieces of `s`, each ending with the `sep` that follows it.
+function split_after(s: str, sep: str) -> [str]
+    return split_after_up_to(s: s, sep: sep, limit: scan.NO_LIMIT)
+
+# At most `limit` pieces of `s`, each ending with the `sep` that follows it,
+# none empty.
+function split_after_up_to(s: str, sep: str, limit: i64) -> [str]
+    if limit <= 0
+        return []
+
+    if sep.len() == 0
+        return characters_n(s: s, limit: limit)
+    found = scan.finder(sep)
+    out: [str] @= []
+    from: i64 @= 0
+
+    while out.len() + 1 < limit
+        match scan.first_from(found, s, from)
+            .ok at =>
+                out @ out.push(s.slice(from: from, to: at + sep.len()))
+                from @ at + sep.len()
+            .err _ => break
+
+    if from < s.len()
+        out @ out.push(rest(s: s, from: from))
+    return out
+
+# At most `n` pieces of `s`, each ending with the `sep` that follows it.
+function split_after_n(s: str, sep: str, n: u64) -> [str]
+    return split_after_up_to(s: s, sep: sep, limit: scan.limit_of(n))
+
+# The pieces of `s` that `sep` ends.
+function split_terminated(s: str, sep: str) -> [str]
+    pieces = split(s: s, sep: sep)
+
+    if pieces.len() > 0 && pieces[pieces.len() - 1] == ""
+        return pieces.slice(from: 0, to: pieces.len() - 1)
+    return pieces
+
+# The pieces of `s` between its characters that `set` holds.
+function split_any(s: str, set: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if scan.holds_char(set: set, s: s, at: at, end: end)
+            out @ out.push(s.slice(from: from, to: at))
+            from @ end
+        at @ end
+
+    out @ out.push(rest(s: s, from: from))
+    return out
+
+# The pieces of `s` between its characters that `separates` accepts.
+function split_where(s: str, separates: (function(str) -> bool)) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if separates(s.slice(from: at, to: end))
+            out @ out.push(s.slice(from: from, to: at))
+            from @ end
+        at @ end
+
+    out @ out.push(rest(s: s, from: from))
+    return out
+
+## Tests
+
+# Whether `c`, one character, is an ASCII digit.
+function is_digit(c: str) -> bool
+    return c[0] >= '0' && c[0] <= '9'
+
+# Whether `c`, one character, takes more than one byte.
+function is_wide(c: str) -> bool
+    return c.len() > 1
+
+test "split: separators inside and at the end, an empty text, an empty separator, and a long separator"
+    assert split(s: "a,b,c", sep: ",") == ["a", "b", "c"]
+    assert split(s: "a,b,", sep: ",") == ["a", "b", ""]
+    assert split(s: ",", sep: ",") == ["", ""]
+    assert split(s: "", sep: ",") == [""]
+    assert split(s: "aaa", sep: "aa") == ["", "a"]
+    assert split(s: "città→roma→", sep: "→") == ["città", "roma", ""]
+    assert split(s: "abc", sep: "") == ["a", "b", "c"]
+    assert split(s: "è,ù", sep: "") == ["è", ",", "ù"]
+    nothing: [str] = []
+    assert split(s: "", sep: "") == nothing
+    long = repeat("ab", 9)
+    assert split(s: "x" + long + "y" + long, sep: long) == ["x", "y", ""]
+
+test "split_n: no piece, one, two, every one, an empty separator, and characters of more than one byte"
+    nothing: [str] = []
+    assert split_n(s: "a,b,c", sep: ",", n: 0) == nothing
+    assert split_n(s: "a,b,c", sep: ",", n: 1) == ["a,b,c"]
+    assert split_n(s: "a,b,c", sep: ",", n: 2) == ["a", "b,c"]
+    assert split_n(s: "a,b", sep: ",", n: 18446744073709551615) == ["a", "b"]
+    assert split_n(s: "", sep: ",", n: 1) == [""]
+    assert split_n(s: "abc", sep: "", n: 2) == ["a", "bc"]
+    assert split_n(s: "", sep: "", n: 2) == nothing
+    assert split_n(s: "è→ù→à", sep: "→", n: 2) == ["è", "ù→à"]
+
+test "split_n_last: no piece, one, two, every one, repeats that would overlap, and an empty separator"
+    nothing: [str] = []
+    assert split_n_last(s: "a,b,c", sep: ",", n: 0) == nothing
+    assert split_n_last(s: "a,b,c", sep: ",", n: 1) == ["a,b,c"]
+    assert split_n_last(s: "a,b,c", sep: ",", n: 2) == ["a,b", "c"]
+    assert split_n_last(s: "a,b,c", sep: ",", n: 9) == ["a", "b", "c"]
+    assert split_n_last(s: "aaa", sep: "aa", n: 9) == ["a", ""]
+    assert split_n_last(s: "", sep: ",", n: 3) == [""]
+    assert split_n_last(s: "è→ù→à", sep: "→", n: 2) == ["è→ù", "à"]
+    assert split_n_last(s: "abè", sep: "", n: 2) == ["ab", "è"]
+    long = repeat("ab", 9)
+    assert split_n_last(s: "x" + long + "y" + long + "z", sep: long, n: 2) == ["x" + long + "y", "z"]
+
+test "split_after: a separator at either end, none, an empty text, an empty separator, and lines"
+    nothing: [str] = []
+    assert split_after(s: "a,b,", sep: ",") == ["a,", "b,"]
+    assert split_after(s: "a,b", sep: ",") == ["a,", "b"]
+    assert split_after(s: ",a", sep: ",") == [",", "a"]
+    assert split_after(s: "abc", sep: ";") == ["abc"]
+    assert split_after(s: "", sep: ",") == nothing
+    assert split_after(s: "abè", sep: "") == ["a", "b", "è"]
+    assert split_after(s: "città\nè\n", sep: "\n") == ["città\n", "è\n"]
+
+test "split_after_n: no piece, the rest kept whole, a last separator, and characters of more than one byte"
+    nothing: [str] = []
+    assert split_after_n(s: "a,b,c", sep: ",", n: 0) == nothing
+    assert split_after_n(s: "a,b,c", sep: ",", n: 2) == ["a,", "b,c"]
+    assert split_after_n(s: "a,", sep: ",", n: 2) == ["a,"]
+    assert split_after_n(s: "a,b,", sep: ",", n: 2) == ["a,", "b,"]
+    assert split_after_n(s: "", sep: ",", n: 2) == nothing
+    assert split_after_n(s: "abc", sep: "", n: 2) == ["a", "bc"]
+    assert split_after_n(s: "é,è,à", sep: ",", n: 2) == ["é,", "è,à"]
+
+test "split_terminated: a final separator, two, one alone, none, and an empty text"
+    nothing: [str] = []
+    assert split_terminated(s: "a;b;", sep: ";") == ["a", "b"]
+    assert split_terminated(s: "a;b;;", sep: ";") == ["a", "b", ""]
+    assert split_terminated(s: ";", sep: ";") == [""]
+    assert split_terminated(s: "a;b", sep: ";") == ["a", "b"]
+    assert split_terminated(s: "", sep: ";") == nothing
+    assert split_terminated(s: "é;è;", sep: ";") == ["é", "è"]
+
+test "split_any: two separators, an empty set, an empty text, separators at both ends, and characters of more than one byte"
+    assert split_any(s: "a,b;c", set: ",;") == ["a", "b", "c"]
+    assert split_any(s: "abc", set: "") == ["abc"]
+    assert split_any(s: "", set: ",") == [""]
+    assert split_any(s: ",a,", set: ",") == ["", "a", ""]
+    assert split_any(s: "è,ù;à", set: ",;") == ["è", "ù", "à"]
+    assert split_any(s: "aéb", set: "é") == ["a", "b"]
+
+test "split_where: separators side by side, an empty text, one alone, and characters of more than one byte"
+    assert split_where(s: "a1b22c", separates: is_digit) == ["a", "b", "", "c"]
+    assert split_where(s: "", separates: is_digit) == [""]
+    assert split_where(s: "1", separates: is_digit) == ["", ""]
+    assert split_where(s: "èxé", separates: is_wide) == ["", "x", ""]

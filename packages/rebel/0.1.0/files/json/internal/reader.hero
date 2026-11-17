@@ -1,0 +1,419 @@
+# A JSON text read into the flat list of its events, by RFC 8259's grammar
+# and the widenings a caller asks for. The containers still open are counted
+# on a stack this module holds, so a text nested a million deep costs a list
+# of a million entries and never the machine's stack, and the nesting a
+# caller allows is a number it sets.
+
+use json/internal/event
+use json/internal/scan
+use json/internal/stack
+use numbers
+
+# The code of a number past what its type holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The largest integer an `f64` holds with no other integer reading to it.
+constant EXACT_LIMIT: i64
+    9007199254740991
+
+# The largest `i64`, the nesting a respacing allows.
+constant NO_LIMIT: i64
+    9223372036854775807
+
+# How a text is read.
+record Reading
+    # The deepest nesting accepted: `[]` is 1 deep.
+    max_depth: i64
+    # Whether a key written twice in one object is accepted.
+    duplicate_keys: bool
+    # Whether a raw control character may stand inside a string.
+    control_characters: bool
+    # Whether half a surrogate pair is read as U+FFFD.
+    lone_surrogates: bool
+    # Whether `NaN`, `Infinity` and `-Infinity` are read as numbers.
+    non_finite: bool
+    # Whether an integer past `EXACT_LIMIT` fails.
+    exact_integers: bool
+    # Whether a number's digits are read as an `f64`. A respacing reads none,
+    # so no number is too large for it.
+    read_numbers: bool
+    # Whether each number and string keeps its text as written, in `raw`.
+    keep_raw: bool
+
+# What `read` answers.
+record Read
+    # The text's events, in order.
+    events: [event.Event]
+    # The byte index past the value and the white space after it.
+    next: i64
+
+# The reading of a respacing: RFC 8259's grammar and nothing it does not
+# oblige, no limit of nesting, no key looked for twice, no number read, and
+# every token kept as it was written.
+function respacing() -> Reading
+    return Reading(
+        max_depth: NO_LIMIT,
+        duplicate_keys: true,
+        control_characters: false,
+        lone_surrogates: true,
+        non_finite: false,
+        exact_integers: false,
+        read_numbers: false,
+        keep_raw: true
+    )
+
+# The events of the one value that begins at byte `from` of `text`, after any
+# white space, and where the next begins. Fails `invalid` where the text is
+# not JSON as `reading` reads it, and `does_not_fit` where a number is past
+# what an `f64` holds, or past `EXACT_LIMIT` where `reading.exact_integers`
+# asks; each message says the line, the column, and what was expected.
+function read(text: str, from: i64, reading: Reading) -> Read?
+    out: [event.Event] @= []
+
+    # Whether each open container is an object, the innermost at `depth - 1`.
+    objects: [bool] @= []
+    depth: i64 @= 0
+
+    # The keys of the open object, with where each was first written, and
+    # those of the containers that hold it.
+    seen: {str: i64} @= {}
+    held: [{str: i64}] @= []
+    at: i64 @= scan.skip_space(text, from)
+    wants_value: bool @= true
+
+    while true
+        if wants_value
+            if at < text.len() && (text[at] == '[' || text[at] == '{')
+                if depth >= reading.max_depth
+                    return fail(
+                        code: scan.INVALID,
+                        msg: scan.said(text: text, at: at, what: f"nested deeper than {reading.max_depth} levels, the most this reading allows")
+                    )
+                is_object = text[at] == '{'
+
+                kind = if is_object
+                    event.BEGIN_OBJECT
+                else
+                    event.BEGIN_LIST
+                out @ out.push(positioned(e: event.mark(kind), at: at))
+                stack.put(items: @objects, top: depth, item: is_object)
+                stack.put(items: @held, top: depth, item: seen)
+                seen @ {}
+                depth @ depth + 1
+                at @ scan.skip_space(text, at + 1)
+
+                if at < text.len() && text[at] == closing_of(is_object)
+                    depth @ depth - 1
+                    out @ out.push(positioned(e: event.mark(closed_by(kind)), at: at))
+                    seen @ held[depth]
+                    held[depth] @ {}
+                    at @ at + 1
+                    wants_value @ false
+                else if is_object
+                    at @ read_key(text: text, at: at, @out, @seen, reading: reading)?
+            else
+                at @ read_scalar(text: text, at: at, @out, reading: reading)?
+                wants_value @ false
+        else
+            at @ scan.skip_space(text, at)
+
+            if depth == 0
+                return ok(Read(events: out, next: at))
+            is_object = objects[depth - 1]
+            closing = closing_of(is_object)
+
+            if at < text.len() && text[at] == ','
+                at @ scan.skip_space(text, at + 1)
+
+                if at < text.len() && text[at] == closing
+                    what = if is_object
+                        "a key after `,`: an object does not end with a comma"
+                    else
+                        "a value after `,`: a list does not end with a comma"
+                    return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+
+                if is_object
+                    at @ read_key(text: text, at: at, @out, @seen, reading: reading)?
+                wants_value @ true
+            else if at < text.len() && text[at] == closing
+                depth @ depth - 1
+
+                kind = if is_object
+                    event.END_OBJECT
+                else
+                    event.END_LIST
+                out @ out.push(positioned(e: event.mark(kind), at: at))
+                seen @ held[depth]
+                held[depth] @ {}
+                at @ at + 1
+            else
+                what = if is_object
+                    "`,` or `}`"
+                else
+                    "`,` or `]`"
+                return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+
+# The byte that closes an object, or a list.
+function closing_of(is_object: bool) -> u8
+    if is_object
+        return '}'
+    return ']'
+
+# The event that closes a container opened by an event of `kind`.
+function closed_by(kind: i64) -> i64
+    if kind == event.BEGIN_OBJECT
+        return event.END_OBJECT
+    return event.END_LIST
+
+# `e` with the byte index where its token begins.
+function positioned(e: event.Event, at: i64) -> event.Event
+    placed: event.Event @= e
+    placed.at @ at
+    return placed
+
+# Reads the key that begins at `at`, the `:` after it and the white space
+# around it, adding the key's event to `out` and the key to `seen`, the keys
+# of its object; answers where the member's value begins.
+function read_key(text: str, at: i64, @out: [event.Event], @seen: {str: i64}, reading: Reading) -> i64?
+    if at >= text.len() || text[at] != '"'
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: at, what: "a key: a string, in double quotes")
+        )
+    lexeme = scan.read_string(text: text, at: at, control_characters: reading.control_characters, lone_surrogates: reading.lone_surrogates)?
+
+    if !reading.duplicate_keys
+        match seen[lexeme.value]
+            .ok first =>
+                where = scan.position(text, first)
+                return fail(
+                    code: scan.INVALID,
+                    msg: scan.said(text: text, at: at, what: f"the key \"{lexeme.value}\" is written twice in one object, first at {where}")
+                )
+            .err _ => seen[lexeme.value] @ at
+
+    raw = if reading.keep_raw
+        text.slice(from: at, to: lexeme.end)
+    else
+        ""
+    out @ out.push(event.Event(kind: event.KEY, at: at, flag: false, number: 0.0, text: lexeme.value, raw: raw))
+    colon = scan.skip_space(text, lexeme.end)
+
+    if colon >= text.len() || text[colon] != ':'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: colon, what: "`:` after a key"))
+    return ok(scan.skip_space(text, colon + 1))
+
+# Reads the value that is no container, beginning at `at`, adding its event
+# to `out`; answers where it ends.
+function read_scalar(text: str, at: i64, @out: [event.Event], reading: Reading) -> i64?
+    if at >= text.len()
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: "a value"))
+    b = text[at]
+
+    if b == '"'
+        lexeme = scan.read_string(text: text, at: at, control_characters: reading.control_characters, lone_surrogates: reading.lone_surrogates)?
+
+        raw = if reading.keep_raw
+            text.slice(from: at, to: lexeme.end)
+        else
+            ""
+        out @ out.push(event.Event(kind: event.TEXT, at: at, flag: false, number: 0.0, text: lexeme.value, raw: raw))
+        return ok(lexeme.end)
+
+    for word in ["true", "false", "null"]
+        if scan.holds_at(text: text, at: at, word: word)
+            if word == "null"
+                out @ out.push(positioned(e: event.mark(event.NULL_VALUE), at: at))
+            else
+                out @ out.push(positioned(e: event.boolean(word == "true"), at: at))
+            return ok(at + word.len())
+
+    if reading.non_finite
+        for word in ["NaN", "Infinity", "-Infinity"]
+            if scan.holds_at(text: text, at: at, word: word)
+                n = numbers.parse_float(word)?
+                out @ out.push(event.Event(kind: event.NUMBER, at: at, flag: false, number: n, text: word, raw: word))
+                return ok(at + word.len())
+
+    if b != '-' && !scan.is_digit(b)
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: "a value"))
+    end = scan.number_end(text, at)?
+    raw = text.slice(from: at, to: end)
+    n: f64 @= 0.0
+
+    if reading.read_numbers
+        n @ numbers.parse_float(raw)?
+
+        if n - n != 0.0
+            return fail(
+                code: DOES_NOT_FIT,
+                msg: scan.said(text: text, at: at, what: f"the number {raw} is past the largest an f64 holds")
+            )
+
+        if reading.exact_integers && scan.is_integer_shaped(raw)
+            exact = match numbers.parse_int(raw)
+                .ok whole => whole <= EXACT_LIMIT && whole >= 0 - EXACT_LIMIT
+                .err _    => false
+
+            if !exact
+                return fail(
+                    code: DOES_NOT_FIT,
+                    msg: scan.said(text: text, at: at, what: f"the integer {raw} is past {EXACT_LIMIT}, the largest an f64 holds exactly")
+                )
+
+    kept = if reading.keep_raw
+        raw
+    else
+        ""
+    out @ out.push(event.Event(kind: event.NUMBER, at: at, flag: false, number: n, text: raw, raw: kept))
+    return ok(end)
+
+## Tests
+
+# The reading of RFC 8259 and nothing wider, as `json.strict` answers it.
+function strictly() -> Reading
+    return Reading(
+        max_depth: 512,
+        duplicate_keys: false,
+        control_characters: false,
+        lone_surrogates: false,
+        non_finite: false,
+        exact_integers: false,
+        read_numbers: true,
+        keep_raw: false
+    )
+
+# The kinds of the events of `text`, read strictly.
+function kinds_of(text: str) -> [i64]
+    got = read(text: text, from: 0, reading: strictly()).must()
+    return got.events.map(kind_of_event)
+
+# The kind of `e`.
+function kind_of_event(e: event.Event) -> i64
+    return e.kind
+
+# The message `text` fails with, read strictly, or "" where it is read.
+function failure_of(text: str) -> str
+    return match read(text: text, from: 0, reading: strictly())
+        .ok _  => ""
+        .err e => e.msg
+
+test "read: each scalar alone, and white space around it"
+    assert kinds_of("null") == [event.NULL_VALUE]
+    assert kinds_of(" true ") == [event.BOOLEAN]
+    assert kinds_of("-1.5e3") == [event.NUMBER]
+    assert kinds_of("\"é\"") == [event.TEXT]
+    got = read(text: "  0 ", from: 0, reading: strictly()).must()
+    assert got.next == 4
+    assert got.events[0].at == 2
+    assert got.events[0].number == 0.0
+
+test "read: empty and nested containers, in order"
+    assert kinds_of("[]") == [event.BEGIN_LIST, event.END_LIST]
+    assert kinds_of("{}") == [event.BEGIN_OBJECT, event.END_OBJECT]
+    one = [
+        event.BEGIN_LIST
+        event.NUMBER
+        event.BEGIN_OBJECT
+        event.KEY
+        event.NULL_VALUE
+        event.END_OBJECT
+        event.END_LIST
+    ]
+    assert kinds_of("[1, {\"a\": null}]") == one
+    assert kinds_of("[[[]]]") == [event.BEGIN_LIST, event.BEGIN_LIST, event.BEGIN_LIST, event.END_LIST, event.END_LIST, event.END_LIST]
+
+test "read: next stands past the value and its white space, where anything may follow"
+    got = read(text: "[1] [2]", from: 0, reading: strictly()).must()
+    assert got.next == 4
+    again = read(text: "[1] [2]", from: 4, reading: strictly()).must()
+    assert again.next == 7
+    assert read(text: "true false", from: 0, reading: strictly()).must().next == 5
+
+test "read: the messages of Python's and Go's failing texts, with line and column"
+    assert failure_of("") == "line 1, column 1: expected a value, found the end of the text"
+    assert failure_of(" ") == "line 1, column 2: expected a value, found the end of the text"
+    assert failure_of("nul") == "line 1, column 1: expected a value, found \"nul\""
+    assert failure_of("NaN") == "line 1, column 1: expected a value, found \"NaN\""
+    assert failure_of("'a'") == "line 1, column 1: expected a value, found \"'\""
+    assert failure_of("[1 2]") == "line 1, column 4: expected `,` or `]`, found \"2\""
+    assert failure_of("[1}") == "line 1, column 3: expected `,` or `]`, found \"}\""
+    assert failure_of("{\"a\" 1}") == "line 1, column 6: expected `:` after a key, found \"1\""
+    assert failure_of("{a:1}") == "line 1, column 2: expected a key: a string, in double quotes, found \"a\""
+    assert failure_of("{1:2}") == "line 1, column 2: expected a key: a string, in double quotes, found \"1\""
+    assert failure_of("[") == "line 1, column 2: expected a value, found the end of the text"
+    assert failure_of("{\"a\":") == "line 1, column 6: expected a value, found the end of the text"
+    assert failure_of("[\n1,\n  x]") == "line 3, column 3: expected a value, found \"x\""
+    assert failure_of("]") == "line 1, column 1: expected a value, found \"]\""
+    assert failure_of("{,}") == "line 1, column 2: expected a key: a string, in double quotes, found \",\""
+    assert failure_of("[,1]") == "line 1, column 2: expected a value, found \",\""
+
+test "read: a trailing comma, in a list and in an object"
+    assert failure_of("[1,]") == "line 1, column 4: expected a value after `,`: a list does not end with a comma, found \"]\""
+    assert failure_of("{\"a\":1,}") == "line 1, column 8: expected a key after `,`: an object does not end with a comma, found \"}\""
+
+test "read: a key written twice, refused where it is, and kept when asked"
+    assert failure_of("{\"a\":1,\"b\":2,\"a\":3}") == "line 1, column 14: the key \"a\" is written twice in one object, first at line 1, column 2"
+    assert failure_of("[{\"a\":1},{\"a\":2}]") == ""
+    assert failure_of("{\"a\":{\"a\":1}}") == ""
+    assert failure_of("{\"a\":[{\"b\":1}],\"b\":2}") == ""
+    assert failure_of("{\"a\":[{\"b\":1}],\"a\":2}").len() > 0
+    asked: Reading @= strictly()
+    asked.duplicate_keys @ true
+    assert !read(text: "{\"a\":1,\"a\":3}", from: 0, reading: asked).is_err()
+
+test "read: the depth allowed, and one level past it"
+    deep = repeat("[", 512) + repeat("]", 512)
+    assert !read(text: deep, from: 0, reading: strictly()).is_err()
+    deeper = repeat("[", 513) + repeat("]", 513)
+    assert failure_of(deeper) == "line 1, column 513: nested deeper than 512 levels, the most this reading allows"
+    flat: Reading @= strictly()
+    flat.max_depth @ 0
+    assert !read(text: "1", from: 0, reading: flat).is_err()
+    assert read(text: "[]", from: 0, reading: flat).is_err()
+
+test "read: a hundred thousand levels with no limit, on the module's own stack"
+    deep = repeat("[", 100000) + repeat("]", 100000)
+    got = read(text: deep, from: 0, reading: respacing()).must()
+    assert got.events.len() == 200000
+
+test "read: numbers past an f64, below its least, and past 2 to the 53rd"
+    match read(text: "1e400", from: 0, reading: strictly())
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "line 1, column 1: the number 1e400 is past the largest an f64 holds"
+
+    assert read(text: "-1e400", from: 0, reading: strictly()).is_err()
+    assert read(text: "1e-400", from: 0, reading: strictly()).must().events[0].number == 0.0
+    big = read(text: "9007199254740993", from: 0, reading: strictly()).must()
+    assert big.events[0].number == 9007199254740992.0
+    exact: Reading @= strictly()
+    exact.exact_integers @ true
+
+    match read(text: "9007199254740993", from: 0, reading: exact)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    assert read(text: "-9007199254740992", from: 0, reading: exact).is_err()
+    assert read(text: "99999999999999999999", from: 0, reading: exact).is_err()
+    assert !read(text: "9007199254740991", from: 0, reading: exact).is_err()
+    assert !read(text: "-9007199254740991", from: 0, reading: exact).is_err()
+    assert !read(text: "9007199254740993.0", from: 0, reading: exact).is_err()
+    assert !read(text: "1e400", from: 0, reading: respacing()).is_err()
+
+test "read: NaN and the infinities, refused and read when asked"
+    assert read(text: "Infinity", from: 0, reading: strictly()).is_err()
+    assert read(text: "-Infinity", from: 0, reading: strictly()).is_err()
+    wide: Reading @= strictly()
+    wide.non_finite @ true
+    nan = read(text: "[NaN]", from: 0, reading: wide).must().events[1].number
+    assert nan != nan
+    assert read(text: "-Infinity", from: 0, reading: wide).must().events[0].number < -1.0
+    assert read(text: "Infinity", from: 0, reading: wide).must().events[0].number > 1.0
+
+test "read: raw text kept for a respacing, and none kept otherwise"
+    got = read(text: "{\"\\u00e9\":1.50}", from: 0, reading: respacing()).must()
+    assert got.events[1].raw == "\"\\u00e9\"" && got.events[1].text == "é"
+    assert got.events[2].raw == "1.50"
+    plain = read(text: "{\"\\u00e9\":1.50}", from: 0, reading: strictly()).must()
+    assert plain.events[1].raw == "" && plain.events[2].raw == ""

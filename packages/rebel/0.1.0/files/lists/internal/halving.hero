@@ -1,0 +1,180 @@
+# A sorted list searched by halving: where a value stands, where it would
+# enter before or after its equals, a value put in its place, and where the
+# elements a test accepts end. Each search halves the range it holds until
+# it is empty, so it reads about the logarithm of the length of elements, and
+# every index it reads lies inside that range whatever the order answers.
+
+use lists/internal/codes
+use lists/internal/editing
+use lists/internal/samples
+
+# How many elements of `xs` go before `value` by `less`.
+#
+# - `xs`: a list sorted by `less`; on any other the answer means nothing.
+# - `value`: the value whose place is asked.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# The answer is from 0 to the length: the index where `value` would enter
+# the list ahead of its equals.
+function lower_bound<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64
+    low: i64 @= 0
+    high: i64 @= xs.len()
+
+    while low < high
+        mid = low + (high - low) / 2
+
+        if less(a: xs[mid], b: value)
+            low @ mid + 1
+        else
+            high @ mid
+
+    return low
+
+# How many elements of `xs` do not go after `value` by `less`.
+#
+# - `xs`: a list sorted by `less`; on any other the answer means nothing.
+# - `value`: the value whose place is asked.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# The answer is from 0 to the length: the index where `value` would enter
+# the list behind its equals.
+function upper_bound<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64
+    low: i64 @= 0
+    high: i64 @= xs.len()
+
+    while low < high
+        mid = low + (high - low) / 2
+
+        if less(a: value, b: xs[mid])
+            high @ mid
+        else
+            low @ mid + 1
+
+    return low
+
+# The index of the first element of `xs` equal to `value` by `less`.
+#
+# - `xs`: a list sorted by `less`; on any other the answer means nothing.
+# - `value`: the value sought.
+# - `less`: the order, true where `a` goes before `b`; two elements are
+#   equal where neither goes before the other.
+#
+# Fails `not_found` where no element is equal to `value`.
+function binary_search<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> i64?
+    at = lower_bound(xs, value, less)
+
+    if at < xs.len() && !less(a: value, b: xs[at])
+        return ok(at)
+    return fail(
+        code: codes.NOT_FOUND,
+        msg: codes.none_is(count: xs.len(), what: "equal by the order to the value sought")
+    )
+
+# `xs` with `value` put in where the order keeps, behind its equals.
+#
+# - `xs`: a list sorted by `less`.
+# - `value`: the value put in.
+# - `less`: the order, true where `a` goes before `b`.
+#
+# It copies the whole list.
+function insert_sorted<T>(xs: [T], value: T, less: (function(a: T, b: T) -> bool)) -> [T]
+    return editing.insert(xs, at: upper_bound(xs, value, less), value: value)
+
+# How many leading elements of `xs` `accepts` accepts, found by halving.
+#
+# - `xs`: a list in which every element `accepts` accepts stands before
+#   every one it refuses; on any other the answer means nothing.
+# - `accepts`: the test.
+function partition_point<T>(xs: [T], accepts: (function(T) -> bool)) -> i64
+    low: i64 @= 0
+    high: i64 @= xs.len()
+
+    while low < high
+        mid = low + (high - low) / 2
+
+        if accepts(xs[mid])
+            low @ mid + 1
+        else
+            high @ mid
+
+    return low
+
+# Whether every element of `xs` `accepts` accepts stands before every one it
+# refuses.
+#
+# - `xs`: the list asked about; an empty one is.
+# - `accepts`: the test.
+function is_partitioned<T>(xs: [T], accepts: (function(T) -> bool)) -> bool
+    refused: bool @= false
+
+    for x in xs
+        if accepts(x)
+            if refused
+                return false
+        else
+            refused @ true
+
+    return true
+
+## Tests
+
+test "lower_bound: before all, at the first of equals, after all, and an empty list, as bisect_left"
+    xs = [1, 2, 2, 2, 3]
+    nothing: [i64] = []
+    assert lower_bound(xs, 0, samples.ascending) == 0
+    assert lower_bound(xs, 1, samples.ascending) == 0
+    assert lower_bound(xs, 2, samples.ascending) == 1
+    assert lower_bound(xs, 3, samples.ascending) == 4
+    assert lower_bound(xs, 4, samples.ascending) == 5
+    assert lower_bound(nothing, 5, samples.ascending) == 0
+    assert lower_bound(xs, -9_223_372_036_854_775_808, samples.ascending) == 0
+
+test "upper_bound: before all, after the last of equals, after all, and an empty list, as bisect_right"
+    xs = [1, 2, 2, 2, 3]
+    nothing: [i64] = []
+    assert upper_bound(xs, 0, samples.ascending) == 0
+    assert upper_bound(xs, 1, samples.ascending) == 1
+    assert upper_bound(xs, 2, samples.ascending) == 4
+    assert upper_bound(xs, 3, samples.ascending) == 5
+    assert upper_bound(xs, 4, samples.ascending) == 5
+    assert upper_bound(nothing, 5, samples.ascending) == 0
+    assert upper_bound(xs, 9_223_372_036_854_775_807, samples.ascending) == 5
+
+test "binary_search: the first of equals as Go, at either end, absent, and an empty list"
+    xs = [1, 2, 2, 2, 3]
+    nothing: [i64] = []
+    assert binary_search(xs, 1, samples.ascending).must() == 0
+    assert binary_search(xs, 2, samples.ascending).must() == 1
+    assert binary_search(xs, 3, samples.ascending).must() == 4
+
+    match binary_search(xs, 4, samples.ascending)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "none of the 5 elements of the list is equal by the order to the value sought"
+
+    assert binary_search(xs, 0, samples.ascending).is_err()
+    assert binary_search(nothing, 0, samples.ascending).is_err()
+    assert binary_search(["a", "bb", "é"], "xy", samples.by_length).must() == 1
+
+test "insert_sorted: inside, behind its equals as insort, at either end, and into an empty list"
+    nothing: [i64] = []
+    assert insert_sorted([1, 3, 5], 4, samples.ascending) == [1, 3, 4, 5]
+    assert insert_sorted([1, 3], 0, samples.ascending) == [0, 1, 3]
+    assert insert_sorted([1, 3], 9, samples.ascending) == [1, 3, 9]
+    assert insert_sorted(nothing, 4, samples.ascending) == [4]
+    cards = [samples.Card(rank: 1, suit: "s"), samples.Card(rank: 2, suit: "h"), samples.Card(rank: 3, suit: "c")]
+    assert insert_sorted(cards, samples.Card(rank: 2, suit: "x"), samples.by_rank)[2].suit == "x"
+
+test "partition_point: inside, all accepted, none, and an empty list"
+    nothing: [i64] = []
+    assert partition_point([1, 2, 3, 4], samples.below_three) == 2
+    assert partition_point([1, 2], samples.below_three) == 2
+    assert partition_point([3, 4], samples.below_three) == 0
+    assert partition_point(nothing, samples.below_three) == 0
+
+test "is_partitioned: accepted first, mixed, all, none, and an empty list"
+    nothing: [i64] = []
+    assert is_partitioned([1, 2, 5, 6], samples.below_three)
+    assert !is_partitioned([1, 5, 2], samples.below_three)
+    assert is_partitioned([1, 2], samples.below_three)
+    assert is_partitioned([5, 6], samples.below_three)
+    assert is_partitioned(nothing, samples.below_three)

@@ -1,0 +1,239 @@
+# Address bytes written as text: the shortest form RFC 5952 gives IPv6, the
+# expanded form with every digit, the port after it, and the name a reverse
+# lookup asks for. Each text is built from pieces joined once.
+
+use numbers
+use strings
+
+# The text of the address `bytes`, with its zone and, where it has one, its
+# port.
+#
+# - `bytes`: four bytes for IPv4, sixteen for IPv6.
+# - `zone`: the zone written after a `%`, "" for none.
+# - `has_port`: whether `port` is written.
+# - `port`: the port, 0 to 65535, read only where `has_port` is true.
+#
+# Aborts where `bytes` holds other than four or sixteen bytes.
+function address(bytes: [u8], zone: str, has_port: bool, port: i64) -> str
+    return with_port(bytes, text: with_zone(text: ip(bytes), zone: zone), has_port: has_port, port: port)
+
+# The text of the address `bytes` with no digit left out, its zone and its
+# port written as `address` writes them.
+#
+# - `bytes`: four bytes for IPv4, sixteen for IPv6, each IPv6 group then
+#   written as four hexadecimal digits.
+# - `zone`: the zone written after a `%`, "" for none.
+# - `has_port`: whether `port` is written.
+# - `port`: the port, 0 to 65535, read only where `has_port` is true.
+#
+# Aborts where `bytes` holds other than four or sixteen bytes.
+function expanded(bytes: [u8], zone: str, has_port: bool, port: i64) -> str
+    if bytes.len() == 4
+        return address(bytes, zone: zone, has_port: has_port, port: port)
+    assert bytes.len() == 16
+    groups: [str] @= []
+
+    for i in range(from: 0, to: 8)
+        groups @ groups.push(
+            strings.pad_start(s: numbers.format_int(n: group_of(bytes, i: i), base: 16), width: 4, pad: "0")
+        )
+
+    return with_port(bytes, text: with_zone(text: groups.join(":"), zone: zone), has_port: has_port, port: port)
+
+# The text of the address `bytes`, without a zone or a port: IPv4 dotted,
+# IPv6 in lower case with its longest run of two zero groups or more as `::`,
+# and an IPv6 address that maps an IPv4 one as `::ffff:` and that one.
+#
+# - `bytes`: four bytes for IPv4, sixteen for IPv6.
+#
+# Aborts where `bytes` holds other than four or sixteen bytes.
+function ip(bytes: [u8]) -> str
+    if bytes.len() == 4
+        return dotted(bytes, from: 0)
+    assert bytes.len() == 16
+
+    if is_mapped(bytes)
+        return "::ffff:" + dotted(bytes, from: 12)
+    run = longest_zeros(bytes)
+    parts: [str] @= []
+    i: i64 @= 0
+
+    while i < 8
+        if i == run.start
+            if i == 0
+                parts @ parts.push("")
+            parts @ parts.push("")
+            i @ i + run.count
+
+            if i == 8
+                parts @ parts.push("")
+        else
+            parts @ parts.push(numbers.format_int(n: group_of(bytes, i: i), base: 16))
+            i @ i + 1
+
+    return parts.join(":")
+
+# The name a reverse lookup of the address `bytes` asks for: the IPv4 bytes
+# from the last, then `in-addr.arpa`; the IPv6 hexadecimal digits from the
+# last, then `ip6.arpa`.
+#
+# - `bytes`: four bytes for IPv4, sixteen for IPv6.
+#
+# Aborts where `bytes` holds other than four or sixteen bytes.
+function reverse_name(bytes: [u8]) -> str
+    parts: [str] @= []
+    at: i64 @= bytes.len() - 1
+
+    if bytes.len() == 4
+        while at >= 0
+            parts @ parts.push(to_str(bytes[at]))
+            at @ at - 1
+
+        parts @ parts.push("in-addr.arpa")
+        return parts.join(".")
+    assert bytes.len() == 16
+
+    while at >= 0
+        b = to_i64(bytes[at]).must()
+        parts @ parts.push(numbers.format_int(n: b % 16, base: 16))
+        parts @ parts.push(numbers.format_int(n: b / 16, base: 16))
+        at @ at - 1
+
+    parts @ parts.push("ip6.arpa")
+    return parts.join(".")
+
+# What `longest_zeros` answers: where the run begins and how many groups it
+# holds.
+record Run
+    # The index of the run's first group, 0 to 7, or -1 where there is none.
+    start: i64
+    # How many zero groups the run holds, 0 where there is none.
+    count: i64
+
+# The first of the longest runs of two zero groups or more of the IPv6
+# address `bytes`, which RFC 5952 writes as `::`.
+#
+# - `bytes`: sixteen bytes.
+function longest_zeros(bytes: [u8]) -> Run
+    best: Run @= Run(start: -1, count: 0)
+    start: i64 @= -1
+
+    for i in range(from: 0, to: 9)
+        if i < 8 && group_of(bytes, i: i) == 0
+            if start < 0
+                start @ i
+        else if start >= 0
+            if i - start >= 2 && i - start > best.count
+                best @ Run(start: start, count: i - start)
+            start @ -1
+
+    return best
+
+# The group `i` of the IPv6 address `bytes`, 0 to 65535.
+#
+# - `bytes`: sixteen bytes.
+# - `i`: which group, 0 to 7.
+function group_of(bytes: [u8], i: i64) -> i64
+    return to_i64(bytes[2 * i]).must() * 256 + to_i64(bytes[2 * i + 1]).must()
+
+# Whether the IPv6 address `bytes` maps an IPv4 one, `::ffff:a.b.c.d`.
+#
+# - `bytes`: sixteen bytes.
+function is_mapped(bytes: [u8]) -> bool
+    for i in range(from: 0, to: 10)
+        if bytes[i] != 0
+            return false
+
+    return bytes[10] == 0xff && bytes[11] == 0xff
+
+# The four bytes of `bytes` from `from` as an IPv4 address, `192.0.2.1`.
+#
+# - `bytes`: the bytes, four of them from `from` on.
+# - `from`: the index of the first of the four.
+function dotted(bytes: [u8], from: i64) -> str
+    parts: [str] @= []
+
+    for i in range(from: from, to: from + 4)
+        parts @ parts.push(to_str(bytes[i]))
+
+    return parts.join(".")
+
+# `text` with `zone` after a `%`, or `text` alone where `zone` is "".
+#
+# - `text`: the address written.
+# - `zone`: the zone, "" for none.
+function with_zone(text: str, zone: str) -> str
+    if zone == ""
+        return text
+    return text + "%" + zone
+
+# `text` with the port after it, IPv6 in brackets, or `text` alone where it
+# has none.
+#
+# - `bytes`: the address's bytes, which say whether brackets are wanted.
+# - `text`: the address written, with its zone.
+# - `has_port`: whether `port` is written.
+# - `port`: the port, read only where `has_port` is true.
+function with_port(bytes: [u8], text: str, has_port: bool, port: i64) -> str
+    if !has_port
+        return text
+
+    if bytes.len() == 4
+        return f"{text}:{port}"
+    return f"[{text}]:{port}"
+
+## Tests
+
+test "address: IPv4 at its edges, with a port, and the zone a hand might give it"
+    assert address([0, 0, 0, 0], zone: "", has_port: false, port: 0) == "0.0.0.0"
+    assert address([255, 255, 255, 255], zone: "", has_port: false, port: 0) == "255.255.255.255"
+    assert address([1, 2, 3, 4], zone: "", has_port: true, port: 0) == "1.2.3.4:0"
+    assert address([1, 2, 3, 4], zone: "", has_port: true, port: 65535) == "1.2.3.4:65535"
+
+test "address: IPv6 as Go and Python write it, with a zone, with a port"
+    loop: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    assert address(loop, zone: "", has_port: false, port: 0) == "::1"
+    assert address(loop, zone: "", has_port: true, port: 80) == "[::1]:80"
+    assert address(loop, zone: "lo0", has_port: true, port: 443) == "[::1%lo0]:443"
+    assert address(loop, zone: "é", has_port: false, port: 0) == "::1%é"
+
+test "ip: `::` at the start, the end, the first of two equal runs, never a single group"
+    assert ip([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == "::"
+    assert ip([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == "1::"
+    assert ip([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 0]) == "1:2:3:4:5:6:7:0"
+    assert ip([0, 0, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]) == "0:2:3:4:5:6:7:8"
+    assert ip([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]) == "2001:db8::1:0:0:1"
+    assert ip([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]) == "2001:db8:0:1:1:1:1:1"
+    assert ip([0x20, 0x01, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1]) == "2001:0:0:1::1"
+    assert ip([0xab, 0xcd, 0xef, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == "abcd:ef01::"
+
+test "ip: IPv4 mapped written dotted, and IPv4 in other groups written as hexadecimal"
+    assert ip([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 1, 2, 3, 4]) == "::ffff:1.2.3.4"
+    assert ip([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0, 0, 0, 0]) == "::ffff:0.0.0.0"
+    assert ip([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4]) == "::102:304"
+    assert ip([0, 0x64, 0xff, 0x9b, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4]) == "64:ff9b::102:304"
+
+test "expanded: every IPv6 digit, the mapped address in hexadecimal as Go writes it, IPv4 unchanged"
+    assert expanded([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], zone: "", has_port: false, port: 0) == "2001:0db8:0000:0000:0001:0000:0000:0001"
+    assert expanded([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 1, 2, 3, 4], zone: "", has_port: false, port: 0) == "0000:0000:0000:0000:0000:ffff:0102:0304"
+    assert expanded([0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], zone: "eth0", has_port: true, port: 8) == "[fe80:0000:0000:0000:0000:0000:0000:0001%eth0]:8"
+    assert expanded([1, 2, 3, 4], zone: "", has_port: true, port: 80) == "1.2.3.4:80"
+
+test "reverse_name: IPv4 and IPv6 as Python's reverse_pointer writes them"
+    assert reverse_name([1, 2, 3, 4]) == "4.3.2.1.in-addr.arpa"
+    assert reverse_name([0, 0, 0, 0]) == "0.0.0.0.in-addr.arpa"
+    assert reverse_name([0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1]) == "1.0.0.0.0.0.0.0.0.0.0.0.1.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa"
+
+test "longest_zeros: none, one alone, two equal, the whole address"
+    assert longest_zeros([0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]) == Run(start: -1, count: 0)
+    assert longest_zeros([0, 1, 0, 0, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]) == Run(start: -1, count: 0)
+    assert longest_zeros([0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 7, 0, 8]) == Run(start: 1, count: 2)
+    assert longest_zeros([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == Run(start: 0, count: 8)
+
+test "group_of, is_mapped, dotted, with_zone, with_port: one case at each edge"
+    assert group_of([0xff, 0xff, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i: 0) == 65535
+    assert group_of([0xff, 0xff, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], i: 1) == 1
+    assert !is_mapped([0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0xff, 0xff, 1, 2, 3, 4])
+    assert dotted([9, 1, 2, 3, 4], from: 1) == "1.2.3.4"
+    assert with_zone(text: "a", zone: "") == "a"
+    assert with_port([1, 2, 3, 4], text: "x", has_port: false, port: 9) == "x"

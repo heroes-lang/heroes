@@ -1,0 +1,239 @@
+# The ledger of `sql/sqlite`: SQLite through its C library, measured against
+# Python's `sqlite3` (Python 3.15 on this machine, SQLite 3.54.1 inside it:
+# `dir()` of the module, of a `Connection`, of a `Cursor`, of `Row` and of
+# `Blob`, 2026-11-16). Go's and Rust's standard libraries hold no SQLite; Go's
+# `database/sql`, which every Go driver answers, stands in the ledgers of `sql`
+# and `sql/postgres`, whose API this driver keeps name for name, so their
+# lines are `-` here. Python's 169 `SQLITE_*` constants stand in four blocks
+# by group: 106 result codes, 35 authorizer codes, 12 limits, 16 options of a
+# connection. Expected values of the tests were observed from Python's
+# `sqlite3` and from SQLite's C API on this Mac (SQLite 3.54.0, the SDK's
+# library), 2026-11-16.
+
+capability sqlite/open  a connection to a database in a file, made where it is not there
+  heroes  sql/sqlite.open
+  go      -
+  rust    -
+  python  connect, Connection
+  note    a path is a path, relative to the working folder; "" opens a temporary file and `:memory:` a database in memory, as SQLite reads those two. It waits five seconds for another connection's lock, as Python does
+
+capability sqlite/open-read-only  a connection that reads a database and never writes it
+  heroes  sql/sqlite.open_read_only
+  go      -
+  rust    -
+  python  connect with uri=True and mode=ro
+  note    a function of its own, where Python asks for a URI; a write fails `permission` ("[8] attempt to write a readonly database")
+
+capability sqlite/open-memory  a database in memory, which no other connection reaches
+  heroes  sql/sqlite.open_memory
+  go      -
+  rust    -
+  python  connect(":memory:")
+
+capability sqlite/uri  a database named by a `file:` URI with parameters
+  heroes  refused: a path is read as a path, so a file named `file:x` is that file; reading only and memory have functions of their own, and the other parameters (a shared cache, a VFS, `immutable`) change what every later call means where the call cannot see it
+  go      -
+  rust    -
+  python  connect uri
+
+capability sqlite/close  a connection ended, and asked whether it is
+  heroes  sql/sqlite.close, sql/sqlite.is_closed
+  go      -
+  rust    -
+  python  Connection.close
+  note    a close SQLite refuses (a statement `prepare` made still open) leaves the connection open, as SQLite's own `sqlite3_close` does; Python's closes it anyway. The binding marks the close `when 0` (spec § 13), so the program owes the connection until SQLite has ended it
+
+capability sqlite/busy-timeout  how long a statement waits for another connection's lock
+  heroes  sql/sqlite.set_busy_timeout, sql/sqlite.DEFAULT_BUSY_TIMEOUT_MS
+  go      -
+  rust    -
+  python  connect timeout
+  note    milliseconds, 5000 by default as Python's five seconds; past it a statement fails `timeout` ("[5] database is locked")
+
+capability sqlite/exec  one statement run with its values bound as parameters, and what it changed
+  heroes  sql/sqlite.exec
+  go      -
+  rust    -
+  python  Connection.execute, Cursor.execute, Cursor.rowcount, Cursor.lastrowid
+  note    `rows_affected` is SQLite's `changes()` where the statement changed rows, the rows answered by a statement that changes nothing, and 0 for every other, where Python answers -1 for a `CREATE TABLE` and SQLite's own counter keeps the last `INSERT`'s count. `last_id` is SQLite's `last_insert_rowid()`, kept across a statement that inserts nothing, as Go's drivers answer it; Python's `lastrowid` is the same number. Text after the first statement, a comment aside, is refused `invalid`, as Python refuses "You can only execute one statement at a time"
+
+capability sqlite/query  a statement's columns and every row it answers
+  heroes  sql/sqlite.query
+  go      -
+  rust    -
+  python  Cursor.fetchall, Cursor.description
+  note    the columns carry the type each was declared with, where Python's `description` carries the name alone
+
+capability sqlite/query-one  a statement's first row, and none told apart
+  heroes  sql/sqlite.query_one
+  go      -
+  rust    -
+  python  Cursor.fetchone
+  note    no row fails `not_found` where Python answers None; SQLite stops at the first row, a statement that changes rows having made every change at its first step
+
+capability sqlite/fetch-part  a statement's rows read a few at a time
+  heroes  refused: every driver answers a query whole, the contract `sql/postgres` writes; `LIMIT` and `OFFSET` read a page, and a cursor kept between two calls would hold the database's read lock in a value the program may forget
+  go      -
+  rust    -
+  python  Cursor.fetchmany, Cursor.arraysize
+
+capability sqlite/exec-many  one statement run for many lists of values
+  heroes  sql/sqlite.prepare, sql/sqlite.exec_prepared
+  go      -
+  rust    -
+  python  Connection.executemany, Cursor.executemany
+  note    a loop over `exec_prepared`, the statement compiled once; inside `begin` and `commit` the rows are written together, which is where Python's speed comes from
+
+capability sqlite/exec-script  several statements run in order, as a migration is
+  heroes  sql/sqlite.exec_script
+  go      -
+  rust    -
+  python  Connection.executescript, Cursor.executescript
+  note    each statement commits on its own unless the script holds its own `BEGIN` and `COMMIT`, as SQLite's `sqlite3_exec` runs one; Python commits a transaction open before it, and here a transaction open stays open. The statements kept for `exec` and `query` are given back first
+
+capability sqlite/prepare  a statement compiled once, run many times, and given back
+  heroes  sql/sqlite.prepare, sql/sqlite.exec_prepared, sql/sqlite.query_prepared, sql/sqlite.close_statement, sql/sqlite.Statement
+  go      -
+  rust    -
+  python  -
+  note    Python compiles behind each call and keeps what it compiled; here a program also holds one, and owes it a `close_statement`, which `close` waits for
+
+capability sqlite/statement-cache  a statement run again by its text without compiling it again
+  heroes  sql/sqlite.exec, sql/sqlite.query, sql/sqlite.query_one, sql/sqlite.Db
+  go      -
+  rust    -
+  python  connect cached_statements
+  note    the 64 statements last compiled, by their text byte for byte, where Python keeps 128; `close` and `exec_script` give them back
+
+capability sqlite/transaction  statements that take effect together or not at all
+  heroes  sql/sqlite.begin, sql/sqlite.commit, sql/sqlite.rollback, sql/sqlite.in_transaction
+  go      -
+  rust    -
+  python  Connection.commit, Connection.rollback, Connection.in_transaction, Connection.isolation_level, Connection.autocommit, LEGACY_TRANSACTION_CONTROL
+  note    `begin` is `BEGIN DEFERRED`; `BEGIN IMMEDIATE` and `EXCLUSIVE` are statements `exec` runs, and `in_transaction` sees them. No transaction opens behind the program's back, Python's `autocommit=True`; its older mode, which opened one before each change, has no counterpart
+
+capability sqlite/total-changes  the rows every statement of a connection changed
+  heroes  sql/sqlite.total_changes
+  go      -
+  rust    -
+  python  Connection.total_changes
+
+capability sqlite/row-by-name  a column of a row read by its name
+  heroes  sql.value_named, sql.Row
+  go      -
+  rust    -
+  python  Row, Row.keys, Connection.row_factory, Cursor.row_factory
+  note    every row carries its columns' names, so no factory is chosen
+
+capability sqlite/values  a value bound and read back, by its case and by its column's declared type
+  heroes  sql.Value
+  go      -
+  rust    -
+  python  Binary, Date, Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks, PARSE_DECLTYPES, adapt, adapters, PrepareProtocol, Connection.text_factory
+  note    a closed set, in the module's comment: a `boolean` as 1 or 0 and read back as one in a column declared `BOOLEAN`; an `instant` as SQLite's date text in UTC and read back as one in a column declared `DATE`, `DATETIME` or `TIMESTAMP`, as Python's `PARSE_DECLTYPES` reads `date` and `timestamp` and Go's drivers read those three; a NaN stored as `NULL`, which SQLite does; a zero byte in a text kept (Python's answer); a text that is not UTF-8 refused `invalid`, as Python refuses it ("Could not decode to UTF-8"). A time of day alone travels as text
+
+capability sqlite/custom-conversion  a conversion of a program's own type, chosen by a column's name or type
+  heroes  refused: a registry of functions by type needs a value of any type and a function kept in a table; a program converts a `sql.Value` with a function of its own, at the call
+  go      -
+  rust    -
+  python  register_adapter, register_converter, converters, PARSE_COLNAMES
+
+capability sqlite/errors  a failure told by its kind, with SQLite's own code and words
+  heroes  sql.INVALID, sql.NOT_FOUND, sql.EXISTS, sql.PERMISSION, sql.DOES_NOT_FIT, sql.CLOSED, sql.TIMEOUT, sql.STOPPED, sql.LIMIT, sql.UNSUPPORTED, sql.FAILED, sql.database_code_of
+  go      -
+  rust    -
+  python  Error, Warning, DatabaseError, IntegrityError, OperationalError, ProgrammingError, DataError, InternalError, NotSupportedError, InterfaceError, Error.sqlite_errorcode, Error.sqlite_errorname, Connection.Error, Connection.Warning, Connection.DatabaseError, Connection.IntegrityError, Connection.OperationalError, Connection.ProgrammingError, Connection.DataError, Connection.InternalError, Connection.NotSupportedError, Connection.InterfaceError, the 106 result codes SQLITE_OK to SQLITE_WARNING_AUTOINDEX
+  note    the extended result code is the code in the message's brackets, `[2067] UNIQUE constraint failed: t.name`, the number Python's `sqlite_errorcode` gives; its name is not kept, SQLite's C library having no table of them. `SQLITE_ERROR` is told apart by its words: `no such ...` is `not_found`, `... already exists` is `exists`, `integer overflow` is `does_not_fit`, `too many ...` is `limit`; Python makes every one an `OperationalError`. A file that would not open is `not_found` or `permission` by the system's number (2 or 3, 13), else `failed` with the number
+
+capability sqlite/complete  whether a text ends a whole statement
+  heroes  sql/sqlite.is_complete
+  go      -
+  rust    -
+  python  complete_statement
+  note    the same answers as Python's on "SELECT 1;", "SELECT 1", "", an open quote, an open trigger body, a comment alone and ";"
+
+capability sqlite/version  the version of the SQLite the program runs with
+  heroes  sql/sqlite.version
+  go      -
+  rust    -
+  python  sqlite_version, sqlite_version_info
+  note    the text alone; `numbers` reads its parts where a program compares them
+
+capability sqlite/backup  a whole database copied into another connection's, while it is in use
+  heroes  sql/sqlite.backup
+  go      -
+  rust    -
+  python  Connection.backup
+  note    every page in one step, where Python may copy a few at a time and report its progress through a function it is given
+
+capability sqlite/keywords  the words SQLite keeps for itself
+  heroes  pending
+  go      -
+  rust    -
+  python  SQLITE_KEYWORDS
+  note    `sqlite3_keyword_name` answers a word as a pointer and a length into one text, not a C string, so it is read with `copy_bytes` and is small work left for after the round
+
+capability sqlite/blob-io  one cell's bytes read and written a piece at a time
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.blobopen, Blob, Blob.read, Blob.write, Blob.seek, Blob.tell, Blob.close
+  note    `sqlite3_blob_open` begins a handle `sqlite3_blob_close` ends, as `prepare` does; a blob travels whole meanwhile
+
+capability sqlite/serialize  a whole database as bytes, and a database made of bytes
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.serialize, Connection.deserialize
+  note    `sqlite3_serialize` answers bytes SQLite allocated with their size, freed with `sqlite3_free`; the language's `owned` mark frees a C string and not a run of bytes, so it waits for a binding that copies and frees in one call. `backup` into a file covers saving meanwhile
+
+capability sqlite/dump  a database written out as the SQL that would make it again
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.iterdump
+  note    Python writes it in Python from `sqlite_master` and the rows; it is a function over `query`, quoting every value, left for after the round
+
+capability sqlite/limits  a connection's limits on a statement's length, columns, depth and parameters
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.getlimit, Connection.setlimit, SQLITE_LIMIT_LENGTH, SQLITE_LIMIT_SQL_LENGTH, SQLITE_LIMIT_COLUMN, SQLITE_LIMIT_EXPR_DEPTH, SQLITE_LIMIT_COMPOUND_SELECT, SQLITE_LIMIT_VDBE_OP, SQLITE_LIMIT_FUNCTION_ARG, SQLITE_LIMIT_ATTACHED, SQLITE_LIMIT_LIKE_PATTERN_LENGTH, SQLITE_LIMIT_VARIABLE_NUMBER, SQLITE_LIMIT_TRIGGER_DEPTH, SQLITE_LIMIT_WORKER_THREADS
+  note    `sqlite3_limit` is one call; a variant naming the twelve limits is the work
+
+capability sqlite/options  a connection's options: foreign keys, triggers, views, defensive mode and the rest
+  heroes  pending
+  go      -
+  rust    -
+  python  Connection.getconfig, Connection.setconfig, the 16 SQLITE_DBCONFIG_* constants
+  note    `sqlite3_db_config` is variadic, which the language binds only through a door of C (`.claude/rules/c-boundary.md`); `PRAGMA foreign_keys = ON` and the other pragmas run through `exec` meanwhile
+
+capability sqlite/sql-functions  SQL functions, aggregates, window functions and collations written in Heroes
+  heroes  refused: SQLite keeps the function and calls it later from inside a step, with its arguments as values only its own API reads and an aggregate's state between calls; the language hands C a function as a parameter for one call (spec § 13), and a function value carries no state
+  go      -
+  rust    -
+  python  Connection.create_function, Connection.create_aggregate, Connection.create_window_function, Connection.create_collation
+
+capability sqlite/hooks  a function SQLite calls on every statement it compiles, every few steps, or every statement it runs
+  heroes  refused: SQLite keeps the function and calls it later, as for `sqlite/sql-functions`
+  go      -
+  rust    -
+  python  Connection.set_authorizer, Connection.set_progress_handler, Connection.set_trace_callback, enable_callback_tracebacks, SQLITE_DENY, SQLITE_IGNORE, the 33 authorizer action codes SQLITE_ALTER_TABLE to SQLITE_UPDATE
+
+capability sqlite/interrupt  a running statement stopped from another thread
+  heroes  refused: a thread receives an `i64` or a `str` and nothing else crosses (spec § 13), so no other thread holds the connection to interrupt it
+  go      -
+  rust    -
+  python  Connection.interrupt
+
+capability sqlite/extensions  a library of C loaded into SQLite while the program runs
+  heroes  refused: it runs C the compiler never checked against a header, inside the program
+  go      -
+  rust    -
+  python  Connection.enable_load_extension, Connection.load_extension
+
+dropped
+  python  apilevel, paramstyle, threadsafety: DB-API's descriptions of itself; the placeholders are in the module's comment, and a connection crosses no thread
+  python  dbapi2, collections, datetime, time: modules Python's `sqlite3` re-exports
+  python  Connection.cursor, Cursor, Cursor.close, Cursor.connection, Cursor.setinputsizes, Cursor.setoutputsize: DB-API's cursor, a second handle over the connection; every call here answers whole
+  python  connect detect_types, factory, check_same_thread: covered by `sqlite/values`, no subclass, no thread

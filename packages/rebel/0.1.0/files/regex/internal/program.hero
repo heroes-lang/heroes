@@ -1,0 +1,85 @@
+# The program a pattern compiles to: the instructions of an automaton, which
+# `simulate` runs over a text with every state at once.
+#
+# An instruction either reads one character, or reads none and says where to
+# go on. Every distance is relative, counted from the instruction that holds
+# it, so a run of instructions means the same wherever it stands: `build`
+# joins and repeats such runs without rewriting one.
+
+# One instruction of the automaton: what it reads, or where it goes on.
+variant Inst
+    # Reads one given character.
+    char
+        # Its code point.
+        code: i64
+    # Reads one character that is the same letter as `code` ignoring case.
+    char_fold
+        # The smallest code point of the letter's case folding, `casefold.key`'s.
+        code: i64
+    # Reads any character.
+    any
+    # Reads any character but a line feed.
+    any_but_line_feed
+    # Reads one character of a class.
+    set
+        # The class, as its index in the program's `sets`.
+        index: i64
+    # Goes on both ways, `first` preferred over `second`.
+    split
+        # How far the preferred way is, in instructions.
+        first: i64
+        # How far the other way is, in instructions.
+        second: i64
+    # Goes on elsewhere.
+    jump
+        # How far, in instructions, back where it is negative.
+        by: i64
+    # Records where in the text the search stands.
+    save
+        # The slot it is recorded in: `2 * n` where the group `n` begins,
+        # `2 * n + 1` where it ends, the whole match being the group 0.
+        slot: i64
+    # Goes on only at the start of the text.
+    begin_text
+    # Goes on only at the end of the text.
+    end_text
+    # Goes on only at the start of the text or just after a line feed.
+    begin_line
+    # Goes on only at the end of the text or just before a line feed.
+    end_line
+    # Goes on only between a word character of ASCII and what is not one,
+    # the start and the end of the text counting as not one.
+    word_edge
+    # Goes on only where `word_edge` does not.
+    not_word_edge
+    # The pattern has matched.
+    accept
+
+# A class of characters: the ones its ranges or its categories hold, or the
+# ones outside them where it is negated.
+record Set
+    # The ranges, sorted and apart, as `sets.normalized` leaves them: two
+    # entries for each, its first code point and its last.
+    ranges: [i64]
+    # General categories it holds, as `unicode.category` writes them, one
+    # letter standing for every category it begins.
+    categories: [str]
+    # General categories whose every character outside it holds.
+    not_categories: [str]
+    # Whether the class is every character the rest does NOT hold.
+    negated: bool
+    # Whether a character is also held where a letter of its case folding is.
+    fold: bool
+
+# A compiled pattern: its automaton, its classes and its groups.
+record Program
+    # The instructions; a search enters at the first, and the last is
+    # `accept`.
+    insts: [Inst]
+    # The classes the `set` instructions name.
+    sets: [Set]
+    # How many groups the pattern captures, the whole match not counted.
+    groups: i64
+    # The name of each group, "" for one without; the entry 0 is the whole
+    # match's and is "".
+    names: [str]

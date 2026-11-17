@@ -1,0 +1,235 @@
+# The escapes of JavaScript: a value written where a script's expression
+# stands, a text inside its string, its template literal or its regular
+# expression, and Go's `JSEscapeString`. Each was written from the bytes Go's
+# `html/template` and `text/template` 1.27 answered for every ASCII character
+# and a sample past it, asked on 2026-11-16.
+
+use json
+use template/internal/escape_text
+use unicode
+
+# The hexadecimal digits in capitals, which `JSEscapeString` writes.
+constant HEX_CAPITAL: str
+    "0123456789ABCDEF"
+
+# `v` where a script's expression stands: as JSON, its strings with `<`, `>`,
+# `&`, U+2028 and U+2029 as `\u` escapes, and a number, a boolean or null with
+# a space on each side, so that it joins no token beside it. Fails `invalid`
+# where `v` holds a `nan` or an infinity.
+function value(v: json.Value) -> str?
+    options: json.FormatOptions @= json.compact()
+    options.escape_html @ true
+    options.escape_js @ true
+    written = json.format_with(v, options)?
+
+    return match v
+        .number _ | .boolean _ | .null_value => ok(" " + written + " ")
+        .text _ | .list _ | .object _        => ok(written)
+
+# Whether the bytes at `at` of `s` begin U+2028 or U+2029.
+function is_line_separator(s: str, at: i64) -> bool
+    return s[at] == 0xe2 && at + 2 < s.len() && s[at + 1] == 0x80 && (s[at + 2] == 0xa8 || s[at + 2] == 0xa9)
+
+# The `\u` escape of the code point `n`, four hexadecimal digits in lower case.
+function unit_lower(n: i64) -> str
+    return "\\u" + escape_text.hex2((n / 256).to_u8().must()) + escape_text.hex2((n % 256).to_u8().must())
+
+# The escape of the byte `b` inside a script's string, "" where it is kept.
+function string_byte(b: u8) -> str
+    if b < 0x20
+        return match b
+            '\t' => "\\t"
+            '\n' => "\\n"
+            0x0c => "\\f"
+            '\r' => "\\r"
+            _    => unit_lower(b.to_i64().must())
+
+    return match b
+        '"'  => "\\u0022"
+        '&'  => "\\u0026"
+        '\'' => "\\u0027"
+        '+'  => "\\u002b"
+        '/'  => "\\/"
+        '<'  => "\\u003c"
+        '>'  => "\\u003e"
+        '\\' => "\\\\"
+        '`'  => "\\u0060"
+        _    => ""
+
+# The escape of the byte `b` inside a template literal, "" where it is kept.
+function template_byte(b: u8) -> str
+    return match b
+        '$' => "\\u0024"
+        '{' => "\\u007b"
+        '}' => "\\u007d"
+        _   => string_byte(b)
+
+# The escape of the byte `b` inside a regular expression, "" where it is
+# kept.
+function regexp_byte(b: u8) -> str
+    return match b
+        '`' => ""
+        '$' => "\\$"
+        '(' => "\\("
+        ')' => "\\)"
+        '*' => "\\*"
+        '-' => "\\-"
+        '.' => "\\."
+        '?' => "\\?"
+        '[' => "\\["
+        ']' => "\\]"
+        '^' => "\\^"
+        '{' => "\\{"
+        '|' => "\\|"
+        '}' => "\\}"
+        _   => string_byte(b)
+
+# `s` with each byte `escape` answers a text for written as it, and U+2028
+# and U+2029 as `\u2028` and `\u2029`.
+function escaped(s: str, escape: (function(u8) -> str)) -> str
+    pieces: [str] @= []
+    kept: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if is_line_separator(s, at)
+            if kept < at
+                pieces @ pieces.push(s.slice(from: kept, to: at))
+            pieces @ pieces.push(unit_lower(unicode.code_point_at(s, at)))
+            at @ at + 3
+            kept @ at
+        else
+            written = escape(s[at])
+
+            if written != ""
+                if kept < at
+                    pieces @ pieces.push(s.slice(from: kept, to: at))
+                pieces @ pieces.push(written)
+                kept @ at + 1
+            at @ at + 1
+
+    if pieces.len() == 0
+        return s
+
+    if kept < s.len()
+        pieces @ pieces.push(s.slice(from: kept, to: s.len()))
+    return pieces.join("")
+
+# `s` inside a script's string between `"` or `'`: both quotes, `&`, `+`,
+# `<`, `>`, a backtick and the control characters as `\u` escapes, `/` as
+# `\/` and `\` as `\\`.
+function string(s: str) -> str
+    return escaped(s, string_byte)
+
+# `s` inside a template literal: as `string` writes it, and `$`, `{` and `}`
+# as `\u` escapes, so that no `${` opens.
+function template(s: str) -> str
+    return escaped(s, template_byte)
+
+# `s` inside a regular expression: as `string` writes it but for the
+# backtick, every character a pattern reads specially after a `\`, and the
+# empty text as `(?:)`, which matches it.
+function regexp(s: str) -> str
+    if s == ""
+        return "(?:)"
+    return escaped(s, regexp_byte)
+
+# `n`, a UTF-16 unit, as `\u` and four hexadecimal digits in capitals.
+function unit_capital(n: i64) -> str
+    digits: [str] @= []
+
+    for shift in [12, 8, 4, 0]
+        d = n >> shift & 15
+        digits @ digits.push(HEX_CAPITAL.slice(from: d, to: d + 1))
+
+    return "\\u" + digits.join("")
+
+# The escape `JSEscapeString` writes for the ASCII byte `b`, "" where it is
+# kept.
+function go_ascii(b: u8) -> str
+    if b < 0x20
+        return unit_capital(b.to_i64().must())
+
+    return match b
+        '\\' => "\\\\"
+        '\'' => "\\'"
+        '"'  => "\\\""
+        '<'  => "\\u003C"
+        '>'  => "\\u003E"
+        '&'  => "\\u0026"
+        '='  => "\\u003D"
+        _    => ""
+
+# `s` as Go's `JSEscapeString` writes it: `\`, `'` and `"` after a `\`; `<`,
+# `>`, `&`, `=`, the control characters below U+0020 and every character past
+# ASCII that is not printable as `\u` and capital digits, one past U+FFFF as
+# its two surrogates.
+function go_string(s: str) -> str
+    pieces: [str] @= []
+    kept: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+        width = unicode.width_at(s, at)
+        written: str @= ""
+
+        if b < 0x80
+            written @ go_ascii(b)
+        else if !unicode.is_printable(s.slice(from: at, to: at + width))
+            units: [str] @= []
+
+            for unit in unicode.to_utf16(unicode.code_point_at(s, at)).must()
+                units @ units.push(unit_capital(unit.to_i64().must()))
+
+            written @ units.join("")
+
+        if written != ""
+            if kept < at
+                pieces @ pieces.push(s.slice(from: kept, to: at))
+            pieces @ pieces.push(written)
+            kept @ at + width
+        at @ at + width
+
+    if pieces.len() == 0
+        return s
+
+    if kept < s.len()
+        pieces @ pieces.push(s.slice(from: kept, to: s.len()))
+    return pieces.join("")
+
+test "value: each kind as Go's html/template writes it in a script, padded where it is a word or a number"
+    assert value(.text(v: "a</script>\u{2028}")).must() == "\"a\\u003c/script\\u003e\\u2028\""
+    assert value(.number(v: 1.0)).must() == " 1 " && value(.number(v: -0.0)).must() == " -0 "
+    assert value(.number(v: 1.5)).must() == " 1.5 " && value(.number(v: 1000000000000000000000.0)).must() == " 1e+21 "
+    assert value(.boolean(v: true)).must() == " true " && value(.null_value).must() == " null "
+    assert value(.text(v: "")).must() == "\"\"" && value(.list(items: [])).must() == "[]"
+    assert value(.object(members: {})).must() == "{}"
+    list = json.parse("[1,\"<b>&\",true,null,{\"a\":\"'/\"}]").must()
+    assert value(list).must() == "[1,\"\\u003cb\\u003e\\u0026\",true,null,{\"a\":\"'/\"}]"
+    controls: [u8] = [0x08, 0x0c, 0x01, 0x7f]
+    assert value(.text(v: controls.validated_bytes().must())).must() == "\"\\b\\f\\u0001\u{7f}\""
+
+test "string: every byte Go escapes inside a script's string, U+2028, and text past ASCII kept"
+    assert string("a'b\"c\\d\ne</script>&=+`") == "a\\u0027b\\u0022c\\\\d\\ne\\u003c\\/script\\u003e\\u0026=\\u002b\\u0060"
+    controls: [u8] = [0, 0x08, 0x09, 0x0b, 0x0c, 0x0d, 0x1f]
+    assert string(controls.validated_bytes().must()) == "\\u0000\\u0008\\t\\u000b\\f\\r\\u001f"
+    assert string("é\u{2029}😀") == "é\\u2029😀" && string("") == ""
+
+test "template: the escapes of a string, and the dollar and braces that would open an expression"
+    assert template("a`b${c}") == "a\\u0060b\\u0024\\u007bc\\u007d"
+
+test "regexp: every character a pattern reads, the backtick kept, and the empty pattern"
+    assert regexp("$()*+-./?[\\]^{|}`") == "\\$\\(\\)\\*\\u002b\\-\\.\\/\\?\\[\\\\\\]\\^\\{\\|\\}`"
+    assert regexp("") == "(?:)"
+
+test "go_string: Go's JSEscapeString over ASCII, capitals, and the characters past it that are not printable"
+    assert go_string("<a href='x'>&\"+\\\n=`é\u{2028}") == "\\u003Ca href\\u003D\\'x\\'\\u003E\\u0026\\\"+\\\\\\u000A\\u003D`é\\u2028"
+    nul: [u8] = [0, 0x7f]
+    assert go_string(nul.validated_bytes().must()) == "\\u0000\u{7f}"
+
+    # U+00A0, U+00AD, U+FEFF and U+E000, then U+E0001, none of them printable.
+    hidden: [u8] = [0xc2, 0xa0, 0xc2, 0xad, 0xef, 0xbb, 0xbf, 0xee, 0x80, 0x80]
+    assert go_string(hidden.validated_bytes().must() + "😀�") == "\\u00A0\\u00AD\\uFEFF\\uE000😀�"
+    tag: [u8] = [0xf3, 0xa0, 0x80, 0x81]
+    assert go_string(tag.validated_bytes().must()) == "\\uDB40\\uDC01"

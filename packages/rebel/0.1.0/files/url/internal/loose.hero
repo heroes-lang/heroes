@@ -1,0 +1,72 @@
+# A text a person typed made into one the strict reader reads: every byte
+# its part may not hold as itself is written as its escape, and nothing else
+# is touched, so a text that was a URL is answered unchanged.
+
+use url/internal/classes
+use url/internal/escapes
+
+# `s` with every byte no URL holds as itself written as its escape: a space,
+# a control character, a quote and the other ASCII marks a URL never holds,
+# a character above ASCII, a "%" that begins no escape, a "#" after the
+# first, and a "[" or a "]" outside the authority.
+function loosen(s: str) -> str
+    n = s.len()
+    stop: i64 @= 0
+
+    while stop < n && s[stop] != ':' && s[stop] != '/' && s[stop] != '?' && s[stop] != '#'
+        stop @ stop + 1
+
+    start: i64 @= 0
+
+    if stop < n && s[stop] == ':' && classes.is_scheme(s.slice(from: 0, to: stop))
+        start @ stop + 1
+    authority_from: i64 @= 0
+    authority_to: i64 @= 0
+
+    if n - start >= 2 && s[start] == '/' && s[start + 1] == '/'
+        authority_from @ start + 2
+        authority_to @ start + 2
+
+        while authority_to < n && s[authority_to] != '/' && s[authority_to] != '?' && s[authority_to] != '#'
+            authority_to @ authority_to + 1
+    out: [u8] @= []
+    seen_hash: bool @= false
+    at: i64 @= 0
+
+    while at < n
+        b = s[at]
+        keep: bool @= classes.in_url(b)
+
+        if b == '#'
+            keep @ !seen_hash
+            seen_hash @ true
+        else if b == '%'
+            keep @ escapes.escape_at(s: s, at: at)
+        else if b == '[' || b == ']'
+            keep @ at >= authority_from && at < authority_to
+
+        if keep
+            out @ out.push(b)
+        else
+            escapes.put_escape(@out, b)
+        at @ at + 1
+
+    return out.validated_bytes().must()
+
+## Tests
+
+test "loosen: a URL unchanged, a space, a character of two bytes, a stray percent, a second hash"
+    assert loosen("") == ""
+    assert loosen("http://h/a%20b?q=1#f") == "http://h/a%20b?q=1#f"
+    assert loosen("http://h/a b") == "http://h/a%20b"
+    assert loosen("http://h/café") == "http://h/caf%C3%A9"
+    assert loosen("http://h/50%") == "http://h/50%25"
+    assert loosen("http://h/%zz") == "http://h/%25zz"
+    assert loosen("http://h/#a#b") == "http://h/#a%23b"
+
+test "loosen: brackets kept in the authority and escaped elsewhere, control characters, quotes"
+    assert loosen("http://[::1]:80/a[1]?b[]=2") == "http://[::1]:80/a%5B1%5D?b%5B%5D=2"
+    assert loosen("//[::1]/") == "//[::1]/"
+    assert loosen("/a[") == "/a%5B"
+    assert loosen("a\tb\"c<d>") == "a%09b%22c%3Cd%3E"
+    assert loosen("x\\y^z`{|}") == "x%5Cy%5Ez%60%7B%7C%7D"

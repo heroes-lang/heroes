@@ -1,0 +1,248 @@
+# The conversation with the server: the session's state, the login, and each
+# kind of request written whole and answered by reading until ReadyForQuery,
+# so that a failure in the middle never leaves the connection out of step.
+# A failure the server calls FATAL, a lost connection and a message out of
+# order end the session; every later request then fails `closed`.
+
+use io
+use sql
+use sql/postgres/internal/backend
+use sql/postgres/internal/codes
+use sql/postgres/internal/frontend
+
+# The most notices a session keeps; older ones are dropped.
+constant MOST_NOTICES: i64
+    64
+
+# A session's state, which the face's `Db` holds.
+record Session
+    # The stream requests are written to.
+    out: io.Stream
+    # The reader of the server's answers.
+    input: io.Reader
+    # How messages name the server: `host:port/database`.
+    target: str
+    # The transaction state of the last ReadyForQuery: `I`, `T` or `E`.
+    status: u8
+    # The run-time parameters the server reported.
+    parameters: {str: str}
+    # The server process's id.
+    process_id: i64
+    # The cancel key's secret.
+    secret_key: [u8]
+    # The number of the next prepared statement's name.
+    next_statement: i64
+    # The newest notices, at most `MOST_NOTICES`.
+    notices: [backend.Report]
+    # Whether the session is over.
+    ended: bool
+
+# What a request answered: the columns of its last statement, the rows, and
+# its tag.
+record Answer
+    # The columns the server described, none where it described none.
+    fields: [backend.Field]
+    # The rows, each a list of cells.
+    rows: [[backend.Cell]]
+    # The last CommandComplete's tag, "" for none.
+    tag: str
+    # The placeholders' types, where a statement was described.
+    parameter_types: [i64]
+
+# A session over `out` and `input`, before its login.
+#
+# - `out`: where requests go; for a TCP connection, its stream.
+# - `input`: the stream answers come from; the same stream for TCP.
+# - `target`: how messages name the server.
+function over(out: io.Stream, input: io.Stream, target: str) -> Session
+    return Session(
+        out: out,
+        input: io.reader(input),
+        target: target,
+        status: 'I',
+        parameters: {},
+        process_id: 0,
+        secret_key: [],
+        next_statement: 1,
+        notices: [],
+        ended: false
+    )
+
+# The failure of a request on a session that is over.
+#
+# - `s`: the session.
+function closed_failure<T>(s: Session) -> T?
+    return fail(code: sql.CLOSED, msg: f"the connection to {s.target} is closed")
+
+# Writes `data` to the server.
+#
+# - `s`: the session, ended where the write fails.
+# - `data`: whole messages.
+function send(@s: Session, data: [u8]) -> ()?
+    if s.ended
+        return closed_failure(s)
+
+    match io.write(s.out, data: data)
+        .ok _ => return ok()
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: f"writing to {s.target}: {e.msg}")
+
+# The next message the caller acts on: a ParameterStatus is kept, a notice is
+# kept, a notification is dropped, and the next one is read.
+#
+# - `s`: the session, ended where the read fails.
+function receive(@s: Session) -> backend.Message?
+    while true
+        if s.ended
+            return closed_failure(s)
+
+        m = match backend.read(@s.input)
+            .ok got => got
+            .err e =>
+                s.ended @ true
+                return fail(code: e.code, msg: f"reading from {s.target}: {e.msg}")
+
+        match m
+            .parameter_status p => s.parameters[p.name] @ p.value
+            .notice_response n  => keep_notice(@s, report: n.report)
+            .notification _     => _ = 0
+            .authentication _ | .backend_key _ | .ready _ | .row_description _ | .data_row _ | .command_complete _ | .error_response _ | .empty_query | .parse_complete | .bind_complete | .close_complete | .no_data | .portal_suspended | .parameter_description _ | .negotiate_version _ | .copy_in | .copy_out | .copy_both | .copy_data | .copy_done | .other _ => return ok(
+                m
+            )
+
+# Keeps `report` among the session's notices, dropping the oldest past
+# `MOST_NOTICES`.
+#
+# - `s`: the session.
+# - `report`: the notice.
+function keep_notice(@s: Session, report: backend.Report)
+    kept: [backend.Report] @= s.notices
+
+    if kept.len() >= MOST_NOTICES
+        kept @ kept.slice(from: kept.len() - MOST_NOTICES + 1, to: kept.len())
+    kept @ kept.push(report)
+    s.notices @ kept
+
+# The failure of a message the protocol does not allow where it came, which
+# ends the session.
+#
+# - `s`: the session, ended.
+# - `m`: the message.
+# - `waiting`: what the client was waiting for.
+function out_of_step<T>(@s: Session, m: backend.Message, waiting: str) -> T?
+    s.ended @ true
+    return fail(
+        code: sql.INVALID,
+        msg: f"{s.target} sent {name_of(m)} while the client waited for {waiting}, and the connection was given up"
+    )
+
+# How a message names the message `m`.
+#
+# - `m`: the message.
+function name_of(m: backend.Message) -> str
+    return match m
+        .authentication _        => "an Authentication"
+        .backend_key _           => "a BackendKeyData"
+        .parameter_status _      => "a ParameterStatus"
+        .ready _                 => "a ReadyForQuery"
+        .row_description _       => "a RowDescription"
+        .data_row _              => "a DataRow"
+        .command_complete _      => "a CommandComplete"
+        .error_response _        => "an ErrorResponse"
+        .notice_response _       => "a NoticeResponse"
+        .empty_query             => "an EmptyQueryResponse"
+        .parse_complete          => "a ParseComplete"
+        .bind_complete           => "a BindComplete"
+        .close_complete          => "a CloseComplete"
+        .no_data                 => "a NoData"
+        .portal_suspended        => "a PortalSuspended"
+        .parameter_description _ => "a ParameterDescription"
+        .notification _          => "a NotificationResponse"
+        .negotiate_version _     => "a NegotiateProtocolVersion"
+        .copy_in                 => "a CopyInResponse"
+        .copy_out                => "a CopyOutResponse"
+        .copy_both               => "a CopyBothResponse"
+        .copy_data               => "a CopyData"
+        .copy_done               => "a CopyDone"
+        .other o                 => f"a message of kind {o.kind}"
+
+# Reads the answers to one request up to ReadyForQuery: the first failure is
+# kept and told after it, so the session stays in step.
+#
+# - `s`: the session, its transaction state written.
+function collect(@s: Session) -> Answer?
+    answer @= Answer(fields: [], rows: [], tag: "", parameter_types: [])
+    rows: [[backend.Cell]] @= []
+    first: str @= ""
+    first_msg: str @= ""
+
+    while true
+        m = receive(@s)?
+
+        match m
+            .parse_complete | .bind_complete | .close_complete | .portal_suspended | .copy_data | .copy_done => _ = 0
+            .row_description d =>
+                answer.fields @ d.fields
+                rows @ []
+            .no_data                 => answer.fields @ []
+            .parameter_description p => answer.parameter_types @ p.types
+            .data_row d              => rows @ rows.push(d.cells)
+            .command_complete c      => answer.tag @ c.tag
+            .empty_query             => answer.tag @ ""
+            .error_response e =>
+                if codes.is_fatal(e.report)
+                    s.ended @ true
+                    return codes.failure(e.report)
+
+                if first == ""
+                    first @ codes.code_of(codes.state_of(e.report))
+                    first_msg @ codes.message_of(e.report)
+            .copy_in =>
+                send(@s, data: frontend.copy_fail("COPY FROM STDIN is not spoken by this driver"))?
+
+                if first == ""
+                    first @ sql.UNSUPPORTED
+                    first_msg @ "COPY FROM STDIN is not spoken by this driver: its rows go in with INSERT"
+            .copy_out =>
+                if first == ""
+                    first @ sql.UNSUPPORTED
+                    first_msg @ "COPY TO STDOUT is not spoken by this driver: its rows were read and dropped"
+            .ready r =>
+                s.status @ r.status
+
+                if first != ""
+                    return fail(code: first, msg: first_msg)
+                answer.rows @ rows
+                return ok(answer)
+            .authentication _ | .backend_key _ | .parameter_status _ | .notice_response _ | .notification _ | .negotiate_version _ | .copy_both | .other _ => return out_of_step(
+                @s,
+                m: m,
+                waiting: "the answer to a statement"
+            )
+
+# Tells the server the client is leaving, where the session is not over, and
+# closes the connection's stream.
+#
+# - `s`: the session, ended.
+#
+# Fails `closed` where the stream is closed already.
+function close(@s: Session) -> ()?
+    if !s.ended
+        _ = send(@s, data: frontend.terminate()).is_err()
+    s.ended @ true
+
+    if io.is_closed(s.out)
+        return fail(code: sql.CLOSED, msg: f"the connection to {s.target} is closed already")
+    return io.close(@s.out)
+
+test "keep_notice: the oldest dropped past 64"
+    s @= over(out: io.stdout(), input: io.stdin(), target: "t")
+
+    for i in range(from: 0, to: 70)
+        keep_notice(
+            @s,
+            report: backend.Report(severity: "NOTICE", code: "00000", message: to_str(i), detail: "", hint: "", position: "")
+        )
+
+    assert s.notices.len() == 64 && s.notices[0].message == "6" && s.notices[63].message == "69"

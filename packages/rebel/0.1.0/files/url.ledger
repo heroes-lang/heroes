@@ -1,0 +1,284 @@
+capability url/parse  a URL read into its parts: scheme, user and password, host, port, path, query, fragment
+  heroes  url.parse
+  go      url.Parse, url.URL, url.URL.Scheme, url.URL.Opaque, url.URL.Host, url.URL.Path, url.URL.RawPath, url.URL.RawQuery, url.URL.Fragment, url.URL.RawFragment, url.URL.UnmarshalBinary
+  rust    -
+  python  urlsplit, SplitResult, SplitResult.scheme, SplitResult.netloc, SplitResult.path, SplitResult.query, SplitResult.fragment, splittype, splitquery, splittag, scheme_chars
+  note    read by RFC 3986, strictly: a space, a `[` in a query, a character above ASCII and a `%` that begins no escape are `invalid`, where Go refuses only the last, and not in a query, and Python none. A relative path whose first segment holds a `:` ("192.168.0.1:80/x") is `invalid` as in Go and by RFC 3986 § 4.2, where Python reads a path. "mailto:a@b" has the path "a@b", the RFC's and Python's reading, where Go keeps it in `Opaque`. The path, the query and the fragment are kept raw (Python's; Go decodes the path and the fragment and keeps a raw hint), the user, the password and the host decoded (Go's). Rust's standard library has nothing in this area
+
+capability url/parse-loose  a URL read from text a person typed or a server sent, what a URL may not hold written as its escape
+  heroes  url.parse_loose
+  go      -
+  rust    -
+  python  -
+  note    Go's `url.Parse` and Python's `urlsplit` are this reading by default, and have no strict one; here the strict reading is `parse` and this one is asked for by name. "http://h/a b", "http://h/café", "http://h/a\"b" and "http://h/a^b" are written back as Go's `String` writes them
+
+capability url/parse-request-target  the target of an HTTP request read: an absolute path with its query, or an absolute URL
+  heroes  url.parse_request_target
+  go      url.ParseRequestURI
+  rust    -
+  python  -
+  note    RFC 9112 § 3.2's origin-form and absolute-form; a `#` is `invalid`, where Go takes it into the path ("/p#f" is the path "/p#f"), and "*" is no URL, where Go answers the path "*". A target that begins with "//" is a path, as in Go
+
+capability url/empty-parts  a part that is there and empty told from one that is absent
+  heroes  url.parse, url.format
+  go      url.URL.ForceQuery, url.URL.OmitHost
+  rust    -
+  python  -
+  note    RFC 3986 § 6.2.3: a delimiter is not removed where its part is empty. Go keeps "?", "user:@" and "@" and drops "#"; Python keeps all of them since 3.15 where `missing_as_none` is asked. Here all are kept, by the five `empty_` flags of `url.Url`. An empty port ("h:") is read as none, RFC 3986 § 3.2.3, where Go and Python keep the ":"
+
+capability url/params  the parameters after a `;` in the last segment of a path
+  heroes  refused: RFC 3986 § 3.3 made the `;` of a segment each scheme's business, no longer the generic syntax's; `url.parse_path` answers a segment with its `;`, and `strings` cuts it
+  go      -
+  rust    -
+  python  urlparse, urlunparse, ParseResult, ParseResult.params, uses_params, splitattr
+  note    Python reads RFC 1808's parameters of the last segment alone ("/a;x/b;y" has the parameters "y"); Go has none
+
+capability url/format  the text of a URL built back from its parts
+  heroes  url.format
+  go      url.URL.String, url.URL.EscapedPath, url.URL.EscapedFragment, url.URL.MarshalBinary, url.URL.AppendBinary
+  rust    -
+  python  urlunsplit, SplitResult.geturl
+  note    RFC 3986 § 5.3. What a part may not hold is written as its escape, as Go does, so the answer is a URL; Python writes the parts as they are. A scheme or a port no escape can write aborts, a precondition the caller can check and `parse` never breaks. A first segment holding a ":" with neither scheme nor authority gets "./" before it, as in Go
+
+capability url/redacted  the text of a URL with its password hidden, for a log
+  heroes  url.redacted
+  go      url.URL.Redacted
+  rust    -
+  python  -
+  note    "xxxxx" in place of the password, Go's, an empty password that is written included
+
+capability url/request-target  the path and the query as an HTTP request writes them
+  heroes  url.request_target
+  go      url.URL.RequestURI
+  rust    -
+  python  -
+  note    an empty path is "/", Go's answer; a path that begins with no "/" gets one
+
+capability url/is-absolute  whether a URL has a scheme
+  heroes  url.is_abs
+  go      url.URL.IsAbs
+  rust    -
+  python  -
+  note    a scheme makes it absolute, Go's reading and RFC 3986 § 4.3's
+
+capability url/resolve  a reference resolved against a base
+  heroes  url.resolve
+  go      url.URL.ResolveReference, url.URL.Parse
+  rust    -
+  python  urljoin, uses_relative, uses_netloc
+  note    RFC 3986 § 5.2, every example of § 5.4 tested. The strict reading: "http:g" against "http://a/b/c/d;p?q" is "http:g", Go's answer, where Python answers "http://a/b/c/g"; the two agree with the RFC on the 41 others. Every scheme is resolved, where Python resolves only the ones in `uses_relative` ("d" against "foo://a/b/c" is "d" there). Go's `URL.Parse` is `url.parse` then `url.resolve`
+
+capability url/remove-fragment  a URL without its fragment
+  heroes  url.without_fragment
+  go      -
+  rust    -
+  python  urldefrag, DefragResult, DefragResult.url, DefragResult.fragment, DefragResult.geturl
+  note    Python answers the text and the fragment apart; here the fragment stays readable in the `url.Url` it came from
+
+capability url/userinfo  the user and the password of a URL, read and written
+  heroes  url.parse, url.format
+  go      url.URL.User, url.User, url.UserPassword, url.Userinfo, url.Userinfo.Username, url.Userinfo.Password, url.Userinfo.String
+  rust    -
+  python  SplitResult.username, SplitResult.password, splituser, splitpasswd
+  note    the fields `user` and `password` of `url.Url`, decoded, Go's reading, where Python answers them raw; a ":" in either is written "%3A", as Go writes it
+
+capability url/host  the host alone, an IPv6 address without its brackets
+  heroes  url.parse
+  go      url.URL.Hostname
+  rust    -
+  python  SplitResult.hostname, splithost
+  note    the field `host` of `url.Url`, its ASCII letters in lower case, Python's and RFC 3986 § 6.2.2.1's, where Go keeps the case. In a host an escape writes a character above ASCII or a letter, a digit, `-`, `.`, `_`, `~`, and any other is `invalid`: Go refuses every ASCII escape, Python decodes none. "[fe80::1%25en0]", a zone, is `invalid`: RFC 3986 has none and RFC 9844 obsoleted RFC 6874, which Go and Python read. "[v1.a]", an address of a future version, is `invalid` as in Go, where Python reads it: no version beyond 6 is in use, and its host could not be told from a name once its brackets are gone
+
+capability url/port  the port a URL is reached on, as a number
+  heroes  url.port_of
+  go      url.URL.Port
+  rust    -
+  python  SplitResult.port
+  note    a number, read through `numbers`; past 65535 is `does_not_fit`, where Python raises and Go's `Port` answers the text; with no port written, the scheme's default, where both answer none
+
+capability url/host-port  a host and a port told apart in "host:port", and joined into it, an IPv6 host in brackets
+  heroes  url.parse_host_port, url.format_host_port
+  go      -
+  rust    -
+  python  splitport, splitnport
+  note    Go's are `net.SplitHostPort` and `net.JoinHostPort`, outside this area
+
+capability url/default-port  the port of a scheme where a URL writes none
+  heroes  url.default_port
+  go      -
+  rust    -
+  python  -
+  note    neither library offers one in this area. The table holds 32 schemes: those this machine's `/etc/services` names with the scheme's own name, read with Python's `socket.getservbyname` on 2026-11-15, and `ws`, `wss`, `sips`, `coap`, `coaps` from their RFCs. `sftp` and `news` are left out: the services table gives their names to other protocols (115, 2009)
+
+capability url/path-segments  the segments of a path, unescaped, read and written
+  heroes  url.parse_path, url.format_path
+  go      -
+  rust    -
+  python  -
+  note    Go answers the whole path decoded in `URL.Path`, where "%2F" and "/" can no longer be told apart; here the path stays raw and its segments are read one by one
+
+capability url/join-path  a URL whose path goes on with more segments
+  heroes  url.add_segments
+  go      url.JoinPath, url.URL.JoinPath
+  rust    -
+  python  -
+  note    each segment is escaped, where Go takes them escaped already, and "." and ".." are not removed: that is `url.remove_dot_segments`, asked for apart. "http://h/v1" with "users" and "7", "http://h/v1/" with "a b" and "http://h" with "a" answer what Go answers
+
+capability url/clean-path  a path without its "." and ".." segments
+  heroes  url.remove_dot_segments
+  go      url.JoinPath, url.URL.JoinPath
+  rust    -
+  python  -
+  note    RFC 3986 § 5.2.4; Go does it inside `JoinPath` and also merges runs of "/", which the RFC does not
+
+capability url/escape-segment  a text written as one segment of a path
+  heroes  url.escape_segment
+  go      url.PathEscape
+  rust    -
+  python  quote
+  note    every character but a letter, a digit, `-`, `.`, `_`, `~` is escaped: RFC 3986 § 2.2 asks it of data, and it is Python's `quote(s, safe="")`. Go leaves `$&+:=@` as they are
+
+capability url/escape-query  a text written as a key or a value of a query
+  heroes  url.escape_query
+  go      url.QueryEscape
+  rust    -
+  python  quote_plus
+  note    the two agree on every printable ASCII character, and so does this
+
+capability url/escape-fragment  a text written as a fragment
+  heroes  url.escape_fragment
+  go      url.URL.EscapedFragment
+  rust    -
+  python  quote
+  note    `/` and `?` stay, which RFC 3986 § 3.5 allows as data in a fragment, and every other reserved character is escaped: Python's `quote(s, safe="/?")`. Go leaves `!$&()*+,:;=@` too
+
+capability url/escape-bytes  bytes that are no text written as escapes
+  heroes  url.escape_bytes
+  go      -
+  rust    -
+  python  quote_from_bytes
+  note    Python's `quote_from_bytes(b, safe="")`
+
+capability url/unescape  the text an escaped segment, fragment or name stands for
+  heroes  url.unescape
+  go      url.PathUnescape
+  rust    -
+  python  unquote
+  note    a `%` that begins no escape is `invalid`, Go's answer, where Python leaves it; bytes that are not UTF-8 are `not_text`, where Go answers the bytes and Python U+FFFD
+
+capability url/unescape-query  the text an escaped key or value of a query stands for, a `+` read as a space
+  heroes  url.unescape_query
+  go      url.QueryUnescape
+  rust    -
+  python  unquote_plus
+  note    as `url/unescape`
+
+capability url/unescape-bytes  the bytes escapes stand for, text or not
+  heroes  url.unescape_bytes
+  go      -
+  rust    -
+  python  unquote_to_bytes
+  note    a `%` that begins no escape is `invalid`, where Python leaves it
+
+capability url/query-parse  the keys and values of a query, in their order, a key held more than once kept
+  heroes  url.parse_query
+  go      url.ParseQuery, url.URL.Query, url.Values
+  rust    -
+  python  parse_qsl, parse_qs, splitvalue
+  note    a list of `url.Pair`, Python's `parse_qsl`, where Go's map loses the order of the keys. "a&b=1" holds the key "a" with an empty value, Go's answer and Python's with `keep_blank_values`. A `;` is a character of its value, Python's reading and the form's own rule, where Go fails. "%zz" is `invalid`, Go's answer, where Python keeps it; "%FF" is `not_text`, where Go answers the byte and Python U+FFFD
+
+capability url/query-format  a query written from keys and values
+  heroes  url.format_query
+  go      url.Values.Encode
+  rust    -
+  python  urlencode
+  note    in the order given, Python's, where Go sorts by key
+
+capability url/query-first  the first value of a key in a query
+  heroes  url.value_of
+  go      url.Values.Get
+  rust    -
+  python  -
+  note    absent is `not_found`, where Go answers ""
+
+capability url/query-all  every value of a key in a query
+  heroes  url.values_of
+  go      -
+  rust    -
+  python  -
+  note    Go indexes its map and Python the dictionary `parse_qs` answers
+
+capability url/query-has  whether a query holds a key
+  heroes  url.has_key
+  go      url.Values.Has
+  rust    -
+  python  -
+  note    Go's
+
+capability url/query-add  a key and a value added to a query
+  heroes  built-in push
+  go      url.Values.Add
+  rust    -
+  python  -
+  note    a `url.Pair` pushed on the list, which keeps the order; Go's `Add` appends to the key's list in its map
+
+capability url/query-set  a key of a query given one value, in place of the ones it had
+  heroes  url.with_value
+  go      url.Values.Set
+  rust    -
+  python  -
+  note    the first pair with the key keeps its place and the later ones go; Go's map has no place to keep
+
+capability url/query-remove  a query without a key
+  heroes  url.without_key
+  go      url.Values.Del
+  rust    -
+  python  -
+  note    Go's
+
+capability url/unwrap  a URL taken out of "<URL:...>"
+  heroes  refused: RFC 1738's "<URL:...>" wrapper, which RFC 3986 Appendix C replaced with angle brackets alone; `strings` trims either
+  go      -
+  rust    -
+  python  unwrap
+  note    Python answers "http://a/b" for "<URL:http://a/b>"
+
+dropped error-types  a failure is a code and a message, `invalid` or `not_text` here, and no type of its own
+  go      url.Error, url.Error.Error, url.Error.Unwrap, url.EscapeError, url.EscapeError.Error, url.InvalidHostError, url.InvalidHostError.Error
+  rust    -
+  python  -
+
+dropped network-errors  nothing here opens a connection, so no failure is temporary or a timeout
+  go      url.Error.Temporary, url.Error.Timeout
+  rust    -
+  python  -
+
+dropped copies  every value is a copy already
+  go      url.URL.Clone, url.Values.Clone
+  rust    -
+  python  -
+
+dropped bytes-variants  a URL is text; the same results over bytes, and the conversions between the two
+  go      -
+  rust    -
+  python  SplitResultBytes, ParseResultBytes, DefragResultBytes, ResultBase, SplitResult.encode, ParseResult.encode, DefragResult.encode, to_bytes
+
+dropped tuple-methods  what a result has for being a tuple
+  go      -
+  rust    -
+  python  SplitResult.count, SplitResult.index, ParseResult.count, ParseResult.index, DefragResult.count, DefragResult.index
+
+dropped cache  a cache of parsed URLs inside the library, and the call that empties it
+  go      -
+  rust    -
+  python  clear_cache
+
+dropped scheme-tables  lists of schemes Python keeps for old callers and reads no more
+  go      -
+  rust    -
+  python  uses_query, uses_fragment, non_hierarchical
+
+dropped imports  names Python's module binds for its own use, the modules it imports, and no entry of its own
+  go      -
+  rust    -
+  python  functools, ipaddress, math, re, types, warnings, namedtuple

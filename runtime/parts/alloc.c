@@ -616,6 +616,43 @@ static void *hero_calloc_raw(size_t size) {
     return p;
 }
 
+/* THE PLATFORM LAYER'S MEMORY (`platform/hero_layer_alloc.h`, M-rebel-library,
+ * 2026-11-16): a FIFTH shape, and like `hero_grow_kept` deliberately no pair of
+ * the exit gate's. A member of the layer (`platform/hero_tls.c` first) keeps
+ * state past a call and gives it back on whatever thread leaves it last, or on
+ * Network.framework's own queue after a close has returned, so a count read at
+ * exit would accuse a correct program; `leaks --atExit` and LeakSanitizer weigh
+ * it instead. And it answers NULL where `hero_malloc_raw` would panic: a member
+ * tells a missing block as its own `LIMIT` kind, never as an abort. It still
+ * lives HERE, behind the same signal fences, so §4.20's single point and Part
+ * 7.13's one place to change stay literally true. */
+void *hero_layer_alloc(size_t size) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
+    void *p = malloc(size == 0 ? 1 : size);
+    hero_alloc_leave(inside);
+    return p;
+}
+
+void *hero_layer_alloc_zero(size_t count, size_t size) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
+    void *p = calloc(count == 0 ? 1 : count, size == 0 ? 1 : size);
+    hero_alloc_leave(inside);
+    return p;
+}
+
+void *hero_layer_grow(void *block, size_t size) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
+    void *p = realloc(block, size == 0 ? 1 : size);
+    hero_alloc_leave(inside);
+    return p;
+}
+
+void hero_layer_free(void *block) {
+    volatile sig_atomic_t *inside = hero_alloc_enter();
+    free(block);
+    hero_alloc_leave(inside);
+}
+
 /* Scratch memory, borrowed by one runtime call and given back before it returns.
  * Counted since 2026-08-30 — the header says why. */
 static void *hero_alloc(size_t size) {

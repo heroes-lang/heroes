@@ -1,0 +1,88 @@
+# The events a YAML stream is read as: a document begun and ended, a list or a
+# map opened and closed, a scalar, an alias. The parser writes them, in the
+# order of the stream, and the composer builds the values from them.
+
+## Kinds
+
+# A scalar, or a node with no content.
+constant SCALAR: i64
+    0
+
+# An alias, `*name`.
+constant ALIAS: i64
+    1
+
+# A list opened.
+constant SEQ_START: i64
+    2
+
+# A list closed.
+constant SEQ_END: i64
+    3
+
+# A map opened.
+constant MAP_START: i64
+    4
+
+# A map closed.
+constant MAP_END: i64
+    5
+
+# A document begun.
+constant DOC_START: i64
+    6
+
+# A document ended.
+constant DOC_END: i64
+    7
+
+## The event
+
+# One event, and where it stands in the stream.
+record Event
+    # One of the kinds above.
+    kind: i64
+    # The byte index of what it was read from.
+    at: i64
+    # A scalar's characters, or an alias's name.
+    text: str
+    # The anchor of a scalar, a list or a map; empty for none.
+    anchor: str
+    # The tag of a scalar, a list or a map, whole: `tag:yaml.org,2002:str`,
+    # `!` for the non-specific tag, empty for none.
+    tag: str
+    # Whether a scalar was written plain, so that the schema reads it.
+    is_plain: bool
+    # Whether it is a node with no content.
+    is_empty: bool
+
+# A scalar at `at`.
+function scalar(at: i64, text: str, anchor: str, tag: str, is_plain: bool) -> Event
+    return Event(kind: SCALAR, at: at, text: text, anchor: anchor, tag: tag, is_plain: is_plain, is_empty: false)
+
+# A node with no content at `at`, carrying `anchor` and `tag`.
+function empty(at: i64, anchor: str, tag: str) -> Event
+    return Event(kind: SCALAR, at: at, text: "", anchor: anchor, tag: tag, is_plain: false, is_empty: true)
+
+# An alias of `name` at `at`.
+function alias(at: i64, name: str) -> Event
+    return Event(kind: ALIAS, at: at, text: name, anchor: "", tag: "", is_plain: false, is_empty: false)
+
+# A list or a map opened at `at`, `kind` saying which.
+function opening(kind: i64, at: i64, anchor: str, tag: str) -> Event
+    return Event(kind: kind, at: at, text: "", anchor: anchor, tag: tag, is_plain: false, is_empty: false)
+
+# A collection closed, or a document begun or ended, at `at`.
+function closing(kind: i64, at: i64) -> Event
+    return Event(kind: kind, at: at, text: "", anchor: "", tag: "", is_plain: false, is_empty: false)
+
+## Tests
+
+test "scalar, empty, alias, opening and closing: each kind and what it holds"
+    s = scalar(at: 2, text: "a", anchor: "x", tag: "", is_plain: true)
+    assert s.kind == SCALAR && s.text == "a" && s.anchor == "x" && s.is_plain && !s.is_empty
+    e = empty(at: 0, anchor: "", tag: "!")
+    assert e.kind == SCALAR && e.is_empty && e.tag == "!" && e.text == ""
+    assert alias(at: 1, name: "n").text == "n" && alias(at: 1, name: "n").kind == ALIAS
+    assert opening(kind: MAP_START, at: 0, anchor: "m", tag: "").anchor == "m"
+    assert closing(kind: DOC_END, at: 5).kind == DOC_END

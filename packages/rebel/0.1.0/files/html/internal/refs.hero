@@ -1,0 +1,400 @@
+# Character references, read as the standard's tokenizer reads them (13.2.5.77
+# to 13.2.5.84) and written as its serialisation escapes text: one reading,
+# shared by the tokenizer and by the face's `unescape`, and the escapes the
+# writer and the face use.
+
+use html/internal/ascii
+use html/internal/entities
+use unicode
+
+# What reading one reference answers: the characters to write, how far it
+# read, and the parse errors it met.
+record Read
+    # The characters the reference stands for, or the text read kept as it is
+    # where it is no reference.
+    chars: str
+    # The byte index just past what was read.
+    end: i64
+    # The standard's codes of the parse errors met, in order.
+    codes: [str]
+    # The byte index of each error, beside its code.
+    places: [i64]
+
+# The longest name of the table, in bytes.
+constant LONGEST: i64
+    32
+
+# The reference that begins at `at`, an `&`, read as the tokenizer reads it in
+# text or, where `in_attribute`, in an attribute's value.
+function read_at(text: str, at: i64, in_attribute: bool) -> Read
+    codes: [str] = []
+    places: [i64] = []
+    after = at + 1
+
+    if after < text.len() && text[after] == '#'
+        return numeric_at(text, at)
+
+    if after >= text.len() || !ascii.is_alnum(text[after])
+        return Read(chars: "&", end: after, codes: codes, places: places)
+    run: i64 @= after
+
+    while run < text.len() && ascii.is_alnum(text[run])
+        run @ run + 1
+
+    # The longest name the text begins with: the whole run with its `;`
+    # where one follows, else the longest run without one.
+    if run < text.len() && text[run] == ';' && run - after < LONGEST
+        found = name_index(text: text, from: after, to: run + 1)
+
+        if found >= 0
+            return Read(chars: chars_of(entities.POINTS[found]), end: run + 1, codes: codes, places: places)
+    size: i64 @= run - after
+
+    if size > LONGEST
+        size @ LONGEST
+
+    while size > 0
+        found = name_index(text: text, from: after, to: after + size)
+
+        if found >= 0
+            end = after + size
+            follows = end < text.len() && (text[end] == '=' || ascii.is_alnum(text[end]))
+
+            if in_attribute && follows
+                return Read(chars: text.slice(from: at, to: end), end: end, codes: codes, places: places)
+            return Read(
+                chars: chars_of(entities.POINTS[found]),
+                end: end,
+                codes: ["missing-semicolon-after-character-reference"],
+                places: [end]
+            )
+        size @ size - 1
+
+    # No name: the ampersand and the letters and digits after it are text,
+    # and a `;` after them names nothing.
+    if run < text.len() && text[run] == ';'
+        return Read(
+            chars: text.slice(from: at, to: run),
+            end: run,
+            codes: ["unknown-named-character-reference"],
+            places: [run]
+        )
+    return Read(chars: text.slice(from: at, to: run), end: run, codes: codes, places: places)
+
+# The numeric reference that begins at `at`, `&#`, as 13.2.5.80 to 13.2.5.84
+# read it.
+function numeric_at(text: str, at: i64) -> Read
+    codes: [str] @= []
+    places: [i64] @= []
+    digits: i64 @= at + 2
+    hex = digits < text.len() && (text[digits] == 'x' || text[digits] == 'X')
+
+    if hex
+        digits @ digits + 1
+    end: i64 @= digits
+    code: i64 @= 0
+
+    while end < text.len() && (hex && ascii.is_hex(text[end]) || !hex && ascii.is_digit(text[end]))
+        b = text[end]
+
+        value = if ascii.is_digit(b)
+            to_i64(b - '0').must()
+        else if b >= 'a'
+            to_i64(b - 'a').must() + 10
+        else
+            to_i64(b - 'A').must() + 10
+
+        # Past U+10FFFF the value is no character whatever follows, so it
+        # stops growing, and no digit can overflow it.
+        if code <= 0x10ffff
+            code @ if hex
+                code * 16 + value
+            else
+                code * 10 + value
+        end @ end + 1
+
+    if end == digits
+        return Read(
+            chars: text.slice(from: at, to: digits),
+            end: digits,
+            codes: ["absence-of-digits-in-numeric-character-reference"],
+            places: [digits]
+        )
+
+    if end < text.len() && text[end] == ';'
+        end @ end + 1
+    else
+        codes @ codes.push("missing-semicolon-after-character-reference")
+        places @ places.push(end)
+
+    if code == 0
+        codes @ codes.push("null-character-reference")
+        places @ places.push(end)
+        code @ 0xfffd
+    else if code > 0x10ffff
+        codes @ codes.push("character-reference-outside-unicode-range")
+        places @ places.push(end)
+        code @ 0xfffd
+    else if code >= 0xd800 && code <= 0xdfff
+        codes @ codes.push("surrogate-character-reference")
+        places @ places.push(end)
+        code @ 0xfffd
+    else if is_noncharacter(code)
+        codes @ codes.push("noncharacter-character-reference")
+        places @ places.push(end)
+    else if code == 0x0d || is_control(code) && !ascii.is_white(to_u8(code).default(0))
+        codes @ codes.push("control-character-reference")
+        places @ places.push(end)
+
+        if code >= 0x80 && code <= 0x9f
+            code @ WINDOWS_1252[code - 0x80]
+    return Read(chars: unicode.from_code_point(code).must(), end: end, codes: codes, places: places)
+
+# Whether `n` is a noncharacter: U+FDD0 to U+FDEF, and the last two code
+# points of every plane.
+function is_noncharacter(n: i64) -> bool
+    return n >= 0xfdd0 && n <= 0xfdef || n & 0xfffe == 0xfffe
+
+# Whether `n` is a control: U+0000 to U+001F and U+007F to U+009F.
+function is_control(n: i64) -> bool
+    return n <= 0x1f || n >= 0x7f && n <= 0x9f
+
+# What the numeric references 0x80 to 0x9F stand for, by 13.2.5.84's table:
+# the Windows-1252 character, or the number itself where the table has none.
+constant WINDOWS_1252: [i64]
+    [
+        0x20ac
+        0x81
+        0x201a
+        0x192
+        0x201e
+        0x2026
+        0x2020
+        0x2021
+        0x2c6
+        0x2030
+        0x160
+        0x2039
+        0x152
+        0x8d
+        0x17d
+        0x8f
+        0x90
+        0x2018
+        0x2019
+        0x201c
+        0x201d
+        0x2022
+        0x2013
+        0x2014
+        0x2dc
+        0x2122
+        0x161
+        0x203a
+        0x153
+        0x9d
+        0x17e
+        0x178
+    ]
+
+# The index in `entities.NAMES` of the bytes of `text` from `from` to `to`, or
+# -1 where the table has no such name, found by halving.
+function name_index(text: str, from: i64, to: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= entities.NAMES.len()
+
+    while low < high
+        middle = (low + high) / 2
+        order = compare_at(text: text, from: from, to: to, name: entities.NAMES[middle])
+
+        if order == 0
+            return middle
+
+        if order < 0
+            high @ middle
+        else
+            low @ middle + 1
+
+    return -1
+
+# How the bytes of `text` from `from` to `to` order against `name`: -1 before,
+# 0 the same, 1 after, by bytes and a shorter text first.
+function compare_at(text: str, from: i64, to: i64, name: str) -> i64
+    size = to - from
+    i: i64 @= 0
+
+    while i < size && i < name.len()
+        a = text[from + i]
+        b = name[i]
+
+        if a != b
+            return if a < b
+                -1
+            else
+                1
+        i @ i + 1
+
+    if size == name.len()
+        return 0
+
+    return if size < name.len()
+        -1
+    else
+        1
+
+# The characters `entities.POINTS` holds as `first << 21 | second`.
+function chars_of(points: i64) -> str
+    first = points >> 21
+    second = points & 0x1fffff
+    one = unicode.from_code_point(first).must()
+
+    if second == 0
+        return one
+    return one + unicode.from_code_point(second).must()
+
+# `s` with its references read as text reads them, or as an attribute's value
+# reads them where `in_attribute`.
+function unescaped(s: str, in_attribute: bool) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '&'
+            pieces @ pieces.push(s.slice(from: run, to: at))
+            read = read_at(s, at, in_attribute)
+            pieces @ pieces.push(read.chars)
+            at @ read.end
+            run @ at
+        else
+            at @ at + 1
+
+    if run == 0
+        return s
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return pieces.join("")
+
+# `s` escaped as the serialisation escapes it (13.3): `&`, a no-break space,
+# `<` and `>` always, and `"` where `quote`.
+function escaped(s: str, quote: bool) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        written = if b == '&'
+            "&amp;"
+        else if b == '<'
+            "&lt;"
+        else if b == '>'
+            "&gt;"
+        else if b == '"' && quote
+            "&quot;"
+        else if b == 0xc2 && at + 1 < s.len() && s[at + 1] == 0xa0
+            "&nbsp;"
+        else
+            ""
+
+        if written == ""
+            at @ at + 1
+        else
+            pieces @ pieces.push(s.slice(from: run, to: at))
+            pieces @ pieces.push(written)
+
+            at @ if b == 0xc2
+                at + 2
+            else
+                at + 1
+            run @ at
+
+    if run == 0
+        return s
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return pieces.join("")
+
+# `s` with `&`, `<`, `>`, `"` and `'` written as references, safe as text and
+# as a quoted value.
+function escaped_all(s: str) -> str
+    pieces: [str] @= []
+    run: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        b = s[at]
+
+        written = if b == '&'
+            "&amp;"
+        else if b == '<'
+            "&lt;"
+        else if b == '>'
+            "&gt;"
+        else if b == '"'
+            "&quot;"
+        else if b == '\''
+            "&#39;"
+        else
+            ""
+
+        if written != ""
+            pieces @ pieces.push(s.slice(from: run, to: at))
+            pieces @ pieces.push(written)
+            run @ at + 1
+
+    if run == 0
+        return s
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return pieces.join("")
+
+## Tests
+
+test "read_at: a name with its `;`, an old name without, the longest of two, and none, as Python's html.unescape reads them"
+    assert read_at("&amp;x", 0, false) == Read(chars: "&", end: 5, codes: [], places: [])
+    got = read_at("&ampx", 0, false)
+    assert got.chars == "&" && got.end == 4 && got.codes == ["missing-semicolon-after-character-reference"]
+    assert read_at("&notin;", 0, false).chars == "∉" && read_at("&notit;", 0, false).chars == "¬" && read_at("&notit;", 0, false).end == 4
+    nothing = read_at("&zzz;", 0, false)
+    assert nothing.chars == "&zzz" && nothing.end == 4 && nothing.codes == ["unknown-named-character-reference"]
+    assert read_at("&", 0, false).chars == "&" && read_at("& ", 0, false).end == 1 && read_at("a&lt", 1, false).chars == "<"
+
+test "read_at: in an attribute, an old name before `=` or a letter kept, and before `;` or a space read"
+    assert read_at("&copy=2", 0, true).chars == "&copy" && read_at("&copyx", 0, true).chars == "&copy"
+    assert read_at("&copy;=", 0, true).chars == "©" && read_at("&copy ", 0, true).chars == "©" && read_at("&copy=2", 0, false).chars == "©"
+
+test "read_at: the longest name of the table, and a run of letters past it"
+    assert read_at("&CounterClockwiseContourIntegral;", 0, false).chars == "∳"
+    long = "&" + repeat("a", 100) + ";"
+    assert read_at(long, 0, false).chars == "&" + repeat("a", 100)
+
+test "read_at: two code points, `&NotEqualTilde;`, as the table gives them"
+    assert unicode.code_points(read_at("&NotEqualTilde;", 0, false).chars) == [0x2242, 0x338]
+
+test "numeric_at: decimal, hexadecimal in both cases, no digits, and no semicolon, as html.unescape reads them"
+    assert read_at("&#65;", 0, false).chars == "A" && read_at("&#x41;", 0, false).chars == "A" && read_at("&#X6a;", 0, false).chars == "j"
+    none = read_at("&#;", 0, false)
+    assert none.chars == "&#" && none.end == 2 && none.codes == ["absence-of-digits-in-numeric-character-reference"]
+    assert read_at("&#xg", 0, false).chars == "&#x" && read_at("&#65x", 0, false).end == 4
+
+test "numeric_at: zero, a surrogate, past U+10FFFF, a run of digits that would overflow, a noncharacter and a control"
+    fffd = unicode.from_code_point(0xfffd).must()
+    assert read_at("&#0;", 0, false).chars == fffd && read_at("&#xD800;", 0, false).chars == fffd
+    assert read_at("&#x110000;", 0, false).chars == fffd && read_at("&#99999999999999999999999999999;", 0, false).chars == fffd
+    assert read_at("&#xFFFF;", 0, false).codes == ["noncharacter-character-reference"]
+    assert read_at("&#128;", 0, false).chars == "€" && read_at("&#x81;", 0, false).chars == unicode.from_code_point(0x81).must()
+    assert read_at("&#13;", 0, false).chars == "\r" && read_at("&#9;", 0, false).codes == []
+
+test "compare_at and name_index: before, after, a prefix, and the first and last names of the table"
+    assert compare_at(text: "ab", from: 0, to: 2, name: "ab") == 0 && compare_at(text: "ab", from: 0, to: 1, name: "ab") == -1
+    assert compare_at(text: "b", from: 0, to: 1, name: "ab") == 1
+    assert name_index(text: "AElig", from: 0, to: 5) == 0 && name_index(text: "zwnj;", from: 0, to: 5) == entities.NAMES.len() - 1
+    assert name_index(text: "nope;", from: 0, to: 5) == -1
+
+test "unescaped: text and attribute, nothing to read, and text of more than one byte, as html.unescape reads them"
+    assert unescaped("a &lt;b&gt; &amp", false) == "a <b> &" && unescaped("", false) == "" && unescaped("é&eacute;", false) == "éé"
+    assert unescaped("?x=1&not=2", true) == "?x=1&not=2" && unescaped("?x=1&not=2", false) == "?x=1¬=2"
+
+test "escaped and escaped_all: the characters each writes, a no-break space, and nothing to write"
+    nbsp = unicode.from_code_point(0xa0).must()
+    assert escaped("<a & \"b\">" + nbsp, false) == "&lt;a &amp; \"b\"&gt;&nbsp;" && escaped("\"", true) == "&quot;"
+    assert escaped("é", true) == "é" && escaped("", true) == ""
+    assert escaped_all("<'&\">") == "&lt;&#39;&amp;&quot;&gt;" && escaped_all("é") == "é"

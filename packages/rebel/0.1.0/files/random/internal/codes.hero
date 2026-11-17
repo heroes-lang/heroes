@@ -1,0 +1,7 @@
+# The code `random` fails with, held once so that the face and every module
+# name the same constant, and a misspelt code is a compile error.
+
+# The input is not what the function reads: an empty list to choose from, a
+# count past the list, or weights that cannot be drawn from.
+constant INVALID: str
+    "invalid"

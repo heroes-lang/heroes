@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's streams, `hero_stream.h`, so
+# that `heroes test` on this file runs the floor's own tests (spec § 12, § 13).
+# It prints whether the process has a standard output the layer can hand out
+# as a stream, which is the same line on every run that prints at all.
+
+use <rebel>/io/hero_stream
+
+function main()
+    print(hero_stream.std(1) != nullptr)

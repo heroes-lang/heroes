@@ -1,0 +1,738 @@
+# CBOR, the Concise Binary Object Representation of RFC 8949: bytes decoded
+# into a value a program matches on, and a value encoded as bytes, in the
+# deterministic encoding of its section 4.2 unless the program asks for
+# another key order. The value is wider than JSON's: it keeps byte strings,
+# tags, `undefined`, simple values, keys of any kind and every integer from
+# -2^64 to 2^64 - 1, so a CBOR item read and written again loses nothing but
+# the length of its encoding. `to_json` and `from_json` cross to a
+# `json.Value`, and `to_json` refuses what JSON cannot hold, naming where it
+# stands.
+#
+# Nothing here follows the data with recursion: an item nested deep is read and
+# written on stacks this package holds, and `decode` reads no deeper than
+# `DEFAULT_MAX_DEPTH` unless it is asked to, since `==` on two values nested
+# many thousands deep follows them on the machine's stack.
+#
+# A record is not filled from CBOR by its field names, since the language has
+# no reflection: a program writes each field with the language's own
+# `Record::field` names (spec § 9), which the compiler checks, as the example
+# of `encode` shows. A generator of those functions would be a verb of
+# `heroes`, which needs a design sitting before it exists.
+#
+# An integer past 64 bits, a bignum (tags 2 and 3), and a decimal fraction (tag
+# 4) are read as `big` numbers and made from them; a bigfloat (tag 5) is kept
+# as a tag, its value being a fraction whose denominator an exponent from
+# outside could make as large as memory.
+#
+# It does not read a stream: `io` reads the bytes, and `decode_next` takes the
+# items of a CBOR sequence (RFC 8742) one after the other. It writes no
+# indefinite length, which the deterministic encoding forbids, and keeps no
+# NaN's payload: every NaN is read as the one NaN and written `0xf97e00`. It
+# fails with `invalid`, `not_text`, `does_not_fit`, `not_found` and
+# `unsupported`.
+
+use big
+use bytes
+use cbor/internal/appendix
+use cbor/internal/convert
+use cbor/internal/decoder
+use cbor/internal/diagnostic
+use cbor/internal/encoder
+use cbor/internal/event
+use cbor/internal/samples
+use json
+
+## The value
+
+# One CBOR data item. A `match` on it answers all eleven cases.
+#
+# An integer is `unsigned` or `negative`, as CBOR's major types 0 and 1 hold
+# them, so the whole range from -2^64 to 2^64 - 1 is held exactly; `int_of`
+# answers one that fits an `i64`, and `from_int` makes one. A float is an
+# `f64` whatever width it was encoded at, since every half and single is a
+# double exactly. A map is a list of entries, so its keys may be of any kind
+# and keep the order they were read or built in; `encode` orders them, and
+# `==` compares two maps' entries in their order, so a map read back from its
+# deterministic encoding equals the one written only where its entries
+# already stood in that order.
+variant Value
+    # A non-negative integer, major type 0.
+    unsigned
+        # The integer itself, 0 to 2^64 - 1.
+        v: u64
+    # A negative integer, major type 1: the integer is -1 - `n`.
+    negative
+        # The argument, 0 to 2^64 - 1, so the integer runs from -1 to -2^64.
+        n: u64
+    # A byte string, major type 2.
+    binary
+        # The bytes, of any length.
+        v: [u8]
+    # A text string, major type 3: UTF-8, as every `str` is.
+    text
+        # The characters themselves.
+        v: str
+    # An array, major type 4.
+    list
+        # Its elements, in order.
+        items: [Value]
+    # A map, major type 5.
+    pairs
+        # Its entries, in the order they were read or built.
+        entries: [Entry]
+    # A tag, major type 6: a number that gives the item it holds a meaning.
+    tagged
+        # The tag number, 0 to 2^64 - 1, such as 1 for an epoch time.
+        tag: u64
+        # The tagged item, exactly one: a list only because a case may hold
+        # its own type no other way.
+        content: [Value]
+    # A float, major type 7: half, single or double as encoded, held as a
+    # double, `nan` and the infinities included.
+    float
+        # The number.
+        v: f64
+    # `false` or `true`.
+    boolean
+        # The truth value.
+        v: bool
+    # CBOR's `null`, a word the language keeps for itself.
+    null_value
+    # CBOR's `undefined`.
+    undefined
+    # A simple value with no name: 0 to 19, or 32 to 255.
+    simple
+        # The number; 20 to 31 are `false`, `true`, `null`, `undefined` and
+        # values no item may hold.
+        v: u8
+
+# One entry of a map: a key and its value, each of any kind.
+record Entry
+    # The key.
+    key: Value
+    # The value under it.
+    value: Value
+
+## Codes and limits
+
+# The code of bytes that are not one well-formed and valid CBOR item, of a
+# value `encode` cannot write, and of a value that is not of the kind asked
+# for.
+constant INVALID: str
+    "invalid"
+
+# The code of a text string whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of an integer past what its type holds: `int_of` past an `i64`,
+# `to_json` past what a JSON number holds exactly.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a key a map does not hold, which `member` fails with.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an item JSON has no form for, which `to_json` fails with: a byte
+# string, a tag, `undefined`, a simple value, a key that is not text, a `nan`
+# or an infinity.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The deepest nesting `decode` reads: `1` is 0 deep, `[]` is 1, `[[]]` and
+# `1(1)` are 2, a tag counting as a level.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+## Decoding
+
+# How bytes are decoded. `strict` answers the options of RFC 8949's
+# well-formed and valid items; a program changes the fields it needs.
+record DecodeOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
+    # An item nested deeper fails `invalid`.
+    max_depth: i64
+    # Whether a map may hold one key twice, the two keys equal where their
+    # deterministic encodings are; both entries are then kept, in order.
+    # Refused, it fails `invalid`.
+    duplicate_keys: bool
+    # Whether the item must be written in the deterministic encoding of RFC
+    # 8949 section 4.2.1, the encoding `encode` writes: shortest arguments and
+    # floats, definite lengths, keys in the order of their encodings. Asked,
+    # any other encoding fails `invalid`.
+    deterministic: bool
+
+# What `decode_next` answers.
+record Decoded
+    # The item decoded.
+    value: Value
+    # The byte index past the item: the length of the data where nothing
+    # follows.
+    next: i64
+
+# The options of RFC 8949's well-formed and valid items: nesting no deeper
+# than `DEFAULT_MAX_DEPTH`, no key twice in a map, any encoding accepted.
+function strict() -> DecodeOptions
+    return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: false, deterministic: false)
+
+# The one item `data` holds, decoded as `strict` decodes.
+#
+# - `data`: the encoded item, and nothing after it; the empty list holds no
+#   item and fails.
+#
+# Fails `invalid` where `data` is not one well-formed item (it ends inside
+# one, a head is reserved, a break stands where no indefinite length is open,
+# bytes follow the item), where a map holds one key twice, or where the
+# nesting passes `DEFAULT_MAX_DEPTH`; fails `not_text` where a text string is
+# not UTF-8. Each message opens `byte B:`, the index counted from 0, then
+# says what was expected and what was found. An indefinite length is read and
+# not kept, and a length no remaining byte could fill fails before anything
+# is held for it. See also `decode_with`, `decode_next`, `encode`.
+function decode(data: [u8]) -> Value?
+    return decode_with(data: data, options: strict())
+
+# The one item `data` holds, decoded as `options` asks.
+#
+# - `data`: the encoded item, and nothing after it.
+# - `options`: the depth allowed, whether a key may stand twice, whether the
+#   encoding must be deterministic.
+#
+# Fails as `decode` fails, and `invalid` where `options.deterministic` asks
+# for the deterministic encoding and the bytes differ from it, the message
+# naming the first byte that does. See also `decode`, `strict`.
+function decode_with(data: [u8], options: DecodeOptions) -> Value?
+    got = decode_next(data: data, from: 0, options: options)?
+
+    if got.next != data.len()
+        return fail(code: INVALID, msg: f"byte {got.next}: {data.len() - got.next} bytes follow the item")
+    return ok(got.value)
+
+# The item that begins at byte `from` of `data`, and where the next begins:
+# the way through a CBOR sequence, items written one after another.
+#
+# - `data`: the bytes holding the item, and anything after it.
+# - `from`: the byte index where the item begins, 0 to the length of `data`;
+#   at the length there is no item, and it fails.
+# - `options`: as `decode_with` reads them.
+#
+# Fails as `decode_with` fails, bytes after the item excepted. Aborts where
+# `from` is negative or past the length of `data`. See also `decode`.
+function decode_next(data: [u8], from: i64, options: DecodeOptions) -> Decoded?
+    assert from >= 0 && from <= data.len()
+    reading = decoder.Reading(
+        max_depth: options.max_depth,
+        duplicate_keys: options.duplicate_keys,
+        deterministic: options.deterministic
+    )
+    got = decoder.read(data: data, from: from, reading: reading)?
+
+    # Each item made, the last event first: a container takes its items off
+    # the top of `done`, which holds `top` of them.
+    done: [Value] @= []
+    top: i64 @= 0
+    at: i64 @= got.events.len()
+
+    while at > 0
+        at @ at - 1
+        e = got.events[at]
+        count = event.children_of(e)
+        held: [Value] @= []
+
+        for k in range(from: 0, to: count)
+            held @ held.push(done[top - 1 - k])
+
+        made: Value @= .null_value
+
+        if e.kind == event.UNSIGNED
+            made @ .unsigned(v: e.arg)
+        else if e.kind == event.NEGATIVE
+            made @ .negative(n: e.arg)
+        else if e.kind == event.BINARY
+            made @ .binary(v: e.data)
+        else if e.kind == event.TEXT
+            made @ .text(v: e.text)
+        else if e.kind == event.LIST
+            made @ .list(items: held)
+        else if e.kind == event.PAIRS
+            entries: [Entry] @= []
+
+            for k in range(from: 0, to: count / 2)
+                entries @ entries.push(Entry(key: held[2 * k], value: held[2 * k + 1]))
+
+            made @ .pairs(entries: entries)
+        else if e.kind == event.TAG
+            made @ .tagged(tag: e.arg, content: held)
+        else if e.kind == event.FLOAT
+            made @ .float(v: e.number)
+        else if e.kind == event.BOOLEAN
+            made @ .boolean(v: e.flag)
+        else if e.kind == event.UNDEFINED
+            made @ .undefined
+        else if e.kind == event.SIMPLE
+            made @ .simple(v: to_u8(e.arg).must())
+        top @ top - count
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    return ok(Decoded(value: done[0], next: got.next))
+
+## Encoding
+
+# The order an encoded map's keys stand in.
+variant KeyOrder
+    # The bytewise order of their encodings, RFC 8949 section 4.2.1: the
+    # deterministic encoding, `encode`'s.
+    bytewise
+    # The shorter encoding first, then the bytewise order, RFC 8949 section
+    # 4.2.3: the canonical CBOR of RFC 7049.
+    length_first
+    # The order of the value's own entries, each item still at its shortest.
+    as_written
+
+# `v` encoded in the deterministic encoding of RFC 8949 section 4.2.1.
+#
+# - `v`: the item to encode.
+#
+# Every argument and every float is at its shortest, a float as the half, the
+# single or the double that holds it exactly; every length is definite; a
+# map's keys stand in the bytewise order of their encodings; a bignum, tag 2 or
+# 3 holding a byte string, loses its leading zero bytes and is written as a
+# plain integer where it fits 64 bits (RFC 8949 section 3.4.3). Fails `invalid`
+# where `v` holds a map with one key twice, a tag whose `content` is not one
+# item, or a simple value from 20 to 31. A map's keys are each encoded once
+# more to be ordered. See also `encode_with`, `decode`.
+function encode(v: Value) -> [u8]?
+    return encode_with(v: v, order: .bytewise)
+
+# `v` encoded at its shortest, a map's keys in the order `order` names.
+#
+# - `v`: the item to encode.
+# - `order`: where each map's keys stand; `.bytewise` is `encode`.
+#
+# Fails as `encode` fails, but that `.as_written` writes a map's entries as
+# they stand, a key twice included, which `strict` then refuses. See also
+# `encode`.
+function encode_with(v: Value, order: KeyOrder) -> [u8]?
+    # Each item waiting to be written, the next on top: a container's items
+    # wait above it, its first on top.
+    events: [event.Event] @= []
+    waiting: [Value] @= [v]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        children: [Value] @= []
+
+        made = match waiting[top]
+            .unsigned u => event.of_kind(kind: event.UNSIGNED, arg: u.v)
+            .negative n => event.of_kind(kind: event.NEGATIVE, arg: n.n)
+            .binary b   => event.of_binary(b.v)
+            .text t     => event.of_text(t.v)
+            .list l =>
+                children @ l.items
+                event.of_kind(kind: event.LIST, arg: to_u64(l.items.len()).must())
+            .pairs p =>
+                for entry in p.entries
+                    children @ children.push(entry.key)
+                    children @ children.push(entry.value)
+
+                event.of_kind(kind: event.PAIRS, arg: to_u64(p.entries.len()).must())
+            .tagged t =>
+                children @ t.content
+                event.of_tag(tag: t.tag, count: t.content.len())
+            .float f    => event.of_float(f.v)
+            .boolean b  => event.of_boolean(b.v)
+            .null_value => event.of_kind(kind: event.NULL_VALUE, arg: 0)
+            .undefined  => event.of_kind(kind: event.UNDEFINED, arg: 0)
+            .simple x   => event.of_kind(kind: event.SIMPLE, arg: to_u64(x.v).must())
+
+        events @ events.push(made)
+
+        for k in range(from: 0, to: children.len())
+            child = children[children.len() - 1 - k]
+
+            if top == waiting.len()
+                waiting @ waiting.push(child)
+            else
+                waiting[top] @ child
+            top @ top + 1
+
+    code = match order
+        .bytewise     => encoder.BYTEWISE
+        .length_first => encoder.LENGTH_FIRST
+        .as_written   => encoder.AS_WRITTEN
+
+    return encoder.write(events: events, order: code, duplicates: false)
+
+## JSON
+
+# `v` as a `json.Value`, where JSON can hold every item of it.
+#
+# - `v`: the item to cross; an integer becomes a number, a float with no
+#   `nan` or infinity a number, a map with text keys an object in the order of
+#   its entries.
+#
+# Fails `unsupported` where `v` holds a byte string, a tag, `undefined`, a
+# simple value, a key that is not text, a `nan` or an infinity; fails
+# `does_not_fit` where it holds an integer past `json.MAX_EXACT_INT` either
+# way, a bignum included, which is a number where it is exact; fails `invalid` where a map holds one text key twice. Each message
+# opens with the JSON pointer of the item, `/a/0`, the empty pointer naming
+# `v` itself. See also `from_json`.
+function to_json(v: Value) -> json.Value?
+    return convert.to_json(encode_with(v: v, order: .as_written)?)
+
+# `v` as a CBOR item.
+#
+# - `v`: the JSON value; a number that is a whole number from -2^64 to 2^64 -
+#   1 becomes an integer, `-0.0` and every other number a float, an object a
+#   map whose keys are texts in the order of its members.
+#
+# `to_json` gives `v` back, so a JSON value crosses both ways unchanged; a
+# CBOR float that is a whole number comes back an integer. See also
+# `to_json`.
+function from_json(v: json.Value) -> Value
+    lenient = DecodeOptions(max_depth: 9223372036854775807, duplicate_keys: true, deterministic: false)
+    return decode_with(data: convert.from_json(v), options: lenient).must()
+
+## Reading a value
+
+# The integer `n` as an item: `unsigned` from 0 up, `negative` below.
+#
+# - `n`: any `i64`, its smallest and largest included.
+#
+# See also `int_of`.
+function from_int(n: i64) -> Value
+    if n >= 0
+        return .unsigned(v: to_u64(n).must())
+    return .negative(n: to_u64(-1 - n).must())
+
+# The integer `v` holds, as an `i64`.
+#
+# - `v`: the item to read; an `unsigned` or a `negative`.
+#
+# Fails `does_not_fit` where the integer is past an `i64` either way, and
+# `invalid` where `v` is no integer, a float included. See also `from_int`.
+function int_of(v: Value) -> i64?
+    return match v
+        .unsigned u => to_i64(u.v)
+        .negative n =>
+            match to_i64(n.n)
+                .ok k  => ok(-1 - k)
+                .err _ => fail(code: DOES_NOT_FIT, msg: f"-1 - {n.n} is past an i64")
+        .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            fail(code: INVALID, msg: "the item is no integer")
+
+# The value `v`, a map, holds under the text key `key`.
+#
+# - `v`: the map to read.
+# - `key`: the key, compared with each text key byte for byte; a key of
+#   another kind never matches.
+#
+# The first entry with that key answers where a map holds it twice. Fails
+# `not_found` where `v` holds no such key, and `invalid` where `v` is no map.
+# It reads the entries in order, so it costs one comparison an entry.
+function member(v: Value, key: str) -> Value?
+    wanted: Value = .text(v: key)
+
+    return match v
+        .pairs p =>
+            for entry in p.entries
+                if entry.key == wanted
+                    return ok(entry.value)
+
+            fail(code: NOT_FOUND, msg: f"no key {json.quote(key)} in the map")
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            fail(code: INVALID, msg: f"the item is no map, so it holds no key {json.quote(key)}")
+
+# `v` in the diagnostic notation of RFC 8949 section 8, the text a person
+# reads: `[1, {"a": h'00ff'}, 1(-2.5)]`.
+#
+# - `v`: the item to write.
+#
+# Integers are written in decimal, every one of them, a bignum as the number
+# it stands for as RFC 8949's appendix A writes it; a float as `to_str`
+# writes it, and `NaN`, `Infinity`, `-Infinity`; a text as `json.quote`
+# writes it; a byte string as `h'...'` in lower-case hexadecimal; a tag as its
+# number and the item in brackets; a simple value as `simple(N)`. No encoding
+# indicator is written. Fails `invalid` where `v` holds a tag whose
+# `content` is not one item or a simple value from 20 to 31, which no item
+# holds. See also `decode`.
+function format_diagnostic(v: Value) -> str?
+    return diagnostic.format(encode_with(v: v, order: .as_written)?)
+
+## Numbers past 64 bits
+
+# `n` as an item at its preferred serialization: an integer where it fits 64
+# bits, else a bignum, tag 2 for `n` from 2^64 up and tag 3 below -2^64,
+# holding the bytes of its magnitude with no leading zero.
+#
+# - `n`: any integer, of any size.
+#
+# Tag 3 holds -1 - `n`, as RFC 8949 section 3.4.3 writes a negative bignum.
+# See also `integer_of`, `from_int`.
+function from_integer(n: big.Integer) -> Value
+    if big.sign(n) >= 0
+        match big.u64_of(n)
+            .ok u  => return .unsigned(v: u)
+            .err _ => return .tagged(tag: 2, content: [.binary(v: big.to_bytes(n: n, order: .big_endian).must())])
+
+    flipped = big.bit_not(n)
+
+    match big.u64_of(flipped)
+        .ok u  => return .negative(n: u)
+        .err _ => return .tagged(tag: 3, content: [.binary(v: big.to_bytes(n: flipped, order: .big_endian).must())])
+
+# The integer `v` holds, of any size.
+#
+# - `v`: an `unsigned`, a `negative`, or a bignum: tag 2 or 3 holding one
+#   byte string, read as an unsigned number with its leading zeros allowed,
+#   empty for zero.
+#
+# Fails `invalid` where `v` is no integer and no bignum. See also
+# `from_integer`, `int_of`.
+function integer_of(v: Value) -> big.Integer?
+    match v
+        .unsigned u => return ok(big.from_u64(u.v))
+        .negative n => return ok(big.bit_not(big.from_u64(n.n)))
+        .tagged t =>
+            if (t.tag == 2 || t.tag == 3) && t.content.len() == 1
+                match t.content[0]
+                    .binary b =>
+                        n = big.from_bytes(b: b.v, order: .big_endian)
+
+                        if t.tag == 2
+                            return ok(n)
+                        return ok(big.bit_not(n))
+                    .unsigned _ | .negative _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+                        _ = 0
+            return fail(
+                code: INVALID,
+                msg: f"tag {t.tag} holding that is no bignum, which is tag 2 or 3 holding one byte string"
+            )
+        .binary _ | .text _ | .list _ | .pairs _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: "the item is no integer and no bignum")
+
+# `d` as a decimal fraction, tag 4 holding its exponent and its mantissa:
+# `d.unscaled` times ten to the power `-d.scale`.
+#
+# - `d`: any decimal; 273.15 with a scale of 2 is written `4([-2, 27315])`.
+#
+# The exponent is a plain integer and the mantissa is written as
+# `from_integer` writes it, a bignum where it passes 64 bits. The scale is
+# kept as it is, so 1.50 is `4([-2, 150])` and not `4([-1, 15])`. See also
+# `decimal_of`.
+function from_decimal(d: big.Decimal) -> Value
+    exponent = from_integer(big.negate(big.from_int(d.scale)))
+    return .tagged(tag: 4, content: [.list(items: [exponent, from_integer(d.unscaled)])])
+
+# The decimal the decimal fraction `v` holds: tag 4 holding an exponent and a
+# mantissa, `mantissa` times ten to the power `exponent`.
+#
+# - `v`: tag 4 holding an array of two items: the exponent, an `unsigned` or a
+#   `negative`, and the mantissa, an integer or a bignum.
+#
+# Fails `invalid` where `v` is no such item, and `does_not_fit` where the
+# exponent's negation, the decimal's scale, is past an `i64`. See also
+# `from_decimal`, `integer_of`.
+function decimal_of(v: Value) -> big.Decimal?
+    shape = "a decimal fraction is tag 4 holding an array of an integer exponent and an integer or bignum mantissa"
+    pair: [Value] @= []
+
+    match v
+        .tagged t =>
+            if t.tag == 4 && t.content.len() == 1
+                match t.content[0]
+                    .list l => pair @ l.items
+                    .unsigned _ | .negative _ | .binary _ | .text _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+                        _ = 0
+        .unsigned _ | .negative _ | .binary _ | .text _ | .list _ | .pairs _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            _ = 0
+
+    if pair.len() != 2
+        return fail(code: INVALID, msg: f"the item is no decimal fraction: {shape}")
+
+    exponent = match pair[0]
+        .unsigned u => big.from_u64(u.v)
+        .negative n => big.bit_not(big.from_u64(n.n))
+        .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .float _ | .boolean _ | .null_value | .undefined | .simple _ =>
+            return fail(code: INVALID, msg: f"the exponent is no integer: {shape}")
+
+    mantissa = integer_of(pair[1])?
+    scale = big.int_of(big.negate(exponent))?
+    return ok(big.Decimal(unscaled: mantissa, scale: scale))
+
+## Examples
+
+# The bytes of RFC 8949's own example, `[1, [2, 3], [4, 5]]`.
+test "decode: an array of arrays"
+    data: [u8] = [0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05]
+    assert format_diagnostic(decode(data).must()).must() == "[1, [2, 3], [4, 5]]"
+
+# The depth allowed, raised for an item nested deeper than the default.
+test "decode_with: a deeper nesting allowed"
+    deep: [u8] @= []
+
+    for _ in range(from: 0, to: 600)
+        deep @ deep.push(0x81)
+
+    deep @ deep.push(0x00)
+    assert decode(deep).is_err()
+    options = DecodeOptions(max_depth: 1000, duplicate_keys: false, deterministic: false)
+    assert !decode_with(data: deep, options: options).is_err()
+
+# Two items of a CBOR sequence read one after the other.
+test "decode_next: a sequence of two items"
+    data: [u8] = [0x01, 0x61, 0x61]
+    first = decode_next(data: data, from: 0, options: strict()).must()
+    assert first.value == .unsigned(v: 1)
+    second = decode_next(data: data, from: first.next, options: strict()).must()
+    assert second.value == .text(v: "a")
+    assert second.next == 3
+
+# A record written to CBOR and read back by its field names, which the
+# compiler checks: `samples.Point::x` is the text `"x"`, and a name the record
+# does not declare is a compile error.
+test "encode: a record written and read back by its field names"
+    p = samples.Point(x: 3, y: -4)
+    entries = [
+        Entry(key: .text(v: samples.Point::x), value: from_int(p.x))
+        Entry(key: .text(v: samples.Point::y), value: from_int(p.y))
+    ]
+    data = encode(.pairs(entries: entries)).must()
+    assert data == [0xa2, 0x61, 0x78, 0x03, 0x61, 0x79, 0x23]
+    back = decode(data).must()
+    x = int_of(member(back, key: samples.Point::x).must()).must()
+    y = int_of(member(back, key: samples.Point::y).must()).must()
+    assert samples.Point(x: x, y: y) == p
+
+# A map's keys in the order RFC 7049 called canonical: the shorter first.
+test "encode_with: keys ordered by length first"
+    entries = [
+        Entry(key: .text(v: "aa"), value: from_int(1))
+        Entry(key: from_int(100), value: from_int(2))
+    ]
+    v: Value = .pairs(entries: entries)
+    assert encode_with(v: v, order: .length_first).must() == [0xa2, 0x18, 0x64, 0x02, 0x62, 0x61, 0x61, 0x01]
+    assert encode_with(v: v, order: .bytewise).must() == [0xa2, 0x18, 0x64, 0x02, 0x62, 0x61, 0x61, 0x01]
+
+# CBOR read into a `json.Value` and written as JSON text.
+test "to_json: a map of a text and a list"
+    data: [u8] = [0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03]
+    assert json.format(to_json(decode(data).must()).must()).must() == "{\"a\":1,\"b\":[2,3]}"
+
+# JSON text written as CBOR.
+test "from_json: a JSON object encoded"
+    v = json.parse("{\"b\": [2, 3], \"a\": 1.5}").must()
+    assert encode(from_json(v)).must() == [0xa2, 0x61, 0x61, 0xf9, 0x3e, 0x00, 0x61, 0x62, 0x82, 0x02, 0x03]
+
+# The smallest `i64` as an item.
+test "from_int: the smallest i64"
+    assert from_int(-9223372036854775808) == .negative(n: 9223372036854775807)
+
+# An integer read out of an item.
+test "int_of: a negative integer"
+    assert int_of(.negative(n: 99)).must() == -100
+
+# A member of a map read by its key.
+test "member: the value under a text key"
+    v = decode([0xa1, 0x61, 0x61, 0x01]).must()
+    assert int_of(member(v, key: "a").must()).must() == 1
+
+# An item written for a person to read.
+test "format_diagnostic: a tag, a byte string and a float"
+    v: Value = .list(items: [.tagged(tag: 1, content: [.float(v: -2.5)]), .binary(v: [0x00, 0xff])])
+    assert format_diagnostic(v).must() == "[1(-2.5), h'00ff']"
+
+# The options that refuse a key twice.
+test "strict: a map holding one key twice is refused"
+    data: [u8] = [0xa2, 0x01, 0x02, 0x01, 0x03]
+    assert decode_with(data: data, options: strict()).is_err()
+
+test "decode, encode and format_diagnostic: every example of RFC 8949 appendix A through a value"
+    for row in appendix.rows()
+        v = decode(bytes.parse_hex(row.encoded).must()).must()
+        assert format_diagnostic(v).must() == row.diagnostic
+        written = encode(v).must()
+        assert bytes.format_hex(written) == row.written
+        assert encode(decode(written).must()).must() == written
+
+# 2^64, one past a `u64`, written as RFC 8949's appendix A writes it.
+test "from_integer: 2^64 as a bignum"
+    n = big.parse("18446744073709551616").must()
+    assert encode(from_integer(n)).must() == [0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]
+
+# The negative bignum of RFC 8949's appendix A read as a number.
+test "integer_of: the bignum -18446744073709551617"
+    v = decode([0xc3, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]).must()
+    assert big.format(integer_of(v).must()) == "-18446744073709551617"
+
+# RFC 8949's own decimal fraction, 273.15.
+test "from_decimal: 273.15 as tag 4"
+    d = big.Decimal(unscaled: big.from_int(27315), scale: 2)
+    assert encode(from_decimal(d)).must() == [0xc4, 0x82, 0x21, 0x19, 0x6a, 0xb3]
+
+# RFC 8949's decimal fraction read back as a decimal.
+test "decimal_of: 4([-2, 27315]) is 273.15"
+    v = decode([0xc4, 0x82, 0x21, 0x19, 0x6a, 0xb3]).must()
+    assert big.format_decimal(decimal_of(v).must()) == "273.15"
+
+test "from_integer: zero and the edges of 64 bits either way"
+    assert from_integer(big.from_int(0)) == .unsigned(v: 0)
+    assert from_integer(big.from_u64(18446744073709551615)) == .unsigned(v: 18446744073709551615)
+    assert from_integer(big.parse("-18446744073709551616").must()) == .negative(n: 18446744073709551615)
+    past = encode(from_integer(big.parse("-18446744073709551617").must())).must()
+    assert past == [0xc3, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert from_integer(big.from_int(-9223372036854775808)) == from_int(-9223372036854775808)
+
+test "integer_of and from_integer: a number of 1000 digits either way crosses unchanged"
+    n = big.add(a: big.power(big.from_int(10), 999), b: big.from_int(123456789))
+    assert big.digit_count(n) == 1000
+
+    for x in [n, big.negate(n)]
+        data = encode(from_integer(x)).must()
+        assert integer_of(decode(data).must()).must() == x
+
+test "integer_of: a tag 2 with leading zero bytes, written again without them"
+    padded: [u8] = [0xc2, 0x4a, 0x00, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]
+    v = decode(padded).must()
+    assert big.format(integer_of(v).must()) == "18446744073709551616"
+    assert encode(v).must() == [0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]
+    deterministic = DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: false, deterministic: true)
+    assert decode_with(data: padded, options: deterministic).is_err()
+    small: [u8] = [0xc2, 0x43, 0x00, 0x00, 0x05]
+    assert integer_of(decode(small).must()).must() == big.from_int(5)
+    assert encode(decode(small).must()).must() == [0x05]
+
+test "integer_of: an empty bignum is zero, and items that are no integer"
+    empty_three: Value = .tagged(tag: 3, content: [.binary(v: [])])
+    assert integer_of(empty_three).must() == big.from_int(-1)
+    assert integer_of(.text(v: "1")).is_err()
+    assert integer_of(.tagged(tag: 2, content: [.text(v: "1")])).is_err()
+    assert integer_of(.tagged(tag: 2, content: [.binary(v: [1]), .binary(v: [2])])).is_err()
+    assert integer_of(.tagged(tag: 4, content: [.binary(v: [1])])).is_err()
+
+test "decimal_of: a bignum mantissa, an exponent past an i64's negation, shapes that are not one"
+    big_mantissa = decode([0xc4, 0x82, 0x21, 0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]).must()
+    assert big.format_decimal(decimal_of(big_mantissa).must()) == "184467440737095516.16"
+    far = decode([0xc4, 0x82, 0x3b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01]).must()
+
+    match decimal_of(far)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    assert decimal_of(decode([0xc4, 0x82, 0xc2, 0x41, 0x01, 0x01]).must()).is_err()
+    assert decimal_of(decode([0xc4, 0x81, 0x01]).must()).is_err()
+    assert decimal_of(decode([0xc5, 0x82, 0x20, 0x03]).must()).is_err()
+
+test "from_decimal and decimal_of: the scale kept, the smallest and largest scales"
+    kept = big.Decimal(unscaled: big.from_int(150), scale: 2)
+    assert decimal_of(from_decimal(kept)).must() == kept
+    smallest = big.Decimal(unscaled: big.from_int(-7), scale: -9223372036854775808)
+    assert decimal_of(decode(encode(from_decimal(smallest)).must()).must()).must() == smallest
+    largest = big.Decimal(unscaled: big.from_int(1), scale: 9223372036854775807)
+    assert decimal_of(decode(encode(from_decimal(largest)).must()).must()).must() == largest

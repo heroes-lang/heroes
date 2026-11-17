@@ -1,0 +1,233 @@
+# The ledger of `template`: what Go's `text/template` and `html/template`
+# (1.27) and Python's `string.Template` and `html` (3.15) let a program do,
+# one block per capability, and what Rebel answers. Rust's standard library
+# holds no template, so its lines are `-` in every block. The lists are this
+# machine's, 2026-11-16: `go doc -all text/template` and `go doc -all
+# html/template` (functions, types, methods, the error codes, and the actions
+# and functions of the template language its documentation names), and
+# `dir(string.Template)` and `dir(html)`. Every expected value of the
+# package's tests that Go or Python answers was observed from them, the HTML
+# mode's from a Go program run over the same template and JSON value.
+
+capability template/parse  a template read from its text, errors with their line and column
+  heroes  template.parse, template.parse_with, template.Options, template.plain
+  go      New, Template.New, Template.Parse, Template.Name
+  rust    -
+  python  Template, Template.is_valid
+  note    a parse error opens `line L, column C:`, the column in characters, where Go gives the line alone for most
+
+capability template/execute  a template run over a value, the text it makes answered
+  heroes  template.render
+  go      Template.Execute
+  rust    -
+  python  Template.substitute
+  note    the value is a `json.Value`; a program writes the text answered to a stream with `io`, where Go writes to an `io.Writer`
+
+capability template/set  several templates in one set, one run by its name
+  heroes  template.parse_all, template.render_named, template.Template
+  go      Template, Template.ExecuteTemplate, Template.Lookup, Template.Templates, Template.DefinedTemplates, Template.AddParseTree, {{define}}
+  rust    -
+  python  -
+  note    a name defined twice is refused, where Go keeps the last; the set's names are `Template.names`
+
+capability template/files  templates read from files by path or by pattern
+  heroes  built-in read_file
+  go      ParseFiles, ParseGlob, ParseFS, Template.ParseFiles, Template.ParseGlob, Template.ParseFS
+  rust    -
+  python  -
+  note    a program reads each file and hands the texts to `template.parse_all`, each named as it chooses; a pattern over a folder is `fs`'s
+
+capability template/include  a template running another by name, with a value
+  heroes  template.parse_all, template.render_named
+  go      {{template "name"}}, {{template "name" pipeline}}
+  rust    -
+  python  -
+  note    the value is always written, `.` for the same one, where Go's `{{template "name"}}` hands nil in silence; `include` nests at most `MAX_DEPTH` deep, Go's 100000
+
+capability template/block  a template defined and run at one place, which another set may redefine
+  heroes  refused: a name is defined once in a set, so nothing redefines a block; `define` and `include` write the rest
+  go      {{block "name" pipeline}}
+  rust    -
+  python  -
+  note    -
+
+capability template/delimiters  the texts that open and close an action
+  heroes  template.parse_with, template.Options
+  go      Template.Delims
+  rust    -
+  python  Template.delimiter, Template.pattern
+  note    -
+
+capability template/path  a value read by a path of keys and indices
+  heroes  template.parse
+  go      .Field, .Key, $x.Field, index
+  rust    -
+  python  Template.idpattern, Template.braceidpattern, Template.flags
+  note    a key of digits picks a list's element and `.["a key"]` any member; a method is not called, since a value is data
+
+capability template/missing  a value that is not there, a failure the caller sees
+  heroes  template.render, template.NOT_FOUND
+  go      Template.Option, missingkey=error
+  rust    -
+  python  Template.substitute
+  note    Go writes `<no value>` by default and Python raises `KeyError`; a missing value fails `not_found` here, and so does `null`, unless `default` follows it
+
+capability template/safe-substitute  a value that is not there left as the template wrote it
+  heroes  refused: a part of the page missing in silence is the mistake this package exists to stop; `default` says in the template what stands in its place
+  go      missingkey=default, missingkey=zero
+  rust    -
+  python  Template.safe_substitute
+  note    -
+
+capability template/default  a value standing where another is missing or null
+  heroes  template.parse
+  go      -
+  rust    -
+  python  -
+  note    `{{ .x | default "none" }}` stands for a value not there and for null, where Go and Python have no such filter; `default` stands at once after the path it replaces, so no other filter meets the missing value first
+
+capability template/identifiers  the names a template reads
+  heroes  template.paths_of
+  go      -
+  rust    -
+  python  Template.get_identifiers
+  note    the paths read from the template's own `.`, in the order they first stand
+
+capability template/if  a part written or not by a value's truth
+  heroes  template.parse, template.is_true
+  go      {{if}}, {{else}}, {{else if}}, IsTrue, not
+  rust    -
+  python  -
+  note    false are `false`, `0`, `null`, `""`, `[]` and `{}`, as Go's `IsTrue` takes them; a missing value fails, where Go takes it as false
+
+capability template/compare  two values compared for equality
+  heroes  template.parse
+  go      eq, ne
+  rust    -
+  python  -
+  note    a text, a number, a boolean or null on each side; a list or an object compared fails `invalid`, where Go's `eq` refuses them too
+
+capability template/logic  values ordered, and conditions joined
+  heroes  refused: the closed syntax holds `not`, `==` and `!=`; an order or a joined condition is computed by the program into the value, where its language checks it, or written as nested `if`s
+  go      and, or, lt, le, gt, ge
+  rust    -
+  python  -
+  note    -
+
+capability template/with  a part written with `.` set to a value where it is true
+  heroes  refused: `.` names the template's value everywhere in it, so a reader never asks what it names; `if` and the path written again do the same, and `include` hands a part its own value
+  go      {{with}}, {{else with}}
+  rust    -
+  python  -
+  note    -
+
+capability template/loop  a part written for each element of a list or member of an object, else another
+  heroes  template.parse, template.MAX_DEPTH
+  go      {{range}}, {{range}} {{else}}, {{break}}, {{continue}}, $i, $e
+  rust    -
+  python  -
+  note    an object is looped over in its members' order, as `json` keeps it, where Go sorts a map's keys; an object with one variable fails `invalid`, where Go binds the value; a text or a number is not looped over, as in Go
+
+capability template/variables  a name bound to a value inside a template and assigned again
+  heroes  refused: a template binds a loop's variables and nothing else, so every name in it is read where its loop says; a value computed is computed by the program
+  go      {{$x := pipeline}}, {{$x = pipeline}}, {{with $x := pipeline}}
+  rust    -
+  python  -
+  note    -
+
+capability template/whitespace  the white space beside an action dropped
+  heroes  template.parse
+  go      {{- , -}}
+  rust    -
+  python  -
+  note    `{{- ` with white space after the `-`, as Go reads it, so `{{-3}}` is the number -3
+
+capability template/comments  a comment that writes nothing
+  heroes  template.parse
+  go      {{/* */}}
+  rust    -
+  python  -
+  note    as Go reads it, the comment fills its action
+
+capability template/filters  a value changed on its way out: case, a list joined, a length
+  heroes  template.parse
+  go      len
+  rust    -
+  python  -
+  note    `upper`, `lower`, `join`, `default`, `length` and `escape`; `length` counts characters, as Python's `len`, where Go's `len` counts bytes
+
+capability template/functions  a function of the program called from a template, or one of formatting
+  heroes  refused: a template runs no code but its six filters, so what it writes is known from its text; the program formats its values before it hands them in
+  go      FuncMap, Template.Funcs, call, print, printf, println, slice
+  rust    -
+  python  -
+  note    -
+
+capability template/value-text  a value written as text
+  heroes  template.render
+  go      Template.Execute
+  rust    -
+  python  Template.substitute
+  note    a number is written as JSON writes it, `100000000` and `0.000001`, where Go writes `1e+08` and `1e-06`; a list, an object and null fail outside a script, where Go writes `[1 a]`, `map[a:1]` and `<no value>`
+
+capability template/errors  what went wrong, and where
+  heroes  template.INVALID, template.NOT_FOUND
+  go      ExecError, ExecError.Error, ExecError.Unwrap, Error, Error.Error, ErrorCode, ErrAmbigContext, ErrBadHTML, ErrBranchEnd, ErrEndContext, ErrNoSuchTemplate, ErrOutputContext, ErrPartialCharset, ErrPartialEscape, ErrRangeLoopReentry, ErrSlashAmbig, ErrPredefinedEscaper, ErrJSTemplate
+  rust    -
+  python  -
+  note    two codes, `invalid` and `not_found`, the message saying what Go's codes name
+
+capability html/contextual  values escaped by the place they land in an HTML page
+  heroes  template.parse_html, template.html, template.UNSAFE
+  go      html/template
+  rust    -
+  python  -
+  note    text, a title or a textarea, an attribute's name, a quoted and an unquoted value, a URL from its start, in its path and in its query, `srcset`, a script's value, string, template literal and regular expression, a style sheet's value, string and `url(...)`, each escaped as Go 1.27 escapes it, every one observed; a value refused is written `ZrebelZ`, where Go writes `ZgotmplZ`
+
+capability html/trusted  a value marked as trusted HTML, CSS, JavaScript or URL, written unescaped
+  heroes  refused: a value is data and never markup; trusted HTML is joined to the output by the program, or written as a template of the set and included
+  go      HTML, HTMLAttr, JS, JSStr, CSS, URL, Srcset
+  rust    -
+  python  -
+  note    -
+
+capability html/escape  a text escaped as HTML
+  heroes  template.escape_html
+  go      HTMLEscape, HTMLEscapeString, HTMLEscaper, html
+  rust    -
+  python  html.escape
+  note    Go's references, `&#34;` and `&#39;`, where Python writes `&quot;` and `&#x27;`; both escape the quotes always, so the text stands in an attribute too
+
+capability html/unescape  HTML's character references read
+  heroes  template.unescape_html
+  go      -
+  rust    -
+  python  html.unescape, html.entities
+  note    every rule Python's: a name whole with its `;`, else the longest of the 106 read without one; a number 0, a surrogate or past U+10FFFF as U+FFFD, 0x80 to 0x9F through Windows-1252, a control or a noncharacter dropped; the 2231 names are the HTML standard's, as `html.entities.html5` holds them
+
+capability js/escape  a text escaped for a JavaScript string
+  heroes  template.escape_js
+  go      JSEscape, JSEscapeString, JSEscaper, js
+  rust    -
+  python  -
+  note    Go's `JSEscapeString` byte for byte, but a character past U+FFFF that is not printable, which Go writes as `\u` and five digits, a JavaScript string reads as another: it is written as its two surrogates
+
+capability url/query-escape  a text escaped for a URL's query
+  heroes  refused: a URL's parts are `url`'s, a package of the same layer this one does not use; the HTML mode escapes a value in a URL by its place, and a program writes `url.escape_query` of a value before it hands it in for the text mode
+  go      URLQueryEscaper, urlquery
+  rust    -
+  python  -
+  note    -
+
+capability template/clone  a set of templates copied, to be changed apart
+  heroes  built-in =
+  go      Template.Clone
+  rust    -
+  python  -
+  note    a `Template` is a value, and every value a copy
+
+dropped
+  go      Must: `.must()` is the language's
+  go      text/template/parse and every name of it: the syntax tree a template is read into
+  go      .Method and a method called on a value: a `json.Value` has none
+  python  Template.__init_subclass__ and the class attributes a subclass overrides: a class's hooks, which records have none of; their blocks are template/delimiters and template/path

@@ -1,0 +1,155 @@
+capability stats/mean  the arithmetic mean, exact then rounded once
+  heroes  stats.mean
+  go      -
+  rust    -
+  python  statistics.mean
+  note    Go and Rust have no statistics package. Exact as Python's, with integers of any size where Python uses fractions: equal to Python's to the last bit on 600 random data sets observed, values from 10^-4 to 10^16 among them, and on the mean of 2^1023, 2^1023 and -2^1023, which a float sum overflows. A nan or both infinities answer a nan and one infinity itself, as Python's; minus zero answers zero, as Python's
+
+capability stats/fast-mean  the mean as a sum of floats rounded once over the count
+  heroes  stats.fast_mean
+  go      -
+  rust    -
+  python  statistics.fmean
+  note    equal to Python's fmean on the same 600 sets; a sum past the largest float fails `does_not_fit`, where Python raises OverflowError
+
+capability stats/weighted-mean  the mean of values weighted by others
+  heroes  stats.weighted_mean
+  go      -
+  rust    -
+  python  statistics.fmean
+  note    Python's `fmean(data, weights)`; equal to it on 600 sets. Weights summing to zero fail `invalid`
+
+capability stats/geometric-mean  the exponential of the mean of the logarithms
+  heroes  stats.geometric_mean
+  go      -
+  rust    -
+  python  statistics.geometric_mean
+  note    equal to Python's on 600 sets of positive values; a zero answers 0.0 and a negative value fails `invalid`, as Python's
+
+capability stats/harmonic-mean  the count over the sum of the inverses
+  heroes  stats.harmonic_mean
+  go      -
+  rust    -
+  python  statistics.harmonic_mean
+  note    the inverses are floats and their sum exact, as Python's; equal on 600 sets. A zero answers 0.0, one value answers itself, a negative value fails `invalid`, as Python's
+
+capability stats/harmonic-mean-weighted  the harmonic mean with a weight for each value
+  heroes  pending
+  go      -
+  rust    -
+  python  statistics.harmonic_mean
+  note    Python's `weights` argument; the exact sum it needs is there, and the observations of Python's answers are not yet made
+
+capability stats/median  the middle value, or the mean of the two middle values
+  heroes  stats.median
+  go      -
+  rust    -
+  python  statistics.median
+  note    the two middle values are added as floats and halved, as Python's, so two values past half the largest float answer an infinity, observed in both. A nan fails `invalid`, where Python's sort leaves it anywhere and answers what falls in the middle
+
+capability stats/median-low-high  the lower or the higher of the two middle values
+  heroes  stats.median_low, stats.median_high
+  go      -
+  rust    -
+  python  statistics.median_low, statistics.median_high
+  note    always one of the values; the sort is stable as Python's, so of `0.0` and `-0.0` the same one is answered
+
+capability stats/median-grouped  the median of data grouped in classes of a width
+  heroes  stats.median_grouped
+  go      -
+  rust    -
+  python  statistics.median_grouped
+  note    equal to Python's on 600 sets with classes of width 1, and on Python's documented examples with widths 1 and 2
+
+capability stats/mode  the value that occurs most often, the first of several
+  heroes  stats.mode
+  go      -
+  rust    -
+  python  statistics.mode
+  note    over floats; `0.0` and `-0.0` are one value, answered as it first occurred, as Python's Counter keeps its first key. A nan fails `invalid`: it equals no value, and Python counts it only against itself
+
+capability stats/multimode  every value that occurs most often, in the order of first occurrence
+  heroes  stats.multimode
+  go      -
+  rust    -
+  python  statistics.multimode
+  note    empty data answer an empty list, as Python's
+
+capability stats/variance  the sample and the population variance, exact then rounded once
+  heroes  stats.variance, stats.population_variance
+  go      -
+  rust    -
+  python  statistics.variance, statistics.pvariance
+  note    exact as Python's, equal to the last bit on 600 sets; past the largest float `does_not_fit` where Python raises OverflowError. With an infinity among the values Python answers the infinity of the sum, negative where it is; this answers the positive infinity, since a spread is never negative
+
+capability stats/deviation  the sample and the population standard deviation, the root of the exact variance rounded once
+  heroes  stats.standard_deviation, stats.population_standard_deviation
+  go      -
+  rust    -
+  python  statistics.stdev, statistics.pstdev
+  note    the root of the exact fraction, rounded once, as Python's: equal on 600 sets, and finite where the variance is not (2^1023 and -2^1023 give the root of two times 2^1023 in both). With an infinity Python raises ValueError and this answers the positive infinity, or a nan beside a nan or both infinities
+
+capability stats/variance-around  a variance around a mean the caller gives
+  heroes  refused: the mean given saves nothing where the variance computes its own exactly, and a wrong one answers a wrong variance in silence
+  go      -
+  rust    -
+  python  statistics.variance, statistics.pvariance, statistics.stdev, statistics.pstdev
+  note    Python's `xbar` and `mu` arguments
+
+capability stats/quantiles  the points cutting data into groups of equal share, exclusive and inclusive
+  heroes  stats.quantiles, stats.quantiles_inclusive
+  go      -
+  rust    -
+  python  statistics.quantiles
+  note    Python's `method` is two functions; equal to Python's on 600 sets in 4 and 7 parts each way, 5,400 points. One value answers itself at every point, as Python's
+
+capability stats/covariance  the sample covariance of two lists
+  heroes  stats.covariance
+  go      -
+  rust    -
+  python  statistics.covariance
+  note    in floats, as Python's: equal on 600 sets. Where finite data overflow, Python answers an infinity and this fails `does_not_fit`
+
+capability stats/correlation  Pearson's correlation of two lists
+  heroes  stats.correlation
+  go      -
+  rust    -
+  python  statistics.correlation
+  note    the root of the product of the two spreads is taken exactly and rounded once; equal to Python's on 600 sets. A constant input fails `invalid`, where Python raises
+
+capability stats/rank-correlation  Spearman's correlation, of the ranks
+  heroes  stats.rank_correlation
+  go      -
+  rust    -
+  python  statistics.correlation
+  note    Python's `method="ranked"`; ties share the mean of their ranks; equal on 600 sets, with ties among them
+
+capability stats/regression  the line of least squares through pairs, or through the origin
+  heroes  stats.linear_regression, stats.proportional_regression
+  go      -
+  rust    -
+  python  statistics.linear_regression, statistics.LinearRegression
+  note    Python's `proportional` is a function of its own; the slope and intercept are a record, `stats.Line`. Equal to Python's on 600 sets
+
+capability stats/normal-distribution  a normal distribution: its density, cumulative probability, inverse, overlap, z-score, samples, and arithmetic on two
+  heroes  pending
+  go      -
+  rust    -
+  python  statistics.NormalDist, NormalDist.from_samples, NormalDist.samples, NormalDist.pdf, NormalDist.cdf, NormalDist.inv_cdf, NormalDist.overlap, NormalDist.quantiles, NormalDist.zscore, NormalDist.mean, NormalDist.median, NormalDist.mode, NormalDist.stdev, NormalDist.variance, and its +, -, *, /, == and hash
+  note    a record of a mean and a deviation and functions over it; the inverse of the cumulative probability needs an algorithm whose answers are to be held to Python's, not yet done. Its samples are `random`'s
+
+capability stats/kernel-density  an estimate of a density by kernels, and samples drawn from it
+  heroes  refused: it answers a function that remembers the data, which needs a closure
+  go      -
+  rust    -
+  python  statistics.kde, statistics.kde_random
+
+dropped error-types  a failure is a code and a message here, so it has no type of its own
+  go      -
+  rust    -
+  python  statistics.StatisticsError
+
+dropped imports  names `statistics` imports from other modules and so lists, none of them its own
+  go      -
+  rust    -
+  python  statistics.Counter, statistics.Decimal, statistics.Fraction, statistics.namedtuple, statistics.defaultdict, statistics.groupby, statistics.itemgetter, statistics.bisect_left, statistics.bisect_right, statistics.compress, statistics.count, statistics.reduce, statistics.repeat, statistics.fsum, statistics.sumprod, statistics.sqrt, statistics.exp, statistics.log, statistics.fabs, statistics.erfc, statistics.hypot, statistics.isfinite, statistics.isinf, statistics.acos, statistics.asin, statistics.atan, statistics.cos, statistics.cosh, statistics.sin, statistics.tan, statistics.pi, statistics.tau, statistics.math, statistics.numbers, statistics.random, statistics.sys

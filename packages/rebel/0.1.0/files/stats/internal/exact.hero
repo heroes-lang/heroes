@@ -1,0 +1,398 @@
+# The statistics Python computes exactly, computed exactly: every finite float
+# is an integer times a power of two, so the data, scaled by the smallest such
+# power among them, are integers, and a sum, a sum of squares and the
+# variance's numerator are integers too. One division or one square root,
+# rounded once to the nearest float and to the even one on a tie, gives the
+# answer, the same to the last bit as a fraction of Python's rounded to a
+# float. Past the largest float it fails `does_not_fit`, where Python raises.
+
+use math
+use stats/internal/big
+
+# The code of input that is not what a function reads.
+constant INVALID: str
+    "invalid"
+
+# The code of an answer past the largest float.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# A signed integer of any size.
+record Signed
+    # Whether it is below zero; zero is never negative.
+    negative: bool
+    # Its size, a number of `big`.
+    magnitude: [i64]
+
+# The finite floats of a list as integers over one power of two: each value
+# is its integer times two to `exponent`.
+record Sums
+    # How many values were read, zeros included.
+    count: i64
+    # Their sum, scaled.
+    total: Signed
+    # The sum of their squares, scaled twice.
+    squares: [i64]
+    # The power of two of the scale; 0 where every value is zero.
+    exponent: i64
+
+# The integer and the power of two of `x`, a finite float other than zero:
+# `x` is the integer, of 53 bits, times two to the power.
+record Parts
+    # Whether `x` is below zero.
+    negative: bool
+    # Its integer, from 2^52 to 2^53 less one.
+    mantissa: i64
+    # The power of two of its last bit.
+    exponent: i64
+
+# `x`, finite and not zero, split exactly.
+function parts(x: f64) -> Parts
+    lead = math.exponent_of(x).must()
+    whole = math.scale(math.abs(x), 52 - lead)
+    return Parts(negative: x < 0.0, mantissa: to_i64(whole).must(), exponent: lead - 52)
+
+# `left` plus `right`, signs and all.
+function plus(left: Signed, right: Signed) -> Signed
+    if left.negative == right.negative
+        return Signed(negative: left.negative, magnitude: big.add(left: left.magnitude, right: right.magnitude))
+
+    if big.compare(left: left.magnitude, right: right.magnitude) >= 0
+        rest = big.sub(left: left.magnitude, right: right.magnitude)
+        return Signed(negative: left.negative && rest.len() > 0, magnitude: rest)
+    return Signed(negative: right.negative, magnitude: big.sub(left: right.magnitude, right: left.magnitude))
+
+# The exact sum and sum of squares of `data`, every value finite.
+function sums(data: [f64]) -> Sums
+    lowest: i64 @= 0
+    seen: bool @= false
+
+    for x in data
+        if x != 0.0
+            exponent = parts(x).exponent
+
+            if !seen || exponent < lowest
+                lowest @ exponent
+            seen @ true
+
+    total: Signed @= Signed(negative: false, magnitude: [])
+    squares: [i64] @= []
+
+    for x in data
+        if x != 0.0
+            split = parts(x)
+            value = big.shift_left(big.of(split.mantissa), split.exponent - lowest)
+            total @ plus(left: total, right: Signed(negative: split.negative, magnitude: value))
+            squares @ big.add(left: squares, right: big.mul(left: value, right: value))
+
+    return Sums(count: data.len(), total: total, squares: squares, exponent: lowest)
+
+# How many bits `n`, above zero, takes.
+function width(n: i64) -> i64
+    count: i64 @= 0
+    left: i64 @= n
+
+    while left > 0
+        count @ count + 1
+        left @ left >> 1
+
+    return count
+
+# `kept` plus a fraction below one, `inexact` saying whether that fraction is
+# above zero, times two to `exponent`, rounded once to the nearest float, to
+# the even one on a tie; `kept` holds at least 55 bits.
+function rounded(kept: i64, inexact: bool, exponent: i64, negative: bool) -> f64?
+    bits = width(kept)
+    lead = bits - 1 + exponent
+
+    if lead > 1023
+        return fail(code: DOES_NOT_FIT, msg: "the answer is past the largest float")
+    precision: i64 @= 53
+
+    if lead < -1022
+        precision @ 53 - (-1022 - lead)
+    drop = bits - precision
+    zero: f64 = 0.0
+
+    if drop > 62
+        if negative
+            return ok(-zero)
+        return ok(zero)
+    high: i64 @= kept >> drop
+    rest = kept & (1 << drop) - 1
+    half = 1 << drop - 1
+
+    if rest > half || rest == half && (inexact || high & 1 == 1)
+        high @ high + 1
+    value = math.scale(to_f64(high), exponent + drop)
+
+    if math.is_inf(value)
+        return fail(code: DOES_NOT_FIT, msg: "the answer is past the largest float")
+
+    if negative
+        return ok(-value)
+    return ok(value)
+
+# `numerator` over `denominator`, times two to `exponent`, rounded once.
+function ratio(numerator: [i64], denominator: [i64], exponent: i64, negative: bool) -> f64?
+    if numerator.len() == 0
+        return ok(0.0)
+    shift = 55 + big.bit_length(denominator) - big.bit_length(numerator)
+    scaled: [i64] @= numerator
+    inexact: bool @= false
+
+    if shift >= 0
+        scaled @ big.shift_left(numerator, shift)
+    else
+        scaled @ big.shift_right(numerator, -shift)
+        inexact @ big.has_low_bits(numerator, -shift)
+    parts_of = big.divide(dividend: scaled, divisor: denominator)
+    return rounded(
+        kept: big.small(parts_of.quotient),
+        inexact: inexact || parts_of.remainder.len() > 0,
+        exponent: exponent - shift,
+        negative: negative
+    )
+
+# The whole square root of `n`, a number of at most 120 bits.
+function root(n: [i64]) -> i64
+    bits = big.bit_length(n)
+    drop: i64 @= 0
+
+    if bits > 60
+        drop @ bits - 60
+    drop @ drop + drop % 2
+    guess = math.scale(math.sqrt(to_f64(big.small(big.shift_right(n, drop)))), drop / 2)
+    r: i64 @= to_i64(guess).must()
+
+    while big.compare(left: big.mul(left: big.of(r + 1), right: big.of(r + 1)), right: n) <= 0
+        r @ r + 1
+
+    while r > 0 && big.compare(left: big.mul(left: big.of(r), right: big.of(r)), right: n) > 0
+        r @ r - 1
+
+    return r
+
+# The square root of `numerator` over `denominator`, times two to `exponent`,
+# rounded once: the quotient is taken to 112 bits or more, so its whole root
+# holds 56, and the root is exact only where both the quotient and its root
+# are.
+function root_of_ratio(numerator: [i64], denominator: [i64], exponent: i64) -> f64?
+    if numerator.len() == 0
+        return ok(0.0)
+    need = 112 - big.bit_length(numerator) + big.bit_length(denominator)
+    half: i64 @= need / 2
+
+    if need > 0
+        half @ (need + 1) / 2
+    scaled: [i64] @= numerator
+    inexact: bool @= false
+
+    if half >= 0
+        scaled @ big.shift_left(numerator, 2 * half)
+    else
+        scaled @ big.shift_right(numerator, -2 * half)
+        inexact @ big.has_low_bits(numerator, -2 * half)
+    division = big.divide(dividend: scaled, divisor: denominator)
+    whole = root(division.quotient)
+    square = big.mul(left: big.of(whole), right: big.of(whole))
+    exact = !inexact && division.remainder.len() == 0 && big.compare(left: square, right: division.quotient) == 0
+    return rounded(kept: whole, inexact: !exact, exponent: exponent - half, negative: false)
+
+# What a sum of `data` is where some value is not finite: a nan where one is,
+# or where both infinities are; otherwise the infinity. Fails `not_found`
+# where every value is finite.
+function not_finite(data: [f64]) -> f64?
+    up: bool @= false
+    down: bool @= false
+
+    for x in data
+        if math.is_nan(x)
+            return ok(x)
+
+        if math.is_inf(x)
+            if x > 0.0
+                up @ true
+            else
+                down @ true
+
+    zero: f64 = 0.0
+
+    if up && down
+        return ok(zero / zero)
+
+    if up
+        return ok(1.0 / zero)
+
+    if down
+        return ok(-1.0 / zero)
+    return fail(code: "not_found", msg: "every value is finite")
+
+# The spread a variance answers where some value is not finite: a nan where
+# one is, or where both infinities are, otherwise the infinity, which is
+# positive whatever its sign. Fails `not_found` where every value is finite.
+function spread_not_finite(data: [f64]) -> f64?
+    found = not_finite(data)?
+
+    if !math.is_nan(found) && found < 0.0
+        return ok(-found)
+    return ok(found)
+
+# The mean of `data`, exact then rounded once.
+function mean(data: [f64]) -> f64?
+    if data.len() == 0
+        return fail(code: INVALID, msg: "the mean of no value: the data are empty")
+
+    match not_finite(data)
+        .ok x  => return ok(x)
+        .err _ => _ = 0
+
+    total = sums(data)
+    return ratio(
+        numerator: total.total.magnitude,
+        denominator: big.of(total.count),
+        exponent: total.exponent,
+        negative: total.total.negative
+    )
+
+# The numerator of the variance: the count times the sum of squares, less the
+# square of the sum, which is the count squared times the squared distances
+# from the mean.
+function spread(total: Sums) -> [i64]
+    return big.sub(
+        left: big.mul(left: big.of(total.count), right: total.squares),
+        right: big.mul(left: total.total.magnitude, right: total.total.magnitude)
+    )
+
+# The variance of `data` around its own mean, over the count less one where
+# `sample`, otherwise over the count; its square root where `root_of`.
+function variance_of(data: [f64], sample: bool, root_of: bool) -> f64?
+    least: i64 @= 1
+
+    if sample
+        least @ 2
+
+    if data.len() < least
+        return fail(code: INVALID, msg: f"a variance needs at least {least} values, and the data hold {data.len()}")
+
+    match spread_not_finite(data)
+        .ok x  => return ok(x)
+        .err _ => _ = 0
+
+    total = sums(data)
+    others: i64 @= total.count
+
+    if sample
+        others @ total.count - 1
+    over = big.mul(left: big.of(total.count), right: big.of(others))
+
+    if root_of
+        return root_of_ratio(numerator: spread(total), denominator: over, exponent: total.exponent)
+    return ratio(numerator: spread(total), denominator: over, exponent: 2 * total.exponent, negative: false)
+
+# The harmonic mean of `data`: the count over the exact sum of the floats
+# `1.0 / x`, rounded once.
+function harmonic_mean(data: [f64]) -> f64?
+    if data.len() == 0
+        return fail(code: INVALID, msg: "the harmonic mean of no value: the data are empty")
+    inverses: [f64] @= []
+    zero: f64 = 0.0
+
+    for x in data
+        if math.is_nan(x)
+            return ok(x)
+
+        if x < 0.0
+            return fail(code: INVALID, msg: f"the harmonic mean of a negative value, {x}")
+
+        if x == 0.0
+            return ok(zero)
+        inverses @ inverses.push(1.0 / x)
+
+    if data.len() == 1
+        return ok(data[0])
+    total = sums(inverses)
+
+    if total.total.magnitude.len() == 0
+        return ok(1.0 / zero)
+    return ratio(
+        numerator: big.of(total.count),
+        denominator: total.total.magnitude,
+        exponent: -total.exponent,
+        negative: false
+    )
+
+test "parts: one, a half, a negative, the largest float and the smallest subnormal, exactly"
+    one = parts(1.0)
+    assert one.mantissa == 4503599627370496 && one.exponent == -52 && !one.negative
+    assert parts(0.5).exponent == -53
+    assert parts(-3.0).negative && parts(-3.0).mantissa == 6755399441055744
+    largest = parts(math.scale(1.9999999999999998, 1023))
+    assert largest.mantissa == 9007199254740991 && largest.exponent == 971
+    tiny = parts(math.scale(1.0, -1074))
+    assert tiny.mantissa == 4503599627370496 && tiny.exponent == -1126
+
+test "rounded: exact, below a half, a tie to even each way, just above a half, and past the largest"
+    assert rounded(kept: 36028797018963968, inexact: false, exponent: -55, negative: false).must() == 1.0
+    assert rounded(kept: 36028797018963969, inexact: false, exponent: -55, negative: false).must() == 1.0
+    assert rounded(kept: 36028797018963972, inexact: false, exponent: -55, negative: false).must() == 1.0
+    assert rounded(kept: 36028797018963972, inexact: true, exponent: -55, negative: false).must() == 1.0000000000000002
+    assert rounded(kept: 36028797018963980, inexact: false, exponent: -55, negative: true).must() == -1.0000000000000004
+    assert rounded(kept: 36028797018963968, inexact: false, exponent: 970, negative: false).is_err()
+
+test "rounded: into the subnormals, the smallest of them, and below its half"
+    assert rounded(kept: 36028797018963968, inexact: false, exponent: -1129, negative: false).must() == math.scale(1.0, -1074)
+    assert rounded(kept: 36028797018963968, inexact: false, exponent: -1130, negative: false).must() == 0.0
+    assert rounded(kept: 36028797018963968, inexact: true, exponent: -1130, negative: false).must() == math.scale(1.0, -1074)
+    assert rounded(kept: 36028797018963968, inexact: false, exponent: -2000, negative: false).must() == 0.0
+
+test "root: zero, perfect squares, and one below a square"
+    assert root(big.of(0)) == 0
+    assert root(big.of(49)) == 7
+    assert root(big.of(48)) == 6
+    assert root(big.mul(left: big.of(4294967311), right: big.of(4294967311))) == 4294967311
+
+test "mean: one value, tenths that a running sum misses, values that a float sum overflows, and minus zero, as Python's mean"
+    assert mean([2.5]).must() == 2.5
+    assert mean([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]).must() == 0.1
+    huge = math.scale(1.0, 1023)
+    assert mean([huge, huge, -huge]).must() == huge / 3.0
+    zero: f64 = 0.0
+    assert !math.has_minus_sign(mean([-zero]).must())
+    tiny = math.scale(1.0, -1074)
+    assert mean([tiny, 0.0]).must() == 0.0
+    assert mean([tiny, tiny, 0.0]).must() == tiny
+
+test "mean: no value fails invalid, a nan and both infinities answer a nan, one infinity answers itself"
+    nothing: [f64] = []
+    assert mean(nothing).is_err()
+    zero: f64 = 0.0
+    assert math.is_nan(mean([zero / zero, 1.0]).must())
+    assert math.is_nan(mean([1.0 / zero, -1.0 / zero]).must())
+    assert mean([-1.0 / zero, 1.0]).must() == -1.0 / zero
+
+test "variance_of: Python's variance, pvariance, stdev and pstdev on small data and on data a float sum overflows"
+    assert variance_of([1.0, 2.0, 4.0], sample: true, root_of: false).must() == 2.3333333333333335
+    assert variance_of([1.0, 2.0, 4.0], sample: true, root_of: true).must() == 1.5275252316519468
+    assert variance_of([3.0], sample: false, root_of: false).must() == 0.0
+    assert variance_of([3.0], sample: false, root_of: true).must() == 0.0
+    huge = math.scale(1.0, 1023)
+    assert variance_of([huge, -huge], sample: true, root_of: true).must() == math.sqrt(2.0) * huge
+    assert variance_of([huge, -huge], sample: true, root_of: false).is_err()
+    assert variance_of([math.scale(1.0, -1074), 0.0], sample: false, root_of: false).must() == 0.0
+
+test "variance_of: too few values fail invalid, infinities answer a positive infinity or a nan"
+    assert variance_of([1.0], sample: true, root_of: false).is_err()
+    nothing: [f64] = []
+    assert variance_of(nothing, sample: false, root_of: false).is_err()
+    zero: f64 = 0.0
+    assert variance_of([-1.0 / zero, 1.0], sample: true, root_of: false).must() == 1.0 / zero
+    assert math.is_nan(variance_of([1.0 / zero, -1.0 / zero], sample: true, root_of: true).must())
+
+test "harmonic_mean: Python's on tenths, one value, a zero, a negative, and huge values"
+    assert harmonic_mean([0.1, 0.2, 0.3]).must() == 0.16363636363636364
+    assert harmonic_mean([3.0]).must() == 3.0
+    assert harmonic_mean([0.0, 1.0]).must() == 0.0
+    assert harmonic_mean([-1.0, 1.0]).is_err()
+    huge = math.scale(1.0, 1023)
+    assert harmonic_mean([huge, huge]).must() == huge

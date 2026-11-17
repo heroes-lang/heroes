@@ -1,0 +1,78 @@
+# Text in Latin-1 (ISO 8859-1), the one gzip writes a name and a comment in
+# (RFC 1952 section 2.3.1): one byte per character, U+0000 to U+00FF, the
+# byte 0 ending the field. A `str` is UTF-8, so a character of Latin-1 past
+# U+007F is two bytes of it and one byte of Latin-1.
+
+use bytes
+use compress/internal/codes
+
+# The Latin-1 bytes of `s`, which `what` names in a message. Fails `invalid`
+# where `s` holds U+0000, which would end the field, or a character past
+# U+00FF, which Latin-1 has no byte for.
+function to_latin(s: str, what: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        lead = s[at]
+
+        if lead == 0
+            return fail(code: codes.INVALID, msg: f"{what} holds U+0000, which would end it in a gzip header")
+
+        if lead < 0x80
+            out @ out.push(lead)
+            at @ at + 1
+        else if lead == 0xc2 || lead == 0xc3
+            high = to_i64(lead).must() & 0x1f
+            low = to_i64(s[at + 1]).must() & 0x3f
+            out @ out.push(to_u8(high << 6 | low).must())
+            at @ at + 2
+        else
+            return fail(
+                code: codes.INVALID,
+                msg: f"{what} holds a character past U+00FF, which a gzip header cannot write"
+            )
+
+    return ok(out)
+
+# The text of `latin`, Latin-1 bytes: each byte past 0x7f becomes the two
+# bytes of its character in UTF-8, so every byte is a character.
+function from_latin(latin: [u8] lent) -> str
+    out: [u8] @= []
+
+    for b in latin
+        if b < 0x80
+            out @ out.push(b)
+        else
+            value = to_i64(b).must()
+            out @ out.push(to_u8(0xc0 | value >> 6).must())
+            out @ out.push(to_u8(0x80 | value & 0x3f).must())
+
+    # Every byte above was made a character of UTF-8 just now.
+    return bytes.to_text(out).must()
+
+test "to_latin: empty, ASCII, the characters of two bytes, and the edges"
+    assert to_latin(s: "", what: "the name").must().len() == 0
+    assert to_latin(s: "a.txt", what: "the name").must() == [0x61, 0x2e, 0x74, 0x78, 0x74]
+    assert to_latin(s: "é", what: "the name").must() == [0xe9]
+    assert to_latin(s: "¡ÿ", what: "the name").must() == [0xa1, 0xff]
+
+test "to_latin: a character past U+00FF, of two, three and four bytes"
+    for s in ["Ā", "☃", "😀"]
+        match to_latin(s: s, what: "the name")
+            .ok _ => assert false
+            .err e =>
+                assert e.code == "invalid"
+                assert e.msg == "the name holds a character past U+00FF, which a gzip header cannot write"
+
+test "from_latin: empty, ASCII, and every byte past 0x7f"
+    none: [u8] = []
+    assert from_latin(none) == ""
+    assert from_latin([0x61, 0xe9]) == "aé"
+    high: [u8] @= []
+
+    for b in range(from: 0x80, to: 0x100)
+        high @ high.push(to_u8(b).must())
+
+    back = to_latin(s: from_latin(high), what: "a text").must()
+    assert back == high

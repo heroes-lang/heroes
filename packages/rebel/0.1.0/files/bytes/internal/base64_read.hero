@@ -1,0 +1,275 @@
+# Base 64 read back into bytes, strictly, so a text has one reading and given
+# bytes one text: nothing is skipped, a line end included, the padding must be
+# the one the bytes need, and the last character may set no bit that no byte
+# holds. Every failure is `invalid` and names the byte where the text stops
+# being base 64.
+
+use bytes/internal/base64
+use bytes/internal/codes
+use bytes/internal/raw
+
+# The alphabet `url` names, for a message.
+function alphabet_name(url: bool) -> str
+    if url
+        return "the alphabet safe in a URL"
+    return "the standard alphabet"
+
+# The value from 0 to 63 that `c` writes in the alphabet `url` names.
+function sextet(c: u8, url: bool) -> i64?
+    if c >= 'A' && c <= 'Z'
+        return ok(raw.widened(c - 'A'))
+
+    if c >= 'a' && c <= 'z'
+        return ok(raw.widened(c - 'a') + 26)
+
+    if c >= '0' && c <= '9'
+        return ok(raw.widened(c - '0') + 52)
+
+    if url && c == '-' || !url && c == '+'
+        return ok(62)
+
+    if url && c == '_' || !url && c == '/'
+        return ok(63)
+    return fail(code: codes.INVALID, msg: f"{raw.byte_shown(c)} is not of {alphabet_name(url)}")
+
+# The failure at byte `at` of the base 64, saying `what`.
+function refused(at: i64, what: str) -> [u8]?
+    return fail(code: codes.INVALID, msg: f"byte {at} of the base 64 {what}")
+
+# The bytes the base 64 `s` writes in the alphabet `url` names, padded where
+# `padded`, failing `invalid` at the first byte that breaks the form.
+function parsed(s: str, url: bool, padded: bool) -> [u8]?
+    out: [u8] @= []
+    group: i64 @= 0
+    held: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len() && s[at] != '='
+        match sextet(s[at], url)
+            .ok v =>
+                group @ group << 6 | v
+                held @ held + 1
+            .err e => return refused(at: at, what: f"is {e.msg}")
+
+        if held == 4
+            push_bytes(out: @out, group: group, count: 3)
+            group @ 0
+            held @ 0
+        at @ at + 1
+
+    data = at
+
+    if at < s.len()
+        _ = padding_checked(s: s, at: at, padded: padded)?
+    else if padded && held > 0
+        return refused(
+            at: data - held,
+            what: f"begins a last group of {held} characters, where padded base 64 holds groups of four"
+        )
+
+    if held == 1
+        return refused(at: data - 1, what: "is a group's only character, and one character writes no byte")
+    spare: i64 @= 0
+
+    if held == 2
+        spare @ 4
+
+    if held == 3
+        spare @ 2
+
+    if group & (1 << spare) - 1 != 0
+        last = s[data - 1]
+        written = base64.alphabet(url)[(group & 63) >> spare << spare]
+        return refused(
+            at: data - 1,
+            what: f"is {raw.byte_shown(last)}, which sets bits that no byte holds: the same bytes end in {raw.byte_shown(written)}"
+        )
+
+    if held > 1
+        push_bytes(out: @out, group: group >> spare << 24 - 6 * held + spare, count: held - 1)
+    return ok(out)
+
+# Adds the first `count` bytes of the 24 bits of `group`, from the highest, at
+# the end of `out`.
+function push_bytes(@out: [u8], group: i64, count: i64)
+    shift: i64 @= 16
+    k: i64 @= 0
+
+    while k < count
+        # Eight bits make a value from 0 to 255.
+        out @ out.push(to_u8(group >> shift & 255).must())
+        shift @ shift - 8
+        k @ k + 1
+
+# Whether the padding of `s`, its first "=" at `at`, is the one its last
+# group needs and ends the text, failing at the first byte where it is not.
+function padding_checked(s: str, at: i64, padded: bool) -> bool?
+    if !padded
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at} of the base 64 is \"=\", padding, which unpadded base 64 does not have"
+        )
+    place = at % 4
+
+    if place < 2
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at} of the base 64 is \"=\", padding, where a group of four holds {place} characters and padding follows two or three"
+        )
+    need = 4 - place
+    k: i64 @= 1
+
+    while k < need
+        if at + k == s.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"the base 64 ends at byte {s.len()}, inside its padding: a last group of {place} characters is padded with {need} \"=\""
+            )
+
+        if s[at + k] != '='
+            return fail(
+                code: codes.INVALID,
+                msg: f"byte {at + k} of the base 64 is {raw.byte_shown(s[at + k])}, inside the padding, where only \"=\" may stand"
+            )
+        k @ k + 1
+
+    if at + need < s.len()
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at + need} of the base 64 is {raw.byte_shown(s[at + need])}, after the padding, which ends the text"
+        )
+    return ok(true)
+
+## Tests
+
+test "parsed reads back what formatted writes, every byte value, every length to 7, in the four forms"
+    every: [u8] @= []
+    k: i64 @= 0
+
+    while k < 256
+        every @ every.push(to_u8(255 - k).must())
+        k @ k + 1
+
+    length: i64 @= 0
+
+    while length <= 7
+        part = every.slice(from: 0, to: length)
+
+        for url in [false, true]
+            for padded in [false, true]
+                assert parsed(base64.formatted(part, url: url, padded: padded), url: url, padded: padded).must() == part
+
+        length @ length + 1
+
+    assert parsed(base64.formatted(every, url: false, padded: true), url: false, padded: true).must() == every
+
+# Python's `b64decode(validate=True)` answered the first four, and with
+# `canonical=True` refused "Zh==" and "Zm9="; Go's `StdEncoding.Strict()`
+# refused them too, at the "=".
+test "parsed, standard and padded: what it reads, and the bits no byte holds refused"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert parsed("", url: false, padded: true).must() == nothing
+    assert parsed("Zm9v", url: false, padded: true).must() == t("foo")
+    assert parsed("Zg==", url: false, padded: true).must() == t("f")
+    assert parsed("Zm8=", url: false, padded: true).must() == t("fo")
+
+    match parsed("Zh==", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 1 of the base 64 is \"h\", which sets bits that no byte holds: the same bytes end in \"g\""
+
+    match parsed("Zm9=", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of the base 64 is \"9\", which sets bits that no byte holds: the same bytes end in \"8\""
+
+# Go's `StdEncoding.Strict()` named the same byte for each of these on
+# 2026-11-15: 1, 1, 4, 3, 1, 4 and 0.
+test "parsed, standard and padded, fails invalid at the byte: outside the alphabet, padding misplaced, short, followed"
+    match parsed("Z!9v", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 1 of the base 64 is \"!\" is not of the standard alphabet"
+
+    match parsed("Z=9v", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 1 of the base 64 is \"=\", padding, where a group of four holds 1 characters and padding follows two or three"
+
+    match parsed("Zg==Zg==", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4 of the base 64 is \"Z\", after the padding, which ends the text"
+
+    match parsed("Zg=", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "the base 64 ends at byte 3, inside its padding: a last group of 2 characters is padded with 2 \"=\""
+
+    match parsed("Zm9vY", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4 of the base 64 begins a last group of 1 characters, where padded base 64 holds groups of four"
+
+    match parsed("Zg", url: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 64 begins a last group of 2 characters, where padded base 64 holds groups of four"
+
+    assert parsed("Z===", url: false, padded: true).is_err()
+    assert parsed("Zm9v\n", url: false, padded: true).is_err()
+    assert parsed("Zg=a", url: false, padded: true).is_err()
+    assert parsed("-_8=", url: false, padded: true).is_err()
+
+# Python's `b64decode(padded=False)` answered "f" for "Zg" and refused "Zg==";
+# Go's `RawStdEncoding.Strict()` named byte 4 for "Zm9vY" and 0 for "A".
+test "parsed, unpadded: what it reads, padding refused, a group of one, bits no byte holds"
+    t = raw.of_text
+    assert parsed("Zg", url: false, padded: false).must() == t("f")
+    assert parsed("AA", url: false, padded: false).must() == [0x00]
+    assert parsed("Zm9vYmE", url: false, padded: false).must() == t("fooba")
+
+    match parsed("Zg==", url: false, padded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of the base 64 is \"=\", padding, which unpadded base 64 does not have"
+
+    match parsed("Zm9vY", url: false, padded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4 of the base 64 is a group's only character, and one character writes no byte"
+
+    assert parsed("A", url: false, padded: false).is_err()
+    assert parsed("Zh", url: false, padded: false).is_err()
+
+# Python's `urlsafe_b64decode` read "+/8=" with a warning that it will not;
+# Go's `URLEncoding` refused it at byte 0.
+test "parsed, safe in a URL: its two characters read, the standard ones refused"
+    assert parsed("-_8=", url: true, padded: true).must() == [0xfb, 0xff]
+    assert parsed("-_8", url: true, padded: false).must() == [0xfb, 0xff]
+
+    match parsed("+/8=", url: true, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 64 is \"+\" is not of the alphabet safe in a URL"
+
+test "sextet and alphabet_name: the edges of the three ranges, the last two of each alphabet, and a stranger"
+    assert sextet('A', false).must() == 0 && sextet('Z', false).must() == 25
+    assert sextet('a', false).must() == 26 && sextet('z', false).must() == 51
+    assert sextet('0', false).must() == 52 && sextet('9', false).must() == 61
+    assert sextet('+', false).must() == 62 && sextet('/', false).must() == 63
+    assert sextet('-', true).must() == 62 && sextet('_', true).must() == 63
+    assert sextet('-', false).is_err() && sextet('+', true).is_err() && sextet('=', false).is_err()
+
+    match sextet('/', true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"/\" is not of " + alphabet_name(true)
+
+test "push_bytes and refused: the three bytes of a group, the first one, and a failure that names its byte"
+    out: [u8] @= []
+    push_bytes(out: @out, group: 0x00ff7f, count: 3)
+    push_bytes(out: @out, group: 0xab0000, count: 1)
+    assert out == [0x00, 0xff, 0x7f, 0xab]
+
+    match refused(at: 7, what: "is wrong")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 7 of the base 64 is wrong"
+
+test "padding_checked: two and one, unpadded, misplaced, cut short, and followed"
+    assert padding_checked(s: "Zg==", at: 2, padded: true).must()
+    assert padding_checked(s: "Zm8=", at: 3, padded: true).must()
+    assert padding_checked(s: "Zg==", at: 2, padded: false).is_err()
+    assert padding_checked(s: "Z===", at: 1, padded: true).is_err()
+    assert padding_checked(s: "Zg=", at: 2, padded: true).is_err()
+    assert padding_checked(s: "Zg=a", at: 2, padded: true).is_err()
+    assert padding_checked(s: "Zm8==", at: 3, padded: true).is_err()

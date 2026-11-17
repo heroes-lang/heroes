@@ -1,0 +1,248 @@
+# Fractions of two integers kept in lowest terms with the sign on the
+# numerator: their arithmetic, their order, their exact decimal scale, the
+# nearest fraction under a bound on the denominator by continued fractions,
+# and their text.
+
+use big/internal/decimal
+use big/internal/decimal_text
+use big/internal/floats
+use big/internal/limbs
+use big/internal/product
+use big/internal/quotient
+use big/internal/signed
+use big/internal/text
+use big/internal/theory
+
+constant INVALID: str
+    "invalid"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# A fraction in lowest terms, `den` above zero.
+record Frac
+    num: signed.Signed
+    den: signed.Signed
+
+# `num` over `den`, not zero, in lowest terms.
+function make(num: signed.Signed, den: signed.Signed) -> Frac
+    assert den.magnitude.len() > 0
+    g = theory.gcd(a: num.magnitude, b: den.magnitude)
+    n = quotient.divide(n: num.magnitude, by: g).quotient
+    d = quotient.divide(n: den.magnitude, by: g).quotient
+    return Frac(
+        num: signed.make(negative: num.negative != den.negative, magnitude: n),
+        den: signed.make(negative: false, magnitude: d)
+    )
+
+# The whole number `n` as a fraction.
+function whole(n: signed.Signed) -> Frac
+    return Frac(num: n, den: signed.of_int(1))
+
+# `a` plus `b`.
+function add(a: Frac, b: Frac) -> Frac
+    top = signed.add(a: signed.mul(a: a.num, b: b.den), b: signed.mul(a: b.num, b: a.den))
+    return make(num: top, den: signed.mul(a: a.den, b: b.den))
+
+# `a` less `b`.
+function sub(a: Frac, b: Frac) -> Frac
+    return add(a: a, b: Frac(num: signed.negate(b.num), den: b.den))
+
+# `a` times `b`.
+function mul(a: Frac, b: Frac) -> Frac
+    return make(num: signed.mul(a: a.num, b: b.num), den: signed.mul(a: a.den, b: b.den))
+
+# `a` divided by `b`, not zero.
+function div(a: Frac, b: Frac) -> Frac
+    assert b.num.magnitude.len() > 0
+    return make(num: signed.mul(a: a.num, b: b.den), den: signed.mul(a: a.den, b: b.num))
+
+# -1, 0 or 1 as `a` is below `b`, equal, or above.
+function compare(a: Frac, b: Frac) -> i64
+    return signed.compare(a: signed.mul(a: a.num, b: b.den), b: signed.mul(a: b.num, b: a.den))
+
+# `f` to the power `k`; a negative `k` raises the inverse, `f` not zero.
+function power(f: Frac, k: i64) -> Frac
+    if k >= 0
+        n = product.power(a: f.num.magnitude, exponent: k)
+        d = product.power(a: f.den.magnitude, exponent: k)
+        return Frac(
+            num: signed.make(negative: f.num.negative && k & 1 == 1, magnitude: n),
+            den: signed.make(negative: false, magnitude: d)
+        )
+    assert f.num.magnitude.len() > 0
+    inverse = Frac(num: signed.make(negative: f.num.negative, magnitude: f.den.magnitude), den: signed.abs(f.num))
+    return power(f: inverse, k: -k)
+
+# The fewest digits after the point that write `f` exactly. Fails
+# `does_not_fit` where its denominator holds a prime other than 2 and 5.
+function exact_scale(f: Frac) -> i64?
+    twos = limbs.trailing_zeros(f.den.magnitude)
+    rest: [i64] @= limbs.shift_right(a: f.den.magnitude, count: twos)
+    fives: i64 @= 0
+
+    while true
+        cut = limbs.divided_small(a: rest, d: 5)
+
+        if cut.remainder != 0
+            break
+        rest @ cut.quotient
+        fives @ fives + 1
+
+    if rest != [1]
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: "the denominator holds a prime other than 2 and 5, so no decimal writes the fraction exactly"
+        )
+
+    if twos > fives
+        return ok(twos)
+    return ok(fives)
+
+# The value of `d` as a fraction.
+function of_decimal(d: decimal.Dec) -> Frac
+    if d.scale <= 0
+        return whole(decimal.scaled_up(s: d.unscaled, k: -d.scale))
+    return make(num: d.unscaled, den: signed.make(negative: false, magnitude: decimal.ten_to(d.scale)))
+
+# The exact fraction of the float whose parts are `parts`, of sign `negative`.
+function of_float(parts: floats.Parts, negative: bool) -> Frac
+    m = limbs.of(parts.mantissa)
+
+    if parts.exponent >= 0
+        return whole(signed.make(negative: negative, magnitude: limbs.shift_left(a: m, count: parts.exponent)))
+    den = limbs.shift_left(a: [1], count: -parts.exponent)
+    return Frac(num: signed.make(negative: negative, magnitude: m), den: signed.make(negative: false, magnitude: den))
+
+# The float nearest `f`, with `bits` bits of mantissa and `lowest` the
+# exponent of the smallest subnormal.
+function to_float(f: Frac, bits: i64, lowest: i64) -> f64
+    if f.num.magnitude.len() == 0
+        return 0.0
+    v = floats.nearest(num: f.num.magnitude, den: f.den.magnitude, bits: bits, lowest: lowest)
+
+    if f.num.negative
+        return -v
+    return v
+
+# The distance from `a` to `b`, without its sign.
+function distance(a: Frac, b: Frac) -> Frac
+    d = sub(a: a, b: b)
+    return Frac(num: signed.abs(d.num), den: d.den)
+
+# The fraction nearest `f` whose denominator is at most `max`, 1 or more, by
+# the convergents of its continued fraction and the best of the last two
+# semiconvergents.
+function approximate(f: Frac, max: signed.Signed) -> Frac
+    assert signed.compare(a: max, b: signed.of_int(1)) >= 0
+
+    if signed.compare(a: f.den, b: max) <= 0
+        return f
+    p0: signed.Signed @= signed.of_int(0)
+    q0: signed.Signed @= signed.of_int(1)
+    p1: signed.Signed @= signed.of_int(1)
+    q1: signed.Signed @= signed.of_int(0)
+    n: signed.Signed @= f.num
+    d: signed.Signed @= f.den
+
+    while true
+        a = signed.divide(n: n, by: d, mode: .floor).quotient
+        q2 = signed.add(a: q0, b: signed.mul(a: a, b: q1))
+
+        if signed.compare(a: q2, b: max) > 0
+            break
+        p2 = signed.add(a: p0, b: signed.mul(a: a, b: p1))
+        p0 @ p1
+        q0 @ q1
+        p1 @ p2
+        q1 @ q2
+        rest = signed.sub(a: n, b: signed.mul(a: a, b: d))
+        n @ d
+        d @ rest
+
+    k = signed.divide(n: signed.sub(a: max, b: q0), by: q1, mode: .floor).quotient
+    first = make(num: signed.add(a: p0, b: signed.mul(a: k, b: p1)), den: signed.add(a: q0, b: signed.mul(a: k, b: q1)))
+    second = make(num: p1, den: q1)
+
+    if compare(a: distance(a: second, b: f), b: distance(a: first, b: f)) <= 0
+        return second
+    return first
+
+# The fraction `s` spells: `n/d`, the denominator digits alone, or a decimal.
+function parse(s: str, limit: i64) -> Frac?
+    at: i64 @= 0
+
+    while at < s.len() && s[at] != '/'
+        at @ at + 1
+
+    if at == s.len()
+        return ok(of_decimal(decimal_text.parse(s: s, limit: limit)?))
+    num = text.parse(s: s.slice(from: 0, to: at), base: 10)?
+    den = text.magnitude_of(s: s, from: at + 1, base: 10, underscores: false)?
+
+    if den.len() == 0
+        return fail(code: INVALID, msg: "the denominator is zero")
+    return ok(make(num: num, den: signed.make(negative: false, magnitude: den)))
+
+# `f` as text: `n/d`, or `n` where the denominator is 1.
+function format(f: Frac) -> str
+    top = text.format(s: f.num, base: 10)
+
+    if f.den.magnitude == [1]
+        return top
+    return top + "/" + text.format(s: f.den, base: 10)
+
+## Tests
+
+# The fraction `n` over `d`.
+function frac(n: i64, d: i64) -> Frac
+    return make(num: signed.of_int(n), den: signed.of_int(d))
+
+test "make: lowest terms, the sign moved up, and zero"
+    assert frac(n: 6, d: -8) == Frac(num: signed.of_int(-3), den: signed.of_int(4))
+    assert frac(n: -6, d: -8) == Frac(num: signed.of_int(3), den: signed.of_int(4))
+    assert frac(n: 0, d: -5) == Frac(num: signed.of_int(0), den: signed.of_int(1))
+
+test "add, sub, mul, div, compare and power: signs, zero, and a negative power"
+    assert add(a: frac(n: 1, d: 2), b: frac(n: 1, d: 3)) == frac(n: 5, d: 6)
+    assert sub(a: frac(n: 1, d: 2), b: frac(n: 1, d: 2)) == frac(n: 0, d: 1)
+    assert mul(a: frac(n: -2, d: 3), b: frac(n: 3, d: 4)) == frac(n: -1, d: 2)
+    assert div(a: frac(n: 1, d: 2), b: frac(n: -1, d: 4)) == frac(n: -2, d: 1)
+    assert compare(a: frac(n: 1, d: 3), b: frac(n: 1, d: 2)) == -1
+    assert compare(a: frac(n: -1, d: 3), b: frac(n: -1, d: 2)) == 1
+    assert power(f: frac(n: -2, d: 3), k: -3) == frac(n: -27, d: 8)
+    assert power(f: frac(n: 5, d: 7), k: 0) == frac(n: 1, d: 1)
+
+test "exact_scale: whole, eighths, fiftieths, and a third"
+    assert exact_scale(frac(n: 4, d: 1)).must() == 0
+    assert exact_scale(frac(n: 1, d: 8)).must() == 3
+    assert exact_scale(frac(n: 3, d: 50)).must() == 2
+    assert exact_scale(frac(n: 1, d: 3)).is_err()
+
+test "approximate: within the bound, pi's convergents, a tie, and a negative"
+    assert approximate(f: frac(n: 3, d: 4), max: signed.of_int(10)) == frac(n: 3, d: 4)
+    pi = frac(n: 314159265, d: 100000000)
+    assert approximate(f: pi, max: signed.of_int(10)) == frac(n: 22, d: 7)
+    assert approximate(f: pi, max: signed.of_int(1000)) == frac(n: 355, d: 113)
+    assert approximate(f: frac(n: 1, d: 2), max: signed.of_int(1)) == frac(n: 0, d: 1)
+    assert approximate(f: frac(n: -1, d: 2), max: signed.of_int(1)) == frac(n: -1, d: 1)
+
+test "parse and format: a fraction, a decimal, an exponent, and what fails"
+    assert parse(s: "-6/8", limit: 999999).must() == frac(n: -3, d: 4)
+    assert parse(s: "1.25", limit: 999999).must() == frac(n: 5, d: 4)
+    assert parse(s: "1e-3", limit: 999999).must() == frac(n: 1, d: 1000)
+    assert parse(s: "3/0", limit: 999999).is_err()
+    assert parse(s: "3/-4", limit: 999999).is_err()
+    assert parse(s: "3/", limit: 999999).is_err()
+    assert parse(s: "/4", limit: 999999).is_err()
+    assert parse(s: "1.5/2", limit: 999999).is_err()
+    assert format(frac(n: -3, d: 4)) == "-3/4"
+    assert format(frac(n: 6, d: 3)) == "2"
+
+test "of_float, of_decimal and to_float: a tenth, a power of two, and a negative"
+    tenth = of_float(parts: floats.parts_of(0.1), negative: false)
+    assert format(tenth) == "3602879701896397/36028797018963968"
+    assert of_float(parts: floats.parts_of(8.0), negative: true) == frac(n: -8, d: 1)
+    assert of_decimal(decimal.Dec(unscaled: signed.of_int(150), scale: 2)) == frac(n: 3, d: 2)
+    assert of_decimal(decimal.Dec(unscaled: signed.of_int(15), scale: -2)) == frac(n: 1500, d: 1)
+    assert to_float(f: frac(n: -1, d: 3), bits: 53, lowest: -1074) == -1.0 / 3.0

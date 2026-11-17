@@ -1,0 +1,150 @@
+# The rules for parsing tokens in foreign content (13.2.6.5): what SVG and
+# MathML hold, the HTML tags that break out of them, and the integration
+# points where HTML goes on inside them.
+
+use html/internal/ascii
+use html/internal/builder
+use html/internal/dom
+use html/internal/insert
+use html/internal/token
+use unicode
+
+# Whether `node` is a MathML text integration point: `mi`, `mo`, `mn`, `ms`
+# or `mtext`.
+function is_mathml_text_point(t: dom.Tree lent, node: i64) -> bool
+    if t.spaces[node] != dom.MATHML
+        return false
+
+    return match t.names[node]
+        "mi" | "mo" | "mn" | "ms" | "mtext" => true
+        _                                   => false
+
+# Whether `node` is an HTML integration point: SVG's `foreignObject`, `desc`
+# and `title`, and MathML's `annotation-xml` of an HTML encoding.
+function is_html_point(t: dom.Tree lent, node: i64) -> bool
+    space = t.spaces[node]
+    name = t.names[node]
+
+    if space == dom.SVG
+        return name == "foreignObject" || name == "desc" || name == "title"
+
+    if space == dom.MATHML && name == "annotation-xml"
+        encoding = ascii.to_lower(dom.attribute_of(t, node, "encoding").default(""))
+        return encoding == "text/html" || encoding == "application/xhtml+xml"
+    return false
+
+# Whether a start tag named `name` leaves foreign content.
+function breaks_out(t: token.Token lent) -> bool
+    if t.name == "font"
+        return token.has_attribute(t, "color") || token.has_attribute(t, "face") || token.has_attribute(t, "size")
+
+    return match t.name
+        "b" | "big" | "blockquote" | "body" | "br" | "center" | "code" | "dd" | "div" | "dl" | "dt" | "em" | "embed" => true
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "head" | "hr" | "i" | "img" | "li" | "listing" | "menu" | "meta" => true
+        "nobr" | "ol" | "p" | "pre" | "ruby" | "s" | "small" | "span" | "strong" | "strike" | "sub" | "sup" => true
+        "table" | "tt" | "u" | "ul" | "var"                                                                 => true
+        _                                                                                                   => false
+
+# 13.2.6.5, the rules for parsing tokens in foreign content.
+function foreign(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        s = t.data
+        pieces: [str] @= []
+        run: i64 @= 0
+        other: bool @= false
+
+        for i in range(from: 0, to: s.len())
+            if s[i] == 0
+                builder.error(@b, "unexpected-null-character", t)
+                pieces @ pieces.push(s.slice(from: run, to: i))
+                pieces @ pieces.push(unicode.REPLACEMENT_CHARACTER)
+                run @ i + 1
+            else if !ascii.is_white(s[i])
+                other @ true
+
+        pieces @ pieces.push(s.slice(from: run, to: s.len()))
+        insert.text(@b, pieces.join(""))
+
+        if other
+            b.frameset_ok @ false
+        return .done
+
+    if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+
+    if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+
+    if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+
+    if t.kind == token.START && breaks_out(t) || t.kind == token.END && (t.name == "br" || t.name == "p")
+        builder.unexpected(@b, t)
+
+        while b.depth > 1
+            node = builder.current(b)
+
+            if is_mathml_text_point(b.tree, node) || is_html_point(b.tree, node) || b.tree.spaces[node] == dom.HTML
+                break
+            builder.pop(@b)
+
+        return .using(mode: b.mode)
+
+    if t.kind == token.START
+        adjusted = builder.adjusted_current(b)
+        space = b.tree.spaces[adjusted]
+
+        if space == dom.MATHML
+            t.attributes @ insert.adjust_mathml(t.attributes)
+
+        if space == dom.SVG
+            t.name @ insert.svg_name(t.name)
+            t.attributes @ insert.adjust_svg(t.attributes)
+        t.attributes @ insert.adjust_foreign(t.attributes)
+        _ = insert.element_for(@b, t, space)
+
+        if t.self_closing
+            builder.acknowledge(@b)
+            builder.pop(@b)
+        return .done
+
+    if t.kind == token.END
+        current = builder.current(b)
+
+        if t.name == "script" && b.tree.spaces[current] == dom.SVG && b.tree.names[current] == "script"
+            builder.pop(@b)
+            return .done
+        i: i64 @= b.depth - 1
+
+        if ascii.to_lower(b.tree.names[b.open[i]]) != t.name
+            builder.error(@b, "unexpected-end-tag", t)
+
+        while i > 0
+            node = b.open[i]
+
+            if ascii.to_lower(b.tree.names[node]) == t.name
+                builder.pop_until_node(@b, node)
+                return .done
+            i @ i - 1
+
+            if b.tree.spaces[b.open[i]] == dom.HTML
+                return .using(mode: b.mode)
+
+        return .done
+    return .done
+
+## Tests
+
+test "breaks_out: the HTML tags that leave foreign content, and `font` only with its attributes"
+    plain = token.tag(kind: token.START, name: "font", attributes: [], at: 0)
+    sized = token.tag(
+        kind: token.START,
+        name: "font",
+        attributes: [dom.Attr(space: dom.NO_SPACE, name: "size", value: "2")],
+        at: 0
+    )
+    assert breaks_out(token.tag(kind: token.START, name: "p", attributes: [], at: 0)) && !breaks_out(plain) && breaks_out(sized)
+    assert !breaks_out(token.tag(kind: token.START, name: "circle", attributes: [], at: 0))

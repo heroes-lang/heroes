@@ -1,0 +1,168 @@
+# Text written as escapes and escapes read back: a byte written "%" and two
+# upper-case hexadecimal digits (RFC 3986 § 2.1), each part of a URL keeping
+# its own set of bytes as themselves.
+#
+# Every function here builds its answer as a list of bytes and validates it
+# once, so a long text costs one pass. What it writes is ASCII, which is why
+# the escaping functions may take the text of their bytes as an invariant.
+
+use url/internal/classes
+
+# Adds `b` to `out`, as itself where `keeps` accepts it, as "+" where it is a
+# space and `plus` is true, and as its escape otherwise.
+function put(@out: [u8], b: u8, keeps: (function(u8) -> bool), plus: bool)
+    if plus && b == ' '
+        out @ out.push('+')
+    else if keeps(b)
+        out @ out.push(b)
+    else
+        put_escape(@out, b)
+
+# Adds the escape of `b` to `out`: "%" and two upper-case hexadecimal digits.
+function put_escape(@out: [u8], b: u8)
+    out @ out.push('%')
+    out @ out.push(classes.hex_digit(b / 16))
+    out @ out.push(classes.hex_digit(b % 16))
+
+# `s` with every byte `keeps` refuses written as its escape, and a space as
+# "+" where `plus` is true. `keeps` accepts ASCII bytes alone, so a character
+# of more than one byte is escaped byte by byte.
+function escape(s: str, keeps: (function(u8) -> bool), plus: bool) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        put(@out, b: s[at], keeps: keeps, plus: plus)
+        at @ at + 1
+
+    return out.validated_bytes().must()
+
+# `data` with every byte `keeps` refuses written as its escape.
+function escape_list(data: [u8], keeps: (function(u8) -> bool)) -> str
+    out: [u8] @= []
+
+    for b in data
+        put(@out, b: b, keeps: keeps, plus: false)
+
+    return out.validated_bytes().must()
+
+# Whether a valid escape begins at `at` in `s`: a "%" and two hexadecimal
+# digits.
+function escape_at(s: str, at: i64) -> bool
+    return s[at] == '%' && at + 2 < s.len() && classes.is_hex(s[at + 1]) && classes.is_hex(s[at + 2])
+
+# `s`, a raw part of a URL, with every byte `keeps` refuses written as its
+# escape: a "%" that begins an escape stays, one that begins none is written
+# "%25", and every escape is left as it is written.
+function escape_raw(s: str, keeps: (function(u8) -> bool)) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        if escape_at(s: s, at: at)
+            out @ out.push('%')
+            out @ out.push(s[at + 1])
+            out @ out.push(s[at + 2])
+            at @ at + 3
+        else
+            put(@out, b: s[at], keeps: keeps, plus: false)
+            at @ at + 1
+
+    return out.validated_bytes().must()
+
+# The bytes `s` stands for: each "%" and two hexadecimal digits one byte, a
+# "+" a space where `plus` is true, and every other byte itself. Fails
+# `invalid` where a "%" is not followed by two hexadecimal digits.
+function decode(s: str, plus: bool) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == '%'
+            if !escape_at(s: s, at: at)
+                return fail(
+                    code: classes.INVALID,
+                    msg: f"byte {at} of {classes.shown(s)}: a \"%\" not followed by two hexadecimal digits; a \"%\" as itself is written \"%25\""
+                )
+            out @ out.push(classes.hex_value(s[at + 1]) * 16 + classes.hex_value(s[at + 2]))
+            at @ at + 3
+        else if plus && b == '+'
+            out @ out.push(' ')
+            at @ at + 1
+        else
+            out @ out.push(b)
+            at @ at + 1
+
+    return ok(out)
+
+# The text `s` stands for, read as `decode` reads it. Fails `invalid` as
+# `decode` does, and `not_text` where the bytes are not UTF-8. A text with
+# nothing to decode is answered as it is, with no copy.
+function unescape(s: str, plus: bool) -> str?
+    at: i64 @= 0
+
+    while at < s.len() && s[at] != '%' && !(plus && s[at] == '+')
+        at @ at + 1
+
+    if at == s.len()
+        return ok(s)
+    data = decode(s: s, plus: plus)?
+
+    match data.validated_bytes()
+        .ok text => return ok(text)
+        .err _ => return fail(
+            code: classes.NOT_TEXT,
+            msg: f"{classes.shown(s)}: its escapes write bytes that are not UTF-8"
+        )
+
+## Tests
+
+test "escape: empty, unreserved alone, a space with and without plus, a character of two bytes"
+    assert escape(s: "", keeps: classes.is_unreserved, plus: false) == ""
+    assert escape(s: "aZ0-._~", keeps: classes.is_unreserved, plus: false) == "aZ0-._~"
+    assert escape(s: "a b", keeps: classes.is_unreserved, plus: false) == "a%20b"
+    assert escape(s: "a b+", keeps: classes.is_unreserved, plus: true) == "a+b%2B"
+    assert escape(s: "café", keeps: classes.is_unreserved, plus: false) == "caf%C3%A9"
+    assert escape(s: "/?", keeps: classes.in_fragment_data, plus: false) == "/?"
+
+test "escape_list: no byte, the zero byte, the largest, and a kept one"
+    nothing: [u8] = []
+    assert escape_list(data: nothing, keeps: classes.is_unreserved) == ""
+    assert escape_list(data: [0, 255, 65, 47, 126], keeps: classes.is_unreserved) == "%00%FFA%2F~"
+
+test "escape_raw: an escape kept, a stray percent, a percent at the end, a space"
+    assert escape_raw(s: "a%2Fb", keeps: classes.in_path) == "a%2Fb"
+    assert escape_raw(s: "a%zz", keeps: classes.in_path) == "a%25zz"
+    assert escape_raw(s: "50%", keeps: classes.in_path) == "50%25"
+    assert escape_raw(s: "%4", keeps: classes.in_path) == "%254"
+    assert escape_raw(s: "a b#", keeps: classes.in_path) == "a%20b%23"
+
+test "decode: nothing, an escape of either case, plus, a stray percent, a short escape"
+    nothing: [u8] = []
+    assert decode(s: "", plus: false).must() == nothing
+    assert decode(s: "%e4%BD%a0", plus: false).must() == [0xe4, 0xbd, 0xa0]
+    assert decode(s: "a+b", plus: false).must() == ['a', '+', 'b']
+    assert decode(s: "a+b", plus: true).must() == ['a', ' ', 'b']
+    assert decode(s: "%FF", plus: false).must() == [0xff]
+
+    match decode(s: "a%zz", plus: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 1 of \"a%zz\": a \"%\" not followed by two hexadecimal digits; a \"%\" as itself is written \"%25\""
+
+    match decode(s: "%4", plus: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "unescape: nothing to decode, a character of three bytes, the zero byte, bytes that are not UTF-8"
+    assert unescape(s: "", plus: false).must() == ""
+    assert unescape(s: "a b", plus: false).must() == "a b"
+    assert unescape(s: "%e4%bd%a0", plus: false).must() == "你"
+    assert unescape(s: "a%20b+c", plus: false).must() == "a b+c"
+    assert unescape(s: "a%20b+c", plus: true).must() == "a b c"
+    assert unescape(s: "%00", plus: false).must().len() == 1
+
+    match unescape(s: "%FF", plus: false)
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "\"%FF\": its escapes write bytes that are not UTF-8"

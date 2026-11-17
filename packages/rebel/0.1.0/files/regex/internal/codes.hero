@@ -1,0 +1,74 @@
+# The codes `regex` fails with, for its private modules, and how a failure of
+# a pattern or a template says where it stands.
+
+# The code of a pattern or a template this package does not read.
+constant INVALID: str
+    "invalid"
+
+# The code of a pattern past one of the package's bounds.
+constant LIMIT: str
+    "limit"
+
+# The code of a search that found nothing, and of a group that took no part.
+constant NOT_FOUND: str
+    "not_found"
+
+# The longest text a message quotes whole; a longer one is told by its length.
+constant QUOTED_MAX: i64
+    60
+
+# Where the byte `at` of `text` stands, for a message: `text` quoted where it
+# is short, its length where it is not.
+#
+# - `text`: the pattern or the template.
+# - `at`: the byte the message is about.
+function place(text: str, at: i64) -> str
+    if text.len() > QUOTED_MAX
+        return f"at byte {at} of {text.len()} bytes"
+    return f"at byte {at} of \"{text}\""
+
+# A failure `invalid` of a pattern: what is wrong, then where.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where the fault begins.
+# - `why`: what is wrong there, in words a reader can act on.
+function invalid<T>(pattern: str, at: i64, why: str) -> T?
+    return fail(code: INVALID, msg: f"{why}, {place(pattern, at)}")
+
+# A failure `limit` of a pattern: which bound, then where.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where the bound was passed.
+# - `why`: the bound, and what passed it.
+function limit<T>(pattern: str, at: i64, why: str) -> T?
+    return fail(code: LIMIT, msg: f"{why}, {place(pattern, at)}")
+
+# The value of a byte as an `i64`, which every byte fits.
+#
+# - `b`: the byte.
+function wide(b: u8) -> i64
+    return to_i64(b).must()
+
+## Tests
+
+test "place: a short text quoted, a long one told by its length"
+    assert place("a(b", 1) == "at byte 1 of \"a(b\""
+    assert place(repeat("a", 61), 3) == "at byte 3 of 61 bytes"
+    assert place("", 0) == "at byte 0 of \"\""
+
+test "invalid and limit: the code, the reason and the place"
+    bad: i64? = invalid(pattern: "*", at: 0, why: "nothing to repeat")
+
+    match bad
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "nothing to repeat, at byte 0 of \"*\""
+
+    big: i64? = limit(pattern: "a{2000}", at: 1, why: "too many")
+
+    match big
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "too many, at byte 1 of \"a{2000}\""
+
+test "wide: the smallest and the largest byte"
+    assert wide(0) == 0
+    assert wide(255) == 255

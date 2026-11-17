@@ -1,0 +1,241 @@
+# One header of a tar archive, a block of 512 bytes, read: the ustar layout
+# of POSIX.1-1988 with its prefix, the old GNU and v7 layouts, numbers in
+# octal or in GNU's base 256, and the PAX records of POSIX.1-2001 that say
+# what a header cannot. Text in a header that is not UTF-8 is read as
+# Latin-1, one character a byte, so every name is a text. `tar_format`
+# writes them.
+
+use archive/internal/codes
+use bytes
+
+# The size of a header, and the unit data is padded to.
+constant BLOCK: i64
+    512
+
+# The largest special entry read (PAX records, a GNU long name): 1 MiB.
+constant SPECIAL_MOST: i64
+    1048576
+
+# The largest number eleven octal digits hold: a size or a time in ustar.
+constant OCTAL_11: i64
+    8589934591
+
+# The largest number seven octal digits hold: an id in ustar.
+constant OCTAL_7: i64
+    2097151
+
+# What a tar header says, PAX records applied.
+record Header
+    # The entry's path, its parts joined by `/`.
+    name: str
+    # The type flag byte: `'0'` a file, `'5'` a directory, and the rest.
+    flag: i64
+    # The data's size in bytes.
+    size: i64
+    # The permission bits, 0 to 0o7777.
+    mode: i64
+    # When it was last changed: whole seconds since 1970 UTC.
+    modified: i64
+    # And the nanoseconds past them, 0 to 999,999,999.
+    nanos: i64
+    # A link's target, "" for none.
+    link: str
+    # The owner's and the group's numbers and names.
+    user_id: i64
+    # The group's number.
+    group_id: i64
+    # The owner's name.
+    user_name: str
+    # The group's name.
+    group_name: str
+    # A device's numbers.
+    major: i64
+    # And its minor number.
+    minor: i64
+    # The PAX records no field above holds.
+    records: {str: str}
+
+# A header that says nothing: a file of no bytes named "".
+function empty() -> Header
+    return Header(
+        name: "",
+        flag: '0',
+        size: 0,
+        mode: 0o644,
+        modified: 0,
+        nanos: 0,
+        link: "",
+        user_id: 0,
+        group_id: 0,
+        user_name: "",
+        group_name: "",
+        major: 0,
+        minor: 0,
+        records: {}
+    )
+
+# Whether all 512 bytes of `block` are zero: the end of an archive.
+function is_zero(block: [u8] lent) -> bool
+    for b in block
+        if b != 0
+            return false
+
+    return true
+
+# The text of `block`'s field from `from`, `width` bytes, up to its first 0;
+# bytes that are not UTF-8 are read as Latin-1.
+function text_of(block: [u8] lent, from: i64, width: i64) -> str
+    end: i64 @= from
+
+    while end < from + width && block[end] != 0
+        end @ end + 1
+
+    raw = block.slice(from: from, to: end)
+
+    match bytes.to_text(raw)
+        .ok s  => return s
+        .err _ => return latin(raw)
+
+# `raw` read as Latin-1.
+function latin(raw: [u8] lent) -> str
+    out: [u8] @= []
+
+    for b in raw
+        value = to_i64(b).must()
+
+        if value < 0x80
+            out @ out.push(b)
+        else
+            out @ out.push(to_u8(0xc0 | value >> 6).must())
+            out @ out.push(to_u8(0x80 | value & 0x3f).must())
+
+    # Each byte became a character of UTF-8 just now.
+    return bytes.to_text(out).must()
+
+# The number in `block`'s field from `from`, `width` bytes: octal digits
+# between spaces and zeros, or GNU's base 256 where the first byte's high
+# bit is set. Fails `invalid` at `at` plus the field where it is neither, is
+# negative or passes an `i64`.
+function number_of(block: [u8] lent, from: i64, width: i64, at: i64) -> i64?
+    lead = to_i64(block[from]).must()
+
+    if lead & 0x80 != 0
+        if lead & 0x40 != 0
+            return codes.invalid_at(at: at + from, why: "a negative number in base 256")
+        value: i64 @= lead & 0x3f
+
+        for i in range(from: from + 1, to: from + width)
+            if value > 0x7f_ffff_ffff_ffff
+                return codes.invalid_at(at: at + from, why: "a number in base 256 past the largest an i64 holds")
+            value @ value << 8 | to_i64(block[i]).must()
+
+        return ok(value)
+    at_digit: i64 @= from
+
+    while at_digit < from + width && (block[at_digit] == ' ' || block[at_digit] == 0)
+        at_digit @ at_digit + 1
+
+    value: i64 @= 0
+
+    while at_digit < from + width && block[at_digit] >= '0' && block[at_digit] <= '7'
+        if value > 0x0fff_ffff_ffff_ffff
+            return codes.invalid_at(at: at + from, why: "an octal number past the largest an i64 holds")
+        value @ value * 8 + to_i64(block[at_digit] - '0').must()
+        at_digit @ at_digit + 1
+
+    while at_digit < from + width
+        if block[at_digit] != ' ' && block[at_digit] != 0
+            return codes.invalid_at(at: at + at_digit, why: f"a byte {block[at_digit]} inside a number")
+        at_digit @ at_digit + 1
+
+    return ok(value)
+
+# The sum of `block`'s bytes, the checksum's own eight counted as spaces.
+function sum_of(block: [u8] lent, signed: bool) -> i64
+    total: i64 @= 0
+
+    for i in range(from: 0, to: BLOCK)
+        value: i64 @= to_i64(block[i]).must()
+
+        if i >= 148 && i < 156
+            value @ 32
+        else if signed && value >= 128
+            value @ value - 256
+        total @ total + value
+
+    return total
+
+# The header in `block`, which stands at byte `at` of the archive. Fails
+# `invalid` where its checksum does not match, signed or not, or a number is
+# not one. PAX records and GNU long names are applied by the reader.
+function parse(block: [u8] lent, at: i64) -> Header?
+    stored = number_of(block, from: 148, width: 8, at: at)?
+
+    if stored != sum_of(block, signed: false) && stored != sum_of(block, signed: true)
+        return codes.invalid_at(
+            at: at + 148,
+            why: f"a header whose checksum says {stored} where its bytes give {sum_of(block, signed: false)}"
+        )
+    h @= empty()
+    h.name @ text_of(block, from: 0, width: 100)
+    h.mode @ number_of(block, from: 100, width: 8, at: at)? & 0o7777
+    h.user_id @ number_of(block, from: 108, width: 8, at: at)?
+    h.group_id @ number_of(block, from: 116, width: 8, at: at)?
+    h.size @ number_of(block, from: 124, width: 12, at: at)?
+    h.modified @ number_of(block, from: 136, width: 12, at: at)?
+    h.flag @ to_i64(block[156]).must()
+    h.link @ text_of(block, from: 157, width: 100)
+    posix = block[257] == 'u' && block[258] == 's' && block[259] == 't' && block[260] == 'a' && block[261] == 'r' && block[262] == 0
+    gnu = block[257] == 'u' && block[262] == ' ' && block[263] == ' '
+
+    if posix || gnu
+        h.user_name @ text_of(block, from: 265, width: 32)
+        h.group_name @ text_of(block, from: 297, width: 32)
+        h.major @ number_of(block, from: 329, width: 8, at: at)?
+        h.minor @ number_of(block, from: 337, width: 8, at: at)?
+
+    if posix && block[345] != 0
+        h.name @ text_of(block, from: 345, width: 155) + "/" + h.name
+    return ok(h)
+
+# The PAX records of `data`, the data of an `x` or `g` entry at byte `at`:
+# lines `LENGTH KEY=VALUE`, LENGTH counting the whole line. Fails `invalid`
+# where a line is not one or a value is not UTF-8.
+function parse_records(data: [u8] lent, at: i64) -> {str: str}?
+    records: {str: str} @= {}
+    pos: i64 @= 0
+
+    while pos < data.len()
+        digits: i64 @= pos
+        length: i64 @= 0
+
+        while digits < data.len() && data[digits] >= '0' && data[digits] <= '9' && digits - pos < 12
+            length @ length * 10 + to_i64(data[digits] - '0').must()
+            digits @ digits + 1
+
+        if digits == pos || digits >= data.len() || data[digits] != ' ' || length <= digits - pos + 1 || pos + length > data.len() || data[pos + length - 1] != '\n'
+            return codes.invalid_at(at: at + pos, why: "a PAX record that is not `LENGTH KEY=VALUE` and a line feed")
+        line = data.slice(from: digits + 1, to: pos + length - 1)
+        equals: i64 @= 0
+
+        while equals < line.len() && line[equals] != '='
+            equals @ equals + 1
+
+        if equals == 0 || equals == line.len()
+            return codes.invalid_at(at: at + pos, why: "a PAX record with no key or no `=`")
+
+        match bytes.to_text(line.slice(from: 0, to: equals))
+            .err _ => return codes.invalid_at(at: at + pos, why: "a PAX key that is not UTF-8")
+            .ok key =>
+                match bytes.to_text(line.slice(from: equals + 1, to: line.len()))
+                    .ok value => records[key] @ value
+                    .err _    => records[key] @ latin(line.slice(from: equals + 1, to: line.len()))
+
+        pos @ pos + length
+
+    return ok(records)
+
+test "text_of: UTF-8 kept, other bytes read as Latin-1"
+    block: [u8] = [0x61, 0xc3, 0xa9, 0, 0xe9, 0]
+    assert text_of(block, from: 0, width: 6) == "aé"
+    assert text_of(block, from: 4, width: 2) == "é"

@@ -1,0 +1,11 @@
+# Reaches Rebel's package `crypto`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It prints the SHA-256 digest of a word
+# and its HMAC under a key, as hexadecimal.
+
+use <rebel>/bytes
+use <rebel>/crypto
+
+function main()
+    print(bytes.format_hex(crypto.sha256_text("Heroes")))
+    tag = crypto.hmac_text(algorithm: .sha256, key: bytes.from_text("key"), s: "Heroes")
+    print(bytes.format_hex(tag))

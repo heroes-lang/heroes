@@ -1,0 +1,277 @@
+# The ledger of `sql/postgres`: what a program does with a connection, and
+# what PostgreSQL's protocol offers, measured against Go's `database/sql`
+# (Go 1.27, `go doc -all`, 2026-11-16) and Python's DB-API 2.0 (PEP 249, a
+# document and no module: its names as the PEP writes them). Rust's standard
+# library has no database, so its line is `-` in every block. Go's `lib/pq`
+# was the task's yardstick of what a PostgreSQL driver offers; it is not on
+# this machine, so its names stand in the notes from its documentation as
+# remembered, unverified here. What does not depend on the database (values,
+# rows, results, failure codes) is the ledger of `sql`.
+#
+# Every expected value of the tests was observed or written from the
+# protocol's documentation: the messages' bytes from "Message Formats" of
+# PostgreSQL's documentation, the SCRAM exchange from RFC 7677 section 3 and,
+# for the empty user PostgreSQL sends, from Python's `hashlib` and `hmac`, the
+# MD5 answer from Python's `hashlib`. No server answered on this machine on
+# 2026-11-16, so no test ran against a live PostgreSQL: the examples that need
+# one open `localhost` and show nothing where none answers.
+
+capability sql-postgres/open  a connection opened and logged in
+  heroes  postgres.open, postgres.options, postgres.Options, postgres.DEFAULT_PORT
+  go      Open, OpenDB, DB, DB.Conn, Conn
+  rust    -
+  python  connect
+  note    one connection, which the program owes a `close`; no pool (the ledger of `sql`). lib/pq's Open and NewConnector do the same
+
+capability sql-postgres/url  a connection's options read from a URL
+  heroes  postgres.parse_url
+  go      -
+  rust    -
+  python  connect (its dsn)
+  note    libpq's URI form; lib/pq's ParseURL turns one into its key=value form. `connect_timeout` is refused `unsupported`: it bounds the connecting alone, and `net` gives the session a deadline from the connection on, not the connecting
+
+capability sql-postgres/key-value-dsn  a connection's options read from libpq's `key=value` text
+  heroes  pending
+  go      -
+  rust    -
+  python  connect (its dsn)
+  note    `host=h port=5432 user=u` with its quoting rules; a URL and `Options` cover the same fields
+
+capability sql-postgres/environment  options read from PGHOST, PGUSER, PGPASSWORD and the password file
+  heroes  refused: a package does not read the environment behind its caller; a program reads what it wants with `os` and puts it in `Options`
+  go      -
+  rust    -
+  python  -
+  note    libpq and lib/pq read them; psycopg through libpq
+
+capability sql-postgres/login  a password sent as the server asks: SCRAM-SHA-256, MD5 or cleartext
+  heroes  postgres.open
+  go      -
+  rust    -
+  python  -
+  note    SCRAM-SHA-256 from RFC 5802 and RFC 7677, its nonce from `os.random_bytes`, the server's signature checked in constant time; the password is never sent in clear unless the server asks for it so. Kerberos, GSSAPI and SSPI are refused `unsupported`
+
+capability sql-postgres/saslprep  a non-ASCII password normalized by SASLprep before SCRAM
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    the password is used as its UTF-8 bytes; one that NFKC would change, or that holds a space other than U+0020, fails the login. It needs Unicode's normalization tables, which `unicode` would carry
+
+capability sql-postgres/tls  the connection encrypted with TLS, the server's certificate checked for its authority and its host
+  heroes  postgres.Security
+  go      -
+  rust    -
+  python  -
+  note    `.checked`, the default, is libpq's `sslmode=verify-full` (`sslrootcert` the authorities, `system` or "" the system's store): PostgreSQL's SSLRequest answered `S`, then TLS, through `tls.connect_after` on every platform, macOS included; `.direct` is PostgreSQL 17's `sslnegotiation=direct`, TLS from the first byte with ALPN `postgresql`, through `tls.connect`; `.plain` is `sslmode=disable`. A server answering `N` fails `unsupported`. The default differs from libpq's `prefer` on purpose (the refusals below)
+
+capability sql-postgres/tls-channel-binding  SCRAM-SHA-256-PLUS, the login bound to the TLS connection
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    needs `tls-server-end-point` of the TLS connection (`tls/channel-binding`, pending in `tls`); a server offering only SCRAM-SHA-256-PLUS is refused
+
+capability sql-postgres/sslmode-allow  libpq's sslmode=allow: plain text first, TLS only where the server insists
+  heroes  refused: it begins in plain text, so whoever sits between the two ends reads the password's exchange and every statement
+  go      -
+  rust    -
+  python  -
+
+capability sql-postgres/sslmode-prefer  libpq's sslmode=prefer, its default: TLS where the server offers it, plain text otherwise
+  heroes  refused: where TLS fails it falls back to plain text in silence, so whoever sits between can make it fail and read everything; a program that means plain text says `.plain`
+  go      -
+  rust    -
+  python  -
+
+capability sql-postgres/sslmode-require  libpq's sslmode=require: TLS, the server's certificate not checked
+  heroes  refused: an encryption whose peer is never checked is an open door to whoever sits between, who poses as the server; `.checked` with the authority in `roots` is the same connection, checked
+  go      -
+  rust    -
+  python  -
+
+capability sql-postgres/sslmode-verify-ca  libpq's sslmode=verify-ca: the authority checked, the host not
+  heroes  refused: any server the authority vouched for passes for this one; `.checked` checks the host too
+  go      -
+  rust    -
+  python  -
+capability sql-postgres/unix-socket  a connection through a Unix socket's folder
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `net` speaks TCP and UDP; a host that is a folder fails `unsupported`
+
+capability sql-postgres/several-hosts  several hosts tried in turn
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    libpq's `host=a,b` and `target_session_attrs`; a URL naming several fails `unsupported`
+
+capability sql-postgres/close  a connection ended
+  heroes  postgres.close, postgres.is_closed
+  go      DB.Close, Conn.Close, ErrConnDone, driver.ErrBadConn
+  rust    -
+  python  Connection.close
+  note    Terminate is sent, then the socket closed; a FATAL failure or a lost connection ends it too, and every later call fails `closed`
+
+capability sql-postgres/ping  whether a connection still works
+  heroes  postgres.ping
+  go      DB.Ping, DB.PingContext, Conn.PingContext
+  rust    -
+  python  -
+  note    an empty simple query, which the server answers without running anything
+
+capability sql-postgres/exec  one statement run with its values bound, its count answered
+  heroes  postgres.exec
+  go      DB.Exec, DB.ExecContext, Conn.ExecContext, Tx.Exec, Tx.ExecContext
+  rust    -
+  python  Cursor.execute
+  note    always the extended query, Parse, Bind, Describe, Execute and Sync in one write, so a value never enters the text; lib/pq uses the simple query where no argument is given, so there a statement with no parameters may hold several
+
+capability sql-postgres/query  one statement's rows
+  heroes  postgres.query
+  go      DB.Query, DB.QueryContext, Conn.QueryContext, Tx.Query, Tx.QueryContext, Rows.Next, Rows.Close, Rows.Err
+  rust    -
+  python  Cursor.execute, Cursor.fetchall, Cursor.close, Cursor.connection
+  note    every row is read before it answers; Go's Rows and Python's cursor read them as the program asks. A connection here is the cursor too, so Connection.cursor has no counterpart
+
+capability sql-postgres/query-one  one statement's first row
+  heroes  postgres.query_one
+  go      DB.QueryRow, DB.QueryRowContext, Conn.QueryRowContext, Tx.QueryRow, Tx.QueryRowContext, Row.Err, ErrNoRows
+  rust    -
+  python  Cursor.fetchone
+  note    no row fails `not_found`, where Go's Scan answers ErrNoRows and Python None; the rows after the first are read and dropped, as Go's QueryRow does
+
+capability sql-postgres/rows-in-turn  rows read a few at a time, a large answer never held whole
+  heroes  pending
+  go      Rows.Next
+  rust    -
+  python  Cursor.fetchmany, Cursor.arraysize, Cursor.next, Cursor.__iter__, Cursor.rownumber, Cursor.scroll
+  note    the protocol's Execute with a row limit and PortalSuspended, or a server-side cursor; not written in this wave. `LIMIT` and `OFFSET` read a page meanwhile
+
+capability sql-postgres/several-results  the several answers of one request
+  heroes  pending
+  go      Rows.NextResultSet
+  rust    -
+  python  Cursor.nextset
+  note    `exec_script` runs several statements and drops their rows
+
+capability sql-postgres/script  several statements run in one request, with no parameters
+  heroes  postgres.exec_script
+  go      -
+  rust    -
+  python  -
+  note    the simple query; Python's sqlite3 calls it executescript, outside PEP 249
+
+capability sql-postgres/execute-many  one statement run once for each of many sets of values
+  heroes  postgres.prepare, postgres.exec_prepared
+  go      -
+  rust    -
+  python  Cursor.executemany
+  note    a prepared statement run in a loop, which is what executemany does; no second way
+
+capability sql-postgres/prepare  a statement read and planned once, run many times, then ended
+  heroes  postgres.prepare, postgres.Statement, postgres.exec_prepared, postgres.query_prepared, postgres.close_statement
+  go      DB.Prepare, DB.PrepareContext, Conn.PrepareContext, Tx.Prepare, Tx.PrepareContext, Tx.Stmt, Tx.StmtContext, Stmt, Stmt.Exec, Stmt.ExecContext, Stmt.Query, Stmt.QueryContext, Stmt.QueryRow, Stmt.QueryRowContext, Stmt.Close
+  rust    -
+  python  -
+  note    a named statement, `rebel_1` and on, whose placeholders' types the server reports; a run with a count of values that differs fails `invalid` before anything is sent
+
+capability sql-postgres/transactions  statements committed together or not at all
+  heroes  postgres.begin, postgres.commit, postgres.rollback, postgres.transaction_of, postgres.Transaction
+  go      DB.Begin, DB.BeginTx, Conn.BeginTx, Tx, Tx.Commit, Tx.Rollback, ErrTxDone
+  rust    -
+  python  Connection.commit, Connection.rollback
+  note    PEP 249 opens a transaction implicitly; here each statement commits alone until `begin`. `begin` inside a transaction fails `invalid` where the server would only warn, and a `commit` the server answers `ROLLBACK` fails `failed`
+
+capability sql-postgres/isolation  a transaction's isolation level, and a read-only one
+  heroes  postgres.exec
+  go      TxOptions, IsolationLevel, IsolationLevel.String, LevelDefault, LevelReadUncommitted, LevelReadCommitted, LevelWriteCommitted, LevelRepeatableRead, LevelSnapshot, LevelSerializable, LevelLinearizable
+  rust    -
+  python  -
+  note    `SET TRANSACTION ISOLATION LEVEL SERIALIZABLE` or `SET TRANSACTION READ ONLY` run with `exec` right after `begin`, as PostgreSQL writes it; Go's levels WriteCommitted, Snapshot and Linearizable are not PostgreSQL's
+
+capability sql-postgres/two-phase  a transaction prepared for a two-phase commit
+  heroes  postgres.exec_script
+  go      -
+  rust    -
+  python  Connection.xid, Connection.tpc_begin, Connection.tpc_prepare, Connection.tpc_commit, Connection.tpc_rollback, Connection.tpc_recover
+  note    `PREPARE TRANSACTION`, `COMMIT PREPARED` and `ROLLBACK PREPARED` are statements of PostgreSQL's, run as any other
+
+capability sql-postgres/deadline  a time after which a connection's waits fail
+  heroes  postgres.Options
+  go      DB.ExecContext, DB.QueryContext (their context's deadline)
+  rust    -
+  python  -
+  note    `deadline_ms`, a time from the connection on, as `net` gives it; a statement's own limit is PostgreSQL's `SET statement_timeout`, which fails `stopped`
+
+capability sql-postgres/cancel  a running statement cancelled from another thread
+  heroes  pending
+  go      DB.QueryContext (cancelling its context)
+  rust    -
+  python  -
+  note    the protocol's CancelRequest on a second connection, naming `process_id` and the secret key the session keeps; lib/pq does it when a context is cancelled
+
+capability sql-postgres/failures  a failure the server reports, with its SQLSTATE
+  heroes  sql.database_code_of, sql.failure_message
+  go      -
+  rust    -
+  python  -
+  note    the SQLSTATE chooses the code (the module comment's table) and stays in the message in brackets, with the server's detail, hint and position; lib/pq's Error, ErrorCode and ErrorClass carry each field apart
+
+capability sql-postgres/notices  the warnings and notices a server sends beside an answer
+  heroes  postgres.take_notices, postgres.Notice
+  go      -
+  rust    -
+  python  Connection.messages, Cursor.messages, Warning
+  note    the 64 newest kept; lib/pq hands them to a notice handler, which a function value without a closure could not keep
+
+capability sql-postgres/server-parameters  what the server reports of the session: its version, its encoding, its time zone
+  heroes  postgres.parameter_of
+  go      -
+  rust    -
+  python  -
+
+capability sql-postgres/listen  notifications of LISTEN and NOTIFY
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    lib/pq's Listener; a notification arriving during a statement is dropped now. Waiting for one needs a wait with its own time limit, which `net`'s socket deadline is not
+
+capability sql-postgres/copy  rows copied in bulk with COPY
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    lib/pq's CopyIn; `COPY ... FROM STDIN` is answered with CopyFail and fails `unsupported`, and `COPY ... TO STDOUT`'s rows are read and dropped
+
+capability sql-postgres/arrays  an array value of a column or a parameter
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `sql.Value` has no list case: an array arrives as the text PostgreSQL writes, `{1,2,3}`, and a parameter of an array type is given as that text; lib/pq's Array and its typed arrays read and write them
+
+capability sql-postgres/values  each column's type read into a value, each value given its type
+  heroes  sql.Value
+  go      -
+  rust    -
+  python  -
+  note    the module comment's tables. An integer goes as the smallest of int2, int4 and int8, as psycopg 3 does, so that `repeat('a', $1)` finds its function; a text goes with no type, as lib/pq sends every value, so it fills a uuid, a date or a json column. A `numeric` comes back as text, every digit kept, and a timestamp out of `time.Instant`'s range as its text; lib/pq refuses `infinity` unless asked
+
+capability sql-postgres/quote-identifier  a name quoted for a statement's text
+  heroes  sql.quote_identifier, sql.quote_qualified
+  go      -
+  rust    -
+  python  -
+  note    lib/pq's QuoteIdentifier; QuoteLiteral is refused in the ledger of `sql`
+
+dropped
+  go      DB.SetConnMaxIdleTime, DB.SetConnMaxLifetime, DB.SetMaxIdleConns, DB.SetMaxOpenConns, DB.Stats, DB.Driver, Conn.Raw: the pool `database/sql` keeps, stated in the ledger of `sql`
+  python  Connection.cursor: the connection is its own cursor here
+  python  Cursor.setinputsizes, Cursor.setoutputsize: hints most drivers ignore, a parameter's type being its value's case here
+  python  Cursor.callproc: a procedure is run with `CALL` through `query`, and the ledger of `sql` refuses output parameters
+  python  Cursor.description, Cursor.rowcount, Cursor.lastrowid, apilevel, threadsafety, paramstyle, Connection.errorhandler, Cursor.errorhandler: stated in the ledger of `sql`

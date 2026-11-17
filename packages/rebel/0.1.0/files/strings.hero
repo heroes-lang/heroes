@@ -1,0 +1,535 @@
+# Text searched, cut, trimmed, replaced, padded and cased. A position is a
+# byte index, an `i64`, as the language indexes a `str`, and every index a
+# function here cuts at is a character's first byte, so no text read from
+# outside makes one abort. A search that finds nothing fails `not_found`; none
+# answers -1. A character is what `s.chars()` yields, a `str` of one
+# character, and a function that takes a function takes a top-level one over
+# one character. What the language does itself is not here: `join`, `repeat`,
+# `chars`, `slice`, `+`, and `map`, `filter`, `any` and `all` over
+# `s.chars()`.
+
+use strings/internal/bounds
+use strings/internal/bytewise
+use strings/internal/casing
+use strings/internal/padding
+use strings/internal/pieces
+use strings/internal/replacing
+use strings/internal/runs
+use strings/internal/search
+use strings/internal/trimming
+use unicode
+
+## Codes
+
+# The code a search fails with where the text holds nothing of what was asked.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code `slice_checked` fails with where its indices cut no part of the
+# text.
+constant INVALID: str
+    "invalid"
+
+## Searching
+
+# Whether `s` holds `substr`. Every text holds the empty text.
+function contains(s: str, substr: str) -> bool
+    return search.contains(s: s, substr: substr)
+
+# Whether `s` holds any character of `set`. No text holds a character of
+# the empty text.
+function contains_any(s: str, set: str) -> bool
+    return search.contains_any(s: s, set: set)
+
+# Whether `s` begins with `prefix`. Every text begins with the empty text.
+function has_prefix(s: str, prefix: str) -> bool
+    return search.has_prefix_at(s: s, prefix: prefix, at: 0)
+
+# Whether `prefix` stands in `s` at byte `at`. It is false for an `at` below
+# 0 or past the end, so it never aborts; the empty text stands where a
+# character begins and at the end. It copies nothing, where `has_prefix` on a
+# slice copies the slice.
+function has_prefix_at(s: str, prefix: str, at: i64) -> bool
+    return search.has_prefix_at(s: s, prefix: prefix, at: at)
+
+# Whether `s` ends with `suffix`. Every text ends with the empty text.
+function has_suffix(s: str, suffix: str) -> bool
+    return search.has_suffix(s: s, suffix: suffix)
+
+# Where `substr` first begins in `s`, as a byte index. Fails `not_found`
+# where `s` holds none. The empty text is found at 0.
+function index_of(s: str, substr: str) -> i64?
+    return search.index_of_from(s: s, substr: substr, from: 0)
+
+# Where `substr` first begins in `s` at or after byte `from`. Fails
+# `not_found` where that part of `s` holds none. A `from` below 0 searches
+# the whole text and one past the end finds nothing, so it never aborts; the
+# empty text is found at the first character that begins at or after `from`,
+# or at the end. It copies nothing, where `index_of` on a slice copies the
+# slice.
+function index_of_from(s: str, substr: str, from: i64) -> i64?
+    return search.index_of_from(s: s, substr: substr, from: from)
+
+# Where `substr` last begins in `s`, as a byte index. Fails `not_found` where
+# `s` holds none. The empty text is found at the end, `s.len()`.
+function index_of_last(s: str, substr: str) -> i64?
+    return search.index_of_last(s: s, substr: substr)
+
+# Where the first character of `s` that `set` holds begins, as a byte
+# index. Fails `not_found` where `s` holds no character of `set`, as it
+# always does for an empty `set`.
+function index_of_any(s: str, set: str) -> i64?
+    return search.index_of_any_from(s: s, set: set, from: 0)
+
+# Where the first character that `set` holds begins in `s` at or after
+# byte `from`. Fails `not_found` where that part of `s` holds none. A `from`
+# below 0 searches the whole text, one past the end finds nothing, and one
+# inside a character starts at the next character.
+function index_of_any_from(s: str, set: str, from: i64) -> i64?
+    return search.index_of_any_from(s: s, set: set, from: from)
+
+# Where the last character of `s` that `set` holds begins, as a byte index.
+# Fails `not_found` where `s` holds no character of `set`.
+function index_of_any_last(s: str, set: str) -> i64?
+    return search.index_of_any_last(s: s, set: set)
+
+# Where the first character of `s` that `accepts` accepts begins, as a byte
+# index. Fails `not_found` where it accepts none. `accepts` is asked each
+# character in order and no more once it accepts one.
+function index_where(s: str, accepts: (function(str) -> bool)) -> i64?
+    return search.index_where_from(s: s, accepts: accepts, from: 0)
+
+# Where the first character that `accepts` accepts begins in `s` at or after
+# byte `from`. Fails `not_found` where it accepts none there. A `from` below
+# 0 searches the whole text, one past the end finds nothing, and one inside a
+# character starts at the next character.
+function index_where_from(s: str, accepts: (function(str) -> bool), from: i64) -> i64?
+    return search.index_where_from(s: s, accepts: accepts, from: from)
+
+# Where the last character of `s` that `accepts` accepts begins, as a byte
+# index. Fails `not_found` where it accepts none. `accepts` is asked each
+# character from the end backwards.
+function index_where_last(s: str, accepts: (function(str) -> bool)) -> i64?
+    return search.index_where_last(s: s, accepts: accepts)
+
+# How many times `s` holds `substr`, counted from the start with no two
+# occurrences sharing a byte: "aaaa" holds "aa" twice. The empty text is
+# counted once more than `s` has characters.
+function count_of(s: str, substr: str) -> i64
+    return search.count_of(s: s, substr: substr)
+
+# Where each occurrence of `substr` begins in `s`, in order, as byte indices,
+# taken from the start with no two sharing a byte. The empty text is found
+# before every character and at the end.
+function index_of_all(s: str, substr: str) -> [i64]
+    return search.index_of_all(s: s, substr: substr)
+
+## Comparing
+
+# Which of `a` and `b` orders first: -1 where `a` does, 1 where `b` does, 0
+# where they are the same text. The order is by bytes, the one the built-in
+# `sort` gives a `[str]`, which for UTF-8 is the order of the code points; a
+# text orders before every longer text that begins with it.
+function compare(a: str, b: str) -> i64
+    return bytewise.compare(a: a, b: b)
+
+# Whether `a` and `b` are the same text once the case of their letters is set
+# aside, by Unicode's case folding, which is the same for every language.
+# Nothing is normalised: a letter with its accent written as one character
+# differs from the same letter followed by a combining accent.
+function equals_ignoring_case(a: str, b: str) -> bool
+    return casing.equals_ignoring_case(a: a, b: b)
+
+# Whether `a` and `b` are the same text once the case of their ASCII letters,
+# "a" to "z", is set aside. Every other character must be the same byte for
+# byte, so "É" and "é" differ.
+function equals_ignoring_case_ascii(a: str, b: str) -> bool
+    return bytewise.equals_ignoring_case_ascii(a: a, b: b)
+
+## Splitting
+
+# What `split_once` and `split_once_last` answer: a text cut in two around a
+# separator, which is in neither part.
+record Halves
+    # The text before the separator.
+    before: str
+    # The text after the separator.
+    after: str
+
+# The text of `s` before its first `sep` and the text after it. Fails
+# `not_found` where `s` holds no `sep`. An empty `sep` is found at the start,
+# so `before` is empty and `after` is `s`.
+function split_once(s: str, sep: str) -> Halves?
+    at = search.index_of_from(s: s, substr: sep, from: 0)?
+    return ok(Halves(before: s.slice(from: 0, to: at), after: s.slice(from: at + sep.len(), to: s.len())))
+
+# The text of `s` before its last `sep` and the text after it. Fails
+# `not_found` where `s` holds no `sep`. An empty `sep` is found at the end,
+# so `before` is `s` and `after` is empty.
+function split_once_last(s: str, sep: str) -> Halves?
+    at = search.index_of_last(s: s, substr: sep)?
+    return ok(Halves(before: s.slice(from: 0, to: at), after: s.slice(from: at + sep.len(), to: s.len())))
+
+# The pieces of `s` between its `sep`s, one more than `count_of` counts: a
+# `sep` at either end leaves an empty piece there, and a text holding no
+# `sep` is its own one piece, the empty text included. An empty `sep` cuts
+# between every two characters, so the pieces are the characters of `s`, and
+# none for the empty text.
+function split(s: str, sep: str) -> [str]
+    return pieces.split(s: s, sep: sep)
+
+# At most `n` pieces of `s` between its `sep`s, cut from the start; the last
+# piece holds the rest of `s`, later `sep`s included. No piece at all for an
+# `n` of 0. An empty `sep` cuts after each character.
+function split_n(s: str, sep: str, n: u64) -> [str]
+    return pieces.split_n(s: s, sep: sep, n: n)
+
+# At most `n` pieces of `s` between its `sep`s, cut from the end; the first
+# piece holds the rest of `s`, earlier `sep`s included. The pieces stand in
+# the order of the text. No piece at all for an `n` of 0. An empty `sep` cuts
+# before each character.
+function split_n_last(s: str, sep: str, n: u64) -> [str]
+    return pieces.split_n_last(s: s, sep: sep, n: n)
+
+# The pieces of `s`, each ending with the `sep` that follows it, and a last
+# piece for what follows the last `sep` where anything does. Joined with ""
+# they are `s` again, and none is empty, so the empty text has no pieces.
+# With "\n" they are the lines of `s` with their ends. An empty `sep` gives
+# the characters of `s`.
+function split_after(s: str, sep: str) -> [str]
+    return pieces.split_after(s: s, sep: sep)
+
+# At most `n` pieces of `s`, each ending with the `sep` that follows it, cut
+# from the start; the last piece holds the rest of `s`. No piece at all for
+# an `n` of 0, and none is empty.
+function split_after_n(s: str, sep: str, n: u64) -> [str]
+    return pieces.split_after_n(s: s, sep: sep, n: n)
+
+# The pieces of `s` that `sep` ends: what `split` answers without the empty
+# piece after a final `sep`, so "a;b;" and "a;b" are both "a" and "b". The
+# empty text has no pieces.
+function split_terminated(s: str, sep: str) -> [str]
+    return pieces.split_terminated(s: s, sep: sep)
+
+# The pieces of `s` between its characters that `set` holds, one more than
+# there are such characters. An empty `set` cuts nowhere and answers `s`
+# as its one piece.
+function split_any(s: str, set: str) -> [str]
+    return pieces.split_any(s: s, set: set)
+
+# The pieces of `s` between its characters that `separates` accepts, one
+# more than there are such characters, so two of them side by side leave an
+# empty piece between; `words_where` leaves none.
+function split_where(s: str, separates: (function(str) -> bool)) -> [str]
+    return pieces.split_where(s: s, separates: separates)
+
+# The words of `s`: the pieces between its runs of white space, none of them
+# empty, so a text of white space alone has no words. White space is
+# Unicode's, as `trim` reads it.
+function words(s: str) -> [str]
+    return runs.words(s)
+
+# The pieces of `s` between its runs of characters that `separates` accepts,
+# none of them empty.
+function words_where(s: str, separates: (function(str) -> bool)) -> [str]
+    return runs.words_where(s: s, separates: separates)
+
+# At most `n` words of `s`, read from the start, as Python's `split` with
+# no separator reads them: the white space at the start is passed over, and
+# the last word holds the rest of `s` from where it begins, the white space
+# at its end kept. No word at all for an `n` of 0. White space is `trim`'s.
+function words_n(s: str, n: u64) -> [str]
+    return runs.words_n(s: s, n: n)
+
+# At most `n` words of `s`, read from the end, in the order of the text: the
+# white space at the end is passed over, and the first word holds the rest
+# of `s` up to where it ends, the white space at its start kept. No word at
+# all for an `n` of 0.
+function words_n_last(s: str, n: u64) -> [str]
+    return runs.words_n_last(s: s, n: n)
+
+# The lines of `s`, each without its end, which is "\n" or "\r\n". The last
+# line's end is optional, so "a\nb" and "a\nb\n" are the same two lines; the
+# empty text has no lines, and a "\r" with no "\n" after it ends nothing.
+function lines(s: str) -> [str]
+    return runs.lines(s)
+
+## Trimming
+
+# `s` without the white space at either end. White space is Unicode's
+# White_Space as the package `unicode` reads it: space, tab, line feed and
+# carriage return among others, and the no-break space.
+function trim(s: str) -> str
+    return trimming.trim(s)
+
+# `s` without the white space at its start, white space being `trim`'s.
+function trim_start(s: str) -> str
+    return trimming.trim_start(s)
+
+# `s` without the white space at its end, white space being `trim`'s.
+function trim_end(s: str) -> str
+    return trimming.trim_end(s)
+
+# `s` without the characters of `set` at either end: a character is taken
+# off an end for as long as `set` holds it. `set` is a set, not a text to
+# match; `trim_prefix` and `trim_suffix` take a text off.
+function trim_any(s: str, set: str) -> str
+    return trimming.trim_any(s: s, set: set)
+
+# `s` without the characters of `set` at its start.
+function trim_start_any(s: str, set: str) -> str
+    return trimming.trim_start_any(s: s, set: set)
+
+# `s` without the characters of `set` at its end.
+function trim_end_any(s: str, set: str) -> str
+    return trimming.trim_end_any(s: s, set: set)
+
+# `s` without the characters that `accepts` accepts at either end.
+function trim_where(s: str, accepts: (function(str) -> bool)) -> str
+    return trimming.trim_where(s: s, accepts: accepts)
+
+# `s` without the characters that `accepts` accepts at its start.
+function trim_start_where(s: str, accepts: (function(str) -> bool)) -> str
+    return trimming.trim_start_where(s: s, accepts: accepts)
+
+# `s` without the characters that `accepts` accepts at its end.
+function trim_end_where(s: str, accepts: (function(str) -> bool)) -> str
+    return trimming.trim_end_where(s: s, accepts: accepts)
+
+# `s` without `prefix` at its start, or `s` itself where it does not begin
+# with it. The prefix is taken off once: `trim_prefix_all` takes off every
+# one, and `after_prefix` says whether it was there.
+function trim_prefix(s: str, prefix: str) -> str
+    return trimming.trim_prefix(s: s, prefix: prefix)
+
+# `s` without `suffix` at its end, or `s` itself where it does not end with
+# it. The suffix is taken off once: `trim_suffix_all` takes off every one,
+# and `before_suffix` says whether it was there.
+function trim_suffix(s: str, suffix: str) -> str
+    return trimming.trim_suffix(s: s, suffix: suffix)
+
+# `s` without `prefix` at its start, taken off for as many times as what is
+# left begins with it: "ababc" without "ab" is "c". An empty `prefix` takes
+# nothing off.
+function trim_prefix_all(s: str, prefix: str) -> str
+    return trimming.trim_prefix_all(s: s, prefix: prefix)
+
+# `s` without `suffix` at its end, taken off for as many times as what is
+# left ends with it: "cabab" without "ab" is "c". An empty `suffix` takes
+# nothing off.
+function trim_suffix_all(s: str, suffix: str) -> str
+    return trimming.trim_suffix_all(s: s, suffix: suffix)
+
+# The text of `s` after `prefix`. Fails `not_found` where `s` does not begin
+# with `prefix`. An empty `prefix` is always there, and the text after it is
+# `s`.
+function after_prefix(s: str, prefix: str) -> str?
+    return trimming.after_prefix(s: s, prefix: prefix)
+
+# The text of `s` before `suffix`. Fails `not_found` where `s` does not end
+# with `suffix`. An empty `suffix` is always there, and the text before it is
+# `s`.
+function before_suffix(s: str, suffix: str) -> str?
+    return trimming.before_suffix(s: s, suffix: suffix)
+
+# The text of `s` between `prefix` at its start and `suffix` at its end.
+# Fails `not_found` where `s` does not begin with `prefix`, does not end with
+# `suffix`, or is too short to hold the two apart: "aba" is not "ab" then
+# "ba".
+function between(s: str, prefix: str, suffix: str) -> str?
+    return trimming.between(s: s, prefix: prefix, suffix: suffix)
+
+## Replacing
+
+# `s` with every `old` replaced by `new`, the occurrences taken from the
+# start with no two sharing a byte. An empty `old` stands before every
+# character and at the end, so `new` is written in each of those places.
+function replace_all(s: str, old: str, new: str) -> str
+    return replacing.replace_all(s: s, old: old, new: new)
+
+# `s` with its first `n` occurrences of `old` replaced by `new`, taken as
+# `replace_all` takes them; `s` itself for an `n` of 0.
+function replace_n(s: str, old: str, new: str, n: u64) -> str
+    return replacing.replace_n(s: s, old: old, new: new, n: n)
+
+# `s` with its last `old` replaced by `new`, or `s` itself where it holds
+# none. An empty `old` stands at the end, so `new` is written there.
+function replace_last(s: str, old: str, new: str) -> str
+    return replacing.replace_last(s: s, old: old, new: new)
+
+# `s` with each key of `pairs` replaced by its value, in one pass from the
+# start: at each position the first key, in the order the map was filled,
+# that stands there is replaced, and the search goes on after it, so what a
+# replacement wrote is never replaced again and two pairs can swap two
+# texts. A pair whose key is empty is passed over.
+function replace_pairs(s: str, pairs: {str: str}) -> str
+    return replacing.replace_pairs(s: s, pairs: pairs)
+
+## Padding
+
+# `s` with `pad` written before it until the whole is `width` characters
+# long, or `s` itself where it is that long already or `pad` is empty. The
+# width counts characters, not bytes and not the columns a terminal draws. A
+# `pad` of several characters is written again and again and cut after a
+# character where the width is reached.
+function pad_start(s: str, width: i64, pad: str) -> str
+    return padding.pad_start(s: s, width: width, pad: pad)
+
+# `s` with `pad` written after it until the whole is `width` characters
+# long, or `s` itself where it is that long already or `pad` is empty. The
+# width and a `pad` of several characters are read as `pad_start` reads
+# them.
+function pad_end(s: str, width: i64, pad: str) -> str
+    return padding.pad_end(s: s, width: width, pad: pad)
+
+# `s` with `pad` written on both sides until the whole is `width` characters
+# long, half of the padding before and half after, the odd character after;
+# `s` itself where it is that long already or `pad` is empty. The width and a
+# `pad` of several characters are read as `pad_start` reads them, each side
+# starting `pad` afresh.
+function center(s: str, width: i64, pad: str) -> str
+    return padding.center(s: s, width: width, pad: pad)
+
+# `s`, the text of a number, with zeros written after its sign, "+" or "-",
+# or at its start where it has none, until the whole is `width` characters
+# long; `s` itself where it is that long already. It does not ask whether
+# `s` is a number.
+function pad_zeros(s: str, width: i64) -> str
+    return padding.pad_zeros(s: s, width: width)
+
+# `s` with each tab replaced by the spaces that reach the next tab stop, a
+# stop standing every `tab_width` characters from the start of the line. A
+# line starts after "\n" or "\r", and a tab at a stop takes `tab_width`
+# spaces. A `tab_width` of 0 or less takes the tabs out and writes nothing
+# for them.
+function expand_tabs(s: str, tab_width: i64) -> str
+    return padding.expand_tabs(s: s, tab_width: tab_width)
+
+## Case
+
+# `s` in lower case, each character by Unicode's mapping, which is the same
+# for every language. The text may change its length in bytes and in
+# characters.
+function to_lower(s: str) -> str
+    return casing.to_lower(s)
+
+# `s` in upper case, each character by Unicode's mapping, which is the same
+# for every language. The text may change its length in bytes and in
+# characters.
+function to_upper(s: str) -> str
+    return casing.to_upper(s)
+
+# `s` with the first letter of each word in title case and its other letters
+# in lower case. A word is a run of letters that have a case, so a digit, an
+# apostrophe or an underscore ends one and the letter after it starts the
+# next: "they're" becomes "They'Re".
+function to_title(s: str) -> str
+    return casing.to_title(s)
+
+# `s` with its first character in title case and every other in lower case.
+function capitalize(s: str) -> str
+    return casing.capitalize(s)
+
+# `s` with each upper case letter in lower case and each lower case letter in
+# upper case. Swapping twice does not always give `s` back, since a letter's
+# other case can be more than one character.
+function swap_case(s: str) -> str
+    return casing.swap_case(s)
+
+# `s` folded, the form two texts take where they differ only in the case of
+# their letters, by Unicode's full case folding: "Straße" and "STRASSE" fold
+# alike. A folded text is for comparing, never for showing.
+function to_casefold(s: str) -> str
+    return casing.to_casefold(s)
+
+# `s` with its ASCII letters "A" to "Z" in lower case and every other
+# character as it was. The length does not change.
+function to_lower_ascii(s: str) -> str
+    return bytewise.ascii_case(s: s, upper: false)
+
+# `s` with its ASCII letters "a" to "z" in upper case and every other
+# character as it was. The length does not change.
+function to_upper_ascii(s: str) -> str
+    return bytewise.ascii_case(s: s, upper: true)
+
+# Whether `s` holds a letter that has a case and none of them is upper or
+# title case. Characters with no case, digits and spaces among them, are
+# passed over, and a text with no cased letter is not lower case.
+function is_lower(s: str) -> bool
+    return casing.is_lower(s)
+
+# Whether `s` holds a letter that has a case and none of them is lower or
+# title case. Characters with no case, digits and spaces among them, are
+# passed over, and a text with no cased letter is not upper case.
+function is_upper(s: str) -> bool
+    return casing.is_upper(s)
+
+# Whether `s` is in the form `to_title` writes: it holds a letter that has a
+# case, every word begins with an upper or title case letter, and every
+# other cased letter is lower case.
+function is_title(s: str) -> bool
+    return casing.is_title(s)
+
+## Bytes and boundaries
+
+# Whether every character of `s` is ASCII, which is whether every byte is
+# below 128. The empty text is.
+function is_ascii(s: str) -> bool
+    return bounds.is_ascii(s)
+
+# The bytes of `s`, which are its UTF-8. `validated_bytes` reads them back
+# as the same text.
+function to_bytes(s: str) -> [u8]
+    return bounds.to_bytes(s)
+
+# Whether byte index `at` of `s` stands between two characters: at 0, at
+# `s.len()`, or where a character begins. It is false for an `at` below 0 or
+# past the end, so it never aborts. A slice may start and end only at such
+# an index.
+function is_boundary(s: str, at: i64) -> bool
+    return unicode.is_char_boundary(s, at)
+
+# The nearest index at or below `at` where `is_boundary` holds, so that
+# `s.slice(from: 0, to: floor_boundary(s, at))` is `s` cut to at most `at`
+# bytes without splitting a character. An `at` below 0 answers 0 and one
+# past the end answers `s.len()`.
+function floor_boundary(s: str, at: i64) -> i64
+    return unicode.floor_char_boundary(s, at)
+
+# The nearest index at or above `at` where `is_boundary` holds. An `at`
+# below 0 answers 0 and one past the end answers `s.len()`.
+function ceil_boundary(s: str, at: i64) -> i64
+    return unicode.ceil_char_boundary(s, at)
+
+# The part of `s` from byte `from` up to byte `to`, which is not included.
+# Fails `invalid` where either index is below 0 or past the end, where `to`
+# is below `from`, or where either stands inside a character: the cases in
+# which the built-in `slice` aborts. It is for indices that come from
+# outside the program.
+function slice_checked(s: str, from: i64, to: i64) -> str?
+    return bounds.slice_checked(s: s, from: from, to: to)
+
+## Tests
+
+test "split_once: the first separator, one at the end, a missing one, an empty one, and characters of more than one byte"
+    halves = split_once(s: "key=value=more", sep: "=").must()
+    assert halves.before == "key" && halves.after == "value=more"
+    empty = split_once(s: "abc", sep: "").must()
+    assert empty.before == "" && empty.after == "abc"
+    last = split_once(s: "a;", sep: ";").must()
+    assert last.before == "a" && last.after == ""
+    accents = split_once(s: "città→è→à", sep: "→").must()
+    assert accents.before == "città" && accents.after == "è→à"
+
+    match split_once(s: "abc", sep: ";")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no \";\" in \"abc\""
+
+test "split_once_last: the last separator, an empty one, a missing one, and characters of more than one byte"
+    halves = split_once_last(s: "a=b=c", sep: "=").must()
+    assert halves.before == "a=b" && halves.after == "c"
+    empty = split_once_last(s: "abc", sep: "").must()
+    assert empty.before == "abc" && empty.after == ""
+    accents = split_once_last(s: "città→è→à", sep: "→").must()
+    assert accents.before == "città→è" && accents.after == "à"
+    assert split_once_last(s: "abc", sep: ";").is_err()

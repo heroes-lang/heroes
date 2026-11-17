@@ -1,0 +1,1494 @@
+# Archives of many files in one: tar (ustar, with PAX records and GNU's long
+# names read) plain or gzip, and zip (stored and deflated members, ZIP64 for
+# large ones), read entry by entry, listed, extracted into a folder, written
+# entry by entry or from files on the disk. Written from POSIX.1-2001's
+# `pax` format and PKWARE's APPNOTE.TXT 6.3; what it writes Python's
+# `tarfile` and `zipfile` read, and what they write, it reads.
+#
+# It compresses nothing by itself: DEFLATE and gzip are `compress`'s. It
+# does not name or walk paths on its own: `fs` and `path` do. Encrypted zip
+# members, methods other than stored and deflated, sparse tar members and
+# archives split over several disks are refused as `unsupported`.
+#
+# **An archive is not trusted.** Extraction refuses, and never writes, an
+# entry whose name would land outside the target folder: an absolute name,
+# a name with a drive, a `..` part anywhere in a name; a symbolic link
+# whose target is absolute or climbs out of the folder from where the link
+# stands; a hard link to anything not already extracted inside; a path that
+# would pass through a link already on the disk; a device or a pipe. A
+# refusal fails `invalid` and stops the extraction there; a zip's names are
+# all checked before anything is written. Files are written without set-id,
+# sticky or others' write bits, and owners are never set. Every reading
+# call takes a `limit`, so an archive that expands without measure costs at
+# most that many bytes.
+#
+# It fails with `invalid`, `limit`, `not_found` and `unsupported`, and with
+# the codes of `io`, `fs` and `compress` where they fail.
+
+use archive/internal/codes
+use archive/internal/extract
+use archive/internal/safe
+use archive/internal/samples
+use archive/internal/source
+use archive/internal/tar_header
+use archive/internal/tar_read
+use archive/internal/tar_write
+use archive/internal/zip_end
+use archive/internal/zip_member
+use archive/internal/zip_read
+use archive/internal/zip_write
+use bytes
+use fs
+use io
+use path
+use time
+
+## Codes
+
+# The code of an archive that is not what its format says, the message
+# naming the byte; and of an entry refused by extraction, the message naming
+# the entry and why. Every function that reads or extracts fails with it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of an archive, or an entry's data, that would pass the `limit`
+# the caller set. Every function that reads with a limit fails with it.
+constant LIMIT: str
+    codes.LIMIT
+
+# The code of a zip entry asked for by a name the archive does not hold:
+# `entry_of`.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of what this package does not read: an encrypted zip member, a
+# zip method other than stored and deflated, a sparse tar member, an
+# archive split over disks.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+## Entries
+
+# What an entry is.
+variant Kind
+    # A file of bytes.
+    file
+    # A folder.
+    directory
+    # A symbolic link, whose target is the entry's `link`.
+    symlink
+    # A tar hard link: the same file as the entry named by its `link`.
+    hard_link
+    # A tar entry of another kind, a device or a pipe, which extraction
+    # refuses.
+    other
+        # Its tar type flag: `3` a character device, `4` a block device, `6`
+        # a pipe.
+        flag: u8
+
+# How a tar archive is compressed.
+variant Compression
+    # Not at all: the archive's bytes as they are.
+    none
+    # As gzip, a `.tar.gz`.
+    gzip
+
+# How a zip member's data is held.
+variant Method
+    # As it is (method 0).
+    stored
+    # Compressed by DEFLATE (method 8).
+    deflated
+
+# Which archive a file is, as `format_of` tells.
+variant Format
+    # A tar archive, not compressed.
+    tar
+    # A zip archive.
+    zip
+
+# Which archive `start` begins, told by its first bytes: zip's local header
+# or end record signature, or a tar header whose checksum holds.
+#
+# - `start`: the archive's first bytes, at least 512 for tar.
+#
+# Fails `invalid` where they begin neither; a gzip-compressed tar is told by
+# `compress.format_of` first.
+#
+# See also `zip_reader` and `tar_reader`.
+function format_of(start: [u8]) -> Format?
+    if start.len() >= 4 && start[0] == 'P' && start[1] == 'K' && (start[2] == 3 && start[3] == 4 || start[2] == 5 && start[3] == 6)
+        return ok(.zip)
+
+    if start.len() >= 512
+        match tar_header.parse(start.slice(from: 0, to: 512), at: 0)
+            .ok _  => return ok(.tar)
+            .err _ => _ = 0
+    return fail(code: INVALID, msg: "the bytes begin neither a tar archive nor a zip archive")
+
+## Tar
+
+# What a tar header says of an entry.
+record TarEntry
+    # The entry's path, its parts joined by `/`, no `/` at the end.
+    name: str
+    # What it is.
+    kind: Kind
+    # Its data's size in bytes; 0 for anything but a file.
+    size: i64
+    # Its permission bits, 0 to 0o7777.
+    mode: i64
+    # When it was last changed.
+    modified: time.Instant
+    # A link's target: a path for a symbolic link, an entry's name for a
+    # hard link; "" otherwise.
+    link: str
+    # The owner's number.
+    user_id: i64
+    # The group's number.
+    group_id: i64
+    # The owner's name, "" for none.
+    user_name: str
+    # The group's name, "" for none.
+    group_name: str
+    # A device's major number, 0 for anything else.
+    device_major: i64
+    # A device's minor number.
+    device_minor: i64
+    # The PAX records the fields above do not hold (`comment`, `atime`,
+    # `SCHILY.xattr.*`), written back as they are.
+    records: {str: str}
+
+# A tar entry named `name` of kind `kind` with every other field at its
+# usual value: mode 0o644 (0o755 for a folder), no data, the time 1970-01-01
+# UTC, no link, no owner.
+#
+# - `name`: the entry's path, parts joined by `/`.
+# - `kind`: what it is.
+#
+# See also `write_tar_entry`.
+function tar_entry(name: str, kind: Kind) -> TarEntry
+    mode: i64 @= 0o644
+
+    match kind
+        .directory                               => mode @ 0o755
+        .file | .symlink | .hard_link | .other _ => _ = 0
+
+    return TarEntry(
+        name: name,
+        kind: kind,
+        size: 0,
+        mode: mode,
+        modified: time.epoch(),
+        link: "",
+        user_id: 0,
+        group_id: 0,
+        user_name: "",
+        group_name: "",
+        device_major: 0,
+        device_minor: 0,
+        records: {}
+    )
+
+# What `next_entry` answers: the next entry, or the archive's end.
+variant Next
+    # An entry, whose data `read_data` reads.
+    entry
+        # Its header.
+        value: TarEntry
+    # The archive has ended.
+    end
+
+# A reader of a tar archive from a stream: made by `tar_reader`, it reads
+# entry by entry. It holds a copy of the stream and
+# never closes it.
+record TarReader
+    # The archive being read: the stream, the entry in hand, the records.
+    state: tar_read.State
+
+# A reader of the tar archive in `from`, compressed as `compression` says,
+# of at most `limit` bytes once decompressed. It reads nothing until asked.
+#
+# - `from`: the archive's stream; the caller closes it.
+# - `compression`: none, or gzip.
+# - `limit`: the most bytes of archive read, headers and padding included,
+#   after gzip; 0 or more.
+#
+# See also `next_entry` and `list_tar`.
+function tar_reader(from: io.Stream, compression: Compression, limit: i64) -> TarReader
+    gzip = match compression
+        .none => false
+        .gzip => true
+
+    return TarReader(state: tar_read.start(source.start(from, gzip: gzip, limit: limit)))
+
+# The next entry of `r`, or the archive's end; the data of the entry before
+# it that was not read is skipped.
+#
+# - `r`: the reader, which moves to the entry.
+#
+# Fails `invalid` where a header is not one, `unsupported` on a sparse
+# member, `limit` where the archive passes the reader's limit, and as the
+# stream fails.
+#
+# See also `read_data` and `read_rest`.
+function next_entry(@r: TarReader) -> Next?
+    found = tar_read.next_header(@r.state)?
+
+    if !found.found
+        return ok(.end)
+    h = found.header
+    kind: Kind @= .file
+
+    if h.flag == '1'
+        kind @ .hard_link
+    else if h.flag == '2'
+        kind @ .symlink
+    else if h.flag == '5'
+        kind @ .directory
+    else if h.flag == '3' || h.flag == '4' || h.flag == '6'
+        kind @ .other(flag: to_u8(h.flag).must())
+    modified = time.from_unix(whole_seconds: h.modified, extra_nanoseconds: h.nanos).default(time.epoch())
+    entry = TarEntry(
+        name: h.name,
+        kind: kind,
+        size: h.size,
+        mode: h.mode,
+        modified: modified,
+        link: h.link,
+        user_id: h.user_id,
+        group_id: h.group_id,
+        user_name: h.user_name,
+        group_name: h.group_name,
+        device_major: h.major,
+        device_minor: h.minor,
+        records: h.records
+    )
+    return ok(.entry(value: entry))
+
+# Up to `most` bytes of the data of `r`'s entry in hand, fewer where fewer
+# come at once, none at its end.
+#
+# - `r`: the reader.
+# - `most`: the most bytes answered, 0 or more.
+#
+# Fails `invalid` where the archive ends inside the data, `limit` where it
+# passes the reader's limit, and as the stream fails.
+#
+# See also `read_rest`.
+function read_data(@r: TarReader, most: i64) -> [u8]?
+    return tar_read.read_data(@r.state, most: most)
+
+# The rest of the data of `r`'s entry in hand, whole.
+#
+# - `r`: the reader.
+#
+# Fails as `read_data` does. It holds the data whole, which the reader's
+# limit bounds.
+#
+# See also `read_data`.
+function read_rest(@r: TarReader) -> [u8]?
+    out: [u8] @= []
+
+    while true
+        got = read_data(@r, most: 65536)?
+
+        if got.len() == 0
+            return ok(out)
+
+        for b in got
+            out @ out.push(b)
+
+    return ok(out)
+
+# Every entry of the tar archive in `from`, in order, their data skipped.
+#
+# - `from`: the archive's stream, read to its end; the caller closes it.
+# - `compression`: none, or gzip.
+# - `limit`: the most bytes of archive read, after gzip.
+#
+# Fails as `next_entry` does.
+#
+# See also `extract_tar`.
+function list_tar(from: io.Stream, compression: Compression, limit: i64) -> [TarEntry]?
+    r @= tar_reader(from, compression: compression, limit: limit)
+    entries: [TarEntry] @= []
+
+    while true
+        match next_entry(@r)?
+            .end     => return ok(entries)
+            .entry e => entries @ entries.push(e.value)
+
+    return ok(entries)
+
+# Extracts every entry of the tar archive in `from` into the folder `to`,
+# and answers their names in order. An entry that would land outside `to`
+# is refused (the module's opening comment says which).
+#
+# - `from`: the archive's stream, read to its end; the caller closes it.
+# - `compression`: none, or gzip.
+# - `to`: the folder, made where it is not there.
+# - `limit`: the most bytes of archive read, after gzip, which bounds what
+#   is written.
+#
+# Fails `invalid` on the first entry refused, the entries before it
+# extracted; and as `next_entry` and `fs` fail.
+#
+# See also `list_tar` and `extract_zip`.
+function extract_tar(from: io.Stream, compression: Compression, to: str, limit: i64) -> [str]?
+    fs.make_dir_all(to)?
+    r @= tar_reader(from, compression: compression, limit: limit)
+    names: [str] @= []
+    dirs: [str] @= []
+    dir_times: [time.Instant] @= []
+
+    while true
+        match next_entry(@r)?
+            .end =>
+                extract.set_dir_times(dirs, times: dir_times)?
+                return ok(names)
+            .entry found =>
+                e = found.value
+                parts = safe.parts_of(e.name)?
+
+                match e.kind
+                    .directory =>
+                        dirs @ dirs.push(extract.make_dir(name: e.name, root: to, parts: parts)?)
+                        dir_times @ dir_times.push(e.modified)
+                    .file =>
+                        target = extract.place(name: e.name, root: to, parts: parts)?
+                        f @= extract.open_file(target, mode: e.mode)?
+                        copied = tar_read.copy_data(@r.state, to: f)
+                        closed = io.close(@f)
+                        _ = copied?
+                        closed?
+                        extract.finish_file(target, mode: e.mode, modified: e.modified)?
+                    .symlink   => extract.make_symlink(name: e.name, root: to, parts: parts, link: e.link)?
+                    .hard_link => extract.make_hard_link(name: e.name, root: to, parts: parts, link: e.link)?
+                    .other _ => return codes.refused(
+                        name: e.name,
+                        why: "it is a device or a pipe, which is not extracted"
+                    )
+
+                names @ names.push(e.name)
+
+    return ok(names)
+
+# A writer of a tar archive to a stream: made by `tar_writer`, it writes
+# entry by entry, and `finish_tar` writes the archive's end. It holds a copy
+# of the stream and never closes it.
+record TarWriter
+    # Where the archive goes, and how many bytes of it have been written.
+    sink: tar_write.Sink
+    # The data the entry in hand still owes, in bytes.
+    owed: i64
+    # The size of the entry in hand's data, for its padding.
+    size: i64
+    # The name of the entry in hand, for messages.
+    name: str
+
+# A writer of a tar archive to `to`, compressed as `compression` says (gzip
+# at level 6). Nothing is written until the first entry.
+#
+# - `to`: the stream; the caller closes it, after `finish_tar`.
+# - `compression`: none, or gzip.
+#
+# See also `write_tar_entry` and `finish_tar`.
+function tar_writer(to: io.Stream, compression: Compression) -> TarWriter
+    gzip = match compression
+        .none => false
+        .gzip => true
+
+    # Level 6 is in range, so the sink is always made.
+    sink = tar_write.start(to, gzip: gzip, level: 6).must()
+    return TarWriter(sink: sink, owed: 0, size: 0, name: "")
+
+# Writes `entry`'s header; its data, `entry.size` bytes for a file, follows
+# by `write_tar_data`. A name or a field ustar cannot hold is written in a
+# PAX record before the header.
+#
+# - `w`: the writer, whose entry in hand must have had all its data.
+# - `entry`: the header; a folder's name gets its `/`, and an entry that is
+#   not a file has no data, whatever its size says.
+#
+# Fails `invalid` where the entry before still owes data, the name is
+# empty, or the size is below 0; and as the stream fails.
+#
+# See also `write_tar_data` and `write_tar_entry`.
+function write_tar_header(@w: TarWriter, entry: TarEntry) -> ()?
+    if w.owed > 0
+        return fail(code: INVALID, msg: f"a header written while \"{w.name}\" still owes {w.owed} bytes of data")
+
+    if entry.name == "" || entry.size < 0
+        return fail(code: INVALID, msg: f"a tar entry named \"{entry.name}\" of {entry.size} bytes")
+    tar_write.pad(@w.sink, size: w.size)?
+    h @= tar_header.empty()
+    h.name @ entry.name
+    h.mode @ entry.mode
+    nanos = (entry.modified.unix_nanoseconds % 1000000000 + 1000000000) % 1000000000
+    h.modified @ (entry.modified.unix_nanoseconds - nanos) / 1000000000
+    h.nanos @ nanos
+    h.link @ entry.link
+    h.user_id @ entry.user_id
+    h.group_id @ entry.group_id
+    h.user_name @ entry.user_name
+    h.group_name @ entry.group_name
+    h.major @ entry.device_major
+    h.minor @ entry.device_minor
+    h.records @ entry.records
+    h.size @ 0
+
+    match entry.kind
+        .file =>
+            h.flag @ '0'
+            h.size @ entry.size
+        .directory =>
+            h.flag @ '5'
+
+            if h.name[h.name.len() - 1] != '/'
+                h.name @ h.name + "/"
+        .symlink   => h.flag @ '2'
+        .hard_link => h.flag @ '1'
+        .other o   => h.flag @ to_i64(o.flag).must()
+
+    tar_write.write_header(@w.sink, h: h)?
+    w.owed @ h.size
+    w.size @ h.size
+    w.name @ entry.name
+    return ok()
+
+# Writes `data` as the next bytes of the entry in hand's data.
+#
+# - `w`: the writer.
+# - `data`: the bytes; none write nothing.
+#
+# Fails `invalid` where they pass what the entry's size owes, and as the
+# stream fails.
+#
+# See also `write_tar_header`.
+function write_tar_data(@w: TarWriter, data: [u8]) -> ()?
+    if data.len() > w.owed
+        return fail(code: INVALID, msg: f"{data.len()} bytes of data written where \"{w.name}\" owes {w.owed}")
+    tar_write.put(@w.sink, data: data)?
+    w.owed @ w.owed - data.len()
+    return ok()
+
+# Writes an entry and its data whole: `entry`'s size is `data`'s length.
+#
+# - `w`: the writer.
+# - `entry`: the header; its `size` is replaced by `data`'s length.
+# - `data`: the data, for a file; empty for anything else.
+#
+# Fails `invalid` where `data` is not empty for an entry that is not a
+# file, and as `write_tar_header` fails.
+#
+# See also `add_tar_file`.
+function write_tar_entry(@w: TarWriter, entry: TarEntry, data: [u8]) -> ()?
+    sized @= entry
+    sized.size @ data.len()
+
+    match entry.kind
+        .file => _ = 0
+        .directory | .symlink | .hard_link | .other _ =>
+            if data.len() > 0
+                return fail(code: INVALID, msg: f"data given for \"{entry.name}\", which is not a file")
+
+    write_tar_header(@w, entry: sized)?
+    write_tar_data(@w, data: data)?
+    return ok()
+
+# Writes the file, folder or symbolic link at `file` on the disk as the
+# entry `name`, with its mode and time; a file's data is read 65,536 bytes
+# at a time. A folder's contents are not added: `add_tar_tree` does that.
+#
+# - `w`: the writer.
+# - `file`: what to add, a path; a link is added as a link, not followed.
+# - `name`: the entry's name in the archive, parts joined by `/`.
+#
+# Fails `invalid` where `file` names a device or a pipe, or a file that
+# grows while it is read, and as `fs` and the stream fail.
+#
+# See also `add_tar_tree`.
+function add_tar_file(@w: TarWriter, file: str, name: str) -> ()?
+    info = fs.link_info(file)?
+    entry @= tar_entry(name, kind: .file)
+    entry.mode @ info.permission
+    entry.modified @ info.written
+
+    match info.kind
+        .directory =>
+            entry.kind @ .directory
+            write_tar_header(@w, entry: entry)?
+        .link =>
+            entry.kind @ .symlink
+            entry.link @ fs.read_link(file)?
+            write_tar_header(@w, entry: entry)?
+        .other => return fail(
+            code: INVALID,
+            msg: f"\"{file}\" is a device or a pipe, which a tar entry here does not hold"
+        )
+        .file =>
+            entry.size @ info.size
+            write_tar_header(@w, entry: entry)?
+            f @= fs.open(file)?
+            copied = tar_write.copy_in(@w.sink, from: f, most: info.size, name: file)
+            closed = io.close(@f)
+            n = copied?
+            closed?
+            w.owed @ w.owed - n
+
+            if w.owed > 0
+                return fail(
+                    code: INVALID,
+                    msg: f"the file \"{file}\" shrank to {n} bytes while it was read, where its header says {info.size}"
+                )
+
+    return ok()
+
+# Writes the folder `dir` and everything under it as entries below `name`,
+# folders before what they hold, links as links.
+#
+# - `w`: the writer.
+# - `dir`: the folder on the disk.
+# - `name`: the name the folder takes in the archive; "" puts what it holds
+#   at the archive's top.
+#
+# Fails as `add_tar_file` and `fs.walk` fail.
+#
+# See also `add_tar_file`.
+function add_tar_tree(@w: TarWriter, dir: str, name: str) -> ()?
+    if name != ""
+        add_tar_file(@w, file: dir, name: name)?
+
+    for e in fs.walk(dir)?
+        inside = bytes.to_text(
+            bytes.replace_all(s: bytes.from_text(e.name), old: bytes.from_text(path.sep()), new: bytes.from_text("/"))
+        ).must()
+        entry_name: str @= inside
+
+        if name != ""
+            entry_name @ name + "/" + inside
+        add_tar_file(@w, file: path.join_all([dir, e.name]), name: entry_name)?
+
+    return ok()
+
+# Writes the archive's end, and gzip's end where it is compressed. The
+# stream stays open for its owner.
+#
+# - `w`: the writer, ended by this call.
+#
+# Fails `invalid` where the entry in hand still owes data, and as the
+# stream fails.
+#
+# See also `tar_writer`.
+function finish_tar(@w: TarWriter) -> ()?
+    if w.owed > 0
+        return fail(code: INVALID, msg: f"the archive ended while \"{w.name}\" still owes {w.owed} bytes of data")
+    tar_write.pad(@w.sink, size: w.size)?
+    w.size @ 0
+    tar_write.finish(@w.sink)?
+    return ok()
+
+## Zip
+
+# What a zip archive's central directory says of a member.
+record ZipEntry
+    # The member's path, parts joined by `/`, no `/` at the end.
+    name: str
+    # What it is: a file, a folder or a symbolic link.
+    kind: Kind
+    # How its data is held.
+    method: Method
+    # Its data's size in bytes.
+    size: i64
+    # Its size as held, compressed or not.
+    compressed_size: i64
+    # The CRC-32 of its data.
+    crc: u32
+    # When it was last changed: the extended timestamp where there is one,
+    # else the DOS time read as UTC, to the even second.
+    modified: time.Instant
+    # Its Unix permission bits, 0 to 0o7777: 0o644 (0o755 for a folder)
+    # where the archive was not made on Unix.
+    mode: i64
+    # Its comment, "" for none.
+    comment: str
+    # Where its local header begins in the archive's stream; 0 for a member
+    # not read from one.
+    offset: i64
+
+# A zip member named `name` of kind `kind`, deflated, with every other field
+# at its usual value: mode 0o644 (0o755 for a folder), the time 1980-01-01
+# UTC, no comment.
+#
+# - `name`: the member's path, parts joined by `/`.
+# - `kind`: a file, a folder or a symbolic link.
+#
+# See also `write_zip_entry`.
+function zip_entry(name: str, kind: Kind) -> ZipEntry
+    mode: i64 @= 0o644
+
+    match kind
+        .directory                               => mode @ 0o755
+        .file | .symlink | .hard_link | .other _ => _ = 0
+
+    return ZipEntry(
+        name: name,
+        kind: kind,
+        method: .deflated,
+        size: 0,
+        compressed_size: 0,
+        crc: 0,
+        modified: time.date(year: 1980, month: 1, day: 1).must(),
+        mode: mode,
+        comment: "",
+        offset: 0
+    )
+
+# A zip archive open to read: its central directory read, its members'
+# data read on demand. It holds a copy of the stream and never closes it.
+record ZipReader
+    # The archive's stream, which can seek: a file.
+    from: io.Stream
+    # The stream's size in bytes.
+    size: i64
+    # Every member, in the central directory's order.
+    entries: [ZipEntry]
+    # The archive's comment, "" for none.
+    comment: str
+    # The central directory's own record of each member, in the order of
+    # `entries`: what reading a member's data starts from.
+    members: [zip_read.Member]
+
+# A reader of the zip archive in `from`, its central directory read.
+#
+# - `from`: the archive's stream, which can seek, a file; the caller closes
+#   it.
+#
+# Fails `invalid` where no end record is found or the directory is not
+# one, `unsupported` on an archive split over disks, and as `io.size`,
+# `io.seek` and `io.read` fail; a pipe fails `unsupported`.
+#
+# See also `read_zip_entry` and `extract_zip`.
+function zip_reader(from: io.Stream) -> ZipReader?
+    dir = zip_read.read_directory(from)?
+    entries: [ZipEntry] @= []
+
+    for m in dir.members
+        unix = m.made_by >> 8 == 3
+        type = m.external >> 16 & 0o170000
+        mode: i64 @= m.external >> 16 & 0o7777
+        kind: Kind @= .file
+        name: str @= m.name
+
+        if name.len() > 0 && name[name.len() - 1] == '/'
+            kind @ .directory
+            name @ name.slice(from: 0, to: name.len() - 1)
+        else if unix && type == 0o120000
+            kind @ .symlink
+        else if unix && type == 0o040000
+            kind @ .directory
+
+        if !unix || mode == 0
+            mode @ 0o644
+
+            match kind
+                .directory                               => mode @ 0o755
+                .file | .symlink | .hard_link | .other _ => _ = 0
+        method: Method @= .deflated
+
+        if m.method == zip_read.STORED
+            method @ .stored
+        entries @ entries.push(
+            ZipEntry(name: name, kind: kind, method: method, size: m.size, compressed_size: m.compressed, crc: to_u32(m.crc).must(), modified: m.modified, mode: mode, comment: m.comment, offset: m.offset)
+        )
+
+    return ok(ZipReader(from: from, size: io.size(from)?, entries: entries, comment: dir.comment, members: dir.members))
+
+# The member of `r` named `name`, the first where several are.
+#
+# - `r`: the reader.
+# - `name`: the member's name, no `/` at the end.
+#
+# Fails `not_found` where `r` holds none of that name.
+#
+# See also `read_zip_entry`.
+function entry_of(r: ZipReader, name: str) -> ZipEntry?
+    for e in r.entries
+        if e.name == name
+            return ok(e)
+
+    return fail(code: NOT_FOUND, msg: f"no member \"{name}\" in the zip archive")
+
+# The data of `entry`, a member of `r`, whole: its CRC-32 and size checked.
+#
+# - `r`: the reader.
+# - `entry`: a member of `r.entries`, found by where it begins.
+# - `limit`: the most bytes answered; a member whose size passes it fails
+#   at once.
+#
+# Fails `not_found` where `entry` is not a member of `r`; `limit` where its
+# size passes `limit`; `invalid` where its local header, its data, its
+# CRC-32 or its size is not what the directory says; `unsupported` on an
+# encrypted member or another method; and as the stream fails.
+#
+# See also `entry_of` and `extract_zip`.
+function read_zip_entry(r: ZipReader, entry: ZipEntry, limit: i64) -> [u8]?
+    for m in r.members
+        if m.offset == entry.offset
+            reading @= zip_member.start_reading(r.from, size: r.size, m: m, limit: limit)?
+            return zip_member.read_member(@reading)
+
+    return fail(code: NOT_FOUND, msg: f"no member \"{entry.name}\" begins at {entry.offset} in the zip archive")
+
+# Extracts every member of the zip archive in `from` into the folder `to`,
+# and answers their names in order. Every name, and the sum of the sizes,
+# is checked before anything is written; a symbolic link's target is
+# checked before the link is made.
+#
+# - `from`: the archive's stream, which can seek; the caller closes it.
+# - `to`: the folder, made where it is not there.
+# - `limit`: the most bytes of data written in all.
+#
+# Fails `invalid` where a member is refused or its data is not what the
+# directory says, `limit` where the sizes pass `limit`, `unsupported` as
+# `read_zip_entry` does, and as `fs` and the stream fail.
+#
+# See also `zip_reader` and `extract_tar`.
+function extract_zip(from: io.Stream, to: str, limit: i64) -> [str]?
+    r = zip_reader(from)?
+    total: i64 @= 0
+
+    for e in r.entries
+        _ = safe.parts_of(e.name)?
+        total @ total + e.size
+
+        if total > limit || total < 0
+            return fail(code: LIMIT, msg: f"the members hold more than the limit of {limit} bytes")
+
+    fs.make_dir_all(to)?
+    names: [str] @= []
+    dirs: [str] @= []
+    dir_times: [time.Instant] @= []
+
+    for i in range(from: 0, to: r.entries.len())
+        e = r.entries[i]
+        parts = safe.parts_of(e.name)?
+
+        match e.kind
+            .directory =>
+                dirs @ dirs.push(extract.make_dir(name: e.name, root: to, parts: parts)?)
+                dir_times @ dir_times.push(e.modified)
+            .symlink =>
+                reading @= zip_member.start_reading(r.from, size: r.size, m: r.members[i], limit: 4096)?
+                target = bytes.to_text(zip_member.read_member(@reading)?)?
+                extract.make_symlink(name: e.name, root: to, parts: parts, link: target)?
+            .file | .hard_link | .other _ =>
+                target = extract.place(name: e.name, root: to, parts: parts)?
+                reading @= zip_member.start_reading(r.from, size: r.size, m: r.members[i], limit: limit)?
+                f @= extract.open_file(target, mode: e.mode)?
+                copied = zip_member.copy_member(@reading, to: f)
+                closed = io.close(@f)
+                copied?
+                closed?
+                extract.finish_file(target, mode: e.mode, modified: e.modified)?
+
+        names @ names.push(e.name)
+
+    extract.set_dir_times(dirs, times: dir_times)?
+    return ok(names)
+
+# A writer of a zip archive to a stream: made by `zip_writer`, it writes
+# member by member, and `finish_zip` writes the central directory. It holds
+# a copy of the stream and never closes it.
+record ZipWriter
+    # Where the archive goes, and what has been written of it.
+    sink: zip_write.Sink
+
+# A writer of a zip archive to `to`. Nothing is written until the first
+# member.
+#
+# - `to`: the stream; the caller closes it, after `finish_zip`.
+#
+# See also `write_zip_entry` and `finish_zip`.
+function zip_writer(to: io.Stream) -> ZipWriter
+    return ZipWriter(sink: zip_write.start(to, zip64_at: zip_write.ZIP64_AT))
+
+# Writes a member and its data whole, compressed by `entry.method` at level
+# 6: its size, compressed size and CRC-32 are `data`'s, whatever `entry`
+# says. ZIP64 records are written where a size or an offset needs them.
+#
+# - `w`: the writer.
+# - `entry`: the member: name, kind, method, time, mode and comment; a
+#   folder's name gets its `/`, and a symbolic link's data is its target.
+# - `data`: the data; empty for a folder.
+#
+# Fails `invalid` where the name is empty or passes 65,535 bytes, the kind
+# is a hard link or another, or a folder is given data; and as the stream
+# fails.
+#
+# See also `add_zip_file`.
+function write_zip_entry(@w: ZipWriter, entry: ZipEntry, data: [u8]) -> ()?
+    name: str @= entry.name
+
+    if name == ""
+        return fail(code: INVALID, msg: "a zip member with no name")
+
+    match entry.kind
+        .file | .symlink => _ = 0
+        .directory =>
+            if data.len() > 0
+                return fail(code: INVALID, msg: f"data given for the folder \"{name}\"")
+
+            if name[name.len() - 1] != '/'
+                name @ name + "/"
+        .hard_link | .other _ => return fail(
+            code: INVALID,
+            msg: f"\"{name}\" is a hard link or a device, which a zip member does not hold"
+        )
+
+    method = match entry.method
+        .stored   => zip_read.STORED
+        .deflated => zip_read.DEFLATED
+
+    kind = match entry.kind
+        .directory                    => 1
+        .symlink                      => 2
+        .file | .hard_link | .other _ => 0
+
+    zip_write.add_whole(@w.sink, name: name, comment: entry.comment, method: method, level: 6, modified: entry.modified, external: zip_write.external_of(mode: entry.mode, kind: kind), data: data)?
+    return ok()
+
+# Writes the file, folder or symbolic link at `file` on the disk as the
+# member `name`, with its mode and time; a file's data is read and
+# compressed 65,536 bytes at a time, a data descriptor after it.
+#
+# - `w`: the writer.
+# - `file`: what to add, a path; a link is added as a link, not followed.
+# - `name`: the member's name in the archive, parts joined by `/`.
+# - `method`: how a file's data is held.
+#
+# Fails `invalid` where `file` names a device or a pipe, and as `fs` and
+# the stream fail.
+#
+# See also `add_zip_tree`.
+function add_zip_file(@w: ZipWriter, file: str, name: str, method: Method) -> ()?
+    info = fs.link_info(file)?
+    entry @= zip_entry(name, kind: .file)
+    entry.mode @ info.permission
+    entry.modified @ info.written
+    entry.method @ method
+
+    match info.kind
+        .directory =>
+            entry.kind @ .directory
+            write_zip_entry(@w, entry: entry, data: [])?
+        .link =>
+            entry.kind @ .symlink
+            entry.method @ .stored
+            write_zip_entry(@w, entry: entry, data: bytes.from_text(fs.read_link(file)?))?
+        .other => return fail(code: INVALID, msg: f"\"{file}\" is a device or a pipe, which a zip member does not hold")
+        .file =>
+            code = match method
+                .stored   => zip_read.STORED
+                .deflated => zip_read.DEFLATED
+
+            f @= fs.open(file)?
+            added = zip_write.add_streamed(
+                @w.sink,
+                name: name,
+                comment: "",
+                method: code,
+                level: 6,
+                modified: info.written,
+                external: zip_write.external_of(mode: info.permission, kind: 0),
+                from: f,
+                expected: info.size
+            )
+            closed = io.close(@f)
+            added?
+            closed?
+
+    return ok()
+
+# Writes the folder `dir` and everything under it as members below `name`,
+# folders before what they hold, links as links.
+#
+# - `w`: the writer.
+# - `dir`: the folder on the disk.
+# - `name`: the name the folder takes in the archive; "" puts what it holds
+#   at the archive's top.
+# - `method`: how files' data is held.
+#
+# Fails as `add_zip_file` and `fs.walk` fail.
+#
+# See also `add_zip_file`.
+function add_zip_tree(@w: ZipWriter, dir: str, name: str, method: Method) -> ()?
+    if name != ""
+        add_zip_file(@w, file: dir, name: name, method: method)?
+
+    for e in fs.walk(dir)?
+        inside = bytes.to_text(
+            bytes.replace_all(s: bytes.from_text(e.name), old: bytes.from_text(path.sep()), new: bytes.from_text("/"))
+        ).must()
+        member: str @= inside
+
+        if name != ""
+            member @ name + "/" + inside
+        add_zip_file(@w, file: path.join_all([dir, e.name]), name: member, method: method)?
+
+    return ok()
+
+# Writes the central directory and the end records, with the archive's
+# `comment`. The stream stays open for its owner.
+#
+# - `w`: the writer, ended by this call.
+# - `comment`: the archive's comment, "" for none, at most 65,535 bytes.
+#
+# Fails `invalid` where the comment is longer, and as the stream fails.
+#
+# See also `zip_writer`.
+function finish_zip(@w: ZipWriter, comment: str) -> ()?
+    return zip_end.finish(@w.sink, comment: comment)
+
+## Tests
+
+test "list_tar: Python's PAX archive, every field it holds"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_PAX)).must()
+    io.close(@p.writer).must()
+    entries = list_tar(p.reader, compression: .gzip, limit: 1000000).must()
+    io.close(@p.reader).must()
+    assert entries.len() == 8
+    assert entries[0].name == "dir" && entries[0].kind == .directory && entries[0].mode == 0o750
+    assert time.unix_seconds(entries[0].modified) == 1600000000
+    assert entries[1].name == "dir/a.txt" && entries[1].size == 6 && entries[1].mode == 0o640
+    assert entries[2].name == "été/ü.txt"
+    assert entries[3].name == "long/" + repeat("n", 145) + ".txt"
+    assert entries[4].kind == .symlink && entries[4].link == "a.txt" && entries[4].size == 0
+    assert entries[5].kind == .hard_link && entries[5].link == "dir/a.txt"
+    assert entries[6].records["comment"].must() == "a PAX comment"
+    assert entries[7].modified.unix_nanoseconds == 1700000000500000000
+
+test "list_tar: Python's GNU archive and its ustar archive"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_GNU)).must()
+    io.close(@p.writer).must()
+    gnu = list_tar(p.reader, compression: .gzip, limit: 1000000).must()
+    io.close(@p.reader).must()
+    assert gnu[0].name == "g/" + repeat("m", 120)
+    assert gnu[1].user_id == 16777216
+    assert gnu[2].link == repeat("t", 120)
+    q @= io.pipe().must()
+    io.write(q.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@q.writer).must()
+    plain = list_tar(q.reader, compression: .gzip, limit: 1000000).must()
+    io.close(@q.reader).must()
+    assert plain.len() == 1 && plain[0].name == "u/one.txt" && plain[0].size == 3
+
+test "extract_tar: Python's PAX archive into a folder, its files, links, modes and times"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_PAX)).must()
+    io.close(@p.writer).must()
+    names = extract_tar(p.reader, compression: .gzip, to: root, limit: 1000000).must()
+    io.close(@p.reader).must()
+    assert names.len() == 8
+    a = path.join_all([root, "dir", "a.txt"])
+    assert fs.read_bytes(a).must() == bytes.from_text("alpha\n")
+    assert fs.permission_of(a).must() == 0o640
+    assert time.unix_seconds(fs.info(a).must().written) == 1700000000
+    assert fs.read_link(path.join_all([root, "dir", "link"])).must() == "a.txt"
+    assert fs.read_bytes(path.join_all([root, "dir", "hard"])).must() == bytes.from_text("alpha\n")
+    assert fs.read_bytes(path.join_all([root, "été", "ü.txt"])).must() == bytes.from_text("x")
+    assert time.unix_seconds(fs.info(path.join_all([root, "dir"])).must().written) == 1600000000
+    fs.remove_all(root).must()
+
+test "extract_tar: every hostile archive is refused, and nothing lands outside"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    inside = path.join_all([root, "in"])
+    hostile = [
+        samples.TAR_EVIL_UP
+        samples.TAR_EVIL_ABS
+        samples.TAR_EVIL_LINK_ABS
+        samples.TAR_EVIL_LINK_UP
+        samples.TAR_EVIL_THROUGH
+        samples.TAR_EVIL_HARD
+        samples.TAR_EVIL_DEVICE
+    ]
+
+    for hex in hostile
+        p @= io.pipe().must()
+        io.write(p.writer, data: samples.of(hex)).must()
+        io.close(@p.writer).must()
+
+        match extract_tar(p.reader, compression: .gzip, to: inside, limit: 1000000)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+        io.close(@p.reader).must()
+
+    assert !fs.exists(path.join_all([root, "evil.txt"])).must()
+    assert fs.read_bytes(path.join_all([inside, "ok.txt"])).must() == bytes.from_text("ok")
+    assert !fs.exists(path.join_all([inside, "d", "x.txt"])).must()
+    fs.remove_all(root).must()
+
+test "write_tar_entry and next_entry: every kind, long and non-ASCII names, gzip, back"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .gzip)
+    long = repeat("x", 120) + "/" + repeat("y", 110) + "/z.txt"
+    file @= tar_entry("héros/" + long, kind: .file)
+    file.mode @ 0o600
+    file.modified @ time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 250000000).must()
+    file.records @ {"comment": "kept"}
+    write_tar_entry(@w, entry: file, data: bytes.from_text("data")).must()
+    write_tar_entry(@w, entry: tar_entry("héros", kind: .directory), data: []).must()
+    link @= tar_entry("héros/l", kind: .symlink)
+    link.link @ repeat("t", 150)
+    write_tar_entry(@w, entry: link, data: []).must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    r @= tar_reader(p.reader, compression: .gzip, limit: 1000000)
+
+    match next_entry(@r).must()
+        .end => assert false
+        .entry e =>
+            assert e.value.name == "héros/" + long
+            assert e.value.mode == 0o600 && e.value.size == 4
+            assert e.value.modified.unix_nanoseconds == 1700000000250000000
+            assert e.value.records["comment"].must() == "kept"
+            assert read_rest(@r).must() == bytes.from_text("data")
+
+    match next_entry(@r).must()
+        .end     => assert false
+        .entry e => assert e.value.kind == .directory && e.value.name == "héros"
+
+    match next_entry(@r).must()
+        .end     => assert false
+        .entry e => assert e.value.link == repeat("t", 150)
+
+    assert next_entry(@r).must() == .end
+    io.close(@p.reader).must()
+
+test "write_tar_header and write_tar_data: data owed at the next header and at the end, data past the size"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    e @= tar_entry("a", kind: .file)
+    e.size @ 3
+    write_tar_header(@w, entry: e).must()
+    write_tar_data(@w, data: [1]).must()
+    assert write_tar_data(@w, data: [1, 2, 3]).is_err()
+    assert write_tar_header(@w, entry: e).is_err()
+    assert finish_tar(@w).is_err()
+    write_tar_data(@w, data: [2, 3]).must()
+    assert write_tar_entry(@w, entry: tar_entry("d", kind: .directory), data: [1]).is_err()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+test "add_tar_tree and extract_tar: a folder on the disk through an archive and back"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    src = path.join_all([root, "src"])
+    fs.make_dir_all(path.join_all([src, "sub"])).must()
+    fs.write_bytes(path.join_all([src, "top.txt"]), data: bytes.from_text("top")).must()
+    fs.write_bytes(path.join_all([src, "sub", "deep.txt"]), data: bytes.from_text("deep")).must()
+    fs.symlink(target: "top.txt", name: path.join_all([src, "to-top"])).must()
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    add_tar_tree(@w, dir: src, name: "tree").must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    dst = path.join_all([root, "dst"])
+    _ = extract_tar(p.reader, compression: .none, to: dst, limit: 1000000).must()
+    io.close(@p.reader).must()
+    assert fs.read_bytes(path.join_all([dst, "tree", "sub", "deep.txt"])).must() == bytes.from_text("deep")
+    assert fs.read_link(path.join_all([dst, "tree", "to-top"])).must() == "top.txt"
+    fs.remove_all(root).must()
+
+test "tar_reader: an archive past the limit fails `limit`"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_PAX)).must()
+    io.close(@p.writer).must()
+
+    match list_tar(p.reader, compression: .gzip, limit: 1000)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    io.close(@p.reader).must()
+
+test "zip_reader and read_zip_entry: Python's archive, every field, and a name it does not hold"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "py.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_PY)).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert r.comment == "an archive comment"
+    assert r.entries.len() == 5
+    assert r.entries[0].name == "dir" && r.entries[0].kind == .directory
+    stored = entry_of(r, name: "dir/stored.txt").must()
+    assert stored.method == .stored && stored.mode == 0o640
+    assert time.unix_seconds(stored.modified) == 1700000000
+    assert read_zip_entry(r, entry: stored, limit: 100).must() == bytes.from_text("stored data\n")
+    deflated = entry_of(r, name: "dir/deflated.txt").must()
+    assert deflated.method == .deflated && deflated.size == 900 && deflated.comment == "a member comment"
+    assert read_zip_entry(r, entry: deflated, limit: 900).must() == bytes.from_text(repeat("deflated ", 100))
+
+    match read_zip_entry(r, entry: deflated, limit: 899)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    assert entry_of(r, name: "été.txt").must().size == 6
+    assert entry_of(r, name: "dir/link").must().kind == .symlink
+
+    match entry_of(r, name: "absent")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+test "zip_reader: Python's ZIP64 member"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "z64.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_64)).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert read_zip_entry(r, entry: r.entries[0], limit: 1000).must() == bytes.from_text(repeat("zip64 ", 50))
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+test "extract_zip: Python's archive, and hostile ones refused before anything is written"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "a.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_PY)).must()
+    s @= fs.open(file).must()
+    out = path.join_all([root, "out"])
+    assert extract_zip(s, to: out, limit: 100000).must().len() == 5
+    io.close(@s).must()
+    assert fs.read_bytes(path.join_all([out, "dir", "deflated.txt"])).must().len() == 900
+    assert fs.read_link(path.join_all([out, "dir", "link"])).must() == "stored.txt"
+
+    for hex in [samples.ZIP_EVIL_UP, samples.ZIP_EVIL_ABS, samples.ZIP_EVIL_LINK]
+        fs.write_bytes(file, data: samples.of(hex)).must()
+        bad @= fs.open(file).must()
+        assert extract_zip(bad, to: path.join_all([root, "bad"]), limit: 100000).is_err()
+        io.close(@bad).must()
+
+    assert !fs.exists(path.join_all([root, "bad", "ok.txt"])).must()
+    assert !fs.exists(path.join_all([root, "evil.txt"])).must()
+
+    last @= fs.open(file).must()
+    small = extract_zip(last, to: out, limit: 1)
+    io.close(@last).must()
+
+    match small
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    fs.remove_all(root).must()
+
+test "write_zip_entry and add_zip_tree: every kind written, read back, extracted"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    src = path.join_all([root, "src"])
+    fs.make_dir_all(src).must()
+    fs.write_bytes(path.join_all([src, "f.txt"]), data: bytes.from_text(repeat("file ", 200))).must()
+    file = path.join_all([root, "w.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    stored @= zip_entry("héros/stored.txt", kind: .file)
+    stored.method @ .stored
+    stored.comment @ "été"
+    write_zip_entry(@w, entry: stored, data: bytes.from_text("plain")).must()
+    write_zip_entry(@w, entry: zip_entry("héros", kind: .directory), data: []).must()
+    write_zip_entry(@w, entry: zip_entry("héros/l", kind: .symlink), data: bytes.from_text("stored.txt")).must()
+    add_zip_tree(@w, dir: src, name: "tree", method: .deflated).must()
+    finish_zip(@w, comment: "made by Rebel").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert r.comment == "made by Rebel"
+    assert entry_of(r, name: "héros/stored.txt").must().comment == "été"
+    assert read_zip_entry(r, entry: entry_of(r, name: "tree/f.txt").must(), limit: 1000).must() == bytes.from_text(repeat("file ", 200))
+    io.close(@s).must()
+    again @= fs.open(file).must()
+    _ = extract_zip(again, to: path.join_all([root, "x"]), limit: 100000).must()
+    io.close(@again).must()
+    assert fs.read_link(path.join_all([root, "x", "héros", "l"])).must() == "stored.txt"
+    fs.remove_all(root).must()
+
+## Examples
+
+# Telling a zip archive by its first bytes.
+test "format_of: a zip archive"
+    assert format_of(samples.of(samples.ZIP_PY)).must() == .zip
+
+# The header of a file entry, before its data is written.
+test "tar_entry: a file entry"
+    e = tar_entry("notes.txt", kind: .file)
+    assert e.mode == 0o644 && e.size == 0
+
+# Reading the entries of an archive one at a time.
+test "tar_reader: entries one at a time"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
+
+    match next_entry(@r).must()
+        .entry e => assert e.value.name == "u/one.txt"
+        .end     => assert false
+
+    io.close(@p.reader).must()
+
+# The next entry, or the end of the archive.
+test "next_entry: one entry, then the end"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
+    _ = next_entry(@r).must()
+    assert next_entry(@r).must() == .end
+    io.close(@p.reader).must()
+
+# An entry's data, a few bytes at a time.
+test "read_data: two bytes of an entry"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
+    _ = next_entry(@r).must()
+    assert read_data(@r, most: 2).must() == bytes.from_text("on")
+    io.close(@p.reader).must()
+
+# An entry's data, whole.
+test "read_rest: an entry's data"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    r @= tar_reader(p.reader, compression: .gzip, limit: 100000)
+    _ = next_entry(@r).must()
+    assert read_rest(@r).must() == bytes.from_text("one")
+    io.close(@p.reader).must()
+
+# The names in a compressed archive.
+test "list_tar: the names of a .tar.gz"
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    assert list_tar(p.reader, compression: .gzip, limit: 100000).must()[0].name == "u/one.txt"
+    io.close(@p.reader).must()
+
+# A .tar.gz extracted into a new folder.
+test "extract_tar: a .tar.gz into a folder"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    p @= io.pipe().must()
+    io.write(p.writer, data: samples.of(samples.TAR_USTAR)).must()
+    io.close(@p.writer).must()
+    assert extract_tar(p.reader, compression: .gzip, to: root, limit: 100000).must() == ["u/one.txt"]
+    io.close(@p.reader).must()
+    assert fs.read_bytes(path.join_all([root, "u", "one.txt"])).must() == bytes.from_text("one")
+    fs.remove_all(root).must()
+
+# An archive of one file, written to a pipe.
+test "tar_writer: one file"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    write_tar_entry(@w, entry: tar_entry("a.txt", kind: .file), data: bytes.from_text("a")).must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert io.read_all(p.reader).must().len() == 512 * 4
+    io.close(@p.reader).must()
+
+# A header, then its data in two pieces.
+test "write_tar_header: a header, then its data"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    e @= tar_entry("two.txt", kind: .file)
+    e.size @ 6
+    write_tar_header(@w, entry: e).must()
+    write_tar_data(@w, data: bytes.from_text("ab")).must()
+    write_tar_data(@w, data: bytes.from_text("cdef")).must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# The data of the entry in hand, written as it comes.
+test "write_tar_data: the data a header announced"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    e @= tar_entry("x", kind: .file)
+    e.size @ 1
+    write_tar_header(@w, entry: e).must()
+    write_tar_data(@w, data: [0x78]).must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()
+
+# An entry and its data at once.
+test "write_tar_entry: a file and its data"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .gzip)
+    write_tar_entry(@w, entry: tar_entry("hi.txt", kind: .file), data: bytes.from_text("hi")).must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert list_tar(p.reader, compression: .gzip, limit: 100000).must()[0].size == 2
+    io.close(@p.reader).must()
+
+# A file on the disk added under a name of its own.
+test "add_tar_file: a file from the disk"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "f.txt"])
+    fs.write_bytes(file, data: bytes.from_text("disk")).must()
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    add_tar_file(@w, file: file, name: "f.txt").must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert list_tar(p.reader, compression: .none, limit: 100000).must()[0].size == 4
+    io.close(@p.reader).must()
+    fs.remove_all(root).must()
+
+# A folder on the disk and everything under it.
+test "add_tar_tree: a folder from the disk"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    fs.write_bytes(path.join_all([root, "one.txt"]), data: bytes.from_text("1")).must()
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    add_tar_tree(@w, dir: root, name: "").must()
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert list_tar(p.reader, compression: .none, limit: 100000).must()[0].name == "one.txt"
+    io.close(@p.reader).must()
+    fs.remove_all(root).must()
+
+# The end of an archive.
+test "finish_tar: the two blocks of zeros"
+    p @= io.pipe().must()
+    w @= tar_writer(p.writer, compression: .none)
+    finish_tar(@w).must()
+    io.close(@p.writer).must()
+    assert io.read_all(p.reader).must().len() == 1024
+    io.close(@p.reader).must()
+
+# A zip member of a folder.
+test "zip_entry: a folder"
+    e = zip_entry("docs", kind: .directory)
+    assert e.mode == 0o755 && e.method == .deflated
+
+# The members of a zip file.
+test "zip_reader: the members of a file"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "a.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_64)).must()
+    s @= fs.open(file).must()
+    assert zip_reader(s).must().entries[0].name == "forced.txt"
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A member found by its name.
+test "entry_of: a member by name"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "a.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_PY)).must()
+    s @= fs.open(file).must()
+    assert entry_of(zip_reader(s).must(), name: "été.txt").must().size == 6
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A member's data, read whole under a limit.
+test "read_zip_entry: a member's data"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "a.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_PY)).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert read_zip_entry(r, entry: entry_of(r, name: "été.txt").must(), limit: 100).must() == bytes.from_text("accent")
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A zip file extracted into a folder.
+test "extract_zip: a zip into a folder"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "a.zip"])
+    fs.write_bytes(file, data: samples.of(samples.ZIP_64)).must()
+    s @= fs.open(file).must()
+    assert extract_zip(s, to: path.join_all([root, "out"]), limit: 1000).must() == ["forced.txt"]
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A zip file of one member.
+test "zip_writer: one member"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "one.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    write_zip_entry(@w, entry: zip_entry("one.txt", kind: .file), data: bytes.from_text("one")).must()
+    finish_zip(@w, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    assert zip_reader(s).must().entries.len() == 1
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A member and its data, stored as it is.
+test "write_zip_entry: a stored member"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "s.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    e @= zip_entry("s.txt", kind: .file)
+    e.method @ .stored
+    write_zip_entry(@w, entry: e, data: bytes.from_text("as is")).must()
+    finish_zip(@w, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    assert zip_reader(s).must().entries[0].compressed_size == 5
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A file on the disk added as a deflated member.
+test "add_zip_file: a file from the disk"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    disk = path.join_all([root, "f.txt"])
+    fs.write_bytes(disk, data: bytes.from_text(repeat("ab", 100))).must()
+    file = path.join_all([root, "f.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    add_zip_file(@w, file: disk, name: "f.txt", method: .deflated).must()
+    finish_zip(@w, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert r.entries[0].size == 200 && r.entries[0].compressed_size < 200
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# A folder on the disk added under a name.
+test "add_zip_tree: a folder from the disk"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    src = path.join_all([root, "src"])
+    fs.make_dir_all(src).must()
+    fs.write_bytes(path.join_all([src, "a.txt"]), data: bytes.from_text("a")).must()
+    file = path.join_all([root, "t.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    add_zip_tree(@w, dir: src, name: "src", method: .deflated).must()
+    finish_zip(@w, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    assert entry_of(zip_reader(s).must(), name: "src/a.txt").must().size == 1
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# The central directory, with a comment.
+test "finish_zip: an archive with a comment"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "c.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    finish_zip(@w, comment: "empty, but said").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    assert zip_reader(s).must().comment == "empty, but said"
+    io.close(@s).must()
+    fs.remove_all(root).must()

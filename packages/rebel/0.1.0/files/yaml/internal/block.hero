@@ -1,0 +1,306 @@
+# A block scalar read: a literal one, `|`, whose lines are kept as they are
+# written, or a folded one, `>`, whose lines are folded where they begin with
+# no white space; its header's chomping indicator, `-` or `+`, saying what
+# becomes of its last line breaks, and its indentation indicator, 1 to 9,
+# saying how far its lines are indented where the first line cannot say it.
+
+use unicode
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# What a block scalar's header says.
+record Header
+    # -1 strips every last line break, 0 keeps one, 1 keeps them all.
+    chomp: i64
+    # The indentation indicator, 1 to 9; 0 where the first line says it.
+    step: i64
+    # The byte index where the content begins: past the header's line break,
+    # or the text's length.
+    end: i64
+
+# One line of a block scalar's content.
+record Line
+    # Its characters past the content's indentation; empty for an empty line.
+    content: str
+    # Whether it is empty: no character past the indentation, or fewer spaces.
+    is_empty: bool
+    # Whether its characters begin with white space, which a folded scalar
+    # does not fold.
+    is_spaced: bool
+
+# The block scalar whose `|` or `>` is at byte `at` of `text`, read, and the
+# byte index where the line after it begins, or the text's length.
+#
+# - `indent`: the column of the block holding it, -1 at the top: its lines
+#   hold more spaces than that, and an indentation indicator counts from it,
+#   or from column 0 at the top, as libyaml and PyYAML count it.
+#
+# Fails `invalid` where its header is not one, a leading empty line holds more
+# spaces than its first line, or it holds a character YAML allows only between
+# quotes.
+function read(text: str, at: i64, indent: i64) -> token.Lexeme?
+    header = read_header(text, at)?
+    content_indent: i64 @= header.step
+
+    if indent > 0
+        content_indent @ indent + header.step
+
+    if header.step == 0
+        content_indent @ detect(text: text, at: header.end, indent: indent)?
+    lines: [Line] @= []
+    pos: i64 @= header.end
+    end: i64 @= header.end
+    final_break: bool @= true
+
+    while pos < text.len()
+        end @ pos
+        k: i64 @= pos
+
+        while k < text.len() && text[k] == ' ' && k - pos < content_indent
+            k @ k + 1
+
+        if k - pos < content_indent
+            if k >= text.len() || text[k] != '\n'
+                break
+            lines @ lines.push(Line(content: "", is_empty: true, is_spaced: false))
+            pos @ k + 1
+            end @ pos
+            continue
+
+        if content_indent == 0 && source.is_marker_at(text, pos)
+            break
+        e = source.line_end(text, k)
+        printable(text: text, from: k, to: e)?
+        content = text.slice(from: k, to: e)
+        lines @ lines.push(
+            Line(content: content, is_empty: content == "", is_spaced: content != "" && source.is_white(content[0]))
+        )
+
+        if e >= text.len()
+            final_break @ false
+            pos @ e
+            end @ e
+            break
+        pos @ e + 1
+        end @ pos
+
+    return ok(
+        token.Lexeme(value: chomped(lines: lines, literal: text[at] == '|', chomp: header.chomp, final_break: final_break), end: end)
+    )
+
+# The header after the `|` or `>` at byte `at` of `text`. Fails `invalid`
+# where an indicator is not one, or anything but white space and a comment
+# follows them on the line.
+function read_header(text: str, at: i64) -> Header?
+    chomp: i64 @= 0
+    chomp_read: bool @= false
+    step: i64 @= 0
+    i: i64 @= at + 1
+
+    for _ in range(from: 0, to: 2)
+        if i < text.len() && (text[i] == '-' || text[i] == '+') && !chomp_read
+            chomp @ if text[i] == '-'
+                -1
+            else
+                1
+            chomp_read @ true
+            i @ i + 1
+        else if i < text.len() && source.is_digit(text[i]) && step == 0
+            if text[i] == '0'
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: i, what: "an indentation indicator of 0: it is 1 to 9, the spaces past the block holding the scalar")
+                )
+            step @ (text[i] - '0').to_i64().must()
+            i @ i + 1
+
+    j: i64 @= i
+
+    while j < text.len() && source.is_white(text[j])
+        j @ j + 1
+
+    if j < text.len() && text[j] == '#' && j > i
+        j @ source.line_end(text, j)
+
+    if j < text.len() && text[j] != '\n'
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: j, what: "a line break after a block scalar's header: `|` or `>`, then at most a chomping indicator, `-` or `+`, an indentation indicator, 1 to 9, and a comment")
+        )
+
+    if j < text.len()
+        return ok(Header(chomp: chomp, step: step, end: j + 1))
+    return ok(Header(chomp: chomp, step: step, end: j))
+
+# The content's indentation as its first line that is not empty says it, from
+# byte `at` of `text`: at least one space past `indent`. Fails `invalid` where
+# an empty line before that one holds more spaces than it.
+function detect(text: str, at: i64, indent: i64) -> i64?
+    widest: i64 @= 0
+    widest_at: i64 @= at
+    pos: i64 @= at
+
+    while pos < text.len()
+        k: i64 @= pos
+
+        while k < text.len() && text[k] == ' '
+            k @ k + 1
+
+        if k < text.len() && text[k] != '\n'
+            spaces = k - pos
+
+            if spaces <= indent
+                break
+
+            if widest > spaces
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: widest_at, what: f"an empty line of {widest} spaces before the block scalar's first line, which holds {spaces}: indent the first line as far, or give the header an indentation indicator")
+                )
+            return ok(spaces)
+
+        if k - pos > widest
+            widest @ k - pos
+            widest_at @ pos
+
+        if k >= text.len()
+            break
+        pos @ k + 1
+
+    if widest > indent + 1
+        return ok(widest)
+    return ok(indent + 1)
+
+# Fails `invalid` where a character from byte `from` to `to` of `text` is one
+# YAML allows only between quotes.
+function printable(text: str, from: i64, to: i64) -> ()?
+    i: i64 @= from
+
+    while i < to
+        if !source.is_printable_at(text, i)
+            name = source.code_name(unicode.code_point_at(text, i))
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: i, what: f"{name} stands in a block scalar, and YAML allows it only between double quotes, as an escape")
+            )
+        i @ i + unicode.width_at(text, i)
+
+    return ok()
+
+# The text `lines` write, literal or folded, its last line breaks chomped as
+# `chomp` says; `final_break` says whether the last line ended with one.
+function chomped(lines: [Line] lent, literal: bool, chomp: i64, final_break: bool) -> str
+    last: i64 @= -1
+
+    for at in range(from: 0, to: lines.len())
+        if !lines[at].is_empty
+            last @ at
+
+    if last < 0
+        if chomp > 0
+            return repeat("\n", lines.len().to_u64().must())
+        return ""
+
+    body = if literal
+        literal_body(lines: lines, last: last)
+    else
+        folded_body(lines: lines, last: last)
+
+    if chomp < 0
+        return body
+    has_break = last < lines.len() - 1 || final_break
+    breaks: i64 @= lines.len() - 1 - last
+
+    if has_break
+        breaks @ breaks + 1
+
+    if chomp == 0
+        if has_break
+            return body + "\n"
+        return body
+    return body + repeat("\n", breaks.to_u64().must())
+
+# The lines up to `last`, joined by line breaks.
+function literal_body(lines: [Line] lent, last: i64) -> str
+    kept: [str] @= []
+
+    for at in range(from: 0, to: last + 1)
+        kept @ kept.push(lines[at].content)
+
+    return kept.join("\n")
+
+# The lines up to `last`, folded: a line break between two lines that begin
+# with no white space is a space, or nothing where empty lines stand between
+# them, each of which is a line break; every other line break is kept.
+function folded_body(lines: [Line] lent, last: i64) -> str
+    pieces: [str] @= []
+    previous: i64 @= -1
+    empties: i64 @= 0
+
+    for at in range(from: 0, to: last + 1)
+        if lines[at].is_empty
+            empties @ empties + 1
+        else
+            if previous < 0
+                pieces @ pieces.push(repeat("\n", empties.to_u64().must()))
+            else if !lines[previous].is_spaced && !lines[at].is_spaced
+                if empties == 0
+                    pieces @ pieces.push(" ")
+                else
+                    pieces @ pieces.push(repeat("\n", empties.to_u64().must()))
+            else
+                pieces @ pieces.push(repeat("\n", (empties + 1).to_u64().must()))
+            pieces @ pieces.push(lines[at].content)
+            previous @ at
+            empties @ 0
+
+    return pieces.join("")
+
+## Tests
+
+test "read_header: none, each indicator, both in either order, a comment, and what is not one"
+    assert read_header(text: "|\nx", at: 0).must() == Header(chomp: 0, step: 0, end: 2)
+    assert read_header(text: ">-2\n", at: 0).must() == Header(chomp: -1, step: 2, end: 4)
+    assert read_header(text: "|9+ # c\n", at: 0).must() == Header(chomp: 1, step: 9, end: 8)
+    assert read_header(text: "|", at: 0).must() == Header(chomp: 0, step: 0, end: 1)
+
+    for text in ["|0\n", "|x\n", "|--\n", "|#c\n", "| a\n"]
+        match read_header(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "read: literal, clipped, stripped and kept, as YAML 1.2 example 8.4 and 8.5 write them"
+    assert read(text: "|\n  a\n  b\n\n", at: 0, indent: -1).must() == token.Lexeme(value: "a\nb\n", end: 11)
+    assert read(text: "|-\n  a\n\n", at: 0, indent: -1).must().value == "a"
+    assert read(text: "|+\n  a\n\n", at: 0, indent: -1).must().value == "a\n\n"
+    assert read(text: "|\n  a", at: 0, indent: -1).must().value == "a"
+    assert read(text: "|+\n\n", at: 0, indent: -1).must().value == "\n"
+    assert read(text: "|\n", at: 0, indent: -1).must().value == ""
+
+test "read: the indentation found, given, the lines after it, and white space past it"
+    assert read(text: "|\n   a\n    b\n  c: d", at: 0, indent: 0).must() == token.Lexeme(value: "a\n b\n", end: 13)
+    assert read(text: "|1\n  a\n b", at: 0, indent: 0).must().value == " a\nb"
+    assert read(text: "|2\n  a\n   b", at: 0, indent: -1).must().value == "a\n b"
+    assert read(text: "|\n  \ta\n  ", at: 0, indent: 0).must().value == "\ta\n"
+    assert read(text: "|\n a\n---\n", at: 0, indent: -1).must().value == "a\n"
+    assert read(text: "|\na\n---\n", at: 0, indent: -1).must() == token.Lexeme(value: "a\n", end: 4)
+
+    match read(text: "|\n   \n  a\n", at: 0, indent: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 1: an empty line of 3 spaces before the block scalar's first line, which holds 2: indent the first line as far, or give the header an indentation indicator"
+
+test "read: folded lines, as YAML 1.2 example 8.10 folds them, and a stripped fold"
+    text = ">\n\n folded\n line\n\n next\n line\n   * bullet\n\n   * list\n   * lines\n\n last\n line\n\n# Comment\n"
+    assert read(text: text, at: 0, indent: -1).must().value == "\nfolded line\nnext line\n  * bullet\n\n  * list\n  * lines\n\nlast line\n"
+    assert read(text: ">-\n  a\n  b\n\n  c\n", at: 0, indent: -1).must().value == "a b\nc"
+
+test "read: a character allowed only between quotes, and characters of more than one byte"
+    assert read(text: "|\n  città\n", at: 0, indent: -1).must().value == "città\n"
+
+    match read(text: "|\n  a\u{85}\u{80}\n", at: 0, indent: -1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 2, column 5: U+0080 stands in a block scalar, and YAML allows it only between double quotes, as an escape"

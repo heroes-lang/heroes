@@ -1,0 +1,748 @@
+# The ledger of `lists`: what Go 1.27 (`slices`, `sort`), Rust 1.100 (the slice,
+# `Vec`, `Iterator`) and Python 3.15 (`list`, `sorted`, `reversed`, `min`, `max`,
+# `sum`, `enumerate`, `zip`, `itertools`, `bisect`) offer for a list, one block
+# per capability, and what Heroes answers to each.
+#
+# Three facts of the language shape every answer. Generics have no constraints,
+# so `==`, `<` and `+` are refused on a type parameter: an equality is a
+# function the caller gives, `(function(left: T, right: T) -> bool)`, and an
+# order is another, `(function(a: T, b: T) -> bool)`, true where `a` goes
+# before `b`; the two types differ by their names, so one is never taken for
+# the other. There is no generic record and no tuple, so nothing answers two
+# values of different types. Every value is a copy, so a function answers a
+# new list and no entry that works through a mutable view has a twin here.
+#
+# Where a line says `built-in` followed by a form that is not a function's
+# name (`xs[i]`, `==`, `for`, `=`, `[]`), the language does it with that form.
+
+## What the language does
+
+capability list/length  how many elements a list holds, and whether it holds none
+  heroes  built-in len
+  go      -
+  rust    slice::len, slice::is_empty, Vec::len, Vec::is_empty, Iterator::count
+  python  len
+  note    an empty list is `xs.len() == 0`
+
+capability list/element  the element at an index, aborting past the end
+  heroes  built-in xs[i]
+  go      -
+  rust    slice::index
+  python  xs[i]
+  note    Python's negative index counts from the end; here it aborts, and the end is reached through `xs.len()`
+
+capability list/set-element  a list with the element at an index replaced
+  heroes  built-in xs[i] @ v
+  go      -
+  rust    slice::index_mut, slice::get_mut, slice::first_mut, slice::last_mut, slice::iter_mut
+  python  xs[i] = v
+
+capability list/append  a list with one more element at its end
+  heroes  built-in push
+  go      -
+  rust    Vec::push
+  python  list.append
+
+capability list/slice  the elements between two indices
+  heroes  built-in slice
+  go      -
+  rust    slice::get
+  python  xs[a:b], itertools.islice
+  note    `slice` aborts past the end where Python cuts short; the forms that cut short are `lists.take` and `lists.skip`
+
+capability list/copy  an independent copy of a list
+  heroes  built-in =
+  go      slices.Clone
+  rust    slice::to_vec, slice::to_owned, slice::into_vec, Vec::clone
+  python  list.copy, itertools.tee
+  note    every value is a copy (spec § 3), so a binding is one
+
+capability list/empty  a list holding nothing
+  heroes  built-in []
+  go      -
+  rust    Vec::new, Vec::clear, slice::default
+  python  list.clear
+
+capability list/walk  each element in turn, stopping where the program says
+  heroes  built-in for
+  go      slices.Values
+  rust    slice::iter, slice::into_iter, Iterator::for_each, Iterator::try_for_each, Iterator::try_fold, Iterator::try_reduce, Iterator::try_find
+  python  iter
+  note    a `for` whose body answers an error with `?` stops at the first failure, which is what the `try_` forms are for
+
+capability list/map  each element through a function
+  heroes  built-in map
+  go      -
+  rust    Iterator::map, Vec::from_fn
+  python  -
+  note    `Vec::from_fn` is `map` over `range`
+
+capability list/filter  the elements a function accepts
+  heroes  built-in filter
+  go      -
+  rust    Iterator::filter, Vec::retain, Vec::retain_mut
+  python  -
+
+capability list/fold  one value built from every element
+  heroes  built-in fold
+  go      -
+  rust    Iterator::fold, Iterator::reduce, Iterator::sum, Iterator::product
+  python  sum
+  note    a sum is a fold with the addition of its own type, which the caller writes because `+` is refused on a type parameter; `reduce` is a fold that starts at the first element
+
+capability list/find  the first element a function accepts
+  heroes  built-in find
+  go      -
+  rust    Iterator::find
+  python  -
+
+capability list/any  whether a function accepts some element
+  heroes  built-in any
+  go      slices.ContainsFunc
+  rust    Iterator::any
+  python  -
+
+capability list/all  whether a function accepts every element
+  heroes  built-in all
+  go      -
+  rust    Iterator::all
+  python  -
+
+capability list/sort-natural  numbers, texts or bools in ascending order
+  heroes  built-in sort
+  go      slices.Sort, slices.Sorted, sort.Ints, sort.Float64s, sort.Strings
+  rust    slice::sort, slice::sort_unstable, slice::sort_floats
+  python  sorted, list.sort
+  note    `sort` aborts on a `nan`, where Go orders it first and Python leaves the list in no order
+
+capability list/equal  whether two lists hold equal elements in the same order
+  heroes  built-in ==
+  go      slices.Equal
+  rust    slice::eq, slice::ne, Iterator::eq, Iterator::ne
+  python  list ==
+  note    `==` is refused on a type parameter, so generic code asks `lists.equal_by`
+
+## The ends
+
+capability list/first  the first element, where there is one
+  heroes  lists.first
+  go      -
+  rust    slice::first, Iterator::next
+  python  -
+  note    an empty list is `not_found`, where Go and Python abort on `xs[0]`
+
+capability list/last  the last element, where there is one
+  heroes  lists.last
+  go      -
+  rust    slice::last, Iterator::last
+  python  -
+
+capability list/get  the element at an index, where there is one
+  heroes  lists.get
+  go      -
+  rust    slice::get, Iterator::nth
+  python  -
+  note    the checked twin of `xs[i]`; an index below zero is `not_found` and never counts from the end
+
+## Parts of a list
+
+capability list/take  the first elements, at most so many
+  heroes  lists.take
+  go      -
+  rust    Iterator::take, Vec::truncate, slice::first_chunk, Iterator::next_chunk
+  python  itertools.islice
+
+capability list/skip  a list without its first elements
+  heroes  lists.skip
+  go      -
+  rust    Iterator::skip, Iterator::advance_by
+  python  itertools.islice
+
+capability list/take-last  the last elements, at most so many
+  heroes  lists.take_last
+  go      -
+  rust    slice::last_chunk
+  python  xs[-n:]
+
+capability list/skip-last  a list without its last elements
+  heroes  lists.skip_last
+  go      -
+  rust    -
+  python  xs[:-n]
+
+capability list/take-where  the leading elements a function accepts
+  heroes  lists.take_where
+  go      -
+  rust    Iterator::take_while, Iterator::map_while
+  python  itertools.takewhile
+  note    `map_while` is `map` over what this answers
+
+capability list/skip-where  a list without the leading elements a function accepts
+  heroes  lists.skip_where
+  go      -
+  rust    Iterator::skip_while
+  python  itertools.dropwhile
+
+capability list/step  every so-manieth element
+  heroes  lists.step
+  go      -
+  rust    Iterator::step_by
+  python  xs[::k], itertools.islice
+  note    a step below one aborts, as in Rust; Python's negative step, which walks backwards, is `lists.reverse` first
+
+capability list/chunks  a list cut into pieces of one size
+  heroes  lists.chunks
+  go      slices.Chunk
+  rust    slice::chunks, slice::chunks_exact, slice::as_chunks, Iterator::array_chunks, Vec::into_chunks
+  python  itertools.batched
+  note    the last piece holds what is left, as in all three; the exact forms are this without a last piece shorter than the size
+
+capability list/chunks-last  a list cut into pieces of one size, counted from its end
+  heroes  lists.chunks_last
+  go      -
+  rust    slice::rchunks, slice::rchunks_exact, slice::as_rchunks
+  python  -
+
+capability list/windows  every run of neighbours of one length
+  heroes  lists.windows
+  go      -
+  rust    slice::windows, slice::array_windows, Iterator::map_windows
+  python  itertools.pairwise
+  note    `pairwise` is the windows of length two, each a list of two rather than a tuple
+
+capability list/split-where  the pieces between the elements a function accepts
+  heroes  lists.split_where
+  go      -
+  rust    slice::split, slice::rsplit
+  python  -
+  note    `rsplit` is this answer reversed
+
+capability list/split-where-n  the same pieces, at most so many
+  heroes  lists.split_where_n
+  go      -
+  rust    slice::splitn, slice::rsplitn
+  python  -
+  note    `rsplitn` is this over the reversed list, each piece reversed back
+
+capability list/split-after  a list cut after each element a function accepts
+  heroes  lists.split_after_where
+  go      -
+  rust    slice::split_inclusive
+  python  -
+
+capability list/runs  the runs of neighbours that belong together
+  heroes  lists.runs_by
+  go      -
+  rust    slice::chunk_by
+  python  itertools.groupby
+  note    Rust's shape, a function of two neighbours, as `chunk_by`; Python's key is said as a function comparing the two keys, and its group's key is the run's first element. Python's groupby by parity of [1, 3, 2, 4, 5] gives [[1, 3], [2, 4], [5]], and so does this
+
+## Building and editing
+
+capability list/concat  one list after another
+  heroes  lists.concat
+  go      slices.Concat, slices.AppendSeq
+  rust    Vec::append, Vec::extend, Vec::extend_from_slice, Vec::extend_from_within, Iterator::chain
+  python  list +, list.extend, itertools.chain
+
+capability list/flatten  the lists of a list, joined into one
+  heroes  lists.flatten
+  go      slices.Concat
+  rust    slice::concat, Iterator::flatten, Iterator::flat_map, Vec::into_flattened
+  python  itertools.chain.from_iterable
+  note    `flat_map` is this over `map`
+
+capability list/cycle  a list repeated so many times
+  heroes  lists.cycle
+  go      slices.Repeat
+  rust    slice::repeat, slice::fill
+  python  list *, itertools.repeat
+  note    the name `repeat` is the built-in's, for a text; so many copies of one value is the cycle of a list of one. A count below zero aborts, as in Go, where Python answers an empty list
+
+capability list/resize  a list cut or grown to a length
+  heroes  lists.resize
+  go      -
+  rust    Vec::resize
+  python  -
+
+capability list/intersperse  a list with a value between each two elements
+  heroes  lists.intersperse
+  go      -
+  rust    Iterator::intersperse, slice::join, slice::connect
+  python  -
+  note    the slice's `join` is `lists.flatten` of this
+
+capability list/insert  a list with an element put in at an index
+  heroes  lists.insert
+  go      slices.Insert
+  rust    Vec::insert
+  python  list.insert
+  note    an index past the end aborts, as in Go and Rust; Python moves it to the nearest end
+
+capability list/insert-all  a list with another put in at an index
+  heroes  lists.insert_all
+  go      slices.Insert
+  rust    Vec::splice
+  python  xs[i:i] = ys
+
+capability list/remove-at  a list without the element at an index
+  heroes  lists.remove_at
+  go      slices.Delete
+  rust    Vec::remove, Vec::swap_remove, Vec::try_remove
+  python  del xs[i]
+  note    `swap_remove` trades the order for speed; a copy pays for the whole list either way, so the order is kept
+
+capability list/remove-range  a list without the elements between two indices
+  heroes  lists.remove_range
+  go      slices.Delete
+  rust    Vec::drain
+  python  del xs[a:b]
+  note    what `drain` hands back is `slice` of the same two indices
+
+capability list/replace-range  a list with the elements between two indices replaced by another list
+  heroes  lists.replace_range
+  go      slices.Replace
+  rust    Vec::splice, slice::copy_from_slice, slice::clone_from_slice, slice::copy_within
+  python  xs[a:b] = ys
+
+capability list/swap  a list with two elements exchanged
+  heroes  lists.swap
+  go      sort.Interface.Swap, sort.IntSlice.Swap, sort.Float64Slice.Swap, sort.StringSlice.Swap
+  rust    slice::swap
+  python  -
+
+capability list/reverse  a list from its last element to its first
+  heroes  lists.reverse
+  go      slices.Reverse, slices.Backward
+  rust    slice::reverse, Iterator::rev
+  python  list.reverse, reversed
+
+capability list/rotate-left  a list with its first elements moved to its end
+  heroes  lists.rotate_left
+  go      -
+  rust    slice::rotate_left
+  python  -
+
+capability list/rotate-right  a list with its last elements moved to its front
+  heroes  lists.rotate_right
+  go      -
+  rust    slice::rotate_right
+  python  -
+
+capability list/select  the elements a list of bools marks
+  heroes  lists.select
+  go      -
+  rust    -
+  python  itertools.compress
+
+capability list/accumulate  what a fold holds after each element
+  heroes  lists.accumulate
+  go      -
+  rust    Iterator::scan
+  python  itertools.accumulate
+  note    one answer per element and the start not among them, as Rust and as Python without `initial`; the function is `fold`'s own, `acc` then `item`
+
+## Removing
+
+capability list/remove-where  a list without the elements a function accepts
+  heroes  lists.remove_where
+  go      slices.DeleteFunc
+  rust    Vec::extract_if
+  python  itertools.filterfalse
+
+capability list/remove  a list without the first element equal to a value
+  heroes  lists.remove
+  go      -
+  rust    -
+  python  list.remove
+  note    absent is `not_found`, as Python raises
+
+capability list/remove-all  a list without every element equal to a value
+  heroes  lists.remove_all
+  go      slices.DeleteFunc
+  rust    Vec::retain
+  python  -
+  note    Go and Rust say it with a closure holding the value; Heroes has no closure, so the value and the equality are arguments
+
+capability list/compact  a list with each run of equal neighbours reduced to its first
+  heroes  lists.compact
+  go      slices.Compact, slices.CompactFunc
+  rust    Vec::dedup, Vec::dedup_by, Vec::dedup_by_key, slice::partition_dedup, slice::partition_dedup_by, slice::partition_dedup_by_key
+  python  -
+  note    Go and Rust disagree where the equality is not transitive: Go compares each element with its neighbour, Rust with the last one kept, so two numbers at most one apart compact [1, 2, 3, 4, 10] to [1, 10] in Go and [1, 3, 10] in Rust, observed. Go's is taken, so `compact` keeps the first element of each run `lists.runs_by` answers
+
+capability list/trim-prefix  a list without a leading list, where it begins with it
+  heroes  lists.trim_prefix
+  go      -
+  rust    slice::strip_prefix, slice::trim_prefix, slice::strip_circumfix
+  python  -
+  note    a list that does not begin with it is answered whole, as `trim_prefix`; whether it did is `lists.has_prefix`
+
+capability list/trim-suffix  a list without a trailing list, where it ends with it
+  heroes  lists.trim_suffix
+  go      -
+  rust    slice::strip_suffix, slice::trim_suffix, slice::strip_circumfix
+  python  -
+
+## Searching
+
+capability list/contains  whether a list holds a value
+  heroes  lists.contains
+  go      slices.Contains
+  rust    slice::contains
+  python  in
+
+capability list/index-of  where a value first stands
+  heroes  lists.index_of
+  go      slices.Index
+  rust    -
+  python  list.index
+  note    absent is `not_found`, where Go answers -1 and Python raises
+
+capability list/index-of-last  where a value last stands
+  heroes  lists.index_of_last
+  go      -
+  rust    Iterator::rposition
+  python  -
+  note    Rust says it with a closure holding the value
+
+capability list/index-where  where the first element a function accepts stands
+  heroes  lists.index_where
+  go      slices.IndexFunc
+  rust    Iterator::position
+  python  -
+
+capability list/index-where-last  where the last element a function accepts stands
+  heroes  lists.index_where_last
+  go      -
+  rust    Iterator::rposition
+  python  -
+
+capability list/count-of  how many elements equal a value
+  heroes  lists.count_of
+  go      -
+  rust    -
+  python  list.count
+  note    how many a function accepts is `filter` then `len`
+
+capability list/has-prefix  whether a list begins with another
+  heroes  lists.has_prefix
+  go      -
+  rust    slice::starts_with
+  python  -
+
+capability list/has-suffix  whether a list ends with another
+  heroes  lists.has_suffix
+  go      -
+  rust    slice::ends_with
+  python  -
+
+capability list/equal-by  whether two lists hold the same elements by a given equality
+  heroes  lists.equal_by
+  go      slices.EqualFunc
+  rust    Iterator::eq_by
+  python  -
+
+## Order
+
+capability list/sort-by  a list in the order a function gives, equal elements keeping their places
+  heroes  lists.sort_by
+  go      slices.SortFunc, slices.SortStableFunc, slices.SortedFunc, slices.SortedStableFunc, sort.Slice, sort.SliceStable, sort.Sort, sort.Stable, sort.Reverse
+  rust    slice::sort_by, slice::sort_by_key, slice::sort_by_cached_key, slice::sort_unstable_by, slice::sort_unstable_by_key, slice::select_nth_unstable, slice::select_nth_unstable_by, slice::select_nth_unstable_by_key, slice::partial_sort_unstable, slice::partial_sort_unstable_by, slice::partial_sort_unstable_by_key
+  python  sorted, list.sort
+  note    always stable, so the unstable forms have no twin. Stability observed against Python's sorted and Go's SortStableFunc on cards of repeated rank, and held over a thousand repeated keys. A `nan` given to an order that compares with `<` aborts, as `<` does on one, where Python leaves such a list in no order. A key is said as an order comparing the two keys, since a key of a type parameter has no `<`; a descending order is an order the caller writes, which keeps equal elements in place as Python's `reverse=True` does. The nth smallest is this then an index, at the sort's cost
+
+capability list/is-sorted  whether a list is in the order a function gives
+  heroes  lists.is_sorted_by
+  go      slices.IsSorted, slices.IsSortedFunc, sort.IsSorted, sort.SliceIsSorted, sort.IntsAreSorted, sort.Float64sAreSorted, sort.StringsAreSorted
+  rust    slice::is_sorted, slice::is_sorted_by, slice::is_sorted_by_key, Iterator::is_sorted, Iterator::is_sorted_by, Iterator::is_sorted_by_key
+  python  -
+
+capability list/min  the smallest element by an order
+  heroes  lists.min_by
+  go      slices.Min, slices.MinFunc
+  rust    Iterator::min, Iterator::min_by, Iterator::min_by_key
+  python  min
+  note    of equal smallest the first, as all three; an empty list is `not_found`, where Go panics and Python raises
+
+capability list/max  the largest element by an order
+  heroes  lists.max_by
+  go      slices.Max, slices.MaxFunc
+  rust    Iterator::max, Iterator::max_by, Iterator::max_by_key
+  python  max
+  note    of equal largest the first, as Go and Python; Rust answers the last, observed with cards of equal rank
+
+capability list/is-before  whether one list goes before another, element by element
+  heroes  lists.is_before
+  go      slices.Compare, slices.CompareFunc
+  rust    slice::cmp, slice::partial_cmp, slice::lt, slice::le, slice::gt, slice::ge, Iterator::cmp, Iterator::cmp_by, Iterator::partial_cmp, Iterator::partial_cmp_by, Iterator::lt, Iterator::le, Iterator::gt, Iterator::ge, Vec::max, Vec::min, Vec::clamp
+  python  list <
+  note    a list that is the beginning of a longer one goes before it, as all three; the three-way answer of Go and Rust is this asked both ways
+
+capability list/binary-search  where a value stands in a sorted list
+  heroes  lists.binary_search
+  go      slices.BinarySearch, slices.BinarySearchFunc, sort.Find
+  rust    slice::binary_search, slice::binary_search_by, slice::binary_search_by_key
+  python  -
+  note    of equal elements the first, as Go: 2 in [1, 2, 2, 2, 3] is at 1 in Go and here, at 3 in Rust, observed. Absent is `not_found`, and where it would stand is `lists.lower_bound`
+
+capability list/lower-bound  where a value would enter a sorted list, before its equals
+  heroes  lists.lower_bound
+  go      sort.SearchInts, sort.SearchFloat64s, sort.SearchStrings, sort.IntSlice.Search, sort.Float64Slice.Search, sort.StringSlice.Search
+  rust    -
+  python  bisect.bisect_left
+
+capability list/upper-bound  where a value would enter a sorted list, after its equals
+  heroes  lists.upper_bound
+  go      -
+  rust    -
+  python  bisect.bisect_right, bisect.bisect
+
+capability list/insert-sorted  a sorted list with a value put in its place
+  heroes  lists.insert_sorted
+  go      -
+  rust    -
+  python  bisect.insort, bisect.insort_right, bisect.insort_left
+  note    after its equals, as `insort`; before them is `lists.insert` at `lists.lower_bound`
+
+capability list/partition-point  how many leading elements a function accepts, found by halving
+  heroes  lists.partition_point
+  go      sort.Search
+  rust    slice::partition_point
+  python  -
+  note    Go's function reads an index through a closure; here it reads an element
+
+capability list/is-partitioned  whether every element a function accepts stands before every one it refuses
+  heroes  lists.is_partitioned
+  go      -
+  rust    Iterator::is_partitioned
+  python  -
+
+## Lists of fallible values
+
+capability list/all-ok  the values of a list of fallible values, or its first error
+  heroes  lists.all_ok
+  go      -
+  rust    Iterator::try_collect, Iterator::collect
+  python  -
+
+capability list/only-ok  the values of a list of fallible values, its errors left out
+  heroes  lists.only_ok
+  go      -
+  rust    Iterator::filter_map, Iterator::find_map, Iterator::flatten
+  python  -
+  note    `filter_map` is this over `map`, and `find_map` its first element
+
+## Arrangements
+
+capability list/permutations  every ordered choice of so many elements
+  heroes  lists.permutations
+  go      -
+  rust    -
+  python  itertools.permutations
+
+capability list/combinations  every choice of so many elements, in the list's order
+  heroes  lists.combinations
+  go      -
+  rust    -
+  python  itertools.combinations
+
+capability list/combinations-repeating  the same, an element chosen as often as wanted
+  heroes  lists.combinations_repeating
+  go      -
+  rust    -
+  python  itertools.combinations_with_replacement
+
+capability list/cartesian-product  every choice of one element from each of several lists
+  heroes  lists.cartesian_product
+  go      -
+  rust    -
+  python  itertools.product
+  note    lists of one type; a product of lists of different types would need a generic record
+
+## The heap
+
+capability heap/make  a list arranged as a heap in one pass
+  heroes  lists.heapify
+  go      heap.Init
+  rust    BinaryHeap::from, BinaryHeap::from_iter, BinaryHeap::from_raw_vec
+  python  heapq.heapify, heapq.heapify_max
+  note    in the caller's own place, linear in the length; the layout is Go's Init's slot for slot, observed. A heap here takes its order from the caller, so Python's `_max` twins and Rust's heap of the largest first are this with the opposite order
+
+capability heap/push  an element added to a heap
+  heroes  lists.heap_push
+  go      heap.Push
+  rust    BinaryHeap::push, BinaryHeap::extend, BinaryHeap::append
+  python  heapq.heappush, heapq.heappush_max
+  note    the layout after each push is Python's heappush's and Go's Push's, observed; many elements at once are `concat` then `lists.heapify`, Rust's `append`
+
+capability heap/pop  the first element of a heap taken out
+  heroes  lists.heap_pop
+  go      heap.Pop
+  rust    BinaryHeap::pop, BinaryHeap::pop_if, PeekMut::pop, BinaryHeap::drain_sorted, BinaryHeap::into_iter_sorted
+  python  heapq.heappop, heapq.heappop_max, heapq.heappushpop, heapq.heappushpop_max, heapq.heapreplace, heapq.heapreplace_max
+  note    an empty heap is `not_found`, where Go panics, Python raises IndexError and Rust answers None. Python's `heappushpop` is `lists.heap_push` then this, and `heapreplace` this then `lists.heap_push`, the same answers in two calls; Rust's `pop_if` is `lists.heap_peek` asked first. The language cannot shorten a list in place, so each pop copies the list to drop its last slot: the comparisons are logarithmic, but draining a heap is quadratic in copies, measured 1.28 s for 20,000 pushes and pops, 5.21 s for 40,000 and 23.60 s for 80,000, where `lists.merge_sorted_by` and `lists.min_n_by`, which keep their heap inside, are linear and n log n. It becomes logarithmic with no change to its signature once the language shortens a plain name or an `@` parameter in place, as `push` grows one
+
+capability heap/peek  the first element of a heap, left in
+  heroes  lists.heap_peek
+  go      -
+  rust    BinaryHeap::peek
+  python  -
+  note    Go and Python read `h[0]`, which here is `lists.heap_peek(h)` answering `not_found` on an empty heap where `h[0]` aborts
+
+capability heap/fix  a heap put in order again after one of its elements changed
+  heroes  lists.heap_fix
+  go      heap.Fix
+  rust    BinaryHeap::peek_mut, PeekMut::refresh
+  python  -
+  note    the layouts after a larger first element and a smaller last one are Go's Fix's, observed; Rust's PeekMut changes the first alone, which is this at 0
+
+capability heap/remove-at  the element at an index of a heap taken out
+  heroes  lists.heap_remove_at
+  go      heap.Remove
+  rust    -
+  python  -
+  note    answer and layout are Go's Remove's, observed; an index that names no element aborts, as in Go and as `lists.remove_at` does. It copies the list once, as `lists.heap_pop` does
+
+capability heap/keep-where  a heap without the elements a function refuses
+  heroes  lists.heapify
+  go      -
+  rust    BinaryHeap::retain
+  python  -
+  note    `filter` keeps the elements, then `lists.heapify` makes them a heap again, linear like Rust's `retain`
+
+capability heap/sort  a list sorted in its own place, with no second list
+  heroes  lists.heap_sort_by
+  go      -
+  rust    BinaryHeap::into_sorted_vec
+  python  -
+  note    not stable, which `lists.sort_by` is; its answer against the built-in `sort` over a thousand scrambled numbers and the extremes of `i64`, observed equal to Python's sorted. Go's `slices.SortFunc` and Rust's `sort_unstable_by` stand under list/sort-by, which keeps equal elements in place and so answers every program they serve
+
+capability heap/as-list  the elements of a heap read, emptied or counted
+  heroes  built-in len
+  go      -
+  rust    BinaryHeap::len, BinaryHeap::is_empty, BinaryHeap::iter, BinaryHeap::into_iter, BinaryHeap::into_vec, BinaryHeap::as_slice, BinaryHeap::as_mut_slice, BinaryHeap::drain, BinaryHeap::clear, BinaryHeap::new, BinaryHeap::default, BinaryHeap::clone, BinaryHeap::clone_from
+  python  -
+  note    a heap is a plain list, so its length, its walk, its copy and its emptying are the list's own: `h.len()`, `for x in h`, `=`, `h @ []`
+
+capability heap/smallest-n  the n smallest elements by an order, the smallest first
+  heroes  lists.min_n_by
+  go      -
+  rust    -
+  python  heapq.nsmallest
+  note    stable as Python's: of equal elements the earlier first, observed on cards of repeated rank for n from 0 to past the length. A count below zero aborts, as `lists.take` does, where Python answers an empty list. 10 of 1,000,000 measured at 0.04 s
+
+capability heap/largest-n  the n largest elements by an order, the largest first
+  heroes  lists.max_n_by
+  go      -
+  rust    -
+  python  heapq.nlargest
+  note    of equal elements the earlier first, as Python's, which is `sorted(reverse=True)[:n]`, observed on the same cards
+
+capability heap/merge  sorted lists merged into one sorted list
+  heroes  lists.merge_sorted_by
+  go      -
+  rust    -
+  python  heapq.merge
+  note    of equal elements the earlier list's first, observed; on lists that are not sorted its interleaving is Python's too, observed. Python's `reverse=True` is the opposite order. Two lists of 1,000,000 measured at 1.00 s
+
+## Refused
+
+capability list/zip  two lists walked together as pairs
+  heroes  refused: needs a generic record
+  go      -
+  rust    Iterator::zip, Iterator::unzip
+  python  zip, itertools.zip_longest, itertools.starmap
+  note    a program walks `range(from: 0, to: xs.len())` and indexes both
+
+capability list/enumerate  each element with its index
+  heroes  refused: needs a generic record
+  go      slices.All
+  rust    Iterator::enumerate
+  python  enumerate
+  note    the indices are `range(from: 0, to: xs.len())`
+
+capability list/partition  the elements a function accepts and the ones it refuses, as two lists
+  heroes  refused: needs a generic record
+  go      -
+  rust    Iterator::partition, Iterator::partition_in_place
+  python  -
+  note    the two lists are `filter` and `lists.remove_where`
+
+capability list/split-in-two  a list as two parts, or as an element and the rest
+  heroes  refused: needs a generic record
+  go      -
+  rust    slice::split_at, slice::split_at_checked, slice::split_first, slice::split_last, slice::split_first_chunk, slice::split_last_chunk, slice::split_off, slice::split_off_first, slice::split_off_last, slice::split_once, slice::rsplit_once, slice::shift_left, slice::shift_right, Vec::split_off, Vec::pop, Vec::pop_if
+  python  list.pop
+  note    the two parts are `lists.take` and `lists.skip`; a pop is `lists.last` and `lists.skip_last`
+
+capability list/endless  a sequence with no end
+  heroes  refused: a list is whole in memory, so one with no end cannot be said
+  go      -
+  rust    Iterator::cycle
+  python  itertools.count, itertools.cycle
+  note    so many of them are `range` and `lists.cycle`
+
+## dropped
+
+# Plumbing, with its reason. Nothing here is a thing a program does to a list.
+
+dropped capacity  a list's capacity is the runtime's, and no program states it
+  go      slices.Clip, slices.Grow
+  rust    Vec::with_capacity, Vec::try_with_capacity, Vec::capacity, Vec::reserve, Vec::reserve_exact, Vec::try_reserve, Vec::try_reserve_exact, Vec::shrink_to_fit, Vec::shrink_to, Vec::try_shrink_to_fit, Vec::try_shrink_to, Vec::spare_capacity_mut, Vec::split_at_spare_mut, Vec::push_within_capacity, Vec::set_len, Vec::recycle
+  python  -
+
+dropped raw-memory  pointers, allocators and memory with no value in it
+  go      -
+  rust    slice::as_ptr, slice::as_mut_ptr, slice::as_ptr_range, slice::as_mut_ptr_range, slice::align_to, slice::align_to_mut, slice::as_simd, slice::as_simd_mut, slice::element_offset, slice::subslice_range, slice::to_vec_in, Vec::as_non_null, Vec::from_raw_parts, Vec::from_raw_parts_in, Vec::from_parts, Vec::from_parts_in, Vec::into_raw_parts, Vec::into_raw_parts_with_allocator, Vec::into_parts, Vec::into_parts_with_allocator, Vec::new_in, Vec::with_capacity_in, Vec::try_with_capacity_in, Vec::allocator, Vec::leak, Vec::into_boxed_slice, Vec::const_make_global, every method of `[MaybeUninit<T>]` and of `Box<[T]>`
+  python  -
+
+dropped unchecked  the twin of a checked form that skips its check
+  go      -
+  rust    slice::get_unchecked, slice::get_unchecked_mut, slice::swap_unchecked, slice::split_at_unchecked, slice::split_at_mut_unchecked, slice::as_chunks_unchecked, slice::as_chunks_unchecked_mut, slice::get_disjoint_unchecked_mut
+  python  -
+
+dropped mutable-views  the `_mut` twin of a form, and what exchanges two views: a mutable view into a list, which Heroes has no word for
+  go      -
+  rust    slice::split_first_mut, slice::split_last_mut, slice::first_chunk_mut, slice::last_chunk_mut, slice::split_first_chunk_mut, slice::split_last_chunk_mut, slice::chunks_mut, slice::chunks_exact_mut, slice::rchunks_mut, slice::rchunks_exact_mut, slice::as_chunks_mut, slice::as_rchunks_mut, slice::chunk_by_mut, slice::split_at_mut, slice::split_at_mut_checked, slice::split_mut, slice::split_inclusive_mut, slice::rsplit_mut, slice::splitn_mut, slice::rsplitn_mut, slice::split_off_mut, slice::split_off_first_mut, slice::split_off_last_mut, slice::get_disjoint_mut, slice::swap_with_slice, Vec::push_mut, Vec::insert_mut, Vec::peek_mut
+  python  -
+
+dropped fixed-arrays  a view of a list as an array of a length in its type, which Heroes has only at the C boundary
+  go      -
+  rust    slice::as_array, slice::as_mut_array, slice::as_slice, slice::as_mut_slice, Vec::as_slice, Vec::as_mut_slice, Vec::into_array
+  python  -
+
+dropped lazy-iterators  the workings of a sequence computed on demand; a list is whole
+  go      slices.Collect
+  rust    Iterator::size_hint, Iterator::by_ref, Iterator::peekable, Iterator::fuse, Iterator::inspect, Iterator::collect_into, Iterator::copied, Iterator::cloned
+  python  -
+
+dropped closures  a value made by a function that remembers something, which needs a closure
+  go      -
+  rust    slice::fill_with, Vec::resize_with, Iterator::intersperse_with
+  python  -
+
+dropped interfaces  a collection sorted through methods it declares, which needs an interface
+  go      sort.Interface, sort.IntSlice, sort.Float64Slice, sort.StringSlice and their Len and Less
+  rust    -
+  python  -
+
+dropped bytes-and-streams  of `[u8]`, of text and of a stream: the packages `bytes`, `strings` and `io`
+  go      -
+  rust    every method of `impl [u8]`, of `[AsciiChar]` and of `[f32]` but `sort_floats`; `Read`, `BufRead` and `Write` over `[u8]`; `Pattern` over `[char]`; `ToSocketAddrs`
+  python  -
+
+dropped traits  what a trait gives every type, and no program calls for a list
+  go      -
+  rust    Hash, Debug, Default, Borrow, BorrowMut, AsRef, AsMut, From, Into, TryFrom, TryInto, Any, Deref, Drop, CloneToUninit, Clone::clone_from, ToOwned::clone_into, Extend::extend_one, Extend::extend_reserve, Index over a range
+  python  -
+
+dropped heap-interface  a heap kept through methods its collection declares, which needs an interface: here the heap is a list and its order a function
+  go      heap.Interface and its Len, Less, Swap, Push and Pop
+  rust    -
+  python  -
+
+dropped heap-plumbing  a heap's capacity, allocator, iterator types and traits: a heap is a plain list, whose own are the runtime's or the language's
+  go      -
+  rust    BinaryHeap::with_capacity, BinaryHeap::with_capacity_in, BinaryHeap::new_in, BinaryHeap::capacity, BinaryHeap::reserve, BinaryHeap::reserve_exact, BinaryHeap::try_reserve, BinaryHeap::try_reserve_exact, BinaryHeap::shrink_to, BinaryHeap::shrink_to_fit, BinaryHeap::allocator, BinaryHeap::extend_one, BinaryHeap::extend_reserve, BinaryHeap::fmt, binary_heap::Drain, binary_heap::DrainSorted, binary_heap::IntoIter, binary_heap::IntoIterSorted, binary_heap::Iter, binary_heap::PeekMut and its deref, deref_mut, drop and pin_drop, and on BinaryHeap `type_id`, `borrow`, `borrow_mut`, `clone_to_uninit`, `into`, `to_owned`, `clone_into`, `try_from`, `try_into`
+  python  -

@@ -1,0 +1,134 @@
+# Integer arithmetic that never fails: stopped at the limit it passes, or
+# taken modulo 2 to the 64, as a hash wants it.
+#
+# Nothing in the language wraps (spec § 7), so the modulo is built from what
+# cannot overflow: halves of 32 bits, whose sums fit in an `i64`, and products
+# of halves, which fit in a `u64`. `<<` drops the bits it shifts out, which
+# is the one place the language itself takes a number modulo 2 to the 64.
+
+use math/internal/checked
+use math/internal/limits
+
+# 2 to the 32 less one: the low half of an `i64`'s bits.
+constant LOW_HALF: i64
+    4294967295
+
+# The sum of `a` and `b`, or the limit it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function add_clamped(a: i64, b: i64) -> i64
+    match checked.add(a: a, b: b)
+        .ok sum => return sum
+        .err _ =>
+            if b > 0
+                return limits.MAX_I64
+            return limits.MIN_I64
+
+# `a` less `b`, or the limit it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function sub_clamped(a: i64, b: i64) -> i64
+    match checked.sub(a: a, b: b)
+        .ok difference => return difference
+        .err _ =>
+            if b < 0
+                return limits.MAX_I64
+            return limits.MIN_I64
+
+# The product of `a` and `b`, or the limit it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function mul_clamped(a: i64, b: i64) -> i64
+    match checked.mul(a: a, b: b)
+        .ok product => return product
+        .err _ =>
+            if a < 0 == (b < 0)
+                return limits.MAX_I64
+            return limits.MIN_I64
+
+# The sum of `a` and `b` modulo 2 to the 64, by halves: the low halves add
+# into 33 bits, and the high halves with that carry into a number whose low
+# 32 bits are the answer's high half.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function add_wrapping(a: i64, b: i64) -> i64
+    low = (a & LOW_HALF) + (b & LOW_HALF)
+    high = (a >> 32) + (b >> 32) + (low >> 32)
+    return high << 32 | low & LOW_HALF
+
+# `a` less `b` modulo 2 to the 64: `a` plus the bits of `b` turned over, plus
+# one, which is `-b` modulo 2 to the 64.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function sub_wrapping(a: i64, b: i64) -> i64
+    return add_wrapping(a: add_wrapping(a: a, b: ~b), b: 1)
+
+# The product of `a` and `b` modulo 2 to the 64. With each split into a high
+# and a low half of 32 bits, the product is the low halves' product plus the
+# two cross products moved up 32 bits; the high halves' product moves past
+# the 64th bit and drops. Each product of halves fits in a `u64`, and only the
+# low 32 bits of a cross product count.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function mul_wrapping(a: i64, b: i64) -> i64
+    a_low = to_u64(a & LOW_HALF).must()
+    a_high = to_u64(a >> 32 & LOW_HALF).must()
+    b_low = to_u64(b & LOW_HALF).must()
+    b_high = to_u64(b >> 32 & LOW_HALF).must()
+    halves: u64 = 4294967296
+    cross = (a_low * b_high % halves + a_high * b_low % halves) % halves
+    return add_wrapping(a: bits_of(a_low * b_low), b: to_i64(cross).must() << 32)
+
+# The `i64` whose 64 bits are those of `n`: `n` itself up to `MAX_I64`, and
+# beyond it `n` less 2 to the 64.
+#
+# - `n`: any `u64`.
+function bits_of(n: u64) -> i64
+    if n <= 9223372036854775807
+        return to_i64(n).must()
+    return to_i64(n - 9223372036854775808).must() | limits.MIN_I64
+
+## Tests
+
+# Rust's `saturating_add`, `saturating_sub` and `saturating_mul`, run on
+# 2026-11-16.
+test "add_clamped, sub_clamped and mul_clamped: past each limit, and inside them"
+    assert add_clamped(a: limits.MAX_I64, b: 1) == limits.MAX_I64
+    assert add_clamped(a: limits.MIN_I64, b: -1) == limits.MIN_I64
+    assert add_clamped(a: 2, b: 3) == 5
+    assert sub_clamped(a: limits.MIN_I64, b: 1) == limits.MIN_I64
+    assert sub_clamped(a: 0, b: limits.MIN_I64) == limits.MAX_I64
+    assert sub_clamped(a: 2, b: 3) == -1
+    assert mul_clamped(a: limits.MIN_I64, b: -1) == limits.MAX_I64
+    assert mul_clamped(a: limits.MAX_I64, b: -2) == limits.MIN_I64
+    assert mul_clamped(a: -3, b: 7) == -21
+
+# Rust's `wrapping_add`, `wrapping_sub` and `wrapping_mul`, run on 2026-11-16.
+test "add_wrapping and sub_wrapping: past each limit, the limits together, small numbers"
+    assert add_wrapping(a: limits.MAX_I64, b: 1) == limits.MIN_I64
+    assert add_wrapping(a: limits.MIN_I64, b: limits.MIN_I64) == 0
+    assert add_wrapping(a: -1, b: -1) == -2
+    assert add_wrapping(a: limits.MAX_I64, b: limits.MAX_I64) == -2
+    assert sub_wrapping(a: limits.MIN_I64, b: 1) == limits.MAX_I64
+    assert sub_wrapping(a: 0, b: limits.MIN_I64) == limits.MIN_I64
+    assert sub_wrapping(a: 5, b: 7) == -2
+
+test "mul_wrapping: the largest squared, the smallest by -1, two mixed patterns, the FNV prime, small numbers"
+    assert mul_wrapping(a: limits.MAX_I64, b: limits.MAX_I64) == 1
+    assert mul_wrapping(a: limits.MIN_I64, b: -1) == limits.MIN_I64
+    assert mul_wrapping(a: 81985529216486895, b: 1147797409030816545) == 2459930256624457935
+    assert mul_wrapping(a: -3, b: 7) == -21
+    assert mul_wrapping(a: 1099511628211, b: -3750763034362895579) == -5808590958014384161
+    assert mul_wrapping(a: 0, b: limits.MIN_I64) == 0
+
+test "bits_of: zero, the largest i64, one past it, the largest u64"
+    assert bits_of(0) == 0
+    assert bits_of(9223372036854775807) == limits.MAX_I64
+    assert bits_of(9223372036854775808) == limits.MIN_I64
+    assert bits_of(limits.MAX_U64) == -1

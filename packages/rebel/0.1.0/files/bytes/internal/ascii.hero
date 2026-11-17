@@ -1,0 +1,118 @@
+# The ASCII classes of a byte and the case of ASCII letters: what `bytes`
+# means by white space, a digit, a letter and its case. A byte above 127 is
+# none of them and keeps its case, since bytes are read as no encoding.
+
+# Whether `c` is ASCII white space: space, and tab to carriage return, the
+# bytes 9 to 13. It is Python's set; Rust's `is_ascii_whitespace` leaves out
+# the vertical tab, 11.
+function is_space(c: u8) -> bool
+    return c == ' ' || c >= 9 && c <= 13
+
+# Whether `c` is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# Whether `c` is an ASCII upper-case letter.
+function is_upper(c: u8) -> bool
+    return c >= 'A' && c <= 'Z'
+
+# Whether `c` is an ASCII lower-case letter.
+function is_lower(c: u8) -> bool
+    return c >= 'a' && c <= 'z'
+
+# Whether `c` is an ASCII letter.
+function is_letter(c: u8) -> bool
+    return is_upper(c) || is_lower(c)
+
+# `c` in lower case where it is an ASCII upper-case letter, else `c`.
+function lowered(c: u8) -> u8
+    if is_upper(c)
+        return c + 32
+    return c
+
+# `c` in upper case where it is an ASCII lower-case letter, else `c`.
+function raised(c: u8) -> u8
+    if is_lower(c)
+        return c - 32
+    return c
+
+# `s` with its ASCII letters in lower case.
+function to_lower(s: [u8]) -> [u8]
+    return s.map(lowered)
+
+# `s` with its ASCII letters in upper case.
+function to_upper(s: [u8]) -> [u8]
+    return s.map(raised)
+
+# Whether every byte of `s` is below 128.
+function is_ascii(s: [u8]) -> bool
+    for c in s
+        if c >= 128
+            return false
+
+    return true
+
+# Whether `a` and `b` are the same bytes once ASCII letters are read in one
+# case.
+function equals_ignoring_case(a: [u8], b: [u8]) -> bool
+    if a.len() != b.len()
+        return false
+    at: i64 @= 0
+
+    while at < a.len()
+        if lowered(a[at]) != lowered(b[at])
+            return false
+        at @ at + 1
+
+    return true
+
+## Tests
+
+test "is_space: the six bytes of white space and their neighbours"
+    for c in [9, 10, 11, 12, 13, 32]
+        assert is_space(to_u8(c).must())
+
+    assert !is_space(8)
+    assert !is_space(14)
+    assert !is_space(0x85)
+    assert !is_space(0xa0)
+    assert !is_space(0)
+    assert !is_space(255)
+
+test "is_digit, is_letter, is_upper and is_lower at the edges of each range"
+    assert is_digit('0') && is_digit('9') && !is_digit('/') && !is_digit(':')
+    assert is_upper('A') && is_upper('Z') && !is_upper('@') && !is_upper('[')
+    assert is_lower('a') && is_lower('z') && !is_lower('`') && !is_lower('{')
+    assert is_letter('A') && is_letter('z') && !is_letter('1') && !is_letter(0xc9)
+
+# Python's `bytes.upper` and `bytes.lower` answered these on 2026-11-15: the
+# bytes of `É` and a lone 0xE9 keep their case.
+test "to_upper and to_lower: ASCII letters change, bytes above 127 do not"
+    nothing: [u8] = []
+    assert to_upper(nothing) == nothing
+    mixed: [u8] = [0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0xc3, 0x89, 0x74, 0xe9, 0x20, 0x31, 0x21]
+    upper: [u8] = [0x48, 0x45, 0x4c, 0x4c, 0x4f, 0x20, 0xc3, 0x89, 0x54, 0xe9, 0x20, 0x31, 0x21]
+    lower: [u8] = [0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0xc3, 0x89, 0x74, 0xe9, 0x20, 0x31, 0x21]
+    assert to_upper(mixed) == upper
+    assert to_lower(upper) == lower
+
+test "is_ascii: the empty list, 127, and 128"
+    nothing: [u8] = []
+    assert is_ascii(nothing)
+    assert is_ascii([0x00, 0x7f])
+    assert !is_ascii([0x61, 0x80])
+
+# Rust's `eq_ignore_ascii_case` answered false for 0xE9 against 0xC9; Go's
+# `EqualFold` answered true, reading both as the replacement character.
+test "equals_ignoring_case: ASCII case, lengths that differ, and bytes above 127"
+    assert equals_ignoring_case(a: [0x47, 0x6f], b: [0x47, 0x4f])
+    assert !equals_ignoring_case(a: [0x61], b: [0x61, 0x62])
+    assert !equals_ignoring_case(a: [0xe9], b: [0xc9])
+    assert equals_ignoring_case(a: [0x40, 0x5b], b: [0x40, 0x5b])
+    assert !equals_ignoring_case(a: [0x40], b: [0x60])
+
+test "lowered and raised: the edges of each case, and the bytes beside them"
+    assert lowered('A') == 'a' && lowered('Z') == 'z'
+    assert lowered('@') == '@' && lowered('[') == '[' && lowered('a') == 'a' && lowered(0xc9) == 0xc9
+    assert raised('a') == 'A' && raised('z') == 'Z'
+    assert raised('`') == '`' && raised('{') == '{' && raised('A') == 'A' && raised(0xe9) == 0xe9

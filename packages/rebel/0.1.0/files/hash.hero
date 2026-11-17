@@ -1,0 +1,650 @@
+# Checksums and fast hashes that are not cryptographic, computed over bytes or
+# over text, all at once or in steps: CRC-32 by the IEEE polynomial, by
+# Castagnoli's or by one of the caller's; CRC-64 by ISO's polynomial, by
+# ECMA's or by one of the caller's; Adler-32; and FNV-1 and FNV-1a in 32 and
+# 64 bits. Text is hashed as its UTF-8 bytes, so a text and its bytes answer
+# alike, and a state fed piece by piece answers what feeding everything at
+# once does.
+#
+# They find an accident, a bit flipped on a disk or on a wire, and spread
+# keys over buckets; none of them resists a person who wants two inputs to
+# answer alike, so a digest that must, SHA-256 or an HMAC, is the package
+# `crypto`'s. A map's own keys are hashed by the language's `{K: V}`, and a
+# seeded hash for a table of one's own is not here.
+#
+# Nothing here fails. These algorithms wrap their words by design and Heroes
+# aborts on an overflow, so every sum and product is written modulo 2^32 or
+# 2^64, and none wraps.
+
+use hash/internal/adler
+use hash/internal/crc
+use hash/internal/fnv
+use hash/internal/table_castagnoli
+use hash/internal/table_ecma
+use hash/internal/table_ieee
+use hash/internal/table_iso
+use hash/internal/word
+
+## CRC-32
+
+# Koopman's polynomial for a CRC-32, its bits reversed as `crc32_poly`'s
+# `poly` takes it: 0xeb31d82e, which is 0x741b8cd7 read from the other end.
+constant KOOPMAN: u32
+    0xeb31d82e
+
+# The CRC-32 of `data` by the IEEE polynomial, the one zlib, gzip, PNG and
+# Ethernet check with, and Python's `zlib.crc32`.
+#
+# - `data`: the bytes to check; the CRC-32 of no bytes is 0.
+#
+# See also `crc32_text`, `crc32_combine` and `start32`.
+function crc32(data: [u8]) -> u32
+    return to_u32(crc.feed32(crc: 0, table: table_ieee.IEEE, data: data)).must()
+
+# The CRC-32 of the bytes of `s` by the IEEE polynomial, what `crc32` answers
+# for its UTF-8.
+#
+# - `s`: the text to check, read where it stands and never copied; the
+#   CRC-32 of the empty text is 0.
+#
+# See also `crc32`.
+function crc32_text(s: str) -> u32
+    return to_u32(crc.feed32_text(crc: 0, table: table_ieee.IEEE, s: s)).must()
+
+# The CRC-32C of `data`, by Castagnoli's polynomial, the one iSCSI, ext4 and
+# the instruction of SSE 4.2 check with.
+#
+# - `data`: the bytes to check; the CRC-32C of no bytes is 0.
+#
+# See also `crc32c_text` and `start32`.
+function crc32c(data: [u8]) -> u32
+    return to_u32(crc.feed32(crc: 0, table: table_castagnoli.CASTAGNOLI, data: data)).must()
+
+# The CRC-32C of the bytes of `s`, what `crc32c` answers for its UTF-8.
+#
+# - `s`: the text to check, read where it stands; the CRC-32C of the empty
+#   text is 0.
+#
+# See also `crc32c`.
+function crc32c_text(s: str) -> u32
+    return to_u32(crc.feed32_text(crc: 0, table: table_castagnoli.CASTAGNOLI, s: s)).must()
+
+# The CRC-32 by the IEEE polynomial of two pieces one after the other, made
+# from the CRC-32 of each and the length of the second, without their bytes.
+#
+# - `first`: the CRC-32 of the first piece, as `crc32` answers it.
+# - `second`: the CRC-32 of the second piece.
+# - `second_len`: the length of the second piece, in bytes; for 0 the answer
+#   is `first` and `second` combined by exclusive or, since only no bytes
+#   have the CRC-32 0.
+#
+# It costs a few hundred steps for each bit of `second_len`, whatever the
+# pieces held. See also `crc32`.
+function crc32_combine(first: u32, second: u32, second_len: u64) -> u32
+    joined = crc.combine32(
+        first: to_i64(first).must(),
+        second: to_i64(second).must(),
+        second_len: second_len,
+        poly: 0xedb88320
+    )
+    return to_u32(joined).must()
+
+## Adler-32
+
+# The Adler-32 of `data`, the checksum of zlib's streams (RFC 1950), and
+# Python's `zlib.adler32`: faster than a CRC-32, and weaker over a few bytes.
+#
+# - `data`: the bytes to check; the Adler-32 of no bytes is 1.
+#
+# See also `adler32_text`, `adler32_combine` and `start32`.
+function adler32(data: [u8]) -> u32
+    return to_u32(adler.feed(sum: 1, data: data)).must()
+
+# The Adler-32 of the bytes of `s`, what `adler32` answers for its UTF-8.
+#
+# - `s`: the text to check, read where it stands; the Adler-32 of the empty
+#   text is 1.
+#
+# See also `adler32`.
+function adler32_text(s: str) -> u32
+    return to_u32(adler.feed_text(sum: 1, s: s)).must()
+
+# The Adler-32 of two pieces one after the other, made from the Adler-32 of
+# each and the length of the second, without their bytes.
+#
+# - `first`: the Adler-32 of the first piece, as `adler32` answers it.
+# - `second`: the Adler-32 of the second piece.
+# - `second_len`: the length of the second piece, in bytes; for 0, `second`
+#   must be 1, the Adler-32 of no bytes, for the answer to be `first`.
+#
+# Each half of `first` and `second` is taken modulo 65521 first, as
+# `adler32` would have left it. See also `adler32`.
+function adler32_combine(first: u32, second: u32, second_len: u64) -> u32
+    joined = adler.combine(first: to_i64(first).must(), second: to_i64(second).must(), second_len: second_len)
+    return to_u32(joined).must()
+
+## FNV
+
+# The FNV-1 hash of `data` in 32 bits: from the offset 2166136261, each byte
+# multiplies by the prime 16777619 and then mixes in by exclusive or.
+#
+# - `data`: the bytes to hash; the hash of no bytes is the offset.
+#
+# See also `fnv1a_32`, which spreads close inputs further, and `start32`.
+function fnv1_32(data: [u8]) -> u32
+    return to_u32(fnv.feed32(hash: fnv.OFFSET32, data: data, xor_first: false)).must()
+
+# The FNV-1 hash of the bytes of `s` in 32 bits, what `fnv1_32` answers for
+# its UTF-8.
+#
+# - `s`: the text to hash, read where it stands; the hash of the empty text
+#   is the offset, 2166136261.
+#
+# See also `fnv1_32`.
+function fnv1_32_text(s: str) -> u32
+    return to_u32(fnv.feed32_text(hash: fnv.OFFSET32, s: s, xor_first: false)).must()
+
+# The FNV-1a hash of `data` in 32 bits: from the offset 2166136261, each byte
+# mixes in by exclusive or and then multiplies by the prime 16777619.
+#
+# - `data`: the bytes to hash; the hash of no bytes is the offset.
+#
+# See also `fnv1a_32_text` and `start32`.
+function fnv1a_32(data: [u8]) -> u32
+    return to_u32(fnv.feed32(hash: fnv.OFFSET32, data: data, xor_first: true)).must()
+
+# The FNV-1a hash of the bytes of `s` in 32 bits, what `fnv1a_32` answers
+# for its UTF-8.
+#
+# - `s`: the text to hash, read where it stands; the hash of the empty text
+#   is the offset, 2166136261.
+#
+# See also `fnv1a_32`.
+function fnv1a_32_text(s: str) -> u32
+    return to_u32(fnv.feed32_text(hash: fnv.OFFSET32, s: s, xor_first: true)).must()
+
+# The FNV-1 hash of `data` in 64 bits: from the offset 14695981039346656037,
+# each byte multiplies by the prime 1099511628211 and then mixes in by
+# exclusive or.
+#
+# - `data`: the bytes to hash; the hash of no bytes is the offset.
+#
+# See also `fnv1a_64` and `start64`.
+function fnv1_64(data: [u8]) -> u64
+    return word.unsigned(fnv.feed64(hash: fnv.OFFSET64, data: data, xor_first: false))
+
+# The FNV-1 hash of the bytes of `s` in 64 bits, what `fnv1_64` answers for
+# its UTF-8.
+#
+# - `s`: the text to hash, read where it stands; the hash of the empty text
+#   is the offset, 14695981039346656037.
+#
+# See also `fnv1_64`.
+function fnv1_64_text(s: str) -> u64
+    return word.unsigned(fnv.feed64_text(hash: fnv.OFFSET64, s: s, xor_first: false))
+
+# The FNV-1a hash of `data` in 64 bits: from the offset
+# 14695981039346656037, each byte mixes in by exclusive or and then
+# multiplies by the prime 1099511628211.
+#
+# - `data`: the bytes to hash; the hash of no bytes is the offset.
+#
+# See also `fnv1a_64_text` and `start64`.
+function fnv1a_64(data: [u8]) -> u64
+    return word.unsigned(fnv.feed64(hash: fnv.OFFSET64, data: data, xor_first: true))
+
+# The FNV-1a hash of the bytes of `s` in 64 bits, what `fnv1a_64` answers
+# for its UTF-8.
+#
+# - `s`: the text to hash, read where it stands; the hash of the empty text
+#   is the offset, 14695981039346656037.
+#
+# See also `fnv1a_64`.
+function fnv1a_64_text(s: str) -> u64
+    return word.unsigned(fnv.feed64_text(hash: fnv.OFFSET64, s: s, xor_first: true))
+
+## CRC-64
+
+# The CRC-64 of `data` by ISO's polynomial, Go's `crc64.ISO`: the register
+# starts and ends with every bit flipped, as Go's does.
+#
+# - `data`: the bytes to check; the CRC-64 of no bytes is 0.
+#
+# See also `crc64_ecma` and `start64`.
+function crc64_iso(data: [u8]) -> u64
+    return word.unsigned(crc.feed64(crc: 0, table: table_iso.ISO, data: data))
+
+# The CRC-64 of the bytes of `s` by ISO's polynomial, what `crc64_iso`
+# answers for its UTF-8.
+#
+# - `s`: the text to check, read where it stands; the CRC-64 of the empty
+#   text is 0.
+#
+# See also `crc64_iso`.
+function crc64_iso_text(s: str) -> u64
+    return word.unsigned(crc.feed64_text(crc: 0, table: table_iso.ISO, s: s))
+
+# The CRC-64 of `data` by ECMA-182's polynomial, Go's `crc64.ECMA` and the
+# check of the `xz` format.
+#
+# - `data`: the bytes to check; the CRC-64 of no bytes is 0.
+#
+# See also `crc64_iso` and `start64`.
+function crc64_ecma(data: [u8]) -> u64
+    return word.unsigned(crc.feed64(crc: 0, table: table_ecma.ECMA, data: data))
+
+# The CRC-64 of the bytes of `s` by ECMA-182's polynomial, what `crc64_ecma`
+# answers for its UTF-8.
+#
+# - `s`: the text to check, read where it stands; the CRC-64 of the empty
+#   text is 0.
+#
+# See also `crc64_ecma`.
+function crc64_ecma_text(s: str) -> u64
+    return word.unsigned(crc.feed64_text(crc: 0, table: table_ecma.ECMA, s: s))
+
+## Steps of 32 bits
+
+# Which checksum or hash of 32 bits a `State32` computes.
+variant Algorithm32
+    # CRC-32 by the IEEE polynomial, what `crc32` answers.
+    crc32
+    # CRC-32C by Castagnoli's polynomial, what `crc32c` answers.
+    crc32c
+    # CRC-32 by a polynomial of the caller's, the register starting and
+    # ending with every bit flipped as for the other two.
+    crc32_poly
+        # The polynomial with its bits reversed, the coefficient of x^31 as
+        # the lowest bit and x^32's left out: `KOOPMAN`, or 0xedb88320 for
+        # the IEEE polynomial.
+        poly: u32
+    # Adler-32, what `adler32` answers.
+    adler32
+    # FNV-1 in 32 bits, what `fnv1_32` answers.
+    fnv1_32
+    # FNV-1a in 32 bits, what `fnv1a_32` answers.
+    fnv1a_32
+
+# A checksum or hash of 32 bits computed in steps: the caller holds it and
+# feeds it piece by piece with `update32` and `update_text32`, and its
+# `value` is at every moment what feeding all the pieces at once answers. It
+# is made by `start32` or `resume32`, and copied with `=` like any value;
+# one built directly with a `table` that is not its polynomial's answers
+# wrong values.
+record State32
+    # Which checksum or hash it computes.
+    algorithm: Algorithm32
+    # The checksum or hash of every byte fed so far: the answer, read
+    # whenever it is wanted.
+    value: u32
+    # For a CRC, the value each of the 256 bytes leaves in a register that
+    # held only it, each from 0 to 2^32 - 1; for the others, empty.
+    table: [i64]
+
+# A state of `algorithm` that has been fed nothing, its `value` the checksum
+# or hash of no bytes.
+#
+# - `algorithm`: which checksum or hash it computes; a `crc32_poly` makes its
+#   table here, once.
+#
+# See also `update32` and `resume32`.
+function start32(algorithm: Algorithm32) -> State32
+    nothing: u32 = match algorithm
+        .crc32 | .crc32c | .crc32_poly _ => 0
+        .adler32                         => 1
+        .fnv1_32 | .fnv1a_32             => 2166136261
+
+    return resume32(algorithm: algorithm, value: nothing)
+
+# A state of `algorithm` that goes on from `value`, the checksum or hash of
+# bytes fed before: what Go's `crc32.Update` and Python's `zlib.crc32` and
+# `zlib.adler32` take as the value to start from.
+#
+# - `algorithm`: which checksum or hash it computes; a `crc32_poly` makes its
+#   table here, once.
+# - `value`: the checksum or hash of the bytes before, as `value` holds it;
+#   for Adler-32, each half is taken modulo 65521 when the state is next fed.
+#
+# See also `start32`.
+function resume32(algorithm: Algorithm32, value: u32) -> State32
+    none: [i64] = []
+
+    table = match algorithm
+        .crc32                          => table_ieee.IEEE
+        .crc32c                         => table_castagnoli.CASTAGNOLI
+        .crc32_poly p                   => crc.table_for(to_i64(p.poly).must())
+        .adler32 | .fnv1_32 | .fnv1a_32 => none
+
+    return State32(algorithm: algorithm, value: value, table: table)
+
+# Feeds `data` to `state`, whose `value` becomes the checksum or hash of what
+# it was fed before and then `data`.
+#
+# - `state`: the state fed, which the caller holds; only its `value` changes.
+# - `data`: the bytes fed; no bytes leave `value` as it was.
+#
+# See also `update_text32`.
+function update32(@state: State32, data: [u8])
+    before = to_i64(state.value).must()
+
+    after = match state.algorithm
+        .crc32 | .crc32c | .crc32_poly _ => crc.feed32(crc: before, table: state.table, data: data)
+        .adler32                         => adler.feed(sum: before, data: data)
+        .fnv1_32                         => fnv.feed32(hash: before, data: data, xor_first: false)
+        .fnv1a_32                        => fnv.feed32(hash: before, data: data, xor_first: true)
+
+    state.value @ to_u32(after).must()
+
+# Feeds the bytes of `s` to `state`, as `update32` feeds its UTF-8.
+#
+# - `state`: the state fed, which the caller holds; only its `value` changes.
+# - `s`: the text fed, read where it stands; the empty text leaves `value` as
+#   it was.
+#
+# See also `update32`.
+function update_text32(@state: State32, s: str)
+    before = to_i64(state.value).must()
+
+    after = match state.algorithm
+        .crc32 | .crc32c | .crc32_poly _ => crc.feed32_text(crc: before, table: state.table, s: s)
+        .adler32                         => adler.feed_text(sum: before, s: s)
+        .fnv1_32                         => fnv.feed32_text(hash: before, s: s, xor_first: false)
+        .fnv1a_32                        => fnv.feed32_text(hash: before, s: s, xor_first: true)
+
+    state.value @ to_u32(after).must()
+
+## Steps of 64 bits
+
+# Which checksum or hash of 64 bits a `State64` computes.
+variant Algorithm64
+    # CRC-64 by ISO's polynomial, what `crc64_iso` answers.
+    crc64_iso
+    # CRC-64 by ECMA-182's polynomial, what `crc64_ecma` answers.
+    crc64_ecma
+    # CRC-64 by a polynomial of the caller's, the register starting and
+    # ending with every bit flipped as for the other two.
+    crc64_poly
+        # The polynomial with its bits reversed, the coefficient of x^63 as
+        # the lowest bit and x^64's left out: 0xd800000000000000 for ISO's.
+        poly: u64
+    # FNV-1 in 64 bits, what `fnv1_64` answers.
+    fnv1_64
+    # FNV-1a in 64 bits, what `fnv1a_64` answers.
+    fnv1a_64
+
+# A checksum or hash of 64 bits computed in steps: the caller holds it and
+# feeds it piece by piece with `update64` and `update_text64`, and its
+# `value` is at every moment what feeding all the pieces at once answers. It
+# is made by `start64` or `resume64`; one built directly with a `table` that
+# is not its polynomial's answers wrong values.
+record State64
+    # Which checksum or hash it computes.
+    algorithm: Algorithm64
+    # The checksum or hash of every byte fed so far: the answer, read
+    # whenever it is wanted.
+    value: u64
+    # For a CRC, the value each of the 256 bytes leaves in a register that
+    # held only it, each an `i64` holding the value's 64 bits, the highest as
+    # the sign; for the others, empty.
+    table: [i64]
+
+# A state of `algorithm` that has been fed nothing, its `value` the checksum
+# or hash of no bytes.
+#
+# - `algorithm`: which checksum or hash it computes; a `crc64_poly` makes its
+#   table here, once.
+#
+# See also `update64` and `resume64`.
+function start64(algorithm: Algorithm64) -> State64
+    nothing: u64 = match algorithm
+        .crc64_iso | .crc64_ecma | .crc64_poly _ => 0
+        .fnv1_64 | .fnv1a_64                     => 14695981039346656037
+
+    return resume64(algorithm: algorithm, value: nothing)
+
+# A state of `algorithm` that goes on from `value`, the checksum or hash of
+# bytes fed before: what Go's `crc64.Update` takes as the value to start
+# from.
+#
+# - `algorithm`: which checksum or hash it computes; a `crc64_poly` makes its
+#   table here, once.
+# - `value`: the checksum or hash of the bytes before, as `value` holds it.
+#
+# See also `start64`.
+function resume64(algorithm: Algorithm64, value: u64) -> State64
+    none: [i64] = []
+
+    table = match algorithm
+        .crc64_iso           => table_iso.ISO
+        .crc64_ecma          => table_ecma.ECMA
+        .crc64_poly p        => crc.table_for(word.from_unsigned(p.poly))
+        .fnv1_64 | .fnv1a_64 => none
+
+    return State64(algorithm: algorithm, value: value, table: table)
+
+# Feeds `data` to `state`, whose `value` becomes the checksum or hash of what
+# it was fed before and then `data`.
+#
+# - `state`: the state fed, which the caller holds; only its `value` changes.
+# - `data`: the bytes fed; no bytes leave `value` as it was.
+#
+# See also `update_text64`.
+function update64(@state: State64, data: [u8])
+    before = word.from_unsigned(state.value)
+
+    after = match state.algorithm
+        .crc64_iso | .crc64_ecma | .crc64_poly _ => crc.feed64(crc: before, table: state.table, data: data)
+        .fnv1_64                                 => fnv.feed64(hash: before, data: data, xor_first: false)
+        .fnv1a_64                                => fnv.feed64(hash: before, data: data, xor_first: true)
+
+    state.value @ word.unsigned(after)
+
+# Feeds the bytes of `s` to `state`, as `update64` feeds its UTF-8.
+#
+# - `state`: the state fed, which the caller holds; only its `value` changes.
+# - `s`: the text fed, read where it stands; the empty text leaves `value` as
+#   it was.
+#
+# See also `update64`.
+function update_text64(@state: State64, s: str)
+    before = word.from_unsigned(state.value)
+
+    after = match state.algorithm
+        .crc64_iso | .crc64_ecma | .crc64_poly _ => crc.feed64_text(crc: before, table: state.table, s: s)
+        .fnv1_64                                 => fnv.feed64_text(hash: before, s: s, xor_first: false)
+        .fnv1a_64                                => fnv.feed64_text(hash: before, s: s, xor_first: true)
+
+    state.value @ word.unsigned(after)
+
+## Tests
+
+test "the steps of every 32-bit algorithm answer what feeding at once does, by bytes and by text"
+    all32: [Algorithm32] = [.crc32, .crc32c, .crc32_poly(poly: KOOPMAN), .adler32, .fnv1_32, .fnv1a_32]
+    whole: [u32] = [
+        crc32_text("héros ☃")
+        crc32c_text("héros ☃")
+        563120402
+        adler32_text("héros ☃")
+        fnv1_32_text("héros ☃")
+        fnv1a_32_text("héros ☃")
+    ]
+
+    for i in range(from: 0, to: all32.len())
+        state @= start32(all32[i])
+        update32(@state, word.bytes_of("hé"))
+        update_text32(@state, "")
+        update_text32(@state, "ros ☃")
+        assert state.value == whole[i]
+        again @= resume32(algorithm: all32[i], value: state.value)
+        update32(@again, [])
+        assert again.value == whole[i]
+
+test "the steps of every 64-bit algorithm answer what feeding at once does, by bytes and by text"
+    all64: [Algorithm64] = [.crc64_iso, .crc64_ecma, .crc64_poly(poly: 0xd800000000000000), .fnv1_64, .fnv1a_64]
+    whole: [u64] = [
+        crc64_iso_text("héros ☃")
+        crc64_ecma_text("héros ☃")
+        17914586672435834237
+        fnv1_64_text("héros ☃")
+        fnv1a_64_text("héros ☃")
+    ]
+
+    for i in range(from: 0, to: all64.len())
+        state @= start64(all64[i])
+        update64(@state, word.bytes_of("hé"))
+        update_text64(@state, "")
+        update_text64(@state, "ros ☃")
+        assert state.value == whole[i]
+
+# Go's `crc64.Update` from 2^63 answered this on 2026-11-15.
+test "resume64: from a value with its top bit set"
+    state @= resume64(algorithm: .crc64_ecma, value: 9223372036854775808)
+    update_text64(@state, "123456789")
+    assert state.value == 695445988102215951
+
+test "the one-shot functions answer alike over bytes and over text, and for nothing"
+    assert crc32([]) == 0 && crc32_text("") == 0
+    assert crc32c([]) == 0 && adler32([]) == 1
+    assert fnv1_32([]) == 2166136261 && fnv1a_32_text("") == 2166136261
+    assert fnv1_64([]) == 14695981039346656037 && fnv1a_64_text("") == 14695981039346656037
+    assert crc64_iso([]) == 0 && crc64_ecma_text("") == 0
+    assert crc32(word.bytes_of("héros ☃")) == crc32_text("héros ☃")
+    assert fnv1a_64(word.bytes_of("héros ☃")) == fnv1a_64_text("héros ☃")
+
+## Examples
+
+# The CRC-32 of a byte, as Python's `zlib.crc32(b"a")` answers it.
+test "crc32: the CRC-32 of one byte"
+    assert crc32([0x61]) == 3904355907
+
+# The standard check: every CRC-32 of the text "123456789" is published.
+test "crc32_text: the standard check text"
+    assert crc32_text("123456789") == 0xcbf43926
+
+# The CRC-32C of the standard check text.
+test "crc32c: the CRC-32C of the check text's bytes"
+    assert crc32c([0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39]) == 0xe3069283
+
+# The CRC-32C of a text.
+test "crc32c_text: the CRC-32C of a word"
+    assert crc32c_text("a") == 3251651376
+
+# Two pieces checked apart, then their CRC-32 together without their bytes.
+test "crc32_combine: two pieces of a greeting"
+    first = crc32_text("hello, ")
+    second = crc32_text("world")
+    assert crc32_combine(first: first, second: second, second_len: 5) == crc32_text("hello, world")
+
+# The Adler-32 of a byte: `a` is 1 + 0x61 and `b` the same.
+test "adler32: the Adler-32 of one byte"
+    assert adler32([0x61]) == 0x00620062
+
+# The Adler-32 of the standard check text.
+test "adler32_text: the standard check text"
+    assert adler32_text("123456789") == 152961502
+
+# Two pieces checked apart, then their Adler-32 together.
+test "adler32_combine: two pieces of a greeting"
+    first = adler32_text("hello, ")
+    second = adler32_text("world")
+    assert adler32_combine(first: first, second: second, second_len: 5) == adler32_text("hello, world")
+
+# The FNV-1 hash of a byte in 32 bits.
+test "fnv1_32: the hash of one byte"
+    assert fnv1_32([0x61]) == 84696446
+
+# The FNV-1 hash of a text in 32 bits.
+test "fnv1_32_text: the hash of the check text"
+    assert fnv1_32_text("123456789") == 605325334
+
+# The FNV-1a hash of a byte in 32 bits.
+test "fnv1a_32: the hash of one byte"
+    assert fnv1a_32([0x61]) == 3826002220
+
+# The FNV-1a hash of a key, as a table of one's own would spread it.
+test "fnv1a_32_text: the hash of the check text"
+    assert fnv1a_32_text("123456789") == 3146166556
+
+# The FNV-1 hash of a byte in 64 bits.
+test "fnv1_64: the hash of one byte"
+    assert fnv1_64([0x61]) == 12638153115695167422
+
+# The FNV-1 hash of a text in 64 bits.
+test "fnv1_64_text: the hash of the check text"
+    assert fnv1_64_text("123456789") == 12047124837835544278
+
+# The FNV-1a hash of a byte in 64 bits.
+test "fnv1a_64: the hash of one byte"
+    assert fnv1a_64([0x61]) == 12638187200555641996
+
+# The FNV-1a hash of a text in 64 bits.
+test "fnv1a_64_text: the hash of the check text"
+    assert fnv1a_64_text("123456789") == 492395637191921148
+
+# The CRC-64 by ISO's polynomial of a byte.
+test "crc64_iso: the CRC-64 of one byte"
+    assert crc64_iso([0x61]) == 3756002089226993664
+
+# The CRC-64 by ISO's polynomial of the standard check text.
+test "crc64_iso_text: the standard check text"
+    assert crc64_iso_text("123456789") == 0xb90956c775a41001
+
+# The CRC-64 by ECMA's polynomial of a byte.
+test "crc64_ecma: the CRC-64 of one byte"
+    assert crc64_ecma([0x61]) == 3675645893302102789
+
+# The CRC-64 by ECMA's polynomial of the standard check text, the `xz`
+# format's check value.
+test "crc64_ecma_text: the standard check text"
+    assert crc64_ecma_text("123456789") == 0x995dc9bbdf1939fa
+
+# A CRC-32 begun before any byte, by Koopman's polynomial.
+test "start32: a CRC-32 by Koopman's polynomial, fed nothing yet"
+    state = start32(.crc32_poly(poly: KOOPMAN))
+    assert state.value == 0
+
+# A checksum saved after the first piece, taken up again for the second.
+test "resume32: going on from a saved CRC-32"
+    saved = crc32_text("1234")
+    state @= resume32(algorithm: .crc32, value: saved)
+    update_text32(@state, "56789")
+    assert state.value == crc32_text("123456789")
+
+# A file's bytes fed as they arrive, a piece at a time.
+test "update32: a CRC-32 fed in two pieces"
+    state @= start32(.crc32)
+    update32(@state, [0x31, 0x32, 0x33, 0x34])
+    update32(@state, [0x35, 0x36, 0x37, 0x38, 0x39])
+    assert state.value == 0xcbf43926
+
+# Lines fed one by one to an Adler-32.
+test "update_text32: an Adler-32 fed line by line"
+    state @= start32(.adler32)
+    update_text32(@state, "hello, ")
+    update_text32(@state, "world")
+    assert state.value == adler32_text("hello, world")
+
+# A CRC-64 begun before any byte.
+test "start64: a CRC-64 by ECMA's polynomial, fed nothing yet"
+    state = start64(.crc64_ecma)
+    assert state.value == 0
+
+# A CRC-64 saved after the first piece, taken up again for the second.
+test "resume64: going on from a saved CRC-64"
+    saved = crc64_iso_text("1234")
+    state @= resume64(algorithm: .crc64_iso, value: saved)
+    update_text64(@state, "56789")
+    assert state.value == crc64_iso_text("123456789")
+
+# An FNV-1a hash of 64 bits fed in two pieces.
+test "update64: an FNV-1a hash fed in two pieces"
+    state @= start64(.fnv1a_64)
+    update64(@state, [0x31, 0x32, 0x33, 0x34])
+    update64(@state, [0x35, 0x36, 0x37, 0x38, 0x39])
+    assert state.value == fnv1a_64_text("123456789")
+
+# A CRC-64 by a polynomial of the caller's, ISO's written out, fed a text.
+test "update_text64: a CRC-64 by a polynomial given as a number"
+    state @= start64(.crc64_poly(poly: 0xd800000000000000))
+    update_text64(@state, "123456789")
+    assert state.value == crc64_iso_text("123456789")

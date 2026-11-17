@@ -1,0 +1,93 @@
+# Bytes read as UTF-8 text: whole, failing where they are not UTF-8, or with
+# what is not UTF-8 replaced. The language checks UTF-8 (`validated_bytes`,
+# spec section 13); the package `unicode` says where a character begins and
+# how far a broken one goes.
+
+use bytes/internal/codes
+use bytes/internal/raw
+use unicode
+
+# The text `s` holds, failing `not_text` with the index where it stops being
+# UTF-8.
+function to_text(s: [u8]) -> str?
+    match s.validated_bytes()
+        .ok t => return ok(t)
+        .err _ =>
+            at = unicode.utf8_prefix_len(s)
+            return fail(
+                code: codes.NOT_TEXT,
+                msg: f"these bytes are UTF-8 up to index {at} and not from there, where the byte is {raw.byte_shown(s[at])}"
+            )
+
+# The text `s` holds, each longest run of bytes that begins a character and
+# cannot go on replaced by U+FFFD, and a byte that begins nothing replaced
+# alone.
+function lossy(s: [u8]) -> str
+    if unicode.is_utf8(s)
+        return s.validated_bytes().must()
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        match unicode.decode_at(s, at)
+            .ok d =>
+                raw.push_range(out: @out, s: s, from: at, to: at + d.width)
+                at @ at + d.width
+            .err _ =>
+                raw.push_text(@out, "�")
+                at @ at + broken_len(s, at)
+
+    # Every byte pushed is a whole character, so `out` is UTF-8.
+    return out.validated_bytes().must()
+
+# How many bytes from `at` in `s` begin a character and cannot go on: at
+# least one, and at most one fewer than the character's first byte asks for.
+function broken_len(s: [u8], at: i64) -> i64
+    width = unicode.utf8_width(s[at]).default(1)
+    longest: i64 @= 1
+    k: i64 @= 2
+
+    while k < width && at + k <= s.len()
+        if unicode.is_utf8_prefix(s.slice(from: at, to: at + k))
+            longest @ k
+        k @ k + 1
+
+    return longest
+
+## Tests
+
+test "to_text: the empty list, a zero byte, two bytes of one character"
+    nothing: [u8] = []
+    assert to_text(nothing).must() == ""
+    assert to_text([0x41, 0x00, 0x42]).must().len() == 3
+    assert to_text([0xc3, 0xa9]).must() == "é"
+
+test "to_text fails not_text and says where: 0xff first, a character cut short at the end"
+    match to_text([0xff, 0x41])
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "these bytes are UTF-8 up to index 0 and not from there, where the byte is 0xff"
+
+    match to_text([0x61, 0xe2, 0x82])
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "these bytes are UTF-8 up to index 1 and not from there, where the byte is 0xe2"
+
+# Rust's `String::from_utf8_lossy` and Python's `decode(errors="replace")`
+# both answered eight replacements for these bytes on 2026-11-15; Go's
+# `bytes.ToValidUTF8` answered five, one for each run of broken bytes.
+test "lossy: a lone byte, a character cut short, an overlong form, a surrogate, a cut four-byte one"
+    broken: [u8] = [0x61, 0xff, 0x62, 0xe2, 0x82, 0x63, 0xe0, 0x80, 0x64, 0xed, 0xa0, 0x80, 0x65, 0xf0, 0x9f, 0x98]
+    assert lossy(broken) == "a�b�c��d���e�"
+    assert lossy([0xc0, 0x80]) == "��"
+    assert lossy([0xf0, 0x9f, 0x98]) == "�"
+
+test "lossy: the empty list, and text left as it is"
+    nothing: [u8] = []
+    assert lossy(nothing) == ""
+    assert lossy(raw.of_text("caffè")) == "caffè"
+    assert lossy([0x00]).len() == 1
+
+test "broken_len: a byte that begins nothing, and the longest beginning of a character"
+    assert broken_len([0x80], 0) == 1
+    assert broken_len([0xe2, 0x82], 0) == 2
+    assert broken_len([0xe0, 0x80], 0) == 1
+    assert broken_len([0xf0, 0x9f, 0x98, 0x41], 0) == 3

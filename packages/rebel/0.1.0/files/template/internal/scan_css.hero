@@ -1,0 +1,135 @@
+# A style sheet's text read from a context, as the HTML mode reads it: its
+# strings and `url(...)`, in which it follows the part of a URL a value would
+# land in, since a string may name a URL (`@import "..."`), and its comments,
+# `/* */` and, as Go's `html/template` reads them too, `//` to a line's end.
+# Where the style sheet is an element's content its comments are dropped, each
+# run of a block comment written as one space.
+
+use template/internal/context
+
+# Whether `b` may stand in a CSS name.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-' || b == '_' || b >= 0x80
+
+# Whether `s` holds `url(` at `at`, in any case, before `to`.
+function holds_url(s: str, at: i64, to: i64) -> bool
+    if at + 4 > to
+        return false
+    u = s[at] == 'u' || s[at] == 'U'
+    r = s[at + 1] == 'r' || s[at + 1] == 'R'
+    l = s[at + 2] == 'l' || s[at + 2] == 'L'
+    return u && r && l && s[at + 3] == '('
+
+# The bytes of `s` from `from` to `to` read as a style sheet from `start`.
+# Where `emit`, the text answered is those bytes with the comments dropped;
+# else it is "".
+function scan(s: str, from: i64, to: i64, start: context.Context, emit: bool) -> context.Scanned
+    out: [str] @= []
+    c: context.Context @= start
+    at: i64 @= from
+    kept: i64 @= from
+
+    while at < to
+        b = s[at]
+        state = c.state
+
+        if state == context.CSS
+            next: u8 = if at + 1 < to
+                s[at + 1]
+            else
+                0
+
+            if b == '/' && (next == '*' || next == '/')
+                if emit && kept < at
+                    out @ out.push(s.slice(from: kept, to: at))
+
+                if next == '*'
+                    c.state @ context.CSS_BLOCK_COMMENT
+                else
+                    c.state @ context.CSS_LINE_COMMENT
+                at @ at + 2
+            else if b == '"' || b == '\''
+                if b == '"'
+                    c.state @ context.CSS_DOUBLE
+                else
+                    c.state @ context.CSS_SINGLE
+                c.url_part @ context.URL_NONE
+                at @ at + 1
+            else if holds_url(s, at: at, to: to) && (at == from || !is_name_byte(s[at - 1]))
+                at @ at + 4
+
+                while at < to && (s[at] == ' ' || s[at] == '\t' || s[at] == '\n' || s[at] == '\r' || s[at] == 0x0c)
+                    at @ at + 1
+
+                c.url_part @ context.URL_NONE
+
+                if at < to && s[at] == '"'
+                    c.state @ context.CSS_DOUBLE_URL
+                    at @ at + 1
+                else if at < to && s[at] == '\''
+                    c.state @ context.CSS_SINGLE_URL
+                    at @ at + 1
+                else
+                    c.state @ context.CSS_URL
+            else if b == '\\'
+                at @ at + 2
+            else
+                at @ at + 1
+        else if state == context.CSS_BLOCK_COMMENT
+            if b == '*' && at + 1 < to && s[at + 1] == '/'
+                c.state @ context.CSS
+                at @ at + 2
+
+                if emit
+                    out @ out.push(" ")
+                kept @ at
+            else
+                at @ at + 1
+        else if state == context.CSS_LINE_COMMENT
+            if b == '\n' || b == '\r'
+                c.state @ context.CSS
+                kept @ at
+            at @ at + 1
+        else
+            closing: u8 = match state
+                17 => '"'
+                18 => '\''
+                20 => '"'
+                21 => '\''
+                _  => ')'
+
+            if b == closing
+                c.state @ context.CSS
+                at @ at + 1
+            else if b == '\\'
+                c.url_part @ context.url_after(c.url_part, b)
+                at @ at + 2
+            else
+                c.url_part @ context.url_after(c.url_part, b)
+                at @ at + 1
+
+    if emit
+        if c.state == context.CSS_BLOCK_COMMENT
+            out @ out.push(" ")
+        else if c.state != context.CSS_LINE_COMMENT && kept < to
+            out @ out.push(s.slice(from: kept, to: to))
+    return context.Scanned(text: out.join(""), ctx: c, fault: "", fault_at: -1)
+
+# The style sheet `s` read from its start, for the tests.
+function read(s: str) -> context.Scanned
+    return scan(s, from: 0, to: s.len(), start: context.with_state(context.initial(), context.CSS), emit: true)
+
+test "scan: strings and url() with the part of a URL reached, and a url( that is part of a name"
+    start = read("p{font:\"")
+    assert start.ctx.state == context.CSS_DOUBLE && start.ctx.url_part == context.URL_NONE
+    assert read("p{font:\"x").ctx.url_part == context.URL_PRE_QUERY
+    assert read("p{font:\"x?").ctx.url_part == context.URL_QUERY
+    assert read("p{font:'a\\'b").ctx.state == context.CSS_SINGLE
+    assert read("p{background:url( ").ctx.state == context.CSS_URL
+    assert read("p{background:URL(\"").ctx.state == context.CSS_DOUBLE_URL
+    assert read("p{background:url(x)").ctx.state == context.CSS
+    assert read("p{x-url(").ctx.state == context.CSS
+
+test "scan: comments dropped, block comments as one space, and a line comment as Go reads one"
+    assert read("/* c */p{}").text == " p{}" && read("// c\np{}").text == "\np{}"
+    assert read("p{} /* c").text == "p{}  "

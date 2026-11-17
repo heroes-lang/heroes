@@ -1,0 +1,210 @@
+# A message written, RFC 9112: its first line, its fields, its framing and its
+# body as the bytes a connection carries. Every part is checked before a byte
+# is made, so a value holding a line end can never add a line to the message.
+
+use bytes
+use http/internal/body
+use http/internal/status
+use http/internal/syntax
+use http/internal/wire
+
+# The bytes of a request: `method` `target` HTTP/1.1, `Host: host`, the
+# fields but the framing's and the host's, the framing, and `content`.
+# Fails `invalid` where the method or a name is no token, the target is
+# empty or holds a space, a control byte or a byte above ASCII, the host is
+# empty or a value holds a line end, or a `Transfer-Encoding` says other than
+# chunked.
+function request(method: str, target: str, host: str, fields: [wire.Field], content: [u8], closing: bool) -> [u8]?
+    if !syntax.is_token(method)
+        return fail(code: syntax.INVALID, msg: f"writing a request: the method {syntax.shown(method)} is no token")
+
+    if target.len() == 0
+        return fail(code: syntax.INVALID, msg: "writing a request: its target is empty")
+    at: i64 @= 0
+
+    while at < target.len()
+        if target[at] < 33 || target[at] > 126
+            return fail(
+                code: syntax.INVALID,
+                msg: f"writing a request: the target {syntax.shown(target)} holds a space, a control byte or a byte above ASCII"
+            )
+        at @ at + 1
+
+    if host == "" || !syntax.is_value(host)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing a request to {syntax.shown(target)}: it names no host, by its target or a `Host` field"
+        )
+    chunks = transfer(fields)?
+    lines: [str] @= [f"{method} {target} HTTP/1.1", "Host: " + host]
+    others(@lines, fields: fields, skip_host: true)?
+
+    if closing && !syntax.has_member(wire.values_of(fields, name: "Connection"), token: "close")
+        lines @ lines.push("Connection: close")
+
+    if chunks
+        lines @ lines.push("Transfer-Encoding: chunked")
+    else if content.len() > 0 || method == "POST" || method == "PUT" || method == "PATCH"
+        lines @ lines.push(f"Content-Length: {content.len()}")
+    return ok(joined(lines, content: content, chunks: chunks, sent: true))
+
+# The bytes of a response: HTTP/1.1 `status` `reason`, the fields but the
+# framing's, the framing and `content`. `reason` "" is the status's text.
+# No body and no length for 1xx, 204 and 304; `head_only`, the answer to
+# `HEAD`, writes the length and not the body; `keep_alive` says
+# `Connection: keep-alive` to an HTTP/1.0 client that asked for it. Fails
+# `invalid` where `status` is outside 100 to 999, the reason or a value holds
+# a line end, a name is no token, or a `Transfer-Encoding` says other than
+# chunked.
+function response(status_code: i64, reason: str, fields: [wire.Field], content: [u8], closing: bool, keep_alive: bool, head_only: bool) -> [u8]?
+    if status_code < 100 || status_code > 999
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing a response: the status {status_code} is not three digits from 100"
+        )
+    said: str @= reason
+
+    if said == ""
+        said @ status.text_of(status_code).default("")
+
+    if !syntax.is_value(said)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing a response: the reason {syntax.shown(said)} holds a line end or a control byte"
+        )
+    chunks = transfer(fields)?
+    lines: [str] @= [f"HTTP/1.1 {status_code} {said}"]
+    others(@lines, fields: fields, skip_host: false)?
+    connection = wire.values_of(fields, name: "Connection")
+
+    if closing && !syntax.has_member(connection, token: "close")
+        lines @ lines.push("Connection: close")
+    else if keep_alive && !closing && !syntax.has_member(connection, token: "keep-alive")
+        lines @ lines.push("Connection: keep-alive")
+    bodiless = status_code < 200 || status_code == 204 || status_code == 304
+
+    if !bodiless && chunks
+        lines @ lines.push("Transfer-Encoding: chunked")
+    else if !bodiless
+        lines @ lines.push(f"Content-Length: {content.len()}")
+    return ok(joined(lines, content: content, chunks: chunks, sent: !bodiless && !head_only))
+
+# Adds to `lines` each of `fields` as `name: value`, but the framing's and,
+# where `skip_host`, `Host`. Fails `invalid` where a name is no token or a
+# value holds a line end or a control byte.
+function others(@lines: [str], fields: [wire.Field], skip_host: bool) -> ()?
+    for f in fields
+        if !syntax.is_token(f.name)
+            return fail(
+                code: syntax.INVALID,
+                msg: f"writing a message: the field name {syntax.shown(f.name)} is no token"
+            )
+
+        if !syntax.is_value(f.value)
+            return fail(
+                code: syntax.INVALID,
+                msg: f"writing a message: the value of `{f.name}`, {syntax.shown(f.value)}, holds a line end or a control byte"
+            )
+        framing = syntax.same_name(a: f.name, b: "Content-Length") || syntax.same_name(a: f.name, b: "Transfer-Encoding")
+
+        if !framing && !(skip_host && syntax.same_name(a: f.name, b: "Host"))
+            lines @ lines.push(f.name + ": " + f.value)
+
+    return ok()
+
+# Whether `fields` ask the body written as chunks: true where a
+# `Transfer-Encoding` says chunked alone. Fails `invalid` where one says
+# anything else.
+function transfer(fields: [wire.Field]) -> bool?
+    codings = wire.values_of(fields, name: "Transfer-Encoding")
+
+    if codings.len() == 0
+        return ok(false)
+    members: [str] @= []
+
+    for value in codings
+        for member in syntax.members(value)
+            members @ members.push(member)
+
+    if members.len() == 1 && syntax.same_name(a: members[0], b: "chunked")
+        return ok(true)
+    return fail(
+        code: syntax.INVALID,
+        msg: f"writing a message: the transfer coding {syntax.shown(codings.join(", "))} is not chunked alone, the one this package writes"
+    )
+
+# The head `lines` with their ends and the empty line, then `content`, as
+# chunks where `chunks`, where `sent`.
+function joined(lines: [str], content: [u8], chunks: bool, sent: bool) -> [u8]
+    out: [u8] @= bytes.from_text(lines.join("\r\n") + "\r\n\r\n")
+
+    if !sent
+        return out
+    tail: [u8] @= content
+
+    if chunks
+        tail @ body.chunked(content)
+
+    for b in tail
+        out @ out.push(b)
+
+    return out
+
+## Tests
+
+test "request: the line, Host first, framing replaced, Connection: close, Content-Length for POST"
+    fields = [
+        wire.Field(name: "Host", value: "ignored")
+        wire.Field(name: "Accept", value: "*/*")
+        wire.Field(name: "Content-Length", value: "99")
+    ]
+    got = wire.text_of(
+        request(method: "POST", target: "/a?b", host: "example.com:8080", fields: fields, content: [104, 105], closing: true).must()
+    )
+    assert got == "POST /a?b HTTP/1.1\r\nHost: example.com:8080\r\nAccept: */*\r\nConnection: close\r\nContent-Length: 2\r\n\r\nhi"
+    assert wire.text_of(request(method: "GET", target: "/", host: "h", fields: [], content: [], closing: false).must()) == "GET / HTTP/1.1\r\nHost: h\r\n\r\n"
+    assert wire.text_of(request(method: "PUT", target: "/", host: "h", fields: [], content: [], closing: false).must()) == "PUT / HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\n\r\n"
+    chunked = [wire.Field(name: "Transfer-Encoding", value: "chunked")]
+    assert wire.text_of(request(method: "POST", target: "/", host: "h", fields: chunked, content: [97], closing: false).must()) == "POST / HTTP/1.1\r\nHost: h\r\nTransfer-Encoding: chunked\r\n\r\n1\r\na\r\n0\r\n\r\n"
+
+test "request: no line end can be smuggled, and what else is refused"
+    for f in [wire.Field(name: "X", value: "a\r\nEvil: 1"), wire.Field(name: "X Y", value: "1"), wire.Field(name: "", value: "1"), wire.Field(name: "X", value: "a\u{1}"), wire.Field(name: "Transfer-Encoding", value: "gzip")]
+        match request(method: "GET", target: "/", host: "h", fields: [f], content: [], closing: false)
+            .ok _  => assert false
+            .err e => assert e.code == syntax.INVALID
+
+    for target in ["", "/a b", "/a\r\n", "/é"]
+        assert request(method: "GET", target: target, host: "h", fields: [], content: [], closing: false).is_err()
+
+    assert request(method: "G T", target: "/", host: "h", fields: [], content: [], closing: false).is_err()
+    assert request(method: "GET", target: "/", host: "", fields: [], content: [], closing: false).is_err()
+    assert request(method: "GET", target: "/", host: "h\r\nX: 1", fields: [], content: [], closing: false).is_err()
+
+test "response: the status text where the reason is empty, no length for 204 and 304, HEAD's length without the body"
+    assert wire.text_of(response(status_code: 200, reason: "", fields: [], content: [104, 105], closing: false, keep_alive: false, head_only: false).must()) == "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nhi"
+    assert wire.text_of(response(status_code: 299, reason: "", fields: [], content: [], closing: true, keep_alive: false, head_only: false).must()) == "HTTP/1.1 299 \r\nConnection: close\r\nContent-Length: 0\r\n\r\n"
+    assert wire.text_of(response(status_code: 204, reason: "", fields: [wire.Field(name: "Content-Length", value: "5")], content: [1], closing: false, keep_alive: true, head_only: false).must()) == "HTTP/1.1 204 No Content\r\nConnection: keep-alive\r\n\r\n"
+    assert wire.text_of(response(status_code: 304, reason: "Same", fields: [], content: [1], closing: false, keep_alive: false, head_only: false).must()) == "HTTP/1.1 304 Same\r\n\r\n"
+    assert wire.text_of(response(status_code: 200, reason: "", fields: [], content: [104, 105], closing: false, keep_alive: false, head_only: true).must()) == "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\n"
+
+test "response: a status outside 100 to 999 and a reason with a line end are refused"
+    for code in [99, 1_000, 0, -200]
+        assert response(
+            code,
+            reason: "",
+            fields: [],
+            content: [],
+            closing: false,
+            keep_alive: false,
+            head_only: false
+        ).is_err()
+
+    assert response(
+        200,
+        reason: "OK\r\nX: 1",
+        fields: [],
+        content: [],
+        closing: false,
+        keep_alive: false,
+        head_only: false
+    ).is_err()

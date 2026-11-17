@@ -1,0 +1,253 @@
+# Each kind of request, written whole in one write and answered by
+# `session.collect`: a statement run once unnamed, a statement prepared, run
+# by its name and closed, and a simple query of several statements. The tests
+# of `session.collect` stand here, since they need a request to answer.
+
+use bytes
+use sql
+use sql/postgres/internal/backend
+use sql/postgres/internal/frontend
+use sql/postgres/internal/script
+use sql/postgres/internal/session
+use sql/postgres/internal/values
+use sql/postgres/internal/wire
+
+# The most placeholders a statement may have: the protocol counts them in two
+# bytes.
+constant MOST_PARAMS: i64
+    65535
+
+# Checks a statement's text and its parameters before they are sent.
+#
+# - `s`: the session.
+# - `statement`: the text.
+# - `count`: how many parameters.
+function checked(s: session.Session, statement: str, count: i64) -> ()?
+    if s.ended
+        return session.closed_failure(s)
+
+    if wire.has_zero(statement)
+        return fail(code: sql.INVALID, msg: "the statement holds a zero byte, which PostgreSQL does not read")
+
+    if count > MOST_PARAMS
+        return fail(
+            code: sql.INVALID,
+            msg: f"{count} parameters were given, and a statement takes at most {MOST_PARAMS}"
+        )
+    return ok()
+
+# Runs `statement` once, unnamed, with `params`: Parse, Bind, Describe,
+# Execute and Sync in one write.
+#
+# - `s`: the session.
+# - `statement`: one statement.
+# - `params`: its parameters.
+function run(@s: session.Session, statement: str, params: [sql.Value]) -> session.Answer?
+    checked(s, statement: statement, count: params.len())?
+    types: [i64] @= []
+    formats: [i64] @= []
+    bound: [frontend.Arg] @= []
+
+    for p in params
+        e = values.encode(p)
+        types @ types.push(e.type_oid)
+        formats @ formats.push(e.format)
+        bound @ bound.push(e.arg)
+
+    request: [u8] @= frontend.parse(name: "", text: statement, types: types)
+    wire.push_all(
+        out: @request,
+        data: frontend.bind(portal: "", statement: "", formats: formats, bound: bound, result_formats: [])
+    )
+    wire.push_all(out: @request, data: frontend.describe(kind: 'P', name: ""))
+    wire.push_all(out: @request, data: frontend.execute(portal: "", max_rows: 0))
+    wire.push_all(out: @request, data: frontend.sync())
+    session.send(@s, data: request)?
+    return session.collect(@s)
+
+# Runs the prepared statement `name` with `params`: Bind, Execute and Sync.
+#
+# - `s`: the session.
+# - `name`: the statement's name.
+# - `params`: its parameters.
+function run_prepared(@s: session.Session, name: str, params: [sql.Value]) -> session.Answer?
+    checked(s, statement: name, count: params.len())?
+    formats: [i64] @= []
+    bound: [frontend.Arg] @= []
+
+    for p in params
+        e = values.encode(p)
+        formats @ formats.push(e.format)
+        bound @ bound.push(e.arg)
+
+    request: [u8] @= frontend.bind(portal: "", statement: name, formats: formats, bound: bound, result_formats: [])
+    wire.push_all(out: @request, data: frontend.execute(portal: "", max_rows: 0))
+    wire.push_all(out: @request, data: frontend.sync())
+    session.send(@s, data: request)?
+    return session.collect(@s)
+
+# Prepares `statement` as `name`: Parse, Describe and Sync.
+#
+# - `s`: the session.
+# - `name`: the name.
+# - `statement`: one statement.
+function prepare(@s: session.Session, name: str, statement: str) -> session.Answer?
+    checked(s, statement: statement, count: 0)?
+    request: [u8] @= frontend.parse(name: name, text: statement, types: [])
+    wire.push_all(out: @request, data: frontend.describe(kind: 'S', name: name))
+    wire.push_all(out: @request, data: frontend.sync())
+    session.send(@s, data: request)?
+    return session.collect(@s)
+
+# Ends the prepared statement `name`: Close and Sync.
+#
+# - `s`: the session.
+# - `name`: the name.
+function close_statement(@s: session.Session, name: str) -> ()?
+    if s.ended
+        return session.closed_failure(s)
+    request: [u8] @= frontend.close(kind: 'S', name: name)
+    wire.push_all(out: @request, data: frontend.sync())
+    session.send(@s, data: request)?
+    _ = session.collect(@s)?
+    return ok()
+
+# Runs `text`, which may hold several statements, as a simple query.
+#
+# - `s`: the session.
+# - `text`: the statements.
+function simple(@s: session.Session, text: str) -> session.Answer?
+    checked(s, statement: text, count: 0)?
+    session.send(@s, data: frontend.query(text))?
+    return session.collect(@s)
+
+test "run: Parse, Bind, Describe, Execute and Sync in one write, a row answered"
+    fields: [u8] @= [0, 1]
+    wire.push_cstr(@fields, "n")
+    wire.push_all(out: @fields, data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 0, 4, 255, 255, 255, 255, 0, 0])
+    t @= script.scripted(
+        script.joined([script.msg(kind: '1', body: []), script.msg(kind: '2', body: []), script.msg(kind: 'T', body: fields), script.msg(kind: 'D', body: [0, 1, 0, 0, 0, 2, '4', '2']), script.msg(kind: 'C', body: script.cstrs(["SELECT 1"])), script.msg(kind: 'Z', body: ['I'])])
+    )
+    a = run(@t.session, statement: "SELECT $1::int4 AS n", params: [.integer(v: 42)]).must()
+    assert a.fields == [backend.Field(name: "n", type_oid: 23)]
+    assert a.rows == [[.given(data: ['4', '2'])]]
+    written = script.finish(@t)
+    want = script.joined(
+        [frontend.parse(name: "", text: "SELECT $1::int4 AS n", types: [21]), frontend.bind(portal: "", statement: "", formats: [0], bound: [.given(data: ['4', '2'])], result_formats: []), frontend.describe(kind: 'P', name: ""), frontend.execute(portal: "", max_rows: 0), frontend.sync(), frontend.terminate()]
+    )
+    assert written == want
+
+test "collect: an error in the middle is told after ReadyForQuery, and the session goes on"
+    missing = script.msg(
+        kind: 'E',
+        body: script.report_body([["S", "ERROR"], ["V", "ERROR"], ["C", "42P01"], ["M", "relation \"nope\" does not exist"], ["P", "15"]])
+    )
+    t @= script.scripted(
+        script.joined([missing, script.msg(kind: 'Z', body: ['E']), script.msg(kind: 'I', body: []), script.msg(kind: 'Z', body: ['E'])])
+    )
+
+    match run(@t.session, statement: "SELECT * FROM nope", params: [])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "[42P01] relation \"nope\" does not exist; at character 15"
+
+    assert t.session.status == 'E' && !t.session.ended
+    assert simple(@t.session, text: "").must().tag == ""
+    _ = script.finish(@t)
+
+test "collect: a notice kept, then a FATAL ends the session and the next request fails closed"
+    notice = script.msg(
+        kind: 'N',
+        body: script.report_body([["S", "NOTICE"], ["V", "NOTICE"], ["C", "00000"], ["M", "table \"t\" does not exist, skipping"]])
+    )
+    fatal = script.msg(
+        kind: 'E',
+        body: script.report_body([["V", "FATAL"], ["C", "57P01"], ["M", "terminating connection due to administrator command"]])
+    )
+    t @= script.scripted(
+        script.joined([notice, script.msg(kind: 'C', body: script.cstrs(["DROP TABLE"])), script.msg(kind: 'Z', body: ['I']), fatal])
+    )
+    assert simple(@t.session, text: "DROP TABLE IF EXISTS t").must().tag == "DROP TABLE"
+    assert t.session.notices.len() == 1 && t.session.notices[0].message == "table \"t\" does not exist, skipping"
+
+    match simple(@t.session, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    assert t.session.ended
+
+    match simple(@t.session, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && e.msg == "the connection to test:5432/db is closed"
+
+    _ = script.finish(@t)
+
+test "collect: a connection that ends in the middle, and a message out of step"
+    t @= script.scripted([])
+
+    match simple(@t.session, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && t.session.ended
+
+    _ = script.finish(@t)
+    odd @= script.scripted(script.auth_msg(code: 0, data: []))
+
+    match simple(@odd.session, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "test:5432/db sent an Authentication while the client waited for the answer to a statement, and the connection was given up"
+
+    _ = script.finish(@odd)
+
+test "collect: COPY FROM STDIN answered with a CopyFail and told unsupported"
+    cancelled = script.msg(
+        kind: 'E',
+        body: script.report_body([["V", "ERROR"], ["C", "57014"], ["M", "COPY from stdin failed"]])
+    )
+    t @= script.scripted(
+        script.joined([script.msg(kind: 'G', body: [0, 0, 0]), cancelled, script.msg(kind: 'Z', body: ['I'])])
+    )
+
+    match simple(@t.session, text: "COPY t FROM STDIN")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    written = script.finish(@t)
+    want = script.joined(
+        [frontend.query("COPY t FROM STDIN"), frontend.copy_fail("COPY FROM STDIN is not spoken by this driver"), frontend.terminate()]
+    )
+    assert written == want
+
+test "prepare and run_prepared: the placeholders' types and the columns kept, then a run by name"
+    fields: [u8] @= [0, 1]
+    wire.push_cstr(@fields, "name")
+    wire.push_all(out: @fields, data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 25, 255, 255, 255, 255, 255, 255, 0, 0])
+    t @= script.scripted(
+        script.joined([script.msg(kind: '1', body: []), script.msg(kind: 't', body: [0, 1, 0, 0, 0, 23]), script.msg(kind: 'T', body: fields), script.msg(kind: 'Z', body: ['I']), script.msg(kind: '2', body: []), script.msg(kind: 'D', body: [0, 1, 0, 0, 0, 1, 'x']), script.msg(kind: 'C', body: script.cstrs(["SELECT 1"])), script.msg(kind: 'Z', body: ['I']), script.msg(kind: '3', body: []), script.msg(kind: 'Z', body: ['I'])])
+    )
+    p = prepare(@t.session, name: "rebel_1", statement: "SELECT name FROM t WHERE id = $1").must()
+    assert p.parameter_types == [23] && p.fields == [backend.Field(name: "name", type_oid: 25)]
+    a = run_prepared(@t.session, name: "rebel_1", params: [.text(v: "7")]).must()
+    assert a.rows == [[.given(data: ['x'])]] && a.tag == "SELECT 1"
+    assert close_statement(@t.session, name: "rebel_1").is_err() == false
+    written = script.finish(@t)
+    want = script.joined(
+        [frontend.parse(name: "rebel_1", text: "SELECT name FROM t WHERE id = $1", types: []), frontend.describe(kind: 'S', name: "rebel_1"), frontend.sync(), frontend.bind(portal: "", statement: "rebel_1", formats: [0], bound: [.given(data: ['7'])], result_formats: []), frontend.execute(portal: "", max_rows: 0), frontend.sync(), frontend.close(kind: 'S', name: "rebel_1"), frontend.sync(), frontend.terminate()]
+    )
+    assert written == want
+
+test "checked: a statement holding a zero byte, and more parameters than the protocol counts"
+    t @= script.scripted([])
+
+    match simple(@t.session, text: "SELECT 1" + bytes.to_text([0]).must())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && !t.session.ended
+
+    many: [sql.Value] @= []
+
+    for _ in range(from: 0, to: 65536)
+        many @ many.push(.null_value)
+
+    match run(@t.session, statement: "SELECT 1", params: many)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "65536 parameters were given, and a statement takes at most 65535"
+
+    _ = script.finish(@t)

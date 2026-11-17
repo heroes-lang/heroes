@@ -1,0 +1,122 @@
+# The arithmetic of words of 64 bits that PCG and Lemire's bound wrap by
+# design, written so that nothing overflows, since an overflow aborts in
+# Heroes. A word is an `i64` holding its 64 bits, the highest as the sign. A
+# product is made from limbs of 16 bits, so that every partial product is
+# below 2^32 and every column below 2^35; a sum is made in halves of 32 bits.
+
+# The highest bit of a word, which is the sign of the `i64` that holds it.
+constant TOP: i64
+    1 << 63
+
+# The 32 low bits of a word, all set.
+constant LOW32: i64
+    0xffffffff
+
+# The 16 low bits of a word, all set.
+constant LOW16: i64
+    0xffff
+
+# The product of two words: its high word and its low word.
+record Wide
+    # The bits from 64 to 127 of the product.
+    high: i64
+    # The bits from 0 to 63 of the product.
+    low: i64
+
+# `x` shifted right by `n` bits with zeros coming in at the top, as for an
+# unsigned word. `n` is from 0 to 63.
+function shift_right(x: i64, n: i64) -> i64
+    if n == 0
+        return x
+    return x >> n & ~(-1 << 64 - n)
+
+# `a + b` modulo 2^64.
+function add(a: i64, b: i64) -> i64
+    low = (a & LOW32) + (b & LOW32)
+    high = shift_right(x: a, n: 32) + shift_right(x: b, n: 32) + (low >> 32)
+    return high << 32 | low & LOW32
+
+# Whether the word `a` is below the word `b`, both read as unsigned.
+function is_below(a: i64, b: i64) -> bool
+    return a ^ TOP < b ^ TOP
+
+# `a * b` modulo 2^64, the low word of their product.
+function times(a: i64, b: i64) -> i64
+    a0 = a & LOW16
+    a1 = a >> 16 & LOW16
+    a2 = a >> 32 & LOW16
+    a3 = a >> 48 & LOW16
+    b0 = b & LOW16
+    b1 = b >> 16 & LOW16
+    b2 = b >> 32 & LOW16
+    b3 = b >> 48 & LOW16
+    c0 = a0 * b0
+    c1 = a0 * b1 + a1 * b0 + (c0 >> 16)
+    c2 = a0 * b2 + a1 * b1 + a2 * b0 + (c1 >> 16)
+    c3 = a0 * b3 + a1 * b2 + a2 * b1 + a3 * b0 + (c2 >> 16)
+    return (c3 & LOW16) << 48 | (c2 & LOW16) << 32 | (c1 & LOW16) << 16 | c0 & LOW16
+
+# The whole product of the words `a` and `b`, read as unsigned: 128 bits.
+function product(a: i64, b: i64) -> Wide
+    a0 = a & LOW16
+    a1 = a >> 16 & LOW16
+    a2 = a >> 32 & LOW16
+    a3 = a >> 48 & LOW16
+    b0 = b & LOW16
+    b1 = b >> 16 & LOW16
+    b2 = b >> 32 & LOW16
+    b3 = b >> 48 & LOW16
+    c0 = a0 * b0
+    c1 = a0 * b1 + a1 * b0 + (c0 >> 16)
+    c2 = a0 * b2 + a1 * b1 + a2 * b0 + (c1 >> 16)
+    c3 = a0 * b3 + a1 * b2 + a2 * b1 + a3 * b0 + (c2 >> 16)
+    c4 = a1 * b3 + a2 * b2 + a3 * b1 + (c3 >> 16)
+    c5 = a2 * b3 + a3 * b2 + (c4 >> 16)
+    c6 = a3 * b3 + (c5 >> 16)
+    c7 = c6 >> 16
+    low = (c3 & LOW16) << 48 | (c2 & LOW16) << 32 | (c1 & LOW16) << 16 | c0 & LOW16
+    high = (c7 & LOW16) << 48 | (c6 & LOW16) << 32 | (c5 & LOW16) << 16 | c4 & LOW16
+    return Wide(high: high, low: low)
+
+# The word that holds the bits of `x`.
+function from_unsigned(x: u64) -> i64
+    if x < 9223372036854775808
+        return to_i64(x).must()
+    return to_i64(x - 9223372036854775808).must() | TOP
+
+# The `u64` whose bits the word `x` holds.
+function unsigned(x: i64) -> u64
+    if x >= 0
+        return to_u64(x).must()
+    return to_u64(x & ~TOP).must() + 9223372036854775808
+
+test "random wide add and is_below: carries, a sum past 2^64, and the order of words with the top bit set"
+    assert add(a: -1, b: 1) == 0
+    assert add(a: LOW32, b: 1) == 0x100000000
+    assert add(a: 0x7fffffffffffffff, b: 1) == TOP
+    assert is_below(a: 1, b: -1)
+    assert !is_below(a: -1, b: 1)
+    assert is_below(a: 0x7fffffffffffffff, b: TOP)
+    assert !is_below(a: 5, b: 5)
+
+# Python's integers answered the products on 2026-11-16.
+test "random wide times and product: by 0 and 1, the largest words, and a product with every limb set"
+    assert times(a: -1, b: 0) == 0
+    assert times(a: -1, b: 1) == -1
+    assert times(a: -1, b: -1) == 1
+    assert times(a: TOP, b: 2) == 0
+    largest = product(a: -1, b: -1)
+    assert unsigned(largest.high) == 18446744073709551614 && largest.low == 1
+    mixed = product(a: from_unsigned(14192431797130687760), b: 10)
+    assert mixed.high == 7 && unsigned(mixed.low) == 12797109455340016288
+    none = product(a: 0, b: -1)
+    assert none.high == 0 && none.low == 0
+    one = product(a: TOP, b: 2)
+    assert one.high == 1 && one.low == 0
+
+test "random wide from_unsigned and unsigned: 0, 2^63 and the largest u64, both ways"
+    assert from_unsigned(0) == 0
+    assert from_unsigned(9223372036854775808) == TOP
+    assert from_unsigned(18446744073709551615) == -1
+    assert unsigned(-1) == 18446744073709551615
+    assert unsigned(shift_right(x: -1, n: 1)) == 9223372036854775807

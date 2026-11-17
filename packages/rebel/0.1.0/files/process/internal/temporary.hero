@@ -1,0 +1,229 @@
+# The temporary files a child's bytes pass through: made new in the system's
+# temporary folder under a name nobody else holds, read back, and removed on
+# every path, a failing one included.
+
+use io
+use io/hero_stream
+use os
+use os/hero_disk
+use path
+use process/internal/codes
+
+# A temporary file made new: its path, and the stream that writes it.
+record Made
+    # The file's path, in the system's temporary folder.
+    path: str
+    # The stream open to write it, which the caller closes.
+    stream: io.Stream
+
+# How many names `made` tries: each holds six random bytes, so a second is
+# needed only where another program chose the same.
+constant TRIES: i64
+    16
+
+# A number of six random bytes, which a temporary file's name holds.
+function random_number() -> i64?
+    drawn = os.random_bytes(6)?
+    n: i64 @= 0
+
+    for b in drawn
+        n @ n * 256 + b.to_i64().must()
+
+    return ok(n)
+
+# A file made new and empty in the system's temporary folder, its name
+# holding `purpose`, open to write. Fails with the code the temporary folder
+# or the disk answers, and `limit` where every name tried was taken.
+function made(purpose: str) -> Made?
+    folder = os.temp_dir()?
+    tried: i64 @= 0
+
+    while tried < TRIES
+        name = f"rebel-process-{os.pid()}-{random_number()?}-{purpose}"
+        full = path.join_all([folder, name])
+        handle = hero_stream.open(full, access: hero_stream.HERO_STREAM_ACCESS_CREATE, perm: 0o600)
+
+        if handle != nullptr
+            return ok(Made(path: full, stream: io.of_handle(handle, name: f"the temporary file \"{full}\"")))
+
+        if hero_stream.last_error() != hero_stream.HERO_STREAM_EXISTS
+            return io.last_failure(asked: f"making the temporary file \"{full}\"")
+        tried @ tried + 1
+
+    return codes.of(
+        code: codes.LIMIT,
+        asked: f"making a temporary file in \"{folder}\"",
+        why: f"the {TRIES} names tried were all taken"
+    )
+
+# Removes the file at `location`, where it is there.
+function removed(location: str)
+    _ = hero_disk.remove(location)
+
+# The path of a temporary file holding `data`, closed. Fails as `made` does,
+# and with the disk's code where `data` cannot be written, nothing being left
+# on the disk then.
+function filled(data: [u8], purpose: str) -> str?
+    file @= made(purpose)?
+    wrote = io.write(file.stream, data: data)
+    closed = io.close(@file.stream)
+
+    match wrote
+        .err e =>
+            removed(file.path)
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    match closed
+        .err e =>
+            removed(file.path)
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    return ok(file.path)
+
+# The file at `location` opened to read. Fails with the disk's code.
+function opened(location: str) -> io.Stream?
+    handle = hero_stream.open(location, access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+
+    if handle == nullptr
+        return io.last_failure(asked: f"opening the temporary file \"{location}\"")
+    return ok(io.of_handle(handle, name: f"the temporary file \"{location}\""))
+
+# Every byte of the file at `location`, which is removed, read or not. Fails with
+# the disk's code.
+function taken(location: str) -> [u8]?
+    match opened(location)
+        .err e =>
+            removed(location)
+            return fail(code: e.code, msg: e.msg)
+        .ok stream =>
+            s @= stream
+            read = io.read_all(s)
+            closed = io.close(@s)
+            removed(location)
+            got = read?
+            closed?
+            return ok(got)
+
+# The temporary files `run` captures a child's output and error in: one for
+# each that is captured, none for the other.
+record Captures
+    # Whether the output is captured.
+    output: bool
+    # The file of the output, where it is.
+    output_file: Made
+    # Whether the error is captured.
+    error: bool
+    # The file of the error, where it is.
+    error_file: Made
+
+# What the files of a capture held.
+record Collected
+    # Every byte of the output's file; empty where none was made.
+    output: [u8]
+    # Every byte of the error's file; empty where none was made.
+    error: [u8]
+
+# A file that was not made: no path, a closed stream.
+function none_made() -> Made
+    return Made(path: "", stream: io.of_handle(nullptr, name: "no temporary file"))
+
+# A file made where `wanted`, or none.
+function made_if(wanted: bool, purpose: str) -> Made?
+    if !wanted
+        return ok(none_made())
+    return made(purpose)
+
+# The files of a capture of the output where `output` and of the error where
+# `error`. Fails as `made` does, nothing being left on the disk then.
+function prepared(output: bool, error: bool) -> Captures?
+    out_file @= made_if(output, purpose: "output")?
+
+    match made_if(error, purpose: "error")
+        .err e =>
+            closed_quietly(@out_file.stream)
+            removed(out_file.path)
+            return fail(code: e.code, msg: e.msg)
+        .ok err_file => return ok(Captures(output: output, output_file: out_file, error: error, error_file: err_file))
+
+# Closes `s` where it is open, its failure dropped.
+function closed_quietly(@s: io.Stream)
+    if !io.is_closed(s)
+        match io.close(@s)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+# Closes the program's streams of `files`, once the child holds its own.
+function written(@files: Captures)
+    closed_quietly(@files.output_file.stream)
+    closed_quietly(@files.error_file.stream)
+
+# Closes and removes every file of `files`, what they held unread.
+function discarded(@files: Captures)
+    written(@files)
+
+    if files.output
+        removed(files.output_file.path)
+
+    if files.error
+        removed(files.error_file.path)
+
+# What every file of `files` holds, each removed, read or not. Fails with the
+# disk's code.
+function collected(@files: Captures) -> Collected?
+    written(@files)
+    none: [u8] = []
+    output: [u8] @= none
+    error: [u8] @= none
+
+    if files.output
+        match taken(files.output_file.path)
+            .err e =>
+                if files.error
+                    removed(files.error_file.path)
+                return fail(code: e.code, msg: e.msg)
+            .ok got => output @ got
+
+    if files.error
+        error @ taken(files.error_file.path)?
+    return ok(Collected(output: output, error: error))
+
+test "prepared and collected: no capture, the output alone, and both, each file gone after"
+    nothing @= prepared(output: false, error: false).must()
+    got = collected(@nothing).must()
+    assert got.output.len() == 0 && got.error.len() == 0
+    both @= prepared(output: true, error: true).must()
+    io.write_text(both.output_file.stream, text: "out").must()
+    io.write_text(both.error_file.stream, text: "err").must()
+    read = collected(@both).must()
+    assert read.output == [111, 117, 116]
+    assert read.error == [101, 114, 114]
+    assert hero_disk.remove(both.output_file.path) == -1
+    assert hero_disk.remove(both.error_file.path) == -1
+    one @= prepared(output: true, error: false).must()
+    discarded(@one)
+    assert hero_disk.remove(one.output_file.path) == -1
+
+test "made: a new empty file in the temporary folder, two of them named apart, each removed"
+    first @= made("test").must()
+    second @= made("test").must()
+    assert first.path != second.path
+    io.close(@first.stream).must()
+    io.close(@second.stream).must()
+    assert taken(first.path).must().len() == 0
+    assert taken(second.path).must().len() == 0
+    assert hero_disk.remove(first.path) == -1
+
+test "filled and taken: no byte, bytes that are no text, and the file gone after"
+    none: [u8] = []
+    empty = filled(none, purpose: "test").must()
+    assert taken(empty).must() == none
+    file = filled([0, 255, 10, 195], purpose: "test").must()
+    assert taken(file).must() == [0, 255, 10, 195]
+    assert hero_disk.remove(file) == -1
+
+test "taken: a path that names nothing fails file_not_found"
+    match taken("build/rebel-process-no-such-temporary")
+        .ok _  => assert false
+        .err e => assert e.code == io.FILE_NOT_FOUND

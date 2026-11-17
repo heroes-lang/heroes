@@ -1,0 +1,54 @@
+# The case folding `(?i)` reads: the code points that are one letter ignoring
+# case, walked with `unicode.simple_fold`, and the one number they share.
+
+use unicode
+
+# The most code points one letter has under case folding; a walk is cut
+# there, so a table that never came back could not hang a search.
+constant MAX_ORBIT: i64
+    8
+
+# The code points that are the same letter as `n` ignoring case, `n` first,
+# then in the order `unicode.simple_fold` walks them.
+#
+# - `n`: a code point; one with no other letter answers itself alone.
+function orbit(n: i64) -> [i64]
+    out: [i64] @= [n]
+    step: i64 @= unicode.simple_fold(n)
+
+    while step != n && out.len() < MAX_ORBIT
+        out @ out.push(step)
+        step @ unicode.simple_fold(step)
+
+    return out
+
+# The smallest code point of `n`'s orbit: two code points answer the same
+# exactly where they are one letter ignoring case.
+#
+# - `n`: a code point.
+function key(n: i64) -> i64
+    least: i64 @= n
+
+    for m in orbit(n)
+        if m < least
+            least @ m
+
+    return least
+
+## Tests
+
+test "orbit: a letter of three, a letter of two, and one alone"
+    assert orbit('k') == ['k', 0x212a, 'K']
+    assert orbit('a') == ['a', 'A']
+    assert orbit(0x3c3) == [0x3c3, 0x3a3, 0x3c2]
+    assert orbit('1') == ['1']
+    assert orbit(0x10ffff) == [0x10ffff]
+    assert orbit(0xdf) == [0xdf, 0x1e9e]
+    assert orbit(0x3c2) == [0x3c2, 0x3c3, 0x3a3]
+
+test "key: the smallest of the orbit, shared by every letter of it"
+    assert key('k') == 'K'
+    assert key(0x212a) == 'K'
+    assert key('K') == 'K'
+    assert key(0x3c2) == 0x3a3
+    assert key('1') == '1'

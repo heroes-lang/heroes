@@ -1,0 +1,301 @@
+# The ledger of `xml`: what Go's `encoding/xml` (Go 1.27) and Python's
+# `xml.etree.ElementTree`, `xml.dom.minidom` and `xml.sax.saxutils` (3.15) let
+# a program do, one block per capability, and what Rebel answers. Of minidom,
+# only what is a capability stands in a block; the DOM's interfaces are in
+# `dropped`. Rust's standard library has no XML, so its line is `-` in every
+# block. The lists are this machine's, 2026-11-15: `go doc -all encoding/xml`,
+# `ElementTree.__all__` with `dir` of its classes, and `dir` of `minidom`, its
+# node classes and `saxutils`. Every expected value in the package's tests was
+# observed from Python or Go on the same day, or decided by the standard where
+# they disagree, as each block's note says.
+
+capability xml/tree  a document held as a tree a program can match on
+  heroes  xml.Document, xml.Element, xml.Node, xml.Misc, xml.Attribute
+  go      Token, StartElement, EndElement, CharData, Comment, ProcInst, Attr
+  rust    -
+  python  ElementTree, ElementTree.getroot, Element, Element.tag, Element.text, Element.tail, Element.attrib, minidom.Document, minidom.Element, minidom.Text, minidom.Comment, minidom.ProcessingInstruction, minidom.Attr, minidom.CharacterData, Document.documentElement, Node.childNodes, Element.tagName, ProcessingInstruction.target, ProcessingInstruction.data, CharacterData.data, Attr.name, Attr.value
+  note    a document holds its declaration, the comments and instructions before and after its one root, and the root; an element holds its children in order, text among them, where ElementTree splits text into `text` and `tail`. A `match` on a `Node` answers all four cases. The variants and records are the face's, decided 2026-11-16
+
+capability xml/name  a name with its prefix, its local name and the namespace it resolves to
+  heroes  xml.Name, xml.format_name, xml.XMLNS_SPACE, xml.XML_SPACE
+  go      Name, Name.Space, Name.Local
+  rust    -
+  python  QName, Node.prefix, Node.localName, Node.namespaceURI, minidom.EMPTY_NAMESPACE, minidom.EMPTY_PREFIX, minidom.XMLNS_NAMESPACE
+  note    a name keeps its prefix, its local name and its namespace, as minidom's `prefix`, `localName` and `namespaceURI` and Go's `Name` (whose `Space` is the namespace); a declaration's own name is in `XMLNS_SPACE`, as minidom places it, where Go puts `xmlns` in `Space`. ElementTree's `{uri}local` drops the prefix
+
+capability xml/parse  a text read into a document, by XML 1.0 and Namespaces in XML 1.0
+  heroes  xml.parse, xml.parse_with
+  go      -
+  rust    -
+  python  fromstring, XML, fromstringlist, XMLParser, XMLParser.feed, XMLParser.close, XMLParser.flush, XMLParser.version, minidom.parseString
+  note    XML 1.0 (fifth edition) and Namespaces in XML 1.0, well-formedness checked whole: names, a start tag matched by its end tag, one root, an attribute once, `]]>` outside CDATA, `--` in a comment, an instruction's target `xml` in any case, a character XML cannot hold, a prefix not declared. Go's token reader passes two roots, an undeclared prefix and an attribute twice; ElementTree refuses all of them, and so does this. A line end is read as XML 1.0 section 2.11 says, an attribute's value normalised as section 3.3.3 says, as ElementTree does; Go keeps a value's tabs and line ends. A CDATA section is read as text, and text side by side as one text
+
+capability xml/parse-bytes  bytes read into a document, which may not be UTF-8
+  heroes  xml.parse_bytes
+  go      -
+  rust    -
+  python  fromstring (of bytes), minidom.parseString (of bytes)
+  note    bytes that are not UTF-8 fail `not_text`, the message giving the line and column of the first byte that is not, columns counted from 1 where ElementTree counts from 0
+
+capability xml/parse-where-wrong  where a text stops being XML, for a program to act on
+  heroes  xml.parse
+  go      SyntaxError, SyntaxError.Msg, SyntaxError.Line, SyntaxError.Error, Decoder.InputPos
+  rust    -
+  python  ParseError, ParseError.code, ParseError.position
+  note    a failure is `invalid` and its message opens `line L, column C:`, both counted from 1 and the column in characters, then says what was expected and what was found; ElementTree counts the column from 0, Go gives the line alone
+
+capability xml/parse-limits  a limit on depth and on size the caller sets
+  heroes  xml.ParseOptions, xml.default_options, xml.DEFAULT_MAX_DEPTH, xml.DEFAULT_MAX_BYTES
+  go      -
+  rust    -
+  python  -
+  note    past either limit `limit`; neither reference has one. The depth is held because `==` follows a tree's nesting (512 levels, as `json`); the size because it bounds what a text from outside may cost, no entity being expanded (64 MiB by default). The size is the whole bound, since no entity is expanded
+
+capability xml/well-formed  whether a text is XML
+  heroes  xml.is_well_formed
+  go      -
+  rust    -
+  python  -
+  note    true exactly where `parse` succeeds
+
+capability xml/references  the five predefined entities and character references read
+  heroes  xml.parse, xml.unescape
+  go      Decoder.Entity (its five standard entries)
+  rust    -
+  python  -
+  note    `&lt;`, `&gt;`, `&amp;`, `&quot;`, `&apos;` and every character reference to a character XML holds; any other entity is `invalid`, as both refuse it
+
+capability xml/entities-declared  an entity a DTD or the caller declares, expanded
+  heroes  refused: an entity expanded is how a document makes a reader grow without end (the billion laughs), so none is; decided 2026-11-16
+  go      Decoder.Entity (entries of the caller's)
+  rust    -
+  python  XMLParser.entity, minidom.Entity, minidom.Notation
+  note    a DTD's internal subset that declares an entity is `invalid` with a message, where ElementTree expands it; an entity the caller would name, Go's `Decoder.Entity`, is refused for the same reason
+
+capability xml/doctype  the document type declaration, its name and identifiers kept
+  heroes  refused: no DTD is processed (decided 2026-11-16), so nothing in a document type declaration changes the document read and the tree keeps nothing of it, as ElementTree keeps nothing
+  go      Directive, Directive.Copy
+  rust    -
+  python  minidom.DocumentType, Document.doctype, DocumentType.name, DocumentType.publicId, DocumentType.systemId, DocumentType.internalSubset
+  note    `parse` reads and checks it: its name, its external identifier, and an internal subset of element and notation declarations, comments and instructions. An attribute list or a parameter entity reference is `invalid` as well as an entity, since its defaults and types would change the attributes read and are not applied; ElementTree applies them
+
+capability xml/external  a resource a document names, fetched
+  heroes  refused: nothing a document names is ever fetched (decided 2026-11-16)
+  go      -
+  rust    -
+  python  saxutils.prepare_input_source
+  note    -
+
+capability xml/encodings  a document in another encoding than UTF-8, read or written
+  heroes  refused: UTF-8 alone is read and written (decided 2026-11-16)
+  go      Decoder.CharsetReader
+  rust    -
+  python  XMLParser(encoding=), tostring(encoding=), ElementTree.write(encoding=), Node.toxml(encoding=), Node.toprettyxml(encoding=), Document.encoding, Document.actualEncoding
+  note    a declaration naming another encoding fails `unsupported`, where ElementTree reads Latin-1 and Go asks its `CharsetReader`; `format` fails `invalid` on a declaration naming another
+
+capability xml/declaration  the XML declaration read and written: its version, encoding and standalone
+  heroes  xml.Declaration, xml.document
+  go      Header, ProcInst (of target xml)
+  rust    -
+  python  tostring(xml_declaration=), ElementTree.write(xml_declaration=), Document.version, Document.standalone, Node.toxml(standalone=), Node.toprettyxml(standalone=)
+  note    kept as written, version, encoding and standalone. A version is `1.` and digits as XML 1.0 writes it, `1.1` read as 1.0 as its section 2.8 says; `2.0` is `invalid`, as Go refuses it (`unsupported version`) and ElementTree reads it. `document` opens with Go's `Header` without its line break
+
+capability xml/namespaces  each name resolved to its namespace by the declarations in scope
+  heroes  xml.parse, xml.Name
+  go      Name.Space (as Decoder.Token resolves it)
+  rust    -
+  python  the `{uri}local` tags of ElementTree, Node.namespaceURI
+  note    each declaration stands for its element and everything inside; `xml` is bound without being declared; `xmlns:p=""`, `xmlns` declared, `xml` bound elsewhere and two attributes of one expanded name are `invalid` as Namespaces in XML 1.0 and ElementTree refuse them
+
+capability xml/default-space  a namespace given to every unprefixed name, as if the document declared it
+  heroes  refused: a document's namespaces are those it declares, so a reading that adds one would answer names the text does not hold
+  go      Decoder.DefaultSpace
+  rust    -
+  python  -
+  note    -
+
+capability xml/namespace-registry  a prefix chosen once, for every later write, for a namespace
+  heroes  refused: a prefix chosen for every later write is a mutable global; a prefix is declared on an element with `with_namespace`
+  go      -
+  rust    -
+  python  register_namespace
+  note    -
+
+capability xml/children  an element's child elements: by name, the first, every one
+  heroes  xml.child, xml.child_in, xml.children_named, xml.children_in, xml.elements_of
+  go      -
+  rust    -
+  python  Element.find, Element.findall, Element.iterfind (of one name), minidom Node.firstChild, Node.lastChild, Node.hasChildNodes
+  note    by the name as written, or by namespace and local name whatever the prefix, as ElementTree's `{uri}local`; absent is `not_found` naming the children there are, where ElementTree answers None
+
+capability xml/descendants  every element inside another, by name or every one, in document order
+  heroes  xml.descendants, xml.descendants_in, xml.descendants_of
+  go      -
+  rust    -
+  python  Element.iter, ElementTree.iter, Element.getElementsByTagName, Element.getElementsByTagNameNS, Document.getElementsByTagName, Document.getElementsByTagNameNS
+  note    document order; the element itself is left out, as minidom's getElementsByTagName leaves it and ElementTree's iter does not. On the package's own stack
+
+capability xml/by-id  an element found by its identifier
+  heroes  xml.descendants_of, xml.attribute
+  go      -
+  rust    -
+  python  XMLID, Document.getElementById
+  note    an identifier is whatever attribute the program names, since no DTD types one: a program walks `descendants_of` and asks `attribute`
+
+capability xml/path  an element reached by a path of names
+  heroes  xml.element_at, xml.elements_at
+  go      -
+  rust    -
+  python  ElementTree.find, ElementTree.findall, ElementTree.iterfind, ElementTree.findtext, Element.findtext, Element.find, Element.findall and Element.iterfind (of a path)
+  note    names as written separated by `/`; `element_at` answers the first in document order and `elements_at` all of them, as ElementTree's find and findall. The empty path reaches the element itself, where ElementTree's find answers None
+
+capability xml/xpath  XPath: wildcards, parents, predicates, positions
+  heroes  refused: XPath is a language of its own, of axes, predicates and functions; a path of names reaches what walking a tree needs, the rest being written in the program, and `*`, `.`, `..`, `//`, `@` and `[` are `invalid` with a message saying so
+  go      -
+  rust    -
+  python  Element.find, Element.findall and Element.iterfind given `*`, `.`, `..`, `//` or a `[...]` predicate
+  note    -
+
+capability xml/attributes  an attribute by name, with or without a namespace, and whether it is there
+  heroes  xml.attribute, xml.attribute_in, xml.has_attribute, xml.Element
+  go      StartElement.Attr
+  rust    -
+  python  Element.get, Element.keys, Element.items, minidom Element.getAttribute, Element.getAttributeNS, Element.hasAttribute, Element.hasAttributeNS, Element.hasAttributes, Element.getAttributeNode, Element.getAttributeNodeNS, Element.attributes
+  note    absent is `not_found` naming the attributes there are, where ElementTree answers None and minidom the empty text; the attributes are the element's field, in their order
+
+capability xml/text  the text an element holds
+  heroes  xml.text_of
+  go      CharData
+  rust    -
+  python  Element.itertext, tostring(method="text"), Text.wholeText
+  note    every text inside, at any depth, joined, as ElementTree's itertext and minidom's textContent; a program wanting only an element's own text matches its children
+
+capability xml/text-merged  text side by side held as one text
+  heroes  xml.parse
+  go      -
+  rust    -
+  python  Node.normalize
+  note    `parse` never answers two texts side by side; a built tree's are written as one text and read back as one
+
+capability xml/build  a document built by a program: elements, attributes, text, comments, instructions
+  heroes  xml.element, xml.with_attribute, xml.without_attribute, xml.with_text, xml.with_child, xml.document
+  go      StartElement{...}, Name{...}, Attr{...}, CharData(...), Comment(...), ProcInst{...}
+  rust    -
+  python  Element(), SubElement, Element.makeelement, Element.set, Element.append, Element.extend, Element.insert, Element.remove, Element.clear, Comment, PI, ProcessingInstruction, TreeBuilder, TreeBuilder.start, TreeBuilder.end, TreeBuilder.data, TreeBuilder.comment, TreeBuilder.pi, TreeBuilder.close, Document.createElement, Document.createTextNode, Document.createComment, Document.createProcessingInstruction, Document.createAttribute, Document.createDocumentFragment, Element.setAttribute, Element.setAttributeNode, Element.removeAttribute, Element.removeAttributeNode, Node.appendChild, Node.insertBefore, Node.removeChild, Node.replaceChild, Document.renameNode
+  note    the records and the cases are constructors too; a list of children is edited with the built-ins and given to `children` once, since each `with_` copies the element
+
+capability xml/build-namespaces  a namespaced name and a namespace declaration built by a program
+  heroes  xml.element_in, xml.with_attribute_in, xml.with_namespace
+  go      Name{Space: ...} (as Encoder.EncodeToken declares it)
+  rust    -
+  python  Element("{uri}local"), Document.createElementNS, Document.createAttributeNS, Element.setAttributeNS, Element.setAttributeNodeNS, Element.removeAttributeNS, Element.removeAttributeNodeNS
+  note    a name carries its namespace and `format` holds it to the declarations in scope, failing `invalid` with the declaration to add, where Go and ElementTree invent prefixes (`ns0`)
+
+capability xml/format  a document or an element written as text on one line
+  heroes  xml.format, xml.format_with, xml.format_element
+  go      -
+  rust    -
+  python  tostring, tostringlist, ElementTree.write, dump, Node.toxml, Node.writexml
+  note    the same tree always the same bytes, and those bytes read back as the same tree: attributes in their order between `"`, an empty element `<a/>` as minidom writes it. Where reading would not give the tree back, `invalid`: a comment holding `--` (ElementTree writes it), a character XML cannot hold (ElementTree writes it, Go writes U+FFFD), a carriage return in a comment or an instruction, a name or a prefix that does not hold
+
+capability xml/format-indented  a document written over several lines, indented
+  heroes  xml.format_indented, xml.FormatOptions
+  go      Encoder.Indent
+  rust    -
+  python  indent, Node.toprettyxml
+  note    an element whose children are elements, comments and instructions with white space between gets one child to a line, and one holding other text is written on one line as it is, as ElementTree's indent lays them out; no line break ends the text
+
+capability xml/format-empty  an element with no content written `<a/>` or `<a></a>`
+  heroes  xml.FormatOptions
+  go      -
+  rust    -
+  python  tostring(short_empty_elements=), ElementTree.write(short_empty_elements=)
+  note    `self_closing`, true in `compact`; `<a/>` as minidom writes it, where ElementTree writes `<a />` and Go `<a></a>`
+
+capability xml/escape  a text escaped to stand as content or as an attribute's value, and read back
+  heroes  xml.escape_text, xml.quote_attribute, xml.unescape
+  go      EscapeText, Escape
+  rust    -
+  python  saxutils.escape, saxutils.quoteattr, saxutils.unescape
+  note    text escapes `&`, `<`, `>` and a carriage return, which saxutils' escape leaves raw and reading would change; a value adds `"`, tab and line feed, as quoteattr, always between double quotes where quoteattr may choose single ones. A character XML cannot hold fails `invalid`. `unescape` reads the five entities and character references, where saxutils reads three, and refuses any other
+
+capability xml/canonical  the one text Canonical XML gives a document
+  heroes  pending
+  go      -
+  rust    -
+  python  canonicalize, C14NWriterTarget, ElementTree.write_c14n, ElementTree.write(method="c14n")
+  note    Canonical XML 2.0, which Python's canonicalize writes, is not written yet
+
+capability xml/cdata-written  text written as a CDATA section
+  heroes  refused: a CDATA section is read as text (decided 2026-11-16), so the tree holds none to write; text written escaped reads back as the same characters
+  go      -
+  rust    -
+  python  Document.createCDATASection, minidom.CDATASection
+  note    -
+
+capability xml/html  HTML read leniently and written by HTML's rules
+  heroes  refused: HTML is not XML; a text that is not well-formed is refused, never guessed at
+  go      Decoder.Strict, Decoder.AutoClose, HTMLAutoClose, HTMLEntity
+  rust    -
+  python  HTML_EMPTY, tostring(method="html"), ElementTree.write(method="html")
+  note    -
+
+capability xml/records  a record filled from XML by its field names, and written as XML
+  heroes  refused: needs reflection
+  go      Marshal, MarshalIndent, Unmarshal, Decoder.Decode, Decoder.DecodeElement, Encoder.Encode, Encoder.EncodeElement, TagPathError, TagPathError.Error, UnmarshalError, UnmarshalError.Error, UnsupportedTypeError, UnsupportedTypeError.Error
+  rust    -
+  python  -
+  note    the language has no reflection and no tag on a field (design.md Part 6); a program reads each value with the walking functions and builds its own type
+
+capability xml/hooks  a function of the program called for each node read or written
+  heroes  refused: needs an interface
+  go      Marshaler, MarshalerAttr, Unmarshaler, UnmarshalerAttr
+  rust    -
+  python  XMLParser(target=), XMLParser.target, TreeBuilder(element_factory=), saxutils.XMLFilterBase
+  note    -
+
+capability xml/tokens  a text read one token at a time, and written one at a time
+  heroes  refused: xml stands on no stream
+  go      Decoder.Token, Decoder.RawToken, Decoder.Skip, Decoder.InputOffset, CopyToken, TokenReader, NewTokenDecoder, StartElement.End, StartElement.Copy, CharData.Copy, Comment.Copy, ProcInst.Copy, Encoder.EncodeToken
+  rust    -
+  python  iterparse, XMLPullParser, XMLPullParser.feed, XMLPullParser.read_events, XMLPullParser.close, XMLPullParser.flush, saxutils.XMLGenerator
+  note    reading token by token is how a program reads a document larger than its memory from a stream; a text held whole is read whole, by `parse`, as `json` answers
+
+capability xml/stream  XML read from a stream and written to one
+  heroes  refused: xml stands on no stream
+  go      NewDecoder, Decoder, NewEncoder, Encoder, Encoder.Flush, Encoder.Close
+  rust    -
+  python  parse, ElementTree.parse, ElementTree.write (to a file), minidom.parse, Node.writexml (to a writer)
+  note    `xml` may use `strings`, `numbers` and `unicode` and no stream (README A1); a program reads the text with `read_file` or `io` and calls `parse`, and writes what `format` answers
+
+capability xml/up  an element's parent and siblings
+  heroes  refused: a value holds no reference to its parent
+  go      -
+  rust    -
+  python  Node.parentNode, Node.nextSibling, Node.previousSibling, Node.ownerDocument, Attr.ownerElement
+  note    a tree of values has no parent: a program walks down from the root and keeps its own path
+
+capability xml/copy  an independent copy of a tree
+  heroes  built-in `=`
+  go      -
+  rust    -
+  python  Node.cloneNode, Document.importNode, copy.deepcopy of an Element
+  note    every value of the language is an independent copy (spec section 3)
+
+capability xml/equal  whether two trees are the same
+  heroes  built-in `==`
+  go      -
+  rust    -
+  python  Node.isSameNode
+  note    structural equality; values have no identity, so minidom's isSameNode has no counterpart. It follows the nesting, hence `DEFAULT_MAX_DEPTH`
+
+dropped
+  go      CopyToken's buffers aside, Escape: kept for Go 1.0, and EscapeText does the same
+  go      Decoder.Strict, Decoder.AutoClose: HTML leniency, refused in xml/html
+  python  ElementPath: the module behind find, not in `__all__`; its paths stand in xml/path and xml/xpath
+  python  iselement: a question the type answers
+  python  ParseError (its `args`, `with_traceback`, `add_note`): what every Python exception has
+  python  minidom Node's node-type constants, DOMImplementation, DOMImplementationLS, DocumentLS, getDOMImplementation, Node.getInterface, Node.isSupported, Node.getUserData, Node.setUserData, Node.unlink, TypeInfo, Element.schemaType, Attr.schemaType, Attr.isId, Attr.specified, Element.setIdAttribute, Element.setIdAttributeNS, Element.setIdAttributeNode, Text.isWhitespaceInElementContent, Document.load, Document.loadXML, Document.saveXML, Document.abort, Document.async_, Document.documentURI, Document.errorHandler, Document.strictErrorChecking, Document.implementation: the DOM's interfaces, not a capability (the task's ruling)
+  python  minidom NodeList, EmptyNodeList, NamedNodeMap, AttributeList, ReadOnlySequentialNamedNodeMap, Childless, Identified, ElementInfo, StringTypes, defproperty, domreg: the DOM's plumbing
+  python  CharacterData.appendData, insertData, deleteData, replaceData, substringData, length, Text.splitText, Text.replaceWholeText: an edit of a text is an edit of a `str`, the work of `strings`
+

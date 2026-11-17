@@ -1,0 +1,397 @@
+# A decompressor run: the loop over its phases, and the parts of the stream
+# around the blocks, the wrapper's header and checksum and the bytes between
+# gzip members; and a whole input decompressed at once.
+
+use compress/internal/codes
+use compress/internal/cursor
+use compress/internal/inflate_blocks
+use compress/internal/inflater
+use compress/internal/samples
+use compress/internal/wrap_read
+use compress/internal/wrapping
+use hash
+
+# What `whole` answers.
+record Whole
+    # The output.
+    data: [u8]
+    # How many input bytes the stream took.
+    used: i64
+
+# Decompresses until `want` bytes are ready, the stream ends, or the input
+# runs out, and says which: `inflater.MET`, `inflater.ENDED` or `inflater.STARVED`. Fails `invalid`
+# where the input is not the stream, or runs out after `inflater.end_input`, and
+# `limit` where the output would pass the limit; once failed, every later
+# call fails the same way.
+function run(@st: inflater.State, want: i64) -> i64?
+    if st.broken_code != ""
+        return fail(code: st.broken_code, msg: st.broken_msg)
+
+    if st.limit < 0
+        return fail(code: codes.INVALID, msg: f"a limit of {st.limit} bytes, where a limit is 0 or more")
+
+    match steps(@st, want: want)
+        .ok status => return ok(status)
+        .err e =>
+            st.broken_code @ e.code
+            st.broken_msg @ e.msg
+            return fail(code: e.code, msg: e.msg)
+
+# `run`'s work, before its failure is kept.
+function steps(@st: inflater.State, want: i64) -> i64?
+    while true
+        if st.phase == inflater.DONE
+            return ok(inflater.ENDED)
+
+        if inflater.pending(st) >= want && (st.phase == inflater.BLOCK || st.phase == inflater.STORED || st.phase == inflater.CODES)
+            return ok(inflater.MET)
+        moved = step(@st, want: want)?
+
+        if !moved
+            if st.at_end
+                return codes.invalid_at(
+                    at: st.base + st.input.len(),
+                    why: f"the input ends inside {phase_name(st.phase)}"
+                )
+            return ok(inflater.STARVED)
+
+    return ok(inflater.STARVED)
+
+# What a message calls the part of the stream in `phase`.
+function phase_name(phase: i64) -> str
+    return match phase
+        0 => "the header"
+        1 => "a block's header"
+        2 => "a stored block"
+        3 => "a coded block"
+        4 => "the checksum at the end"
+        _ => "the stream"
+
+# Takes one step of the phase `st` is in, and answers whether it moved;
+# where it did not, the input ran out and the cursor is where it was.
+function step(@st: inflater.State, want: i64) -> bool?
+    return match st.phase
+        0 => header(@st)
+        1 => inflate_blocks.block_header(@st)
+        2 => inflate_blocks.stored(@st)
+        3 => inflate_blocks.coded(@st, want: want)
+        4 => trailer(@st)
+        5 => gap(@st)
+        _ => ok(true)
+
+# Reads the zlib or gzip header.
+function header(@st: inflater.State) -> bool?
+    if st.wrap == wrapping.ZLIB
+        found = wrap_read.read_zlib(@st.cur, st.input, base: st.base)?
+
+        if !found.complete
+            return ok(false)
+
+        if found.has_dictionary
+            if st.dictionary.len() == 0
+                return codes.invalid_at(
+                    at: inflater.here(st),
+                    why: f"the stream needs the preset dictionary whose Adler-32 is {found.dictionary_id}, and none was given"
+                )
+            given = to_i64(hash.adler32(st.dictionary)).must()
+
+            if given != found.dictionary_id
+                return codes.invalid_at(
+                    at: inflater.here(st),
+                    why: f"the stream needs the preset dictionary whose Adler-32 is {found.dictionary_id}, and the one given has {given}"
+                )
+            inflater.prime(@st)
+        st.phase @ inflater.BLOCK
+        return ok(true)
+    found = wrap_read.read_gzip(@st.cur, st.input, base: st.base, most: wrapping.FIELD_MOST)?
+
+    if !found.complete
+        return ok(false)
+
+    if !st.has_header
+        st.header @ found.header
+        st.has_header @ true
+    st.check @ hash.start32(.crc32)
+    st.member_size @ 0
+    st.phase @ inflater.BLOCK
+    return ok(true)
+
+# Reads the wrapper's checksum and, for gzip, the size, and compares them
+# with the output's.
+function trailer(@st: inflater.State) -> bool?
+    saved = st.cur
+    inflater.sync_check(@st)
+    made = to_i64(st.check.value).must()
+
+    if st.wrap == wrapping.ZLIB
+        sum = wrap_read.read_number(@st.cur, st.input, width: 4, big: true)
+
+        if sum < 0
+            st.cur @ saved
+            return ok(false)
+
+        if sum != made
+            return codes.invalid_at(at: inflater.here(st), why: f"an Adler-32 of {sum} where the data gives {made}")
+        st.phase @ inflater.DONE
+        return ok(true)
+    sum = wrap_read.read_number(@st.cur, st.input, width: 4, big: false)
+    size = wrap_read.read_number(@st.cur, st.input, width: 4, big: false)
+
+    if size < 0
+        st.cur @ saved
+        return ok(false)
+
+    if sum != made
+        return codes.invalid_at(at: inflater.here(st) - 4, why: f"a CRC-32 of {sum} where the data gives {made}")
+
+    if size != st.member_size & 0xffffffff
+        return codes.invalid_at(
+            at: inflater.here(st),
+            why: f"a size of {size} bytes where the data is {st.member_size & 0xffffffff} (modulo 2^32)"
+        )
+
+    if st.multi
+        st.phase @ inflater.GAP
+    else
+        st.phase @ inflater.DONE
+    return ok(true)
+
+# Between gzip members: skips one zero byte of padding, or begins the next
+# member at 1f, or ends where the input has ended.
+function gap(@st: inflater.State) -> bool?
+    saved = st.cur
+    byte = cursor.next_byte(@st.cur, st.input)
+
+    if byte < 0
+        if st.at_end
+            st.cur @ saved
+            st.phase @ inflater.DONE
+            return ok(true)
+        return ok(false)
+
+    if byte == 0
+        return ok(true)
+    st.cur @ saved
+
+    if byte == 0x1f
+        st.phase @ inflater.HEADER
+        return ok(true)
+    return codes.invalid_at(
+        at: inflater.here(st) + 1,
+        why: f"a byte {byte} after a gzip member, where only another member or zeros may follow"
+    )
+
+# The output of `data`, one stream wrapped in `wrap`, and how many bytes
+# of it the stream took. Where `whole_input`, bytes after the stream fail
+# `invalid`, and gzip members after the first are read.
+function whole(data: [u8], wrap: i64, limit: i64, whole_input: bool) -> Whole?
+    st @= inflater.start(wrap: wrap, limit: limit, multi: whole_input)
+    inflater.feed(@st, more: data)
+    inflater.end_input(@st)
+    _ = run(@st, want: inflater.EVERYTHING)?
+
+    if whole_input && wrap != wrapping.GZIP && inflater.unused(st).len() > 0
+        return codes.invalid_at(
+            at: inflater.used(st),
+            why: f"{inflater.unused(st).len()} bytes after the end of the stream"
+        )
+    used_bytes = inflater.used(st)
+    return ok(Whole(data: inflater.take(@st, most: inflater.EVERYTHING), used: used_bytes))
+
+# The code and message `whole` fails with for `data` read as `wrap`, or
+# "ok" where it does not fail: what the tests below compare.
+function refusal(data: [u8], wrap: i64) -> str
+    return match whole(data, wrap: wrap, limit: 100000, whole_input: true)
+        .ok _  => "ok"
+        .err e => e.code + ": " + e.msg
+
+# `data` with the byte at `at` changed.
+function flipped(data: [u8], at: i64) -> [u8]
+    out @= data
+    out[at] @ to_u8(to_i64(data[at]).must() ^ 1).must()
+    return out
+
+# `data` and then `more`.
+function joined(data: [u8], more: [u8]) -> [u8]
+    out @= data
+    inflater.append(data: @out, more: more)
+    return out
+
+test "whole: every stream Python made reads back as the text"
+    text = samples.text()
+    assert whole(samples.of(samples.ZLIB_6), wrap: wrapping.ZLIB, limit: 10000, whole_input: true).must().data == text
+    assert whole(samples.of(samples.ZLIB_0), wrap: wrapping.ZLIB, limit: 10000, whole_input: true).must().data == text.slice(from: 0, to: 300)
+    assert whole(samples.of(samples.RAW_9), wrap: wrapping.RAW, limit: 10000, whole_input: true).must().data == text
+    assert whole(samples.of(samples.GZIP_NAMED), wrap: wrapping.GZIP, limit: 10000, whole_input: true).must().data == text
+    assert whole(samples.of(samples.GZIP_MEMBERS), wrap: wrapping.GZIP, limit: 10000, whole_input: true).must().data == text
+    assert whole(samples.of(samples.ZLIB_FLUSHED), wrap: wrapping.ZLIB, limit: 10000, whole_input: true).must().data == text
+    assert samples.ZLIB_6_LEN == text.len()
+    assert samples.ZLIB_6_CRC == to_i64(hash.crc32(text)).must()
+
+test "whole: the streams made by hand, refused where Python refuses them"
+    bad = "invalid: not a valid compressed stream at byte "
+    assert refusal(samples.of(samples.RAW_TYPE3), wrap: wrapping.RAW) == bad + "0: a block of type 3, which RFC 1951 reserves"
+    assert refusal(samples.of(samples.RAW_STORED_NLEN), wrap: wrapping.RAW) == bad + "4: a stored block of 5 bytes whose complement says 65535"
+    assert refusal(samples.of(samples.RAW_STORED_CUT), wrap: wrapping.RAW) == bad + "7: the input ends inside a stored block"
+    assert refusal(samples.of(samples.RAW_LIT286), wrap: wrapping.RAW) == bad + "1: the length symbol 286, past the 285 there are"
+    assert refusal(samples.of(samples.RAW_DIST30), wrap: wrapping.RAW) == bad + "2: the distance symbol 30, past the 29 there are"
+    assert refusal(samples.of(samples.RAW_TOO_FAR), wrap: wrapping.RAW) == bad + "2: a repeat at distance 2, before the start of the output, which holds 1 bytes"
+    assert refusal(samples.of(samples.RAW_FAR_FIRST), wrap: wrapping.RAW) == bad + "1: a repeat at distance 1, before the start of the output, which holds 0 bytes"
+    assert refusal(samples.of(samples.RAW_CL_OVERSUBSCRIBED), wrap: wrapping.RAW) == bad + "9: a code length code that is not complete"
+    assert refusal(samples.of(samples.RAW_CL_INCOMPLETE), wrap: wrapping.RAW) == bad + "9: a code length code that is not complete"
+    assert refusal(samples.of(samples.RAW_LIT_INCOMPLETE), wrap: wrapping.RAW) == bad + "13: the literal and length code leaves some bits meaning nothing"
+    assert refusal(samples.of(samples.RAW_REPEAT_FIRST), wrap: wrapping.RAW) == bad + "9: a repeat of the length before the first length"
+    assert refusal(samples.of(samples.RAW_NO_END), wrap: wrapping.RAW) == bad + "13: a block with no code for its end"
+    assert refusal(samples.of(samples.RAW_HLIT287), wrap: wrapping.RAW) == bad + "2: a block that sends 287 literal and length codes, past the 286 there are"
+    assert whole(samples.of(samples.RAW_FIXED_OK), wrap: wrapping.RAW, limit: 10, whole_input: true).must().data == [0x61, 0x61, 0x61, 0x61]
+    assert whole(samples.of(samples.RAW_DYN_OK), wrap: wrapping.RAW, limit: 10, whole_input: true).must().data == [0x61]
+
+test "whole: a stream cut at every byte is refused, and never read past"
+    for hex in [samples.ZLIB_6, samples.GZIP_NAMED]
+        stream = samples.of(hex)
+        wrap: i64 @= wrapping.ZLIB
+
+        if hex == samples.GZIP_NAMED
+            wrap @ wrapping.GZIP
+
+        for cut in range(from: 0, to: stream.len())
+            match whole(stream.slice(from: 0, to: cut), wrap: wrap, limit: 10000, whole_input: true)
+                .ok _  => assert false
+                .err e => assert e.code == "invalid"
+
+test "whole: the limit at its edges, a million zeros under a thousand, and below 0"
+    stream = samples.of(samples.ZLIB_6)
+    size = samples.text().len()
+    assert whole(stream, wrap: wrapping.ZLIB, limit: size, whole_input: true).must().data.len() == size
+
+    match whole(stream, wrap: wrapping.ZLIB, limit: size - 1, whole_input: true)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    zeros = samples.of(samples.ZLIB_ZEROS)
+
+    match whole(zeros, wrap: wrapping.ZLIB, limit: 1000, whole_input: true)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    all_zeros = whole(zeros, wrap: wrapping.ZLIB, limit: samples.ZLIB_ZEROS_LEN, whole_input: true).must().data
+    assert all_zeros.len() == samples.ZLIB_ZEROS_LEN
+    assert to_i64(hash.crc32(all_zeros)).must() == samples.ZLIB_ZEROS_CRC
+    assert refusal(stream, wrap: wrapping.RAW) != "ok"
+    none: [u8] = []
+
+    match whole(none, wrap: wrapping.RAW, limit: -1, whole_input: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "a limit of -1 bytes, where a limit is 0 or more"
+
+test "whole: bytes after a stream, zeros after gzip, and a stream read where it leads"
+    stream = samples.of(samples.ZLIB_6)
+    assert refusal(joined(data: stream, more: [0]), wrap: wrapping.ZLIB) == f"invalid: not a valid compressed stream at byte {stream.len()}: 1 bytes after the end of the stream"
+    raw = samples.of(samples.RAW_9)
+    assert refusal(joined(data: raw, more: [1, 2]), wrap: wrapping.RAW) == f"invalid: not a valid compressed stream at byte {raw.len()}: 2 bytes after the end of the stream"
+    named = samples.of(samples.GZIP_NAMED)
+    assert refusal(joined(data: named, more: [0, 0, 0]), wrap: wrapping.GZIP) == "ok"
+    assert refusal(joined(data: named, more: [0x41]), wrap: wrapping.GZIP) == f"invalid: not a valid compressed stream at byte {named.len()}: a byte 65 after a gzip member, where only another member or zeros may follow"
+    led = whole(joined(data: stream, more: [7, 7]), wrap: wrapping.ZLIB, limit: 10000, whole_input: false).must()
+    assert led.used == stream.len()
+    assert led.data == samples.text()
+    members = samples.of(samples.GZIP_MEMBERS)
+    first = whole(members, wrap: wrapping.GZIP, limit: 10000, whole_input: false).must()
+    assert first.data == samples.text().slice(from: 0, to: 1000)
+    assert first.used < members.len()
+
+test "whole: a checksum or a size that does not match"
+    stream = samples.of(samples.ZLIB_6)
+    assert refusal(flipped(stream, at: stream.len() - 1), wrap: wrapping.ZLIB) != "ok"
+    named = samples.of(samples.GZIP_NAMED)
+
+    match whole(flipped(named, at: named.len() - 8), wrap: wrapping.GZIP, limit: 10000, whole_input: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match whole(flipped(named, at: named.len() - 1), wrap: wrapping.GZIP, limit: 10000, whole_input: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "whole: the empty input of each wrapping"
+    none: [u8] = []
+    bad = "invalid: not a valid compressed stream at byte 0: the input ends inside "
+    assert refusal(none, wrap: wrapping.RAW) == bad + "a block's header"
+    assert refusal(none, wrap: wrapping.ZLIB) == bad + "the header"
+    assert refusal(none, wrap: wrapping.GZIP) == bad + "the header"
+
+test "run: a stream fed one byte at a time, its output taken seven bytes at a time"
+    for hex in [samples.ZLIB_6, samples.GZIP_NAMED, samples.ZLIB_FLUSHED]
+        stream = samples.of(hex)
+        wrap: i64 @= wrapping.ZLIB
+
+        if hex == samples.GZIP_NAMED
+            wrap @ wrapping.GZIP
+        st @= inflater.start(wrap: wrap, limit: 10000, multi: false)
+        out: [u8] @= []
+
+        for b in stream
+            inflater.feed(@st, more: [b])
+            _ = run(@st, want: 7).must()
+
+            while inflater.pending(st) > 0
+                inflater.append(data: @out, more: inflater.take(@st, most: 7))
+
+        assert inflater.is_done(st)
+        assert out == samples.text()
+        assert inflater.used(st) == stream.len()
+
+test "run: a million bytes streamed out a thousand at a time keep a bounded window"
+    st @= inflater.start(wrap: wrapping.ZLIB, limit: samples.ZLIB_ZEROS_LEN, multi: false)
+    inflater.feed(@st, more: samples.of(samples.ZLIB_ZEROS))
+    total: i64 @= 0
+    held_most: i64 @= 0
+
+    while !inflater.is_done(st)
+        status = run(@st, want: 1000).must()
+        total @ total + inflater.take(@st, most: 1000).len()
+
+        if st.out.len() > held_most
+            held_most @ st.out.len()
+        assert status != inflater.STARVED
+
+    assert total == samples.ZLIB_ZEROS_LEN
+    assert held_most < 2 * inflater.DROP_AT + inflater.WINDOW
+
+test "run: a stream that needs a dictionary, without it, with another one, and with it"
+    stream = samples.of(samples.ZLIB_DICT)
+    id = to_i64(hash.adler32(samples.dictionary())).must()
+    st @= inflater.start(wrap: wrapping.ZLIB, limit: 10000, multi: false)
+    inflater.feed(@st, more: stream)
+
+    match run(@st, want: inflater.EVERYTHING)
+        .ok _  => assert false
+        .err e => assert e.msg == f"not a valid compressed stream at byte 5: the stream needs the preset dictionary whose Adler-32 is {id}, and none was given"
+
+    other @= inflater.start(wrap: wrapping.ZLIB, limit: 10000, multi: false)
+    inflater.set_dictionary(@other, dictionary: [1, 2, 3]).must()
+    inflater.feed(@other, more: stream)
+
+    match run(@other, want: inflater.EVERYTHING)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    good @= inflater.start(wrap: wrapping.ZLIB, limit: 10000, multi: false)
+    inflater.set_dictionary(@good, dictionary: samples.dictionary()).must()
+    inflater.feed(@good, more: stream)
+    assert run(@good, want: inflater.EVERYTHING).must() == inflater.ENDED
+    assert inflater.take(@good, most: inflater.EVERYTHING) == samples.text()
+
+test "run: a failure is kept, and every later call fails the same way"
+    st @= inflater.start(wrap: wrapping.RAW, limit: 100, multi: false)
+    inflater.feed(@st, more: samples.of(samples.RAW_TYPE3))
+    first = run(@st, want: 10)
+    inflater.feed(@st, more: samples.of(samples.RAW_FIXED_OK))
+    second = run(@st, want: 10)
+
+    match first
+        .ok _ => assert false
+        .err a =>
+            match second
+                .ok _  => assert false
+                .err b => assert a.msg == b.msg

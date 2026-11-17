@@ -1,0 +1,168 @@
+# Names looked up through the floor `net/hero_net`: the addresses of a host,
+# and the name of an address. The floor writes into a buffer and says how
+# many bytes the whole answer takes, so a call whose buffer was too short is
+# made once more with one long enough.
+
+use net/hero_net
+use net/internal/failure
+use net/internal/format
+use net/internal/hosts
+use net/internal/parse
+
+# The bytes the first buffer of a lookup holds: room for about thirty
+# addresses, which a host seldom has more of.
+constant FIRST_SIZE: u64
+    1024
+
+# The addresses of the host `name`, none twice, in the order the resolver
+# gives them.
+#
+# - `name`: a host's name, or an address as text, which answers itself; ""
+#   and a zero byte are refused.
+#
+# Fails `invalid` where `name` is "" or holds a zero byte, and as the floor
+# fails: `not_found` where the resolver knows no address for it.
+function lookup(name: str) -> [parse.Parsed]?
+    asked = f"looking up \"{name}\""
+    hosts.checked_host(host: name, asked: asked)?
+    size: u64 @= FIRST_SIZE
+
+    while true
+        list: [u8] @= []
+        took = hero_net.lookup(name: name, @list, n: size)
+
+        if took < 0
+            return failure.last(asked: asked)
+        wanted = to_u64(took).must()
+
+        if wanted < size
+            return addresses_in(list.slice(from: 0, to: took), asked: asked)
+        size @ wanted + 1
+
+# The name the resolver has for the address `text` writes.
+#
+# - `text`: an address as text, with its zone where it has one, and no port.
+#
+# Fails as the floor fails: `not_found` where the resolver has no name for
+# it, `failed` where the name is not text.
+function name_of(text: str) -> str?
+    asked = f"looking up the name of {text}"
+    size: u64 @= 256
+
+    while true
+        name: [u8] @= []
+        took = hero_net.name_of(address: text, @name, n: size)
+
+        if took < 0
+            return failure.last(asked: asked)
+        wanted = to_u64(took).must()
+
+        if wanted < size
+            match name.slice(from: 0, to: took).validated_bytes()
+                .ok t  => return ok(t)
+                .err _ => return failure.of(code: failure.FAILED, asked: asked, why: "the resolver's name is not UTF-8")
+        size @ wanted + 1
+
+# The addresses in `list`, each ended by a newline, none twice.
+#
+# - `list`: the bytes the floor wrote, addresses as text each followed by a
+#   newline; empty holds none.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `failed` where a line is no address, which the floor never writes.
+function addresses_in(list: [u8], asked: str) -> [parse.Parsed]?
+    out: [parse.Parsed] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: list.len())
+        if list[at] == '\n'
+            line = list.slice(from: start, to: at)
+            start @ at + 1
+
+            match line.validated_bytes()
+                .err _ => return failure.of(
+                    code: failure.FAILED,
+                    asked: asked,
+                    why: "the resolver wrote an address that is not text"
+                )
+                .ok t =>
+                    match parse.address(t)
+                        .err e => return failure.of(
+                            code: failure.FAILED,
+                            asked: asked,
+                            why: "the resolver wrote no address: " + e.msg
+                        )
+                        .ok p =>
+                            if !holds(out, p)
+                                out @ out.push(p)
+
+    return ok(out)
+
+# Whether `list` holds `p` already.
+#
+# - `list`: the addresses kept so far.
+# - `p`: the address read.
+function holds(list: [parse.Parsed] lent, p: parse.Parsed) -> bool
+    for q in list
+        if q == p
+            return true
+
+    return false
+
+# The text the floor is handed for the address `bytes` with `zone`.
+#
+# - `bytes`: four or sixteen bytes.
+# - `zone`: the zone, "" for none.
+function text_of(bytes: [u8], zone: str) -> str
+    return format.address(bytes, zone: zone, has_port: false, port: 0)
+
+## Tests
+
+test "lookup: localhost has a loopback address, an address answers itself, and a list longer than the first buffer is read whole"
+    local = lookup("localhost").must()
+    assert local.len() >= 1
+
+    for p in local
+        assert p.bytes == [127, 0, 0, 1] || p.bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+
+    itself = lookup("127.0.0.1").must()
+    assert itself == [parse.Parsed(bytes: [127, 0, 0, 1], zone: "", has_port: false, port: 0)]
+    assert lookup("::1").must()[0].bytes[15] == 1
+
+test "lookup: a name nobody has, no name, and a zero byte"
+    match lookup("no-such-host.invalid")
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND || e.code == failure.FAILED
+
+    match lookup("")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    nul: [u8] = [97, 0, 98]
+
+    match lookup(nul.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "name_of: the loopback address has a name or none, and what is no number is refused"
+    match name_of("127.0.0.1")
+        .ok n  => assert n.len() > 0
+        .err e => assert e.code == failure.NOT_FOUND
+
+    match name_of("not a number")
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "addresses_in: none, one, a repeated one kept once, and a line that is no address"
+    assert addresses_in([], asked: "x").must() == []
+    one: [u8] = [49, 46, 50, 46, 51, 46, 52, 10]
+    assert addresses_in(one, asked: "x").must()[0].bytes == [1, 2, 3, 4]
+    twice: [u8] = [58, 58, 49, 10, 58, 58, 49, 10]
+    assert addresses_in(twice, asked: "x").must().len() == 1
+    wrong: [u8] = [120, 10]
+    assert addresses_in(wrong, asked: "x").is_err()
+
+test "holds, text_of: found and absent, and a zone written"
+    p = parse.Parsed(bytes: [1, 2, 3, 4], zone: "", has_port: false, port: 0)
+    assert holds([p], p) && !holds([], p)
+    assert text_of([0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], zone: "lo0") == "fe80::1%lo0"

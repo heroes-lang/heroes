@@ -1,0 +1,92 @@
+# What the tests and examples of `web` share and cannot declare in a test: a
+# request made from its parts, the functions handed as values, a fixed clock,
+# and a folder of files laid out on the disk under `build/`.
+
+use fs
+use http
+use path
+use time
+
+# A request of `method` for `target`, holding `headers`.
+function request_of(method: str, target: str, headers: [http.Header]) -> http.Request
+    r @= http.request(method: method, target: target).must()
+    r.headers @ headers
+    return r
+
+# Whether `c` are the test's credentials, `alice` and `secret`.
+function is_alice(c: http.Credentials) -> bool
+    return c.user == "alice" && c.password == "secret"
+
+# Whether `token` is the test's token.
+function is_good_token(token: str) -> bool
+    return token == "good-token"
+
+# A program's own function with its own state: counts a visit in `hits` and
+# answers the route's `name`, the `id` and the count.
+function visit(@hits: i64, name: str, id: str) -> http.Response
+    hits @ hits + 1
+    return http.respond_text(http.STATUS_OK, text: f"{name} {id} {hits}")
+
+# RFC 9110's example instant, 1994-11-06 08:49:37 UTC.
+function clock() -> time.Instant?
+    return time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 0)
+
+# The instant 250 milliseconds before `clock`'s.
+function started() -> time.Instant
+    return time.from_unix(whole_seconds: 784_111_776, extra_nanoseconds: 750_000_000).must()
+
+# A new folder under `build/` holding: `a.txt` (`hello world`, written at
+# `clock`'s instant), `sub/b.html`, `sub/a b&<.txt`, `sub/dir/`, `idx/index.html`
+# (`IDX`), `.hidden`, and `out.txt`, a link to `../outside.txt` beside the
+# folder. Answers the folder; its parent is removed by `remove`.
+function lay_out() -> str
+    base = fs.make_temp_dir(dir: "build", pattern: "rebel-web-*").must()
+    root = path.join_all([base, "root"])
+    fs.make_dir(root).must()
+    fs.make_dir(path.join_all([root, "sub"])).must()
+    fs.make_dir(path.join_all([root, "sub", "dir"])).must()
+    fs.make_dir(path.join_all([root, "idx"])).must()
+    write(file: path.join_all([root, "a.txt"]), text: "hello world")
+    write(file: path.join_all([root, "sub", "b.html"]), text: "<p>b</p>")
+    write(file: path.join_all([root, "sub", "a b&<.txt"]), text: "x")
+    write(file: path.join_all([root, "idx", "index.html"]), text: "IDX")
+    write(file: path.join_all([root, ".hidden"]), text: "s")
+    write(file: path.join_all([base, "outside.txt"]), text: "out")
+    fs.symlink(target: "../outside.txt", name: path.join_all([root, "out.txt"])).must()
+    at = clock().must()
+    fs.set_times(path.join_all([root, "a.txt"]), written: at, read: at).must()
+    return root
+
+# Writes `text` to the file `file`.
+function write(file: str, text: str)
+    write_file(path: file, text: text).must()
+
+# Removes the folder `lay_out` made, given its `root`.
+function remove(root: str)
+    fs.remove_all(path.parent(root)).must()
+
+test "request_of: a method, a target and fields"
+    r = request_of(method: "PUT", target: "http://h/a?b=1", headers: [http.Header(name: "X", value: "1")])
+    assert r.method == "PUT" && r.url.path == "/a" && r.headers.len() == 1
+
+test "is_alice: the right pair and a wrong password"
+    assert is_alice(http.Credentials(user: "alice", password: "secret"))
+    assert !is_alice(http.Credentials(user: "alice", password: "x"))
+
+test "is_good_token: the token and another"
+    assert is_good_token("good-token") && !is_good_token("bad")
+
+test "visit: the count grows in the caller's place"
+    hits: i64 @= 0
+    _ = visit(@hits, name: "a", id: "1")
+    got = visit(@hits, name: "user", id: "7")
+    assert hits == 2 && http.text_of(got).must() == "user 7 2"
+
+test "clock: RFC 9110's instant, and 250 ms before it"
+    assert time.between(from: started(), to: clock().must()).must().nanoseconds == 250_000_000
+
+test "lay_out: the files and the link, then removed"
+    root = lay_out()
+    assert fs.is_link(path.join_all([root, "out.txt"])).must() && read_file(path.join_all([root, "a.txt"])).must() == "hello world"
+    remove(root)
+    assert !fs.exists(path.parent(root)).must()

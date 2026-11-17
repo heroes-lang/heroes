@@ -1,0 +1,8 @@
+# Reaches Rebel's package `os`, the process's world, so that `heroes test` on
+# this file runs the package's tests and its floor's (spec § 12). It prints
+# whether the process has an id, which every process has.
+
+use <rebel>/os
+
+function main()
+    print(os.pid() > 0)

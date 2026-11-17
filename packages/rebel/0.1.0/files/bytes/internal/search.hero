@@ -1,0 +1,304 @@
+# Where bytes stand in other bytes: a list, a byte of a set or a byte a
+# function accepts, sought from the start or from the end, counted, and two
+# lists ordered. Every position is an index; a search that finds nothing fails
+# `not_found` with a message naming what it sought and where.
+
+use bytes/internal/ascii
+use bytes/internal/codes
+use bytes/internal/raw
+
+# Whether `prefix` stands in `s` at index `at`; false for an `at` below 0 or
+# past the end, so it never aborts.
+function has_prefix_at(s: [u8], prefix: [u8], at: i64) -> bool
+    if at < 0 || at > s.len() || prefix.len() > s.len() - at
+        return false
+    i: i64 @= 0
+
+    while i < prefix.len()
+        if s[at + i] != prefix[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether `s` ends with `suffix`.
+function has_suffix(s: [u8], suffix: [u8]) -> bool
+    return has_prefix_at(s: s, prefix: suffix, at: s.len() - suffix.len())
+
+# Whether `set` holds the byte `c`.
+function holds(set: [u8], c: u8) -> bool
+    for x in set
+        if x == c
+            return true
+
+    return false
+
+# Whether `s` holds `substr`, asked with no message built on a miss.
+function contains(s: [u8], substr: [u8]) -> bool
+    at: i64 @= 0
+
+    while at + substr.len() <= s.len()
+        if has_prefix_at(s: s, prefix: substr, at: at)
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether `s` holds any byte of `set`.
+function contains_any(s: [u8], set: [u8]) -> bool
+    for c in s
+        if holds(set, c)
+            return true
+
+    return false
+
+# The failure of a search for `sought` in `s` from `from`.
+function absent(sought: str, s: [u8], from: i64) -> i64?
+    if from > 0
+        return fail(code: codes.NOT_FOUND, msg: f"no {sought} in {raw.quoted(s)} at or after index {from}")
+    return fail(code: codes.NOT_FOUND, msg: f"no {sought} in {raw.quoted(s)}")
+
+# Where `substr` first begins in `s` at or after `from`, a `from` below 0
+# read as 0.
+function index_of_from(s: [u8], substr: [u8], from: i64) -> i64?
+    at: i64 @= from
+
+    if at < 0
+        at @ 0
+
+    while at + substr.len() <= s.len()
+        if has_prefix_at(s: s, prefix: substr, at: at)
+            return ok(at)
+        at @ at + 1
+
+    return absent(sought: raw.quoted(substr), s: s, from: from)
+
+# Where `substr` last begins in `s`.
+function index_of_last(s: [u8], substr: [u8]) -> i64?
+    at: i64 @= s.len() - substr.len()
+
+    while at >= 0
+        if has_prefix_at(s: s, prefix: substr, at: at)
+            return ok(at)
+        at @ at - 1
+
+    return absent(sought: raw.quoted(substr), s: s, from: 0)
+
+# Where the first byte that `set` holds stands in `s` at or after `from`.
+function index_of_any_from(s: [u8], set: [u8], from: i64) -> i64?
+    at: i64 @= from
+
+    if at < 0
+        at @ 0
+
+    while at < s.len()
+        if holds(set, s[at])
+            return ok(at)
+        at @ at + 1
+
+    return absent(sought: f"byte of {raw.quoted(set)}", s: s, from: from)
+
+# Where the last byte that `set` holds stands in `s`.
+function index_of_any_last(s: [u8], set: [u8]) -> i64?
+    at: i64 @= s.len() - 1
+
+    while at >= 0
+        if holds(set, s[at])
+            return ok(at)
+        at @ at - 1
+
+    return absent(sought: f"byte of {raw.quoted(set)}", s: s, from: 0)
+
+# Where the first byte that `accepts` accepts stands in `s` at or after
+# `from`.
+function index_where_from(s: [u8], accepts: (function(u8) -> bool), from: i64) -> i64?
+    at: i64 @= from
+
+    if at < 0
+        at @ 0
+
+    while at < s.len()
+        if accepts(s[at])
+            return ok(at)
+        at @ at + 1
+
+    return absent(sought: "byte the function accepts", s: s, from: from)
+
+# Where the last byte that `accepts` accepts stands in `s`.
+function index_where_last(s: [u8], accepts: (function(u8) -> bool)) -> i64?
+    at: i64 @= s.len() - 1
+
+    while at >= 0
+        if accepts(s[at])
+            return ok(at)
+        at @ at - 1
+
+    return absent(sought: "byte the function accepts", s: s, from: 0)
+
+# How many times `s` holds `substr`, no two sharing a byte.
+function count_of(s: [u8], substr: [u8]) -> i64
+    if substr.len() == 0
+        return s.len() + 1
+    count: i64 @= 0
+    at: i64 @= 0
+
+    while at + substr.len() <= s.len()
+        if has_prefix_at(s: s, prefix: substr, at: at)
+            count @ count + 1
+            at @ at + substr.len()
+        else
+            at @ at + 1
+
+    return count
+
+# Where each occurrence of `substr` begins in `s`, no two sharing a byte.
+function index_of_all(s: [u8], substr: [u8]) -> [i64]
+    if substr.len() == 0
+        return range(from: 0, to: s.len() + 1)
+    found: [i64] @= []
+    at: i64 @= 0
+
+    while at + substr.len() <= s.len()
+        if has_prefix_at(s: s, prefix: substr, at: at)
+            found @ found.push(at)
+            at @ at + substr.len()
+        else
+            at @ at + 1
+
+    return found
+
+# Which of `a` and `b` orders first, byte by byte and then by length.
+function compare(a: [u8], b: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < a.len() && at < b.len()
+        if a[at] < b[at]
+            return -1
+
+        if a[at] > b[at]
+            return 1
+        at @ at + 1
+
+    if a.len() < b.len()
+        return -1
+
+    if a.len() > b.len()
+        return 1
+    return 0
+
+## Tests
+
+test "has_prefix_at: inside, the empty prefix at the end, past either end, and too long"
+    s = raw.of_text("abc")
+    assert has_prefix_at(s: s, prefix: raw.of_text("bc"), at: 1)
+    assert has_prefix_at(s: s, prefix: raw.of_text(""), at: 3)
+    assert !has_prefix_at(s: s, prefix: raw.of_text(""), at: 4)
+    assert !has_prefix_at(s: s, prefix: raw.of_text("a"), at: -1)
+    assert !has_prefix_at(s: s, prefix: raw.of_text("abcd"), at: 0)
+    assert !has_prefix_at(s: s, prefix: raw.of_text("c"), at: 1)
+
+test "has_suffix: a match, the empty suffix, a longer one and a miss"
+    assert has_suffix(s: raw.of_text("abc"), suffix: raw.of_text("bc"))
+    assert has_suffix(s: raw.of_text("abc"), suffix: raw.of_text(""))
+    assert has_suffix(s: raw.of_text(""), suffix: raw.of_text(""))
+    assert !has_suffix(s: raw.of_text("bc"), suffix: raw.of_text("abc"))
+    assert !has_suffix(s: raw.of_text("abc"), suffix: raw.of_text("b"))
+
+test "contains and contains_any: the empty list, the empty needle and set, 0x00 and 0xff"
+    assert contains(s: raw.of_text("abc"), substr: raw.of_text(""))
+    assert contains(s: raw.of_text(""), substr: raw.of_text(""))
+    assert !contains(s: raw.of_text(""), substr: raw.of_text("a"))
+    assert !contains(s: raw.of_text("ab"), substr: raw.of_text("abc"))
+    assert contains(s: [0x00, 0xff, 0x61], substr: [0xff, 0x61])
+    assert contains_any(s: [0x00, 0xff], set: [0xff])
+    assert !contains_any(s: raw.of_text("abc"), set: raw.of_text(""))
+    assert !contains_any(s: raw.of_text(""), set: raw.of_text("a"))
+
+# Python's `bytes.find` answered each position on 2026-11-15, and -1 where
+# this fails.
+test "index_of_from: the empty needle, 0x00 at both ends, a start inside, below 0 and past the end"
+    zeros: [u8] = [0x00, 0xff, 0x61, 0x62, 0x00]
+    assert index_of_from(s: raw.of_text(""), substr: raw.of_text(""), from: 0).must() == 0
+    assert index_of_from(s: raw.of_text("abc"), substr: raw.of_text(""), from: 0).must() == 0
+    assert index_of_from(s: zeros, substr: [0x00], from: 0).must() == 0
+    assert index_of_from(s: zeros, substr: [0x00], from: 1).must() == 4
+    assert index_of_from(s: raw.of_text("abcabc"), substr: raw.of_text("bc"), from: 0).must() == 1
+    assert index_of_from(s: raw.of_text("abcabc"), substr: raw.of_text("bc"), from: 2).must() == 4
+    assert index_of_from(s: raw.of_text("abc"), substr: raw.of_text(""), from: 3).must() == 3
+    assert index_of_from(s: raw.of_text("abc"), substr: raw.of_text("a"), from: -5).must() == 0
+    assert index_of_from(s: raw.of_text("abc"), substr: raw.of_text(""), from: 4).is_err()
+    assert index_of_from(s: raw.of_text(""), substr: raw.of_text("a"), from: 0).is_err()
+
+test "index_of_from fails not_found with what it sought and where it began"
+    match index_of_from(s: raw.of_text("abc"), substr: raw.of_text(";"), from: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no \";\" in \"abc\""
+
+    match index_of_from(s: raw.of_text("abc"), substr: [0xff], from: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "no \"\\xff\" in \"abc\" at or after index 1"
+
+test "index_of_last: 0x00 at the end, the empty needle at the end, and none"
+    assert index_of_last(s: [0x00, 0xff, 0x61, 0x62, 0x00], substr: [0x00]).must() == 4
+    assert index_of_last(s: raw.of_text("abcabc"), substr: raw.of_text("bc")).must() == 4
+    assert index_of_last(s: raw.of_text("abc"), substr: raw.of_text("")).must() == 3
+    assert index_of_last(s: raw.of_text(""), substr: raw.of_text("")).must() == 0
+    assert index_of_last(s: raw.of_text(""), substr: raw.of_text("a")).is_err()
+    assert index_of_last(s: raw.of_text("ab"), substr: raw.of_text("abc")).is_err()
+
+test "index_of_any_from and index_of_any_last: a set of two, the empty set, 0xff, and a start"
+    assert index_of_any_from(s: raw.of_text("abc"), set: raw.of_text("xc"), from: 0).must() == 2
+    assert index_of_any_from(s: raw.of_text("aXbX"), set: raw.of_text("X"), from: 2).must() == 3
+    assert index_of_any_from(s: [0x00, 0xff], set: [0xff], from: -1).must() == 1
+    assert index_of_any_from(s: raw.of_text("abc"), set: raw.of_text(""), from: 0).is_err()
+    assert index_of_any_from(s: raw.of_text("abc"), set: raw.of_text("c"), from: 3).is_err()
+    assert index_of_any_last(s: raw.of_text("aXbX"), set: raw.of_text("Xa")).must() == 3
+    assert index_of_any_last(s: raw.of_text("aXb"), set: raw.of_text("a")).must() == 0
+    assert index_of_any_last(s: raw.of_text("abc"), set: raw.of_text("")).is_err()
+    assert index_of_any_last(s: raw.of_text(""), set: raw.of_text("a")).is_err()
+
+test "index_where_from and index_where_last: the first and last digit, a start, and none"
+    assert index_where_from(s: raw.of_text("ab1c2"), accepts: ascii.is_digit, from: 0).must() == 2
+    assert index_where_from(s: raw.of_text("ab1c2"), accepts: ascii.is_digit, from: 3).must() == 4
+    assert index_where_from(s: raw.of_text("ab1c2"), accepts: ascii.is_digit, from: -1).must() == 2
+    assert index_where_from(s: raw.of_text("abc"), accepts: ascii.is_digit, from: 0).is_err()
+    assert index_where_from(s: raw.of_text(""), accepts: ascii.is_digit, from: 0).is_err()
+    assert index_where_last(s: raw.of_text("ab1c2"), accepts: ascii.is_digit).must() == 4
+    assert index_where_last(s: raw.of_text("1ab"), accepts: ascii.is_digit).must() == 0
+    assert index_where_last(s: raw.of_text("abc"), accepts: ascii.is_digit).is_err()
+
+# Python's `bytes.count` answered 3 for the two bytes of `é` and the empty
+# needle; Go's `bytes.Count` answered 2, counting characters.
+test "count_of: overlapping candidates, the empty needle, and none"
+    assert count_of(s: raw.of_text("aaaa"), substr: raw.of_text("aa")) == 2
+    assert count_of(s: raw.of_text("abc"), substr: raw.of_text("")) == 4
+    assert count_of(s: raw.of_text(""), substr: raw.of_text("")) == 1
+    assert count_of(s: raw.of_text("é"), substr: raw.of_text("")) == 3
+    assert count_of(s: raw.of_text("abc"), substr: raw.of_text("d")) == 0
+    assert count_of(s: raw.of_text(""), substr: raw.of_text("a")) == 0
+
+test "index_of_all: overlapping candidates, the empty needle, and none"
+    nowhere: [i64] = []
+    assert index_of_all(s: raw.of_text("aaaa"), substr: raw.of_text("aa")) == [0, 2]
+    assert index_of_all(s: raw.of_text("ab"), substr: raw.of_text("")) == [0, 1, 2]
+    assert index_of_all(s: raw.of_text(""), substr: raw.of_text("")) == [0]
+    assert index_of_all(s: raw.of_text("abc"), substr: raw.of_text("d")) == nowhere
+
+# Go's `bytes.Compare` answered 0, -1, 1 and 1 for the first four.
+test "compare: both empty, a prefix, a later byte, 0xff against a longer list, and equal"
+    nothing: [u8] = []
+    assert compare(a: nothing, b: nothing) == 0
+    assert compare(a: raw.of_text("a"), b: raw.of_text("ab")) == -1
+    assert compare(a: raw.of_text("b"), b: raw.of_text("ab")) == 1
+    assert compare(a: [0xff], b: [0x00, 0x01]) == 1
+    assert compare(a: raw.of_text("abc"), b: raw.of_text("abc")) == 0
+    assert compare(a: [0x00], b: nothing) == 1
+
+test "holds and absent: a byte of a set, the empty set, 0x00, and the message of a search"
+    assert holds(raw.of_text("abc"), 'b')
+    assert !holds(raw.of_text(""), 'b')
+    assert holds([0x00], 0x00)
+
+    match absent(sought: "x", s: raw.of_text("ab"), from: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no x in \"ab\""

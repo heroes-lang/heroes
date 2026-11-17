@@ -1,0 +1,75 @@
+# Whether a stretch of a URL holds only what its part may hold, and the
+# message that says where it does not: every refusal names the byte, the
+# character, the part and the escape that would be read instead.
+
+use url/internal/classes
+use url/internal/escapes
+
+# `s`'s character at byte `at` as a message names it: in quotes, or "a
+# control character". `at` is where a character begins.
+function named_char(s: str, at: i64) -> str
+    b = s[at]
+
+    if b < 0x20 || b == 0x7f
+        return "a control character"
+    return f"\"{s.slice(from: at, to: at + classes.char_width(b))}\""
+
+# The message refusing the character at byte `at` of `s` in `part`, which
+# names the part with its article, "a path". `at` is where a character
+# begins.
+function refusal(s: str, at: i64, part: str) -> str
+    c = s.slice(from: at, to: at + classes.char_width(s[at]))
+    written = escapes.escape(s: c, keeps: classes.is_unreserved, plus: false)
+    return f"byte {at} of {classes.shown(s)}: {named_char(s: s, at: at)} may not stand in {part} as itself; its escape is \"{written}\""
+
+# Whether `s` holds between byte `from` and byte `to` only bytes `keeps`
+# accepts and escapes. Fails `invalid` at the first byte that is neither, or
+# at a "%" not followed by two hexadecimal digits before `to`. `from` is
+# where a character begins, and `keeps` accepts ASCII bytes alone.
+function check_part(s: str, from: i64, to: i64, part: str, keeps: (function(u8) -> bool)) -> ()?
+    at: i64 @= from
+
+    while at < to
+        b = s[at]
+
+        if b == '%'
+            if at + 2 >= to || !classes.is_hex(s[at + 1]) || !classes.is_hex(s[at + 2])
+                return fail(
+                    code: classes.INVALID,
+                    msg: f"byte {at} of {classes.shown(s)}: a \"%\" not followed by two hexadecimal digits; a \"%\" as itself is written \"%25\""
+                )
+            at @ at + 3
+        else if keeps(b)
+            at @ at + 1
+        else
+            return fail(code: classes.INVALID, msg: refusal(s: s, at: at, part: part))
+
+    return ok()
+
+## Tests
+
+test "named_char: an ASCII character, one of two bytes, a control character"
+    assert named_char(s: "a b", at: 1) == "\" \""
+    assert named_char(s: "aé", at: 1) == "\"é\""
+    assert named_char(s: "a\tb", at: 1) == "a control character"
+
+test "check_part: empty, whole, an escape, a refused byte, a short escape at the end of the part"
+    assert !check_part(s: "", from: 0, to: 0, part: "a path", keeps: classes.in_path).is_err()
+    assert !check_part(s: "/a%20b", from: 0, to: 6, part: "a path", keeps: classes.in_path).is_err()
+    assert !check_part(s: "x?y", from: 2, to: 3, part: "a path", keeps: classes.in_path).is_err()
+
+    match check_part(s: "/a b", from: 0, to: 4, part: "a path", keeps: classes.in_path)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 2 of \"/a b\": \" \" may not stand in a path as itself; its escape is \"%20\""
+
+    match check_part(s: "/café", from: 0, to: 6, part: "a path", keeps: classes.in_path)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4 of \"/café\": \"é\" may not stand in a path as itself; its escape is \"%C3%A9\""
+
+    match check_part(s: "/a%2#", from: 0, to: 4, part: "a path", keeps: classes.in_path)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of \"/a%2#\": a \"%\" not followed by two hexadecimal digits; a \"%\" as itself is written \"%25\""
+
+    match check_part(s: "a\nb", from: 0, to: 3, part: "a path", keeps: classes.in_path)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 1 of a text of 3 bytes: a control character may not stand in a path as itself; its escape is \"%0A\""

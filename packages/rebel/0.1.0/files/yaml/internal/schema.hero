@@ -1,0 +1,272 @@
+# What a scalar means, under YAML 1.2's JSON schema: a plain scalar spelled as
+# JSON spells `null`, `true`, `false` or a number is one, and every other
+# scalar is text; a core tag asks for one kind and refuses a scalar that does
+# not spell it; every other tag is refused, since no tag here makes a value of
+# a kind the program did not ask for.
+
+use json
+use numbers
+use yaml/internal/event
+use yaml/internal/source
+
+# The code of a scalar its tag cannot describe.
+constant INVALID: str
+    "invalid"
+
+# The code of a tag that is not one of the core ones.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a number past what an `f64` holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The prefix of YAML's own tags, which the handle `!!` names.
+constant CORE_PREFIX: str
+    "tag:yaml.org,2002:"
+
+# The value of the scalar `e`, read from `text`.
+#
+# Fails `invalid` where a core tag asks for a kind its characters do not spell,
+# or tags a scalar with `!!seq` or `!!map`; `unsupported` where its tag is not
+# a core one; `does_not_fit` where a number is past what an `f64` holds.
+function scalar_value(e: event.Event, text: str) -> json.Value?
+    tag = e.tag
+
+    if tag == ""
+        if e.is_empty || e.is_plain && e.text == "null"
+            return ok(.null_value)
+
+        if e.is_plain && (e.text == "true" || e.text == "false")
+            return ok(.boolean(v: e.text == "true"))
+
+        if e.is_plain && is_float(e.text)
+            return number(e, text)
+        return ok(.text(v: e.text))
+
+    if tag == "!" || tag == CORE_PREFIX + "str"
+        return ok(.text(v: e.text))
+
+    if tag == CORE_PREFIX + "null"
+        if e.is_empty || e.text == "null"
+            return ok(.null_value)
+        return fail(code: INVALID, msg: mismatch(e: e, text: text, spelled: "`null`, or nothing", kind: "null"))
+
+    if tag == CORE_PREFIX + "bool"
+        if e.text == "true" || e.text == "false"
+            return ok(.boolean(v: e.text == "true"))
+        return fail(code: INVALID, msg: mismatch(e: e, text: text, spelled: "`true` or `false`", kind: "bool"))
+
+    if tag == CORE_PREFIX + "int"
+        if is_int(e.text)
+            return number(e, text)
+        return fail(
+            code: INVALID,
+            msg: mismatch(e: e, text: text, spelled: "an integer as JSON writes one", kind: "int")
+        )
+
+    if tag == CORE_PREFIX + "float"
+        if is_float(e.text)
+            return number(e, text)
+        return fail(
+            code: INVALID,
+            msg: mismatch(e: e, text: text, spelled: "a number as JSON writes one", kind: "float")
+        )
+
+    if tag == CORE_PREFIX + "seq" || tag == CORE_PREFIX + "map"
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: e.at, what: f"the tag {shown(tag)} describes a collection, and tags a scalar")
+        )
+    return fail(code: UNSUPPORTED, msg: refused(tag: tag, at: e.at, text: text))
+
+# Fails where the tag of the list or map `e` opens cannot describe it: `invalid`
+# for a core tag of another kind, `unsupported` for a tag that is not a core
+# one.
+function check_collection(e: event.Event, text: str) -> ()?
+    tag = e.tag
+    is_map = e.kind == event.MAP_START
+
+    if tag == "" || tag == "!" || is_map && tag == CORE_PREFIX + "map" || !is_map && tag == CORE_PREFIX + "seq"
+        return ok()
+
+    what = if is_map
+        "map"
+    else
+        "list"
+
+    if is_core(tag)
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: e.at, what: f"the tag {shown(tag)} tags a {what}, which it cannot describe")
+        )
+    return fail(code: UNSUPPORTED, msg: refused(tag: tag, at: e.at, text: text))
+
+# Whether `tag` is one of the seven core tags.
+function is_core(tag: str) -> bool
+    for name in ["str", "null", "bool", "int", "float", "seq", "map"]
+        if tag == CORE_PREFIX + name
+            return true
+
+    return false
+
+# `tag` as a document writes it: `!!str` for a core tag, a local tag as it is,
+# and any other between `!<` and `>`.
+function shown(tag: str) -> str
+    if tag.len() > CORE_PREFIX.len() && tag.slice(from: 0, to: CORE_PREFIX.len()) == CORE_PREFIX
+        return "!!" + tag.slice(from: CORE_PREFIX.len(), to: tag.len())
+
+    if tag.len() > 0 && tag[0] == '!'
+        return tag
+    return f"!<{tag}>"
+
+# The message of a tag this reader refuses, at byte `at` of `text`.
+function refused(tag: str, at: i64, text: str) -> str
+    return source.said(
+        text: text,
+        at: at,
+        what: f"the tag {shown(tag)}, which this reader refuses: it reads the core tags `!!str`, `!!int`, `!!float`, `!!bool`, `!!null`, `!!seq` and `!!map` and the non-specific `!`, and no tag makes a value of another kind or runs code"
+    )
+
+# The message of the scalar `e`, tagged `!!kind`, whose characters do not
+# spell what `spelled` says.
+function mismatch(e: event.Event, text: str, spelled: str, kind: str) -> str
+    return source.said(text: text, at: e.at, what: f"the tag !!{kind} tags \"{e.text}\", which is not {spelled}")
+
+# Whether `s` is an integer as the JSON schema spells one: an optional `-`,
+# then `0` or a digit from 1 to 9 and digits.
+function is_int(s: str) -> bool
+    start: i64 @= 0
+
+    if s.len() > 0 && s[0] == '-'
+        start @ 1
+    return digits_end(s: s, from: start) == s.len() && whole_part_is_valid(s: s, from: start)
+
+# Whether `s` is a number as the JSON schema spells one: an integer, then an
+# optional point and digits, then an optional `e` or `E`, an optional sign and
+# digits.
+function is_float(s: str) -> bool
+    start: i64 @= 0
+
+    if s.len() > 0 && s[0] == '-'
+        start @ 1
+
+    if !whole_part_is_valid(s: s, from: start)
+        return false
+    i: i64 @= digits_end(s: s, from: start)
+
+    if i < s.len() && s[i] == '.'
+        i @ digits_end(s: s, from: i + 1)
+
+    if i < s.len() && (s[i] == 'e' || s[i] == 'E')
+        i @ i + 1
+
+        if i < s.len() && (s[i] == '+' || s[i] == '-')
+            i @ i + 1
+        after = digits_end(s: s, from: i)
+
+        if after == i
+            return false
+        i @ after
+    return i == s.len()
+
+# Whether the digits from byte `from` of `s` are `0` alone or begin with 1 to
+# 9, and there is at least one.
+function whole_part_is_valid(s: str, from: i64) -> bool
+    end = digits_end(s: s, from: from)
+
+    if end == from
+        return false
+    return s[from] != '0' || end == from + 1
+
+# The byte index past the ASCII digits from byte `from` of `s`.
+function digits_end(s: str, from: i64) -> i64
+    i: i64 @= from
+
+    while i < s.len() && source.is_digit(s[i])
+        i @ i + 1
+
+    return i
+
+# The number `e` spells. Fails `invalid` where it spells none, and
+# `does_not_fit` where it is past what an `f64` holds.
+function number(e: event.Event, text: str) -> json.Value?
+    if !is_float(e.text)
+        return fail(
+            code: INVALID,
+            msg: mismatch(e: e, text: text, spelled: "a number as JSON writes one", kind: "float")
+        )
+    x = numbers.parse_float(e.text)?
+
+    if x - x != 0.0
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: source.said(text: text, at: e.at, what: f"the number {e.text} is past what an f64 holds")
+        )
+    return ok(.number(v: x))
+
+## Tests
+
+# A plain scalar `s` with the tag `tag`, at 0.
+function plain(s: str, tag: str) -> event.Event
+    return event.scalar(at: 0, text: s, anchor: "", tag: tag, is_plain: true)
+
+test "is_int and is_float: the JSON schema's spellings, and the core schema's and YAML 1.1's refused"
+    for s in ["0", "-0", "12", "-12"]
+        assert is_int(s) && is_float(s)
+
+    for s in ["1.", "1.5", "-0.5e10", "1E+2", "1e-07", "0.0"]
+        assert !is_int(s) && is_float(s)
+
+    for s in ["", "-", "01", "+1", ".5", "0x1F", "0o17", "1_000", "1e", "1e+", ".inf", "1.2.3", "1:30", "- 1", "1 "]
+        assert !is_int(s) && !is_float(s)
+
+test "scalar_value: plain null, booleans and numbers, and the words of YAML 1.1 and the core schema as text"
+    assert scalar_value(plain(s: "null", tag: ""), "").must() == .null_value
+    assert scalar_value(plain(s: "true", tag: ""), "").must() == .boolean(v: true)
+    assert scalar_value(plain(s: "false", tag: ""), "").must() == .boolean(v: false)
+    assert scalar_value(plain(s: "-1.5e1", tag: ""), "").must() == .number(v: -15.0)
+
+    for s in ["yes", "no", "on", "off", "y", "~", "Null", "NULL", "True", "TRUE", "0x1F", ".inf", ".nan", "+1", "007"]
+        assert scalar_value(plain(s: s, tag: ""), "").must() == .text(v: s)
+
+test "scalar_value: quoted and empty, and a number past an f64"
+    assert scalar_value(event.scalar(at: 0, text: "1", anchor: "", tag: "", is_plain: false), "").must() == .text(v: "1")
+    assert scalar_value(event.empty(at: 0, anchor: "", tag: ""), "").must() == .null_value
+    assert scalar_value(event.empty(at: 0, anchor: "", tag: "!"), "").must() == .text(v: "")
+
+    match scalar_value(plain(s: "1e400", tag: ""), "1e400")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "line 1, column 1: the number 1e400 is past what an f64 holds"
+
+test "scalar_value: each core tag on what it spells, on what it does not, and a tag refused"
+    core = CORE_PREFIX
+    assert scalar_value(plain(s: "1", tag: core + "str"), "").must() == .text(v: "1")
+    assert scalar_value(event.scalar(at: 0, text: "42", anchor: "", tag: core + "int", is_plain: false), "").must() == .number(v: 42.0)
+    assert scalar_value(plain(s: "1", tag: core + "float"), "").must() == .number(v: 1.0)
+    assert scalar_value(plain(s: "true", tag: core + "bool"), "").must() == .boolean(v: true)
+    assert scalar_value(event.empty(at: 0, anchor: "", tag: core + "null"), "").must() == .null_value
+
+    for e in [plain(s: "1.5", tag: core + "int"), plain(s: "yes", tag: core + "bool"), plain(s: "~", tag: core + "null"), plain(s: "null", tag: core + "bool"), plain(s: "a", tag: core + "seq")]
+        match scalar_value(e, "x")
+            .ok _  => assert false
+            .err f => assert f.code == "invalid"
+
+    match scalar_value(plain(s: "x", tag: core + "binary"), "x")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg.slice(from: 0, to: 39) == "line 1, column 1: the tag !!binary, whi"
+
+test "check_collection: no tag, the non-specific one, the core one that fits, another, and a foreign one"
+    assert !check_collection(event.opening(kind: event.SEQ_START, at: 0, anchor: "", tag: ""), "").is_err()
+    assert !check_collection(event.opening(kind: event.MAP_START, at: 0, anchor: "", tag: "!"), "").is_err()
+    assert !check_collection(event.opening(kind: event.MAP_START, at: 0, anchor: "", tag: CORE_PREFIX + "map"), "").is_err()
+
+    match check_collection(event.opening(kind: event.SEQ_START, at: 0, anchor: "", tag: CORE_PREFIX + "map"), "x")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 1: the tag !!map tags a list, which it cannot describe"
+
+    match check_collection(event.opening(kind: event.MAP_START, at: 0, anchor: "", tag: CORE_PREFIX + "set"), "x")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert shown("!local") == "!local" && shown("tag:e.com,2000:x") == "!<tag:e.com,2000:x>"

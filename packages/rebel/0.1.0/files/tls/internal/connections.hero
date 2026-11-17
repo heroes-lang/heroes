@@ -1,0 +1,556 @@
+# TLS connections over the floor `tls/hero_tls`: made by name, accepted,
+# begun over a stream the caller holds, and asked what they chose. Every
+# answer is an `io.Stream`, which `io` reads, writes and closes; every
+# failure a code of README § A4 by `tls/internal/failure`.
+#
+# Text reaches C checked first (`tls/internal/text`): input from outside
+# never aborts. PEM crosses as its bytes and their count.
+
+use bytes
+use io
+use strings
+use tls/hero_tls
+use tls/internal/failure
+use tls/internal/fixture
+use tls/internal/text
+
+# A listener the floor made, with the port it listens on.
+record Bound
+    # The floor's listener, `nullptr` once closed.
+    handle: hero_tls.Listener
+    # The port it listens on, the one the system chose where 0 was asked.
+    port: i64
+
+# `host` and `port` as a message names them.
+function place(host: str, port: i64) -> str
+    if host == ""
+        return "every address port " + to_str(port)
+    return host + " port " + to_str(port)
+
+# The byte count of `b` as C reads it.
+function count_of(b: [u8]) -> u64
+    return to_u64(b.len()).must()
+
+# A TLS stream to `host` at `port`, its connection and handshake within
+# `deadline_ms` milliseconds (0 for no limit), trusting the PEM `roots` alone
+# where it is not "" and the system's store where it is, offering
+# `protocols`, with `checks` one of the floor's two.
+function connect(host: str, port: i64, deadline_ms: i64, roots: str, protocols: [str], checks: i64) -> io.Stream?
+    asked = "connecting over TLS to " + place(host: host, port: port)
+    text.no_zero(s: host, what: "the host", asked: asked)?
+    offered = text.protocols_text(protocols, asked: asked)?
+    pem: [u8] @= bytes.from_text(roots)
+    handle = hero_tls.connect(
+        host: host,
+        port: port,
+        ms: deadline_ms,
+        @pem,
+        roots_count: count_of(pem),
+        protocols: offered,
+        checks: checks
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(handle, name: "the TLS connection to " + place(host: host, port: port)))
+
+# A listener on `host` at `port` whose connections present the PEM `chain`
+# and prove they hold the PEM `key`, taking `protocols`.
+function listen(host: str, port: i64, chain: str, key: str, protocols: [str]) -> Bound?
+    asked = "listening for TLS on " + place(host: host, port: port)
+    text.no_zero(s: host, what: "the host", asked: asked)?
+    taken = text.protocols_text(protocols, asked: asked)?
+    chain_bytes: [u8] @= bytes.from_text(chain)
+    key_bytes: [u8] @= bytes.from_text(key)
+    handle @= hero_tls.listen(
+        address: host,
+        port: port,
+        chain: @chain_bytes,
+        chain_count: count_of(chain_bytes),
+        key: @key_bytes,
+        key_count: count_of(key_bytes),
+        protocols: taken
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    found = hero_tls.port_of(handle)
+
+    if found < 0
+        lost: Bound? = failure.last(asked: asked)
+        _ = hero_tls.close_listener(@handle)
+        return lost
+    return ok(Bound(handle: handle, port: found))
+
+# The next connection `l` holds, once its handshake ends within
+# `deadline_ms` milliseconds of the connection (0 for no limit).
+function accept(l: hero_tls.Listener, deadline_ms: i64, asked: str) -> io.Stream?
+    if l == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
+    handle = hero_tls.accept(l, ms: deadline_ms)
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(handle, name: "a TLS connection accepted"))
+
+# Closes the listener in `l` and empties the place.
+function close_listener(@l: hero_tls.Listener, asked: str) -> ()?
+    if l == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed already")
+    answer = hero_tls.close_listener(@l)
+    l @ nullptr
+
+    if answer != 0
+        return failure.last(asked: asked)
+    return ok()
+
+# What `client_over` and `server_over` refuse of the inner stream before C
+# is asked: a place emptied by a close, or one of the process's own three.
+function inner_given(inner: io.Stream, asked: str) -> ()?
+    if inner.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: inner.name + " is closed")
+
+    if inner.borrowed
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: inner.name + " belongs to the process and is not given away"
+        )
+    return ok()
+
+# TLS as the client of `host` over `inner`, which the TLS stream then owns:
+# its place is emptied. Where no TLS stream is made `inner` stays the
+# caller's, open.
+function client_over(@inner: io.Stream, host: str, roots: str, protocols: [str], checks: i64) -> io.Stream?
+    asked = "beginning TLS as the client of " + host + " over " + inner.name
+    inner_given(inner, asked: asked)?
+    text.no_zero(s: host, what: "the host", asked: asked)?
+    offered = text.protocols_text(protocols, asked: asked)?
+    pem: [u8] @= bytes.from_text(roots)
+    handle = hero_tls.client(
+        @inner.handle,
+        host: host,
+        @pem,
+        roots_count: count_of(pem),
+        protocols: offered,
+        checks: checks
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    named = "the TLS connection to " + host + " over " + inner.name
+    inner.handle @ nullptr
+    return ok(io.of_handle(handle, name: named))
+
+# TLS as the server over `inner`, presenting `chain` and `key`, which the
+# TLS stream then owns as `client_over`'s does.
+function server_over(@inner: io.Stream, chain: str, key: str, protocols: [str]) -> io.Stream?
+    asked = "beginning TLS as the server over " + inner.name
+    inner_given(inner, asked: asked)?
+    taken = text.protocols_text(protocols, asked: asked)?
+    chain_bytes: [u8] @= bytes.from_text(chain)
+    key_bytes: [u8] @= bytes.from_text(key)
+    handle = hero_tls.server(
+        @inner.handle,
+        chain: @chain_bytes,
+        chain_count: count_of(chain_bytes),
+        key: @key_bytes,
+        key_count: count_of(key_bytes),
+        protocols: taken
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    named = "the TLS connection over " + inner.name
+    inner.handle @ nullptr
+    return ok(io.of_handle(handle, name: named))
+
+# The version of TLS `s` speaks, 12 or 13.
+function version_of(s: io.Stream) -> i64?
+    asked = "reading the TLS version of " + s.name
+
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    version = hero_tls.version(s.handle)
+
+    if version < 0
+        return failure.last(asked: asked)
+    return ok(version)
+
+# The application protocol `s` chose, "" where none.
+function protocol_of(s: io.Stream) -> str?
+    asked = "reading the application protocol of " + s.name
+
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+    buffer: [u8] @= []
+    length = hero_tls.protocol(s.handle, @buffer, count: hero_tls.HERO_TLS_PROTOCOL_MOST)
+
+    if length < 0
+        return failure.last(asked: asked)
+    return bytes.to_text(buffer.slice(from: 0, to: length))
+
+# One step of the exchange before TLS as the floor reads it.
+record Plain
+    # One of the floor's `HERO_TLS_STEP_*`.
+    kind: i64
+    # Its bytes: those sent, those expected, or a line's beginning.
+    bytes: [u8]
+
+# The steps as the floor reads them: each a kind byte, four bytes of its
+# length, most significant first, then its bytes. Fails `invalid` where there
+# are more than 64, or a step holds no bytes or more than its bound: 65536,
+# or 64 for a line's beginning.
+function steps_bytes(steps: [Plain], asked: str) -> [u8]?
+    if steps.len() > 64
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "there are " + to_str(steps.len()) + " steps, more than 64"
+        )
+    out: [u8] @= []
+    number @= 0
+
+    for step in steps
+        number @ number + 1
+        most @= 65536
+
+        if step.kind == hero_tls.HERO_TLS_STEP_EXPECT_LINE
+            most @ 64
+        length = step.bytes.len()
+
+        if length == 0 || length > most
+            return failure.of(
+                code: failure.INVALID,
+                asked: asked,
+                why: "step " + to_str(number) + " holds " + to_str(length) + " bytes, where it holds 1 to " + to_str(most)
+            )
+        out @ out.push(to_u8(step.kind).must())
+        out @ out.push(to_u8(length >> 24 & 255).must())
+        out @ out.push(to_u8(length >> 16 & 255).must())
+        out @ out.push(to_u8(length >> 8 & 255).must())
+        out @ out.push(to_u8(length & 255).must())
+
+        for b in step.bytes
+            out @ out.push(b)
+
+    return ok(out)
+
+# `connect`, with `steps` run on the connection before TLS begins, all
+# within `deadline_ms`.
+function connect_after(host: str, port: i64, deadline_ms: i64, roots: str, protocols: [str], checks: i64, steps: [Plain]) -> io.Stream?
+    asked = "connecting over TLS to " + place(host: host, port: port)
+    text.no_zero(s: host, what: "the host", asked: asked)?
+    offered = text.protocols_text(protocols, asked: asked)?
+    encoded @= steps_bytes(steps, asked: asked)?
+    pem: [u8] @= bytes.from_text(roots)
+    handle = hero_tls.connect_after(
+        host: host,
+        port: port,
+        ms: deadline_ms,
+        roots: @pem,
+        roots_count: count_of(pem),
+        protocols: offered,
+        checks: checks,
+        steps: @encoded,
+        steps_count: count_of(encoded)
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    return ok(io.of_handle(handle, name: "the TLS connection to " + place(host: host, port: port)))
+
+# `listen`, every connection accepted running `steps` from the server's
+# side before TLS begins.
+function listen_after(host: str, port: i64, chain: str, key: str, protocols: [str], steps: [Plain]) -> Bound?
+    asked = "listening for TLS on " + place(host: host, port: port)
+    text.no_zero(s: host, what: "the host", asked: asked)?
+    taken = text.protocols_text(protocols, asked: asked)?
+    encoded @= steps_bytes(steps, asked: asked)?
+    chain_bytes: [u8] @= bytes.from_text(chain)
+    key_bytes: [u8] @= bytes.from_text(key)
+    handle @= hero_tls.listen_after(
+        address: host,
+        port: port,
+        chain: @chain_bytes,
+        chain_count: count_of(chain_bytes),
+        key: @key_bytes,
+        key_count: count_of(key_bytes),
+        protocols: taken,
+        steps: @encoded,
+        steps_count: count_of(encoded)
+    )
+
+    if handle == nullptr
+        return failure.last(asked: asked)
+    found = hero_tls.port_of(handle)
+
+    if found < 0
+        lost: Bound? = failure.last(asked: asked)
+        _ = hero_tls.close_listener(@handle)
+        return lost
+    return ok(Bound(handle: handle, port: found))
+
+# Makes every later and waiting read and write of `s` end by `ms`
+# milliseconds from now.
+function set_deadline(s: io.Stream, ms: i64, asked: str) -> ()?
+    if s.handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the stream is closed")
+
+    if hero_tls.set_deadline(s.handle, ms: ms) != 0
+        return failure.last(asked: asked)
+    return ok()
+
+# Makes every later and waiting accept on `l` end by `ms` milliseconds from
+# now.
+function set_accept_deadline(l: hero_tls.Listener, ms: i64, asked: str) -> ()?
+    if l == nullptr
+        return failure.of(code: failure.CLOSED, asked: asked, why: "the listener is closed")
+
+    if hero_tls.set_accept_deadline(l, ms: ms) != 0
+        return failure.last(asked: asked)
+    return ok()
+
+## Tests
+
+test "connect: a host with a zero byte, an empty protocol and a protocol with a comma fail invalid before any connection"
+    zero = connect(
+        host: bytes.to_text([108, 0]).must(),
+        port: 443,
+        deadline_ms: 0,
+        roots: "",
+        protocols: [],
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+    match zero
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert strings.has_suffix(s: e.msg, suffix: ": the host holds a zero byte")
+
+    for offered in [[""], ["h2,http/1.1"]]
+        made = connect(
+            host: "localhost",
+            port: 443,
+            deadline_ms: 0,
+            roots: "",
+            protocols: offered,
+            checks: hero_tls.HERO_TLS_CHECK_ALL
+        )
+
+        match made
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "connect: no host, port 0, port 65536 and a time below 0 fail invalid; roots with no certificate fail invalid"
+    assert connect(
+        host: "",
+        port: 443,
+        deadline_ms: 0,
+        roots: "",
+        protocols: [],
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    ).is_err()
+
+    for port in [0, 65536]
+        made = connect(
+            host: "localhost",
+            port: port,
+            deadline_ms: 0,
+            roots: "",
+            protocols: [],
+            checks: hero_tls.HERO_TLS_CHECK_ALL
+        )
+
+        match made
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+    late = connect(
+        host: "localhost",
+        port: 443,
+        deadline_ms: -1,
+        roots: "",
+        protocols: [],
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+    match late
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "connecting over TLS to localhost port 443: the layer refuses an argument (the time given is below 0)"
+
+    if hero_tls.available() == 1
+        junk = connect(
+            host: "localhost",
+            port: 443,
+            deadline_ms: 0,
+            roots: "no PEM here",
+            protocols: [],
+            checks: hero_tls.HERO_TLS_CHECK_ALL
+        )
+
+        match junk
+            .ok _ => assert false
+            .err e =>
+                assert e.code == failure.INVALID
+                assert e.msg == "connecting over TLS to localhost port 443: the layer refuses an argument (the roots: the PEM holds no CERTIFICATE block)"
+
+test "connect: a port nothing listens on fails closed"
+    held = listen(host: "127.0.0.1", port: 0, chain: "x", key: "x", protocols: [])
+    assert held.is_err()
+
+    if hero_tls.available() == 1
+        free @= listen(host: "127.0.0.1", port: 0, chain: fixture_chain(), key: fixture_key(), protocols: []).must()
+        port = free.port
+        close_listener(@free.handle, asked: "t").must()
+        gone = connect(
+            host: "127.0.0.1",
+            port: port,
+            deadline_ms: 15000,
+            roots: "",
+            protocols: [],
+            checks: hero_tls.HERO_TLS_CHECK_ALL
+        )
+
+        match gone
+            .ok _ => assert false
+            .err e =>
+                assert e.code == failure.CLOSED
+                assert strings.has_prefix(
+                    s: e.msg,
+                    prefix: "connecting over TLS to 127.0.0.1 port " + to_str(port) + ": nothing listens there"
+                )
+
+test "listen: PEM with no certificate, PEM with no key, a key that is not the certificate's, a port past 65535"
+    none = listen(host: "127.0.0.1", port: 0, chain: "", key: "", protocols: [])
+
+    match none
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID || e.code == failure.UNSUPPORTED
+
+    if hero_tls.available() == 1
+        keyless = listen(host: "127.0.0.1", port: 0, chain: fixture_chain(), key: fixture_chain(), protocols: [])
+
+        match keyless
+            .ok _ => assert false
+            .err e =>
+                assert e.code == failure.INVALID
+                assert e.msg == "listening for TLS on 127.0.0.1 port 0: the layer refuses an argument (the PEM holds no PRIVATE KEY, RSA PRIVATE KEY or EC PRIVATE KEY block)"
+
+        far = listen(host: "127.0.0.1", port: 65536, chain: fixture_chain(), key: fixture_key(), protocols: [])
+        assert far.is_err()
+
+test "accept and close_listener: a listener emptied fails closed, and a second close fails closed"
+    empty: hero_tls.Listener = nullptr
+    taken = accept(empty, deadline_ms: 0, asked: "accepting")
+
+    match taken
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.CLOSED
+            assert e.msg == "accepting: the listener is closed"
+
+    if hero_tls.available() == 1
+        l @= listen(host: "127.0.0.1", port: 0, chain: fixture_chain(), key: fixture_key(), protocols: []).must()
+        assert l.port > 0
+        close_listener(@l.handle, asked: "closing").must()
+        again = close_listener(@l.handle, asked: "closing")
+
+        match again
+            .ok _ => assert false
+            .err e =>
+                assert e.code == failure.CLOSED
+                assert e.msg == "closing: the listener is closed already"
+
+test "version_of and protocol_of: a stream that is no TLS stream fails closed, and so does one closed"
+    p @= io.pipe().must()
+    found = version_of(p.reader)
+
+    match found
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    assert protocol_of(p.writer).is_err()
+    io.close(@p.reader).must()
+    io.close(@p.writer).must()
+    shut = protocol_of(p.reader)
+
+    match shut
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+test "client_over and server_over: a closed stream and one of the process's own are refused, the stream left as it was"
+    p @= io.pipe().must()
+    io.close(@p.writer).must()
+    gone = client_over(@p.writer, host: "localhost", roots: "", protocols: [], checks: hero_tls.HERO_TLS_CHECK_ALL)
+
+    match gone
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    own @= io.stdout()
+    kept = server_over(@own, chain: fixture_chain(), key: fixture_key(), protocols: [])
+
+    match kept
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    assert !io.is_closed(own)
+    io.close(@p.reader).must()
+
+test "connect: example.com at port 443, its certificate checked by the system's own store, where the network answers"
+    made = connect(
+        host: "example.com",
+        port: 443,
+        deadline_ms: 10000,
+        roots: "",
+        protocols: ["http/1.1"],
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+    match made
+        .ok s =>
+            stream @= s
+            version = version_of(stream).must()
+            assert version == 12 || version == 13
+            print("example.com:443 answered over TLS 1." + to_str(version - 10))
+            io.close(@stream).must()
+        .err e =>
+            # No network: the test says so, and passes only where no
+            # certificate was refused.
+            print("example.com:443 unrun, the network did not answer: " + e.msg)
+            assert e.code != failure.INVALID
+
+# The loopback certificate, for the tests above that need one valid chain.
+function fixture_chain() -> str
+    return fixture.LOCALHOST_CHAIN
+
+# Its key.
+function fixture_key() -> str
+    return fixture.LOCALHOST_KEY
+
+test "steps_bytes: none, one step written whole, a line's beginning of 64 and 65 bytes, a step of no bytes, more than 64 steps"
+    assert steps_bytes([], asked: "t").must() == []
+    assert steps_bytes([Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: [83])], asked: "t").must() == [2, 0, 0, 0, 1, 83]
+    assert steps_bytes([Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT_LINE, bytes: bytes.from_text(repeat("2", 64)))], asked: "t").must().len() == 69
+    past = steps_bytes(
+        [Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT_LINE, bytes: bytes.from_text(repeat("2", 65)))],
+        asked: "asked"
+    )
+
+    match past
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "asked: step 1 holds 65 bytes, where it holds 1 to 64"
+
+    assert steps_bytes([Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: [])], asked: "t").is_err()
+    many: [Plain] @= []
+
+    for _ in range(from: 0, to: 65)
+        many @ many.push(Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: [1]))
+
+    assert steps_bytes(many, asked: "t").is_err()

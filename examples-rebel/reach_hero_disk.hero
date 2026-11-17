@@ -1,0 +1,10 @@
+# Reaches Rebel's floor over the platform layer's doors on the file system
+# that are reached by path, `hero_disk.h`, so that `heroes test` on this file
+# runs the floor's own tests (spec § 12, § 13). It prints whether the system
+# names a folder for temporary files, which every machine does.
+
+use <rebel>/os/hero_disk
+
+function main()
+    none: [u8] @= []
+    print(hero_disk.temp_folder(@none, n: 0) > 0)

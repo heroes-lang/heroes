@@ -1,0 +1,160 @@
+# Integers of a fixed width written as bytes and read back, in either order:
+# what the face's `encode_` and `decode_` functions of every width do. A
+# number travels here as an `i64` holding its bits, since the bitwise
+# operators take an `i64` alone; a `u64` above the largest `i64` is carried as
+# the negative `i64` with the same 64 bits.
+
+use bytes/internal/codes
+
+# The smallest `i64`, written so because its digits do not fit one.
+constant I64_MIN: i64
+    -9_223_372_036_854_775_807 - 1
+
+# 2 to the 63, the first `u64` no `i64` holds.
+constant U64_HALF: u64
+    9_223_372_036_854_775_808
+
+# The lowest `width` bytes of `value`, the highest of them first where `big`
+# and the lowest first otherwise. `width` is from 1 to 8.
+function encoded(value: i64, width: i64, big: bool) -> [u8]
+    out: [u8] @= []
+    k: i64 @= 0
+
+    while k < width
+        shift: i64 @= k * 8
+
+        if big
+            shift @ (width - 1 - k) * 8
+        out @ out.push(to_u8(value >> shift & 255).must())
+        k @ k + 1
+
+    return out
+
+# The `width` bytes of `s` from index `at` as one number, the highest first
+# where `big`: from 0 to 2 to the `8 * width` less one, but for a width of 8,
+# whose highest bit is the sign of the `i64`. `asked` names the number in the
+# message. Fails `invalid` where fewer than `width` bytes stand from `at`.
+function decoded(s: [u8], at: i64, width: i64, big: bool, asked: str) -> i64?
+    in_reach(s, at: at, width: width, asked: asked)?
+    value: i64 @= 0
+    k: i64 @= 0
+
+    while k < width
+        shift: i64 @= k * 8
+
+        if big
+            shift @ (width - 1 - k) * 8
+        value @ value | to_i64(s[at + k]).must() << shift
+        k @ k + 1
+
+    return ok(value)
+
+# Nothing, where `width` bytes stand in `s` from index `at`. Fails `invalid`
+# otherwise, the message naming `asked`, the index and the length.
+function in_reach(s: [u8], at: i64, width: i64, asked: str) -> ()?
+    if at < 0
+        return fail(code: codes.INVALID, msg: f"{asked} cannot be read at the index {at}, before the first byte")
+
+    if at > s.len() || s.len() - at < width
+        return fail(
+            code: codes.INVALID,
+            msg: f"{asked} takes {counted(width)} from the index {at}, and only {counted(remaining(s, at: at))} of {s.len()} remain there"
+        )
+    return ok()
+
+# `n` bytes, in words: `1 byte`, `2 bytes`.
+function counted(n: i64) -> str
+    if n == 1
+        return "1 byte"
+    return f"{n} bytes"
+
+# How many bytes of `s` stand from index `at` to its end, none past the end.
+function remaining(s: [u8], at: i64) -> i64
+    if at >= s.len()
+        return 0
+    return s.len() - at
+
+# `value`, the bits of a number `width` bytes wide, read as two's complement:
+# from 2 to the `8 * width - 1` up it is negative. `width` is from 1 to 4.
+function signed(value: i64, width: i64) -> i64
+    half = 1 << width * 8 - 1
+
+    if value >= half
+        return value - (half << 1)
+    return value
+
+# The 64 bits of `n` as an `i64`: itself below 2 to the 63, and `n` less 2 to
+# the 64 from there, so the largest `u64` is -1.
+function bits_of_u64(n: u64) -> i64
+    if n < U64_HALF
+        return to_i64(n).must()
+    return to_i64(n - U64_HALF).must() + I64_MIN
+
+# The `u64` whose 64 bits `bits` holds: `bits_of_u64` read back.
+function u64_of_bits(bits: i64) -> u64
+    if bits >= 0
+        return to_u64(bits).must()
+    return to_u64(bits - I64_MIN).must() + U64_HALF
+
+# Python's `struct.pack` answered every list below on 2026-11-16, `>` and `<`
+# with `h`, `i`, `q` and their capitals.
+test "encoded: one, two, four and eight bytes, either order, at both ends of a signed width"
+    assert encoded(value: 0, width: 1, big: true) == [0x00]
+    assert encoded(value: -1, width: 1, big: false) == [0xff]
+    assert encoded(value: 8080, width: 2, big: true) == [0x1f, 0x90]
+    assert encoded(value: 8080, width: 2, big: false) == [0x90, 0x1f]
+    assert encoded(value: -32_768, width: 2, big: true) == [0x80, 0x00]
+    assert encoded(value: 32_767, width: 2, big: false) == [0xff, 0x7f]
+    assert encoded(value: 0x0102_0304, width: 4, big: true) == [0x01, 0x02, 0x03, 0x04]
+    assert encoded(value: -2_147_483_648, width: 4, big: false) == [0x00, 0x00, 0x00, 0x80]
+    assert encoded(value: I64_MIN, width: 8, big: true) == [0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    assert encoded(value: 9_223_372_036_854_775_807, width: 8, big: false) == [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x7f]
+    assert encoded(value: 0x0102_0304_0506_0708, width: 8, big: false) == [0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01]
+
+# Python's `struct.unpack` answered the values, `>i` on 80 00 00 01 among them.
+test "decoded and signed: either order, a byte above 127 at each place, and the sign of each width"
+    assert decoded([0x1f, 0x90], at: 0, width: 2, big: true, asked: "a u16").must() == 8080
+    assert decoded([0x1f, 0x90], at: 0, width: 2, big: false, asked: "a u16").must() == 0x901f
+    assert decoded([0xff, 0xff, 0xff, 0xff], at: 0, width: 4, big: true, asked: "a u32").must() == 4_294_967_295
+    assert signed(value: decoded([0x80, 0x00, 0x00, 0x01], at: 0, width: 4, big: true, asked: "an i32").must(), width: 4) == -2_147_483_647
+    assert signed(value: 0x7f, width: 1) == 127
+    assert signed(value: 0x80, width: 1) == -128
+    assert signed(value: 0xffff, width: 2) == -1
+    assert decoded([0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0, width: 8, big: false, asked: "an i64").must() == -2
+    assert decoded([0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00], at: 0, width: 8, big: true, asked: "an i64").must() == I64_MIN
+    assert decoded([0x09, 0x01, 0x02], at: 1, width: 2, big: true, asked: "a u16").must() == 0x0102
+
+# Python's `unpack_from(">I", b"\x01\x02\x03\x04\x05", 2)` refused the same
+# reading, naming the 6 bytes it needed; this names the 3 that remain.
+test "decoded fails invalid: three bytes for four, from the middle, a negative index, past the end, and nothing"
+    nothing: [u8] = []
+
+    match decoded([0x01, 0x02, 0x03], at: 0, width: 4, big: true, asked: "a u32")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "a u32 takes 4 bytes from the index 0, and only 3 bytes of 3 remain there"
+
+    match decoded([0x01, 0x02, 0x03, 0x04, 0x05], at: 2, width: 4, big: false, asked: "a u32")
+        .ok _  => assert false
+        .err e => assert e.msg == "a u32 takes 4 bytes from the index 2, and only 3 bytes of 5 remain there"
+
+    match decoded([0x01], at: -1, width: 1, big: true, asked: "a u8")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "a u8 cannot be read at the index -1, before the first byte"
+
+    match decoded([0x01], at: 9, width: 1, big: true, asked: "a u8")
+        .ok _  => assert false
+        .err e => assert e.msg == "a u8 takes 1 byte from the index 9, and only 0 bytes of 1 remain there"
+
+    assert decoded(nothing, at: 0, width: 1, big: true, asked: "a u8").is_err()
+    assert decoded([0x01], at: 1, width: 1, big: true, asked: "a u8").is_err()
+    assert decoded([0x01, 0x02], at: 9_223_372_036_854_775_807, width: 8, big: true, asked: "a u64").is_err()
+
+test "bits_of_u64 and u64_of_bits: zero, the largest i64, 2 to the 63, and the largest u64"
+    assert bits_of_u64(0) == 0
+    assert bits_of_u64(9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
+    assert bits_of_u64(U64_HALF) == I64_MIN
+    assert bits_of_u64(18_446_744_073_709_551_615) == -1
+    assert u64_of_bits(-1) == 18_446_744_073_709_551_615
+    assert u64_of_bits(I64_MIN) == U64_HALF
+    assert u64_of_bits(9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
+    assert u64_of_bits(0) == 0

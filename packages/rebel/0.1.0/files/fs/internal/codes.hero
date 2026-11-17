@@ -1,0 +1,191 @@
+# The codes `fs` fails with, and the one place a kind of the floors' is turned
+# into a code and a message: a door of `hero_disk.h` that answered -1 is read
+# here, right after the call, before any other call of that floor on the
+# thread. A path is checked here before any door is handed it, since C reads a
+# zero byte as its end and `cstr` aborts on one.
+
+use os/hero_disk
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant EXISTS: str
+    "exists"
+
+constant PERMISSION: str
+    "permission"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant IS_A_DIRECTORY: str
+    "is_a_directory"
+
+constant NOT_EMPTY: str
+    "not_empty"
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant FAILED: str
+    "failed"
+
+# A stream a lock was asked through is closed (round 3, 2026-11-16).
+constant CLOSED: str
+    "closed"
+
+# The code of `kind`, one of the kinds `hero_disk.last_error` answers.
+function code_of(kind: i64) -> str
+    if kind == hero_disk.HERO_DISK_INVALID
+        return INVALID
+
+    if kind == hero_disk.HERO_DISK_NOT_FOUND
+        return FILE_NOT_FOUND
+
+    if kind == hero_disk.HERO_DISK_EXISTS
+        return EXISTS
+
+    if kind == hero_disk.HERO_DISK_DENIED
+        return PERMISSION
+
+    if kind == hero_disk.HERO_DISK_NOT_A_DIRECTORY
+        return NOT_A_DIRECTORY
+
+    if kind == hero_disk.HERO_DISK_IS_A_DIRECTORY
+        return IS_A_DIRECTORY
+
+    if kind == hero_disk.HERO_DISK_NOT_EMPTY
+        return NOT_EMPTY
+
+    if kind == hero_disk.HERO_DISK_LIMIT
+        return LIMIT
+
+    if kind == hero_disk.HERO_DISK_UNSUPPORTED
+        return UNSUPPORTED
+
+    if kind == hero_disk.HERO_DISK_NOT_TEXT
+        return NOT_TEXT
+
+    if kind == hero_disk.HERO_DISK_NOT_OPEN
+        return CLOSED
+    return FAILED
+
+# What the system found, in words, for `kind`, with its own number where no
+# code of the library names the reason.
+function words_of(kind: i64, number: i64) -> str
+    if kind == hero_disk.HERO_DISK_INVALID
+        return "the system takes no such path or number"
+
+    if kind == hero_disk.HERO_DISK_NOT_FOUND
+        return "nothing is there"
+
+    if kind == hero_disk.HERO_DISK_EXISTS
+        return "something is there already"
+
+    if kind == hero_disk.HERO_DISK_DENIED
+        return "the system refuses it to this program"
+
+    if kind == hero_disk.HERO_DISK_NOT_A_DIRECTORY
+        return "a part of the path is not a folder"
+
+    if kind == hero_disk.HERO_DISK_IS_A_DIRECTORY
+        return "it is a folder"
+
+    if kind == hero_disk.HERO_DISK_NOT_EMPTY
+        return "the folder holds something"
+
+    if kind == hero_disk.HERO_DISK_LIMIT
+        return "the system has no more of what it needs"
+
+    if kind == hero_disk.HERO_DISK_UNSUPPORTED
+        return "this system has no such thing"
+
+    if kind == hero_disk.HERO_DISK_NOT_TEXT
+        return "a name is not UTF-8"
+
+    if kind == hero_disk.HERO_DISK_CROSS_DEVICE
+        return "the two paths are on different volumes"
+
+    if kind == hero_disk.HERO_DISK_BUSY
+        return "it is in use"
+
+    if kind == hero_disk.HERO_DISK_NOT_OPEN
+        return "the stream is closed"
+    return f"the system refused it, its number {number}"
+
+# The failure of `asked` where a door of `hero_disk` answered -1: its kind as
+# a code, and what the system found in words.
+function disk_failed<T>(asked: str) -> T?
+    kind = hero_disk.last_error()
+    return fail(code: code_of(kind), msg: f"{asked}: {words_of(kind: kind, number: hero_disk.last_os_error())}")
+
+# Whether the last call of `hero_disk` on this thread failed with `kind`.
+function last_was(kind: i64) -> bool
+    return hero_disk.last_error() == kind
+
+# Nothing where `path` can be handed to C, or `invalid` where it holds a zero
+# byte, which C reads as its end.
+function checked(path: str, asked: str) -> ()?
+    at: i64 @= 0
+
+    while at < path.len()
+        if path[at] == 0
+            return fail(code: INVALID, msg: f"{asked}: the path holds a zero byte at {at}, which no system reads")
+        at @ at + 1
+
+    return ok()
+
+## Tests
+
+test "code_of: each kind of the floor its code, and a kind no code names failed"
+    assert code_of(hero_disk.HERO_DISK_NOT_FOUND) == FILE_NOT_FOUND
+    assert code_of(hero_disk.HERO_DISK_EXISTS) == EXISTS
+    assert code_of(hero_disk.HERO_DISK_DENIED) == PERMISSION
+    assert code_of(hero_disk.HERO_DISK_NOT_A_DIRECTORY) == NOT_A_DIRECTORY
+    assert code_of(hero_disk.HERO_DISK_IS_A_DIRECTORY) == IS_A_DIRECTORY
+    assert code_of(hero_disk.HERO_DISK_NOT_EMPTY) == NOT_EMPTY
+    assert code_of(hero_disk.HERO_DISK_INVALID) == INVALID
+    assert code_of(hero_disk.HERO_DISK_NOT_TEXT) == NOT_TEXT
+    assert code_of(hero_disk.HERO_DISK_LIMIT) == LIMIT
+    assert code_of(hero_disk.HERO_DISK_UNSUPPORTED) == UNSUPPORTED
+    assert code_of(hero_disk.HERO_DISK_CROSS_DEVICE) == FAILED
+    assert code_of(hero_disk.HERO_DISK_BUSY) == FAILED
+    assert code_of(hero_disk.HERO_DISK_OTHER) == FAILED
+
+test "words_of: what was found, and the system's number where no code names it"
+    assert words_of(kind: hero_disk.HERO_DISK_NOT_FOUND, number: 2) == "nothing is there"
+    assert words_of(kind: hero_disk.HERO_DISK_CROSS_DEVICE, number: 18) == "the two paths are on different volumes"
+    assert words_of(kind: hero_disk.HERO_DISK_OTHER, number: 5) == "the system refused it, its number 5"
+
+test "disk_failed: the kind the floor last answered, as a code and the words of what was asked"
+    numbers: [i64] @= []
+    assert hero_disk.facts("build/rebel-fs-codes-none/x", @numbers, n: 1) == -1
+    failure: ()? = disk_failed(asked: "reading \"x\"")
+
+    match failure
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND && e.msg == "reading \"x\": nothing is there"
+
+test "checked: an empty path, a plain one, one of more than one byte a character, and a zero byte at either end"
+    assert !checked(path: "", asked: "a").is_err()
+    assert !checked(path: "a/b", asked: "a").is_err()
+    assert !checked(path: "caffè/é", asked: "a").is_err()
+    zero_first: [u8] = [0, 'a']
+    zero_last: [u8] = ['a', 0]
+
+    match checked(path: zero_first.validated_bytes().must(), asked: "reading")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "reading: the path holds a zero byte at 0, which no system reads"
+
+    match checked(path: zero_last.validated_bytes().must(), asked: "reading")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

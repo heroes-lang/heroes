@@ -1,0 +1,411 @@
+# The texts of a set compiled into its parts: each text's pieces read in order
+# into steps, the blocks `if`, `for` and `define` held open on a stack of their
+# own, so that no depth of nesting reaches the machine's stack. A failure's
+# message opens with the text's name in quotes, where it is not "", then the
+# line and column.
+
+use template/internal/action
+use template/internal/lex
+use template/internal/program
+
+# The deepest blocks nest in one text; the face's `MAX_NESTING`.
+constant MAX_NESTING: i64
+    256
+
+## Blocks
+
+constant BLOCK_IF: i64
+    0
+
+constant BLOCK_FOR: i64
+    1
+
+constant BLOCK_DEFINE: i64
+    2
+
+# A block open while its text is read.
+record Block
+    # `BLOCK_IF`, `BLOCK_FOR` or `BLOCK_DEFINE`.
+    kind: i64
+    # Where its action stands.
+    opened: lex.Place
+    # `if`: the `JUMP_UNLESS` step waiting for its target, -1 after a plain
+    # `else`; `for`: the `FOR_BEGIN` step.
+    test_at: i64
+    # The `JUMP` steps that go on at the block's end.
+    ends: [i64]
+    # A loop's `BREAK` steps and the `JUMP` steps of its `continue`.
+    breaks: [i64]
+    continues: [i64]
+    # A loop's first step of its body.
+    body: i64
+    # Whether its `else` has been read.
+    in_else: bool
+    # How many names a loop put in scope.
+    bound: i64
+
+# A template compiled and the place its name was given.
+record Defined
+    part: program.Part
+    place: lex.Place
+
+# The name of a block's kind, for a message.
+function block_word(kind: i64) -> str
+    return match kind
+        0 => "if"
+        1 => "for"
+        _ => "define"
+
+# A block of `kind` opened at `opened`, its step at `test_at`.
+function block(kind: i64, opened: lex.Place, test_at: i64) -> Block
+    return Block(
+        kind: kind,
+        opened: opened,
+        test_at: test_at,
+        ends: [],
+        breaks: [],
+        continues: [],
+        body: test_at + 1,
+        in_else: false,
+        bound: 0
+    )
+
+# The index of the innermost loop among `blocks`, or -1.
+function innermost_loop(blocks: [Block] lent) -> i64
+    at: i64 @= blocks.len()
+
+    while at > 0
+        at @ at - 1
+
+        if blocks[at].kind == BLOCK_FOR
+            return at
+
+    return -1
+
+# The templates the text `text`, named `source`, writes: its own first, then
+# each `define` of it in order. Fails `invalid` where it is not a template.
+function compile_text(source: str, text: str, left: str, right: str, html: bool) -> [Defined]?
+    pieces = lex.pieces_of(text: text, left: left, right: right)?
+    steps: [program.Step] @= []
+    main_steps: [program.Step] @= []
+    slots: i64 @= 0
+    main_slots: i64 @= 0
+    blocks: [Block] @= []
+    scope: action.Scope @= action.Scope(names: [], slots: [])
+    defined: [Defined] @= []
+    define_name: str @= ""
+
+    for piece in pieces
+        here = piece.at
+
+        if piece.kind == lex.TEXT
+            s: program.Step @= program.step(kind: program.TEXT, line: here.line, column: here.column)
+            s.text @ piece.text
+            steps @ steps.push(s)
+            continue
+        r: action.Reader @= action.reader(piece.text, piece.inner)
+        word = action.peek_word(r)
+        opening = word == "if" || word == "for" || word == "define"
+
+        if opening && blocks.len() >= MAX_NESTING
+            return fail(
+                code: "invalid",
+                msg: lex.located(here, f"blocks nested deeper than {MAX_NESTING}, the most a text holds")
+            )
+
+        if word == "if"
+            action.take_word(@r, "if")
+            s: program.Step @= program.step(kind: program.JUMP_UNLESS, line: here.line, column: here.column)
+            s.cond @ action.condition(@r, scope, html)?
+            action.finish(@r)?
+            blocks @ blocks.push(block(kind: BLOCK_IF, opened: here, test_at: steps.len()))
+            steps @ steps.push(s)
+        else if word == "else"
+            action.take_word(@r, "else")
+            top = blocks.len() - 1
+
+            if top < 0 || blocks[top].kind == BLOCK_DEFINE
+                return fail(code: "invalid", msg: lex.located(here, "`else` stands inside an `if` or a `for`"))
+
+            if blocks[top].in_else
+                return fail(
+                    code: "invalid",
+                    msg: lex.located(here, f"a second `else` in the `{block_word(blocks[top].kind)}` at line {blocks[top].opened.line}, column {blocks[top].opened.column}")
+                )
+
+            if blocks[top].kind == BLOCK_IF
+                jump = program.step(kind: program.JUMP, line: here.line, column: here.column)
+                blocks[top].ends @ blocks[top].ends.push(steps.len())
+                steps @ steps.push(jump)
+                steps[blocks[top].test_at].target @ steps.len()
+
+                if action.peek_word(r) == "if"
+                    action.take_word(@r, "if")
+                    s: program.Step @= program.step(kind: program.JUMP_UNLESS, line: here.line, column: here.column)
+                    s.cond @ action.condition(@r, scope, html)?
+                    action.finish(@r)?
+                    blocks[top].test_at @ steps.len()
+                    steps @ steps.push(s)
+                else
+                    action.finish(@r)?
+                    blocks[top].test_at @ -1
+                    blocks[top].in_else @ true
+            else
+                if action.peek_word(r) == "if"
+                    return fail(
+                        code: "invalid",
+                        msg: lex.located(here, "a loop's `else` takes no condition: it runs where there is nothing to loop over")
+                    )
+                action.finish(@r)?
+                next: program.Step @= program.step(kind: program.FOR_NEXT, line: here.line, column: here.column)
+                next.target @ blocks[top].body
+
+                for c in blocks[top].continues
+                    steps[c].target @ steps.len()
+
+                steps @ steps.push(next)
+                blocks[top].ends @ blocks[top].ends.push(steps.len())
+                steps @ steps.push(program.step(kind: program.JUMP, line: here.line, column: here.column))
+                steps[blocks[top].test_at].target @ steps.len()
+                kept = scope.names.len() - blocks[top].bound
+                scope @ action.Scope(
+                    names: scope.names.slice(from: 0, to: kept),
+                    slots: scope.slots.slice(from: 0, to: kept)
+                )
+                blocks[top].bound @ 0
+                blocks[top].in_else @ true
+        else if word == "end"
+            action.take_word(@r, "end")
+            action.finish(@r)?
+            top = blocks.len() - 1
+
+            if top < 0
+                return fail(code: "invalid", msg: lex.located(here, "`end` with no block open"))
+            closing = blocks[top]
+
+            if closing.kind == BLOCK_DEFINE
+                steps @ steps.push(program.step(kind: program.RETURN, line: here.line, column: here.column))
+                part = program.Part(name: define_name, source: source, steps: steps, slots: slots)
+                defined @ defined.push(Defined(part: part, place: closing.opened))
+                steps @ main_steps
+                main_steps @ []
+                slots @ main_slots
+            else if closing.kind == BLOCK_IF
+                if closing.test_at >= 0
+                    steps[closing.test_at].target @ steps.len()
+
+                for e in closing.ends
+                    steps[e].target @ steps.len()
+            else
+                if !closing.in_else
+                    next: program.Step @= program.step(kind: program.FOR_NEXT, line: here.line, column: here.column)
+                    next.target @ closing.body
+
+                    for c in closing.continues
+                        steps[c].target @ steps.len()
+
+                    steps @ steps.push(next)
+                    steps[closing.test_at].target @ steps.len()
+                    kept = scope.names.len() - closing.bound
+                    scope @ action.Scope(
+                        names: scope.names.slice(from: 0, to: kept),
+                        slots: scope.slots.slice(from: 0, to: kept)
+                    )
+
+                for e in closing.ends
+                    steps[e].target @ steps.len()
+
+                for b in closing.breaks
+                    steps[b].target @ steps.len()
+            blocks @ blocks.slice(from: 0, to: top)
+        else if word == "for"
+            action.take_word(@r, "for")
+            bound: [str] @= []
+
+            while true
+                action.skip_space(@r)
+
+                if r.at >= r.text.len() || r.text[r.at] != '$'
+                    return fail(
+                        code: "invalid",
+                        msg: action.failure(r, f"expected a variable such as `$item` after `for`, found {action.found(r)}")
+                    )
+                at_variable = r.at
+                r.at @ r.at + 1
+                variable = action.name(@r)
+
+                if variable == ""
+                    return fail(
+                        code: "invalid",
+                        msg: action.failure(r, f"expected a variable's name after `$`, found {action.found(r)}")
+                    )
+
+                if action.slot_of(scope, variable) >= 0 || bound.len() == 1 && bound[0] == variable
+                    r.at @ at_variable
+                    return fail(
+                        code: "invalid",
+                        msg: action.failure(r, f"`${variable}` is bound already by a loop around this one")
+                    )
+                bound @ bound.push(variable)
+                action.skip_space(@r)
+
+                if bound.len() == 2 || r.at >= r.text.len() || r.text[r.at] != ','
+                    break
+                r.at @ r.at + 1
+
+            if action.peek_word(r) != "in"
+                return fail(
+                    code: "invalid",
+                    msg: action.failure(r, f"expected `in` after the loop's variables, found {action.found(r)}")
+                )
+            action.take_word(@r, "in")
+            looped = action.pipe(@r, scope, html)?
+            action.finish(@r)?
+            s: program.Step @= program.step(kind: program.FOR_BEGIN, line: here.line, column: here.column)
+            s.cond @ program.only(looped)
+            s.first_slot @ slots
+
+            if bound.len() == 2
+                s.second_slot @ slots + 1
+            opened: Block @= block(kind: BLOCK_FOR, opened: here, test_at: steps.len())
+            opened.bound @ bound.len()
+            blocks @ blocks.push(opened)
+            steps @ steps.push(s)
+
+            for variable in bound
+                scope @ action.Scope(names: scope.names.push(variable), slots: scope.slots.push(slots))
+                slots @ slots + 1
+        else if word == "break" || word == "continue"
+            action.take_word(@r, word)
+            action.finish(@r)?
+            loop_at = innermost_loop(blocks)
+
+            if loop_at < 0
+                return fail(code: "invalid", msg: lex.located(here, f"`{word}` stands inside a loop"))
+
+            if blocks[loop_at].in_else
+                return fail(
+                    code: "invalid",
+                    msg: lex.located(here, f"`{word}` stands in a loop's body, not in its `else`")
+                )
+
+            if word == "break"
+                blocks[loop_at].breaks @ blocks[loop_at].breaks.push(steps.len())
+                steps @ steps.push(program.step(kind: program.BREAK, line: here.line, column: here.column))
+            else
+                blocks[loop_at].continues @ blocks[loop_at].continues.push(steps.len())
+                steps @ steps.push(program.step(kind: program.JUMP, line: here.line, column: here.column))
+        else if word == "include"
+            action.take_word(@r, "include")
+            callee = action.string_literal(@r)?
+
+            if action.at_end(@r)
+                return fail(
+                    code: "invalid",
+                    msg: action.failure(r, "`include` names the value it hands on after the template's name: `.` for this one")
+                )
+            value = action.pipe(@r, scope, html)?
+            action.finish(@r)?
+            s: program.Step @= program.step(kind: program.INCLUDE, line: here.line, column: here.column)
+            s.callee @ callee
+            s.cond @ program.only(value)
+            steps @ steps.push(s)
+        else if word == "define"
+            action.take_word(@r, "define")
+            name = action.string_literal(@r)?
+            action.finish(@r)?
+
+            if blocks.len() > 0
+                return fail(code: "invalid", msg: lex.located(here, "`define` stands outside every other block"))
+
+            if name == ""
+                return fail(code: "invalid", msg: lex.located(here, "a template defined has a name that is not empty"))
+            define_name @ name
+            main_steps @ steps
+            steps @ []
+            main_slots @ slots
+            slots @ 0
+            blocks @ blocks.push(block(kind: BLOCK_DEFINE, opened: here, test_at: -1))
+        else
+            value = action.pipe(@r, scope, html)?
+            action.finish(@r)?
+            s: program.Step @= program.step(kind: program.OUTPUT, line: here.line, column: here.column)
+            s.cond @ program.only(value)
+            steps @ steps.push(s)
+
+    if blocks.len() > 0
+        open = blocks[blocks.len() - 1]
+        return fail(code: "invalid", msg: lex.located(open.opened, f"the `{block_word(open.kind)}` here has no `end`"))
+    steps @ steps.push(program.step(kind: program.RETURN, line: 1, column: 1))
+    main = Defined(
+        part: program.Part(name: source, source: source, steps: steps, slots: slots),
+        place: lex.Place(line: 1, column: 1)
+    )
+    templates: [Defined] @= [main]
+
+    for d in defined
+        templates @ templates.push(d)
+
+    return ok(templates)
+
+# The templates one text writes alone, in the text mode, for the tests.
+function one(text: str) -> [Defined]?
+    return compile_text(source: "", text: text, left: "{{", right: "}}", html: false)
+
+# The kinds of `part`'s steps in order, for the tests.
+function kinds_of(part: program.Part lent) -> [i64]
+    kinds: [i64] @= []
+
+    for s in part.steps
+        kinds @ kinds.push(s.kind)
+
+    return kinds
+
+test "compile: text, a value, and if with else if and else, each jump where its branch ends"
+    part = one("a{{ .x }}{{ if .p }}1{{ else if .q }}2{{ else }}3{{ end }}b").must()[0].part
+    assert kinds_of(part) == [0, 1, 3, 0, 2, 3, 0, 2, 0, 0, 8]
+    assert part.steps[2].target == 5 && part.steps[4].target == 9
+    assert part.steps[5].target == 8 && part.steps[7].target == 9
+
+test "compile: for with its else, break and continue, and the variables it binds"
+    got = one("{{ for $i, $v in .xs }}{{ if $v }}{{ continue }}{{ end }}{{ break }}{{ else }}none{{ end }}.")
+    part = got.must()[0].part
+    assert kinds_of(part) == [4, 3, 2, 6, 5, 2, 0, 0, 8]
+    assert part.steps[0].target == 6 && part.steps[0].first_slot == 0 && part.steps[0].second_slot == 1
+    assert part.steps[2].target == 4 && part.steps[3].target == 7 && part.steps[4].target == 1 && part.steps[5].target == 7
+    assert part.slots == 2
+
+test "compile: each block left open, closed twice, or misplaced, with where it stands"
+    cases: {str: str} = {
+        "{{ if .a }}x": "line 1, column 1: the `if` here has no `end`"
+        "x{{ end }}": "line 1, column 2: `end` with no block open"
+        "{{ else }}": "line 1, column 1: `else` stands inside an `if` or a `for`"
+        "{{ if .a }}{{ else }}{{ else }}{{ end }}": "line 1, column 22: a second `else` in the `if` at line 1, column 1"
+        "{{ break }}": "line 1, column 1: `break` stands inside a loop"
+        "{{ for $x in . }}{{ else }}{{ continue }}{{ end }}": "line 1, column 28: `continue` stands in a loop's body, not in its `else`"
+        "{{ for $x in . }}{{ else if .a }}{{ end }}": "line 1, column 18: a loop's `else` takes no condition: it runs where there is nothing to loop over"
+        "{{ if .a }}{{ define \"x\" }}{{ end }}{{ end }}": "line 1, column 12: `define` stands outside every other block"
+        "{{ define \"\" }}{{ end }}": "line 1, column 1: a template defined has a name that is not empty"
+        "{{ for $x in . }}{{ for $x in . }}{{ end }}{{ end }}": "line 1, column 25: `$x` is bound already by a loop around this one"
+        "{{ for $x, $x in . }}{{ end }}": "line 1, column 12: `$x` is bound already by a loop around this one"
+        "{{ for x in . }}{{ end }}": "line 1, column 8: expected a variable such as `$item` after `for`, found \"x\""
+        "{{ for $x of . }}{{ end }}": "line 1, column 11: expected `in` after the loop's variables, found \"of\""
+        "{{ include \"x\" }}": "line 1, column 16: `include` names the value it hands on after the template's name: `.` for this one"
+        "{{ $y }}": "line 1, column 4: no loop here binds `$y`"
+    }
+
+    for text in keys(cases)
+        match one(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg == cases[text].must()
+
+test "compile: blocks nested as deep as allowed, one past it, and a variable out of its loop"
+    deep = repeat("{{ if . }}", 256) + repeat("{{ end }}", 256)
+    assert !one(deep).is_err()
+
+    match one(repeat("{{ if . }}", 257) + repeat("{{ end }}", 257))
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2561: blocks nested deeper than 256, the most a text holds"
+
+    assert one("{{ for $x in . }}{{ end }}{{ $x }}").is_err()
+    assert one("{{ for $x in . }}{{ else }}{{ $x }}{{ end }}").is_err()

@@ -1,0 +1,380 @@
+# An arena of nodes written as a TOML 1.0.0 document that reads back as the
+# same values: a table's plain keys first, then each of its tables under a
+# header and each array of tables under `[[...]]`, and everything else inline.
+# A string is written in one line with its escapes; a float in the fewest
+# digits that read back; a date, a time or an offset outside its range is
+# refused, since no TOML says it.
+
+use numbers
+use strings
+use time
+use toml/internal/doc
+use toml/internal/scalar
+
+# The failure of a value no TOML writes.
+function unwritable<T>(what: str) -> T?
+    return fail(code: scalar.INVALID, msg: what)
+
+# `key` as a key is written: bare where it holds only letters, digits, `_` and
+# `-`, else quoted.
+function key_text(key: str) -> str
+    if key == ""
+        return "\"\""
+
+    for k in range(from: 0, to: key.len())
+        if !doc.is_bare(key[k])
+            return string_text(key)
+
+    return key
+
+# `path`'s keys as a header writes them.
+function path_text(path: [str]) -> str
+    parts: [str] @= []
+
+    for key in path
+        parts @ parts.push(key_text(key))
+
+    return parts.join(".")
+
+# `s` as a basic string of one line, its quotes, backslashes and control
+# characters escaped.
+function string_text(s: str) -> str
+    pieces: [str] @= ["\""]
+    start @= 0
+
+    for k in range(from: 0, to: s.len())
+        b = s[k]
+        escaped: str @= ""
+
+        if b == '"'
+            escaped @ "\\\""
+        else if b == '\\'
+            escaped @ "\\\\"
+        else if b == '\n'
+            escaped @ "\\n"
+        else if b == '\t'
+            escaped @ "\\t"
+        else if b == '\r'
+            escaped @ "\\r"
+        else if b == 0x08
+            escaped @ "\\b"
+        else if b == 0x0c
+            escaped @ "\\f"
+        else if b < 0x20 || b == 0x7f
+            escaped @ "\\u" + strings.pad_zeros(numbers.format_int(n: to_i64(b).must(), base: 16), 4)
+
+        if escaped != ""
+            pieces @ pieces.push(s.slice(from: start, to: k))
+            pieces @ pieces.push(escaped)
+            start @ k + 1
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# `x` in the fewest digits that read back as `x`: plainly between 1e-5 and
+# 1e16, in exponent form outside, `inf`, `-inf` and `nan` as they are.
+function float_text(x: f64) -> str
+    if x != x || x == 0.0
+        return numbers.format_float_shortest(x)
+    size: f64 @= x
+
+    if size < 0.0
+        size @ -size
+
+    if size >= 0.00001 && size < 10000000000000000.0
+        return numbers.format_float_shortest(x)
+    return numbers.format_float_exp_shortest(x)
+
+# `n` in decimal, padded with zeros to `width` digits.
+function padded(n: i64, width: i64) -> str
+    return strings.pad_zeros(numbers.format_int(n: n, base: 10), width)
+
+# The fraction of a second `nanosecond` writes: "" for none, else a point and
+# its digits, the zeros at their end dropped.
+function fraction_text(nanosecond: i64) -> str
+    if nanosecond == 0
+        return ""
+    return "." + strings.trim_end_any(s: padded(n: nanosecond, width: 9), set: "0")
+
+# `HH:MM:SS` and the fraction. Fails `invalid` where a part is outside its
+# range.
+function clock_text(hour: i64, minute: i64, second: i64, nanosecond: i64) -> str?
+    if hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 || nanosecond < 0 || nanosecond > 999999999
+        return unwritable(f"{hour}:{minute}:{second}.{nanosecond} is no time of day")
+    return ok(
+        padded(n: hour, width: 2) + ":" + padded(n: minute, width: 2) + ":" + padded(n: second, width: 2) + fraction_text(nanosecond)
+    )
+
+# `YYYY-MM-DD`. Fails `invalid` where the date is not a day of the calendar
+# between the years 0 and 9999.
+function date_text(d: time.DateTime) -> str?
+    if d.year < 0 || d.year > 9999 || d.month < 1 || d.month > 12 || d.day < 1 || d.day > time.days_in_month(year: d.year, month: d.month).must()
+        return unwritable(f"{d.year}-{d.month}-{d.day} is no day TOML writes")
+    return ok(padded(n: d.year, width: 4) + "-" + padded(n: d.month, width: 2) + "-" + padded(n: d.day, width: 2))
+
+# The offset `minutes` east of UTC as written: `Z` for 0, else `+HH:MM` or
+# `-HH:MM`. Fails `invalid` past 23 hours and 59 minutes either way.
+function offset_text(minutes: i64) -> str?
+    if minutes == 0
+        return ok("Z")
+
+    if minutes <= -1440 || minutes >= 1440
+        return unwritable(f"an offset of {minutes} minutes, past what TOML writes")
+    sign: str @= "+"
+    size: i64 @= minutes
+
+    if minutes < 0
+        sign @ "-"
+        size @ -minutes
+    return ok(sign + padded(n: size / 60, width: 2) + ":" + padded(n: size % 60, width: 2))
+
+# The value of the node at `at`, which holds no other, written as TOML
+# writes it. Fails `invalid` where a date, a time or an offset is outside its
+# range.
+function scalar_text(nodes: [doc.Node] lent, at: i64) -> str?
+    n = nodes[at]
+    v = n.value
+
+    if n.kind == scalar.TEXT
+        return ok(string_text(v.text))
+
+    if n.kind == scalar.INTEGER
+        return ok(numbers.format_int(n: v.integer, base: 10))
+
+    if n.kind == scalar.FLOAT
+        return ok(float_text(v.float))
+
+    if n.kind == scalar.BOOLEAN
+        if v.flag
+            return ok("true")
+        return ok("false")
+
+    if n.kind == scalar.LOCAL_TIME
+        total = v.clock.nanoseconds
+
+        if total < 0 || total >= 86400000000000
+            return unwritable(f"a time of day {total} nanoseconds after midnight, outside a day")
+        seconds = total / 1000000000
+        return clock_text(
+            hour: seconds / 3600,
+            minute: seconds / 60 % 60,
+            second: seconds % 60,
+            nanosecond: total % 1000000000
+        )
+    d = v.date
+    date = date_text(d)?
+
+    if n.kind == scalar.LOCAL_DATE
+        return ok(date)
+    clock = clock_text(hour: d.hour, minute: d.minute, second: d.second, nanosecond: d.nanosecond)?
+
+    if n.kind == scalar.LOCAL_DATE_TIME
+        return ok(date + "T" + clock)
+    return ok(date + "T" + clock + offset_text(v.integer)?)
+
+# The value of the node at `at` written inline: a table in braces, an array in
+# brackets. Fails `invalid` where a date, a time or an offset is outside its
+# range. The containers open around the value being written wait on a stack
+# this function holds, so that no nesting reaches the machine's stack.
+function inline_text(nodes: [doc.Node] lent, at: i64) -> str?
+    # The tables and arrays open, the innermost last, and the next child of
+    # each to write.
+    open: [i64] @= []
+    next: [i64] @= []
+
+    # The texts of the innermost open container's children written so far,
+    # and those of the containers around it.
+    parts: [str] @= []
+    held: [[str]] @= []
+    current @= at
+
+    while true
+        text: str @= ""
+        finished @= false
+
+        if nodes[current].kind == scalar.TABLE || nodes[current].kind == scalar.ARRAY
+            open @ open.push(current)
+            next @ next.push(0)
+            held @ held.push(parts)
+            parts @ []
+        else
+            text @ scalar_text(nodes, current)?
+            finished @ true
+
+        while true
+            if finished
+                if open.len() == 0
+                    return ok(text)
+                top = open.len() - 1
+                t = open[top]
+
+                if nodes[t].kind == scalar.TABLE
+                    parts @ parts.push(key_text(nodes[t].keys[next[top] - 1]) + " = " + text)
+                else
+                    parts @ parts.push(text)
+                finished @ false
+            top = open.len() - 1
+            t = open[top]
+
+            if next[top] < nodes[t].children.len()
+                current @ nodes[t].children[next[top]]
+                next[top] @ next[top] + 1
+                break
+
+            if nodes[t].kind == scalar.TABLE
+                text @ "{" + parts.join(", ") + "}"
+            else
+                text @ "[" + parts.join(", ") + "]"
+            parts @ held[top]
+            held @ held.slice(from: 0, to: top)
+            open @ open.slice(from: 0, to: top)
+            next @ next.slice(from: 0, to: top)
+            finished @ true
+
+    return ok("")
+
+# Whether the node at `at` is written as an array of tables: an array, not
+# empty, of tables alone.
+function is_table_array(nodes: [doc.Node] lent, at: i64) -> bool
+    n = nodes[at]
+
+    if n.kind != scalar.ARRAY || n.children.len() == 0
+        return false
+
+    for c in n.children
+        if nodes[c].kind != scalar.TABLE
+            return false
+
+    return true
+
+# The document whose root table is the first node of `nodes`: each table's
+# plain keys, then each of its tables under its header and each array of
+# tables under `[[...]]`, a table's whole content before its next sibling's.
+# The tables still to write wait on a list this function holds, so that no
+# nesting reaches the machine's stack.
+function document_text(nodes: [doc.Node] lent) -> str?
+    out: [str] @= []
+
+    # The tables still to write, the next one last: where each stands, its
+    # path, and the header that opens it, "" for the root.
+    work: [i64] @= [0]
+    paths: [[str]] @= [[]]
+    heads: [str] @= [""]
+
+    while work.len() > 0
+        last = work.len() - 1
+        t = work[last]
+        path = paths[last]
+        head = heads[last]
+        work @ work.slice(from: 0, to: last)
+        paths @ paths.slice(from: 0, to: last)
+        heads @ heads.slice(from: 0, to: last)
+        out @ out.push(head)
+        n = nodes[t]
+
+        for k in range(from: 0, to: n.keys.len())
+            c = n.children[k]
+
+            if nodes[c].kind != scalar.TABLE && !is_table_array(nodes, c)
+                out @ out.push(key_text(n.keys[k]) + " = " + inline_text(nodes, c)? + "\n")
+
+        # The tables under this one, in the order written, pushed last first.
+        later: [i64] @= []
+        later_paths: [[str]] @= []
+        later_heads: [str] @= []
+
+        for k in range(from: 0, to: n.keys.len())
+            c = n.children[k]
+            inner @= path
+            inner @ inner.push(n.keys[k])
+
+            if nodes[c].kind == scalar.TABLE
+                later @ later.push(c)
+                later_paths @ later_paths.push(inner)
+                later_heads @ later_heads.push("\n[" + path_text(inner) + "]\n")
+            else if is_table_array(nodes, c)
+                for item in nodes[c].children
+                    later @ later.push(item)
+                    later_paths @ later_paths.push(inner)
+                    later_heads @ later_heads.push("\n[[" + path_text(inner) + "]]\n")
+
+        for k in range(from: 0, to: later.len())
+            back = later.len() - 1 - k
+            work @ work.push(later[back])
+            paths @ paths.push(later_paths[back])
+            heads @ heads.push(later_heads[back])
+
+    text = out.join("")
+
+    if strings.has_prefix(s: text, prefix: "\n")
+        return ok(text.slice(from: 1, to: text.len()))
+    return ok(text)
+
+# `text` read and written back, or the failure's message.
+function round(text: str) -> str
+    match doc.parse_document(text)
+        .err e => return e.msg
+        .ok nodes =>
+            match document_text(nodes)
+                .ok written => return written
+                .err e      => return e.msg
+
+test "document_text: plain keys first, tables under headers, arrays of tables, and keys quoted where they must be"
+    assert round("[a.b]\nx = 1\n[[c]]\ny = 2\n[[c]]\n[c.d]\nz = 3\n") == "[a]\n\n[a.b]\nx = 1\n\n[[c]]\ny = 2\n\n[[c]]\n\n[c.d]\nz = 3\n"
+    assert round("\"a b\" = 1\n\"\" = 2\n'é' = 3\n") == "\"a b\" = 1\n\"\" = 2\n\"é\" = 3\n"
+    assert round("") == ""
+    assert round("e = []\nt = {}\n") == "e = []\n\n[t]\n"
+
+test "document_text: values inline, arrays mixing tables and values, strings escaped"
+    assert round("a = [1, {x = 2}]\nb = [[1, 2], []]\n") == "a = [1, {x = 2}]\nb = [[1, 2], []]\n"
+    assert round("s = \"q\\\"b\\\\\\n\\t\\u0001é\"\n") == "s = \"q\\\"b\\\\\\n\\t\\u0001é\"\n"
+    assert round("s = '''\nx\r\ny'''\n") == "s = \"x\\ny\"\n"
+
+test "document_text: numbers, booleans, and floats in the fewest digits"
+    assert round("i = -9223372036854775808\nh = 0xff\nf = [0.1, -0.0, 1e300, 1e-7, 6.626e-34, 12345.5, inf, -inf, nan]\nb = false\n") == "i = -9223372036854775808\nh = 255\nf = [0.1, -0.0, 1e+300, 1e-07, 6.626e-34, 12345.5, inf, -inf, nan]\nb = false\n"
+
+test "document_text: dates and times in their four forms, a fraction trimmed, an offset kept"
+    assert round("a = 1979-05-27T07:32:00Z\nb = 1979-05-27 00:32:00.999999-07:00\nc = 1979-05-27T07:32:00.5\nd = 1979-05-27\ne = 07:32:00.000001\nf = 0001-01-01T00:00:00+23:59\n") == "a = 1979-05-27T07:32:00Z\nb = 1979-05-27T00:32:00.999999-07:00\nc = 1979-05-27T07:32:00.5\nd = 1979-05-27\ne = 07:32:00.000001\nf = 0001-01-01T00:00:00+23:59\n"
+
+test "inline_text: a date, a time and an offset outside their ranges refused"
+    bad_date @= doc.container(kind: scalar.LOCAL_DATE, depth: 0)
+    bad_date.value.date @ time.DateTime(year: 2023, month: 2, day: 29, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+    match inline_text([bad_date], 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "2023-2-29 is no day TOML writes"
+
+    bad_offset @= doc.container(kind: scalar.DATE_TIME, depth: 0)
+    bad_offset.value.date @ time.DateTime(year: 2000, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    bad_offset.value.integer @ 1440
+
+    match inline_text([bad_offset], 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "an offset of 1440 minutes, past what TOML writes"
+
+    bad_clock @= doc.container(kind: scalar.LOCAL_TIME, depth: 0)
+    bad_clock.value.clock @ time.nanoseconds(86400000000000)
+    assert inline_text([bad_clock], 0).is_err()
+
+test "string_text and key_text: the escapes, a DEL, and bare keys"
+    assert string_text("\u{8}\u{c}\u{7f}") == "\"\\b\\f\\u007f\""
+    assert key_text("a-b_9") == "a-b_9"
+    assert key_text("a.b") == "\"a.b\""
+
+test "document_text: an array nested as deep as allowed written back as it was read"
+    deep = "a = " + repeat("[", 512) + repeat("]", 512) + "\n"
+    assert round(deep) == deep
+
+test "document_text: tables nested as deep as allowed by one header written back, each under its own"
+    names: [str] @= []
+
+    for _ in range(from: 0, to: 512)
+        names @ names.push("a")
+
+    expected: [str] @= []
+
+    for k in range(from: 1, to: 513)
+        expected @ expected.push("[" + names.slice(from: 0, to: k).join(".") + "]\n")
+
+    assert round("[" + names.join(".") + "]\n") == expected.join("\n")

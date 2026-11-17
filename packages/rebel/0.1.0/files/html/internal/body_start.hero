@@ -1,0 +1,336 @@
+# "In body"'s start tags (13.2.6.4.7), in the standard's order: what each
+# closes before it opens, what it reopens, and which mode or tokenizer state
+# it switches to. Customizable `select` is the standard's of 2026: a `select`
+# holds whatever it is given, and only `input`, `hr`, `option`, `optgroup` and
+# another `select` look for one in scope.
+
+use html/internal/ascii
+use html/internal/builder
+use html/internal/common
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/token
+
+# The step for the start tag `t` in "in body".
+function start_tag(@b: builder.Builder, @t: token.Token) -> builder.Step
+    name = t.name
+
+    match name
+        "html" =>
+            builder.error(@b, "unexpected-start-tag", t)
+
+            if !builder.has_open(b, "template") && b.depth > 0
+                add_missing(@b, node: b.open[0], t: t)
+            return .done
+        "base" | "basefont" | "bgsound" | "link" | "meta" | "noframes" | "script" | "style" | "template" | "title" =>
+            return .using(mode: .in_head)
+        "body" =>
+            builder.error(@b, "unexpected-start-tag", t)
+
+            if b.depth > 1 && dom.is_html(b.tree, b.open[1], "body") && !builder.has_open(b, "template")
+                b.frameset_ok @ false
+                add_missing(@b, node: b.open[1], t: t)
+            return .done
+        "frameset" =>
+            builder.error(@b, "unexpected-start-tag", t)
+
+            if b.depth > 1 && dom.is_html(b.tree, b.open[1], "body") && b.frameset_ok
+                dom.detach(@b.tree, b.open[1])
+                builder.truncate(@b, 1)
+                _ = insert.element_for(@b, t, dom.HTML)
+                b.mode @ .in_frameset
+            return .done
+        "address" | "article" | "aside" | "blockquote" | "center" | "details" | "dialog" | "dir" | "div" | "dl" | "fieldset" =>
+            return block(@b, t)
+        "figcaption" | "figure" | "footer" | "header" | "hgroup" | "main" | "menu" | "nav" | "ol" | "p" | "search" =>
+            return block(@b, t)
+        "section" | "summary" | "ul" =>
+            return block(@b, t)
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" =>
+            common.close_p_in_button_scope(@b, t)
+
+            if is_heading(b.tree, builder.current(b))
+                builder.error(@b, "unclosed-element", t)
+                builder.pop(@b)
+            _ = insert.element_for(@b, t, dom.HTML)
+            return .done
+        "pre" | "listing" =>
+            common.close_p_in_button_scope(@b, t)
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.skip_newline @ true
+            b.frameset_ok @ false
+            return .done
+        "form" =>
+            template = builder.has_open(b, "template")
+
+            if b.form != dom.NONE && !template
+                builder.error(@b, "unexpected-start-tag", t)
+                return .done
+            common.close_p_in_button_scope(@b, t)
+            node = insert.element_for(@b, t, dom.HTML)
+
+            if !template
+                b.form @ node
+            return .done
+        "li" | "dd" | "dt" =>
+            list_item(@b, t)
+            return .done
+        "plaintext" =>
+            common.close_p_in_button_scope(@b, t)
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.switch_to @ builder.SWITCH_PLAINTEXT
+            return .done
+        "button" =>
+            if builder.in_scope(b, "button", builder.SCOPE)
+                builder.error(@b, "unexpected-start-tag", t)
+                builder.generate_implied_end_tags(@b, "")
+                builder.pop_until(@b, "button")
+            formatting.reconstruct(@b)
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.frameset_ok @ false
+            return .done
+        "a" =>
+            found = formatting.last_named(b, "a")
+
+            if found >= 0
+                builder.error(@b, "misnested-tag", t)
+                existing = b.formatting[found]
+                _ = formatting.adopt(@b, t)
+                at = formatting.index_of_entry(b, existing)
+
+                if at >= 0
+                    formatting.remove_entry(@b, at)
+                builder.remove_from_stack(@b, existing)
+            return formatting_element(@b, t)
+        "b" | "big" | "code" | "em" | "font" | "i" | "s" | "small" | "strike" | "strong" | "tt" | "u" =>
+            return formatting_element(@b, t)
+        "nobr" =>
+            formatting.reconstruct(@b)
+
+            if builder.in_scope(b, "nobr", builder.SCOPE)
+                builder.error(@b, "misnested-tag", t)
+                _ = formatting.adopt(@b, t)
+            return formatting_element(@b, t)
+        "applet" | "marquee" | "object" =>
+            formatting.reconstruct(@b)
+            _ = insert.element_for(@b, t, dom.HTML)
+            formatting.push_marker(@b)
+            b.frameset_ok @ false
+            return .done
+        "table" =>
+            if b.tree.quirks != dom.QUIRKS
+                common.close_p_in_button_scope(@b, t)
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.frameset_ok @ false
+            b.mode @ .in_table
+            return .done
+        "area" | "br" | "embed" | "img" | "keygen" | "wbr" =>
+            void(@b, t, true)
+            b.frameset_ok @ false
+            return .done
+        "input" =>
+            if context_is_select(b)
+                builder.error(@b, "unexpected-start-tag", t)
+                return .done
+
+            if builder.in_scope(b, "select", builder.SCOPE)
+                builder.error(@b, "unexpected-start-tag", t)
+                builder.pop_until(@b, "select")
+            void(@b, t, true)
+
+            if !token.has_attribute(t, "type") || !ascii.equals_ignoring_case(a: token.value_of(t, "type"), b: "hidden")
+                b.frameset_ok @ false
+            return .done
+        "param" | "source" | "track" =>
+            void(@b, t, false)
+            return .done
+        "hr" =>
+            common.close_p_in_button_scope(@b, t)
+
+            if builder.in_scope(b, "select", builder.SCOPE)
+                builder.generate_implied_end_tags(@b, "")
+
+                if builder.in_scope(b, "option", builder.SCOPE) || builder.in_scope(b, "optgroup", builder.SCOPE)
+                    builder.error(@b, "unexpected-start-tag", t)
+            void(@b, t, false)
+            b.frameset_ok @ false
+            return .done
+        "image" =>
+            builder.error(@b, "unexpected-start-tag", t)
+            t.name @ "img"
+            return .again
+        "textarea" =>
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.skip_newline @ true
+            b.switch_to @ builder.SWITCH_RCDATA
+            b.original @ b.mode
+            b.frameset_ok @ false
+            b.mode @ .text
+            return .done
+        "xmp" =>
+            common.close_p_in_button_scope(@b, t)
+            formatting.reconstruct(@b)
+            b.frameset_ok @ false
+            return common.text_element(@b, t, builder.SWITCH_RAWTEXT)
+        "iframe" =>
+            b.frameset_ok @ false
+            return common.text_element(@b, t, builder.SWITCH_RAWTEXT)
+        "noembed" =>
+            return common.text_element(@b, t, builder.SWITCH_RAWTEXT)
+        "noscript" =>
+            if b.scripting
+                return common.text_element(@b, t, builder.SWITCH_RAWTEXT)
+            return ordinary(@b, t)
+        "select" =>
+            if context_is_select(b)
+                builder.error(@b, "unexpected-start-tag", t)
+            else if builder.in_scope(b, "select", builder.SCOPE)
+                builder.error(@b, "unexpected-start-tag", t)
+                builder.pop_until(@b, "select")
+            else
+                formatting.reconstruct(@b)
+                _ = insert.element_for(@b, t, dom.HTML)
+                b.frameset_ok @ false
+            return .done
+        "option" =>
+            if builder.in_scope(b, "select", builder.SCOPE)
+                builder.generate_implied_end_tags(@b, "optgroup")
+
+                if builder.in_scope(b, "option", builder.SCOPE)
+                    builder.error(@b, "unexpected-start-tag", t)
+            else if builder.current_is(b, "option")
+                builder.pop(@b)
+            return ordinary(@b, t)
+        "optgroup" =>
+            if builder.in_scope(b, "select", builder.SCOPE)
+                builder.generate_implied_end_tags(@b, "")
+
+                if builder.in_scope(b, "option", builder.SCOPE) || builder.in_scope(b, "optgroup", builder.SCOPE)
+                    builder.error(@b, "unexpected-start-tag", t)
+            else if builder.current_is(b, "option")
+                builder.pop(@b)
+            return ordinary(@b, t)
+        "rb" | "rtc" =>
+            if builder.in_scope(b, "ruby", builder.SCOPE)
+                builder.generate_implied_end_tags(@b, "")
+
+                if !builder.current_is(b, "ruby")
+                    builder.error(@b, "unexpected-start-tag", t)
+            _ = insert.element_for(@b, t, dom.HTML)
+            return .done
+        "rp" | "rt" =>
+            if builder.in_scope(b, "ruby", builder.SCOPE)
+                builder.generate_implied_end_tags(@b, "rtc")
+
+                if !builder.current_is(b, "rtc") && !builder.current_is(b, "ruby")
+                    builder.error(@b, "unexpected-start-tag", t)
+            _ = insert.element_for(@b, t, dom.HTML)
+            return .done
+        "math" =>
+            formatting.reconstruct(@b)
+            t.attributes @ insert.adjust_foreign(insert.adjust_mathml(t.attributes))
+            return foreign_element(@b, t, dom.MATHML)
+        "svg" =>
+            formatting.reconstruct(@b)
+            t.attributes @ insert.adjust_foreign(insert.adjust_svg(t.attributes))
+            return foreign_element(@b, t, dom.SVG)
+        "caption" | "col" | "colgroup" | "frame" | "head" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" =>
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+        _ => return ordinary(@b, t)
+
+# The attributes of `t` that `node` does not have, added to it: `<html>` and
+# `<body>` met again.
+function add_missing(@b: builder.Builder, node: i64, t: token.Token lent)
+    attributes: [dom.Attr] @= b.tree.attributes[node]
+
+    for a in t.attributes
+        found: bool @= false
+
+        for have in attributes
+            if have.name == a.name
+                found @ true
+                break
+
+        if !found
+            attributes @ attributes.push(a)
+
+    b.tree.attributes[node] @ attributes
+
+# A block that closes a `p`: `div`, `ul`, `section` and the rest of their
+# list.
+function block(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    common.close_p_in_button_scope(@b, t)
+    _ = insert.element_for(@b, t, dom.HTML)
+    return .done
+
+# An ordinary element: the formatting elements reconstructed, then it.
+function ordinary(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    formatting.reconstruct(@b)
+    _ = insert.element_for(@b, t, dom.HTML)
+    return .done
+
+# A formatting element: reconstructed, inserted and put on the list.
+function formatting_element(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    formatting.reconstruct(@b)
+    node = insert.element_for(@b, t, dom.HTML)
+    formatting.push_element(@b, node)
+    return .done
+
+# A void element: inserted, popped at once, its `/>` acknowledged, the
+# formatting elements reconstructed first where `reconstructs`.
+function void(@b: builder.Builder, t: token.Token lent, reconstructs: bool)
+    if reconstructs
+        formatting.reconstruct(@b)
+    _ = insert.element_for(@b, t, dom.HTML)
+    builder.pop(@b)
+    builder.acknowledge(@b)
+
+# A `math` or `svg` element, popped at once where it ends in `/>`.
+function foreign_element(@b: builder.Builder, t: token.Token lent, space: i64) -> builder.Step
+    _ = insert.element_for(@b, t, space)
+
+    if t.self_closing
+        builder.pop(@b)
+        builder.acknowledge(@b)
+    return .done
+
+# `li`, `dd` and `dt`: the open item of the same kind closed first, unless a
+# special element other than `address`, `div` and `p` stands between.
+function list_item(@b: builder.Builder, t: token.Token lent)
+    b.frameset_ok @ false
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        node = b.open[i]
+        name = b.tree.names[node]
+        same = b.tree.spaces[node] == dom.HTML && (name == t.name || t.name != "li" && (name == "dd" || name == "dt"))
+
+        if same && (t.name == "li" || name == "dd" || name == "dt")
+            builder.generate_implied_end_tags(@b, name)
+
+            if !builder.current_is(b, name)
+                builder.error(@b, "unclosed-element", t)
+            builder.pop_until(@b, name)
+            break
+
+        if builder.is_special(b.tree, node) && !(b.tree.spaces[node] == dom.HTML && (name == "address" || name == "div" || name == "p"))
+            break
+        i @ i - 1
+
+    common.close_p_in_button_scope(@b, t)
+    _ = insert.element_for(@b, t, dom.HTML)
+
+# Whether `node` is an HTML `h1` to `h6`.
+function is_heading(t: dom.Tree lent, node: i64) -> bool
+    if node == dom.NONE || t.spaces[node] != dom.HTML || t.kinds[node] != dom.ELEMENT
+        return false
+
+    return match t.names[node]
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => true
+        _                                       => false
+
+# Whether the fragment is read inside a `select` element.
+function context_is_select(b: builder.Builder lent) -> bool
+    return b.context != dom.NONE && dom.is_html(b.tree, b.context, "select")

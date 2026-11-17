@@ -1,0 +1,157 @@
+# What the server answered, made into `sql`'s types: the columns and the
+# rows of a query, each value read by its column's type, and the count a
+# CommandComplete's tag holds.
+
+use numbers
+use sql
+use sql/postgres/internal/backend
+use sql/postgres/internal/values
+use strings
+
+# The columns `fields` describes, each type named as `pg_type` names it.
+#
+# - `fields`: a RowDescription's columns.
+function columns_of(fields: [backend.Field]) -> [sql.Column]
+    out: [sql.Column] @= []
+
+    for f in fields
+        out @ out.push(sql.Column(name: f.name, type_name: values.type_name(f.type_oid)))
+
+    return out
+
+# The rows `raw` holds, read by the types of `fields`.
+#
+# - `fields`: the columns.
+# - `raw`: the DataRows' cells, in order.
+#
+# Fails `invalid` where a row has more or fewer cells than there are columns,
+# or a value is not what its type writes.
+function rows_of(fields: [backend.Field], raw: [[backend.Cell]]) -> sql.Rows?
+    names: [str] @= []
+
+    for f in fields
+        names @ names.push(f.name)
+
+    rows: [sql.Row] @= []
+
+    for cells in raw
+        if cells.len() != fields.len()
+            return fail(
+                code: sql.INVALID,
+                msg: f"the server sent a row of {cells.len()} values for {fields.len()} columns"
+            )
+        got: [sql.Value] @= []
+        at: i64 @= 0
+
+        for c in cells
+            match c
+                .null_cell => got @ got.push(.null_value)
+                .given g   => got @ got.push(values.decode(type_oid: fields[at].type_oid, data: g.data)?)
+
+            at @ at + 1
+
+        rows @ rows.push(sql.Row(names: names, values: got))
+
+    return ok(sql.Rows(columns: columns_of(fields), rows: rows))
+
+# What a statement whose tag is `tag` answers: its count, and no last id.
+#
+# - `tag`: the CommandComplete's tag.
+function result_of(tag: str) -> sql.Result
+    return sql.Result(
+        rows_affected: count_of(tag),
+        last_id: fail(code: sql.UNSUPPORTED, msg: "PostgreSQL keeps no last id: INSERT ... RETURNING answers it")
+    )
+
+# The rows a tag counts: its last word, for `INSERT`, `UPDATE`, `DELETE`,
+# `SELECT`, `MERGE`, `MOVE`, `FETCH` and `COPY`; 0 for every other tag.
+#
+# - `tag`: the CommandComplete's tag.
+function count_of(tag: str) -> i64
+    words = strings.split(s: tag, sep: " ")
+    counted = ["INSERT", "UPDATE", "DELETE", "SELECT", "MERGE", "MOVE", "FETCH", "COPY"]
+
+    if words.len() < 2
+        return 0
+
+    for c in counted
+        if c == words[0]
+            return numbers.parse_int(words[words.len() - 1]).default(0)
+
+    return 0
+
+# Checks a run of the prepared statement `name` with `given` values where it
+# has `wanted` placeholders.
+#
+# - `name`: the statement's name, "" once it is closed.
+# - `given`: the values given.
+# - `wanted`: its placeholders.
+#
+# Fails `closed` where it is closed, `invalid` where the counts differ.
+function checked_run(name: str, given: i64, wanted: i64) -> ()?
+    if name == ""
+        return fail(code: sql.CLOSED, msg: "the prepared statement was closed")
+
+    if given != wanted
+        return fail(code: sql.INVALID, msg: f"{given} values were given for a statement of {wanted} placeholders")
+    return ok()
+
+# A notice's words: its message, then its detail and hint where it has them.
+#
+# - `r`: the notice.
+function notice_text(r: backend.Report) -> str
+    parts: [str] @= [r.message]
+
+    if r.detail != ""
+        parts @ parts.push("detail: " + r.detail)
+
+    if r.hint != ""
+        parts @ parts.push("hint: " + r.hint)
+    return parts.join("; ")
+
+test "checked_run: closed, too few, too many, and as many"
+    assert checked_run(name: "", given: 0, wanted: 0).is_err()
+    assert !checked_run(name: "rebel_1", given: 2, wanted: 2).is_err()
+
+    match checked_run(name: "rebel_1", given: 1, wanted: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "1 values were given for a statement of 2 placeholders"
+
+    assert checked_run(name: "rebel_1", given: 3, wanted: 2).is_err()
+
+test "notice_text: the message alone, and with a detail and a hint"
+    assert notice_text(backend.Report(severity: "NOTICE", code: "00000", message: "m", detail: "", hint: "", position: "")) == "m"
+    assert notice_text(backend.Report(severity: "WARNING", code: "01000", message: "m", detail: "d", hint: "h", position: "3")) == "m; detail: d; hint: h"
+
+test "count_of: each counted tag, INSERT's oid before its count, a tag that counts nothing, empty"
+    assert count_of("INSERT 0 1") == 1
+    assert count_of("UPDATE 3") == 3
+    assert count_of("DELETE 0") == 0
+    assert count_of("SELECT 2") == 2
+    assert count_of("MERGE 5") == 5
+    assert count_of("COPY 7") == 7
+    assert count_of("FETCH 9223372036854775807") == 9223372036854775807
+    assert count_of("CREATE TABLE") == 0
+    assert count_of("BEGIN") == 0
+    assert count_of("") == 0
+
+test "result_of: the count, and a last id that fails unsupported"
+    r = result_of("INSERT 0 4")
+    assert r.rows_affected == 4
+
+    match r.last_id
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "rows_of: two columns, a NULL, a value read by its type, and a row of the wrong width"
+    fields = [backend.Field(name: "id", type_oid: 23), backend.Field(name: "name", type_oid: 25)]
+    got = rows_of(fields, raw: [[.given(data: ['7']), .null_cell], [.given(data: ['8']), .given(data: ['x'])]]).must()
+    assert got.columns == [sql.Column(name: "id", type_name: "int4"), sql.Column(name: "name", type_name: "text")]
+    assert got.rows == [sql.Row(names: ["id", "name"], values: [.integer(v: 7), .null_value]), sql.Row(names: ["id", "name"], values: [.integer(v: 8), .text(v: "x")])]
+    assert rows_of(fields, raw: []).must().rows == []
+
+    match rows_of(fields, raw: [[.null_cell]])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the server sent a row of 1 values for 2 columns"
+
+    assert rows_of(fields, raw: [[.given(data: ['x']), .null_cell]]).is_err()

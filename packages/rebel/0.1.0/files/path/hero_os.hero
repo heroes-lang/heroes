@@ -1,0 +1,20 @@
+# The one door of the language's `hero_os.h` that `path` reads, bound thin: the
+# suffix a program's file takes on this system, which is how a program written
+# in Heroes tells Windows from every other system. The floor of `path`: its
+# face asks it which rules the system reads a path by, and nothing else here
+# touches the machine.
+
+extern "hero_os.h"
+    function hero_run_exe_suffix() -> str
+
+# `.exe` on Windows, where a program's file needs it to be started, and "" on
+# every other system.
+function run_exe_suffix() -> str
+    return hero_run_exe_suffix()
+
+## Tests
+
+test "run_exe_suffix: the suffix is `.exe` or nothing, and the same when asked twice"
+    suffix = run_exe_suffix()
+    assert suffix == "" || suffix == ".exe"
+    assert run_exe_suffix() == suffix

@@ -1,0 +1,303 @@
+# The scanner's state between two tokens: where it stands, the columns of the
+# block collections open, how many flow collections are open, and the possible
+# simple keys, the places where a key begins if a `:` follows on the same line.
+# A simple key is how YAML writes `key: value` with no `?`: the scanner meets
+# the key before the `:` that makes it one, so it remembers where it began.
+
+use unicode
+use yaml/internal/source
+use yaml/internal/stack
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# The most characters a simple key holds, from its first to its `:`, as YAML
+# says.
+constant MAX_KEY_CHARS: i64
+    1024
+
+# Where the scanner stands, and what is open around it.
+record State
+    # The byte index of the next character to read.
+    at: i64
+    # The line it stands on, counted from 1.
+    line: i64
+    # The byte index where that line begins.
+    line_start: i64
+    # The column of the innermost block collection open, in bytes from its
+    # line's start; -1 where none is.
+    indent: i64
+    # How many outer columns the stack of indentations holds.
+    levels: i64
+    # How many flow collections are open.
+    flow_level: i64
+    # Whether a simple key may begin at the next token.
+    allow_simple_key: bool
+    # The byte index past the last quoted scalar or flow collection, where a
+    # `:` in a flow collection begins a value with no space after it; -1 for
+    # none.
+    adjacent: i64
+
+# A place where a key may begin, found before the `:` that would make it one.
+record SimpleKey
+    # Whether it is still a possible key.
+    live: bool
+    # The index, in the token list, of the token it begins with.
+    index: i64
+    # The byte index where it begins.
+    at: i64
+    # The line it stands on.
+    line: i64
+    # Its column, in bytes from its line's start.
+    column: i64
+    # Whether it must be a key: it begins a line of a block map at the map's
+    # column, so no `:` after it is a failure.
+    required: bool
+    # Whether a tab stands in the white space before it on its line.
+    tabbed: bool
+
+# The state at the start of `text`.
+function start() -> State
+    return State(
+        at: 0,
+        line: 1,
+        line_start: 0,
+        indent: -1,
+        levels: 0,
+        flow_level: 0,
+        allow_simple_key: true,
+        adjacent: -1
+    )
+
+# A place that is no possible key.
+function no_key() -> SimpleKey
+    return SimpleKey(live: false, index: 0, at: 0, line: 0, column: 0, required: false, tabbed: false)
+
+# Moves `s` forward to byte `to` of `text`, counting the line breaks it passes.
+function move_to(text: str, @s: State, to: i64)
+    i: i64 @= s.at
+
+    while i < to
+        if text[i] == '\n'
+            s.line @ s.line + 1
+            s.line_start @ i + 1
+        i @ i + 1
+
+    s.at @ to
+
+# Moves `s` past the white space, comments and line breaks before the next
+# token; a line break in a block context lets a simple key begin. Fails
+# `invalid` where a comment holds a character YAML allows only between quotes.
+function skip_to_token(text: str, @s: State) -> ()?
+    while true
+        while s.at < text.len() && source.is_white(text[s.at])
+            s.at @ s.at + 1
+
+        if s.at < text.len() && text[s.at] == '#' && (s.at == s.line_start || source.is_white(text[s.at - 1]))
+            e = source.line_end(text, s.at)
+            i: i64 @= s.at
+
+            while i < e
+                if !source.is_printable_at(text, i)
+                    name = source.code_name(unicode.code_point_at(text, i))
+                    return fail(
+                        code: INVALID,
+                        msg: source.said(text: text, at: i, what: f"{name} stands in a comment, and YAML allows it only between double quotes")
+                    )
+                i @ i + unicode.width_at(text, i)
+
+            s.at @ e
+
+        if s.at >= text.len() || text[s.at] != '\n'
+            return ok()
+        s.at @ s.at + 1
+        s.line @ s.line + 1
+        s.line_start @ s.at
+
+        if s.flow_level == 0
+            s.allow_simple_key @ true
+
+# Whether only white space stands before `s.at` on its line.
+function first_on_line(text: str, s: State) -> bool
+    i: i64 @= s.line_start
+
+    while i < s.at
+        if !source.is_white(text[i])
+            return false
+        i @ i + 1
+
+    return true
+
+# How many spaces begin the line `s` stands on, before anything else.
+function leading_spaces(text: str, s: State) -> i64
+    i: i64 @= s.line_start
+
+    while i < text.len() && text[i] == ' '
+        i @ i + 1
+
+    return i - s.line_start
+
+# Whether a tab stands in the white space just before `s.at`.
+function tab_before(text: str, s: State) -> bool
+    i: i64 @= s.at - 1
+
+    while i >= s.line_start && source.is_white(text[i])
+        if text[i] == '\t'
+            return true
+        i @ i - 1
+
+    return false
+
+# The message of a key that no `:` follows on its line, at byte `at` of
+# `text`.
+function missing_colon(text: str, at: i64) -> str
+    return source.said(
+        text: text,
+        at: at,
+        what: "expected `:` after this key on its line: a line that begins at a block map's column holds a key, its `:` and its value"
+    )
+
+# Whether more than `MAX_KEY_CHARS` characters stand from byte `from` to `to`
+# of `text`.
+function too_long(text: str, from: i64, to: i64) -> bool
+    if to - from <= MAX_KEY_CHARS
+        return false
+    count: i64 @= 0
+    i: i64 @= from
+
+    while i < to
+        if !unicode.is_continuation(text[i])
+            count @ count + 1
+        i @ i + 1
+
+    return count > MAX_KEY_CHARS
+
+# Ends the possible key of the flow level `s` is at where it no longer can be
+# one: on another line, or more than `MAX_KEY_CHARS` characters back. Fails
+# `invalid` where that key was required.
+function check_stale(text: str, @possible: [SimpleKey], s: State) -> ()?
+    k = possible[s.flow_level]
+
+    if k.live && (k.line != s.line || too_long(text: text, from: k.at, to: s.at))
+        if k.required
+            return fail(code: INVALID, msg: missing_colon(text, k.at))
+        possible[s.flow_level].live @ false
+    return ok()
+
+# Remembers the token about to be written, the `index`th, as a possible key,
+# where one may begin at `s`.
+function save_key(text: str, @possible: [SimpleKey], s: State, index: i64) -> ()?
+    if !s.allow_simple_key
+        return ok()
+    remove_key(text, @possible, s)?
+    column = s.at - s.line_start
+    possible[s.flow_level] @ SimpleKey(
+        live: true,
+        index: index,
+        at: s.at,
+        line: s.line,
+        column: column,
+        required: s.flow_level == 0 && s.indent == column,
+        tabbed: tab_before(text, s)
+    )
+    return ok()
+
+# Ends the possible key of the flow level `s` is at. Fails `invalid` where it
+# was required.
+function remove_key(text: str, @possible: [SimpleKey], s: State) -> ()?
+    k = possible[s.flow_level]
+
+    if k.live && k.required
+        return fail(code: INVALID, msg: missing_colon(text, k.at))
+    possible[s.flow_level].live @ false
+    return ok()
+
+# Closes every block collection whose column is past `column`, a
+# `BLOCK_END` each, in a block context; in a flow collection nothing closes.
+function unwind(@tokens: [token.Token], indents: [i64] lent, @s: State, column: i64)
+    if s.flow_level > 0
+        return
+
+    while s.indent > column
+        tokens @ tokens.push(token.mark(kind: token.BLOCK_END, at: s.at, end: s.at))
+        s.levels @ s.levels - 1
+        s.indent @ indents[s.levels]
+
+# Opens a block collection at `column` where it is past the innermost one, and
+# answers whether it did.
+function add_indent(@indents: [i64], @s: State, column: i64) -> bool
+    if s.indent >= column
+        return false
+    stack.put(items: @indents, top: s.levels, item: s.indent)
+    s.levels @ s.levels + 1
+    s.indent @ column
+    return true
+
+## Tests
+
+test "move_to and skip_to_token: lines counted, comments and white space passed, a simple key allowed"
+    text = "a  # c\n\n  b"
+    s: State @= start()
+    move_to(text, @s, 1)
+    s.allow_simple_key @ false
+    skip_to_token(text, @s).must()
+    assert s.at == 10 && s.line == 3 && s.line_start == 8 && s.allow_simple_key
+    t: State @= start()
+    skip_to_token("a#b", @t).must()
+    assert t.at == 0
+
+test "skip_to_token: a comment at the start of the text, the end, and one with a character it may not hold"
+    s: State @= start()
+    skip_to_token("# c", @s).must()
+    assert s.at == 3
+    t: State @= start()
+
+    match skip_to_token("# a\u{85}\u{80}", @t)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 15) == "line 1, column "
+
+test "first_on_line, leading_spaces and tab_before: white space before, a tab, and a token before"
+    s: State @= start()
+    move_to("  \tx", @s, 3)
+    assert first_on_line("  \tx", s) && leading_spaces("  \tx", s) == 2 && tab_before("  \tx", s)
+    t: State @= start()
+    move_to("a: b", @t, 3)
+    assert !first_on_line("a: b", t) && !tab_before("a: b", t)
+
+test "too_long: at the limit, past it in bytes but not in characters, and past it"
+    assert !too_long(text: repeat("a", 1100), from: 0, to: 1024)
+    assert too_long(text: repeat("a", 1100), from: 0, to: 1025)
+    assert !too_long(text: repeat("é", 600), from: 0, to: 1200)
+
+test "save_key, check_stale and remove_key: a key kept on its line, dropped past it, and one required"
+    possible: [SimpleKey] @= [no_key()]
+    s: State @= start()
+    save_key("a\nb", @possible, s, 4).must()
+    assert possible[0].live && possible[0].index == 4 && !possible[0].required
+    move_to("a\nb", @s, 2)
+    check_stale("a\nb", @possible, s).must()
+    assert !possible[0].live
+    r: State @= start()
+    r.indent @ 0
+    save_key("a\nb", @possible, r, 0).must()
+    assert possible[0].required
+    move_to("a\nb", @r, 2)
+
+    match check_stale("a\nb", @possible, r)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: expected `:` after this key on its line: a line that begins at a block map's column holds a key, its `:` and its value"
+
+    assert remove_key("a\nb", @possible, r).is_err()
+
+test "add_indent and unwind: a column opened, one not past, and each closed with a BLOCK_END"
+    tokens: [token.Token] @= []
+    indents: [i64] @= []
+    s: State @= start()
+    assert add_indent(@indents, @s, 0) && add_indent(@indents, @s, 2)
+    assert !add_indent(@indents, @s, 2)
+    unwind(@tokens, indents, @s, 0)
+    assert s.indent == 0 && tokens.len() == 1 && tokens[0].kind == token.BLOCK_END
+    unwind(@tokens, indents, @s, -1)
+    assert s.indent == -1 && s.levels == 0 && tokens.len() == 2

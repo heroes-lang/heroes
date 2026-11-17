@@ -1,0 +1,339 @@
+capability stream/standard  the process's own input, output and error output
+  heroes  io.stdin, io.stdout, io.stderr
+  go      -
+  rust    stdin, stdout, stderr, Stdin, Stdout, Stderr
+  python  -
+  note    Go's are `os.Stdin` and the rest, and Python's `sys.stdin` and the rest, outside this area. Here they are borrowed: `close` empties the place and closes nothing, as Rust's cannot be closed
+
+capability stream/pipe  a pipe's two ends
+  heroes  io.pipe
+  go      io.Pipe, io.PipeReader, io.PipeWriter, io.PipeReader.Read, io.PipeWriter.Write
+  rust    pipe, PipeReader, PipeWriter
+  python  -
+  note    Rust's: a pipe of the system, its writes buffered by the system. Go's is a pipe in memory where each write waits for its read; a pipe here waits only once the system's buffer is full
+
+capability stream/close  a stream ended, saying whether its last bytes could be written
+  heroes  io.close
+  go      io.Closer, io.PipeReader.Close, io.PipeWriter.Close
+  rust    -
+  python  IOBase.close
+  note    Rust closes on drop and says nothing. A second close fails `closed`, as Go's second `Close` of a file fails, where Python's answers nothing: a closed stream is closed to every later call
+
+capability stream/close-with-error  a pipe's end closed so its other end reads a given error
+  heroes  refused: a pipe of the system carries bytes and an end, never an error value
+  go      io.PipeReader.CloseWithError, io.PipeWriter.CloseWithError
+  rust    -
+  python  -
+
+capability stream/is-closed  whether a stream was closed
+  heroes  io.is_closed
+  go      -
+  rust    -
+  python  IOBase.closed
+
+capability stream/of-handle  a stream over a handle another package opened
+  heroes  io.of_handle, io.last_failure
+  go      -
+  rust    -
+  python  -
+  note    How `fs`, `process` and `net` hand out an `io.Stream` and turn the floor's kinds into codes, so the table of codes is written once
+
+capability stream/name  how a stream is named
+  heroes  io.Stream (its field `name`)
+  go      -
+  rust    -
+  python  FileIO.name, BufferedReader.name, BufferedWriter.name, BufferedRandom.name, TextIOWrapper.name
+  note    a field and no function: its maker names it, a path in quotes for a file
+
+capability stream/access  which ways a stream was opened, to read, to write
+  heroes  pending
+  go      -
+  rust    -
+  python  IOBase.readable, IOBase.writable, FileIO.mode, BufferedReader.mode, BufferedWriter.mode, BufferedRandom.mode
+  note    the floor does not say which way a stream was opened; a read of one opened to write fails `permission`
+
+capability read/some  up to a count of bytes, waiting for one
+  heroes  io.read
+  go      io.Reader, io.LimitedReader.Read, io.SectionReader.Read, io.ErrNoProgress
+  rust    Read::read, Read::read_buf
+  python  RawIOBase.read, FileIO.read, RawIOBase.readinto, BufferedIOBase.read1, BufferedIOBase.readinto, BufferedIOBase.readinto1
+  note    it answers a new list where the three fill the caller's; at most 65,536 bytes at once, so a count from outside never sizes a buffer. The end is an empty list, as Go's 0 with EOF and Rust's Ok(0)
+
+capability read/exact  exactly a count of bytes
+  heroes  io.read_exact
+  go      io.ReadFull, io.ReadAtLeast, io.ErrUnexpectedEOF, io.ErrShortBuffer
+  rust    Read::read_exact, Read::read_buf_exact, Read::read_array
+  python  -
+  note    an end before the count fails `closed`, where Rust fails UnexpectedEof (observed) and Go ErrUnexpectedEOF; Go's ReadAtLeast is `read_exact` for its minimum, then `read`
+
+capability read/all  every byte to the end
+  heroes  io.read_all
+  go      io.ReadAll
+  rust    Read::read_to_end, Read::bytes
+  python  RawIOBase.readall, FileIO.readall, BufferedIOBase.read
+
+capability read/all-text  every byte to the end, as text
+  heroes  io.read_all_text
+  go      -
+  rust    Read::read_to_string, read_to_string
+  python  TextIOBase.read
+  note    bytes that are not UTF-8 fail `not_text`, the message naming the first wrong byte, where Rust fails InvalidData and Python raises UnicodeDecodeError (observed)
+
+capability write/all  every byte of a list written, however many calls the system needs
+  heroes  io.write
+  go      io.Writer, io.ByteWriter, io.ErrShortWrite
+  rust    Write::write, Write::write_all
+  python  RawIOBase.write, BufferedIOBase.write, FileIO.write
+  note    every write of `io` writes every byte or fails, as Rust's write_all; Rust's short `write` is not offered, a short write being plumbing a program loops over. A byte alone is `write(s, data: [b])`
+
+capability write/text  a text written
+  heroes  io.write_text
+  go      io.WriteString, io.StringWriter
+  rust    Write::write_fmt
+  python  TextIOBase.write
+  note    Rust's `write!` is an `f"..."` literal handed to `write_text`
+
+capability write/line  a text and a line feed written in one write
+  heroes  io.write_line
+  go      -
+  rust    -
+  python  -
+  note    Go's Fprintln and Rust's writeln! are outside this area or macros
+
+capability write/several  several pieces written in one write
+  heroes  io.write_lines
+  go      -
+  rust    Write::write_vectored, Write::write_all_vectored, Write::is_write_vectored
+  python  IOBase.writelines
+  note    each line gets a line feed, where Python's writelines adds none; pieces without one are `join`ed and given to `write_text`
+
+capability write/flush  what a writer holds sent on
+  heroes  io.write
+  go      -
+  rust    Write::flush
+  python  IOBase.flush
+  note    a stream of `io` holds no byte: a write answers once the system has every byte, so there is nothing to flush; `sync` asks the disk
+
+capability copy/all  everything one stream holds copied into another
+  heroes  io.copy
+  go      io.Copy, io.CopyBuffer, io.WriterTo, io.ReaderFrom
+  rust    copy
+  python  -
+  note    65,536 bytes at a time, the buffer the package's own; a megabyte copied between files in the tests
+
+capability copy/count  at most a count of bytes copied, or read
+  heroes  io.copy_n
+  go      io.CopyN, io.LimitReader, io.LimitedReader
+  rust    Read::take, Take, Take::limit, Take::set_limit, Take::position, Take::into_inner, Take::get_ref, Take::get_mut
+  python  -
+  note    fewer at the end is no failure, where Go's CopyN answers EOF; a limited read through a reader is `read_n`
+
+capability position/seek  where the next read or write begins, moved from the start, the current place or the end
+  heroes  io.seek
+  go      io.Seeker, io.SeekStart, io.SeekCurrent, io.SeekEnd, io.SectionReader.Seek, io.OffsetWriter.Seek
+  rust    Seek::seek, Seek::rewind, Seek::seek_relative, BufReader::seek_relative, SeekFrom, SeekFrom::Start, SeekFrom::Current, SeekFrom::End
+  python  IOBase.seek, SEEK_SET, SEEK_CUR, SEEK_END
+  note    the place to count from is the variant `io.Origin`; a rewind is `seek(s, offset: 0, from: .start)`. A position before the start fails `invalid`, past the end is allowed, as in the three
+
+capability position/tell  where the next read or write begins
+  heroes  io.position
+  go      -
+  rust    Seek::stream_position
+  python  IOBase.tell
+
+capability position/size  the size of the file a stream stands on
+  heroes  io.size
+  go      io.SectionReader.Size
+  rust    Seek::stream_len
+  python  -
+
+capability position/at  a read or a write at a position that leaves the stream's own where it was
+  heroes  pending
+  go      io.ReaderAt, io.WriterAt, io.SectionReader, io.NewSectionReader, io.SectionReader.ReadAt, io.SectionReader.Outer, io.OffsetWriter, io.NewOffsetWriter, io.OffsetWriter.Write, io.OffsetWriter.WriteAt
+  rust    -
+  python  -
+  note    the floor has no read or write at an offset; `seek` then `read` does it on one thread and moves the position, which is not the capability
+
+capability stream/truncate  the file a stream stands on cut or grown to a length
+  heroes  io.truncate
+  go      -
+  rust    -
+  python  IOBase.truncate
+  note    where the stream stands does not move, as Python's; bytes added read as zero on POSIX
+
+capability stream/sync  what was written to a file put on the storage itself
+  heroes  io.sync
+  go      -
+  rust    -
+  python  -
+  note    Go's File.Sync and Rust's File::sync_all are outside these lists; anything not a file fails `unsupported`
+
+capability stream/is-terminal  whether a stream is a terminal
+  heroes  io.is_terminal
+  go      -
+  rust    IsTerminal, IsTerminal::is_terminal
+  python  IOBase.isatty
+
+capability stream/is-seekable  whether a stream has positions
+  heroes  io.is_seekable
+  go      -
+  rust    -
+  python  IOBase.seekable
+
+capability failure/codes  what a failed call of a stream says
+  heroes  io.last_failure
+  go      io.EOF, io.ErrClosedPipe
+  rust    Error, ErrorKind, Error::kind, Error::raw_os_error, Error::last_os_error, Error::from_raw_os_error, Error::new, Error::other, Error::get_ref, Error::get_mut, Error::into_inner, Error::downcast, RawOsError, Result, const_error
+  python  BlockingIOError, UnsupportedOperation
+  note    a failure is a code of README § A4 and a message holding the system's number; the end is no failure here, as Go's EOF is one. The floor's kinds map one way each: closed for a stream closed or a reader gone, `timeout` and `stopped` for a socket's stream
+
+capability reader/make  a buffered reader over a stream
+  heroes  io.reader
+  go      bufio.Reader, bufio.NewReader, bufio.NewReaderSize, bufio.Reader.Reset, bufio.NewScanner, bufio.Scanner
+  rust    BufReader, BufReader::new
+  python  BufferedReader
+  note    a reader holds a copy of the stream and never closes it; a reader over another stream is a new `reader`
+
+capability reader/inner  the stream a reader reads
+  heroes  io.Reader (its field `stream`)
+  go      -
+  rust    BufReader::get_ref, BufReader::get_mut, BufReader::into_inner
+  python  BufferedReader.raw, BufferedIOBase.detach
+  note    a field and no function
+
+capability reader/line  the next line, without its end
+  heroes  io.read_line
+  go      bufio.Reader.ReadLine, bufio.Scanner.Scan, bufio.Scanner.Text, bufio.Scanner.Bytes, bufio.ScanLines
+  rust    BufRead::lines, Lines
+  python  -
+  note    Rust's (observed): "\n" or "\r\n" ends a line and a CR alone ends nothing, "x\r" at the end staying "x\r", where Go's Scanner drops that last CR. "" at the end, as for an empty line: `at_end` tells them apart
+
+capability reader/line-with-end  the next line, its end as it was
+  heroes  io.read_line_with_end
+  go      bufio.Reader.ReadString
+  rust    BufRead::read_line, Stdin::read_line
+  python  IOBase.readline
+  note    the three agree (observed): "a\r\n", "b\rc\n", "\n", "d" for "a\r\nb\rc\n\nd"; Python's text mode with `newline=""` ends a line at a CR alone too, its bytes mode does not
+
+capability reader/lines  every line left
+  heroes  io.read_lines
+  go      -
+  rust    Stdin::lines
+  python  IOBase.readlines
+  note    without their ends, as Rust's lines, where Python's readlines keeps them
+
+capability reader/until  the bytes up to and including a byte
+  heroes  io.read_until
+  go      bufio.Reader.ReadBytes, bufio.Reader.ReadSlice
+  rust    BufRead::read_until, BufRead::split, Split
+  python  -
+  note    an empty list at the end; to the end where the byte never comes, as the three
+
+capability reader/skip-until  the bytes up to and including a byte, dropped
+  heroes  io.read_until
+  go      -
+  rust    BufRead::skip_until
+  python  -
+  note    `_ = io.read_until(@r, byte: b)?`, the bytes answered and dropped
+
+capability reader/char  the next character
+  heroes  io.read_char
+  go      bufio.Reader.ReadRune, io.RuneReader, bufio.ScanRunes
+  rust    -
+  python  -
+  note    "" at the end; bytes that begin no character, or an end inside one, fail `not_text` and are read, where Go answers U+FFFD
+
+capability reader/n  at most a count of bytes, waiting for all of them or the end
+  heroes  io.read_n
+  go      bufio.Reader.Read, bufio.Reader.ReadByte, io.ByteReader, bufio.ScanBytes
+  rust    -
+  python  BufferedReader.read
+  note    a byte alone is `read_n(@r, n: 1)`
+
+capability reader/rest  every byte a reader holds and its stream to the end
+  heroes  io.read_rest, io.read_rest_text
+  go      bufio.Reader.WriteTo
+  rust    -
+  python  -
+
+capability reader/peek  the next bytes without reading them
+  heroes  io.peek
+  go      bufio.Reader.Peek
+  rust    BufReader::peek, BufRead::fill_buf
+  python  BufferedReader.peek, BufferedRandom.peek
+  note    fewer only at the end, as Rust's; Go's fails ErrBufferFull past its buffer, where here the reader holds as many as asked
+
+capability reader/unread  a byte or a character put back
+  heroes  io.peek
+  go      bufio.Reader.UnreadByte, bufio.Reader.UnreadRune, io.ByteScanner, io.RuneScanner, bufio.ErrInvalidUnreadByte, bufio.ErrInvalidUnreadRune
+  rust    -
+  python  -
+  note    a look ahead with `peek` instead of a put back
+
+capability reader/skip  a count of bytes dropped
+  heroes  io.skip
+  go      bufio.Reader.Discard
+  rust    BufRead::consume
+  python  -
+
+capability reader/at-end  whether a reader has no byte left
+  heroes  io.at_end
+  go      -
+  rust    BufRead::has_data_left
+  python  -
+
+capability reader/buffered  the bytes a reader holds and has not given out
+  heroes  io.buffered
+  go      bufio.Reader.Buffered
+  rust    BufReader::buffer
+  python  -
+
+capability reader/words  the words of a stream
+  heroes  io.read_all_text
+  go      bufio.ScanWords
+  rust    -
+  python  -
+  note    the text read whole or by line, then cut by `strings.words`
+
+capability write/buffered  a writer that holds bytes and sends them on in fewer calls
+  heroes  refused: a writer holding bytes would be a type of `io` the library's list of owned types does not have; a program collects its pieces in a `[str]` and writes them once (README § B1)
+  go      bufio.Writer, bufio.NewWriter, bufio.NewWriterSize, bufio.Writer.Write, bufio.Writer.WriteByte, bufio.Writer.WriteRune, bufio.Writer.WriteString, bufio.Writer.Flush, bufio.Writer.Available, bufio.Writer.AvailableBuffer, bufio.Writer.Buffered, bufio.Writer.ReadFrom, bufio.Writer.Reset, bufio.Writer.Size, bufio.ReadWriter, bufio.NewReadWriter
+  rust    BufWriter, BufWriter::new, BufWriter::with_capacity, BufWriter::into_inner, BufWriter::into_parts, BufWriter::get_ref, BufWriter::get_mut, BufWriter::buffer, BufWriter::capacity, LineWriter, LineWriter::new, LineWriter::with_capacity, LineWriter::get_ref, LineWriter::get_mut, LineWriter::into_inner, IntoInnerError, IntoInnerError::error, IntoInnerError::into_inner, IntoInnerError::into_error, IntoInnerError::into_parts, WriterPanicked
+  python  BufferedWriter, BufferedRandom, BufferedRWPair, TextIOWrapper.line_buffering, TextIOWrapper.write_through
+
+capability stream/in-memory  a stream over bytes the program holds
+  heroes  refused: needs an interface; the concrete thing is a `[u8]` read by index and `slice`, or `bytes` and `strings` over a text
+  go      -
+  rust    Cursor, Cursor::new, Cursor::into_inner, Cursor::get_ref, Cursor::get_mut, Cursor::position, Cursor::set_position, Cursor::split, Cursor::split_mut
+  python  BytesIO, StringIO, BytesIO.getvalue, BytesIO.getbuffer, StringIO.getvalue
+
+capability stream/composed  a reader or writer built of others: several in a row, one to many, a copy on the way, nothing, the same byte for ever
+  heroes  refused: needs an interface; the concrete thing is a loop: read each stream in turn, `write` to each, `skip` to drop, a `[u8]` the program builds
+  go      io.MultiReader, io.MultiWriter, io.TeeReader, io.NopCloser, io.Discard
+  rust    Read::chain, Chain, Chain::into_inner, Chain::get_ref, Chain::get_mut, empty, Empty, sink, Sink, repeat, Repeat
+  python  -
+
+dropped  what an interface, a trait or a class tree would have needed: Heroes has none, and `io.Stream` is the one handle
+  go      io.ReadCloser, io.ReadSeekCloser, io.ReadSeeker, io.ReadWriteCloser, io.ReadWriteSeeker, io.ReadWriter, io.WriteCloser, io.WriteSeeker
+  rust    Read, Write, Seek, BufRead, Read::by_ref, Write::by_ref, Bytes, the traits each struct repeats (each named once above under its trait), type_id, borrow, borrow_mut, from, into, try_from, try_into, fmt, clone, clone_from, clone_to_uninit, to_owned, clone_into, default, eq, ne, drop, pin_drop
+  python  IOBase, RawIOBase, BufferedIOBase, TextIOBase, FileIO, Reader, Writer, abc, GenericAlias
+
+dropped  a capacity, a buffer size or a splitter's plumbing: a reader's buffer is the package's own, 65,536 bytes, and a line has no maximum
+  go      bufio.MaxScanTokenSize, bufio.Scanner.Buffer, bufio.Scanner.Split, bufio.Scanner.Err, bufio.SplitFunc, bufio.ErrTooLong, bufio.ErrNegativeAdvance, bufio.ErrAdvanceTooFar, bufio.ErrBadReadCount, bufio.ErrFinalToken, bufio.ErrNegativeCount, bufio.ErrBufferFull, bufio.Reader.Size
+  rust    BufReader::with_capacity, BufReader::capacity
+  python  DEFAULT_BUFFER_SIZE
+
+dropped  a raw descriptor, a lock, a vectored or an unchecked buffer: a stream is a checked handle, one call writes a whole list, and a list is filled by the package
+  go      -
+  rust    Stdin::lock, Stdout::lock, Stderr::lock, StdinLock, StdoutLock, StderrLock, as_fd, as_handle, as_raw_fd, as_raw_handle, set_fd, take_fd, replace_fd, set_handle, replace_handle, take_handle, from_raw_fd, from_raw_handle, into_raw_fd, into_raw_handle, PipeReader::try_clone, PipeWriter::try_clone, Read::read_vectored, Read::is_read_vectored, BorrowedBuf, BorrowedCursor, IoSlice, IoSliceMut
+  python  IOBase.fileno, FileIO.closefd
+
+dropped  an encoding, a newline translation, or a number read in a byte order: text is UTF-8 and checked, bytes are never translated (`hero_stream.h`), and a number from bytes is another package's area
+  go      -
+  rust    Read::read_le, Read::read_be
+  python  TextIOBase.encoding, TextIOBase.errors, TextIOBase.newlines, TextIOWrapper, TextIOWrapper.buffer, TextIOWrapper.reconfigure, IncrementalNewlineDecoder, IncrementalNewlineDecoder.decode, IncrementalNewlineDecoder.getstate, IncrementalNewlineDecoder.reset, IncrementalNewlineDecoder.setstate, text_encoding
+
+dropped  opening a file by its path: the package `fs`'s, which hands `io` the stream
+  go      -
+  rust    -
+  python  open, open_code

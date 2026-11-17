@@ -1,0 +1,314 @@
+# What kind of address a list of bytes is: loopback, private, multicast,
+# link-local, global, reserved and the other classes, each a list of CIDR
+# blocks written as the registries write them. An IPv6 address that maps an
+# IPv4 one is classed as that one, as Go and Python class it, except where it
+# is asked whether it names no address.
+
+use net/internal/format
+use net/internal/networks
+use net/internal/parse
+use net/internal/scan
+
+# Whether `bytes` is a loopback address.
+#
+# - `bytes`: four or sixteen bytes.
+function is_loopback(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["127.0.0.0/8", "::1/128"])
+
+# Whether `bytes` is a private address as Go and Rust read one.
+#
+# - `bytes`: four or sixteen bytes.
+function is_private(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "fc00::/7"])
+
+# Whether `bytes` is `0.0.0.0` or `::`, a mapped `0.0.0.0` not among them.
+#
+# - `bytes`: four or sixteen bytes.
+function is_unspecified(bytes: [u8]) -> bool
+    for b in bytes
+        if b != 0
+            return false
+
+    return true
+
+# Whether `bytes` is a multicast address.
+#
+# - `bytes`: four or sixteen bytes.
+function is_multicast(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["224.0.0.0/4", "ff00::/8"])
+
+# Whether `bytes` is a link-local unicast address.
+#
+# - `bytes`: four or sixteen bytes.
+function is_link_local(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["169.254.0.0/16", "fe80::/10"])
+
+# Whether `bytes` is a link-local multicast address: `224.0.0.0/24`, or IPv6
+# multicast of link scope, its fourth hexadecimal digit 2 whatever its flags.
+#
+# - `bytes`: four or sixteen bytes.
+function is_link_local_multicast(bytes: [u8]) -> bool
+    b = unmapped(bytes)
+
+    if b.len() == 4
+        return in_any(b, blocks: ["224.0.0.0/24"])
+    return scope_of(b) == 2
+
+# Whether `bytes` is IPv6 multicast of interface scope, its fourth
+# hexadecimal digit 1 whatever its flags.
+#
+# - `bytes`: four or sixteen bytes; IPv4 has none.
+function is_interface_local_multicast(bytes: [u8]) -> bool
+    b = unmapped(bytes)
+    return b.len() == 16 && scope_of(b) == 1
+
+# Whether `bytes` is global unicast as Go reads it.
+#
+# - `bytes`: four or sixteen bytes.
+function is_global_unicast(bytes: [u8]) -> bool
+    b = unmapped(bytes)
+
+    if is_unspecified(b) || is_loopback(b) || is_multicast(b) || is_link_local(b)
+        return false
+    return !(b.len() == 4 && in_any(b, blocks: ["255.255.255.255/32"]))
+
+# Whether `bytes` is globally reachable as Python's `is_global` reads IANA's
+# special-purpose registries.
+#
+# - `bytes`: four or sixteen bytes.
+function is_global(bytes: [u8]) -> bool
+    b = unmapped(bytes)
+
+    if b.len() == 4
+        if in_any(b, blocks: ["192.0.0.9/32", "192.0.0.10/32"])
+            return true
+        return !in_any(b, blocks: not_global_v4())
+
+    if in_any(b, blocks: ["2001:1::1/128", "2001:1::2/128", "2001:3::/32", "2001:4:112::/48", "2001:20::/28", "2001:30::/28"])
+        return true
+    return !in_any(b, blocks: not_global_v6())
+
+# The IPv4 blocks Python's `is_global` reads as not global.
+function not_global_v4() -> [str]
+    return [
+        "0.0.0.0/8"
+        "10.0.0.0/8"
+        "100.64.0.0/10"
+        "127.0.0.0/8"
+        "169.254.0.0/16"
+        "172.16.0.0/12"
+        "192.0.0.0/24"
+        "192.0.2.0/24"
+        "192.168.0.0/16"
+        "198.18.0.0/15"
+        "198.51.100.0/24"
+        "203.0.113.0/24"
+        "240.0.0.0/4"
+    ]
+
+# The IPv6 blocks Python's `is_global` reads as not global, before the
+# blocks inside them that are.
+function not_global_v6() -> [str]
+    return [
+        "::/128"
+        "::1/128"
+        "64:ff9b:1::/48"
+        "100::/64"
+        "2001::/23"
+        "2001:db8::/32"
+        "2002::/16"
+        "3fff::/20"
+        "fc00::/7"
+        "fe80::/10"
+    ]
+
+# Whether `bytes` is reserved as Python's `is_reserved` reads it.
+#
+# - `bytes`: four or sixteen bytes.
+function is_reserved(bytes: [u8]) -> bool
+    return in_any(
+        unmapped(bytes),
+        blocks: ["240.0.0.0/4", "::/8", "100::/8", "200::/7", "400::/6", "800::/5", "1000::/4", "4000::/3", "6000::/3", "8000::/3", "a000::/3", "c000::/3", "e000::/4", "f000::/5", "f800::/6", "fe00::/9"]
+    )
+
+# Whether `bytes` is kept for documentation, as Rust reads it.
+#
+# - `bytes`: four or sixteen bytes.
+function is_documentation(bytes: [u8]) -> bool
+    return in_any(
+        unmapped(bytes),
+        blocks: ["192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24", "2001:db8::/32", "3fff::/20"]
+    )
+
+# Whether `bytes` is kept for benchmarking, as Rust reads it.
+#
+# - `bytes`: four or sixteen bytes.
+function is_benchmarking(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["198.18.0.0/15", "2001:2::/48"])
+
+# Whether `bytes` is in the space shared by carriers.
+#
+# - `bytes`: four or sixteen bytes; IPv6 has none.
+function is_shared(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["100.64.0.0/10"])
+
+# Whether `bytes` is `255.255.255.255`.
+#
+# - `bytes`: four or sixteen bytes.
+function is_broadcast(bytes: [u8]) -> bool
+    return in_any(unmapped(bytes), blocks: ["255.255.255.255/32"])
+
+# Whether `bytes` is a site-local IPv6 address.
+#
+# - `bytes`: four or sixteen bytes; IPv4 has none.
+function is_site_local(bytes: [u8]) -> bool
+    return in_any(bytes, blocks: ["fec0::/10"])
+
+# The four bytes of the IPv4 address a 6to4 address carries, or [] where
+# `bytes` is none.
+#
+# - `bytes`: four or sixteen bytes.
+function sixtofour(bytes: [u8]) -> [u8]
+    if !in_any(bytes, blocks: ["2002::/16"])
+        return []
+    return bytes.slice(from: 2, to: 6)
+
+# The eight bytes a Teredo address carries, its server's four then its
+# client's four with every bit turned, or [] where `bytes` is none.
+#
+# - `bytes`: four or sixteen bytes.
+function teredo(bytes: [u8]) -> [u8]
+    if !in_any(bytes, blocks: ["2001::/32"])
+        return []
+    out: [u8] @= bytes.slice(from: 4, to: 8)
+
+    for i in range(from: 12, to: 16)
+        out @ out.push(networks.narrow(0xff & ~networks.wide(bytes[i])))
+
+    return out
+
+# The scope of the IPv6 multicast address `bytes`, its fourth hexadecimal
+# digit, or -1 where it is no multicast address.
+#
+# - `bytes`: sixteen bytes.
+function scope_of(bytes: [u8]) -> i64
+    if bytes[0] != 0xff
+        return -1
+    return networks.wide(bytes[1]) & 0x0f
+
+# The IPv4 address an IPv6 address that maps one stands for, and every other
+# address as it is.
+#
+# - `bytes`: four or sixteen bytes.
+function unmapped(bytes: [u8]) -> [u8]
+    if bytes.len() == 16 && format.is_mapped(bytes)
+        return bytes.slice(from: 12, to: 16)
+    return bytes
+
+# Whether `bytes` is in any of `blocks`, a block of the other length holding
+# none.
+#
+# - `bytes`: four or sixteen bytes.
+# - `blocks`: CIDR blocks, each an address, a `/` and its bits, written by
+#   this module and so read without fail.
+function in_any(bytes: [u8], blocks: [str]) -> bool
+    for block in blocks
+        cut = slash_of(block)
+        prefix = parse.address(block.slice(from: 0, to: cut)).must().bytes
+        bits = scan.port_in(s: block, from: cut + 1, to: block.len(), asked: block).must()
+
+        if networks.holds(prefix: prefix, bits: bits, bytes: bytes)
+            return true
+
+    return false
+
+# The byte index of the `/` of `block`.
+#
+# - `block`: a CIDR block this module wrote.
+#
+# Aborts where `block` holds no `/`.
+function slash_of(block: str) -> i64
+    at: i64 @= 0
+
+    while block[at] != '/'
+        at @ at + 1
+
+    return at
+
+## Tests
+
+# The bytes of the address `s` writes, for the tests below: each address they
+# hold is the edge of a block, and what they assert is what Python 3.15,
+# Go 1.27 or Rust 1.100 answered for it.
+#
+# - `s`: an address as text, written by the tests and so read without fail.
+function bytes_of(s: str) -> [u8]
+    return parse.address(s).must().bytes
+
+test "is_global: Python's answer at the edges of every IPv4 block"
+    for yes in ["9.255.255.255", "11.0.0.0", "100.63.255.255", "100.128.0.0", "192.0.0.9", "192.0.0.10", "192.0.1.0", "192.31.196.0", "192.52.193.255", "192.88.99.0", "192.175.48.0", "198.17.255.255", "198.20.0.0", "224.0.0.0", "239.255.255.255", "1.1.1.1"]
+        assert is_global(bytes_of(yes))
+
+    for no in ["0.0.0.0", "0.255.255.255", "10.0.0.0", "100.64.0.0", "100.127.255.255", "127.255.255.255", "169.254.0.0", "172.31.255.255", "192.0.0.0", "192.0.0.8", "192.0.0.11", "192.0.0.170", "192.0.0.255", "192.0.2.0", "192.168.255.255", "198.18.0.0", "198.19.255.255", "198.51.100.0", "203.0.113.255", "240.0.0.0", "255.255.255.255"]
+        assert !is_global(bytes_of(no))
+
+test "is_global: Python's answer at the edges of every IPv6 block, and a mapped address read as IPv4"
+    for yes in ["64:ff9b::", "64:ff9b::ffff:ffff", "2001:1::1", "2001:1::2", "2001:3::", "2001:3:ffff:ffff:ffff:ffff:ffff:ffff", "2001:4:112::", "2001:20::", "2001:3f:ffff:ffff:ffff:ffff:ffff:ffff", "2001:200::", "2620:4f:8000::", "5f00::", "fec0::1", "ff02::1", "::ffff:8.8.8.8", "::2"]
+        assert is_global(bytes_of(yes))
+
+    for no in ["::", "::1", "64:ff9b:1::", "100::", "100::ffff:ffff:ffff:ffff", "2001::", "2001:1::3", "2001:2::", "2001:10::", "2001:1ff:ffff:ffff:ffff:ffff:ffff:ffff", "2001:db8::1", "2002::", "3fff::", "fc00::", "fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "fe80::", "febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "::ffff:10.0.0.1", "::ffff:0.0.0.0"]
+        assert !is_global(bytes_of(no))
+
+test "is_reserved: Python's 240.0.0.0/4 with the broadcast address, the unassigned IPv6 blocks, and a mapped address read as IPv4"
+    for yes in ["240.0.0.0", "255.255.255.255", "::", "::fffe:ffff:ffff", "100::", "1ff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "1000::", "4000::", "5f00::", "f800::", "fe00::", "fe7f:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "::ffff:255.255.255.255"]
+        assert is_reserved(bytes_of(yes))
+
+    for no in ["239.255.255.255", "2000::", "3fff:ffff:ffff:ffff:ffff:ffff:ffff:ffff", "fc00::", "fe80::", "fec0::", "ff00::", "::ffff:0.0.0.0", "::ffff:1.2.3.4"]
+        assert !is_reserved(bytes_of(no))
+
+test "is_loopback, is_private, is_unspecified: Go's answers, mapped addresses among them"
+    assert is_loopback(bytes_of("127.0.0.0")) && is_loopback(bytes_of("127.255.255.255")) && is_loopback(bytes_of("::1")) && is_loopback(bytes_of("::ffff:127.0.0.1"))
+    assert !is_loopback(bytes_of("128.0.0.0")) && !is_loopback(bytes_of("::2")) && !is_loopback(bytes_of("::"))
+    assert is_private(bytes_of("10.0.0.1")) && is_private(bytes_of("172.31.255.255")) && is_private(bytes_of("fd00::1")) && is_private(bytes_of("::ffff:10.0.0.1"))
+    assert !is_private(bytes_of("172.32.0.0")) && !is_private(bytes_of("100.64.0.1")) && !is_private(bytes_of("fe00::"))
+    assert is_unspecified(bytes_of("0.0.0.0")) && is_unspecified(bytes_of("::"))
+    assert !is_unspecified(bytes_of("::ffff:0.0.0.0")) && !is_unspecified(bytes_of("0.0.0.1"))
+
+test "is_multicast, is_link_local and the two multicast scopes: Go's answers, flags of the scope ignored"
+    assert is_multicast(bytes_of("224.0.0.0")) && is_multicast(bytes_of("239.255.255.255")) && is_multicast(bytes_of("ff00::")) && is_multicast(bytes_of("::ffff:224.0.0.1"))
+    assert !is_multicast(bytes_of("240.0.0.0")) && !is_multicast(bytes_of("fe00::"))
+    assert is_link_local(bytes_of("169.254.0.0")) && is_link_local(bytes_of("febf::1")) && is_link_local(bytes_of("::ffff:169.254.1.1"))
+    assert !is_link_local(bytes_of("fec0::1")) && !is_link_local(bytes_of("169.255.0.0"))
+    assert is_link_local_multicast(bytes_of("224.0.0.1")) && is_link_local_multicast(bytes_of("ff02::1")) && is_link_local_multicast(bytes_of("ff12::1"))
+    assert !is_link_local_multicast(bytes_of("224.0.1.1")) && !is_link_local_multicast(bytes_of("ff05::1"))
+    assert is_interface_local_multicast(bytes_of("ff01::1")) && is_interface_local_multicast(bytes_of("ff11::1"))
+    assert !is_interface_local_multicast(bytes_of("ff02::1")) && !is_interface_local_multicast(bytes_of("224.0.0.1"))
+
+test "is_global_unicast: Go's answers, a private address and an old site-local one counted"
+    for yes in ["10.0.0.1", "100.64.0.1", "0.1.2.3", "8.8.8.8", "fc00::1", "fec0::1", "2001:db8::1", "::ffff:8.8.8.8", "::ffff:10.0.0.1"]
+        assert is_global_unicast(bytes_of(yes))
+
+    for no in ["0.0.0.0", "::", "127.0.0.1", "::1", "224.0.0.1", "ff05::1", "fe80::1", "169.254.0.1", "255.255.255.255", "::ffff:255.255.255.255", "::ffff:0.0.0.0", "::ffff:127.0.0.1"]
+        assert !is_global_unicast(bytes_of(no))
+
+test "is_documentation, is_benchmarking, is_shared, is_broadcast, is_site_local: Rust's and Python's edges"
+    assert is_documentation(bytes_of("192.0.2.1")) && is_documentation(bytes_of("198.51.100.255")) && is_documentation(bytes_of("203.0.113.0"))
+    assert is_documentation(bytes_of("2001:db8::1")) && is_documentation(bytes_of("3fff:fff::")) && !is_documentation(bytes_of("3fff:1000::")) && !is_documentation(bytes_of("203.0.114.0"))
+    assert is_benchmarking(bytes_of("198.18.0.0")) && is_benchmarking(bytes_of("198.19.255.255")) && !is_benchmarking(bytes_of("198.20.0.0"))
+    assert is_benchmarking(bytes_of("2001:2:0:ffff::")) && !is_benchmarking(bytes_of("2001:2:1::"))
+    assert is_shared(bytes_of("100.64.0.0")) && is_shared(bytes_of("100.127.255.255")) && !is_shared(bytes_of("100.128.0.0")) && !is_shared(bytes_of("::"))
+    assert is_broadcast(bytes_of("255.255.255.255")) && !is_broadcast(bytes_of("255.255.255.254")) && !is_broadcast(bytes_of("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"))
+    assert is_site_local(bytes_of("fec0::1")) && is_site_local(bytes_of("feff:ffff:ffff:ffff:ffff:ffff:ffff:ffff")) && !is_site_local(bytes_of("fe80::1")) && !is_site_local(bytes_of("1.2.3.4"))
+
+test "sixtofour, teredo: Python's answers, and none outside their blocks"
+    assert sixtofour(bytes_of("2002:c000:204::1")) == [192, 0, 2, 4]
+    assert sixtofour(bytes_of("2003::")) == [] && sixtofour(bytes_of("1.2.3.4")) == []
+    assert teredo(bytes_of("2001:0:4136:e378:8000:63bf:3fff:fdd2")) == [65, 54, 227, 120, 192, 0, 2, 45]
+    assert teredo(bytes_of("2001::")) == [0, 0, 0, 0, 255, 255, 255, 255]
+    assert teredo(bytes_of("2001:db8::1")) == [] && teredo(bytes_of("1.2.3.4")) == []
+
+test "scope_of, unmapped, in_any, slash_of: one case at each edge"
+    assert scope_of(bytes_of("ff0e::1")) == 14 && scope_of(bytes_of("fe80::1")) == -1
+    assert unmapped(bytes_of("::ffff:1.2.3.4")) == [1, 2, 3, 4] && unmapped(bytes_of("::1.2.3.4")).len() == 16
+    assert in_any(bytes_of("1.2.3.4"), blocks: ["::/0", "0.0.0.0/0"]) && !in_any(bytes_of("1.2.3.4"), blocks: [])
+    assert slash_of("10.0.0.0/8") == 8

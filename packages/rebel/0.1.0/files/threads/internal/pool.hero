@@ -1,0 +1,102 @@
+# A function run over a list of values on several threads, the answers in the
+# order of the values: at most `workers` threads run at once, each started on
+# one value, and the oldest is waited for before the next starts, so the
+# answers come in order and no handle leaves the call. The runtime's own
+# ceiling bounds `workers`, since it panics past it.
+
+use threads/hero_os
+use threads/internal/samples
+
+# The code of a thread the system refused to start, the face's `LIMIT`.
+constant LIMIT: str
+    "limit"
+
+# How many threads to run at once: `workers`, at most the runtime's ceiling.
+# Aborts where `workers` is below one.
+function width(workers: i64) -> i64
+    assert workers >= 1
+    ceiling = hero_os.limit()
+
+    if workers > ceiling
+        return ceiling
+    return workers
+
+# `body` of each of `values` on threads, at most `workers` at once, the
+# answers in order. Fails `limit` where the system refuses a thread, after
+# waiting for those already started.
+function run_all(body: (function(i64) -> i64), values: [i64], workers: i64) -> [i64]?
+    wide = width(workers: workers)
+    handles: [i64] @= []
+    out: [i64] @= []
+
+    while out.len() < values.len()
+        while handles.len() < values.len() && handles.len() - out.len() < wide
+            why: i64 @= 0
+            handle = hero_os.start(body: body, arg: values[handles.len()], bytes: 0, why: @why)
+
+            if handle < 0
+                at: i64 @= out.len()
+
+                while at < handles.len()
+                    _ = hero_os.finish(handles[at])
+                    at @ at + 1
+
+                return fail(
+                    code: LIMIT,
+                    msg: f"the system refused to start a thread for value {handles.len()} of {values.len()} (its own number {why})"
+                )
+            handles @ handles.push(handle)
+
+        out @ out.push(hero_os.finish(handles[out.len()]))
+
+    return ok(out)
+
+# `body` of each of `values` on threads, at most `workers` at once, the
+# answers in order, each a copy.
+function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]
+    wide = width(workers: workers)
+    handles: [i64] @= []
+    out: [str] @= []
+
+    while out.len() < values.len()
+        while handles.len() < values.len() && handles.len() - out.len() < wide
+            handles @ handles.push(hero_os.start_text(body: body, arg: values[handles.len()]))
+
+        out @ out.push(hero_os.finish_text(handles[out.len()]))
+
+    return out
+
+test "width: one, the ceiling, and past it"
+    assert width(workers: 1) == 1
+    ceiling = hero_os.limit()
+    assert width(workers: ceiling) == ceiling
+    assert width(workers: 9223372036854775807) == ceiling
+
+test "run_all: no value, one, fewer workers than values, more workers than values, the answers in order"
+    nothing: [i64] = []
+    assert run_all(body: samples.square, values: nothing, workers: 4).must().len() == 0
+    assert run_all(body: samples.square, values: [7], workers: 1).must() == [49]
+    assert run_all(body: samples.square, values: [1, 2, 3, 4, 5], workers: 2).must() == [1, 4, 9, 16, 25]
+    assert run_all(body: samples.square, values: [3, 2, 1], workers: 8).must() == [9, 4, 1]
+
+test "run_all: the largest and smallest i64 cross whole, and slow bodies keep their order"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    assert run_all(body: samples.same, values: [largest, 0, smallest], workers: 3).must() == [largest, 0, smallest]
+    assert run_all(body: samples.sum_below, values: [100000, 10, 1000], workers: 3).must() == [4999950000, 45, 499500]
+
+test "run_all: more values than the runtime's ceiling, workers past it, every answer in order"
+    values: [i64] @= []
+
+    for at in range(from: 0, to: 300)
+        values @ values.push(at)
+
+    answers = run_all(body: samples.same, values: values, workers: 1000).must()
+    assert answers == values
+
+test "run_all_text: no value, one, text of more than one byte and the empty text cross whole, in order"
+    nothing: [str] = []
+    assert run_all_text(body: samples.shout, values: nothing, workers: 2).len() == 0
+    assert run_all_text(body: samples.shout, values: ["hi"], workers: 1) == ["hi!"]
+    assert run_all_text(body: samples.same_text, values: ["caffè", "", "über", "日本"], workers: 2) == ["caffè", "", "über", "日本"]
+    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 9) == ["a!", "b!", "c!"]

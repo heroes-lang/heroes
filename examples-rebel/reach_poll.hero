@@ -1,0 +1,15 @@
+# Reaches Rebel's `poll`, so that `heroes test` on this file runs the package's
+# own tests (spec § 12). It waits on a set holding one timer of a millisecond
+# and prints how many entries the wait found ready: 1.
+
+use <rebel>/poll
+use <rebel>/time
+
+function main()
+    match poll.make(1)
+        .err e => print(e.code, ": ", e.msg)
+        .ok made =>
+            s @= made
+            _ = poll.add_timer(s, first: time.nanoseconds(1000000), every: time.nanoseconds(0)).default(0)
+            print(poll.wait_forever(s).default([]).len())
+            _ = poll.close(@s).is_err()

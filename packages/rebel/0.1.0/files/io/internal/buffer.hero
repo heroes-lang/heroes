@@ -1,0 +1,202 @@
+# What a reader holds between its stream and its caller, and the work of
+# giving it out: bytes read from the stream a chunk at a time, scanned for a
+# byte or a character, and handed out from where the last call stopped. The
+# face `io` keeps the record that holds it, `io.Reader`, and hands each
+# function here the stream's handle and name.
+#
+# A byte is given out once: `at` only moves forward, and what is before it is
+# dropped at the next read of the stream. Only `look` keeps bytes past a
+# chunk, since a look ahead must hold them all at once.
+
+use io/hero_stream
+use io/internal/failure
+use io/internal/move
+
+# The bytes a reader holds: read from its stream, and not all given out yet.
+record Held
+    # What the last reads of the stream answered; those before `at` are given
+    # out already.
+    bytes: [u8]
+    # The first byte of `bytes` not given out yet.
+    at: i64
+    # Whether the stream has answered its end, so no read of it is made again.
+    ended: bool
+
+# A reader's holding before its first read: nothing held, the end not seen.
+function empty() -> Held
+    return Held(bytes: [], at: 0, ended: false)
+
+# How many bytes `held` holds and has not given out.
+function count(held: Held lent) -> i64
+    return held.bytes.len() - held.at
+
+# Fails `closed` where the reader's own place of its stream was emptied by
+# `io.close`: a reader gives out nothing once its stream is closed, what it
+# holds included, so a closed stream is closed to every later call.
+function still_open(handle: hero_stream.Stream, name: str) -> ()?
+    if handle == nullptr
+        return failure.of(code: failure.CLOSED, asked: "reading " + name, why: "the stream is closed")
+    return ok()
+
+# Whether `held` has a byte to give out, reading a chunk of the stream where
+# it holds none: false only at the end.
+function fill(@held: Held, handle: hero_stream.Stream, name: str) -> bool?
+    still_open(handle, name: name)?
+
+    if held.at < held.bytes.len()
+        return ok(true)
+
+    if held.ended
+        return ok(false)
+    part = move.some(handle, name: name, most: move.CHUNK)?
+
+    if part.len() == 0
+        held.ended @ true
+        held.bytes @ []
+        held.at @ 0
+        return ok(false)
+    held.bytes @ part
+    held.at @ 0
+    return ok(true)
+
+# The bytes up to and including the first `byte`, or to the end: an empty
+# list at the end.
+function until(@held: Held, handle: hero_stream.Stream, name: str, byte: u8) -> [u8]?
+    out: [u8] @= []
+
+    while fill(@held, handle, name: name)?
+        bytes = held.bytes
+        at: i64 @= held.at
+
+        while at < bytes.len()
+            b = bytes[at]
+            out @ out.push(b)
+            at @ at + 1
+
+            if b == byte
+                held.at @ at
+                return ok(out)
+
+        held.at @ at
+
+    return ok(out)
+
+# At most `n` bytes, fewer only at the end. Where `keep` is false they are
+# not collected, and the answer is empty: a skip.
+function take(@held: Held, handle: hero_stream.Stream, name: str, n: i64, keep: bool) -> Taken?
+    out: [u8] @= []
+    moved: i64 @= 0
+
+    while moved < n && fill(@held, handle, name: name)?
+        bytes = held.bytes
+        at: i64 @= held.at
+
+        while at < bytes.len() && moved < n
+            if keep
+                out @ out.push(bytes[at])
+            at @ at + 1
+            moved @ moved + 1
+
+        held.at @ at
+
+    return ok(Taken(bytes: out, count: moved))
+
+# What `take` answers: the bytes, where it kept them, and how many it took.
+record Taken
+    # The bytes taken, or none where they were dropped.
+    bytes: [u8]
+    # How many bytes were taken, kept or not.
+    count: i64
+
+# The next `n` bytes without giving them out, fewer only at the end: `held`
+# reads its stream until it holds `n`, keeping what it held before.
+function look(@held: Held, handle: hero_stream.Stream, name: str, n: i64) -> [u8]?
+    still_open(handle, name: name)?
+
+    while count(held) < n && !held.ended
+        part = move.some(handle, name: name, most: move.CHUNK)?
+
+        if part.len() == 0
+            held.ended @ true
+        else
+            kept: [u8] @= held.bytes.slice(from: held.at, to: held.bytes.len())
+            move.add(onto: @kept, part: part)
+            held.bytes @ kept
+            held.at @ 0
+
+    end: i64 @= held.bytes.len()
+
+    if held.at + n < end
+        end @ held.at + n
+    return ok(held.bytes.slice(from: held.at, to: end))
+
+# Every byte left: what `held` holds, then the stream to its end.
+function rest(@held: Held, handle: hero_stream.Stream, name: str) -> [u8]?
+    still_open(handle, name: name)?
+    out: [u8] @= held.bytes.slice(from: held.at, to: held.bytes.len())
+    held.bytes @ []
+    held.at @ 0
+
+    if !held.ended
+        move.add(onto: @out, part: move.to_end(handle, name: name)?)
+        held.ended @ true
+    return ok(out)
+
+# How many bytes the UTF-8 character that `first` begins holds, or 0 where
+# `first` begins none: a byte that continues a character, or one UTF-8 never
+# writes.
+function char_width(first: u8) -> i64
+    if first < 0x80
+        return 1
+
+    if first >= 0xc2 && first <= 0xdf
+        return 2
+
+    if first >= 0xe0 && first <= 0xef
+        return 3
+
+    if first >= 0xf0 && first <= 0xf4
+        return 4
+    return 0
+
+# The next character: "" at the end, failing `not_text` where the bytes begin
+# none or the stream ends inside one, those bytes read.
+function char(@held: Held, handle: hero_stream.Stream, name: str) -> str?
+    if !fill(@held, handle, name: name)?
+        return ok("")
+    first = held.bytes[held.at]
+    width = char_width(first)
+    asked = "reading a character of " + name
+
+    if width == 0
+        held.at @ held.at + 1
+        return failure.of(code: failure.NOT_TEXT, asked: asked, why: f"the byte {first} begins no UTF-8 character")
+    got = take(@held, handle, name: name, n: width, keep: true)?
+
+    match got.bytes.validated_bytes()
+        .ok c  => return ok(c)
+        .err _ => return failure.of(code: failure.NOT_TEXT, asked: asked, why: f"its {got.count} bytes are not UTF-8")
+
+## Tests
+
+test "char_width: one byte, two, three, four, and bytes that begin nothing"
+    assert char_width('a') == 1
+    assert char_width(0) == 1
+    assert char_width(0x7f) == 1
+    assert char_width(0x80) == 0
+    assert char_width(0xbf) == 0
+    assert char_width(0xc0) == 0
+    assert char_width(0xc1) == 0
+    assert char_width(0xc3) == 2
+    assert char_width(0xdf) == 2
+    assert char_width(0xe2) == 3
+    assert char_width(0xf0) == 4
+    assert char_width(0xf4) == 4
+    assert char_width(0xf5) == 0
+    assert char_width(0xff) == 0
+
+test "count and empty: a new holding holds nothing and has not seen the end"
+    held = empty()
+    assert count(held) == 0
+    assert !held.ended
+    assert count(Held(bytes: [1, 2, 3], at: 1, ended: false)) == 2

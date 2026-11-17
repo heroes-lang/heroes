@@ -1,0 +1,9 @@
+# Reaches Rebel's package `net`, so that `heroes test` on this file runs the
+# tests of its face, its private modules and the floors under them (spec
+# § 12). It prints the IPv6 loopback address as the package writes it, `::1`,
+# on every run, touching no network.
+
+use <rebel>/net
+
+function main()
+    print(net.format_address(net.loopback_v6()))

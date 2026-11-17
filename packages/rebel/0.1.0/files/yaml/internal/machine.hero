@@ -1,0 +1,122 @@
+# The states of the parser's machine, where it stands among the tokens, and
+# the stack of states it comes back to: a list, so that no recursion follows
+# the data.
+
+use yaml/internal/stack
+
+## States
+
+# The stream is read whole.
+constant END: i64
+    0
+
+# A document, or the end of the stream, comes next.
+constant DOCUMENT_START: i64
+    1
+
+# A document's node comes next, after `---`.
+constant DOCUMENT_CONTENT: i64
+    2
+
+# A document ends next.
+constant DOCUMENT_END: i64
+    3
+
+# A node of a block context comes next.
+constant BLOCK_NODE: i64
+    4
+
+# A node of a block context comes next, or a list whose `-` stands at its
+# map's column.
+constant BLOCK_NODE_OR_INDENTLESS: i64
+    5
+
+# A node of a flow collection comes next.
+constant FLOW_NODE: i64
+    6
+
+# A block list's next element, or its end.
+constant BLOCK_SEQ_ENTRY: i64
+    7
+
+# The next element of a list whose `-` stands at its map's column, or its end.
+constant INDENTLESS_SEQ_ENTRY: i64
+    8
+
+# A block map's next key, or its end.
+constant BLOCK_MAP_KEY: i64
+    9
+
+# A block map's next value.
+constant BLOCK_MAP_VALUE: i64
+    10
+
+# A flow list's first element, or its end.
+constant FLOW_SEQ_FIRST_ENTRY: i64
+    11
+
+# A flow list's next element after a `,`, or its end.
+constant FLOW_SEQ_ENTRY: i64
+    12
+
+# The key of a map of one pair written as a flow list's element, `[a: b]`.
+constant FLOW_SEQ_PAIR_KEY: i64
+    13
+
+# That pair's value.
+constant FLOW_SEQ_PAIR_VALUE: i64
+    14
+
+# That pair's end.
+constant FLOW_SEQ_PAIR_END: i64
+    15
+
+# A flow map's first key, or its end.
+constant FLOW_MAP_FIRST_KEY: i64
+    16
+
+# A flow map's next key after a `,`, or its end.
+constant FLOW_MAP_KEY: i64
+    17
+
+# A flow map's next value.
+constant FLOW_MAP_VALUE: i64
+    18
+
+# The empty value of a flow map's key written with no `:`.
+constant FLOW_MAP_EMPTY_VALUE: i64
+    19
+
+## Where it stands
+
+# Where the parser stands.
+record Parsing
+    # The index of the next token.
+    i: i64
+    # What comes next, one of the states above.
+    state: i64
+    # How many states the stack holds, to come back to.
+    top: i64
+
+# Remembers `state` to come back to.
+function push_state(@states: [i64], @p: Parsing, state: i64)
+    stack.put(items: @states, top: p.top, item: state)
+    p.top @ p.top + 1
+
+# Comes back to the state remembered last.
+function pop_state(states: [i64] lent, @p: Parsing)
+    p.top @ p.top - 1
+    p.state @ states[p.top]
+
+## Tests
+
+test "push_state and pop_state: one state remembered, two, and each come back to in turn"
+    states: [i64] @= []
+    p: Parsing @= Parsing(i: 0, state: BLOCK_NODE, top: 0)
+    push_state(@states, @p, BLOCK_MAP_KEY)
+    push_state(@states, @p, FLOW_SEQ_ENTRY)
+    assert p.top == 2 && states == [BLOCK_MAP_KEY, FLOW_SEQ_ENTRY]
+    pop_state(states, @p)
+    assert p.state == FLOW_SEQ_ENTRY && p.top == 1
+    pop_state(states, @p)
+    assert p.state == BLOCK_MAP_KEY && p.top == 0

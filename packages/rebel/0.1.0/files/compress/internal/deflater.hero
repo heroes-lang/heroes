@@ -1,0 +1,311 @@
+# A DEFLATE compressor fed piece by piece: the bytes fed wait until enough
+# follow them to find the longest repeat, become symbols, and every 16,384
+# symbols become a block written in its shortest kind. A flush writes what
+# waits; the end writes the last block and the wrapper's checksum. Memory
+# stays bounded: the bytes before both the window and the block in progress
+# are dropped as the stream goes on.
+
+use compress/internal/bitout
+use compress/internal/blocks
+use compress/internal/codes
+use compress/internal/matcher
+use compress/internal/tables
+use compress/internal/wrapping
+use hash
+
+# How many bytes must follow a position before its repeat is looked for,
+# unless the stream is being flushed or ended: the longest repeat, and three
+# more to hash the next position.
+constant LOOKAHEAD: i64
+    262
+
+# How many symbols a block holds before it is written.
+constant SYMBOLS_PER_BLOCK: i64
+    16384
+
+# How many bytes no longer needed are dropped at once.
+constant DROP_AT: i64
+    65536
+
+# A compressor in progress.
+record State
+    # `wrapping.RAW`, `ZLIB` or `GZIP`.
+    wrap: i64
+    # 0 to 9; 0 writes stored blocks only.
+    level: i64
+    # How repeats are looked for.
+    config: matcher.Config
+    # The bytes from position `base` on: the window, the block in progress
+    # and what waits for its repeats.
+    data: [u8]
+    # The position of `data`'s first byte.
+    base: i64
+    # The first position not yet a symbol.
+    pos: i64
+    # No repeat reaches before this position: 0, or where a full flush was.
+    floor: i64
+    # The chains of earlier positions.
+    chains: matcher.Chains
+    # The symbols of the block in progress.
+    syms: [i64]
+    # How often each occurs.
+    freqs: blocks.Freqs
+    # The first position of the block in progress.
+    block_start: i64
+    # What has been written and not yet handed out.
+    out: [u8]
+    # The bits written that are not yet a whole byte.
+    sink: bitout.Sink
+    # The checksum of the bytes fed: Adler-32 for zlib, CRC-32 otherwise.
+    check: hash.State32
+    # How many bytes have been fed.
+    size: i64
+    # Whether `finish` has written the end.
+    ended: bool
+
+# A compressor wrapping its stream in `wrap`, at `level` 0 to 9, under the
+# matcher's `strategy`, with a window of 2^`window_bits` bytes and the
+# preset `dictionary`, writing `gzip` where `wrap` is gzip. Its header is
+# written at once. Fails `invalid` where the level or the window is out of
+# its range, where a dictionary is given to gzip, or where the gzip header
+# cannot be written.
+function start(wrap: i64, level: i64, strategy: i64, window_bits: i64, dictionary: [u8], gzip: wrapping.Gzip) -> State?
+    if level < 0 || level > 9
+        return fail(code: codes.INVALID, msg: f"a level of {level}, where a level is 0 to 9")
+
+    if window_bits < 9 || window_bits > 15
+        return fail(code: codes.INVALID, msg: f"a window of 2^{window_bits} bytes, where window_bits is 9 to 15")
+
+    if wrap == wrapping.GZIP && dictionary.len() > 0
+        return fail(code: codes.INVALID, msg: "a dictionary for gzip, whose header has no place to name one")
+    out: [u8] @= []
+    check @= hash.start32(.crc32)
+
+    if wrap == wrapping.ZLIB
+        out @ wrapping.zlib_header(level: level, window_bits: window_bits, dictionary: dictionary)
+        check @ hash.start32(.adler32)
+    else if wrap == wrapping.GZIP
+        out @ wrapping.gzip_header(gzip, level: level)?
+    window = 1 << window_bits
+    kept: i64 @= 0
+
+    if dictionary.len() > window
+        kept @ dictionary.len() - window
+    data = dictionary.slice(from: kept, to: dictionary.len())
+    level_used: i64 @= level
+
+    if level == 0
+        level_used @ 1
+    return ok(
+        State(wrap: wrap, level: level, config: matcher.config_for(level: level_used, strategy: strategy, window: window), data: data, base: 0, pos: data.len(), floor: 0, chains: matcher.empty_chains(from: 0, expected: -1), syms: [], freqs: blocks.empty_freqs(), block_start: data.len(), out: out, sink: bitout.empty(), check: check, size: 0, ended: false)
+    )
+
+# Sizes `st`'s tables to a stream of `total` bytes, the dictionary kept
+# included, before any position goes into them: what `compress` does where
+# the whole input is in hand. Nothing where they are made already.
+function expect(@st: State, total: i64)
+    if st.chains.head.len() == 0
+        st.chains @ matcher.empty_chains(from: st.chains.inserted, expected: total)
+
+# Adds `more` to the end of `data`.
+function append(@data: [u8], more: [u8] lent)
+    for b in more
+        data @ data.push(b)
+
+# Feeds `more` to `st`: its bytes join those waiting, and every repeat that
+# can be decided now is, its blocks written to `st.out`. Aborts where `st`
+# has ended, which the caller can ask first.
+function feed(@st: State, more: [u8] lent)
+    assert !st.ended
+    append(data: @st.data, more: more)
+    hash.update32(@st.check, more)
+    st.size @ st.size + more.len()
+    advance(@st, to_end: false)
+
+# Turns into symbols every position that has enough bytes after it, or
+# every one where `to_end`, writing a block each time one is full; then drops
+# the bytes no repeat and no block needs.
+function advance(@st: State, to_end: bool)
+    end = st.base + st.data.len()
+
+    if st.level == 0
+        while end - st.block_start >= blocks.STORED_MOST
+            blocks.write_stored(
+                out: @st.out,
+                @st.sink,
+                data: st.data,
+                from: st.block_start,
+                to: st.block_start + blocks.STORED_MOST,
+                base: st.base,
+                last: false
+            )
+            st.block_start @ st.block_start + blocks.STORED_MOST
+
+        st.pos @ end
+    else
+        stop: i64 @= end - LOOKAHEAD
+
+        if to_end
+            stop @ end
+
+        while st.pos < stop
+            st.pos @ matcher.parse(
+                st.data,
+                base: st.base,
+                from: st.pos,
+                stop: stop,
+                end: end,
+                floor: st.floor,
+                @st.chains,
+                @st.syms,
+                @st.freqs,
+                config: st.config,
+                room: SYMBOLS_PER_BLOCK
+            )
+
+            if st.syms.len() >= SYMBOLS_PER_BLOCK
+                write_block(@st, last: false)
+    drop_unneeded(@st)
+
+# Writes the block in progress, the last one where `last`, and starts the
+# next at `st.pos`.
+function write_block(@st: State, last: bool)
+    if st.level == 0
+        blocks.write_stored(
+            out: @st.out,
+            @st.sink,
+            data: st.data,
+            from: st.block_start,
+            to: st.pos,
+            base: st.base,
+            last: last
+        )
+    else
+        blocks.write_block(
+            out: @st.out,
+            @st.sink,
+            st.syms,
+            freqs: st.freqs,
+            data: st.data,
+            from: st.block_start,
+            to: st.pos,
+            base: st.base,
+            last: last,
+            fixed_only: st.config.strategy == matcher.FIXED
+        )
+    st.syms @ []
+    st.freqs @ blocks.empty_freqs()
+    st.block_start @ st.pos
+
+# Drops the bytes before both the window and the block in progress, once
+# there are enough of them to be worth the copy.
+function drop_unneeded(@st: State)
+    keep: i64 @= st.pos - tables.MAX_DISTANCE
+
+    if st.block_start < keep
+        keep @ st.block_start
+
+    if keep - st.base >= DROP_AT
+        st.data @ st.data.slice(from: keep - st.base, to: st.data.len())
+        st.base @ keep
+
+# Writes everything fed so far so that it can all be decompressed from what
+# `st.out` holds: the block in progress, then an empty stored block that
+# ends on a byte. Where `full`, no later repeat reaches before this point.
+# Aborts where `st` has ended.
+function flush(@st: State, full: bool)
+    assert !st.ended
+    advance(@st, to_end: true)
+
+    if st.pos > st.block_start || st.syms.len() > 0
+        write_block(@st, last: false)
+    empty: [u8] = []
+    blocks.write_stored(out: @st.out, @st.sink, data: empty, from: 0, to: 0, base: 0, last: false)
+
+    if full
+        st.floor @ st.pos
+        matcher.forget(@st.chains, from: st.pos)
+
+# Writes the last block and the wrapper's end: Adler-32 for zlib, CRC-32
+# and the size modulo 2^32 for gzip. Aborts where `st` has ended already.
+function finish(@st: State)
+    assert !st.ended
+    advance(@st, to_end: true)
+    write_block(@st, last: true)
+    bitout.align(@st.out, @st.sink)
+
+    if st.wrap == wrapping.ZLIB
+        bitout.put_big(@st.out, value: to_i64(st.check.value).must(), width: 4)
+    else if st.wrap == wrapping.GZIP
+        bitout.put_little(@st.out, value: to_i64(st.check.value).must(), width: 4)
+        bitout.put_little(@st.out, value: st.size & 0xffffffff, width: 4)
+    st.ended @ true
+
+# What `st` has written since this was last asked, handed out once.
+function take_out(@st: State) -> [u8]
+    out = st.out
+    st.out @ []
+    return out
+
+# The compressed bytes of `data` whole.
+function whole(data: [u8], wrap: i64, level: i64, strategy: i64) -> [u8]
+    st @= start(
+        wrap: wrap,
+        level: level,
+        strategy: strategy,
+        window_bits: 15,
+        dictionary: [],
+        gzip: wrapping.empty_gzip()
+    ).must()
+    feed(@st, more: data)
+    finish(@st)
+    return take_out(@st)
+
+test "whole: Python's bytes for an empty input, raw, zlib at level 6 and stored at level 0"
+    none: [u8] = []
+    assert whole(none, wrap: wrapping.RAW, level: 6, strategy: matcher.STANDARD) == [3, 0]
+    assert whole(none, wrap: wrapping.ZLIB, level: 6, strategy: matcher.STANDARD) == [0x78, 0x9c, 3, 0, 0, 0, 0, 1]
+    assert whole(none, wrap: wrapping.ZLIB, level: 0, strategy: matcher.STANDARD) == [0x78, 1, 1, 0, 0, 0xff, 0xff, 0, 0, 0, 1]
+    two: [u8] = [0x61, 0x62]
+    assert whole(two, wrap: wrapping.ZLIB, level: 0, strategy: matcher.STANDARD) == [0x78, 1, 1, 2, 0, 0xfd, 0xff, 0x61, 0x62, 1, 0x26, 0, 0xc4]
+
+test "whole: Python's gzip of hello at level 6"
+    hello: [u8] = [0x68, 0x65, 0x6c, 0x6c, 0x6f]
+    out = whole(hello, wrap: wrapping.GZIP, level: 6, strategy: matcher.STANDARD)
+    assert out.slice(from: 0, to: 10) == [0x1f, 0x8b, 8, 0, 0, 0, 0, 0, 0, 0xff]
+    assert out.slice(from: out.len() - 8, to: out.len()) == [0x86, 0xa6, 0x10, 0x36, 5, 0, 0, 0]
+
+test "start: a level, a window and a dictionary no compressor takes"
+    none: [u8] = []
+    g = wrapping.empty_gzip()
+
+    match start(wrap: wrapping.RAW, level: 10, strategy: matcher.STANDARD, window_bits: 15, dictionary: none, gzip: g)
+        .ok _  => assert false
+        .err e => assert e.msg == "a level of 10, where a level is 0 to 9"
+
+    match start(wrap: wrapping.RAW, level: -1, strategy: matcher.STANDARD, window_bits: 15, dictionary: none, gzip: g)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match start(wrap: wrapping.ZLIB, level: 6, strategy: matcher.STANDARD, window_bits: 8, dictionary: none, gzip: g)
+        .ok _  => assert false
+        .err e => assert e.msg == "a window of 2^8 bytes, where window_bits is 9 to 15"
+
+    match start(wrap: wrapping.GZIP, level: 6, strategy: matcher.STANDARD, window_bits: 15, dictionary: [1], gzip: g)
+        .ok _  => assert false
+        .err e => assert e.msg == "a dictionary for gzip, whose header has no place to name one"
+
+test "flush: Python's sync flush of abc ends on 00 00 ff ff"
+    st @= start(
+        wrap: wrapping.ZLIB,
+        level: 6,
+        strategy: matcher.STANDARD,
+        window_bits: 15,
+        dictionary: [],
+        gzip: wrapping.empty_gzip()
+    ).must()
+    feed(@st, more: [0x61, 0x62, 0x63])
+    flush(@st, full: false)
+    out = take_out(@st)
+    assert out.slice(from: out.len() - 4, to: out.len()) == [0, 0, 0xff, 0xff]
+    assert out == [0x78, 0x9c, 0x4a, 0x4c, 0x4a, 0x06, 0, 0, 0, 0xff, 0xff]

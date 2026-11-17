@@ -1,0 +1,161 @@
+# What the tests of `process` start: the system's own programs, named for each
+# platform, and a child's text with its line ends taken off. No program calls
+# it. On POSIX `/bin/sh` reads the scripts, `cat` copies its input to its
+# output and `sleep` waits; on Windows `cmd.exe` reads them, `sort` copies its
+# input (one line passes unchanged) and `ping` of 127.0.0.1 waits a second a
+# reply.
+
+use os
+use unicode
+
+# Whether the tests run on Windows.
+function on_windows() -> bool
+    return os.family() == .windows
+
+# A script that ends with the exit code `code`.
+function exit_script(code: i64) -> str
+    if on_windows()
+        return f"exit /b {code}"
+    return f"exit {code}"
+
+# A script that prints the variable `name`.
+function variable_script(name: str) -> str
+    if on_windows()
+        return f"echo %{name}%"
+    return f"echo \"${name}\""
+
+# A script that writes `word` to its error. `cmd.exe` writes the space
+# before a redirection or an `&&` as part of what `echo` prints, so there the
+# `echo` stands in parentheses that end its words.
+function error_script(word: str) -> str
+    if on_windows()
+        return f"(echo {word})1>&2"
+    return f"echo {word} 1>&2"
+
+# A script that writes `first` to its output, then `second` to its error.
+function both_script(first: str, second: str) -> str
+    if on_windows()
+        return f"(echo {first})&&(echo {second})1>&2"
+    return f"echo {first} && echo {second} 1>&2"
+
+# A script that writes bytes that are no text: the byte 255 by `printf` on
+# POSIX, and on Windows the shell's own program file, a program and no text,
+# by `type`.
+function no_text_script() -> str
+    if on_windows()
+        return "type %ComSpec%"
+    return "printf '\\377'"
+
+# The exit code a child `hero_proc_kill` ended reads: none, -1, on POSIX,
+# where SIGKILL ended it; on Windows, which has no signals, the code 1
+# `TerminateProcess` was given (`hero_proc.h`).
+function killed_code() -> i64
+    if on_windows()
+        return 1
+    return -1
+
+# The signal a child `hero_proc_kill` ended reads: SIGKILL, 9, on POSIX, and
+# 0 on Windows, which has none.
+function killed_signal() -> i64
+    if on_windows()
+        return 0
+    return 9
+
+# The program `shell` starts: `/bin/sh` on POSIX, and on Windows the one
+# `ComSpec` names, `cmd.exe` where it names none.
+function shell_program() -> str
+    if on_windows()
+        program = os.env("ComSpec").default("")
+
+        if program == ""
+            return "cmd.exe"
+        return program
+    return "/bin/sh"
+
+# The arguments that make `shell_program` run `script`, as `shell` passes
+# them.
+function shell_arguments(script: str) -> [str]
+    if on_windows()
+        return ["/d", "/s", "/c", script]
+    return ["-c", script]
+
+# The name a search of PATH finds the system's shell by.
+function shell_name() -> str
+    if on_windows()
+        return "cmd"
+    return "sh"
+
+# How the path that search answers ends.
+function shell_ending() -> str
+    if on_windows()
+        return "\\cmd.exe"
+    return "/sh"
+
+# Whether the paths `a` and `b` are written alike by the system's rules: byte
+# for byte on POSIX, and on Windows with a letter's two cases alike, since a
+# Windows folder answers to either and `cd` prints the case on the disk.
+function same_path(a: str, b: str) -> bool
+    if !on_windows()
+        return a == b
+    return lowered(a) == lowered(b)
+
+# `text` with every letter in its lower case.
+function lowered(text: str) -> str
+    kept: [str] @= []
+
+    for c in text.chars()
+        kept @ kept.push(unicode.to_lower(c))
+
+    return kept.join("")
+
+# A script that prints its working folder.
+function folder_script() -> str
+    if on_windows()
+        return "cd"
+    return "pwd"
+
+# A folder every system has: the system's root on Windows, `/bin` elsewhere.
+function a_folder() -> str
+    if on_windows()
+        return os.env("SystemRoot").default("C:\\Windows")
+    return "/bin"
+
+# The system's program that copies its input to its output, and ends when the
+# input does.
+function copier() -> str
+    if on_windows()
+        return "sort"
+    return "cat"
+
+# The system's program that waits.
+function sleeper() -> str
+    if on_windows()
+        return "ping"
+    return "sleep"
+
+# The arguments that make `sleeper` wait about `seconds`.
+function sleeper_arguments(seconds: i64) -> [str]
+    if on_windows()
+        return ["-n", f"{seconds + 1}", "127.0.0.1"]
+    return [f"{seconds}"]
+
+# `bytes` as text without the line ends after it, which are two bytes on
+# Windows.
+function line(bytes: [u8]) -> str
+    end: i64 @= bytes.len()
+
+    while end > 0 && (bytes[end - 1] == 10 || bytes[end - 1] == 13)
+        end @ end - 1
+
+    return bytes.slice(from: 0, to: end).validated_bytes().must()
+
+# `text` without its carriage returns, so a Windows child's lines read as
+# POSIX's.
+function unix_lines(text: str) -> str
+    kept: [str] @= []
+
+    for c in text.chars()
+        if c != "\r"
+            kept @ kept.push(c)
+
+    return kept.join("")

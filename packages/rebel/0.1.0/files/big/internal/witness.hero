@@ -1,0 +1,56 @@
+# The operands the face's tests hold to Python's answers: digits made by a
+# small generator that the Python side of each test runs the same way, and a
+# digest of the answers' text, so a test over numbers of thousands of digits
+# asserts one number. Only tests read this module.
+
+# The lengths in digits the generated operands take, from one to thousands.
+function sizes() -> [i64]
+    return [1, 2, 5, 9, 10, 19, 20, 50, 100, 300, 1000, 3000]
+
+# `count` decimal digits from the generator started at `seed`, the first not
+# zero.
+function digits(count: i64, seed: i64) -> str
+    out: [u8] @= []
+    state: i64 @= seed
+
+    while out.len() < count
+        state @ (state * 1103515245 + 12345) % 2147483648
+        d: i64 @= (state >> 16) % 10
+
+        if out.len() == 0 && d == 0
+            d @ 1
+        out @ out.push(to_u8(48 + d).must())
+
+    return out.validated_bytes().must()
+
+# `into` carried on over the bytes of `text`, modulo 1000000007.
+function digest(text: str, into: i64) -> i64
+    h: i64 @= into
+    at: i64 @= 0
+
+    while at < text.len()
+        h @ (h * 131 + to_i64(text[at]).must()) % 1000000007
+        at @ at + 1
+
+    return h
+
+# The bytes `b` as their numbers joined by commas, as Python writes them for
+# the same test.
+function bytes_text(b: [u8]) -> str
+    pieces: [str] @= []
+
+    for byte in b
+        pieces @ pieces.push(f"{byte}")
+
+    return pieces.join(",")
+
+## Tests
+
+test "digits and digest: a first digit never zero, the length asked, and a known digest"
+    assert digits(count: 5, seed: 1).len() == 5
+    assert digits(count: 1, seed: 0) != "0"
+    assert digest(text: "", into: 7) == 7
+    assert digest(text: "ab", into: 0) == 97 * 131 + 98
+    assert bytes_text([1, 255]) == "1,255"
+    nothing: [u8] = []
+    assert bytes_text(nothing) == ""

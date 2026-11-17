@@ -1,0 +1,126 @@
+# Entries written into a folder, every one first held to `safe`'s rules:
+# the place of each prepared (the folders on its way made, no link on its
+# way, a link already at the place itself removed rather than followed), a
+# file given a mode with no set-id, sticky or others' write bits, a link
+# made only where its target stays inside, a hard link only to a file
+# already inside. Owners are never set. What a refusal stops is the entry
+# and those after it; what was written before stays.
+
+use archive/internal/codes
+use archive/internal/safe
+use fs
+use io
+use time
+
+# The mode a file is written with: the archive's permission bits without
+# set-id, sticky, group write and others' write, and the owner able to read
+# and write it.
+function file_mode(mode: i64) -> i64
+    return mode & 0o755 | 0o600
+
+# The mode a folder is made with: as a file's, and the owner able to enter
+# it.
+function dir_mode(mode: i64) -> i64
+    return mode & 0o755 | 0o700
+
+# The place of the entry `name`, whose parts are `parts` below `root`,
+# made ready: the folders on its way made, a link already there removed.
+# Fails `invalid` where a link or a file stands on its way, and as `fs`
+# fails.
+function place(name: str, root: str, parts: [str]) -> str?
+    if parts.len() == 0
+        return codes.refused(name: name, why: "it names the folder itself")
+    safe.check_way(name: name, root: root, parts: parts)?
+
+    if parts.len() > 1
+        fs.make_dir_all(safe.joined(root, parts: parts.slice(from: 0, to: parts.len() - 1)))?
+    target = safe.joined(root, parts: parts)
+
+    match fs.link_info(target)
+        .err _ => _ = 0
+        .ok info =>
+            match info.kind
+                .link                       => fs.remove(target)?
+                .file | .directory | .other => _ = 0
+
+    return ok(target)
+
+# Opens the file at `target` to write, emptied or made, with `mode` made
+# safe.
+function open_file(target: str, mode: i64) -> io.Stream?
+    return fs.open_with(target, access: .write, permission: file_mode(mode))
+
+# Gives the file written at `target` its safe mode and its time.
+function finish_file(target: str, mode: i64, modified: time.Instant) -> ()?
+    fs.set_permission(target, permission: file_mode(mode))?
+    fs.set_times(target, written: modified, read: modified)?
+    return ok()
+
+# Makes the folder of `parts` below `root`, and answers its path. Fails as
+# `place` does.
+function make_dir(name: str, root: str, parts: [str]) -> str?
+    if parts.len() == 0
+        return ok(root)
+    safe.check_way(name: name, root: root, parts: parts)?
+    target = safe.joined(root, parts: parts)
+
+    match fs.link_info(target)
+        .ok info =>
+            match info.kind
+                .directory     => _ = 0
+                .link          => return codes.refused(name: name, why: f"\"{target}\" is a link already there")
+                .file | .other => return codes.refused(name: name, why: f"\"{target}\" is a file already there")
+        .err _ => fs.make_dir_all(target)?
+
+    return ok(target)
+
+# Makes the symbolic link `parts` below `root` with the target `link`.
+# Fails `invalid` where the target would lead outside, and as `fs` fails.
+function make_symlink(name: str, root: str, parts: [str], link: str) -> ()?
+    safe.check_link(name: name, parts: parts, target: link)?
+    target = place(name: name, root: root, parts: parts)?
+    fs.symlink(target: link, name: target)?
+    return ok()
+
+# Makes the hard link `parts` below `root` to the entry named `link`, a
+# file already inside. Fails `invalid` where `link` is not one, and as `fs`
+# fails.
+function make_hard_link(name: str, root: str, parts: [str], link: str) -> ()?
+    to_parts = safe.parts_of(link)?
+
+    if to_parts.len() == 0
+        return codes.refused(name: name, why: "it is a hard link to the folder itself")
+    safe.check_way(name: name, root: root, parts: to_parts)?
+    existing = safe.joined(root, parts: to_parts)
+
+    match fs.link_info(existing)
+        .err _ => return codes.refused(name: name, why: f"it is a hard link to \"{link}\", which is not in the folder")
+        .ok info =>
+            match info.kind
+                .file => _ = 0
+                .directory | .link | .other => return codes.refused(
+                    name: name,
+                    why: f"it is a hard link to \"{link}\", which is not a file"
+                )
+
+    target = place(name: name, root: root, parts: parts)?
+    fs.hard_link(existing: existing, name: target)?
+    return ok()
+
+# Gives each of `dirs` its time in `times`, the deepest first, once every
+# entry has been written: writing into a folder changes its time.
+function set_dir_times(dirs: [str], times: [time.Instant]) -> ()?
+    i: i64 @= dirs.len() - 1
+
+    while i >= 0
+        fs.set_times(dirs[i], written: times[i], read: times[i])?
+        i @ i - 1
+
+    return ok()
+
+test "file_mode and dir_mode: set-id, sticky and others' write dropped"
+    assert file_mode(0o4777) == 0o755
+    assert file_mode(0o000) == 0o600
+    assert file_mode(0o666) == 0o644
+    assert dir_mode(0o000) == 0o700
+    assert dir_mode(0o1777) == 0o755

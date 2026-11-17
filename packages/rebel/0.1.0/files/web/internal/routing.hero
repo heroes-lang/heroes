@@ -1,0 +1,347 @@
+# What a router keeps to route: each route's method, pattern, shape and name
+# beside the tree of their segments; the checks a route passes to be added;
+# the route that takes a method and a path; the methods a path allows; and
+# what a request no route takes is owed.
+
+use url
+use web/internal/patterns
+use web/internal/tree
+
+# The methods RFC 9110 defines, which a route of every method takes, sorted.
+function every_method() -> [str]
+    return ["CONNECT", "DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT", "TRACE"]
+
+# The routes of a router as `route` reads them, each by its index, the same
+# in every list.
+record Index
+    # Each route's method, "" for every method.
+    methods: [str]
+    # Each route's whole pattern, as written.
+    wholes: [str]
+    # Each route's pieces.
+    pieces: [[patterns.Piece]]
+    # Each route's shape, `patterns.shape`'s.
+    shapes: [str]
+    # Each route's name.
+    names: [str]
+    # The tree of every route's segments.
+    nodes: [tree.Node]
+
+# An index of no route.
+function empty() -> Index
+    return Index(methods: [], wholes: [], pieces: [], shapes: [], names: [], nodes: tree.empty())
+
+# Whether `s` is a token of RFC 9110, as a method is: letters, digits and
+# ``!#$%&'*+-.^_`|~``, not empty.
+function is_token(s: str) -> bool
+    if s == ""
+        return false
+
+    for i in range(from: 0, to: s.len())
+        c = s[i]
+        alnum = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+
+        if !alnum && !is_mark(c)
+            return false
+
+    return true
+
+# Whether `c` is one of the marks a token may hold beside letters and digits.
+function is_mark(c: u8) -> bool
+    for m in "!#$%&'*+-.^_`|~".chars()
+        if c == m[0]
+            return true
+
+    return false
+
+# Adds to `index` the route `name` of `method` ("" for every one) on the whole
+# pattern `whole`. Fails `invalid` where the pattern is no pattern or the name
+# is empty; `exists` where a route of that method and shape is there, or the
+# name stands on another pattern.
+function add(@index: Index, method: str, whole: str, name: str) -> ()?
+    if name == ""
+        return fail(code: "invalid", msg: f"the route of \"{whole}\" has an empty name")
+    pieces = patterns.parse(whole)?
+    shape = patterns.shape(pieces)
+
+    for i in range(from: 0, to: index.names.len())
+        if index.names[i] == name && index.wholes[i] != whole
+            return fail(
+                code: "exists",
+                msg: f"the name \"{name}\" stands on \"{index.wholes[i]}\" already, so it cannot name \"{whole}\""
+            )
+
+        if index.methods[i] == method && index.shapes[i] == shape
+            return fail(
+                code: "exists",
+                msg: f"{shown(method)} \"{whole}\" takes what {shown(method)} \"{index.wholes[i]}\" takes already"
+            )
+
+    at = index.names.len()
+    index.methods @ index.methods.push(method)
+    index.wholes @ index.wholes.push(whole)
+    index.pieces @ index.pieces.push(pieces)
+    index.shapes @ index.shapes.push(shape)
+    index.names @ index.names.push(name)
+    tree.insert(@index.nodes, pieces: pieces, route: at)
+    return ok()
+
+# A method as a message names it: "every method" for "".
+function shown(method: str) -> str
+    if method == ""
+        return "every method"
+    return method
+
+# Adds every route of `other` to `index`, or none where one fails as `add`
+# fails.
+function merge(@index: Index, other: Index) -> ()?
+    copy @= index
+
+    for i in range(from: 0, to: other.names.len())
+        add(@copy, method: other.methods[i], whole: other.wholes[i], name: other.names[i])?
+
+    index @ copy
+    return ok()
+
+# The index of the route that takes `method` on `segments`. Fails
+# `not_found` where none does.
+function route_of(index: Index, method: str, segments: [str]) -> i64?
+    for group in tree.matches(index.nodes, segments: segments)
+        exact: i64 @= -1
+        by_get: i64 @= -1
+        every: i64 @= -1
+
+        for i in group
+            m = index.methods[i]
+
+            if m == method && exact < 0
+                exact @ i
+            else if m == "GET" && method == "HEAD" && by_get < 0
+                by_get @ i
+            else if m == "" && every < 0
+                every @ i
+
+        if exact >= 0
+            return ok(exact)
+
+        if by_get >= 0
+            return ok(by_get)
+
+        if every >= 0
+            return ok(every)
+
+    return fail(code: "not_found", msg: f"no route takes {method} {url.format_path(segments)}")
+
+# The methods the routes matching `segments` take, sorted by their bytes:
+# `HEAD` where `GET` is, `OPTIONS` where any is; none where no route matches.
+function allowed(index: Index, segments: [str]) -> [str]
+    seen: {str: bool} @= {}
+
+    for group in tree.matches(index.nodes, segments: segments)
+        for i in group
+            if index.methods[i] == ""
+                for m in every_method()
+                    seen[m] @ true
+            else
+                seen[index.methods[i]] @ true
+
+    if keys(seen).len() == 0
+        return []
+
+    if seen["GET"].default(false)
+        seen["HEAD"] @ true
+    seen["OPTIONS"] @ true
+    return sort(keys(seen))
+
+# Every method a route of `index` takes, as `allowed` writes them: what
+# `OPTIONS *` is answered.
+function every_allowed(index: Index) -> [str]
+    seen: {str: bool} @= {}
+
+    for m in index.methods
+        if m == ""
+            for e in every_method()
+                seen[e] @ true
+        else
+            seen[m] @ true
+
+    if seen["GET"].default(false)
+        seen["HEAD"] @ true
+    seen["OPTIONS"] @ true
+    return sort(keys(seen))
+
+# What a request no route takes is owed, before its body is written.
+record Miss
+    # The status: 204, 308, 400, 404 or 405.
+    status: i64
+    # The methods for `Allow`, for 204 and 405; none else.
+    allow: [str]
+    # The path and query for `Location`, for 308; "" else.
+    location: str
+
+# What the request of `method` on the raw `path` and `query` is owed where
+# `route_of` found no route: see the face's `not_routed`.
+function miss(index: Index, method: str, path: str, query: str, redirect_slash: bool) -> Miss
+    if path == "*"
+        if method == "OPTIONS"
+            return Miss(status: 204, allow: every_allowed(index), location: "")
+        return Miss(status: 404, allow: [], location: "")
+
+    if path != "" && path[0] != '/'
+        return Miss(status: 404, allow: [], location: "")
+
+    segments = match url.parse_path(path)
+        .ok got => at_least_root(got)
+        .err _  => return Miss(status: 400, allow: [], location: "")
+
+    if !patterns.is_clean(segments)
+        return Miss(
+            status: 308,
+            allow: [],
+            location: with_query(path: url.format_path(patterns.cleaned(segments)), query: query)
+        )
+    allow = allowed(index, segments: segments)
+
+    if allow.len() > 0 && method == "OPTIONS"
+        return Miss(status: 204, allow: allow, location: "")
+
+    if allow.len() > 0
+        return Miss(status: 405, allow: allow, location: "")
+
+    if redirect_slash
+        other = toggled(segments)
+
+        if other.len() > 0 && !route_of(index, method: method, segments: other).is_err()
+            return Miss(status: 308, allow: [], location: with_query(path: url.format_path(other), query: query))
+    return Miss(status: 404, allow: [], location: "")
+
+# The segments of a path that has none, "", read as the root's.
+function at_least_root(segments: [str]) -> [str]
+    if segments.len() == 0
+        return [""]
+    return segments
+
+# `segments` with a last empty segment taken away, or added where there is
+# none; none for the root, which has no other form.
+function toggled(segments: [str]) -> [str]
+    n = segments.len()
+
+    if n == 1 && segments[0] == ""
+        return []
+
+    if segments[n - 1] == ""
+        return segments.slice(from: 0, to: n - 1)
+    return segments.push("")
+
+# `path` with `?` and `query` after it where `query` is not empty.
+function with_query(path: str, query: str) -> str
+    if query == ""
+        return path
+    return path + "?" + query
+
+# An index of `list`, pairs of a method and a pattern, each named by its
+# place: "r0", "r1" and on.
+function index_of_pairs(list: [[str]]) -> Index
+    out @= empty()
+
+    for i in range(from: 0, to: list.len())
+        add(@out, method: list[i][0], whole: list[i][1], name: f"r{i}").must()
+
+    return out
+
+test "is_token: methods, an empty text, a space, a character above ASCII"
+    assert is_token("GET") && is_token("M-SEARCH") && is_token("x~y")
+    assert !is_token("") && !is_token("G T") && !is_token("GÉT") && !is_token("a:b")
+
+test "is_mark: each mark, and a colon"
+    assert is_mark('!') && is_mark('~') && is_mark('`') && !is_mark(':') && !is_mark('a')
+
+test "add: the same shape refused for one method, taken for another, a name on two patterns refused"
+    x @= empty()
+    add(@x, method: "GET", whole: "/u/:id", name: "u").must()
+    add(@x, method: "DELETE", whole: "/u/:id", name: "u").must()
+
+    match add(@x, method: "GET", whole: "/u/:name", name: "other")
+        .ok _  => assert false
+        .err e => assert e.code == "exists"
+
+    match add(@x, method: "POST", whole: "/v", name: "u")
+        .ok _  => assert false
+        .err e => assert e.code == "exists"
+
+    match add(@x, method: "GET", whole: "/w", name: "")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert x.names == ["u", "u"]
+
+test "add: a route of every method beside one of GET on one shape"
+    x @= empty()
+    add(@x, method: "GET", whole: "/a", name: "a").must()
+    add(@x, method: "", whole: "/a", name: "a").must()
+    assert x.methods == ["GET", ""]
+
+test "shown: a method, and every method"
+    assert shown("GET") == "GET" && shown("") == "every method"
+
+test "merge: all or none"
+    x @= index_of_pairs([["GET", "/a"]])
+    y = index_of_pairs([["GET", "/b"], ["GET", "/a"]])
+    assert merge(index: @x, other: y).is_err() && x.names.len() == 1
+    z @= empty()
+    add(@z, method: "POST", whole: "/c", name: "c").must()
+    merge(index: @x, other: z).must()
+    assert x.wholes == ["/a", "/c"]
+
+test "route_of: the exact method, GET for HEAD, every method last, none"
+    x = index_of_pairs([["", "/a"], ["GET", "/a"], ["PUT", "/a"]])
+    assert route_of(x, method: "PUT", segments: ["a"]).must() == 2
+    assert route_of(x, method: "HEAD", segments: ["a"]).must() == 1
+    assert route_of(x, method: "PATCH", segments: ["a"]).must() == 0
+    assert route_of(x, method: "GET", segments: ["b"]).is_err()
+
+test "route_of: a method on a later shape where the first shape lacks it"
+    x = index_of_pairs([["GET", "/users/new"], ["POST", "/users/:id"]])
+    assert route_of(x, method: "POST", segments: ["users", "new"]).must() == 1
+
+test "allowed: none, sorted with HEAD and OPTIONS, every method"
+    x = index_of_pairs([["GET", "/users/:id"], ["DELETE", "/users/:id"], ["", "/any"]])
+    assert allowed(x, segments: ["nothing"]).len() == 0
+    assert allowed(x, segments: ["users", "7"]) == ["DELETE", "GET", "HEAD", "OPTIONS"]
+    assert allowed(x, segments: ["any"]).len() == 9
+
+test "every_allowed: the methods of every route"
+    assert every_allowed(index_of_pairs([["POST", "/a"], ["GET", "/b"]])) == ["GET", "HEAD", "OPTIONS", "POST"]
+    assert every_allowed(empty()) == ["OPTIONS"]
+
+test "miss: 404, 405, OPTIONS, OPTIONS *, a dirty path, a bad escape"
+    x = index_of_pairs([["GET", "/users/:id"], ["POST", "/items"]])
+    assert miss(x, method: "GET", path: "/nothing", query: "", redirect_slash: false).status == 404
+    no = miss(x, method: "PUT", path: "/users/7", query: "", redirect_slash: false)
+    assert no.status == 405 && no.allow == ["GET", "HEAD", "OPTIONS"]
+    assert miss(x, method: "OPTIONS", path: "/items", query: "", redirect_slash: false).status == 204
+    star = miss(x, method: "OPTIONS", path: "*", query: "", redirect_slash: false)
+    assert star.status == 204 && star.allow == ["GET", "HEAD", "OPTIONS", "POST"]
+    dirty = miss(x, method: "GET", path: "/a/../users/7", query: "q=1", redirect_slash: false)
+    assert dirty.status == 308 && dirty.location == "/users/7?q=1"
+    assert miss(x, method: "GET", path: "//users/7", query: "", redirect_slash: false).location == "/users/7"
+    assert miss(x, method: "GET", path: "/a%zz", query: "", redirect_slash: false).status == 400
+
+test "miss: a slash added or taken away only where asked and a route takes it"
+    x = index_of_pairs([["GET", "/a/"], ["GET", "/b"]])
+    assert miss(x, method: "GET", path: "/a", query: "", redirect_slash: false).status == 404
+    assert miss(x, method: "GET", path: "/a", query: "", redirect_slash: true).location == "/a/"
+    assert miss(x, method: "GET", path: "/b/", query: "x", redirect_slash: true).location == "/b?x"
+    assert miss(x, method: "POST", path: "/b/", query: "", redirect_slash: true).status == 404
+
+test "at_least_root: none, and some"
+    assert at_least_root([]) == [""] && at_least_root(["a"]) == ["a"]
+
+test "toggled: the root, a last slash, none"
+    assert toggled([""]).len() == 0 && toggled(["a", ""]) == ["a"] && toggled(["a"]) == ["a", ""]
+
+test "every_method: the nine of RFC 9110, sorted"
+    assert every_method().len() == 9 && sort(every_method()) == every_method()
+
+test "with_query: none and one"
+    assert with_query(path: "/a", query: "") == "/a" && with_query(path: "/a", query: "b=1") == "/a?b=1"

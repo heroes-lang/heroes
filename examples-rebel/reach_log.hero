@@ -1,0 +1,21 @@
+# Reaches Rebel's `log`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes two lines to the standard error,
+# one in each form, and a debug line its logger does not write.
+
+use <rebel>/io
+use <rebel>/log
+
+function main()
+    logger = log.with_fields(log.to(io.stderr()), fields: [log.text(key: "program", value: "reach_log")])
+
+    match log.info(logger, "started", [log.integer(key: "lines", value: 2)])
+        .ok _  => _ = 0
+        .err e => print(e.msg)
+
+    match log.debug(logger, "not written", [])
+        .ok _  => _ = 0
+        .err e => print(e.msg)
+
+    match log.warn(log.with_form(logger, form: .json), "ending", [log.boolean(key: "clean", value: true)])
+        .ok _  => _ = 0
+        .err e => print(e.msg)

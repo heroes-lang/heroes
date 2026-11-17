@@ -1,0 +1,512 @@
+# Shell completions made from a declaration: a script for bash, zsh or fish
+# that finds which command, at any depth of subcommands, the words typed so
+# far have chosen, skipping each option's value, and offers that command's
+# options, its subcommands, the words of a choice, or the names of files
+# where a value is text. Every name is quoted for its shell, so no name a
+# declaration holds can break the script; hidden arguments are not offered.
+
+use flags/internal/decl
+use strings
+
+# A shell a script is made for.
+constant BASH: i64
+    0
+
+# A shell a script is made for.
+constant ZSH: i64
+    1
+
+# A shell a script is made for.
+constant FISH: i64
+    2
+
+# One command of a declaration and the words that reach it.
+record Scope
+    # Its name and its parents', as the usage writes them: `tool remote add`.
+    path: str
+    # Its declaration.
+    spec: decl.Spec
+
+# Every command of `root`, itself first, each before its subcommands.
+function scopes_of(root: decl.Spec) -> [Scope]
+    found: [Scope] @= []
+    work: [Scope] @= [Scope(path: root.name, spec: root)]
+
+    while work.len() > 0
+        here = work[work.len() - 1]
+        work @ work.slice(from: 0, to: work.len() - 1)
+        found @ found.push(here)
+        subs = here.spec.subs
+
+        for k in range(from: 0, to: subs.len())
+            back = subs[subs.len() - 1 - k]
+            work @ work.push(Scope(path: here.path + " " + back.name, spec: back))
+
+    return found
+
+# `name` with every byte that is not an ASCII letter, digit or `_` made `_`,
+# for the name of a shell function.
+function function_name(name: str) -> str
+    kept: [str] @= []
+
+    for c in name.chars()
+        b = c[0]
+
+        if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+            kept @ kept.push(c)
+        else
+            kept @ kept.push("_")
+
+    return "_" + kept.join("")
+
+# `s` in single quotes as bash and zsh read it.
+function sh_quote(s: str) -> str
+    return "'" + strings.replace_all(s: s, old: "'", new: "'\\''") + "'"
+
+# `s` in single quotes as fish reads it.
+function fish_quote(s: str) -> str
+    escaped = strings.replace_all(s: strings.replace_all(s: s, old: "\\", new: "\\\\"), old: "'", new: "\\'")
+    return "'" + escaped + "'"
+
+# `s` as one word of a fish list, its spaces and specials escaped.
+function fish_word(s: str) -> str
+    kept: [str] @= []
+
+    for c in s.chars()
+        if strings.contains_any(s: c, set: " \t\"'\\$*?~#()[]{}<>&|;")
+            kept @ kept.push("\\" + c)
+        else
+            kept @ kept.push(c)
+
+    return kept.join("")
+
+# Every spelling of the options `spec` offers: `-h`, `--help`, `-V`,
+# `--version`, each option's short and long names, its negation and its
+# aliases; hidden ones left out.
+function spellings(spec: decl.Spec lent) -> [str]
+    words: [str] @= []
+
+    if spec.help
+        words @ words.push("-h")
+        words @ words.push("--help")
+
+    if spec.version != ""
+        words @ words.push("-V")
+        words @ words.push("--version")
+
+    for w in spec.wants
+        if !w.positional && !w.hidden
+            for name in names_of(w)
+                words @ words.push(name)
+
+            if w.negatable
+                words @ words.push("--no-" + w.long)
+
+    return words
+
+# The spellings that name the option `w`: its short, its long and its
+# aliases.
+function names_of(w: decl.Want) -> [str]
+    names: [str] @= []
+
+    if w.short != ""
+        names @ names.push("-" + w.short)
+
+    if w.long != ""
+        names @ names.push("--" + w.long)
+
+    for alias in w.aliases
+        names @ names.push("--" + alias)
+
+    for alias in w.short_aliases
+        names @ names.push("-" + alias)
+
+    return names
+
+# Whether `w` takes the next word as its value.
+function takes_next(w: decl.Want) -> bool
+    return !w.positional && w.takes_value && w.missing.len() == 0
+
+# Whether a positional of `spec` takes text, so that files are offered.
+function wants_files(spec: decl.Spec lent) -> bool
+    for w in spec.wants
+        if w.positional && !w.hidden && w.kind == decl.TEXT
+            return true
+
+    return false
+
+# The words of every positional of `spec` that is a choice.
+function positional_words(spec: decl.Spec lent) -> [str]
+    words: [str] @= []
+
+    for w in spec.wants
+        if w.positional && !w.hidden && w.kind == decl.CHOICE
+            for c in w.choices
+                words @ words.push(c)
+
+    return words
+
+# Every name a subcommand of `spec` is chosen by, its aliases included.
+function sub_words(spec: decl.Spec lent) -> [str]
+    words: [str] @= []
+
+    for s in spec.subs
+        if !s.hidden
+            words @ words.push(s.name)
+
+    return words
+
+# `words` each quoted by `quote` and joined by spaces.
+function quoted_all(words: [str], fish: bool) -> str
+    quoted: [str] @= []
+
+    for w in words
+        if fish
+            quoted @ quoted.push(fish_quote(w))
+        else
+            quoted @ quoted.push(sh_quote(w))
+
+    return quoted.join(" ")
+
+# The case pattern of bash and zsh matching the scope `path` and the word
+# `word`, a tab between them.
+function pattern(path: str, word: str) -> str
+    return sh_quote(path) + "$'\\t'" + sh_quote(word)
+
+# The lines of the walk, for bash and zsh, that move the scope into a
+# subcommand or past an option's value.
+function walk_cases(scopes: [Scope]) -> [str]
+    lines: [str] @= []
+
+    for scope in scopes
+        for s in scope.spec.subs
+            target = sh_quote(scope.path + " " + s.name)
+            names: [str] @= [s.name]
+
+            for alias in s.aliases
+                names @ names.push(alias)
+
+            for name in names
+                lines @ lines.push("            " + pattern(path: scope.path, word: name) + ") scope=" + target + " ;;")
+
+        for w in scope.spec.wants
+            if takes_next(w)
+                for name in names_of(w)
+                    lines @ lines.push("            " + pattern(path: scope.path, word: name) + ") i=$((i + 1)) ;;")
+
+    return lines
+
+# The script for bash.
+function bash_script(root: decl.Spec) -> str
+    scopes = scopes_of(root)
+    entry = function_name(root.name)
+    lines: [str] @= [
+        f"# bash completion for {root.name}, made from its declaration by Rebel's flags."
+        ""
+        entry + "_offer() {"
+        "    local word"
+        "    for word in \"$@\"; do"
+        "        if [[ \"$word\" == \"$cur\"* ]]; then"
+        "            COMPREPLY+=(\"$word\")"
+        "        fi"
+        "    done"
+        "}"
+        ""
+        entry + "_files() {"
+        "    local IFS=$'\\n'"
+        "    COMPREPLY+=($(compgen -f -- \"$cur\"))"
+        "}"
+        ""
+        entry + "() {"
+        "    local cur=\"${COMP_WORDS[COMP_CWORD]}\""
+        "    local prev=\"\""
+        "    local scope=" + sh_quote(root.name)
+        "    local i"
+        "    COMPREPLY=()"
+        "    if [[ $COMP_CWORD -gt 0 ]]; then prev=\"${COMP_WORDS[COMP_CWORD-1]}\"; fi"
+        "    for ((i = 1; i < COMP_CWORD; i++)); do"
+        "        case \"$scope\"$'\\t'\"${COMP_WORDS[i]}\" in"
+    ]
+
+    for line in walk_cases(scopes)
+        lines @ lines.push(line)
+
+    lines @ lines.push("        esac")
+    lines @ lines.push("    done")
+    lines @ lines.push("    case \"$scope\"$'\\t'\"$prev\" in")
+
+    for scope in scopes
+        for w in scope.spec.wants
+            if takes_next(w)
+                cases: [str] @= []
+
+                for name in names_of(w)
+                    cases @ cases.push(pattern(path: scope.path, word: name))
+
+                action: str @= "return 0"
+
+                if w.kind == decl.CHOICE
+                    action @ entry + "_offer " + quoted_all(w.choices, false) + "; return 0"
+                else if w.kind == decl.TEXT
+                    action @ entry + "_files; return 0"
+                lines @ lines.push("        " + cases.join("|") + ") " + action + " ;;")
+
+    lines @ lines.push("    esac")
+    lines @ lines.push("    case \"$scope\" in")
+
+    for scope in scopes
+        lines @ lines.push("        " + sh_quote(scope.path) + ")")
+        lines @ lines.push("            if [[ \"$cur\" == -* ]]; then")
+        lines @ lines.push("                " + entry + "_offer " + quoted_all(spellings(scope.spec), false))
+        lines @ lines.push("            else")
+        lines @ lines.push(
+            "                " + entry + "_offer " + quoted_all(sub_words(scope.spec), false) + " " + quoted_all(positional_words(scope.spec), false)
+        )
+
+        if wants_files(scope.spec)
+            lines @ lines.push("                " + entry + "_files")
+        lines @ lines.push("            fi")
+        lines @ lines.push("            ;;")
+
+    lines @ lines.push("    esac")
+    lines @ lines.push("}")
+    lines @ lines.push("")
+    lines @ lines.push("complete -F " + entry + " " + sh_quote(root.name))
+    return lines.join("\n") + "\n"
+
+# The script for zsh.
+function zsh_script(root: decl.Spec) -> str
+    scopes = scopes_of(root)
+    entry = function_name(root.name)
+    lines: [str] @= [
+        "#compdef " + root.name
+        f"# zsh completion for {root.name}, made from its declaration by Rebel's flags."
+        ""
+        entry + "() {"
+        "    local cur=\"${words[CURRENT]}\""
+        "    local prev=\"${words[CURRENT-1]}\""
+        "    local scope=" + sh_quote(root.name)
+        "    local i"
+        "    for ((i = 2; i < CURRENT; i++)); do"
+        "        case \"$scope\"$'\\t'\"${words[i]}\" in"
+    ]
+
+    for line in walk_cases(scopes)
+        lines @ lines.push(line)
+
+    lines @ lines.push("        esac")
+    lines @ lines.push("    done")
+    lines @ lines.push("    case \"$scope\"$'\\t'\"$prev\" in")
+
+    for scope in scopes
+        for w in scope.spec.wants
+            if takes_next(w)
+                cases: [str] @= []
+
+                for name in names_of(w)
+                    cases @ cases.push(pattern(path: scope.path, word: name))
+
+                action: str @= "return 1"
+
+                if w.kind == decl.CHOICE
+                    action @ "compadd -- " + quoted_all(w.choices, false) + "; return"
+                else if w.kind == decl.TEXT
+                    action @ "_files; return"
+                lines @ lines.push("        " + cases.join("|") + ") " + action + " ;;")
+
+    lines @ lines.push("    esac")
+    lines @ lines.push("    case \"$scope\" in")
+
+    for scope in scopes
+        lines @ lines.push("        " + sh_quote(scope.path) + ")")
+        lines @ lines.push("            if [[ \"$cur\" == -* ]]; then")
+        lines @ lines.push("                compadd -- " + quoted_all(spellings(scope.spec), false))
+        lines @ lines.push("            else")
+        lines @ lines.push(
+            "                compadd -- " + quoted_all(sub_words(scope.spec), false) + " " + quoted_all(positional_words(scope.spec), false)
+        )
+
+        if wants_files(scope.spec)
+            lines @ lines.push("                _files")
+        lines @ lines.push("            fi")
+        lines @ lines.push("            ;;")
+
+    lines @ lines.push("    esac")
+    lines @ lines.push("}")
+    lines @ lines.push("")
+    lines @ lines.push("if [ \"$funcstack[1]\" = " + sh_quote(entry) + " ]; then")
+    lines @ lines.push("    " + entry + " \"$@\"")
+    lines @ lines.push("else")
+    lines @ lines.push("    compdef " + entry + " " + sh_quote(root.name))
+    lines @ lines.push("fi")
+    return lines.join("\n") + "\n"
+
+# The script for fish.
+function fish_script(root: decl.Spec) -> str
+    scopes = scopes_of(root)
+    entry = "_" + function_name(root.name)
+    command = fish_quote(root.name)
+    lines: [str] @= [
+        f"# fish completion for {root.name}, made from its declaration by Rebel's flags."
+        ""
+        "function " + entry + "_scope"
+        "    set -l scope " + fish_quote(root.name)
+        "    set -l skip 0"
+        "    for token in (commandline -opc)[2..-1]"
+        "        if test $skip -eq 1"
+        "            set skip 0"
+        "            continue"
+        "        end"
+    ]
+
+    for scope in scopes
+        for s in scope.spec.subs
+            names: [str] @= [s.name]
+
+            for alias in s.aliases
+                names @ names.push(alias)
+
+            for name in names
+                lines @ lines.push(
+                    "        if test \"$scope\" = " + fish_quote(scope.path) + "; and test \"$token\" = " + fish_quote(name)
+                )
+                lines @ lines.push("            set scope " + fish_quote(scope.path + " " + s.name))
+                lines @ lines.push("            continue")
+                lines @ lines.push("        end")
+
+        for w in scope.spec.wants
+            if takes_next(w)
+                for name in names_of(w)
+                    lines @ lines.push(
+                        "        if test \"$scope\" = " + fish_quote(scope.path) + "; and test \"$token\" = " + fish_quote(name)
+                    )
+                    lines @ lines.push("            set skip 1")
+                    lines @ lines.push("        end")
+
+    lines @ lines.push("    end")
+    lines @ lines.push("    echo $scope")
+    lines @ lines.push("end")
+    lines @ lines.push("")
+    lines @ lines.push("function " + entry + "_in")
+    lines @ lines.push("    test (" + entry + "_scope) = $argv[1]")
+    lines @ lines.push("end")
+    lines @ lines.push("")
+    lines @ lines.push("complete -c " + command + " -f")
+
+    for scope in scopes
+        when = "-n " + fish_quote(entry + "_in " + fish_quote(scope.path))
+        spec = scope.spec
+
+        if spec.help
+            lines @ lines.push("complete -c " + command + " " + when + " -s h -l help -d 'show this help'")
+
+        if spec.version != ""
+            lines @ lines.push("complete -c " + command + " " + when + " -s V -l version -d 'show the version'")
+
+        for w in spec.wants
+            if !w.positional && !w.hidden
+                names: [str] @= []
+
+                if w.short != ""
+                    names @ names.push("-s " + fish_quote(w.short))
+
+                if w.long != ""
+                    names @ names.push("-l " + fish_quote(w.long))
+
+                for alias in w.aliases
+                    names @ names.push("-l " + fish_quote(alias))
+
+                for alias in w.short_aliases
+                    names @ names.push("-s " + fish_quote(alias))
+
+                value: str @= ""
+
+                if takes_next(w)
+                    if w.kind == decl.CHOICE
+                        words: [str] @= []
+
+                        for c in w.choices
+                            words @ words.push(fish_word(c))
+
+                        value @ " -x -a " + fish_quote(words.join(" "))
+                    else if w.kind == decl.TEXT
+                        value @ " -r -F"
+                    else
+                        value @ " -x"
+                lines @ lines.push(
+                    "complete -c " + command + " " + when + " " + names.join(" ") + value + " -d " + fish_quote(w.help)
+                )
+
+                if w.negatable
+                    lines @ lines.push(
+                        "complete -c " + command + " " + when + " -l " + fish_quote("no-" + w.long) + " -d " + fish_quote(w.help)
+                    )
+
+        for s in spec.subs
+            if s.hidden
+                continue
+            lines @ lines.push(
+                "complete -c " + command + " " + when + " -a " + fish_quote(fish_word(s.name)) + " -d " + fish_quote(first_line(s.about))
+            )
+
+        words = positional_words(spec)
+
+        if words.len() > 0
+            escaped: [str] @= []
+
+            for w in words
+                escaped @ escaped.push(fish_word(w))
+
+            lines @ lines.push("complete -c " + command + " " + when + " -a " + fish_quote(escaped.join(" ")))
+
+        if wants_files(spec)
+            lines @ lines.push("complete -c " + command + " " + when + " -F")
+
+    return lines.join("\n") + "\n"
+
+# The first line of `text`.
+function first_line(text: str) -> str
+    match strings.index_of(s: text, substr: "\n")
+        .ok at => return text.slice(from: 0, to: at)
+        .err _ => return text
+
+# The script for `shell`, one of `BASH`, `ZSH` and `FISH`.
+function script(root: decl.Spec, shell: i64) -> str
+    if shell == BASH
+        return bash_script(root)
+
+    if shell == ZSH
+        return zsh_script(root)
+    return fish_script(root)
+
+test "function_name and the quotes: a dash, a dot, a quote and a backslash"
+    assert function_name("my-tool.v2") == "_my_tool_v2"
+    assert sh_quote("it's") == "'it'\\''s'"
+    assert fish_quote("it's \\") == "'it\\'s \\\\'"
+    assert fish_word("a b$") == "a\\ b\\$"
+
+test "scopes_of: subcommands nested three deep, each after its parent"
+    leaf = decl.new_spec(name: "add", about: "")
+    middle @= decl.new_spec(name: "remote", about: "")
+    decl.add_sub(spec: @middle, sub: leaf)
+    root @= decl.new_spec(name: "git", about: "")
+    decl.add_sub(spec: @root, sub: middle)
+    decl.add_sub(spec: @root, sub: decl.new_spec(name: "init", about: ""))
+    paths: [str] @= []
+
+    for s in scopes_of(root)
+        paths @ paths.push(s.path)
+
+    assert paths == ["git", "git remote", "git remote add", "git init"]
+
+test "spellings: help, version, short, long, negation and alias, a hidden option left out"
+    s @= decl.new_spec(name: "t", about: "")
+    s.version @ "1.0"
+    color @= decl.flag_want(long: "color", short: "c", help: "")
+    color.negatable @ true
+    color.aliases @ ["colour"]
+    decl.add_want(@s, color)
+    secret @= decl.flag_want(long: "secret", short: "", help: "")
+    secret.hidden @ true
+    decl.add_want(@s, secret)
+    assert spellings(s) == ["-h", "--help", "-V", "--version", "-c", "--color", "--colour", "--no-color"]

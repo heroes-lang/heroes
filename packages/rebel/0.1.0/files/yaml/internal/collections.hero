@@ -1,0 +1,283 @@
+# The collections of a YAML stream read as events: a block list's elements, a
+# list whose `-` stands at its map's column, a block map's keys and values, a
+# flow list with the maps of one pair written in it, and a flow map. Each
+# function reads the next entry or the end of one collection and leaves the
+# entry's node to the parser's state machine.
+
+use yaml/internal/event
+use yaml/internal/machine
+use yaml/internal/scanner
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# The next element of a block list, or its end.
+function block_seq(tokens: [token.Token] lent, text: str, @p: machine.Parsing, @states: [i64], @events: [event.Event]) -> ()?
+    indentless = p.state == machine.INDENTLESS_SEQ_ENTRY
+    t = tokens[p.i]
+
+    if t.kind == token.BLOCK_ENTRY
+        p.i @ p.i + 1
+        n = tokens[p.i].kind
+        ends = n == token.BLOCK_ENTRY || n == token.BLOCK_END || indentless && (n == token.KEY || n == token.VALUE)
+
+        if ends
+            events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+        else
+            machine.push_state(@states, @p, p.state)
+            p.state @ machine.BLOCK_NODE
+        return ok()
+
+    if indentless
+        events @ events.push(event.closing(kind: event.SEQ_END, at: t.at))
+        machine.pop_state(states, @p)
+        return ok()
+
+    if t.kind != token.BLOCK_END
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: t.at, what: "`-`, which begins the list's next element, or a line indented less, which ends the list")
+        )
+    p.i @ p.i + 1
+    events @ events.push(event.closing(kind: event.SEQ_END, at: t.at))
+    machine.pop_state(states, @p)
+    return ok()
+
+# A block map's next key, its value, or its end.
+function block_map(tokens: [token.Token] lent, text: str, @p: machine.Parsing, @states: [i64], @events: [event.Event]) -> ()?
+    t = tokens[p.i]
+
+    if p.state == machine.BLOCK_MAP_VALUE
+        p.state @ machine.BLOCK_MAP_KEY
+
+        if t.kind == token.VALUE
+            p.i @ p.i + 1
+            n = tokens[p.i].kind
+
+            if n != token.KEY && n != token.VALUE && n != token.BLOCK_END
+                machine.push_state(@states, @p, machine.BLOCK_MAP_KEY)
+                p.state @ machine.BLOCK_NODE_OR_INDENTLESS
+                return ok()
+        events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+        return ok()
+
+    if t.kind == token.KEY
+        p.i @ p.i + 1
+        n = tokens[p.i].kind
+        p.state @ machine.BLOCK_MAP_VALUE
+
+        if n != token.KEY && n != token.VALUE && n != token.BLOCK_END
+            machine.push_state(@states, @p, machine.BLOCK_MAP_VALUE)
+            p.state @ machine.BLOCK_NODE_OR_INDENTLESS
+        else
+            events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+        return ok()
+
+    if t.kind == token.VALUE
+        p.state @ machine.BLOCK_MAP_VALUE
+        events @ events.push(event.empty(at: t.at, anchor: "", tag: ""))
+        return ok()
+
+    if t.kind != token.BLOCK_END
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: t.at, what: "a key of the map and its `:`, or a line indented less, which ends the map")
+        )
+    p.i @ p.i + 1
+    events @ events.push(event.closing(kind: event.MAP_END, at: t.at))
+    machine.pop_state(states, @p)
+    return ok()
+
+# A flow list's next element, the parts of a map of one pair written as one,
+# or the list's end.
+function flow_seq(tokens: [token.Token] lent, text: str, @p: machine.Parsing, @states: [i64], @events: [event.Event]) -> ()?
+    st = p.state
+    t = tokens[p.i]
+
+    if st == machine.FLOW_SEQ_PAIR_KEY
+        p.state @ machine.FLOW_SEQ_PAIR_VALUE
+
+        if t.kind != token.VALUE && t.kind != token.FLOW_ENTRY && t.kind != token.FLOW_SEQ_END
+            machine.push_state(@states, @p, machine.FLOW_SEQ_PAIR_VALUE)
+            p.state @ machine.FLOW_NODE
+        else
+            events @ events.push(event.empty(at: t.at, anchor: "", tag: ""))
+        return ok()
+
+    if st == machine.FLOW_SEQ_PAIR_VALUE
+        p.state @ machine.FLOW_SEQ_PAIR_END
+
+        if t.kind == token.VALUE
+            p.i @ p.i + 1
+            n = tokens[p.i].kind
+
+            if n != token.FLOW_ENTRY && n != token.FLOW_SEQ_END
+                machine.push_state(@states, @p, machine.FLOW_SEQ_PAIR_END)
+                p.state @ machine.FLOW_NODE
+                return ok()
+        events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+        return ok()
+
+    if st == machine.FLOW_SEQ_PAIR_END
+        events @ events.push(event.closing(kind: event.MAP_END, at: t.at))
+        p.state @ machine.FLOW_SEQ_ENTRY
+        return ok()
+
+    if t.kind != token.FLOW_SEQ_END
+        if st == machine.FLOW_SEQ_ENTRY
+            if t.kind != token.FLOW_ENTRY
+                return fail(
+                    code: INVALID,
+                    msg: source.expected(text: text, at: t.at, what: "`,` or the `]` that ends the list")
+                )
+            p.i @ p.i + 1
+        u = tokens[p.i]
+
+        if u.kind == token.KEY
+            events @ events.push(event.opening(kind: event.MAP_START, at: u.at, anchor: "", tag: ""))
+            p.i @ p.i + 1
+            p.state @ machine.FLOW_SEQ_PAIR_KEY
+            return ok()
+
+        if u.kind != token.FLOW_SEQ_END
+            machine.push_state(@states, @p, machine.FLOW_SEQ_ENTRY)
+            p.state @ machine.FLOW_NODE
+            return ok()
+    p.i @ p.i + 1
+    events @ events.push(event.closing(kind: event.SEQ_END, at: tokens[p.i - 1].at))
+    machine.pop_state(states, @p)
+    return ok()
+
+# A flow map's next key, its value, or the map's end.
+function flow_map(tokens: [token.Token] lent, text: str, @p: machine.Parsing, @states: [i64], @events: [event.Event]) -> ()?
+    st = p.state
+    t = tokens[p.i]
+
+    if st == machine.FLOW_MAP_VALUE
+        p.state @ machine.FLOW_MAP_KEY
+
+        if t.kind == token.VALUE
+            p.i @ p.i + 1
+            n = tokens[p.i].kind
+
+            if n != token.FLOW_ENTRY && n != token.FLOW_MAP_END
+                machine.push_state(@states, @p, machine.FLOW_MAP_KEY)
+                p.state @ machine.FLOW_NODE
+                return ok()
+        events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+        return ok()
+
+    if st == machine.FLOW_MAP_EMPTY_VALUE
+        p.state @ machine.FLOW_MAP_KEY
+        events @ events.push(event.empty(at: t.at, anchor: "", tag: ""))
+        return ok()
+
+    if t.kind != token.FLOW_MAP_END
+        if st == machine.FLOW_MAP_KEY
+            if t.kind != token.FLOW_ENTRY
+                return fail(
+                    code: INVALID,
+                    msg: source.expected(text: text, at: t.at, what: "`,` or the `}` that ends the map")
+                )
+            p.i @ p.i + 1
+        u = tokens[p.i]
+
+        if u.kind == token.KEY
+            p.i @ p.i + 1
+            n = tokens[p.i].kind
+            p.state @ machine.FLOW_MAP_VALUE
+
+            if n != token.VALUE && n != token.FLOW_ENTRY && n != token.FLOW_MAP_END
+                machine.push_state(@states, @p, machine.FLOW_MAP_VALUE)
+                p.state @ machine.FLOW_NODE
+            else
+                events @ events.push(event.empty(at: tokens[p.i].at, anchor: "", tag: ""))
+            return ok()
+
+        if u.kind != token.FLOW_MAP_END
+            machine.push_state(@states, @p, machine.FLOW_MAP_EMPTY_VALUE)
+            p.state @ machine.FLOW_NODE
+            return ok()
+    p.i @ p.i + 1
+    events @ events.push(event.closing(kind: event.MAP_END, at: tokens[p.i - 1].at))
+    machine.pop_state(states, @p)
+    return ok()
+
+## Tests
+
+# The machine at token `i` of a stream, in `state`, with nothing to come back
+# to.
+function at(i: i64, state: i64) -> machine.Parsing
+    return machine.Parsing(i: i, state: state, top: 0)
+
+test "block_seq: an element begun, an empty one, the end, and a key where none of them stands"
+    text = "- a\n-\n"
+    tokens = scanner.scan(text).must()
+    states: [i64] @= []
+    events: [event.Event] @= []
+    p: machine.Parsing @= at(i: 1, state: machine.BLOCK_SEQ_ENTRY)
+    block_seq(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.BLOCK_NODE && p.i == 2 && states == [machine.BLOCK_SEQ_ENTRY] && events.len() == 0
+    p @ machine.Parsing(i: 3, state: machine.BLOCK_SEQ_ENTRY, top: 1)
+    block_seq(tokens, text, @p, @states, @events).must()
+    assert p.i == 4 && events.len() == 1 && events[0].is_empty
+    block_seq(tokens, text, @p, @states, @events).must()
+    assert events[1].kind == event.SEQ_END && p.state == machine.BLOCK_SEQ_ENTRY && p.top == 0
+    wrong: machine.Parsing @= at(i: 1, state: machine.BLOCK_SEQ_ENTRY)
+    assert block_seq(scanner.scan("a: 1").must(), "a: 1", @wrong, @states, @events).is_err()
+
+test "block_map: a key, a value left empty, a value with no key, and the end"
+    text = "? a\n"
+    tokens = scanner.scan(text).must()
+    states: [i64] @= []
+    events: [event.Event] @= []
+    p: machine.Parsing @= at(i: 1, state: machine.BLOCK_MAP_KEY)
+    block_map(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.BLOCK_NODE_OR_INDENTLESS && states == [machine.BLOCK_MAP_VALUE]
+    p @ machine.Parsing(i: 3, state: machine.BLOCK_MAP_VALUE, top: 1)
+    block_map(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.BLOCK_MAP_KEY && events.len() == 1 && events[0].is_empty
+    block_map(tokens, text, @p, @states, @events).must()
+    assert events[1].kind == event.MAP_END
+    keyless: machine.Parsing @= at(i: 1, state: machine.BLOCK_MAP_KEY)
+    block_map(scanner.scan(": b").must(), ": b", @keyless, @states, @events).must()
+    assert keyless.state == machine.BLOCK_MAP_VALUE && events[2].is_empty
+
+test "flow_seq: a map of one pair, a comma before the end, and a comma missing"
+    text = "[a: 1, ]"
+    tokens = scanner.scan(text).must()
+    states: [i64] @= [machine.END]
+    events: [event.Event] @= []
+    p: machine.Parsing @= at(i: 1, state: machine.FLOW_SEQ_FIRST_ENTRY)
+    flow_seq(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.FLOW_SEQ_PAIR_KEY && events[0].kind == event.MAP_START
+    p @ machine.Parsing(i: 5, state: machine.FLOW_SEQ_PAIR_END, top: 1)
+    flow_seq(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.FLOW_SEQ_ENTRY && events[1].kind == event.MAP_END
+    flow_seq(tokens, text, @p, @states, @events).must()
+    assert events[2].kind == event.SEQ_END && p.i == 7
+    missing: machine.Parsing @= at(i: 2, state: machine.FLOW_SEQ_ENTRY)
+
+    match flow_seq(scanner.scan("[a [b]]").must(), "[a [b]]", @missing, @states, @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: expected `,` or the `]` that ends the list, found `[`"
+
+test "flow_map: a key with no value, a value left empty, and a comma missing"
+    text = "{a, b: }"
+    tokens = scanner.scan(text).must()
+    states: [i64] @= []
+    events: [event.Event] @= []
+    p: machine.Parsing @= at(i: 1, state: machine.FLOW_MAP_FIRST_KEY)
+    flow_map(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.FLOW_NODE && states == [machine.FLOW_MAP_EMPTY_VALUE]
+    p @ machine.Parsing(i: 2, state: machine.FLOW_MAP_EMPTY_VALUE, top: 0)
+    flow_map(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.FLOW_MAP_KEY && events[0].is_empty
+    p @ machine.Parsing(i: 5, state: machine.FLOW_MAP_VALUE, top: 0)
+    flow_map(tokens, text, @p, @states, @events).must()
+    assert p.state == machine.FLOW_MAP_KEY && events[1].is_empty && p.i == 6
+    missing: machine.Parsing @= at(i: 4, state: machine.FLOW_MAP_KEY)
+    assert flow_map(scanner.scan("{a: 1 [b]}").must(), "{a: 1 [b]}", @missing, @states, @events).is_err()

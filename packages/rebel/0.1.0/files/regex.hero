@@ -1,0 +1,735 @@
+# A regular expression compiled once and matched in time linear in the text,
+# for every pattern: the pattern becomes an automaton, and a search runs the
+# automaton over the text with every state at once and never goes back. So no
+# pattern can hang a program, and so a pattern has no back-reference and no
+# look-around, which no such automaton can match.
+#
+# A text is UTF-8 and a match never splits a character: every position here is
+# a byte index at a character's first byte, and `.` and a class read one
+# character, of however many bytes. Of the matches that begin at the leftmost
+# place the one taken is the one a backtracking engine would take, Perl's
+# rule: an alternative written first is preferred, a repetition takes as many
+# as it can, and a lazy one as few.
+#
+# What a pattern may hold, and nothing else:
+#
+# - a character, which matches itself; `\` before a punctuation character of
+#   ASCII makes it one; `\t` `\n` `\r` `\f` `\v` `\a`; a character by its code,
+#   `\x41` or `\x{1f600}`;
+# - `.`, any character but a line feed;
+# - a class `[abc]`, `[a-z0-9]`, and `[^abc]` for the characters outside it;
+#   inside one, `\d` and the like, and ASCII's named classes, `[:alpha:]`,
+#   `[:^alpha:]` and `alnum` `ascii` `blank` `cntrl` `digit` `graph` `lower`
+#   `print` `punct` `space` `upper` `word` `xdigit`;
+# - `\d` a digit of ASCII, `\w` a letter or digit of ASCII or `_`, `\s` a
+#   space, tab, line feed, carriage return, form feed or vertical tab; `\D`
+#   `\W` `\S` the characters outside each;
+# - `\p{L}`, `\pL`, `\p{Lu}`, a class of Unicode by its general category, and
+#   `\P{L}`, `\PL`, `\p{^L}` the characters outside it; a script's name, such
+#   as `\p{Greek}`, is not read;
+# - `^` the start of the text and `$` its end; `\A` and `\z` the same whatever
+#   the flags; `\b` between a word character of ASCII and what is not one, and
+#   `\B` everywhere else;
+# - `x*` `x+` `x?` and the counts `x{n}` `x{n,}` `x{n,m}`, each taking as many
+#   as it can, and lazy with a `?` after it, `x*?`;
+# - `x|y`, `x` preferred;
+# - `(x)` a group, numbered from 1 by its opening parenthesis; `(?P<name>x)`
+#   and `(?<name>x)` a group with a name as well; `(?:x)` no group at all;
+# - the flags `i` case ignored, `s` `.` reads a line feed too, `m` `^` and `$`
+#   also at the start and the end of every line: `(?i)` from there to the end
+#   of the group it stands in, `(?i:x)` inside it, `(?-i)` to end one, and
+#   several at once, `(?im-s)`.
+#
+# Anything else is `invalid` with a message that names it: a back-reference
+# `\1`, look-around `(?=x)`, a possessive `x*+` or `(?>x)`, a condition, a
+# comment, an octal escape, `\Q`, `\Z`, `\u`, the flags `U` and `x`, and a
+# `{` that opens no count, which is written `\{`.
+
+use regex/internal/capture
+use regex/internal/escapes
+use regex/internal/iterate
+use regex/internal/parse
+use regex/internal/program
+use regex/internal/simulate
+use regex/internal/template as filling
+use unicode
+
+## The codes and the bounds
+
+# The code of a pattern or a template this package does not read.
+constant INVALID: str
+    "invalid"
+
+# The code of a pattern past one of the three bounds below.
+constant LIMIT: str
+    "limit"
+
+# The code of a search that found no match, and of a group that took no part.
+constant NOT_FOUND: str
+    "not_found"
+
+# The largest count a pattern may write: `x{1000}` compiles, `x{1001}` fails
+# `limit`.
+constant MAX_REPEAT: i64
+    1000
+
+# The most groups a pattern may capture.
+constant MAX_GROUPS: i64
+    200
+
+# The most states a pattern's automaton may have. A search costs at most this
+# many steps for each character of the text.
+constant MAX_STATES: i64
+    100000
+
+# The most groups a pattern may open inside one another, those that capture
+# nothing included; past it a pattern fails `limit`.
+constant MAX_NESTING: i64
+    1000
+
+## The pattern
+
+# A compiled pattern, ready to be matched any number of times.
+record Regex
+    # The pattern as it was written.
+    pattern: str
+    # The automaton the pattern compiled to, which the functions below run.
+    compiled: program.Program
+
+# The pattern `pattern` compiled. Fails `invalid` where it is not a pattern
+# this package reads, the message saying which byte of it and why; fails
+# `limit` where a count is above `MAX_REPEAT`, the groups are more than
+# `MAX_GROUPS`, groups nest more than `MAX_NESTING` deep or the automaton
+# would have more than `MAX_STATES` states. It costs time linear in the
+# automaton it builds for each level of groups nested; compile once and keep
+# the answer.
+function compile(pattern: str) -> Regex?
+    compiled = parse.compile(pattern)?
+    return ok(Regex(pattern: pattern, compiled: compiled))
+
+# `s` with a `\` before each character a pattern reads specially, so that
+# compiled it matches `s` itself and nothing else. The characters are
+# `\ . + * ? ( ) | [ ] { } ^ $ -`.
+function escape(s: str) -> str
+    return escapes.quote(s)
+
+# How many groups `re` captures, the whole match not counted.
+function group_count(re: Regex) -> i64
+    return re.compiled.groups
+
+# The name of each group of `re`, the group 1 first, "" for a group without a
+# name.
+function group_names(re: Regex) -> [str]
+    return re.compiled.names.slice(from: 1, to: re.compiled.names.len())
+
+# The number of the group of `re` named `name`. Fails `not_found` where no
+# group has that name.
+function group_number(re: Regex, name: str) -> i64?
+    for i in range(from: 1, to: re.compiled.names.len())
+        if name != "" && re.compiled.names[i] == name
+            return ok(i)
+
+    return fail(code: NOT_FOUND, msg: f"no group named \"{name}\" in \"{re.pattern}\"")
+
+## Searching
+
+# A stretch of a text: where it begins and where it ends.
+record Span
+    # The byte index of its first byte.
+    start: i64
+    # The byte index just after its last byte.
+    end: i64
+
+# One match of a pattern in a text.
+record Match
+    # Where the match begins in the text searched, as a byte index.
+    start: i64
+    # Where the match ends: the byte index just after its last byte.
+    end: i64
+    # The text matched.
+    text: str
+    # What the search recorded about the pattern's groups, read through
+    # `group`, `span`, `groups` and the functions beside them.
+    captured: capture.Groups
+
+# Whether `s` holds a match of `re`, anywhere in it.
+function contains(s: str, re: Regex) -> bool
+    return !simulate.run_once(re.compiled, s: s, search: simulate.Search(from: 0, anchored: false, whole: false, not_empty_at: -1, groups: false)).is_err()
+
+# The first match of `re` in `s`: the leftmost, and of those the one Perl's
+# rule prefers. Fails `not_found` where `s` holds none.
+function search(s: str, re: Regex) -> Match?
+    return search_from(s: s, re: re, from: 0)
+
+# The first match of `re` in `s` that begins at the byte `from` or after it.
+# Fails `not_found` where there is none. Aborts where `from` is outside `s` or
+# inside a character, as a slice does. The text before `from` is still seen:
+# `^` and `\b` there answer as they do in the whole text, which a search of
+# the slice would not. After an empty match, search again from the character
+# after it, or the same match is found for ever.
+function search_from(s: str, re: Regex, from: i64) -> Match?
+    assert unicode.is_char_boundary(s, from)
+    g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: from, anchored: false, whole: false, not_empty_at: -1, groups: true))?
+    return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
+
+# The match of `re` that begins exactly at the byte `at` of `s`. Fails
+# `not_found` where none begins there. Aborts where `at` is outside `s` or
+# inside a character, as a slice does. The text before `at` is still seen, as
+# in `search_from`.
+function match_at(s: str, re: Regex, at: i64) -> Match?
+    assert unicode.is_char_boundary(s, at)
+    g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: at, anchored: true, whole: false, not_empty_at: -1, groups: true))?
+    return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
+
+# The match of `re` that is the whole of `s`, from its first byte to its last.
+# Fails `not_found` where `s` as a whole does not match, even where a part of
+# it does.
+function full_match(s: str, re: Regex) -> Match?
+    g = capture.search_groups(pattern: re.pattern, prog: re.compiled, s: s, search: simulate.Search(from: 0, anchored: true, whole: true, not_empty_at: -1, groups: true))?
+    return ok(Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g))
+
+# Every match of `re` in `s`, in order, none overlapping another. A search
+# begins again where the match before it ended, and after an empty match it
+# takes no empty match at the same place again: Python's rule and Perl's, so
+# `a*` in "baa" answers "", "aa" and "", where Go answers the first two. Each
+# search is linear in the text; a pattern that must read far ahead to choose
+# its match may read the rest of the text again for each match.
+function search_all(s: str, re: Regex) -> [Match]
+    return search_n(s: s, re: re, n: 2 * s.len() + 2)
+
+# The first `n` matches of `search_all`, or all of them where they are fewer;
+# none where `n` is zero or less.
+function search_n(s: str, re: Regex, n: i64) -> [Match]
+    out: [Match] @= []
+
+    if n <= 0
+        return out
+
+    for slots in iterate.all_slots(re.compiled, s: s, most: n)
+        g = capture.groups_of(s: s, prog: re.compiled, slots: slots)
+        out @ out.push(
+            Match(start: g.slots[0], end: g.slots[1], text: s.slice(from: g.slots[0], to: g.slots[1]), captured: g)
+        )
+
+    return out
+
+## The groups of a match
+
+# The text the group `n` matched, the group 0 being the whole match. Fails
+# `not_found` where the group took no part in the match, and `invalid` where
+# the pattern has no group `n`.
+function group(m: Match, n: i64) -> str?
+    at = span(m, n)?
+    return ok(m.captured.source.slice(from: at.start, to: at.end))
+
+# The text the group named `name` matched. Fails `not_found` where the group
+# took no part in the match, and `invalid` where the pattern has no group of
+# that name.
+function group_named(m: Match, name: str) -> str?
+    n = capture.number_of(m.captured, name)?
+    return group(m, n)
+
+# Where the group `n` matched in the text searched, the group 0 being the
+# whole match. Fails `not_found` where the group took no part in the match,
+# and `invalid` where the pattern has no group `n`.
+function span(m: Match, n: i64) -> Span?
+    count = m.captured.names.len() - 1
+
+    if n < 0 || n > count
+        return fail(code: INVALID, msg: f"the pattern has no group {n}: its groups are 0 to {count}")
+    start = m.captured.slots[2 * n]
+
+    if start < 0
+        return fail(code: NOT_FOUND, msg: f"the group {n} took no part in the match")
+    return ok(Span(start: start, end: m.captured.slots[2 * n + 1]))
+
+# Where the group named `name` matched in the text searched. Fails `not_found`
+# where the group took no part in the match, and `invalid` where the pattern
+# has no group of that name.
+function span_named(m: Match, name: str) -> Span?
+    n = capture.number_of(m.captured, name)?
+    return span(m, n)
+
+# The text of every group, the group 1 first, with `absent` for each group
+# that took no part in the match.
+function groups(m: Match, absent: str) -> [str]
+    out: [str] @= []
+
+    for n in range(from: 1, to: m.captured.names.len())
+        out @ out.push(group(m, n).default(absent))
+
+    return out
+
+# The text of every group that has a name, by its name, with `absent` for each
+# that took no part in the match.
+function groups_by_name(m: Match, absent: str) -> {str: str}
+    out: {str: str} @= {}
+
+    for n in range(from: 1, to: m.captured.names.len())
+        if m.captured.names[n] != ""
+            out[m.captured.names[n]] @ group(m, n).default(absent)
+
+    return out
+
+# The number of the group that closed last in the match, which says which
+# alternative matched where each is a group. Fails `not_found` where no group
+# took part.
+function last_group(m: Match) -> i64?
+    if m.captured.last <= 0
+        return fail(code: NOT_FOUND, msg: "no group took part in the match")
+    return ok(m.captured.last)
+
+# `template` with each `$` filled from the match: `$1` and `${1}` are the text
+# of the group 1, `$name` and `${name}` of the group so named, `$0` the whole
+# match, and `$$` one `$`; a group that took no part writes nothing. A name
+# after `$` goes on as far as letters, digits and `_` do, so braces end it
+# where the text goes on with one of those. Fails `invalid` where the template
+# names a group the pattern has not, where a `$` is followed by none of these,
+# and where a number is followed by a letter or `_`, which reads two ways.
+function expand(m: Match, template: str) -> str?
+    pieces = filling.pieces_of(template, m.captured.names)?
+    return ok(filling.fill(pieces, slots: m.captured.slots, source: m.captured.source))
+
+## Replacing
+
+# `s` with its first match of `re` replaced by `new`, which is taken as it is:
+# a `$` in it is a `$`. `s` itself where there is no match.
+function replace(s: str, re: Regex, new: str) -> str
+    return replace_n(s: s, re: re, new: new, n: 1)
+
+# `s` with every match of `re` replaced by `new`, which is taken as it is. The
+# matches are `search_all`'s.
+function replace_all(s: str, re: Regex, new: str) -> str
+    return replace_n(s: s, re: re, new: new, n: 2 * s.len() + 2)
+
+# `s` with its first `n` matches of `re` replaced by `new`, which is taken as
+# it is; `s` itself where `n` is zero or less.
+function replace_n(s: str, re: Regex, new: str, n: i64) -> str
+    if n <= 0
+        return s
+    found = iterate.all_slots(re.compiled, s: s, most: n)
+    inserts: [str] @= []
+
+    for _ in found
+        inserts @ inserts.push(new)
+
+    return iterate.rebuilt(s, found: found, inserts: inserts)
+
+# `s` with its first match of `re` replaced by `template` filled from that
+# match, as `expand` fills it. Fails `invalid` where `expand` would, whether
+# or not `s` holds a match.
+function substitute(s: str, re: Regex, template: str) -> str?
+    return substitute_n(s: s, re: re, template: template, n: 1)
+
+# `s` with every match of `re` replaced by `template` filled from that match,
+# as `expand` fills it. Fails `invalid` where `expand` would, whether or not
+# `s` holds a match. The matches are `search_all`'s.
+function substitute_all(s: str, re: Regex, template: str) -> str?
+    return substitute_n(s: s, re: re, template: template, n: 2 * s.len() + 2)
+
+# `s` with its first `n` matches of `re` replaced by `template` filled from
+# each, as `expand` fills it; `s` itself where `n` is zero or less. Fails
+# `invalid` where `expand` would, whether or not `s` holds a match.
+function substitute_n(s: str, re: Regex, template: str, n: i64) -> str?
+    pieces = filling.pieces_of(template, re.compiled.names)?
+
+    if n <= 0
+        return ok(s)
+    found = iterate.all_slots(re.compiled, s: s, most: n)
+    inserts: [str] @= []
+
+    for slots in found
+        inserts @ inserts.push(filling.fill(pieces, slots: slots, source: s))
+
+    return ok(iterate.rebuilt(s, found: found, inserts: inserts))
+
+# `s` with its first match of `re` replaced by what `by` answers for it.
+function replace_by(s: str, re: Regex, by: (function(Match) -> str)) -> str
+    return replace_n_by(s: s, re: re, by: by, n: 1)
+
+# `s` with every match of `re` replaced by what `by` answers for it, called
+# once for each match, in order. The matches are `search_all`'s.
+function replace_all_by(s: str, re: Regex, by: (function(Match) -> str)) -> str
+    return replace_n_by(s: s, re: re, by: by, n: 2 * s.len() + 2)
+
+# `s` with its first `n` matches of `re` replaced by what `by` answers for
+# each; `s` itself where `n` is zero or less.
+function replace_n_by(s: str, re: Regex, by: (function(Match) -> str), n: i64) -> str
+    found: [[i64]] @= []
+    inserts: [str] @= []
+
+    for m in search_n(s: s, re: re, n: n)
+        found @ found.push(m.captured.slots)
+        inserts @ inserts.push(by(m))
+
+    return iterate.rebuilt(s, found: found, inserts: inserts)
+
+## Splitting
+
+# The pieces of `s` between its matches of `re`, in order: one more piece than
+# there are matches, so a text with no match answers itself alone, and a match
+# at either end leaves an empty piece there. The matches are `search_all`'s,
+# empty ones included, as Python cuts.
+function split(s: str, re: Regex) -> [str]
+    return split_n(s: s, re: re, n: 2 * s.len() + 3)
+
+# The pieces of `split`, at most `n` of them: the first `n - 1` matches cut,
+# and the last piece is the rest of `s`, uncut. No piece where `n` is zero or
+# less.
+function split_n(s: str, re: Regex, n: i64) -> [str]
+    if n <= 0
+        out: [str] = []
+        return out
+    return iterate.pieces(s, iterate.all_slots(re.compiled, s: s, most: n - 1))
+
+## Tests
+
+test "compile: the codes of a pattern refused, a count at the bound and past it"
+    match compile("a(b")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a group opened by `(` is never closed: its `)` is missing, at byte 1 of \"a(b\""
+
+    assert compile(f"a{{{MAX_REPEAT}}}").is_err() == false
+
+    match compile(f"a{{{MAX_REPEAT + 1}}}")
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert compile("(?=a)").is_err() && compile("(a)\\1").is_err() && compile("\\p{Greek}").is_err()
+    assert compile(repeat("(?:", to_u64(MAX_NESTING + 1).must()) + repeat(")", to_u64(MAX_NESTING + 1).must())).is_err()
+    assert compile(repeat("(a)", to_u64(MAX_GROUPS + 1).must())).is_err()
+    assert compile("").must().pattern == ""
+
+test "escape: nothing, every special character, and a text that then matches itself only"
+    assert escape("") == ""
+    assert escape("a.b*c-d é$") == "a\\.b\\*c\\-d é\\$"
+    text = "(1+1)*[2]? {x} ^$ | a-b \\ é"
+    re = compile(escape(text)).must()
+    assert full_match(text, re).must().text == text
+    assert !contains("(11)", re)
+
+test "the groups of a pattern: none, numbered, named, and a name asked that is not there"
+    plain = compile("abc").must()
+    assert group_count(plain) == 0
+    none: [str] = []
+    assert group_names(plain) == none
+    re = compile("(?P<a>x)(y)(?P<b>z)?").must()
+    assert group_count(re) == 3
+    assert group_names(re) == ["a", "", "b"]
+    assert group_number(re, "b").must() == 3
+
+    match group_number(re, "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert group_number(re, "").is_err()
+
+test "contains and search: the empty text, the empty pattern, and characters of more than one byte"
+    assert contains("", compile("").must()) && !contains("", compile("a").must())
+    assert search("baaab", compile("a").must()).must().start == 1
+    dot = search("é!", compile(".").must()).must()
+    assert dot.start == 0 && dot.end == 2 && dot.text == "é"
+
+    match search("abc", compile("x").must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no match of \"x\" in \"abc\""
+
+test "search: Perl's preference among the leftmost, ASCII's `\\b` and `\\w`, and `$` at the very end"
+    m = search("abcd", compile("(a|ab)(c|bcd)(d*)").must()).must()
+    assert m.text == "abcd" && group(m, 1).must() == "a" && group(m, 2).must() == "bcd"
+    assert search("café é", compile("\\bé").must()).must().start == 3
+    assert iterate.spans_of(pattern: "\\w+", s: "héllo wörld_1", most: -1) == [[0, 1], [3, 6], [7, 8], [10, 15]]
+    assert search("a\n", compile("a$").must()).is_err()
+    assert iterate.spans_of(pattern: "(?m)a$", s: "a\naa", most: -1) == [[0, 1], [3, 4]]
+    assert iterate.spans_of(pattern: "\\s+", s: "a\tb\u{b}c", most: -1) == [[1, 2], [3, 4]]
+
+# The third character of the first text is U+212A, the Kelvin sign, and the
+# character of the last line U+1E9E, the capital sharp s.
+test "search: case ignored with a letter of three, a class, and a negation after folding"
+    assert iterate.spans_of(pattern: "(?i)k", s: "kKK", most: -1) == [[0, 1], [1, 2], [2, 5]]
+    assert iterate.spans_of(pattern: "(?i)[a-z]+", s: "Hello WORLD", most: -1) == [[0, 5], [6, 11]]
+    assert !contains("A", compile("(?i)[^a]").must())
+    assert !contains("k", compile("(?i)\\W").must())
+    assert contains("a", compile("(?i)\\p{Lu}").must())
+    assert contains("ẞ", compile("(?i)\\x{df}").must())
+
+test "search_from and match_at: the start, the end, and the text before still seen"
+    re = compile("^a").must()
+    assert search_from(s: "aa", re: re, from: 0).must().start == 0
+    assert search_from(s: "aa", re: re, from: 1).is_err()
+    assert search_from(s: "ba a", re: compile("\\ba").must(), from: 1).must().start == 3
+    assert search_from(s: "ab", re: compile("").must(), from: 2).must().start == 2
+    assert match_at(s: "ab", re: compile("b").must(), at: 1).must().end == 2
+    assert match_at(s: "ab", re: compile("^b").must(), at: 1).is_err()
+    assert match_at(s: "ab", re: compile("b").must(), at: 0).is_err()
+
+test "full_match: the whole text, a part only, and the empty text"
+    assert full_match("ab", compile("a|ab").must()).must().end == 2
+    assert full_match("ab", compile("a").must()).is_err()
+    assert full_match("12a", compile("\\d+").must()).is_err()
+    assert full_match("", compile("").must()).must().end == 0
+
+test "search_all: the text, start and end of each match, and characters of more than one byte"
+    found = search_all("à1é22", compile("\\d+").must())
+    assert found.len() == 2
+    assert found[0].text == "1" && found[0].start == 2 && found[0].end == 3
+    assert found[1].text == "22" && found[1].start == 5 && found[1].end == 7
+    assert search_all("", compile("x").must()).len() == 0
+
+test "search_all and search_n: none, empty matches by Python's rule, and at most so many"
+    none: [[i64]] = []
+    assert iterate.spans_of(pattern: "x", s: "abc", most: -1) == none
+    assert iterate.spans_of(pattern: "a*", s: "baaa", most: -1) == [[0, 0], [1, 4], [4, 4]]
+    assert iterate.spans_of(pattern: "", s: "", most: -1) == [[0, 0]]
+    assert search_n(s: "aaa", re: compile("a").must(), n: 2).len() == 2
+    assert search_n(s: "aaa", re: compile("a").must(), n: 0).len() == 0
+    assert search_n(s: "aaa", re: compile("a").must(), n: -1).len() == 0
+
+test "a pattern that makes a backtracking engine exponential answers at once"
+    re = compile("(a+)+$").must()
+    assert !contains(repeat("a", 30) + "b", re)
+    assert !contains(repeat("a", 100000) + "b", re)
+    assert search_all(repeat("a", 30) + "b", re).len() == 0
+
+test "group, span and their named forms: the whole match, a group not taken, and groups not there"
+    m = search("on 2026-x", compile("(?P<y>\\d+)-(?P<m>\\d+)?x?").must()).must()
+    assert group(m, 0).must() == "2026-x" && group(m, 1).must() == "2026"
+    assert span(m, 1).must() == Span(start: 3, end: 7)
+    assert span_named(m, "y").must() == Span(start: 3, end: 7)
+
+    match group(m, 2)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "the group 2 took no part in the match"
+
+    match group(m, 3)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the pattern has no group 3: its groups are 0 to 2"
+
+    assert group(m, -1).is_err() && group_named(m, "m").is_err() && span_named(m, "q").is_err()
+
+    match group_named(m, "q")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "groups, groups_by_name and last_group: an absent group, no names, and no group taken"
+    m = search("on 2026-x", compile("(?P<y>\\d+)-(?P<m>\\d+)?x?").must()).must()
+    assert groups(m, "?") == ["2026", "?"]
+    assert groups_by_name(m, "?") == {"y": "2026", "m": "?"}
+    plain = search("ab", compile("ab").must()).must()
+    none: [str] = []
+    assert groups(plain, "") == none
+    unnamed: {str: str} = {}
+    assert groups_by_name(plain, "") == unnamed
+    assert last_group(search("a", compile("(a)(b)?").must()).must()).must() == 1
+    assert last_group(search("ab", compile("((a)b)").must()).must()).must() == 1
+    assert last_group(search("ab", compile("(a)(b)").must()).must()).must() == 2
+    assert last_group(search("b", compile("(a)|b").must()).must()).is_err()
+
+test "expand: numbers, names, braces, the whole match, a dollar, and a template refused"
+    m = search("on 2026-x", compile("(?P<y>\\d+)-(?P<m>\\d+)?x?").must()).must()
+    assert expand(m, "${y}/$0").must() == "2026/2026-x"
+    assert expand(m, "[$2]$$").must() == "[]$"
+    assert expand(m, "").must() == ""
+
+    match expand(m, "$1x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert expand(m, "$9").is_err() && expand(m, "$").is_err() && expand(m, "$q").is_err()
+
+test "replace and its forms: no match, the first, so many, every one, and empty matches"
+    a = compile("a").must()
+    assert replace(s: "xyz", re: a, new: "-") == "xyz"
+    assert replace(s: "banana", re: a, new: "$") == "b$nana"
+    assert replace_n(s: "banana", re: a, new: "-", n: 2) == "b-n-na"
+    assert replace_n(s: "banana", re: a, new: "-", n: 0) == "banana"
+    assert replace_all(s: "banana", re: a, new: "-") == "b-n-n-"
+    assert replace_all(s: "abxd", re: compile("x*").must(), new: "-") == "-a-b--d-"
+    assert replace_all(s: "", re: compile("x*").must(), new: "-") == "-"
+    assert replace_all(s: "café crème", re: compile("é").must(), new: "e") == "cafe crème"
+
+test "substitute and its forms: groups by number and name, a template refused without a match"
+    re = compile("a(b)").must()
+    assert substitute(s: "xabyab", re: re, template: "[$1]").must() == "x[b]yab"
+    assert substitute_all(s: "xabyab", re: re, template: "[${1}]").must() == "x[b]y[b]"
+    assert substitute_n(s: "xabyab", re: re, template: "<$0>", n: 2).must() == "x<ab>y<ab>"
+    assert substitute_n(s: "xabyab", re: re, template: "<$0>", n: 0).must() == "xabyab"
+    mail = compile("(?P<w>\\w+)@(?P<d>\\w+)").must()
+    assert substitute_all(s: "me@home, you@work", re: mail, template: "${d} at $w").must() == "home at me, work at you"
+    assert substitute(s: "none here", re: re, template: "$5").is_err()
+
+# What the tests and examples of `replace_by` and its forms replace a match
+# by: its text in angle brackets. It stands in the face because a function
+# over a `Match` can stand nowhere else in the package.
+#
+# - `m`: the match.
+function bracketed(m: Match) -> str
+    return "<" + m.text + ">"
+
+test "replace_by and its forms: the first, so many, every one, and no match"
+    digits = compile("\\d+").must()
+    assert replace_by(s: "a1b22", re: digits, by: bracketed) == "a<1>b22"
+    assert replace_all_by(s: "a1b22", re: digits, by: bracketed) == "a<1>b<22>"
+    assert replace_n_by(s: "a1b22c3", re: digits, by: bracketed, n: 2) == "a<1>b<22>c3"
+    assert replace_n_by(s: "a1b22", re: digits, by: bracketed, n: 0) == "a1b22"
+    assert replace_all_by(s: "abc", re: digits, by: bracketed) == "abc"
+
+test "split and split_n: no match, a separator at either end, empty matches, and at most so many"
+    comma = compile(",").must()
+    assert split(",a,", comma) == ["", "a", ""]
+    assert split("a", comma) == ["a"]
+    assert split("", comma) == [""]
+    assert split("a, b,c", compile(",\\s*").must()) == ["a", "b", "c"]
+    assert split("axbc", compile("x*").must()) == ["", "a", "", "b", "c", ""]
+    assert split("", compile("x*").must()) == ["", ""]
+    assert split_n(s: "a,b,c,d", re: comma, n: 3) == ["a", "b", "c,d"]
+    assert split_n(s: "a,b", re: comma, n: 1) == ["a,b"]
+    none: [str] = []
+    assert split_n(s: "a,b", re: comma, n: 0) == none
+
+## Examples
+
+# A pattern compiled once and asked whether a text holds a match.
+test "compile: a pattern for dates"
+    re = compile("\\d{4}-\\d{2}-\\d{2}").must()
+    assert contains("due 2026-11-16", re)
+
+# A text taken as it is, so that its dots and stars match only themselves.
+test "escape: a file name as a pattern"
+    assert escape("notes*.txt") == "notes\\*\\.txt"
+
+# How many groups a pattern captures.
+test "group_count: two groups and one that captures nothing"
+    assert group_count(compile("(\\w+)@(?:\\w+)\\.(\\w+)").must()) == 2
+
+# The names of a pattern's groups, "" for one with a number alone.
+test "group_names: a named group and a numbered one"
+    assert group_names(compile("(?P<user>\\w+)@(\\w+)").must()) == ["user", ""]
+
+# The number of the group a name names.
+test "group_number: the group named host"
+    assert group_number(compile("(?P<user>\\w+)@(?P<host>\\w+)").must(), "host").must() == 2
+
+# Whether a line holds a number anywhere.
+test "contains: a line with a number in it"
+    assert contains("room 101", compile("\\d+").must())
+
+# The first number of a line, and where it stands.
+test "search: the first number of a line"
+    m = search("room 101, floor 3", compile("\\d+").must()).must()
+    assert m.text == "101" && m.start == 5 && m.end == 8
+
+# The next match after the first, found by searching again from its end.
+test "search_from: the second number of a line"
+    re = compile("\\d+").must()
+    first = search("room 101, floor 3", re).must()
+    assert search_from(s: "room 101, floor 3", re: re, from: first.end).must().text == "3"
+
+# A match that must begin at a given place, as a reader of tokens asks.
+test "match_at: a word that begins where the reader stands"
+    assert match_at(s: "let x = 1", re: compile("[a-z]+").must(), at: 4).must().text == "x"
+
+# Whether a whole text is a number, and not only a part of it.
+test "full_match: a text that is a number"
+    re = compile("\\d+").must()
+    assert full_match("2026", re).must().text == "2026"
+    assert full_match("2026a", re).is_err()
+
+# Every word of a line, in order.
+test "search_all: the words of a line"
+    words: [str] @= []
+
+    for m in search_all("to be or not", compile("[a-z]+").must())
+        words @ words.push(m.text)
+
+    assert words == ["to", "be", "or", "not"]
+
+# The first two numbers of a line, and no more.
+test "search_n: the first two numbers"
+    assert search_n(s: "1 22 333", re: compile("\\d+").must(), n: 2).len() == 2
+
+# The text of a group, by its number.
+test "group: the user of an address"
+    m = search("mail ana@example.org", compile("(\\w+)@([\\w.]+)").must()).must()
+    assert group(m, 1).must() == "ana"
+
+# The text of a group, by its name.
+test "group_named: the host of an address"
+    m = search("mail ana@example.org", compile("(?P<user>\\w+)@(?P<host>[\\w.]+)").must()).must()
+    assert group_named(m, "host").must() == "example.org"
+
+# Where a group matched, by its number.
+test "span: where the user of an address stands"
+    m = search("mail ana@example.org", compile("(\\w+)@").must()).must()
+    assert span(m, 1).must() == Span(start: 5, end: 8)
+
+# Where a group matched, by its name.
+test "span_named: where the year of a date stands"
+    m = search("on 2026-11", compile("(?P<year>\\d{4})-(?P<month>\\d{2})").must()).must()
+    assert span_named(m, "year").must() == Span(start: 3, end: 7)
+
+# The text of every group at once.
+test "groups: the parts of a date"
+    m = search("on 2026-11", compile("(\\d{4})-(\\d{2})").must()).must()
+    assert groups(m, "") == ["2026", "11"]
+
+# The text of every named group, by its name.
+test "groups_by_name: the parts of a date by name"
+    m = search("on 2026-11", compile("(?P<year>\\d{4})-(?P<month>\\d{2})").must()).must()
+    assert groups_by_name(m, "") == {"year": "2026", "month": "11"}
+
+# Which alternative matched, where each is a group.
+test "last_group: the alternative a token matched"
+    re = compile("(\\d+)|([a-z]+)").must()
+    assert last_group(search("abc", re).must()).must() == 2
+
+# A template filled from the groups of one match.
+test "expand: a date written the other way round"
+    m = search("on 2026-11", compile("(?P<year>\\d{4})-(?P<month>\\d{2})").must()).must()
+    assert expand(m, "$month/$year").must() == "11/2026"
+
+# The first match replaced by a text taken as it is.
+test "replace: the first space"
+    assert replace(s: "a b c", re: compile(" ").must(), new: "_") == "a_b c"
+
+# Every match replaced, a run of spaces by one.
+test "replace_all: runs of spaces"
+    assert replace_all(s: "a  b   c", re: compile(" +").must(), new: " ") == "a b c"
+
+# The first matches replaced, and the rest left.
+test "replace_n: the first two spaces"
+    assert replace_n(s: "a b c d", re: compile(" ").must(), new: "_", n: 2) == "a_b_c d"
+
+# The first match replaced by a template naming its groups.
+test "substitute: the first date turned round"
+    re = compile("(\\d+)-(\\d+)").must()
+    assert substitute(s: "1-2 3-4", re: re, template: "$2-$1").must() == "2-1 3-4"
+
+# Every match replaced by a template naming its groups.
+test "substitute_all: every key and value swapped"
+    re = compile("(?P<k>\\w+)=(?P<v>\\w+)").must()
+    assert substitute_all(s: "a=1 b=2", re: re, template: "$v=$k").must() == "1=a 2=b"
+
+# The first matches replaced by a template, and the rest left.
+test "substitute_n: the first two words doubled"
+    assert substitute_n(s: "a b c", re: compile("\\w").must(), template: "$0$0", n: 2).must() == "aa bb c"
+
+# The first match replaced by what a function answers for it.
+test "replace_by: the first number in brackets"
+    assert replace_by(s: "1 and 22", re: compile("\\d+").must(), by: bracketed) == "<1> and 22"
+
+# Every match replaced by what a function answers for it.
+test "replace_all_by: every number in brackets"
+    assert replace_all_by(s: "1 and 22", re: compile("\\d+").must(), by: bracketed) == "<1> and <22>"
+
+# The first matches replaced by what a function answers, and the rest left.
+test "replace_n_by: the first number of three in brackets"
+    assert replace_n_by(s: "1 2 3", re: compile("\\d").must(), by: bracketed, n: 1) == "<1> 2 3"
+
+# A line cut at commas and the spaces after them.
+test "split: a list written by hand"
+    assert split("red, green,blue", compile(",\\s*").must()) == ["red", "green", "blue"]
+
+# A line cut at its first separator only, the rest left whole.
+test "split_n: a key and the rest of the line"
+    assert split_n(s: "key: a: b", re: compile(":\\s*").must(), n: 2) == ["key", "a: b"]

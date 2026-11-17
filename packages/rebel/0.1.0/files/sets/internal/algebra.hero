@@ -1,0 +1,273 @@
+# Two sets and more combined and compared: union, intersection, difference,
+# symmetric difference, and the questions of subset, superset and
+# disjointness. Every function reads an element through `members.contains`,
+# so a key under `false` counts as absent on either side, and answers a set
+# holding `true` alone.
+
+use sets/internal/members
+
+# How many keys of `s` stand under `true`.
+function size<K>(s: {K: bool}) -> i64
+    count: i64 @= 0
+
+    for k in keys(s)
+        if s[k].must()
+            count @ count + 1
+
+    return count
+
+# `out` with every element of `other` added at its end; the caller's own set,
+# so nothing is copied.
+function put_all<K>(@out: {K: bool}, other: {K: bool} lent)
+    for k in keys(other)
+        if other[k].must()
+            out[k] @ true
+
+# The elements either set holds, `s`'s first.
+function union_of<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    out: {K: bool} @= members.clean(s: s)
+    put_all(out: @out, other: other)
+    return out
+
+# The elements both hold, in the order of `s`.
+function intersection<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && members.contains(s: other, element: k)
+            out[k] @ true
+
+    return out
+
+# The elements of `s` that `other` does not hold, in the order of `s`.
+function difference<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && !members.contains(s: other, element: k)
+            out[k] @ true
+
+    return out
+
+# The elements only `s` holds, in its order, then those only `other` holds.
+function symmetric_difference<K>(s: {K: bool}, other: {K: bool}) -> {K: bool}
+    out: {K: bool} @= difference(s: s, other: other)
+
+    for k in keys(other)
+        if other[k].must() && !members.contains(s: s, element: k)
+            out[k] @ true
+
+    return out
+
+# The elements any of `s` and `others` holds, in the order they first come.
+function union_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    out: {K: bool} @= members.clean(s: s)
+    at: i64 @= 0
+
+    while at < others.len()
+        put_all(out: @out, other: others[at])
+        at @ at + 1
+
+    return out
+
+# Whether every set of `others` holds `element`.
+function held_by_all<K>(others: [{K: bool}] lent, element: K) -> bool
+    at: i64 @= 0
+
+    while at < others.len()
+        if !members.contains(s: others[at], element: element)
+            return false
+        at @ at + 1
+
+    return true
+
+# Whether some set of `others` holds `element`.
+function held_by_any<K>(others: [{K: bool}] lent, element: K) -> bool
+    at: i64 @= 0
+
+    while at < others.len()
+        if members.contains(s: others[at], element: element)
+            return true
+        at @ at + 1
+
+    return false
+
+# The elements of `s` every set of `others` holds, in the order of `s`.
+function intersection_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && held_by_all(others, k)
+            out[k] @ true
+
+    return out
+
+# The elements of `s` no set of `others` holds, in the order of `s`.
+function difference_all<K>(s: {K: bool}, others: [{K: bool}]) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && !held_by_any(others, k)
+            out[k] @ true
+
+    return out
+
+# Whether `other` holds every element of `s`, stopping at the first it does
+# not.
+function is_subset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    for k in keys(s)
+        if s[k].must() && !members.contains(s: other, element: k)
+            return false
+
+    return true
+
+# Whether `s` holds every element of `other`.
+function is_superset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return is_subset(s: other, other: s)
+
+# Whether `s` is a subset of `other` with fewer elements.
+function is_proper_subset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return size(s: s) < size(s: other) && is_subset(s: s, other: other)
+
+# Whether `other` is a subset of `s` with fewer elements.
+function is_proper_superset<K>(s: {K: bool}, other: {K: bool}) -> bool
+    return is_proper_subset(s: other, other: s)
+
+# Whether no element of `small` is one of `large`, walking `small`.
+function shares_none<K>(small: {K: bool}, large: {K: bool}) -> bool
+    for k in keys(small)
+        if small[k].must() && members.contains(s: large, element: k)
+            return false
+
+    return true
+
+# Whether `s` and `other` share no element, walking the one of fewer keys.
+function is_disjoint<K>(s: {K: bool}, other: {K: bool}) -> bool
+    if s.len() <= other.len()
+        return shares_none(small: s, large: other)
+
+    return shares_none(small: other, large: s)
+
+test "size: an empty set, keys under false not counted"
+    empty: {str: bool} = {}
+    assert size(s: empty) == 0
+    assert size(s: {"a": true, "b": false, "c": true}) == 2
+
+test "union_of: both empty, either empty, nothing shared, and the order when elements are shared"
+    empty: {str: bool} = {}
+    assert union_of(s: empty, other: empty).len() == 0
+    assert union_of(s: empty, other: {"a": true}) == {"a": true}
+    assert union_of(s: {"a": true}, other: empty) == {"a": true}
+    assert keys(union_of(s: {"b": true}, other: {"a": true})) == ["b", "a"]
+    assert keys(union_of(s: members.from_list(elements: ["x", "y"]), other: members.from_list(elements: ["y", "z", "x"]))) == ["x", "y", "z"]
+
+test "union_of: text of more than one byte, keys under false on either side, the sets given unchanged"
+    assert keys(union_of(s: {"è": true}, other: {"e": true, "è": true})) == ["è", "e"]
+    assert union_of(s: {"a": false, "b": true}, other: {"c": false, "d": true}) == {"b": true, "d": true}
+    assert keys(union_of(s: {"a": false, "b": true}, other: {"a": true})) == ["b", "a"]
+    s = {"a": true}
+    other = {"b": true}
+    assert union_of(s: s, other: other).len() == 2
+    assert keys(s) == ["a"] && keys(other) == ["b"]
+
+test "intersection: either empty, none shared, the order of the first, and the largest and smallest i64"
+    empty: {i64: bool} = {}
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    assert intersection(s: empty, other: {1: true}).len() == 0
+    assert intersection(s: {1: true}, other: empty).len() == 0
+    assert intersection(s: members.from_list(elements: [1, 2]), other: members.from_list(elements: [3, 4])).len() == 0
+    shared = intersection(
+        s: members.from_list(elements: [smallest, 0, largest]),
+        other: members.from_list(elements: [largest, smallest])
+    )
+    assert keys(shared) == [smallest, largest]
+
+test "intersection: keys under false on either side count as absent"
+    assert intersection(s: {"a": true, "b": true}, other: {"a": false, "b": true}) == {"b": true}
+    assert intersection(s: {"a": false, "b": true}, other: {"a": true, "b": true}) == {"b": true}
+
+test "difference: either empty, nothing shared, the order of the first, and keys under false"
+    empty: {i64: bool} = {}
+    assert difference(s: empty, other: {1: true}).len() == 0
+    assert keys(difference(s: members.from_list(elements: [2, 1]), other: empty)) == [2, 1]
+    assert keys(difference(s: members.from_list(elements: [1, 2]), other: {3: true})) == [1, 2]
+    assert keys(difference(s: members.from_list(elements: [4, 1, 2, 3]), other: members.from_list(elements: [2, 4, 9]))) == [1, 3]
+    assert difference(s: {1: true, 2: false}, other: {1: false}) == {1: true}
+
+test "symmetric_difference: both empty, equal sets, the order, and text of more than one byte"
+    empty: {str: bool} = {}
+    assert symmetric_difference(s: empty, other: empty).len() == 0
+    assert symmetric_difference(s: {"a": true}, other: empty) == {"a": true}
+    assert symmetric_difference(s: empty, other: {"a": true}) == {"a": true}
+    assert symmetric_difference(s: {"a": true, "b": true}, other: {"b": true, "a": true}).len() == 0
+    assert keys(symmetric_difference(s: members.from_list(elements: ["è", "a"]), other: members.from_list(elements: ["a", "ü"]))) == ["è", "ü"]
+    assert symmetric_difference(s: {"a": false}, other: {"a": true}) == {"a": true}
+
+test "union_all: no other set, three, an empty one among them, and keys under false"
+    no_sets: [{i64: bool}] = []
+    assert keys(union_all(s: members.from_list(elements: [1, 2]), others: no_sets)) == [1, 2]
+    everything = union_all(s: {1: true}, others: [{2: true, 1: true}, {3: true}, {}, {3: true, 4: true}])
+    assert keys(everything) == [1, 2, 3, 4]
+    assert union_all(s: {1: false}, others: [{2: false}, {3: true}]) == {3: true}
+
+test "intersection_all: no other set, an empty one among them, and the order of the first"
+    no_sets: [{i64: bool}] = []
+    empty: {i64: bool} = {}
+    assert keys(intersection_all(s: members.from_list(elements: [2, 1]), others: no_sets)) == [2, 1]
+    assert intersection_all(s: members.from_list(elements: [1, 2]), others: [{1: true}, empty]).len() == 0
+    days = intersection_all(
+        s: members.from_list(elements: [5, 2, 3]),
+        others: [{2: true, 3: true}, {3: true, 2: true, 9: true}]
+    )
+    assert keys(days) == [2, 3]
+    assert intersection_all(s: {1: true, 2: true}, others: [{1: true, 2: false}]) == {1: true}
+
+test "difference_all: no other set, several, and keys under false"
+    no_sets: [{i64: bool}] = []
+    assert keys(difference_all(s: {1: true}, others: no_sets)) == [1]
+    assert keys(difference_all(s: members.from_list(elements: [1, 2, 3, 4, 5]), others: [{2: true}, {4: true, 9: true}])) == [1, 3, 5]
+    assert difference_all(s: {1: true, 2: true}, others: [{1: false}, {2: true}]) == {1: true}
+
+test "is_subset: the empty set, a set of itself, of another order, and keys under false"
+    empty: {i64: bool} = {}
+    assert is_subset(s: empty, other: empty)
+    assert is_subset(s: empty, other: {1: true})
+    assert !is_subset(s: {1: true}, other: empty)
+    assert is_subset(s: members.from_list(elements: [1, 2]), other: members.from_list(elements: [2, 1]))
+    assert !is_subset(s: members.from_list(elements: [1, 3]), other: members.from_list(elements: [1, 2]))
+    assert is_subset(s: {1: true, 2: false}, other: {1: true})
+    assert !is_subset(s: {1: true}, other: {1: false})
+
+test "is_superset: the empty set, a set of itself, and a smaller one"
+    empty: {i64: bool} = {}
+    assert is_superset(s: {1: true}, other: empty)
+    assert !is_superset(s: empty, other: {1: true})
+    assert is_superset(s: empty, other: empty)
+    assert is_superset(s: members.from_list(elements: [1, 2, 3]), other: members.from_list(elements: [3, 1]))
+
+test "is_proper_subset: the empty set of itself and of another, equal sets, a larger one, and keys under false"
+    empty: {i64: bool} = {}
+    assert !is_proper_subset(s: empty, other: empty)
+    assert is_proper_subset(s: empty, other: {1: true})
+    assert !is_proper_subset(s: members.from_list(elements: [1, 2]), other: members.from_list(elements: [2, 1]))
+    assert is_proper_subset(s: {1: true}, other: members.from_list(elements: [1, 2]))
+    assert !is_proper_subset(s: members.from_list(elements: [1, 3]), other: members.from_list(elements: [1, 2, 4]))
+    assert !is_proper_subset(s: {1: true}, other: {1: true, 2: false})
+
+test "is_proper_superset: a larger set, equal sets, and the empty set of itself"
+    empty: {i64: bool} = {}
+    assert is_proper_superset(s: members.from_list(elements: [1, 2]), other: {1: true})
+    assert !is_proper_superset(s: members.from_list(elements: [1, 2]), other: members.from_list(elements: [1, 2]))
+    assert !is_proper_superset(s: empty, other: empty)
+
+test "is_disjoint: both empty, one empty, a set and itself, apart, sharing, and keys under false"
+    empty: {i64: bool} = {}
+    assert is_disjoint(s: empty, other: empty)
+    assert is_disjoint(s: {1: true}, other: empty)
+    assert is_disjoint(s: empty, other: {1: true})
+    assert !is_disjoint(s: {1: true}, other: {1: true})
+    assert is_disjoint(s: members.from_list(elements: [1, 3]), other: members.from_list(elements: [2, 4]))
+    assert !is_disjoint(s: members.from_list(elements: [1, 2, 3]), other: {3: true})
+    assert !is_disjoint(s: {3: true}, other: members.from_list(elements: [1, 2, 3]))
+    assert is_disjoint(s: {1: false, 2: true}, other: {1: true})

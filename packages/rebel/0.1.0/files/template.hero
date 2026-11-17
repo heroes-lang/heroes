@@ -1,0 +1,491 @@
+# Text made from a template and a value: a template is text holding actions
+# between `{{` and `}}`, which write the value's parts, choose, loop and run
+# another template, and its HTML mode escapes every value by the place it
+# stands in the page, as Go's `html/template` does. The value is a
+# `json.Value` read by paths, since the language has no reflection: a program
+# builds one from its records, or reads it with `json.parse`.
+#
+# A template runs no code: it calls no function but six filters and binds no
+# name but a loop's. It reads no file: a program reads its templates with
+# `read_file` and hands their texts to `parse_all`. A URL's own parts are made
+# with `url` before they are handed in.
+#
+# ## The syntax
+#
+# Text outside an action is written as it stands. An action is one of these,
+# white space allowed inside it:
+#
+# - `{{ .user.name }}`, a value by its path: `.` is the value the template was
+#   given, `.key` an object's member, a key of digits alone such as `.0` a
+#   list's element, and `.["a key"]` a member whose key is not a run of
+#   letters, digits and `_`. `{{ $item.name }}` reads from a loop's variable.
+# - `{{ "text" }}`, `{{ 3 }}`, `{{ true }}`, `{{ false }}`, `{{ null }}`, a
+#   literal. A string reads the escapes `\"`, `\\`, `\n`, `\t` and `\r`, and a
+#   number is written as JSON writes one.
+# - `{{ .name | upper }}`, a value through filters, left to right: `escape`
+#   (HTML's escapes, in the text mode only), `upper`, `lower`, `join ", "`,
+#   `default "none"`, which stands first after a path, and `length`.
+# - `{{ if .ready }}` ... `{{ else if .count == 0 }}` ... `{{ else }}` ...
+#   `{{ end }}`, a choice: a value, `not` and a value, or two values compared
+#   by `==` or `!=`. `false`, `0`, `null`, `""`, `[]` and `{}` are false.
+# - `{{ for $item in .items }}` ... `{{ else }}` ... `{{ end }}`, a loop over
+#   a list, `else` running where it is empty; `for $i, $item in .items` binds
+#   the index too, and an object is looped over as `for $key, $value in
+#   .members`, in its members' order. `{{ break }}` and `{{ continue }}` stand
+#   inside a loop.
+# - `{{ define "name" }}` ... `{{ end }}`, outside every other block, and
+#   `{{ include "name" .path }}`, which runs that template with that value as
+#   its `.`.
+# - `{{/* a comment */}}`, which writes nothing.
+#
+# `{{- ` drops the white space before an action, and ` -}}` the white space
+# after it: spaces, tabs and line breaks.
+#
+# A value that is not there fails, and so does `null`, unless `default`
+# follows it at once. A list and an object are written as JSON inside a
+# script of the HTML mode and fail anywhere else: `join` and `for` write them.
+#
+# ## The HTML mode
+#
+# `parse_html` reads the template's own text as HTML and knows, for each
+# action, where its value lands: in text, a title or a textarea; in an
+# attribute's name or value; in a URL; in a script, as a value, in a string, a
+# template literal or a regular expression; or in a style sheet, as a value,
+# in a string or in `url(...)`. Each place has its escapes, so that no value
+# moves where the page's next characters stand. A URL whose scheme is none of
+# `http`, `https` and `mailto`, a style value that is not a plain word, and an
+# attribute name that is not a plain one are written `UNSAFE` instead. The
+# comments of HTML, scripts and style sheets are dropped with every value in
+# them, and a `<` that opens no tag is written `&lt;`.
+#
+# Fails `invalid` where a text is not a template, the message opening `line
+# L, column C:`, where branches of the HTML mode leave the page in different
+# places, and where a value is of a kind its place does not take; `not_found`
+# where a value, a key or a template named is not there.
+
+use json
+use strings
+use template/internal/analyze
+use template/internal/assemble
+use template/internal/escape_js as scripts
+use template/internal/escape_text
+use template/internal/program
+use template/internal/references
+use template/internal/run
+use template/internal/values
+
+## Codes and limits
+
+# The code of a text that is not a template, of a template whose HTML is not
+# what its actions need, and of a value of a kind its place does not take:
+# `parse`, `parse_html`, `parse_with`, `parse_all`, `render`, `render_named`.
+constant INVALID: str
+    "invalid"
+
+# The code of a value or a key that is not there and of a template named that
+# is not: `render`, `render_named`, `paths_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The deepest `include` runs one inside another; past it `render` fails
+# `invalid`, so that a template that includes itself without end stops.
+constant MAX_DEPTH: i64
+    10000
+
+# The deepest blocks `if`, `for` and `define` nest in one text; deeper fails
+# `invalid` when it is parsed.
+constant MAX_NESTING: i64
+    256
+
+# What the HTML mode writes instead of a value refused in its place: a URL of
+# another scheme, a style value that is not a plain word, an attribute name
+# that is not a plain one.
+constant UNSAFE: str
+    "ZrebelZ"
+
+## Parsing
+
+# How a text is read: the mode and the delimiters of an action.
+record Options
+    # Whether values are escaped by their place in HTML: `parse_html`'s mode.
+    html: bool
+    # The text that opens an action: not empty, holding no white space.
+    left: str
+    # The text that closes an action: not empty, holding no white space.
+    right: str
+
+# A set of templates read, every one by its name, ready to render. It is made
+# only by `parse`, `parse_html`, `parse_with` and `parse_all`.
+record Template
+    # The name of the template `render` runs: "" for the one text of `parse`,
+    # the first key for `parse_all`.
+    main: str
+    # The name of every template of the set, in the order they were read.
+    names: [str]
+    # Whether the set was read in the HTML mode.
+    html: bool
+    # The templates compiled, which `render` runs.
+    compiled: program.Program
+
+# The options of the text mode, with `{{` and `}}` around an action.
+function plain() -> Options
+    return Options(html: false, left: "{{", right: "}}")
+
+# The options of the HTML mode, with `{{` and `}}` around an action.
+function html() -> Options
+    return Options(html: true, left: "{{", right: "}}")
+
+# The template `text` writes, in the text mode.
+#
+# - `text`: the template; any text, the empty one included.
+#
+# Fails `invalid` where `text` is not a template, the message opening `line L,
+# column C:`, counted from 1 and the column in characters, then saying what was
+# expected and what was found. See also `parse_html`, `parse_with`.
+function parse(text: str) -> Template?
+    return parse_with(text, plain())
+
+# The template `text` writes, in the HTML mode.
+#
+# - `text`: the template, read as HTML.
+#
+# Fails `invalid` as `parse` does, and where the HTML around an action leaves
+# its place unknown: branches of `if` or a loop's body ending in different
+# places, a value in an ambiguous part of a URL, a `/` in a script that may
+# begin a division or a regular expression, the text ending elsewhere than in
+# text, a quote or `=` in an unquoted attribute value. Every template of the
+# set begins and ends in text when run by its name. See also `parse`.
+function parse_html(text: str) -> Template?
+    return parse_with(text, html())
+
+# The template `text` writes, read as `options` say.
+#
+# - `text`: the template.
+# - `options`: the mode and the delimiters; `plain()` and `html()` are the
+#   usual ones.
+#
+# Fails as `parse` and `parse_html` do, and `invalid` where a delimiter is
+# empty or holds white space.
+function parse_with(text: str, options: Options) -> Template?
+    texts: {str: str} @= {}
+    texts[""] @ text
+    return parse_all(texts, options)
+
+# The set of templates `texts` write, each template named by its key, every
+# `define` adding one more.
+#
+# - `texts`: each text by its name; the first is the one `render` runs. A name
+#   is any text, the empty one included.
+# - `options`: the mode and the delimiters, the same for every text.
+#
+# Fails `invalid` where a text is not a template, the message opening with the
+# text's name in quotes where it is not "", then `line L, column C:`; where two
+# templates share a name; and where an `include` names a template the set does
+# not hold. Fails `invalid` where `texts` is empty.
+#
+# Every `include` is checked against the set here, and in the HTML mode each
+# template is read in every place an `include` runs it.
+function parse_all(texts: {str: str}, options: Options) -> Template?
+    if keys(texts).len() == 0
+        return fail(code: INVALID, msg: "no text to read: `parse_all` is given one at least")
+
+    for delimiter in [options.left, options.right]
+        if delimiter == "" || strings.contains_any(s: delimiter, set: " \t\r\n")
+            return fail(code: INVALID, msg: f"the delimiter {json.quote(delimiter)} is empty or holds white space")
+
+    got = assemble.compile(texts, left: options.left, right: options.right, html: options.html)?
+
+    compiled: program.Program @= got.compiled
+
+    if options.html
+        compiled @ analyze.html(got.compiled, names: got.names)?
+    return ok(Template(main: got.names[0], names: got.names, html: options.html, compiled: compiled))
+
+## Rendering
+
+# The text `t`'s main template makes of `value`.
+#
+# - `t`: the templates.
+# - `value`: what `.` names in the main template.
+#
+# Fails `not_found` where a path names a key, an element or a variable's member
+# that is not there and no `default` follows it, the message saying where in
+# which template and what the value held. Fails `invalid` where a value is of a
+# kind its place does not take: `null`, a list or an object written outside a
+# script, a loop over a text or a number, an object looped over with one
+# variable, a filter given the wrong kind; and where `include` runs deeper than
+# `MAX_DEPTH`.
+#
+# It runs on stacks it holds itself, so no template or value is too deep for
+# the machine's stack; its cost is the text it writes and the steps it runs.
+# See also `render_named`.
+function render(t: Template, value: json.Value) -> str?
+    return render_named(t, t.main, value)
+
+# The text the template of `t` named `name` makes of `value`.
+#
+# - `t`: the templates.
+# - `name`: the template to run, one of `t.names`.
+# - `value`: what `.` names in it.
+#
+# Fails `not_found` where `t` holds no template `name`, and as `render` does.
+function render_named(t: Template, name: str, value: json.Value) -> str?
+    match t.compiled.index[name]
+        .err _    => return fail(code: NOT_FOUND, msg: assemble.missing_template(t.names, name: name))
+        .ok entry => return run.render(t.compiled, entry: entry, value: value)
+
+# The paths the template `name` reads from its own `.`, each written as the
+# template writes it, in the order they first stand.
+#
+# - `t`: the templates.
+# - `name`: the template asked about, one of `t.names`.
+#
+# Fails `not_found` where `t` holds no template `name`.
+#
+# A path read from a loop's variable is not one, nor a path of a template
+# `include` runs, which reads its own `.`: ask `paths_of` of that one.
+function paths_of(t: Template, name: str) -> [str]?
+    match t.compiled.index[name]
+        .err _    => return fail(code: NOT_FOUND, msg: assemble.missing_template(t.names, name: name))
+        .ok entry => return ok(assemble.paths_in(t.compiled.parts[entry]))
+
+## Values
+
+# Whether `if` takes `v` as true: every value but `false`, `0`, `null`, `""`,
+# `[]` and `{}`.
+#
+# - `v`: any value.
+function is_true(v: json.Value) -> bool
+    return values.is_true(v)
+
+## Escaping
+
+# `s` with `&`, `<`, `>`, `"` and `'` written as HTML's references, so that it
+# stands as text in an element or in a quoted attribute, as `escape` writes it.
+#
+# - `s`: any text, the empty one included.
+#
+# The references are `&amp;`, `&lt;`, `&gt;`, `&#34;` and `&#39;`, as Go
+# writes them, and U+0000 is written U+FFFD. See also `unescape_html`.
+function escape_html(s: str) -> str
+    return escape_text.html_plain(s)
+
+# `s` with HTML's character references read: named, decimal and hexadecimal,
+# as a browser reads them in text.
+#
+# - `s`: any text; a `&` that begins no reference stays as it is.
+#
+# A named reference is read from the table of HTML's standard, those a browser
+# reads with no `;` after them included; a number past U+10FFFF, a surrogate
+# and 0 are read as U+FFFD, a number of Windows-1252's C1 range as the
+# character that code page gives it, and a control character or a
+# noncharacter is dropped, as Python's `html.unescape` reads them. See also
+# `escape_html`.
+function unescape_html(s: str) -> str
+    return references.unescape(s)
+
+# `s` written so that it stands inside a JavaScript string between `"` or `'`
+# and inside HTML, as Go's `JSEscapeString` writes it.
+#
+# - `s`: any text, the empty one included.
+#
+# `\` and both quotes are written `\\`, `\"` and `\'`; `<`, `>`, `&`, `=`, the
+# control characters and every character past ASCII that is not printable,
+# U+2028 and U+2029 among them, as `\uXXXX` with capital hex digits, one past
+# U+FFFF as its two surrogates.
+function escape_js(s: str) -> str
+    return scripts.go_string(s)
+
+## Tests
+
+test "render: a value missing fails, saying where it was and what the object held"
+    t = parse("Hi {{ .user.name }}!").must()
+
+    match render(t, json.parse("{\"user\": {\"id\": 1}}").must())
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "line 1, column 4: no key \"name\" in .user, an object holding the keys \"id\""
+
+test "render: null, a list and an object written as text fail, and default stands for null and for a value not there"
+    t = parse("{{ .a }}").must()
+
+    for text in ["{\"a\": null}", "{\"a\": [1]}", "{\"a\": {}}"]
+        match render(t, json.parse(text).must())
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    defaulted = parse("{{ .a | default \"-\" }}{{ .b | default 0 }}").must()
+    assert render(defaulted, json.parse("{\"a\": null}").must()).must() == "-0"
+
+test "render: numbers as JSON writes them, where Go writes 1e+08, booleans, and characters of more than one byte"
+    t = parse("{{ .a }} {{ .b }} {{ .c }} {{ .d }} {{ .e }}").must()
+    v = json.parse("{\"a\": 100000000, \"b\": 0.000001, \"c\": 1.5, \"d\": true, \"e\": \"città\"}").must()
+    assert render(t, v).must() == "100000000 0.000001 1.5 true città"
+
+test "render: an object looped over in its order, a list's index, continue and break"
+    t = parse(
+        "{{ for $k, $v in .m }}{{ $k }}={{ $v }};{{ end }}|{{ for $i, $x in .l }}{{ if $x == 2 }}{{ continue }}{{ end }}{{ if $x == 4 }}{{ break }}{{ end }}{{ $i }}:{{ $x }} {{ end }}"
+    ).must()
+    v = json.parse("{\"m\": {\"b\": 1, \"a\": 2}, \"l\": [1, 2, 3, 4, 5]}").must()
+    assert render(t, v).must() == "b=1;a=2;|0:1 2:3 "
+
+test "render: an object looped over with one variable, a text and a number looped over, each refused"
+    v = json.parse("{\"m\": {\"a\": 1}, \"s\": \"ab\", \"n\": 3}").must()
+
+    for text in ["{{ for $x in .m }}{{ end }}", "{{ for $x in .s }}{{ end }}", "{{ for $x in .n }}{{ end }}"]
+        match render(parse(text).must(), v)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "render: loops nested, the outer variable read in the inner loop, and else for an empty list"
+    t = parse(
+        "{{ for $row in .rows }}[{{ for $cell in $row.cells }}{{ $row.name }}{{ $cell }}{{ else }}empty{{ end }}]{{ end }}"
+    ).must()
+    v = json.parse("{\"rows\": [{\"name\": \"a\", \"cells\": [1, 2]}, {\"name\": \"b\", \"cells\": []}]}").must()
+    assert render(t, v).must() == "[a1a2][empty]"
+
+test "render: trim marks and comments, as Go's text/template writes them"
+    assert render(parse("a  {{- \" b \" -}}  c").must(), .null_value).must() == "a b c"
+    assert render(parse("a {{/* c */}} b").must(), .null_value).must() == "a  b"
+    assert render(parse("a {{- /* c */ -}} b").must(), .null_value).must() == "ab"
+    assert render(parse("{{ for $x in . -}}\n  {{ $x }}\n{{- end }}").must(), json.parse("[1, 2]").must()).must() == "12"
+
+test "render: include hands a value on, a tree walked by a template including itself, and one never ending"
+    tree = parse(
+        "{{ define \"node\" }}({{ .name }}{{ for $c in .children }}{{ include \"node\" $c }}{{ end }}){{ end }}{{ include \"node\" . }}"
+    ).must()
+    v = json.parse(
+        "{\"name\": \"a\", \"children\": [{\"name\": \"b\", \"children\": []}, {\"name\": \"c\", \"children\": [{\"name\": \"d\", \"children\": []}]}]}"
+    ).must()
+    assert render(tree, v).must() == "(a(b)(c(d)))"
+    forever = parse("{{ define \"x\" }}{{ include \"x\" . }}{{ end }}{{ include \"x\" . }}").must()
+
+    match render(forever, .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 17: `include` runs deeper than 10000, which a template that includes itself with no end would"
+
+test "parse: a text that is not a template, with the line and the column of what is wrong"
+    match parse("ok\n{{ if .a }}\n{{ .b | trim }}{{ end }}")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 3, column 9: no filter \"trim\": the filters are escape, upper, lower, join, default and length"
+
+test "parse_all: a text's name before its message, an include of no template, and no text at all"
+    texts: {str: str} @= {}
+    texts["page"] @ "{{ include \"nav\" . }}"
+
+    match parse_all(texts, plain())
+        .ok _  => assert false
+        .err e => assert e.msg == "\"page\", line 1, column 1: no template \"nav\" in the set, which holds \"page\""
+
+    empty: {str: str} = {}
+    assert parse_all(empty, plain()).is_err()
+
+test "parse_with: a delimiter empty or holding white space"
+    options: Options @= plain()
+    options.left @ "{ {"
+    assert parse_with("x", options).is_err()
+    options.left @ ""
+    assert parse_with("x", options).is_err()
+
+test "render_named and paths_of: a template the set does not hold"
+    t = parse("x").must()
+
+    match render_named(t, "y", .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no template \"y\" in the set, which holds \"\""
+
+    assert paths_of(t, "y").is_err()
+
+test "parse_html: a template included in an attribute's value, escaped where it lands there and in text"
+    t = parse_html(
+        "{{ define \"href\" }}/users/{{ . }}{{ end }}<a href=\"{{ include \"href\" .id }}\">{{ include \"href\" .id }}</a>"
+    ).must()
+    assert render(t, json.parse("{\"id\": \"a b&c\"}").must()).must() == "<a href=\"/users/a%20b&amp;c\">/users/a b&amp;c</a>"
+
+test "parse_html: an object in a script in its own order, and null in a script, where Go sorts the keys"
+    t = parse_html("<script>var data = {{ .data }}, none = {{ .none }};</script>").must()
+    v = json.parse("{\"data\": {\"b\": 1, \"a\": \"<\"}, \"none\": null}").must()
+    assert render(t, v).must() == "<script>var data = {\"b\":1,\"a\":\"\\u003c\"}, none =  null ;</script>"
+
+test "parse_html: a template that ends inside an attribute, refused when it is parsed"
+    match parse_html("{{ define \"open\" }}<a href=\"{{ end }}x")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the template \"open\" ends inside a URL inside an attribute's value: a template closes what its text opens"
+
+test "parse_html: a script's end tag inside its string ends it, as a browser reads it, where Go reads on"
+    t = parse_html("<script>var a = \"</script>{{ . }}\"").must()
+    assert render(t, .text(v: "<b>")).must() == "<script>var a = \"</script>&lt;b&gt;\""
+
+test "parse_html: escape, a value in a tag's or an attribute's name, and a script's type given by a value, refused"
+    for text in ["{{ .a | escape }}", "<a{{ .x }}>", "<a title{{ .x }}=1>", "<script type=\"{{ .t }}\"></script>"]
+        match parse_html(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+## Examples
+
+# Two options, the text mode's and the HTML mode's.
+test "plain: the text mode, between braces"
+    assert !plain().html && plain().left == "{{" && plain().right == "}}"
+
+# The HTML mode's options.
+test "html: the HTML mode, between braces"
+    assert html().html && html().left == "{{"
+
+# A greeting, a value by its path.
+test "parse: a value by its path"
+    t = parse("Hello, {{ .user.name }}!").must()
+    assert render(t, json.parse("{\"user\": {\"name\": \"Ana\"}}").must()).must() == "Hello, Ana!"
+
+# A link and its title, each escaped where it lands.
+test "parse_html: a URL refused and a title escaped"
+    t = parse_html("<a href=\"{{ .url }}\">{{ .title }}</a>").must()
+    value = json.parse("{\"url\": \"javascript:alert(1)\", \"title\": \"<b>Hi</b>\"}").must()
+    assert render(t, value).must() == "<a href=\"#ZrebelZ\">&lt;b&gt;Hi&lt;/b&gt;</a>"
+
+# Square brackets for a text whose braces are its own.
+test "parse_with: other delimiters"
+    options: Options @= plain()
+    options.left @ "[["
+    options.right @ "]]"
+    t = parse_with("{ \"n\": [[ .n ]] }", options).must()
+    assert render(t, json.parse("{\"n\": 3}").must()).must() == "{ \"n\": 3 }"
+
+# A page that includes a list.
+test "parse_all: a page and the list it includes"
+    texts: {str: str} @= {}
+    texts["page"] @ "<h1>{{ .title }}</h1><ul>{{ include \"list\" .items }}</ul>"
+    texts["list"] @ "{{ for $item in . }}<li>{{ $item }}</li>{{ end }}"
+    t = parse_all(texts, html()).must()
+    value = json.parse("{\"title\": \"Fruit\", \"items\": [\"fig\", \"<pear>\"]}").must()
+    assert render(t, value).must() == "<h1>Fruit</h1><ul><li>fig</li><li>&lt;pear&gt;</li></ul>"
+
+# A loop, its else, and a default.
+test "render: a loop over a list and a default"
+    t = parse("{{ for $n in .nums }}{{ $n }};{{ else }}none{{ end }} by {{ .who | default \"nobody\" }}").must()
+    assert render(t, json.parse("{\"nums\": [1, 2.5]}").must()).must() == "1;2.5; by nobody"
+
+# One template of a set run by its name.
+test "render_named: a template defined in the text"
+    t = parse("{{ define \"row\" }}<{{ .name | upper }}>{{ end }}").must()
+    assert render_named(t, "row", json.parse("{\"name\": \"ana\"}").must()).must() == "<ANA>"
+
+# The paths a template reads.
+test "paths_of: two paths, one read twice"
+    t = parse("{{ .a.b }} {{ .c }} {{ .a.b }}").must()
+    assert paths_of(t, "").must() == [".a.b", ".c"]
+
+# What `if` takes as true.
+test "is_true: an empty text, a zero and a list"
+    assert !is_true(.text(v: "")) && !is_true(.number(v: 0.0)) && is_true(.list(items: [.null_value]))
+
+# A text made safe for HTML.
+test "escape_html: a tag and its quotes"
+    assert escape_html("<a href='x'>&\"") == "&lt;a href=&#39;x&#39;&gt;&amp;&#34;"
+
+# References read back.
+test "unescape_html: named, decimal and hexadecimal"
+    assert unescape_html("&lt;p&gt; &amp;amp; &#233;&#x41;") == "<p> &amp; éA"
+
+# A text made safe inside a script's string.
+test "escape_js: quotes and a tag"
+    assert escape_js("'<b>'") == "\\'\\u003Cb\\u003E\\'"

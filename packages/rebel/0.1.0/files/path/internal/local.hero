@@ -1,0 +1,231 @@
+# What a path may hold and still be used where it stands: the names Windows
+# keeps for itself, whether a path stays under the folder it is read from, a
+# slash-separated path turned into a local one, and a list of paths such as
+# PATH cut into its paths. A rules value reaches it as `windows`.
+
+use path/internal/codes
+use path/internal/roots
+use path/internal/scan
+
+# Whether `name`, one name, is one Windows keeps for itself: it ends with a dot
+# or a space, holds a control character or one of `*?"<>|`, or names a device
+# before its first dot or colon, its spaces at the end set aside. `.` and `..`
+# are not reserved. These are the answers Python's `ntpath.isreserved` gave on
+# 2026-11-15.
+function is_reserved_name(name: str) -> bool
+    if name == "." || name == ".."
+        return false
+    last = name[name.len() - 1]
+
+    if last == '.' || last == ' '
+        return true
+    end: i64 @= name.len()
+    at: i64 @= 0
+
+    while at < name.len()
+        b = name[at]
+
+        if b < 0x20 || b == '*' || b == '?' || b == '"' || b == '<' || b == '>' || b == '|'
+            return true
+
+        if end == name.len() && (b == '.' || b == ':')
+            end @ at
+        at @ at + 1
+
+    while end > 0 && name[end - 1] == ' '
+        end @ end - 1
+
+    return is_device(name.slice(from: 0, to: end))
+
+# Whether `base`, a name before its extension, is the name of a device of
+# Windows in any case of its ASCII letters: CON, PRN, AUX, NUL, CONIN$,
+# CONOUT$, and COM or LPT followed by a digit from 1 to 9 or by `¹`, `²` or
+# `³`.
+function is_device(base: str) -> bool
+    for device in ["con", "prn", "aux", "nul", "conin$", "conout$"]
+        if scan.same(a: base, b: device, windows: true)
+            return true
+
+    if base.len() < 4
+        return false
+    head = base.slice(from: 0, to: 3)
+
+    if !scan.same(a: head, b: "com", windows: true) && !scan.same(a: head, b: "lpt", windows: true)
+        return false
+    tail = base.slice(from: 3, to: base.len())
+    return tail.len() == 1 && tail[0] >= '1' && tail[0] <= '9' || tail == "¹" || tail == "²" || tail == "³"
+
+# Whether a name of `path` is one Windows keeps for itself; by POSIX's rules
+# none is.
+function is_reserved(path: str, windows: bool) -> bool
+    if !windows
+        return false
+
+    for name in scan.names_in(roots.split(path, true).rest, true)
+        if is_reserved_name(name)
+            return true
+
+    return false
+
+# Whether `path` stays under the folder it is read from: not empty, with no
+# volume and no root, no `..` climbing above its beginning, and by Windows'
+# rules no reserved name.
+function is_local(path: str, windows: bool) -> bool
+    if path == ""
+        return false
+    anchor = roots.split(path, windows)
+
+    if anchor.volume != "" || anchor.root != "" || is_reserved(path, windows)
+        return false
+    depth: i64 @= 0
+
+    for name in scan.names_in(anchor.rest, windows)
+        if name == ".."
+            if depth == 0
+                return false
+            depth @ depth - 1
+        else
+            depth @ depth + 1
+
+    return true
+
+# `path`, written with slashes, as a local path of the rules, failing `invalid`
+# where it is not a plain relative path or the rules cannot hold it as written.
+function localize(path: str, windows: bool) -> str?
+    if path == "."
+        return ok(".")
+
+    if path == ""
+        return fail(code: codes.INVALID, msg: "the empty path names nothing to localize")
+    pieces: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            piece = path.slice(from: start, to: at)
+            pieces @ pieces.push(piece)
+            start @ at + 1
+
+    for piece in pieces
+        why = refusal(piece, windows)
+
+        if why != ""
+            return fail(code: codes.INVALID, msg: f"\"{path}\" is no local path: {why}")
+
+    return ok(pieces.join(scan.separator(windows)))
+
+# Why `piece`, one part of a slash-separated path, cannot stand in a local path
+# of the rules, or "" where it can.
+function refusal(piece: str, windows: bool) -> str
+    if piece == ""
+        return "it has an empty part, a slash at an end or two together"
+
+    if piece == "." || piece == ".."
+        return f"it has the part \"{piece}\""
+
+    for at in range(from: 0, to: piece.len())
+        if piece[at] == 0
+            return "it holds a zero byte"
+
+        if windows && (piece[at] == '\\' || piece[at] == ':')
+            return f"the part \"{piece}\" holds a separator or a colon of Windows"
+
+    if windows && is_reserved_name(piece)
+        return f"Windows keeps the name \"{piece}\" for itself"
+    return ""
+
+# The paths of `list`, cut at `:` by POSIX's rules and at `;` by Windows', where
+# a piece may stand in double quotes to hold a `;`, and the quotes are dropped.
+function split_list(list: str, windows: bool) -> [str]
+    out: [str] @= []
+
+    if list == ""
+        return out
+
+    cut: u8 = if windows
+        ';'
+    else
+        ':'
+
+    held: [str] @= []
+    quoted: bool @= false
+    start: i64 @= 0
+
+    for at in range(from: 0, to: list.len() + 1)
+        if at == list.len() || list[at] == cut && !quoted
+            held @ held.push(list.slice(from: start, to: at))
+            out @ out.push(held.join(""))
+            held @ []
+            start @ at + 1
+        else if windows && list[at] == '"'
+            held @ held.push(list.slice(from: start, to: at))
+            quoted @ !quoted
+            start @ at + 1
+
+    return out
+
+## Tests
+
+test "is_reserved_name: the answers Python's `ntpath.isreserved` gave on 2026-11-15"
+    for name in ["NUL", "nul.txt", "CON", "COM1", "COM¹", "COM²", "COM³", "LPT9.x", "CONIN$", "conout$", "AUX ", "a.", "a ", " ", "a*b", "a?b", "a<b", "a|b", "a\"b", "nul .txt", "con.txt.gz", "CON:s", "NUL:", "nul\t", "LPT¹", "PRN", "AUX."]
+        assert is_reserved_name(name)
+
+    for name in ["COM0", "a:b", "CLOCK$", "..", ".", "COM⁴", "lpt0", "x y", "prné", "comx", "a"]
+        assert !is_reserved_name(name)
+
+test "is_reserved: by Windows' rules any name of the path, by POSIX's none"
+    assert is_reserved("x\\NUL\\y", true) && is_reserved("C:\\NUL", true)
+    assert is_reserved("\\\\h\\s\\nul", true) && is_reserved("a/b ", true)
+    assert !is_reserved("x\\NUL\\y", false) && !is_reserved("", true)
+    assert !is_reserved("C:\\a\\..\\b", true)
+
+test "is_local by POSIX's rules, the answers Go's `filepath.IsLocal` gave on 2026-11-15"
+    for path in [".", "a", "a/", "a//", "a/b", "a/b/", "a//b", "a/./b", "a/../b", "a/..", "./a", "a/.", "git/", ".bashrc", "..a", "a/.b", "caffè"]
+        assert is_local(path, false)
+
+    for path in ["", "..", "/", "//", "/a", "//a", "../a", "/..", "/../a", "a/../.."]
+        assert !is_local(path, false)
+
+test "is_local by Windows' rules: a volume, a root, a reserved name"
+    assert is_local("a\\b", true) && is_local("a/..", true)
+    assert !is_local("C:a", true) && !is_local("\\a", true) && !is_local("C:\\a", true)
+    assert !is_local("\\\\h\\s\\a", true) && !is_local("a\\NUL", true) && !is_local("a\\..\\..", true)
+    assert is_local("C:a", false)
+
+test "localize by POSIX's rules, the answers Go's `filepath.Localize` gave on 2026-11-15"
+    assert localize("a/b", false).must() == "a/b" && localize(".", false).must() == "."
+    assert localize("a\\b", false).must() == "a\\b" && localize("NUL", false).must() == "NUL"
+    assert localize("a:b", false).must() == "a:b" && localize("caffè/è", false).must() == "caffè/è"
+
+    for path in ["", "/a", "a/", "a//b", "a/./b", "a/../b", ".."]
+        match localize(path, false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    zero: [u8] = [0x61, 0, 0x62]
+    assert localize(zero.validated_bytes().must(), false).is_err()
+
+test "localize by Windows' rules: the separator written, a backslash, a colon and a device refused"
+    assert localize("a/b/c", true).must() == "a\\b\\c"
+    assert localize("a\\b", true).is_err() && localize("a:b", true).is_err()
+    assert localize("x/NUL", true).is_err() && localize("C:/x", true).is_err()
+
+    match localize("x/nul.txt", true)
+        .ok _  => assert false
+        .err e => assert e.msg == "\"x/nul.txt\" is no local path: Windows keeps the name \"nul.txt\" for itself"
+
+test "split_list by POSIX's rules, the answers Go's `filepath.SplitList` gave on 2026-11-15"
+    nothing: [str] = []
+    assert split_list("", false) == nothing
+    assert split_list(":", false) == ["", ""] && split_list("a", false) == ["a"]
+    assert split_list("a:b", false) == ["a", "b"] && split_list("a::b", false) == ["a", "", "b"]
+    assert split_list(":a", false) == ["", "a"] && split_list("a:", false) == ["a", ""]
+    assert split_list("/usr/bin:/bin", false) == ["/usr/bin", "/bin"]
+    assert split_list("a;b", false) == ["a;b"]
+
+test "split_list by Windows' rules: a semicolon, quotes that hold one, an open quote"
+    assert split_list("C:\\a;D:\\b", true) == ["C:\\a", "D:\\b"]
+    assert split_list("a;\"b;c\";d", true) == ["a", "b;c", "d"]
+    assert split_list("\"a\"b", true) == ["ab"]
+    assert split_list("a;\"b;c", true) == ["a", "b;c"]
+    assert split_list("a:b", true) == ["a:b"]

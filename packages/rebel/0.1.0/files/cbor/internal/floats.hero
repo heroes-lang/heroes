@@ -1,0 +1,317 @@
+# A float's bits made and read by exact arithmetic: the language has no cast
+# between a float and its bits, and every step here multiplies or divides by a
+# power of two, which an `f64` does exactly while the result stays in range.
+# A double is held as its three fields, each an `i64` so that the bitwise
+# operators reach them; halves and singles are read from their bits and
+# chosen, for writing, only where they hold the double exactly.
+
+use bytes
+
+# 2^64, the largest step a scaling takes at once.
+constant STEP: f64
+    18446744073709551616.0
+
+# 2^52, the weight of a double's hidden bit.
+constant HIDDEN: i64
+    4503599627370496
+
+# The three fields of a double.
+record Parts
+    # 1 where the sign bit is set, else 0.
+    sign: i64
+    # The biased exponent, 0 to 2047.
+    exponent: i64
+    # The fraction's 52 bits.
+    fraction: i64
+
+# 2^`k` exactly, for `k` from -1074 to 1023.
+function pow2(k: i64) -> f64
+    result: f64 @= 1.0
+    left: i64 @= k
+
+    while left >= 64
+        result @ result * STEP
+        left @ left - 64
+
+    while left <= -64
+        result @ result / STEP
+        left @ left + 64
+
+    while left > 0
+        result @ result * 2.0
+        left @ left - 1
+
+    while left < 0
+        result @ result / 2.0
+        left @ left + 1
+
+    return result
+
+# The fields of the double `x`; every `nan` is the quiet one, its sign clear.
+function parts_of(x: f64) -> Parts
+    if x != x
+        return Parts(sign: 0, exponent: 2047, fraction: HIDDEN / 2)
+
+    negative = x < 0.0 || x == 0.0 && 1.0 / x < 0.0
+
+    sign = if negative
+        1
+    else
+        0
+
+    a = if negative
+        -x
+    else
+        x
+
+    if a == 0.0
+        return Parts(sign: sign, exponent: 0, fraction: 0)
+    else if a == 1.0 / 0.0
+        return Parts(sign: sign, exponent: 2047, fraction: 0)
+
+    y: f64 @= a
+    e: i64 @= 0
+
+    while y >= STEP
+        y @ y / STEP
+        e @ e + 64
+
+    while y >= 2.0
+        y @ y / 2.0
+        e @ e + 1
+
+    while y < 1.0 / STEP
+        y @ y * STEP
+        e @ e - 64
+
+    while y < 1.0
+        y @ y * 2.0
+        e @ e - 1
+
+    if e >= -1022
+        return Parts(sign: sign, exponent: e + 1023, fraction: to_i64((y - 1.0) * pow2(52)).must())
+    return Parts(sign: sign, exponent: 0, fraction: to_i64(y * pow2(e + 1074)).must())
+
+# The double whose fields are `p`.
+function value_of(p: Parts) -> f64
+    magnitude = if p.exponent == 2047 && p.fraction != 0
+        0.0 / 0.0
+    else if p.exponent == 2047
+        1.0 / 0.0
+    else if p.exponent == 0
+        to_f64(p.fraction) * pow2(-1074)
+    else
+        to_f64(p.fraction + HIDDEN) * pow2(p.exponent - 1075)
+
+    if p.sign == 1
+        return -magnitude
+    return magnitude
+
+# The value of the half whose 16 bits are `h`.
+function half_value(h: i64) -> f64
+    exponent = h >> 10 & 31
+    fraction = h & 1023
+
+    magnitude = if exponent == 31 && fraction != 0
+        0.0 / 0.0
+    else if exponent == 31
+        1.0 / 0.0
+    else if exponent == 0
+        to_f64(fraction) * pow2(-24)
+    else
+        to_f64(fraction + 1024) * pow2(exponent - 25)
+
+    if h >> 15 == 1
+        return -magnitude
+    return magnitude
+
+# The value of the single whose 32 bits are `s`.
+function single_value(s: i64) -> f64
+    exponent = s >> 23 & 255
+    fraction = s & 8388607
+
+    magnitude = if exponent == 255 && fraction != 0
+        0.0 / 0.0
+    else if exponent == 255
+        1.0 / 0.0
+    else if exponent == 0
+        to_f64(fraction) * pow2(-149)
+    else
+        to_f64(fraction + 8388608) * pow2(exponent - 150)
+
+    if s >> 31 == 1
+        return -magnitude
+    return magnitude
+
+# The value of the double whose eight bytes, most significant first, begin at
+# `at` of `data`.
+function double_value(data: [u8], at: i64) -> f64
+    b0 = to_i64(data[at]).must()
+    b1 = to_i64(data[at + 1]).must()
+    fraction: i64 @= b1 & 15
+
+    for k in range(from: 2, to: 8)
+        fraction @ fraction << 8 | to_i64(data[at + k]).must()
+
+    return value_of(Parts(sign: b0 >> 7, exponent: (b0 & 127) << 4 | b1 >> 4, fraction: fraction))
+
+# `n`'s lowest `count` bytes, the most significant first.
+function bytes_of(n: i64, count: i64) -> [u8]
+    out: [u8] @= []
+
+    for k in range(from: 0, to: count)
+        out @ out.push(to_u8(n >> 8 * (count - 1 - k) & 255).must())
+
+    return out
+
+# Whether the lowest `bits` bits of `n` are all zero.
+function low_clear(n: i64, bits: i64) -> bool
+    return n & (1 << bits) - 1 == 0
+
+# `x` as a CBOR float item at its shortest, its head byte first: the half, the
+# single or the double that holds it exactly, every `nan` as `0xf97e00`.
+function shortest(x: f64) -> [u8]
+    p = parts_of(x)
+
+    if p.exponent == 2047 && p.fraction != 0
+        return [0xf9, 0x7e, 0x00]
+    else if p.exponent == 2047
+        return [0xf9, to_u8(0x7c | p.sign << 7).must(), 0x00]
+    else if p.exponent == 0 && p.fraction == 0
+        return [0xf9, to_u8(p.sign << 7).must(), 0x00]
+
+    head: [u8] = [0xf9]
+    e = p.exponent - 1023
+    full = p.fraction + HIDDEN
+
+    if p.exponent > 0 && e >= -14 && e <= 15 && low_clear(n: p.fraction, bits: 42)
+        return bytes.concat([head, bytes_of(n: p.sign << 15 | e + 15 << 10 | p.fraction >> 42, count: 2)])
+    else if p.exponent > 0 && e >= -24 && e <= -15 && low_clear(n: full, bits: 28 - e)
+        return bytes.concat([head, bytes_of(n: p.sign << 15 | full >> 28 - e, count: 2)])
+
+    single: [u8] = [0xfa]
+
+    if p.exponent > 0 && e >= -126 && e <= 127 && low_clear(n: p.fraction, bits: 29)
+        return bytes.concat([single, bytes_of(n: p.sign << 31 | e + 127 << 23 | p.fraction >> 29, count: 4)])
+    else if p.exponent > 0 && e >= -149 && e <= -127 && low_clear(n: full, bits: -97 - e)
+        return bytes.concat([single, bytes_of(n: p.sign << 31 | full >> -97 - e, count: 4)])
+
+    first = p.sign << 7 | p.exponent >> 4
+    second = (p.exponent & 15) << 4 | p.fraction >> 48
+    return bytes.concat(
+        [[0xfb, to_u8(first).must(), to_u8(second).must()], bytes_of(n: p.fraction & 0xffffffffffff, count: 6)]
+    )
+
+test "pow2: zero, one, the extremes, a step of 64 and past it"
+    assert pow2(0) == 1.0
+    assert pow2(1) == 2.0
+    assert pow2(-1) == 0.5
+    assert pow2(64) == 18446744073709551616.0
+    assert pow2(1023) / pow2(1000) == 8388608.0
+    assert pow2(-1074) > 0.0 && pow2(-1074) / 2.0 == 0.0
+    assert pow2(-1022) == pow2(-511) * pow2(-511)
+
+test "parts_of: zero, minus zero, one, nan, the infinities"
+    assert parts_of(0.0) == Parts(sign: 0, exponent: 0, fraction: 0)
+    assert parts_of(-0.0) == Parts(sign: 1, exponent: 0, fraction: 0)
+    assert parts_of(1.0) == Parts(sign: 0, exponent: 1023, fraction: 0)
+    assert parts_of(0.0 / 0.0) == Parts(sign: 0, exponent: 2047, fraction: 2251799813685248)
+    assert parts_of(1.0 / 0.0) == Parts(sign: 0, exponent: 2047, fraction: 0)
+    assert parts_of(-1.0 / 0.0) == Parts(sign: 1, exponent: 2047, fraction: 0)
+
+test "parts_of: the smallest subnormal, the smallest normal, the largest, -4.1"
+    assert parts_of(pow2(-1074)) == Parts(sign: 0, exponent: 0, fraction: 1)
+    assert parts_of(pow2(-1022)) == Parts(sign: 0, exponent: 1, fraction: 0)
+    assert parts_of((pow2(53) - 1.0) * pow2(971)) == Parts(sign: 0, exponent: 2046, fraction: 4503599627370495)
+    assert parts_of(-4.1) == Parts(sign: 1, exponent: 1025, fraction: 0x0666666666666)
+
+test "value_of: back from the fields of every edge"
+    for x in [0.0, 1.0, -4.1, pow2(-1074), pow2(-1022), (pow2(53) - 1.0) * pow2(971), 0.1, 1.1]
+        assert value_of(parts_of(x)) == x
+
+    negative_zero = value_of(parts_of(-0.0))
+    assert negative_zero == 0.0 && 1.0 / negative_zero < 0.0
+    assert value_of(parts_of(1.0 / 0.0)) == 1.0 / 0.0
+    not_a_number = value_of(parts_of(0.0 / 0.0))
+    assert not_a_number != not_a_number
+
+test "half_value: zero, the smallest subnormal and normal, the largest, the infinities, nan"
+    assert half_value(0x0000) == 0.0
+    assert half_value(0x0001) == pow2(-24)
+    assert half_value(0x03ff) == 1023.0 * pow2(-24)
+    assert half_value(0x0400) == 0.00006103515625
+    assert half_value(0x7bff) == 65504.0
+    assert half_value(0xfbff) == -65504.0
+    assert half_value(0x3e00) == 1.5
+    assert half_value(0x7c00) == 1.0 / 0.0
+    assert half_value(0xfc00) == -1.0 / 0.0
+    h = half_value(0x7e00)
+    assert h != h
+    minus_zero = half_value(0x8000)
+    assert minus_zero == 0.0 && 1.0 / minus_zero < 0.0
+
+test "single_value: the smallest subnormal and normal, the largest, 100000, the infinities"
+    assert single_value(0x00000001) == pow2(-149)
+    assert single_value(0x00800000) == pow2(-126)
+    assert single_value(0x7f7fffff) == 16777215.0 * pow2(104)
+    assert single_value(0x47c35000) == 100000.0
+    assert single_value(0x7f800000) == 1.0 / 0.0
+    assert single_value(0xff800000) == -1.0 / 0.0
+    s = single_value(0x7fc00000)
+    assert s != s
+
+test "double_value: 1.1, -4.1, the smallest subnormal, read at an offset"
+    assert double_value(data: [0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a], at: 0) == 1.1
+    assert double_value(data: [0xff, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66], at: 1) == -4.1
+    assert double_value(data: [0, 0, 0, 0, 0, 0, 0, 1], at: 0) == pow2(-1074)
+    assert double_value(data: [0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0) == (pow2(53) - 1.0) * pow2(971)
+
+test "bytes_of and low_clear: the widths and the edges"
+    assert bytes_of(n: 0x1234, count: 2) == [0x12, 0x34]
+    assert bytes_of(n: 0, count: 1) == [0]
+    assert bytes_of(n: 0xff, count: 4) == [0, 0, 0, 0xff]
+    assert low_clear(n: 0x400, bits: 10)
+    assert !low_clear(n: 0x401, bits: 10)
+
+test "shortest: zero, minus zero, the infinities and nan, as halves"
+    assert shortest(0.0) == [0xf9, 0x00, 0x00]
+    assert shortest(-0.0) == [0xf9, 0x80, 0x00]
+    assert shortest(1.0 / 0.0) == [0xf9, 0x7c, 0x00]
+    assert shortest(-1.0 / 0.0) == [0xf9, 0xfc, 0x00]
+    assert shortest(0.0 / 0.0) == [0xf9, 0x7e, 0x00]
+
+test "shortest: the halves Python's struct packs, subnormals included"
+    assert shortest(1.0) == [0xf9, 0x3c, 0x00]
+    assert shortest(1.5) == [0xf9, 0x3e, 0x00]
+    assert shortest(5.5) == [0xf9, 0x45, 0x80]
+    assert shortest(65504.0) == [0xf9, 0x7b, 0xff]
+    assert shortest(-65504.0) == [0xf9, 0xfb, 0xff]
+    assert shortest(-4.0) == [0xf9, 0xc4, 0x00]
+    assert shortest(0.333251953125) == [0xf9, 0x35, 0x55]
+    assert shortest(pow2(-24)) == [0xf9, 0x00, 0x01]
+    assert shortest(1023.0 * pow2(-24)) == [0xf9, 0x03, 0xff]
+    assert shortest(0.00006103515625) == [0xf9, 0x04, 0x00]
+
+test "shortest: the singles, just past a half either way, subnormals included"
+    assert shortest(65505.0) == [0xfa, 0x47, 0x7f, 0xe1, 0x00]
+    assert shortest(65536.0) == [0xfa, 0x47, 0x80, 0x00, 0x00]
+    assert shortest(100000.0) == [0xfa, 0x47, 0xc3, 0x50, 0x00]
+    assert shortest(5555.5) == [0xfa, 0x45, 0xad, 0x9c, 0x00]
+    assert shortest(1000000.5) == [0xfa, 0x49, 0x74, 0x24, 0x08]
+    assert shortest(16777215.0 * pow2(104)) == [0xfa, 0x7f, 0x7f, 0xff, 0xff]
+    assert shortest(pow2(-25)) == [0xfa, 0x33, 0x00, 0x00, 0x00]
+    assert shortest(pow2(-149)) == [0xfa, 0x00, 0x00, 0x00, 0x01]
+    assert shortest(pow2(-126)) == [0xfa, 0x00, 0x80, 0x00, 0x00]
+
+test "shortest: the doubles, just past a single, subnormal and largest"
+    assert shortest(1.1) == [0xfb, 0x3f, 0xf1, 0x99, 0x99, 0x99, 0x99, 0x99, 0x9a]
+    assert shortest(-4.1) == [0xfb, 0xc0, 0x10, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66]
+    assert shortest(0.0000001) == [0xfb, 0x3e, 0x7a, 0xd7, 0xf2, 0x9a, 0xbc, 0xaf, 0x48]
+    assert shortest(33554431.0 * pow2(103)) == [0xfb, 0x47, 0xef, 0xff, 0xff, 0xf0, 0x00, 0x00, 0x00]
+    big: [u8] = [0x7e, 0x37, 0xe4, 0x3c, 0x88, 0x00, 0x75, 0x9c]
+    lead: [u8] = [0xfb]
+    assert shortest(double_value(data: big, at: 0)) == bytes.concat([lead, big])
+    assert shortest(pow2(-1074)) == [0xfb, 0, 0, 0, 0, 0, 0, 0, 1]
+    assert shortest(pow2(-1022)) == [0xfb, 0x00, 0x10, 0, 0, 0, 0, 0, 0]
+    assert shortest((pow2(53) - 1.0) * pow2(971)) == [0xfb, 0x7f, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert shortest(1363896240.5) == [0xfb, 0x41, 0xd4, 0x52, 0xd9, 0xec, 0x20, 0x00, 0x00]

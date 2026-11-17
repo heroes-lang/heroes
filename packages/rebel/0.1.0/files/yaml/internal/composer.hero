@@ -1,0 +1,357 @@
+# The events of a YAML stream built into values, one a document: each list and
+# map on a stack this module holds, each scalar read by the schema, each alias
+# a copy of the node its anchor names. What aliases copy is counted, so that a
+# document of a few lines that names a node a billion times is refused before
+# it is built; a key must be text, and is written once in its map.
+
+use json
+use yaml/internal/event
+use yaml/internal/schema
+use yaml/internal/source
+use yaml/internal/stack
+
+# The code of a text that is not YAML, or a key that is not text.
+constant INVALID: str
+    "invalid"
+
+# The code of aliases that copy past the limits.
+constant LIMIT: str
+    "limit"
+
+# The largest `i64`, where a count stops growing.
+constant MAX_COUNT: i64
+    9223372036854775807
+
+# How far a stream may nest, and how much its aliases may copy.
+record Limits
+    # The deepest nesting a value may reach, its aliases copied.
+    max_depth: i64
+    # The most all the aliases of the stream may copy together, each value
+    # counted once and each byte of its texts and keys once more.
+    max_expanded: i64
+    # Whether a key written twice in one map is accepted, the last value at
+    # the first one's place.
+    duplicate_keys: bool
+
+# One document read.
+record Document
+    # Its value.
+    value: json.Value
+    # The byte index where it begins.
+    at: i64
+
+# The value an anchor names, and what a copy of it costs.
+record Anchored
+    # The value.
+    value: json.Value
+    # What it holds: one for each value and one more for each byte of its texts
+    # and keys.
+    size: i64
+    # How deep it nests: 0 for a scalar.
+    depth: i64
+
+# What an open list or map holds besides its elements and members.
+record Frame
+    # Whether it is a map.
+    is_map: bool
+    # The byte index where it opened.
+    at: i64
+    # Its anchor; empty for none.
+    anchor: str
+    # Its size so far, counted as `Anchored.size` counts.
+    size: i64
+    # Its depth so far.
+    depth: i64
+    # The key whose value comes next, in a map.
+    key: str
+    # Whether that key has been read.
+    has_key: bool
+
+# A value about to be placed in the collection open around it.
+record Placed
+    # The value.
+    value: json.Value
+    # Its size, counted as `Anchored.size` counts.
+    size: i64
+    # Its depth.
+    depth: i64
+    # The byte index of what it was read from.
+    at: i64
+    # How it was written, where it is a scalar: for a message about a key.
+    spelling: str
+
+# The documents `events` build, read from `text` within `limits`.
+#
+# Fails `invalid` where a key is not text or is written twice, where an alias
+# names no anchor before it or a node that holds it, and where the text nests
+# deeper than `limits.max_depth`. Fails `limit` where aliases copy more than
+# `limits.max_expanded`, or nest a copy deeper than `limits.max_depth`. Fails
+# as `schema.scalar_value` does on a scalar.
+function compose(events: [event.Event] lent, text: str, limits: Limits) -> [Document]?
+    documents: [Document] @= []
+    anchors: {str: Anchored} @= {}
+    opening: {str: i64} @= {}
+    frame: Frame @= root_frame()
+    items: [json.Value] @= []
+    members: {str: json.Value} @= {}
+    seen: {str: i64} @= {}
+    held_frames: [Frame] @= []
+    held_items: [[json.Value]] @= []
+    held_members: [{str: json.Value}] @= []
+    held_seen: [{str: i64}] @= []
+    depth: i64 @= 0
+    expanded: i64 @= 0
+    root: json.Value @= .null_value
+    begun: i64 @= 0
+
+    for e in events
+        k = e.kind
+
+        if k == event.DOC_START
+            anchors @ {}
+            opening @ {}
+            begun @ e.at
+        else if k == event.DOC_END
+            documents @ documents.push(Document(value: root, at: begun))
+        else if k == event.SEQ_START || k == event.MAP_START
+            schema.check_collection(e, text)?
+
+            if depth >= limits.max_depth
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: e.at, what: f"nested deeper than {limits.max_depth} levels, the most this reading allows")
+                )
+            stack.put(items: @held_frames, top: depth, item: frame)
+            stack.put(items: @held_items, top: depth, item: items)
+            stack.put(items: @held_members, top: depth, item: members)
+            stack.put(items: @held_seen, top: depth, item: seen)
+            depth @ depth + 1
+            frame @ Frame(
+                is_map: k == event.MAP_START,
+                at: e.at,
+                anchor: e.anchor,
+                size: 1,
+                depth: 1,
+                key: "",
+                has_key: false
+            )
+            items @ []
+            members @ {}
+            seen @ {}
+
+            if e.anchor != ""
+                opening[e.anchor] @ opening[e.anchor].default(0) + 1
+        else if k == event.SEQ_END || k == event.MAP_END
+            done: json.Value = if frame.is_map
+                .object(members: members)
+            else
+                .list(items: items)
+            closed = frame
+
+            if closed.anchor != ""
+                opening[closed.anchor] @ opening[closed.anchor].default(1) - 1
+                anchors[closed.anchor] @ Anchored(value: done, size: closed.size, depth: closed.depth)
+            depth @ depth - 1
+            frame @ held_frames[depth]
+            items @ held_items[depth]
+            members @ held_members[depth]
+            seen @ held_seen[depth]
+            held_items[depth] @ []
+            held_members[depth] @ {}
+            held_seen[depth] @ {}
+            placed = Placed(value: done, size: closed.size, depth: closed.depth, at: closed.at, spelling: "")
+            add(@frame, @items, @members, @seen, @root, depth == 0, placed, text, limits)?
+        else if k == event.SCALAR
+            v = schema.scalar_value(e, text)?
+            size = sum(a: 1, b: e.text.len())
+
+            if e.anchor != ""
+                anchors[e.anchor] @ Anchored(value: v, size: size, depth: 0)
+
+            spelling = if e.is_plain
+                e.text
+            else
+                ""
+            placed = Placed(value: v, size: size, depth: 0, at: e.at, spelling: spelling)
+            add(@frame, @items, @members, @seen, @root, depth == 0, placed, text, limits)?
+        else
+            named = copied(e: e, text: text, anchors: anchors, opening: opening)?
+
+            if named.size > limits.max_expanded - expanded
+                return fail(
+                    code: LIMIT,
+                    msg: source.said(text: text, at: e.at, what: f"the alias `*{e.text}` would make the stream's aliases copy past {limits.max_expanded}, the most this reading allows: each value counts one and each byte of its texts and keys one more")
+                )
+            expanded @ expanded + named.size
+
+            if depth + named.depth > limits.max_depth
+                return fail(
+                    code: LIMIT,
+                    msg: source.said(text: text, at: e.at, what: f"the alias `*{e.text}` would nest its copy {depth + named.depth} levels deep, past {limits.max_depth}, the most this reading allows")
+                )
+            placed = Placed(value: named.value, size: named.size, depth: named.depth, at: e.at, spelling: "*" + e.text)
+            add(@frame, @items, @members, @seen, @root, depth == 0, placed, text, limits)?
+
+    return ok(documents)
+
+# A frame that stands for no collection, before a document's root.
+function root_frame() -> Frame
+    return Frame(is_map: false, at: 0, anchor: "", size: 0, depth: 0, key: "", has_key: false)
+
+# `a` and `b` added, or `MAX_COUNT` where the sum is past it; both are 0 or
+# more.
+function sum(a: i64, b: i64) -> i64
+    if a > MAX_COUNT - b
+        return MAX_COUNT
+    return a + b
+
+# What the alias `e` names. Fails `invalid` where no anchor of that name
+# stands before it in its document, or the node it names is still open around
+# it.
+function copied(e: event.Event, text: str, anchors: {str: Anchored} lent, opening: {str: i64} lent) -> Anchored?
+    if opening[e.text].default(0) > 0
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: e.at, what: f"the alias `*{e.text}` names a node that holds it, and a value cannot hold itself")
+        )
+
+    match anchors[e.text]
+        .ok named => return ok(named)
+        .err _ =>
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: e.at, what: f"the alias `*{e.text}` names no anchor `&{e.text}` before it in its document")
+            )
+
+# Places `placed` in the collection open around it, or makes it the
+# document's root where `is_root`.
+#
+# Fails `invalid` where it is a map's key and not text, or a key the map holds
+# already and `limits.duplicate_keys` does not accept.
+function add(@frame: Frame, @items: [json.Value], @members: {str: json.Value}, @seen: {str: i64}, @root: json.Value, is_root: bool, placed: Placed, text: str, limits: Limits) -> ()?
+    if is_root
+        root @ placed.value
+        return ok()
+    frame.size @ sum(a: frame.size, b: placed.size)
+
+    if placed.depth + 1 > frame.depth
+        frame.depth @ placed.depth + 1
+
+    if !frame.is_map
+        items @ items.push(placed.value)
+        return ok()
+
+    if frame.has_key
+        members[frame.key] @ placed.value
+        frame.has_key @ false
+        return ok()
+
+    match placed.value
+        .text t =>
+            match seen[t.v]
+                .ok first =>
+                    if !limits.duplicate_keys
+                        where = source.position(text, first)
+                        return fail(
+                            code: INVALID,
+                            msg: source.said(text: text, at: placed.at, what: f"the key \"{t.v}\" is written twice in one map, first at {where}")
+                        )
+                .err _ => seen[t.v] @ placed.at
+
+            frame.key @ t.v
+            frame.has_key @ true
+            return ok()
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: source.said(text: text, at: placed.at, what: not_text(placed)))
+
+# What a message says of a key that is not text.
+function not_text(placed: Placed) -> str
+    kind = json.kind_of(placed.value)
+
+    if placed.spelling == "" && kind == "null"
+        return "an empty key is null, and a map's keys are text here: write `\"\"` for the empty text"
+
+    if placed.spelling == ""
+        return f"a key that is a {kind}, and a map's keys are text here"
+
+    if placed.spelling[0] == '*'
+        return f"the alias `{placed.spelling}` names a {kind}, and a map's keys are text here"
+    return f"the key {placed.spelling} is a {kind}, and a map's keys are text here: write it \"{placed.spelling}\""
+
+## Tests
+
+# The events of a map `{key: value}` of two plain scalars, in a document.
+function pair(key: str, value: str) -> [event.Event]
+    return [
+        event.closing(kind: event.DOC_START, at: 0)
+        event.opening(kind: event.MAP_START, at: 0, anchor: "", tag: "")
+        event.scalar(at: 0, text: key, anchor: "", tag: "", is_plain: true)
+        event.scalar(at: 0, text: value, anchor: "", tag: "", is_plain: true)
+        event.closing(kind: event.MAP_END, at: 0)
+        event.closing(kind: event.DOC_END, at: 0)
+    ]
+
+# The limits of a strict reading.
+function strict() -> Limits
+    return Limits(max_depth: 512, max_expanded: 1000000, duplicate_keys: false)
+
+test "compose: a map of one pair, a key that is a number, and an empty one"
+    docs = compose(pair(key: "a", value: "1"), "", strict()).must()
+    assert docs.len() == 1 && docs[0].value == .object(members: {"a": .number(v: 1.0)})
+
+    match compose(pair(key: "200", value: "OK"), "200: OK", strict())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 1: the key 200 is a number, and a map's keys are text here: write it \"200\""
+
+    empty_key: [event.Event] @= pair(key: "a", value: "b")
+    empty_key[2] @ event.empty(at: 0, anchor: "", tag: "")
+    assert compose(empty_key, "", strict()).is_err()
+
+test "compose: an alias copied, one named before its anchor, one inside its node, and the copies counted"
+    a = event.scalar(at: 0, text: "xyz", anchor: "a", tag: "", is_plain: true)
+    events = [
+        event.closing(kind: event.DOC_START, at: 0)
+        event.opening(kind: event.SEQ_START, at: 0, anchor: "", tag: "")
+        a
+        event.alias(at: 0, name: "a")
+        event.closing(kind: event.SEQ_END, at: 0)
+        event.closing(kind: event.DOC_END, at: 0)
+    ]
+    assert compose(events, "", strict()).must()[0].value == .list(items: [.text(v: "xyz"), .text(v: "xyz")])
+    tight: Limits @= strict()
+    tight.max_expanded @ 3
+
+    match compose(events, "", tight)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    tight.max_expanded @ 4
+    assert !compose(events, "", tight).is_err()
+    early: [event.Event] @= events
+    early[2] @ event.alias(at: 0, name: "a")
+    assert compose(early, "", strict()).is_err()
+    inside: [event.Event] @= events
+    inside[1] @ event.opening(kind: event.SEQ_START, at: 0, anchor: "a", tag: "")
+    inside[2] @ event.scalar(at: 0, text: "x", anchor: "", tag: "", is_plain: true)
+    assert compose(inside, "", strict()).is_err()
+
+test "compose: nesting past the limit, and two documents with an anchor each"
+    deep: [event.Event] @= [event.closing(kind: event.DOC_START, at: 0)]
+
+    for _ in range(from: 0, to: 3)
+        deep @ deep.push(event.opening(kind: event.SEQ_START, at: 0, anchor: "", tag: ""))
+
+    for _ in range(from: 0, to: 3)
+        deep @ deep.push(event.closing(kind: event.SEQ_END, at: 0))
+
+    deep @ deep.push(event.closing(kind: event.DOC_END, at: 0))
+    shallow: Limits @= strict()
+    shallow.max_depth @ 2
+    assert compose(deep, "", shallow).is_err()
+    shallow.max_depth @ 3
+    assert compose(deep, "", shallow).must()[0].value == .list(items: [.list(items: [.list(items: [])])])
+
+test "sum and not_text: past the largest count, and each kind of key named"
+    assert sum(a: 1, b: 2) == 3 && sum(a: MAX_COUNT, b: 1) == MAX_COUNT
+    assert not_text(Placed(value: .list(items: []), size: 1, depth: 1, at: 0, spelling: "")) == "a key that is a list, and a map's keys are text here"
+    assert not_text(Placed(value: .boolean(v: true), size: 5, depth: 0, at: 0, spelling: "*b")) == "the alias `*b` names a boolean, and a map's keys are text here"

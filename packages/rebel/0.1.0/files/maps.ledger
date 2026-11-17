@@ -1,0 +1,286 @@
+capability map/empty  a map that holds nothing
+  heroes  built-in {}
+  go      -
+  rust    HashMap::new, HashMap::default, BTreeMap::new, BTreeMap::default
+  python  dict
+  note    the empty literal, with the annotation that says its type; Go's is the language's `make`
+
+capability map/get  the value under a key
+  heroes  built-in m[k]
+  go      -
+  rust    HashMap::get, HashMap::index, BTreeMap::get, BTreeMap::index
+  python  dict.__getitem__
+  note    an absent key is `missing_key`, a `V?` the caller answers; Rust's `index` panics and Python's raises, which is `m[k].must()`; Go reads it with the language's `m[k]`
+
+capability map/get-or-default  the value under a key, or another where the key is absent
+  heroes  built-in default
+  go      -
+  rust    -
+  python  dict.get, Counter.__missing__
+  note    `m[k].default(v)`, which evaluates `v` only for an absent key; Python's `get` with no default answers None, which is the `V?` itself
+
+capability map/has-key  whether a map holds a key
+  heroes  built-in m[k]
+  go      -
+  rust    HashMap::contains_key, BTreeMap::contains_key
+  python  dict.__contains__
+  note    `!m[k].is_err()`; where the values are themselves fallible `.is_err()` is refused and a `match` names both levels
+
+capability map/insert  a value written under a key, new or held
+  heroes  built-in m[k] @ v
+  go      -
+  rust    HashMap::insert, BTreeMap::insert, hash_map::VacantEntry::insert, hash_map::VacantEntry::insert_entry, hash_map::OccupiedEntry::insert, hash_map::Entry::insert_entry, btree_map::VacantEntry::insert, btree_map::VacantEntry::insert_entry, btree_map::OccupiedEntry::insert, btree_map::Entry::insert_entry
+  python  dict.__setitem__
+  note    a replaced key keeps its place; Rust's `insert` answers the value it replaced, which here is `m[k]` read before the write
+
+capability map/insert-if-absent  a value written under a key only where the key is absent
+  heroes  built-in default
+  go      -
+  rust    HashMap::entry, HashMap::try_insert, BTreeMap::entry, BTreeMap::try_insert, hash_map::Entry::or_insert, hash_map::Entry::or_insert_with, hash_map::Entry::or_insert_with_key, hash_map::Entry::or_default, btree_map::Entry::or_insert, btree_map::Entry::or_insert_with, btree_map::Entry::or_insert_with_key, btree_map::Entry::or_default
+  python  dict.setdefault, collections.defaultdict, defaultdict.default_factory, defaultdict.__missing__
+  note    `m[k] @ m[k].default(v)`: a held key is written back its own value and keeps its place. A map that inserts a default at every read of an absent key, Python's `defaultdict`, is not offered: a read here never writes
+
+capability map/change-a-value  the value under a key replaced by one computed from it
+  heroes  built-in m[k] @ v
+  go      -
+  rust    HashMap::get_mut, BTreeMap::get_mut, hash_map::Entry::and_modify, hash_map::OccupiedEntry::get, hash_map::OccupiedEntry::get_mut, hash_map::OccupiedEntry::into_mut, btree_map::Entry::and_modify, btree_map::OccupiedEntry::get, btree_map::OccupiedEntry::get_mut, btree_map::OccupiedEntry::into_mut
+  python  -
+  note    `m[k] @ m[k].default(0) + 1` counts in one line, absent key included
+
+capability map/change-every-value  a map of the same keys, each value passed through a function
+  heroes  maps.map_values
+  go      -
+  rust    HashMap::values_mut, HashMap::iter_mut, BTreeMap::values_mut, BTreeMap::iter_mut
+  python  -
+  note    Rust changes the values in place; here the answer is a new map, whose values may be of another type
+
+capability map/len  how many keys a map holds, and whether it holds none
+  heroes  built-in len
+  go      -
+  rust    HashMap::len, HashMap::is_empty, BTreeMap::len, BTreeMap::is_empty
+  python  dict.__len__
+  note    `m.len()`, and `m.len() == 0`
+
+capability map/keys  the keys of a map
+  heroes  built-in keys
+  go      maps.Keys
+  rust    HashMap::keys, HashMap::into_keys, BTreeMap::keys, BTreeMap::into_keys
+  python  dict.keys, dict.__iter__
+  note    in the order the keys were first inserted, as Python's; Go's order is random at each walk and `HashMap`'s unspecified
+
+capability map/values  the values of a map
+  heroes  maps.values
+  go      maps.Values
+  rust    HashMap::values, HashMap::into_values, BTreeMap::values, BTreeMap::into_values
+  python  dict.values
+  note    in the order of `keys`, so the two lists pair up element by element
+
+capability map/entries  the pairs of key and value, as one list
+  heroes  refused: needs a generic record
+  go      maps.All
+  rust    HashMap::iter, HashMap::into_iter, BTreeMap::iter, BTreeMap::into_iter
+  python  dict.items
+  note    a pair of a `K` and a `V` is a record with two type parameters, and generics are on functions only. `keys(m)` and `maps.values(m)` are the two halves in one order; a walk is `for k in keys(m)` with `m[k].must()` beside it
+
+capability map/from-entries  a map built from keys and their values
+  heroes  maps.from_lists
+  go      maps.Collect, maps.Insert
+  rust    HashMap::from_iter, HashMap::from, BTreeMap::from_iter, BTreeMap::from
+  python  -
+  note    from two lists in one order, since there is no list of pairs; Python's is `dict(pairs)` and `dict(zip(a, b))`, the type's own call. Go's `Insert` into a map that holds something is `merge` of the two
+
+capability map/from-keys  a map of given keys, every one under the same value
+  heroes  maps.from_keys
+  go      -
+  rust    -
+  python  dict.fromkeys
+  note    -
+
+capability map/copy  a second map equal to the first and independent of it
+  heroes  built-in =
+  go      maps.Clone
+  rust    HashMap::clone, HashMap::clone_from, BTreeMap::clone, BTreeMap::clone_from
+  python  dict.copy
+  note    every value is a copy: after `b = a` a write to one never reaches the other, nested maps and lists included, where Go's and Python's copies are shallow
+
+capability map/clear  a map emptied
+  heroes  built-in {}
+  go      -
+  rust    HashMap::clear, HashMap::drain, BTreeMap::clear
+  python  dict.clear
+  note    `m @ {}`; Go's is the language's `clear`; what `drain` hands out on the way is `keys(m)` and `maps.values(m)` read first
+
+capability map/remove  a map without one key
+  heroes  maps.remove
+  go      -
+  rust    HashMap::remove, HashMap::remove_entry, BTreeMap::remove, BTreeMap::remove_entry, hash_map::OccupiedEntry::remove, hash_map::OccupiedEntry::remove_entry, btree_map::OccupiedEntry::remove, btree_map::OccupiedEntry::remove_entry
+  python  dict.__delitem__, dict.pop
+  note    the language names no removal, so the answer is a new map, rebuilt. An absent key is no error, as with Go's `delete` and Rust's `remove`, where Python's `del` and `pop` raise; the value Rust and Python hand back is `m[k]` read first
+
+capability map/remove-several  a map without the keys of a list
+  heroes  maps.remove_all
+  go      -
+  rust    -
+  python  -
+  note    the three remove in constant time and loop; here each removal rebuilds the map, so a loop is quadratic and this takes the whole list in one pass
+
+capability map/remove-where  a map without the entries a function points at
+  heroes  maps.remove_where
+  go      maps.DeleteFunc
+  rust    HashMap::extract_if, BTreeMap::extract_if
+  python  -
+  note    the half Rust's `extract_if` hands out is `keep_where` of the same function
+
+capability map/keep-where  a map of only the entries a function accepts
+  heroes  maps.keep_where
+  go      -
+  rust    HashMap::retain, BTreeMap::retain
+  python  -
+  note    -
+
+capability map/pick  the entries under given keys, in the order given
+  heroes  maps.pick
+  go      -
+  rust    -
+  python  OrderedDict.move_to_end
+  note    it is how a map is put in an order: `maps.pick(m, sort(keys(m)))` is the map by sorted key, and a key moved to the front or the end is a `pick` of that key merged with the rest
+
+capability map/reverse  a map with its keys in the opposite order
+  heroes  maps.reverse
+  go      -
+  rust    -
+  python  dict.__reversed__
+  note    -
+
+capability map/first-and-last  the key inserted first, the one inserted last, and the map without it
+  heroes  built-in keys
+  go      -
+  rust    -
+  python  dict.popitem, OrderedDict.popitem
+  note    `keys(m)`'s first and last element, then `maps.remove`; Python removes in constant time and here each removal rebuilds the map
+
+capability map/by-sorted-key  the smallest key, the largest, and a walk from one to the other
+  heroes  built-in sort
+  go      -
+  rust    BTreeMap::first_key_value, BTreeMap::last_key_value, BTreeMap::first_entry, BTreeMap::last_entry, BTreeMap::pop_first, BTreeMap::pop_last
+  python  -
+  note    `sort(keys(m))`, as the specification's own example walks a map; `sort` orders numbers, texts and booleans, and never a type parameter, so a key of another kind is ordered by a function of `lists`
+
+capability map/range-of-keys  the entries whose keys lie between two bounds, found without a walk
+  heroes  refused: the language's map finds by hash and keeps insertion order, so it has no index sorted by key to cut; a range is a walk of `sort(keys(m))` with the comparison the key's type has
+  go      -
+  rust    BTreeMap::range, BTreeMap::range_mut, BTreeMap::split_off, BTreeMap::lower_bound, BTreeMap::lower_bound_mut, BTreeMap::upper_bound, BTreeMap::upper_bound_mut, btree_map::Cursor, btree_map::CursorMut, btree_map::CursorMutKey
+  python  -
+  note    -
+
+capability map/merge  two maps as one, the second's value standing where both hold a key
+  heroes  maps.merge
+  go      maps.Copy
+  rust    HashMap::extend, BTreeMap::extend, BTreeMap::append
+  python  dict.update, dict.__or__, dict.__ior__, dict.__ror__
+  note    the order is Python's: the first map's keys in their places, then the second's new ones
+
+capability map/merge-by  two maps as one, a function deciding the value where both hold a key
+  heroes  maps.merge_by
+  go      -
+  rust    BTreeMap::merge
+  python  Counter.update, Counter.__add__, Counter.__iadd__
+  note    Rust's function also takes the key. Python's `+` on two counters drops what does not end above zero, which is `keep_where` after
+
+capability map/layers  several maps read as one, the first that holds a key answering
+  heroes  refused: a view that follows later writes to its layers is not a value, and every value here is a copy; `maps.merge` of the layers answers every read the view would
+  go      -
+  rust    -
+  python  collections.ChainMap, ChainMap.maps, ChainMap.new_child, ChainMap.parents
+  note    -
+
+capability map/equal  whether two maps hold the same keys under equal values
+  heroes  built-in ==
+  go      maps.Equal
+  rust    HashMap::eq, HashMap::ne, BTreeMap::eq, BTreeMap::ne
+  python  dict.__eq__
+  note    the order of insertion does not count, as in the three
+
+capability map/equal-by  whether two maps hold the same keys under values a function calls the same
+  heroes  maps.equal_by
+  go      maps.EqualFunc
+  rust    -
+  python  -
+  note    the two maps' values may be of two types, as Go's
+
+capability count/occurrences  how many times each element of a list occurs
+  heroes  maps.counts
+  go      -
+  rust    -
+  python  collections.Counter
+  note    -
+
+capability count/most-common  a map of counts with the largest first, whole or its first n
+  heroes  maps.most_common, maps.most_common_n
+  go      -
+  rust    -
+  python  Counter.most_common
+  note    Python answers a list of pairs; here a map in that order, whose `keys` and `maps.values` are the two halves
+
+capability count/elements  each key repeated as many times as its count
+  heroes  maps.elements
+  go      -
+  rust    -
+  python  Counter.elements
+  note    -
+
+capability count/total  the sum of the counts
+  heroes  built-in fold
+  go      -
+  rust    -
+  python  Counter.total
+  note    `maps.values(m).fold(0, add)` with the program's own `add`, which says what an overflow does
+
+capability count/multiset-arithmetic  counts subtracted, intersected, united and compared as multisets
+  heroes  refused: a multiset is a type that says what a count of zero or below means, and a plain map of counts does not; two maps of counts are added by `maps.merge_by`
+  go      -
+  rust    -
+  python  Counter.subtract, Counter.__sub__, Counter.__isub__, Counter.__and__, Counter.__iand__, Counter.__or__, Counter.__ior__, Counter.__xor__, Counter.__ixor__, Counter.__neg__, Counter.__pos__, Counter.__le__, Counter.__lt__, Counter.__ge__, Counter.__gt__
+  note    -
+
+capability map/group  the elements of a list gathered under the key a function gives each
+  heroes  maps.group_by
+  go      -
+  rust    -
+  python  -
+  note    what Python's `defaultdict(list)` is most written for. The built-ins can write it, `m[k] @ m[k].default([]).push(x)`, and that copies the group at every push: measured 2026-11-15 at -O2, one group of 50,000 took 1.93 s and of 100,000 7.53 s, where `maps.group_by` took 0.01 s for 100,000
+
+dropped capacity  a map grows by insertion and has no capacity to ask, hint, reserve or give back
+  go      -
+  rust    HashMap::with_capacity, HashMap::capacity, HashMap::reserve, HashMap::try_reserve, HashMap::shrink_to_fit, HashMap::shrink_to, HashMap::extend_reserve, BTreeMap::extend_reserve
+  python  -
+
+dropped hashers-and-allocators  the language's map has one hash and one allocator, neither of them a value
+  go      -
+  rust    HashMap::with_hasher, HashMap::with_capacity_and_hasher, HashMap::hasher, HashMap::new_in, HashMap::with_capacity_in, HashMap::with_hasher_in, HashMap::with_capacity_and_hasher_in, BTreeMap::new_in, hash_map::RandomState, hash_map::DefaultHasher
+  python  -
+
+dropped borrows  what exists to hold a reference into a map: every value is a copy, and equality is structural, so the key held is the key asked
+  go      -
+  rust    HashMap::get_disjoint_mut, HashMap::get_disjoint_unchecked_mut, HashMap::get_key_value, BTreeMap::get_key_value, hash_map::Entry::key, hash_map::OccupiedEntry::key, hash_map::VacantEntry::key, hash_map::VacantEntry::into_key, btree_map::Entry::key, btree_map::OccupiedEntry::key, btree_map::VacantEntry::key, btree_map::VacantEntry::into_key
+  python  -
+
+dropped closures  an insertion whose value a closure computes and may fail to: with no closure the caller computes the value and writes it
+  go      -
+  rust    hash_map::Entry::or_try_insert_with, hash_map::Entry::or_try_insert_with_key, btree_map::Entry::or_try_insert_with, btree_map::Entry::or_try_insert_with_key, HashMap::extend_one, BTreeMap::extend_one
+  python  -
+
+dropped iterator-and-error-types  a walk is a `for` over `keys(m)`, and a failure is a code and a message, so neither has a type of its own
+  go      -
+  rust    hash_map::Iter, hash_map::IterMut, hash_map::Keys, hash_map::Values, hash_map::ValuesMut, hash_map::IntoIter, hash_map::IntoKeys, hash_map::IntoValues, hash_map::Drain, hash_map::ExtractIf, hash_map::OccupiedError, btree_map::Iter, btree_map::IterMut, btree_map::Keys, btree_map::Values, btree_map::ValuesMut, btree_map::IntoIter, btree_map::IntoKeys, btree_map::IntoValues, btree_map::Range, btree_map::RangeMut, btree_map::ExtractIf, btree_map::OccupiedError, btree_map::UnorderedKeyError
+  python  -
+
+dropped traits  what an interface would have needed: a map written as text for a debugger, hashed, ordered against another map, dropped, converted
+  go      -
+  rust    HashMap::fmt, BTreeMap::fmt, BTreeMap::hash, BTreeMap::hash_slice, BTreeMap::cmp, BTreeMap::partial_cmp, BTreeMap::lt, BTreeMap::le, BTreeMap::gt, BTreeMap::ge, BTreeMap::max, BTreeMap::min, BTreeMap::clamp, BTreeMap::clamp_to, BTreeMap::drop, BTreeMap::pin_drop, and on both `type_id`, `borrow`, `borrow_mut`, `clone_to_uninit`, `into`, `to_owned`, `clone_into`, `try_from`, `try_into`
+  python  dict.__class_getitem__, collections.UserDict
+
+dropped not-a-plain-map  the rest of Python's `collections`: an ordered map is what the language's map already is, and the others are lists' and records'
+  go      -
+  rust    -
+  python  collections.OrderedDict, collections.deque, collections.namedtuple, collections.UserList, collections.UserString, collections.abc

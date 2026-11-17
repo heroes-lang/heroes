@@ -1,0 +1,8 @@
+# Reaches Rebel's `unicode`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the version of Unicode the tables
+# hold and the general category of one letter.
+
+use <rebel>/unicode
+
+function main()
+    print(unicode.UNICODE_VERSION, " ", unicode.category("a"))

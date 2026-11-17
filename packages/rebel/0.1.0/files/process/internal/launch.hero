@@ -1,0 +1,308 @@
+# A child started through the floor `process/hero_proc`: its words packed as
+# the floor reads them, every text checked first for the zero byte C cannot
+# carry, and the floor's refusal turned into a code.
+
+use io
+use io/hero_stream
+use process/hero_proc
+use process/internal/codes
+use process/internal/environment
+use process/internal/fixture
+use process/internal/temporary
+
+# What one of a child's three standard streams is, as the floor takes it.
+record End
+    # One of `HERO_PROC_STDIO_*`.
+    kind: i64
+    # The stream, for `HERO_PROC_STDIO_STREAM`; `nullptr` otherwise.
+    stream: hero_stream.Stream
+
+# The end of `kind`, which reads no stream.
+function plain(kind: i64) -> End
+    return End(kind: kind, stream: nullptr)
+
+# Whether `text` holds a zero byte.
+function holds_zero(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if text[i] == 0
+            return true
+
+    return false
+
+# `words` as the floor reads them: each followed by one zero byte. Fails
+# `invalid` where one holds a zero byte, naming which.
+function packed(words: [str], asked: str) -> [u8]?
+    out: [u8] @= []
+
+    for at in range(from: 0, to: words.len())
+        word = words[at]
+
+        if holds_zero(word)
+            return codes.of(
+                code: codes.INVALID,
+                asked: asked,
+                why: f"argument {at + 1} holds a zero byte, which no program can be handed"
+            )
+
+        for i in range(from: 0, to: word.len())
+            out @ out.push(word[i])
+
+        out @ out.push(0)
+
+    return ok(out)
+
+# The process the floor started of `program` with `arguments`, the variables
+# `env`, working in `dir`, its three streams `input`, `output` and `error`.
+# Fails `invalid` where `program` is empty or a text holds a zero byte, and
+# with the code the floor's refusal turns into.
+function begun(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End) -> hero_proc.Proc?
+    asked = f"starting \"{program}\""
+
+    if program.len() == 0
+        return codes.of(code: codes.INVALID, asked: "starting a program", why: "no program is named")
+
+    if holds_zero(program)
+        return codes.of(code: codes.INVALID, asked: asked, why: "the program's name holds a zero byte")
+
+    if holds_zero(dir)
+        return codes.of(code: codes.INVALID, asked: asked, why: "the working folder holds a zero byte")
+    words @= packed(arguments, asked: asked)?
+    variables @= env.bytes
+    p = hero_proc.start(
+        program: program,
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: env.kind,
+        environment: @variables,
+        environment_count: variables.len().to_u64().must(),
+        folder: dir,
+        in_kind: input.kind,
+        in_stream: input.stream,
+        out_kind: output.kind,
+        out_stream: output.stream,
+        err_kind: error.kind,
+        err_stream: error.stream
+    )
+
+    if p == nullptr
+        return codes.last(asked: asked, program: program, dir: dir)
+    return ok(p)
+
+# A child started, with the program's ends of its pipes, each a closed
+# place where the child's stream is no pipe of the program's.
+record Started
+    # The process.
+    proc: hero_proc.Proc
+    # The writing end of the child's input.
+    input: io.Stream
+    # The reading end of the child's output, and of its error where the two
+    # are merged.
+    output: io.Stream
+    # The reading end of the child's error.
+    error: io.Stream
+
+# A closed place called `name`: every call through it fails `closed`.
+function closed(name: str) -> io.Stream
+    return io.of_handle(nullptr, name: name)
+
+# Closes `s` where it is open, its failure dropped: what a path that fails
+# already, or a stream whose last bytes no one reads, owes the stream.
+function dropped(@s: io.Stream)
+    if !io.is_closed(s)
+        match io.close(@s)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+# The program's end of the child's pipe `which` where `asked_for`, called
+# `name`; else a closed place.
+function end_of(p: hero_proc.Proc, which: i64, asked_for: bool, name: str) -> io.Stream
+    if asked_for
+        return io.of_handle(hero_proc.pipe(p, which), name: name)
+    return closed(name)
+
+# The child `begun` starts, where its input is `fed`'s bytes through a
+# temporary file where `feeding`, and its error goes where its output goes
+# where `merged`: into one pipe made here where the output is a pipe. Fails
+# as `begun` does, and with the disk's code for the temporary file; nothing
+# made here is left behind then.
+function started(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End, fed: [u8], feeding: bool, merged: bool) -> Started?
+    in_end: End @= input
+    held: io.Stream @= closed("the child's input file")
+    fed_path: str @= ""
+
+    if feeding
+        fed_path @ temporary.filled(fed, purpose: "input")?
+
+        match temporary.opened(fed_path)
+            .err e =>
+                temporary.removed(fed_path)
+                return fail(code: e.code, msg: e.msg)
+            .ok stream => held @ stream
+
+        in_end @ End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: held.handle)
+    out_end: End @= output
+    err_end: End @= error
+    joined_reader: io.Stream @= closed(f"the output of \"{program}\"")
+    joined_writer: io.Stream @= closed(f"the output of \"{program}\"")
+    joined = merged && output.kind == hero_proc.HERO_PROC_STDIO_PIPE
+
+    if joined
+        match io.pipe()
+            .err e =>
+                dropped(@held)
+                temporary.removed(fed_path)
+                return fail(code: e.code, msg: e.msg)
+            .ok pair =>
+                joined_reader @ io.of_handle(pair.reader.handle, name: f"the output of \"{program}\"")
+                joined_writer @ pair.writer
+
+        out_end @ End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: joined_writer.handle)
+
+    if merged
+        err_end @ out_end
+    child = begun(
+        program: program,
+        arguments: arguments,
+        env: env,
+        dir: dir,
+        input: in_end,
+        output: out_end,
+        error: err_end
+    )
+    dropped(@held)
+    dropped(@joined_writer)
+
+    if feeding
+        temporary.removed(fed_path)
+
+    match child
+        .err e =>
+            dropped(@joined_reader)
+            return fail(code: e.code, msg: e.msg)
+        .ok p =>
+            output_end: io.Stream @= joined_reader
+
+            if !joined
+                output_end @ end_of(
+                    p,
+                    which: hero_proc.HERO_PROC_OUTPUT,
+                    asked_for: output.kind == hero_proc.HERO_PROC_STDIO_PIPE,
+                    name: f"the output of \"{program}\""
+                )
+            return ok(
+                Started(proc: p, input: end_of(p, which: hero_proc.HERO_PROC_INPUT, asked_for: in_end.kind == hero_proc.HERO_PROC_STDIO_PIPE, name: f"the input of \"{program}\""), output: output_end, error: end_of(p, which: hero_proc.HERO_PROC_ERROR, asked_for: !merged && error.kind == hero_proc.HERO_PROC_STDIO_PIPE, name: f"the error of \"{program}\""))
+            )
+
+# Closes each of `input`, `output` and `error` that is open, all three
+# whatever one answers. Fails with the code of the first that could not be
+# closed.
+function closed_all(@input: io.Stream, @output: io.Stream, @error: io.Stream) -> ()?
+    first: [str] @= []
+
+    for which in range(from: 0, to: 3)
+        answer = match which
+            0 => closed_one(@input)
+            1 => closed_one(@output)
+            _ => closed_one(@error)
+
+        match answer
+            .ok _ => _ = 0
+            .err e =>
+                if first.len() == 0
+                    first @ [e.code, e.msg]
+
+    if first.len() > 0
+        return fail(code: first[0], msg: first[1])
+    return ok()
+
+# Closes `s` where it is open.
+function closed_one(@s: io.Stream) -> ()?
+    if io.is_closed(s)
+        return ok()
+    return io.close(@s)
+
+## Tests
+
+# This process's own variables, as the floor is handed them.
+function inherited() -> environment.Given
+    none: [u8] = []
+    return environment.Given(kind: hero_proc.HERO_PROC_ENV_PARENT, bytes: none)
+
+# A child of `program` with `arguments` and nothing for its three streams.
+function quiet(program: str, arguments: [str], dir: str) -> hero_proc.Proc?
+    nothing = plain(hero_proc.HERO_PROC_STDIO_NOTHING)
+    return begun(
+        program: program,
+        arguments: arguments,
+        env: inherited(),
+        dir: dir,
+        input: nothing,
+        output: nothing,
+        error: nothing
+    )
+
+# The code `quiet` fails with, or "" where it started a child, which is then
+# waited for and given back.
+function code_of_start(program: str, arguments: [str], dir: str) -> str
+    match quiet(program: program, arguments: arguments, dir: dir)
+        .err e => return e.code
+        .ok proc_begun =>
+            p @= proc_begun
+            code: i64 @= 0
+            signal: i64 @= 0
+            _ = hero_proc.wait(p, code: @code, by_signal: @signal)
+            _ = hero_proc.release(@p)
+            return ""
+
+test "packed: no word, one empty word, words of more than one byte, and a zero byte in the second"
+    none: [str] = []
+    assert packed(none, asked: "t").must().len() == 0
+    assert packed([""], asked: "t").must() == [0]
+    assert packed(["a", "é"], asked: "t").must() == [97, 0, 195, 169, 0]
+    zero_bytes: [u8] = [97, 0]
+    zero = zero_bytes.validated_bytes().must()
+
+    match packed(["a", zero], asked: "t")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == codes.INVALID
+            assert e.msg == "t: argument 2 holds a zero byte, which no program can be handed"
+
+test "begun: no program, a zero byte in the program and in the folder, before any child"
+    none: [str] = []
+    zero_bytes: [u8] = [115, 0]
+    zero = zero_bytes.validated_bytes().must()
+    assert code_of_start(program: "", arguments: none, dir: "") == codes.INVALID
+    assert code_of_start(program: zero, arguments: none, dir: "") == codes.INVALID
+    assert code_of_start(program: "/bin/sh", arguments: none, dir: zero) == codes.INVALID
+
+test "begun: a program that is not there, by name and by path, and a folder that names nothing or is a file"
+    none: [str] = []
+    assert code_of_start(program: "rebel-no-such-program", arguments: none, dir: "") == codes.NOT_FOUND
+    assert code_of_start(program: "build/rebel-no-such-folder/program", arguments: none, dir: "") == codes.NOT_FOUND
+    shell = fixture.shell_program()
+    assert code_of_start(program: shell, arguments: none, dir: "build/rebel-process-no-such-folder") == codes.FILE_NOT_FOUND
+    assert code_of_start(program: shell, arguments: none, dir: shell) == codes.NOT_A_DIRECTORY
+
+test "begun: the largest list, 4,096 arguments, starts; one past it is limit"
+    shell = fixture.shell_program()
+    most: [str] @= fixture.shell_arguments(fixture.exit_script(0))
+
+    for _ in range(from: most.len(), to: 4096)
+        most @ most.push("")
+
+    assert code_of_start(program: shell, arguments: most, dir: "") == ""
+    most @ most.push("")
+    assert code_of_start(program: shell, arguments: most, dir: "") == codes.LIMIT
+
+test "begun: a child of the system's shell starts and ends with its own code"
+    p @= quiet(
+        program: fixture.shell_program(),
+        arguments: fixture.shell_arguments(fixture.exit_script(7)),
+        dir: ""
+    ).must()
+    code: i64 @= 0
+    signal: i64 @= 0
+    assert hero_proc.wait(p, code: @code, by_signal: @signal) == 0
+    assert code == 7 && signal == 0
+    assert hero_proc.release(@p) == 0

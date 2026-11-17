@@ -1,0 +1,69 @@
+# A path of names, `item/title`, read into its names: each one a name as
+# Namespaces in XML 1.0 writes it, separated by single `/`. XPath is not read:
+# it is a language of its own, of axes, predicates and functions, and a path of
+# names reaches what a program walking a tree needs, the rest being written in
+# the program.
+
+use strings
+use xml/internal/characters
+use xml/internal/scan
+
+# The names of `path`, in order; none for the empty path. Fails `invalid` where
+# a name is empty, as in `a//b`, `/a` and `a/`, or is not a name, and the
+# message says where XPath was met.
+function names_of(path: str) -> [str]?
+    names: [str] @= []
+
+    if path == ""
+        return ok(names)
+
+    for step in strings.split(s: path, sep: "/")
+        if step == ""
+            return fail(
+                code: scan.INVALID,
+                msg: f"\"{path}\" holds an empty name: a path is names separated by single `/`, and XPath's `//` and a leading `/` are not read"
+            )
+
+        if !characters.is_qname(step)
+            if is_xpath(step)
+                return fail(
+                    code: scan.INVALID,
+                    msg: f"\"{step}\" in \"{path}\" is XPath, which this package does not read: a path is names separated by `/`"
+                )
+            return fail(code: scan.INVALID, msg: f"\"{step}\" in \"{path}\" is not a name")
+        names @ names.push(step)
+
+    return ok(names)
+
+# Whether `step` holds what XPath writes and a name does not: `*`, `.` alone or
+# `..`, `@`, `[`, `(` or `::`.
+function is_xpath(step: str) -> bool
+    if step == "." || step == ".."
+        return true
+    return strings.contains_any(s: step, set: "*@[(") || strings.contains(s: step, substr: "::")
+
+## Tests
+
+test "names_of: the empty path, one name, several, prefixed names and names of more than one byte"
+    nothing: [str] = []
+    assert names_of("").must() == nothing
+    assert names_of("a").must() == ["a"]
+    assert names_of("a/p:b/città.x").must() == ["a", "p:b", "città.x"]
+
+test "names_of: an empty name at the start, inside and at the end, XPath, and what is not a name"
+    for path in ["/a", "a//b", "a/", "/", "*", "a/*", ".", "..", "a/@x", "a[1]", "text()", "child::a", "1a", "a b"]
+        match names_of(path)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match names_of("a/*")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"*\" in \"a/*\" is XPath, which this package does not read: a path is names separated by `/`"
+
+    match names_of("a//b")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"a//b\" holds an empty name: a path is names separated by single `/`, and XPath's `//` and a leading `/` are not read"
+
+test "is_xpath: each mark, and a name"
+    assert is_xpath("*") && is_xpath(".") && is_xpath("..") && is_xpath("@x") && is_xpath("a[1]") && is_xpath("f()") && is_xpath("child::a")
+    assert !is_xpath("a.b") && !is_xpath("1a")

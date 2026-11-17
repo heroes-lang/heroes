@@ -1,0 +1,333 @@
+# Address text read into bytes: IPv4, IPv6 with its zone, and either with a
+# port. It walks bytes and cuts a slice only at an ASCII byte it has matched,
+# so no text read from outside makes it abort, and every failure is
+# `invalid` with the byte where the text stopped being an address.
+
+use net/internal/failure
+use net/internal/scan
+
+# The parts of an address read from text, which the face makes a
+# `net.Address`.
+record Parsed
+    # Four bytes for IPv4, sixteen for IPv6, in network order.
+    bytes: [u8]
+    # The zone after a `%`, "" where there is none.
+    zone: str
+    # Whether a port was read.
+    has_port: bool
+    # The port read, 0 where none was.
+    port: i64
+
+# The address `s` writes, without a port.
+#
+# - `s`: the text, IPv4 or IPv6 with an optional zone; "" is no address.
+#
+# Fails `invalid` where `s` is no address, the message naming the byte.
+function address(s: str) -> Parsed?
+    asked = f"reading \"{s}\" as an address"
+
+    if s.len() == 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the text is empty")
+
+    if scan.colon_in(s, from: 0, to: s.len()) >= 0
+        return v6(s: s, from: 0, to: s.len(), asked: asked)
+    v4 = v4_in(s: s, from: 0, to: s.len(), asked: asked)?
+    return ok(Parsed(bytes: v4, zone: "", has_port: false, port: 0))
+
+# The address and port `s` writes, `192.0.2.1:80` or `[::1]:80`.
+#
+# - `s`: the text; an IPv6 address stands in brackets, the port after a `:`.
+#
+# Fails `invalid` where `s` is no address and port, the message naming the
+# byte.
+function address_port(s: str) -> Parsed?
+    asked = f"reading \"{s}\" as an address and a port"
+
+    if s.len() == 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the text is empty")
+
+    if s[0] == '['
+        close: i64 @= 1
+
+        while close < s.len() && s[close] != ']'
+            close @ close + 1
+
+        if close == s.len()
+            return scan.bad(asked: asked, at: 0, why: "the `[` is never closed")
+
+        if scan.colon_in(s, from: 1, to: close) < 0
+            return scan.bad(asked: asked, at: 1, why: "brackets hold an IPv6 address alone")
+
+        if close + 1 == s.len() || s[close + 1] != ':'
+            return scan.bad(asked: asked, at: close + 1, why: "a `:` and a port follow the `]`")
+        inner = v6(s: s, from: 1, to: close, asked: asked)?
+        port = scan.port_in(s: s, from: close + 2, to: s.len(), asked: asked)?
+        return ok(Parsed(bytes: inner.bytes, zone: inner.zone, has_port: true, port: port))
+    colon = scan.colon_in(s, from: 0, to: s.len())
+
+    if colon < 0
+        return scan.bad(asked: asked, at: s.len(), why: "a `:` and a port follow the address")
+
+    if scan.colon_in(s, from: colon + 1, to: s.len()) >= 0
+        return scan.bad(asked: asked, at: colon, why: "an IPv6 address with a port stands in brackets")
+    v4 = v4_in(s: s, from: 0, to: colon, asked: asked)?
+    port = scan.port_in(s: s, from: colon + 1, to: s.len(), asked: asked)?
+    return ok(Parsed(bytes: v4, zone: "", has_port: true, port: port))
+
+# The four bytes of the IPv4 address the bytes of `s` from `from` to `to`
+# write: four decimal numbers 0 to 255 with dots, none with a zero before it.
+#
+# - `s`: the text holding the address.
+# - `from`: the byte index of its first digit.
+# - `to`: the byte index just past its last digit.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where the bytes write no IPv4 address.
+function v4_in(s: str, from: i64, to: i64, asked: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= from
+
+    while out.len() < 4
+        start = at
+        value: i64 @= 0
+
+        while at < to && scan.is_digit(s[at])
+            if at > start && s[start] == '0'
+                return scan.bad(asked: asked, at: start, why: "a number of an IPv4 address has a zero before it")
+            value @ value * 10 + scan.digit_of(s[at])
+
+            if value > 255
+                return scan.bad(asked: asked, at: start, why: "a number of an IPv4 address is 255 at most")
+            at @ at + 1
+
+        if at == start
+            return scan.bad(asked: asked, at: at, why: "a number of an IPv4 address has a digit here")
+        out @ out.push(to_u8(value).must())
+
+        if out.len() < 4
+            if at == to
+                return scan.bad(
+                    asked: asked,
+                    at: at,
+                    why: f"an IPv4 address has four numbers, and this one {out.len()}"
+                )
+
+            if s[at] != '.'
+                return scan.bad(asked: asked, at: at, why: "a `.` stands between two numbers of an IPv4 address")
+            at @ at + 1
+
+    if at != to
+        return scan.bad(asked: asked, at: at, why: "an IPv4 address ends after its fourth number")
+    return ok(out)
+
+# The IPv6 address the bytes of `s` from `from` to `to` write, with its zone.
+#
+# - `s`: the text holding the address.
+# - `from`: the byte index of its first byte.
+# - `to`: the byte index just past its last byte, its zone's included.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where the bytes write no IPv6 address, or a zone that is
+# empty or holds a `%`, a `]`, a `/` or a byte below 0x21.
+function v6(s: str, from: i64, to: i64, asked: str) -> Parsed?
+    end: i64 @= from
+
+    while end < to && s[end] != '%'
+        end @ end + 1
+
+    zone: str @= ""
+
+    if end < to
+        if end + 1 == to
+            return scan.bad(asked: asked, at: end, why: "a zone after a `%` has one byte or more")
+        zone @ s.slice(from: end + 1, to: to)
+        wrong = scan.wrong_in_zone(zone)
+
+        if wrong >= 0
+            return scan.bad(
+                asked: asked,
+                at: end + 1 + wrong,
+                why: "a zone holds no `%`, `]`, `/`, space or control byte"
+            )
+    groups = groups_in(s: s, from: from, to: end, asked: asked)?
+    return ok(Parsed(bytes: groups, zone: zone, has_port: false, port: 0))
+
+# The sixteen bytes the IPv6 groups of `s` from `from` to `to` write, one run
+# of them shortened to `::`, the last two written as IPv4 where wanted.
+#
+# - `s`: the text holding the address, without its zone.
+# - `from`: the byte index of its first byte.
+# - `to`: the byte index just past its last byte.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where the bytes write no IPv6 address.
+function groups_in(s: str, from: i64, to: i64, asked: str) -> [u8]?
+    groups: [i64] @= []
+    gap: i64 @= -1
+    at: i64 @= from
+
+    if to - from >= 2 && s[from] == ':' && s[from + 1] == ':'
+        gap @ 0
+        at @ from + 2
+
+    while at < to
+        start = at
+        value: i64 @= 0
+
+        while at < to && scan.is_hex(s[at])
+            if at - start == 4
+                return scan.bad(asked: asked, at: start, why: "a group of an IPv6 address has four digits at most")
+            value @ value * 16 + scan.hex_of(s[at])
+            at @ at + 1
+
+        if at < to && s[at] == '.'
+            if groups.len() > 6 || gap < 0 && groups.len() != 6
+                return scan.bad(
+                    asked: asked,
+                    at: start,
+                    why: "an IPv4 address in an IPv6 one writes its last two groups"
+                )
+            four = v4_in(s: s, from: start, to: to, asked: asked)?
+            groups @ groups.push(to_i64(four[0]).must() * 256 + to_i64(four[1]).must())
+            groups @ groups.push(to_i64(four[2]).must() * 256 + to_i64(four[3]).must())
+            at @ to
+            break
+
+        if at == start
+            return scan.bad(asked: asked, at: at, why: "a group of an IPv6 address has a hexadecimal digit here")
+
+        if groups.len() == 8
+            return scan.bad(asked: asked, at: start, why: "an IPv6 address has eight groups at most")
+        groups @ groups.push(value)
+
+        if at == to
+            break
+
+        if s[at] != ':'
+            return scan.bad(asked: asked, at: at, why: "a `:` stands between two groups of an IPv6 address")
+        at @ at + 1
+
+        if at == to
+            return scan.bad(asked: asked, at: at - 1, why: "an IPv6 address does not end with one `:`")
+
+        if s[at] == ':'
+            if gap >= 0
+                return scan.bad(asked: asked, at: at - 1, why: "an IPv6 address holds `::` once at most")
+            gap @ groups.len()
+            at @ at + 1
+
+    if gap < 0 && groups.len() != 8
+        return scan.bad(
+            asked: asked,
+            at: to,
+            why: f"an IPv6 address without `::` has eight groups, and this one {groups.len()}"
+        )
+
+    if gap >= 0 && groups.len() > 7
+        return scan.bad(asked: asked, at: from, why: "`::` stands for one group or more, and eight are written")
+    out: [u8] @= []
+
+    for i in range(from: 0, to: 8)
+        g = group_at(groups, gap: gap, i: i)
+        out @ out.push(to_u8(g / 256).must())
+        out @ out.push(to_u8(g % 256).must())
+
+    return ok(out)
+
+# The group `i` of an address whose written groups are `groups`, `::` standing
+# before the group `gap` of them.
+#
+# - `groups`: the groups written, each 0 to 65535, eight where `gap` is -1.
+# - `gap`: how many groups stand before `::`, or -1 where there is none.
+# - `i`: which group of the eight, 0 to 7.
+function group_at(groups: [i64], gap: i64, i: i64) -> i64
+    if gap < 0
+        return groups[i]
+    missing = 8 - groups.len()
+
+    if i < gap
+        return groups[i]
+
+    if i < gap + missing
+        return 0
+    return groups[i - missing]
+
+## Tests
+
+test "address: IPv4 at its edges, and every way Go and Python refuse one"
+    assert address("0.0.0.0").must().bytes == [0, 0, 0, 0]
+    assert address("255.255.255.255").must().bytes == [255, 255, 255, 255]
+    assert address("1.2.3.4").must() == Parsed(bytes: [1, 2, 3, 4], zone: "", has_port: false, port: 0)
+
+    for refused in ["", "01.2.3.4", "1.2.3", "1.2.3.4.5", "256.1.1.1", "1.2.3.4.", " 1.2.3.4", "1..2.3", "1.2.3.4%eth0", "99999999999999999999.1.1.1"]
+        match address(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "address: IPv6 with `::` at the start, the end, the middle, and none"
+    assert address("::").must().bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert address("::1").must().bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    assert address("1::").must().bytes == [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert address("1:2:3:4:5:6:7::").must().bytes == [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 0]
+    assert address("::2:3:4:5:6:7:8").must().bytes == [0, 0, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
+    assert address("1:2:3:4:5:6:7:8").must().bytes == [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 7, 0, 8]
+    assert address("ABCD:EF01::").must().bytes == [0xab, 0xcd, 0xef, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert address("2001:db8::ffff").must().bytes == [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff]
+
+test "address: IPv4 in the last two groups of IPv6, and where it may not stand"
+    assert address("::ffff:1.2.3.4").must().bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 1, 2, 3, 4]
+    assert address("::1.2.3.4").must().bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4]
+    assert address("1:2:3:4:5:6:1.2.3.4").must().bytes == [0, 1, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 1, 2, 3, 4]
+
+    for refused in ["1:2:3:4:5:6:7:1.2.3.4", "::ffff:1.2.3", "::ffff:01.2.3.4", "1:2:3:4:5:6::1.2.3.4", "1.2.3.4::"]
+        match address(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "address: what IPv6 text Go and Python refuse, nine groups and a lone colon among them"
+    for refused in ["1::2:3:4:5:6:7:8", "1:2:3:4:5:6:7:8:9", ":::", "1:::2", "1::2::3", ":1::", "1::2:", "00001::", "[::1]", "g::1", "1:2:3:4:5:6:7", ":"]
+        match address(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "address: a zone after `%`, empty or holding what a zone may not refused"
+    assert address("fe80::1%eth0").must().zone == "eth0"
+    assert address("fe80::1%3").must().zone == "3"
+    assert address("fe80::1%é").must().zone == "é"
+    assert address("::ffff:1.2.3.4%x").must().zone == "x"
+
+    for refused in ["fe80::1%", "fe80::1%eth%0", "fe80::1%a/b", "fe80::1%a]b", "fe80::1%a b"]
+        match address(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "address: the message says what was asked, why, and at which byte"
+    match address("1.2.300.4")
+        .ok _  => assert false
+        .err e => assert e.msg == "reading \"1.2.300.4\" as an address: a number of an IPv4 address is 255 at most (byte 4)"
+
+test "address_port: IPv4 and IPv6 with a port, its zeros read, at 0 and 65535"
+    assert address_port("1.2.3.4:80").must() == Parsed(bytes: [1, 2, 3, 4], zone: "", has_port: true, port: 80)
+    assert address_port("1.2.3.4:080").must().port == 80
+    assert address_port("1.2.3.4:0").must().port == 0
+    assert address_port("1.2.3.4:65535").must().port == 65535
+    assert address_port("[::1]:80").must().bytes[15] == 1
+    with_zone = address_port("[fe80::1%eth0]:443").must()
+    assert with_zone.zone == "eth0" && with_zone.port == 443 && with_zone.has_port
+
+test "address_port: no port, a port past 65535 or signed, IPv4 in brackets, IPv6 without them"
+    for refused in ["", "1.2.3.4", "1.2.3.4:", "1.2.3.4:+80", "1.2.3.4:65536", "[1.2.3.4]:80", "::1:80", "[::1]", "[::1", "[::1]80", " 1.2.3.4:80", "1.2.3.4:99999999999999999999"]
+        match address_port(refused)
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "v4_in, v6, groups_in: a part of a longer text read alone"
+    assert v4_in(s: "[10.0.0.1]", from: 1, to: 9, asked: "a").must() == [10, 0, 0, 1]
+    assert v6(s: "[::2%x]", from: 1, to: 6, asked: "a").must().zone == "x"
+    assert groups_in(s: "(::)", from: 1, to: 3, asked: "a").must().len() == 16
+
+test "group_at: before, inside and after the run `::` stands for"
+    assert group_at([1, 2], gap: 1, i: 0) == 1
+    assert group_at([1, 2], gap: 1, i: 3) == 0
+    assert group_at([1, 2], gap: 1, i: 7) == 2
+    assert group_at([1, 2, 3, 4, 5, 6, 7, 8], gap: -1, i: 7) == 8

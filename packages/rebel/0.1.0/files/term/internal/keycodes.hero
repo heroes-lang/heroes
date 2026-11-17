@@ -1,0 +1,162 @@
+# A key's bytes, as the floor hands them one key at a time, named: the control
+# bytes, the escape sequences terminals send (xterm's, which Linux's console,
+# macOS's Terminal and Windows' console with its sequences on send for the
+# keys named here, and which `hero_term.c` writes for a Windows key with no
+# character), and a UTF-8 character. A sequence named nowhere here is handed
+# as its bytes.
+
+use unicode
+
+# A key named: `name` one of the face's cases (`character`, `enter`, `tab`,
+# `backspace`, `escape`, `up`, `down`, `left`, `right`, `home`, `end`,
+# `page_up`, `page_down`, `insert`, `delete`, `function_key`, `control`,
+# `other`).
+record Named
+    # The case.
+    name: str
+    # The character of a `character`, the lower-case letter of a `control`,
+    # else "".
+    text: str
+    # The number of a `function_key`, 1 to 12, else 0.
+    n: i64
+
+# The key `b`, one key's bytes, names.
+function name_of(b: [u8]) -> Named
+    if b.len() == 1
+        return one_byte(b[0])
+
+    if b.len() >= 3 && b[0] == 27 && (b[1] == '[' || b[1] == 'O')
+        return sequence(b)
+
+    if unicode.is_utf8(b)
+        points = unicode.from_utf8(b).default([])
+
+        if points.len() == 1
+            return Named(name: "character", text: unicode.from_code_point(points[0]).default(""), n: 0)
+    return Named(name: "other", text: "", n: 0)
+
+# A key of one byte: a control byte by its name, Ctrl and a letter for the
+# rest of 1 to 26, a printable ASCII character as itself.
+function one_byte(c: u8) -> Named
+    if c == 13 || c == 10
+        return Named(name: "enter", text: "", n: 0)
+
+    if c == 9
+        return Named(name: "tab", text: "", n: 0)
+
+    if c == 127 || c == 8
+        return Named(name: "backspace", text: "", n: 0)
+
+    if c == 27
+        return Named(name: "escape", text: "", n: 0)
+
+    if c >= 1 && c <= 26
+        return Named(name: "control", text: unicode.from_code_point(to_i64(c).must() + 96).default(""), n: 0)
+
+    if c >= 32 && c < 127
+        return Named(name: "character", text: unicode.from_code_point(to_i64(c).must()).default(""), n: 0)
+    return Named(name: "other", text: "", n: 0)
+
+# A key sent as `ESC [ ...` or `ESC O x`.
+function sequence(b: [u8]) -> Named
+    last = b[b.len() - 1]
+
+    if b.len() == 3
+        if last == 'A'
+            return Named(name: "up", text: "", n: 0)
+
+        if last == 'B'
+            return Named(name: "down", text: "", n: 0)
+
+        if last == 'C'
+            return Named(name: "right", text: "", n: 0)
+
+        if last == 'D'
+            return Named(name: "left", text: "", n: 0)
+
+        if last == 'H'
+            return Named(name: "home", text: "", n: 0)
+
+        if last == 'F'
+            return Named(name: "end", text: "", n: 0)
+
+        if b[1] == 'O' && last >= 'P' && last <= 'S'
+            return Named(name: "function_key", text: "", n: to_i64(last - 'P').must() + 1)
+        return Named(name: "other", text: "", n: 0)
+
+    if b[1] != '[' || last != '~'
+        return Named(name: "other", text: "", n: 0)
+    number: i64 @= 0
+
+    for i in range(from: 2, to: b.len() - 1)
+        if b[i] < '0' || b[i] > '9' || number > 1000
+            return Named(name: "other", text: "", n: 0)
+        number @ number * 10 + to_i64(b[i] - '0').must()
+
+    return tilde(number)
+
+# A key sent as `ESC [ number ~`.
+function tilde(number: i64) -> Named
+    named = match number
+        1 => "home"
+        7 => "home"
+        4 => "end"
+        8 => "end"
+        2 => "insert"
+        3 => "delete"
+        5 => "page_up"
+        6 => "page_down"
+        _ => ""
+
+    if named != ""
+        return Named(name: named, text: "", n: 0)
+    numbers = [11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 23, 24]
+
+    for i in range(from: 0, to: numbers.len())
+        if numbers[i] == number
+            return Named(name: "function_key", text: "", n: i + 1)
+
+    return Named(name: "other", text: "", n: 0)
+
+test "one_byte: Enter as 13 and 10, Tab, Backspace as 127 and 8, Escape, Ctrl and a letter at both ends, a printable character, and 0"
+    assert one_byte(13).name == "enter"
+    assert one_byte(10).name == "enter"
+    assert one_byte(9).name == "tab"
+    assert one_byte(127).name == "backspace"
+    assert one_byte(8).name == "backspace"
+    assert one_byte(27).name == "escape"
+    assert one_byte(1) == Named(name: "control", text: "a", n: 0)
+    assert one_byte(3) == Named(name: "control", text: "c", n: 0)
+    assert one_byte(26) == Named(name: "control", text: "z", n: 0)
+    assert one_byte(' ') == Named(name: "character", text: " ", n: 0)
+    assert one_byte('~') == Named(name: "character", text: "~", n: 0)
+    assert one_byte(0).name == "other"
+
+test "name_of: the arrows as a Darwin terminal sent them, in both cursor modes, a character of two and of four bytes, and bytes that are no key"
+    assert name_of([27, 91, 65]).name == "up"
+    assert name_of([27, 91, 66]).name == "down"
+    assert name_of([27, 91, 67]).name == "right"
+    assert name_of([27, 91, 68]).name == "left"
+    assert name_of([27, 79, 65]).name == "up"
+    assert name_of([195, 169]) == Named(name: "character", text: "é", n: 0)
+    assert name_of([240, 159, 142, 184]) == Named(name: "character", text: "🎸", n: 0)
+    assert name_of([255]).name == "other"
+    assert name_of([195, 40]).name == "other"
+    assert name_of([27, 91, 49, 59, 53, 65]).name == "other"
+
+test "sequence and tilde: Home and End in their three forms, the editing keys, F1 to F12 in both forms, and a number named nowhere"
+    assert name_of([27, 91, 72]).name == "home"
+    assert name_of([27, 79, 72]).name == "home"
+    assert name_of([27, 91, 49, 126]).name == "home"
+    assert name_of([27, 91, 70]).name == "end"
+    assert name_of([27, 91, 52, 126]).name == "end"
+    assert name_of([27, 91, 50, 126]).name == "insert"
+    assert name_of([27, 91, 51, 126]).name == "delete"
+    assert name_of([27, 91, 53, 126]).name == "page_up"
+    assert name_of([27, 91, 54, 126]).name == "page_down"
+    assert name_of([27, 79, 80]) == Named(name: "function_key", text: "", n: 1)
+    assert name_of([27, 79, 83]) == Named(name: "function_key", text: "", n: 4)
+    assert name_of([27, 91, 49, 53, 126]) == Named(name: "function_key", text: "", n: 5)
+    assert name_of([27, 91, 50, 52, 126]) == Named(name: "function_key", text: "", n: 12)
+    assert name_of([27, 91, 57, 57, 126]).name == "other"
+    assert name_of([27, 91, 57, 57, 57, 57, 57, 126]).name == "other"

@@ -1,0 +1,343 @@
+# The events of one CBOR item encoded as bytes, every argument and float at its
+# shortest and every length definite, a map's entries in the order asked for.
+# The events are walked from the last to the first, so each container finds
+# its items already encoded on top of a stack this module holds, and a map's
+# entries are ordered by their keys' bytes with no recursion.
+
+use bytes
+use cbor/internal/event
+use cbor/internal/floats
+use lists
+
+# The code of an item no well-formed and valid encoding holds.
+constant INVALID: str
+    "invalid"
+
+# A map's keys in the bytewise order of their encodings, RFC 8949 4.2.1.
+constant BYTEWISE: i64
+    0
+
+# The shorter key first, then the bytewise order, RFC 8949 4.2.3.
+constant LENGTH_FIRST: i64
+    1
+
+# A map's entries in the order the events hold them.
+constant AS_WRITTEN: i64
+    2
+
+# One entry of a map, encoded.
+record Encoded
+    # The key's bytes.
+    key: [u8]
+    # The value's bytes.
+    value: [u8]
+
+# The head of an item of `major` type whose argument is `arg`, at its
+# shortest: in the first byte below 24, then in 1, 2, 4 or 8 bytes after it.
+function head(major: i64, arg: u64) -> [u8]
+    first = major << 5
+
+    if arg < 24
+        return [to_u8(first + to_i64(arg).must()).must()]
+    else if arg < 256
+        return [to_u8(first + 24).must(), to_u8(arg).must()]
+    else if arg < 65536
+        return bytes.concat([[to_u8(first + 25).must()], bytes.encode_u16_be(to_u16(arg).must())])
+    else if arg < 4294967296
+        return bytes.concat([[to_u8(first + 26).must()], bytes.encode_u32_be(to_u32(arg).must())])
+    return bytes.concat([[to_u8(first + 27).must()], bytes.encode_u64_be(arg)])
+
+# Whether `a`'s key comes before `b`'s in the bytewise order.
+function bytewise_less(a: Encoded, b: Encoded) -> bool
+    return bytes.compare(a: a.key, b: b.key) < 0
+
+# Whether `a`'s key comes before `b`'s, the shorter first.
+function length_first_less(a: Encoded, b: Encoded) -> bool
+    if a.key.len() != b.key.len()
+        return a.key.len() < b.key.len()
+    return bytes.compare(a: a.key, b: b.key) < 0
+
+# The bytes of the map event `e` whose entries are `entries`, in `order`.
+# Fails `invalid` where an order that sorts finds one key twice and
+# `duplicates` does not allow it.
+function map_of(e: event.Event, entries: [Encoded], order: i64, duplicates: bool) -> [u8]?
+    ordered = if order == BYTEWISE
+        lists.sort_by(entries, less: bytewise_less)
+    else if order == LENGTH_FIRST
+        lists.sort_by(entries, less: length_first_less)
+    else
+        entries
+    out: [u8] @= head(major: 5, arg: to_u64(entries.len()).must())
+
+    for k in range(from: 0, to: ordered.len())
+        if order != AS_WRITTEN && !duplicates && k > 0 && ordered[k].key == ordered[k - 1].key
+            return fail(
+                code: INVALID,
+                msg: f"{event.where(e)}a map holds one key twice, encoded {bytes.format_hex(ordered[k].key)}"
+            )
+        bytes.push_all(to: @out, from: ordered[k].key)
+        bytes.push_all(to: @out, from: ordered[k].value)
+
+    return ok(out)
+
+# The bytes of the item `e` holds with no item after it. Fails `invalid` for a
+# simple value no item holds.
+function scalar_of(e: event.Event) -> [u8]?
+    if e.kind == event.UNSIGNED
+        return ok(head(major: 0, arg: e.arg))
+    else if e.kind == event.NEGATIVE
+        return ok(head(major: 1, arg: e.arg))
+    else if e.kind == event.BINARY
+        return ok(bytes.concat([head(major: 2, arg: to_u64(e.data.len()).must()), e.data]))
+    else if e.kind == event.TEXT
+        return ok(bytes.concat([head(major: 3, arg: to_u64(e.text.len()).must()), bytes.from_text(e.text)]))
+    else if e.kind == event.FLOAT
+        return ok(floats.shortest(e.number))
+    else if e.kind == event.BOOLEAN && e.flag
+        return ok([0xf5])
+    else if e.kind == event.BOOLEAN
+        return ok([0xf4])
+    else if e.kind == event.NULL_VALUE
+        return ok([0xf6])
+    else if e.kind == event.UNDEFINED
+        return ok([0xf7])
+    else if e.arg < 20
+        return ok(head(major: 7, arg: e.arg))
+    else if e.arg >= 32 && e.arg <= 255
+        return ok([0xf8, to_u8(e.arg).must()])
+    return fail(
+        code: INVALID,
+        msg: f"{event.where(e)}simple value {e.arg} is no item's: 20 to 23 are false, true, null and undefined, and 24 to 31 are not well-formed"
+    )
+
+# The bytes of the tag `e` holding one item, encoded `encoded`, which `child`
+# begins. A bignum, tag 2 or 3 holding a byte string, is written at its
+# preferred serialization (RFC 8949 section 3.4.3): without the byte string's
+# leading zeros, and as a plain integer of major type 0 or 1 where it fits 64
+# bits.
+function tagged_of(e: event.Event, child: event.Event, encoded: [u8]) -> [u8]
+    if !event.is_bignum(tag: e, child: child)
+        return bytes.concat([head(major: 6, arg: e.arg), encoded])
+
+    magnitude = event.magnitude_of(child.data)
+
+    if magnitude.len() <= 8
+        major = if e.arg == 2
+            0
+        else
+            1
+        return head(major: major, arg: event.u64_of(magnitude))
+    return bytes.concat([head(major: 6, arg: e.arg), head(major: 2, arg: to_u64(magnitude.len()).must()), magnitude])
+
+# The events of one item encoded, a map's entries in `order`: `BYTEWISE`,
+# `LENGTH_FIRST` or `AS_WRITTEN`. Fails `invalid` where a tag holds other than
+# one item, a simple value is one no item holds, or a sorted map holds one key
+# twice and `duplicates` does not allow it.
+function write(events: [event.Event], order: i64, duplicates: bool) -> [u8]?
+    done: [[u8]] @= []
+    top: i64 @= 0
+    at: i64 @= events.len()
+
+    while at > 0
+        at @ at - 1
+        e = events[at]
+        count = event.children_of(e)
+        made: [u8] @= []
+
+        if e.kind == event.LIST
+            made @ head(major: 4, arg: e.arg)
+
+            for k in range(from: 0, to: count)
+                bytes.push_all(to: @made, from: done[top - 1 - k])
+        else if e.kind == event.PAIRS
+            entries: [Encoded] @= []
+
+            for k in range(from: 0, to: count / 2)
+                entries @ entries.push(Encoded(key: done[top - 1 - 2 * k], value: done[top - 2 - 2 * k]))
+
+            made @ map_of(e: e, entries: entries, order: order, duplicates: duplicates)?
+        else if e.kind == event.TAG
+            if count != 1
+                return fail(
+                    code: INVALID,
+                    msg: f"{event.where(e)}tag {e.arg} holds {count} items, where a tag holds one"
+                )
+            made @ tagged_of(e: e, child: events[at + 1], encoded: done[top - 1])
+        else
+            made @ scalar_of(e)?
+        top @ top - count
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    if top != 1
+        return fail(code: INVALID, msg: f"the events hold {top} items, where one was expected")
+    return ok(done[0])
+
+# The events of `items`, each a scalar, under one list.
+function list_of(items: [event.Event]) -> [event.Event]
+    out: [event.Event] @= [event.of_kind(kind: event.LIST, arg: to_u64(items.len()).must())]
+
+    for item in items
+        out @ out.push(item)
+
+    return out
+
+test "head: each width's first and last argument"
+    assert head(major: 0, arg: 0) == [0x00]
+    assert head(major: 0, arg: 23) == [0x17]
+    assert head(major: 0, arg: 24) == [0x18, 0x18]
+    assert head(major: 0, arg: 255) == [0x18, 0xff]
+    assert head(major: 0, arg: 256) == [0x19, 0x01, 0x00]
+    assert head(major: 0, arg: 65535) == [0x19, 0xff, 0xff]
+    assert head(major: 0, arg: 65536) == [0x1a, 0x00, 0x01, 0x00, 0x00]
+    assert head(major: 0, arg: 4294967295) == [0x1a, 0xff, 0xff, 0xff, 0xff]
+    assert head(major: 0, arg: 4294967296) == [0x1b, 0, 0, 0, 1, 0, 0, 0, 0]
+    assert head(major: 1, arg: 18446744073709551615) == [0x3b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert head(major: 7, arg: 0) == [0xe0]
+
+test "bytewise_less and length_first_less: the RFC's own key order"
+    short = Encoded(key: [0x20], value: [])
+    long = Encoded(key: [0x18, 0x64], value: [])
+    assert bytewise_less(a: long, b: short)
+    assert !bytewise_less(a: short, b: long)
+    assert length_first_less(a: short, b: long)
+    assert !bytewise_less(a: short, b: short)
+
+test "scalar_of: the integers, a byte string, a text, the named values, the simple values"
+    assert scalar_of(event.of_kind(kind: event.UNSIGNED, arg: 1000)).must() == [0x19, 0x03, 0xe8]
+    assert scalar_of(event.of_kind(kind: event.NEGATIVE, arg: 999)).must() == [0x39, 0x03, 0xe7]
+    assert scalar_of(event.of_binary([])).must() == [0x40]
+    assert scalar_of(event.of_text("ü")).must() == [0x62, 0xc3, 0xbc]
+    assert scalar_of(event.of_boolean(false)).must() == [0xf4]
+    assert scalar_of(event.of_boolean(true)).must() == [0xf5]
+    assert scalar_of(event.of_kind(kind: event.NULL_VALUE, arg: 0)).must() == [0xf6]
+    assert scalar_of(event.of_kind(kind: event.UNDEFINED, arg: 0)).must() == [0xf7]
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 16)).must() == [0xf0]
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 255)).must() == [0xf8, 0xff]
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 32)).must() == [0xf8, 0x20]
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 20)).is_err()
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 31)).is_err()
+    assert scalar_of(event.of_kind(kind: event.SIMPLE, arg: 256)).is_err()
+
+test "write: an empty list, nested lists, a tag, one item alone"
+    assert write(events: list_of([]), order: BYTEWISE, duplicates: false).must() == [0x80]
+    nested = [
+        event.of_kind(kind: event.LIST, arg: 3)
+        event.of_kind(kind: event.UNSIGNED, arg: 1)
+        event.of_kind(kind: event.LIST, arg: 2)
+        event.of_kind(kind: event.UNSIGNED, arg: 2)
+        event.of_kind(kind: event.UNSIGNED, arg: 3)
+        event.of_kind(kind: event.LIST, arg: 2)
+        event.of_kind(kind: event.UNSIGNED, arg: 4)
+        event.of_kind(kind: event.UNSIGNED, arg: 5)
+    ]
+    assert write(events: nested, order: BYTEWISE, duplicates: false).must() == [0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05]
+    tagged = [event.of_tag(tag: 1, count: 1), event.of_kind(kind: event.UNSIGNED, arg: 1363896240)]
+    assert write(events: tagged, order: BYTEWISE, duplicates: false).must() == [0xc1, 0x1a, 0x51, 0x4b, 0x67, 0xb0]
+    assert write(events: [event.of_float(1.5)], order: BYTEWISE, duplicates: false).must() == [0xf9, 0x3e, 0x00]
+
+test "write: a tag holding no item or two, and no event at all"
+    empty_tag = [event.of_tag(tag: 1, count: 0)]
+    assert write(events: empty_tag, order: BYTEWISE, duplicates: false).is_err()
+    two = [event.of_tag(tag: 1, count: 2), event.of_boolean(true), event.of_boolean(false)]
+    assert write(events: two, order: AS_WRITTEN, duplicates: true).is_err()
+    none: [event.Event] = []
+    assert write(events: none, order: BYTEWISE, duplicates: false).is_err()
+
+test "write: the RFC's eight keys ordered bytewise, and length first"
+    zero = event.of_kind(kind: event.UNSIGNED, arg: 0)
+    entries = [
+        event.of_kind(kind: event.PAIRS, arg: 8)
+        event.of_boolean(false)
+        zero
+        event.of_kind(kind: event.LIST, arg: 1)
+        event.of_kind(kind: event.NEGATIVE, arg: 0)
+        zero
+        event.of_text("aa")
+        zero
+        event.of_kind(kind: event.UNSIGNED, arg: 100)
+        zero
+        event.of_kind(kind: event.NEGATIVE, arg: 0)
+        zero
+        event.of_text("z")
+        zero
+        event.of_kind(kind: event.LIST, arg: 1)
+        event.of_kind(kind: event.UNSIGNED, arg: 100)
+        zero
+        event.of_kind(kind: event.UNSIGNED, arg: 10)
+        zero
+    ]
+    sorted = write(events: entries, order: BYTEWISE, duplicates: false).must()
+    expected: [u8] = [
+        0xa8
+        0x0a
+        0x00
+        0x18
+        0x64
+        0x00
+        0x20
+        0x00
+        0x61
+        0x7a
+        0x00
+        0x62
+        0x61
+        0x61
+        0x00
+        0x81
+        0x18
+        0x64
+        0x00
+        0x81
+        0x20
+        0x00
+        0xf4
+        0x00
+    ]
+    assert sorted == expected
+    by_length = write(events: entries, order: LENGTH_FIRST, duplicates: false).must()
+    assert by_length.slice(from: 0, to: 7) == [0xa8, 0x0a, 0x00, 0x20, 0x00, 0xf4, 0x00]
+
+test "write: one key twice, refused when sorted, kept as written or when allowed"
+    twice = [
+        event.of_kind(kind: event.PAIRS, arg: 2)
+        event.of_text("a")
+        event.of_kind(kind: event.UNSIGNED, arg: 1)
+        event.of_text("a")
+        event.of_kind(kind: event.UNSIGNED, arg: 2)
+    ]
+    assert write(events: twice, order: BYTEWISE, duplicates: false).is_err()
+    assert write(events: twice, order: LENGTH_FIRST, duplicates: false).is_err()
+    kept: [u8] = [0xa2, 0x61, 0x61, 0x01, 0x61, 0x61, 0x02]
+    assert write(events: twice, order: AS_WRITTEN, duplicates: false).must() == kept
+    assert write(events: twice, order: BYTEWISE, duplicates: true).must() == kept
+
+test "write: the message names the map's byte where the events were decoded"
+    twice = [
+        event.placed(e: event.of_kind(kind: event.PAIRS, arg: 2), at: 4)
+        event.of_text("a")
+        event.of_kind(kind: event.UNSIGNED, arg: 1)
+        event.of_text("a")
+        event.of_kind(kind: event.UNSIGNED, arg: 2)
+    ]
+
+    match write(events: twice, order: BYTEWISE, duplicates: false)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "byte 4: a map holds one key twice, encoded 6161"
+
+test "tagged_of: a bignum at its preferred serialization, another tag as it is"
+    small = event.of_tag(tag: 2, count: 1)
+    assert tagged_of(e: small, child: event.of_binary([0, 0, 5]), encoded: [0x43, 0, 0, 5]) == [0x05]
+    assert tagged_of(e: event.of_tag(tag: 3, count: 1), child: event.of_binary([]), encoded: [0x40]) == [0x20]
+    eight: [u8] = [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert tagged_of(e: small, child: event.of_binary(eight), encoded: [0x48]) == [0x1b, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    nine: [u8] = [0, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+    expected: [u8] = [0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert tagged_of(e: small, child: event.of_binary(nine), encoded: [0x4a]) == expected
+    assert tagged_of(e: event.of_tag(tag: 1, count: 1), child: event.of_binary([1]), encoded: [0x41, 0x01]) == [0xc1, 0x41, 0x01]

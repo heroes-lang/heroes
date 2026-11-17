@@ -1,0 +1,15 @@
+# Reaches Rebel's `toml`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small document, takes a value
+# out of it by its path and writes the document back.
+
+use <rebel>/toml
+
+function main()
+    match toml.parse("title = \"Low\"\n\n[album]\nyear = 1977\nreleased = 1977-01-14\n")
+        .err e => print(e.msg)
+        .ok found =>
+            match toml.value_at(found, ["album", "year"])
+                .ok year => print(toml.format(.table(members: {"year": year})).default("?"))
+                .err e   => print(e.msg)
+
+            print(toml.format(found).default("?"))

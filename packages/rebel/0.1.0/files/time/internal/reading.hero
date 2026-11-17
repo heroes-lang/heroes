@@ -1,0 +1,289 @@
+# The text of a time read: one reader walks any layout's list of pieces,
+# comparing bytes, and cuts a slice only across ASCII digits, so no text it is
+# given, whatever it holds, can make it cut a character in two.
+
+use numbers
+use strings
+use time/internal/civil
+use time/internal/forms
+
+# The code of a text that is not the layout's.
+constant INVALID: str
+    "invalid"
+
+# What a reader has read so far, and where it stands.
+record Reading
+    # The text read.
+    s: str
+    # The byte the next piece begins at.
+    at: i64
+    # The parts read, the date 1970-01-01 and the time 00:00:00 until a piece
+    # says otherwise.
+    parts: civil.Civil
+    # The offset read, in seconds ahead of UTC.
+    offset: i64
+    # The ISO number of the weekday written, 0 where none is.
+    day_number: i64
+
+# The failure that says `expected` was not found at the reader's byte.
+function missing(r: Reading lent, expected: str) -> str
+    return f"at byte {r.at} of \"{r.s}\": expected {expected}"
+
+# Whether the byte at `at` of `s` is an ASCII digit.
+function is_digit_at(s: str, at: i64) -> bool
+    return at < s.len() && s[at] >= '0' && s[at] <= '9'
+
+# The number `count` ASCII digits spell at the reader's byte, which moves past
+# them. Fails `invalid` naming `what` where they are not there.
+function take_digits(@r: Reading, count: i64, what: str) -> i64?
+    seen: i64 @= 0
+
+    while seen < count && is_digit_at(s: r.s, at: r.at + seen)
+        seen @ seen + 1
+
+    if seen < count
+        return fail(code: INVALID, msg: missing(r: r, expected: f"{count} digits of the {what}"))
+    n = numbers.parse_int(r.s.slice(from: r.at, to: r.at + count))?
+    r.at @ r.at + count
+    return ok(n)
+
+# Whether `word` is written at the reader's byte, compared byte by byte.
+function holds_at(r: Reading lent, word: str) -> bool
+    if r.at + word.len() > r.s.len()
+        return false
+    at: i64 @= 0
+
+    while at < word.len()
+        if r.s[r.at + at] != word[at]
+            return false
+        at @ at + 1
+
+    return true
+
+# Moves the reader past `word`. Fails `invalid` where it is not written there.
+function take_text(@r: Reading, word: str) -> ()?
+    if !holds_at(r: r, word: word)
+        return fail(code: INVALID, msg: missing(r: r, expected: f"\"{word}\""))
+    r.at @ r.at + word.len()
+    return ok()
+
+# The place in `names`, from 1, of the name written at the reader's byte, which
+# moves past it. Fails `invalid` naming `what` where none is written there.
+function take_name(@r: Reading, names: [str], what: str) -> i64?
+    place: i64 @= 0
+
+    while place < names.len()
+        if holds_at(r: r, word: names[place])
+            r.at @ r.at + names[place].len()
+            return ok(place + 1)
+        place @ place + 1
+
+    return fail(code: INVALID, msg: missing(r: r, expected: f"{what}, {names[0]} to {names[names.len() - 1]}"))
+
+# The fraction of a second at the reader's byte, in nanoseconds, 0 where no
+# `.` is written there: the digits past the ninth are dropped.
+function take_fraction(@r: Reading) -> i64?
+    if r.at >= r.s.len() || r.s[r.at] != '.'
+        return ok(0)
+    r.at @ r.at + 1
+    from = r.at
+
+    while is_digit_at(s: r.s, at: r.at)
+        r.at @ r.at + 1
+
+    if r.at == from
+        return fail(code: INVALID, msg: missing(r: r, expected: "a digit of the fraction after \".\""))
+    kept: i64 @= r.at
+
+    if kept - from > 9
+        kept @ from + 9
+    digits = strings.pad_end(s: r.s.slice(from: from, to: kept), width: 9, pad: "0")
+    return numbers.parse_int(digits)
+
+# The offset `+hh:mm`, `-hh:mm`, or with no `:` where `colon` is false, at the
+# reader's byte, in seconds ahead of UTC. Fails `invalid` where it is not
+# written there, or its hour is past 23 or its minute past 59.
+function take_offset(@r: Reading, colon: bool) -> i64?
+    if r.at >= r.s.len() || r.s[r.at] != '+' && r.s[r.at] != '-'
+        return fail(code: INVALID, msg: missing(r: r, expected: "an offset, \"+\" or \"-\" and its hours and minutes"))
+    sign: i64 @= 1
+
+    if r.s[r.at] == '-'
+        sign @ -1
+    r.at @ r.at + 1
+    hours_at = r.at
+    hours = take_digits(@r, count: 2, what: "offset's hours")?
+
+    if colon
+        take_text(@r, word: ":")?
+    minutes = take_digits(@r, count: 2, what: "offset's minutes")?
+
+    if hours > 23 || minutes > 59
+        return fail(code: INVALID, msg: f"at byte {hours_at} of \"{r.s}\": the offset {hours}:{minutes} is past 23:59")
+    return ok(sign * (hours * 3_600 + minutes * 60))
+
+# The offset after a zone written `Z`, `z` or as an offset with a `:`.
+function take_zone_z(@r: Reading) -> i64?
+    if r.at < r.s.len() && (r.s[r.at] == 'Z' || r.s[r.at] == 'z')
+        r.at @ r.at + 1
+        return ok(0)
+    return take_offset(@r, colon: true)
+
+# Reads one piece into the reader. Fails `invalid` where the text at its byte
+# is not the piece.
+function take_piece(@r: Reading, p: forms.Piece) -> ()?
+    match p
+        .text t        => take_text(@r, word: t.literal)?
+        .year          => r.parts.year @ take_digits(@r, count: 4, what: "year")?
+        .year_two      => r.parts.year @ century(take_digits(@r, count: 2, what: "year")?)
+        .month         => r.parts.month @ take_digits(@r, count: 2, what: "month")?
+        .month_name    => r.parts.month @ take_name(@r, names: forms.short(forms.month_names()), what: "a month's name")?
+        .day           => r.parts.day @ take_digits(@r, count: 2, what: "day")?
+        .day_space     => r.parts.day @ take_day_space(@r)?
+        .weekday_short => r.day_number @ take_name(@r, names: forms.short(forms.weekday_names()), what: "a weekday's name")?
+        .weekday_long  => r.day_number @ take_name(@r, names: forms.weekday_names(), what: "a weekday's name")?
+        .hour          => r.parts.hour @ take_digits(@r, count: 2, what: "hour")?
+        .minute        => r.parts.minute @ take_digits(@r, count: 2, what: "minute")?
+        .second        => r.parts.second @ take_digits(@r, count: 2, what: "second")?
+        .fraction _    => r.parts.nanosecond @ take_fraction(@r)?
+        .separator     => take_separator(@r)?
+        .zone_z        => r.offset @ take_zone_z(@r)?
+        .zone_gmt      => take_text(@r, word: "GMT")?
+        .zone_numeric  => r.offset @ take_offset(@r, colon: false)?
+
+    return ok()
+
+# The year of the 1900s or the 2000s whose last two digits are `two`: 69 to
+# 99 are 1969 to 1999, and 00 to 68 are 2000 to 2068, as POSIX reads them.
+function century(two: i64) -> i64
+    if two >= 69
+        return 1900 + two
+    return 2000 + two
+
+# The day written as ` 2` or `12` at the reader's byte.
+function take_day_space(@r: Reading) -> i64?
+    if r.at < r.s.len() && r.s[r.at] == ' '
+        r.at @ r.at + 1
+        return take_digits(@r, count: 1, what: "day")
+    return take_digits(@r, count: 2, what: "day")
+
+# Moves the reader past `T` or `t`.
+function take_separator(@r: Reading) -> ()?
+    if r.at < r.s.len() && (r.s[r.at] == 'T' || r.s[r.at] == 't')
+        r.at @ r.at + 1
+        return ok()
+    return fail(code: INVALID, msg: missing(r: r, expected: "\"T\" between the date and the time"))
+
+# The nanoseconds from 1970-01-01T00:00:00Z to the moment `s` writes by
+# `pieces`, read whole. Fails `invalid` where `s` is not such a text, a part
+# is outside its range, or a weekday written is not the date's; fails
+# `does_not_fit` where the moment is outside an `i64` of nanoseconds.
+function parse(s: str, pieces: [forms.Piece]) -> i64?
+    start = civil.Civil(year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    r: Reading @= Reading(s: s, at: 0, parts: start, offset: 0, day_number: 0)
+
+    for p in pieces
+        take_piece(@r, p: p)?
+
+    if r.at != s.len()
+        return fail(code: INVALID, msg: f"at byte {r.at} of \"{s}\": the time ends there, and more follows")
+
+    match civil.check(r.parts)
+        .ok _  => _ = 0
+        .err e => return fail(code: INVALID, msg: f"\"{s}\": {e.msg}")
+
+    if r.day_number != 0
+        actual = civil.weekday(civil.days_from_date(year: r.parts.year, month: r.parts.month, day: r.parts.day))
+
+        if actual != r.day_number
+            written = forms.weekday_names()[r.day_number - 1]
+            return fail(
+                code: INVALID,
+                msg: f"\"{s}\": it says {written}, and that date is a {forms.weekday_names()[actual - 1]}"
+            )
+    return civil.to_nanoseconds(c: r.parts, offset: r.offset)
+
+## Tests
+
+# Expected instants observed with Go's `time.Parse(time.RFC3339, ...)` and
+# Python's `datetime.fromisoformat`, 2026-11-15; Go refuses `t` and `z`, which
+# RFC 3339 allows and this reader reads.
+test "parse: RFC 3339 with and without a fraction, lower case, offsets, and ten fraction digits"
+    assert parse(s: "2006-01-02T15:04:05Z", pieces: forms.rfc3339(-1)).must() == 1_136_214_245_000_000_000
+    assert parse(s: "2006-01-02T15:04:05.5Z", pieces: forms.rfc3339(0)).must() == 1_136_214_245_500_000_000
+    assert parse(s: "2006-01-02t15:04:05z", pieces: forms.rfc3339(-1)).must() == 1_136_214_245_000_000_000
+    assert parse(s: "2006-01-02T15:04:05+05:30", pieces: forms.rfc3339(-1)).must() == 1_136_194_445_000_000_000
+    assert parse(s: "2006-01-02T15:04:05-00:00", pieces: forms.rfc3339(-1)).must() == 1_136_214_245_000_000_000
+    assert parse(s: "2006-01-02T15:04:05.1234567891Z", pieces: forms.rfc3339(-1)).must() == 1_136_214_245_123_456_789
+    assert parse(s: "2262-04-12T01:00:00+02:00", pieces: forms.rfc3339(-1)).must() == 9_223_369_200_000_000_000
+    assert parse(s: "1677-09-21T00:12:43.145224192Z", pieces: forms.rfc3339(-1)).must() == -9_223_372_036_854_775_807 - 1
+
+test "parse: what is not RFC 3339 fails invalid at its byte, and what an i64 cannot hold fails does_not_fit"
+    match parse(s: "2006-01-02 15:04:05Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "at byte 10 of \"2006-01-02 15:04:05Z\": expected \"T\" between the date and the time"
+
+    match parse(s: "2006-1-02T15:04:05Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 5 of \"2006-1-02T15:04:05Z\": expected 2 digits of the month"
+
+    match parse(s: "2006-01-02T15:04:05.Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 20 of \"2006-01-02T15:04:05.Z\": expected a digit of the fraction after \".\""
+
+    match parse(s: "2006-01-02T15:04:05+24:00", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 20 of \"2006-01-02T15:04:05+24:00\": the offset 24:0 is past 23:59"
+
+    match parse(s: "2006-02-30T00:00:00Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.msg == "\"2006-02-30T00:00:00Z\": the day 30 is outside 1 to 28 in month 2 of 2006"
+
+    assert parse(s: "2006-01-02T15:04:60Z", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "2006-01-02T24:00:00Z", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "2006-01-02T15:04:05Z ", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "2006-01-02T15:04:05", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "2006-01-02T15:04:05é", pieces: forms.rfc3339(-1)).is_err()
+    assert parse(s: "é006-01-02T15:04:05Z", pieces: forms.rfc3339(-1)).is_err()
+
+    match parse(s: "2262-04-11T23:47:16.854775808Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match parse(s: "1677-09-21T00:12:43.145224191Z", pieces: forms.rfc3339(-1))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+# Expected instants observed with Go's `time.Parse` in `RFC1123`, `RFC850`,
+# `ANSIC` and `RFC1123Z`, and Python's `strptime("%y")`, 2026-11-15.
+test "parse: the HTTP dates, a two-digit year either side of 69, C's asctime, and e-mail's offset"
+    assert parse(s: "Mon, 02 Jan 2006 15:04:05 GMT", pieces: forms.http()).must() == 1_136_214_245_000_000_000
+    assert parse(s: "Monday, 02-Jan-06 15:04:05 GMT", pieces: forms.rfc850()).must() == 1_136_214_245_000_000_000
+    assert parse(s: "Thursday, 02-Jan-69 15:04:05 GMT", pieces: forms.rfc850()).must() == -31_395_355_000_000_000
+    assert parse(s: "Monday, 02-Jan-68 15:04:05 GMT", pieces: forms.rfc850()).must() == 3_092_742_245_000_000_000
+    assert parse(s: "Mon Jan  2 15:04:05 2006", pieces: forms.ansic()).must() == 1_136_214_245_000_000_000
+    assert parse(s: "Thu Jan 12 01:02:03 2006", pieces: forms.ansic()).must() == 1_137_027_723_000_000_000
+    assert parse(s: "Mon, 02 Jan 2006 15:04:05 -0700", pieces: forms.email()).must() == 1_136_239_445_000_000_000
+    assert parse(s: "2006-01-02 15:04:05", pieces: forms.date_time()).must() == 1_136_214_245_000_000_000
+    assert parse(s: "2006-01-02", pieces: forms.date_only()).must() == 1_136_160_000_000_000_000
+    assert parse(s: "15:04:05", pieces: forms.time_only()).must() == 54_245_000_000_000
+
+test "parse: a weekday that is not the date's, a name in the wrong case, and a fraction a layout does not hold"
+    match parse(s: "Tue, 02 Jan 2006 15:04:05 GMT", pieces: forms.http())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"Tue, 02 Jan 2006 15:04:05 GMT\": it says Tuesday, and that date is a Monday"
+
+    match parse(s: "Mon, 02 jan 2006 15:04:05 GMT", pieces: forms.http())
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 8 of \"Mon, 02 jan 2006 15:04:05 GMT\": expected a month's name, Jan to Dec"
+
+    assert parse(s: "Mon, 02 Jan 2006 15:04:05 UTC", pieces: forms.http()).is_err()
+    assert parse(s: "2006-01-02 15:04:05.5", pieces: forms.date_time()).is_err()
+    assert parse(s: "Mon, 02 Jan 2006 15:04:05 +07", pieces: forms.email()).is_err()
+
+test "format and parse: every layout reads back what it writes"
+    t = 1_136_214_245_000_000_000
+
+    for pieces in [forms.rfc3339(-1), forms.rfc3339(0), forms.rfc3339(3), forms.rfc3339(6), forms.rfc3339(9), forms.date_time(), forms.http(), forms.rfc850(), forms.ansic(), forms.email()]
+        assert parse(s: forms.format(nanoseconds: t, pieces: pieces), pieces: pieces).must() == t

@@ -1,0 +1,212 @@
+# A float rounded to a whole number, and a float divided into a whole quotient
+# and a remainder by each of the rules programs use: toward zero (the
+# language's `%`, C's `fmod`), down (Python's `//` and `%`), Euclid's (Rust's
+# `div_euclid`), and to the nearest (C's `remainder`).
+#
+# The remainder of two floats is exact, so each quotient is computed from it
+# and only rounded where the division itself must round.
+
+use math/internal/floats
+use math/internal/limits
+use math/libm
+
+# The largest whole number at or below `x`.
+#
+# - `x`: any float.
+function floor(x: f64) -> f64
+    return libm.c_floor(x)
+
+# The smallest whole number at or above `x`.
+#
+# - `x`: any float.
+function ceil(x: f64) -> f64
+    return libm.c_ceil(x)
+
+# `x` rounded toward zero.
+#
+# - `x`: any float.
+function trunc(x: f64) -> f64
+    return libm.c_trunc(x)
+
+# The whole number nearest to `x`, a half away from zero.
+#
+# - `x`: any float.
+function round(x: f64) -> f64
+    return libm.c_round(x)
+
+# The whole number nearest to `x`, a half to the even one. `x - trunc(x)` is
+# exact for every float, so a half is seen as a half; C's `rint` would read
+# the rounding mode, which a C library the program calls may have changed.
+#
+# - `x`: any float.
+function round_even(x: f64) -> f64
+    if !floats.is_finite(x)
+        return x
+    whole = trunc(x)
+
+    if floats.abs(x - whole) != 0.5
+        return round(x)
+
+    if whole % 2.0 == 0.0
+        return floats.with_sign(x: whole, of: x)
+    return whole + floats.sign(x)
+
+# The part of `x` after its point, with the sign of `x`.
+#
+# - `x`: any float.
+function fraction(x: f64) -> f64
+    whole: f64 @= 0.0
+    return libm.c_modf(x: x, iptr: @whole)
+
+# The quotient of `x` by `by` rounded down.
+#
+# - `x`: the dividend.
+# - `by`: the divisor.
+function div_floor(x: f64, by: f64) -> f64
+    remainder = x % by
+
+    if floats.is_nan(remainder)
+        return remainder
+    quotient: f64 @= (x - remainder) / by
+
+    if remainder != 0.0 && floats.has_minus_sign(remainder) != floats.has_minus_sign(by)
+        quotient @ quotient - 1.0
+
+    if quotient == 0.0
+        return floats.with_sign(x: 0.0, of: x / by)
+    below = floor(quotient)
+
+    if quotient - below > 0.5
+        return below + 1.0
+    return below
+
+# The remainder of `x` by `by` with the sign of `by`.
+#
+# - `x`: the dividend.
+# - `by`: the divisor.
+function rem_floor(x: f64, by: f64) -> f64
+    remainder = x % by
+
+    if floats.is_nan(remainder)
+        return remainder
+
+    if remainder == 0.0
+        return floats.with_sign(x: 0.0, of: by)
+
+    if floats.has_minus_sign(remainder) != floats.has_minus_sign(by)
+        return remainder + by
+    return remainder
+
+# The quotient of `x` by `by` whose remainder is never negative.
+#
+# - `x`: the dividend.
+# - `by`: the divisor.
+function div_euclid(x: f64, by: f64) -> f64
+    quotient = trunc(x / by)
+    remainder = x % by
+
+    if floats.is_nan(remainder) || remainder >= 0.0
+        return quotient
+
+    if by > 0.0
+        return quotient - 1.0
+    return quotient + 1.0
+
+# The remainder of `x` by `by` that is never negative.
+#
+# - `x`: the dividend.
+# - `by`: the divisor.
+function rem_euclid(x: f64, by: f64) -> f64
+    remainder = x % by
+
+    if floats.is_nan(remainder) || remainder >= 0.0
+        return remainder
+    return remainder + floats.abs(by)
+
+# The remainder of `x` by `by` whose quotient is the nearest whole number.
+#
+# - `x`: the dividend.
+# - `by`: the divisor.
+function rem_nearest(x: f64, by: f64) -> f64
+    return libm.c_remainder(x: x, y: by)
+
+## Tests
+
+# Go's answers, which keep the sign of a zero that Python's integers lose.
+test "floor, ceil and trunc: a half each way, the two zeros, an infinity, a whole number past 2^52"
+    assert floor(-0.5) == -1.0 && floor(0.5) == 0.0 && floor(-2.5) == -3.0
+    assert floats.has_minus_sign(floor(-0.0))
+    assert floor(limits.INF) == limits.INF
+    assert floats.has_minus_sign(ceil(-0.5)) && ceil(0.5) == 1.0 && ceil(2.5) == 3.0
+    assert floats.has_minus_sign(ceil(-0.0))
+    assert floats.has_minus_sign(trunc(-0.5)) && trunc(-2.5) == -2.0
+    assert floor(4503599627370497.0) == 4503599627370497.0
+    assert ceil(-0.000000000000000000000000000000000000001) == 0.0
+    assert floats.is_nan(trunc(limits.INF - limits.INF))
+
+test "round: a half away from zero, both signs, minus zero, the float a hair below a half"
+    assert round(0.5) == 1.0 && round(-0.5) == -1.0
+    assert round(2.5) == 3.0 && round(-2.5) == -3.0
+    assert floats.has_minus_sign(round(-0.0))
+    assert round(0.49999999999999994) == 0.0
+
+test "round_even: halves to the even one, both signs, minus zero kept, a hair below a half, a whole number past 2^52"
+    assert round_even(0.5) == 0.0 && !floats.has_minus_sign(round_even(0.5))
+    assert round_even(-0.5) == 0.0 && floats.has_minus_sign(round_even(-0.5))
+    assert round_even(1.5) == 2.0 && round_even(2.5) == 2.0
+    assert round_even(-2.5) == -2.0 && round_even(-3.5) == -4.0
+    assert floats.has_minus_sign(round_even(-0.0))
+    assert round_even(0.49999999999999994) == 0.0
+    assert round_even(4503599627370497.0) == 4503599627370497.0
+    assert round_even(limits.INF) == limits.INF
+
+test "fraction: a negative number, the infinities, minus zero, a large number, a nan"
+    assert fraction(-3.75) == -0.75
+    assert fraction(limits.INF) == 0.0 && !floats.has_minus_sign(fraction(limits.INF))
+    assert floats.has_minus_sign(fraction(-limits.INF))
+    assert floats.has_minus_sign(fraction(-0.0))
+    assert fraction(0.1) == 0.1
+    assert floats.is_nan(fraction(limits.INF - limits.INF))
+
+# Python's `//` and `%` on floats, run on 2026-11-16.
+test "div_floor and rem_floor: each pair of signs, 7 by 0.1, an infinite divisor, the zeros"
+    assert div_floor(x: 7.0, by: 2.0) == 3.0 && rem_floor(x: 7.0, by: 2.0) == 1.0
+    assert div_floor(x: -7.0, by: 2.0) == -4.0 && rem_floor(x: -7.0, by: 2.0) == 1.0
+    assert div_floor(x: 7.0, by: -2.0) == -4.0 && rem_floor(x: 7.0, by: -2.0) == -1.0
+    assert div_floor(x: -7.5, by: 2.0) == -4.0 && rem_floor(x: -7.5, by: 2.0) == 0.5
+    assert div_floor(x: 7.0, by: 0.1) == 69.0 && rem_floor(x: 7.0, by: 0.1) == 0.09999999999999962
+    assert div_floor(x: 5.0, by: limits.INF) == 0.0 && rem_floor(x: 5.0, by: limits.INF) == 5.0
+    assert div_floor(x: -5.0, by: limits.INF) == -1.0 && rem_floor(x: -5.0, by: limits.INF) == limits.INF
+    assert rem_floor(x: 5.0, by: -limits.INF) == -limits.INF
+    assert floats.has_minus_sign(div_floor(x: 0.0, by: -3.0)) && floats.has_minus_sign(rem_floor(x: 0.0, by: -3.0))
+    assert floats.has_minus_sign(div_floor(x: -0.0, by: 3.0)) && !floats.has_minus_sign(rem_floor(x: -0.0, by: 3.0))
+
+test "div_floor and rem_floor: a zero divisor, an infinite dividend and a nan answer a nan"
+    assert floats.is_nan(div_floor(x: 5.0, by: 0.0)) && floats.is_nan(rem_floor(x: 5.0, by: 0.0))
+    assert floats.is_nan(div_floor(x: limits.INF, by: 2.0)) && floats.is_nan(rem_floor(x: limits.INF, by: 2.0))
+    assert floats.is_nan(div_floor(x: limits.INF - limits.INF, by: 2.0))
+
+# Rust's `div_euclid` and `rem_euclid` on `f64`, run on 2026-11-16.
+test "div_euclid and rem_euclid: each pair of signs, minus zero, an infinite dividend, a zero and an infinite divisor"
+    assert div_euclid(x: -7.5, by: 2.0) == -4.0 && rem_euclid(x: -7.5, by: 2.0) == 0.5
+    assert div_euclid(x: 7.5, by: -2.0) == -3.0 && rem_euclid(x: 7.5, by: -2.0) == 1.5
+    assert rem_euclid(x: -7.5, by: -2.0) == 0.5
+    assert floats.has_minus_sign(rem_euclid(x: -0.0, by: 2.0))
+    assert div_euclid(x: limits.INF, by: 2.0) == limits.INF
+    assert div_euclid(x: 5.0, by: 0.0) == limits.INF
+    assert rem_euclid(x: 5.0, by: limits.INF) == 5.0
+    assert rem_euclid(x: -5.0, by: limits.INF) == limits.INF
+    assert rem_euclid(x: -0.00000000000000000001, by: 1.0) == 1.0
+    assert floats.is_nan(rem_euclid(x: 5.0, by: 0.0))
+
+# C's `remainder`, as Go's and Python's answer it.
+test "rem_nearest: a half to the even quotient, both signs, a zero divisor, an infinite divisor and dividend"
+    assert rem_nearest(x: 7.0, by: 2.0) == -1.0
+    assert rem_nearest(x: 5.0, by: 2.0) == 1.0
+    assert rem_nearest(x: -5.0, by: 2.0) == -1.0
+    assert rem_nearest(x: 7.5, by: 2.0) == -0.5
+    assert rem_nearest(x: 6.5, by: 2.0) == 0.5
+    assert rem_nearest(x: 5.0, by: limits.INF) == 5.0
+    assert floats.has_minus_sign(rem_nearest(x: -0.0, by: 1.0))
+    assert floats.is_nan(rem_nearest(x: 5.0, by: 0.0))
+    assert floats.is_nan(rem_nearest(x: limits.INF, by: 2.0))

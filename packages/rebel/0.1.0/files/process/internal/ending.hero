@@ -1,0 +1,163 @@
+# A child's end through the floor: waited for, its command's time limit kept
+# on the monotonic clock, or looked at without waiting; and the CPU time it
+# used, read once it has ended.
+
+use process/hero_proc
+use process/internal/clock
+use process/internal/codes
+use process/internal/fixture
+use process/internal/launch
+
+# What a look at a child saw.
+record Seen
+    # Whether it has ended; every other field is 0 or `false` where not.
+    ended: bool
+    # Its exit code where it ended by itself, -1 where a signal ended it.
+    code: i64
+    # The signal that ended it, 0 where none did.
+    signal: i64
+    # Whether its time limit ran out and it was ended for it.
+    timed_out: bool
+    # Nanoseconds of CPU time spent in its own code.
+    user_ns: i64
+    # Nanoseconds of CPU time the system spent for it.
+    system_ns: i64
+
+# What is seen of a child that runs.
+function running() -> Seen
+    return Seen(ended: false, code: 0, signal: 0, timed_out: false, user_ns: 0, system_ns: 0)
+
+# The end of `p`, waiting for it, `timed_out` saying whether its time limit
+# ended it. Fails with the code of the floor's refusal.
+function settled(p: hero_proc.Proc, timed_out: bool, asked: str, program: str) -> Seen?
+    code: i64 @= 0
+    signal: i64 @= 0
+
+    if hero_proc.wait(p, code: @code, by_signal: @signal) < 0
+        return codes.last(asked: asked, program: program, dir: "")
+    user: i64 @= 0
+    system: i64 @= 0
+
+    if hero_proc.cpu(p, user_ns: @user, system_ns: @system) < 0
+        return codes.last(asked: asked, program: program, dir: "")
+    return ok(Seen(ended: true, code: code, signal: signal, timed_out: timed_out, user_ns: user, system_ns: system))
+
+# The end of `p`, ended at once for its time limit and waited for.
+function stopped(p: hero_proc.Proc, asked: str, program: str) -> Seen?
+    if hero_proc.kill(p) < 0
+        return codes.last(asked: asked, program: program, dir: "")
+    return settled(p, timed_out: true, asked: asked, program: program)
+
+# What is seen of `p` now: its end where it has ended, never waiting for one
+# that runs; where `limit` is above 0, one that runs `limit` nanoseconds past
+# `started` on the monotonic clock is ended at once.
+function looked(p: hero_proc.Proc, started: i64, limit: i64, asked: str, program: str) -> Seen?
+    ended = hero_proc.ended(p)
+
+    if ended < 0
+        return codes.last(asked: asked, program: program, dir: "")
+
+    if ended == 1
+        return settled(p, timed_out: false, asked: asked, program: program)
+
+    if limit > 0 && clock.now()? >= clock.deadline(started: started, limit: limit)
+        return stopped(p, asked: asked, program: program)
+    return ok(running())
+
+# The end of `p`, waiting for it; where `limit` is above 0, `limit`
+# nanoseconds past `started` on the monotonic clock it is ended at once. A
+# limited wait looks again after a pause of one millisecond, doubled each
+# time up to fifty.
+function waited(p: hero_proc.Proc, started: i64, limit: i64, asked: str, program: str) -> Seen?
+    if limit <= 0
+        return settled(p, timed_out: false, asked: asked, program: program)
+    deadline = clock.deadline(started: started, limit: limit)
+    pause: i64 @= clock.SHORTEST
+
+    while true
+        seen = looked(p, started: started, limit: limit, asked: asked, program: program)?
+
+        if seen.ended
+            return ok(seen)
+        left = deadline - clock.now()?
+
+        if left < pause
+            clock.rest(max_with(a: left, b: 0))
+        else
+            clock.rest(pause)
+        pause @ clock.next_pause(pause)
+
+# The larger of `a` and `b`.
+function max_with(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+## Tests
+
+# A child of the system's shell running `script`, nothing for its streams.
+function shell_child(script: str) -> hero_proc.Proc
+    return launch.quiet(program: fixture.shell_program(), arguments: fixture.shell_arguments(script), dir: "").must()
+
+# A child that waits 30 seconds, nothing for its streams: the shell made the
+# sleeper on POSIX, and on Windows the sleeper itself, since `cmd.exe` has no
+# `exec` and a shell ended there leaves its own child running.
+function sleeping_child() -> hero_proc.Proc
+    if fixture.on_windows()
+        return launch.quiet(program: fixture.sleeper(), arguments: fixture.sleeper_arguments(30), dir: "").must()
+    return shell_child("exec sleep 30")
+
+test "waited: no limit, an exit code, and the CPU time read once it ended"
+    p @= shell_child(fixture.exit_script(3))
+    seen = waited(p, started: 0, limit: 0, asked: "t", program: "sh").must()
+    assert seen.ended && seen.code == 3 && seen.signal == 0 && !seen.timed_out
+    assert seen.user_ns >= 0 && seen.system_ns >= 0
+    assert hero_proc.release(@p) == 0
+
+test "waited: a child that ends before its limit is no time out"
+    p @= shell_child(fixture.exit_script(0))
+    start = clock.now().must()
+    seen = waited(
+        p,
+        started: start,
+        limit: 10_000_000_000,
+        asked: "t",
+        program: "sh"
+    ).must()
+    assert seen.ended && seen.code == 0 && !seen.timed_out
+    assert hero_proc.release(@p) == 0
+
+test "waited: a child past its limit of 100 ms is ended at once, by SIGKILL, long before its own end"
+    p @= sleeping_child()
+    start = clock.now().must()
+    seen = waited(
+        p,
+        started: start,
+        limit: 100_000_000,
+        asked: "t",
+        program: "sh"
+    ).must()
+    took = clock.now().must() - start
+    assert seen.ended && seen.timed_out
+    assert seen.code == fixture.killed_code() && seen.signal == fixture.killed_signal()
+    assert took >= 100_000_000 && took < 5_000_000_000
+    assert hero_proc.release(@p) == 0
+
+test "looked: a child that runs is seen running, then ended past a limit of 1 ns, and looked at again it answers the same"
+    p @= sleeping_child()
+    first = looked(p, started: 0, limit: 0, asked: "t", program: "sh").must()
+    assert !first.ended
+    second = looked(p, started: 0, limit: 1, asked: "t", program: "sh").must()
+    assert second.ended && second.timed_out && second.signal == fixture.killed_signal()
+    third = looked(p, started: 0, limit: 0, asked: "t", program: "sh").must()
+    assert third.ended && !third.timed_out && third.signal == fixture.killed_signal()
+    assert hero_proc.release(@p) == 0
+
+test "settled: a process given back already is refused, the floor's own refusal"
+    p @= shell_child(fixture.exit_script(0))
+    assert hero_proc.release(@p) == 0
+    none: hero_proc.Proc = nullptr
+
+    match settled(none, timed_out: false, asked: "t", program: "sh")
+        .ok _  => assert false
+        .err e => assert e.code == codes.CLOSED

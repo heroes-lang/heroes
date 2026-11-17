@@ -1,0 +1,118 @@
+# The ledger of `msgpack`: what MessagePack's specification (msgpack.org,
+# `spec.md` of the `msgpack/msgpack` repository, read 2026-11-16) lets a
+# program do, one block per capability, and what Rebel answers. None of the
+# three reference libraries holds MessagePack in its standard library:
+# `go doc -all` lists no such package in Go 1.27, Rust 1.100's `std` has none,
+# and Python 3.15 has no `msgpack` module, nor is one installed on this
+# machine. So every block's `go`, `rust` and `python` lines are `-`, and the
+# capabilities are the specification's own; the expected bytes of the tests
+# are its format tables', and floats' bits were observed from Python's
+# `struct` (`>f`, `>d`).
+
+capability msgpack/decode  one encoded object read into a value a program matches on
+  heroes  msgpack.decode, msgpack.Value, msgpack.Entry
+  go      -
+  rust    -
+  python  -
+  note    every format of the specification's table is read; `0xc1`, which it never uses, is refused, and a count or a length the remaining bytes could not hold fails before anything is held for it
+
+capability msgpack/decode-options  how strictly bytes are read: depth, a key twice
+  heroes  msgpack.decode_with, msgpack.strict, msgpack.DecodeOptions
+  go      -
+  rust    -
+  python  -
+  note    the specification says nothing of a key twice; `strict` refuses it, as CBOR calls such a map not valid, two keys being one where their smallest encodings are, so `0xd001` and `0x01` are the same key
+
+capability msgpack/raw-text  a string whose bytes are not UTF-8 handed back as its bytes
+  heroes  msgpack.DecodeOptions
+  go      -
+  rust    -
+  python  -
+  note    the specification asks a deserializer to make the original bytes reachable; `invalid_text` reads such a string as a `.binary`, and `strict` refuses it `not_text`
+
+capability msgpack/sequence  objects written one after another, read in turn
+  heroes  msgpack.decode_next, msgpack.Decoded
+  go      -
+  rust    -
+  python  -
+  note    `decode` refuses bytes after its object and names where they begin
+
+capability msgpack/encode  a value written, each object in its smallest format
+  heroes  msgpack.encode
+  go      -
+  rust    -
+  python  -
+  note    the specification's SHOULD: positive fixint, uint 8 to 64 and negative fixint, int 8 to 64 of fewest bytes; fix, 8, 16 or 32-bit headers; fixext where the length is 1, 2, 4, 8 or 16; float 32 where a single holds the double exactly; a map holding one key twice, a `.negative` not below 0 and a length past 2^32 - 1 fail `invalid`
+
+capability msgpack/key-order  a map's entries sorted, so equal values encode to equal bytes
+  heroes  msgpack.encode_with, msgpack.KeyOrder
+  go      -
+  rust    -
+  python  -
+  note    MessagePack names no deterministic encoding; `.bytewise` takes the order CBOR's deterministic encoding uses, the keys' encodings compared byte by byte
+
+capability msgpack/integers  every MessagePack integer held, made from and read as an `i64`
+  heroes  msgpack.from_int, msgpack.int_of
+  go      -
+  rust    -
+  python  -
+  note    `.unsigned` holds 0 to 2^64 - 1 and `.negative` -2^63 to -1, so a value read from any of the eight integer formats is held one way only
+
+capability msgpack/floats  float 32 and float 64 read, and written at their smallest
+  heroes  msgpack.Value
+  go      -
+  rust    -
+  python  -
+  note    every float is held as an `f64`, which holds every single exactly; the bits are made by exact arithmetic on powers of two, a module `cbor` holds too since neither package may use the other and no package below them offers a float's bits
+
+capability msgpack/float-width  a float written in 64 bits though a single holds it
+  heroes  refused: the specification asks a serializer for the smallest format, and the value holds a number, not the width it came in; every reader of MessagePack reads both widths
+  go      -
+  rust    -
+  python  -
+
+capability msgpack/extensions  an extension's type and bytes kept
+  heroes  msgpack.Value
+  go      -
+  rust    -
+  python  -
+  note    `.extension` keeps any type from -128 to 127 and its bytes, so an extension the program does not know is carried through untouched, as the specification allows
+
+capability msgpack/timestamp  the timestamp extension read as an instant and written from one
+  heroes  msgpack.instant_of, msgpack.from_instant, msgpack.TIMESTAMP
+  go      -
+  rust    -
+  python  -
+  note    the three layouts of 32, 64 and 96 bits, written in the smallest as the specification's pseudo code chooses; nanoseconds past 999999999 fail `invalid`
+
+capability msgpack/timestamp-wide  a timestamp outside 1677 to 2262 read
+  heroes  refused: a `time.Instant` holds nanoseconds in an `i64`, 1677 to 2262; `instant_of` fails `does_not_fit` past it, and the seconds of the 96-bit layout stand in the extension's bytes for a program that needs them
+  go      -
+  rust    -
+  python  -
+
+capability msgpack/json  a MessagePack object crossed to a JSON value and back
+  heroes  msgpack.to_json, msgpack.from_json
+  go      -
+  rust    -
+  python  -
+  note    what JSON cannot hold, a binary, an extension, a key that is not a string, a `nan` or an infinity, fails `unsupported` with the JSON pointer of the object, and an integer past 2^53 - 1 fails `does_not_fit`; a JSON number that is a whole number from -2^63 to 2^64 - 1 becomes an integer, every other one a float
+
+capability msgpack/member  a map's value read by its string key
+  heroes  msgpack.member
+  go      -
+  rust    -
+  python  -
+  note    the first entry where a key stands twice
+
+capability msgpack/records  a record of the program written to and read from a map by its field names
+  heroes  refused: the language has no reflection; a record is written by hand with its `Record::field` names (spec § 9), which the compiler checks, as `cbor`'s example of `encode` shows, and a generator of those functions would be a verb of `heroes`, which needs a design sitting
+  go      -
+  rust    -
+  python  -
+
+capability msgpack/stream  objects read from and written to a stream as they come
+  heroes  refused: `io` reads the bytes and writes them; `decode_next` walks objects held whole, and `msgpack` takes no stream
+  go      -
+  rust    -
+  python  -

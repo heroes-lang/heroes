@@ -1,0 +1,126 @@
+# UDP over the floor `net/hero_net`: a socket bound to an address, a
+# datagram sent to an address, and a datagram received whole with its
+# sender.
+
+use net/hero_net
+use net/internal/failure
+use net/internal/hosts
+use net/internal/parse
+use net/internal/sockets
+
+# A datagram received, which the face makes a `net.Datagram`.
+record Received
+    # The datagram's bytes, whole.
+    data: [u8]
+    # The sender's address and port.
+    sender: parse.Parsed
+
+# The most bytes one datagram holds over IPv4 or IPv6, and so the size of the
+# buffer `receive` hands the floor: no datagram is ever cut.
+constant DATAGRAM_MOST: u64
+    65536
+
+# A UDP socket bound to `host` at `port`.
+#
+# - `host`: an address, or "" for every address of the machine; a zero byte
+#   is refused, and a name fails as the floor fails it.
+# - `port`: 0 to 65535, 0 for one the system chooses.
+#
+# Fails `invalid` where `host` holds a zero byte or `port` is out of range,
+# and as the floor fails where the socket is not made.
+function open_udp(host: str, port: i64) -> sockets.Bound?
+    asked = f"opening a UDP socket on {hosts.joined(host, port: sockets.clamped(port))}"
+    hosts.checked_zero(text: host, asked: asked)?
+    _ = hosts.checked(port, asked: asked)?
+    s @= hero_net.udp(address: host, port: port)
+
+    if s == nullptr
+        return failure.last(asked: asked)
+    return sockets.bound(@s, asked: asked)
+
+# Sends `data` as one datagram from `s` to the address `to` writes at `port`.
+#
+# - `s`: the UDP socket.
+# - `data`: the datagram's bytes, none allowed.
+# - `to`: the address as text, a number of the socket's own kind.
+# - `port`: 1 to 65535.
+#
+# Fails as the floor fails: `invalid` for an address of the other kind, a
+# port 0 or a datagram too long.
+function send_to(s: hero_net.Socket, data: [u8], to: str, port: i64) -> ()?
+    asked = f"sending {data.len()} bytes to {hosts.joined(to, port: port)}"
+    bytes: [u8] @= data
+
+    if hero_net.send_to(s, @bytes, n: to_u64(data.len()).must(), address: to, port: port) < 0
+        return failure.last(asked: asked)
+    return ok()
+
+# The next datagram `s` receives, whole, and its sender, waiting for one.
+#
+# - `s`: the UDP socket.
+#
+# Fails as the floor fails: `timeout`, `stopped`, `closed`.
+function receive(s: hero_net.Socket) -> Received?
+    asked = "receiving a datagram"
+    buffer: [u8] @= []
+    who: [u8] @= []
+    port: i64 @= 0
+    n = hero_net.recv_from(
+        s,
+        buffer: @buffer,
+        n: DATAGRAM_MOST,
+        address: @who,
+        m: hero_net.HERO_NET_ADDRESS_MOST,
+        port: @port
+    )
+
+    if n < 0
+        return failure.last(asked: asked)
+    sender = sockets.address_in(who, port: port, asked: asked)?
+    return ok(Received(data: buffer.slice(from: 0, to: n), sender: sender))
+
+## Tests
+
+test "open_udp, send_to, receive: datagrams both ways, one of no bytes, the sender told"
+    a @= open_udp("127.0.0.1", port: 0).must()
+    b @= open_udp("127.0.0.1", port: 0).must()
+    sockets.set_deadline(b.socket, ms: 5000, asked: "deadline").must()
+    sockets.set_deadline(a.socket, ms: 5000, asked: "deadline").must()
+    send_to(a.socket, data: [104, 105, 33], to: "127.0.0.1", port: b.address.port).must()
+    got = receive(b.socket).must()
+    assert got.data == [104, 105, 33] && got.sender == a.address
+    send_to(b.socket, data: [], to: "127.0.0.1", port: got.sender.port).must()
+    back = receive(a.socket).must()
+    assert back.data == [] && back.sender.port == b.address.port
+    sockets.close(@a.socket, asked: "closing").must()
+    sockets.close(@b.socket, asked: "closing").must()
+
+test "send_to and receive: the largest datagram whole, an address of the other kind and port 0 invalid, a quiet socket timeout"
+    a @= open_udp("127.0.0.1", port: 0).must()
+    b @= open_udp("127.0.0.1", port: 0).must()
+    sockets.set_deadline(b.socket, ms: 5000, asked: "deadline").must()
+    big: [u8] @= []
+
+    for i in range(from: 0, to: 9216)
+        big @ big.push(to_u8(i % 251).must())
+
+    send_to(a.socket, data: big, to: "127.0.0.1", port: b.address.port).must()
+    assert receive(b.socket).must().data == big
+
+    match send_to(a.socket, data: [1], to: "::1", port: b.address.port)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    assert send_to(a.socket, data: [1], to: "127.0.0.1", port: 0).is_err()
+    sockets.set_deadline(b.socket, ms: 100, asked: "deadline").must()
+
+    match receive(b.socket)
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT
+
+    sockets.close(@a.socket, asked: "closing").must()
+    sockets.close(@b.socket, asked: "closing").must()
+
+    match receive(a.socket)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED

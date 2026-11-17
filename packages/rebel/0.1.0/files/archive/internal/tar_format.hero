@@ -1,0 +1,244 @@
+# One header of a tar archive written: the ustar block, each field held to
+# what it can say, and the PAX records that say what ustar cannot (a long
+# or non-ASCII name or link, a size past 8 GiB, ids past seven octal digits,
+# owner names past 32 bytes, a time outside eleven octal digits or with a
+# fraction). `tar_header` reads them back.
+
+use archive/internal/tar_header
+use bytes
+
+# The PAX record of `key` and `value` as a line, its length counting itself.
+function record_line(key: str, value: str) -> [u8]
+    body = bytes.from_text(" " + key + "=" + value + "\n")
+    length: i64 @= body.len() + 1
+
+    while to_str(length).len() + body.len() != length
+        length @ length + 1
+
+    out: [u8] @= bytes.from_text(to_str(length))
+
+    for b in body
+        out @ out.push(b)
+
+    return out
+
+# Whether every byte of `s` is ASCII and none is 0.
+function is_plain(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] >= 0x80 || s[i] == 0
+            return false
+
+    return true
+
+# Writes `value` into `block` from `from`, `width` bytes: `width` - 1 octal
+# digits and a 0. `value` fits them.
+function put_octal(@block: [u8], from: i64, width: i64, value: i64)
+    rest: i64 @= value
+
+    for i in range(from: 0, to: width - 1)
+        block[from + width - 2 - i] @ to_u8('0' + (rest & 7)).must()
+        rest @ rest >> 3
+
+    block[from + width - 1] @ 0
+
+# Writes the bytes of `s` into `block` from `from`; they fit.
+function put_text(@block: [u8], from: i64, s: str)
+    for i in range(from: 0, to: s.len())
+        block[from + i] @ s[i]
+
+# Where `name` splits into ustar's prefix and name, the index of its `/`,
+# or -1 where it cannot: the name part at most 100 bytes, the prefix 155.
+function split_at(name: str) -> i64
+    if name.len() <= 100
+        return name.len()
+    at: i64 @= name.len() - 1
+
+    while at > 0
+        if name[at] == '/' && at <= 155 && name.len() - at - 1 <= 100 && name.len() - at - 1 > 0
+            return at
+        at @ at - 1
+
+    return -1
+
+# The PAX records `h` needs to be written whole: those of what a ustar field
+# cannot hold, then its own records.
+function needed_records(h: tar_header.Header lent) -> {str: str}
+    out: {str: str} @= {}
+
+    if !is_plain(h.name) || split_at(h.name) < 0
+        out["path"] @ h.name
+
+    if !is_plain(h.link) || h.link.len() > 100
+        out["linkpath"] @ h.link
+
+    if h.size > tar_header.OCTAL_11
+        out["size"] @ to_str(h.size)
+
+    if h.user_id > tar_header.OCTAL_7 || h.user_id < 0
+        out["uid"] @ to_str(h.user_id)
+
+    if h.group_id > tar_header.OCTAL_7 || h.group_id < 0
+        out["gid"] @ to_str(h.group_id)
+
+    if !is_plain(h.user_name) || h.user_name.len() > 32
+        out["uname"] @ h.user_name
+
+    if !is_plain(h.group_name) || h.group_name.len() > 32
+        out["gname"] @ h.group_name
+
+    if h.modified < 0 || h.modified > tar_header.OCTAL_11 || h.nanos != 0
+        out["mtime"] @ time_text(seconds: h.modified, nanos: h.nanos)
+
+    for key in keys(h.records)
+        out[key] @ h.records[key].must()
+
+    return out
+
+# Seconds and nanoseconds as PAX writes a time: `1700000000.5`, no zeros at
+# the end, and no point where there is no fraction.
+function time_text(seconds: i64, nanos: i64) -> str
+    if nanos == 0
+        return to_str(seconds)
+    digits @= to_str(nanos + 1000000000).slice(from: 1, to: 10)
+
+    while digits[digits.len() - 1] == '0'
+        digits @ digits.slice(from: 0, to: digits.len() - 1)
+
+    return to_str(seconds) + "." + digits
+
+# The ustar block of `h`, each field held to what it can say: what does not
+# fit is in the PAX records written before it.
+function block_of(h: tar_header.Header lent) -> [u8]
+    block @= zeros(tar_header.BLOCK)
+    split = split_at(h.name)
+
+    if is_plain(h.name) && split >= 0 && split < h.name.len()
+        put_text(@block, from: 345, s: h.name.slice(from: 0, to: split))
+        put_text(@block, from: 0, s: h.name.slice(from: split + 1, to: h.name.len()))
+    else if is_plain(h.name) && split >= 0
+        put_text(@block, from: 0, s: h.name)
+    else
+        put_text(@block, from: 0, s: ascii_part(h.name, most: 100))
+    put_octal(@block, from: 100, width: 8, value: h.mode & 0o7777)
+    put_octal(@block, from: 108, width: 8, value: clamp(value: h.user_id, most: tar_header.OCTAL_7))
+    put_octal(@block, from: 116, width: 8, value: clamp(value: h.group_id, most: tar_header.OCTAL_7))
+    put_octal(@block, from: 124, width: 12, value: clamp(value: h.size, most: tar_header.OCTAL_11))
+    put_octal(@block, from: 136, width: 12, value: clamp(value: h.modified, most: tar_header.OCTAL_11))
+    block[156] @ to_u8(h.flag).must()
+    put_text(@block, from: 157, s: ascii_part(h.link, most: 100))
+    put_text(@block, from: 257, s: "ustar")
+    put_text(@block, from: 263, s: "00")
+    put_text(@block, from: 265, s: ascii_part(h.user_name, most: 32))
+    put_text(@block, from: 297, s: ascii_part(h.group_name, most: 32))
+    put_octal(@block, from: 329, width: 8, value: clamp(value: h.major, most: tar_header.OCTAL_7))
+    put_octal(@block, from: 337, width: 8, value: clamp(value: h.minor, most: tar_header.OCTAL_7))
+    put_text(@block, from: 148, s: "        ")
+    put_octal(@block, from: 148, width: 7, value: tar_header.sum_of(block, signed: false))
+    block[155] @ ' '
+    return block
+
+# `value`, or 0 below 0, or `most` above it.
+function clamp(value: i64, most: i64) -> i64
+    if value < 0
+        return 0
+
+    if value > most
+        return most
+    return value
+
+# A list of `n` zero bytes.
+function zeros(n: i64) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(0)
+
+    return out
+
+# The ASCII characters of `s` up to `most` bytes, for a field a PAX record
+# says whole.
+function ascii_part(s: str, most: i64) -> str
+    kept: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        if kept.len() < most && s[i] < 0x80 && s[i] != 0
+            kept @ kept.push(s[i])
+
+    return bytes.to_text(kept).must()
+
+test "parse and block_of: a header written and read back"
+    h @= tar_header.empty()
+    h.name @ "dir/file.txt"
+    h.size @ 1234
+    h.mode @ 0o640
+    h.modified @ 1700000000
+    h.user_id @ 501
+    h.group_id @ 20
+    h.user_name @ "ziggy"
+    h.group_name @ "staff"
+    back = tar_header.parse(block_of(h), at: 0).must()
+    assert back == h
+
+test "split_at: names of 100 bytes, a split, and none"
+    short = repeat("a", 100)
+    assert split_at(short) == 100
+    long = repeat("b", 120) + "/" + repeat("c", 90)
+    assert split_at(long) == 120
+    assert split_at(repeat("d", 101)) == -1
+
+test "record_line and parse_records: lengths that count their own digits"
+    line = record_line(key: "path", value: "a")
+    assert bytes.to_text(line).must() == "9 path=a\n"
+    long = record_line(key: "comment", value: repeat("x", 90))
+    assert bytes.to_text(long.slice(from: 0, to: 4)).must() == "103 "
+    data @= line
+
+    for b in long
+        data @ data.push(b)
+
+    records = tar_header.parse_records(data, at: 0).must()
+    assert records["path"].must() == "a"
+    assert records["comment"].must().len() == 90
+
+    match tar_header.parse_records(bytes.from_text("5 a=b\n"), at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "needed_records: what ustar cannot say, and nothing for a plain header"
+    plain = tar_header.empty()
+    assert keys(needed_records(plain)).len() == 0
+    h @= tar_header.empty()
+    h.name @ "été.txt"
+    h.size @ tar_header.OCTAL_11 + 1
+    h.nanos @ 500000000
+    needed = needed_records(h)
+    assert needed["path"].must() == "été.txt"
+    assert needed["size"].must() == "8589934592"
+    assert needed["mtime"].must() == "0.5"
+
+test "number_of: octal with spaces and zeros, base 256, and a stray byte"
+    block @= zeros(16)
+    put_text(@block, from: 0, s: "  0644 ")
+    assert tar_header.number_of(block, from: 0, width: 8, at: 0).must() == 0o644
+    block[8] @ 0x80
+    block[15] @ 5
+    assert tar_header.number_of(block, from: 8, width: 8, at: 0).must() == 5
+    block[8] @ 0xff
+
+    match tar_header.number_of(block, from: 8, width: 8, at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    put_text(@block, from: 0, s: "06x4")
+
+    match tar_header.number_of(block, from: 0, width: 8, at: 100)
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid archive at byte 102: a byte 120 inside a number"
+
+test "parse: a checksum that does not match"
+    block @= block_of(tar_header.empty())
+    block[0] @ 'x'
+
+    match tar_header.parse(block, at: 1024)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

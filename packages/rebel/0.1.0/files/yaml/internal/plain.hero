@@ -1,0 +1,157 @@
+# A plain scalar read: its characters from where it begins to where an
+# indicator, a comment, a document's marker or a line indented no more than
+# its block ends it, its lines folded as YAML folds them, one line break a
+# space and each empty line a line break.
+
+use unicode
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# Whether a plain scalar may begin at byte `at` of `text`: a character that is
+# no indicator, or `-`, `?` or `:` followed by one that is no white space and,
+# in a flow collection, no flow indicator.
+function can_begin(text: str, at: i64, in_flow: bool) -> bool
+    b = text[at]
+
+    if !source.is_printable_at(text, at)
+        return false
+
+    if !source.is_indicator(b)
+        return true
+
+    if b != '-' && b != '?' && b != ':'
+        return false
+
+    if source.is_blank_at(text, at + 1)
+        return false
+    return !(in_flow && source.is_flow_indicator(text[at + 1]))
+
+# Whether a plain scalar's line stops before byte `at` of `text`: at a line
+# break, at a `:` that white space follows (or, in a flow collection, a flow
+# indicator), at a `#` that white space precedes, and in a flow collection at
+# any flow indicator.
+function stops_at(text: str, at: i64, in_flow: bool) -> bool
+    b = text[at]
+
+    if b == '\n'
+        return true
+
+    if b == ':'
+        if source.is_blank_at(text, at + 1)
+            return true
+        return in_flow && source.is_flow_indicator(text[at + 1])
+
+    if in_flow && source.is_flow_indicator(b)
+        return true
+    return b == '#' && at > 0 && source.is_white(text[at - 1])
+
+# The plain scalar that begins at byte `at` of `text`, and the byte index past
+# its last character, white space after it left out.
+#
+# - `indent`: the column of the block holding it, -1 at the top: a line goes on
+#   with the scalar only where it holds more spaces than that.
+# - `in_flow`: whether it stands in a flow collection.
+#
+# Fails `invalid` where it holds a character YAML allows only between quotes.
+function read(text: str, at: i64, indent: i64, in_flow: bool) -> token.Lexeme?
+    pieces: [str] @= []
+    i: i64 @= at
+    end: i64 @= at
+
+    while true
+        start = i
+
+        while i < text.len() && !stops_at(text: text, at: i, in_flow: in_flow)
+            if !source.is_printable_at(text, i)
+                name = source.code_name(unicode.code_point_at(text, i))
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: i, what: f"{name} stands in a plain scalar, and YAML allows it only between double quotes, as an escape")
+                )
+            i @ i + unicode.width_at(text, i)
+
+        last: i64 @= i
+
+        while last > start && source.is_white(text[last - 1])
+            last @ last - 1
+
+        pieces @ pieces.push(text.slice(from: start, to: last))
+        end @ last
+
+        if i >= text.len() || text[i] != '\n'
+            break
+        k: i64 @= i
+        breaks: i64 @= 0
+        line_start: i64 @= i
+        spaces: i64 @= 0
+
+        while k < text.len() && text[k] == '\n'
+            breaks @ breaks + 1
+            k @ k + 1
+            line_start @ k
+
+            while k < text.len() && text[k] == ' '
+                k @ k + 1
+
+            spaces @ k - line_start
+
+            while k < text.len() && source.is_white(text[k])
+                k @ k + 1
+
+        if k >= text.len() || text[k] == '#' || spaces <= indent || source.is_marker_at(text, line_start)
+            break
+
+        if stops_at(text: text, at: k, in_flow: in_flow)
+            break
+
+        if breaks == 1
+            pieces @ pieces.push(" ")
+        else
+            pieces @ pieces.push(repeat("\n", (breaks - 1).to_u64().must()))
+        i @ k
+
+    return ok(token.Lexeme(value: pieces.join(""), end: end))
+
+## Tests
+
+test "can_begin: a letter, an indicator, a dash before a letter, before a space, and in flow"
+    assert can_begin(text: "a", at: 0, in_flow: false)
+    assert !can_begin(text: "[a", at: 0, in_flow: false) && !can_begin(text: "#a", at: 0, in_flow: false)
+    assert can_begin(text: "-1", at: 0, in_flow: false) && can_begin(text: ":x", at: 0, in_flow: true)
+    assert !can_begin(text: "- a", at: 0, in_flow: false) && !can_begin(text: "-", at: 0, in_flow: false)
+    assert can_begin(text: "-]", at: 0, in_flow: false) && !can_begin(text: "-]", at: 0, in_flow: true)
+    assert !can_begin(text: "\u{7f}", at: 0, in_flow: false)
+
+test "read: one line, before a colon, before a comment, and a colon inside"
+    assert read(text: "abc", at: 0, indent: -1, in_flow: false).must() == token.Lexeme(value: "abc", end: 3)
+    assert read(text: "key: v", at: 0, indent: -1, in_flow: false).must() == token.Lexeme(value: "key", end: 3)
+    assert read(text: "a b  # c", at: 0, indent: -1, in_flow: false).must() == token.Lexeme(value: "a b", end: 3)
+    assert read(text: "a:b#c d", at: 0, indent: -1, in_flow: false).must().value == "a:b#c d"
+    assert read(text: "a:", at: 0, indent: -1, in_flow: false).must().value == "a"
+
+test "read: in a flow collection, stopping at each flow indicator and at a colon before one"
+    assert read(text: "a b, c]", at: 0, indent: -1, in_flow: true).must() == token.Lexeme(value: "a b", end: 3)
+    assert read(text: "a:b]", at: 0, indent: -1, in_flow: true).must().value == "a:b"
+    assert read(text: "a:]", at: 0, indent: -1, in_flow: true).must().value == "a"
+    assert read(text: "a:b", at: 0, indent: -1, in_flow: false).must().value == "a:b"
+
+test "read: lines folded, empty lines kept, and the lines that end it"
+    assert read(text: "a\n b\n\n c\n", at: 0, indent: -1, in_flow: false).must() == token.Lexeme(value: "a b\nc", end: 8)
+    assert read(text: "a\n  \n\n b", at: 0, indent: 0, in_flow: false).must().value == "a\n\nb"
+    assert read(text: "a\nb: c", at: 2, indent: -1, in_flow: false).must().value == "b"
+    assert read(text: "a\nb", at: 0, indent: 0, in_flow: false).must() == token.Lexeme(value: "a", end: 1)
+    assert read(text: "a\n# c\n b", at: 0, indent: -1, in_flow: false).must().value == "a"
+    assert read(text: "a\n---\n", at: 0, indent: -1, in_flow: false).must().value == "a"
+    assert read(text: "a  \n\tb", at: 0, indent: -1, in_flow: false).must().value == "a b"
+    assert read(text: "a\n: b", at: 0, indent: -1, in_flow: false).must().value == "a"
+
+test "read: characters of more than one byte, and one allowed only between quotes"
+    assert read(text: "città é", at: 0, indent: -1, in_flow: false).must().value == "città é"
+
+    match read(text: "a\u{85}b\u{9f}", at: 0, indent: -1, in_flow: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 4: U+009F stands in a plain scalar, and YAML allows it only between double quotes, as an escape"

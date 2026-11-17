@@ -1,0 +1,298 @@
+# The escapes of HTML, URLs and style sheets that the HTML mode writes a
+# value with, one function for each place a value lands, each written from the
+# bytes Go's `html/template` 1.27 answered for every ASCII character and a
+# sample past it, asked on 2026-11-16. A value refused in its place is written
+# `UNSAFE`. The escapes of scripts are `escape_js`'s, of style sheets
+# `escape_css`'s.
+
+use strings
+use template/internal/names
+
+# What a value refused in its place is written as.
+constant UNSAFE: str
+    "ZrebelZ"
+
+# The hexadecimal digits in lower case.
+constant HEX: str
+    "0123456789abcdef"
+
+## The generic walk
+
+# `s` with each byte `replace` answers a text for written as that text, and
+# every other byte kept: `replace` answers "" for a byte kept. A byte past
+# ASCII is replaced only where every byte of its character is.
+function bytewise(s: str, replace: (function(u8) -> str)) -> str
+    pieces: [str] @= []
+    kept: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        written = replace(s[at])
+
+        if written != ""
+            if kept < at
+                pieces @ pieces.push(s.slice(from: kept, to: at))
+            pieces @ pieces.push(written)
+            kept @ at + 1
+        at @ at + 1
+
+    if pieces.len() == 0
+        return s
+
+    if kept < s.len()
+        pieces @ pieces.push(s.slice(from: kept, to: s.len()))
+    return pieces.join("")
+
+# `b` as two hexadecimal digits in lower case.
+function hex2(b: u8) -> str
+    n = b.to_i64().must()
+    return HEX.slice(from: n / 16, to: n / 16 + 1) + HEX.slice(from: n % 16, to: n % 16 + 1)
+
+# `b` percent-encoded.
+function percent(b: u8) -> str
+    return "%" + hex2(b)
+
+# Whether `b` is a hexadecimal digit of either case.
+function is_hex(b: u8) -> bool
+    return b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# Whether `b` is HTML's white space: space, tab, line feed, form feed,
+# carriage return.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 0x0c
+
+## HTML
+
+# The escape of `b` in HTML's text, a title, a textarea and a quoted value.
+function html_byte(b: u8) -> str
+    return match b
+        '"'  => "&#34;"
+        '&'  => "&amp;"
+        '\'' => "&#39;"
+        '+'  => "&#43;"
+        '<'  => "&lt;"
+        '>'  => "&gt;"
+        0    => "�"
+        _    => ""
+
+# `s` written as text in HTML, a title, a textarea or a quoted attribute
+# value: `"`, `&`, `'`, `+`, `<` and `>` as references, U+0000 as U+FFFD.
+function html_text(s: str) -> str
+    return bytewise(s, html_byte)
+
+# The escape of `b` by Go's `HTMLEscapeString`.
+function plain_byte(b: u8) -> str
+    return match b
+        '"'  => "&#34;"
+        '&'  => "&amp;"
+        '\'' => "&#39;"
+        '<'  => "&lt;"
+        '>'  => "&gt;"
+        0    => "�"
+        _    => ""
+
+# `s` with `"`, `&`, `'`, `<` and `>` written as references and U+0000 as
+# U+FFFD, as Go's `HTMLEscapeString` writes it and the `escape` filter.
+function html_plain(s: str) -> str
+    return bytewise(s, plain_byte)
+
+# The escape of `b` in an attribute value with no quotes around it.
+function unquoted_byte(b: u8) -> str
+    return match b
+        '\t' => "&#9;"
+        '\n' => "&#10;"
+        0x0b => "&#11;"
+        0x0c => "&#12;"
+        '\r' => "&#13;"
+        ' '  => "&#32;"
+        '='  => "&#61;"
+        '`'  => "&#96;"
+        0    => "&#xfffd;"
+        _    => html_byte(b)
+
+# `s` written in an attribute value with no quotes around it, where white
+# space, `=` and a backtick would end it or begin another: those as
+# references too. An empty `s` is `UNSAFE`, since nothing there would make the
+# next attribute this one's value.
+function unquoted(s: str) -> str
+    if s == ""
+        return UNSAFE
+    return bytewise(s, unquoted_byte)
+
+# `s` as an attribute's name: in lower case, where it is ASCII letters and
+# digits alone and names an attribute whose value is text; anything else is
+# `UNSAFE`.
+function attr_name(s: str) -> str
+    lower = strings.to_lower_ascii(s)
+
+    if lower == ""
+        return UNSAFE
+
+    for at in range(from: 0, to: lower.len())
+        b = lower[at]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9')
+            return UNSAFE
+
+    if names.attr_of(lower, names.ELEMENT_NONE) != names.ATTR_PLAIN
+        return UNSAFE
+    return lower
+
+## URLs
+
+# Whether `s`, read as a URL, has no scheme, or `http`, `https` or `mailto`
+# in any case: its first `:` stands after a `/`, a `?` or a `#`, or nowhere.
+function is_safe_url(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        b = s[at]
+
+        if b == '/' || b == '?' || b == '#'
+            return true
+
+        if b == ':'
+            scheme = strings.to_lower_ascii(s.slice(from: 0, to: at))
+            return scheme == "http" || scheme == "https" || scheme == "mailto"
+
+    return true
+
+# Whether a URL may not hold `b` as itself.
+function is_url_unsafe(b: u8) -> bool
+    if b <= 0x20 || b >= 0x7f
+        return true
+
+    return match b
+        '"'  => true
+        '\'' => true
+        '('  => true
+        ')'  => true
+        '<'  => true
+        '>'  => true
+        '\\' => true
+        '^'  => true
+        '`'  => true
+        '{'  => true
+        '|'  => true
+        '}'  => true
+        _    => false
+
+# `s` as part of a URL before its query: every byte a URL may not hold
+# percent-encoded, and a `%` too where two hexadecimal digits do not follow it.
+function url_path(s: str) -> str
+    pieces: [str] @= []
+    kept: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+        lone_percent = b == '%' && !(at + 2 < s.len() && is_hex(s[at + 1]) && is_hex(s[at + 2]))
+
+        if is_url_unsafe(b) || lone_percent
+            if kept < at
+                pieces @ pieces.push(s.slice(from: kept, to: at))
+            pieces @ pieces.push(percent(b))
+            kept @ at + 1
+        at @ at + 1
+
+    if kept < s.len()
+        pieces @ pieces.push(s.slice(from: kept, to: s.len()))
+    return pieces.join("")
+
+# `s` as a URL from its start: `#` and `UNSAFE` where its scheme is another
+# than `http`, `https` and `mailto`, else as `url_path` writes it.
+function url_start(s: str) -> str
+    if !is_safe_url(s)
+        return "#" + UNSAFE
+    return url_path(s)
+
+# The escape of `b` in a URL's query or fragment.
+function query_byte(b: u8) -> str
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return ""
+
+    if b == '-' || b == '.' || b == '_' || b == '~'
+        return ""
+    return percent(b)
+
+# `s` in a URL's query or fragment: every byte but a letter, a digit, `-`,
+# `.`, `_` and `~` percent-encoded.
+function url_query(s: str) -> str
+    return bytewise(s, query_byte)
+
+# `s` as the value of `srcset`, a list of images split at `,`: each image's
+# white space kept, its URL written as `url_path` writes it, and the image
+# written `#` and `UNSAFE` where its URL has another scheme or its size holds
+# anything but letters, digits and white space.
+function srcset(s: str) -> str
+    written: [str] @= []
+
+    for candidate in strings.split(s: s, sep: ",")
+        at: i64 @= 0
+
+        while at < candidate.len() && is_space(candidate[at])
+            at @ at + 1
+
+        url_from = at
+
+        while at < candidate.len() && !is_space(candidate[at])
+            at @ at + 1
+
+        url = candidate.slice(from: url_from, to: at)
+        safe: bool @= is_safe_url(url)
+
+        for d in range(from: at, to: candidate.len())
+            b = candidate[d]
+
+            if !(is_space(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9')
+                safe @ false
+
+        if safe
+            spaces = candidate.slice(from: 0, to: url_from)
+            size = candidate.slice(from: at, to: candidate.len())
+            written @ written.push(spaces + url_path(url) + size)
+        else
+            written @ written.push("#" + UNSAFE)
+
+    return written.join(",")
+
+test "html_text: each escaped byte as Go writes it in text, U+0000, and text past ASCII kept"
+    assert html_text("O'Reilly: <i>you</i>? \"a\" & b + c") == "O&#39;Reilly: &lt;i&gt;you&lt;/i&gt;? &#34;a&#34; &amp; b &#43; c"
+    nul: [u8] = [0x61, 0, 0x62]
+    assert html_text(nul.validated_bytes().must()) == "a�b"
+    assert html_text("") == "" && html_text("città") == "città"
+
+test "html_plain: Go's HTMLEscapeString, which keeps the plus"
+    assert html_plain("<a href='x'>&\"+") == "&lt;a href=&#39;x&#39;&gt;&amp;&#34;+"
+
+test "unquoted: white space, equals and backtick as references, and the empty value refused"
+    nul: [u8] = [0x61, 0x20, 0x09, 0x0b, 0x3d, 0x60, 0x27, 0x22, 0x3c, 0x26, 0x2b, 0]
+    assert unquoted(nul.validated_bytes().must()) == "a&#32;&#9;&#11;&#61;&#96;&#39;&#34;&lt;&amp;&#43;&#xfffd;"
+    assert unquoted("") == UNSAFE
+
+test "attr_name: a plain name lowered, and every name Go refuses"
+    assert attr_name("Title") == "title" && attr_name("name2") == "name2" && attr_name("xon") == "xon"
+
+    for name in ["", "onclick", "on", "href", "style", "src", "srcset", "xurl", "data-x", "a b", "é"]
+        assert attr_name(name) == UNSAFE
+
+test "is_safe_url: the three schemes in any case, a colon after a slash, and the schemes refused"
+    for url in ["", "http://x", "HTTPS:x", "mailto:a@b", "/rel/path:x", "//evil.com/a", "a?b:c", "#x:y"]
+        assert is_safe_url(url)
+
+    for url in ["javascript:alert(1)", "JavaScript:x", "  javascript:x", "data:x", "tel:1", "a:z"]
+        assert !is_safe_url(url)
+
+test "url_path and url_start: Go's normalizer, a lone percent, bytes past ASCII, and the filter"
+    assert url_path("O'Reilly: How are <i>you</i>? é %41 %zz") == "O%27Reilly:%20How%20are%20%3ci%3eyou%3c/i%3e?%20%c3%a9%20%41%20%25zz"
+    assert url_path("a%4") == "a%254" && url_path("%") == "%25"
+    assert url_start("javascript:alert(1)") == "#ZrebelZ" && url_start("HTTP://x.org/a b?c=d") == "HTTP://x.org/a%20b?c=d"
+
+test "url_query: Go's query escaper over every reserved character, and the four kept"
+    assert url_query("O'Reilly: How are <i>you</i>? é %41 #x") == "O%27Reilly%3a%20How%20are%20%3ci%3eyou%3c%2fi%3e%3f%20%c3%a9%20%2541%20%23x"
+    assert url_query("a-._~z!$&()*+,;=@[]") == "a-._~z%21%24%26%28%29%2a%2b%2c%3b%3d%40%5b%5d"
+
+test "srcset: images kept, each refused alone, a size that is not a word, and empty images"
+    assert srcset("a.png 1x, b.png 2x") == "a.png 1x, b.png 2x"
+    assert srcset("a.png 1x , javascript:x") == "a.png 1x ,#ZrebelZ"
+    assert srcset("a.png 1.5x") == "#ZrebelZ" && srcset("a.png <x") == "#ZrebelZ"
+    assert srcset(",a") == ",a" && srcset(" ") == " " && srcset("a.png\t1x") == "a.png\t1x"
+    assert srcset("a<b 2e1x") == "a%3cb 2e1x"

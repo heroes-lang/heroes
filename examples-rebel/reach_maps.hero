@@ -1,0 +1,9 @@
+# Reaches Rebel's `maps`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It counts the letters of a word and prints
+# the one that occurs most.
+
+use <rebel>/maps
+
+function main()
+    letters = maps.counts("abracadabra".chars())
+    print(keys(maps.most_common_n(letters, 1)).join(""))

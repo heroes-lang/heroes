@@ -1,0 +1,227 @@
+capability set/empty  a set that holds nothing
+  heroes  built-in {}
+  go      -
+  rust    HashSet::new, HashSet::default, BTreeSet::new, BTreeSet::default
+  python  set, frozenset
+  note    the empty map literal with its annotation, `s: {str: bool} = {}`; Go has no set, and its programs write `map[K]bool` or `map[K]struct{}`, which is this package's own shape
+
+capability set/from-list  a set of the elements of a list
+  heroes  sets.from_list
+  go      -
+  rust    HashSet::from, HashSet::from_iter, BTreeSet::from, BTreeSet::from_iter
+  python  set, frozenset
+  note    the elements stand in the order they first occur, where Python's set answers the order of its hash table, Rust's HashSet none and BTreeSet the sorted one; the order never counts for `==` or any question
+
+capability set/contains  whether a set holds a value
+  heroes  sets.contains
+  go      -
+  rust    HashSet::contains, BTreeSet::contains
+  python  set.__contains__
+  note    `s[x].default(false)` asks the same; a key under `false` is no element, so a removal written by hand as `s[x] @ false` is read as one
+
+capability set/size  how many elements a set holds, and whether it holds none
+  heroes  built-in len
+  go      -
+  rust    HashSet::len, HashSet::is_empty, BTreeSet::len, BTreeSet::is_empty
+  python  set.__len__
+  note    `s.len()` counts keys, so it is the size where every value is `true`, as in every set this package answers; `sets.to_list(s).len()` counts the elements of a map built by hand with keys under `false`
+
+capability set/equal  whether two sets hold the same elements
+  heroes  built-in ==
+  go      -
+  rust    HashSet::eq, HashSet::ne, BTreeSet::eq, BTreeSet::ne
+  python  set.__eq__, set.__ne__
+  note    the map's own `==`, on which insertion order does not count (observed: a set built in two orders is one key of a map); it compares the values too, so it answers equality of sets where every value is `true`
+
+capability set/copy  a second set that changes apart from the first
+  heroes  built-in =
+  go      -
+  rust    HashSet::clone, HashSet::clone_from, BTreeSet::clone, BTreeSet::clone_from
+  python  set.copy, frozenset.copy
+  note    every value is a copy, so `t = s` is one
+
+capability set/immutable  a set nothing may change, usable as the key of a map or an element of a set
+  heroes  built-in =
+  go      -
+  rust    BTreeSet::hash, BTreeSet::hash_slice
+  python  frozenset, frozenset.__hash__
+  note    a binding made with `=` never changes, and a `{K: bool}` is a valid key: observed, `{a, b}` and `{b, a}` are one key of a `{{str: bool}: i64}`, as two frozensets of one content are one key in Python
+
+capability set/walk  every element of a set, in an order
+  heroes  sets.to_list
+  go      -
+  rust    HashSet::iter, HashSet::into_iter, BTreeSet::iter, BTreeSet::into_iter
+  python  set.__iter__
+  note    the order the elements were first added; `for x in sets.to_list(s)` walks them. Rust's BTreeSet walks in sorted order, which is `sort(sets.to_list(s))` for numbers, texts and booleans and `lists.sort_by` for any other type
+
+capability set/add  a set with one element more
+  heroes  sets.add
+  go      -
+  rust    HashSet::insert, BTreeSet::insert, HashSet::get_or_insert, BTreeSet::get_or_insert
+  python  set.add
+  note    a new set, the one given unchanged; an element held already keeps its place. Rust's `insert` answers whether it was new, which is `!sets.contains(s, x)` asked before
+
+capability set/add-many  a set with every element of a list added
+  heroes  sets.add_all
+  go      -
+  rust    HashSet::extend, BTreeSet::extend
+  python  set.update, set.__ior__
+  note    one pass, where `add` in a loop copies the set at every call; Python's `update` takes several iterables, which is `add_all` with their elements concatenated or `sets.union_all`
+
+capability set/remove  a set without one element
+  heroes  sets.remove
+  go      -
+  rust    HashSet::remove, HashSet::take, BTreeSet::remove, BTreeSet::take
+  python  set.remove, set.discard
+  note    an element the set does not hold is no failure, as Python's `discard` and Rust's `remove`, where Python's `remove` raises KeyError: the caller who must know asks `sets.contains` first. Rust's `take` answers the element removed, which is the value the caller gave
+
+capability set/remove-many  a set without the elements of a list
+  heroes  sets.remove_all
+  go      -
+  rust    -
+  python  set.difference_update, set.__isub__
+  note    one pass over the list and one over the set; the elements of another set go with `sets.difference`
+
+capability set/clear  a set emptied
+  heroes  built-in {}
+  go      -
+  rust    HashSet::clear, HashSet::drain, BTreeSet::clear
+  python  set.clear
+  note    `s @ {}` on a cell; Rust's `drain` answers the elements as it empties, which is `sets.to_list(s)` read before
+
+capability set/keep-where  the elements a function accepts
+  heroes  sets.keep_where
+  go      -
+  rust    HashSet::retain, BTreeSet::retain
+  python  -
+  note    Python writes a set comprehension, `{x for x in s if f(x)}`; the function is called once for each element, in their order
+
+capability set/remove-where  a set without the elements a function accepts
+  heroes  sets.remove_where
+  go      -
+  rust    HashSet::extract_if, BTreeSet::extract_if
+  python  -
+  note    Rust's `extract_if` also answers the elements it took out, which is `sets.keep_where` with the same function
+
+capability set/union  the elements either of two sets holds
+  heroes  sets.union_of
+  go      -
+  rust    HashSet::union, HashSet::bitor, BTreeSet::union, BTreeSet::bitor, BTreeSet::append
+  python  set.union, set.__or__, set.__ror__, frozenset.union
+  note    named `union_of` because the compiler refuses `union` as a name, a keyword of C; the elements of the first stand first, then those only the second holds
+
+capability set/union-many  the elements any of several sets holds
+  heroes  sets.union_all
+  go      -
+  rust    -
+  python  set.union, set.update
+  note    Python's `union` takes any number of others; here the first set and a list of the others
+
+capability set/intersection  the elements two sets both hold
+  heroes  sets.intersection
+  go      -
+  rust    HashSet::intersection, HashSet::bitand, BTreeSet::intersection, BTreeSet::bitand
+  python  set.intersection, set.__and__, set.__rand__, set.intersection_update, set.__iand__, frozenset.intersection
+  note    in the order of the first set; `_update` writes the answer into the caller's own cell, `s @ sets.intersection(s: s, other: t)`
+
+capability set/intersection-many  the elements all of several sets hold
+  heroes  sets.intersection_all
+  go      -
+  rust    -
+  python  set.intersection, set.intersection_update
+  note    the first set and a list of the others, so the intersection of no set at all, which has no answer, cannot be asked; an empty list answers the first set, as Python's `s.intersection()` does
+
+capability set/difference  the elements of one set the other does not hold
+  heroes  sets.difference
+  go      -
+  rust    HashSet::difference, HashSet::sub, BTreeSet::difference, BTreeSet::sub
+  python  set.difference, set.__sub__, set.__rsub__, frozenset.difference
+  note    in the order of the first set
+
+capability set/difference-many  the elements of one set none of several others holds
+  heroes  sets.difference_all
+  go      -
+  rust    -
+  python  set.difference, set.difference_update
+  note    Python's `difference` takes any number of others
+
+capability set/symmetric-difference  the elements exactly one of two sets holds
+  heroes  sets.symmetric_difference
+  go      -
+  rust    HashSet::symmetric_difference, HashSet::bitxor, BTreeSet::symmetric_difference, BTreeSet::bitxor
+  python  set.symmetric_difference, set.__xor__, set.__rxor__, set.symmetric_difference_update, set.__ixor__, frozenset.symmetric_difference
+  note    those only the first holds, in its order, then those only the second holds
+
+capability set/subset  whether every element of one set is an element of another
+  heroes  sets.is_subset
+  go      -
+  rust    HashSet::is_subset, BTreeSet::is_subset
+  python  set.issubset, set.__le__, frozenset.issubset
+  note    Python's `issubset` takes any iterable; a list is made a set with `sets.from_list` first
+
+capability set/superset  whether a set holds every element of another
+  heroes  sets.is_superset
+  go      -
+  rust    HashSet::is_superset, BTreeSet::is_superset
+  python  set.issuperset, set.__ge__, frozenset.issuperset
+  note    -
+
+capability set/proper-subset  whether a set is a subset of a larger one
+  heroes  sets.is_proper_subset
+  go      -
+  rust    -
+  python  set.__lt__
+  note    Rust's BTreeSet `lt` orders two sets by their sorted elements, a lexical order and not this question, so it stands among the dropped traits
+
+capability set/proper-superset  whether a set holds another and more
+  heroes  sets.is_proper_superset
+  go      -
+  rust    -
+  python  set.__gt__
+  note    -
+
+capability set/disjoint  whether two sets share no element
+  heroes  sets.is_disjoint
+  go      -
+  rust    HashSet::is_disjoint, BTreeSet::is_disjoint
+  python  set.isdisjoint, frozenset.isdisjoint
+  note    it walks the set of fewer keys
+
+capability set/take-one  an element taken out, with the set that is left
+  heroes  refused: two answers of a type parameter are a record with a type parameter, and generics are on functions only
+  go      -
+  rust    BTreeSet::pop_first, BTreeSet::pop_last, BTreeSet::first, BTreeSet::last
+  python  set.pop
+  note    the first in the order of addition is `sets.to_list(s)[0]` where the set is not empty, and `sets.remove` takes it out; the smallest is the first of `sort(sets.to_list(s))`. Python's `pop` takes an element it does not name, which no program can count on
+
+capability set/range  the elements between two bounds of an order
+  heroes  sets.keep_where
+  go      -
+  rust    BTreeSet::range, BTreeSet::split_off, BTreeSet::lower_bound, BTreeSet::upper_bound, BTreeSet::lower_bound_mut, BTreeSet::upper_bound_mut
+  python  -
+  note    a set here is not kept sorted, so the elements within bounds are those a function of the bounds accepts, one pass; Rust's cursors walk a tree this package does not hold
+
+dropped capacity  room asked of the allocator ahead of the elements: the language's map grows by itself and has no capacity to ask
+  go      -
+  rust    HashSet::with_capacity, HashSet::capacity, HashSet::reserve, HashSet::try_reserve, HashSet::shrink_to, HashSet::shrink_to_fit, HashSet::extend_reserve, HashSet::extend_one, BTreeSet::extend_reserve, BTreeSet::extend_one
+  python  -
+
+dropped hashers-and-allocators  the language's map has one hash and one allocator, neither of them a value
+  go      -
+  rust    HashSet::with_hasher, HashSet::with_capacity_and_hasher, HashSet::hasher, HashSet::new_in, HashSet::with_capacity_in, HashSet::with_hasher_in, HashSet::with_capacity_and_hasher_in, BTreeSet::new_in
+  python  -
+
+dropped borrows  what exists to reach the element a set stores rather than the one asked: every value is a copy and equality is structural, so the element held is the element asked
+  go      -
+  rust    HashSet::get, HashSet::replace, HashSet::get_or_insert_with, HashSet::entry, BTreeSet::get, BTreeSet::replace, BTreeSet::get_or_insert_with, BTreeSet::entry, hash_set::Entry, hash_set::OccupiedEntry, hash_set::VacantEntry, btree_set::Entry, btree_set::OccupiedEntry, btree_set::VacantEntry
+  python  -
+
+dropped iterator-and-cursor-types  a walk is a `for` over `sets.to_list(s)`, and a failure is a code and a message, so neither has a type of its own
+  go      -
+  rust    hash_set::Iter, hash_set::IntoIter, hash_set::Drain, hash_set::ExtractIf, hash_set::Difference, hash_set::Intersection, hash_set::SymmetricDifference, hash_set::Union, btree_set::Iter, btree_set::IntoIter, btree_set::Range, btree_set::ExtractIf, btree_set::Difference, btree_set::Intersection, btree_set::SymmetricDifference, btree_set::Union, btree_set::Cursor, btree_set::CursorMut, btree_set::CursorMutKey, btree_set::UnorderedKeyError
+  python  -
+
+dropped traits  what an interface would have needed: a set written as text for a debugger, ordered against another set by its sorted elements, converted, sized in memory
+  go      -
+  rust    HashSet::fmt, BTreeSet::fmt, BTreeSet::cmp, BTreeSet::partial_cmp, BTreeSet::lt, BTreeSet::le, BTreeSet::gt, BTreeSet::ge, BTreeSet::max, BTreeSet::min, BTreeSet::clamp, BTreeSet::clamp_to, and on both `type_id`, `borrow`, `borrow_mut`, `clone_to_uninit`, `into`, `to_owned`, `clone_into`, `try_from`, `try_into`
+  python  set.__class_getitem__, set.__repr__, set.__str__, set.__format__, set.__sizeof__, set.__reduce__, set.__reduce_ex__, set.__getstate__, set.__init__, set.__new__, set.__hash__, and the object protocol every class has (`__class__`, `__delattr__`, `__dir__`, `__doc__`, `__getattribute__`, `__init_subclass__`, `__setattr__`, `__subclasshook__`)

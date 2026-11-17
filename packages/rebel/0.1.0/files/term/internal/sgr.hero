@@ -1,0 +1,87 @@
+# The terminal's control sequences as text: Select Graphic Rendition for
+# colours and styles, and the cursor's and the screen's sequences, as ECMA-48
+# (the fifth edition, 1991) and xterm's control sequences write them. Pure:
+# nothing here writes, and the face decides where a sequence may go.
+
+# The Control Sequence Introducer, ESC then `[`.
+constant CSI: str
+    "\u{1b}["
+
+# The rendition every attribute and colour off, the terminal's own again.
+constant RESET: str
+    "\u{1b}[0m"
+
+# `text` between the rendition `codes` (each a number or numbers joined by
+# `;`, as SGR takes them) and the reset; `text` as it is where there are no
+# codes.
+function wrap(text: str, codes: [str]) -> str
+    if codes.len() == 0
+        return text
+    return CSI + codes.join(";") + "m" + text + RESET
+
+# The SGR code of one of the sixteen colours, `n` 0 to 15, as a foreground
+# (30 to 37, the bright ones 90 to 97) or a background (40 to 47 and 100 to
+# 107).
+function basic(n: i64, background: bool) -> str
+    base = if background
+        40
+    else
+        30
+
+    if n < 8
+        return to_str(base + n)
+    return to_str(base + 60 + n - 8)
+
+# The SGR codes of one of the 256 indexed colours.
+function indexed(n: u8, background: bool) -> str
+    lead = if background
+        "48"
+    else
+        "38"
+    return f"{lead};5;{n}"
+
+# The SGR codes of a colour of 24 bits.
+function rgb(red: u8, green: u8, blue: u8, background: bool) -> str
+    lead = if background
+        "48"
+    else
+        "38"
+    return f"{lead};2;{red};{green};{blue}"
+
+# The sequence that moves the cursor `n` cells by `final` (`A` up, `B` down,
+# `C` forward, `D` back), or no text for 0.
+function moved(n: i64, final: str) -> str
+    if n == 0
+        return ""
+    return f"{CSI}{n}{final}"
+
+# The sequence that puts the cursor at `row` and `column`, from 1.
+function placed(row: i64, column: i64) -> str
+    return f"{CSI}{row};{column}H"
+
+test "wrap: no codes is the text alone, the empty text is wrapped too, and codes are joined by ;"
+    assert wrap("x", []) == "x"
+    assert wrap("", ["1"]) == "\u{1b}[1m\u{1b}[0m"
+    assert wrap("hi", ["1", "31"]) == "\u{1b}[1;31mhi\u{1b}[0m"
+    assert wrap("été", ["4"]) == "\u{1b}[4mété\u{1b}[0m"
+
+test "basic: the first and last of the eight and of the bright eight, foreground and background"
+    assert basic(0, background: false) == "30"
+    assert basic(7, background: false) == "37"
+    assert basic(8, background: false) == "90"
+    assert basic(15, background: false) == "97"
+    assert basic(0, background: true) == "40"
+    assert basic(15, background: true) == "107"
+
+test "indexed and rgb: the smallest and the largest, foreground and background"
+    assert indexed(0, background: false) == "38;5;0"
+    assert indexed(255, background: true) == "48;5;255"
+    assert rgb(red: 0, green: 0, blue: 0, background: false) == "38;2;0;0;0"
+    assert rgb(red: 255, green: 128, blue: 1, background: true) == "48;2;255;128;1"
+
+test "moved and placed: 0 cells is no text, one and many cells, and the first cell"
+    assert moved(0, final: "A") == ""
+    assert moved(1, final: "A") == "\u{1b}[1A"
+    assert moved(250, final: "D") == "\u{1b}[250D"
+    assert placed(row: 1, column: 1) == "\u{1b}[1;1H"
+    assert placed(row: 24, column: 80) == "\u{1b}[24;80H"

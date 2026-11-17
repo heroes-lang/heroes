@@ -1,0 +1,296 @@
+# A duration's text, written and read as Go writes and reads it: `1h30m0s`,
+# `250ms`, `1.5µs`. A count is held as its magnitude in a `u64`, so the most
+# negative duration, whose magnitude an `i64` does not hold, is written and
+# read like any other.
+
+use numbers
+use strings
+
+# The code of a text that is no duration.
+constant INVALID: str
+    "invalid"
+
+# The code of a duration outside an `i64` of nanoseconds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The magnitude of the most negative `i64`, 2^63.
+constant LIMIT: u64
+    9_223_372_036_854_775_808
+
+# Nanoseconds in a microsecond.
+constant MICROSECOND: u64
+    1_000
+
+# Nanoseconds in a millisecond.
+constant MILLISECOND: u64
+    1_000_000
+
+# Nanoseconds in a second.
+constant SECOND: u64
+    1_000_000_000
+
+# Nanoseconds in a minute.
+constant MINUTE: u64
+    60_000_000_000
+
+# Nanoseconds in an hour.
+constant HOUR: u64
+    3_600_000_000_000
+
+## Writing
+
+# `n` nanoseconds counted in units of `unit`, `width` digits after the point,
+# with the zeros at the end of the fraction dropped and no point where none
+# is left.
+function decimal(n: u64, unit: u64, width: i64) -> str
+    whole = to_str(n / unit)
+    rest = n % unit
+
+    if rest == 0
+        return whole
+    return whole + "." + strings.trim_end_any(s: strings.pad_zeros(to_str(rest), width), set: "0")
+
+# The text of a duration of `d` nanoseconds: hours, minutes and seconds from
+# one second up, the hours and minutes only where some are, and below a
+# second one unit, `ns`, `µs` or `ms`; `0s` for zero.
+function format(d: i64) -> str
+    if d == 0
+        return "0s"
+    magnitude: u64 @= 0
+    sign: str @= ""
+
+    if d < 0
+        magnitude @ to_u64(-(d + 1)).must() + 1
+        sign @ "-"
+    else
+        magnitude @ to_u64(d).must()
+
+    if magnitude < MICROSECOND
+        return sign + to_str(magnitude) + "ns"
+
+    if magnitude < MILLISECOND
+        return sign + decimal(n: magnitude, unit: MICROSECOND, width: 3) + "µs"
+
+    if magnitude < SECOND
+        return sign + decimal(n: magnitude, unit: MILLISECOND, width: 6) + "ms"
+    hours = magnitude / HOUR
+    minutes = magnitude % HOUR / MINUTE
+    parts: [str] @= [sign]
+
+    if hours > 0
+        parts @ parts.push(f"{hours}h")
+
+    if hours > 0 || minutes > 0
+        parts @ parts.push(f"{minutes}m")
+    parts @ parts.push(decimal(n: magnitude % MINUTE, unit: SECOND, width: 9) + "s")
+    return parts.join("")
+
+## Reading
+
+# Whether the byte at `at` of `s` is an ASCII digit.
+function is_digit_at(s: str, at: i64) -> bool
+    return at < s.len() && s[at] >= '0' && s[at] <= '9'
+
+# The nanoseconds in one of the unit named `name`. Fails `invalid` where it
+# names none.
+function unit_of(name: str, s: str, at: i64) -> u64?
+    return match name
+        "ns" => ok(1)
+        "us" => ok(MICROSECOND)
+        "µs" => ok(MICROSECOND)
+        "μs" => ok(MICROSECOND)
+        "ms" => ok(MILLISECOND)
+        "s"  => ok(SECOND)
+        "m"  => ok(MINUTE)
+        "h"  => ok(HOUR)
+        _ => fail(
+            code: INVALID,
+            msg: f"at byte {at} of \"{s}\": \"{name}\" is no unit; the units are ns, us, µs, ms, s, m and h"
+        )
+
+# The whole nanoseconds in the fraction `0.digits` of `unit`, rounded toward
+# zero, exactly however many digits there are: each digit from the last is
+# added and the sum divided by ten, and a sum of whole parts divided by ten
+# each time is the whole part of the sum divided once.
+function fraction_of(digits: str, unit: u64) -> u64
+    carried: u64 @= 0
+    at: i64 @= digits.len()
+
+    while at > 0
+        at @ at - 1
+        digit = to_u64(digits[at] - '0').must()
+        carried @ (carried + digit * unit) / 10
+
+    return carried
+
+# The magnitude of the number and unit at byte `at` of `s`, and the byte after
+# them. Fails `invalid` where no number or no unit is there, and
+# `does_not_fit` where the magnitude is past 2^63.
+function take_term(s: str, at: i64) -> Term?
+    whole_from = at
+    cursor: i64 @= at
+
+    while is_digit_at(s: s, at: cursor)
+        cursor @ cursor + 1
+
+    whole_to = cursor
+    fraction_from: i64 @= cursor
+
+    if cursor < s.len() && s[cursor] == '.'
+        cursor @ cursor + 1
+        fraction_from @ cursor
+
+        while is_digit_at(s: s, at: cursor)
+            cursor @ cursor + 1
+
+    fraction_to = cursor
+
+    if whole_to == whole_from && fraction_to == fraction_from
+        return fail(code: INVALID, msg: f"at byte {at} of \"{s}\": expected a number")
+    unit_from = cursor
+
+    while cursor < s.len() && s[cursor] != '.' && !is_digit_at(s: s, at: cursor)
+        cursor @ cursor + 1
+
+    if cursor == unit_from
+        return fail(
+            code: INVALID,
+            msg: f"at byte {unit_from} of \"{s}\": a unit is missing, one of ns, us, µs, ms, s, m or h"
+        )
+    unit = unit_of(name: s.slice(from: unit_from, to: cursor), s: s, at: unit_from)?
+    whole: u64 @= 0
+
+    if whole_to > whole_from
+        match numbers.parse_u64(s.slice(from: whole_from, to: whole_to))
+            .ok n  => whole @ n
+            .err _ => return fail(code: DOES_NOT_FIT, msg: f"\"{s}\" is outside a duration, about 292 years either way")
+
+    if whole > LIMIT / unit
+        return fail(code: DOES_NOT_FIT, msg: f"\"{s}\" is outside a duration, about 292 years either way")
+    fraction = fraction_of(digits: s.slice(from: fraction_from, to: fraction_to), unit: unit)
+    return ok(Term(magnitude: whole * unit + fraction, next: cursor))
+
+# One number and its unit read.
+record Term
+    # Its nanoseconds, not signed.
+    magnitude: u64
+    # The byte after its unit.
+    next: i64
+
+# The nanoseconds `s` writes: an optional sign, then one number or more with
+# their units, summed; "0" alone, signed or not, needs no unit. Fails
+# `invalid` where `s` is no such text, and `does_not_fit` where the sum is
+# outside an `i64`.
+function parse(s: str) -> i64?
+    at: i64 @= 0
+    negative: bool @= false
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        negative @ s[0] == '-'
+        at @ 1
+
+    if s.len() - at == 1 && s[at] == '0'
+        return ok(0)
+
+    if at == s.len()
+        return fail(code: INVALID, msg: f"\"{s}\" is no duration: it holds no number")
+    total: u64 @= 0
+
+    while at < s.len()
+        term = take_term(s: s, at: at)?
+
+        if term.magnitude > LIMIT - total
+            return fail(code: DOES_NOT_FIT, msg: f"\"{s}\" is outside a duration, about 292 years either way")
+        total @ total + term.magnitude
+        at @ term.next
+
+    if negative
+        if total == LIMIT
+            return ok(-9_223_372_036_854_775_807 - 1)
+        return ok(-to_i64(total).must())
+
+    if total == LIMIT
+        return fail(code: DOES_NOT_FIT, msg: f"\"{s}\" is outside a duration, about 292 years either way")
+    return ok(to_i64(total).must())
+
+## Tests
+
+# Expected texts observed with Go's `Duration.String`, 2026-11-15.
+test "format: zero, each unit below a second, a fraction, hours with no minutes, and both ends of an i64"
+    assert format(0) == "0s"
+    assert format(1) == "1ns"
+    assert format(-1) == "-1ns"
+    assert format(999) == "999ns"
+    assert format(1_000) == "1µs"
+    assert format(1_500) == "1.5µs"
+    assert format(999_999) == "999.999µs"
+    assert format(1_000_000) == "1ms"
+    assert format(250_000_000) == "250ms"
+    assert format(1_000_000_000) == "1s"
+    assert format(1_500_000_000) == "1.5s"
+    assert format(61_000_000_000) == "1m1s"
+    assert format(5_400_000_000_000) == "1h30m0s"
+    assert format(5_400_000_000_001) == "1h30m0.000000001s"
+    assert format(-5_400_000_000_000) == "-1h30m0s"
+    assert format(360_000_000_000_000) == "100h0m0s"
+    assert format(9_223_372_036_854_775_807) == "2562047h47m16.854775807s"
+    assert format(-9_223_372_036_854_775_807 - 1) == "-2562047h47m16.854775808s"
+
+# Expected durations observed with Go's `time.ParseDuration`, 2026-11-15.
+test "parse: units, signs, a bare zero, three spellings of the microsecond, and fractions"
+    assert parse("1h30m").must() == 5_400_000_000_000
+    assert parse("250ms").must() == 250_000_000
+    assert parse("-1.5h").must() == -5_400_000_000_000
+    assert parse("0").must() == 0
+    assert parse("-0").must() == 0
+    assert parse("0s").must() == 0
+    assert parse("+5s").must() == 5_000_000_000
+    assert parse("1.5us").must() == 1_500
+    assert parse("1.5µs").must() == 1_500
+    assert parse("1.5μs").must() == 1_500
+    assert parse("1h1h").must() == 7_200_000_000_000
+    assert parse(".5s").must() == 500_000_000
+    assert parse("5.s").must() == 5_000_000_000
+    assert parse("2m3.5s").must() == 123_500_000_000
+    assert parse("1.0000000001s").must() == 1_000_000_000
+    assert parse("0.9999999999s").must() == 999_999_999
+    assert parse("0.333333333333333333333h").must() == 1_199_999_999_999
+
+test "parse: both ends of an i64, one past either, and texts that are no duration"
+    assert parse("9223372036854775807ns").must() == 9_223_372_036_854_775_807
+    assert parse("2562047h47m16.854775807s").must() == 9_223_372_036_854_775_807
+    assert parse("-2562047h47m16.854775808s").must() == -9_223_372_036_854_775_807 - 1
+    assert parse("9223372036854775808ns").is_err()
+    assert parse("99999999999999999999h").is_err()
+
+    match parse("2562047h47m16.854775808s")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match parse("")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"\" is no duration: it holds no number"
+
+    assert parse("-").is_err()
+
+    match parse("s")
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 0 of \"s\": expected a number"
+
+    match parse("1")
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 1 of \"1\": a unit is missing, one of ns, us, µs, ms, s, m or h"
+
+    match parse("3 s")
+        .ok _  => assert false
+        .err e => assert e.msg == "at byte 1 of \"3 s\": \" s\" is no unit; the units are ns, us, µs, ms, s, m and h"
+
+    assert parse("1H").is_err()
+    assert parse("1e3s").is_err()
+    assert parse(".s").is_err()
+    assert parse("1sé").is_err()
+
+test "format and parse: every text written reads back as the same duration"
+    for d in [0, 1, -1, 1_500, 999_999, 250_000_000, 5_400_000_000_001, 9_223_372_036_854_775_807, -9_223_372_036_854_775_807 - 1]
+        assert parse(format(d)).must() == d

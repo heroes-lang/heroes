@@ -1,0 +1,175 @@
+# Bytes of text read one at a time: decimal and hexadecimal digits, a port,
+# a count of bits, a byte looked for, and the failure that names the byte
+# where a text stopped being what was asked. Every reader here walks bytes
+# and cuts no slice, so no text read from outside makes one abort.
+
+use net/internal/failure
+
+# The port the bytes of `s` from `from` to `to` write: digits alone, zeros
+# before them read, 0 to 65535.
+#
+# - `s`: the text holding the port.
+# - `from`: the byte index of its first digit.
+# - `to`: the byte index just past its last digit; `from` itself writes no
+#   port.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where there is no digit, a byte that is no digit, or a
+# number past 65535.
+function port_in(s: str, from: i64, to: i64, asked: str) -> i64?
+    if from >= to
+        return bad(asked: asked, at: from, why: "a port has one digit or more")
+    value: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        if !is_digit(s[at])
+            return bad(asked: asked, at: at, why: "a port is digits alone")
+        value @ value * 10 + digit_of(s[at])
+
+        if value > 65535
+            return bad(asked: asked, at: at, why: "a port is 65535 at most")
+        at @ at + 1
+
+    return ok(value)
+
+# The count of bits the bytes of `s` from `from` to `to` write after a
+# network's `/`: decimal digits, no zero before them, `most` at most.
+#
+# - `s`: the text holding the count.
+# - `from`: the byte index of its first digit.
+# - `to`: the byte index just past its last digit; `from` itself writes none.
+# - `most`: the largest count, 32 or 128.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where there is no digit, a byte that is no digit, a zero
+# before the count, or a count past `most`.
+function bits_in(s: str, from: i64, to: i64, most: i64, asked: str) -> i64?
+    if from >= to
+        return bad(asked: asked, at: from, why: "a count of bits follows the `/`")
+
+    if to - from > 1 && s[from] == '0'
+        return bad(asked: asked, at: from, why: "a count of bits has no zero before it")
+    value: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        if !is_digit(s[at])
+            return bad(asked: asked, at: at, why: "a count of bits is digits alone")
+        value @ value * 10 + digit_of(s[at])
+
+        if value > most
+            return bad(asked: asked, at: from, why: f"the address has {most} bits")
+        at @ at + 1
+
+    return ok(value)
+
+# The byte index of the first `:` of `s` from `from` to `to`, or -1.
+#
+# - `s`: the text.
+# - `from`: the byte index the search begins at.
+# - `to`: the byte index just past where it ends.
+function colon_in(s: str, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at < to
+        if s[at] == ':'
+            return at
+        at @ at + 1
+
+    return -1
+
+# The byte index of the first byte of `zone` a zone may not hold, or -1.
+#
+# - `zone`: the zone's text.
+function wrong_in_zone(zone: str) -> i64
+    at: i64 @= 0
+
+    while at < zone.len()
+        c = zone[at]
+
+        if c < 0x21 || c == 0x7f || c == '%' || c == ']' || c == '/'
+            return at
+        at @ at + 1
+
+    return -1
+
+# Whether `c` is an ASCII decimal digit.
+#
+# - `c`: the byte.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# Whether `c` is an ASCII hexadecimal digit, in either case.
+#
+# - `c`: the byte.
+function is_hex(c: u8) -> bool
+    return is_digit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
+
+# The value of the decimal digit `c`.
+#
+# - `c`: the byte, `0` to `9`.
+#
+# Aborts where `c` is no decimal digit.
+function digit_of(c: u8) -> i64
+    assert is_digit(c)
+    return to_i64(c - '0').must()
+
+# The value of the hexadecimal digit `c`, 0 to 15.
+#
+# - `c`: the byte, a digit or a letter `a` to `f` in either case.
+#
+# Aborts where `c` is no hexadecimal digit.
+function hex_of(c: u8) -> i64
+    if is_digit(c)
+        return digit_of(c)
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+    assert c >= 'A' && c <= 'F'
+    return to_i64(c - 'A').must() + 10
+
+# A failure `invalid` saying what was asked, why, and at which byte.
+#
+# - `asked`: what was asked, the text in quotes.
+# - `at`: the byte index where the text stopped being what was asked.
+# - `why`: what the text should have held there.
+function bad<T>(asked: str, at: i64, why: str) -> T?
+    return failure.of(code: failure.INVALID, asked: asked, why: f"{why} (byte {at})")
+
+## Tests
+
+test "port_in: digits alone from 0 to 65535, nothing at all refused"
+    assert port_in(s: "x:8080", from: 2, to: 6, asked: "a port").must() == 8080
+    assert port_in(s: "0", from: 0, to: 1, asked: "a port").must() == 0
+    assert port_in(s: "x:", from: 2, to: 2, asked: "a port").is_err()
+    assert port_in(s: "8a", from: 0, to: 2, asked: "a port").is_err()
+
+test "bits_in: 0, the most, a zero before, past the most, and none"
+    assert bits_in(s: "/0", from: 1, to: 2, most: 32, asked: "a").must() == 0
+    assert bits_in(s: "/128", from: 1, to: 4, most: 128, asked: "a").must() == 128
+    assert bits_in(s: "/08", from: 1, to: 3, most: 32, asked: "a").is_err()
+    assert bits_in(s: "/33", from: 1, to: 3, most: 32, asked: "a").is_err()
+    assert bits_in(s: "/", from: 1, to: 1, most: 32, asked: "a").is_err()
+    assert bits_in(s: "/+8", from: 1, to: 3, most: 32, asked: "a").is_err()
+    assert bits_in(s: "/99999999999999999999999", from: 1, to: 24, most: 128, asked: "a").is_err()
+
+test "colon_in, wrong_in_zone: found, absent, and the first one"
+    assert colon_in("a:b:c", from: 0, to: 5) == 1
+    assert colon_in("a:b:c", from: 2, to: 5) == 3
+    assert colon_in("abc", from: 0, to: 3) == -1
+    assert wrong_in_zone("eth0") == -1
+    assert wrong_in_zone("a%b/c") == 1
+
+test "is_digit, is_hex, digit_of, hex_of: the edges of each range"
+    assert is_digit('0') && is_digit('9') && !is_digit('/') && !is_digit(':')
+    assert is_hex('a') && is_hex('F') && !is_hex('g') && !is_hex('G')
+    assert digit_of('7') == 7
+    assert hex_of('0') == 0 && hex_of('f') == 15 && hex_of('A') == 10
+
+test "bad: the message ends with the byte"
+    failed: i64? = bad(asked: "reading \"x\"", at: 3, why: "no")
+
+    match failed
+        .ok _  => assert false
+        .err e => assert e.msg == "reading \"x\": no (byte 3)"

@@ -1,0 +1,202 @@
+# A folder made with every folder above it, and a tree removed whole: what
+# `fs.make_dir_all` and `fs.remove_all` do. Neither recurses: the folders
+# still to make are a list, and the folders still to empty a stack, so no
+# path is too deep for them.
+
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use fs/internal/listing
+use os/hero_disk
+use path
+
+# A folder on the stack of `removed_all`.
+record Pending
+    # The folder's path.
+    dir: str
+    # Whether its entries have been put on the stack, so that it is empty
+    # once it is on top again.
+    opened: bool
+
+# Makes the folder `dir` and every folder above it that is not there.
+#
+# - `dir`: the path; the empty path names nothing.
+#
+# Fails `not_a_directory` where `dir`, or a part on its way, is no folder,
+# and `file_not_found` for the empty path. A folder another program makes
+# meanwhile is no failure.
+function made_all(dir: str) -> ()?
+    asked = f"making the folder \"{dir}\" and those above it"
+    codes.checked(path: dir, asked: asked)?
+    missing: [str] @= []
+    at: str @= dir
+
+    while true
+        kind = facts.presence(at: at, through: true, asked: asked)?
+
+        if kind == facts.DIRECTORY
+            break
+
+        if kind != facts.NOTHING
+            return fail(code: codes.NOT_A_DIRECTORY, msg: f"{asked}: \"{at}\" is there and is no folder")
+        missing @ missing.push(at)
+        above = path.parent(at)
+
+        if above == at
+            break
+        at @ above
+
+    left: i64 @= missing.len()
+
+    while left > 0
+        left @ left - 1
+        making = missing[left]
+
+        if hero_disk.make_folder(making, permission: 0o777) != 0
+            if !codes.last_was(hero_disk.HERO_DISK_EXISTS)
+                return codes.disk_failed(asked: asked)
+
+            if facts.presence(at: making, through: true, asked: asked)? != facts.DIRECTORY
+                return fail(code: codes.NOT_A_DIRECTORY, msg: f"{asked}: \"{making}\" is there and is no folder")
+
+    return ok()
+
+# Removes the file, link or empty folder at `at`, where it is still there.
+#
+# - `at`: the path.
+# - `asked`: what a failure's message says was asked.
+function gone(at: str, asked: str) -> ()?
+    if hero_disk.remove(at) != 0 && !codes.last_was(hero_disk.HERO_DISK_NOT_FOUND)
+        return codes.disk_failed(asked: f"{asked}: removing \"{at}\"")
+    return ok()
+
+# Removes `root` with everything it holds, links inside removed and never
+# followed.
+#
+# - `root`: the path; where it is a file or a link, that alone is removed.
+#
+# Fails `file_not_found` where nothing is at `root`, `not_text` where a name
+# inside is not UTF-8, and on the first entry that cannot be removed. An
+# entry removed meanwhile is no failure.
+function removed_all(root: str) -> ()?
+    asked = f"removing \"{root}\" with all it holds"
+    codes.checked(path: root, asked: asked)?
+    kind = facts.presence(at: root, through: false, asked: asked)?
+
+    if kind == facts.NOTHING
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: nothing is there")
+
+    if kind != facts.DIRECTORY
+        return gone(at: root, asked: asked)
+    stack: [Pending] @= [Pending(dir: root, opened: false)]
+    count: i64 @= 1
+
+    while count > 0
+        top = stack[count - 1]
+
+        if top.opened
+            count @ count - 1
+            gone(at: top.dir, asked: asked)?
+            continue
+        stack[count - 1].opened @ true
+
+        match listing.listed(dir: top.dir, asked: f"{asked}: reading \"{top.dir}\"")
+            .err e =>
+                if e.code != codes.FILE_NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+            .ok entries =>
+                for entry in entries
+                    child = path.join_all([top.dir, entry.name])
+
+                    if entry.kind == facts.DIRECTORY
+                        if count < stack.len()
+                            stack[count] @ Pending(dir: child, opened: false)
+                        else
+                            stack @ stack.push(Pending(dir: child, opened: false))
+                        count @ count + 1
+                    else
+                        gone(at: child, asked: asked)?
+
+    return ok()
+
+## Tests
+
+test "made_all: one level, several, there already, a trailing separator, a file in the way, and the empty path"
+    dir = fixture.folder("madeall")
+    assert !made_all(dir + "/a").is_err()
+    assert !made_all(dir + "/b/c/d").is_err()
+    assert facts.presence(at: dir + "/b/c/d", through: true, asked: "a").must() == facts.DIRECTORY
+    assert !made_all(dir + "/b/c/d").is_err()
+    assert !made_all(dir + "/e/f/").is_err()
+    assert facts.presence(at: dir + "/e/f", through: true, asked: "a").must() == facts.DIRECTORY
+    assert !write_file(path: dir + "/file", text: "x").is_err()
+
+    match made_all(dir + "/file")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY
+
+    match made_all(dir + "/file/g/h")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY && e.msg == f"making the folder \"{dir}/file/g/h\" and those above it: \"{path.clean(dir + "/file")}\" is there and is no folder"
+
+    match made_all("")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "made_all through a link to a folder, and a path with `..` in it"
+    dir = fixture.folder("madelink")
+    assert !made_all(dir + "/real").is_err()
+
+    if fixture.linked(target: "real", name: dir + "/l")
+        assert !made_all(dir + "/l/x/y").is_err()
+        assert facts.presence(at: dir + "/real/x/y", through: true, asked: "a").must() == facts.DIRECTORY
+    assert !made_all(dir + "/p/../q").is_err()
+    assert facts.presence(at: dir + "/q", through: true, asked: "a").must() == facts.DIRECTORY
+    assert fixture.cleared(dir)
+
+test "removed_all: a tree of files and folders, an empty folder, a file alone, and nothing there"
+    dir = fixture.folder("removeall")
+    assert !made_all(dir + "/t/a/b/c").is_err()
+    assert !write_file(path: dir + "/t/f", text: "x").is_err()
+    assert !write_file(path: dir + "/t/a/b/c/g", text: "x").is_err()
+    assert !write_file(path: dir + "/t/a/é", text: "x").is_err()
+    assert !removed_all(dir + "/t").is_err()
+    assert facts.presence(at: dir + "/t", through: false, asked: "a").must() == facts.NOTHING
+    assert !made_all(dir + "/empty").is_err()
+    assert !removed_all(dir + "/empty").is_err()
+    assert !write_file(path: dir + "/alone", text: "x").is_err()
+    assert !removed_all(dir + "/alone").is_err()
+    assert facts.presence(at: dir + "/alone", through: false, asked: "a").must() == facts.NOTHING
+
+    match removed_all(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "removed_all removes a link and never what it names, a link to a folder included"
+    dir = fixture.folder("removelink")
+    assert !made_all(dir + "/kept").is_err()
+    assert !write_file(path: dir + "/kept/f", text: "x").is_err()
+    assert !made_all(dir + "/t").is_err()
+
+    if fixture.linked(target: "../kept", name: dir + "/t/l")
+        assert !removed_all(dir + "/t").is_err()
+        assert facts.presence(at: dir + "/t", through: false, asked: "a").must() == facts.NOTHING
+        assert read_file(dir + "/kept/f").must() == "x"
+    assert fixture.cleared(dir)
+
+test "removed_all: a tree forty-one folders deep, emptied from the bottom up"
+    dir = fixture.folder("deep")
+    at: str @= dir + "/d"
+    assert hero_disk.make_folder(at, permission: 0o755) == 0
+
+    for _ in range(from: 0, to: 40)
+        at @ at + "/d"
+        assert hero_disk.make_folder(at, permission: 0o755) == 0
+
+    assert !removed_all(dir + "/d").is_err()
+    assert facts.presence(at: dir + "/d", through: false, asked: "a").must() == facts.NOTHING
+    assert fixture.cleared(dir)

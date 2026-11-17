@@ -1,0 +1,323 @@
+# A compiled set run over a value: the steps of a part taken in order, each
+# `include` a frame pushed on a stack this module holds, each loop a state
+# pushed on another, so that no template and no value is too deep for the
+# machine's stack. A failure's message opens with the text's name, where it
+# has one, and the line and column of the step that failed.
+
+use json
+use template/internal/assemble
+use template/internal/escape_css
+use template/internal/escape_js
+use template/internal/escape_text
+use template/internal/lex
+use template/internal/program
+use template/internal/values
+
+# The deepest `include` runs one inside another; the face's `MAX_DEPTH`.
+constant MAX_DEPTH: i64
+    10000
+
+# `plain` through the escaper `escaper`, one of `program`'s: `RAW` and
+# `ATTR_PLAIN` keep it.
+function escaped(escaper: i64, plain: str) -> str
+    if escaper == program.HTML_TEXT
+        return escape_text.html_text(plain)
+
+    if escaper == program.URL_START
+        return escape_text.url_start(plain)
+
+    if escaper == program.URL_PATH
+        return escape_text.url_path(plain)
+
+    if escaper == program.URL_QUERY
+        return escape_text.url_query(plain)
+
+    if escaper == program.SRCSET
+        return escape_text.srcset(plain)
+
+    if escaper == program.JS_STRING
+        return escape_js.string(plain)
+
+    if escaper == program.JS_TEMPLATE
+        return escape_js.template(plain)
+
+    if escaper == program.JS_REGEXP
+        return escape_js.regexp(plain)
+
+    if escaper == program.CSS_VALUE
+        return escape_css.css_value(plain)
+
+    if escaper == program.CSS_STRING_START
+        return escape_css.css_string_start(plain)
+
+    if escaper == program.CSS_STRING
+        return escape_css.css_string(plain)
+
+    if escaper == program.ATTR_NAME
+        return escape_text.attr_name(plain)
+    return plain
+
+# `v` written as `step` says: through its escaper, then the escape of the
+# attribute delimiter it stands in. Fails `invalid` where `v` is of a kind its
+# place does not take.
+function written(v: json.Value, step: program.Step lent) -> str?
+    escaper = step.escaper
+
+    if escaper == program.DROPPED
+        return ok("")
+    text: str @= ""
+
+    if escaper == program.JS_VALUE
+        match escape_js.value(v)
+            .ok t => text @ t
+            .err _ => return fail(
+                code: "invalid",
+                msg: f"{step.cond.left.operand.written} is a number no script writes, an infinity or not a number"
+            )
+    else
+        plain = values.scalar_text(v, step.cond.left.operand.written)?
+        text @ escaped(escaper, plain)
+
+    if step.delim == program.DELIM_QUOTED
+        return ok(escape_text.html_text(text))
+
+    if step.delim == program.DELIM_UNQUOTED
+        return ok(escape_text.unquoted(text))
+    return ok(text)
+
+# `msg` placed at `step` of the text `source`.
+function placed(step: program.Step lent, source: str, msg: str) -> str
+    where = lex.located(lex.Place(line: step.line, column: step.column), msg)
+
+    if source == ""
+        return where
+    return json.quote(source) + ", " + where
+
+# The text the part `entry` of `compiled` makes of `value`. Fails `not_found`
+# where a value is not there, `invalid` where one is of the wrong kind or
+# `include` runs deeper than `MAX_DEPTH`.
+function render(compiled: program.Program lent, entry: i64, value: json.Value) -> str?
+    out: [str] @= []
+
+    # The frames of the parts that ran an `include`, the newest last: where
+    # each goes on, its `.`, and where its variables begin in `slots`.
+    frame_part: [i64] @= []
+    frame_pc: [i64] @= []
+    frame_dot: [json.Value] @= []
+    frame_base: [i64] @= []
+
+    # The variables of every frame, each frame's from its base on.
+    slots: [json.Value] @= []
+
+    # The loops running, the newest last: the elements, an object's keys,
+    # where each is, and the slots it binds.
+    loop_items: [[json.Value]] @= []
+    loop_keys: [[str]] @= []
+    loop_at: [i64] @= []
+    loop_first: [i64] @= []
+    loop_second: [i64] @= []
+
+    part: i64 @= entry
+    steps: [program.Step] @= compiled.parts[entry].steps
+    source: str @= compiled.parts[entry].source
+    pc: i64 @= 0
+    dot: json.Value @= value
+    base: i64 @= 0
+
+    for _ in range(from: 0, to: compiled.parts[entry].slots)
+        slots @ slots.push(.null_value)
+
+    while true
+        s = steps[pc]
+        kind = s.kind
+
+        if kind == program.TEXT
+            out @ out.push(s.text)
+            pc @ pc + 1
+        else if kind == program.OUTPUT
+            match values.evaluate(s.cond.left, dot, slots, base)
+                .err e => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                .ok v =>
+                    match written(v, s)
+                        .err e   => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                        .ok text => out @ out.push(text)
+
+            pc @ pc + 1
+        else if kind == program.JUMP
+            pc @ s.target
+        else if kind == program.JUMP_UNLESS
+            match values.truth(s.cond, dot, slots, base)
+                .err e => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                .ok holds =>
+                    if holds
+                        pc @ pc + 1
+                    else
+                        pc @ s.target
+        else if kind == program.FOR_BEGIN
+            items: [json.Value] @= []
+            names: [str] @= []
+            looped = s.cond.left.operand.written
+
+            match values.evaluate(s.cond.left, dot, slots, base)
+                .err e => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                .ok over =>
+                    match over
+                        .list l => items @ l.items
+                        .object o =>
+                            if s.second_slot < 0
+                                return fail(
+                                    code: "invalid",
+                                    msg: placed(s, source: source, msg: f"{looped} is an object, and a loop over one binds two variables, its key and its value")
+                                )
+                            names @ keys(o.members)
+
+                            for name in names
+                                items @ items.push(o.members[name].must())
+                        .null_value | .boolean _ | .number _ | .text _ =>
+                            return fail(
+                                code: "invalid",
+                                msg: placed(s, source: source, msg: f"a loop goes over a list or an object, and {looped} is {values.kind_named(over)}")
+                            )
+
+            if items.len() == 0
+                pc @ s.target
+            else
+                first = base + s.first_slot
+
+                second: i64 = if s.second_slot < 0
+                    -1
+                else
+                    base + s.second_slot
+                loop_items @ loop_items.push(items)
+                loop_keys @ loop_keys.push(names)
+                loop_at @ loop_at.push(0)
+                loop_first @ loop_first.push(first)
+                loop_second @ loop_second.push(second)
+                bind(slots: @slots, first: first, second: second, items: items, names: names, at: 0)
+                pc @ pc + 1
+        else if kind == program.FOR_NEXT
+            top = loop_at.len() - 1
+            next = loop_at[top] + 1
+
+            if next < loop_items[top].len()
+                loop_at[top] @ next
+                bind(
+                    slots: @slots,
+                    first: loop_first[top],
+                    second: loop_second[top],
+                    items: loop_items[top],
+                    names: loop_keys[top],
+                    at: next
+                )
+                pc @ s.target
+            else
+                loop_items @ loop_items.slice(from: 0, to: top)
+                loop_keys @ loop_keys.slice(from: 0, to: top)
+                loop_at @ loop_at.slice(from: 0, to: top)
+                loop_first @ loop_first.slice(from: 0, to: top)
+                loop_second @ loop_second.slice(from: 0, to: top)
+                pc @ pc + 1
+        else if kind == program.BREAK
+            top = loop_at.len() - 1
+            loop_items @ loop_items.slice(from: 0, to: top)
+            loop_keys @ loop_keys.slice(from: 0, to: top)
+            loop_at @ loop_at.slice(from: 0, to: top)
+            loop_first @ loop_first.slice(from: 0, to: top)
+            loop_second @ loop_second.slice(from: 0, to: top)
+            pc @ s.target
+        else if kind == program.INCLUDE
+            if frame_part.len() + 1 >= MAX_DEPTH
+                return fail(
+                    code: "invalid",
+                    msg: placed(s, source: source, msg: f"`include` runs deeper than {MAX_DEPTH}, which a template that includes itself with no end would")
+                )
+
+            handed = match values.evaluate(s.cond.left, dot, slots, base)
+                .err e => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                .ok v  => v
+
+            callee = compiled.index[s.callee].must()
+            frame_part @ frame_part.push(part)
+            frame_pc @ frame_pc.push(pc + 1)
+            frame_dot @ frame_dot.push(dot)
+            frame_base @ frame_base.push(base)
+            part @ callee
+            steps @ compiled.parts[callee].steps
+            source @ compiled.parts[callee].source
+            pc @ 0
+            dot @ handed
+            base @ slots.len()
+
+            for _ in range(from: 0, to: compiled.parts[callee].slots)
+                slots @ slots.push(.null_value)
+        else
+            if frame_part.len() == 0
+                break
+            top = frame_part.len() - 1
+            slots @ slots.slice(from: 0, to: base)
+            part @ frame_part[top]
+            pc @ frame_pc[top]
+            dot @ frame_dot[top]
+            base @ frame_base[top]
+            steps @ compiled.parts[part].steps
+            source @ compiled.parts[part].source
+            frame_part @ frame_part.slice(from: 0, to: top)
+            frame_pc @ frame_pc.slice(from: 0, to: top)
+            frame_dot @ frame_dot.slice(from: 0, to: top)
+            frame_base @ frame_base.slice(from: 0, to: top)
+
+    return ok(out.join(""))
+
+# Binds a loop's variables to its element `at` in `slots`: the element alone
+# where `second` is -1; else the index or the key in `first` and the element
+# in `second`.
+function bind(@slots: [json.Value], first: i64, second: i64, items: [json.Value] lent, names: [str] lent, at: i64)
+    if second < 0
+        slots[first] @ items[at]
+        return
+
+    if names.len() > 0
+        slots[first] @ .text(v: names[at])
+    else
+        slots[first] @ .number(v: to_f64(at))
+    slots[second] @ items[at]
+
+# The text `text` makes of `value` in the text mode, or `ERR` and the
+# failure's message, for the tests.
+function rendered(text: str, value: json.Value) -> str
+    texts: {str: str} @= {}
+    texts[""] @ text
+
+    match assemble.compile(texts, left: "{{", right: "}}", html: false)
+        .err e => return "ERR " + e.msg
+        .ok got =>
+            match render(got.compiled, entry: 0, value: value)
+                .ok page => return page
+                .err e   => return "ERR " + e.msg
+
+test "render: text, a value, a branch each way, an empty template and the empty value"
+    assert rendered("", .null_value) == ""
+    assert rendered("a{{ if . }}b{{ else }}c{{ end }}d", .boolean(v: true)) == "abd"
+    assert rendered("a{{ if . }}b{{ else }}c{{ end }}d", .boolean(v: false)) == "acd"
+    assert rendered("{{ \"x\" }}{{ 3 }}{{ true }}", .null_value) == "x3true"
+
+test "render: a loop's variables bound afresh on every pass and gone after it, and an include's own"
+    page = "{{ define \"row\" }}{{ for $x in . }}<{{ $x }}>{{ end }}{{ end }}{{ for $a in .l }}{{ include \"row\" $a }}|{{ end }}"
+    assert rendered(page, json.parse("{\"l\": [[1, 2], [], [3]]}").must()) == "<1><2>||<3>|"
+
+test "render: a failure in a template a text defines, at that template's line"
+    page = "{{ define \"x\" }}\n  {{ .missing }}{{ end }}{{ include \"x\" . }}"
+    assert rendered(page, json.parse("{}").must()) == "ERR line 2, column 3: no key \"missing\" in ., an object holding no key"
+
+test "written: each escaper and delimiter, and a list refused outside a script"
+    s: program.Step @= program.step(kind: program.OUTPUT, line: 1, column: 1)
+    s.escaper @ program.URL_START
+    s.delim @ program.DELIM_QUOTED
+    assert written(.text(v: "javascript:x"), s).must() == "#ZrebelZ"
+    s.escaper @ program.JS_VALUE
+    assert written(.list(items: [.text(v: "<")]), s).must() == "[&#34;\\u003c&#34;]"
+    s.escaper @ program.HTML_TEXT
+    s.delim @ program.DELIM_NONE
+    assert written(.list(items: []), s).is_err()
+    s.escaper @ program.DROPPED
+    assert written(.list(items: []), s).must() == ""

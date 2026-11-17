@@ -1,0 +1,506 @@
+# The platform layer's TLS, `hero_tls.h`, bound thin: one function per C
+# function, each answering what C answers, in C's order. Where a call fails
+# its stream or listener is `nullptr` or its count -1, and `last_error` then
+# names the kind, `last_message` the system's own words. Rebel's floor of
+# `tls` (`examples/packages/README.md` § 4.1): no policy stands here, and the
+# face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group
+# names its header and no `link`: on Windows the member links SChannel's
+# libraries itself, on macOS Network.framework's, and on Linux it opens
+# OpenSSL at the first call that needs it, so the same lines bind it
+# everywhere. A TLS stream is `io/hero_stream`'s handle, read, written and
+# closed by that floor.
+#
+# THE INNER STREAM'S LIFE PASSES INTO THE TLS STREAM, AND THE MARK IS
+# `transfers`, as `net/hero_stream_net` hands a socket into a stream: the TLS
+# stream's close then closes the inner one, once; and where no TLS stream is
+# made the transfer is not made, so the inner stream stays the caller's.
+
+use io/hero_stream
+use net/hero_net
+
+extern "hero_tls.h"
+    # A socket listening for TLS connections. It is a handle the layer issues
+    # and checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_TLS_NOT_OPEN`, never a read of freed memory.
+    record Listener tag hero_tls_listener
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform; those a stream also has keep `hero_stream.h`'s numbers.
+    constant HERO_TLS_OK: i64
+    constant HERO_TLS_INVALID: i64
+    constant HERO_TLS_NOT_OPEN: i64
+    constant HERO_TLS_NOT_FOUND: i64
+    constant HERO_TLS_DENIED: i64
+    constant HERO_TLS_LIMIT: i64
+    constant HERO_TLS_CLOSED_PEER: i64
+    constant HERO_TLS_UNSUPPORTED: i64
+    constant HERO_TLS_OTHER: i64
+    constant HERO_TLS_TIMED_OUT: i64
+    constant HERO_TLS_STOPPED: i64
+    constant HERO_TLS_REFUSED: i64
+    constant HERO_TLS_UNREACHABLE: i64
+    constant HERO_TLS_IN_USE: i64
+    constant HERO_TLS_CERT_EXPIRED: i64
+    constant HERO_TLS_CERT_HOST: i64
+    constant HERO_TLS_CERT_UNTRUSTED: i64
+    constant HERO_TLS_CERT_REVOKED: i64
+    constant HERO_TLS_CERT_INVALID: i64
+    constant HERO_TLS_HANDSHAKE: i64
+    constant HERO_TLS_PREAMBLE: i64
+    # The kinds of a step of the exchange before TLS, and its bounds: the
+    # steps, a step's bytes, a line's bytes with its end, a line's beginning.
+    constant HERO_TLS_STEP_SEND: i64
+    constant HERO_TLS_STEP_EXPECT: i64
+    constant HERO_TLS_STEP_EXPECT_LINE: i64
+    constant HERO_TLS_STEPS_MOST: u64
+    constant HERO_TLS_STEP_BYTES_MOST: u64
+    constant HERO_TLS_LINE_MOST: u64
+    constant HERO_TLS_PREFIX_MOST: u64
+    # What `checks` takes: every check, or, for tests alone, none.
+    constant HERO_TLS_CHECK_ALL: i64
+    constant HERO_TLS_CHECK_NOTHING_FOR_TESTS: i64
+    # The bytes a buffer must have for `protocol` to write a protocol's name.
+    constant HERO_TLS_PROTOCOL_MOST: u64
+    # The two calls the marks below name: the one that ends a stream's life,
+    # which the header declares through `hero_stream.h`, and the listener's.
+    function hero_stream_close(s: hero_stream.Stream consumes) -> i64
+    function hero_tls_available() -> i64
+    function hero_tls_connect(host: cstr lent, port: i64, ms: i64, @roots: [u8] counted_by roots_count lent, roots_count: u64, protocols: cstr lent, checks: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_tls_listen(address: cstr lent, port: i64, @chain: [u8] counted_by chain_count lent, chain_count: u64, @key: [u8] counted_by key_count lent, key_count: u64, protocols: cstr lent) -> Listener acquires hero_tls_close_listener
+    function hero_tls_connect_after(host: cstr lent, port: i64, ms: i64, @roots: [u8] counted_by roots_count lent, roots_count: u64, protocols: cstr lent, checks: i64, @steps: [u8] counted_by steps_count lent, steps_count: u64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_tls_listen_after(address: cstr lent, port: i64, @chain: [u8] counted_by chain_count lent, chain_count: u64, @key: [u8] counted_by key_count lent, key_count: u64, protocols: cstr lent, @steps: [u8] counted_by steps_count lent, steps_count: u64) -> Listener acquires hero_tls_close_listener
+    function hero_tls_port(l: Listener) -> i64
+    function hero_tls_accept(l: Listener, ms: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_tls_close_listener(l: Listener consumes) -> i64
+    function hero_tls_client(inner: hero_stream.Stream transfers hero_stream_close, host: cstr lent, @roots: [u8] counted_by roots_count lent, roots_count: u64, protocols: cstr lent, checks: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_tls_server(inner: hero_stream.Stream transfers hero_stream_close, @chain: [u8] counted_by chain_count lent, chain_count: u64, @key: [u8] counted_by key_count lent, key_count: u64, protocols: cstr lent) -> hero_stream.Stream acquires hero_stream_close
+    function hero_tls_version(s: hero_stream.Stream) -> i64
+    function hero_tls_protocol(s: hero_stream.Stream, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_tls_set_deadline(s: hero_stream.Stream, ms: i64) -> i64
+    function hero_tls_set_accept_deadline(l: Listener, ms: i64) -> i64
+    function hero_tls_last_error() -> i64
+    function hero_tls_last_os_error() -> i64
+    function hero_tls_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
+
+# 1 where this machine has the platform's TLS library, 0 where it has not (a
+# Linux machine with no `libssl.so.3`).
+function available() -> i64
+    return hero_tls_available()
+
+# A TLS stream to `host` at `port`, its connection and handshake made within
+# `ms` milliseconds (0 for no limit), or `nullptr`. The first `roots_count`
+# bytes of `roots`, PEM, are the only authorities trusted where the count is
+# not 0, the system's store where it is; `protocols` is the ALPN list offered,
+# the names joined by `,`; `checks` is one of `HERO_TLS_CHECK_*`. It aborts
+# where `host` or `protocols` holds a zero byte, which C cannot read.
+function connect(host: str, port: i64, ms: i64, @roots: [u8], roots_count: u64, protocols: str, checks: i64) -> hero_stream.Stream
+    return hero_tls_connect(
+        host: host.cstr(),
+        port: port,
+        ms: ms,
+        @roots,
+        roots_count: roots_count,
+        protocols: protocols.cstr(),
+        checks: checks
+    )
+
+# A socket listening for TLS on `address` at `port` (0 for a free one), or
+# `nullptr`; every connection it accepts presents the PEM chain of the first
+# `chain_count` bytes of `chain` and proves it holds the PEM key of the first
+# `key_count` bytes of `key`. `protocols` is the ALPN list it takes.
+function listen(address: str, port: i64, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str) -> Listener
+    return hero_tls_listen(
+        address: address.cstr(),
+        port: port,
+        chain: @chain,
+        chain_count: chain_count,
+        key: @key,
+        key_count: key_count,
+        protocols: protocols.cstr()
+    )
+
+# `connect`, with the exchange of the first `steps_count` bytes of `steps`
+# run on the connection before TLS begins, in the header's form: each step a
+# kind byte, four bytes of length, most significant first, and its bytes.
+# `ms` bounds the connection, the exchange and the handshake together.
+function connect_after(host: str, port: i64, ms: i64, @roots: [u8], roots_count: u64, protocols: str, checks: i64, @steps: [u8], steps_count: u64) -> hero_stream.Stream
+    return hero_tls_connect_after(
+        host: host.cstr(),
+        port: port,
+        ms: ms,
+        roots: @roots,
+        roots_count: roots_count,
+        protocols: protocols.cstr(),
+        checks: checks,
+        steps: @steps,
+        steps_count: steps_count
+    )
+
+# `listen`, every connection it accepts running the exchange of `steps`
+# from the server's side before TLS begins, within `accept`'s time.
+function listen_after(address: str, port: i64, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str, @steps: [u8], steps_count: u64) -> Listener
+    return hero_tls_listen_after(
+        address: address.cstr(),
+        port: port,
+        chain: @chain,
+        chain_count: chain_count,
+        key: @key,
+        key_count: key_count,
+        protocols: protocols.cstr(),
+        steps: @steps,
+        steps_count: steps_count
+    )
+
+# The port `l` listens on, or -1.
+function port_of(l: Listener) -> i64
+    return hero_tls_port(l)
+
+# The next connection `l` holds as a TLS stream once its handshake has ended
+# within `ms` milliseconds of the connection (0 for no limit), or `nullptr`.
+# A close of `l` on another thread ends the wait, `HERO_TLS_NOT_OPEN`.
+function accept(l: Listener, ms: i64) -> hero_stream.Stream
+    return hero_tls_accept(l, ms: ms)
+
+# 0, or -1 where `l` was not open; `l` is given back either way, and the
+# streams accepted from it stay open.
+function close_listener(@l: Listener) -> i64
+    return hero_tls_close_listener(l)
+
+# TLS as the client over `inner`, a stream connected to `host`, or `nullptr`.
+# From this call `inner` is closed by the TLS stream's close; where no TLS
+# stream is made it stays the caller's, to close. On macOS it answers
+# `nullptr` with `HERO_TLS_UNSUPPORTED` and leaves `inner` untouched.
+function client(@inner: hero_stream.Stream, host: str, @roots: [u8], roots_count: u64, protocols: str, checks: i64) -> hero_stream.Stream
+    return hero_tls_client(
+        inner,
+        host: host.cstr(),
+        @roots,
+        roots_count: roots_count,
+        protocols: protocols.cstr(),
+        checks: checks
+    )
+
+# TLS as the server over `inner`, a stream connected to a client, presenting
+# `chain` and `key` as `listen`'s connections do, or `nullptr`; `inner`'s
+# life passes as `client`'s does, and macOS answers as it does there.
+function server(@inner: hero_stream.Stream, @chain: [u8], chain_count: u64, @key: [u8], key_count: u64, protocols: str) -> hero_stream.Stream
+    return hero_tls_server(
+        inner,
+        chain: @chain,
+        chain_count: chain_count,
+        key: @key,
+        key_count: key_count,
+        protocols: protocols.cstr()
+    )
+
+# The version of TLS `s` speaks, 12 or 13, or -1 where `s` is no open TLS
+# stream.
+function version(s: hero_stream.Stream) -> i64
+    return hero_tls_version(s)
+
+# The length of the application protocol `s` chose, its name written into
+# `buffer`'s first bytes with a zero after it: 0 where none was chosen, -1
+# where `s` is no open TLS stream or `count` is below
+# `HERO_TLS_PROTOCOL_MOST`.
+function protocol(s: hero_stream.Stream, @buffer: [u8], count: u64) -> i64
+    return hero_tls_protocol(s, @buffer, count: count)
+
+# 0, or -1: every read or write of `s`, a TLS stream, that waits ends by
+# `ms` milliseconds from now, failing `HERO_STREAM_TIMED_OUT`, a read already
+# waiting included; 0 takes the deadline away.
+function set_deadline(s: hero_stream.Stream, ms: i64) -> i64
+    return hero_tls_set_deadline(s, ms: ms)
+
+# 0, or -1: every `accept` waiting on `l`, and every later one, ends by `ms`
+# milliseconds from now, failing `HERO_TLS_TIMED_OUT`; 0 takes it away.
+function set_accept_deadline(l: Listener, ms: i64) -> i64
+    return hero_tls_set_accept_deadline(l, ms: ms)
+
+# The kind of the last call's failure on this thread, `HERO_TLS_OK` after a
+# call that did not fail.
+function last_error() -> i64
+    return hero_tls_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# itself refused.
+function last_os_error() -> i64
+    return hero_tls_last_os_error()
+
+# The length of the last failure's words, written into `buffer`'s first
+# bytes with a zero after them and cut where a character ends, or -1 where
+# `count` is 0.
+function last_message(@buffer: [u8], count: u64) -> i64
+    return hero_tls_last_message(@buffer, count: count)
+
+## Tests
+
+test "available answers 1 or 0, and 1 on a machine with the platform's TLS"
+    assert available() == 1 || available() == 0
+
+test "connect refuses what it cannot read before any connection: no host, a port of 0 or past 65535, a time below 0, checks of neither kind, an empty protocol name"
+    roots: [u8] @= []
+    a = connect(host: "", port: 443, ms: 0, @roots, roots_count: 0, protocols: "", checks: HERO_TLS_CHECK_ALL)
+    assert a == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    b = connect(host: "localhost", port: 0, ms: 0, @roots, roots_count: 0, protocols: "", checks: HERO_TLS_CHECK_ALL)
+    assert b == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    c = connect(
+        host: "localhost",
+        port: 65536,
+        ms: 0,
+        @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL
+    )
+    assert c == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    d = connect(
+        host: "localhost",
+        port: 443,
+        ms: -1,
+        @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL
+    )
+    assert d == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    e = connect(host: "localhost", port: 443, ms: 0, @roots, roots_count: 0, protocols: "", checks: 0)
+    assert e == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    f = connect(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        @roots,
+        roots_count: 0,
+        protocols: "h2,,http/1.1",
+        checks: HERO_TLS_CHECK_ALL
+    )
+    assert f == nullptr
+    assert last_error() == HERO_TLS_INVALID
+
+test "connect to a port nothing listens on fails refused, and roots that hold no certificate fail invalid"
+    probe @= hero_net.listen(address: "127.0.0.1", port: 0)
+    port = hero_net.port_of(probe)
+    assert hero_net.close(@probe) == 0
+    roots: [u8] @= []
+    gone = connect(
+        host: "127.0.0.1",
+        port: port,
+        ms: 15000,
+        @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL
+    )
+    assert gone == nullptr
+
+    if available() == 1
+        assert last_error() == HERO_TLS_REFUSED
+    junk: [u8] @= [110, 111]
+    bad = connect(
+        host: "127.0.0.1",
+        port: port,
+        ms: 15000,
+        @junk,
+        roots_count: 2,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL
+    )
+    assert bad == nullptr
+    assert last_error() == HERO_TLS_INVALID || last_error() == HERO_TLS_UNSUPPORTED
+
+test "listen refuses PEM with no certificate, PEM with no key, and a port past 65535, saying why"
+    junk: [u8] @= [110, 111, 116, 32, 80, 69, 77]
+    other: [u8] @= [110, 111, 116, 32, 80, 69, 77]
+    a = listen(address: "127.0.0.1", port: 0, chain: @junk, chain_count: 7, key: @other, key_count: 7, protocols: "")
+    assert a == nullptr
+    assert last_error() == HERO_TLS_INVALID || last_error() == HERO_TLS_UNSUPPORTED
+    words: [u8] @= []
+    length = last_message(@words, count: 256)
+    assert length > 0
+    b = listen(
+        address: "127.0.0.1",
+        port: 70000,
+        chain: @junk,
+        chain_count: 7,
+        key: @other,
+        key_count: 7,
+        protocols: ""
+    )
+    assert b == nullptr
+    assert last_error() == HERO_TLS_INVALID
+
+test "close_listener and port_of of a listener that is none fail not open"
+    l: Listener @= nullptr
+    assert port_of(l) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert close_listener(@l) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+
+test "version and protocol of a stream that is no TLS stream fail not open, and protocol refuses a short buffer"
+    out_end: hero_stream.Stream @= nullptr
+    in_end: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @out_end, writer: @in_end) == 0
+    assert version(out_end) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    name: [u8] @= []
+    assert protocol(out_end, @name, count: HERO_TLS_PROTOCOL_MOST) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert protocol(out_end, @name, count: 8) == -1
+    assert last_error() == HERO_TLS_INVALID
+    assert hero_stream.close(@out_end) == 0
+    assert hero_stream.close(@in_end) == 0
+
+test "last_message refuses a buffer of no bytes"
+    words: [u8] @= []
+    assert last_message(@words, count: 0) == -1
+    assert last_error() == HERO_TLS_INVALID
+
+test "client over a pipe's reading end makes no stream and leaves the pipe the caller's: unsupported on macOS, its first write refused elsewhere"
+    out_end: hero_stream.Stream @= nullptr
+    in_end: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @out_end, writer: @in_end) == 0
+    roots: [u8] @= []
+    made = client(@out_end, host: "localhost", @roots, roots_count: 0, protocols: "", checks: HERO_TLS_CHECK_ALL)
+    assert made == nullptr
+    assert last_error() != HERO_TLS_OK
+    assert hero_stream.close(@out_end) == 0
+    assert hero_stream.close(@in_end) == 0
+
+test "connect_after refuses steps not in the header's form before any connection: a kind it does not know, a step of no bytes, a head cut short, a step running past the end, a line's beginning past 64 bytes"
+    roots: [u8] @= []
+    unknown: [u8] @= [9, 0, 0, 0, 1, 65]
+    a = connect_after(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @unknown,
+        steps_count: 6
+    )
+    assert a == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    empty: [u8] @= [1, 0, 0, 0, 0]
+    b = connect_after(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @empty,
+        steps_count: 5
+    )
+    assert b == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    short: [u8] @= [1, 0, 0]
+    c = connect_after(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @short,
+        steps_count: 3
+    )
+    assert c == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    past: [u8] @= [2, 0, 0, 0, 9, 83]
+    d = connect_after(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @past,
+        steps_count: 6
+    )
+    assert d == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    long_prefix: [u8] @= [3, 0, 0, 0, 65]
+
+    for _ in range(from: 0, to: 65)
+        long_prefix @ long_prefix.push(65)
+
+    e = connect_after(
+        host: "localhost",
+        port: 443,
+        ms: 0,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @long_prefix,
+        steps_count: 70
+    )
+    assert e == nullptr
+    assert last_error() == HERO_TLS_INVALID
+    words: [u8] @= []
+    assert last_message(@words, count: 640) > 0
+
+test "connect_after with steps in their form to a port nothing listens on fails refused, as connect does"
+    probe @= hero_net.listen(address: "127.0.0.1", port: 0)
+    port = hero_net.port_of(probe)
+    assert hero_net.close(@probe) == 0
+    roots: [u8] @= []
+    steps: [u8] @= [1, 0, 0, 0, 1, 65, 2, 0, 0, 0, 1, 83]
+    gone = connect_after(
+        host: "127.0.0.1",
+        port: port,
+        ms: 15000,
+        roots: @roots,
+        roots_count: 0,
+        protocols: "",
+        checks: HERO_TLS_CHECK_ALL,
+        steps: @steps,
+        steps_count: 12
+    )
+    assert gone == nullptr
+
+    if available() == 1
+        assert last_error() == HERO_TLS_REFUSED
+
+test "listen_after refuses steps not in their form before it listens"
+    chain: [u8] @= [110]
+    key: [u8] @= [110]
+    steps: [u8] @= [7, 0, 0, 0, 1, 65]
+    l = listen_after(
+        address: "127.0.0.1",
+        port: 0,
+        chain: @chain,
+        chain_count: 1,
+        key: @key,
+        key_count: 1,
+        protocols: "",
+        steps: @steps,
+        steps_count: 6
+    )
+    assert l == nullptr
+    assert last_error() == HERO_TLS_INVALID
+
+test "set_deadline and set_accept_deadline: a stream that is no TLS stream and a listener that is none fail not open, a time below 0 invalid"
+    out_end: hero_stream.Stream @= nullptr
+    in_end: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @out_end, writer: @in_end) == 0
+    assert set_deadline(out_end, ms: 100) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert set_deadline(out_end, ms: -1) == -1
+    assert last_error() == HERO_TLS_INVALID
+    none: Listener = nullptr
+    assert set_accept_deadline(none, ms: 100) == -1
+    assert last_error() == HERO_TLS_NOT_OPEN
+    assert hero_stream.close(@out_end) == 0
+    assert hero_stream.close(@in_end) == 0

@@ -1,0 +1,242 @@
+# What `fs` asks of `hero_disk` in one call: a folder made, a path removed or
+# renamed, its times, length and owner set, its volume's space, and whether
+# two paths name one file. Each checks its paths, calls one door, and turns a
+# -1 into the failure of what was asked.
+
+use fs/internal/codes
+use fs/internal/fixture
+use os/hero_disk
+use time
+
+# The space `room` answers, in bytes.
+record Room
+    # The bytes this user may still write.
+    available: i64
+    # The volume's size.
+    total: i64
+
+# Nothing once `answer`, what a door of `hero_disk` answered, is 0, or the
+# failure of `asked` where it is -1.
+#
+# - `answer`: the door's answer, read before any other call of the floor.
+# - `asked`: what a failure's message says was asked.
+function done(answer: i64, asked: str) -> ()?
+    if answer != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+# Makes one folder at `at`.
+#
+# - `at`: the path.
+# - `permission`: its bits, 0 to 0o7777, less the process's mask.
+#
+# Fails `exists`, `file_not_found` for a parent not there, `invalid` for bits
+# outside their range.
+function made_dir(at: str, permission: i64) -> ()?
+    asked = f"making the folder \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    return done(hero_disk.make_folder(at, permission: permission), asked: asked)
+
+# Removes the file, the link or the empty folder at `at`.
+#
+# - `at`: the path.
+#
+# Fails `file_not_found`, `not_empty`.
+function removed(at: str) -> ()?
+    asked = f"removing \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    return done(hero_disk.remove(at), asked: asked)
+
+# Gives `from` the name `to`, on one volume.
+#
+# - `from`: the path renamed.
+# - `to`: its new path.
+#
+# Fails as `hero_disk.rename` says: `is_a_directory`, `exists`,
+# `file_not_found`, and `failed` across volumes.
+function renamed(from: str, to: str) -> ()?
+    asked = f"renaming \"{from}\" to \"{to}\""
+    codes.checked(path: from, asked: asked)?
+    codes.checked(path: to, asked: asked)?
+    return done(hero_disk.rename(from: from, to: to), asked: asked)
+
+# Sets the times of what `at` names, links followed.
+#
+# - `at`: the path.
+# - `written`: the last write.
+# - `read`: the last read.
+function timed(at: str, written: time.Instant, read: time.Instant) -> ()?
+    asked = f"setting the times of \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    return done(
+        hero_disk.set_times(at, written: written.unix_nanoseconds, read: read.unix_nanoseconds),
+        asked: asked
+    )
+
+# Makes the file `at` names `length` bytes long.
+#
+# - `at`: the path, links followed.
+# - `length`: the new length in bytes; below 0 fails `invalid`.
+function truncated(at: str, length: i64) -> ()?
+    asked = f"making \"{at}\" {length} bytes long"
+    codes.checked(path: at, asked: asked)?
+    return done(hero_disk.set_length(at, length: length), asked: asked)
+
+# Gives what `at` names to the user and the group of those numbers.
+#
+# - `at`: the path.
+# - `user`: the user's number, -1 leaving it.
+# - `group`: the group's number, -1 leaving it.
+# - `through`: whether a link is followed, or the link itself changed.
+function owned(at: str, user: i64, group: i64, through: bool) -> ()?
+    asked = f"giving \"{at}\" to the user {user} and the group {group}"
+    codes.checked(path: at, asked: asked)?
+
+    if through
+        return done(hero_disk.set_owner(at, user: user, group: group), asked: asked)
+    return done(hero_disk.set_link_owner(at, user: user, group: group), asked: asked)
+
+# The space of the volume `at` stands on.
+#
+# - `at`: the path.
+function room(at: str) -> Room?
+    asked = f"asking the space of the volume of \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    available: i64 @= 0
+    total: i64 @= 0
+
+    if hero_disk.space(at, free_bytes: @available, total_bytes: @total) != 0
+        return codes.disk_failed(asked: asked)
+    return ok(Room(available: available, total: total))
+
+# Whether `first` and `second` name one file, every link followed.
+#
+# - `first`: one path.
+# - `second`: the other.
+#
+# Fails `file_not_found` where either names nothing.
+function same(first: str, second: str) -> bool?
+    asked = f"asking whether \"{first}\" and \"{second}\" are one file"
+    codes.checked(path: first, asked: asked)?
+    codes.checked(path: second, asked: asked)?
+    answer = hero_disk.same(first: first, second: second)
+
+    if answer < 0
+        return codes.disk_failed(asked: asked)
+    return ok(answer == 1)
+
+## Tests
+
+test "made_dir and removed: a folder made, there already, under a parent not there, bits out of range, and removed full and empty"
+    dir = fixture.folder("changes")
+    assert !made_dir(dir + "/d", permission: 0o755).is_err()
+
+    match made_dir(dir + "/d", permission: 0o755)
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS && e.msg == f"making the folder \"{dir}/d\": something is there already"
+
+    match made_dir(dir + "/no/d", permission: 0o755)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    match made_dir(dir + "/x", permission: 0o10000)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert !write_file(path: dir + "/d/f", text: "x").is_err()
+
+    match removed(dir + "/d")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_EMPTY
+
+    assert !removed(dir + "/d/f").is_err()
+    assert !removed(dir + "/d").is_err()
+
+    match removed(dir + "/d")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "renamed: a file moved, over a file, over a folder, a folder over a folder, and a source not there"
+    dir = fixture.folder("renamed")
+    assert !write_file(path: dir + "/a", text: "one").is_err()
+    assert !write_file(path: dir + "/b", text: "two").is_err()
+    assert !renamed(from: dir + "/a", to: dir + "/b").is_err()
+    assert read_file(dir + "/b").must() == "one"
+    assert !made_dir(dir + "/d", permission: 0o755).is_err()
+    assert !made_dir(dir + "/e", permission: 0o755).is_err()
+
+    match renamed(from: dir + "/b", to: dir + "/d")
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    match renamed(from: dir + "/d", to: dir + "/e")
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS
+
+    match renamed(from: dir + "/none", to: dir + "/c")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == f"renaming \"{dir}/none\" to \"{dir}/c\": nothing is there"
+
+    assert fixture.cleared(dir)
+
+test "timed and truncated: times read back, before 1970, a length shorter and longer, below 0, and a folder"
+    dir = fixture.folder("timed")
+    assert !write_file(path: dir + "/f", text: "hello world").is_err()
+    assert !timed(dir + "/f", written: time.Instant(unix_nanoseconds: 1_500_000_000_000_000_000), read: time.Instant(unix_nanoseconds: -1_000_000_000)).is_err()
+    numbers: [i64] @= []
+    assert hero_disk.facts(dir + "/f", @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+    assert numbers[hero_disk.HERO_DISK_FACT_WRITTEN] == 1_500_000_000_000_000_000
+    assert numbers[hero_disk.HERO_DISK_FACT_READ] == -1_000_000_000
+    assert !truncated(dir + "/f", length: 5).is_err()
+    assert read_file(dir + "/f").must() == "hello"
+    assert !truncated(dir + "/f", length: 0).is_err()
+    assert read_file(dir + "/f").must() == ""
+
+    match truncated(dir + "/f", length: -1)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    match truncated(dir, length: 0)
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    assert fixture.cleared(dir)
+
+test "owned: nothing to change, or unsupported on Windows, and a name not there"
+    dir = fixture.folder("owned")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    match owned(dir + "/f", user: -1, group: -1, through: true)
+        .ok _  => _ = 0
+        .err e => assert e.code == codes.UNSUPPORTED
+
+    match owned(dir + "/f", user: -1, group: -1, through: false)
+        .ok _  => _ = 0
+        .err e => assert e.code == codes.UNSUPPORTED
+
+    match owned(dir + "/none", user: -1, group: -1, through: true)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND || e.code == codes.UNSUPPORTED
+
+    assert fixture.cleared(dir)
+
+test "room and same: a volume's space, one file by two spellings, two files, and one not there"
+    dir = fixture.folder("room")
+    assert !write_file(path: dir + "/a", text: "x").is_err()
+    assert !write_file(path: dir + "/b", text: "x").is_err()
+    space = room(dir).must()
+    assert space.total > 0 && space.available >= 0 && space.available <= space.total
+    assert same(first: dir + "/a", second: dir + "/./a").must()
+    assert !same(first: dir + "/a", second: dir + "/b").must()
+
+    match same(first: dir + "/a", second: dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    match room(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)

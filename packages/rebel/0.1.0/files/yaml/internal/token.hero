@@ -1,0 +1,181 @@
+# The tokens a YAML stream is cut into: what each kind is, and the record
+# that holds one with where it stands. The scanner writes them, the parser
+# reads them; a scalar's text is read once, here, so the parser reads no
+# character.
+
+## Kinds
+
+# The end of the stream.
+constant STREAM_END: i64
+    0
+
+# A `%YAML` directive, its version in `text`.
+constant VERSION_DIRECTIVE: i64
+    1
+
+# A `%TAG` directive, its handle in `text` and its prefix in `suffix`.
+constant TAG_DIRECTIVE: i64
+    2
+
+# `---`, which begins a document.
+constant DOC_START: i64
+    3
+
+# `...`, which ends one.
+constant DOC_END: i64
+    4
+
+# Where a block list begins, at the column of its first `-`.
+constant BLOCK_SEQ_START: i64
+    5
+
+# Where a block map begins, at the column of its first key.
+constant BLOCK_MAP_START: i64
+    6
+
+# Where a block list or map ends, a line being indented less than it.
+constant BLOCK_END: i64
+    7
+
+# `[`.
+constant FLOW_SEQ_START: i64
+    8
+
+# `]`.
+constant FLOW_SEQ_END: i64
+    9
+
+# `{`.
+constant FLOW_MAP_START: i64
+    10
+
+# `}`.
+constant FLOW_MAP_END: i64
+    11
+
+# A `-` that begins an element of a block list.
+constant BLOCK_ENTRY: i64
+    12
+
+# A `,` between two entries of a flow collection.
+constant FLOW_ENTRY: i64
+    13
+
+# What begins a key: a `?`, or the place before a key that a `:` follows.
+constant KEY: i64
+    14
+
+# A `:` that begins a value.
+constant VALUE: i64
+    15
+
+# `*name`, the name in `text`.
+constant ALIAS: i64
+    16
+
+# `&name`, the name in `text`.
+constant ANCHOR: i64
+    17
+
+# A tag: its handle in `text`, `!`, `!!` or `!name!`, and its suffix in
+# `suffix`; a verbatim `!<uri>` has the empty handle and the URI as its suffix.
+constant TAG: i64
+    18
+
+# A scalar, its characters read in `text`.
+constant SCALAR: i64
+    19
+
+## The token
+
+# One token, and where it stands in the stream.
+record Token
+    # One of the kinds above.
+    kind: i64
+    # The byte index where it begins.
+    at: i64
+    # The byte index past its last character.
+    end: i64
+    # A scalar's characters, a name, a version, or a tag's handle.
+    text: str
+    # A tag's suffix or a `%TAG` directive's prefix; empty otherwise.
+    suffix: str
+    # Whether a scalar is written plain, so that the schema reads it.
+    is_plain: bool
+    # Whether a `KEY` stands before this token, a `:` having been found after
+    # it on its line.
+    key_before: bool
+    # Whether a `BLOCK_MAP_START` stands before that key, the key being the
+    # first of a map.
+    map_before: bool
+
+# What a reader of a scalar or a name answers: its characters read, and where
+# it ends.
+record Lexeme
+    # The characters, escapes and folding read.
+    value: str
+    # The byte index past its last character.
+    end: i64
+
+# A token of `kind` from `at` to `end` that holds no text.
+function mark(kind: i64, at: i64, end: i64) -> Token
+    return Token(
+        kind: kind,
+        at: at,
+        end: end,
+        text: "",
+        suffix: "",
+        is_plain: false,
+        key_before: false,
+        map_before: false
+    )
+
+# A token of `kind` from `at` to `end` holding `text` and `suffix`.
+function holding(kind: i64, at: i64, end: i64, text: str, suffix: str) -> Token
+    return Token(
+        kind: kind,
+        at: at,
+        end: end,
+        text: text,
+        suffix: suffix,
+        is_plain: false,
+        key_before: false,
+        map_before: false
+    )
+
+# The tokens of `tokens` with the `BLOCK_MAP_START` and the `KEY` each one
+# carries made tokens of their own, in front of it.
+function expanded(tokens: [Token] lent) -> [Token]
+    out: [Token] @= []
+
+    for t in tokens
+        if t.map_before
+            out @ out.push(mark(kind: BLOCK_MAP_START, at: t.at, end: t.at))
+
+        if t.key_before
+            out @ out.push(mark(kind: KEY, at: t.at, end: t.at))
+        out @ out.push(t)
+
+    return out
+
+## Tests
+
+test "mark and holding: a token with no text, and one with a text and a suffix"
+    t = mark(kind: VALUE, at: 3, end: 4)
+    assert t.kind == VALUE && t.at == 3 && t.end == 4 && t.text == "" && !t.key_before
+    h = holding(kind: TAG, at: 0, end: 5, text: "!!", suffix: "str")
+    assert h.text == "!!" && h.suffix == "str" && !h.is_plain
+
+test "expanded: none, a key, a map and its key, and the order kept"
+    nothing: [Token] = []
+    assert expanded(nothing) == nothing
+    a: Token @= holding(kind: SCALAR, at: 0, end: 1, text: "a", suffix: "")
+    a.key_before @ true
+    a.map_before @ true
+    b = mark(kind: VALUE, at: 1, end: 2)
+    kinds: [i64] @= []
+
+    for t in expanded([a, b])
+        kinds @ kinds.push(t.kind)
+
+    assert kinds == [BLOCK_MAP_START, KEY, SCALAR, VALUE]

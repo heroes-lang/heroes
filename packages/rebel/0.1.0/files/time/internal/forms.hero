@@ -1,0 +1,272 @@
+# The text of a time written: each layout `time` offers is a list of pieces,
+# and one writer walks any such list; `reading` reads them. Every text written
+# is ASCII.
+
+use strings
+use time/internal/civil
+
+# One part of a layout.
+variant Piece
+    # Text written as it is and read only as it is.
+    text
+        literal: str
+    # The year in four digits.
+    year
+    # The year's last two digits, read as 1969 to 2068.
+    year_two
+    # The month in two digits.
+    month
+    # The month's name in three letters, `Jan`.
+    month_name
+    # The day of the month in two digits.
+    day
+    # The day of the month after a space where it has one digit, ` 2` or `12`.
+    day_space
+    # The weekday's name in three letters, `Mon`.
+    weekday_short
+    # The weekday's whole name, `Monday`.
+    weekday_long
+    # The hour in two digits, 00 to 23.
+    hour
+    # The minute in two digits.
+    minute
+    # The second in two digits.
+    second
+    # The fraction of the second after a `.`: `digits` of them, cut toward the
+    # past, or as many as it needs where `digits` is -1. Read, it is optional
+    # and of any length, the digits past the ninth dropped.
+    fraction
+        digits: i64
+    # `T`, read as `T` or `t`.
+    separator
+    # `Z`, read as `Z`, `z` or an offset `+hh:mm` or `-hh:mm`.
+    zone_z
+    # `GMT`, read only so.
+    zone_gmt
+    # `+0000`, read as any offset `+hhmm` or `-hhmm`.
+    zone_numeric
+
+# The month names in English, January first.
+function month_names() -> [str]
+    return [
+        "January"
+        "February"
+        "March"
+        "April"
+        "May"
+        "June"
+        "July"
+        "August"
+        "September"
+        "October"
+        "November"
+        "December"
+    ]
+
+# The weekday names in English, Monday first.
+function weekday_names() -> [str]
+    return ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+# Each of `names` cut to its first three letters.
+function short(names: [str]) -> [str]
+    out: [str] @= []
+
+    for name in names
+        out @ out.push(name.slice(from: 0, to: 3))
+
+    return out
+
+# A text piece.
+function lit(literal: str) -> Piece
+    return .text(literal: literal)
+
+# RFC 3339, the fraction `digits` long, or as long as it needs at -1.
+function rfc3339(digits: i64) -> [Piece]
+    return [
+        .year
+        lit("-")
+        .month
+        lit("-")
+        .day
+        .separator
+        .hour
+        lit(":")
+        .minute
+        lit(":")
+        .second
+        .fraction(digits: digits)
+        .zone_z
+    ]
+
+# `2006-01-02 15:04:05`.
+function date_time() -> [Piece]
+    return [.year, lit("-"), .month, lit("-"), .day, lit(" "), .hour, lit(":"), .minute, lit(":"), .second]
+
+# `2006-01-02`.
+function date_only() -> [Piece]
+    return [.year, lit("-"), .month, lit("-"), .day]
+
+# `15:04:05`.
+function time_only() -> [Piece]
+    return [.hour, lit(":"), .minute, lit(":"), .second]
+
+# `Mon, 02 Jan 2006 15:04:05 GMT`.
+function http() -> [Piece]
+    return [
+        .weekday_short
+        lit(", ")
+        .day
+        lit(" ")
+        .month_name
+        lit(" ")
+        .year
+        lit(" ")
+        .hour
+        lit(":")
+        .minute
+        lit(":")
+        .second
+        lit(" ")
+        .zone_gmt
+    ]
+
+# `Monday, 02-Jan-06 15:04:05 GMT`.
+function rfc850() -> [Piece]
+    return [
+        .weekday_long
+        lit(", ")
+        .day
+        lit("-")
+        .month_name
+        lit("-")
+        .year_two
+        lit(" ")
+        .hour
+        lit(":")
+        .minute
+        lit(":")
+        .second
+        lit(" ")
+        .zone_gmt
+    ]
+
+# `Mon Jan  2 15:04:05 2006`.
+function ansic() -> [Piece]
+    return [
+        .weekday_short
+        lit(" ")
+        .month_name
+        lit(" ")
+        .day_space
+        lit(" ")
+        .hour
+        lit(":")
+        .minute
+        lit(":")
+        .second
+        lit(" ")
+        .year
+    ]
+
+# `Mon, 02 Jan 2006 15:04:05 +0000`.
+function email() -> [Piece]
+    return [
+        .weekday_short
+        lit(", ")
+        .day
+        lit(" ")
+        .month_name
+        lit(" ")
+        .year
+        lit(" ")
+        .hour
+        lit(":")
+        .minute
+        lit(":")
+        .second
+        lit(" ")
+        .zone_numeric
+    ]
+
+## Writing
+
+# `n`, not negative, in at least `width` digits.
+function padded(n: i64, width: i64) -> str
+    return strings.pad_zeros(to_str(n), width)
+
+# The fraction of a second `nanosecond` holds, after its `.`, `digits` long or
+# as long as it needs at -1; nothing for none.
+function fraction_text(nanosecond: i64, digits: i64) -> str
+    if digits == 0 || digits == -1 && nanosecond == 0
+        return ""
+
+    if digits == -1
+        return "." + strings.trim_end_any(s: padded(n: nanosecond, width: 9), set: "0")
+    divisor: i64 @= 1
+    cut: i64 @= digits
+
+    while cut < 9
+        divisor @ divisor * 10
+        cut @ cut + 1
+
+    return "." + padded(n: nanosecond / divisor, width: digits)
+
+# The text of one piece for the moment `c`, whose weekday is `day_number`.
+function piece_text(p: Piece, c: civil.Civil, day_number: i64) -> str
+    return match p
+        .text t        => t.literal
+        .year          => padded(n: c.year, width: 4)
+        .year_two      => padded(n: c.year % 100, width: 2)
+        .month         => padded(n: c.month, width: 2)
+        .month_name    => short(month_names())[c.month - 1]
+        .day           => padded(n: c.day, width: 2)
+        .day_space     => strings.pad_start(s: to_str(c.day), width: 2, pad: " ")
+        .weekday_short => short(weekday_names())[day_number - 1]
+        .weekday_long  => weekday_names()[day_number - 1]
+        .hour          => padded(n: c.hour, width: 2)
+        .minute        => padded(n: c.minute, width: 2)
+        .second        => padded(n: c.second, width: 2)
+        .fraction f    => fraction_text(nanosecond: c.nanosecond, digits: f.digits)
+        .separator     => "T"
+        .zone_z        => "Z"
+        .zone_gmt      => "GMT"
+        .zone_numeric  => "+0000"
+
+# The moment `nanoseconds` after 1970-01-01T00:00:00Z written by `pieces`.
+function format(nanoseconds: i64, pieces: [Piece]) -> str
+    c = civil.from_nanoseconds(nanoseconds)
+    day_number = civil.weekday(civil.days_from_date(year: c.year, month: c.month, day: c.day))
+    parts: [str] @= []
+
+    for p in pieces
+        parts @ parts.push(piece_text(p: p, c: c, day_number: day_number))
+
+    return parts.join("")
+
+## Tests
+
+# Expected texts observed with Go's `Time.Format` at
+# 2006-01-02T15:04:05.123456789Z and Python's `strftime`, 2026-11-15.
+test "format: every layout at one moment, written as Go and Python write it"
+    t = 1_136_214_245_123_456_789
+    assert format(nanoseconds: t, pieces: rfc3339(-1)) == "2006-01-02T15:04:05.123456789Z"
+    assert format(nanoseconds: t, pieces: rfc3339(0)) == "2006-01-02T15:04:05Z"
+    assert format(nanoseconds: t, pieces: rfc3339(3)) == "2006-01-02T15:04:05.123Z"
+    assert format(nanoseconds: t, pieces: rfc3339(6)) == "2006-01-02T15:04:05.123456Z"
+    assert format(nanoseconds: t, pieces: rfc3339(9)) == "2006-01-02T15:04:05.123456789Z"
+    assert format(nanoseconds: t, pieces: date_time()) == "2006-01-02 15:04:05"
+    assert format(nanoseconds: t, pieces: date_only()) == "2006-01-02"
+    assert format(nanoseconds: t, pieces: time_only()) == "15:04:05"
+    assert format(nanoseconds: t, pieces: http()) == "Mon, 02 Jan 2006 15:04:05 GMT"
+    assert format(nanoseconds: t, pieces: rfc850()) == "Monday, 02-Jan-06 15:04:05 GMT"
+    assert format(nanoseconds: t, pieces: ansic()) == "Mon Jan  2 15:04:05 2006"
+    assert format(nanoseconds: t, pieces: email()) == "Mon, 02 Jan 2006 15:04:05 +0000"
+
+test "format: a whole second, a tenth, a two-digit day, and both ends of an i64"
+    assert format(nanoseconds: 1_136_214_245_000_000_000, pieces: rfc3339(-1)) == "2006-01-02T15:04:05Z"
+    assert format(nanoseconds: 1_136_214_245_100_000_000, pieces: rfc3339(-1)) == "2006-01-02T15:04:05.1Z"
+    assert format(nanoseconds: 1_136_214_245_000_000_000, pieces: rfc3339(9)) == "2006-01-02T15:04:05.000000000Z"
+    assert format(nanoseconds: 1_137_027_723_000_000_000, pieces: ansic()) == "Thu Jan 12 01:02:03 2006"
+    assert format(nanoseconds: -9_223_372_036_854_775_807 - 1, pieces: rfc3339(-1)) == "1677-09-21T00:12:43.145224192Z"
+    assert format(nanoseconds: 9_223_372_036_854_775_807, pieces: rfc3339(-1)) == "2262-04-11T23:47:16.854775807Z"
+    assert format(nanoseconds: -1, pieces: rfc3339(3)) == "1969-12-31T23:59:59.999Z"

@@ -1,0 +1,115 @@
+# A tar archive written to a stream, plain or through gzip: each header in
+# ustar, with a PAX entry before it where a field says what ustar cannot (a
+# long or non-ASCII name, a size past 8 GiB, a time with a fraction), the
+# data padded to whole blocks, and two blocks of zeros at the end.
+
+use archive/internal/tar_format
+use archive/internal/tar_header
+use compress
+use io
+
+# Where a tar archive's bytes go.
+record Sink
+    # Whether they go through `writer`, compressed with gzip.
+    gzip: bool
+    # The stream, owned by the caller.
+    stream: io.Stream
+    # The gzip writer over the stream; made but never written otherwise.
+    writer: compress.Writer
+    # How many bytes of archive have been written, before gzip.
+    written: i64
+    # Whether the end has been written.
+    ended: bool
+
+# A sink writing to `stream`, through gzip at `level` where `gzip`. Fails
+# `invalid` where the level is out of 0 to 9.
+function start(stream: io.Stream, gzip: bool, level: i64) -> Sink?
+    o @= compress.defaults(.gzip)
+    o.level @ level
+    w = compress.writer(stream, o)?
+    return ok(Sink(gzip: gzip, stream: stream, writer: w, written: 0, ended: false))
+
+# Writes `data` to the archive. Fails as the stream or gzip fail.
+function put(@sink: Sink, data: [u8]) -> ()?
+    if sink.gzip
+        compress.write(@sink.writer, data: data)?
+    else
+        io.write(sink.stream, data: data)?
+    sink.written @ sink.written + data.len()
+    return ok()
+
+# Writes the zeros that pad `size` bytes of data to a whole block.
+function pad(@sink: Sink, size: i64) -> ()?
+    n = (tar_header.BLOCK - size % tar_header.BLOCK) % tar_header.BLOCK
+
+    if n > 0
+        put(@sink, data: tar_format.zeros(n))?
+    return ok()
+
+# Writes `h`'s header: a PAX entry first where it needs one, then its ustar
+# block. Its data is the caller's to write, `h.size` bytes, then `pad`.
+function write_header(@sink: Sink, h: tar_header.Header lent) -> ()?
+    records = tar_format.needed_records(h)
+
+    if keys(records).len() > 0
+        data: [u8] @= []
+
+        for key in sort(keys(records))
+            for b in tar_format.record_line(key: key, value: records[key].must())
+                data @ data.push(b)
+
+        pax @= tar_header.empty()
+        pax.name @ "././@PaxHeader"
+        pax.flag @ 'x'
+        pax.size @ data.len()
+        pax.modified @ tar_format.clamp(value: h.modified, most: tar_header.OCTAL_11)
+        put(@sink, data: tar_format.block_of(pax))?
+        put(@sink, data: data)?
+        pad(@sink, size: data.len())?
+    put(@sink, data: tar_format.block_of(h))?
+    return ok()
+
+# Writes the archive's end, two blocks of zeros, and gzip's end where the
+# sink is gzip. The stream stays open for its owner.
+function finish(@sink: Sink) -> ()?
+    put(@sink, data: tar_format.zeros(2 * tar_header.BLOCK))?
+
+    if sink.gzip
+        compress.finish(@sink.writer)?
+    sink.ended @ true
+    return ok()
+
+# Writes everything `from` holds to its end into the archive, at most
+# `most` bytes, and answers how many. Fails `invalid` where `from` holds
+# more than `most`, and as the streams fail.
+function copy_in(@sink: Sink, from: io.Stream, most: i64, name: str) -> i64?
+    copied: i64 @= 0
+
+    while true
+        got = io.read(from, most: 65536)?
+
+        if got.len() == 0
+            return ok(copied)
+
+        if copied + got.len() > most
+            return fail(
+                code: "invalid",
+                msg: f"the file \"{name}\" grew past the {most} bytes its header says while it was read"
+            )
+        put(@sink, data: got)?
+        copied @ copied + got.len()
+
+    return ok(copied)
+
+test "write_header: a plain header is one block, a long name adds a PAX entry"
+    p @= io.pipe().must()
+    sink @= start(p.writer, gzip: false, level: 6).must()
+    h @= tar_header.empty()
+    h.name @ "short.txt"
+    write_header(@sink, h: h).must()
+    assert sink.written == 512
+    h.name @ repeat("x", 300)
+    write_header(@sink, h: h).must()
+    assert sink.written == 512 + 512 + 512 + 512
+    io.close(@p.writer).must()
+    io.close(@p.reader).must()

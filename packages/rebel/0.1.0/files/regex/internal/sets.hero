@@ -1,0 +1,252 @@
+# Classes of characters, held as sorted ranges of code points: merged,
+# complemented and asked, with ASCII's named classes, the classes `\d` `\w`
+# `\s`, Unicode's general categories and case folding.
+
+use regex/internal/casefold
+use regex/internal/program
+use unicode
+
+# The largest code point.
+constant MAX_CODE: i64
+    0x10ffff
+
+# How far a range's first code point is shifted to make one number of the
+# range, so that the numbers sort as the ranges do: past every code point.
+constant SHIFT: i64
+    21
+
+# `ranges` sorted by their first code point, the ranges that overlap or touch
+# merged into one, which is the form every other function here reads.
+#
+# - `ranges`: two entries for each range, its first code point and its last,
+#   in any order; a trailing odd entry is ignored.
+function normalized(ranges: [i64]) -> [i64]
+    keyed: [i64] @= []
+    at: i64 @= 0
+
+    while at + 1 < ranges.len()
+        keyed @ keyed.push(ranges[at] << SHIFT | ranges[at + 1])
+        at @ at + 2
+
+    mask = (1 << SHIFT) - 1
+    out: [i64] @= []
+
+    for k in sort(keyed)
+        first = k >> SHIFT
+        last = k & mask
+        n = out.len()
+
+        if n > 0 && first <= out[n - 1] + 1
+            if last > out[n - 1]
+                out[n - 1] @ last
+        else
+            out @ out.push(first)
+            out @ out.push(last)
+
+    return out
+
+# The code points `ranges` does not hold, as normalized ranges.
+#
+# - `ranges`: normalized ranges; none answers every code point.
+function complement(ranges: [i64]) -> [i64]
+    out: [i64] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at + 1 < ranges.len()
+        if ranges[at] > from
+            out @ out.push(from)
+            out @ out.push(ranges[at] - 1)
+        from @ ranges[at + 1] + 1
+        at @ at + 2
+
+    if from <= MAX_CODE
+        out @ out.push(from)
+        out @ out.push(MAX_CODE)
+    return out
+
+# Whether one of `ranges` holds `code`, asked by halving.
+#
+# - `ranges`: normalized ranges.
+# - `code`: a code point.
+function holds(ranges: [i64] lent, code: i64) -> bool
+    low: i64 @= 0
+    high: i64 @= ranges.len() / 2
+
+    while low < high
+        mid = (low + high) / 2
+
+        if code < ranges[2 * mid]
+            high @ mid
+        else if code > ranges[2 * mid + 1]
+            low @ mid + 1
+        else
+            return true
+
+    return false
+
+# The ranges of ASCII's class named `name`, as `[[:name:]]` reads it.
+#
+# - `name`: one of `alnum` `alpha` `ascii` `blank` `cntrl` `digit` `graph`
+#   `lower` `print` `punct` `space` `upper` `word` `xdigit`.
+#
+# Fails `not_found` for any other name.
+function ascii_class(name: str) -> [i64]?
+    ranges: [i64] = match name
+        "alnum"  => ['0', '9', 'A', 'Z', 'a', 'z']
+        "alpha"  => ['A', 'Z', 'a', 'z']
+        "ascii"  => [0, 0x7f]
+        "blank"  => ['\t', '\t', ' ', ' ']
+        "cntrl"  => [0, 0x1f, 0x7f, 0x7f]
+        "digit"  => ['0', '9']
+        "graph"  => ['!', '~']
+        "lower"  => ['a', 'z']
+        "print"  => [' ', '~']
+        "punct"  => ['!', '/', ':', '@', '[', '`', '{', '~']
+        "space"  => ['\t', 0x0d, ' ', ' ']
+        "upper"  => ['A', 'Z']
+        "word"   => ['0', '9', 'A', 'Z', '_', '_', 'a', 'z']
+        "xdigit" => ['0', '9', 'A', 'F', 'a', 'f']
+        _        => [0]
+
+    if ranges.len() == 1
+        return fail(code: "not_found", msg: f"no ASCII class named \"{name}\"")
+    return ok(ranges)
+
+# The ranges of `\d`, `\w` or `\s`, ASCII's digits, word characters and white
+# space.
+#
+# - `letter`: `d`, `w` or `s`; any other answers `\s`'s.
+function perl_class(letter: u8) -> [i64]
+    if letter == 'd'
+        return ['0', '9']
+
+    if letter == 'w'
+        return ['0', '9', 'A', 'Z', '_', '_', 'a', 'z']
+    return ['\t', 0x0d, ' ', ' ']
+
+# Whether `name` is a general category `\p{...}` reads: one of Unicode's
+# thirty, or the one letter that begins several.
+#
+# - `name`: the name, as written between the braces.
+function is_category(name: str) -> bool
+    return match name
+        "L" | "Lu" | "Ll" | "Lt" | "Lm" | "Lo"               => true
+        "M" | "Mn" | "Mc" | "Me"                             => true
+        "N" | "Nd" | "Nl" | "No"                             => true
+        "P" | "Pc" | "Pd" | "Ps" | "Pe" | "Pi" | "Pf" | "Po" => true
+        "S" | "Sm" | "Sc" | "Sk" | "So"                      => true
+        "Z" | "Zs" | "Zl" | "Zp"                             => true
+        "C" | "Cc" | "Cf" | "Cs" | "Co" | "Cn"               => true
+        _                                                    => false
+
+# Whether the character `c` is of the category `name`.
+#
+# - `c`: one character.
+# - `name`: a name `is_category` accepts; one letter matches every category
+#   it begins.
+function in_category(c: str, name: str) -> bool
+    found = unicode.category(c)
+
+    if name.len() == 1
+        return found[0] == name[0]
+    return found == name
+
+# Whether the code point `code` is in `set`, before the set's negation.
+#
+# - `set`: the class.
+# - `code`: a code point of a character.
+function holds_one(set: program.Set lent, code: i64) -> bool
+    if holds(set.ranges, code)
+        return true
+
+    if set.categories.len() == 0 && set.not_categories.len() == 0
+        return false
+    c = unicode.from_code_point(code).must()
+
+    for name in set.categories
+        if in_category(c: c, name: name)
+            return true
+
+    for name in set.not_categories
+        if !in_category(c: c, name: name)
+            return true
+
+    return false
+
+# Whether the character `code` is in `set`: under case folding where the set
+# says, and outside it where the set is negated.
+#
+# - `set`: the class.
+# - `code`: a code point of a character.
+function contains(set: program.Set lent, code: i64) -> bool
+    held: bool @= false
+
+    if set.fold
+        for n in casefold.orbit(code)
+            if !held && holds_one(set, n)
+                held @ true
+    else
+        held @ holds_one(set, code)
+    return held != set.negated
+
+## Tests
+
+test "normalized: none, one, overlapping, touching, apart and out of order"
+    nothing: [i64] = []
+    assert normalized(nothing) == nothing
+    assert normalized(['a', 'z']) == ['a', 'z']
+    assert normalized(['m', 'z', 'a', 'n']) == ['a', 'z']
+    assert normalized(['a', 'c', 'd', 'f']) == ['a', 'f']
+    assert normalized(['x', 'x', 'a', 'a']) == ['a', 'a', 'x', 'x']
+    assert normalized([0, MAX_CODE, 'a', 'b']) == [0, MAX_CODE]
+
+test "complement: of nothing, of everything, of the edges, and of the middle"
+    nothing: [i64] = []
+    assert complement(nothing) == [0, MAX_CODE]
+    assert complement([0, MAX_CODE]) == nothing
+    assert complement([0, 9]) == [10, MAX_CODE]
+    assert complement(['a', MAX_CODE]) == [0, 'a' - 1]
+    assert complement(['0', '9', 'a', 'z']) == [0, '0' - 1, '9' + 1, 'a' - 1, 'z' + 1, MAX_CODE]
+
+test "holds: none, the first and last of a range, between ranges, past them"
+    nothing: [i64] = []
+    assert !holds(nothing, 'a')
+    ranges = ['0', '9', 'a', 'z', 0x3b1, 0x3c9]
+    assert holds(ranges, '0') && holds(ranges, '9') && holds(ranges, 'z')
+    assert holds(ranges, 0x3c0)
+    assert !holds(ranges, ':') && !holds(ranges, '/') && !holds(ranges, 0x3ca)
+    assert !holds(ranges, -1) && !holds(ranges, MAX_CODE)
+
+test "ascii_class: a name, the punctuation's four ranges, and a name that is none"
+    assert ascii_class("digit").must() == ['0', '9']
+    assert ascii_class("punct").must() == ['!', '/', ':', '@', '[', '`', '{', '~']
+
+    match ascii_class("letters")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "perl_class: digits, word characters and white space with the vertical tab"
+    assert perl_class('d') == ['0', '9']
+    assert perl_class('w') == ['0', '9', 'A', 'Z', '_', '_', 'a', 'z']
+    assert perl_class('s') == ['\t', 0x0d, ' ', ' ']
+
+test "is_category and in_category: one letter, two, and a script's name"
+    assert is_category("L") && is_category("Lu") && is_category("Cn")
+    assert !is_category("Greek") && !is_category("") && !is_category("l")
+    assert in_category(c: "A", name: "L") && in_category(c: "A", name: "Lu")
+    assert !in_category(c: "a", name: "Lu") && in_category(c: "é", name: "Ll")
+    assert in_category(c: " ", name: "Zs") && in_category(c: "\u{2028}", name: "Z")
+
+test "contains: ranges, a negation, categories inside and outside, and case folding"
+    none: [str] = []
+    digits = program.Set(ranges: ['0', '9'], categories: none, not_categories: none, negated: false, fold: false)
+    assert contains(set: digits, code: '5') && !contains(set: digits, code: 'a')
+    not_digits = program.Set(ranges: ['0', '9'], categories: none, not_categories: none, negated: true, fold: false)
+    assert !contains(set: not_digits, code: '5') && contains(set: not_digits, code: 0x10ffff)
+    letters = program.Set(ranges: [], categories: ["L"], not_categories: none, negated: false, fold: false)
+    assert contains(set: letters, code: 0x3b1) && !contains(set: letters, code: '1')
+    not_letters = program.Set(ranges: [], categories: none, not_categories: ["L"], negated: false, fold: false)
+    assert !contains(set: not_letters, code: 0x3b1) && contains(set: not_letters, code: '1')
+    lower = program.Set(ranges: ['a', 'z'], categories: none, not_categories: none, negated: false, fold: true)
+    assert contains(set: lower, code: 'K') && contains(set: lower, code: 0x212a) && !contains(set: lower, code: '1')

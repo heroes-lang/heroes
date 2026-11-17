@@ -1,0 +1,208 @@
+# Rows read one at a time from a stream: whole lines are read until the row
+# that begins with the first of them ends, then the row is read from them as
+# from a text. Rows read strictly are read in time linear in the stream: a
+# row is whole once its quotes are even, which no strict row can be while one
+# of its fields is open. Lazy quotes cannot be counted so, and a field across
+# many lines is read again after each of them.
+
+use csv/internal/scan
+use io
+
+# A reader's place in its stream.
+record State
+    # The buffered reader over the stream, whose stream the caller closes.
+    source: io.Reader
+    # How the rows are read.
+    rules: scan.Rules
+    # Whole lines read from the stream and not yet given out as a row, or
+    # skipped.
+    pending: str
+    # The line number of `pending`'s first line, from 1.
+    line: i64
+    # The number of fields of the first row read, 0 before it.
+    width: i64
+    # The line the last row given out began on, 0 before the first.
+    row_line: i64
+    # Whether the stream has given its last line.
+    ended: bool
+
+# A reader of the stream `s` by `rules`, which has read nothing yet.
+function start(s: io.Stream, rules: scan.Rules) -> State
+    return State(
+        source: io.reader(s),
+        rules: rules,
+        pending: "",
+        line: 1,
+        width: 0,
+        row_line: 0,
+        ended: false
+    )
+
+# How many times `quote` stands in `text`.
+function quotes_in(text: str, quote: u8) -> i64
+    count: i64 @= 0
+
+    for k in range(from: 0, to: text.len())
+        if text[k] == quote
+            count @ count + 1
+
+    return count
+
+# Drops the empty and comment lines that stand before the next row, reading
+# lines as it needs. Answers whether a row's first line is pending.
+function skip_empty(@st: State) -> bool?
+    while true
+        if st.pending == ""
+            if st.ended
+                return ok(false)
+            got = io.read_line_with_end(@st.source)?
+
+            if got == ""
+                st.ended @ true
+            st.pending @ got
+            continue
+        skip = scan.skipped_len(st.pending, at: 0, rules: st.rules)
+
+        if skip == 0
+            return ok(true)
+        st.pending @ st.pending.slice(from: skip, to: st.pending.len())
+        st.line @ st.line + 1
+
+    return ok(false)
+
+# The next row of the stream, [] at its end: no row read is empty, since an
+# empty line holds no row.
+function read_row(@st: State) -> [str]?
+    if !skip_empty(@st)?
+        return ok([])
+    lines: [str] @= [st.pending]
+    quotes @= quotes_in(st.pending, st.rules.quote)
+    size @= st.pending.len()
+    st.pending @ ""
+
+    while true
+        if st.ended || st.rules.lazy || quotes % 2 == 0 || size > st.rules.max_field
+            text = lines.join("")
+            s = scan.scan_row(text, from: 0, first_line: st.line, rules: st.rules, partial: !st.ended)?
+
+            if s.complete
+                scan.check_width(width: @st.width, count: s.fields.len(), line: st.line, rules: st.rules)?
+                st.pending @ text.slice(from: s.next, to: text.len())
+                st.row_line @ st.line
+                st.line @ st.line + s.lines
+                return ok(s.fields)
+
+            if text.len() - s.open_at > st.rules.max_field
+                return fail(
+                    code: scan.INVALID,
+                    msg: f"line {st.line}: a quoted field past the {st.rules.max_field} bytes allowed, not closed yet"
+                )
+            lines @ [text]
+        got = io.read_line_with_end(@st.source)?
+
+        if got == ""
+            st.ended @ true
+        else
+            lines @ lines.push(got)
+            quotes @ quotes + quotes_in(got, st.rules.quote)
+            size @ size + got.len()
+
+    return ok([])
+
+# Every row left in the stream, in order.
+function read_rows(@st: State) -> [[str]]?
+    rows: [[str]] @= []
+
+    while true
+        row = read_row(@st)?
+
+        if row.len() == 0
+            return ok(rows)
+        rows @ rows.push(row)
+
+    return ok(rows)
+
+# Whether no row is left, reading the lines that hold none.
+function at_end(@st: State) -> bool?
+    return ok(!skip_empty(@st)?)
+
+# A stream that gives `text` and ends, its writing end closed. The caller
+# closes the stream answered.
+function fed(text: str) -> io.Stream
+    p @= io.pipe().must()
+    io.write_text(p.writer, text).must()
+    io.close(@p.writer).must()
+    return p.reader
+
+# Every row of `text` read through a stream by `rules`, or the failure's
+# message as a row of its own after the rows read before it.
+function streamed(text: str, rules: scan.Rules) -> [[str]]
+    s @= fed(text)
+    st @= start(s, rules)
+    rows: [[str]] @= []
+
+    while true
+        match read_row(@st)
+            .err e =>
+                rows @ rows.push([e.msg])
+                break
+            .ok row =>
+                if row.len() == 0
+                    break
+                rows @ rows.push(row)
+
+    io.close(@s).must()
+    return rows
+
+test "read_row: empty, blank lines, CR LF, no last line end, and a row across lines as the text reads it"
+    assert streamed("", scan.standard_rules()).len() == 0
+    assert streamed("\n\r\n", scan.standard_rules()).len() == 0
+    assert streamed("a,b\r\n\nc,d", scan.standard_rules()) == [["a", "b"], ["c", "d"]]
+    assert streamed("a,\"b\r\nc\"\"\nd\",e\nf,g,h\n", scan.standard_rules()) == [["a", "b\r\nc\"\nd", "e"], ["f", "g", "h"]]
+    assert streamed("é,\"ü\"\"x\"\n", scan.standard_rules()) == [["é", "ü\"x"]]
+
+test "read_row: failures with the lines of the stream, after the rows before them"
+    assert streamed("a,b\nc\n", scan.standard_rules()) == [["a", "b"], ["line 2: 1 fields where the first row has 2"]]
+    assert streamed("x\n\"a\nb", scan.standard_rules()) == [["x"], ["line 3, column 2: the field opened at line 2, column 1 has no closing quote"]]
+    assert streamed("x\na\"b\nc\"\n", scan.standard_rules()) == [["x"], ["line 2, column 2: a quote inside a field that does not open with one"]]
+
+test "read_row: lazy quotes across lines, and a field left open past the most bytes allowed"
+    assert streamed("\"a\nb\"c,d\n", scan.lazy_rules()) == [["a\nbc", "d"]]
+    small = scan.new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "",
+        trim: false,
+        lazy: false,
+        ragged: false,
+        max_field: 4
+    )
+    assert streamed("\"ab\ncd\nef\ngh\n", small) == [["line 1: a quoted field past the 4 bytes allowed, not closed yet"]]
+
+test "at_end and the line a row began on, comments and blank lines between rows"
+    comments = scan.new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "#",
+        trim: false,
+        lazy: false,
+        ragged: false,
+        max_field: 100
+    )
+    s @= fed("#head\na\n\n\"b\nc\"\n#tail\n")
+    st @= start(s, comments)
+    assert !at_end(@st).must()
+    assert read_row(@st).must() == ["a"]
+    assert st.row_line == 2
+    assert read_row(@st).must() == ["b\nc"]
+    assert st.row_line == 4
+    assert at_end(@st).must()
+    assert read_row(@st).must().len() == 0
+    io.close(@s).must()
+
+test "read_rows: every row left"
+    s @= fed("a\nb\n")
+    st @= start(s, scan.standard_rules())
+    assert read_row(@st).must() == ["a"]
+    assert read_rows(@st).must() == [["b"]]
+    io.close(@s).must()

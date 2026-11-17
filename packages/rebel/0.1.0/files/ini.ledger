@@ -1,0 +1,141 @@
+# The ledger of `ini`: what Python's `configparser` (3.15) lets a program do,
+# one block per capability, and what Rebel answers. Neither Go's nor Rust's
+# standard library reads INI, so their lines are `-` in every block. The list
+# is this machine's, 2026-11-16: `dir(configparser)`,
+# `dir(configparser.RawConfigParser)`, `dir(configparser.SectionProxy)` and
+# the signature `inspect.signature` prints for the parser. Every expected
+# value of the package's tests that Python answers was observed from it the
+# same day.
+
+capability ini/parse  a text read into its sections and keys, in the order written
+  heroes  ini.parse, ini.parse_with, ini.Document, ini.Section, ini.Entry
+  go      -
+  rust    -
+  python  RawConfigParser, ConfigParser, read_string, read_file, SectionProxy, SectionProxy.name
+  note    the document is plain data a program walks, builds and changes; keys keep their case unless `lower_keys` asks, where Python lowers them, so that a document read and written back keeps its keys as the file had them
+
+capability ini/files  INI read from files named by path
+  heroes  built-in read_file
+  go      -
+  rust    -
+  python  read
+  note    a program reads each file and parses it; several files merged are several documents the program combines, `set_value` by `set_value`
+
+capability ini/multiline  a value continued on more indented lines, empty lines inside it
+  heroes  ini.parse, ini.ReadOptions.empty_lines_in_values
+  go      -
+  rust    -
+  python  RawConfigParser(empty_lines_in_values=)
+  note    the lines are joined by line feeds, each trimmed, the empty ones at a value's end dropped, as Python reads them
+
+capability ini/delimiters  the texts that separate a key from its value
+  heroes  ini.ReadOptions.delimiters, ini.WriteOptions.delimiter
+  go      -
+  rust    -
+  python  RawConfigParser(delimiters=)
+  note    the first standing in the line wins, `k:1=2` being `k` and `1=2`, as Python reads it
+
+capability ini/comments  comment lines, at a line's start and at its end
+  heroes  ini.ReadOptions.comment_prefixes, ini.ReadOptions.inline_comment_prefixes
+  go      -
+  rust    -
+  python  RawConfigParser(comment_prefixes=, inline_comment_prefixes=)
+  note    an inline comment needs white space before it, as Python's does: `2#c` is a value
+
+capability ini/comments-kept  comments kept on read and written back
+  heroes  ini.ReadOptions.keep_comments, ini.Entry.comments, ini.Section.comments, ini.Document.closing
+  go      -
+  rust    -
+  python  -
+  note    a comment line is kept above the header or the key after it, and at the end; Python drops every comment. Inline comments are dropped
+
+capability ini/strict  a section or a key given twice, refused or merged
+  heroes  ini.ReadOptions.duplicates
+  go      -
+  rust    -
+  python  RawConfigParser(strict=), DuplicateSectionError, DuplicateOptionError
+  note    refused by default, naming the line, as Python's strict default refuses; merged, a section given again gains its keys and a key given again keeps its last value, as Python's `strict=False` reads them
+
+capability ini/no-value  a key written with no delimiter and no value
+  heroes  ini.ReadOptions.bare_keys, ini.Entry.bare
+  go      -
+  rust    -
+  python  RawConfigParser(allow_no_value=)
+  note    its value is "" and `bare` says so; Python's is None
+
+capability ini/unnamed-section  keys before the first header
+  heroes  ini.ReadOptions.unnamed_section
+  go      -
+  rust    -
+  python  RawConfigParser(allow_unnamed_section=), UNNAMED_SECTION, UnnamedSectionDisabledError
+  note    a section named "", which only the first may be; written with no header
+
+capability ini/key-case  keys read in lower case
+  heroes  ini.ReadOptions.lower_keys
+  go      -
+  rust    -
+  python  optionxform
+  note    off by default (Python lowers); a program looks a key up as the document holds it. Any other transform of a key is the program's own, applied to the entries
+
+capability ini/default-section  keys every section holds where it holds none of its own
+  heroes  ini.DEFAULT_SECTION, ini.value_of, ini.section_of
+  go      -
+  rust    -
+  python  DEFAULTSECT, defaults, RawConfigParser(defaults=, default_section=)
+  note    the section is named `DEFAULT` always; it stands in the document like any other, and `sections_of` leaves it out as Python's `sections` does
+
+capability ini/lookup  a value looked up by section and key, and whether it is there
+  heroes  ini.value_of, ini.has_section, ini.has_key, ini.sections_of, ini.section_of
+  go      -
+  rust    -
+  python  get, has_section, has_option, sections, options, items, keys, values, SectionProxy.get, SectionProxy.items, SectionProxy.keys, SectionProxy.values, NoSectionError, NoOptionError
+  note    an absent section or key fails `not_found`; Python's `fallback=` is `.default(v)`
+
+capability ini/typed  a value read as a boolean or a number
+  heroes  ini.bool_of
+  go      -
+  rust    -
+  python  getboolean, getint, getfloat, BOOLEAN_STATES, converters, ConverterMapping, SectionProxy.getboolean, SectionProxy.getint, SectionProxy.getfloat
+  note    the booleans are Python's eight words in any case. A number is read from the value with `numbers.parse_int` or `numbers.parse_float`, whose failure says what was read: `ini` stands on `strings` alone (README A1)
+
+capability ini/change  sections and keys added, changed and removed
+  heroes  ini.set_value, ini.add_section, ini.remove_section, ini.remove_key
+  go      -
+  rust    -
+  python  set, add_section, remove_section, remove_option, clear, pop, popitem, setdefault, update, read_dict, SectionProxy.clear, SectionProxy.pop, SectionProxy.popitem, SectionProxy.setdefault, SectionProxy.update
+  note    `set_value` adds a section that is not there, where Python's `set` raises; `add_section` fails `exists` as Python raises. The rest of a mapping's surface is a program's own loop over `Document.sections`
+
+capability ini/from-map  a document built from maps
+  heroes  ini.from_map
+  go      -
+  rust    -
+  python  read_dict
+  note    -
+
+capability ini/write  a document written back as text
+  heroes  ini.format, ini.format_with, ini.spaced, ini.WriteOptions
+  go      -
+  rust    -
+  python  write, write(space_around_delimiters=), InvalidWriteError
+  note    Python's layout: `key = value`, a value's later lines after a tab, an empty line after each section. What `strict` would read back otherwise fails `invalid` (a key holding a delimiter, a value line with white space at an end, a later line opening like a comment, an empty last line), where Python refuses only a key opening like a header and writes the rest to be read back changed
+
+capability ini/errors  a text that is not INI, with its line
+  heroes  ini.INVALID
+  go      -
+  rust    -
+  python  Error, ParsingError, MissingSectionHeaderError, MultilineContinuationError
+  note    the message opens `line L:`; text after a header's closing bracket is refused, where Python drops it, and so is a header with no name
+
+capability ini/interpolation  a value referring to another, `%(name)s` or `${section:name}`
+  heroes  refused: a value is the text written; a reference resolved in it makes a value depend on keys elsewhere, and on the order they are looked up, so the program replaces what it means to in its own code
+  go      -
+  rust    -
+  python  Interpolation, BasicInterpolation, ExtendedInterpolation, InterpolationError, InterpolationDepthError, InterpolationMissingOptionError, InterpolationSyntaxError, MAX_INTERPOLATION_DEPTH, RawConfigParser(interpolation=), get(raw=, vars=)
+  note    -
+
+dropped
+  python  RawConfigParser(dict_type=): the map a section is held in; here a section keeps its keys in a list, in order
+  python  BOOLEAN_STATES as a field a program reassigns, and optionxform as a method it overrides: a class's hooks, which records have none of; their blocks are ini/typed and ini/key-case
+  python  NONSPACECRE, OPTCRE, OPTCRE_NV, SECTCRE: the regular expressions the parser is written with
+  python  SectionProxy.parser: the parser a section belongs to; a section is a value of its document
+  python  Iterable, MutableMapping, contextlib, functools, io, itertools, os, re, sys: modules and names `configparser` imports, not its own

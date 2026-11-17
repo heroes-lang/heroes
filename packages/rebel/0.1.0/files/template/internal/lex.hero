@@ -1,0 +1,277 @@
+# A template's text cut into pieces: the text written as it stands, and the
+# inside of each action between its delimiters. A comment is dropped here;
+# `{{- ` and ` -}}` drop the white space beside them here; a `}}` inside a
+# string literal of an action closes nothing. Every piece knows its line and
+# column, counted from 1 and the column in characters, so that a message can
+# say where.
+
+use json
+
+## Pieces
+
+# A piece of text written as it stands.
+constant TEXT: i64
+    0
+
+# The inside of an action.
+constant ACTION: i64
+    1
+
+# A place in a text: its line and its column, from 1, the column in
+# characters.
+record Place
+    line: i64
+    column: i64
+
+# One piece of a template's text.
+record Piece
+    # `TEXT` or `ACTION`.
+    kind: i64
+    # The text written, or the action's inside with its delimiters and trim
+    # marks taken off.
+    text: str
+    # Where the piece begins: its first character kept, or the action's left
+    # delimiter.
+    at: Place
+    # Where `text` begins, for an action: after its delimiter and trim mark.
+    inner: Place
+
+# The place after reading `text` from `from` to `to`, begun at `start`.
+function advance(text: str, from: i64, to: i64, start: Place) -> Place
+    line: i64 @= start.line
+    column: i64 @= start.column
+
+    for at in range(from: from, to: to)
+        b = text[at]
+
+        if b == '\n'
+            line @ line + 1
+            column @ 1
+        else if b < 0x80 || b >= 0xc0
+            column @ column + 1
+
+    return Place(line: line, column: column)
+
+# The message `what` said at `place`.
+function located(place: Place, what: str) -> str
+    return f"line {place.line}, column {place.column}: {what}"
+
+# `msg` said of the text `source`: its name in quotes before it, where it has
+# one.
+function of_text(source: str, msg: str) -> str
+    if source == ""
+        return msg
+    return json.quote(source) + ", " + msg
+
+# Whether `b` is white space a trim mark drops: space, tab, carriage return,
+# line feed.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\r' || b == '\n'
+
+# Whether `text` holds `what` at byte `at`.
+function holds_at(text: str, at: i64, what: str) -> bool
+    if at < 0 || at + what.len() > text.len()
+        return false
+
+    for k in range(from: 0, to: what.len())
+        if text[at + k] != what[k]
+            return false
+
+    return true
+
+# Where `what` first stands in `text` from byte `from`, or -1.
+function next_of(text: str, what: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at + what.len() <= text.len()
+        if holds_at(text: text, at: at, what: what)
+            return at
+        at @ at + 1
+
+    return -1
+
+# The piece of text between `from` and `to`, white space dropped at its start
+# where `trim_start` and at its end where `trim_end`; nothing where none is
+# left.
+function text_piece(text: str, from: i64, to: i64, place: Place, trim_start: bool, trim_end: bool) -> [Piece]
+    first: i64 @= from
+    last: i64 @= to
+
+    if trim_start
+        while first < last && is_space(text[first])
+            first @ first + 1
+
+    if trim_end
+        while last > first && is_space(text[last - 1])
+            last @ last - 1
+
+    if first == last
+        return []
+    at = advance(text, from: from, to: first, start: place)
+    return [Piece(kind: TEXT, text: text.slice(from: first, to: last), at: at, inner: at)]
+
+# Where the string literal that opens at byte `at` of `text` ends: the byte
+# after its closing quote. Fails `invalid` where it reaches a line's end or
+# the text's end first.
+function string_end(text: str, at: i64, place: Place) -> i64?
+    k: i64 @= at + 1
+
+    while k < text.len()
+        b = text[k]
+
+        if b == '"'
+            return ok(k + 1)
+
+        if b == '\n'
+            break
+
+        if b == '\\' && k + 1 < text.len()
+            k @ k + 2
+        else
+            k @ k + 1
+
+    return fail(code: "invalid", msg: located(place, "a string ends with `\"` on the line it begins"))
+
+# The pieces of `text`, actions between `left` and `right`. Fails `invalid`
+# where an action or a comment is not closed, a comment does not end right
+# before its delimiter, or a string does not end on its line, the message
+# opening with the line and column.
+function pieces_of(text: str, left: str, right: str) -> [Piece]?
+    pieces: [Piece] @= []
+    at: i64 @= 0
+    place: Place @= Place(line: 1, column: 1)
+    trim_start: bool @= false
+
+    while at < text.len()
+        open = next_of(text: text, what: left, from: at)
+
+        if open < 0
+            for p in text_piece(text, from: at, to: text.len(), place: place, trim_start: trim_start, trim_end: false)
+                pieces @ pieces.push(p)
+
+            break
+        opened = advance(text, from: at, to: open, start: place)
+        after_left = open + left.len()
+        trim_end = after_left + 1 < text.len() && text[after_left] == '-' && is_space(text[after_left + 1])
+
+        for p in text_piece(text, from: at, to: open, place: place, trim_start: trim_start, trim_end: trim_end)
+            pieces @ pieces.push(p)
+
+        inside: i64 @= after_left
+
+        if trim_end
+            inside @ after_left + 1
+        first: i64 @= inside
+
+        if trim_end
+            while first < text.len() && is_space(text[first])
+                first @ first + 1
+
+        if holds_at(text: text, at: first, what: "/*")
+            # A comment: it ends at `*/`, then the delimiter, a trim mark
+            # between them or none.
+            close_comment = next_of(text: text, what: "*/", from: first + 2)
+
+            if close_comment < 0
+                return fail(code: "invalid", msg: located(opened, "the comment has no `*/` to end it"))
+            after: i64 @= close_comment + 2
+            trim_next: bool @= false
+
+            if !holds_at(text: text, at: after, what: right)
+                k: i64 @= after
+
+                while k < text.len() && is_space(text[k])
+                    k @ k + 1
+
+                if k > after && holds_at(text: text, at: k + 1, what: right) && text[k] == '-'
+                    trim_next @ true
+                    after @ k + 1
+                else
+                    return fail(
+                        code: "invalid",
+                        msg: located(advance(text, from: open, to: after, start: opened), f"a comment ends with `*/` right before `{right}`")
+                    )
+            at @ after + right.len()
+            place @ advance(text, from: open, to: at, start: opened)
+            trim_start @ trim_next
+            continue
+
+        # An action: it ends at the first `right` that stands outside a
+        # string literal.
+        k: i64 @= inside
+        close: i64 @= -1
+
+        while k < text.len() && close < 0
+            if holds_at(text: text, at: k, what: right)
+                close @ k
+            else if text[k] == '"'
+                k @ string_end(text, at: k, place: advance(text, from: open, to: k, start: opened))?
+            else
+                k @ k + 1
+
+        if close < 0
+            return fail(code: "invalid", msg: located(opened, f"the action has no `{right}` to close it"))
+        trim_next = close - 2 >= inside && text[close - 1] == '-' && is_space(text[close - 2])
+
+        inner_end = if trim_next
+            close - 1
+        else
+            close
+        inner_place = advance(text, from: open, to: inside, start: opened)
+        pieces @ pieces.push(
+            Piece(kind: ACTION, text: text.slice(from: inside, to: inner_end), at: opened, inner: inner_place)
+        )
+        at @ close + right.len()
+        place @ advance(text, from: open, to: at, start: opened)
+        trim_start @ trim_next
+
+    return ok(pieces)
+
+test "pieces_of: text alone, an action, the empty text, and characters of two bytes counted once"
+    assert pieces_of(text: "", left: "{{", right: "}}").must().len() == 0
+    only = pieces_of(text: "città", left: "{{", right: "}}").must()
+    assert only.len() == 1 && only[0].text == "città" && only[0].kind == TEXT
+    got = pieces_of(text: "né {{ .a }}!\n{{.b}}", left: "{{", right: "}}").must()
+    assert got.len() == 4
+    assert got[1].kind == ACTION && got[1].text == " .a " && got[1].at.column == 4 && got[1].inner.column == 6
+    assert got[2].text == "!\n" && got[3].text == ".b" && got[3].at.line == 2 && got[3].at.column == 1
+
+test "pieces_of: trim marks drop spaces, tabs and line breaks beside the action, and need white space"
+    got = pieces_of(text: "a \n\t{{- \"b\" -}} \n c", left: "{{", right: "}}").must()
+    assert got.len() == 3 && got[0].text == "a" && got[1].text == " \"b\" " && got[2].text == "c"
+    assert got[2].at.line == 3 && got[2].at.column == 2
+    minus = pieces_of(text: "a {{-3}} b", left: "{{", right: "}}").must()
+    assert minus[0].text == "a " && minus[1].text == "-3" && minus[2].text == " b"
+    gone = pieces_of(text: " {{- .a -}} ", left: "{{", right: "}}").must()
+    assert gone.len() == 1 && gone[0].text == " .a "
+
+test "pieces_of: a comment dropped, trimmed, holding the closing delimiter, and each way it is malformed"
+    got = pieces_of(text: "a {{/* c }} */}} b", left: "{{", right: "}}").must()
+    assert got.len() == 2 && got[0].text == "a " && got[1].text == " b"
+    trimmed = pieces_of(text: "a {{- /* c */ -}} b", left: "{{", right: "}}").must()
+    assert trimmed.len() == 2 && trimmed[0].text == "a" && trimmed[1].text == "b"
+
+    match pieces_of(text: "a {{/* c */ .}} b", left: "{{", right: "}}")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 12: a comment ends with `*/` right before `}}`"
+
+    match pieces_of(text: "x\n {{/* c", left: "{{", right: "}}")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 2: the comment has no `*/` to end it"
+
+test "pieces_of: a closing delimiter inside a string, an action never closed, and a string never ended"
+    got = pieces_of(text: "{{ \"}}\" }}", left: "{{", right: "}}").must()
+    assert got.len() == 1 && got[0].text == " \"}}\" "
+
+    match pieces_of(text: "ab {{ .x", left: "{{", right: "}}")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: the action has no `}}` to close it"
+
+    match pieces_of(text: "{{ \"a\n\" }}", left: "{{", right: "}}")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: a string ends with `\"` on the line it begins"
+
+test "pieces_of: other delimiters, and a lone left brace kept"
+    got = pieces_of(text: "{ [[ .n ]] }", left: "[[", right: "]]").must()
+    assert got.len() == 3 && got[0].text == "{ " && got[1].text == " .n " && got[2].text == " }"
+    assert pieces_of(text: "a { b } c", left: "{{", right: "}}").must()[0].text == "a { b } c"

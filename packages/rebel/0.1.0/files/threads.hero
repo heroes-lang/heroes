@@ -1,0 +1,242 @@
+# A function run on another thread and waited for, through the language's own
+# doors (spec § 13), made safe to call: a thread started is a value the
+# program must wait for, and one it never waits for is told.
+#
+# What crosses is one `i64`, or one `str` copied each way, and nothing else: a
+# thread's body is a top-level function of one `i64` answering one, or of one
+# `str` answering one, and it builds every other value it needs from that. No
+# list, map, record or handle crosses, and threads share nothing, so there is
+# no lock, channel or shared memory here and none is needed: a value is never
+# held by two threads. A thread that must report more than a number writes it
+# as text.
+#
+# A thread started by `spawn` is a `Thread`, by `spawn_text` a `TextThread`,
+# and each is given back by `wait` or `wait_text`, which answer what its body
+# returned. A thread never waited for stops the program when `main` returns,
+# saying how many (the place it names is inside this package, where the life
+# began, not the program's call); one waited for twice, itself or a copy, stops
+# it at the second wait. The runtime runs at most `max_running()` threads at once
+# and stops the program past them, so a program that starts one per input
+# value goes through `run_all`, which bounds them.
+#
+# It does not sleep, which is `time`'s, nor count processors, which is
+# `os.processor_count`. It fails with `limit`, where the system refuses to
+# start a thread.
+
+use threads/hero_os
+use threads/internal/lives
+use threads/internal/pool
+use threads/internal/samples
+
+# The code of a thread the system refused to start: `spawn`, `spawn_sized`
+# and `run_all` fail with it.
+constant LIMIT: str
+    pool.LIMIT
+
+## Threads of a number
+
+# A thread `spawn` or `spawn_sized` started, which the program owes `wait`.
+# Only those two make one; every copy names the same thread, and the first
+# `wait` spends them all.
+record Thread
+    # The runtime's index of the thread, from 0, never a system thread.
+    handle: i64
+    # The life `wait` ends: what tells a thread never waited for.
+    life: lives.Life
+
+# Starts `body` on `arg` on a thread of its own and answers it, running.
+#
+# - `body`: the function the thread runs, called once with `arg`; what it
+#   returns is what `wait` answers. A body that aborts stops the program.
+# - `arg`: the one value the thread is given, any `i64`.
+#
+# Fails `limit` where the system refuses to start a thread, its own number in
+# the message. Aborts where `max_running()` threads of the program are
+# running, none of them waited for. See also `wait`, `run_all`.
+function spawn(body: (function(i64) -> i64), arg: i64) -> Thread?
+    return spawn_sized(body: body, arg: arg, stack: 0)
+
+# Starts `body` on `arg` on a thread with a stack of at least `stack` bytes,
+# and answers it, running.
+#
+# - `body`: the function the thread runs, called once with `arg`; what it
+#   returns is what `wait` answers.
+# - `arg`: the one value the thread is given, any `i64`.
+# - `stack`: the least size of the thread's stack, in bytes, for a body that
+#   goes deep; 0 takes the runtime's own, which is at least the main
+#   thread's.
+#
+# Fails `limit` where the system refuses to start such a thread, its own
+# number in the message. Aborts where `stack` is below zero, and where
+# `max_running()` threads of the program are running. See also `spawn`.
+function spawn_sized(body: (function(i64) -> i64), arg: i64, stack: i64) -> Thread?
+    why: i64 @= 0
+    handle = hero_os.start(body: body, arg: arg, bytes: stack, why: @why)
+
+    if handle < 0
+        return fail(code: LIMIT, msg: f"the system refused to start a thread (its own number {why})")
+    return ok(Thread(handle: handle, life: lives.begin()))
+
+# Waits for `thread` to end and answers what its body returned.
+#
+# - `thread`: the caller's thread, which this spends: neither it nor a copy
+#   of it may be waited for again.
+#
+# Aborts where `thread`, or a copy of it, was waited for already. It blocks
+# until the body returns, with no limit of time. See also `spawn`.
+function wait(@thread: Thread) -> i64
+    answer = hero_os.finish(thread.handle)
+    lives.end(@thread.life)
+    return answer
+
+## Threads of a text
+
+# A thread `spawn_text` started, which the program owes `wait_text`. Only
+# `spawn_text` makes one; every copy names the same thread.
+record TextThread
+    # The runtime's index of the thread, from 0, never a system thread.
+    handle: i64
+    # The life `wait_text` ends: what tells a thread never waited for.
+    life: lives.Life
+
+# Starts `body` on a copy of `arg` on a thread of its own and answers it,
+# running.
+#
+# - `body`: the function the thread runs, called once with its own copy of
+#   `arg`; a copy of what it returns is what `wait_text` answers.
+# - `arg`: the one text the thread is given, copied, of any length; the empty
+#   text crosses too.
+#
+# Aborts where the system refuses to start a thread, since the runtime's text
+# door answers no refusal, and where `max_running()` threads of the program
+# are running. See also `wait_text`, `run_all_text`.
+function spawn_text(body: (function(str) -> str), arg: str) -> TextThread
+    handle = hero_os.start_text(body: body, arg: arg)
+    return TextThread(handle: handle, life: lives.begin())
+
+# Waits for `thread` to end and answers a copy of what its body returned.
+#
+# - `thread`: the caller's thread, which this spends: it may not be waited
+#   for again.
+#
+# Aborts where `thread`, or a copy of it, was waited for already. It blocks
+# until the body returns, with no limit of time. See also `spawn_text`.
+function wait_text(@thread: TextThread) -> str
+    answer = hero_os.finish_text(thread.handle)
+    lives.end(@thread.life)
+    return answer
+
+## Many values
+
+# `body` of each of `values`, each run on a thread, the answers in the order
+# of `values`.
+#
+# - `body`: the function each thread runs, called once for each value.
+# - `values`: the values, one thread each; an empty list starts none and
+#   answers an empty list.
+# - `workers`: at most how many threads run at once, from one; past
+#   `max_running()` it is taken as that. `os.processor_count()` is the usual
+#   choice.
+#
+# Every thread it starts is waited for before it answers, so nothing is owed
+# after it. Fails `limit` where the system refuses a thread, once those it
+# started have ended. Aborts where `workers` is below one, and where the
+# program's other threads leave the runtime no room for one more. See also
+# `spawn`, `run_all_text`.
+function run_all(body: (function(i64) -> i64), values: [i64], workers: i64) -> [i64]?
+    return pool.run_all(body: body, values: values, workers: workers)
+
+# `body` of a copy of each of `values`, each run on a thread, the answers in
+# the order of `values`.
+#
+# - `body`: the function each thread runs, called once for each value.
+# - `values`: the texts, one thread each, copied; an empty list starts none.
+# - `workers`: at most how many threads run at once, from one; past
+#   `max_running()` it is taken as that.
+#
+# Every thread it starts is waited for before it answers. Aborts where
+# `workers` is below one, where the system refuses a thread, and where the
+# program's other threads leave the runtime no room for one more. See also
+# `spawn_text`, `run_all`.
+function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]
+    return pool.run_all_text(body: body, values: values, workers: workers)
+
+# How many threads the runtime runs at once, the program's started and not
+# yet waited for among them: past it a start stops the program.
+#
+# The same number on every platform. See also `run_all`.
+function max_running() -> i64
+    return hero_os.limit()
+
+## Tests
+
+test "spawn and wait: several at once, each answer to its own thread"
+    first: Thread @= spawn(body: samples.square, arg: 3).must()
+    second: Thread @= spawn(body: samples.sum_below, arg: 100000).must()
+    third: Thread @= spawn(body: samples.same, arg: -1).must()
+    assert wait(@third) == -1
+    assert wait(@first) == 9
+    assert wait(@second) == 4999950000
+
+test "spawn: the largest and smallest i64 cross whole"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    low: Thread @= spawn(body: samples.same, arg: smallest).must()
+    high: Thread @= spawn(body: samples.same, arg: largest).must()
+    assert wait(@low) == smallest
+    assert wait(@high) == largest
+
+test "spawn_sized: a stack the runtime's own, and one of eight megabytes"
+    plain: Thread @= spawn_sized(body: samples.square, arg: 5, stack: 0).must()
+    deep: Thread @= spawn_sized(body: samples.square, arg: 6, stack: 8388608).must()
+    assert wait(@plain) == 25
+    assert wait(@deep) == 36
+
+test "spawn_text and wait_text: the empty text, text of more than one byte, several at once"
+    empty: TextThread @= spawn_text(body: samples.shout, arg: "")
+    wide: TextThread @= spawn_text(body: samples.same_text, arg: "caffè über 日本")
+    assert wait_text(@wide) == "caffè über 日本"
+    assert wait_text(@empty) == "!"
+
+test "max_running: the runtime's ceiling, the same as its own door"
+    assert max_running() == hero_os.limit()
+    assert max_running() >= 1
+
+## Examples
+
+# A square computed on another thread.
+test "spawn: a number squared on a thread of its own"
+    t: Thread @= spawn(body: samples.square, arg: 12).must()
+    assert wait(@t) == 144
+
+# A thread started with room for a deep body.
+test "spawn_sized: a thread with a stack of sixteen megabytes"
+    t: Thread @= spawn_sized(body: samples.square, arg: 4, stack: 16777216).must()
+    assert wait(@t) == 16
+
+# The answer of a thread, waited for.
+test "wait: the sum a thread computed"
+    t: Thread @= spawn(body: samples.sum_below, arg: 5).must()
+    assert wait(@t) == 10
+
+# A text handled on another thread.
+test "spawn_text: a word made a shout on a thread of its own"
+    t: TextThread @= spawn_text(body: samples.shout, arg: "hello")
+    assert wait_text(@t) == "hello!"
+
+# The text a thread gave back.
+test "wait_text: a copy of what the thread returned"
+    t: TextThread @= spawn_text(body: samples.same_text, arg: "è")
+    assert wait_text(@t) == "è"
+
+# Numbers squared four at a time, the answers in order.
+test "run_all: squares of a list, four threads at a time"
+    assert run_all(body: samples.square, values: [1, 2, 3, 4, 5, 6], workers: 4).must() == [1, 4, 9, 16, 25, 36]
+
+# Words handled two at a time, in order.
+test "run_all_text: three words, two threads at a time"
+    assert run_all_text(body: samples.shout, values: ["a", "b", "c"], workers: 2) == ["a!", "b!", "c!"]
+
+# How many threads may run at once.
+test "max_running: the runtime's ceiling"
+    assert max_running() > 0

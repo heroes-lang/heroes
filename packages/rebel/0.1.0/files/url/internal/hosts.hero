@@ -1,0 +1,308 @@
+# A host and its port read out of an authority and written back: a name, an
+# IPv4 address or an IPv6 address in brackets (RFC 3986 § 3.2.2), then a ":"
+# and digits.
+#
+# Two refusals are this package's and not the grammar's. An address in
+# brackets that is not IPv6, RFC 3986's IPvFuture, names no version in use,
+# and its host could not be told from a name once the brackets are gone. An
+# escape in a name that writes an ASCII character other than an unreserved
+# one writes a delimiter as data, which a host decoded into a text could no
+# longer tell from the delimiter itself.
+
+use numbers
+use strings
+use url/internal/classes
+use url/internal/escapes
+use url/internal/scan
+
+# A host and its port, as `read` answers them.
+record HostPort
+    # The host, unescaped and in lower case, an IPv6 address without brackets.
+    host: str
+    # The port's digits, "" where none is written.
+    port: str
+
+# Whether `piece` is one group of an IPv6 address: one to four hexadecimal
+# digits.
+function is_h16(piece: str) -> bool
+    if piece.len() == 0 || piece.len() > 4
+        return false
+
+    for c in piece.chars()
+        if !classes.is_hex(c[0])
+            return false
+
+    return true
+
+# Whether `piece` is an IPv4 address: four numbers 0 to 255 parted by ".",
+# none written with a zero before it (RFC 3986's dec-octet).
+function is_ipv4(piece: str) -> bool
+    octets = strings.split(s: piece, sep: ".")
+
+    if octets.len() != 4
+        return false
+
+    for octet in octets
+        if octet.len() == 0 || octet.len() > 3 || octet.len() > 1 && octet[0] == '0'
+            return false
+
+        for c in octet.chars()
+            if !classes.is_digit(c[0])
+                return false
+
+        if numbers.parse_int(octet).must() > 255
+            return false
+
+    return true
+
+# How many groups of 16 bits `text` writes, its pieces parted by ":", the
+# last an IPv4 address of two groups where `ipv4_last` is true. Fails
+# `invalid` where a piece is neither; "" writes none.
+function count_groups(text: str, ipv4_last: bool) -> i64?
+    if text == ""
+        return ok(0)
+    pieces = strings.split(s: text, sep: ":")
+    count: i64 @= 0
+
+    for i in range(from: 0, to: pieces.len())
+        if ipv4_last && i == pieces.len() - 1 && strings.contains(s: pieces[i], substr: ".")
+            if !is_ipv4(pieces[i])
+                return fail(code: classes.INVALID, msg: f"{classes.shown(pieces[i])} is no IPv4 address")
+            count @ count + 2
+        else if is_h16(pieces[i])
+            count @ count + 1
+        else
+            return fail(
+                code: classes.INVALID,
+                msg: f"{classes.shown(pieces[i])} is no group of one to four hexadecimal digits"
+            )
+
+    return ok(count)
+
+# Whether `address` is an IPv6 address by RFC 3986's grammar: eight groups,
+# a "::" standing for one group of zeros or more, the last two groups an IPv4
+# address where it writes one. Fails `invalid` saying why not.
+function check_ipv6(address: str) -> ()?
+    double = strings.index_of(s: address, substr: "::").default(address.len())
+
+    if double == address.len()
+        if count_groups(text: address, ipv4_last: true)? != 8
+            return fail(code: classes.INVALID, msg: "it writes no \"::\" and not eight groups")
+        return ok()
+    right = address.slice(from: double + 2, to: address.len())
+
+    if strings.contains(s: right, substr: "::")
+        return fail(code: classes.INVALID, msg: "it writes \"::\" twice")
+    left = count_groups(text: address.slice(from: 0, to: double), ipv4_last: false)?
+
+    if left + count_groups(text: right, ipv4_last: right != "")? > 7
+        return fail(code: classes.INVALID, msg: "it writes more than seven groups beside its \"::\"")
+    return ok()
+
+# Whether `host` is an IPv6 address, which an authority writes in brackets.
+function is_ipv6(host: str) -> bool
+    return !check_ipv6(host).is_err()
+
+# The IPv6 address in the brackets that open at byte `from` of `s` and
+# close at `close`, in lower case. Fails `invalid` where it is none, a zone
+# or an address of a future version.
+function read_ipv6(s: str, from: i64, close: i64) -> str?
+    address = s.slice(from: from + 1, to: close)
+    where = f"bytes {from} to {close} of {classes.shown(s)}"
+
+    if address != "" && (address[0] == 'v' || address[0] == 'V')
+        return fail(
+            code: classes.INVALID,
+            msg: f"{where}: an address of a future version of IP, which no URL uses; an address in brackets is an IPv6 one"
+        )
+
+    if strings.contains(s: address, substr: "%")
+        return fail(
+            code: classes.INVALID,
+            msg: f"{where}: an IPv6 address with a zone, which RFC 3986 has not and RFC 9844 withdrew"
+        )
+
+    match check_ipv6(address)
+        .ok _  => return ok(strings.to_lower_ascii(address))
+        .err e => return fail(code: classes.INVALID, msg: f"{where}: no IPv6 address, as {e.msg}")
+
+# The port written between byte `from` and byte `to` of `s`, digits alone.
+# Fails `invalid` at a byte that is not a digit.
+function read_port(s: str, from: i64, to: i64) -> str?
+    at: i64 @= from
+
+    while at < to
+        if !classes.is_digit(s[at])
+            return fail(
+                code: classes.INVALID,
+                msg: f"byte {at} of {classes.shown(s)}: a port is digits alone, and {scan.named_char(s: s, at: at)} is not one"
+            )
+        at @ at + classes.char_width(s[at])
+
+    return ok(s.slice(from: from, to: to))
+
+# The name written between byte `from` and byte `to` of `s`, unescaped and
+# in lower case. Fails `invalid` where it holds a byte a name may not, or an
+# escape of an ASCII character that is not unreserved, and `not_text` where
+# its escapes are not UTF-8.
+function read_name(s: str, from: i64, to: i64) -> str?
+    scan.check_part(s: s, from: from, to: to, part: "a host", keeps: classes.in_name)?
+    at: i64 @= from
+
+    while at < to
+        if s[at] == '%'
+            b = classes.hex_value(s[at + 1]) * 16 + classes.hex_value(s[at + 2])
+
+            if b < 0x80 && !classes.is_unreserved(b)
+                return fail(
+                    code: classes.INVALID,
+                    msg: f"byte {at} of {classes.shown(s)}: \"{s.slice(from: at, to: at + 3)}\" writes as data a character a host holds only as a delimiter, or never; a host's escapes write a letter, a digit, \"-\", \".\", \"_\", \"~\" or a character above ASCII"
+                )
+            at @ at + 3
+        else
+            at @ at + 1
+
+    name = escapes.unescape(s: s.slice(from: from, to: to), plus: false)?
+    return ok(strings.to_lower_ascii(name))
+
+# The host and the port written between byte `from` and byte `to` of `s`,
+# an authority with its user taken away. Fails `invalid` where either is not
+# one, the message naming the byte, and `not_text` where the host's escapes
+# are not UTF-8.
+function read(s: str, from: i64, to: i64) -> HostPort?
+    if from < to && s[from] == '['
+        close = classes.first_of(s: s, b: ']', from: from, to: to)
+
+        if close == to
+            return fail(
+                code: classes.INVALID,
+                msg: f"byte {from} of {classes.shown(s)}: a \"[\" opens an IPv6 address and no \"]\" closes it"
+            )
+        address = read_ipv6(s: s, from: from, close: close)?
+
+        if close + 1 == to
+            return ok(HostPort(host: address, port: ""))
+
+        if s[close + 1] != ':'
+            return fail(
+                code: classes.INVALID,
+                msg: f"byte {close + 1} of {classes.shown(s)}: after the \"]\" of an IPv6 address comes a \":\" and a port, or nothing"
+            )
+        return ok(HostPort(host: address, port: read_port(s: s, from: close + 2, to: to)?))
+    colon = classes.first_of(s: s, b: ':', from: from, to: to)
+    name = read_name(s: s, from: from, to: colon)?
+
+    if colon == to
+        return ok(HostPort(host: name, port: ""))
+    return ok(HostPort(host: name, port: read_port(s: s, from: colon + 1, to: to)?))
+
+# Whether `port` is digits alone, the empty port included.
+function is_port(port: str) -> bool
+    for c in port.chars()
+        if !classes.is_digit(c[0])
+            return false
+
+    return true
+
+# `host` and `port` as an authority writes them: an IPv6 address in
+# brackets, any other host escaped as a name, then ":" and the port where it
+# is not "". Aborts where `port` holds a byte that is not a digit, which no
+# escape can write.
+function format(host: str, port: str) -> str
+    written: str @= ""
+
+    if is_ipv6(host)
+        written @ "[" + host + "]"
+    else
+        written @ escapes.escape(s: host, keeps: classes.in_name, plus: false)
+
+    if port == ""
+        return written
+
+    if !is_port(port)
+        classes.abort_with(f"the port {classes.shown(port)} is not digits alone, and no escape writes a port")
+    return written + ":" + port
+
+## Tests
+
+test "is_h16 and is_ipv4: empty, the widest, a zero before a number, past 255"
+    assert !is_h16("") && is_h16("0") && is_h16("ffFF") && !is_h16("12345") && !is_h16("g")
+    assert is_ipv4("0.0.0.0") && is_ipv4("255.255.255.255") && is_ipv4("192.0.2.1")
+    assert !is_ipv4("256.0.0.1") && !is_ipv4("01.2.3.4") && !is_ipv4("1.2.3") && !is_ipv4("1.2.3.4.5")
+    assert !is_ipv4("1..2.3") && !is_ipv4("1.2.3.a") && !is_ipv4("") && !is_ipv4("1000.0.0.1")
+
+test "check_ipv6: the RFC's nine shapes, an IPv4 tail, and the refusals"
+    assert is_ipv6("1:2:3:4:5:6:7:8")
+    assert is_ipv6("::") && is_ipv6("::1") && is_ipv6("1::") && is_ipv6("fe80::1")
+    assert is_ipv6("1:2:3:4:5:6:7::") && is_ipv6("::2:3:4:5:6:7:8")
+    assert is_ipv6("::ffff:192.0.2.1") && is_ipv6("::192.0.2.1") && is_ipv6("1:2:3:4:5:6:1.2.3.4")
+    assert !is_ipv6("") && !is_ipv6("1:2:3:4:5:6:7") && !is_ipv6("1:2:3:4:5:6:7:8:9")
+    assert !is_ipv6("1::2::3") && !is_ipv6(":1:2:3:4:5:6:7") && !is_ipv6("1:2:3:4:5:6:7:8::")
+    assert !is_ipv6("1:2:3:4:5:6:7::8") && !is_ipv6("1.2.3.4") && !is_ipv6("::1.2.3.4:5")
+    assert !is_ipv6("12345::") && !is_ipv6("zz") && !is_ipv6("::1:")
+
+test "read: a name, a port, an empty port, an IPv6 address with and without a port"
+    a = read(s: "Example.COM", from: 0, to: 11).must()
+    assert a.host == "example.com" && a.port == ""
+    b = read(s: "h:8080", from: 0, to: 6).must()
+    assert b.host == "h" && b.port == "8080"
+    c = read(s: "h:", from: 0, to: 2).must()
+    assert c.host == "h" && c.port == ""
+    d = read(s: "[FE80::1]:443", from: 0, to: 13).must()
+    assert d.host == "fe80::1" && d.port == "443"
+    e = read(s: "[::1]", from: 0, to: 5).must()
+    assert e.host == "::1" && e.port == ""
+    f = read(s: "", from: 0, to: 0).must()
+    assert f.host == "" && f.port == ""
+
+test "read: escapes of a character above ASCII and of a letter, and the escapes refused"
+    assert read(s: "%C3%A9.com", from: 0, to: 10).must().host == "é.com"
+    assert read(s: "ex%41mple.com", from: 0, to: 13).must().host == "example.com"
+
+    match read(s: "a%20b", from: 0, to: 5)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && strings.has_prefix(s: e.msg, prefix: "byte 1 of \"a%20b\": \"%20\" writes as data")
+
+    match read(s: "%FF", from: 0, to: 3)
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+test "read: what is no host and port"
+    match read(s: "h:8a", from: 0, to: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 3 of \"h:8a\": a port is digits alone, and \"a\" is not one"
+
+    match read(s: "[::1", from: 0, to: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of \"[::1\": a \"[\" opens an IPv6 address and no \"]\" closes it"
+
+    match read(s: "[::1]x", from: 0, to: 6)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 5 of \"[::1]x\": after the \"]\" of an IPv6 address comes a \":\" and a port, or nothing"
+
+    match read(s: "[v1.a]", from: 0, to: 6)
+        .ok _  => assert false
+        .err e => assert e.msg == "bytes 0 to 5 of \"[v1.a]\": an address of a future version of IP, which no URL uses; an address in brackets is an IPv6 one"
+
+    match read(s: "[fe80::1%25en0]", from: 0, to: 15)
+        .ok _  => assert false
+        .err e => assert e.msg == "bytes 0 to 14 of \"[fe80::1%25en0]\": an IPv6 address with a zone, which RFC 3986 has not and RFC 9844 withdrew"
+
+    match read(s: "[zz]", from: 0, to: 4)
+        .ok _  => assert false
+        .err e => assert e.msg == "bytes 0 to 3 of \"[zz]\": no IPv6 address, as \"zz\" is no group of one to four hexadecimal digits"
+
+    match read(s: "::1", from: 0, to: 3)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 1 of \"::1\": a port is digits alone, and \":\" is not one"
+
+    assert read(s: "a b", from: 0, to: 3).is_err()
+    assert read(s: "a@b", from: 0, to: 3).is_err()
+    assert read(s: "h:é", from: 0, to: 4).is_err()
+
+test "format: a name, an IPv6 address, a name escaped, a port"
+    assert format(host: "example.com", port: "") == "example.com"
+    assert format(host: "::1", port: "8080") == "[::1]:8080"
+    assert format(host: "é.com", port: "") == "%C3%A9.com"
+    assert format(host: "a b:c", port: "1") == "a%20b%3Ac:1"
+    assert format(host: "", port: "") == ""

@@ -1,0 +1,39 @@
+# Reaches Rebel's `sql/sqlite`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It opens a database in memory, makes a
+# table, inserts two rows with their values as parameters, prints them back in
+# order and closes the connection.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+
+function main()
+    match sqlite.open_memory()
+        .err e => print(e.code, ": ", e.msg)
+        .ok first =>
+            db @= first
+            print(shown(@db))
+            print(sqlite.close(@db).is_err())
+
+# The two rows the program writes and reads back, one per line, or the
+# failure that stopped it.
+function shown(@db: sqlite.Db) -> str
+    made = sqlite.exec_script(@db, "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+
+    if made.is_err()
+        return "no table"
+    lines: [str] @= []
+
+    for name in ["Ziggy", "Aladdin"]
+        match sqlite.exec(@db, "INSERT INTO singer(name) VALUES (?1)", [.text(v: name)])
+            .err e => return e.msg
+            .ok _  => _ = 0
+
+    match sqlite.query(@db, "SELECT id, name FROM singer ORDER BY id", [])
+        .err e => return e.msg
+        .ok rows =>
+            for row in rows.rows
+                lines @ lines.push(
+                    sql.integer_named(row, "id").default(0).to_str() + " " + sql.text_named(row, "name").default("?")
+                )
+
+    return lines.join("\n")

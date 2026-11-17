@@ -1,0 +1,12 @@
+# Reaches Rebel's `math`, so that `heroes test` on this file runs the tests of
+# the package's modules (spec § 12). It prints the square root of 2 and the
+# sum of the largest `i64` and 1, which does not fit.
+
+use <rebel>/math
+
+function main()
+    print(math.sqrt(2.0))
+
+    match math.add(a: math.MAX_I64, b: 1)
+        .ok n  => print(n)
+        .err e => print(e.code)

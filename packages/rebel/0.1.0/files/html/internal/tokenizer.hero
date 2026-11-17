@@ -1,0 +1,140 @@
+# The tokenizer run: each step runs the rule of the state the lexer is in, and
+# `next` steps until a token is made and hands it on. Tree construction asks
+# for one token at a time, so a state it sets after a start tag (`script`'s,
+# `title`'s) is in force for the very next character.
+
+use html/internal/lex_doctype
+use html/internal/lex_markup
+use html/internal/lex_script
+use html/internal/lex_tag
+use html/internal/lex_text
+use html/internal/lexer
+use html/internal/token
+
+# Runs the rule of the state `lx` is in, once.
+function step(@lx: lexer.Lexer)
+    match lx.state
+        .data                                                              => lex_text.data(@lx)
+        .rcdata | .rawtext | .script_data | .plaintext                     => lex_text.raw(@lx)
+        .tag_open                                                          => lex_text.tag_open(@lx)
+        .end_tag_open                                                      => lex_text.end_tag_open(@lx)
+        .tag_name                                                          => lex_text.tag_name(@lx)
+        .rcdata_less_than | .rawtext_less_than                             => lex_text.raw_less_than(@lx)
+        .raw_end_tag_open                                                  => lex_text.raw_end_tag_open(@lx)
+        .raw_end_tag_name                                                  => lex_text.raw_end_tag_name(@lx)
+        .script_less_than                                                  => lex_script.less_than(@lx)
+        .script_escape_start | .script_escape_start_dash                   => lex_script.escape_start(@lx)
+        .script_escaped | .script_escaped_dash | .script_escaped_dash_dash => lex_script.escaped(@lx)
+        .script_double_escaped | .script_double_escaped_dash               => lex_script.escaped(@lx)
+        .script_double_escaped_dash_dash                                   => lex_script.escaped(@lx)
+        .script_escaped_less_than                                          => lex_script.escaped_less_than(@lx)
+        .script_double_escape_start | .script_double_escape_end            => lex_script.double_escape_edge(@lx)
+        .script_double_escaped_less_than                                   => lex_script.double_escaped_less_than(@lx)
+        .before_attribute_name                                             => lex_tag.before_name(@lx)
+        .attribute_name                                                    => lex_tag.name(@lx)
+        .after_attribute_name                                              => lex_tag.after_name(@lx)
+        .before_attribute_value                                            => lex_tag.before_value(@lx)
+        .attribute_value_double | .attribute_value_single                  => lex_tag.quoted(@lx)
+        .attribute_value_unquoted                                          => lex_tag.unquoted(@lx)
+        .after_attribute_value                                             => lex_tag.after_value(@lx)
+        .self_closing_start_tag                                            => lex_tag.self_closing(@lx)
+        .bogus_comment                                                     => lex_markup.bogus_comment(@lx)
+        .markup_declaration_open                                           => lex_markup.declaration_open(@lx)
+        .comment_start | .comment_start_dash                               => lex_markup.comment_start(@lx)
+        .comment                                                           => lex_markup.comment(@lx)
+        .comment_less_than | .comment_less_than_bang                       => lex_markup.comment_less_than(@lx)
+        .comment_less_than_bang_dash | .comment_less_than_bang_dash_dash   => lex_markup.comment_less_than(@lx)
+        .comment_end_dash | .comment_end | .comment_end_bang               => lex_markup.comment_end(@lx)
+        .doctype | .before_doctype_name                                    => lex_doctype.before_name(@lx)
+        .doctype_name                                                      => lex_doctype.name(@lx)
+        .after_doctype_name                                                => lex_doctype.after_name(@lx)
+        .after_doctype_public_keyword | .before_doctype_public_id          => lex_doctype.before_id(@lx)
+        .after_doctype_system_keyword | .before_doctype_system_id          => lex_doctype.before_id(@lx)
+        .doctype_public_id_double | .doctype_public_id_single              => lex_doctype.id(@lx)
+        .doctype_system_id_double | .doctype_system_id_single              => lex_doctype.id(@lx)
+        .after_doctype_public_id | .between_doctype_ids                    => lex_doctype.after_public_id(@lx)
+        .after_doctype_system_id                                           => lex_doctype.after_system_id(@lx)
+        .bogus_doctype                                                     => lex_doctype.bogus(@lx)
+        .cdata_section | .cdata_section_bracket | .cdata_section_end       => lex_markup.cdata(@lx)
+        .instruction_open | .instruction_target                            => lex_markup.instruction_target(@lx)
+        .after_instruction_target | .instruction_data                      => lex_markup.instruction_data(@lx)
+        .instruction_questionable                                          => lex_markup.instruction_data(@lx)
+
+# The most steps in a row that may read nothing and make nothing. The
+# standard's states never chain more than a handful; past this many, the byte
+# under the cursor is read as text, so that no text can hold the tokenizer
+# still, and `stalls` counts it.
+constant STALL_LIMIT: i64
+    64
+
+# The next token of `lx`, once the end is reached the end-of-file token again.
+function next(@lx: lexer.Lexer, @stalls: i64) -> token.Token
+    still: i64 @= 0
+
+    while lx.head >= lx.queue.len()
+        before = lx.at
+        step(@lx)
+
+        if lx.at == before && lx.head >= lx.queue.len()
+            still @ still + 1
+
+            if still > STALL_LIMIT && !lexer.at_end(lx)
+                stalls @ stalls + 1
+                lexer.text_out(@lx, s: lexer.current(lx), at: lx.at)
+                lx.at @ lx.at + lexer.width(lx)
+                lx.state @ .data
+                still @ 0
+        else
+            still @ 0
+
+    t = lx.queue[lx.head]
+    lx.head @ lx.head + 1
+
+    if lx.head == lx.queue.len()
+        lx.queue @ []
+        lx.head @ 0
+    return t
+
+## Tests
+
+# Every token of `text` read from the data state, with the stalls counted;
+# tree construction's switches of state are not made.
+function tokens_of(text: str) -> [token.Token]
+    lx: lexer.Lexer @= lexer.start(text)
+    stalls: i64 @= 0
+    found: [token.Token] @= []
+
+    while true
+        t = next(@lx, @stalls)
+        found @ found.push(t)
+
+        if t.kind == token.EOF
+            assert stalls == 0
+            return found
+
+test "next: text, a start tag with attributes, a comment, an end tag and the end, as the standard reads them"
+    got = tokens_of("a<p class=x id='y'>b<!--c--></p>")
+    assert got.len() == 6
+    assert got[0].kind == token.CHARS && got[0].data == "a"
+    assert got[1].kind == token.START && got[1].name == "p" && got[1].attributes.len() == 2 && got[1].attributes[1].value == "y"
+    assert got[2].data == "b" && got[3].kind == token.COMMENT && got[3].data == "c"
+    assert got[4].kind == token.END && got[4].name == "p" && got[5].kind == token.EOF
+
+test "next: a doctype with both identifiers, as the standard reads it"
+    got = tokens_of("<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" 'http://www.w3.org/TR/html4/strict.dtd'>")
+    assert got[0].kind == token.DOCTYPE && got[0].name == "html" && got[0].has_public && got[0].has_system
+    assert got[0].data == "-//W3C//DTD HTML 4.01//EN" && got[0].system == "http://www.w3.org/TR/html4/strict.dtd" && !got[0].force_quirks
+
+test "next: an instruction, and `<?xml` read as a bogus comment, as the standard of 2026 reads them"
+    got = tokens_of("<?php echo 1 ?><?xml version=\"1.0\"?>")
+    assert got[0].kind == token.INSTRUCTION && got[0].name == "php" && got[0].data == "echo 1 "
+    assert got[1].kind == token.COMMENT && got[1].data == "?xml version=\"1.0\"?"
+
+test "next: the comments the standard names, closed abruptly, with `--!`, and nested"
+    assert tokens_of("<!-->")[0].data == "" && tokens_of("<!--a--!>")[0].data == "a" && tokens_of("<!--<!-- a -->")[0].data == "<!-- a "
+    assert tokens_of("<!--a")[0].data == "a" && tokens_of("<!--a-")[0].data == "a" && tokens_of("<!---->")[0].data == ""
+
+test "next: every truncated form ends, each with no token stuck"
+    for text in ["<", "</", "<a", "<a ", "<a b", "<a b=", "<a b=\"", "<a b='x", "<a b=x", "<a/", "<!", "<!-", "<!--", "<!DOCTYPE", "<!DOCTYPE x PUBLIC", "<!DOCTYPE x PUBLIC \"", "<!DOCTYPE x SYSTEM 'a' b", "<?", "<?a", "<?a b?", "&", "&#", "&#x", "&am", "</x y=", "<![CDATA["]
+        got = tokens_of(text)
+        assert got[got.len() - 1].kind == token.EOF

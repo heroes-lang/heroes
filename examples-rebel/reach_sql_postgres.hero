@@ -1,0 +1,19 @@
+# Reaches Rebel's `sql/postgres`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a connection's options from a URL
+# and, where a server answers there, asks it for its version and closes the
+# connection; where none answers it says why.
+
+use <rebel>/sql
+use <rebel>/sql/postgres
+
+function main()
+    match postgres.parse_url("postgres://postgres@localhost:5432/postgres")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match postgres.open(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    db @= first
+                    row = postgres.query_one(@db, "SELECT version() AS v", [])
+                    print(sql.text_named(row.default(sql.Row(names: [], values: [])), "v").default("?"))
+                    print(postgres.close(@db).is_err())

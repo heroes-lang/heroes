@@ -1,0 +1,9 @@
+# The record the face's examples write to CBOR and read back by its field
+# names, kept here so that the face declares only what a program writes.
+
+# A point on a grid, written to CBOR as a map of two text keys.
+record Point
+    # The column.
+    x: i64
+    # The row.
+    y: i64

@@ -1,0 +1,75 @@
+# The bits of a DEFLATE stream written as RFC 1951 section 3.1.1 packs them:
+# the first bit lowest in its byte, a number of n bits least significant bit
+# first. A Huffman code goes the other way, so `huffman` hands out each code
+# reversed ahead of time and it is written here as a number.
+
+# The bits written and not yet a whole byte.
+record Sink
+    # The pending bits, the first written lowest.
+    bits: i64
+    # How many there are: 0 to 7 between calls.
+    count: i64
+
+# A sink holding no bit.
+function empty() -> Sink
+    return Sink(bits: 0, count: 0)
+
+# Writes the `count` lowest bits of `value` after those written before,
+# moving every whole byte to `out`. `value` holds no bit above them, and
+# `count` is 0 to 32.
+function put(@out: [u8], @sink: Sink, value: i64, count: i64)
+    sink.bits @ sink.bits | value << sink.count
+    sink.count @ sink.count + count
+
+    while sink.count >= 8
+        out @ out.push(to_u8(sink.bits & 255).must())
+        sink.bits @ sink.bits >> 8
+        sink.count @ sink.count - 8
+
+# Pads the pending bits with zeros to the end of their byte and moves it to
+# `out`; nothing where the bits end on a byte already.
+function align(@out: [u8], @sink: Sink)
+    if sink.count > 0
+        out @ out.push(to_u8(sink.bits & 255).must())
+        sink.bits @ 0
+        sink.count @ 0
+
+# Writes `value` as `width` bytes, the lowest first, after aligning: a
+# stored block's lengths and gzip's numbers.
+function put_little(@out: [u8], value: i64, width: i64)
+    for i in range(from: 0, to: width)
+        out @ out.push(to_u8(value >> 8 * i & 255).must())
+
+# Writes `value` as `width` bytes, the highest first: zlib's numbers.
+function put_big(@out: [u8], value: i64, width: i64)
+    for i in range(from: 0, to: width)
+        out @ out.push(to_u8(value >> 8 * (width - 1 - i) & 255).must())
+
+test "put: bits packed lowest first, across bytes"
+    out: [u8] @= []
+    sink @= empty()
+    put(@out, @sink, value: 1, count: 1)
+    put(@out, @sink, value: 1, count: 2)
+    assert out.len() == 0
+    put(@out, @sink, value: 0, count: 7)
+    assert out == [3]
+    assert sink.count == 2
+    align(@out, @sink)
+    assert out == [3, 0]
+    assert sink.count == 0
+
+test "align: nothing on a byte boundary, zeros otherwise"
+    out: [u8] @= []
+    sink @= empty()
+    align(@out, @sink)
+    assert out.len() == 0
+    put(@out, @sink, value: 5, count: 3)
+    align(@out, @sink)
+    assert out == [5]
+
+test "put_little and put_big: the two orders of one number"
+    out: [u8] @= []
+    put_little(@out, value: 0x12345678, width: 4)
+    put_big(@out, value: 0x12345678, width: 4)
+    put_little(@out, value: 0xffff, width: 2)
+    assert out == [0x78, 0x56, 0x34, 0x12, 0x12, 0x34, 0x56, 0x78, 0xff, 0xff]

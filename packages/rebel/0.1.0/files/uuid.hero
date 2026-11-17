@@ -1,0 +1,369 @@
+# Universally unique identifiers (RFC 9562): versions 4 and 7 made, any
+# version read from text or bytes and written back, the nil and the max
+# values, and the version, the variant and a version 7's time read. A UUID is
+# 128 bits; written, it is 32 hexadecimal digits in groups of 8, 4, 4, 4 and
+# 12, `f81d4fae-7dec-11d0-a765-00a0c91e6bf6`.
+#
+# Version 4 is random: its 122 bits come from the system's generator for
+# keys, through `random.secure_below`. Version 7 orders by time: its first 48
+# bits are the milliseconds since 1970 and the rest is random, so identifiers
+# made a millisecond apart sort in the order they were made; two made within
+# one millisecond sort in no particular order, since no counter is kept.
+# Versions 1, 3, 5, 6 and 8 are read and written but not made.
+#
+# It fails with `invalid` where a text or bytes are not a UUID or a time
+# falls outside version 7's, and `new_v4` and `new_v7` with the codes of
+# `random.secure_below` and `time.now`.
+
+use random
+use time
+use uuid/internal/text
+
+## Codes
+
+# The code a function fails with where its input is not a UUID: a text,
+# bytes that are not 16, a time version 7 cannot hold, or a UUID that is not
+# of version 7 asked its time.
+constant INVALID: str
+    text.INVALID
+
+## The identifier
+
+# A UUID: 128 bits, held as two halves. Every two halves are a UUID, so one
+# is built directly, though one made by `new_v4` or `new_v7` or read by
+# `parse` is the usual way; `==` says whether two are the same, and `compare`
+# orders them as their bytes order.
+record Uuid
+    # The first 8 bytes as a number, the first byte the highest.
+    high: u64
+    # The last 8 bytes as a number, the first of them the highest.
+    low: u64
+
+# The nil UUID, every bit 0 (RFC 9562 5.9): Python's `uuid.NIL`. Its variant
+# is `ncs` and its version bits 0.
+#
+# See also `max_uuid`.
+function nil_uuid() -> Uuid
+    return Uuid(high: 0, low: 0)
+
+# The max UUID, every bit 1 (RFC 9562 5.10): Python's `uuid.MAX`. Its variant
+# is `future` and its version bits 15.
+#
+# See also `nil_uuid`.
+function max_uuid() -> Uuid
+    return Uuid(high: 18446744073709551615, low: 18446744073709551615)
+
+# Which layout a UUID's bits follow, read from its first bits of byte 8.
+variant Variant
+    # 0xx: the old layout of Apollo's NCS, the nil UUID among them.
+    ncs
+    # 10x: RFC 9562's, and RFC 4122's before it: the one every version here
+    # has.
+    rfc
+    # 110: Microsoft's old one.
+    microsoft
+    # 111: reserved for the future, the max UUID among them.
+    future
+
+## Made
+
+# A new UUID of version 4: 122 bits from the system's generator for keys,
+# the version and the variant set, as RFC 9562 5.4 asks.
+#
+# Fails with the code of `random.secure_below` where the system's generator
+# refuses. See also `new_v7`.
+function new_v4() -> Uuid?
+    first = random.secure_below(281474976710656)?
+    middle = random.secure_below(4096)?
+    last = random.secure_below(4611686018427387904)?
+    return ok(Uuid(high: first * 65536 + 0x4000 + middle, low: 9223372036854775808 + last))
+
+# A new UUID of version 7 for this moment: the milliseconds since 1970 in its
+# first 48 bits and 74 random bits after (RFC 9562 5.7), so it sorts after
+# one made a millisecond before.
+#
+# Fails with the code of `time.now` where the clock cannot be read, and
+# `invalid` where it reads before 1970 or past the year 10889. See also
+# `new_v7_at` and `time_of`.
+function new_v7() -> Uuid?
+    now = time.now()?
+    return new_v7_at(time.unix_milliseconds(now))
+
+# A new UUID of version 7 for the moment `unix_milliseconds`: what `new_v7`
+# makes, at a time of the caller's.
+#
+# - `unix_milliseconds`: milliseconds since 1970-01-01T00:00:00Z, from 0 to
+#   2^48 - 1.
+#
+# Fails `invalid` where `unix_milliseconds` is below 0 or past 2^48 - 1, and
+# with the code of `random.secure_below` where the system's generator
+# refuses. See also `new_v7`.
+function new_v7_at(unix_milliseconds: i64) -> Uuid?
+    if unix_milliseconds < 0 || unix_milliseconds > 281474976710655
+        return fail(
+            code: INVALID,
+            msg: f"{unix_milliseconds} milliseconds since 1970, where version 7 holds 0 to 281474976710655"
+        )
+    ms = to_u64(unix_milliseconds).must()
+    middle = random.secure_below(4096)?
+    last = random.secure_below(4611686018427387904)?
+    return ok(Uuid(high: ms * 65536 + 0x7000 + middle, low: 9223372036854775808 + last))
+
+## Text and bytes
+
+# The UUID `s` writes: the standard form of 36 characters in either case,
+# the same 32 digits with no hyphen, either of these inside braces, or the
+# standard form after `urn:uuid:`.
+#
+# - `s`: the text read, whole: nothing before or after is skipped.
+#
+# Fails `invalid` where `s` is none of these; the message says where. A
+# hyphen out of its place is refused, where Python's reader drops it. See
+# also `format`.
+function parse(s: str) -> Uuid?
+    halves = text.parse(s)?
+    return ok(Uuid(high: halves.high, low: halves.low))
+
+# `id` in the standard form, lower case: `f81d4fae-7dec-11d0-a765-00a0c91e6bf6`.
+#
+# - `id`: the UUID written.
+#
+# See also `parse`, `format_urn` and `format_hex`.
+function format(id: Uuid) -> str
+    return text.format(high: id.high, low: id.low)
+
+# `id` as a URN: `urn:uuid:` and the standard form.
+#
+# - `id`: the UUID written.
+#
+# See also `format`.
+function format_urn(id: Uuid) -> str
+    return "urn:uuid:" + text.format(high: id.high, low: id.low)
+
+# `id` as its 32 hexadecimal digits in lower case, with no hyphen: Python's
+# `hex`.
+#
+# - `id`: the UUID written.
+#
+# See also `format`.
+function format_hex(id: Uuid) -> str
+    return text.hex(high: id.high, low: id.low)
+
+# The UUID the 16 bytes `data` hold, the first byte the highest, as a
+# database or a protocol stores it.
+#
+# - `data`: the bytes read, exactly 16.
+#
+# Fails `invalid` where `data` does not hold 16 bytes. See also `to_bytes`.
+function from_bytes(data: [u8]) -> Uuid?
+    if data.len() != 16
+        return fail(code: INVALID, msg: f"{data.len()} bytes, where a UUID is 16")
+    halves = text.halves_of(data)
+    return ok(Uuid(high: halves.high, low: halves.low))
+
+# The 16 bytes of `id`, the first the highest: RFC 9562's order, Python's
+# `bytes`.
+#
+# - `id`: the UUID written.
+#
+# See also `from_bytes`.
+function to_bytes(id: Uuid) -> [u8]
+    return text.bytes_of(high: id.high, low: id.low)
+
+## Reading
+
+# The version of `id`, the four bits RFC 9562 gives it, from 0 to 15: 4 for
+# one made by `new_v4`, 7 for one made by `new_v7`.
+#
+# - `id`: the UUID read.
+#
+# The bits mean a version only where `variant_of` answers `rfc`; the nil UUID
+# answers 0 and the max 15, where Python answers no version. See also
+# `variant_of`.
+function version_of(id: Uuid) -> i64
+    return to_i64(id.high / 4096 % 16).must()
+
+# The layout `id` follows, read from the first bits of its byte 8.
+#
+# - `id`: the UUID read.
+#
+# See also `version_of`.
+function variant_of(id: Uuid) -> Variant
+    top = id.low / 2305843009213693952
+
+    if top < 4
+        return .ncs
+
+    if top < 6
+        return .rfc
+
+    if top == 6
+        return .microsoft
+    return .future
+
+# Which of `a` and `b` orders first: -1 where `a` does, 1 where `b` does, 0
+# where they are the same, by their bytes as numbers; for version 7, the
+# order they were made in, to the millisecond.
+#
+# - `a`: one UUID.
+# - `b`: the other.
+#
+# See also `Uuid`.
+function compare(a: Uuid, b: Uuid) -> i64
+    if a.high != b.high
+        if a.high < b.high
+            return -1
+        return 1
+
+    if a.low < b.low
+        return -1
+
+    if a.low > b.low
+        return 1
+    return 0
+
+# The moment a UUID of version 7 was made, to the millisecond.
+#
+# - `id`: the UUID read, of version 7 and of RFC 9562's variant.
+#
+# Fails `invalid` where `id` is of another version or variant, which holds
+# no such time. See also `new_v7`.
+function time_of(id: Uuid) -> time.Instant?
+    if version_of(id) != 7 || variant_of(id) != .rfc
+        return fail(
+            code: INVALID,
+            msg: f"{format(id)} is of version {version_of(id)}, and only version 7 holds the time it was made"
+        )
+    return time.from_unix_milliseconds(to_i64(id.high / 65536).must())
+
+## Tests
+
+test "the code is the vocabulary's word"
+    assert INVALID == "invalid"
+
+# Python's `uuid.NIL` and `uuid.MAX` answered these on 2026-11-16.
+test "nil_uuid() and max_uuid(): written, their variants and versions"
+    assert format(nil_uuid()) == "00000000-0000-0000-0000-000000000000"
+    assert format(max_uuid()) == "ffffffff-ffff-ffff-ffff-ffffffffffff"
+    assert variant_of(nil_uuid()) == .ncs && variant_of(max_uuid()) == .future
+    assert version_of(nil_uuid()) == 0 && version_of(max_uuid()) == 15
+    assert compare(a: nil_uuid(), b: max_uuid()) == -1 && compare(a: max_uuid(), b: nil_uuid()) == 1 && compare(a: max_uuid(), b: max_uuid()) == 0
+
+# Python answered the Microsoft and future variants of these on 2026-11-16.
+test "variant_of: each of the four, at its edges"
+    assert variant_of(parse("00000000-0000-0000-7fff-000000000000").must()) == .ncs
+    assert variant_of(parse("00000000-0000-0000-8000-000000000000").must()) == .rfc
+    assert variant_of(parse("00000000-0000-0000-bfff-000000000000").must()) == .rfc
+    assert variant_of(parse("00000000-0000-0000-c000-000000000000").must()) == .microsoft
+    assert variant_of(parse("00000000-0000-0000-e000-000000000000").must()) == .future
+
+test "new_v4: a hundred, each of version 4 and RFC 9562's variant, none alike"
+    seen: {str: bool} @= {}
+
+    for _ in range(from: 0, to: 100)
+        id = new_v4().must()
+        assert version_of(id) == 4 && variant_of(id) == .rfc
+        seen[format(id)] @ true
+
+    assert keys(seen).len() == 100
+
+test "new_v7_at: the first and the last millisecond, and the times refused"
+    first = new_v7_at(0).must()
+    assert format(first).slice(from: 0, to: 15) == "00000000-0000-7"
+    last = new_v7_at(281474976710655).must()
+    assert format(last).slice(from: 0, to: 15) == "ffffffff-ffff-7"
+    assert new_v7_at(-1).is_err()
+
+    match new_v7_at(281474976710656)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "281474976710656 milliseconds since 1970, where version 7 holds 0 to 281474976710655"
+
+test "new_v7: version 7, its time now, and one made a millisecond later sorts after"
+    id = new_v7().must()
+    assert version_of(id) == 7 && variant_of(id) == .rfc
+    made = time.unix_milliseconds(time_of(id).must())
+    now = time.unix_milliseconds(time.now().must())
+    assert made <= now && now - made < 60000
+    later = new_v7_at(made + 1).must()
+    assert compare(a: id, b: later) == -1
+
+test "from_bytes and time_of: lengths refused, and a version that holds no time"
+    assert from_bytes([]).is_err()
+    assert from_bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
+
+    match time_of(parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "f81d4fae-7dec-11d0-a765-00a0c91e6bf6 is of version 1, and only version 7 holds the time it was made"
+
+    assert time_of(max_uuid()).is_err()
+
+## Examples
+
+# A random identifier for a new record.
+test "new_v4: an identifier for a new record"
+    id = new_v4().must()
+    assert version_of(id) == 4
+
+# An identifier that sorts by the time it was made.
+test "new_v7: an identifier that sorts by time"
+    id = new_v7().must()
+    assert version_of(id) == 7
+
+# RFC 9562's own example of version 7, made again at its millisecond: the
+# first 48 bits are the time, then the version.
+test "new_v7_at: RFC 9562's moment"
+    id = new_v7_at(1645557742000).must()
+    assert format(id).slice(from: 0, to: 15) == "017f22e2-79b0-7"
+
+# An identifier read from a form or a file.
+test "parse: the standard form"
+    id = parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()
+    assert id == Uuid(high: 17878533706586264016, low: 12062047867550723062)
+
+# An identifier written back, in lower case.
+test "format: written in lower case"
+    assert format(parse("{F81D4FAE-7DEC-11D0-A765-00A0C91E6BF6}").must()) == "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+
+# An identifier written as a URN.
+test "format_urn: the URN of an identifier"
+    assert format_urn(parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()) == "urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+
+# An identifier written as 32 digits.
+test "format_hex: the 32 digits"
+    assert format_hex(parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()) == "f81d4fae7dec11d0a76500a0c91e6bf6"
+
+# An identifier read from the 16 bytes a database stores.
+test "from_bytes: sixteen bytes from a database"
+    data: [u8] = [248, 29, 79, 174, 125, 236, 17, 208, 167, 101, 0, 160, 201, 30, 107, 246]
+    assert format(from_bytes(data).must()) == "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+
+# The bytes a database stores for an identifier.
+test "to_bytes: the sixteen bytes of an identifier"
+    assert to_bytes(max_uuid()).len() == 16 && to_bytes(nil_uuid())[15] == 0
+
+# The version of RFC 9562's example of version 1.
+test "version_of: a version 1"
+    assert version_of(parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()) == 1
+
+# The variant every version made here has.
+test "variant_of: RFC 9562's variant"
+    assert variant_of(parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()) == .rfc
+
+# Two identifiers ordered.
+test "compare: the smaller first"
+    a = parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()
+    b = parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf7").must()
+    assert compare(a: a, b: b) == -1
+
+# The moment RFC 9562's example of version 7 was made, as Python reads it.
+test "time_of: RFC 9562's example of version 7"
+    id = parse("017f22e2-79b0-7cc3-98c4-dc0c0c07398f").must()
+    assert time.unix_milliseconds(time_of(id).must()) == 1645557742000
+
+# The nil UUID, which stands for no identifier.
+test "nil_uuid: the nil UUID written"
+    assert format(nil_uuid()) == "00000000-0000-0000-0000-000000000000"
+
+# The max UUID, which sorts after every other.
+test "max_uuid: the max UUID written"
+    assert format(max_uuid()) == "ffffffff-ffff-ffff-ffff-ffffffffffff"

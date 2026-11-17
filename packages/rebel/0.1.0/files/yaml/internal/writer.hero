@@ -1,0 +1,195 @@
+# A value written as a YAML document in block style: a map a member a line,
+# `key: value`, a list an element a line, `- value`, each level indented two
+# spaces past the one that holds it, a map or a list inside a list's element
+# begun on the element's own line. It walks the value on a stack of its own,
+# so no nesting is too deep for it.
+
+use json
+use yaml/internal/stack
+use yaml/internal/style
+
+# The code of a value no YAML can say.
+constant INVALID: str
+    "invalid"
+
+# The node is a document's root.
+constant ROOT: i64
+    0
+
+# The node follows `key:` on its line.
+constant AFTER_KEY: i64
+    1
+
+# The node follows `-` on its line.
+constant AFTER_DASH: i64
+    2
+
+# The most characters a key holds written on its line before its `:`; a
+# longer one is written after a `?`, on a line of its own.
+constant MAX_KEY_CHARS: i64
+    1024
+
+# A node left to write, the text before it already chosen.
+record Work
+    # The node.
+    value: json.Value
+    # The column of the collection that holds it: its key's or its `-`'s.
+    indent: i64
+    # Where it stands: `ROOT`, `AFTER_KEY` or `AFTER_DASH`.
+    place: i64
+    # What is written before it on its line: the indentation and its key and
+    # `:`, or its `-`.
+    head: str
+
+# `v` as one document, ending with a line break. Fails `invalid` where it holds
+# a `nan` or an infinity.
+function document(v: json.Value) -> str?
+    pieces: [str] @= []
+    works: [Work] @= [Work(value: v, indent: 0, place: ROOT, head: "")]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        w = works[top]
+        works[top] @ Work(value: .null_value, indent: 0, place: ROOT, head: "")
+        pieces @ pieces.push(w.head)
+
+        gap = if w.place == ROOT
+            ""
+        else
+            " "
+
+        match w.value
+            .null_value => pieces @ pieces.push(gap + "null\n")
+            .boolean b  => pieces @ pieces.push(f"{gap}{b.v}\n")
+            .number n =>
+                if n.v != n.v || n.v - n.v != 0.0
+                    return fail(code: INVALID, msg: f"a number {n.v}, which YAML's JSON schema cannot write")
+                pieces @ pieces.push(gap + json.format(.number(v: n.v))? + "\n")
+            .text t => pieces @ pieces.push(gap + scalar(s: t.v, w: w))
+            .list l =>
+                if l.items.len() == 0
+                    pieces @ pieces.push(gap + "[]\n")
+                else
+                    inner = inner_indent(w)
+                    pieces @ pieces.push(opening(w))
+                    at: i64 @= l.items.len()
+
+                    while at > 0
+                        at @ at - 1
+                        head = margin(w: w, inner: inner, first: at == 0) + "-"
+                        stack.put(
+                            items: @works,
+                            top: top,
+                            item: Work(value: l.items[at], indent: inner, place: AFTER_DASH, head: head)
+                        )
+                        top @ top + 1
+            .object o =>
+                names = keys(o.members)
+
+                if names.len() == 0
+                    pieces @ pieces.push(gap + "{}\n")
+                else
+                    inner = inner_indent(w)
+                    pieces @ pieces.push(opening(w))
+                    at: i64 @= names.len()
+
+                    while at > 0
+                        at @ at - 1
+                        head = margin(w: w, inner: inner, first: at == 0) + key_head(key: names[at], inner: inner)
+                        stack.put(
+                            items: @works,
+                            top: top,
+                            item: Work(value: o.members[names[at]].must(), indent: inner, place: AFTER_KEY, head: head)
+                        )
+                        top @ top + 1
+
+    return ok(pieces.join(""))
+
+# The column of the elements or members of a collection written as `w`.
+function inner_indent(w: Work) -> i64
+    if w.place == ROOT
+        return 0
+    return w.indent + 2
+
+# What comes between `w`'s head and its collection's first entry: nothing at
+# the root, a space after a `-`, and a line break after a key's `:`.
+function opening(w: Work) -> str
+    if w.place == ROOT
+        return ""
+
+    if w.place == AFTER_DASH
+        return " "
+    return "\n"
+
+# The indentation of an entry at column `inner` of a collection written as
+# `w`: none for its first entry after a `-`, which shares that line.
+function margin(w: Work, inner: i64, first: bool) -> str
+    if first && w.place == AFTER_DASH
+        return ""
+    return repeat(" ", inner.to_u64().must())
+
+# `key` and its `:`, as a map's entry at column `inner` writes them: on one
+# line, or after a `?` where the key is too long for one.
+function key_head(key: str, inner: i64) -> str
+    written = style.one_line(key)
+
+    if too_long(written)
+        return "? " + written + "\n" + repeat(" ", inner.to_u64().must()) + ":"
+    return written + ":"
+
+# Whether `written` holds more than `MAX_KEY_CHARS` characters.
+function too_long(written: str) -> bool
+    if written.len() <= MAX_KEY_CHARS
+        return false
+    count: i64 @= 0
+
+    for _ in written.chars()
+        count @ count + 1
+
+    return count > MAX_KEY_CHARS
+
+# The text `s` as the scalar of `w`, with its line break: a literal block where
+# it holds lines and may be one, one line otherwise. At the root, a block that
+# needs an indentation indicator is quoted instead, since readers differ on
+# where a root's indicator counts from.
+function scalar(s: str, w: Work) -> str
+    if style.literal_fits(s) && !(w.place == ROOT && style.needs_indicator(s))
+        content = if w.place == ROOT
+            2
+        else
+            w.indent + 2
+        return style.literal(s: s, content: content)
+    return style.one_line(s) + "\n"
+
+## Tests
+
+test "document: each scalar at the root, and the empty list and map"
+    assert document(.null_value).must() == "null\n"
+    assert document(.boolean(v: false)).must() == "false\n"
+    assert document(.number(v: 1.5)).must() == "1.5\n"
+    assert document(.number(v: 1000000000000000000000.0)).must() == "1e+21\n"
+    assert document(.text(v: "a")).must() == "a\n"
+    assert document(.text(v: "")).must() == "\"\"\n"
+    assert document(.list(items: [])).must() == "[]\n"
+    assert document(.object(members: {})).must() == "{}\n"
+
+test "document: a map, a list under a key, a map in a list, a list in a list, and empty ones inside"
+    v: json.Value = .object(
+        members: {"a": .list(items: [.number(v: 1.0), .object(members: {"b": .null_value, "c": .list(items: [])})]), "d": .object(members: {"e": .list(items: [.list(items: [.text(v: "x"), .text(v: "y")])])})}
+    )
+    want = "a:\n  - 1\n  - b: null\n    c: []\nd:\n  e:\n    - - x\n      - \"y\"\n"
+    assert document(v).must() == want
+
+test "document: lines as a literal block at each place, and one that needs an indicator at the root"
+    assert document(.text(v: "a\nb")).must() == "|-\n  a\n  b\n"
+    assert document(.text(v: " a\nb")).must() == "\" a\\nb\"\n"
+    assert document(.list(items: [.text(v: " a\nb\n")])).must() == "- |2\n   a\n  b\n"
+    assert document(.object(members: {"k": .list(items: [.object(members: {"m": .text(v: "x\ny\n\n")})])})).must() == "k:\n  - m: |+\n      x\n      y\n\n"
+
+test "document: a key that is quoted, one too long for its line, and nan refused"
+    assert document(.object(members: {"": .number(v: 1.0), "yes": .text(v: "no")})).must() == "\"\": 1\n\"yes\": \"no\"\n"
+    long = repeat("k", 1030)
+    assert document(.object(members: {long: .number(v: 1.0)})).must() == "? " + long + "\n: 1\n"
+    nan = 0.0 / 0.0
+    assert document(.list(items: [.number(v: nan)])).is_err()

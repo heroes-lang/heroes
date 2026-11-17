@@ -1,0 +1,14 @@
+# Reaches Rebel's `ini`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small settings text, changes one
+# value and writes the document back.
+
+use <rebel>/ini
+
+function main()
+    match ini.parse("[DEFAULT]\ncolor = no\n\n[album]\ntitle = Low\nyear = 1977\n")
+        .err e => print(e.msg)
+        .ok found =>
+            doc @= found
+            ini.set_value(@doc, section: "album", key: "title", value: "Heroes")
+            print(ini.value_of(doc, section: "album", key: "color").default("?"))
+            print(ini.format(doc).default("?"))

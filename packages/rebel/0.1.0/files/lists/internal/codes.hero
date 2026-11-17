@@ -1,0 +1,24 @@
+# The code `lists` fails with and the words of its messages, kept in one place
+# so that every module of the package fails alike.
+
+# The code of a search that found nothing, which the face names as
+# `lists.NOT_FOUND`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The message of a search through `count` elements that found none that is
+# `what`: what was asked, and how much was searched.
+function none_is(count: i64, what: str) -> str
+    if count == 0
+        return f"an empty list holds no element that is {what}"
+
+    if count == 1
+        return f"the one element of the list is not {what}"
+    return f"none of the {count} elements of the list is {what}"
+
+## Tests
+
+test "none_is: an empty list, one element, and several"
+    assert none_is(count: 0, what: "x") == "an empty list holds no element that is x"
+    assert none_is(count: 1, what: "x") == "the one element of the list is not x"
+    assert none_is(count: 3, what: "x") == "none of the 3 elements of the list is x"

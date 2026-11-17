@@ -1,0 +1,817 @@
+# The platform layer's sockets, `hero_net.h`, bound thin: one function per C
+# function, each answering what C answers. They stand in C's order, and where
+# a call fails its socket is `nullptr` or its count -1, and `last_error` then
+# the kind. Rebel's floor of the network (`examples/packages/README.md` § 4.1):
+# no policy stands here, and the face above it turns every kind below into a
+# code. It began as the floor of `core`'s `net`, whose every line stands, and
+# after them come the layer's datagrams, names and a socket's two addresses.
+#
+# The layer is C of the language's own beside the runtime (panel 234's R6,
+# feature 2295), so this group names its header and no `link`: no platform
+# type reaches it, and the same lines bind it on every platform. Every mark
+# below is the header's own promise: a socket the layer hands out is begun by
+# the call and ended by `hero_net_close`, or given up for its number by
+# `hero_net_number` where it is a connection a thread may take (panel 246's R6).
+
+extern "hero_net.h"
+    # A socket the layer holds open. It is a handle the layer issues and
+    # checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_NET_NOT_OPEN`, never a read of freed memory.
+    record Socket tag hero_net_socket
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, `HERO_NET_STOPPED` once the stop is asked.
+    constant HERO_NET_OK: i64
+    constant HERO_NET_INVALID: i64
+    constant HERO_NET_NOT_OPEN: i64
+    constant HERO_NET_ADDRESS: i64
+    constant HERO_NET_IN_USE: i64
+    constant HERO_NET_REFUSED: i64
+    constant HERO_NET_RESET: i64
+    constant HERO_NET_TIMED_OUT: i64
+    constant HERO_NET_UNREACHABLE: i64
+    constant HERO_NET_LIMIT: i64
+    constant HERO_NET_DENIED: i64
+    constant HERO_NET_OTHER: i64
+    constant HERO_NET_STOPPED: i64
+    constant HERO_NET_TOO_LONG: i64
+    constant HERO_NET_NOT_FOUND: i64
+    # The bytes a buffer must have for the layer to write an address into it.
+    constant HERO_NET_ADDRESS_MOST: u64
+    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+    function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_accept(listener: Socket) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_port(s: Socket) -> i64
+    function hero_net_send(s: Socket, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_recv(s: Socket, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_close(s: Socket consumes) -> i64
+    function hero_net_number(s: Socket consumes) -> i64
+    function hero_net_of(n: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_catch_stop() -> i64
+    function hero_net_stop_asked() -> i64
+    function hero_net_ask_stop()
+    function hero_net_set_deadline(s: Socket, ms: i64) -> i64
+    function hero_net_last_error() -> i64
+    function hero_net_last_os_error() -> i64
+    function hero_net_udp(address: cstr lent, port: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_send_to(s: Socket, @data: [u8] counted_by n lent, n: u64, address: cstr lent, port: i64) -> i64
+    function hero_net_recv_from(s: Socket, @buffer: [u8] counted_by n lent, n: u64, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
+    function hero_net_lookup(name: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_name_of(address: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_net_local(s: Socket, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
+    function hero_net_remote(s: Socket, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
+    # Round 3 (2026-11-16): which direction `shutdown` closes, the options,
+    # and the flags of an interface.
+    constant HERO_NET_SHUT_READ: i64
+    constant HERO_NET_SHUT_WRITE: i64
+    constant HERO_NET_SHUT_BOTH: i64
+    constant HERO_NET_OPTION_NO_DELAY: i64
+    constant HERO_NET_OPTION_KEEP_ALIVE: i64
+    constant HERO_NET_OPTION_BROADCAST: i64
+    constant HERO_NET_OPTION_MULTICAST_INTERFACE: i64
+    constant HERO_NET_OPTION_MULTICAST_LOOP: i64
+    constant HERO_NET_OPTION_MULTICAST_HOPS: i64
+    constant HERO_NET_INTERFACE_UP: i64
+    constant HERO_NET_INTERFACE_RUNNING: i64
+    constant HERO_NET_INTERFACE_LOOPBACK: i64
+    constant HERO_NET_INTERFACE_BROADCAST: i64
+    constant HERO_NET_INTERFACE_MULTICAST: i64
+    constant HERO_NET_INTERFACE_POINT_TO_POINT: i64
+    function hero_net_connect_within(address: cstr lent, port: i64, ms: i64) -> Socket acquires hero_net_close | hero_net_number
+    function hero_net_shutdown(s: Socket, how: i64) -> i64
+    function hero_net_set_option(s: Socket, option: i64, value: i64) -> i64
+    function hero_net_option(s: Socket, option: i64) -> i64
+    function hero_net_join_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
+    function hero_net_leave_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
+    function hero_net_interfaces(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# A socket listening on `address` at `port`, or `nullptr`. The address is
+# `127.0.0.1`, `::1`, or "" for every address of the machine, and port 0 asks
+# the system for a free one. It aborts where `address` holds a zero byte, which
+# C cannot read.
+function listen(address: str, port: i64) -> Socket
+    return hero_net_listen(address: address.cstr(), port: port)
+
+# A connection to `address` at `port`, or `nullptr`. The address is a number
+# or a name, and it aborts where it holds a zero byte.
+function connect(address: str, port: i64) -> Socket
+    return hero_net_connect(address: address.cstr(), port: port)
+
+# The next connection `listener` holds, waiting for one, or `nullptr`.
+function accept(listener: Socket) -> Socket
+    return hero_net_accept(listener)
+
+# The port `s` stands on, or -1.
+function port_of(s: Socket) -> i64
+    return hero_net_port(s)
+
+# How many of the first `n` bytes of `data` were sent, or -1. It may be fewer,
+# as many as the system had room for, and it waits only while there is no room
+# at all; `data` is left as it was handed, `n` bytes long.
+function send(s: Socket, @data: [u8], n: u64) -> i64
+    return hero_net_send(s, @data, n: n)
+
+# How many bytes were received into `buffer`, 0 where the peer closed, or -1.
+# It waits for one, and leaves `buffer` `n` bytes long, the received ones
+# first.
+function recv(s: Socket, @buffer: [u8], n: u64) -> i64
+    return hero_net_recv(s, @buffer, n: n)
+
+# 0, or -1 where the system failed; `s` is given back either way. A call
+# another thread waits in on it ends at once, failing `HERO_NET_NOT_OPEN`.
+function close(@s: Socket) -> i64
+    return hero_net_close(s)
+
+# The number `s` is given up for, or -1. Another thread takes it back with
+# `of`, and from this call no handle names the socket. It is large, above
+# 2^62, so it is carried whole to `of` and never computed with.
+function number(@s: Socket) -> i64
+    return hero_net_number(s)
+
+# The socket number `n` names, taken back once, or `nullptr`. It has a handle
+# of its own; `n` names none where it was taken back already, its socket
+# closed, or the layer never gave it.
+function of(n: i64) -> Socket
+    return hero_net_of(n)
+
+# 0 once SIGINT and SIGTERM ask a stop instead of ending the program, or -1.
+# On Windows Ctrl-C, Ctrl-Break and the console closing do; from the first of
+# them every call of the layer that would wait fails `HERO_NET_STOPPED`, on
+# every thread.
+function catch_stop() -> i64
+    return hero_net_catch_stop()
+
+# 1 once a stop was asked, else 0. A signal after `catch_stop` asks it, and so
+# does `ask_stop`; it changes nothing `last_error` answers.
+function stop_asked() -> i64
+    return hero_net_stop_asked()
+
+# Asks the program's own stop, from any thread. From this call every call of
+# the layer that would wait fails `HERO_NET_STOPPED`, on every thread, as
+# after the first signal `catch_stop` catches, which it is kept apart from: a
+# first Ctrl-C after it does not end the program, a second does.
+function ask_stop()
+    hero_net_ask_stop()
+
+# 0 once every wait on `s` ends by `ms` milliseconds from now, or -1. A wait
+# past it fails `HERO_NET_TIMED_OUT`, calls already waiting among them; 0
+# takes it away; -1 where `s` is not open or `ms` is negative.
+function set_deadline(s: Socket, ms: i64) -> i64
+    return hero_net_set_deadline(s, ms: ms)
+
+# The kind of the last call's failure on this thread. It is `HERO_NET_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_net_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# refused.
+function last_os_error() -> i64
+    return hero_net_last_os_error()
+
+# A datagram socket bound to `address` at `port`, or `nullptr`. The address
+# is a number, or "" for every address of the machine, and port 0 asks the
+# system for a free one; a name fails `HERO_NET_ADDRESS`. `send`, `recv` and
+# `accept` refuse it `HERO_NET_INVALID`, and it aborts where `address` holds a
+# zero byte.
+function udp(address: str, port: i64) -> Socket
+    return hero_net_udp(address: address.cstr(), port: port)
+
+# `n` where the first `n` bytes of `data` went as one datagram to `address`
+# at `port`, or -1. The address is a number of the socket's own family, and a
+# datagram goes whole or not at all: one too long fails `HERO_NET_TOO_LONG`.
+function send_to(s: Socket, @data: [u8], n: u64, address: str, port: i64) -> i64
+    return hero_net_send_to(s, @data, n: n, address: address.cstr(), port: port)
+
+# How many bytes of one datagram were received into `buffer`, or -1. It waits
+# for one, and writes its sender's address into `address`, text ended by a
+# zero byte, and its port into `port`; `m` is `address`'s bytes, at least
+# `HERO_NET_ADDRESS_MOST`. A datagram longer than `n` fails
+# `HERO_NET_TOO_LONG`: `buffer` holds its first `n` bytes, the sender is told,
+# and the rest is gone.
+function recv_from(s: Socket, @buffer: [u8], n: u64, @address: [u8], m: u64, @port: i64) -> i64
+    return hero_net_recv_from(s, buffer: @buffer, n: n, address: @address, m: m, port: @port)
+
+# The bytes the list of `name`'s addresses takes, or -1. Each address is text
+# ended by a newline, IPv4 and IPv6 in the system's order, and a zero byte
+# ends the list; an answer of `n` or more says the list was cut after the
+# last address written. It may wait in the system's resolver, which no
+# deadline and no stop ends; a name it does not know fails
+# `HERO_NET_NOT_FOUND`.
+function lookup(name: str, @buffer: [u8], n: u64) -> i64
+    return hero_net_lookup(name: name.cstr(), @buffer, n: n)
+
+# The bytes of the name the resolver has for `address`, a number, or -1. The
+# name is written, a zero byte after it, where `n` is more than the answer;
+# it may wait as `lookup` does, and an address with no name fails
+# `HERO_NET_NOT_FOUND`.
+function name_of(address: str, @buffer: [u8], n: u64) -> i64
+    return hero_net_name_of(address: address.cstr(), @buffer, n: n)
+
+# The bytes of the address `s` stands on, or -1. The text goes into
+# `address`, a zero byte after it, and the port into `port`; `m` is
+# `address`'s bytes, at least `HERO_NET_ADDRESS_MOST`.
+function local(s: Socket, @address: [u8], m: u64, @port: i64) -> i64
+    return hero_net_local(s, @address, m: m, @port)
+
+# The bytes of the address of the peer `s` is connected to, or -1. It is
+# written as `local` writes; a socket with no peer fails `HERO_NET_RESET`.
+function remote(s: Socket, @address: [u8], m: u64, @port: i64) -> i64
+    return hero_net_remote(s, @address, m: m, @port)
+
+# A connection to `address` at `port`, as `connect` makes it, made within
+# `ms` milliseconds, or `nullptr`: `HERO_NET_TIMED_OUT` once they pass, every
+# address of a name tried within the one time. 0 is no limit, below 0
+# `HERO_NET_INVALID`; the name's lookup is not bounded. The connection made
+# keeps no deadline. It aborts where `address` holds a zero byte.
+function connect_within(address: str, port: i64, ms: i64) -> Socket
+    return hero_net_connect_within(address: address.cstr(), port: port, ms: ms)
+
+# 0 once one direction of the connection `s` is closed, `how` one of
+# `HERO_NET_SHUT_READ`, `HERO_NET_SHUT_WRITE` and `HERO_NET_SHUT_BOTH`, or -1:
+# `HERO_NET_INVALID` for a datagram socket or another `how`,
+# `HERO_NET_RESET` for one with no connection. A `recv` after READ answers 0;
+# a `send` after WRITE fails `HERO_NET_RESET`, and the peer reads its end.
+function shutdown(s: Socket, how: i64) -> i64
+    return hero_net_shutdown(s, how: how)
+
+# 0 once `option`, one of `HERO_NET_OPTION_...`, is `value`, or -1:
+# `HERO_NET_INVALID` for an option the socket's kind has not (no delay and
+# keep-alive a connection's or a listener's, broadcast and the three
+# multicast options a datagram socket's) or a value out of its range: 1 on
+# and 0 off, an interface's index for `HERO_NET_OPTION_MULTICAST_INTERFACE`
+# (0 the system's choice), 0 to 255 for `HERO_NET_OPTION_MULTICAST_HOPS`.
+function set_option(s: Socket, option: i64, value: i64) -> i64
+    return hero_net_set_option(s, option: option, value: value)
+
+# The value of `option`, 1 on and 0 off or the number it holds, or -1 as
+# `set_option` fails.
+function option_of(s: Socket, option: i64) -> i64
+    return hero_net_option(s, option: option)
+
+# 0 once the datagram socket `s` has joined the multicast group `group`, an
+# address of its own family, on the interface of `interface_index`, 0 for
+# the system's choice, or -1: `HERO_NET_ADDRESS` where `group` is no
+# multicast number of that family, `HERO_NET_INVALID` for a connection or an
+# index outside 0 to 2^32 - 1. It aborts where `group` holds a zero byte.
+function join_group(s: Socket, group: str, interface_index: i64) -> i64
+    return hero_net_join_group(s, group: group.cstr(), interface_index: interface_index)
+
+# 0 once `s` has left the group `join_group` joined, or -1: a group not
+# joined is the system's own refusal.
+function leave_group(s: Socket, group: str, interface_index: i64) -> i64
+    return hero_net_leave_group(s, group: group.cstr(), interface_index: interface_index)
+
+# How many bytes the list of the machine's interfaces is, or -1. It fills
+# `buffer` with one entry for each address of each interface, and one for an
+# interface with none: five fields, each ended by a zero byte, the name, the
+# index, the flags (`HERO_NET_INTERFACE_...` added together), the address as
+# text ("" for none) and its prefix length, the three numbers in decimal
+# digits. An answer above `n` says the buffer was short, nothing in it then
+# to be read; `buffer` is left `n` long.
+function interfaces(@buffer: [u8], n: u64) -> i64
+    return hero_net_interfaces(@buffer, n: n)
+
+## Tests
+
+test "listen asks the system for a free port, port_of reads it, and close gives the socket back"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert listener != nullptr
+    assert port_of(listener) > 0
+    assert close(@listener) == 0
+
+test "a connection is made, accepted, sent over and received, each side closed"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    assert client != nullptr
+    accepted @= accept(listener)
+    assert accepted != nullptr
+    hello: [u8] @= [104, 105]
+    assert send(client, @hello, n: 2) == 2
+    assert hello == [104, 105]
+    heard: [u8] @= []
+    got = recv(accepted, @heard, n: 8)
+    assert got >= 1 && got <= 2
+    assert heard.len() == 8 && heard[0] == 104
+    assert close(@client) == 0
+    rest: [u8] @= []
+
+    # The peer's close is a 0, after the bytes not yet read.
+    if got == 1
+        assert recv(accepted, @rest, n: 8) == 1
+    assert recv(accepted, @rest, n: 8) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+test "number gives a connection up and of takes it back once, a stale number refused"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    n = number(@accepted)
+    assert n > 0
+    back @= of(n)
+    assert back != nullptr
+    again = of(n)
+    assert again == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN
+    assert last_os_error() == 0
+    assert close(@back) == 0
+    assert close(@client) == 0
+    assert close(@listener) == 0
+
+test "a deadline ends a recv on a quiet connection, and 0 takes it away"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    heard: [u8] @= []
+    assert set_deadline(accepted, ms: 200) == 0
+    assert recv(accepted, @heard, n: 8) == -1
+    assert last_error() == HERO_NET_TIMED_OUT
+    assert set_deadline(accepted, ms: 0) == 0
+    hello: [u8] @= [104]
+    assert send(client, @hello, n: 1) == 1
+    assert recv(accepted, @heard, n: 8) == 1
+    assert set_deadline(accepted, ms: -1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@client) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+# A socket that is no socket fails `HERO_NET_NOT_OPEN` everywhere, never a read
+# of freed memory, and a port outside 0 to 65535 is refused before any call.
+test "what the layer refuses: a number it never gave, and a port past 65535"
+    assert of(12345) == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN
+    assert listen(address: "127.0.0.1", port: 65536) == nullptr
+    assert last_error() == HERO_NET_INVALID
+    assert last_error() != HERO_NET_OK
+
+# This changes the process that runs the tests as it would a server: SIGINT and
+# SIGTERM ask a stop from here on, and a second one still ends it at once.
+test "catch_stop answers 0, the second time too"
+    assert catch_stop() == 0
+    assert catch_stop() == 0
+
+# Each `test` runs as a process of its own, so the stop this one asks ends no
+# other test's waits.
+test "ask_stop makes an accept fail stopped, and stop_asked reads it"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert stop_asked() == 0
+    ask_stop()
+    assert stop_asked() == 1
+    assert accept(listener) == nullptr
+    assert last_error() == HERO_NET_STOPPED
+    assert close(@listener) == 0
+
+## Tests of the datagrams, the names and the two addresses
+
+# The edges first: what the layer refuses before the system is asked, each
+# refusal a kind and never a fault.
+test "what the datagram calls refuse: a name, a port that is none, the other kind of socket, a short address buffer"
+    assert udp(address: "127.0.0.1", port: 65536) == nullptr
+    assert last_error() == HERO_NET_INVALID
+    assert udp(address: "localhost", port: 0) == nullptr
+    assert last_error() == HERO_NET_ADDRESS
+    box @= udp(address: "127.0.0.1", port: 0)
+    assert box != nullptr
+    listener @= listen(address: "127.0.0.1", port: 0)
+    bytes: [u8] @= [1, 2]
+    who: [u8] @= []
+    sender: i64 @= 0
+
+    # A connection's calls on a datagram socket, and a datagram's on a listener.
+    assert send(box, @bytes, n: 2) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert recv(box, @bytes, n: 2) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert accept(box) == nullptr
+    assert last_error() == HERO_NET_INVALID
+    assert send_to(listener, @bytes, n: 2, address: "127.0.0.1", port: 9) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert recv_from(listener, buffer: @bytes, n: 2, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == -1
+    assert last_error() == HERO_NET_INVALID
+
+    # A name, an address of the other family, a port that is none.
+    assert send_to(box, @bytes, n: 2, address: "localhost", port: 9) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert send_to(box, @bytes, n: 2, address: "::1", port: 9) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert send_to(box, @bytes, n: 2, address: "127.0.0.1", port: 0) == -1
+    assert last_error() == HERO_NET_INVALID
+
+    # An address buffer too short for any address: refused, no datagram taken.
+    assert recv_from(box, buffer: @bytes, n: 2, address: @who, m: 8, @sender) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@box) == 0
+    assert close(@listener) == 0
+
+test "a datagram is sent and received, its sender's address and port told, and one of no bytes is one"
+    a @= udp(address: "127.0.0.1", port: 0)
+    b @= udp(address: "127.0.0.1", port: 0)
+    assert a != nullptr
+    assert b != nullptr
+    assert set_deadline(a, ms: 5000) == 0
+    assert set_deadline(b, ms: 5000) == 0
+    hello: [u8] @= [104, 105, 33]
+    assert send_to(a, @hello, n: 3, address: "127.0.0.1", port: port_of(b)) == 3
+    assert hello == [104, 105, 33]
+    heard: [u8] @= []
+    who: [u8] @= []
+    sender: i64 @= 0
+    assert recv_from(b, buffer: @heard, n: 16, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == 3
+    assert heard.len() == 16 && heard[0] == 104 && heard[2] == 33
+    assert sender == port_of(a)
+
+    # The text `127.0.0.1` and the zero byte that ends it.
+    loopback: [u8] = [49, 50, 55, 46, 48, 46, 48, 46, 49, 0]
+    assert who.slice(from: 0, to: 10) == loopback
+
+    # The answer goes to the port the datagram told, and holds no byte.
+    nothing: [u8] @= []
+    assert send_to(b, @nothing, n: 0, address: "127.0.0.1", port: sender) == 0
+    assert recv_from(a, buffer: @heard, n: 16, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == 0
+    assert sender == port_of(b)
+    assert close(@a) == 0
+    assert close(@b) == 0
+
+test "a datagram longer than the buffer is reported, its first bytes and its sender kept, and the next one is whole"
+    a @= udp(address: "127.0.0.1", port: 0)
+    b @= udp(address: "127.0.0.1", port: 0)
+    assert set_deadline(b, ms: 5000) == 0
+    big: [u8] @= [1, 2, 3, 4, 5, 6, 7, 8]
+    small: [u8] @= [9]
+    assert send_to(a, @big, n: 8, address: "127.0.0.1", port: port_of(b)) == 8
+    assert send_to(a, @small, n: 1, address: "127.0.0.1", port: port_of(b)) == 1
+    heard: [u8] @= []
+    who: [u8] @= []
+    sender: i64 @= 0
+    assert recv_from(b, buffer: @heard, n: 4, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == -1
+    assert last_error() == HERO_NET_TOO_LONG
+    assert heard == [1, 2, 3, 4]
+    assert sender == port_of(a)
+    assert who[0] == '1' && who[9] == 0
+    assert recv_from(b, buffer: @heard, n: 4, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == 1
+    assert heard[0] == 9
+    assert close(@a) == 0
+    assert close(@b) == 0
+
+test "a deadline ends a recv_from on a quiet datagram socket"
+    box @= udp(address: "127.0.0.1", port: 0)
+    heard: [u8] @= []
+    who: [u8] @= []
+    sender: i64 @= 0
+    assert set_deadline(box, ms: 200) == 0
+    assert recv_from(box, buffer: @heard, n: 8, address: @who, m: HERO_NET_ADDRESS_MOST, @sender) == -1
+    assert last_error() == HERO_NET_TIMED_OUT
+    assert close(@box) == 0
+
+test "localhost has at least one address, a number answers itself, and a short buffer says the list was cut"
+    list: [u8] @= []
+    took = lookup(name: "localhost", @list, n: 1024)
+
+    # At least `::1` and its newline, the list whole, a zero byte after it.
+    assert took >= 4 && took < 1024
+    assert list[took - 1] == '\n' && list[took] == 0
+    own: [u8] @= []
+    assert lookup(name: "127.0.0.1", @own, n: 64) == 10
+    itself: [u8] = [49, 50, 55, 46, 48, 46, 48, 46, 49, 10, 0]
+    assert own.slice(from: 0, to: 11) == itself
+
+    # Ten bytes hold the list and not its zero byte: nothing of it is written.
+    cut: [u8] @= []
+    assert lookup(name: "127.0.0.1", @cut, n: 10) == 10
+    assert cut[0] == 0
+
+# `.invalid` is a name no resolver may answer (RFC 6761). Where no name server
+# can be asked at all the resolver says so, which is another kind.
+test "a name that does not exist is a failure of its own kind, and no name at all is refused"
+    list: [u8] @= []
+    assert lookup(name: "no-such-host.invalid", @list, n: 1024) == -1
+    kind = last_error()
+    assert kind == HERO_NET_NOT_FOUND || kind == HERO_NET_UNREACHABLE
+    assert lookup(name: "", @list, n: 1024) == -1
+    assert last_error() == HERO_NET_INVALID
+
+test "name_of refuses what is no number, and answers a name or not found for the loopback address"
+    name: [u8] @= []
+    assert name_of(address: "not a number", @name, n: 1025) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    took = name_of(address: "127.0.0.1", @name, n: 1025)
+    assert took > 0 || last_error() == HERO_NET_NOT_FOUND
+
+    if took > 0
+        assert name[0] != 0 && name[took] == 0
+
+test "local and remote tell a connection's two addresses, and a listener has no peer"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    here: [u8] @= []
+    there: [u8] @= []
+    here_port: i64 @= 0
+    there_port: i64 @= 0
+
+    # The client's own end is the end its peer sees: nine bytes, `127.0.0.1`.
+    assert local(client, @here, m: HERO_NET_ADDRESS_MOST, @here_port) == 9
+    assert remote(accepted, @there, m: HERO_NET_ADDRESS_MOST, @there_port) == 9
+    assert here == there
+    assert here_port == there_port && here_port == port_of(client)
+    assert remote(client, @there, m: HERO_NET_ADDRESS_MOST, @there_port) == 9
+    assert there_port == port_of(listener)
+    assert remote(listener, @there, m: HERO_NET_ADDRESS_MOST, @there_port) == -1
+    assert last_error() == HERO_NET_RESET
+    assert local(client, @here, m: 8, @here_port) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@client) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+## Tests of round 3: a connect with a time limit, a direction closed, the options, multicast and the interfaces
+
+# The fields of the first `used` bytes of an interface list, each ended by a
+# zero byte, as text.
+function test_fields(buffer: [u8], used: i64) -> [str]
+    fields: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: used)
+        if buffer[at] == 0
+            fields @ fields.push(buffer.slice(from: from, to: at).validated_bytes().must())
+            from @ at + 1
+
+    return fields
+
+# The index of the interface holding 127.0.0.1, the loopback, from the
+# list: the one interface every machine has and every route leaves alone.
+function test_loopback_index() -> i64
+    none: [u8] @= []
+    need = interfaces(@none, n: 0)
+    room = need.to_u64().must() + 1024
+    list: [u8] @= []
+    used = interfaces(@list, n: room)
+    fields = test_fields(list, used: used)
+
+    for at in range(from: 0, to: fields.len() / 5)
+        flags = test_number(fields[at * 5 + 2])
+
+        if fields[at * 5 + 3] == "127.0.0.1" && flags & HERO_NET_INTERFACE_LOOPBACK != 0
+            return test_number(fields[at * 5 + 1])
+
+    return 0
+
+# The number the decimal digits of `text` write, -1 for a text that holds
+# anything else or none.
+function test_number(text: str) -> i64
+    if text.len() == 0
+        return -1
+    value: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        digit = text[at]
+
+        if digit < '0' || digit > '9'
+            return -1
+        value @ value * 10 + (digit - '0').to_i64().must()
+
+    return value
+
+test "connect_within: a listener reached within its time, a time below 0, an address that never answers, and a name not there"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect_within(address: "127.0.0.1", port: port_of(listener), ms: 5000)
+    assert client != nullptr
+    accepted @= accept(listener)
+    assert accepted != nullptr
+
+    # The connection keeps no deadline of its own: a quiet recv waits for
+    # the deadline set after, not for the time of the connect.
+    heard: [u8] @= []
+    assert set_deadline(client, ms: 100) == 0
+    assert recv(client, @heard, n: 8) == -1
+    assert last_error() == HERO_NET_TIMED_OUT
+    assert close(@client) == 0
+    assert close(@accepted) == 0
+    none = connect_within(address: "127.0.0.1", port: port_of(listener), ms: -1)
+    assert none == nullptr
+    assert last_error() == HERO_NET_INVALID
+    assert close(@listener) == 0
+
+    # TEST-NET-1 (RFC 5737) is routed nowhere: the time passes, or the
+    # system says at once that no route reaches it.
+    silent = connect_within(address: "192.0.2.1", port: 9, ms: 300)
+    assert silent == nullptr
+    assert last_error() == HERO_NET_TIMED_OUT || last_error() == HERO_NET_UNREACHABLE
+
+# The defect of round 3: a name the resolver does not know is
+# `HERO_NET_NOT_FOUND` to a connection as to `lookup`, where it was
+# `HERO_NET_ADDRESS`.
+test "connect and connect_within: a name nobody has fails as lookup fails it"
+    list: [u8] @= []
+    assert lookup(name: "no-such-host.invalid", @list, n: 64) == -1
+    looked = last_error()
+    nobody = connect(address: "no-such-host.invalid", port: 80)
+    assert nobody == nullptr
+
+    if looked == HERO_NET_NOT_FOUND
+        assert last_error() == HERO_NET_NOT_FOUND
+    else
+        assert last_error() == HERO_NET_ADDRESS
+    within = connect_within(address: "no-such-host.invalid", port: 80, ms: 1000)
+    assert within == nullptr
+
+    if looked == HERO_NET_NOT_FOUND
+        assert last_error() == HERO_NET_NOT_FOUND
+
+test "shutdown: the writing side closed is the peer's end, a send after it refused, the reading side closed reads 0, and what has no connection"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    assert set_deadline(client, ms: 5000) == 0
+    assert set_deadline(accepted, ms: 5000) == 0
+    assert shutdown(client, how: HERO_NET_SHUT_WRITE) == 0
+    heard: [u8] @= []
+    assert recv(accepted, @heard, n: 8) == 0
+
+    # Its reading side at its end already, the peer's close read, is shut
+    # with no failure, as on every platform.
+    assert shutdown(accepted, how: HERO_NET_SHUT_READ) == 0
+    assert recv(accepted, @heard, n: 8) == 0
+    one: [u8] @= [7]
+    assert send(client, @one, n: 1) == -1
+    assert last_error() == HERO_NET_RESET
+
+    # The other direction still carries bytes, until it is closed too.
+    assert send(accepted, @one, n: 1) == 1
+    assert recv(client, @heard, n: 8) == 1 && heard[0] == 7
+    assert shutdown(client, how: HERO_NET_SHUT_READ) == 0
+    assert recv(client, @heard, n: 8) == 0
+    assert shutdown(client, how: 0) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert shutdown(listener, how: HERO_NET_SHUT_BOTH) == -1
+    assert last_error() == HERO_NET_RESET
+    datagrams @= udp(address: "127.0.0.1", port: 0)
+    assert shutdown(datagrams, how: HERO_NET_SHUT_BOTH) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@datagrams) == 0
+    assert close(@client) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+test "set_option and option: no delay and keep-alive on and off on a connection, broadcast on a datagram socket, and what each kind has not"
+    listener @= listen(address: "127.0.0.1", port: 0)
+    client @= connect(address: "127.0.0.1", port: port_of(listener))
+    accepted @= accept(listener)
+    assert option_of(client, option: HERO_NET_OPTION_NO_DELAY) == 0
+    assert set_option(client, option: HERO_NET_OPTION_NO_DELAY, value: 1) == 0
+    assert option_of(client, option: HERO_NET_OPTION_NO_DELAY) == 1
+    assert set_option(client, option: HERO_NET_OPTION_NO_DELAY, value: 0) == 0
+    assert option_of(client, option: HERO_NET_OPTION_NO_DELAY) == 0
+    assert set_option(accepted, option: HERO_NET_OPTION_KEEP_ALIVE, value: 1) == 0
+    assert option_of(accepted, option: HERO_NET_OPTION_KEEP_ALIVE) == 1
+    assert set_option(listener, option: HERO_NET_OPTION_NO_DELAY, value: 1) == 0
+    assert set_option(client, option: HERO_NET_OPTION_BROADCAST, value: 1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert set_option(client, option: HERO_NET_OPTION_NO_DELAY, value: 2) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert option_of(client, option: 99) == -1
+    assert last_error() == HERO_NET_INVALID
+    datagrams @= udp(address: "0.0.0.0", port: 0)
+    assert option_of(datagrams, option: HERO_NET_OPTION_BROADCAST) == 0
+    assert set_option(datagrams, option: HERO_NET_OPTION_BROADCAST, value: 1) == 0
+    assert option_of(datagrams, option: HERO_NET_OPTION_BROADCAST) == 1
+    assert set_option(datagrams, option: HERO_NET_OPTION_KEEP_ALIVE, value: 1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@datagrams) == 0
+    gone: Socket = nullptr
+    assert option_of(gone, option: HERO_NET_OPTION_NO_DELAY) == -1
+    assert last_error() == HERO_NET_NOT_OPEN
+    assert close(@client) == 0
+    assert close(@accepted) == 0
+    assert close(@listener) == 0
+
+# A group joined on the loopback interface, and sent to by it with the loop
+# on, takes back what is sent: no route of the machine is asked, so it holds
+# on any network (2026-11-16, after a VPN gave this Mac a second route for
+# multicast beside its Wi-Fi's, which the system's choice of index 0 met).
+# Where the system refuses the join, nothing is asked of a datagram.
+test "join_group and leave_group: a datagram sent to a group joined on the loopback comes back, the group left, the system's choice, what is no group, and a connection"
+    s @= udp(address: "0.0.0.0", port: 0)
+    assert set_deadline(s, ms: 3000) == 0
+    loopback = test_loopback_index()
+    assert loopback > 0
+    joined = join_group(s, group: "239.255.77.77", interface_index: loopback)
+
+    if joined == 0
+        assert set_option(s, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: loopback) == 0
+        assert set_option(s, option: HERO_NET_OPTION_MULTICAST_LOOP, value: 1) == 0
+        hello: [u8] @= [104, 105]
+        assert send_to(s, @hello, n: 2, address: "239.255.77.77", port: port_of(s)) == 2
+        got: [u8] @= []
+        from: [u8] @= []
+        from_port: i64 @= 0
+        assert recv_from(s, buffer: @got, n: 16, address: @from, m: HERO_NET_ADDRESS_MOST, port: @from_port) == 2
+        assert got[0] == 104 && got[1] == 105
+        assert leave_group(s, group: "239.255.77.77", interface_index: loopback) == 0
+        assert leave_group(s, group: "239.255.77.77", interface_index: loopback) == -1
+    else
+        assert last_error() != HERO_NET_INVALID && last_error() != HERO_NET_ADDRESS
+
+    # The system's choice, index 0: joined and left, or refused, where no
+    # route for multicast stands; no datagram is asked of it.
+    if join_group(s, group: "239.255.77.78", interface_index: 0) == 0
+        assert leave_group(s, group: "239.255.77.78", interface_index: 0) == 0
+    else
+        assert last_error() != HERO_NET_INVALID && last_error() != HERO_NET_ADDRESS
+    assert join_group(s, group: "127.0.0.1", interface_index: 0) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert join_group(s, group: "ff02::1", interface_index: 0) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert join_group(s, group: "239.255.77.77", interface_index: -1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@s) == 0
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert join_group(listener, group: "239.255.77.77", interface_index: 0) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@listener) == 0
+
+test "set_option and option_of of multicast: the interface, the loop and the hops read back on IPv4 and on IPv6, each range's edges, and a connection"
+    loopback = test_loopback_index()
+    four @= udp(address: "0.0.0.0", port: 0)
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE) == 0
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: loopback) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE) == loopback
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: 0) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_LOOP) == 1
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_LOOP, value: 0) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_LOOP) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_HOPS) == 1
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_HOPS, value: 255) == 0
+    assert option_of(four, option: HERO_NET_OPTION_MULTICAST_HOPS) == 255
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_HOPS, value: 256) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_LOOP, value: 2) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: -1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert set_option(four, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: 4_294_967_296) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@four) == 0
+    six @= udp(address: "::", port: 0)
+    assert six != nullptr
+    assert set_option(six, option: HERO_NET_OPTION_MULTICAST_INTERFACE, value: loopback) == 0
+    assert option_of(six, option: HERO_NET_OPTION_MULTICAST_INTERFACE) == loopback
+    assert set_option(six, option: HERO_NET_OPTION_MULTICAST_LOOP, value: 0) == 0
+    assert option_of(six, option: HERO_NET_OPTION_MULTICAST_LOOP) == 0
+    assert set_option(six, option: HERO_NET_OPTION_MULTICAST_HOPS, value: 7) == 0
+    assert option_of(six, option: HERO_NET_OPTION_MULTICAST_HOPS) == 7
+    assert close(@six) == 0
+    listener @= listen(address: "127.0.0.1", port: 0)
+    assert set_option(listener, option: HERO_NET_OPTION_MULTICAST_LOOP, value: 1) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert option_of(listener, option: HERO_NET_OPTION_MULTICAST_HOPS) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert close(@listener) == 0
+
+test "interfaces: no room measures the list, the room asked takes it, and the loopback interface holds 127.0.0.1 in 8 bits"
+    none: [u8] @= []
+    need = interfaces(@none, n: 0)
+    assert need > 0
+    room = need.to_u64().must() + 256
+    list: [u8] @= []
+    used = interfaces(@list, n: room)
+    assert used > 0 && used <= room.to_i64().must()
+    fields = test_fields(list, used: used)
+    assert fields.len() % 5 == 0
+    found: bool @= false
+
+    for at in range(from: 0, to: fields.len() / 5)
+        name = fields[at * 5]
+        index = test_number(fields[at * 5 + 1])
+        flags = test_number(fields[at * 5 + 2])
+        address = fields[at * 5 + 3]
+        prefix = test_number(fields[at * 5 + 4])
+        assert name.len() > 0 && index >= 0 && flags >= 0 && prefix >= 0 && prefix <= 128
+
+        if address == "127.0.0.1"
+            assert flags & HERO_NET_INTERFACE_LOOPBACK != 0 && flags & HERO_NET_INTERFACE_UP != 0
+            assert prefix == 8 && index > 0
+            found @ true
+
+    assert found
+    short: [u8] @= []
+    assert interfaces(@short, n: 4) == used
+
+# The handle tag (2026-11-16): a number is a socket's handle with bit 62
+# set, and a value of the streams' tag (1, in bits 58 to 61) at slot 3 and
+# life 1 is a stream's handle with that bit, never a socket's: one this
+# table never gave, not open, and no slot is looked at. The same slot and
+# life with the sockets' own tag (2) and no number given out is not open as
+# well.
+test "of: a number carrying another table's tag is one never given, not open, as one of this table never given out"
+    stream_tagged = 4_899_916_394_579_230_724
+    none = of(stream_tagged)
+    assert none == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN
+    socket_tagged = 5_188_146_770_730_942_468
+    also = of(socket_tagged)
+    assert also == nullptr
+    assert last_error() == HERO_NET_NOT_OPEN

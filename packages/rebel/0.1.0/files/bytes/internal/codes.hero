@@ -1,0 +1,19 @@
+# The codes `bytes` fails with, held once so that every module of the package
+# and its face name the same constants, and a misspelt code is a compile
+# error.
+
+# A search found nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# A text is not what the function reads.
+constant INVALID: str
+    "invalid"
+
+# Bytes are not UTF-8, the language's own code.
+constant NOT_TEXT: str
+    "not_text"
+
+# A number read from bytes is wider than its type, the language's own code.
+constant DOES_NOT_FIT: str
+    "does_not_fit"

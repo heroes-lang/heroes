@@ -1,0 +1,166 @@
+# The ledger of `csv`: what Go's `encoding/csv` (Go 1.27) and Python's `csv`
+# (3.15) let a program do, one block per capability, and what Rebel answers.
+# Rust's standard library has no CSV, so its line is `-` in every block. The
+# lists are this machine's, 2026-11-16: `go doc -all encoding/csv`, and
+# `dir(csv)`, `dir(csv.Dialect)` and the attributes of a reader, a writer, a
+# DictReader, a DictWriter and a Sniffer. Every expected value of the
+# package's tests that the two answer was observed from them the same day.
+
+capability csv/read-text  every row of a text
+  heroes  csv.parse, csv.parse_with
+  go      NewReader, Reader.ReadAll
+  rust    -
+  python  reader
+  note    an empty line holds no row and is skipped, as Go skips it; Python answers an empty row for it, which no CSV writer writes for a row of fields
+
+capability csv/read-stream  rows read one at a time from a stream, and its end
+  heroes  csv.Reader, csv.reader, csv.read_row, csv.read_rows, csv.at_end
+  go      NewReader, Reader, Reader.Read, Reader.ReadAll
+  rust    -
+  python  reader, the reader's iteration
+  note    `read_row` answers [] at the end, which no row read can be; strict rows are read in time linear in the stream
+
+capability csv/quoted  quoted fields, doubled quotes, separators and line ends inside quotes
+  heroes  csv.parse
+  go      Reader.Read
+  rust    -
+  python  reader, Dialect.doublequote
+  note    a line end inside a quoted field is kept as written, CR LF included, as Python keeps it; Go turns CR LF there into LF. A carriage return alone outside quotes is text, as Go reads it; Python ends a row at it
+
+capability csv/strict-quotes  a quote inside a field that does not open with one, and text after a closing quote, refused or read
+  heroes  csv.ReadOptions.lazy_quotes
+  go      Reader.LazyQuotes, ErrBareQuote, ErrQuote
+  rust    -
+  python  Dialect.strict
+  note    strict by default, as Go and RFC 4180 are; Python reads leniently unless `strict`. Read lazily, a bare quote is text (both), text after a closing quote is added to the field, `"a"b` read as `ab` (Python's, which is Excel's; Go reads on to the next quote), and a quoted field the input ends inside ends there (both)
+
+capability csv/separator  another character between fields
+  heroes  csv.ReadOptions.separator, csv.WriteOptions.separator
+  go      Reader.Comma, Writer.Comma
+  rust    -
+  python  Dialect.delimiter, excel_tab
+  note    one ASCII character, as Python's must be one character; Go takes any character
+
+capability csv/quote-character  another character opening a quoted field
+  heroes  csv.ReadOptions.quote, csv.WriteOptions.quote
+  go      -
+  rust    -
+  python  Dialect.quotechar
+  note    one ASCII character
+
+capability csv/comment  lines opening with a character skipped
+  heroes  csv.ReadOptions.comment
+  go      Reader.Comment
+  rust    -
+  python  -
+  note    only at a line's first byte, as Go reads it: ` #x` is a row
+
+capability csv/trim  spaces before a field dropped
+  heroes  csv.ReadOptions.trim_leading_space
+  go      Reader.TrimLeadingSpace
+  rust    -
+  python  Dialect.skipinitialspace
+  note    spaces and tabs, so that a quoted field may follow them, as both read it
+
+capability csv/field-count  rows of different lengths refused, or allowed
+  heroes  csv.ReadOptions.ragged
+  go      Reader.FieldsPerRecord, ErrFieldCount
+  rust    -
+  python  -
+  note    refused by default, every row as long as the first, as Go's default and RFC 4180 ask; Python allows any. A count fixed before the first row is the program's to check, `len` of a row
+
+capability csv/field-limit  the most bytes a field may hold
+  heroes  csv.ReadOptions.max_field_len, csv.DEFAULT_MAX_FIELD_LEN
+  go      -
+  rust    -
+  python  field_size_limit
+  note    131,072 by default, Python's; through a stream a quoted field never closed is refused once it passes the limit rather than read whole
+
+capability csv/errors  a failure saying where the text stops being CSV
+  heroes  csv.INVALID
+  go      ParseError, ParseError.StartLine, ParseError.Line, ParseError.Column, ParseError.Err, ParseError.Error, ParseError.Unwrap
+  rust    -
+  python  Error
+  note    the message opens `line L, column C:`, the column in characters as json counts it, where Go counts bytes; a row of the wrong length says `line L:`. A field never closed names the line and column it opened at, as Go's StartLine does
+
+capability csv/position  where in the stream the last row began
+  heroes  csv.line_of
+  go      Reader.FieldPos, Reader.InputOffset
+  rust    -
+  python  reader.line_num
+  note    the line a row began on; a field's own column and the byte offset in the stream are not kept, since a failure's message carries its own line and column
+
+capability csv/header-read  rows keyed by the names of a header row
+  heroes  csv.parse_records, csv.record_of
+  go      -
+  rust    -
+  python  DictReader, DictReader.fieldnames, DictReader(restkey=, restval=)
+  note    a header naming a column twice fails, where Python keeps the last; a row longer than the header fails, where Python puts the rest under `restkey`; a row shorter lacks the names past its end, where Python gives them `restval`
+
+capability csv/header-write  records written under a header row
+  heroes  csv.format_records
+  go      -
+  rust    -
+  python  DictWriter, DictWriter.writeheader, DictWriter.writerow, DictWriter.writerows, DictWriter(restval=, extrasaction=)
+  note    a name a record lacks is written "", as Python's default `restval`; a key the header lacks fails, as Python's default `extrasaction` raises
+
+capability csv/write-text  rows written as text
+  heroes  csv.format, csv.format_with, csv.format_row
+  go      NewWriter, Writer.Write, Writer.WriteAll
+  rust    -
+  python  writer, writer.writerow, writer.writerows
+  note    a row of one empty field is written `""`, as Python writes it, so that it is read back; Go writes an empty line, which its reader skips. A row of no field is an empty line, as both write it
+
+capability csv/write-stream  rows written to a stream
+  heroes  csv.write_row, csv.write_rows
+  go      Writer.Write, Writer.WriteAll, Writer.Flush, Writer.Error
+  rust    -
+  python  writer(f).writerow, writer(f).writerows
+  note    each call writes at once, so there is nothing to flush and each write answers its own failure
+
+capability csv/line-end  the line end written after each row
+  heroes  csv.WriteOptions.line_end
+  go      Writer.UseCRLF
+  rust    -
+  python  Dialect.lineterminator, unix_dialect
+  note    CR LF by default, RFC 4180's and Python's; Go writes LF unless asked. A field's own line ends are written as they are, as Python writes them; Go turns them into CR LF with `UseCRLF`
+
+capability csv/quoting  which fields are quoted when written
+  heroes  csv.WriteOptions.quote_all, csv.minimal
+  go      -
+  rust    -
+  python  QUOTE_MINIMAL, QUOTE_ALL, Dialect.quoting
+  note    minimal quotes a field holding the separator, the quote, a carriage return or a line feed, RFC 4180's rule and Python's; Go also quotes a field opening with a space and the field `\.`
+
+capability csv/quoting-by-kind  fields quoted by the kind of value they hold
+  heroes  refused: a field is text and a row a `[str]`, so no field is a number or a null to quote apart
+  go      -
+  rust    -
+  python  QUOTE_NONNUMERIC, QUOTE_STRINGS, QUOTE_NOTNULL
+  note    -
+
+capability csv/escape  a field escaped with a character instead of quoted
+  heroes  refused: RFC 4180 quotes a field and doubles its quotes; a field escaped by a backslash is another format
+  go      -
+  rust    -
+  python  QUOTE_NONE, Dialect.escapechar, Dialect(doublequote=False)
+  note    -
+
+capability csv/dialects  a set of options kept and reused
+  heroes  csv.ReadOptions, csv.WriteOptions, csv.strict, csv.minimal
+  go      -
+  rust    -
+  python  Dialect, excel, excel_tab, unix_dialect, register_dialect, get_dialect, list_dialects, unregister_dialect, reader.dialect, writer.dialect
+  note    the options are records a program keeps in a binding or makes with a function of its own; no registry of names is kept, which would be a global. `strict` and `minimal` are Python's `excel`; `excel_tab` is the separator `"\t"`; `unix_dialect` is `quote_all` and `"\n"`
+
+capability csv/sniff  the options of a text guessed from a sample of it
+  heroes  refused: a guess can read a text as another format without a word; a program states the format it reads
+  go      -
+  rust    -
+  python  Sniffer, Sniffer.sniff, Sniffer.has_header
+  note    -
+
+dropped
+  go      Reader.ReuseRecord: an allocation hint, for a slice reused from row to row
+  go      Reader.TrailingComma, ErrTrailingComma: Go's own documentation says both are ignored
+  python  StringIO, types: modules `csv` imports, not names of its own

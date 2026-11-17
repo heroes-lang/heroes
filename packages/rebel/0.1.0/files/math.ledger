@@ -1,0 +1,569 @@
+capability const/circle-and-e  pi, twice pi, and the base of the natural logarithm
+  heroes  math.PI, math.TAU, math.E
+  go      Pi, E
+  rust    f64::consts::PI, TAU, E
+  python  pi, tau, e
+
+capability const/roots-and-logs  the square root of 2, and the logarithms a program divides by
+  heroes  math.SQRT_2, math.LN_2, math.LN_10, math.LOG2_E, math.LOG10_E
+  go      Sqrt2, Ln2, Ln10, Log2E, Log10E
+  rust    f64::consts::SQRT_2, LN_2, LN_10, LOG2_E, LOG10_E
+  python  -
+
+capability const/golden-and-euler  the golden ratio and Euler's constant, which no one operation gives
+  heroes  math.PHI, math.EULER_GAMMA
+  go      Phi
+  rust    f64::consts::GOLDEN_RATIO, EULER_GAMMA
+  python  -
+
+capability const/derived  a constant that is one operation on another
+  heroes  refused: each is one division, product or `sqrt` of a constant the package gives, and a name for every such quotient is a list with no end
+  go      SqrtE, SqrtPi, SqrtPhi
+  rust    f64::consts::FRAC_1_PI, FRAC_1_SQRT_2, FRAC_1_SQRT_2PI, FRAC_1_SQRT_3, FRAC_1_SQRT_5, FRAC_1_SQRT_PI, FRAC_2_PI, FRAC_2_SQRT_PI, FRAC_PI_2, FRAC_PI_3, FRAC_PI_4, FRAC_PI_6, FRAC_PI_8, LOG10_2, LOG2_10, SQRT_3, SQRT_5
+  python  -
+
+capability limits/infinity-and-nan  the infinity and a value that is not a number
+  heroes  math.INF, math.NAN
+  go      Inf, NaN
+  rust    f64::INFINITY, NEG_INFINITY, NAN
+  python  inf, nan
+  note    minus infinity is `-math.INF`; Heroes has no exponent literal, so these are computed from the largest float
+
+capability limits/float-range  the largest and the smallest float, and the gap after 1.0
+  heroes  math.MAX_F64, math.SMALLEST_F64, math.SMALLEST_NORMAL_F64, math.EPSILON, math.MAX_F32, math.SMALLEST_F32
+  go      MaxFloat64, SmallestNonzeroFloat64, MaxFloat32, SmallestNonzeroFloat32
+  rust    f64::MAX, MIN, MIN_POSITIVE, EPSILON
+  python  -
+  note    Rust's `MIN` is `-math.MAX_F64`; its `MIN_POSITIVE` is the smallest normal one, Go's smallest is the subnormal, so both are named for what they are
+
+capability limits/float-format  the parameters of the float format
+  heroes  refused: they are the numbers of IEEE 754's binary64, which no platform Heroes runs on changes, and a program that needs one writes it
+  go      -
+  rust    f64::RADIX, MANTISSA_DIGITS, DIGITS, MAX_EXP, MIN_EXP, MAX_10_EXP, MIN_10_EXP, MAX_EXACT_INTEGER, MIN_EXACT_INTEGER, BITS
+  python  -
+
+capability limits/integer-range  the largest and the smallest value of every integer type
+  heroes  math.MAX_I8, math.MIN_I8, math.MAX_I16, math.MIN_I16, math.MAX_I32, math.MIN_I32, math.MAX_I64, math.MIN_I64, math.MAX_U8, math.MAX_U16, math.MAX_U32, math.MAX_U64
+  go      MaxInt8, MinInt8, MaxInt16, MinInt16, MaxInt32, MinInt32, MaxInt64, MinInt64, MaxInt, MinInt, MaxUint8, MaxUint16, MaxUint32, MaxUint64, MaxUint, bits.UintSize
+  rust    i64::MAX, MIN, BITS, max_value, min_value, and the same of each width
+  python  -
+  note    each constant has its own type; an unsigned type's smallest is 0; Go's `int` is 64 bits on every platform Heroes runs on
+
+capability float/is-nan  whether a float is not a number
+  heroes  math.is_nan
+  go      IsNaN
+  rust    f64::is_nan
+  python  isnan
+
+capability float/is-infinite  whether a float is an infinity
+  heroes  math.is_inf
+  go      IsInf
+  rust    f64::is_infinite
+  python  isinf
+  note    Go's sign argument is `x == math.INF` or `x == -math.INF`
+
+capability float/is-finite  whether a float is neither an infinity nor a nan
+  heroes  math.is_finite
+  go      -
+  rust    f64::is_finite
+  python  isfinite
+
+capability float/is-normal  whether a float has its full precision, or is one of the tiny ones below it
+  heroes  math.is_normal, math.is_subnormal
+  go      -
+  rust    f64::is_normal, is_subnormal, classify
+  python  isnormal, issubnormal
+  note    `classify`'s five answers are these questions, `is_nan`, `is_inf` and `x == 0.0`; a variant for them would be a second way
+
+capability float/sign-bit  whether a float carries a minus sign, minus zero and a nan included
+  heroes  math.has_minus_sign
+  go      Signbit
+  rust    f64::is_sign_negative, is_sign_positive
+  python  signbit
+
+capability float/abs  a float without its sign
+  heroes  math.abs
+  go      Abs
+  rust    f64::abs
+  python  fabs, abs
+
+capability float/sign  the sign of a float as -1.0, 0.0 or 1.0
+  heroes  math.sign
+  go      -
+  rust    f64::signum
+  python  -
+  note    a zero answers itself, the sign of mathematics; Rust answers 1.0 or -1.0 by the sign bit even for a zero, which here is `math.with_sign(x: 1.0, of: v)`
+
+capability float/copy-sign  one float with the sign of another
+  heroes  math.with_sign
+  go      Copysign
+  rust    f64::copysign
+  python  copysign
+
+capability float/min-max  the smaller and the larger of two floats
+  heroes  math.min, math.max
+  go      Min, Max
+  rust    f64::min, max, minimum, maximum
+  python  fmin, fmax, min, max
+  note    a nan answers nan, IEEE 754-2019's and Rust's `minimum`: C's `fmin`, Rust's `min` and Python's `fmin` drop the nan and so hide the mistake that made it, Go keeps it except beside an infinity, and Python's built-in answers by the order of its arguments; minus zero is below zero
+
+capability float/clamp  a float held between two limits
+  heroes  math.clamp
+  go      -
+  rust    f64::clamp, clamp_to, clamp_magnitude
+  python  -
+  note    aborts where the limits are crossed or a nan, as Rust panics; `clamp_magnitude` is `math.clamp(x: v, low: -limit, high: limit)`
+
+capability float/positive-difference  the difference of two floats, or zero where it would be negative
+  heroes  refused: `math.max(a: x - y, b: 0.0)` is it, with the same answers for a nan and for two infinities
+  go      Dim
+  rust    f64::abs_sub
+  python  -
+
+capability float/midpoint  the float halfway between two, with no overflow on the way
+  heroes  math.midpoint
+  go      -
+  rust    f64::midpoint
+  python  -
+
+capability float/is-close  whether two floats are equal within a tolerance
+  heroes  math.is_close
+  go      -
+  rust    -
+  python  isclose
+  note    Heroes has no default argument, so both tolerances are written; Python's defaults are 0.000000001 and 0.0
+
+capability round/floor-ceil-trunc  a float rounded down, up, or toward zero to a whole number
+  heroes  math.floor, math.ceil, math.trunc
+  go      Floor, Ceil, Trunc
+  rust    f64::floor, ceil, trunc
+  python  floor, ceil, trunc
+  note    the answer is a float; Python answers an integer, which here is the built-in `to_i64` after it
+
+capability round/nearest  a float rounded to the nearest whole number, a half going away from zero or to the even one
+  heroes  math.round, math.round_even
+  go      Round, RoundToEven
+  rust    f64::round, round_ties_even
+  python  round
+  note    Python's `round` of one argument is the half-to-even one, `round_even`
+
+capability round/fraction  the part of a float after its point
+  heroes  math.fraction
+  go      Modf
+  rust    f64::fract
+  python  modf
+  note    the whole part is `math.trunc`; an infinity's fraction is a zero, as C, Go and Python answer, where Rust's `fract` answers nan
+
+capability round/to-integer  a float as an integer, or the failure that it does not fit
+  heroes  built-in to_i64
+  go      -
+  rust    f64::to_int_checked, to_int_strict, to_int_saturating
+  python  -
+  note    `to_i64` truncates toward zero and fails `does_not_fit` for a nan, an infinity and a value outside i64; round first with `math.floor`, `math.ceil` or `math.round` for the other directions
+
+capability round/decimal-digits  a float rounded to a count of decimal digits
+  heroes  refused: the nearest float to a decimal rounding is found only by the conversion that writes the number as text, which is the package `numbers`'; `math` stands below it
+  go      -
+  rust    -
+  python  round (with ndigits)
+
+capability power/sqrt  the square root
+  heroes  math.sqrt
+  go      Sqrt
+  rust    f64::sqrt
+  python  sqrt
+  note    a negative number answers nan, as C, Go and Rust; Python raises, and every function of this package answers IEEE's nan or infinity where Python raises a domain or a range error, since a `T?` on each call would make arithmetic unwritable and `math.is_nan` asks afterwards
+
+capability power/cbrt  the cube root
+  heroes  math.cbrt
+  go      Cbrt
+  rust    f64::cbrt
+  python  cbrt
+
+capability power/hypot  the length of the longest side of a right triangle, with no overflow on the way
+  heroes  math.hypot
+  go      Hypot
+  rust    f64::hypot
+  python  hypot (two arguments)
+
+capability power/pow  a float raised to a power
+  heroes  math.pow
+  go      Pow, Pow10
+  rust    f64::powf, powi
+  python  pow, math.pow
+  note    an integer exponent is `to_f64` of it; `Pow10(n)` is `math.pow(base: 10.0, exponent: to_f64(n))`
+
+capability power/exp  e or 2 raised to a float, and e to a float less one, exact near zero
+  heroes  math.exp, math.exp2, math.exp_minus_1
+  go      Exp, Exp2, Expm1
+  rust    f64::exp, exp2, exp_m1
+  python  exp, exp2, expm1
+
+capability power/log  the logarithm in base e, 2, 10 or any base, and of one plus a float, exact near zero
+  heroes  math.ln, math.log2, math.log10, math.log, math.ln_1_plus
+  go      Log, Log2, Log10, Log1p
+  rust    f64::ln, log2, log10, log, ln_1p
+  python  log, log2, log10, log1p
+  note    `ln` is the natural one, so `log` never leaves its base unsaid; zero answers minus infinity and a negative number nan
+
+capability trig/circular  sine, cosine and tangent of an angle in radians
+  heroes  math.sin, math.cos, math.tan
+  go      Sin, Cos, Tan, Sincos
+  rust    f64::sin, cos, tan, sin_cos
+  python  sin, cos, tan
+  note    `Sincos` is the two calls: C11's `math.h` has no function that saves one; a value inside the range is held by the tests to two units of the last place of Python's answer, since each platform's C library rounds the last bit its own way
+
+capability trig/inverse  the angle whose sine, cosine or tangent a float is, and the angle of a point
+  heroes  math.asin, math.acos, math.atan, math.atan2
+  go      Asin, Acos, Atan, Atan2
+  rust    f64::asin, acos, atan, atan2
+  python  asin, acos, atan, atan2
+
+capability trig/hyperbolic  the hyperbolic functions and their inverses
+  heroes  math.sinh, math.cosh, math.tanh, math.asinh, math.acosh, math.atanh
+  go      Sinh, Cosh, Tanh, Asinh, Acosh, Atanh
+  rust    f64::sinh, cosh, tanh, asinh, acosh, atanh
+  python  sinh, cosh, tanh, asinh, acosh, atanh
+
+capability trig/degrees  an angle from radians to degrees and back
+  heroes  math.to_degrees, math.to_radians
+  go      -
+  rust    f64::to_degrees, to_radians
+  python  degrees, radians
+
+capability special/erf  the error function and its complement
+  heroes  math.erf, math.erfc
+  go      Erf, Erfc
+  rust    f64::erf, erfc
+  python  erf, erfc
+
+capability special/erf-inverse  the inverses of the error function
+  heroes  pending
+  go      Erfinv, Erfcinv
+  rust    -
+  python  -
+  note    C11's `math.h` holds none, and one written here must be right to the last digits in both tails before it is offered
+
+capability special/gamma  the gamma function and the logarithm of its size
+  heroes  math.gamma, math.ln_gamma
+  go      Gamma, Lgamma
+  rust    f64::gamma, ln_gamma
+  python  gamma, lgamma
+  note    `ln_gamma` answers the logarithm of the absolute value, as Python; the sign Go and Rust answer beside it is `math.sign(math.gamma(x))` where that does not overflow; C answers +inf for -inf, where Go answers -Inf
+
+capability special/bessel  the Bessel functions of the first and second kind
+  heroes  pending
+  go      J0, J1, Jn, Y0, Y1, Yn
+  rust    -
+  python  -
+  note    C11's `math.h` does not hold them: POSIX's `j0` and Windows's `_j0` are two names, and a floor is one binding for every platform
+
+capability float/scale  a float as a fraction and a power of two, and a float times a power of two
+  heroes  math.to_scaled, math.scale
+  go      Frexp, Ldexp
+  rust    -
+  python  frexp, ldexp
+  note    a zero, an infinity and a nan answer themselves with the exponent 0, which C leaves unspecified
+
+capability float/exponent  the power of two a float lies at
+  heroes  math.exponent_of
+  go      Ilogb, Logb
+  rust    -
+  python  -
+  note    a zero, an infinity and a nan fail `invalid`, where C answers a number that differs by platform
+
+capability float/next  the float next to one in a direction, and the size of the gap there
+  heroes  math.next_after, math.next_after_f32, math.ulp
+  go      Nextafter, Nextafter32
+  rust    f64::next_up, next_down
+  python  nextafter, ulp
+  note    `next_up` is `math.next_after(x: v, toward: math.INF)`
+
+capability float/mul-add  a product plus a float, rounded once
+  heroes  math.mul_add
+  go      FMA
+  rust    f64::mul_add
+  python  fma
+
+capability float/bits  a float's bits as an integer and back, and the order that ranks every float
+  heroes  pending
+  go      Float64bits, Float64frombits, Float32bits, Float32frombits
+  rust    f64::to_bits, from_bits, to_be_bytes, to_le_bytes, to_ne_bytes, from_be_bytes, from_le_bytes, from_ne_bytes, total_cmp, EXPONENT_MASK, MANTISSA_MASK, SIGN_MASK
+  python  -
+  note    `math.h` gives no door from a float to its bits: it needs a function of the language's own C beside the runtime, and what `frexp` could rebuild loses a nan's payload, so nothing is faked
+
+capability float/rem  the remainder of a float division, with the sign of the dividend
+  heroes  built-in %
+  go      Mod
+  rust    f64 `%`
+  python  fmod
+
+capability float/rem-nearest  the remainder of a float division whose quotient is rounded to the nearest whole number
+  heroes  math.rem_nearest
+  go      Remainder
+  rust    -
+  python  remainder
+
+capability float/div-floor  a float quotient rounded down, and the remainder that has the divisor's sign
+  heroes  math.div_floor, math.rem_floor
+  go      -
+  rust    -
+  python  divmod, `//` and `%` on floats
+  note    `divmod` is the two calls, since several results would be a record for two numbers; a zero divisor answers nan where Python raises
+
+capability float/div-euclid  the float quotient and remainder where the remainder is never negative
+  heroes  math.div_euclid, math.rem_euclid
+  go      -
+  rust    f64::div_euclid, rem_euclid
+  python  -
+
+capability many/sum  the sum of a list of floats, rounded once
+  heroes  math.sum
+  go      -
+  rust    -
+  python  fsum
+  note    Python's answers, but where Python raises: finite floats summing past the largest on the way fail `does_not_fit` (Python raises OverflowError), both infinities answer a nan (Python raises ValueError), and an infinity beside such floats answers itself; a sum of zeros is a positive zero, as Python's
+
+capability many/product  the product of a list of floats
+  heroes  math.product
+  go      -
+  rust    -
+  python  prod
+
+capability many/min-max-of  the smallest and the largest of a list of numbers
+  heroes  math.min_of, math.max_of, math.min_of_i64, math.max_of_i64
+  go      -
+  rust    -
+  python  min, max (of an iterable)
+  note    an empty list fails `not_found`
+
+capability many/dot  the sum of the products of two lists of floats, rounded once
+  heroes  math.dot
+  go      -
+  rust    -
+  python  sumprod
+  note    a product past the largest float fails `does_not_fit`, as `math.sum` does, where Python's `sumprod` answers an infinity
+
+capability many/norm  the length of a vector and the distance between two points, with no overflow on the way
+  heroes  math.norm, math.dist
+  go      -
+  rust    -
+  python  hypot (many arguments), dist
+
+capability int/add-sub-mul  the sum, difference, product and negation of integers, or the failure that it does not fit
+  heroes  math.add, math.sub, math.mul, math.neg, math.add_u64, math.sub_u64, math.mul_u64
+  go      -
+  rust    i64::checked_add, checked_sub, checked_mul, checked_neg, u64::checked_add, checked_sub, checked_mul
+  python  -
+  note    for i64, and for u64 the three a count needs: generics have no constraints, so one function cannot serve every width; a narrower integer widens with `to_i64`, is computed there, and comes back through `to_<type>`, which fails `does_not_fit` itself; Python's integers have no limit
+
+capability int/abs  the absolute value of an integer, and the distance between two
+  heroes  math.abs_i64, math.abs_diff
+  go      -
+  rust    i64::abs, checked_abs, unsigned_abs, abs_diff
+  python  abs
+  note    the smallest i64 has no absolute value in i64: `abs_i64` fails `does_not_fit`, and `math.abs_diff(a: x, b: 0)` answers it as a u64
+
+capability int/pow  an integer raised to a power, or the failure that it does not fit
+  heroes  math.pow_i64
+  go      -
+  rust    i64::pow, checked_pow
+  python  pow (integers)
+  note    a negative exponent fails `invalid`
+
+capability int/div  the quotient and remainder of integers that answer where `/` and `%` abort
+  heroes  math.div, math.rem
+  go      -
+  rust    i64::checked_div, checked_rem
+  python  -
+  note    the remainder of the smallest i64 by -1 is 0, which fits; Rust's `checked_rem` answers None there
+
+capability int/div-floor  the integer quotient rounded down, and the remainder that has the divisor's sign
+  heroes  math.div_floor_i64, math.rem_floor_i64
+  go      -
+  rust    i64::div_floor
+  python  divmod, `//` and `%` on integers
+  note    `divmod` is the two calls
+
+capability int/div-euclid  the integer quotient and remainder where the remainder is never negative
+  heroes  math.div_euclid_i64, math.rem_euclid_i64
+  go      -
+  rust    i64::div_euclid, rem_euclid, checked_div_euclid, checked_rem_euclid
+  python  -
+  note    the smallest i64 by -1 has the remainder 0, which fits: Rust's `rem_euclid` panics there and Python answers 0, as this does
+
+capability int/div-ceil  the integer quotient rounded up
+  heroes  math.div_ceil
+  go      -
+  rust    i64::div_ceil
+  python  -
+
+capability int/clamped  the sum, difference and product that stop at the type's limit
+  heroes  math.add_clamped, math.sub_clamped, math.mul_clamped
+  go      -
+  rust    i64::saturating_add, saturating_sub, saturating_mul
+  python  -
+
+capability int/clamped-others  negation, absolute value, division and power that stop at the limit
+  heroes  refused: the first three can only pass the largest i64, so `math.neg(x).default(math.MAX_I64)` is each, and a power's limit is read from `math.pow_i64`'s failure and the base's sign
+  go      -
+  rust    i64::saturating_neg, saturating_abs, saturating_div, saturating_pow
+  python  -
+
+capability int/wrapping  the sum, difference and product modulo 2 to the 64, as a hash wants them
+  heroes  math.add_wrapping, math.sub_wrapping, math.mul_wrapping
+  go      -
+  rust    i64::wrapping_add, wrapping_sub, wrapping_mul
+  python  -
+  note    Go's own operators wrap; in Heroes nothing wraps unless its name says so
+
+capability int/min-max-clamp  the smaller and the larger of two integers, and one held between limits
+  heroes  math.min_i64, math.max_i64, math.clamp_i64
+  go      -
+  rust    i64::min, max, clamp
+  python  min, max
+
+capability int/sign  the sign of an integer as -1, 0 or 1
+  heroes  math.sign_i64
+  go      -
+  rust    i64::signum, is_positive, is_negative
+  python  -
+
+capability int/midpoint  the integer halfway between two, with no overflow on the way
+  heroes  math.midpoint_i64
+  go      -
+  rust    i64::midpoint
+  python  -
+  note    rounded toward zero, as Rust
+
+capability int/sum-product  the sum and the product of a list of integers, failing only where the answer itself does not fit
+  heroes  math.sum_i64, math.product_i64
+  go      -
+  rust    -
+  python  prod (integers)
+
+capability whole/gcd-lcm  the greatest common divisor and the least common multiple
+  heroes  math.gcd, math.lcm
+  go      -
+  rust    -
+  python  gcd, lcm
+  note    of two numbers; several are a fold; the divisor of the smallest i64 and 0 is 2 to the 63, which fails `does_not_fit`
+
+capability whole/isqrt  the whole square root of an integer
+  heroes  math.isqrt
+  go      -
+  rust    i64::isqrt, checked_isqrt
+  python  isqrt
+
+capability whole/log  the whole logarithm of an integer in base 2, 10 or any base
+  heroes  math.log2_i64, math.log10_i64, math.log_i64
+  go      -
+  rust    i64::ilog2, ilog10, ilog, checked_ilog2, checked_ilog10, checked_ilog
+  python  -
+
+capability whole/counting  the factorial, and the counts of combinations and of arrangements
+  heroes  math.factorial, math.comb, math.perm
+  go      -
+  rust    -
+  python  factorial, comb, perm
+  note    each fails only where the answer itself does not fit; `perm` takes both arguments
+
+capability whole/pow-mod  a power modulo a number, with no overflow on the way
+  heroes  math.pow_mod
+  go      -
+  rust    -
+  python  pow (three arguments)
+  note    a negative exponent answers the power of the inverse, as Python; a modulus below 1 fails `invalid`, where Python reads a negative one and answers a remainder of its sign
+
+capability whole/multiple  the next multiple of a number at or after an integer
+  heroes  math.next_multiple
+  go      -
+  rust    i64::next_multiple_of, checked_next_multiple_of, u64::is_multiple_of
+  python  -
+  note    `is_multiple_of` is `a % b == 0`
+
+capability whole/power-of-two  whether an integer is a power of two, and the next one at or after it
+  heroes  math.is_power_of_two, math.next_power_of_two
+  go      -
+  rust    u64::is_power_of_two, next_power_of_two, checked_next_power_of_two
+  python  -
+
+capability bits/count  how many of an integer's 64 bits are ones
+  heroes  math.count_ones
+  go      bits.OnesCount, OnesCount8, OnesCount16, OnesCount32, OnesCount64
+  rust    i64::count_ones, count_zeros
+  python  int.bit_count
+  note    the 64 bits of the i64, a negative number's included, as Go and Rust; Python counts the absolute value's; the zeros are 64 less the ones
+
+capability bits/zeros  how many zero bits an integer begins and ends with
+  heroes  math.leading_zeros, math.trailing_zeros
+  go      bits.LeadingZeros, LeadingZeros8, LeadingZeros16, LeadingZeros32, LeadingZeros64, TrailingZeros, TrailingZeros8, TrailingZeros16, TrailingZeros32, TrailingZeros64
+  rust    i64::leading_zeros, trailing_zeros, leading_ones, trailing_ones
+  python  -
+  note    the ones are the zeros of `~x`
+
+capability bits/width  how many bits an integer needs
+  heroes  math.bit_width
+  go      bits.Len, Len8, Len16, Len32, Len64
+  rust    u64::bit_width
+  python  int.bit_length
+  note    the 64 bits, so -1 needs 64, as Go's `Len(uint64(x))`; Python measures the size, and answers 1
+
+capability bits/rotate  an integer's bits rotated
+  heroes  math.rotate_left
+  go      bits.RotateLeft, RotateLeft8, RotateLeft16, RotateLeft32, RotateLeft64
+  rust    i64::rotate_left, rotate_right
+  python  -
+  note    a negative count rotates right, as Go
+
+capability bits/reverse  an integer's bits, or its bytes, in the opposite order
+  heroes  math.reverse_bits, math.swap_bytes
+  go      bits.Reverse, Reverse8, Reverse16, Reverse32, Reverse64, ReverseBytes, ReverseBytes16, ReverseBytes32, ReverseBytes64
+  rust    i64::reverse_bits, swap_bytes
+  python  -
+
+capability bits/shift  an integer's bits shifted
+  heroes  built-in << >>
+  go      -
+  rust    i64::checked_shl, checked_shr, unbounded_shl, unbounded_shr, shl_exact, shr_exact
+  python  -
+  note    a count outside 0 to 63 aborts
+
+capability wide/carry  arithmetic on numbers of more than one 64-bit word: a carry in and out, a product and a quotient of two words
+  heroes  pending
+  go      bits.Add, Add32, Add64, Sub, Sub32, Sub64, Mul, Mul32, Mul64, Div, Div32, Div64, Rem, Rem32, Rem64
+  rust    u64::carrying_add, borrowing_sub, carrying_mul, carrying_mul_add, widening_mul
+  python  -
+  note    it is u64 arithmetic that wraps, where Heroes gives u64 no bitwise operator and no wrap; the division of two words by one was not written well in time
+
+dropped
+  rust    i64::overflowing_abs, overflowing_add, overflowing_add_unsigned, overflowing_div, overflowing_div_euclid, overflowing_mul, overflowing_neg, overflowing_pow, overflowing_rem, overflowing_rem_euclid, overflowing_shl, overflowing_shr, overflowing_sub, overflowing_sub_unsigned
+  reason  a value beside a flag: a `T?` says both
+  rust    i64::strict_abs, strict_add, strict_add_unsigned, strict_cast, strict_cast_unsigned, strict_div, strict_div_euclid, strict_mul, strict_neg, strict_pow, strict_rem, strict_rem_euclid, strict_shl, strict_shr, strict_sub, strict_sub_unsigned
+  reason  arithmetic that aborts on overflow is the language's own operators
+  rust    i64::unchecked_add, unchecked_cast, unchecked_div_exact, unchecked_mul, unchecked_neg, unchecked_shl, unchecked_shl_exact, unchecked_shr, unchecked_shr_exact, unchecked_sub, f64::to_int_unchecked, u64::unchecked_disjoint_bitor, unchecked_funnel_shl, unchecked_funnel_shr
+  reason  unchecked variants: Heroes has no arithmetic whose overflow is undefined
+  rust    i64::wrapping_abs, wrapping_neg, wrapping_pow, wrapping_div, wrapping_div_euclid, wrapping_rem, wrapping_rem_euclid, wrapping_shl, wrapping_shr, wrapping_cast, wrapping_add_unsigned, wrapping_sub_unsigned, u64::wrapping_add_signed, wrapping_sub_signed, wrapping_next_power_of_two
+  reason  the three wrapping operations a hash is written with are offered; the rest wrap only at the smallest i64 divided or negated, which `math.div`, `math.rem` and `math.neg` answer
+  rust    f64::algebraic_add, algebraic_sub, algebraic_mul, algebraic_div, algebraic_rem
+  reason  licences for the compiler to reorder float arithmetic: Heroes keeps IEEE's order
+  rust    i64::checked_add_unsigned, checked_sub_unsigned, saturating_add_unsigned, saturating_sub_unsigned, u64::checked_add_signed, checked_sub_signed, checked_signed_diff, saturating_add_signed, saturating_sub_signed, overflowing_add_signed, overflowing_sub_signed, strict_add_signed, strict_sub_signed
+  reason  arithmetic across a signed and an unsigned type: convert with `to_i64` or `to_u64`, which fail `does_not_fit`, then the helper
+  rust    i64::cast_unsigned, checked_cast, checked_cast_unsigned, saturating_cast, saturating_cast_unsigned, truncate, checked_truncate, saturating_truncate, widen, f64::cast, u64::cast_signed, checked_cast_signed, saturating_cast_signed, strict_cast_signed
+  reason  conversions between number types are the built-ins `to_<type>`
+  rust    i64::from_str_radix, from_ascii_bytes, from_ascii_bytes_radix, format_into
+  reason  a number read from text and written as text is the package `numbers`'
+  rust    i64::to_be, to_le, from_be, from_le, to_be_bytes, to_le_bytes, to_ne_bytes, from_be_bytes, from_le_bytes, from_ne_bytes
+  reason  an integer's bytes in an order are read and written where bytes are, not where arithmetic is
+  rust    f64::recip
+  reason  `1.0 / x`
+  rust    f64::nan_to
+  reason  an `if math.is_nan(x)`
+  rust    i64::div_exact, checked_div_exact
+  reason  `a % b == 0`, then `math.div`
+  rust    i64::clamp_magnitude
+  reason  `math.clamp_i64(x: v, low: -limit, high: limit)`
+  rust    i64::isolate_highest_one, isolate_lowest_one, highest_one, lowest_one, u64::deposit_bits, extract_bits, select, funnel_shl, funnel_shr, carryless_mul, carrying_carryless_mul, widening_carryless_mul
+  reason  bit manipulation beyond counting, rotating and reversing: `x & -x` is the lowest one, `math.bit_width` finds the highest, and the rest is the instruction set's, not arithmetic a program writes
+  python  math.integer
+  reason  the integer functions of `math` under a second name

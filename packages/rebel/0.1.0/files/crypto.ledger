@@ -1,0 +1,133 @@
+capability crypto/md5  the MD5 digest of bytes or of text, broken for security and kept for compatibility
+  heroes  crypto.md5, crypto.md5_text
+  go      md5.Sum, md5.New, md5.Size, md5.BlockSize
+  rust    -
+  python  hashlib.md5
+  note    RFC 1321's test suite answered as Python did; Go's `New` is `start(.md5)`
+
+capability crypto/sha1  the SHA-1 digest of bytes or of text, broken for security and kept for compatibility
+  heroes  crypto.sha1, crypto.sha1_text
+  go      sha1.Sum, sha1.New, sha1.Size, sha1.BlockSize
+  rust    -
+  python  hashlib.sha1
+
+capability crypto/sha256  the SHA-224 and SHA-256 digests of bytes or of text
+  heroes  crypto.sha224, crypto.sha224_text, crypto.sha256, crypto.sha256_text
+  go      sha256.Sum224, sha256.Sum256, sha256.New, sha256.New224, sha256.Size, sha256.Size224, sha256.BlockSize
+  rust    -
+  python  hashlib.sha224, hashlib.sha256
+  note    FIPS 180-4's messages, a million `a` and a chain over every length from 0 to 300 answered as Python did; a megabyte and a PBKDF2 of 100000 iterations take 0.76 s together at -O2
+
+capability crypto/sha512  the SHA-384, SHA-512, SHA-512/224 and SHA-512/256 digests of bytes or of text
+  heroes  crypto.sha384, crypto.sha384_text, crypto.sha512, crypto.sha512_text, crypto.sha512_224, crypto.sha512_224_text, crypto.sha512_256, crypto.sha512_256_text
+  go      sha512.Sum384, sha512.Sum512, sha512.Sum512_224, sha512.Sum512_256, sha512.New, sha512.New384, sha512.New512_224, sha512.New512_256, sha512.Size, sha512.Size224, sha512.Size256, sha512.Size384, sha512.BlockSize
+  rust    -
+  python  hashlib.sha384, hashlib.sha512
+  note    Python reaches SHA-512/224 and SHA-512/256 through `hashlib.new`; their starting words are computed again by a test as FIPS 180-4 5.3.6 makes them, and Go answered SHA-512/224 of "abc" as Python did
+
+capability crypto/algorithm  a digest named as a value, its sizes, and its name read and written
+  heroes  crypto.Algorithm, crypto.digest_size, crypto.block_size, crypto.format_algorithm, crypto.parse_algorithm
+  go      crypto.Hash, crypto.Hash.Size, crypto.Hash.String, crypto.Hash.HashFunc, crypto.Hash.New, crypto.Hash.Available
+  rust    -
+  python  hashlib.new, hashlib.algorithms_guaranteed, hashlib.algorithms_available
+  note    the names are Python's, `sha512_256`; Go's `String` writes `SHA-512/256`, which `parse_algorithm` does not read, and Python's `new` also takes upper case. Every algorithm is always available here, so Go's `Available` and Python's two sets are the variant's cases
+
+capability crypto/steps  a digest or an HMAC fed piece by piece and read at any moment
+  heroes  crypto.start, crypto.update, crypto.update_text, crypto.digest
+  go      hash.Hash.Write, hash.Hash.Sum, hash.Hash.Reset
+  rust    -
+  python  hashlib.hash.update, hashlib.hash.digest, hashlib.hash.digest_size, hashlib.hash.block_size, hashlib.hash.name
+  note    a state is a value, so `digest` reads a copy and the state goes on, as Python's `digest` does; Go's `Reset` is a new `start`
+
+capability crypto/copy  a state copied, to go on from one beginning in two ways
+  heroes  built-in =
+  go      sha3.SHA3.Clone
+  rust    -
+  python  hashlib.hash.copy, hmac.HMAC.copy
+
+capability crypto/hex-digest  a digest written as hexadecimal
+  heroes  bytes.format_hex
+  go      -
+  rust    -
+  python  hashlib.hash.hexdigest, hmac.HMAC.hexdigest
+  note    a digest is its bytes, and `bytes` writes bytes as text
+
+capability crypto/hmac  the HMAC of a message under a key, at once or in steps
+  heroes  crypto.hmac, crypto.hmac_text, crypto.start_hmac
+  go      hmac.New
+  rust    -
+  python  hmac.new, hmac.digest, hmac.HMAC, hmac.HMAC.update, hmac.HMAC.digest, hmac.HMAC.digest_size, hmac.HMAC.block_size
+  note    RFC 2202's and RFC 4231's cases answered as Python did, keys of a block's length and one more included; the outer key block is compressed once, so each tag costs one compression less than a plain HMAC
+
+capability crypto/compare  two byte lists compared in a time their contents do not decide
+  heroes  crypto.equals_constant_time
+  go      subtle.ConstantTimeCompare, hmac.Equal
+  rust    -
+  python  hmac.compare_digest, secrets.compare_digest
+  note    lists of different lengths answer false at once, as all three do; Python also compares two texts, which is `bytes.from_text` on both
+
+capability crypto/hkdf  keys derived from a secret by HKDF, extracted, expanded, or both
+  heroes  crypto.hkdf_extract, crypto.hkdf_expand, crypto.hkdf
+  go      hkdf.Extract, hkdf.Expand, hkdf.Key
+  rust    -
+  python  -
+  note    RFC 5869's cases answered as Go did; a length of 0 makes no bytes, as Go's does, and past 255 digests fails `invalid` where Go errs; `info` is bytes where Go's is a `string`
+
+capability crypto/pbkdf2  a key derived from a password by PBKDF2
+  heroes  crypto.pbkdf2
+  go      pbkdf2.Key
+  rust    -
+  python  hashlib.pbkdf2_hmac
+  note    RFC 6070's and RFC 7914's first cases answered as Python did; no iterations fail `invalid` as Python refuses them, where Go answered a key, since RFC 8018 asks a positive count; a length of 0 fails as both refuse it
+
+capability crypto/sha3  the SHA-3 digests and the SHAKE functions
+  heroes  pending
+  go      sha3.Sum224, sha3.Sum256, sha3.Sum384, sha3.Sum512, sha3.SumSHAKE128, sha3.SumSHAKE256, sha3.SHA3, sha3.New224, sha3.New256, sha3.New384, sha3.New512, sha3.SHA3.BlockSize, sha3.SHA3.Reset, sha3.SHA3.Size, sha3.SHA3.Sum, sha3.SHA3.Write, sha3.SHAKE, sha3.NewSHAKE128, sha3.NewSHAKE256, sha3.NewCSHAKE128, sha3.NewCSHAKE256, sha3.SHAKE.BlockSize, sha3.SHAKE.Read, sha3.SHAKE.Reset, sha3.SHAKE.Write
+  rust    -
+  python  hashlib.sha3_224, hashlib.sha3_256, hashlib.sha3_384, hashlib.sha3_512, hashlib.shake_128, hashlib.shake_256
+
+capability crypto/blake2  the BLAKE2b and BLAKE2s digests, keyed or not
+  heroes  pending
+  go      -
+  rust    -
+  python  hashlib.blake2b, hashlib.blake2s
+
+capability crypto/scrypt  a key derived from a password by scrypt
+  heroes  pending
+  go      -
+  rust    -
+  python  hashlib.scrypt
+
+capability crypto/file-digest  the digest of a stream or a file
+  heroes  crypto.update
+  go      -
+  rust    -
+  python  hashlib.file_digest
+  note    `crypto` may not use `io`; a stream's pieces are fed to `update` as `io` reads them
+
+capability crypto/ciphers  encryption, decryption, signatures and key agreement
+  heroes  refused: a cipher must compute in a time its key and its text do not decide, and nothing in this wave proves that of the C the compiler makes; a digest needs no such proof
+  go      crypto.Signer, crypto.SignerOpts, crypto.SignMessage, crypto.MessageSigner, crypto.Decrypter, crypto.DecrypterOpts, crypto.Encapsulator, crypto.Decapsulator, crypto.PrivateKey, crypto.PublicKey, subtle.ConstantTimeByteEq, subtle.ConstantTimeEq, subtle.ConstantTimeLessOrEq, subtle.ConstantTimeSelect, subtle.ConstantTimeCopy, subtle.XORBytes, subtle.WithDataIndependentTiming
+  rust    -
+  python  -
+  note    Go's packages `crypto/aes`, `cipher`, `des`, `rc4`, `rsa`, `dsa`, `ecdsa`, `ed25519`, `ecdh`, `elliptic`, `mlkem`, `tls` and `x509` stand here whole; `subtle`'s selections serve the writing of such code
+
+dropped registry  Go's table of hash constructors filled at start-up: there are no mutable globals, and `Algorithm` is closed
+  go      crypto.RegisterHash
+  rust    -
+  python  -
+
+dropped implementation-tables  the HMAC's padding tables, which `start_hmac` holds and nothing else needs
+  go      -
+  rust    -
+  python  hmac.trans_36, hmac.trans_5C, hmac.digest_size, hmac.HMAC.name
+
+dropped encoding-state  Go's saving of a running state to bytes and back; a state is a value, kept as long as the program keeps it
+  go      sha3.SHA3.AppendBinary, sha3.SHA3.MarshalBinary, sha3.SHA3.UnmarshalBinary, sha3.SHAKE.AppendBinary, sha3.SHAKE.MarshalBinary, sha3.SHAKE.UnmarshalBinary
+  rust    -
+  python  -
+
+dropped random  random bytes, tokens and choices are the package `random`'s
+  go      -
+  rust    -
+  python  secrets.token_bytes, secrets.token_hex, secrets.token_urlsafe, secrets.choice, secrets.randbelow, secrets.randbits, secrets.SystemRandom, secrets.DEFAULT_ENTROPY, secrets.base64

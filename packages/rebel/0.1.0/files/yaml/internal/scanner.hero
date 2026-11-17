@@ -1,0 +1,429 @@
+# A YAML stream cut into tokens: the indentation of its block collections made
+# tokens of their own, each simple key marked where its `:` is found, and every
+# scalar read. It reads the stream once, from its start to its end, in a loop:
+# no recursion follows the data.
+
+use yaml/internal/block
+use yaml/internal/layout
+use yaml/internal/marks
+use yaml/internal/plain
+use yaml/internal/quoted
+use yaml/internal/source
+use yaml/internal/stack
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# The tokens of `text`, a stream whose line breaks are all `\n`, ending with
+# `STREAM_END`. Fails `invalid` where `text` is not YAML as a stream of tokens
+# reads it: a character it may not hold, a tab in its indentation, a key with
+# no `:`, an indicator where none may stand.
+function scan(text: str) -> [token.Token]?
+    control = source.first_control(text)
+
+    if control < text.len()
+        name = source.code_name(to_i64(text[control]).must())
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: control, what: f"the control character {name}, which YAML allows nowhere: between double quotes, write it as an escape")
+        )
+    tokens: [token.Token] @= []
+    indents: [i64] @= []
+    possible: [layout.SimpleKey] @= [layout.no_key()]
+    s: layout.State @= layout.start()
+
+    while true
+        layout.skip_to_token(text, @s)?
+        layout.check_stale(text, @possible, s)?
+
+        if s.at >= text.len()
+            layout.unwind(@tokens, indents, @s, -1)
+            layout.remove_key(text, @possible, s)?
+            tokens @ tokens.push(token.mark(kind: token.STREAM_END, at: text.len(), end: text.len()))
+            return ok(token.expanded(tokens))
+        fetch(text, @tokens, @indents, @possible, @s)?
+
+# Reads the one token at `s`, after the checks of its line's indentation.
+function fetch(text: str, @tokens: [token.Token], @indents: [i64], @possible: [layout.SimpleKey], @s: layout.State) -> ()?
+    column = s.at - s.line_start
+    tabbed = layout.tab_before(text, s)
+
+    if layout.first_on_line(text, s)
+        spaces = layout.leading_spaces(text, s)
+
+        if s.flow_level > 0 && spaces <= s.indent
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: s.at, what: f"a line inside a flow collection indented {spaces} spaces, where the block holding the collection needs {s.indent + 1} at least")
+            )
+
+        if s.flow_level == 0 && tabbed && spaces <= s.indent
+            return fail(code: INVALID, msg: tab_message(text: text, at: s.line_start + spaces))
+    layout.unwind(@tokens, indents, @s, column)
+    c = text[s.at]
+
+    if column == 0 && c == '%'
+        return fetch_directive(text, @tokens, indents, @possible, @s)
+
+    if column == 0 && source.is_marker_at(text, s.at)
+        return fetch_marker(text, @tokens, indents, @possible, @s)
+
+    if c == '[' || c == '{'
+        layout.save_key(text, @possible, s, tokens.len())?
+        s.flow_level @ s.flow_level + 1
+        stack.put(items: @possible, top: s.flow_level, item: layout.no_key())
+        s.allow_simple_key @ true
+
+        kind = if c == '['
+            token.FLOW_SEQ_START
+        else
+            token.FLOW_MAP_START
+        return pushed(@tokens, @s, kind)
+
+    if c == ']' || c == '}'
+        return fetch_flow_end(text, @tokens, @possible, @s)
+
+    if c == ',' && s.flow_level > 0
+        layout.remove_key(text, @possible, s)?
+        s.allow_simple_key @ true
+        return pushed(@tokens, @s, token.FLOW_ENTRY)
+
+    if c == '-' && source.is_blank_at(text, s.at + 1) && s.flow_level == 0
+        return fetch_block_entry(text, @tokens, @indents, @possible, @s, tabbed)
+
+    if c == '?' && source.is_blank_at(text, s.at + 1)
+        return fetch_key(text, @tokens, @indents, @possible, @s, tabbed)
+
+    if c == ':' && is_value(text, s)
+        return fetch_value(text, @tokens, @indents, @possible, @s, tabbed)
+
+    if c == '*' || c == '&' || c == '!'
+        return fetch_mark(text, @tokens, @possible, @s)
+
+    if (c == '|' || c == '>') && s.flow_level == 0
+        s.allow_simple_key @ true
+        layout.remove_key(text, @possible, s)?
+        read = block.read(text: text, at: s.at, indent: s.indent)?
+        tokens @ tokens.push(token.holding(kind: token.SCALAR, at: s.at, end: read.end, text: read.value, suffix: ""))
+        layout.move_to(text, @s, read.end)
+        return ok()
+
+    if c == '\'' || c == '"'
+        layout.save_key(text, @possible, s, tokens.len())?
+        s.allow_simple_key @ false
+        read = quoted.read(text: text, at: s.at, indent: s.indent)?
+        tokens @ tokens.push(token.holding(kind: token.SCALAR, at: s.at, end: read.end, text: read.value, suffix: ""))
+        layout.move_to(text, @s, read.end)
+        s.adjacent @ read.end
+        return ok()
+
+    if plain.can_begin(text: text, at: s.at, in_flow: s.flow_level > 0)
+        layout.save_key(text, @possible, s, tokens.len())?
+        s.allow_simple_key @ false
+        read = plain.read(text: text, at: s.at, indent: s.indent, in_flow: s.flow_level > 0)?
+        scalar: token.Token @= token.holding(kind: token.SCALAR, at: s.at, end: read.end, text: read.value, suffix: "")
+        scalar.is_plain @ true
+        tokens @ tokens.push(scalar)
+        layout.move_to(text, @s, read.end)
+        return ok()
+    return fail(code: INVALID, msg: cannot_begin(text, s))
+
+# Writes a token of `kind` one byte long at `s`, and moves past it.
+function pushed(@tokens: [token.Token], @s: layout.State, kind: i64) -> ()?
+    tokens @ tokens.push(token.mark(kind: kind, at: s.at, end: s.at + 1))
+    s.at @ s.at + 1
+    return ok()
+
+# Whether the `:` at `s` begins a value: white space or a line break after it,
+# and in a flow collection a flow indicator after it, or a quoted scalar or a
+# flow collection just before it.
+function is_value(text: str, s: layout.State) -> bool
+    if source.is_blank_at(text, s.at + 1)
+        return true
+
+    if s.flow_level == 0
+        return false
+    return source.is_flow_indicator(text[s.at + 1]) || s.adjacent == s.at
+
+# The message of a tab at byte `at` of `text` that indents a line.
+function tab_message(text: str, at: i64) -> str
+    return source.said(
+        text: text,
+        at: at,
+        what: "a tab in the indentation: YAML indents with spaces only, and a tab stands only after the spaces that indent a line, before no key and no `-`"
+    )
+
+# The message of a node that cannot begin at `s`.
+function cannot_begin(text: str, s: layout.State) -> str
+    c = text[s.at]
+
+    if c == '@' || c == '`'
+        return source.said(
+            text: text,
+            at: s.at,
+            what: f"{source.found(text, s.at)} is reserved by YAML and begins no node: quote a text that begins with it"
+        )
+
+    if c == '#'
+        return source.said(
+            text: text,
+            at: s.at,
+            what: "a `#` begins a comment only after white space: quote a text that holds one here"
+        )
+
+    if c == '%'
+        return source.said(
+            text: text,
+            at: s.at,
+            what: "a `%` begins a directive only at the start of a line: quote a text that begins with one"
+        )
+
+    if c == ','
+        return source.said(
+            text: text,
+            at: s.at,
+            what: "a `,` stands only between the entries of a flow collection: quote a text that begins with one"
+        )
+
+    if c == '-' && s.flow_level > 0
+        return source.said(
+            text: text,
+            at: s.at,
+            what: "a block list's `- ` inside a flow collection: write its elements between `[` and `]`, or quote a text that begins with `- `"
+        )
+
+    if c == '|' || c == '>'
+        return source.said(
+            text: text,
+            at: s.at,
+            what: "a block scalar inside a flow collection: quote the text instead"
+        )
+
+    if !source.is_printable_at(text, s.at)
+        return source.said(
+            text: text,
+            at: s.at,
+            what: f"{source.found(text, s.at)} stands outside quotes, and YAML allows it only between double quotes, as an escape"
+        )
+    return source.expected(text: text, at: s.at, what: "a node")
+
+# Reads a directive, which closes every block collection.
+function fetch_directive(text: str, @tokens: [token.Token], indents: [i64] lent, @possible: [layout.SimpleKey], @s: layout.State) -> ()?
+    if s.flow_level > 0
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: s.at, what: "a directive inside a flow collection, which is never closed before it")
+        )
+    layout.unwind(@tokens, indents, @s, -1)
+    layout.remove_key(text, @possible, s)?
+    s.allow_simple_key @ false
+    read = marks.read_directive(text, s.at)?
+
+    if read.name == "YAML"
+        tokens @ tokens.push(
+            token.holding(kind: token.VERSION_DIRECTIVE, at: s.at, end: read.end, text: read.first, suffix: "")
+        )
+    else if read.name == "TAG"
+        tokens @ tokens.push(
+            token.holding(kind: token.TAG_DIRECTIVE, at: s.at, end: read.end, text: read.first, suffix: read.second)
+        )
+    layout.move_to(text, @s, read.end)
+    return ok()
+
+# Reads `---` or `...`, which closes every block collection.
+function fetch_marker(text: str, @tokens: [token.Token], indents: [i64] lent, @possible: [layout.SimpleKey], @s: layout.State) -> ()?
+    if s.flow_level > 0
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: s.at, what: "a document's marker inside a flow collection, which is never closed before it")
+        )
+    layout.unwind(@tokens, indents, @s, -1)
+    layout.remove_key(text, @possible, s)?
+    s.allow_simple_key @ false
+
+    kind = if text[s.at] == '-'
+        token.DOC_START
+    else
+        token.DOC_END
+    tokens @ tokens.push(token.mark(kind: kind, at: s.at, end: s.at + 3))
+    s.at @ s.at + 3
+    return ok()
+
+# Reads `]` or `}`.
+function fetch_flow_end(text: str, @tokens: [token.Token], @possible: [layout.SimpleKey], @s: layout.State) -> ()?
+    if s.flow_level == 0
+        opening = if text[s.at] == ']'
+            "["
+        else
+            "{"
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: s.at, what: f"{source.found(text, s.at)} with no `{opening}` open before it: quote a text that begins with it")
+        )
+    layout.remove_key(text, @possible, s)?
+    s.flow_level @ s.flow_level - 1
+    s.allow_simple_key @ false
+
+    kind = if text[s.at] == ']'
+        token.FLOW_SEQ_END
+    else
+        token.FLOW_MAP_END
+    pushed(@tokens, @s, kind)?
+    s.adjacent @ s.at
+    return ok()
+
+# Reads the `-` that begins an element of a block list, opening the list where
+# it is the first.
+function fetch_block_entry(text: str, @tokens: [token.Token], @indents: [i64], @possible: [layout.SimpleKey], @s: layout.State, tabbed: bool) -> ()?
+    if !s.allow_simple_key
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: s.at, what: "a `-` here would begin a list inside a line: a block list's `-` begins a line, or follows a `-`, `?` or `:` that begins one")
+        )
+
+    if layout.add_indent(@indents, @s, s.at - s.line_start)
+        if tabbed
+            return fail(code: INVALID, msg: tab_message(text: text, at: s.at))
+        tokens @ tokens.push(token.mark(kind: token.BLOCK_SEQ_START, at: s.at, end: s.at))
+    s.allow_simple_key @ true
+    layout.remove_key(text, @possible, s)?
+    return pushed(@tokens, @s, token.BLOCK_ENTRY)
+
+# Reads a `?`, which begins a key, opening a block map where it is the first.
+function fetch_key(text: str, @tokens: [token.Token], @indents: [i64], @possible: [layout.SimpleKey], @s: layout.State, tabbed: bool) -> ()?
+    if s.flow_level == 0
+        if !s.allow_simple_key
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: s.at, what: "a `?` here would begin a key inside a line: a block map's `?` begins a line, or follows a `-`, `?` or `:` that begins one")
+            )
+
+        if layout.add_indent(@indents, @s, s.at - s.line_start)
+            if tabbed
+                return fail(code: INVALID, msg: tab_message(text: text, at: s.at))
+            tokens @ tokens.push(token.mark(kind: token.BLOCK_MAP_START, at: s.at, end: s.at))
+    s.allow_simple_key @ s.flow_level == 0
+    layout.remove_key(text, @possible, s)?
+    return pushed(@tokens, @s, token.KEY)
+
+# Reads a `:` that begins a value, making the possible key before it a key, and
+# opening a block map where that key is the first of one.
+function fetch_value(text: str, @tokens: [token.Token], @indents: [i64], @possible: [layout.SimpleKey], @s: layout.State, tabbed: bool) -> ()?
+    k = possible[s.flow_level]
+
+    if k.live
+        tokens[k.index].key_before @ true
+
+        if s.flow_level == 0 && layout.add_indent(@indents, @s, k.column)
+            if k.tabbed
+                return fail(code: INVALID, msg: tab_message(text: text, at: k.at))
+            tokens[k.index].map_before @ true
+        possible[s.flow_level].live @ false
+        s.allow_simple_key @ false
+    else
+        if s.flow_level == 0
+            if !s.allow_simple_key
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: s.at, what: "a `:` with no key before it on its line: a key and its `:` stand on one line, and a value on its key's line holds no second key")
+                )
+
+            if layout.add_indent(@indents, @s, s.at - s.line_start)
+                if tabbed
+                    return fail(code: INVALID, msg: tab_message(text: text, at: s.at))
+                tokens @ tokens.push(token.mark(kind: token.BLOCK_MAP_START, at: s.at, end: s.at))
+        s.allow_simple_key @ s.flow_level == 0
+        layout.remove_key(text, @possible, s)?
+    return pushed(@tokens, @s, token.VALUE)
+
+# Reads an alias, `*name`, an anchor, `&name`, or a tag, `!...`, each of which
+# may begin a key.
+function fetch_mark(text: str, @tokens: [token.Token], @possible: [layout.SimpleKey], @s: layout.State) -> ()?
+    layout.save_key(text, @possible, s, tokens.len())?
+    s.allow_simple_key @ false
+
+    if text[s.at] == '!'
+        tag = marks.read_tag(text: text, at: s.at, in_flow: s.flow_level > 0)?
+        tokens @ tokens.push(
+            token.holding(kind: token.TAG, at: s.at, end: tag.end, text: tag.handle, suffix: tag.suffix)
+        )
+        s.at @ tag.end
+        return ok()
+    name = marks.read_name(text, s.at)?
+
+    kind = if text[s.at] == '*'
+        token.ALIAS
+    else
+        token.ANCHOR
+    tokens @ tokens.push(token.holding(kind: kind, at: s.at, end: name.end, text: name.value, suffix: ""))
+    s.at @ name.end
+    return ok()
+
+## Tests
+
+# The kinds of the tokens of `text`, or `[-1]` where it is not YAML.
+function kinds_of(text: str) -> [i64]
+    match scan(text)
+        .err _ => return [-1]
+        .ok tokens =>
+            kinds: [i64] @= []
+
+            for t in tokens
+                kinds @ kinds.push(t.kind)
+
+            return kinds
+
+# The message of the failure of `text`, or the empty text where it is YAML.
+function failure_of(text: str) -> str
+    match scan(text)
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "scan: a scalar alone, the empty stream, and comments alone"
+    assert kinds_of("a") == [token.SCALAR, token.STREAM_END]
+    assert kinds_of("") == [token.STREAM_END]
+    assert kinds_of("# c\n  # d\n") == [token.STREAM_END]
+
+test "scan: a block map, a nested one, and the possible marked where their colons are"
+    assert kinds_of("a: 1\nb: 2") == [token.BLOCK_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.BLOCK_END, token.STREAM_END]
+    assert kinds_of("a:\n  b: 1\n") == [token.BLOCK_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.BLOCK_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.BLOCK_END, token.BLOCK_END, token.STREAM_END]
+
+test "scan: block lists, nested on one line, a map in one, and one at its map's column"
+    assert kinds_of("- a\n- b") == [token.BLOCK_SEQ_START, token.BLOCK_ENTRY, token.SCALAR, token.BLOCK_ENTRY, token.SCALAR, token.BLOCK_END, token.STREAM_END]
+    assert kinds_of("- - a") == [token.BLOCK_SEQ_START, token.BLOCK_ENTRY, token.BLOCK_SEQ_START, token.BLOCK_ENTRY, token.SCALAR, token.BLOCK_END, token.BLOCK_END, token.STREAM_END]
+    assert kinds_of("- a: 1") == [token.BLOCK_SEQ_START, token.BLOCK_ENTRY, token.BLOCK_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.BLOCK_END, token.BLOCK_END, token.STREAM_END]
+    assert kinds_of("k:\n- a") == [token.BLOCK_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.BLOCK_ENTRY, token.SCALAR, token.BLOCK_END, token.STREAM_END]
+
+test "scan: flow collections, a key in one, and a colon right after a quoted key"
+    assert kinds_of("[a, b]") == [token.FLOW_SEQ_START, token.SCALAR, token.FLOW_ENTRY, token.SCALAR, token.FLOW_SEQ_END, token.STREAM_END]
+    assert kinds_of("{a: 1}") == [token.FLOW_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.FLOW_MAP_END, token.STREAM_END]
+    assert kinds_of("{\"a\":1}") == [token.FLOW_MAP_START, token.KEY, token.SCALAR, token.VALUE, token.SCALAR, token.FLOW_MAP_END, token.STREAM_END]
+    assert kinds_of("[a:b]") == [token.FLOW_SEQ_START, token.SCALAR, token.FLOW_SEQ_END, token.STREAM_END]
+
+test "scan: documents, directives, anchors, aliases and tags"
+    assert kinds_of("%YAML 1.2\n--- a\n...\n") == [token.VERSION_DIRECTIVE, token.DOC_START, token.SCALAR, token.DOC_END, token.STREAM_END]
+    assert kinds_of("&a !!str x") == [token.ANCHOR, token.TAG, token.SCALAR, token.STREAM_END]
+    assert kinds_of("*a : b") == [token.BLOCK_MAP_START, token.KEY, token.ALIAS, token.VALUE, token.SCALAR, token.BLOCK_END, token.STREAM_END]
+
+test "scan: tabs, refused in the indentation, allowed after a key's colon and after the spaces that indent"
+    assert failure_of("a:\n\tb: 1\n") == "line 2, column 1: a tab in the indentation: YAML indents with spaces only, and a tab stands only after the spaces that indent a line, before no key and no `-`"
+    assert failure_of("- a\n-\t- b\n") != ""
+    assert failure_of("a:\tb\n") == ""
+    assert failure_of("a:\n  \tb\n") == ""
+    assert failure_of("\t{}") == ""
+
+test "scan: each indicator where none may stand, and a key with no colon"
+    assert failure_of("a: b: c") == "line 1, column 5: a `:` with no key before it on its line: a key and its `:` stand on one line, and a value on its key's line holds no second key"
+    assert failure_of("a: - b") != ""
+    assert failure_of("a: 1\nb\n") == "line 2, column 1: expected `:` after this key on its line: a line that begins at a block map's column holds a key, its `:` and its value"
+    assert failure_of("]") == "line 1, column 1: `]` with no `[` open before it: quote a text that begins with it"
+    assert failure_of("@a") == "line 1, column 1: `@` is reserved by YAML and begins no node: quote a text that begins with it"
+    assert failure_of("[- a]") != "" && failure_of("[a\n---\n]") != "" && failure_of("[|\n a]") != ""
+    assert failure_of("a\u{1}") == "line 1, column 2: the control character U+0001, which YAML allows nowhere: between double quotes, write it as an escape"
+
+test "scan: a flow collection's lines indented past its block, and one that is not"
+    assert failure_of("k: [a,\n  b]\n") == ""
+    assert failure_of("k: [a,\nb]\n") == "line 2, column 1: a line inside a flow collection indented 0 spaces, where the block holding the collection needs 1 at least"
+    assert failure_of("[a,\nb]") == ""

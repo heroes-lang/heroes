@@ -1,0 +1,356 @@
+# The blocks of a DEFLATE stream written (RFC 1951 sections 3.2.3 to 3.2.7):
+# the symbols of a block in whichever of the three kinds is shortest, the
+# bytes as they are (stored), with the fixed codes, or with codes made for
+# the block and sent in its header. Each kind's size is counted in bits
+# before any is written.
+
+use compress/internal/bitout
+use compress/internal/huffman
+use compress/internal/tables
+
+# The most bytes one stored block holds.
+constant STORED_MOST: i64
+    65535
+
+# How often each symbol of a block occurs.
+record Freqs
+    # By literal or length symbol, 0 to 285; the end of the block is not
+    # counted here.
+    literals: [i64]
+    # By distance symbol, 0 to 29.
+    distances: [i64]
+
+# What a dynamic block's header says, and its size.
+record Plan
+    # The code length of each literal and length symbol, 286 of them.
+    literal_lengths: [i64]
+    # The code length of each distance symbol, 30 of them.
+    distance_lengths: [i64]
+    # How many literal and length lengths the header sends: 257 to 286.
+    literals_sent: i64
+    # How many distance lengths it sends: 1 to 30.
+    distances_sent: i64
+    # The code length of each code length symbol, 0 to 18.
+    code_lengths: [i64]
+    # How many of those it sends, in `tables.CODE_LENGTH_ORDER`: 4 to 19.
+    code_lengths_sent: i64
+    # The lengths sent, as code length symbols: each the symbol plus 256
+    # times the value of its extra bits.
+    sequence: [i64]
+    # The header's size in bits, the three bits of every block left out.
+    bits: i64
+
+# Counts of nothing.
+function empty_freqs() -> Freqs
+    return Freqs(literals: huffman.zeros(tables.LITERALS), distances: huffman.zeros(tables.DISTANCES))
+
+# The code length symbols that send `lengths` (RFC 1951 section 3.2.7): a
+# length as itself, a run of the same length by 16, a run of zeros by 17
+# or 18. Each answer is the symbol plus 256 times its extra bits' value.
+function code_length_symbols(lengths: [i64] lent) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < lengths.len()
+        value = lengths[at]
+        run: i64 @= 1
+
+        while at + run < lengths.len() && lengths[at + run] == value
+            run @ run + 1
+
+        left: i64 @= run
+
+        if value == 0
+            while left >= 11
+                n = min_of(a: left, b: 138)
+                out @ out.push(18 + 256 * (n - 11))
+                left @ left - n
+
+            if left >= 3
+                out @ out.push(17 + 256 * (left - 3))
+                left @ 0
+        else
+            out @ out.push(value)
+            left @ left - 1
+
+            while left >= 3
+                n = min_of(a: left, b: 6)
+                out @ out.push(16 + 256 * (n - 3))
+                left @ left - n
+
+        while left > 0
+            out @ out.push(value)
+            left @ left - 1
+
+        at @ at + run
+
+    return out
+
+# How many extra bits a code length symbol takes.
+function code_length_extra(symbol: i64) -> i64
+    if symbol == 16
+        return 2
+
+    if symbol == 17
+        return 3
+
+    if symbol == 18
+        return 7
+    return 0
+
+# How many of `lengths` are sent: up to the last that is not 0, and no fewer
+# than `least`.
+function sent(lengths: [i64] lent, least: i64) -> i64
+    n: i64 @= lengths.len()
+
+    while n > least && lengths[n - 1] == 0
+        n @ n - 1
+
+    return n
+
+# The dynamic header for a block whose literal and length symbols occur
+# `literals` times, the end of the block among them, and whose distances
+# occur `distances` times.
+function plan_for(literals: [i64] lent, distances: [i64] lent) -> Plan
+    literal_lengths = huffman.lengths_for(literals, limit: tables.MAX_BITS)
+    distance_lengths @= huffman.lengths_for(distances, limit: tables.MAX_BITS)
+
+    if distance_lengths[0] == 0 && distance_lengths[1] == 0 && sent(distance_lengths, least: 0) == 0
+        distance_lengths[0] @ 1
+        distance_lengths[1] @ 1
+    literals_sent = sent(literal_lengths, least: 257)
+    distances_sent = sent(distance_lengths, least: 1)
+    both: [i64] @= literal_lengths.slice(from: 0, to: literals_sent)
+
+    for i in range(from: 0, to: distances_sent)
+        both @ both.push(distance_lengths[i])
+
+    sequence = code_length_symbols(both)
+    counts @= huffman.zeros(tables.CODE_LENGTHS)
+
+    for item in sequence
+        counts[item & 255] @ counts[item & 255] + 1
+
+    code_lengths = huffman.lengths_for(counts, limit: tables.MAX_CODE_LENGTH_BITS)
+    in_order: [i64] @= []
+
+    for symbol in tables.CODE_LENGTH_ORDER
+        in_order @ in_order.push(code_lengths[symbol])
+
+    code_lengths_sent = sent(in_order, least: 4)
+    bits: i64 @= 5 + 5 + 4 + 3 * code_lengths_sent
+
+    for item in sequence
+        bits @ bits + code_lengths[item & 255] + code_length_extra(item & 255)
+
+    return Plan(
+        literal_lengths: literal_lengths,
+        distance_lengths: distance_lengths,
+        literals_sent: literals_sent,
+        distances_sent: distances_sent,
+        code_lengths: code_lengths,
+        code_lengths_sent: code_lengths_sent,
+        sequence: sequence,
+        bits: bits
+    )
+
+# The extra bits every length and distance of a block takes, in all.
+function extra_bits(literals: [i64] lent, distances: [i64] lent) -> i64
+    total: i64 @= 0
+
+    for i in range(from: 0, to: 29)
+        total @ total + literals[257 + i] * tables.LENGTH_EXTRA[i]
+
+    for i in range(from: 0, to: tables.DISTANCES)
+        total @ total + distances[i] * tables.DISTANCE_EXTRA[i]
+
+    return total
+
+# Writes the bytes from position `from` to `to` of `data`, whose first byte
+# is position `base`, as stored blocks of at most 65,535 bytes, the last of
+# them final where `last` is: one empty block where there are none.
+function write_stored(@out: [u8], @sink: bitout.Sink, data: [u8] lent, from: i64, to: i64, base: i64, last: bool)
+    at: i64 @= from
+
+    while true
+        n = min_of(a: STORED_MOST, b: to - at)
+        final: i64 @= 0
+
+        if last && at + n == to
+            final @ 1
+        bitout.put(@out, @sink, value: final, count: 3)
+        bitout.align(@out, @sink)
+        bitout.put_little(@out, value: n, width: 2)
+        bitout.put_little(@out, value: n ^ 0xffff, width: 2)
+
+        for i in range(from: at - base, to: at - base + n)
+            out @ out.push(data[i])
+
+        at @ at + n
+
+        if at >= to
+            break
+
+# Writes every symbol of `syms` and the end of the block with the codes
+# `codes` of lengths `lengths` for literals and lengths, and `far` of
+# lengths `far_lengths` for distances.
+function write_symbols(@out: [u8], @sink: bitout.Sink, syms: [i64] lent, codes: [i64] lent, lengths: [i64] lent, far: [i64] lent, far_lengths: [i64] lent)
+    for s in syms
+        if s < 256
+            bitout.put(@out, @sink, value: codes[s], count: lengths[s])
+        else
+            length = s >> 16
+            distance = s & 0xffff
+            lc = tables.length_code(length)
+            bitout.put(@out, @sink, value: codes[257 + lc], count: lengths[257 + lc])
+
+            if tables.LENGTH_EXTRA[lc] > 0
+                bitout.put(@out, @sink, value: length - tables.LENGTH_BASE[lc], count: tables.LENGTH_EXTRA[lc])
+            dc = tables.distance_code(distance)
+            bitout.put(@out, @sink, value: far[dc], count: far_lengths[dc])
+
+            if tables.DISTANCE_EXTRA[dc] > 0
+                bitout.put(@out, @sink, value: distance - tables.DISTANCE_BASE[dc], count: tables.DISTANCE_EXTRA[dc])
+
+    bitout.put(@out, @sink, value: codes[tables.END_OF_BLOCK], count: lengths[tables.END_OF_BLOCK])
+
+# The size in bits of the bytes from `from` to `to` as stored blocks, after
+# `pending` bits already written; -1 where they are not all held, before
+# `base`.
+function stored_bits(from: i64, to: i64, base: i64, pending: i64) -> i64
+    if from < base
+        return -1
+    n = to - from
+    chunks: i64 @= (n + STORED_MOST - 1) / STORED_MOST
+
+    if chunks == 0
+        chunks @ 1
+    return (8 - (pending + 3) % 8) % 8 + 3 + 32 + (chunks - 1) * (8 + 32) + 8 * n
+
+# Writes the block of `syms`, which say the bytes from position `from` to
+# `to` of `data` (whose first byte is position `base`), in the kind that is
+# shortest: stored, fixed codes or dynamic codes, never dynamic where
+# `fixed_only`. It is the last block where `last` is.
+function write_block(@out: [u8], @sink: bitout.Sink, syms: [i64] lent, freqs: Freqs lent, data: [u8] lent, from: i64, to: i64, base: i64, last: bool, fixed_only: bool)
+    literals @= freqs.literals
+    literals[tables.END_OF_BLOCK] @ 1
+    extra = extra_bits(literals: literals, distances: freqs.distances)
+    fixed_lengths = tables.fixed_literal_lengths()
+    fixed_far = tables.fixed_distance_lengths()
+    fixed = 3 + huffman.cost(counts: literals, lengths: fixed_lengths.slice(from: 0, to: tables.LITERALS)) + huffman.cost(counts: freqs.distances, lengths: fixed_far.slice(from: 0, to: tables.DISTANCES)) + extra
+    plan = plan_for(literals: literals, distances: freqs.distances)
+    dynamic = 3 + plan.bits + huffman.cost(counts: literals, lengths: plan.literal_lengths) + huffman.cost(counts: freqs.distances, lengths: plan.distance_lengths) + extra
+    stored = stored_bits(from: from, to: to, base: base, pending: sink.count)
+    flag: i64 @= 0
+
+    if last
+        flag @ 1
+
+    if stored >= 0 && stored < fixed && (fixed_only || stored < dynamic)
+        write_stored(out: @out, @sink, data: data, from: from, to: to, base: base, last: last)
+    else if fixed_only || fixed <= dynamic
+        bitout.put(@out, @sink, value: flag | 1 << 1, count: 3)
+        write_symbols(
+            @out,
+            @sink,
+            syms: syms,
+            codes: huffman.codes_for(fixed_lengths),
+            lengths: fixed_lengths,
+            far: huffman.codes_for(fixed_far),
+            far_lengths: fixed_far
+        )
+    else
+        bitout.put(@out, @sink, value: flag | 2 << 1, count: 3)
+        bitout.put(@out, @sink, value: plan.literals_sent - 257, count: 5)
+        bitout.put(@out, @sink, value: plan.distances_sent - 1, count: 5)
+        bitout.put(@out, @sink, value: plan.code_lengths_sent - 4, count: 4)
+
+        for i in range(from: 0, to: plan.code_lengths_sent)
+            bitout.put(@out, @sink, value: plan.code_lengths[tables.CODE_LENGTH_ORDER[i]], count: 3)
+
+        header_codes = huffman.codes_for(plan.code_lengths)
+
+        for item in plan.sequence
+            symbol = item & 255
+            bitout.put(@out, @sink, value: header_codes[symbol], count: plan.code_lengths[symbol])
+
+            if code_length_extra(symbol) > 0
+                bitout.put(@out, @sink, value: item >> 8, count: code_length_extra(symbol))
+
+        write_symbols(
+            @out,
+            @sink,
+            syms: syms,
+            codes: huffman.codes_for(plan.literal_lengths),
+            lengths: plan.literal_lengths,
+            far: huffman.codes_for(plan.distance_lengths),
+            far_lengths: plan.distance_lengths
+        )
+
+# The smaller of two numbers.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+test "code_length_symbols: single lengths, runs of a length, and runs of zeros"
+    assert code_length_symbols([]).len() == 0
+    assert code_length_symbols([8]) == [8]
+    assert code_length_symbols([8, 8, 8]) == [8, 8, 8]
+    assert code_length_symbols([8, 8, 8, 8]) == [8, 16]
+    assert code_length_symbols([5, 5, 5, 5, 5, 5, 5, 5]) == [5, 16 + 256 * 3, 5]
+    assert code_length_symbols([0, 0]) == [0, 0]
+    assert code_length_symbols([0, 0, 0]) == [17]
+    assert code_length_symbols([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]) == [18]
+    zeros = huffman.zeros(139)
+    assert code_length_symbols(zeros) == [18 + 256 * 127, 0]
+
+test "plan_for: a block of no repeat sends 257 literal lengths and two of distance"
+    literals @= huffman.zeros(tables.LITERALS)
+    literals[0x61] @ 3
+    literals[0x62] @ 1
+    literals[tables.END_OF_BLOCK] @ 1
+    plan = plan_for(literals: literals, distances: huffman.zeros(tables.DISTANCES))
+    assert plan.literals_sent == 257
+    assert plan.distances_sent == 2
+    assert huffman.is_complete(plan.literal_lengths)
+    assert huffman.is_complete(plan.code_lengths)
+
+test "write_stored: an empty last block, Python's five bytes, and a block of 65,535 then one more"
+    out: [u8] @= []
+    sink @= bitout.empty()
+    write_stored(out: @out, @sink, data: [], from: 0, to: 0, base: 0, last: true)
+    assert out == [1, 0, 0, 0xff, 0xff]
+    data: [u8] @= []
+
+    for i in range(from: 0, to: 65536)
+        data @ data.push(to_u8(i & 255).must())
+
+    out @ []
+    write_stored(out: @out, @sink, data: data, from: 0, to: 65536, base: 0, last: true)
+    assert out.len() == 65536 + 10
+    assert out.slice(from: 0, to: 5) == [0, 0xff, 0xff, 0, 0]
+    assert out.slice(from: 65540, to: 65545) == [1, 1, 0, 0xfe, 0xff]
+
+test "write_block: an empty last block is fixed codes, Python's 03 00"
+    out: [u8] @= []
+    sink @= bitout.empty()
+    write_block(
+        out: @out,
+        @sink,
+        [],
+        freqs: empty_freqs(),
+        data: [],
+        from: 0,
+        to: 0,
+        base: 0,
+        last: true,
+        fixed_only: false
+    )
+    bitout.align(@out, @sink)
+    assert out == [3, 0]
+
+test "stored_bits: one chunk, the padding, and bytes no longer held"
+    assert stored_bits(from: 0, to: 0, base: 0, pending: 0) == 5 + 3 + 32
+    assert stored_bits(from: 0, to: 10, base: 0, pending: 5) == 3 + 32 + 80
+    assert stored_bits(from: 0, to: 10, base: 1, pending: 0) == -1

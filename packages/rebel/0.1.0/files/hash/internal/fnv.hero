@@ -1,0 +1,150 @@
+# FNV-1 and FNV-1a, Fowler, Noll and Vo's hashes, in 32 and 64 bits: from an
+# offset, each byte is mixed in by a multiplication by a prime and an
+# exclusive or, FNV-1 multiplying first and FNV-1a mixing first. A 32-bit
+# hash is an `i64` below 2^32, whose product by the 32-bit prime fits; a
+# 64-bit one is a word of `hash/internal/word`, multiplied as 2^40 + 0x1b3.
+# Every function here takes and answers the finished hash of what came
+# before, so feeding in pieces and feeding at once are the same.
+
+use hash/internal/word
+
+# The hash of nothing in 32 bits, 2166136261.
+constant OFFSET32: i64
+    2166136261
+
+# The prime of the 32-bit hashes, 2^24 + 0x193.
+constant PRIME32: i64
+    16777619
+
+# The hash of nothing in 64 bits, 14695981039346656037, as the word that
+# holds its bits.
+constant OFFSET64: i64
+    -3750763034362895579
+
+# The FNV-32 of what came before and then `data`, from `hash`, the FNV-32 of
+# what came before: FNV-1a where `xor_first`, else FNV-1.
+function feed32(hash: i64, data: [u8] lent, xor_first: bool) -> i64
+    h: i64 @= hash
+    at: i64 @= 0
+
+    while at < data.len()
+        b = to_i64(data[at]).must()
+
+        if xor_first
+            h @ (h ^ b) * PRIME32 & word.LOW32
+        else
+            h @ h * PRIME32 & word.LOW32 ^ b
+        at @ at + 1
+
+    return h
+
+# What `feed32` answers for the bytes of `s`, read where they stand.
+function feed32_text(hash: i64, s: str lent, xor_first: bool) -> i64
+    h: i64 @= hash
+    at: i64 @= 0
+
+    while at < s.len()
+        b = to_i64(s[at]).must()
+
+        if xor_first
+            h @ (h ^ b) * PRIME32 & word.LOW32
+        else
+            h @ h * PRIME32 & word.LOW32 ^ b
+        at @ at + 1
+
+    return h
+
+# The FNV-64 of what came before and then `data`, from `hash`, the FNV-64 of
+# what came before: FNV-1a where `xor_first`, else FNV-1.
+function feed64(hash: i64, data: [u8] lent, xor_first: bool) -> i64
+    h: i64 @= hash
+    at: i64 @= 0
+
+    while at < data.len()
+        b = to_i64(data[at]).must()
+
+        if xor_first
+            h @ times_prime64(h ^ b)
+        else
+            h @ times_prime64(h) ^ b
+        at @ at + 1
+
+    return h
+
+# What `feed64` answers for the bytes of `s`, read where they stand.
+function feed64_text(hash: i64, s: str lent, xor_first: bool) -> i64
+    h: i64 @= hash
+    at: i64 @= 0
+
+    while at < s.len()
+        b = to_i64(s[at]).must()
+
+        if xor_first
+            h @ times_prime64(h ^ b)
+        else
+            h @ times_prime64(h) ^ b
+        at @ at + 1
+
+    return h
+
+# `h` times the 64-bit prime, 1099511628211, which is 2^40 + 0x1b3, modulo
+# 2^64.
+function times_prime64(h: i64) -> i64
+    return word.add(a: word.times_small(x: h, m: 0x1b3), b: h << 40)
+
+test "fnv constants: the offsets and the primes"
+    assert word.unsigned(OFFSET64) == 14695981039346656037
+    assert word.unsigned(times_prime64(1)) == 1099511628211
+    assert PRIME32 == 16777619
+
+# Go's `fnv.New32`, `New32a`, `New64` and `New64a` answered these on
+# 2026-11-15.
+test "fnv feed32: empty, one byte, a zero byte, the check text, every byte, a thousand bytes of 0xff, and a text of several bytes per character"
+    t = word.bytes_of
+    assert feed32(hash: OFFSET32, data: [], xor_first: false) == 2166136261
+    assert feed32(hash: OFFSET32, data: t("a"), xor_first: false) == 84696446
+    assert feed32(hash: OFFSET32, data: t("a"), xor_first: true) == 3826002220
+    assert feed32(hash: OFFSET32, data: [0], xor_first: false) == 84696351
+    assert feed32(hash: OFFSET32, data: [0], xor_first: true) == 84696351
+    assert feed32(hash: OFFSET32, data: t("123456789"), xor_first: false) == 605325334
+    assert feed32(hash: OFFSET32, data: t("123456789"), xor_first: true) == 3146166556
+    assert feed32_text(hash: OFFSET32, s: "héros ☃", xor_first: false) == 2762876952
+    assert feed32_text(hash: OFFSET32, s: "héros ☃", xor_first: true) == 1274658774
+    every: [u8] @= []
+
+    for i in range(from: 0, to: 256)
+        every @ every.push(to_u8(i).must())
+
+    assert feed32(hash: OFFSET32, data: every, xor_first: true) == 2426689733
+    ones: [u8] @= []
+
+    for _ in range(from: 0, to: 1000)
+        ones @ ones.push(0xff)
+
+    assert feed32(hash: OFFSET32, data: ones, xor_first: false) == 1924235885
+    assert feed32_text(hash: OFFSET32, s: "", xor_first: true) == 2166136261
+
+test "fnv feed64: empty, one byte, a zero byte, the check text, every byte, a thousand bytes of 0xff, and a text of several bytes per character"
+    t = word.bytes_of
+    assert word.unsigned(feed64(hash: OFFSET64, data: [], xor_first: true)) == 14695981039346656037
+    assert word.unsigned(feed64(hash: OFFSET64, data: t("a"), xor_first: false)) == 12638153115695167422
+    assert word.unsigned(feed64(hash: OFFSET64, data: t("a"), xor_first: true)) == 12638187200555641996
+    assert word.unsigned(feed64(hash: OFFSET64, data: [0], xor_first: true)) == 12638153115695167455
+    assert word.unsigned(feed64(hash: OFFSET64, data: t("123456789"), xor_first: false)) == 12047124837835544278
+    assert word.unsigned(feed64(hash: OFFSET64, data: t("123456789"), xor_first: true)) == 492395637191921148
+    assert word.unsigned(feed64_text(hash: OFFSET64, s: "héros ☃", xor_first: false)) == 17641497160208618040
+    assert word.unsigned(feed64_text(hash: OFFSET64, s: "héros ☃", xor_first: true)) == 14713013188754567190
+    every: [u8] @= []
+
+    for i in range(from: 0, to: 256)
+        every @ every.push(to_u8(i).must())
+
+    assert word.unsigned(feed64(hash: OFFSET64, data: every, xor_first: true)) == 4774620800949106213
+    ones: [u8] @= []
+
+    for _ in range(from: 0, to: 1000)
+        ones @ ones.push(0xff)
+
+    assert word.unsigned(feed64(hash: OFFSET64, data: ones, xor_first: false)) == 13261221646552773197
+    half = feed64_text(hash: OFFSET64, s: "1234", xor_first: true)
+    assert word.unsigned(feed64_text(hash: half, s: "56789", xor_first: true)) == 492395637191921148

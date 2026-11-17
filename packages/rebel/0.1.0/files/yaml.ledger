@@ -1,0 +1,211 @@
+# The ledger of `yaml`: what a YAML library lets a program do, one block per
+# capability, and what Rebel answers. None of the three yardsticks has YAML in
+# its standard library (Go 1.27's `go doc std`, Python 3.15's
+# `sys.stdlib_module_names`, Rust 1.100's std documentation, read on this
+# machine 2026-11-16), so the capabilities are YAML 1.2.2's own, chapter by
+# chapter, and the `go` line names the entries of `gopkg.in/yaml.v3` v3.0.1,
+# the de facto Go library, found in this machine's module cache and listed
+# with `go doc -all`, nothing downloaded. PyYAML is not installed here, so the
+# `python` line is `-` everywhere. Every expected value in the package's tests
+# was observed from yaml.v3 the same day, or, where the JSON schema decided
+# otherwise, derived from the specification's own examples (chapter 2) and
+# rules; the notes say where.
+
+capability yaml/value  a YAML document read into a tree a program can match on
+  heroes  json.Value
+  go      Unmarshal (into an interface{}), Kind, DocumentNode, SequenceNode, MappingNode, ScalarNode, AliasNode
+  rust    -
+  python  -
+  note    decided with the package: the value is `json.Value`, the tree `json` walks and writes, so a document read from YAML is read out with `json.member`, `json.value_at` and the rest
+
+capability yaml/parse  a text holding one document read into a value
+  heroes  yaml.parse, yaml.parse_with
+  go      Unmarshal, Node.Decode
+  rust    -
+  python  -
+  note    a stream of no document answers null, as yaml.v3's Unmarshal does; one of two documents fails `invalid` at the second, where yaml.v3's Unmarshal reads the first alone and drops the rest in silence
+
+capability yaml/parse-stream  every document of a stream read, `---` and `...` between them
+  heroes  yaml.parse_all, yaml.parse_all_with
+  go      NewDecoder, Decoder, Decoder.Decode
+  rust    -
+  python  -
+  note    a bare document after `...` is read, as YAML 1.2.2's stream grammar allows; yaml.v3 refuses it ("did not find expected <document start>")
+
+capability yaml/parse-where-wrong  where a text stops being YAML, for a person to act on
+  heroes  yaml.parse
+  go      TypeError, TypeError.Errors, TypeError.Error, Node.Line, Node.Column
+  rust    -
+  python  -
+  note    every failure's message opens `line L, column C:`, the column in characters, then says what was expected and what was found, and how to write it where the fix is known: a key that is a number is told to be quoted
+
+capability yaml/validity  whether a text is YAML this package reads
+  heroes  yaml.is_valid
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability yaml/schema  what a plain scalar means: null, a boolean, a number or text
+  heroes  yaml.parse
+  go      Unmarshal (the core schema, and YAML 1.1's spellings into typed values)
+  rust    -
+  python  -
+  note    decided with the package: YAML 1.2's JSON schema, `null`, `true`, `false` and numbers spelled as JSON spells them, and text otherwise. yaml.v3 reads the core schema: `~` null, `0x1F` 31, `0o14` 12, `+12345` a number, `.inf` and `.nan` floats; each is text here (spec examples 2.19 and 2.20 hold the difference). A timestamp is text in both (example 2.22)
+
+capability yaml/schema-wider  the core schema's and YAML 1.1's spellings read as numbers, nulls and booleans
+  heroes  refused: the JSON schema is the package's decided design, so `yes`, `no`, `on`, `~` and `0x1F` are never a boolean, a null or a number; a program that wants one reads the text and decides
+  go      Unmarshal into a bool or an int (yes/no, on/off, 0b, 0o, 0x)
+  rust    -
+  python  -
+  note    -
+
+capability yaml/block-collections  block maps and lists, compact nested ones, explicit keys, a list at its map's column
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    a tab in the indentation is refused as YAML 1.2.2 refuses it; a tab after the spaces that indent a line, and between tokens, is white space
+
+capability yaml/flow-collections  `[...]` and `{...}`, nested, over several lines, a map of one pair in a list, JSON's own text
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    a line inside a flow collection, and a quoted scalar's line after its first, must be indented past the block holding it, as YAML 1.2.2's productions say (`s-flow-line-prefix`); yaml.v3 accepts `k: [a,\nb]` and a `]` at the key's column. Taken from the specification; a decision the author may turn
+
+capability yaml/scalar-styles  plain, single-quoted and double-quoted scalars with every escape, literal and folded blocks with chomping and indentation indicators, lines folded
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    a root block scalar's indentation indicator counts from column 0, as yaml.v3 (libyaml) counts it; a surrogate escape, `\ud83d`, is refused as yaml.v3 refuses it
+
+capability yaml/comments  comments read past
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    -
+
+capability yaml/comments-kept  a document's comments, styles and positions kept, to edit a file and write it back as it was
+  heroes  refused: the value is `json.Value`, which holds no comment, style or position; what `format` writes is the value's
+  go      Node, Node.Kind, Node.Style, Node.Value, Node.Content, Node.HeadComment, Node.LineComment, Node.FootComment, Node.IsZero, Node.SetString, Style, TaggedStyle, DoubleQuotedStyle, SingleQuotedStyle, LiteralStyle, FoldedStyle, FlowStyle
+  rust    -
+  python  -
+  note    -
+
+capability yaml/directives  `%YAML` and `%TAG` read; a reserved directive read past
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    `%YAML 1.1` is read as 1.2; a version past 1 fails `unsupported`
+
+capability yaml/anchors  anchors and aliases, an alias read as a copy of what its anchor names
+  heroes  yaml.parse
+  go      Node.Anchor, Node.Alias
+  rust    -
+  python  -
+  note    an alias inside the node its anchor names is refused `invalid`, as yaml.v3 refuses it ("contains itself"): a value cannot hold itself
+
+capability yaml/alias-limit  a stream whose aliases would copy without end refused, the limit the program's
+  heroes  yaml.ParseOptions, yaml.DEFAULT_MAX_EXPANDED, yaml.LIMIT
+  go      -
+  rust    -
+  python  -
+  note    each value an alias copies counts one and each byte of its texts and keys one more, the whole stream together, so a long text copied many times is counted as well as many nodes; past `max_expanded`, `limit`. yaml.v3 has a ratio of its own that no program sets
+
+capability yaml/depth-limit  how deep a document may nest, the limit the program's
+  heroes  yaml.ParseOptions, yaml.DEFAULT_MAX_DEPTH
+  go      -
+  rust    -
+  python  -
+  note    the same default as `json`, for the same reason; nothing follows the data with recursion, reading or writing
+
+capability yaml/tags-core  the core tags, `!!str`, `!!int`, `!!float`, `!!bool`, `!!null`, `!!seq`, `!!map`, and the non-specific `!`
+  heroes  yaml.parse
+  go      Node.Tag, Node.LongTag, Node.ShortTag
+  rust    -
+  python  -
+  note    a core tag asks for its kind under the JSON schema: `!!int "3"` is 3, `!!int x` is `invalid`, `!!null ~` is `invalid`
+
+capability yaml/tags-other  tags of other kinds: `!!binary`, `!!timestamp`, `!!set`, `!!omap`, local and global tags
+  heroes  refused: no tag makes a value of a kind the program did not ask for, and no code runs; `unsupported`, naming the tag
+  go      Unmarshaler, Marshaler
+  rust    -
+  python  -
+  note    -
+
+capability yaml/keys  a map's keys
+  heroes  yaml.parse
+  go      Unmarshal (keys of any kind into an interface{})
+  rust    -
+  python  -
+  note    decided with the package: a key is text, so a key that is a number, a boolean, null, a list or a map fails `invalid` saying where and how to quote it. `200: OK` is refused; `"200": OK` is read
+
+capability yaml/duplicate-keys  a key written twice in one map
+  heroes  yaml.ParseOptions
+  go      Unmarshal
+  rust    -
+  python  -
+  note    refused `invalid` as YAML 1.2 says and yaml.v3 refuses it; `duplicate_keys` keeps the last value at the first one's place, as `json` does
+
+capability yaml/merge-key  YAML 1.1's `<<`, which merges a map into another
+  heroes  refused: YAML 1.2 has no merge key, and under its JSON schema `<<` is a key like any other, kept as one
+  go      Unmarshal
+  rust    -
+  python  -
+  note    yaml.v3 merges `<<: {a: 1}` into `{a: 1}`; here it is `{"<<": {"a": 1}}`
+
+capability yaml/format  a value written as a YAML document
+  heroes  yaml.format
+  go      Marshal, NewEncoder, Encoder, Encoder.Encode, Node.Encode
+  rust    -
+  python  -
+  note    block style, two spaces a level, a list under a key indented past it as yaml.v3 writes with SetIndent(2); a map's members in its own order where yaml.v3 sorts them; a text quoted only where a reader of YAML 1.2 or 1.1 would read the plain scalar otherwise, between double quotes where yaml.v3 sometimes uses single; text of several lines as a literal block. What it writes reads back as the same value, which the tests check for every example
+
+capability yaml/format-stream  several values written as one stream
+  heroes  yaml.format_all
+  go      Encoder.Encode, Encoder.Close
+  rust    -
+  python  -
+  note    -
+
+capability yaml/format-options  the indentation, the styles and the order a writer chooses
+  heroes  refused: one layout, so the same value always writes the same bytes; a program that wants its keys sorted builds its map in that order
+  go      Encoder.SetIndent
+  rust    -
+  python  -
+  note    -
+
+capability yaml/typed  a document read into a record by its field names, and a record written
+  heroes  refused: the language has no reflection; a program reads each member out of the tree with `json` and builds its own type, as with `json`
+  go      Unmarshal (into a struct), Marshal (of a struct), Decoder.KnownFields, IsZeroer
+  rust    -
+  python  -
+  note    -
+
+capability yaml/stream  YAML read from a stream and written to one
+  heroes  refused: yaml stands on no stream (README A1); a program reads the text with `read_file` or `io` and calls `parse_all`
+  go      NewDecoder (an io.Reader), NewEncoder (an io.Writer)
+  rust    -
+  python  -
+  note    -
+
+capability yaml/encodings  a stream in UTF-16 or UTF-32
+  heroes  refused: a `str` is UTF-8; a byte order mark at its start is read past
+  go      Unmarshal (UTF-16 with a byte order mark)
+  rust    -
+  python  -
+  note    -
+
+capability yaml/line-breaks  `\r\n` and `\r` read as line breaks
+  heroes  yaml.parse
+  go      Unmarshal
+  rust    -
+  python  -
+  note    -
+
+dropped
+  go      -: every public entry of yaml.v3 stands in a block above

@@ -1,0 +1,1025 @@
+# A PostgreSQL client written in Heroes: it speaks the database's own
+# frontend/backend protocol, version 3.0, over a TCP connection of `net`, and
+# links no library of PostgreSQL. It logs in with SCRAM-SHA-256, MD5 or a
+# cleartext password, runs statements with their values bound as parameters,
+# prepares statements, reads rows into `sql`'s values by their column's
+# type, and runs transactions.
+#
+# **It speaks TLS by default** (`tls`, the system's own library on each
+# platform): `Options.security` is `.checked`, PostgreSQL's `sslmode=
+# verify-full`, unless the program asks for `.plain`. TLS begins after
+# PostgreSQL's own request for it, or from the first byte where the server
+# is PostgreSQL 17 and `.direct` is asked; either way the server's
+# certificate is checked for its authority and its host. `sslmode`'s
+# `allow`, `prefer`, `require` and `verify-ca` are refused: each lets
+# whoever sits between the two ends read the connection or pose as the
+# server, `prefer`, libpq's default, by falling back to plain text in
+# silence. It does not copy rows in bulk (`COPY`), wait for `NOTIFY`, or
+# cancel a statement from another thread; the ledger says so of each.
+#
+# ## The contract every driver keeps
+#
+# Every driver of Rebel answers these calls, name for name, over `sql`'s
+# types; only `open`'s argument, what names the database, is the driver's
+# own. A program moves from one database to another by changing its `use`,
+# its `open`, and the placeholders of its statements.
+#
+# - `open(...) -> Db?`: a connection; `close` ends it, and the program owes it.
+# - `close(@db: Db) -> ()?`
+# - `exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?`: one
+#   statement that answers no rows, its values bound as parameters.
+# - `query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?`: one
+#   statement's rows.
+# - `query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?`: its
+#   first row, failing `not_found` where it answers none.
+# - `exec_script(@db: Db, script: str) -> ()?`: several statements separated by
+#   semicolons, with no parameters, as a migration is.
+# - `prepare(@db: Db, statement: str) -> Statement?`: a statement read once and
+#   run many times; `close_statement` ends it.
+# - `exec_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Result?`
+# - `query_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Rows?`
+# - `close_statement(@db: Db, @prepared: Statement) -> ()?`
+# - `begin(@db: Db) -> ()?`, `commit(@db: Db) -> ()?`, `rollback(@db: Db) -> ()?`:
+#   a transaction, which `begin` refuses to open inside another.
+#
+# A value never enters the text of a statement: PostgreSQL's placeholders are
+# `$1`, `$2` and on, and the list `params` gives their values in that order.
+#
+# ## How a value travels
+#
+# A parameter goes as its case says: an `integer` as `int2`, `int4` or `int8`,
+# the smallest that holds it, so that the database widens it wherever a wider
+# one is asked; a `float` as `float8`; a `boolean` as `bool`; a `blob` as
+# `bytea`; an `instant` as `timestamptz`, which PostgreSQL rounds to the
+# microsecond; and a `text` with no type of its own, so the database reads it
+# as whatever its place asks for, a `uuid`, a `date`, a `numeric`, a `json`.
+# A parameter whose place gives no type, as in `SELECT $1 IS NULL`, fails
+# `invalid` until the statement casts it: `$1::text IS NULL`.
+#
+# A column comes back by its type: `bool` as a `boolean`; `int2`, `int4`,
+# `int8` and `oid` as an `integer`; `float4` and `float8` as a `float`;
+# `bytea` as a `blob`; `timestamptz` as an `instant`, `timestamp` as an
+# `instant` read in UTC, and `date` as the `instant` of its midnight in UTC,
+# where `time.Instant` holds the moment (years 1678 to 2261); and every other
+# type as the `text` PostgreSQL writes for it: a `numeric` keeps every digit,
+# and `time`, `interval`, `uuid`, `json` and arrays come as their text. A
+# timestamp outside what an `Instant` holds, `infinity` among them, comes as
+# its text too. `NULL` is `null_value` whatever the type.
+#
+# The connection asks for UTF-8, ISO dates and UTC on opening, so these texts
+# never depend on the server's settings.
+#
+# ## Failures
+#
+# Each call fails with `sql`'s codes. A failure the database reports keeps its
+# SQLSTATE and its words in the message, `[42P01] relation "nope" does not
+# exist`, with its detail and hint after them, and `sql.database_code_of`
+# reads the SQLSTATE back. The SQLSTATE chooses the code: `exists` for a
+# unique key or a name taken (23505, 42P07, ...), `not_found` for a table, a
+# column, a function or a database unknown (42P01, 42703, 42883, 3D000, ...),
+# `permission` for a login or a privilege refused (class 28, 42501),
+# `does_not_fit` for a value past its type (22003, 22001, 22008, 22015),
+# `invalid` for the rest of classes 22, 23, 42 and 25, `limit` for classes 53
+# and 54, `unsupported` for 0A000, `stopped` for a statement cancelled
+# (57014), `timeout` for a session's own time limits (25P03, 57P05), `closed`
+# for class 08 and a server shutting down (57P01 to 57P03), and `failed` for
+# every other, a deadlock (40P01) and a serialization failure (40001) among
+# them. A failure the database calls `FATAL` ends the connection: every
+# later call fails `closed`.
+
+use io
+use net
+use os
+use sql
+use sql/postgres/internal/answers
+use sql/postgres/internal/auth
+use sql/postgres/internal/backend
+use sql/postgres/internal/login
+use sql/postgres/internal/requests
+use sql/postgres/internal/script as server
+use sql/postgres/internal/session
+use sql/postgres/internal/target
+use sql/postgres/internal/tls_peer
+use strings
+use threads
+use tls
+
+## Connecting
+
+# The port PostgreSQL listens on unless it is told another.
+constant DEFAULT_PORT: i64
+    5432
+
+# How the connection to the server is secured.
+variant Security
+    # Nothing encrypted and nothing checked: whoever sits between the two
+    # ends reads every byte, the password's exchange included.
+    # PostgreSQL's `sslmode=disable`.
+    plain
+    # TLS, begun after PostgreSQL's request for it, the server's certificate
+    # checked for its authority and its host: `sslmode=verify-full`.
+    checked
+        # The PEM of the only authorities trusted (libpq's `sslrootcert`);
+        # "" for the system's own store.
+        roots: str
+    # TLS from the first byte, as PostgreSQL 17 takes it
+    # (`sslnegotiation=direct`), offering the protocol `postgresql`, checked
+    # as `checked` checks: one round trip fewer, and refused by servers
+    # before PostgreSQL 17.
+    direct
+        # The PEM of the only authorities trusted; "" for the system's own
+        # store.
+        roots: str
+
+# Where a database is and who logs into it. `options` makes one; a program
+# changes the fields it needs with `@`, or `parse_url` reads one from a URL.
+record Options
+    # The server's name or address, without brackets: `localhost`, `db.lan`,
+    # `::1`.
+    host: str
+    # The server's TCP port, from 1 to 65535; `DEFAULT_PORT` unless told.
+    port: i64
+    # The role to log in as.
+    user: str
+    # The role's password, "" where the server asks for none; it is sent
+    # only when the server asks for it, and never in clear unless the server
+    # asks for it in clear.
+    password: str
+    # The database to open; "" opens the one named as the user, as the server
+    # does.
+    database: str
+    # The name the server shows for this connection in `pg_stat_activity`, ""
+    # for none.
+    application_name: str
+    # Milliseconds from when the connection is made by which every later wait
+    # on it ends, failing `timeout`: a time, not a span, as `net.connect`
+    # takes it. 0, the default, for none. Over TLS it bounds the connection,
+    # the request for TLS and the handshake together, and then every later
+    # wait, as over plain TCP.
+    deadline_ms: i64
+    # How the connection is secured: `.checked(roots: "")`, TLS checked
+    # against the system's store, unless the program asks for another.
+    security: Security
+
+# The options of a connection to `database` on `host` at `DEFAULT_PORT` as
+# `user`, with no password, no application name and no deadline, over TLS
+# checked against the system's own store.
+#
+# - `host`: the server's name or address, without brackets.
+# - `user`: the role to log in as.
+# - `database`: the database to open, "" for the one named as the user.
+#
+# See also `parse_url`, `open`.
+function options(host: str, user: str, database: str) -> Options
+    return Options(
+        host: host,
+        port: DEFAULT_PORT,
+        user: user,
+        password: "",
+        database: database,
+        application_name: "",
+        deadline_ms: 0,
+        security: .checked(roots: "")
+    )
+
+# The options a `postgres://` or `postgresql://` URL names, as libpq reads
+# one: `postgres://user:password@host:port/database?application_name=app`.
+#
+# - `url`: the URL. Its user, password, host and database are
+#   percent-decoded; a host in brackets is an IPv6 address; a part left out
+#   takes `options`'s default, `localhost` for the host. Its query may name
+#   `user`, `password`, `host`, `port`, `dbname`, `application_name`,
+#   `sslmode` (`verify-full`, the default here where libpq's is `prefer`, or
+#   `disable`), `sslrootcert` (a file of PEM authorities, read now, or
+#   `system`) and `sslnegotiation` (`postgres`, or `direct`).
+#
+# Fails `invalid` where `url` is not such a URL, or names another key, a
+# port outside 1 to 65535, an `sslmode` PostgreSQL does not know, a
+# `sslrootcert` file that cannot be read, or `sslnegotiation=direct` with
+# `sslmode=disable`, the message saying which part. Fails `unsupported`
+# where `sslmode` is `allow`, `prefer`, `require` or `verify-ca`, each
+# refused with its reason (the module's comment), where the URL names
+# several hosts or a Unix socket's folder, and where it names
+# `connect_timeout`, which bounds the connecting alone where `deadline_ms`
+# bounds the session. See also `options`.
+function parse_url(url: str) -> Options?
+    t = target.read(url)?
+    security: Security @= .checked(roots: t.roots)
+
+    if t.sslmode == "disable"
+        security @ .plain
+    else if t.negotiation == "direct"
+        security @ .direct(roots: t.roots)
+    return ok(
+        Options(host: t.host, port: t.port, user: t.user, password: t.password, database: t.database, application_name: t.application_name, deadline_ms: 0, security: security)
+    )
+
+# A connection to the database `opts` names, logged in and ready for a
+# statement.
+#
+# - `opts`: where the database is and who logs in.
+#
+# The program owes the connection a `close`. It asks the server for UTF-8,
+# ISO dates, UTC and floats written exactly (the module's comment).
+#
+# Fails as `net.connect` fails where nothing answers; over TLS as
+# `tls.connect_after` fails, `invalid` where the server's certificate is
+# refused (the message says why), and `unsupported` where the server offers
+# no TLS (it answers `N` to the request for it); `permission` where the
+# server refuses the login or the password; `not_found` where the database
+# does not exist; `unsupported` where the server asks for GSSAPI, SSPI,
+# Kerberos or a SASL mechanism other than SCRAM-SHA-256, or speaks no protocol
+# 3.0; `invalid` where `opts.port` is out of range or `opts.user` is empty;
+# `closed` where the server ends the connection; `limit` where it has no
+# connection left; and as `os.random_bytes` fails where the system gives no
+# random bytes for the login's nonce. See also `close`, `options`.
+function open(opts: Options) -> Db?
+    if opts.port < 1 || opts.port > 65535
+        return fail(code: sql.INVALID, msg: f"the port {opts.port} is outside 1 to 65535")
+
+    if opts.user == ""
+        return fail(code: sql.INVALID, msg: f"connecting to {opts.host}: the user is empty")
+
+    database = if opts.database == ""
+        opts.user
+    else
+        opts.database
+    random = os.random_bytes(18)?
+
+    made: io.Stream? = match opts.security
+        .plain =>
+            conn = net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)?
+            ok(conn.stream)
+        .checked c =>
+            tls.connect_after(
+                host: opts.host,
+                port: opts.port,
+                deadline_ms: opts.deadline_ms,
+                client: tls.Client(roots: c.roots, protocols: []),
+                steps: [.send(data: [0, 0, 0, 8, 4, 210, 22, 47]), .expect(answer: [83])]
+            )
+        .direct d => tls.connect(
+            host: opts.host,
+            port: opts.port,
+            deadline_ms: opts.deadline_ms,
+            client: tls.Client(roots: d.roots, protocols: ["postgresql"])
+        )
+
+    stream = match made
+        .ok s => s
+        .err e =>
+            # The SSLRequest answered `N`: the server has no TLS to offer.
+            if e.code == sql.INVALID && strings.contains(s: e.msg, substr: "heard \"N\")")
+                return fail(
+                    code: sql.UNSUPPORTED,
+                    msg: f"connecting to {opts.host}:{opts.port}: the server offers no TLS, answering \"N\" to the request for it; Security.plain connects in plain text, readable by whoever sits between"
+                )
+            return fail(code: e.code, msg: e.msg)
+
+    # Over TLS the session's later waits take the deadline here, as
+    # `net.connect` gives a plain connection's.
+    match opts.security
+        .plain => _ = 0
+        .checked _ | .direct _ =>
+            if opts.deadline_ms > 0
+                timed = tls.set_deadline(stream, ms: opts.deadline_ms)
+
+                match timed
+                    .ok _ => _ = 0
+                    .err e =>
+                        held @= stream
+                        _ = io.close(@held).is_err()
+                        return fail(code: e.code, msg: e.msg)
+
+    s @= session.over(out: stream, input: stream, target: f"{opts.host}:{opts.port}/{database}")
+
+    match login.login(@s, user: opts.user, database: opts.database, application_name: opts.application_name, password: opts.password, nonce: auth.nonce_of(random))
+        .ok _ => return ok(Db(session: s))
+        .err e =>
+            _ = session.close(@s).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Ends the connection: tells the server it is leaving, then closes the
+# socket, and empties the place, so every later call through it fails
+# `closed`. A transaction still open is rolled back by the server.
+#
+# - `db`: the connection, emptied.
+#
+# Fails `closed` where it is closed already. The socket is closed either
+# way. See also `open`, `is_closed`.
+function close(@db: Db) -> ()?
+    return session.close(@db.session)
+
+# Whether `close` has emptied `db`, or a failure the server called `FATAL`
+# or a lost connection has ended it.
+#
+# - `db`: the connection asked about.
+#
+# See also `close`.
+function is_closed(db: Db) -> bool
+    return db.session.ended
+
+# Asks the server whether the connection still works, with a statement that
+# does nothing.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where the connection is closed or lost, `timeout` where its
+# deadline passed. See also `is_closed`.
+function ping(@db: Db) -> ()?
+    _ = requests.simple(@db.session, text: "")?
+    return ok()
+
+## The connection
+
+# A connection to a PostgreSQL server, which `open` makes and `close` ends.
+# Its one field is the conversation's private state: the socket, the reader
+# of the server's answers, the transaction it stands in, the parameters and
+# notices the server sent; `transaction_of`, `parameter_of` and
+# `take_notices` read them. Every call works on the caller's own place,
+# through `@`, since each one reads what the server sends and changes that
+# state. Two places holding one connection read one socket: a program keeps
+# one place per connection.
+record Db
+    # The conversation's state, which only this package reads and writes.
+    session: session.Session
+
+# The transaction a connection stands in.
+variant Transaction
+    # No transaction is open: each statement commits on its own.
+    idle
+    # `begin` opened one, and its statements commit together.
+    open
+    # A statement in the open transaction failed: the server ignores every
+    # statement until `rollback`, and a `commit` rolls back.
+    failed
+
+# A warning or a notice the server sent beside an answer, as a `RAISE
+# NOTICE` or a `DROP TABLE IF EXISTS` of a table that was not there does.
+record Notice
+    # The severity as the server names it in English: `WARNING`, `NOTICE`,
+    # `DEBUG`, `INFO` or `LOG`.
+    severity: str
+    # The SQLSTATE, five characters: `01000` for a warning.
+    code: str
+    # The server's words, then its detail and hint where it gave them.
+    message: str
+
+# The transaction `db` stands in, as the server said after its last answer.
+#
+# - `db`: the connection asked about.
+#
+# See also `begin`.
+function transaction_of(db: Db) -> Transaction
+    status = db.session.status
+
+    if status == 'T'
+        return .open
+
+    if status == 'E'
+        return .failed
+    return .idle
+
+# The value of the run-time parameter `name` as the server reported it:
+# `server_version`, `server_encoding`, `TimeZone`, `DateStyle`,
+# `integer_datetimes`, `standard_conforming_strings`, `application_name`.
+#
+# - `db`: the connection asked about.
+# - `name`: the parameter's name, as the server spells it.
+#
+# Fails `not_found` where the server reported no parameter of that name.
+function parameter_of(db: Db, name: str) -> str?
+    match db.session.parameters[name]
+        .ok v  => return ok(v)
+        .err _ => return fail(code: sql.NOT_FOUND, msg: f"{db.session.target} reported no parameter \"{name}\"")
+
+# The warnings and notices the server sent since the last call, oldest
+# first, and empties the connection's list.
+#
+# - `db`: the connection, whose list is emptied.
+#
+# Where more than 64 came, the oldest are lost.
+function take_notices(@db: Db) -> [Notice]
+    out: [Notice] @= []
+
+    for r in db.session.notices
+        out @ out.push(Notice(severity: r.severity, code: r.code, message: answers.notice_text(r)))
+
+    db.session.notices @ []
+    return out
+
+## Running a statement
+
+# Runs `statement`, one statement that answers no rows, with `params` bound
+# to its placeholders, and answers how many rows it changed.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `$1`, `$2` and
+#   on; "" is refused by the server as no statement.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# A statement that answers rows may run here too: its rows are read and
+# dropped, and `rows_affected` counts them. `last_id` always fails
+# `unsupported`: `INSERT ... RETURNING id` with `query_one` answers it.
+#
+# Fails with the database's failure (the module's comment), `invalid` where
+# `params` holds more or fewer values than the statement's placeholders, and
+# `closed` where the connection is closed or lost. See also `query`,
+# `exec_prepared`.
+function exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?
+    a = requests.run(@db.session, statement: statement, params: params)?
+    return ok(answers.result_of(a.tag))
+
+# Runs `statement` with `params` bound to its placeholders, and answers its
+# columns and every row it answered.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `$1`, `$2` and
+#   on.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# Every row is read before it answers, so a statement answering a million
+# rows holds a million in memory; `LIMIT` and `OFFSET` read a page.
+#
+# Fails as `exec` does, and `invalid` where a value of a column cannot be read
+# as its type says. See also `query_one`, `query_prepared`.
+function query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?
+    a = requests.run(@db.session, statement: statement, params: params)?
+    return answers.rows_of(a.fields, raw: a.rows)
+
+# The first row `statement` answers, with `params` bound to its
+# placeholders.
+#
+# - `db`: the connection.
+# - `statement`: one statement of SQL, its values written as `$1`, `$2` and
+#   on.
+# - `params`: the placeholders' values in order, `[]` for none.
+#
+# The rows after the first are read and dropped.
+#
+# Fails `not_found` where the statement answers no row, and as `query` does.
+# See also `query`.
+function query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?
+    found = query(@db, statement, params)?
+
+    if found.rows.len() == 0
+        return fail(code: sql.NOT_FOUND, msg: "the statement answered no row")
+    return ok(found.rows[0])
+
+# Runs every statement of `script`, separated by semicolons, in order and
+# with no parameters, as a migration does. Their rows are dropped.
+#
+# - `db`: the connection.
+# - `script`: statements of SQL; "" runs nothing.
+#
+# Where no transaction is open, the server runs the script as one
+# transaction unless it holds its own `BEGIN` and `COMMIT`, so a statement
+# that fails undoes the ones before it.
+#
+# Fails with the first failure, as `exec` does. See also `exec`.
+function exec_script(@db: Db, script: str) -> ()?
+    _ = requests.simple(@db.session, text: script)?
+    return ok()
+
+## Prepared statements
+
+# A statement the server has read and planned, which `prepare` makes and
+# `close_statement` ends. It belongs to the connection that prepared it.
+record Statement
+    # The server's name for it, `rebel_1` and on; "" once
+    # `close_statement` has ended it.
+    name: str
+    # The statement's text, as it was prepared.
+    text: str
+    # The type the server chose for each placeholder, as its number in
+    # `pg_type`, in the placeholders' order.
+    parameter_types: [i64]
+    # The columns it answers, none for a statement that answers no rows.
+    columns: [sql.Column]
+    # The type of each column, as its number in `pg_type`, in order.
+    column_types: [i64]
+
+# `statement` read and planned by the server once, to be run many times with
+# `exec_prepared` and `query_prepared`.
+#
+# - `db`: the connection, which the statement belongs to.
+# - `statement`: one statement of SQL, its values written as `$1`, `$2` and
+#   on.
+#
+# The program owes the statement a `close_statement` where the connection
+# goes on; closing the connection ends every statement it prepared.
+#
+# Fails with the database's failure where the statement is not one it can
+# plan, as `exec` does. See also `exec_prepared`, `close_statement`.
+function prepare(@db: Db, statement: str) -> Statement?
+    name = f"rebel_{db.session.next_statement}"
+    db.session.next_statement @ db.session.next_statement + 1
+    a = requests.prepare(@db.session, name: name, statement: statement)?
+    types: [i64] @= []
+
+    for f in a.fields
+        types @ types.push(f.type_oid)
+
+    return ok(
+        Statement(name: name, text: statement, parameter_types: a.parameter_types, columns: answers.columns_of(a.fields), column_types: types)
+    )
+
+# Runs `prepared` with `params` bound to its placeholders, as `exec` runs a
+# statement.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, from `prepare` on this connection.
+# - `params`: the placeholders' values in order, as many as `prepared`'s
+#   `parameter_types`.
+#
+# Fails `invalid` where `params` holds more or fewer values than the
+# statement's placeholders, `closed` where `close_statement` ended it, and as
+# `exec` does. See also `query_prepared`.
+function exec_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Result?
+    answers.checked_run(name: prepared.name, given: params.len(), wanted: prepared.parameter_types.len())?
+    a = requests.run_prepared(@db.session, name: prepared.name, params: params)?
+    return ok(answers.result_of(a.tag))
+
+# Runs `prepared` with `params` bound to its placeholders, and answers its
+# rows, as `query` does.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, from `prepare` on this connection.
+# - `params`: the placeholders' values in order, as many as `prepared`'s
+#   `parameter_types`.
+#
+# Fails as `exec_prepared` does. See also `exec_prepared`.
+function query_prepared(@db: Db, prepared: Statement, params: [sql.Value]) -> sql.Rows?
+    answers.checked_run(name: prepared.name, given: params.len(), wanted: prepared.parameter_types.len())?
+    a = requests.run_prepared(@db.session, name: prepared.name, params: params)?
+    fields: [backend.Field] @= []
+    at: i64 @= 0
+
+    for c in prepared.columns
+        fields @ fields.push(backend.Field(name: c.name, type_oid: prepared.column_types[at]))
+        at @ at + 1
+
+    return answers.rows_of(fields, raw: a.rows)
+
+# Ends `prepared` on the server and empties its name, so every later run of
+# it fails `closed`.
+#
+# - `db`: the connection that prepared it.
+# - `prepared`: the statement, emptied.
+#
+# Fails `closed` where it was ended already or the connection is closed.
+# See also `prepare`.
+function close_statement(@db: Db, @prepared: Statement) -> ()?
+    if prepared.name == ""
+        return fail(code: sql.CLOSED, msg: "the prepared statement was closed already")
+    name = prepared.name
+    prepared.name @ ""
+    return requests.close_statement(@db.session, name: name)
+
+## Transactions
+
+# Opens a transaction: the statements after it commit together at `commit`,
+# or none of them does, at `rollback`.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where a transaction is open already, and `closed` where the
+# connection is closed. See also `commit`, `rollback`, `transaction_of`.
+function begin(@db: Db) -> ()?
+    if !db.session.ended && db.session.status != 'I'
+        return fail(
+            code: sql.INVALID,
+            msg: "a transaction is open already, and PostgreSQL does not nest one in another"
+        )
+    _ = requests.simple(@db.session, text: "BEGIN")?
+    return ok()
+
+# Commits the open transaction: every statement since `begin` takes effect.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where no transaction is open, and `failed` where a
+# statement in it had failed: the server then rolls it back, and the message
+# says so. See also `begin`, `rollback`.
+function commit(@db: Db) -> ()?
+    if !db.session.ended && db.session.status == 'I'
+        return fail(code: sql.INVALID, msg: "no transaction is open to commit")
+    a = requests.simple(@db.session, text: "COMMIT")?
+
+    if a.tag == "ROLLBACK"
+        return fail(
+            code: sql.FAILED,
+            msg: "a statement of the transaction had failed, so the server rolled the whole transaction back"
+        )
+    return ok()
+
+# Rolls the open transaction back: no statement since `begin` takes effect.
+# A transaction in which a statement failed is ended this way.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where no transaction is open. See also `begin`, `commit`.
+function rollback(@db: Db) -> ()?
+    if !db.session.ended && db.session.status == 'I'
+        return fail(code: sql.INVALID, msg: "no transaction is open to roll back")
+    _ = requests.simple(@db.session, text: "ROLLBACK")?
+    return ok()
+
+## Tests
+
+test "begin, commit and rollback: the statements sent, the state followed, and the refusals"
+    t @= server.scripted(
+        server.joined([server.msg(kind: 'C', body: server.cstrs(["BEGIN"])), server.msg(kind: 'Z', body: ['T']), server.msg(kind: 'C', body: server.cstrs(["COMMIT"])), server.msg(kind: 'Z', body: ['I']), server.msg(kind: 'C', body: server.cstrs(["BEGIN"])), server.msg(kind: 'Z', body: ['T']), server.msg(kind: 'C', body: server.cstrs(["ROLLBACK"])), server.msg(kind: 'Z', body: ['I'])])
+    )
+    db @= Db(session: t.session)
+    assert transaction_of(db) == .idle
+    assert commit(@db).is_err() && rollback(@db).is_err()
+    assert !begin(@db).is_err() && transaction_of(db) == .open
+
+    match begin(@db)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a transaction is open already, and PostgreSQL does not nest one in another"
+
+    assert !commit(@db).is_err() && transaction_of(db) == .idle
+    assert !begin(@db).is_err()
+    assert !rollback(@db).is_err() && transaction_of(db) == .idle
+    t.session @ db.session
+    written = server.finish(@t)
+    assert written == server.joined([server.frontend_query("BEGIN"), server.frontend_query("COMMIT"), server.frontend_query("BEGIN"), server.frontend_query("ROLLBACK"), server.frontend_terminate()])
+
+test "commit: a failed transaction answered ROLLBACK is told failed"
+    t @= server.scripted(
+        server.joined([server.msg(kind: 'C', body: server.cstrs(["ROLLBACK"])), server.msg(kind: 'Z', body: ['I'])])
+    )
+    db @= Db(session: t.session)
+    db.session.status @ 'E'
+    assert transaction_of(db) == .failed
+
+    match commit(@db)
+        .ok _  => assert false
+        .err e => assert e.code == "failed"
+
+    assert transaction_of(db) == .idle
+    t.session @ db.session
+    _ = server.finish(@t)
+
+test "query_one: no row is not_found, and the first of two is the one"
+    empty = server.joined(
+        [server.msg(kind: '1', body: []), server.msg(kind: '2', body: []), server.msg(kind: 'n', body: []), server.msg(kind: 'C', body: server.cstrs(["SELECT 0"])), server.msg(kind: 'Z', body: ['I'])]
+    )
+    t @= server.scripted(empty)
+    db @= Db(session: t.session)
+
+    match query_one(@db, "SELECT 1 WHERE false", [])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    t.session @ db.session
+    _ = server.finish(@t)
+
+test "exec: the count of the tag, and no last id"
+    t @= server.scripted(
+        server.joined([server.msg(kind: '1', body: []), server.msg(kind: '2', body: []), server.msg(kind: 'n', body: []), server.msg(kind: 'C', body: server.cstrs(["UPDATE 3"])), server.msg(kind: 'Z', body: ['I'])])
+    )
+    db @= Db(session: t.session)
+    r = exec(@db, "UPDATE t SET n = $1", [.integer(v: 1)]).must()
+    assert r.rows_affected == 3 && r.last_id.is_err()
+    t.session @ db.session
+    _ = server.finish(@t)
+
+test "exec_prepared and close_statement: a count that differs, then closed twice"
+    t @= server.scripted(server.joined([server.msg(kind: '3', body: []), server.msg(kind: 'Z', body: ['I'])]))
+    db @= Db(session: t.session)
+    s @= Statement(name: "rebel_1", text: "SELECT $1", parameter_types: [25], columns: [], column_types: [])
+
+    match exec_prepared(@db, s, [])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "0 values were given for a statement of 1 placeholders"
+
+    assert !close_statement(@db, @s).is_err() && s.name == ""
+
+    match close_statement(@db, @s)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    match query_prepared(@db, s, [.text(v: "x")])
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    t.session @ db.session
+    _ = server.finish(@t)
+
+test "parameter_of, take_notices, close twice and is_closed"
+    notice = server.msg(
+        kind: 'N',
+        body: server.report_body([["V", "WARNING"], ["C", "01000"], ["M", "careful"], ["H", "look"]])
+    )
+    t @= server.scripted(
+        server.joined([server.msg(kind: 'S', body: server.cstrs(["server_version", "16.15"])), notice, server.msg(kind: 'I', body: []), server.msg(kind: 'Z', body: ['I'])])
+    )
+    db @= Db(session: t.session)
+    assert !ping(@db).is_err()
+    assert parameter_of(db, "server_version").must() == "16.15"
+    assert parameter_of(db, "nope").is_err()
+    assert take_notices(@db) == [Notice(severity: "WARNING", code: "01000", message: "careful; hint: look")]
+    assert take_notices(@db) == []
+    assert !is_closed(db)
+    assert !close(@db).is_err() && is_closed(db)
+
+    match close(@db)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    match ping(@db)
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    t.session @ db.session
+    _ = server.finish(@t)
+
+test "open: a port out of range and an empty user, refused before connecting"
+    bad_port @= options(host: "localhost", user: "a", database: "")
+    bad_port.port @ 0
+    assert open(bad_port).is_err()
+
+    match open(options(host: "localhost", user: "", database: ""))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "open over TLS: a server answering N to the request for TLS fails unsupported, saying it offers none"
+    if tls.is_available()
+        port = tls_peer.free_port()
+        peer @= threads.spawn_text(body: tls_peer.serve, arg: "n " + to_str(port))
+        tls_peer.until_listening(port)
+        made = open(
+            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        )
+        _ = threads.wait_text(@peer)
+
+        match made
+            .ok d =>
+                db @= d
+                close(@db).must()
+                assert false
+            .err e =>
+                assert e.code == sql.UNSUPPORTED
+                assert e.msg == f"connecting to localhost:{port}: the server offers no TLS, answering \"N\" to the request for it; Security.plain connects in plain text, readable by whoever sits between"
+
+test "open over TLS: a server whose certificate names another host is refused invalid, saying so"
+    if tls.is_available()
+        port = tls_peer.free_port()
+        peer @= threads.spawn_text(body: tls_peer.serve, arg: "wrong " + to_str(port))
+        tls_peer.until_listening(port)
+        made = open(
+            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        )
+        _ = threads.wait_text(@peer)
+
+        match made
+            .ok d =>
+                db @= d
+                close(@db).must()
+                assert false
+            .err e =>
+                assert e.code == sql.INVALID
+                assert strings.contains(s: e.msg, substr: "the peer's certificate names other hosts")
+
+test "open over TLS: the request answered S, the handshake checked, and the server's FATAL answer read through TLS"
+    if tls.is_available()
+        port = tls_peer.free_port()
+        peer @= threads.spawn_text(body: tls_peer.serve, arg: "fatal " + to_str(port))
+        tls_peer.until_listening(port)
+        made = open(
+            Options(host: "localhost", port: port, user: "ana", password: "secret", database: "d", application_name: "", deadline_ms: 10000, security: .checked(roots: tls.TEST_ROOT))
+        )
+        did = threads.wait_text(@peer)
+        assert strings.has_suffix(s: did, suffix: " bytes, answered FATAL")
+
+        match made
+            .ok d =>
+                db @= d
+                close(@db).must()
+                assert false
+            .err e =>
+                assert e.code == sql.PERMISSION
+                assert strings.contains(s: e.msg, substr: "28P01")
+
+test "open live over TLS, against the server REBEL_POSTGRES_TLS_URL names, where one is named"
+    match os.env("REBEL_POSTGRES_TLS_URL")
+        .err _ => print("open live over TLS: skipped, REBEL_POSTGRES_TLS_URL names no server")
+        .ok url =>
+            db @= open(parse_url(url).must()).must()
+            row = query_one(@db, "SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()", []).must()
+            encrypted: [sql.Value] = [.boolean(v: true)]
+            assert row.values == encrypted
+            print("open live over TLS: the server says this session is encrypted")
+            close(@db).must()
+
+## Examples
+
+# The options of a connection, and one field changed.
+test "options: a database on this machine, with a password"
+    opts @= options(host: "localhost", user: "ana", database: "shop")
+    opts.password @ "s3cret"
+    assert opts.port == 5432 && opts.password == "s3cret"
+
+# The options a URL names.
+test "parse_url: a user, a host, a port and a database"
+    opts = parse_url("postgres://ana:s3cret@db.lan:6543/shop").must()
+    assert opts.host == "db.lan" && opts.port == 6543 && opts.user == "ana" && opts.database == "shop"
+
+# A connection opened and closed, where a server answers on this machine as
+# `postgres` with no password; elsewhere it shows nothing.
+test "open: a connection to a local server"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert !is_closed(db)
+            close(@db).must()
+
+# A connection closed, after which every call fails `closed`.
+test "close: the end of a connection"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            close(@db).must()
+            assert ping(@db).is_err()
+
+# Whether a connection is still open.
+test "is_closed: before and after close"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert !is_closed(db)
+            close(@db).must()
+            assert is_closed(db)
+
+# A connection asked whether it still works.
+test "ping: a live connection"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            ping(@db).must()
+            close(@db).must()
+
+# The transaction a connection stands in, before and inside one.
+test "transaction_of: idle, then open"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert transaction_of(db) == .idle
+            begin(@db).must()
+            assert transaction_of(db) == .open
+            rollback(@db).must()
+            close(@db).must()
+
+# The server's version, as it reported it on opening.
+test "parameter_of: the server's version"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            assert parameter_of(db, "server_version").must() != ""
+            close(@db).must()
+
+# The notice a `DROP TABLE IF EXISTS` of no table sends.
+test "take_notices: a table that was not there"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "DROP TABLE IF EXISTS pg_temp.not_there").must()
+            assert take_notices(@db).len() == 1
+            close(@db).must()
+
+# A row inserted, its value bound as a parameter.
+test "exec: a row inserted with a parameter"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            _ = exec(@db, "CREATE TEMP TABLE bands (name text)", []).must()
+            r = exec(@db, "INSERT INTO bands (name) VALUES ($1)", [.text(v: "Spiders")]).must()
+            assert r.rows_affected == 1
+            close(@db).must()
+
+# The rows of a query, each column read by its name.
+test "query: two rows of a series"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            found = query(@db, "SELECT n FROM generate_series(1, $1) AS n", [.integer(v: 2)]).must()
+            assert found.rows.len() == 2 && sql.integer_named(found.rows[1], "n").must() == 2
+            close(@db).must()
+
+# One row, the id an insert answered with `RETURNING`.
+test "query_one: the id of a row inserted"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE people (id serial PRIMARY KEY, name text)").must()
+            row = query_one(@db, "INSERT INTO people (name) VALUES ($1) RETURNING id", [.text(v: "Ziggy")]).must()
+            assert sql.integer_named(row, "id").must() == 1
+            close(@db).must()
+
+# Two statements run as one script.
+test "exec_script: a table made and filled"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE t (n int); INSERT INTO t VALUES (1), (2)").must()
+            assert sql.integer_at(query_one(@db, "SELECT count(*) FROM t", []).must(), 0).must() == 2
+            close(@db).must()
+
+# A statement prepared once, its placeholders' types read.
+test "prepare: a statement of one placeholder"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            s @= prepare(@db, "SELECT $1::int8 + 1 AS next").must()
+            assert s.parameter_types == [20]
+            close_statement(@db, @s).must()
+            close(@db).must()
+
+# A prepared statement run twice with different values.
+test "exec_prepared: two rows inserted by one statement"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
+            s @= prepare(@db, "INSERT INTO t VALUES ($1)").must()
+            assert exec_prepared(@db, s, [.integer(v: 1)]).must().rows_affected == 1
+            assert exec_prepared(@db, s, [.integer(v: 2)]).must().rows_affected == 1
+            close_statement(@db, @s).must()
+            close(@db).must()
+
+# A prepared query run with a value.
+test "query_prepared: a value read back"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            s @= prepare(@db, "SELECT $1::text AS name").must()
+            rows = query_prepared(@db, s, [.text(v: "Ziggy")]).must()
+            assert sql.text_named(rows.rows[0], "name").must() == "Ziggy"
+            close_statement(@db, @s).must()
+            close(@db).must()
+
+# A prepared statement ended.
+test "close_statement: a statement no longer needed"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            s @= prepare(@db, "SELECT 1").must()
+            close_statement(@db, @s).must()
+            assert query_prepared(@db, s, []).is_err()
+            close(@db).must()
+
+# A transaction opened and committed.
+test "begin: two inserts that commit together"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES ($1), ($2)", [.integer(v: 1), .integer(v: 2)]).must()
+            commit(@db).must()
+            close(@db).must()
+
+# The statements of a transaction made to take effect.
+test "commit: an insert kept"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+            commit(@db).must()
+            assert query(@db, "SELECT n FROM t", []).must().rows.len() == 1
+            close(@db).must()
+
+# The statements of a transaction undone.
+test "rollback: an insert undone"
+    match open(options(host: "localhost", user: "postgres", database: "postgres"))
+        .err _ => _ = 0
+        .ok first =>
+            db @= first
+            exec_script(@db, "CREATE TEMP TABLE t (n int)").must()
+            begin(@db).must()
+            _ = exec(@db, "INSERT INTO t VALUES (1)", []).must()
+            rollback(@db).must()
+            assert query(@db, "SELECT n FROM t", []).must().rows.len() == 0
+            close(@db).must()

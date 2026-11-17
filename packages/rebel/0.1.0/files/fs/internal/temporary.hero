@@ -1,0 +1,200 @@
+# Temporary folders and files with names nobody has: what
+# `fs.make_temp_dir` and `fs.make_temp_file` do, and how `fs.move` names the
+# copy it puts in place. A name is the pattern with its last `*` replaced by
+# sixteen hexadecimal digits of `os.random_bytes`, and it is made in the same
+# step as it is tried, a folder by `make_folder` and a file opened to create,
+# so another program never takes it between the two.
+
+use fs/internal/codes
+use fs/internal/fixture
+use fs/internal/whole
+use io
+use io/hero_stream
+use os
+use os/hero_disk
+use path
+
+# How many names are tried before a failure is told: with 64 random bits a
+# second try is already rare.
+constant TRIES: i64
+    16
+
+# The digits a random byte is written with.
+constant DIGITS: str
+    "0123456789abcdef"
+
+# A pattern cut at its last `*`.
+record Pieces
+    # What comes before the random digits.
+    prefix: str
+    # What comes after them.
+    suffix: str
+
+# A temporary file made, and its stream.
+record Made
+    # Its path.
+    at: str
+    # The stream open to write it.
+    stream: io.Stream
+
+# `data` written as lower-case hexadecimal, two digits a byte.
+#
+# - `data`: the bytes; none answers "".
+function hex_of(data: [u8]) -> str
+    digits: [str] @= []
+
+    for b in data
+        value = b.to_i64().must()
+        high = value >> 4
+        low = value & 15
+        digits @ digits.push(DIGITS.slice(from: high, to: high + 1))
+        digits @ digits.push(DIGITS.slice(from: low, to: low + 1))
+
+    return digits.join("")
+
+# `pattern` cut at its last `*`, or whole before the digits where it holds
+# none.
+#
+# - `pattern`: the name's pattern.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `invalid` where it holds a separator.
+function pieces_of(pattern: str, asked: str) -> Pieces?
+    for c in pattern.chars()
+        if path.is_sep(c)
+            return fail(code: codes.INVALID, msg: f"{asked}: the pattern \"{pattern}\" holds a separator")
+
+    star: i64 @= pattern.len() - 1
+
+    while star >= 0 && pattern[star] != '*'
+        star @ star - 1
+
+    if star < 0
+        return ok(Pieces(prefix: pattern, suffix: ""))
+    return ok(
+        Pieces(prefix: pattern.slice(from: 0, to: star), suffix: pattern.slice(from: star + 1, to: pattern.len()))
+    )
+
+# A new name in `dir` by `pieces`, its digits drawn now.
+#
+# - `dir`: the folder.
+# - `pieces`: the pattern, cut.
+function candidate(dir: str, pieces: Pieces) -> str?
+    random = os.random_bytes(8)?
+    return ok(path.join_all([dir, pieces.prefix + hex_of(random) + pieces.suffix]))
+
+# `dir`, or the system's folder for temporary files where it is empty.
+#
+# - `dir`: the folder asked for.
+function folder_for(dir: str) -> str?
+    if dir == ""
+        return os.temp_dir()
+    return ok(dir)
+
+# Makes a new folder in `dir` by `pattern`, 0o700, and answers its path.
+#
+# - `dir`: the folder, "" for the system's.
+# - `pattern`: the name's pattern.
+#
+# Fails `invalid` for a separator in `pattern`, `file_not_found` where `dir`
+# is not there.
+function made_dir(dir: str, pattern: str) -> str?
+    asked = f"making a temporary folder in \"{dir}\""
+    codes.checked(path: dir, asked: asked)?
+    codes.checked(path: pattern, asked: asked)?
+    pieces = pieces_of(pattern: pattern, asked: asked)?
+    folder = folder_for(dir)?
+    tries: i64 @= 1
+
+    while true
+        name = candidate(folder, pieces: pieces)?
+
+        if hero_disk.make_folder(name, permission: 0o700) == 0
+            return ok(name)
+
+        if !codes.last_was(hero_disk.HERO_DISK_EXISTS) || tries >= TRIES
+            return codes.disk_failed(asked: asked)
+        tries @ tries + 1
+
+# Makes a new file in `dir` by `pattern`, 0o600, and answers it with its
+# stream.
+#
+# - `dir`: the folder, "" for the system's.
+# - `pattern`: the name's pattern.
+#
+# Fails as `made_dir` does.
+function made_file(dir: str, pattern: str) -> Made?
+    asked = f"making a temporary file in \"{dir}\""
+    codes.checked(path: dir, asked: asked)?
+    codes.checked(path: pattern, asked: asked)?
+    pieces = pieces_of(pattern: pattern, asked: asked)?
+    folder = folder_for(dir)?
+    tries: i64 @= 1
+
+    while true
+        name = candidate(folder, pieces: pieces)?
+
+        match whole.opened(at: name, access: hero_stream.HERO_STREAM_ACCESS_CREATE, permission: 0o600, asked: asked)
+            .ok s => return ok(Made(at: name, stream: s))
+            .err e =>
+                if e.code != codes.EXISTS || tries >= TRIES
+                    return fail(code: e.code, msg: e.msg)
+
+        tries @ tries + 1
+
+## Tests
+
+test "hex_of: no bytes, the smallest and the largest byte, and several"
+    nothing: [u8] = []
+    assert hex_of(nothing) == ""
+    assert hex_of([0]) == "00"
+    assert hex_of([255]) == "ff"
+    assert hex_of([1, 171, 16]) == "01ab10"
+
+test "pieces_of: no star, one, the last of two, a star at either end, and a separator"
+    assert pieces_of(pattern: "tmp", asked: "a").must() == Pieces(prefix: "tmp", suffix: "")
+    assert pieces_of(pattern: "pre*.txt", asked: "a").must() == Pieces(prefix: "pre", suffix: ".txt")
+    assert pieces_of(pattern: "a*b*c", asked: "a").must() == Pieces(prefix: "a*b", suffix: "c")
+    assert pieces_of(pattern: "*", asked: "a").must() == Pieces(prefix: "", suffix: "")
+    assert pieces_of(pattern: "", asked: "a").must() == Pieces(prefix: "", suffix: "")
+
+    match pieces_of(pattern: "a/b*", asked: "making")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "making: the pattern \"a/b*\" holds a separator"
+
+test "made_dir: a name by the pattern, two never the same, 0o700, the system's folder, and a folder not there"
+    dir = fixture.folder("tempdir")
+    one = made_dir(dir: dir, pattern: "pre*.d").must()
+    two = made_dir(dir: dir, pattern: "pre*.d").must()
+    assert one != two
+    name = path.name(one).must()
+    assert name.len() == 3 + 16 + 2 && name.slice(from: 0, to: 3) == "pre" && name.slice(from: 19, to: 21) == ".d"
+    numbers: [i64] @= []
+    assert hero_disk.facts(one, @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+    assert numbers[hero_disk.HERO_DISK_FACT_KIND] == hero_disk.HERO_DISK_KIND_DIRECTORY
+    assert numbers[hero_disk.HERO_DISK_FACT_PERMISSION] == 0o700 || numbers[hero_disk.HERO_DISK_FACT_PERMISSION] == 0o666
+    assert folder_for("").must() == os.temp_dir().must()
+    assert folder_for(dir).must() == dir
+
+    match made_dir(dir: dir + "/none", pattern: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)
+
+test "made_file: a file made empty and open to write, 0o600, and a separator in the pattern"
+    dir = fixture.folder("tempfile")
+    made @= made_file(dir: dir, pattern: "*.txt").must()
+    assert path.ext(made.at).must() == ".txt"
+    assert !io.write_text(made.stream, "kept").is_err()
+    assert !io.close(@made.stream).is_err()
+    assert read_file(made.at).must() == "kept"
+    numbers: [i64] @= []
+    assert hero_disk.facts(made.at, @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+    assert numbers[hero_disk.HERO_DISK_FACT_PERMISSION] == 0o600 || numbers[hero_disk.HERO_DISK_FACT_PERMISSION] == 0o666
+
+    match made_file(dir: dir, pattern: "a/*")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)

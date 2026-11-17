@@ -1,0 +1,311 @@
+capability command/build  a command made from a program and its arguments, read by no shell
+  heroes  process.command
+  go      exec.Command, exec.Cmd, exec.Cmd.Path, exec.Cmd.Args
+  rust    Command, Command::new, Command::get_program, Command::get_args, CommandArgs
+  python  Popen, Popen.args
+  note    a command is a record whose fields a program reads, which is what Rust's getters answer. Go's Args holds the program first; here `arguments` are those after it, as Rust's `args`
+
+capability command/arguments  a command's arguments given or replaced
+  heroes  process.with_arguments
+  go      exec.Cmd.Args
+  rust    Command::arg, Command::args
+  python  -
+  note    Rust adds one or several to those already there; here the list is given whole, since a program builds a `[str]` where it needs to add
+
+capability command/shell  a text run through the system's shell
+  heroes  process.shell
+  go      -
+  rust    -
+  python  run(shell=True), Popen(shell=True), getoutput, getstatusoutput
+  note    `/bin/sh -c` as Python's, and `cmd.exe /d /s /c` on Windows, where Python takes `ComSpec` too. Python's `getoutput(cmd)` is `capture(shell(cmd))` with the last line end taken off and the error joined; `getstatusoutput` adds the code, which `run` answers. On Windows a script holding `"` fails `unsupported`: the floor writes the child's line by `CommandLineToArgvW`'s rule, which `cmd.exe` does not undo (unrun on Windows)
+
+capability command/quote  a text quoted so a POSIX shell reads it back as one word
+  heroes  process.quote
+  go      -
+  rust    -
+  python  shlex.quote
+  note    the same answers as Python's on every input the tests ask: plain ASCII as it is, anything else in single quotes
+
+capability command/quote-all  words quoted and joined into one line for a POSIX shell
+  heroes  process.quote_all
+  go      exec.Cmd.String
+  rust    -
+  python  shlex.join
+  note    Python's. Go's `String` joins the words without quoting and is for showing only
+
+capability command/windows-line  a Windows command line written by the program
+  heroes  refused: the floor writes a child's Windows line from the list itself, by the rule `CommandLineToArgvW` undoes; a line written by hand is what lets a word run as another
+  go      -
+  rust    Command::raw_arg, Command::force_quotes
+  python  list2cmdline
+
+capability env/set  a variable set for the child
+  heroes  process.with_env
+  go      exec.Cmd.Env, os.ProcAttr.Env
+  rust    Command::env
+  python  Popen(env=)
+  note    over the inherited ones, as Rust's; Go's and Python's lists replace the whole environment, which is `with_env_cleared` then `with_env`. On Windows a name compares without its ASCII case, as Rust's does; a name holding a character above ASCII compares by its bytes there, where Windows would fold it too
+
+capability env/set-all  several variables set for the child at once
+  heroes  process.with_env_all
+  go      -
+  rust    Command::envs
+  python  -
+
+capability env/remove  a variable taken out of the child's environment
+  heroes  process.with_env_removed
+  go      -
+  rust    Command::env_remove
+  python  -
+
+capability env/clear  a child that starts with no variable
+  heroes  process.with_env_cleared
+  go      -
+  rust    Command::env_clear, Command::get_env_clear
+  python  -
+  note    Go and Python do it with an empty list or map. The command's own program is still looked for in this process's PATH, as the floor's search reads it whatever the child is given
+
+capability env/of  the variables the child would start with
+  heroes  process.env_of
+  go      exec.Cmd.Environ
+  rust    Command::get_envs, Command::get_resolved_envs, CommandEnvs, CommandResolvedEnvs
+  python  -
+  note    Go's, as a map. Rust's `get_envs` answers the changes alone, which are the command's fields `env_set` and `env_removed` here
+
+capability dir/set  the child's working folder
+  heroes  process.with_dir
+  go      exec.Cmd.Dir, os.ProcAttr.Dir
+  rust    Command::current_dir, Command::get_current_dir
+  python  Popen(cwd=)
+  note    a folder that names nothing fails `file_not_found` and one that is no folder `not_a_directory`, where Go and Python say the system's error
+
+capability stdio/input  what the child reads: this process's input, nothing, a pipe, a stream, or bytes given whole
+  heroes  process.with_input
+  go      exec.Cmd.Stdin
+  rust    Command::stdin, Stdio, Stdio::inherit, Stdio::null, Stdio::piped, Stdio::makes_pipe
+  python  Popen(stdin=), run(input=), PIPE, DEVNULL
+  note    bytes given whole pass through a temporary file, so a child that does not read them all never stops the program, where Go copies them from a goroutine and Python from `communicate`
+
+capability stdio/output  where the child's output goes
+  heroes  process.with_output
+  go      exec.Cmd.Stdout
+  rust    Command::stdout
+  python  Popen(stdout=)
+
+capability stdio/error  where the child's error goes
+  heroes  process.with_error
+  go      exec.Cmd.Stderr
+  rust    Command::stderr
+  python  Popen(stderr=)
+
+capability stdio/error-to-output  the child's error interleaved with its output
+  heroes  process.with_error_to_output
+  go      exec.Cmd.CombinedOutput
+  rust    -
+  python  STDOUT
+  note    one pipe or one capture for both, in the order the child writes them, as Python's `stderr=STDOUT`
+
+capability stdio/chain  one child's output another child's input, with no shell between
+  heroes  process.with_input
+  go      -
+  rust    Stdio::from
+  python  Popen(stdin=other.stdout)
+  note    `.stream` of the first child's `output`; the program then closes its own copy so the second reads the end
+
+capability run/status  a command run to its end, and how it ended
+  heroes  process.run
+  go      exec.Cmd.Run
+  rust    Command::status
+  python  run, call, CompletedProcess, CompletedProcess.args, CompletedProcess.returncode
+  note    a child that ends with another code than 0 is no failure of `run`, as Rust's and Python's; Go's `Run` answers it as an `ExitError`
+
+capability run/captured  a command run to its end, what it wrote captured
+  heroes  process.run
+  go      exec.Cmd.Output, exec.ExitError.Stderr
+  rust    Command::output, Output, Output.status, Output.stdout, Output.stderr, Child::wait_with_output
+  python  run(capture_output=True), CompletedProcess.stdout, CompletedProcess.stderr, Popen.communicate
+  note    captured through temporary files, so a child writing to both never fills a pipe and its time limit holds whatever it writes; Rust's `output` captures both where the command set neither, here what is `.pipe` is captured
+
+capability run/text  a command's output as text, failing where it did not succeed
+  heroes  process.capture
+  go      exec.Cmd.Output
+  rust    -
+  python  check_output
+  note    fails `failed` with the end of the error's text where that was captured, as Go's `ExitError.Stderr` carries it; `not_text` where the output is not UTF-8, where Python answers bytes unless asked for text
+
+capability run/check  a child that did not succeed turned into a failure
+  heroes  process.require_success
+  go      exec.ExitError, exec.ExitError.Error
+  rust    ExitStatus::exit_ok, Output::exit_ok, ExitStatusError, ExitStatusError::into_status
+  python  check_call, run(check=True), CompletedProcess.check_returncode, CalledProcessError, SubprocessError
+  note    `failed` for another code or a signal, `timeout` for the time limit
+
+capability run/time-limit  a child ended once it has run too long
+  heroes  process.with_time_limit
+  go      exec.CommandContext, exec.Cmd.Cancel, exec.Cmd.WaitDelay, exec.ErrWaitDelay
+  rust    -
+  python  run(timeout=), Popen.wait(timeout=), Popen.communicate(timeout=), TimeoutExpired
+  note    in nanoseconds on the monotonic clock, kept by `run`, `capture`, `wait` and `has_ended`; the child is ended at once and its status is `.timed_out`, where Python raises after killing it and Go's context kills it. Not a `time.Duration`: `process` uses no `time` (README § A1); a duration's `nanoseconds` is what a program passes. A read of a started child's pipe is not bounded by it
+
+capability child/start  a child started and handed to the program
+  heroes  process.start
+  go      exec.Cmd.Start, exec.Cmd.Process, exec.Cmd.Err, os.StartProcess, os.ProcAttr, os.ProcAttr.Files, os.Process
+  rust    Command::spawn, Child
+  python  Popen
+  note    a program that is not there fails `not_found` at the start, as Go's `Err` and Rust's and Python's errors say
+
+capability child/pipes  the program's ends of a started child's pipes
+  heroes  process.Child
+  go      exec.Cmd.StdinPipe, exec.Cmd.StdoutPipe, exec.Cmd.StderrPipe
+  rust    Child.stdin, Child.stdout, Child.stderr, ChildStdin, ChildStdout, ChildStderr
+  python  Popen.stdin, Popen.stdout, Popen.stderr
+  note    the fields `input`, `output` and `error`, each an `io.Stream`, closed where no pipe was asked for
+
+capability child/wait  a started child waited for
+  heroes  process.wait
+  go      exec.Cmd.Wait, os.Process.Wait, exec.Cmd.ProcessState, os.ProcessState
+  rust    Child::wait
+  python  Popen.wait, Popen.returncode
+  note    the input is closed first, as Rust's; every end is closed after, as Go's, so a read after `wait` fails `closed` and the pattern that fills a pipe while waiting cannot be written by mistake
+
+capability child/poll  whether a started child has ended, never waiting
+  heroes  process.has_ended
+  go      -
+  rust    Child::try_wait
+  python  Popen.poll
+  note    the status is then the child's `state`, and `wait` answers it at once
+
+capability child/terminate  a child asked to end
+  heroes  process.terminate
+  go      os.Interrupt
+  rust    -
+  python  Popen.terminate
+  note    SIGTERM as Python's; Go's `Interrupt` is SIGINT. On Windows `unsupported`, where Python's documentation says `terminate` is `kill` (unrun here): a request is not an end, and `kill` is the one that ends it there
+
+capability child/kill  a child ended at once
+  heroes  process.kill
+  go      os.Process.Kill, os.Kill, os.ErrProcessDone
+  rust    Child::kill
+  python  Popen.kill
+  note    one that has ended already is sent nothing and no failure, as Rust's; Go answers `ErrProcessDone`
+
+capability child/id  the system's number of a child
+  heroes  process.Child
+  go      os.Process.Pid, os.ProcessState.Pid
+  rust    Child::id
+  python  Popen.pid
+  note    the field `id`, to show: the handle names the process
+
+capability child/release  a child given up while it runs
+  heroes  process.release
+  go      os.Process.Release
+  rust    -
+  python  -
+  note    Rust and Python give one up when it is dropped. One that still runs runs on, and the floor keeps no zombie of it
+
+capability child/cpu  the CPU time a child used
+  heroes  process.cpu_of
+  go      os.ProcessState.UserTime, os.ProcessState.SystemTime, os.ProcessState.SysUsage
+  rust    -
+  python  -
+  note    in nanoseconds, once the child was seen to end; `run` answers it in `Finished.cpu`
+
+capability child/signal  any signal sent to a child
+  heroes  refused: two requests are portable, to end and to end at once; any other signal is POSIX's alone, and the floor sends none
+  go      os.Process.Signal, os.Signal
+  rust    Child::send_signal, Child::send_process_group_signal, Child::kill_process_group
+  python  Popen.send_signal
+
+capability child/find  a process found by its number
+  heroes  refused: the floor names a process by the handle that started it, never by a number, which may name another process by then
+  go      os.FindProcess
+  rust    -
+  python  -
+
+capability status/ended  how a child ended, an exit code and a signal told apart
+  heroes  process.Status
+  go      os.ProcessState.Exited
+  rust    ExitStatus
+  python  -
+  note    a variant of three cases, `exited`, `signaled` and `timed_out`; Python folds a signal into a negative return code
+
+capability status/success  whether a child succeeded
+  heroes  process.is_success
+  go      os.ProcessState.Success
+  rust    ExitStatus::success
+  python  -
+
+capability status/code  a child's exit code
+  heroes  process.code_of
+  go      os.ProcessState.ExitCode, exec.ExitError.ExitCode
+  rust    ExitStatus::code, ExitStatusError::code, ExitStatusError::code_nonzero
+  python  -
+  note    fails `not_found` where a signal or the time limit ended the child, where Go answers -1 and Rust `None`
+
+capability status/signal  the signal that ended a child
+  heroes  process.signal_of
+  go      -
+  rust    ExitStatus::signal, ExitStatusError::signal
+  python  -
+  note    by number; Go's `String` names it (`killed`)
+
+capability status/text  how a child ended, as words
+  heroes  process.format_status
+  go      os.ProcessState.String
+  rust    ExitStatus::to_string
+  python  -
+  note    `exited with code 3`, `ended by signal 9`, `ended at its time limit`; Go writes `exit status 3` and `signal: killed`, Rust `exit status: 3`
+
+capability status/stopped  a core dumped, a child stopped or continued
+  heroes  refused: the floor reports how a child ended, its code or its signal; a stopped or continued child has not ended, and a core is the system's file
+  go      -
+  rust    ExitStatus::core_dumped, ExitStatus::stopped_signal, ExitStatus::continued, ExitStatusError::core_dumped, ExitStatusError::stopped_signal, ExitStatusError::continued
+  python  -
+
+capability lookup/path  where a program is in the folders of PATH
+  heroes  process.path_of
+  go      exec.LookPath, exec.ErrNotFound, exec.ErrDot, exec.Error, exec.Error.Error, exec.Error.Unwrap
+  rust    -
+  python  shutil.which
+  note    the folders `start` reads, by the floor's rule: an empty PATH entry, or a PATH set empty, is the working folder, as POSIX's `execvp` reads it, where Go refuses a find there (`ErrDot`) and Python's `which` reads an empty PATH as no folder. A file runs where a permission bit lets someone run it; the floor also asks whether this user may (`faccessat`), which no door of `process` can ask. An empty name fails `invalid`, where Go and Python answer not found
+
+capability own/exit  the program's own end with a code
+  heroes  built-in exit
+  go      os.Exit
+  rust    exit, ExitCode, ExitCode::SUCCESS, ExitCode::FAILURE, ExitCode::exit_process, Termination, Termination::report
+  python  -
+
+capability own/abort  the program ended at once
+  heroes  built-in assert
+  go      -
+  rust    abort, abort_immediate
+  python  -
+  note    `assert false` ends the program at once, saying where (spec § 6)
+
+capability own/id  the program's own number
+  heroes  os.pid
+  go      os.Getpid
+  rust    id
+  python  -
+  note    the package `os`'s
+
+capability platform/attributes  what one system alone gives a child: its user, its group, a session, a chroot, code run before it starts, Windows' creation flags and windows
+  heroes  refused: each is one system's alone, and the floor starts every child the same way on every platform
+  go      exec.Cmd.SysProcAttr, exec.Cmd.ExtraFiles, os.ProcAttr.Sys, os.Process.WithHandle
+  rust    Command::uid, Command::gid, Command::groups, Command::process_group, Command::setsid, Command::chroot, Command::pre_exec, Command::before_exec, Command::exec, Command::create_pidfd, Command::creation_flags, Command::show_window, Command::inherit_handles, Command::async_pipes, Command::spawn_with_attributes, Command::startupinfo_force_feedback, Command::startupinfo_fullscreen, Command::startupinfo_untrusted_source, Command::desktop, Child::main_thread_handle
+  python  Popen(close_fds=), Popen(pass_fds=), Popen(start_new_session=), Popen(process_group=), Popen(user=), Popen(group=), Popen(extra_groups=), Popen(umask=), Popen(preexec_fn=), Popen(restore_signals=), Popen(startupinfo=), Popen(creationflags=), Popen(executable=)
+
+dropped  a buffer size, a text mode or an encoding: a child's bytes are bytes, and text is UTF-8 checked where it is asked for
+  go      -
+  rust    -
+  python  Popen(bufsize=), Popen(pipesize=), Popen(text=), Popen(encoding=), Popen(errors=), Popen.universal_newlines
+
+dropped  a raw descriptor or handle: a child's ends are `io.Stream`s and its process a handle the floor checks
+  go      -
+  rust    Child::as_handle, Child::as_raw_handle, Child::into_raw_handle, ChildStdin::as_fd, ChildStdin::as_raw_fd, ChildStdout::as_fd, ChildStdout::as_raw_fd, ChildStderr::as_fd, ChildStderr::as_raw_fd, ExitStatus::from_raw, ExitStatus::into_raw, ExitStatusError::from_raw, ExitStatusError::into_raw, ExitCode::from_raw
+  python  -
+
+dropped  what a trait, an iterator or an error chain would have needed: Heroes has none, and a failure is a code with a message
+  go      -
+  rust    the traits each struct repeats, type_id, borrow, borrow_mut, from, into, try_from, try_into, fmt, clone, clone_from, clone_to_uninit, clone_into, to_owned, default, eq, ne, ExitStatusError::description, ExitStatusError::cause, ExitStatusError::source, ExitStatusError::provide, the iterator methods of CommandArgs and CommandEnvs, ChildStdin's Write and ChildStdout's and ChildStderr's Read methods (each named in `io`)
+  python  the modules `subprocess` imports: builtins, contextlib, errno, fcntl, io, locale, os, select, selectors, signal, sys, threading, time, types, warnings

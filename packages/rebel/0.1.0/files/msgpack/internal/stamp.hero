@@ -1,0 +1,99 @@
+# MessagePack's timestamp, extension type -1, read into a `time.Instant` and
+# written from one, in the smallest of its three layouts as the specification's
+# own pseudo code chooses: 32 bits of seconds, 64 bits of nanoseconds and
+# seconds, or 96 bits of nanoseconds and signed seconds.
+
+use bytes
+use time
+
+# The code of an extension that is no timestamp.
+constant INVALID: str
+    "invalid"
+
+# A billion: the nanoseconds of a second.
+constant BILLION: i64
+    1000000000
+
+# The `i64` the eight bytes from `at` write in two's complement.
+function signed_at(data: [u8], at: i64) -> i64
+    return bytes.decode_i64_be(s: data, at: at).must()
+
+# The instant the timestamp payload `data` holds. Fails `invalid` where its
+# length is not 4, 8 or 12 bytes or its nanoseconds pass 999999999, and
+# `does_not_fit` where the instant is outside a `time.Instant`, which holds
+# 1677 to 2262.
+function instant_of(data: [u8]) -> time.Instant?
+    seconds: i64 @= 0
+    nanoseconds: i64 @= 0
+
+    if data.len() == 4
+        seconds @ to_i64(bytes.decode_u32_be(s: data, at: 0).must()).must()
+    else if data.len() == 8
+        high = to_i64(bytes.decode_u32_be(s: data, at: 0).must()).must()
+        low = to_i64(bytes.decode_u32_be(s: data, at: 4).must()).must()
+        nanoseconds @ high >> 2
+        seconds @ (high & 3) << 32 | low
+    else if data.len() == 12
+        nanoseconds @ to_i64(bytes.decode_u32_be(s: data, at: 0).must()).must()
+        seconds @ signed_at(data: data, at: 4)
+    else
+        return fail(code: INVALID, msg: f"a timestamp of {data.len()} bytes, where one holds 4, 8 or 12")
+
+    if nanoseconds >= BILLION
+        return fail(code: INVALID, msg: f"a timestamp of {nanoseconds} nanoseconds, where one holds at most 999999999")
+    return time.from_unix(whole_seconds: seconds, extra_nanoseconds: nanoseconds)
+
+# The timestamp payload of `t`, in the smallest layout that holds it.
+function payload_of(t: time.Instant) -> [u8]
+    seconds: i64 @= t.unix_nanoseconds / BILLION
+    nanoseconds: i64 @= t.unix_nanoseconds % BILLION
+
+    if nanoseconds < 0
+        seconds @ seconds - 1
+        nanoseconds @ nanoseconds + BILLION
+
+    if seconds >= 0 && seconds < 1 << 34
+        if nanoseconds == 0 && seconds < 1 << 32
+            return bytes.encode_u32_be(to_u32(seconds).must())
+        high = nanoseconds << 2 | seconds >> 32
+        return bytes.concat(
+            [bytes.encode_u32_be(to_u32(high).must()), bytes.encode_u32_be(to_u32(seconds & 0xffffffff).must())]
+        )
+    return bytes.concat([bytes.encode_u32_be(to_u32(nanoseconds).must()), bytes.encode_i64_be(seconds)])
+
+test "instant_of: each layout, the epoch, the last second of 32 bits"
+    assert instant_of([0, 0, 0, 0]).must() == time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    assert instant_of([0xff, 0xff, 0xff, 0xff]).must() == time.from_unix(whole_seconds: 4294967295, extra_nanoseconds: 0).must()
+    sixty_four: [u8] = [0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01]
+    assert instant_of(sixty_four).must() == time.from_unix(whole_seconds: 1, extra_nanoseconds: 1).must()
+    ninety_six: [u8] = [0, 0, 0, 5, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    assert instant_of(ninety_six).must() == time.from_unix(whole_seconds: -1, extra_nanoseconds: 5).must()
+
+test "instant_of: a length no layout has, nanoseconds past a second, past an instant"
+    assert instant_of([0, 0]).is_err()
+    assert instant_of([]).is_err()
+    past: [u8] = [0xee, 0x6b, 0x28, 0x00, 0, 0, 0, 0]
+    assert instant_of(past).is_err()
+    far: [u8] = [0, 0, 0, 0, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+
+    match instant_of(far)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "payload_of: the smallest layout for the epoch, a fraction, before 1970, 2^33 seconds"
+    assert payload_of(time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()) == [0, 0, 0, 0]
+    assert payload_of(time.from_unix(whole_seconds: 1, extra_nanoseconds: 1).must()) == [0, 0, 0, 4, 0, 0, 0, 1]
+    assert payload_of(time.from_unix(whole_seconds: 4294967296, extra_nanoseconds: 0).must()) == [0, 0, 0, 1, 0, 0, 0, 0]
+    before = payload_of(time.from_unix(whole_seconds: -1, extra_nanoseconds: 5).must())
+    assert before == [0, 0, 0, 5, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    late = payload_of(time.from_unix(whole_seconds: 8589934592, extra_nanoseconds: 0).must())
+    assert late == [0, 0, 0, 2, 0, 0, 0, 0]
+
+test "payload_of and instant_of: the earliest and the latest instants come back"
+    for t in [time.min_instant(), time.max_instant()]
+        assert instant_of(payload_of(t)).must() == t
+
+test "signed_at: minus one, the smallest and the largest i64"
+    assert signed_at(data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0) == -1
+    assert signed_at(data: [0x80, 0, 0, 0, 0, 0, 0, 0], at: 0) == -9223372036854775808
+    assert signed_at(data: [0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff], at: 0) == 9223372036854775807

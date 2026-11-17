@@ -1,0 +1,177 @@
+# "In body"'s end tags (13.2.6.4.7): the ones that close what is in scope, the
+# formatting ones the adoption agency mends, `</p>` and `</br>` that open what
+# they close, and "any other end tag", which never closes past a special
+# element.
+
+use html/internal/builder
+use html/internal/common
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/token
+
+# The step for the end tag `t` in "in body".
+function end_tag(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    name = t.name
+
+    match name
+        "template" => return .using(mode: .in_head)
+        "body" | "html" =>
+            if !builder.in_scope(b, "body", builder.SCOPE)
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+
+            if builder.has_unexpected_open(b)
+                builder.error(@b, "unclosed-element", t)
+            b.mode @ .after_body
+
+            if name == "html"
+                return .again
+            return .done
+        "address" | "article" | "aside" | "blockquote" | "button" | "center" | "details" | "dialog" | "dir" | "div" | "dl" =>
+            close_in_scope(@b, t)
+            return .done
+        "fieldset" | "figcaption" | "figure" | "footer" | "header" | "hgroup" | "listing" | "main" | "menu" | "nav" | "ol" =>
+            close_in_scope(@b, t)
+            return .done
+        "pre" | "search" | "section" | "select" | "summary" | "ul" =>
+            close_in_scope(@b, t)
+            return .done
+        "form" =>
+            end_form(@b, t)
+            return .done
+        "p" =>
+            if !builder.in_scope(b, "p", builder.BUTTON_SCOPE)
+                builder.error(@b, "unexpected-end-tag", t)
+                _ = insert.element_named(@b, "p")
+            common.close_p(@b, t)
+            return .done
+        "li" =>
+            if !builder.in_scope(b, "li", builder.LIST_ITEM_SCOPE)
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            builder.generate_implied_end_tags(@b, "li")
+
+            if !builder.current_is(b, "li")
+                builder.error(@b, "unclosed-element", t)
+            builder.pop_until(@b, "li")
+            return .done
+        "dd" | "dt" =>
+            if !builder.in_scope(b, name, builder.SCOPE)
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            builder.generate_implied_end_tags(@b, name)
+
+            if !builder.current_is(b, name)
+                builder.error(@b, "unclosed-element", t)
+            builder.pop_until(@b, name)
+            return .done
+        "h1" | "h2" | "h3" | "h4" | "h5" | "h6" =>
+            end_heading(@b, t)
+            return .done
+        "a" | "b" | "big" | "code" | "em" | "font" | "i" | "nobr" | "s" | "small" | "strike" | "strong" | "tt" | "u" =>
+            if formatting.adopt(@b, t)
+                any_other_end_tag(@b, t)
+            return .done
+        "applet" | "marquee" | "object" =>
+            if !builder.in_scope(b, name, builder.SCOPE)
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            builder.generate_implied_end_tags(@b, "")
+
+            if !builder.current_is(b, name)
+                builder.error(@b, "unclosed-element", t)
+            builder.pop_until(@b, name)
+            formatting.clear_to_marker(@b)
+            return .done
+        "br" =>
+            builder.error(@b, "unexpected-end-tag", t)
+            formatting.reconstruct(@b)
+            _ = insert.element_named(@b, "br")
+            builder.pop(@b)
+            b.frameset_ok @ false
+            return .done
+        _ =>
+            any_other_end_tag(@b, t)
+            return .done
+
+# An end tag that closes the HTML element of its name, where one is in scope.
+function close_in_scope(@b: builder.Builder, t: token.Token lent)
+    if !builder.in_scope(b, t.name, builder.SCOPE)
+        builder.error(@b, "unexpected-end-tag", t)
+        return
+    builder.generate_implied_end_tags(@b, "")
+
+    if !builder.current_is(b, t.name)
+        builder.error(@b, "unclosed-element", t)
+    builder.pop_until(@b, t.name)
+
+# `</form>`: the form the pointer names, or inside a template the one in
+# scope.
+function end_form(@b: builder.Builder, t: token.Token lent)
+    if builder.has_open(b, "template")
+        if !builder.in_scope(b, "form", builder.SCOPE)
+            builder.error(@b, "unexpected-end-tag", t)
+            return
+        builder.generate_implied_end_tags(@b, "")
+
+        if !builder.current_is(b, "form")
+            builder.error(@b, "unclosed-element", t)
+        builder.pop_until(@b, "form")
+        return
+    node = b.form
+    b.form @ dom.NONE
+
+    if node == dom.NONE || !builder.node_in_scope(b, target: node, kind: builder.SCOPE)
+        builder.error(@b, "unexpected-end-tag", t)
+        return
+    builder.generate_implied_end_tags(@b, "")
+
+    if builder.current(b) != node
+        builder.error(@b, "unclosed-element", t)
+    builder.remove_from_stack(@b, node)
+
+# `</h1>` to `</h6>`: any heading in scope is closed, whatever its number.
+function end_heading(@b: builder.Builder, t: token.Token lent)
+    found: bool @= false
+
+    for h in ["h1", "h2", "h3", "h4", "h5", "h6"]
+        if builder.in_scope(b, h, builder.SCOPE)
+            found @ true
+
+    if !found
+        builder.error(@b, "unexpected-end-tag", t)
+        return
+    builder.generate_implied_end_tags(@b, "")
+
+    if !builder.current_is(b, t.name)
+        builder.error(@b, "unclosed-element", t)
+
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+        builder.pop(@b)
+        name = b.tree.names[top]
+
+        if b.tree.spaces[top] == dom.HTML && (name == "h1" || name == "h2" || name == "h3" || name == "h4" || name == "h5" || name == "h6")
+            return
+
+# "Any other end tag": the nearest open HTML element of its name is closed,
+# unless a special element stands nearer, which makes the tag ignored.
+function any_other_end_tag(@b: builder.Builder, t: token.Token lent)
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        node = b.open[i]
+
+        if dom.is_html(b.tree, node, t.name)
+            builder.generate_implied_end_tags(@b, t.name)
+
+            if builder.current(b) != node
+                builder.error(@b, "unclosed-element", t)
+            builder.pop_until_node(@b, node)
+            return
+
+        if builder.is_special(b.tree, node)
+            builder.error(@b, "unexpected-end-tag", t)
+            return
+        i @ i - 1

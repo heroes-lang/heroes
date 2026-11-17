@@ -1,0 +1,131 @@
+# A start tag read: its name as written and its attributes in their order,
+# their values read and normalised, each name checked as Namespaces in XML 1.0
+# reads it, and no attribute written twice. Resolving the names to their
+# namespaces is the reader's, which holds the scope.
+
+use xml/internal/characters
+use xml/internal/markup
+use xml/internal/refs
+use xml/internal/scan
+
+# What `read_start_tag` answers.
+record StartTag
+    # The element's name as written, `p:local` or `local`.
+    raw: str
+    # Each attribute's name as written, in order.
+    names: [str]
+    # Each attribute's value, read and normalised.
+    values: [str]
+    # The byte index where each attribute's name begins.
+    places: [i64]
+    # Whether the tag ends `/>`, so that the element holds nothing.
+    closed: bool
+    # The byte index past `>`.
+    end: i64
+
+# The start tag whose `<` stands at byte `at` of `text`. Fails `invalid` where
+# it is not one, and the message says what was expected.
+function read_start_tag(text: str, at: i64) -> StartTag?
+    name_at = at + 1
+    name_end = qname_end(text: text, at: name_at, what: "an element's name after `<`")?
+    raw = text.slice(from: name_at, to: name_end)
+    names: [str] @= []
+    values: [str] @= []
+    places: [i64] @= []
+    seen: {str: i64} @= {}
+    i: i64 @= name_end
+
+    while true
+        next = markup.skip_space(text: text, at: i)
+
+        if next < text.len() && text[next] == '>'
+            return ok(StartTag(raw: raw, names: names, values: values, places: places, closed: false, end: next + 1))
+
+        if markup.holds_at(text: text, at: next, word: "/>")
+            return ok(StartTag(raw: raw, names: names, values: values, places: places, closed: true, end: next + 2))
+
+        if next == i
+            return fail(code: scan.INVALID, msg: scan.expected(text: text, at: next, what: "white space, `>` or `/>`"))
+        end = qname_end(text: text, at: next, what: "an attribute's name, `>` or `/>`")?
+        name = text.slice(from: next, to: end)
+
+        match seen[name]
+            .ok first =>
+                return fail(
+                    code: scan.INVALID,
+                    msg: scan.said(text: text, at: next, what: f"the attribute `{name}` is written twice on <{raw}>, first at {scan.position(text: text, at: first)}")
+                )
+            .err _ => seen[name] @ next
+
+        equals = markup.skip_space(text: text, at: end)
+
+        if equals >= text.len() || text[equals] != '='
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: equals, what: f"`=` after the attribute `{name}`")
+            )
+        quote = markup.skip_space(text: text, at: equals + 1)
+
+        if quote >= text.len() || text[quote] != '"' && text[quote] != '\''
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: quote, what: "`\"` or `'`, which opens the attribute's value")
+            )
+        value = refs.read_value(text: text, at: quote)?
+        names @ names.push(name)
+        values @ values.push(value.value)
+        places @ places.push(next)
+        i @ value.end
+
+# The byte index past the name that begins at byte `at` of `text`, a name
+# Namespaces in XML 1.0 reads: one colon at most, between two names. Fails
+# `invalid` where none begins there, `what` saying what was expected, or where
+# it holds its colons otherwise.
+function qname_end(text: str, at: i64, what: str) -> i64?
+    end = characters.name_end(text: text, at: at)
+
+    if end == at
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+    name = text.slice(from: at, to: end)
+
+    if !characters.is_qname(name)
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at, what: f"`{name}` is not a name Namespaces in XML 1.0 reads: one colon at most, between two names")
+        )
+    return ok(end)
+
+## Tests
+
+test "read_start_tag: no attributes, closed, attributes in order with either quote, and white space around `=`"
+    assert read_start_tag(text: "<a>", at: 0).must() == StartTag(raw: "a", names: [], values: [], places: [], closed: false, end: 3)
+    assert read_start_tag(text: "<a/>", at: 0).must().closed
+    assert read_start_tag(text: "<p:a  />", at: 0).must() == StartTag(raw: "p:a", names: [], values: [], places: [], closed: true, end: 8)
+    tag = read_start_tag(text: "<città b='1' a = \"é\"\n c=\"&lt;\">", at: 0).must()
+    assert tag.raw == "città" && tag.names == ["b", "a", "c"] && tag.values == ["1", "é", "<"] && tag.places == [8, 14, 24]
+    assert !tag.closed && tag.end == tag.places[2] + 9
+
+test "read_start_tag: an attribute twice as Python refuses it, no space between, no value, no `=`, and no end"
+    match read_start_tag(text: "<a x=\"1\" x=\"2\"/>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 10: the attribute `x` is written twice on <a>, first at line 1, column 4"
+
+    match read_start_tag(text: "<a x=\"1\"y=\"2\"/>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 9: expected white space, `>` or `/>`, found \"y\""
+
+    for text in ["<a x>", "<a x=1>", "<a x=\"1\"", "<a", "< a>", "<1a>", "<a:b:c>", "<a :b=\"1\">", "<a / >"]
+        match read_start_tag(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "qname_end: a name, a prefixed one, two colons, a colon at either end, and none"
+    assert qname_end(text: "a b", at: 0, what: "x").must() == 1
+    assert qname_end(text: "p:a>", at: 0, what: "x").must() == 3
+    assert qname_end(text: "a:b:c", at: 0, what: "x").is_err()
+    assert qname_end(text: ":a", at: 0, what: "x").is_err()
+    assert qname_end(text: "a:", at: 0, what: "x").is_err()
+
+    match qname_end(text: "=", at: 0, what: "a name")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: expected a name, found \"=\""

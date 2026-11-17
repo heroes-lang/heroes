@@ -1,0 +1,90 @@
+# A text read byte by byte, its characters left whole: two texts ordered by
+# their bytes, which is the order of the built-in `sort`, and the case of
+# ASCII letters, which changes one byte for another of the same width.
+
+# `b` in lower case where it is an ASCII upper case letter.
+function lower_byte(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# `b` in upper case where it is an ASCII lower case letter.
+function upper_byte(b: u8) -> u8
+    if b >= 'a' && b <= 'z'
+        return b - 32
+    return b
+
+# `s` with its ASCII letters in lower case, or in upper case where `upper`;
+# the bytes it changes are ASCII, so the text stays UTF-8.
+function ascii_case(s: str, upper: bool) -> str
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        if upper
+            out @ out.push(upper_byte(s[at]))
+        else
+            out @ out.push(lower_byte(s[at]))
+        at @ at + 1
+
+    return out.validated_bytes().must()
+
+# Which of `a` and `b` orders first by bytes: -1, 0 or 1.
+function compare(a: str, b: str) -> i64
+    shorter: i64 @= a.len()
+
+    if b.len() < shorter
+        shorter @ b.len()
+    at: i64 @= 0
+
+    while at < shorter
+        if a[at] != b[at]
+            if a[at] < b[at]
+                return 0 - 1
+            return 1
+        at @ at + 1
+
+    if a.len() < b.len()
+        return 0 - 1
+
+    if a.len() > b.len()
+        return 1
+    return 0
+
+# Whether `a` and `b` are the same once their ASCII letters' case is set
+# aside.
+function equals_ignoring_case_ascii(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+    at: i64 @= 0
+
+    while at < a.len()
+        if lower_byte(a[at]) != lower_byte(b[at])
+            return false
+        at @ at + 1
+
+    return true
+
+## Tests
+
+test "ascii_case: ASCII letters changed, every other character kept"
+    assert ascii_case(s: "ÀBC é", upper: false) == "Àbc é"
+    assert ascii_case(s: "straße", upper: true) == "STRAßE"
+    assert ascii_case(s: "", upper: true) == ""
+
+test "compare: less, more, equal, a prefix, empty texts, and characters of more than one byte"
+    assert compare(a: "a", b: "b") == 0 - 1
+    assert compare(a: "b", b: "a") == 1
+    assert compare(a: "a", b: "a") == 0
+    assert compare(a: "a", b: "ab") == 0 - 1
+    assert compare(a: "ab", b: "a") == 1
+    assert compare(a: "", b: "") == 0
+    assert compare(a: "", b: "a") == 0 - 1
+    assert compare(a: "é", b: "z") == 1
+    assert compare(a: "città", b: "cittá") == 0 - 1
+
+test "equals_ignoring_case_ascii: ASCII letters, an accent that is not ASCII, and two lengths"
+    assert equals_ignoring_case_ascii(a: "Straße", b: "STRAßE")
+    assert !equals_ignoring_case_ascii(a: "É", b: "é")
+    assert equals_ignoring_case_ascii(a: "a", b: "A")
+    assert !equals_ignoring_case_ascii(a: "ab", b: "a")

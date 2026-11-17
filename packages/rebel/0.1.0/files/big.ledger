@@ -1,0 +1,461 @@
+# The ledger of `big`: what Go's `math/big` (Go 1.27) and Python's `int`,
+# `decimal` and `fractions` (3.15), with the functions of `math` and the
+# built-ins Python reads integers of any size with, let a program do, one block
+# per capability, and what Rebel answers. Go's `big.Float` is a binary float of
+# chosen precision, not a decimal: its one block is refused below, and its
+# rounding modes stand with the decimal's. Rust's standard library has no
+# integer of any size, no decimal and no fraction, so its line is `-` in every
+# block. The lists are this machine's, 2026-11-16: `go doc -all math/big`,
+# `dir(int)`, `dir(decimal)`, `dir(decimal.Decimal)`, `dir(decimal.Context)`,
+# `dir(fractions.Fraction)`.
+
+capability integer/value  an integer of any size, held exactly, compared with `==`
+  heroes  big.Integer, big.from_int
+  go      big.Int, big.NewInt, Int.Set, Int.SetInt64, Int.IsInt64
+  rust    -
+  python  int, int.__new__
+  note    one value has one form, so `==` compares values and an integer may key a map, as Python's int; Go compares with Cmp, its `==` comparing pointers
+
+capability integer/from-int  an integer made from the language's own
+  heroes  big.from_int, big.from_u64
+  go      big.NewInt, Int.SetInt64, Int.SetUint64
+  rust    -
+  python  int(i)
+  note    -
+
+capability integer/to-int  an integer as the language's `i64` or `u64`, failing where it does not fit
+  heroes  big.int_of, big.u64_of
+  go      Int.Int64, Int.IsInt64, Int.Uint64, Int.IsUint64
+  rust    -
+  python  -
+  note    Go's Int64 and Uint64 answer the low bits of a number past 64 bits and say nothing; here it fails `does_not_fit`, as IsInt64 would have told
+
+capability integer/float  an integer as the nearest `f64`, and a float's integer part as an integer
+  heroes  big.float_of, big.from_float
+  go      Int.Float64, Float.Int
+  rust    -
+  python  float(int), int.__float__, int(float)
+  note    the nearest float, ties to even, as Go's Float64 and Python's float answer; past the largest float Python raises OverflowError and Go answers an infinity, as here and as the language's `to_f64`; from a float, NaN fails `invalid` and an infinity `does_not_fit`, Python's ValueError and OverflowError
+
+capability integer/parse  an integer read from text in base ten
+  heroes  big.parse
+  go      Int.SetString (base 10), Int.UnmarshalText, Int.UnmarshalJSON, Int.Scan
+  rust    -
+  python  int(str)
+  note    a sign, `+` included, and digits; Python's spaces around the number and `_` between digits are `invalid`, as in Go and in `numbers.parse_int`
+
+capability integer/parse-base  an integer read from text in a given base
+  heroes  big.parse_base
+  go      Int.SetString (base 2 to 62), big.MaxBase
+  rust    -
+  python  int(str, base)
+  note    bases 2 to 62 as Go reads them, either case up to 36; Python stops at 36 and reads a prefix that matches the base (`int("0x1f", 16)`), here `invalid` as in Go
+
+capability integer/parse-literal  an integer read with its base told by its prefix
+  heroes  big.parse_literal
+  go      Int.SetString (base 0)
+  rust    -
+  python  int(str, 0)
+  note    the language's own spelling, as `numbers.parse_int_literal` reads it: Go's and Python's base 0 also read `0X1F` and `0x_ff`, and Go a lone leading zero as octal
+
+capability integer/format  an integer written in base ten
+  heroes  big.format
+  go      Int.String, Int.MarshalText, Int.MarshalJSON, Int.Append, Int.AppendText
+  rust    -
+  python  str(int), int.__str__, int.__repr__, int.__format__ ("d")
+  note    -
+
+capability integer/format-base  an integer written in a given base
+  heroes  big.format_base
+  go      Int.Text, Int.Format ("b", "o", "x", "X")
+  rust    -
+  python  bin, oct, hex, int.__format__ ("b", "o", "x", "X")
+  note    no prefix and lower case letters, as Go's Text; Python's bin, oct and hex write `0b`, `0o`, `0x`; upper case is `strings.to_upper` of the text
+
+capability integer/bytes  an integer read from bytes and written as bytes, either order, signed or not
+  heroes  big.from_bytes, big.from_bytes_signed, big.to_bytes, big.to_bytes_signed, big.to_bytes_width, big.to_bytes_signed_width, big.ByteOrder
+  go      Int.SetBytes, Int.Bytes, Int.FillBytes
+  rust    -
+  python  int.from_bytes, int.to_bytes
+  note    the fewest bytes, zero being none, as Go's Bytes; a width as Python's `length` and Go's FillBytes; a negative integer's unsigned bytes fail `does_not_fit` where Go's Bytes writes its absolute value and says nothing, Python's raising OverflowError
+
+capability integer/sign  the sign of an integer, its absolute value, its negation
+  heroes  big.sign, big.abs, big.negate
+  go      Int.Sign, Int.Abs, Int.Neg
+  rust    -
+  python  abs, int.__abs__, int.__neg__, int.__pos__, int.__bool__
+  note    -
+
+capability integer/compare  two integers ordered, by value and by absolute value
+  heroes  big.compare, big.compare_abs
+  go      Int.Cmp, Int.CmpAbs
+  rust    -
+  python  int.__lt__, int.__le__, int.__gt__, int.__ge__, int.__eq__, int.__ne__
+  note    -
+
+capability integer/add  the sum and the difference of two integers
+  heroes  big.add, big.subtract
+  go      Int.Add, Int.Sub
+  rust    -
+  python  int.__add__, int.__sub__
+  note    -
+
+capability integer/multiply  the product of two integers, sub-quadratic for large ones
+  heroes  big.multiply
+  go      Int.Mul
+  rust    -
+  python  int.__mul__
+  note    Karatsuba's method from 80 limbs of 30 bits, the length measured where it began to win; 20000 by 15000 digits held to Python's product
+
+capability integer/divide  the quotient and remainder of two integers, the quotient rounded as the caller names
+  heroes  big.divide, big.Division, big.Rounding
+  go      Int.Quo, Int.Rem, Int.QuoRem, Int.Divide, big.Trunc, big.Floor, big.Round, big.Ceil
+  rust    -
+  python  int.__floordiv__, int.__mod__, int.__divmod__, divmod
+  note    one function, the rounding named by the caller: Go's four division modes and Python's floor among the eight; the remainder is what the quotient leaves, held to Python's quotients under every rounding on operands of 1 to 3000 digits and on exact ties
+
+capability integer/divide-euclidean  the quotient and the remainder that is never negative
+  heroes  big.divide_euclidean
+  go      Int.Div, Int.Mod, Int.DivMod
+  rust    -
+  python  -
+  note    -
+
+capability integer/power  an integer raised to a power
+  heroes  big.power
+  go      Int.Exp (no modulus)
+  rust    -
+  python  int.__pow__, pow(a, b)
+  note    a negative exponent aborts: Python answers a float and Go answers 1
+
+capability integer/power-mod  an integer raised to a power modulo another
+  heroes  big.power_mod
+  go      Int.Exp
+  rust    -
+  python  pow(a, b, m)
+  note    the answer is never negative, as Go's Exp ignores the modulus's sign; Python's `pow(3, 2, -5)` is -1, here 4; a negative exponent raises the inverse, as both
+
+capability integer/inverse-mod  the inverse of an integer modulo another
+  heroes  big.inverse_mod
+  go      Int.ModInverse
+  rust    -
+  python  pow(a, -1, m)
+  note    fails `invalid` where none exists: Go answers nil, Python raises ValueError
+
+capability integer/sqrt-mod  a square root modulo a prime
+  heroes  big.sqrt_mod
+  go      Int.ModSqrt
+  rust    -
+  python  -
+  note    the root Go's ModSqrt answers, held to Go on nine primes; Go's behaviour is undefined for a modulus that is not prime, here it fails `invalid`
+
+capability integer/jacobi  the Jacobi symbol of two integers
+  heroes  big.jacobi
+  go      big.Jacobi
+  rust    -
+  python  -
+  note    a negative divisor read as Go reads it, held to Go on ten pairs
+
+capability integer/prime  whether an integer is prime, with an error that can be bounded
+  heroes  big.is_probable_prime
+  go      Int.ProbablyPrime
+  rust    -
+  python  -
+  note    Baillie-PSW and rounds of Miller-Rabin as Go's ProbablyPrime; the bases of the rounds come from the number itself, so the answer never changes from one call to the next
+
+capability integer/gcd  the greatest common divisor, the least common multiple, and Bezout's coefficients
+  heroes  big.gcd, big.lcm, big.gcd_with_coefficients, big.Bezout
+  go      Int.GCD
+  rust    -
+  python  math.gcd, math.lcm
+  note    the coefficients are Go's, held to Go on seven pairs of every sign; Python has no extended form, and its gcd and lcm of many numbers are a `fold`
+
+capability integer/sqrt  the integer square root
+  heroes  big.sqrt
+  go      Int.Sqrt
+  rust    -
+  python  math.isqrt
+  note    -
+
+capability integer/combinatorics  factorials, binomial coefficients, and products of ranges
+  heroes  big.factorial, big.binomial, big.product_of_range
+  go      Int.Binomial, Int.MulRange
+  rust    -
+  python  math.factorial, math.comb, math.perm, math.prod
+  note    Go's MulRange includes its end, `product_of_range` leaves it out as `range` does; Python's `math.perm(n, k)` is `product_of_range(from: n - k + 1, to: n + 1)`, and `math.prod` of a list of integers is a `fold` with `multiply`
+
+capability integer/bit-counts  how many bits an integer needs, how many are set, how many zeros end it
+  heroes  big.bit_len, big.bit_count, big.trailing_zero_bits
+  go      Int.BitLen, Int.TrailingZeroBits
+  rust    -
+  python  int.bit_length, int.bit_count
+  note    of the absolute value, as all three
+
+capability integer/bit  one bit of an integer read and set, as two's complement reads it
+  heroes  big.bit, big.with_bit
+  go      Int.Bit, Int.SetBit
+  rust    -
+  python  -
+  note    two's complement of infinite width for a negative integer, as Go's Bit and SetBit; Python writes `(n >> i) & 1`
+
+capability integer/logic  and, or, exclusive or, not and and-not of integers, as two's complement of infinite width
+  heroes  big.bit_and, big.bit_or, big.bit_xor, big.bit_not, big.bit_and_not
+  go      Int.And, Int.Or, Int.Xor, Int.Not, Int.AndNot
+  rust    -
+  python  int.__and__, int.__or__, int.__xor__, int.__invert__
+  note    two's complement of infinite width, as Go and Python, held to Python on every pair of signs
+
+capability integer/shift  an integer shifted left and right by a count of bits
+  heroes  big.shift_left, big.shift_right
+  go      Int.Lsh, Int.Rsh
+  rust    -
+  python  int.__lshift__, int.__rshift__
+  note    a right shift rounds toward the floor, as Go's Rsh and Python's `>>`
+
+capability integer/random  an integer drawn evenly from 0 up to a bound
+  heroes  big.random_below
+  go      Int.Rand
+  rust    -
+  python  -
+  note    by drawing again past the bound, so every value is as likely; the generator is `random`'s, a seeded one or one from the system
+
+capability decimal/value  a decimal number held exactly: an integer and a count of digits after the point
+  heroes  big.Decimal
+  go      -
+  rust    -
+  python  decimal.Decimal, decimal.DecimalTuple, Decimal.as_tuple, Decimal.from_number
+  note    any integer and any scale, built directly; no NaN, infinity or negative zero, refused below
+
+capability decimal/parse  a decimal read from text, with an exponent or without
+  heroes  big.parse_decimal
+  go      -
+  rust    -
+  python  Decimal(str), Context.create_decimal
+  note    Python also reads spaces around the number, `_`, `NaN` and `Infinity`, here `invalid`; "-0" is zero where Python keeps a negative zero; an exponent past `EXPONENT_MAX`, the Emax of Python's default context, fails `does_not_fit` rather than build a number of a million digits
+
+capability decimal/format  a decimal written with its point and no exponent
+  heroes  big.format_decimal
+  go      -
+  rust    -
+  python  Decimal.__format__ ("f")
+  note    the text Python's `format(d, "f")` writes, held to it on operands of 1 to 3000 digits
+
+capability decimal/format-scientific  a decimal written as the General Decimal Arithmetic writes it, with an exponent where it is far from one
+  heroes  big.format_decimal_scientific
+  go      -
+  rust    -
+  python  Decimal.__str__, Decimal.__repr__, Context.to_sci_string
+  note    the text Python's `str` writes, held to it
+
+capability decimal/format-engineering  a decimal written with an exponent that is a multiple of three
+  heroes  big.format_decimal_engineering
+  go      -
+  rust    -
+  python  Decimal.to_eng_string, Context.to_eng_string
+  note    the text Python's `to_eng_string` writes, held to it
+
+capability decimal/add  the exact sum and difference of two decimals
+  heroes  big.add_decimal, big.subtract_decimal
+  go      -
+  rust    -
+  python  Decimal.__add__, Decimal.__sub__, Context.add, Context.subtract, Context.plus, Context.minus
+  note    exact: Python rounds every result to its context's precision, 28 digits by default, which a program then raises by hand
+
+capability decimal/multiply  the exact product of two decimals
+  heroes  big.multiply_decimal
+  go      -
+  rust    -
+  python  Decimal.__mul__, Context.multiply, Decimal.fma, Context.fma
+  note    exact, so Python's fused multiply-add is a `multiply_decimal` and an `add_decimal`, neither rounding
+
+capability decimal/divide  the quotient of two decimals to a scale, rounded as the caller names
+  heroes  big.divide_decimal
+  go      -
+  rust    -
+  python  Decimal.__truediv__, Context.divide
+  note    rounded to a scale the caller names, where Python rounds to its context's precision; held to Python's exact quotient rounded at the scale, under every rounding
+
+capability decimal/divide-whole  the whole quotient of two decimals and what remains
+  heroes  big.divide_decimal_whole, big.DecimalDivision
+  go      -
+  rust    -
+  python  Decimal.__floordiv__, Decimal.__mod__, Decimal.__divmod__, Context.divide_int, Context.remainder, Context.divmod, Decimal.remainder_near, Context.remainder_near
+  note    Python's `//` and `%` of a Decimal are `.toward_zero`, its `remainder_near` `.half_even`
+
+capability decimal/round  a decimal rounded to a count of digits after the point, as the caller names
+  heroes  big.with_scale
+  go      -
+  rust    -
+  python  Decimal.quantize, Context.quantize, Decimal.to_integral, Decimal.to_integral_exact, Decimal.to_integral_value, Context.to_integral, Context.to_integral_exact, Context.to_integral_value, Decimal.__round__, Decimal.__floor__, Decimal.__ceil__, Decimal.__trunc__, Decimal.__int__
+  note    Python's quantize; its to_integral forms and `round(d)` are `with_scale` at scale 0, `int(d)` with `.toward_zero`
+
+capability decimal/precision  a decimal rounded to a count of significant digits, and how many it has
+  heroes  big.with_precision, big.digit_count
+  go      -
+  rust    -
+  python  Context.prec, Context.plus, Decimal.adjusted, decimal.MAX_PREC
+  note    Python's precision is a field of a context, here an argument; Python's `adjusted` is `digit_count` less one less the scale; held to Python's rounding at a precision, under every rounding
+
+capability decimal/rounding  the ways a number is rounded, named by the caller at each call
+  heroes  big.Rounding
+  go      big.RoundingMode, big.ToNearestEven, big.ToNearestAway, big.ToZero, big.AwayFromZero, big.ToNegativeInf, big.ToPositiveInf, RoundingMode.String
+  rust    -
+  python  decimal.ROUND_HALF_EVEN, ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_UP, ROUND_DOWN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP, Context.rounding
+  note    Python's eight; Go's Float names six of them: ToNearestEven `.half_even`, ToNearestAway `.half_away_from_zero`, ToZero `.toward_zero`, AwayFromZero `.away_from_zero`, ToNegativeInf `.floor`, ToPositiveInf `.ceiling`
+
+capability decimal/trim  a decimal with the zeros at the end of its digits taken off
+  heroes  big.trim_zeros
+  go      -
+  rust    -
+  python  Decimal.normalize, Context.normalize
+  note    Python's normalize, zero at scale 0 as Python writes `0`
+
+capability decimal/compare  two decimals ordered by value
+  heroes  big.compare_decimal
+  go      -
+  rust    -
+  python  Decimal.__lt__, Decimal.__eq__, Decimal.compare, Decimal.compare_signal, Decimal.compare_total, Decimal.compare_total_mag, Decimal.max, Decimal.min, Decimal.max_mag, Decimal.min_mag, Decimal.same_quantum and the same of Context
+  note    by value, 1.5 and 1.50 equal, as Python's `==`; Python's compare_total orders equal values by their exponent, which is `compare_decimal` and then the scale; max and min follow from `compare_decimal`, same_quantum is the two scales equal
+
+capability decimal/sign  a decimal's sign, its absolute value, its negation, a power of ten moved into its scale
+  heroes  big.sign, big.abs, big.negate
+  go      -
+  rust    -
+  python  Decimal.copy_abs, Decimal.copy_negate, Decimal.copy_sign, Decimal.is_signed, Decimal.is_zero, Decimal.scaleb, Decimal.__neg__, Decimal.__pos__, Decimal.__abs__ and the same of Context
+  note    of a decimal's `unscaled`; scaleb is a decimal built with the scale moved
+
+capability decimal/sqrt  the square root of a decimal to a scale, rounded as the caller names
+  heroes  big.sqrt_decimal
+  go      -
+  rust    -
+  python  Decimal.sqrt, Context.sqrt
+  note    Python's sqrt rounds half to even at its precision; here at a scale and under the rounding named; held to Python's at twelve places
+
+capability decimal/power  a decimal raised to a whole power, exactly
+  heroes  big.power_decimal
+  go      -
+  rust    -
+  python  Decimal.__pow__, Context.power (a whole exponent)
+  note    -
+
+capability decimal/transcendental  e to a power, logarithms and fractional powers of a decimal to a precision
+  heroes  refused: an exact decimal holds no irrational number, and big's arithmetic is exact; `math` answers e to a power, the logarithms and fractional powers in `f64`, and a correctly rounded one at any precision is a library of its own, Python's being mpdecimal
+  go      -
+  rust    -
+  python  Decimal.exp, Decimal.ln, Decimal.log10, Decimal.logb, Context.exp, Context.ln, Context.log10, Context.logb, Context.power (a fractional exponent)
+  note    -
+
+capability decimal/float  a float's exact decimal, and a decimal's nearest float
+  heroes  big.decimal_of_float, big.float_of_decimal
+  go      -
+  rust    -
+  python  Decimal.from_float, Context.create_decimal_from_float, Decimal.__float__, decimal.FloatOperation
+  note    the exact decimal of a float, as Python's from_float; the nearest float of a decimal, as `numbers.parse_float` reads the decimal's text, held to it; FloatOperation is a trap of Python's context
+
+capability decimal/special  the values of a floating decimal that are no number: NaN, the infinities, a negative zero
+  heroes  refused: an exact number has no NaN, no infinity and one zero; `f64` holds them, and the conversions from a float fail on NaN and the infinities
+  go      -
+  rust    -
+  python  Decimal.is_nan, Decimal.is_qnan, Decimal.is_snan, Decimal.is_infinite, Decimal.is_finite, decimal.InvalidOperation, decimal.DivisionUndefined, decimal.DivisionByZero, decimal.DivisionImpossible
+  note    -
+
+capability decimal/bounded  a decimal of bounded precision and exponent: its limits, its next value, its classes
+  heroes  refused: limits, a next value and classes of normal and subnormal belong to a decimal of bounded precision and exponent, a floating decimal; an exact decimal has none, and its exponent is bounded only where text is read, by `EXPONENT_MAX`
+  go      -
+  rust    -
+  python  Context.Emax, Context.Emin, Context.Etiny, Context.Etop, Context.clamp, Decimal.next_minus, Decimal.next_plus, Decimal.next_toward, Decimal.is_normal, Decimal.is_subnormal, Decimal.number_class, decimal.MAX_EMAX, decimal.MIN_EMIN, decimal.MIN_ETINY, decimal.IEEEContext, decimal.IEEE_CONTEXT_MAX_BITS, decimal.Subnormal, decimal.Underflow, decimal.Overflow, decimal.Clamped, decimal.Inexact, decimal.Rounded and the same of Context
+  note    -
+
+capability decimal/digitwise  logic and rotation on the digits of a decimal of zeros and ones
+  heroes  refused: logic on decimals of zeros and ones is the General Decimal Arithmetic's stand-in for bits; `bit_and`, `bit_or`, `bit_xor`, `bit_not` and the shifts do it on an `Integer`
+  go      -
+  rust    -
+  python  Decimal.logical_and, Decimal.logical_or, Decimal.logical_xor, Decimal.logical_invert, Decimal.rotate, Decimal.shift and the same of Context
+  note    -
+
+capability fraction/value  a fraction of two integers held exactly, in lowest terms
+  heroes  big.Fraction, big.fraction
+  go      big.Rat, big.NewRat, Rat.SetFrac, Rat.SetFrac64, Rat.SetInt, Rat.SetInt64, Rat.SetUint64, Rat.Set, Rat.Num, Rat.Denom
+  rust    -
+  python  fractions.Fraction, Fraction.numerator, Fraction.denominator, Fraction.as_integer_ratio, Fraction.from_number
+  note    in lowest terms with the sign on the numerator, as both, so `==` compares values
+
+capability fraction/arithmetic  the sum, difference, product and quotient of two fractions, and a fraction negated, made positive and inverted
+  heroes  big.add_fraction, big.subtract_fraction, big.multiply_fraction, big.divide_fraction
+  go      Rat.Add, Rat.Sub, Rat.Mul, Rat.Quo, Rat.Neg, Rat.Abs, Rat.Inv
+  rust    -
+  python  Fraction.__add__, Fraction.__sub__, Fraction.__mul__, Fraction.__truediv__, Fraction.__neg__, Fraction.__abs__
+  note    Neg and Abs are `fraction` of the numerator negated or made positive; Inv is one divided by the fraction
+
+capability fraction/power  a fraction raised to a whole power, negative included
+  heroes  big.power_fraction
+  go      -
+  rust    -
+  python  Fraction.__pow__
+  note    -
+
+capability fraction/compare  two fractions ordered, a fraction's sign, whether it is whole
+  heroes  big.compare_fraction
+  go      Rat.Cmp, Rat.Sign, Rat.IsInt
+  rust    -
+  python  Fraction.__lt__, Fraction.__eq__, Fraction.is_integer
+  note    Go's Sign is the numerator's `sign`; IsInt and Python's is_integer are the denominator equal to one
+
+capability fraction/round  a fraction rounded to an integer as the caller names
+  heroes  big.round_fraction
+  go      -
+  rust    -
+  python  math.floor, math.ceil, Fraction.__round__, Fraction.__floor__, Fraction.__ceil__, Fraction.__trunc__, Fraction.__int__, Fraction.__floordiv__, Fraction.__mod__, Fraction.__divmod__
+  note    `.floor` is Python's math.floor and `//`, `.ceiling` math.ceil, `.half_even` round, `.toward_zero` int and trunc; held to Python
+
+capability fraction/decimal  a fraction as a decimal to a scale, a decimal as a fraction, and the scale a fraction needs to be written exactly
+  heroes  big.decimal_of_fraction, big.fraction_of_decimal, big.exact_scale
+  go      Rat.FloatString, Rat.FloatPrec
+  rust    -
+  python  Fraction.from_decimal, Fraction.__round__ (with digits), Fraction.__format__ ("f")
+  note    Go's FloatString rounds half away from zero, here the rounding is named; its FloatPrec answers a count and whether it is exact, here the count or `does_not_fit`
+
+capability fraction/float  a fraction as the nearest float, and a float's exact fraction
+  heroes  big.float_of_fraction, big.float32_of_fraction, big.fraction_of_float
+  go      Rat.Float64, Rat.Float32, Rat.SetFloat64
+  rust    -
+  python  Fraction.__float__, Fraction.from_float
+  note    rounded once to each width, as Go's Float64 and Float32
+
+capability fraction/approximate  the nearest fraction whose denominator is at most a bound
+  heroes  big.approximate
+  go      -
+  rust    -
+  python  Fraction.limit_denominator
+  note    Python's limit_denominator, its choice between two as near included, held to Python
+
+capability fraction/parse  a fraction read from text, `3/4` or a decimal
+  heroes  big.parse_fraction
+  go      Rat.SetString, Rat.UnmarshalText, Rat.Scan
+  rust    -
+  python  Fraction(str)
+  note    Python also reads spaces around the number and around the `/`, and `_`; here neither, as in `parse`
+
+capability fraction/format  a fraction written as text
+  heroes  big.format_fraction
+  go      Rat.String, Rat.RatString, Rat.MarshalText, Rat.AppendText
+  rust    -
+  python  Fraction.__str__, Fraction.__repr__, Fraction.__format__
+  note    Python's str and Go's RatString write the numerator alone for a whole number; Go's String writes `3/1`
+
+capability float/binary  a binary floating-point number of any precision chosen by the program
+  heroes  refused: a binary float of chosen precision is neither exact nor decimal; `f64` is the language's float, and an exact value is a `Decimal` or a `Fraction`; Go's Float is the one library of the three that has it
+  go      big.Float, big.NewFloat, big.ParseFloat, big.MaxExp, big.MinExp, big.MaxPrec, big.Accuracy, big.Below, big.Exact, big.Above, Accuracy.String, big.ErrNaN, ErrNaN.Error, Float.Abs, Float.Acc, Float.Add, Float.Append, Float.AppendText, Float.Cmp, Float.Copy, Float.Float32, Float.Float64, Float.Format, Float.GobDecode, Float.GobEncode, Float.Int, Float.Int64, Float.IsInf, Float.IsInt, Float.MantExp, Float.MarshalText, Float.MinPrec, Float.Mode, Float.Mul, Float.Neg, Float.Parse, Float.Prec, Float.Quo, Float.Rat, Float.Scan, Float.Set, Float.SetFloat64, Float.SetInf, Float.SetInt, Float.SetInt64, Float.SetMantExp, Float.SetMode, Float.SetPrec, Float.SetRat, Float.SetString, Float.SetUint64, Float.Sign, Float.Signbit, Float.Sqrt, Float.String, Float.Sub, Float.Text, Float.Uint64, Float.UnmarshalText
+  rust    -
+  python  -
+  note    -
+
+dropped
+  go      Int.GobEncode, Int.GobDecode, Rat.GobEncode, Rat.GobDecode: Go's own binary serialisation; an integer is written as bytes or text by the blocks above
+  go      Int.Format, Int.Scan, Rat.Scan's fmt.State and fmt.ScanState: the machinery of Go's fmt interfaces, what they select being in the blocks above
+  go      Int.Bits, Int.SetBits, big.Word: the raw words of Go's representation, unchecked; an integer's bits are read by `bit` and its bytes by `to_bytes`
+  go      big.Int's receiver-as-result form (z.Add(x, y) writing into z): an allocation hint; every function here answers a new value
+  python  int.__radd__, int.__rsub__, int.__rmul__, int.__rfloordiv__, int.__rmod__, int.__rdivmod__, int.__rpow__, int.__rand__, int.__ror__, int.__rxor__, int.__rlshift__, int.__rrshift__, int.__rtruediv__, int.__truediv__ and the same of Decimal and Fraction: the reflected operators of Python's mixed arithmetic, and a true division of integers answering a binary float
+  python  int.__index__, int.__int__, int.__trunc__, int.__floor__, int.__ceil__, int.__round__, int.conjugate, int.real, int.imag, int.numerator, int.denominator, int.as_integer_ratio, int.is_integer, Decimal.conjugate, Decimal.real, Decimal.imag, Decimal.as_integer_ratio, Fraction.conjugate, Fraction.real, Fraction.imag: the numeric tower's identities, an integer being its own numerator, real part and floor
+  python  the object protocol of int, Decimal and Fraction (`__class__`, `__delattr__`, `__dir__`, `__doc__`, `__getattribute__`, `__getnewargs__`, `__getstate__`, `__hash__`, `__init__`, `__init_subclass__`, `__reduce__`, `__reduce_ex__`, `__setattr__`, `__sizeof__`, `__subclasshook__`, `__copy__`, `__deepcopy__`): what every Python object answers, nothing about numbers
+  python  decimal.Context, decimal.getcontext, decimal.setcontext, decimal.localcontext, decimal.DefaultContext, decimal.BasicContext, decimal.ExtendedContext, decimal.HAVE_CONTEXTVAR, decimal.HAVE_THREADS, decimal.SPEC_VERSION, decimal.DecimalException, decimal.ConversionSyntax, decimal.InvalidContext, Context.copy, Context.clear_flags, Context.clear_traps, Context.capitals, Context.copy_decimal, Context._apply, Context.radix, Decimal.radix, Decimal.canonical, Decimal.is_canonical, Context.canonical, Context.is_canonical: a mutable context of precision, rounding, traps and flags held per thread; here the scale and the rounding are arguments of each call, and a failure is a `T?`

@@ -1,0 +1,601 @@
+# Tree construction's state (13.2.4): the insertion mode, the stack of open
+# elements, the list of active formatting elements, the element pointers and
+# flags, and the questions the modes ask of them: what is in scope, what is
+# special, which elements have implied end tags. Both stacks are lists with a
+# count in use, so leaving an element costs nothing and no rule recurses.
+
+use html/internal/dom
+use html/internal/token
+
+# The insertion modes (13.2.4.1).
+variant Mode
+    initial
+    before_html
+    before_head
+    in_head
+    in_head_noscript
+    after_head
+    in_body
+    text
+    in_table
+    in_table_text
+    in_caption
+    in_column_group
+    in_table_body
+    in_row
+    in_cell
+    in_template
+    after_body
+    in_frameset
+    after_frameset
+    after_after_body
+    after_after_frameset
+
+# What a mode's rule asks next, once it has done its part.
+variant Step
+    # The token is handled.
+    done
+    # Reprocess the token, by the dispatcher, in the mode now current.
+    again
+    # Process the token using the rules of another mode, the mode unchanged.
+    using
+        # The mode whose rules are used.
+        mode: Mode
+    # Process the token using the rules of "in body" with foster parenting
+    # enabled, then disable it ("in table", anything else).
+    using_foster
+    # Push the head element, process the token using the rules of "in head",
+    # then take the head element off the stack ("after head").
+    using_head
+
+# The tokenizer state a rule asks for after a start tag, beside none.
+constant NO_SWITCH: i64
+    0
+
+constant SWITCH_RCDATA: i64
+    1
+
+constant SWITCH_RAWTEXT: i64
+    2
+
+constant SWITCH_SCRIPT: i64
+    3
+
+constant SWITCH_PLAINTEXT: i64
+    4
+
+# The marker entry of the list of active formatting elements.
+constant MARKER: i64
+    -2
+
+# Tree construction, over one tree.
+record Builder
+    # The tree built.
+    tree: dom.Tree
+    # The insertion mode, and the original one to go back to from "text" and
+    # "in table text".
+    mode: Mode
+    original: Mode
+    # The stack of template insertion modes, `template_count` in use.
+    templates: [Mode]
+    template_count: i64
+    # The stack of open elements, `depth` in use, the current node last, and
+    # how many HTML elements of each name it holds, so that a question about
+    # one that is not open is answered at once.
+    open: [i64]
+    depth: i64
+    counts: {str: i64}
+    # The list of active formatting elements, `MARKER` for a marker,
+    # `formatting_count` in use.
+    formatting: [i64]
+    formatting_count: i64
+    # The head and form element pointers, or `dom.NONE`.
+    head: i64
+    form: i64
+    frameset_ok: bool
+    foster: bool
+    scripting: bool
+    # The fragment's context element, held by nothing in the tree, or
+    # `dom.NONE` for a whole document.
+    context: i64
+    # Whether a line feed opening the next token is dropped (`pre`,
+    # `listing`, `textarea`).
+    skip_newline: bool
+    # Whether the start tag being processed had its `/>` acknowledged.
+    acknowledged: bool
+    # "In table text"'s pending characters, and where they began.
+    pending: [str]
+    pending_at: i64
+    # The text node being written, and the pieces that will be its data.
+    text_node: i64
+    text_pieces: [str]
+    # The tokenizer state a rule asked for, `NO_SWITCH` where none.
+    switch_to: i64
+    # How deep an element may stand before what is deeper is kept flat.
+    max_depth: i64
+    # The parse errors: code, tag name and byte index side by side.
+    codes: [str]
+    tags: [str]
+    places: [i64]
+
+# A builder of a new document, its options set.
+function start(scripting: bool, max_depth: i64) -> Builder
+    modes: [Mode] = []
+    numbers: [i64] = []
+    pieces: [str] = []
+    return Builder(
+        tree: dom.new_tree(dom.DOCUMENT),
+        mode: .initial,
+        original: .initial,
+        templates: modes,
+        template_count: 0,
+        open: numbers,
+        depth: 0,
+        counts: {},
+        formatting: numbers,
+        formatting_count: 0,
+        head: dom.NONE,
+        form: dom.NONE,
+        frameset_ok: true,
+        foster: false,
+        scripting: scripting,
+        context: dom.NONE,
+        skip_newline: false,
+        acknowledged: false,
+        pending: pieces,
+        pending_at: 0,
+        text_node: dom.NONE,
+        text_pieces: pieces,
+        switch_to: NO_SWITCH,
+        max_depth: max_depth,
+        codes: pieces,
+        tags: pieces,
+        places: numbers
+    )
+
+# Notes a parse error of tree construction, about the token `t`.
+function error(@b: Builder, code: str, t: token.Token lent)
+    b.codes @ b.codes.push(code)
+    b.tags @ b.tags.push(t.name)
+    b.places @ b.places.push(t.at)
+
+# Notes the parse error of a token a mode does not expect, its code by the
+# token's kind.
+function unexpected(@b: Builder, t: token.Token lent)
+    code = if t.kind == token.START
+        "unexpected-start-tag"
+    else if t.kind == token.END
+        "unexpected-end-tag"
+    else if t.kind == token.CHARS
+        "unexpected-text"
+    else if t.kind == token.EOF
+        "unexpected-end-of-file"
+    else
+        "unexpected-doctype"
+    error(@b, code: code, t: t)
+
+# Acknowledges the self-closing flag of the start tag being processed.
+function acknowledge(@b: Builder)
+    b.acknowledged @ true
+
+## The stack of open elements
+
+# Adds `delta` to the count of the HTML elements named as `node` is.
+function count(@b: Builder, node: i64, delta: i64)
+    if b.tree.spaces[node] == dom.HTML && b.tree.kinds[node] == dom.ELEMENT
+        name = b.tree.names[node]
+        b.counts[name] @ b.counts[name].default(0) + delta
+
+# Puts `node` on the stack of open elements.
+function push_open(@b: Builder, node: i64)
+    if b.depth == b.open.len()
+        dom.append(items: @b.open, item: node)
+    else
+        b.open[b.depth] @ node
+    b.depth @ b.depth + 1
+    count(@b, node: node, delta: 1)
+
+# Takes the current node off the stack.
+function pop(@b: Builder)
+    if b.depth > 0
+        b.depth @ b.depth - 1
+        count(@b, node: b.open[b.depth], delta: -1)
+
+# Pops until the stack holds `depth` elements.
+function truncate(@b: Builder, depth: i64)
+    while b.depth > depth
+        pop(@b)
+
+# The current node, or `dom.NONE` where the stack is empty.
+function current(b: Builder lent) -> i64
+    if b.depth == 0
+        return dom.NONE
+    return b.open[b.depth - 1]
+
+# The adjusted current node: the context element where a fragment's stack
+# holds the root alone, else the current node.
+function adjusted_current(b: Builder lent) -> i64
+    if b.context != dom.NONE && b.depth == 1
+        return b.context
+    return current(b)
+
+# Whether there is an adjusted current node and it is not an HTML element,
+# which the tokenizer asks before a CDATA section. Asked here, where the
+# builder is lent, so that no reference to the tree's lists outlives the
+# question: one held across tree construction would make every node added
+# copy the list it grows.
+function is_foreign_now(b: Builder lent) -> bool
+    if b.depth == 0
+        return false
+    node = adjusted_current(b)
+    return b.tree.spaces[node] != dom.HTML
+
+# Whether the current node is an HTML element named `name`.
+function current_is(b: Builder lent, name: str) -> bool
+    return b.depth > 0 && dom.is_html(b.tree, b.open[b.depth - 1], name)
+
+# The index in the stack of `node`, or -1 where it is not on it.
+function index_in_stack(b: Builder lent, node: i64) -> i64
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        if b.open[i] == node
+            return i
+        i @ i - 1
+
+    return -1
+
+# Takes `node` off the stack wherever it stands; nothing where it is not on.
+function remove_from_stack(@b: Builder, node: i64)
+    at = index_in_stack(b, node)
+
+    if at < 0
+        return
+    count(@b, node: node, delta: -1)
+
+    for i in range(from: at, to: b.depth - 1)
+        b.open[i] @ b.open[i + 1]
+
+    b.depth @ b.depth - 1
+
+# Pops until an HTML element named `name` has been popped.
+function pop_until(@b: Builder, name: str)
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+        pop(@b)
+
+        if dom.is_html(b.tree, top, name)
+            return
+
+# Pops until `node` has been popped.
+function pop_until_node(@b: Builder, node: i64)
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+        pop(@b)
+
+        if top == node
+            return
+
+# Whether an HTML element named `name` is on the stack.
+function has_open(b: Builder lent, name: str) -> bool
+    return b.counts[name].default(0) > 0
+
+## Scopes
+
+# The default scope, and the three narrower ones of 13.2.4.2.
+constant SCOPE: i64
+    0
+
+constant LIST_ITEM_SCOPE: i64
+    1
+
+constant BUTTON_SCOPE: i64
+    2
+
+constant TABLE_SCOPE: i64
+    3
+
+# Whether `node` ends a scope of `kind`.
+function ends_scope(t: dom.Tree lent, node: i64, kind: i64) -> bool
+    space = t.spaces[node]
+    name = t.names[node]
+
+    if kind == TABLE_SCOPE
+        return space == dom.HTML && (name == "html" || name == "table" || name == "template")
+
+    if space == dom.HTML
+        if kind == LIST_ITEM_SCOPE && (name == "ol" || name == "ul")
+            return true
+
+        if kind == BUTTON_SCOPE && name == "button"
+            return true
+
+        return match name
+            "applet" | "caption" | "html" | "table" | "td" | "th" | "marquee" | "object" | "select" | "template" => true
+            _ => false
+
+    if space == dom.MATHML
+        return match name
+            "mi" | "mo" | "mn" | "ms" | "mtext" | "annotation-xml" => true
+            _                                                      => false
+    return name == "foreignObject" || name == "desc" || name == "title"
+
+# Whether the stack has an HTML element named `name` in the scope `kind`.
+function in_scope(b: Builder lent, name: str, kind: i64) -> bool
+    if b.counts[name].default(0) == 0
+        return false
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        node = b.open[i]
+
+        if dom.is_html(b.tree, node, name)
+            return true
+
+        if ends_scope(b.tree, node: node, kind: kind)
+            return false
+        i @ i - 1
+
+    return false
+
+# Whether the stack has `target` in the scope `kind`.
+function node_in_scope(b: Builder lent, target: i64, kind: i64) -> bool
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        node = b.open[i]
+
+        if node == target
+            return true
+
+        if ends_scope(b.tree, node: node, kind: kind)
+            return false
+        i @ i - 1
+
+    return false
+
+## Kinds of element
+
+# Whether `node` is in the special category (13.2.4.2).
+function is_special(t: dom.Tree lent, node: i64) -> bool
+    name = t.names[node]
+    space = t.spaces[node]
+
+    if space == dom.MATHML
+        return match name
+            "mi" | "mo" | "mn" | "ms" | "mtext" | "annotation-xml" => true
+            _                                                      => false
+
+    if space == dom.SVG
+        return name == "foreignObject" || name == "desc" || name == "title"
+    return is_special_name(name)
+
+# Whether an HTML element named `name` is in the special category.
+function is_special_name(name: str) -> bool
+    return match name
+        "address" | "applet" | "area" | "article" | "aside" | "base" | "basefont" | "bgsound" | "blockquote" | "body" | "br" => true
+        "button" | "caption" | "center" | "col" | "colgroup" | "dd" | "details" | "dir" | "div" | "dl" | "dt" | "embed" => true
+        "fieldset" | "figcaption" | "figure" | "footer" | "form" | "frame" | "frameset" | "h1" | "h2" | "h3" | "h4" | "h5" => true
+        "h6" | "head" | "header" | "hgroup" | "hr" | "html" | "iframe" | "img" | "input" | "keygen" | "li" | "link" => true
+        "listing" | "main" | "marquee" | "menu" | "meta" | "nav" | "noembed" | "noframes" | "noscript" | "object" | "ol" => true
+        "p" | "param" | "plaintext" | "pre" | "script" | "search" | "section" | "select" | "source" | "style" | "summary" => true
+        "table" | "tbody" | "td" | "template" | "textarea" | "tfoot" | "th" | "thead" | "title" | "tr" | "track" | "ul" => true
+        "wbr" | "xmp" => true
+        _             => false
+
+# Whether an HTML element named `name` is a formatting element.
+function is_formatting_name(name: str) -> bool
+    return match name
+        "a" | "b" | "big" | "code" | "em" | "font" | "i" | "nobr" | "s" | "small" | "strike" | "strong" | "tt" | "u" => true
+        _ => false
+
+# Whether an HTML element named `name` has an implied end tag; with
+# `thoroughly`, the wider list of 13.2.6.3.
+function has_implied_end(name: str, thoroughly: bool) -> bool
+    plain = match name
+        "dd" | "dt" | "li" | "optgroup" | "option" | "p" | "rb" | "rp" | "rt" | "rtc" => true
+        _                                                                             => false
+
+    if plain || !thoroughly
+        return plain
+
+    return match name
+        "caption" | "colgroup" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" => true
+        _                                                                         => false
+
+# Pops while the current node has an implied end tag, but an HTML element
+# named `except`; empty `except` excepts nothing.
+function generate_implied_end_tags(@b: Builder, except: str)
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+
+        if b.tree.spaces[top] != dom.HTML || b.tree.kinds[top] != dom.ELEMENT
+            return
+        name = b.tree.names[top]
+
+        if name == except || !has_implied_end(name, false)
+            return
+        pop(@b)
+
+# Pops while the current node has an implied end tag by the wider list.
+function generate_all_implied_end_tags(@b: Builder)
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+
+        if b.tree.spaces[top] != dom.HTML || !has_implied_end(b.tree.names[top], true)
+            return
+        pop(@b)
+
+# Whether any open element is not one the end of the body may leave open:
+# the standard's parse error of `</body>`, `</html>` and the end of the text.
+function has_unexpected_open(b: Builder lent) -> bool
+    for i in range(from: 0, to: b.depth)
+        name = b.tree.names[b.open[i]]
+
+        if b.tree.spaces[b.open[i]] != dom.HTML || !may_stay_open(name)
+            return true
+
+    return false
+
+# Whether an HTML element named `name` may be left open at the end of the
+# body without a parse error.
+function may_stay_open(name: str) -> bool
+    return match name
+        "dd" | "dt" | "li" | "optgroup" | "option" | "p" | "rb" | "rp" | "rt" | "rtc" | "tbody" | "td" => true
+        "tfoot" | "th" | "thead" | "tr" | "body" | "html"                                              => true
+        _                                                                                              => false
+
+# Pops until the current node is an HTML element named in `names`, the
+# table-context lists of 13.2.6.4.9, .13 and .14.
+function clear_back_to(@b: Builder, first: str, second: str, third: str)
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+        name = b.tree.names[top]
+
+        if b.tree.spaces[top] == dom.HTML && (name == first || name == second || name == third || name == "template" || name == "html")
+            return
+        pop(@b)
+
+## The insertion mode
+
+# Resets the insertion mode appropriately (13.2.4.1).
+function reset_mode(@b: Builder)
+    i: i64 @= b.depth - 1
+
+    while i >= 0
+        last = i == 0
+
+        node = if last && b.context != dom.NONE
+            b.context
+        else
+            b.open[i]
+
+        name = if b.tree.spaces[node] == dom.HTML
+            b.tree.names[node]
+        else
+            ""
+
+        if (name == "td" || name == "th") && !last
+            b.mode @ .in_cell
+            return
+
+        if name == "tr"
+            b.mode @ .in_row
+            return
+
+        if name == "tbody" || name == "thead" || name == "tfoot"
+            b.mode @ .in_table_body
+            return
+
+        if name == "caption"
+            b.mode @ .in_caption
+            return
+
+        if name == "colgroup"
+            b.mode @ .in_column_group
+            return
+
+        if name == "table"
+            b.mode @ .in_table
+            return
+
+        if name == "template"
+            b.mode @ current_template_mode(b)
+            return
+
+        if name == "head" && !last
+            b.mode @ .in_head
+            return
+
+        if name == "body"
+            b.mode @ .in_body
+            return
+
+        if name == "frameset"
+            b.mode @ .in_frameset
+            return
+
+        if name == "html"
+            b.mode @ if b.head == dom.NONE
+                .before_head
+            else
+                .after_head
+            return
+
+        if last
+            b.mode @ .in_body
+            return
+        i @ i - 1
+
+    b.mode @ .in_body
+
+# The current template insertion mode; "in body" where the stack is empty.
+function current_template_mode(b: Builder lent) -> Mode
+    if b.template_count == 0
+        return .in_body
+    return b.templates[b.template_count - 1]
+
+# Pushes `mode` on the stack of template insertion modes.
+function push_template_mode(@b: Builder, mode: Mode)
+    if b.template_count == b.templates.len()
+        dom.append(items: @b.templates, item: mode)
+    else
+        b.templates[b.template_count] @ mode
+    b.template_count @ b.template_count + 1
+
+# Pops the current template insertion mode.
+function pop_template_mode(@b: Builder)
+    if b.template_count > 0
+        b.template_count @ b.template_count - 1
+
+## Tests
+
+test "push, pop, current, index_in_stack and remove_from_stack: the stack grows, shrinks and keeps its order"
+    b: Builder @= start(scripting: true, max_depth: 512)
+    assert current(b) == dom.NONE
+    first = dom.add_element(@b.tree, space: dom.HTML, name: "p", attributes: [])
+    second = dom.add_element(@b.tree, space: dom.HTML, name: "p", attributes: [])
+    third = dom.add_element(@b.tree, space: dom.HTML, name: "b", attributes: [])
+    push_open(@b, first)
+    push_open(@b, second)
+    push_open(@b, third)
+    assert current(b) == third && index_in_stack(b, second) == 1 && index_in_stack(b, 0) == -1 && b.counts["p"].must() == 2
+    remove_from_stack(@b, second)
+    assert b.depth == 2 && b.open[1] == third && b.counts["p"].must() == 1
+    pop(@b)
+    pop(@b)
+    pop(@b)
+    assert b.depth == 0 && !has_open(b, "p") && !has_open(b, "b")
+
+test "in_scope: a p in button scope, cut by a button and by a table"
+    b: Builder @= start(scripting: true, max_depth: 512)
+    html = dom.add_element(@b.tree, space: dom.HTML, name: "html", attributes: [])
+    p = dom.add_element(@b.tree, space: dom.HTML, name: "p", attributes: [])
+    button = dom.add_element(@b.tree, space: dom.HTML, name: "button", attributes: [])
+    push_open(@b, html)
+    push_open(@b, p)
+    assert in_scope(b, "p", BUTTON_SCOPE) && in_scope(b, "p", SCOPE) && !in_scope(b, "li", SCOPE)
+    push_open(@b, button)
+    assert !in_scope(b, "p", BUTTON_SCOPE) && in_scope(b, "p", SCOPE) && node_in_scope(b, target: p, kind: SCOPE)
+
+test "is_special, is_formatting_name and has_implied_end: the standard's lists"
+    assert is_special_name("search") && is_special_name("select") && !is_special_name("span") && !is_special_name("option")
+    assert is_formatting_name("nobr") && !is_formatting_name("span")
+    assert has_implied_end("rtc", false) && !has_implied_end("tbody", false) && has_implied_end("tbody", true)
+
+test "reset_mode: a cell, a row, a table and the html element without a head"
+    b: Builder @= start(scripting: true, max_depth: 512)
+    html = dom.add_element(@b.tree, space: dom.HTML, name: "html", attributes: [])
+    push_open(@b, html)
+    reset_mode(@b)
+    assert b.mode == .before_head
+    table = dom.add_element(@b.tree, space: dom.HTML, name: "table", attributes: [])
+    tr = dom.add_element(@b.tree, space: dom.HTML, name: "tr", attributes: [])
+    td = dom.add_element(@b.tree, space: dom.HTML, name: "td", attributes: [])
+    push_open(@b, table)
+    reset_mode(@b)
+    assert b.mode == .in_table
+    push_open(@b, tr)
+    push_open(@b, td)
+    reset_mode(@b)
+    assert b.mode == .in_cell

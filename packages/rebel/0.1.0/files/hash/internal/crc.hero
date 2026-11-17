@@ -1,0 +1,193 @@
+# CRC-32 and CRC-64 computed a byte at a time from a table of 256 values, in
+# the reflected form zlib, Go and Python use: the polynomial is written with
+# its bits reversed, the register's lowest bit is the highest power of x, and
+# the register starts and ends with every bit flipped. A CRC-32 is an `i64`
+# from 0 to 2^32 - 1, a CRC-64 a word of `hash/internal/word`. Every function
+# here takes and answers the finished CRC of what came before, so feeding in
+# pieces and feeding at once are the same.
+
+use hash/internal/table_castagnoli
+use hash/internal/table_ecma
+use hash/internal/table_ieee
+use hash/internal/table_iso
+use hash/internal/word
+
+# The table of the CRC whose polynomial, its bits reversed, is `poly`: for
+# each byte, the value it leaves in a register that held only it. It serves
+# both widths, since a CRC-32's register never has its top bit set.
+function table_for(poly: i64) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < 256
+        c: i64 @= at
+        k: i64 @= 0
+
+        while k < 8
+            if c & 1 == 1
+                c @ word.shift_right(x: c, n: 1) ^ poly
+            else
+                c @ word.shift_right(x: c, n: 1)
+            k @ k + 1
+
+        out @ out.push(c)
+        at @ at + 1
+
+    return out
+
+# The CRC-32 of what came before and then `data`, from `crc`, the CRC-32 of
+# what came before, by the polynomial whose table is `table`.
+function feed32(crc: i64, table: [i64] lent, data: [u8] lent) -> i64
+    c: i64 @= crc ^ word.LOW32
+    at: i64 @= 0
+
+    while at < data.len()
+        c @ table[(c ^ to_i64(data[at]).must()) & 0xff] ^ c >> 8
+        at @ at + 1
+
+    return c ^ word.LOW32
+
+# What `feed32` answers for the bytes of `s`, read where they stand.
+function feed32_text(crc: i64, table: [i64] lent, s: str lent) -> i64
+    c: i64 @= crc ^ word.LOW32
+    at: i64 @= 0
+
+    while at < s.len()
+        c @ table[(c ^ to_i64(s[at]).must()) & 0xff] ^ c >> 8
+        at @ at + 1
+
+    return c ^ word.LOW32
+
+# The CRC-64 of what came before and then `data`, from `crc`, the CRC-64 of
+# what came before, by the polynomial whose table is `table`.
+function feed64(crc: i64, table: [i64] lent, data: [u8] lent) -> i64
+    c: i64 @= ~crc
+    at: i64 @= 0
+
+    while at < data.len()
+        c @ table[(c ^ to_i64(data[at]).must()) & 0xff] ^ word.shift_right(x: c, n: 8)
+        at @ at + 1
+
+    return ~c
+
+# What `feed64` answers for the bytes of `s`, read where they stand.
+function feed64_text(crc: i64, table: [i64] lent, s: str lent) -> i64
+    c: i64 @= ~crc
+    at: i64 @= 0
+
+    while at < s.len()
+        c @ table[(c ^ to_i64(s[at]).must()) & 0xff] ^ word.shift_right(x: c, n: 8)
+        at @ at + 1
+
+    return ~c
+
+# The polynomials `a` and `b` multiplied modulo the CRC-32's polynomial `poly`,
+# each written as a register is, the bit 31 standing for 1 and the bit 0 for
+# x^31. Multiplying by x is a register's step: a shift right, and the
+# polynomial added where a bit falls off.
+function times_mod(a: i64, b: i64, poly: i64) -> i64
+    product: i64 @= 0
+    step: i64 @= b
+    bit: i64 @= 0x80000000
+
+    while bit != 0
+        if a & bit != 0
+            product @ product ^ step
+
+        if step & 1 == 1
+            step @ step >> 1 ^ poly
+        else
+            step @ step >> 1
+        bit @ bit >> 1
+
+    return product
+
+# x to the power `8 * bytes` modulo `poly`, by squaring: the factor a CRC-32
+# is multiplied by when `bytes` bytes follow what it covers.
+function power_of_x(bytes: u64, poly: i64) -> i64
+    result: i64 @= 0x80000000
+    square: i64 @= 0x800000
+    left: u64 @= bytes
+
+    while left > 0
+        if left % 2 == 1
+            result @ times_mod(a: result, b: square, poly: poly)
+        square @ times_mod(a: square, b: square, poly: poly)
+        left @ left / 2
+
+    return result
+
+# The CRC-32 of two pieces one after the other, from `first`'s CRC-32,
+# `second`'s and `second_len`, the length of the second in bytes. Since the
+# register starts and ends with every bit flipped, the flips cancel and the
+# CRC-32 is linear: `first` moved past `second_len` bytes, added to `second`.
+function combine32(first: i64, second: i64, second_len: u64, poly: i64) -> i64
+    return times_mod(a: power_of_x(bytes: second_len, poly: poly), b: first, poly: poly) ^ second
+
+test "crc table: the four written tables are the ones their polynomials compute"
+    assert table_for(0xedb88320) == table_ieee.IEEE
+    assert table_for(0x82f63b78) == table_castagnoli.CASTAGNOLI
+    assert table_for(word.from_unsigned(0xd800000000000000)) == table_iso.ISO
+    assert table_for(word.from_unsigned(0xc96c5795d7870f42)) == table_ecma.ECMA
+    assert table_for(0).len() == 256
+
+# Go's `crc32.ChecksumIEEE` and `crc32.Checksum` with its Castagnoli and
+# Koopman tables, and Python's `zlib.crc32`, answered these on 2026-11-15.
+test "crc feed32: empty, one byte, a zero byte, the check text, every byte, and a text of several bytes per character"
+    t = word.bytes_of
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: []) == 0
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: t("a")) == 3904355907
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: [0]) == 3523407757
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: t("123456789")) == 3421780262
+    assert feed32_text(crc: 0, table: table_ieee.IEEE, s: "héros ☃") == 4004016178
+    assert feed32(crc: 0, table: table_castagnoli.CASTAGNOLI, data: t("123456789")) == 3808858755
+    assert feed32_text(crc: 0, table: table_castagnoli.CASTAGNOLI, s: "héros ☃") == 2861696206
+    assert feed32(crc: 0, table: table_for(0xeb31d82e), data: t("123456789")) == 759025838
+    assert feed32(crc: 0, table: table_for(0x04c11db7), data: t("123456789")) == 4233047017
+    every: [u8] @= []
+
+    for i in range(from: 0, to: 256)
+        every @ every.push(to_u8(i).must())
+
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: every) == 688229491
+    assert feed32(crc: 0, table: table_castagnoli.CASTAGNOLI, data: every) == 2621708363
+    assert feed32_text(crc: 0, table: table_ieee.IEEE, s: "") == 0
+
+# Go's `crc32.Update` and Python's `zlib.crc32` with a value answered these.
+test "crc feed32: from a value, in pieces, and a thousand bytes of 0xff"
+    t = word.bytes_of
+    assert feed32(crc: 12345, table: table_ieee.IEEE, data: t("123456789")) == 3433766098
+    half = feed32_text(crc: 0, table: table_ieee.IEEE, s: "1234")
+    assert feed32_text(crc: half, table: table_ieee.IEEE, s: "56789") == 3421780262
+    ones: [u8] @= []
+
+    for _ in range(from: 0, to: 1000)
+        ones @ ones.push(0xff)
+
+    assert feed32(crc: 0, table: table_ieee.IEEE, data: ones) == 3763548720
+    assert feed32(crc: 0, table: table_castagnoli.CASTAGNOLI, data: ones) == 2071070349
+
+# Go's `crc64.Checksum` and `crc64.Update` answered these on 2026-11-15.
+test "crc feed64: empty, one byte, the check text by ISO and by ECMA, a text of several bytes per character, and from a value"
+    t = word.bytes_of
+    assert feed64(crc: 0, table: table_iso.ISO, data: []) == 0
+    assert word.unsigned(feed64(crc: 0, table: table_iso.ISO, data: t("a"))) == 3756002089226993664
+    assert word.unsigned(feed64(crc: 0, table: table_iso.ISO, data: [0])) == 8038925334856335360
+    assert word.unsigned(feed64(crc: 0, table: table_iso.ISO, data: t("123456789"))) == 13333283586479230977
+    assert word.unsigned(feed64_text(crc: 0, table: table_iso.ISO, s: "héros ☃")) == 17914586672435834237
+    assert word.unsigned(feed64(crc: 0, table: table_ecma.ECMA, data: t("123456789"))) == 11051210869376104954
+    assert word.unsigned(feed64_text(crc: 0, table: table_ecma.ECMA, s: "héros ☃")) == 7473011406911137595
+    assert word.unsigned(feed64(crc: 0, table: table_for(1), data: t("123456789"))) == 18446744073709551614
+    assert word.unsigned(feed64(crc: word.TOP, table: table_ecma.ECMA, data: t("123456789"))) == 695445988102215951
+    assert feed64_text(crc: 0, table: table_ecma.ECMA, s: "") == 0
+
+# Python's `zlib.crc32_combine` answered these on 2026-11-15.
+test "crc combine32: two pieces, a second piece of no bytes, and a length past 2^32"
+    hello = feed32_text(crc: 0, table: table_ieee.IEEE, s: "hello, ")
+    world = feed32_text(crc: 0, table: table_ieee.IEEE, s: "world")
+    assert combine32(first: hello, second: world, second_len: 5, poly: 0xedb88320) == 4289425978
+    assert combine32(first: 123, second: 456, second_len: 0, poly: 0xedb88320) == 435
+    assert combine32(first: 0xdeadbeef, second: 0x12345678, second_len: 1000000000000, poly: 0xedb88320) == 2575421253
+    one = feed32_text(crc: 0, table: table_castagnoli.CASTAGNOLI, s: "1234")
+    two = feed32_text(crc: 0, table: table_castagnoli.CASTAGNOLI, s: "56789")
+    assert combine32(first: one, second: two, second_len: 5, poly: 0x82f63b78) == 3808858755

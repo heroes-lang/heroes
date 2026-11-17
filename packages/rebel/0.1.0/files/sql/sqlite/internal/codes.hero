@@ -1,0 +1,207 @@
+# A failure SQLite reports, told with `sql`'s codes: the code chosen from
+# SQLite's extended result code, and the message `sql.failure_message` makes,
+# SQLite's code in brackets and its own words after it. The face's opening
+# comment states the table; `code_of` is its one home.
+
+use sql
+use sql/sqlite/hero_sqlite3
+use strings
+
+# A failure as it will be told: the code and the message of a `fail`.
+record Refusal
+    # One of `sql`'s codes.
+    code: str
+    # The message, SQLite's code in brackets first where SQLite reported it.
+    msg: str
+
+# The code of `sql` a failure SQLite reported is told with.
+#
+# - `extended`: SQLite's extended result code; its low byte is the primary.
+# - `words`: SQLite's own message, which tells the cases of `SQLITE_ERROR`
+#   apart.
+# - `system`: the system's error number behind a file that would not open, 0
+#   where there is none.
+#
+# The system's numbers read are those every platform gives one meaning: 2 and
+# 3 a path naming nothing (POSIX's `ENOENT` is 2, SQLite on Darwin answers 3
+# for a folder that is not there, measured with SQLite 3.54.0, and Windows'
+# file and path not found are 2 and 3), 13 a refusal (POSIX's `EACCES`; no
+# file's answer on Windows). Any other is `failed`, the number in the message:
+# 21 for a folder named as the file on this Mac.
+function code_of(extended: i64, words: str, system: i64) -> str
+    primary = extended & 255
+
+    if extended == hero_sqlite3.SQLITE_CONSTRAINT_UNIQUE || extended == hero_sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY
+        return sql.EXISTS
+
+    if extended == hero_sqlite3.SQLITE_CANTOPEN_ISDIR
+        return sql.INVALID
+
+    if primary == hero_sqlite3.SQLITE_ERROR
+        return error_code(words)
+
+    if primary == hero_sqlite3.SQLITE_CANTOPEN
+        if system == 2 || system == 3
+            return sql.NOT_FOUND
+
+        if system == 13
+            return sql.PERMISSION
+        return sql.FAILED
+
+    if primary == hero_sqlite3.SQLITE_CONSTRAINT || primary == hero_sqlite3.SQLITE_MISMATCH || primary == hero_sqlite3.SQLITE_MISUSE || primary == hero_sqlite3.SQLITE_RANGE || primary == hero_sqlite3.SQLITE_NOTADB
+        return sql.INVALID
+
+    if primary == hero_sqlite3.SQLITE_PERM || primary == hero_sqlite3.SQLITE_READONLY || primary == hero_sqlite3.SQLITE_AUTH
+        return sql.PERMISSION
+
+    if primary == hero_sqlite3.SQLITE_BUSY
+        return sql.TIMEOUT
+
+    if primary == hero_sqlite3.SQLITE_NOMEM || primary == hero_sqlite3.SQLITE_FULL || primary == hero_sqlite3.SQLITE_TOOBIG
+        return sql.LIMIT
+
+    if primary == hero_sqlite3.SQLITE_INTERRUPT || primary == hero_sqlite3.SQLITE_ABORT
+        return sql.STOPPED
+
+    if primary == hero_sqlite3.SQLITE_NOLFS
+        return sql.UNSUPPORTED
+    return sql.FAILED
+
+# The code of a failure SQLite calls `SQLITE_ERROR`, which it tells apart
+# only in its words. Its words are English and have stood since SQLite 3.0;
+# the tests of the face run each one against the library, so a change in them
+# fails a test rather than a program.
+#
+# - `words`: SQLite's message.
+function error_code(words: str) -> str
+    if strings.has_prefix(s: words, prefix: "no such ") || strings.has_prefix(s: words, prefix: "unknown database ")
+        return sql.NOT_FOUND
+
+    if strings.contains(s: words, substr: " already exists")
+        return sql.EXISTS
+
+    if words == "integer overflow"
+        return sql.DOES_NOT_FIT
+
+    if strings.has_prefix(s: words, prefix: "too many ")
+        return sql.LIMIT
+    return sql.INVALID
+
+# The failure `rc` stands for on `connection`, in SQLite's words.
+#
+# - `connection`: the connection the failing call ran on, which holds the
+#   words.
+# - `rc`: the extended result code the call answered.
+function refusal(connection: hero_sqlite3.Connection, rc: i64) -> Refusal
+    words = hero_sqlite3.message(connection).default("")
+    return told(rc: rc, words: words, system: 0)
+
+# The failure `rc` stands for where SQLite compiled a statement's text: its
+# words, then the byte of the text the failure points at, where it points at
+# one.
+#
+# - `connection`: the connection the compile ran on.
+# - `rc`: the extended result code it answered.
+function refusal_compiling(connection: hero_sqlite3.Connection, rc: i64) -> Refusal
+    words = hero_sqlite3.message(connection).default("")
+    at = hero_sqlite3.error_offset(connection)
+
+    if at < 0
+        return told(rc: rc, words: words, system: 0)
+
+    shown = f"{words} (at byte {at} of the statement)"
+    return Refusal(
+        code: code_of(extended: rc, words: words, system: 0),
+        msg: sql.failure_message(database_code: rc.to_str(), message: shown)
+    )
+
+# The failure `rc` stands for where a database file would not open: SQLite's
+# words, the path, and the system's own number where it gave one.
+#
+# - `connection`: the connection the open handed back, which holds the words.
+# - `rc`: the extended result code the open answered.
+# - `path`: the path that was opened.
+function refusal_opening(connection: hero_sqlite3.Connection, rc: i64, path: str) -> Refusal
+    words = hero_sqlite3.message(connection).default("")
+    system = hero_sqlite3.system_code(connection)
+
+    shown = if system == 0
+        f"{words}: \"{path}\""
+    else
+        f"{words}: \"{path}\" (system error {system})"
+
+    return Refusal(
+        code: code_of(extended: rc, words: words, system: system),
+        msg: sql.failure_message(database_code: rc.to_str(), message: shown)
+    )
+
+# The failure `rc` stands for, told with `words`.
+#
+# - `rc`: the extended result code.
+# - `words`: SQLite's words for it.
+# - `system`: the system's error number, 0 for none.
+function told(rc: i64, words: str, system: i64) -> Refusal
+    return Refusal(
+        code: code_of(extended: rc, words: words, system: system),
+        msg: sql.failure_message(database_code: rc.to_str(), message: words)
+    )
+
+## Tests
+
+test "code_of: the keys a row breaks are exists, every other constraint invalid"
+    assert code_of(extended: 2067, words: "UNIQUE constraint failed: t.name", system: 0) == sql.EXISTS
+    assert code_of(extended: 1555, words: "UNIQUE constraint failed: t.id", system: 0) == sql.EXISTS
+    assert code_of(extended: 1299, words: "NOT NULL constraint failed: t.name", system: 0) == sql.INVALID
+    assert code_of(extended: 275, words: "CHECK constraint failed: n >= 0", system: 0) == sql.INVALID
+    assert code_of(extended: 787, words: "FOREIGN KEY constraint failed", system: 0) == sql.INVALID
+    assert code_of(extended: 3091, words: "cannot store TEXT value in INTEGER column s.x", system: 0) == sql.INVALID
+    assert code_of(extended: 19, words: "constraint failed", system: 0) == sql.INVALID
+
+test "code_of: SQLITE_ERROR told apart by its words, as SQLite 3.54 writes them"
+    assert code_of(extended: 1, words: "no such table: nope", system: 0) == sql.NOT_FOUND
+    assert code_of(extended: 1, words: "no such column: nope", system: 0) == sql.NOT_FOUND
+    assert code_of(extended: 1, words: "no such function: nofunc", system: 0) == sql.NOT_FOUND
+    assert code_of(extended: 1, words: "unknown database nope", system: 0) == sql.NOT_FOUND
+    assert code_of(extended: 1, words: "table t already exists", system: 0) == sql.EXISTS
+    assert code_of(extended: 1, words: "index i already exists", system: 0) == sql.EXISTS
+    assert code_of(extended: 1, words: "integer overflow", system: 0) == sql.DOES_NOT_FIT
+    assert code_of(extended: 1, words: "too many SQL variables", system: 0) == sql.LIMIT
+    assert code_of(extended: 1, words: "near \"SELEC\": syntax error", system: 0) == sql.INVALID
+    assert code_of(extended: 1, words: "", system: 0) == sql.INVALID
+
+test "code_of: a file that would not open, by the system's number"
+    assert code_of(extended: 14, words: "unable to open database file", system: 2) == sql.NOT_FOUND
+    assert code_of(extended: 14, words: "unable to open database file", system: 3) == sql.NOT_FOUND
+    assert code_of(extended: 14, words: "unable to open database file", system: 13) == sql.PERMISSION
+    assert code_of(extended: 14, words: "unable to open database file", system: 5) == sql.FAILED
+    assert code_of(extended: 14, words: "unable to open database file", system: 0) == sql.FAILED
+    assert code_of(extended: 526, words: "unable to open database file", system: 21) == sql.INVALID
+
+test "code_of: every other primary code, an extended one read by its low byte"
+    assert code_of(extended: 5, words: "database is locked", system: 0) == sql.TIMEOUT
+    assert code_of(extended: 517, words: "database is locked", system: 0) == sql.TIMEOUT
+    assert code_of(extended: 6, words: "database table is locked", system: 0) == sql.FAILED
+    assert code_of(extended: 8, words: "attempt to write a readonly database", system: 0) == sql.PERMISSION
+    assert code_of(extended: 3, words: "access permission denied", system: 0) == sql.PERMISSION
+    assert code_of(extended: 23, words: "authorization denied", system: 0) == sql.PERMISSION
+    assert code_of(extended: 7, words: "out of memory", system: 0) == sql.LIMIT
+    assert code_of(extended: 13, words: "database or disk is full", system: 0) == sql.LIMIT
+    assert code_of(extended: 18, words: "string or blob too big", system: 0) == sql.LIMIT
+    assert code_of(extended: 9, words: "interrupted", system: 0) == sql.STOPPED
+    assert code_of(extended: 4, words: "query aborted", system: 0) == sql.STOPPED
+    assert code_of(extended: 22, words: "large file support is disabled", system: 0) == sql.UNSUPPORTED
+    assert code_of(extended: 20, words: "datatype mismatch", system: 0) == sql.INVALID
+    assert code_of(extended: 21, words: "bad parameter or other API misuse", system: 0) == sql.INVALID
+    assert code_of(extended: 25, words: "column index out of range", system: 0) == sql.INVALID
+    assert code_of(extended: 26, words: "file is not a database", system: 0) == sql.INVALID
+    assert code_of(extended: 10, words: "disk I/O error", system: 0) == sql.FAILED
+    assert code_of(extended: 266, words: "disk I/O error", system: 0) == sql.FAILED
+    assert code_of(extended: 11, words: "database disk image is malformed", system: 0) == sql.FAILED
+    assert code_of(extended: 2, words: "", system: 0) == sql.FAILED
+    assert code_of(extended: 999, words: "", system: 0) == sql.FAILED
+
+test "told: SQLite's code in brackets, read back by sql.database_code_of"
+    r = told(rc: 2067, words: "UNIQUE constraint failed: t.name", system: 0)
+    assert r.code == sql.EXISTS
+    assert r.msg == "[2067] UNIQUE constraint failed: t.name"
+    assert sql.database_code_of(r.msg).must() == "2067"

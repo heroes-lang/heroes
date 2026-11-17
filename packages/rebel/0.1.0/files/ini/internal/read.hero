@@ -1,0 +1,352 @@
+# An INI text read line by line into its sections, each with its keys and
+# values in the order written: section headers, keys and values split at the
+# first delimiter, values continued on more indented lines, comments skipped
+# or kept above what follows them. A failure's message opens `line L:`.
+
+use strings
+
+# The code of a text that is not INI as the rules read it.
+constant INVALID: str
+    "invalid"
+
+# How a text is read.
+record Rules
+    # The texts that separate a key from its value; the first in the line
+    # wins.
+    delimiters: [str]
+    # The texts that open a comment line, after any white space.
+    comments: [str]
+    # The texts that open a comment at a line's end, after white space.
+    inline: [str]
+    # Whether a section or a key given twice is merged rather than refused.
+    duplicates: bool
+    # Whether keys are read in lower case.
+    lower_keys: bool
+    # Whether a key may stand with no delimiter and no value.
+    bare_keys: bool
+    # Whether keys may stand before the first section header.
+    unnamed: bool
+    # Whether comment lines are kept above what follows them.
+    keep_comments: bool
+    # Whether an empty line inside a value continued below it belongs to it.
+    empty_lines: bool
+
+# A key and its value as read.
+record Item
+    # The key.
+    key: str
+    # The value, its lines joined by line feeds.
+    value: str
+    # Whether it stood with no delimiter and no value.
+    bare: bool
+    # The comment lines above it, where kept.
+    comments: [str]
+
+# A section as read.
+record Part
+    # Its name, "" for the keys before the first header.
+    name: str
+    # The comment lines above its header, where kept.
+    comments: [str]
+    # Its keys, in the order first written.
+    items: [Item]
+    # The line its header stands on, 0 for the keys before any header.
+    line: i64
+
+# What a text holds.
+record Read
+    # Its sections, in the order first written.
+    parts: [Part]
+    # The comment lines after everything else, where kept.
+    closing: [str]
+
+# The lines of `first`, then those of `then`.
+function joined(first: [str], then: [str]) -> [str]
+    all_lines @= first
+
+    for line in then
+        all_lines @ all_lines.push(line)
+
+    return all_lines
+
+# The failure of line `line`.
+function wrong<T>(line: i64, what: str) -> T?
+    return fail(code: INVALID, msg: f"line {line}: {what}")
+
+# Whether `body`, a line with no white space at either end, opens with one of
+# `prefixes`.
+function opens_with_any(body: str, prefixes: [str]) -> bool
+    for p in prefixes
+        if strings.has_prefix(s: body, prefix: p)
+            return true
+
+    return false
+
+# `line` with its comment at the end cut off: the first of `prefixes` after
+# white space.
+function cut_inline(line: str, prefixes: [str]) -> str
+    cut @= line.len()
+
+    for p in prefixes
+        for at in strings.index_of_all(s: line, substr: p)
+            if at > 0 && at < cut && (line[at - 1] == ' ' || line[at - 1] == '\t')
+                cut @ at
+
+    return line.slice(from: 0, to: cut)
+
+# How many spaces and tabs open `line`.
+function indent_of(line: str) -> i64
+    k @= 0
+
+    while k < line.len() && (line[k] == ' ' || line[k] == '\t')
+        k @ k + 1
+
+    return k
+
+# Where the first delimiter of `rules` stands in `body`, and which.
+record Split
+    # Its byte index.
+    at: i64
+    # Its length in bytes.
+    len: i64
+
+# The first delimiter in `body`. Fails `invalid` where it holds none.
+function first_delimiter(body: str, delimiters: [str]) -> Split?
+    best @= body.len()
+    width: i64 @= 0
+
+    for d in delimiters
+        match strings.index_of(s: body, substr: d)
+            .ok at =>
+                if at < best
+                    best @ at
+                    width @ d.len()
+            .err _ => _ = 0
+
+    if width == 0
+        return fail(code: INVALID, msg: "no delimiter")
+    return ok(Split(at: best, len: width))
+
+# Where the part named `name` stands in `parts`. Fails `invalid` where none
+# is.
+function part_named(parts: [Part] lent, name: str) -> i64?
+    for at in range(from: 0, to: parts.len())
+        if parts[at].name == name
+            return ok(at)
+
+    return fail(code: INVALID, msg: "no such part")
+
+# Where the item keyed `key` stands in `items`. Fails `invalid` where none is.
+function item_keyed(items: [Item] lent, key: str) -> i64?
+    for at in range(from: 0, to: items.len())
+        if items[at].key == key
+            return ok(at)
+
+    return fail(code: INVALID, msg: "no such item")
+
+# The name a section header holds, `body` being a line opening with `[`.
+function header_name(body: str, line: i64) -> str?
+    if !strings.has_suffix(s: body, suffix: "]")
+        if strings.contains(s: body, substr: "]")
+            return wrong(line, "text after a section header's closing bracket")
+        return wrong(line, "a section header with no closing bracket")
+
+    if body.len() == 2
+        return wrong(line, "a section header with no name")
+    return ok(body.slice(from: 1, to: body.len() - 1))
+
+# Every section and key of `text`, read by `rules`.
+function parse_text(text: str, rules: Rules) -> Read?
+    lines = strings.split(s: text, sep: "\n")
+    parts: [Part] @= []
+    items: [Item] @= []
+    current: i64 @= -1
+    held: [str] @= []
+    open_item @= false
+    item_indent: i64 @= 0
+    blanks: i64 @= 0
+
+    for number in range(from: 0, to: lines.len())
+        line = number + 1
+        raw = strings.trim_suffix(s: lines[number], suffix: "\r")
+        body = strings.trim(cut_inline(raw, rules.inline))
+
+        if strings.trim(raw) == "" || body == ""
+            if open_item && rules.empty_lines && strings.trim(raw) == ""
+                blanks @ blanks + 1
+            else
+                open_item @ false
+            continue
+
+        if opens_with_any(strings.trim(raw), rules.comments)
+            if rules.keep_comments
+                held @ held.push(strings.trim(raw))
+            continue
+        indent = indent_of(raw)
+
+        if open_item && indent > item_indent
+            last = items.len() - 1
+            items[last].value @ items[last].value + repeat("\n", to_u64(blanks + 1).must()) + body
+            blanks @ 0
+            continue
+        open_item @ false
+        blanks @ 0
+
+        if body[0] == '['
+            name = header_name(body, line)?
+
+            if current >= 0
+                parts[current].items @ items
+
+            match part_named(parts, name)
+                .ok at =>
+                    if !rules.duplicates
+                        return wrong(line, f"the section \"{name}\" again, after line {parts[at].line}")
+                    current @ at
+                    parts[at].comments @ joined(first: parts[at].comments, then: held)
+                .err _ =>
+                    parts @ parts.push(Part(name: name, comments: held, items: [], line: line))
+                    current @ parts.len() - 1
+
+            items @ parts[current].items
+            held @ []
+            continue
+
+        if current < 0
+            if !rules.unnamed
+                return wrong(line, "a key before any section header")
+            parts @ parts.push(Part(name: "", comments: [], items: [], line: 0))
+            current @ 0
+        key @= body
+        value @= ""
+        bare @= true
+
+        match first_delimiter(body, rules.delimiters)
+            .ok split =>
+                key @ strings.trim(body.slice(from: 0, to: split.at))
+                value @ strings.trim(body.slice(from: split.at + split.len, to: body.len()))
+                bare @ false
+            .err _ =>
+                if !rules.bare_keys
+                    return wrong(line, f"\"{body}\" is neither a section header nor a key and its value")
+
+        if key == ""
+            return wrong(line, "a value with no key")
+
+        if rules.lower_keys
+            key @ strings.to_lower(key)
+        item = Item(key: key, value: value, bare: bare, comments: held)
+        held @ []
+
+        match item_keyed(items, key)
+            .ok at =>
+                if !rules.duplicates
+                    return wrong(line, f"the key \"{key}\" again in the section \"{parts[current].name}\"")
+                items[at] @ Item(
+                    key: key,
+                    value: value,
+                    bare: bare,
+                    comments: joined(first: items[at].comments, then: item.comments)
+                )
+                open_item @ false
+            .err _ =>
+                items @ items.push(item)
+                open_item @ !bare
+                item_indent @ indent
+
+    if current >= 0
+        parts[current].items @ items
+    return ok(Read(parts: parts, closing: held))
+
+# Python's rules: `=` and `:`, `#` and `;` comments, nothing merged, keys as
+# written, no bare key, no key before a header, comments dropped, empty lines
+# kept inside a value.
+function python_rules() -> Rules
+    return Rules(
+        delimiters: ["=", ":"],
+        comments: ["#", ";"],
+        inline: [],
+        duplicates: false,
+        lower_keys: false,
+        bare_keys: false,
+        unnamed: false,
+        keep_comments: false,
+        empty_lines: true
+    )
+
+# The sections of `text` read by `rules`, each as `name: key=value;...`, or
+# the failure's message.
+function shape_of(text: str, rules: Rules) -> [str]
+    match parse_text(text, rules)
+        .err e => return [e.msg]
+        .ok r =>
+            shown: [str] @= []
+
+            for p in r.parts
+                pairs: [str] @= []
+
+                for i in p.items
+                    if i.bare
+                        pairs @ pairs.push(i.key)
+                    else
+                        pairs @ pairs.push(i.key + "=" + i.value)
+
+                shown @ shown.push(p.name + ": " + pairs.join(";"))
+
+            return shown
+
+test "parse_text: a value across lines, an empty line inside it kept and the last ones dropped, as Python reads it"
+    assert shape_of("[a]\nk = one\n  two\n\n  three\n\nj=x\n", python_rules()) == ["a: k=one\ntwo\n\nthree;j=x"]
+    assert shape_of("[a]\nk =\n  x\n", python_rules()) == ["a: k=\nx"]
+
+test "parse_text: the first delimiter wins, white space trimmed, a name kept as written, CR LF, characters of two bytes"
+    assert shape_of("[a]\nk:1=2\nj=3:4\n", python_rules()) == ["a: k=1=2;j=3:4"]
+    assert shape_of("[ a b ]\n  Key Name  :  v = w  \n", python_rules()) == [" a b : Key Name=v = w"]
+    assert shape_of("[a]\r\nk=1\r\n", python_rules()) == ["a: k=1"]
+    assert shape_of("[ü]\nkéy = vål\n", python_rules()) == ["ü: kéy=vål"]
+    assert shape_of("[a]\nk=\nj:\n", python_rules()) == ["a: k=;j="]
+    assert shape_of("", python_rules()).len() == 0
+
+test "parse_text: comments at any indent, and a comment opener inside a value kept unless inline comments are asked"
+    assert shape_of("# top\n[a]\n  ; x\nk=1 # not a comment\n", python_rules()) == ["a: k=1 # not a comment"]
+    inline @= python_rules()
+    inline.inline @ ["#"]
+    assert shape_of("[a]\nk=1 # c\nj=2#c\n", inline) == ["a: k=1;j=2#c"]
+
+test "parse_text: a section or a key twice, refused with its line, and merged where duplicates are allowed"
+    assert shape_of("[a]\nk=1\n[a]\nj=2\n", python_rules()) == ["line 3: the section \"a\" again, after line 1"]
+    assert shape_of("[a]\nk=1\nk=2\n", python_rules()) == ["line 3: the key \"k\" again in the section \"a\""]
+    lax @= python_rules()
+    lax.duplicates @ true
+    assert shape_of("[a]\nk=1\n[b]\n[a]\nk=2\nj=3\n", lax) == ["a: k=2;j=3", "b: "]
+
+test "parse_text: a key before any header, a stray line, an indented line under a header, and broken headers"
+    assert shape_of("k=1\n", python_rules()) == ["line 1: a key before any section header"]
+    assert shape_of("[a]\nnot a pair\n", python_rules()) == ["line 2: \"not a pair\" is neither a section header nor a key and its value"]
+    assert shape_of("[a]\n  x\n", python_rules()) == ["line 2: \"x\" is neither a section header nor a key and its value"]
+    assert shape_of("[]\n", python_rules()) == ["line 1: a section header with no name"]
+    assert shape_of("[a\n", python_rules()) == ["line 1: a section header with no closing bracket"]
+    assert shape_of("[a] x\n", python_rules()) == ["line 1: text after a section header's closing bracket"]
+    assert shape_of("[a]\n=1\n", python_rules()) == ["line 2: a value with no key"]
+
+test "parse_text: keys in lower case, bare keys and keys before the first header where asked"
+    lower @= python_rules()
+    lower.lower_keys @ true
+    assert shape_of("[a]\nKey=1\nKEY=2\n", lower) == ["line 3: the key \"key\" again in the section \"a\""]
+    bare @= python_rules()
+    bare.bare_keys @ true
+    assert shape_of("[a]\nflag\nk=v\n", bare) == ["a: flag;k=v"]
+    unnamed @= python_rules()
+    unnamed.unnamed @ true
+    assert shape_of("k=1\n[a]\nj=2\n", unnamed) == [": k=1", "a: j=2"]
+
+test "parse_text: comments kept above the header or the key after them, and at the end"
+    kept @= python_rules()
+    kept.keep_comments @ true
+    r = parse_text("# one\n[a]\n; two\nk=1\n# three\n", kept).must()
+    assert r.parts[0].comments == ["# one"] && r.parts[0].items[0].comments == ["; two"] && r.closing == ["# three"]
+
+test "parse_text: an empty line ends a value where empty lines are not kept in one"
+    strict @= python_rules()
+    strict.empty_lines @ false
+    assert shape_of("[a]\nk=1\n  2\n\n  3\n", strict) == ["line 5: \"3\" is neither a section header nor a key and its value"]

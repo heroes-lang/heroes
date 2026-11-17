@@ -1,0 +1,443 @@
+# The number theory of `big`: the greatest common divisor and Bezout's
+# coefficients by Euclid's algorithm, powers and inverses modulo a number,
+# the Jacobi symbol, square roots modulo a prime (Tonelli and Shanks, with the
+# shorter roads for primes of 3 and 5 modulo 8), the integer square root by
+# Newton's method, and the Baillie-PSW test of primality: Miller-Rabin to base
+# 2 and the strong Lucas test with Selfridge's parameters.
+
+use big/internal/limbs
+use big/internal/product
+use big/internal/quotient
+use big/internal/signed
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+# What `bezout` answers: `gcd` is `a` times `x` plus `b` times `y`.
+record Bezout
+    gcd: signed.Signed
+    x: signed.Signed
+    y: signed.Signed
+
+# `n` modulo `m`, above zero, from 0 to `m` less one.
+function modulo(n: signed.Signed, m: [i64]) -> [i64]
+    r = quotient.divide(n: n.magnitude, by: m).remainder
+
+    if n.negative && r.len() > 0
+        return limbs.sub(a: m, b: r)
+    return r
+
+# `a` times `b` modulo `m`.
+function times_mod(a: [i64], b: [i64], m: [i64]) -> [i64]
+    return quotient.divide(n: product.multiply(a: a, b: b), by: m).remainder
+
+# `base` to the power `exponent` modulo `m`, `m` above 1, `base` below `m`.
+function power_of(base: [i64], exponent: [i64], m: [i64]) -> [i64]
+    result: [i64] @= [1]
+    at: i64 @= limbs.bit_len(exponent) - 1
+
+    while at >= 0
+        result @ times_mod(a: result, b: result, m: m)
+
+        if limbs.bit(a: exponent, index: at)
+            result @ times_mod(a: result, b: base, m: m)
+        at @ at - 1
+
+    return result
+
+# The greatest common divisor of two magnitudes.
+function gcd(a: [i64], b: [i64]) -> [i64]
+    x: [i64] @= a
+    y: [i64] @= b
+
+    while y.len() > 0
+        r = quotient.divide(n: x, by: y).remainder
+        x @ y
+        y @ r
+
+    return x
+
+# The greatest common divisor of `a` and `b` and the coefficients that make it.
+function bezout(a: signed.Signed, b: signed.Signed) -> Bezout
+    zero = signed.of_int(0)
+
+    if a.magnitude.len() == 0 && b.magnitude.len() == 0
+        return Bezout(gcd: zero, x: zero, y: zero)
+    old_r: [i64] @= a.magnitude
+    r: [i64] @= b.magnitude
+    old_s: signed.Signed @= signed.of_int(1)
+    s: signed.Signed @= zero
+    old_t: signed.Signed @= zero
+    t: signed.Signed @= signed.of_int(1)
+
+    while r.len() > 0
+        d = quotient.divide(n: old_r, by: r)
+        q = signed.make(negative: false, magnitude: d.quotient)
+        old_r @ r
+        r @ d.remainder
+        next_s = signed.sub(a: old_s, b: signed.mul(a: q, b: s))
+        old_s @ s
+        s @ next_s
+        next_t = signed.sub(a: old_t, b: signed.mul(a: q, b: t))
+        old_t @ t
+        t @ next_t
+
+    x: signed.Signed @= old_s
+    y: signed.Signed @= old_t
+
+    if a.negative
+        x @ signed.negate(x)
+
+    if b.negative
+        y @ signed.negate(y)
+    return Bezout(gcd: signed.make(negative: false, magnitude: old_r), x: x, y: y)
+
+# The inverse of `n` modulo `m`, `m` not zero. Fails `invalid` where none
+# exists.
+function inverse(n: signed.Signed, m: [i64]) -> [i64]?
+    assert m.len() > 0
+
+    if m == [1]
+        return ok([])
+    r = modulo(n: n, m: m)
+    b = bezout(a: signed.make(negative: false, magnitude: r), b: signed.make(negative: false, magnitude: m))
+
+    if b.gcd.magnitude != [1]
+        return fail(code: INVALID, msg: "the integer shares a factor with the modulus, so it has no inverse")
+    return ok(modulo(n: b.x, m: m))
+
+# `base` to the power `exponent` modulo the magnitude of `modulus`. Fails
+# `invalid` where `exponent` is negative and `base` has no inverse.
+function power_mod(base: signed.Signed, exponent: signed.Signed, modulus: signed.Signed) -> [i64]?
+    m = modulus.magnitude
+    assert m.len() > 0
+
+    if m == [1]
+        return ok([])
+    b: [i64] @= modulo(n: base, m: m)
+
+    if exponent.negative
+        b @ inverse(n: signed.make(negative: false, magnitude: b), m: m)?
+    return ok(power_of(base: b, exponent: exponent.magnitude, m: m))
+
+# The Jacobi symbol of `a` over the odd `b`.
+function jacobi(a: signed.Signed, b: signed.Signed) -> i64
+    assert b.magnitude.len() > 0 && b.magnitude[0] & 1 == 1
+    j: i64 @= 1
+
+    if a.negative && b.negative
+        j @ -1
+    x: [i64] @= modulo(n: a, m: b.magnitude)
+    y: [i64] @= b.magnitude
+
+    while y != [1]
+        x @ quotient.divide(n: x, by: y).remainder
+
+        if x.len() == 0
+            return 0
+        zeros = limbs.trailing_zeros(x)
+
+        if zeros & 1 == 1 && (y[0] & 7 == 3 || y[0] & 7 == 5)
+            j @ -j
+        x @ limbs.shift_right(a: x, count: zeros)
+
+        if x[0] & 3 == 3 && y[0] & 3 == 3
+            j @ -j
+        swap = x
+        x @ y
+        y @ swap
+
+    return j
+
+# The square root of `n` rounded down.
+function isqrt(n: [i64]) -> [i64]
+    if n.len() == 0
+        return n
+    x: [i64] @= limbs.shift_left(a: [1], count: (limbs.bit_len(n) + 1) / 2)
+
+    while true
+        y = limbs.shift_right(a: limbs.add(a: x, b: quotient.divide(n: n, by: x).quotient), count: 1)
+
+        if limbs.compare(a: y, b: x) >= 0
+            return x
+        x @ y
+
+# Whether `n`, odd and above 3, passes Miller-Rabin to the base `a`.
+function strong_to(n: [i64], a: [i64]) -> bool
+    less = limbs.sub(a: n, b: [1])
+    s = limbs.trailing_zeros(less)
+    x: [i64] @= power_of(base: a, exponent: limbs.shift_right(a: less, count: s), m: n)
+
+    if x == [1] || x == less
+        return true
+    k: i64 @= 1
+
+    while k < s
+        x @ times_mod(a: x, b: x, m: n)
+
+        if x == less
+            return true
+        k @ k + 1
+
+    return false
+
+# `x` halved modulo the odd `n`.
+function halved(x: [i64], n: [i64]) -> [i64]
+    if limbs.bit(a: x, index: 0)
+        return limbs.shift_right(a: limbs.add(a: x, b: n), count: 1)
+    return limbs.shift_right(a: x, count: 1)
+
+# `a` less `b` modulo `n`, both below `n`.
+function minus_mod(a: [i64], b: [i64], n: [i64]) -> [i64]
+    if limbs.compare(a: a, b: b) >= 0
+        return limbs.sub(a: a, b: b)
+    return limbs.sub(a: limbs.add(a: a, b: n), b: b)
+
+# `a` plus `b` modulo `n`, both below `n`.
+function plus_mod(a: [i64], b: [i64], n: [i64]) -> [i64]
+    sum = limbs.add(a: a, b: b)
+
+    if limbs.compare(a: sum, b: n) >= 0
+        return limbs.sub(a: sum, b: n)
+    return sum
+
+# Whether `n`, odd, above 3 and no square, is a strong Lucas probable prime
+# with Selfridge's parameters: the first of 5, -7, 9, -11 ... whose Jacobi
+# symbol over `n` is -1, P = 1 and Q = (1 - D) / 4.
+function strong_lucas(n: [i64]) -> bool
+    nn = signed.make(negative: false, magnitude: n)
+    d_value: i64 @= 5
+
+    while jacobi(a: signed.of_int(d_value), b: nn) != -1
+        if jacobi(a: signed.of_int(d_value), b: nn) == 0 && limbs.compare(a: limbs.of(abs_of(d_value)), b: n) != 0
+            return false
+
+        if d_value > 0
+            d_value @ -(d_value + 2)
+        else
+            d_value @ -d_value + 2
+
+    d = modulo(n: signed.of_int(d_value), m: n)
+    q_value = (1 - d_value) / 4
+    q = modulo(n: signed.of_int(q_value), m: n)
+    plus = limbs.add(a: n, b: [1])
+    s = limbs.trailing_zeros(plus)
+    k = limbs.shift_right(a: plus, count: s)
+    u: [i64] @= [1]
+    v: [i64] @= [1]
+    qk: [i64] @= q
+    at: i64 @= limbs.bit_len(k) - 2
+
+    while at >= 0
+        u @ times_mod(a: u, b: v, m: n)
+        v @ minus_mod(a: times_mod(a: v, b: v, m: n), b: plus_mod(a: qk, b: qk, n: n), n: n)
+        qk @ times_mod(a: qk, b: qk, m: n)
+
+        if limbs.bit(a: k, index: at)
+            next_u = halved(x: plus_mod(a: u, b: v, n: n), n: n)
+            v @ halved(x: plus_mod(a: times_mod(a: d, b: u, m: n), b: v, n: n), n: n)
+            u @ next_u
+            qk @ times_mod(a: qk, b: q, m: n)
+        at @ at - 1
+
+    if u.len() == 0 || v.len() == 0
+        return true
+    r: i64 @= 1
+
+    while r < s
+        v @ minus_mod(a: times_mod(a: v, b: v, m: n), b: plus_mod(a: qk, b: qk, n: n), n: n)
+        qk @ times_mod(a: qk, b: qk, m: n)
+
+        if v.len() == 0
+            return true
+        r @ r + 1
+
+    return false
+
+# The absolute value of a small `n`.
+function abs_of(n: i64) -> i64
+    if n < 0
+        return -n
+    return n
+
+# The primes below 60.
+function small_primes() -> [i64]
+    return [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59]
+
+# Whether `n` is prime by Baillie-PSW and `rounds` rounds of Miller-Rabin to
+# bases drawn from `n` itself.
+function is_probable_prime(n: signed.Signed, rounds: i64) -> bool
+    assert rounds >= 0
+    m = n.magnitude
+
+    if n.negative || limbs.compare(a: m, b: [2]) < 0
+        return false
+
+    for p in small_primes()
+        if m == [p]
+            return true
+
+        if limbs.divided_small(a: m, d: p).remainder == 0
+            return false
+
+    if limbs.compare(a: m, b: [3481]) < 0
+        return true
+
+    if !strong_to(n: m, a: [2])
+        return false
+    root = isqrt(m)
+
+    if product.multiply(a: root, b: root) == m || !strong_lucas(m)
+        return false
+    state: i64 @= m[0]
+    span = limbs.sub(a: m, b: [3])
+    done: i64 @= 0
+
+    while done < rounds
+        state @ (state * 1103515245 + 12345) % 2147483648
+        draw = limbs.times_add(a: limbs.of(state), factor: 1073741823, plus: done)
+        a = limbs.add(a: quotient.divide(n: draw, by: span).remainder, b: [2])
+
+        if !strong_to(n: m, a: a)
+            return false
+        done @ done + 1
+
+    return true
+
+# A square root of `n` modulo the odd prime `p`. Fails `invalid` where `p` is
+# not an odd prime and `not_found` where no root exists.
+function sqrt_mod(n: signed.Signed, p: signed.Signed) -> [i64]?
+    m = p.magnitude
+
+    if p.negative || m.len() == 0 || m[0] & 1 == 0 || m == [1] || !is_probable_prime(n: p, rounds: 20)
+        return fail(code: INVALID, msg: "the modulus of a square root must be an odd prime")
+    a = modulo(n: n, m: m)
+
+    if a.len() == 0
+        return ok([])
+
+    if jacobi(a: signed.make(negative: false, magnitude: a), b: p) != 1
+        return fail(code: NOT_FOUND, msg: "the integer has no square root modulo the prime")
+
+    if m[0] & 3 == 3
+        return ok(power_of(base: a, exponent: limbs.shift_right(a: limbs.add(a: m, b: [1]), count: 2), m: m))
+
+    if m[0] & 7 == 5
+        twice = plus_mod(a: a, b: a, n: m)
+        b = power_of(base: twice, exponent: limbs.shift_right(a: m, count: 3), m: m)
+        i = times_mod(a: twice, b: times_mod(a: b, b: b, m: m), m: m)
+        return ok(times_mod(a: times_mod(a: a, b: b, m: m), b: minus_mod(a: i, b: [1], n: m), m: m))
+    less = limbs.sub(a: m, b: [1])
+    s = limbs.trailing_zeros(less)
+    q = limbs.shift_right(a: less, count: s)
+    z: i64 @= 2
+
+    while jacobi(a: signed.of_int(z), b: p) != -1
+        z @ z + 1
+
+    level: i64 @= s
+    c: [i64] @= power_of(base: limbs.of(z), exponent: q, m: m)
+    t: [i64] @= power_of(base: a, exponent: q, m: m)
+    r: [i64] @= power_of(base: a, exponent: limbs.shift_right(a: limbs.add(a: q, b: [1]), count: 1), m: m)
+
+    while t != [1]
+        i: i64 @= 0
+        t2: [i64] @= t
+
+        while t2 != [1] && i < level
+            t2 @ times_mod(a: t2, b: t2, m: m)
+            i @ i + 1
+
+        if i == level
+            return fail(code: INVALID, msg: "the modulus of a square root must be an odd prime")
+
+        b: [i64] @= c
+        k: i64 @= 0
+
+        while k < level - i - 1
+            b @ times_mod(a: b, b: b, m: m)
+            k @ k + 1
+
+        level @ i
+        c @ times_mod(a: b, b: b, m: m)
+        t @ times_mod(a: t, b: c, m: m)
+        r @ times_mod(a: r, b: b, m: m)
+
+    return ok(r)
+
+## Tests
+
+test "gcd and bezout: zero and zero, one zero, coprime, and signs"
+    nothing: [i64] = []
+    assert gcd(a: nothing, b: nothing) == nothing
+    assert gcd(a: nothing, b: [6]) == [6]
+    assert gcd(a: [12], b: [18]) == [6]
+    b = bezout(a: signed.of_int(240), b: signed.of_int(46))
+    assert b.gcd == signed.of_int(2)
+    assert signed.add(a: signed.mul(a: signed.of_int(240), b: b.x), b: signed.mul(a: signed.of_int(46), b: b.y)) == b.gcd
+    c = bezout(a: signed.of_int(-240), b: signed.of_int(46))
+    assert signed.add(a: signed.mul(a: signed.of_int(-240), b: c.x), b: signed.mul(a: signed.of_int(46), b: c.y)) == c.gcd
+    z = bezout(a: signed.of_int(0), b: signed.of_int(-5))
+    assert z.gcd == signed.of_int(5)
+    assert z.y == signed.of_int(-1)
+
+test "inverse and power_mod: modulus one, no inverse, a negative exponent"
+    nothing: [i64] = []
+    assert inverse(n: signed.of_int(3), m: [7]).must() == [5]
+    assert inverse(n: signed.of_int(-3), m: [7]).must() == [2]
+    assert inverse(n: signed.of_int(5), m: [1]).must() == nothing
+    assert inverse(n: signed.of_int(4), m: [6]).is_err()
+    assert power_mod(base: signed.of_int(3), exponent: signed.of_int(200), modulus: signed.of_int(-1000)).must() == [1]
+    assert power_mod(base: signed.of_int(3), exponent: signed.of_int(-1), modulus: signed.of_int(7)).must() == [5]
+    assert power_mod(base: signed.of_int(2), exponent: signed.of_int(-1), modulus: signed.of_int(4)).is_err()
+    assert power_mod(base: signed.of_int(0), exponent: signed.of_int(0), modulus: signed.of_int(5)).must() == [1]
+
+test "jacobi: zero, a square, a non-residue, and negative operands"
+    assert jacobi(a: signed.of_int(0), b: signed.of_int(1)) == 1
+    assert jacobi(a: signed.of_int(0), b: signed.of_int(3)) == 0
+    assert jacobi(a: signed.of_int(2), b: signed.of_int(7)) == 1
+    assert jacobi(a: signed.of_int(3), b: signed.of_int(7)) == -1
+    assert jacobi(a: signed.of_int(-1), b: signed.of_int(7)) == -1
+    assert jacobi(a: signed.of_int(-1), b: signed.of_int(-7)) == 1
+
+test "isqrt: zero, a square, one below a square, and a number of three limbs"
+    nothing: [i64] = []
+    assert isqrt(nothing) == nothing
+    assert isqrt([1]) == [1]
+    assert isqrt([99]) == [9]
+    assert isqrt([100]) == [10]
+    two_sixty = limbs.shift_left(a: [1], count: 60)
+    assert isqrt(two_sixty) == limbs.shift_left(a: [1], count: 30)
+    assert isqrt(limbs.sub(a: two_sixty, b: [1])) == [1073741823]
+
+test "is_probable_prime: below 2, small primes and squares, a Carmichael number, a Mersenne prime"
+    assert !is_probable_prime(n: signed.of_int(1), rounds: 0)
+    assert !is_probable_prime(n: signed.of_int(-7), rounds: 0)
+    assert is_probable_prime(n: signed.of_int(2), rounds: 0)
+    assert is_probable_prime(n: signed.of_int(3433), rounds: 0)
+    assert !is_probable_prime(n: signed.of_int(3481), rounds: 0)
+    assert !is_probable_prime(n: signed.of_int(561), rounds: 0)
+    assert !is_probable_prime(n: signed.of_int(3215031751), rounds: 0)
+    assert !is_probable_prime(n: signed.of_int(5459), rounds: 0)
+    assert is_probable_prime(n: signed.of_int(2147483647), rounds: 5)
+    m127 = signed.make(negative: false, magnitude: limbs.sub(a: limbs.shift_left(a: [1], count: 127), b: [1]))
+    assert is_probable_prime(n: m127, rounds: 10)
+    assert !is_probable_prime(n: signed.mul(a: m127, b: signed.of_int(2147483647)), rounds: 0)
+
+test "sqrt_mod: zero, each kind of prime, no root, and a modulus that is not prime"
+    nothing: [i64] = []
+    assert sqrt_mod(n: signed.of_int(0), p: signed.of_int(7)).must() == nothing
+    r7 = sqrt_mod(n: signed.of_int(2), p: signed.of_int(7)).must()
+    assert times_mod(a: r7, b: r7, m: [7]) == [2]
+    r13 = sqrt_mod(n: signed.of_int(10), p: signed.of_int(13)).must()
+    assert times_mod(a: r13, b: r13, m: [13]) == [10]
+    r17 = sqrt_mod(n: signed.of_int(-2), p: signed.of_int(17)).must()
+    assert times_mod(a: r17, b: r17, m: [17]) == [15]
+    r41 = sqrt_mod(n: signed.of_int(10), p: signed.of_int(41)).must()
+    assert times_mod(a: r41, b: r41, m: [41]) == [10]
+    assert sqrt_mod(n: signed.of_int(3), p: signed.of_int(7)).is_err()
+    assert sqrt_mod(n: signed.of_int(4), p: signed.of_int(9)).is_err()
+    assert sqrt_mod(n: signed.of_int(1), p: signed.of_int(2)).is_err()

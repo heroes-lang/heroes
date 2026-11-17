@@ -1,0 +1,1836 @@
+# Numbers of any size, held exactly: integers, decimals and fractions, their
+# arithmetic, and their text in any base.
+#
+# An `Integer` is as large as memory allows; its arithmetic never overflows and
+# never rounds. A `Decimal` is an integer and a count of digits after the
+# point, so 1.50 is 150 with a scale of 2: its sum, difference and product are
+# exact, and where a result cannot be exact (a quotient, a square root, fewer
+# digits) the caller names the scale and the `Rounding`. A `Fraction` is two
+# integers in lowest terms, and its four operations are exact. One value has
+# one form, so `==` compares two integers or two fractions by value; two
+# decimals are equal by `==` only with the same scale, and `compare_decimal`
+# orders them by value (1.5 and 1.50 compare equal).
+#
+# Multiplication above eighty limbs of 30 bits, some 720 digits, takes
+# Karatsuba's method, so it costs less than the square of the length;
+# division, text in a base that is not a power of two, and the square root
+# cost about the square of the length.
+#
+# It does not hold a binary float of chosen precision (Go's `big.Float`), NaN,
+# an infinity or a negative zero, and it computes no logarithm or
+# exponential: `math` answers those in `f64`. The integers of the language's
+# own widths are written and read by `numbers`.
+#
+# Fails `invalid` where a text is not a number of the form a function reads,
+# or an inverse modulo a number does not exist; `does_not_fit` where a value
+# is outside the type asked for; and `not_found` where a square root modulo a
+# prime does not exist.
+
+use big/internal/counting
+use big/internal/decimal
+use big/internal/decimal_text
+use big/internal/draw
+use big/internal/floats
+use big/internal/limbs
+use big/internal/logic
+use big/internal/modes
+use big/internal/octets
+use big/internal/rational
+use big/internal/signed
+use big/internal/text
+use big/internal/theory
+use big/internal/witness
+use numbers
+use random
+
+## Codes and limits
+
+# The code of a text that is not a number of the form the function reads, and
+# of an inverse that does not exist: `parse`, `parse_base`, `parse_literal`,
+# `parse_decimal`, `parse_fraction`, `power_mod`, `inverse_mod`, `sqrt_mod`,
+# and the conversions from a float given NaN.
+constant INVALID: str
+    "invalid"
+
+# The code of a number outside the type asked for, the language's own code:
+# `int_of`, `u64_of`, `to_bytes`, `to_bytes_width`, `to_bytes_signed_width`,
+# `exact_scale`, an exponent past `EXPONENT_MAX` in a text, and the
+# conversions from a float given an infinity.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a square root modulo a prime that does not exist: `sqrt_mod`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The largest exponent `parse_decimal` and `parse_fraction` read after an `e`,
+# either sign: Python's `decimal` holds the same bound in its default context.
+# A larger one would make a number whose digits fill memory.
+constant EXPONENT_MAX: i64
+    999999
+
+## The types
+
+# An integer of any size. Made only by this package's functions, which keep
+# its one form, so two equal integers are equal by `==` and an integer may be
+# a key of a map.
+record Integer
+    # The sign and the limbs of 30 bits of the integer, the least significant
+    # first, zero never negative and no zero limb at the top; read through
+    # this package's functions.
+    value: signed.Signed
+
+# A decimal number: `unscaled` divided by ten to the power `scale`, so 1.50 is
+# 150 with a scale of 2 and 1500 is 15 with a scale of -2. Built directly, any
+# integer and any scale making a valid one, or by `parse_decimal`.
+record Decimal
+    # The digits of the number as one integer, its sign included.
+    unscaled: Integer
+    # How many of those digits stand after the point; a negative scale adds
+    # that many zeros before the point.
+    scale: i64
+
+# A fraction in lowest terms. Made only by `fraction` and this package's
+# functions, which keep its one form: the denominator is above zero and shares
+# no factor with the numerator, so two equal fractions are equal by `==`.
+record Fraction
+    # The numerator, which carries the sign.
+    numerator: Integer
+    # The denominator, 1 or more.
+    denominator: Integer
+
+# What `divide` and `divide_euclidean` answer: `n` equals `quotient` times
+# `by`, plus `remainder`.
+record Division
+    # The quotient, rounded as the call asked.
+    quotient: Integer
+    # What remains: `n` less `quotient` times `by`.
+    remainder: Integer
+
+# What `divide_decimal_whole` answers: `n` equals `quotient` times `by`, plus
+# `remainder`.
+record DecimalDivision
+    # The whole quotient, rounded as the call asked.
+    quotient: Integer
+    # What remains, at the larger of the two scales.
+    remainder: Decimal
+
+# What `gcd_with_coefficients` answers: `gcd` equals `a` times `x` plus `b`
+# times `y`.
+record Bezout
+    # The greatest common divisor, never negative.
+    gcd: Integer
+    # The coefficient of `a`.
+    x: Integer
+    # The coefficient of `b`.
+    y: Integer
+
+# How a result that falls between two numbers is rounded to one of them.
+variant Rounding
+    # To the one nearer zero: Go's `Trunc` and `ToZero`, Python's `ROUND_DOWN`.
+    toward_zero
+    # To the one farther from zero: Python's `ROUND_UP`.
+    away_from_zero
+    # To the lower one: Go's `Floor`, Python's `ROUND_FLOOR` and `//`.
+    floor
+    # To the higher one: Go's `Ceil`, Python's `ROUND_CEILING`.
+    ceiling
+    # To the nearer one, a tie to the even one: Go's `Round`, Python's
+    # `ROUND_HALF_EVEN`, the banker's rounding.
+    half_even
+    # To the nearer one, a tie away from zero: Python's `ROUND_HALF_UP`, the
+    # rounding taught at school.
+    half_away_from_zero
+    # To the nearer one, a tie toward zero: Python's `ROUND_HALF_DOWN`.
+    half_toward_zero
+    # Toward zero, unless the last digit kept would then be 0 or 5, when away
+    # from zero: Python's `ROUND_05UP`, which lets a result be rounded again
+    # later without rounding it twice.
+    away_if_zero_or_five
+
+# The order of an integer's bytes.
+variant ByteOrder
+    # The most significant byte first, as networks, CBOR and Go's `Bytes` write.
+    big_endian
+    # The least significant byte first.
+    little_endian
+
+## Integers from and to the language's numbers
+
+# The integer `n`.
+#
+# - `n`: any `i64`.
+#
+# See also `int_of`, `from_u64`.
+function from_int(n: i64) -> Integer
+    return Integer(value: signed.of_int(n))
+
+# The integer `n`.
+#
+# - `n`: any `u64`.
+#
+# See also `u64_of`, `from_int`.
+function from_u64(n: u64) -> Integer
+    return Integer(value: signed.of_u64(n))
+
+# `n` as an `i64`.
+#
+# - `n`: any integer.
+#
+# Fails `does_not_fit` where `n` is below -2^63 or above 2^63 - 1. See also
+# `from_int`, `u64_of`.
+function int_of(n: Integer) -> i64?
+    return signed.int_of(n.value)
+
+# `n` as a `u64`.
+#
+# - `n`: any integer.
+#
+# Fails `does_not_fit` where `n` is negative or above 2^64 - 1. See also
+# `from_u64`, `int_of`.
+function u64_of(n: Integer) -> u64?
+    return signed.u64_of(n.value)
+
+# The `f64` nearest `n`, a tie going to the one whose last bit is zero.
+#
+# - `n`: any integer.
+#
+# Too large for a float is an infinity of `n`'s sign, as `to_f64` answers.
+# See also `from_float`, `float_of_decimal`.
+function float_of(n: Integer) -> f64
+    return decimal.to_float(decimal.Dec(unscaled: n.value, scale: 0))
+
+# The integer part of `x`, its fraction dropped toward zero, exactly: 1e300
+# answers all of its 301 digits.
+#
+# - `x`: any `f64`; -0.0 answers zero.
+#
+# Fails `invalid` where `x` is NaN and `does_not_fit` where it is an infinity.
+# See also `float_of`, `decimal_of_float`.
+function from_float(x: f64) -> Integer?
+    if floats.is_nan(x)
+        return fail(code: INVALID, msg: "NaN is no integer")
+
+    if floats.is_infinite(x)
+        return fail(code: DOES_NOT_FIT, msg: "an infinity is past every integer")
+    return ok(Integer(value: decimal.whole_of_float(parts: floats.parts_of(x), negative: x < 0.0)))
+
+## Integers as text
+
+# The integer `s` spells in base ten: an optional `+` or `-`, then one digit or
+# more, and nothing else.
+#
+# - `s`: the text; zeros before the digits are read, and "-0" is zero.
+#
+# Fails `invalid` where `s` is empty, has no digit, or holds any other byte, a
+# space and a `_` included. It costs about the square of the digits. See also
+# `parse_base`, `parse_literal`, `format`.
+function parse(s: str) -> Integer?
+    return ok(Integer(value: text.parse(s: s, base: 10)?))
+
+# The integer `s` spells in `base`: an optional `+` or `-`, then one digit of
+# `base` or more, with no prefix.
+#
+# - `s`: the text.
+# - `base`: 2 to 62. Up to 36 the letters `a` to `z` and `A` to `Z` are the
+#   digits 10 to 35 alike; above 36 the lower case letters are 10 to 35 and
+#   the upper case ones 36 to 61, as Go reads them.
+#
+# Fails `invalid` where `s` is empty, has no digit, or holds a byte that is no
+# digit of `base`. Aborts where `base` is outside 2 to 62. See also `parse`,
+# `format_base`.
+function parse_base(s: str, base: i64) -> Integer?
+    return ok(Integer(value: text.parse(s: s, base: base)?))
+
+# The integer `s` spells as the language writes one: an optional sign, then
+# `0x`, `0o` or `0b` and digits of base 16, 8 or 2, or digits of base ten, with
+# a `_` allowed between two digits.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` is not such a literal: a prefix in upper case, a
+# `_` anywhere but between two digits, and a zero before a decimal number,
+# which is never octal. See also `parse`, `parse_base`.
+function parse_literal(s: str) -> Integer?
+    return ok(Integer(value: text.parse_literal(s)?))
+
+# `n` in base ten: a `-` where it is negative, then its digits, with no zero
+# before them.
+#
+# - `n`: any integer.
+#
+# It costs about the square of the digits. See also `format_base`, `parse`.
+function format(n: Integer) -> str
+    return text.format(s: n.value, base: 10)
+
+# `n` in `base`: a `-` where it is negative, then its digits with no prefix
+# and no zero before them.
+#
+# - `n`: any integer.
+# - `base`: 2 to 62; the digits 10 to 35 are `a` to `z`, and 36 to 61 are `A`
+#   to `Z`, as Go writes them. A program wanting upper case letters in base 16
+#   writes `strings.to_upper` of the answer.
+#
+# Aborts where `base` is outside 2 to 62. A base that is a power of two costs
+# the length of `n`; another, about its square. See also `format`,
+# `parse_base`.
+function format_base(n: Integer, base: i64) -> str
+    return text.format(s: n.value, base: base)
+
+## Integers as bytes
+
+# The integer that the bytes `b` spell as an unsigned number.
+#
+# - `b`: the bytes, any number of them; empty answers zero.
+# - `order`: which byte is the most significant.
+#
+# See also `from_bytes_signed`, `to_bytes`.
+function from_bytes(b: [u8], order: ByteOrder) -> Integer
+    least = octets.ordered(b: b, most_first: order == .big_endian)
+    return Integer(value: octets.read(b: least, twos: false))
+
+# The integer that the bytes `b` spell in two's complement, the top bit of the
+# most significant byte being the sign.
+#
+# - `b`: the bytes, any number of them; empty answers zero.
+# - `order`: which byte is the most significant.
+#
+# See also `from_bytes`, `to_bytes_signed`.
+function from_bytes_signed(b: [u8], order: ByteOrder) -> Integer
+    least = octets.ordered(b: b, most_first: order == .big_endian)
+    return Integer(value: octets.read(b: least, twos: true))
+
+# `n` as the fewest bytes that spell it as an unsigned number.
+#
+# - `n`: an integer not below zero.
+# - `order`: which byte comes first.
+#
+# Zero is no bytes at all. Fails `does_not_fit` where `n` is negative. See
+# also `to_bytes_width`, `to_bytes_signed`, `from_bytes`.
+function to_bytes(n: Integer, order: ByteOrder) -> [u8]?
+    if n.value.negative
+        return fail(code: DOES_NOT_FIT, msg: "a negative integer has no unsigned bytes")
+    return ok(octets.ordered(b: octets.bytes_of(n.value.magnitude), most_first: order == .big_endian))
+
+# `n` as the fewest bytes that spell it in two's complement.
+#
+# - `n`: any integer.
+# - `order`: which byte comes first.
+#
+# Zero is no bytes at all; 127 is one byte and 128 two, the first zero. See
+# also `to_bytes_signed_width`, `from_bytes_signed`.
+function to_bytes_signed(n: Integer, order: ByteOrder) -> [u8]
+    return octets.ordered(b: octets.twos_of(n.value), most_first: order == .big_endian)
+
+# `n` as exactly `width` bytes spelling it as an unsigned number, zeros
+# filling the most significant ones.
+#
+# - `n`: an integer not below zero.
+# - `width`: the count of bytes, 0 or more.
+# - `order`: which byte comes first.
+#
+# Fails `does_not_fit` where `n` is negative or needs more than `width` bytes.
+# Aborts where `width` is negative. See also `to_bytes`.
+function to_bytes_width(n: Integer, width: i64, order: ByteOrder) -> [u8]?
+    assert width >= 0
+
+    if n.value.negative
+        return fail(code: DOES_NOT_FIT, msg: "a negative integer has no unsigned bytes")
+    least = octets.widened(b: octets.bytes_of(n.value.magnitude), width: width, fill: 0)?
+    return ok(octets.ordered(b: least, most_first: order == .big_endian))
+
+# `n` as exactly `width` bytes in two's complement, the sign filling the most
+# significant ones.
+#
+# - `n`: any integer.
+# - `width`: the count of bytes, 0 or more.
+# - `order`: which byte comes first.
+#
+# Fails `does_not_fit` where `n` needs more than `width` bytes. Aborts where
+# `width` is negative. See also `to_bytes_signed`.
+function to_bytes_signed_width(n: Integer, width: i64, order: ByteOrder) -> [u8]?
+    fill: u8 @= 0
+
+    if n.value.negative
+        fill @ 255
+    least = octets.widened(b: octets.twos_of(n.value), width: width, fill: fill)?
+    return ok(octets.ordered(b: least, most_first: order == .big_endian))
+
+## Sign and order
+
+# -1, 0 or 1 as `n` is below zero, zero, or above it.
+#
+# - `n`: any integer.
+#
+# See also `abs`, `negate`.
+function sign(n: Integer) -> i64
+    return signed.sign(n.value)
+
+# `n` without its sign.
+#
+# - `n`: any integer.
+#
+# See also `sign`, `negate`.
+function abs(n: Integer) -> Integer
+    return Integer(value: signed.abs(n.value))
+
+# `n` with its sign turned; zero stays zero.
+#
+# - `n`: any integer.
+#
+# See also `abs`, `subtract`.
+function negate(n: Integer) -> Integer
+    return Integer(value: signed.negate(n.value))
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it.
+#
+# - `a`: the integer on the left.
+# - `b`: the integer on the right.
+#
+# See also `compare_abs`; `==` answers equality alone.
+function compare(a: Integer, b: Integer) -> i64
+    return signed.compare(a: a.value, b: b.value)
+
+# -1, 0 or 1 as the absolute value of `a` is below that of `b`, equal to it,
+# or above it.
+#
+# - `a`: the integer on the left.
+# - `b`: the integer on the right.
+#
+# See also `compare`.
+function compare_abs(a: Integer, b: Integer) -> i64
+    return limbs.compare(a: a.value.magnitude, b: b.value.magnitude)
+
+## Arithmetic
+
+# `a` plus `b`.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# See also `subtract`.
+function add(a: Integer, b: Integer) -> Integer
+    return Integer(value: signed.add(a: a.value, b: b.value))
+
+# `a` less `b`.
+#
+# - `a`: the integer subtracted from.
+# - `b`: the integer subtracted.
+#
+# See also `add`, `negate`.
+function subtract(a: Integer, b: Integer) -> Integer
+    return Integer(value: signed.sub(a: a.value, b: b.value))
+
+# `a` times `b`.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# Where both are longer than eighty limbs of 30 bits it takes Karatsuba's
+# method, about the 1.6th power of the length instead of its square. See also
+# `power`.
+function multiply(a: Integer, b: Integer) -> Integer
+    return Integer(value: signed.mul(a: a.value, b: b.value))
+
+# The quotient of `n` by `by` rounded as `rounding` says, and what remains.
+#
+# - `n`: the dividend.
+# - `by`: the divisor, not zero.
+# - `rounding`: how the exact quotient is rounded to a whole one:
+#   `.toward_zero` is the language's own `/` and `%`, and `.floor` is Python's
+#   `//` and `%`.
+#
+# The remainder is `n` less the quotient times `by`, so its sign follows from
+# the rounding: the sign of `n` toward zero, the sign of `by` at the floor.
+# Aborts where `by` is zero, as the language's `/` does. It costs about the
+# product of the two lengths. See also `divide_euclidean`.
+function divide(n: Integer, by: Integer, rounding: Rounding) -> Division
+    mode: modes.Mode = match rounding
+        .toward_zero          => .toward_zero
+        .away_from_zero       => .away_from_zero
+        .floor                => .floor
+        .ceiling              => .ceiling
+        .half_even            => .half_even
+        .half_away_from_zero  => .half_away_from_zero
+        .half_toward_zero     => .half_toward_zero
+        .away_if_zero_or_five => .away_if_zero_or_five
+
+    d = signed.divide(n: n.value, by: by.value, mode: mode)
+    return Division(quotient: Integer(value: d.quotient), remainder: Integer(value: d.remainder))
+
+# The quotient of `n` by `by` whose remainder is never negative, and the
+# remainder, from 0 to the absolute value of `by` less one.
+#
+# - `n`: the dividend.
+# - `by`: the divisor, not zero.
+#
+# This is Go's `Div` and `Mod`; it differs from the floor where `by` is
+# negative. Aborts where `by` is zero. See also `divide`.
+function divide_euclidean(n: Integer, by: Integer) -> Division
+    if by.value.negative
+        return divide(n: n, by: by, rounding: .ceiling)
+    return divide(n: n, by: by, rounding: .floor)
+
+# `base` raised to the power `exponent`.
+#
+# - `base`: any integer.
+# - `exponent`: 0 or more; any base to the power 0 is 1, zero's included.
+#
+# Aborts where `exponent` is negative. The answer has about `exponent` times
+# the digits of `base`, so a large one fills memory. See also `power_mod`.
+function power(base: Integer, exponent: i64) -> Integer
+    return Integer(value: signed.power(s: base.value, k: exponent))
+
+# `base` raised to the power `exponent`, modulo `modulus`: from 0 to the
+# absolute value of `modulus` less one, whatever the signs.
+#
+# - `base`: any integer.
+# - `exponent`: any integer; a negative one raises the inverse of `base`.
+# - `modulus`: not zero; its sign is not read.
+#
+# Fails `invalid` where `exponent` is negative and `base` has no inverse
+# modulo `modulus`. Aborts where `modulus` is zero. It takes about two
+# products for each bit of `exponent`; it does not take a constant time, so
+# it keeps no secret from a program that times it. See also `inverse_mod`.
+function power_mod(base: Integer, exponent: Integer, modulus: Integer) -> Integer?
+    m = theory.power_mod(base: base.value, exponent: exponent.value, modulus: modulus.value)?
+    return ok(Integer(value: signed.make(negative: false, magnitude: m)))
+
+# The inverse of `n` modulo `modulus`: the integer from 0 to the absolute value
+# of `modulus` less one that times `n` leaves 1.
+#
+# - `n`: any integer.
+# - `modulus`: not zero; its sign is not read, and 1 answers 0.
+#
+# Fails `invalid` where `n` and `modulus` share a factor, so no inverse
+# exists. Aborts where `modulus` is zero. See also `power_mod`,
+# `gcd_with_coefficients`.
+function inverse_mod(n: Integer, modulus: Integer) -> Integer?
+    m = theory.inverse(n: n.value, m: modulus.value.magnitude)?
+    return ok(Integer(value: signed.make(negative: false, magnitude: m)))
+
+# A square root of `n` modulo the odd prime `prime`: an integer from 0 to
+# `prime` less one whose square leaves `n`, the one Go's `ModSqrt` answers.
+#
+# - `n`: any integer.
+# - `prime`: an odd prime.
+#
+# The other root is `prime` less the answer. Fails `not_found` where `n` has
+# no square root modulo `prime`, and `invalid` where `prime` is not an odd
+# prime by `is_probable_prime` with 20 rounds. See also `jacobi`.
+function sqrt_mod(n: Integer, prime: Integer) -> Integer?
+    m = theory.sqrt_mod(n: n.value, p: prime.value)?
+    return ok(Integer(value: signed.make(negative: false, magnitude: m)))
+
+# The Jacobi symbol of `a` over `b`: -1, 0 or 1.
+#
+# - `a`: any integer.
+# - `b`: an odd integer; a negative one answers as Go's `Jacobi` does, the
+#   symbol over its absolute value, turned where `a` is negative too.
+#
+# Aborts where `b` is even. See also `sqrt_mod`.
+function jacobi(a: Integer, b: Integer) -> i64
+    return theory.jacobi(a: a.value, b: b.value)
+
+# Whether `n` is prime, by the Baillie-PSW test and `rounds` more rounds of
+# Miller-Rabin.
+#
+# - `n`: any integer; one below 2 is not prime.
+# - `rounds`: the rounds of Miller-Rabin beyond Baillie-PSW, 0 or more, their
+#   bases drawn from `n` itself, so the same `n` answers the same.
+#
+# A prime always answers true. Below 2^64 the answer is exact; above, no
+# composite number is known that Baillie-PSW calls prime, and each round
+# answers true for a composite one with a chance below one in four. Aborts
+# where `rounds` is negative. See also `sqrt_mod`.
+function is_probable_prime(n: Integer, rounds: i64) -> bool
+    return theory.is_probable_prime(n: n.value, rounds: rounds)
+
+# The greatest common divisor of `a` and `b`, never negative.
+#
+# - `a`: any integer.
+# - `b`: any integer; the divisor of zero and zero is zero.
+#
+# See also `lcm`, `gcd_with_coefficients`.
+function gcd(a: Integer, b: Integer) -> Integer
+    return Integer(
+        value: signed.make(negative: false, magnitude: theory.gcd(a: a.value.magnitude, b: b.value.magnitude))
+    )
+
+# The least common multiple of `a` and `b`, never negative.
+#
+# - `a`: any integer.
+# - `b`: any integer; a zero on either side answers zero.
+#
+# See also `gcd`.
+function lcm(a: Integer, b: Integer) -> Integer
+    if sign(a) == 0 || sign(b) == 0
+        return from_int(0)
+    part = divide(n: abs(a), by: gcd(a: a, b: b), rounding: .toward_zero).quotient
+    return multiply(a: part, b: abs(b))
+
+# The greatest common divisor of `a` and `b`, with the coefficients `x` and
+# `y` that make it `a` times `x` plus `b` times `y`.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# The coefficients are the smallest Euclid's algorithm gives, the ones Go's
+# `GCD` answers; zero and zero answer zero for all three. See also `gcd`,
+# `inverse_mod`.
+function gcd_with_coefficients(a: Integer, b: Integer) -> Bezout
+    r = theory.bezout(a: a.value, b: b.value)
+    return Bezout(gcd: Integer(value: r.gcd), x: Integer(value: r.x), y: Integer(value: r.y))
+
+# The square root of `n`, rounded down: the largest integer whose square is
+# not above `n`.
+#
+# - `n`: an integer not below zero.
+#
+# Aborts where `n` is negative. See also `sqrt_decimal`.
+function sqrt(n: Integer) -> Integer
+    assert !n.value.negative
+    return Integer(value: signed.make(negative: false, magnitude: theory.isqrt(n.value.magnitude)))
+
+# `n` factorial: the product of the integers from 1 to `n`.
+#
+# - `n`: 0 or more; 0 factorial is 1.
+#
+# Aborts where `n` is negative. See also `binomial`, `product_of_range`.
+function factorial(n: i64) -> Integer
+    return Integer(value: signed.make(negative: false, magnitude: counting.factorial(n)))
+
+# The count of ways to choose `k` things of `n`.
+#
+# - `n`: the things, 0 or more.
+# - `k`: how many are chosen, 0 or more; above `n` answers 0.
+#
+# Aborts where `n` or `k` is negative. See also `factorial`.
+function binomial(n: i64, k: i64) -> Integer
+    return Integer(value: signed.make(negative: false, magnitude: counting.binomial(n: n, k: k)))
+
+# The product of the integers from `from` to `to`, `to` left out as the
+# built-in `range` leaves it.
+#
+# - `from`: the first factor, any `i64`.
+# - `to`: one past the last; not above `from` answers 1, the empty product.
+#
+# A range holding zero answers zero. Python's `math.perm(n, k)` is
+# `product_of_range(from: n - k + 1, to: n + 1)`. See also `factorial`.
+function product_of_range(from: i64, to: i64) -> Integer
+    return Integer(value: counting.range_product(from: from, to: to))
+
+## Bits
+
+# How many bits the absolute value of `n` needs: 0 for zero.
+#
+# - `n`: any integer.
+#
+# See also `bit_count`, `trailing_zero_bits`.
+function bit_len(n: Integer) -> i64
+    return limbs.bit_len(n.value.magnitude)
+
+# How many bits of the absolute value of `n` are 1.
+#
+# - `n`: any integer.
+#
+# See also `bit_len`.
+function bit_count(n: Integer) -> i64
+    return limbs.ones(n.value.magnitude)
+
+# How many zero bits end the absolute value of `n`: 0 for zero.
+#
+# - `n`: any integer.
+#
+# See also `bit_len`.
+function trailing_zero_bits(n: Integer) -> i64
+    return limbs.trailing_zeros(n.value.magnitude)
+
+# Whether the bit `index` of `n` is 1, a negative `n` read in two's complement
+# of infinite width.
+#
+# - `n`: any integer.
+# - `index`: the bit, 0 the least significant, 0 or more.
+#
+# Aborts where `index` is negative. See also `with_bit`.
+function bit(n: Integer, index: i64) -> bool
+    return logic.bit(a: n.value, index: index)
+
+# `n` with its bit `index` set to 1 where `value` is true and to 0 where it is
+# false, a negative `n` read in two's complement of infinite width.
+#
+# - `n`: any integer.
+# - `index`: the bit, 0 the least significant, 0 or more.
+# - `value`: true for 1, false for 0.
+#
+# Aborts where `index` is negative. See also `bit`.
+function with_bit(n: Integer, index: i64, value: bool) -> Integer
+    return Integer(value: logic.with_bit(a: n.value, index: index, on: value))
+
+# The bits that are 1 in both `a` and `b`, as two's complement of infinite
+# width reads a negative integer.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# See also `bit_or`, `bit_and_not`.
+function bit_and(a: Integer, b: Integer) -> Integer
+    return Integer(value: logic.joined(a: a.value, b: b.value, op: logic.AND))
+
+# The bits that are 1 in `a` or `b`, as two's complement of infinite width
+# reads a negative integer.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# See also `bit_and`, `bit_xor`.
+function bit_or(a: Integer, b: Integer) -> Integer
+    return Integer(value: logic.joined(a: a.value, b: b.value, op: logic.OR))
+
+# The bits that are 1 in one of `a` and `b` and not both, as two's complement
+# of infinite width reads a negative integer.
+#
+# - `a`: any integer.
+# - `b`: any integer.
+#
+# See also `bit_or`.
+function bit_xor(a: Integer, b: Integer) -> Integer
+    return Integer(value: logic.joined(a: a.value, b: b.value, op: logic.XOR))
+
+# The bits that are 1 in `a` and 0 in `b`, as two's complement of infinite
+# width reads a negative integer.
+#
+# - `a`: the integer whose bits are kept.
+# - `b`: the integer whose 1 bits are cleared from `a`.
+#
+# See also `bit_and`, `bit_not`.
+function bit_and_not(a: Integer, b: Integer) -> Integer
+    return Integer(value: logic.joined(a: a.value, b: b.value, op: logic.AND_NOT))
+
+# Every bit of `n` turned, which is -1 less `n`.
+#
+# - `n`: any integer.
+#
+# CBOR's negative bignum, tag 3, holds `bit_not` of its value. See also
+# `bit_and_not`.
+function bit_not(n: Integer) -> Integer
+    return Integer(value: logic.inverted(n.value))
+
+# `n` times 2 to the power `count`.
+#
+# - `n`: any integer.
+# - `count`: the bits to shift by, 0 or more.
+#
+# Aborts where `count` is negative. See also `shift_right`.
+function shift_left(n: Integer, count: i64) -> Integer
+    return Integer(
+        value: signed.make(negative: n.value.negative, magnitude: limbs.shift_left(a: n.value.magnitude, count: count))
+    )
+
+# `n` divided by 2 to the power `count`, rounded toward the floor, as two's
+# complement shifts: -1 shifted right stays -1.
+#
+# - `n`: any integer.
+# - `count`: the bits to shift by, 0 or more.
+#
+# Aborts where `count` is negative. See also `shift_left`.
+function shift_right(n: Integer, count: i64) -> Integer
+    return Integer(value: logic.shifted_right(a: n.value, count: count))
+
+# An integer from 0 to `n` less one, every one as likely.
+#
+# - `generator`: the generator drawn from, which the caller holds; it
+#   advances by the bytes drawn, and by more where a draw past `n` is thrown
+#   away and drawn again.
+# - `n`: the bound, which is never answered; above zero.
+#
+# Aborts where `n` is not above zero. Whether the answer is secret is the
+# generator's: one made by `random.from_system` keeps it. See also
+# `random.below`.
+function random_below(@generator: random.Generator, n: Integer) -> Integer
+    assert !n.value.negative
+    m = draw.below(@generator, n: n.value.magnitude)
+    return Integer(value: signed.make(negative: false, magnitude: m))
+
+# How many decimal digits the absolute value of `n` has: zero has one.
+#
+# - `n`: any integer.
+#
+# It costs a power of ten as long as `n`. See also `with_precision`.
+function digit_count(n: Integer) -> i64
+    return decimal.digit_count(n.value.magnitude)
+
+## Decimals
+
+# The decimal `s` spells: an optional `+` or `-`, digits with at most one `.`
+# among them or at either end, at least one digit, then optionally `e` or `E`,
+# an optional sign and the digits of a power of ten.
+#
+# - `s`: the text; its scale is the count of digits after the point less the
+#   exponent, so "1.50" is 150 at scale 2 and "1.5e3" is 15 at scale -2.
+#
+# "-0" and "-0.0" are zero. Fails `invalid` where `s` is not such a number: a
+# space, a `_`, "NaN" and "Infinity" are not read. Fails `does_not_fit` where
+# the exponent is past `EXPONENT_MAX`. See also `format_decimal`.
+function parse_decimal(s: str) -> Decimal?
+    d = decimal_text.parse(s: s, limit: EXPONENT_MAX)?
+    return ok(Decimal(unscaled: Integer(value: d.unscaled), scale: d.scale))
+
+# `d` written with a point and no exponent: as many digits after the point as
+# its scale, none where the scale is 0 or less.
+#
+# - `d`: any decimal.
+#
+# 150 at scale 2 is "1.50", 15 at scale -2 is "1500", and 5 at scale 3 is
+# "0.005". A scale far below zero writes that many zeros. See also
+# `format_decimal_scientific`, `parse_decimal`.
+function format_decimal(d: Decimal) -> str
+    return decimal_text.plain(decimal.Dec(unscaled: d.unscaled.value, scale: d.scale))
+
+# `d` written as the General Decimal Arithmetic writes it, which is Python's
+# `str` of a `Decimal`: with a point and no exponent where the exponent is 0
+# or less and the number is not below one millionth, else one digit, the rest
+# after a point, and `E` with its sign.
+#
+# - `d`: any decimal.
+#
+# 15 at scale -2 is "1.5E+3", 1 at scale 7 is "1E-7". See also
+# `format_decimal`, `format_decimal_engineering`.
+function format_decimal_scientific(d: Decimal) -> str
+    return decimal_text.scientific(d: decimal.Dec(unscaled: d.unscaled.value, scale: d.scale), engineering: false)
+
+# `d` written as `format_decimal_scientific` writes it, but with an exponent
+# that is a multiple of three, as Python's `to_eng_string` writes it.
+#
+# - `d`: any decimal.
+#
+# 1 at scale 7 is "100E-9". See also `format_decimal_scientific`.
+function format_decimal_engineering(d: Decimal) -> str
+    return decimal_text.scientific(d: decimal.Dec(unscaled: d.unscaled.value, scale: d.scale), engineering: true)
+
+# `a` plus `b`, exactly, at the larger of their scales.
+#
+# - `a`: any decimal.
+# - `b`: any decimal.
+#
+# Two scales far apart make as many digits. See also `subtract_decimal`,
+# `with_scale`.
+function add_decimal(a: Decimal, b: Decimal) -> Decimal
+    r = decimal.add(
+        a: decimal.Dec(unscaled: a.unscaled.value, scale: a.scale),
+        b: decimal.Dec(unscaled: b.unscaled.value, scale: b.scale)
+    )
+    return Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale)
+
+# `a` less `b`, exactly, at the larger of their scales.
+#
+# - `a`: the decimal subtracted from.
+# - `b`: the decimal subtracted.
+#
+# See also `add_decimal`.
+function subtract_decimal(a: Decimal, b: Decimal) -> Decimal
+    r = decimal.sub(
+        a: decimal.Dec(unscaled: a.unscaled.value, scale: a.scale),
+        b: decimal.Dec(unscaled: b.unscaled.value, scale: b.scale)
+    )
+    return Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale)
+
+# `a` times `b`, exactly, at the sum of their scales.
+#
+# - `a`: any decimal.
+# - `b`: any decimal.
+#
+# 1.5 times 1.50 is 2.250. See also `with_scale`, `divide_decimal`.
+function multiply_decimal(a: Decimal, b: Decimal) -> Decimal
+    r = decimal.mul(
+        a: decimal.Dec(unscaled: a.unscaled.value, scale: a.scale),
+        b: decimal.Dec(unscaled: b.unscaled.value, scale: b.scale)
+    )
+    return Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale)
+
+# `n` divided by `by`, rounded to `scale` digits after the point as
+# `rounding` says.
+#
+# - `n`: the dividend.
+# - `by`: the divisor, not zero.
+# - `scale`: the digits after the point of the answer; a negative one rounds
+#   to tens, hundreds and so on.
+# - `rounding`: how the exact quotient is rounded to that scale.
+#
+# Aborts where `by` is zero. See also `divide_decimal_whole`, `with_scale`.
+function divide_decimal(n: Decimal, by: Decimal, scale: i64, rounding: Rounding) -> Decimal
+    r = decimal.quotient_at(
+        n: decimal.Dec(unscaled: n.unscaled.value, scale: n.scale),
+        by: decimal.Dec(unscaled: by.unscaled.value, scale: by.scale),
+        scale: scale
+    )
+    q = divide(n: Integer(value: r.num), by: Integer(value: r.den), rounding: rounding).quotient
+    return Decimal(unscaled: q, scale: scale)
+
+# The whole quotient of `n` by `by` rounded as `rounding` says, and what
+# remains.
+#
+# - `n`: the dividend.
+# - `by`: the divisor, not zero.
+# - `rounding`: how the exact quotient is rounded to a whole one:
+#   `.toward_zero` is Python's `divide_int` and `remainder` of a `Decimal`,
+#   `.half_even` its `remainder_near`.
+#
+# The remainder is at the larger of the two scales. Aborts where `by` is zero.
+# See also `divide_decimal`, `divide`.
+function divide_decimal_whole(n: Decimal, by: Decimal, rounding: Rounding) -> DecimalDivision
+    q = divide_decimal(n: n, by: by, scale: 0, rounding: rounding).unscaled
+    rest = subtract_decimal(a: n, b: multiply_decimal(a: Decimal(unscaled: q, scale: 0), b: by))
+    return DecimalDivision(quotient: q, remainder: rest)
+
+# `d` rounded to `scale` digits after the point as `rounding` says: Python's
+# `quantize`.
+#
+# - `d`: any decimal.
+# - `scale`: the digits after the point of the answer; above `d`'s, zeros are
+#   added and nothing is rounded; a negative one rounds to tens, hundreds and
+#   so on, and 0 to a whole number.
+# - `rounding`: how a value between two of that scale is rounded.
+#
+# A scale far above `d`'s writes that many digits. See also `with_precision`.
+function with_scale(d: Decimal, scale: i64, rounding: Rounding) -> Decimal
+    r = decimal.at_scale(d: decimal.Dec(unscaled: d.unscaled.value, scale: d.scale), scale: scale)
+    q = divide(n: Integer(value: r.num), by: Integer(value: r.den), rounding: rounding).quotient
+    return Decimal(unscaled: q, scale: scale)
+
+# `d` rounded to `digits` significant digits as `rounding` says, as Python's
+# `decimal` rounds a result to its context's precision.
+#
+# - `d`: any decimal.
+# - `digits`: the significant digits kept, 1 or more; where `d` has no more,
+#   it is answered as it is.
+# - `rounding`: how a value between two is rounded.
+#
+# 123456 rounded to 3 digits is 123 at scale -3, written "1.23E+5". A
+# rounding that carries into a new digit, 999 to 2 digits, answers 10 at
+# scale -2. Aborts where `digits` is below 1. See also `with_scale`,
+# `digit_count`.
+function with_precision(d: Decimal, digits: i64, rounding: Rounding) -> Decimal
+    assert digits >= 1
+    count = digit_count(d.unscaled)
+
+    if count <= digits
+        return d
+    target = d.scale - (count - digits)
+    rounded = with_scale(d: d, scale: target, rounding: rounding)
+
+    if digit_count(rounded.unscaled) > digits
+        tenth = divide(n: rounded.unscaled, by: from_int(10), rounding: .toward_zero).quotient
+        return Decimal(unscaled: tenth, scale: target - 1)
+    return rounded
+
+# `d` with the zeros that end its digits taken off and its scale lowered by
+# as many, so 1.500 is 1.5 and 1500 is 15 at scale -2: Python's
+# `normalize`.
+#
+# - `d`: any decimal; zero is 0 at scale 0.
+#
+# See also `with_scale`.
+function trim_zeros(d: Decimal) -> Decimal
+    r = decimal.trim(decimal.Dec(unscaled: d.unscaled.value, scale: d.scale))
+    return Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale)
+
+# -1, 0 or 1 as the value of `a` is below that of `b`, equal to it, or above
+# it, whatever their scales.
+#
+# - `a`: the decimal on the left.
+# - `b`: the decimal on the right.
+#
+# 1.5 and 1.50 compare equal. See also `compare`.
+function compare_decimal(a: Decimal, b: Decimal) -> i64
+    return decimal.compare(
+        a: decimal.Dec(unscaled: a.unscaled.value, scale: a.scale),
+        b: decimal.Dec(unscaled: b.unscaled.value, scale: b.scale)
+    )
+
+# The square root of `d`, rounded to `scale` digits after the point as
+# `rounding` says.
+#
+# - `d`: a decimal not below zero.
+# - `scale`: the digits after the point of the answer.
+# - `rounding`: how the exact root is rounded to that scale; the root of 0.25
+#   to a whole number is a tie, 0.5, and the halves decide it as they say.
+#
+# Aborts where `d` is negative. See also `sqrt`.
+function sqrt_decimal(d: Decimal, scale: i64, rounding: Rounding) -> Decimal
+    r = decimal.sqrt_at(d: decimal.Dec(unscaled: d.unscaled.value, scale: d.scale), scale: scale)
+    q = divide(n: Integer(value: r.num), by: Integer(value: r.den), rounding: rounding).quotient
+    return Decimal(unscaled: q, scale: scale)
+
+# `d` raised to the power `exponent`, exactly, at `exponent` times its scale.
+#
+# - `d`: any decimal.
+# - `exponent`: 0 or more; any decimal to the power 0 is 1 at scale 0.
+#
+# Aborts where `exponent` is negative: a quotient is `divide_decimal`'s. See
+# also `power`.
+function power_decimal(d: Decimal, exponent: i64) -> Decimal
+    r = decimal.power(d: decimal.Dec(unscaled: d.unscaled.value, scale: d.scale), k: exponent)
+    return Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale)
+
+# The exact value of `x` as a decimal, with the fewest digits that hold it, as
+# Python's `Decimal.from_float` answers: 0.1 is
+# 0.1000000000000000055511151231257827021181583404541015625.
+#
+# - `x`: any `f64`; -0.0 answers zero.
+#
+# Fails `invalid` where `x` is NaN and `does_not_fit` where it is an infinity.
+# See also `float_of_decimal`, `parse_decimal`.
+function decimal_of_float(x: f64) -> Decimal?
+    if floats.is_nan(x)
+        return fail(code: INVALID, msg: "NaN is no decimal")
+
+    if floats.is_infinite(x)
+        return fail(code: DOES_NOT_FIT, msg: "an infinity is past every decimal")
+    r = decimal.of_float(parts: floats.parts_of(x), negative: x < 0.0)
+    return ok(Decimal(unscaled: Integer(value: r.unscaled), scale: r.scale))
+
+# The `f64` nearest the value of `d`, a tie going to the one whose last bit is
+# zero.
+#
+# - `d`: any decimal.
+#
+# Too large is an infinity, too small a zero, each of `d`'s sign. See also
+# `decimal_of_float`, `float_of`.
+function float_of_decimal(d: Decimal) -> f64
+    return decimal.to_float(decimal.Dec(unscaled: d.unscaled.value, scale: d.scale))
+
+## Fractions
+
+# The fraction `numerator` over `denominator`, in lowest terms with the sign
+# on the numerator.
+#
+# - `numerator`: any integer.
+# - `denominator`: any integer but zero.
+#
+# Aborts where `denominator` is zero. See also `parse_fraction`.
+function fraction(numerator: Integer, denominator: Integer) -> Fraction
+    r = rational.make(num: numerator.value, den: denominator.value)
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# `a` plus `b`.
+#
+# - `a`: any fraction.
+# - `b`: any fraction.
+#
+# See also `subtract_fraction`.
+function add_fraction(a: Fraction, b: Fraction) -> Fraction
+    r = rational.add(
+        a: rational.Frac(num: a.numerator.value, den: a.denominator.value),
+        b: rational.Frac(num: b.numerator.value, den: b.denominator.value)
+    )
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# `a` less `b`.
+#
+# - `a`: the fraction subtracted from.
+# - `b`: the fraction subtracted.
+#
+# See also `add_fraction`.
+function subtract_fraction(a: Fraction, b: Fraction) -> Fraction
+    r = rational.sub(
+        a: rational.Frac(num: a.numerator.value, den: a.denominator.value),
+        b: rational.Frac(num: b.numerator.value, den: b.denominator.value)
+    )
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# `a` times `b`.
+#
+# - `a`: any fraction.
+# - `b`: any fraction.
+#
+# See also `divide_fraction`.
+function multiply_fraction(a: Fraction, b: Fraction) -> Fraction
+    r = rational.mul(
+        a: rational.Frac(num: a.numerator.value, den: a.denominator.value),
+        b: rational.Frac(num: b.numerator.value, den: b.denominator.value)
+    )
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# `n` divided by `by`.
+#
+# - `n`: the dividend.
+# - `by`: the divisor, not zero; the inverse of a fraction `f`, Go's `Inv`, is
+#   `f` divided into 1.
+#
+# Aborts where `by` is zero. See also `multiply_fraction`.
+function divide_fraction(n: Fraction, by: Fraction) -> Fraction
+    r = rational.div(
+        a: rational.Frac(num: n.numerator.value, den: n.denominator.value),
+        b: rational.Frac(num: by.numerator.value, den: by.denominator.value)
+    )
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# `f` raised to the power `exponent`.
+#
+# - `f`: any fraction.
+# - `exponent`: any `i64` but the smallest; a negative one raises the inverse
+#   of `f`.
+#
+# Aborts where `f` is zero and `exponent` is negative. See also `power`.
+function power_fraction(f: Fraction, exponent: i64) -> Fraction
+    r = rational.power(f: rational.Frac(num: f.numerator.value, den: f.denominator.value), k: exponent)
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it.
+#
+# - `a`: the fraction on the left.
+# - `b`: the fraction on the right.
+#
+# See also `compare`.
+function compare_fraction(a: Fraction, b: Fraction) -> i64
+    return rational.compare(
+        a: rational.Frac(num: a.numerator.value, den: a.denominator.value),
+        b: rational.Frac(num: b.numerator.value, den: b.denominator.value)
+    )
+
+# `f` rounded to a whole number as `rounding` says.
+#
+# - `f`: any fraction.
+# - `rounding`: how a fraction between two whole numbers is rounded:
+#   `.floor` is Python's `math.floor`, `.toward_zero` its `int`, `.half_even`
+#   its `round`.
+#
+# See also `decimal_of_fraction`.
+function round_fraction(f: Fraction, rounding: Rounding) -> Integer
+    return divide(n: f.numerator, by: f.denominator, rounding: rounding).quotient
+
+# `f` as a decimal of `scale` digits after the point, rounded as `rounding`
+# says.
+#
+# - `f`: any fraction.
+# - `scale`: the digits after the point of the answer.
+# - `rounding`: how a value between two of that scale is rounded; Go's
+#   `FloatString` rounds `.half_away_from_zero`.
+#
+# See also `exact_scale`, `fraction_of_decimal`.
+function decimal_of_fraction(f: Fraction, scale: i64, rounding: Rounding) -> Decimal
+    whole = Decimal(unscaled: f.numerator, scale: 0)
+    return divide_decimal(n: whole, by: Decimal(unscaled: f.denominator, scale: 0), scale: scale, rounding: rounding)
+
+# The value of `d` as a fraction in lowest terms.
+#
+# - `d`: any decimal.
+#
+# See also `decimal_of_fraction`.
+function fraction_of_decimal(d: Decimal) -> Fraction
+    r = rational.of_decimal(decimal.Dec(unscaled: d.unscaled.value, scale: d.scale))
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# The fewest digits after the point that write `f` exactly as a decimal.
+#
+# - `f`: any fraction.
+#
+# A whole number answers 0, 1/8 answers 3. Fails `does_not_fit` where `f` has
+# no exact decimal, its denominator holding a prime other than 2 and 5, as
+# 1/3 does. See also `decimal_of_fraction`.
+function exact_scale(f: Fraction) -> i64?
+    return rational.exact_scale(rational.Frac(num: f.numerator.value, den: f.denominator.value))
+
+# The `f64` nearest `f`, a tie going to the one whose last bit is zero.
+#
+# - `f`: any fraction.
+#
+# Too large is an infinity, too small a zero, each of `f`'s sign. See also
+# `float32_of_fraction`, `fraction_of_float`.
+function float_of_fraction(f: Fraction) -> f64
+    return rational.to_float(
+        f: rational.Frac(num: f.numerator.value, den: f.denominator.value),
+        bits: 53,
+        lowest: -1074
+    )
+
+# The `f32` nearest `f`, rounded once, a tie going to the one whose last bit
+# is zero.
+#
+# - `f`: any fraction.
+#
+# It is not always `to_f32` of `float_of_fraction`, which rounds twice. Too
+# large is an infinity, too small a zero. See also `float_of_fraction`.
+function float32_of_fraction(f: Fraction) -> f32
+    return to_f32(
+        rational.to_float(f: rational.Frac(num: f.numerator.value, den: f.denominator.value), bits: 24, lowest: -149)
+    )
+
+# The exact value of `x` as a fraction: 0.1 is
+# 3602879701896397/36028797018963968.
+#
+# - `x`: any `f64`; -0.0 answers zero.
+#
+# Fails `invalid` where `x` is NaN and `does_not_fit` where it is an infinity.
+# See also `float_of_fraction`, `approximate`.
+function fraction_of_float(x: f64) -> Fraction?
+    if floats.is_nan(x)
+        return fail(code: INVALID, msg: "NaN is no fraction")
+
+    if floats.is_infinite(x)
+        return fail(code: DOES_NOT_FIT, msg: "an infinity is past every fraction")
+    r = rational.of_float(parts: floats.parts_of(x), negative: x < 0.0)
+    return ok(Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den)))
+
+# The fraction nearest `f` whose denominator is at most `max_denominator`, as
+# Python's `limit_denominator` answers it.
+#
+# - `f`: any fraction.
+# - `max_denominator`: the largest denominator allowed, 1 or more; 1 rounds
+#   `f` to a nearest whole number.
+#
+# Where two are as near, the one the continued fraction of `f` reaches last
+# is answered, as Python does: 1/2 under 1 is 0, and -1/2 is -1. Aborts where
+# `max_denominator` is below 1. See also `fraction_of_float`.
+function approximate(f: Fraction, max_denominator: Integer) -> Fraction
+    r = rational.approximate(
+        f: rational.Frac(num: f.numerator.value, den: f.denominator.value),
+        max: max_denominator.value
+    )
+    return Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den))
+
+# The fraction `s` spells: an integer as `parse` reads one, a `/` and a
+# denominator of digits alone, or a decimal as `parse_decimal` reads one.
+#
+# - `s`: the text, "3/4", "-6/8", "1.25" or "1e-3"; no space is read.
+#
+# Fails `invalid` where `s` is no such text or its denominator is zero, and
+# `does_not_fit` where an exponent is past `EXPONENT_MAX`. See also
+# `format_fraction`.
+function parse_fraction(s: str) -> Fraction?
+    r = rational.parse(s: s, limit: EXPONENT_MAX)?
+    return ok(Fraction(numerator: Integer(value: r.num), denominator: Integer(value: r.den)))
+
+# `f` written as its numerator, a `/` and its denominator, or as the numerator
+# alone where the denominator is 1, as Python's `str` writes a `Fraction`.
+#
+# - `f`: any fraction.
+#
+# See also `parse_fraction`, `decimal_of_fraction`.
+function format_fraction(f: Fraction) -> str
+    return rational.format(rational.Frac(num: f.numerator.value, den: f.denominator.value))
+
+## Tests against Go
+
+test "gcd_with_coefficients: the coefficients Go's GCD answers, every pair of signs and a zero"
+    lefts = [240, -240, 0, 46, 12, 7, -7]
+    bs = [46, 46, -5, 240, 18, 0, -3]
+    xs = [-9, 9, 0, 47, -1, 1, -1]
+    ys = [47, 47, -1, -9, 1, 0, 2]
+
+    for i in range(from: 0, to: 7)
+        b = gcd_with_coefficients(a: from_int(lefts[i]), b: from_int(bs[i]))
+        assert b.x == from_int(xs[i])
+        assert b.y == from_int(ys[i])
+
+test "jacobi: the symbols Go's Jacobi answers, negative operands included"
+    lefts = [2, 3, -1, -1, 0, 0, 5, -5, 1001, 19]
+    bs = [7, 7, 7, -7, 1, 3, -3, -3, 9907, 45]
+    js = [1, -1, -1, 1, 1, 0, -1, -1, -1, 1]
+
+    for i in range(from: 0, to: 10)
+        assert jacobi(a: from_int(lefts[i]), b: from_int(bs[i])) == js[i]
+
+test "sqrt_mod: the roots Go's ModSqrt answers, primes of 3, 5 and 1 modulo 8, and none"
+    ns = [2, 10, -2, 10, 5, 3, 13, 58, 2]
+    ps = [7, 13, 17, 41, 41, 11, 17, 101, 113]
+    roots = [4, 7, 7, 16, 28, 5, 8, 82, 62]
+
+    for i in range(from: 0, to: 9)
+        assert sqrt_mod(n: from_int(ns[i]), prime: from_int(ps[i])).must() == from_int(roots[i])
+
+    assert sqrt_mod(n: from_int(1000), prime: from_int(1000000007)).is_err()
+
+## Tests against Python
+
+test "add, subtract and multiply: generated operands of 1 to 3000 digits, against Python"
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        a = parse(witness.digits(count: size, seed: size)).must()
+        b = negate(parse(witness.digits(count: size * 2 / 3 + 1, seed: size + 7)).must())
+        h @ witness.digest(text: format(add(a: a, b: b)), into: h)
+        h @ witness.digest(text: format(subtract(a: b, b: a)), into: h)
+        h @ witness.digest(text: format(multiply(a: a, b: b)), into: h)
+
+    assert h == 63348533
+
+test "divide: every rounding, both signs, and exact ties, against Python"
+    roundings: [Rounding] = [
+        .toward_zero
+        .away_from_zero
+        .floor
+        .ceiling
+        .half_even
+        .half_away_from_zero
+        .half_toward_zero
+        .away_if_zero_or_five
+    ]
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        a = parse(witness.digits(count: size, seed: size + 1)).must()
+        b = parse(witness.digits(count: size / 2 + 1, seed: size + 2)).must()
+        half = parse(witness.digits(count: size, seed: size + 3)).must()
+        whole = parse(witness.digits(count: size, seed: size + 4)).must()
+        twice = multiply(a: half, b: from_int(2))
+        tie = add(a: multiply(a: whole, b: twice), b: half)
+        xs = [a, negate(a), a, negate(a), tie, negate(tie)]
+        ys = [b, b, negate(b), negate(b), twice, twice]
+
+        for i in range(from: 0, to: 6)
+            for m in roundings
+                d = divide(n: xs[i], by: ys[i], rounding: m)
+                h @ witness.digest(text: format(d.quotient), into: h)
+                h @ witness.digest(text: format(d.remainder), into: h)
+
+    assert h == 1303664
+
+test "divide_euclidean, gcd, lcm, sqrt, power_mod and inverse_mod: generated operands, against Python"
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        a = parse(witness.digits(count: size, seed: size + 5)).must()
+        b = parse(witness.digits(count: size / 2 + 1, seed: size + 6)).must()
+        m = bit_or(a: parse(witness.digits(count: size / 3 + 2, seed: size + 8)).must(), b: from_int(1))
+        e = divide_euclidean(n: negate(a), by: negate(b))
+        h @ witness.digest(text: format(e.quotient) + "/" + format(e.remainder), into: h)
+        h @ witness.digest(text: format(gcd(a: a, b: negate(b))), into: h)
+        h @ witness.digest(text: format(lcm(a: negate(a), b: b)), into: h)
+        h @ witness.digest(text: format(sqrt(a)), into: h)
+        h @ witness.digest(text: format(power_mod(base: a, exponent: b, modulus: m).must()), into: h)
+
+        inverse = match inverse_mod(n: a, modulus: m)
+            .ok v  => format(v)
+            .err _ => "none"
+
+        h @ witness.digest(text: inverse, into: h)
+
+    assert h == 662300033
+
+test "the bits, the shifts, the bases and the bytes: generated operands, against Python"
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        a = parse(witness.digits(count: size, seed: size + 9)).must()
+        b = parse(witness.digits(count: size * 3 / 4 + 1, seed: size + 10)).must()
+        xs = [a, negate(a), a, negate(a)]
+        ys = [b, b, negate(b), negate(b)]
+
+        for i in range(from: 0, to: 4)
+            h @ witness.digest(text: format(bit_and(a: xs[i], b: ys[i])), into: h)
+            h @ witness.digest(text: format(bit_or(a: xs[i], b: ys[i])), into: h)
+            h @ witness.digest(text: format(bit_xor(a: xs[i], b: ys[i])), into: h)
+            h @ witness.digest(text: format(bit_and_not(a: xs[i], b: ys[i])), into: h)
+
+        for k in [0, 1, 29, 30, 31, 100]
+            h @ witness.digest(text: format(shift_left(n: negate(a), count: k)), into: h)
+            h @ witness.digest(text: format(shift_right(n: negate(a), count: k)), into: h)
+            h @ witness.digest(text: format(shift_right(n: a, count: k)), into: h)
+
+        h @ witness.digest(text: f"{bit_len(a)},{bit_count(a)},{trailing_zero_bits(a)}", into: h)
+
+        for base in [2, 7, 16, 36, 62]
+            written = format_base(n: negate(a), base: base)
+            h @ witness.digest(text: written, into: h)
+            assert parse_base(s: written, base: base).must() == negate(a)
+
+        signed_bytes = to_bytes_signed(n: negate(a), order: .big_endian)
+        assert from_bytes_signed(b: signed_bytes, order: .big_endian) == negate(a)
+        little = to_bytes(n: a, order: .little_endian).must()
+        assert from_bytes(b: little, order: .little_endian) == a
+        h @ witness.digest(text: witness.bytes_text(signed_bytes), into: h)
+        h @ witness.digest(text: witness.bytes_text(little), into: h)
+
+    assert h == 429787127
+
+test "decimals: quotients, scales, precisions, roots and text, every rounding, against Python"
+    roundings: [Rounding] = [
+        .toward_zero
+        .away_from_zero
+        .floor
+        .ceiling
+        .half_even
+        .half_away_from_zero
+        .half_toward_zero
+        .away_if_zero_or_five
+    ]
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        u = parse(witness.digits(count: size, seed: size + 11)).must()
+        v = parse(witness.digits(count: size / 2 + 1, seed: size + 12)).must()
+        d = Decimal(unscaled: u, scale: size / 2)
+        e = Decimal(unscaled: negate(v), scale: 3)
+        x = Decimal(unscaled: negate(u), scale: 2)
+        digits: i64 @= size / 3
+
+        if digits < 1
+            digits @ 1
+
+        for m in roundings
+            h @ witness.digest(text: format_decimal(divide_decimal(n: d, by: e, scale: 7, rounding: m)), into: h)
+            h @ witness.digest(text: format_decimal(with_scale(d: d, scale: size / 4, rounding: m)), into: h)
+            h @ witness.digest(
+                text: format_decimal_scientific(with_precision(d: x, digits: digits, rounding: m)),
+                into: h
+            )
+
+        h @ witness.digest(text: format_decimal(sqrt_decimal(d: d, scale: 12, rounding: .half_even)), into: h)
+        sums = [
+            format_decimal(add_decimal(a: d, b: e))
+            format_decimal(subtract_decimal(a: d, b: e))
+            format_decimal(multiply_decimal(a: d, b: e))
+        ]
+        h @ witness.digest(text: sums.join("|"), into: h)
+        h @ witness.digest(text: format_decimal_scientific(trim_zeros(d)), into: h)
+        y = Decimal(unscaled: negate(u), scale: 7 - size / 3)
+        h @ witness.digest(text: format_decimal_scientific(y) + "|" + format_decimal_engineering(y), into: h)
+
+    assert h == 170786726
+
+test "fractions: the four operations, approximate, rounding, powers and decimals, against Python"
+    h: i64 @= 0
+
+    for size in witness.sizes()
+        p = parse(witness.digits(count: size, seed: size + 13)).must()
+        q = parse(witness.digits(count: size / 2 + 1, seed: size + 14)).must()
+        r = parse(witness.digits(count: size / 3 + 1, seed: size + 15)).must()
+        s = parse(witness.digits(count: size / 4 + 1, seed: size + 16)).must()
+        f = fraction(numerator: p, denominator: negate(q))
+        g = fraction(numerator: r, denominator: s)
+        four = [
+            add_fraction(a: f, b: g)
+            subtract_fraction(a: f, b: g)
+            multiply_fraction(a: f, b: g)
+            divide_fraction(n: f, by: g)
+        ]
+        h @ witness.digest(text: four.map(format_fraction).join("|"), into: h)
+        near = [approximate(f: f, max_denominator: from_int(1000)), approximate(f: g, max_denominator: from_int(7))]
+        h @ witness.digest(text: near.map(format_fraction).join("|"), into: h)
+        rounded = [
+            format(round_fraction(f: f, rounding: .floor))
+            format(round_fraction(f: f, rounding: .half_even))
+            format_fraction(power_fraction(f: f, exponent: 3))
+        ]
+        h @ witness.digest(text: rounded.join("|"), into: h)
+        h @ witness.digest(
+            text: format_decimal(decimal_of_fraction(f: f, scale: 9, rounding: .half_away_from_zero)),
+            into: h
+        )
+
+    assert h == 28009135
+
+test "multiply: Karatsuba's method on 20000 and 15000 digits, against Python"
+    a = parse(witness.digits(count: 20000, seed: 1)).must()
+    b = parse(witness.digits(count: 15000, seed: 2)).must()
+    h: i64 @= witness.digest(text: format(multiply(a: a, b: b)), into: 0)
+    h @ witness.digest(text: format(multiply(a: a, b: a)), into: h)
+    assert h == 52961937
+
+test "float_of, float_of_decimal and float_of_fraction: the float numbers reads from the same digits"
+    for size in witness.sizes()
+        a = parse(witness.digits(count: size, seed: size + 17)).must()
+        assert float_of(a) == numbers.parse_float(format(a)).must()
+        assert float_of(negate(a)) == numbers.parse_float(format(negate(a))).must()
+
+        for k in [0, 5, size, size + 300, size + 330, size + 400]
+            d = Decimal(unscaled: negate(a), scale: k)
+            near = numbers.parse_float(format_decimal(d)).must()
+            assert float_of_decimal(d) == near
+            assert float_of_fraction(fraction_of_decimal(d)) == near
+
+test "random_below: every value below ten drawn, and none past a bound of 2 to the 100th plus one"
+    g @= random.Generator(high: 7, low: 9)
+    seen: {i64: bool} @= {}
+
+    for _ in range(from: 0, to: 300)
+        n = random_below(@g, n: from_int(10))
+        seen[int_of(n).must()] @ true
+
+    assert keys(seen).len() == 10
+    bound = add(a: power(base: from_int(2), exponent: 100), b: from_int(1))
+
+    for _ in range(from: 0, to: 50)
+        n = random_below(@g, n: bound)
+        assert sign(n) >= 0 && compare(a: n, b: bound) < 0
+
+## Examples
+
+# An `i64` made an integer and written back.
+test "from_int: a negative number"
+    assert format(from_int(-42)) == "-42"
+
+# The largest `u64` made an integer.
+test "from_u64: the largest u64"
+    assert format(from_u64(18446744073709551615)) == "18446744073709551615"
+
+# An integer that fits an `i64`, and one past it.
+test "int_of: the largest i64, and one more"
+    assert int_of(parse("9223372036854775807").must()).must() == 9223372036854775807
+    assert int_of(parse("9223372036854775808").must()).is_err()
+
+# An integer that fits a `u64`.
+test "u64_of: a byte's largest value"
+    assert u64_of(from_int(255)).must() == 255
+
+# 2^53 + 1 has no float; the nearest is 2^53.
+test "float_of: a number past the floats' whole numbers"
+    assert float_of(parse("9007199254740993").must()) == 9007199254740992.0
+
+# The integer part of a float, toward zero.
+test "from_float: -2.75"
+    assert format(from_float(-2.75).must()) == "-2"
+
+# A number with a sign and zeros before it.
+test "parse: a sign and leading zeros"
+    assert format(parse("-000123").must()) == "-123"
+
+# A number in base 16.
+test "parse_base: ff in base 16"
+    assert format(parse_base(s: "ff", base: 16).must()) == "255"
+
+# A literal as the language writes it.
+test "parse_literal: a hexadecimal literal with a separator"
+    assert format(parse_literal("0xff_ff").must()) == "65535"
+
+# 2 to the 100th, all its digits.
+test "format: 2 to the 100th"
+    assert format(power(base: from_int(2), exponent: 100)) == "1267650600228229401496703205376"
+
+# A negative number in base 16.
+test "format_base: -255 in base 16"
+    assert format_base(n: from_int(-255), base: 16) == "-ff"
+
+# Two bytes, the most significant first.
+test "from_bytes: 256 from two bytes"
+    assert format(from_bytes(b: [1, 0], order: .big_endian)) == "256"
+
+# Two bytes of two's complement.
+test "from_bytes_signed: -2 from two bytes"
+    assert format(from_bytes_signed(b: [255, 254], order: .big_endian)) == "-2"
+
+# The fewest bytes of 256.
+test "to_bytes: 256"
+    assert to_bytes(n: from_int(256), order: .big_endian).must() == [1, 0]
+
+# The fewest bytes of -2 in two's complement.
+test "to_bytes_signed: -2"
+    assert to_bytes_signed(n: from_int(-2), order: .big_endian) == [254]
+
+# One in four bytes, the least significant first.
+test "to_bytes_width: one in four bytes"
+    assert to_bytes_width(n: from_int(1), width: 4, order: .little_endian).must() == [1, 0, 0, 0]
+
+# -1 in two bytes of two's complement.
+test "to_bytes_signed_width: -1 in two bytes"
+    assert to_bytes_signed_width(n: from_int(-1), width: 2, order: .big_endian).must() == [255, 255]
+
+# The sign of a negative number.
+test "sign: of -5"
+    assert sign(from_int(-5)) == -1
+
+# A number without its sign.
+test "abs: of -5"
+    assert abs(from_int(-5)) == from_int(5)
+
+# A number with its sign turned.
+test "negate: 5"
+    assert negate(from_int(5)) == from_int(-5)
+
+# Two numbers ordered.
+test "compare: 2 and 10"
+    assert compare(a: from_int(2), b: from_int(10)) == -1
+
+# Two numbers ordered by their absolute values.
+test "compare_abs: -20 and 10"
+    assert compare_abs(a: from_int(-20), b: from_int(10)) == 1
+
+# A sum that carries past every digit.
+test "add: one past twenty nines"
+    assert format(add(a: parse("99999999999999999999").must(), b: from_int(1))) == "100000000000000000000"
+
+# A difference below zero.
+test "subtract: 3 less 5"
+    assert subtract(a: from_int(3), b: from_int(5)) == from_int(-2)
+
+# The square of a thirty-digit number.
+test "multiply: a thirty-digit number squared"
+    x = parse("123456789012345678901234567890").must()
+    assert format(multiply(a: x, b: x)) == "15241578753238836750495351562536198787501905199875019052100"
+
+# -7 divided by 2 at the floor, as Python's `//` and `%` answer.
+test "divide: -7 by 2 at the floor"
+    d = divide(n: from_int(-7), by: from_int(2), rounding: .floor)
+    assert d.quotient == from_int(-4)
+    assert d.remainder == from_int(1)
+
+# A remainder that stays above zero with a negative divisor.
+test "divide_euclidean: -7 by -2"
+    d = divide_euclidean(n: from_int(-7), by: from_int(-2))
+    assert d.quotient == from_int(4)
+    assert d.remainder == from_int(1)
+
+# A negative number cubed.
+test "power: -3 cubed"
+    assert power(base: from_int(-3), exponent: 3) == from_int(-27)
+
+# 3 to the 200th, its last three digits.
+test "power_mod: 3 to the 200th modulo 1000"
+    assert power_mod(base: from_int(3), exponent: from_int(200), modulus: from_int(1000)).must() == from_int(1)
+
+# The inverse of 3 modulo 7.
+test "inverse_mod: 3 modulo 7"
+    assert inverse_mod(n: from_int(3), modulus: from_int(7)).must() == from_int(5)
+
+# A square root of 10 modulo 13, as Go answers it.
+test "sqrt_mod: 10 modulo 13"
+    assert sqrt_mod(n: from_int(10), prime: from_int(13)).must() == from_int(7)
+
+# A Jacobi symbol over a prime.
+test "jacobi: 1001 over 9907"
+    assert jacobi(a: from_int(1001), b: from_int(9907)) == -1
+
+# A Mersenne prime.
+test "is_probable_prime: 2 to the 31st less one"
+    assert is_probable_prime(n: from_int(2147483647), rounds: 0)
+
+# The divisor of a negative number.
+test "gcd: 12 and -18"
+    assert gcd(a: from_int(12), b: from_int(-18)) == from_int(6)
+
+# The least common multiple of two numbers.
+test "lcm: 4 and 6"
+    assert lcm(a: from_int(4), b: from_int(6)) == from_int(12)
+
+# Bezout's coefficients of 240 and 46, as Go answers them.
+test "gcd_with_coefficients: 240 and 46"
+    b = gcd_with_coefficients(a: from_int(240), b: from_int(46))
+    assert b.gcd == from_int(2)
+    assert b.x == from_int(-9)
+    assert b.y == from_int(47)
+
+# The square root of ten to the 20th.
+test "sqrt: ten to the 20th"
+    assert sqrt(parse("100000000000000000000").must()) == from_int(10000000000)
+
+# 25 factorial, past 64 bits.
+test "factorial: 25"
+    assert format(factorial(25)) == "15511210043330985984000000"
+
+# The middle of the 60th row of Pascal's triangle.
+test "binomial: 60 choose 30"
+    assert binomial(n: 60, k: 30) == from_int(118264581564861424)
+
+# The product of 3, 4, 5 and 6.
+test "product_of_range: 3 to 7"
+    assert product_of_range(from: 3, to: 7) == from_int(360)
+
+# The bits of a byte's largest value.
+test "bit_len: 255"
+    assert bit_len(from_int(255)) == 8
+
+# The ones of the absolute value of -7.
+test "bit_count: -7"
+    assert bit_count(from_int(-7)) == 3
+
+# The zeros ending 40.
+test "trailing_zero_bits: 40"
+    assert trailing_zero_bits(from_int(40)) == 3
+
+# The lowest bit of -2 in two's complement.
+test "bit: the lowest of -2"
+    assert !bit(n: from_int(-2), index: 0)
+
+# A bit set in zero.
+test "with_bit: bit 3 of zero"
+    assert with_bit(n: from_int(0), index: 3, value: true) == from_int(8)
+
+# And of a positive and a negative number.
+test "bit_and: 12 and -10"
+    assert bit_and(a: from_int(12), b: from_int(-10)) == from_int(4)
+
+# Or of a positive and a negative number.
+test "bit_or: 12 or -10"
+    assert bit_or(a: from_int(12), b: from_int(-10)) == from_int(-2)
+
+# Exclusive or of a positive and a negative number.
+test "bit_xor: 12 xor -10"
+    assert bit_xor(a: from_int(12), b: from_int(-10)) == from_int(-6)
+
+# The bits of 12 that are not in 10.
+test "bit_and_not: 12 and not 10"
+    assert bit_and_not(a: from_int(12), b: from_int(10)) == from_int(4)
+
+# Every bit of 5 turned.
+test "bit_not: 5"
+    assert bit_not(from_int(5)) == from_int(-6)
+
+# A negative number shifted left.
+test "shift_left: -3 by 4"
+    assert shift_left(n: from_int(-3), count: 4) == from_int(-48)
+
+# A negative number shifted right, toward the floor.
+test "shift_right: -7 by 1"
+    assert shift_right(n: from_int(-7), count: 1) == from_int(-4)
+
+# A number drawn below 2 to the 100th by a seeded generator.
+test "random_below: below 2 to the 100th"
+    g @= random.Generator(high: 1, low: 2)
+    bound = power(base: from_int(2), exponent: 100)
+    n = random_below(@g, n: bound)
+    assert sign(n) >= 0 && compare(a: n, b: bound) < 0
+
+# The digits of -1000.
+test "digit_count: -1000"
+    assert digit_count(from_int(-1000)) == 4
+
+# A price read with its two digits after the point.
+test "parse_decimal: 1.50"
+    d = parse_decimal("1.50").must()
+    assert d.unscaled == from_int(150)
+    assert d.scale == 2
+
+# A small negative decimal written out.
+test "format_decimal: -0.005"
+    assert format_decimal(Decimal(unscaled: from_int(-5), scale: 3)) == "-0.005"
+
+# A decimal of a negative scale written with an exponent.
+test "format_decimal_scientific: 15 at scale -2"
+    assert format_decimal_scientific(Decimal(unscaled: from_int(15), scale: -2)) == "1.5E+3"
+
+# A ten millionth with an exponent that is a multiple of three.
+test "format_decimal_engineering: 1 at scale 7"
+    assert format_decimal_engineering(Decimal(unscaled: from_int(1), scale: 7)) == "100E-9"
+
+# Two decimals of different scales added.
+test "add_decimal: 1.5 and 0.25"
+    assert format_decimal(add_decimal(a: parse_decimal("1.5").must(), b: parse_decimal("0.25").must())) == "1.75"
+
+# A thousandth taken from one.
+test "subtract_decimal: 1 less 0.001"
+    assert format_decimal(subtract_decimal(a: parse_decimal("1").must(), b: parse_decimal("0.001").must())) == "0.999"
+
+# A product keeps every digit.
+test "multiply_decimal: 1.5 times 1.50"
+    assert format_decimal(multiply_decimal(a: parse_decimal("1.5").must(), b: parse_decimal("1.50").must())) == "2.250"
+
+# Ten split three ways, to the cent.
+test "divide_decimal: 10.00 by 3 to two places"
+    q = divide_decimal(n: parse_decimal("10.00").must(), by: parse_decimal("3").must(), scale: 2, rounding: .half_even)
+    assert format_decimal(q) == "3.33"
+
+# 7.5 divided by 2: three, and 1.5 left.
+test "divide_decimal_whole: 7.5 by 2"
+    d = divide_decimal_whole(n: parse_decimal("7.5").must(), by: parse_decimal("2").must(), rounding: .toward_zero)
+    assert d.quotient == from_int(3)
+    assert format_decimal(d.remainder) == "1.5"
+
+# A tie rounded to the even cent and away from zero.
+test "with_scale: 2.345 to two places"
+    d = parse_decimal("2.345").must()
+    assert format_decimal(with_scale(d: d, scale: 2, rounding: .half_even)) == "2.34"
+    assert format_decimal(with_scale(d: d, scale: 2, rounding: .half_away_from_zero)) == "2.35"
+
+# A number kept to three significant digits.
+test "with_precision: 123456 to three digits"
+    d = with_precision(d: parse_decimal("123456").must(), digits: 3, rounding: .half_even)
+    assert format_decimal_scientific(d) == "1.23E+5"
+
+# The zeros ending a decimal taken off.
+test "trim_zeros: 1.500"
+    assert format_decimal(trim_zeros(parse_decimal("1.500").must())) == "1.5"
+
+# Two scales, one value.
+test "compare_decimal: 1.5 and 1.50"
+    assert compare_decimal(a: parse_decimal("1.5").must(), b: parse_decimal("1.50").must()) == 0
+
+# The square root of two to ten places.
+test "sqrt_decimal: 2 to ten places"
+    r = sqrt_decimal(d: parse_decimal("2").must(), scale: 10, rounding: .half_even)
+    assert format_decimal(r) == "1.4142135624"
+
+# A decimal squared.
+test "power_decimal: 1.1 squared"
+    assert format_decimal(power_decimal(d: parse_decimal("1.1").must(), exponent: 2)) == "1.21"
+
+# What the float 0.1 holds.
+test "decimal_of_float: 0.1"
+    assert format_decimal(decimal_of_float(0.1).must()) == "0.1000000000000000055511151231257827021181583404541015625"
+
+# The float nearest a tenth.
+test "float_of_decimal: 0.1"
+    assert float_of_decimal(parse_decimal("0.1").must()) == 0.1
+
+# A fraction put in lowest terms, the sign moved up.
+test "fraction: 6 over -8"
+    assert format_fraction(fraction(numerator: from_int(6), denominator: from_int(-8))) == "-3/4"
+
+# A half and a third.
+test "add_fraction: a half and a third"
+    assert format_fraction(add_fraction(a: parse_fraction("1/2").must(), b: parse_fraction("1/3").must())) == "5/6"
+
+# A third taken from a half.
+test "subtract_fraction: a half less a third"
+    assert format_fraction(subtract_fraction(a: parse_fraction("1/2").must(), b: parse_fraction("1/3").must())) == "1/6"
+
+# Two thirds of three quarters.
+test "multiply_fraction: two thirds times three quarters"
+    assert format_fraction(multiply_fraction(a: parse_fraction("2/3").must(), b: parse_fraction("3/4").must())) == "1/2"
+
+# How many quarters make a half.
+test "divide_fraction: a half by a quarter"
+    assert format_fraction(divide_fraction(n: parse_fraction("1/2").must(), by: parse_fraction("1/4").must())) == "2"
+
+# A fraction to a negative power.
+test "power_fraction: two thirds to the -2"
+    assert format_fraction(power_fraction(f: parse_fraction("2/3").must(), exponent: -2)) == "9/4"
+
+# A third is below a half.
+test "compare_fraction: a third and a half"
+    assert compare_fraction(a: parse_fraction("1/3").must(), b: parse_fraction("1/2").must()) == -1
+
+# Halves rounded to the even whole number.
+test "round_fraction: 7/2 and 5/2 to the even"
+    assert round_fraction(f: parse_fraction("7/2").must(), rounding: .half_even) == from_int(4)
+    assert round_fraction(f: parse_fraction("5/2").must(), rounding: .half_even) == from_int(2)
+
+# A third written to five places.
+test "decimal_of_fraction: a third to five places"
+    d = decimal_of_fraction(f: parse_fraction("1/3").must(), scale: 5, rounding: .toward_zero)
+    assert format_decimal(d) == "0.33333"
+
+# A decimal as a fraction in lowest terms.
+test "fraction_of_decimal: 1.25"
+    assert format_fraction(fraction_of_decimal(parse_decimal("1.25").must())) == "5/4"
+
+# An eighth needs three places, a third has none that end.
+test "exact_scale: an eighth and a third"
+    assert exact_scale(parse_fraction("1/8").must()).must() == 3
+    assert exact_scale(parse_fraction("1/3").must()).is_err()
+
+# A quarter as a float.
+test "float_of_fraction: a quarter"
+    assert float_of_fraction(parse_fraction("1/4").must()) == 0.25
+
+# A quarter as an `f32`.
+test "float32_of_fraction: a quarter"
+    assert float32_of_fraction(parse_fraction("1/4").must()) == to_f32(0.25)
+
+# What the float 0.1 holds, as a fraction.
+test "fraction_of_float: 0.1"
+    assert format_fraction(fraction_of_float(0.1).must()) == "3602879701896397/36028797018963968"
+
+# Pi's best fraction under a thousand.
+test "approximate: pi under a thousand"
+    pi = parse_fraction("3.14159265").must()
+    assert format_fraction(approximate(f: pi, max_denominator: from_int(1000))) == "355/113"
+
+# A fraction read and put in lowest terms.
+test "parse_fraction: -6/8"
+    assert format_fraction(parse_fraction("-6/8").must()) == "-3/4"
+
+# A whole fraction written without its denominator.
+test "format_fraction: six thirds"
+    assert format_fraction(fraction(numerator: from_int(6), denominator: from_int(3))) == "2"

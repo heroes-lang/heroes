@@ -1,0 +1,65 @@
+# A text quoted for a POSIX shell, so that the shell reads it back as the one
+# word it was. The expected values of the tests are Python's `shlex.quote` and
+# `shlex.join`, asked on 2026-11-15.
+
+# Whether `b`, one byte, stands in a word a POSIX shell reads as it is: an
+# ASCII letter or digit, or one of `@%+=:,./-_`.
+function is_plain(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    return b == '@' || b == '%' || b == '+' || b == '=' || b == ':' || b == ',' || b == '.' || b == '/' || b == '-' || b == '_'
+
+# `word` as a POSIX shell reads it back whole: as it is where every byte is
+# plain, else between single quotes, each `'` written `'"'"'`. A `'` is one
+# byte that begins no longer character, so the cuts never split one.
+function quoted(word: str) -> str
+    if word.len() == 0
+        return "''"
+    plain: bool @= true
+
+    for i in range(from: 0, to: word.len())
+        if !is_plain(word[i])
+            plain @ false
+            break
+
+    if plain
+        return word
+    pieces: [str] @= ["'"]
+    from: i64 @= 0
+
+    for i in range(from: 0, to: word.len())
+        if word[i] == '\''
+            pieces @ pieces.push(word.slice(from: from, to: i))
+            pieces @ pieces.push("'\"'\"'")
+            from @ i + 1
+
+    pieces @ pieces.push(word.slice(from: from, to: word.len()))
+    pieces @ pieces.push("'")
+    return pieces.join("")
+
+# Every one of `words` quoted, joined with one space.
+function quoted_all(words: [str]) -> str
+    return words.map(quoted).join(" ")
+
+test "quoted: the empty word, plain words, a space, quotes inside, and characters of more than one byte"
+    assert quoted("") == "''"
+    assert quoted("abc") == "abc"
+    assert quoted("-x") == "-x"
+    assert quoted("@%+=:,./-_") == "@%+=:,./-_"
+    assert quoted("a b") == "'a b'"
+    assert quoted("it's") == "'it'\"'\"'s'"
+    assert quoted("'") == "''\"'\"''"
+    assert quoted("a\"b") == "'a\"b'"
+    assert quoted("$HOME") == "'$HOME'"
+    assert quoted("a\nb") == "'a\nb'"
+    assert quoted("é") == "'é'"
+    assert quoted("日本") == "'日本'"
+    assert quoted("*") == "'*'"
+    assert quoted("~") == "'~'"
+    assert quoted("!") == "'!'"
+
+test "quoted_all: no words, one word, and an empty word among others"
+    none: [str] = []
+    assert quoted_all(none) == ""
+    assert quoted_all(["x"]) == "x"
+    assert quoted_all(["a", "b c", ""]) == "a 'b c' ''"

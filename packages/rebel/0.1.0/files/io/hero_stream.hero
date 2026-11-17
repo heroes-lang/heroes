@@ -1,0 +1,507 @@
+# The platform layer's streams, `hero_stream.h`, bound thin: one function per
+# C function, in C's order, each answering what C answers. The floor of `io`:
+# where a call fails its stream is `nullptr` or its count -1, and `last_error`
+# then the kind, which `io` turns into a code.
+#
+# One handle stands for everything a program reads and writes: a file, a pipe,
+# the process's own input and outputs, a terminal, and a socket another floor
+# hands out. The layer is C of the language's own beside the runtime, so this
+# group names its header and no `link`, no platform type reaches it, and the
+# same lines bind it on every platform. Every mark below is the header's own
+# promise: a stream the layer hands out is begun by the call and ended by
+# `hero_stream_close`, and one of the process's own three is borrowed, begun
+# by nothing and owed to nothing.
+#
+# What the header keeps for the layer's other members, a stream made over a
+# table of operations and a stream's descriptor, is bound by no group: a
+# Heroes program cannot be trusted with either.
+
+extern "hero_stream.h"
+    # A stream the layer holds open. It is a handle the layer issues and
+    # checks: one closed already, `nullptr`, or one it never issued is
+    # `HERO_STREAM_NOT_OPEN`, never a read of freed memory.
+    record Stream tag hero_stream
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform, `HERO_STREAM_CLOSED_PEER` for a write to a pipe or a
+    # socket whose reader is gone, which is a value and never a signal.
+    constant HERO_STREAM_OK: i64
+    constant HERO_STREAM_INVALID: i64
+    constant HERO_STREAM_NOT_OPEN: i64
+    constant HERO_STREAM_NOT_FOUND: i64
+    constant HERO_STREAM_EXISTS: i64
+    constant HERO_STREAM_DENIED: i64
+    constant HERO_STREAM_NOT_A_DIRECTORY: i64
+    constant HERO_STREAM_IS_A_DIRECTORY: i64
+    constant HERO_STREAM_LIMIT: i64
+    constant HERO_STREAM_NOT_SEEKABLE: i64
+    constant HERO_STREAM_CLOSED_PEER: i64
+    constant HERO_STREAM_UNSUPPORTED: i64
+    constant HERO_STREAM_OTHER: i64
+    constant HERO_STREAM_TIMED_OUT: i64
+    constant HERO_STREAM_STOPPED: i64
+    # What `kind` answers a stream is.
+    constant HERO_STREAM_KIND_FILE: i64
+    constant HERO_STREAM_KIND_PIPE: i64
+    constant HERO_STREAM_KIND_TERMINAL: i64
+    constant HERO_STREAM_KIND_SOCKET: i64
+    constant HERO_STREAM_KIND_OTHER: i64
+    # The accesses `open` takes: to read a file that is there, to write one
+    # from its start, to write one the call must create, to write at the end,
+    # and to read and write one that is there.
+    constant HERO_STREAM_ACCESS_READ: i64
+    constant HERO_STREAM_ACCESS_WRITE: i64
+    constant HERO_STREAM_ACCESS_CREATE: i64
+    constant HERO_STREAM_ACCESS_APPEND: i64
+    constant HERO_STREAM_ACCESS_READ_WRITE: i64
+    # The process's own three streams, for `std`.
+    constant HERO_STREAM_STD_IN: i64
+    constant HERO_STREAM_STD_OUT: i64
+    constant HERO_STREAM_STD_ERR: i64
+    # Where `seek` counts its offset from.
+    constant HERO_STREAM_FROM_START: i64
+    constant HERO_STREAM_FROM_CURRENT: i64
+    constant HERO_STREAM_FROM_END: i64
+    function hero_stream_open(path: cstr lent, access: i64, perm: i64) -> Stream acquires hero_stream_close
+    function hero_stream_std(which: i64) -> Stream borrows
+    function hero_stream_pipe(@reader: Stream acquires hero_stream_close, @writer: Stream acquires hero_stream_close) -> i64
+    function hero_stream_read(s: Stream, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_stream_write(s: Stream, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_stream_seek(s: Stream, offset: i64, from: i64) -> i64
+    function hero_stream_size(s: Stream) -> i64
+    function hero_stream_sync(s: Stream) -> i64
+    function hero_stream_truncate(s: Stream, size: i64) -> i64
+    function hero_stream_kind(s: Stream) -> i64
+    function hero_stream_is_terminal(s: Stream) -> i64
+    function hero_stream_close(s: Stream consumes) -> i64
+    function hero_stream_last_error() -> i64
+    function hero_stream_last_os_error() -> i64
+
+# What the tests below need of the disk, and nothing else here does: a folder
+# made, a folder removed with what it holds, and this process's number, which
+# keeps two runs' folders apart.
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_fs_mkdir_all(path: cstr lent) -> i64
+    function hero_dir_remove_tree(path: cstr lent) -> i64
+    function hero_os_pid() -> i64
+
+# The file at `path` opened for `access`, or `nullptr`. `access` is one of
+# `HERO_STREAM_ACCESS_*` and `perm` the permission of a file the call creates,
+# 0 to `0o777`, which Windows does not have and ignores. It aborts where `path`
+# holds a zero byte, which C cannot read.
+function open(path: str, access: i64, perm: i64) -> Stream
+    return hero_stream_open(path: path.cstr(), access: access, perm: perm)
+
+# One of the process's own three streams, or `nullptr` where it was started
+# without it. `which` is one of `HERO_STREAM_STD_*`; the handle is borrowed,
+# the same at every call, and never closed.
+function std(which: i64) -> Stream
+    return hero_stream_std(which)
+
+# 0 with a pipe's two ends in `reader` and `writer`, or -1 with both
+# `nullptr`. What is written to `writer` is read from `reader`, and each end
+# is closed by its own `close`.
+function pipe(@reader: Stream, @writer: Stream) -> i64
+    return hero_stream_pipe(reader: @reader, writer: @writer)
+
+# How many bytes were read into `buffer`, 0 at the end, or -1. It waits for
+# one byte and may answer fewer than `n`; it leaves `buffer` `n` bytes long,
+# the read ones first, and refuses an `n` of 0, whose answer would read as the
+# end.
+function read(s: Stream, @buffer: [u8], n: u64) -> i64
+    return hero_stream_read(s, @buffer, n: n)
+
+# How many of the first `n` bytes of `data` were written, or -1. It may be
+# fewer, and the caller writes the rest; `data` is left as it was handed, `n`
+# bytes long. To a pipe or a socket whose reader is gone it answers -1 with
+# `HERO_STREAM_CLOSED_PEER`.
+function write(s: Stream, @data: [u8], n: u64) -> i64
+    return hero_stream_write(s, @data, n: n)
+
+# The position `s` stands at after moving `offset` bytes from `from`, or -1.
+# `from` is one of `HERO_STREAM_FROM_*`; a pipe, a terminal or a socket
+# answers -1 with `HERO_STREAM_NOT_SEEKABLE`.
+function seek(s: Stream, offset: i64, from: i64) -> i64
+    return hero_stream_seek(s, offset: offset, from: from)
+
+# The size of the file `s` stands on, in bytes, or -1. What is no file
+# answers -1 with `HERO_STREAM_NOT_SEEKABLE`.
+function size(s: Stream) -> i64
+    return hero_stream_size(s)
+
+# 0 once the system says everything written to the file is on the storage
+# itself, or -1. What is no file answers -1 with `HERO_STREAM_UNSUPPORTED`.
+function sync(s: Stream) -> i64
+    return hero_stream_sync(s)
+
+# 0 once the file is `to` bytes long, or -1. It cuts what is past `to` or adds
+# bytes to reach it, and the position does not move.
+function truncate(s: Stream, to: i64) -> i64
+    return hero_stream_truncate(s, size: to)
+
+# What `s` is, one of `HERO_STREAM_KIND_*`, or -1.
+function kind(s: Stream) -> i64
+    return hero_stream_kind(s)
+
+# 1 where `s` is a terminal, 0 where it is not, or -1.
+function is_terminal(s: Stream) -> i64
+    return hero_stream_is_terminal(s)
+
+# 0, or -1 where the system failed; `s` is given back either way. A call
+# another thread is still in on it runs to its end.
+function close(@s: Stream) -> i64
+    return hero_stream_close(s)
+
+# The kind of the last call's failure on this thread. It is `HERO_STREAM_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_stream_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# refused.
+function last_os_error() -> i64
+    return hero_stream_last_os_error()
+
+## Tests
+
+# The folder a test works in, made new under `build/` of the folder the tests
+# run from. Its name holds this process's number and the test's own word, so
+# no two tests and no two runs share one.
+function scratch(name: str) -> str
+    folder = f"build/rebel-hero_stream-{hero_os_pid()}-{name}"
+    _ = hero_fs_mkdir_all(folder.cstr())
+    return folder
+
+# Whether `folder` is gone, removed with everything a test left in it.
+function cleared(folder: str) -> bool
+    return hero_dir_remove_tree(folder.cstr()) == HERO_OS_OK
+
+# The edge the language itself shuts first: a stream closed and handed to C
+# again, or a copy of it made before, aborts the program before C runs, and so
+# does a borrowed one handed to `close`. So what reaches C as no stream is
+# `nullptr`.
+test "nullptr is no stream: every call answers -1 with HERO_STREAM_NOT_OPEN, the layer's own refusal"
+    none: Stream @= nullptr
+    bytes: [u8] @= [1, 2, 3, 4]
+    assert read(none, @bytes, n: 4) == -1
+    assert last_error() == HERO_STREAM_NOT_OPEN
+    assert last_os_error() == 0
+    assert write(none, @bytes, n: 4) == -1
+    assert last_error() == HERO_STREAM_NOT_OPEN
+    assert seek(none, offset: 0, from: HERO_STREAM_FROM_START) == -1
+    assert last_error() == HERO_STREAM_NOT_OPEN
+    assert size(none) == -1
+    assert sync(none) == -1
+    assert truncate(none, to: 0) == -1
+    assert kind(none) == -1
+    assert is_terminal(none) == -1
+    assert last_error() == HERO_STREAM_NOT_OPEN
+    assert close(@none) == -1
+    assert last_error() == HERO_STREAM_NOT_OPEN
+
+test "an empty buffer: a read of no bytes is refused, since its 0 would read as the end, and a write of none answers 0"
+    folder = scratch("empty")
+    path = folder + "/empty.bin"
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert out != nullptr
+    nothing: [u8] @= []
+    assert write(out, @nothing, n: 0) == 0
+    assert last_error() == HERO_STREAM_OK
+    assert close(@out) == 0
+    back @= open(path, access: HERO_STREAM_ACCESS_READ, perm: 0)
+    assert back != nullptr
+    assert read(back, @nothing, n: 0) == -1
+    assert last_error() == HERO_STREAM_INVALID
+    assert last_os_error() == 0
+    assert close(@back) == 0
+    assert cleared(folder)
+
+test "a path that is not there: nullptr with HERO_STREAM_NOT_FOUND and the system's own number"
+    folder = scratch("absent")
+    missing = open(folder + "/nobody.txt", access: HERO_STREAM_ACCESS_READ, perm: 0)
+    assert missing == nullptr
+    assert last_error() == HERO_STREAM_NOT_FOUND
+    assert last_os_error() != 0
+    both = open(folder + "/nobody.txt", access: HERO_STREAM_ACCESS_READ_WRITE, perm: 0)
+    assert both == nullptr
+    assert last_error() == HERO_STREAM_NOT_FOUND
+    deeper = open(folder + "/no-folder/new.txt", access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert deeper == nullptr
+    assert last_error() == HERO_STREAM_NOT_FOUND
+    assert cleared(folder)
+
+test "create-only on a file that exists: HERO_STREAM_EXISTS, and the file is left as it was"
+    folder = scratch("exists")
+    path = folder + "/once.txt"
+    first @= open(path, access: HERO_STREAM_ACCESS_CREATE, perm: 0o644)
+    assert first != nullptr
+    kept: [u8] @= [107, 101, 112, 116]
+    assert write(first, @kept, n: 4) == 4
+    assert close(@first) == 0
+    second = open(path, access: HERO_STREAM_ACCESS_CREATE, perm: 0o644)
+    assert second == nullptr
+    assert last_error() == HERO_STREAM_EXISTS
+    assert read_file(path).must() == "kept"
+    assert cleared(folder)
+
+test "what the layer refuses before any call: an access, a permission, a standard stream and a place to seek from that are none"
+    folder = scratch("refused")
+    path = folder + "/refused.txt"
+    assert open(path, access: 0, perm: 0o644) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    assert open(path, access: 6, perm: 0o644) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    assert open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o1000) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    assert open(path, access: HERO_STREAM_ACCESS_WRITE, perm: -1) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    assert last_os_error() == 0
+    assert std(3) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    assert std(-1) == nullptr
+    assert last_error() == HERO_STREAM_INVALID
+    file @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert file != nullptr
+    assert seek(file, offset: 0, from: 3) == -1
+    assert last_error() == HERO_STREAM_INVALID
+    assert seek(file, offset: -1, from: HERO_STREAM_FROM_START) == -1
+    assert last_error() == HERO_STREAM_INVALID
+    assert truncate(file, to: -1) == -1
+    assert last_error() == HERO_STREAM_INVALID
+    assert close(@file) == 0
+    assert cleared(folder)
+
+test "seek on a pipe: HERO_STREAM_NOT_SEEKABLE, as its size and its cutting are, and its sync HERO_STREAM_UNSUPPORTED"
+    reader: Stream @= nullptr
+    writer: Stream @= nullptr
+    assert pipe(reader: @reader, writer: @writer) == 0
+    assert seek(reader, offset: 0, from: HERO_STREAM_FROM_CURRENT) == -1
+    assert last_error() == HERO_STREAM_NOT_SEEKABLE
+    assert seek(writer, offset: 0, from: HERO_STREAM_FROM_START) == -1
+    assert last_error() == HERO_STREAM_NOT_SEEKABLE
+    assert size(reader) == -1
+    assert last_error() == HERO_STREAM_NOT_SEEKABLE
+    assert truncate(writer, to: 0) == -1
+    assert last_error() == HERO_STREAM_NOT_SEEKABLE
+    assert sync(writer) == -1
+    assert last_error() == HERO_STREAM_UNSUPPORTED
+    assert kind(reader) == HERO_STREAM_KIND_PIPE
+    assert kind(writer) == HERO_STREAM_KIND_PIPE
+    assert is_terminal(reader) == 0
+    assert close(@reader) == 0
+    assert close(@writer) == 0
+
+test "a round trip through a file: written, closed, read back whole, then the end is 0, twice"
+    folder = scratch("round")
+    path = folder + "/round.bin"
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert out != nullptr
+    assert kind(out) == HERO_STREAM_KIND_FILE
+    assert is_terminal(out) == 0
+    hello: [u8] @= [104, 101, 108, 108, 111]
+    assert write(out, @hello, n: 5) == 5
+    assert hello == [104, 101, 108, 108, 111]
+    assert sync(out) == 0
+    assert size(out) == 5
+    assert close(@out) == 0
+    back @= open(path, access: HERO_STREAM_ACCESS_READ, perm: 0)
+    assert back != nullptr
+    heard: [u8] @= []
+    assert read(back, @heard, n: 16) == 5
+    assert heard.len() == 16
+    assert heard.slice(from: 0, to: 5) == [104, 101, 108, 108, 111]
+    assert read(back, @heard, n: 16) == 0
+    assert last_error() == HERO_STREAM_OK
+    assert read(back, @heard, n: 16) == 0
+    assert close(@back) == 0
+    assert cleared(folder)
+
+test "a short buffer: a read answers no more than it was given room for, and the next begins where it stopped"
+    folder = scratch("short")
+    path = folder + "/short.bin"
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    seven: [u8] @= [1, 2, 3, 4, 5, 6, 7]
+    assert write(out, @seven, n: 7) == 7
+    assert close(@out) == 0
+    back @= open(path, access: HERO_STREAM_ACCESS_READ, perm: 0)
+    part: [u8] @= []
+    assert read(back, @part, n: 3) == 3
+    assert part == [1, 2, 3]
+    assert read(back, @part, n: 3) == 3
+    assert part == [4, 5, 6]
+    assert read(back, @part, n: 3) == 1
+    assert part[0] == 7
+    assert read(back, @part, n: 3) == 0
+    assert close(@back) == 0
+    assert cleared(folder)
+
+test "a pipe written and read: the bytes in order, 0 once the writer is closed and they are read"
+    reader: Stream @= nullptr
+    writer: Stream @= nullptr
+    assert pipe(reader: @reader, writer: @writer) == 0
+    assert reader != nullptr && writer != nullptr
+    sent: [u8] @= [112, 105, 112, 101]
+    assert write(writer, @sent, n: 4) == 4
+    heard: [u8] @= []
+    assert read(reader, @heard, n: 2) == 2
+    assert heard == [112, 105]
+    assert read(reader, @heard, n: 8) == 2
+    assert heard.slice(from: 0, to: 2) == [112, 101]
+    assert close(@writer) == 0
+    assert read(reader, @heard, n: 8) == 0
+    assert last_error() == HERO_STREAM_OK
+    assert close(@reader) == 0
+
+# The test's own process is what a signal would end: it reaching its last
+# line is the proof that none was raised.
+test "a write to a pipe whose reader is gone is a value, HERO_STREAM_CLOSED_PEER, and the program goes on"
+    reader: Stream @= nullptr
+    writer: Stream @= nullptr
+    assert pipe(reader: @reader, writer: @writer) == 0
+    assert close(@reader) == 0
+    late: [u8] @= [108, 97, 116, 101]
+    assert write(writer, @late, n: 4) == -1
+    assert last_error() == HERO_STREAM_CLOSED_PEER
+    assert last_os_error() != 0
+    assert write(writer, @late, n: 4) == -1
+    assert last_error() == HERO_STREAM_CLOSED_PEER
+    assert close(@writer) == 0
+
+test "a pipe's ends go one way: a read of the writing end and a write of the reading end are HERO_STREAM_DENIED"
+    reader: Stream @= nullptr
+    writer: Stream @= nullptr
+    assert pipe(reader: @reader, writer: @writer) == 0
+    bytes: [u8] @= [1, 2]
+    assert read(writer, @bytes, n: 2) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert write(reader, @bytes, n: 2) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert close(@reader) == 0
+    assert close(@writer) == 0
+
+test "a file opened one way refuses the other: HERO_STREAM_DENIED for a read, a write, a sync and a cutting it was not opened for"
+    folder = scratch("oneway")
+    path = folder + "/oneway.bin"
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    bytes: [u8] @= [1, 2, 3]
+    assert write(out, @bytes, n: 3) == 3
+    assert read(out, @bytes, n: 3) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert close(@out) == 0
+    back @= open(path, access: HERO_STREAM_ACCESS_READ, perm: 0)
+    assert write(back, @bytes, n: 3) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert sync(back) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert truncate(back, to: 0) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert size(back) == 3
+    assert close(@back) == 0
+    assert cleared(folder)
+
+test "positions: seek answers where the stream stands, a read begins there, and truncate cuts and grows without moving it"
+    folder = scratch("seek")
+    path = folder + "/seek.bin"
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    ten: [u8] @= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    assert write(out, @ten, n: 10) == 10
+    assert close(@out) == 0
+    both @= open(path, access: HERO_STREAM_ACCESS_READ_WRITE, perm: 0)
+    assert both != nullptr
+    assert size(both) == 10
+    assert seek(both, offset: 4, from: HERO_STREAM_FROM_START) == 4
+    two: [u8] @= []
+    assert read(both, @two, n: 2) == 2
+    assert two == [4, 5]
+    assert seek(both, offset: 0, from: HERO_STREAM_FROM_CURRENT) == 6
+    assert seek(both, offset: -1, from: HERO_STREAM_FROM_END) == 9
+    assert read(both, @two, n: 2) == 1
+    assert two[0] == 9
+    assert seek(both, offset: 6, from: HERO_STREAM_FROM_START) == 6
+    assert truncate(both, to: 3) == 0
+    assert size(both) == 3
+    assert seek(both, offset: 0, from: HERO_STREAM_FROM_CURRENT) == 6
+    assert truncate(both, to: 8) == 0
+    assert size(both) == 8
+    assert seek(both, offset: 20, from: HERO_STREAM_FROM_START) == 20
+    assert read(both, @two, n: 2) == 0
+    assert close(@both) == 0
+    assert cleared(folder)
+
+test "append writes at the end wherever a seek left the position, keeps what was there, and refuses to be cut"
+    folder = scratch("append")
+    path = folder + "/log.txt"
+    first @= open(path, access: HERO_STREAM_ACCESS_APPEND, perm: 0o644)
+    assert first != nullptr
+    one: [u8] @= [111, 110, 101]
+    assert write(first, @one, n: 3) == 3
+    assert close(@first) == 0
+    again @= open(path, access: HERO_STREAM_ACCESS_APPEND, perm: 0o644)
+    assert seek(again, offset: 0, from: HERO_STREAM_FROM_START) == 0
+    two: [u8] @= [116, 119, 111]
+    assert write(again, @two, n: 3) == 3
+    assert truncate(again, to: 0) == -1
+    assert last_error() == HERO_STREAM_DENIED
+    assert close(@again) == 0
+    assert read_file(path).must() == "onetwo"
+    assert cleared(folder)
+
+test "write empties a file that was there, and read-write leaves it whole"
+    folder = scratch("empties")
+    path = folder + "/full.txt"
+    assert !write_file(path: path, text: "a long line that was there").is_err()
+    both @= open(path, access: HERO_STREAM_ACCESS_READ_WRITE, perm: 0)
+    assert size(both) == 26
+    assert close(@both) == 0
+    out @= open(path, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644)
+    assert size(out) == 0
+    new: [u8] @= [110, 101, 119]
+    assert write(out, @new, n: 3) == 3
+    assert close(@out) == 0
+    assert read_file(path).must() == "new"
+    assert cleared(folder)
+
+test "a folder is no stream: HERO_STREAM_IS_A_DIRECTORY to read it and to write it"
+    folder = scratch("folder")
+    assert open(folder, access: HERO_STREAM_ACCESS_READ, perm: 0) == nullptr
+    assert last_error() == HERO_STREAM_IS_A_DIRECTORY
+    assert open(folder, access: HERO_STREAM_ACCESS_WRITE, perm: 0o644) == nullptr
+    assert last_error() == HERO_STREAM_IS_A_DIRECTORY
+    assert cleared(folder)
+
+# POSIX says a file stands where a folder must; Windows says only that the
+# path leads nowhere, so either kind is the answer here.
+test "a file on the path's way: nullptr, HERO_STREAM_NOT_A_DIRECTORY or, on Windows, HERO_STREAM_NOT_FOUND"
+    folder = scratch("way")
+    path = folder + "/plain.txt"
+    assert !write_file(path: path, text: "plain").is_err()
+    assert open(path + "/below.txt", access: HERO_STREAM_ACCESS_READ, perm: 0) == nullptr
+    assert last_error() == HERO_STREAM_NOT_A_DIRECTORY || last_error() == HERO_STREAM_NOT_FOUND
+    assert cleared(folder)
+
+test "the process's own streams: the same borrowed handle at every call, each of a kind, and a write of nothing answers 0"
+    out = std(HERO_STREAM_STD_OUT)
+    assert out != nullptr
+    assert out == std(HERO_STREAM_STD_OUT)
+    err = std(HERO_STREAM_STD_ERR)
+    assert err != nullptr
+    assert err != out
+    k = kind(out)
+    assert k >= HERO_STREAM_KIND_FILE && k <= HERO_STREAM_KIND_OTHER
+    t = is_terminal(out)
+    assert t == 0 || t == 1
+    nothing: [u8] @= []
+    assert write(err, @nothing, n: 0) == 0
+    assert last_error() == HERO_STREAM_OK
+
+test "a read asked for far more than there is answers what there is"
+    folder = scratch("large")
+    path = folder + "/small.bin"
+    assert !write_file(path: path, text: "abc").is_err()
+    back @= open(path, access: HERO_STREAM_ACCESS_READ, perm: 0)
+    wide: [u8] @= []
+    assert read(back, @wide, n: 1_000_000) == 3
+    assert wide.len() == 1_000_000
+    assert wide[0] == 97 && wide[2] == 99 && wide[3] == 0
+    assert close(@back) == 0
+    assert cleared(folder)

@@ -1,0 +1,174 @@
+# A failure told to a person: in one line, `<code>: <message>`, as an abort
+# tells it, or as an indented chain, one link a line, a joined failure's parts
+# beneath it. A control character is written as a literal of the language
+# writes it, so what is told never moves a terminal's cursor. Joined failures
+# nested in joined ones wait on a stack this module holds, never in recursion.
+
+use errors/internal/links
+
+# The hexadecimal digits, lower case, as `\u{1b}` writes them.
+constant HEX: str
+    "0123456789abcdef"
+
+# How a literal of the language writes the control byte `b`.
+function escape_of(b: u8) -> str
+    if b == '\n'
+        return "\\n"
+    else if b == '\t'
+        return "\\t"
+    else if b == '\r'
+        return "\\r"
+
+    value = to_i64(b).must()
+    low = HEX.slice(from: value % 16, to: value % 16 + 1)
+
+    if value < 16
+        return f"\\u{{{low}}}"
+    high = HEX.slice(from: value / 16, to: value / 16 + 1)
+    return f"\\u{{{high}{low}}}"
+
+# `text` with each control byte, U+0000 to U+001F and U+007F, written as a
+# literal writes it; every other byte as it is.
+function escaped(text: str) -> str
+    pieces: [str] @= []
+    start: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        b = text[at]
+
+        if b < 0x20 || b == 0x7f
+            pieces @ pieces.push(text.slice(from: start, to: at))
+            pieces @ pieces.push(escape_of(b))
+            start @ at + 1
+
+    if start == 0
+        return text
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces.join("")
+
+# `<code>: <message>` for a failure, the empty text for a value.
+function format_line<T>(r: T?) -> str
+    return match r
+        .ok _  => ""
+        .err e => f"{escaped(e.code)}: {escaped(e.msg)}"
+
+# A failure waiting to be told: its code and message, and how many spaces its
+# first line stands in.
+record Waiting
+    # The failure's code.
+    code: str
+    # The failure's message.
+    msg: str
+    # The spaces before its first line.
+    indent: i64
+
+# The lines of `first` told as a chain, a joined failure's parts beneath its
+# last link, each told the same way four spaces further in.
+function chain_lines(first: Waiting) -> [str]
+    lines: [str] @= []
+    stack: [Waiting] @= [first]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        w = stack[top]
+        chain = links.cut(text: w.msg, mark: ':')
+        last = chain.len() - 1
+        pad = repeat(" ", to_u64(w.indent).must())
+
+        for at in range(from: 0, to: chain.len())
+            link = match links.joined_of(chain[at])
+                .ok j  => if at == last
+                    j.head
+                else
+                    chain[at]
+                .err _ => chain[at]
+
+            if at == 0
+                lines @ lines.push(f"{pad}{escaped(w.code)}: {escaped(link)}")
+            else
+                lines @ lines.push(f"{pad}    caused by: {escaped(link)}")
+
+        match links.joined_of(chain[last])
+            .ok j =>
+                inner = if last == 0
+                    w.indent + 4
+                else
+                    w.indent + 8
+                count = j.parts.len()
+
+                for k in range(from: 0, to: count)
+                    part = j.parts[count - 1 - k]
+                    next = Waiting(code: part.code, msg: part.msg, indent: inner)
+
+                    if top < stack.len()
+                        stack[top] @ next
+                    else
+                        stack @ stack.push(next)
+                    top @ top + 1
+            .err _ => _ = 0
+
+    return lines
+
+# The chain of a failure, one link a line; the empty text for a value.
+function format_chain<T>(r: T?) -> str
+    return match r
+        .ok _  => ""
+        .err e => chain_lines(Waiting(code: e.code, msg: e.msg, indent: 0)).join("\n")
+
+test "escape_of: a line feed, a tab, a return, the zero byte, escape, delete"
+    assert escape_of('\n') == "\\n"
+    assert escape_of('\t') == "\\t"
+    assert escape_of('\r') == "\\r"
+    assert escape_of(0) == "\\u{0}"
+    assert escape_of(0x1b) == "\\u{1b}"
+    assert escape_of(0x7f) == "\\u{7f}"
+    assert escape_of(0x1f) == "\\u{1f}"
+
+test "escaped: empty, none to escape, at either end, characters of more than one byte"
+    assert escaped("") == ""
+    assert escaped("no \"x\"") == "no \"x\""
+    assert escaped("\na\n") == "\\na\\n"
+    assert escaped("città\t日本") == "città\\t日本"
+    assert escaped("\u{1b}[2J") == "\\u{1b}[2J"
+
+test "format_line: a value, an empty message, a line break, an escape in the code"
+    held: i64? = ok(1)
+    assert format_line(held) == ""
+    empty: i64? = fail(code: "invalid", msg: "")
+    assert format_line(empty) == "invalid: "
+    broken: i64? = fail(code: "failed", msg: "first line\nsecond line")
+    assert format_line(broken) == "failed: first line\\nsecond line"
+    odd: i64? = fail(code: "a\tb", msg: "x")
+    assert format_line(odd) == "a\\tb: x"
+
+test "format_chain: a value, one link, an empty link between two"
+    held: i64? = ok(1)
+    assert format_chain(held) == ""
+    one: i64? = fail(code: "invalid", msg: "no digit at 3")
+    assert format_chain(one) == "invalid: no digit at 3"
+    gap: i64? = fail(code: "invalid", msg: "a: : b")
+    assert format_chain(gap) == "invalid: a\n    caused by: \n    caused by: b"
+
+test "format_chain: a joined failure alone, its parts four spaces in"
+    r: ()? = fail(code: "invalid", msg: "2 failures (invalid: reading \"a\": no digit; not_found: no \"x\")")
+    told = format_chain(r)
+    lines = [
+        "invalid: 2 failures"
+        "    invalid: reading \"a\""
+        "        caused by: no digit"
+        "    not_found: no \"x\""
+    ]
+    assert told == lines.join("\n")
+
+test "format_chain: a joined failure under context, a nested list, a control byte"
+    r: ()? = fail(code: "a", msg: "loading: 2 failures (a: 2 failures (b: x; c: y\nz); d: w)")
+    lines = [
+        "a: loading"
+        "    caused by: 2 failures"
+        "        a: 2 failures"
+        "            b: x"
+        "            c: y\\nz"
+        "        d: w"
+    ]
+    assert format_chain(r) == lines.join("\n")

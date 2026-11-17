@@ -1,0 +1,3028 @@
+# HTTP/1.1, client and server, over `net` and over `tls`: a request and a
+# response as values, read from and written to an `io.Stream` by RFC 9112; a
+# client that sends a request to an `http://` or `https://` URL and follows
+# its redirects; and a server that answers each request of each connection,
+# plain or TLS, with a function of the program.
+#
+# **HTTPS is `tls`'s**: an `https://` request goes through `tls.connect`,
+# the server's certificate checked against the system's own store, or the
+# authorities a `Client`'s `roots` names, and nothing here turns that check
+# off. A refused certificate fails `invalid`, the message saying why.
+#
+# **A compressed body is `compress`'s**: the client asks for gzip and deflate
+# and undoes them, always within its body's limit, so a few bytes that expand
+# without measure fail `limit`; a server compresses a response only where
+# the program asks, by `with_compression`, and the client accepts it.
+#
+# **What it does not do.** HTTP/2 and HTTP/3 are not here, nor a proxy or
+# its tunnel, routing by pattern, a time limit on making a plain connection,
+# Brotli or Zstandard, or a file server: a file is read by `fs` and answered
+# by `respond`. A body is held whole in memory, read within `Limits`, never
+# streamed. The connection is `net`'s, a URL `url`'s, a JSON value `json`'s,
+# an instant `time`'s.
+#
+# The client is `requests`' beside Go's: a `Session` keeps the fields, the
+# base URL and the cookies of many requests; a request's body is made from
+# text, bytes, JSON, a form or parts with files; redirects, retries and a
+# time limit are the `Client`'s.
+#
+# **Every message is read within stated limits** (`Limits`), and one past
+# them fails `limit`. A message that is not HTTP/1.1 fails `invalid`, its
+# message saying what was found and where; a server answers it 400 and goes
+# on, and nothing a peer sends can end the server or the program.
+#
+# The codes it fails with: `invalid`, `limit`, `unsupported`, `not_found`,
+# `not_text`, `does_not_fit`, and, from the connection, `closed`, `timeout`,
+# `stopped` and `failed`.
+
+use bytes
+use compress
+use http/internal/canned
+use http/internal/charset
+use http/internal/coding
+use http/internal/cookies
+use http/internal/multipart
+use http/internal/policy
+use http/internal/read
+use http/internal/status as texts
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use io
+use json
+use net
+use strings
+use threads
+use time
+use tls
+use url
+
+## Codes
+
+# A message or a value that is not what HTTP/1.1 allows, a target that is no
+# URL among them; the message says what and where.
+constant INVALID: str
+    "invalid"
+
+# A message past one of its `Limits`, or a client past its redirects.
+constant LIMIT: str
+    "limit"
+
+# What this package does not do: a scheme other than `http` and `https`, a
+# transfer coding other than chunked, an HTTP version other than 1.x; and TLS
+# on a Linux machine with no OpenSSL, as `tls` fails.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A field, a status's text or a form that is not there; and, from `net`, a
+# host name with no address.
+constant NOT_FOUND: str
+    "not_found"
+
+# The connection ended: the peer closed it, or nothing listens where a
+# client connects, or a stream ended before a message began.
+constant CLOSED: str
+    "closed"
+
+# The time a connection was allowed ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The program asked to stop (`net.catch_stop`, `net.ask_stop`) while a call
+# waited.
+constant STOPPED: str
+    "stopped"
+
+# The system refused the connection for a reason no other code names, the
+# message carrying its own words; and a status of 400 or more made a failure
+# by `require_success`, the message naming it.
+constant FAILED: str
+    "failed"
+
+# A body, a form or credentials whose bytes are not text in their charset.
+constant NOT_TEXT: str
+    "not_text"
+
+# An HTTP date outside what a `time.Instant` holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+## Status codes
+
+# The status 100, "Continue".
+constant STATUS_CONTINUE: i64
+    100
+
+# The status 101, "Switching Protocols".
+constant STATUS_SWITCHING_PROTOCOLS: i64
+    101
+
+# The status 102, "Processing".
+constant STATUS_PROCESSING: i64
+    102
+
+# The status 103, "Early Hints".
+constant STATUS_EARLY_HINTS: i64
+    103
+
+# The status 200, "OK".
+constant STATUS_OK: i64
+    200
+
+# The status 201, "Created".
+constant STATUS_CREATED: i64
+    201
+
+# The status 202, "Accepted".
+constant STATUS_ACCEPTED: i64
+    202
+
+# The status 203, "Non-Authoritative Information".
+constant STATUS_NON_AUTHORITATIVE_INFORMATION: i64
+    203
+
+# The status 204, "No Content".
+constant STATUS_NO_CONTENT: i64
+    204
+
+# The status 205, "Reset Content".
+constant STATUS_RESET_CONTENT: i64
+    205
+
+# The status 206, "Partial Content".
+constant STATUS_PARTIAL_CONTENT: i64
+    206
+
+# The status 207, "Multi-Status".
+constant STATUS_MULTI_STATUS: i64
+    207
+
+# The status 208, "Already Reported".
+constant STATUS_ALREADY_REPORTED: i64
+    208
+
+# The status 226, "IM Used".
+constant STATUS_IM_USED: i64
+    226
+
+# The status 300, "Multiple Choices".
+constant STATUS_MULTIPLE_CHOICES: i64
+    300
+
+# The status 301, "Moved Permanently".
+constant STATUS_MOVED_PERMANENTLY: i64
+    301
+
+# The status 302, "Found".
+constant STATUS_FOUND: i64
+    302
+
+# The status 303, "See Other".
+constant STATUS_SEE_OTHER: i64
+    303
+
+# The status 304, "Not Modified".
+constant STATUS_NOT_MODIFIED: i64
+    304
+
+# The status 305, "Use Proxy".
+constant STATUS_USE_PROXY: i64
+    305
+
+# The status 307, "Temporary Redirect".
+constant STATUS_TEMPORARY_REDIRECT: i64
+    307
+
+# The status 308, "Permanent Redirect".
+constant STATUS_PERMANENT_REDIRECT: i64
+    308
+
+# The status 400, "Bad Request".
+constant STATUS_BAD_REQUEST: i64
+    400
+
+# The status 401, "Unauthorized".
+constant STATUS_UNAUTHORIZED: i64
+    401
+
+# The status 402, "Payment Required".
+constant STATUS_PAYMENT_REQUIRED: i64
+    402
+
+# The status 403, "Forbidden".
+constant STATUS_FORBIDDEN: i64
+    403
+
+# The status 404, "Not Found".
+constant STATUS_NOT_FOUND: i64
+    404
+
+# The status 405, "Method Not Allowed".
+constant STATUS_METHOD_NOT_ALLOWED: i64
+    405
+
+# The status 406, "Not Acceptable".
+constant STATUS_NOT_ACCEPTABLE: i64
+    406
+
+# The status 407, "Proxy Authentication Required".
+constant STATUS_PROXY_AUTHENTICATION_REQUIRED: i64
+    407
+
+# The status 408, "Request Timeout".
+constant STATUS_REQUEST_TIMEOUT: i64
+    408
+
+# The status 409, "Conflict".
+constant STATUS_CONFLICT: i64
+    409
+
+# The status 410, "Gone".
+constant STATUS_GONE: i64
+    410
+
+# The status 411, "Length Required".
+constant STATUS_LENGTH_REQUIRED: i64
+    411
+
+# The status 412, "Precondition Failed".
+constant STATUS_PRECONDITION_FAILED: i64
+    412
+
+# The status 413, "Content Too Large".
+constant STATUS_CONTENT_TOO_LARGE: i64
+    413
+
+# The status 414, "URI Too Long".
+constant STATUS_URI_TOO_LONG: i64
+    414
+
+# The status 415, "Unsupported Media Type".
+constant STATUS_UNSUPPORTED_MEDIA_TYPE: i64
+    415
+
+# The status 416, "Range Not Satisfiable".
+constant STATUS_RANGE_NOT_SATISFIABLE: i64
+    416
+
+# The status 417, "Expectation Failed".
+constant STATUS_EXPECTATION_FAILED: i64
+    417
+
+# The status 418, "I'm a Teapot".
+constant STATUS_IM_A_TEAPOT: i64
+    418
+
+# The status 421, "Misdirected Request".
+constant STATUS_MISDIRECTED_REQUEST: i64
+    421
+
+# The status 422, "Unprocessable Content".
+constant STATUS_UNPROCESSABLE_CONTENT: i64
+    422
+
+# The status 423, "Locked".
+constant STATUS_LOCKED: i64
+    423
+
+# The status 424, "Failed Dependency".
+constant STATUS_FAILED_DEPENDENCY: i64
+    424
+
+# The status 425, "Too Early".
+constant STATUS_TOO_EARLY: i64
+    425
+
+# The status 426, "Upgrade Required".
+constant STATUS_UPGRADE_REQUIRED: i64
+    426
+
+# The status 428, "Precondition Required".
+constant STATUS_PRECONDITION_REQUIRED: i64
+    428
+
+# The status 429, "Too Many Requests".
+constant STATUS_TOO_MANY_REQUESTS: i64
+    429
+
+# The status 431, "Request Header Fields Too Large".
+constant STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE: i64
+    431
+
+# The status 451, "Unavailable For Legal Reasons".
+constant STATUS_UNAVAILABLE_FOR_LEGAL_REASONS: i64
+    451
+
+# The status 500, "Internal Server Error".
+constant STATUS_INTERNAL_SERVER_ERROR: i64
+    500
+
+# The status 501, "Not Implemented".
+constant STATUS_NOT_IMPLEMENTED: i64
+    501
+
+# The status 502, "Bad Gateway".
+constant STATUS_BAD_GATEWAY: i64
+    502
+
+# The status 503, "Service Unavailable".
+constant STATUS_SERVICE_UNAVAILABLE: i64
+    503
+
+# The status 504, "Gateway Timeout".
+constant STATUS_GATEWAY_TIMEOUT: i64
+    504
+
+# The status 505, "HTTP Version Not Supported".
+constant STATUS_HTTP_VERSION_NOT_SUPPORTED: i64
+    505
+
+# The status 506, "Variant Also Negotiates".
+constant STATUS_VARIANT_ALSO_NEGOTIATES: i64
+    506
+
+# The status 507, "Insufficient Storage".
+constant STATUS_INSUFFICIENT_STORAGE: i64
+    507
+
+# The status 508, "Loop Detected".
+constant STATUS_LOOP_DETECTED: i64
+    508
+
+# The status 510, "Not Extended".
+constant STATUS_NOT_EXTENDED: i64
+    510
+
+# The status 511, "Network Authentication Required".
+constant STATUS_NETWORK_AUTHENTICATION_REQUIRED: i64
+    511
+
+# The text RFC 9110 gives the status `status`, as its constant's comment
+# writes it.
+#
+# - `status`: the status, any number.
+#
+# Fails `not_found` for a status RFC 9110 and its registry give no text.
+# Where Go's texts are older (413, 414, 416, 418, 422) RFC 9110's are taken,
+# as Python takes them.
+function status_text(status: i64) -> str?
+    return texts.text_of(status)
+
+## Methods
+
+# The method that asks for a representation of the target.
+constant METHOD_GET: str
+    "GET"
+
+# The method that asks for what `METHOD_GET` would, without its body.
+constant METHOD_HEAD: str
+    "HEAD"
+
+# The method that hands the target a body to process.
+constant METHOD_POST: str
+    "POST"
+
+# The method that replaces the target with the body.
+constant METHOD_PUT: str
+    "PUT"
+
+# The method that changes part of the target by the body.
+constant METHOD_PATCH: str
+    "PATCH"
+
+# The method that removes the target.
+constant METHOD_DELETE: str
+    "DELETE"
+
+# The method that opens a tunnel; this package's server answers it 501.
+constant METHOD_CONNECT: str
+    "CONNECT"
+
+# The method that asks what the target allows.
+constant METHOD_OPTIONS: str
+    "OPTIONS"
+
+# The method that asks the request back, as the server received it.
+constant METHOD_TRACE: str
+    "TRACE"
+
+## Header fields
+
+# One field of a message's header: a name and its value. A message holds its
+# fields as a list, in their order, and a name may stand more than once.
+record Header
+    # The name, a token of RFC 9110: letters, digits and ``!#$%&'*+-.^_`|~``.
+    # Two names are the same name in any case of their ASCII letters.
+    name: str
+    # The value, without the spaces around it; no line end and no zero byte.
+    value: str
+
+# The value of the first field of `headers` named `name`.
+#
+# - `headers`: the fields searched, in their order.
+# - `name`: the name sought, in any case: `"content-type"` finds
+#   `Content-Type`.
+#
+# Fails `not_found` where no field has that name. See also `values_of`.
+function value_of(headers: [Header], name: str) -> str?
+    for h in headers
+        if syntax.same_name(a: h.name, b: name)
+            return ok(h.value)
+
+    return fail(code: NOT_FOUND, msg: f"no field named {syntax.shown(name)} among the {headers.len()} fields")
+
+# The value of every field of `headers` named `name`, in their order.
+#
+# - `headers`: the fields searched.
+# - `name`: the name sought, in any case.
+#
+# An empty list where no field has the name. A value holding a list, `a, b`,
+# is one value: nothing is split. See also `value_of`.
+function values_of(headers: [Header], name: str) -> [str]
+    out: [str] @= []
+
+    for h in headers
+        if syntax.same_name(a: h.name, b: name)
+            out @ out.push(h.value)
+
+    return out
+
+# Whether a field of `headers` is named `name`.
+#
+# - `headers`: the fields searched.
+# - `name`: the name sought, in any case.
+function has_header(headers: [Header], name: str) -> bool
+    for h in headers
+        if syntax.same_name(a: h.name, b: name)
+            return true
+
+    return false
+
+# A copy of `headers` with one field `name: value` where every field of that
+# name was.
+#
+# - `headers`: the fields copied.
+# - `name`: the name set, written as given; the fields it replaces are found
+#   in any case.
+# - `value`: its value.
+#
+# The new field stands where the first field of that name stood, or last
+# where none did. See also `without_header`.
+function with_header(headers: [Header], name: str, value: str) -> [Header]
+    out: [Header] @= []
+    placed: bool @= false
+
+    for h in headers
+        if !syntax.same_name(a: h.name, b: name)
+            out @ out.push(h)
+        else if !placed
+            out @ out.push(Header(name: name, value: value))
+            placed @ true
+
+    if !placed
+        out @ out.push(Header(name: name, value: value))
+    return out
+
+# A copy of `headers` without any field named `name`.
+#
+# - `headers`: the fields copied, in their order.
+# - `name`: the name taken out, in any case.
+function without_header(headers: [Header], name: str) -> [Header]
+    out: [Header] @= []
+
+    for h in headers
+        if !syntax.same_name(a: h.name, b: name)
+            out @ out.push(h)
+
+    return out
+
+# `name` as a header's name is written by custom: the first letter and each
+# letter after a `-` upper case, the others lower case.
+#
+# - `name`: a name; one that is not a token, holding a space or a byte above
+#   ASCII, is answered as it is.
+#
+# `"content-type"` is `"Content-Type"`, as Go writes it.
+function canonical_name(name: str) -> str
+    return syntax.canonical(name)
+
+## Requests and responses
+
+# A request: what a client sends and a server's handler reads. A client's is
+# made by `request`, or built directly; a server's is read by the server.
+record Request
+    # The method, compared as written: `METHOD_GET`, `"POST"`.
+    method: str
+    # The target: a client's an absolute `http://` or `https://` URL, or a path and a query
+    # where the request is written by `write_request` or `round_trip` or
+    # resolved against a `Session`'s base; a server's what its first line
+    # names, as `url.parse_request_target` reads it, the path `*` for
+    # `OPTIONS *`.
+    url: url.Url
+    # The header's fields, in their order. Writing it, this package writes
+    # the `Host`, `Content-Length` and `Transfer-Encoding` it needs, so those
+    # given here are replaced.
+    headers: [Header]
+    # The body's bytes, its chunks joined: none where it has none.
+    body: [u8]
+    # Whether the connection ends after this request: read as true where the
+    # client asked it (`Connection: close`, or HTTP/1.0 without `keep-alive`),
+    # written as `Connection: close`.
+    closing: bool
+    # The client's address and port, as `net.format_address` writes them, for
+    # a request a server read; "" for one a program made.
+    remote: str
+
+# A response: what a server's handler answers and a client reads.
+record Response
+    # The status, 200 to 999 from a handler, 100 to 999 read; the `STATUS_`
+    # constants name them.
+    status: i64
+    # The reason after the status, as read; written as given, or as
+    # `status_text` gives it where it is "".
+    reason: str
+    # The header's fields, in their order; `Content-Length` and
+    # `Transfer-Encoding` are this package's to write, as for `Request`.
+    headers: [Header]
+    # The body's bytes, its chunks joined: none where it has none, and never
+    # any for 1xx, 204, 304 or the answer to `HEAD`.
+    body: [u8]
+    # Whether the connection ends after this response: read as true where the
+    # server said so or the body ran to the connection's end; a handler sets
+    # it to close the connection after answering.
+    closing: bool
+
+# A user and a password, as a request's `Authorization: Basic` carries them.
+record Credentials
+    # The user, which holds no `:`.
+    user: str
+    # The password, any text.
+    password: str
+
+# One part of a `multipart/form-data` body, as `with_multipart` writes it: a
+# form's field, or a file.
+record Part
+    # The form field's name.
+    name: str
+    # The file's name, written in the part's `filename`; "" for a field that
+    # is no file, which writes none.
+    filename: str
+    # The part's `Content-Type`; "" writes none, which a reader takes as
+    # `text/plain`.
+    content_type: str
+    # The part's bytes.
+    data: [u8]
+
+# A request with no field and no body, to send to `target`.
+#
+# - `method`: the method, a token: `METHOD_GET`, `"POST"`.
+# - `target`: an absolute URL, `http://example.com/a?b=1`, or a path and a
+#   query, `/a?b=1`, for a connection the program holds or a `Session`'s base.
+#
+# Fails `invalid` where `method` is no token or `target` is no URL as
+# `url.parse` reads one, its message saying where. See also `send`.
+function request(method: str, target: str) -> Request?
+    if !syntax.is_token(method)
+        return fail(code: INVALID, msg: f"making a request: the method {syntax.shown(method)} is no token")
+    return ok(Request(method: method, url: url.parse(target)?, headers: [], body: [], closing: false, remote: ""))
+
+# A copy of `r` whose target's query has `pairs` after what it held.
+#
+# - `r`: the request.
+# - `pairs`: the keys and values, written as `url.format_query` writes them,
+#   in their order; none leaves `r` as it is.
+function with_query(r: Request, pairs: [url.Pair]) -> Request
+    if pairs.len() == 0
+        return r
+    out @= r
+    added = url.format_query(pairs)
+
+    if r.url.query == ""
+        out.url.query @ added
+    else
+        out.url.query @ r.url.query + "&" + added
+    return out
+
+# A copy of `r` with `body`, typed `content_type`.
+#
+# - `r`: the request.
+# - `content_type`: the `Content-Type` set, every one before replaced.
+# - `body`: the body's bytes.
+function with_body(r: Request, content_type: str, body: [u8]) -> Request
+    out @= r
+    out.headers @ with_header(r.headers, name: "Content-Type", value: content_type)
+    out.body @ body
+    return out
+
+# A copy of `r` whose body is `text`, typed `text/plain; charset=utf-8`.
+#
+# - `r`: the request.
+# - `text`: the body.
+function with_text(r: Request, text: str) -> Request
+    return with_body(r, content_type: "text/plain; charset=utf-8", body: bytes.from_text(text))
+
+# A copy of `r` whose body is `value` as JSON, typed `application/json`.
+#
+# - `r`: the request.
+# - `value`: the value, written as `json.format` writes it.
+#
+# Fails `invalid` where `value` holds a `nan` or an infinity.
+function with_json(r: Request, value: json.Value) -> Request?
+    return ok(with_body(r, content_type: "application/json", body: bytes.from_text(json.format(value)?)))
+
+# A copy of `r` whose body is the form `pairs`, typed
+# `application/x-www-form-urlencoded`.
+#
+# - `r`: the request.
+# - `pairs`: the keys and values, written as `url.format_query` writes them.
+#
+# See also `form_of`.
+function with_form(r: Request, pairs: [url.Pair]) -> Request
+    return with_body(
+        r,
+        content_type: "application/x-www-form-urlencoded",
+        body: bytes.from_text(url.format_query(pairs))
+    )
+
+# A copy of `r` whose body is `parts` as `multipart/form-data`, RFC 7578.
+#
+# - `r`: the request.
+# - `parts`: the parts, in their order; a name or a file's name with a `"`
+#   or a line end has it written `%22`, `%0D` or `%0A`, as browsers write it.
+#
+# The boundary is the first of `----rebel-0`, `----rebel-1` and on that no
+# part holds, so no part can end the body early.
+function with_multipart(r: Request, parts: [Part]) -> Request
+    pieces: [multipart.Piece] @= []
+
+    for p in parts
+        pieces @ pieces.push(
+            multipart.Piece(name: p.name, filename: p.filename, content_type: p.content_type, data: p.data)
+        )
+
+    boundary = multipart.boundary_for(pieces)
+    return with_body(
+        r,
+        content_type: "multipart/form-data; boundary=" + boundary,
+        body: multipart.encode(pieces, boundary: boundary)
+    )
+
+# The keys and values of the query of `r`'s target, in their order.
+#
+# - `r`: the request.
+#
+# An empty list where the target has no query. Fails `invalid` and
+# `not_text` as `url.parse_query` does.
+function query_of(r: Request) -> [url.Pair]?
+    return url.parse_query(r.url.query)
+
+# The keys and values of `r`'s body, a form sent as
+# `application/x-www-form-urlencoded`, in their order.
+#
+# - `r`: the request; its `Content-Type` is compared without case and
+#   without its parameters.
+#
+# Fails `not_found` where `r` holds no such form, by its `Content-Type`;
+# `not_text` where the body is not UTF-8; and as `url.parse_query` does.
+# See also `post_form`.
+function form_of(r: Request) -> [url.Pair]?
+    kind = charset.media_type(value_of(r.headers, name: "Content-Type").default(""))
+
+    if kind != "application/x-www-form-urlencoded"
+        return fail(
+            code: NOT_FOUND,
+            msg: f"reading a form: the request's body is typed {syntax.shown(kind)}, not as a form"
+        )
+    return url.parse_query(bytes.to_text(r.body)?)
+
+# The user and the password `r`'s `Authorization: Basic` field carries.
+#
+# - `r`: the request.
+#
+# Fails `not_found` where `r` has no `Authorization` field of the scheme
+# `Basic`, in any case; `invalid` where its base 64 does not read or holds no
+# `:`; `not_text` where it reads to bytes that are not UTF-8. See also
+# `with_basic_auth`.
+function basic_auth_of(r: Request) -> Credentials?
+    said = value_of(r.headers, name: "Authorization")?
+    parts = strings.split_once(s: said, sep: " ").default(strings.Halves(before: said, after: ""))
+
+    if !syntax.same_name(a: parts.before, b: "Basic")
+        return fail(code: NOT_FOUND, msg: "reading the credentials: `Authorization` is not of the scheme Basic")
+    text = bytes.to_text(bytes.parse_base64(syntax.trim_ows(parts.after))?)?
+    halves = strings.split_once(s: text, sep: ":")
+
+    match halves
+        .ok h => return ok(Credentials(user: h.before, password: h.after))
+        .err _ => return fail(
+            code: INVALID,
+            msg: "reading the credentials: Basic's text holds no `:` between the user and the password"
+        )
+
+# A copy of `r` carrying `user` and `password` in an `Authorization: Basic`
+# field, every `Authorization` before replaced.
+#
+# - `r`: the request.
+# - `user`: the user; it must hold no `:`.
+# - `password`: the password.
+#
+# Aborts where `user` holds a `:`, which no server could read apart. Basic's
+# password is not hidden from anyone who reads the connection.
+function with_basic_auth(r: Request, user: str, password: str) -> Request
+    assert !strings.contains(s: user, substr: ":")
+    out @= r
+    out.headers @ with_header(
+        r.headers,
+        name: "Authorization",
+        value: "Basic " + bytes.format_base64(bytes.from_text(user + ":" + password))
+    )
+    return out
+
+# A copy of `r` carrying `token` in an `Authorization: Bearer` field, RFC
+# 6750, every `Authorization` before replaced.
+#
+# - `r`: the request.
+# - `token`: the token, as the server issued it.
+function with_bearer_auth(r: Request, token: str) -> Request
+    out @= r
+    out.headers @ with_header(r.headers, name: "Authorization", value: "Bearer " + token)
+    return out
+
+# A response of `status` with `body`, typed `content_type`.
+#
+# - `status`: the status, 200 to 999 for a server to send it.
+# - `content_type`: the `Content-Type` written: `"text/html; charset=utf-8"`.
+# - `body`: the body's bytes.
+#
+# The reason is `status_text`'s, "" where it has none. See also
+# `respond_text`, `respond_json`, `respond_status`.
+function respond(status: i64, content_type: str, body: [u8]) -> Response
+    return Response(
+        status: status,
+        reason: texts.text_of(status).default(""),
+        headers: [Header(name: "Content-Type", value: content_type)],
+        body: body,
+        closing: false
+    )
+
+# A response of `status` whose body is `text`, typed
+# `text/plain; charset=utf-8`.
+#
+# - `status`: the status.
+# - `text`: the body.
+function respond_text(status: i64, text: str) -> Response
+    return respond(status, content_type: "text/plain; charset=utf-8", body: bytes.from_text(text))
+
+# A response of `status` whose body is `value` as JSON, typed
+# `application/json`.
+#
+# - `status`: the status.
+# - `value`: the value, written as `json.format` writes it.
+#
+# Fails `invalid` where `value` holds a `nan` or an infinity, which no JSON
+# says.
+function respond_json(status: i64, value: json.Value) -> Response?
+    return ok(respond(status, content_type: "application/json", body: bytes.from_text(json.format(value)?)))
+
+# A response of `status` alone: no body, no field.
+#
+# - `status`: the status.
+function respond_status(status: i64) -> Response
+    return Response(status: status, reason: texts.text_of(status).default(""), headers: [], body: [], closing: false)
+
+# A response sending the client to `location`.
+#
+# - `status`: `STATUS_MOVED_PERMANENTLY`, `STATUS_FOUND`, `STATUS_SEE_OTHER`,
+#   `STATUS_TEMPORARY_REDIRECT` or `STATUS_PERMANENT_REDIRECT`; another is
+#   written as given.
+# - `location`: the URL written in `Location`, absolute or relative to the
+#   request's.
+function respond_redirect(status: i64, location: str) -> Response
+    out @= respond_status(status)
+    out.headers @ [Header(name: "Location", value: location)]
+    return out
+
+# The answer that sends `r` to the same path and query under `base`: 308,
+# so the method and the body are kept, as a site that moved, or an
+# `http://` server sending every client to `https://`, answers. A handler
+# with a state, for `serve_with`.
+#
+# - `base`: the scheme and the host the client is sent to, with no path:
+#   `https://example.com`.
+# - `r`: the request; its target's path and query follow `base`.
+function respond_moved_to(base: str, r: Request) -> Response
+    return respond_redirect(STATUS_PERMANENT_REDIRECT, location: base + url.request_target(r.url))
+
+# The answer to `r` where its target names nothing, as Go's `NotFound`
+# answers: 404 and the text `404 page not found`.
+#
+# - `r`: the request, which it does not read; a handler's type takes it.
+function respond_not_found(r: Request) -> Response
+    _ = r
+    return respond_text(STATUS_NOT_FOUND, text: "404 page not found\n")
+
+# The answer RFC 9110 § 9.3.8 gives a `TRACE`: 200 and the request as it was
+# read, typed `message/http`, for a handler to answer with.
+#
+# - `r`: the request; its `Authorization`, `Proxy-Authorization` and
+#   `Cookie` fields are left out, as the RFC asks of what may hold a secret.
+#
+# The request's first line is written with its target's path and query,
+# then its fields and its body.
+function respond_trace(r: Request) -> Response
+    lines: [str] @= [r.method + " " + url.request_target(r.url) + " HTTP/1.1"]
+
+    for h in r.headers
+        secret = syntax.same_name(a: h.name, b: "Authorization") || syntax.same_name(a: h.name, b: "Proxy-Authorization") || syntax.same_name(a: h.name, b: "Cookie")
+
+        if !secret
+            lines @ lines.push(h.name + ": " + h.value)
+
+    data: [u8] @= bytes.from_text(lines.join("\r\n") + "\r\n\r\n")
+
+    for b in r.body
+        data @ data.push(b)
+
+    return respond(STATUS_OK, content_type: "message/http", body: data)
+
+# The body of `r` as text, read by the `charset` of its `Content-Type`.
+#
+# - `r`: the response.
+#
+# UTF-8 where no charset is named, as JSON and HTML5 read a body. Fails
+# `not_text` where the bytes are not UTF-8 or ASCII as named, `unsupported`
+# for a charset other than UTF-8, US-ASCII and ISO-8859-1 by their names and
+# aliases. See also `json_of`.
+function text_of(r: Response) -> str?
+    return charset.decode(r.body, name: charset.of(value_of(r.headers, name: "Content-Type").default("")))
+
+# The body of `r` as a JSON value.
+#
+# - `r`: the response; its body read as `text_of` reads it.
+#
+# Fails as `text_of` and `json.parse` do.
+function json_of(r: Response) -> json.Value?
+    return json.parse(text_of(r)?)
+
+# `r` where its status is below 400, what `requests` calls raising for the
+# status.
+#
+# - `r`: the response.
+#
+# Fails `failed` for a status of 400 or more, its message naming the status
+# and the reason.
+function require_success(r: Response) -> Response?
+    if r.status >= 400
+        return fail(code: FAILED, msg: f"the server answered {r.status} {syntax.shown(r.reason)}")
+    return ok(r)
+
+# A copy of `r` with its `Content-Encoding` undone, RFC 9110 § 8.4: gzip,
+# `x-gzip`, deflate and identity, the last applied first, `deflate` read as
+# zlib and, where zlib refuses it, as raw DEFLATE, as some servers send it.
+#
+# - `r`: the response, read whole.
+# - `limit`: the most bytes each decoding may produce, 0 or more: a client's
+#   `limits.body_bytes` where `send` decodes.
+#
+# The copy holds no `Content-Encoding` and no `Content-Length`, which spoke of
+# the bytes before. A response with no body, or one coded in a way this does
+# not undo (`br`, `zstd`), is answered as it is, as `requests` answers it.
+# Fails `limit` where a decoding would pass `limit` bytes, a "zip bomb"
+# among them, and `invalid` where the body is not what its coding says, a
+# gzip cut short among them. `send` and `fetch` call it on every response.
+# See also `with_compression`.
+function decode_body(r: Response, limit: i64) -> Response?
+    codings = coding.codings_of(values_of(r.headers, name: "Content-Encoding"))
+
+    if codings.len() == 0 || r.body.len() == 0 || !coding.is_decodable(codings)
+        return ok(r)
+    out @= r
+    out.body @ coding.decode(r.body, codings: codings, limit: limit)?
+    out.headers @ without_header(without_header(r.headers, name: "Content-Encoding"), name: "Content-Length")
+    return ok(out)
+
+# A copy of `response` compressed as gzip, or as deflate (zlib) where `r`
+# accepts deflate and not gzip, where `r`'s `Accept-Encoding` accepts one,
+# RFC 9110 § 12.5.3; else `response` as it is. A handler calls it on what it
+# answers.
+#
+# - `response`: the response a handler made; one with a `Content-Encoding`
+#   already, no body, or a status of 204 or 304 is answered as it is.
+# - `r`: the request it answers; a coding named with `q=0` is refused, and
+#   `*` accepts any.
+#
+# The copy says `Content-Encoding` and `Vary: Accept-Encoding`, and so does
+# no copy: a response answered as it is because `r` refused both codings
+# gains `Vary: Accept-Encoding` alone, so a cache keeps the two apart.
+# Compressing is `compress`'s at its default level. See also `decode_body`.
+function with_compression(response: Response, r: Request) -> Response
+    out @= response
+
+    if has_header(response.headers, name: "Content-Encoding") || response.body.len() == 0 || response.status == 204 || response.status == 304
+        return out
+
+    if !has_header(response.headers, name: "Vary")
+        out.headers @ out.headers.push(Header(name: "Vary", value: "Accept-Encoding"))
+    accepted = values_of(r.headers, name: "Accept-Encoding")
+
+    if coding.accepts(accepted, coding: "gzip")
+        out.body @ compress.compress(response.body, options: compress.defaults(.gzip)).must()
+        out.headers @ out.headers.push(Header(name: "Content-Encoding", value: "gzip"))
+    else if coding.accepts(accepted, coding: "deflate")
+        out.body @ compress.compress(response.body, options: compress.defaults(.zlib)).must()
+        out.headers @ out.headers.push(Header(name: "Content-Encoding", value: "deflate"))
+    return out
+
+## Cookies
+
+# A cookie, RFC 6265: what a `Set-Cookie` field gives a client to keep, and
+# what a `Cookie` field sends back. A cookie of a `Cookie` field has its name
+# and its value alone, the other fields empty.
+record Cookie
+    # The name.
+    name: str
+    # The value, without the quotes it may be written in.
+    value: str
+    # The host it is sent to, in lower case without a leading `.`; "" where
+    # the field names none.
+    domain: str
+    # Whether it goes to `domain` alone, which it does where the field named
+    # no domain; else to its subdomains too.
+    host_only: bool
+    # The path below which it is sent, beginning with `/`; "" where the field
+    # names none.
+    path: str
+    # When it stops being sent, read only where `persistent`.
+    expires: time.Instant
+    # Whether it has an end, by `Max-Age` or `Expires`; else it lasts as long
+    # as the session that keeps it.
+    persistent: bool
+    # Whether it is sent over HTTPS alone, and kept only from an `https://`
+    # response.
+    secure: bool
+    # Whether a script of a browser may not read it.
+    http_only: bool
+    # Its `SameSite`, as written: `"Strict"`, `"Lax"`, `"None"`, or "".
+    same_site: str
+
+# The cookie the `Set-Cookie` field's value `s` sets, RFC 6265 § 5.2.
+#
+# - `s`: the value, `name=value; Path=/; Max-Age=60`.
+# - `now`: the instant a `Max-Age` counts from.
+#
+# `Max-Age` wins over `Expires`, and one of 0 or below is an end already
+# passed. An attribute the RFC does not name is dropped, and one that does
+# not read is dropped too. Fails `invalid` where `s` has no `=` before its
+# first `;`, or an empty name, which the RFC asks a client to ignore.
+function parse_set_cookie(s: str, now: time.Instant) -> Cookie?
+    a = cookies.parse_set_cookie(s)?
+    expires: time.Instant @= time.epoch()
+    persistent: bool @= false
+
+    if a.has_max_age
+        persistent @ true
+
+        if a.max_age <= 0
+            expires @ time.min_instant()
+        else
+            expires @ time.add(now, d: time.seconds(a.max_age).default(time.max_duration())).default(time.max_instant())
+    else if a.has_expires
+        persistent @ true
+        expires @ a.expires
+    return ok(
+        Cookie(name: a.name, value: a.value, domain: a.domain, host_only: a.domain == "", path: a.path, expires: expires, persistent: persistent, secure: a.secure, http_only: a.http_only, same_site: a.same_site)
+    )
+
+# The value of a `Set-Cookie` field setting `c`.
+#
+# - `c`: the cookie; its domain and path are written where they are not "",
+#   its end as `Expires` where it is `persistent`.
+#
+# Aborts where the name is no token, or the value or an attribute holds a
+# `;`, a line end or a control byte, which no reader could read back.
+function format_set_cookie(c: Cookie) -> str
+    assert syntax.is_token(c.name) && cookies.is_value(c.value) && cookies.is_value(c.domain) && cookies.is_value(c.path) && cookies.is_value(c.same_site)
+    out: [str] @= [c.name + "=" + c.value]
+
+    if c.path != ""
+        out @ out.push("Path=" + c.path)
+
+    if c.domain != ""
+        out @ out.push("Domain=" + c.domain)
+
+    if c.persistent
+        out @ out.push("Expires=" + format_date(c.expires))
+
+    if c.secure
+        out @ out.push("Secure")
+
+    if c.http_only
+        out @ out.push("HttpOnly")
+
+    if c.same_site != ""
+        out @ out.push("SameSite=" + c.same_site)
+    return out.join("; ")
+
+# The cookies the `Cookie` field's value `s` sends, in their order, each a
+# name and a value.
+#
+# - `s`: the value, `a=1; b=2`.
+#
+# A pair with no `=` or an empty name is dropped, as Go drops it. Fails
+# `invalid` where `s` holds a control byte.
+function parse_cookie(s: str) -> [Cookie]?
+    out: [Cookie] @= []
+
+    for p in cookies.parse_cookie(s)?
+        out @ out.push(
+            Cookie(name: p.key, value: p.value, domain: "", host_only: false, path: "", expires: time.epoch(), persistent: false, secure: false, http_only: false, same_site: "")
+        )
+
+    return ok(out)
+
+# The value of a `Cookie` field sending `list`: each name and value, `; `
+# between them.
+#
+# - `list`: the cookies, in their order; only their names and values are
+#   written.
+function format_cookie(list: [Cookie]) -> str
+    out: [str] @= []
+
+    for c in list
+        out @ out.push(c.name + "=" + c.value)
+
+    return out.join("; ")
+
+# The cookies of `jar` a request to `target` sends at `now`, RFC 6265 § 5.4:
+# its host matched by each cookie's domain, its path by each cookie's path,
+# none ended, and a secure one only to an `https://` target.
+#
+# - `jar`: the cookies kept.
+# - `target`: the URL the request goes to.
+# - `now`: the instant an end is compared with.
+#
+# The longest paths first, and else in the jar's order.
+function matching_cookies(jar: [Cookie], target: url.Url, now: time.Instant) -> [Cookie]
+    path: str @= target.path
+
+    if path == ""
+        path @ "/"
+    out: [Cookie] @= []
+
+    for c in jar
+        live = !c.persistent || time.is_after(a: c.expires, b: now)
+        reaches = c.host_only && c.domain == target.host || !c.host_only && cookies.domain_matches(host: target.host, domain: c.domain)
+
+        if live && reaches && (!c.secure || syntax.same_name(a: target.scheme, b: "https")) && cookies.path_matches(path: path, cookie_path: c.path)
+            at: i64 @= out.len()
+
+            while at > 0 && out[at - 1].path.len() < c.path.len()
+                at @ at - 1
+
+            moved: [Cookie] @= out.slice(from: 0, to: at)
+            moved @ moved.push(c)
+
+            for later in out.slice(from: at, to: out.len())
+                moved @ moved.push(later)
+
+            out @ moved
+
+    return out
+
+# Keeps in `jar` each cookie `response`'s `Set-Cookie` fields set, for a
+# request to `target`, RFC 6265 § 5.3.
+#
+# - `jar`: the cookies kept; one of the same name, domain and path is
+#   replaced, and one whose new end has passed is taken out.
+# - `target`: the URL the response came from.
+# - `response`: the response read.
+# - `now`: the instant ends are compared with.
+#
+# A field that does not read, a `Domain` that does not match the host or
+# names a single label, and a `Secure` cookie from `http://` are dropped.
+# Without a list of public suffixes a `Domain` such as `co.uk` is taken.
+function store_cookies(@jar: [Cookie], target: url.Url, response: Response, now: time.Instant)
+    for value in values_of(response.headers, name: "Set-Cookie")
+        match parse_set_cookie(value, now: now)
+            .err _ => _ = 0
+            .ok read_one =>
+                c @= read_one
+
+                if c.host_only
+                    c.domain @ target.host
+
+                if c.path == "" || c.path[0] != '/'
+                    c.path @ cookies.default_path(target.path)
+                secure_ok = !c.secure || syntax.same_name(a: target.scheme, b: "https")
+                kept = secure_ok && (c.host_only || cookies.may_set(host: target.host, domain: c.domain))
+
+                if kept
+                    others: [Cookie] @= []
+
+                    for old in jar
+                        if old.name != c.name || old.domain != c.domain || old.path != c.path
+                            others @ others.push(old)
+
+                    if !c.persistent || time.is_after(a: c.expires, b: now)
+                        others @ others.push(c)
+                    jar @ others
+
+## Messages on a stream
+
+# How much of a message is read before it fails `limit`: what keeps a peer
+# from holding a program's memory. `default_limits` makes the usual ones.
+record Limits
+    # The most bytes of a head, its first line and every field line with
+    # their ends, at least 1.
+    head_bytes: i64
+    # The most field lines of a head, and of a chunked body's trailer, 0 or
+    # more.
+    field_count: i64
+    # The most bytes of a body, its chunks joined, 0 or more.
+    body_bytes: i64
+
+# The usual limits: a head of 65,536 bytes, as Python's line limit, 100
+# fields, as Python's, and a body of 10 MiB.
+function default_limits() -> Limits
+    return Limits(head_bytes: 65_536, field_count: 100, body_bytes: 10_485_760)
+
+# The next request `reader` holds, its head and its body, by RFC 9112.
+#
+# - `reader`: the reader of the connection, advanced past the request; the
+#   bytes after it stay held for the next.
+# - `limits`: what the request may hold.
+#
+# Empty lines before the request are skipped, a line may end with a line feed
+# alone, and a field's value that is not UTF-8 is read as Latin-1, as Python
+# reads it. Fails `closed` where the stream ends before a request begins;
+# `invalid` where it is no request or ends inside one, its message naming the
+# line; `limit` past `limits`, or a chunk's size line past 4,096 bytes;
+# `unsupported` for a transfer coding other than chunked or a version other
+# than 1.x; and as `io.read` fails. A body by both `Content-Length` and
+# `Transfer-Encoding` is `invalid`, so no two readers can split it apart.
+function read_request(@reader: io.Reader, limits: Limits) -> Request?
+    m = read.request(@reader, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes))?
+    target = parse_target(method: m.head.method, target: m.head.target)?
+    headers: [Header] @= []
+
+    for f in m.head.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(
+        Request(method: m.head.method, url: target, headers: headers, body: m.content, closing: m.closing, remote: "")
+    )
+
+# The URL a request's first line names, `target` as written, for a request
+# of `method`: `*` for `OPTIONS`, else as `url.parse_request_target` reads it.
+#
+# - `method`: the request's method.
+# - `target`: the target, as the first line writes it.
+#
+# Fails `invalid` where `target` is no target of RFC 9112 § 3.2: `*` for
+# another method, a fragment, a text that is no URL; and `not_text` as
+# `url.parse_request_target` does.
+function parse_target(method: str, target: str) -> url.Url?
+    if target == "*" && method == METHOD_OPTIONS
+        return url.parse("*")
+    return url.parse_request_target(target)
+
+# Writes `r` to `s` as HTTP/1.1: its first line, `Host`, its fields, its
+# framing and its body.
+#
+# - `s`: the stream written; its owner closes it.
+# - `r`: the request; its target's path and query are written, `*` for
+#   `OPTIONS` with the path `*`.
+#
+# The body is written with its `Content-Length`, or as chunks where `r`
+# holds `Transfer-Encoding: chunked`; `Content-Length: 0` is written for an
+# empty `POST`, `PUT` or `PATCH`. Fails `invalid` before writing a byte
+# where the method or a name is no token, a value holds a line end or a zero
+# byte, a `Transfer-Encoding` says other than chunked, or neither the target
+# nor a field names a host; and as `io.write` fails.
+function write_request(s: io.Stream, r: Request) -> ()?
+    fields: [wire.Field] @= []
+
+    for h in r.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    host = value_of(r.headers, name: "Host").default(
+        policy.host_field(scheme: r.url.scheme, host: r.url.host, port: r.url.port)
+    )
+    target: str @= url.request_target(r.url)
+
+    if r.method == METHOD_OPTIONS && r.url.path == "*"
+        target @ "*"
+    data = write.request(method: r.method, target: target, host: host, fields: fields, content: r.body, closing: r.closing)?
+    return io.write(s, data: data)
+
+# The next final response `reader` holds, by RFC 9112, the informational ones
+# before it skipped.
+#
+# - `reader`: the reader of the connection, advanced past the response.
+# - `method`: the method of the request answered; a response to `HEAD` has
+#   no body whatever its fields say.
+# - `limits`: what the response may hold.
+#
+# A body with neither length nor chunks is read to the connection's end, and
+# the response is then `closing`. Fails as `read_request` does, and
+# `unsupported` for 101, since switching protocols is not done here.
+function read_response(@reader: io.Reader, method: str, limits: Limits) -> Response?
+    m = read.response(@reader, method: method, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes))?
+    headers: [Header] @= []
+
+    for f in m.head.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(
+        Response(status: m.head.status, reason: m.head.reason, headers: headers, body: m.content, closing: m.closing)
+    )
+
+# Writes `response` to `s` as HTTP/1.1: its status line, its fields, its
+# framing and its body.
+#
+# - `s`: the stream written; its owner closes it.
+# - `response`: the response; a status from 100 to 999.
+# - `method`: the method of the request answered; for `HEAD` the length is
+#   written and the body is not.
+#
+# No body and no length are written for 1xx, 204 and 304; `Connection:
+# close` is written where `response` closes. It knows no request, so a
+# server tells an HTTP/1.0 client its connection is kept by `write_answer`.
+# Fails `invalid`
+# before writing a byte where the status is outside 100 to 999, a reason holds
+# a line end, a name is no token or a value holds a line end or a zero byte;
+# and as `io.write` fails.
+function write_response(s: io.Stream, response: Response, method: str) -> ()?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    data = write.response(status_code: response.status, reason: response.reason, fields: fields, content: response.body, closing: response.closing, keep_alive: false, head_only: method == METHOD_HEAD)?
+    return io.write(s, data: data)
+
+## The client
+
+# When a request is sent again, and how long the client waits first.
+record Retries
+    # How many times a request is sent again after its first, 0 for never.
+    count: i64
+    # The statuses after which it is sent again: `[429, 500, 502, 503, 504]`
+    # in `default_client`.
+    statuses: [i64]
+    # The milliseconds waited before the first retry, doubled before each
+    # next, 0 or more.
+    backoff_ms: i64
+    # The most milliseconds waited before one retry, a `Retry-After` the
+    # server sends included.
+    max_backoff_ms: i64
+
+# How a client sends: made by `default_client`, its fields changed by the
+# program.
+record Client
+    # The most redirects followed for one request, 0 or more; at 0 a redirect
+    # is answered as it came.
+    max_redirects: i64
+    # The milliseconds one request may take, its redirects and retries
+    # included, counted from its first connection; 0 for none. Over
+    # `http://` it bounds every read and write, a name's lookup and the making
+    # of the connection taking what the system allows; over `https://` it
+    # bounds the connection and its handshake, and what is left of it then
+    # bounds every read and write (`tls.set_deadline`).
+    deadline_ms: i64
+    # What a response may hold.
+    limits: Limits
+    # The PEM of the only authorities an `https://` server's certificate may
+    # be signed by, one certificate or several; "" trusts the system's own
+    # store, as `tls.Client`'s `roots`. Nothing turns the check off.
+    roots: str
+    # When a request is sent again. Only `GET`, `HEAD`, `OPTIONS`, `PUT`,
+    # `DELETE` and `TRACE`, which RFC 9110 calls idempotent, are: after a
+    # status of `statuses`, or after the connection failed `closed`,
+    # `timeout` or `failed`.
+    retries: Retries
+
+# The usual client: 10 redirects, as Go and Python follow, a time limit of
+# 30 seconds, `default_limits()`, the system's own authorities, and no retry,
+# whose waits would be 100 ms doubled up to 10 s.
+function default_client() -> Client
+    return Client(
+        max_redirects: 10,
+        deadline_ms: 30_000,
+        limits: default_limits(),
+        roots: "",
+        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff_ms: 100, max_backoff_ms: 10_000)
+    )
+
+# What a program keeps between requests, as `requests`' session does: how they
+# are sent, the fields each carries, the URL a path is read against, and the
+# cookies the server set.
+record Session
+    # How each request is sent.
+    client: Client
+    # Fields added to each request that holds none of that name:
+    # `User-Agent`, `Accept`, an `Authorization`.
+    headers: [Header]
+    # The absolute URL a request's target is resolved against where it has
+    # no scheme, `http://example.com/api/`; "" for none.
+    base: str
+    # The cookies kept, received by `Set-Cookie` and sent where they match.
+    cookies: [Cookie]
+
+# A session with `default_client()`, no field, no base and no cookie.
+function default_session() -> Session
+    return Session(client: default_client(), headers: [], base: "", cookies: [])
+
+# The response to `r`, sent as `send` sends it, through `s`: its target
+# resolved against `s.base`, `s.headers` added where `r` has none of the
+# name, the cookies of `s` sent and those set kept, on every redirect.
+#
+# - `s`: the session; its `cookies` change.
+# - `r`: the request.
+#
+# Fails as `send` does, and `invalid` where `s.base` is no absolute URL.
+function fetch(@s: Session, r: Request) -> Response?
+    out @= r
+
+    if !url.is_abs(r.url) && s.base != ""
+        out.url @ url.resolve(base: url.parse(s.base)?, reference: r.url)
+
+    for h in s.headers
+        if !has_header(out.headers, name: h.name)
+            out.headers @ out.headers.push(h)
+
+    start = time.mark()?
+    whole = s.client.deadline_ms
+    hops: i64 @= 0
+
+    while true
+        if whole > 0
+            s.client.deadline_ms @ policy.left_ms(deadline_ms: whole, start: start)?
+        outcome = fetch_once(@s, r: out)
+        s.client.deadline_ms @ whole
+        answer = outcome?
+
+        if !policy.follows(answer.status) || s.client.max_redirects == 0 || !has_header(answer.headers, name: "Location")
+            return ok(answer)
+        hops @ hops + 1
+
+        if hops > s.client.max_redirects
+            return fail(
+                code: LIMIT,
+                msg: f"sending {out.method} {url.redacted(r.url)}: stopped after {s.client.max_redirects} redirects"
+            )
+        next = url.resolve(
+            base: out.url,
+            reference: url.parse_loose(value_of(answer.headers, name: "Location").must())?
+        )
+
+        if !policy.same_origin(a_scheme: out.url.scheme, a_host: out.url.host, a_port: out.url.port, b_scheme: next.scheme, b_host: next.host, b_port: next.port)
+            out.headers @ without_header(without_header(out.headers, name: "Authorization"), name: "Cookie")
+
+        if !policy.keeps_body(answer.status)
+            out.body @ []
+            out.headers @ without_header(out.headers, name: "Content-Type")
+        out.method @ policy.method_after(status: answer.status, method: out.method)
+        out.url @ next
+
+# The response to `r` through `s`, its redirects not followed: one request,
+# sent again as `s.client.retries` says, its target resolved and its fields
+# added as `fetch` does, the cookies of `s` sent and those set kept.
+#
+# - `s`: the session; its `cookies` change.
+# - `r`: the request.
+#
+# A redirect is answered as it came, as `requests` answers with
+# `allow_redirects=False`. Fails as `send` does.
+function fetch_once(@s: Session, r: Request) -> Response?
+    start = time.mark()?
+    out @= r
+
+    if !url.is_abs(r.url) && s.base != ""
+        out.url @ url.resolve(base: url.parse(s.base)?, reference: r.url)
+
+    for h in s.headers
+        if !has_header(out.headers, name: h.name)
+            out.headers @ out.headers.push(h)
+
+    c = s.client
+    tries: i64 @= 0
+
+    while true
+        now = time.now()?
+        fields: [wire.Field] @= []
+
+        for h in without_header(out.headers, name: "Cookie")
+            fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+        sent: [str] @= values_of(out.headers, name: "Cookie")
+        matched = matching_cookies(s.cookies, target: out.url, now: now)
+
+        if matched.len() > 0
+            sent @ sent.push(format_cookie(matched))
+
+        if sent.len() > 0
+            fields @ fields.push(wire.Field(name: "Cookie", value: sent.join("; ")))
+
+        if !has_header(out.headers, name: "Accept-Encoding")
+            fields @ fields.push(wire.Field(name: "Accept-Encoding", value: "gzip, deflate"))
+        left = policy.left_ms(deadline_ms: c.deadline_ms, start: start)?
+        outcome = policy.exchange(
+            scheme: out.url.scheme,
+            host: out.url.host,
+            port: out.url.port,
+            deadline_ms: left,
+            roots: c.roots,
+            method: out.method,
+            target: url.request_target(out.url),
+            host_value: value_of(out.headers, name: "Host").default(policy.host_field(scheme: out.url.scheme, host: out.url.host, port: out.url.port)),
+            fields: fields,
+            content: out.body,
+            bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes)
+        )
+        retry = policy.is_idempotent(out.method) && tries < c.retries.count
+        wait: i64 @= policy.backoff_ms(attempt: tries + 1, base: c.retries.backoff_ms, most: c.retries.max_backoff_ms)
+
+        match outcome
+            .ok m =>
+                headers: [Header] @= []
+
+                for f in m.head.fields
+                    headers @ headers.push(Header(name: f.name, value: f.value))
+
+                answer = Response(
+                    status: m.head.status,
+                    reason: m.head.reason,
+                    headers: headers,
+                    body: m.content,
+                    closing: m.closing
+                )
+                store_cookies(@s.cookies, target: out.url, response: answer, now: now)
+
+                if !retry || !policy.has_status(c.retries.statuses, status: answer.status)
+                    return decode_body(answer, limit: c.limits.body_bytes)
+
+                match policy.retry_after_ms(value_of(answer.headers, name: "Retry-After").default(""), now: now)
+                    .ok after => wait @ policy.at_most(n: after, most: c.retries.max_backoff_ms)
+                    .err _    => _ = 0
+
+                if !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: wait)?
+                    return decode_body(answer, limit: c.limits.body_bytes)
+            .err e =>
+                transient = e.code == CLOSED || e.code == TIMEOUT || e.code == FAILED
+
+                if !retry || !transient || !policy.may_wait(deadline_ms: c.deadline_ms, start: start, wait_ms: wait)?
+                    return fail(code: e.code, msg: e.msg)
+
+        policy.pause(wait)
+        tries @ tries + 1
+
+# The response to `r`, sent to the `http://` or `https://` URL it names on a
+# connection of its own, its redirects followed and the cookies set on the
+# way sent on.
+#
+# - `c`: how it is sent.
+# - `r`: the request; its target an absolute `http://` or `https://` URL.
+#
+# An `https://` request is TLS by `tls.connect`, offering HTTP/1.1, the
+# server's certificate checked against `c.roots`. The response is answered
+# whatever its status; a 4xx or 5xx is no failure (`require_success` makes it
+# one). A 301, 302 or 303 is followed with `GET` and no body, a `HEAD`
+# staying `HEAD`; a 307 or 308 with the same method and body; between
+# `http://` and `https://` either way; `Authorization` and the request's own
+# `Cookie` are dropped where the scheme, the host or the port changes, so an
+# `https://` redirect to `http://` carries neither, and a secure cookie goes
+# only to `https://`; a redirect with no `Location` is answered as it came.
+# Fails `unsupported` for a scheme other than `http` and `https`; `invalid`
+# for a certificate refused, the message saying why, a target that is not
+# absolute or a response that is not HTTP/1.1; `limit` past
+# `c.max_redirects` or `c.limits`; `timeout` past `c.deadline_ms`; and as
+# `net.connect` and `tls.connect` fail. See also `fetch`, `get`,
+# `round_trip`.
+function send(c: Client, r: Request) -> Response?
+    s @= Session(client: c, headers: [], base: "", cookies: [])
+    return fetch(@s, r: r)
+
+# The response to a `GET` of `target`, as `send` answers it.
+#
+# - `c`: how it is sent.
+# - `target`: an absolute `http://` or `https://` URL.
+#
+# Fails as `request` and `send` do.
+function get(c: Client, target: str) -> Response?
+    return send(c, r: request(method: METHOD_GET, target: target)?)
+
+# The response to a `HEAD` of `target`, as `send` answers it: no body.
+#
+# - `c`: how it is sent.
+# - `target`: an absolute `http://` or `https://` URL.
+#
+# Fails as `request` and `send` do.
+function head(c: Client, target: str) -> Response?
+    return send(c, r: request(method: METHOD_HEAD, target: target)?)
+
+# The response to a `POST` of `body` to `target`, as `send` answers it.
+#
+# - `c`: how it is sent.
+# - `target`: an absolute `http://` or `https://` URL.
+# - `content_type`: the body's `Content-Type`.
+# - `body`: the body's bytes.
+#
+# Fails as `request` and `send` do.
+function post(c: Client, target: str, content_type: str, body: [u8]) -> Response?
+    return send(c, r: with_body(request(method: METHOD_POST, target: target)?, content_type: content_type, body: body))
+
+# The response to a `POST` of the form `pairs` to `target`, as
+# `application/x-www-form-urlencoded`, as `send` answers it.
+#
+# - `c`: how it is sent.
+# - `target`: an absolute `http://` or `https://` URL.
+# - `pairs`: the keys and values, written as `url.format_query` writes them.
+#
+# Fails as `request` and `send` do. See also `form_of`.
+function post_form(c: Client, target: str, pairs: [url.Pair]) -> Response?
+    return send(c, r: with_form(request(method: METHOD_POST, target: target)?, pairs: pairs))
+
+# The response to `r`, written on the connection `reader` reads and read
+# back through `reader`: one exchange on a connection the program holds, so
+# several may follow one another on it.
+#
+# - `reader`: the reader of the connection, a `net.Conn`'s stream or, for
+#   HTTPS, one `tls.connect` answered; the request is written to its stream,
+#   and its owner closes it.
+# - `r`: the request; its target's path and query are written, and a
+#   `Host` field or the target's host names the host.
+# - `limits`: what the response may hold.
+#
+# No redirect is followed. Once the response is `closing`, the connection
+# carries no other. Fails as `write_request` and `read_response` do.
+function round_trip(@reader: io.Reader, r: Request, limits: Limits) -> Response?
+    write_request(reader.stream, r: r)?
+    return read_response(@reader, method: r.method, limits: limits)
+
+## The server
+
+# How a server serves: made by `default_server`, its fields changed by the
+# program.
+record Server
+    # What a request may hold; past it the client is answered 431 or 413.
+    limits: Limits
+    # The milliseconds each connection may last from its accepting, every
+    # request it carries included, 0 for none; a connection past it is
+    # closed. Over TLS its handshake may take as long again before it. One
+    # connection is served at a time, so this is the longest one client can
+    # keep the others waiting.
+    deadline_ms: i64
+
+# The usual server: `default_limits()` and connections of 30 seconds at most.
+function default_server() -> Server
+    return Server(limits: default_limits(), deadline_ms: 30_000)
+
+# Serves every connection `l` accepts with `handler`, one connection at a
+# time, until the program asks to stop.
+#
+# - `s`: how it serves.
+# - `l`: the listener; its owner closes it.
+# - `handler`: called once for each request, on this thread, with the request
+#   read whole; what it answers is written back. A response it cannot write,
+#   a status outside 200 to 999 or a field with a line end, is answered 500.
+#
+# It serves ONE CONNECTION AT A TIME: the next waits in the listener's queue
+# until the one served ends. A program that serves several at once accepts
+# with `net.accept_number`, hands each number to a thread, and calls
+# `serve_conn` there. It answers once the stop is asked (`net.catch_stop`,
+# `net.ask_stop`). Fails `timeout` where the listener's deadline passes
+# (`net.set_accept_deadline`), `closed` where `l` is closed. Where the system
+# has no descriptor left it waits and tries again, from 5 ms to 1 s, as Go
+# does.
+function serve(s: Server, l: net.Listener, handler: (function(Request) -> Response)) -> ()?
+    wait_ms: i64 @= 5
+
+    while true
+        match net.accept(l, deadline_ms: s.deadline_ms)
+            .ok accepted =>
+                wait_ms @ 5
+                conn @= accepted
+                _ = serve_conn(s, c: conn, handler: handler)
+
+                match io.close(@conn.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == STOPPED
+                    return ok()
+
+                if e.code != LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                policy.pause(wait_ms)
+                wait_ms @ policy.at_most(n: wait_ms * 2, most: 1_000)
+
+# Serves every TLS connection `l` accepts with `handler`, one connection at
+# a time, until the program asks to stop: `serve` over `tls`.
+#
+# - `s`: how it serves; `s.deadline_ms` is the milliseconds a client's
+#   handshake may take once it has connected, and then the milliseconds its
+#   connection may last (`tls.set_deadline`), 0 for no limit.
+# - `l`: the TLS listener, made by `tls.listen` with HTTP/1.1 among its
+#   protocols; its owner closes it.
+# - `handler`: called once for each request, as `serve` calls it.
+#
+# It serves ONE CONNECTION AT A TIME, as `serve` does, so a client that
+# connects and goes silent holds the others for `s.deadline_ms` twice at
+# most, its handshake's and its connection's. A handshake that fails or times
+# out ends that client alone. It answers once the stop is asked. Fails
+# `timeout` where the listener's own deadline passes
+# (`tls.set_accept_deadline`), told from a handshake's by the wait being
+# shorter than `s.deadline_ms`; `closed` where `l` is closed, `invalid` for a
+# deadline below 0, and as `tls.accept` fails for any reason that is not one
+# client's; where the system has nothing left it waits and tries again, as
+# `serve` does. Each request's `remote` is "", since
+# `tls` does not tell the client's address. See also `serve_stream`.
+function serve_tls(s: Server, l: tls.Listener, handler: (function(Request) -> Response)) -> ()?
+    wait_ms: i64 @= 5
+
+    while true
+        began = time.mark()
+
+        match tls.accept(l, deadline_ms: s.deadline_ms)
+            .ok accepted =>
+                wait_ms @ 5
+                stream @= accepted
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, ms: s.deadline_ms).is_err()
+
+                if timed
+                    _ = serve_stream(s, stream: stream, remote: "", handler: handler)
+
+                match io.close(@stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == STOPPED
+                    return ok()
+
+                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: s.deadline_ms)
+                    return fail(code: e.code, msg: e.msg)
+                one_client = e.code == CLOSED && l.handle != nullptr || e.code == TIMEOUT || e.code == FAILED
+
+                if e.code == LIMIT
+                    policy.pause(wait_ms)
+                    wait_ms @ policy.at_most(n: wait_ms * 2, most: 1_000)
+                else if !one_client
+                    return fail(code: e.code, msg: e.msg)
+
+# Serves the requests of the connection `c` with `handler`, one after
+# another, and answers how many were answered.
+#
+# - `s`: how it serves; `s.deadline_ms` is not read, the connection's own
+#   deadline being the one `net` gave it.
+# - `c`: the connection; its owner closes it.
+# - `handler`: called once for each request, as `serve` calls it.
+#
+# It ends where the client closes, asks the connection closed, sends what is
+# no request or stays silent past the deadline, or where the stop is asked or
+# a response cannot be written. What is no request is answered 400, a head
+# past `s.limits` 431, a body past them 413, a transfer coding other than
+# chunked 501, a version other than 1.x 505, an `Expect` other than
+# `100-continue` 417, and `CONNECT` 501, before the connection ends;
+# `Expect: 100-continue` is answered 100 before the body is read. A `Date`
+# field is written where `handler` gives none.
+function serve_conn(s: Server, c: net.Conn, handler: (function(Request) -> Response)) -> i64
+    return serve_stream(s, stream: c.stream, remote: net.format_address(c.remote), handler: handler)
+
+# Serves the requests that come on `stream` with `handler`, one after
+# another, as `serve_conn` serves a connection's, and answers how many were
+# answered: the same work over any stream, a TLS one `tls.accept` answered
+# among them.
+#
+# - `s`: how it serves; `s.deadline_ms` is not read, the stream's own
+#   deadline, where it has one, being the one that holds.
+# - `stream`: the stream read and written; its owner closes it.
+# - `remote`: what each request's `remote` holds: the client's address, or
+#   "" where the caller does not know it.
+# - `handler`: called once for each request, as `serve` calls it.
+#
+# It ends as `serve_conn` does. The stream's own deadline is the one that
+# holds: `serve_tls` sets one on each TLS stream it accepts. See also
+# `serve_tls`.
+function serve_stream(s: Server, stream: io.Stream, remote: str, handler: (function(Request) -> Response)) -> i64
+    reader @= io.reader(stream)
+    answered: i64 @= 0
+
+    while true
+        r @= match next_request(@reader, limits: s.limits)
+            .ok got => got
+            .err _  => return answered
+
+        r.remote @ remote
+        answer = handler(r)
+
+        match write_answer(reader.stream, r: r, response: answer)
+            .ok _  => answered @ answered + 1
+            .err _ => return answered
+
+        if r.closing || answer.closing
+            return answered
+
+## Serving with the program's own value
+
+# `serve` with `state` handed to `handler` beside each request: how a
+# handler reads the program's routes, settings or data, since a function
+# value holds none of its own.
+#
+# - `s`: how it serves.
+# - `l`: the listener; its owner closes it.
+# - `state`: the value handed to every call of `handler`, read and never
+#   changed: each call receives its own copy, as every value is (spec § 3),
+#   and a call that changes its copy changes nothing the next one sees.
+# - `handler`: called once for each request, with `state` and the request;
+#   what it answers is written back, as `serve` writes it.
+#
+# Serves one connection at a time and ends as `serve` does. Handing `state`
+# costs no copy of its bytes where `handler` only reads it (README § B1); a
+# handler that changes it pays for a copy each call. See also
+# `serve_stream_with`, `serve_tls_with`.
+function serve_with<S>(s: Server, l: net.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
+    wait_ms: i64 @= 5
+
+    while true
+        match net.accept(l, deadline_ms: s.deadline_ms)
+            .ok accepted =>
+                wait_ms @ 5
+                conn @= accepted
+                _ = serve_stream_with(
+                    s,
+                    stream: conn.stream,
+                    remote: net.format_address(conn.remote),
+                    state: state,
+                    handler: handler
+                )
+
+                match io.close(@conn.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == STOPPED
+                    return ok()
+
+                if e.code != LIMIT
+                    return fail(code: e.code, msg: e.msg)
+                policy.pause(wait_ms)
+                wait_ms @ policy.at_most(n: wait_ms * 2, most: 1_000)
+
+# `serve_tls` with `state` handed to `handler` beside each request, as
+# `serve_with` hands it.
+#
+# - `s`: how it serves, `deadline_ms` a handshake's as `serve_tls` reads it.
+# - `l`: the TLS listener; its owner closes it.
+# - `state`: the value handed to every call, as `serve_with` hands it.
+# - `handler`: called once for each request, with `state` and the request.
+#
+# Serves and ends as `serve_tls` does, a silent client dropped at the
+# deadline included.
+# See also `serve_with`.
+function serve_tls_with<S>(s: Server, l: tls.Listener, state: S, handler: (function(S, Request) -> Response)) -> ()?
+    wait_ms: i64 @= 5
+
+    while true
+        began = time.mark()
+
+        match tls.accept(l, deadline_ms: s.deadline_ms)
+            .ok accepted =>
+                wait_ms @ 5
+                stream @= accepted
+                timed = s.deadline_ms <= 0 || !tls.set_deadline(stream, ms: s.deadline_ms).is_err()
+
+                if timed
+                    _ = serve_stream_with(s, stream: stream, remote: "", state: state, handler: handler)
+
+                match io.close(@stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+            .err e =>
+                if e.code == STOPPED
+                    return ok()
+
+                if e.code == TIMEOUT && policy.is_listener_timeout(began, handshake_ms: s.deadline_ms)
+                    return fail(code: e.code, msg: e.msg)
+                one_client = e.code == CLOSED && l.handle != nullptr || e.code == TIMEOUT || e.code == FAILED
+
+                if e.code == LIMIT
+                    policy.pause(wait_ms)
+                    wait_ms @ policy.at_most(n: wait_ms * 2, most: 1_000)
+                else if !one_client
+                    return fail(code: e.code, msg: e.msg)
+
+# `serve_stream` with `state` handed to `handler` beside each request, as
+# `serve_with` hands it, and how many were answered.
+#
+# - `s`: how it serves.
+# - `stream`: the stream read and written; its owner closes it.
+# - `remote`: what each request's `remote` holds, "" where it is not known.
+# - `state`: the value handed to every call, as `serve_with` hands it.
+# - `handler`: called once for each request, with `state` and the request.
+#
+# Ends as `serve_stream` does. See also `next_request`, `write_answer`.
+function serve_stream_with<S>(s: Server, stream: io.Stream, remote: str, state: S, handler: (function(S, Request) -> Response)) -> i64
+    reader @= io.reader(stream)
+    answered: i64 @= 0
+
+    while true
+        r @= match next_request(@reader, limits: s.limits)
+            .ok got => got
+            .err _  => return answered
+
+        r.remote @ remote
+        answer = handler(state, r)
+
+        match write_answer(reader.stream, r: r, response: answer)
+            .ok _  => answered @ answered + 1
+            .err _ => return answered
+
+        if r.closing || answer.closing
+            return answered
+
+## A server's own loop, step by step
+
+# A request's head read apart from its body: what `read_request_head`
+# answers and `read_request_body` reads on from.
+record RequestHead
+    # The request its head says, its body not read yet and empty; `closing`
+    # as the head asks, `remote` "".
+    request: Request
+    # Its version's minor digit: 1 for HTTP/1.1, 0 for HTTP/1.0.
+    minor: i64
+
+# The head of the next request `reader` holds, its body left unread: what a
+# server's own loop reads to decide before the body comes.
+#
+# - `reader`: the reader of the connection, advanced past the head.
+# - `limits`: what the head may hold.
+#
+# A `CONNECT`'s target, a host and a port, is read as a URL's authority.
+# Fails as `read_request` does on a head: `closed` where the stream ends
+# before a request begins, `invalid` where it is no request head or its
+# target no URL, `limit` past `limits`, `unsupported` for a version other
+# than 1.x. See also `read_request_body`, `failure_status`, `refusal_of`.
+function read_request_head(@reader: io.Reader, limits: Limits) -> RequestHead?
+    h = read.request_head(@reader, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes))?
+    target: url.Url @= url.parse("/").must()
+
+    if h.method == METHOD_CONNECT
+        target @ url.parse("//" + h.target)?
+    else
+        target @ parse_target(method: h.method, target: h.target)?
+    headers: [Header] @= []
+
+    for f in h.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(
+        RequestHead(request: Request(method: h.method, url: target, headers: headers, body: [], closing: read.closes(h), remote: ""), minor: h.minor)
+    )
+
+# The request `h` begins, its body read from `reader`, `100 Continue`
+# written first where an HTTP/1.1 client asked for it and a body follows.
+#
+# - `reader`: the reader `h` was read from, advanced past the body.
+# - `h`: the head, as `read_request_head` answered it.
+# - `limits`: what the body may hold.
+#
+# Fails `unsupported` for a transfer coding other than chunked; `invalid`
+# for both `Content-Length` and `Transfer-Encoding`, a length that is no
+# number or a body cut short; `limit` past `limits`; and as `io.write` and
+# `io.read` fail. See also `failure_status`.
+function read_request_body(@reader: io.Reader, h: RequestHead, limits: Limits) -> Request?
+    fields: [wire.Field] @= []
+
+    for one in h.request.headers
+        fields @ fields.push(wire.Field(name: one.name, value: one.value))
+
+    expect = values_of(h.request.headers, name: "Expect")
+    continuing = h.minor >= 1 && expect.len() == 1 && syntax.same_name(a: expect[0], b: "100-continue")
+    head_read = wire.Head(
+        method: h.request.method,
+        target: "",
+        status: 0,
+        reason: "",
+        major: 1,
+        minor: h.minor,
+        fields: fields
+    )
+    out @= h.request
+    out.body @ policy.body_after(@reader, h: head_read, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes), continuing: continuing)?
+    return ok(out)
+
+# The status a server answers a request it failed to read with, RFC 9110
+# § 15: 400 for `invalid`, 431 for `limit` in the head and 413 in the body,
+# 505 for `unsupported` in the head (a version) and 501 in the body (a
+# transfer coding).
+#
+# - `code`: the failure's code, as `read_request_head` or
+#   `read_request_body` failed.
+# - `in_head`: whether the head failed, else the body.
+#
+# Fails `not_found` for a code no status answers, `closed`, `timeout` and
+# `stopped` among them: the connection is ended, with nothing written. See
+# also `refusal_of`.
+function failure_status(code: str, in_head: bool) -> i64?
+    if code == INVALID
+        return ok(STATUS_BAD_REQUEST)
+
+    if code == LIMIT && in_head
+        return ok(STATUS_REQUEST_HEADER_FIELDS_TOO_LARGE)
+
+    if code == LIMIT
+        return ok(STATUS_CONTENT_TOO_LARGE)
+
+    if code == UNSUPPORTED && in_head
+        return ok(STATUS_HTTP_VERSION_NOT_SUPPORTED)
+
+    if code == UNSUPPORTED
+        return ok(STATUS_NOT_IMPLEMENTED)
+    return fail(code: NOT_FOUND, msg: f"a failure `{code}` is answered by no status: the connection is ended")
+
+# The status a server answers a well-formed head it will not serve with:
+# 501 for `CONNECT`, which asks for a tunnel, and 417 for an `Expect` other
+# than `100-continue`, RFC 9110 § 10.1.1.
+#
+# - `h`: the head, as `read_request_head` answered it.
+#
+# Fails `not_found` where the head asks for nothing refused. See also
+# `failure_status`.
+function refusal_of(h: RequestHead) -> i64?
+    if h.request.method == METHOD_CONNECT
+        return ok(STATUS_NOT_IMPLEMENTED)
+    expect = values_of(h.request.headers, name: "Expect")
+
+    if expect.len() > 0 && !(expect.len() == 1 && syntax.same_name(a: expect[0], b: "100-continue"))
+        return ok(STATUS_EXPECTATION_FAILED)
+    return fail(code: NOT_FOUND, msg: "the head asks for nothing a server refuses")
+
+# The next request `reader` holds, read whole as a server reads it: every
+# refusal RFC 9112 asks for answered on `reader`'s stream first, closing,
+# its reason the body, and `100 Continue` written where it is asked for.
+#
+# - `reader`: the reader of the connection, advanced past the request.
+# - `limits`: what a request may hold.
+#
+# A failure is answered with `failure_status`'s status, a head
+# `refusal_of` refuses with its own, and nothing for a failure no status
+# answers; the caller ends the connection after any failure. Fails as
+# `read_request_head` and `read_request_body` do, and `unsupported` for a
+# head `refusal_of` refuses. See also `write_answer`.
+function next_request(@reader: io.Reader, limits: Limits) -> Request?
+    h = match read_request_head(@reader, limits: limits)
+        .ok got => got
+        .err e =>
+            policy.refuse_for(reader.stream, code: e.code, in_head: true, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    match refusal_of(h)
+        .ok status =>
+            why = f"{h.request.method} {url.request_target(h.request.url)}: {status_text(status).default("refused")}"
+            policy.refuse(reader.stream, status_code: status, why: why)
+            return fail(code: UNSUPPORTED, msg: why)
+        .err _ => _ = 0
+
+    match read_request_body(@reader, h: h, limits: limits)
+        .ok r => return ok(r)
+        .err e =>
+            policy.refuse_for(reader.stream, code: e.code, in_head: false, why: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# Writes `response` to `s` as a server's answer to `r`, RFC 9112: a `Date`
+# field where it has none, no body for `HEAD`, `Connection: close` where `r`
+# or `response` closes, and `Connection: keep-alive` where `r` asked to keep
+# the connection and it is kept, as an HTTP/1.0 client must be told.
+#
+# - `s`: the connection's stream; its owner closes it.
+# - `r`: the request answered.
+# - `response`: the answer; one that cannot be written, a status outside 200
+#   to 999 or a field with a line end, is answered 500.
+#
+# The body is written with its length, a `Transfer-Encoding` it names left
+# out, since every HTTP/1.x client reads a length. Fails as `io.write`
+# does. See also `next_request`.
+function write_answer(s: io.Stream, r: Request, response: Response) -> ()?
+    fields: [wire.Field] @= []
+
+    for f in response.headers
+        if !syntax.same_name(a: f.name, b: "Transfer-Encoding")
+            fields @ fields.push(wire.Field(name: f.name, value: f.value))
+
+    if !has_header(response.headers, name: "Date")
+        match policy.date_now()
+            .ok d  => fields @ fields.push(wire.Field(name: "Date", value: d))
+            .err _ => _ = 0
+
+    ends = r.closing || response.closing
+    kept = !ends && syntax.has_member(values_of(r.headers, name: "Connection"), token: "keep-alive")
+    data = policy.response_or_500(
+        status_code: response.status,
+        reason: response.reason,
+        fields: fields,
+        content: response.body,
+        closing: ends,
+        keep_alive: kept,
+        head_only: r.method == METHOD_HEAD
+    )
+    return io.write(s, data: data)
+
+## Dates
+
+# `t` as HTTP writes a date, RFC 9110's IMF-fixdate: `Mon, 02 Jan 2006
+# 15:04:05 GMT`.
+#
+# - `t`: the instant, its fraction of a second dropped.
+function format_date(t: time.Instant) -> str
+    return time.format(t, layout: .http)
+
+# The instant `s` writes as an HTTP date: IMF-fixdate, the obsolete RFC 850
+# form or C's asctime form, as RFC 9110 asks a reader to accept.
+#
+# - `s`: the text, read whole.
+#
+# Fails `invalid` where `s` is none of the three, and `does_not_fit` as
+# `time.parse` does.
+function parse_date(s: str) -> time.Instant?
+    return policy.parse_date(s)
+
+## Tests
+
+test "fetch_once: a 503 sent again, its Retry-After of 0 read, then the 200"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 503 Service Unavailable\r\nRetry-After: 0\r\nContent-Length: 0\r\n\r\n", "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"])
+    )
+    port = t.port
+    s @= default_session()
+    s.client.retries.count @ 2
+    got = fetch_once(@s, r: request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/a").must()).must()
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert got.status == 200 && seen.len() == 2
+
+test "send: a POST is never sent again, a 503 answered as it came"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n"]))
+    port = t.port
+    c @= default_client()
+    c.retries.count @ 3
+    got = post(c, target: f"http://127.0.0.1:{port}/p", content_type: "text/plain", body: [104])
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert got.must().status == 503 && seen.len() == 1
+
+test "send: a redirect past the client's number fails limit, a 307 keeps the method and the body"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 307 Temporary Redirect\r\nLocation: /b\r\nContent-Length: 0\r\n\r\n", "HTTP/1.1 302 Found\r\nLocation: /c\r\nContent-Length: 0\r\n\r\n"])
+    )
+    port = t.port
+    c @= default_client()
+    c.max_redirects @ 1
+
+    match post(c, target: f"http://127.0.0.1:{port}/a", content_type: "text/plain", body: [104, 105])
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert seen.len() == 2 && strings.has_prefix(s: seen[1], prefix: "POST /b\n") && strings.has_suffix(s: seen[1], suffix: "\n\nhi")
+
+test "send: an ftp URL is unsupported, a target with no scheme invalid, no network asked"
+    match get(default_client(), target: "ftp://example.com/")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match send(default_client(), r: request(method: METHOD_GET, target: "/a").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match request(method: "G T", target: "http://h/")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "get: a server that never answers ends at the client's time limit"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    c @= default_client()
+    c.deadline_ms @ 200
+
+    match get(c, target: f"http://127.0.0.1:{l.address.port}/slow")
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    net.close_listener(@l).must()
+
+test "serve_conn: what is no request is answered 400, and the connection ends"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "nonsense\r\n\r\nGET / HTTP/1.1\r\nHost: h\r\n\r\n").must()
+    assert serve_conn(default_server(), c: two.second, handler: respond_trace) == 0
+    reader @= io.reader(two.first.stream)
+    got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert got.status == 400 && got.closing && strings.contains(s: text_of(got).must(), substr: "request line")
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_conn: a head past the limits is answered 431, a body past them 413"
+    small @= default_server()
+    small.limits.head_bytes @ 60
+    small.limits.body_bytes @ 2
+
+    for given in [["GET / HTTP/1.1\r\nHost: h\r\nX-Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n", "431"], ["POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello", "413"], ["GET / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n", "501"], ["GET / HTTP/3.0\r\n\r\n", "505"], ["CONNECT h:443 HTTP/1.1\r\n\r\n", "501"], ["GET / HTTP/1.1\r\nExpect: magic\r\n\r\n", "417"]]
+        two @= net.pair(deadline_ms: 5_000).must()
+        io.write_text(two.first.stream, text: given[0]).must()
+        assert serve_conn(small, c: two.second, handler: respond_trace) == 0
+        reader @= io.reader(two.first.stream)
+        assert f"{read_response(@reader, method: METHOD_GET, limits: default_limits()).must().status}" == given[1]
+        io.close(@two.second.stream).must()
+        io.close(@reader.stream).must()
+
+test "serve_conn: Expect 100-continue answered 100 before the body is read"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "TRACE / HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 2\r\nConnection: close\r\n\r\nhi"
+    ).must()
+    assert serve_conn(default_server(), c: two.second, handler: respond_trace) == 1
+    reader @= io.reader(two.first.stream)
+    assert bytes.to_text(io.read_n(@reader, n: 25).must()).must() == "HTTP/1.1 100 Continue\r\n\r\n"
+    got = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    assert got.status == 200 && strings.has_suffix(s: text_of(got).must(), suffix: "\r\n\r\nhi")
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_conn: HTTP/1.0 kept alive where it asks, closed where it does not"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "TRACE /a HTTP/1.0\r\nConnection: keep-alive\r\n\r\nTRACE /b HTTP/1.0\r\n\r\n"
+    ).must()
+    assert serve_conn(default_server(), c: two.second, handler: respond_trace) == 2
+    reader @= io.reader(two.first.stream)
+    first = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    second = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    assert value_of(first.headers, name: "Connection").must() == "keep-alive" && !first.closing && second.closing
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve: a connection of nonsense answered 400, and serving goes on to the listener's deadline"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    bad = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
+    io.write_text(bad.stream, text: "\u{1}\u{2}\r\n\r\n").must()
+    net.set_accept_deadline(l, ms: 300).must()
+
+    match serve(default_server(), l: l, handler: respond_trace)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    reader @= io.reader(bad.stream)
+    got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert got.status == 400 && got.closing
+    io.close(@reader.stream).must()
+    net.close_listener(@l).must()
+
+test "store_cookies: Max-Age=0 deletes, a Secure cookie and another host's domain are dropped"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    target = url.parse("http://www.example.com/").must()
+    jar: [Cookie] @= []
+    answer @= respond_status(STATUS_OK)
+    answer.headers @ [
+        Header(name: "Set-Cookie", value: "a=1; Domain=example.com")
+        Header(name: "Set-Cookie", value: "s=1; Secure")
+        Header(name: "Set-Cookie", value: "o=1; Domain=other.com")
+        Header(name: "Set-Cookie", value: "t=1; Domain=com")
+    ]
+    store_cookies(@jar, target: target, response: answer, now: now)
+    assert jar.len() == 1 && jar[0].name == "a" && !jar[0].host_only && jar[0].domain == "example.com"
+    answer.headers @ [Header(name: "Set-Cookie", value: "a=; Domain=example.com; Max-Age=0")]
+    store_cookies(@jar, target: target, response: answer, now: now)
+    assert jar.len() == 0
+
+test "matching_cookies: an ended cookie, a secure one and a host-only one of another host are not sent"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    base = Cookie(
+        name: "a",
+        value: "1",
+        domain: "h.example",
+        host_only: true,
+        path: "/",
+        expires: time.epoch(),
+        persistent: true,
+        secure: false,
+        http_only: false,
+        same_site: ""
+    )
+    secure @= base
+    secure.persistent @ false
+    secure.secure @ true
+    live @= base
+    live.expires @ time.from_unix(whole_seconds: 2_000, extra_nanoseconds: 0).must()
+    assert matching_cookies([base, secure, live], target: url.parse("http://h.example/x").must(), now: now).len() == 1
+    assert matching_cookies([live], target: url.parse("http://www.h.example/x").must(), now: now).len() == 0
+
+test "parse_date: a date in no form of the three is invalid"
+    match parse_date("1994-11-06T08:49:37Z")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "with_query: no pair leaves the target as it was"
+    r = request(method: METHOD_GET, target: "http://h/s?a=1").must()
+    assert with_query(r, pairs: []) == r
+
+test "get: https on the loopback, the server's certificate checked against the test authority"
+    t @= canned.start_tls(
+        canned.script_tls(chain: "localhost", accepts: 1, responses: ["HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"])
+    )
+    port = t.port
+    c @= default_client()
+    c.roots @ tls.TEST_ROOT
+    got = get(c, target: f"https://127.0.0.1:{port}/a")
+    seen = threads.wait_text(@t.thread)
+    assert got.must().status == 200 && text_of(got.must()).must() == "hello"
+    assert strings.has_prefix(s: seen, prefix: "GET /a\n") && strings.contains(s: seen, substr: f"\nHost: 127.0.0.1:{port}\n")
+
+test "get: https refuses a certificate for another host, and one no root of the system's store signed"
+    for given in [["wrong", tls.TEST_ROOT], ["localhost", ""]]
+        t @= canned.start_tls(canned.script_tls(chain: given[0], accepts: 1, responses: []))
+        port = t.port
+        c @= default_client()
+        c.roots @ given[1]
+        got = get(c, target: f"https://localhost:{port}/")
+        _ = threads.wait_text(@t.thread)
+
+        match got
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "send: an https redirect to http carries no Authorization and no secure cookie"
+    p @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"]))
+    plain = p.port
+    t @= canned.start_tls(
+        canned.script_tls(chain: "localhost", accepts: 1, responses: [f"HTTP/1.1 302 Found\r\nSet-Cookie: s=1; Secure; Path=/\r\nSet-Cookie: p=2; Path=/\r\nLocation: http://127.0.0.1:{plain}/b\r\nContent-Length: 0\r\n\r\n"])
+    )
+    secure = t.port
+    c @= default_client()
+    c.roots @ tls.TEST_ROOT
+    r = with_basic_auth(
+        request(method: METHOD_GET, target: f"https://127.0.0.1:{secure}/a").must(),
+        user: "u",
+        password: "p"
+    )
+    got = send(c, r: r)
+    first = threads.wait_text(@t.thread)
+    second = threads.wait_text(@p.thread)
+    assert got.must().status == 200
+    assert strings.contains(s: first, substr: "\nAuthorization: Basic ")
+    assert !strings.contains(s: second, substr: "Authorization") && strings.contains(s: second, substr: "\nCookie: p=2\n") && !strings.contains(s: second, substr: "s=1")
+
+test "matching_cookies: a secure cookie goes to https alone"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    c = Cookie(
+        name: "s",
+        value: "1",
+        domain: "h.example",
+        host_only: true,
+        path: "/",
+        expires: time.epoch(),
+        persistent: false,
+        secure: true,
+        http_only: false,
+        same_site: ""
+    )
+    assert matching_cookies([c], target: url.parse("https://h.example/").must(), now: now).len() == 1
+    assert matching_cookies([c], target: url.parse("http://h.example/").must(), now: now).len() == 0
+
+test "serve_stream: a request over TLS from a client of the test authority"
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
+    ).must()
+    t @= threads.spawn_text(
+        body: canned.ask_tls,
+        arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+    )
+    stream @= tls.accept(l, deadline_ms: 10_000).must()
+    assert serve_stream(default_server(), stream: stream, remote: "", handler: respond_trace) == 1
+    io.close(@stream).must()
+    said = threads.wait_text(@t)
+    assert strings.has_prefix(s: said, prefix: "HTTP/1.1 200 OK\r\n") && strings.has_suffix(s: said, suffix: "\r\n\r\nTRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+    tls.close_listener(@l).must()
+
+test "get: https://example.com where the network answers, a SKIP line where it does not"
+    c @= default_client()
+    c.deadline_ms @ 10_000
+
+    match get(c, target: "https://example.com/")
+        .ok got => assert got.status == 200 && strings.contains(s: text_of(got).default(""), substr: "Example Domain")
+        .err e =>
+            assert e.code != INVALID
+            print("SKIP get https://example.com/: the network did not answer, " + e.code + ": " + e.msg)
+
+test "send: gzip, zlib and raw deflate bodies undone, a chunked one too, Accept-Encoding sent"
+    text: [u8] = [104, 101, 108, 108, 111]
+    gz = compress.compress(text, options: compress.defaults(.gzip)).must()
+    zl = compress.compress(text, options: compress.defaults(.zlib)).must()
+    raw = compress.compress(text, options: compress.defaults(.raw)).must()
+    responses = [
+        canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {gz.len()}\r\n\r\n", body: gz)
+        canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: deflate\r\nContent-Length: {zl.len()}\r\n\r\n", body: zl)
+        canned.chunked(head: "HTTP/1.1 200 OK\r\nContent-Encoding: deflate\r\n", data: raw)
+    ]
+    t @= canned.start(canned.script(responses: responses))
+    port = t.port
+    got: [Response] @= []
+
+    for path in ["gz", "zl", "raw"]
+        got @ got.push(get(default_client(), target: f"http://127.0.0.1:{port}/{path}").must())
+
+    seen = threads.wait_text(@t.thread)
+
+    for one in got
+        assert one.body == text && !has_header(one.headers, name: "Content-Encoding") && !has_header(one.headers, name: "Content-Length")
+
+    assert strings.contains(s: seen, substr: "\nAccept-Encoding: gzip, deflate\n")
+
+test "send: a compression bomb fails limit, a gzip cut short fails invalid"
+    zeros: [u8] @= []
+
+    while zeros.len() < 1_048_576
+        zeros @ zeros.push(0)
+
+    bomb = compress.compress(zeros, options: compress.defaults(.gzip)).must()
+    whole = compress.compress([104, 105], options: compress.defaults(.gzip)).must()
+    cut = whole.slice(from: 0, to: whole.len() - 3)
+    t @= canned.start(
+        canned.script(responses: [canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {bomb.len()}\r\n\r\n", body: bomb), canned.binary(head: f"HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: {cut.len()}\r\n\r\n", body: cut)])
+    )
+    port = t.port
+    c @= default_client()
+    c.limits.body_bytes @ 65_536
+    first = get(c, target: f"http://127.0.0.1:{port}/bomb")
+    second = get(c, target: f"http://127.0.0.1:{port}/cut")
+    _ = threads.wait_text(@t.thread)
+
+    match first
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    match second
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "send: an Accept-Encoding the program set is kept, a coding it cannot undo answered as it came"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Encoding: br\r\nContent-Length: 3\r\n\r\nabc"])
+    )
+    port = t.port
+    r @= request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/").must()
+    r.headers @ [Header(name: "Accept-Encoding", value: "br")]
+    got = send(default_client(), r: r).must()
+    seen = threads.wait_text(@t.thread)
+    assert got.body == [97, 98, 99] && value_of(got.headers, name: "Content-Encoding").must() == "br"
+    assert strings.contains(s: seen, substr: "\nAccept-Encoding: br\n") && !strings.contains(s: seen, substr: "gzip")
+
+test "with_compression: a coding refused by q=0, deflate alone, a body coded already, no body"
+    body = bytes.from_text("aaaaaaaaaaaaaaaaaaaa")
+    answer = respond_text(STATUS_OK, text: "aaaaaaaaaaaaaaaaaaaa")
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Accept-Encoding", value: "gzip;q=0, identity")]
+    refused = with_compression(answer, r: r)
+    assert refused.body == body && !has_header(refused.headers, name: "Content-Encoding") && value_of(refused.headers, name: "Vary").must() == "Accept-Encoding"
+    r.headers @ [Header(name: "Accept-Encoding", value: "deflate")]
+    deflated = with_compression(answer, r: r)
+    assert value_of(deflated.headers, name: "Content-Encoding").must() == "deflate" && decode_body(deflated, limit: 100).must().body == body
+    coded @= answer
+    coded.headers @ coded.headers.push(Header(name: "Content-Encoding", value: "br"))
+    assert with_compression(coded, r: r) == coded && with_compression(respond_status(STATUS_NO_CONTENT), r: r).headers.len() == 0
+
+test "decode_body: no coding, an empty body, a coding not undone, each answered as it is"
+    plain = respond_text(STATUS_OK, text: "hi")
+    assert decode_body(plain, limit: 0).must() == plain
+    empty @= respond_status(STATUS_OK)
+    empty.headers @ [Header(name: "Content-Encoding", value: "gzip")]
+    assert decode_body(empty, limit: 0).must() == empty
+
+test "serve_tls: a client silent after its handshake dropped at the deadline, then the listener's deadline ends it"
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
+    ).must()
+    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR)
+    tls.set_accept_deadline(l, ms: 3_000).must()
+    s @= default_server()
+    s.deadline_ms @ 300
+    began = time.mark().must()
+
+    match serve_tls(s, l: l, handler: respond_trace)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    took = time.to_units(time.elapsed(began).must(), unit: .millisecond)
+    assert threads.wait_text(@t) == ""
+    assert took >= 2_500 && took < 6_000
+    tls.close_listener(@l).must()
+
+## Examples
+
+# The text of a status, from its constant.
+test "status_text: the text of 404"
+    assert status_text(STATUS_NOT_FOUND).must() == "Not Found"
+
+# A field found by its name in any case.
+test "value_of: a field named in another case"
+    assert value_of([Header(name: "Content-Type", value: "text/html")], name: "content-type").must() == "text/html"
+
+# Every value of a name that stands twice, in order.
+test "values_of: a name standing twice"
+    assert values_of([Header(name: "Accept", value: "a"), Header(name: "B", value: "x"), Header(name: "accept", value: "b")], name: "Accept") == ["a", "b"]
+
+# Whether a field is there, its name in any case.
+test "has_header: there and not there"
+    assert has_header([Header(name: "Host", value: "h")], name: "HOST") && !has_header([], name: "Host")
+
+# One field set where two of its name stood.
+test "with_header: two fields of a name replaced by one, in the first one's place"
+    got = with_header(
+        [Header(name: "X-A", value: "1"), Header(name: "B", value: "2"), Header(name: "x-a", value: "3")],
+        name: "X-A",
+        value: "9"
+    )
+    assert got == [Header(name: "X-A", value: "9"), Header(name: "B", value: "2")]
+
+# Every field of a name taken out.
+test "without_header: a name taken out wherever it stands"
+    assert without_header([Header(name: "A", value: "1"), Header(name: "B", value: "2"), Header(name: "a", value: "3")], name: "A") == [Header(name: "B", value: "2")]
+
+# A name written as custom writes it.
+test "canonical_name: a name in lower case"
+    assert canonical_name("x-forwarded-for") == "X-Forwarded-For"
+
+# A request made from its method and its URL.
+test "request: a GET of an absolute URL"
+    r = request(method: METHOD_GET, target: "http://example.com/a?b=1").must()
+    assert r.url.host == "example.com" && r.url.path == "/a" && r.url.query == "b=1" && r.body.len() == 0
+
+# A query's pairs added after the one the URL holds.
+test "with_query: a pair added to a query"
+    r = with_query(
+        request(method: METHOD_GET, target: "http://h/s?a=1").must(),
+        pairs: [url.Pair(key: "q", value: "a b")]
+    )
+    got = query_of(r).must()
+    assert got.len() == 2 && got[1].key == "q" && got[1].value == "a b"
+
+# A body and its type set.
+test "with_body: bytes typed as an image"
+    r = with_body(request(method: METHOD_PUT, target: "http://h/x").must(), content_type: "image/png", body: [137, 80])
+    assert value_of(r.headers, name: "Content-Type").must() == "image/png" && r.body == [137, 80]
+
+# A text body, typed as UTF-8 text.
+test "with_text: a text body"
+    r = with_text(request(method: METHOD_POST, target: "http://h/x").must(), text: "hi")
+    assert value_of(r.headers, name: "Content-Type").must() == "text/plain; charset=utf-8" && r.body == [104, 105]
+
+# A JSON body made from a value.
+test "with_json: an object as the body"
+    r = with_json(
+        request(method: METHOD_POST, target: "http://h/x").must(),
+        value: .object(members: {"a": .number(v: 1.0)})
+    ).must()
+    assert value_of(r.headers, name: "Content-Type").must() == "application/json" && bytes.to_text(r.body).must() == "{\"a\":1}"
+
+# A form's pairs as the body, read back by a server.
+test "with_form: two pairs as a form"
+    r = with_form(
+        request(method: METHOD_POST, target: "http://h/x").must(),
+        pairs: [url.Pair(key: "a", value: "1"), url.Pair(key: "b", value: "x y")]
+    )
+    got = form_of(r).must()
+    assert got.len() == 2 && got[1].value == "x y"
+
+# A field and a file as a multipart body.
+test "with_multipart: a field and a file"
+    r = with_multipart(
+        request(method: METHOD_POST, target: "http://h/up").must(),
+        parts: [Part(name: "title", filename: "", content_type: "", data: [104, 105]), Part(name: "file", filename: "a.txt", content_type: "text/plain", data: [120])]
+    )
+    assert value_of(r.headers, name: "Content-Type").must() == "multipart/form-data; boundary=----rebel-0"
+    assert strings.contains(
+        s: bytes.to_text(r.body).must(),
+        substr: "Content-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\nContent-Type: text/plain\r\n\r\nx\r\n------rebel-0--\r\n"
+    )
+
+# The pairs of a target's query.
+test "query_of: a query of two pairs"
+    got = query_of(request(method: METHOD_GET, target: "/search?q=a+b&n=1").must()).must()
+    assert got.len() == 2 && got[0].value == "a b" && got[1].key == "n"
+
+# The form a server reads from a request's body.
+test "form_of: a form a browser posted"
+    r = with_body(
+        request(method: METHOD_POST, target: "/f").must(),
+        content_type: "application/x-www-form-urlencoded",
+        body: bytes.from_text("name=Ana&age=7")
+    )
+    assert url.value_of(form_of(r).must(), key: "name").must() == "Ana"
+
+# The credentials of RFC 7617's example.
+test "basic_auth_of: RFC 7617's Aladdin"
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Authorization", value: "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==")]
+    got = basic_auth_of(r).must()
+    assert got.user == "Aladdin" && got.password == "open sesame"
+
+# Credentials written as Basic writes them.
+test "with_basic_auth: RFC 7617's Aladdin written"
+    r = with_basic_auth(request(method: METHOD_GET, target: "/").must(), user: "Aladdin", password: "open sesame")
+    assert value_of(r.headers, name: "Authorization").must() == "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+
+# A token written as Bearer writes it.
+test "with_bearer_auth: a token"
+    assert value_of(with_bearer_auth(request(method: METHOD_GET, target: "/").must(), token: "t0k").headers, name: "Authorization").must() == "Bearer t0k"
+
+# A response of a status, a type and bytes.
+test "respond: HTML"
+    got = respond(STATUS_OK, content_type: "text/html; charset=utf-8", body: bytes.from_text("<p>hi</p>"))
+    assert got.status == 200 && got.reason == "OK" && value_of(got.headers, name: "Content-Type").must() == "text/html; charset=utf-8"
+
+# A response whose body is text.
+test "respond_text: a line of text"
+    assert text_of(respond_text(STATUS_CREATED, text: "made")).must() == "made"
+
+# A response whose body is a JSON value.
+test "respond_json: a list"
+    got = respond_json(STATUS_OK, value: .list(items: [.boolean(v: true), .null_value])).must()
+    assert bytes.to_text(got.body).must() == "[true,null]"
+
+# A response of a status alone.
+test "respond_status: 204"
+    got = respond_status(STATUS_NO_CONTENT)
+    assert got.status == 204 && got.reason == "No Content" && got.headers.len() == 0
+
+# A response sending the client elsewhere.
+test "respond_redirect: 303 to a page"
+    got = respond_redirect(STATUS_SEE_OTHER, location: "/done")
+    assert got.status == 303 && value_of(got.headers, name: "Location").must() == "/done"
+
+# The answer to a target that names nothing.
+test "respond_not_found: Go's words"
+    got = respond_not_found(request(method: METHOD_GET, target: "/nothing").must())
+    assert got.status == 404 && text_of(got).must() == "404 page not found\n"
+
+# A request echoed as TRACE asks, its secrets left out.
+test "respond_trace: a request echoed without its cookie"
+    r @= request(method: METHOD_TRACE, target: "/t?x=1").must()
+    r.headers @ [Header(name: "Host", value: "h"), Header(name: "Cookie", value: "sid=1")]
+    assert text_of(respond_trace(r)).must() == "TRACE /t?x=1 HTTP/1.1\r\nHost: h\r\n\r\n"
+
+# A body read in the charset its type names.
+test "text_of: a Latin-1 body"
+    got = respond(STATUS_OK, content_type: "text/plain; charset=ISO-8859-1", body: [99, 97, 102, 233])
+    assert text_of(got).must() == "café"
+
+# A body read as JSON.
+test "json_of: an object's member"
+    assert json.int_of(json.member(json_of(respond_text(STATUS_OK, text: "{\"n\": 2}")).must(), key: "n").must()).must() == 2
+
+# A status of 400 or more made a failure.
+test "require_success: 404 fails, 200 passes"
+    match require_success(respond_status(STATUS_NOT_FOUND))
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    assert require_success(respond_status(STATUS_OK)).must().status == 200
+
+# A cookie a server set, its Max-Age counted from now.
+test "parse_set_cookie: a cookie of a minute"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    c = parse_set_cookie("id=a3fWa; Max-Age=60; Path=/; HttpOnly", now: now).must()
+    assert c.name == "id" && c.value == "a3fWa" && c.path == "/" && c.http_only && c.persistent && time.unix_seconds(c.expires) == 1_060
+
+# A cookie written as a server sets it, as Go writes it.
+test "format_set_cookie: Go's text for a session cookie"
+    c = Cookie(
+        name: "id",
+        value: "a3fWa",
+        domain: "",
+        host_only: true,
+        path: "/",
+        expires: time.epoch(),
+        persistent: false,
+        secure: false,
+        http_only: true,
+        same_site: ""
+    )
+    assert format_set_cookie(c) == "id=a3fWa; Path=/; HttpOnly"
+
+# The cookies a browser sent.
+test "parse_cookie: two cookies"
+    got = parse_cookie("a=1; b=2").must()
+    assert got.len() == 2 && got[1].name == "b" && got[1].value == "2"
+
+# Cookies written as a client sends them.
+test "format_cookie: two cookies"
+    assert format_cookie(parse_cookie("a=1;b=2").must()) == "a=1; b=2"
+
+# The cookies of a jar a request sends, the longest path first.
+test "matching_cookies: a domain's subdomain and a path below"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    site = Cookie(
+        name: "site",
+        value: "1",
+        domain: "example.com",
+        host_only: false,
+        path: "/",
+        expires: time.epoch(),
+        persistent: false,
+        secure: false,
+        http_only: false,
+        same_site: ""
+    )
+    docs @= site
+    docs.name @ "docs"
+    docs.path @ "/docs"
+    got = matching_cookies([site, docs], target: url.parse("http://www.example.com/docs/a").must(), now: now)
+    assert got.len() == 2 && got[0].name == "docs"
+    assert matching_cookies([site, docs], target: url.parse("http://example.org/docs").must(), now: now).len() == 0
+
+# The cookie a response set, kept for its host.
+test "store_cookies: a cookie kept for the host that set it"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    jar: [Cookie] @= []
+    answer @= respond_status(STATUS_OK)
+    answer.headers @ [Header(name: "Set-Cookie", value: "sid=42")]
+    store_cookies(@jar, target: url.parse("http://h.example/a/b").must(), response: answer, now: now)
+    assert jar.len() == 1 && jar[0].domain == "h.example" && jar[0].host_only && jar[0].path == "/a"
+
+# The usual limits.
+test "default_limits: Python's and 10 MiB"
+    assert default_limits() == Limits(head_bytes: 65_536, field_count: 100, body_bytes: 10_485_760)
+
+# A request read from a stream.
+test "read_request: a GET with a query"
+    p = io.pipe().must()
+    io.write_text(p.writer, text: "GET /a?b=1 HTTP/1.1\r\nHost: h\r\n\r\n").must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    r = read_request(@reader, limits: default_limits()).must()
+    assert r.method == "GET" && r.url.path == "/a" && r.url.query == "b=1" && value_of(r.headers, name: "host").must() == "h"
+    io.close(@reader.stream).must()
+
+# The URL of a request's first line.
+test "parse_target: OPTIONS * and a path"
+    assert parse_target(method: METHOD_OPTIONS, target: "*").must().path == "*"
+    assert parse_target(method: METHOD_GET, target: "/a%20b?c").must().path == "/a%20b"
+
+# A request written to a stream.
+test "write_request: a POST on the wire"
+    p = io.pipe().must()
+    writer @= p.writer
+    write_request(
+        writer,
+        r: with_text(request(method: METHOD_POST, target: "http://example.com/n").must(), text: "hi")
+    ).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert io.read_rest_text(@reader).must() == "POST /n HTTP/1.1\r\nHost: example.com\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 2\r\n\r\nhi"
+    io.close(@reader.stream).must()
+
+# A response read from a stream.
+test "read_response: a chunked body joined"
+    p = io.pipe().must()
+    io.write_text(p.writer, text: "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nhi\r\n0\r\n\r\n").must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert got.status == 200 && got.body == [104, 105] && !got.closing
+    io.close(@reader.stream).must()
+
+# A response written to a stream.
+test "write_response: a text answer on the wire"
+    p = io.pipe().must()
+    writer @= p.writer
+    write_response(writer, response: respond_text(STATUS_OK, text: "hi"), method: METHOD_GET).must()
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    assert io.read_rest_text(@reader).must() == "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: 2\r\n\r\nhi"
+    io.close(@reader.stream).must()
+
+# The usual client.
+test "default_client: ten redirects, thirty seconds, no retry"
+    c = default_client()
+    assert c.max_redirects == 10 && c.deadline_ms == 30_000 && c.retries.count == 0
+
+# The usual session.
+test "default_session: nothing kept yet"
+    s = default_session()
+    assert s.base == "" && s.headers.len() == 0 && s.cookies.len() == 0
+
+# A session's base, its fields, and a cookie a response set sent on.
+test "fetch: a base URL, a field of the session, a cookie sent on"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 200 OK\r\nSet-Cookie: sid=42; Path=/\r\nContent-Length: 0\r\n\r\n", "HTTP/1.1 204 No Content\r\n\r\n"])
+    )
+    port = t.port
+    s @= default_session()
+    s.base @ f"http://127.0.0.1:{port}/api/"
+    s.headers @ [Header(name: "User-Agent", value: "example/1")]
+    assert fetch(@s, r: request(method: METHOD_GET, target: "login").must()).must().status == 200
+    assert fetch(@s, r: request(method: METHOD_GET, target: "items").must()).must().status == 204
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert strings.has_prefix(s: seen[0], prefix: "GET /api/login\n") && strings.contains(s: seen[0], substr: "User-Agent: example/1")
+    assert strings.contains(s: seen[1], substr: "\nCookie: sid=42\n")
+
+# A redirect answered as it came.
+test "fetch_once: a 302 not followed"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 302 Found\r\nLocation: /b\r\nContent-Length: 0\r\n\r\n"]))
+    port = t.port
+    s @= default_session()
+    got = fetch_once(@s, r: request(method: METHOD_GET, target: f"http://127.0.0.1:{port}/a").must()).must()
+    _ = threads.wait_text(@t.thread)
+    assert got.status == 302 && value_of(got.headers, name: "Location").must() == "/b"
+
+# A request sent with a JSON body.
+test "send: a JSON body posted"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 201 Created\r\nContent-Length: 0\r\n\r\n"]))
+    port = t.port
+    r = with_json(
+        request(method: METHOD_POST, target: f"http://127.0.0.1:{port}/items").must(),
+        value: .text(v: "x")
+    ).must()
+    assert send(default_client(), r: r).must().status == 201
+    seen = threads.wait_text(@t.thread)
+    assert strings.contains(s: seen, substr: "Content-Type: application/json") && strings.has_suffix(s: seen, suffix: "\n\n\"x\"")
+
+# A page fetched through a redirect.
+test "get: a page behind a 302"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 302 Found\r\nLocation: /b\r\nContent-Length: 0\r\n\r\n", "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"])
+    )
+    port = t.port
+    got = get(default_client(), target: f"http://127.0.0.1:{port}/a").must()
+    seen = strings.split(s: threads.wait_text(@t.thread), sep: canned.SEPARATOR)
+    assert got.status == 200 && text_of(got).must() == "hello"
+    assert seen.len() == 2 && strings.has_prefix(s: seen[1], prefix: "GET /b\n")
+
+# The head of a page, without its body.
+test "head: a length and no body"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n"]))
+    port = t.port
+    got = head(default_client(), target: f"http://127.0.0.1:{port}/a").must()
+    _ = threads.wait_text(@t.thread)
+    assert got.body.len() == 0 && value_of(got.headers, name: "Content-Length").must() == "5"
+
+# Bytes posted with their type.
+test "post: bytes and their type"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"]))
+    port = t.port
+    got = post(
+        default_client(),
+        target: f"http://127.0.0.1:{port}/p",
+        content_type: "text/csv",
+        body: bytes.from_text("a,b")
+    )
+    seen = threads.wait_text(@t.thread)
+    assert got.must().status == 200 && strings.contains(s: seen, substr: "Content-Type: text/csv") && strings.has_suffix(s: seen, suffix: "\n\na,b")
+
+# A form posted.
+test "post_form: a form of one pair"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n"]))
+    port = t.port
+    got = post_form(default_client(), target: f"http://127.0.0.1:{port}/f", pairs: [url.Pair(key: "a", value: "1")])
+    seen = threads.wait_text(@t.thread)
+    assert got.must().status == 200 && strings.has_suffix(s: seen, suffix: "\n\na=1")
+
+# One exchange on a connection the program holds.
+test "round_trip: a GET on a held connection"
+    two = net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.second.stream, text: "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nhi").must()
+    reader @= io.reader(two.first.stream)
+    got = round_trip(
+        @reader,
+        r: request(method: METHOD_GET, target: "http://h/x").must(),
+        limits: default_limits()
+    ).must()
+    assert got.status == 200 && text_of(got).must() == "hi"
+    far @= io.reader(two.second.stream)
+    assert read_request(@far, limits: default_limits()).must().url.path == "/x"
+    io.close(@reader.stream).must()
+    io.close(@far.stream).must()
+
+# The usual server.
+test "default_server: thirty seconds a connection"
+    assert default_server().deadline_ms == 30_000 && default_server().limits == default_limits()
+
+# A server answering one connection, then ending as its listener's deadline passes.
+test "serve: one connection answered, then the listener's deadline"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
+    io.write_text(conn.stream, text: "TRACE /t HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
+    net.set_accept_deadline(l, ms: 300).must()
+
+    match serve(default_server(), l: l, handler: respond_trace)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    reader @= io.reader(conn.stream)
+    got = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    assert got.status == 200 && got.closing && strings.has_prefix(s: text_of(got).must(), prefix: "TRACE /t HTTP/1.1\r\n")
+    io.close(@reader.stream).must()
+    net.close_listener(@l).must()
+
+# Two requests answered on one connection, the second closing it.
+test "serve_conn: two requests, the second closing"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "TRACE /a HTTP/1.1\r\nHost: h\r\n\r\nTRACE /b HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n"
+    ).must()
+    assert serve_conn(default_server(), c: two.second, handler: respond_trace) == 2
+    reader @= io.reader(two.first.stream)
+    first = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    second = read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must()
+    assert !first.closing && second.closing && has_header(first.headers, name: "Date")
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+# An instant written as HTTP writes a date.
+test "format_date: RFC 9110's own example"
+    assert format_date(time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 0).must()) == "Sun, 06 Nov 1994 08:49:37 GMT"
+
+# An HTTP date read in its obsolete form too.
+test "parse_date: IMF-fixdate and asctime, one instant"
+    assert parse_date("Sun, 06 Nov 1994 08:49:37 GMT").must() == parse_date("Sun Nov  6 08:49:37 1994").must()
+
+# A stream's requests served, the client's address given by the caller.
+test "serve_stream: two requests on a stream, the remote named"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "TRACE /a HTTP/1.1\r\nHost: h\r\n\r\nTRACE /b HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n"
+    ).must()
+    assert serve_stream(default_server(), stream: two.second.stream, remote: "192.0.2.1:5000", handler: respond_trace) == 2
+    io.close(@two.second.stream).must()
+    reader @= io.reader(two.first.stream)
+    assert read_response(@reader, method: METHOD_TRACE, limits: default_limits()).must().status == 200
+    io.close(@reader.stream).must()
+
+# A TLS server's loop, here over a listener closed already, which ends it.
+test "serve_tls: a closed listener ends it"
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
+    ).must()
+    tls.close_listener(@l).must()
+
+    match serve_tls(default_server(), l: l, handler: respond_trace)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+# A gzip body undone, its coding's fields gone.
+test "decode_body: a gzip body"
+    r @= respond(
+        STATUS_OK,
+        content_type: "text/plain",
+        body: compress.compress(bytes.from_text("hello"), options: compress.defaults(.gzip)).must()
+    )
+    r.headers @ r.headers.push(Header(name: "Content-Encoding", value: "gzip"))
+    got = decode_body(r, limit: 1_024).must()
+    assert text_of(got).must() == "hello" && !has_header(got.headers, name: "Content-Encoding")
+
+# A response compressed for a client that accepts gzip.
+test "with_compression: gzip for a browser"
+    r @= request(method: METHOD_GET, target: "/page").must()
+    r.headers @ [Header(name: "Accept-Encoding", value: "gzip, deflate, br")]
+    got = with_compression(respond_text(STATUS_OK, text: "hello hello hello"), r: r)
+    assert value_of(got.headers, name: "Content-Encoding").must() == "gzip" && value_of(got.headers, name: "Vary").must() == "Accept-Encoding"
+    assert text_of(decode_body(got, limit: 1_024).must()).must() == "hello hello hello"
+
+# Every request sent to the same path on another site, as a moved site or
+# an http-to-https redirector answers.
+test "respond_moved_to: a path and a query kept under a new base"
+    got = respond_moved_to("https://example.com", r: request(method: METHOD_GET, target: "/a?b=1").must())
+    assert got.status == 308 && value_of(got.headers, name: "Location").must() == "https://example.com/a?b=1"
+
+# A server whose handler reads a value of the program: here the base URL
+# every request is sent to.
+test "serve_with: a redirector serving one connection, then the listener's deadline"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
+    io.write_text(conn.stream, text: "GET /x HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
+    net.set_accept_deadline(l, ms: 300).must()
+
+    match serve_with(default_server(), l: l, state: "https://example.com", handler: respond_moved_to)
+        .ok _  => assert false
+        .err e => assert e.code == TIMEOUT
+
+    reader @= io.reader(conn.stream)
+    got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert got.status == 308 && value_of(got.headers, name: "Location").must() == "https://example.com/x"
+    io.close(@reader.stream).must()
+    net.close_listener(@l).must()
+
+# A TLS server's loop with a value of the program, here over a listener
+# closed already, which ends it.
+test "serve_tls_with: a closed listener ends it"
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
+    ).must()
+    tls.close_listener(@l).must()
+
+    match serve_tls_with(default_server(), l: l, state: "https://example.com", handler: respond_moved_to)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+# A stream's requests answered by a handler reading a value of the program.
+test "serve_stream_with: two requests sent to a new base"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /a HTTP/1.1\r\nHost: h\r\n\r\nGET /b HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n"
+    ).must()
+    assert serve_stream_with(default_server(), stream: two.second.stream, remote: "", state: "https://new.example", handler: respond_moved_to) == 2
+    io.close(@two.second.stream).must()
+    reader @= io.reader(two.first.stream)
+    first = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    second = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert value_of(first.headers, name: "Location").must() == "https://new.example/a" && value_of(second.headers, name: "Location").must() == "https://new.example/b"
+    io.close(@reader.stream).must()
+
+# A request's head read, its body left for later.
+test "read_request_head: a POST's head before its body"
+    p = io.pipe().must()
+    io.write_text(p.writer, text: "POST /up HTTP/1.1\r\nHost: h\r\nContent-Length: 2\r\n\r\nhi").must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    h = read_request_head(@reader, limits: default_limits()).must()
+    assert h.request.method == "POST" && h.request.url.path == "/up" && h.request.body.len() == 0 && h.minor == 1
+    assert read_request_body(@reader, h: h, limits: default_limits()).must().body == [104, 105]
+    io.close(@reader.stream).must()
+
+# A body read after its head, `100 Continue` written first where asked.
+test "read_request_body: 100 Continue before the body"
+    two = net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "PUT /f HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 3\r\n\r\nabc"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    h = read_request_head(@reader, limits: default_limits()).must()
+    assert read_request_body(@reader, h: h, limits: default_limits()).must().body == [97, 98, 99]
+    client @= io.reader(two.first.stream)
+    assert bytes.to_text(io.read_n(@client, n: 25).must()).must() == "HTTP/1.1 100 Continue\r\n\r\n"
+    io.close(@reader.stream).must()
+    io.close(@client.stream).must()
+
+# The status a read failure is answered with, by where it happened.
+test "failure_status: a limit in the head and in the body"
+    assert failure_status(LIMIT, in_head: true).must() == 431 && failure_status(LIMIT, in_head: false).must() == 413
+    assert failure_status(UNSUPPORTED, in_head: true).must() == 505 && failure_status(UNSUPPORTED, in_head: false).must() == 501
+    assert failure_status(INVALID, in_head: true).must() == 400 && failure_status(CLOSED, in_head: true).is_err()
+
+# The status a well-formed head is refused with.
+test "refusal_of: CONNECT, an expectation not met, and a head refused nothing"
+    connect = RequestHead(request: request(method: METHOD_CONNECT, target: "//h:443").must(), minor: 1)
+    assert refusal_of(connect).must() == 501
+    odd @= RequestHead(request: request(method: METHOD_GET, target: "/").must(), minor: 1)
+    odd.request.headers @ [Header(name: "Expect", value: "magic")]
+    assert refusal_of(odd).must() == 417
+    odd.request.headers @ [Header(name: "Expect", value: "100-continue")]
+    assert refusal_of(odd).is_err()
+
+# A server's own loop: the next request read whole, a refusal answered for it.
+test "next_request: a request read, then a head past the limits answered 431"
+    two = net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /a HTTP/1.1\r\nHost: h\r\n\r\nGET /" + "b".repeat(100) + " HTTP/1.1\r\n\r\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    small @= default_limits()
+    small.head_bytes @ 64
+    assert next_request(@reader, limits: small).must().url.path == "/a"
+
+    match next_request(@reader, limits: small)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    client @= io.reader(two.first.stream)
+    assert read_response(@client, method: METHOD_GET, limits: default_limits()).must().status == 431
+    io.close(@reader.stream).must()
+    io.close(@client.stream).must()
+
+# An answer written as a server writes it: an HTTP/1.0 client told its
+# connection is kept.
+test "write_answer: keep-alive told to an HTTP/1.0 client"
+    p = io.pipe().must()
+    r @= request(method: METHOD_GET, target: "/").must()
+    r.headers @ [Header(name: "Connection", value: "keep-alive")]
+    write_answer(p.writer, r: r, response: respond_text(STATUS_OK, text: "hi")).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert value_of(got.headers, name: "Connection").must() == "keep-alive" && has_header(got.headers, name: "Date")
+    io.close(@reader.stream).must()

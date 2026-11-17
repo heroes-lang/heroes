@@ -1,0 +1,116 @@
+# The tokens the tokenizer hands tree construction (13.2.5): a doctype, a
+# start or end tag, a comment, a run of characters, a processing instruction
+# and the end of the text. Characters side by side are handed as one token,
+# which tree construction cuts where its rules need.
+
+use html/internal/dom
+
+# A doctype token.
+constant DOCTYPE: i64
+    1
+
+# A start tag token.
+constant START: i64
+    2
+
+# An end tag token.
+constant END: i64
+    3
+
+# A comment token.
+constant COMMENT: i64
+    4
+
+# A run of character tokens.
+constant CHARS: i64
+    5
+
+# The end-of-file token.
+constant EOF: i64
+    6
+
+# A processing instruction token.
+constant INSTRUCTION: i64
+    7
+
+# One token; the fields a kind does not use stay empty.
+record Token
+    # One of the kinds above.
+    kind: i64
+    # A tag's name in lower case, a doctype's name, an instruction's target.
+    name: str
+    # A tag's attributes, the first of each name.
+    attributes: [dom.Attr]
+    # Whether a tag ends in `/>`.
+    self_closing: bool
+    # The characters of a run, a comment or an instruction; a doctype's
+    # public identifier.
+    data: str
+    # A doctype's system identifier.
+    system: str
+    # Whether a doctype has a public identifier, and a system one: one that
+    # is missing is not one that is empty.
+    has_public: bool
+    has_system: bool
+    # A doctype's force-quirks flag.
+    force_quirks: bool
+    # The byte index where the token begins in the text read.
+    at: i64
+
+# A token of `kind` with nothing in it, beginning at `at`.
+function empty(kind: i64, at: i64) -> Token
+    none: [dom.Attr] = []
+    return Token(
+        kind: kind,
+        name: "",
+        attributes: none,
+        self_closing: false,
+        data: "",
+        system: "",
+        has_public: false,
+        has_system: false,
+        force_quirks: false,
+        at: at
+    )
+
+# A run of characters, `data`, beginning at `at`.
+function run(data: str, at: i64) -> Token
+    t: Token @= empty(kind: CHARS, at: at)
+    t.data @ data
+    return t
+
+# A tag of `kind`, START or END, named `name`, with `attributes`.
+function tag(kind: i64, name: str, attributes: [dom.Attr], at: i64) -> Token
+    t: Token @= empty(kind: kind, at: at)
+    t.name @ name
+    t.attributes @ attributes
+    return t
+
+# The value of the attribute `name` of the tag `t`, or the empty text where it
+# has none; `has_attribute` tells the two apart.
+function value_of(t: Token lent, name: str) -> str
+    for a in t.attributes
+        if a.name == name
+            return a.value
+
+    return ""
+
+# Whether the tag `t` has an attribute `name`.
+function has_attribute(t: Token lent, name: str) -> bool
+    for a in t.attributes
+        if a.name == name
+            return true
+
+    return false
+
+## Tests
+
+test "empty, run and tag: their kinds and fields"
+    assert empty(kind: EOF, at: 3).kind == EOF && empty(kind: EOF, at: 3).at == 3
+    assert run(data: "ab", at: 1).data == "ab" && run(data: "ab", at: 1).kind == CHARS
+    t = tag(kind: START, name: "a", attributes: [dom.Attr(space: dom.NO_SPACE, name: "href", value: "x")], at: 0)
+    assert t.name == "a" && !t.self_closing
+
+test "value_of and has_attribute: present, absent, and an empty value told apart from none"
+    t = tag(kind: START, name: "input", attributes: [dom.Attr(space: dom.NO_SPACE, name: "checked", value: "")], at: 0)
+    assert has_attribute(t, "checked") && value_of(t, "checked") == "" && !has_attribute(t, "type") && value_of(t, "type") == ""

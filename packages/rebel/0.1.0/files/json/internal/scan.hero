@@ -1,0 +1,461 @@
+# The characters of a JSON text: the white space between tokens, a string's
+# escapes read, a number's grammar, and the message of a failure, which says
+# the line and the column, what was expected and what was found.
+#
+# Every index this module answers is a character's first byte: the bytes it
+# stops at, a quote, a backslash, a digit, are ASCII, and none of them
+# continues a character of more than one byte.
+
+use numbers
+use strings
+use unicode
+
+# The code of a text that is not JSON.
+constant INVALID: str
+    "invalid"
+
+# What `read_string` answers.
+record Lexeme
+    # The string's characters, its escapes read.
+    value: str
+    # The byte index past the string's closing quote.
+    end: i64
+
+# Whether `b` is white space between tokens, as RFC 8259 reads it: a space, a
+# tab, a line feed or a carriage return, and nothing else.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The index of the first byte from `at` on that is not white space, or the
+# text's length.
+function skip_space(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && is_space(text[i])
+        i @ i + 1
+
+    return i
+
+# Whether `text` holds `word` from `at` on.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at + word.len() > text.len()
+        return false
+    i: i64 @= 0
+
+    while i < word.len()
+        if text[at + i] != word[i]
+            return false
+        i @ i + 1
+
+    return true
+
+## Messages
+
+# Where byte `at` of `text` stands, as `line L, column C`, both counted from
+# 1: a line ends at a line feed, and the column counts characters.
+function position(text: str, at: i64) -> str
+    line: i64 @= 1
+    line_start: i64 @= 0
+    i: i64 @= 0
+
+    while i < at && i < text.len()
+        if text[i] == '\n'
+            line @ line + 1
+            line_start @ i + 1
+        i @ i + 1
+
+    column: i64 @= 1
+    j: i64 @= line_start
+
+    while j < at && j < text.len()
+        if !unicode.is_continuation(text[j])
+            column @ column + 1
+        j @ j + 1
+
+    return f"line {line}, column {column}"
+
+# What stands at byte `at` of `text`, for a message: the end of the text, a
+# run of ASCII letters as a word, one character between quotes, or one that
+# cannot be seen named by its code point, `U+FEFF`.
+function found(text: str, at: i64) -> str
+    if at >= text.len()
+        return "the end of the text"
+
+    if !unicode.is_char_boundary(text, at)
+        return "a byte in the middle of a character"
+    end: i64 @= at
+
+    while end < text.len() && end - at < 16 && is_letter(text[end])
+        end @ end + 1
+
+    if end > at
+        return f"\"{text.slice(from: at, to: end)}\""
+    width = unicode.width_at(text, at)
+    c = text.slice(from: at, to: at + width)
+
+    if unicode.is_graphic(c) && c != "\"" && c != "\\"
+        return f"\"{c}\""
+
+    if c == "\"" || c == "\\"
+        return f"`{c}`"
+    return code_name(unicode.code_point_at(text, at))
+
+# The name of the code point `n`, `U+` and at least four hexadecimal digits in
+# upper case, as Unicode writes it: `U+000A`, `U+1F600`.
+function code_name(n: i64) -> str
+    digits = strings.to_upper(numbers.format_int(n: n, base: 16))
+    return "U+" + strings.pad_start(s: digits, width: 4, pad: "0")
+
+# The message of a failure at byte `at` of `text`: where, what was expected,
+# and what was found there.
+function expected(text: str, at: i64, what: str) -> str
+    return f"{position(text, at)}: expected {what}, found {found(text, at)}"
+
+# The message of a failure at byte `at` of `text` that says `what` happened.
+function said(text: str, at: i64, what: str) -> str
+    return f"{position(text, at)}: {what}"
+
+# A kind of value named with its article, for a message: `a number`, `an
+# object`, `null`.
+function with_article(kind: str) -> str
+    if kind == "null"
+        return "null"
+
+    if kind == "object"
+        return "an object"
+    return "a " + kind
+
+# The keys `names` for a message: `no keys`, or up to eight of them quoted and
+# how many more there are.
+function keys_named(names: [str]) -> str
+    if names.len() == 0
+        return "no keys"
+    shown: [str] @= []
+
+    for name in names
+        if shown.len() < 8
+            shown @ shown.push(f"\"{name}\"")
+
+    if names.len() > 8
+        return f"the keys {shown.join(", ")} and {names.len() - 8} more"
+    return f"the keys {shown.join(", ")}"
+
+## Strings
+
+# The JSON string that begins with the quote at `at` of `text`, its escapes
+# read, and where it ends. Fails `invalid` where it is never closed, holds a
+# raw control character, U+0000 to U+001F, that `control_characters` does not
+# allow, an escape that is not one, or half a surrogate pair that
+# `lone_surrogates` does not read as U+FFFD.
+function read_string(text: str, at: i64, control_characters: bool, lone_surrogates: bool) -> Lexeme?
+    pieces: [str] @= []
+    run: i64 @= at + 1
+    i: i64 @= at + 1
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '"'
+            pieces @ pieces.push(text.slice(from: run, to: i))
+            return ok(Lexeme(value: pieces.join(""), end: i + 1))
+
+        if b == '\\'
+            pieces @ pieces.push(text.slice(from: run, to: i))
+            escape = read_escape(text: text, at: i, lone_surrogates: lone_surrogates)?
+            pieces @ pieces.push(escape.value)
+            i @ escape.end
+            run @ i
+        else if b < 0x20 && !control_characters
+            return fail(
+                code: INVALID,
+                msg: expected(text: text, at: i, what: "a character or an escape: a control character stands in a string only as an escape, such as `\\n`")
+            )
+        else
+            i @ i + 1
+
+    return fail(
+        code: INVALID,
+        msg: said(text: text, at: at, what: "the string that begins here is never closed: expected `\"`, found the end of the text")
+    )
+
+# The escape that begins with the backslash at `at` of `text`: the characters
+# it writes and where it ends. A pair of escapes that writes one character
+# above U+FFFF, `\ud83d\ude00`, is read as that one character.
+function read_escape(text: str, at: i64, lone_surrogates: bool) -> Lexeme?
+    if at + 1 >= text.len()
+        return fail(code: INVALID, msg: expected(text: text, at: at + 1, what: "an escape after `\\`"))
+    c = text[at + 1]
+
+    if c == 'u'
+        return read_unit_escape(text: text, at: at, lone_surrogates: lone_surrogates)
+    simple: str @= ""
+
+    if c == '"'
+        simple @ "\""
+    else if c == '\\'
+        simple @ "\\"
+    else if c == '/'
+        simple @ "/"
+    else if c == 'b'
+        simple @ "\u{8}"
+    else if c == 'f'
+        simple @ "\u{c}"
+    else if c == 'n'
+        simple @ "\n"
+    else if c == 'r'
+        simple @ "\r"
+    else if c == 't'
+        simple @ "\t"
+    else
+        what = "an escape after `\\`: one of `\"`, `\\`, `/`, `b`, `f`, `n`, `r`, `t` and `u`"
+        return fail(code: INVALID, msg: expected(text: text, at: at + 1, what: what))
+
+    return ok(Lexeme(value: simple, end: at + 2))
+
+# The escape `\uXXXX` that begins at `at` of `text`, with the second half of
+# a surrogate pair where the first is one.
+function read_unit_escape(text: str, at: i64, lone_surrogates: bool) -> Lexeme?
+    unit = hex_unit(text, at + 2)?
+
+    if unit >= 0xdc00 && unit <= 0xdfff
+        return lone(text: text, at: at, unit: unit, lone_surrogates: lone_surrogates)
+
+    if unit < 0xd800 || unit > 0xdbff
+        return ok(Lexeme(value: unicode.from_code_point(unit)?, end: at + 6))
+
+    if !holds_at(text: text, at: at + 6, word: "\\u")
+        return lone(text: text, at: at, unit: unit, lone_surrogates: lone_surrogates)
+    low = hex_unit(text, at + 8)?
+
+    if low < 0xdc00 || low > 0xdfff
+        return lone(text: text, at: at, unit: unit, lone_surrogates: lone_surrogates)
+    joined = unicode.from_surrogates(high: unit, low: low)?
+    return ok(Lexeme(value: unicode.from_code_point(joined)?, end: at + 12))
+
+# Half a surrogate pair written alone at `at`: U+FFFD where `lone_surrogates`
+# reads it so, and a failure where it does not.
+function lone(text: str, at: i64, unit: i64, lone_surrogates: bool) -> Lexeme?
+    if lone_surrogates
+        return ok(Lexeme(value: unicode.REPLACEMENT_CHARACTER, end: at + 6))
+    name = code_name(unit)
+    return fail(
+        code: INVALID,
+        msg: said(text: text, at: at, what: f"the escape of {name} is half a surrogate pair, and no text holds half of one: U+D800 to U+DBFF is followed by an escape of U+DC00 to U+DFFF, and those stand only after one")
+    )
+
+# The number the four hexadecimal digits from `at` of `text` write.
+function hex_unit(text: str, at: i64) -> i64?
+    i: i64 @= at
+
+    while i < at + 4
+        if i >= text.len() || !is_hex_digit(text[i])
+            return fail(code: INVALID, msg: expected(text: text, at: i, what: "four hexadecimal digits after `\\u`"))
+        i @ i + 1
+
+    return numbers.parse_int_base(text.slice(from: at, to: at + 4), base: 16)
+
+# Whether `b` is an ASCII hexadecimal digit, in either case.
+function is_hex_digit(b: u8) -> bool
+    return is_digit(b) || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+## Numbers
+
+# The byte index past the number that begins at `at` of `text`, read by RFC
+# 8259's grammar: an optional `-`, `0` or a digit from 1 to 9 and digits,
+# then an optional point and digits, then an optional exponent, `e` or `E`, an
+# optional sign and digits. Fails `invalid` where the grammar is not met,
+# `01` included.
+function number_end(text: str, at: i64) -> i64?
+    i: i64 @= at
+
+    if text[i] == '-'
+        i @ i + 1
+
+    if i >= text.len() || !is_digit(text[i])
+        return fail(code: INVALID, msg: expected(text: text, at: i, what: "a digit after `-`"))
+
+    if text[i] == '0'
+        i @ i + 1
+
+        if i < text.len() && is_digit(text[i])
+            return fail(
+                code: INVALID,
+                msg: said(text: text, at: at, what: "a number does not begin with 0 followed by another digit, as `01` does")
+            )
+    else
+        i @ digits_end(text, i)
+
+    if i < text.len() && text[i] == '.'
+        i @ i + 1
+
+        if i >= text.len() || !is_digit(text[i])
+            return fail(code: INVALID, msg: expected(text: text, at: i, what: "a digit after the point"))
+        i @ digits_end(text, i)
+
+    if i < text.len() && (text[i] == 'e' || text[i] == 'E')
+        i @ i + 1
+
+        if i < text.len() && (text[i] == '+' || text[i] == '-')
+            i @ i + 1
+
+        if i >= text.len() || !is_digit(text[i])
+            return fail(code: INVALID, msg: expected(text: text, at: i, what: "a digit of the exponent"))
+        i @ digits_end(text, i)
+
+    return ok(i)
+
+# The index past the digits that begin at `at` of `text`.
+function digits_end(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && is_digit(text[i])
+        i @ i + 1
+
+    return i
+
+# Whether the number `raw`, written by RFC 8259's grammar, is an integer as
+# written: no point and no exponent.
+function is_integer_shaped(raw: str) -> bool
+    for c in raw.chars()
+        if c == "." || c == "e" || c == "E"
+            return false
+
+    return true
+
+## Tests
+
+test "is_space and skip_space: the four white space bytes, and no other"
+    assert is_space(' ') && is_space('\t') && is_space('\n') && is_space('\r')
+    assert !is_space('a') && !is_space(0x0b) && !is_space(0x0c)
+    assert skip_space(" \t\r\n x", 0) == 5
+    assert skip_space("", 0) == 0
+    assert skip_space("   ", 1) == 3
+    assert skip_space("x", 0) == 0
+
+test "holds_at: at the start, inside, past the end, and the empty word"
+    assert holds_at(text: "true", at: 0, word: "true")
+    assert holds_at(text: "[null]", at: 1, word: "null")
+    assert !holds_at(text: "nul", at: 0, word: "null")
+    assert holds_at(text: "", at: 0, word: "")
+
+test "position: the first line, a later one, and columns counted in characters"
+    assert position("abc", 0) == "line 1, column 1"
+    assert position("abc", 2) == "line 1, column 3"
+    assert position("[\n1,\n  x]", 7) == "line 3, column 3"
+    assert position("\"é\\q\"", 4) == "line 1, column 4"
+    assert position("ab", 2) == "line 1, column 3"
+    assert position("a\n", 2) == "line 2, column 1"
+
+test "found: the end, a word, a character, a quote, and one that cannot be seen"
+    assert found(text: "", at: 0) == "the end of the text"
+    assert found(text: "[nul", at: 1) == "\"nul\""
+    assert found(text: "NaN", at: 0) == "\"NaN\""
+    assert found(text: "]", at: 0) == "\"]\""
+    assert found(text: "é", at: 0) == "\"é\""
+    assert found(text: "é", at: 1) == "a byte in the middle of a character"
+    assert found(text: "\"", at: 0) == "`\"`"
+    assert found(text: "\t", at: 0) == "U+0009"
+    bom: [u8] = [0xef, 0xbb, 0xbf, 0x31]
+    assert found(text: bom.validated_bytes().must(), at: 0) == "U+FEFF"
+    assert found(text: "\u{2028}", at: 0) == "U+2028"
+
+test "code_name: four digits at least, in upper case"
+    assert code_name(0) == "U+0000"
+    assert code_name(0xa) == "U+000A"
+    assert code_name(0xd800) == "U+D800"
+    assert code_name(0x1f600) == "U+1F600"
+
+test "expected, said, with_article and keys_named: the shapes of a message"
+    assert expected(text: "[1 2]", at: 3, what: "`,` or `]`") == "line 1, column 4: expected `,` or `]`, found \"2\""
+    assert said(text: "x", at: 0, what: "it") == "line 1, column 1: it"
+    assert with_article("object") == "an object"
+    assert with_article("null") == "null"
+    assert with_article("list") == "a list"
+    assert keys_named([]) == "no keys"
+    assert keys_named(["a"]) == "the keys \"a\""
+    names = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+    assert keys_named(names) == "the keys \"a\", \"b\", \"c\", \"d\", \"e\", \"f\", \"g\", \"h\" and 2 more"
+
+test "read_string: empty, plain, characters of several bytes, and where it ends"
+    empty = read_string(text: "\"\"", at: 0, control_characters: false, lone_surrogates: false).must()
+    assert empty.value == "" && empty.end == 2
+    plain = read_string(text: "[\"città\"]", at: 1, control_characters: false, lone_surrogates: false).must()
+    assert plain.value == "città" && plain.end == 9
+
+test "read_string: every escape, a pair above U+FFFF, and U+0000"
+    s = "\"\\\"\\\\\\/\\b\\f\\n\\r\\t\\u00e9\\ud83d\\ude00\\u0041\""
+    got = read_string(text: s, at: 0, control_characters: false, lone_surrogates: false).must()
+    assert got.value == "\"\\/\u{8}\u{c}\n\r\té😀A"
+    assert got.end == s.len()
+    nul: [u8] = [0]
+    zero = read_string(text: "\"\\u0000\"", at: 0, control_characters: false, lone_surrogates: false).must()
+    assert zero.value == nul.validated_bytes().must()
+
+test "read_string: never closed, a raw control character, and a bad escape"
+    match read_string(text: "\"abc", at: 0, control_characters: false, lone_surrogates: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: the string that begins here is never closed: expected `\"`, found the end of the text"
+
+    match read_string(text: "\"a\tb\"", at: 0, control_characters: false, lone_surrogates: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.len() > 0
+
+    tab = read_string(text: "\"a\tb\"", at: 0, control_characters: true, lone_surrogates: false).must()
+    assert tab.value == "a\tb"
+
+    match read_string(text: "\"\\x\"", at: 0, control_characters: false, lone_surrogates: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match read_string(text: "\"\\u12g4\"", at: 0, control_characters: false, lone_surrogates: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 6: expected four hexadecimal digits after `\\u`, found \"g\""
+
+    match read_string(text: "\"\\", at: 0, control_characters: false, lone_surrogates: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "read_string: half a surrogate pair, refused, and read as U+FFFD when asked"
+    for s in ["\"\\ud800\"", "\"\\udc00\"", "\"\\ud800\\u0041\"", "\"\\ud800x\""]
+        assert read_string(text: s, at: 0, control_characters: false, lone_surrogates: false).is_err()
+
+    high = read_string(text: "\"\\ud800\\u0041\"", at: 0, control_characters: false, lone_surrogates: true).must()
+    assert high.value == unicode.REPLACEMENT_CHARACTER + "A"
+    low = read_string(text: "\"\\udc00\"", at: 0, control_characters: false, lone_surrogates: true).must()
+    assert low.value == unicode.REPLACEMENT_CHARACTER
+
+test "number_end: every part of the grammar, and each way to miss it"
+    assert number_end(text: "0", at: 0).must() == 1
+    assert number_end(text: "-0", at: 0).must() == 2
+    assert number_end(text: "123,", at: 0).must() == 3
+    assert number_end(text: "1.5e+10]", at: 0).must() == 7
+    assert number_end(text: "0e0", at: 0).must() == 3
+    assert number_end(text: "1E-2", at: 0).must() == 4
+
+    match number_end(text: "01", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: a number does not begin with 0 followed by another digit, as `01` does"
+
+    match number_end(text: "1.", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 3: expected a digit after the point, found the end of the text"
+
+    assert number_end(text: "-", at: 0).is_err()
+    assert number_end(text: "-a", at: 0).is_err()
+    assert number_end(text: "1e", at: 0).is_err()
+    assert number_end(text: "1e+", at: 0).is_err()
+    assert number_end(text: "1.e5", at: 0).is_err()
+
+test "is_integer_shaped: with no point and no exponent only"
+    assert is_integer_shaped("-12")
+    assert !is_integer_shaped("1.0")
+    assert !is_integer_shaped("1e5")
+    assert !is_integer_shaped("1E5")

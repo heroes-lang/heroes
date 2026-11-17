@@ -1,0 +1,126 @@
+# A server for the tests of `open` over TLS, on a thread of its own: it
+# answers PostgreSQL's request for TLS, presents a test certificate of
+# `tls`, and speaks just enough of the protocol after it to show that the
+# whole way, the request, the handshake and a message of the protocol read
+# through TLS, works. A thread runs a function of one `str` (spec § 13), so
+# its port is chosen by the test before it and the test waits until the
+# port answers (`until_listening`), which costs the server one connection
+# that sends nothing.
+
+use io
+use net
+use numbers
+use sql/postgres/internal/script
+use strings
+use time
+use tls
+
+# A port of the loopback address nothing listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port` of the loopback address, by
+# connecting and closing at once, for at most about ten seconds.
+function until_listening(port: i64)
+    tries @= 0
+
+    while tries < 500
+        tries @ tries + 1
+        made = net.connect(host: "127.0.0.1", port: port, deadline_ms: 1000)
+
+        match made
+            .ok c =>
+                s @= c.stream
+                closing = io.close(@s)
+
+                match closing
+                    .ok _  => return
+                    .err _ => return
+            .err _ => time.sleep(time.Duration(nanoseconds: 20000000))
+
+# The server: `arg` is `"<mode> <port>"`. `n` answers `N` to the request
+# for TLS; `wrong` answers `S` and presents a certificate for
+# `wrong.example`; `fatal` answers `S`, presents one for `localhost`, reads
+# the startup message through TLS and answers it a FATAL error, 28P01. It
+# accepts twice at most, the test's probe and the client, and answers what
+# it did, or its failure's code and message.
+function serve(arg: str) -> str
+    parts = strings.split(s: arg, sep: " ")
+
+    if parts.len() != 2
+        return "invalid: not \"<mode> <port>\": " + arg
+    mode = parts[0]
+    port = numbers.parse_int(parts[1]).default(0)
+    reply: [u8] @= [83]
+    chain @= tls.TEST_LOCALHOST_CHAIN
+    key @= tls.TEST_LOCALHOST_KEY
+
+    if mode == "n"
+        reply @ [78]
+    else if mode == "wrong"
+        chain @ tls.TEST_WRONG_CHAIN
+        key @ tls.TEST_WRONG_KEY
+    steps: [tls.Step] = [.expect(answer: [0, 0, 0, 8, 4, 210, 22, 47]), .send(data: reply)]
+    made = tls.listen_after(
+        host: "127.0.0.1",
+        port: port,
+        server: tls.Server(chain: chain, key: key, protocols: []),
+        steps: steps
+    )
+
+    match made
+        .err e => return e.code + ": " + e.msg
+        .ok l =>
+            listener @= l
+            did @= "no client went through TLS"
+            bounded = tls.set_accept_deadline(listener, ms: 15000)
+
+            match bounded
+                .ok _  => _ = 0
+                .err e => did @ e.code + ": " + e.msg
+
+            tries @= 0
+
+            while tries < 2
+                tries @ tries + 1
+                taken = tls.accept(listener, deadline_ms: 10000)
+
+                match taken
+                    .err _ => _ = 0
+                    .ok s =>
+                        stream @= s
+                        did @ answered(stream)
+                        closing = io.close(@stream)
+
+                        match closing
+                            .ok _  => _ = 0
+                            .err _ => _ = 0
+
+                        break
+
+            closed = tls.close_listener(@listener)
+
+            match closed
+                .ok _  => return did
+                .err e => return e.code + ": " + e.msg
+
+# Reads the client's startup message through TLS and answers it a FATAL
+# error, as a server refusing the password does.
+function answered(s: io.Stream) -> str
+    startup = io.read(s, most: 1024)
+
+    match startup
+        .err e => return e.code + ": " + e.msg
+        .ok bytes =>
+            refusal = script.msg(
+                kind: 'E',
+                body: script.report_body([["S", "FATAL"], ["V", "FATAL"], ["C", "28P01"], ["M", "password authentication failed for user \"ana\""]])
+            )
+            written = io.write(s, data: refusal)
+
+            match written
+                .err e => return e.code + ": " + e.msg
+                .ok _  => return "read " + to_str(bytes.len()) + " bytes, answered FATAL"

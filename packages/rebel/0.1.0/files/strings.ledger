@@ -1,0 +1,679 @@
+capability text/contains  whether a text holds another
+  heroes  strings.contains
+  go      strings.Contains, strings.ContainsRune
+  rust    str::contains (a text, a character)
+  python  -
+  note    Python asks with its `in` operator, which is no method of `str`
+
+capability text/contains-any  whether a text holds any character of a set
+  heroes  strings.contains_any
+  go      strings.ContainsAny
+  rust    str::contains (a set of characters)
+  python  -
+
+capability text/contains-where  whether a text holds a character a function accepts
+  heroes  built-in any
+  go      strings.ContainsFunc
+  rust    str::contains (a function)
+  python  -
+  note    `s.chars().any(accepts)`: the built-in over the characters is the one way
+
+capability text/starts-with  whether a text begins with another
+  heroes  strings.has_prefix
+  go      strings.HasPrefix
+  rust    str::starts_with
+  python  str.startswith
+  note    Python also takes several prefixes at once; here each is asked in turn
+
+capability text/starts-with-at  whether a text stands at a position of another
+  heroes  strings.has_prefix_at
+  go      -
+  rust    -
+  python  str.startswith (its `start`)
+  note    Go and Rust ask it of a slice, which costs them nothing; a slice of a `str` is a copy here, and one that splits a character aborts
+
+capability text/ends-with  whether a text ends with another
+  heroes  strings.has_suffix
+  go      strings.HasSuffix
+  rust    str::ends_with
+  python  str.endswith
+
+capability text/find-first  where a text first holds another
+  heroes  strings.index_of
+  go      strings.Index, strings.IndexByte, strings.IndexRune
+  rust    str::find (a text, a character)
+  python  str.find, str.index
+  note    absent is `not_found`, where Go and Python's find answer -1; the empty text is found at 0, as all three say
+
+capability text/find-first-from  where a text first holds another at or after a position
+  heroes  strings.index_of_from
+  go      -
+  rust    -
+  python  str.find (its `start`), str.index (its `start`)
+  note    Go and Rust search a slice, which costs them nothing; here a slice is a copy, so a search that goes on from where the last one ended has its own function
+
+capability text/find-last  where a text last holds another
+  heroes  strings.index_of_last
+  go      strings.LastIndex, strings.LastIndexByte
+  rust    str::rfind (a text, a character)
+  python  str.rfind, str.rindex
+  note    the empty text is found at the end, as all three say
+
+capability text/find-first-any  where a text first holds a character of a set
+  heroes  strings.index_of_any
+  go      strings.IndexAny
+  rust    str::find (a set of characters)
+  python  -
+
+capability text/find-first-any-from  where a text first holds a character of a set at or after a position
+  heroes  strings.index_of_any_from
+  go      -
+  rust    -
+  python  -
+  note    the three reach it by slicing; see text/find-first-from
+
+capability text/find-last-any  where a text last holds a character of a set
+  heroes  strings.index_of_any_last
+  go      strings.LastIndexAny
+  rust    str::rfind (a set of characters)
+  python  -
+
+capability text/find-first-where  where a text first holds a character a function accepts
+  heroes  strings.index_where
+  go      strings.IndexFunc
+  rust    str::find (a function)
+  python  -
+
+capability text/find-first-where-from  where a text first holds a character a function accepts at or after a position
+  heroes  strings.index_where_from
+  go      -
+  rust    -
+  python  -
+  note    the three reach it by slicing; see text/find-first-from
+
+capability text/find-last-where  where a text last holds a character a function accepts
+  heroes  strings.index_where_last
+  go      strings.LastIndexFunc
+  rust    str::rfind (a function)
+  python  -
+
+capability text/count  how many times a text holds another
+  heroes  strings.count_of
+  go      strings.Count
+  rust    str::matches (a text, counted)
+  python  str.count
+  note    occurrences never overlap, counted from the start; the empty text occurs once more than the text has characters, as all three say
+
+capability text/find-all  where every occurrence of a text begins
+  heroes  strings.index_of_all
+  go      -
+  rust    str::match_indices
+  python  -
+
+capability text/find-all-from-end  every occurrence or piece, searched from the end
+  heroes  refused: the answers are those of `index_of_all` and `split_terminated` unless occurrences overlap, and `index_of_last` and `split_n_last` search from the end
+  go      -
+  rust    str::rmatch_indices, str::rmatches, str::rsplit_terminator
+  python  -
+
+capability text/search-in-part  a search within a part of a text
+  heroes  built-in slice
+  go      -
+  rust    -
+  python  the `start` and `end` of str.find, str.rfind, str.index, str.rindex, str.count, str.startswith, str.endswith
+  note    the part is a slice, searched like any text; `index_of_from` and `has_prefix_at` search from a position without the copy
+
+capability text/compare  which of two texts orders first
+  heroes  strings.compare
+  go      strings.Compare
+  rust    str::cmp, str::partial_cmp, str::lt, str::le, str::gt, str::ge, String::max, String::min, String::clamp, String::clamp_to
+  python  -
+  note    by bytes, which is the order of the built-in `sort`; Python orders with its operators, which are no method of `str`
+
+capability text/equal  whether two texts are the same
+  heroes  built-in ==
+  go      -
+  rust    str::eq, str::ne
+  python  -
+
+capability text/equal-ignoring-case  whether two texts are the same but for the case of their letters
+  heroes  strings.equals_ignoring_case
+  go      strings.EqualFold
+  rust    str::eq_ignore_case_unnormalized
+  python  -
+  note    full case folding, Python's `casefold` and Rust's: "Straße" equals "STRASSE" (Python and Rust say true, Go's EqualFold, folding one character to one, says false)
+
+capability text/equal-ignoring-ascii-case  whether two texts are the same but for the case of their ASCII letters
+  heroes  strings.equals_ignoring_case_ascii
+  go      -
+  rust    str::eq_ignore_ascii_case
+  python  -
+
+capability text/fold-case  a text in the form that compares equal whatever its case
+  heroes  strings.to_casefold
+  go      -
+  rust    str::to_casefold_unnormalized
+  python  str.casefold
+
+capability text/split-once  the two parts of a text around the first separator
+  heroes  strings.split_once
+  go      strings.Cut
+  rust    str::split_once
+  python  str.partition
+  note    absent is `not_found`, where Go answers a `false` beside the text and Python three texts; an empty separator is found at the start, as Go and Rust say, where Python raises
+
+capability text/split-once-last  the two parts of a text around the last separator
+  heroes  strings.split_once_last
+  go      strings.CutLast
+  rust    str::rsplit_once
+  python  str.rpartition
+
+capability text/split  the pieces of a text between its separators
+  heroes  strings.split
+  go      strings.Split, strings.SplitSeq
+  rust    str::split (a text, a character)
+  python  str.split (with a separator)
+  note    an empty separator gives the characters, Go's answer: Rust adds an empty piece at each end and Python raises
+
+capability text/split-limited  at most n pieces of a text, the last holding the rest
+  heroes  strings.split_n
+  go      strings.SplitN
+  rust    str::splitn
+  python  str.split (its `maxsplit`)
+  note    n counts pieces, as Go and Rust do; Python counts cuts, one fewer. The count is a `u64`, so Go's -1 for every piece does not compile: `split` answers every piece
+
+capability text/split-limited-from-end  at most n pieces of a text, cut from the end, the first holding the rest
+  heroes  strings.split_n_last
+  go      -
+  rust    str::rsplitn, str::rsplit
+  python  str.rsplit
+  note    the pieces stand in the text's order, as Python's do; Rust yields them last first. With n above the count of separators it is every piece, the separators matched from the end; an empty separator cuts before each character, the mirror of Go's empty separator in `split_n`: Python raises and Rust answers an empty piece first
+
+capability text/split-keeping-separators  the pieces of a text, each keeping the separator that ends it
+  heroes  strings.split_after
+  go      strings.SplitAfter, strings.SplitAfterSeq, strings.Lines
+  rust    str::split_inclusive
+  python  -
+  note    Rust's answer: the pieces joined are the text and none is empty, where Go's SplitAfter ends with an empty piece after a final separator. With "\n" it is Go's Lines
+
+capability text/split-keeping-separators-limited  at most n such pieces, the last holding the rest
+  heroes  strings.split_after_n
+  go      strings.SplitAfterN
+  rust    -
+  python  -
+  note    Rust's rule, as `split_after`: no piece is empty, where Go's SplitAfterN("a,", ",", 2) ends with an empty piece
+
+capability text/split-terminated  the pieces of a text whose separator ends each one
+  heroes  strings.split_terminated
+  go      -
+  rust    str::split_terminator
+  python  -
+  note    Rust's answers: "a;b;" is "a" and "b", ";" is one empty piece, the empty text none
+
+capability text/split-any  the pieces of a text between the characters of a set
+  heroes  strings.split_any
+  go      -
+  rust    str::split (a set of characters)
+  python  -
+
+capability text/split-where  the pieces of a text between the characters a function accepts
+  heroes  strings.split_where
+  go      -
+  rust    str::split (a function)
+  python  -
+
+capability text/words  the words of a text, between runs of white space
+  heroes  strings.words
+  go      strings.Fields, strings.FieldsSeq
+  rust    str::split_whitespace
+  python  str.split (with no separator)
+  note    white space is Unicode's White_Space, Go's and Rust's: Python's split also cuts at U+001C to U+001F, which are not
+
+capability text/words-where  the pieces of a text between runs of characters a function accepts
+  heroes  strings.words_where
+  go      strings.FieldsFunc, strings.FieldsFuncSeq
+  rust    str::split_ascii_whitespace
+  python  -
+  note    Rust's split_ascii_whitespace is `words_where` with a function accepting the ASCII white space, a class `unicode` names (its class/ascii-classes)
+
+capability text/words-limited  the first words of a text and the rest of it
+  heroes  strings.words_n, strings.words_n_last
+  go      -
+  rust    -
+  python  str.split (no separator, its `maxsplit`), str.rsplit (no separator, its `maxsplit`)
+  note    Python's answers, the only library with it: "  a  b  c  " in two words is "a" and "b  c  "; n counts words, where Python's maxsplit counts cuts
+
+capability text/lines  the lines of a text
+  heroes  strings.lines
+  go      -
+  rust    str::lines, str::lines_any
+  python  str.splitlines
+  note    Rust's answer: a line ends at "\n" or "\r\n" and loses its end. Python also ends a line at nine other characters, a lone "\r" among them; Go's Lines keeps the ends and is text/split-keeping-separators
+
+capability text/trim  a text without the white space at its ends
+  heroes  strings.trim
+  go      strings.TrimSpace
+  rust    str::trim
+  python  str.strip (with no argument)
+
+capability text/trim-start  a text without the white space at its start
+  heroes  strings.trim_start
+  go      -
+  rust    str::trim_start, str::trim_left
+  python  str.lstrip (with no argument)
+
+capability text/trim-end  a text without the white space at its end
+  heroes  strings.trim_end
+  go      -
+  rust    str::trim_end, str::trim_right
+  python  str.rstrip (with no argument)
+
+capability text/trim-any  a text without the characters of a set at its ends
+  heroes  strings.trim_any
+  go      strings.Trim
+  rust    str::trim_matches (a set of characters)
+  python  str.strip (with characters)
+
+capability text/trim-start-any  a text without the characters of a set at its start
+  heroes  strings.trim_start_any
+  go      strings.TrimLeft
+  rust    str::trim_start_matches (a set of characters), str::trim_left_matches (a set of characters)
+  python  str.lstrip (with characters)
+
+capability text/trim-end-any  a text without the characters of a set at its end
+  heroes  strings.trim_end_any
+  go      strings.TrimRight
+  rust    str::trim_end_matches (a set of characters), str::trim_right_matches (a set of characters)
+  python  str.rstrip (with characters)
+
+capability text/trim-where  a text without the characters a function accepts at its ends
+  heroes  strings.trim_where
+  go      strings.TrimFunc
+  rust    str::trim_matches (a function)
+  python  -
+
+capability text/trim-start-where  a text without the characters a function accepts at its start
+  heroes  strings.trim_start_where
+  go      strings.TrimLeftFunc
+  rust    str::trim_start_matches (a function), str::trim_left_matches (a function)
+  python  -
+
+capability text/trim-end-where  a text without the characters a function accepts at its end
+  heroes  strings.trim_end_where
+  go      strings.TrimRightFunc
+  rust    str::trim_end_matches (a function), str::trim_right_matches (a function)
+  python  -
+
+capability text/trim-ascii-space  a text without the ASCII white space at its ends
+  heroes  strings.trim_where, strings.trim_start_where, strings.trim_end_where
+  go      -
+  rust    str::trim_ascii, str::trim_ascii_start, str::trim_ascii_end
+  python  -
+  note    with a function accepting the ASCII white space, which `unicode` names (its class/ascii-classes); Rust leaves U+000B out of it
+
+capability text/remove-prefix  a text without a prefix, or itself where it has none
+  heroes  strings.trim_prefix
+  go      strings.TrimPrefix
+  rust    str::trim_prefix
+  python  str.removeprefix
+
+capability text/remove-suffix  a text without a suffix, or itself where it has none
+  heroes  strings.trim_suffix
+  go      strings.TrimSuffix
+  rust    str::trim_suffix
+  python  str.removesuffix
+
+capability text/remove-prefix-told  the text after a prefix, or the fact that it is not there
+  heroes  strings.after_prefix
+  go      strings.CutPrefix
+  rust    str::strip_prefix
+  python  -
+  note    absent is `not_found`, where Go answers a `false` beside the text
+
+capability text/remove-suffix-told  the text before a suffix, or the fact that it is not there
+  heroes  strings.before_suffix
+  go      strings.CutSuffix
+  rust    str::strip_suffix
+  python  -
+
+capability text/remove-both-told  the text between a prefix and a suffix, or the fact that one is not there
+  heroes  strings.between
+  go      -
+  rust    str::strip_circumfix
+  python  -
+
+capability text/remove-repeated-prefix  a text without a prefix, as many times as it begins with it
+  heroes  strings.trim_prefix_all
+  go      -
+  rust    str::trim_start_matches (a text), str::trim_left_matches (a text)
+  python  -
+
+capability text/remove-repeated-suffix  a text without a suffix, as many times as it ends with it
+  heroes  strings.trim_suffix_all
+  go      -
+  rust    str::trim_end_matches (a text), str::trim_right_matches (a text)
+  python  -
+  note    Rust's answers, matches taken from the end: "aaa" without "aa" repeated is "a"
+
+capability text/replace-all  a text with every occurrence of another replaced
+  heroes  strings.replace_all
+  go      strings.ReplaceAll
+  rust    str::replace, String::remove_matches
+  python  str.replace
+  note    an empty text to replace stands before every character and at the end, as all three say
+
+capability text/replace-first-n  a text with the first n occurrences of another replaced
+  heroes  strings.replace_n
+  go      strings.Replace
+  rust    str::replacen, String::replace_first
+  python  str.replace (its `count`)
+  note    the count is a `u64`, so Go's -1 for every occurrence does not compile: `replace_all` replaces every one
+
+capability text/replace-last  a text with the last occurrence of another replaced
+  heroes  strings.replace_last
+  go      -
+  rust    String::replace_last
+  python  -
+  note    the last occurrence is `index_of_last`'s, Rust's rfind: in "aaa" the last "aa" begins at 1
+
+capability text/replace-pairs  a text with each of several texts replaced by its own replacement, in one pass
+  heroes  strings.replace_pairs
+  go      strings.NewReplacer, strings.Replacer.Replace
+  rust    -
+  python  str.translate, str.maketrans
+  note    Go's Replacer: one pass from the start, at each position the first key in the map's order that stands there, so "aab" with a, aa, b answers "113"; an empty key is passed over, where Go's matches before every character. Python's translate is the case of keys of one character, its None being ""
+
+capability text/replace-by-function  a text with each character replaced by what a function answers for it
+  heroes  built-in map
+  go      strings.Map
+  rust    -
+  python  -
+  note    `s.chars().map(changes).join("")`, where `changes` answers "" for a character to drop: the built-in over the characters is the one way
+
+capability text/keep-where  a text with only the characters a function accepts
+  heroes  built-in filter
+  go      -
+  rust    String::retain, str::matches (a function)
+  python  -
+  note    `s.chars().filter(keeps).join("")`
+
+capability text/join  several texts as one, a separator between them
+  heroes  built-in join
+  go      strings.Join
+  rust    str::join, str::concat
+  python  str.join
+
+capability text/repeat  a text written n times
+  heroes  built-in repeat
+  go      strings.Repeat
+  rust    str::repeat
+  python  -
+
+capability text/concatenate  two texts as one
+  heroes  built-in +
+  go      -
+  rust    str::add, str::add_assign, String::push_str, String::push
+  python  -
+
+capability text/build  a text built piece by piece
+  heroes  built-in join
+  go      strings.Builder.WriteString, strings.Builder.WriteByte, strings.Builder.WriteRune, strings.Builder.Write, strings.Builder.String, strings.Builder.Len, strings.Builder.Reset
+  rust    String::write_str, String::write_char, String::write_fmt, String::extend, String::extend_one, String::from_iter
+  python  -
+  note    the pieces are pushed onto a `[str]` and joined once; there is no builder type
+
+capability text/pad-start  a text padded at its start to a width
+  heroes  strings.pad_start
+  go      -
+  rust    -
+  python  str.rjust
+  note    a pad of several characters is written again and cut after a character; Python takes one character only
+
+capability text/pad-end  a text padded at its end to a width
+  heroes  strings.pad_end
+  go      -
+  rust    -
+  python  str.ljust
+
+capability text/center  a text padded on both sides to a width
+  heroes  strings.center
+  go      -
+  rust    -
+  python  str.center
+  note    the odd character after, as Rust's `format!("{:^}")` and Python's own format: Python's str.center puts it before where the width is odd ("ab" to 5 is "**ab*")
+
+capability text/pad-zeros  the text of a number padded with zeros after its sign
+  heroes  strings.pad_zeros
+  go      -
+  rust    -
+  python  str.zfill
+  note    Python's answers: "-42" to 5 is "-0042", "--1" is "-00-1", the width counts characters
+
+capability text/expand-tabs  a text with its tabs replaced by the spaces that reach the next tab stop
+  heroes  strings.expand_tabs
+  go      -
+  rust    -
+  python  str.expandtabs
+  note    Python's answers: a column counts characters and starts again after "\n" or "\r"
+
+capability text/lower  a text in lower case
+  heroes  strings.to_lower
+  go      strings.ToLower
+  rust    str::to_lowercase
+  python  str.lower
+  note    Unicode's full mapping with the word-final sigma, Python's and Rust's: "ΟΔΟΣ" is "οδος" (Go maps one character to one and answers "οδοσ")
+
+capability text/upper  a text in upper case
+  heroes  strings.to_upper
+  go      strings.ToUpper
+  rust    str::to_uppercase
+  python  str.upper
+  note    Unicode's full mapping, Python's and Rust's: "straße" is "STRASSE" (Go keeps "ß")
+
+capability text/title  a text with each word's first letter in title case and its other letters in lower case
+  heroes  strings.to_title
+  go      strings.Title
+  rust    -
+  python  str.title
+  note    Python's title: a word is a run of cased letters, so "they're x_y 3d" is "They'Re X_Y 3D"; Go's deprecated Title keeps the other letters' case and starts words differently
+
+capability text/capitalize  a text with its first letter in title case and its other letters in lower case
+  heroes  strings.capitalize
+  go      -
+  rust    str::word_to_titlecase
+  python  str.capitalize
+  note    Python's: the first character in title case and every other in lower case; Rust's word_to_titlecase, unstable, titles the first cased letter instead
+
+capability text/swap-case  a text with the case of each letter swapped
+  heroes  strings.swap_case
+  go      -
+  rust    -
+  python  str.swapcase
+  note    Python's answers, the final sigma included: "Hello ß ǅ" is "hELLO SS ǅ"
+
+capability text/lower-ascii  a text with its ASCII letters in lower case
+  heroes  strings.to_lower_ascii
+  go      -
+  rust    str::to_ascii_lowercase, str::make_ascii_lowercase
+  python  -
+
+capability text/upper-ascii  a text with its ASCII letters in upper case
+  heroes  strings.to_upper_ascii
+  go      -
+  rust    str::to_ascii_uppercase, str::make_ascii_uppercase
+  python  -
+
+capability text/title-case-letters  a text with every letter in its title case
+  heroes  built-in map
+  go      strings.ToTitle
+  rust    -
+  python  -
+  note    `s.chars().map(unicode.to_title).join("")`: the built-in over the characters with `unicode`'s case is the one way
+
+capability text/case-by-locale  a text in the upper, lower or title case of one language
+  heroes  pending
+  go      strings.ToUpperSpecial, strings.ToLowerSpecial, strings.ToTitleSpecial
+  rust    -
+  python  -
+  note    waits on `unicode`'s case/of-a-language, pending there; with it, a program maps the characters as for title-case-letters
+
+capability text/is-lower  whether the letters of a text are all lower case
+  heroes  strings.is_lower
+  go      -
+  rust    -
+  python  str.islower
+  note    Python's answers: a text with no cased letter is neither lower nor upper case
+
+capability text/is-upper  whether the letters of a text are all upper case
+  heroes  strings.is_upper
+  go      -
+  rust    -
+  python  str.isupper
+
+capability text/is-title  whether a text is in title case
+  heroes  strings.is_title
+  go      -
+  rust    -
+  python  str.istitle
+  note    Python's rule: an upper or title case letter only after a character with no case, a lower case one only after a cased one
+
+capability text/is-ascii  whether every character of a text is ASCII
+  heroes  strings.is_ascii
+  go      -
+  rust    str::is_ascii
+  python  str.isascii
+
+capability text/all-of-a-class  whether every character of a text is of one class
+  heroes  built-in all
+  go      -
+  rust    -
+  python  str.isalnum, str.isalpha, str.isdecimal, str.isdigit, str.isnumeric, str.isspace, str.isprintable
+  note    `s.chars().all(accepts)` with a function of `unicode`, which owns the classes; Python answers false for the empty text, and `all` true
+
+capability text/is-identifier  whether a text is a name in one language
+  heroes  refused: what a name is belongs to the language that reads it, and Python's rule is Python's
+  go      -
+  rust    -
+  python  str.isidentifier
+
+capability text/length  how many bytes a text holds
+  heroes  built-in len
+  go      -
+  rust    str::len, str::is_empty
+  python  -
+
+capability text/characters  the characters of a text
+  heroes  built-in chars
+  go      -
+  rust    str::chars, str::char_indices, String::into_chars
+  python  -
+  note    each character's byte index is the running sum of `c.len()`
+
+capability text/to-bytes  the bytes of a text
+  heroes  strings.to_bytes
+  go      -
+  rust    str::as_bytes, str::bytes, String::into_bytes
+  python  str.encode (as UTF-8)
+
+capability text/from-bytes  the text some bytes are, where they are UTF-8
+  heroes  built-in validated_bytes
+  go      -
+  rust    str::from_utf8, String::from_utf8
+  python  -
+
+capability text/repair-utf8  a text with what is not UTF-8 replaced
+  heroes  refused: a `str` is UTF-8 by construction, so no text needs the repair; bytes that are not text fail `not_text` where they are read
+  go      strings.ToValidUTF8
+  rust    String::from_utf8_lossy, String::from_utf8_lossy_owned
+  python  -
+
+capability text/other-encodings  a text written in, or read from, an encoding that is not UTF-8
+  heroes  refused: a `str` is UTF-8 and nothing else; another encoding is bytes, read and written by the package that owns the encoding
+  go      -
+  rust    str::encode_utf16, String::from_utf16, String::from_utf16_lossy, String::from_utf16le, String::from_utf16le_lossy, String::from_utf16be, String::from_utf16be_lossy
+  python  str.encode (as another encoding)
+
+capability text/is-boundary  whether a byte index stands between two characters
+  heroes  strings.is_boundary
+  go      -
+  rust    str::is_char_boundary
+  python  -
+  note    the same as `unicode.is_char_boundary`, which it calls; kept because the face was fixed with it, see the report
+
+capability text/boundary-below  the nearest index between two characters at or below a byte index
+  heroes  strings.floor_boundary
+  go      -
+  rust    str::floor_char_boundary
+  python  -
+  note    the same as `unicode.floor_char_boundary`, which it calls
+
+capability text/boundary-above  the nearest index between two characters at or above a byte index
+  heroes  strings.ceil_boundary
+  go      -
+  rust    str::ceil_char_boundary
+  python  -
+  note    the same as `unicode.ceil_char_boundary`, which it calls
+
+capability text/slice  the part of a text between two byte indices
+  heroes  built-in slice
+  go      -
+  rust    str::index, str::split_at, String::split_off, String::truncate
+  python  -
+  note    it aborts where an index is past the end or splits a character, as Rust's panic; `floor_boundary` gives an index that splits none
+
+capability text/slice-checked  the part of a text between two byte indices, or the fact that they cut no such part
+  heroes  strings.slice_checked
+  go      -
+  rust    str::get, str::split_at_checked
+  python  -
+
+capability text/edit-at-index  a text with a part inserted, removed or replaced at a byte index
+  heroes  built-in slice
+  go      -
+  rust    String::insert, String::insert_str, String::remove, String::pop, String::drain, String::replace_range, String::extend_from_within
+  python  -
+  note    the parts are slices joined with `+`: `s.slice(from: 0, to: at) + part + s.slice(from: at, to: s.len())`
+
+capability text/escape  a text with what cannot be shown written as escapes
+  heroes  pending
+  go      -
+  rust    str::escape_debug, str::escape_default, str::escape_unicode
+  python  -
+  note    not done well in time: which characters to escape is `unicode.is_printable`'s, and Heroes' own escapes, the natural form, cannot write U+0000
+
+capability text/format  a text built from a pattern and values
+  heroes  refused: an `f` literal builds the text and the compiler checks every value it names; a pattern read at run time could name anything
+  go      -
+  rust    -
+  python  str.format, str.format_map
+
+capability text/read-as-stream  a text read like a file
+  heroes  refused: a stream is `io`'s, which stands above `strings` and so cannot be named here
+  go      strings.NewReader, strings.Reader.Len, strings.Reader.Read, strings.Reader.ReadAt, strings.Reader.ReadByte, strings.Reader.ReadRune, strings.Reader.Reset, strings.Reader.Seek, strings.Reader.Size, strings.Reader.UnreadByte, strings.Reader.UnreadRune, strings.Reader.WriteTo
+  rust    -
+  python  -
+
+dropped  every value is a copy already, and owns what it holds
+  go      strings.Clone
+  rust    str::clone, str::clone_from, str::clone_to_uninit, str::clone_into, str::to_owned, str::to_string, str::into_string, str::into_boxed_bytes, str::as_str, String::as_str, String::into_boxed_str, String::leak, String::clear, String::new, str::default, str::from, str::try_from, String::into, String::try_into, String::from_str
+  python  -
+
+dropped  a capacity hint: a text has no capacity a program sees
+  go      strings.Builder.Cap, strings.Builder.Grow
+  rust    String::with_capacity, String::try_with_capacity, String::capacity, String::reserve, String::reserve_exact, String::try_reserve, String::try_reserve_exact, String::shrink_to_fit, String::shrink_to, str::extend_reserve
+  python  -
+
+dropped  an unchecked variant, or a raw pointer: nothing here trusts bytes it has not read
+  go      -
+  rust    str::from_utf8_unchecked, str::from_utf8_unchecked_mut, str::get_unchecked, str::get_unchecked_mut, str::slice_unchecked, str::slice_mut_unchecked, str::as_ascii_unchecked, str::as_ptr, str::as_mut_ptr, str::substr_range, String::from_utf8_unchecked, String::from_raw_parts, String::into_raw_parts, String::as_mut_vec
+  python  -
+
+dropped  a text changed where it stands: a `str` is immutable, and the function that answers the changed text is in its block
+  go      -
+  rust    str::from_utf8_mut, str::as_bytes_mut, str::get_mut, str::split_at_mut, str::split_at_mut_checked, str::copy_from_str, str::index_mut, String::as_mut_str, str::as_mut, str::borrow_mut, String::deref_mut
+  python  -
+
+dropped  what an interface or a trait would have needed: Heroes has neither
+  go      strings.Replacer.WriteString
+  rust    str::parse, str::as_ascii, str::fmt, str::hash, String::hash_slice, str::as_ref, str::borrow, String::deref, str::type_id, str::to_socket_addrs, str::is_prefix_of, str::is_contained_in, str::strip_prefix_of, str::is_suffix_of, str::strip_suffix_of, str::into_searcher, str::as_utf8_pattern
+  python  -

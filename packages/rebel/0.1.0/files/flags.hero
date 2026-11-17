@@ -1,0 +1,1145 @@
+# The arguments of a program read against a declaration: options long and
+# short, with a value and without, given once or many times, positionals,
+# subcommands, defaults, and a help page made from the declaration itself.
+#
+# A declaration is a value a program builds with the functions below and
+# hands to `parse`; nothing is held anywhere else. A parse answers what it
+# found, or a failure whose message says what was wrong and then the usage.
+# It never prints and never ends the program: the caller decides, and the
+# help a user asks for with `-h` or `--help` is answered by `is_help`.
+#
+# The rules it reads by, POSIX's and GNU's: `--name value` and `--name=value`;
+# `-n value`, `-nvalue` and `-n=value`; flags of one character joined, `-vq`;
+# options and positionals in any order; `--` ending the options; `-` alone a
+# positional; an argument reading as a negative number, `-5`, a positional
+# where no short option is a digit. An option's value is the argument after
+# it, whatever it is, so `--offset -5` reads `-5`.
+#
+# What a declaration may also say: an environment variable an argument is
+# read from where the command line leaves it out, other names, a value an
+# option takes when given alone, values split at a delimiter, a range of
+# integers, a version, arguments that need others, and shell completions made
+# from it for bash, zsh and fish.
+#
+# It reads no file and converts no value past a number: a duration or a path
+# is read as text and given to `time` or `path`. Fails `invalid` where the
+# arguments are not what the declaration reads, `not_found` where a value
+# asked for was not given and has no default, and `not_text` where an argument
+# of the program is not UTF-8.
+
+use flags/internal/answer
+use flags/internal/complete
+use flags/internal/decl
+use flags/internal/page
+use flags/internal/scan
+use strings
+
+## Codes
+
+# The code of arguments the declaration does not read, and of a value that is
+# not of its kind: `parse` and the functions that read a value as a number.
+constant INVALID: str
+    "invalid"
+
+# The code of a value asked for that was neither given nor declared with a
+# default: `value_of`, `int_of`, `float_of`, `subcommand`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an argument of the program that is not UTF-8: `parse_args`.
+constant NOT_TEXT: str
+    "not_text"
+
+## Declaring
+
+# A command: its name, what it says of itself, the arguments it takes and its
+# subcommands. Made only by `command`, and grown by `add`, `add_command` and
+# `add_exclusive`.
+record Command
+    # The declaration, read by the functions of this package.
+    spec: decl.Spec
+
+# One argument a command takes: a flag, an option with a value, or a
+# positional. Made only by `flag`, `option` and `positional`, and changed by
+# the functions named `with_`.
+record Argument
+    # The declaration of the argument, read by the functions of this package.
+    want: decl.Want
+
+# What an option's or a positional's values are read as; `parse` refuses a
+# value that is not one.
+variant Kind
+    # Any text: what an argument is read as until `with_kind` says otherwise.
+    text
+    # An integer as the language writes one: an optional sign, then decimal
+    # digits with no zero before them, or `0x`, `0o` or `0b` and digits, with
+    # `_` allowed between two digits.
+    integer
+    # A decimal number, with an optional exponent; `inf` and `nan` too.
+    float
+    # One of a list of words.
+    choice
+        # The words taken, in the order the help lists them.
+        among: [str]
+
+# How many values a positional takes.
+variant Arity
+    # Exactly one: what a positional takes until `with_arity` says otherwise.
+    one
+    # None or one.
+    optional
+    # Any number, none included.
+    many
+    # One or more.
+    at_least_one
+
+# A command named `name`, taking nothing yet, that answers `-h` and `--help`
+# with its help.
+#
+# - `name`: the name its usage writes: the program's own for the outermost
+#   command, the word that chooses it for a subcommand.
+# - `about`: what the help writes under the usage, as written, line breaks
+#   kept; "" for nothing.
+#
+# Aborts where `name` is empty. See also `without_help`.
+function command(name: str, about: str) -> Command
+    return Command(spec: decl.new_spec(name: name, about: about))
+
+# An option of no value: `--verbose`, `-v`. Read with `is_on` or `count_of`.
+#
+# - `long`: its name after `--`, without them: letters, digits and dashes, no
+#   `=` and no space; "" where it has none.
+# - `short`: its one ASCII letter or digit after `-`; "" where it has none.
+# - `help`: one line saying what it does, for the help; "" for none.
+#
+# Aborts where `long` and `short` are both "", or either is not such a name.
+# See also `option`, `with_negation`.
+function flag(long: str, short: str, help: str) -> Argument
+    return Argument(want: decl.flag_want(long: long, short: short, help: help))
+
+# An option taking one value each time it is given: `--max 5`, `--max=5`,
+# `-m 5`, `-m5`. Read with `value_of`, `values_of`, `int_of` or `float_of`.
+#
+# - `long`: its name after `--`, as `flag` takes it; "" where it has none.
+# - `short`: its one letter or digit after `-`; "" where it has none.
+# - `value_name`: the word that stands for its value in the help, `NUM`,
+#   `FILE`; not empty.
+# - `help`: one line saying what it does, for the help; "" for none.
+#
+# Aborts as `flag` does, and where `value_name` is empty. See also
+# `with_kind`, `with_default`, `with_required`.
+function option(long: str, short: str, value_name: str, help: str) -> Argument
+    return Argument(want: decl.option_want(long: long, short: short, value_name: value_name, help: help))
+
+# A positional named `name`, taking exactly one value. Positionals take the
+# arguments that are not options, in the order they were added.
+#
+# - `name`: the name the usage and the help write, and the one a program
+#   reads its values by; not empty.
+# - `help`: one line saying what it is, for the help; "" for none.
+#
+# Aborts where `name` is empty. See also `with_arity`.
+function positional(name: str, help: str) -> Argument
+    return Argument(want: decl.positional_want(name: name, help: help))
+
+# A copy of `a` whose values are read as `kind`.
+#
+# - `a`: an option or a positional.
+# - `kind`: what each value must be; a `choice` must hold one word or more.
+#
+# Aborts where `a` is a flag, where `kind` is a `choice` of no word, and where
+# a default of `a` is not of `kind`.
+function with_kind(a: Argument, kind: Kind) -> Argument
+    assert a.want.takes_value
+    w @= a.want
+
+    match kind
+        .text    => w.kind @ decl.TEXT
+        .integer => w.kind @ decl.INTEGER
+        .float   => w.kind @ decl.FLOAT
+        .choice c =>
+            assert c.among.len() > 0
+            w.kind @ decl.CHOICE
+            w.choices @ c.among
+
+    for d in w.defaults
+        assert !decl.check_value(w, d).is_err()
+
+    return Argument(want: w)
+
+# A copy of `a` whose value, where none is given, is `value`.
+#
+# - `a`: an option, or a positional that may take no value.
+# - `value`: the default, read as `a`'s kind reads a value.
+#
+# Aborts where `a` is a flag, where `a` is a positional that takes one value
+# or more, and where `value` is not of `a`'s kind.
+function with_default(a: Argument, value: str) -> Argument
+    assert a.want.takes_value
+    assert !a.want.positional || a.want.least == 0
+    assert !decl.check_value(a.want, value).is_err()
+    w @= a.want
+    w.defaults @ [value]
+    return Argument(want: w)
+
+# A copy of `a` that a parse refuses to go without.
+#
+# - `a`: a flag or an option; a positional's arity says whether it is needed.
+#
+# Aborts where `a` is a positional. See also `add_exclusive`.
+function with_required(a: Argument) -> Argument
+    assert !a.want.positional
+    w @= a.want
+    w.required @ true
+    return Argument(want: w)
+
+# A copy of the positional `a` taking as many values as `arity` says.
+#
+# - `a`: a positional.
+# - `arity`: how many values it takes.
+#
+# Aborts where `a` is not a positional, and where it has a default and
+# `arity` asks for one value or more.
+function with_arity(a: Argument, arity: Arity) -> Argument
+    assert a.want.positional
+    w @= a.want
+
+    match arity
+        .one =>
+            w.least @ 1
+            w.most @ 1
+        .optional =>
+            w.least @ 0
+            w.most @ 1
+        .many =>
+            w.least @ 0
+            w.most @ decl.UNBOUNDED
+        .at_least_one =>
+            w.least @ 1
+            w.most @ decl.UNBOUNDED
+
+    assert w.least == 0 || w.defaults.len() == 0
+    return Argument(want: w)
+
+# A copy of the flag `a` that `--no-` and its long name turn off again:
+# `--color` and `--no-color`, the last given winning.
+#
+# - `a`: a flag with a long name.
+#
+# Aborts where `a` takes a value or has no long name.
+function with_negation(a: Argument) -> Argument
+    assert !a.want.takes_value && a.want.long != ""
+    w @= a.want
+    w.negatable @ true
+    return Argument(want: w)
+
+# A copy of the option `a` that the help lists under a heading of its own.
+#
+# - `a`: a flag or an option.
+# - `title`: the heading, written with a colon after it; "" for the command's
+#   own list.
+#
+# Aborts where `a` is a positional.
+function with_section(a: Argument, title: str) -> Argument
+    assert !a.want.positional
+    w @= a.want
+    w.section @ title
+    return Argument(want: w)
+
+# A copy of `a` that the help and the usage leave out; a parse reads it all
+# the same.
+#
+# - `a`: any argument.
+function with_hidden(a: Argument) -> Argument
+    w @= a.want
+    w.hidden @ true
+    return Argument(want: w)
+
+# Adds `a` to `c`, after the arguments it takes already.
+#
+# - `@c`: the command; gains `a`.
+# - `a`: the argument.
+#
+# Aborts where a name of `a` is taken in `c`: its long name, its short name,
+# its negation, `help` and `h` while `c` answers them, and a positional's
+# name, which shares one list with the long names; and where `a` is a
+# positional and `c` has subcommands.
+function add(@c: Command, a: Argument)
+    decl.add_want(@c.spec, a.want)
+
+# Adds `sub` to `c` as a subcommand: the first positional of the arguments
+# then names one, and every argument after it is `sub`'s.
+#
+# - `@c`: the command; gains `sub`.
+# - `sub`: the subcommand, its name the word that chooses it.
+#
+# Aborts where `c` has a subcommand of that name already or takes a
+# positional. A parse of `c` then fails where no subcommand is named.
+function add_command(@c: Command, sub: Command)
+    decl.add_sub(spec: @c.spec, sub: sub.spec)
+
+# Adds to `c` a group of options of which at most one may be given.
+#
+# - `@c`: the command; gains the group.
+# - `names`: two options or more, each named as `value_of` names it, all of
+#   them added to `c` already.
+# - `required`: whether one of them must be given.
+#
+# Aborts where `names` holds fewer than two, or a name `c` does not hold as an
+# option.
+function add_exclusive(@c: Command, names: [str], required: bool)
+    decl.add_group(@c.spec, members: names, required: required)
+
+# A copy of `c` where every argument from the first positional on is a
+# positional, options included: a command that runs another, `nice CMD -x`.
+#
+# - `c`: the command.
+function with_options_first(c: Command) -> Command
+    s @= c.spec
+    s.options_first @ true
+    return Command(spec: s)
+
+# A copy of `c` that does not answer `-h` and `--help`, so that a program may
+# give the names to options of its own.
+#
+# - `c`: the command; options added to it before keep their names.
+function without_help(c: Command) -> Command
+    s @= c.spec
+    s.help @ false
+    return Command(spec: s)
+
+# A copy of `c` whose help ends with `text`.
+#
+# - `c`: the command.
+# - `text`: written as given, line breaks kept; "" for nothing.
+function with_epilog(c: Command, text: str) -> Command
+    s @= c.spec
+    s.epilog @ text
+    return Command(spec: s)
+
+# A copy of `a` that takes its value from the environment variable `name`
+# where the command line does not give it, which `parse_with_env` reads.
+#
+# - `a`: any argument; a flag reads `1`, `true`, `yes`, `on`, `y` and `t` as
+#   on and `0`, `false`, `no`, `off`, `n`, `f` and "" as off, in any case.
+# - `name`: the variable's name, not empty and holding no `=`.
+#
+# The variable's value is read as the command line's would be, and stands
+# before a default. Aborts where `name` is empty or holds `=`. See also
+# `source_of`.
+function with_env(a: Argument, name: str) -> Argument
+    assert name != "" && !strings.contains(s: name, substr: "=")
+    w @= a.want
+    w.env @ name
+    return Argument(want: w)
+
+# A copy of the option `a` that `--` and `name` name as well: `--colour` for
+# `--color`.
+#
+# - `a`: a flag or an option.
+# - `name`: another long name, as `flag` takes one.
+#
+# The help lists the aliases after what it says of `a`. Aborts where `a` is a
+# positional or `name` is not such a name; `add` aborts where it is taken.
+function with_alias(a: Argument, name: str) -> Argument
+    assert !a.want.positional && decl.is_long_name(name)
+    w @= a.want
+    w.aliases @ w.aliases.push(name)
+    return Argument(want: w)
+
+# A copy of the option `a` that, given with no value after `=`, takes
+# `value` and leaves the next argument alone: `--color` alone is
+# `--color=always`.
+#
+# - `a`: an option.
+# - `value`: the value it takes given alone, read as its kind reads one.
+#
+# A value is then given only as `--name=value` or `-nvalue`. Aborts where `a`
+# is a flag or a positional, or `value` is not of its kind.
+function with_missing_value(a: Argument, value: str) -> Argument
+    assert a.want.takes_value && !a.want.positional
+    assert !decl.check_value(a.want, value).is_err()
+    w @= a.want
+    w.missing @ [value]
+    return Argument(want: w)
+
+# A copy of `a` whose every value is split at `delimiter` into several:
+# `--tag a,b` gives `a` and `b`.
+#
+# - `a`: an option or a positional.
+# - `delimiter`: the text between two values; not empty.
+#
+# Each piece is read as `a`'s kind reads a value. Aborts where `a` is a flag
+# or `delimiter` is empty.
+function with_delimiter(a: Argument, delimiter: str) -> Argument
+    assert a.want.takes_value && delimiter != ""
+    w @= a.want
+    w.delimiter @ delimiter
+    return Argument(want: w)
+
+# A copy of the integer argument `a` whose values must lie from `lowest` to
+# `highest`, both included.
+#
+# - `a`: an option or a positional of `Kind.integer`.
+# - `lowest`: the smallest value taken.
+# - `highest`: the largest value taken; not below `lowest`.
+#
+# A parse fails `invalid` on a value outside them. Aborts where `a` is not of
+# `Kind.integer`, `highest` is below `lowest`, or a default lies outside.
+function with_range(a: Argument, lowest: i64, highest: i64) -> Argument
+    assert a.want.takes_value && a.want.kind == decl.INTEGER && lowest <= highest
+    w @= a.want
+    w.ranged @ true
+    w.lowest @ lowest
+    w.highest @ highest
+
+    for d in w.defaults
+        assert !decl.check_value(w, d).is_err()
+
+    return Argument(want: w)
+
+# A copy of `c` that answers `-V` and `--version` with `version`: the parse
+# stops there, as at `-h`, and `is_version` says so.
+#
+# - `c`: the command; a subcommand answers only its own.
+# - `version`: the version, `1.4.2`; not empty.
+#
+# Aborts where `version` is empty, or `c` takes `--version` or `-V` already.
+function with_version(c: Command, version: str) -> Command
+    assert version != "" && !decl.is_long_taken(c.spec, "version") && decl.index_of_short(c.spec, "V").is_err()
+    s @= c.spec
+    s.version @ version
+    return Command(spec: s)
+
+# A copy of the option `a` that `-` and `short` name as well.
+#
+# - `a`: a flag or an option.
+# - `short`: another short name, one ASCII letter or digit.
+#
+# The help lists it after what it says of `a`. Aborts where `a` is a
+# positional or `short` is not such a name; `add` aborts where it is taken.
+function with_short_alias(a: Argument, short: str) -> Argument
+    assert !a.want.positional && decl.is_short_name(short)
+    w @= a.want
+    w.short_aliases @ w.short_aliases.push(short)
+    return Argument(want: w)
+
+# A copy of the subcommand `c` that its parent's help and completions leave
+# out; its parent's arguments choose it all the same.
+#
+# - `c`: a command to be added with `add_command`.
+function with_command_hidden(c: Command) -> Command
+    s @= c.spec
+    s.hidden @ true
+    return Command(spec: s)
+
+# A copy of the subcommand `c` that its parent's arguments may choose by
+# `name` too.
+#
+# - `c`: a command to be added with `add_command`.
+# - `name`: another word choosing it; not empty.
+#
+# `add_command` aborts where a sibling has that name or alias.
+function with_command_alias(c: Command, name: str) -> Command
+    assert name != ""
+    s @= c.spec
+    s.aliases @ s.aliases.push(name)
+    return Command(spec: s)
+
+# A copy of `c` whose parse given no argument at all answers `is_help`, as
+# where `-h` was given.
+#
+# - `c`: a command that answers `-h`.
+#
+# Aborts where `c` answers no help.
+function with_help_on_empty(c: Command) -> Command
+    assert c.spec.help
+    s @= c.spec
+    s.help_on_empty @ true
+    return Command(spec: s)
+
+# A copy of `c` that takes a word naming none of its subcommands as another
+# program's command: the word and every argument after it are kept, unread,
+# for `external_of`. `git`'s `git-foo` commands are found so.
+#
+# - `c`: a command with subcommands.
+function with_external_commands(c: Command) -> Command
+    s @= c.spec
+    s.external @ true
+    return Command(spec: s)
+
+# Adds to `c` that the argument `name` needs `needs` given with it: a parse
+# where `name` is given and `needs` is not fails `invalid`.
+#
+# - `@c`: the command; gains the rule.
+# - `name`: the argument that needs, named as `value_of` names it, added
+#   already.
+# - `needs`: the argument needed, the same way.
+#
+# A value from the environment counts as given; a default does not. Aborts
+# where either name is not declared, or they are one. See also
+# `add_exclusive`.
+function add_requirement(@c: Command, name: str, needs: str)
+    decl.add_requirement(@c.spec, member: name, needs: needs)
+
+## Parsing
+
+# What a parse found: a value read only through the functions below.
+record Found
+    # The values, counts and choices found, and the declaration read.
+    got: scan.Got
+
+# What `arguments` give the command `c`.
+#
+# - `c`: the declaration.
+# - `arguments`: the arguments, the program's name left out, as `args()`
+#   answers them; empty for none.
+#
+# Fails `invalid` where an option is unknown, an option's value is missing or
+# not of its kind, a flag is given a value, two options of a group are given,
+# a required option, a positional or a subcommand is missing, or an argument
+# is left over. The message's first line says which, naming the nearest
+# declared name where an unknown one is close to it; its second is the usage.
+#
+# The parse stops at the first `-h` or `--help` among the options and answers
+# `is_help`, checking nothing after it and no required argument; a failure
+# before it is answered first.
+function parse(c: Command, arguments: [str]) -> Found?
+    return ok(Found(got: scan.read(c.spec, arguments, 0, false, c.spec.name, {})?))
+
+# What `arguments` give `c`, the options it does not declare kept rather than
+# refused: each as written, in `unknown_of`. A program that passes them on to
+# another reads them so.
+#
+# - `c`: the declaration.
+# - `arguments`: the arguments, the program's name left out.
+#
+# Fails `invalid` as `parse` does, but for an unknown option. A cluster of
+# short options holding an unknown character is kept whole, none of its
+# flags counted.
+function parse_known(c: Command, arguments: [str]) -> Found?
+    return ok(Found(got: scan.read(c.spec, arguments, 0, true, c.spec.name, {})?))
+
+# What the program's own arguments give `c`.
+#
+# - `c`: the declaration.
+#
+# Fails `not_text` where an argument of the program is not UTF-8, naming its
+# place counted from 1; else as `parse` does. Unlike `args()`, it never aborts
+# on such an argument.
+function parse_args(c: Command) -> Found?
+    given: [str] @= []
+
+    for a in args_checked()
+        match a
+            .ok text => given @ given.push(text)
+            .err _   => return fail(code: NOT_TEXT, msg: f"argument {given.len() + 1} is not UTF-8")
+
+    return parse(c, given)
+
+# What `arguments` and the environment `env` give the command `c`: an
+# argument declared `with_env` and not given takes its variable's value.
+#
+# - `c`: the declaration.
+# - `arguments`: the arguments, the program's name left out.
+# - `env`: the environment, a name to each value: `os.env_all()`'s answer,
+#   or a map of a program's own.
+#
+# Fails `invalid` as `parse` does, and where a variable's value is not of its
+# argument's kind, naming the variable. See also `source_of`.
+function parse_with_env(c: Command, arguments: [str], env: {str: str}) -> Found?
+    return ok(Found(got: scan.read(c.spec, arguments, 0, false, c.spec.name, env)?))
+
+# What the program's own arguments and the environment `env` give `c`.
+#
+# - `c`: the declaration.
+# - `env`: the environment, as `parse_with_env` takes it.
+#
+# Fails `not_text` as `parse_args` does, else as `parse_with_env` does.
+function parse_args_with_env(c: Command, env: {str: str}) -> Found?
+    given: [str] @= []
+
+    for a in args_checked()
+        match a
+            .ok text => given @ given.push(text)
+            .err _   => return fail(code: NOT_TEXT, msg: f"argument {given.len() + 1} is not UTF-8")
+
+    return parse_with_env(c, given, env)
+
+## Reading what was found
+
+# Whether `-h` or `--help` was given, to the command of `f` or to a
+# subcommand chosen under it. A program then prints `help_text` and stops.
+#
+# - `f`: what a parse found.
+function is_help(f: Found) -> bool
+    return answer.is_help(f.got)
+
+# The help page of the deepest command chosen in `f`: the one `-h` was given
+# to, where `is_help` says so.
+#
+# - `f`: what a parse found.
+#
+# See also `help_of`.
+function help_text(f: Found) -> str
+    return answer.help_text(f.got)
+
+# The name of the command `f` answers for.
+#
+# - `f`: what a parse found.
+function name_of(f: Found) -> str
+    return f.got.spec.name
+
+# What was found for the subcommand chosen.
+#
+# - `f`: what a parse found for a command that has subcommands.
+#
+# Fails `not_found` where `f`'s command has none, and where the help was
+# asked before a subcommand was named.
+function subcommand(f: Found) -> Found?
+    if f.got.sub.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no subcommand of \"{f.got.spec.name}\" was chosen")
+    return ok(Found(got: f.got.sub[0]))
+
+# Whether the argument `name` was given, as a flag, an option, its negation or
+# a positional; a default is not given.
+#
+# - `f`: what a parse found.
+# - `name`: the argument's long name, else its short name, else a
+#   positional's name, as the declaration wrote it.
+#
+# Aborts where the command of `f` declares no `name`.
+function is_given(f: Found, name: str) -> bool
+    return answer.is_given(f.got, name)
+
+# Whether the flag `name` was given and not turned off after by its negation.
+#
+# - `f`: what a parse found.
+# - `name`: the flag's long name, else its short name.
+#
+# Aborts where the command of `f` declares no `name`, or `name` takes a
+# value. See also `count_of`.
+function is_on(f: Found, name: str) -> bool
+    return answer.is_on(f.got, name)
+
+# How many times the argument `name` was given: `-vvv` gives `v` 3. A
+# negation sets it back to 0.
+#
+# - `f`: what a parse found.
+# - `name`: the argument, named as `is_given` names it.
+#
+# Aborts where the command of `f` declares no `name`.
+function count_of(f: Found, name: str) -> i64
+    return answer.count_of(f.got, name)
+
+# The last value given to `name`, else its default.
+#
+# - `f`: what a parse found.
+# - `name`: an option or a positional, named as `is_given` names it.
+#
+# Fails `not_found` where it was not given and has no default. Aborts where
+# the command of `f` declares no `name`, or `name` is a flag. See also
+# `values_of`.
+function value_of(f: Found, name: str) -> str?
+    return answer.value_of(f.got, name)
+
+# Every value given to `name`, in the order given, else its default; empty
+# where neither stands.
+#
+# - `f`: what a parse found.
+# - `name`: an option or a positional, named as `is_given` names it.
+#
+# Aborts where the command of `f` declares no `name`, or `name` is a flag.
+function values_of(f: Found, name: str) -> [str]
+    return answer.values_of(f.got, name)
+
+# The value of `name` read as an integer as the language writes one.
+#
+# - `f`: what a parse found.
+# - `name`: an option or a positional, named as `is_given` names it.
+#
+# Fails `not_found` as `value_of` does, and `invalid` where the value is no
+# such integer or is past an `i64`; never for a value of `Kind.integer`, which
+# the parse has read already. Aborts as `value_of` does.
+function int_of(f: Found, name: str) -> i64?
+    return answer.int_of(f.got, name)
+
+# The value of `name` read as a decimal number.
+#
+# - `f`: what a parse found.
+# - `name`: an option or a positional, named as `is_given` names it.
+#
+# Fails `not_found` as `value_of` does, and `invalid` where the value is no
+# number. Aborts as `value_of` does.
+function float_of(f: Found, name: str) -> f64?
+    return answer.float_of(f.got, name)
+
+# The options `parse_known` kept because the command of `f` does not declare
+# them, as written, in order; empty after `parse`.
+#
+# - `f`: what a parse found.
+function unknown_of(f: Found) -> [str]
+    return f.got.unknown
+
+# Whether `-V` or `--version` was given, to the command of `f` or to a
+# subcommand chosen under it. A program then prints `version_text` and stops.
+#
+# - `f`: what a parse found.
+function is_version(f: Found) -> bool
+    return answer.is_version(f.got)
+
+# The version line of the deepest command chosen in `f`: its name and its
+# parents', a space and its version, `tool 1.4.2`.
+#
+# - `f`: what a parse found where `is_version` says so.
+function version_text(f: Found) -> str
+    return answer.version_text(f.got)
+
+# Where an argument's values came from.
+variant Source
+    # The command line.
+    command_line
+    # Its environment variable, the command line leaving it out.
+    environment
+    # Its default, nothing else giving it.
+    fallback
+    # Nowhere: neither given nor declared with a default.
+    absent
+
+# Where the values of the argument `name` came from.
+#
+# - `f`: what a parse found.
+# - `name`: the argument, named as `is_given` names it.
+#
+# Aborts where the command of `f` declares no `name`.
+function source_of(f: Found, name: str) -> Source
+    at = answer.index_in(f.got, name)
+
+    if f.got.from_env[at]
+        return .environment
+
+    if f.got.given[at]
+        return .command_line
+
+    if f.got.spec.wants[at].defaults.len() > 0
+        return .fallback
+    return .absent
+
+# The word naming another program's command and every argument after it,
+# where the command of `f` was declared `with_external_commands`; empty
+# otherwise.
+#
+# - `f`: what a parse found.
+function external_of(f: Found) -> [str]
+    return f.got.external
+
+## The help
+
+# The help page of `c`: its usage, what it says of itself, its positionals,
+# its options under their headings with their defaults and the words they
+# take, its subcommands and its epilog, a blank line between each two and no
+# line break at the end.
+#
+# - `c`: the declaration.
+#
+# See also `help_text`, `usage_of`.
+function help_of(c: Command) -> str
+    return page.help_page(c.spec, c.spec.name)
+
+# The usage of `c`: `usage: `, its name, then each argument it takes as a
+# user writes it, `[-v]`, `[-m NUM]`, `FILE...`, wrapped before column 80.
+#
+# - `c`: the declaration.
+function usage_of(c: Command) -> str
+    return page.usage_line(c.spec, c.spec.name)
+
+## Completions
+
+# A shell that `completion_of` writes a script for.
+variant Shell
+    # bash, 3.2 and later.
+    bash
+    # zsh.
+    zsh
+    # fish.
+    fish
+
+# A script that completes the command `c` in `shell`, made from its
+# declaration: at any depth of subcommands it offers the options, the
+# subcommands, the words of a choice, or the names of files where a value is
+# text, and skips each option's value while finding the subcommand.
+#
+# - `c`: the declaration; hidden arguments are not offered.
+# - `shell`: the shell.
+#
+# bash reads the script with `source`; zsh from a file named `_` and the
+# command's name in a folder of its `fpath`, or with `source` after
+# `compinit`; fish from `~/.config/fish/completions/`, a file named for the
+# command with `.fish` after it. Every name is quoted for the shell.
+function completion_of(c: Command, shell: Shell) -> str
+    match shell
+        .bash => return complete.script(c.spec, complete.BASH)
+        .zsh  => return complete.script(c.spec, complete.ZSH)
+        .fish => return complete.script(c.spec, complete.FISH)
+
+## Examples
+
+# A command with a flag, an option of an integer and a positional, built.
+test "command: a small program's declaration"
+    c @= command(name: "grep", about: "Searches files for a pattern.")
+    add(@c, flag(long: "count", short: "c", help: "print only a count"))
+    add(@c, positional(name: "PATTERN", help: "what to find"))
+    assert usage_of(c) == "usage: grep [-h] [-c] PATTERN"
+
+# A flag given in its short form.
+test "flag: given as -c"
+    c @= command(name: "grep", about: "")
+    add(@c, flag(long: "count", short: "c", help: "print only a count"))
+    found = parse(c, ["-c"]).must()
+    assert is_on(found, "count")
+
+# An option given with `=` and on its own.
+test "option: given as --max=5 and as -m 7, the last winning"
+    c @= command(name: "grep", about: "")
+    add(@c, option(long: "max", short: "m", value_name: "NUM", help: "stop after NUM"))
+    found = parse(c, ["--max=5", "-m", "7"]).must()
+    assert value_of(found, "max").must() == "7"
+
+# A positional read by its name.
+test "positional: one file"
+    c @= command(name: "cat", about: "")
+    add(@c, positional(name: "FILE", help: "the file to print"))
+    assert value_of(parse(c, ["notes.txt"]).must(), "FILE").must() == "notes.txt"
+
+# An option of an integer refusing a word.
+test "with_kind: an integer option given a word"
+    c @= command(name: "head", about: "")
+    add(@c, with_kind(option(long: "lines", short: "n", value_name: "N", help: ""), .integer))
+
+    match parse(c, ["-n", "ten"])
+        .ok _  => assert false
+        .err e => assert e.msg == "--lines: \"ten\" is not an integer\nusage: head [-h] [-n N]"
+
+# An option's default where it is not given.
+test "with_default: the default of an option left out"
+    c @= command(name: "head", about: "")
+    add(@c, with_default(option(long: "lines", short: "n", value_name: "N", help: ""), "10"))
+    assert value_of(parse(c, []).must(), "lines").must() == "10"
+
+# A required option left out.
+test "with_required: a required option missing"
+    c @= command(name: "login", about: "")
+    add(@c, with_required(option(long: "user", short: "u", value_name: "NAME", help: "")))
+
+    match parse(c, [])
+        .ok _  => assert false
+        .err e => assert e.msg == "missing --user\nusage: login [-h] -u NAME"
+
+# A positional taking every file after it.
+test "with_arity: any number of files"
+    c @= command(name: "cat", about: "")
+    add(@c, with_arity(positional(name: "FILE", help: ""), .many))
+    assert values_of(parse(c, ["a", "b"]).must(), "FILE") == ["a", "b"]
+
+# A flag turned off by its negation.
+test "with_negation: --no-color after --color"
+    c @= command(name: "ls", about: "")
+    add(@c, with_negation(flag(long: "color", short: "", help: "colour the names")))
+    assert !is_on(parse(c, ["--color", "--no-color"]).must(), "color")
+
+# Options listed under a heading of their own.
+test "with_section: an option under Output"
+    c @= command(name: "ls", about: "")
+    add(@c, with_section(flag(long: "long", short: "l", help: "one per line"), "Output"))
+    assert help_of(c) == "usage: ls [-h] [-l]\n\nOptions:\n  -h, --help  show this help\n\nOutput:\n  -l, --long  one per line"
+
+# An option the help leaves out but a parse reads.
+test "with_hidden: a debugging switch"
+    c @= command(name: "tool", about: "")
+    add(@c, with_hidden(flag(long: "trace", short: "", help: "")))
+    assert usage_of(c) == "usage: tool [-h]"
+    assert is_on(parse(c, ["--trace"]).must(), "trace")
+
+# Arguments added one after the other.
+test "add: a flag and a positional"
+    c @= command(name: "rm", about: "")
+    add(@c, flag(long: "force", short: "f", help: ""))
+    add(@c, positional(name: "PATH", help: ""))
+    found = parse(c, ["-f", "old.txt"]).must()
+    assert is_on(found, "force") && value_of(found, "PATH").must() == "old.txt"
+
+# A subcommand chosen, and what it was given.
+test "add_command: git's remote add"
+    add_cmd @= command(name: "add", about: "adds a remote")
+    add(@add_cmd, positional(name: "NAME", help: ""))
+    c @= command(name: "git", about: "")
+    add_command(c: @c, sub: add_cmd)
+    sub = subcommand(parse(c, ["add", "origin"]).must()).must()
+    assert name_of(sub) == "add" && value_of(sub, "NAME").must() == "origin"
+
+# Two options that may not be given together.
+test "add_exclusive: --json and --text together"
+    c @= command(name: "report", about: "")
+    add(@c, flag(long: "json", short: "", help: ""))
+    add(@c, flag(long: "text", short: "", help: ""))
+    add_exclusive(@c, ["json", "text"], false)
+
+    match parse(c, ["--json", "--text"])
+        .ok _  => assert false
+        .err e => assert e.msg == "--json and --text cannot be used together\nusage: report [-h] [--json] [--text]"
+
+# A command that runs another, its options passed on untouched.
+test "with_options_first: nice's command and its own options"
+    c @= command(name: "nice", about: "")
+    add(@c, with_arity(positional(name: "COMMAND", help: ""), .at_least_one))
+    found = parse(with_options_first(c), ["ls", "-l"]).must()
+    assert values_of(found, "COMMAND") == ["ls", "-l"]
+
+# `-h` given to an option of the program's own.
+test "without_help: -h names the host"
+    c @= without_help(command(name: "connect", about: ""))
+    add(@c, option(long: "host", short: "h", value_name: "HOST", help: ""))
+    assert value_of(parse(c, ["-h", "example.org"]).must(), "host").must() == "example.org"
+
+# A line at the end of the help.
+test "with_epilog: a pointer to the manual"
+    c = with_epilog(command(name: "tool", about: ""), "See the manual.")
+    assert help_of(c) == "usage: tool [-h]\n\nOptions:\n  -h, --help  show this help\n\nSee the manual."
+
+# The arguments of a program read, and a value taken out of them.
+test "parse: a flag, an option and two files in any order"
+    c @= command(name: "grep", about: "")
+    add(@c, flag(long: "count", short: "c", help: ""))
+    add(@c, with_kind(option(long: "max", short: "m", value_name: "NUM", help: ""), .integer))
+    add(@c, with_arity(positional(name: "FILE", help: ""), .at_least_one))
+    found = parse(c, ["a.txt", "-cm3", "b.txt"]).must()
+    assert int_of(found, "max").must() == 3 && values_of(found, "FILE") == ["a.txt", "b.txt"]
+
+# Options a wrapper does not know, kept for the program it runs.
+test "parse_known: --jobs kept for another program"
+    c @= command(name: "wrap", about: "")
+    add(@c, flag(long: "quiet", short: "q", help: ""))
+    found = parse_known(c, ["-q", "--jobs=4"]).must()
+    assert unknown_of(found) == ["--jobs=4"]
+
+# The program's own arguments read; a test is given none that a command of
+# any number of positionals refuses.
+test "parse_args: the program's own arguments"
+    c @= command(name: "tool", about: "")
+    add(@c, with_arity(positional(name: "ARG", help: ""), .many))
+    assert !parse_args(with_options_first(c)).is_err()
+
+# The help asked for, and the page to print.
+test "is_help: -h given"
+    c = command(name: "tool", about: "Does one thing.")
+    found = parse(c, ["-h"]).must()
+    assert is_help(found)
+
+# The page of the subcommand the help was asked of.
+test "help_text: the help of a subcommand"
+    sub = command(name: "init", about: "Makes an empty project.")
+    c @= command(name: "tool", about: "")
+    add_command(c: @c, sub: sub)
+    found = parse(c, ["init", "--help"]).must()
+    assert help_text(found) == "usage: tool init [-h]\n\nMakes an empty project.\n\nOptions:\n  -h, --help  show this help"
+
+# The name of the command found.
+test "name_of: the outermost command"
+    assert name_of(parse(command(name: "tool", about: ""), []).must()) == "tool"
+
+# The subcommand chosen.
+test "subcommand: build chosen"
+    c @= command(name: "cargo", about: "")
+    add_command(c: @c, sub: command(name: "build", about: ""))
+    assert name_of(subcommand(parse(c, ["build"]).must()).must()) == "build"
+
+# Whether an option was given rather than defaulted.
+test "is_given: a default is not given"
+    c @= command(name: "tool", about: "")
+    add(@c, with_default(option(long: "level", short: "", value_name: "N", help: ""), "1"))
+    assert !is_given(parse(c, []).must(), "level")
+
+# A flag given.
+test "is_on: -v given"
+    c @= command(name: "tool", about: "")
+    add(@c, flag(long: "verbose", short: "v", help: ""))
+    assert is_on(parse(c, ["-v"]).must(), "verbose")
+
+# How loud a program is asked to be.
+test "count_of: -vvv"
+    c @= command(name: "tool", about: "")
+    add(@c, flag(long: "verbose", short: "v", help: ""))
+    assert count_of(parse(c, ["-vvv"]).must(), "verbose") == 3
+
+# An option's value.
+test "value_of: --output given"
+    c @= command(name: "tool", about: "")
+    add(@c, option(long: "output", short: "o", value_name: "FILE", help: ""))
+    assert value_of(parse(c, ["-o", "out.txt"]).must(), "output").must() == "out.txt"
+
+# An option given many times.
+test "values_of: -I given twice"
+    c @= command(name: "cc", about: "")
+    add(@c, option(long: "include", short: "I", value_name: "DIR", help: ""))
+    assert values_of(parse(c, ["-Ia", "-I", "b"]).must(), "include") == ["a", "b"]
+
+# An option read as an integer.
+test "int_of: --jobs 0x10"
+    c @= command(name: "make", about: "")
+    add(@c, option(long: "jobs", short: "j", value_name: "N", help: ""))
+    assert int_of(parse(c, ["--jobs", "0x10"]).must(), "jobs").must() == 16
+
+# An option read as a decimal number.
+test "float_of: --ratio 0.5"
+    c @= command(name: "tool", about: "")
+    add(@c, option(long: "ratio", short: "", value_name: "R", help: ""))
+    assert float_of(parse(c, ["--ratio", "0.5"]).must(), "ratio").must() == 0.5
+
+# What a wrapper did not know.
+test "unknown_of: two options kept in order"
+    c = command(name: "wrap", about: "")
+    assert unknown_of(parse_known(c, ["--a", "-b"]).must()) == ["--a", "-b"]
+
+# A whole help page.
+test "help_of: options with defaults and a positional"
+    c @= command(name: "head", about: "Prints the first lines.")
+    add(@c, with_default(option(long: "lines", short: "n", value_name: "N", help: "how many"), "10"))
+    add(@c, positional(name: "FILE", help: "the file"))
+    assert help_of(c) == "usage: head [-h] [-n N] FILE\n\nPrints the first lines.\n\nArguments:\n  FILE           the file\n\nOptions:\n  -h, --help     show this help\n  -n, --lines N  how many (default: 10)"
+
+# The usage line alone.
+test "usage_of: a required option and a list of files"
+    c @= command(name: "tar", about: "")
+    add(@c, with_required(option(long: "file", short: "f", value_name: "ARCHIVE", help: "")))
+    add(@c, with_arity(positional(name: "PATH", help: ""), .many))
+    assert usage_of(c) == "usage: tar [-h] -f ARCHIVE [PATH...]"
+
+# An option read from the environment where the command line leaves it out.
+test "with_env: TOKEN from the environment"
+    c @= command(name: "push", about: "")
+    add(@c, with_env(option(long: "token", short: "", value_name: "TOKEN", help: ""), "PUSH_TOKEN"))
+    found = parse_with_env(c, [], {"PUSH_TOKEN": "s3cret"}).must()
+    assert value_of(found, "token").must() == "s3cret"
+
+# An option known by a second name.
+test "with_alias: --colour for --color"
+    c @= command(name: "ls", about: "")
+    add(@c, with_alias(option(long: "color", short: "", value_name: "WHEN", help: ""), "colour"))
+    assert value_of(parse(c, ["--colour", "never"]).must(), "color").must() == "never"
+
+# An option given alone taking its declared value.
+test "with_missing_value: --color alone is always"
+    c @= command(name: "ls", about: "")
+    add(@c, with_missing_value(option(long: "color", short: "", value_name: "WHEN", help: ""), "always"))
+    add(@c, with_arity(positional(name: "FILE", help: ""), .many))
+    found = parse(c, ["--color", "file"]).must()
+    assert value_of(found, "color").must() == "always" && values_of(found, "FILE") == ["file"]
+    assert value_of(parse(c, ["--color=never"]).must(), "color").must() == "never"
+
+# Values split at a comma.
+test "with_delimiter: --tag a,b"
+    c @= command(name: "tag", about: "")
+    add(@c, with_delimiter(option(long: "tag", short: "t", value_name: "TAG", help: ""), ","))
+    assert values_of(parse(c, ["--tag", "a,b", "-t", "c"]).must(), "tag") == ["a", "b", "c"]
+
+# A port outside the range refused.
+test "with_range: a port of 70000"
+    c @= command(name: "serve", about: "")
+    add(
+        @c,
+        with_range(with_kind(option(long: "port", short: "p", value_name: "PORT", help: ""), .integer), lowest: 1, highest: 65535)
+    )
+
+    match parse(c, ["-p", "70000"])
+        .ok _  => assert false
+        .err e => assert e.msg == "--port: 70000 is outside 1 to 65535\nusage: serve [-h] [-p PORT]"
+
+# The version asked for.
+test "with_version: --version"
+    c = with_version(command(name: "tool", about: ""), "1.4.2")
+    found = parse(c, ["--version"]).must()
+    assert is_version(found) && version_text(found) == "tool 1.4.2"
+
+# A subcommand chosen by its alias.
+test "with_command_alias: rm for remove"
+    c @= command(name: "pkg", about: "")
+    add_command(c: @c, sub: with_command_alias(command(name: "remove", about: ""), "rm"))
+    assert name_of(subcommand(parse(c, ["rm"]).must()).must()) == "remove"
+
+# No argument at all asking for the help.
+test "with_help_on_empty: nothing given"
+    c = with_help_on_empty(command(name: "tool", about: ""))
+    assert is_help(parse(c, []).must())
+
+# A word that names no subcommand kept for another program.
+test "with_external_commands: git's foo"
+    c @= with_external_commands(command(name: "git", about: ""))
+    add_command(c: @c, sub: command(name: "init", about: ""))
+    assert external_of(parse(c, ["foo", "--bar"]).must()) == ["foo", "--bar"]
+
+# An option that needs another.
+test "add_requirement: --output needs --format"
+    c @= command(name: "export", about: "")
+    add(@c, option(long: "output", short: "o", value_name: "FILE", help: ""))
+    add(@c, option(long: "format", short: "f", value_name: "FORMAT", help: ""))
+    add_requirement(@c, name: "output", needs: "format")
+
+    match parse(c, ["-o", "x"])
+        .ok _  => assert false
+        .err e => assert e.msg == "--output needs --format given with it\nusage: export [-h] [-o FILE] [-f FORMAT]"
+
+# The environment read with the arguments.
+test "parse_with_env: a flag on from the environment"
+    c @= command(name: "tool", about: "")
+    add(@c, with_env(flag(long: "debug", short: "", help: ""), "DEBUG"))
+    assert is_on(parse_with_env(c, [], {"DEBUG": "yes"}).must(), "debug")
+
+# The program's own arguments and an environment of its own.
+test "parse_args_with_env: the program's own arguments"
+    c @= command(name: "tool", about: "")
+    add(@c, with_arity(positional(name: "ARG", help: ""), .many))
+    assert !parse_args_with_env(with_options_first(c), {}).is_err()
+
+# The version asked of a subcommand.
+test "is_version: -V given"
+    assert is_version(parse(with_version(command(name: "t", about: ""), "2.0"), ["-V"]).must())
+
+# The line a program prints for --version.
+test "version_text: the name and the version"
+    assert version_text(parse(with_version(command(name: "t", about: ""), "2.0"), ["-V"]).must()) == "t 2.0"
+
+# Where a value came from.
+test "source_of: the command line, the environment, the default, nowhere"
+    c @= command(name: "t", about: "")
+    add(@c, with_env(with_default(option(long: "a", short: "", value_name: "A", help: ""), "1"), "A"))
+    add(@c, option(long: "b", short: "", value_name: "B", help: ""))
+    assert source_of(parse_with_env(c, ["--a", "2"], {}).must(), "a") == .command_line
+    assert source_of(parse_with_env(c, [], {"A": "3"}).must(), "a") == .environment
+    assert source_of(parse(c, []).must(), "a") == .fallback
+    assert source_of(parse(c, []).must(), "b") == .absent
+
+# Another program's command and its arguments.
+test "external_of: empty where a subcommand was chosen"
+    c @= with_external_commands(command(name: "git", about: ""))
+    add_command(c: @c, sub: command(name: "init", about: ""))
+    assert external_of(parse(c, ["init"]).must()).len() == 0
+
+# A completion script for bash.
+test "completion_of: bash completes a flag"
+    c @= command(name: "tool", about: "")
+    add(@c, flag(long: "verbose", short: "v", help: "say more"))
+    assert strings.contains(s: completion_of(c, .bash), substr: "complete -F _tool 'tool'")
+
+# An option known by a second short name.
+test "with_short_alias: -n for -l"
+    c @= command(name: "head", about: "")
+    add(@c, with_short_alias(option(long: "lines", short: "l", value_name: "N", help: ""), "n"))
+    assert value_of(parse(c, ["-n", "5"]).must(), "lines").must() == "5"
+
+# A subcommand left out of the help but read.
+test "with_command_hidden: a debugging command"
+    c @= command(name: "tool", about: "")
+    add_command(c: @c, sub: with_command_hidden(command(name: "debug", about: "")))
+    add_command(c: @c, sub: command(name: "run", about: "runs"))
+    assert help_of(c) == "usage: tool [-h] COMMAND ...\n\nOptions:\n  -h, --help  show this help\n\nCommands:\n  run         runs"
+    assert name_of(subcommand(parse(c, ["debug"]).must()).must()) == "debug"

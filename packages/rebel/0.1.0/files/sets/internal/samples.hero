@@ -1,0 +1,17 @@
+# The functions and the record the tests and the examples of `sets` hand to
+# it: a function value has to be a top-level function, and the face declares
+# nothing a program does not write. No other function here is part of the
+# package.
+
+# Two numbers, an element that is a record, compared by its fields.
+record Pair
+    first: i64
+    second: i64
+
+# A `Pair` of `first` and `second`.
+function pair(first: i64, second: i64) -> Pair
+    return Pair(first: first, second: second)
+
+# Whether `n` is even.
+function is_even(n: i64) -> bool
+    return n % 2 == 0

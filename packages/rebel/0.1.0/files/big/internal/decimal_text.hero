@@ -1,0 +1,194 @@
+# Decimals read from text and written as text: plain, with a point and no
+# exponent; scientific, as the General Decimal Arithmetic and Python's `str`
+# of a `Decimal` write them; and engineering, the exponent a multiple of three.
+
+use big/internal/decimal
+use big/internal/signed
+use big/internal/text
+
+constant INVALID: str
+    "invalid"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# Whether the byte `c` is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# The decimal `s` spells, its exponent at most `limit` either way.
+function parse(s: str, limit: i64) -> decimal.Dec?
+    at: i64 @= 0
+    negative: bool @= false
+
+    if s.len() > 0 && (s[0] == '+' || s[0] == '-')
+        negative @ s[0] == '-'
+        at @ 1
+    digits: [u8] @= []
+    after_point: i64 @= 0
+    seen_point: bool @= false
+
+    while at < s.len() && (is_digit(s[at]) || s[at] == '.')
+        if s[at] == '.'
+            if seen_point
+                return fail(code: INVALID, msg: f"a second `.` at byte {at}")
+            seen_point @ true
+        else
+            digits @ digits.push(s[at])
+
+            if seen_point
+                after_point @ after_point + 1
+        at @ at + 1
+
+    if digits.len() == 0
+        return fail(code: INVALID, msg: "no digit where a decimal was expected")
+    exponent: i64 @= 0
+
+    if at < s.len()
+        if s[at] != 'e' && s[at] != 'E'
+            return fail(code: INVALID, msg: f"byte {at} is not part of a decimal")
+        at @ at + 1
+        exponent_negative: bool @= false
+
+        if at < s.len() && (s[at] == '+' || s[at] == '-')
+            exponent_negative @ s[at] == '-'
+            at @ at + 1
+
+        if at >= s.len()
+            return fail(code: INVALID, msg: "no digit after the exponent's `e`")
+        too_large: bool @= false
+
+        while at < s.len()
+            if !is_digit(s[at])
+                return fail(code: INVALID, msg: f"byte {at} is no digit of the exponent")
+
+            if !too_large
+                exponent @ exponent * 10 + to_i64(s[at] - '0').must()
+                too_large @ exponent > limit
+            at @ at + 1
+
+        if too_large
+            return fail(code: DOES_NOT_FIT, msg: f"the exponent is past {limit}")
+
+        if exponent_negative
+            exponent @ -exponent
+    m = text.magnitude_of(s: digits.validated_bytes().must(), from: 0, base: 10, underscores: false)?
+    return ok(decimal.Dec(unscaled: signed.make(negative: negative, magnitude: m), scale: after_point - exponent))
+
+# `count` zeros.
+function zeros(count: i64) -> str
+    return repeat("0", to_u64(count).must())
+
+# `d` with a point and no exponent.
+function plain(d: decimal.Dec) -> str
+    c = text.format(s: signed.abs(d.unscaled), base: 10)
+    pieces: [str] @= []
+
+    if d.unscaled.negative
+        pieces @ pieces.push("-")
+
+    if d.scale <= 0
+        pieces @ pieces.push(c)
+
+        if d.unscaled.magnitude.len() > 0
+            pieces @ pieces.push(zeros(-d.scale))
+    else if c.len() > d.scale
+        pieces @ pieces.push(c.slice(from: 0, to: c.len() - d.scale))
+        pieces @ pieces.push(".")
+        pieces @ pieces.push(c.slice(from: c.len() - d.scale, to: c.len()))
+    else
+        pieces @ pieces.push("0.")
+        pieces @ pieces.push(zeros(d.scale - c.len()))
+        pieces @ pieces.push(c)
+    return pieces.join("")
+
+# `a` modulo 3, from 0 to 2 whatever the sign of `a`.
+function mod3(a: i64) -> i64
+    r = a % 3
+
+    if r < 0
+        return r + 3
+    return r
+
+# `d` as the General Decimal Arithmetic writes it: plain where the exponent is
+# 0 or less and the number not below one millionth, else with an exponent,
+# one digit before the point, or one to three where `engineering`.
+function scientific(d: decimal.Dec, engineering: bool) -> str
+    c = text.format(s: signed.abs(d.unscaled), base: 10)
+    exponent = -d.scale
+    left = exponent + c.len()
+    dot: i64 @= 1
+
+    if exponent <= 0 && left > -6
+        dot @ left
+    else if engineering && d.unscaled.magnitude.len() == 0
+        dot @ mod3(left + 1) - 1
+    else if engineering
+        dot @ mod3(left - 1) + 1
+    pieces: [str] @= []
+
+    if d.unscaled.negative
+        pieces @ pieces.push("-")
+
+    if dot <= 0
+        pieces @ pieces.push("0.")
+        pieces @ pieces.push(zeros(-dot))
+        pieces @ pieces.push(c)
+    else if dot >= c.len()
+        pieces @ pieces.push(c)
+        pieces @ pieces.push(zeros(dot - c.len()))
+    else
+        pieces @ pieces.push(c.slice(from: 0, to: dot))
+        pieces @ pieces.push(".")
+        pieces @ pieces.push(c.slice(from: dot, to: c.len()))
+
+    if left != dot
+        shown = left - dot
+
+        if shown >= 0
+            pieces @ pieces.push(f"E+{shown}")
+        else
+            pieces @ pieces.push(f"E{shown}")
+    return pieces.join("")
+
+## Tests
+
+# The decimal `u` over ten to the `scale`.
+function dec(u: i64, scale: i64) -> decimal.Dec
+    return decimal.Dec(unscaled: signed.of_int(u), scale: scale)
+
+test "parse: a point at either end, an exponent of each sign, a zero, and what fails"
+    assert parse(s: "1.50", limit: 999999).must() == dec(u: 150, scale: 2)
+    assert parse(s: "-.5", limit: 999999).must() == dec(u: -5, scale: 1)
+    assert parse(s: "5.", limit: 999999).must() == dec(u: 5, scale: 0)
+    assert parse(s: "1.50e2", limit: 999999).must() == dec(u: 150, scale: 0)
+    assert parse(s: "15E-3", limit: 999999).must() == dec(u: 15, scale: 3)
+    assert parse(s: "-0.0", limit: 999999).must() == dec(u: 0, scale: 1)
+    assert parse(s: "1e999999", limit: 999999).must() == dec(u: 1, scale: -999999)
+    assert parse(s: "1e1000000", limit: 999999).is_err()
+    assert parse(s: "", limit: 999999).is_err()
+    assert parse(s: ".", limit: 999999).is_err()
+    assert parse(s: "1.2.3", limit: 999999).is_err()
+    assert parse(s: "1e", limit: 999999).is_err()
+    assert parse(s: "1e+", limit: 999999).is_err()
+    assert parse(s: " 1", limit: 999999).is_err()
+    assert parse(s: "NaN", limit: 999999).is_err()
+    assert parse(s: "1_0", limit: 999999).is_err()
+
+test "plain: a point inside, zeros before, a negative scale, and zero at each scale"
+    assert plain(dec(u: 150, scale: 2)) == "1.50"
+    assert plain(dec(u: -5, scale: 3)) == "-0.005"
+    assert plain(dec(u: 15, scale: -2)) == "1500"
+    assert plain(dec(u: 0, scale: 2)) == "0.00"
+    assert plain(dec(u: 0, scale: -3)) == "0"
+    assert plain(dec(u: 7, scale: 0)) == "7"
+
+test "scientific: plain, past one millionth, a positive exponent, and engineering"
+    assert scientific(d: dec(u: 15, scale: 4), engineering: false) == "0.0015"
+    assert scientific(d: dec(u: 1, scale: 7), engineering: false) == "1E-7"
+    assert scientific(d: dec(u: 1, scale: 7), engineering: true) == "100E-9"
+    assert scientific(d: dec(u: 123, scale: -3), engineering: false) == "1.23E+5"
+    assert scientific(d: dec(u: 123, scale: -3), engineering: true) == "123E+3"
+    assert scientific(d: dec(u: 0, scale: -3), engineering: false) == "0E+3"
+    assert scientific(d: dec(u: 0, scale: -4), engineering: true) == "0.00E+6"
+    assert scientific(d: dec(u: -1, scale: 6), engineering: false) == "-0.000001"

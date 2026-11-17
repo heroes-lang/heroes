@@ -1,0 +1,186 @@
+# What each byte is to a URL: the classes RFC 3986 § 2 names, the set of
+# bytes each part of a URL holds as itself, and the few helpers every reader
+# of a URL shares, a bounded search and a text shown in a message.
+#
+# Every class here holds ASCII bytes alone, so a byte any class accepts is a
+# whole character, and a run of them can be cut out of a text without
+# splitting one.
+
+# The code of a text that is not what the function reads.
+constant INVALID: str
+    "invalid"
+
+# The code of escaped bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# Ends the program saying `msg`: the caller broke a precondition it could
+# have checked, one no escape can mend.
+function abort_with(msg: str)
+    stop: ()? = fail(code: INVALID, msg: msg)
+    stop.must()
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` is a hexadecimal digit, of either case.
+function is_hex(b: u8) -> bool
+    return is_digit(b) || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F'
+
+# The value of the hexadecimal digit `b`, 0 to 15. `b` is one: `is_hex` says
+# so first.
+function hex_value(b: u8) -> u8
+    if is_digit(b)
+        return b - '0'
+
+    if b >= 'a'
+        return b - 'a' + 10
+    return b - 'A' + 10
+
+# The upper-case hexadecimal digit of `n`, which is 0 to 15.
+function hex_digit(n: u8) -> u8
+    if n < 10
+        return '0' + n
+    return 'A' + n - 10
+
+# Whether `b` is unreserved: a letter, a digit, "-", ".", "_" or "~", which
+# mean the same escaped or not (RFC 3986 § 2.3).
+function is_unreserved(b: u8) -> bool
+    return is_letter(b) || is_digit(b) || b == '-' || b == '.' || b == '_' || b == '~'
+
+# Whether `b` is a sub-delimiter, "!$&'()*+,;=" (RFC 3986 § 2.2).
+function is_sub_delim(b: u8) -> bool
+    return b == '!' || b == '$' || b == '&' || b == '\'' || b == '(' || b == ')' || b == '*' || b == '+' || b == ',' || b == ';' || b == '='
+
+# Whether `b` is a general delimiter, ":/?#[]@" (RFC 3986 § 2.2).
+function is_gen_delim(b: u8) -> bool
+    return b == ':' || b == '/' || b == '?' || b == '#' || b == '[' || b == ']' || b == '@'
+
+# Whether a path holds `b` as itself: a segment's characters and "/".
+function in_path(b: u8) -> bool
+    return is_unreserved(b) || is_sub_delim(b) || b == ':' || b == '@' || b == '/'
+
+# Whether a query or a fragment holds `b` as itself: a path's, and "?".
+function in_query(b: u8) -> bool
+    return in_path(b) || b == '?'
+
+# Whether a user name and password, read together, hold `b` as itself.
+function in_userinfo(b: u8) -> bool
+    return is_unreserved(b) || is_sub_delim(b) || b == ':'
+
+# Whether a host name, a user name or a password is written with `b` as
+# itself: the unreserved bytes and the sub-delimiters, so a ":" is escaped.
+function in_name(b: u8) -> bool
+    return is_unreserved(b) || is_sub_delim(b)
+
+# Whether a fragment is written with `b` as itself where it is data: an
+# unreserved byte, "/" or "?".
+function in_fragment_data(b: u8) -> bool
+    return is_unreserved(b) || b == '/' || b == '?'
+
+# Whether `b` may stand as itself somewhere in a URL.
+function in_url(b: u8) -> bool
+    return is_unreserved(b) || is_sub_delim(b) || is_gen_delim(b)
+
+# Whether `name` is a scheme: a letter, then letters, digits, "+", "-" and
+# "." (RFC 3986 § 3.1).
+function is_scheme(name: str) -> bool
+    if name.len() == 0 || !is_letter(name[0])
+        return false
+    at: i64 @= 1
+
+    while at < name.len()
+        b = name[at]
+
+        if !(is_letter(b) || is_digit(b) || b == '+' || b == '-' || b == '.')
+            return false
+        at @ at + 1
+
+    return true
+
+# Where `b` first stands in `s` between byte `from` and byte `to`, `to`
+# excluded; `to` where it stands nowhere there.
+function first_of(s: str, b: u8, from: i64, to: i64) -> i64
+    at: i64 @= from
+
+    while at < to
+        if s[at] == b
+            return at
+        at @ at + 1
+
+    return to
+
+# The width in bytes of the character whose first byte is `b`.
+function char_width(b: u8) -> i64
+    if b < 0x80
+        return 1
+
+    if b < 0xe0
+        return 2
+
+    if b < 0xf0
+        return 3
+    return 4
+
+# `s` as a message shows it: in quotes, or as its length where it is longer
+# than 200 bytes or holds a control character, which a message must not
+# carry into a log.
+function shown(s: str) -> str
+    if s.len() > 200
+        return f"a text of {s.len()} bytes"
+
+    for c in s.chars()
+        if c[0] < 0x20 || c[0] == 0x7f
+            return f"a text of {s.len()} bytes"
+
+    return f"\"{s}\""
+
+## Tests
+
+test "the byte classes: letters, digits, hexadecimal digits, unreserved"
+    assert is_letter('a') && is_letter('Z') && !is_letter('0') && !is_letter('_')
+    assert is_digit('0') && is_digit('9') && !is_digit('a')
+    assert is_hex('0') && is_hex('f') && is_hex('F') && !is_hex('g') && !is_hex('G')
+    assert is_unreserved('~') && is_unreserved('-') && !is_unreserved('%') && !is_unreserved(' ')
+    assert !is_unreserved(0x80) && !is_unreserved(0xff) && !is_unreserved(0)
+
+test "hex_value and hex_digit: both ends, and both cases"
+    assert hex_value('0') == 0 && hex_value('9') == 9
+    assert hex_value('a') == 10 && hex_value('F') == 15
+    assert hex_digit(0) == '0' && hex_digit(9) == '9' && hex_digit(10) == 'A' && hex_digit(15) == 'F'
+
+test "the sets of the parts: a path, a query, a name, a URL"
+    assert in_path('/') && in_path(':') && in_path('@') && !in_path('?') && !in_path('#')
+    assert in_query('?') && in_query('/') && !in_query('#') && !in_query('[')
+    assert in_userinfo(':') && !in_userinfo('@') && !in_name(':')
+    assert in_fragment_data('/') && in_fragment_data('?') && !in_fragment_data('&')
+    assert in_url('[') && in_url('#') && !in_url(' ') && !in_url('"') && !in_url('%')
+
+test "is_scheme: empty, one letter, a digit first, and the three marks"
+    assert !is_scheme("")
+    assert is_scheme("h")
+    assert is_scheme("svn+ssh") && is_scheme("a.b-c")
+    assert !is_scheme("1http") && !is_scheme("+a") && !is_scheme("a b") && !is_scheme("é")
+
+test "first_of: at the start, inside the bounds, outside them, and nowhere"
+    assert first_of(s: "a/b/c", b: '/', from: 0, to: 5) == 1
+    assert first_of(s: "a/b/c", b: '/', from: 2, to: 5) == 3
+    assert first_of(s: "a/b/c", b: '/', from: 2, to: 3) == 3
+    assert first_of(s: "", b: '/', from: 0, to: 0) == 0
+
+test "char_width: one byte, two, three and four"
+    assert char_width('a') == 1
+    assert char_width("é"[0]) == 2
+    assert char_width("€"[0]) == 3
+    assert char_width("𝄞"[0]) == 4
+
+test "shown: a short text, a long one, and one holding a control character"
+    assert shown("") == "\"\""
+    assert shown("é") == "\"é\""
+    assert shown(repeat("a", 201)) == "a text of 201 bytes"
+    assert shown("a\nb") == "a text of 3 bytes"

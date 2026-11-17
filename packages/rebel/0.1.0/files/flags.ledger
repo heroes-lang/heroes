@@ -1,0 +1,471 @@
+# The ledger of `flags`: what Go's `flag` (Go 1.27), Python's `argparse`
+# (3.15) and Rust's clap (4.6.7, with clap_complete and clap_mangen) let a
+# program do with its arguments, one block per capability, and what Rebel
+# answers. Rust's standard library parses no arguments: it hands them over,
+# `std::env::args` and `args_os`, which are the language's own `args()` and
+# `args_checked()`; the author asked on 2026-11-16 that `flags` be as complete
+# as clap, so clap stands on the `rust` lines. The lists are this machine's,
+# 2026-11-16: `go doc -all flag`; `dir(argparse)`,
+# `dir(argparse.ArgumentParser)` and the signatures `inspect.signature`
+# prints; and the names of clap_builder 4.6.7's public functions and enum
+# cases in the cargo registry (`Command`, `Arg`, `ArgGroup`, `ArgMatches`,
+# `ValueHint`, `ErrorKind`, `ValueSource`), names only. Every expected value of
+# the package's tests that Go or Python answers was observed from them the
+# same day; clap was not run.
+
+capability flags/command  a declaration of what a program takes, held as a value
+  heroes  flags.Command, flags.command, flags.add
+  go      NewFlagSet, FlagSet, FlagSet.Init, FlagSet.Name, CommandLine
+  rust    clap::Command::new, Command::name, Command::about, Command::author, Command::arg, Command::args, Command::bin_name, Command::display_name, Command::no_binary_name, Arg::new, Arg::id
+  python  ArgumentParser, ArgumentParser(prog=, description=)
+  note    no declaration is held anywhere but in the program's own value: Go's top-level functions write `CommandLine`, a mutable global the language has none of. The arguments list leaves the program's name out, clap's `no_binary_name`
+
+capability flags/flag  an option of no value, on or off
+  heroes  flags.flag, flags.is_on
+  go      Bool, BoolVar, FlagSet.Bool, FlagSet.BoolVar
+  rust    clap::ArgAction::SetTrue, ArgAction::SetFalse, ArgMatches::get_flag, Arg::short, Arg::long
+  python  add_argument(action="store_true"), add_argument(action="store_false"), add_argument(action="store_const", const=)
+  note    Go also reads `-v=false`; here a flag takes no value, as argparse and clap refuse one, and turning one off is `with_negation`'s. A flag that stands for a value is `is_on` and the program's own `if`
+
+capability flags/negation  a flag turned off again by `--no-` and its name
+  heroes  flags.with_negation
+  go      -
+  rust    clap::Arg::overrides_with, Arg::overrides_with_all
+  python  BooleanOptionalAction
+  note    the last of the two given wins, as argparse's does and as clap's two arguments that override each other do
+
+capability flags/count  a flag given several times, counted
+  heroes  flags.count_of
+  go      BoolFunc, FlagSet.BoolFunc
+  rust    clap::ArgAction::Count, ArgMatches::get_count
+  python  add_argument(action="count")
+  note    `-vvv` counts 3, as argparse counts it; a negation sets the count back to 0
+
+capability flags/option  an option taking a text value, `--name value`, `--name=value`, `-n value`, `-nvalue`, `-n=value`
+  heroes  flags.option, flags.value_of
+  go      String, StringVar, FlagSet.String, FlagSet.StringVar
+  rust    clap::ArgAction::Set, Arg::value_name, Arg::value_names, ArgMatches::get_one, ArgMatches::get_raw, Arg::allow_hyphen_values, Command::allow_hyphen_values
+  python  add_argument(action="store"), add_argument(metavar=), add_argument(dest=)
+  note    the value is the next argument whatever it is, as Go takes it and clap's `allow_hyphen_values`, so `--offset -5` reads `-5`; argparse refuses a value that opens with `-` and is not a number. `-n=value` reads `value`, as all three read it. An argument is read by its long name, else its short one: no `dest` of another name. Given twice, the last wins
+
+capability flags/repeated  every value of an option given many times, in order
+  heroes  flags.values_of
+  go      Func, FlagSet.Func
+  rust    clap::ArgAction::Append, ArgMatches::get_many, ArgMatches::get_occurrences, ArgMatches::get_raw_occurrences
+  python  add_argument(action="append"), add_argument(action="extend"), add_argument(action="append_const")
+  note    every option keeps every value given; `value_of` answers the last, so no option is declared repeated or not
+
+capability flags/integer  an option's value read as an integer, refused at the parse where it is not one
+  heroes  flags.Kind, flags.with_kind, flags.int_of
+  go      Int, IntVar, Int64, Int64Var, Uint, UintVar, Uint64, Uint64Var, FlagSet.Int, FlagSet.IntVar, FlagSet.Int64, FlagSet.Int64Var, FlagSet.Uint, FlagSet.UintVar, FlagSet.Uint64, FlagSet.Uint64Var
+  rust    clap::value_parser!(i64), clap::value_parser!(u64)
+  python  add_argument(type=int)
+  note    read as the language writes an integer (`numbers.parse_int_literal`): Go reads `0x10` and `1_000` as these do, and `007` as octal, which this refuses as the language does; argparse's `int` reads `1_000` and `007` and refuses `0x10`. An unsigned option is `with_range` from 0
+
+capability flags/range  an integer's value held between two bounds
+  heroes  flags.with_range
+  go      -
+  rust    clap::RangedI64ValueParser, clap::RangedU64ValueParser, ValueParser::range
+  python  -
+  note    both bounds included; a value outside fails `invalid`, naming them
+
+capability flags/float  an option's value read as a decimal number
+  heroes  flags.Kind, flags.with_kind, flags.float_of
+  go      Float64, Float64Var, FlagSet.Float64, FlagSet.Float64Var
+  rust    clap::value_parser!(f64)
+  python  add_argument(type=float)
+  note    `inf` and `nan` are read, as Go and Python read them
+
+capability flags/duration  an option's value read as a length of time
+  heroes  refused: `flags` stands on no `time` (README A1); the value is read as text and given to `time.parse_duration`, whose failure the program reports
+  go      Duration, DurationVar, FlagSet.Duration, FlagSet.DurationVar
+  rust    -
+  python  -
+  note    -
+
+capability flags/choices  an option whose value is one of a list of words
+  heroes  flags.Kind
+  go      -
+  rust    clap::PossibleValue, PossibleValuesParser, Arg::value_parser([..]), Arg::ignore_case, Arg::hide_possible_values
+  python  add_argument(choices=)
+  note    the words are matched exactly, case included; the message lists them, as argparse's and clap's do; the help always lists them
+
+capability flags/converted  an option's value read by a function of the program's own while the arguments are parsed
+  heroes  refused: a converter run inside the parse would need a function value per argument kept in the declaration, and a failure of it would need its own code; the program reads `values_of` and converts each in its own code, where its failure is its own
+  go      Var, FlagSet.Var, TextVar, FlagSet.TextVar, Value, Getter
+  rust    clap::Arg::value_parser, ValueParser, TypedValueParser, ValueParserFactory, value_parser!(PathBuf), value_parser!(OsString)
+  python  add_argument(type=), register
+  note    -
+
+capability flags/default  the value answered where an argument is not given, and whether it was given
+  heroes  flags.with_default, flags.is_given
+  go      the `value` argument of every defining function, Flag.DefValue, NFlag, FlagSet.NFlag, Visit, FlagSet.Visit
+  rust    clap::Arg::default_value, Arg::default_values, ArgMatches::contains_id
+  python  add_argument(default=), set_defaults, get_default, ArgumentParser(argument_default=)
+  note    a default is checked against the argument's kind when it is declared, and a wrong one aborts there
+
+capability flags/environment  a value read from an environment variable where the command line leaves it out
+  heroes  flags.with_env, flags.parse_with_env, flags.parse_args_with_env
+  go      -
+  rust    clap::Arg::env, Arg::hide_env, Arg::hide_env_values
+  python  -
+  note    the environment is handed to the parse, `os.env_all()`'s answer, so that the parse reads no global; a flag's variable is read as a boolean word, `1`, `true`, `yes`, `on`, `y`, `t` or their six opposites and the empty text, in any case; the help always shows the variable's name, never its value
+
+capability flags/source  where an argument's value came from
+  heroes  flags.source_of, flags.Source
+  go      -
+  rust    clap::ArgMatches::value_source, ValueSource::CommandLine, ValueSource::EnvVariable, ValueSource::DefaultValue
+  python  -
+  note    `absent` is a fourth case where clap answers none
+
+capability flags/required  an option a parse refuses to go without
+  heroes  flags.with_required
+  go      -
+  rust    clap::Arg::required, ErrorKind::MissingRequiredArgument
+  python  add_argument(required=)
+  note    every missing argument is named in one message, as argparse and clap name them; a value from the environment counts
+
+capability flags/positional  the arguments that are not options, by name and by how many
+  heroes  flags.positional, flags.with_arity, flags.Arity
+  go      Arg, Args, NArg, FlagSet.Arg, FlagSet.Args, FlagSet.NArg
+  rust    clap::Arg::index, Arg::num_args on a positional, Command::allow_missing_positional, Arg::allow_negative_numbers, Command::allow_negative_numbers
+  python  add_argument(nargs=), ONE_OR_MORE, OPTIONAL, ZERO_OR_MORE
+  note    each positional takes as many as it may while those after it can take their fewest: `A B* C` given 1 2 3 4 is 1, [2 3], 4, and `A? B` given x is none, x, as argparse answers. An argument reading as a negative number is a positional where no short option is a digit, argparse's rule
+
+capability flags/option-of-several  one option taking several values at once, `--point 1 2`
+  heroes  refused: an option takes one value each time it is given, so every value stands right after its option and no positional can be taken for one; several values are the option given several times, or one value `with_delimiter` splits
+  go      -
+  rust    clap::Arg::num_args on an option, Arg::number_of_values, Arg::value_terminator, ErrorKind::TooManyValues, ErrorKind::TooFewValues, ErrorKind::WrongNumberOfValues
+  python  add_argument(nargs=) on an option
+  note    -
+
+capability flags/delimiter  one value split into several at a delimiter, `--tag a,b`
+  heroes  flags.with_delimiter
+  go      -
+  rust    clap::Arg::value_delimiter, Command::dont_delimit_trailing_values
+  python  -
+  note    each piece is checked as the argument's kind reads a value; an empty piece is a value
+
+capability flags/missing-value  an option given alone taking a declared value, `--color` for `--color=always`
+  heroes  flags.with_missing_value
+  go      -
+  rust    clap::Arg::default_missing_value, Arg::default_missing_values, Arg::require_equals, ErrorKind::NoEquals
+  python  add_argument(nargs="?", const=)
+  note    such an option takes its value only after `=` or joined to its short name, never from the next argument, as clap's `require_equals` reads it
+
+capability flags/end-of-options  `--` ending the options, and options among the positionals
+  heroes  flags.parse
+  go      FlagSet.Parse
+  rust    clap::Command::try_get_matches_from
+  python  parse_args, parse_intermixed_args, parse_known_intermixed_args
+  note    options and positionals stand in any order, as argparse, clap and GNU read them; Go stops at the first positional, which is `with_options_first`
+
+capability flags/options-first  every argument from the first positional on taken as a positional, for a command that runs another
+  heroes  flags.with_options_first
+  go      FlagSet.Parse
+  rust    clap::Command::trailing_var_arg, Arg::trailing_var_arg, Arg::last
+  python  REMAINDER
+  note    clap's `last`, a positional only after `--`, is a program's own reading of `--`: refused as a form apart
+
+capability flags/parse  the arguments read against the declaration, into an answer
+  heroes  flags.parse, flags.Found
+  go      Parse, FlagSet.Parse, Parsed, FlagSet.Parsed
+  rust    clap::Command::try_get_matches_from, Command::try_get_matches_from_mut, ArgMatches
+  python  parse_args, Namespace
+  note    a `Found` exists only after a parse, so nothing asks whether one was made
+
+capability flags/program-arguments  the program's own arguments read
+  heroes  flags.parse_args, flags.parse_args_with_env, built-in args, built-in args_checked
+  go      -
+  rust    std::env::args, std::env::args_os, std::env::Args, std::env::ArgsOs, clap::Command::try_get_matches, ErrorKind::InvalidUtf8
+  python  parse_args() with no list
+  note    an argument that is not UTF-8 fails `not_text`, where `args()` would abort
+
+capability flags/parse-known  the options the declaration does not name kept rather than refused
+  heroes  flags.parse_known, flags.unknown_of
+  go      -
+  rust    clap::Command::ignore_errors
+  python  parse_known_args
+  note    a cluster of short options holding an unknown character is kept whole and none of its flags counted, so what is passed on is what was written; clap's `ignore_errors` drops every error, which no message then names
+
+capability flags/subcommands  words choosing commands of their own, nested to any depth, each with its own arguments and help
+  heroes  flags.add_command, flags.subcommand, flags.name_of
+  go      -
+  rust    clap::Command::subcommand, Command::subcommands, Command::subcommand_required, ArgMatches::subcommand, ArgMatches::subcommand_name, ArgMatches::subcommand_matches, ErrorKind::MissingSubcommand, ErrorKind::InvalidSubcommand
+  python  add_subparsers, PARSER
+  note    a command with subcommands requires one, as clap's `subcommand_required`, unless `with_external_commands`; its own options stand before the name and the subcommand's after it, as argparse and clap read them; an unknown name is told with the nearest declared one
+
+capability flags/command-alias  a subcommand chosen by another word too
+  heroes  flags.with_command_alias
+  go      -
+  rust    clap::Command::alias, Command::aliases, Command::visible_alias, Command::visible_aliases
+  python  add_parser(aliases=)
+  note    the help lists a subcommand's aliases after what it says of itself
+
+capability flags/flag-subcommand  a subcommand chosen by an option's spelling, pacman's `-S`
+  heroes  refused: a subcommand is a word; an option chooses nothing but itself, so `-S` is a flag the program reads
+  go      -
+  rust    clap::Command::short_flag, Command::long_flag, Command::short_flag_alias, Command::short_flag_aliases, Command::long_flag_alias, Command::long_flag_aliases, Command::visible_short_flag_alias, Command::visible_short_flag_aliases, Command::visible_long_flag_alias, Command::visible_long_flag_aliases
+  python  -
+  note    -
+
+capability flags/external  a word naming no subcommand kept, with what follows it, for another program
+  heroes  flags.with_external_commands, flags.external_of
+  go      -
+  rust    clap::Command::allow_external_subcommands, Command::external_subcommand_value_parser
+  python  -
+  note    the word and the arguments after it are kept unread, as `git` hands `git foo` to `git-foo`
+
+capability flags/hidden-subcommand  a subcommand read but left out of the help and the completions
+  heroes  flags.with_command_hidden
+  go      -
+  rust    clap::Command::hide
+  python  -
+  note    -
+
+capability flags/exclusive  options of which at most one, or exactly one, may be given
+  heroes  flags.add_exclusive
+  go      -
+  rust    clap::ArgGroup, ArgGroup::args, ArgGroup::multiple, ArgGroup::required, Arg::group, Arg::groups, Arg::conflicts_with, Arg::conflicts_with_all, Arg::exclusive, ArgGroup::conflicts_with, ArgGroup::conflicts_with_all, ErrorKind::ArgumentConflict
+  python  add_mutually_exclusive_group
+  note    two options that conflict are a group of two; clap's `exclusive`, an argument that stands alone, is a group of it and every other
+
+capability flags/requirement  an option that needs another given with it
+  heroes  flags.add_requirement
+  go      -
+  rust    clap::Arg::requires, Arg::requires_all, ArgGroup::requires, ArgGroup::requires_all
+  python  -
+  note    refused with a message naming both; a value from the environment counts as given, a default does not
+
+capability flags/conditional-requirement  an argument needed, or defaulted, only where another holds a given value
+  heroes  refused: a rule over the value of another argument is the program's own `if` after the parse, where its message is its own, with `usage_of` for the usage
+  go      -
+  rust    clap::Arg::requires_if, Arg::requires_ifs, Arg::required_if_eq, Arg::required_if_eq_all, Arg::required_if_eq_any, Arg::required_unless_present, Arg::required_unless_present_all, Arg::required_unless_present_any, Arg::default_value_if, Arg::default_value_ifs, Arg::default_values_if, Arg::default_values_ifs, Command::subcommand_negates_reqs, Command::args_conflicts_with_subcommands, Command::subcommand_precedence_over_arg
+  python  -
+  note    `required_unless_present_any` of two is `add_exclusive` of the two, required
+
+capability flags/global  an option of a command read at every depth of its subcommands
+  heroes  refused: an option stands before the subcommand's name or after it in the subcommand's own list, so that where it stands says whose it is; a program that wants one everywhere adds it to each command with a function of its own
+  go      -
+  rust    clap::Arg::global
+  python  -
+  note    -
+
+capability flags/alias  an option named by another long name too
+  heroes  flags.with_alias
+  go      -
+  rust    clap::Arg::alias, Arg::aliases, Arg::visible_alias, Arg::visible_aliases
+  python  add_argument with several long names
+  note    the help lists the aliases; the unknown option's message may name one as the nearest
+
+capability flags/short-alias  an option named by another short name too
+  heroes  flags.with_short_alias
+  go      -
+  rust    clap::Arg::short_alias, Arg::short_aliases, Arg::visible_short_alias, Arg::visible_short_aliases
+  python  add_argument with several short names
+  note    -
+
+capability flags/help  a help page made from the declaration, and the help asked for
+  heroes  flags.help_of, flags.help_text, flags.is_help, flags.without_help, flags.with_epilog
+  go      PrintDefaults, FlagSet.PrintDefaults, Usage, FlagSet.Usage, ErrHelp, UnquoteUsage
+  rust    clap::Command::render_help, Command::print_help, Command::write_help, Arg::help, Command::disable_help_flag, Command::after_help, Command::before_help, ErrorKind::DisplayHelp
+  python  format_help, print_help, ArgumentParser(add_help=, epilog=), add_argument(help=), HelpFormatter, RawDescriptionHelpFormatter, RawTextHelpFormatter, ArgumentDefaultsHelpFormatter, MetavarTypeHelpFormatter
+  note    one layout: what a command and an argument say is written as given, line breaks kept, and the defaults, the words of a choice, a range, a variable and the aliases are always shown. The parse stops at the first `-h` as all three do; a failure before it is answered first, Go's order, where argparse lets the help win
+
+capability flags/help-on-empty  no argument at all answered with the help
+  heroes  flags.with_help_on_empty
+  go      -
+  rust    clap::Command::arg_required_else_help, ErrorKind::DisplayHelpOnMissingArgumentOrSubcommand
+  python  -
+  note    -
+
+capability flags/long-help  a second, longer help beside the short one
+  heroes  refused: one help, whose every line is what the program wrote; two would say one argument two ways
+  go      -
+  rust    clap::Arg::long_help, Command::long_about, Command::print_long_help, Command::render_long_help, Command::write_long_help, Command::after_long_help, Command::before_long_help, Arg::hide_long_help, Arg::hide_short_help
+  python  -
+  note    -
+
+capability flags/help-layout  the help's layout tuned: widths, order, wrapping, a template
+  heroes  refused: the help is the same bytes on every terminal, its arguments in the order declared, its column the widest name's; a terminal's width would make it differ from one reader to the next
+  go      -
+  rust    clap::Command::term_width, Command::max_term_width, Command::next_line_help, Arg::next_line_help, Arg::display_order, Command::display_order, Command::next_display_order, Command::flatten_help, Command::dont_collapse_args_in_usage, Command::help_expected, Command::subcommand_help_heading, Command::subcommand_value_name, Arg::hide_default_value
+  python  -
+  note    -
+
+capability flags/help-subcommand  a subcommand `help` showing another's help
+  heroes  refused: `-h` after a subcommand's name shows its help; a word `help` would take a name from the program's own subcommands
+  go      -
+  rust    clap::Command::disable_help_subcommand
+  python  -
+  note    -
+
+capability flags/usage  the usage line alone
+  heroes  flags.usage_of
+  go      -
+  rust    clap::Command::render_usage
+  python  format_usage, print_usage
+  note    a failure's message carries it on its second line, as all three print it
+
+capability flags/usage-written  a usage or a help written by the program instead of the one derived
+  heroes  refused: a usage written by hand falls out of step with what the parse reads; the one derived from the declaration cannot
+  go      -
+  rust    clap::Command::override_usage, Command::override_help, Command::help_template
+  python  ArgumentParser(usage=)
+  note    -
+
+capability flags/hidden  an argument read but left out of the help, the usage and the completions
+  heroes  flags.with_hidden
+  go      -
+  rust    clap::Arg::hide
+  python  SUPPRESS
+  note    -
+
+capability flags/sections  options listed in the help under headings of their own
+  heroes  flags.with_section
+  go      -
+  rust    clap::Arg::help_heading, Command::next_help_heading
+  python  add_argument_group
+  note    -
+
+capability flags/version  an option answering the program's version
+  heroes  flags.with_version, flags.is_version, flags.version_text
+  go      -
+  rust    clap::Command::version, Command::long_version, Command::render_version, Command::render_long_version, Command::disable_version_flag, Command::propagate_version, ArgAction::Version, ErrorKind::DisplayVersion
+  python  add_argument(action="version")
+  note    `-V` and `--version`, clap's spellings; the parse stops there and prints nothing; the line is the command's path and its version. A subcommand answers only a version of its own: clap's `propagate_version` is `with_version` on each
+
+capability flags/errors  a failure saying what was wrong, with the usage
+  heroes  flags.parse
+  go      FlagSet.Parse's error, ContinueOnError
+  rust    clap::Error, ErrorKind::InvalidValue, ErrorKind::UnknownArgument, ErrorKind::ValueValidation, ErrorKind::Io, ErrorKind::Format, Error::kind, ErrorKind::as_str
+  python  ArgumentError, ArgumentTypeError, ArgumentParser(exit_on_error=False), ArgumentParser(suggest_on_error=)
+  note    one code, `invalid`; the first line of the message says what was wrong, naming the declared name nearest to an unknown option or command where it is at most two characters away, as argparse 3.15 and clap suggest one
+
+capability flags/exit-on-error  the parse printing its failure and ending the program
+  heroes  refused: a parse never prints and never ends the program; the caller prints the message and calls `exit` with the code it chooses
+  go      ExitOnError, PanicOnError, ErrorHandling, FlagSet.ErrorHandling, Output, FlagSet.Output, SetOutput, FlagSet.SetOutput
+  rust    clap::Command::get_matches, Command::get_matches_from, Command::get_matches_mut, Error::exit, Command::error
+  python  error, exit, ArgumentParser(exit_on_error=True)
+  note    -
+
+capability flags/abbreviation  a long option or a subcommand named by a prefix of it
+  heroes  refused: a prefix that names one option today names two once an option is added, and a script that worked stops; Go reads none
+  go      -
+  rust    clap::Command::infer_long_args, Command::infer_subcommands
+  python  ArgumentParser(allow_abbrev=)
+  note    -
+
+capability flags/completions  shell completions for bash, zsh and fish made from the declaration
+  heroes  flags.completion_of, flags.Shell
+  go      -
+  rust    clap_complete::generate, clap_complete::Shell::Bash, Shell::Zsh, Shell::Fish, ValueHint::FilePath, ValueHint::AnyPath, ValueHint::Unknown
+  python  -
+  note    a script finds the command chosen at any depth, skipping each option's value, and offers options, subcommands, a choice's words, or files where a value is text. Run on this machine on 2026-11-16 in bash 3.2 and zsh 5.9 against a declaration of three levels; fish was not on the machine, its script unrun
+
+capability flags/completions-other  completions for Elvish and PowerShell, and values hinted as directories, hosts, users, commands or addresses
+  heroes  pending
+  go      -
+  rust    clap_complete::Shell::Elvish, Shell::PowerShell, Arg::value_hint, ValueHint::DirPath, ValueHint::ExecutablePath, ValueHint::CommandName, ValueHint::CommandString, ValueHint::CommandWithArguments, ValueHint::Username, ValueHint::Hostname, ValueHint::Url, ValueHint::EmailAddress, ValueHint::Other
+  python  -
+  note    -
+
+capability flags/man-page  a manual page in roff made from the declaration
+  heroes  pending
+  go      -
+  rust    clap_mangen::Man
+  python  -
+  note    -
+
+capability flags/derive  a declaration written as a record's fields, with attributes
+  heroes  refused: clap's derive is a macro, and the language has no macro and no reflection; a declaration is built by the functions of this package and read by name
+  go      -
+  rust    clap::Parser, clap::Args, clap::Subcommand, clap::ValueEnum, #[derive(Parser)], #[arg], #[command]
+  python  -
+  note    -
+
+capability flags/multicall  one program answering under several names, busybox's way
+  heroes  refused: the program's name is not among the arguments `args()` gives; a program reading its own name chooses a command itself and parses the rest with it
+  go      -
+  rust    clap::Command::multicall
+  python  -
+  note    -
+
+capability flags/argument-files  arguments read from a file named by an argument, `@args.txt`
+  heroes  refused: `flags` reads no file; a program reads the file and adds its words to the list it parses
+  go      -
+  rust    -
+  python  ArgumentParser(fromfile_prefix_chars=), convert_arg_line_to_args
+  note    -
+
+capability flags/prefix  options opened by another character than `-`
+  heroes  refused: one convention, POSIX's and GNU's `-` and `--`, which every command a user knows writes
+  go      -
+  rust    -
+  python  ArgumentParser(prefix_chars=)
+  note    -
+
+capability flags/file-argument  an argument opened as a file while the arguments are read
+  heroes  refused: a parse touches no disk; the program opens what the value names with `fs`, and reports its own failure
+  go      -
+  rust    -
+  python  FileType
+  note    -
+
+capability flags/set  a value written into the parse's answer by the program
+  heroes  refused: the answer is what the arguments said; a value the program decides is the program's own binding
+  go      Set, FlagSet.Set
+  rust    clap::ArgMatches::remove_one, ArgMatches::remove_many, ArgMatches::remove_occurrences, ArgMatches::try_clear_id
+  python  -
+  note    -
+
+capability flags/inspect  the declared arguments looked up and walked
+  heroes  refused: a declaration is the program's own value, built by its own code, which knows what it declared; `help_of` writes it out
+  go      Lookup, FlagSet.Lookup, VisitAll, FlagSet.VisitAll, Flag
+  rust    clap::Command::get_arguments, Command::get_opts, Command::get_positionals, Command::get_subcommands, Command::find_subcommand, Command::get_groups, Command::has_subcommands, Arg::get_long, Arg::get_short, Arg::get_help, Arg::get_default_values, Arg::get_env, ArgMatches::ids, ArgMatches::args_present
+  python  -
+  note    the rest of clap's `get_` and `is_*_set` readers of a declaration stand under dropped
+
+capability flags/conflicts  a name declared twice, the later replacing the earlier
+  heroes  refused: a name declared twice is a mistake in the program's own text, and aborts at the line that declares it, as Go panics on one and clap's debug assertions do
+  go      -
+  rust    clap::Command::debug_assert, Command::args_override_self
+  python  ArgumentParser(conflict_handler=)
+  note    clap's `args_override_self`, an option given twice keeping the last, is this package's rule for every option
+
+capability flags/parents  arguments shared by several commands
+  heroes  flags.add
+  go      -
+  rust    clap::Command::mut_arg, Command::mut_args, Command::mut_group, Command::mut_subcommand, Command::mut_subcommands
+  python  ArgumentParser(parents=)
+  note    a program writes a function that adds the shared arguments, and calls it for each command
+
+capability flags/deprecated  an argument that warns when it is given
+  heroes  refused: a parse prints nothing; the program warns where `is_given` says the argument was used
+  go      -
+  rust    -
+  python  add_argument(deprecated=)
+  note    -
+
+capability flags/colour  the help and the messages coloured for a terminal
+  heroes  refused: the text is plain and the same bytes every time; a terminal's colours are the program's to add
+  go      -
+  rust    clap::Command::color, Command::styles, Command::disable_colored_help, ColorChoice
+  python  ArgumentParser(color=)
+  note    -
+
+capability flags/positions  where in the argument list each value stood
+  heroes  refused: the answer holds each argument's values in order; a value's place among all the arguments is a program's to find in the list it parsed
+  go      -
+  rust    clap::ArgMatches::index_of, ArgMatches::indices_of, Arg::index on an option
+  python  -
+  note    -
+
+dropped
+  go      Getter, Value: the interface a custom flag type implements; Rebel has no interfaces, and its block is flags/converted
+  python  Action: the class a custom action derives from; its block is flags/converted
+  python  ngettext: the translation of argparse's own messages
+  python  ArgumentParser.add_argument(*args, **kwargs) as a whole: each keyword is placed in its block above
+  rust    clap::Command::build, Command::get, Command::remove, Arg::get, Arg::remove, Arg::add, Command::add, Arg::raw, Command::get_* and Command::is_*_set, Arg::get_* and Arg::is_*_set beyond those of flags/inspect: a declaration's readers and its builder's plumbing, which a value built by the program's own functions does not need
+  rust    clap::ArgMatches::try_get_one, try_get_many, try_get_raw, try_get_occurrences, try_get_raw_occurrences, try_remove_one, try_remove_many, try_remove_occurrences, try_contains_id, is_valid_subcommand, remove_subcommand, subcommand_matches beyond its block: the fallible twins of the readers, where this package's readers abort on a name not declared and fail `not_found` on a value absent
+  rust    clap::Command::get_matches_from on `OsString`, Arg::default_value_os, default_values_os, default_missing_value_os, default_missing_values_os, default_value_if_os, default_value_ifs_os, Arg::env_os: the forms over bytes that are not UTF-8, which `parse_args` refuses with `not_text`

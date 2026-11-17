@@ -1,0 +1,242 @@
+# The exact decimal digits of a float, and those digits rounded half to even
+# at any place: what every float written with a precision is made from.
+#
+# A finite float is an integer times a power of two. Below one the power is
+# negative, and m times 2 to the -k is m times 5 to the k over 10 to the k,
+# so the digits are those of the integer m times 5 to the k: at most 767 of
+# them, gathered in limbs of nine decimal digits.
+
+# The integer and the power of two a float above zero is made of.
+record Split
+    # The significand, under 2 to the 53rd.
+    significand: i64
+    # The power of two it is multiplied by, -1074 or more.
+    exp: i64
+
+# A number above or at zero, as decimal digits and where the point stands.
+record Digits
+    # ASCII digits, the first not zero and the last not zero; none for zero.
+    digits: [u8]
+    # Where the point stands: the value is 0.d1d2... times ten to the
+    # `point`th, so 12.5 has the point 2.
+    point: i64
+
+constant BILLION: i64
+    1000000000
+
+# Zero, as digits.
+function zero() -> Digits
+    return Digits(digits: [], point: 0)
+
+# The integer and the power of two `x`, finite and above zero, is made of,
+# found by multiplying by two and by one half, which is exact here.
+function split(x: f64) -> Split
+    two52: f64 = 4503599627370496.0
+    two53: f64 = 9007199254740992.0
+    y: f64 @= x
+    exp: i64 @= 0
+
+    while y >= two53
+        y @ y * 0.5
+        exp @ exp + 1
+
+    while y < two52 && exp > -1074
+        y @ y * 2.0
+        exp @ exp - 1
+
+    return Split(significand: to_i64(y).must(), exp: exp)
+
+# `limbs`, nine decimal digits each with the least significant first, times
+# `factor`, which is at most 2 to the 30th.
+function times(limbs: [i64], factor: i64) -> [i64]
+    out: [i64] @= []
+    carry: i64 @= 0
+
+    for limb in limbs
+        t = limb * factor + carry
+        out @ out.push(t % BILLION)
+        carry @ t / BILLION
+
+    while carry > 0
+        out @ out.push(carry % BILLION)
+        carry @ carry / BILLION
+
+    return out
+
+# The ASCII digits of `limbs`, the most significant first, with no zero
+# before them.
+function ascii(limbs: [i64]) -> [u8]
+    out: [u8] @= []
+    at: i64 @= limbs.len() - 1
+
+    while at >= 0
+        limb = limbs[at]
+        place: i64 @= 100000000
+
+        while place > 0
+            digit = limb / place % 10
+
+            if out.len() > 0 || digit != 0
+                out @ out.push(to_u8(digit).must() + '0')
+            place @ place / 10
+
+        at @ at - 1
+
+    return out
+
+# `digits` without the zeros at their end, `point` kept.
+function stripped(digits: [u8], point: i64) -> Digits
+    kept: i64 @= digits.len()
+
+    while kept > 0 && digits[kept - 1] == '0'
+        kept @ kept - 1
+
+    if kept == 0
+        return zero()
+    return Digits(digits: digits.slice(from: 0, to: kept), point: point)
+
+# The exact digits of `x`, finite and not below zero.
+function of(x: f64) -> Digits
+    if x == 0.0
+        return zero()
+    parts = split(x)
+    limbs: [i64] @= [parts.significand % BILLION, parts.significand / BILLION]
+    left: i64 @= parts.exp
+
+    while left >= 29
+        limbs @ times(limbs: limbs, factor: 536870912)
+        left @ left - 29
+
+    while left > 0
+        limbs @ times(limbs: limbs, factor: 2)
+        left @ left - 1
+
+    while left <= -12
+        limbs @ times(limbs: limbs, factor: 244140625)
+        left @ left + 12
+
+    while left < 0
+        limbs @ times(limbs: limbs, factor: 5)
+        left @ left + 1
+
+    digits = ascii(limbs)
+    point: i64 @= digits.len()
+
+    if parts.exp < 0
+        point @ point + parts.exp
+    return stripped(digits: digits, point: point)
+
+# `d` cut to its first `keep` digits, which round it toward zero.
+function truncated(d: Digits, keep: i64) -> Digits
+    if keep >= d.digits.len()
+        return d
+
+    if keep <= 0
+        return zero()
+    return stripped(digits: d.digits.slice(from: 0, to: keep), point: d.point)
+
+# `d` cut to its first `keep` digits, `keep` 0 or more, and raised by one in
+# the last of them: the decimal of that length just above the cut.
+function raised(d: Digits, keep: i64) -> Digits
+    assert keep >= 0
+    padded: [u8] @= []
+
+    at: i64 @= 0
+
+    while at < keep
+        if at < d.digits.len()
+            padded @ padded.push(d.digits[at])
+        else
+            padded @ padded.push('0')
+        at @ at + 1
+
+    last: i64 @= keep - 1
+
+    while last >= 0 && padded[last] == '9'
+        last @ last - 1
+
+    if last < 0
+        return Digits(digits: ['1'], point: d.point + 1)
+    kept: [u8] @= padded.slice(from: 0, to: last + 1)
+    kept[last] @ kept[last] + 1
+    return Digits(digits: kept, point: d.point)
+
+# `d` rounded to its first `keep` digits, ties going to the even digit: a
+# `keep` of 0 rounds at the place just above the first digit, and one below
+# 0 rounds to zero.
+function rounded(d: Digits, keep: i64) -> Digits
+    if keep >= d.digits.len()
+        return d
+
+    if keep < 0
+        return zero()
+    next = d.digits[keep]
+    after = keep + 1 < d.digits.len()
+    odd = keep > 0 && (d.digits[keep - 1] - '0') % 2 == 1
+
+    if next > '5' || next == '5' && (after || odd)
+        return raised(d: d, keep: keep)
+    return truncated(d: d, keep: keep)
+
+## Tests
+
+test "split: one, a fraction, the largest float, and the smallest"
+    assert split(1.0) == Split(significand: 4503599627370496, exp: -52)
+    assert split(0.75) == Split(significand: 6755399441055744, exp: -53)
+    assert split(9007199254740992.0) == Split(significand: 4503599627370496, exp: 1)
+    tiny: f64 @= 1.0
+
+    for _ in range(from: 0, to: 1074)
+        tiny @ tiny / 2.0
+
+    assert split(tiny) == Split(significand: 1, exp: -1074)
+
+test "ascii and stripped: zero limbs inside, a top limb short, and zeros at the end"
+    assert ascii([5, 12]) == ['1', '2', '0', '0', '0', '0', '0', '0', '0', '0', '5']
+    nothing: [u8] = []
+    assert ascii([0, 0]) == nothing
+    assert stripped(digits: ['1', '2', '0', '0'], point: 4) == Digits(digits: ['1', '2'], point: 4)
+    assert stripped(digits: ['0'], point: 3) == zero()
+
+test "of: zero, a whole number, a fraction, one tenth exactly, and 2 to the 63rd"
+    assert of(0.0) == zero()
+    assert of(12.5) == Digits(digits: ['1', '2', '5'], point: 2)
+    assert of(100.0) == Digits(digits: ['1'], point: 3)
+    tenth = of(0.1)
+    assert tenth.point == 0 && tenth.digits.len() == 55
+    assert tenth.digits.slice(from: 0, to: 20) == ['1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '5', '5', '5']
+    assert of(9223372036854775808.0) == Digits(digits: ['9', '2', '2', '3', '3', '7', '2', '0', '3', '6', '8', '5', '4', '7', '7', '5', '8', '0', '8'], point: 19)
+
+test "of: the smallest float has 751 digits, and the largest has 309 before its point"
+    tiny: f64 @= 1.0
+
+    for _ in range(from: 0, to: 1074)
+        tiny @ tiny / 2.0
+
+    smallest = of(tiny)
+    assert smallest.point == -323 && smallest.digits.len() == 751
+    assert smallest.digits.slice(from: 0, to: 4) == ['4', '9', '4', '0']
+
+test "truncated and raised: inside, past the digits, at zero, and nines that carry"
+    d = Digits(digits: ['1', '2', '5'], point: 1)
+    assert truncated(d: d, keep: 1) == Digits(digits: ['1'], point: 1)
+    assert truncated(d: d, keep: 5) == d
+    assert truncated(d: d, keep: 0) == zero()
+    assert raised(d: d, keep: 2) == Digits(digits: ['1', '3'], point: 1)
+    assert raised(d: d, keep: 4) == Digits(digits: ['1', '2', '5', '1'], point: 1)
+    assert raised(d: d, keep: 0) == Digits(digits: ['1'], point: 2)
+    assert raised(d: Digits(digits: ['9', '9', '5'], point: 0), keep: 2) == Digits(digits: ['1'], point: 1)
+
+test "rounded: down, up, a tie to even both ways, a carry through nines, and past either end"
+    d = Digits(digits: ['1', '2', '5'], point: 1)
+    assert rounded(d: d, keep: 2) == Digits(digits: ['1', '2'], point: 1)
+    assert rounded(d: Digits(digits: ['1', '3', '5'], point: 1), keep: 2) == Digits(digits: ['1', '4'], point: 1)
+    assert rounded(d: Digits(digits: ['1', '2', '5', '1'], point: 1), keep: 2) == Digits(digits: ['1', '3'], point: 1)
+    assert rounded(d: Digits(digits: ['1', '2', '4', '9'], point: 1), keep: 2) == Digits(digits: ['1', '2'], point: 1)
+    assert rounded(d: Digits(digits: ['9', '9', '7'], point: 0), keep: 2) == Digits(digits: ['1'], point: 1)
+    assert rounded(d: Digits(digits: ['1', '9', '7'], point: 0), keep: 2) == Digits(digits: ['2'], point: 0)
+    assert rounded(d: d, keep: 3) == d
+    assert rounded(d: d, keep: -1) == zero()
+    assert rounded(d: Digits(digits: ['5'], point: 0), keep: 0) == zero()
+    assert rounded(d: Digits(digits: ['5', '1'], point: 0), keep: 0) == Digits(digits: ['1'], point: 1)
+    assert rounded(d: Digits(digits: ['4', '9'], point: 0), keep: 0) == zero()

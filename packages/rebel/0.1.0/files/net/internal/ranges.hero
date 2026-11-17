@@ -1,0 +1,291 @@
+# Networks cut, taken apart and put together: the subnets of a network, a
+# network with another taken out, the fewest networks covering a range of
+# addresses, and a list of networks collapsed into the fewest. It works on
+# bytes, a network being its masked address and its bits, so that an IPv6
+# network of any size is counted without an integer of 128 bits.
+
+use net/internal/failure
+use net/internal/networks
+
+# A network as this module works on it, which the face makes a
+# `net.Network`.
+record Block
+    # The network's address, every bit past `bits` clear.
+    bytes: [u8]
+    # How many first bits name the network.
+    bits: i64
+
+# The most networks `subnets` lists: 2 to the power 16.
+constant MOST_SUBNETS: i64
+    65536
+
+# The networks of `new_bits` bits the network `bytes`/`bits` is cut into, in
+# order.
+#
+# - `bytes`: the network's address, four or sixteen bytes; its bits past
+#   `bits` are not read.
+# - `bits`: the network's bits.
+# - `new_bits`: the subnets' bits, from `bits` to the address's bits.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `new_bits` is outside that range, and
+# `does_not_fit` where the subnets are more than 65,536.
+function subnets(bytes: [u8], bits: i64, new_bits: i64, asked: str) -> [Block]?
+    total = bytes.len() * 8
+
+    if new_bits < bits || new_bits > total
+        return failure.of(code: failure.INVALID, asked: asked, why: f"the subnets' bits are from {bits} to {total}")
+
+    if new_bits - bits > 16
+        return failure.of(
+            code: failure.DOES_NOT_FIT,
+            asked: asked,
+            why: f"they are 2 to the power {new_bits - bits}, more than the {MOST_SUBNETS} a list holds here"
+        )
+    count = 1 << new_bits - bits
+    out: [Block] @= []
+    at: [u8] @= networks.past(bytes, bits: bits, set: false)
+
+    for i in range(from: 0, to: count)
+        out @ out.push(Block(bytes: at, bits: new_bits))
+
+        if i < count - 1
+            at @ networks.add_power(at, power: total - new_bits)
+
+    return ok(out)
+
+# The networks that cover `outer` but not `inner`, the largest first, as
+# Python's `address_exclude` lists them.
+#
+# - `outer`: the network taken from, its bits past its own not read.
+# - `inner`: the network taken out, inside `outer` and of its kind.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where `inner` is of the other kind or not inside `outer`.
+function exclude(outer: Block, inner: Block, asked: str) -> [Block]?
+    if outer.bytes.len() != inner.bytes.len()
+        return failure.of(code: failure.INVALID, asked: asked, why: "the two networks are of different kinds")
+    here = masked(outer)
+    taken = masked(inner)
+
+    if here.bits > taken.bits || !networks.holds(prefix: here.bytes, bits: here.bits, bytes: taken.bytes)
+        return failure.of(code: failure.INVALID, asked: asked, why: "the network taken out is not inside the other")
+    total = here.bytes.len() * 8
+    out: [Block] @= []
+    at: Block @= here
+
+    while at.bits < taken.bits
+        low = Block(bytes: at.bytes, bits: at.bits + 1)
+        high = Block(bytes: networks.add_power(at.bytes, power: total - at.bits - 1), bits: at.bits + 1)
+
+        if networks.holds(prefix: low.bytes, bits: low.bits, bytes: taken.bytes)
+            out @ out.push(high)
+            at @ low
+        else
+            out @ out.push(low)
+            at @ high
+
+    return ok(out)
+
+# The fewest networks covering every address from `first` to `last`, in
+# order.
+#
+# - `first`: the first address, four or sixteen bytes.
+# - `last`: the last address, of `first`'s kind, not below it; `first`
+#   itself is a range of one.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where the two are of different kinds or `last` is below
+# `first`.
+function summarize(first: [u8], last: [u8], asked: str) -> [Block]?
+    if first.len() != last.len()
+        return failure.of(code: failure.INVALID, asked: asked, why: "the two addresses are of different kinds")
+
+    if networks.order_of(a: first, b: last) > 0
+        return failure.of(code: failure.INVALID, asked: asked, why: "the last address is below the first")
+    total = first.len() * 8
+    out: [Block] @= []
+    at: [u8] @= first
+
+    while true
+        free: i64 @= networks.low_zeros(at)
+
+        while free > 0 && networks.order_of(a: networks.past(at, bits: total - free, set: true), b: last) > 0
+            free @ free - 1
+
+        out @ out.push(Block(bytes: at, bits: total - free))
+        end = networks.past(at, bits: total - free, set: true)
+
+        if networks.order_of(a: end, b: last) == 0
+            break
+        at @ networks.add_power(end, power: 0)
+
+    return ok(out)
+
+# The fewest networks covering every address of `blocks`, in order: those
+# held by another dropped, and two halves of one network made that network.
+#
+# - `blocks`: networks of one kind, their bits past their own not read; none
+#   collapse to none.
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `invalid` where the networks are not all of one kind.
+function collapse(blocks: [Block], asked: str) -> [Block]?
+    if blocks.len() == 0
+        return ok([])
+    kept: [Block] @= []
+
+    for b in blocks
+        if b.bytes.len() != blocks[0].bytes.len()
+            return failure.of(code: failure.INVALID, asked: asked, why: "the networks are of different kinds")
+        kept @ kept.push(masked(b))
+
+    stack: [Block] @= []
+
+    for b in sorted(kept)
+        if stack.len() > 0 && holds(outer: stack[stack.len() - 1], inner: b)
+            continue
+        stack @ stack.push(b)
+
+        while stack.len() >= 2 && are_halves(first: stack[stack.len() - 2], second: stack[stack.len() - 1])
+            parent = Block(bytes: stack[stack.len() - 2].bytes, bits: stack[stack.len() - 2].bits - 1)
+            stack @ stack.slice(from: 0, to: stack.len() - 2)
+            stack @ stack.push(parent)
+
+    return ok(stack)
+
+# `b` with every bit past its own cleared.
+#
+# - `b`: the network.
+function masked(b: Block) -> Block
+    return Block(bytes: networks.past(b.bytes, bits: b.bits, set: false), bits: b.bits)
+
+# Whether the network `outer` holds every address of `inner`.
+#
+# - `outer`: a masked network.
+# - `inner`: a masked network of the same kind.
+function holds(outer: Block, inner: Block) -> bool
+    return outer.bits <= inner.bits && networks.holds(prefix: outer.bytes, bits: outer.bits, bytes: inner.bytes)
+
+# Whether `first` and `second` are the two halves of one network, `first`
+# the lower.
+#
+# - `first`: a masked network.
+# - `second`: a masked network of the same kind.
+function are_halves(first: Block, second: Block) -> bool
+    if first.bits != second.bits || first.bits == 0 || first.bytes == second.bytes
+        return false
+    return networks.holds(prefix: first.bytes, bits: first.bits - 1, bytes: second.bytes)
+
+# `blocks` ordered by their addresses, then the fewer bits first, by merging
+# halves each ordered.
+#
+# - `blocks`: networks of one kind; none or one is ordered already.
+function sorted(blocks: [Block]) -> [Block]
+    if blocks.len() <= 1
+        return blocks
+    middle = blocks.len() / 2
+    low = sorted(blocks.slice(from: 0, to: middle))
+    high = sorted(blocks.slice(from: middle, to: blocks.len()))
+    out: [Block] @= []
+    i: i64 @= 0
+    j: i64 @= 0
+
+    while i < low.len() || j < high.len()
+        if j == high.len() || i < low.len() && !after(b: low[i], other: high[j])
+            out @ out.push(low[i])
+            i @ i + 1
+        else
+            out @ out.push(high[j])
+            j @ j + 1
+
+    return out
+
+# Whether `b` stands after `other`: a higher address, or the same with more
+# bits.
+#
+# - `b`: a network.
+# - `other`: a network of the same kind.
+function after(b: Block, other: Block) -> bool
+    by_bytes = networks.order_of(a: b.bytes, b: other.bytes)
+
+    if by_bytes != 0
+        return by_bytes > 0
+    return b.bits > other.bits
+
+## Tests
+
+# The networks here are built from their bytes; each expected list is what
+# Python 3.15's `ipaddress` answered for the same networks.
+test "subnets: Python's cuts of a /24 and of the whole IPv6 space, a cut into itself, and the bits refused"
+    four = subnets([192, 0, 2, 0], bits: 24, new_bits: 26, asked: "x").must()
+    assert four == [Block(bytes: [192, 0, 2, 0], bits: 26), Block(bytes: [192, 0, 2, 64], bits: 26), Block(bytes: [192, 0, 2, 128], bits: 26), Block(bytes: [192, 0, 2, 192], bits: 26)]
+    assert subnets([192, 0, 2, 9], bits: 24, new_bits: 24, asked: "x").must() == [Block(bytes: [192, 0, 2, 0], bits: 24)]
+    assert subnets([255, 255, 255, 254], bits: 31, new_bits: 32, asked: "x").must()[1] == Block(bytes: [255, 255, 255, 255], bits: 32)
+    zero: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    halves = subnets(zero, bits: 0, new_bits: 1, asked: "x").must()
+    assert halves[1].bytes[0] == 0x80 && halves[1].bits == 1
+    assert subnets([192, 0, 2, 0], bits: 24, new_bits: 23, asked: "x").is_err() && subnets([192, 0, 2, 0], bits: 24, new_bits: 33, asked: "x").is_err()
+
+    match subnets(zero, bits: 0, new_bits: 17, asked: "x")
+        .ok _  => assert false
+        .err e => assert e.code == failure.DOES_NOT_FIT
+
+    assert subnets(zero, bits: 0, new_bits: 16, asked: "x").must().len() == 65536
+
+test "exclude: Python's order, a network taken from itself, and one outside or of the other kind refused"
+    got = exclude(
+        outer: Block(bytes: [192, 0, 2, 0], bits: 28),
+        inner: Block(bytes: [192, 0, 2, 1], bits: 32),
+        asked: "x"
+    ).must()
+    assert got == [Block(bytes: [192, 0, 2, 8], bits: 29), Block(bytes: [192, 0, 2, 4], bits: 30), Block(bytes: [192, 0, 2, 2], bits: 31), Block(bytes: [192, 0, 2, 0], bits: 32)]
+    assert exclude(outer: Block(bytes: [10, 0, 0, 0], bits: 8), inner: Block(bytes: [10, 0, 0, 0], bits: 8), asked: "x").must() == []
+    v6: [u8] = [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    three: [u8] = [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3]
+    two: [u8] = [0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2]
+    assert exclude(outer: Block(bytes: v6, bits: 126), inner: Block(bytes: three, bits: 128), asked: "x").must() == [Block(bytes: v6, bits: 127), Block(bytes: two, bits: 128)]
+    assert exclude(
+        outer: Block(bytes: [10, 0, 0, 0], bits: 8),
+        inner: Block(bytes: [11, 0, 0, 0], bits: 8),
+        asked: "x"
+    ).is_err()
+    assert exclude(outer: Block(bytes: [10, 0, 0, 0], bits: 8), inner: Block(bytes: v6, bits: 0), asked: "x").is_err()
+
+test "summarize: Python's cover of a ragged range, of every IPv4 address, of one address, and of all IPv6 but the first"
+    assert summarize(first: [192, 0, 2, 0], last: [192, 0, 2, 130], asked: "x").must() == [Block(bytes: [192, 0, 2, 0], bits: 25), Block(bytes: [192, 0, 2, 128], bits: 31), Block(bytes: [192, 0, 2, 130], bits: 32)]
+    assert summarize(first: [0, 0, 0, 0], last: [255, 255, 255, 255], asked: "x").must() == [Block(bytes: [0, 0, 0, 0], bits: 0)]
+    assert summarize(first: [1, 2, 3, 4], last: [1, 2, 3, 4], asked: "x").must() == [Block(bytes: [1, 2, 3, 4], bits: 32)]
+    one: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+    full: [u8] = [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255]
+    cover = summarize(first: one, last: full, asked: "x").must()
+    assert cover.len() == 128 && cover[0] == Block(bytes: one, bits: 128) && cover[1].bits == 127 && cover[127].bits == 1
+    assert summarize(first: [1, 2, 3, 5], last: [1, 2, 3, 4], asked: "x").is_err() && summarize(first: [1, 2, 3, 4], last: one, asked: "x").is_err()
+
+test "collapse: two halves made one, held ones dropped, neighbours that are no halves kept, none, and two kinds refused"
+    assert collapse([Block(bytes: [192, 0, 2, 0], bits: 25), Block(bytes: [192, 0, 2, 128], bits: 25)], asked: "x").must() == [Block(bytes: [192, 0, 2, 0], bits: 24)]
+    many = [
+        Block(bytes: [10, 0, 0, 0], bits: 24)
+        Block(bytes: [10, 0, 1, 0], bits: 24)
+        Block(bytes: [10, 0, 2, 0], bits: 24)
+        Block(bytes: [10, 0, 3, 0], bits: 25)
+        Block(bytes: [10, 0, 3, 128], bits: 25)
+        Block(bytes: [10, 0, 0, 0], bits: 23)
+        Block(bytes: [9, 0, 0, 0], bits: 8)
+        Block(bytes: [10, 0, 0, 5], bits: 32)
+    ]
+    assert collapse(many, asked: "x").must() == [Block(bytes: [9, 0, 0, 0], bits: 8), Block(bytes: [10, 0, 0, 0], bits: 22)]
+    apart = [Block(bytes: [10, 0, 1, 0], bits: 24), Block(bytes: [10, 0, 2, 0], bits: 24)]
+    assert collapse(apart, asked: "x").must() == apart
+    assert collapse([], asked: "x").must() == []
+    zero: [u8] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert collapse([Block(bytes: [10, 0, 0, 0], bits: 8), Block(bytes: zero, bits: 0)], asked: "x").is_err()
+
+test "masked, holds, are_halves, sorted, after: each at its edge"
+    assert masked(Block(bytes: [10, 1, 2, 3], bits: 8)) == Block(bytes: [10, 0, 0, 0], bits: 8)
+    assert holds(outer: Block(bytes: [10, 0, 0, 0], bits: 8), inner: Block(bytes: [10, 9, 0, 0], bits: 16)) && !holds(outer: Block(bytes: [10, 9, 0, 0], bits: 16), inner: Block(bytes: [10, 0, 0, 0], bits: 8))
+    assert are_halves(first: Block(bytes: [0, 0, 0, 0], bits: 1), second: Block(bytes: [128, 0, 0, 0], bits: 1))
+    assert !are_halves(first: Block(bytes: [0, 0, 0, 0], bits: 0), second: Block(bytes: [0, 0, 0, 0], bits: 0))
+    assert !are_halves(first: Block(bytes: [10, 0, 1, 0], bits: 24), second: Block(bytes: [10, 0, 2, 0], bits: 24))
+    assert sorted([Block(bytes: [2, 0, 0, 0], bits: 8), Block(bytes: [1, 0, 0, 0], bits: 16), Block(bytes: [1, 0, 0, 0], bits: 8)]) == [Block(bytes: [1, 0, 0, 0], bits: 8), Block(bytes: [1, 0, 0, 0], bits: 16), Block(bytes: [2, 0, 0, 0], bits: 8)]
+    assert sorted([]) == [] && after(b: Block(bytes: [1, 0, 0, 0], bits: 9), other: Block(bytes: [1, 0, 0, 0], bits: 8))

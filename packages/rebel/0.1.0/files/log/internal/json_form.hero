@@ -1,0 +1,88 @@
+# The JSON form of a line: one object, its time, level and message first, then
+# each value as a member, a group as a nested object. A group that holds no
+# value, however deep, is not written, as Go's slog JSONHandler leaves it out.
+
+use json
+use log/internal/piece
+
+# The line, without its line feed: one JSON object on one line, since every
+# character below U+0020 inside a string is escaped.
+function line(time_text: str, level_name: str, message: str, pieces: [piece.Piece]) -> str
+    parts: [str] @= ["{"]
+    parts @ parts.push(json.quote(piece.TIME_KEY) + ":" + json.quote(time_text))
+    parts @ parts.push("," + json.quote(piece.LEVEL_KEY) + ":" + json.quote(level_name))
+    parts @ parts.push("," + json.quote(piece.MESSAGE_KEY) + ":" + json.quote(message))
+
+    # Whether the object open at each depth holds a member yet, the line's own
+    # object first; and the groups opened but not yet written, since a group is
+    # written only once a value inside it comes.
+    wrote: [bool] @= [true]
+    waiting: [str] @= []
+
+    for p in pieces
+        if p.kind == piece.OPEN
+            waiting @ waiting.push(p.key)
+        else if p.kind == piece.CLOSE
+            if waiting.len() > 0
+                waiting @ waiting.slice(from: 0, to: waiting.len() - 1)
+            else
+                parts @ parts.push("}")
+                wrote @ wrote.slice(from: 0, to: wrote.len() - 1)
+        else
+            for key in waiting
+                if wrote[wrote.len() - 1]
+                    parts @ parts.push(",")
+                parts @ parts.push(json.quote(key) + ":{")
+                wrote[wrote.len() - 1] @ true
+                wrote @ wrote.push(false)
+
+            waiting @ []
+
+            if wrote[wrote.len() - 1]
+                parts @ parts.push(",")
+
+            written = if p.is_string
+                json.quote(p.text)
+            else
+                p.text
+            parts @ parts.push(json.quote(p.key) + ":" + written)
+            wrote[wrote.len() - 1] @ true
+
+    parts @ parts.push("}")
+    return parts.join("")
+
+test "line: no fields, and a message that needs escapes"
+    assert line(time_text: "T", level_name: "INFO", message: "", pieces: []) == "{\"time\":\"T\",\"level\":\"INFO\",\"msg\":\"\"}"
+    assert line(time_text: "T", level_name: "INFO", message: "a\"b\nc", pieces: []) == "{\"time\":\"T\",\"level\":\"INFO\",\"msg\":\"a\\\"b\\nc\"}"
+
+# The members below are those Go 1.27's slog JSONHandler wrote, 2026-11-16:
+# `"g":{"x":1,"h":{"y":true}}`, an empty group left out.
+test "line: strings and bare values, a nested group, an empty group and a group holding only an empty group"
+    pieces = [
+        piece.value(key: "s", text: "x=y", is_string: true)
+        piece.open("g")
+        piece.value(key: "x", text: "1", is_string: false)
+        piece.open("h")
+        piece.value(key: "y", text: "true", is_string: false)
+        piece.close()
+        piece.close()
+        piece.open("empty")
+        piece.close()
+        piece.open("outer")
+        piece.open("inner")
+        piece.close()
+        piece.close()
+        piece.value(key: "last", text: "esc\u{1b}", is_string: true)
+    ]
+    want = "{\"time\":\"T\",\"level\":\"WARN\",\"msg\":\"m\",\"s\":\"x=y\",\"g\":{\"x\":1,\"h\":{\"y\":true}},\"last\":\"esc\\u001b\"}"
+    assert line(time_text: "T", level_name: "WARN", message: "m", pieces: pieces) == want
+
+test "line: a group whose first member is itself a group"
+    pieces = [
+        piece.open("a")
+        piece.open("b")
+        piece.value(key: "c", text: "1", is_string: false)
+        piece.close()
+        piece.close()
+    ]
+    assert line(time_text: "T", level_name: "INFO", message: "m", pieces: pieces) == "{\"time\":\"T\",\"level\":\"INFO\",\"msg\":\"m\",\"a\":{\"b\":{\"c\":1}}}"

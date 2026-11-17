@@ -1,0 +1,129 @@
+# The orders, equalities and tests the package's tests pass to its functions,
+# written once: no function of the package calls one.
+
+# A card of a deck, the shape the tests sort: two cards of one rank are equal
+# by `by_rank` and told apart by their suit, which shows whether a sort kept
+# equal elements in their places.
+record Card
+    # The card's rank, 1 to 13.
+    rank: i64
+    # The card's suit, one letter.
+    suit: str
+
+# A key and the place it held in a list, the shape the tests sort when they
+# ask whether a thousand equal keys kept their places.
+record Placed
+    # The key the order reads.
+    key: i64
+    # The index the element held before the sort.
+    place: i64
+
+# Whether `a` goes before `b` by their keys alone.
+#
+# - `a`: the element asked about.
+# - `b`: the element it is compared with.
+function by_key(a: Placed, b: Placed) -> bool
+    return a.key < b.key
+
+# Whether `a` goes before `b` by their ranks alone.
+function by_rank(a: Card, b: Card) -> bool
+    return a.rank < b.rank
+
+# Whether `a` goes before `b` by their ranks, the larger first.
+function by_rank_descending(a: Card, b: Card) -> bool
+    return a.rank > b.rank
+
+# Whether the number `a` goes before `b`, the smaller first.
+function ascending(a: i64, b: i64) -> bool
+    return a < b
+
+# Whether the number `a` goes before `b`, the larger first.
+function descending(a: i64, b: i64) -> bool
+    return a > b
+
+# Whether the float `a` goes before `b`, the smaller first: an order that
+# aborts on a `nan`, which the tests never give it.
+function ascending_float(a: f64, b: f64) -> bool
+    return a < b
+
+# Whether the text `a` goes before `b` by its length in bytes alone.
+function by_length(a: str, b: str) -> bool
+    return a.len() < b.len()
+
+# An order that says every element goes before every other, which no order
+# does: what a sort is given by mistake, and must survive.
+function always(a: i64, b: i64) -> bool
+    return a == a && b == b
+
+# Whether two numbers are the same number.
+function same_number(left: i64, right: i64) -> bool
+    return left == right
+
+# Whether two texts are the same text.
+function same_text(left: str, right: str) -> bool
+    return left == right
+
+# Whether two numbers are at most one apart: an equality that is not
+# transitive, since 1 is near 2 and 2 near 3 but 1 not near 3.
+function near(left: i64, right: i64) -> bool
+    return left - right <= 1 && right - left <= 1
+
+# Whether two cards have the same rank.
+function same_rank(left: Card, right: Card) -> bool
+    return left.rank == right.rank
+
+# Whether `n` is even.
+function is_even(n: i64) -> bool
+    return n % 2 == 0
+
+# Whether `n` is zero.
+function is_zero(n: i64) -> bool
+    return n == 0
+
+# Whether `n` is below three.
+function below_three(n: i64) -> bool
+    return n < 3
+
+# Whether `s` is a comma.
+function is_comma(s: str) -> bool
+    return s == ","
+
+# The sum of two numbers, in `fold`'s names.
+function add(acc: i64, item: i64) -> i64
+    return acc + item
+
+# `acc` with the text `item` after it, in `fold`'s names.
+function append(acc: str, item: str) -> str
+    return acc + item
+
+# The number `word` names, failing `invalid` for a word this test reads as no
+# number.
+function parse_small(word: str) -> i64?
+    if word == "one"
+        return ok(1)
+
+    if word == "two"
+        return ok(2)
+    return fail(code: "invalid", msg: f"\"{word}\" is not one or two")
+
+## Tests
+
+test "the samples: each order, equality and test answers as its comment says"
+    assert by_rank(a: Card(rank: 1, suit: "s"), b: Card(rank: 2, suit: "h"))
+    assert !by_rank(a: Card(rank: 2, suit: "s"), b: Card(rank: 2, suit: "h"))
+    assert by_rank_descending(a: Card(rank: 3, suit: "s"), b: Card(rank: 2, suit: "h"))
+    assert by_key(a: Placed(key: 1, place: 9), b: Placed(key: 2, place: 0))
+    assert ascending(a: 1, b: 2) && !ascending(a: 2, b: 2)
+    assert descending(a: 2, b: 1) && !descending(a: 2, b: 2)
+    assert ascending_float(a: 1.5, b: 2.5)
+    assert by_length(a: "é", b: "abc") && !by_length(a: "ab", b: "é")
+    assert always(a: 1, b: 2) && always(a: 2, b: 1)
+    assert same_number(left: 1, right: 1) && !same_number(left: 1, right: 2)
+    assert same_text(left: "é", right: "é")
+    assert near(left: 1, right: 2) && near(left: 2, right: 1) && !near(left: 1, right: 3)
+    assert same_rank(left: Card(rank: 2, suit: "s"), right: Card(rank: 2, suit: "h"))
+    assert is_even(0) && !is_even(-3)
+    assert is_zero(0) && below_three(2) && !below_three(3) && is_comma(",")
+    assert add(acc: 1, item: 2) == 3 && append(acc: "a", item: "b") == "ab"
+    assert parse_small("two").must() == 2
+    assert parse_small("three").is_err()

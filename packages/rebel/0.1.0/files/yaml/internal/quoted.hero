@@ -1,0 +1,304 @@
+# A quoted scalar read: between single quotes, where `''` is a quote, or
+# between double quotes, where every escape of YAML 1.2 is read, its lines
+# folded as YAML folds them. A raw control character below U+0020 is refused
+# before this module reads; every other character, U+007F and the C1 controls
+# included, may stand between quotes, as JSON allows them.
+
+use numbers
+use unicode
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# The quoted scalar whose opening quote is at byte `at` of `text`, its
+# characters read, and the byte index past its closing quote.
+#
+# - `indent`: the column of the block holding it, -1 at the top: a line after
+#   its first holds more spaces than that, or it is refused.
+#
+# Fails `invalid` where it is never closed, holds an escape that is not one, a
+# document's marker at the start of a line, or a line indented no more than
+# its block.
+function read(text: str, at: i64, indent: i64) -> token.Lexeme?
+    double = text[at] == '"'
+    pieces: [str] @= []
+    i: i64 @= at + 1
+
+    while true
+        if i >= text.len()
+            return fail(code: INVALID, msg: unclosed(text: text, at: at))
+        b = text[i]
+
+        if b == text[at]
+            if !double && i + 1 < text.len() && text[i + 1] == '\''
+                pieces @ pieces.push("'")
+                i @ i + 2
+            else
+                return ok(token.Lexeme(value: pieces.join(""), end: i + 1))
+        else if double && b == '\\'
+            if i + 1 < text.len() && text[i + 1] == '\n'
+                folded = breaks_folded(text: text, opened: at, at: i + 1, indent: indent, escaped: true)?
+                pieces @ pieces.push(folded.value)
+                i @ folded.end
+            else
+                read_escape = escape(text, i)?
+                pieces @ pieces.push(read_escape.value)
+                i @ read_escape.end
+        else if b == '\n'
+            folded = breaks_folded(text: text, opened: at, at: i, indent: indent, escaped: false)?
+            pieces @ pieces.push(folded.value)
+            i @ folded.end
+        else if source.is_white(b)
+            j: i64 @= i
+
+            while j < text.len() && source.is_white(text[j])
+                j @ j + 1
+
+            if j >= text.len() || text[j] != '\n'
+                pieces @ pieces.push(text.slice(from: i, to: j))
+            i @ j
+        else
+            j: i64 @= i
+
+            while j < text.len() && !ends_run(b: text[j], double: double)
+                j @ j + unicode.width_at(text, j)
+
+            pieces @ pieces.push(text.slice(from: i, to: j))
+            i @ j
+
+# Whether `b` ends a run of a quoted scalar's ordinary characters.
+function ends_run(b: u8, double: bool) -> bool
+    if b == '\n' || source.is_white(b)
+        return true
+
+    if double
+        return b == '"' || b == '\\'
+    return b == '\''
+
+# The message of a quoted scalar opened at byte `at` of `text` and never
+# closed.
+function unclosed(text: str, at: i64) -> str
+    quote = text.slice(from: at, to: at + 1)
+    return source.said(
+        text: text,
+        at: at,
+        what: f"a text opened here with `{quote}` is never closed: expected `{quote}` before the end of the text"
+    )
+
+# The line breaks from byte `at` of `text` on, folded, and the byte index of
+# the next line's first character that is no white space.
+#
+# - `opened`: where the scalar's opening quote stands, for a message.
+# - `indent`: the column of the block holding the scalar.
+# - `escaped`: whether a `\` stood before the first break, which then folds to
+#   nothing.
+#
+# One break folds to a space, and each empty line after it to a line break.
+function breaks_folded(text: str, opened: i64, at: i64, indent: i64, escaped: bool) -> token.Lexeme?
+    k: i64 @= at
+    breaks: i64 @= 0
+    line_start: i64 @= at
+    spaces: i64 @= 0
+
+    while k < text.len() && text[k] == '\n'
+        breaks @ breaks + 1
+        k @ k + 1
+        line_start @ k
+
+        while k < text.len() && text[k] == ' '
+            k @ k + 1
+
+        spaces @ k - line_start
+
+        while k < text.len() && source.is_white(text[k])
+            k @ k + 1
+
+    if k >= text.len()
+        return fail(code: INVALID, msg: unclosed(text: text, at: opened))
+
+    if source.is_marker_at(text, line_start)
+        where = source.position(text, opened)
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: line_start, what: f"a document's marker inside the text quoted at {where}, which is never closed before it")
+        )
+
+    if spaces <= indent
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: k, what: f"a line of a quoted text indented {spaces} spaces, where the block holding it needs {indent + 1} at least")
+        )
+
+    if escaped
+        return ok(token.Lexeme(value: repeat("\n", (breaks - 1).to_u64().must()), end: k))
+
+    if breaks == 1
+        return ok(token.Lexeme(value: " ", end: k))
+    return ok(token.Lexeme(value: repeat("\n", (breaks - 1).to_u64().must()), end: k))
+
+# The escape that begins with the `\` at byte `at` of `text`, read, and the
+# byte index past it.
+#
+# Fails `invalid` where the character after `\` begins no escape, where the
+# hexadecimal digits are too few, and where they name a surrogate or a number
+# past U+10FFFF.
+function escape(text: str, at: i64) -> token.Lexeme?
+    if at + 1 >= text.len()
+        return fail(code: INVALID, msg: unclosed(text: text, at: at))
+    c = text[at + 1]
+
+    if c == 'x' || c == 'u' || c == 'U'
+        digits = if c == 'x'
+            2
+        else if c == 'u'
+            4
+        else
+            8
+        n = hex(text: text, at: at + 2, digits: digits)?
+
+        if n >= 0xd800 && n <= 0xdfff || n > unicode.MAX_CODE_POINT
+            escaped = text.slice(from: at, to: at + 2 + digits)
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: at, what: f"`{escaped}` names no character: a surrogate, or past U+10FFFF; write a character past U+FFFF as one `\\U` escape")
+            )
+        return ok(token.Lexeme(value: unicode.from_code_point(n)?, end: at + 2 + digits))
+    simple = simple_escape(c)
+
+    if simple.is_err()
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: at + 1, what: "an escape after `\\`: one of `0`, `a`, `b`, `t`, `n`, `v`, `f`, `r`, `e`, a space, `\"`, `/`, `\\`, `N`, `_`, `L`, `P`, `x`, `u`, `U` and a tab")
+        )
+    return ok(token.Lexeme(value: simple.must(), end: at + 2))
+
+# The character an escape of one letter writes, `n` for a line feed. Fails
+# `invalid` where `c` begins no such escape.
+function simple_escape(c: u8) -> str?
+    if c == '0'
+        return unicode.from_code_point(0)
+
+    if c == 'a'
+        return ok("\u{7}")
+
+    if c == 'b'
+        return ok("\u{8}")
+
+    if c == 't' || c == '\t'
+        return ok("\t")
+
+    if c == 'n'
+        return ok("\n")
+
+    if c == 'v'
+        return ok("\u{b}")
+
+    if c == 'f'
+        return ok("\u{c}")
+
+    if c == 'r'
+        return ok("\r")
+
+    if c == 'e'
+        return ok("\u{1b}")
+
+    if c == ' ' || c == '"' || c == '/' || c == '\\'
+        return ok([c].validated_bytes().must())
+
+    if c == 'N'
+        return ok("\u{85}")
+
+    if c == '_'
+        return unicode.from_code_point(0xa0)
+
+    if c == 'L'
+        return ok("\u{2028}")
+
+    if c == 'P'
+        return ok("\u{2029}")
+    return fail(code: INVALID, msg: "no such escape")
+
+# The number the `digits` hexadecimal digits from byte `at` of `text` write.
+function hex(text: str, at: i64, digits: i64) -> i64?
+    i: i64 @= at
+
+    while i < at + digits
+        if i >= text.len() || !source.is_hex_digit(text[i])
+            return fail(
+                code: INVALID,
+                msg: source.expected(text: text, at: i, what: f"{digits} hexadecimal digits after `{text.slice(from: at - 2, to: at)}`")
+            )
+        i @ i + 1
+
+    return numbers.parse_int_base(text.slice(from: at, to: at + digits), base: 16)
+
+## Tests
+
+test "read: single quotes, a doubled quote, the empty text, and characters of more than one byte"
+    assert read(text: "'a b'", at: 0, indent: -1).must() == token.Lexeme(value: "a b", end: 5)
+    assert read(text: "'it''s'x", at: 0, indent: -1).must() == token.Lexeme(value: "it's", end: 7)
+    assert read(text: "''", at: 0, indent: -1).must().value == ""
+    assert read(text: "'città # \\n'", at: 0, indent: -1).must().value == "città # \\n"
+    assert read(text: "\"\"", at: 0, indent: -1).must().value == ""
+
+test "read: the escapes of double quotes, each kind"
+    text = "\"\\0\\a\\b\\t\\\t\\n\\v\\f\\r\\e\\ \\\"\\/\\\\\\N\\_\\L\\P\""
+    want = [
+        0x00
+        0x07
+        0x08
+        0x09
+        0x09
+        0x0a
+        0x0b
+        0x0c
+        0x0d
+        0x1b
+        0x20
+        0x22
+        0x2f
+        0x5c
+        0x85
+        0xa0
+        0x2028
+        0x2029
+    ]
+    assert unicode.code_points(read(text: text, at: 0, indent: -1).must().value) == want
+    assert read(text: "\"\\x41\\u00e9\\U0001F600\"", at: 0, indent: -1).must().value == "Aé😀"
+
+test "read: an escape that is none, too few digits, a surrogate, and past U+10FFFF"
+    for text in ["\"\\q\"", "\"\\x4\"", "\"\\ud83d\"", "\"\\U00110000\"", "\"\\"]
+        match read(text: text, at: 0, indent: -1)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match read(text: "\"\\ud83d\\ude00\"", at: 0, indent: -1)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2: `\\ud83d` names no character: a surrogate, or past U+10FFFF; write a character past U+FFFF as one `\\U` escape"
+
+test "read: lines folded, empty lines kept, trailing white space dropped, an escaped break"
+    assert read(text: "\"a \n  b\"", at: 0, indent: -1).must().value == "a b"
+    assert read(text: "'a\n\n\n b'", at: 0, indent: -1).must().value == "a\n\nb"
+    assert read(text: "\"a\\\n   b\"", at: 0, indent: -1).must().value == "ab"
+    assert read(text: "\"a \\\n\n b\"", at: 0, indent: -1).must().value == "a \nb"
+    assert read(text: "\"a\\t\n b\"", at: 0, indent: -1).must().value == "a\t b"
+    assert read(text: "\"\u{7f}\u{85}\"", at: 0, indent: -1).must().value == "\u{7f}\u{85}"
+
+test "read: never closed, a marker inside, and a line indented no more than its block"
+    match read(text: "'abc", at: 0, indent: -1)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: a text opened here with `'` is never closed: expected `'` before the end of the text"
+
+    match read(text: "\"a\n---\nb\"", at: 0, indent: -1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg.slice(from: 0, to: 15) == "line 2, column "
+
+    match read(text: "\"a\nb\"", at: 0, indent: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 1: a line of a quoted text indented 0 spaces, where the block holding it needs 1 at least"
+
+    assert read(text: "\"a\n\tb\"", at: 0, indent: -1).must().value == "a b"
+    assert read(text: "\"a\n b\"", at: 0, indent: 0).must().value == "a b"

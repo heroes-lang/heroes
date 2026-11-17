@@ -1,0 +1,313 @@
+# The ledger of `log`: what Go's `log` and `log/slog` (Go 1.27) and Python's
+# `logging` (3.15) let a program do, one block per capability, and what Rebel
+# answers. Rust's standard library has no logging, so its line is `-` in every
+# block. The lists are this machine's, 2026-11-16: `go doc -all log`, `go doc
+# -short log/slog` and its methods from `go doc -all log/slog`, `dir(logging)`
+# and the attributes of a Logger, a Handler, a Formatter, a LogRecord, a
+# LoggerAdapter, a StreamHandler, a FileHandler and a Filter. Every expected
+# line of the package's tests that slog writes too was observed from it the
+# same day.
+
+capability log/logger  a logger made, writing to a stream
+  heroes  log.to, log.Logger
+  go      log.New, log.Logger, slog.New, slog.Logger, slog.NewTextHandler, slog.TextHandler, slog.HandlerOptions
+  rust    -
+  python  Logger, StreamHandler, StreamHandler.setStream, StreamHandler.terminator, FileHandler, Handler, Logger.handle
+  note    a logger is a record passed along, as the task decided: one stream, one level, one prefix, one form, its fields and its clock. A file is opened by `fs.open` and handed to `log.to`; the line feed is the one terminator, as Go writes it
+
+capability log/default  a logger every part of the program reaches without being handed it
+  heroes  refused: needs a mutable global
+  go      log.Default, log.Print, log.Printf, log.Println, log.SetOutput, log.SetFlags, log.SetPrefix, log.Flags, log.Prefix, log.Writer, log.Output, slog.Default, slog.SetDefault, slog.Debug, slog.Info, slog.Warn, slog.Error, slog.Log, slog.LogAttrs, slog.With, slog.DebugContext, slog.InfoContext, slog.WarnContext, slog.ErrorContext
+  rust    -
+  python  root, RootLogger, basicConfig, BASIC_FORMAT, debug, info, warning, warn, error, critical, fatal, exception, log, lastResort
+  note    Heroes has no mutable global (spec § 4), so the logger a program builds is handed to the code that writes
+
+capability log/stream  where a logger's lines go, read back
+  heroes  log.Logger.stream
+  go      Logger.Writer, Logger.SetOutput, Logger.Handler
+  rust    -
+  python  StreamHandler.stream, StreamHandler.setStream
+  note    a logger is a value: another stream is another logger, `log.to`, and nothing is set in place
+
+capability log/close  the stream closed once the last line is written
+  heroes  io.close
+  go      -
+  rust    -
+  python  Handler.close, FileHandler.close, shutdown
+  note    the logger never closes its stream: whoever opened it closes it, as every `io.Stream` is closed
+
+capability log/flush  lines held back, written out
+  heroes  refused: nothing is held; each line is one write of `io` that reaches the system before the call answers
+  go      -
+  rust    -
+  python  Handler.flush, StreamHandler.flush, shutdown
+  note    Go's two loggers hold nothing either
+
+capability log/level  a closed set of levels, ordered
+  heroes  log.Level, log.level_number
+  go      slog.Level, slog.LevelDebug, slog.LevelInfo, slog.LevelWarn, slog.LevelError, Level.Level, slog.Leveler
+  rust    -
+  python  DEBUG, INFO, WARNING, WARN, ERROR, getLevelNamesMapping
+  note    four levels, as the task decided; `level_number` answers Python's 10 to 40, since Go's -4 to 8 serve its arithmetic on levels, which a closed variant has no use for
+
+capability log/level-other  a level of the program's own, or past error
+  heroes  refused: the levels are a closed variant, four, as decided; a line past `error` is an `error`
+  go      Level arithmetic (LevelInfo+2), Kind
+  rust    -
+  python  addLevelName, NOTSET, CRITICAL, FATAL, critical, fatal, Logger.critical, Logger.fatal, LoggerAdapter.critical, LoggerAdapter.fatal
+  note    Python's CRITICAL is written by `log.error`; Go's slog has no level past error either
+
+capability log/level-name  a level's name written
+  heroes  log.level_name
+  go      Level.String, Level.MarshalText, Level.AppendText, Level.MarshalJSON
+  rust    -
+  python  getLevelName
+  note    `DEBUG`, `INFO`, `WARN`, `ERROR`, Go's names; Python writes `WARNING`
+
+capability log/level-parse  a level read from a setting
+  heroes  log.parse_level
+  go      Level.UnmarshalText, Level.UnmarshalJSON
+  rust    -
+  python  getLevelName, getLevelNamesMapping
+  note    the four names in any ASCII case, and `warning`, Python's, since settings written for either are read; Go's `INFO+2` is not, there being no level between two; anything else fails `invalid`
+
+capability log/lowest-level  the lowest level a logger writes
+  heroes  log.with_level, log.Logger.level
+  go      HandlerOptions.Level
+  rust    -
+  python  Logger.setLevel, Handler.setLevel, LoggerAdapter.setLevel
+  note    `info` unless set, as both default
+
+capability log/level-shared  a level changed while the program runs, for every holder of the logger
+  heroes  refused: needs a mutable global, or state shared between copies of a value
+  go      slog.LevelVar, LevelVar.Set, LevelVar.Level, LevelVar.String, LevelVar.MarshalText, LevelVar.UnmarshalText, LevelVar.AppendText, slog.SetLogLoggerLevel
+  rust    -
+  python  disable, Logger.setLevel on a shared logger
+  note    a program that changes its level builds the copy `with_level` answers and hands it on
+
+capability log/enabled  whether a line at a level would be written
+  heroes  log.is_enabled
+  go      Logger.Enabled, Handler.Enabled, TextHandler.Enabled, JSONHandler.Enabled
+  rust    -
+  python  Logger.isEnabledFor, Logger.getEffectiveLevel, LoggerAdapter.isEnabledFor, LoggerAdapter.getEffectiveLevel
+
+capability log/write-level  a line written at a level chosen at run time
+  heroes  log.write
+  go      Logger.Log, Logger.LogAttrs, Handler.Handle, TextHandler.Handle, JSONHandler.Handle
+  rust    -
+  python  Logger.log, LoggerAdapter.log, Logger.callHandlers, Handler.handle, Handler.emit, StreamHandler.emit, FileHandler.emit
+  note    the line's own fields are a list, as decided, never pairs of arguments: no variadic in Heroes, and no odd count to answer as Go's `!BADKEY`
+
+capability log/write-debug  a line at debug
+  heroes  log.debug
+  go      Logger.Debug, Logger.DebugContext
+  rust    -
+  python  Logger.debug, LoggerAdapter.debug
+
+capability log/write-info  a line at info
+  heroes  log.info
+  go      Logger.Info, Logger.InfoContext, log.Logger.Print, log.Logger.Println, log.Logger.Printf, log.Logger.Output
+  rust    -
+  python  Logger.info, LoggerAdapter.info
+  note    Go's `log` has no level, and its `Print` is the ordinary line, `info` here; `Printf`'s formatting is the language's `f"..."`; `Output`'s call depth names a source line, refused under log/source
+
+capability log/write-warn  a line at warn
+  heroes  log.warn
+  go      Logger.Warn, Logger.WarnContext
+  rust    -
+  python  Logger.warning, Logger.warn, LoggerAdapter.warning, LoggerAdapter.warn
+
+capability log/write-error  a line at error
+  heroes  log.error
+  go      Logger.Error, Logger.ErrorContext
+  rust    -
+  python  Logger.error, LoggerAdapter.error
+
+capability log/write-fatal  a line written, then the program ended
+  heroes  refused: a library does not end the program; `log.error`, then `exit(code: 1)`
+  go      log.Fatal, log.Fatalf, log.Fatalln, Logger.Fatal, Logger.Fatalf, Logger.Fatalln
+  rust    -
+  python  -
+  note    two calls say what happens; `exit` is the language's
+
+capability log/write-panic  a line written, then a panic raised
+  heroes  refused: Heroes has no panic and no exception; a failure is a `T?` the caller answers
+  go      log.Panic, log.Panicf, log.Panicln, Logger.Panic, Logger.Panicf, Logger.Panicln
+  rust    -
+  python  -
+
+capability log/exception  a line with the exception being handled and its traceback
+  heroes  refused: Heroes has no exception and no traceback; an error's code and message go in fields
+  go      -
+  rust    -
+  python  exception, Logger.exception, LoggerAdapter.exception, Formatter.formatException, Formatter.formatStack, Handler.handleError, raiseExceptions
+
+capability log/time  each line's time
+  heroes  log.format_line
+  go      log.Ldate, log.Ltime, log.Lmicroseconds, log.LUTC, log.LstdFlags, Logger.Flags, Logger.SetFlags, slog.TimeKey, slog.Time key of a record
+  rust    -
+  python  Formatter.formatTime, Formatter.converter, Formatter.default_time_format, Formatter.default_msec_format, Formatter.usesTime
+  note    one form, as decided: RFC 3339 in UTC to the millisecond, `2006-01-02T15:04:05.123Z`, the fraction cut toward the past; Go's `log` writes the local time to the second by default and Python `2006-01-02 15:04:05,123` in local time. No layout is chosen per logger
+
+capability log/clock  the time of every line fixed, so a line is the same on every run
+  heroes  log.with_clock, log.Logger.clock
+  go      -
+  rust    -
+  python  Formatter.converter
+  note    a test hands the logger a function of its own answering one instant; `time.now` otherwise. Go's tests drop the time key with `ReplaceAttr`, which needs a closure
+
+capability log/prefix  text before every message
+  heroes  log.with_prefix, log.Logger.prefix
+  go      log.New's prefix, Logger.SetPrefix, Logger.Prefix, log.Lmsgprefix
+  rust    -
+  python  getLogger's name, Logger.name in a format
+  note    written just before the message, as Go's `Lmsgprefix` places it, so every line opens with its time and lines sort by time; in the JSON form the prefix is part of `msg`
+
+capability log/source  the file and line that wrote a line
+  heroes  refused: a Heroes program has no position of its caller at run time
+  go      log.Llongfile, log.Lshortfile, HandlerOptions.AddSource, slog.SourceKey, slog.Source, Record.Source
+  rust    -
+  python  Logger.findCaller, currentframe, LogRecord's pathname and lineno
+
+capability log/process-facts  the process, thread or task that wrote a line, on every line
+  heroes  refused: no logger reads the process's world; a program adds what it needs as a field
+  go      -
+  rust    -
+  python  logProcesses, logThreads, logMultiprocessing, logAsyncioTasks
+
+capability log/form-text  the line as words and key=value
+  heroes  log.Form.text
+  go      slog.TextHandler, slog.NewTextHandler
+  rust    -
+  python  Formatter, Formatter.format, Handler.format, Handler.setFormatter
+  note    time, level, message, fields; Go's TextHandler writes `time=... level=... msg=...` keyed, and the task decided the first three bare. The message is quoted only where it is empty or holds a quote, an `=` or an escaped character, so `key=` begins the fields; a key or a value is quoted, as slog quotes them, where it is empty or holds a space, a quote, an `=` or an escaped character. Escaped are C0 and C1 controls, DEL, U+2028, U+2029 and the bidirectional controls, with Go's escapes; Go escapes every character it calls unprintable, a set that needs Unicode's tables, which `log`'s row does not reach. So no message or value can write a second line or move a terminal's cursor
+
+capability log/form-json  the line as one JSON object
+  heroes  log.Form.json, log.TIME_KEY, log.LEVEL_KEY, log.MESSAGE_KEY
+  go      slog.JSONHandler, slog.NewJSONHandler, slog.TimeKey, slog.LevelKey, slog.MessageKey
+  rust    -
+  python  -
+  note    the members slog writes, in its order, strings by `json.quote`. Where they differ: a non-finite float is the string `nan`, `inf` or `-inf` (slog writes `!ERROR:...`), and a duration the string `1.5s` (slog writes nanoseconds, a number whose unit the line does not say)
+
+capability log/form-other  a line in a layout of the program's own
+  heroes  refused: two forms, as decided; a program wanting another writes its line through `io` from `format_line`'s parts
+  go      HandlerOptions.ReplaceAttr
+  rust    -
+  python  Formatter's format string, PercentStyle, StrFormatStyle, StringTemplateStyle, Template, Formatter.formatMessage, BufferingFormatter, LogRecord.getMessage
+  note    ReplaceAttr and a format string each need a function or a little language run per line; the two forms are what a reader of logs and a tool both read
+
+capability log/line-text  a line made without writing it
+  heroes  log.format_line
+  go      slog.Record, slog.NewRecord, Record.Clone
+  rust    -
+  python  makeLogRecord, LogRecord, Formatter.format, Handler.format
+  note    the record a line is made from is the call's own arguments; `format_line` answers the line for a given time
+
+capability log/field-text  a field holding a text
+  heroes  log.text
+  go      slog.String, slog.StringValue, Value.String
+  rust    -
+  python  the `extra` mapping of a call
+  note    Python's `extra` adds attributes to the record, written only where a format string names them
+
+capability log/field-integer  a field holding a whole number
+  heroes  log.integer
+  go      slog.Int, slog.Int64, slog.IntValue, slog.Int64Value, slog.Uint64, slog.Uint64Value, Value.Int, Value.Uint
+  rust    -
+  python  -
+  note    an `i64`; a `u64` past it goes in a `text` field
+
+capability log/field-number  a field holding a float
+  heroes  log.number
+  go      slog.Float64, slog.Float64Value, Value.Float
+  rust    -
+  python  -
+  note    JSON's shortest digits in both forms, `1e-7` where slog's text writes `1e-07`, one spelling for both forms
+
+capability log/field-boolean  a field holding true or false
+  heroes  log.boolean
+  go      slog.Bool, slog.BoolValue, Value.Bool
+  rust    -
+  python  -
+
+capability log/field-duration  a field holding a length of time
+  heroes  log.duration
+  go      slog.Duration, slog.DurationValue, Value.Duration
+  rust    -
+  python  -
+
+capability log/field-instant  a field holding a moment
+  heroes  log.instant
+  go      slog.Time, slog.TimeValue, Value.Time
+  rust    -
+  python  -
+  note    RFC 3339 in UTC with the fraction it needs, as `time.format` writes `rfc3339`
+
+capability log/field-group  fields nested under one key
+  heroes  log.group
+  go      slog.Group, slog.GroupAttrs, slog.GroupValue, Value.Group, Logger.WithGroup, Handler.WithGroup, TextHandler.WithGroup, JSONHandler.WithGroup
+  rust    -
+  python  -
+  note    keyed `g.k` in the text form and nested in JSON, as slog does; an empty group is not written, and one with an empty key writes its fields in its place, as slog. A logger's later fields under one group, `WithGroup`, are a `group` the caller wraps them in. Walked with a stack of its own, so ten thousand levels write
+
+capability log/field-any  a field holding a value of any type, or one that works out its own value
+  heroes  refused: Heroes has no interface; a value is one of the seven cases
+  go      slog.Any, slog.AnyValue, slog.LogValuer, Value.Any, Value.LogValuer, Value.Resolve, slog.KindAny, Value.Kind, Kind.String
+  rust    -
+  python  -
+  note    the costly value is asked for only where its line is written: `is_enabled` first
+
+capability log/field-read  a field's key and value read back, two compared
+  heroes  log.Field, log.Value
+  go      slog.Attr, Attr.Equal, Attr.String, Value.Equal, Record.Attrs, Record.NumAttrs, Record.Add, Record.AddAttrs
+  rust    -
+  python  -
+  note    a field is a record read by its fields and a `match`, compared with `==`
+
+capability log/with-fields  fields every line of a logger carries
+  heroes  log.with_fields, log.Logger.fields
+  go      Logger.With, Handler.WithAttrs, TextHandler.WithAttrs, JSONHandler.WithAttrs
+  rust    -
+  python  LoggerAdapter, LoggerAdapter.process, LoggerAdapter.name, Logger.getChild
+  note    written before the line's own; a key both hold is written twice, as slog writes it
+
+capability log/fan-out  one line written to several places
+  heroes  refused: one logger writes one stream; a program writes to two loggers, since a list of streams would need what each stream's failure means to the others
+  go      slog.MultiHandler, slog.NewMultiHandler, MultiHandler.Enabled, MultiHandler.Handle, MultiHandler.WithAttrs, MultiHandler.WithGroup
+  rust    -
+  python  Logger.addHandler, Logger.removeHandler, Logger.hasHandlers, LoggerAdapter.hasHandlers, getHandlerByName, getHandlerNames, Handler.name, Handler.get_name, Handler.set_name
+
+capability log/discard  a logger that writes nothing
+  heroes  pending
+  go      slog.DiscardHandler
+  rust    -
+  python  NullHandler
+  note    needs a stream that discards, which `io` does not offer; a logger at `error` whose program writes no error comes close and is not the same
+
+capability log/hierarchy  loggers named in a tree, found by name, a child passing lines to its parent
+  heroes  refused: needs a mutable global registry
+  go      -
+  rust    -
+  python  getLogger, Logger.getChild, Logger.getChildren, Manager, Logger.manager, LoggerAdapter.manager, PlaceHolder, setLoggerClass, getLoggerClass, setLogRecordFactory, getLogRecordFactory, Logger.makeRecord, Logger.root
+  note    a part of a program gets its own logger as a `with_prefix` or `with_fields` copy handed to it
+
+capability log/filter  a line kept or dropped by a function
+  heroes  refused: needs a function called with each line and state of its own, a closure; a program decides before it writes
+  go      -
+  rust    -
+  python  Filter, Filter.filter, Filterer
+
+capability log/concurrency  lines from several threads, whole
+  heroes  log.write
+  go      the loggers' safety for concurrent use
+  rust    -
+  python  Handler.acquire, Handler.release, Handler.createLock
+  note    a line is one write of `io`, so two threads' lines do not interleave inside a line on a pipe or a file opened to append, as far as the system writes a write whole; there is no lock to take
+
+dropped
+  go      slog.NewLogLogger: a bridge from slog to log, two libraries here being one
+  go      slog.Handler, slog.Leveler, slog.LogValuer: interfaces, which Heroes has none of; their one implementation each is a block above
+  go      slog.Kind, KindAny and its siblings: the cases of `log.Value`
+  go      the Context variants' `context.Context`: no context exists in Heroes; the variants are the blocks of their level
+  python  captureWarnings: Python's `warnings` module, which Heroes has none of
+  python  atexit, collections, io, os, re, sys, threading, time, traceback, warnings, weakref, GenericAlias: modules and names `logging` imports, not its own

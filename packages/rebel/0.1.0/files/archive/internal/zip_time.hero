@@ -1,0 +1,78 @@
+# The times a zip archive holds: the MS-DOS date and time every header has,
+# to the even second, from 1980 to 2107, in no zone, which this package
+# reads and writes as UTC; and the extended timestamp extra field (0x5455),
+# seconds since 1970 UTC, which wins where it is there.
+
+use time
+
+# The extra field's id of the extended timestamp.
+constant EXTENDED_TIME: i64
+    0x5455
+
+# The instant of a DOS `date` and `time`, read as UTC; 1980-01-01 where they
+# name no day (a zero date, a 31st of February).
+function from_dos(date: i64, clock: i64) -> time.Instant
+    dt = time.DateTime(
+        year: 1980 + (date >> 9 & 0x7f),
+        month: date >> 5 & 15,
+        day: date & 31,
+        hour: clock >> 11 & 31,
+        minute: clock >> 5 & 63,
+        second: (clock & 31) * 2,
+        nanosecond: 0
+    )
+
+    match time.from_date_time(dt)
+        .ok t  => return t
+        .err _ => return time.date(year: 1980, month: 1, day: 1).must()
+
+# What the DOS date of `t` is, and its time.
+record Dos
+    # Year since 1980 times 512, month times 32, and day.
+    date: i64
+    # Hour times 2048, minute times 32, and seconds halved.
+    clock: i64
+
+# The DOS date and time of `t` in UTC, held to 1980 to 2107 and rounded down
+# to an even second.
+function to_dos(t: time.Instant) -> Dos
+    dt = time.to_date_time(t)
+
+    if dt.year < 1980
+        return Dos(date: 1 << 5 | 1, clock: 0)
+
+    if dt.year > 2107
+        return Dos(date: 127 << 9 | 12 << 5 | 31, clock: 23 << 11 | 59 << 5 | 29)
+    return Dos(
+        date: dt.year - 1980 << 9 | dt.month << 5 | dt.day,
+        clock: dt.hour << 11 | dt.minute << 5 | dt.second / 2
+    )
+
+# The seconds an extended timestamp field's `data` holds for the time of
+# last change, or -1 where it holds none: a flags byte, then the seconds of
+# each time its flags name, four bytes each, the lowest first.
+function extended_seconds(data: [u8] lent) -> i64
+    if data.len() < 5 || to_i64(data[0]).must() & 1 == 0
+        return -1
+    value: i64 @= 0
+
+    for i in range(from: 0, to: 4)
+        value @ value | to_i64(data[1 + i]).must() << 8 * i
+
+    if value >= 0x8000_0000
+        value @ value - 0x1_0000_0000
+    return value
+
+test "from_dos and to_dos: a time and back, a zero date, and the edges"
+    t = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    d = to_dos(t)
+    assert time.unix_seconds(from_dos(date: d.date, clock: d.clock)) == 1700000000
+    assert time.unix_seconds(from_dos(date: 0, clock: 0)) == 315532800
+    early = to_dos(time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must())
+    assert early.date == 33 && early.clock == 0
+
+test "extended_seconds: a time, a negative one, none, and too short"
+    assert extended_seconds([1, 0x00, 0xf1, 0x53, 0x65]) == 1700000000
+    assert extended_seconds([1, 0xff, 0xff, 0xff, 0xff]) == -1
+    assert extended_seconds([0, 1, 2, 3, 4]) == -1
+    assert extended_seconds([1, 2]) == -1

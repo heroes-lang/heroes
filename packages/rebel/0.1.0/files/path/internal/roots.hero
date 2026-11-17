@@ -1,0 +1,187 @@
+# Where a path begins: its volume, its root and the rest, as written, and the
+# path read as a beginning and a list of names. Every other module of `path`
+# reads a path through this one, so the Windows edges are decided here once.
+#
+# By POSIX's rules a path has no volume, and its root is the run of `/` it
+# begins with: `//a` begins at the root as `/a` does, which is what Linux and
+# macOS do with it. By Windows' rules a path that begins with two separators
+# names a share, `\\host\share`, or a device, `\\.\pipe` and `\\?\C:`, and its
+# volume runs to the separator after the share's name, or after the name
+# following `\\?\UNC\`; a path that begins with one character and a colon names
+# a drive, `C:`; and a path that begins with one separator has a root and no
+# volume.
+
+use path/internal/scan
+
+# A path in three pieces, which written one after the other are the path, and
+# what kind of volume it begins with.
+record Anchor
+    # The volume as written, or "".
+    volume: str
+    # The run of separators after the volume, or "" where the path is relative.
+    root: str
+    # What follows the root: it never begins with a separator.
+    rest: str
+    # Whether the volume is a share or a device, which always names its top.
+    share: bool
+
+# A path read as its beginning and its names.
+record Reading
+    # The volume and root as one part, every separator written the rules' way
+    # and the root as one separator: `/`, `C:\`, `C:`, `\\host\share\`, or "".
+    start: str
+    # The names after it, as `scan.names_in` reads them.
+    names: [str]
+
+# `path` cut into its volume, its root and the rest, by Windows' rules where
+# `windows` is true and POSIX's where it is not.
+function split(path: str, windows: bool) -> Anchor
+    volume_end: i64 @= 0
+    share: bool @= false
+
+    if windows
+        volume_end @ volume_length(path)
+        share @ volume_end >= 2 && scan.is_sep(path[0], true) && scan.is_sep(path[1], true)
+    root_end: i64 @= volume_end
+
+    while root_end < path.len() && scan.is_sep(path[root_end], windows)
+        root_end @ root_end + 1
+
+    return Anchor(
+        volume: path.slice(from: 0, to: volume_end),
+        root: path.slice(from: volume_end, to: root_end),
+        rest: path.slice(from: root_end, to: path.len()),
+        share: share
+    )
+
+# How many bytes of `path` its volume takes by Windows' rules, 0 where it
+# begins with none.
+function volume_length(path: str) -> i64
+    if path.len() >= 2 && scan.is_sep(path[0], true) && scan.is_sep(path[1], true)
+        start: i64 @= 2
+
+        if is_long_share(path)
+            start @ 8
+        first = sep_from(path, start)
+
+        if first == path.len()
+            return first
+        return sep_from(path, first + 1)
+
+    if path.len() == 0 || scan.is_sep(path[0], true)
+        return 0
+    width = scan.width_at(path, 0)
+
+    if path.len() > width && path[width] == ':'
+        return width + 1
+    return 0
+
+# Whether `path` begins `\\?\UNC\`, either separator anywhere and the three
+# letters in any case, the device form of a share.
+function is_long_share(path: str) -> bool
+    if path.len() < 8 || path[2] != '?' || !scan.is_sep(path[3], true) || !scan.is_sep(path[7], true)
+        return false
+    return scan.same(a: path.slice(from: 4, to: 7), b: "unc", windows: true)
+
+# Where the first separator at or after `from` stands in `path`, by Windows'
+# rules, or the length of `path` where none does.
+function sep_from(path: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < path.len() && !scan.is_sep(path[at], true)
+        at @ at + 1
+
+    return at
+
+# The volume and root of `anchor` as one part, the rules' way: every separator
+# of the volume written as the rules write it, and the root as one separator.
+function start_of(anchor: Anchor, windows: bool) -> str
+    sep = scan.separator(windows)
+    volume = scan.with_seps(path: anchor.volume, to: sep, windows: windows)
+
+    if anchor.root == ""
+        return volume
+    return volume + sep
+
+# `path` read as its beginning and its names; nothing is cleaned, so a `..`
+# stays where it stands.
+function read(path: str, windows: bool) -> Reading
+    anchor = split(path, windows)
+    return Reading(start: start_of(anchor, windows), names: scan.names_in(anchor.rest, windows))
+
+# Whether `anchor` names the top of its volume: it has a root, or its volume is
+# a share or a device.
+function has_root(anchor: Anchor) -> bool
+    return anchor.root != "" || anchor.share
+
+# Whether `anchor` names one place wherever the program stands: by POSIX's
+# rules it has a root, and by Windows' it has a volume and a root, or its
+# volume is a share or a device.
+function is_abs(anchor: Anchor, windows: bool) -> bool
+    if !windows
+        return anchor.root != ""
+    return anchor.share || anchor.volume != "" && anchor.root != ""
+
+## Tests
+
+test "split by POSIX's rules: empty, relative, one root, a run of roots, and no volume"
+    assert split("", false) == Anchor(volume: "", root: "", rest: "", share: false)
+    assert split("a/b", false) == Anchor(volume: "", root: "", rest: "a/b", share: false)
+    assert split("/a", false) == Anchor(volume: "", root: "/", rest: "a", share: false)
+    assert split("///a//", false) == Anchor(volume: "", root: "///", rest: "a//", share: false)
+    assert split("C:\\x", false) == Anchor(volume: "", root: "", rest: "C:\\x", share: false)
+    assert split("\\\\h\\s", false) == Anchor(volume: "", root: "", rest: "\\\\h\\s", share: false)
+
+test "split by Windows' rules: a drive with and without a root, and a root alone"
+    assert split("C:", true) == Anchor(volume: "C:", root: "", rest: "", share: false)
+    assert split("C:x", true) == Anchor(volume: "C:", root: "", rest: "x", share: false)
+    assert split("C:\\x", true) == Anchor(volume: "C:", root: "\\", rest: "x", share: false)
+    assert split("c:/x", true) == Anchor(volume: "c:", root: "/", rest: "x", share: false)
+    assert split("C:\\\\\\x", true) == Anchor(volume: "C:", root: "\\\\\\", rest: "x", share: false)
+    assert split("\\x", true) == Anchor(volume: "", root: "\\", rest: "x", share: false)
+    assert split("/x", true) == Anchor(volume: "", root: "/", rest: "x", share: false)
+    assert split("x:y:z", true) == Anchor(volume: "x:", root: "", rest: "y:z", share: false)
+    assert split("1:\\x", true) == Anchor(volume: "1:", root: "\\", rest: "x", share: false)
+
+# Python's `ntpath.splitroot` reads a drive as any one character and a colon,
+# observed on 2026-11-15 with `é:x` and `😀:x`.
+test "split by Windows' rules: a drive whose letter takes more than one byte"
+    assert split("é:x", true) == Anchor(volume: "é:", root: "", rest: "x", share: false)
+    assert split("😀:\\x", true) == Anchor(volume: "😀:", root: "\\", rest: "x", share: false)
+    assert split("é", true) == Anchor(volume: "", root: "", rest: "é", share: false)
+
+test "split by Windows' rules: shares whole, incomplete, and written with slashes"
+    assert split("\\\\host\\share", true) == Anchor(volume: "\\\\host\\share", root: "", rest: "", share: true)
+    assert split("\\\\host\\share\\x", true) == Anchor(volume: "\\\\host\\share", root: "\\", rest: "x", share: true)
+    assert split("//host/share/x", true) == Anchor(volume: "//host/share", root: "/", rest: "x", share: true)
+    assert split("\\\\host", true) == Anchor(volume: "\\\\host", root: "", rest: "", share: true)
+    assert split("\\\\host\\", true) == Anchor(volume: "\\\\host\\", root: "", rest: "", share: true)
+    assert split("\\\\", true) == Anchor(volume: "\\\\", root: "", rest: "", share: true)
+    assert split("\\\\\\x", true) == Anchor(volume: "\\\\\\x", root: "", rest: "", share: true)
+
+test "split by Windows' rules: the device forms, `\\\\?\\UNC\\` in any case"
+    assert split("\\\\?\\C:\\x", true) == Anchor(volume: "\\\\?\\C:", root: "\\", rest: "x", share: true)
+    assert split("\\\\?\\UNC\\h\\s\\x", true) == Anchor(volume: "\\\\?\\UNC\\h\\s", root: "\\", rest: "x", share: true)
+    assert split("\\\\?\\unc\\h\\s\\x", true) == Anchor(volume: "\\\\?\\unc\\h\\s", root: "\\", rest: "x", share: true)
+    assert split("\\\\.\\pipe\\x", true) == Anchor(volume: "\\\\.\\pipe", root: "\\", rest: "x", share: true)
+    assert split("\\\\.\\NUL", true) == Anchor(volume: "\\\\.\\NUL", root: "", rest: "", share: true)
+    assert split("\\\\?\\x", true) == Anchor(volume: "\\\\?\\x", root: "", rest: "", share: true)
+
+test "read: the start written the rules' way, and the names as written"
+    nothing: [str] = []
+    assert read("", false) == Reading(start: "", names: nothing)
+    assert read("//a/./b/", false) == Reading(start: "/", names: ["a", "b"])
+    assert read("C:/a\\..", true) == Reading(start: "C:\\", names: ["a", ".."])
+    assert read("C:a", true) == Reading(start: "C:", names: ["a"])
+    assert read("//h/s/x", true) == Reading(start: "\\\\h\\s\\", names: ["x"])
+    assert read("\\\\h\\s", true) == Reading(start: "\\\\h\\s", names: nothing)
+
+test "is_abs and has_root: a drive without a root, a root without a drive, a share"
+    assert is_abs(split("/a", false), false) && has_root(split("/a", false))
+    assert !is_abs(split("a", false), false) && !has_root(split("a", false))
+    assert is_abs(split("C:\\a", true), true) && has_root(split("C:\\a", true))
+    assert !is_abs(split("C:a", true), true) && !has_root(split("C:a", true))
+    assert !is_abs(split("\\a", true), true) && has_root(split("\\a", true))
+    assert is_abs(split("\\\\h\\s", true), true) && has_root(split("\\\\h\\s", true))
+    assert !is_abs(split("C:", true), true)
+    assert !is_abs(split("\\a", false), false)

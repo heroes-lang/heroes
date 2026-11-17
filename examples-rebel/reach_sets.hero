@@ -1,0 +1,9 @@
+# Reaches Rebel's `sets`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the letters two words share, in
+# the order of the first: "ae".
+
+use <rebel>/sets
+
+function main()
+    shared = sets.intersection(s: sets.from_list("make".chars()), other: sets.from_list("tea".chars()))
+    print(sets.to_list(shared).join(""))

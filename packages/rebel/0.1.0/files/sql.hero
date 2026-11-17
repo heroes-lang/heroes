@@ -1,0 +1,682 @@
+# What a program does with a database whatever the database is: the values
+# that travel to it and back, the rows a query answers and the reads of their
+# columns by place and by name, what a statement that changes rows answers,
+# the codes a database failure is told with, and an identifier quoted.
+#
+# It talks to no database. A driver does, and every driver of Rebel keeps one
+# API name for name over these types: `sql/postgres` speaks PostgreSQL's own
+# protocol over `net`, and `sql/sqlite` runs SQLite through its C library,
+# which only a program using that driver links. The contract is written in
+# `sql/postgres`'s opening comment.
+#
+# A value travels as a parameter, never inside the text of a statement: a
+# statement names its parameters with the database's own placeholders, `$1`
+# for PostgreSQL and `?1` for SQLite, and the values come in a list beside it.
+# So nothing here quotes a value; `quote_identifier` quotes a name, which a
+# parameter cannot carry.
+#
+# A database failure is told with one of the codes below, and its message
+# keeps the database's own code and words: `[23505] duplicate key value
+# violates unique constraint "users_pkey"`. `database_code_of` reads the code
+# back. Reads of a row fail `not_found` on a column the row does not hold and
+# `invalid` on a value of another kind.
+
+use sql/internal/columns
+use sql/internal/naming
+use time
+
+## Values
+
+# A value as it travels to a database and back. A `match` on it answers all
+# seven cases. Which case a column arrives as is the driver's to say, by the
+# column's type; `sql/postgres` writes its table in its opening comment.
+variant Value
+    # SQL's `NULL`, a word the language keeps for itself.
+    null_value
+    # `true` or `false`.
+    boolean
+        # The truth value.
+        v: bool
+    # A whole number.
+    integer
+        # The number, within an `i64`.
+        v: i64
+    # A floating-point number, `nan` and the infinities included.
+    float
+        # The number.
+        v: f64
+    # Text, UTF-8, which may be empty.
+    text
+        # The characters.
+        v: str
+    # Bytes with no meaning as text: a `bytea`, a `BLOB`.
+    blob
+        # The bytes, which may be empty.
+        v: [u8]
+    # A moment in UTC: a timestamp, or a date at its midnight.
+    instant
+        # The moment, as `time` counts it.
+        v: time.Instant
+
+## Rows
+
+# What a driver knows of one column of a query's answer.
+record Column
+    # The column's name as the database wrote it: the name in the table, or
+    # the name an `AS` gave, or one the database made up for an expression.
+    name: str
+    # The database's name for the column's type, in its own spelling:
+    # `int4` or `timestamptz` for PostgreSQL, the declared type for SQLite, ""
+    # where the database names none.
+    type_name: str
+
+# One row of a query's answer: its values in the order of the columns, each
+# under the column's name. A driver builds it; `names` and `values` are as
+# long as each other.
+record Row
+    # The columns' names in order. Two columns may share a name; a read by
+    # name answers the first.
+    names: [str]
+    # The values, one per column, in the same order.
+    values: [Value]
+
+# Everything a query answered: its columns and its rows, in the order the
+# database gave them. A query that answers no row still says its columns.
+record Rows
+    # The columns, in order.
+    columns: [Column]
+    # The rows, in the order the database sent them, which is the statement's
+    # `ORDER BY` and otherwise no order a program may count on.
+    rows: [Row]
+
+# What a statement that changes rows answers.
+record Result
+    # The rows it inserted, changed or deleted, 0 for a statement that counts
+    # none, as a `CREATE TABLE` does. PostgreSQL also counts the rows a
+    # `SELECT` answered.
+    rows_affected: i64
+    # The id of the last row inserted, where the database keeps one, as
+    # SQLite's rowid is. Fails `unsupported` where it keeps none: PostgreSQL
+    # answers an inserted id with `RETURNING`.
+    last_id: i64?
+
+## Reading a row
+
+# The value of the column at `index` of `row`, counted from 0.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0 to one less than the row's columns.
+#
+# Fails `not_found` where `index` is below 0 or past the last column, the
+# message saying how many the row holds. See also `value_named`.
+function value_at(row: Row, index: i64) -> Value?
+    at = columns.checked_index(count: row.values.len(), index: index)?
+    return ok(row.values[at])
+
+# The value of the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte: `ID` is not `id`.
+#
+# Fails `not_found` where no column is named so, the message listing the
+# names the row has. See also `value_at`.
+function value_named(row: Row, name: str) -> Value?
+    at = columns.index_named(row.names, name: name)?
+    return ok(row.values[at])
+
+# Whether the column at `index` of `row` is `NULL`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does. See also `is_null_named`.
+function is_null_at(row: Row, index: i64) -> bool?
+    return ok(value_at(row, index)? == .null_value)
+
+# Whether the first column of `row` named `name` is `NULL`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does. See also `is_null_at`.
+function is_null_named(row: Row, name: str) -> bool?
+    return ok(value_named(row, name)? == .null_value)
+
+# The truth value of the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# a `boolean`, `NULL` included, the message naming the kind it is. See also
+# `boolean_named`.
+function boolean_at(row: Row, index: i64) -> bool?
+    v = value_at(row, index)?
+
+    match v
+        .boolean b => return ok(b.v)
+        .null_value | .integer _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "boolean")
+            )
+
+# The truth value of the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not a `boolean`, `NULL` included. See also `boolean_at`.
+function boolean_named(row: Row, name: str) -> bool?
+    v = value_named(row, name)?
+
+    match v
+        .boolean b => return ok(b.v)
+        .null_value | .integer _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "boolean")
+            )
+
+# The whole number in the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# an `integer`, `NULL` and a `float` included: nothing is converted. See also
+# `integer_named`.
+function integer_at(row: Row, index: i64) -> i64?
+    v = value_at(row, index)?
+
+    match v
+        .integer n => return ok(n.v)
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "integer")
+            )
+
+# The whole number in the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not an `integer`, `NULL` included. See also `integer_at`.
+function integer_named(row: Row, name: str) -> i64?
+    v = value_named(row, name)?
+
+    match v
+        .integer n => return ok(n.v)
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "integer")
+            )
+
+# The floating-point number in the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# a `float`, `NULL` and an `integer` included: an integer past 2^53 has no
+# exact float, so nothing is converted. See also `float_named`.
+function float_at(row: Row, index: i64) -> f64?
+    v = value_at(row, index)?
+
+    match v
+        .float x => return ok(x.v)
+        .null_value | .boolean _ | .integer _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "float")
+            )
+
+# The floating-point number in the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not a `float`, `NULL` included. See also `float_at`.
+function float_named(row: Row, name: str) -> f64?
+    v = value_named(row, name)?
+
+    match v
+        .float x => return ok(x.v)
+        .null_value | .boolean _ | .integer _ | .text _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "float")
+            )
+
+# The text in the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# `text`, `NULL` included. See also `text_named`.
+function text_at(row: Row, index: i64) -> str?
+    v = value_at(row, index)?
+
+    match v
+        .text t => return ok(t.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "text")
+            )
+
+# The text in the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not `text`, `NULL` included. See also `text_at`.
+function text_named(row: Row, name: str) -> str?
+    v = value_named(row, name)?
+
+    match v
+        .text t => return ok(t.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "text")
+            )
+
+# The bytes in the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# a `blob`, `NULL` and `text` included. See also `blob_named`.
+function blob_at(row: Row, index: i64) -> [u8]?
+    v = value_at(row, index)?
+
+    match v
+        .blob b => return ok(b.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .text _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "blob")
+            )
+
+# The bytes in the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not a `blob`, `NULL` included. See also `blob_at`.
+function blob_named(row: Row, name: str) -> [u8]?
+    v = value_named(row, name)?
+
+    match v
+        .blob b => return ok(b.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .text _ | .instant _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "blob")
+            )
+
+# The moment in the column at `index` of `row`.
+#
+# - `row`: the row read.
+# - `index`: the column's place, from 0.
+#
+# Fails `not_found` as `value_at` does, and `invalid` where the value is not
+# an `instant`, `NULL` included. See also `instant_named`.
+function instant_at(row: Row, index: i64) -> time.Instant?
+    v = value_at(row, index)?
+
+    match v
+        .instant t => return ok(t.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .text _ | .blob _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.at_words(index: index, name: row.names[index]), found: kind_of(v), wanted: "instant")
+            )
+
+# The moment in the first column of `row` named `name`.
+#
+# - `row`: the row read.
+# - `name`: the column's name, compared byte for byte.
+#
+# Fails `not_found` as `value_named` does, and `invalid` where the value is
+# not an `instant`, `NULL` included. See also `instant_at`.
+function instant_named(row: Row, name: str) -> time.Instant?
+    v = value_named(row, name)?
+
+    match v
+        .instant t => return ok(t.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .text _ | .blob _ =>
+            return fail(
+                code: INVALID,
+                msg: columns.wrong_kind(column: columns.named_words(name), found: kind_of(v), wanted: "instant")
+            )
+
+# The name of the case `v` is: `null`, `boolean`, `integer`, `float`, `text`,
+# `blob` or `instant`, as a failure's message names it.
+#
+# - `v`: the value named.
+function kind_of(v: Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean _  => "boolean"
+        .integer _  => "integer"
+        .float _    => "float"
+        .text _     => "text"
+        .blob _     => "blob"
+        .instant _  => "instant"
+
+## Identifiers
+
+# `name` as a quoted identifier of standard SQL, which PostgreSQL and SQLite
+# both read: inside double quotes, each double quote in it doubled. A quoted
+# name keeps its case and may hold any character, a space or a keyword
+# included.
+#
+# - `name`: the table's, column's or schema's name, as it should be stored.
+#
+# Fails `invalid` where `name` is empty or holds a zero byte, which no
+# database keeps in a name. See also `quote_qualified`.
+function quote_identifier(name: str) -> str?
+    return naming.quoted(name: name, which: "the identifier")
+
+# The parts of a qualified name, each quoted as `quote_identifier` quotes it,
+# joined by dots: `["app", "users"]` gives `"app"."users"`.
+#
+# - `parts`: the name's parts from the outermost, a schema before a table;
+#   one part is a name alone.
+#
+# Fails `invalid` where `parts` is empty or one part is, or holds a zero
+# byte, the message saying which part, counted from 0. See also
+# `quote_identifier`.
+function quote_qualified(parts: [str]) -> str?
+    return naming.qualified(parts)
+
+## Failures
+
+# The code of a value read as a kind it is not, and of a statement, a name
+# or a parameter the database refuses as written: a syntax error, a value of
+# the wrong type, a constraint a row breaks other than a unique one.
+constant INVALID: str
+    "invalid"
+
+# The code of a column a row does not hold, of a query that answers no row
+# where one was asked for, and of a table, a column, a function or a
+# database the database does not know.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a row a unique key already holds, and of a table, a column or
+# another object made where one of its name is already there.
+constant EXISTS: str
+    "exists"
+
+# The code of a login the database refuses, and of a statement the user may
+# not run.
+constant PERMISSION: str
+    "permission"
+
+# The code of a value past what its column's type holds: a number out of its
+# range, a text longer than its column allows.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a connection that is closed, or that the database or the
+# network closed while the call waited.
+constant CLOSED: str
+    "closed"
+
+# The code of a call whose time ran out: a connection's deadline, or a
+# limit of the database's own on how long a session may wait.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a statement the database cancelled while it ran, and of a call
+# that ended because the program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# The code of a database that has no more of what the statement needs:
+# disk, memory, connections, or a limit of its own on a statement's size.
+constant LIMIT: str
+    "limit"
+
+# The code of what this database or this driver does not do: a feature the
+# database does not have, a protocol the driver does not speak.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of every other failure of a database, a deadlock and a
+# transaction that could not be serialized among them: the message carries
+# the database's own code and words.
+constant FAILED: str
+    "failed"
+
+# The message of a failure a database reported: its own code in brackets,
+# then its own words, `[23505] duplicate key value violates unique
+# constraint "users_pkey"`. Every driver makes its database's failures with
+# it, so `database_code_of` reads every one back.
+#
+# - `database_code`: the database's own code for the failure, PostgreSQL's
+#   SQLSTATE or SQLite's extended result code, with no space and no `]`.
+# - `message`: the database's own words, and whatever it added after them.
+#
+# Aborts where `database_code` is empty or holds a space or a `]`: a driver
+# makes the code, and the code is never empty. See also `database_code_of`.
+function failure_message(database_code: str, message: str) -> str
+    assert naming.is_code(database_code)
+    return "[" + database_code + "] " + message
+
+# The database's own code in the message of a failure `failure_message`
+# made: `23505` in `[23505] duplicate key value violates unique constraint`.
+#
+# - `msg`: a failure's message, as `e.msg` holds it.
+#
+# Fails `not_found` where `msg` does not open with a code in brackets: a
+# failure the driver found itself, a connection refused or a value read as
+# another kind, carries none. See also `failure_message`.
+function database_code_of(msg: str) -> str?
+    return naming.code_in(msg)
+
+## Tests
+
+test "value_at and value_named: the first, the last, past the end, below 0, an empty row"
+    row = Row(names: ["a", "b"], values: [.integer(v: 1), .null_value])
+    assert value_at(row, 0).must() == .integer(v: 1)
+    assert value_at(row, 1).must() == .null_value
+    assert value_named(row, "b").must() == .null_value
+
+    match value_at(row, 2)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no column 2 in a row of 2 columns"
+
+    assert value_at(row, -1).is_err()
+
+    match value_named(Row(names: [], values: []), "a")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no column \"a\" in a row of no columns"
+
+test "typed reads: each kind read as itself, by place and by name"
+    t = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 0).must()
+    row = Row(
+        names: ["b", "i", "f", "s", "x", "t"],
+        values: [.boolean(v: false), .integer(v: -9223372036854775808), .float(v: -0.0), .text(v: ""), .blob(v: []), .instant(v: t)]
+    )
+    assert !boolean_at(row, 0).must() && !boolean_named(row, "b").must()
+    assert integer_at(row, 1).must() == -9223372036854775808 && integer_named(row, "i").must() == -9223372036854775808
+    assert float_at(row, 2).must() == 0.0 && float_named(row, "f").must() == 0.0
+    assert text_at(row, 3).must() == "" && text_named(row, "s").must() == ""
+    assert blob_at(row, 4).must() == [] && blob_named(row, "x").must() == []
+    assert instant_at(row, 5).must() == t && instant_named(row, "t").must() == t
+
+    for i in range(from: 0, to: 6)
+        assert !is_null_at(row, i).must()
+
+test "typed reads: null and every other kind refused with invalid, nothing converted"
+    row = Row(names: ["n", "i", "x"], values: [.null_value, .integer(v: 1), .text(v: "1")])
+
+    match integer_at(row, 0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "column 0 (\"n\") is null, not an integer"
+
+    match float_named(row, "i")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "column \"i\" is an integer, not a float"
+
+    match integer_named(row, "x")
+        .ok _  => assert false
+        .err e => assert e.msg == "column \"x\" is text, not an integer"
+
+    assert boolean_at(row, 1).is_err() && text_at(row, 1).is_err() && blob_at(row, 2).is_err() && instant_at(row, 2).is_err()
+    assert boolean_named(row, "n").is_err() && text_named(row, "n").is_err() && blob_named(row, "n").is_err() && instant_named(row, "n").is_err()
+    assert float_at(row, 0).is_err()
+
+test "typed reads: a missing column is not_found before a kind is asked"
+    row = Row(names: ["a"], values: [.text(v: "x")])
+
+    match text_at(row, 1)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match text_named(row, "A")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no column \"A\" in a row of the column \"a\""
+
+    assert is_null_at(row, 5).is_err() && is_null_named(row, "b").is_err()
+
+test "kind_of: every case"
+    assert kind_of(.null_value) == "null"
+    assert kind_of(.boolean(v: true)) == "boolean"
+    assert kind_of(.integer(v: 0)) == "integer"
+    assert kind_of(.float(v: 1.5)) == "float"
+    assert kind_of(.text(v: "é")) == "text"
+    assert kind_of(.blob(v: [0])) == "blob"
+    assert kind_of(.instant(v: time.epoch())) == "instant"
+
+test "quote_identifier and quote_qualified: the names SQLite reads back as themselves"
+    assert quote_identifier("Stardust \"Spiders\"").must() == "\"Stardust \"\"Spiders\"\"\""
+    assert quote_identifier("città").must() == "\"città\""
+    assert quote_qualified(["main", "t\"x"]).must() == "\"main\".\"t\"\"x\""
+    assert quote_identifier("").is_err()
+    assert quote_qualified([]).is_err()
+
+test "failure_message and database_code_of: there and back, and a message with no code"
+    assert failure_message(database_code: "42P01", message: "relation \"nope\" does not exist") == "[42P01] relation \"nope\" does not exist"
+    assert database_code_of(failure_message(database_code: "SQLITE_BUSY/5", message: "")).must() == "SQLITE_BUSY/5"
+
+    match database_code_of("connecting to localhost:5432: nothing listens there")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+## Examples
+
+# The value in a row's second column.
+test "value_at: the second column"
+    row = Row(names: ["id", "name"], values: [.integer(v: 7), .text(v: "Ziggy")])
+    assert value_at(row, 1).must() == .text(v: "Ziggy")
+
+# The value in the column called `name`.
+test "value_named: a column by its name"
+    row = Row(names: ["id", "name"], values: [.integer(v: 7), .text(v: "Ziggy")])
+    assert value_named(row, "name").must() == .text(v: "Ziggy")
+
+# A `NULL` told apart from a value, by place.
+test "is_null_at: a NULL column"
+    row = Row(names: ["id", "left_at"], values: [.integer(v: 7), .null_value])
+    assert is_null_at(row, 1).must()
+
+# A `NULL` told apart from a value, by name.
+test "is_null_named: a NULL column by its name"
+    row = Row(names: ["id", "left_at"], values: [.integer(v: 7), .null_value])
+    assert !is_null_named(row, "id").must()
+
+# A truth value read by place.
+test "boolean_at: an active flag"
+    row = Row(names: ["active"], values: [.boolean(v: true)])
+    assert boolean_at(row, 0).must()
+
+# A truth value read by name.
+test "boolean_named: an active flag by its name"
+    row = Row(names: ["active"], values: [.boolean(v: true)])
+    assert boolean_named(row, "active").must()
+
+# A count read by place.
+test "integer_at: a count"
+    row = Row(names: ["count"], values: [.integer(v: 42)])
+    assert integer_at(row, 0).must() == 42
+
+# A count read by name.
+test "integer_named: a count by its name"
+    row = Row(names: ["count"], values: [.integer(v: 42)])
+    assert integer_named(row, "count").must() == 42
+
+# A price read by place.
+test "float_at: a price"
+    row = Row(names: ["price"], values: [.float(v: 9.5)])
+    assert float_at(row, 0).must() == 9.5
+
+# A price read by name.
+test "float_named: a price by its name"
+    row = Row(names: ["price"], values: [.float(v: 9.5)])
+    assert float_named(row, "price").must() == 9.5
+
+# A name read by place.
+test "text_at: a name"
+    row = Row(names: ["name"], values: [.text(v: "Ziggy")])
+    assert text_at(row, 0).must() == "Ziggy"
+
+# A name read by its column's name.
+test "text_named: a name by its column's name"
+    row = Row(names: ["name"], values: [.text(v: "Ziggy")])
+    assert text_named(row, "name").must() == "Ziggy"
+
+# A picture's bytes read by place.
+test "blob_at: a picture's first bytes"
+    row = Row(names: ["picture"], values: [.blob(v: [137, 80, 78, 71])])
+    assert blob_at(row, 0).must() == [137, 80, 78, 71]
+
+# A picture's bytes read by name.
+test "blob_named: a picture's bytes by name"
+    row = Row(names: ["picture"], values: [.blob(v: [137, 80, 78, 71])])
+    assert blob_named(row, "picture").must().len() == 4
+
+# A moment read by place.
+test "instant_at: when a row was made"
+    made = time.date(year: 1972, month: 6, day: 16).must()
+    row = Row(names: ["made_at"], values: [.instant(v: made)])
+    assert instant_at(row, 0).must() == made
+
+# A moment read by name.
+test "instant_named: when a row was made, by name"
+    made = time.date(year: 1972, month: 6, day: 16).must()
+    row = Row(names: ["made_at"], values: [.instant(v: made)])
+    assert time.format(instant_named(row, "made_at").must(), .date_only) == "1972-06-16"
+
+# The kind of a value, as a message names it.
+test "kind_of: a text value"
+    assert kind_of(.text(v: "Ziggy")) == "text"
+
+# A table's name that holds a space and a quote, quoted for a statement.
+test "quote_identifier: a name with a space and quotes"
+    assert quote_identifier("Stardust \"Spiders\"").must() == "\"Stardust \"\"Spiders\"\"\""
+
+# A table named with its schema.
+test "quote_qualified: a schema and a table"
+    assert quote_qualified(["app", "users"]).must() == "\"app\".\"users\""
+
+# The message a driver makes of a database's failure.
+test "failure_message: a unique key broken"
+    assert failure_message(database_code: "23505", message: "duplicate key value violates unique constraint \"users_pkey\"") == "[23505] duplicate key value violates unique constraint \"users_pkey\""
+
+# The database's own code read back out of a failure's message.
+test "database_code_of: a SQLSTATE read back"
+    assert database_code_of("[23505] duplicate key value violates unique constraint \"users_pkey\"").must() == "23505"

@@ -1,0 +1,49 @@
+# The runtime's thread doors, `hero_os.h`, bound thin: the floor of `threads`,
+# in the header's order, each answering what C answers. spec § 13 states what
+# crosses: one `i64`, or one `str` copied each way, and nothing else.
+#
+# The header is the runtime's, spec § 13's *threads, processes and files from
+# the language's `hero_os.h`*, so this group names it and no `link`. A handle
+# is the runtime's index of the thread, never a system thread. The runtime
+# holds `hero_thread_limit()` threads at once and panics past them; it panics
+# too on a handle joined twice, a handle it never gave, and a thread joined by
+# the door of the other kind.
+
+extern "hero_os.h"
+    # Starts `body` on `arg` on a new thread with a stack of at least `bytes`,
+    # 0 asking the runtime's own floor; -1 with the system's own number in
+    # `why` where the system refuses.
+    function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+    # Waits for a thread `hero_thread_spawn_sized` started and answers what
+    # its body returned; the handle is spent.
+    function hero_thread_join(handle: i64) -> i64
+    # Starts `body` on a copy of `arg` on a new thread; panics where the
+    # system refuses.
+    function hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64
+    # Waits for a thread `hero_thread_spawn_str` started and answers a copy of
+    # what its body returned; the handle is spent.
+    function hero_thread_join_str(handle: i64) -> str
+    # How many threads the runtime holds at once.
+    function hero_thread_limit() -> i64
+
+# `hero_thread_spawn_sized`: `body` on `arg` on a stack of at least `bytes`,
+# answering the handle, or -1 with the system's number in `why`.
+function start(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+    return hero_thread_spawn_sized(body: body, arg: arg, bytes: bytes, why: @why)
+
+# `hero_thread_join`: what the body of the thread `handle` returned.
+function finish(handle: i64) -> i64
+    return hero_thread_join(handle)
+
+# `hero_thread_spawn_str`: `body` on a copy of `arg`, answering the handle.
+function start_text(body: (function(str) -> str), arg: str) -> i64
+    return hero_thread_spawn_str(body: body, arg: arg)
+
+# `hero_thread_join_str`: a copy of what the body of the thread `handle`
+# returned.
+function finish_text(handle: i64) -> str
+    return hero_thread_join_str(handle)
+
+# `hero_thread_limit`: how many threads the runtime holds at once.
+function limit() -> i64
+    return hero_thread_limit()

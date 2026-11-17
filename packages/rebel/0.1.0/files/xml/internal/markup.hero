@@ -1,0 +1,335 @@
+# The markup that is not a tag: a comment, a processing instruction, a CDATA
+# section and the XML declaration, each read from its opening `<` to the byte
+# past its end, with the checks XML 1.0 (fifth edition) asks of each.
+
+use strings
+use xml/internal/characters
+use xml/internal/refs
+use xml/internal/scan
+
+# What `read_instruction` answers.
+record Instruction
+    # The name after `<?`.
+    target: str
+    # What follows the white space after the target, up to `?>`, its line ends
+    # read as line feeds.
+    data: str
+    # The byte index past `?>`.
+    end: i64
+
+# What `read_declaration` answers: each pseudo-attribute as written, and the
+# byte index past `?>`.
+record Declared
+    # The version, `1.` and digits.
+    version: str
+    # The encoding, `UTF-8` in any case, or empty where none is named.
+    encoding: str
+    # `yes`, `no`, or empty where none is said.
+    standalone: str
+    # The byte index past `?>`.
+    end: i64
+
+# Whether `text` holds `word` from byte `at` on.
+function holds_at(text: str, at: i64, word: str) -> bool
+    if at < 0 || at + word.len() > text.len()
+        return false
+
+    for k in range(from: 0, to: word.len())
+        if text[at + k] != word[k]
+            return false
+
+    return true
+
+# The byte index of the first byte from `at` on that is not white space, or
+# the text's length.
+function skip_space(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && characters.is_space(text[i])
+        i @ i + 1
+
+    return i
+
+# Where `word` next begins in `text` from byte `at` on, or the text's length
+# where it does not.
+function index_from(text: str, at: i64, word: str) -> i64
+    i: i64 @= at
+
+    while i + word.len() <= text.len()
+        if holds_at(text: text, at: i, word: word)
+            return i
+        i @ i + 1
+
+    return text.len()
+
+# The comment whose `<!--` begins at byte `at` of `text`: its characters
+# between `<!--` and `-->`. Fails `invalid` where `--` stands inside it, so
+# where it ends in `-`, and where it never ends.
+function read_comment(text: str, at: i64) -> refs.Piece?
+    first = at + 4
+    dashes = index_from(text: text, at: first, word: "--")
+
+    if dashes == text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: text.len(), what: f"`-->`, which ends the comment opened at {scan.position(text: text, at: at)}")
+        )
+
+    if !holds_at(text: text, at: dashes, word: "-->")
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: dashes, what: "`--` stands inside a comment, where XML allows it only in the `-->` that ends it")
+        )
+    return ok(refs.Piece(value: refs.normalized(text.slice(from: first, to: dashes)), end: dashes + 3))
+
+# The instruction whose `<?` begins at byte `at` of `text`. Fails `invalid`
+# where its target is not a name, holds a colon, or is `xml` in any case, and
+# where no `?>` ends it.
+function read_instruction(text: str, at: i64) -> Instruction?
+    first = at + 2
+    end = characters.name_end(text: text, at: first)
+
+    if end == first
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: first, what: "a target name after `<?`"))
+    target = text.slice(from: first, to: end)
+
+    if strings.to_lower_ascii(target) == "xml"
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at, what: f"`<?{target}` stands where only an instruction may: a declaration opens a document and stands nowhere else, and no instruction's target is `xml` in any case")
+        )
+
+    if characters.colon_index(target) != target.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: first, what: f"the target `{target}` holds a colon, which Namespaces in XML 1.0 refuses")
+        )
+
+    if holds_at(text: text, at: end, word: "?>")
+        return ok(Instruction(target: target, data: "", end: end + 2))
+
+    if end >= text.len() || !characters.is_space(text[end])
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: end, what: "white space or `?>` after the target")
+        )
+    data_at = skip_space(text: text, at: end)
+    close = index_from(text: text, at: data_at, word: "?>")
+
+    if close == text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: text.len(), what: f"`?>`, which ends the instruction opened at {scan.position(text: text, at: at)}")
+        )
+    return ok(Instruction(target: target, data: refs.normalized(text.slice(from: data_at, to: close)), end: close + 2))
+
+# The CDATA section whose `<![CDATA[` begins at byte `at` of `text`: its
+# characters, line ends read as line feeds. Fails `invalid` where no `]]>`
+# ends it.
+function read_cdata(text: str, at: i64) -> refs.Piece?
+    first = at + 9
+    close = index_from(text: text, at: first, word: "]]>")
+
+    if close == text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: text.len(), what: f"`]]>`, which ends the CDATA section opened at {scan.position(text: text, at: at)}")
+        )
+    return ok(refs.Piece(value: refs.normalized(text.slice(from: first, to: close)), end: close + 3))
+
+# The quoted value of a pseudo-attribute of the declaration, from its quote
+# at byte `at` of `text`: the characters between the quotes, as written.
+function read_quoted(text: str, at: i64) -> refs.Piece?
+    if at >= text.len() || text[at] != '"' && text[at] != '\''
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: at, what: "`\"` or `'`, which opens a value")
+        )
+    close: i64 @= at + 1
+
+    while close < text.len() && text[close] != text[at]
+        close @ close + 1
+
+    if close >= text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: close, what: "the quote that ends the value")
+        )
+    return ok(refs.Piece(value: text.slice(from: at + 1, to: close), end: close + 1))
+
+# The value of the pseudo-attribute `name` that begins at byte `at` of `text`:
+# `name`, `=` with white space around it or none, and a quoted value.
+function read_pseudo(text: str, at: i64, name: str) -> refs.Piece?
+    equals = skip_space(text: text, at: at + name.len())
+
+    if equals >= text.len() || text[equals] != '='
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: equals, what: f"`=` after `{name}`"))
+    return read_quoted(text: text, at: skip_space(text: text, at: equals + 1))
+
+# Whether `s` is a version XML 1.0 reads: `1.` and one digit or more.
+function is_version(s: str) -> bool
+    if s.len() < 3 || s[0] != '1' || s[1] != '.'
+        return false
+
+    for k in range(from: 2, to: s.len())
+        if s[k] < '0' || s[k] > '9'
+            return false
+
+    return true
+
+# Whether `s` is an encoding's name as XML 1.0 writes one: a letter, then
+# letters, digits, `.`, `_` and `-`.
+function is_encoding_name(s: str) -> bool
+    if s.len() == 0 || !is_ascii_letter(s[0])
+        return false
+
+    for k in range(from: 1, to: s.len())
+        b = s[k]
+
+        if !is_ascii_letter(b) && !(b >= '0' && b <= '9') && b != '.' && b != '_' && b != '-'
+            return false
+
+    return true
+
+# Whether `b` is an ASCII letter.
+function is_ascii_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# The XML declaration whose `<?xml` begins at byte `at` of `text`, white space
+# following it. Fails `invalid` where it is not one, and `unsupported` where it
+# names another encoding than UTF-8.
+function read_declaration(text: str, at: i64) -> Declared?
+    first = skip_space(text: text, at: at + 5)
+
+    if !holds_at(text: text, at: first, word: "version")
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: first, what: "`version`, which a declaration names first")
+        )
+    version = read_pseudo(text: text, at: first, name: "version")?
+
+    if !is_version(version.value)
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: first, what: f"the version `{version.value}` is none XML 1.0 reads: `1.0`, or `1.` and other digits, read as 1.0")
+        )
+    i: i64 @= version.end
+    encoding: str @= ""
+    standalone: str @= ""
+    next: i64 @= skip_space(text: text, at: i)
+
+    if next > i && holds_at(text: text, at: next, word: "encoding")
+        named = read_pseudo(text: text, at: next, name: "encoding")?
+
+        if !is_encoding_name(named.value)
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: next, what: f"`{named.value}` is not an encoding's name")
+            )
+
+        if strings.to_lower_ascii(named.value) != "utf-8"
+            return fail(
+                code: scan.UNSUPPORTED,
+                msg: scan.said(text: text, at: next, what: f"the declaration names the encoding `{named.value}`, and this reader reads UTF-8 alone")
+            )
+        encoding @ named.value
+        i @ named.end
+        next @ skip_space(text: text, at: i)
+
+    if next > i && holds_at(text: text, at: next, word: "standalone")
+        said = read_pseudo(text: text, at: next, name: "standalone")?
+
+        if said.value != "yes" && said.value != "no"
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: next, what: f"`standalone` is `yes` or `no`, and here `{said.value}`")
+            )
+        standalone @ said.value
+        i @ said.end
+        next @ skip_space(text: text, at: i)
+
+    if !holds_at(text: text, at: next, word: "?>")
+        what = if encoding == "" && standalone == ""
+            "`encoding`, `standalone` or `?>`"
+        else if standalone == ""
+            "`standalone` or `?>`"
+        else
+            "`?>`"
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: next, what: what))
+    return ok(Declared(version: version.value, encoding: encoding, standalone: standalone, end: next + 2))
+
+## Tests
+
+test "holds_at, skip_space and index_from: at the start, past the end, and absent"
+    assert holds_at(text: "<!--", at: 0, word: "<!")
+    assert !holds_at(text: "<!", at: 1, word: "!-")
+    assert !holds_at(text: "a", at: -1, word: "a")
+    assert skip_space(text: " \t\r\nx", at: 0) == 4
+    assert skip_space(text: "  ", at: 0) == 2
+    assert index_from(text: "a?>b?>", at: 2, word: "?>") == 4
+    assert index_from(text: "abc", at: 0, word: "?>") == 3
+
+test "read_comment: empty, characters of more than one byte, a line end, and as Python reads them"
+    assert read_comment(text: "<!---->", at: 0).must() == refs.Piece(value: "", end: 7)
+    assert read_comment(text: "x<!-- città -->y", at: 1).must() == refs.Piece(value: " città ", end: 16)
+    assert read_comment(text: "<!--a\r\nb-->", at: 0).must().value == "a\nb"
+    assert read_comment(text: "<!-- - -->", at: 0).must().value == " - "
+
+test "read_comment: `--` inside, a `-` before the end, and no end, refused as Python and Go refuse them"
+    match read_comment(text: "<!-- a -- b -->", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 8: `--` stands inside a comment, where XML allows it only in the `-->` that ends it"
+
+    assert read_comment(text: "<!-- a --->", at: 0).is_err()
+    assert read_comment(text: "<!--->", at: 0).is_err()
+
+    match read_comment(text: "<!-- a", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 7: expected `-->`, which ends the comment opened at line 1, column 1, found the end of the text"
+
+test "read_instruction: no data, data after white space as Go reads it, and a target that begins with xml"
+    assert read_instruction(text: "<?t?>", at: 0).must() == Instruction(target: "t", data: "", end: 5)
+    assert read_instruction(text: "<?t   d  x ?>", at: 0).must() == Instruction(target: "t", data: "d  x ", end: 13)
+    assert read_instruction(text: "<?xml-stylesheet href=\"a\"?>", at: 0).must().target == "xml-stylesheet"
+    assert read_instruction(text: "<?é\n\r\nx?>", at: 0).must().data == "x"
+
+test "read_instruction: the target xml in any case, a colon, no target, no space, and no end"
+    for text in ["<?xml version=\"1.0\"?>", "<?XmL x?>", "<?p:t x?>", "<? t?>", "<?t-x?>x", "<?t#?>", "<?t x"]
+        match read_instruction(text: text, at: 0)
+            .ok i  => assert i.target == "t-x"
+            .err e => assert e.code == "invalid"
+
+    match read_instruction(text: "<?XmL x?>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: `<?XmL` stands where only an instruction may: a declaration opens a document and stands nowhere else, and no instruction's target is `xml` in any case"
+
+test "read_cdata: empty, markup inside read as text, a line end, and no end"
+    assert read_cdata(text: "<![CDATA[]]>", at: 0).must() == refs.Piece(value: "", end: 12)
+    assert read_cdata(text: "<![CDATA[<x>&amp;]]>", at: 0).must().value == "<x>&amp;"
+    assert read_cdata(text: "<![CDATA[a\rb]]]>", at: 0).must().value == "a\nb]"
+    assert read_cdata(text: "<![CDATA[a]]", at: 0).is_err()
+
+test "read_declaration: the version alone, all three, either quote, and white space around `=`"
+    assert read_declaration(text: "<?xml version=\"1.0\"?>", at: 0).must() == Declared(version: "1.0", encoding: "", standalone: "", end: 21)
+    whole = read_declaration(text: "<?xml version='1.1' encoding='utf-8' standalone='yes' ?><a/>", at: 0).must()
+    assert whole == Declared(version: "1.1", encoding: "utf-8", standalone: "yes", end: 56)
+    assert read_declaration(text: "<?xml  version = \"1.0\"\nstandalone=\"no\"?>", at: 0).must().standalone == "no"
+
+test "read_declaration: version 2.0 as Go refuses it, another encoding, the wrong order, and no version"
+    match read_declaration(text: "<?xml version=\"2.0\"?>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 7: the version `2.0` is none XML 1.0 reads: `1.0`, or `1.` and other digits, read as 1.0"
+
+    match read_declaration(text: "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "line 1, column 21: the declaration names the encoding `ISO-8859-1`, and this reader reads UTF-8 alone"
+
+    for text in ["<?xml encoding=\"UTF-8\" version=\"1.0\"?>", "<?xml?>", "<?xml version=\"1.0\"encoding=\"UTF-8\"?>", "<?xml version=\"1.0\" standalone=\"maybe\"?>", "<?xml version=\"1.\"?>", "<?xml version=\"1.0\" encoding=\"8bit\"?>", "<?xml version=\"1.0\""]
+        match read_declaration(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "is_version and is_encoding_name: the edges of each"
+    assert is_version("1.0") && is_version("1.10") && !is_version("1.") && !is_version("2.0") && !is_version("1.x")
+    assert is_encoding_name("UTF-8") && is_encoding_name("x") && !is_encoding_name("") && !is_encoding_name("8x")
+    assert !is_encoding_name("utf 8")

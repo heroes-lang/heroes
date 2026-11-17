@@ -1,0 +1,285 @@
+# Decimals as an integer and a scale, the value being the integer divided by
+# ten to the scale. Sums, differences, products and powers are exact. A result
+# that must be rounded is answered as a `Ratio`, an exact quotient of two
+# integers whose rounding to a whole number gives the digits wanted, and the
+# face rounds it with its own `divide`, so every rounding of `big` passes
+# through one place.
+
+use big/internal/floats
+use big/internal/limbs
+use big/internal/product
+use big/internal/quotient
+use big/internal/signed
+use big/internal/theory
+
+# A decimal: `unscaled` over ten to the `scale`.
+record Dec
+    unscaled: signed.Signed
+    scale: i64
+
+# An exact quotient, `num` over `den`, `den` not zero.
+record Ratio
+    num: signed.Signed
+    den: signed.Signed
+
+# Ten to the `k`th, `k` not negative.
+function ten_to(k: i64) -> [i64]
+    return product.power(a: [10], exponent: k)
+
+# `s` times ten to the `k`th, `k` not negative.
+function scaled_up(s: signed.Signed, k: i64) -> signed.Signed
+    if k == 0 || s.magnitude.len() == 0
+        return s
+    return signed.make(negative: s.negative, magnitude: product.multiply(a: s.magnitude, b: ten_to(k)))
+
+# `a` plus `b`, at the larger scale.
+function add(a: Dec, b: Dec) -> Dec
+    if a.scale >= b.scale
+        return Dec(
+            unscaled: signed.add(a: a.unscaled, b: scaled_up(s: b.unscaled, k: a.scale - b.scale)),
+            scale: a.scale
+        )
+    return Dec(unscaled: signed.add(a: scaled_up(s: a.unscaled, k: b.scale - a.scale), b: b.unscaled), scale: b.scale)
+
+# `a` less `b`, at the larger scale.
+function sub(a: Dec, b: Dec) -> Dec
+    return add(a: a, b: Dec(unscaled: signed.negate(b.unscaled), scale: b.scale))
+
+# `a` times `b`, at the sum of the scales.
+function mul(a: Dec, b: Dec) -> Dec
+    return Dec(unscaled: signed.mul(a: a.unscaled, b: b.unscaled), scale: a.scale + b.scale)
+
+# `d` to the power `k`, not negative, at `k` times its scale.
+function power(d: Dec, k: i64) -> Dec
+    assert k >= 0
+    m = product.power(a: d.unscaled.magnitude, exponent: k)
+    return Dec(unscaled: signed.make(negative: d.unscaled.negative && k & 1 == 1, magnitude: m), scale: d.scale * k)
+
+# The value of `d` times ten to the `scale`, exactly, as a quotient.
+function at_scale(d: Dec, scale: i64) -> Ratio
+    if scale >= d.scale
+        return Ratio(num: scaled_up(s: d.unscaled, k: scale - d.scale), den: signed.of_int(1))
+    return Ratio(num: d.unscaled, den: signed.make(negative: false, magnitude: ten_to(d.scale - scale)))
+
+# `n` over `by` times ten to the `scale`, exactly, as a quotient.
+function quotient_at(n: Dec, by: Dec, scale: i64) -> Ratio
+    k = by.scale + scale - n.scale
+
+    if k >= 0
+        return Ratio(num: scaled_up(s: n.unscaled, k: k), den: by.unscaled)
+    return Ratio(num: n.unscaled, den: scaled_up(s: by.unscaled, k: -k))
+
+# A quotient that rounds as the square root of `d` times ten to the `scale`
+# does: the root itself where it is whole, else its whole part plus a quarter,
+# a half or three quarters as the rest is below, at or above a half.
+function sqrt_at(d: Dec, scale: i64) -> Ratio
+    assert !d.unscaled.negative
+    k = d.scale - 2 * scale
+    up: i64 @= 0
+    down: i64 @= 0
+
+    if k < 0
+        up @ -k
+    else
+        down @ k
+    a = product.multiply(a: d.unscaled.magnitude, b: ten_to(up))
+    b = ten_to(down)
+    r = theory.isqrt(quotient.divide(n: a, by: b).quotient)
+    square = product.multiply(a: product.multiply(a: r, b: r), b: b)
+
+    if square == a
+        return Ratio(num: signed.make(negative: false, magnitude: r), den: signed.of_int(1))
+    odd = limbs.add(a: limbs.shift_left(a: r, count: 1), b: [1])
+    half = limbs.compare(
+        a: limbs.shift_left(a: a, count: 2),
+        b: product.multiply(a: product.multiply(a: odd, b: odd), b: b)
+    )
+    num = limbs.add(a: limbs.shift_left(a: r, count: 2), b: limbs.of(2 + half))
+    return Ratio(num: signed.make(negative: false, magnitude: num), den: signed.of_int(4))
+
+# -1, 0 or 1 as `a` is below `b`, equal, or above, by value. Two scales far
+# apart are told by their lengths, so no power of ten past both is made.
+function compare(a: Dec, b: Dec) -> i64
+    sa = signed.sign(a.unscaled)
+    sb = signed.sign(b.unscaled)
+
+    if sa != sb
+        if sa < sb
+            return -1
+        return 1
+
+    if sa == 0
+        return 0
+    order: i64 @= 0
+
+    if a.scale == b.scale
+        order @ limbs.compare(a: a.unscaled.magnitude, b: b.unscaled.magnitude)
+    else if a.scale > b.scale
+        gap = a.scale - b.scale
+
+        if gap > limbs.bit_len(a.unscaled.magnitude)
+            order @ -1
+        else
+            order @ limbs.compare(a: a.unscaled.magnitude, b: product.multiply(a: b.unscaled.magnitude, b: ten_to(gap)))
+    else
+        gap = b.scale - a.scale
+
+        if gap > limbs.bit_len(b.unscaled.magnitude)
+            order @ 1
+        else
+            order @ limbs.compare(a: product.multiply(a: a.unscaled.magnitude, b: ten_to(gap)), b: b.unscaled.magnitude)
+    return sa * order
+
+# `d` with the zeros that end its digits taken off; zero is 0 at scale 0.
+function trim(d: Dec) -> Dec
+    if d.unscaled.magnitude.len() == 0
+        return Dec(unscaled: d.unscaled, scale: 0)
+    m: [i64] @= d.unscaled.magnitude
+    scale: i64 @= d.scale
+    step: i64 @= 1000000000
+    count: i64 @= 9
+
+    while count > 0
+        cut = limbs.divided_small(a: m, d: step)
+
+        if cut.remainder == 0
+            m @ cut.quotient
+            scale @ scale - count
+        else
+            step @ step / 10
+            count @ count - 1
+
+    return Dec(unscaled: signed.make(negative: d.unscaled.negative, magnitude: m), scale: scale)
+
+# How many decimal digits `m` has; zero has one.
+function digit_count(m: [i64]) -> i64
+    if m.len() == 0
+        return 1
+    digits: i64 @= (limbs.bit_len(m) - 1) * 30102 / 100000 + 1
+
+    while limbs.compare(a: m, b: ten_to(digits)) >= 0
+        digits @ digits + 1
+
+    return digits
+
+# The exact decimal of the float whose parts are `parts`, of sign `negative`.
+function of_float(parts: floats.Parts, negative: bool) -> Dec
+    m = limbs.of(parts.mantissa)
+
+    if parts.exponent >= 0
+        return Dec(
+            unscaled: signed.make(negative: negative, magnitude: limbs.shift_left(a: m, count: parts.exponent)),
+            scale: 0
+        )
+    five = product.power(a: [5], exponent: -parts.exponent)
+    return Dec(
+        unscaled: signed.make(negative: negative, magnitude: product.multiply(a: m, b: five)),
+        scale: -parts.exponent
+    )
+
+# The whole part of the float whose parts are `parts`, of sign `negative`,
+# its fraction dropped toward zero.
+function whole_of_float(parts: floats.Parts, negative: bool) -> signed.Signed
+    m = limbs.of(parts.mantissa)
+
+    if parts.exponent >= 0
+        return signed.make(negative: negative, magnitude: limbs.shift_left(a: m, count: parts.exponent))
+    return signed.make(negative: negative, magnitude: limbs.shift_right(a: m, count: -parts.exponent))
+
+# The `f64` nearest `d`.
+function to_float(d: Dec) -> f64
+    m = d.unscaled.magnitude
+    sign: f64 @= 1.0
+
+    if d.unscaled.negative
+        sign @ -1.0
+
+    if m.len() == 0
+        return 0.0
+    bits = limbs.bit_len(m)
+
+    if (bits - 1) * 30102 / 100000 - d.scale > 310
+        return sign * floats.infinity()
+
+    if bits * 30103 / 100000 + 1 - d.scale < -330
+        return sign * 0.0
+
+    if d.scale <= 0
+        return sign * floats.nearest(num: product.multiply(a: m, b: ten_to(-d.scale)), den: [1], bits: 53, lowest: -1074)
+    return sign * floats.nearest(num: m, den: ten_to(d.scale), bits: 53, lowest: -1074)
+
+## Tests
+
+# The decimal `u` over ten to the `scale`.
+function dec(u: i64, scale: i64) -> Dec
+    return Dec(unscaled: signed.of_int(u), scale: scale)
+
+test "add, sub and mul: scales apart, a negative, and zero"
+    assert add(a: dec(u: 15, scale: 1), b: dec(u: 150, scale: 2)) == dec(u: 300, scale: 2)
+    assert add(a: dec(u: 1, scale: -2), b: dec(u: 5, scale: 1)) == dec(u: 1005, scale: 1)
+    assert sub(a: dec(u: 1, scale: 0), b: dec(u: 1, scale: 3)) == dec(u: 999, scale: 3)
+    assert mul(a: dec(u: 15, scale: 1), b: dec(u: -150, scale: 2)) == dec(u: -2250, scale: 3)
+    assert mul(a: dec(u: 0, scale: 5), b: dec(u: 7, scale: 1)) == dec(u: 0, scale: 6)
+
+test "power: to zero, of a negative, odd and even"
+    assert power(d: dec(u: -15, scale: 1), k: 0) == dec(u: 1, scale: 0)
+    assert power(d: dec(u: -15, scale: 1), k: 3) == dec(u: -3375, scale: 3)
+    assert power(d: dec(u: -15, scale: 1), k: 2) == dec(u: 225, scale: 2)
+
+test "at_scale and quotient_at: up, down, and a divisor of another scale"
+    up = at_scale(d: dec(u: 15, scale: 1), scale: 3)
+    assert up.num == signed.of_int(1500)
+    assert up.den == signed.of_int(1)
+    down = at_scale(d: dec(u: 15, scale: 1), scale: -1)
+    assert down.num == signed.of_int(15)
+    assert down.den == signed.of_int(100)
+    q = quotient_at(n: dec(u: 1, scale: 0), by: dec(u: 3, scale: 0), scale: 2)
+    assert q.num == signed.of_int(100)
+    assert q.den == signed.of_int(3)
+    r = quotient_at(n: dec(u: 1, scale: 5), by: dec(u: 3, scale: 0), scale: 2)
+    assert r.num == signed.of_int(1)
+    assert r.den == signed.of_int(3000)
+
+test "sqrt_at: a whole root, a tie, below and above a half"
+    whole = sqrt_at(d: dec(u: 1600, scale: 2), scale: 0)
+    assert whole.num == signed.of_int(4)
+    assert whole.den == signed.of_int(1)
+    tie = sqrt_at(d: dec(u: 25, scale: 2), scale: 0)
+    assert tie.num == signed.of_int(2)
+    assert tie.den == signed.of_int(4)
+    two = sqrt_at(d: dec(u: 2, scale: 0), scale: 2)
+    assert two.num == signed.of_int(4 * 141 + 1)
+    three = sqrt_at(d: dec(u: 3, scale: 0), scale: 1)
+    assert three.num == signed.of_int(4 * 17 + 1)
+    above = sqrt_at(d: dec(u: 35, scale: 1), scale: 1)
+    assert above.num == signed.of_int(4 * 18 + 3)
+
+test "compare: signs, zero, scales near and far apart"
+    assert compare(a: dec(u: 15, scale: 1), b: dec(u: 150, scale: 2)) == 0
+    assert compare(a: dec(u: -1, scale: 0), b: dec(u: 0, scale: 9)) == -1
+    assert compare(a: dec(u: 0, scale: 0), b: dec(u: 0, scale: -9)) == 0
+    assert compare(a: dec(u: 1, scale: 1000000), b: dec(u: 1, scale: 0)) == -1
+    assert compare(a: dec(u: -1, scale: 1000000), b: dec(u: -1, scale: 0)) == 1
+    assert compare(a: dec(u: 1, scale: -1000000), b: dec(u: 999, scale: 0)) == 1
+    assert compare(a: dec(u: 151, scale: 2), b: dec(u: 15, scale: 1)) == 1
+
+test "trim and digit_count: zero, many zeros, none, and powers of ten"
+    nothing: [i64] = []
+    assert trim(dec(u: 0, scale: 7)) == dec(u: 0, scale: 0)
+    assert trim(dec(u: 1500, scale: 3)) == dec(u: 15, scale: 1)
+    assert trim(dec(u: -12000000000000, scale: 0)) == dec(u: -12, scale: -12)
+    assert trim(dec(u: 7, scale: 2)) == dec(u: 7, scale: 2)
+    assert digit_count(nothing) == 1
+    assert digit_count([9]) == 1
+    assert digit_count([10]) == 2
+    assert digit_count(limbs.of(999999999999999999)) == 18
+    assert digit_count(limbs.of(1000000000000000000)) == 19
+
+test "of_float and to_float: a half, a large power of two, a tie and a tiny value"
+    assert of_float(parts: floats.parts_of(0.5), negative: false) == dec(u: 5, scale: 1)
+    assert of_float(parts: floats.parts_of(1024.0), negative: true) == dec(u: -1024, scale: 0)
+    assert to_float(dec(u: 1, scale: 1)) == 0.1
+    assert to_float(dec(u: -15, scale: 1)) == -1.5
+    assert to_float(dec(u: 1, scale: 400)) == 0.0
+    assert to_float(dec(u: 1, scale: -400)) == floats.infinity()
+    assert to_float(dec(u: 9007199254740993, scale: 0)) == 9007199254740992.0

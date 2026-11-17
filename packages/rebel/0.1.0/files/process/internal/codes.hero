@@ -1,0 +1,206 @@
+# The codes `process` fails with, and the failure the floor's last call left
+# turned into one of them, with a message that says what was asked and what
+# was found.
+
+use os/hero_disk
+use process/hero_proc
+use process/internal/fixture
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+constant PERMISSION: str
+    "permission"
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant FAILED: str
+    "failed"
+
+# A failure with `code`, its message `asked`, then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+# The failure the floor's last call on this thread left, for a call that
+# asked `asked` of `program` working in `dir`.
+function last<T>(asked: str, program: str, dir: str) -> T?
+    kind = hero_proc.last_error()
+    os_number = hero_proc.last_os_error()
+
+    if kind == hero_proc.HERO_PROC_NOT_FOUND
+        return of(code: NOT_FOUND, asked: asked, why: missing(program))
+
+    if kind == hero_proc.HERO_PROC_NOT_A_DIRECTORY
+        return folder(asked: asked, dir: dir)
+
+    if kind == hero_proc.HERO_PROC_DENIED
+        return of(
+            code: PERMISSION,
+            asked: asked,
+            why: f"the system will not run \"{program}\" (system error {os_number})"
+        )
+
+    if kind == hero_proc.HERO_PROC_INVALID
+        return of(code: INVALID, asked: asked, why: "the system's process layer refused what it was handed")
+
+    if kind == hero_proc.HERO_PROC_NOT_OPEN
+        return of(code: CLOSED, asked: asked, why: "a stream given to the child, or the child itself, is closed")
+
+    if kind == hero_proc.HERO_PROC_LIMIT
+        return of(
+            code: LIMIT,
+            asked: asked,
+            why: f"the system has no process or descriptor left, or more than 4,096 arguments or variables were given (system error {os_number})"
+        )
+
+    if kind == hero_proc.HERO_PROC_UNSUPPORTED
+        return of(code: UNSUPPORTED, asked: asked, why: "this platform has no such request")
+
+    if kind == hero_proc.HERO_PROC_RUNNING
+        return of(code: INVALID, asked: asked, why: "the child still runs")
+
+    if kind == hero_proc.HERO_PROC_NOT_A_PROGRAM
+        return of(
+            code: INVALID,
+            asked: asked,
+            why: f"\"{program}\" is no program this system starts; a batch file runs through `shell`"
+        )
+    return of(code: FAILED, asked: asked, why: f"the system refused (system error {os_number})")
+
+# `why`, then what a child wrote to its error where it wrote text: its last
+# 400 bytes or fewer, cut where a character begins, without the line ends.
+function told(why: str, error: [u8]) -> str
+    end: i64 @= error.len()
+
+    while end > 0 && (error[end - 1] == 10 || error[end - 1] == 13)
+        end @ end - 1
+
+    from: i64 @= 0
+
+    if end > 400
+        from @ end - 400
+
+    while from < end && error[from] >= 128 && error[from] < 192
+        from @ from + 1
+
+    if from == end
+        return why
+
+    match error.slice(from: from, to: end).validated_bytes()
+        .ok text => return f"{why}; its error ends: {text}"
+        .err _   => return why
+
+# Why a program was not found: a name in no folder of PATH, or a path that
+# names nothing.
+function missing(program: str) -> str
+    for c in program.chars()
+        if c == "/" || c == "\\"
+            return f"nothing that runs is at \"{program}\""
+
+    return f"no program \"{program}\" in the folders of PATH"
+
+# The failure of a working folder the child could not start in: `dir` names
+# nothing, or names what is no folder.
+function folder<T>(asked: str, dir: str) -> T?
+    numbers: [i64] @= [0, 0, 0, 0, 0, 0, 0, 0]
+
+    if hero_disk.facts_through(dir, @numbers, n: 8) < 0 && hero_disk.last_error() == hero_disk.HERO_DISK_NOT_FOUND
+        return of(code: FILE_NOT_FOUND, asked: asked, why: f"the working folder \"{dir}\" names nothing")
+    return of(code: NOT_A_DIRECTORY, asked: asked, why: f"\"{dir}\" is no folder a child can work in")
+
+## Tests
+
+# What `last` answers once the floor refused to start `program` in `dir`.
+function refused_start(program: str, dir: str) -> ()?
+    words: [u8] @= []
+    variables: [u8] @= []
+    p = hero_proc.start(
+        program: program,
+        arguments: @words,
+        arguments_count: 0,
+        environment_kind: hero_proc.HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: dir,
+        in_kind: hero_proc.HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: hero_proc.HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: hero_proc.HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr
+    )
+    assert p == nullptr
+    return last(asked: "t", program: program, dir: dir)
+
+test "of: the code, and the message of what was asked then what was found"
+    got: ()? = of(code: INVALID, asked: "asking", why: "found")
+
+    match got
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "asking: found"
+
+test "told: no error, line ends alone, a short error, the last 400 bytes of a long one cut where a character begins, and bytes that are no text"
+    none: [u8] = []
+    assert told("it failed", error: none) == "it failed"
+    assert told("it failed", error: [10, 13, 10]) == "it failed"
+    assert told("x", error: [98, 97, 100, 13, 10]) == "x; its error ends: bad"
+    long: [u8] @= [195, 169]
+
+    for _ in range(from: 0, to: 399)
+        long @ long.push('a')
+
+    assert told("x", error: long) == "x; its error ends: " + repeat("a", 399)
+    assert told("x", error: [255]) == "x"
+
+test "missing: a name in no folder of PATH, and a path that names nothing by `/` and by `\\`"
+    assert missing("tool") == "no program \"tool\" in the folders of PATH"
+    assert missing("./tool") == "nothing that runs is at \"./tool\""
+    assert missing("a\\tool") == "nothing that runs is at \"a\\tool\""
+
+test "last: the floor's refusals as codes, a program that is not there, a folder that names nothing, one that is a file, and a pipe of no process"
+    match refused_start(program: "rebel-no-such-program", dir: "")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "t: no program \"rebel-no-such-program\" in the folders of PATH"
+
+    match refused_start(program: fixture.shell_program(), dir: "build/rebel-process-no-such-folder")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match refused_start(program: fixture.shell_program(), dir: fixture.shell_program())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_A_DIRECTORY
+
+    none: hero_proc.Proc = nullptr
+    end = hero_proc.pipe(none, which: hero_proc.HERO_PROC_OUTPUT)
+    assert end == nullptr
+    got: ()? = last(asked: "t", program: "p", dir: "")
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED

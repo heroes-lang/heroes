@@ -1,0 +1,57 @@
+# What the face asks of a stream and of the program's terminal: whether a
+# stream takes the terminal's control sequences, a text written to the
+# terminal itself, and a buffer of zeros the floor fills.
+
+use io
+use os
+use term/hero_term
+use term/internal/failure
+
+# Whether `s` is a terminal that takes control sequences and `TERM` is not
+# `dumb`; false for a closed stream. On Windows it turns the console's
+# processing of sequences on, which the layer puts back at the program's end.
+function controls_on(s: io.Stream) -> bool
+    if s.handle == nullptr
+        return false
+
+    if os.env("TERM").default("") == "dumb"
+        return false
+    return hero_term.sequences(s.handle) == 1
+
+# Writes `text` to the program's terminal itself, which the person at it sees
+# whatever its outputs are. Fails `unsupported` where the program has none.
+function to_terminal(text: str, asked: str) -> ()?
+    bytes: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        bytes @ bytes.push(text[i])
+
+    if hero_term.write(@bytes, n: to_u64(bytes.len()).must()) < 0
+        return failure.last(asked: asked)
+    return ok()
+
+# `n` zeros, `n` at or above 0.
+function zeros(n: i64) -> [u8]
+    made: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        made @ made.push(0)
+
+    return made
+
+test "controls_on: a pipe takes none, at either end"
+    p @= io.pipe().must()
+    assert !controls_on(p.reader)
+    assert !controls_on(p.writer)
+    io.close(@p.reader).must()
+    io.close(@p.writer).must()
+
+test "to_terminal: no text is written, or unsupported where the program has no terminal"
+    match to_terminal(text: "", asked: "writing nothing")
+        .ok _  => _ = 0
+        .err e => assert e.code == failure.UNSUPPORTED
+
+test "zeros: none, one, and many"
+    assert zeros(0) == []
+    assert zeros(1) == [0]
+    assert zeros(64).len() == 64

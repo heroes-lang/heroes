@@ -1,0 +1,252 @@
+# The tokenizer's states of text and of a tag's name (13.2.5.1 to 13.2.5.17):
+# data, RCDATA, RAWTEXT, script data and PLAINTEXT, the opening of a tag, its
+# name, and an end tag read inside raw text. Each step reads at least one byte
+# or switches to a state that will; a run of ordinary bytes is read at once.
+
+use html/internal/ascii
+use html/internal/lexer
+use html/internal/token
+use unicode
+
+# 13.2.5.1, the data state.
+function data(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '&'
+        lexer.reference(@lx, false)
+    else if b == '<'
+        lx.at @ lx.at + 1
+        lx.state @ .tag_open
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lexer.text_out(@lx, s: lx.text.slice(from: lx.at, to: lx.at + 1), at: lx.at)
+        lx.at @ lx.at + 1
+    else
+        at = lx.at
+        lexer.text_out(
+            @lx,
+            s: lexer.take(@lx, end: lexer.run_end(lx, stop_a: '&', stop_b: '<', stop_c: '<'), lower: false),
+            at: at
+        )
+
+# 13.2.5.2 to 13.2.5.5: RCDATA, RAWTEXT, script data and PLAINTEXT, which
+# differ in what `<` opens and whether `&` begins a reference.
+function raw(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+    references = lx.state == .rcdata
+    plain = lx.state == .plaintext
+
+    if b == '&' && references
+        lexer.reference(@lx, false)
+    else if b == '<' && !plain
+        lx.at @ lx.at + 1
+
+        lx.state @ if lx.state == .rcdata
+            .rcdata_less_than
+        else if lx.state == .rawtext
+            .rawtext_less_than
+        else
+            .script_less_than
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lexer.text_out(@lx, s: unicode.REPLACEMENT_CHARACTER, at: lx.at)
+        lx.at @ lx.at + 1
+    else
+        at = lx.at
+
+        stop: u8 = if plain
+            0
+        else
+            '<'
+
+        amp: u8 = if references
+            '&'
+        else
+            stop
+        lexer.text_out(
+            @lx,
+            s: lexer.take(@lx, end: lexer.run_end(lx, stop_a: stop, stop_b: amp, stop_c: stop), lower: false),
+            at: at
+        )
+
+# 13.2.5.6, the tag open state; `<` is read.
+function tag_open(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-before-tag-name")
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if b == '!'
+        lx.at @ lx.at + 1
+        lx.begun @ lx.at - 2
+        lx.state @ .markup_declaration_open
+    else if b == '/'
+        lx.at @ lx.at + 1
+        lx.state @ .end_tag_open
+    else if ascii.is_alpha(b)
+        lexer.new_tag(@lx, kind: token.START, at: lx.at - 1)
+        lx.state @ .tag_name
+    else if b == '?'
+        lx.temp @ []
+        lx.begun @ lx.at - 1
+        lx.at @ lx.at + 1
+        lx.state @ .instruction_open
+    else
+        lexer.error_here(@lx, "invalid-first-character-of-tag-name")
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lx.state @ .data
+
+# 13.2.5.7, the end tag open state; `</` is read.
+function end_tag_open(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-before-tag-name")
+        lexer.text_out(@lx, s: "</", at: lx.at - 2)
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_alpha(b)
+        lexer.new_tag(@lx, kind: token.END, at: lx.at - 2)
+        lx.state @ .tag_name
+    else if b == '>'
+        lexer.error_here(@lx, "missing-end-tag-name")
+        lx.at @ lx.at + 1
+        lx.state @ .data
+    else
+        lexer.error_here(@lx, "invalid-first-character-of-tag-name")
+        lexer.new_comment(@lx, first: "", at: lx.at - 2)
+        lx.state @ .bogus_comment
+
+# 13.2.5.8, the tag name state.
+function tag_name(@lx: lexer.Lexer)
+    if lexer.at_end(lx)
+        lexer.error_here(@lx, "eof-in-tag")
+        lexer.emit_eof(@lx)
+        return
+    b = lexer.byte(lx)
+
+    if ascii.is_white(b)
+        lx.at @ lx.at + 1
+        lx.state @ .before_attribute_name
+    else if b == '/'
+        lx.at @ lx.at + 1
+        lx.state @ .self_closing_start_tag
+    else if b == '>'
+        lx.at @ lx.at + 1
+        lx.state @ .data
+        lexer.emit_tag(@lx)
+    else if b == 0
+        lexer.error_here(@lx, "unexpected-null-character")
+        lx.name @ lx.name.push(unicode.REPLACEMENT_CHARACTER)
+        lx.at @ lx.at + 1
+    else
+        end: i64 @= lx.at
+
+        while end < lx.text.len() && !ascii.is_white(lx.text[end]) && lx.text[end] != '/' && lx.text[end] != '>' && lx.text[end] != 0
+            end @ end + 1
+
+        lx.name @ lx.name.push(lexer.take(@lx, end: end, lower: true))
+
+# 13.2.5.9 and 13.2.5.12: RCDATA's and RAWTEXT's `<`.
+function raw_less_than(@lx: lexer.Lexer)
+    back: lexer.State = if lx.state == .rcdata_less_than
+        .rcdata
+    else
+        .rawtext
+
+    if !lexer.at_end(lx) && lexer.byte(lx) == '/'
+        lx.temp @ []
+        lx.at @ lx.at + 1
+        lx.back @ back
+        lx.state @ .raw_end_tag_open
+    else
+        lexer.text_out(@lx, s: "<", at: lx.at - 1)
+        lx.state @ back
+
+# 13.2.5.10, 13.2.5.13, 13.2.5.16 and 13.2.5.24: `</` read inside raw text,
+# whose kind `back` names.
+function raw_end_tag_open(@lx: lexer.Lexer)
+    if !lexer.at_end(lx) && ascii.is_alpha(lexer.byte(lx))
+        lexer.new_tag(@lx, kind: token.END, at: lx.at - 2)
+        lx.state @ .raw_end_tag_name
+    else
+        lexer.text_out(@lx, s: "</", at: lx.at - 2)
+        lx.state @ lx.back
+
+# 13.2.5.11, 13.2.5.14, 13.2.5.17 and 13.2.5.25: an end tag's name inside
+# raw text, a tag only where it closes the element the text is in.
+function raw_end_tag_name(@lx: lexer.Lexer)
+    if !lexer.at_end(lx)
+        b = lexer.byte(lx)
+
+        if ascii.is_alpha(b)
+            end: i64 @= lx.at
+
+            while end < lx.text.len() && ascii.is_alpha(lx.text[end])
+                end @ end + 1
+
+            written = lexer.take(@lx, end: end, lower: false)
+            lx.name @ lx.name.push(ascii.to_lower(written))
+            lx.temp @ lx.temp.push(written)
+            return
+
+        if (ascii.is_white(b) || b == '/' || b == '>') && lexer.is_appropriate(lx)
+            lx.at @ lx.at + 1
+
+            if b == '>'
+                lx.state @ .data
+                lexer.emit_tag(@lx)
+            else if b == '/'
+                lx.state @ .self_closing_start_tag
+            else
+                lx.state @ .before_attribute_name
+            return
+    lexer.text_out(@lx, s: "</" + lx.temp.join(""), at: lx.begun)
+    lx.state @ lx.back
+
+## Tests
+
+test "data and tag_open: text, a tag's `<` opening a state, a `<` that opens nothing, and the end"
+    lx: lexer.Lexer @= lexer.start("ab<1")
+    data(@lx)
+    assert lx.at == 2 && lx.pending == ["ab"]
+    data(@lx)
+    assert lx.state == .tag_open && lx.at == 3
+    tag_open(@lx)
+    assert lx.state == .data && lx.at == 3 && lx.codes == ["invalid-first-character-of-tag-name"] && lx.pending == ["ab", "<"]
+
+test "tag_name: a name lower-cased in one run, ended by `>`, and a zero byte replaced"
+    lx: lexer.Lexer @= lexer.start("<DiV>")
+    lx.at @ 1
+    tag_open(@lx)
+    tag_name(@lx)
+    tag_name(@lx)
+    assert lx.queue.len() == 1 && lx.queue[0].name == "div" && lx.state == .data && lx.last_start == "div"
+
+test "raw_end_tag_name: the appropriate end tag, and one that is not read back as text"
+    lx: lexer.Lexer @= lexer.start("</TITLE>")
+    lx.last_start @ "title"
+    lx.state @ .rcdata_less_than
+    lx.at @ 1
+    raw_less_than(@lx)
+    raw_end_tag_open(@lx)
+    raw_end_tag_name(@lx)
+    raw_end_tag_name(@lx)
+    assert lx.queue.len() == 1 && lx.queue[0].kind == token.END && lx.queue[0].name == "title"
+    other: lexer.Lexer @= lexer.start("</b>")
+    other.last_start @ "title"
+    other.state @ .rawtext_less_than
+    other.at @ 1
+    raw_less_than(@other)
+    raw_end_tag_open(@other)
+    raw_end_tag_name(@other)
+    raw_end_tag_name(@other)
+    assert other.state == .rawtext && other.pending == ["</b"] && other.queue.len() == 0

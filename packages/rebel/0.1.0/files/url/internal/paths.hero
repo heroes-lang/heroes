@@ -1,0 +1,177 @@
+# A path's segments read and written, its "." and ".." removed by RFC 3986
+# § 5.2.4, and two paths merged by § 5.2.3, the work of resolving a
+# reference.
+#
+# Every function reads the raw path and cuts it only at a "/", which is
+# ASCII, so no cut splits a character.
+
+use strings
+use url/internal/classes
+use url/internal/escapes
+
+# Adds `piece` to the first `kept` pieces of `out`, past which nothing
+# counts: a piece removed is forgotten by `kept` alone, so the work stays one
+# pass.
+function put(@out: [str], @kept: i64, piece: str)
+    if kept < out.len()
+        out[kept] @ piece
+    else
+        out @ out.push(piece)
+    kept @ kept + 1
+
+# Whether `path` from byte `at` to its end is `rest` and nothing else.
+function rest_is(path: str, at: i64, rest: str) -> bool
+    return path.len() - at == rest.len() && strings.has_prefix_at(s: path, prefix: rest, at: at)
+
+# `path` without its "." and ".." segments, by RFC 3986 § 5.2.4's five
+# rules, A to E, read from left to right. A ".." above the first segment is
+# dropped.
+function remove_dot_segments(path: str) -> str
+    out: [str] @= []
+    kept: i64 @= 0
+    at: i64 @= 0
+    n = path.len()
+
+    while at < n
+        if strings.has_prefix_at(s: path, prefix: "../", at: at)
+            at @ at + 3
+        else if strings.has_prefix_at(s: path, prefix: "./", at: at)
+            at @ at + 2
+        else if strings.has_prefix_at(s: path, prefix: "/./", at: at)
+            at @ at + 2
+        else if rest_is(path: path, at: at, rest: "/.")
+            put(@out, @kept, "/")
+            at @ n
+        else if strings.has_prefix_at(s: path, prefix: "/../", at: at)
+            if kept > 0
+                kept @ kept - 1
+            at @ at + 3
+        else if rest_is(path: path, at: at, rest: "/..")
+            if kept > 0
+                kept @ kept - 1
+            put(@out, @kept, "/")
+            at @ n
+        else if rest_is(path: path, at: at, rest: ".") || rest_is(path: path, at: at, rest: "..")
+            at @ n
+        else
+            from: i64 @= at
+
+            if path[at] == '/'
+                from @ at + 1
+            end = classes.first_of(s: path, b: '/', from: from, to: n)
+            put(@out, @kept, path.slice(from: at, to: end))
+            at @ end
+
+    return out.slice(from: 0, to: kept).join("")
+
+# The path of a relative `reference` read where `base` stands, by RFC 3986
+# § 5.2.3: `base` up to its last "/", then `reference`; "/" and `reference`
+# where `base` is empty and has an authority before it.
+function merge(base: str, reference: str, authority: bool) -> str
+    if authority && base == ""
+        return "/" + reference
+
+    match strings.index_of_last(s: base, substr: "/")
+        .ok at => return base.slice(from: 0, to: at + 1) + reference
+        .err _ => return reference
+
+# The segments of the raw `path`, each unescaped. Fails `invalid` where a
+# "%" begins no escape and `not_text` where a segment's bytes are not UTF-8.
+function parse(path: str) -> [str]?
+    out: [str] @= []
+
+    if path == ""
+        return ok(out)
+    body: str @= path
+
+    if path[0] == '/'
+        body @ path.slice(from: 1, to: path.len())
+
+    for piece in strings.split(s: body, sep: "/")
+        out @ out.push(escapes.unescape(s: piece, plus: false)?)
+
+    return ok(out)
+
+# The raw path of `segments`, a "/" before each, each escaped so that a "/"
+# inside it stays in it.
+function format(segments: [str]) -> str
+    pieces: [str] @= []
+
+    for segment in segments
+        pieces @ pieces.push("/" + escapes.escape(s: segment, keeps: classes.is_unreserved, plus: false))
+
+    return pieces.join("")
+
+# `path` going on with `segments`, each escaped: a "/" between the two
+# unless `path` ends with one, and a "/" before them where `path` is empty
+# and an authority stands before it.
+function add(path: str, segments: [str], authority: bool) -> str
+    if segments.len() == 0
+        return path
+    pieces: [str] @= []
+
+    for segment in segments
+        pieces @ pieces.push(escapes.escape(s: segment, keeps: classes.is_unreserved, plus: false))
+
+    tail = pieces.join("/")
+
+    if path == ""
+        if authority
+            return "/" + tail
+        return tail
+
+    if path[path.len() - 1] == '/'
+        return path + tail
+    return path + "/" + tail
+
+## Tests
+
+test "remove_dot_segments: the RFC's two examples, empty, dots alone, and dots inside a name"
+    assert remove_dot_segments("/a/b/c/./../../g") == "/a/g"
+    assert remove_dot_segments("mid/content=5/../6") == "mid/6"
+    assert remove_dot_segments("") == ""
+    assert remove_dot_segments("/") == "/"
+    assert remove_dot_segments(".") == ""
+    assert remove_dot_segments("..") == ""
+    assert remove_dot_segments("/.") == "/"
+    assert remove_dot_segments("/..") == "/"
+    assert remove_dot_segments("/../../a") == "/a"
+    assert remove_dot_segments("/a/b/") == "/a/b/"
+    assert remove_dot_segments("/a/b/..") == "/a/"
+    assert remove_dot_segments("/a/.b/..c/c..") == "/a/.b/..c/c.."
+    assert remove_dot_segments("/a//../b") == "/a/b"
+    assert remove_dot_segments("/café/./x") == "/café/x"
+
+test "merge: an empty base with and without an authority, a base with a slash, one without"
+    assert merge(base: "", reference: "g", authority: true) == "/g"
+    assert merge(base: "", reference: "g", authority: false) == "g"
+    assert merge(base: "/b/c/d;p", reference: "g", authority: true) == "/b/c/g"
+    assert merge(base: "/b/c/", reference: "g", authority: true) == "/b/c/g"
+    assert merge(base: "d", reference: "g", authority: false) == "g"
+
+test "parse: empty, a slash alone, a slash at either end, an escaped slash, a refusal"
+    nothing: [str] = []
+    assert parse("").must() == nothing
+    assert parse("/").must() == [""]
+    assert parse("/a/b").must() == ["a", "b"]
+    assert parse("a/b").must() == ["a", "b"]
+    assert parse("/a/").must() == ["a", ""]
+    assert parse("/a%2Fb/c%20d").must() == ["a/b", "c d"]
+    assert parse("/caf%C3%A9").must() == ["café"]
+    assert parse("/%zz").is_err()
+    assert parse("/%FF").is_err()
+
+test "format: no segment, one empty, a slash and a character of two bytes inside a segment"
+    nothing: [str] = []
+    assert format(nothing) == ""
+    assert format([""]) == "/"
+    assert format(["a/b", "c d", "café"]) == "/a%2Fb/c%20d/caf%C3%A9"
+
+test "add: no segment, an empty path with and without an authority, a path ending with a slash"
+    nothing: [str] = []
+    assert add(path: "/v1", segments: nothing, authority: true) == "/v1"
+    assert add(path: "", segments: ["a", "b"], authority: true) == "/a/b"
+    assert add(path: "", segments: ["a"], authority: false) == "a"
+    assert add(path: "/v1", segments: ["users", "7"], authority: true) == "/v1/users/7"
+    assert add(path: "/v1/", segments: ["a b"], authority: true) == "/v1/a%20b"
+    assert add(path: "/", segments: [""], authority: true) == "/"

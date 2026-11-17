@@ -1,0 +1,189 @@
+# The tables of DEFLATE itself, RFC 1951 sections 3.2.5 to 3.2.7: what each
+# length and distance symbol stands for, the fixed codes, the order the code
+# length codes are sent in, and the arithmetic that finds the symbol of a
+# length or a distance. Both the compressor and the decompressor read them.
+
+# The shortest repeat DEFLATE can say: shorter ones are written as bytes.
+constant MIN_MATCH: i64
+    3
+
+# The longest repeat DEFLATE can say.
+constant MAX_MATCH: i64
+    258
+
+# The farthest a repeat can reach back: the largest window.
+constant MAX_DISTANCE: i64
+    32768
+
+# The symbol that ends a block.
+constant END_OF_BLOCK: i64
+    256
+
+# How many literal and length symbols a block may use: 0 to 285.
+constant LITERALS: i64
+    286
+
+# How many distance symbols a block may use: 0 to 29.
+constant DISTANCES: i64
+    30
+
+# How many code length symbols there are: 0 to 18.
+constant CODE_LENGTHS: i64
+    19
+
+# The longest code of a literal, a length or a distance.
+constant MAX_BITS: i64
+    15
+
+# The longest code of a code length symbol.
+constant MAX_CODE_LENGTH_BITS: i64
+    7
+
+# The shortest length each length symbol 257 to 285 stands for, by the symbol
+# less 257.
+constant LENGTH_BASE: [i64]
+    [3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258]
+
+# How many extra bits follow each length symbol, by the symbol less 257.
+constant LENGTH_EXTRA: [i64]
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0]
+
+# The shortest distance each distance symbol 0 to 29 stands for.
+constant DISTANCE_BASE: [i64]
+    [
+        1
+        2
+        3
+        4
+        5
+        7
+        9
+        13
+        17
+        25
+        33
+        49
+        65
+        97
+        129
+        193
+        257
+        385
+        513
+        769
+        1025
+        1537
+        2049
+        3073
+        4097
+        6145
+        8193
+        12289
+        16385
+        24577
+    ]
+
+# How many extra bits follow each distance symbol.
+constant DISTANCE_EXTRA: [i64]
+    [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13]
+
+# The order in which a dynamic block's header sends the lengths of the code
+# length code.
+constant CODE_LENGTH_ORDER: [i64]
+    [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15]
+
+# How many bits `x` needs, `x` 1 or more: 1 for 1, 4 for 8 to 15.
+function bit_length(x: i64) -> i64
+    n: i64 @= 0
+    rest: i64 @= x
+
+    while rest > 0
+        rest @ rest >> 1
+        n @ n + 1
+
+    return n
+
+# The length symbol of a repeat of `length` bytes, less 257: from 0 for 3 to
+# 28 for 258. `length` is 3 to 258.
+function length_code(length: i64) -> i64
+    if length == MAX_MATCH
+        return 28
+    l = length - MIN_MATCH
+
+    if l < 8
+        return l
+    top = bit_length(l) - 1
+    return 4 * (top - 1) + (l >> top - 2 & 3)
+
+# The distance symbol of a repeat reaching back `distance` bytes: from 0 for
+# 1 to 29 for 24,577 to 32,768. `distance` is 1 to 32,768.
+function distance_code(distance: i64) -> i64
+    d = distance - 1
+
+    if d < 4
+        return d
+    top = bit_length(d) - 1
+    return 2 * top + (d >> top - 1 & 1)
+
+# The code lengths of the fixed literal and length code, RFC 1951 section
+# 3.2.6: 8 bits for 0 to 143, 9 for 144 to 255, 7 for 256 to 279 and 8 for
+# 280 to 287. Symbols 286 and 287 have codes and are never valid.
+function fixed_literal_lengths() -> [i64]
+    lengths: [i64] @= []
+
+    for symbol in range(from: 0, to: 288)
+        bits: i64 @= 8
+
+        if symbol >= 144 && symbol <= 255
+            bits @ 9
+        else if symbol >= 256 && symbol <= 279
+            bits @ 7
+        lengths @ lengths.push(bits)
+
+    return lengths
+
+# The code lengths of the fixed distance code: 5 bits for each of 32 symbols,
+# of which 30 and 31 are never valid.
+function fixed_distance_lengths() -> [i64]
+    lengths: [i64] @= []
+
+    for _ in range(from: 0, to: 32)
+        lengths @ lengths.push(5)
+
+    return lengths
+
+test "length_code: every length from 3 to 258 falls in its symbol's range"
+    for length in range(from: 3, to: 259)
+        code = length_code(length)
+        assert length >= LENGTH_BASE[code]
+        assert length < LENGTH_BASE[code] + (1 << LENGTH_EXTRA[code]) || code == 28 && length == 258
+
+    assert length_code(3) == 0
+    assert length_code(10) == 7
+    assert length_code(11) == 8
+    assert length_code(257) == 27
+    assert length_code(258) == 28
+
+test "distance_code: every distance from 1 to 32,768 falls in its symbol's range"
+    for distance in range(from: 1, to: 32769)
+        code = distance_code(distance)
+        assert distance >= DISTANCE_BASE[code]
+        assert distance < DISTANCE_BASE[code] + (1 << DISTANCE_EXTRA[code])
+
+    assert distance_code(1) == 0
+    assert distance_code(4) == 3
+    assert distance_code(5) == 4
+    assert distance_code(32768) == 29
+
+test "bit_length: one, a power of two, and one below it"
+    assert bit_length(1) == 1
+    assert bit_length(8) == 4
+    assert bit_length(7) == 3
+    assert bit_length(32767) == 15
+
+test "fixed_literal_lengths and fixed_distance_lengths: the counts RFC 1951 gives"
+    lit = fixed_literal_lengths()
+    assert lit.len() == 288
+    assert lit[0] == 8 && lit[143] == 8 && lit[144] == 9 && lit[255] == 9
+    assert lit[256] == 7 && lit[279] == 7 && lit[280] == 8 && lit[287] == 8
+    assert fixed_distance_lengths().len() == 32

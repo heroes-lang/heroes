@@ -1,0 +1,93 @@
+# An integer written as text in a base: the digits of a magnitude, the sign
+# and the prefix that tells the base. Every magnitude is a `u64`, so the
+# smallest `i64`, whose magnitude no `i64` holds, is written like any other.
+
+constant DIGITS: str
+    "0123456789abcdefghijklmnopqrstuvwxyz"
+
+# The magnitude of `n` as a `u64`, which holds the smallest `i64`'s too.
+function magnitude(n: i64) -> u64
+    if n >= 0
+        return to_u64(n).must()
+    return to_u64(0 - (n + 1)).must() + 1
+
+# The `u64` whose 64 bits are those of `n`: `n` itself where it is not
+# negative, and `n` plus 2 to the 64th where it is.
+function bits_of(n: i64) -> u64
+    if n >= 0
+        return to_u64(n).must()
+    return to_u64(n - (0 - 9223372036854775807 - 1)).must() + 9223372036854775808
+
+# The prefix the language writes before the digits of `base`: `0x`, `0o`,
+# `0b`, and nothing for ten. Aborts for any other base, which has none.
+function prefix_of(base: i64) -> str
+    if base == 16
+        return "0x"
+
+    if base == 8
+        return "0o"
+
+    if base == 2
+        return "0b"
+    assert base == 10
+    return ""
+
+# A `-` where `negative`, then `prefix`, then the digits of `n` in `base`, 2
+# to 36, the letters in lower case: zero is one "0". Aborts where `base` is
+# outside 2 to 36.
+function spelt(negative: bool, prefix: str, n: u64, base: i64) -> str
+    assert base >= 2 && base <= 36
+    reversed: [u8] @= []
+    rest: u64 @= n
+    radix = to_u64(base).must()
+
+    while rest >= radix
+        reversed @ reversed.push(DIGITS[to_i64(rest % radix).must()])
+        rest @ rest / radix
+
+    reversed @ reversed.push(DIGITS[to_i64(rest).must()])
+    out: [u8] @= []
+
+    if negative
+        out @ out.push('-')
+
+    for at in range(from: 0, to: prefix.len())
+        out @ out.push(prefix[at])
+
+    at: i64 @= reversed.len() - 1
+
+    while at >= 0
+        out @ out.push(reversed[at])
+        at @ at - 1
+
+    return out.validated_bytes().must()
+
+## Tests
+
+test "magnitude: zero, both ends of i64, and minus one"
+    assert magnitude(0) == 0
+    assert magnitude(-1) == 1
+    assert magnitude(9223372036854775807) == 9223372036854775807
+    assert magnitude(0 - 9223372036854775807 - 1) == 9223372036854775808
+
+test "bits_of: zero, the largest i64, the smallest, and minus one"
+    assert bits_of(0) == 0
+    assert bits_of(9223372036854775807) == 9223372036854775807
+    assert bits_of(0 - 9223372036854775807 - 1) == 9223372036854775808
+    assert bits_of(-1) == 18446744073709551615
+
+test "prefix_of: the three bases that have one, and ten"
+    assert prefix_of(16) == "0x"
+    assert prefix_of(8) == "0o"
+    assert prefix_of(2) == "0b"
+    assert prefix_of(10) == ""
+
+test "spelt: zero, one digit, the bases at either end, and a sign with a prefix"
+    assert spelt(negative: false, prefix: "", n: 0, base: 2) == "0"
+    assert spelt(negative: false, prefix: "", n: 35, base: 36) == "z"
+    assert spelt(negative: false, prefix: "", n: 36, base: 36) == "10"
+    assert spelt(negative: false, prefix: "", n: 5, base: 2) == "101"
+    assert spelt(negative: true, prefix: "0x", n: 255, base: 16) == "-0xff"
+    assert spelt(negative: false, prefix: "", n: 18446744073709551615, base: 10) == "18446744073709551615"
+    assert spelt(negative: false, prefix: "", n: 18446744073709551615, base: 2) == "1111111111111111111111111111111111111111111111111111111111111111"
+    assert spelt(negative: false, prefix: "", n: 18446744073709551615, base: 36) == "3w5e11264sgsf"

@@ -1,0 +1,140 @@
+# The words the digests compute with, and how bytes become words and words
+# bytes. A word of 32 bits is an `i64` from 0 to 2^32 - 1, masked with
+# `LOW32` after a sum; a word of 64 bits is an `i64` holding its 64 bits, the
+# highest as the sign, added in halves of 32 bits so that nothing overflows,
+# since an overflow aborts in Heroes where these algorithms wrap by design.
+# `^`, `&`, `|`, `~` and `<<` are already a word's; `>>` copies the sign, so
+# a 64-bit word is shifted right by `shift_right`. The package `hash` holds
+# the same arithmetic for its own words, and `crypto` may not use it.
+
+# The 32 low bits of a word, all set: 2^32 - 1.
+constant LOW32: i64
+    0xffffffff
+
+# The highest bit of a word of 64 bits, the sign of the `i64` that holds it.
+constant TOP: i64
+    1 << 63
+
+# `x` shifted right by `n` bits with zeros coming in at the top, as for an
+# unsigned word. `n` is from 0 to 63.
+function shift_right(x: i64, n: i64) -> i64
+    if n == 0
+        return x
+    return x >> n & ~(-1 << 64 - n)
+
+# The word of 32 bits `x` rotated right by `n` bits, `n` from 1 to 31.
+function rotate_right32(x: i64, n: i64) -> i64
+    return (x >> n | x << 32 - n) & LOW32
+
+# The word of 32 bits `x` rotated left by `n` bits, `n` from 1 to 31.
+function rotate_left32(x: i64, n: i64) -> i64
+    return (x << n | x >> 32 - n) & LOW32
+
+# The word of 64 bits `x` rotated right by `n` bits, `n` from 1 to 63.
+function rotate_right64(x: i64, n: i64) -> i64
+    return shift_right(x: x, n: n) | x << 64 - n
+
+# `a + b` modulo 2^64.
+function add(a: i64, b: i64) -> i64
+    low = (a & LOW32) + (b & LOW32)
+    high = shift_right(x: a, n: 32) + shift_right(x: b, n: 32) + (low >> 32)
+    return high << 32 | low & LOW32
+
+# `a + b + c + d` modulo 2^64: four low halves and their carry fit an `i64`.
+function add4(a: i64, b: i64, c: i64, d: i64) -> i64
+    low = (a & LOW32) + (b & LOW32) + (c & LOW32) + (d & LOW32)
+    high = shift_right(x: a, n: 32) + shift_right(x: b, n: 32) + shift_right(x: c, n: 32) + shift_right(x: d, n: 32) + (low >> 32)
+    return high << 32 | low & LOW32
+
+# `a + b + c + d + e` modulo 2^64.
+function add5(a: i64, b: i64, c: i64, d: i64, e: i64) -> i64
+    return add(a: add4(a: a, b: b, c: c, d: d), b: e)
+
+# The word of 32 bits that the four bytes of `data` from `at` write, the
+# first byte the highest.
+function load32_big(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at]).must() << 24 | to_i64(data[at + 1]).must() << 16 | to_i64(data[at + 2]).must() << 8 | to_i64(data[at + 3]).must()
+
+# The word of 32 bits that the four bytes of `data` from `at` write, the
+# first byte the lowest.
+function load32_little(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at + 3]).must() << 24 | to_i64(data[at + 2]).must() << 16 | to_i64(data[at + 1]).must() << 8 | to_i64(data[at]).must()
+
+# The word of 64 bits that the eight bytes of `data` from `at` write, the
+# first byte the highest.
+function load64_big(data: [u8] lent, at: i64) -> i64
+    return load32_big(data, at) << 32 | load32_big(data, at + 4)
+
+# Adds the `count` bytes of `x` to `out`, the highest first, which the caller
+# owns; `count` is 4 for a word of 32 bits and 8 for one of 64.
+function push_big(@out: [u8], x: i64, count: i64)
+    at: i64 @= count - 1
+
+    while at >= 0
+        out @ out.push(to_u8(shift_right(x: x, n: 8 * at) & 0xff).must())
+        at @ at - 1
+
+# Adds the `count` bytes of `x` to `out`, the lowest first, which the caller
+# owns.
+function push_little(@out: [u8], x: i64, count: i64)
+    at: i64 @= 0
+
+    while at < count
+        out @ out.push(to_u8(shift_right(x: x, n: 8 * at) & 0xff).must())
+        at @ at + 1
+
+# The bytes of `s`, its UTF-8.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        out @ out.push(s[at])
+        at @ at + 1
+
+    return out
+
+test "crypto word shift_right: by 0, 1 and 63, of a word with its top bit set"
+    assert shift_right(x: -1, n: 0) == -1
+    assert shift_right(x: -1, n: 1) == 0x7fffffffffffffff
+    assert shift_right(x: TOP, n: 63) == 1
+    assert shift_right(x: 0x100, n: 8) == 1
+
+test "crypto word rotations: by 1 and by the width less one, at 32 and 64 bits"
+    assert rotate_right32(x: 1, n: 1) == 0x80000000
+    assert rotate_right32(x: 0x80000000, n: 31) == 1
+    assert rotate_left32(x: 0x80000000, n: 1) == 1
+    assert rotate_left32(x: 1, n: 31) == 0x80000000
+    assert rotate_right64(x: 1, n: 1) == TOP
+    assert rotate_right64(x: TOP, n: 63) == 1
+    assert rotate_right64(x: -1, n: 17) == -1
+
+test "crypto word add, add4 and add5: no carry, a carry between halves, and sums past 2^64"
+    assert add(a: 1, b: 2) == 3
+    assert add(a: LOW32, b: 1) == 0x100000000
+    assert add(a: -1, b: 1) == 0
+    assert add(a: TOP, b: TOP) == 0
+    assert add4(a: -1, b: -1, c: -1, d: -1) == -4
+    assert add5(a: -1, b: -1, c: -1, d: -1, e: 5) == 1
+    assert add5(a: 0x7fffffffffffffff, b: 1, c: 0, d: 0, e: 0) == TOP
+
+test "crypto word loads and pushes: both orders, the top bit set, and back again"
+    data: [u8] = [0x01, 0x02, 0x03, 0x04, 0xff, 0xfe, 0xfd, 0xfc]
+    assert load32_big(data, 0) == 0x01020304
+    assert load32_little(data, 0) == 0x04030201
+    assert load32_big(data, 4) == 0xfffefdfc
+    assert load64_big(data, 0) == 0x01020304fffefdfc
+    out: [u8] @= []
+    push_big(@out, x: load64_big(data, 0), count: 8)
+    assert out == data
+    back: [u8] @= []
+    push_little(@back, x: 0x04030201, count: 4)
+    assert back == [0x01, 0x02, 0x03, 0x04]
+    top: [u8] @= []
+    push_big(@top, x: TOP, count: 8)
+    assert top == [0x80, 0, 0, 0, 0, 0, 0, 0]
+
+test "crypto word bytes_of: empty, ASCII and a character of three bytes"
+    assert bytes_of("").len() == 0
+    assert bytes_of("ab") == [0x61, 0x62]
+    assert bytes_of("☃") == [0xe2, 0x98, 0x83]

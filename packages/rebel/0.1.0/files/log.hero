@@ -1,0 +1,704 @@
+# Lines with a time and a level, written to a stream: a logger is a record
+# that says where its lines go, the lowest level it writes, a prefix, the
+# line's form and the fields every line carries, built by `to` and passed
+# along. There is no default logger and nothing global to set: a program
+# builds its logger once and hands it to the code that writes.
+#
+# A line is one of two forms, each on one line whatever its message and values
+# hold. The text form: the time in UTC as RFC 3339 with milliseconds, the
+# level, the message, then each field as `key=value`:
+# `2006-01-02T15:04:05.123Z INFO started port=8080 name="my server"`. The JSON
+# form: one object, `{"time":"…","level":"INFO","msg":"started","port":8080}`.
+#
+# It does not open files, which `fs.open` does, nor buffer, rotate or send
+# lines anywhere: each line is one write of `io` that reaches the system before
+# the call answers. It does not end the program: a program that must stop
+# after a line calls `exit` itself. Its time is UTC's, as `time` keeps it.
+#
+# Fails as `io.write` fails the stream: `closed`, `permission`, `failed`, and
+# as the logger's clock fails, `failed` for `time.now`; `invalid` where a
+# level's name is not one.
+
+use io
+use log/internal/fixture
+use log/internal/json_form
+use log/internal/piece
+use log/internal/text_form
+use strings
+use time
+
+## Codes and keys
+
+# The code of a text that names no level, from `parse_level`.
+constant INVALID: str
+    "invalid"
+
+# The code of a write to a stream that is closed, or whose reader is gone,
+# from `write` and the four functions named after a level.
+constant CLOSED: str
+    "closed"
+
+# The code of a write to a stream not opened to write, from `write` and the
+# four functions named after a level.
+constant PERMISSION: str
+    "permission"
+
+# The code of a write the system refused for another reason, its message the
+# system's words, and of a clock the system cannot read, from `write` and the
+# four functions named after a level.
+constant FAILED: str
+    "failed"
+
+# The key of a line's time in the JSON form, `time`.
+constant TIME_KEY: str
+    piece.TIME_KEY
+
+# The key of a line's level in the JSON form, `level`.
+constant LEVEL_KEY: str
+    piece.LEVEL_KEY
+
+# The key of a line's message in the JSON form, `msg`.
+constant MESSAGE_KEY: str
+    piece.MESSAGE_KEY
+
+## Levels
+
+# How much a line matters, from the least to the most. A logger writes the
+# lines at its own level and above.
+variant Level
+    # Detail for whoever is finding a fault; written as `DEBUG`.
+    debug
+    # What the program is doing, in the ordinary course; written as `INFO`.
+    info
+    # Something unexpected the program went on after; written as `WARN`.
+    warn
+    # Something that failed; written as `ERROR`.
+    error
+
+# The name a line writes for `level`: `DEBUG`, `INFO`, `WARN` or `ERROR`.
+#
+# - `level`: any level.
+#
+# See also `parse_level`.
+function level_name(level: Level) -> str
+    return match level
+        .debug => "DEBUG"
+        .info  => "INFO"
+        .warn  => "WARN"
+        .error => "ERROR"
+
+# The number Python's `logging` gives `level`: 10, 20, 30 or 40, a larger
+# number for a line that matters more.
+#
+# - `level`: any level.
+#
+# See also `is_enabled`.
+function level_number(level: Level) -> i64
+    return match level
+        .debug => 10
+        .info  => 20
+        .warn  => 30
+        .error => 40
+
+# The level `name` names, as a setting or an environment variable writes it.
+#
+# - `name`: `debug`, `info`, `warn` or `error` in any mix of ASCII cases, or
+#   `warning`, Python's name for `warn`; nothing else, no space around it.
+#
+# Fails `invalid` where `text` names no level. See also `level_name`.
+function parse_level(name: str) -> Level?
+    return match strings.to_lower_ascii(name)
+        "debug"   => ok(.debug)
+        "info"    => ok(.info)
+        "warn"    => ok(.warn)
+        "warning" => ok(.warn)
+        "error"   => ok(.error)
+        _         => fail(code: INVALID, msg: f"no level named \"{name}\": the levels are debug, info, warn and error")
+
+## Fields
+
+# A value a line carries beside its message: a key and its value.
+#
+# Built by `text`, `integer`, `number`, `boolean`, `duration`, `instant` or
+# `group`, or directly. The text form writes it `key=value`, the JSON form as a
+# member. Two fields of one line may share a key, and both are written.
+record Field
+    # The key, any text; the text form quotes one that is empty or holds a
+    # space, a quote, an `=` or a control character.
+    key: str
+    # The value.
+    value: Value
+
+# What a field holds.
+variant Value
+    # A text, written as it is, quoted where it needs to be.
+    text
+        # The text.
+        v: str
+    # A whole number, written in decimal, bare in JSON.
+    integer
+        # The number.
+        v: i64
+    # A float, written as JSON's shortest digits that read back as it, or as
+    # `nan`, `inf` or `-inf`, which the JSON form writes as strings.
+    number
+        # The number.
+        v: f64
+    # `true` or `false`, bare in JSON.
+    boolean
+        # The value.
+        v: bool
+    # A length of time, written as `time.format_duration` writes it, `1.5s`,
+    # a string in JSON.
+    duration
+        # The length.
+        v: time.Duration
+    # A moment, written as RFC 3339 in UTC with the fraction it needs, a string
+    # in JSON.
+    instant
+        # The moment.
+        v: time.Instant
+    # Fields under one key: in the text form each is keyed `key.inner`, in the
+    # JSON form they are a nested object. A group holding no value is not
+    # written, and one whose key is empty writes its fields as if they stood
+    # in its place.
+    group
+        # The fields, in order.
+        fields: [Field]
+
+# The field `key` holding the text `value`.
+#
+# - `key`: the key, any text.
+# - `value`: the text, any; the empty text is written `""`.
+#
+# See also `Value`.
+function text(key: str, value: str) -> Field
+    return Field(key: key, value: .text(v: value))
+
+# The field `key` holding the whole number `value`.
+#
+# - `key`: the key, any text.
+# - `value`: any `i64`.
+#
+# A `u64` past the largest `i64` goes in a `text` field.
+function integer(key: str, value: i64) -> Field
+    return Field(key: key, value: .integer(v: value))
+
+# The field `key` holding the float `value`.
+#
+# - `key`: the key, any text.
+# - `value`: any `f64`; `nan` and the infinities are written `nan`, `inf` and
+#   `-inf`.
+function number(key: str, value: f64) -> Field
+    return Field(key: key, value: .number(v: value))
+
+# The field `key` holding `value`, `true` or `false`.
+#
+# - `key`: the key, any text.
+# - `value`: the value.
+function boolean(key: str, value: bool) -> Field
+    return Field(key: key, value: .boolean(v: value))
+
+# The field `key` holding the length of time `value`.
+#
+# - `key`: the key, any text.
+# - `value`: any duration, negative ones included.
+function duration(key: str, value: time.Duration) -> Field
+    return Field(key: key, value: .duration(v: value))
+
+# The field `key` holding the moment `value`.
+#
+# - `key`: the key, any text.
+# - `value`: any instant.
+function instant(key: str, value: time.Instant) -> Field
+    return Field(key: key, value: .instant(v: value))
+
+# The field `key` holding `fields` as a group.
+#
+# - `key`: the group's key; the empty text writes `fields` in its place.
+# - `fields`: the fields, in order, groups among them; none writes nothing.
+function group(key: str, fields: [Field]) -> Field
+    return Field(key: key, value: .group(fields: fields))
+
+## The logger
+
+# The two forms of a line.
+variant Form
+    # Words and `key=value`: the time, the level, the message, the fields.
+    text
+    # One JSON object a line, its members `time`, `level`, `msg`, then the
+    # fields.
+    json
+
+# Where a logger's lines go and what each holds. Built by `to` and changed by
+# the functions named `with_`, each answering a copy; a logger is a value, so
+# a copy changed leaves the one it was copied from as it was.
+record Logger
+    # The stream every line is written to. The logger does not close it: the
+    # code that opened it does, once nothing writes through the logger.
+    stream: io.Stream
+    # The lowest level written; a line below it is not written.
+    level: Level
+    # Text written before every message, as it is: `"db: "`. The empty text
+    # writes nothing.
+    prefix: str
+    # The form of every line.
+    form: Form
+    # The fields every line carries, before the line's own.
+    fields: [Field]
+    # The function asked for each line's time; `time.now` unless a test fixes
+    # it with `with_clock`.
+    clock: (function() -> time.Instant?)
+
+# A logger writing to `stream`: lines at `info` and above, no prefix, the text
+# form, no fields, the time from `time.now`.
+#
+# - `stream`: where the lines go; the caller closes it, after the last line.
+#
+# See also `with_level`, `with_form`.
+function to(stream: io.Stream) -> Logger
+    return Logger(stream: stream, level: .info, prefix: "", form: .text, fields: [], clock: time.now)
+
+# A copy of `logger` that writes the lines at `level` and above.
+#
+# - `logger`: the logger copied.
+# - `level`: the lowest level the copy writes.
+#
+# See also `is_enabled`.
+function with_level(logger: Logger, level: Level) -> Logger
+    copy @= logger
+    copy.level @ level
+    return copy
+
+# A copy of `logger` whose messages open with `prefix`.
+#
+# - `logger`: the logger copied.
+# - `prefix`: the text written before every message, as it is; the empty text
+#   writes none.
+function with_prefix(logger: Logger, prefix: str) -> Logger
+    copy @= logger
+    copy.prefix @ prefix
+    return copy
+
+# A copy of `logger` that writes its lines in `form`.
+#
+# - `logger`: the logger copied.
+# - `form`: the form of every line.
+function with_form(logger: Logger, form: Form) -> Logger
+    copy @= logger
+    copy.form @ form
+    return copy
+
+# A copy of `logger` whose lines carry `fields` after the ones it carries
+# already.
+#
+# - `logger`: the logger copied.
+# - `fields`: the fields added, in order; none answers the same logger.
+function with_fields(logger: Logger, fields: [Field]) -> Logger
+    copy @= logger
+    joined @= logger.fields
+
+    for f in fields
+        joined @ joined.push(f)
+
+    copy.fields @ joined
+    return copy
+
+# A copy of `logger` that asks `clock` for each line's time: how a test makes
+# every line the same on every run.
+#
+# - `logger`: the logger copied.
+# - `clock`: called once for each line written, never for a line below the
+#   logger's level; the instant it answers is the line's time, and a failure it
+#   answers is the write's. A test passes a function of its own that answers
+#   one fixed instant.
+function with_clock(logger: Logger, clock: (function() -> time.Instant?)) -> Logger
+    copy @= logger
+    copy.clock @ clock
+    return copy
+
+# Whether `logger` writes a line at `level`: where `level` is the logger's own
+# or above it.
+#
+# - `logger`: the logger.
+# - `level`: the level asked about.
+#
+# A program asks it before working out a costly field.
+function is_enabled(logger: Logger, level: Level) -> bool
+    return level_number(level) >= level_number(logger.level)
+
+## Writing a line
+
+# Writes one line at `level` to `logger`'s stream, at the time its clock reads,
+# where the logger writes that level; else does nothing.
+#
+# - `logger`: the logger.
+# - `level`: the line's level.
+# - `msg`: the message, after the logger's prefix; any text, a line feed in it
+#   written escaped.
+# - `fields`: the line's own fields, after the logger's; none writes only the
+#   logger's.
+#
+# Fails `closed` where the stream is closed or its reader is gone,
+# `permission` where it was not opened to write, `failed` where the system
+# refused the write; and as the clock fails, `failed` for `time.now`. The line
+# is one write, so it reaches the stream whole or a failure says so.
+#
+# See also `format_line`, `info`.
+function write(logger: Logger, level: Level, msg: str, fields: [Field]) -> ()?
+    if !is_enabled(logger, level)
+        return ok()
+    read_clock = logger.clock
+    at = read_clock()?
+    return io.write_line(logger.stream, line: format_line(logger, level, at, msg, fields))
+
+# Writes one line at `debug`, as `write` does.
+#
+# - `logger`: the logger.
+# - `msg`: the message.
+# - `fields`: the line's own fields.
+#
+# Fails as `write` fails.
+function debug(logger: Logger, msg: str, fields: [Field]) -> ()?
+    return write(logger, .debug, msg, fields)
+
+# Writes one line at `info`, as `write` does.
+#
+# - `logger`: the logger.
+# - `msg`: the message.
+# - `fields`: the line's own fields.
+#
+# Fails as `write` fails.
+function info(logger: Logger, msg: str, fields: [Field]) -> ()?
+    return write(logger, .info, msg, fields)
+
+# Writes one line at `warn`, as `write` does.
+#
+# - `logger`: the logger.
+# - `msg`: the message.
+# - `fields`: the line's own fields.
+#
+# Fails as `write` fails.
+function warn(logger: Logger, msg: str, fields: [Field]) -> ()?
+    return write(logger, .warn, msg, fields)
+
+# Writes one line at `error`, as `write` does.
+#
+# - `logger`: the logger.
+# - `msg`: the message.
+# - `fields`: the line's own fields.
+#
+# Fails as `write` fails.
+function error(logger: Logger, msg: str, fields: [Field]) -> ()?
+    return write(logger, .error, msg, fields)
+
+# The line `write` writes for these, without its line feed, whatever the
+# logger's level: what a program checks a line against, or sends somewhere a
+# stream does not reach.
+#
+# - `logger`: whose prefix, form and fields the line takes; its stream, level
+#   and clock are not read.
+# - `level`: the line's level.
+# - `at`: the line's time, written in UTC to the millisecond, the rest cut off
+#   toward the past.
+# - `msg`: the message, after the logger's prefix.
+# - `fields`: the line's own fields, after the logger's.
+#
+# It holds no line break: the text form writes a message or a value holding
+# one between quotes, escaped, and so the JSON form's strings. Groups are
+# walked with a stack of their own, so no nesting is too deep for it.
+function format_line(logger: Logger, level: Level, at: time.Instant, msg: str, fields: [Field]) -> str
+    pieces: [piece.Piece] @= []
+
+    # The fields still to walk, one list for each group open, the line's own
+    # at the bottom; where each list stands; and whether each closes a group
+    # the pieces opened, which a group with an empty key does not.
+    lists: [[Field]] @= [with_fields(logger, fields).fields]
+    places: [i64] @= [0]
+    closes: [bool] @= [false]
+
+    while lists.len() > 0
+        top = lists.len() - 1
+        walked = lists[top]
+
+        if places[top] == walked.len()
+            if closes[top]
+                pieces @ pieces.push(piece.close())
+            lists @ lists.slice(from: 0, to: top)
+            places @ places.slice(from: 0, to: top)
+            closes @ closes.slice(from: 0, to: top)
+            continue
+        f = walked[places[top]]
+        places[top] @ places[top] + 1
+
+        match f.value
+            .text t     => pieces @ pieces.push(piece.value(key: f.key, text: t.v, is_string: true))
+            .integer n  => pieces @ pieces.push(piece.value(key: f.key, text: to_str(n.v), is_string: false))
+            .number x   => pieces @ pieces.push(piece.number(key: f.key, x: x.v))
+            .boolean b  => pieces @ pieces.push(piece.value(key: f.key, text: to_str(b.v), is_string: false))
+            .duration d => pieces @ pieces.push(
+                piece.value(key: f.key, text: time.format_duration(d.v), is_string: true)
+            )
+            .instant i  => pieces @ pieces.push(
+                piece.value(key: f.key, text: time.format(i.v, .rfc3339), is_string: true)
+            )
+            .group g =>
+                if f.key != ""
+                    pieces @ pieces.push(piece.open(f.key))
+                lists @ lists.push(g.fields)
+                places @ places.push(0)
+                closes @ closes.push(f.key != "")
+
+    time_text = time.format(at, .rfc3339_milliseconds)
+    message = logger.prefix + msg
+
+    return match logger.form
+        .text => text_form.line(time_text: time_text, level_name: level_name(level), message: message, pieces: pieces)
+        .json => json_form.line(time_text: time_text, level_name: level_name(level), message: message, pieces: pieces)
+
+## Tests
+
+test "level_name and level_number: every level, in order"
+    assert level_name(.debug) == "DEBUG"
+    assert level_name(.error) == "ERROR"
+    assert level_number(.debug) < level_number(.info)
+    assert level_number(.info) < level_number(.warn)
+    assert level_number(.warn) < level_number(.error)
+
+test "parse_level: every name, mixed case, warning, the empty text, a space and an unknown name"
+    assert parse_level("debug").must() == .debug
+    assert parse_level("WaRn").must() == .warn
+    assert parse_level("WARNING").must() == .warn
+    assert parse_level("error").must() == .error
+    assert parse_level("").is_err()
+    assert parse_level(" info").is_err()
+    assert parse_level("critical").is_err()
+
+    match parse_level("fatal")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "no level named \"fatal\": the levels are debug, info, warn and error"
+
+test "is_enabled: below, at and above the logger's level"
+    logger = with_level(to(io.stderr()), level: .warn)
+    assert !is_enabled(logger, .info)
+    assert is_enabled(logger, .warn)
+    assert is_enabled(logger, .error)
+
+test "with_fields: none, then two added after the ones held, the original unchanged"
+    base = with_fields(to(io.stderr()), fields: [text(key: "a", value: "1")])
+    assert with_fields(base, fields: []).fields == base.fields
+    grown = with_fields(base, fields: [text(key: "b", value: "2"), integer(key: "c", value: 3)])
+    assert grown.fields.len() == 3
+    assert grown.fields[2].key == "c"
+    assert base.fields.len() == 1
+
+test "format_line: every kind of value in the text form, the extremes of an i64 among them"
+    logger = to(io.stderr())
+    at = fixture.clock().must()
+    fields = [
+        text(key: "s", value: "x y")
+        integer(key: "min", value: -9223372036854775807 - 1)
+        integer(key: "max", value: 9223372036854775807)
+        number(key: "f", value: 1.0)
+        boolean(key: "b", value: false)
+        duration(key: "d", value: time.milliseconds(1500).must())
+        instant(key: "t", value: at)
+    ]
+    want = "2006-01-02T15:04:05.123Z INFO m s=\"x y\" min=-9223372036854775808 max=9223372036854775807 f=1 b=false d=1.5s t=2006-01-02T15:04:05.123Z"
+    assert format_line(logger, .info, at, "m", fields) == want
+
+test "format_line: groups nested, empty, and with an empty key, in both forms"
+    logger = to(io.stderr())
+    at = fixture.clock().must()
+    fields = [
+        group(key: "g", fields: [integer(key: "x", value: 1), group(key: "h", fields: [boolean(key: "y", value: true)])])
+        group(key: "empty", fields: [])
+        group(key: "", fields: [text(key: "inline", value: "v")])
+    ]
+    assert format_line(logger, .warn, at, "m", fields) == "2006-01-02T15:04:05.123Z WARN m g.x=1 g.h.y=true inline=v"
+    json_line = format_line(with_form(logger, form: .json), .warn, at, "m", fields)
+    assert json_line == "{\"time\":\"2006-01-02T15:04:05.123Z\",\"level\":\"WARN\",\"msg\":\"m\",\"g\":{\"x\":1,\"h\":{\"y\":true}},\"inline\":\"v\"}"
+
+test "format_line: a group nested ten thousand deep is walked without running out of stack"
+    deep @= group(key: "k", fields: [integer(key: "v", value: 1)])
+
+    for _ in range(from: 0, to: 9999)
+        deep @ group(key: "k", fields: [deep])
+
+    line = format_line(to(io.stderr()), .info, fixture.clock().must(), "m", [deep])
+    assert line.len() == 2 * 10000 + "2006-01-02T15:04:05.123Z INFO m v=1".len()
+
+test "format_line: a prefix, the logger's fields before the line's, and the time cut to the millisecond"
+    logger = with_fields(with_prefix(to(io.stderr()), prefix: "db: "), fields: [text(key: "a", value: "1")])
+    at = time.from_unix(whole_seconds: 0, extra_nanoseconds: 999999999).must()
+    assert format_line(logger, .error, at, "down", [text(key: "b", value: "2")]) == "1970-01-01T00:00:00.999Z ERROR db: down a=1 b=2"
+
+test "format_line: a message and a value holding a line feed stay on one line"
+    logger = to(io.stderr())
+    at = fixture.clock().must()
+    line = format_line(logger, .info, at, "a\nb", [text(key: "k", value: "c\r\nd")])
+    assert !strings.contains(s: line, substr: "\n")
+    assert line == "2006-01-02T15:04:05.123Z INFO \"a\\nb\" k=\"c\\r\\nd\""
+    json_line = format_line(with_form(logger, form: .json), .info, at, "a\nb", [])
+    assert !strings.contains(s: json_line, substr: "\n")
+
+test "write: a line below the level is not written and its clock is not asked"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.clock)
+    info(logger, "shown", []).must()
+    debug(logger, "hidden", []).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z INFO shown\n"
+
+test "write: a closed stream fails closed"
+    p @= io.pipe().must()
+    logger = to(p.writer)
+    io.close(@p.reader).must()
+
+    match info(logger, "lost", [])
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@p.writer).must()
+
+test "write: the clock's failure is the write's"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.broken_clock)
+
+    match info(logger, "when?", [])
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    assert fixture.drained(@p).must() == ""
+
+test "write: the real clock writes a time of this century"
+    p @= io.pipe().must()
+    info(to(p.writer), "now", []).must()
+    line = fixture.drained(@p).must()
+    assert strings.has_prefix(s: line, prefix: "20")
+    assert strings.has_suffix(s: line, suffix: "Z INFO now\n")
+
+## Examples
+
+# The number Python gives the level `warn`.
+test "level_number: warn is 30"
+    assert level_number(.warn) == 30
+
+# The name a line writes for a level.
+test "level_name: the name of info"
+    assert level_name(.info) == "INFO"
+
+# A level read from a setting, whatever its case.
+test "parse_level: a setting written in capitals"
+    assert parse_level("DEBUG").must() == .debug
+
+# A text field, quoted in the line because it holds a space.
+test "text: a name with a space"
+    assert text(key: "name", value: "my server") == Field(key: "name", value: .text(v: "my server"))
+
+# A whole number field.
+test "integer: a port"
+    assert integer(key: "port", value: 8080).value == .integer(v: 8080)
+
+# A float field.
+test "number: a ratio"
+    assert number(key: "ratio", value: 0.5).value == .number(v: 0.5)
+
+# A boolean field.
+test "boolean: a flag"
+    assert boolean(key: "cached", value: true).value == .boolean(v: true)
+
+# A duration field.
+test "duration: how long a request took"
+    took = time.milliseconds(250).must()
+    assert duration(key: "took", value: took).value == .duration(v: took)
+
+# An instant field.
+test "instant: when a file was changed"
+    when = time.epoch()
+    assert instant(key: "changed", value: when).value == .instant(v: when)
+
+# Two fields under one key.
+test "group: a request's method and path"
+    request = group(key: "request", fields: [text(key: "method", value: "GET"), text(key: "path", value: "/")])
+    assert request.key == "request"
+
+# A logger writing to the process's error output, at `info` and above.
+test "to: a logger for the error output"
+    logger = to(io.stderr())
+    assert logger.level == .info
+    assert logger.form == .text
+
+# A logger that writes `debug` lines too.
+test "with_level: a logger for a debugging run"
+    logger = with_level(to(io.stderr()), level: .debug)
+    assert is_enabled(logger, .debug)
+
+# A logger whose messages name the part of the program that wrote them.
+test "with_prefix: lines from the database code"
+    logger = with_prefix(to(io.stderr()), prefix: "db: ")
+    assert format_line(logger, .info, time.epoch(), "connected", []) == "1970-01-01T00:00:00.000Z INFO db: connected"
+
+# A logger writing one JSON object a line.
+test "with_form: lines as JSON"
+    logger = with_form(to(io.stderr()), form: .json)
+    assert format_line(logger, .info, time.epoch(), "up", []) == "{\"time\":\"1970-01-01T00:00:00.000Z\",\"level\":\"INFO\",\"msg\":\"up\"}"
+
+# A logger whose every line names the request it serves.
+test "with_fields: a request's identifier on every line"
+    logger = with_fields(to(io.stderr()), fields: [text(key: "request", value: "r-17")])
+    assert format_line(logger, .info, time.epoch(), "done", []) == "1970-01-01T00:00:00.000Z INFO done request=r-17"
+
+# A test fixes the time with a clock of its own, so the line is the same on
+# every run; the clock here answers 2006-01-02T15:04:05.123Z.
+test "with_clock: a line the same on every run"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.clock)
+    info(logger, "started", [integer(key: "port", value: 8080)]).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z INFO started port=8080\n"
+
+# A costly field worked out only where its line will be written.
+test "is_enabled: a debug line skipped by an info logger"
+    logger = to(io.stderr())
+    assert !is_enabled(logger, .debug)
+
+# A line written at a level chosen at run time.
+test "write: a line at a level read from a setting"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.clock)
+    write(logger, parse_level("warn").must(), "disk almost full", [integer(key: "free_mb", value: 12)]).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z WARN disk almost full free_mb=12\n"
+
+# A debug line, written by a logger that writes them.
+test "debug: a value while finding a fault"
+    p @= io.pipe().must()
+    logger = with_clock(with_level(to(p.writer), level: .debug), clock: fixture.clock)
+    debug(logger, "cache", [integer(key: "size", value: 3)]).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z DEBUG cache size=3\n"
+
+# An info line with a field.
+test "info: a server started"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.clock)
+    info(logger, "started", [text(key: "name", value: "my server")]).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z INFO started name=\"my server\"\n"
+
+# A warning, in the JSON form.
+test "warn: a retry, as JSON"
+    p @= io.pipe().must()
+    logger = with_clock(with_form(to(p.writer), form: .json), clock: fixture.clock)
+    warn(logger, "retrying", [integer(key: "attempt", value: 2)]).must()
+    assert fixture.drained(@p).must() == "{\"time\":\"2006-01-02T15:04:05.123Z\",\"level\":\"WARN\",\"msg\":\"retrying\",\"attempt\":2}\n"
+
+# An error line.
+test "error: a failure and its code"
+    p @= io.pipe().must()
+    logger = with_clock(to(p.writer), clock: fixture.clock)
+    error(logger, "open failed", [text(key: "code", value: "file_not_found")]).must()
+    assert fixture.drained(@p).must() == "2006-01-02T15:04:05.123Z ERROR open failed code=file_not_found\n"
+
+# A line made without writing it, at a time given.
+test "format_line: a line checked without a stream"
+    logger = to(io.stderr())
+    assert format_line(logger, .info, time.epoch(), "ready", [boolean(key: "ok", value: true)]) == "1970-01-01T00:00:00.000Z INFO ready ok=true"

@@ -1,0 +1,258 @@
+# Where a text holds another, read byte by byte, and the step from one
+# character to the next: what every function of `strings` stands on.
+#
+# A `str` is UTF-8, and a slice that splits a character aborts (spec § 10).
+# A match of a text that is not empty begins where a character begins and
+# ends where one ends, since no byte that continues a character equals one
+# that begins one, so every index this module answers is one a slice may
+# cut at. A pattern longer than `SHORT` is sought with a table built once,
+# Knuth, Morris and Pratt's, so that no text makes a search quadratic.
+
+use unicode
+
+# The code a search fails with where the text holds nothing of what was
+# asked.
+constant NOT_FOUND: str
+    "not_found"
+
+# The longest pattern sought by comparing it at each position; a longer one
+# builds its tables.
+constant SHORT: i64
+    8
+
+# How many bytes of a text a message quotes; a longer text is named by its
+# length.
+constant QUOTED: i64
+    40
+
+# A text to seek, with the two tables that make the search of a long one
+# linear in the text, one for each direction.
+record Finder
+    # The text sought.
+    pattern: str
+    # For each count k of the pattern's first bytes matched, how many of
+    # them still match once the match moves on one byte: the longest proper
+    # prefix of those k bytes that is also their suffix. Empty for a short
+    # pattern.
+    forward: [i64]
+    # The same table for the pattern read from its last byte to its first.
+    backward: [i64]
+
+# The largest `i64`, which a count of pieces never reaches.
+constant NO_LIMIT: i64
+    9223372036854775807
+
+# A count given as a `u64` read as an `i64`: one past the largest `i64` is
+# more than any text holds, so it is no limit at all.
+function limit_of(n: u64) -> i64
+    return to_i64(n).default(NO_LIMIT)
+
+# `t` as a message names it: quoted where it is short, by its length where
+# it is long.
+function shown(t: str) -> str
+    if t.len() > QUOTED
+        return f"a text of {t.len()} bytes"
+    return f"\"{t}\""
+
+# The byte of `pattern` at `at`, counted from its end where `reversed`.
+function byte_at(pattern: str, at: i64, reversed: bool) -> u8
+    if reversed
+        return pattern[pattern.len() - 1 - at]
+    return pattern[at]
+
+# The table of `pattern` read forward, or from its end where `reversed`.
+function table(pattern: str, reversed: bool) -> [i64]
+    back: [i64] @= [0, 0]
+    k: i64 @= 0
+    at: i64 @= 1
+
+    while at < pattern.len()
+        here = byte_at(pattern: pattern, at: at, reversed: reversed)
+
+        while k > 0 && here != byte_at(pattern: pattern, at: k, reversed: reversed)
+            k @ back[k]
+
+        if here == byte_at(pattern: pattern, at: k, reversed: reversed)
+            k @ k + 1
+        back @ back.push(k)
+        at @ at + 1
+
+    return back
+
+# `pattern` ready to be sought, its tables built where it is long.
+function finder(pattern: str) -> Finder
+    if pattern.len() <= SHORT
+        return Finder(pattern: pattern, forward: [], backward: [])
+    return Finder(
+        pattern: pattern,
+        forward: table(pattern: pattern, reversed: false),
+        backward: table(pattern: pattern, reversed: true)
+    )
+
+# Where `f`'s pattern first begins in `s` at or after byte `from`, which is
+# 0 to `s.len()`. Fails `not_found` where it begins nowhere there. An empty
+# pattern is found at `from`.
+function first_from(f: Finder lent, s: str, from: i64) -> i64?
+    m = f.pattern.len()
+
+    if f.forward.len() == 0
+        last = s.len() - m
+        at: i64 @= from
+
+        while at <= last
+            matched: i64 @= 0
+
+            while matched < m && s[at + matched] == f.pattern[matched]
+                matched @ matched + 1
+
+            if matched == m
+                return ok(at)
+            at @ at + 1
+
+        return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+    k: i64 @= 0
+    at: i64 @= from
+
+    while at < s.len()
+        while k > 0 && s[at] != f.pattern[k]
+            k @ f.forward[k]
+
+        if s[at] == f.pattern[k]
+            k @ k + 1
+
+        if k == m
+            return ok(at - m + 1)
+        at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+
+# Where `f`'s pattern last begins in `s` with its end at or before byte
+# `end`, which is 0 to `s.len()`. Fails `not_found` where it ends nowhere
+# there. An empty pattern is found at `end`.
+function last_before(f: Finder lent, s: str, end: i64) -> i64?
+    m = f.pattern.len()
+
+    if f.backward.len() == 0
+        at: i64 @= end - m
+
+        while at >= 0
+            matched: i64 @= 0
+
+            while matched < m && s[at + matched] == f.pattern[matched]
+                matched @ matched + 1
+
+            if matched == m
+                return ok(at)
+            at @ at - 1
+
+        return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+    k: i64 @= 0
+    at: i64 @= end - 1
+
+    while at >= 0
+        while k > 0 && s[at] != f.pattern[m - 1 - k]
+            k @ f.backward[k]
+
+        if s[at] == f.pattern[m - 1 - k]
+            k @ k + 1
+
+        if k == m
+            return ok(at)
+        at @ at - 1
+
+    return fail(code: NOT_FOUND, msg: f"no {shown(f.pattern)} in {shown(s)}")
+
+# Where the character that begins at byte `at` of `s` ends, which is where
+# the next one begins. Aborts where `at` is not a character's first byte.
+function next_at(s: str, at: i64) -> i64
+    return at + unicode.width_at(s, at)
+
+# Where the character that ends at byte `end` of `s` begins; `end` is above
+# 0 and where a character ends.
+function previous_at(s: str, end: i64) -> i64
+    return unicode.floor_char_boundary(s, end - 1)
+
+# Whether `set` holds the character of `s` from byte `at` up to `end`, as a
+# whole character: a match of its bytes begins at a first byte in `set`,
+# which says the same width.
+function holds_char(set: str, s: str, at: i64, end: i64) -> bool
+    width = end - at
+    i: i64 @= 0
+
+    while i + width <= set.len()
+        matched: i64 @= 0
+
+        while matched < width && set[i + matched] == s[at + matched]
+            matched @ matched + 1
+
+        if matched == width
+            return true
+        i @ i + 1
+
+    return false
+
+## Tests
+
+test "shown: a short text quoted, a long one named by its length"
+    assert shown("") == "\"\""
+    assert shown("città") == "\"città\""
+    assert shown(repeat("é", 20)) == "\"" + repeat("é", 20) + "\""
+    assert shown(repeat("é", 21)) == "a text of 42 bytes"
+
+test "table: the forward and backward tables of a pattern with repeats"
+    assert table(pattern: "abcabd", reversed: false) == [0, 0, 0, 0, 1, 2, 0]
+    assert table(pattern: "aaaa", reversed: false) == [0, 0, 1, 2, 3]
+    assert table(pattern: "abcabd", reversed: true) == [0, 0, 0, 0, 0, 0, 0]
+    assert table(pattern: "dbacba", reversed: true) == [0, 0, 0, 0, 1, 2, 0]
+
+test "first_from: short and long patterns, from a position, absent, and characters of more than one byte"
+    assert first_from(finder("a"), "abc", 0).must() == 0
+    assert first_from(finder(""), "abc", 3).must() == 3
+    assert first_from(finder("b"), "abcabc", 2).must() == 4
+    assert first_from(finder("x"), "abc", 0).is_err()
+    assert first_from(finder("abc"), "ab", 0).is_err()
+    assert first_from(finder("è"), "caffè latte", 0).must() == 4
+    long = repeat("ab", 20) + "c" + repeat("ab", 20)
+    assert first_from(finder(repeat("ab", 10) + "c"), long, 0).must() == 20
+    tail = repeat("a", 40) + "b"
+    assert first_from(finder(repeat("a", 16) + "b"), tail, 0).must() == 24
+    assert first_from(finder(repeat("a", 16) + "b"), tail, 25).is_err()
+    assert first_from(finder(repeat("aab", 6) + "a"), repeat("aab", 12), 1).must() == 3
+    accents = repeat("è", 20) + "x" + repeat("è", 20)
+    assert first_from(finder(repeat("è", 8) + "x"), accents, 0).must() == 24
+
+    match first_from(finder("x"), "abc", 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no \"x\" in \"abc\""
+
+test "last_before: short and long patterns, overlapping repeats, an end inside, and absent"
+    assert last_before(finder("aa"), "aaa", 3).must() == 1
+    assert last_before(finder("bc"), "abcabc", 3).must() == 1
+    assert last_before(finder(""), "abc", 2).must() == 2
+    assert last_before(finder("è"), "caffè è", 9).must() == 7
+    assert last_before(finder("x"), "abc", 3).is_err()
+    pairs = repeat("ab", 30)
+    assert last_before(finder(repeat("ab", 9)), pairs, 60).must() == 42
+    assert last_before(finder(repeat("ab", 9)), pairs, 41).must() == 22
+    assert last_before(finder(repeat("aab", 6) + "a"), repeat("aab", 12), 36).must() == 15
+    accents = repeat("è", 20) + "x" + repeat("è", 20)
+    assert last_before(finder(repeat("è", 8) + "x"), accents, accents.len()).must() == 24
+    assert last_before(finder("x" + repeat("ab", 9)), pairs, 60).is_err()
+
+test "next_at and previous_at step over characters of one to four bytes"
+    s = "aé€😀"
+    assert next_at(s, 0) == 1
+    assert next_at(s, 1) == 3
+    assert next_at(s, 3) == 6
+    assert next_at(s, 6) == 10
+    assert previous_at(s, 10) == 6
+    assert previous_at(s, 6) == 3
+    assert previous_at(s, 3) == 1
+    assert previous_at(s, 1) == 0
+
+test "holds_char: a whole character of a set, never part of one"
+    assert holds_char(set: "xyz", s: "ay", at: 1, end: 2)
+    assert !holds_char(set: "xyz", s: "ab", at: 1, end: 2)
+    assert holds_char(set: "aéz", s: "é", at: 0, end: 2)
+    assert !holds_char(set: "", s: "a", at: 0, end: 1)
+    assert !holds_char(set: "è", s: "é", at: 0, end: 2)

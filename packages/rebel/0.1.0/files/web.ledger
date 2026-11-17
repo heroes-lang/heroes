@@ -1,0 +1,501 @@
+capability router/value  a router: a value holding routes, built by functions and passed along
+  heroes  web.Router, web.new_router
+  go      echo.New, echo.Echo, gin.New, gin.Default, gin.Engine, chi.NewRouter, chi.NewMux, chi.Mux, chi.Router, net/http.NewServeMux, net/http.ServeMux, net/http.DefaultServeMux
+  rust    -
+  python  flask.Flask, flask.Flask.url_map, werkzeug.routing.Map, werkzeug.routing.Rule
+  note    a value and not a server: the router answers which route takes a request, and the program calls its own function for it
+
+capability route/add  a route by method and pattern, named
+  heroes  web.add
+  go      echo.Echo.GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, CONNECT, TRACE, Add, echo.Route.Name, gin.RouterGroup.GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, Handle, chi.Router.Get, Post, Put, Patch, Delete, Head, Options, Connect, Trace, Method, MethodFunc, net/http.ServeMux.Handle, HandleFunc, net/http.Handle, net/http.HandleFunc
+  rust    -
+  python  flask.Flask.route, flask.Flask.add_url_rule, flask.Flask.get, post, put, patch, delete, werkzeug.routing.Map.add
+  note    one function and the method as a value (`http.METHOD_GET`), where Echo writes one function a method: `get` is `http`'s client call, and one name keeps one meaning
+
+capability route/any  a route answering every method
+  heroes  web.add_any
+  go      echo.Echo.Any, gin.RouterGroup.Any, chi.Router.Handle, chi.Router.HandleFunc, a net/http.ServeMux pattern without a method
+  rust    -
+  python  flask.Flask.route with every method named
+  note    a route of one method wins over a route of every method on the same path, as Go's more specific pattern does
+
+capability route/methods  one route for several methods
+  heroes  web.add, once a method
+  go      echo.Echo.Match, gin.RouterGroup.Match
+  rust    -
+  python  flask.Flask.route(methods=[...])
+  note    `add` once a method, one name for them all; a name may stand on one pattern only, so `path_for` has one answer
+
+capability route/param  a segment of the path named as a parameter, `/users/:id`
+  heroes  web.param_of, web.Found
+  go      echo.Context.Param, ParamNames, ParamValues, gin.Context.Param, gin.Params, gin.Params.Get, ByName, chi.URLParam, chi.URLParamFromCtx, chi.RouteParams, net/http.Request.PathValue, net/http.Request.SetPathValue
+  rust    -
+  python  flask.Request.view_args, werkzeug.routing.UnicodeConverter
+  note    a parameter matches one segment that is not empty, unescaped: `/users/a%2Fb` gives `a/b`, as Go 1.27 answers (observed); `/users/` matches no `/users/:id` (observed in Go)
+
+capability route/wildcard  the rest of a path named, `/files/*path`
+  heroes  web.add (`*name`), web.param_of
+  go      echo's `*` and echo.Context.Param("*"), gin's `*name`, chi's `*` and URLParam("*"), net/http's `{name...}`
+  rust    -
+  python  werkzeug.routing.PathConverter, `<path:name>`
+  note    it matches the empty rest too, `/files/` and `/files` both giving "", where Go answers `/files` 307 to `/files/` (observed); every segment unescaped and joined by `/`
+
+capability route/priority  which of several routes takes a path
+  heroes  web.route
+  go      echo's and gin's order (static, then parameter, then wildcard), chi's, net/http.ServeMux's most specific pattern
+  rust    -
+  python  werkzeug.routing.Rule's weights
+  note    segment by segment from the left, a static segment before a parameter before a wildcard, and back to the next where the rest does not match: `/users/new` before `/users/:id` (observed in Go); then a route of the request's method, then `GET` for `HEAD`, then a route of every method
+
+capability route/conflict  a second route of the same method and shape refused
+  heroes  web.add, web.mount
+  go      net/http.ServeMux.Handle's panic on a conflict, gin's panic on a route added twice
+  rust    -
+  python  werkzeug.routing.Map's refusal of a rule added twice
+  note    `exists`, never a panic; `/a/:id` and `/a/:name` are one shape
+
+capability route/constraint  a parameter matched by its kind or an expression, `/posts/{id:[0-9]+}`
+  heroes  pending
+  go      chi's `{name:regexp}`
+  rust    -
+  python  werkzeug.routing.IntegerConverter, FloatConverter, UUIDConverter, AnyConverter, BaseConverter, flask.Flask.url_map.converters
+  note    a value is read from the parameter's text by `numbers` or `uuid` once routed; a route chosen by its parameter's kind is not written
+
+capability route/group  routes under a common prefix, named so the program can apply its steps to them
+  heroes  web.new_group, web.is_in_group, web.Found
+  go      echo.Echo.Group, echo.Group, echo.Group.Group, gin.RouterGroup.Group, gin.RouterGroup.BasePath, chi.Router.Route, chi.Router.Group, chi.Router.With
+  rust    -
+  python  flask.Blueprint, flask.Blueprint.route, url_prefix
+  note    a group is a router of its own, its routes added with its prefix, then mounted; a found route says the groups it stands in, outermost first
+
+capability route/mount  a router's routes taken into another
+  heroes  web.mount
+  go      chi.Router.Mount, echo.Group's routes joining the Echo
+  rust    -
+  python  flask.Flask.register_blueprint
+  note    every conflict is refused as `add` refuses it
+
+capability route/reverse  the path of a named route, its parameters filled
+  heroes  web.path_for
+  go      echo.Echo.Reverse, echo.Echo.URI, echo.Router.Reverse
+  rust    -
+  python  flask.url_for, werkzeug.routing.MapAdapter.build
+  note    each parameter escaped as one segment; a wildcard's `/` kept
+
+capability route/list  the routes a router holds
+  heroes  web.Router
+  go      echo.Echo.Routes, echo.Router.Routes, gin.Engine.Routes, gin.RoutesInfo, chi.Walk, chi.Routes
+  rust    -
+  python  werkzeug.routing.Map.iter_rules, flask.Flask.url_map
+  note    in the order they were added
+
+capability route/find  the route that takes a request, and its parameters
+  heroes  web.route
+  go      echo.Router.Find, chi.Mux.Find, chi.Mux.Match, net/http.ServeMux.Handler, net/http.Request.Pattern, echo.Context.Path, gin.Context.FullPath
+  rust    -
+  python  werkzeug.routing.MapAdapter.match, flask.Request.url_rule, flask.Request.endpoint
+  note    fails `not_found` for 404 and for 405 alike, and `not_routed` answers which
+
+capability route/not-found  the answer for a path no route takes
+  heroes  web.not_routed
+  go      echo.NotFoundHandler, echo.Echo.RouteNotFound, gin.Engine.NoRoute, chi.Mux.NotFound, net/http.NotFound, net/http.NotFoundHandler
+  rust    -
+  python  flask.Flask.errorhandler(404), werkzeug.exceptions.NotFound
+  note    404 and the status's text, `Not Found`, where Go writes `404 page not found`; JSON where the router says so
+
+capability route/method-not-allowed  405 and the methods allowed for a path whose routes take other methods
+  heroes  web.not_routed, web.allowed_of
+  go      echo.MethodNotAllowedHandler, gin.Engine.NoMethod, gin.Engine.HandleMethodNotAllowed, chi.Mux.MethodNotAllowed, net/http.ServeMux's 405
+  rust    -
+  python  werkzeug.exceptions.MethodNotAllowed, flask.Flask.errorhandler(405)
+  note    `Allow` lists every method a route of the path takes, sorted, `HEAD` where `GET` is, and `OPTIONS`, which `not_routed` answers: `DELETE, GET, HEAD, OPTIONS` where Go writes `DELETE, GET, HEAD` (observed)
+
+capability route/options  OPTIONS answered with the methods allowed
+  heroes  web.not_routed
+  go      echo's automatic OPTIONS answer
+  rust    -
+  python  werkzeug.routing.Map's provide_automatic_options, flask.Flask.make_default_options_response
+  note    204 and `Allow`, as Echo and Flask answer, where Go answers 405 (observed); a route of `OPTIONS` takes it first
+
+capability route/head  HEAD taken by the route of GET
+  heroes  web.route
+  go      net/http.ServeMux's GET pattern answering HEAD (observed), chi/middleware.GetHead
+  rust    -
+  python  werkzeug.routing.Rule adding HEAD to GET
+  note    `http` writes no body for HEAD
+
+capability route/trailing-slash  a path with or without its last `/` sent to the one a route takes
+  heroes  web.Router, web.not_routed
+  go      gin.Engine.RedirectTrailingSlash, chi/middleware.RedirectSlashes, chi/middleware.StripSlashes, echo/middleware.AddTrailingSlash, echo/middleware.RemoveTrailingSlash, net/http.ServeMux's redirect to a subtree
+  rust    -
+  python  werkzeug.routing.Rule's strict_slashes, flask.Flask.url_map.strict_slashes
+  note    off unless the router asks; 308, which keeps the method and the body, as Flask answers, where Gin answers 301 for GET and 307 for the others
+
+capability route/clean-path  a path holding `.`, `..` or an empty segment sent to its clean form
+  heroes  web.route, web.not_routed
+  go      net/http.ServeMux's redirect (observed 307 for `/a/../users/7` and `//users/7`), gin.Engine.RedirectFixedPath, gin.Engine.RemoveExtraSlash, chi/middleware.CleanPath
+  rust    -
+  python  werkzeug.routing.Map's merge_slashes
+  note    `route` refuses such a path, so no route's code ever sees one, and `not_routed` answers 308 to the clean path, where Go answers 307 (observed): the clean form does not change, and 308 keeps the method
+
+capability route/host  routing by the request's host
+  heroes  http.value_of, web.route
+  go      a net/http.ServeMux pattern with a host, echo.Echo.Host, chi's hostrouter
+  rust    -
+  python  werkzeug.routing.Map's host_matching, flask.Flask's subdomain_matching, flask.Blueprint's subdomain
+  note    the program reads `Host` and routes with one router a host
+
+capability route/rewrite  a request's path changed before it is routed
+  heroes  web.route
+  go      net/http.StripPrefix, echo/middleware.Rewrite, echo.Echo.Pre, chi/middleware.PathRewrite, chi/middleware.URLFormat
+  rust    -
+  python  werkzeug.middleware.dispatcher.DispatcherMiddleware
+  note    a request is a value: the program sets its `url.path` before `route`
+
+capability request/query  a query parameter read
+  heroes  http.query_of, url.value_of, url.values_of
+  go      echo.Context.QueryParam, QueryParams, QueryString, gin.Context.Query, DefaultQuery, GetQuery, QueryArray, GetQueryArray, QueryMap, GetQueryMap
+  rust    -
+  python  flask.Request.args
+  note    `http`'s and `url`'s calls, which this package does not repeat
+
+capability request/form  a form field read
+  heroes  http.form_of, url.value_of
+  go      echo.Context.FormValue, FormParams, gin.Context.PostForm, DefaultPostForm, GetPostForm, PostFormArray, PostFormMap
+  rust    -
+  python  flask.Request.form, flask.Request.values
+  note    `http.form_of`
+
+capability request/files  a multipart form's files read
+  heroes  pending
+  go      echo.Context.FormFile, MultipartForm, gin.Context.FormFile, MultipartForm, SaveUploadedFile, gin.Engine.MaxMultipartMemory
+  rust    -
+  python  flask.Request.files, werkzeug.datastructures.FileStorage
+  note    reading a multipart body is `http`'s block request/multipart-read, which waits there
+
+capability request/json  a request's JSON body read
+  heroes  web.json_of
+  go      echo.Context.Bind as JSON, gin.Context.ShouldBindJSON, BindJSON, net/http's json.NewDecoder(r.Body) as its users write it
+  rust    -
+  python  flask.Request.json, flask.Request.get_json, flask.Request.is_json
+  note    `application/json` or a `+json` type, compared without case and parameters; a body typed otherwise is `invalid`, as Flask answers 415
+
+capability request/bind  a request read into a record by its field names
+  heroes  refused: the language has no reflection, so no function can fill a record it does not know by its fields' names (README § B3); the program reads the members of `json.Value` into its record
+  go      echo.Context.Bind, echo.DefaultBinder, echo.BindUnmarshaler, gin.Context.ShouldBind, ShouldBindQuery, ShouldBindUri, ShouldBindHeader, gin/binding, echo.Context.Validate, echo.Validator
+  rust    -
+  python  -
+
+capability request/header  a header field read
+  heroes  http.value_of, http.values_of
+  go      echo.Context.Request().Header.Get, gin.Context.GetHeader
+  rust    -
+  python  flask.Request.headers
+  note    `http.value_of`
+
+capability request/cookie  a cookie of the request read by its name
+  heroes  web.cookie_of
+  go      echo.Context.Cookie, echo.Context.Cookies, gin.Context.Cookie
+  rust    -
+  python  flask.Request.cookies
+  note    the first of the name, as Go's `Request.Cookie` answers
+
+capability request/bearer  the token of `Authorization: Bearer`
+  heroes  web.bearer_token_of
+  go      echo/middleware.KeyAuth's extractor
+  rust    -
+  python  flask.Request.authorization.token
+  note    the scheme compared without case, RFC 6750
+
+capability request/client-address  the client's address, through proxies the program trusts
+  heroes  web.client_address_of
+  go      echo.Context.RealIP, echo.ExtractIPDirect, ExtractIPFromXFFHeader, ExtractIPFromRealIPHeader, echo.TrustOption, gin.Context.ClientIP, gin.Context.RemoteIP, gin.Engine.SetTrustedProxies, chi/middleware.RealIP
+  rust    -
+  python  flask.Request.remote_addr, flask.Request.access_route, werkzeug.middleware.proxy_fix.ProxyFix
+  note    `X-Forwarded-For` read only from an address the program trusts, from its last entry back
+
+capability response/json  a response of JSON
+  heroes  http.respond_json, http.respond, json.format_indented
+  go      echo.Context.JSON, JSONBlob, JSONPretty, gin.Context.JSON, IndentedJSON, PureJSON, AsciiJSON, SecureJSON
+  rust    -
+  python  flask.jsonify, flask.json.dumps
+  note    `http.respond_json`; indented through `json.format_indented` and `http.respond`
+
+capability response/jsonp  JSON wrapped in a script's call
+  heroes  refused: a JSONP answer runs as a script in the page of any origin that includes it, with the user's cookies, so whatever the session may read any site may read; CORS (`with_cors`) lets a chosen origin read JSON instead
+  go      echo.Context.JSONP, JSONPBlob, gin.Context.JSONP
+  rust    -
+  python  -
+
+capability response/text  a response of text
+  heroes  http.respond_text
+  go      echo.Context.String, gin.Context.String
+  rust    -
+  python  flask.make_response with a text
+  note    `http.respond_text`
+
+capability response/html  a page made by a template
+  heroes  web.render
+  go      echo.Context.Render, echo.Renderer, echo.Context.HTML, HTMLBlob, gin.Context.HTML, gin.Engine.LoadHTMLGlob, LoadHTMLFiles, SetHTMLTemplate
+  rust    -
+  python  flask.render_template, flask.render_template_string, flask.stream_template
+  note    typed HTML only for a set read in `template`'s HTML mode, which escapes by context; a set of the text mode answers `text/plain`, so an unescaped value never reaches a page
+
+capability response/redirect  a redirect
+  heroes  http.respond_redirect, web.path_for
+  go      echo.Context.Redirect, gin.Context.Redirect
+  rust    -
+  python  flask.redirect
+  note    `http.respond_redirect`, the path of a named route from `path_for`
+
+capability response/blob  a response of bytes, or of a status alone
+  heroes  http.respond, http.respond_status
+  go      echo.Context.Blob, NoContent, gin.Context.Data, gin.Context.Status
+  rust    -
+  python  flask.make_response, flask.Response
+  note    `http.respond`, `http.respond_status`
+
+capability response/xml  a response of XML or YAML
+  heroes  http.respond, xml.format, yaml.format, toml.format
+  go      echo.Context.XML, XMLBlob, XMLPretty, gin.Context.XML, YAML, TOML, ProtoBuf
+  rust    -
+  python  -
+  note    the text the format's own package writes, answered by `http.respond` with its type
+
+capability response/stream  a body written piece by piece while it is made
+  heroes  pending
+  go      echo.Context.Stream, gin.Context.Stream, DataFromReader, SSEvent
+  rust    -
+  python  flask.stream_with_context, flask.Response with a generator
+  note    `http` holds every body whole and writes it at once; a body written in pieces waits for `http` to write one
+
+capability response/attachment  a response a browser saves, or shows, under a file name
+  heroes  web.with_disposition
+  go      echo.Context.Attachment, echo.Context.Inline, gin.Context.FileAttachment
+  rust    -
+  python  flask.send_file(as_attachment=True, download_name=...)
+  note    RFC 6266: `filename` in ASCII and `filename*` in UTF-8 where the name is not ASCII
+
+capability response/error  an error answered as text or as JSON
+  heroes  web.error_response
+  go      echo.NewHTTPError, echo.HTTPError, echo.Echo.HTTPErrorHandler, echo.DefaultHTTPErrorHandler, gin.Context.AbortWithStatusJSON, AbortWithError, net/http.Error
+  rust    -
+  python  flask.abort, werkzeug.exceptions.HTTPException
+  note    JSON as Echo writes it, `{"message":"..."}`
+
+capability static/file  one file answered from a path the program names
+  heroes  web.serve_file
+  go      echo.Context.File, echo.Echo.File, gin.Context.File, gin.RouterGroup.StaticFile, net/http.ServeFile, net/http.ServeContent
+  rust    -
+  python  flask.send_file
+  note    only `GET` and `HEAD`; its type by its name, else by its bytes
+
+capability static/folder  the files of a folder answered, nothing outside it
+  heroes  web.serve_folder, web.default_folder, web.Folder
+  go      echo.Echo.Static, echo.Group.Static, echo/middleware.Static, gin.RouterGroup.Static, StaticFS, gin.Dir, net/http.FileServer, FileServerFS, ServeFileFS, net/http.Dir, FS, FileSystem, File
+  rust    -
+  python  flask.send_from_directory, werkzeug.security.safe_join, werkzeug.utils.safe_join, werkzeug.middleware.shared_data.SharedDataMiddleware, http.server.SimpleHTTPRequestHandler.translate_path
+  note    a `..`, a `.`, an absolute path, a `\`, a zero byte, a `:` on Windows and a link leading out of the folder are refused 404, where Go serves a link out of the folder (observed); a name beginning with `.` is refused unless asked, where Go serves it (observed)
+
+capability static/index  a folder answered by its index file, its path given its last `/`
+  heroes  web.serve_folder
+  go      net/http.FileServer's index.html and its redirect, echo/middleware.StaticConfig.Index
+  rust    -
+  python  http.server.SimpleHTTPRequestHandler's index.html and its redirect
+  note    301 to the path with `/` (`sub/`), and from `index.html` to `./`, both relative as Go writes them (observed)
+
+capability static/listing  a folder's names answered as a page
+  heroes  web.serve_folder
+  go      net/http.FileServer's listing, echo/middleware.StaticConfig.Browse
+  rust    -
+  python  http.server.SimpleHTTPRequestHandler.list_directory
+  note    off unless asked, as Echo's; Go's page (observed), each name sorted by its bytes, a folder's ending in `/`, its link escaped as one segment, so `&` is `%26` where Go writes it bare
+
+capability static/conditional  a file not sent again where the client holds it
+  heroes  web.serve_file, web.serve_folder
+  go      net/http.ServeContent's Last-Modified and If-Modified-Since, If-Unmodified-Since
+  rust    -
+  python  http.server.SimpleHTTPRequestHandler's If-Modified-Since
+  note    304 where `If-Modified-Since` is not older than the file, to the second; 412 for `If-Unmodified-Since`; `If-None-Match` read first, a file having no entity tag, so only `*` matches (RFC 9110 § 13.2.2); as Go answers (observed)
+
+capability static/range  part of a file answered
+  heroes  web.serve_file, web.serve_folder
+  go      net/http.ServeContent's Range and If-Range
+  rust    -
+  python  -
+  note    one range 206, unsatisfiable ones dropped (`bytes=20-,0-1` gives `0-1`), none left 416 with `Content-Range: bytes */N`, a range that does not read 416, as Go (observed); several left answered whole 200, where Go writes multipart/byteranges; `bytes=-0` 416, where Go answers 206 `bytes 11-10/11` (observed) and RFC 9110 § 14.1.2 calls it unsatisfiable; a unit other than bytes ignored, as RFC 9110 § 14.2 allows, where Go answers 416
+
+capability static/type-by-name  a file's type by its extension
+  heroes  web.content_type_of
+  go      mime.TypeByExtension, mime.ExtensionsByType, mime.AddExtensionType
+  rust    -
+  python  mimetypes.guess_type, guess_file_type, guess_extension, guess_all_extensions, types_map, common_types, add_type, init, inited, knownfiles, read_mime_types, MimeTypes, suffix_map, encodings_map
+  note    one table carried here, the same on every machine: Go's answer on macOS where Go and Python disagree (`xml`, `ico`, `wav`, `rar`), Python's built-in table where Go has none (`md`, `yaml`, `webmanifest`), observed 2026-11-16; a type of text carries `charset=utf-8`; a table changed at run time (`AddExtensionType`, `add_type`) would be a mutable global, which the language has none of
+
+capability static/sniff  a body's type guessed from its first bytes
+  heroes  web.sniff
+  go      net/http.DetectContentType
+  rust    -
+  python  -
+  note    the WHATWG's MIME Sniffing standard, as Go answers it on every signature tested (observed)
+
+capability middleware/chain  steps run before and after a handler, in the program's order
+  heroes  web.before, web.after, web.Step
+  go      echo.Echo.Use, echo.Echo.Pre, echo.MiddlewareFunc, echo.HandlerFunc, gin.Engine.Use, gin.HandlersChain, gin.Context.Next, Abort, IsAborted, chi.Router.Use, chi.Chain, chi.Middlewares
+  rust    -
+  python  flask.Flask.before_request, flask.Flask.after_request, flask.Flask.teardown_request, flask.Blueprint.before_request, after_request
+  note    a step before is a function from a request to the request or an answer, a step after one from a request and a response to a response; the program calls them, so a step may take what it needs as arguments
+
+capability middleware/log  one line a request
+  heroes  web.log_request
+  go      echo/middleware.Logger, LoggerWithConfig, RequestLogger, gin.Logger, gin.LoggerWithFormatter, chi/middleware.Logger
+  rust    -
+  python  werkzeug's request log
+  note    `info` below 500 and `error` from 500, through `log`'s text or JSON form
+
+capability middleware/recover  a failed handler answered 500, its failure logged
+  heroes  web.recover
+  go      echo/middleware.Recover, gin.Recovery, gin.CustomRecovery, chi/middleware.Recoverer
+  rust    -
+  python  flask.Flask.errorhandler(500), flask.Flask.handle_exception
+  note    a failure, `T?`'s error, answered 500 without its message, which is logged; an abort ends the program, which no step can stop
+
+capability middleware/cors  cross-origin requests allowed by origin
+  heroes  web.preflight, web.with_cors, web.default_cors, web.Cors
+  go      echo/middleware.CORS, CORSWithConfig, gin-contrib/cors, go-chi/cors
+  rust    -
+  python  flask-cors
+  note    by the Fetch standard: `*` where every origin is allowed and no credentials go, else the origin itself and `Vary: Origin`; a preflight of a refused origin answered 204 with none of the allowing fields
+
+capability middleware/request-id  an identifier for each request, kept where the client sent one
+  heroes  web.with_request_id, web.copy_request_id
+  go      echo/middleware.RequestID, chi/middleware.RequestID, chi/middleware.GetReqID
+  rust    -
+  python  -
+  note    `X-Request-Id`, kept where the client sent 1 to 128 visible ASCII characters, else a UUID of version 4
+
+capability middleware/body-limit  a body past a size refused 413
+  heroes  web.limit_body
+  go      echo/middleware.BodyLimit, chi/middleware.RequestSize, net/http.MaxBytesReader, MaxBytesHandler
+  rust    -
+  python  flask.Flask.config MAX_CONTENT_LENGTH, flask.Request.max_content_length
+  note    the server's own limit is `http.Server.limits`; this is a route's
+
+capability middleware/basic-auth  a request refused 401 without credentials the program accepts
+  heroes  web.require_basic, web.challenge_basic, http.basic_auth_of
+  go      echo/middleware.BasicAuth, gin.BasicAuth, gin.BasicAuthForRealm, gin.Accounts, chi/middleware.BasicAuth
+  rust    -
+  python  flask.Request.authorization
+  note    `WWW-Authenticate: Basic realm="…", charset="UTF-8"`, RFC 7617, where Echo writes `basic realm=Restricted`
+
+capability middleware/key-auth  a request refused 401 without a token the program accepts
+  heroes  web.require_bearer, web.challenge_bearer, web.bearer_token_of
+  go      echo/middleware.KeyAuth, KeyAuthWithConfig
+  rust    -
+  python  -
+  note    RFC 6750's answers: 401 with no error where no token is sent, `invalid_token` where it is refused, 400 `invalid_request` where it is no token, where Echo answers 400 for a missing key
+
+capability middleware/gzip  a response compressed where the client accepts it
+  heroes  web.gzip
+  go      echo/middleware.Gzip, GzipWithConfig, chi/middleware.Compress, gin-contrib/gzip
+  rust    -
+  python  -
+  note    compressed where `Accept-Encoding` takes gzip by RFC 9110 § 12.5.3, a weight of 0 refusing it; `Vary: Accept-Encoding` on every response it could compress
+
+capability middleware/decompress  a gzip request body read
+  heroes  web.gunzip_body
+  go      echo/middleware.Decompress
+  rust    -
+  python  -
+  note    415 and `Accept-Encoding: gzip` for another coding, RFC 9110 § 15.5.16
+
+capability middleware/cross-origin-protection  an unsafe request from another origin refused
+  heroes  web.refuse_cross_origin
+  go      net/http.CrossOriginProtection, NewCrossOriginProtection, AddTrustedOrigin, AddInsecureBypassPattern, Check, Handler, SetDenyHandler, echo/middleware.CSRF
+  rust    -
+  python  -
+  note    Go's answers on every case tested (observed): a trusted `Origin` first, then `Sec-Fetch-Site`, then `Origin` against `Host` as written; Echo's token is not kept, the two fields refusing what it refuses with no state
+
+capability middleware/secure  the headers that keep a page from being framed or sniffed
+  heroes  web.with_secure_headers
+  go      echo/middleware.Secure, SecureWithConfig, chi/middleware.NoCache, chi/middleware.SetHeader
+  rust    -
+  python  -
+  note    three fields with no cost to any page; HSTS and a content security policy bind a site's whole future, so the program writes them with `http.with_header`
+
+capability middleware/content-type  a body of a type the route does not read refused 415
+  heroes  web.require_type
+  go      chi/middleware.AllowContentType, chi/middleware.ContentCharset
+  rust    -
+  python  -
+
+capability middleware/method-override  the method a form names in place of POST
+  heroes  web.override_method
+  go      echo/middleware.MethodOverride
+  rust    -
+  python  -
+  note    `PUT`, `PATCH` and `DELETE` alone, another answered 400, where Echo takes any
+
+capability middleware/redirects  HTTP sent to HTTPS, or a host to its `www.` form and back
+  heroes  pending
+  go      echo/middleware.HTTPSRedirect, HTTPSWWWRedirect, HTTPSNonWWWRedirect, WWWRedirect, NonWWWRedirect
+  rust    -
+  python  -
+
+capability middleware/rate-limit  requests of one client counted and refused 429 past a rate
+  heroes  pending
+  go      echo/middleware.RateLimiter, RateLimiterMemoryStore, chi/middleware.Throttle, ThrottleBacklog
+  rust    -
+  python  -
+
+capability middleware/timeout  a handler stopped past a time
+  heroes  refused: a handler runs to its end on the thread that serves, and the language has no way to stop a function midway (spec § 13 joins a thread, never cancels one), so a step could answer late but never stop the work; `http.Server.deadline_ms` bounds a connection instead
+  go      echo/middleware.Timeout, echo/middleware.ContextTimeout, chi/middleware.Timeout, net/http.TimeoutHandler
+  rust    -
+  python  -
+
+capability middleware/proxy  requests passed to another server
+  heroes  pending
+  go      echo/middleware.Proxy, echo/middleware.ProxyBalancer, net/http/httputil.ReverseProxy
+  rust    -
+  python  -
+
+capability serve/stateless  a listener's connections served by a router and one function of the program
+  heroes  web.serve, web.serve_stream, http.serve_with
+  go      echo.Echo.Start, gin.Engine.Run, net/http.ListenAndServe with a ServeMux
+  rust    -
+  python  flask.Flask.run, wsgiref.simple_server.make_server, WSGIServer, WSGIRequestHandler, demo_app
+  note    `http.serve_with` with the router as the program's value, so every refusal, `100 Continue` and keep-alive are `http.serve`'s; one connection at a time
+
+capability serve/tls  the same over TLS
+  heroes  web.serve_tls, http.serve_tls_with
+  go      echo.Echo.StartTLS, gin.Engine.RunTLS
+  rust    -
+  python  -
+
+capability serve/stateful  the loop a program with state writes: accept, read, route, call its own function with its `@` state, write
+  heroes  http.next_request, http.write_answer, web.route, web.not_routed
+  go      echo.Context.Set, echo.Context.Get, gin.Context.Set, Get, MustGet, chi/middleware.WithValue, a closure over the program's state
+  rust    -
+  python  flask.g, flask.current_app, flask.Flask.app_context
+  note    no closure carries the state: the router answers the route's name and the program calls its own function with its `@` state, in the loop of `route`'s example; `http.next_request` answers 100, 400, 413, 417, 431, 501 and 505 and `http.write_answer` keeps an HTTP/1.0 connection alive, as `http.serve` does
+
+dropped  a context, an interface, a handler type or an error type: the language has none (README § A4, § B3)
+  go      echo.Context and its Get, Set, Request, SetRequest, Response, Logger, Echo, Reset, echo.Response, echo.Map, echo.Echo.NewContext, AcquireContext, ReleaseContext, echo.WrapHandler, WrapMiddleware, gin.Context.Copy, Keys, Errors, Error, gin.WrapF, WrapH, gin.HandlerFunc, chi.RouteContext, chi.NewRouteContext, chi.Context, echo.Echo.Validator, Binder, JSONSerializer, IPExtractor as fields
+  rust    -
+  python  flask.Flask.app_context, request_context, test_request_context, flask.g, flask.session as a proxy, werkzeug.local
+
+dropped  a framework's own server, its modes and its plumbing: the connection is `http`'s and `net`'s
+  go      echo.Echo.Server, TLSServer, Listener, AutoTLSManager, StartAutoTLS, StartServer, StartH2CServer, Shutdown, Close, ListenerAddr, Debug, HideBanner, HidePort, gin.SetMode, gin.Mode, gin.IsDebugging, gin.Engine.RunUnix, RunFd, RunListener, RunQUIC, gin.DisableConsoleColor, gin.ForceConsoleColor
+  rust    -
+  python  flask.Flask.run's debug and reloader, wsgiref.handlers.BaseHandler, SimpleHandler, BaseCGIHandler, CGIHandler, IISCGIHandler, read_environ, wsgiref.util.FileWrapper, setup_testing_defaults, request_uri, application_uri, guess_scheme, shift_path_info, is_hop_by_hop, wsgiref.headers.Headers, wsgiref.validate.validator and its checks, wsgiref.types, wsgiref.simple_server.ServerHandler, software_version, sys_version
+
+dropped  a media type's parameters and MIME's encoded words: `http`'s and `mail`'s area
+  go      mime.ParseMediaType, mime.FormatMediaType, mime.ErrInvalidMediaParameter, mime.WordDecoder, mime.WordEncoder, mime.BEncoding, mime.QEncoding
+  rust    -
+  python  -
+
+dropped  Rust has no web framework in its standard library
+  go      -
+  rust    -
+  python  -

@@ -1,0 +1,213 @@
+# The messages a client sends, as the protocol's documentation (version 3.0,
+# "Message Formats") lays each out: its kind's byte, its length, then its
+# fields. Each answers the whole message's bytes, ready to write.
+
+use sql/postgres/internal/wire
+
+# The protocol's version in the startup message: 3 in the high half, 0 in
+# the low.
+constant PROTOCOL_3_0: i64
+    196608
+
+# A run-time parameter of the startup message, or of a server's report.
+record Pair
+    # The parameter's name.
+    name: str
+    # Its value.
+    value: str
+
+# A parameter's value in a Bind message.
+variant Arg
+    # SQL's NULL, written as the length -1 and no bytes.
+    absent
+    # A value, in the format its column of `formats` says.
+    given
+        # The value's bytes.
+        data: [u8]
+
+# The startup message: the protocol's version, then each pair, then a zero
+# byte.
+#
+# - `pairs`: the parameters, `user` among them; no name or value holds a zero
+#   byte.
+function startup(pairs: [Pair]) -> [u8]
+    body: [u8] @= []
+    wire.push_i32(@body, PROTOCOL_3_0)
+
+    for p in pairs
+        wire.push_cstr(@body, p.name)
+        wire.push_cstr(@body, p.value)
+
+    body @ body.push(0)
+    return wire.unframed(body)
+
+# A password message, answering a cleartext or an MD5 request.
+#
+# - `secret`: the password, or the MD5 answer, with no zero byte.
+function password_message(secret: str) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, secret)
+    return wire.framed(kind: 'p', body: body)
+
+# The first message of a SASL exchange: the mechanism chosen and the client's
+# first message.
+#
+# - `mechanism`: `SCRAM-SHA-256`.
+# - `data`: the client's first message.
+function sasl_initial(mechanism: str, data: [u8]) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, mechanism)
+    wire.push_i32(@body, data.len())
+    wire.push_all(out: @body, data: data)
+    return wire.framed(kind: 'p', body: body)
+
+# A later message of a SASL exchange.
+#
+# - `data`: the client's message.
+function sasl_response(data: [u8]) -> [u8]
+    return wire.framed(kind: 'p', body: data)
+
+# A simple query: one text that may hold several statements.
+#
+# - `text`: the statements, with no zero byte.
+function query(text: str) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, text)
+    return wire.framed(kind: 'Q', body: body)
+
+# A Parse message: a statement to read and plan, under a name.
+#
+# - `name`: the statement's name, "" for the unnamed one.
+# - `text`: the statement, with no zero byte.
+# - `types`: a type's number for each placeholder, 0 to leave it to the
+#   server; at most 65,535.
+function parse(name: str, text: str, types: [i64]) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, name)
+    wire.push_cstr(@body, text)
+    wire.push_i16(@body, types.len())
+
+    for t in types
+        wire.push_i32(@body, t)
+
+    return wire.framed(kind: 'P', body: body)
+
+# A Bind message: a statement's placeholders given their values, making a
+# portal.
+#
+# - `portal`: the portal's name, "" for the unnamed one.
+# - `statement`: the statement's name, "" for the unnamed one.
+# - `formats`: for each value, 0 for text or 1 for binary.
+# - `bound`: the values, as many as `formats`.
+# - `result_formats`: the format of each column answered, `[]` for text in
+#   every one.
+function bind(portal: str, statement: str, formats: [i64], bound: [Arg], result_formats: [i64]) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, portal)
+    wire.push_cstr(@body, statement)
+    wire.push_i16(@body, formats.len())
+
+    for f in formats
+        wire.push_i16(@body, f)
+
+    wire.push_i16(@body, bound.len())
+
+    for a in bound
+        match a
+            .absent => wire.push_i32(@body, -1)
+            .given g =>
+                wire.push_i32(@body, g.data.len())
+                wire.push_all(out: @body, data: g.data)
+
+    wire.push_i16(@body, result_formats.len())
+
+    for f in result_formats
+        wire.push_i16(@body, f)
+
+    return wire.framed(kind: 'B', body: body)
+
+# A Describe message, asking what a statement or a portal takes and answers.
+#
+# - `kind`: `'S'` for a statement, `'P'` for a portal.
+# - `name`: its name, "" for the unnamed one.
+function describe(kind: u8, name: str) -> [u8]
+    body: [u8] @= [kind]
+    wire.push_cstr(@body, name)
+    return wire.framed(kind: 'D', body: body)
+
+# An Execute message, running a portal.
+#
+# - `portal`: the portal's name, "" for the unnamed one.
+# - `max_rows`: the most rows to answer, 0 for every one.
+function execute(portal: str, max_rows: i64) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, portal)
+    wire.push_i32(@body, max_rows)
+    return wire.framed(kind: 'E', body: body)
+
+# A Close message, ending a prepared statement or a portal.
+#
+# - `kind`: `'S'` for a statement, `'P'` for a portal.
+# - `name`: its name.
+function close(kind: u8, name: str) -> [u8]
+    body: [u8] @= [kind]
+    wire.push_cstr(@body, name)
+    return wire.framed(kind: 'C', body: body)
+
+# A Sync message: the end of an extended query, after which the server
+# answers ReadyForQuery.
+function sync() -> [u8]
+    return wire.framed(kind: 'S', body: [])
+
+# A Terminate message: the client is leaving.
+function terminate() -> [u8]
+    return wire.framed(kind: 'X', body: [])
+
+# A CopyFail message, refusing the rows a `COPY ... FROM STDIN` waits for.
+#
+# - `reason`: why, as the server's failure will say it.
+function copy_fail(reason: str) -> [u8]
+    body: [u8] @= []
+    wire.push_cstr(@body, reason)
+    return wire.framed(kind: 'f', body: body)
+
+test "startup: version 3.0, the user and the database, then a zero byte"
+    got = startup([Pair(name: "user", value: "ana"), Pair(name: "database", value: "d")])
+    assert got == [0, 0, 0, 29, 0, 3, 0, 0, 'u', 's', 'e', 'r', 0, 'a', 'n', 'a', 0, 'd', 'a', 't', 'a', 'b', 'a', 's', 'e', 0, 'd', 0, 0]
+    assert startup([]) == [0, 0, 0, 9, 0, 3, 0, 0, 0]
+
+test "password_message, sasl_initial and sasl_response: the kind p, an empty password, no data"
+    assert password_message("") == ['p', 0, 0, 0, 5, 0]
+    assert password_message("pw") == ['p', 0, 0, 0, 7, 'p', 'w', 0]
+    assert sasl_initial(mechanism: "M", data: ['x']) == ['p', 0, 0, 0, 11, 'M', 0, 0, 0, 0, 1, 'x']
+    assert sasl_initial(mechanism: "M", data: []) == ['p', 0, 0, 0, 10, 'M', 0, 0, 0, 0, 0]
+    assert sasl_response(['a', 'b']) == ['p', 0, 0, 0, 6, 'a', 'b']
+
+test "query: a statement, an empty one, and one of more than one byte"
+    assert query("SELECT 1") == ['Q', 0, 0, 0, 13, 'S', 'E', 'L', 'E', 'C', 'T', ' ', '1', 0]
+    assert query("") == ['Q', 0, 0, 0, 5, 0]
+    assert query("é") == ['Q', 0, 0, 0, 7, 195, 169, 0]
+
+test "parse: unnamed with no types, named with two"
+    assert parse(name: "", text: "x", types: []) == ['P', 0, 0, 0, 9, 0, 'x', 0, 0, 0]
+    assert parse(name: "s", text: "x", types: [20, 0]) == ['P', 0, 0, 0, 18, 's', 0, 'x', 0, 0, 2, 0, 0, 0, 20, 0, 0, 0, 0]
+
+test "bind: no values, a NULL, a text value, an empty value, and binary results"
+    assert bind(portal: "", statement: "", formats: [], bound: [], result_formats: []) == ['B', 0, 0, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0]
+    got = bind(
+        portal: "",
+        statement: "s",
+        formats: [0, 1, 0],
+        bound: [.absent, .given(data: ['4', '2']), .given(data: [])],
+        result_formats: [1]
+    )
+    assert got == ['B', 0, 0, 0, 35, 0, 's', 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 3, 255, 255, 255, 255, 0, 0, 0, 2, '4', '2', 0, 0, 0, 0, 0, 1, 0, 1]
+
+test "describe, execute, close, sync, terminate and copy_fail"
+    assert describe(kind: 'S', name: "s") == ['D', 0, 0, 0, 7, 'S', 's', 0]
+    assert describe(kind: 'P', name: "") == ['D', 0, 0, 0, 6, 'P', 0]
+    assert execute(portal: "", max_rows: 0) == ['E', 0, 0, 0, 9, 0, 0, 0, 0, 0]
+    assert close(kind: 'S', name: "rebel_1") == ['C', 0, 0, 0, 13, 'S', 'r', 'e', 'b', 'e', 'l', '_', '1', 0]
+    assert sync() == ['S', 0, 0, 0, 4]
+    assert terminate() == ['X', 0, 0, 0, 4]
+    assert copy_fail("no") == ['f', 0, 0, 0, 7, 'n', 'o', 0]

@@ -1,0 +1,335 @@
+# Crossing between CBOR and a `json.Value`. A CBOR item is first checked in the
+# order its bytes hold it, so the first item JSON cannot hold is the one named,
+# by its JSON pointer, then built from its last event to its first; a JSON
+# value is flattened into events on a stack this module holds. Neither way
+# follows the data with recursion.
+
+use cbor/internal/decoder
+use cbor/internal/encoder
+use cbor/internal/event
+use json
+
+# The code of an item JSON has no form for.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of an integer past what a JSON number holds exactly.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a map holding one text key twice.
+constant INVALID: str
+    "invalid"
+
+# 2^64 as a float, the first integer no CBOR head holds.
+constant TWO_64: f64
+    18446744073709551616.0
+
+# 2^63 as a float, the first integer no `i64` holds.
+constant TWO_63: f64
+    9223372036854775808.0
+
+# A container open while the events are walked in order: its kind, how many
+# items it holds, how many have been read, and the last text key read in it.
+record Frame
+    # `event.LIST`, `event.PAIRS` or `event.TAG`.
+    kind: i64
+    # The items it holds: a map's twice its entries.
+    total: i64
+    # The items read so far.
+    seen: i64
+    # The text of the last key read, in a map.
+    key: str
+
+# The JSON pointer of the item the walk stands at, the first `top` frames open:
+# a list's index, a map's key, nothing for a map's key itself.
+function pointer_of(frames: [Frame] lent, top: i64) -> str
+    tokens: [str] @= []
+
+    for k in range(from: 0, to: top)
+        f = frames[k]
+
+        if f.kind == event.LIST
+            tokens @ tokens.push(to_str(f.seen))
+        else if f.kind == event.PAIRS && f.seen % 2 == 1
+            tokens @ tokens.push(f.key)
+
+    return json.pointer_of(tokens)
+
+# Moves the walk past the event `e`: a container with items opens a frame,
+# and an item complete counts in each frame it completes. Answers the frames
+# open after it.
+function advance(@frames: [Frame], top: i64, e: event.Event) -> i64
+    open: i64 @= top
+
+    if open > 0 && frames[open - 1].kind == event.PAIRS && frames[open - 1].seen % 2 == 0
+        frames[open - 1].key @ e.text
+
+    count = event.children_of(e)
+
+    if count > 0
+        made = Frame(kind: e.kind, total: count, seen: 0, key: "")
+
+        if open == frames.len()
+            frames @ frames.push(made)
+        else
+            frames[open] @ made
+        return open + 1
+
+    while open > 0
+        frames[open - 1].seen @ frames[open - 1].seen + 1
+
+        if frames[open - 1].seen < frames[open - 1].total
+            return open
+        open @ open - 1
+
+    return open
+
+# The JSON pointer of the event at `index`.
+function pointer_at(events: [event.Event] lent, index: i64) -> str
+    frames: [Frame] @= []
+    top: i64 @= 0
+
+    for k in range(from: 0, to: index)
+        top @ advance(frames: @frames, top: top, e: events[k])
+
+    return pointer_of(frames: frames, top: top)
+
+# Fails where JSON cannot hold `e`, standing at `pointer`, a map's key where
+# `is_key`.
+function check(e: event.Event, pointer: str, is_key: bool) -> ()?
+    if is_key && e.kind != event.TEXT
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"at \"{pointer}\": a key that is {event.kind_name(e)}, where every JSON key is text"
+        )
+    else if e.kind == event.BINARY || e.kind == event.TAG || e.kind == event.UNDEFINED || e.kind == event.SIMPLE
+        return fail(code: UNSUPPORTED, msg: f"at \"{pointer}\": {event.kind_name(e)} has no JSON form")
+    else if e.kind == event.FLOAT && (e.number != e.number || e.number - e.number != 0.0)
+        return fail(code: UNSUPPORTED, msg: f"at \"{pointer}\": the float {to_str(e.number)} has no JSON form")
+    else if e.kind == event.UNSIGNED && e.arg > 9007199254740991
+        return fail(code: DOES_NOT_FIT, msg: f"at \"{pointer}\": {e.arg} is past what a JSON number holds exactly")
+    else if e.kind == event.NEGATIVE && e.arg >= 9007199254740991
+        return fail(code: DOES_NOT_FIT, msg: f"at \"{pointer}\": -1 - {e.arg} is past what a JSON number holds exactly")
+    return ok()
+
+# Fails `does_not_fit` where the bignum of tag `tag` holding `data`, standing
+# at `pointer`, is past what a JSON number holds exactly.
+function exact(tag: event.Event, data: [u8], pointer: str) -> ()?
+    magnitude = event.magnitude_of(data)
+    fits = magnitude.len() <= 7 && (event.u64_of(magnitude) < 9007199254740991 || tag.arg == 2 && event.u64_of(magnitude) == 9007199254740991)
+
+    if !fits
+        return fail(code: DOES_NOT_FIT, msg: f"at \"{pointer}\": a bignum past what a JSON number holds exactly")
+    return ok()
+
+# The JSON value the CBOR item `data` holds. Fails `unsupported` where an item
+# has no JSON form, `does_not_fit` where an integer is past what a JSON number
+# holds exactly, `invalid` where a map holds one text key twice; each message
+# opens with the JSON pointer of the item.
+function to_json(data: [u8]) -> json.Value?
+    got = decoder.read(data: data, from: 0, reading: decoder.lenient())?
+    events = got.events
+    frames: [Frame] @= []
+    top: i64 @= 0
+
+    # A bignum's byte string is checked with its tag, so it is passed over.
+    passed: bool @= false
+
+    for i in range(from: 0, to: events.len())
+        e = events[i]
+        is_key = top > 0 && frames[top - 1].kind == event.PAIRS && frames[top - 1].seen % 2 == 0
+
+        if passed
+            passed @ false
+        else if !is_key && i + 1 < events.len() && event.is_bignum(tag: e, child: events[i + 1])
+            exact(tag: e, data: events[i + 1].data, pointer: pointer_of(frames: frames, top: top))?
+            passed @ true
+        else
+            check(e: e, pointer: pointer_of(frames: frames, top: top), is_key: is_key)?
+        top @ advance(frames: @frames, top: top, e: e)
+
+    done: [json.Value] @= []
+    held: i64 @= 0
+    at: i64 @= events.len()
+
+    while at > 0
+        at @ at - 1
+        e = events[at]
+        count = event.children_of(e)
+        made: json.Value @= .null_value
+
+        if e.kind == event.UNSIGNED
+            made @ .number(v: to_f64(e.arg))
+        else if e.kind == event.NEGATIVE
+            made @ .number(v: -1.0 - to_f64(e.arg))
+        else if e.kind == event.TEXT
+            made @ .text(v: e.text)
+        else if e.kind == event.FLOAT
+            made @ .number(v: e.number)
+        else if e.kind == event.BOOLEAN
+            made @ .boolean(v: e.flag)
+        else if e.kind == event.TAG && event.is_bignum(tag: e, child: events[at + 1])
+            n = to_f64(event.u64_of(event.magnitude_of(events[at + 1].data)))
+
+            if e.arg == 2
+                made @ .number(v: n)
+            else
+                made @ .number(v: -1.0 - n)
+        else if e.kind == event.LIST
+            items: [json.Value] @= []
+
+            for k in range(from: 0, to: count)
+                items @ items.push(done[held - 1 - k])
+
+            made @ .list(items: items)
+        else if e.kind == event.PAIRS
+            members: {str: json.Value} @= {}
+
+            for k in range(from: 0, to: count / 2)
+                key = json.text_of(done[held - 1 - 2 * k]).must()
+
+                if !members[key].is_err()
+                    return fail(
+                        code: INVALID,
+                        msg: f"at \"{pointer_at(events: events, index: at)}\": a map holds the key {json.quote(key)} twice"
+                    )
+                members[key] @ done[held - 2 - 2 * k]
+
+            made @ .object(members: members)
+        held @ held - count
+
+        if held == done.len()
+            done @ done.push(made)
+        else
+            done[held] @ made
+        held @ held + 1
+
+    return ok(done[0])
+
+# A JSON value waiting to be flattened, or a key to write before one.
+record Pending
+    # Whether this is a key, written as a text string.
+    is_key: bool
+    # The key's text.
+    key: str
+    # The value, where this is no key.
+    value: json.Value
+
+# The event of the JSON number `n`: an integer where it is a whole number from
+# -2^64 to 2^64 - 1 and not `-0.0`, else a float.
+function number_event(n: f64) -> event.Event
+    whole = n == n && n - n == 0.0 && (n >= 9007199254740992.0 || n <= -9007199254740992.0 || n == to_f64(to_i64(n).must()))
+
+    if !whole || n >= TWO_64 || n < -TWO_64 || n == 0.0 && 1.0 / n < 0.0
+        return event.of_float(n)
+    else if n >= TWO_63
+        return event.of_kind(kind: event.UNSIGNED, arg: to_u64(to_i64(n - TWO_63).must()).must() + 9223372036854775808)
+    else if n >= 0.0
+        return event.of_kind(kind: event.UNSIGNED, arg: to_u64(to_i64(n).must()).must())
+    else if n == -TWO_64
+        return event.of_kind(kind: event.NEGATIVE, arg: 18446744073709551615)
+    else if -n >= TWO_63
+        return event.of_kind(kind: event.NEGATIVE, arg: to_u64(to_i64(-n - TWO_63).must()).must() + 9223372036854775807)
+    return event.of_kind(kind: event.NEGATIVE, arg: to_u64(-1 - to_i64(n).must()).must())
+
+# The CBOR item of the JSON value `v`, as written, an object's members in its
+# order.
+function from_json(v: json.Value) -> [u8]
+    events: [event.Event] @= []
+    waiting: [Pending] @= [Pending(is_key: false, key: "", value: v)]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        p = waiting[top]
+        children: [Pending] @= []
+
+        if p.is_key
+            events @ events.push(event.of_text(p.key))
+        else
+            made = match p.value
+                .null_value => event.of_kind(kind: event.NULL_VALUE, arg: 0)
+                .boolean b  => event.of_boolean(b.v)
+                .number n   => number_event(n.v)
+                .text t     => event.of_text(t.v)
+                .list l =>
+                    for item in l.items
+                        children @ children.push(Pending(is_key: false, key: "", value: item))
+
+                    event.of_kind(kind: event.LIST, arg: to_u64(l.items.len()).must())
+                .object o =>
+                    for k in keys(o.members)
+                        children @ children.push(Pending(is_key: true, key: k, value: .null_value))
+                        children @ children.push(Pending(is_key: false, key: "", value: o.members[k].must()))
+
+                    event.of_kind(kind: event.PAIRS, arg: to_u64(o.members.len()).must())
+
+            events @ events.push(made)
+
+        for k in range(from: 0, to: children.len())
+            item = children[children.len() - 1 - k]
+
+            if top == waiting.len()
+                waiting @ waiting.push(item)
+            else
+                waiting[top] @ item
+            top @ top + 1
+
+    return encoder.write(events: events, order: encoder.AS_WRITTEN, duplicates: true).must()
+
+test "number_event: whole numbers, the edges of both widths, fractions, minus zero"
+    assert number_event(0.0) == event.of_kind(kind: event.UNSIGNED, arg: 0)
+    assert number_event(-1.0) == event.of_kind(kind: event.NEGATIVE, arg: 0)
+    assert number_event(1.5) == event.of_float(1.5)
+    assert number_event(TWO_63) == event.of_kind(kind: event.UNSIGNED, arg: 9223372036854775808)
+    assert number_event(TWO_64 - 2048.0) == event.of_kind(kind: event.UNSIGNED, arg: 18446744073709549568)
+    assert number_event(TWO_64) == event.of_float(TWO_64)
+    assert number_event(-TWO_63) == event.of_kind(kind: event.NEGATIVE, arg: 9223372036854775807)
+    assert number_event(-TWO_63 - 2048.0) == event.of_kind(kind: event.NEGATIVE, arg: 9223372036854777855)
+    assert number_event(-TWO_64) == event.of_kind(kind: event.NEGATIVE, arg: 18446744073709551615)
+    assert number_event(-TWO_64 - 4096.0) == event.of_float(-TWO_64 - 4096.0)
+    assert number_event(-0.0).kind == event.FLOAT
+
+test "from_json: scalars, an empty list and object, members in their order"
+    assert from_json(json.parse("null").must()) == [0xf6]
+    assert from_json(json.parse("true").must()) == [0xf5]
+    assert from_json(json.parse("\"ü\"").must()) == [0x62, 0xc3, 0xbc]
+    assert from_json(json.parse("[]").must()) == [0x80]
+    assert from_json(json.parse("{}").must()) == [0xa0]
+    assert from_json(json.parse("{\"b\": 1, \"a\": [-1, 0.5]}").must()) == [0xa2, 0x61, 0x62, 0x01, 0x61, 0x61, 0x82, 0x20, 0xf9, 0x38, 0x00]
+
+test "to_json: scalars, nested containers, the largest exact integers"
+    assert to_json([0xf6]).must() == json.parse("null").must()
+    assert to_json([0x83, 0x01, 0x82, 0x02, 0x03, 0x82, 0x04, 0x05]).must() == json.parse("[1, [2, 3], [4, 5]]").must()
+    assert to_json([0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03]).must() == json.parse("{\"a\": 1, \"b\": [2, 3]}").must()
+    assert to_json([0x1b, 0x00, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]).must() == json.parse("9007199254740991").must()
+    assert to_json([0x3b, 0x00, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe]).must() == json.parse("-9007199254740991").must()
+
+# The code and message `to_json` fails with on `data`.
+function failure_of(data: [u8]) -> str
+    return match to_json(data)
+        .ok _  => ""
+        .err e => f"{e.code}: {e.msg}"
+
+test "to_json: what JSON cannot hold, each named by its pointer"
+    assert failure_of([0x40]) == "unsupported: at \"\": a byte string has no JSON form"
+    assert failure_of([0x82, 0x01, 0xc1, 0x01]) == "unsupported: at \"/1\": a tag has no JSON form"
+    assert failure_of([0xa1, 0x61, 0x61, 0x81, 0xf7]) == "unsupported: at \"/a/0\": undefined has no JSON form"
+    assert failure_of([0xa1, 0x01, 0x02]) == "unsupported: at \"\": a key that is an unsigned integer, where every JSON key is text"
+    assert failure_of([0x81, 0xf0]) == "unsupported: at \"/0\": a simple value has no JSON form"
+    assert failure_of([0xf9, 0x7e, 0x00]) == "unsupported: at \"\": the float nan has no JSON form"
+    assert failure_of([0xa1, 0x62, 0x61, 0x2f, 0xf9, 0x7c, 0x00]) == "unsupported: at \"/a~1\": the float inf has no JSON form"
+
+test "to_json: integers just past the exact ones, and one text key twice"
+    assert failure_of([0x1b, 0x00, 0x20, 0, 0, 0, 0, 0, 0]) == "does_not_fit: at \"\": 9007199254740992 is past what a JSON number holds exactly"
+    assert failure_of([0x3b, 0x00, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]) == "does_not_fit: at \"\": -1 - 9007199254740991 is past what a JSON number holds exactly"
+    assert failure_of([0x81, 0xa2, 0x61, 0x61, 0x01, 0x61, 0x61, 0x02]) == "invalid: at \"/0\": a map holds the key \"a\" twice"
+
+test "to_json: a bignum that a JSON number holds exactly, and one it does not"
+    assert to_json([0xc2, 0x42, 0x00, 0x05]).must() == json.parse("5").must()
+    assert to_json([0x81, 0xc3, 0x40]).must() == json.parse("[-1]").must()
+    assert to_json([0xc2, 0x47, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]).must() == json.parse("9007199254740991").must()
+    assert failure_of([0xc3, 0x47, 0x1f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]) == "does_not_fit: at \"\": a bignum past what a JSON number holds exactly"
+    assert failure_of([0xa1, 0x61, 0x6e, 0xc2, 0x49, 0x01, 0, 0, 0, 0, 0, 0, 0, 0]) == "does_not_fit: at \"/n\": a bignum past what a JSON number holds exactly"
+    assert failure_of([0xc2, 0x61, 0x31]) == "unsupported: at \"\": a tag has no JSON form"

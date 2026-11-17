@@ -1,0 +1,296 @@
+# Natural numbers of any size, the little the exact statistics need: a sum, a
+# difference, a product, shifts, a comparison and a division whose quotient is
+# short. A number is a list of limbs of 30 bits, the lowest first, with no zero
+# limb at the top, so zero is the empty list; a product of two limbs stays far
+# inside an `i64`. Every function answers a new list and none aborts on a
+# number it was given, only on a precondition named beside it.
+
+# The bits of one limb.
+constant BITS: i64
+    30
+
+# One more than the largest limb.
+constant BASE: i64
+    1073741824
+
+# The bits of a limb, as a mask.
+constant MASK: i64
+    1073741823
+
+# What `divide` answers: the whole quotient and what is left.
+record Division
+    # The quotient, rounded toward zero.
+    quotient: [i64]
+    # What is left, below the divisor.
+    remainder: [i64]
+
+# `xs` without its zero limbs at the top.
+function trimmed(xs: [i64]) -> [i64]
+    end: i64 @= xs.len()
+
+    while end > 0 && xs[end - 1] == 0
+        end @ end - 1
+
+    if end == xs.len()
+        return xs
+    return xs.slice(from: 0, to: end)
+
+# The number `n`, which must not be below zero.
+function of(n: i64) -> [i64]
+    assert n >= 0
+    out: [i64] @= []
+    left: i64 @= n
+
+    while left > 0
+        out @ out.push(left & MASK)
+        left @ left >> BITS
+
+    return out
+
+# The number as an `i64`; aborts where it holds more than 62 bits.
+function small(xs: [i64]) -> i64
+    assert bit_length(xs) <= 62
+    out: i64 @= 0
+    at: i64 @= xs.len() - 1
+
+    while at >= 0
+        out @ out << BITS | xs[at]
+        at @ at - 1
+
+    return out
+
+# How many bits the number takes, 0 for zero.
+function bit_length(xs: [i64]) -> i64
+    if xs.len() == 0
+        return 0
+    top: i64 @= xs[xs.len() - 1]
+    count: i64 @= 0
+
+    while top > 0
+        count @ count + 1
+        top @ top >> 1
+
+    return (xs.len() - 1) * BITS + count
+
+# -1, 0 or 1 as `left` is below, equal to or above `right`.
+function compare(left: [i64], right: [i64]) -> i64
+    if left.len() != right.len()
+        if left.len() < right.len()
+            return -1
+        return 1
+    at: i64 @= left.len() - 1
+
+    while at >= 0
+        if left[at] != right[at]
+            if left[at] < right[at]
+                return -1
+            return 1
+        at @ at - 1
+
+    return 0
+
+# `left` plus `right`.
+function add(left: [i64], right: [i64]) -> [i64]
+    out: [i64] @= []
+    carry: i64 @= 0
+    at: i64 @= 0
+
+    while at < left.len() || at < right.len() || carry > 0
+        total: i64 @= carry
+
+        if at < left.len()
+            total @ total + left[at]
+
+        if at < right.len()
+            total @ total + right[at]
+        out @ out.push(total & MASK)
+        carry @ total >> BITS
+        at @ at + 1
+
+    return out
+
+# `left` less `right`; aborts where `right` is the larger.
+function sub(left: [i64], right: [i64]) -> [i64]
+    assert compare(left: left, right: right) >= 0
+    out: [i64] @= []
+    borrow: i64 @= 0
+    at: i64 @= 0
+
+    while at < left.len()
+        total: i64 @= left[at] - borrow
+
+        if at < right.len()
+            total @ total - right[at]
+
+        if total < 0
+            total @ total + BASE
+            borrow @ 1
+        else
+            borrow @ 0
+        out @ out.push(total)
+        at @ at + 1
+
+    return trimmed(out)
+
+# `left` times `right`, limb by limb, a row's carry carried as it goes.
+function mul(left: [i64], right: [i64]) -> [i64]
+    if left.len() == 0 || right.len() == 0
+        return []
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: left.len() + right.len())
+        out @ out.push(0)
+
+    i: i64 @= 0
+
+    while i < left.len()
+        carry: i64 @= 0
+        j: i64 @= 0
+
+        while j < right.len()
+            total = out[i + j] + left[i] * right[j] + carry
+            out[i + j] @ total & MASK
+            carry @ total >> BITS
+            j @ j + 1
+
+        at: i64 @= i + right.len()
+
+        while carry > 0
+            total = out[at] + carry
+            out[at] @ total & MASK
+            carry @ total >> BITS
+            at @ at + 1
+
+        i @ i + 1
+
+    return trimmed(out)
+
+# `xs` times two to the `count`; aborts where `count` is below zero.
+function shift_left(xs: [i64], count: i64) -> [i64]
+    assert count >= 0
+
+    if xs.len() == 0
+        return xs
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: count / BITS)
+        out @ out.push(0)
+
+    within = count % BITS
+    carry: i64 @= 0
+
+    for limb in xs
+        moved = limb << within | carry
+        out @ out.push(moved & MASK)
+        carry @ moved >> BITS
+
+    if carry > 0
+        out @ out.push(carry)
+    return out
+
+# `xs` divided by two to the `count`, rounded toward zero; aborts where
+# `count` is below zero.
+function shift_right(xs: [i64], count: i64) -> [i64]
+    assert count >= 0
+    skip = count / BITS
+
+    if skip >= xs.len()
+        return []
+    within = count % BITS
+    out: [i64] @= []
+    at: i64 @= skip
+
+    while at < xs.len()
+        low = xs[at] >> within
+        high: i64 @= 0
+
+        if at + 1 < xs.len() && within > 0
+            high @ xs[at + 1] << BITS - within & MASK
+        out @ out.push(low | high)
+        at @ at + 1
+
+    return trimmed(out)
+
+# Whether any of the lowest `count` bits of `xs` is set.
+function has_low_bits(xs: [i64], count: i64) -> bool
+    whole = count / BITS
+    at: i64 @= 0
+
+    while at < whole && at < xs.len()
+        if xs[at] != 0
+            return true
+        at @ at + 1
+
+    within = count % BITS
+
+    if within > 0 && whole < xs.len()
+        return xs[whole] & (1 << within) - 1 != 0
+    return false
+
+# `dividend` divided by `divisor`, bit by bit from the top of the quotient,
+# which suits a quotient of a few hundred bits. Aborts where `divisor` is
+# zero.
+function divide(dividend: [i64], divisor: [i64]) -> Division
+    assert divisor.len() > 0
+    span = bit_length(dividend) - bit_length(divisor)
+
+    if span < 0
+        return Division(quotient: [], remainder: dividend)
+    left: [i64] @= dividend
+    quotient: [i64] @= []
+    at: i64 @= span
+
+    while at >= 0
+        part = shift_left(divisor, at)
+
+        if compare(left: left, right: part) >= 0
+            left @ sub(left: left, right: part)
+            quotient @ add(left: quotient, right: shift_left(of(1), at))
+        at @ at - 1
+
+    return Division(quotient: quotient, remainder: left)
+
+test "of and small: zero, one limb, two limbs, and the largest of 62 bits"
+    assert of(0).len() == 0
+    assert small(of(0)) == 0
+    assert of(5) == [5]
+    assert of(1073741824) == [0, 1]
+    assert small(of(4611686018427387903)) == 4611686018427387903
+
+test "bit_length and compare: zero, powers of two, and numbers of different sizes"
+    assert bit_length(of(0)) == 0
+    assert bit_length(of(1)) == 1
+    assert bit_length(of(1073741824)) == 31
+    assert compare(left: of(3), right: of(3)) == 0
+    assert compare(left: of(2), right: of(1073741824)) == -1
+    assert compare(left: of(1073741825), right: of(1073741824)) == 1
+
+test "add and sub: carries across limbs, zero on either side, and a difference to zero"
+    assert add(left: of(1073741823), right: of(1)) == [0, 1]
+    assert add(left: of(0), right: of(7)) == [7]
+    assert sub(left: [0, 1], right: of(1)) == [1073741823]
+    assert sub(left: of(9), right: of(9)).len() == 0
+
+test "mul: zero, one limb, and a product past 62 bits checked by its halves"
+    assert mul(left: of(0), right: of(9)).len() == 0
+    assert mul(left: of(6), right: of(7)) == [42]
+    square = mul(left: of(4294967295), right: of(4294967295))
+    assert square == add(left: sub(left: shift_left(of(1), 64), right: shift_left(of(1), 33)), right: of(1))
+
+test "shift_left, shift_right and has_low_bits: within a limb, across limbs, and past the top"
+    assert small(shift_left(of(3), 40)) == 3298534883328
+    assert small(shift_right(of(3298534883328), 40)) == 3
+    assert shift_right(of(5), 3).len() == 0
+    assert has_low_bits(of(8), 3) == false
+    assert has_low_bits(of(9), 3)
+    assert has_low_bits(shift_left(of(1), 61), 61) == false
+    assert has_low_bits(add(left: shift_left(of(1), 61), right: of(1)), 61)
+
+test "divide: a smaller dividend, an exact quotient, a remainder, and numbers of several limbs"
+    short = divide(dividend: of(3), divisor: of(7))
+    assert short.quotient.len() == 0 && short.remainder == [3]
+    exact = divide(dividend: of(42), divisor: of(6))
+    assert small(exact.quotient) == 7 && exact.remainder.len() == 0
+    rest = divide(dividend: of(4611686018427387903), divisor: of(1000000007))
+    assert small(rest.quotient) == 4611686018427387903 / 1000000007
+    assert small(rest.remainder) == 4611686018427387903 % 1000000007

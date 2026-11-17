@@ -1,0 +1,324 @@
+# A path matched against a pattern of `*`, `?`, classes and `**`, part by part,
+# in time proportional to the pattern times the path: no backtracking, so no
+# pattern can make a match run long.
+#
+# A pattern is read whole before it is matched, so a malformed one fails
+# whatever the path. Its volume and root are compared as written with the
+# path's; its parts after them are matched against the path's names, a part
+# `**` standing for any number of names, and every other part for one name.
+# A rules value reaches it as `windows`: by POSIX's rules `\` makes the next
+# character stand for itself, and by Windows' it is a separator and ASCII
+# letters match without their case.
+
+use path/internal/codes
+use path/internal/roots
+use path/internal/scan
+
+# One element of a part of a pattern.
+variant Atom
+    # `?`: one character.
+    one
+    # `*`: any run of characters, none included.
+    run
+    # A character that stands for itself.
+    literal
+        # The character.
+        text: str
+    # A class, `[...]`: one character among some, or outside them.
+    set
+        # Whether the class is of the characters outside it, `[!...]` or `[^...]`.
+        negated: bool
+        # The characters named one by one, as numbers.
+        singles: [i64]
+        # The first character of each range.
+        lows: [i64]
+        # The last character of each range.
+        highs: [i64]
+
+# One part of a pattern.
+record Piece
+    # Whether the part is `**` alone, standing for any number of names.
+    deep: bool
+    # What the part matches, where it is not `**`.
+    atoms: [Atom]
+
+# A character read from a pattern, and where the next one begins.
+record Char
+    # The character, its escape removed.
+    text: str
+    # Where the next character of the pattern begins.
+    next: i64
+
+# A class read from a pattern, and where what follows it begins.
+record Class
+    # The class.
+    atom: Atom
+    # Where what follows it begins.
+    next: i64
+
+# Whether the whole of `path` matches `pattern`, failing `invalid` where the
+# pattern is malformed.
+function matches(path: str, pattern: str, windows: bool) -> bool?
+    shape = roots.split(pattern, windows)
+    pieces = parse(pattern: pattern, rest: shape.rest, windows: windows)?
+    anchor = roots.split(path, windows)
+
+    if !scan.same(a: roots.start_of(shape, windows), b: roots.start_of(anchor, windows), windows: windows)
+        return ok(false)
+    return ok(match_pieces(pieces, names: scan.names_in(anchor.rest, windows), windows: windows))
+
+# The parts of `rest`, what follows the volume and root of `pattern`: an empty
+# part and a `.` part are left out.
+function parse(pattern: str, rest: str, windows: bool) -> [Piece]?
+    pieces: [Piece] @= []
+    atoms: [Atom] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at < rest.len()
+        b = rest[at]
+
+        if scan.is_sep(b, windows)
+            pieces @ close(pieces, atoms: atoms, raw: rest.slice(from: start, to: at))
+            atoms @ []
+            at @ at + 1
+            start @ at
+        else if b == '*'
+            atoms @ atoms.push(.run)
+            at @ at + 1
+        else if b == '?'
+            atoms @ atoms.push(.one)
+            at @ at + 1
+        else if b == '['
+            bracket = read_class(pattern: pattern, rest: rest, at: at, windows: windows)?
+            atoms @ atoms.push(bracket.atom)
+            at @ bracket.next
+        else
+            c = read_char(pattern: pattern, rest: rest, at: at, windows: windows)?
+            atoms @ atoms.push(.literal(text: c.text))
+            at @ c.next
+
+    return ok(close(pieces, atoms: atoms, raw: rest.slice(from: start, to: rest.len())))
+
+# `pieces` with the part read as `atoms` from the text `raw` added: nothing
+# where `raw` is empty or `.`, a deep part where it is `**`.
+function close(pieces: [Piece], atoms: [Atom], raw: str) -> [Piece]
+    if raw == "" || raw == "."
+        return pieces
+
+    if raw == "**"
+        return pieces.push(Piece(deep: true, atoms: []))
+    return pieces.push(Piece(deep: false, atoms: atoms))
+
+# The character of `rest` at `at`, an escape removed by POSIX's rules.
+function read_char(pattern: str, rest: str, at: i64, windows: bool) -> Char?
+    if !windows && rest[at] == '\\'
+        if at + 1 >= rest.len()
+            return fail(code: codes.INVALID, msg: f"the pattern \"{pattern}\" ends with a `\\` that escapes nothing")
+        width = scan.width_at(rest, at + 1)
+        return ok(Char(text: rest.slice(from: at + 1, to: at + 1 + width), next: at + 1 + width))
+    width = scan.width_at(rest, at)
+    return ok(Char(text: rest.slice(from: at, to: at + width), next: at + width))
+
+# The class of `rest` that opens at `at`. A `]` right after the opening, or
+# after its `!` or `^`, stands for itself, and so does a `-` at either end.
+function read_class(pattern: str, rest: str, at: i64, windows: bool) -> Class?
+    next: i64 @= at + 1
+    negated: bool @= false
+
+    if next < rest.len() && (rest[next] == '!' || rest[next] == '^')
+        negated @ true
+        next @ next + 1
+    singles: [i64] @= []
+    lows: [i64] @= []
+    highs: [i64] @= []
+    first: bool @= true
+
+    while true
+        if next >= rest.len()
+            return fail(code: codes.INVALID, msg: f"the pattern \"{pattern}\" leaves a class open")
+
+        if rest[next] == ']' && !first
+            return ok(Class(atom: .set(negated: negated, singles: singles, lows: lows, highs: highs), next: next + 1))
+        low = read_char(pattern: pattern, rest: rest, at: next, windows: windows)?
+        next @ low.next
+
+        if next + 1 < rest.len() && rest[next] == '-' && rest[next + 1] != ']'
+            high = read_char(pattern: pattern, rest: rest, at: next + 1, windows: windows)?
+            lows @ lows.push(scan.code_point(low.text))
+            highs @ highs.push(scan.code_point(high.text))
+            next @ high.next
+        else
+            singles @ singles.push(scan.code_point(low.text))
+        first @ false
+
+# A list of `count` values, each false.
+function falses(count: i64) -> [bool]
+    out: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(false)
+
+    return out
+
+# Whether `pieces` match `names`, every one. A deep part takes any number of
+# names, and one or more where it is the last part, so that `a/**` matches
+# what `a` holds and not `a` itself.
+function match_pieces(pieces: [Piece], names: [str], windows: bool) -> bool
+    count = names.len()
+    after: [bool] @= falses(count + 1)
+    after[count] @ true
+    at: i64 @= pieces.len() - 1
+
+    while at >= 0
+        row: [bool] @= falses(count + 1)
+        piece = pieces[at]
+
+        if piece.deep && at == pieces.len() - 1
+            for j in range(from: 0, to: count)
+                row[j] @ true
+        else if piece.deep
+            j: i64 @= count
+
+            while j >= 0
+                row[j] @ after[j] || j < count && row[j + 1]
+                j @ j - 1
+        else
+            for j in range(from: 0, to: count)
+                row[j] @ after[j + 1] && piece_matches(piece.atoms, name: names[j], windows: windows)
+
+        after @ row
+        at @ at - 1
+
+    return after[0]
+
+# Whether `atoms` match the whole of `name`, character by character.
+function piece_matches(atoms: [Atom], name: str, windows: bool) -> bool
+    letters = name.chars()
+    count = letters.len()
+    reached: [bool] @= falses(count + 1)
+    reached[0] @ true
+
+    for atom in atoms
+        next: [bool] @= falses(count + 1)
+
+        match atom
+            .run =>
+                seen: bool @= false
+
+                for j in range(from: 0, to: count + 1)
+                    seen @ seen || reached[j]
+                    next[j] @ seen
+            .one =>
+                for j in range(from: 0, to: count)
+                    next[j + 1] @ reached[j]
+            .literal l =>
+                for j in range(from: 0, to: count)
+                    next[j + 1] @ reached[j] && scan.same(a: letters[j], b: l.text, windows: windows)
+            .set s =>
+                for j in range(from: 0, to: count)
+                    next[j + 1] @ reached[j] && in_class(negated: s.negated, singles: s.singles, lows: s.lows, highs: s.highs, c: letters[j], windows: windows)
+
+        reached @ next
+
+    return reached[count]
+
+# Whether the character `c` is in the class: among `singles` or a range, or
+# outside them where it is `negated`. By Windows' rules an ASCII letter is in
+# it where either of its cases is.
+function in_class(negated: bool, singles: [i64], lows: [i64], highs: [i64], c: str, windows: bool) -> bool
+    point = scan.code_point(c)
+    hit: bool @= holds(singles: singles, lows: lows, highs: highs, point: point)
+
+    if windows && !hit
+        other = other_case(point)
+        hit @ other != point && holds(singles: singles, lows: lows, highs: highs, point: other)
+    return hit != negated
+
+# Whether `point` is among `singles` or within a range of `lows` and `highs`.
+function holds(singles: [i64], lows: [i64], highs: [i64], point: i64) -> bool
+    for single in singles
+        if single == point
+            return true
+
+    for at in range(from: 0, to: lows.len())
+        if lows[at] <= point && point <= highs[at]
+            return true
+
+    return false
+
+# The other case of `point` where it is an ASCII letter, else `point`.
+function other_case(point: i64) -> i64
+    if point >= 65 && point <= 90
+        return point + 32
+
+    if point >= 97 && point <= 122
+        return point - 32
+    return point
+
+## Tests
+
+test "matches by POSIX's rules: the answers Python's `full_match` gave on 2026-11-15"
+    assert matches(path: "a.txt", pattern: "*.txt", windows: false).must()
+    assert !matches(path: "a/b", pattern: "*", windows: false).must()
+    assert matches(path: "a/b", pattern: "a/*", windows: false).must()
+    assert matches(path: "a/b/c", pattern: "a/**", windows: false).must()
+    assert !matches(path: "a", pattern: "a/**", windows: false).must()
+    assert matches(path: "a/b/c", pattern: "**/c", windows: false).must()
+    assert matches(path: "a/c", pattern: "a/**/c", windows: false).must()
+    assert matches(path: "b", pattern: "[!a]", windows: false).must()
+    assert matches(path: "]", pattern: "[]a]", windows: false).must()
+    assert matches(path: "-", pattern: "[a-]", windows: false).must()
+    assert !matches(path: "b", pattern: "[z-a]", windows: false).must()
+    assert !matches(path: "a.txt", pattern: "*.TXT", windows: false).must()
+    assert matches(path: "/a/b", pattern: "/a/*", windows: false).must()
+    assert !matches(path: "/a", pattern: "*", windows: false).must()
+    assert matches(path: "a/b", pattern: "a/./b", windows: false).must()
+    assert matches(path: "a/b", pattern: "a//b", windows: false).must()
+    assert matches(path: "é", pattern: "?", windows: false).must()
+    assert matches(path: "axxb", pattern: "a**b", windows: false).must()
+
+test "matches by POSIX's rules: the answers Go's `path.Match` gave on 2026-11-15"
+    assert matches(path: "a*", pattern: "a\\*", windows: false).must()
+    assert !matches(path: "ab", pattern: "a\\*", windows: false).must()
+    assert matches(path: "b", pattern: "[^a]", windows: false).must()
+    assert matches(path: ".x", pattern: "*", windows: false).must()
+    assert matches(path: "caffè", pattern: "caff[à-é]", windows: false).must()
+    assert !matches(path: "caffe", pattern: "caff[à-é]", windows: false).must()
+    assert matches(path: "", pattern: "", windows: false).must()
+    assert !matches(path: "a", pattern: "", windows: false).must()
+
+test "matches fails on a malformed pattern, whatever the path"
+    for pattern in ["[", "a[", "[a", "[!", "a\\", "[a\\", "x/[/y"]
+        match matches(path: "anything", pattern: pattern, windows: false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match matches(path: "a", pattern: "a\\", windows: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the pattern \"a\\\" ends with a `\\` that escapes nothing"
+
+    assert matches(path: "a\\b", pattern: "a\\*", windows: true).must()
+
+test "matches by Windows' rules: case set aside, both separators, a drive"
+    assert matches(path: "a.txt", pattern: "*.TXT", windows: true).must()
+    assert matches(path: "A\\b.txt", pattern: "a/*.txt", windows: true).must()
+    assert matches(path: "C:\\x\\y", pattern: "c:/x/*", windows: true).must()
+    assert !matches(path: "D:\\x\\y", pattern: "C:\\x\\*", windows: true).must()
+    assert !matches(path: "\\x", pattern: "C:\\x", windows: true).must()
+    assert matches(path: "Q", pattern: "[a-z]", windows: true).must()
+    assert !matches(path: "Q", pattern: "[a-z]", windows: false).must()
+    assert !matches(path: "q", pattern: "[!A-Z]", windows: true).must()
+    assert matches(path: "x\\y\\z", pattern: "**", windows: true).must()
+
+test "match_pieces: a deep part between, first, last and alone"
+    nothing: [str] = []
+    deep = Piece(deep: true, atoms: [])
+    a = Piece(deep: false, atoms: [.literal(text: "a")])
+    assert match_pieces([deep], names: ["x"], windows: false)
+    assert !match_pieces([deep], names: nothing, windows: false)
+    assert match_pieces([deep, a], names: ["a"], windows: false)
+    assert match_pieces([a, deep, a], names: ["a", "a"], windows: false)
+    assert match_pieces([a, deep, a], names: ["a", "x", "y", "a"], windows: false)
+    assert !match_pieces([a, deep], names: ["a"], windows: false)
+    assert match_pieces([], names: nothing, windows: false)

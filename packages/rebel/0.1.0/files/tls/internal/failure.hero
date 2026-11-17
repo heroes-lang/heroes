@@ -1,0 +1,167 @@
+# How a failure of the floor `tls/hero_tls` becomes a code of README § A4
+# and a message that says what was asked and what was found. A refused
+# certificate is `invalid`, the peer's input not being what the client reads,
+# and its message says why: past its dates, for other hosts, signed by no
+# authority trusted, revoked; the system's own words follow in brackets.
+
+use bytes
+use tls/hero_tls
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant PERMISSION: str
+    "permission"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant EXISTS: str
+    "exists"
+
+constant FAILED: str
+    "failed"
+
+# A kind told: its code and the words that say what was found.
+record Told
+    # A code of README § A4.
+    code: str
+    # What was found, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of the floor's kinds.
+function told(kind: i64) -> Told
+    if kind == hero_tls.HERO_TLS_INVALID
+        return Told(code: INVALID, why: "the layer refuses an argument")
+
+    if kind == hero_tls.HERO_TLS_NOT_OPEN
+        return Told(code: CLOSED, why: "it is closed")
+
+    if kind == hero_tls.HERO_TLS_NOT_FOUND
+        return Told(code: NOT_FOUND, why: "the host name has no address")
+
+    if kind == hero_tls.HERO_TLS_DENIED
+        return Told(code: PERMISSION, why: "the system refuses the address or the port to this program")
+
+    if kind == hero_tls.HERO_TLS_LIMIT
+        return Told(code: LIMIT, why: "the system has no memory, socket or stream left")
+
+    if kind == hero_tls.HERO_TLS_CLOSED_PEER
+        return Told(code: CLOSED, why: "the peer closed the connection before the handshake ended")
+
+    if kind == hero_tls.HERO_TLS_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this platform has no such thing")
+
+    if kind == hero_tls.HERO_TLS_TIMED_OUT
+        return Told(code: TIMEOUT, why: "the time allowed ran out")
+
+    if kind == hero_tls.HERO_TLS_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+
+    if kind == hero_tls.HERO_TLS_REFUSED
+        return Told(code: CLOSED, why: "nothing listens there")
+
+    if kind == hero_tls.HERO_TLS_UNREACHABLE
+        return Told(code: FAILED, why: "no route reaches the host")
+
+    if kind == hero_tls.HERO_TLS_IN_USE
+        return Told(code: EXISTS, why: "something listens there already")
+
+    if kind == hero_tls.HERO_TLS_CERT_EXPIRED
+        return Told(code: INVALID, why: "the peer's certificate is past its last day, or before its first")
+
+    if kind == hero_tls.HERO_TLS_CERT_HOST
+        return Told(code: INVALID, why: "the peer's certificate names other hosts")
+
+    if kind == hero_tls.HERO_TLS_CERT_UNTRUSTED
+        return Told(code: INVALID, why: "no authority trusted signed the peer's certificate")
+
+    if kind == hero_tls.HERO_TLS_CERT_REVOKED
+        return Told(code: INVALID, why: "the peer's certificate was revoked")
+
+    if kind == hero_tls.HERO_TLS_CERT_INVALID
+        return Told(code: INVALID, why: "the peer's certificate was refused")
+
+    if kind == hero_tls.HERO_TLS_HANDSHAKE
+        return Told(code: FAILED, why: "the TLS handshake failed")
+
+    if kind == hero_tls.HERO_TLS_PREAMBLE
+        return Told(code: INVALID, why: "the peer's answer before TLS is not the one expected")
+    return Told(code: FAILED, why: "the system failed")
+
+# The floor's words for its last failure on this thread, "" where it gave
+# none.
+function words() -> str
+    buffer: [u8] @= []
+    length = hero_tls.last_message(@buffer, count: 640)
+
+    if length <= 0
+        return ""
+    return bytes.to_text(buffer.slice(from: 0, to: length)).default("")
+
+# The floor's last failure on this thread as a `T?` whose message begins
+# with `asked`. It is called right after the call that failed.
+function last<T>(asked: str) -> T?
+    found = told(hero_tls.last_error())
+    said = words()
+
+    if said == ""
+        return fail(code: found.code, msg: asked + ": " + found.why)
+    return fail(code: found.code, msg: asked + ": " + found.why + " (" + said + ")")
+
+# A failure the face finds itself, before the floor is asked.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: asked + ": " + why)
+
+## Tests
+
+test "told: every kind of the floor has a code of README § A4, a refused certificate invalid and saying why"
+    assert told(hero_tls.HERO_TLS_INVALID).code == INVALID
+    assert told(hero_tls.HERO_TLS_NOT_OPEN).code == CLOSED
+    assert told(hero_tls.HERO_TLS_REFUSED).code == CLOSED
+    assert told(hero_tls.HERO_TLS_NOT_FOUND).code == NOT_FOUND
+    assert told(hero_tls.HERO_TLS_IN_USE).code == EXISTS
+    assert told(hero_tls.HERO_TLS_TIMED_OUT).code == TIMEOUT
+    assert told(hero_tls.HERO_TLS_UNSUPPORTED).code == UNSUPPORTED
+    assert told(hero_tls.HERO_TLS_CERT_EXPIRED).code == INVALID
+    assert told(hero_tls.HERO_TLS_CERT_EXPIRED).why == "the peer's certificate is past its last day, or before its first"
+    assert told(hero_tls.HERO_TLS_CERT_HOST).why == "the peer's certificate names other hosts"
+    assert told(hero_tls.HERO_TLS_CERT_UNTRUSTED).why == "no authority trusted signed the peer's certificate"
+    assert told(hero_tls.HERO_TLS_HANDSHAKE).code == FAILED
+    assert told(9999).code == FAILED
+
+test "last: the floor's last failure begins with what was asked, and the system's words follow in brackets"
+    junk: [u8] @= [110, 111]
+    other: [u8] @= [110, 111]
+    made = hero_tls.listen(
+        address: "127.0.0.1",
+        port: 70000,
+        chain: @junk,
+        chain_count: 2,
+        key: @other,
+        key_count: 2,
+        protocols: ""
+    )
+    assert made == nullptr
+    answer: i64? = last(asked: "listening")
+
+    match answer
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "listening: the layer refuses an argument (the port is outside 0 to 65535)"

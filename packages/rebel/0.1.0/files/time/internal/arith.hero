@@ -1,0 +1,219 @@
+# Arithmetic on counts of nanoseconds that fails `does_not_fit` where the
+# language would abort: every sum, difference and product `time` computes from
+# what a program gives it goes through here, and so does the division rounded
+# toward the past that a calendar needs.
+
+# The code of a result outside an `i64`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The smallest `i64`.
+constant MIN: i64
+    -9_223_372_036_854_775_807 - 1
+
+# The largest `i64`.
+constant MAX: i64
+    9_223_372_036_854_775_807
+
+# Nanoseconds in a second.
+constant SECOND: i64
+    1_000_000_000
+
+# What every failure here says after its operation.
+constant RANGE: str
+    "is outside an i64 of nanoseconds, about 292 years either side of 1970"
+
+# `a + b`. Fails `does_not_fit` where the sum is outside an `i64`.
+function add(a: i64, b: i64) -> i64?
+    if b > 0 && a > MAX - b || b < 0 && a < MIN - b
+        return fail(code: DOES_NOT_FIT, msg: f"{a} + {b} {RANGE}")
+    return ok(a + b)
+
+# `a - b`. Fails `does_not_fit` where the difference is outside an `i64`.
+function subtract(a: i64, b: i64) -> i64?
+    if b < 0 && a > MAX + b || b > 0 && a < MIN + b
+        return fail(code: DOES_NOT_FIT, msg: f"{a} - {b} {RANGE}")
+    return ok(a - b)
+
+# `a * b`. Fails `does_not_fit` where the product is outside an `i64`. Each
+# bound is the quotient of a limit by one side, which rounds toward zero, so
+# the comparison is exact.
+function multiply(a: i64, b: i64) -> i64?
+    outside = a > 0 && b > 0 && a > MAX / b || a > 0 && b < 0 && b < MIN / a || a < 0 && b > 0 && a < MIN / b || a < 0 && b < 0 && a < MAX / b
+
+    if outside
+        return fail(code: DOES_NOT_FIT, msg: f"{a} * {b} {RANGE}")
+    return ok(a * b)
+
+# `a` divided by `b` and rounded toward the past, where the language's `/`
+# rounds toward zero: -1 for -1 / 2. Aborts where `b` is not above zero, a
+# precondition of every caller here.
+function floor_div(a: i64, b: i64) -> i64
+    assert b > 0
+    quotient = a / b
+
+    if a % b < 0
+        return quotient - 1
+    return quotient
+
+# What is left of `a` once `floor_div(a: a, b: b)` times `b` is taken out: never
+# negative. Aborts where `b` is not above zero.
+function floor_mod(a: i64, b: i64) -> i64
+    assert b > 0
+    rest = a % b
+
+    if rest < 0
+        return rest + b
+    return rest
+
+# The nanoseconds of `seconds` whole seconds and `nanoseconds` more, either
+# negative or past a second. Fails `does_not_fit` where the total is outside
+# an `i64`, and only there: near the smallest `i64` the seconds alone may not
+# fit while the total does, so the nanoseconds are brought into one second
+# first and the second they borrow is taken from `seconds`.
+function from_parts(seconds: i64, nanoseconds: i64) -> i64?
+    carried = add(a: seconds, b: floor_div(a: nanoseconds, b: SECOND))?
+    rest = floor_mod(a: nanoseconds, b: SECOND)
+
+    if carried < 0 && rest > 0
+        whole = multiply(a: carried + 1, b: SECOND)?
+        return add(a: whole, b: rest - SECOND)
+    whole = multiply(a: carried, b: SECOND)?
+    return add(a: whole, b: rest)
+
+# The code of a unit that is not above zero.
+constant INVALID: str
+    "invalid"
+
+# Nothing, where `unit` is above zero. Fails `invalid` otherwise.
+function above_zero(unit: i64) -> ()?
+    if unit <= 0
+        return fail(code: INVALID, msg: f"the unit {unit} nanoseconds is not above zero")
+    return ok()
+
+# `n` moved toward the past to a whole multiple of `unit`. Fails `invalid`
+# where `unit` is not above zero, and `does_not_fit` where the multiple is
+# below the smallest `i64`.
+function floor_to(n: i64, unit: i64) -> i64?
+    above_zero(unit)?
+    return subtract(a: n, b: floor_mod(a: n, b: unit))
+
+# `n` moved to the nearest whole multiple of `unit`, a tie going up. Fails
+# `invalid` where `unit` is not above zero, and `does_not_fit` where the
+# multiple is outside an `i64`.
+function nearest_up(n: i64, unit: i64) -> i64?
+    above_zero(unit)?
+    rest = floor_mod(a: n, b: unit)
+
+    if rest >= unit - rest
+        return add(a: n, b: unit - rest)
+    return ok(n - rest)
+
+# `n` moved toward zero to a whole multiple of `unit`. Fails `invalid` where
+# `unit` is not above zero.
+function toward_zero(n: i64, unit: i64) -> i64?
+    above_zero(unit)?
+    return ok(n - n % unit)
+
+# `n` moved to the nearest whole multiple of `unit`, a tie going away from
+# zero. Fails `invalid` where `unit` is not above zero, and `does_not_fit`
+# where the multiple is outside an `i64`.
+function nearest_away(n: i64, unit: i64) -> i64?
+    above_zero(unit)?
+    rest = n % unit
+
+    if n >= 0
+        if rest < unit - rest
+            return ok(n - rest)
+        return add(a: n, b: unit - rest)
+    magnitude = -rest
+
+    if magnitude < unit - magnitude
+        return ok(n + magnitude)
+    return subtract(a: n, b: unit - magnitude)
+
+## Tests
+
+test "add: the largest and smallest sums that fit, one past either, and zero"
+    assert add(a: MAX - 1, b: 1).must() == MAX
+    assert add(a: MIN + 1, b: -1).must() == MIN
+    assert add(a: MAX, b: 1).is_err()
+    assert add(a: MIN, b: -1).is_err()
+    assert add(a: MIN, b: MAX).must() == -1
+    assert add(a: 0, b: 0).must() == 0
+
+    match add(a: MAX, b: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == f"{MAX} + 1 {RANGE}"
+
+test "subtract: down to the smallest, one past it, and the largest less the smallest"
+    assert subtract(a: MIN + 1, b: 1).must() == MIN
+    assert subtract(a: MIN, b: 1).is_err()
+    assert subtract(a: MAX, b: -1).is_err()
+    assert subtract(a: -1, b: MAX).must() == MIN
+    assert subtract(a: 0, b: MIN).is_err()
+    assert subtract(a: MAX, b: MAX).must() == 0
+
+test "multiply: every sign, the products at either end, and one past them"
+    assert multiply(a: 0, b: MIN).must() == 0
+    assert multiply(a: MIN, b: 1).must() == MIN
+    assert multiply(a: MIN, b: -1).is_err()
+    assert multiply(a: -1, b: MIN).is_err()
+    assert multiply(a: MAX, b: -1).must() == -MAX
+    assert multiply(a: 4_611_686_018_427_387_904, b: -2).must() == MIN
+    assert multiply(a: -2, b: 4_611_686_018_427_387_904).must() == MIN
+    assert multiply(a: 4_611_686_018_427_387_904, b: 2).is_err()
+    assert multiply(a: -4_611_686_018_427_387_904, b: -2).is_err()
+    assert multiply(a: 3_037_000_499, b: 3_037_000_499).must() == 9_223_372_030_926_249_001
+    assert multiply(a: 3_037_000_500, b: 3_037_000_500).is_err()
+    assert multiply(a: -3_037_000_500, b: -3_037_000_500).is_err()
+
+test "floor_div and floor_mod: below zero they round toward the past"
+    assert floor_div(a: -1, b: 2) == -1
+    assert floor_mod(a: -1, b: 2) == 1
+    assert floor_div(a: -2, b: 2) == -1
+    assert floor_mod(a: -2, b: 2) == 0
+    assert floor_div(a: 7, b: 2) == 3
+    assert floor_mod(a: 7, b: 2) == 1
+    assert floor_div(a: MIN, b: 1) == MIN
+    assert floor_div(a: MIN, b: MAX) == -2
+    assert floor_mod(a: MIN, b: MAX) == MAX - 1
+    assert floor_div(a: MAX, b: MAX) == 1
+
+test "from_parts: nanoseconds past a second or below zero, and both ends of an i64"
+    assert from_parts(seconds: 1, nanoseconds: -1).must() == 999_999_999
+    assert from_parts(seconds: 0, nanoseconds: 2_500_000_000).must() == 2_500_000_000
+    assert from_parts(seconds: -1, nanoseconds: 500_000_000).must() == -500_000_000
+    assert from_parts(seconds: -9_223_372_037, nanoseconds: 145_224_192).must() == MIN
+    assert from_parts(seconds: -9_223_372_037, nanoseconds: 145_224_191).is_err()
+    assert from_parts(seconds: 9_223_372_036, nanoseconds: 854_775_807).must() == MAX
+    assert from_parts(seconds: 9_223_372_036, nanoseconds: 854_775_808).is_err()
+    assert from_parts(seconds: MAX, nanoseconds: MAX).is_err()
+    assert from_parts(seconds: 0, nanoseconds: MIN).must() == MIN
+
+# Expected values observed with Go's `Duration.Truncate`, `Duration.Round`,
+# `Time.Truncate` and `Time.Round`, 2026-11-15.
+test "floor_to, nearest_up, toward_zero and nearest_away: below zero, ties, and both ends of an i64"
+    assert floor_to(n: -1_500_000_000, unit: SECOND).must() == -2_000_000_000
+    assert nearest_up(n: 1_136_214_245_500_000_000, unit: SECOND).must() == 1_136_214_246_000_000_000
+    assert nearest_up(n: -1_500_000_000, unit: SECOND).must() == -1_000_000_000
+    assert toward_zero(n: -1_900_000_000, unit: SECOND).must() == -1_000_000_000
+    assert nearest_away(n: -1_900_000_000, unit: SECOND).must() == -2_000_000_000
+    assert nearest_away(n: 1_500_000_000, unit: SECOND).must() == 2_000_000_000
+    assert nearest_away(n: -1_500_000_000, unit: SECOND).must() == -2_000_000_000
+    assert nearest_away(n: 1_400_000_000, unit: SECOND).must() == 1_000_000_000
+    assert floor_to(n: MIN, unit: SECOND).is_err()
+    assert nearest_up(n: MAX, unit: SECOND).is_err()
+    assert nearest_away(n: MIN, unit: SECOND).is_err()
+    assert nearest_away(n: MAX, unit: SECOND).is_err()
+    assert toward_zero(n: MIN, unit: SECOND).must() == -9_223_372_036_000_000_000
+    assert floor_to(n: MIN, unit: 1).must() == MIN
+    assert nearest_up(n: MAX, unit: MAX).must() == MAX
+
+    match floor_to(n: 5, unit: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the unit 0 nanoseconds is not above zero"
+
+    assert nearest_up(n: 5, unit: -1).is_err()
+    assert toward_zero(n: 5, unit: MIN).is_err()
+    assert nearest_away(n: 5, unit: 0).is_err()

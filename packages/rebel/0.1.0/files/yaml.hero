@@ -1,0 +1,505 @@
+# YAML read and written: a YAML 1.2 stream read into the tree `json` holds,
+# `json.Value`, and a value written back as a document in block style.
+#
+# A document is read under YAML 1.2's JSON schema. A plain scalar is `null`,
+# `true`, `false` or a number only where it is spelled as JSON spells one, and
+# text otherwise: `yes`, `no`, `on`, `off`, `~`, `Null`, `0x1F` and `.inf` are
+# all text, never a boolean, a null or a number. A quoted or block scalar is
+# always text, and a node with no content is `null`. A map's keys are text: a
+# key that is a number, a boolean, `null`, a list or a map is refused `invalid`
+# saying where, so `200: OK` is written `"200": OK`. A tag other than the core
+# ones, `!!str`, `!!int`, `!!float`, `!!bool`, `!!null`, `!!seq`, `!!map` and
+# the non-specific `!`, is refused `unsupported`: no tag makes a value of a kind
+# the program did not ask for, and no code runs. An alias is read as a copy of
+# the node its anchor names, and what aliases may copy is limited, so no
+# document expands without end. YAML 1.1's merge key `<<` is a key like any
+# other. Nothing here follows the data with recursion: the package holds its
+# own stacks, reading and writing.
+#
+# It does not walk or build values: `json` does, on the same tree
+# (`json.member`, `json.value_at`, `json.text_of`), and writes one as JSON. It
+# keeps no comment, style or anchor of what it read: what it writes is the
+# value's, not the text's. It reads a text held whole; `read_file` or `io`
+# reads one first.
+#
+# Fails `invalid` where a text is not YAML, with the line, the column and what
+# was expected, and where a key is not text; `unsupported` where a tag is not a
+# core one or a `%YAML` directive names a version past 1; `limit` where aliases
+# copy more than the options allow; `does_not_fit` where a number is past what
+# an `f64` holds.
+
+use json
+use yaml/internal/composer
+use yaml/internal/reading
+use yaml/internal/writer
+
+## Codes and limits
+
+# The code of a text that is not YAML, of a key that is not text, of a tag on a
+# node it cannot describe, and of a value no YAML can say.
+constant INVALID: str
+    "invalid"
+
+# The code of a tag that is not one of the core ones, and of a `%YAML`
+# directive naming a version past 1.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a stream whose aliases copy more than
+# `ParseOptions.max_expanded` allows, or nest a value deeper than
+# `ParseOptions.max_depth` allows.
+constant LIMIT: str
+    "limit"
+
+# The code of a number past what an `f64` holds, as `1e400` is.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The deepest nesting `parse` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2, as
+# `json.DEFAULT_MAX_DEPTH` counts it and for its reason: `==` on two values
+# follows their nesting.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# The most aliases may copy into one stream by default: a million, each value
+# an alias copies counted once and each byte of its texts and keys once more.
+constant DEFAULT_MAX_EXPANDED: i64
+    1000000
+
+## Reading a text
+
+# How a stream is read. `strict` answers the options of YAML 1.2 and nothing
+# wider; a program changes the fields it needs.
+record ParseOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it. A
+    # text nested deeper fails `invalid`; an alias that would nest its copy
+    # deeper fails `limit`.
+    max_depth: i64
+    # The most all the aliases of a stream may copy together, each value
+    # counted once and each byte of its texts and keys once more: 0 refuses
+    # every alias. Past it, `limit`.
+    max_expanded: i64
+    # Whether a key written twice in one map is accepted: the last value then
+    # stands at the first one's place. Refused, it fails `invalid`, as YAML 1.2
+    # says.
+    duplicate_keys: bool
+
+# The options that read YAML 1.2 and nothing wider: nesting no deeper than
+# `DEFAULT_MAX_DEPTH`, aliases copying no more than `DEFAULT_MAX_EXPANDED`, and
+# a key written twice refused.
+function strict() -> ParseOptions
+    return ParseOptions(max_depth: DEFAULT_MAX_DEPTH, max_expanded: DEFAULT_MAX_EXPANDED, duplicate_keys: false)
+
+# The value of the one document `text` holds, read as `strict` reads.
+#
+# - `text`: a YAML stream in UTF-8, a byte order mark allowed at its start;
+#   `\r\n` and `\r` are line breaks as `\n` is.
+#
+# A stream holding no document, the empty text or comments alone, answers
+# `null`, as an empty document does.
+#
+# Fails `invalid` where `text` is not YAML, or holds more than one document,
+# and the message opens `line L, column C:`, both counted from 1 and the column
+# in characters, then says what was expected and what was found. Fails
+# `invalid` where a key is not text or is written twice in one map,
+# `unsupported` where a tag is not a core one, `limit` where aliases copy more
+# than `DEFAULT_MAX_EXPANDED`, and `does_not_fit` where a number is past what
+# an `f64` holds.
+#
+# See also `parse_all`, `json.member`.
+function parse(text: str) -> json.Value?
+    return parse_with(text, strict())
+
+# The value of the one document `text` holds, read as `options` say.
+#
+# - `text`: a YAML stream in UTF-8, a byte order mark allowed at its start.
+# - `options`: how it is read; `strict()` reads YAML 1.2 and nothing wider.
+#
+# A stream holding no document answers `null`.
+#
+# Fails as `parse` does, the limits being those of `options`.
+function parse_with(text: str, options: ParseOptions) -> json.Value?
+    limits = composer.Limits(
+        max_depth: options.max_depth,
+        max_expanded: options.max_expanded,
+        duplicate_keys: options.duplicate_keys
+    )
+    return reading.one(text, limits)
+
+# The values of every document `text` holds, in the order they are written.
+#
+# - `text`: a YAML stream in UTF-8, its documents begun by `---` and ended by
+#   `...` where they need to be; a byte order mark allowed at its start.
+#
+# A stream holding no document answers the empty list; an empty document
+# between two `---` is `null`.
+#
+# Fails as `parse` does, and never for the count of documents. An anchor names
+# a node of its own document only.
+#
+# See also `format_all`.
+function parse_all(text: str) -> [json.Value]?
+    return parse_all_with(text, strict())
+
+# The values of every document `text` holds, read as `options` say.
+#
+# - `text`: a YAML stream in UTF-8.
+# - `options`: how it is read; `max_expanded` counts the copies of the whole
+#   stream together.
+#
+# A stream holding no document answers the empty list.
+#
+# Fails as `parse` does, the limits being those of `options`.
+function parse_all_with(text: str, options: ParseOptions) -> [json.Value]?
+    limits = composer.Limits(
+        max_depth: options.max_depth,
+        max_expanded: options.max_expanded,
+        duplicate_keys: options.duplicate_keys
+    )
+    return reading.many(text, limits)
+
+# Whether `text` is a YAML stream this package reads: true exactly where
+# `parse_all` succeeds.
+#
+# - `text`: the text asked about.
+#
+# A stream of several documents is valid; a tag that is not a core one, a key
+# that is not text and an alias that copies past the default limit are not.
+function is_valid(text: str) -> bool
+    return !parse_all(text).is_err()
+
+## Writing a value
+
+# `v` as one YAML document in block style, ending with a line break.
+#
+# - `v`: the value to write, nested as deep as it is.
+#
+# A map writes a member a line, `key: value`, and a list an element a line,
+# `- value`, each level indented two spaces past the one that holds it; an
+# empty list is `[]` and an empty map `{}`. A text is written plain where a
+# plain scalar reads back as that text in YAML 1.2 and in YAML 1.1: `"123"`,
+# `"true"`, `"yes"`, `"null"`, `"~"`, `"- a"`, `"a: b"` and the empty text are
+# quoted, between double quotes with YAML's escapes. A text of several lines is
+# written as a literal block, `|`, where its characters allow it. A number is
+# written as `json.format` writes it.
+#
+# Fails `invalid` where `v` holds a `nan` or an infinity, which the JSON schema
+# cannot say.
+#
+# The same value always gives the same bytes, its members in the order the map
+# holds them, and `parse` reads back what it writes as the same value. It holds
+# its own stack, so no nesting is too deep for it.
+#
+# See also `format_all`, `json.format`.
+function format(v: json.Value) -> str?
+    return writer.document(v)
+
+# `values` as one YAML stream, a document each, every one after the first
+# begun by a line `---`.
+#
+# - `values`: the documents' values in order; none gives the empty text.
+#
+# Fails `invalid` where a value holds a `nan` or an infinity.
+#
+# `parse_all` reads back what it writes as the same values.
+#
+# See also `format`.
+function format_all(values: [json.Value]) -> str?
+    documents: [str] @= []
+
+    for v in values
+        documents @ documents.push(writer.document(v)?)
+
+    return ok(documents.join("---\n"))
+
+## Tests
+
+test "parse: no document, comments alone, an empty one, and one ended by ..."
+    for text in ["", "# a comment\n", "---\n", "--- \n...\n", "...\n"]
+        assert parse(text).must() == .null_value
+
+    assert parse("a\n...\n").must() == .text(v: "a")
+
+test "parse: a second document refused where one is read, and read by parse_all"
+    match parse("a: 1\n---\nb: 2\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 2, column 1: a second document, where one is read: `parse_all` reads every document of a stream"
+
+    assert parse_all("a: 1\n---\nb: 2\n").must().len() == 2
+    assert parse_all("a\n...\nb\n").must() == [.text(v: "a"), .text(v: "b")]
+
+test "parse: a failure's line and column, counted in characters, and what was expected"
+    match parse("a: [1, 2\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 2, column 1: expected `,` or the `]` that ends the list, found the end of the text"
+
+    match parse("città: [\n  é, x]: y\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg.slice(from: 0, to: 18) == "line 2, column 8: "
+
+    match parse("a:\n\t- b\n")
+        .ok _  => assert false
+        .err e => assert e.msg.slice(from: 0, to: 46) == "line 2, column 1: a tab in the indentation: YA"
+
+test "parse: a billion laughs refused, an alias inside its own node, and one naming nothing"
+    lines: [str] @= ["a: &a [x, x, x, x, x, x, x, x, x, x]"]
+    names = ["a", "b", "c", "d", "e", "f", "g", "h", "i"]
+
+    for at in range(from: 1, to: names.len())
+        prior = names[at - 1]
+        lines @ lines.push(
+            f"{names[at]}: &{names[at]} [*{prior}, *{prior}, *{prior}, *{prior}, *{prior}, *{prior}, *{prior}, *{prior}, *{prior}, *{prior}]"
+        )
+
+    match parse(lines.join("\n") + "\n")
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    for text in ["&a [*a]", "&a {k: *a}", "*a", "a: 1\nb: *a\n"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert parse("a: &x {k: v}\nb: *x\n").must() == .object(members: {"a": .object(members: {"k": .text(v: "v")}), "b": .object(members: {"k": .text(v: "v")})})
+
+test "parse_with: the nesting allowed, one past it, an alias nesting past it, and ten thousand when asked"
+    assert !parse(repeat("[", 512) + repeat("]", 512)).is_err()
+
+    match parse(repeat("[", 513) + repeat("]", 513))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 1, column 513: nested deeper than 512 levels, the most this reading allows"
+
+    shallow: ParseOptions @= strict()
+    shallow.max_depth @ 3
+
+    match parse_with("a: &a [[1]]\nb: [*a]\n", shallow)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    deep = repeat("- ", 10000) + "x\n"
+    wide: ParseOptions @= strict()
+    wide.max_depth @ 10000
+    value = parse_with(deep, wide).must()
+    assert parse_with(format(value).must(), wide).must() == value
+
+test "parse: a key written twice, refused as YAML 1.2 says, and the last kept when asked"
+    match parse("a: 1\nb: 2\na: 3\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 3, column 1: the key \"a\" is written twice in one map, first at line 1, column 1"
+
+test "parse: JSON read as YAML, carriage returns, a byte order mark, and tabs between tokens"
+    assert parse("{\"a\": [1, 2.5, \"x\", null, true], \"b\":{}}").must() == json.parse("{\"a\": [1, 2.5, \"x\", null, true], \"b\":{}}").must()
+    bom: [u8] = [0xef, 0xbb, 0xbf, 0x61, 0x3a, 0x20, 0x31, 0x0d, 0x0a, 0x62, 0x3a, 0x09, 0x32, 0x0d]
+    assert parse(bom.validated_bytes().must()).must() == .object(members: {"a": .number(v: 1.0), "b": .number(v: 2.0)})
+
+test "parse: directives, a version past 1 refused, and tags of each kind"
+    assert parse("%YAML 1.2\n---\na\n").must() == .text(v: "a")
+    assert parse("%YAML 1.1\n--- a\n").must() == .text(v: "a")
+
+    match parse("%YAML 2.0\n--- a\n")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert parse("[!!str 1, !!int \"3\", ! 4, !!float 2, !!null null, !!bool false]").must() == json.parse("[\"1\", 3, \"4\", 2, null, false]").must()
+    assert parse("%TAG !e! tag:yaml.org,2002:\n--- !e!str 1\n").must() == .text(v: "1")
+
+    for text in ["!!python/object:os.system x", "!!binary aGk=", "!local x", "--- !!set {a}", "!<tag:e.com,2000:x> y"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+    for text in ["!!int x", "!!seq a", "!!map [a]", "!e!x y"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "parse: a number past an f64, keys that are no text, the merge key, and the words of YAML 1.1"
+    match parse("x: 1e400\n")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match parse("1: one\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 1, column 1: the key 1 is a number, and a map's keys are text here: write it \"1\""
+
+    for text in ["true: a", "null: a", ": a", "[a]: b", "{a: b}: c"]
+        assert parse(text).is_err()
+
+    assert json.value_at(parse("base: &b {a: 1}\nderived:\n  <<: *b\n").must(), "/derived/<<").must() == .object(members: {"a": .number(v: 1.0)})
+    assert parse("country: NO\nopen: on\n").must() == .object(members: {"country": .text(v: "NO"), "open": .text(v: "on")})
+
+test "parse: explicit keys, an empty value, a compact list in a list, and folded lines"
+    assert parse("? a\n: b\n? c\n").must() == .object(members: {"a": .text(v: "b"), "c": .null_value})
+    assert parse("- - a\n  - b\n- c:\n").must() == json.parse("[[\"a\", \"b\"], {\"c\": null}]").must()
+    assert parse("k: >-\n  one\n  two\n\n  three\n").must() == .object(members: {"k": .text(v: "one two\nthree")})
+
+test "format: every awkward text as a value, as a key and at the root, read back the same"
+    awkward = [
+        ""
+        " "
+        "a "
+        " a"
+        "-"
+        "- x"
+        "?"
+        ":"
+        "a: b"
+        "a:"
+        "a #b"
+        "#"
+        "null"
+        "Null"
+        "~"
+        "true"
+        "yes"
+        "on"
+        "n"
+        "1"
+        "-1"
+        "1.5"
+        "1e5"
+        ".inf"
+        "0x10"
+        "1_0"
+        "2001-01-01"
+        "a\nb"
+        "a\n"
+        "a\n\n"
+        "\n"
+        "\n\n"
+        " a\nb"
+        "\ta\nb"
+        "a\tb"
+        "\u{1}"
+        "é"
+        "😀"
+        "\u{85}"
+        "\u{2028}"
+        "\""
+        "'"
+        "\\"
+        "..."
+        "---"
+        "--- a"
+        "a\r\nb"
+        "<<"
+        "="
+        "@x"
+        "`x"
+        "%x"
+        "!x"
+        "&x"
+        "*x"
+        "|"
+        ">"
+        "["
+        "]"
+        "{"
+        "}"
+        ",x"
+        "a, b"
+        "x\n  y\n"
+        "# no\nyes"
+        "a\u{7f}b"
+    ]
+
+    for s in awkward
+        forms: [json.Value] = [.text(v: s), .list(items: [.text(v: s)]), .object(members: {s: .text(v: s)})]
+
+        for v in forms
+            text = format(v).must()
+            assert parse(text).must() == v
+            assert format(v).must() == text
+
+    long = repeat("é", 1100)
+    assert parse(format(.object(members: {long: .null_value})).must()).must() == .object(members: {long: .null_value})
+
+test "format: the bytes yaml.v3 writes at an indent of 2, but double quotes where it writes single"
+    doc = json.parse(
+        "{\"e\":{},\"k\":[\"a\",{\"b\":1}],\"l\":[],\"m\":\"x\\ny\",\"n\":\"\",\"s\":\" lead\",\"w\":\"yes\",\"z\":\"123\"}"
+    ).must()
+    assert format(doc).must() == "e: {}\nk:\n  - a\n  - b: 1\nl: []\nm: |-\n  x\n  y\n\"n\": \"\"\ns: \" lead\"\nw: \"yes\"\nz: \"123\"\n"
+
+test "format: nan and the infinities refused, and a value nested ten thousand deep"
+    inf = 1.0 / 0.0
+
+    match format(.object(members: {"x": .number(v: inf)}))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    deep: json.Value @= .null_value
+
+    for _ in range(from: 0, to: 10000)
+        deep @ .list(items: [deep])
+
+    text = format(deep).must()
+    assert text.len() > 10000
+
+test "format_all: none, one, and documents whose roots are scalars and blocks"
+    nothing: [json.Value] = []
+    assert format_all(nothing).must() == ""
+    assert parse_all("").must() == nothing
+    values: [json.Value] = [.null_value, .text(v: "a\nb"), .list(items: []), .text(v: "...")]
+    text = format_all(values).must()
+    assert text == "null\n---\n|-\n  a\n  b\n---\n[]\n---\n\"...\"\n"
+    assert parse_all(text).must() == values
+
+## Examples
+
+# The options read YAML 1.2, and a program widens one field of them.
+test "strict: the defaults, and a key written twice accepted when asked"
+    options: ParseOptions @= strict()
+    assert options.max_depth == DEFAULT_MAX_DEPTH && !options.duplicate_keys
+    options.duplicate_keys @ true
+    assert parse_with("a: 1\na: 2\n", options).must() == .object(members: {"a": .number(v: 2.0)})
+
+# A configuration read, and one value taken out of it with `json`.
+test "parse: a map holding a text, a list of numbers and a word that is no boolean"
+    doc = parse("name: Ziggy\nalbums:\n  - 1972\n  - 1973\nlive: yes\n").must()
+    assert json.member(doc, "name").must() == .text(v: "Ziggy")
+    assert json.value_at(doc, "/albums/1").must() == .number(v: 1973.0)
+    assert json.member(doc, "live").must() == .text(v: "yes")
+
+# A document whose aliases would copy more than the program allows.
+test "parse_with: an alias limit set low, and the stream refused past it"
+    options: ParseOptions @= strict()
+    options.max_expanded @ 10
+    text = "a: &x [1, 2, 3, 4, 5, 6]\nb: *x\nc: *x\n"
+
+    match parse_with(text, options)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+# A stream of two documents, read as a list of their values.
+test "parse_all: two documents begun by ---"
+    docs = parse_all("--- 1\n--- [a, b]\n").must()
+    assert docs == [.number(v: 1.0), .list(items: [.text(v: "a"), .text(v: "b")])]
+
+# Every document of a stream read with a key written twice accepted.
+test "parse_all_with: a key written twice in each of two documents"
+    options: ParseOptions @= strict()
+    options.duplicate_keys @ true
+    docs = parse_all_with("k: 1\nk: 2\n---\nk: 3\nk: 4\n", options).must()
+    assert docs == [.object(members: {"k": .number(v: 2.0)}), .object(members: {"k": .number(v: 4.0)})]
+
+# What YAML is, and what this package refuses to read.
+test "is_valid: a stream, a tab in the indentation, and a tag that runs nothing"
+    assert is_valid("a: 1\n---\nb: 2\n")
+    assert !is_valid("a:\n\t- b\n")
+    assert !is_valid("!!python/object:os.system x\n")
+
+# A value written as a document, and read back the same.
+test "format: a map holding a list, a text that would read as a number, and lines"
+    doc: json.Value = .object(
+        members: {"name": .text(v: "Ziggy"), "albums": .list(items: [.number(v: 1972.0)]), "code": .text(v: "007"), "notes": .text(v: "one\ntwo")}
+    )
+    text = format(doc).must()
+    assert text == "name: Ziggy\nalbums:\n  - 1972\ncode: \"007\"\nnotes: |-\n  one\n  two\n"
+    assert parse(text).must() == doc
+
+# Two values written as one stream, and read back.
+test "format_all: two documents, the second begun by ---"
+    values: [json.Value] = [.object(members: {"a": .number(v: 1.0)}), .list(items: [.text(v: "b")])]
+    text = format_all(values).must()
+    assert text == "a: 1\n---\n- b\n"
+    assert parse_all(text).must() == values

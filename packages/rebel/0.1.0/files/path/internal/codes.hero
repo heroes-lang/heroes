@@ -1,0 +1,10 @@
+# The codes `path` fails with, written once so that its private modules and
+# its face name the same text: a misspelt code is then a compile error.
+
+# A path holds nothing of what was asked: no name, no extension, no volume.
+constant NOT_FOUND: str
+    "not_found"
+
+# The input is not what the function reads; the message says where.
+constant INVALID: str
+    "invalid"

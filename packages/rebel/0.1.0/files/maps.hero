@@ -1,0 +1,550 @@
+# What the built-ins do not do for a `{K: V}`: its values, a map built from
+# lists, keys removed, kept and put in an order, two maps merged, the elements
+# of a list counted and grouped.
+#
+# Every function answers a new map and leaves the one it was given as it was.
+# A map keeps its keys in the order they were first inserted, so each function
+# says what order its answer is in. The language names no removal: a map
+# without a key is built again, one insertion for each entry that stays.
+#
+# A function handed to one of these names its two parameters as the type here
+# does wherever they are of one type, `key` and `value` or `left` and `right`:
+# the names are then all that says which is which, and the compiler asks for
+# them.
+
+use maps/internal/gather
+use maps/internal/rank
+use maps/internal/samples
+
+# The code of a failure on input that is not what the function reads: here,
+# two lists of different lengths given to `from_lists`.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# The values of `m`, in the order of `keys(m)`: the value at an index is the
+# one under the key at that index, so the two lists pair up.
+function values<K, V>(m: {K: V}) -> [V]
+    out: [V] @= []
+
+    for k in keys(m)
+        out @ out.push(m[k].must())
+
+    return out
+
+## Building
+
+# A map of each element of `key_list` under the element of `value_list` at the
+# same index. Fails `invalid` where the two lists differ in length. Aborts
+# where a key is a `nan`, which no map can hold. The keys stand in the order
+# of `key_list`; a key that occurs twice stands where it first occurred, under
+# the value of its last occurrence.
+function from_lists<K, V>(key_list: [K], value_list: [V]) -> {K: V}?
+    if key_list.len() != value_list.len()
+        return fail(
+            code: INVALID,
+            msg: f"{key_list.len()} keys and {value_list.len()} values, where a map takes one value for each key"
+        )
+    out: {K: V} @= {}
+    at: i64 @= 0
+
+    while at < key_list.len()
+        out[key_list[at]] @ value_list[at]
+        at @ at + 1
+
+    return ok(out)
+
+# A map of each element of `key_list` under `value`. Aborts where a key is a
+# `nan`, which no map can hold. The keys stand in the order of `key_list`, one
+# that occurs twice standing once, where it first occurred.
+function from_keys<K, V>(key_list: [K], value: V) -> {K: V}
+    out: {K: V} @= {}
+
+    for k in key_list
+        out[k] @ value
+
+    return out
+
+## Removing and keeping
+
+# `m` without `key`, the other keys in the order they had. A key `m` does not
+# hold is no failure: the answer then equals `m`. It costs one insertion for
+# each entry that stays, where other languages remove in constant time, so
+# removing many keys one call at a time is quadratic: `remove_all` takes them
+# in one pass.
+function remove<K, V>(m: {K: V}, key: K) -> {K: V}
+    return remove_all(m, [key])
+
+# `m` without the keys in `key_list`, the other keys in the order they had. A
+# key `m` does not hold, or one listed twice, changes nothing. It is one pass
+# over the list and one over `m`, however many keys go.
+function remove_all<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
+    gone = from_keys(key_list, true)
+    out: {K: V} @= {}
+
+    for k in keys(m)
+        if gone[k].is_err()
+            out[k] @ m[k].must()
+
+    return out
+
+# `m` without the entries `removes` accepts, the others in the order they had.
+# `removes` is called once for each entry, in the order of `keys(m)`.
+function remove_where<K, V>(m: {K: V}, removes: (function(key: K, value: V) -> bool)) -> {K: V}
+    out: {K: V} @= {}
+
+    for k in keys(m)
+        v = m[k].must()
+
+        if !removes(key: k, value: v)
+            out[k] @ v
+
+    return out
+
+# The entries of `m` that `keeps` accepts, in the order they had. `keeps` is
+# called once for each entry, in the order of `keys(m)`.
+function keep_where<K, V>(m: {K: V}, keeps: (function(key: K, value: V) -> bool)) -> {K: V}
+    out: {K: V} @= {}
+
+    for k in keys(m)
+        v = m[k].must()
+
+        if keeps(key: k, value: v)
+            out[k] @ v
+
+    return out
+
+# The entries of `m` under the keys in `key_list`, in the order of `key_list`
+# and not of `m`. A key `m` does not hold is left out, and one listed twice
+# stands where it was first listed. Given every key of `m` in another order it
+# answers `m` in that order, which is how a map is sorted: by the sorted list
+# of its keys.
+function pick<K, V>(m: {K: V}, key_list: [K]) -> {K: V}
+    out: {K: V} @= {}
+
+    for k in key_list
+        match m[k]
+            .ok v  => out[k] @ v
+            .err _ => _ = 0
+
+    return out
+
+## Changing
+
+# A map of the keys of `m`, in their order, each under what `change` answers
+# for its value. `change` is called once for each entry, in that order.
+function map_values<K, V, W>(m: {K: V}, change: (function(V) -> W)) -> {K: W}
+    out: {K: W} @= {}
+
+    for k in keys(m)
+        out[k] @ change(m[k].must())
+
+    return out
+
+# `m` with its keys in the opposite order, the last inserted first.
+function reverse<K, V>(m: {K: V}) -> {K: V}
+    order = keys(m)
+    out: {K: V} @= {}
+    at: i64 @= order.len() - 1
+
+    while at >= 0
+        out[order[at]] @ m[order[at]].must()
+        at @ at - 1
+
+    return out
+
+## Merging
+
+# The entries of `base` and of `over` in one map; where both hold a key, the
+# value is `over`'s. The keys of `base` stand first, in their order, a key
+# both hold keeping its place among them; then the keys only `over` holds, in
+# theirs.
+function merge<K, V>(base: {K: V}, over: {K: V}) -> {K: V}
+    out: {K: V} @= base
+
+    for k in keys(over)
+        out[k] @ over[k].must()
+
+    return out
+
+# The entries of `base` and of `over` in one map; where both hold a key, the
+# value is what `combine` answers, given `base`'s value as `left` and `over`'s
+# as `right`. The order is `merge`'s. `combine` is called once for each key
+# both hold, in the order of `keys(over)`.
+function merge_by<K, V>(base: {K: V}, over: {K: V}, combine: (function(left: V, right: V) -> V)) -> {K: V}
+    out: {K: V} @= base
+
+    for k in keys(over)
+        theirs = over[k].must()
+
+        match base[k]
+            .ok ours => out[k] @ combine(left: ours, right: theirs)
+            .err _   => out[k] @ theirs
+
+    return out
+
+## Comparing
+
+# Whether `left` and `right` hold the same keys and `same` accepts, for every
+# key, the two values under it, `left`'s first. The order of the keys does not
+# count. Two maps of different sizes answer false with no call of `same`,
+# which is otherwise called in the order of `keys(left)` and no more once a
+# key is missing from `right` or it refuses a pair. Where the values are of
+# one type and `==` is the comparison wanted, the built-in `==` on the two
+# maps asks the same.
+function equal_by<K, V, W>(left: {K: V}, right: {K: W}, same: (function(left: V, right: W) -> bool)) -> bool
+    if left.len() != right.len()
+        return false
+
+    for k in keys(left)
+        match right[k]
+            .ok theirs =>
+                if !same(left: left[k].must(), right: theirs)
+                    return false
+            .err _ => return false
+
+    return true
+
+## Counting and grouping
+
+# How many times each element of `xs` occurs: a map of each distinct element
+# under its count. Aborts where an element is a `nan`, which no map can hold
+# as a key. The keys stand in the order the elements first occur.
+function counts<K>(xs: [K]) -> {K: i64}
+    out: {K: i64} @= {}
+
+    for x in xs
+        out[x] @ out[x].default(0) + 1
+
+    return out
+
+# The entries of `m`, a map of counts, the largest count first. Entries of
+# equal count stand in the order they had.
+function most_common<K>(m: {K: i64}) -> {K: i64}
+    return most_common_n(m, m.len())
+
+# The `n` entries of `m`, a map of counts, with the largest counts, the largest
+# first: all of them where `m` holds fewer than `n`, none where `n` is below
+# one. Entries of equal count stand in the order they had, and that order
+# decides which of them are among the `n`.
+function most_common_n<K>(m: {K: i64}, n: i64) -> {K: i64}
+    order = keys(m)
+    ranked = rank.largest_first(values(m))
+    out: {K: i64} @= {}
+    at: i64 @= 0
+
+    while at < ranked.len() && at < n
+        key = order[ranked[at]]
+        out[key] @ m[key].must()
+        at @ at + 1
+
+    return out
+
+# Each key of `m`, a map of counts, repeated as many times as its count, the
+# keys in their order. A count below one gives nothing. The list is as long as
+# the sum of the counts, so a count read from outside decides how much memory
+# this asks for.
+function elements<K>(m: {K: i64}) -> [K]
+    out: [K] @= []
+
+    for k in keys(m)
+        more: i64 @= m[k].must()
+
+        while more > 0
+            out @ out.push(k)
+            more @ more - 1
+
+    return out
+
+# The elements of `xs` gathered by the key `key_of` gives each: a map of each
+# key under the list of the elements that gave it. Aborts where a key is a
+# `nan`, which no map can hold. The keys stand in the order they first occur,
+# and the elements of a group in the order they had in `xs`. `key_of` is
+# called once for each element, in order. It costs one pass and no copy of a
+# group, where the built-in way, a push to the list under a key, copies that
+# list at every push.
+function group_by<T, K>(xs: [T], key_of: (function(T) -> K)) -> {K: [T]}
+    group_of: {K: i64} @= {}
+    which: [i64] @= []
+
+    for x in xs
+        k = key_of(x)
+        g = group_of[k].default(group_of.len())
+        group_of[k] @ g
+        which @ which.push(g)
+
+    order = gather.by_group(which, group_of.len())
+    bounds = gather.starts(which, group_of.len())
+    names = keys(group_of)
+    out: {K: [T]} @= {}
+
+    for g in range(from: 0, to: names.len())
+        members: [T] @= []
+        at: i64 @= bounds[g]
+
+        while at < bounds[g + 1]
+            members @ members.push(xs[order[at]])
+            at @ at + 1
+
+        out[names[g]] @ members
+
+    return out
+
+## Tests
+
+test "values: an empty map, one entry, and the order of keys after a key is written again"
+    empty: {str: i64} = {}
+    nothing: [i64] = []
+    assert values(empty) == nothing
+    assert values({"a": 1}) == [1]
+    m: {str: i64} @= {"b": 1, "a": 2, "c": 3}
+    m["b"] @ 9
+    assert keys(m) == ["b", "a", "c"]
+    assert values(m) == [9, 2, 3]
+
+test "values: text of more than one byte, and a value that is itself a map"
+    assert values({"è": "caffè", "ü": "über"}) == ["caffè", "über"]
+    nested: {str: {str: i64}} = {"outer": {"x": 1, "y": 2}}
+    assert values(nested).map(values) == [[1, 2]]
+
+test "from_lists: no key, one, and a key that occurs twice keeps its first place and its last value"
+    no_keys: [str] = []
+    no_values: [i64] = []
+    assert from_lists(no_keys, no_values).must().len() == 0
+    assert from_lists(["a"], [1]).must() == {"a": 1}
+    twice = from_lists(["a", "b", "a"], [1, 2, 3]).must()
+    assert keys(twice) == ["a", "b"]
+    assert values(twice) == [3, 2]
+    assert keys(from_lists(["è", "e"], ["é", "ê"]).must()) == ["è", "e"]
+
+test "from_lists: lists of different lengths fail invalid, whichever is the longer"
+    match from_lists(["a", "b"], [1])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "2 keys and 1 values, where a map takes one value for each key"
+
+    no_keys: [str] = []
+
+    match from_lists(no_keys, [1])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "from_keys: no key, one, a key twice, and keys of more than one byte"
+    no_keys: [str] = []
+    assert from_keys(no_keys, 0).len() == 0
+    assert from_keys(["a"], true) == {"a": true}
+    twice = from_keys(["a", "b", "a"], 0)
+    assert keys(twice) == ["a", "b"]
+    assert values(twice) == [0, 0]
+    assert keys(from_keys(["è", "caffè"], "")) == ["è", "caffè"]
+
+test "remove: from an empty map, the only key, an absent key, the first, the middle and the last"
+    empty: {str: i64} = {}
+    assert remove(empty, "a").len() == 0
+    assert remove({"a": 1}, "a").len() == 0
+    m = {"a": 1, "b": 2, "c": 3}
+    assert remove(m, "zz") == m
+    assert keys(remove(m, "zz")) == ["a", "b", "c"]
+    assert keys(remove(m, "a")) == ["b", "c"]
+    assert keys(remove(m, "b")) == ["a", "c"]
+    assert values(remove(m, "b")) == [1, 3]
+    assert keys(remove(m, "c")) == ["a", "b"]
+    assert keys(m) == ["a", "b", "c"]
+
+test "remove: a key of more than one byte, a number, and a list as the key"
+    assert keys(remove({"è": 1, "e": 2}, "è")) == ["e"]
+    assert keys(remove({1: "a", -1: "b", 0: "c"}, -1)) == [1, 0]
+    assert keys(remove({[1, 2]: "a", [2, 1]: "b"}, [1, 2])) == [[2, 1]]
+
+test "remove_all: an empty list, an empty map, absent keys, a key listed twice, every key"
+    empty: {str: i64} = {}
+    no_keys: [str] = []
+    m = {"a": 1, "b": 2, "c": 3, "d": 4}
+    assert keys(remove_all(m, no_keys)) == ["a", "b", "c", "d"]
+    assert remove_all(empty, ["a"]).len() == 0
+    assert keys(remove_all(m, ["zz", "yy"])) == ["a", "b", "c", "d"]
+    assert keys(remove_all(m, ["c", "a", "c"])) == ["b", "d"]
+    assert values(remove_all(m, ["c", "a", "c"])) == [2, 4]
+    assert remove_all(m, ["d", "c", "b", "a"]).len() == 0
+
+test "remove_where: an empty map, nothing accepted, everything accepted, and the order of what stays"
+    empty: {str: i64} = {}
+    assert remove_where(empty, samples.above_two).len() == 0
+    assert keys(remove_where({"a": 1, "b": 2}, samples.above_two)) == ["a", "b"]
+    assert remove_where({"a": 3, "b": 4}, samples.above_two).len() == 0
+    stays = remove_where({"x": 1, "y": 9, "z": 3}, samples.above_two)
+    assert keys(stays) == ["x"]
+    assert values(stays) == [1]
+
+test "keep_where: an empty map, nothing accepted, everything accepted, and the order of what stays"
+    empty: {str: i64} = {}
+    assert keep_where(empty, samples.above_two).len() == 0
+    assert keep_where({"a": 1, "b": 2}, samples.above_two).len() == 0
+    assert keys(keep_where({"a": 3, "b": 4}, samples.above_two)) == ["a", "b"]
+    stays = keep_where({"dd": 3, "a": 1, "è": 9, "b": 4}, samples.short_key)
+    assert keys(stays) == ["a", "b"]
+    assert values(stays) == [1, 4]
+
+test "keep_where and remove_where: a key and a value of one type, told apart by their names"
+    m = {"a": "a", "b": "c", "d": "d"}
+    assert keys(keep_where(m, samples.under_itself)) == ["a", "d"]
+    assert keys(remove_where(m, samples.under_itself)) == ["b"]
+
+test "pick: an empty list, an empty map, absent keys left out, a key listed twice, the list's order"
+    empty: {str: i64} = {}
+    no_keys: [str] = []
+    m = {"a": 1, "b": 2, "c": 3}
+    assert pick(m, no_keys).len() == 0
+    assert pick(empty, ["a"]).len() == 0
+    assert keys(pick(m, ["zz", "c", "yy", "a"])) == ["c", "a"]
+    assert values(pick(m, ["zz", "c", "yy", "a"])) == [3, 1]
+    assert keys(pick(m, ["b", "a", "b"])) == ["b", "a"]
+
+test "pick: by the sorted list of its keys a map is put in order"
+    m = {"pear": 3, "apple": 1, "fig": 2}
+    by_key = pick(m, sort(keys(m)))
+    assert keys(by_key) == ["apple", "fig", "pear"]
+    assert values(by_key) == [1, 2, 3]
+    assert by_key == m
+
+test "map_values: an empty map, one entry, the order kept, and values of another type"
+    empty: {str: i64} = {}
+    assert map_values(empty, samples.double).len() == 0
+    assert map_values({"a": 21}, samples.double) == {"a": 42}
+    doubled = map_values({"b": 1, "a": 2, "c": 3}, samples.double)
+    assert keys(doubled) == ["b", "a", "c"]
+    assert values(doubled) == [2, 4, 6]
+    lengths = map_values({"x": "caffè", "y": ""}, samples.byte_length)
+    assert values(lengths) == [6, 0]
+
+test "reverse: an empty map, one entry, three, and twice is the map's own order"
+    empty: {str: i64} = {}
+    assert reverse(empty).len() == 0
+    assert reverse({"a": 1}) == {"a": 1}
+    m = {"a": 1, "b": 2, "c": 3}
+    assert keys(reverse(m)) == ["c", "b", "a"]
+    assert values(reverse(m)) == [3, 2, 1]
+    assert keys(reverse(reverse(m))) == ["a", "b", "c"]
+
+test "merge: either map empty, both, no key shared, and a shared key keeps its place and takes the second value"
+    empty: {str: i64} = {}
+    assert merge(base: empty, over: empty).len() == 0
+    assert merge(base: empty, over: {"a": 1}) == {"a": 1}
+    assert merge(base: {"a": 1}, over: empty) == {"a": 1}
+    apart = merge(base: {"b": 1}, over: {"a": 2})
+    assert keys(apart) == ["b", "a"]
+    both = merge(base: {"x": 1, "y": 2}, over: {"y": 9, "z": 3, "x": 7})
+    assert keys(both) == ["x", "y", "z"]
+    assert values(both) == [7, 9, 3]
+
+test "merge: the two maps given are left as they were"
+    base = {"x": 1, "y": 2}
+    over = {"y": 9, "z": 3}
+    merged = merge(base: base, over: over)
+    assert merged.len() == 3
+    assert keys(base) == ["x", "y"] && values(base) == [1, 2]
+    assert keys(over) == ["y", "z"] && values(over) == [9, 3]
+
+test "merge_by: either map empty, no key shared, counts added, and which value comes as left"
+    empty: {str: i64} = {}
+    assert merge_by(base: empty, over: empty, combine: samples.add).len() == 0
+    assert merge_by(base: empty, over: {"a": 1}, combine: samples.add) == {"a": 1}
+    assert merge_by(base: {"a": 1}, over: empty, combine: samples.add) == {"a": 1}
+    assert keys(merge_by(base: {"b": 1}, over: {"a": 2}, combine: samples.add)) == ["b", "a"]
+    added = merge_by(base: {"a": 1, "b": 2}, over: {"c": 5, "a": 3}, combine: samples.add)
+    assert keys(added) == ["a", "b", "c"]
+    assert values(added) == [4, 2, 5]
+    marked = merge_by(base: {"k": "base"}, over: {"k": "over"}, combine: samples.left_then_right)
+    assert values(marked) == ["base<over"]
+
+test "equal_by: two empty maps, different sizes, a key only one holds, the order of keys, a pair refused"
+    empty: {str: str} = {}
+    assert equal_by(left: empty, right: empty, same: samples.same_length)
+    first = {"x": "One", "y": "Two"}
+    assert equal_by(left: first, right: {"y": "TWO", "x": "one"}, same: samples.same_length)
+    assert !equal_by(left: first, right: {"x": "one"}, same: samples.same_length)
+    assert !equal_by(left: first, right: {"x": "one", "z": "two"}, same: samples.same_length)
+    assert !equal_by(left: first, right: {"x": "one", "y": "three"}, same: samples.same_length)
+    assert !equal_by(left: empty, right: first, same: samples.same_length)
+
+test "equal_by: values of two types"
+    assert equal_by(left: {"x": 1, "y": -20}, right: {"x": "1", "y": "-20"}, same: samples.written_as)
+    assert !equal_by(left: {"x": 1}, right: {"x": "one"}, same: samples.written_as)
+
+test "counts: an empty list, one element, the order of first occurrence, characters of more than one byte"
+    nothing: [str] = []
+    assert counts(nothing).len() == 0
+    assert counts(["a"]) == {"a": 1}
+    letters = counts("abracadabra".chars())
+    assert keys(letters) == ["a", "b", "r", "c", "d"]
+    assert values(letters) == [5, 2, 2, 1, 1]
+    wide = counts("caffè è".chars())
+    assert keys(wide) == ["c", "a", "f", "è", " "]
+    assert values(wide) == [1, 1, 2, 2, 1]
+    numbers = counts([3, 1, 3, 3, 1])
+    assert keys(numbers) == [3, 1]
+    assert values(numbers) == [3, 2]
+
+test "most_common: an empty map, one entry, equal counts in the order they had, zero and negative counts"
+    empty: {str: i64} = {}
+    assert most_common(empty).len() == 0
+    assert most_common({"a": 7}) == {"a": 7}
+    ranked = most_common(counts("abracadabra".chars()))
+    assert keys(ranked) == ["a", "b", "r", "c", "d"]
+    assert values(ranked) == [5, 2, 2, 1, 1]
+    mixed = most_common({"a": 0, "b": -2, "c": 5, "d": 5})
+    assert keys(mixed) == ["c", "d", "a", "b"]
+    assert values(mixed) == [5, 5, 0, -2]
+
+test "most_common: the largest and the smallest count an i64 holds"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    ranked = most_common({"lo": smallest, "z": 0, "hi": largest, "lo2": smallest})
+    assert keys(ranked) == ["hi", "z", "lo", "lo2"]
+    assert values(ranked) == [largest, 0, smallest, smallest]
+
+test "most_common_n: n below one, one, between, the size and past it"
+    letters = counts("abracadabra".chars())
+    smallest: i64 = -9223372036854775807 - 1
+    assert most_common_n(letters, 0).len() == 0
+    assert most_common_n(letters, -1).len() == 0
+    assert most_common_n(letters, smallest).len() == 0
+    assert most_common_n(letters, 1) == {"a": 5}
+    assert keys(most_common_n(letters, 2)) == ["a", "b"]
+    assert keys(most_common_n(letters, 3)) == ["a", "b", "r"]
+    assert values(most_common_n(letters, 3)) == [5, 2, 2]
+    assert keys(most_common_n(letters, 5)) == ["a", "b", "r", "c", "d"]
+    assert keys(most_common_n(letters, 99)) == ["a", "b", "r", "c", "d"]
+    assert keys(most_common_n(letters, 9223372036854775807)) == ["a", "b", "r", "c", "d"]
+
+test "elements: an empty map, counts of zero and below, and each key as many times as its count"
+    empty: {str: i64} = {}
+    nothing: [str] = []
+    smallest: i64 = -9223372036854775807 - 1
+    assert elements(empty) == nothing
+    assert elements({"b": 0, "c": -1, "s": smallest}) == nothing
+    assert elements({"a": 2, "b": 0, "c": -1, "d": 1}) == ["a", "a", "d"]
+    assert elements({"è": 3}) == ["è", "è", "è"]
+
+test "elements and counts: a list counted and spread again is the list gathered by element"
+    assert elements(counts(["b", "a", "b", "c", "a", "b"])) == ["b", "b", "b", "a", "a", "c"]
+
+test "group_by: an empty list, one element, groups in the order their keys first occur, members in the list's order"
+    nothing: [str] = []
+    assert group_by(nothing, samples.byte_length).len() == 0
+    assert group_by(["a"], samples.byte_length) == {1: ["a"]}
+    by_length = group_by(["apple", "fig", "kiwi", "plum", "pear", "yam"], samples.byte_length)
+    assert keys(by_length) == [5, 3, 4]
+    assert values(by_length) == [["apple"], ["fig", "yam"], ["kiwi", "plum", "pear"]]
+    assert keys(group_by(["è", "e"], samples.byte_length)) == [2, 1]
+
+test "group_by: every element its own group, all in one, and two that alternate"
+    apart = group_by([3, 1, 2], samples.double)
+    assert keys(apart) == [6, 2, 4]
+    assert values(apart) == [[3], [1], [2]]
+    assert values(group_by(["ab", "cd", "ef"], samples.byte_length)) == [["ab", "cd", "ef"]]
+    by_oddness = group_by([1, 2, 3, 4, 5, -6], samples.oddness)
+    assert keys(by_oddness) == [1, 0]
+    assert values(by_oddness) == [[1, 3, 5], [2, 4, -6]]

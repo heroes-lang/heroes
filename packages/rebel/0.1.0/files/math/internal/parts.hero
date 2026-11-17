@@ -1,0 +1,188 @@
+# The parts of a float: its fraction and power of two, its neighbours, and the
+# product rounded once. C's `frexp`, `ldexp`, `nextafter` and `fma` do the
+# work; this module answers for the zeros, the infinities and the nan, where
+# C leaves the exponent unspecified.
+
+use math/internal/floats
+use math/internal/limits
+use math/libm
+
+# The fraction `to_scaled` answers: from 0.5 up to 1.0 in size, or `x` itself
+# where it is a zero, an infinity or a nan.
+#
+# - `x`: any float.
+function scaled_fraction(x: f64) -> f64
+    if x == 0.0 || !floats.is_finite(x)
+        return x
+    exponent: i32 @= 0
+    return libm.c_frexp(x, @exponent)
+
+# The power of two `to_scaled` answers: 0 for a zero, an infinity and a nan.
+#
+# - `x`: any float.
+function scaled_exponent(x: f64) -> i64
+    if x == 0.0 || !floats.is_finite(x)
+        return 0
+    exponent: i32 @= 0
+    _ = libm.c_frexp(x, @exponent)
+    return to_i64(exponent).must()
+
+# `x` times 2 raised to `exponent`.
+#
+# - `x`: any float.
+# - `exponent`: any power of two; beyond 4,000 in size every finite float other
+#   than zero has gone to an infinity or a zero, so the count is held there
+#   before it is narrowed to C's `int`.
+function scale(x: f64, exponent: i64) -> f64
+    held: i64 @= exponent
+
+    if held > 4000
+        held @ 4000
+    else if held < -4000
+        held @ -4000
+    return libm.c_ldexp(x, to_i32(held).must())
+
+# The power of two `x` lies at.
+#
+# - `x`: a finite float other than zero.
+function exponent_of(x: f64) -> i64?
+    if x == 0.0 || !floats.is_finite(x)
+        return fail(code: limits.INVALID, msg: f"{x} lies at no power of two: it is a zero, an infinity or a nan")
+    return ok(scaled_exponent(x) - 1)
+
+# The float next to `x` toward `toward`.
+#
+# - `x`: any float.
+# - `toward`: the direction.
+function next_after(x: f64, toward: f64) -> f64
+    return libm.c_nextafter(x: x, y: toward)
+
+# The `f32` next to `x` toward `toward`.
+#
+# - `x`: any `f32`.
+# - `toward`: the direction.
+function next_after_f32(x: f32, toward: f32) -> f32
+    return libm.c_nextafterf(x: x, y: toward)
+
+# The gap between the size of `x` and the next float above it, or below it at
+# the largest float.
+#
+# - `x`: any float.
+function ulp(x: f64) -> f64
+    if floats.is_nan(x)
+        return x
+    size = floats.abs(x)
+
+    if floats.is_inf(size)
+        return size
+    above = next_after(x: size, toward: limits.INF)
+
+    if floats.is_inf(above)
+        return size - next_after(x: size, toward: 0.0)
+    return above - size
+
+# `x` times `times` plus `plus`, rounded once.
+#
+# - `x`: one factor.
+# - `times`: the other factor.
+# - `plus`: what is added.
+function mul_add(x: f64, times: f64, plus: f64) -> f64
+    return libm.c_fma(x: x, y: times, z: plus)
+
+# Whether `x` is within `ulps` units in the last place of `expected`: how the
+# tests of `math` hold a function C's libraries round differently, the value
+# observed from Python's `math` on this machine standing as `expected`.
+#
+# - `x`: the answer to judge.
+# - `expected`: the answer observed, finite.
+# - `ulps`: how many units of the last place apart they may be, 0.0 or more.
+function within_ulps(x: f64, expected: f64, ulps: f64) -> bool
+    if floats.is_nan(x) || !floats.is_finite(expected)
+        return false
+    return floats.abs(x - expected) <= ulps * ulp(expected)
+
+## Tests
+
+test "scaled_fraction and scaled_exponent: a power of two, a negative number, the zeros, the infinity, the smallest and the largest"
+    assert scaled_fraction(8.0) == 0.5 && scaled_exponent(8.0) == 4
+    assert scaled_fraction(-0.75) == -0.75 && scaled_exponent(-0.75) == 0
+    assert scaled_fraction(1.0) == 0.5 && scaled_exponent(1.0) == 1
+    assert scaled_fraction(0.0) == 0.0 && scaled_exponent(0.0) == 0
+    assert floats.has_minus_sign(scaled_fraction(-0.0)) && scaled_exponent(-0.0) == 0
+    assert scaled_fraction(-limits.INF) == -limits.INF && scaled_exponent(limits.INF) == 0
+    assert floats.is_nan(scaled_fraction(limits.NAN)) && scaled_exponent(limits.NAN) == 0
+    assert scaled_fraction(limits.SMALLEST_F64) == 0.5 && scaled_exponent(limits.SMALLEST_F64) == -1073
+    assert scaled_exponent(limits.SMALLEST_NORMAL_F64) == -1021
+    assert scaled_fraction(limits.MAX_F64) == 0.9999999999999999 && scaled_exponent(limits.MAX_F64) == 1024
+
+test "scale: up and down, into the subnormals, a half of the smallest rounding to even, and past either end"
+    assert scale(x: 0.5, exponent: 4) == 8.0
+    assert scale(x: 1.0, exponent: -1074) == limits.SMALLEST_F64
+    assert scale(x: 1.0, exponent: -1075) == 0.0
+    assert scale(x: 3.0, exponent: -1075) == limits.SMALLEST_F64 * 2.0
+    assert scale(x: 0.75, exponent: -1074) == limits.SMALLEST_F64
+    assert scale(x: 1.0, exponent: 1024) == limits.INF
+    assert scale(x: -1.0, exponent: 1023) == -limits.TWO_1023
+    assert floats.has_minus_sign(scale(x: -0.0, exponent: 5))
+    assert scale(x: limits.INF, exponent: -5000) == limits.INF
+    assert scale(x: 1.0, exponent: 9223372036854775807) == limits.INF
+    assert scale(x: 1.0, exponent: -9223372036854775808) == 0.0
+
+test "exponent_of: one, a power of two, a fraction, the smallest, the largest, a negative number"
+    assert exponent_of(1.0).must() == 0
+    assert exponent_of(8.0).must() == 3
+    assert exponent_of(0.75).must() == -1
+    assert exponent_of(limits.SMALLEST_F64).must() == -1074
+    assert exponent_of(limits.MAX_F64).must() == 1023
+    assert exponent_of(-3.0).must() == 1
+
+test "exponent_of fails invalid on a zero, an infinity and a nan"
+    for x in [0.0, -0.0, limits.INF, -limits.INF, limits.NAN]
+        match exponent_of(x)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "next_after: up, down, from zero both ways, past the largest, to itself, the zeros, a nan"
+    assert next_after(x: 1.0, toward: 2.0) == 1.0000000000000002
+    assert next_after(x: 1.0, toward: 0.0) == 0.9999999999999999
+    assert next_after(x: 0.0, toward: 1.0) == limits.SMALLEST_F64
+    assert next_after(x: 0.0, toward: -1.0) == -limits.SMALLEST_F64
+    assert next_after(x: limits.MAX_F64, toward: limits.INF) == limits.INF
+    assert next_after(x: 1.0, toward: 1.0) == 1.0
+    assert !floats.has_minus_sign(next_after(x: -0.0, toward: 0.0))
+    assert floats.has_minus_sign(next_after(x: 0.0, toward: -0.0))
+    assert next_after(x: limits.SMALLEST_F64, toward: 0.0) == 0.0
+    assert floats.is_nan(next_after(x: limits.NAN, toward: 1.0))
+    assert floats.is_nan(next_after(x: 1.0, toward: limits.NAN))
+
+test "next_after_f32: up from one, from zero both ways, past the largest, to itself"
+    one: f32 = 1.0
+    two: f32 = 2.0
+    zero: f32 = 0.0
+    assert next_after_f32(x: one, toward: two) == 1.00000011920928955078125
+    assert next_after_f32(x: zero, toward: one) == limits.SMALLEST_F32
+    assert next_after_f32(x: zero, toward: -one) == -limits.SMALLEST_F32
+    assert to_f64(next_after_f32(x: limits.MAX_F32, toward: limits.MAX_F32 * two)) == limits.INF
+    assert next_after_f32(x: one, toward: one) == one
+
+test "ulp: the zeros, one both ways, the largest, the infinity, the nan, the smallest, a large number"
+    assert ulp(0.0) == limits.SMALLEST_F64 && ulp(-0.0) == limits.SMALLEST_F64
+    assert ulp(1.0) == limits.EPSILON && ulp(-1.0) == limits.EPSILON
+    assert ulp(limits.MAX_F64) == 19958403095347198116563727130368385660674512604354575415025472424372118918689640657849579654926357010893424468441924952439724379883935936607391717982848314203200056729510856765175377214443629871826533567445439239933308104551208703888888552684480441575071209068757560416423584952303440099278848.0
+    assert ulp(limits.INF) == limits.INF && ulp(-limits.INF) == limits.INF
+    assert floats.is_nan(ulp(limits.NAN))
+    assert ulp(limits.SMALLEST_F64) == limits.SMALLEST_F64
+    assert ulp(limits.SMALLEST_NORMAL_F64) == limits.SMALLEST_F64
+
+test "mul_add: rounded once where the product and the sum round twice, a nan, an infinity times zero"
+    assert mul_add(x: 0.1, times: 10.0, plus: -1.0) == 0.00000000000000005551115123125783
+    assert 0.1 * 10.0 - 1.0 == 0.0
+    assert mul_add(x: 2.0, times: 3.0, plus: 1.0) == 7.0
+    assert floats.is_nan(mul_add(x: limits.INF, times: 0.0, plus: 1.0))
+    assert floats.is_nan(mul_add(x: limits.NAN, times: 1.0, plus: 1.0))
+
+test "within_ulps: equal, one place apart, three places apart, a nan"
+    assert within_ulps(x: 1.0, expected: 1.0, ulps: 0.0)
+    assert within_ulps(x: 1.0000000000000002, expected: 1.0, ulps: 1.0)
+    assert !within_ulps(x: 1.0000000000000007, expected: 1.0, ulps: 2.0)
+    assert !within_ulps(x: limits.NAN, expected: 1.0, ulps: 2.0)

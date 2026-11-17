@@ -1,0 +1,539 @@
+# Waiting on many connections, listeners, datagram sockets, streams and timers
+# at once, and being told which are ready and for what, so one thread serves
+# many connections: what an event loop gives a program (Rust's `tokio` and
+# `mio`, Go's network poller, Python's `selectors`), without a coroutine,
+# which the language refuses (design.md Part 6). The loop is the program's own
+# `while`: it adds what it waits on to a `Set`, calls `wait`, and acts on each
+# `Event` with `io` and `net`, whose read, write and accept then find what the
+# event told and do not wait.
+#
+# What it does NOT do: read, write or accept (`io`, `net`); sleep (`time`); run
+# a function on another thread (`threads`); ask a program to stop
+# (`net.catch_stop`, `net.ask_stop`), though every wait here ends at a stop.
+#
+# **Level-triggered**: what stays ready is told again at every wait until the
+# program reads it, writes it or removes it, so a loop that reads once per
+# event loses nothing. **What a set holds stays the program's**: a connection,
+# a listener or a stream is closed by its own package, and one closed while in
+# a set is kept open underneath until it leaves the set, so nothing else takes
+# its place there; a connection so closed is told `hangup`.
+#
+# It fails with `invalid`, `closed`, `not_found`, `limit`, `unsupported`,
+# `stopped` and `failed` (README § A4).
+
+use io
+use net
+use poll/hero_poll
+use poll/internal/failure
+use poll/internal/ready
+use time
+
+## Codes
+
+# An argument out of its range: a size, a time below zero, an interest a
+# timer cannot have. `make`, `add_timer`, `reset_timer`, `change` and `wait`
+# fail with it.
+constant INVALID: str
+    "invalid"
+
+# The set, or the connection, listener or stream handed, is closed. Every
+# function here fails with it.
+constant CLOSED: str
+    "closed"
+
+# A key that names no entry of the set: removed already, or another set's.
+# `change`, `remove` and `reset_timer` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The set holds the most entries it was made for, or the process has no room
+# for another set. `make` and every `add_` function fail with it.
+constant LIMIT: str
+    "limit"
+
+# This system cannot wait on what the stream stands on: a pipe or a console on
+# Windows, a device such as `/dev/null`. `add_stream` fails with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The program was asked to stop (`net.catch_stop`, `net.ask_stop`). `wait` and
+# `wait_forever` fail with it.
+constant STOPPED: str
+    "stopped"
+
+# The system's wait failed for a reason none of the above names; the message
+# carries its number. `wait` and `wait_forever` fail with it.
+constant FAILED: str
+    "failed"
+
+## The set
+
+# A set of entries waited on together. It is an address, as an `io.Stream`
+# is: every copy reaches the same set, and `close` empties the place it is
+# handed. Made by `make` alone; one nobody closes is told when `main` returns.
+record Set
+    # The floor's set, `nullptr` once `close` has emptied this place.
+    handle: hero_poll.Set
+    # The most entries it holds, as `make` was asked: 1 to 65,535.
+    most: i64
+
+# What an entry waits for.
+variant Interest
+    # Bytes to read, the end of the stream, or for a listener a connection to
+    # accept.
+    read
+    # Room to write.
+    write
+    # Either of the two.
+    read_write
+
+# One entry found ready by a wait, and what for.
+record Event
+    # The key the `add_` function answered for the entry.
+    key: i64
+    # Bytes can be read, the peer closed its side (a read answers the end), or
+    # a listener holds a connection to accept. Always false for a timer.
+    readable: bool
+    # Bytes can be written. Always false for a timer.
+    writable: bool
+    # The peer closed its side, or the connection is gone; told beside
+    # `readable` where the entry waits to read.
+    hangup: bool
+    # The system holds a failure for the socket, which the next read or write
+    # on it answers.
+    error: bool
+    # For a timer, the times it fell due since it was last told: 1, or more
+    # where the program waited past later ones. 0 for every other entry.
+    due: i64
+
+# A new set that holds at most `most` entries.
+#
+# - `most`: the most entries the set will hold at once, 1 to 65,535; the
+#   process has 65,536 entries among all its sets and 1,024 sets.
+#
+# Fails `invalid` where `most` is outside 1 to 65,535, `limit` where the
+# process has no room for so many. The set is closed with `close`. See also
+# `close`.
+function make(most: i64) -> Set?
+    if most < 1 || most > hero_poll.HERO_POLL_MOST
+        return failure.of(code: INVALID, asked: f"making a set of {most} entries", why: "a set holds 1 to 65,535")
+    handle = hero_poll.make(most)
+
+    if handle == nullptr
+        return failure.last(asked: f"making a set of {most} entries")
+    return ok(Set(handle: handle, most: most))
+
+# Closes the set and empties the place, so every later call through it fails
+# `closed`; what it held is let go and none of it closed, being the
+# program's.
+#
+# - `set`: the set; emptied by the call.
+#
+# Fails `closed` where it is closed already. See also `make`.
+function close(@set: Set) -> ()?
+    if set.handle == nullptr
+        return failure.of(code: CLOSED, asked: "closing a set", why: "it is closed already")
+    answer = hero_poll.close(@set.handle)
+    set.handle @ nullptr
+    return failure.done(answer: answer, asked: "closing a set")
+
+# How many entries the set holds.
+#
+# - `set`: the set.
+#
+# Fails `closed` where it is closed. See also `remove`.
+function count(set: Set) -> i64?
+    return failure.key(answer: hero_poll.count(set.handle), asked: "counting a set's entries")
+
+## What a set waits on
+
+# Adds the connection `c` to the set, waiting for what `interest` says, and
+# answers the key every event of it carries.
+#
+# - `set`: the set.
+# - `c`: the connection; it stays the program's, which closes it with
+#   `io.close(@c.stream)`, in the set or not.
+# - `interest`: what to wait for.
+#
+# The key is above 0 and names this entry alone: a connection added twice has
+# two keys.
+#
+# Fails `closed` where the set or `c` is closed, `limit` where the set holds
+# the most it was made for. See also `add_listener`, `change`, `remove`.
+function add_conn(set: Set, c: net.Conn, interest: Interest) -> i64?
+    bits = match interest
+        .read       => hero_poll.HERO_POLL_READ
+        .write      => hero_poll.HERO_POLL_WRITE
+        .read_write => hero_poll.HERO_POLL_READ | hero_poll.HERO_POLL_WRITE
+
+    return failure.key(
+        answer: hero_poll.add_stream(set.handle, s: c.stream.handle, interest: bits),
+        asked: "adding a connection to a set"
+    )
+
+# Adds the listener `l` to the set, told readable when a connection waits to
+# be accepted, and answers the entry's key.
+#
+# - `set`: the set.
+# - `l`: the listener; it stays the program's, which closes it with
+#   `net.close_listener`.
+#
+# Fails `closed` where the set or `l` is closed, `limit` where the set holds
+# the most it was made for. See also `add_conn`, `net.accept`.
+function add_listener(set: Set, l: net.Listener) -> i64?
+    return failure.key(
+        answer: hero_poll.add_socket(set.handle, s: l.socket, interest: hero_poll.HERO_POLL_READ),
+        asked: "adding a listener to a set"
+    )
+
+# Adds the datagram socket `u` to the set, waiting for what `interest` says,
+# and answers the entry's key.
+#
+# - `set`: the set.
+# - `u`: the socket; it stays the program's, which closes it with
+#   `net.close_udp`.
+# - `interest`: what to wait for: `read` is a datagram to receive.
+#
+# Fails `closed` where the set or `u` is closed, `limit` where the set holds
+# the most it was made for. See also `net.receive`.
+function add_udp(set: Set, u: net.UdpSocket, interest: Interest) -> i64?
+    bits = match interest
+        .read       => hero_poll.HERO_POLL_READ
+        .write      => hero_poll.HERO_POLL_WRITE
+        .read_write => hero_poll.HERO_POLL_READ | hero_poll.HERO_POLL_WRITE
+
+    return failure.key(
+        answer: hero_poll.add_socket(set.handle, s: u.socket, interest: bits),
+        asked: "adding a datagram socket to a set"
+    )
+
+# Adds the stream `s` to the set, waiting for what `interest` says, and
+# answers the entry's key: a connection's stream is waited on as its socket,
+# a pipe or a terminal as what it stands on, and a regular file is ready at
+# every wait.
+#
+# - `set`: the set.
+# - `s`: the stream; it stays the program's, which closes it with `io.close`.
+# - `interest`: what to wait for.
+#
+# Fails `closed` where the set or `s` is closed, `limit` where the set holds
+# the most it was made for, `unsupported` where the system cannot wait on what
+# `s` stands on: a pipe or a console on Windows, which waits on sockets alone,
+# and a device it refuses everywhere (`/dev/null`). See also `add_conn`.
+function add_stream(set: Set, s: io.Stream, interest: Interest) -> i64?
+    bits = match interest
+        .read       => hero_poll.HERO_POLL_READ
+        .write      => hero_poll.HERO_POLL_WRITE
+        .read_write => hero_poll.HERO_POLL_READ | hero_poll.HERO_POLL_WRITE
+
+    return failure.key(
+        answer: hero_poll.add_stream(set.handle, s: s.handle, interest: bits),
+        asked: f"adding {s.name} to a set"
+    )
+
+# Adds a timer to the set, due once `first` has passed and then every `every`,
+# and answers its key; a timer fallen due is told by `wait` with `due`, the
+# times it fell due.
+#
+# - `set`: the set.
+# - `first`: the time from now to its first fall, zero for now.
+# - `every`: the time between two falls after the first; zero for a timer
+#   that falls once, and is then due no more until `reset_timer`.
+#
+# A timer waited past is told once, with every time it fell due counted in
+# `due`, and is due next at the first of its times still to come: never a
+# burst. Its times are read on a clock that never goes back.
+#
+# Fails `invalid` where `first` or `every` is below zero, `closed` where the
+# set is closed, `limit` where it holds the most it was made for. See also
+# `reset_timer`.
+function add_timer(set: Set, first: time.Duration, every: time.Duration) -> i64?
+    if first.nanoseconds < 0 || every.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: "adding a timer to a set",
+            why: f"a time is zero or more, and {first.nanoseconds} ns then every {every.nanoseconds} ns was asked"
+        )
+    return failure.key(
+        answer: hero_poll.add_timer(set.handle, first_ns: first.nanoseconds, every_ns: every.nanoseconds),
+        asked: "adding a timer to a set"
+    )
+
+# Sets the timer `key` again from now, as `add_timer` sets one.
+#
+# - `set`: the set.
+# - `key`: the timer's key, as `add_timer` answered it.
+# - `first`: the time from now to its next fall, zero for now.
+# - `every`: the time between two falls after it, zero for once.
+#
+# Fails `invalid` where `first` or `every` is below zero or `key` is no
+# timer's, `not_found` where `key` names no entry of the set, `closed` where
+# the set is closed. See also `add_timer`.
+function reset_timer(set: Set, key: i64, first: time.Duration, every: time.Duration) -> ()?
+    if first.nanoseconds < 0 || every.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: f"setting the timer {key} again",
+            why: f"a time is zero or more, and {first.nanoseconds} ns then every {every.nanoseconds} ns was asked"
+        )
+    return failure.done(
+        answer: hero_poll.set_timer(set.handle, key: key, first_ns: first.nanoseconds, every_ns: every.nanoseconds),
+        asked: f"setting the timer {key} again"
+    )
+
+# Makes the entry `key` wait for what `interest` says from now.
+#
+# - `set`: the set.
+# - `key`: the entry's key.
+# - `interest`: what to wait for now.
+#
+# Fails `invalid` where `key` is a timer's, `not_found` where it names no
+# entry of the set, `closed` where the set is closed. See also `remove`.
+function change(set: Set, key: i64, interest: Interest) -> ()?
+    bits = match interest
+        .read       => hero_poll.HERO_POLL_READ
+        .write      => hero_poll.HERO_POLL_WRITE
+        .read_write => hero_poll.HERO_POLL_READ | hero_poll.HERO_POLL_WRITE
+
+    return failure.done(
+        answer: hero_poll.change(set.handle, key: key, interest: bits),
+        asked: f"changing what the entry {key} waits for"
+    )
+
+# Takes the entry `key` out of the set, letting go of what it held, which
+# stays open and the program's.
+#
+# - `set`: the set.
+# - `key`: the entry's key; it names nothing after this call, and a later
+#   entry never takes it.
+#
+# Fails `not_found` where `key` names no entry of the set, `closed` where the
+# set is closed. See also `change`, `count`.
+function remove(set: Set, key: i64) -> ()?
+    return failure.done(answer: hero_poll.remove(set.handle, key: key), asked: f"removing the entry {key}")
+
+## Waiting
+
+# The entries of the set found ready, waiting until one is, a timer falls
+# due, `limit` passes, or the stop is asked.
+#
+# - `set`: the set.
+# - `limit`: the longest to wait; zero asks without waiting.
+#
+# One event per entry, the timers fallen due first, then the files, then what
+# the system told, in its order; empty where `limit` passed with none ready.
+# At most 1,024 events at once: the rest are told by the next wait, as
+# everything still ready is.
+#
+# Fails `stopped` where the stop was asked, before the call or while it
+# waited, even with entries ready, so a server's loop ends under load;
+# `invalid` where `limit` is below zero; `closed` where the set is closed;
+# `failed` where the system's wait failed. See also `wait_forever`.
+function wait(set: Set, limit: time.Duration) -> [Event]?
+    if limit.nanoseconds < 0
+        return failure.of(
+            code: INVALID,
+            asked: "waiting on a set",
+            why: f"a limit is zero or more, and {limit.nanoseconds} ns was asked"
+        )
+    found = ready.wait(set.handle, limit_ns: limit.nanoseconds)?
+    events: [Event] @= []
+
+    for r in found
+        events @ events.push(
+            Event(key: r.key, readable: r.readable, writable: r.writable, hangup: r.hangup, error: r.error, due: r.due)
+        )
+
+    return ok(events)
+
+# The entries of the set found ready, waiting as long as it takes: until one
+# is ready, a timer falls due, or the stop is asked.
+#
+# - `set`: the set.
+#
+# Never empty: it answers once something is ready. At most 1,024 events at
+# once, as `wait` answers.
+#
+# Fails `stopped`, `closed` and `failed` as `wait` does. See also `wait`.
+function wait_forever(set: Set) -> [Event]?
+    # The largest limit, about 292 years: as long as it takes.
+    return wait(set, limit: time.nanoseconds(9223372036854775807))
+
+## Examples
+
+# A set made for four entries, and closed.
+test "make: a set for four entries"
+    s @= make(4).must()
+    assert count(s).must() == 0
+    close(@s).must()
+
+# A closed set's place is empty, and a second close says so.
+test "close: a set closed, then closed again"
+    s @= make(1).must()
+    close(@s).must()
+    assert close(@s).is_err()
+
+# How many entries a set holds as they come and go.
+test "count: two timers added, one removed"
+    s @= make(4).must()
+    a = add_timer(s, first: time.nanoseconds(1000000000), every: time.nanoseconds(0)).must()
+    _ = add_timer(s, first: time.nanoseconds(1000000000), every: time.nanoseconds(0)).must()
+    assert count(s).must() == 2
+    remove(s, key: a).must()
+    assert count(s).must() == 1
+    close(@s).must()
+
+# A connection told readable once its peer has written.
+test "add_conn: a connection told readable once its peer writes"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
+    server @= net.accept(l, deadline_ms: 5000).must()
+    s @= make(4).must()
+    key = add_conn(s, c: server, interest: .read).must()
+    io.write(client.stream, data: [104, 105]).must()
+    events = wait(s, limit: time.nanoseconds(5000000000)).must()
+    assert events.len() == 1
+    assert events[0].key == key
+    assert events[0].readable
+    assert io.read(server.stream, most: 16).must() == [104, 105]
+    close(@s).must()
+    io.close(@client.stream).must()
+    io.close(@server.stream).must()
+    net.close_listener(@l).must()
+
+# A listener told readable when a connection waits to be accepted.
+test "add_listener: a listener told readable when a client connects"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    s @= make(4).must()
+    key = add_listener(s, l: l).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    client @= net.connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
+    events = wait(s, limit: time.nanoseconds(5000000000)).must()
+    assert events[0].key == key
+    assert events[0].readable
+    server @= net.accept(l, deadline_ms: 5000).must()
+    close(@s).must()
+    io.close(@client.stream).must()
+    io.close(@server.stream).must()
+    net.close_listener(@l).must()
+
+# A datagram socket told readable once a datagram has come.
+test "add_udp: a datagram socket told readable when a datagram comes"
+    receiver @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    sender @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    s @= make(4).must()
+    key = add_udp(s, u: receiver, interest: .read).must()
+    net.send_to(sender, data: [7], to: receiver.address).must()
+    events = wait(s, limit: time.nanoseconds(5000000000)).must()
+    assert events[0].key == key
+    assert net.receive(receiver).must().data == [7]
+    close(@s).must()
+    net.close_udp(@receiver).must()
+    net.close_udp(@sender).must()
+
+# A pipe's reading end told readable once a byte is written; Windows waits on
+# sockets alone, and says so.
+test "add_stream: a pipe's reading end, or unsupported on Windows"
+    p @= io.pipe().must()
+    s @= make(4).must()
+
+    match add_stream(s, s: p.reader, interest: .read)
+        .err e => assert e.code == UNSUPPORTED
+        .ok key =>
+            io.write(p.writer, data: [1]).must()
+            events = wait(s, limit: time.nanoseconds(5000000000)).must()
+            assert events[0].key == key
+
+    close(@s).must()
+    io.close(@p.reader).must()
+    io.close(@p.writer).must()
+
+# A timer that falls once, 10 ms from now, ends a wait with no limit.
+test "add_timer: a timer falls once and ends the wait"
+    s @= make(2).must()
+    key = add_timer(s, first: time.nanoseconds(10000000), every: time.nanoseconds(0)).must()
+    events = wait_forever(s).must()
+    assert events[0].key == key
+    assert events[0].due == 1
+    close(@s).must()
+
+# A timer that fell once set again to fall now.
+test "reset_timer: a timer that fell is set to fall again"
+    s @= make(2).must()
+    key = add_timer(s, first: time.nanoseconds(0), every: time.nanoseconds(0)).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 1
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    reset_timer(s, key: key, first: time.nanoseconds(0), every: time.nanoseconds(0)).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 1
+    close(@s).must()
+
+# A connection waited on for room to write, once the read it waited for came.
+test "change: from waiting to read to waiting to write"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= net.connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
+    server @= net.accept(l, deadline_ms: 5000).must()
+    s @= make(4).must()
+    key = add_conn(s, c: server, interest: .read).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    change(s, key: key, interest: .write).must()
+    events = wait(s, limit: time.nanoseconds(5000000000)).must()
+    assert events[0].writable
+    close(@s).must()
+    io.close(@client.stream).must()
+    io.close(@server.stream).must()
+    net.close_listener(@l).must()
+
+# An entry taken out is told no more, and its key names nothing.
+test "remove: a timer taken out before it falls"
+    s @= make(2).must()
+    key = add_timer(s, first: time.nanoseconds(0), every: time.nanoseconds(0)).must()
+    remove(s, key: key).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    assert remove(s, key: key).is_err()
+    close(@s).must()
+
+# An echo server serving three clients on one thread, in one process: each
+# client connects and writes two bytes, and the server's loop accepts each
+# connection the listener is told ready with, reads what each connection is
+# told readable with, writes it back, and lets the connection go.
+test "wait: an echo server serves three clients on one thread"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    s @= make(8).must()
+    listening = add_listener(s, l: l).must()
+    clients: [net.Conn] @= []
+
+    for i in range(from: 0, to: 3)
+        c = net.connect(host: "127.0.0.1", port: l.address.port, deadline_ms: 5000).must()
+        io.write(c.stream, data: [104, to_u8(48 + i).must()]).must()
+        clients @ clients.push(c)
+
+    served: [net.Conn] @= []
+    which: {i64: i64} @= {}
+    echoed: i64 @= 0
+
+    while echoed < 3
+        for e in wait(s, limit: time.nanoseconds(5000000000)).must()
+            if e.key == listening
+                c = net.accept(l, deadline_ms: 5000).must()
+                which[add_conn(s, c: c, interest: .read).must()] @ served.len()
+                served @ served.push(c)
+            else
+                c = served[which[e.key].must()]
+                io.write(c.stream, data: io.read(c.stream, most: 64).must()).must()
+                remove(s, key: e.key).must()
+                echoed @ echoed + 1
+
+    for i in range(from: 0, to: 3)
+        assert io.read_exact(clients[i].stream, count: 2).must() == [104, to_u8(48 + i).must()]
+        io.close(@clients[i].stream).must()
+        io.close(@served[i].stream).must()
+
+    close(@s).must()
+    net.close_listener(@l).must()
+
+# A wait with no limit ended by a timer, the one thing the set holds.
+test "wait_forever: ended by the one timer the set holds"
+    s @= make(1).must()
+    key = add_timer(s, first: time.nanoseconds(5000000), every: time.nanoseconds(0)).must()
+    assert wait_forever(s).must()[0].key == key
+    close(@s).must()

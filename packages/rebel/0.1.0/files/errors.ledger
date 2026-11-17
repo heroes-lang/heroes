@@ -1,0 +1,177 @@
+# The ledger of `errors`: what Go's `errors` and `fmt.Errorf` with `%w` (Go
+# 1.27), Rust's `anyhow` (1.0.104) and `thiserror` (2.0.21) with the standard
+# library's `std::error` (Rust 1.100), and Python's exception chaining and
+# groups with its `traceback` module (3.15) let a program do with a failure,
+# one block per capability, and what Rebel answers. The lists are this
+# machine's, 2026-11-16: `go doc -short errors` and `go doc fmt.Errorf`; the
+# items and methods of `std::error` in the toolchain's documentation; the
+# documentation `cargo doc --offline` made for `anyhow` and `thiserror` from
+# the crates in this machine's cargo registry, copied into the scratch folder;
+# and `dir()` of `BaseException`, `BaseExceptionGroup` and `traceback`, less
+# what every object has. `anyhow` and `thiserror` are not Rust's standard
+# library; the task named them as the capabilities this package answers.
+#
+# A failure in Heroes is a `T?` holding a code and a message (spec § 6), and
+# nothing else: no type of its own, no cause held as a second value, no stack.
+# So a chain is written into the message, `what: <old message>`, as Go's
+# `fmt.Errorf("what: %w")` and `anyhow`'s `{:#}` write it, and read back from
+# it at `": "` outside double quotes and brackets.
+
+capability failure/make  a failure made with a code and a message
+  heroes  built-in fail
+  go      errors.New, fmt.Errorf
+  rust    anyhow::anyhow!, anyhow::format_err!, anyhow::Error::msg, anyhow::Error::new, anyhow::bail!, thiserror::Error, #[error("...")]
+  python  BaseException, BaseException.args, raise
+  note    `fail(code:, msg:)`, the message an f-string; where Go and Python carry a type or an identity and `thiserror` a variant, Heroes carries a code
+
+capability failure/codes  a family of failures a package declares, each with its name
+  heroes  built-in constant
+  go      errors.ErrUnsupported, var Err... = errors.New
+  rust    thiserror::Error (an enum's variants)
+  python  class ... (Exception)
+  note    a package's codes are its constants, `fs.EXISTS`, so a misspelt one is a compile error (README § A4); Go's `ErrUnsupported` is the code `unsupported`
+
+capability failure/ensure  a condition checked, failing where it does not hold
+  heroes  built-in fail
+  go      -
+  rust    anyhow::ensure!
+  python  -
+  note    `if !cond` then `return fail(code:, msg:)`; a function taking the condition would build its message on every call, where the condition holds too
+
+capability failure/propagate  a failure handed up to the caller as it is
+  heroes  built-in ?
+  go      -
+  rust    anyhow::Result, anyhow::Ok, #[error(transparent)]
+  python  raise
+  note    `expr?` hands the failure up with its code and message unchanged
+
+capability failure/context  words added before a failure's message, its code kept
+  heroes  errors.context
+  go      fmt.Errorf (%w)
+  rust    anyhow::Context::context, anyhow::Error::context
+  python  raise ... from, BaseException.__cause__
+  note    the message becomes `what: <old message>`, the text Go's `fmt.Errorf("reading: %w")` writes (observed: `reading: no x`) and `anyhow`'s `{:#}` writes (observed: `reading the configuration: opening x.toml: no "x" in "a: b"`); the code is kept, as Go and `anyhow` keep the root for `Is` and `is`; Python keeps the cause as a second exception of another type
+
+capability failure/context-lazy  words computed and added only where the result fails
+  heroes  errors.context_by
+  go      -
+  rust    anyhow::Context::with_context
+  python  -
+  note    no closure: a top-level function and the one value it reads, called only where the result fails, as `anyhow`'s closure is
+
+capability failure/recode  a failure given another code, its message kept
+  heroes  errors.with_code
+  go      -
+  rust    #[from], #[source]
+  python  raise NewError(...) from e
+  note    Python's `raise New(...) from e` changes the kind and keeps the cause beside it; here the message stays and the old code is read nowhere after, so what it said goes into the message with `context` first where it matters
+
+capability failure/note  words added after a failure's message
+  heroes  refused: one way adds words to a failure, `errors.context`, before the message, so a chain reads from the outermost to the root; Python's notes stand after the message (observed: `ValueError: x` then `note one`)
+  go      -
+  rust    -
+  python  BaseException.add_note, BaseException.__notes__
+
+capability failure/is  whether a failure has a code, through a joined one
+  heroes  errors.has_code
+  go      errors.Is
+  rust    anyhow::Error::is, std::error::Error::is
+  python  isinstance, except
+  note    a code travels up through every `context` unchanged, so the outermost failure's code is the root's and one comparison, `e.code == fs.NOT_FOUND`, answers what Go's `Is` walks a chain for; `has_code` also reads the codes a joined failure lists, as `Is` walks a `Join`
+
+capability failure/as  the failure's own value taken back
+  heroes  built-in match
+  go      errors.As, errors.AsType
+  rust    anyhow::Error::downcast, anyhow::Error::downcast_ref, anyhow::Error::downcast_mut, std::error::Error::downcast, std::error::Error::downcast_ref, std::error::Error::downcast_mut
+  python  except ... as
+  note    a failure is its code and its message, `e.code` and `e.msg` in a `match` arm; there is no other value to take back and no type to test
+
+capability failure/chain  the links of a failure's chain, the outermost first
+  heroes  errors.chain_of
+  go      errors.Unwrap
+  rust    anyhow::Error::chain, anyhow::Chain, std::error::Error::source, std::error::Error::sources, std::error::Error::cause, std::error::Error::description
+  python  BaseException.__cause__
+  note    the links cut out of the message at `": "` outside quotes and brackets: the failure `anyhow` chains as three values reads back as its three links (observed: `["reading the configuration", "opening x.toml", "no \"x\" in \"a: b\""]`); Go's `Unwrap` answers one step at a time
+
+capability failure/root  the innermost link of a chain
+  heroes  errors.chain_of
+  go      -
+  rust    anyhow::Error::root_cause
+  python  -
+  note    the last link of `chain_of`, which `anyhow`'s `root_cause` answers (observed: `no "x" in "a: b"`)
+
+capability failure/join  several failures joined into one
+  heroes  errors.combine
+  go      errors.Join, fmt.Errorf (several %w)
+  rust    -
+  python  ExceptionGroup, BaseExceptionGroup, BaseExceptionGroup.message
+  note    Go joins the messages with a line feed and skips nil (observed: `"first: bad\nsecond"`, and nil where every one is nil); Python's group needs at least one exception (observed: an empty list raises `ValueError`) and its text is a count, `loading (2 sub-exceptions)`. Here an empty list or one of values is `ok()` as in Go; one failure stays itself (Go wraps it, observed `Join(a) != a`); several make one line, `<n> failures (<code>: <message>; ...)`, each with its code, so the one-line telling stays one line and `parts_of` reads them back; the code is the first one's
+
+capability failure/collect  every value of a list of results, or every failure joined
+  heroes  errors.collect
+  go      -
+  rust    -
+  python  -
+  note    no library of the three gathers every failure of a list: Rust's `collect` into a `Result`, outside `std::error`, stops at the first; here every failure is told, joined as `combine` joins them
+
+capability failure/parts  the failures a joined failure holds, and those of one code among them
+  heroes  errors.parts_of
+  go      -
+  rust    -
+  python  BaseExceptionGroup.exceptions, BaseExceptionGroup.split, BaseExceptionGroup.subgroup, BaseExceptionGroup.derive
+  note    Python's `exceptions` reads a group's parts; `split` and `subgroup` by a kind are `filter` over `parts_of` by code, and `derive` is `combine`; one level is read, so a part that is joined itself stays joined
+
+capability failure/discard-value  a result's value dropped, its failure kept
+  heroes  errors.discard_value
+  go      -
+  rust    -
+  python  -
+  note    what puts results of several types into one `[()?]` for `combine`; Go's `error` and Python's exceptions are of one type already
+
+capability failure/tell-line  a failure told to a person in one line
+  heroes  errors.format_line
+  go      error.Error
+  rust    anyhow::Error (Display, {} and {:#}), std::error::Report
+  python  traceback.format_exception_only, str(e)
+  note    `<code>: <message>`, as the language's own abort tells a failure (observed: `panic: .must() on an error: not_found: reading the configuration: no "x" in "abc"`) and as Python's `format_exception_only` writes the type before the message (observed: `ValueError: reading the configuration`); a control character is escaped, so the line stays one
+
+capability failure/tell-chain  a failure told to a person as an indented chain
+  heroes  errors.format_chain
+  go      -
+  rust    anyhow::Error (Debug, {:?}), std::error::Report::pretty
+  python  traceback.format_exception, traceback.print_exception, traceback.format_exc, traceback.print_exc, traceback.TracebackException
+  note    `anyhow`'s Debug writes the outermost link, then `Caused by:` and each further link numbered four spaces in (observed); here the code opens the first line, each further link stands four spaces in after `caused by: `, and a joined failure's parts follow beneath it, as Python's group traceback nests its parts
+
+capability failure/backtrace  where in the program a failure began
+  heroes  refused: an abort already names its file, line and function (observed: `at probe1.hero:18:11, in probe1.main`), and a failure is a value holding no stack
+  go      -
+  rust    anyhow::Error::backtrace, std::error::Report::show_backtrace, #[backtrace]
+  python  BaseException.__traceback__, BaseException.with_traceback, traceback.extract_tb, traceback.format_tb, traceback.print_tb, traceback.walk_tb, traceback.extract_stack, traceback.format_stack, traceback.print_stack, traceback.walk_stack, traceback.StackSummary, traceback.FrameSummary, traceback.clear_frames, traceback.print_last, traceback.format_list, traceback.print_list, traceback.BUILTIN_EXCEPTION_LIMIT
+
+capability failure/suppress  a failure ignored on purpose
+  heroes  built-in .default
+  go      -
+  rust    -
+  python  contextlib.suppress, traceback.suppress
+  note    `.default(v)`, or a `match` arm that does nothing; `_` never drops a `T?` (spec § 5), so a failure ignored is always written so
+
+capability failure/implicit-context  a failure raised while another is being handled, the first kept beside it
+  heroes  refused: the language has no exceptions, so no failure is raised while another is handled; a failure made while answering another names it with `errors.context` or joins it with `errors.combine`
+  go      -
+  rust    -
+  python  BaseException.__context__, BaseException.__suppress_context__
+
+dropped traits  what an interface or a trait would have needed: a failure converted, borrowed, compared, written for a debugger, sized
+  go      -
+  rust    anyhow::Error::as_ref, borrow, borrow_mut, deref, deref_mut, drop, fmt, from, into, to_string, try_from, try_into, type_id, pin_drop, anyhow::Chain (the iterator's own methods)
+  python  BaseException.__dict__, BaseException.__setstate__, and the object protocol every class has
+
+dropped boxes-and-providers  Rust's ways of moving an error between its boxes, and its unstable provider API: a failure is a code and a message, held by value
+  go      -
+  rust    anyhow::Error::from_boxed, anyhow::Error::into_boxed_dyn_error, anyhow::Error::reallocate_into_boxed_dyn_error_without_backtrace, std::error::Error::provide, std::error::Request, std::error::request_ref, std::error::request_value, std::error::Report::new
+  python  -
+
+dropped imports  names `dir(traceback)` lists that are modules the module imports, not its API
+  go      -
+  rust    -
+  python  traceback.codeop, traceback.collections, traceback.functools, traceback.importlib, traceback.io, traceback.itertools, traceback.keyword, traceback.linecache, traceback.os, traceback.pathlib, traceback.re, traceback.sys, traceback.textwrap, traceback.tokenize, traceback.types, traceback.warnings

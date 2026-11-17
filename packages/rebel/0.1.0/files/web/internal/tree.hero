@@ -1,0 +1,160 @@
+# The routes of a router as a tree of path segments, and the walk that finds
+# the routes a path matches, in the order they take it: segment by segment, a
+# fixed segment before a parameter before a wildcard, and back to the next
+# where the rest does not match. Each node stands at one depth, so the walk
+# visits a node once at most and holds its own stack, whatever the path.
+
+use web/internal/patterns
+
+# One node of the tree: the routes whose pattern ends at its depth, and the
+# nodes one segment below.
+record Node
+    # The node below for each segment written as text.
+    fixed: {str: i64}
+    # The node below for a parameter, -1 for none.
+    param: i64
+    # The routes, by their index in the router, whose pattern ends here.
+    ends: [i64]
+    # The routes whose wildcard begins at this node's depth.
+    rests: [i64]
+
+# A step of the walk: a node to visit at a depth, or the wildcards of a node
+# to give once its other branches are done.
+record Frame
+    # The node, by its index.
+    node: i64
+    # How many segments of the path lie above it.
+    depth: i64
+    # Whether the frame gives the node's wildcards rather than visiting it.
+    rests_only: bool
+
+# A tree with no route: its root alone.
+function empty() -> [Node]
+    return [blank()]
+
+# A node with nothing below it and no route.
+function blank() -> Node
+    return Node(fixed: {}, param: -1, ends: [], rests: [])
+
+# Adds the route `route` of the pattern `pieces` to `nodes`.
+function insert(@nodes: [Node], pieces: [patterns.Piece], route: i64)
+    at: i64 @= 0
+
+    for p in pieces
+        match p
+            .fixed f =>
+                match nodes[at].fixed[f.text]
+                    .ok next => at @ next
+                    .err _ =>
+                        nodes @ nodes.push(blank())
+                        nodes[at].fixed[f.text] @ nodes.len() - 1
+                        at @ nodes.len() - 1
+            .param _ =>
+                if nodes[at].param < 0
+                    nodes @ nodes.push(blank())
+                    nodes[at].param @ nodes.len() - 1
+                at @ nodes[at].param
+            .rest _ =>
+                nodes[at].rests @ nodes[at].rests.push(route)
+                return
+
+    nodes[at].ends @ nodes[at].ends.push(route)
+
+# The routes whose patterns match `segments`, in groups of one shape, the
+# group that takes the path first standing first.
+function matches(nodes: [Node], segments: [str]) -> [[i64]]
+    out: [[i64]] @= []
+    stack: [Frame] @= []
+    top: i64 @= 0
+    put(@stack, @top, frame: Frame(node: 0, depth: 0, rests_only: false))
+
+    while top > 0
+        top @ top - 1
+        f = stack[top]
+
+        if f.rests_only
+            out @ out.push(nodes[f.node].rests)
+        else if f.depth == segments.len()
+            if nodes[f.node].ends.len() > 0
+                out @ out.push(nodes[f.node].ends)
+
+            if nodes[f.node].rests.len() > 0
+                out @ out.push(nodes[f.node].rests)
+        else
+            if nodes[f.node].rests.len() > 0
+                put(@stack, @top, frame: Frame(node: f.node, depth: f.depth, rests_only: true))
+            param = nodes[f.node].param
+
+            if param >= 0 && segments[f.depth] != ""
+                put(@stack, @top, frame: Frame(node: param, depth: f.depth + 1, rests_only: false))
+
+            match nodes[f.node].fixed[segments[f.depth]]
+                .ok next => put(@stack, @top, frame: Frame(node: next, depth: f.depth + 1, rests_only: false))
+                .err _   => _ = 0
+
+    return out
+
+# Puts `frame` on `stack` at `top`, and moves `top` past it.
+function put(@stack: [Frame], @top: i64, frame: Frame)
+    if top == stack.len()
+        stack @ stack.push(frame)
+    else
+        stack[top] @ frame
+    top @ top + 1
+
+# A tree of `patterns`, each route numbered by its place in the list.
+function tree_of(list: [str]) -> [Node]
+    nodes @= empty()
+
+    for i in range(from: 0, to: list.len())
+        insert(@nodes, pieces: patterns.parse(list[i]).must(), route: i)
+
+    return nodes
+
+test "matches: an empty tree, the root, a path deeper than every route"
+    assert matches(empty(), segments: [""]).len() == 0
+    assert matches(tree_of(["/"]), segments: [""]) == [[0]]
+    assert matches(tree_of(["/a"]), segments: ["a", "b", "c"]).len() == 0
+
+test "matches: a fixed segment before a parameter before a wildcard, each kept in order"
+    t = tree_of(["/users/:id", "/users/new", "/users/*rest"])
+    assert matches(t, segments: ["users", "new"]) == [[1], [0], [2]]
+    assert matches(t, segments: ["users", "7"]) == [[0], [2]]
+
+test "matches: a parameter takes no empty segment, a wildcard takes an empty rest and none"
+    t = tree_of(["/users/:id", "/files/*p"])
+    assert matches(t, segments: ["users", ""]).len() == 0
+    assert matches(t, segments: ["files", ""]) == [[1]]
+    assert matches(t, segments: ["files"]) == [[1]]
+
+test "matches: back to the parameter where the fixed branch ends early"
+    t = tree_of(["/users/new", "/users/:id/posts"])
+    assert matches(t, segments: ["users", "new", "posts"]) == [[1]]
+
+test "matches: routes of one shape grouped, a last slash its own segment"
+    t = tree_of(["/a/:x", "/a/:y", "/a/"])
+    assert matches(t, segments: ["a", "q"]) == [[0, 1]]
+    assert matches(t, segments: ["a", ""]) == [[2]]
+
+test "matches: ten thousand segments walked without recursion"
+    segments: [str] @= []
+
+    for _ in range(from: 0, to: 10_000)
+        segments @ segments.push("a")
+
+    assert matches(tree_of(["/*all"]), segments: segments) == [[0]]
+
+test "insert: shared prefixes share nodes"
+    t = tree_of(["/a/b", "/a/c", "/a/:x"])
+    assert t.len() == 5 && t[1].param == 4
+
+test "put: on an empty stack and over a frame popped"
+    stack: [Frame] @= []
+    top: i64 @= 0
+    put(@stack, @top, frame: Frame(node: 1, depth: 0, rests_only: false))
+    top @ 0
+    put(@stack, @top, frame: Frame(node: 2, depth: 0, rests_only: false))
+    assert stack.len() == 1 && stack[0].node == 2 && top == 1
+
+test "blank: nothing below, no route"
+    assert blank().param == -1 && blank().ends.len() == 0 && keys(blank().fixed).len() == 0

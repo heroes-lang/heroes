@@ -1,0 +1,138 @@
+# Floats and exact numbers: a finite float taken apart into an odd integer and
+# a power of two, by multiplications by two that are exact; and the float
+# nearest a quotient of two integers, rounded once, ties to even, with the
+# subnormal floats and the infinities where they fall.
+
+use big/internal/limbs
+use big/internal/quotient
+
+# A finite float's value: `mantissa` times 2 to the `exponent`, the mantissa
+# odd or zero and never negative.
+record Parts
+    mantissa: i64
+    exponent: i64
+
+# 2 to the 53rd, the first float past which every float is a whole number.
+constant WHOLE: f64
+    9007199254740992.0
+
+# Whether `x` is NaN.
+function is_nan(x: f64) -> bool
+    return x != x
+
+# Whether `x` is an infinity.
+function is_infinite(x: f64) -> bool
+    gap = x - x
+    return x == x && gap != gap
+
+# The positive infinity.
+function infinity() -> f64
+    x: f64 @= 2.0
+
+    while x - x == 0.0
+        x @ x * x
+
+    return x
+
+# The parts of `x`, finite, its sign dropped.
+function parts_of(x: f64) -> Parts
+    v: f64 @= x
+
+    if v < 0.0
+        v @ -v
+    exponent: i64 @= 0
+
+    while v < WHOLE && to_f64(to_i64(v).must()) != v
+        v @ v * 2.0
+        exponent @ exponent - 1
+
+    while v >= WHOLE
+        v @ v * 0.5
+        exponent @ exponent + 1
+
+    mantissa: i64 @= to_i64(v).must()
+
+    while mantissa != 0 && mantissa & 1 == 0
+        mantissa @ mantissa >> 1
+        exponent @ exponent + 1
+
+    return Parts(mantissa: mantissa, exponent: exponent)
+
+# 2 to the `k`th, `k` from -1074 to 1023.
+function power_of_two(k: i64) -> f64
+    x: f64 @= 1.0
+    left: i64 @= k
+
+    while left > 0
+        x @ x * 2.0
+        left @ left - 1
+
+    while left < 0
+        x @ x * 0.5
+        left @ left + 1
+
+    return x
+
+# The float nearest `num` over `den`, both above zero, with `bits` bits of
+# mantissa and `lowest` the exponent of its smallest subnormal: 53 and -1074
+# for an `f64`, 24 and -149 for an `f32`, whose answer is exact in an `f64`.
+function nearest(num: [i64], den: [i64], bits: i64, lowest: i64) -> f64
+    span = limbs.bit_len(num) - limbs.bit_len(den)
+    shift: i64 @= span - bits - 3
+
+    if shift < lowest - 2
+        shift @ lowest - 2
+    d: quotient.Division @= quotient.divide(n: num, by: den)
+
+    if shift >= 0
+        d @ quotient.divide(n: num, by: limbs.shift_left(a: den, count: shift))
+    else
+        d @ quotient.divide(n: limbs.shift_left(a: num, count: -shift), by: den)
+    q = d.quotient
+    top = limbs.bit_len(q) - 1 + shift
+    lsb: i64 @= top - (bits - 1)
+
+    if lsb < lowest
+        lsb @ lowest
+    drop = lsb - shift
+    kept = limbs.shift_right(a: q, count: drop)
+    low = limbs.sub(a: q, b: limbs.shift_left(a: kept, count: drop))
+    half = limbs.compare(a: low, b: limbs.shift_left(a: [1], count: drop - 1))
+    mantissa: i64 @= 0
+
+    at: i64 @= kept.len() - 1
+
+    while at >= 0
+        mantissa @ (mantissa << limbs.BITS) + kept[at]
+        at @ at - 1
+
+    if half > 0 || half == 0 && (d.remainder.len() > 0 || mantissa & 1 == 1)
+        mantissa @ mantissa + 1
+
+    if lsb > 1023
+        return infinity()
+    return to_f64(mantissa) * power_of_two(lsb)
+
+## Tests
+
+test "parts_of: zero, one, a half, 0.1, the largest and the smallest float"
+    assert parts_of(0.0) == Parts(mantissa: 0, exponent: 0)
+    assert parts_of(-1.0) == Parts(mantissa: 1, exponent: 0)
+    assert parts_of(0.5) == Parts(mantissa: 1, exponent: -1)
+    assert parts_of(0.1) == Parts(mantissa: 3602879701896397, exponent: -55)
+    assert parts_of(to_f64(9007199254740991) * power_of_two(971)) == Parts(mantissa: 9007199254740991, exponent: 971)
+    assert parts_of(power_of_two(-1074)) == Parts(mantissa: 1, exponent: -1074)
+    assert parts_of(6.0) == Parts(mantissa: 3, exponent: 1)
+
+test "nearest: exact, a third, a tie to even, the subnormals, and past the largest"
+    assert nearest(num: [3], den: [1], bits: 53, lowest: -1074) == 3.0
+    assert nearest(num: [1], den: [3], bits: 53, lowest: -1074) == 1.0 / 3.0
+    nine = limbs.add(a: limbs.shift_left(a: [1], count: 53), b: [1])
+    assert nearest(num: nine, den: [1], bits: 53, lowest: -1074) == 9007199254740992.0
+    eleven = limbs.add(a: limbs.shift_left(a: [1], count: 53), b: [3])
+    assert nearest(num: eleven, den: [1], bits: 53, lowest: -1074) == 9007199254740996.0
+    assert nearest(num: [1], den: limbs.shift_left(a: [1], count: 1074), bits: 53, lowest: -1074) == power_of_two(-1074)
+    assert nearest(num: [1], den: limbs.shift_left(a: [1], count: 1075), bits: 53, lowest: -1074) == 0.0
+    assert nearest(num: [3], den: limbs.shift_left(a: [1], count: 1076), bits: 53, lowest: -1074) == power_of_two(-1074)
+    assert nearest(num: limbs.shift_left(a: [1], count: 1024), den: [1], bits: 53, lowest: -1074) == infinity()
+    assert nearest(num: [1], den: [3], bits: 24, lowest: -149) == to_f64(to_f32(1.0 / 3.0))

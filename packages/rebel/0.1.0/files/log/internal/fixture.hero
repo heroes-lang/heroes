@@ -1,0 +1,34 @@
+# What the package's tests share: the fixed clock that makes a line the same on
+# every run, and the text a pipe received.
+
+use io
+use time
+
+# 2006-01-02T15:04:05.123Z, every time it is called: the clock the tests give
+# `log.with_clock`. Its milliseconds since 1970 are Python's for that moment.
+function clock() -> time.Instant?
+    return time.from_unix_milliseconds(1136214245123)
+
+# A clock that fails `failed` every time, as a system that cannot read its
+# clock makes `time.now` fail.
+function broken_clock() -> time.Instant?
+    return fail(code: "failed", msg: "reading the clock: this test's clock answers nothing")
+
+# Every byte written to `pipe`'s writer, read as text once the writer is
+# closed; both ends are closed here.
+function drained(@pipe: io.Pipe) -> str?
+    io.close(@pipe.writer)?
+    text = io.read_all_text(pipe.reader)?
+    io.close(@pipe.reader)?
+    return ok(text)
+
+test "clock: Go's reference time with milliseconds, in UTC"
+    assert time.format(clock().must(), .rfc3339_milliseconds) == "2006-01-02T15:04:05.123Z"
+
+test "drained: an empty pipe, and two writes read back whole"
+    empty @= io.pipe().must()
+    assert drained(@empty).must() == ""
+    full @= io.pipe().must()
+    io.write_line(full.writer, line: "a").must()
+    io.write_line(full.writer, line: "é").must()
+    assert drained(@full).must() == "a\né\n"

@@ -1,0 +1,99 @@
+# A `multipart/form-data` body written, RFC 7578: each part's
+# `Content-Disposition` and `Content-Type`, its bytes, and a boundary no part
+# holds, so no part can end the body early.
+
+use bytes
+use strings
+
+# One part: the face's `Part`, field for field.
+record Piece
+    # The form field's name.
+    name: str
+    # The file's name; "" for none.
+    filename: str
+    # The part's type; "" for none.
+    content_type: str
+    # The part's bytes.
+    data: [u8]
+
+# The first of `----rebel-0`, `----rebel-1` and on that no piece's name,
+# file name, type or bytes holds.
+function boundary_for(pieces: [Piece]) -> str
+    n: i64 @= 0
+
+    while true
+        boundary = f"----rebel-{n}"
+        mark = bytes.from_text(boundary)
+        held: bool @= false
+
+        for p in pieces
+            if bytes.contains(s: p.data, substr: mark) || strings.contains(s: p.name + p.filename + p.content_type, substr: boundary)
+                held @ true
+
+        if !held
+            return boundary
+        n @ n + 1
+
+# `s` as a quoted parameter holds it: `"` as `%22`, a carriage return as
+# `%0D`, a line feed as `%0A`, as the HTML standard writes a form.
+function escaped(s: str) -> str
+    return strings.replace_all(
+        s: strings.replace_all(s: strings.replace_all(s: s, old: "\"", new: "%22"), old: "\r", new: "%0D"),
+        old: "\n",
+        new: "%0A"
+    )
+
+# `s` with every control byte a space, so it stays on its line.
+function one_line(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        if c.len() == 1 && (c[0] < 32 || c[0] == 127)
+            out @ out.push(" ")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# The body of `pieces` parted by `boundary`.
+function encode(pieces: [Piece], boundary: str) -> [u8]
+    out: [u8] @= []
+
+    for p in pieces
+        head: [str] @= ["--" + boundary, "Content-Disposition: form-data; name=\"" + escaped(p.name) + "\""]
+
+        if p.filename != ""
+            head[1] @ head[1] + "; filename=\"" + escaped(p.filename) + "\""
+
+        if p.content_type != ""
+            head @ head.push("Content-Type: " + one_line(p.content_type))
+
+        for b in bytes.from_text(head.join("\r\n") + "\r\n\r\n")
+            out @ out.push(b)
+
+        for b in p.data
+            out @ out.push(b)
+
+        out @ out.push('\r')
+        out @ out.push('\n')
+
+    for b in bytes.from_text("--" + boundary + "--\r\n")
+        out @ out.push(b)
+
+    return out
+
+## Tests
+
+test "encode: a field and a file, the boundary closing the body"
+    pieces = [
+        Piece(name: "a", filename: "", content_type: "", data: [49])
+        Piece(name: "f", filename: "x.txt", content_type: "text/plain", data: [104, 105])
+    ]
+    want = "--B\r\nContent-Disposition: form-data; name=\"a\"\r\n\r\n1\r\n--B\r\nContent-Disposition: form-data; name=\"f\"; filename=\"x.txt\"\r\nContent-Type: text/plain\r\n\r\nhi\r\n--B--\r\n"
+    assert bytes.to_text(encode(pieces, boundary: "B")).must() == want
+    assert bytes.to_text(encode([], boundary: "B")).must() == "--B--\r\n"
+
+test "boundary_for: the next number where a part holds the first, names escaped, a type on one line"
+    assert boundary_for([]) == "----rebel-0"
+    assert boundary_for([Piece(name: "a", filename: "", content_type: "", data: bytes.from_text("x----rebel-0y"))]) == "----rebel-1"
+    assert escaped("a\"b\r\nc") == "a%22b%0D%0Ac" && one_line("text/plain\r\nX: 1") == "text/plain  X: 1"

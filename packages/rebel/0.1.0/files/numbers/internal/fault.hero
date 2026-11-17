@@ -1,0 +1,47 @@
+# The words a parse of `numbers` fails with, built in one place so that every
+# function says what was asked and what was found in the same shape: the text,
+# what it was read as, and the byte that stopped the reading.
+
+constant INVALID: str
+    "invalid"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# `s` as a message shows it: between quotes where it is short, and as its
+# length where a reader would not find anything in it. No slice is cut, so a
+# text with characters of more than one byte is shown whole or not at all.
+function shown(s: str) -> str
+    if s.len() > 40
+        return f"a text of {s.len()} bytes"
+    return f"\"{s}\""
+
+# The message of a text stopped at one byte: `s` is not `what`, since the
+# byte at `at` is `why`.
+function stopped(s: str, what: str, at: i64, why: str) -> str
+    return f"{shown(s)} is not {what}: byte {at} {why}"
+
+# The message of a text that is wrong as a whole: `s` is not `what`, since
+# it `why`.
+function unread(s: str, what: str, why: str) -> str
+    if s.len() == 0
+        return f"\"\" is not {what}: it is empty"
+    return f"{shown(s)} is not {what}: it {why}"
+
+# The message of a number spelt correctly and outside its type.
+function outside(s: str, type_name: str, bounds: str) -> str
+    return f"{shown(s)} does not fit {type_name}, whose range is {bounds}"
+
+## Tests
+
+test "shown: a short text between quotes, a long one by its length"
+    assert shown("12a") == "\"12a\""
+    assert shown("") == "\"\""
+    assert shown("0123456789012345678901234567890123456789") == "\"0123456789012345678901234567890123456789\""
+    assert shown("01234567890123456789012345678901234567890") == "a text of 41 bytes"
+
+test "stopped, unread and outside: the three shapes of a message"
+    assert stopped(s: "12a", what: "an integer in base 10", at: 2, why: "is no digit") == "\"12a\" is not an integer in base 10: byte 2 is no digit"
+    assert unread(s: "", what: "a float", why: "has no digit") == "\"\" is not a float: it is empty"
+    assert unread(s: "-", what: "a float", why: "has no digit") == "\"-\" is not a float: it has no digit"
+    assert outside(s: "300", type_name: "i8", bounds: "-128 to 127") == "\"300\" does not fit i8, whose range is -128 to 127"

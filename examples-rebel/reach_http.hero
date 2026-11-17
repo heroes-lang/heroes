@@ -1,0 +1,8 @@
+# Reaches Rebel's package `http`, so that `heroes test` on this file runs the
+# tests of its face and its private modules (spec § 12). It prints the text of
+# the status 404, `Not Found`, on every run, touching no network.
+
+use <rebel>/http
+
+function main()
+    print(http.status_text(404).default(""))

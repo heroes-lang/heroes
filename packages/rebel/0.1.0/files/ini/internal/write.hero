@@ -1,0 +1,177 @@
+# Sections written back as INI text, Python's layout: a header, then each key
+# with its value, a value's later lines indented by a tab, and an empty line
+# after each section. Nothing is written that the default reading would read
+# back otherwise: a key that holds a delimiter, a value line with white space
+# at either end, a value line that would read as a comment.
+
+use ini/internal/read
+use strings
+
+# How keys and values are written.
+record Style
+    # What stands between a key and its value: "=" or ":".
+    delimiter: str
+    # Whether a space stands on either side of the delimiter.
+    spaced: bool
+
+# The style of `delimiter` and `spaced`. Aborts where `delimiter` is neither
+# "=" nor ":".
+function new_style(delimiter: str, spaced: bool) -> Style
+    assert delimiter == "=" || delimiter == ":"
+    return Style(delimiter: delimiter, spaced: spaced)
+
+# The failure of what would not read back.
+function unwritable<T>(what: str, why: str) -> T?
+    return fail(code: read.INVALID, msg: f"{what} would not read back: {why}")
+
+# Whether `text` holds a line end.
+function has_line_end(text: str) -> bool
+    return strings.contains(s: text, substr: "\n") || strings.contains(s: text, substr: "\r")
+
+# Whether `text` has a space or a tab at either end.
+function has_outer_space(text: str) -> bool
+    return strings.trim(text) != text
+
+# Fails `invalid` where `line` is not one comment line.
+function check_comment(line: str) -> ()?
+    if has_line_end(line) || !read.opens_with_any(line, ["#", ";"]) || has_outer_space(line)
+        return unwritable(what: f"the comment \"{line}\"", why: "a comment is one line opening with \"#\" or \";\"")
+    return ok()
+
+# Fails `invalid` where `key` would be read as another key, or not as a key.
+function check_key(key: str) -> ()?
+    what = f"the key \"{key}\""
+
+    if key == ""
+        return unwritable(what: what, why: "it is empty")
+
+    if has_line_end(key) || has_outer_space(key)
+        return unwritable(what: what, why: "it holds a line end, or white space at an end")
+
+    if strings.contains(s: key, substr: "=") || strings.contains(s: key, substr: ":")
+        return unwritable(what: what, why: "it holds a delimiter")
+
+    if read.opens_with_any(key, ["[", "#", ";"])
+        return unwritable(what: what, why: "it opens like a header or a comment")
+    return ok()
+
+# Fails `invalid` where the value of `key` would be read back otherwise.
+function check_value(key: str, value: str) -> ()?
+    what = f"the value of \"{key}\""
+
+    if strings.contains(s: value, substr: "\r")
+        return unwritable(what: what, why: "it holds a carriage return")
+    lines = strings.split(s: value, sep: "\n")
+
+    for at in range(from: 0, to: lines.len())
+        line = lines[at]
+
+        if has_outer_space(line)
+            return unwritable(what: what, why: "a line of it has white space at an end")
+
+        if at > 0 && read.opens_with_any(line, ["#", ";"])
+            return unwritable(what: what, why: "a line after its first opens like a comment")
+
+    if lines.len() > 1 && lines[lines.len() - 1] == ""
+        return unwritable(what: what, why: "its last line is empty")
+    return ok()
+
+# Every part of `r` written in `style`. Fails `invalid` where a section has
+# no name and is not the first, a name holds a line end, or a comment, a key
+# or a value would not read back.
+function text_of(r: read.Read, style: Style) -> str?
+    between: str @= style.delimiter
+
+    if style.spaced
+        between @ " " + style.delimiter + " "
+    pieces: [str] @= []
+
+    for at in range(from: 0, to: r.parts.len())
+        part = r.parts[at]
+
+        for c in part.comments
+            check_comment(c)?
+            pieces @ pieces.push(c + "\n")
+
+        if part.name == ""
+            if at > 0
+                return unwritable(what: "a section with no name", why: "only the first section may have none")
+        else
+            if has_line_end(part.name) || strings.contains(s: part.name, substr: "]")
+                return unwritable(what: f"the section \"{part.name}\"", why: "its name holds a line end or a \"]\"")
+            pieces @ pieces.push("[" + part.name + "]\n")
+
+        for item in part.items
+            for c in item.comments
+                check_comment(c)?
+                pieces @ pieces.push(c + "\n")
+
+            check_key(item.key)?
+
+            if item.bare
+                if item.value != ""
+                    return unwritable(what: f"the key \"{item.key}\"", why: "a key with no delimiter has no value")
+                pieces @ pieces.push(item.key + "\n")
+            else
+                check_value(key: item.key, value: item.value)?
+                indented = strings.replace_all(s: item.value, old: "\n", new: "\n\t")
+                pieces @ pieces.push(item.key + between + indented + "\n")
+
+        pieces @ pieces.push("\n")
+
+    for c in r.closing
+        check_comment(c)?
+        pieces @ pieces.push(c + "\n")
+
+    return ok(pieces.join(""))
+
+# One part `name` holding `items`, no comment.
+function part_of(name: str, items: [read.Item]) -> read.Part
+    return read.Part(name: name, comments: [], items: items, line: 0)
+
+# An item `key` = `value`, no comment.
+function item_of(key: str, value: str) -> read.Item
+    return read.Item(key: key, value: value, bare: false, comments: [])
+
+# What `text_of` answers for `r` in Python's style, or the failure's message.
+function written(r: read.Read) -> str
+    match text_of(r, new_style(delimiter: "=", spaced: true))
+        .ok text => return text
+        .err e   => return e.msg
+
+test "text_of: Python's layout, an empty value, a value of two lines, a bare key, and an empty section"
+    parts = [
+        part_of(name: "a", items: [item_of(key: "k", value: "one\ntwo"), item_of(key: "b", value: "")])
+        part_of(name: "b", items: [read.Item(key: "flag", value: "", bare: true, comments: [])])
+    ]
+    assert written(read.Read(parts: parts, closing: [])) == "[a]\nk = one\n\ttwo\nb = \n\n[b]\nflag\n\n"
+    assert written(read.Read(parts: [part_of(name: "c", items: [])], closing: [])) == "[c]\n\n"
+    assert written(read.Read(parts: [], closing: [])) == ""
+
+test "text_of: no space around the delimiter, a colon, keys before any header, an empty line inside a value"
+    r = read.Read(
+        parts: [part_of(name: "", items: [item_of(key: "k", value: "1")]), part_of(name: "a", items: [item_of(key: "j", value: "x\n\ny")])],
+        closing: []
+    )
+    assert text_of(r, new_style(delimiter: ":", spaced: false)).must() == "k:1\n\n[a]\nj:x\n\t\n\ty\n\n"
+
+test "text_of: comments above a header, a key and at the end"
+    item = read.Item(key: "k", value: "1", bare: false, comments: ["; two"])
+    r = read.Read(parts: [read.Part(name: "a", comments: ["# one"], items: [item], line: 0)], closing: ["# three"])
+    assert written(r) == "# one\n[a]\n; two\nk = 1\n\n# three\n"
+
+test "text_of: what would not read back refused, as Python refuses a key opening like a header"
+    one = one_key(key: "[x]", value: "1")
+    assert written(one) == "the key \"[x]\" would not read back: it opens like a header or a comment"
+    assert written(one_key(key: "a=b", value: "1")) == "the key \"a=b\" would not read back: it holds a delimiter"
+    assert written(one_key(key: "", value: "1")) == "the key \"\" would not read back: it is empty"
+    assert written(one_key(key: "k", value: " sp ")) == "the value of \"k\" would not read back: a line of it has white space at an end"
+    assert written(one_key(key: "k", value: "a\n# b")) == "the value of \"k\" would not read back: a line after its first opens like a comment"
+    assert written(one_key(key: "k", value: "a\n")) == "the value of \"k\" would not read back: its last line is empty"
+    late = read.Read(parts: [part_of(name: "a", items: []), part_of(name: "", items: [])], closing: [])
+    assert written(late) == "a section with no name would not read back: only the first section may have none"
+    assert written(read.Read(parts: [], closing: ["x"])) == "the comment \"x\" would not read back: a comment is one line opening with \"#\" or \";\""
+
+# A text of one section `s` holding `key` = `value`.
+function one_key(key: str, value: str) -> read.Read
+    return read.Read(parts: [part_of(name: "s", items: [item_of(key: key, value: value)])], closing: [])

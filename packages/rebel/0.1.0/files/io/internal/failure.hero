@@ -1,0 +1,226 @@
+# The codes `io` fails with, and the one place a kind of the floor
+# `io/hero_stream` becomes one: every failure of the package, and of `fs`,
+# `process` and `net` through `io.last_failure`, is built here, its message
+# saying what was asked and what the system answered (README § A4).
+
+use io/hero_stream
+
+constant CLOSED: str
+    "closed"
+
+constant NOT_TEXT: str
+    "not_text"
+
+constant INVALID: str
+    "invalid"
+
+constant PERMISSION: str
+    "permission"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant TIMEOUT: str
+    "timeout"
+
+constant STOPPED: str
+    "stopped"
+
+constant FAILED: str
+    "failed"
+
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+constant EXISTS: str
+    "exists"
+
+constant IS_A_DIRECTORY: str
+    "is_a_directory"
+
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_STREAM_*`, the platform's
+# own number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_stream.HERO_STREAM_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument")
+
+    if kind == hero_stream.HERO_STREAM_NOT_OPEN
+        return Told(code: CLOSED, why: "the stream is closed")
+
+    if kind == hero_stream.HERO_STREAM_NOT_FOUND
+        return Told(code: FILE_NOT_FOUND, why: "the path names nothing")
+
+    if kind == hero_stream.HERO_STREAM_EXISTS
+        return Told(code: EXISTS, why: "the file is there already")
+
+    if kind == hero_stream.HERO_STREAM_DENIED
+        return Told(
+            code: PERMISSION,
+            why: "the system refuses it: the file's permissions, or a stream not opened for it"
+        )
+
+    if kind == hero_stream.HERO_STREAM_NOT_A_DIRECTORY
+        return Told(code: NOT_A_DIRECTORY, why: "a name on the path's way is a file")
+
+    if kind == hero_stream.HERO_STREAM_IS_A_DIRECTORY
+        return Told(code: IS_A_DIRECTORY, why: "the path names a folder")
+
+    if kind == hero_stream.HERO_STREAM_LIMIT
+        return Told(code: LIMIT, why: "the system has no descriptor, room or memory left")
+
+    if kind == hero_stream.HERO_STREAM_NOT_SEEKABLE
+        return Told(code: UNSUPPORTED, why: "the stream has no positions, being no file")
+
+    if kind == hero_stream.HERO_STREAM_CLOSED_PEER
+        return Told(code: CLOSED, why: "its other end is closed")
+
+    if kind == hero_stream.HERO_STREAM_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "the stream has no such operation")
+
+    if kind == hero_stream.HERO_STREAM_TIMED_OUT
+        return Told(code: TIMEOUT, why: "the time allowed ran out")
+
+    if kind == hero_stream.HERO_STREAM_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+    return Told(code: FAILED, why: f"the system failed, its error {os_error} (kind {kind})")
+
+# The failure the floor's last call on this thread left, its message `asked`
+# and what the system answered. Called right after the call that failed.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_stream.last_error(), os_error: hero_stream.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` whose message is `asked` and `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+# The text `b` holds, failing `not_text` where it is not UTF-8, the message
+# `asked` and the index of the first byte that begins no character.
+function text(b: [u8], asked: str) -> str?
+    match b.validated_bytes()
+        .ok t  => return ok(t)
+        .err _ => return of(code: NOT_TEXT, asked: asked, why: f"its bytes are not UTF-8, from byte {first_wrong(b)}")
+
+# The index of the first byte of `b` where no UTF-8 character can be read
+# whole, or `b.len()` where every one can.
+function first_wrong(b: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < b.len()
+        width = width_of(b, at: at)
+
+        if width == 0
+            return at
+        at @ at + width
+
+    return b.len()
+
+# How many bytes the character beginning at `at` of `b` holds, or 0 where none
+# can be read whole there: a lead byte UTF-8 never writes, a continuation
+# byte missing or out of its range, an encoding longer than it needs, a
+# surrogate, or a code above U+10FFFF.
+function width_of(b: [u8], at: i64) -> i64
+    first = b[at]
+
+    if first < 0x80
+        return 1
+    width: i64 @= 0
+    low: u8 @= 0x80
+    high: u8 @= 0xbf
+
+    if first >= 0xc2 && first <= 0xdf
+        width @ 2
+    else if first >= 0xe0 && first <= 0xef
+        width @ 3
+
+        if first == 0xe0
+            low @ 0xa0
+        else if first == 0xed
+            high @ 0x9f
+    else if first >= 0xf0 && first <= 0xf4
+        width @ 4
+
+        if first == 0xf0
+            low @ 0x90
+        else if first == 0xf4
+            high @ 0x8f
+    else
+        return 0
+
+    if at + width > b.len()
+        return 0
+
+    if b[at + 1] < low || b[at + 1] > high
+        return 0
+
+    for k in range(from: 2, to: width)
+        if b[at + k] < 0x80 || b[at + k] > 0xbf
+            return 0
+
+    return width
+
+## Tests
+
+test "text: empty, plain, several bytes a character, and where the first wrong byte stands"
+    assert text([], asked: "x").must() == ""
+    assert text([104, 105], asked: "x").must() == "hi"
+    assert text([0xc3, 0xa8], asked: "x").must() == "è"
+
+    match text([104, 0xff, 105], asked: "reading")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT && e.msg == "reading: its bytes are not UTF-8, from byte 1"
+
+    match text([97, 0xe2, 0x82], asked: "reading")
+        .ok _  => assert false
+        .err e => assert e.msg == "reading: its bytes are not UTF-8, from byte 1"
+
+test "first_wrong: overlong, surrogate, past U+10FFFF and a stray continuation byte, as validated_bytes refuses them"
+    assert first_wrong([0xc0, 0x80]) == 0
+    assert first_wrong([0xe0, 0x80, 0x80]) == 0
+    assert first_wrong([0xed, 0xa0, 0x80]) == 0
+    assert first_wrong([0xf4, 0x90, 0x80, 0x80]) == 0
+    assert first_wrong([97, 0x80]) == 1
+    assert first_wrong([0xf0, 0x9f, 0x98, 0x80]) == 4
+    assert first_wrong([0xed, 0x9f, 0xbf]) == 3
+
+test "told: every kind of the floor has its code, and an unknown kind is failed with its numbers"
+    assert told(kind: hero_stream.HERO_STREAM_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_stream.HERO_STREAM_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_stream.HERO_STREAM_NOT_FOUND, os_error: 2).code == FILE_NOT_FOUND
+    assert told(kind: hero_stream.HERO_STREAM_EXISTS, os_error: 17).code == EXISTS
+    assert told(kind: hero_stream.HERO_STREAM_DENIED, os_error: 13).code == PERMISSION
+    assert told(kind: hero_stream.HERO_STREAM_NOT_A_DIRECTORY, os_error: 20).code == NOT_A_DIRECTORY
+    assert told(kind: hero_stream.HERO_STREAM_IS_A_DIRECTORY, os_error: 21).code == IS_A_DIRECTORY
+    assert told(kind: hero_stream.HERO_STREAM_LIMIT, os_error: 24).code == LIMIT
+    assert told(kind: hero_stream.HERO_STREAM_NOT_SEEKABLE, os_error: 29).code == UNSUPPORTED
+    assert told(kind: hero_stream.HERO_STREAM_CLOSED_PEER, os_error: 32).code == CLOSED
+    assert told(kind: hero_stream.HERO_STREAM_UNSUPPORTED, os_error: 0).code == UNSUPPORTED
+    assert told(kind: hero_stream.HERO_STREAM_TIMED_OUT, os_error: 60).code == TIMEOUT
+    assert told(kind: hero_stream.HERO_STREAM_STOPPED, os_error: 0).code == STOPPED
+    other = told(kind: hero_stream.HERO_STREAM_OTHER, os_error: 5)
+    assert other.code == FAILED
+    assert other.why == "the system failed, its error 5 (kind 12)"
+    assert told(kind: 99, os_error: 0).code == FAILED
+
+test "last: a nullptr read leaves closed, with what was asked first in the message"
+    none: hero_stream.Stream = nullptr
+    room: [u8] @= [0]
+    assert hero_stream.read(none, @room, n: 1) == -1
+    t: i64? = last(asked: "reading nothing")
+
+    match t
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED && e.msg == "reading nothing: the stream is closed"

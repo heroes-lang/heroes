@@ -1,0 +1,165 @@
+# Reading a tree: walking it in document order through its links alone, with
+# no stack, comparing names and attributes as the DOM compares them in an
+# HTML document, and gathering its text.
+
+use html/internal/ascii
+use html/internal/dom
+
+# The node after `node` in document order inside `root`, or `dom.NONE` past
+# its last; `root` itself is never answered.
+function next_in(t: dom.Tree lent, root: i64, node: i64) -> i64
+    if t.firsts[node] != dom.NONE
+        return t.firsts[node]
+    at: i64 @= node
+
+    while at != root && at != dom.NONE
+        if t.nexts[at] != dom.NONE
+            return t.nexts[at]
+        at @ t.parents[at]
+
+    return dom.NONE
+
+# Every node inside `root`, in document order.
+function descendants(t: dom.Tree lent, root: i64) -> [i64]
+    found: [i64] @= []
+    at: i64 @= next_in(t, root: root, node: root)
+
+    while at != dom.NONE
+        found @ found.push(at)
+        at @ next_in(t, root: root, node: at)
+
+    return found
+
+# Whether `node` is an element named `name`: an HTML element's name in any
+# ASCII case, another's exactly.
+function is_named(t: dom.Tree lent, node: i64, name: str) -> bool
+    if t.kinds[node] != dom.ELEMENT
+        return false
+
+    if t.spaces[node] == dom.HTML
+        return ascii.equals_ignoring_case(a: t.names[node], b: name)
+    return t.names[node] == name
+
+# The name `a` is written with: its local name, after `xlink:`, `xml:` or
+# `xmlns:` where its namespace asks.
+function qualified(a: dom.Attr) -> str
+    if a.space == dom.XLINK
+        return "xlink:" + a.name
+
+    if a.space == dom.XML
+        return "xml:" + a.name
+
+    if a.space == dom.XMLNS && a.name != "xmlns"
+        return "xmlns:" + a.name
+    return a.name
+
+# The index among the attributes of `node` of the one written `name`, or -1:
+# compared in any ASCII case on an HTML element, exactly on another.
+function attribute_index(t: dom.Tree lent, node: i64, name: str) -> i64
+    if t.kinds[node] != dom.ELEMENT
+        return -1
+    html = t.spaces[node] == dom.HTML
+    attributes = t.attributes[node]
+
+    for i in range(from: 0, to: attributes.len())
+        written = qualified(attributes[i])
+
+        if html && ascii.equals_ignoring_case(a: written, b: name) || !html && written == name
+            return i
+
+    return -1
+
+# The names of the attributes of `node`, as written, for a message.
+function attribute_names(t: dom.Tree lent, node: i64) -> str
+    names: [str] @= []
+
+    for a in t.attributes[node]
+        names @ names.push("`" + qualified(a) + "`")
+
+    if names.len() == 0
+        return "none"
+    return names.join(", ")
+
+# The classes of `node`: its `class` attribute split at ASCII white space.
+function classes(t: dom.Tree lent, node: i64) -> [str]
+    at = attribute_index(t, node: node, name: "class")
+
+    if at < 0
+        return []
+    return ascii.split_white(t.attributes[node][at].value)
+
+# Whether `node` has the class `name`.
+function has_class(t: dom.Tree lent, node: i64, name: str) -> bool
+    for c in classes(t, node)
+        if c == name
+            return true
+
+    return false
+
+# Every text node at or inside `node`, its data, in document order.
+function texts(t: dom.Tree lent, node: i64) -> [str]
+    if t.kinds[node] == dom.TEXT
+        return [t.data[node]]
+    found: [str] @= []
+    at: i64 @= next_in(t, root: node, node: node)
+
+    while at != dom.NONE
+        if t.kinds[at] == dom.TEXT
+            found @ found.push(t.data[at])
+        at @ next_in(t, root: node, node: at)
+
+    return found
+
+# The element children of `node`, in order.
+function child_elements(t: dom.Tree lent, node: i64) -> [i64]
+    found: [i64] @= []
+    child: i64 @= t.firsts[node]
+
+    while child != dom.NONE
+        if t.kinds[child] == dom.ELEMENT
+            found @ found.push(child)
+        child @ t.nexts[child]
+
+    return found
+
+## Tests
+
+# A tree of `<div><p>a</p>b</div>` and the numbers of its nodes.
+function sample() -> dom.Tree
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    div = dom.add_element(
+        @t,
+        space: dom.HTML,
+        name: "div",
+        attributes: [dom.Attr(space: dom.NO_SPACE, name: "class", value: " x  y ")]
+    )
+    p = dom.add_element(@t, space: dom.HTML, name: "p", attributes: [])
+    a = dom.add_data(@t, kind: dom.TEXT, data: "a")
+    b = dom.add_data(@t, kind: dom.TEXT, data: "b")
+    dom.append_child(@t, parent: 0, child: div)
+    dom.append_child(@t, parent: div, child: p)
+    dom.append_child(@t, parent: p, child: a)
+    dom.append_child(@t, parent: div, child: b)
+    return t
+
+test "next_in and descendants: document order, an element before what it holds, and nothing past the root"
+    t = sample()
+    assert descendants(t, 0) == [1, 2, 3, 4] && descendants(t, 2) == [3] && descendants(t, 3) == []
+    assert next_in(t, root: 2, node: 3) == dom.NONE
+
+test "is_named, attribute_index and qualified: HTML in any case, SVG exactly, and an XLink name"
+    t: dom.Tree @= sample()
+    svg = dom.add_element(
+        @t,
+        space: dom.SVG,
+        name: "foreignObject",
+        attributes: [dom.Attr(space: dom.XLINK, name: "href", value: "#a")]
+    )
+    assert is_named(t, 1, "DIV") && !is_named(t, svg, "foreignobject") && is_named(t, svg, "foreignObject") && !is_named(t, 3, "a")
+    assert attribute_index(t, node: 1, name: "CLASS") == 0 && attribute_index(t, node: svg, name: "xlink:href") == 0 && attribute_index(t, node: svg, name: "href") == -1
+    assert qualified(dom.Attr(space: dom.XMLNS, name: "xmlns", value: "")) == "xmlns" && qualified(dom.Attr(space: dom.XMLNS, name: "xlink", value: "")) == "xmlns:xlink"
+
+test "classes, has_class, texts and child_elements"
+    t = sample()
+    assert classes(t, 1) == ["x", "y"] && has_class(t, node: 1, name: "y") && !has_class(t, node: 1, name: "z") && classes(t, 2) == []
+    assert texts(t, 1) == ["a", "b"] && texts(t, 3) == ["a"] && child_elements(t, 1) == [2]

@@ -1,0 +1,533 @@
+# The loopback tests of `tls`: a server on the test's own thread and a
+# client on a thread of its own, meeting on 127.0.0.1 with the certificates
+# of `tls/internal/fixture`. A thread runs a function of one `str` and
+# answers one (spec § 13), so the client's case and the server's port cross
+# as text, and the client answers what it heard, or its failure's code and
+# message, as text.
+#
+# On Windows the client checks the server's certificate after the
+# handshake, so where it refuses one the server's accept has succeeded and
+# its read then finds the client gone; on macOS and Linux the accept fails.
+# So a refused round asserts the client's answer alone.
+
+use bytes
+use io
+use net
+use numbers
+use os
+use strings
+use threads
+use time
+use tls/hero_tls
+use tls/internal/connections
+use tls/internal/fixture
+
+# The client of a loopback round, on a thread of its own. `arg` is
+# `"<mode> <port>"`: `checked` reaches `localhost` trusting the test
+# authority alone, `address` the same by `127.0.0.1`, `system` trusting the
+# system's store, `unchecked` checking nothing, for tests, and `over` begins
+# TLS over a TCP connection of `net`. It says "ping", reads four bytes, and
+# answers `"ok <protocol> <bytes read>"`, or `"<code>: <message>"`.
+function client_side(arg: str) -> str
+    parts = strings.split(s: arg, sep: " ")
+
+    if parts.len() != 2
+        return "invalid: not \"<mode> <port>\": " + arg
+    port = numbers.parse_int(parts[1])
+
+    match port
+        .err e => return e.code + ": " + e.msg
+        .ok p =>
+            if parts[0] == "over"
+                return over_client(port: p)
+
+            if parts[0] == "postgres" || parts[0] == "smtp" || parts[0] == "silent" || parts[0] == "endless"
+                return after_client(mode: parts[0], port: p)
+
+            if parts[0] == "patient" || parts[0] == "late"
+                return timed_client(mode: parts[0], port: p)
+            return named_client(mode: parts[0], port: p)
+
+# The client of every case but `over`.
+function named_client(mode: str, port: i64) -> str
+    host @= "localhost"
+    roots @= fixture.ROOT
+    checks @= hero_tls.HERO_TLS_CHECK_ALL
+
+    if mode == "address"
+        host @ "127.0.0.1"
+    else if mode == "system"
+        roots @ ""
+    else if mode == "unchecked"
+        roots @ ""
+        checks @ hero_tls.HERO_TLS_CHECK_NOTHING_FOR_TESTS
+    return spoken(
+        connections.connect(host: host, port: port, deadline_ms: 10000, roots: roots, protocols: ["http/1.1"], checks: checks)
+    )
+
+# The client of `over`: a TCP connection made by `net`, then TLS over it.
+function over_client(port: i64) -> str
+    made = net.connect(host: "127.0.0.1", port: port, deadline_ms: 10000)
+
+    match made
+        .err e => return e.code + ": " + e.msg
+        .ok c =>
+            inner @= c.stream
+            secured = connections.client_over(
+                @inner,
+                host: "localhost",
+                roots: fixture.ROOT,
+                protocols: ["http/1.1"],
+                checks: hero_tls.HERO_TLS_CHECK_ALL
+            )
+            closed_or_given(@inner)
+            return spoken(secured)
+
+# Closes `inner` where `client_over` or `server_over` left it the caller's;
+# a place they emptied is left as it is.
+function closed_or_given(@inner: io.Stream)
+    if io.is_closed(inner)
+        return
+    closing = io.close(@inner)
+
+    match closing
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# What a client's stream heard, as `client_side` answers it; the stream is
+# closed.
+function spoken(made: io.Stream?) -> str
+    match made
+        .err e => return e.code + ": " + e.msg
+        .ok s =>
+            stream @= s
+            said = talk(stream)
+            closing = io.close(@stream)
+
+            match said
+                .err e => return e.code + ": " + e.msg
+                .ok text =>
+                    match closing
+                        .err e => return e.code + ": " + e.msg
+                        .ok _  => return text
+
+# The client's side of the exchange.
+function talk(s: io.Stream) -> str?
+    io.write_text(s, text: "ping")?
+    reply = io.read_exact(s, count: 4)?
+    chosen = connections.protocol_of(s)?
+    return ok("ok " + chosen + " " + bytes.to_text(reply)?)
+
+# The server's side of one connection: four bytes read, "pong" written, the
+# version asked; answers the bytes read.
+function answer_once(s: io.Stream) -> str?
+    heard = io.read_exact(s, count: 4)?
+    io.write_text(s, text: "pong")?
+    version = connections.version_of(s)?
+
+    if version != 12 && version != 13
+        return fail(code: "failed", msg: "the version read is " + to_str(version))
+    return bytes.to_text(heard)
+
+# What the server heard on one stream accepted, the stream then closed.
+function heard_on(taken: io.Stream?) -> str
+    match taken
+        .err e => return e.code + ": " + e.msg
+        .ok s =>
+            stream @= s
+            heard = answer_once(stream)
+            closing = io.close(@stream)
+
+            match closing
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            match heard
+                .err e   => return e.code + ": " + e.msg
+                .ok text => return text
+
+# One round: a listener presenting `chain` and `key`, taking `h2` and
+# `http/1.1`, and a client of `case` on a thread of its own; answers what
+# the client said and what the server heard, joined by `" | "`.
+function round(chain: str, key: str, mode: str) -> str
+    l @= connections.listen(host: "127.0.0.1", port: 0, chain: chain, key: key, protocols: ["h2", "http/1.1"]).must()
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port))
+
+    # Bounded, so a client that never connects fails the test, never hangs it.
+    connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
+    heard = heard_on(connections.accept(l.handle, deadline_ms: 10000, asked: "accepting"))
+    said = threads.wait_text(@client)
+    connections.close_listener(@l.handle, asked: "closing the test's listener").must()
+    return said + " | " + heard
+
+# One round of `over`: a TCP listener of `net`, the client beginning TLS
+# over its connection, the server over the one it accepts.
+function round_over() -> str
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: client_side, arg: "over " + to_str(l.address.port))
+    accepted = net.accept(l, deadline_ms: 10000)
+    heard @= ""
+
+    match accepted
+        .err e => heard @ e.code + ": " + e.msg
+        .ok c =>
+            inner @= c.stream
+            secured = connections.server_over(
+                @inner,
+                chain: fixture.LOCALHOST_CHAIN,
+                key: fixture.LOCALHOST_KEY,
+                protocols: ["http/1.1"]
+            )
+            closed_or_given(@inner)
+            heard @ heard_on(secured)
+
+    said = threads.wait_text(@client)
+    net.close_listener(@l).must()
+    return said + " | " + heard
+
+# The client of a mode with an exchange before TLS: `postgres` sends the
+# SSLRequest and expects `S`, `smtp` reads a banner, says `EHLO`, reads the
+# lines that answer it, says `STARTTLS` and reads `220`; `silent` and
+# `endless` expect a line beginning `220`, `silent` within half a second.
+function after_client(mode: str, port: i64) -> str
+    steps @= postgres_client()
+    deadline @= 10000
+    host @= "localhost"
+
+    if mode == "smtp"
+        steps @ smtp_client()
+    else if mode == "silent" || mode == "endless"
+        # By address: on Windows a refused `::1`, which `localhost` tries
+        # first, takes about two seconds, past `silent`'s half second.
+        steps @ [line("220")]
+        host @ "127.0.0.1"
+
+    if mode == "silent"
+        deadline @ 500
+    return spoken(
+        connections.connect_after(host: host, port: port, deadline_ms: deadline, roots: fixture.ROOT, protocols: ["http/1.1"], checks: hero_tls.HERO_TLS_CHECK_ALL, steps: steps)
+    )
+
+# A step that sends `text`.
+function sent(text: str) -> connections.Plain
+    return connections.Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: bytes.from_text(text))
+
+# A step that expects exactly `text`.
+function answer(text: str) -> connections.Plain
+    return connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: bytes.from_text(text))
+
+# A step that expects a line beginning with `prefix`.
+function line(prefix: str) -> connections.Plain
+    return connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT_LINE, bytes: bytes.from_text(prefix))
+
+# Postgres's SSLRequest: its length, 8, then the code 80877103.
+function ssl_request() -> [u8]
+    return [0, 0, 0, 8, 4, 210, 22, 47]
+
+# A Postgres client's exchange before TLS.
+function postgres_client() -> [connections.Plain]
+    return [
+        connections.Plain(kind: hero_tls.HERO_TLS_STEP_SEND, bytes: ssl_request())
+        connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: [83])
+    ]
+
+# A Postgres server's: the SSLRequest expected, `reply` answered (`S` to go
+# on to TLS, `N` to refuse it).
+function postgres_server(reply: str) -> [connections.Plain]
+    return [connections.Plain(kind: hero_tls.HERO_TLS_STEP_EXPECT, bytes: ssl_request()), sent(reply)]
+
+# An SMTP client's exchange before TLS, the reply to `EHLO` in three lines.
+function smtp_client() -> [connections.Plain]
+    return [line("220"), sent("EHLO heroes\r\n"), line("250"), sent("STARTTLS\r\n"), line("220")]
+
+# An SMTP server's.
+function smtp_server() -> [connections.Plain]
+    return [
+        sent("220 ready\r\n")
+        line("EHLO")
+        sent("250-hello\r\n250-PIPELINING\r\n250 STARTTLS\r\n")
+        answer("STARTTLS\r\n")
+        sent("220 go\r\n")
+    ]
+
+# One round with an exchange before TLS: a listener running `server_steps`
+# on each connection, and a client of `mode` on a thread of its own; answers
+# as `round` does.
+function round_after(server_steps: [connections.Plain], mode: str) -> str
+    l @= connections.listen_after(
+        host: "127.0.0.1",
+        port: 0,
+        chain: fixture.LOCALHOST_CHAIN,
+        key: fixture.LOCALHOST_KEY,
+        protocols: ["h2", "http/1.1"],
+        steps: server_steps
+    ).must()
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.port))
+
+    # Bounded, so a client that never connects fails the test, never hangs it.
+    connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
+    heard = heard_on(connections.accept(l.handle, deadline_ms: 10000, asked: "accepting"))
+    said = threads.wait_text(@client)
+    connections.close_listener(@l.handle, asked: "closing the test's listener").must()
+    return said + " | " + heard
+
+# One round against a plain server of `net` that writes `first` and then
+# nothing: answers what the client of `mode` said.
+function round_plain(mode: str, first: str) -> str
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    client @= threads.spawn_text(body: client_side, arg: mode + " " + to_str(l.address.port))
+    net.set_accept_deadline(l, ms: 15000).must()
+    c = net.accept(l, deadline_ms: 10000).must()
+    stream @= c.stream
+
+    if first != ""
+        written = io.write_text(stream, text: first)
+
+        match written
+            .ok _  => _ = 0
+            .err _ => _ = 0
+    said = threads.wait_text(@client)
+    closed_or_given(@stream)
+    net.close_listener(@l).must()
+    return said
+
+# A port of the loopback address nothing listens on now.
+function free_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# Waits until something listens on `port` of the loopback address, by
+# connecting and closing at once, for at most about ten seconds; the server
+# then sees one connection that sends nothing, and accepts again.
+function until_listening(port: i64)
+    tries @= 0
+
+    while tries < 500
+        tries @ tries + 1
+        made = net.connect(host: "127.0.0.1", port: port, deadline_ms: 1000)
+
+        match made
+            .ok c =>
+                s @= c.stream
+                closed_or_given(@s)
+                return
+            .err _ => time.sleep(time.Duration(nanoseconds: 20000000))
+
+# A server on a thread of its own: `arg` is `"<mode> <port>"`, `postgres` or
+# `smtp`; it listens on that port with the server's exchange before TLS,
+# accepts until a connection's exchange and handshake succeed (five tries
+# at most), answers it as `heard_on` does, and closes the listener.
+function serve_after(arg: str) -> str
+    parts = strings.split(s: arg, sep: " ")
+
+    if parts.len() != 2
+        return "invalid: not \"<mode> <port>\": " + arg
+    port = numbers.parse_int(parts[1]).default(0)
+    steps @= postgres_server("S")
+
+    if parts[0] == "smtp"
+        steps @ smtp_server()
+    made = connections.listen_after(
+        host: "127.0.0.1",
+        port: port,
+        chain: fixture.LOCALHOST_CHAIN,
+        key: fixture.LOCALHOST_KEY,
+        protocols: ["http/1.1"],
+        steps: steps
+    )
+
+    match made
+        .err e => return e.code + ": " + e.msg
+        .ok b =>
+            l @= b
+            heard @= "closed: no client's exchange succeeded"
+            connections.set_accept_deadline(l.handle, ms: 15000, asked: "bounding the test's wait").must()
+            tries @= 0
+
+            while tries < 5
+                tries @ tries + 1
+                taken = connections.accept(l.handle, deadline_ms: 10000, asked: "accepting")
+
+                if !taken.is_err()
+                    heard @ heard_on(taken)
+                    break
+
+            closing = connections.close_listener(@l.handle, asked: "closing")
+
+            match closing
+                .ok _  => return heard
+                .err e => return e.code + ": " + e.msg
+
+# The clients of deadlines: `patient` sets 300 ms, finds its read ended by
+# them, takes the deadline away and reads the server's late bytes; `late`
+# waits 800 ms before it says "ping", then talks as `checked` does.
+function timed_client(mode: str, port: i64) -> str
+    made = connections.connect(
+        host: "localhost",
+        port: port,
+        deadline_ms: 10000,
+        roots: fixture.ROOT,
+        protocols: [],
+        checks: hero_tls.HERO_TLS_CHECK_ALL
+    )
+
+    match made
+        .err e => return e.code + ": " + e.msg
+        .ok s =>
+            stream @= s
+            said @= ""
+
+            if mode == "patient"
+                said @ answer_of(patient(stream))
+            else
+                time.sleep(time.Duration(nanoseconds: 800000000))
+                said @ answer_of(talk(stream))
+            closed_or_given(@stream)
+            return said
+
+# A text answered, or its failure's code and message.
+function answer_of(said: str?) -> str
+    match said
+        .ok text => return text
+        .err e   => return e.code + ": " + e.msg
+
+# A read ended by a deadline, then the deadline taken away and the bytes
+# read that came after it.
+function patient(s: io.Stream) -> str?
+    connections.set_deadline(s, ms: 300, asked: "setting a deadline")?
+    first = io.read(s, most: 4)
+    ended @= "no failure"
+
+    match first
+        .ok _  => ended @ "bytes before the deadline"
+        .err e => ended @ e.code
+
+    connections.set_deadline(s, ms: 0, asked: "taking the deadline away")?
+    late = io.read_exact(s, count: 4)?
+    return ok("first " + ended + ", then " + bytes.to_text(late)?)
+
+## Tests
+
+test "round: connect and accept by name and by address, the test authority alone trusted, ALPN http/1.1 chosen of h2 and http/1.1, bytes both ways"
+    if hero_tls.available() == 1
+        assert round(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, mode: "checked") == "ok http/1.1 pong | ping"
+        assert round(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, mode: "address") == "ok http/1.1 pong | ping"
+
+test "round: an RSA key in PKCS #1 and an EC key in SEC 1 serve as the EC key in PKCS #8 does"
+    if hero_tls.available() == 1
+        assert round(chain: fixture.RSA_CHAIN, key: fixture.RSA_KEY, mode: "checked") == "ok http/1.1 pong | ping"
+        assert round(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_SEC1_KEY, mode: "checked") == "ok http/1.1 pong | ping"
+
+test "round: a certificate for other hosts is refused invalid, the message saying so"
+    if hero_tls.available() == 1
+        said = round(chain: fixture.WRONG_CHAIN, key: fixture.WRONG_KEY, mode: "checked")
+        assert strings.has_prefix(s: said, prefix: "invalid: connecting over TLS to localhost port ")
+        assert strings.contains(s: said, substr: ": the peer's certificate names other hosts (")
+
+test "round: a certificate past its last day is refused invalid, the message saying so"
+    if hero_tls.available() == 1
+        said = round(chain: fixture.EXPIRED_CHAIN, key: fixture.EXPIRED_KEY, mode: "checked")
+        assert strings.has_prefix(s: said, prefix: "invalid: ")
+        assert strings.contains(s: said, substr: ": the peer's certificate is past its last day, or before its first (")
+
+test "round: a certificate signed by itself is refused, and the system's store does not trust the test authority"
+    if hero_tls.available() == 1
+        alone = round(chain: fixture.SELF_CHAIN, key: fixture.SELF_KEY, mode: "checked")
+        assert strings.contains(s: alone, substr: ": no authority trusted signed the peer's certificate (")
+        stranger = round(chain: fixture.LOCALHOST_CHAIN, key: fixture.LOCALHOST_KEY, mode: "system")
+        assert strings.has_prefix(s: stranger, prefix: "invalid: ")
+        assert strings.contains(s: stranger, substr: ": no authority trusted signed the peer's certificate (")
+
+test "round: with nothing checked, for tests, the server that signed its own certificate is reached"
+    if hero_tls.available() == 1
+        assert round(chain: fixture.SELF_CHAIN, key: fixture.SELF_KEY, mode: "unchecked") == "ok http/1.1 pong | ping"
+
+test "round_over: TLS begun over a TCP connection both ends hold, as Postgres and a proxy's tunnel need; unsupported on macOS"
+    if hero_tls.available() == 1
+        answered = round_over()
+
+        match os.system()
+            .darwin =>
+                assert strings.has_prefix(
+                    s: answered,
+                    prefix: "unsupported: beginning TLS as the client of localhost over "
+                )
+                assert strings.contains(s: answered, substr: " | unsupported: beginning TLS as the server over ")
+            .linux | .windows | .other => assert answered == "ok http/1.1 pong | ping"
+
+# Whether a round's answer is the refusal macOS gives TLS over a stream a
+# program holds.
+function is_unsupported(said: str) -> bool
+    return strings.has_prefix(s: said, prefix: "unsupported: ")
+
+test "round_after: Postgres's SSLRequest answered S, then TLS, on both sides"
+    if hero_tls.available() == 1
+        assert round_after(server_steps: postgres_server("S"), mode: "postgres") == "ok http/1.1 pong | ping"
+
+test "round_after: an SMTP banner, EHLO answered by continuation lines, STARTTLS answered 220, then TLS"
+    if hero_tls.available() == 1
+        assert round_after(server_steps: smtp_server(), mode: "smtp") == "ok http/1.1 pong | ping"
+
+test "round_after: a server that answers N refuses TLS, and the client fails invalid naming the bytes expected and heard"
+    if hero_tls.available() == 1
+        said = round_after(server_steps: postgres_server("N"), mode: "postgres")
+        assert strings.has_prefix(s: said, prefix: "invalid: connecting over TLS to localhost port ")
+        assert strings.contains(
+            s: said,
+            substr: ": the peer's answer before TLS is not the one expected (step 2: expected \"S\", heard \"N\")"
+        )
+
+test "round_plain: a line that never ends passes its bound of 4096 bytes and fails invalid, the line's beginning shown"
+    if hero_tls.available() == 1
+        said = round_plain(mode: "endless", first: "220-" + repeat("a", 5000))
+        assert strings.has_prefix(s: said, prefix: "invalid: ")
+        assert strings.contains(
+            s: said,
+            substr: "(step 1: a line passed 4096 bytes with no end, the line beginning \"220-aaaa"
+        )
+
+test "round_plain: a server silent before TLS keeps the client until its deadline, timeout"
+    if hero_tls.available() == 1
+        said = round_plain(mode: "silent", first: "")
+        assert strings.has_prefix(s: said, prefix: "timeout: connecting over TLS to 127.0.0.1 port ")
+
+test "set_deadline: a read the deadline ends fails timeout and loses nothing, the next read taking the bytes that came after"
+    if hero_tls.available() == 1
+        l @= connections.listen(
+            host: "127.0.0.1",
+            port: 0,
+            chain: fixture.LOCALHOST_CHAIN,
+            key: fixture.LOCALHOST_KEY,
+            protocols: []
+        ).must()
+        client @= threads.spawn_text(body: client_side, arg: "patient " + to_str(l.port))
+        s @= connections.accept(l.handle, deadline_ms: 10000, asked: "accepting").must()
+        time.sleep(time.Duration(nanoseconds: 800000000))
+        io.write_text(s, text: "late").must()
+        said = threads.wait_text(@client)
+        closed_or_given(@s)
+        connections.close_listener(@l.handle, asked: "closing").must()
+        assert said == "first timeout, then late"
+
+test "set_accept_deadline: an accept with no client coming ends at its deadline, timeout"
+    if hero_tls.available() == 1
+        l @= connections.listen(
+            host: "127.0.0.1",
+            port: 0,
+            chain: fixture.LOCALHOST_CHAIN,
+            key: fixture.LOCALHOST_KEY,
+            protocols: []
+        ).must()
+        connections.set_accept_deadline(l.handle, ms: 200, asked: "t").must()
+        taken = connections.accept(l.handle, deadline_ms: 0, asked: "accepting")
+
+        match taken
+            .ok s =>
+                stream @= s
+                closed_or_given(@stream)
+                assert false
+            .err e => assert e.code == "timeout"
+
+        connections.close_listener(@l.handle, asked: "closing").must()

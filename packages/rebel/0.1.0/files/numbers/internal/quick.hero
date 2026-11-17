@@ -1,0 +1,211 @@
+# The quick routes from decimal digits to a float, each answering exactly what
+# `near.nearest` answers, or nothing, where `read` then divides.
+#
+# The first is Clinger's fast path ("How to Read Floating Point Numbers
+# Accurately", 1990): where the integer the digits spell is at most 2 to the
+# 53rd and the power of ten is at most 22, both are floats exactly, and one
+# multiplication or division of floats rounds once, which is the nearest. The
+# second is his AlgorithmR: a float near the answer, made with a few
+# roundings, is accepted or moved to its neighbour by an exact comparison with
+# the midpoints around it (`side`), which needs no division. Only that
+# comparison decides: a first float further off costs moves, never a wrong
+# answer.
+
+use numbers/internal/near
+use numbers/internal/side
+
+# The most digits whose integer an `i64` holds whatever they are.
+constant DIGITS_MAX: i64
+    18
+
+# The largest power of ten a float holds exactly: 5 to the 22nd is under 2 to
+# the 53rd.
+constant TENS_MAX: i64
+    22
+
+# 2 to the 53rd: every integer up to it is an `f64` exactly.
+constant TWO53: i64
+    9007199254740992
+
+# How many times AlgorithmR moves a float before it gives the question back:
+# a first float made with 18 roundings, at the largest powers, is at most
+# about nine steps off.
+constant MOVES_MAX: i64
+    12
+
+# The integer `digits` spell, ASCII digits, at most `DIGITS_MAX` of them.
+function whole_of(digits: [u8]) -> i64
+    assert digits.len() <= DIGITS_MAX
+    n: i64 @= 0
+
+    for c in digits
+        n @ n * 10 + to_i64(c - '0').must()
+
+    return n
+
+# Ten to the `k`th as an `f64`, exactly, for `k` from 0 to `TENS_MAX`: by
+# squaring, every factor and every partial product is a power of ten at most
+# the 22nd.
+function ten_to(k: i64) -> f64
+    assert k >= 0 && k <= TENS_MAX
+    result: f64 @= 1.0
+    base: f64 @= 10.0
+    left: i64 @= k
+
+    while left > 0
+        if left & 1 == 1
+            result @ result * base
+        left @ left >> 1
+
+        if left > 0
+            base @ base * base
+
+    return result
+
+# `w` times ten to the `exponent`th as the nearest `f64`, where Clinger's
+# fast path holds. Fails `undecided` where it does not.
+function exactly(w: i64, exponent: i64) -> f64?
+    if w > TWO53 || exponent < 0 - TENS_MAX
+        return fail(code: "undecided", msg: "past the fast path")
+
+    if exponent < 0
+        return ok(to_f64(w) / ten_to(0 - exponent))
+
+    if exponent <= TENS_MAX
+        return ok(to_f64(w) * ten_to(exponent))
+
+    # A larger power is split, where the integer times its excess is still
+    # at most 2 to the 53rd: 12e30 is 12000000000 times 10 to the 22nd.
+    excess = exponent - TENS_MAX
+
+    if excess > 15
+        return fail(code: "undecided", msg: "past the fast path")
+    scale = to_i64(ten_to(excess)).must()
+
+    if w > TWO53 / scale
+        return fail(code: "undecided", msg: "past the fast path")
+    return ok(to_f64(w * scale) * ten_to(TENS_MAX))
+
+# `r`, the nearest `f64` to some value, as the nearest float of `format` to
+# that value, an `f64`. For an `f32`, rounding twice parts from rounding once
+# only where `r` falls on a midpoint between two `f32`s, which fails
+# `undecided`.
+function narrowed(r: f64, format: near.Format) -> f64?
+    if format.bits == 53
+        return ok(r)
+    f = to_f64(to_f32(r))
+
+    if f == r
+        return ok(r)
+
+    # Where `r` is the midpoint of `f` and another `f32`, that other is
+    # `2r - f`, which is exact, both sides being within a step of each other.
+    other = 2.0 * r - f
+
+    if to_f64(to_f32(other)) == other
+        return fail(code: "undecided", msg: "a midpoint between two f32s")
+    return ok(f)
+
+# `w` times ten to the `exponent`th, near: each multiplication or division by
+# a power of ten at most the 22nd rounds once, and nothing else does. It may
+# be infinite or zero past the range of floats.
+function approximately(w: i64, exponent: i64) -> f64
+    result: f64 @= to_f64(w)
+    left: i64 @= exponent
+
+    while left > TENS_MAX
+        result @ result * ten_to(TENS_MAX)
+        left @ left - TENS_MAX
+
+    while left < 0 - TENS_MAX
+        result @ result / ten_to(TENS_MAX)
+        left @ left + TENS_MAX
+
+    if left < 0
+        return result / ten_to(0 - left)
+    return result * ten_to(left)
+
+# The float of `format` nearest to `w` times ten to the `exponent`th, by
+# AlgorithmR from the float `approximately` makes. Fails `undecided` where it
+# leaves the normal floats or moves too often.
+function refined(w: i64, exponent: i64, format: near.Format) -> f64?
+    first = approximately(w: w, exponent: exponent)
+
+    start = if format.bits == 53
+        first
+    else
+        to_f64(to_f32(first))
+    b: side.Binary @= side.binary_of(x: start, format: format)?
+
+    moves: i64 @= 0
+
+    while moves < MOVES_MAX
+        way = side.place(a: w, tens: exponent, b: b, format: format)
+
+        if way == 0
+            return ok(side.value_of(b))
+        b @ side.neighbour(b: b, way: way, format: format)?
+        moves @ moves + 1
+
+    return fail(code: "undecided", msg: "moved too often")
+
+# The float of `format` nearest to the integer `digits` spell times ten to
+# the `exponent`th, as an `f64`: `digits` hold no zero first or last, and
+# the value is inside the range `read` checked. Fails `undecided` where no
+# quick route decides it.
+function value(digits: [u8], exponent: i64, format: near.Format) -> f64?
+    if digits.len() == 0 || digits.len() > DIGITS_MAX
+        return fail(code: "undecided", msg: "too many digits")
+    w = whole_of(digits)
+
+    match exactly(w: w, exponent: exponent)
+        .ok r  => match narrowed(r: r, format: format)
+            .ok f  => return ok(f)
+            .err _ => _ = 0
+        .err _ => _ = 0
+
+    return refined(w: w, exponent: exponent, format: format)
+
+## Tests
+
+test "whole_of and ten_to: one digit, eighteen, and every exact power"
+    assert whole_of(['7']) == 7
+    assert whole_of(['9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9', '9']) == 999999999999999999
+    p: f64 @= 1.0
+
+    for k in range(from: 0, to: TENS_MAX + 1)
+        assert ten_to(k) == p
+        p @ p * 10.0
+
+test "exactly: inside the fast path, a split power, and past it"
+    assert exactly(w: 15, exponent: -1).must() == 1.5
+    assert exactly(w: 12, exponent: 30).must() == 12000000000000000000000000000000.0
+    assert exactly(w: TWO53 + 1, exponent: 0).is_err()
+    assert exactly(w: 1, exponent: -23).is_err()
+    assert exactly(w: 123456789, exponent: 30).is_err()
+
+test "narrowed: an f32 already, a value between, and a midpoint"
+    f32s = near.f32_format()
+    assert narrowed(r: 0.5, format: f32s).must() == 0.5
+    tenth: f32 = 0.1
+    assert narrowed(r: 0.1, format: f32s).must() == to_f64(tenth)
+    assert narrowed(r: 16777217.0, format: f32s).is_err()
+    assert narrowed(r: 16777217.0, format: near.f64_format()).must() == 16777217.0
+
+test "refined: a value the fast path cannot take, and a tie to even"
+    f64s = near.f64_format()
+    assert refined(w: 65613616999999977, exponent: -15, format: f64s).must() == 65.613616999999977
+    assert refined(w: 9007199254740993, exponent: 0, format: f64s).must() == 9007199254740992.0
+    assert refined(w: 9007199254740995, exponent: 0, format: f64s).must() == 9007199254740996.0
+    assert refined(w: 1, exponent: -23, format: f64s).must() == 0.00000000000000000000001
+    assert refined(w: 17976931348623157, exponent: 292, format: f64s).must() == near.pow2(1023) * 1.9999999999999998
+    assert refined(w: 5, exponent: -324, format: f64s).is_err()
+
+test "value: both widths agree with the division on the hard cases"
+    f64s = near.f64_format()
+    f32s = near.f32_format()
+    assert value(digits: ['1', '7'], exponent: -1, format: f32s).must() == to_f64(to_f32(1.7))
+    assert value(digits: ['1', '6', '7', '7', '7', '2', '1', '7'], exponent: 0, format: f32s).must() == 16777216.0
+    assert value(digits: ['1', '6', '7', '7', '7', '2', '1', '9'], exponent: 0, format: f32s).must() == 16777220.0
+    assert value(digits: ['5'], exponent: -324, format: f64s).is_err()
+    assert value(digits: ['1'], exponent: 23, format: f64s).must() == 100000000000000000000000.0

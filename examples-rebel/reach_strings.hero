@@ -1,0 +1,7 @@
+# Reaches Rebel's `strings`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints a text trimmed and in upper case.
+
+use <rebel>/strings
+
+function main()
+    print(strings.to_upper(strings.trim("  rebel  ")))

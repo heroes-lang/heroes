@@ -1,0 +1,327 @@
+# How two paths stand to each other, read from their text once cleaned: the
+# way from one to the other, whether one stands under the other, the folder
+# several share, and their order. A rules value reaches it as `windows`, and
+# by Windows' rules a volume and a name are compared with ASCII letters' case
+# set aside.
+#
+# A cleaned relative path holds its `..` parts at its beginning and nowhere
+# else, so where it stands is a number of folders up and then names down.
+# Where one path climbs further up than another and then names a folder, the
+# text cannot say how the two meet, since it does not name the folders it
+# climbed out of.
+
+use path/internal/codes
+use path/internal/lexical
+use path/internal/roots
+use path/internal/scan
+
+# A path cleaned and read as its volume, whether it begins at a root, and its
+# names.
+record Cleaned
+    # The volume as `lexical.clean` writes it, or "".
+    volume: str
+    # Whether it begins at the top of its volume.
+    rooted: bool
+    # The names after its start, its `..` parts first.
+    names: [str]
+    # Its volume and root as one part.
+    start: str
+
+# `path` cleaned and read.
+function cleaned(path: str, windows: bool) -> Cleaned
+    anchor = roots.split(lexical.clean(path, windows), windows)
+    return Cleaned(
+        volume: anchor.volume,
+        rooted: roots.has_root(anchor),
+        names: scan.names_in(anchor.rest, windows),
+        start: roots.start_of(anchor, windows)
+    )
+
+# How many `..` parts `names` begins with.
+function ups(names: [str]) -> i64
+    count: i64 @= 0
+
+    while count < names.len() && names[count] == ".."
+        count @ count + 1
+
+    return count
+
+# How many names `a` and `b` share from their beginning.
+function shared(a: [str], b: [str], windows: bool) -> i64
+    count: i64 @= 0
+
+    while count < a.len() && count < b.len() && scan.same(a: a[count], b: b[count], windows: windows)
+        count @ count + 1
+
+    return count
+
+# Whether `a` and `b` begin alike: the same volume, and both at a root or
+# neither.
+function same_start(a: Cleaned, b: Cleaned, windows: bool) -> bool
+    return a.rooted == b.rooted && scan.same(a: a.volume, b: b.volume, windows: windows)
+
+# Why `a` and `b`, two paths that do not begin alike, do not: their volumes
+# differ, or one begins at a root and the other does not.
+function why_apart(a: str, b: str, windows: bool) -> str
+    first = cleaned(a, windows)
+    second = cleaned(b, windows)
+
+    if !scan.same(a: first.volume, b: second.volume, windows: windows)
+        return f"\"{a}\" and \"{b}\" begin with different volumes"
+    return f"\"{a}\" and \"{b}\" do not both begin at a root"
+
+# The way from `base` to `path`, `.` where they are the same, failing `invalid`
+# where the text holds none.
+function rel(path: str, base: str, windows: bool) -> str?
+    to = cleaned(path, windows)
+    from = cleaned(base, windows)
+
+    if !same_start(a: to, b: from, windows: windows)
+        return fail(
+            code: codes.INVALID,
+            msg: f"no way from \"{base}\" to \"{path}\": " + why_apart(a: base, b: path, windows: windows)
+        )
+    alike = shared(a: to.names, b: from.names, windows: windows)
+    out: [str] @= []
+
+    for at in range(from: alike, to: from.names.len())
+        if from.names[at] == ".."
+            return fail(
+                code: codes.INVALID,
+                msg: f"no way from \"{base}\" to \"{path}\": \"{base}\" climbs out of a folder the text does not name"
+            )
+        out @ out.push("..")
+
+    for at in range(from: alike, to: to.names.len())
+        out @ out.push(to.names[at])
+
+    if out.len() == 0
+        return ok(".")
+    return ok(out.join(scan.separator(windows)))
+
+# Whether `path` is `root` or stands under it, both cleaned.
+function is_under(path: str, root: str, windows: bool) -> bool
+    inner = cleaned(path, windows)
+    outer = cleaned(root, windows)
+
+    if !same_start(a: inner, b: outer, windows: windows)
+        return false
+    inner_ups = ups(inner.names)
+    outer_ups = ups(outer.names)
+
+    if inner_ups > outer_ups
+        return false
+
+    if inner_ups < outer_ups
+        return outer.names.len() == outer_ups
+    return shared(a: inner.names, b: outer.names, windows: windows) == outer.names.len()
+
+# Whether the last parts of `path` are the parts of `tail`, read as written: a
+# tail with a start must have every part of the path from its own start.
+function has_tail(path: str, tail: str, windows: bool) -> bool
+    whole = roots.read(path, windows)
+    end = roots.read(tail, windows)
+
+    if end.start != ""
+        same_parts = whole.names.len() == end.names.len() && shared(a: whole.names, b: end.names, windows: windows) == end.names.len()
+        return scan.same(a: whole.start, b: end.start, windows: windows) && same_parts
+
+    if end.names.len() > whole.names.len()
+        return false
+    offset = whole.names.len() - end.names.len()
+
+    for at in range(from: 0, to: end.names.len())
+        if !scan.same(a: whole.names[offset + at], b: end.names[at], windows: windows)
+            return false
+
+    return true
+
+# The longest path that every one of `paths` is or stands under, cleaned,
+# failing `invalid` where `paths` is empty or two do not begin alike.
+function common(paths: [str], windows: bool) -> str?
+    if paths.len() == 0
+        return fail(code: codes.INVALID, msg: "no paths to find the folder they share")
+    first = cleaned(paths[0], windows)
+    most_ups: i64 @= 0
+    even: bool @= true
+    count: i64 @= first.names.len()
+
+    for path in paths
+        other = cleaned(path, windows)
+
+        if !same_start(a: first, b: other, windows: windows)
+            return fail(
+                code: codes.INVALID,
+                msg: "no folder holds both: " + why_apart(a: paths[0], b: path, windows: windows)
+            )
+        count @ min_of(a: count, b: shared(a: first.names, b: other.names, windows: windows))
+        other_ups = ups(other.names)
+
+        if other_ups != ups(first.names)
+            even @ false
+
+        if other_ups > most_ups
+            most_ups @ other_ups
+
+    names: [str] @= first.names.slice(from: 0, to: count)
+
+    if !even
+        names @ []
+
+        for _ in range(from: 0, to: most_ups)
+            names @ names.push("..")
+
+    body = names.join(scan.separator(windows))
+
+    if first.start == "" && body == ""
+        return ok(".")
+    return ok(first.start + body)
+
+# The smaller of `a` and `b`.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The order of `path` and `other` once cleaned: by volume, then the one with
+# no root first, then name by name, a path before every path under it.
+function compare(path: str, other: str, windows: bool) -> i64
+    a = cleaned(path, windows)
+    b = cleaned(other, windows)
+    by_volume = scan.order(a: a.volume, b: b.volume, windows: windows)
+
+    if by_volume != 0
+        return by_volume
+
+    if a.rooted != b.rooted
+        return if a.rooted
+            1
+        else
+            -1
+
+    at: i64 @= 0
+
+    while at < a.names.len() && at < b.names.len()
+        by_name = scan.order(a: a.names[at], b: b.names[at], windows: windows)
+
+        if by_name != 0
+            return by_name
+        at @ at + 1
+
+    return length_order(a: a.names.len(), b: b.names.len())
+
+# -1, 0 or 1 as `a` is less than, equal to or more than `b`.
+function length_order(a: i64, b: i64) -> i64
+    if a < b
+        return -1
+
+    if a > b
+        return 1
+    return 0
+
+## Tests
+
+test "rel by POSIX's rules, the answers Go's `filepath.Rel` gave on 2026-11-15"
+    assert rel(path: "a", base: "a", windows: false).must() == "."
+    assert rel(path: "/b/c", base: "/a", windows: false).must() == "../b/c"
+    assert rel(path: "a", base: "a/b", windows: false).must() == ".."
+    assert rel(path: "../b", base: "../a", windows: false).must() == "../b"
+    assert rel(path: "a", base: ".", windows: false).must() == "a"
+    assert rel(path: ".", base: "a", windows: false).must() == ".."
+    assert rel(path: "../a", base: ".", windows: false).must() == "../a"
+    assert rel(path: "a/b/../c", base: "a/b", windows: false).must() == "../c"
+    assert rel(path: "/", base: "/", windows: false).must() == "."
+    assert rel(path: "/a/x/y", base: "/a/b/c", windows: false).must() == "../../x/y"
+    assert rel(path: "a", base: "", windows: false).must() == "a"
+    assert rel(path: "/a/b/c", base: "/a", windows: false).must() == "b/c"
+    assert rel(path: "a", base: "a/b/c", windows: false).must() == "../.."
+    assert rel(path: "x/è", base: "x/caffè", windows: false).must() == "../è"
+
+test "rel fails where Go's `filepath.Rel` failed on 2026-11-15: a base that climbs out, a root on one side"
+    for pair in [["a", ".."], [".", ".."], ["b", "a/../.."], ["../b", "../../a"], ["b", "/a"]]
+        match rel(path: pair[0], base: pair[1], windows: false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match rel(path: "b", base: "/a", windows: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "no way from \"/a\" to \"b\": \"/a\" and \"b\" do not both begin at a root"
+
+test "rel by Windows' rules: drives, case set aside, a drive without a root, a share"
+    assert rel(path: "c:\\A\\b", base: "C:\\a", windows: true).must() == "b"
+    assert rel(path: "C:/x/y", base: "C:\\x\\z", windows: true).must() == "..\\y"
+    assert rel(path: "C:b", base: "C:a", windows: true).must() == "..\\b"
+    assert rel(path: "\\\\h\\s\\x", base: "\\\\h\\s", windows: true).must() == "x"
+    assert rel(path: "D:\\a", base: "C:\\a", windows: true).is_err()
+    assert rel(path: "\\a", base: "C:\\a", windows: true).is_err()
+
+    match rel(path: "C:a", base: "C:\\a", windows: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "is_under: itself, under, beside, out by a dot-dot, and up a level the text knows"
+    assert is_under(path: "/a/b", root: "/a", windows: false)
+    assert is_under(path: "/a", root: "/a/", windows: false)
+    assert !is_under(path: "/a/../b", root: "/a", windows: false)
+    assert !is_under(path: "/ab", root: "/a", windows: false)
+    assert is_under(path: "a", root: ".", windows: false)
+    assert !is_under(path: "../a", root: ".", windows: false)
+    assert is_under(path: "a", root: "..", windows: false)
+    assert !is_under(path: "a", root: "../b", windows: false)
+    assert is_under(path: "../a/b", root: "../a", windows: false)
+    assert !is_under(path: "../../a", root: "..", windows: false)
+    assert !is_under(path: "/a", root: "a", windows: false)
+    assert is_under(path: "/", root: "/", windows: false)
+
+test "is_under by Windows' rules: the case set aside, both separators, another drive"
+    assert is_under(path: "C:/Users/x", root: "c:\\users", windows: true)
+    assert !is_under(path: "C:/Users/x", root: "c:\\users", windows: false)
+    assert !is_under(path: "D:\\a", root: "C:\\", windows: true)
+    assert !is_under(path: "C:a", root: "C:\\", windows: true)
+    assert is_under(path: "\\\\h\\s\\x", root: "//H/S", windows: true)
+
+# Rust's own examples of `Path::ends_with`, read in its documentation.
+test "has_tail: whole parts only, a tail with a root, and the empty tail"
+    assert has_tail(path: "/etc/resolv.conf", tail: "resolv.conf", windows: false)
+    assert has_tail(path: "/etc/resolv.conf", tail: "etc/resolv.conf", windows: false)
+    assert has_tail(path: "/etc/resolv.conf", tail: "/etc/resolv.conf", windows: false)
+    assert !has_tail(path: "/etc/resolv.conf", tail: "/resolv.conf", windows: false)
+    assert !has_tail(path: "/etc/resolv.conf", tail: "conf", windows: false)
+    assert has_tail(path: "a/b", tail: "", windows: false)
+    assert !has_tail(path: "a", tail: "x/a", windows: false)
+    assert has_tail(path: "a/b/", tail: "b", windows: false)
+    assert has_tail(path: "C:\\X\\Y", tail: "x/y", windows: true)
+    assert !has_tail(path: "a\\C:", tail: "C:", windows: true)
+    assert has_tail(path: "C:\\x", tail: "c:/x", windows: true)
+
+test "common: Python's `commonpath` where it agrees, a dot where it answers nothing"
+    assert common(["/usr/lib", "/usr/local/bin"], false).must() == "/usr"
+    assert common(["a", "b"], false).must() == "."
+    assert common(["/a/b"], false).must() == "/a/b"
+    assert common(["/a", "/b"], false).must() == "/"
+    assert common(["a/../b", "a/c"], false).must() == "."
+    assert common(["../a", "b"], false).must() == ".."
+    assert common(["../a/x", "../a/y"], false).must() == "../a"
+    assert common(["C:\\Usr\\Lib", "c:/usr/local"], true).must() == "C:\\Usr"
+    assert common(["caffè/è", "caffè/e"], false).must() == "caffè"
+
+test "common fails where Python's `commonpath` failed: none, a root on one side, two drives"
+    nothing: [str] = []
+
+    match common(nothing, false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert common(["/a", "b"], false).is_err()
+    assert common(["C:\\a", "D:\\a"], true).is_err()
+
+test "compare: by volume, unrooted first, name by name, a folder before what it holds"
+    assert compare(path: "a", other: "a/", windows: false) == 0
+    assert compare(path: "a", other: "a/b", windows: false) == -1
+    assert compare(path: "a/b", other: "a", windows: false) == 1
+    assert compare(path: "a/b", other: "a-b", windows: false) == -1
+    assert compare(path: "b", other: "/a", windows: false) == -1
+    assert compare(path: "C:\\A", other: "c:/a", windows: true) == 0
+    assert compare(path: "C:\\A", other: "c:/a", windows: false) != 0
+    assert compare(path: "\\\\h\\s", other: "\\\\h\\s\\", windows: true) == 0
+    assert compare(path: "C:\\a", other: "D:\\a", windows: true) == -1

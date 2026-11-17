@@ -1,0 +1,8 @@
+# Reaches Rebel's `tls`, so that `heroes test` on this file runs the
+# package's tests and its examples (spec § 12). It prints whether this
+# machine has the platform's TLS library.
+
+use <rebel>/tls
+
+function main()
+    print(tls.is_available())

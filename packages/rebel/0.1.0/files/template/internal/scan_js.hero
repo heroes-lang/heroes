@@ -1,0 +1,278 @@
+# A script's text read from a context, as the HTML mode reads it: its strings,
+# template literals, regular expressions and comments, and what a `/` begins,
+# a division or a regular expression, judged by the token before it as Go's
+# `html/template` judges it (observed on 2026-11-16 after every keyword and
+# punctuator). Where the script is an element's content its comments are
+# dropped, each run of a block comment written as one space, as Go writes it.
+
+use template/internal/context
+
+# The words after which a `/` begins a regular expression.
+constant REGEXP_WORDS: [str]
+    [
+        "break"
+        "case"
+        "continue"
+        "delete"
+        "do"
+        "else"
+        "finally"
+        "in"
+        "instanceof"
+        "return"
+        "throw"
+        "try"
+        "typeof"
+        "void"
+        "yield"
+    ]
+
+# Whether `b` may stand in a word of a script: a letter, a digit, `_`, `$`,
+# `\` of an escape, or a byte of a character past ASCII.
+function is_word_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' || b == '$' || b == '\\' || b >= 0x80
+
+# Whether `b` is a script's white space.
+function is_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 0x0b || b == 0x0c
+
+# Whether `s` holds `what` at `at`, before `to`.
+function holds(s: str, at: i64, to: i64, what: str) -> bool
+    if at + what.len() > to
+        return false
+
+    for k in range(from: 0, to: what.len())
+        if s[at + k] != what[k]
+            return false
+
+    return true
+
+# What a `/` after the punctuator `b` begins, `plus_run` the `+` written one
+# after another up to it.
+function slash_after(b: u8, plus_run: i64) -> i64
+    if b == '+'
+        if plus_run % 2 == 1
+            return context.SLASH_REGEXP
+        return context.SLASH_DIV
+
+    if b == ')' || b == ']' || b == '-' || b == '<'
+        return context.SLASH_DIV
+    return context.SLASH_REGEXP
+
+# The bytes of `s` from `from` to `to` read as a script from `start`. Where
+# `emit`, the text answered is those bytes with the comments dropped; else
+# it is "". A `/` that may begin either a division or a regular expression is
+# a fault.
+function scan(s: str, from: i64, to: i64, start: context.Context, emit: bool) -> context.Scanned
+    out: [str] @= []
+    c: context.Context @= start
+    at: i64 @= from
+    kept: i64 @= from
+    last: u8 @= 0
+    plus_run: i64 @= 0
+    fresh_line: bool @= true
+
+    while at < to
+        b = s[at]
+        state = c.state
+
+        if state == context.JS
+            if is_space(b)
+                if b == '\n' || b == '\r'
+                    fresh_line @ true
+                plus_run @ 0
+                at @ at + 1
+                continue
+            line_comment = holds(s: s, at: at, to: to, what: "//") || holds(s: s, at: at, to: to, what: "<!--") || fresh_line && holds(s: s, at: at, to: to, what: "-->")
+
+            if line_comment || holds(s: s, at: at, to: to, what: "/*")
+                if emit && kept < at
+                    out @ out.push(s.slice(from: kept, to: at))
+
+                if line_comment
+                    c.state @ context.JS_LINE_COMMENT
+                else
+                    c.state @ context.JS_BLOCK_COMMENT
+                at @ at + 2
+                continue
+            fresh_line @ false
+
+            if b == '"' || b == '\'' || b == '`'
+                c.state @ match b
+                    '"'  => context.JS_DOUBLE
+                    '\'' => context.JS_SINGLE
+                    _    => context.JS_TEMPLATE
+
+                last @ b
+                plus_run @ 0
+                at @ at + 1
+                continue
+
+            if b == '/'
+                if c.slash == context.SLASH_UNKNOWN
+                    return context.Scanned(
+                        text: "",
+                        ctx: c,
+                        fault: "a `/` here may begin a division or a regular expression, since the ways before it leave the script at different places",
+                        fault_at: at
+                    )
+
+                if c.slash == context.SLASH_REGEXP
+                    c.state @ context.JS_REGEXP
+                    c.in_class @ false
+                else
+                    c.slash @ context.SLASH_REGEXP
+                last @ b
+                plus_run @ 0
+                at @ at + 1
+                continue
+
+            if is_word_byte(b)
+                word_from = at
+
+                while at < to && is_word_byte(s[at])
+                    at @ at + 1
+
+                word = s.slice(from: word_from, to: at)
+                keyword: bool @= false
+
+                for known in REGEXP_WORDS
+                    if word == known
+                        keyword @ true
+
+                if keyword && last != '.'
+                    c.slash @ context.SLASH_REGEXP
+                else
+                    c.slash @ context.SLASH_DIV
+                last @ s[at - 1]
+                plus_run @ 0
+                continue
+
+            if b == '{' && c.braces.len() > 0
+                top = c.braces.len() - 1
+                c.braces[top] @ c.braces[top] + 1
+
+            if b == '}' && c.braces.len() > 0
+                top = c.braces.len() - 1
+
+                if c.braces[top] == 0
+                    c.braces @ c.braces.slice(from: 0, to: top)
+                    c.state @ context.JS_TEMPLATE
+                    last @ b
+                    at @ at + 1
+                    continue
+                c.braces[top] @ c.braces[top] - 1
+
+            if b == '+'
+                plus_run @ plus_run + 1
+            else
+                plus_run @ 0
+            c.slash @ slash_after(b, plus_run: plus_run)
+            last @ b
+            at @ at + 1
+        else if state == context.JS_DOUBLE || state == context.JS_SINGLE
+            quote: u8 = if state == context.JS_DOUBLE
+                '"'
+            else
+                '\''
+
+            if b == '\\'
+                at @ at + 2
+            else if b == quote
+                c.state @ context.JS
+                c.slash @ context.SLASH_DIV
+                last @ b
+                at @ at + 1
+            else
+                at @ at + 1
+        else if state == context.JS_TEMPLATE
+            if b == '\\'
+                at @ at + 2
+            else if b == '`'
+                c.state @ context.JS
+                c.slash @ context.SLASH_REGEXP
+                last @ b
+                at @ at + 1
+            else if holds(s: s, at: at, to: to, what: "${")
+                c.braces @ c.braces.push(0)
+                c.state @ context.JS
+                c.slash @ context.SLASH_REGEXP
+                last @ '{'
+                at @ at + 2
+            else
+                at @ at + 1
+        else if state == context.JS_REGEXP
+            if b == '\\'
+                at @ at + 2
+            else
+                if b == '['
+                    c.in_class @ true
+                else if b == ']'
+                    c.in_class @ false
+                else if b == '/' && !c.in_class
+                    c.state @ context.JS
+                    c.slash @ context.SLASH_DIV
+                    last @ b
+                at @ at + 1
+        else if state == context.JS_LINE_COMMENT
+            if b == '\n' || b == '\r'
+                c.state @ context.JS
+                kept @ at
+                fresh_line @ true
+            at @ at + 1
+        else
+            if holds(s: s, at: at, to: to, what: "*/")
+                c.state @ context.JS
+                at @ at + 2
+
+                if emit
+                    out @ out.push(" ")
+                kept @ at
+            else
+                at @ at + 1
+
+    if emit
+        if c.state == context.JS_BLOCK_COMMENT
+            out @ out.push(" ")
+        else if c.state != context.JS_LINE_COMMENT && kept < to
+            out @ out.push(s.slice(from: kept, to: to))
+    return context.Scanned(text: out.join(""), ctx: c, fault: "", fault_at: -1)
+
+# The script `s` read from a script's start, for the tests.
+function read(s: str) -> context.Scanned
+    return scan(s, from: 0, to: s.len(), start: context.with_state(context.initial(), context.JS), emit: true)
+
+test "scan: a slash after each keyword and punctuator, as Go reads it"
+    for regexp in ["return ", "typeof ", "x=", "x+", "x(", "x,", "x;", "x{", "x}", "x.", "x=>", "x&&", "x + + ", "x <= ", "x`t`", "", "x.y=a/b;"]
+        assert read(regexp + "/").ctx.state == context.JS_REGEXP
+
+    for division in ["x ", "new ", "this ", "x.return ", "x)", "x]", "x-", "x - ", "x<", "x++", "x--", "0.5", "\"s\"", "'s'"]
+        got = read(division + "/")
+        assert got.ctx.state == context.JS && got.ctx.slash == context.SLASH_REGEXP
+
+test "scan: strings, a template literal and its nested expression, and a regular expression with a class"
+    assert read("x = \"a\\\"b").ctx.state == context.JS_DOUBLE
+    assert read("x = 'a' + ").ctx.state == context.JS
+    assert read("x = `a${ {a:1} }").ctx.state == context.JS_TEMPLATE
+    nested = read("x = `a${ \"")
+    assert nested.ctx.state == context.JS_DOUBLE && nested.ctx.braces == [0]
+    assert read("x = /[/]a").ctx.state == context.JS_REGEXP && read("x = /a\\/b/").ctx.state == context.JS
+
+test "scan: comments dropped, one space for each run of a block comment, and a line comment to its line's end"
+    assert read("/* c */ var a = 1; // d\nx").text == "  var a = 1; \nx"
+    assert read("a /* c").text == "a  " && read("a // c").text == "a "
+    assert read("<!-- c\nx").text == "\nx" && read("--> c\nx").text == "\nx"
+    rest = scan(
+        " */x",
+        from: 0,
+        to: 4,
+        start: context.with_state(context.initial(), context.JS_BLOCK_COMMENT),
+        emit: true
+    )
+    assert rest.text == " x" && rest.ctx.state == context.JS
+
+test "scan: a slash whose meaning the ways before it leave unknown is a fault"
+    unknown: context.Context @= context.with_state(context.initial(), context.JS)
+    unknown.slash @ context.SLASH_UNKNOWN
+    got = scan("/a/", from: 0, to: 3, start: unknown, emit: true)
+    assert got.fault != "" && got.fault_at == 0

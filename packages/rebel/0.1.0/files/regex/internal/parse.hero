@@ -1,0 +1,325 @@
+# The parser: a pattern read once, from left to right, into the program of
+# its automaton. Each group open is a level, and the levels around it wait on
+# a stack held in a list, so a pattern nested deep costs no stack of the
+# machine. A level builds its piece of the program as it reads, and its `)`
+# hands the piece to the level around.
+
+use regex/internal/build
+use regex/internal/casefold
+use regex/internal/classes
+use regex/internal/codes
+use regex/internal/counts
+use regex/internal/escapes
+use regex/internal/groups
+use regex/internal/program
+use unicode
+
+# The most groups a pattern may capture.
+constant MAX_GROUPS: i64
+    200
+
+# The most instructions a pattern's program may hold.
+constant MAX_STATES: i64
+    100000
+
+# The most groups a pattern may open inside one another.
+constant MAX_NESTING: i64
+    1000
+
+# The last thing read was nothing a repetition can take: the start of a
+# level or of an alternative, or a change of flags.
+constant NOTHING: i64
+    0
+
+# The last thing read was a character, a class or a group, which a
+# repetition can take.
+constant ITEM: i64
+    1
+
+# The last thing read was a place, which reads no character.
+constant ANCHOR: i64
+    2
+
+# The last thing read was a repetition, which is not repeated again.
+constant REPEATED: i64
+    3
+
+# What a level around holds while a level inside it is read, given back at
+# the inside's `)`.
+record Level
+    # Its alternatives finished.
+    alts: [[program.Inst]]
+    # The alternative it was building.
+    seq: [program.Inst]
+    # The group it records, or 0.
+    group: i64
+    # The flags it was read under.
+    flags: groups.Flags
+    # The byte of its `(`, or -1 for the whole pattern.
+    opened: i64
+
+# A character, a class or a place read, and where the pattern goes on.
+record Atom
+    # Its instructions.
+    insts: [program.Inst]
+    # `ITEM` or `ANCHOR`.
+    kind: i64
+    # The byte just after it.
+    next: i64
+
+# The program `pattern` compiles to.
+#
+# - `pattern`: the pattern, as the face's `compile` documents it.
+#
+# Fails `invalid` where the pattern is not one this package reads, and
+# `limit` past `counts.MAX_REPEAT`, `MAX_GROUPS`, `MAX_STATES` or
+# `MAX_NESTING`.
+function compile(pattern: str) -> program.Program?
+    stack: [Level] @= []
+    alts: [[program.Inst]] @= []
+    seq: [program.Inst] @= []
+    pending: [program.Inst] @= []
+    kind: i64 @= NOTHING
+    group: i64 @= 0
+    flags: groups.Flags @= groups.Flags(fold: false, dot_all: false, multi_line: false)
+    opened: i64 @= -1
+    names: [str] @= [""]
+    sets: [program.Set] @= []
+    held: i64 @= 3
+    at: i64 @= 0
+
+    while at < pattern.len()
+        b = pattern[at]
+
+        if b == '*' || b == '+' || b == '?' || b == '{'
+            count = counts.count_at(pattern, at)?
+
+            if kind != ITEM
+                return codes.invalid(pattern: pattern, at: at, why: nothing_to_repeat(kind))
+            grown = build.size_of(n: pending.len(), least: count.least, most: count.most)
+
+            if held - pending.len() + grown > MAX_STATES
+                return too_large(pattern: pattern, at: at)
+            held @ held - pending.len() + grown
+            pending @ build.repeat_of(x: pending, least: count.least, most: count.most, lazy: count.lazy)
+            kind @ REPEATED
+            at @ count.next
+        else if b == '|'
+            build.append(to: @seq, from: pending)
+            pending @ []
+            alts @ alts.push(seq)
+            seq @ []
+            held @ held + 2
+            kind @ NOTHING
+            at @ at + 1
+        else if b == '('
+            opening = groups.open_at(pattern: pattern, at: at, flags: flags)?
+            build.append(to: @seq, from: pending)
+            pending @ []
+            kind @ NOTHING
+
+            match opening.kind
+                .flags_only => flags @ opening.flags
+                .plain | .capture _ =>
+                    if stack.len() >= MAX_NESTING
+                        return codes.limit(pattern: pattern, at: at, why: f"groups nested more than {MAX_NESTING} deep")
+                    stack @ stack.push(Level(alts: alts, seq: seq, group: group, flags: flags, opened: opened))
+                    alts @ []
+                    seq @ []
+                    group @ 0
+                    flags @ opening.flags
+                    opened @ at
+
+            match opening.kind
+                .capture c =>
+                    named(names: names, name: c.name, pattern: pattern, at: at)?
+
+                    if names.len() > MAX_GROUPS
+                        return codes.limit(pattern: pattern, at: at, why: f"more than {MAX_GROUPS} groups")
+                    names @ names.push(c.name)
+                    group @ names.len() - 1
+                    held @ held + 2
+                .plain | .flags_only => _ = 0
+
+            at @ opening.next
+        else if b == ')'
+            if stack.len() == 0
+                return codes.invalid(pattern: pattern, at: at, why: "a `)` closes no group")
+            build.append(to: @seq, from: pending)
+            alts @ alts.push(seq)
+            body: [program.Inst] @= build.alternate(alts)
+
+            if group > 0
+                body @ build.capture(x: body, group: group)
+            outer = stack[stack.len() - 1]
+            stack @ stack.slice(from: 0, to: stack.len() - 1)
+            alts @ outer.alts
+            seq @ outer.seq
+            group @ outer.group
+            flags @ outer.flags
+            opened @ outer.opened
+            pending @ body
+            kind @ ITEM
+            at @ at + 1
+        else
+            atom = atom_at(pattern: pattern, at: at, flags: flags, sets: @sets)?
+            build.append(to: @seq, from: pending)
+            pending @ atom.insts
+            held @ held + atom.insts.len()
+
+            if held > MAX_STATES
+                return too_large(pattern: pattern, at: at)
+            kind @ atom.kind
+            at @ atom.next
+
+    if stack.len() > 0
+        return codes.invalid(
+            pattern: pattern,
+            at: opened,
+            why: "a group opened by `(` is never closed: its `)` is missing"
+        )
+    build.append(to: @seq, from: pending)
+    alts @ alts.push(seq)
+    insts: [program.Inst] @= [.save(slot: 0)]
+    build.append(to: @insts, from: build.alternate(alts))
+    insts @ insts.push(.save(slot: 1))
+    insts @ insts.push(.accept)
+    return ok(program.Program(insts: insts, sets: sets, groups: names.len() - 1, names: names))
+
+# Why a repetition after `kind` has nothing to repeat.
+#
+# - `kind`: what was read last, `NOTHING`, `ANCHOR` or `REPEATED`.
+function nothing_to_repeat(kind: i64) -> str
+    if kind == ANCHOR
+        return "a repetition of a place, which reads no character: nothing to repeat"
+
+    if kind == REPEATED
+        return "a repetition of a repetition: write `(?:x*)*` where that is meant"
+    return "a repetition with nothing before it to repeat: write `\\*` for the character"
+
+# The failure of a pattern whose program would pass `MAX_STATES`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where it passed.
+function too_large(pattern: str, at: i64) -> program.Program?
+    return codes.limit(pattern: pattern, at: at, why: f"an automaton of more than {MAX_STATES} states")
+
+# Refuses a group's name that another group of the pattern has.
+#
+# - `names`: the names of the groups read so far.
+# - `name`: the new group's name, "" for none.
+# - `pattern`: the pattern read.
+# - `at`: the byte of the group's `(`.
+#
+# Fails `invalid` where `name` is not "" and a group has it already.
+function named(names: [str] lent, name: str, pattern: str, at: i64) -> ()?
+    if name == ""
+        return ok()
+
+    for other in names
+        if other == name
+            return codes.invalid(pattern: pattern, at: at, why: f"two groups named \"{name}\"")
+
+    return ok()
+
+# The character, class or place that begins at the byte `at` of `pattern`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where it begins; not a `(`, `)`, `|` or a repetition.
+# - `flags`: the flags in force.
+# - `sets`: the classes read so far, which a class read is added to.
+#
+# Fails `invalid` where an escape or a class is refused.
+function atom_at(pattern: str, at: i64, flags: groups.Flags, @sets: [program.Set]) -> Atom?
+    b = pattern[at]
+
+    if b == '.'
+        if flags.dot_all
+            return ok(Atom(insts: [.any], kind: ITEM, next: at + 1))
+        return ok(Atom(insts: [.any_but_line_feed], kind: ITEM, next: at + 1))
+
+    if b == '^'
+        if flags.multi_line
+            return ok(Atom(insts: [.begin_line], kind: ANCHOR, next: at + 1))
+        return ok(Atom(insts: [.begin_text], kind: ANCHOR, next: at + 1))
+
+    if b == '$'
+        if flags.multi_line
+            return ok(Atom(insts: [.end_line], kind: ANCHOR, next: at + 1))
+        return ok(Atom(insts: [.end_text], kind: ANCHOR, next: at + 1))
+
+    if b == '['
+        read = classes.class_at(pattern: pattern, at: at, folded: flags.fold)?
+        sets @ sets.push(read.set)
+        return ok(Atom(insts: [.set(index: sets.len() - 1)], kind: ITEM, next: read.next))
+
+    if b == '\\'
+        escaped = escapes.escape_at(pattern: pattern, at: at, in_class: false)?
+
+        match escaped.escape
+            .char c => return ok(char_atom(code: c.code, folded: flags.fold, next: escaped.next))
+            .members m =>
+                sets @ sets.push(
+                    program.Set(ranges: m.ranges, categories: m.categories, not_categories: m.not_categories, negated: m.negated, fold: flags.fold)
+                )
+                return ok(Atom(insts: [.set(index: sets.len() - 1)], kind: ITEM, next: escaped.next))
+            .assertion a => return ok(Atom(insts: [a.inst], kind: ANCHOR, next: escaped.next))
+    return ok(
+        char_atom(code: unicode.code_point_at(pattern, at), folded: flags.fold, next: at + unicode.width_at(pattern, at))
+    )
+
+# The instruction reading the character `code`, ignoring its case where
+# `folded` and it has another.
+#
+# - `code`: the character's code point.
+# - `folded`: whether case is ignored.
+# - `next`: the byte of the pattern after it.
+function char_atom(code: i64, folded: bool, next: i64) -> Atom
+    if folded && casefold.orbit(code).len() > 1
+        return Atom(insts: [.char_fold(code: casefold.key(code))], kind: ITEM, next: next)
+    return Atom(insts: [.char(code: code)], kind: ITEM, next: next)
+
+## Tests
+
+# The message `compile` fails `pattern` with, or "" where it compiles.
+function refused(pattern: str) -> str
+    return match compile(pattern)
+        .ok _  => ""
+        .err e => e.code + ": " + e.msg
+
+test "compile: the empty pattern, two characters, and the whole match's slots around them"
+    assert compile("").must().insts == [.save(slot: 0), .save(slot: 1), .accept]
+    ab = compile("ab").must()
+    assert ab.insts == [.save(slot: 0), .char(code: 'a'), .char(code: 'b'), .save(slot: 1), .accept]
+    assert ab.groups == 0 && ab.names == [""]
+    assert compile("é").must().insts[1] == .char(code: 0xe9)
+
+test "compile: groups numbered and named, flags kept to their group, and case ignored"
+    with_names = compile("(?P<x>a)(b)(?:c)").must()
+    assert with_names.groups == 2 && with_names.names == ["", "x", ""]
+    assert compile("(?i)k").must().insts[1] == .char_fold(code: 'K')
+    assert compile("(?i)1").must().insts[1] == .char(code: '1')
+    scoped = compile("(?:(?i)a)a").must()
+    assert scoped.insts[1] == .char_fold(code: 'A') && scoped.insts[2] == .char(code: 'a')
+    assert compile("(?s).").must().insts[1] == .any
+    assert compile(".").must().insts[1] == .any_but_line_feed
+    assert compile("(?m)^$").must().insts[1] == .begin_line
+    assert compile("^$").must().insts[2] == .end_text
+
+test "compile refuses nothing to repeat, a repetition repeated, a place repeated, and open or stray groups"
+    assert refused("*a") == "invalid: a repetition with nothing before it to repeat: write `\\*` for the character, at byte 0 of \"*a\""
+    assert refused("a**") == "invalid: a repetition of a repetition: write `(?:x*)*` where that is meant, at byte 2 of \"a**\""
+    assert refused("^*") == "invalid: a repetition of a place, which reads no character: nothing to repeat, at byte 1 of \"^*\""
+    assert refused("x(a") == "invalid: a group opened by `(` is never closed: its `)` is missing, at byte 1 of \"x(a\""
+    assert refused("a)") == "invalid: a `)` closes no group, at byte 1 of \"a)\""
+    assert refused("(?P<n>a)(?P<n>b)") == "invalid: two groups named \"n\", at byte 8 of \"(?P<n>a)(?P<n>b)\""
+    assert refused("a|*") != "" && refused("(*)") != "" && refused("(?i)*") != ""
+    assert refused("a{2}{3}") != "" && refused("a*?+") != ""
+
+test "compile: the bounds of counts, states, groups and nesting, at them and past them"
+    assert refused("a{1000}") == ""
+    assert refused("(a{1000}){1000}") == "limit: an automaton of more than 100000 states, at byte 9 of \"(a{1000}){1000}\""
+    assert refused(repeat("(a)", 200)) == ""
+    assert refused(repeat("(a)", 201)).slice(from: 0, to: 26) == "limit: more than 200 group"
+    assert refused(repeat("(?:", 1000) + repeat(")", 1000)) == ""
+    assert refused(repeat("(?:", 1001) + repeat(")", 1001)).slice(from: 0, to: 30) == "limit: groups nested more than"

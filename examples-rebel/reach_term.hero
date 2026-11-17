@@ -1,0 +1,10 @@
+# Reaches Rebel's `term`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a word in bold green to the
+# standard output, where colour shows there, and plain elsewhere.
+
+use <rebel>/io
+use <rebel>/term
+
+function main()
+    style = term.with_attribute(term.with_foreground(term.plain(), color: .green), a: .bold)
+    _ = term.write_styled(io.stdout(), text: "ready\n", style: style).is_err()

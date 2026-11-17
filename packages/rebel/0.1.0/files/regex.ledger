@@ -1,0 +1,389 @@
+capability regex/compile  a pattern compiled once, failing with where and why
+  heroes  regex.compile
+  go      regexp.Compile, regexp.MustCompile
+  rust    -
+  python  re.compile, re.error, re.PatternError (msg, pattern, pos, lineno, colno)
+  note    the failure is `invalid` and its message names the byte of the pattern and the reason; `MustCompile` is `.must()`; a pattern is one line, so Python's line and column are the byte
+
+capability regex/compiled  a compiled pattern as a value a program holds and passes
+  heroes  regex.Regex
+  go      regexp.Regexp
+  rust    -
+  python  re.Pattern
+  note    Rust has no regular expression in its standard library, so every `rust` line of this ledger is `-`
+
+capability regex/pattern-text  the text a pattern was compiled from
+  heroes  regex.Regex
+  go      Regexp.String
+  rust    -
+  python  Pattern.pattern
+  note    the record's field `pattern`, the text as written
+
+capability regex/linear-time  a search whose time is linear in the text, whatever the pattern
+  heroes  regex.search
+  go      regexp (the package's guarantee)
+  rust    -
+  python  -
+  note    every search runs the automaton with every state at once; measured 2026-11-16, `(a+)+$` against thirty `a`s and a `b` took 0.00 s of user time and against a million 0.30 s, where Python took 0.07, 0.25, 0.99 and 3.91 s for 20, 22, 24 and 26
+
+capability regex/bounded-size  a pattern that cannot ask for an automaton too large to build
+  heroes  regex.compile
+  go      regexp.Compile (a count above 1000 is refused, and a pattern that grows too large)
+  rust    -
+  python  -
+  note    fails `limit` past `MAX_REPEAT` (1000, Go's bound), `MAX_STATES` (100000), `MAX_GROUPS` (200) and `MAX_NESTING` (1000, Go's); Go refuses `(a{1000}){1000}` too
+
+capability regex/flags  case ignored, `.` reading a line feed, `^` and `$` at every line
+  heroes  regex.compile
+  go      regexp.Compile (`(?i)`, `(?s)`, `(?m)` in the pattern)
+  rust    -
+  python  re.I, re.IGNORECASE, re.S, re.DOTALL, re.M, re.MULTILINE, re.RegexFlag, re.NOFLAG, Pattern.flags
+  note    `(?i)` stands anywhere and holds to the end of its group, Go's rule; Python 3.15 refuses a flag that does not open the pattern
+
+capability regex/flag-ascii  `\d`, `\w`, `\s` and `\b` reading ASCII alone
+  heroes  regex.compile
+  go      regexp.Compile (always so)
+  rust    -
+  python  re.A, re.ASCII
+  note    `\d`, `\w`, `\s` and `\b` are always ASCII, Go's rule; `\s` holds the vertical tab, Python's ASCII rule, where Go's does not; Unicode's classes are asked by name, `\p{Nd}`
+
+capability regex/unicode-classes  a class of characters named by Unicode's category or script
+  heroes  regex.compile
+  go      regexp.Compile (`\pL`, `\p{Lu}`, `\PL`, `\P{Lu}`)
+  rust    -
+  python  re.U, re.UNICODE
+  note    the general categories, one letter or two, and their negations; a script is the block `regex/unicode-scripts`
+
+capability regex/unicode-scripts  a class of characters named by a script
+  heroes  pending
+  go      regexp.Compile (`\p{Greek}`, `\P{Greek}`)
+  rust    -
+  python  -
+  note    waits for `unicode` to answer a character's script, its own block `class/script` being pending; `\p{Greek}` fails `invalid` until then
+
+capability regex/ascii-classes  a class of ASCII named inside brackets
+  heroes  regex.compile
+  go      regexp.Compile (`[[:alpha:]]`, `[[:^digit:]]` and the other twelve)
+  rust    -
+  python  -
+  note    `[:alpha:]` outside brackets is refused with the spelling `[[:alpha:]]`, which Go and Python read as a class of the characters `:alph`
+
+capability regex/flag-locale  classes and case read from the process's locale
+  heroes  refused: what a pattern matches does not change with the process's locale
+  go      -
+  rust    -
+  python  re.L, re.LOCALE
+
+capability regex/flag-verbose  a pattern written over several lines, with comments
+  heroes  refused: a pattern is one line, and what a comment would say about it is written above it
+  go      -
+  rust    -
+  python  re.X, re.VERBOSE, `(?#...)`
+
+capability regex/flag-ungreedy  every repetition lazy unless it says otherwise
+  heroes  refused: one way: a repetition says it is lazy with its own `?`
+  go      regexp.Compile (`(?U)`)
+  rust    -
+  python  -
+
+capability regex/longest  the longest match at the leftmost place, in place of the one Perl prefers
+  heroes  refused: one rule of preference for every search, Perl's, which Go's default and Python share; Go's own documentation calls the POSIX rule computationally prohibitive and not even well-defined
+  go      regexp.CompilePOSIX, regexp.MustCompilePOSIX, Regexp.Longest
+  rust    -
+  python  -
+
+capability regex/back-references  a group's text asked again later in the pattern
+  heroes  refused: not matchable in linear time
+  go      -
+  rust    -
+  python  re.compile (`\1`, `(?P=name)`, `(?(1)yes|no)`)
+
+capability regex/look-around  what stands before or after asked without being matched
+  heroes  refused: not matchable in linear time
+  go      -
+  rust    -
+  python  re.compile (`(?=...)`, `(?!...)`, `(?<=...)`, `(?<!...)`)
+
+capability regex/possessive  a repetition or a group that gives nothing back
+  heroes  refused: an automaton never gives anything back, so a repetition that gives nothing back would only be a second rule of preference beside Perl's
+  go      -
+  rust    -
+  python  re.compile (`*+`, `++`, `?+`, `{n,m}+`, `(?>...)`)
+
+capability regex/code-escapes  a character written by its code
+  heroes  regex.compile
+  go      regexp.Compile (`\x7F`, `\x{10FFFF}`)
+  rust    -
+  python  re.compile (`\xhh`, `\uhhhh`, `\Uhhhhhhhh`)
+  note    `\x41` and `\x{1f600}`; Python's `\u0041` is refused, naming `\x{...}`
+
+capability regex/octal-escapes  a character written by its code in octal
+  heroes  refused: one way: a code is written in hexadecimal, `\x{...}`; `\12` would read as octal beside the back-reference `\1`
+  go      regexp.Compile (`\123`)
+  rust    -
+  python  re.compile (`\0`, `\012`)
+
+capability regex/name-escapes  a character written by its Unicode name
+  heroes  pending
+  go      -
+  rust    -
+  python  re.compile (`\N{NAME}`)
+  note    waits for a table of Unicode's character names, which `unicode` does not hold
+
+capability regex/literal-run  a run of text inside a pattern taken as it is
+  heroes  refused: one way: `regex.escape` quotes a text
+  go      regexp.Compile (`\Q...\E`)
+  rust    -
+  python  -
+
+capability regex/escape  a text quoted so that, as a pattern, it matches itself
+  heroes  regex.escape
+  go      regexp.QuoteMeta
+  rust    -
+  python  re.escape
+  note    escapes `\ . + * ? ( ) | [ ] { } ^ $ -`: Go's set with `-`, so a quoted text also stands inside a class; Python also escapes space, `#`, `&` and `~`
+
+capability regex/contains  whether a text holds a match
+  heroes  regex.contains
+  go      regexp.MatchString, regexp.Match, Regexp.MatchString, Regexp.Match
+  rust    -
+  python  -
+  note    Python asks `search` and compares with `None`; Go's two functions of the package compile the pattern at each call, which here is `compile`, once
+
+capability regex/search  the first match, and where it is
+  heroes  regex.search
+  go      Regexp.Find, Regexp.FindIndex, Regexp.FindString, Regexp.FindStringIndex
+  rust    -
+  python  re.search, Pattern.search, re.Match
+
+capability regex/search-from  the first match at or after a position, the text before it still seen
+  heroes  regex.search_from
+  go      -
+  rust    -
+  python  Pattern.search (pos), Pattern.finditer (pos), Pattern.findall (pos), Match.pos
+
+capability regex/search-until  a search that reads the text only up to a position
+  heroes  built-in slice
+  go      -
+  rust    -
+  python  Pattern.search (endpos), Pattern.match (endpos), Pattern.fullmatch (endpos), Match.endpos
+  note    Python's `endpos` reads the text as if it ended there, which a slice from 0 is, its positions unchanged
+
+capability regex/match-at  the match that begins exactly at a position
+  heroes  regex.match_at
+  go      -
+  rust    -
+  python  re.match, re.prefixmatch, Pattern.match, Pattern.prefixmatch, Pattern.scanner, re.Scanner
+
+capability regex/full-match  the match that is the whole text
+  heroes  regex.full_match
+  go      -
+  rust    -
+  python  re.fullmatch, Pattern.fullmatch
+
+capability regex/search-all  every match, none overlapping another
+  heroes  regex.search_all
+  go      Regexp.FindAll, Regexp.FindAllIndex, Regexp.FindAllString, Regexp.FindAllStringIndex, Regexp.FindAllSubmatch, Regexp.FindAllSubmatchIndex, Regexp.FindAllStringSubmatch, Regexp.FindAllStringSubmatchIndex
+  rust    -
+  python  re.findall, re.finditer, Pattern.findall, Pattern.finditer
+  note    empty matches by Python's rule (Perl's too): `a*` in "baaa" answers "", "aaa" and "", where Go drops an empty match just after another
+
+capability regex/search-n  the first matches, at most so many
+  heroes  regex.search_n
+  go      Regexp.FindAll (n), Regexp.FindAllString (n) and the six beside them
+  rust    -
+  python  -
+
+capability regex/group  the text a group matched, by its number
+  heroes  regex.group
+  go      Regexp.FindSubmatch, Regexp.FindStringSubmatch
+  rust    -
+  python  Match.group
+
+capability regex/group-named  the text a group matched, by its name
+  heroes  regex.group_named
+  go      Regexp.SubexpIndex (with FindStringSubmatch)
+  rust    -
+  python  Match.group (a name)
+
+capability regex/group-span  where a group matched, by its number or its name
+  heroes  regex.span, regex.span_named
+  go      Regexp.FindSubmatchIndex, Regexp.FindStringSubmatchIndex
+  rust    -
+  python  Match.start, Match.end, Match.span, Match.regs
+
+capability regex/groups  the text of every group at once
+  heroes  regex.groups
+  go      Regexp.FindStringSubmatch
+  rust    -
+  python  Match.groups
+
+capability regex/groups-by-name  the text of every named group, by its name
+  heroes  regex.groups_by_name
+  go      -
+  rust    -
+  python  Match.groupdict
+
+capability regex/last-group  which group was the last to close
+  heroes  regex.last_group
+  go      -
+  rust    -
+  python  Match.lastindex, Match.lastgroup
+  note    the number; Python's `lastgroup`, the name, is `regex.group_names` at that number
+
+capability regex/group-count  how many groups a pattern has
+  heroes  regex.group_count
+  go      Regexp.NumSubexp
+  rust    -
+  python  Pattern.groups
+
+capability regex/group-names  the names of a pattern's groups
+  heroes  regex.group_names
+  go      Regexp.SubexpNames
+  rust    -
+  python  Pattern.groupindex
+  note    two groups of one name are refused, Python's rule; Go accepts them
+
+capability regex/group-number  the number of the group a name names
+  heroes  regex.group_number
+  go      Regexp.SubexpIndex
+  rust    -
+  python  Pattern.groupindex (one name)
+
+capability regex/replace-text  the first match replaced by a text taken as it is
+  heroes  regex.replace
+  go      -
+  rust    -
+  python  -
+
+capability regex/replace-text-all  every match replaced by a text taken as it is
+  heroes  regex.replace_all
+  go      Regexp.ReplaceAllLiteral, Regexp.ReplaceAllLiteralString
+  rust    -
+  python  -
+
+capability regex/replace-text-n  the first matches, at most so many, replaced by a text taken as it is
+  heroes  regex.replace_n
+  go      -
+  rust    -
+  python  -
+
+capability regex/replace-template  the first match replaced by a template that names its groups
+  heroes  regex.substitute
+  go      -
+  rust    -
+  python  re.sub (count 1), Pattern.sub (count 1)
+
+capability regex/replace-template-all  every match replaced by a template that names its groups
+  heroes  regex.substitute_all
+  go      Regexp.ReplaceAll, Regexp.ReplaceAllString
+  rust    -
+  python  re.sub, Pattern.sub
+  note    the template is Go's, `$1` `${name}` `$$`; `$1x`, which Go reads as a group named `1x` and fills with nothing, is refused as reading two ways, and so is a group the pattern has not; Python's `\1` and `\g<name>` are not read
+
+capability regex/replace-template-n  the first matches, at most so many, replaced by a template
+  heroes  regex.substitute_n
+  go      -
+  rust    -
+  python  re.sub (count), Pattern.sub (count)
+
+capability regex/replace-by  the first match replaced by what a function answers for it
+  heroes  regex.replace_by
+  go      -
+  rust    -
+  python  re.sub (a function, count 1)
+  note    the function receives the `Match`, groups included, Python's form; Go's receives the matched text alone
+
+capability regex/replace-all-by  every match replaced by what a function answers for it
+  heroes  regex.replace_all_by
+  go      Regexp.ReplaceAllFunc, Regexp.ReplaceAllStringFunc
+  rust    -
+  python  re.sub (a function), Pattern.sub (a function)
+
+capability regex/replace-n-by  the first matches, at most so many, replaced by what a function answers
+  heroes  regex.replace_n_by
+  go      -
+  rust    -
+  python  re.sub (a function, count)
+
+capability regex/replace-count  how many matches a replacement replaced
+  heroes  refused: one way: `regex.search_all(...).len()` counts what `replace_all` replaces
+  go      -
+  rust    -
+  python  re.subn, Pattern.subn
+
+capability regex/expand  a template filled with the groups of one match
+  heroes  regex.expand
+  go      Regexp.Expand, Regexp.ExpandString
+  rust    -
+  python  Match.expand
+
+capability regex/split  a text cut at every match
+  heroes  regex.split
+  go      Regexp.Split
+  rust    -
+  python  re.split, Pattern.split
+  note    the pieces between `search_all`'s matches, empty ones included, Python's answer: `x*` cuts "axbc" into "", "a", "", "b", "c", "", where Go answers "a", "b", "c"
+
+capability regex/split-n  a text cut at the first matches, into at most so many pieces
+  heroes  regex.split_n
+  go      Regexp.Split (n)
+  rust    -
+  python  re.split (maxsplit), Pattern.split (maxsplit)
+
+capability regex/split-keeping-groups  a text cut at every match, the groups of each match kept between the pieces
+  heroes  refused: one way: `regex.search_all` answers each match's groups beside the pieces `regex.split` answers
+  go      -
+  rust    -
+  python  re.split (a pattern with groups)
+
+capability regex/bytes  a pattern matched against bytes that are not text
+  heroes  refused: a pattern reads text, UTF-8, and a match never splits a character; bytes are text once `validated_bytes` says so
+  go      Regexp.Find, Regexp.Match and every entry that takes a `[]byte`, over bytes that are not UTF-8
+  rust    -
+  python  re.compile (a `bytes` pattern)
+
+dropped  what an interface would have needed: a text is read whole, then searched
+  go      regexp.MatchReader, Regexp.MatchReader, Regexp.FindReaderIndex, Regexp.FindReaderSubmatchIndex
+  rust    -
+  python  -
+
+dropped  an interface of another package: a pattern is written as its text and read back by `compile`
+  go      Regexp.MarshalText, Regexp.UnmarshalText, Regexp.AppendText
+  rust    -
+  python  -
+
+dropped  every value is a copy already
+  go      Regexp.Copy
+  rust    -
+  python  -
+
+dropped  a hint for a caller's own index, which no search here needs
+  go      Regexp.LiteralPrefix
+  rust    -
+  python  -
+
+dropped  a cache of compiled patterns to empty: a program holds the patterns it compiled
+  go      -
+  rust    -
+  python  re.purge
+
+dropped  the compiled form printed while compiling
+  go      -
+  rust    -
+  python  re.DEBUG
+
+dropped  what the caller handed in, given back
+  go      -
+  rust    -
+  python  Match.re, Match.string
+
+dropped  modules `re` imports, which `dir` lists and which are not its own
+  go      -
+  rust    -
+  python  re.copyreg, re.enum, re.functools
+
+dropped  the parser's tree and the automaton as public types: a program compiles a pattern and never reads its tree
+  go      regexp/syntax (every entry)
+  rust    -
+  python  -

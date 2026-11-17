@@ -1,0 +1,268 @@
+# A route's pattern read into its pieces, checked, keyed by its shape, matched
+# against a request's segments and filled back into a path; and a request's
+# path judged clean or made so.
+
+use strings
+use url
+
+# One segment of a pattern.
+variant Piece
+    # A segment matched as written.
+    fixed
+        # The text the request's segment, unescaped, must be.
+        text: str
+    # `:name`, one segment that is not empty.
+    param
+        # The parameter's name.
+        name: str
+    # `*name`, the rest of the path, empty or not; always the last piece.
+    rest
+        # The parameter's name.
+        name: str
+
+# Whether `name` is a parameter's or a group's name: letters, digits and `_`,
+# not empty.
+function is_name(name: str) -> bool
+    if name == ""
+        return false
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+        letter = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+        if !letter && !(c >= '0' && c <= '9') && c != '_'
+            return false
+
+    return true
+
+# The pieces of `pattern`, a whole pattern beginning with `/`. Fails
+# `invalid` where it does not begin with `/`, holds an empty segment before
+# its last, a parameter with no name or a name twice, or a wildcard before its
+# last segment.
+function parse(pattern: str) -> [Piece]?
+    if pattern == "" || pattern[0] != '/'
+        return fail(code: "invalid", msg: f"the pattern \"{pattern}\" does not begin with `/`")
+    parts = strings.split(s: pattern.slice(from: 1, to: pattern.len()), sep: "/")
+    pieces: [Piece] @= []
+    names: {str: bool} @= {}
+
+    for i in range(from: 0, to: parts.len())
+        part = parts[i]
+        last = i == parts.len() - 1
+
+        if part == "" && !last
+            return fail(code: "invalid", msg: f"the pattern \"{pattern}\" holds an empty segment, `//`")
+
+        if part != "" && (part[0] == ':' || part[0] == '*')
+            name = part.slice(from: 1, to: part.len())
+
+            if !is_name(name)
+                return fail(
+                    code: "invalid",
+                    msg: f"the pattern \"{pattern}\": the parameter \"{part}\" has no name of letters, digits and `_`"
+                )
+
+            if names[name].default(false)
+                return fail(code: "invalid", msg: f"the pattern \"{pattern}\" names the parameter \"{name}\" twice")
+            names[name] @ true
+
+            if part[0] == '*' && !last
+                return fail(
+                    code: "invalid",
+                    msg: f"the pattern \"{pattern}\": the wildcard \"{part}\" is not its last segment"
+                )
+
+            if part[0] == ':'
+                pieces @ pieces.push(.param(name: name))
+            else
+                pieces @ pieces.push(.rest(name: name))
+        else
+            pieces @ pieces.push(.fixed(text: part))
+
+    return ok(pieces)
+
+# The shape of `pieces`, the same for two patterns that match the same paths:
+# each fixed segment escaped, `:` for a parameter and `*` for a wildcard,
+# whatever their names.
+function shape(pieces: [Piece]) -> str
+    out: [str] @= []
+
+    for p in pieces
+        match p
+            .fixed f => out @ out.push(url.escape_segment(f.text))
+            .param _ => out @ out.push(":")
+            .rest _  => out @ out.push("*")
+
+    return "/" + out.join("/")
+
+# Every parameter's name in `pieces`, in their order.
+function names_of(pieces: [Piece]) -> [str]
+    out: [str] @= []
+
+    for p in pieces
+        match p
+            .fixed _ => _ = 0
+            .param a => out @ out.push(a.name)
+            .rest a  => out @ out.push(a.name)
+
+    return out
+
+# What each parameter of `pieces` holds in `segments`, which they match: a
+# parameter's segment, a wildcard's segments joined by `/`. Its names and
+# values as two lists of one length.
+record Values
+    # The names, in the pattern's order.
+    names: [str]
+    # The values, one for each name.
+    values: [str]
+
+# The values `segments` give the parameters of `pieces`, which match them.
+function values_of(pieces: [Piece], segments: [str]) -> Values
+    names: [str] @= []
+    values: [str] @= []
+
+    for i in range(from: 0, to: pieces.len())
+        match pieces[i]
+            .fixed _ => _ = 0
+            .param a =>
+                names @ names.push(a.name)
+                values @ values.push(segments[i])
+            .rest a =>
+                names @ names.push(a.name)
+                values @ values.push(segments.slice(from: i, to: segments.len()).join("/"))
+
+    return Values(names: names, values: values)
+
+# The raw path of `pieces`, each parameter filled by `values` at the place its
+# name holds in `names`. Fails `not_found` where a name has no value, and
+# `invalid` where a parameter's value is empty or a wildcard's holds a `.` or
+# `..` segment.
+function fill(pieces: [Piece], names: [str], values: [str]) -> str?
+    out: [str] @= []
+
+    for p in pieces
+        match p
+            .fixed f => out @ out.push(url.escape_segment(f.text))
+            .param a =>
+                v = value_named(a.name, names: names, values: values)?
+
+                if v == ""
+                    return fail(code: "invalid", msg: f"the parameter \"{a.name}\" is given an empty value")
+                out @ out.push(url.escape_segment(v))
+            .rest a =>
+                v = value_named(a.name, names: names, values: values)?
+
+                for s in strings.split(s: v, sep: "/")
+                    if s == "." || s == ".."
+                        return fail(
+                            code: "invalid",
+                            msg: f"the wildcard \"{a.name}\" is given \"{v}\", which holds a `{s}` segment"
+                        )
+                    out @ out.push(url.escape_segment(s))
+
+    return ok("/" + out.join("/"))
+
+# The value at the place `name` holds in `names`.
+function value_named(name: str, names: [str], values: [str]) -> str?
+    for i in range(from: 0, to: names.len())
+        if names[i] == name
+            return ok(values[i])
+
+    return fail(code: "not_found", msg: f"no value is given for the parameter \"{name}\"")
+
+# Whether the segments of a request's path are clean: no `.` or `..`, and no
+# empty segment but the last.
+function is_clean(segments: [str]) -> bool
+    for i in range(from: 0, to: segments.len())
+        s = segments[i]
+
+        if s == "." || s == ".." || s == "" && i < segments.len() - 1
+            return false
+
+    return true
+
+# `segments` cleaned as Go's `path.Clean` cleans a path: `.` and empty
+# segments taken away, each `..` taking away the segment before it, and above
+# the root dropped; a last `/` kept where the path had one.
+function cleaned(segments: [str]) -> [str]
+    out: [str] @= []
+
+    for s in segments
+        if s == ".."
+            if out.len() > 0
+                out @ out.slice(from: 0, to: out.len() - 1)
+        else if s != "." && s != ""
+            out @ out.push(s)
+
+    n = segments.len()
+    trailing = n > 0 && (segments[n - 1] == "" || segments[n - 1] == "." || segments[n - 1] == "..")
+
+    if trailing || out.len() == 0
+        out @ out.push("")
+    return out
+
+test "is_name: empty, letters, digits and underscore, a dash and a character above ASCII"
+    assert !is_name("") && is_name("id") && is_name("user_2") && is_name("_")
+    assert !is_name("a-b") && !is_name("café")
+
+test "parse: the root, a parameter, a wildcard, a last slash"
+    assert parse("/").must() == [.fixed(text: "")]
+    assert parse("/users/:id").must() == [.fixed(text: "users"), .param(name: "id")]
+    assert parse("/files/*path").must() == [.fixed(text: "files"), .rest(name: "path")]
+    assert parse("/a/").must() == [.fixed(text: "a"), .fixed(text: "")]
+
+test "parse: no slash first, an empty segment, a nameless or twice-named parameter, a wildcard not last"
+    for bad in ["", "users", "/a//b", "/a/:", "/a/*", "/a/:x/:x", "/a/*x/b", "/a/:b-c"]
+        match parse(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "parse: a colon or a star inside a segment is text, a segment above ASCII kept"
+    assert parse("/a:b/c*d/café").must() == [.fixed(text: "a:b"), .fixed(text: "c*d"), .fixed(text: "café")]
+
+test "shape: names set aside, a fixed colon escaped apart from a parameter"
+    assert shape(parse("/u/:id").must()) == shape(parse("/u/:name").must())
+    assert shape(parse("/u/:id").must()) != shape(parse("/u/*id").must())
+    assert shape([.fixed(text: ":")]) == "/%3A" && shape(parse("/:a").must()) == "/:"
+
+test "names_of: none, and in order"
+    assert names_of(parse("/a/b").must()).len() == 0
+    assert names_of(parse("/:x/b/*y").must()) == ["x", "y"]
+
+test "values_of: a parameter, an empty wildcard, a wildcard of several segments"
+    p = parse("/u/:id/*rest").must()
+    assert values_of(p, segments: ["u", "7", ""]).values == ["7", ""]
+    assert values_of(p, segments: ["u", "a/b", "x", "y"]).values == ["a/b", "x/y"]
+    assert values_of(parse("/f/*p").must(), segments: ["f"]).values == [""]
+
+test "fill: escaped values, a wildcard's slash kept, an absent and an empty value"
+    p = parse("/u/:id/*rest").must()
+    assert fill(p, names: ["id", "rest"], values: ["a b/c", "x/y z"]).must() == "/u/a%20b%2Fc/x/y%20z"
+
+    match fill(p, names: ["rest"], values: ["x"])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    match fill(p, names: ["id", "rest"], values: ["", "x"])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match fill(p, names: ["id", "rest"], values: ["1", "a/../b"])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "value_named: there and not there"
+    assert value_named("b", names: ["a", "b"], values: ["1", "2"]).must() == "2"
+    assert value_named("c", names: [], values: []).is_err()
+
+test "is_clean: the root, a last slash, a dot, two dots, an empty segment inside"
+    assert is_clean([""]) && is_clean(["a", ""]) && is_clean(["a", "b"])
+    assert !is_clean(["a", ".", "b"]) && !is_clean(["..", "a"]) && !is_clean(["", "a"]) && !is_clean(["a", ".."])
+
+test "cleaned: as Go's path.Clean, above the root dropped, a last slash kept"
+    assert cleaned(["a", "..", "users", "7"]) == ["users", "7"]
+    assert cleaned(["", "users", "7"]) == ["users", "7"]
+    assert cleaned(["..", "..", "x"]) == ["x"]
+    assert cleaned(["a", "b", ".."]) == ["a", ""]
+    assert cleaned(["a", "."]) == ["a", ""]
+    assert cleaned(["..", ""]) == [""]

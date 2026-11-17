@@ -1,0 +1,111 @@
+# Where a tar archive's bytes come from: a stream, plain or compressed with
+# gzip, every byte counted against the limit the caller set, so that an
+# archive that expands or goes on without end costs at most that many bytes.
+
+use archive/internal/codes
+use compress
+use io
+
+# A tar archive's stream, and how much of it has been read.
+record Source
+    # Whether the stream is gzip, read through `reader`.
+    gzip: bool
+    # The stream, owned by the caller.
+    stream: io.Stream
+    # The reader over the stream where it is gzip; made but never read
+    # otherwise.
+    reader: compress.Reader
+    # How many bytes of the archive have been read, after gzip.
+    used: i64
+    # The most bytes of archive that may be read.
+    limit: i64
+
+# A source of the archive in `stream`, gzip where `gzip`, of at most
+# `limit` bytes.
+function start(stream: io.Stream, gzip: bool, limit: i64) -> Source
+    return Source(
+        gzip: gzip,
+        stream: stream,
+        reader: compress.reader(stream, format: .gzip, limit: limit),
+        used: 0,
+        limit: limit
+    )
+
+# Up to `most` bytes of the archive, fewer where fewer come at once, none at
+# its end. Fails `limit` where the archive passes the limit, and as the
+# stream or gzip fail.
+function read_some(@src: Source, most: i64) -> [u8]?
+    if most <= 0
+        return ok([])
+    ask: i64 @= most
+
+    if ask > 65536
+        ask @ 65536
+    got: [u8] @= []
+
+    if src.gzip
+        got @ compress.read(@src.reader, most: ask)?
+    else
+        got @ io.read(src.stream, most: ask)?
+
+    if src.used + got.len() > src.limit
+        return fail(code: codes.LIMIT, msg: f"the archive passes the limit of {src.limit} bytes")
+    src.used @ src.used + got.len()
+    return ok(got)
+
+# Exactly `n` bytes of the archive. Fails `invalid` where it ends first,
+# naming `what` was being read.
+function read_exact(@src: Source, n: i64, what: str) -> [u8]?
+    out: [u8] @= []
+
+    while out.len() < n
+        got = read_some(@src, most: n - out.len())?
+
+        if got.len() == 0
+            return codes.invalid_at(at: src.used, why: f"the archive ends inside {what}")
+
+        for b in got
+            out @ out.push(b)
+
+    return ok(out)
+
+# Reads `n` bytes of the archive and drops them, 65,536 at a time. Fails as
+# `read_exact` does.
+function skip(@src: Source, n: i64, what: str) -> ()?
+    left: i64 @= n
+
+    while left > 0
+        got = read_some(@src, most: left)?
+
+        if got.len() == 0
+            return codes.invalid_at(at: src.used, why: f"the archive ends inside {what}")
+        left @ left - got.len()
+
+    return ok()
+
+test "read_exact, read_some and skip: a plain stream, its end, and the limit"
+    p @= io.pipe().must()
+    io.write(p.writer, data: [1, 2, 3, 4, 5, 6]).must()
+    io.close(@p.writer).must()
+    src @= start(p.reader, gzip: false, limit: 5)
+    assert read_exact(@src, n: 2, what: "a header").must() == [1, 2]
+    skip(@src, n: 1, what: "data").must()
+
+    match read_exact(@src, n: 3, what: "a header")
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    io.close(@p.reader).must()
+
+test "read_exact: an archive that ends early, through gzip"
+    p @= io.pipe().must()
+    io.write(p.writer, data: compress.compress([7, 8], compress.defaults(.gzip)).must()).must()
+    io.close(@p.writer).must()
+    src @= start(p.reader, gzip: true, limit: 100)
+
+    match read_exact(@src, n: 3, what: "a header")
+        .ok _  => assert false
+        .err e => assert e.msg == "not a valid archive at byte 2: the archive ends inside a header"
+
+    assert src.used == 2
+    io.close(@p.reader).must()

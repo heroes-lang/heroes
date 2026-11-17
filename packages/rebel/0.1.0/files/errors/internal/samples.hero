@@ -1,0 +1,7 @@
+# The functions the face's examples hand to `errors.context_by`: the language
+# has no anonymous function, so an example's function value is a top-level
+# one, kept here so that the face declares only what a program writes.
+
+# The words a failure gets when `path` was being read.
+function reading(path: str) -> str
+    return f"reading \"{path}\""

@@ -1,0 +1,339 @@
+# A connection's URL read as libpq reads one (PostgreSQL's documentation,
+# "Connection URIs"): `postgres://user:password@host:port/database?key=value`,
+# each part percent-decoded, a part left out taking its default.
+
+use bytes
+use numbers
+use strings
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What a URL names, every field filled.
+record Target
+    # The host, without brackets, `localhost` where the URL names none.
+    host: str
+    # The port, 5432 where the URL names none.
+    port: i64
+    # The user, "" where the URL names none.
+    user: str
+    # The password, "" where the URL names none.
+    password: str
+    # The database, "" where the URL names none.
+    database: str
+    # The application's name, "" where the URL names none.
+    application_name: str
+    # How the connection is secured: `verify-full`, TLS with the server's
+    # certificate checked, where the URL names none; or `disable`.
+    sslmode: str
+    # How TLS begins: `postgres`, PostgreSQL's request for it first, where
+    # the URL names none; or `direct`, TLS from the first byte (PostgreSQL 17).
+    negotiation: str
+    # The PEM of the only authorities trusted, read from `sslrootcert`'s
+    # file; "" for the system's own store, where the URL names none or names
+    # `system`.
+    roots: str
+
+# What `url` names.
+#
+# - `url`: a `postgres://` or `postgresql://` URL.
+#
+# Fails `invalid` where it is not one, or names a key not read here, a port
+# out of range or an `sslmode` PostgreSQL does not know; `unsupported` where
+# it asks for TLS, several hosts, a Unix socket or `connect_timeout`.
+function read(url: str) -> Target?
+    rest: str @= ""
+
+    if strings.has_prefix(s: url, prefix: "postgres://")
+        rest @ url.slice(from: 11, to: url.len())
+    else if strings.has_prefix(s: url, prefix: "postgresql://")
+        rest @ url.slice(from: 13, to: url.len())
+    else
+        return fail(code: INVALID, msg: f"\"{url}\" opens with neither postgres:// nor postgresql://")
+    query: str @= ""
+
+    match strings.split_once(s: rest, sep: "?")
+        .ok h =>
+            rest @ h.before
+            query @ h.after
+        .err _ => _ = 0
+
+    path: str @= ""
+
+    match strings.split_once(s: rest, sep: "/")
+        .ok h =>
+            rest @ h.before
+            path @ h.after
+        .err _ => _ = 0
+
+    t @= Target(
+        host: "localhost",
+        port: 5432,
+        user: "",
+        password: "",
+        database: decoded(s: path, part: "the database")?,
+        application_name: "",
+        sslmode: "verify-full",
+        negotiation: "postgres",
+        roots: ""
+    )
+
+    match strings.split_once_last(s: rest, sep: "@")
+        .ok h =>
+            rest @ h.after
+
+            match strings.split_once(s: h.before, sep: ":")
+                .ok up =>
+                    t.user @ decoded(s: up.before, part: "the user")?
+                    t.password @ decoded(s: up.after, part: "the password")?
+                .err _ => t.user @ decoded(s: h.before, part: "the user")?
+        .err _ => _ = 0
+
+    host_port(@t, spec: rest)?
+
+    if query != ""
+        for pair in strings.split(s: query, sep: "&")
+            keyed(@t, pair: pair)?
+    return checked(t)
+
+# Reads the host and the port of `spec` into `t`.
+#
+# - `t`: the target, its host and port written where `spec` names them.
+# - `spec`: `host`, `host:port`, `[v6]`, `[v6]:port`, `:port` or "".
+function host_port(@t: Target, spec: str) -> ()?
+    if strings.contains(s: spec, substr: ",")
+        return fail(code: UNSUPPORTED, msg: f"\"{spec}\" names several hosts, which this driver does not try in turn")
+    host: str @= spec
+    port: str @= ""
+
+    if strings.has_prefix(s: spec, prefix: "[")
+        match strings.split_once(s: spec.slice(from: 1, to: spec.len()), sep: "]")
+            .err _ => return fail(code: INVALID, msg: f"\"{spec}\" opens a bracket it does not close")
+            .ok h =>
+                host @ h.before
+
+                if h.after != ""
+                    port @ strings.after_prefix(s: h.after, prefix: ":").default("?")
+    else
+        match strings.split_once_last(s: spec, sep: ":")
+            .ok h =>
+                host @ h.before
+                port @ h.after
+            .err _ => _ = 0
+
+    if host != ""
+        t.host @ decoded(s: host, part: "the host")?
+
+    if port != ""
+        t.port @ port_of(port)?
+    return ok()
+
+# Reads one `key=value` of the URL's query into `t`.
+#
+# - `t`: the target, the field the key names written.
+# - `pair`: the pair, percent-encoded.
+function keyed(@t: Target, pair: str) -> ()?
+    h = strings.split_once(s: pair, sep: "=").default(strings.Halves(before: pair, after: ""))
+    key = decoded(s: h.before, part: "a key")?
+    value = decoded(s: h.after, part: f"the value of {key}")?
+
+    if key == "user"
+        t.user @ value
+    else if key == "password"
+        t.password @ value
+    else if key == "host"
+        host_port(@t, spec: value)?
+    else if key == "port"
+        t.port @ port_of(value)?
+    else if key == "dbname"
+        t.database @ value
+    else if key == "application_name"
+        t.application_name @ value
+    else if key == "sslmode"
+        if value == "allow"
+            return fail(
+                code: UNSUPPORTED,
+                msg: "sslmode=allow begins in plain text and turns to TLS only where the server insists, so whoever sits between reads everything; this driver offers disable and verify-full"
+            )
+
+        if value == "prefer"
+            return fail(
+                code: UNSUPPORTED,
+                msg: "sslmode=prefer falls back to plain text in silence where TLS fails, so whoever sits between can make it fail; this driver offers disable and verify-full"
+            )
+
+        if value == "require"
+            return fail(
+                code: UNSUPPORTED,
+                msg: "sslmode=require encrypts without checking the server's certificate, so whoever sits between can pose as the server; verify-full checks it, with sslrootcert naming the authority"
+            )
+
+        if value == "verify-ca"
+            return fail(
+                code: UNSUPPORTED,
+                msg: "sslmode=verify-ca checks the authority and not the host, so any server that authority vouched for passes; verify-full checks both"
+            )
+
+        if value != "disable" && value != "verify-full"
+            return fail(
+                code: INVALID,
+                msg: f"sslmode={value} is none of disable, allow, prefer, require, verify-ca, verify-full"
+            )
+        t.sslmode @ value
+    else if key == "sslrootcert"
+        if value == "system"
+            t.roots @ ""
+        else
+            match read_file(value)
+                .ok pem => t.roots @ pem
+                .err e  => return fail(code: INVALID, msg: f"sslrootcert={value} cannot be read: {e.msg}")
+    else if key == "sslnegotiation"
+        if value != "postgres" && value != "direct"
+            return fail(code: INVALID, msg: f"sslnegotiation={value} is none of postgres, direct")
+        t.negotiation @ value
+    else if key == "connect_timeout"
+        return fail(
+            code: UNSUPPORTED,
+            msg: "connect_timeout bounds the connecting alone, and a connection here takes as long as the system allows; Options.deadline_ms bounds the session"
+        )
+    else
+        return fail(
+            code: INVALID,
+            msg: f"\"{key}\" is not a key this driver reads: user, password, host, port, dbname, application_name, sslmode, sslrootcert, sslnegotiation"
+        )
+    return ok()
+
+# `t`, where its host is one a TCP connection reaches.
+#
+# - `t`: the target read.
+function checked(t: Target) -> Target?
+    if strings.has_prefix(s: t.host, prefix: "/")
+        return fail(code: UNSUPPORTED, msg: f"\"{t.host}\" is a Unix socket's folder, and this driver speaks TCP")
+
+    if t.negotiation == "direct" && t.sslmode == "disable"
+        return fail(code: INVALID, msg: "sslnegotiation=direct begins with TLS, which sslmode=disable turns off")
+    return ok(t)
+
+# The port `s` writes.
+#
+# - `s`: decimal digits.
+#
+# Fails `invalid` where it is not a number from 1 to 65535.
+function port_of(s: str) -> i64?
+    match numbers.parse_int(s)
+        .ok n =>
+            if n >= 1 && n <= 65535
+                return ok(n)
+        .err _ => _ = 0
+
+    return fail(code: INVALID, msg: f"\"{s}\" is not a port from 1 to 65535")
+
+# The value of the hexadecimal digit `c`, or -1 where it is none.
+#
+# - `c`: a byte.
+function hex_of(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c).must() - 48
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c).must() - 87
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c).must() - 55
+    return -1
+
+# `s` with each `%XX` read as the byte it writes.
+#
+# - `s`: the part.
+# - `part`: how a message names it.
+#
+# Fails `invalid` where a `%` is not followed by two hexadecimal digits or
+# the bytes are not UTF-8.
+function decoded(s: str, part: str) -> str?
+    if !strings.contains(s: s, substr: "%")
+        return ok(s)
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '%'
+            if at + 2 >= s.len() || hex_of(s[at + 1]) < 0 || hex_of(s[at + 2]) < 0
+                return fail(
+                    code: INVALID,
+                    msg: f"{part} holds a % at byte {at} with no two hexadecimal digits after it"
+                )
+            out @ out.push(to_u8(hex_of(s[at + 1]) * 16 + hex_of(s[at + 2])).must())
+            at @ at + 3
+        else
+            out @ out.push(s[at])
+            at @ at + 1
+
+    match bytes.to_text(out)
+        .ok text => return ok(text)
+        .err _   => return fail(code: INVALID, msg: f"{part} decodes to bytes that are not UTF-8")
+
+test "read: every part, and every default"
+    assert read("postgres://ana:s3cret@db.lan:6543/app?application_name=web").must() == Target(host: "db.lan", port: 6543, user: "ana", password: "s3cret", database: "app", application_name: "web", sslmode: "verify-full", negotiation: "postgres", roots: "")
+    assert read("postgresql://").must() == Target(host: "localhost", port: 5432, user: "", password: "", database: "", application_name: "", sslmode: "verify-full", negotiation: "postgres", roots: "")
+    assert read("postgres://ana@/app").must() == Target(host: "localhost", port: 5432, user: "ana", password: "", database: "app", application_name: "", sslmode: "verify-full", negotiation: "postgres", roots: "")
+    assert read("postgres://:7000").must().port == 7000
+
+test "read: an IPv6 host in brackets, with and without a port"
+    assert read("postgres://[::1]:6000/d").must().host == "::1"
+    assert read("postgres://[::1]:6000/d").must().port == 6000
+    assert read("postgres://[fe80::1]/d").must().port == 5432
+    assert read("postgres://[::1/d").is_err()
+
+test "read: percent-decoding, a @ in the password, and the query's keys"
+    t = read("postgres://us%40er:p%40ss%3Aw@h/caf%C3%A9?user=other&dbname=x%20y&sslmode=disable").must()
+    assert t.user == "other" && t.password == "p@ss:w" && t.database == "x y"
+    assert read("postgres://a:b@c@h/d").must().password == "b@c"
+    assert read("postgres://h/d?host=other&port=5433").must().host == "other"
+    assert read("postgres://h/caf%C3%A9").must().database == "café"
+
+test "read: refused, each with its code and its reason"
+    for bad in ["mysql://h", "postgres://h:0", "postgres://h:65536", "postgres://h:x", "postgres://h/d?nope=1", "postgres://h/d?sslmode=maybe", "postgres://h/%zz", "postgres://h/%4", "postgres://h/%ff", "postgres://h/%é9"]
+        match read(bad)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    for unsupported in ["postgres://a,b/d", "postgres://h/d?sslmode=allow", "postgres://h/d?sslmode=prefer", "postgres://h/d?sslmode=require", "postgres://h/d?sslmode=verify-ca", "postgres://%2Fvar%2Frun/d", "postgres://h/d?connect_timeout=10"]
+        match read(unsupported)
+            .ok _  => assert false
+            .err e => assert e.code == "unsupported"
+
+    match read("postgres://h/d?nope=1")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"nope\" is not a key this driver reads: user, password, host, port, dbname, application_name, sslmode, sslrootcert, sslnegotiation"
+
+test "read: TLS by default and by verify-full, plain by disable, the system's store or a file of roots, direct negotiation, and what is refused with its reason"
+    assert read("postgres://h/d").must().sslmode == "verify-full"
+    assert read("postgres://h/d?sslmode=verify-full").must().sslmode == "verify-full"
+    assert read("postgres://h/d?sslmode=disable").must().sslmode == "disable"
+    assert read("postgres://h/d?sslrootcert=system").must().roots == ""
+    assert read("postgres://h/d?sslnegotiation=direct").must().negotiation == "direct"
+
+    match read("postgres://h/d?sslmode=disable&sslnegotiation=direct")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "sslnegotiation=direct begins with TLS, which sslmode=disable turns off"
+
+    match read("postgres://h/d?sslmode=prefer")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "unsupported"
+            assert e.msg == "sslmode=prefer falls back to plain text in silence where TLS fails, so whoever sits between can make it fail; this driver offers disable and verify-full"
+
+    match read("postgres://h/d?sslrootcert=%2Fno%2Fsuch%2Froots.pem")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert strings.has_prefix(s: e.msg, prefix: "sslrootcert=/no/such/roots.pem cannot be read: ")
+
+    match read("postgres://h/d?sslnegotiation=maybe")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

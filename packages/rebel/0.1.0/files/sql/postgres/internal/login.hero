@@ -1,0 +1,265 @@
+# The login: the startup message, then each request of the server for a
+# password answered, cleartext, MD5 or SCRAM-SHA-256, until the server is
+# ready. A method not spoken here fails `unsupported` and ends the session.
+
+use bytes
+use sql
+use sql/postgres/internal/auth
+use sql/postgres/internal/codes
+use sql/postgres/internal/frontend
+use sql/postgres/internal/script
+use sql/postgres/internal/session
+use sql/postgres/internal/wire
+
+# The run-time parameters the startup message asks for, beside the user, the
+# database and the application's name: UTF-8, ISO dates, UTC, floats written
+# exactly, and `bytea` in hexadecimal.
+#
+# - `user`: the role.
+# - `database`: the database, "" for the server's choice.
+# - `application_name`: "" for none.
+function startup_pairs(user: str, database: str, application_name: str) -> [frontend.Pair]
+    pairs: [frontend.Pair] @= [frontend.Pair(name: "user", value: user)]
+
+    if database != ""
+        pairs @ pairs.push(frontend.Pair(name: "database", value: database))
+
+    if application_name != ""
+        pairs @ pairs.push(frontend.Pair(name: "application_name", value: application_name))
+    pairs @ pairs.push(frontend.Pair(name: "client_encoding", value: "UTF8"))
+    pairs @ pairs.push(frontend.Pair(name: "DateStyle", value: "ISO"))
+    pairs @ pairs.push(frontend.Pair(name: "TimeZone", value: "UTC"))
+    pairs @ pairs.push(frontend.Pair(name: "extra_float_digits", value: "3"))
+    pairs @ pairs.push(frontend.Pair(name: "bytea_output", value: "hex"))
+    return pairs
+
+# Logs in: sends the startup message, answers the server's request for a
+# password, and reads until the server is ready.
+#
+# - `s`: the session, its key and parameters written.
+# - `user`: the role; not empty, no zero byte.
+# - `database`: the database, "" for the server's choice.
+# - `application_name`: "" for none.
+# - `password`: the password, "" for none.
+# - `nonce`: a fresh SCRAM nonce.
+#
+# Fails `invalid` where a text holds a zero byte or `user` is empty;
+# `permission` where a password is asked for and none was given or the
+# server refuses it; `unsupported` where the server asks for a method not
+# spoken here; and with the server's failure.
+function login(@s: session.Session, user: str, database: str, application_name: str, password: str, nonce: str) -> ()?
+    if user == ""
+        return fail(code: sql.INVALID, msg: f"logging into {s.target}: the user is empty")
+
+    for t in [user, database, application_name, password]
+        if wire.has_zero(t)
+            return fail(
+                code: sql.INVALID,
+                msg: f"logging into {s.target}: a user, database, application name or password holds a zero byte"
+            )
+
+    session.send(@s, data: frontend.startup(startup_pairs(user: user, database: database, application_name: application_name)))?
+    scram @= auth.start(user: "", nonce: nonce)
+
+    while true
+        m = session.receive(@s)?
+
+        match m
+            .authentication a => answer_login(@s, @scram, code: a.code, data: a.data, user: user, password: password)?
+            .backend_key k =>
+                s.process_id @ k.process_id
+                s.secret_key @ k.secret
+            .negotiate_version _ => _ = 0
+            .ready r =>
+                s.status @ r.status
+                return ok()
+            .error_response e =>
+                s.ended @ true
+                return codes.failure(e.report)
+            .parameter_status _ | .notice_response _ | .notification _ | .row_description _ | .data_row _ | .command_complete _ | .empty_query | .parse_complete | .bind_complete | .close_complete | .no_data | .portal_suspended | .parameter_description _ | .copy_in | .copy_out | .copy_both | .copy_data | .copy_done | .other _ => return session.out_of_step(
+                @s,
+                m: m,
+                waiting: "the login"
+            )
+
+# Answers one Authentication message of the login.
+#
+# - `s`: the session.
+# - `scram`: the SCRAM exchange, advanced.
+# - `code`: the message's code.
+# - `data`: what follows the code.
+# - `user`: the role.
+# - `password`: the password.
+function answer_login(@s: session.Session, @scram: auth.Scram, code: i64, data: [u8], user: str, password: str) -> ()?
+    if code == 0
+        return ok()
+
+    if code == 3 || code == 5 || code == 10
+        if password == ""
+            s.ended @ true
+            return fail(code: sql.PERMISSION, msg: f"{s.target} asks for a password, and none was given")
+
+    if code == 3
+        return session.send(@s, data: frontend.password_message(password))
+
+    if code == 5
+        if data.len() != 4
+            return fail(
+                code: sql.INVALID,
+                msg: f"{s.target} asked for an MD5 password with a salt of {data.len()} bytes, where 4 are due"
+            )
+        return session.send(
+            @s,
+            data: frontend.password_message(auth.md5_answer(user: user, password: password, salt: data))
+        )
+
+    if code == 10
+        mechanisms = mechanisms_of(data)?
+
+        if !mechanisms.any(is_scram_sha_256)
+            s.ended @ true
+            return fail(
+                code: sql.UNSUPPORTED,
+                msg: f"{s.target} offers the SASL mechanisms {mechanisms.join(", ")}, and this driver speaks SCRAM-SHA-256 without TLS"
+            )
+        return session.send(
+            @s,
+            data: frontend.sasl_initial(mechanism: "SCRAM-SHA-256", data: bytes.from_text(auth.client_first(scram)))
+        )
+
+    if code == 11
+        server_first = text_of(data)?
+        final = auth.client_final(@scram, password: password, server_first: server_first)?
+        return session.send(@s, data: frontend.sasl_response(bytes.from_text(final)))
+
+    if code == 12
+        return auth.verify(scram, server_final: text_of(data)?)
+    s.ended @ true
+
+    method = if code == 2
+        "Kerberos V5"
+    else if code == 7 || code == 8
+        "GSSAPI"
+    else if code == 9
+        "SSPI"
+    else
+        f"the method numbered {code}"
+    return fail(
+        code: sql.UNSUPPORTED,
+        msg: f"{s.target} asks to log in with {method}, which this driver does not speak"
+    )
+
+# Whether `m` names SCRAM-SHA-256.
+#
+# - `m`: a mechanism's name.
+function is_scram_sha_256(m: str) -> bool
+    return m == "SCRAM-SHA-256"
+
+# The mechanisms an AuthenticationSASL lists: C strings, then an empty one.
+#
+# - `data`: what follows the code.
+function mechanisms_of(data: [u8]) -> [str]?
+    c @= wire.cursor(data)
+    out: [str] @= []
+
+    while true
+        m = wire.read_cstr(@c)?
+
+        if m == ""
+            break
+        out @ out.push(m)
+
+    return ok(out)
+
+# `data` as text.
+#
+# - `data`: a SASL message.
+#
+# Fails `invalid` where it is not UTF-8.
+function text_of(data: [u8]) -> str?
+    match bytes.to_text(data)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: sql.INVALID, msg: "the server's SASL message is not UTF-8")
+
+test "login: a cleartext password asked for and given, the key and a parameter kept"
+    t @= script.scripted(
+        script.joined([script.auth_msg(code: 3, data: []), script.auth_msg(code: 0, data: []), script.msg(kind: 'S', body: script.cstrs(["server_version", "16.1"])), script.msg(kind: 'K', body: [0, 0, 0, 7, 1, 2, 3, 4]), script.msg(kind: 'Z', body: ['I'])])
+    )
+    assert login(@t.session, user: "ana", database: "db", application_name: "", password: "pw", nonce: "n").is_err() == false
+    assert t.session.process_id == 7 && t.session.secret_key == [1, 2, 3, 4] && t.session.status == 'I'
+    written = script.finish(@t)
+    assert written == script.joined([frontend.startup(startup_pairs(user: "ana", database: "db", application_name: "")), frontend.password_message("pw"), frontend.terminate()])
+
+test "login: SCRAM-SHA-256 with RFC 7677's nonce and the user PostgreSQL leaves empty"
+    server_first = "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    final = "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=qvT2SWdEH5Q06albL+hjSYuUhCG7VndFyzIb7CK4n9k="
+    mechanisms = script.joined([bytes.from_text("SCRAM-SHA-256-PLUS"), [0], bytes.from_text("SCRAM-SHA-256"), [0, 0]])
+    t @= script.scripted(
+        script.joined([script.auth_msg(code: 10, data: mechanisms), script.auth_msg(code: 11, data: bytes.from_text(server_first)), script.auth_msg(code: 12, data: bytes.from_text("v=3HO6Qt1M4MKJrmlKaoOqLAI0/0TV0HZe7J9H3MBtSOg=")), script.auth_msg(code: 0, data: []), script.msg(kind: 'Z', body: ['I'])])
+    )
+    assert login(@t.session, user: "ana", database: "", application_name: "app", password: "pencil", nonce: "rOprNGfwEbeRWgbNEkqO").is_err() == false
+    written = script.finish(@t)
+    want = script.joined(
+        [frontend.startup(startup_pairs(user: "ana", database: "", application_name: "app")), frontend.sasl_initial(mechanism: "SCRAM-SHA-256", data: bytes.from_text("n,,n=,r=rOprNGfwEbeRWgbNEkqO")), frontend.sasl_response(bytes.from_text(final)), frontend.terminate()]
+    )
+    assert written == want
+
+test "login: a server signature the password does not make is refused with permission"
+    server_first = "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    t @= script.scripted(
+        script.joined([script.auth_msg(code: 10, data: script.joined([bytes.from_text("SCRAM-SHA-256"), [0, 0]])), script.auth_msg(code: 11, data: bytes.from_text(server_first)), script.auth_msg(code: 12, data: bytes.from_text("v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")), script.auth_msg(code: 0, data: []), script.msg(kind: 'Z', body: ['I'])])
+    )
+
+    match login(@t.session, user: "ana", database: "", application_name: "", password: "pencil", nonce: "rOprNGfwEbeRWgbNEkqO")
+        .ok _  => assert false
+        .err e => assert e.code == "permission"
+
+    _ = script.finish(@t)
+
+test "login: an MD5 password, as Python's hashlib computes it"
+    t @= script.scripted(
+        script.joined([script.auth_msg(code: 5, data: [1, 2, 3, 4]), script.auth_msg(code: 0, data: []), script.msg(kind: 'Z', body: ['I'])])
+    )
+    assert !login(@t.session, user: "ana", database: "", application_name: "", password: "pw", nonce: "n").is_err()
+    written = script.finish(@t)
+    assert written == script.joined([frontend.startup(startup_pairs(user: "ana", database: "", application_name: "")), frontend.password_message("md5ee31357dd868b01f6a57c7a9c099cc5f"), frontend.terminate()])
+
+test "login: a password refused by a FATAL, none given, GSSAPI, SCRAM with channel binding alone, an empty user"
+    refused = script.msg(
+        kind: 'E',
+        body: script.report_body([["S", "FATAL"], ["V", "FATAL"], ["C", "28P01"], ["M", "password authentication failed for user \"ana\""]])
+    )
+    t @= script.scripted(script.joined([script.auth_msg(code: 3, data: []), refused]))
+
+    match login(@t.session, user: "ana", database: "", application_name: "", password: "no", nonce: "n")
+        .ok _  => assert false
+        .err e => assert e.code == "permission" && e.msg == "[28P01] password authentication failed for user \"ana\""
+
+    assert t.session.ended
+    _ = script.finish(@t)
+    none @= script.scripted(script.auth_msg(code: 3, data: []))
+
+    match login(@none.session, user: "ana", database: "", application_name: "", password: "", nonce: "n")
+        .ok _  => assert false
+        .err e => assert e.code == "permission" && e.msg == "test:5432/db asks for a password, and none was given"
+
+    _ = script.finish(@none)
+    gss @= script.scripted(script.auth_msg(code: 7, data: []))
+
+    match login(@gss.session, user: "ana", database: "", application_name: "", password: "", nonce: "n")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "test:5432/db asks to log in with GSSAPI, which this driver does not speak"
+
+    _ = script.finish(@gss)
+    plus @= script.scripted(
+        script.auth_msg(code: 10, data: script.joined([bytes.from_text("SCRAM-SHA-256-PLUS"), [0, 0]]))
+    )
+
+    match login(@plus.session, user: "ana", database: "", application_name: "", password: "pw", nonce: "n")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    _ = script.finish(@plus)
+    empty @= script.scripted([])
+    assert login(@empty.session, user: "", database: "", application_name: "", password: "", nonce: "n").is_err()
+    _ = script.finish(@empty)

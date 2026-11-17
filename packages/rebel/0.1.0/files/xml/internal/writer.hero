@@ -1,0 +1,579 @@
+# Events written as XML, on one line or laid out over several, and checked on
+# the way so that the text reads back as the tree it came from: every name a
+# name, every prefix declared where it stands for the namespace its name
+# carries, no attribute twice, no character XML cannot hold, and no comment or
+# instruction that reading would end early or give back changed. It holds its
+# own stacks, so no nesting reaches the machine's stack.
+
+use strings
+use xml/internal/characters
+use xml/internal/escape
+use xml/internal/event
+use xml/internal/markup
+use xml/internal/scan
+use xml/internal/scope
+use xml/internal/stack
+
+# How the events are laid out.
+record Layout
+    # Whether each element the walk marked `laid` puts each child on its own
+    # line, its white space text left out.
+    multiline: bool
+    # The text that indents one level where `multiline` is set.
+    indent: str
+    # Whether an element with no children is written `<a/>`.
+    self_closing: bool
+
+# The layout of the shortest text.
+function flat() -> Layout
+    return Layout(multiline: false, indent: "", self_closing: true)
+
+# The document of `prolog` and `events` as text, laid out as `layout` says.
+# Fails `invalid` where it would not read back as the same tree, and the
+# message says what and where.
+function render(prolog: event.Prolog, events: [event.Event], layout: Layout) -> str?
+    if !is_indent(layout.indent)
+        return fail(
+            code: scan.INVALID,
+            msg: f"the indent \"{layout.indent}\" holds more than spaces and tabs, and any other character would be text the tree does not hold"
+        )
+    out: [str] @= []
+
+    if prolog.declared
+        out @ out.push(declaration(prolog)?)
+    begun: bool @= prolog.declared
+
+    # The open elements, `depth` of them: each one's name as written, whether
+    # its children are laid out, and how many declarations were in scope
+    # before it.
+    names_at: [str] @= []
+    laid_at: [bool] @= []
+    marks: [i64] @= []
+    depth: i64 @= 0
+    rooted: bool @= false
+
+    prefixes: [str] @= []
+    spaces: [str] @= []
+    hidden: [i64] @= []
+    innermost: {str: i64} @= {}
+    count: i64 @= 0
+    k: i64 @= 0
+
+    while k < events.len()
+        e = events[k]
+
+        if depth == 0
+            if e.kind == event.TEXT || e.kind == event.END || e.kind == event.START && rooted
+                return fail(
+                    code: scan.INVALID,
+                    msg: "a document holds one root element and nothing but comments and instructions beside it"
+                )
+
+            if layout.multiline && begun
+                out @ out.push("\n")
+        else if layout.multiline && laid_at[depth - 1]
+            if e.kind == event.TEXT && characters.is_white(e.text)
+                k @ k + 1
+                continue
+
+            if e.kind != event.END
+                out @ out.push("\n" + repeat(layout.indent, depth.to_u64().must()))
+
+        if e.kind == event.START
+            stack.put(items: @marks, top: depth, item: count)
+            where = place_of(names_at: names_at, depth: depth, prefix: e.prefix, local: e.local)
+            out @ out.push(
+                start_tag(e: e, where: where, prefixes: @prefixes, spaces: @spaces, hidden: @hidden, innermost: @innermost, count: @count)?
+            )
+            written = written_name(prefix: e.prefix, local: e.local)
+
+            if k + 1 < events.len() && events[k + 1].kind == event.END
+                closing = if layout.self_closing
+                    "/>"
+                else
+                    f"></{written}>"
+                out @ out.push(closing)
+                scope.leave(
+                    prefixes: prefixes,
+                    hidden: hidden,
+                    innermost: @innermost,
+                    count: @count,
+                    mark: marks[depth]
+                )
+                rooted @ rooted || depth == 0
+                begun @ true
+                k @ k + 2
+                continue
+            out @ out.push(">")
+            stack.put(items: @names_at, top: depth, item: written)
+            stack.put(items: @laid_at, top: depth, item: e.laid)
+            depth @ depth + 1
+        else if e.kind == event.END
+            depth @ depth - 1
+
+            if layout.multiline && laid_at[depth]
+                out @ out.push("\n" + repeat(layout.indent, depth.to_u64().must()))
+            out @ out.push("</" + names_at[depth] + ">")
+            scope.leave(prefixes: prefixes, hidden: hidden, innermost: @innermost, count: @count, mark: marks[depth])
+            rooted @ rooted || depth == 0
+        else if e.kind == event.TEXT
+            match escape.text_escaped(e.text)
+                .ok text => out @ out.push(text)
+                .err err =>
+                    return fail(
+                        code: scan.INVALID,
+                        msg: f"the text in {path_of(names_at: names_at, depth: depth)}: {err.msg}"
+                    )
+        else if e.kind == event.COMMENT
+            out @ out.push(comment(text: e.text, where: path_of(names_at: names_at, depth: depth))?)
+        else
+            out @ out.push(
+                instruction(target: e.target, data: e.text, where: path_of(names_at: names_at, depth: depth))?
+            )
+
+        begun @ true
+        k @ k + 1
+
+    if !rooted || depth != 0
+        return fail(code: scan.INVALID, msg: "a document holds one root element, and these events close none")
+    return ok(out.join(""))
+
+# Whether `s` holds spaces and tabs alone; the empty text does.
+function is_indent(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] != ' ' && s[at] != '\t'
+            return false
+
+    return true
+
+# The name `prefix:local` as written, or `local` where there is no prefix.
+function written_name(prefix: str, local: str) -> str
+    if prefix == ""
+        return local
+    return prefix + ":" + local
+
+# Where the elements open on `names_at` stand, as a path: `/r/a`, or `the
+# document` outside the root.
+function path_of(names_at: [str] lent, depth: i64) -> str
+    if depth == 0
+        return "the document"
+    return "/" + names_at.slice(from: 0, to: depth).join("/")
+
+# Where the element `prefix:local` stands inside the elements open on
+# `names_at`, as a path: `/r/a/p:b`.
+function place_of(names_at: [str] lent, depth: i64, prefix: str, local: str) -> str
+    if depth == 0
+        return "/" + written_name(prefix: prefix, local: local)
+    return path_of(names_at: names_at, depth: depth) + "/" + written_name(prefix: prefix, local: local)
+
+# The XML declaration `prolog` says. Fails `invalid` where its version is not
+# `1.` and digits, it names an encoding other than UTF-8, or its standalone is
+# other than `yes` and `no`.
+function declaration(prolog: event.Prolog) -> str?
+    if !markup.is_version(prolog.version)
+        return fail(
+            code: scan.INVALID,
+            msg: f"the declaration's version \"{prolog.version}\" is none XML 1.0 reads: `1.0`, or `1.` and digits"
+        )
+
+    if prolog.encoding != "" && strings.to_lower_ascii(prolog.encoding) != "utf-8"
+        return fail(
+            code: scan.INVALID,
+            msg: f"the declaration names the encoding \"{prolog.encoding}\", and the text written is UTF-8"
+        )
+
+    if prolog.standalone != "" && prolog.standalone != "yes" && prolog.standalone != "no"
+        return fail(
+            code: scan.INVALID,
+            msg: f"the declaration's standalone is `yes` or `no`, and here \"{prolog.standalone}\""
+        )
+    parts: [str] @= [f"<?xml version=\"{prolog.version}\""]
+
+    if prolog.encoding != ""
+        parts @ parts.push(f" encoding=\"{prolog.encoding}\"")
+
+    if prolog.standalone != ""
+        parts @ parts.push(f" standalone=\"{prolog.standalone}\"")
+    parts @ parts.push("?>")
+    return ok(parts.join(""))
+
+# Whether a name of these parts is one XML writes: a local name with no colon,
+# and a prefix with none or empty.
+function is_written(prefix: str, local: str) -> bool
+    return characters.is_ncname(local) && (prefix == "" || characters.is_ncname(prefix))
+
+# The start tag of `e`, up to and without its `>` or `/>`, its declarations
+# added to the scope first and every name then held to them. `where` is the
+# element's place, for the messages.
+function start_tag(e: event.Event, where: str, @prefixes: [str], @spaces: [str], @hidden: [i64], @innermost: {str: i64}, @count: i64) -> str?
+    for a in e.attributes
+        if is_declaration(a)
+            name = written_name(prefix: a.prefix, local: a.local)
+
+            if a.prefix == "xmlns" && !characters.is_ncname(a.local)
+                return fail(code: scan.INVALID, msg: f"{where}: `{name}` declares no prefix XML writes")
+
+            if a.space != scope.XMLNS_SPACE
+                return fail(
+                    code: scan.INVALID,
+                    msg: f"{where}: `{name}` declares a namespace, so it stands in \"{scope.XMLNS_SPACE}\", and here in \"{a.space}\": build it with `with_namespace`"
+                )
+
+            declared = if a.prefix == ""
+                ""
+            else
+                a.local
+
+            match scope.check_declaration(prefix: declared, space: a.value)
+                .err err => return fail(code: scan.INVALID, msg: f"{where}: {err.msg}")
+                .ok _ =>
+                    scope.declare(
+                        prefixes: @prefixes,
+                        spaces: @spaces,
+                        hidden: @hidden,
+                        innermost: @innermost,
+                        count: @count,
+                        prefix: declared,
+                        space: a.value
+                    )
+
+    written = written_name(prefix: e.prefix, local: e.local)
+
+    if !is_written(prefix: e.prefix, local: e.local) || e.prefix == "xmlns"
+        return fail(code: scan.INVALID, msg: f"{where}: `{written}` is not an element's name XML writes")
+    held_to(space: e.space, prefix: e.prefix, what: f"<{written}>", where: where, spaces: spaces, innermost: innermost, is_attribute: false)?
+    out: [str] @= ["<" + written]
+    names: {str: i64} @= {}
+    expanded: {str: i64} @= {}
+
+    for a in e.attributes
+        name = written_name(prefix: a.prefix, local: a.local)
+
+        if !is_declaration(a)
+            if !is_written(prefix: a.prefix, local: a.local)
+                return fail(code: scan.INVALID, msg: f"{where}: `{name}` is not an attribute's name XML writes")
+            held_to(space: a.space, prefix: a.prefix, what: f"the attribute `{name}`", where: where, spaces: spaces, innermost: innermost, is_attribute: true)?
+
+            if a.prefix != ""
+                key = f"{a.space.len()}:{a.space}{a.local}"
+
+                match expanded[key]
+                    .ok _ =>
+                        return fail(
+                            code: scan.INVALID,
+                            msg: f"{where}: two attributes are `{a.local}` in the namespace \"{a.space}\", and an element holds one of a name"
+                        )
+                    .err _ => expanded[key] @ 0
+
+        match names[name]
+            .ok _ => return fail(
+                code: scan.INVALID,
+                msg: f"{where}: the attribute `{name}` stands twice, and an element holds one of a name"
+            )
+            .err _ => names[name] @ 0
+
+        match escape.value_escaped(a.value)
+            .ok value => out @ out.push(f" {name}=\"{value}\"")
+            .err err  => return fail(code: scan.INVALID, msg: f"{where}: the value of `{name}`: {err.msg}")
+
+    return ok(out.join(""))
+
+# Whether the attribute `a` is a namespace declaration, `xmlns` or `xmlns:p`.
+function is_declaration(a: event.Attr) -> bool
+    return a.prefix == "xmlns" || a.prefix == "" && a.local == "xmlns"
+
+# Whether a name of `prefix` in the namespace `space` reads back as written:
+# its prefix declared where it stands for that namespace, an element with no
+# prefix in the default namespace, and an attribute with none in no namespace.
+# Fails `invalid` with a message that says what to declare; `what` and `where`
+# name the name and its place.
+function held_to(space: str, prefix: str, what: str, where: str, spaces: [str] lent, innermost: {str: i64} lent, is_attribute: bool) -> ()?
+    if is_attribute && prefix == ""
+        if space != ""
+            return fail(
+                code: scan.INVALID,
+                msg: f"{where}: {what} has no prefix, so it stands in no namespace, and here in \"{space}\": give it a prefix declared for it"
+            )
+        return ok()
+
+    match scope.space_of(spaces: spaces, innermost: innermost, prefix: prefix)
+        .err _ =>
+            return fail(
+                code: scan.INVALID,
+                msg: f"{where}: the prefix `{prefix}` of {what} is not declared where it stands: declare it for \"{space}\" with `with_namespace`"
+            )
+        .ok declared =>
+            if declared != space
+                if prefix == ""
+                    said = if declared == ""
+                        "no default namespace is declared"
+                    else
+                        f"the default namespace is \"{declared}\""
+                    return fail(
+                        code: scan.INVALID,
+                        msg: f"{where}: {what} stands in the namespace \"{space}\", and where it stands {said}: declare it with `with_namespace`"
+                    )
+                return fail(
+                    code: scan.INVALID,
+                    msg: f"{where}: {what} stands in the namespace \"{space}\", and its prefix `{prefix}` is declared there for \"{declared}\""
+                )
+
+    return ok()
+
+# The comment holding `text`. Fails `invalid` where reading would not give back
+# `text`: a character XML cannot hold, `--`, a `-` at its end, a carriage
+# return.
+function comment(text: str, where: str) -> str?
+    bad = characters.bad_char_index(text)
+
+    if bad < text.len()
+        return fail(
+            code: scan.INVALID,
+            msg: f"a comment in {where} holds {scan.found(text: text, at: bad)}, a character XML cannot hold"
+        )
+
+    if markup.index_from(text: text, at: 0, word: "--") < text.len() || markup.holds_at(text: text, at: text.len() - 1, word: "-")
+        return fail(
+            code: scan.INVALID,
+            msg: f"a comment in {where} holds `--` or ends in `-`, which would end it early: \"{text}\""
+        )
+
+    if strings.contains(s: text, substr: "\r")
+        return fail(
+            code: scan.INVALID,
+            msg: f"a comment in {where} holds a carriage return, which reading gives back as a line feed"
+        )
+    return ok("<!--" + text + "-->")
+
+# The instruction `<?target data?>`. Fails `invalid` where reading would not
+# give it back: a target that is not a name with no colon or is `xml` in any
+# case, data holding `?>`, a character XML cannot hold or a carriage return, or
+# beginning with white space, which reading takes as the space after the
+# target.
+function instruction(target: str, data: str, where: str) -> str?
+    if !characters.is_ncname(target) || strings.to_lower_ascii(target) == "xml"
+        return fail(
+            code: scan.INVALID,
+            msg: f"an instruction in {where} has the target \"{target}\": a name with no colon, and never `xml` in any case"
+        )
+    bad = characters.bad_char_index(data)
+
+    if bad < data.len()
+        return fail(
+            code: scan.INVALID,
+            msg: f"the instruction `{target}` in {where} holds {scan.found(text: data, at: bad)}, a character XML cannot hold"
+        )
+
+    if strings.contains(s: data, substr: "?>")
+        return fail(
+            code: scan.INVALID,
+            msg: f"the instruction `{target}` in {where} holds `?>`, which would end it early"
+        )
+
+    if strings.contains(s: data, substr: "\r")
+        return fail(
+            code: scan.INVALID,
+            msg: f"the instruction `{target}` in {where} holds a carriage return, which reading gives back as a line feed"
+        )
+
+    if data == ""
+        return ok("<?" + target + "?>")
+
+    if characters.is_space(data[0])
+        return fail(
+            code: scan.INVALID,
+            msg: f"the data of the instruction `{target}` in {where} begins with white space, which reading takes as the space after the target"
+        )
+    return ok("<?" + target + " " + data + "?>")
+
+## Tests
+
+test "render: an element alone, a declaration, and comments and instructions around the root, as minidom writes them"
+    none: [event.Attr] = []
+    a = event.start(prefix: "", local: "a", space: "", attributes: none, laid: false)
+    end = event.of_text(kind: event.END, s: "")
+    assert render(prolog: event.undeclared(), events: [a, end], layout: flat()).must() == "<a/>"
+    prolog = event.Prolog(declared: true, version: "1.0", encoding: "UTF-8", standalone: "yes")
+    around = [
+        event.of_text(kind: event.COMMENT, s: "c")
+        event.instruction(target: "p", data: "d")
+        a
+        end
+        event.of_text(kind: event.COMMENT, s: "z")
+    ]
+    assert render(prolog: prolog, events: around, layout: flat()).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?><!--c--><?p d?><a/><!--z-->"
+    lines: Layout @= flat()
+    lines.multiline @ true
+    assert render(prolog: prolog, events: around, layout: lines).must() == "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<!--c-->\n<?p d?>\n<a/>\n<!--z-->"
+    open_close: Layout @= flat()
+    open_close.self_closing @ false
+    assert render(prolog: event.undeclared(), events: [a, end], layout: open_close).must() == "<a></a>"
+
+test "render: element content laid out, white space text left out, and mixed content kept on one line, as ElementTree's indent lays them"
+    none: [event.Attr] = []
+    end = event.of_text(kind: event.END, s: "")
+    r = event.start(prefix: "", local: "r", space: "", attributes: none, laid: true)
+    b = event.start(prefix: "", local: "b", space: "", attributes: none, laid: true)
+    c = event.start(prefix: "", local: "c", space: "", attributes: none, laid: false)
+    m = event.start(prefix: "", local: "m", space: "", attributes: none, laid: false)
+    i = event.start(prefix: "", local: "i", space: "", attributes: none, laid: false)
+    text = event.of_text(kind: event.TEXT, s: "\n  ")
+    events = [
+        r
+        text
+        b
+        c
+        end
+        end
+        m
+        event.of_text(kind: event.TEXT, s: "x ")
+        i
+        event.of_text(kind: event.TEXT, s: "y")
+        end
+        end
+        end
+    ]
+    lines: Layout @= flat()
+    lines.multiline @ true
+    lines.indent @ "  "
+    assert render(prolog: event.undeclared(), events: events, layout: lines).must() == "<r>\n  <b>\n    <c/>\n  </b>\n  <m>x <i>y</i></m>\n</r>"
+    assert render(prolog: event.undeclared(), events: events, layout: flat()).must() == "<r>\n  <b><c/></b><m>x <i>y</i></m></r>"
+
+test "render: attributes in order with their escapes, and text escaped"
+    attributes = [
+        event.Attr(prefix: "", local: "k", space: "", value: "a\"b\n<")
+        event.Attr(prefix: "", local: "j", space: "", value: "")
+    ]
+    a = event.start(prefix: "", local: "a", space: "", attributes: attributes, laid: false)
+    events = [a, event.of_text(kind: event.TEXT, s: "x<&>\r"), event.of_text(kind: event.END, s: "")]
+    assert render(prolog: event.undeclared(), events: events, layout: flat()).must() == "<a k=\"a&quot;b&#10;&lt;\" j=\"\">x&lt;&amp;&gt;&#13;</a>"
+
+test "render: namespaces declared and held to, a default one, and xml's own prefix"
+    declared = [
+        event.Attr(prefix: "xmlns", local: "p", space: scope.XMLNS_SPACE, value: "u")
+        event.Attr(prefix: "", local: "xmlns", space: scope.XMLNS_SPACE, value: "d")
+    ]
+    root = event.start(prefix: "p", local: "a", space: "u", attributes: declared, laid: false)
+    inner_attributes = [
+        event.Attr(prefix: "p", local: "x", space: "u", value: "1")
+        event.Attr(prefix: "xml", local: "lang", space: scope.XML_SPACE, value: "it")
+    ]
+    inner = event.start(prefix: "", local: "b", space: "d", attributes: inner_attributes, laid: false)
+    end = event.of_text(kind: event.END, s: "")
+    want = "<p:a xmlns:p=\"u\" xmlns=\"d\"><b p:x=\"1\" xml:lang=\"it\"/></p:a>"
+    assert render(prolog: event.undeclared(), events: [root, inner, end, end], layout: flat()).must() == want
+
+test "render: a prefix not declared, declared for another namespace, a default namespace missing, and an attribute with no prefix in one"
+    none: [event.Attr] = []
+    end = event.of_text(kind: event.END, s: "")
+
+    match render(prolog: event.undeclared(), events: [event.start(prefix: "p", local: "a", space: "u", attributes: none, laid: false), end], layout: flat())
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "/p:a: the prefix `p` of <p:a> is not declared where it stands: declare it for \"u\" with `with_namespace`"
+
+    match render(prolog: event.undeclared(), events: [event.start(prefix: "", local: "a", space: "u", attributes: none, laid: false), end], layout: flat())
+        .ok _  => assert false
+        .err e => assert e.msg == "/a: <a> stands in the namespace \"u\", and where it stands no default namespace is declared: declare it with `with_namespace`"
+
+    other = [event.Attr(prefix: "xmlns", local: "p", space: scope.XMLNS_SPACE, value: "v")]
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "p", local: "a", space: "u", attributes: other, laid: false), end],
+        layout: flat()
+    ).is_err()
+    stray = [event.Attr(prefix: "", local: "x", space: "u", value: "1")]
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "a", space: "", attributes: stray, laid: false), end],
+        layout: flat()
+    ).is_err()
+    plain = [event.Attr(prefix: "", local: "xmlns", space: "", value: "u")]
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "a", space: "", attributes: plain, laid: false), end],
+        layout: flat()
+    ).is_err()
+
+test "render: a name that is none, an attribute twice by its name and by its namespace, and two roots"
+    none: [event.Attr] = []
+    end = event.of_text(kind: event.END, s: "")
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "1a", space: "", attributes: none, laid: false), end],
+        layout: flat()
+    ).is_err()
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "a:b", space: "", attributes: none, laid: false), end],
+        layout: flat()
+    ).is_err()
+    twice = [
+        event.Attr(prefix: "", local: "x", space: "", value: "1")
+        event.Attr(prefix: "", local: "x", space: "", value: "2")
+    ]
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "a", space: "", attributes: twice, laid: false), end],
+        layout: flat()
+    ).is_err()
+    one_name = [
+        event.Attr(prefix: "xmlns", local: "p", space: scope.XMLNS_SPACE, value: "u")
+        event.Attr(prefix: "xmlns", local: "q", space: scope.XMLNS_SPACE, value: "u")
+        event.Attr(prefix: "p", local: "x", space: "u", value: "1")
+        event.Attr(prefix: "q", local: "x", space: "u", value: "2")
+    ]
+    assert render(
+        prolog: event.undeclared(),
+        events: [event.start(prefix: "", local: "a", space: "", attributes: one_name, laid: false), end],
+        layout: flat()
+    ).is_err()
+    a = event.start(prefix: "", local: "a", space: "", attributes: none, laid: false)
+    assert render(prolog: event.undeclared(), events: [a, end, a, end], layout: flat()).is_err()
+    assert render(prolog: event.undeclared(), events: [], layout: flat()).is_err()
+
+test "render: an indent of other characters, and a declaration naming another encoding"
+    none: [event.Attr] = []
+    events = [
+        event.start(prefix: "", local: "a", space: "", attributes: none, laid: false)
+        event.of_text(kind: event.END, s: "")
+    ]
+    dotted: Layout @= flat()
+    dotted.indent @ ".."
+    assert render(prolog: event.undeclared(), events: events, layout: dotted).is_err()
+    latin = event.Prolog(declared: true, version: "1.0", encoding: "ISO-8859-1", standalone: "")
+    assert render(prolog: latin, events: events, layout: flat()).is_err()
+    two = event.Prolog(declared: true, version: "2.0", encoding: "", standalone: "")
+    assert render(prolog: two, events: events, layout: flat()).is_err()
+
+test "comment: as written, and `--`, a `-` at the end, a carriage return and U+0001 refused where Python writes them"
+    assert comment(text: " c ", where: "/a").must() == "<!-- c -->"
+    assert comment(text: "", where: "/a").must() == "<!---->"
+    assert comment(text: "- x", where: "/a").must() == "<!--- x-->"
+
+    for text in ["a--b", "a-", "-", "a\rb", "\u{1}"]
+        match comment(text: text, where: "/a")
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "instruction: data and none, and a target or data reading would not give back"
+    assert instruction(target: "t", data: "d x", where: "/a").must() == "<?t d x?>"
+    assert instruction(target: "xml-stylesheet", data: "", where: "/a").must() == "<?xml-stylesheet?>"
+
+    for pair in [["xml", "x"], ["XML", ""], ["p:t", ""], ["", ""], ["t", "a?>b"], ["t", " d"], ["t", "a\rb"], ["t", "\u{1}"]]
+        match instruction(target: pair[0], data: pair[1], where: "/a")
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "is_indent, written_name, path_of and place_of: their edges"
+    assert is_indent("") && is_indent(" \t ") && !is_indent(" x")
+    assert written_name(prefix: "", local: "a") == "a" && written_name(prefix: "p", local: "a") == "p:a"
+    names = ["r", "p:a"]
+    assert path_of(names_at: names, depth: 0) == "the document"
+    assert path_of(names_at: names, depth: 2) == "/r/p:a"
+    assert place_of(names_at: names, depth: 0, prefix: "", local: "r") == "/r"
+    assert place_of(names_at: names, depth: 1, prefix: "", local: "b") == "/r/b"
+
+test "declaration: the version alone, all three, and each refused"
+    assert declaration(event.Prolog(declared: true, version: "1.0", encoding: "", standalone: "")).must() == "<?xml version=\"1.0\"?>"
+    assert declaration(event.Prolog(declared: true, version: "1.1", encoding: "utf-8", standalone: "no")).must() == "<?xml version=\"1.1\" encoding=\"utf-8\" standalone=\"no\"?>"
+    assert declaration(event.Prolog(declared: true, version: "1.0", encoding: "", standalone: "maybe")).is_err()

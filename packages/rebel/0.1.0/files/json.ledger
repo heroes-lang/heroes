@@ -1,0 +1,219 @@
+# The ledger of `json`: what Go's `encoding/json`, `encoding/json/v2` and
+# `encoding/json/jsontext` (Go 1.27, whose first package is written on the
+# other two) and Python's `json` (3.15) let a program do, one block per
+# capability, and what Rebel answers. Rust's standard library has no JSON, so
+# its line is `-` in every block. The lists are this machine's, 2026-11-15:
+# `go doc -all` on each of the three packages, and `json.__all__` with the
+# signatures `inspect.signature` prints. Every expected value in the package's
+# tests was observed from one of the two on the same day.
+
+capability json/value  a JSON value held as a tree a program can match on
+  heroes  json.Value, json.kind_of
+  go      any (nil, bool, float64, string, []any, map[string]any), jsontext.Kind, jsontext.KindInvalid, jsontext.KindNull, jsontext.KindFalse, jsontext.KindTrue, jsontext.KindString, jsontext.KindNumber, jsontext.KindBeginObject, jsontext.KindEndObject, jsontext.KindBeginArray, jsontext.KindEndArray, jsontext.Kind.String, jsontext.Value.Kind
+  rust    -
+  python  None, bool, int, float, str, list, dict
+  note    a variant of six cases, so a `match` must answer all six. An object is a map that keeps the order its members were written in, as Python's dict does; Go's map has no order. The case of JSON's null is `null_value`: `null` is a word the language refuses
+
+capability json/number  what a number is, and the integer it is when it is one
+  heroes  json.number_of, json.int_of, json.from_int
+  go      float64 in an any, Number.Int64, Number.Float64, jsontext.Token.Int, jsontext.Token.Uint, jsontext.Token.Float, jsontext.Token.Float32
+  rust    -
+  python  int, float
+  note    a number is an f64, as Go's any holds it and as RFC 8259 section 6 expects of a reader: `9007199254740993` is read as 9007199254740992.0 (Go the same, Python keeps the integer exact). `int_of` answers the integer of a number that is one, and `ParseOptions.exact_integers` refuses a text whose integer an f64 would change
+
+capability json/number-as-written  a number's own digits kept, past what an f64 holds
+  heroes  refused: a number of the tree is an f64, the package's decided design; `ParseOptions.exact_integers` refuses a text the f64 would change, and `to_compact` keeps a number's digits as written
+  go      Decoder.UseNumber, Number, Number.String, Number.MarshalJSONTo, Number.UnmarshalJSONFrom, jsontext.CanonicalizeRawInts, jsontext.CanonicalizeRawFloats
+  rust    -
+  python  loads(parse_int=), loads(parse_float=), JSONDecoder(parse_int=, parse_float=)
+  note    -
+
+capability json/parse  a text read into a value, by RFC 8259 and nothing wider
+  heroes  json.parse, json.parse_with
+  go      Unmarshal (into an any), v2.Unmarshal (into an any), jsontext.Value.UnmarshalJSON
+  rust    -
+  python  loads, JSONDecoder, JSONDecoder.decode
+  note    a failure is `invalid` and its message opens `line L, column C:`, the column counted in characters as Python counts it (Go gives a byte offset). `1e400` fails `does_not_fit` as Go refuses it; Python answers inf, which no JSON can then say. `NaN`, `Infinity`, a raw control character in a string and a byte order mark are refused as both refuse them or as RFC 8259 does
+
+capability json/parse-where-wrong  where a text stops being JSON, for a program to act on
+  heroes  json.parse
+  go      SyntaxError, SyntaxError.Offset, SyntaxError.Error, jsontext.SyntacticError, jsontext.SyntacticError.Error, jsontext.SyntacticError.Unwrap, Decoder.InputOffset, jsontext.Decoder.InputOffset
+  rust    -
+  python  JSONDecodeError, JSONDecodeError.msg, JSONDecodeError.doc, JSONDecodeError.pos, JSONDecodeError.lineno, JSONDecodeError.colno
+  note    an error of the language is a code and a message and holds no other field (spec section 6), so the line and the column stand in the message, in one shape for every failure
+
+capability json/parse-depth  a limit of nesting the caller sets
+  heroes  json.ParseOptions, json.DEFAULT_MAX_DEPTH
+  go      - (10,000 levels, fixed: `exceeded max depth` at 10,001, observed)
+  rust    -
+  python  sys.setrecursionlimit (a RecursionError, observed at 100,000 levels)
+  note    512 unless the caller says otherwise. The reader holds its own stack and never runs out of the machine's; the limit is there because the language's `==` on two values follows their nesting: measured on arm64 macOS on 2026-11-15, objects nested 5,800 deep exhaust an 8 MiB stack under `--sanitize` (37,000 in a plain build), and 512 levels cost under 1 MiB in the worst of those
+
+capability json/parse-duplicate-keys  a key written twice in one object
+  heroes  json.ParseOptions
+  go      jsontext.AllowDuplicateNames, jsontext.ErrDuplicateName
+  rust    -
+  python  loads (keeps the last), loads(object_pairs_hook=)
+  note    refused unless the caller asks, as jsontext's IsValid refuses it; asked, the last value stands at the first one's place, which is what Python and Go's v1 answer in silence (observed: `{"a":1,"b":2,"a":3}` is a 3 then b 2)
+
+capability json/parse-wider  what RFC 8259 refuses, read because the caller asked
+  heroes  json.ParseOptions
+  go      jsontext.AllowInvalidUTF8, InvalidUTF8Error, InvalidUTF8Error.Error
+  rust    -
+  python  loads(strict=False), JSONDecoder(strict=), loads(parse_constant=), JSONDecoder(parse_constant=)
+  note    three widenings, each a field of the options: a raw control character inside a string (Python's strict=False), an escape that is half a surrogate pair read as U+FFFD (what Go's v1 does in silence; Python keeps the half, which no UTF-8 text can hold), and `NaN`, `Infinity`, `-Infinity` read as numbers (what Python does in silence). Bytes that are not UTF-8 never reach this package: a `str` is UTF-8, and `validated_bytes` fails `not_text` first
+
+capability json/parse-next  one value read from the middle of a text, saying where it ended
+  heroes  json.parse_next
+  go      Decoder.Decode, Decoder.More, Decoder.Buffered, jsontext.Decoder.ReadValue, jsontext.Decoder.UnreadBuffer
+  rust    -
+  python  JSONDecoder.raw_decode
+  note    so that values written one after another, a line each or not, are read in a loop; the index answered is past the white space that follows the value, where Python's is at the value's end
+
+capability json/valid  whether a text is JSON
+  heroes  json.is_valid
+  go      Valid, jsontext.Value.IsValid
+  rust    -
+  python  -
+  note    true exactly where `parse` succeeds, so a key written twice is not valid, as jsontext answers (false) and against Go's v1 (true), both observed
+
+capability json/format  a value written as text on one line
+  heroes  json.format, json.format_with
+  go      Marshal (of an any), v2.Marshal (of an any), jsontext.Value.MarshalJSON, jsontext.Value.String
+  rust    -
+  python  dumps, JSONEncoder, JSONEncoder.encode
+  note    no white space at all, as Go writes it; Python's default puts a space after each `,` and `:`, which `FormatOptions.spaced` gives. Only what RFC 8259 obliges is escaped, as jsontext does: Python escapes every character past ASCII by default and Go's v1 escapes `<`, `>` and `&`, both of which are options here
+
+capability json/format-number  how a number is written
+  heroes  json.format
+  go      jsontext.AppendFloat, jsontext.Float, jsontext.Float32, jsontext.Int, jsontext.Uint
+  rust    -
+  python  float.__repr__ (through dumps)
+  note    the shortest digits that read back as the same f64, laid out as Go lays them: `1`, `100000000000000000000`, `1e+21`, `0.000001`, `1e-7`, `-0`. Python writes `1.0`, `1e+20`, `1e-06`, `-0.0`, under which an integer read from `1` would be written back as `1.0`
+
+capability json/format-non-finite  nan and the infinities
+  heroes  json.FormatOptions
+  go      UnsupportedValueError, UnsupportedValueError.Error
+  rust    -
+  python  dumps(allow_nan=), JSONEncoder(allow_nan=)
+  note    they have no JSON, and writing one fails `invalid`, as Go does and as Python does under allow_nan=False; `FormatOptions.non_finite` writes Python's `NaN`, `Infinity` and `-Infinity` for a caller who asks
+
+capability json/format-indented  a value written over several lines, indented
+  heroes  json.format_indented, json.FormatOptions
+  go      MarshalIndent, Encoder.SetIndent, jsontext.Multiline, jsontext.WithIndent, jsontext.WithIndentPrefix
+  rust    -
+  python  dumps(indent=), JSONEncoder(indent=)
+  note    one member or element a line, `": "` after a key, an empty list `[]` and an empty object `{}`, on which the two agree (observed). A width of 0 breaks the lines and indents nothing, as Python's indent=0. The indent may be any text and a prefix may begin each line, through the options
+
+capability json/format-spacing  a space after each comma and colon on one line
+  heroes  json.FormatOptions
+  go      jsontext.SpaceAfterComma, jsontext.SpaceAfterColon
+  rust    -
+  python  dumps(separators=), JSONEncoder(separators=), JSONEncoder.item_separator, JSONEncoder.key_separator
+  note    one switch for both spaces, Python's default look; separators of the caller's own invention would write text that is not JSON
+
+capability json/format-sorted  an object's members written in the order of their keys
+  heroes  json.FormatOptions
+  go      v2.Deterministic, jsontext.ReorderRawObjects
+  rust    -
+  python  dumps(sort_keys=), JSONEncoder(sort_keys=)
+  note    by bytes, which is the order of the characters' code points and Python's order. Unasked, the members are written in the order the object holds them, so the same value always writes the same bytes; Go's v1 sorts always, having no order to keep
+
+capability json/format-escapes  which characters are written as escapes
+  heroes  json.FormatOptions
+  go      Encoder.SetEscapeHTML, jsontext.EscapeForHTML, jsontext.EscapeForJS, jsontext.PreserveRawStrings
+  rust    -
+  python  dumps(ensure_ascii=), JSONEncoder(ensure_ascii=)
+  note    three switches: every character past ASCII, and U+007F as Python escapes it too (observed), as `\uXXXX`, a pair of them past U+FFFF (Python's default); `<`, `>` and `&` (Go v1's default); U+2028 and U+2029
+
+capability json/format-canonical  the one text RFC 8785 gives a value
+  heroes  json.format_canonical
+  go      jsontext.Value.Canonicalize
+  rust    -
+  python  -
+  note    keys in the order of their UTF-16 code units, which differs from the order of bytes only between a character past U+FFFF and one from U+E000 on (observed: Go writes the key U+1F600 before the key U+E000); a negative zero is written `0`
+
+capability json/quote  one text written as a JSON string, and read back from one
+  heroes  json.quote, json.unquote
+  go      jsontext.AppendQuote, jsontext.AppendUnquote, jsontext.String, jsontext.Token.String
+  rust    -
+  python  dumps (of a str), loads (of a string token)
+  note    -
+
+capability json/respace  a JSON text respaced without being read into a value
+  heroes  json.to_compact, json.to_indented
+  go      Compact, Indent, jsontext.Value.Compact, jsontext.Value.Indent, jsontext.Value.Format, jsontext.AppendFormat
+  rust    -
+  python  -
+  note    every token is kept as it was written, a number's digits and a string's escapes included; Go 1.27 rewrites a string's `\u00e9` as the character on the way (observed), which changes bytes a caller did not ask to change; and Go's Indent keeps the white space after the value (observed: `} ` stays), where these drop it
+
+capability json/html-safe  a JSON text made safe to stand inside a script element
+  heroes  json.to_html_safe
+  go      HTMLEscape
+  rust    -
+  python  -
+  note    `<`, `>`, `&`, U+2028 and U+2029 become `\u003c`, `\u003e`, `\u0026`, `\u2028` and `\u2029`, which in JSON can stand only inside a string, so the text means what it meant
+
+capability json/read-out  a member by its key, an element by its index, and what a value holds
+  heroes  json.member, json.element, json.bool_of, json.number_of, json.int_of, json.text_of, json.items_of, json.members_of, json.is_null
+  go      v.(map[string]any)[key], v.([]any)[i], v.(string), v.(float64), v.(bool), jsontext.Token.Bool, jsontext.Token.Kind, UnmarshalTypeError, UnmarshalTypeError.Error, UnmarshalTypeError.Unwrap
+  rust    -
+  python  dict[key], list[i], isinstance
+  note    absent is `not_found`, the wrong kind is `invalid`, and each message says what was there instead; Go's assertion panics and Python raises KeyError, IndexError or TypeError
+
+capability json/pointer  a value reached by a path of keys and indices
+  heroes  json.value_at, json.pointer_of, json.pointer_tokens
+  go      jsontext.Pointer, jsontext.Pointer.IsValid, jsontext.Pointer.Tokens, jsontext.Pointer.AppendToken, jsontext.Pointer.Parent, jsontext.Pointer.LastToken, jsontext.Pointer.Contains, jsontext.Decoder.StackPointer, jsontext.Encoder.StackPointer
+  rust    -
+  python  -
+  note    the path is RFC 6901's text, `/users/0/name`. A pointer's parent, its last token and whether it holds another are a slice or a comparison of the list `pointer_tokens` answers
+
+capability json/build  a value built by a program
+  heroes  json.from_int
+  go      map[string]any{}, []any{}, jsontext.Null, jsontext.True, jsontext.False, jsontext.Bool, jsontext.BeginObject, jsontext.EndObject, jsontext.BeginArray, jsontext.EndArray
+  rust    -
+  python  dict, list
+  note    the cases of `json.Value` are its constructors, `.object(members: {"a": .number(v: 1.0)})`, and a map literal builds an object; `from_int` is the one function, because `to_f64` of an integer past 2^53 rounds in silence
+
+capability json/copy  an independent copy of a value
+  heroes  built-in `=`
+  go      jsontext.Value.Clone, jsontext.Token.Clone
+  rust    -
+  python  copy.deepcopy
+  note    every value of the language is an independent copy (spec section 3)
+
+capability json/records  a record filled from JSON by its field names, and written as JSON
+  heroes  refused: needs reflection
+  go      Marshal (of a struct), Unmarshal (into a struct), v2.Marshal, v2.Unmarshal, struct tags, Decoder.DisallowUnknownFields, v2.RejectUnknownMembers, v2.ErrUnknownName, v2.MatchCaseInsensitiveNames, MatchCaseSensitiveDelimiter, v2.OmitZeroStructFields, OmitEmptyWithLegacySemantics, v2.StringifyNumbers, StringifyWithLegacySemantics, v2.FormatNilMapAsNull, v2.FormatNilSliceAsNull, FormatByteArrayAsArray, FormatBytesWithLegacySemantics, FormatDurationAsNano, ParseBytesWithLooseRFC4648, ParseTimeWithLooseRFC3339, UnmarshalArrayFromAnyLength, MergeWithLegacySemantics, CallMethodsWithLegacySemantics, ReportErrorsWithLegacySemantics, DefaultOptionsV1, v2.DefaultOptionsV2, InvalidUnmarshalError, InvalidUnmarshalError.Error, UnmarshalFieldError, UnmarshalFieldError.Error, UnsupportedTypeError, UnsupportedTypeError.Error, v2.SemanticError, v2.SemanticError.Error, v2.SemanticError.Unwrap, jsontext.ErrNonStringName
+  rust    -
+  python  dumps(skipkeys=), JSONEncoder(skipkeys=), dumps(check_circular=), JSONEncoder(check_circular=)
+  note    the language has no reflection and no tag on a field (design.md Part 6), so nothing can walk a record it was not written for. What a program has instead is the value tree: it reads each field out with `member` and the `_of` functions, and builds an object with a map literal, `Point::x` giving a field's own name
+
+capability json/hooks  a function of the program called for each value read or written
+  heroes  refused: needs a closure or an interface
+  go      Marshaler, Unmarshaler, MarshalerError, MarshalerError.Error, MarshalerError.Unwrap, v2.Marshaler, v2.MarshalerTo, v2.Unmarshaler, v2.UnmarshalerFrom, v2.Marshalers, v2.Unmarshalers, v2.MarshalFunc, v2.MarshalToFunc, v2.UnmarshalFunc, v2.UnmarshalFromFunc, v2.JoinMarshalers, v2.JoinUnmarshalers, v2.WithMarshalers, v2.WithUnmarshalers
+  rust    -
+  python  loads(object_hook=), loads(array_hook=), loads(cls=), JSONDecoder(object_hook=, object_pairs_hook=, array_hook=), dumps(default=), dumps(cls=), JSONEncoder.default, JSONEncoder(default=)
+  note    a hook turns a value into a type of the program's own while the text is read; here the program reads the tree and builds its own type from it, in its own function
+
+capability json/stream  JSON read from a stream and written to one
+  heroes  refused: json stands on no stream
+  go      NewDecoder, Decoder, NewEncoder, Encoder, Encoder.Encode, v2.MarshalWrite, v2.UnmarshalRead, v2.MarshalEncode, v2.UnmarshalDecode, jsontext.NewDecoder, jsontext.Decoder, jsontext.NewEncoder, jsontext.Encoder, jsontext.Encoder.WriteValue, jsontext.Decoder.Reset, jsontext.Encoder.Reset
+  rust    -
+  python  load, dump, JSONEncoder.iterencode
+  note    `json` may use `strings`, `numbers` and `unicode` and no stream (README A1). A program reads the text with `read_file` or `io` and calls `parse`, and writes what `format` answers; values one after another in one text are `parse_next`'s
+
+capability json/tokens  a text read one token at a time, and written one at a time
+  heroes  refused: json stands on no stream
+  go      Decoder.Token, Token, Delim, Delim.String, jsontext.Token, jsontext.Decoder.ReadToken, jsontext.Decoder.PeekKind, jsontext.Decoder.SkipValue, jsontext.Decoder.StackDepth, jsontext.Decoder.StackIndex, jsontext.Encoder.WriteToken, jsontext.Encoder.StackDepth, jsontext.Encoder.StackIndex
+  rust    -
+  python  -
+  note    reading token by token is how a program reads a document larger than its memory from a stream; a text held whole is read whole, by `parse`
+
+dropped
+  go      jsontext.Internal, jsontext.Encoder.AvailableBuffer, jsontext.Encoder.OutputOffset: buffers and offsets of a stream's writer, which json has none of
+  go      Options, v2.Options, jsontext.Options, v2.JoinOptions, v2.GetOption, jsontext.Decoder.Options, jsontext.Encoder.Options: the plumbing of variadic options; here an option is a field of a record
+  go      RawMessage, jsontext.Value, jsontext.Value.Clone: a type for bytes held as JSON; a text held as JSON is a `str`, and what is done with one stands in the blocks above
+  python  json.detect_encoding, json.decoder, json.encoder, json.scanner: not in `json.__all__`; a `str` is UTF-8 and has no encoding to detect
+  python  json.tool, `python -m json`: a command of the interpreter and no part of the library
+  python  JSONDecodeError.add_note, JSONDecodeError.args, JSONDecodeError.with_traceback: what every Python exception has

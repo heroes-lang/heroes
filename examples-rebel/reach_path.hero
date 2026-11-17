@@ -1,0 +1,9 @@
+# Reaches Rebel's `path`, a path read as text by POSIX's rules and by
+# Windows', so that `heroes test` on this file runs the package's own tests
+# (spec § 12). It cleans one path by each rules and prints both.
+
+use <rebel>/path
+
+function main()
+    print(path.clean_by("a//b/../c/", .posix))
+    print(path.clean_by("C:/a/./b\\..\\c", .windows))

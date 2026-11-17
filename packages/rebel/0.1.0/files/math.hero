@@ -1,0 +1,1237 @@
+# The functions of mathematics over `f64`, and the integer helpers that answer
+# where the language's own arithmetic aborts.
+#
+# The functions of floats are the platform's C library's (`math/libm.hero`)
+# where C has them, and every one answers what IEEE 754 answers: a nan for a
+# question with no real answer, an infinity for one too large, never a failure,
+# so float arithmetic stays one expression and `is_nan` asks afterwards. A
+# function that orders floats looks for a nan first, since ordering one aborts
+# (spec § 7).
+#
+# Overflow aborts in Heroes at every width, and division by zero too (spec
+# § 7). The integer helpers are the ones that answer instead: a `T?` failing
+# `does_not_fit` where the answer is outside its type. They are written for
+# `i64` alone, a few for `u64`, and that is a rule of the language and not a
+# choice: generics have no constraints, `<` is refused on a type parameter, so
+# one function cannot serve every width. A narrower integer is widened with
+# `to_i64`, computed, and brought back with `to_<type>`, which fails
+# `does_not_fit` itself. A float function holds the plain name (`abs`, `min`,
+# `pow`), and the integer one beside it says `_i64`.
+
+use math/internal/bits
+use math/internal/checked
+use math/internal/elementary
+use math/internal/floats
+use math/internal/integers
+use math/internal/limits
+use math/internal/modular
+use math/internal/parts
+use math/internal/rounding
+use math/internal/sums
+use math/internal/trig
+use math/internal/whole
+use math/internal/wrapping
+
+## The codes `math` fails with
+
+# A number is outside its type: the language's own code, which every function
+# here that can overflow fails with.
+constant DOES_NOT_FIT: str
+    limits.DOES_NOT_FIT
+
+# The input is not what the function reads, a negative count or a zero modulus;
+# the message says what was given.
+constant INVALID: str
+    limits.INVALID
+
+# The smallest or the largest of an empty list was asked for.
+constant NOT_FOUND: str
+    limits.NOT_FOUND
+
+## Constants of mathematics
+
+# Pi, the ratio of a circle's circumference to its diameter, as the nearest
+# `f64`.
+constant PI: f64
+    limits.PI
+
+# Tau, twice pi, a whole turn in radians.
+constant TAU: f64
+    limits.TAU
+
+# E, the base of the natural logarithm.
+constant E: f64
+    limits.E
+
+# The square root of 2.
+constant SQRT_2: f64
+    limits.SQRT_2
+
+# The natural logarithm of 2.
+constant LN_2: f64
+    limits.LN_2
+
+# The natural logarithm of 10.
+constant LN_10: f64
+    limits.LN_10
+
+# The logarithm of e in base 2.
+constant LOG2_E: f64
+    limits.LOG2_E
+
+# The logarithm of e in base 10.
+constant LOG10_E: f64
+    limits.LOG10_E
+
+# The golden ratio, one plus the square root of 5, halved.
+constant PHI: f64
+    limits.PHI
+
+# Euler's constant: the limit of the harmonic sum less the natural logarithm.
+constant EULER_GAMMA: f64
+    limits.EULER_GAMMA
+
+## The limits of the number types
+
+# The positive infinity; the negative one is `-math.INF`.
+constant INF: f64
+    limits.INF
+
+# A value that is not a number. It equals nothing, itself included, and its
+# sign is not promised.
+constant NAN: f64
+    limits.NAN
+
+# The largest finite `f64`, about 1.8 times 10 to the 308; `-math.MAX_F64` is
+# the smallest.
+constant MAX_F64: f64
+    limits.MAX_F64
+
+# The smallest positive `f64`, 2 to the -1074, one of the subnormal floats that
+# hold fewer bits of precision.
+constant SMALLEST_F64: f64
+    limits.SMALLEST_F64
+
+# The smallest positive `f64` that holds its full 53 bits of precision, 2 to
+# the -1022.
+constant SMALLEST_NORMAL_F64: f64
+    limits.SMALLEST_NORMAL_F64
+
+# The gap between 1.0 and the next float above it, 2 to the -52.
+constant EPSILON: f64
+    limits.EPSILON
+
+# The largest finite `f32`, about 3.4 times 10 to the 38.
+constant MAX_F32: f32
+    limits.MAX_F32
+
+# The smallest positive `f32`, 2 to the -149.
+constant SMALLEST_F32: f32
+    limits.SMALLEST_F32
+
+# The largest `i8`.
+constant MAX_I8: i8
+    127
+
+# The smallest `i8`.
+constant MIN_I8: i8
+    -128
+
+# The largest `i16`.
+constant MAX_I16: i16
+    32767
+
+# The smallest `i16`.
+constant MIN_I16: i16
+    -32768
+
+# The largest `i32`.
+constant MAX_I32: i32
+    2147483647
+
+# The smallest `i32`.
+constant MIN_I32: i32
+    -2147483648
+
+# The largest `i64`.
+constant MAX_I64: i64
+    limits.MAX_I64
+
+# The smallest `i64`. It has no negation and no absolute value in `i64`.
+constant MIN_I64: i64
+    limits.MIN_I64
+
+# The largest `u8`; the smallest of every unsigned type is 0.
+constant MAX_U8: u8
+    255
+
+# The largest `u16`.
+constant MAX_U16: u16
+    65535
+
+# The largest `u32`.
+constant MAX_U32: u32
+    4294967295
+
+# The largest `u64`.
+constant MAX_U64: u64
+    limits.MAX_U64
+
+## What a float is
+
+# Whether `x` is a nan, the value that is not a number.
+#
+# - `x`: any float.
+function is_nan(x: f64) -> bool
+    return floats.is_nan(x)
+
+# Whether `x` is an infinity, of either sign.
+#
+# - `x`: any float; a nan is not an infinity.
+function is_inf(x: f64) -> bool
+    return floats.is_inf(x)
+
+# Whether `x` is neither an infinity nor a nan.
+#
+# - `x`: any float.
+function is_finite(x: f64) -> bool
+    return floats.is_finite(x)
+
+# Whether `x` holds its full 53 bits of precision: neither zero, nor
+# subnormal, nor an infinity, nor a nan.
+#
+# - `x`: any float.
+function is_normal(x: f64) -> bool
+    return floats.is_normal(x)
+
+# Whether `x` is subnormal: not zero, and smaller in size than
+# `SMALLEST_NORMAL_F64`, so holding fewer bits of precision.
+#
+# - `x`: any float; zero, an infinity and a nan are not subnormal.
+function is_subnormal(x: f64) -> bool
+    return floats.is_subnormal(x)
+
+# Whether `x` carries a minus sign, which `x < 0.0` cannot say of minus zero.
+#
+# - `x`: any float; minus zero answers `true`, and a nan answers its sign bit,
+#   which the operation that made it chose.
+function has_minus_sign(x: f64) -> bool
+    return floats.has_minus_sign(x)
+
+## Sign and size
+
+# `x` without its sign.
+#
+# - `x`: any float; minus zero answers zero, either infinity the positive one,
+#   a nan a nan.
+function abs(x: f64) -> f64
+    return floats.abs(x)
+
+# The sign of `x`: -1.0, 1.0, or `x` itself where it is a zero or a nan.
+#
+# - `x`: any float; minus zero answers minus zero, an infinity its sign.
+#
+# A zero answers itself, as the sign of mathematics; where a program wants 1.0
+# or -1.0 by the sign bit, `with_sign(x: 1.0, of: v)` is that.
+function sign(x: f64) -> f64
+    return floats.sign(x)
+
+# `x` with its size kept and the sign of `of`.
+#
+# - `x`: the float whose size is kept; a nan stays a nan.
+# - `of`: the float whose sign is taken, minus zero's and a nan's sign bit
+#   included.
+function with_sign(x: f64, of: f64) -> f64
+    return floats.with_sign(x: x, of: of)
+
+# The smaller of `a` and `b`.
+#
+# - `a`: any float.
+# - `b`: any float.
+#
+# A nan on either side answers a nan, so the mistake that made it is not
+# hidden; minus zero is the smaller of the two zeros.
+function min(a: f64, b: f64) -> f64
+    return floats.min(a: a, b: b)
+
+# The larger of `a` and `b`.
+#
+# - `a`: any float.
+# - `b`: any float.
+#
+# A nan on either side answers a nan; zero is the larger of the two zeros.
+function max(a: f64, b: f64) -> f64
+    return floats.max(a: a, b: b)
+
+# `x` held between `low` and `high`: `low` where it is below, `high` where it
+# is above, `x` itself otherwise.
+#
+# - `x`: any float; a nan answers a nan.
+# - `low`: the smallest answer, not a nan.
+# - `high`: the largest answer, not a nan, and not below `low`.
+#
+# Aborts where `low` is above `high`, or either is a nan.
+function clamp(x: f64, low: f64, high: f64) -> f64
+    return floats.clamp(x: x, low: low, high: high)
+
+# The float halfway between `a` and `b`, computed so that two large floats do
+# not overflow on the way.
+#
+# - `a`: any float.
+# - `b`: any float.
+#
+# A nan answers a nan, and the two infinities of opposite sign a nan.
+function midpoint(a: f64, b: f64) -> f64
+    return floats.midpoint(a: a, b: b)
+
+# Whether `a` and `b` are equal within a tolerance: their difference is at
+# most `relative` times the larger of their sizes, or at most `absolute`.
+#
+# - `a`: any float.
+# - `b`: any float.
+# - `relative`: the tolerance as a fraction of the larger size, 0.0 or more;
+#   0.000000001 asks for about nine equal digits.
+# - `absolute`: the tolerance as a size, 0.0 or more, which a comparison with
+#   zero needs, since no relative tolerance reaches zero.
+#
+# Aborts where a tolerance is negative or a nan. Two equal infinities are
+# close, an infinity is close to nothing else, and a nan to nothing.
+function is_close(a: f64, b: f64, relative: f64, absolute: f64) -> bool
+    return floats.is_close(a: a, b: b, relative: relative, absolute: absolute)
+
+## Rounding
+
+# The largest whole number at or below `x`.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves.
+#
+# The answer is a float: `to_i64` after it gives an integer, failing
+# `does_not_fit` where it is outside `i64`.
+function floor(x: f64) -> f64
+    return rounding.floor(x)
+
+# The smallest whole number at or above `x`.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves, and a
+#   number between -1.0 and zero answers minus zero.
+function ceil(x: f64) -> f64
+    return rounding.ceil(x)
+
+# `x` with its fraction dropped, rounded toward zero.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves.
+function trunc(x: f64) -> f64
+    return rounding.trunc(x)
+
+# The whole number nearest to `x`, a half rounded away from zero.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves, and -0.5
+#   answers -1.0.
+function round(x: f64) -> f64
+    return rounding.round(x)
+
+# The whole number nearest to `x`, a half rounded to the even one, as banks
+# and IEEE 754 round.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves, 2.5
+#   answers 2.0, and -0.5 answers minus zero.
+function round_even(x: f64) -> f64
+    return rounding.round_even(x)
+
+# The part of `x` after its point, with the sign of `x`.
+#
+# - `x`: any float; an infinity answers a zero of its sign, and a nan a nan.
+#
+# The part before the point is `trunc(x)`, and the two add up to `x` exactly.
+function fraction(x: f64) -> f64
+    return rounding.fraction(x)
+
+## Division of floats
+
+# The quotient of `x` by `by` rounded down to a whole number, so that
+# `div_floor(x, by) * by + rem_floor(x, by)` is `x`, as nearly as floats
+# hold it.
+#
+# - `x`: the dividend, any float.
+# - `by`: the divisor; zero answers a nan, as does an infinite `x`.
+function div_floor(x: f64, by: f64) -> f64
+    return rounding.div_floor(x: x, by: by)
+
+# The remainder of `x` by `by` with the sign of `by`, the one that pairs with
+# `div_floor`.
+#
+# - `x`: the dividend; an infinity answers a nan.
+# - `by`: the divisor; zero answers a nan, and an infinity answers `x` where
+#   the two have one sign and `by` itself where they have not.
+function rem_floor(x: f64, by: f64) -> f64
+    return rounding.rem_floor(x: x, by: by)
+
+# The quotient of `x` by `by` rounded so that the remainder that pairs with it,
+# `rem_euclid`, is never negative.
+#
+# - `x`: the dividend; an infinity answers an infinity or a nan.
+# - `by`: the divisor; zero answers a nan or an infinity, as `/` does.
+function div_euclid(x: f64, by: f64) -> f64
+    return rounding.div_euclid(x: x, by: by)
+
+# The remainder of `x` by `by` that is never negative, below the size of `by`.
+#
+# - `x`: the dividend; an infinity answers a nan.
+# - `by`: the divisor, of either sign; zero answers a nan.
+#
+# A negative `x` very close to zero can answer the size of `by` itself, since
+# the exact remainder rounds up to it.
+function rem_euclid(x: f64, by: f64) -> f64
+    return rounding.rem_euclid(x: x, by: by)
+
+# The remainder of `x` by `by` whose quotient is rounded to the nearest whole
+# number, a half to the even one, so it lies within half of `by` of zero.
+#
+# - `x`: the dividend; an infinity answers a nan.
+# - `by`: the divisor; zero answers a nan, an infinity answers `x`.
+function rem_nearest(x: f64, by: f64) -> f64
+    return rounding.rem_nearest(x: x, by: by)
+
+## Powers, roots and logarithms
+
+# The square root of `x`.
+#
+# - `x`: any float; a negative number answers a nan, minus zero answers
+#   minus zero, the infinity answers itself.
+function sqrt(x: f64) -> f64
+    return elementary.sqrt(x)
+
+# The cube root of `x`, negative where `x` is.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves.
+function cbrt(x: f64) -> f64
+    return elementary.cbrt(x)
+
+# The length of the hypotenuse of a right triangle whose sides are `x` and
+# `y`, computed so that it does not overflow on the way.
+#
+# - `x`: one side, of either sign.
+# - `y`: the other side, of either sign.
+#
+# An infinity on either side answers the infinity, even beside a nan; a nan
+# beside a finite number answers a nan.
+function hypot(x: f64, y: f64) -> f64
+    return elementary.hypot(x: x, y: y)
+
+# `base` raised to the power `exponent`.
+#
+# - `base`: any float; a negative base with an exponent that is not whole
+#   answers a nan, and zero with a negative exponent an infinity.
+# - `exponent`: any float; zero answers 1.0 for every base, a nan included.
+#
+# 1.0 raised to anything, a nan included, is 1.0. An integer exponent is
+# `to_f64` of it; an integer power of an integer is `pow_i64`.
+function pow(base: f64, exponent: f64) -> f64
+    return elementary.pow(base: base, exponent: exponent)
+
+# E raised to the power `x`.
+#
+# - `x`: any float; minus infinity answers zero, and above about 709.78 the
+#   answer is the infinity.
+function exp(x: f64) -> f64
+    return elementary.exp(x)
+
+# 2 raised to the power `x`.
+#
+# - `x`: any float; minus infinity answers zero, and 1024 or more the
+#   infinity.
+function exp2(x: f64) -> f64
+    return elementary.exp2(x)
+
+# E raised to the power `x`, less one, exact where `x` is near zero, where
+# `exp(x) - 1.0` loses every digit.
+#
+# - `x`: any float; minus infinity answers -1.0, and a zero answers itself.
+function exp_minus_1(x: f64) -> f64
+    return elementary.exp_minus_1(x)
+
+# The natural logarithm of `x`, in base e.
+#
+# - `x`: any float; zero answers minus infinity, a negative number a nan, the
+#   infinity itself.
+function ln(x: f64) -> f64
+    return elementary.ln(x)
+
+# The logarithm of `x` in base 2, exact at every power of two.
+#
+# - `x`: any float; zero answers minus infinity, a negative number a nan.
+function log2(x: f64) -> f64
+    return elementary.log2(x)
+
+# The logarithm of `x` in base 10, exact at every power of ten a float holds.
+#
+# - `x`: any float; zero answers minus infinity, a negative number a nan.
+function log10(x: f64) -> f64
+    return elementary.log10(x)
+
+# The logarithm of `x` in base `base`, `ln(x) / ln(base)`.
+#
+# - `x`: any float; zero answers an infinity, a negative number a nan.
+# - `base`: any float; 1.0 answers an infinity or a nan, a negative one a nan.
+#
+# It is rounded twice, so `log2` and `log10` are more exact in their bases.
+function log(x: f64, base: f64) -> f64
+    return elementary.log(x: x, base: base)
+
+# The natural logarithm of one plus `x`, exact where `x` is near zero, where
+# `ln(1.0 + x)` loses every digit.
+#
+# - `x`: any float; -1.0 answers minus infinity, below it a nan, and a zero
+#   answers itself.
+function ln_1_plus(x: f64) -> f64
+    return elementary.ln_1_plus(x)
+
+## Angles
+
+# The sine of `x`.
+#
+# - `x`: an angle in radians; an infinity answers a nan, and a zero answers
+#   itself.
+function sin(x: f64) -> f64
+    return trig.sin(x)
+
+# The cosine of `x`.
+#
+# - `x`: an angle in radians; an infinity answers a nan.
+function cos(x: f64) -> f64
+    return trig.cos(x)
+
+# The tangent of `x`.
+#
+# - `x`: an angle in radians; an infinity answers a nan, and a zero answers
+#   itself.
+function tan(x: f64) -> f64
+    return trig.tan(x)
+
+# The angle whose sine is `x`, in radians from -pi/2 to pi/2.
+#
+# - `x`: a sine, from -1.0 to 1.0; outside it the answer is a nan.
+function asin(x: f64) -> f64
+    return trig.asin(x)
+
+# The angle whose cosine is `x`, in radians from 0 to pi.
+#
+# - `x`: a cosine, from -1.0 to 1.0; outside it the answer is a nan.
+function acos(x: f64) -> f64
+    return trig.acos(x)
+
+# The angle whose tangent is `x`, in radians from -pi/2 to pi/2.
+#
+# - `x`: any float; an infinity answers pi/2 of its sign.
+function atan(x: f64) -> f64
+    return trig.atan(x)
+
+# The angle of the point (`x`, `y`) from the positive x axis, in radians from
+# -pi to pi, which `atan(y / x)` cannot tell in every quadrant.
+#
+# - `y`: the point's height; its sign, minus zero's included, picks the
+#   half-plane.
+# - `x`: the point's distance along the axis; a negative one, minus zero
+#   included, answers an angle beyond pi/2.
+#
+# Two zeros answer a zero or pi with the sign of `y`; a nan answers a nan.
+function atan2(y: f64, x: f64) -> f64
+    return trig.atan2(y: y, x: x)
+
+# `x` radians in degrees, `x` times 180 over pi.
+#
+# - `x`: an angle in radians; an infinity and a nan answer themselves.
+function to_degrees(x: f64) -> f64
+    return trig.to_degrees(x)
+
+# `x` degrees in radians, `x` times pi over 180.
+#
+# - `x`: an angle in degrees; an infinity and a nan answer themselves.
+function to_radians(x: f64) -> f64
+    return trig.to_radians(x)
+
+# The hyperbolic sine of `x`.
+#
+# - `x`: any float; an infinity answers itself, and the answer overflows to
+#   the infinity above about 710.
+function sinh(x: f64) -> f64
+    return trig.sinh(x)
+
+# The hyperbolic cosine of `x`, 1.0 or more.
+#
+# - `x`: any float; either infinity answers the positive one.
+function cosh(x: f64) -> f64
+    return trig.cosh(x)
+
+# The hyperbolic tangent of `x`, from -1.0 to 1.0.
+#
+# - `x`: any float; an infinity answers 1.0 of its sign.
+function tanh(x: f64) -> f64
+    return trig.tanh(x)
+
+# The number whose hyperbolic sine is `x`.
+#
+# - `x`: any float; an infinity and a zero answer themselves.
+function asinh(x: f64) -> f64
+    return trig.asinh(x)
+
+# The number, zero or more, whose hyperbolic cosine is `x`.
+#
+# - `x`: 1.0 or more; below 1.0 the answer is a nan.
+function acosh(x: f64) -> f64
+    return trig.acosh(x)
+
+# The number whose hyperbolic tangent is `x`.
+#
+# - `x`: from -1.0 to 1.0; at either end an infinity, beyond them a nan.
+function atanh(x: f64) -> f64
+    return trig.atanh(x)
+
+## Special functions
+
+# The error function of `x`, from -1.0 to 1.0.
+#
+# - `x`: any float; an infinity answers 1.0 of its sign.
+function erf(x: f64) -> f64
+    return trig.erf(x)
+
+# The complementary error function of `x`, `1.0 - erf(x)`, exact where `x` is
+# large, where that difference loses every digit.
+#
+# - `x`: any float; the infinity answers zero, minus infinity 2.0.
+function erfc(x: f64) -> f64
+    return trig.erfc(x)
+
+# The gamma function of `x`, which is the factorial of `x - 1` at a whole
+# number.
+#
+# - `x`: any float; a zero answers an infinity of its sign, a negative whole
+#   number and minus infinity a nan, and the answer overflows to the infinity
+#   above about 171.6.
+function gamma(x: f64) -> f64
+    return trig.gamma(x)
+
+# The natural logarithm of the size of `gamma(x)`, which stays finite far past
+# where `gamma` overflows.
+#
+# - `x`: any float; a zero, a negative whole number and either infinity answer
+#   the infinity.
+#
+# The sign `gamma` would have is `sign(gamma(x))` where that does not
+# overflow.
+function ln_gamma(x: f64) -> f64
+    return trig.ln_gamma(x)
+
+## The parts of a float
+
+# What `to_scaled` answers: a float as a fraction and a power of two, `x ==
+# fraction * 2^exponent`.
+record Scaled
+    # The fraction, from 0.5 up to and not including 1.0 in size, with the
+    # sign of the float; or the float itself where it is a zero, an infinity
+    # or a nan.
+    fraction: f64
+    # The power of two the fraction is multiplied by; 0 for a zero, an
+    # infinity and a nan.
+    exponent: i64
+
+# `x` as a fraction and a power of two.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves with the
+#   exponent 0, and a subnormal one a fraction of full precision.
+function to_scaled(x: f64) -> Scaled
+    return Scaled(fraction: parts.scaled_fraction(x), exponent: parts.scaled_exponent(x))
+
+# `x` times 2 raised to `exponent`, computed exactly while the answer is a
+# normal float.
+#
+# - `x`: any float; a zero, an infinity and a nan answer themselves.
+# - `exponent`: the power of two, of either sign; past the range of floats
+#   the answer is a zero or an infinity of the sign of `x`.
+function scale(x: f64, exponent: i64) -> f64
+    return parts.scale(x: x, exponent: exponent)
+
+# The power of two `x` lies at: the whole number `e` with 2^e at or below the
+# size of `x` and 2^(e + 1) above it.
+#
+# - `x`: a finite float other than zero; a subnormal answers below -1022.
+#
+# Fails `invalid` where `x` is a zero, an infinity or a nan, which lie at no
+# power of two.
+function exponent_of(x: f64) -> i64?
+    return parts.exponent_of(x)
+
+# The float next to `x` in the direction of `toward`.
+#
+# - `x`: any float; the largest one toward the infinity answers the infinity.
+# - `toward`: the direction; equal to `x` it answers `toward` itself, and a nan
+#   on either side answers a nan.
+function next_after(x: f64, toward: f64) -> f64
+    return parts.next_after(x: x, toward: toward)
+
+# The `f32` next to `x` in the direction of `toward`.
+#
+# - `x`: any `f32`.
+# - `toward`: the direction; equal to `x` it answers `toward` itself, and a nan
+#   on either side answers a nan.
+function next_after_f32(x: f32, toward: f32) -> f32
+    return parts.next_after_f32(x: x, toward: toward)
+
+# The gap between the size of `x` and the next float above it, the unit in the
+# last place: what one step of rounding costs at `x`.
+#
+# - `x`: any float; a zero answers `SMALLEST_F64`, an infinity the infinity, a
+#   nan a nan, and the largest float the gap below it.
+function ulp(x: f64) -> f64
+    return parts.ulp(x)
+
+# `x` times `times`, plus `plus`, rounded once, so more exact than
+# `x * times + plus`, which rounds twice.
+#
+# - `x`: one factor.
+# - `times`: the other factor.
+# - `plus`: what is added to the exact product.
+#
+# A nan anywhere, or an infinity times zero, answers a nan.
+function mul_add(x: f64, times: f64, plus: f64) -> f64
+    return parts.mul_add(x: x, times: times, plus: plus)
+
+## Many floats at once
+
+# The sum of `xs`, rounded once, so the same whatever their order:
+# `[0.1, 0.1, ...]` ten times sums to 1.0, where a running `+` reaches
+# 0.9999999999999999.
+#
+# - `xs`: the floats, any count; the empty list sums to 0.0.
+#
+# Fails `does_not_fit` where finite floats sum past the largest float on the
+# way, even where later ones would bring the sum back. A nan in the list, or
+# both infinities, answers a nan; one infinity answers itself. It costs a few
+# times a running `+`.
+function sum(xs: [f64]) -> f64?
+    return sums.sum(xs)
+
+# The product of `xs`, multiplied in their order.
+#
+# - `xs`: the floats, any count; the empty list multiplies to 1.0.
+function product(xs: [f64]) -> f64
+    return sums.product(xs)
+
+# The sum of the products of `a` and `b` taken in pairs, each product exact and
+# the sum rounded once.
+#
+# - `a`: the first floats.
+# - `b`: the second floats, as many as `a`; two empty lists answer 0.0.
+#
+# Fails `does_not_fit` where the products sum past the largest float on the way.
+#
+# Aborts where `a` and `b` are not of one length.
+function dot(a: [f64], b: [f64]) -> f64?
+    return sums.dot(a: a, b: b)
+
+# The length of the vector `xs`, the square root of the sum of the squares,
+# computed so that it does not overflow on the way.
+#
+# - `xs`: the coordinates, any count; the empty list answers 0.0.
+#
+# An infinity answers the infinity, even beside a nan.
+function norm(xs: [f64]) -> f64
+    return sums.norm(xs)
+
+# The distance between the points `a` and `b`, `norm` of their difference.
+#
+# - `a`: one point's coordinates.
+# - `b`: the other's, as many as `a`.
+#
+# Aborts where `a` and `b` are not of one length.
+function dist(a: [f64], b: [f64]) -> f64
+    return sums.dist(a: a, b: b)
+
+# The smallest of `xs`.
+#
+# - `xs`: the floats; a nan among them answers a nan, and minus zero is below
+#   zero.
+#
+# Fails `not_found` where `xs` is empty.
+function min_of(xs: [f64]) -> f64?
+    return sums.min_of(xs)
+
+# The largest of `xs`.
+#
+# - `xs`: the floats; a nan among them answers a nan, and zero is above minus
+#   zero.
+#
+# Fails `not_found` where `xs` is empty.
+function max_of(xs: [f64]) -> f64?
+    return sums.max_of(xs)
+
+## Integers that answer instead of aborting
+
+# The sum of `a` and `b`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+#
+# Fails `does_not_fit` where the sum is outside `i64`.
+function add(a: i64, b: i64) -> i64?
+    return checked.add(a: a, b: b)
+
+# `a` less `b`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+#
+# Fails `does_not_fit` where the difference is outside `i64`.
+function sub(a: i64, b: i64) -> i64?
+    return checked.sub(a: a, b: b)
+
+# The product of `a` and `b`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+#
+# Fails `does_not_fit` where the product is outside `i64`.
+function mul(a: i64, b: i64) -> i64?
+    return checked.mul(a: a, b: b)
+
+# `x` with its sign changed.
+#
+# - `x`: any `i64`.
+#
+# Fails `does_not_fit` where `x` is `MIN_I64`, whose negation is one past
+# `MAX_I64`.
+function neg(x: i64) -> i64?
+    return checked.neg(x)
+
+# The quotient of `x` by `by`, rounded toward zero as `/` rounds.
+#
+# - `x`: the dividend.
+# - `by`: the divisor; zero fails.
+#
+# Fails `invalid` where `by` is zero, and `does_not_fit` where `x` is
+# `MIN_I64` and `by` is -1.
+function div(x: i64, by: i64) -> i64?
+    return checked.div(x: x, by: by)
+
+# The remainder of `x` by `by`, with the sign of `x` as `%` gives it.
+#
+# - `x`: the dividend; `MIN_I64` by -1 answers 0.
+# - `by`: the divisor; zero fails.
+#
+# Fails `invalid` where `by` is zero.
+function rem(x: i64, by: i64) -> i64?
+    return checked.rem(x: x, by: by)
+
+# `base` raised to the power `exponent`.
+#
+# - `base`: any `i64`.
+# - `exponent`: 0 or more; 0 answers 1 for every base, 0 included.
+#
+# Fails `invalid` where `exponent` is negative, and `does_not_fit` where the
+# power is outside `i64`.
+function pow_i64(base: i64, exponent: i64) -> i64?
+    return checked.pow_i64(base: base, exponent: exponent)
+
+# `x` without its sign.
+#
+# - `x`: any `i64`.
+#
+# Fails `does_not_fit` where `x` is `MIN_I64`; `abs_diff(a: x, b: 0)` answers
+# that one as a `u64`.
+function abs_i64(x: i64) -> i64?
+    return checked.abs_i64(x)
+
+# The distance between `a` and `b`, which always fits in a `u64`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function abs_diff(a: i64, b: i64) -> u64
+    return checked.abs_diff(a: a, b: b)
+
+# The sum of `a` and `b`.
+#
+# - `a`: any `u64`.
+# - `b`: any `u64`.
+#
+# Fails `does_not_fit` where the sum is above `MAX_U64`.
+function add_u64(a: u64, b: u64) -> u64?
+    return checked.add_u64(a: a, b: b)
+
+# `a` less `b`.
+#
+# - `a`: any `u64`.
+# - `b`: any `u64`.
+#
+# Fails `does_not_fit` where `b` is above `a`.
+function sub_u64(a: u64, b: u64) -> u64?
+    return checked.sub_u64(a: a, b: b)
+
+# The product of `a` and `b`.
+#
+# - `a`: any `u64`.
+# - `b`: any `u64`.
+#
+# Fails `does_not_fit` where the product is above `MAX_U64`.
+function mul_u64(a: u64, b: u64) -> u64?
+    return checked.mul_u64(a: a, b: b)
+
+# The sum of `a` and `b`, or the limit of `i64` it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function add_clamped(a: i64, b: i64) -> i64
+    return wrapping.add_clamped(a: a, b: b)
+
+# `a` less `b`, or the limit of `i64` it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function sub_clamped(a: i64, b: i64) -> i64
+    return wrapping.sub_clamped(a: a, b: b)
+
+# The product of `a` and `b`, or the limit of `i64` it passes.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function mul_clamped(a: i64, b: i64) -> i64
+    return wrapping.mul_clamped(a: a, b: b)
+
+# The sum of `a` and `b` modulo 2 to the 64, as a hash or a checksum wants it:
+# past `MAX_I64` it goes on from `MIN_I64`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function add_wrapping(a: i64, b: i64) -> i64
+    return wrapping.add_wrapping(a: a, b: b)
+
+# `a` less `b` modulo 2 to the 64.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function sub_wrapping(a: i64, b: i64) -> i64
+    return wrapping.sub_wrapping(a: a, b: b)
+
+# The product of `a` and `b` modulo 2 to the 64, its lowest 64 bits.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function mul_wrapping(a: i64, b: i64) -> i64
+    return wrapping.mul_wrapping(a: a, b: b)
+
+## Integer division
+
+# The quotient of `x` by `by` rounded down, as Python's `//` rounds.
+#
+# - `x`: the dividend.
+# - `by`: the divisor, not zero.
+#
+# Fails `does_not_fit` where `x` is `MIN_I64` and `by` is -1.
+#
+# Aborts where `by` is zero, as `/` does.
+function div_floor_i64(x: i64, by: i64) -> i64?
+    return integers.div_floor_i64(x: x, by: by)
+
+# The remainder of `x` by `by` with the sign of `by`, the one that pairs with
+# `div_floor_i64`, as Python's `%` gives it.
+#
+# - `x`: the dividend.
+# - `by`: the divisor, not zero.
+#
+# Aborts where `by` is zero, as `%` does.
+function rem_floor_i64(x: i64, by: i64) -> i64
+    return integers.rem_floor_i64(x: x, by: by)
+
+# The quotient of `x` by `by` rounded so that the remainder that pairs with
+# it, `rem_euclid_i64`, is never negative.
+#
+# - `x`: the dividend.
+# - `by`: the divisor, not zero, of either sign.
+#
+# Fails `does_not_fit` where `x` is `MIN_I64` and `by` is -1.
+#
+# Aborts where `by` is zero, as `/` does.
+function div_euclid_i64(x: i64, by: i64) -> i64?
+    return integers.div_euclid_i64(x: x, by: by)
+
+# The remainder of `x` by `by` that is never negative, below the size of `by`:
+# the bucket of `x` among `by` buckets, whatever the sign of `x`.
+#
+# - `x`: the dividend.
+# - `by`: the divisor, not zero, of either sign.
+#
+# Aborts where `by` is zero, as `%` does.
+function rem_euclid_i64(x: i64, by: i64) -> i64
+    return integers.rem_euclid_i64(x: x, by: by)
+
+# The quotient of `x` by `by` rounded up: how many groups of `by` hold `x`
+# things.
+#
+# - `x`: the dividend.
+# - `by`: the divisor, not zero.
+#
+# Fails `does_not_fit` where `x` is `MIN_I64` and `by` is -1.
+#
+# Aborts where `by` is zero, as `/` does.
+function div_ceil(x: i64, by: i64) -> i64?
+    return integers.div_ceil(x: x, by: by)
+
+## Comparing integers
+
+# The smaller of `a` and `b`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function min_i64(a: i64, b: i64) -> i64
+    return integers.min_i64(a: a, b: b)
+
+# The larger of `a` and `b`.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function max_i64(a: i64, b: i64) -> i64
+    return integers.max_i64(a: a, b: b)
+
+# `x` held between `low` and `high`.
+#
+# - `x`: any `i64`.
+# - `low`: the smallest answer.
+# - `high`: the largest answer, not below `low`.
+#
+# Aborts where `low` is above `high`.
+function clamp_i64(x: i64, low: i64, high: i64) -> i64
+    return integers.clamp_i64(x: x, low: low, high: high)
+
+# The sign of `x`: -1, 0 or 1.
+#
+# - `x`: any `i64`.
+function sign_i64(x: i64) -> i64
+    return integers.sign_i64(x)
+
+# The integer halfway between `a` and `b`, rounded toward zero, computed so
+# that it never overflows.
+#
+# - `a`: any `i64`.
+# - `b`: any `i64`.
+function midpoint_i64(a: i64, b: i64) -> i64
+    return integers.midpoint_i64(a: a, b: b)
+
+# The sum of `xs`.
+#
+# - `xs`: the integers, any count; the empty list sums to 0.
+#
+# Fails `does_not_fit` where the sum itself is outside `i64`; a running total
+# that passes a limit on the way and comes back is no failure.
+function sum_i64(xs: [i64]) -> i64?
+    return integers.sum_i64(xs)
+
+# The product of `xs`.
+#
+# - `xs`: the integers, any count; the empty list multiplies to 1, and a zero
+#   anywhere answers 0.
+#
+# Fails `does_not_fit` where the product itself is outside `i64`.
+function product_i64(xs: [i64]) -> i64?
+    return integers.product_i64(xs)
+
+# The smallest of `xs`.
+#
+# - `xs`: the integers.
+#
+# Fails `not_found` where `xs` is empty.
+function min_of_i64(xs: [i64]) -> i64?
+    return integers.min_of_i64(xs)
+
+# The largest of `xs`.
+#
+# - `xs`: the integers.
+#
+# Fails `not_found` where `xs` is empty.
+function max_of_i64(xs: [i64]) -> i64?
+    return integers.max_of_i64(xs)
+
+## Whole numbers
+
+# The greatest common divisor of `a` and `b`, 0 or more.
+#
+# - `a`: any `i64`; its sign is ignored.
+# - `b`: any `i64`; its sign is ignored, and zero answers the size of `a`.
+#
+# Fails `does_not_fit` where the divisor is 2 to the 63, of `MIN_I64` with 0 or
+# with itself.
+function gcd(a: i64, b: i64) -> i64?
+    return whole.gcd(a: a, b: b)
+
+# The least common multiple of `a` and `b`, 0 or more.
+#
+# - `a`: any `i64`; its sign is ignored, and zero answers 0.
+# - `b`: any `i64`; its sign is ignored, and zero answers 0.
+#
+# Fails `does_not_fit` where the multiple is above `MAX_I64`.
+function lcm(a: i64, b: i64) -> i64?
+    return whole.lcm(a: a, b: b)
+
+# The whole square root of `x`: the largest integer whose square is at most
+# `x`.
+#
+# - `x`: 0 or more.
+#
+# Fails `invalid` where `x` is negative.
+function isqrt(x: i64) -> i64?
+    return whole.isqrt(x)
+
+# The whole logarithm of `x` in base 2: the largest `e` with 2^e at most `x`.
+#
+# - `x`: 1 or more.
+#
+# Fails `invalid` where `x` is 0 or negative.
+function log2_i64(x: i64) -> i64?
+    return whole.log2_i64(x)
+
+# The whole logarithm of `x` in base 10: one less than its count of digits.
+#
+# - `x`: 1 or more.
+#
+# Fails `invalid` where `x` is 0 or negative.
+function log10_i64(x: i64) -> i64?
+    return whole.log10_i64(x)
+
+# The whole logarithm of `x` in base `base`: the largest `e` with `base^e` at
+# most `x`.
+#
+# - `x`: 1 or more.
+# - `base`: 2 or more.
+#
+# Fails `invalid` where `x` is below 1 or `base` below 2.
+function log_i64(x: i64, base: i64) -> i64?
+    return whole.log_i64(x: x, base: base)
+
+# The factorial of `n`, the product of the whole numbers from 1 to `n`.
+#
+# - `n`: from 0 to 20; 0 answers 1.
+#
+# Fails `invalid` where `n` is negative, and `does_not_fit` where it is above
+# 20, whose factorial is above `MAX_I64`.
+function factorial(n: i64) -> i64?
+    return whole.factorial(n)
+
+# The count of ways to choose `k` things from `n`, order not counting.
+#
+# - `n`: how many there are, 0 or more.
+# - `k`: how many are chosen, 0 or more; above `n` the count is 0.
+#
+# Fails `invalid` where either is negative, and `does_not_fit` only where the
+# count itself is above `MAX_I64`.
+function comb(n: i64, k: i64) -> i64?
+    return whole.comb(n: n, k: k)
+
+# The count of ways to arrange `k` things chosen from `n`, order counting.
+#
+# - `n`: how many there are, 0 or more.
+# - `k`: how many are arranged, 0 or more; above `n` the count is 0, and `n`
+#   itself answers `factorial(n)`.
+#
+# Fails `invalid` where either is negative, and `does_not_fit` only where the
+# count itself is above `MAX_I64`.
+function perm(n: i64, k: i64) -> i64?
+    return whole.perm(n: n, k: k)
+
+# `base` raised to `exponent`, modulo `modulus`, from 0 below `modulus`,
+# computed without overflow on the way.
+#
+# - `base`: any `i64`; a negative one is taken modulo `modulus` first.
+# - `exponent`: any `i64`; a negative one raises the inverse of `base` modulo
+#   `modulus`.
+# - `modulus`: 1 or more; 1 answers 0.
+#
+# Fails `invalid` where `modulus` is below 1, or where `exponent` is negative
+# and `base` has no inverse modulo `modulus`.
+function pow_mod(base: i64, exponent: i64, modulus: i64) -> i64?
+    return modular.pow_mod(base: base, exponent: exponent, modulus: modulus)
+
+# The multiple of `of` nearest to `x` in the direction of the sign of `of`: the
+# smallest at or above `x` where `of` is positive, the largest at or below it
+# where `of` is negative.
+#
+# - `x`: any `i64`; a multiple of `of` answers itself.
+# - `of`: the step, not zero.
+#
+# Fails `does_not_fit` where that multiple is outside `i64`.
+#
+# Aborts where `of` is zero, as `%` does.
+function next_multiple(x: i64, of: i64) -> i64?
+    return whole.next_multiple(x: x, of: of)
+
+# Whether `x` is a power of two: 1, 2, 4 and on.
+#
+# - `x`: any `i64`; 0 and the negative numbers are not.
+function is_power_of_two(x: i64) -> bool
+    return whole.is_power_of_two(x)
+
+# The smallest power of two at or above `x`.
+#
+# - `x`: any `i64`; 1 and below answer 1.
+#
+# Fails `does_not_fit` where `x` is above 2 to the 62, the largest power of two
+# an `i64` holds.
+function next_power_of_two(x: i64) -> i64?
+    return whole.next_power_of_two(x)
+
+## Bits
+
+# How many of the 64 bits of `x` are ones.
+#
+# - `x`: any `i64`; a negative number counts its two's complement bits, so -1
+#   answers 64.
+function count_ones(x: i64) -> i64
+    return bits.count_ones(x)
+
+# How many zero bits `x` begins with, from its highest bit.
+#
+# - `x`: any `i64`; 0 answers 64, and a negative number 0.
+function leading_zeros(x: i64) -> i64
+    return bits.leading_zeros(x)
+
+# How many zero bits `x` ends with, from its lowest bit.
+#
+# - `x`: any `i64`; 0 answers 64.
+function trailing_zeros(x: i64) -> i64
+    return bits.trailing_zeros(x)
+
+# How many bits `x` needs, its highest one bit's place plus one: 64 less its
+# leading zeros.
+#
+# - `x`: any `i64`; 0 answers 0, and a negative number 64.
+function bit_width(x: i64) -> i64
+    return bits.bit_width(x)
+
+# `x` with its 64 bits rotated toward the highest by `by` places, the ones
+# shifted out coming back at the lowest.
+#
+# - `x`: any `i64`.
+# - `by`: the places, any `i64`; a negative count rotates the other way, and
+#   every count is taken modulo 64.
+function rotate_left(x: i64, by: i64) -> i64
+    return bits.rotate_left(x: x, by: by)
+
+# `x` with its 64 bits in the opposite order.
+#
+# - `x`: any `i64`.
+function reverse_bits(x: i64) -> i64
+    return bits.reverse_bits(x)
+
+# `x` with its 8 bytes in the opposite order, a number read in the other byte
+# order.
+#
+# - `x`: any `i64`.
+function swap_bytes(x: i64) -> i64
+    return bits.swap_bytes(x)
+
+## Tests
+
+# Python's `math.frexp`, run on 2026-11-16.
+test "to_scaled: a power of two, a negative fraction, minus zero, an infinity, the smallest"
+    assert to_scaled(8.0) == Scaled(fraction: 0.5, exponent: 4)
+    assert to_scaled(-0.75) == Scaled(fraction: -0.75, exponent: 0)
+    assert has_minus_sign(to_scaled(-0.0).fraction) && to_scaled(-0.0).exponent == 0
+    assert to_scaled(-INF) == Scaled(fraction: -INF, exponent: 0)
+    assert to_scaled(SMALLEST_F64) == Scaled(fraction: 0.5, exponent: -1073)

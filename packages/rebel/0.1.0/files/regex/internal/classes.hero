@@ -1,0 +1,240 @@
+# A class of characters written in brackets, `[a-z]`, `[^\d,]` or
+# `[[:alpha:]_]`, read from a pattern into the set the automaton asks.
+
+use regex/internal/codes
+use regex/internal/escapes
+use regex/internal/program
+use regex/internal/sets
+use unicode
+
+# A class read, and where the pattern goes on after its `]`.
+record Read
+    # The class.
+    set: program.Set
+    # The byte just after its `]`.
+    next: i64
+
+# ASCII's named class `[:name:]` read inside a class, and where the class
+# goes on after it.
+record Named
+    # The ranges it holds, normalized, its outside where it was `[:^name:]`.
+    ranges: [i64]
+    # The byte just after its `:]`.
+    next: i64
+
+# The class whose `[` is the byte `at` of `pattern`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `[`.
+# - `folded`: whether case is ignored, so a character is held where a letter
+#   of its case folding is.
+#
+# Fails `invalid` where no `]` closes it, where a range is reversed or ends
+# at a class, where a `[` stands inside it that opens no named class, where
+# an escape inside it is refused, and where the whole class is `[:alpha:]`,
+# which a reader means as `[[:alpha:]]`.
+function class_at(pattern: str, at: i64, folded: bool) -> Read?
+    negated = at + 1 < pattern.len() && pattern[at + 1] == '^'
+    pos: i64 @= at + 1
+
+    if negated
+        pos @ at + 2
+    first = pos
+    ranges: [i64] @= []
+    categories: [str] @= []
+    not_categories: [str] @= []
+    closed: i64 @= -1
+
+    while pos < pattern.len()
+        b = pattern[pos]
+
+        if b == ']' && pos > first
+            closed @ pos
+            break
+
+        if b == '['
+            if pos + 1 < pattern.len() && pattern[pos + 1] == ':'
+                named = named_at(pattern, pos)?
+
+                for n in named.ranges
+                    ranges @ ranges.push(n)
+
+                pos @ named.next
+                continue
+            return codes.invalid(pattern: pattern, at: pos, why: "a `[` inside a class is written `\\[`")
+        low = member_at(pattern, pos)?
+        ranged = low.next + 1 < pattern.len() && pattern[low.next] == '-' && pattern[low.next + 1] != ']'
+
+        match low.escape
+            .members m =>
+                if ranged
+                    return codes.invalid(
+                        pattern: pattern,
+                        at: pos,
+                        why: "a range cannot begin at a class such as `\\d`: write the `-` as `\\-`"
+                    )
+
+                held = if m.negated
+                    sets.complement(m.ranges)
+                else
+                    m.ranges
+
+                for n in held
+                    ranges @ ranges.push(n)
+
+                for c in m.categories
+                    if m.negated
+                        not_categories @ not_categories.push(c)
+                    else
+                        categories @ categories.push(c)
+
+                pos @ low.next
+            .assertion _ => return codes.invalid(pattern: pattern, at: pos, why: "a place stands inside a class")
+            .char c =>
+                if ranged
+                    high = member_at(pattern, low.next + 1)?
+
+                    match high.escape
+                        .char h =>
+                            if h.code < c.code
+                                written = pattern.slice(from: pos, to: high.next)
+                                return codes.invalid(
+                                    pattern: pattern,
+                                    at: pos,
+                                    why: f"the range `{written}` is reversed: its first character comes after its last"
+                                )
+                            ranges @ ranges.push(c.code)
+                            ranges @ ranges.push(h.code)
+                            pos @ high.next
+                        .members _ | .assertion _ => return codes.invalid(
+                            pattern: pattern,
+                            at: low.next + 1,
+                            why: "a range cannot end at a class such as `\\d`: write the `-` as `\\-`"
+                        )
+                else
+                    ranges @ ranges.push(c.code)
+                    ranges @ ranges.push(c.code)
+                    pos @ low.next
+
+    if closed < 0
+        return codes.invalid(pattern: pattern, at: at, why: "a class opened by `[` is never closed: its `]` is missing")
+    bare_named(pattern: pattern, from: first, to: closed)?
+    set = program.Set(
+        ranges: sets.normalized(ranges),
+        categories: categories,
+        not_categories: not_categories,
+        negated: negated,
+        fold: folded
+    )
+    return ok(Read(set: set, next: closed + 1))
+
+# One member of a class: a character, or a class written as an escape.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where the member begins.
+#
+# Fails `invalid` where it is an escape that is refused.
+function member_at(pattern: str, at: i64) -> escapes.Escaped?
+    if pattern[at] == '\\'
+        return escapes.escape_at(pattern: pattern, at: at, in_class: true)
+    code = unicode.code_point_at(pattern, at)
+    return ok(escapes.Escaped(escape: .char(code: code), next: at + unicode.width_at(pattern, at)))
+
+# ASCII's named class `[:name:]` or `[:^name:]`, its `[` being the byte `at`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of its `[`.
+#
+# Fails `invalid` where no `:]` closes it or the name is none of ASCII's.
+function named_at(pattern: str, at: i64) -> Named?
+    close: i64 @= at + 2
+
+    while close + 1 < pattern.len() && !(pattern[close] == ':' && pattern[close + 1] == ']')
+        close @ close + 1
+
+    if close + 1 >= pattern.len()
+        return codes.invalid(pattern: pattern, at: at, why: "`[:` opens a named class that no `:]` closes")
+    inner = pattern.slice(from: at + 2, to: close)
+    outside = inner.len() > 0 && inner[0] == '^'
+
+    name = if outside
+        inner.slice(from: 1, to: inner.len())
+    else
+        inner
+
+    match sets.ascii_class(name)
+        .ok ranges =>
+            held = sets.normalized(ranges)
+
+            if outside
+                return ok(Named(ranges: sets.complement(held), next: close + 2))
+            return ok(Named(ranges: held, next: close + 2))
+        .err _ => return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: f"`[:{inner}:]` is no named class: they are alnum, alpha, ascii, blank, cntrl, digit, graph, lower, print, punct, space, upper, word and xdigit"
+        )
+
+# Refuses a class that is `[:alpha:]` whole, the characters `:alph` to the
+# pattern and ASCII's letters to the one who wrote it.
+#
+# - `pattern`: the pattern read.
+# - `from`: the first byte inside the brackets, after a `^`.
+# - `to`: the byte of the closing `]`.
+#
+# Fails `invalid` where the class is one of ASCII's names between colons.
+function bare_named(pattern: str, from: i64, to: i64) -> ()?
+    if to - from < 3 || pattern[from] != ':' || pattern[to - 1] != ':'
+        return ok()
+    inner = pattern.slice(from: from + 1, to: to - 1)
+
+    if sets.ascii_class(inner).is_err()
+        return ok()
+    return codes.invalid(
+        pattern: pattern,
+        at: from - 1,
+        why: f"`[:{inner}:]` is a class of the characters between its brackets; ASCII's named class is written `[[:{inner}:]]`"
+    )
+
+## Tests
+
+test "class_at: a range, a negation, a first `]`, a last `-`, and where it ends"
+    range_read = class_at(pattern: "[a-c]x", at: 0, folded: false).must()
+    assert range_read.set.ranges == ['a', 'c'] && range_read.next == 5 && !range_read.set.negated
+    assert class_at(pattern: "[^a]", at: 0, folded: true).must().set.negated
+    assert class_at(pattern: "[^a]", at: 0, folded: true).must().set.fold
+    assert class_at(pattern: "[]a]", at: 0, folded: false).must().set.ranges == [']', ']', 'a', 'a']
+    assert class_at(pattern: "[a-]", at: 0, folded: false).must().set.ranges == ['-', '-', 'a', 'a']
+    assert class_at(pattern: "[-a]", at: 0, folded: false).must().set.ranges == ['-', '-', 'a', 'a']
+
+test "class_at: escapes, named classes, a negated member, and characters of more than one byte"
+    assert class_at(pattern: "[\\d,]", at: 0, folded: false).must().set.ranges == [',', ',', '0', '9']
+    assert class_at(pattern: "[\\D]", at: 0, folded: false).must().set.ranges == [0, '0' - 1, '9' + 1, 0x10ffff]
+    assert class_at(pattern: "[[:alpha:]_]", at: 0, folded: false).must().set.ranges == ['A', 'Z', '_', '_', 'a', 'z']
+    assert class_at(pattern: "[[:^digit:]]", at: 0, folded: false).must().set.ranges == [0, '0' - 1, '9' + 1, 0x10ffff]
+    assert class_at(pattern: "[é-ü]", at: 0, folded: false).must().set.ranges == [0xe9, 0xfc]
+    assert class_at(pattern: "[\\P{L}]", at: 0, folded: false).must().set.not_categories == ["L"]
+    assert class_at(pattern: "[\\-]", at: 0, folded: false).must().set.ranges == ['-', '-']
+
+test "class_at refuses an open class, a reversed range, a range at a class, and a bare named class"
+    match class_at(pattern: "[a", at: 0, folded: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a class opened by `[` is never closed: its `]` is missing, at byte 0 of \"[a\""
+
+    match class_at(pattern: "[z-a]", at: 0, folded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the range `z-a` is reversed: its first character comes after its last, at byte 1 of \"[z-a]\""
+
+    match class_at(pattern: "[:alpha:]", at: 0, folded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "`[:alpha:]` is a class of the characters between its brackets; ASCII's named class is written `[[:alpha:]]`, at byte 0 of \"[:alpha:]\""
+
+    assert class_at(pattern: "[\\d-z]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[a-\\d]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[[a]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[[:foo:]]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[[:alpha]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[\\b]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[^]", at: 0, folded: false).is_err()
+    assert class_at(pattern: "[:a:]", at: 0, folded: false).must().set.ranges == [':', ':', 'a', 'a']

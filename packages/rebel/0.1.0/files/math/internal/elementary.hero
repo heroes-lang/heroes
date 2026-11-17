@@ -1,0 +1,179 @@
+# Powers, roots, exponentials and logarithms of floats, each C's own function
+# but `log` in any base, which is two of them.
+#
+# The tests hold an edge (a zero, an infinity, a nan, an exact power) to the
+# bit, and a value inside the range to within two units of the last place of
+# Python's `math`, which asks this machine's C library: another platform's C
+# library may round the last bit otherwise.
+
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+use math/libm
+
+# The square root of `x`.
+#
+# - `x`: any float.
+function sqrt(x: f64) -> f64
+    return libm.c_sqrt(x)
+
+# The cube root of `x`.
+#
+# - `x`: any float.
+function cbrt(x: f64) -> f64
+    return libm.c_cbrt(x)
+
+# The hypotenuse of the sides `x` and `y`.
+#
+# - `x`: one side.
+# - `y`: the other.
+function hypot(x: f64, y: f64) -> f64
+    return libm.c_hypot(x: x, y: y)
+
+# `base` raised to `exponent`.
+#
+# - `base`: any float.
+# - `exponent`: any float.
+function pow(base: f64, exponent: f64) -> f64
+    return libm.c_pow(x: base, y: exponent)
+
+# E raised to `x`.
+#
+# - `x`: any float.
+function exp(x: f64) -> f64
+    return libm.c_exp(x)
+
+# 2 raised to `x`.
+#
+# - `x`: any float.
+function exp2(x: f64) -> f64
+    return libm.c_exp2(x)
+
+# E raised to `x`, less one.
+#
+# - `x`: any float.
+function exp_minus_1(x: f64) -> f64
+    return libm.c_expm1(x)
+
+# The natural logarithm of `x`.
+#
+# - `x`: any float.
+function ln(x: f64) -> f64
+    return libm.c_log(x)
+
+# The logarithm of `x` in base 2.
+#
+# - `x`: any float.
+function log2(x: f64) -> f64
+    return libm.c_log2(x)
+
+# The logarithm of `x` in base 10.
+#
+# - `x`: any float.
+function log10(x: f64) -> f64
+    return libm.c_log10(x)
+
+# The logarithm of `x` in base `base`.
+#
+# - `x`: any float.
+# - `base`: any float.
+function log(x: f64, base: f64) -> f64
+    return ln(x) / ln(base)
+
+# The natural logarithm of one plus `x`.
+#
+# - `x`: any float.
+function ln_1_plus(x: f64) -> f64
+    return libm.c_log1p(x)
+
+## Tests
+
+test "sqrt: a negative number, minus zero, the infinity, an exact root, a subnormal"
+    assert floats.is_nan(sqrt(-1.0))
+    assert sqrt(-0.0) == 0.0 && floats.has_minus_sign(sqrt(-0.0))
+    assert sqrt(limits.INF) == limits.INF
+    assert floats.is_nan(sqrt(-limits.INF))
+    assert sqrt(0.25) == 0.5
+    assert sqrt(2.0) == 1.4142135623730951
+    assert sqrt(limits.SMALLEST_F64 * 2024.0) == 0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000999994433575849
+
+test "cbrt: a negative cube, minus zero, minus infinity, an irrational root"
+    assert cbrt(-27.0) == -3.0
+    assert floats.has_minus_sign(cbrt(-0.0))
+    assert cbrt(-limits.INF) == -limits.INF
+    assert parts.within_ulps(x: cbrt(2.0), expected: 1.2599210498948732, ulps: 2.0)
+
+test "hypot: an infinity beside a nan, a nan beside a number, 3-4-5, the largest twice, minus infinity"
+    assert hypot(x: limits.INF, y: limits.NAN) == limits.INF
+    assert hypot(x: limits.NAN, y: -limits.INF) == limits.INF
+    assert floats.is_nan(hypot(x: limits.NAN, y: 1.0))
+    assert hypot(x: 3.0, y: 4.0) == 5.0
+    assert hypot(x: -3.0, y: -4.0) == 5.0
+    assert hypot(x: limits.MAX_F64, y: limits.MAX_F64) == limits.INF
+    assert hypot(x: -limits.INF, y: 0.0) == limits.INF
+    assert hypot(x: limits.MAX_F64, y: 1.0) == limits.MAX_F64
+
+test "pow: a zero exponent beside a nan, one to a nan, a negative base, zero to a negative power, the infinities"
+    assert pow(base: limits.NAN, exponent: 0.0) == 1.0
+    assert pow(base: 1.0, exponent: limits.NAN) == 1.0
+    assert floats.is_nan(pow(base: -8.0, exponent: 1.0 / 3.0))
+    assert pow(base: 0.0, exponent: -1.0) == limits.INF
+    assert pow(base: -0.0, exponent: -1.0) == -limits.INF
+    assert pow(base: -2.0, exponent: 3.0) == -8.0
+    assert pow(base: 2.0, exponent: 0.5) == 1.4142135623730951
+    assert pow(base: -1.0, exponent: limits.INF) == 1.0
+    assert pow(base: 0.5, exponent: -limits.INF) == limits.INF
+    assert pow(base: 2.0, exponent: -1075.0) == 0.0
+    assert pow(base: 2.0, exponent: -1074.0) == limits.SMALLEST_F64
+    assert pow(base: 2.0, exponent: 1024.0) == limits.INF
+    assert floats.has_minus_sign(pow(base: -0.0, exponent: 3.0))
+    assert !floats.has_minus_sign(pow(base: -0.0, exponent: 2.0))
+
+test "exp, exp2 and exp_minus_1: minus infinity, zero, one, past the largest, into the subnormals"
+    assert exp(-limits.INF) == 0.0 && exp(0.0) == 1.0
+    assert parts.within_ulps(x: exp(1.0), expected: 2.718281828459045, ulps: 2.0)
+    assert parts.within_ulps(
+        x: exp(709.78),
+        expected: 179282279439451550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0,
+        ulps: 2.0
+    )
+    assert exp(709.79) == limits.INF
+    assert exp(-746.0) == 0.0
+    assert exp2(-limits.INF) == 0.0
+    assert exp2(1023.0) == limits.TWO_1023 && exp2(1024.0) == limits.INF
+    assert exp2(-1074.0) == limits.SMALLEST_F64 && exp2(-1075.0) == 0.0
+    assert exp_minus_1(-limits.INF) == -1.0
+    assert floats.has_minus_sign(exp_minus_1(-0.0))
+    assert parts.within_ulps(x: exp_minus_1(0.0000000001), expected: 0.000000000100000000005, ulps: 2.0)
+    assert parts.within_ulps(x: exp_minus_1(1.0), expected: 1.7182818284590453, ulps: 2.0)
+    assert exp_minus_1(710.0) == limits.INF
+
+test "ln, log2 and log10: zero, minus zero, a negative number, the infinity, one, the exact powers"
+    assert ln(0.0) == -limits.INF && ln(-0.0) == -limits.INF
+    assert floats.is_nan(ln(-1.0))
+    assert ln(limits.INF) == limits.INF && ln(1.0) == 0.0
+    assert parts.within_ulps(x: ln(limits.E), expected: 1.0, ulps: 1.0)
+    assert log2(0.0) == -limits.INF && floats.is_nan(log2(-1.0))
+    assert log2(8.0) == 3.0 && log2(1024.0) == 10.0
+    assert log2(limits.SMALLEST_F64) == -1074.0
+    assert parts.within_ulps(x: log2(3.0), expected: 1.584962500721156, ulps: 2.0)
+    assert log10(0.0) == -limits.INF && floats.is_nan(log10(-1.0))
+    assert log10(1000.0) == 3.0 && log10(10000000000000000000000.0) == 22.0
+    assert parts.within_ulps(x: log10(2.0), expected: 0.3010299956639812, ulps: 2.0)
+
+# Python's `math.log(x, base)` divides the same two logarithms.
+test "log: base 2, base 10 rounded twice, a fraction for base, zero, a negative number, base one"
+    assert log(x: 8.0, base: 2.0) == 3.0
+    assert log(x: 1000.0, base: 10.0) == 2.9999999999999996
+    assert log(x: 8.0, base: 0.5) == -3.0
+    assert log(x: 0.0, base: 2.0) == -limits.INF
+    assert floats.is_nan(log(x: -1.0, base: 2.0))
+    assert log(x: 5.0, base: 1.0) == limits.INF
+    assert floats.is_nan(log(x: 1.0, base: 1.0))
+
+test "ln_1_plus: minus one, below it, minus zero, near zero, the infinity"
+    assert ln_1_plus(-1.0) == -limits.INF
+    assert floats.is_nan(ln_1_plus(-2.0))
+    assert floats.has_minus_sign(ln_1_plus(-0.0))
+    assert parts.within_ulps(x: ln_1_plus(0.0000000001), expected: 0.00000000009999999999500001, ulps: 2.0)
+    assert ln_1_plus(limits.INF) == limits.INF

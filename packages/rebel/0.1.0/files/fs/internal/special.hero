@@ -1,0 +1,224 @@
+# What `fs` asks of `hero_disk` since round 3 (2026-11-16): a link made, hard
+# or symbolic, permission bits read and set, a link's own bits and times, the
+# time a file was made, its owner, which other a path names, and a file's
+# permission and times copied onto another. Each checks its paths, calls
+# one door and turns a -1 into the failure of what was asked, as `changes`
+# does.
+
+use fs/internal/changes
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use os/hero_disk
+use time
+
+# The owner `owner_of` answers, by the system's numbers.
+record Owners
+    # The user's number.
+    user: i64
+    # The group's number.
+    group: i64
+
+# The door's `through` for `follow`.
+function through_of(follow: bool) -> i64
+    if follow
+        return 1
+    return 0
+
+# Makes `name` a second name of the file `existing` names.
+#
+# - `existing`: the file; a link is given the second name itself.
+# - `name`: the new name, where nothing must be.
+#
+# Fails `exists`, `file_not_found`, `is_a_directory`, and `failed` across
+# volumes.
+function hard_linked(existing: str, name: str) -> ()?
+    asked = f"making \"{name}\" a second name of \"{existing}\""
+    codes.checked(path: existing, asked: asked)?
+    codes.checked(path: name, asked: asked)?
+    return changes.done(hero_disk.link(existing: existing, name: name), asked: asked)
+
+# Makes `name` a symbolic link holding `target`.
+#
+# - `target`: the text the link holds, not looked for; empty fails `invalid`.
+# - `name`: the link's path, where nothing must be.
+#
+# Fails `exists`, `invalid`, and on Windows `permission` for a user who may
+# make no link.
+function symlinked(target: str, name: str) -> ()?
+    asked = f"making the link \"{name}\" to \"{target}\""
+    codes.checked(path: target, asked: asked)?
+    codes.checked(path: name, asked: asked)?
+    return changes.done(hero_disk.symlink(target: target, name: name), asked: asked)
+
+# The permission bits of what `at` names.
+#
+# - `at`: the path.
+# - `follow`: whether every link is followed, else the link's own.
+function permission_of(at: str, follow: bool) -> i64?
+    found = facts.of(at: at, through: follow, asked: f"reading the permission of \"{at}\"")?
+    return ok(found.permission)
+
+# Sets the permission bits of what `at` names.
+#
+# - `at`: the path.
+# - `permission`: the bits, 0 to 0o7777, no mask taking any away; outside
+#   fails `invalid`.
+# - `follow`: whether every link is followed, else the link's own.
+function permission_set(at: str, permission: i64, follow: bool) -> ()?
+    asked = f"setting the permission of \"{at}\""
+    codes.checked(path: at, asked: asked)?
+
+    if follow
+        return changes.done(hero_disk.set_permission(at, permission: permission), asked: asked)
+    return changes.done(hero_disk.set_link_permission(at, permission: permission), asked: asked)
+
+# Sets the times of the link itself where `at` names one, else of what it
+# names.
+#
+# - `at`: the path.
+# - `written`: the last write.
+# - `read`: the last read.
+function link_timed(at: str, written: time.Instant, read: time.Instant) -> ()?
+    asked = f"setting the times of the link \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    return changes.done(
+        hero_disk.set_link_times(at, written: written.unix_nanoseconds, read: read.unix_nanoseconds),
+        asked: asked
+    )
+
+# The time what `at` names was made.
+#
+# - `at`: the path.
+# - `follow`: whether every link is followed, else the link's own.
+#
+# Fails `unsupported` where the system or the volume keeps no such time.
+function made_at(at: str, follow: bool) -> time.Instant?
+    asked = f"reading when \"{at}\" was made"
+    codes.checked(path: at, asked: asked)?
+    ns: i64 @= 0
+
+    if hero_disk.made(at, through: through_of(follow), ns: @ns) != 0
+        return codes.disk_failed(asked: asked)
+    return ok(time.Instant(unix_nanoseconds: ns))
+
+# The numbers of the user and the group that own what `at` names.
+#
+# - `at`: the path.
+# - `follow`: whether every link is followed, else the link's own.
+#
+# Fails `unsupported` on Windows.
+function owner_of(at: str, follow: bool) -> Owners?
+    asked = f"reading the owner of \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    user: i64 @= -1
+    group: i64 @= -1
+
+    if hero_disk.owner(at, through: through_of(follow), user: @user, group: @group) != 0
+        return codes.disk_failed(asked: asked)
+    return ok(Owners(user: user, group: group))
+
+# Which other `at` names, every link followed: the floor's
+# `HERO_DISK_OTHER_PIPE` to `HERO_DISK_OTHER_UNKNOWN`.
+#
+# - `at`: the path.
+#
+# Fails `invalid` where it names a file, a folder or a link to one.
+function other_of(at: str) -> i64?
+    asked = f"reading which other \"{at}\" is"
+    codes.checked(path: at, asked: asked)?
+    which = hero_disk.other_kind(at, through: 1)
+
+    if which < 0
+        return codes.disk_failed(asked: asked)
+
+    if which == hero_disk.HERO_DISK_OTHER_NONE
+        return fail(code: codes.INVALID, msg: f"{asked}: it is a file, a folder or a link to one, no other")
+    return ok(which)
+
+# Gives `to` the permission bits of `from`, links followed in both.
+#
+# - `from`: the path whose bits are read.
+# - `to`: the path whose bits are set.
+function permission_copied(from: str, to: str) -> ()?
+    bits = permission_of(at: from, follow: true)?
+    return permission_set(at: to, permission: bits, follow: true)
+
+# Gives `to` the permission bits and the times of the last write and the
+# last read of `from`, links followed in both: the times first, so setting
+# the bits, which may make `to` read-only, comes last.
+#
+# - `from`: the path whose facts are read.
+# - `to`: the path whose facts are set.
+function facts_copied(from: str, to: str) -> ()?
+    found = facts.of(at: from, through: true, asked: f"reading the facts of \"{from}\"")?
+    changes.timed(at: to, written: found.written, read: found.read)?
+    return permission_set(at: to, permission: found.permission, follow: true)
+
+## Tests
+
+test "hard_linked and symlinked: a second name, a link to it, a name there already, and a zero byte"
+    dir = fixture.folder("special-links")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert !hard_linked(existing: dir + "/f", name: dir + "/g").is_err()
+
+    match hard_linked(existing: dir + "/f", name: dir + "/g")
+        .ok _  => assert false
+        .err e => assert e.code == codes.EXISTS
+
+    match symlinked(target: "f", name: dir + "/l")
+        .ok _  => assert read_file(dir + "/l").must() == "x"
+        .err e => assert fixture.windows() && e.code == codes.PERMISSION
+
+    zero: [u8] = ['a', 0]
+
+    match symlinked(target: zero.validated_bytes().must(), name: dir + "/z")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)
+
+test "permission_set, permission_of, permission_copied and facts_copied: bits and times read back"
+    dir = fixture.folder("special-bits")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert !write_file(path: dir + "/g", text: "y").is_err()
+    assert !permission_set(at: dir + "/f", permission: 0o444, follow: true).is_err()
+    assert permission_of(at: dir + "/f", follow: true).must() == 0o444
+    assert !permission_copied(from: dir + "/f", to: dir + "/g").is_err()
+    assert permission_of(at: dir + "/g", follow: true).must() == 0o444
+    assert !permission_set(at: dir + "/g", permission: 0o644, follow: true).is_err()
+    then = time.Instant(unix_nanoseconds: 1_500_000_000_000_000_000)
+    assert !changes.timed(at: dir + "/f", written: then, read: then).is_err()
+    assert !facts_copied(from: dir + "/f", to: dir + "/g").is_err()
+    assert facts.of(at: dir + "/g", through: true, asked: "a").must().written == then
+    assert permission_of(at: dir + "/g", follow: true).must() == 0o444
+
+    match permission_set(at: dir + "/f", permission: 0o10000, follow: true)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert !permission_set(at: dir + "/f", permission: 0o644, follow: true).is_err()
+    assert !permission_set(at: dir + "/g", permission: 0o644, follow: true).is_err()
+    assert fixture.cleared(dir)
+
+test "made_at, owner_of and other_of: a file made now, its owner or unsupported, and a file that is no other"
+    dir = fixture.folder("special-facts")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    match made_at(at: dir + "/f", follow: true)
+        .ok t  => assert t.unix_nanoseconds > 1_577_836_800_000_000_000
+        .err e => assert e.code == codes.UNSUPPORTED
+
+    match owner_of(at: dir + "/f", follow: false)
+        .ok o  => assert o.user >= 0 && o.group >= 0
+        .err e => assert fixture.windows() && e.code == codes.UNSUPPORTED
+
+    match other_of(dir + "/f")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    match other_of(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    assert fixture.cleared(dir)

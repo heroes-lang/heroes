@@ -1,0 +1,13 @@
+# Reaches Rebel's `template`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a greeting into a page, the name
+# escaped where it lands.
+
+use <rebel>/json
+use <rebel>/template
+
+function main()
+    match template.parse_html("<p title=\"{{ .name }}\">Hello, {{ .name }}!</p>")
+        .err e => print(e.msg)
+        .ok page =>
+            value = json.parse("{\"name\": \"<Ana & Bo>\"}").default(.null_value)
+            print(template.render(page, value).default("?"))

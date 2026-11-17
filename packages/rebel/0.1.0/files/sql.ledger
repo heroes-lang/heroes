@@ -1,0 +1,143 @@
+# The ledger of `sql`: what does not depend on the database, measured against
+# Go's `database/sql` and `database/sql/driver` (Go 1.27, `go doc -all` on
+# both, 2026-11-16) and Python's DB-API 2.0 (PEP 249, which is a document
+# and no module: its names as the PEP writes them, with `sqlite3`'s on this
+# machine, Python 3.15, where it adds to them). Rust's standard library has
+# no database, so its line is `-` in every block. What a connection does,
+# opening, running, preparing and transactions, stands in the ledger of
+# `sql/postgres`, which writes the API every driver keeps. Expected values of
+# the tests were observed from Python's `sqlite3` on 2026-11-16.
+
+capability sql/value  a value as it travels to a database and back
+  heroes  sql.Value, sql.kind_of
+  go      any, driver.Value, driver.IsValue, driver.IsScanValue
+  rust    -
+  python  None, int, float, str, bytes, datetime.datetime, STRING, BINARY, NUMBER, DATETIME, ROWID
+  note    a variant of seven cases: null, boolean, integer, float, text, blob, instant. Go's driver.Value has the same six plus nil; PEP 249's type objects become `kind_of`'s names. A date and a timestamp are an `instant`; a time of day alone has no case and travels as text
+
+capability sql/null  a NULL told apart from every value
+  heroes  sql.Value, sql.is_null_at, sql.is_null_named
+  go      NullBool, NullByte, NullFloat64, NullInt16, NullInt32, NullInt64, NullString, NullTime, Null, Null.Scan, Null.Value, NullBool.Scan, NullBool.Value, NullByte.Scan, NullByte.Value, NullFloat64.Scan, NullFloat64.Value, NullInt16.Scan, NullInt16.Value, NullInt32.Scan, NullInt32.Value, NullInt64.Scan, NullInt64.Value, NullString.Scan, NullString.Value, NullTime.Scan, NullTime.Value, driver.Null, driver.NotNull
+  rust    -
+  python  None
+  note    one case, `null_value`, in place of Go's nine wrappers: a `match` on a value answers it, and a typed read of a NULL fails `invalid` as Go's Scan into an int64 does
+
+capability sql/parameters  values bound to a statement's placeholders, never spliced into its text
+  heroes  sql.Value
+  go      DB.Exec args, driver.NamedValue, driver.Valuer, driver.ValueConverter, driver.ColumnConverter, driver.DefaultParameterConverter, driver.NamedValueChecker, driver.Bool, driver.Int32, driver.String
+  rust    -
+  python  Cursor.execute parameters, paramstyle
+  note    a `[sql.Value]` beside the statement's text, in the order of its placeholders, which are the database's own (`$1` for PostgreSQL, `?1` for SQLite). Go converts any value through Valuer; here a program builds the case it means
+
+capability sql/named-parameters  parameters given by name
+  heroes  refused: one way to bind a value, a list by position; PostgreSQL's protocol has no named parameters, and a program that names them keeps its own order
+  go      Named, NamedArg
+  rust    -
+  python  paramstyle "named", "pyformat"
+
+capability sql/out-parameters  a stored procedure's output parameters
+  heroes  refused: neither PostgreSQL's protocol nor SQLite has them; a procedure's `INOUT` values come back as a row of `query`
+  go      Out
+  rust    -
+  python  Cursor.callproc
+
+capability sql/row  a row of a query's answer, its values and its columns' names
+  heroes  sql.Row, sql.Rows
+  go      Row, Rows, driver.Rows
+  rust    -
+  python  the tuple Cursor.fetchone answers, sqlite3.Row
+  note    every row of a query is read before it answers, into `sql.Rows`; reading one row at a time is the ledger of `sql/postgres`'s
+
+capability sql/read-by-place  a column's value read by its place in the row
+  heroes  sql.value_at, sql.boolean_at, sql.integer_at, sql.float_at, sql.text_at, sql.blob_at, sql.instant_at
+  go      Row.Scan, Rows.Scan, ConvertAssign, Scanner, RawBytes, driver.ScanContext, driver.RowsColumnScanner
+  rust    -
+  python  row[i]
+  note    a typed read converts nothing: an integer is not read as a float nor a text as an integer, where Go's Scan converts between them (a string to an int64). A place past the row fails `not_found`, a value of another kind `invalid`
+
+capability sql/read-by-name  a column's value read by its name
+  heroes  sql.value_named, sql.boolean_named, sql.integer_named, sql.float_named, sql.text_named, sql.blob_named, sql.instant_named
+  go      -
+  rust    -
+  python  sqlite3.Row[name], sqlite3.Row.keys
+  note    names compared byte for byte, the first of two of one name answering, as observed of `sqlite3.Row`; but `sqlite3.Row` ignores ASCII case (`row["id"]` read a column `Id`), which PostgreSQL's quoted names forbid, so here `id` is not `Id`
+
+capability sql/columns  the names and types of a query's columns
+  heroes  sql.Rows, sql.Column
+  go      Rows.Columns, Rows.ColumnTypes, ColumnType, ColumnType.Name, ColumnType.DatabaseTypeName, driver.RowsColumnTypeDatabaseTypeName
+  rust    -
+  python  Cursor.description (its name and type_code)
+  note    `type_name` is the database's own spelling of the type, as Go's DatabaseTypeName is
+
+capability sql/column-details  a column's length, precision and scale, whether it may be NULL, the type a program reads it as
+  heroes  pending
+  go      ColumnType.Length, ColumnType.DecimalSize, ColumnType.Nullable, ColumnType.ScanType, driver.RowsColumnTypeLength, driver.RowsColumnTypePrecisionScale, driver.RowsColumnTypeNullable, driver.RowsColumnTypeScanType
+  rust    -
+  python  Cursor.description (display_size, internal_size, precision, scale, null_ok)
+  note    PostgreSQL sends a type modifier from which length, precision and scale are read, and whether a column may be NULL needs a question to its catalogue; not written in this wave
+
+capability sql/result  how many rows a statement changed
+  heroes  sql.Result
+  go      Result, Result.RowsAffected, driver.Result, driver.RowsAffected, driver.ResultNoRows
+  rust    -
+  python  Cursor.rowcount
+  note    0 for a statement that counts none, where PEP 249 says -1: a count is never a sign
+
+capability sql/last-id  the id of the last row inserted
+  heroes  sql.Result
+  go      Result.LastInsertId
+  rust    -
+  python  Cursor.lastrowid
+  note    `last_id` is an `i64?` failing `unsupported` where the database keeps none, as PostgreSQL does (Go's lib/pq answers an error, Python's psycopg None)
+
+capability sql/failure-codes  the codes a database failure is told with
+  heroes  sql.INVALID, sql.NOT_FOUND, sql.EXISTS, sql.PERMISSION, sql.DOES_NOT_FIT, sql.CLOSED, sql.TIMEOUT, sql.STOPPED, sql.LIMIT, sql.UNSUPPORTED, sql.FAILED
+  go      ErrNoRows, ErrConnDone, ErrTxDone, driver.ErrBadConn, driver.ErrSkip, driver.ErrRemoveArgument
+  rust    -
+  python  Warning, Error, InterfaceError, DatabaseError, DataError, OperationalError, IntegrityError, InternalError, ProgrammingError, NotSupportedError
+  note    README § A4's codes, no others: PEP 249's IntegrityError splits into `exists` (a unique key) and `invalid` (another constraint), DataError into `does_not_fit` and `invalid`, OperationalError into `closed`, `timeout`, `limit` and `failed`, NotSupportedError is `unsupported`; Go's ErrNoRows is `not_found`, ErrConnDone `closed`, ErrTxDone `invalid`. Warning is no failure: a driver keeps it beside the answer
+
+capability sql/database-code  the database's own code and words kept in a failure
+  heroes  sql.failure_message, sql.database_code_of
+  go      -
+  rust    -
+  python  sqlite3.Error.sqlite_errorcode, sqlite3.Error.sqlite_errorname
+  note    a failure's message opens with the database's code in brackets, `[23505] ...`, since a `T?` carries a code and a message only; `database_code_of` reads it back. Go's standard library leaves it to each driver's error type
+
+capability sql/quote-identifier  a name quoted for a statement's text
+  heroes  sql.quote_identifier, sql.quote_qualified
+  go      -
+  rust    -
+  python  -
+  note    standard SQL's double quotes, each inner quote doubled, observed by Python's `sqlite3` reading every quoted name back as itself; an empty name is refused although SQLite accepts one, since PostgreSQL refuses a zero-length name, and a zero byte is refused by both. Go's lib/pq has QuoteIdentifier and psycopg `sql.Identifier`, outside the standard libraries
+
+capability sql/quote-literal  a value quoted into a statement's text
+  heroes  refused: a value travels as a parameter and never in the text, the package's rule; a statement that takes no parameters names no value of the program's
+  go      -
+  rust    -
+  python  -
+
+capability sql/time-values  a date or a moment made as a value
+  heroes  sql.Value, time.date, time.from_unix
+  go      time.Time in an any
+  rust    -
+  python  Date, Time, Timestamp, DateFromTicks, TimeFromTicks, TimestampFromTicks
+  note    an `instant` holds a `time.Instant`, which `time` makes from a calendar date or from seconds since 1970; PEP 249's Time, a time of day alone, has no case and is written as text
+
+capability sql/binary  bytes made as a value
+  heroes  sql.Value
+  go      []byte in an any
+  rust    -
+  python  Binary
+  note    the `blob` case
+
+capability sql/drivers  a driver chosen by its name at run time
+  heroes  refused: a driver is a package the program names with `use`; the language has no interface for a registry to hold
+  go      Register, Drivers, Open, OpenDB, DB.Driver, driver.Driver, driver.DriverContext, driver.Connector
+  rust    -
+  python  connect
+
+dropped
+  go      driver.Conn, driver.ConnBeginTx, driver.ConnPrepareContext, driver.Execer, driver.ExecerContext, driver.Pinger, driver.Queryer, driver.QueryerContext, driver.SessionResetter, driver.Validator, driver.Stmt, driver.StmtExecContext, driver.StmtQueryContext, driver.Tx, driver.TxOptions, driver.IsolationLevel, driver.RowsNextResultSet: the interfaces a driver implements for `database/sql` to call; here every driver is called directly and keeps the API written in `sql/postgres`
+  go      DBStats, DB.Stats, DB.SetConnMaxIdleTime, DB.SetConnMaxLifetime, DB.SetMaxIdleConns, DB.SetMaxOpenConns, DB.Conn, Conn.Raw: the pool of connections `database/sql` keeps behind a DB; a Rebel connection is one connection, and a pool is a program's own
+  python  apilevel, threadsafety: the PEP's module attributes, which describe a module to a generic caller; a connection here belongs to the thread that holds its place

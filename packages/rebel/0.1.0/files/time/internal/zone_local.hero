@@ -1,0 +1,268 @@
+# A zone's local time, both ways: the civil parts of an instant on a clock
+# some nanoseconds ahead of UTC, and the instants a local time names, read
+# against the few changes of offset around it. A local time the clocks kept
+# once names one instant; one they skipped (a gap) names none, and one they
+# repeated (an overlap) names two, and the caller's choice decides.
+
+use time/internal/arith
+use time/internal/civil
+
+# The code of a local time outside its ranges, or refused in a gap or an
+# overlap.
+constant INVALID: str
+    "invalid"
+
+# The code of an instant outside what an `i64` of nanoseconds holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# A gap moves the time forward and an overlap takes the earlier instant.
+constant COMPATIBLE: i64
+    0
+
+# A gap moves the time back and an overlap takes the earlier instant.
+constant EARLIER: i64
+    1
+
+# A gap moves the time forward and an overlap takes the later instant.
+constant LATER: i64
+    2
+
+# A gap or an overlap fails.
+constant REJECT: i64
+    3
+
+# One change of offset near a local time: when, and the offsets either side.
+record Step
+    # The instant of the change, in nanoseconds since 1970.
+    at: i64
+    # The offset before it, in nanoseconds ahead of UTC.
+    before: i64
+    # The offset from it on, in nanoseconds ahead of UTC.
+    after: i64
+
+# The civil parts of the instant `nanoseconds` on a clock `offset`
+# nanoseconds ahead of UTC, counted in seconds and nanoseconds apart so that
+# neither end of an `i64` overflows.
+function civil_at(nanoseconds: i64, offset: i64) -> civil.Civil
+    within = arith.floor_mod(a: nanoseconds, b: arith.SECOND) + arith.floor_mod(a: offset, b: arith.SECOND)
+    seconds = arith.floor_div(a: nanoseconds, b: arith.SECOND) + arith.floor_div(a: offset, b: arith.SECOND) + within / arith.SECOND
+    days = arith.floor_div(a: seconds, b: 86_400)
+    of_day = arith.floor_mod(a: seconds, b: 86_400)
+    date = civil.date_from_days(days)
+    return civil.Civil(
+        year: date.year,
+        month: date.month,
+        day: date.day,
+        hour: of_day / 3_600,
+        minute: of_day % 3_600 / 60,
+        second: of_day % 60,
+        nanosecond: within % arith.SECOND
+    )
+
+# The instant `c` names on a clock `offset` nanoseconds ahead of UTC.
+function instant_of(c: civil.Civil, offset: i64) -> i64?
+    whole = arith.floor_div(a: offset, b: arith.SECOND)
+    rest = arith.floor_mod(a: offset, b: arith.SECOND)
+    at = civil.to_nanoseconds(c: c, offset: whole)?
+
+    match arith.subtract(a: at, b: rest)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: DOES_NOT_FIT, msg: "the local time is outside what an instant holds")
+
+# The offset in force at `at`, for an instant inside the window `steps`
+# covers: `first` before its first step.
+function offset_in(steps: [Step], first: i64, at: i64) -> i64
+    offset: i64 @= first
+
+    for step in steps
+        if step.at <= at
+            offset @ step.after
+
+    return offset
+
+# The instant `c` names in a zone, `steps` being every change of the zone
+# from two days before it to two days after, in order, and `first` the offset
+# before them; `choice` is one of the four constants above and `zone` names
+# the zone in a message. Fails `invalid` where a part of `c` is outside its
+# range or `choice` refuses a gap or an overlap, and `does_not_fit` where the
+# instant is outside an `i64`.
+function resolve(c: civil.Civil, steps: [Step], first: i64, choice: i64, zone: str) -> i64?
+    civil.check(c)?
+    offsets: [i64] @= [first]
+
+    for step in steps
+        offsets @ offsets.push(step.after)
+
+    found: [i64] @= []
+    outside: bool @= false
+
+    for offset in offsets
+        match instant_of(c: c, offset: offset)
+            .ok at =>
+                if offset_in(steps, first: first, at: at) == offset && !has(found, at: at)
+                    found @ found.push(at)
+            .err _ => outside @ true
+
+    if found.len() == 1
+        return ok(found[0])
+
+    if found.len() > 1
+        if choice == REJECT
+            return fail(code: INVALID, msg: f"{shown(c)} happens twice in {zone}: its clocks went back over it")
+        earliest: i64 @= found[0]
+        latest: i64 @= found[0]
+
+        for at in found
+            if at < earliest
+                earliest @ at
+
+            if at > latest
+                latest @ at
+
+        if choice == LATER
+            return ok(latest)
+        return ok(earliest)
+
+    for step in steps
+        if step.after > step.before
+            moved_forward = instant_of(c: c, offset: step.before)
+            moved_back = instant_of(c: c, offset: step.after)
+
+            if is_at_or_after(moved_forward, at: step.at) && is_before(moved_back, at: step.at)
+                if choice == REJECT
+                    return fail(
+                        code: INVALID,
+                        msg: f"{shown(c)} never happens in {zone}: its clocks went forward over it"
+                    )
+
+                if choice == EARLIER
+                    return moved_back
+                return moved_forward
+
+    if outside
+        return fail(
+            code: DOES_NOT_FIT,
+            msg: f"{shown(c)} in {zone} is outside what an instant holds, 1677-09-21T00:12:43.145224192Z to 2262-04-11T23:47:16.854775807Z"
+        )
+    return fail(code: INVALID, msg: f"{shown(c)} names no instant in {zone}")
+
+# Whether `found` holds `at`.
+function has(found: [i64], at: i64) -> bool
+    for f in found
+        if f == at
+            return true
+
+    return false
+
+# Whether `candidate` is an instant at or after `at`; an error is not.
+function is_at_or_after(candidate: i64?, at: i64) -> bool
+    match candidate
+        .ok n  => return n >= at
+        .err _ => return false
+
+# Whether `candidate` is an instant before `at`; an error is not.
+function is_before(candidate: i64?, at: i64) -> bool
+    match candidate
+        .ok n  => return n < at
+        .err _ => return false
+
+# `c` as a message shows it: `2026-03-29 02:30:00`.
+function shown(c: civil.Civil) -> str
+    return f"{c.year}-{two(c.month)}-{two(c.day)} {two(c.hour)}:{two(c.minute)}:{two(c.second)}"
+
+# `n`, from 0 to 99, in two digits.
+function two(n: i64) -> str
+    if n < 10
+        return f"0{n}"
+    return to_str(n)
+
+# The instants two days either side of the local time `c` read as UTC's, in
+# nanoseconds, within what an `i64` holds: every change that can bear on `c`
+# stands between them, an offset being less than a day.
+record Bounds
+    # Two days before, in nanoseconds since 1970.
+    from: i64
+    # Two days after.
+    to: i64
+
+# The window around `c`. Fails `invalid` where a part of `c` is outside its
+# range, and `does_not_fit` where its year is outside 1677 to 2262.
+function window(c: civil.Civil) -> Bounds?
+    civil.check(c)?
+    civil.in_range(c.year)?
+    days = civil.days_from_date(year: c.year, month: c.month, day: c.day)
+    seconds = days * 86_400 + c.hour * 3_600 + c.minute * 60 + c.second
+    return ok(Bounds(from: clamped(seconds - 172_800) * arith.SECOND, to: clamped(seconds + 172_800) * arith.SECOND))
+
+# `seconds`, brought within the whole seconds an `i64` of nanoseconds holds.
+function clamped(seconds: i64) -> i64
+    if seconds < -9_223_372_036
+        return -9_223_372_036
+
+    if seconds > 9_223_372_036
+        return 9_223_372_036
+    return seconds
+
+# Python's `datetime` answered both ends: 2262-04-12 13:47:16.854775 at +14
+# and 1677-09-20 12:12:43.145225 at -12, to the microsecond it keeps.
+test "civil_at: the last instant fourteen hours ahead, the first twelve behind, and a nanosecond before 1970"
+    last = civil_at(nanoseconds: 9_223_372_036_854_775_807, offset: 14 * 3_600 * arith.SECOND)
+    assert last == civil.Civil(year: 2262, month: 4, day: 12, hour: 13, minute: 47, second: 16, nanosecond: 854_775_807)
+    first = civil_at(nanoseconds: -9_223_372_036_854_775_807 - 1, offset: -12 * 3_600 * arith.SECOND)
+    assert first == civil.Civil(year: 1677, month: 9, day: 20, hour: 12, minute: 12, second: 43, nanosecond: 145_224_192)
+    before = civil_at(nanoseconds: 0, offset: -1)
+    assert before == civil.Civil(year: 1969, month: 12, day: 31, hour: 23, minute: 59, second: 59, nanosecond: 999_999_999)
+
+# Python's `datetime` with `fold` 0 and 1 in Europe/Rome answered every
+# instant: 02:30 of 2026-03-29 is 1,774,747,800 or 1,774,744,200, and of
+# 2026-10-25 1,792,888,200 or 1,792,891,800.
+test "resolve: a gap and an overlap under each choice, a time kept once, and the messages of reject"
+    hour = 3_600 * arith.SECOND
+    gap = [Step(at: 1_774_746_000 * arith.SECOND, before: hour, after: 2 * hour)]
+    spring = civil.Civil(year: 2026, month: 3, day: 29, hour: 2, minute: 30, second: 0, nanosecond: 0)
+    assert resolve(c: spring, steps: gap, first: hour, choice: COMPATIBLE, zone: "Europe/Rome").must() == 1_774_747_800 * arith.SECOND
+    assert resolve(c: spring, steps: gap, first: hour, choice: EARLIER, zone: "Europe/Rome").must() == 1_774_744_200 * arith.SECOND
+    assert resolve(c: spring, steps: gap, first: hour, choice: LATER, zone: "Europe/Rome").must() == 1_774_747_800 * arith.SECOND
+
+    match resolve(c: spring, steps: gap, first: hour, choice: REJECT, zone: "Europe/Rome")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "2026-03-29 02:30:00 never happens in Europe/Rome: its clocks went forward over it"
+
+    overlap = [Step(at: 1_792_890_000 * arith.SECOND, before: 2 * hour, after: hour)]
+    autumn = civil.Civil(year: 2026, month: 10, day: 25, hour: 2, minute: 30, second: 0, nanosecond: 0)
+    assert resolve(c: autumn, steps: overlap, first: 2 * hour, choice: COMPATIBLE, zone: "Europe/Rome").must() == 1_792_888_200 * arith.SECOND
+    assert resolve(c: autumn, steps: overlap, first: 2 * hour, choice: EARLIER, zone: "Europe/Rome").must() == 1_792_888_200 * arith.SECOND
+    assert resolve(c: autumn, steps: overlap, first: 2 * hour, choice: LATER, zone: "Europe/Rome").must() == 1_792_891_800 * arith.SECOND
+
+    match resolve(c: autumn, steps: overlap, first: 2 * hour, choice: REJECT, zone: "Europe/Rome")
+        .ok _  => assert false
+        .err e => assert e.msg == "2026-10-25 02:30:00 happens twice in Europe/Rome: its clocks went back over it"
+
+    summer = civil.Civil(year: 2026, month: 7, day: 1, hour: 12, minute: 0, second: 0, nanosecond: 0)
+    nothing: [Step] = []
+    assert resolve(c: summer, steps: nothing, first: 2 * hour, choice: REJECT, zone: "Europe/Rome").must() == 1_782_900_000 * arith.SECOND
+
+test "resolve and window fail: a month 13, a year past 2262, and a time past the last instant"
+    nothing: [Step] = []
+    thirteen = civil.Civil(year: 2026, month: 13, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    assert resolve(c: thirteen, steps: nothing, first: 0, choice: COMPATIBLE, zone: "UTC").is_err()
+    assert window(thirteen).is_err()
+    far = civil.Civil(year: 3000, month: 1, day: 1, hour: 0, minute: 0, second: 0, nanosecond: 0)
+
+    match resolve(c: far, steps: nothing, first: 0, choice: COMPATIBLE, zone: "UTC")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match window(far)
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    edge = civil.Civil(year: 2262, month: 4, day: 11, hour: 23, minute: 59, second: 0, nanosecond: 0)
+
+    match resolve(c: edge, steps: nothing, first: 0, choice: COMPATIBLE, zone: "UTC")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT && e.msg.slice(from: 0, to: 30) == "2262-04-11 23:59:00 in UTC is "
+
+    bounds = window(edge).must()
+    assert bounds.to == 9_223_372_036 * arith.SECOND && bounds.from < bounds.to

@@ -1,0 +1,280 @@
+# The bytes of the protocol: integers written big-endian at 1, 2 and 4 bytes,
+# C strings ended by a zero byte, and a cursor that reads them back out of a
+# message's body, failing where the body ends early. Every message of
+# PostgreSQL's protocol 3.0 is made of these.
+
+use bytes
+
+constant INVALID: str
+    "invalid"
+
+# A place in a message's body, read forward.
+record Cursor
+    # The body.
+    data: [u8]
+    # The byte index of the next byte to read.
+    at: i64
+
+# A cursor at the start of `data`.
+#
+# - `data`: a message's body.
+function cursor(data: [u8]) -> Cursor
+    return Cursor(data: data, at: 0)
+
+# Adds `n` to `out` as two bytes, high first.
+#
+# - `out`: the bytes being written.
+# - `n`: from -32,768 to 65,535; a negative one is written in two's
+#   complement.
+#
+# Aborts where `n` is outside that range: a writer of the protocol has
+# counted it.
+function push_i16(@out: [u8], n: i64)
+    assert n >= -32768 && n <= 65535
+
+    u = if n < 0
+        n + 65536
+    else
+        n
+    out @ out.push(to_u8(u >> 8).must())
+    out @ out.push(to_u8(u & 255).must())
+
+# Adds `n` to `out` as four bytes, high first.
+#
+# - `out`: the bytes being written.
+# - `n`: from -2,147,483,648 to 4,294,967,295; a negative one is written in
+#   two's complement.
+#
+# Aborts where `n` is outside that range.
+function push_i32(@out: [u8], n: i64)
+    assert n >= -2147483648 && n <= 4294967295
+
+    u = if n < 0
+        n + 4294967296
+    else
+        n
+    out @ out.push(to_u8(u >> 24).must())
+    out @ out.push(to_u8(u >> 16 & 255).must())
+    out @ out.push(to_u8(u >> 8 & 255).must())
+    out @ out.push(to_u8(u & 255).must())
+
+# Adds the bytes of `s` and a zero byte to `out`.
+#
+# - `out`: the bytes being written.
+# - `s`: text with no zero byte, which `has_zero` tells.
+#
+# Aborts where `s` holds a zero byte: the caller refuses such a text first.
+function push_cstr(@out: [u8], s: str)
+    at: i64 @= 0
+
+    while at < s.len()
+        assert s[at] != 0
+        out @ out.push(s[at])
+        at @ at + 1
+
+    out @ out.push(0)
+
+# Adds every byte of `data` to `out`.
+#
+# - `out`: the bytes being written.
+# - `data`: the bytes added.
+function push_all(@out: [u8], data: [u8])
+    for b in data
+        out @ out.push(b)
+
+# Whether `s` holds a zero byte, which a C string of the protocol cannot
+# carry.
+#
+# - `s`: the text asked about.
+function has_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+# A whole message: its kind's byte, its length counting itself and not the
+# kind, then its body.
+#
+# - `kind`: the message's byte, `'Q'` for a query.
+# - `body`: what follows the length.
+function framed(kind: u8, body: [u8]) -> [u8]
+    out: [u8] @= [kind]
+    push_i32(@out, body.len() + 4)
+    push_all(out: @out, data: body)
+    return out
+
+# A message with no kind's byte, as the startup message is: its length
+# counting itself, then its body.
+#
+# - `body`: what follows the length.
+function unframed(body: [u8]) -> [u8]
+    out: [u8] @= []
+    push_i32(@out, body.len() + 4)
+    push_all(out: @out, data: body)
+    return out
+
+# The number four bytes of `data` at `at` write, high first, as an unsigned
+# count.
+#
+# - `data`: the bytes read.
+# - `at`: where the four begin; four bytes must stand there.
+function u32_at(data: [u8], at: i64) -> i64
+    return to_i64(data[at]).must() << 24 | to_i64(data[at + 1]).must() << 16 | to_i64(data[at + 2]).must() << 8 | to_i64(data[at + 3]).must()
+
+# The next byte of `c`.
+#
+# - `c`: the cursor, moved past it.
+#
+# Fails `invalid` where the body has ended.
+function read_u8(@c: Cursor) -> u8?
+    if c.at >= c.data.len()
+        return fail(code: INVALID, msg: f"the server's message ended at byte {c.at}, where a byte was due")
+    b = c.data[c.at]
+    c.at @ c.at + 1
+    return ok(b)
+
+# The next two bytes of `c` as a signed number.
+#
+# - `c`: the cursor, moved past them.
+#
+# Fails `invalid` where fewer than two are left.
+function read_i16(@c: Cursor) -> i64?
+    if c.data.len() - c.at < 2
+        return fail(code: INVALID, msg: f"the server's message ended at byte {c.at}, where two bytes were due")
+    u = to_i64(c.data[c.at]).must() << 8 | to_i64(c.data[c.at + 1]).must()
+    c.at @ c.at + 2
+
+    if u >= 32768
+        return ok(u - 65536)
+    return ok(u)
+
+# The next four bytes of `c` as a signed number.
+#
+# - `c`: the cursor, moved past them.
+#
+# Fails `invalid` where fewer than four are left.
+function read_i32(@c: Cursor) -> i64?
+    if c.data.len() - c.at < 4
+        return fail(code: INVALID, msg: f"the server's message ended at byte {c.at}, where four bytes were due")
+    u = u32_at(c.data, at: c.at)
+    c.at @ c.at + 4
+
+    if u >= 2147483648
+        return ok(u - 4294967296)
+    return ok(u)
+
+# The next four bytes of `c` as an unsigned number, as a type's number is.
+#
+# - `c`: the cursor, moved past them.
+#
+# Fails `invalid` where fewer than four are left.
+function read_u32(@c: Cursor) -> i64?
+    if c.data.len() - c.at < 4
+        return fail(code: INVALID, msg: f"the server's message ended at byte {c.at}, where four bytes were due")
+    u = u32_at(c.data, at: c.at)
+    c.at @ c.at + 4
+    return ok(u)
+
+# The next `n` bytes of `c`.
+#
+# - `c`: the cursor, moved past them.
+# - `n`: how many, 0 or more.
+#
+# Fails `invalid` where `n` is below 0 or fewer are left.
+function read_n(@c: Cursor, n: i64) -> [u8]?
+    if n < 0 || c.data.len() - c.at < n
+        return fail(code: INVALID, msg: f"the server's message ended at byte {c.at}, where {n} bytes were due")
+    out = c.data.slice(from: c.at, to: c.at + n)
+    c.at @ c.at + n
+    return ok(out)
+
+# The bytes of `c` from where it stands to its end.
+#
+# - `c`: the cursor, moved to the end.
+function read_rest(@c: Cursor) -> [u8]
+    out = c.data.slice(from: c.at, to: c.data.len())
+    c.at @ c.data.len()
+    return out
+
+# The next C string of `c`, without its zero byte, as text.
+#
+# - `c`: the cursor, moved past the zero byte.
+#
+# Fails `invalid` where no zero byte ends it, or its bytes are not UTF-8.
+function read_cstr(@c: Cursor) -> str?
+    end: i64 @= c.at
+
+    while end < c.data.len() && c.data[end] != 0
+        end @ end + 1
+
+    if end >= c.data.len()
+        return fail(
+            code: INVALID,
+            msg: f"the server's message holds no zero byte after byte {c.at}, where a string was due"
+        )
+    piece = c.data.slice(from: c.at, to: end)
+    c.at @ end + 1
+
+    match bytes.to_text(piece)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: INVALID, msg: f"the server sent a string at byte {c.at} that is not UTF-8")
+
+test "push_i16 and push_i32: zero, the largest, a negative, and the unsigned top"
+    out: [u8] @= []
+    push_i16(@out, 0)
+    push_i16(@out, 32767)
+    push_i16(@out, -1)
+    push_i16(@out, 65535)
+    assert out == [0, 0, 127, 255, 255, 255, 255, 255]
+    four: [u8] @= []
+    push_i32(@four, 196608)
+    push_i32(@four, -1)
+    push_i32(@four, -2147483648)
+    push_i32(@four, 4294967295)
+    assert four == [0, 3, 0, 0, 255, 255, 255, 255, 128, 0, 0, 0, 255, 255, 255, 255]
+
+test "push_cstr, has_zero, framed and unframed: the documentation's Sync and Terminate"
+    out: [u8] @= []
+    push_cstr(@out, "")
+    push_cstr(@out, "é")
+    assert out == [0, 195, 169, 0]
+    assert framed(kind: 'S', body: []) == ['S', 0, 0, 0, 4]
+    assert framed(kind: 'X', body: []) == ['X', 0, 0, 0, 4]
+    assert framed(kind: 'Q', body: [';', 0]) == ['Q', 0, 0, 0, 6, ';', 0]
+    assert unframed([0, 3, 0, 0, 0]) == [0, 0, 0, 9, 0, 3, 0, 0, 0]
+    assert !has_zero("abc") && !has_zero("")
+
+test "read_i16, read_i32 and read_u32: signs, the edges, and a body that ends early"
+    c @= cursor([255, 255, 128, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 25, 1])
+    assert read_i16(@c).must() == -1
+    assert read_i32(@c).must() == -2147483648
+    assert read_u32(@c).must() == 4294967295
+    assert read_i32(@c).must() == 25
+
+    match read_i16(@c)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the server's message ended at byte 14, where two bytes were due"
+
+    assert read_u8(@c).must() == 1
+    assert read_u8(@c).is_err()
+
+test "read_cstr, read_n and read_rest: an empty string, one of more than one byte, none ended, bytes not UTF-8"
+    c @= cursor([0, 'c', 'i', 't', 't', 195, 160, 0, 1, 2, 3])
+    assert read_cstr(@c).must() == ""
+    assert read_cstr(@c).must() == "città"
+    assert read_n(@c, 2).must() == [1, 2]
+    assert read_n(@c, 2).is_err()
+    assert read_rest(@c) == [3]
+    assert read_rest(@c) == []
+    unended @= cursor(['a', 'b'])
+
+    match read_cstr(@unended)
+        .ok _  => assert false
+        .err e => assert e.msg == "the server's message holds no zero byte after byte 0, where a string was due"
+
+    bad @= cursor([255, 0])
+    assert read_cstr(@bad).is_err()

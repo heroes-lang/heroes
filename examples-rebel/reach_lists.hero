@@ -1,0 +1,8 @@
+# Reaches Rebel's `lists`, what the built-ins do not do for a `[T]`, so that
+# `heroes test` on this file runs the package's own tests (spec § 12). It
+# prints the first of three numbers, 3.
+
+use <rebel>/lists
+
+function main()
+    print(lists.first([3, 1, 2]).default(0))

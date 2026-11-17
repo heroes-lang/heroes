@@ -1,0 +1,123 @@
+capability hash/crc32  the CRC-32 of bytes or of text by the IEEE polynomial
+  heroes  hash.crc32, hash.crc32_text
+  go      crc32.ChecksumIEEE, crc32.IEEE, crc32.IEEETable
+  rust    -
+  python  zlib.crc32, binascii.crc32
+  note    Go and Python answered alike for every input of the tests, a megabyte included; Go's `IEEE` polynomial and table are the `crc32` case of `Algorithm32`
+
+capability hash/crc32c  the CRC-32C of bytes or of text, by Castagnoli's polynomial
+  heroes  hash.crc32c, hash.crc32c_text
+  go      crc32.Castagnoli
+  rust    -
+  python  -
+  note    Go reaches it as `crc32.Checksum(data, crc32.MakeTable(crc32.Castagnoli))`
+
+capability hash/crc32-polynomial  a CRC-32 by a polynomial of the caller's
+  heroes  hash.start32, hash.KOOPMAN
+  go      crc32.MakeTable, crc32.Table, crc32.Checksum, crc32.Koopman
+  rust    -
+  python  -
+  note    the polynomial is the `crc32_poly` case's `poly`, its bits reversed as Go's `MakeTable` takes it; its table is made once, by `start32` or `resume32`, and held in the state
+
+capability hash/crc32-combine  the CRC-32 of two pieces from the CRC-32 of each and the second's length
+  heroes  hash.crc32_combine
+  go      -
+  rust    -
+  python  zlib.crc32_combine
+  note    Python raises on a negative length; the length is a `u64` here, so none can be given
+
+capability hash/adler32  the Adler-32 of bytes or of text
+  heroes  hash.adler32, hash.adler32_text
+  go      adler32.Checksum
+  rust    -
+  python  zlib.adler32
+  note    Go and Python answered alike; the modulo is deferred over runs of a megabyte, and three megabytes answered as Python did
+
+capability hash/adler32-combine  the Adler-32 of two pieces from the Adler-32 of each and the second's length
+  heroes  hash.adler32_combine
+  go      -
+  rust    -
+  python  zlib.adler32_combine
+
+capability hash/fnv-32  FNV-1 and FNV-1a in 32 bits, over bytes or text
+  heroes  hash.fnv1_32, hash.fnv1_32_text, hash.fnv1a_32, hash.fnv1a_32_text
+  go      fnv.New32, fnv.New32a
+  rust    -
+  python  -
+  note    Go offers them as states only; the one-shot functions and `start32` with `fnv1_32` or `fnv1a_32` are both here, the state being what Go's are
+
+capability hash/fnv-64  FNV-1 and FNV-1a in 64 bits, over bytes or text
+  heroes  hash.fnv1_64, hash.fnv1_64_text, hash.fnv1a_64, hash.fnv1a_64_text
+  go      fnv.New64, fnv.New64a
+  rust    -
+  python  -
+  note    the product by the prime is written as 2^40 + 0x1b3 in halves of 32 bits, since an overflow aborts in Heroes
+
+capability hash/fnv-128  FNV-1 and FNV-1a in 128 bits
+  heroes  pending
+  go      fnv.New128, fnv.New128a
+  rust    -
+  python  -
+  note    Heroes has no 128-bit number to answer in; it would answer 16 bytes, high first, as Go's `Sum` writes them
+
+capability hash/crc64  the CRC-64 of bytes or of text by ISO's or ECMA-182's polynomial
+  heroes  hash.crc64_iso, hash.crc64_iso_text, hash.crc64_ecma, hash.crc64_ecma_text
+  go      crc64.ISO, crc64.ECMA, crc64.Checksum
+  rust    -
+  python  -
+  note    the register starts and ends with every bit flipped, as Go's does, so ECMA's is the `xz` format's check
+
+capability hash/crc64-polynomial  a CRC-64 by a polynomial of the caller's
+  heroes  hash.start64
+  go      crc64.MakeTable, crc64.Table
+  rust    -
+  python  -
+  note    the polynomial is the `crc64_poly` case's `poly`, its bits reversed as Go's `MakeTable` takes it
+
+capability hash/steps  a checksum or hash fed piece by piece, its value read at any moment
+  heroes  hash.start32, hash.update32, hash.update_text32, hash.start64, hash.update64, hash.update_text64
+  go      crc32.New, crc32.NewIEEE, crc64.New, adler32.New, hash.Hash32.Sum32, hash.Hash64.Sum64
+  rust    -
+  python  -
+  note    the state is a record the caller holds, `State32` or `State64`, whose `value` is the answer; Go's `Reset` is a new `start32` or `start64`, and Go's `Write` is `update32`, which cannot fail
+
+capability hash/resume  a checksum or hash taken up again from a value saved before
+  heroes  hash.resume32, hash.resume64
+  go      crc32.Update, crc64.Update
+  rust    -
+  python  zlib.crc32, zlib.adler32, binascii.crc32
+  note    Python takes the value as a second argument; it reduces an Adler-32 whose halves are past 65521 before it starts, 917518 from 0xffffffff and no bytes, and so does this
+
+capability hash/copy  a copy of a state, to go on from one prefix in two ways
+  heroes  built-in =
+  go      hash.Cloner
+  rust    -
+  python  -
+  note    a state is a value, so `b = a` copies it and nothing can fail
+
+capability hash/crc16  CRC-16 by the CCITT polynomial, from a value of the caller's
+  heroes  pending
+  go      -
+  rust    -
+  python  binascii.crc_hqx
+
+capability hash/seeded  a hash seeded afresh by each process, for the buckets of a table of the program's own
+  heroes  refused: the language's `{K: V}` holds a table and hashes its own keys, Heroes has no trait a key would implement, and a fresh seed needs `os`'s random bytes, which a package of layer 0 may not use
+  go      maphash.Bytes, maphash.String, maphash.Comparable, maphash.WriteComparable, maphash.Hash, maphash.Hash.BlockSize, maphash.Hash.Clone, maphash.Hash.Reset, maphash.Hash.Seed, maphash.Hash.SetSeed, maphash.Hash.Size, maphash.Hash.Sum, maphash.Hash.Sum64, maphash.Hash.Write, maphash.Hash.WriteByte, maphash.Hash.WriteString, maphash.Seed, maphash.MakeSeed, maphash.Hasher, maphash.ComparableHasher, maphash.ComparableHasher.Equal, maphash.ComparableHasher.Hash
+  rust    hash::Hash, hash::Hasher, hash::BuildHasher, hash::BuildHasherDefault, hash::DefaultHasher, hash::RandomState, hash::SipHasher, hash::Hash derive
+  python  -
+
+dropped interfaces  Heroes has no interface: each state is a record of its own, and a function names the one it takes
+  go      hash.Hash, hash.Hash32, hash.Hash64, hash.XOF
+  rust    -
+  python  -
+
+dropped sizes  a value's size is its type's, `u32` or `u64`, and none of these has a block size a caller acts on
+  go      crc32.Size, crc64.Size, adler32.Size, hash.Hash.Size, hash.Hash.BlockSize
+  rust    -
+  python  -
+
+dropped sum-bytes  a value is a number, and writing a number as bytes in an order is not hashing; Go's `Sum` appends the value high byte first
+  go      hash.Hash.Sum
+  rust    -
+  python  -

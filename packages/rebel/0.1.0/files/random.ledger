@@ -1,0 +1,106 @@
+capability random/generator  a seeded generator whose state the caller holds, the same seed answering the same numbers
+  heroes  random.Generator
+  go      rand.PCG, rand.NewPCG, rand.PCG.Seed, rand.Rand, rand.New, rand.Source
+  rust    random::Rng
+  python  random.Random, random.seed, random.getstate, random.setstate
+  note    PCG with 128 bits of state and the DXSM output, Go's `PCG`; its multiplier and increment were read back from three states Go's `MarshalBinary` showed, and its first numbers from four seeds answered as Go's do. The state is a record built directly, so seeding, getting and setting the state are building and reading it; Python's Mersenne Twister is not reproduced
+
+capability random/system-seed  a generator seeded from the system's generator for keys
+  heroes  random.from_system
+  go      -
+  rust    random::random
+  python  random.Random, random.seed
+  note    Python seeds from `os.urandom` when given no seed; Go's top-level functions do the same with a generator of their own, which a program cannot hold
+
+capability random/u64  the next number, any of its type as likely
+  heroes  random.next_u64
+  go      rand.PCG.Uint64, rand.Uint64, rand.Rand.Uint64, rand.Int64, rand.Rand.Int64, rand.Uint32, rand.Rand.Uint32, rand.Int32, rand.Rand.Int32, rand.Int, rand.Rand.Int, rand.Uint, rand.Rand.Uint
+  rust    random::Distribution
+  python  random.getrandbits
+  note    a narrower or signed number is `below` or `int_in`; Python's `getrandbits(k)` is `below` of 2^k
+
+capability random/below  a number below a bound, without bias
+  heroes  random.below
+  go      rand.Uint64N, rand.Rand.Uint64N, rand.Uint32N, rand.Rand.Uint32N, rand.UintN, rand.Rand.UintN, rand.N, rand.Rand.N
+  rust    -
+  python  random.randrange
+  note    Lemire's method, and the low bits for a power of two, as Go's `Uint64N` draws: its numbers answered from the same state; a bound of 0 aborts, as Go panics
+
+capability random/range  a whole number in a range, without bias
+  heroes  random.int_in
+  go      rand.Int64N, rand.Rand.Int64N, rand.Int32N, rand.Rand.Int32N, rand.IntN, rand.Rand.IntN
+  rust    -
+  python  random.randint, random.randrange
+  note    `to` is left out as the built-in `range` leaves it, where Python's `randint` includes it; Go's `Int64N(n)` is `int_in(from: 0, to: n)` and answered alike
+
+capability random/float  a float in [0, 1)
+  heroes  random.next_f64
+  go      rand.Float64, rand.Rand.Float64, rand.Float32, rand.Rand.Float32
+  rust    -
+  python  random.random
+  note    the low 53 bits of a number over 2^53, as Go's `Float64` takes them, and its numbers answered; a float in another range is `a + (b - a) * next_f64`, which is Python's `uniform`
+
+capability random/bytes  bytes from a seeded generator
+  heroes  random.next_bytes
+  go      rand.ChaCha8.Read
+  rust    -
+  python  random.randbytes
+
+capability random/shuffle  a list put in an order drawn at random
+  heroes  random.shuffle
+  go      rand.Shuffle, rand.Rand.Shuffle, rand.Perm, rand.Rand.Perm
+  rust    -
+  python  random.shuffle
+  note    Fisher and Yates's method from the last element down; Go's own puts the elements in another order from the same state, so the tests hold the order's spread and not Go's order. Go's `Perm(n)` is `shuffle` of `range(from: 0, to: n)`
+
+capability random/choose  an element drawn from a list
+  heroes  random.choose
+  go      -
+  rust    -
+  python  random.choice, secrets.choice
+  note    an empty list fails `invalid`, where Python raises; `secrets.choice` is `xs[secure_below(n)]`
+
+capability random/sample  elements drawn without replacement
+  heroes  random.sample
+  go      -
+  rust    -
+  python  random.sample
+  note    Python's `counts` argument is a list holding each element as many times
+
+capability random/weighted  an element drawn by weights
+  heroes  random.choose_weighted
+  go      -
+  rust    -
+  python  random.choices
+  note    Python's `choices` draws `k` with replacement, which is `choose_weighted` called `k` times, and takes cumulative weights too, which are not offered here
+
+capability random/secure  a number below a bound from the system's generator for keys
+  heroes  random.secure_below
+  go      -
+  rust    random::SystemRng
+  python  secrets.randbelow, secrets.randbits, random.SystemRandom
+  note    random bytes for a key are `os.random_bytes`, and a token is `bytes.format_hex` or `bytes.format_base64_url` of them: Python's `token_bytes`, `token_hex` and `token_urlsafe`
+
+capability random/distributions  numbers drawn by a distribution other than the uniform one
+  heroes  pending
+  go      rand.NormFloat64, rand.Rand.NormFloat64, rand.ExpFloat64, rand.Rand.ExpFloat64, rand.Zipf, rand.NewZipf, rand.Zipf.Uint64
+  rust    -
+  python  random.gauss, random.normalvariate, random.lognormvariate, random.expovariate, random.vonmisesvariate, random.gammavariate, random.betavariate, random.paretovariate, random.weibullvariate, random.triangular, random.binomialvariate, random.uniform
+  note    each needs its own method and a test by its own moments; `uniform` is a line of arithmetic over `next_f64`
+
+capability random/chacha8  a generator whose numbers cannot be told from the ones before
+  heroes  pending
+  go      rand.ChaCha8, rand.NewChaCha8, rand.ChaCha8.Seed, rand.ChaCha8.Uint64
+  rust    -
+  python  -
+  note    until it is written, a secret comes from `os.random_bytes` and `secure_below`
+
+dropped state-bytes  Go's saving of a generator to bytes and back; a `Generator` is two numbers a program keeps as it keeps any record
+  go      rand.PCG.AppendBinary, rand.PCG.MarshalBinary, rand.PCG.UnmarshalBinary, rand.ChaCha8.AppendBinary, rand.ChaCha8.MarshalBinary, rand.ChaCha8.UnmarshalBinary
+  rust    -
+  python  -
+
+dropped constants  numbers Python's implementation keeps for its own distributions
+  go      -
+  rust    -
+  python  random.BPF, random.LOG4, random.NV_MAGICCONST, random.RECIP_BPF, random.SG_MAGICCONST, random.TWOPI, random.main

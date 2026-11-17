@@ -1,0 +1,690 @@
+# The values of TOML 1.0.0 that hold no other value, read at a byte index of
+# a text: the four forms of string, integers in four bases, floats, booleans,
+# and the four forms of date and time. A failure's message opens
+# `line L, column C:`, both from 1 and the column in characters.
+#
+# Every byte this module stops at is ASCII, so every slice it cuts begins and
+# ends at a character's first byte.
+
+use numbers
+use strings
+use time
+use unicode
+
+# The code of a text that is not TOML.
+constant INVALID: str
+    "invalid"
+
+# The code of an integer past what an `i64` holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# A table.
+constant TABLE: i64
+    0
+
+# An array.
+constant ARRAY: i64
+    1
+
+# A string.
+constant TEXT: i64
+    2
+
+# An integer.
+constant INTEGER: i64
+    3
+
+# A float.
+constant FLOAT: i64
+    4
+
+# A boolean.
+constant BOOLEAN: i64
+    5
+
+# A date and time with an offset.
+constant DATE_TIME: i64
+    6
+
+# A date and time with no offset.
+constant LOCAL_DATE_TIME: i64
+    7
+
+# A date alone.
+constant LOCAL_DATE: i64
+    8
+
+# A time of day alone.
+constant LOCAL_TIME: i64
+    9
+
+# A value read, and where it ends.
+record Lexed
+    # Which kind of value it is: one of the constants above, not `TABLE` or
+    # `ARRAY`.
+    kind: i64
+    # A string's characters.
+    text: str
+    # An integer; a date and time's offset in minutes east of UTC.
+    integer: i64
+    # A float.
+    float: f64
+    # A boolean.
+    flag: bool
+    # A date's or a date and time's fields; zero where the kind has none.
+    date: time.DateTime
+    # A time of day's length since midnight.
+    clock: time.Duration
+    # The byte index past the value.
+    end: i64
+
+# Where byte `at` of `text` stands, as `line L, column C`.
+function position(text: str, at: i64) -> str
+    line: i64 @= 1
+    column: i64 @= 1
+
+    for k in range(from: 0, to: at)
+        if text[k] == '\n'
+            line @ line + 1
+            column @ 1
+        else if text[k] < 0x80 || text[k] >= 0xc0
+            column @ column + 1
+
+    return f"line {line}, column {column}"
+
+# The failure at byte `at` of `text`.
+function wrong<T>(text: str, at: i64, what: str) -> T?
+    return fail(code: INVALID, msg: f"{position(text, at)}: {what}")
+
+# A value of `kind` ending at `end`, every other field empty.
+function lexed(kind: i64, end: i64) -> Lexed
+    return Lexed(
+        kind: kind,
+        text: "",
+        integer: 0,
+        float: 0.0,
+        flag: false,
+        date: time.DateTime(year: 0, month: 0, day: 0, hour: 0, minute: 0, second: 0, nanosecond: 0),
+        clock: time.nanoseconds(0),
+        end: end
+    )
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` is a control character no string or comment of TOML holds: below
+# a space but a tab, or DEL.
+function is_control(b: u8) -> bool
+    return b < 0x20 && b != '\t' || b == 0x7f
+
+# Whether `text` holds `want` at byte `at`.
+function holds(text: str, at: i64, want: str) -> bool
+    return strings.has_prefix_at(s: text, prefix: want, at: at)
+
+# The character an escape at byte `at`, a backslash, stands for, and where the
+# escape ends.
+record Escape
+    # The character.
+    text: str
+    # The byte index past the escape.
+    end: i64
+
+# The escape at byte `at` of `text`, a backslash: one of TOML 1.0.0's seven,
+# or a Unicode scalar value in four or eight hexadecimal digits.
+function escape_at(text: str, at: i64) -> Escape?
+    if at + 1 >= text.len()
+        return wrong(text: text, at: at, what: "a backslash at the end of the text")
+    c = text[at + 1]
+
+    if c == 'b'
+        return ok(Escape(text: "\u{8}", end: at + 2))
+
+    if c == 't'
+        return ok(Escape(text: "\t", end: at + 2))
+
+    if c == 'n'
+        return ok(Escape(text: "\n", end: at + 2))
+
+    if c == 'f'
+        return ok(Escape(text: "\u{c}", end: at + 2))
+
+    if c == 'r'
+        return ok(Escape(text: "\r", end: at + 2))
+
+    if c == '"'
+        return ok(Escape(text: "\"", end: at + 2))
+
+    if c == '\\'
+        return ok(Escape(text: "\\", end: at + 2))
+
+    if c == 'u' || c == 'U'
+        width: i64 @= 4
+
+        if c == 'U'
+            width @ 8
+
+        if at + 2 + width > text.len()
+            return wrong(text: text, at: at, what: "an escape with too few hexadecimal digits")
+        digits = text.slice(from: at + 2, to: at + 2 + width)
+
+        for k in range(from: 0, to: width)
+            d = digits[k]
+
+            if !(is_digit(d) || d >= 'a' && d <= 'f' || d >= 'A' && d <= 'F')
+                return wrong(text: text, at: at, what: "an escape with too few hexadecimal digits")
+
+        point = numbers.parse_int_base(digits, 16).must()
+
+        match unicode.from_code_point(point)
+            .ok s => return ok(Escape(text: s, end: at + 2 + width))
+            .err _ => return wrong(
+                text: text,
+                at: at,
+                what: f"\"\\{text.slice(from: at + 1, to: at + 2)}{digits}\" names no Unicode scalar value"
+            )
+    shown = text.slice(from: at, to: strings.ceil_boundary(s: text, at: at + 2))
+    return wrong(text: text, at: at, what: f"\"{shown}\" is no escape of TOML 1.0.0")
+
+# The length of the line end at byte `at`: 1 for a line feed, 2 for CR LF,
+# 0 for anything else.
+function line_end_len(text: str, at: i64) -> i64
+    if at < text.len() && text[at] == '\n'
+        return 1
+
+    if at + 1 < text.len() && text[at] == '\r' && text[at + 1] == '\n'
+        return 2
+    return 0
+
+# The string that opens at byte `at` of `text` with `"` or `'`, in any of its
+# four forms.
+function read_string(text: str, at: i64) -> Lexed?
+    quote = text.slice(from: at, to: at + 1)
+    basic = quote == "\""
+    triple = quote + quote + quote
+    multiline = holds(text: text, at: at, want: triple)
+    pieces: [str] @= []
+    i @= at + 1
+
+    if multiline
+        i @ at + 3
+        i @ i + line_end_len(text, i)
+
+    while true
+        if i >= text.len()
+            return wrong(text: text, at: at, what: "a string with no closing quote")
+        b = text[i]
+
+        if b == quote[0]
+            if !multiline
+                found @= lexed(kind: TEXT, end: i + 1)
+                found.text @ pieces.join("")
+                return ok(found)
+
+            if holds(text: text, at: i, want: triple)
+                run @= 3
+
+                while i + run < text.len() && text[i + run] == quote[0]
+                    run @ run + 1
+
+                if run > 5
+                    return wrong(text: text, at: i, what: "more than five quotes closing a string")
+                pieces @ pieces.push(repeat(quote, to_u64(run - 3).must()))
+                found @= lexed(kind: TEXT, end: i + run)
+                found.text @ pieces.join("")
+                return ok(found)
+            pieces @ pieces.push(quote)
+            i @ i + 1
+        else if b == '\\' && basic
+            if multiline && is_line_ending_backslash(text, i)
+                i @ i + 1
+
+                while i < text.len() && (text[i] == ' ' || text[i] == '\t' || line_end_len(text, i) > 0)
+                    i @ i + 1
+            else
+                e = escape_at(text, i)?
+                pieces @ pieces.push(e.text)
+                i @ e.end
+        else if line_end_len(text, i) > 0
+            if !multiline
+                return wrong(text: text, at: i, what: "a line end inside a string of one line")
+            pieces @ pieces.push("\n")
+            i @ i + line_end_len(text, i)
+        else if is_control(b)
+            return wrong(text: text, at: i, what: "a control character inside a string")
+        else
+            # The byte at `i` is plain text, a literal string's backslash
+            # included, so the run takes it whatever follows and always moves.
+            start = i
+            i @ i + 1
+
+            while i < text.len() && text[i] != quote[0] && !(basic && text[i] == '\\') && !is_control(text[i])
+                i @ i + 1
+
+            pieces @ pieces.push(text.slice(from: start, to: i))
+
+# Whether the backslash at byte `at` ends its line: only spaces and tabs
+# stand between it and a line end.
+function is_line_ending_backslash(text: str, at: i64) -> bool
+    k @= at + 1
+
+    while k < text.len() && (text[k] == ' ' || text[k] == '\t')
+        k @ k + 1
+
+    return line_end_len(text, k) > 0
+
+# Whether `b` may end a value: white space, a comma, a closing bracket or
+# brace, a comment, a line end.
+function ends_value(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == ',' || b == ']' || b == '}' || b == '#' || b == '\n' || b == '\r'
+
+# Where the run of bytes that may make a number, a boolean or a date ends.
+function token_end(text: str, at: i64) -> i64
+    k @= at
+
+    while k < text.len() && !ends_value(text[k])
+        k @ k + 1
+
+    return k
+
+# Whether `digits` are digits of `base` with single underscores between two
+# of them, at least one digit.
+function is_digit_run(digits: str, base: i64) -> bool
+    if digits == "" || digits[0] == '_' || digits[digits.len() - 1] == '_'
+        return false
+
+    for k in range(from: 0, to: digits.len())
+        d = digits[k]
+
+        if d == '_'
+            if digits[k - 1] == '_'
+                return false
+        else if base == 16
+            if !(is_digit(d) || d >= 'a' && d <= 'f' || d >= 'A' && d <= 'F')
+                return false
+        else if base == 8
+            if !(d >= '0' && d <= '7')
+                return false
+        else if base == 2
+            if !(d == '0' || d == '1')
+                return false
+        else if !is_digit(d)
+            return false
+
+    return true
+
+# Whether `digits` are a decimal integer's: a run of digits with no zero
+# before them.
+function is_decimal(digits: str) -> bool
+    return is_digit_run(digits, 10) && (digits == "0" || digits[0] != '0')
+
+# `token`, at byte `at`, read as an integer or a float.
+function read_number(text: str, at: i64, token: str) -> Lexed?
+    end = at + token.len()
+    plain = strings.replace_all(s: token, old: "_", new: "")
+
+    if token.len() > 2 && token[0] == '0' && (token[1] == 'x' || token[1] == 'o' || token[1] == 'b')
+        base: i64 @= 16
+
+        if token[1] == 'o'
+            base @ 8
+        else if token[1] == 'b'
+            base @ 2
+        digits = token.slice(from: 2, to: token.len())
+
+        if !is_digit_run(digits, base)
+            return wrong(text: text, at: at, what: f"\"{token}\" is not an integer")
+
+        match numbers.parse_int_base(plain.slice(from: 2, to: plain.len()), base)
+            .ok n =>
+                found @= lexed(kind: INTEGER, end: end)
+                found.integer @ n
+                return ok(found)
+            .err _ => return fail(
+                code: DOES_NOT_FIT,
+                msg: f"{position(text, at)}: \"{token}\" is past what an i64 holds"
+            )
+    body @= token
+
+    if body != "" && (body[0] == '+' || body[0] == '-')
+        body @ body.slice(from: 1, to: body.len())
+
+    if body == "inf" || body == "nan"
+        found @= lexed(kind: FLOAT, end: end)
+        found.float @ numbers.parse_float(plain).must()
+        return ok(found)
+    whole @= body
+    fraction @= ""
+    exponent @= ""
+    has_fraction @= false
+    has_exponent @= false
+
+    match strings.index_of_any(s: body, set: "eE")
+        .ok e =>
+            exponent @ body.slice(from: e + 1, to: body.len())
+            whole @ body.slice(from: 0, to: e)
+            has_exponent @ true
+        .err _ => _ = 0
+
+    match strings.index_of(s: whole, substr: ".")
+        .ok p =>
+            fraction @ whole.slice(from: p + 1, to: whole.len())
+            whole @ whole.slice(from: 0, to: p)
+            has_fraction @ true
+        .err _ => _ = 0
+
+    if !is_decimal(whole)
+        return wrong(text: text, at: at, what: f"\"{token}\" is not a number")
+
+    if !has_fraction && !has_exponent
+        match numbers.parse_int(plain)
+            .ok n =>
+                found @= lexed(kind: INTEGER, end: end)
+                found.integer @ n
+                return ok(found)
+            .err _ => return fail(
+                code: DOES_NOT_FIT,
+                msg: f"{position(text, at)}: \"{token}\" is past what an i64 holds"
+            )
+
+    if has_fraction && !is_digit_run(fraction, 10)
+        return wrong(text: text, at: at, what: f"\"{token}\" is not a number")
+
+    if has_exponent
+        signless @= exponent
+
+        if signless != "" && (signless[0] == '+' || signless[0] == '-')
+            signless @ signless.slice(from: 1, to: signless.len())
+
+        if !is_digit_run(signless, 10)
+            return wrong(text: text, at: at, what: f"\"{token}\" is not a number")
+    found @= lexed(kind: FLOAT, end: end)
+    found.float @ numbers.parse_float(plain).must()
+    return ok(found)
+
+# The number of `count` digits at byte `at`. Fails where any is not a digit.
+function digits_at(text: str, at: i64, count: i64) -> i64?
+    if at + count > text.len()
+        return fail(code: INVALID, msg: "too short")
+
+    for k in range(from: at, to: at + count)
+        if !is_digit(text[k])
+            return fail(code: INVALID, msg: "not a digit")
+
+    return ok(numbers.parse_int(text.slice(from: at, to: at + count)).must())
+
+# A time of day read at byte `at`: `HH:MM:SS` and an optional fraction.
+record Clock
+    # The hour.
+    hour: i64
+    # The minute.
+    minute: i64
+    # The second.
+    second: i64
+    # The nanoseconds of the fraction, its digits past the ninth dropped.
+    nanosecond: i64
+    # The byte index past it.
+    end: i64
+
+# The time of day at byte `at` of `text`.
+function read_clock(text: str, at: i64) -> Clock?
+    shape = "a time of day, HH:MM:SS with seconds, as TOML 1.0.0 writes one"
+
+    if at + 8 > text.len() || text[at + 2] != ':' || text[at + 5] != ':'
+        return wrong(text: text, at: at, what: f"expected {shape}")
+    hour = digits_at(text, at: at, count: 2).default(-1)
+    minute = digits_at(text, at: at + 3, count: 2).default(-1)
+    second = digits_at(text, at: at + 6, count: 2).default(-1)
+
+    if hour < 0 || minute < 0 || second < 0
+        return wrong(text: text, at: at, what: f"expected {shape}")
+
+    if hour > 23 || minute > 59 || second > 59
+        return wrong(text: text, at: at, what: "an hour past 23, a minute past 59 or a second past 59")
+    end @= at + 8
+    nanosecond @= 0
+
+    if end < text.len() && text[end] == '.'
+        k @= end + 1
+        kept: i64 @= 0
+
+        while k < text.len() && is_digit(text[k])
+            if kept < 9
+                nanosecond @ nanosecond * 10 + to_i64(text[k] - '0').must()
+                kept @ kept + 1
+            k @ k + 1
+
+        if k == end + 1
+            return wrong(text: text, at: end, what: "a decimal point with no digit after it")
+
+        while kept < 9
+            nanosecond @ nanosecond * 10
+            kept @ kept + 1
+
+        end @ k
+    return ok(Clock(hour: hour, minute: minute, second: second, nanosecond: nanosecond, end: end))
+
+# The date, the date and time, or the date and time with an offset at byte
+# `at`, which opens with four digits and a dash.
+function read_date(text: str, at: i64) -> Lexed?
+    year = digits_at(text, at: at, count: 4).default(-1)
+    month = digits_at(text, at: at + 5, count: 2).default(-1)
+    day = digits_at(text, at: at + 8, count: 2).default(-1)
+
+    if year < 0 || month < 0 || day < 0 || text[at + 7] != '-'
+        return wrong(text: text, at: at, what: "expected a date, YYYY-MM-DD")
+
+    if month < 1 || month > 12 || day < 1 || day > time.days_in_month(year: year, month: month).must()
+        return wrong(text: text, at: at, what: f"{text.slice(from: at, to: at + 10)} is no day of the calendar")
+    found @= lexed(kind: LOCAL_DATE, end: at + 10)
+    found.date @ time.DateTime(year: year, month: month, day: day, hour: 0, minute: 0, second: 0, nanosecond: 0)
+    k = at + 10
+
+    if k >= text.len()
+        return ok(found)
+    t = text[k]
+    joined = t == 'T' || t == 't'
+    spaced = t == ' ' && k + 3 < text.len() && is_digit(text[k + 1]) && is_digit(text[k + 2]) && text[k + 3] == ':'
+
+    if !joined && !spaced
+        return ok(found)
+    c = read_clock(text, k + 1)?
+    found.date @ time.DateTime(
+        year: year,
+        month: month,
+        day: day,
+        hour: c.hour,
+        minute: c.minute,
+        second: c.second,
+        nanosecond: c.nanosecond
+    )
+    found.kind @ LOCAL_DATE_TIME
+    found.end @ c.end
+    e = c.end
+
+    if e < text.len() && (text[e] == 'Z' || text[e] == 'z')
+        found.kind @ DATE_TIME
+        found.end @ e + 1
+    else if e < text.len() && (text[e] == '+' || text[e] == '-')
+        hours = digits_at(text, at: e + 1, count: 2).default(-1)
+        minutes = digits_at(text, at: e + 4, count: 2).default(-1)
+
+        if hours < 0 || minutes < 0 || text[e + 3] != ':'
+            return wrong(text: text, at: e, what: "expected an offset, +HH:MM or -HH:MM")
+
+        if hours > 23 || minutes > 59
+            return wrong(text: text, at: e, what: "an offset's hour past 23 or minute past 59")
+        sign: i64 @= 1
+
+        if text[e] == '-'
+            sign @ -1
+        found.kind @ DATE_TIME
+        found.integer @ sign * (hours * 60 + minutes)
+        found.end @ e + 6
+    return ok(found)
+
+# The value at byte `at` of `text` that holds no other: a string, a number,
+# a boolean, a date or a time. Fails `invalid` where none begins there, and
+# `does_not_fit` for an integer past an `i64`.
+function read_scalar(text: str, at: i64) -> Lexed?
+    if at >= text.len()
+        return wrong(text: text, at: at, what: "expected a value")
+    b = text[at]
+
+    if b == '"' || b == '\''
+        return read_string(text, at)
+
+    if at + 4 < text.len() && is_digit(b) && is_digit(text[at + 1]) && is_digit(text[at + 2]) && is_digit(text[at + 3]) && text[at + 4] == '-'
+        found = read_date(text, at)?
+        return check_end(text: text, found: found)
+
+    if at + 2 < text.len() && is_digit(b) && is_digit(text[at + 1]) && text[at + 2] == ':'
+        c = read_clock(text, at)?
+        found @= lexed(kind: LOCAL_TIME, end: c.end)
+        found.clock @ time.nanoseconds(((c.hour * 60 + c.minute) * 60 + c.second) * 1000000000 + c.nanosecond)
+        return check_end(text: text, found: found)
+    end = token_end(text, at)
+    token = text.slice(from: at, to: end)
+
+    if token == "true" || token == "false"
+        found @= lexed(kind: BOOLEAN, end: end)
+        found.flag @ token == "true"
+        return ok(found)
+
+    if token == "" && scalar_end_shown(text, at) != ""
+        return wrong(text: text, at: at, what: f"expected a value, found \"{scalar_end_shown(text, at)}\"")
+
+    if token == ""
+        return wrong(text: text, at: at, what: "expected a value")
+
+    if is_digit(b) || b == '+' || b == '-' || b == 'i' || b == 'n'
+        return read_number(text: text, at: at, token: token)
+    shown = text.slice(from: at, to: strings.ceil_boundary(s: text, at: at + 1))
+    return wrong(text: text, at: at, what: f"expected a value, found \"{shown}\"")
+
+# The character at byte `at` of `text` as a message shows it: "" at the end
+# or at a line end.
+function scalar_end_shown(text: str, at: i64) -> str
+    if at >= text.len() || line_end_len(text, at) > 0
+        return ""
+    return text.slice(from: at, to: strings.ceil_boundary(s: text, at: at + 1))
+
+# `found`, where nothing but the end of a value follows it.
+function check_end(text: str, found: Lexed) -> Lexed?
+    if found.end < text.len() && !ends_value(text[found.end])
+        return wrong(text: text, at: found.end, what: "expected the end of the value")
+    return ok(found)
+
+# What `read_scalar` reads from `text` at byte 0, shown as a test reads it.
+function shown_of(text: str) -> str
+    match read_scalar(text, 0)
+        .err e => return e.code + ": " + e.msg
+        .ok v =>
+            if v.kind == TEXT
+                return "text " + v.text
+
+            if v.kind == INTEGER
+                return f"integer {v.integer}"
+
+            if v.kind == FLOAT
+                return f"float {v.float}"
+
+            if v.kind == BOOLEAN
+                return f"boolean {v.flag}"
+
+            if v.kind == LOCAL_TIME
+                return f"time {v.clock.nanoseconds}"
+            d = v.date
+            return f"{v.kind} {d.year}-{d.month}-{d.day} {d.hour}:{d.minute}:{d.second}.{d.nanosecond} {v.integer} end {v.end}"
+
+test "read_scalar: integers in four bases, signs, underscores, and the ones TOML refuses, as tomllib reads them"
+    assert shown_of("0x1F") == "integer 31"
+    assert shown_of("0xdead_beef") == "integer 3735928559"
+    assert shown_of("0o17") == "integer 15"
+    assert shown_of("0b101") == "integer 5"
+    assert shown_of("+17") == "integer 17"
+    assert shown_of("-0") == "integer 0"
+    assert shown_of("1_000") == "integer 1000"
+    assert shown_of("0x00ff") == "integer 255"
+    assert shown_of("-9223372036854775808") == "integer -9223372036854775808"
+    assert shown_of("9223372036854775808") == "does_not_fit: line 1, column 1: \"9223372036854775808\" is past what an i64 holds"
+    assert shown_of("0x8000000000000000") == "does_not_fit: line 1, column 1: \"0x8000000000000000\" is past what an i64 holds"
+    assert shown_of("0x_1") == "invalid: line 1, column 1: \"0x_1\" is not an integer"
+    assert shown_of("-0x1") == "invalid: line 1, column 1: \"-0x1\" is not a number"
+    assert shown_of("0X1F") == "invalid: line 1, column 1: \"0X1F\" is not a number"
+    assert shown_of("1_") == "invalid: line 1, column 1: \"1_\" is not a number"
+    assert shown_of("1__0") == "invalid: line 1, column 1: \"1__0\" is not a number"
+    assert shown_of("012") == "invalid: line 1, column 1: \"012\" is not a number"
+    assert shown_of("00") == "invalid: line 1, column 1: \"00\" is not a number"
+    assert shown_of("_1") == "invalid: line 1, column 1: expected a value, found \"_\""
+
+test "read_scalar: floats, signed zero, an exponent with underscores, inf and nan, and the forms TOML refuses"
+    assert shown_of("1.0") == "float 1.0"
+    assert shown_of("-3e+2") == "float -300.0"
+    assert shown_of("1E2") == "float 100.0"
+    assert shown_of("6.626e-34") == "float 6.626e-34"
+    assert shown_of("1_0.0_1") == "float 10.01"
+    assert shown_of("1e06") == "float 1000000.0"
+    assert shown_of("1e1_0") == "float 10000000000.0"
+    assert shown_of("-0.0") == "float -0.0"
+    assert shown_of("0e0") == "float 0.0"
+    assert shown_of("+inf") == "float inf"
+    assert shown_of("-inf") == "float -inf"
+    assert shown_of("1.") == "invalid: line 1, column 1: \"1.\" is not a number"
+    assert shown_of("01.5") == "invalid: line 1, column 1: \"01.5\" is not a number"
+    assert shown_of("1_.0") == "invalid: line 1, column 1: \"1_.0\" is not a number"
+    assert shown_of("3.e2") == "invalid: line 1, column 1: \"3.e2\" is not a number"
+    assert shown_of("1e+") == "invalid: line 1, column 1: \"1e+\" is not a number"
+    assert shown_of("nan_") == "invalid: line 1, column 1: \"nan_\" is not a number"
+    assert shown_of(".5") == "invalid: line 1, column 1: expected a value, found \".\""
+    assert shown_of("True") == "invalid: line 1, column 1: expected a value, found \"T\""
+
+test "read_scalar: the four strings, every escape, quotes closing a multi-line string, a line-ending backslash"
+    assert shown_of("\"\\u00e9\\U0001F600\\t\\\"\\\\\"") == "text é😀\t\"\\"
+    assert shown_of("\"\\b\\f\\n\\r\"") == "text \u{8}\u{c}\n\r"
+    assert shown_of("'C:\\path'") == "text C:\\path"
+    assert shown_of("\"\"\"\na\\\n   b\nc\"\"\"\"\"") == "text ab\nc\"\""
+    assert shown_of("'''\n'a'\n'''''") == "text 'a'\n''"
+    assert shown_of("\"\"\"\r\nx\r\ny\"\"\"") == "text x\ny"
+    assert shown_of("\"tab\tok\"") == "text tab\tok"
+    assert shown_of("\"é\"") == "text é"
+    assert shown_of("\"\"") == "text "
+
+test "read_scalar: escapes and characters a string refuses, and strings left open"
+    assert shown_of("\"\\ud800\"") == "invalid: line 1, column 2: \"\\ud800\" names no Unicode scalar value"
+    assert shown_of("\"\\U00110000\"") == "invalid: line 1, column 2: \"\\U00110000\" names no Unicode scalar value"
+    assert shown_of("\"\\x41\"") == "invalid: line 1, column 2: \"\\x\" is no escape of TOML 1.0.0"
+    assert shown_of("\"\\e\"") == "invalid: line 1, column 2: \"\\e\" is no escape of TOML 1.0.0"
+    assert shown_of("\"x\ry\"") == "invalid: line 1, column 3: a control character inside a string"
+    assert shown_of("\"a\nb\"") == "invalid: line 1, column 3: a line end inside a string of one line"
+    assert shown_of("\"\u{1}\"") == "invalid: line 1, column 2: a control character inside a string"
+    assert shown_of("'abc") == "invalid: line 1, column 1: a string with no closing quote"
+    assert shown_of("'''x''''''") == "invalid: line 1, column 5: more than five quotes closing a string"
+
+test "read_scalar: dates and times in their four forms, offsets, a space or a small t, a fraction cut at nanoseconds"
+    assert shown_of("1979-05-27T07:32:00Z") == "6 1979-5-27 7:32:0.0 0 end 20"
+    assert shown_of("1979-05-27T00:32:00.999999-07:00") == "6 1979-5-27 0:32:0.999999000 -420 end 32"
+    assert shown_of("1979-05-27T07:32:00+05:30") == "6 1979-5-27 7:32:0.0 330 end 25"
+    assert shown_of("1979-05-27 07:32:00z") == "6 1979-5-27 7:32:0.0 0 end 20"
+    assert shown_of("1979-05-27t07:32:00") == "7 1979-5-27 7:32:0.0 0 end 19"
+    assert shown_of("1979-05-27") == "8 1979-5-27 0:0:0.0 0 end 10"
+    assert shown_of("1979-05-27T07:32:00.1234567891Z") == "6 1979-5-27 7:32:0.123456789 0 end 31"
+    assert shown_of("07:32:00.5") == "time 27120500000000"
+    assert shown_of("00:00:00") == "time 0"
+
+test "read_scalar: dates and times TOML 1.0.0 refuses: no seconds, a leap second, a day the calendar lacks, short fields"
+    assert shown_of("1979-05-27T07:32") == "invalid: line 1, column 12: expected a time of day, HH:MM:SS with seconds, as TOML 1.0.0 writes one"
+    assert shown_of("1979-05-27T23:59:60Z") == "invalid: line 1, column 12: an hour past 23, a minute past 59 or a second past 59"
+    assert shown_of("1979-05-27T24:00:00") == "invalid: line 1, column 12: an hour past 23, a minute past 59 or a second past 59"
+    assert shown_of("2023-02-29") == "invalid: line 1, column 1: 2023-02-29 is no day of the calendar"
+    assert shown_of("2024-02-29") == "8 2024-2-29 0:0:0.0 0 end 10"
+    assert shown_of("1979-5-27") == "invalid: line 1, column 1: expected a date, YYYY-MM-DD"
+    assert shown_of("7:32:00") == "invalid: line 1, column 1: \"7:32:00\" is not a number"
+    assert shown_of("1979-05-27T07:32:00+5:30") == "invalid: line 1, column 20: expected an offset, +HH:MM or -HH:MM"
+    assert shown_of("1979-05-27x") == "invalid: line 1, column 11: expected the end of the value"
+    assert shown_of("12:00:00.") == "invalid: line 1, column 9: a decimal point with no digit after it"
+
+test "position: a line feed, characters of two bytes"
+    assert position("ab\ncé x", 7) == "line 2, column 4"
+    assert position("", 0) == "line 1, column 1"

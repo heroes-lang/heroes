@@ -1,0 +1,352 @@
+# The insertion modes of tables (13.2.6.4.9 to 13.2.6.4.15): "in table", "in
+# table text", "in caption", "in column group", "in table body", "in row" and
+# "in cell". What does not belong in a table is foster parented: put before
+# the table, by "in body"'s rules.
+
+use html/internal/ascii
+use html/internal/body
+use html/internal/builder
+use html/internal/common
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/token
+
+# 13.2.6.4.9, "in table".
+function in_table(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.CHARS
+        current = builder.current(b)
+        name = b.tree.names[current]
+
+        if b.tree.spaces[current] == dom.HTML && (name == "table" || name == "tbody" || name == "template" || name == "tfoot" || name == "thead" || name == "tr")
+            b.pending @ []
+            b.pending_at @ t.at
+            b.original @ b.mode
+            b.mode @ .in_table_text
+            return .again
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.EOF
+        return .using(mode: .in_body)
+    else if t.kind == token.START
+        match t.name
+            "caption" =>
+                builder.clear_back_to(@b, first: "table", second: "table", third: "table")
+                formatting.push_marker(@b)
+                _ = insert.element_for(@b, t, dom.HTML)
+                b.mode @ .in_caption
+                return .done
+            "colgroup" =>
+                builder.clear_back_to(@b, first: "table", second: "table", third: "table")
+                _ = insert.element_for(@b, t, dom.HTML)
+                b.mode @ .in_column_group
+                return .done
+            "col" =>
+                builder.clear_back_to(@b, first: "table", second: "table", third: "table")
+                _ = insert.element_named(@b, "colgroup")
+                b.mode @ .in_column_group
+                return .again
+            "tbody" | "tfoot" | "thead" =>
+                builder.clear_back_to(@b, first: "table", second: "table", third: "table")
+                _ = insert.element_for(@b, t, dom.HTML)
+                b.mode @ .in_table_body
+                return .done
+            "td" | "th" | "tr" =>
+                builder.clear_back_to(@b, first: "table", second: "table", third: "table")
+                _ = insert.element_named(@b, "tbody")
+                b.mode @ .in_table_body
+                return .again
+            "table" =>
+                builder.error(@b, "unexpected-start-tag", t)
+
+                if !builder.in_scope(b, "table", builder.TABLE_SCOPE)
+                    return .done
+                builder.pop_until(@b, "table")
+                builder.reset_mode(@b)
+                return .again
+            "style" | "script" | "template" => return .using(mode: .in_head)
+            "input" =>
+                if token.has_attribute(t, "type") && ascii.equals_ignoring_case(a: token.value_of(t, "type"), b: "hidden")
+                    builder.error(@b, "unexpected-start-tag", t)
+                    _ = insert.element_for(@b, t, dom.HTML)
+                    builder.pop(@b)
+                    builder.acknowledge(@b)
+                    return .done
+            "form" =>
+                builder.error(@b, "unexpected-start-tag", t)
+                template = builder.has_open(b, "template")
+
+                if b.form != dom.NONE && !template
+                    return .done
+                node = insert.element_for(@b, t, dom.HTML)
+
+                if !template
+                    b.form @ node
+                builder.pop(@b)
+                return .done
+            _ => _ = 0
+    else if t.kind == token.END
+        match t.name
+            "table" =>
+                if !builder.in_scope(b, "table", builder.TABLE_SCOPE)
+                    builder.error(@b, "unexpected-end-tag", t)
+                    return .done
+                builder.pop_until(@b, "table")
+                builder.reset_mode(@b)
+                return .done
+            "body" | "caption" | "col" | "colgroup" | "html" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" =>
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            "template" => return .using(mode: .in_head)
+            _          => _ = 0
+    builder.unexpected(@b, t)
+    return .using_foster
+
+# 13.2.6.4.10, "in table text": characters collected, then inserted as they
+# are where all are white space, or foster parented where not.
+function in_table_text(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.CHARS
+        kept = body.without_zero(@b, t)
+
+        if kept != ""
+            b.pending @ b.pending.push(kept)
+        return .done
+    s = b.pending.join("")
+    b.pending @ []
+
+    if !ascii.is_all_white(s)
+        run = token.run(data: s, at: b.pending_at)
+        builder.error(@b, "unexpected-text", run)
+        b.foster @ true
+        body.characters(@b, run)
+        b.foster @ false
+    else
+        insert.text(@b, s)
+    b.mode @ b.original
+    return .again
+
+# 13.2.6.4.11, "in caption".
+function in_caption(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    ends = t.kind == token.END && t.name == "caption"
+    starts_table_part = t.kind == token.START && is_table_part(t.name)
+
+    if ends || starts_table_part || t.kind == token.END && t.name == "table"
+        if !builder.in_scope(b, "caption", builder.TABLE_SCOPE)
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.generate_implied_end_tags(@b, "")
+
+        if !builder.current_is(b, "caption")
+            builder.error(@b, "unclosed-element", t)
+        builder.pop_until(@b, "caption")
+        formatting.clear_to_marker(@b)
+        b.mode @ .in_table
+
+        if ends
+            return .done
+        return .again
+
+    if t.kind == token.END
+        match t.name
+            "body" | "col" | "colgroup" | "html" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" =>
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            _ => _ = 0
+    return .using(mode: .in_body)
+
+# Whether a start tag named `name` begins another part of a table, as
+# "in caption" and "in cell" list them.
+function is_table_part(name: str) -> bool
+    return match name
+        "caption" | "col" | "colgroup" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" => true
+        _                                                                                 => false
+
+# 13.2.6.4.12, "in column group".
+function in_column_group(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        insert.text(@b, common.take_white(@t))
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.START && t.name == "html"
+        return .using(mode: .in_body)
+    else if t.kind == token.START && t.name == "col"
+        _ = insert.element_for(@b, t, dom.HTML)
+        builder.pop(@b)
+        builder.acknowledge(@b)
+        return .done
+    else if t.kind == token.END && t.name == "colgroup"
+        if !builder.current_is(b, "colgroup")
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.pop(@b)
+        b.mode @ .in_table
+        return .done
+    else if t.kind == token.END && t.name == "col"
+        builder.error(@b, "unexpected-end-tag", t)
+        return .done
+    else if (t.kind == token.START || t.kind == token.END) && t.name == "template"
+        return .using(mode: .in_head)
+    else if t.kind == token.EOF
+        return .using(mode: .in_body)
+
+    if !builder.current_is(b, "colgroup")
+        builder.error(@b, "unexpected-start-tag", t)
+        return .done
+    builder.pop(@b)
+    b.mode @ .in_table
+    return .again
+
+# 13.2.6.4.13, "in table body".
+function in_table_body(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.START && t.name == "tr"
+        builder.clear_back_to(@b, first: "tbody", second: "tfoot", third: "thead")
+        _ = insert.element_for(@b, t, dom.HTML)
+        b.mode @ .in_row
+        return .done
+
+    if t.kind == token.START && (t.name == "th" || t.name == "td")
+        builder.error(@b, "unexpected-start-tag", t)
+        builder.clear_back_to(@b, first: "tbody", second: "tfoot", third: "thead")
+        _ = insert.element_named(@b, "tr")
+        b.mode @ .in_row
+        return .again
+    section = t.name == "tbody" || t.name == "tfoot" || t.name == "thead"
+
+    if t.kind == token.END && section
+        if !builder.in_scope(b, t.name, builder.TABLE_SCOPE)
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.clear_back_to(@b, first: "tbody", second: "tfoot", third: "thead")
+        builder.pop(@b)
+        b.mode @ .in_table
+        return .done
+
+    if t.kind == token.START && (section || t.name == "caption" || t.name == "col" || t.name == "colgroup") || t.kind == token.END && t.name == "table"
+        if !builder.in_scope(b, "tbody", builder.TABLE_SCOPE) && !builder.in_scope(b, "thead", builder.TABLE_SCOPE) && !builder.in_scope(b, "tfoot", builder.TABLE_SCOPE)
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+        builder.clear_back_to(@b, first: "tbody", second: "tfoot", third: "thead")
+        builder.pop(@b)
+        b.mode @ .in_table
+        return .again
+
+    if t.kind == token.END
+        match t.name
+            "body" | "caption" | "col" | "colgroup" | "html" | "td" | "th" | "tr" =>
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            _ => _ = 0
+    return .using(mode: .in_table)
+
+# 13.2.6.4.14, "in row".
+function in_row(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.START && (t.name == "th" || t.name == "td")
+        builder.clear_back_to(@b, first: "tr", second: "tr", third: "tr")
+        _ = insert.element_for(@b, t, dom.HTML)
+        b.mode @ .in_cell
+        formatting.push_marker(@b)
+        return .done
+    section = t.name == "tbody" || t.name == "tfoot" || t.name == "thead"
+    closes = t.kind == token.END && t.name == "tr"
+    reopens = t.kind == token.START && (section || t.name == "caption" || t.name == "col" || t.name == "colgroup" || t.name == "tr") || t.kind == token.END && t.name == "table"
+
+    if t.kind == token.END && section && !builder.in_scope(b, t.name, builder.TABLE_SCOPE)
+        builder.error(@b, "unexpected-end-tag", t)
+        return .done
+
+    if closes || reopens || t.kind == token.END && section
+        if !builder.in_scope(b, "tr", builder.TABLE_SCOPE)
+            if !(t.kind == token.END && section)
+                builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.clear_back_to(@b, first: "tr", second: "tr", third: "tr")
+        builder.pop(@b)
+        b.mode @ .in_table_body
+
+        if closes
+            return .done
+        return .again
+
+    if t.kind == token.END
+        match t.name
+            "body" | "caption" | "col" | "colgroup" | "html" | "td" | "th" =>
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            _ => _ = 0
+    return .using(mode: .in_table)
+
+# 13.2.6.4.15, "in cell".
+function in_cell(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.END && (t.name == "td" || t.name == "th")
+        if !builder.in_scope(b, t.name, builder.TABLE_SCOPE)
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.generate_implied_end_tags(@b, "")
+
+        if !builder.current_is(b, t.name)
+            builder.error(@b, "unclosed-element", t)
+        builder.pop_until(@b, t.name)
+        formatting.clear_to_marker(@b)
+        b.mode @ .in_row
+        return .done
+
+    if t.kind == token.START && is_table_part(t.name)
+        if !builder.in_scope(b, "td", builder.TABLE_SCOPE) && !builder.in_scope(b, "th", builder.TABLE_SCOPE)
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+        close_cell(@b, t)
+        return .again
+
+    if t.kind == token.END
+        match t.name
+            "body" | "caption" | "col" | "colgroup" | "html" =>
+                builder.error(@b, "unexpected-end-tag", t)
+                return .done
+            "table" | "tbody" | "tfoot" | "thead" | "tr" =>
+                if !builder.in_scope(b, t.name, builder.TABLE_SCOPE)
+                    builder.error(@b, "unexpected-end-tag", t)
+                    return .done
+                close_cell(@b, t)
+                return .again
+            _ => _ = 0
+    return .using(mode: .in_body)
+
+# Closes the cell: implied end tags, up to the `td` or `th`, the formatting
+# elements to the marker, and back to "in row".
+function close_cell(@b: builder.Builder, t: token.Token lent)
+    builder.generate_implied_end_tags(@b, "")
+
+    if !builder.current_is(b, "td") && !builder.current_is(b, "th")
+        builder.error(@b, "unclosed-element", t)
+
+    while b.depth > 0
+        top = b.open[b.depth - 1]
+        builder.pop(@b)
+
+        if dom.is_html(b.tree, top, "td") || dom.is_html(b.tree, top, "th")
+            break
+
+    formatting.clear_to_marker(@b)
+    b.mode @ .in_row
+
+## Tests
+
+test "is_table_part: the parts of a table, and not the table itself"
+    assert is_table_part("td") && is_table_part("caption") && !is_table_part("table") && !is_table_part("div")

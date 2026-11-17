@@ -1,0 +1,321 @@
+# A float read from decimal text: every byte checked, the significant digits
+# gathered exactly, and the value made by `near`; and the reading both texts
+# end in, decimal and hexadecimal, made a float of either width.
+#
+# A text may hold more digits than any float needs, so only the first
+# `KEPT` significant digits are kept, and a `1` after them stands for any
+# digit not zero that follows. That changes no answer: a value halfway between
+# two floats has at most 767 significant digits, so the kept text and the
+# whole one lie on the same side of every such value.
+
+use numbers/internal/big
+use numbers/internal/fault
+use numbers/internal/near
+use numbers/internal/quick
+use numbers/internal/whole
+
+# The significant decimal digits kept.
+constant KEPT: i64
+    800
+
+# An exponent's digits stop counting past this, where every value is zero or
+# infinite already.
+constant EXPONENT_MAX: i64
+    1000000000000000
+
+# The size of a value read from text.
+variant Magnitude
+    decimal
+        # ASCII digits, the first not zero and the last not zero; none for zero.
+        digits: [u8]
+        # The power of ten the integer they spell is multiplied by.
+        exponent: i64
+    binary
+        # The bits, as a natural number of `big`.
+        bits: [i64]
+        # The power of two they are multiplied by.
+        exponent: i64
+    infinite
+    not_a_number
+
+# A float read from text, before it is made a float of one width.
+record Reading
+    # Whether a `-` came first.
+    negative: bool
+    # Its size.
+    magnitude: Magnitude
+
+# Whether the bytes of `s` from `from` to its end spell `word`, which is in
+# lower case, in any case.
+function spells(s: str, from: i64, word: str) -> bool
+    if s.len() - from != word.len()
+        return false
+
+    at: i64 @= 0
+
+    while at < word.len()
+        c = s[from + at]
+
+        if c != word[at] && !(c >= 'A' && c <= 'Z' && c + 32 == word[at])
+            return false
+        at @ at + 1
+
+    return true
+
+# The reading of `s` after its sign where it names infinity or no number,
+# and none where it does not.
+function named(s: str, from: i64, negative: bool) -> Reading?
+    if spells(s: s, from: from, word: "inf") || spells(s: s, from: from, word: "infinity")
+        return ok(Reading(negative: negative, magnitude: .infinite))
+
+    if spells(s: s, from: from, word: "nan")
+        return ok(Reading(negative: negative, magnitude: .not_a_number))
+    return fail(code: fault.INVALID, msg: "no name")
+
+# The exponent `s` writes from `at`, its marker read already: an optional
+# sign and decimal digits, which must reach the end of `s`.
+function exponent_at(s: str, at: i64, what: str) -> i64?
+    negative = at < s.len() && s[at] == '-'
+    from: i64 @= at
+
+    if at < s.len() && (s[at] == '+' || s[at] == '-')
+        from @ at + 1
+    amount: i64 @= 0
+    end: i64 @= from
+
+    while end < s.len() && s[end] >= '0' && s[end] <= '9'
+        if amount < EXPONENT_MAX
+            amount @ amount * 10 + to_i64(s[end] - '0').must()
+        end @ end + 1
+
+    if end == from
+        if end == s.len()
+            return fail(
+                code: fault.INVALID,
+                msg: fault.unread(s: s, what: what, why: "ends where its exponent's digits should be")
+            )
+        return fail(
+            code: fault.INVALID,
+            msg: fault.stopped(s: s, what: what, at: end, why: "is no digit of its exponent")
+        )
+
+    if end < s.len()
+        return fail(
+            code: fault.INVALID,
+            msg: fault.stopped(s: s, what: what, at: end, why: "is no digit of its exponent")
+        )
+
+    if negative
+        return ok(0 - amount)
+    return ok(amount)
+
+# The failure of a text whose digits stopped at `at`, with no digit or after
+# them.
+function stopped_at(s: str, at: i64, seen: bool, what: str) -> Reading?
+    if !seen && (at == s.len() || s[at] == 'e' || s[at] == 'E' || s[at] == 'p' || s[at] == 'P')
+        return fail(code: fault.INVALID, msg: fault.unread(s: s, what: what, why: "has no digit"))
+
+    if s[at] == '.'
+        return fail(code: fault.INVALID, msg: fault.stopped(s: s, what: what, at: at, why: "is a second point"))
+    return fail(code: fault.INVALID, msg: fault.stopped(s: s, what: what, at: at, why: "is no digit"))
+
+# The float `s` spells in decimal: an optional sign, digits with at most one
+# point, and an optional exponent; or `inf`, `infinity` or `nan` in any case.
+# Fails `invalid`, naming the byte that stopped the reading.
+function decimal(s: str) -> Reading?
+    what = "a decimal float"
+    from = whole.after_sign(s)
+    negative = from == 1 && s[0] == '-'
+
+    match named(s: s, from: from, negative: negative)
+        .ok r  => return ok(r)
+        .err _ => _ = 0
+
+    digits: [u8] @= []
+    seen: bool @= false
+    point: bool @= false
+    after_point: i64 @= 0
+    dropped: i64 @= 0
+    sticky: bool @= false
+    at: i64 @= from
+
+    while at < s.len()
+        c = s[at]
+
+        if c >= '0' && c <= '9'
+            seen @ true
+
+            if point
+                after_point @ after_point + 1
+
+            if digits.len() > 0 || c != '0'
+                if digits.len() < KEPT
+                    digits @ digits.push(c)
+                else
+                    dropped @ dropped + 1
+                    sticky @ sticky || c != '0'
+        else if c == '.' && !point
+            point @ true
+        else
+            break
+        at @ at + 1
+
+    exponent: i64 @= 0
+
+    if seen && at < s.len() && (s[at] == 'e' || s[at] == 'E')
+        exponent @ exponent_at(s: s, at: at + 1, what: what)?
+    else if !seen || at < s.len()
+        return stopped_at(s: s, at: at, seen: seen, what: what)
+    exponent @ exponent - after_point + dropped
+
+    if sticky
+        digits @ digits.push('1')
+        exponent @ exponent - 1
+    kept: i64 @= digits.len()
+
+    while kept > 0 && digits[kept - 1] == '0'
+        kept @ kept - 1
+
+    if kept == 0
+        exponent @ 0
+    else
+        exponent @ exponent + digits.len() - kept
+    return ok(
+        Reading(negative: negative, magnitude: .decimal(digits: digits.slice(from: 0, to: kept), exponent: exponent))
+    )
+
+# The float of `format` nearest to the integer `digits` spell times ten to
+# the `exponent`th, as an `f64`: by a quick route of `quick` where one
+# decides it, and by the exact division of `near` where none does.
+function decimal_value(digits: [u8], exponent: i64, format: near.Format) -> f64
+    if digits.len() == 0
+        return 0.0
+    lead = exponent + digits.len() - 1
+
+    if lead > format.max_lead
+        return near.infinity()
+
+    if lead < format.min_lead
+        return 0.0
+
+    match quick.value(digits: digits, exponent: exponent, format: format)
+        .ok v  => return v
+        .err _ => _ = 0
+
+    above: [i64] @= big.of_digits(digits)
+    below: [i64] @= [1]
+
+    if exponent > 0
+        above @ big.times_pow10(a: above, k: exponent)
+    else
+        below @ big.times_pow10(a: below, k: 0 - exponent)
+    return near.nearest(a: above, b: below, format: format)
+
+# The float of `format` nearest to `bits` times two to the `exponent`th, as an
+# `f64`.
+function binary_value(bits: [i64], exponent: i64, format: near.Format) -> f64
+    if bits.len() == 0
+        return 0.0
+    lead = big.bit_len(bits) - 1 + exponent
+
+    if lead > format.max_exp + 1
+        return near.infinity()
+
+    if lead < format.min_exp - 2
+        return 0.0
+    above: [i64] @= bits
+    below: [i64] @= [1]
+
+    if exponent > 0
+        above @ big.shifted(a: bits, k: exponent)
+    else
+        below @ big.shifted(a: below, k: 0 - exponent)
+    return near.nearest(a: above, b: below, format: format)
+
+# The float of `format` nearest to what `r` read, with its sign, as an `f64`.
+function value(r: Reading, format: near.Format) -> f64
+    size = match r.magnitude
+        .decimal d    => decimal_value(digits: d.digits, exponent: d.exponent, format: format)
+        .binary b     => binary_value(bits: b.bits, exponent: b.exponent, format: format)
+        .infinite     => near.infinity()
+        .not_a_number => near.not_a_number()
+
+    if r.negative
+        return -size
+    return size
+
+## Tests
+
+test "spells: each case, a longer text, and a shorter one"
+    assert spells(s: "-InF", from: 1, word: "inf")
+    assert spells(s: "NAN", from: 0, word: "nan")
+    assert !spells(s: "infinit", from: 0, word: "infinity")
+    assert !spells(s: "nann", from: 0, word: "nan")
+    assert !spells(s: "n@n", from: 0, word: "nan")
+
+test "exponent_at: a sign, none, no digit, and digits past every float"
+    assert exponent_at(s: "1e+5", at: 2, what: "x").must() == 5
+    assert exponent_at(s: "1e-05", at: 2, what: "x").must() == -5
+    assert exponent_at(s: "1e5", at: 2, what: "x").must() == 5
+    assert exponent_at(s: "1e99999999999999999999999", at: 2, what: "x").must() >= 1000000000000000
+    assert exponent_at(s: "1e+", at: 2, what: "x").is_err()
+    assert exponent_at(s: "1e5x", at: 2, what: "x").is_err()
+
+test "decimal: digits, a point at either end, zeros at both ends, and an exponent"
+    assert decimal("12.5").must() == Reading(negative: false, magnitude: .decimal(digits: ['1', '2', '5'], exponent: -1))
+    assert decimal("-.5").must() == Reading(negative: true, magnitude: .decimal(digits: ['5'], exponent: -1))
+    assert decimal("5.").must() == Reading(negative: false, magnitude: .decimal(digits: ['5'], exponent: 0))
+    assert decimal("00120.0300e2").must() == Reading(negative: false, magnitude: .decimal(digits: ['1', '2', '0', '0', '3'], exponent: 0))
+    assert decimal("+0.000").must() == Reading(negative: false, magnitude: .decimal(digits: [], exponent: 0))
+    assert decimal("-Infinity").must() == Reading(negative: true, magnitude: .infinite)
+    assert decimal("nan").must() == Reading(negative: false, magnitude: .not_a_number)
+
+test "decimal: what is no float, with the byte that says so"
+    for bad in ["", "-", ".", "e5", ".e5", "1e", "1e+", "1.2.3", "1_000", " 1", "1 ", "0x10", "infinit", "1e5.0", "++1"]
+        assert decimal(bad).is_err()
+
+    match decimal("1.2.3")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"1.2.3\" is not a decimal float: byte 3 is a second point"
+
+    match decimal("12x")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"12x\" is not a decimal float: byte 2 is no digit"
+
+    match decimal("-")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"-\" is not a decimal float: it has no digit"
+
+test "decimal: past the digits kept, a digit not zero leaves a 1 behind"
+    ones: [str] @= ["1."]
+
+    for _ in range(from: 0, to: 900)
+        ones @ ones.push("0")
+
+    ones @ ones.push("1")
+
+    match decimal(ones.join("")).must().magnitude
+        .decimal d    => assert d.digits.len() == 801 && d.digits[800] == '1' && d.exponent == -800
+        .binary _     => assert false
+        .infinite     => assert false
+        .not_a_number => assert false
+
+test "decimal_value and binary_value: zero, the edges of range, and both widths"
+    f64s = near.f64_format()
+    assert decimal_value(digits: [], exponent: 5, format: f64s) == 0.0
+    assert decimal_value(digits: ['1'], exponent: 400, format: f64s) == near.infinity()
+    assert decimal_value(digits: ['1'], exponent: -400, format: f64s) == 0.0
+    assert to_str(decimal_value(digits: ['5'], exponent: -324, format: f64s)) == "5e-324"
+    assert to_str(decimal_value(digits: ['1', '7', '9', '7', '6', '9', '3', '1', '3', '4', '8', '6', '2', '3', '1', '5', '7'], exponent: 292, format: f64s)) == "1.7976931348623157e+308"
+    assert to_str(to_f32(decimal_value(digits: ['1'], exponent: -1, format: near.f32_format()))) == "0.1"
+    assert binary_value(bits: [3], exponent: -1, format: f64s) == 1.5
+    assert binary_value(bits: [1], exponent: 1024, format: f64s) == near.infinity()
+
+test "value: the sign of zero, of infinity, and of a number"
+    f64s = near.f64_format()
+    negative_zero = value(r: decimal("-0").must(), format: f64s)
+    assert negative_zero == 0.0 && 1.0 / negative_zero < 0.0
+    assert value(r: decimal("-inf").must(), format: f64s) == -near.infinity()
+    assert value(r: decimal("-2.5").must(), format: f64s) == -2.5
+    not_number = value(r: decimal("NaN").must(), format: f64s)
+    assert not_number != not_number

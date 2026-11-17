@@ -1,0 +1,105 @@
+# What a parse found, read by name: an argument's values, its default where
+# none was given, how many times a flag was given, and a value read as a
+# number. A name the declaration does not hold aborts, since the program
+# wrote both and a misspelt name must not read as an argument left out.
+
+use flags/internal/decl
+use flags/internal/page
+use flags/internal/scan
+
+# Where the argument `name` stands in what `got` was read against. Aborts
+# where the declaration holds no such name.
+function index_in(got: scan.Got lent, name: str) -> i64
+    return decl.index_of_key(got.spec, name).must()
+
+# Whether the argument `name` was given at all, its negation included.
+function is_given(got: scan.Got lent, name: str) -> bool
+    return got.given[index_in(got, name)]
+
+# How many times the argument `name` was given since its negation last
+# turned it off.
+function count_of(got: scan.Got lent, name: str) -> i64
+    return got.counts[index_in(got, name)]
+
+# Whether the flag `name` was given and not turned off after. Aborts where
+# `name` takes a value.
+function is_on(got: scan.Got lent, name: str) -> bool
+    at = index_in(got, name)
+    assert !got.spec.wants[at].takes_value
+    return got.counts[at] > 0
+
+# Every value given to `name`, in order, else its default. Aborts where `name`
+# is a flag.
+function values_of(got: scan.Got lent, name: str) -> [str]
+    at = index_in(got, name)
+    w = got.spec.wants[at]
+    assert w.takes_value
+
+    if got.values[at].len() > 0
+        return got.values[at]
+    return w.defaults
+
+# The last value given to `name`, else its last default. Fails `not_found`
+# where neither stands. Aborts where `name` is a flag.
+function value_of(got: scan.Got lent, name: str) -> str?
+    given = values_of(got, name)
+
+    if given.len() == 0
+        w = got.spec.wants[index_in(got, name)]
+        return fail(code: decl.NOT_FOUND, msg: f"{decl.shown(w)} was not given and has no default")
+    return ok(given[given.len() - 1])
+
+# The value of `name` read as an integer. Fails `not_found` as `value_of`
+# does, and `invalid` where the value is no integer.
+function int_of(got: scan.Got lent, name: str) -> i64?
+    value = value_of(got, name)?
+    return decl.read_int(got.spec.wants[index_in(got, name)], value)
+
+# The value of `name` read as a decimal number. Fails `not_found` as
+# `value_of` does, and `invalid` where the value is no number.
+function float_of(got: scan.Got lent, name: str) -> f64?
+    value = value_of(got, name)?
+    return decl.read_float(got.spec.wants[index_in(got, name)], value)
+
+# Whether `-h` or `--help` was given to the command of `got` or to a
+# subcommand chosen under it.
+function is_help(got: scan.Got lent) -> bool
+    if got.help
+        return true
+
+    for inner in got.sub
+        if is_help(inner)
+            return true
+
+    return false
+
+# The help page of the deepest command chosen under `got`, itself included.
+function help_text(got: scan.Got) -> str
+    deepest @= got
+
+    while deepest.sub.len() > 0
+        deepest @ deepest.sub[0]
+
+    return page.help_page(deepest.spec, deepest.path)
+
+# Whether `-V` or `--version` was given to the command of `got` or to a
+# subcommand chosen under it.
+function is_version(got: scan.Got lent) -> bool
+    if got.version
+        return true
+
+    for inner in got.sub
+        if is_version(inner)
+            return true
+
+    return false
+
+# The version line of the deepest command chosen under `got`: its path, a
+# space and its version.
+function version_text(got: scan.Got) -> str
+    deepest @= got
+
+    while deepest.sub.len() > 0
+        deepest @ deepest.sub[0]
+
+    return deepest.path + " " + deepest.spec.version

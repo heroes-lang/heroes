@@ -1,0 +1,234 @@
+# Bytes written as hexadecimal text and read back from it: two digits for
+# each byte, the high half first, and nothing skipped on the way back, so a
+# text has one reading.
+
+use bytes/internal/codes
+use bytes/internal/raw
+
+# `s` as hexadecimal text in the case of `digits`.
+function formatted(s: [u8], digits: str) -> str
+    out: [u8] @= []
+
+    for c in s
+        out @ out.push(digits[raw.widened(c / 16)])
+        out @ out.push(digits[raw.widened(c % 16)])
+
+    # Every byte pushed is a hexadecimal digit, which is ASCII.
+    return out.validated_bytes().must()
+
+# The value of the hexadecimal digit `c`, in either case.
+function value(c: u8) -> i64?
+    if c >= '0' && c <= '9'
+        return ok(raw.widened(c - '0'))
+
+    if c >= 'a' && c <= 'f'
+        return ok(raw.widened(c - 'a') + 10)
+
+    if c >= 'A' && c <= 'F'
+        return ok(raw.widened(c - 'A') + 10)
+    return fail(code: codes.INVALID, msg: f"{raw.byte_shown(c)} is not a hexadecimal digit")
+
+# The value of the digit at `at` in `s`, failing with its index.
+function digit_at(s: str, at: i64) -> i64?
+    match value(s[at])
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: f"byte {at} of the hexadecimal: {e.msg}")
+
+# The bytes the hexadecimal text `s` writes, failing `invalid` at the first
+# byte that is not a digit, or at a last digit with no second one.
+function parsed(s: str) -> [u8]?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        high = digit_at(s, at)?
+
+        if at + 1 == s.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"the hexadecimal has an odd length, {s.len()}: its last digit, byte {at}, has no second digit to make a byte"
+            )
+        low = digit_at(s, at + 1)?
+
+        # Two digits make a value from 0 to 255.
+        out @ out.push(to_u8(high * 16 + low).must())
+        at @ at + 2
+
+    return ok(out)
+
+# `s` as the lines of a hexadecimal dump, as `hexdump -C` writes them and
+# Go's `hex.Dump`: sixteen bytes a line, each line its offset, the bytes in
+# hexadecimal and the printable ones between bars.
+function dumped(s: [u8]) -> str
+    out: [u8] @= []
+    line: i64 @= 0
+
+    while line < s.len()
+        push_offset(out: @out, offset: line)
+        raw.push_text(@out, "  ")
+        k: i64 @= 0
+
+        while k < 16
+            if line + k < s.len()
+                c = s[line + k]
+                out @ out.push(raw.LOWER_DIGITS[raw.widened(c / 16)])
+                out @ out.push(raw.LOWER_DIGITS[raw.widened(c % 16)])
+                out @ out.push(' ')
+            else
+                raw.push_text(@out, "   ")
+
+            if k == 7
+                out @ out.push(' ')
+            k @ k + 1
+
+        raw.push_text(@out, " |")
+        k @ 0
+
+        while k < 16 && line + k < s.len()
+            c = s[line + k]
+
+            if c >= 32 && c <= 126
+                out @ out.push(c)
+            else
+                out @ out.push('.')
+            k @ k + 1
+
+        raw.push_text(@out, "|\n")
+        line @ line + 16
+
+    # Every byte pushed is a digit, a space, a bar, a dot or printable ASCII.
+    return out.validated_bytes().must()
+
+# Adds `offset` in lower-case hexadecimal at the end of `out`, eight digits
+# at least, more where it needs them.
+function push_offset(@out: [u8], offset: i64)
+    digits: i64 @= 8
+
+    while digits < 16 && offset >> 4 * digits != 0
+        digits @ digits + 1
+
+    shift: i64 @= 4 * (digits - 1)
+
+    while shift >= 0
+        out @ out.push(raw.LOWER_DIGITS[offset >> shift & 15])
+        shift @ shift - 4
+
+## Tests
+
+# Python's `bytes.hex` and `base64.b16encode` answered these on 2026-11-15.
+test "formatted: the empty list, 0x00, 0xff, and four bytes in either case"
+    nothing: [u8] = []
+    assert formatted(nothing, raw.LOWER_DIGITS) == ""
+    assert formatted([0x00], raw.LOWER_DIGITS) == "00"
+    assert formatted([0xff], raw.LOWER_DIGITS) == "ff"
+    assert formatted([0x00, 0x01, 0xab, 0xff], raw.LOWER_DIGITS) == "0001abff"
+    assert formatted([0x00, 0x01, 0xab, 0xff], raw.UPPER_DIGITS) == "0001ABFF"
+
+test "value: the edges of the three ranges, and their neighbours"
+    assert value('0').must() == 0
+    assert value('9').must() == 9
+    assert value('a').must() == 10
+    assert value('F').must() == 15
+    assert value('/').is_err()
+    assert value('g').is_err()
+    assert value('G').is_err()
+    assert value(0xff).is_err()
+
+# Python's `bytes.fromhex` answered the first two; it skips the space of
+# "01 02", which this refuses, as Go's `hex.DecodeString` does.
+test "parsed: the empty text, both cases mixed, and every byte from 0x00 to 0xff written back"
+    nothing: [u8] = []
+    assert parsed("").must() == nothing
+    assert parsed("00ABff").must() == [0x00, 0xab, 0xff]
+    assert parsed("aBcD").must() == [0xab, 0xcd]
+    every: [u8] @= []
+    k: i64 @= 0
+
+    while k < 256
+        every @ every.push(to_u8(k).must())
+        k @ k + 1
+
+    assert parsed(formatted(every, raw.LOWER_DIGITS)).must() == every
+    assert parsed(formatted(every, raw.UPPER_DIGITS)).must() == every
+
+# Python's `fromhex("12z4")` named position 2 and Go's `DecodeString` the byte
+# "z"; for "123" both named the odd length.
+test "parsed fails invalid at the byte: not a digit, an odd length, a space, a 0x before"
+    match parsed("12z4")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 2 of the hexadecimal: \"z\" is not a hexadecimal digit"
+
+    match parsed("123")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the hexadecimal has an odd length, 3: its last digit, byte 2, has no second digit to make a byte"
+
+    match parsed("zz1")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the hexadecimal: \"z\" is not a hexadecimal digit"
+
+    match parsed("01 02")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of the hexadecimal: \" \" is not a hexadecimal digit"
+
+    assert parsed("0x01").is_err()
+    assert parsed("1").is_err()
+    assert parsed("é0").is_err()
+
+test "digit_at: a digit, and a byte that is not one, named by its index"
+    assert digit_at("x7", 1).must() == 7
+
+    match digit_at("x7", 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 0 of the hexadecimal: \"x\" is not a hexadecimal digit"
+
+# Go's `hex.Dump` answered every text here on 2026-11-15, for the first 0, 1,
+# 8, 9, 16, 17 and 33 of the same bytes.
+test "dumped: no bytes, one, half a line, past the half, a whole line, past it, three lines"
+    sample: [u8] = [
+        0x1e
+        0x21
+        0x7e
+        0x7f
+        0xff
+        0x2d
+        0x30
+        0x33
+        0x36
+        0x39
+        0x3c
+        0x3f
+        0x42
+        0x45
+        0x48
+        0x4b
+        0x4e
+        0x51
+        0x54
+        0x57
+        0x5a
+        0x5d
+        0x60
+        0x63
+        0x66
+        0x69
+        0x6c
+        0x6f
+        0x72
+        0x75
+        0x78
+        0x7b
+        0x7e
+    ]
+    assert dumped(sample.slice(from: 0, to: 0)) == ""
+    assert dumped(sample.slice(from: 0, to: 1)) == "00000000  1e                                                |.|\n"
+    assert dumped(sample.slice(from: 0, to: 8)) == "00000000  1e 21 7e 7f ff 2d 30 33                           |.!~..-03|\n"
+    assert dumped(sample.slice(from: 0, to: 9)) == "00000000  1e 21 7e 7f ff 2d 30 33  36                       |.!~..-036|\n"
+    assert dumped(sample.slice(from: 0, to: 16)) == "00000000  1e 21 7e 7f ff 2d 30 33  36 39 3c 3f 42 45 48 4b  |.!~..-0369<?BEHK|\n"
+    assert dumped(sample.slice(from: 0, to: 17)) == "00000000  1e 21 7e 7f ff 2d 30 33  36 39 3c 3f 42 45 48 4b  |.!~..-0369<?BEHK|\n00000010  4e                                                |N|\n"
+    assert dumped(sample.slice(from: 0, to: 33)) == "00000000  1e 21 7e 7f ff 2d 30 33  36 39 3c 3f 42 45 48 4b  |.!~..-0369<?BEHK|\n00000010  4e 51 54 57 5a 5d 60 63  66 69 6c 6f 72 75 78 7b  |NQTWZ]`cfilorux{|\n00000020  7e                                                |~|\n"
+
+test "push_offset: eight digits, and more where the offset needs them"
+    out: [u8] @= []
+    push_offset(out: @out, offset: 0)
+    push_offset(out: @out, offset: 4294967296)
+    assert out == raw.of_text("00000000100000000")

@@ -1,0 +1,543 @@
+capability status/constants  each status of RFC 9110 and its registry as a named number
+  heroes  http.STATUS_CONTINUE and the 61 other STATUS_ constants
+  go      net/http.StatusContinue and every Status constant
+  rust    -
+  python  http.HTTPStatus and its members, http.client's upper-case status names (OK, NOT_FOUND and the rest), http.client.responses, requests.codes
+  note    62 statuses, Python's and Go's sets being the same 62 (observed)
+
+capability status/text  the text of a status
+  heroes  http.status_text
+  go      net/http.StatusText
+  rust    -
+  python  http.HTTPStatus.phrase, http.HTTPStatus.description, http.client.responses
+  note    RFC 9110's texts, as Python 3.15 gives them; Go keeps older ones for 413, 414, 416, 418 and 422 (observed). A status with no text fails `not_found` where Go answers ""
+
+capability method/constants  the methods of RFC 9110 as named texts
+  heroes  http.METHOD_GET, METHOD_HEAD, METHOD_POST, METHOD_PUT, METHOD_PATCH, METHOD_DELETE, METHOD_CONNECT, METHOD_OPTIONS, METHOD_TRACE
+  go      net/http.MethodGet and the eight others
+  rust    -
+  python  http.HTTPMethod and its members
+  note    a misspelt method is a compile error
+
+capability header/field  a header as an ordered list of name and value
+  heroes  http.Header
+  go      net/http.Header
+  rust    -
+  python  http.client.HTTPMessage, email.message.Message as http.client uses it, requests.structures.CaseInsensitiveDict
+  note    a list, not Go's map of lists: the order a message carries is kept, and a name may repeat
+
+capability header/get  the first value of a name, case set aside
+  heroes  http.value_of
+  go      net/http.Header.Get
+  rust    -
+  python  http.client.HTTPMessage.get, http.client.HTTPResponse.getheader, urllib.request.Request.get_header
+  note    absent is `not_found`, where Go answers ""
+
+capability header/values  every value of a name, in order
+  heroes  http.values_of
+  go      net/http.Header.Values
+  rust    -
+  python  http.client.HTTPMessage.get_all, http.client.HTTPResponse.getheaders
+
+capability header/has  whether a name stands
+  heroes  http.has_header
+  go      -
+  rust    -
+  python  urllib.request.Request.has_header, http.client.HTTPMessage.__contains__
+
+capability header/set  one field set where every field of its name was
+  heroes  http.with_header
+  go      net/http.Header.Set
+  rust    -
+  python  urllib.request.Request.add_header, http.server.BaseHTTPRequestHandler.send_header
+
+capability header/add  a field added after the others
+  heroes  built-in push
+  go      net/http.Header.Add
+  rust    -
+  python  urllib.request.Request.add_unredirected_header
+
+capability header/delete  every field of a name taken out
+  heroes  http.without_header
+  go      net/http.Header.Del
+  rust    -
+  python  urllib.request.Request.remove_header
+
+capability header/canonical  a name as custom writes it
+  heroes  http.canonical_name
+  go      net/http.CanonicalHeaderKey
+  rust    -
+  python  -
+  note    Go's, observed on six names, a name that is no token answered as it is
+
+capability header/clone  a copy of a header
+  heroes  built-in (every value is a copy, spec § 3)
+  go      net/http.Header.Clone, net/http.Request.Clone
+  rust    -
+  python  -
+
+capability request/value  a request as a value
+  heroes  http.Request
+  go      net/http.Request, net/http.NewRequest, net/http.NewRequestWithContext
+  rust    -
+  python  urllib.request.Request, requests.Request, requests.PreparedRequest
+  note    the target is a `url.Url`; `closing` is Go's `Request.Close`; `remote` Go's `RemoteAddr`
+
+capability request/make  a request made from a method and a URL
+  heroes  http.request
+  go      net/http.NewRequest
+  rust    -
+  python  urllib.request.Request, requests.Request, requests.Request.prepare, requests.Session.prepare_request
+
+capability request/query  query pairs added to a target, and read from one
+  heroes  http.with_query, http.query_of
+  go      net/http.Request.FormValue (of the query), net/url.URL.Query as Request.URL.Query
+  rust    -
+  python  requests' params argument
+  note    the pairs are written by `url.format_query`; nothing reorders them, where requests encodes a dict
+
+capability request/body  a request's body from bytes, text or JSON
+  heroes  http.with_body, http.with_text, http.with_json
+  go      net/http.NewRequest's body
+  rust    -
+  python  urllib.request.Request.data, requests' data and json arguments
+
+capability request/form  a form sent, and read by a server
+  heroes  http.with_form, http.form_of
+  go      net/http.PostForm, net/http.Client.PostForm, net/http.Request.ParseForm, net/http.Request.PostFormValue, net/http.Request.FormValue
+  rust    -
+  python  requests' data argument given pairs
+  note    a server reads the form of an `application/x-www-form-urlencoded` body alone; the query is `query_of`'s
+
+capability request/multipart  a body of parts with files, written
+  heroes  http.with_multipart, http.Part
+  go      mime/multipart.Writer as net/http's users write it
+  rust    -
+  python  requests' files argument
+  note    RFC 7578; names escaped as the HTML standard writes them (`%22`, `%0D`, `%0A`), as requests' urllib3 writes them; the boundary is the first `----rebel-N` no part holds, never random
+
+capability request/multipart-read  a multipart body read by a server
+  heroes  pending
+  go      net/http.Request.ParseMultipartForm, net/http.Request.MultipartReader, net/http.Request.FormFile
+  rust    -
+  python  -
+
+capability auth/basic  Basic credentials written and read
+  heroes  http.with_basic_auth, http.basic_auth_of, http.Credentials
+  go      net/http.Request.SetBasicAuth, net/http.Request.BasicAuth
+  rust    -
+  python  requests.auth.HTTPBasicAuth, urllib.request.HTTPBasicAuthHandler, urllib.request.HTTPPasswordMgr, urllib.request.HTTPPasswordMgrWithDefaultRealm, urllib.request.HTTPPasswordMgrWithPriorAuth, urllib.request.AbstractBasicAuthHandler
+  note    RFC 7617's example observed with Python's base64; the credentials are sent with the request, not after a 401 as urllib's handlers wait for
+
+capability auth/bearer  a token written as Bearer
+  heroes  http.with_bearer_auth
+  go      -
+  rust    -
+  python  requests' headers argument with Authorization
+  note    RFC 6750
+
+capability auth/digest  Digest authentication, and a proxy's
+  heroes  pending
+  go      -
+  rust    -
+  python  requests.auth.HTTPDigestAuth, requests.auth.HTTPProxyAuth, urllib.request.HTTPDigestAuthHandler, urllib.request.AbstractDigestAuthHandler, urllib.request.ProxyBasicAuthHandler, urllib.request.ProxyDigestAuthHandler
+
+capability response/value  a response as a value
+  heroes  http.Response
+  go      net/http.Response
+  rust    -
+  python  http.client.HTTPResponse, requests.Response, urllib.response.addinfourl as urlopen answers it
+  note    `closing` is Go's `Response.Close`; the body is held whole
+
+capability response/make  a response from a status, a type and bytes, text, JSON or a status alone
+  heroes  http.respond, http.respond_text, http.respond_json, http.respond_status
+  go      net/http.ResponseWriter.Write, net/http.ResponseWriter.WriteHeader, net/http.Error
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.send_response, send_response_only, send_error, end_headers, wfile, flush_headers
+
+capability response/redirect  a response sending the client elsewhere
+  heroes  http.respond_redirect
+  go      net/http.Redirect, net/http.RedirectHandler
+  rust    -
+  python  -
+  note    no body is written, where Go writes a line of HTML for a GET
+
+capability response/not-found  the answer to a target that names nothing
+  heroes  http.respond_not_found
+  go      net/http.NotFound, net/http.NotFoundHandler
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.send_error(404)
+  note    Go's words, `404 page not found`
+
+capability response/trace  the answer to TRACE, the request echoed
+  heroes  http.respond_trace
+  go      -
+  rust    -
+  python  -
+  note    RFC 9110 § 9.3.8; `Authorization`, `Proxy-Authorization` and `Cookie` left out as it asks
+
+capability response/text  a response's body as text, by its charset
+  heroes  http.text_of
+  go      -
+  rust    -
+  python  requests.Response.text, requests.Response.encoding, requests.Response.apparent_encoding, http.client.HTTPResponse.read().decode
+  note    UTF-8, US-ASCII and ISO-8859-1 by Python's names and aliases; no charset is UTF-8, where requests takes ISO-8859-1 for text/* (RFC 2616) and guesses otherwise; another charset is `unsupported`. requests was not on this machine, so its answers were read from its documentation, not observed
+
+capability response/json  a response's body parsed as JSON
+  heroes  http.json_of
+  go      -
+  rust    -
+  python  requests.Response.json
+
+capability response/require-success  a status of 400 or more made a failure
+  heroes  http.require_success
+  go      -
+  rust    -
+  python  requests.Response.raise_for_status, requests.Response.ok, urllib.request.HTTPErrorProcessor, urllib.request.HTTPDefaultErrorHandler, urllib.error.HTTPError as urlopen raises it
+  note    fails `failed`, the server's status and reason its message; `requests.Response.ok` is `r.status < 400`
+
+capability response/history  the URL a response came from after redirects, and the redirects before it
+  heroes  pending
+  go      net/http.Response.Request, net/http.Response.Location
+  rust    -
+  python  requests.Response.url, requests.Response.history, requests.Response.is_redirect, requests.Response.is_permanent_redirect, requests.Response.next, http.client.HTTPResponse.geturl, urllib.request's response.url
+  note    `Location` is read with `value_of` and resolved with `url.resolve`
+
+capability response/links  the Link field's links
+  heroes  pending
+  go      -
+  rust    -
+  python  requests.Response.links
+
+capability cookie/value  a cookie as a value
+  heroes  http.Cookie
+  go      net/http.Cookie, net/http.SameSite and its modes, net/http.Cookie.Valid
+  rust    -
+  python  http.cookies.Morsel, http.cookies.SimpleCookie, http.cookies.BaseCookie, http.cookies.CookieError
+
+capability cookie/set-cookie  a Set-Cookie field read and written
+  heroes  http.parse_set_cookie, http.format_set_cookie
+  go      net/http.ParseSetCookie, net/http.Cookie.String, net/http.SetCookie, net/http.Response.Cookies
+  rust    -
+  python  http.cookies.SimpleCookie.load, http.cookies.SimpleCookie.output, http.cookies.Morsel.OutputString, http.cookies.BaseCookie.value_decode, http.cookies.BaseCookie.value_encode
+  note    Go's on the case observed (quotes off, Max-Age over Expires, Secure, HttpOnly, SameSite); the domain is kept in lower case without its dot, where Go keeps it as written; Netscape's `21-Oct-2015` dates read as Go reads them. Max-Age is resolved against the `now` given, so the cookie holds an instant
+
+capability cookie/header  a Cookie field read and written
+  heroes  http.parse_cookie, http.format_cookie
+  go      net/http.ParseCookie, net/http.Request.Cookies, net/http.Request.Cookie, net/http.Request.CookiesNamed, net/http.Request.AddCookie
+  rust    -
+  python  http.cookies.SimpleCookie.load, http.cookies.BaseCookie.js_output
+  note    a pair with no `=` is dropped, as Go's `Request.Cookies` drops it, where Go's `ParseCookie` refuses the whole field (observed)
+
+capability cookie/jar  cookies kept across requests and sent where they match
+  heroes  http.matching_cookies, http.store_cookies, http.Session.cookies
+  go      net/http.CookieJar, net/http.Client.Jar, net/http/cookiejar as Client uses it
+  rust    -
+  python  requests.cookies.RequestsCookieJar, requests.cookies.cookiejar_from_dict, requests.Session.cookies, urllib.request.HTTPCookieProcessor
+  note    RFC 6265 §§ 5.1.3, 5.1.4, 5.3, 5.4; a `Secure` cookie is kept from an https:// response alone and sent to an https:// target alone
+
+capability cookie/public-suffix  a cookie refused for a public suffix such as co.uk
+  heroes  pending
+  go      net/http/cookiejar.PublicSuffixList
+  rust    -
+  python  -
+  note    a single label is refused; a suffix of two needs the list, which no package holds
+
+capability message/limits  the bounds a message is read within
+  heroes  http.Limits, http.default_limits
+  go      net/http.DefaultMaxHeaderBytes, net/http.Server.MaxHeaderBytes, net/http.Transport.MaxResponseHeaderBytes, net/http.MaxBytesReader, net/http.MaxBytesHandler, net/http.MaxBytesError, net/http.DefaultMaxHeaderValueCount
+  rust    -
+  python  http.client.LineTooLong, http.client's line and header limits
+  note    a head of 65,536 bytes and 100 fields, Python's; a body of 10 MiB, where Go has no bound; past one is `limit`
+
+capability message/read-request  a request read from a stream, by RFC 9112
+  heroes  http.read_request, http.parse_target
+  go      net/http.ReadRequest, net/http.ParseHTTPVersion, net/http.ProtocolError
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.parse_request, handle_one_request, raw_requestline, requestline, command, path, request_version, headers, rfile, http.client.parse_headers
+  note    both `Content-Length` and `Transfer-Encoding` are refused (RFC 9112 § 6.3 lets a server), against request smuggling; a folded line is refused; a value not UTF-8 is read as Latin-1, as Python reads it
+
+capability message/write-request  a request written to a stream
+  heroes  http.write_request
+  go      net/http.Request.Write, net/http.Request.WriteProxy
+  rust    -
+  python  http.client.HTTPConnection.request, putrequest, putheader, endheaders, send
+  note    Host first; `Content-Length: 0` for an empty POST, PUT and PATCH, as Go writes it
+
+capability message/read-response  a final response read, informational ones skipped
+  heroes  http.read_response
+  go      net/http.ReadResponse
+  rust    -
+  python  http.client.HTTPConnection.getresponse, http.client.HTTPResponse.begin, read, readinto, read1, readline, peek, getcode, status, reason, version, msg, headers, info
+  note    a body with no length runs to the connection's end, which then closes; at most 100 informational responses
+
+capability message/write-response  a response written to a stream
+  heroes  http.write_response, http.write_answer
+  go      net/http.Response.Write
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.send_response, send_header, end_headers
+
+capability message/chunked  a body read and written as chunks
+  heroes  http.read_request, http.read_response, http.write_request, http.write_response
+  go      net/http/httputil.NewChunkedReader as net/http uses it
+  rust    -
+  python  http.client.HTTPResponse's chunked reading, http.client.HTTPConnection.request's encode_chunked
+  note    a chunk's size line is bounded at 4,096 bytes; a chunk is written whole, its body being held whole
+
+capability message/trailer  a chunked body's trailer fields kept
+  heroes  pending
+  go      net/http.Request.Trailer, net/http.Response.Trailer, net/http.TrailerPrefix
+  rust    -
+  python  -
+  note    read within the limits and checked, then dropped
+
+capability client/options  how a client sends, made with its usual values
+  heroes  http.Client, http.default_client
+  go      net/http.Client, net/http.DefaultClient, net/http.Client.Timeout, net/http.Client.CheckRedirect, net/http.DefaultTransport, net/http.Transport
+  rust    -
+  python  urllib.request.build_opener, urllib.request.install_opener, urllib.request.OpenerDirector, requests.Session.max_redirects
+
+capability client/send  a request sent and its response read, redirects followed
+  heroes  http.send
+  go      net/http.Client.Do, net/http.Transport.RoundTrip, net/http.RoundTripper
+  rust    -
+  python  urllib.request.urlopen, requests.request, requests.Session.send, requests.Session.request
+  note    a 4xx or 5xx is a response, as Go answers it; urlopen raises, requests answers it too
+
+capability client/verbs  GET, HEAD, POST and a form in one call each
+  heroes  http.get, http.head, http.post, http.post_form
+  go      net/http.Get, net/http.Head, net/http.Post, net/http.PostForm, net/http.Client.Get, net/http.Client.Head, net/http.Client.Post, net/http.Client.PostForm
+  rust    -
+  python  requests.get, requests.head, requests.post, requests.put, requests.patch, requests.delete, requests.options, and Session's same eight
+  note    PUT, PATCH, DELETE and OPTIONS are `request` and `send`, each a constant of its method
+
+capability client/round-trip  one exchange on a connection the program holds, kept alive
+  heroes  http.round_trip
+  go      net/http.ClientConn, net/http.ClientConn.RoundTrip, net/http.Transport.NewClientConn
+  rust    -
+  python  http.client.HTTPConnection, HTTPConnection.connect, close, set_debuglevel, sock, host, port, timeout, http.client.HTTP_PORT
+
+capability client/redirects  redirects followed by RFC 9110's method and body rules, up to a stated number
+  heroes  http.send, http.Client.max_redirects
+  go      net/http.Client.CheckRedirect, net/http.ErrUseLastResponse
+  rust    -
+  python  urllib.request.HTTPRedirectHandler, requests.Session.resolve_redirects, rebuild_method, rebuild_auth, should_strip_auth, get_redirect_target
+  note    Go's: 301, 302 and 303 become GET without a body unless HEAD, 307 and 308 keep both; between http and https either way; Authorization and the request's own Cookie dropped on another scheme, host or port (RFC 6454's origin), so an https-to-http redirect carries neither, and a Secure cookie goes to https alone; past the number is `limit`; at 0 a redirect is answered
+
+capability client/no-redirect  a request whose redirect is answered as it came
+  heroes  http.fetch_once
+  go      net/http.ErrUseLastResponse
+  rust    -
+  python  requests' allow_redirects=False
+
+capability client/retries  a request sent again, with a doubling wait, on chosen statuses and on failures safe to retry
+  heroes  http.Retries, http.Client.retries
+  go      -
+  rust    -
+  python  requests.adapters.HTTPAdapter's max_retries (urllib3's Retry), requests.exceptions.RetryError
+  note    idempotent methods alone, urllib3's default; `Retry-After` read in seconds or as a date and held to the most wait; within the client's time limit
+
+capability client/deadline  a time limit for the whole request, redirects and retries included
+  heroes  http.Client.deadline_ms
+  go      net/http.Client.Timeout
+  rust    -
+  python  requests' timeout as a read timeout, requests.exceptions.Timeout, ReadTimeout
+  note    counted from the first connection; `timeout` past it
+
+capability client/connect-deadline  a time limit on making a connection
+  heroes  pending
+  go      net.Dialer.Timeout as net/http.Transport uses it
+  rust    -
+  python  requests' timeout's connect half, requests.exceptions.ConnectTimeout
+  note    needs a deadline that `net.connect` honours while connecting; its deadline begins once the connection is made
+
+capability client/session  a session keeping fields, a base URL and cookies across requests
+  heroes  http.Session, http.default_session, http.fetch
+  go      net/http.Client with a Jar
+  rust    -
+  python  requests.Session, requests.session, requests.Session.headers, cookies, auth, params, mount, close, merge_environment_settings
+  note    a base URL is not requests' own: the author asked for it, and `url.resolve` reads a target against it
+
+capability client/https  an https:// request, the server's certificate checked against the system's store or roots given
+  heroes  http.send, http.Client.roots
+  go      net/http.Transport.TLSClientConfig, net/http.ErrSchemeMismatch, crypto/tls.Config.RootCAs as net/http uses it
+  rust    -
+  python  http.client.HTTPSConnection, http.client.HTTPS_PORT, urllib.request.HTTPSHandler, requests' verify given a CA bundle, requests.exceptions.SSLError
+  note    through `tls.connect`, offering HTTP/1.1, on all three platforms; a refused certificate is `invalid` with `tls`'s reason. `roots` is PEM text, where requests takes a path: reading a file is `fs`'s
+
+capability client/https-unchecked  a certificate not checked
+  heroes  refused: verification is never turned off outside tests; `tls`'s unchecked connection is named for tests alone, and `http` offers no switch to it
+  go      crypto/tls.Config.InsecureSkipVerify as net/http uses it
+  rust    -
+  python  requests' verify=False, ssl._create_unverified_context as urllib.request takes it
+
+capability client/https-certificate  a client certificate presented to the server
+  heroes  pending
+  go      crypto/tls.Config.Certificates as net/http uses it
+  rust    -
+  python  requests' cert, http.client.HTTPSConnection's context with a certificate
+  note    `tls.Client` offers no client certificate
+
+capability client/https-read-deadline  a time limit on an https:// response's reads
+  heroes  http.send, http.Client.deadline_ms
+  go      net/http.Client.Timeout over TLS
+  rust    -
+  python  requests' read timeout over TLS
+  note    `tls.connect`'s deadline bounds the connection and its handshake, and what is left of the client's time limit is then set on the stream by `tls.set_deadline`, so every read and write of the exchange is bounded; a write it ends leaves the stream good for closing alone, which `send` does
+
+capability client/https-keep-alive  several https:// requests on one connection the program holds
+  heroes  http.round_trip
+  go      net/http.Transport's kept TLS connections
+  rust    -
+  python  http.client.HTTPSConnection reused
+  note    a stream of `tls.connect` read through `io.reader`, as an http:// connection is; `send` itself opens one connection a request, http or https
+
+capability client/compressed  a gzip or deflate response asked for and undone, under the body's limit
+  heroes  http.send, http.decode_body
+  go      net/http.Transport.DisableCompression, net/http.Response.Uncompressed, net/http's transparent gzip
+  rust    -
+  python  requests' Accept-Encoding and its decoding, urllib3's decode_content, requests.exceptions.ContentDecodingError
+  note    `Accept-Encoding: gzip, deflate` unless the program set the field; gzip, x-gzip, deflate and identity undone, the last applied first, each through `compress.decompress` within `limits.body_bytes`, so a bomb fails `limit` and a gzip cut short `invalid`; deflate read as zlib, then as raw DEFLATE where zlib refuses it (some servers send it raw); the body is held whole before it is undone, never streamed; `Content-Encoding` and `Content-Length` taken out, as Go takes them; a coding not undone (br, zstd) is answered as it came, as requests answers it
+
+capability client/compressed-other  a Brotli or Zstandard response undone
+  heroes  pending
+  go      -
+  rust    -
+  python  requests' br and zstd where their libraries are installed
+  note    `compress` holds DEFLATE, zlib and gzip alone
+
+capability server/compressed  a response compressed where the client accepts it
+  heroes  http.with_compression
+  go      -
+  rust    -
+  python  -
+  note    gzip, else deflate (zlib), by RFC 9110 § 12.5.3's weights (`q=0` refuses, `*` accepts any); `Vary: Accept-Encoding` written either way; only where the program asks
+
+capability client/proxy  a request sent through a proxy
+  heroes  pending
+  go      net/http.ProxyFromEnvironment, net/http.ProxyURL, net/http.Transport.Proxy
+  rust    -
+  python  urllib.request.ProxyHandler, getproxies, getproxies_environment, getproxies_macosx_sysconf, proxy_bypass, proxy_bypass_environment, proxy_bypass_macosx_sysconf, requests' proxies, requests.exceptions.ProxyError, requests.Session.rebuild_proxies, trust_env
+  note    an https:// request through a proxy is a CONNECT tunnel with TLS over it, which needs `tls.client_over`, unsupported on macOS
+
+capability client/streaming  a body read or sent as it comes, not held whole
+  heroes  pending
+  go      net/http.Response.Body as a reader, net/http.Request.Body, net/http.NoBody, net/http.Request.GetBody
+  rust    -
+  python  requests' stream argument, requests.Response.iter_content, iter_lines, raw, close, http.client.HTTPResponse.read with an amount, urllib.request.urlretrieve, urlcleanup, requests.exceptions.StreamConsumedError, ChunkedEncodingError
+
+capability server/https  a server over TLS
+  heroes  http.serve_tls, http.serve_stream
+  go      net/http.ListenAndServeTLS, net/http.ServeTLS, net/http.Server.ListenAndServeTLS, net/http.Server.ServeTLS, net/http.Server.TLSConfig
+  rust    -
+  python  http.server.HTTPSServer, http.server.ThreadingHTTPSServer
+  note    the listener is `tls.listen`'s; one connection at a time; `Server.deadline_ms` bounds a client's handshake (`tls.accept`) and then its connection (`tls.set_deadline`), so a client silent after its handshake is dropped at the deadline; a `timeout` shorter than the handshake's deadline is the listener's own (`tls.set_accept_deadline`) and ends the loop. `remote` is "", since `tls.accept` does not tell the client's address
+
+capability server/options  how a server serves, made with its usual values
+  heroes  http.Server, http.default_server
+  go      net/http.Server, net/http.Server.ReadTimeout, WriteTimeout, IdleTimeout, ReadHeaderTimeout, MaxHeaderBytes, Server.SetKeepAlivesEnabled
+  rust    -
+  python  http.server.HTTPServer, http.server.BaseHTTPRequestHandler.timeout, protocol_version, server_version, sys_version
+  note    one deadline for a connection's whole life, `net`'s; no `Server` field is written in a response
+
+capability server/serve  connections accepted and served with a handler until the program asks to stop
+  heroes  http.serve
+  go      net/http.Serve, net/http.ListenAndServe, net/http.Server.Serve, net/http.Server.ListenAndServe, net/http.Server.Close, net/http.Server.Shutdown, net/http.Server.RegisterOnShutdown, net/http.ErrServerClosed, net/http.Handler, net/http.HandlerFunc
+  rust    -
+  python  http.server.HTTPServer.serve_forever, shutdown, server_close, http.server.test
+  note    ONE CONNECTION AT A TIME, a fact the face states; the stop is `net`'s (`catch_stop`, `ask_stop`); a handler is a top-level function value
+
+capability server/state  a handler that reads a value of the program, beside each request
+  heroes  http.serve_with, http.serve_tls_with, http.serve_stream_with, http.respond_moved_to
+  go      a closure over the program's values as net/http.HandlerFunc
+  rust    -
+  python  http.server.BaseHTTPRequestHandler's server attribute, functools.partial as a handler factory
+  note    a function value holds no value of its own (spec § 9: no closure), so the value is a parameter, copied at each call as every value is; measured 2026-11-16, a million calls handed a 10 MiB list took 0.12 to 0.14 s against 0.12 s for none, so a handler that only reads it pays no copy
+
+capability server/steps  a server's own loop: a request's head read apart from its body, a read failure's status, an answer written as a server writes it
+  heroes  http.read_request_head, http.read_request_body, http.RequestHead, http.failure_status, http.refusal_of, http.next_request, http.write_answer
+  go      net/http's conn.readRequest and response.finishRequest, which it keeps private
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.parse_request, handle_expect_100, send_error
+  note    400 for what is no request, 431 for a head past the limits and 413 for a body, 505 for a version and 501 for a transfer coding or CONNECT, 417 for an expectation not met, 100 Continue where asked; an HTTP/1.0 client asking keep-alive is told it is kept (RFC 9112 § 9.3)
+
+capability server/connection  one connection's requests served, keep-alive and pipelining included
+  heroes  http.serve_conn, http.serve_stream
+  go      net/http.Server.ConnState, net/http.ConnState
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.handle, handle_one_request, close_connection
+  note    400, 431, 413, 417, 501 and 505 answered for what cannot be read, then the connection ends; 100 Continue written before a body; a `Date` field where the handler gives none
+
+capability server/concurrent  connections served side by side
+  heroes  net.accept_number, net.conn_of, threads.spawn, http.serve_conn
+  go      net/http.Server's goroutine for each connection
+  rust    -
+  python  http.server.ThreadingHTTPServer
+  note    a thread is handed one number (spec § 13); the face says how
+
+capability server/routing  a handler chosen by a pattern of method and path
+  heroes  web.route, web.Router, web.new_router
+  go      net/http.ServeMux, net/http.NewServeMux, net/http.Handle, net/http.HandleFunc, net/http.DefaultServeMux, net/http.ServeMux.Handle, HandleFunc, Handler, ServeHTTP, net/http.Request.PathValue, net/http.Request.SetPathValue, net/http.StripPrefix
+  rust    -
+  python  -
+  note    done in the package `web`, over `http`, which holds no router of its own
+
+capability server/files  files answered from a folder
+  heroes  web.serve_file, web.serve_folder, web.Folder
+  go      net/http.FileServer, net/http.FileServerFS, net/http.ServeFile, net/http.ServeFileFS, net/http.ServeContent, net/http.FS, net/http.Dir, net/http.Dir.Open, net/http.File, net/http.FileSystem, net/http.ErrMissingFile, net/http.NewFileTransport, net/http.NewFileTransportFS
+  rust    -
+  python  http.server.SimpleHTTPRequestHandler, its directory, list_directory, translate_path, copyfile, guess_type, extensions_map, urllib.request.FileHandler, urllib.request.url2pathname, urllib.request.pathname2url
+  note    done in the package `web`, over `http`: ranges, conditional requests and a folder's listing there
+
+capability server/sniff  a body's type guessed from its bytes
+  heroes  web.sniff
+  go      net/http.DetectContentType
+  rust    -
+  python  -
+  note    done in the package `web`, over `http`
+
+capability server/cross-origin  a cross-origin request refused by its Sec-Fetch-Site and Origin
+  heroes  web.refuse_cross_origin
+  go      net/http.CrossOriginProtection, net/http.NewCrossOriginProtection, its AddTrustedOrigin, AddInsecureBypassPattern, Check, Handler, SetDenyHandler
+  rust    -
+  python  -
+  note    done in the package `web`, over `http`
+
+capability date/format  an instant written as an HTTP date
+  heroes  http.format_date
+  go      net/http.TimeFormat
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.date_time_string, email.utils.formatdate(usegmt=True)
+  note    `time.format`'s `http` layout, RFC 9110's own example observed
+
+capability date/parse  an HTTP date read in its three forms
+  heroes  http.parse_date
+  go      net/http.ParseTime
+  rust    -
+  python  email.utils.parsedate_to_datetime as http.server reads If-Modified-Since
+  note    Go reads the three as one instant, 784111777, and so does this (observed)
+
+dropped  an interface, an error type or a context: Heroes has none, a failure is a code and a message (README § A4)
+  go      net/http.ErrNotSupported, ErrBodyNotAllowed, ErrAbortHandler, ErrBodyReadAfterClose, ErrHandlerTimeout, ErrLineTooLong, ErrNoCookie, ErrNoLocation, ErrSkipAltProtocol, ServerContextKey, LocalAddrContextKey, ProtocolError.Error, ProtocolError.Is, MaxBytesError.Error, Request.Context, Request.WithContext, NewRequestWithContext, ResponseWriter, Flusher, Hijacker, CloseNotifier, Pusher, PushOptions, ResponseController and its EnableFullDuplex, Flush, Hijack, SetReadDeadline, SetWriteDeadline, HandlerFunc.ServeHTTP, ConnState.String
+  rust    -
+  python  http.client.HTTPException, NotConnected, InvalidURL, UnknownProtocol, UnknownTransferEncoding, UnimplementedFileMode, IncompleteRead, ImproperConnectionState, CannotSendRequest, CannotSendHeader, ResponseNotReady, BadStatusLine, RemoteDisconnected, error, urllib.request.URLError, ContentTooShortError, requests.exceptions.RequestException, HTTPError, ConnectionError, URLRequired, TooManyRedirects, MissingSchema, InvalidSchema, InvalidURL, InvalidHeader, UnrewindableBodyError, JSONDecodeError, requests.auth.AuthBase, requests.hooks
+
+dropped  HTTP/2 and the plumbing of a connection pool: this package is HTTP/1.1, and a connection is the program's or the call's
+  go      net/http.HTTP2Config, Protocols and its HTTP, SetHTTP, SetUnencryptedHTTP, String, UnencryptedHTTP, Transport.Clone, Transport.CloseIdleConnections, Transport.CancelRequest, Transport.RegisterProtocol, Client.CloseIdleConnections, ClientConn.Available, ClientConn.Close, ClientConn.Err, ClientConn.InFlight, ClientConn.Release, ClientConn.Reserve, ClientConn.SetStateHook, DefaultMaxIdleConnsPerHost, AllowQuerySemicolons, Request.ProtoAtLeast, Response.ProtoAtLeast, Request.Write's proxy form
+  rust    -
+  python  requests.adapters.HTTPAdapter's pool, requests.Session.mount, requests.Session.adapters, requests.utils
+
+dropped  a handler wrapped by another, which needs a closure (README § B3)
+  go      net/http.TimeoutHandler, MaxBytesHandler as a wrapper, StripPrefix as a wrapper, RedirectHandler as a wrapper
+  rust    -
+  python  urllib.request.BaseHandler, AbstractHTTPHandler, HTTPHandler, UnknownHandler, DataHandler, FTPHandler, CacheFTPHandler, OpenerDirector.add_handler, http.server.BaseHTTPRequestHandler.log_message, log_error, log_request, address_string, version_string, error_message_format, error_content_type, DEFAULT_ERROR_MESSAGE, DEFAULT_ERROR_CONTENT_TYPE, http.server.SimpleHTTPRequestHandler's CGI successors
+
+dropped  another scheme than HTTP, or a module a module imports: not this package's area
+  go      -
+  rust    -
+  python  urllib.request.FTPHandler, ftpwrapper, ftperrors, localhost, thishost, noheaders, addclosehook, addinfourl, quote, unquote, unquote_to_bytes, urljoin, urlparse, urlsplit, urlunparse, unwrap, parse_http_list, parse_keqv_list, request_host (`url`'s), and every module the five import (base64, bisect, contextlib, email, hashlib, http, io, os, re, socket, ssl, string, sys, tempfile, time, datetime, executable, html, itertools, mimetypes, nobody, nobody_uid, posixpath, shutil, socketserver, test, urllib, collections, errno, types, warnings, IntEnum, StrEnum)
+
+dropped  Rust has no HTTP in its standard library
+  go      -
+  rust    -
+  python  -

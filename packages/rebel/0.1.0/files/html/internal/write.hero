@@ -1,0 +1,174 @@
+# Writing a tree as HTML by the standard's serialisation algorithm (13.3): a
+# start tag with its attributes between `"`, what the element holds, its end
+# tag but for a void element, text escaped but inside the elements of raw
+# text, and a template's contents in its place. The walk goes through the
+# tree's links with no stack, so no depth is too deep to write.
+
+use html/internal/dom
+use html/internal/insert
+use html/internal/query
+use html/internal/refs
+
+# Whether `node` is an HTML element the serialisation writes with no end tag.
+function is_void(t: dom.Tree lent, node: i64) -> bool
+    if t.kinds[node] != dom.ELEMENT || t.spaces[node] != dom.HTML
+        return false
+
+    return match t.names[node]
+        "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "source" | "track" | "wbr" => true
+        "basefont" | "bgsound" | "frame" | "keygen" | "param" => true
+        _                                                     => false
+
+# The node whose children are written as `node`'s: a template's contents, or
+# `node` itself.
+function holder(t: dom.Tree lent, node: i64) -> i64
+    if dom.is_html(t, node, "template")
+        return insert.contents_of(t, node)
+    return node
+
+# The element a node's walk climbs to from `node`: its parent, or the template
+# whose contents `node`'s parent is.
+function up(t: dom.Tree lent, node: i64) -> i64
+    parent = t.parents[node]
+
+    if parent != dom.NONE && t.kinds[parent] == dom.FRAGMENT
+        above = t.parents[parent]
+
+        if above != dom.NONE && dom.is_html(t, above, "template")
+            return above
+    return parent
+
+# Whether the text node `node` is written as it is: inside `style`,
+# `script`, `xmp`, `iframe`, `noembed`, `noframes`, `plaintext`, or
+# `noscript` where scripting was set.
+function is_raw(t: dom.Tree lent, node: i64) -> bool
+    parent = t.parents[node]
+
+    if parent == dom.NONE || t.kinds[parent] != dom.ELEMENT || t.spaces[parent] != dom.HTML
+        return false
+
+    return match t.names[parent]
+        "style" | "script" | "xmp" | "iframe" | "noembed" | "noframes" | "plaintext" => true
+        "noscript"                                                                   => t.scripting
+        _                                                                            => false
+
+# Writes the part of `node` before what it holds.
+function open_part(t: dom.Tree lent, node: i64, @pieces: [str])
+    kind = t.kinds[node]
+
+    if kind == dom.ELEMENT
+        pieces @ pieces.push("<" + t.names[node])
+
+        for a in t.attributes[node]
+            pieces @ pieces.push(" " + query.qualified(a) + "=\"" + refs.escaped(a.value, true) + "\"")
+
+        pieces @ pieces.push(">")
+    else if kind == dom.TEXT
+        shown = if is_raw(t, node)
+            t.data[node]
+        else
+            refs.escaped(t.data[node], false)
+        pieces @ pieces.push(shown)
+    else if kind == dom.COMMENT
+        pieces @ pieces.push("<!--" + t.data[node] + "-->")
+    else if kind == dom.INSTRUCTION
+        pieces @ pieces.push("<?" + t.names[node] + " " + t.data[node] + "?>")
+    else if kind == dom.DOCTYPE
+        pieces @ pieces.push("<!DOCTYPE " + t.names[node] + ">")
+
+# Writes the end tag of `node`, where it has one.
+function close_part(t: dom.Tree lent, node: i64, @pieces: [str])
+    if t.kinds[node] == dom.ELEMENT && !is_void(t, node)
+        pieces @ pieces.push("</" + t.names[node] + ">")
+
+# The first child the walk enters from `node`, or `dom.NONE`.
+function first_written(t: dom.Tree lent, node: i64) -> i64
+    if t.kinds[node] != dom.ELEMENT || is_void(t, node)
+        return dom.NONE
+    return t.firsts[holder(t, node)]
+
+# `node` written as HTML: what it holds alone where `inner`, itself and what
+# it holds where not. The document and a fragment are written as what they
+# hold.
+function written(t: dom.Tree lent, node: i64, inner: bool) -> str
+    pieces: [str] @= []
+    kind = t.kinds[node]
+    whole = kind == dom.DOCUMENT || kind == dom.FRAGMENT
+    children_only = inner || whole
+
+    if children_only && is_void(t, node)
+        return ""
+
+    at: i64 @= if children_only
+        if whole
+            t.firsts[node]
+        else
+            t.firsts[holder(t, node)]
+    else
+        node
+
+    if at == dom.NONE
+        return ""
+
+    while true
+        open_part(t, at, @pieces)
+        down = first_written(t, at)
+
+        if down != dom.NONE
+            at @ down
+            continue
+        close_part(t, at, @pieces)
+
+        # Climb to the next node to write, closing each element left.
+        while true
+            if !children_only && at == node
+                return pieces.join("")
+
+            if t.nexts[at] != dom.NONE
+                at @ t.nexts[at]
+                break
+            parent = up(t, at)
+
+            if parent == dom.NONE || children_only && (parent == node || parent == holder(t, node))
+                return pieces.join("")
+            close_part(t, parent, @pieces)
+            at @ parent
+
+    return pieces.join("")
+
+## Tests
+
+test "written: a document, an element with itself, and what it holds"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    p = dom.add_element(
+        @t,
+        space: dom.HTML,
+        name: "p",
+        attributes: [dom.Attr(space: dom.NO_SPACE, name: "title", value: "a\"<")]
+    )
+    br = dom.add_element(@t, space: dom.HTML, name: "br", attributes: [])
+    x = dom.add_data(@t, kind: dom.TEXT, data: "1 & 2")
+    dom.append_child(@t, parent: 0, child: p)
+    dom.append_child(@t, parent: p, child: x)
+    dom.append_child(@t, parent: p, child: br)
+    assert written(t, 0, false) == "<p title=\"a&quot;&lt;\">1 &amp; 2<br></p>"
+    assert written(t, p, true) == "1 &amp; 2<br>" && written(t, br, false) == "<br>" && written(t, br, true) == ""
+
+test "written: raw text inside a script, a comment and an instruction"
+    t: dom.Tree @= dom.new_tree(dom.FRAGMENT)
+    s = dom.add_element(@t, space: dom.HTML, name: "script", attributes: [])
+    code = dom.add_data(@t, kind: dom.TEXT, data: "a < b && c")
+    c = dom.add_data(@t, kind: dom.COMMENT, data: " x ")
+    pi = dom.add(@t, kind: dom.INSTRUCTION, space: dom.HTML, name: "php", attributes: [], data: "echo 1")
+    dom.append_child(@t, parent: 0, child: s)
+    dom.append_child(@t, parent: s, child: code)
+    dom.append_child(@t, parent: 0, child: c)
+    dom.append_child(@t, parent: 0, child: pi)
+    assert written(t, 0, true) == "<script>a < b && c</script><!-- x --><?php echo 1?>"
+
+test "is_void: the void elements, the old ones, and an SVG element of a void name"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    img = dom.add_element(@t, space: dom.HTML, name: "img", attributes: [])
+    frame = dom.add_element(@t, space: dom.HTML, name: "frame", attributes: [])
+    svg = dom.add_element(@t, space: dom.SVG, name: "img", attributes: [])
+    assert is_void(t, img) && is_void(t, frame) && !is_void(t, svg)

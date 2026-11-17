@@ -1,0 +1,686 @@
+capability bytes/from-text  the bytes of a text
+  heroes  bytes.from_text, bytes.push_text
+  go      bytes.NewBufferString
+  rust    -
+  python  -
+  note    Go's is also the conversion `[]byte(s)`, Rust's `str::as_bytes` and Python's `str.encode`, entries outside this area
+
+capability bytes/to-text  the text of bytes that are UTF-8
+  heroes  bytes.to_text
+  go      bytes.Buffer.String
+  rust    -
+  python  bytes.decode, bytearray.decode
+  note    it is the language's `validated_bytes`, failing `not_text`, with a message naming the index where the bytes stop being UTF-8; Go's conversion never fails and Python's `decode` raises without the index in a value
+
+capability bytes/to-text-lossy  the text of bytes, what is not UTF-8 replaced
+  heroes  bytes.to_text_lossy
+  go      bytes.ToValidUTF8
+  rust    [u8]::utf8_chunks
+  python  bytes.decode, bytearray.decode
+  note    Rust's `from_utf8_lossy` and Python's `errors="replace"` both wrote 8 replacement characters for the test's 16 bytes, one for each longest beginning of a character that cannot go on; Go's `ToValidUTF8` wrote 5, one for each run, and takes the replacement as a parameter. Rust's and Python's are taken, U+FFFD always
+
+capability bytes/code-points  the characters bytes hold
+  heroes  unicode.from_utf8
+  go      bytes.Runes
+  rust    -
+  python  -
+  note    the package `unicode` owns UTF-8 read and written (README A1); `bytes` does not copy it
+
+capability bytes/equal  whether two lists of bytes are the same
+  heroes  built-in ==
+  go      bytes.Equal
+  rust    -
+  python  -
+  note    Rust's and Python's are their own `==`
+
+capability bytes/order  which of two lists of bytes comes first
+  heroes  bytes.compare
+  go      bytes.Compare
+  rust    -
+  python  -
+  note    Go's answers observed: 0, -1, 1 and 1 for the test's first four; Rust's and Python's are their `<` on slices and bytes
+
+capability bytes/equal-ignoring-ascii-case  whether two lists of bytes differ only in the case of ASCII letters
+  heroes  bytes.equals_ignoring_case_ascii
+  go      bytes.EqualFold
+  rust    [u8]::eq_ignore_ascii_case
+  python  -
+  note    Rust's is taken: only ASCII letters fold. Go's `EqualFold` reads UTF-8 and folds Unicode's case, and answered true for the lone bytes 0xE9 and 0xC9, reading both as the replacement character; a program comparing text asks `strings.equals_ignoring_case`
+
+capability bytes/length  how many bytes there are
+  heroes  built-in len
+  go      bytes.Buffer.Len
+  rust    [T]::len, [T]::is_empty
+  python  -
+  note    Python's is its own `len`
+
+capability bytes/part  the bytes between two indices
+  heroes  built-in slice
+  go      bytes.Buffer.Next, bytes.Buffer.Peek, bytes.Buffer.Truncate
+  rust    -
+  python  bytearray.take_bytes
+  note    a slice of a `[u8]` is a new list; an index past the end aborts, as the language's own slice does
+
+capability bytes/contains  whether bytes hold other bytes
+  heroes  bytes.contains
+  go      bytes.Contains, bytes.ContainsRune
+  rust    [T]::contains
+  python  -
+  note    a character is sought as its bytes, `bytes.from_text("é")`; Rust's `contains` seeks one element, a list of one here; Python's is its `in`
+
+capability bytes/find-first  where bytes first hold other bytes
+  heroes  bytes.index_of, bytes.index_of_from
+  go      bytes.Index, bytes.IndexByte, bytes.IndexRune
+  rust    -
+  python  bytes.find, bytes.index, bytearray.find, bytearray.index
+  note    absent is `not_found`, where Go and Python's `find` answer -1 and Python's `index` raises; Python's start argument is `index_of_from`, and its end argument a slice
+
+capability bytes/find-last  where bytes last hold other bytes
+  heroes  bytes.index_of_last
+  go      bytes.LastIndex, bytes.LastIndexByte
+  rust    -
+  python  bytes.rfind, bytes.rindex, bytearray.rfind, bytearray.rindex
+  note    the empty bytes are found at the end, as Go and Python answered (3 for "abc")
+
+capability bytes/find-all  where every occurrence of bytes begins
+  heroes  bytes.index_of_all
+  go      -
+  rust    -
+  python  -
+  note    `strings` offers it, and the two faces stay alike
+
+capability bytes/find-first-of-a-set  where the first byte of a set stands
+  heroes  bytes.index_of_any, bytes.index_of_any_from, bytes.contains_any
+  go      bytes.IndexAny, bytes.ContainsAny
+  rust    -
+  python  -
+  note    the set is bytes; Go's is a string of characters, and Go reads `s` as UTF-8
+
+capability bytes/find-last-of-a-set  where the last byte of a set stands
+  heroes  bytes.index_of_any_last
+  go      bytes.LastIndexAny
+  rust    -
+  python  -
+  note    as find-first-of-a-set
+
+capability bytes/find-first-where  where the first byte a function accepts stands
+  heroes  bytes.index_where, bytes.index_where_from
+  go      bytes.IndexFunc, bytes.ContainsFunc
+  rust    -
+  python  -
+  note    the function is asked of a byte, where Go's is asked of a character; `ContainsFunc` is whether `index_where` fails
+
+capability bytes/find-last-where  where the last byte a function accepts stands
+  heroes  bytes.index_where_last
+  go      bytes.LastIndexFunc
+  rust    -
+  python  -
+  note    as find-first-where
+
+capability bytes/count  how many times bytes hold other bytes
+  heroes  bytes.count_of
+  go      bytes.Count
+  rust    -
+  python  bytes.count, bytearray.count
+  note    the empty bytes are counted once more than there are bytes, as Python answered (3 for the two bytes of "é"); Go answered 2, one more than there are characters. Bytes have no characters, so Python's
+
+capability bytes/starts-with  whether bytes begin with other bytes
+  heroes  bytes.has_prefix, bytes.has_prefix_at
+  go      bytes.HasPrefix
+  rust    [T]::starts_with
+  python  bytes.startswith, bytearray.startswith
+  note    Python's start argument is `has_prefix_at`; its tuple of prefixes is one call for each
+
+capability bytes/ends-with  whether bytes end with other bytes
+  heroes  bytes.has_suffix
+  go      bytes.HasSuffix
+  rust    [T]::ends_with
+  python  bytes.endswith, bytearray.endswith
+  note    as starts-with
+
+capability bytes/split  the pieces of bytes between every separator
+  heroes  bytes.split
+  go      bytes.Split, bytes.SplitSeq
+  rust    -
+  python  bytes.split, bytearray.split
+  note    an empty separator cuts between every two bytes; Go's cuts between characters and Python's raises. The pieces are a list, never an iterator, as `strings` decides
+
+capability bytes/split-at-most  the first pieces between separators, the rest left whole
+  heroes  bytes.split_n
+  go      bytes.SplitN
+  rust    -
+  python  bytes.split, bytearray.split
+  note    `n` counts pieces as Go's does, and Python's `maxsplit` counts cuts, so `maxsplit=k` is `n` of k + 1; `n` is a `u64` as in `strings`, and Go's negative `n`, every piece, is `split`
+
+capability bytes/split-from-the-end  the last pieces between separators, the rest left whole
+  heroes  bytes.split_n_last
+  go      -
+  rust    -
+  python  bytes.rsplit, bytearray.rsplit
+  note    Python answered [b"a,b", b"c"] for `rsplit(b",", 1)`, the same pieces as `split_n_last` with `n` of 2
+
+capability bytes/split-keeping-the-separator  the pieces of bytes, each ending with its separator
+  heroes  bytes.split_after, bytes.split_after_n
+  go      bytes.SplitAfter, bytes.SplitAfterN, bytes.SplitAfterSeq
+  rust    -
+  python  -
+  note    Go answered ["a," "b," ""] for "a,b,"; `strings` leaves out the empty last piece, and `bytes` follows `strings`
+
+capability bytes/split-terminated  the pieces of bytes that a separator ends
+  heroes  bytes.split_terminated
+  go      -
+  rust    -
+  python  -
+  note    `strings` offers it, Rust's `str::split_terminator`, outside this area
+
+capability bytes/split-any  the pieces of bytes between the bytes of a set
+  heroes  bytes.split_any
+  go      -
+  rust    -
+  python  -
+  note    `strings` offers it, and the two faces stay alike
+
+capability bytes/split-where  the pieces of bytes between the bytes a function accepts
+  heroes  bytes.split_where, bytes.words_where
+  go      bytes.FieldsFunc, bytes.FieldsFuncSeq
+  rust    [T]::split, [T]::split_mut
+  python  -
+  note    Rust's `split` leaves an empty piece between two accepted bytes, as `split_where` does; Go's `FieldsFunc` leaves none, as `words_where` does. The `_mut` forms lend a part to be written, which a value that is always a copy has no use for
+
+capability bytes/split-where-variants  the same by a function: at most n, from the end, keeping the separator, cut once
+  heroes  refused: each is `index_where_from` or `index_where_last` and one slice, in a loop where it repeats; `strings` offers no such variant either, and the two faces stay alike
+  go      -
+  rust    [T]::splitn, [T]::splitn_mut, [T]::rsplit, [T]::rsplit_mut, [T]::rsplitn, [T]::rsplitn_mut, [T]::split_inclusive, [T]::split_inclusive_mut, [T]::split_once, [T]::rsplit_once
+  python  -
+  note    Rust alone offers them, as methods of every slice
+
+capability bytes/fields  the pieces of bytes between runs of white space
+  heroes  bytes.words
+  go      bytes.Fields, bytes.FieldsSeq
+  rust    [u8]::split_ascii_whitespace
+  python  bytes.split, bytearray.split
+  note    white space is ASCII's, the bytes 9 to 13 and 32, Python's set: it answered [b"a", b"b", b"c"] across a vertical tab and a form feed. Rust's `is_ascii_whitespace` leaves out the vertical tab, and Go reads UTF-8 and splits at Unicode's white space too
+
+capability bytes/lines  the lines of bytes
+  heroes  bytes.lines
+  go      bytes.Lines
+  rust    -
+  python  bytes.splitlines, bytearray.splitlines
+  note    a line ends at a line feed or a carriage return and a line feed, as `strings` decides; Python's `splitlines` also ends one at a lone carriage return, and its `keepends` and Go's `Lines` keep each end, which is `split_after` with a line feed
+
+capability bytes/cut-at-first  the bytes before the first separator and the bytes after it
+  heroes  bytes.split_once
+  go      bytes.Cut
+  rust    -
+  python  bytes.partition, bytearray.partition
+  note    absent is `not_found`, where Go answers a found flag and Python the whole bytes and two empty ones
+
+capability bytes/cut-at-last  the bytes before the last separator and the bytes after it
+  heroes  bytes.split_once_last
+  go      bytes.CutLast
+  rust    -
+  python  bytes.rpartition, bytearray.rpartition
+  note    as cut-at-first
+
+capability bytes/without-prefix  bytes without what they begin with
+  heroes  bytes.trim_prefix, bytes.after_prefix
+  go      bytes.TrimPrefix, bytes.CutPrefix
+  rust    [T]::strip_prefix, [T]::trim_prefix
+  python  bytes.removeprefix, bytearray.removeprefix
+  note    `trim_prefix` answers the bytes as they are where the prefix is absent, as Go's `TrimPrefix`, Rust's `trim_prefix` and Python's `removeprefix`; `after_prefix` fails `not_found` there, where Go's `CutPrefix` answers a found flag and Rust's `strip_prefix` an `Option`
+
+capability bytes/without-suffix  bytes without what they end with
+  heroes  bytes.trim_suffix, bytes.before_suffix
+  go      bytes.TrimSuffix, bytes.CutSuffix
+  rust    [T]::strip_suffix, [T]::trim_suffix
+  python  bytes.removesuffix, bytearray.removesuffix
+  note    as without-prefix
+
+capability bytes/between  the bytes between a prefix and a suffix
+  heroes  bytes.between
+  go      -
+  rust    [T]::strip_circumfix
+  python  -
+  note    fails `not_found` where Rust answers `None`, and where the bytes are too short to hold the two apart
+
+capability bytes/without-a-repeated-prefix  bytes without a prefix or a suffix for as long as it repeats
+  heroes  bytes.trim_prefix_all, bytes.trim_suffix_all
+  go      -
+  rust    -
+  python  -
+  note    `strings` offers it, and the two faces stay alike
+
+capability bytes/trim-a-set  bytes without the bytes of a set at either end
+  heroes  bytes.trim_any
+  go      bytes.Trim
+  rust    -
+  python  bytes.strip, bytearray.strip
+  note    the set is bytes; Go's cutset is a string of characters
+
+capability bytes/trim-a-set-at-the-start  bytes without the bytes of a set at the start
+  heroes  bytes.trim_start_any
+  go      bytes.TrimLeft
+  rust    -
+  python  bytes.lstrip, bytearray.lstrip
+  note    as trim-a-set
+
+capability bytes/trim-a-set-at-the-end  bytes without the bytes of a set at the end
+  heroes  bytes.trim_end_any
+  go      bytes.TrimRight
+  rust    -
+  python  bytes.rstrip, bytearray.rstrip
+  note    as trim-a-set
+
+capability bytes/trim-where  bytes without the bytes a function accepts, at either end or at one
+  heroes  bytes.trim_where, bytes.trim_start_where, bytes.trim_end_where
+  go      bytes.TrimFunc, bytes.TrimLeftFunc, bytes.TrimRightFunc
+  rust    -
+  python  -
+  note    the function is asked of a byte, where Go's is asked of a character
+
+capability bytes/trim-white-space  bytes without the white space at either end or at one
+  heroes  bytes.trim, bytes.trim_start, bytes.trim_end
+  go      bytes.TrimSpace
+  rust    [u8]::trim_ascii, [u8]::trim_ascii_start, [u8]::trim_ascii_end
+  python  bytes.strip, bytes.lstrip, bytes.rstrip, bytearray.strip, bytearray.lstrip, bytearray.rstrip
+  note    Python's set, the bytes 9 to 13 and 32. Rust's `trim_ascii` answered [11, 12, 32, 97, 98] for "\v\f ab\t\r\n", stopping at the vertical tab; Go's `TrimSpace` also took off the bytes of U+0085 and U+00A0, reading UTF-8, which a program holding text asks of `strings.trim`
+
+capability bytes/replace-all  bytes with every occurrence of some replaced by others
+  heroes  bytes.replace_all
+  go      bytes.ReplaceAll
+  rust    -
+  python  bytes.replace, bytearray.replace
+  note    an empty `old` stands before every byte and at the end, Python's: it answered b"-a-b-c-"; Go's stands after each character
+
+capability bytes/replace-at-most  bytes with the first occurrences of some replaced by others
+  heroes  bytes.replace_n
+  go      bytes.Replace
+  rust    -
+  python  bytes.replace, bytearray.replace
+  note    `n` is a `u64` as in `strings`; Go's and Python's negative count, every one, is `replace_all`
+
+capability bytes/replace-last  bytes with the last occurrence of some replaced by others
+  heroes  bytes.replace_last
+  go      -
+  rust    -
+  python  -
+  note    `strings` offers it, and the two faces stay alike
+
+capability bytes/map  bytes with each byte changed by a function
+  heroes  built-in map
+  go      bytes.Map
+  rust    -
+  python  -
+  note    Go's `Map` works on characters and drops one where the function answers a negative value; the built-in `map` works on bytes, and `filter` drops
+
+capability bytes/translate  bytes with each byte looked up in a table of 256, some removed
+  heroes  pending
+  go      -
+  rust    -
+  python  bytes.translate, bytes.maketrans, bytearray.translate, bytearray.maketrans
+  note    a table built at run time cannot reach a function handed to `map`, since there is no closure; the shape, a table of 256 or two lists of equal length, is not settled in this round
+
+capability bytes/upper-ascii  bytes with the ASCII letters in upper case
+  heroes  bytes.to_upper_ascii
+  go      bytes.ToUpper
+  rust    [u8]::to_ascii_uppercase, [u8]::make_ascii_uppercase
+  python  bytes.upper, bytearray.upper
+  note    Python's and Rust's: ASCII letters alone, and Python left the bytes of "É" and a lone 0xE9 as they were. Go's `ToUpper` reads UTF-8 and changed "é" to "É", which a program holding text asks of `strings.to_upper`
+
+capability bytes/lower-ascii  bytes with the ASCII letters in lower case
+  heroes  bytes.to_lower_ascii
+  go      bytes.ToLower
+  rust    [u8]::to_ascii_lowercase, [u8]::make_ascii_lowercase
+  python  bytes.lower, bytearray.lower
+  note    as upper-ascii
+
+capability bytes/words-and-capitals  bytes with the first letter of each word, or of the whole, in upper case, or every case swapped
+  heroes  refused: words and title case are a text's, and a program holding text asks `strings.to_title`, `strings.capitalize` and `strings.swap_case`; `bytes` changes the case of ASCII letters alone
+  go      bytes.Title, bytes.ToTitle, bytes.ToUpperSpecial, bytes.ToLowerSpecial, bytes.ToTitleSpecial
+  rust    -
+  python  bytes.capitalize, bytes.title, bytes.swapcase, bytes.istitle, bytearray.capitalize, bytearray.title, bytearray.swapcase, bytearray.istitle
+  note    Go's `Title` is deprecated by Go itself, and its `Special` forms take Unicode's special casing
+
+capability bytes/is-ascii  whether every byte is ASCII
+  heroes  bytes.is_ascii
+  go      -
+  rust    [u8]::is_ascii, [u8]::as_ascii
+  python  bytes.isascii, bytearray.isascii
+  note    Python answered true for no bytes and for 0x7F, false for 0x80
+
+capability bytes/all-of-a-class  whether every byte is a letter, a digit, white space, upper case or lower case
+  heroes  built-in all, with bytes.is_letter_ascii, bytes.is_digit_ascii, bytes.is_space_ascii, bytes.is_upper_ascii, bytes.is_lower_ascii
+  go      -
+  rust    -
+  python  bytes.isalnum, bytes.isalpha, bytes.isdigit, bytes.islower, bytes.isspace, bytes.isupper, bytearray.isalnum, bytearray.isalpha, bytearray.isdigit, bytearray.islower, bytearray.isspace, bytearray.isupper
+  note    `all` answers true for no bytes, where Python answers false; Python's `islower` and `isupper` ask only of the letters, which `all` with `is_lower_ascii` does not; `isalnum` is a function of the program's own over two classes
+
+capability bytes/pad  bytes brought to a length with bytes repeated at the start, at the end or at both
+  heroes  bytes.pad_start, bytes.pad_end, bytes.center
+  go      -
+  rust    -
+  python  bytes.center, bytes.ljust, bytes.rjust, bytes.zfill, bytearray.center, bytearray.ljust, bytearray.rjust, bytearray.zfill
+  note    Python answered b"**ab*" for `center(5, b"*")`, the odd byte before; `strings` puts it after, and `bytes` follows `strings`. Python's `zfill` writes its zeros after a sign, which `pad_start` with "0" does not
+
+capability bytes/expand-tabs  bytes with each tab replaced by spaces up to the next column
+  heroes  refused: columns are a text's, and a program holding text asks `strings.expand_tabs`
+  go      -
+  rust    -
+  python  bytes.expandtabs, bytearray.expandtabs
+  note    Python counts a column for each byte, so a character of two bytes takes two columns there
+
+capability bytes/write-escaped  bytes as ASCII text, what is not printable written as an escape
+  heroes  bytes.format_escaped
+  go      -
+  rust    [u8]::escape_ascii
+  python  -
+  note    Rust's, observed: `a\t\n\r\\\"\'\x00\x7f\xff z` for the test's bytes
+
+capability bytes/join  lists of bytes made one, a separator between them or nothing
+  heroes  bytes.join_all, bytes.concat
+  go      bytes.Join
+  rust    [T]::join, [T]::concat, [T]::connect
+  python  bytes.join, bytearray.join
+  note    the built-in `join` takes a `[str]`, so bytes have their own; Python answered b"a, , c" for three parts, the middle one empty
+
+capability bytes/repeat  bytes repeated a number of times
+  heroes  bytes.repeated
+  go      bytes.Repeat
+  rust    [T]::repeat
+  python  -
+  note    the count is a `u64` as the built-in `repeat` takes it, so no negative count to refuse as Go's panics; Python's is its `*`
+
+capability bytes/append  bytes added at the end of a list the caller owns
+  heroes  bytes.push_all
+  go      bytes.Buffer.Write
+  rust    -
+  python  bytearray.extend
+  note    an `@` parameter grows the caller's own list in place (README B1)
+
+capability bytes/append-text  the bytes of a text added at the end of a list the caller owns
+  heroes  bytes.push_text
+  go      bytes.Buffer.WriteString, bytes.Buffer.WriteRune
+  rust    -
+  python  -
+  note    one character is a text of one character
+
+capability bytes/append-one  one byte added at the end
+  heroes  built-in push
+  go      bytes.Buffer.WriteByte
+  rust    -
+  python  bytearray.append
+  note    -
+
+capability bytes/copy  a copy of bytes
+  heroes  built-in =
+  go      bytes.Clone, bytes.Buffer.Bytes, bytes.NewBuffer
+  rust    [T]::to_vec
+  python  bytearray.copy
+  note    every value is a copy (spec section 3): `b = a` is one
+
+capability bytes/empty  a list of bytes made empty
+  heroes  built-in @
+  go      bytes.Buffer.Reset
+  rust    -
+  python  bytearray.clear
+  note    `b @ []` re-binds the cell to the empty list
+
+capability bytes/as-any-list  a byte inserted, removed, taken from the end, the order reversed, the length changed
+  heroes  refused: a list's own, the same for every `[T]`; the package `lists` and the built-ins `slice` and `push` answer it, and a `[u8]` is a list
+  go      -
+  rust    -
+  python  bytearray.insert, bytearray.pop, bytearray.remove, bytearray.reverse, bytearray.resize
+  note    -
+
+capability bytes/as-a-stream  bytes read as a stream is read
+  heroes  refused: a reader over bytes is a stream, the package `io`'s (README A6), and `bytes` has no buffer type that pretends to be one
+  go      bytes.NewReader, bytes.Reader.Len, bytes.Reader.Read, bytes.Reader.ReadAt, bytes.Reader.ReadByte, bytes.Reader.ReadRune, bytes.Reader.Reset, bytes.Reader.Seek, bytes.Reader.Size, bytes.Reader.UnreadByte, bytes.Reader.UnreadRune, bytes.Reader.WriteTo, bytes.Buffer.Read, bytes.Buffer.ReadByte, bytes.Buffer.ReadBytes, bytes.Buffer.ReadFrom, bytes.Buffer.ReadRune, bytes.Buffer.ReadString, bytes.Buffer.UnreadByte, bytes.Buffer.UnreadRune, bytes.Buffer.WriteTo
+  rust    -
+  python  -
+  note    -
+
+capability hex/write  bytes as hexadecimal text, in lower case
+  heroes  bytes.format_hex
+  go      hex.EncodeToString, hex.Encode, hex.AppendEncode
+  rust    -
+  python  bytes.hex, bytearray.hex, binascii.hexlify, binascii.b2a_hex
+  note    Python answered "0001abff" for the test's four bytes; Go's `Encode` writes into a buffer the caller sized, which a new text replaces
+
+capability hex/write-upper-case  bytes as hexadecimal text, in upper case
+  heroes  bytes.format_hex_upper
+  go      -
+  rust    -
+  python  base64.b16encode
+  note    Python answered b"0001ABFF"
+
+capability hex/write-separated  bytes as hexadecimal text, a separator between groups of bytes
+  heroes  refused: `format_hex` of each group and the built-in `join` write it, the groups cut with `slice`
+  go      -
+  rust    -
+  python  bytes.hex, bytearray.hex, binascii.hexlify, binascii.b2a_hex
+  note    Python's `sep` and `bytes_per_sep` arguments, counted from the right where negative
+
+capability hex/read  the bytes hexadecimal text writes
+  heroes  bytes.parse_hex
+  go      hex.DecodeString, hex.Decode, hex.AppendDecode
+  rust    -
+  python  bytes.fromhex, bytearray.fromhex, binascii.unhexlify, binascii.a2b_hex, base64.b16decode
+  note    nothing is skipped, as Go's `DecodeString` and `unhexlify`: `fromhex` skips white space, and `b16decode` refuses lower case unless asked. Python's `fromhex("12z4")` named position 2 and Go the byte "z": the message names both. A byte that is not a digit before the end is named before an odd length, as Go's answered for "zz1"
+
+capability hex/dump  bytes as the lines of a hexadecimal dump, offsets and text beside them
+  heroes  bytes.format_hex_dump
+  go      hex.Dump
+  rust    -
+  python  -
+  note    Go's text, observed byte for byte for 0, 1, 8, 9, 16, 17 and 33 bytes
+
+capability base64/write-standard  bytes as base 64, the standard alphabet, padded
+  heroes  bytes.format_base64
+  go      base64.StdEncoding, base64.Encoding.EncodeToString, base64.Encoding.Encode, base64.Encoding.AppendEncode
+  rust    -
+  python  base64.b64encode, base64.standard_b64encode, binascii.b2a_base64
+  note    Python answered every text the tests hold, the empty bytes, 0x00, 0xFF and the lengths 1 to 6 among them; `b2a_base64` adds a line feed, which this does not
+
+capability base64/write-standard-unpadded  bytes as base 64, the standard alphabet, no padding
+  heroes  bytes.format_base64_unpadded
+  go      base64.RawStdEncoding
+  rust    -
+  python  base64.b64encode, binascii.b2a_base64
+  note    Python's `padded=False`
+
+capability base64/write-url  bytes as base 64, the alphabet safe in a URL, padded
+  heroes  bytes.format_base64_url
+  go      base64.URLEncoding
+  rust    -
+  python  base64.urlsafe_b64encode
+  note    -
+
+capability base64/write-url-unpadded  bytes as base 64, the alphabet safe in a URL, no padding
+  heroes  bytes.format_base64_url_unpadded
+  go      base64.RawURLEncoding
+  rust    -
+  python  base64.urlsafe_b64encode
+  note    -
+
+capability base64/read-standard  the bytes base 64 writes, the standard alphabet, padded
+  heroes  bytes.parse_base64
+  go      base64.StdEncoding, base64.Encoding.DecodeString, base64.Encoding.Decode, base64.Encoding.AppendDecode
+  rust    -
+  python  base64.b64decode, base64.standard_b64decode, binascii.a2b_base64
+  note    strict, as Go's `Strict()` and Python's `validate=True, canonical=True`. The failing byte is Go's for "Z!9v", "Z=9v", "Zg==Zg==", "Zg=", "Zm9vY" and "Zg"; for bits no byte holds it is the character that sets them, where Go names the "=" after it. Python without `validate` skips what is not of the alphabet, and Go skips line ends: both refused here
+
+capability base64/read-standard-unpadded  the bytes base 64 writes, the standard alphabet, no padding
+  heroes  bytes.parse_base64_unpadded
+  go      base64.RawStdEncoding
+  rust    -
+  python  base64.b64decode, binascii.a2b_base64
+  note    padding refused, as Go's `RawStdEncoding` and Python's `padded=False` refused "Zg=="
+
+capability base64/read-url  the bytes base 64 writes, the alphabet safe in a URL, padded
+  heroes  bytes.parse_base64_url
+  go      base64.URLEncoding
+  rust    -
+  python  base64.urlsafe_b64decode
+  note    "+" and "/" refused, as Go's `URLEncoding`; Python's `urlsafe_b64decode` read "+/8=" with a warning that it will stop
+
+capability base64/read-url-unpadded  the bytes base 64 writes, the alphabet safe in a URL, no padding
+  heroes  bytes.parse_base64_url_unpadded
+  go      base64.RawURLEncoding
+  rust    -
+  python  base64.urlsafe_b64decode
+  note    Python's `urlsafe_b64decode` reads both forms by default; one function a form here, as Go's four encodings
+
+capability base64/strict  base 64 read only where its last character leaves no bit set that no byte holds
+  heroes  bytes.parse_base64, bytes.parse_base64_unpadded, bytes.parse_base64_url, bytes.parse_base64_url_unpadded
+  go      base64.Encoding.Strict
+  rust    -
+  python  base64.b64decode, binascii.a2b_base64
+  note    the four readers are strict and no lax one is offered, so a text has one reading; the message names the character that a writer would have written instead
+
+capability base64/lines  base 64 written in lines of a width, and read with its line ends
+  heroes  refused: lines are a text's layout; the text is cut with `slice` and its line ends taken out with `strings.replace_all` before a reader, which skips nothing so that a text has one reading
+  go      base64.Encoding.DecodeString, base64.Encoding.Decode, base64.Encoding.AppendDecode
+  rust    -
+  python  base64.encodebytes, base64.decodebytes, base64.b64encode, base64.b64decode, binascii.b2a_base64, binascii.a2b_base64
+  note    Go's decoders skip "\r" and "\n"; Python's `encodebytes` writes lines of 76 characters
+
+capability base64/another-alphabet  base 64 in an alphabet or with a padding character the caller gives
+  heroes  refused: RFC 4648 defines two alphabets and `bytes` reads and writes both; another one is a format of its own, which a value naming a form would let every call misread
+  go      base64.NewEncoding, base64.Encoding.WithPadding
+  rust    -
+  python  base64.b64encode, base64.b64decode, binascii.b2a_base64, binascii.a2b_base64, binascii.BASE64_ALPHABET, binascii.URLSAFE_BASE64_ALPHABET, binascii.CRYPT_ALPHABET, binascii.BINHEX_ALPHABET, binascii.UU_ALPHABET
+  note    `BASE64_ALPHABET` and `URLSAFE_BASE64_ALPHABET` are the two offered
+
+capability base32/write-and-read  bytes as base 32 and back, in its two alphabets
+  heroes  pending
+  go      -
+  rust    -
+  python  base64.b32encode, base64.b32decode, base64.b32hexencode, base64.b32hexdecode, binascii.b2a_base32, binascii.a2b_base32, binascii.BASE32_ALPHABET, binascii.BASE32HEX_ALPHABET
+  note    RFC 4648's too, and it would take base 64's shape: four functions for each alphabet; not written in this round
+
+capability base85/write-and-read  bytes as base 85 and back, in its three forms
+  heroes  pending
+  go      -
+  rust    -
+  python  base64.b85encode, base64.b85decode, base64.a85encode, base64.a85decode, base64.z85encode, base64.z85decode, binascii.b2a_base85, binascii.a2b_base85, binascii.b2a_ascii85, binascii.a2b_ascii85, binascii.BASE85_ALPHABET, binascii.ASCII85_ALPHABET, binascii.Z85_ALPHABET
+  note    three forms, Ascii85's with its "z" and its frame; not written in this round
+
+capability uuencode/write-and-read  bytes as a line of uuencode and back
+  heroes  pending
+  go      -
+  rust    -
+  python  binascii.b2a_uu, binascii.a2b_uu
+  note    not written in this round
+
+capability quoted-printable/write-and-read  bytes as quoted-printable and back
+  heroes  pending
+  go      -
+  rust    -
+  python  binascii.b2a_qp, binascii.a2b_qp
+  note    MIME's, RFC 2045; not written in this round
+
+capability checksum/crc  the cyclic redundancy check of bytes, 32 bits or 16
+  heroes  pending
+  go      -
+  rust    -
+  python  binascii.crc32, binascii.crc_hqx
+  note    Go's is `hash/crc32`, beside its hashes, and Rebel has no package of hashes yet; not written in this round
+
+capability binary/write  an integer of a fixed width written as bytes, the highest byte first or the lowest
+  heroes  bytes.encode_i8, bytes.encode_u16_be, bytes.encode_u16_le, bytes.encode_i16_be, bytes.encode_i16_le, bytes.encode_u32_be, bytes.encode_u32_le, bytes.encode_i32_be, bytes.encode_i32_le, bytes.encode_u64_be, bytes.encode_u64_le, bytes.encode_i64_be, bytes.encode_i64_le
+  go      binary.ByteOrder, binary.AppendByteOrder, binary.BigEndian, binary.LittleEndian, ByteOrder.PutUint16, ByteOrder.PutUint32, ByteOrder.PutUint64, ByteOrder.String, AppendByteOrder.AppendUint16, AppendByteOrder.AppendUint32, AppendByteOrder.AppendUint64, AppendByteOrder.String
+  rust    i8::to_be_bytes, i8::to_le_bytes, i16::to_be_bytes, i16::to_le_bytes, i32::to_be_bytes, i32::to_le_bytes, i64::to_be_bytes, i64::to_le_bytes, u8::to_be_bytes, u8::to_le_bytes, u16::to_be_bytes, u16::to_le_bytes, u32::to_be_bytes, u32::to_le_bytes, u64::to_be_bytes, u64::to_le_bytes
+  python  int.to_bytes
+  note    one function per width and order, every width of the language; a `u8` has none, its byte being `[n]`. Go's `Append` form is `bytes.push_all(@to: buf, from: bytes.encode_u32_le(n))` and its `Put` form, written into bytes at an index, `lists.replace_range`. Python's `struct` packs these through a format, refused under binary/format; its integer formats `b B h H i I l L q Q` in the standard sizes are the functions here. Python's `int.to_bytes` takes any length, and the lengths that are no width of the language are left to a program; Rust's `i128` and `u128` are no width of the language
+
+capability binary/read  an integer of a fixed width read from bytes at an index, the highest byte first or the lowest
+  heroes  bytes.decode_i8, bytes.decode_u8, bytes.decode_u16_be, bytes.decode_u16_le, bytes.decode_i16_be, bytes.decode_i16_le, bytes.decode_u32_be, bytes.decode_u32_le, bytes.decode_i32_be, bytes.decode_i32_le, bytes.decode_u64_be, bytes.decode_u64_le, bytes.decode_i64_be, bytes.decode_i64_le
+  go      ByteOrder.Uint16, ByteOrder.Uint32, ByteOrder.Uint64
+  rust    i8::from_be_bytes, i8::from_le_bytes, i16::from_be_bytes, i16::from_le_bytes, i32::from_be_bytes, i32::from_le_bytes, i64::from_be_bytes, i64::from_le_bytes, u8::from_be_bytes, u8::from_le_bytes, u16::from_be_bytes, u16::from_le_bytes, u32::from_be_bytes, u32::from_le_bytes, u64::from_be_bytes, u64::from_le_bytes
+  python  int.from_bytes
+  note    bytes too few from the index fail `invalid`, where Go's panics and Rust's take an array of the exact length; a negative index or one past the end fails too, so an index read from outside the program cannot abort it. `decode_u8` is `s[at]` failing where that aborts
+
+capability binary/uvarint  an unsigned integer as a varint (LEB128), written and read
+  heroes  bytes.encode_uvarint, bytes.decode_uvarint
+  go      binary.PutUvarint, binary.AppendUvarint, binary.Uvarint
+  rust    -
+  python  -
+  note    Go's behaviour, observed: a form longer than the shortest is read, a tenth byte above 1 fails `does_not_fit`. Ten bytes each with its highest bit set fail `does_not_fit` here, where Go answers too short: no byte after them could make 64 bits
+
+capability binary/varint  a signed integer as a zig-zag varint, written and read
+  heroes  bytes.encode_varint, bytes.decode_varint
+  go      binary.PutVarint, binary.AppendVarint, binary.Varint
+  rust    -
+  python  -
+  note    the zig-zag order of Go and of protocol buffers' `sint64`, observed: 0, -1, 1, -2 as 0, 1, 2, 3
+
+capability binary/native-order  bytes in the order of the machine that runs the program
+  heroes  refused: bytes written in a machine's own order read differently on another, so a program names the order; every platform Heroes runs on is little endian, `_le`
+  go      binary.NativeEndian
+  rust    i8::to_ne_bytes, i8::from_ne_bytes, i8::to_be, i8::to_le, i8::from_be, i8::from_le, i16::to_ne_bytes, i16::from_ne_bytes, i16::to_be, i16::to_le, i16::from_be, i16::from_le, i32::to_ne_bytes, i32::from_ne_bytes, i32::to_be, i32::to_le, i32::from_be, i32::from_le, i64::to_ne_bytes, i64::from_ne_bytes, i64::to_be, i64::to_le, i64::from_be, i64::from_le, u8::to_ne_bytes, u8::from_ne_bytes, u8::to_be, u8::to_le, u8::from_be, u8::from_le, u16::to_ne_bytes, u16::from_ne_bytes, u16::to_be, u16::to_le, u16::from_be, u16::from_le, u32::to_ne_bytes, u32::from_ne_bytes, u32::to_be, u32::to_le, u32::from_be, u32::from_le, u64::to_ne_bytes, u64::from_ne_bytes, u64::to_be, u64::to_le, u64::from_be, u64::from_le
+  python  -
+  note    Rust's `to_be` and its kin answer an integer whose bytes are swapped on some machines, the same refusal: the bytes are read and written, never an integer in another order (`math.swap_bytes` swaps them on purpose)
+
+capability binary/format  values laid out by a format string, or by a record's fields read through reflection
+  heroes  refused: a format is a second grammar in a string that no compiler checks, and Heroes has no reflection; each field is written and read by the function of its width, in the order the program names
+  go      binary.Read, binary.Write, binary.Size, binary.Append, binary.Encode, binary.Decode
+  rust    -
+  python  struct.pack, struct.unpack, struct.pack_into, struct.unpack_from, struct.iter_unpack, struct.calcsize, struct.Struct, Struct.format, Struct.size, Struct.pack, Struct.unpack, Struct.pack_into, Struct.unpack_from, Struct.iter_unpack
+  note    the formats beside the integers, decided here: `x` padding is `[0x00]` repeated, `c` and `s` are bytes as they are, `p` is a length byte then bytes, `?` is a byte compared with zero, so none needs a function; `n`, `N` and `P` have the machine's own size, refused as binary/native-order is; the floats are binary/floats
+
+capability binary/floats  a float written as its bytes and read back
+  heroes  pending
+  go      -
+  rust    -
+  python  struct (its formats `e`, `f` and `d`)
+  note    the language has no door from a float to its bits yet, which `math`'s float/bits awaits; the bytes follow from those bits
+
+dropped capacity  a `[u8]` grows by `push` and has no capacity to ask, hint or reserve; a result is a new list, never a buffer the caller sized
+  go      bytes.MinRead, bytes.ErrTooLarge, bytes.Buffer, bytes.Buffer.Available, bytes.Buffer.AvailableBuffer, bytes.Buffer.Cap, bytes.Buffer.Grow, hex.EncodedLen, hex.DecodedLen, base64.Encoding.EncodedLen, base64.Encoding.DecodedLen
+  rust    -
+  python  base64.MAXLINESIZE, base64.MAXBINSIZE
+
+dropped error-types  a failure is a code and a message, `invalid` here, and no type of its own
+  go      hex.ErrLength, hex.InvalidByteError, hex.InvalidByteError.Error, base64.CorruptInputError, base64.CorruptInputError.Error
+  rust    -
+  python  binascii.Error, binascii.Incomplete
+
+dropped encoding-values  the four forms of base 64 are four pairs of functions, so there is no value that names a form and no padding character to pass
+  go      base64.Encoding, base64.StdPadding, base64.NoPadding
+  rust    -
+  python  -
+
+dropped streams  what wraps a writer or a reader in another: Heroes has no interface, and a stream is the one handle of the package `io` (README A6)
+  go      hex.NewEncoder, hex.NewDecoder, hex.Dumper, base64.NewEncoder, base64.NewDecoder, bytes.Reader
+  rust    -
+  python  base64.encode, base64.decode
+
+dropped unchecked  the unchecked form of a call that is offered checked
+  go      -
+  rust    [u8]::as_ascii_unchecked
+  python  -
+
+dropped module-plumbing  a module's own names, no capability of bytes
+  go      -
+  rust    -
+  python  base64.main, base64.binascii, base64.bytes_types
+
+dropped every-list  a method of every `[T]`, which says nothing of bytes: the package `lists` answers for it in its own ledger, and a `[u8]` is a list
+  go      -
+  rust    [T]::first, [T]::first_mut, [T]::split_first, [T]::split_first_mut, [T]::split_last, [T]::split_last_mut, [T]::last, [T]::last_mut, [T]::first_chunk, [T]::first_chunk_mut, [T]::split_first_chunk, [T]::split_first_chunk_mut, [T]::split_last_chunk, [T]::split_last_chunk_mut, [T]::last_chunk, [T]::last_chunk_mut, [T]::get, [T]::get_mut, [T]::get_unchecked, [T]::get_unchecked_mut, [T]::as_ptr, [T]::as_mut_ptr, [T]::as_ptr_range, [T]::as_mut_ptr_range, [T]::as_array, [T]::as_mut_array, [T]::swap, [T]::swap_unchecked, [T]::reverse, [T]::iter, [T]::iter_mut, [T]::windows, [T]::chunks, [T]::chunks_mut, [T]::chunks_exact, [T]::chunks_exact_mut, [T]::as_chunks_unchecked, [T]::as_chunks, [T]::as_rchunks, [T]::as_chunks_unchecked_mut, [T]::as_chunks_mut, [T]::as_rchunks_mut, [T]::array_windows, [T]::rchunks, [T]::rchunks_mut, [T]::rchunks_exact, [T]::rchunks_exact_mut, [T]::chunk_by, [T]::chunk_by_mut, [T]::split_at, [T]::split_at_mut, [T]::split_at_unchecked, [T]::split_at_mut_unchecked, [T]::split_at_checked, [T]::split_at_mut_checked, [T]::binary_search, [T]::binary_search_by, [T]::binary_search_by_key, [T]::sort_unstable, [T]::sort_unstable_by, [T]::sort_unstable_by_key, [T]::partial_sort_unstable, [T]::partial_sort_unstable_by, [T]::partial_sort_unstable_by_key, [T]::select_nth_unstable, [T]::select_nth_unstable_by, [T]::select_nth_unstable_by_key, [T]::partition_dedup, [T]::partition_dedup_by, [T]::partition_dedup_by_key, [T]::rotate_left, [T]::rotate_right, [T]::shift_left, [T]::shift_right, [T]::fill, [T]::fill_with, [T]::clone_from_slice, [T]::copy_from_slice, [T]::copy_within, [T]::swap_with_slice, [T]::align_to, [T]::align_to_mut, [T]::as_simd, [T]::as_simd_mut, [T]::is_sorted, [T]::is_sorted_by, [T]::is_sorted_by_key, [T]::partition_point, [T]::split_off, [T]::split_off_mut, [T]::split_off_first, [T]::split_off_first_mut, [T]::split_off_last, [T]::split_off_last_mut, [T]::get_disjoint_unchecked_mut, [T]::get_disjoint_mut, [T]::element_offset, [T]::subslice_range, [T]::as_slice, [T]::as_mut_slice, [T]::sort, [T]::sort_by, [T]::sort_by_key, [T]::sort_by_cached_key, [T]::to_vec_in, [T]::into_vec
+  python  -
+
+dropped varint-capacity  a `[u8]` grows by `push`, so no buffer is sized to the longest varint before it is written
+  go      binary.MaxVarintLen16, binary.MaxVarintLen32, binary.MaxVarintLen64
+  rust    -
+  python  -
+
+dropped varint-streams  a varint read from a stream: the stream is the package `io`'s, and its bytes, once read, are `decode_uvarint`'s
+  go      binary.ReadUvarint, binary.ReadVarint
+  rust    -
+  python  -
+
+dropped binary-errors  a failure is a code and a message, `invalid` or `does_not_fit` here, and no type of its own
+  go      -
+  rust    -
+  python  struct.error

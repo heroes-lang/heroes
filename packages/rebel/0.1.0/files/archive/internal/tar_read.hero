@@ -1,0 +1,301 @@
+# A tar archive read entry by entry from a source: each header with the PAX
+# records, the global records and the GNU long names before it applied, its
+# data handed out as asked, and the padding after it skipped. A sparse
+# member is refused, since its data is not laid out as its size says.
+
+use archive/internal/codes
+use archive/internal/source
+use archive/internal/tar_header
+use io
+
+# A tar archive being read.
+record State
+    # Where the bytes come from.
+    src: source.Source
+    # The data of the entry in hand not yet read.
+    left: i64
+    # The padding after it.
+    padding: i64
+    # The name of the entry in hand, for messages.
+    name: str
+    # The PAX records of every `g` entry so far.
+    globals: {str: str}
+    # Whether the archive's end has been read.
+    ended: bool
+
+# What `next_header` found: a header, or the archive's end.
+record Found
+    # Whether it found a header; false at the end.
+    found: bool
+    # The header.
+    header: tar_header.Header
+
+# A reader of the archive `src` holds, before its first header.
+function start(src: source.Source) -> State
+    return State(src: src, left: 0, padding: 0, name: "", globals: {}, ended: false)
+
+# Whether `flag` is a type whose data follows its header: a file, a
+# contiguous file, or a type this reader does not know, read as a file.
+function has_data(flag: i64) -> bool
+    return flag != '1' && flag != '2' && flag != '3' && flag != '4' && flag != '5' && flag != '6'
+
+# The next entry's header, the rest of the entry in hand skipped first; or
+# not found at the archive's end: two blocks of zeros, one before the
+# stream's end, or the stream's end on a block's boundary. Fails `invalid`
+# where a header or a record is not one, `unsupported` on a sparse member,
+# and as the source fails.
+function next_header(@st: State) -> Found?
+    none = Found(found: false, header: tar_header.empty())
+
+    if st.ended
+        return ok(none)
+    source.skip(@st.src, n: st.left + st.padding, what: f"the data of \"{st.name}\"")?
+    st.left @ 0
+    st.padding @ 0
+    pending: {str: str} @= {}
+    long_name: str @= ""
+    long_link: str @= ""
+
+    while true
+        at = st.src.used
+        block = source.read_some(@st.src, most: tar_header.BLOCK)?
+
+        if block.len() == 0
+            st.ended @ true
+            return ok(none)
+        whole @= block
+
+        if whole.len() < tar_header.BLOCK
+            rest = source.read_exact(@st.src, n: tar_header.BLOCK - whole.len(), what: "a header")?
+
+            for b in rest
+                whole @ whole.push(b)
+
+        if tar_header.is_zero(whole)
+            after = source.read_some(@st.src, most: tar_header.BLOCK)?
+            full @= after
+
+            if full.len() > 0 && full.len() < tar_header.BLOCK
+                more = source.read_exact(@st.src, n: tar_header.BLOCK - full.len(), what: "the end of the archive")?
+
+                for b in more
+                    full @ full.push(b)
+
+            if full.len() > 0 && !tar_header.is_zero(full)
+                return codes.invalid_at(
+                    at: at + tar_header.BLOCK,
+                    why: "a header after a block of zeros, which ends an archive"
+                )
+            st.ended @ true
+            return ok(none)
+        h @= tar_header.parse(whole, at: at)?
+
+        if h.flag == 'x' || h.flag == 'g' || h.flag == 'L' || h.flag == 'K'
+            if h.size > tar_header.SPECIAL_MOST
+                return codes.invalid_at(
+                    at: at,
+                    why: f"a special entry of {h.size} bytes, past the {tar_header.SPECIAL_MOST} this reader takes"
+                )
+            data = source.read_exact(@st.src, n: h.size, what: "a special entry")?
+            source.skip(@st.src, n: padding_of(h.size), what: "a special entry")?
+
+            if h.flag == 'x' || h.flag == 'g'
+                records = tar_header.parse_records(data, at: at + tar_header.BLOCK)?
+
+                for key in keys(records)
+                    if h.flag == 'x'
+                        pending[key] @ records[key].must()
+                    else
+                        st.globals[key] @ records[key].must()
+            else
+                text = tar_header.text_of(data, from: 0, width: data.len())
+
+                if h.flag == 'L'
+                    long_name @ text
+                else
+                    long_link @ text
+            continue
+
+        if h.flag == 'S'
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: f"the entry \"{h.name}\" is a sparse file, which this reader does not read"
+            )
+
+        if long_name != ""
+            h.name @ long_name
+
+        if long_link != ""
+            h.link @ long_link
+        apply(@h, records: st.globals, at: at)?
+        apply(@h, records: pending, at: at)?
+
+        if h.name.len() > 1 && h.name[h.name.len() - 1] == '/'
+            if h.flag == '0' || h.flag == 0
+                h.flag @ '5'
+            h.name @ h.name.slice(from: 0, to: h.name.len() - 1)
+
+        if !has_data(h.flag)
+            h.size @ 0
+        st.left @ h.size
+        st.padding @ padding_of(h.size)
+        st.name @ h.name
+        return ok(Found(found: true, header: h))
+
+    return ok(none)
+
+# How many bytes of padding follow `size` bytes of data.
+function padding_of(size: i64) -> i64
+    return (tar_header.BLOCK - size % tar_header.BLOCK) % tar_header.BLOCK
+
+# Applies the PAX `records` to `h`: those of a field set the field, the rest
+# are kept in `h.records`. Fails `invalid` where a number is not one, and
+# `unsupported` on GNU's sparse records.
+function apply(@h: tar_header.Header, records: {str: str} lent, at: i64) -> ()?
+    for key in keys(records)
+        value = records[key].must()
+
+        if key.len() >= 10 && key.slice(from: 0, to: 10) == "GNU.sparse"
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: f"the entry \"{h.name}\" is a sparse file, which this reader does not read"
+            )
+
+        if key == "path"
+            h.name @ value
+        else if key == "linkpath"
+            h.link @ value
+        else if key == "size"
+            h.size @ decimal(value: value, at: at, key: key)?
+        else if key == "uid"
+            h.user_id @ decimal(value: value, at: at, key: key)?
+        else if key == "gid"
+            h.group_id @ decimal(value: value, at: at, key: key)?
+        else if key == "uname"
+            h.user_name @ value
+        else if key == "gname"
+            h.group_name @ value
+        else if key == "mtime"
+            seconds_and_nanos(@h, value: value, at: at)?
+        else
+            h.records[key] @ value
+
+    return ok()
+
+# The whole number `value` of the record `key`, 0 or more. Fails `invalid`
+# where it is not one or passes an `i64`.
+function decimal(value: str, at: i64, key: str) -> i64?
+    match to_i64_text(value)
+        .ok n  => return ok(n)
+        .err _ => return codes.invalid_at(at: at, why: f"a PAX record {key} of \"{value}\", which is no number")
+
+# The whole number written in `s`, decimal digits only.
+function to_i64_text(s: str) -> i64?
+    if s.len() == 0 || s.len() > 18
+        return fail(code: codes.INVALID, msg: "no number")
+    value: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return fail(code: codes.INVALID, msg: "no number")
+        value @ value * 10 + to_i64(s[i] - '0').must()
+
+    return ok(value)
+
+# Sets `h`'s time from a PAX time: seconds, a sign before them perhaps, and
+# a fraction perhaps. Fails `invalid` where it is not one.
+function seconds_and_nanos(@h: tar_header.Header, value: str, at: i64) -> ()?
+    negative = value.len() > 0 && value[0] == '-'
+    from: i64 @= 0
+
+    if negative
+        from @ 1
+    point: i64 @= from
+
+    while point < value.len() && value[point] != '.'
+        point @ point + 1
+
+    whole = decimal(value: value.slice(from: from, to: point), at: at, key: "mtime")?
+    nanos: i64 @= 0
+
+    if point < value.len()
+        digits = value.slice(from: point + 1, to: value.len())
+        scale: i64 @= 100000000
+
+        for i in range(from: 0, to: digits.len())
+            if digits[i] < '0' || digits[i] > '9'
+                return codes.invalid_at(at: at, why: f"a PAX time of \"{value}\", which is no time")
+
+            if scale > 0
+                nanos @ nanos + to_i64(digits[i] - '0').must() * scale
+                scale @ scale / 10
+
+    if negative
+        h.modified @ 0 - whole
+
+        if nanos > 0
+            h.modified @ h.modified - 1
+            nanos @ 1000000000 - nanos
+    else
+        h.modified @ whole
+    h.nanos @ nanos
+    return ok()
+
+# Up to `most` bytes of the entry in hand's data, none at its end. Fails
+# `invalid` where the archive ends inside it, and as the source fails.
+function read_data(@st: State, most: i64) -> [u8]?
+    ask: i64 @= most
+
+    if st.left < ask
+        ask @ st.left
+
+    if ask <= 0
+        return ok([])
+    got = source.read_some(@st.src, most: ask)?
+
+    if got.len() == 0
+        return codes.invalid_at(at: st.src.used, why: f"the archive ends inside the data of \"{st.name}\"")
+    st.left @ st.left - got.len()
+    return ok(got)
+
+# Writes the rest of the entry in hand's data to `to`, and answers how many
+# bytes. Fails as `read_data` does and as the stream fails.
+function copy_data(@st: State, to: io.Stream) -> i64?
+    copied: i64 @= 0
+
+    while true
+        got = read_data(@st, most: 65536)?
+
+        if got.len() == 0
+            return ok(copied)
+        io.write(to, data: got)?
+        copied @ copied + got.len()
+
+    return ok(copied)
+
+test "to_i64_text and seconds_and_nanos: whole, fraction, negative, and not a number"
+    assert to_i64_text("1700000000").must() == 1700000000
+    assert to_i64_text("12a").is_err()
+    h @= tar_header.empty()
+    seconds_and_nanos(@h, value: "1700000000.25", at: 0).must()
+    assert h.modified == 1700000000 && h.nanos == 250000000
+    seconds_and_nanos(@h, value: "-1.5", at: 0).must()
+    assert h.modified == -2 && h.nanos == 500000000
+    assert seconds_and_nanos(@h, value: "1x", at: 0).is_err()
+
+test "apply: fields set, other records kept, sparse refused"
+    h @= tar_header.empty()
+    apply(@h, records: {"path": "a/b", "size": "10", "comment": "hi"}, at: 0).must()
+    assert h.name == "a/b" && h.size == 10
+    assert h.records["comment"].must() == "hi"
+
+    match apply(@h, records: {"GNU.sparse.map": "0,1"}, at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "padding_of and has_data: whole blocks, and types with no data"
+    assert padding_of(0) == 0
+    assert padding_of(1) == 511
+    assert padding_of(512) == 0
+    assert has_data('0') && has_data(0) && has_data('7')
+    assert !has_data('5') && !has_data('2') && !has_data('1')

@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's terminal, `hero_term.h`, so
+# that `heroes test` on this file runs the floor's own tests (spec § 12, § 13).
+# It puts the terminal back as it was, which no mode changed, and prints the 0
+# that answers.
+
+use <rebel>/term/hero_term
+
+function main()
+    print(hero_term.leave())

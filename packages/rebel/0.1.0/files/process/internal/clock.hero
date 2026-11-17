@@ -1,0 +1,62 @@
+# The monotonic clock a child's time limit is kept on, read through the floor
+# `time/hero_time`: the time now, a deadline that cannot overflow, a pause.
+
+use process/internal/codes
+use time/hero_time
+
+# The largest `i64`, the deadline of a limit that reaches past it.
+constant LAST: i64
+    9_223_372_036_854_775_807
+
+# The shortest pause between two looks at a child that has a time limit: one
+# millisecond, doubled after each look up to `LONGEST`.
+constant SHORTEST: i64
+    1_000_000
+
+# The longest pause between two looks: 50 milliseconds, so a child that ends
+# is seen within that much of its end.
+constant LONGEST: i64
+    50_000_000
+
+# Nanoseconds on the monotonic clock now. Fails `failed` where the clock
+# cannot be read.
+function now() -> i64?
+    at = hero_time.monotonic_ns()
+
+    if at < 0
+        return codes.of(code: codes.FAILED, asked: "reading the monotonic clock", why: "the system answered no time")
+    return ok(at)
+
+# `started` plus `limit`, both 0 or more, or `LAST` where the sum is past it.
+function deadline(started: i64, limit: i64) -> i64
+    if limit > LAST - started
+        return LAST
+    return started + limit
+
+# The pause after `pause`, twice as long, never past `LONGEST`.
+function next_pause(pause: i64) -> i64
+    if pause >= LONGEST / 2
+        return LONGEST
+    return pause * 2
+
+# Waits `ns` nanoseconds, 0 or more, on the monotonic clock.
+function rest(ns: i64)
+    _ = hero_time.sleep_ns(ns)
+
+test "deadline: no limit past the start, a sum that fits, and one past the largest i64"
+    assert deadline(started: 0, limit: 0) == 0
+    assert deadline(started: 5, limit: 7) == 12
+    assert deadline(started: LAST, limit: 0) == LAST
+    assert deadline(started: LAST, limit: 1) == LAST
+    assert deadline(started: 1, limit: LAST) == LAST
+
+test "next_pause: the shortest doubled, and never past the longest"
+    assert next_pause(SHORTEST) == 2 * SHORTEST
+    assert next_pause(LONGEST / 2) == LONGEST
+    assert next_pause(LONGEST) == LONGEST
+
+test "now: two readings never go back, and a rest of a millisecond passes at least that much"
+    first = now().must()
+    rest(SHORTEST)
+    second = now().must()
+    assert second - first >= SHORTEST

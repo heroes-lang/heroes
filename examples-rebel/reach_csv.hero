@@ -1,0 +1,16 @@
+# Reaches Rebel's `csv`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small table keyed by its header
+# and writes one column of it back as CSV.
+
+use <rebel>/csv
+
+function main()
+    match csv.parse_records("album,year\nLow,1977\n\"Heroes\",1977\n", csv.strict())
+        .err e => print(e.msg)
+        .ok records =>
+            rows: [[str]] @= []
+
+            for r in records
+                rows @ rows.push([r["album"].default("?")])
+
+            print(csv.format(rows))

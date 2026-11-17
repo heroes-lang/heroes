@@ -1,0 +1,322 @@
+# The compiled form of a set of templates: each template a list of steps run
+# from the first, a step writing text, writing a value, jumping, looping or
+# running another template. Nothing in it nests but a value's filters, so the
+# steps are run, and read by the HTML pass, with stacks held in lists and never
+# with recursion that follows the template or the data.
+
+use json
+
+## What a step does
+
+# A step that writes its `text` as it stands.
+constant TEXT: i64
+    0
+
+# A step that writes the value of its `cond.left`, escaped as its `escaper`
+# and `delim` say.
+constant OUTPUT: i64
+    1
+
+# A step that goes on at `target`.
+constant JUMP: i64
+    2
+
+# A step that goes on at `target` where its `cond` is false, and at the next
+# step where it is true.
+constant JUMP_UNLESS: i64
+    3
+
+# A step that begins a loop over the list or object its `cond.left` names: it
+# goes on at the next step with the first element bound, or at `target` where
+# there is none.
+constant FOR_BEGIN: i64
+    4
+
+# The step at the end of a loop's body: it binds the next element and goes on
+# at `target`, the body's first step, or ends the loop and goes on at the next.
+constant FOR_NEXT: i64
+    5
+
+# A step that ends the innermost loop and goes on at `target`, the step after
+# it.
+constant BREAK: i64
+    6
+
+# A step that runs the template whose part is `callee` with the value of its
+# `cond.left`, then goes on at the next step.
+constant INCLUDE: i64
+    7
+
+# The last step of every part: the template is done.
+constant RETURN: i64
+    8
+
+## The operands and filters of a value
+
+# An operand read from the value the template is given, by its `segments`.
+constant FROM_DOT: i64
+    0
+
+# An operand read from a loop's variable, the one in `slot`, by its
+# `segments`.
+constant FROM_VARIABLE: i64
+    1
+
+# An operand written in the template: its `literal`.
+constant FROM_LITERAL: i64
+    2
+
+# No operand: the right side of a condition that compares nothing.
+constant FROM_NOTHING: i64
+    3
+
+# The filters, in the order the module comment of `template` names them.
+constant ESCAPE: i64
+    0
+
+constant UPPER: i64
+    1
+
+constant LOWER: i64
+    2
+
+constant JOIN: i64
+    3
+
+constant DEFAULT: i64
+    4
+
+constant LENGTH: i64
+    5
+
+# What a condition compares: nothing, equality, inequality.
+constant COMPARE_NONE: i64
+    0
+
+constant COMPARE_EQUAL: i64
+    1
+
+constant COMPARE_NOT_EQUAL: i64
+    2
+
+## How a value is escaped in the HTML mode
+
+# The text of the value as it is: the text mode.
+constant RAW: i64
+    0
+
+# HTML's own escapes, for text, a title or a textarea, and a quoted value.
+constant HTML_TEXT: i64
+    1
+
+# A plain attribute's value, escaped by its delimiter alone.
+constant ATTR_PLAIN: i64
+    2
+
+# A URL from its start: a scheme other than http, https and mailto refused,
+# then the characters a URL may not hold percent-encoded.
+constant URL_START: i64
+    3
+
+# A URL after its start and before its query: percent-encoded where it may
+# not hold the character.
+constant URL_PATH: i64
+    4
+
+# A URL's query or fragment: every byte but a letter, a digit, `-`, `.`, `_`
+# and `~` percent-encoded.
+constant URL_QUERY: i64
+    5
+
+# An `srcset` attribute's list of images and sizes.
+constant SRCSET: i64
+    6
+
+# A script where a value stands: the value as JSON.
+constant JS_VALUE: i64
+    7
+
+# Inside a script's string between `"` or `'`.
+constant JS_STRING: i64
+    8
+
+# Inside a script's template literal between backticks.
+constant JS_TEMPLATE: i64
+    9
+
+# Inside a script's regular expression.
+constant JS_REGEXP: i64
+    10
+
+# A style sheet where a value stands: refused unless it is a plain word.
+constant CSS_VALUE: i64
+    11
+
+# Inside a style sheet's string, from its start: a scheme refused, then the
+# CSS escapes.
+constant CSS_STRING_START: i64
+    12
+
+# Inside a style sheet's string after its start.
+constant CSS_STRING: i64
+    13
+
+# An attribute's name.
+constant ATTR_NAME: i64
+    14
+
+# Inside a comment, which the HTML mode drops with every value in it.
+constant DROPPED: i64
+    15
+
+# What delimits the attribute value an escaped value stands in: none, quotes,
+# or nothing but white space.
+constant DELIM_NONE: i64
+    0
+
+constant DELIM_QUOTED: i64
+    1
+
+constant DELIM_UNQUOTED: i64
+    2
+
+## The compiled form
+
+# A value written in a template: where it is read from, and the path from
+# there.
+record Operand
+    # `FROM_DOT`, `FROM_VARIABLE`, `FROM_LITERAL` or `FROM_NOTHING`.
+    kind: i64
+    # The variable read, for `FROM_VARIABLE`: its place among the part's
+    # slots.
+    slot: i64
+    # The keys and indices walked from there, in order.
+    segments: [str]
+    # The value of a literal.
+    literal: json.Value
+    # The operand as the template writes it, for messages.
+    written: str
+
+# One filter of a pipeline: its kind and its argument, `null` where it takes
+# none.
+record Filter
+    kind: i64
+    arg: json.Value
+
+# A value and the filters it goes through, left to right.
+record Pipe
+    operand: Operand
+    filters: [Filter]
+
+# What `if` asks, and what every other step reads in its `left` alone.
+record Cond
+    # Whether `not` stands before the value.
+    negate: bool
+    # The value asked about, written, looped over or handed on.
+    left: Pipe
+    # `COMPARE_NONE`, `COMPARE_EQUAL` or `COMPARE_NOT_EQUAL`.
+    compare: i64
+    # The value compared with, `FROM_NOTHING` where nothing is.
+    right: Pipe
+
+# One step of a part.
+record Step
+    # What it does: `TEXT` to `RETURN`.
+    kind: i64
+    # The text a `TEXT` step writes.
+    text: str
+    # The value the step reads.
+    cond: Cond
+    # Where a jump, a loop or a break goes on.
+    target: i64
+    # The slots a loop binds: its first variable, and its second or -1.
+    first_slot: i64
+    second_slot: i64
+    # The part an `INCLUDE` runs: its key in `Program.index`.
+    callee: str
+    # How an `OUTPUT` step's value is escaped, `RAW` in the text mode.
+    escaper: i64
+    # The attribute delimiter it stands in.
+    delim: i64
+    # Where the step was written, counted from 1, the column in characters.
+    line: i64
+    column: i64
+
+# One template, compiled.
+record Part
+    # The template's name.
+    name: str
+    # The name of the text it was written in, "" for the one text of `parse`.
+    source: str
+    # Its steps; the last is `RETURN`.
+    steps: [Step]
+    # How many variables its loops bind.
+    slots: i64
+
+# A set of templates compiled, every one reachable by its key.
+record Program
+    parts: [Part]
+    # The index in `parts` of each part by its key: a template's name, and in
+    # the HTML mode a name and the context it begins in for a template that an
+    # `include` runs in another context than text.
+    index: {str: i64}
+
+# Whether `b` may stand in a key written after a `.`: a letter, a digit or `_`.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+# How a path is written: its root, then each key after a `.`, or in brackets
+# where it is not a run of letters, digits and `_`.
+function path_text(root: str, segments: [str] lent) -> str
+    parts: [str] @= [root]
+
+    for at in range(from: 0, to: segments.len())
+        key = segments[at]
+        plain: bool @= key != ""
+
+        for k in range(from: 0, to: key.len())
+            if !is_name_byte(key[k])
+                plain @ false
+
+        if plain && !(at == 0 && root == ".")
+            parts @ parts.push("." + key)
+        else if plain
+            parts @ parts.push(key)
+        else
+            parts @ parts.push("[" + json.quote(key) + "]")
+
+    return parts.join("")
+
+# An operand that reads nothing.
+function nothing() -> Operand
+    return Operand(kind: FROM_NOTHING, slot: -1, segments: [], literal: .null_value, written: "")
+
+# A pipe that reads nothing and filters nothing.
+function empty_pipe() -> Pipe
+    return Pipe(operand: nothing(), filters: [])
+
+# A condition that holds `left` alone.
+function only(left: Pipe) -> Cond
+    return Cond(negate: false, left: left, compare: COMPARE_NONE, right: empty_pipe())
+
+# A step of `kind` at `line` and `column`, every other field empty.
+function step(kind: i64, line: i64, column: i64) -> Step
+    return Step(
+        kind: kind,
+        text: "",
+        cond: only(empty_pipe()),
+        target: -1,
+        first_slot: -1,
+        second_slot: -1,
+        callee: "",
+        escaper: RAW,
+        delim: DELIM_NONE,
+        line: line,
+        column: column
+    )
+
+test "step: a fresh step reads nothing and goes nowhere"
+    s = step(kind: TEXT, line: 3, column: 7)
+    assert s.kind == TEXT && s.target == -1 && s.line == 3 && s.column == 7
+    assert s.cond.left.operand.kind == FROM_NOTHING && s.cond.compare == COMPARE_NONE
+    assert s.escaper == RAW && s.delim == DELIM_NONE

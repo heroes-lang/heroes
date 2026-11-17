@@ -1,0 +1,16 @@
+# Reaches Rebel's `cbor`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints RFC 8949's example item
+# `{"a": 1, "b": [2, 3]}` decoded from its bytes and written in diagnostic
+# notation.
+
+use <rebel>/cbor
+
+function main()
+    data: [u8] = [0xa2, 0x61, 0x61, 0x01, 0x61, 0x62, 0x82, 0x02, 0x03]
+
+    match cbor.decode(data)
+        .ok v =>
+            match cbor.format_diagnostic(v)
+                .ok text => print(text)
+                .err e   => print(f"{e.code}: {e.msg}")
+        .err e => print(f"{e.code}: {e.msg}")

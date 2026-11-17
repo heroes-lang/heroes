@@ -1,0 +1,221 @@
+# The statistics that need the data in order: the medians, the quantiles and
+# the modes. Ordering a nan aborts, and data come from outside, so each fails
+# `invalid` on a nan before it sorts. The sort is `lists.sort_by`, stable as
+# Python's `sorted` is, so `0.0` and `-0.0`, which are equal, keep the order
+# they had and the answers match Python's to the sign of a zero.
+
+use lists
+use math
+use stats/internal/exact
+
+# A value of the data and the index it had.
+record Entry
+    # The value.
+    value: f64
+    # Its index in the data.
+    index: i64
+
+# Whether `a` goes before `b`: the smaller value first.
+function ascending(a: f64, b: f64) -> bool
+    return a < b
+
+# Whether entry `a` goes before entry `b` by their values alone.
+function by_value(a: Entry, b: Entry) -> bool
+    return a.value < b.value
+
+# `data` sorted, failing `invalid` where it is empty or holds a nan, `what`
+# naming the statistic in the message.
+function sorted(data: [f64], what: str) -> [f64]?
+    if data.len() == 0
+        return fail(code: exact.INVALID, msg: f"{what} of no value: the data are empty")
+
+    for x in data
+        if math.is_nan(x)
+            return fail(code: exact.INVALID, msg: f"{what} of data holding a nan, which has no place in an order")
+
+    return ok(lists.sort_by(data, ascending))
+
+# The middle value of `data`, or the mean of the two middle values.
+function median(data: [f64]) -> f64?
+    s = sorted(data, "the median")?
+    half = s.len() / 2
+
+    if s.len() % 2 == 1
+        return ok(s[half])
+    return ok((s[half - 1] + s[half]) / 2.0)
+
+# The middle value, or the lower of the two middle values.
+function median_low(data: [f64]) -> f64?
+    s = sorted(data, "the low median")?
+
+    if s.len() % 2 == 1
+        return ok(s[s.len() / 2])
+    return ok(s[s.len() / 2 - 1])
+
+# The middle value, or the higher of the two middle values.
+function median_high(data: [f64]) -> f64?
+    s = sorted(data, "the high median")?
+    return ok(s[s.len() / 2])
+
+# The median of data grouped in classes `interval` wide around each value:
+# the lower edge of the middle value's class, plus the share of the class the
+# middle of the data reaches into.
+function median_grouped(data: [f64], interval: f64) -> f64?
+    s = sorted(data, "the grouped median")?
+    middle = s[s.len() / 2]
+    below: i64 @= 0
+
+    while s[below] < middle
+        below @ below + 1
+
+    upto: i64 @= below
+
+    while upto < s.len() && s[upto] == middle
+        upto @ upto + 1
+
+    lower = middle - interval / 2.0
+    return ok(lower + interval * (to_f64(s.len()) / 2.0 - to_f64(below)) / to_f64(upto - below))
+
+# The `parts - 1` cut points dividing `data` into `parts` groups of equal
+# share, by interpolation: `inclusive` reads the data as the whole
+# population, otherwise as a sample of one with values beyond them.
+function quantiles(data: [f64], parts: i64, inclusive: bool) -> [f64]?
+    if parts < 1
+        return fail(code: exact.INVALID, msg: f"quantiles in {parts} parts: the parts must be at least 1")
+    s = sorted(data, "quantiles")?
+    out: [f64] @= []
+
+    if s.len() == 1
+        for _ in range(from: 1, to: parts)
+            out @ out.push(s[0])
+
+        return ok(out)
+    whole = to_f64(parts)
+
+    for i in range(from: 1, to: parts)
+        if inclusive
+            m = s.len() - 1
+            j = i * m / parts
+            delta = i * m - j * parts
+            out @ out.push((s[j] * to_f64(parts - delta) + s[j + 1] * to_f64(delta)) / whole)
+        else
+            m = s.len() + 1
+            j: i64 @= i * m / parts
+
+            if j < 1
+                j @ 1
+
+            if j > s.len() - 1
+                j @ s.len() - 1
+            delta = i * m - j * parts
+            out @ out.push((s[j - 1] * to_f64(parts - delta) + s[j] * to_f64(delta)) / whole)
+
+    return ok(out)
+
+# The entries of `data` sorted by value, those of one value in their order.
+function entries(data: [f64]) -> [Entry]
+    out: [Entry] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        out @ out.push(Entry(value: data[at], index: at))
+        at @ at + 1
+
+    return lists.sort_by(out, by_value)
+
+# The values of `data` that occur most often, each as it first occurred, in
+# the order they first occurred; a nan fails `invalid`.
+function modes(data: [f64]) -> [f64]?
+    for x in data
+        if math.is_nan(x)
+            return fail(code: exact.INVALID, msg: "the mode of data holding a nan, which equals no value")
+
+    sorted_entries = entries(data)
+    firsts: [i64] @= []
+    counts: [i64] @= []
+    at: i64 @= 0
+
+    while at < sorted_entries.len()
+        start = at
+
+        while at < sorted_entries.len() && sorted_entries[at].value == sorted_entries[start].value
+            at @ at + 1
+
+        firsts @ firsts.push(sorted_entries[start].index)
+        counts @ counts.push(at - start)
+
+    most: i64 @= 0
+
+    for count in counts
+        if count > most
+            most @ count
+
+    chosen: [i64] @= []
+    at2: i64 @= 0
+
+    while at2 < counts.len()
+        if counts[at2] == most
+            chosen @ chosen.push(firsts[at2])
+        at2 @ at2 + 1
+
+    out: [f64] @= []
+
+    for index in sort(chosen)
+        out @ out.push(data[index])
+
+    return ok(out)
+
+# The value of `data` that occurs most often, the first to occur of several.
+function mode(data: [f64]) -> f64?
+    if data.len() == 0
+        return fail(code: exact.INVALID, msg: "the mode of no value: the data are empty")
+    return ok(modes(data)?[0])
+
+test "sorted: empty and a nan fail invalid, and the two zeros keep their order"
+    nothing: [f64] = []
+    assert sorted(nothing, "x").is_err()
+    zero: f64 = 0.0
+    assert sorted([1.0, zero / zero], "x").is_err()
+    s = sorted([0.0, -zero, -1.0], "x").must()
+    assert s[0] == -1.0
+    assert !math.has_minus_sign(s[1]) && math.has_minus_sign(s[2])
+
+test "median, median_low and median_high: one value, odd, even, and two huge values whose mean overflows, as Python's"
+    assert median([4.0]).must() == 4.0
+    assert median([3.0, 1.0, 2.0]).must() == 2.0
+    assert median([1.0, 3.0, 2.0, 4.0]).must() == 2.5
+    assert median_low([1.0, 3.0, 2.0, 4.0]).must() == 2.0
+    assert median_high([1.0, 3.0, 2.0, 4.0]).must() == 3.0
+    assert median_low([5.0]).must() == 5.0 && median_high([5.0]).must() == 5.0
+    huge = math.scale(1.0, 1023)
+    assert math.is_inf(median([huge, huge]).must())
+
+test "median_grouped: Python's on repeated values, a class of other width, and one value"
+    assert median_grouped([52.0, 52.0, 53.0, 54.0], 1.0).must() == 52.5
+    assert median_grouped([1.0, 3.0, 3.0, 5.0, 7.0], 1.0).must() == 3.25
+    assert median_grouped([1.0, 3.0, 3.0, 5.0, 7.0], 2.0).must() == 3.5
+    assert median_grouped([7.0], 1.0).must() == 7.0
+
+test "quantiles: Python's quartiles, deciles that reach past the data, one value, one part, and refusals"
+    assert quantiles([1.0, 2.0, 4.0, 8.0], 4, false).must() == [1.25, 3.0, 7.0]
+    assert quantiles([1.0, 2.0, 3.0], 10, false).must() == [0.4, 0.8, 1.2, 1.6, 2.0, 2.4, 2.8, 3.2, 3.6]
+    assert quantiles([5.0], 4, false).must() == [5.0, 5.0, 5.0]
+    assert quantiles([1.0, 2.0], 1, false).must().len() == 0
+    assert quantiles([1.0, 2.0], 0, false).is_err()
+    nothing: [f64] = []
+    assert quantiles(nothing, 4, false).is_err()
+
+test "quantiles: inclusive, Python's on four values and on two"
+    assert quantiles([1.0, 2.0, 4.0, 8.0], 4, true).must() == [1.75, 3.0, 5.0]
+    assert quantiles([1.0, 3.0], 4, true).must() == [1.5, 2.0, 2.5]
+
+test "mode and modes: Python's first mode, the two zeros as one first seen, all modes in order, and a nan"
+    assert mode([1.0, 2.0, 2.0, 1.0]).must() == 1.0
+    zero: f64 = 0.0
+    assert math.has_minus_sign(mode([-zero, 0.0, 1.0]).must())
+    assert modes([3.0, 1.0, 3.0, 1.0, 2.0]).must() == [3.0, 1.0]
+    assert modes([7.0]).must() == [7.0]
+    nothing: [f64] = []
+    assert modes(nothing).must().len() == 0
+    assert mode(nothing).is_err()
+    assert modes([zero / zero]).is_err()

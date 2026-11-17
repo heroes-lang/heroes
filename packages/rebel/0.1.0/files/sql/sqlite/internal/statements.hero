@@ -1,0 +1,166 @@
+# The statements a connection compiles for `exec`, `query` and `query_one`,
+# kept by their text so that a statement run again is not compiled again, as
+# Python's `sqlite3` keeps them; and the one check every text passes before
+# SQLite compiles it: one statement, no zero byte, nothing after it.
+
+use sql
+use sql/sqlite/hero_sqlite3
+use sql/sqlite/internal/codes
+use sql/sqlite/internal/values
+use strings
+
+# The most statements a connection keeps; the oldest is given back to make
+# room for a new one.
+constant MOST: i64
+    64
+
+# One statement a connection compiled and keeps.
+record Cached
+    # The text it was compiled from, which a later call is compared with byte
+    # for byte.
+    text: str
+    # SQLite's statement, reset after every run.
+    compiled: hero_sqlite3.Compiled
+
+# `text` compiled by SQLite on `connection`, as one statement.
+#
+# - `connection`: the connection the statement will belong to.
+# - `text`: one statement of SQL; a comment and spaces after it are allowed.
+#
+# The caller owes the statement a `hero_sqlite3.finalize`.
+#
+# Fails `invalid` where `text` holds a zero byte, holds no statement, or holds
+# another statement after the first, and with SQLite's failure where SQLite
+# cannot compile it.
+function compile(connection: hero_sqlite3.Connection, text: str) -> Cached?
+    match values.zero_at(text)
+        .ok at => return fail(
+            code: sql.INVALID,
+            msg: f"the statement holds a zero byte at byte {at}, where SQLite would end it"
+        )
+        .err _ => _ = 0
+
+    compiled: hero_sqlite3.Compiled @= nullptr
+    rest @= ""
+    rc = hero_sqlite3.prepare(connection, sql: text, compiled: @compiled, rest: @rest)
+
+    if rc != hero_sqlite3.SQLITE_OK
+        r = codes.refusal_compiling(connection, rc)
+        _ = hero_sqlite3.finalize(@compiled)
+        return fail(code: r.code, msg: r.msg)
+
+    if compiled == nullptr
+        _ = hero_sqlite3.finalize(@compiled)
+        return fail(code: sql.INVALID, msg: f"no statement in \"{text}\"")
+
+    if strings.trim(rest) != ""
+        after: hero_sqlite3.Compiled @= nullptr
+        left @= ""
+        _ = hero_sqlite3.prepare(connection, sql: rest, compiled: @after, rest: @left)
+        another = after != nullptr || hero_sqlite3.extended_code(connection) != hero_sqlite3.SQLITE_OK
+        _ = hero_sqlite3.finalize(@after)
+
+        if another
+            _ = hero_sqlite3.finalize(@compiled)
+            return fail(
+                code: sql.INVALID,
+                msg: f"more than one statement in \"{text}\": `exec_script` runs several, and each other call one"
+            )
+    return ok(Cached(text: text, compiled: compiled))
+
+# The statement `cached` keeps for `text`, compiled now and kept where it holds
+# none, the oldest given back where it holds `MOST` already.
+#
+# - `cached`: the connection's statements, to which a new one is added.
+# - `connection`: the connection they belong to.
+# - `text`: one statement of SQL, compared byte for byte.
+#
+# Fails as `compile` does.
+function take(@cached: [Cached], connection: hero_sqlite3.Connection, text: str) -> Cached?
+    for kept in cached
+        if kept.text == text
+            return ok(kept)
+
+    made = compile(connection, text)?
+
+    if cached.len() >= MOST
+        oldest @= cached[0].compiled
+        _ = hero_sqlite3.finalize(@oldest)
+        cached @ cached.slice(from: 1, to: cached.len())
+    cached @ cached.push(made)
+    return ok(made)
+
+# Gives every statement of `cached` back to SQLite and empties the list.
+#
+# - `cached`: the connection's statements, emptied.
+function give_back(@cached: [Cached])
+    for kept in cached
+        ended @= kept.compiled
+        _ = hero_sqlite3.finalize(@ended)
+
+    cached @ []
+
+## Tests
+
+# A connection in memory for a test, which the test closes.
+function opened() -> hero_sqlite3.Connection
+    connection: hero_sqlite3.Connection @= nullptr
+    flags = hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE | hero_sqlite3.SQLITE_OPEN_EXRESCODE
+    assert hero_sqlite3.open(":memory:", @connection, flags) == hero_sqlite3.SQLITE_OK
+    return connection
+
+test "compile: one statement, with a comment or a semicolon after it, and the texts refused"
+    connection @= opened()
+    one @= compile(connection, "SELECT 1; -- done").must().compiled
+    _ = hero_sqlite3.finalize(@one)
+    two @= compile(connection, "SELECT 1;  ").must().compiled
+    _ = hero_sqlite3.finalize(@two)
+
+    match compile(connection, "SELECT 1; SELECT 2")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "more than one statement in \"SELECT 1; SELECT 2\": `exec_script` runs several, and each other call one"
+
+    match compile(connection, "SELECT 1; nonsense")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+    match compile(connection, "  -- nothing")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "no statement in \"  -- nothing\""
+
+    match compile(connection, "")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+    zero: [u8] = [0]
+
+    match compile(connection, "SELECT 1" + zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.msg == "the statement holds a zero byte at byte 8, where SQLite would end it"
+
+    match compile(connection, "SELEC 1")
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "[1] near \"SELEC\": syntax error (at byte 0 of the statement)"
+
+    match compile(connection, "SELECT * FROM nope")
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "[1] no such table: nope"
+
+    assert hero_sqlite3.close(@connection) == hero_sqlite3.SQLITE_OK
+
+test "take: a text compiled once and kept, the oldest given back past MOST, and give_back"
+    connection @= opened()
+    cached: [Cached] @= []
+    first = take(@cached, connection, "SELECT 1").must()
+    again = take(@cached, connection, "SELECT 1").must()
+    assert first.compiled == again.compiled && cached.len() == 1
+
+    for i in range(from: 0, to: MOST)
+        _ = take(@cached, connection, f"SELECT {i + 2}").must()
+
+    assert cached.len() == MOST
+    assert cached[0].text == "SELECT 2"
+    assert take(@cached, connection, "SELEC").is_err() && cached.len() == MOST
+    give_back(@cached)
+    assert cached.len() == 0
+    assert hero_sqlite3.close(@connection) == hero_sqlite3.SQLITE_OK

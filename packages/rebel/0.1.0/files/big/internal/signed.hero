@@ -1,0 +1,198 @@
+# Integers with a sign: a magnitude of `limbs` and whether it is below zero,
+# zero never negative, so each integer has one form and `==` compares values.
+# The face's `Integer` holds one; its sum, difference, product, quotient under
+# a rounding and its conversions to the language's numbers are here.
+
+use big/internal/limbs
+use big/internal/modes
+use big/internal/product
+use big/internal/quotient
+
+# An integer: its sign and its magnitude, in the one form `make` gives.
+record Signed
+    # Whether it is below zero; false for zero.
+    negative: bool
+    # Its absolute value, limbs of 30 bits, least significant first.
+    magnitude: [i64]
+
+# What `divide` answers: `n` is `quotient` times the divisor plus `remainder`.
+record Division
+    quotient: Signed
+    remainder: Signed
+
+# The integer of that sign and magnitude, zero made not negative.
+function make(negative: bool, magnitude: [i64]) -> Signed
+    return Signed(negative: negative && magnitude.len() > 0, magnitude: magnitude)
+
+# The integer `n`.
+function of_int(n: i64) -> Signed
+    if n >= 0
+        return make(negative: false, magnitude: limbs.of(n))
+    return make(negative: true, magnitude: limbs.add(a: limbs.of(-(n + 1)), b: [1]))
+
+# The integer `n`.
+function of_u64(n: u64) -> Signed
+    low = to_i64(n % 1073741824).must()
+    middle = to_i64(n / 1073741824 % 1073741824).must()
+    high = to_i64(n / 1152921504606846976).must()
+    return make(negative: false, magnitude: limbs.trimmed([low, middle, high]))
+
+# `s` as an `i64`, failing `does_not_fit` outside it.
+function int_of(s: Signed) -> i64?
+    bits = limbs.bit_len(s.magnitude)
+
+    if bits > 64 || bits == 64 && !(s.negative && limbs.trailing_zeros(s.magnitude) == 63)
+        return fail(code: "does_not_fit", msg: f"{limbs.bit_len(s.magnitude)} bits do not fit an i64")
+
+    if bits == 64
+        return ok(0 - 9223372036854775807 - 1)
+    total: i64 @= 0
+    at: i64 @= s.magnitude.len() - 1
+
+    while at >= 0
+        total @ (total << limbs.BITS) + s.magnitude[at]
+        at @ at - 1
+
+    if s.negative
+        return ok(-total)
+    return ok(total)
+
+# `s` as a `u64`, failing `does_not_fit` outside it.
+function u64_of(s: Signed) -> u64?
+    if s.negative
+        return fail(code: "does_not_fit", msg: "a negative integer does not fit a u64")
+
+    if limbs.bit_len(s.magnitude) > 64
+        return fail(code: "does_not_fit", msg: f"{limbs.bit_len(s.magnitude)} bits do not fit a u64")
+    total: u64 @= 0
+    at: i64 @= s.magnitude.len() - 1
+
+    while at >= 0
+        total @ total * 1073741824 + to_u64(s.magnitude[at]).must()
+        at @ at - 1
+
+    return ok(total)
+
+# -1, 0 or 1 as `s` is below zero, zero, or above.
+function sign(s: Signed) -> i64
+    if s.negative
+        return -1
+
+    if s.magnitude.len() == 0
+        return 0
+    return 1
+
+# `s` to the power `k`, not negative.
+function power(s: Signed, k: i64) -> Signed
+    assert k >= 0
+    return make(negative: s.negative && k & 1 == 1, magnitude: product.power(a: s.magnitude, exponent: k))
+
+# `s` with its sign turned.
+function negate(s: Signed) -> Signed
+    return make(negative: !s.negative, magnitude: s.magnitude)
+
+# `s` without its sign.
+function abs(s: Signed) -> Signed
+    return Signed(negative: false, magnitude: s.magnitude)
+
+# -1, 0 or 1 as `a` is below `b`, equal, or above.
+function compare(a: Signed, b: Signed) -> i64
+    if a.negative != b.negative
+        if a.negative
+            return -1
+        return 1
+    order = limbs.compare(a: a.magnitude, b: b.magnitude)
+
+    if a.negative
+        return -order
+    return order
+
+# `a` plus `b`.
+function add(a: Signed, b: Signed) -> Signed
+    if a.negative == b.negative
+        return make(negative: a.negative, magnitude: limbs.add(a: a.magnitude, b: b.magnitude))
+
+    if limbs.compare(a: a.magnitude, b: b.magnitude) >= 0
+        return make(negative: a.negative, magnitude: limbs.sub(a: a.magnitude, b: b.magnitude))
+    return make(negative: b.negative, magnitude: limbs.sub(a: b.magnitude, b: a.magnitude))
+
+# `a` less `b`.
+function sub(a: Signed, b: Signed) -> Signed
+    return add(a: a, b: negate(b))
+
+# `a` times `b`.
+function mul(a: Signed, b: Signed) -> Signed
+    return make(negative: a.negative != b.negative, magnitude: product.multiply(a: a.magnitude, b: b.magnitude))
+
+# The quotient of `n` by `by`, not zero, rounded as `mode` says, and the
+# remainder that goes with it.
+function divide(n: Signed, by: Signed, mode: modes.Mode) -> Division
+    assert by.magnitude.len() > 0
+    d = quotient.divide(n: n.magnitude, by: by.magnitude)
+    negative = n.negative != by.negative
+
+    if d.remainder.len() == 0
+        return Division(
+            quotient: make(negative: negative, magnitude: d.quotient),
+            remainder: make(negative: false, magnitude: [])
+        )
+    half = limbs.compare(a: limbs.shift_left(a: d.remainder, count: 1), b: by.magnitude)
+
+    if modes.goes_away(mode: mode, negative: negative, half: half, kept: d.quotient)
+        q = make(negative: negative, magnitude: limbs.add(a: d.quotient, b: [1]))
+        r = make(negative: !n.negative, magnitude: limbs.sub(a: by.magnitude, b: d.remainder))
+        return Division(quotient: q, remainder: r)
+    return Division(
+        quotient: make(negative: negative, magnitude: d.quotient),
+        remainder: make(negative: n.negative, magnitude: d.remainder)
+    )
+
+## Tests
+
+test "make, of_int and of_u64: zero never negative, the smallest i64, the largest u64"
+    assert make(negative: true, magnitude: []) == of_int(0)
+    assert of_int(-1) == Signed(negative: true, magnitude: [1])
+    assert of_int(0 - 9223372036854775807 - 1) == Signed(negative: true, magnitude: [0, 0, 8])
+    assert of_u64(18446744073709551615) == Signed(negative: false, magnitude: [1073741823, 1073741823, 15])
+    assert of_u64(0) == of_int(0)
+
+test "int_of and u64_of: zero, both ends of i64, one past each, and a negative u64"
+    assert int_of(of_int(0)).must() == 0
+    assert int_of(of_int(9223372036854775807)).must() == 9223372036854775807
+    assert int_of(of_int(0 - 9223372036854775807 - 1)).must() == 0 - 9223372036854775807 - 1
+    assert int_of(add(a: of_int(9223372036854775807), b: of_int(1))).is_err()
+    assert int_of(sub(a: of_int(0 - 9223372036854775807 - 1), b: of_int(1))).is_err()
+    assert u64_of(of_u64(18446744073709551615)).must() == 18446744073709551615
+    assert u64_of(add(a: of_u64(18446744073709551615), b: of_int(1))).is_err()
+    assert u64_of(of_int(-1)).is_err()
+
+test "add, sub, compare and sign: mixed signs, a result of zero, and equal values"
+    assert add(a: of_int(5), b: of_int(-7)) == of_int(-2)
+    assert add(a: of_int(-5), b: of_int(7)) == of_int(2)
+    assert sub(a: of_int(5), b: of_int(5)) == of_int(0)
+    assert compare(a: of_int(-3), b: of_int(2)) == -1
+    assert compare(a: of_int(-3), b: of_int(-4)) == 1
+    assert compare(a: of_int(4), b: of_int(4)) == 0
+    assert sign(of_int(0)) == 0
+    assert sign(of_int(-9)) == -1
+    assert mul(a: of_int(-3), b: of_int(0)) == of_int(0)
+
+test "divide: every mode on 7 and -7 by 2, and an exact division"
+    seven = of_int(7)
+    minus = of_int(-7)
+    two = of_int(2)
+    assert divide(n: seven, by: two, mode: .toward_zero).quotient == of_int(3)
+    assert divide(n: minus, by: two, mode: .toward_zero).remainder == of_int(-1)
+    assert divide(n: minus, by: two, mode: .floor).quotient == of_int(-4)
+    assert divide(n: minus, by: two, mode: .floor).remainder == of_int(1)
+    assert divide(n: seven, by: of_int(-2), mode: .floor).remainder == of_int(-1)
+    assert divide(n: seven, by: two, mode: .ceiling).quotient == of_int(4)
+    assert divide(n: seven, by: two, mode: .half_even).quotient == of_int(4)
+    assert divide(n: of_int(5), by: two, mode: .half_even).quotient == of_int(2)
+    assert divide(n: minus, by: two, mode: .half_away_from_zero).quotient == of_int(-4)
+    assert divide(n: minus, by: two, mode: .half_toward_zero).quotient == of_int(-3)
+    assert divide(n: of_int(11), by: two, mode: .away_if_zero_or_five).quotient == of_int(6)
+    assert divide(n: of_int(13), by: two, mode: .away_if_zero_or_five).quotient == of_int(6)
+    exact = divide(n: of_int(-8), by: two, mode: .away_from_zero)
+    assert exact.quotient == of_int(-4)
+    assert exact.remainder == of_int(0)

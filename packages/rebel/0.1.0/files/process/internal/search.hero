@@ -1,0 +1,169 @@
+# Where `start` finds a program: the folders the floor's search reads, in
+# their order, and the first file of that name there that runs. On POSIX it
+# is the floor's own rule (`hero_proc.h`, THE PROGRAM): PATH cut at each `:`,
+# an empty entry being this process's working folder, `/usr/bin:/bin` where
+# PATH is not set.
+
+use os
+use path
+use process/internal/codes
+use process/internal/disk
+use process/internal/fixture
+use process/internal/launch
+use strings
+
+# Whether `program` is a path rather than a name: it holds `/`, or on Windows
+# `\` too.
+function is_path(program: str, windows: bool) -> bool
+    for i in range(from: 0, to: program.len())
+        if program[i] == '/' || windows && program[i] == '\\'
+            return true
+
+    return false
+
+# The folders a name is looked for in on POSIX, from `list`, PATH's value:
+# each entry in its order, an empty one being `.`; and `/usr/bin` then `/bin`
+# where `has_list` says PATH is not set.
+function posix_folders(list: str, has_list: bool) -> [str]
+    if !has_list
+        return ["/usr/bin", "/bin"]
+    out: [str] @= []
+
+    for entry in strings.split(s: list, sep: ":")
+        if entry == ""
+            out @ out.push(".")
+        else
+            out @ out.push(entry)
+
+    return out
+
+# The folders a name is looked for in on Windows: this program's folder, the
+# working folder, the system's folders, then PATH's, each that can be read.
+function windows_folders() -> [str]
+    out: [str] @= []
+
+    match os.executable_path()
+        .ok exe => out @ out.push(path.parent(exe))
+        .err _  => _ = 0
+
+    match os.working_dir()
+        .ok dir => out @ out.push(dir)
+        .err _  => _ = 0
+
+    match os.env("SystemRoot")
+        .ok root =>
+            out @ out.push(path.join_all([root, "System32"]))
+            out @ out.push(path.join_all([root, "System"]))
+            out @ out.push(root)
+        .err _ => _ = 0
+
+    match os.env("PATH")
+        .ok list =>
+            for entry in path.split_list(list)
+                if entry != ""
+                    out @ out.push(entry)
+        .err _ => _ = 0
+
+    return out
+
+# The name looked for on Windows: `program`, with `.exe` where it has no
+# extension.
+function windows_name(program: str) -> str
+    match path.ext(program)
+        .ok _  => return program
+        .err _ => return program + ".exe"
+
+# Where `program` is: itself where it is a path naming a file that runs, else
+# the first file of its name that runs in a folder of the search. Fails
+# `invalid` where it is empty or holds a zero byte, `not_found` where nothing
+# runs there, and `not_text` where PATH is not UTF-8.
+function located(program: str) -> str?
+    asked = f"looking for the program \"{program}\""
+
+    if program.len() == 0
+        return codes.of(code: codes.INVALID, asked: "looking for a program", why: "no program is named")
+
+    if launch.holds_zero(program)
+        return codes.of(code: codes.INVALID, asked: asked, why: "the name holds a zero byte")
+    windows = os.family() == .windows
+    name: str @= program
+
+    if windows
+        name @ windows_name(program)
+
+    if is_path(program, windows: windows)
+        if disk.runs(name, windows: windows)
+            return ok(name)
+        return codes.of(code: codes.NOT_FOUND, asked: asked, why: f"nothing that runs is at \"{program}\"")
+    folders: [str] @= []
+
+    if windows
+        folders @ windows_folders()
+    else
+        match os.env("PATH")
+            .ok list => folders @ posix_folders(list, has_list: true)
+            .err e =>
+                if e.code != os.NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+                folders @ posix_folders("", has_list: false)
+
+    for folder in folders
+        candidate: str @= folder + "/" + name
+
+        if windows
+            candidate @ path.join_all([folder, name])
+
+        if disk.runs(candidate, windows: windows)
+            return ok(candidate)
+
+    return codes.of(code: codes.NOT_FOUND, asked: asked, why: f"no program \"{program}\" in the folders of PATH")
+
+test "is_path: a name, a path by `/`, and a `\\` that only Windows reads as a separator"
+    assert !is_path("sh", windows: false)
+    assert is_path("/bin/sh", windows: false)
+    assert is_path("./sh", windows: false)
+    assert !is_path("a\\b", windows: false)
+    assert is_path("a\\b", windows: true)
+    assert !is_path("", windows: true)
+
+test "posix_folders: PATH not set, set empty, an empty entry at either end and inside, and folders kept as written"
+    assert posix_folders("x", has_list: false) == ["/usr/bin", "/bin"]
+    assert posix_folders("", has_list: true) == ["."]
+    assert posix_folders(":/bin", has_list: true) == [".", "/bin"]
+    assert posix_folders("/a::/b:", has_list: true) == ["/a", ".", "/b", "."]
+    assert posix_folders("/usr/bin/", has_list: true) == ["/usr/bin/"]
+
+test "windows_name: a name without an extension takes `.exe`, one with an extension stays"
+    assert windows_name("cmd") == "cmd.exe"
+    assert windows_name("tool.com") == "tool.com"
+    assert windows_name("a.b.exe") == "a.b.exe"
+
+test "located: the system's shell by name and by path, a folder, nothing, an empty name and a zero byte"
+    found = located(fixture.shell_name()).must()
+    assert strings.has_suffix(s: found, suffix: fixture.shell_ending())
+    assert disk.runs(found, windows: fixture.on_windows())
+    assert located(fixture.shell_program()).must() == fixture.shell_program()
+
+    match located(fixture.a_folder())
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND
+
+    match located("rebel-no-such-program")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == codes.NOT_FOUND
+            assert e.msg == "looking for the program \"rebel-no-such-program\": no program \"rebel-no-such-program\" in the folders of PATH"
+
+    match located("./nope/sh")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_FOUND
+
+    match located("")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    zero_bytes: [u8] = [115, 0]
+
+    match located(zero_bytes.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID

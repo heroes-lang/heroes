@@ -1,0 +1,253 @@
+# Failures told well: words added to a failure as it travels up, its code
+# kept; several failures joined into one; and a failure told to a person, in
+# one line or as an indented chain. It is what Rust's `anyhow` gives, said over
+# the language's own failure, a `T?` holding a code and a message (spec § 6):
+# every function here is generic over any `T?`.
+#
+# A chain is written into the message. `context(r, what: "reading the
+# configuration")` makes the message `reading the configuration: <the old
+# message>`, as Go's `fmt.Errorf("...: %w")` and `anyhow`'s `{:#}` write it,
+# and keeps the code, so a caller still matches on the code the failure began
+# with. Read back, a message is cut into links at each `": "` that stands
+# outside double quotes and outside brackets, so a text a message quotes,
+# `no "a: b" in "x"`, stays inside one link; the links joined by `": "` give
+# the message back, so nothing is lost on the way.
+#
+# A joined failure's message lists every failure it joins with its code,
+# `2 failures (not_found: no "x" in "abc"; invalid: no digit at 3)`, the
+# brackets keeping the list one link of a chain; its code is the first
+# failure's.
+#
+# It does not make a failure: the built-in `fail(code:, msg:)` does, and a
+# package's codes are its own constants. It holds no backtrace: an abort
+# already names its file, line and function, and a failure is told by what its
+# chain says, not by where it began. It fails with no code of its own: every
+# failure it answers carries a code it was given.
+
+use errors/internal/chains
+use errors/internal/samples
+use errors/internal/tell
+use errors/internal/wrap
+
+## Adding context
+
+# `r` with `what` written before its message where it fails: the message
+# becomes `what: <the old message>` and the code stays.
+#
+# - `r`: the result to add to; a value passes through as it is.
+# - `what`: what the program was doing, in words a person reads, such as
+#   `reading the configuration`; the empty text still writes its `": "`.
+#
+# Fails where `r` fails, with its code. It copies the message once. See also
+# `context_by`, `with_code`, `chain_of`.
+function context<T>(r: T?, what: str) -> T?
+    return wrap.context(r, what: what)
+
+# `r` with the words `describe` makes of `subject` written before its message
+# where it fails; where `r` holds a value `describe` is not called, so words
+# that cost something to build are built only for a failure.
+#
+# - `r`: the result to add to; a value passes through as it is.
+# - `describe`: called once, with `subject`, only where `r` fails; what it
+#   answers is written before the message as `context` writes `what`.
+# - `subject`: the value the words are made of, such as the path being read.
+#
+# Fails where `r` fails, with its code. See also `context`.
+function context_by<T, A>(r: T?, describe: (function(A) -> str), subject: A) -> T?
+    return wrap.context_by(r, describe: describe, subject: subject)
+
+# `r` with `code` in place of its code where it fails; the message stays.
+#
+# - `r`: the result to recode; a value passes through as it is.
+# - `code`: the new code, a constant of the package that fails with it, such
+#   as `json.INVALID`; the old code is read nowhere after.
+#
+# Fails where `r` fails, with `code`. Where the old code says something the
+# new one does not, write it into the message with `context` first. See also
+# `context`, `has_code`.
+function with_code<T>(r: T?, code: str) -> T?
+    return wrap.with_code(r, code: code)
+
+## Joining failures
+
+# The failures of `results` joined into one, or `ok()` where none fails.
+#
+# - `results`: the results to join, in order; an empty list, or one whose
+#   every result holds a value, gives `ok()`. Results of several types are
+#   joined by passing each through `discard_value` first.
+#
+# One failure is answered as it is, its code and message unchanged. Several
+# give one failure whose code is the first one's and whose message is `<n>
+# failures (<code>: <message>; ...)`, in the order of `results`, which
+# `parts_of` reads back and `has_code` searches.
+#
+# Fails where any result fails, as above. See also `collect`, `parts_of`.
+function combine<T>(results: [T?]) -> ()?
+    return wrap.combine(results)
+
+# Every value of `results` in order, where none fails; else their failures
+# joined as `combine` joins them.
+#
+# - `results`: the results to read; an empty list gives an empty list.
+#
+# Fails where any result fails: with that failure as it is where it is the only
+# one, else with the joined failure `combine` answers. See also `combine`.
+function collect<T>(results: [T?]) -> [T]?
+    return wrap.collect(results)
+
+# `r` with its value dropped: `ok()` where it holds one, the same failure where
+# it fails.
+#
+# - `r`: the result to read.
+#
+# It is how results of several types go into one `[()?]` for `combine`. Fails
+# where `r` fails, with its code and its message. See also `combine`.
+function discard_value<T>(r: T?) -> ()?
+    return wrap.discard_value(r)
+
+## Reading a failure
+
+# The links of the message of `r`, the outermost first: what each `context`
+# wrote, then the message the failure began with.
+#
+# - `r`: the result to read; a value has no chain and gives an empty list.
+#
+# The message is cut at each `": "` outside double quotes and outside round
+# or square brackets, so `chain_of(r).join(": ")` is the message again, and a
+# link is empty where the message holds `": "` twice in a row. The last link
+# is the root, `anyhow`'s `root_cause`. A quote or a bracket that does not
+# close keeps the rest of the message in one link. See also `context`,
+# `format_chain`.
+function chain_of<T>(r: T?) -> [str]
+    return chains.chain_of(r)
+
+# The failures a joined failure holds, each with its own code and message; a
+# failure that joins nothing is its own one part.
+#
+# - `r`: the result to read; a value gives an empty list.
+#
+# The parts are read from the last link of the chain, where `combine` writes
+# them, in their order; the context written before that link is in no part.
+# A link that only looks joined, whose count differs from its parts or one of
+# whose parts has no code, makes `r` one part. See also `combine`,
+# `has_code`.
+function parts_of<T>(r: T?) -> [()?]
+    return chains.parts_of(r)
+
+# Whether `r` fails with `code`, or joins, at any depth, a failure that does.
+#
+# - `r`: the result to ask; a value answers `false`.
+# - `code`: the code to look for, such as `fs.NOT_FOUND`.
+#
+# It reads each joined part once, on a stack of its own. See also
+# `parts_of`, `with_code`.
+function has_code<T>(r: T?, code: str) -> bool
+    return chains.has_code(r, code: code)
+
+## Telling a failure
+
+# The failure of `r` told in one line as an abort tells it, `<code>:
+# <message>`.
+#
+# - `r`: the result to tell; a value has nothing to tell and gives the empty
+#   text.
+#
+# A control character in the code or the message, a line break included, is
+# written as a literal of the language writes it, `\n`, `\t`, `\u{1b}`, so the
+# line stays one line and moves no terminal's cursor. See also
+# `format_chain`.
+function format_line<T>(r: T?) -> str
+    return tell.format_line(r)
+
+# The failure of `r` told as an indented chain, one link a line: its code and
+# its outermost link first, then each link that caused it.
+#
+# - `r`: the result to tell; a value gives the empty text.
+#
+# The first line reads `<code>: <first link>`, and each further link stands
+# four spaces in after `caused by: `. A joined failure's link reads `<n>
+# failures`, and each part follows four spaces further in, told the same way.
+# The lines are joined by a line feed, with none after the last; control
+# characters are written as `format_line` writes them. See also
+# `format_line`, `chain_of`.
+function format_chain<T>(r: T?) -> str
+    return tell.format_chain(r)
+
+## Examples
+
+# Context added on the way up: the message grows, the code stays.
+test "context: a missing key read while loading a configuration"
+    r: i64? = fail(code: "not_found", msg: "no \"port\" in \"server\"")
+
+    match context(r, what: "reading the configuration")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_found"
+            assert e.msg == "reading the configuration: no \"port\" in \"server\""
+
+# Context made by a function, only where the result fails.
+test "context_by: the path being read named in the failure"
+    r: str? = fail(code: "file_not_found", msg: "no such file")
+    told = format_line(context_by(r, describe: samples.reading, subject: "app.toml"))
+    assert told == "file_not_found: reading \"app.toml\": no such file"
+
+# A failure given the code of the package that hands it on.
+test "with_code: a missing file told as a configuration that is not valid"
+    r: i64? = fail(code: "file_not_found", msg: "no such file")
+    assert format_line(with_code(r, code: "invalid")) == "invalid: no such file"
+
+# Every failure of a list joined into one.
+test "combine: two of three checks fail"
+    checks: [()?] = [
+        ok()
+        fail(code: "invalid", msg: "no digit at 3")
+        fail(code: "not_found", msg: "no \"x\" in \"abc\"")
+    ]
+
+    match combine(checks)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "invalid"
+            assert e.msg == "2 failures (invalid: no digit at 3; not_found: no \"x\" in \"abc\")"
+
+# The values of a list of results, all of which hold one.
+test "collect: three numbers read"
+    read: [i64?] = [ok(1), ok(2), ok(3)]
+    assert collect(read).must() == [1, 2, 3]
+
+# A number's failure put beside a text's, for `combine`.
+test "discard_value: two results of two types joined"
+    count: i64? = fail(code: "invalid", msg: "not a number")
+    name: str? = ok("ada")
+    joined = combine([discard_value(count), discard_value(name)])
+    assert format_line(joined) == "invalid: not a number"
+
+# The links of a chain, the outermost first.
+test "chain_of: two contexts over a quoted message"
+    r: i64? = fail(code: "not_found", msg: "no \"a: b\" in \"x\"")
+    told = context(context(r, what: "opening \"x.toml\""), what: "reading the configuration")
+    assert chain_of(told) == ["reading the configuration", "opening \"x.toml\"", "no \"a: b\" in \"x\""]
+
+# The failures a joined failure holds, read back.
+test "parts_of: the two failures of a joined one"
+    a: ()? = fail(code: "invalid", msg: "no digit at 3")
+    b: ()? = fail(code: "not_found", msg: "no \"x\"")
+    assert parts_of(combine([a, b])) == [a, b]
+
+# Asking a joined failure for a code its second part has.
+test "has_code: a code found inside a joined failure"
+    failures: [()?] = [fail(code: "invalid", msg: "a"), fail(code: "not_found", msg: "b")]
+    joined = combine(failures)
+    assert has_code(joined, code: "not_found")
+    assert !has_code(joined, code: "exists")
+
+# A failure told in one line.
+test "format_line: a failure with its context"
+    r: i64? = fail(code: "not_found", msg: "no \"port\"")
+    assert format_line(context(r, what: "reading the configuration")) == "not_found: reading the configuration: no \"port\""
+
+# A failure told as an indented chain.
+test "format_chain: a failure with two contexts"
+    r: i64? = fail(code: "not_found", msg: "no \"port\"")
+    told = format_chain(context(context(r, what: "opening \"app.toml\""), what: "starting the server"))
+    assert told == "not_found: starting the server\n    caused by: opening \"app.toml\"\n    caused by: no \"port\""

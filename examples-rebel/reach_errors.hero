@@ -1,0 +1,10 @@
+# Reaches Rebel's `errors`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints a failure with the context added
+# on its way up, told in one line: `not_found: reading the configuration: no
+# "port" in "server"`.
+
+use <rebel>/errors
+
+function main()
+    r: i64? = fail(code: "not_found", msg: "no \"port\" in \"server\"")
+    print(errors.format_line(errors.context(r, what: "reading the configuration")))

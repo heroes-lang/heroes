@@ -1,0 +1,139 @@
+# A message read whole from a connection's reader: a request's head and body,
+# or a final response's, the informational responses before it skipped; and
+# whether the connection ends after it, RFC 9112 § 9.3.
+
+use http/internal/body
+use http/internal/syntax
+use http/internal/wire
+use io
+
+# The code of a version or a status this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The most informational responses read before a final one.
+constant MOST_INTERIM: i64
+    100
+
+# A message read: its head, its body and whether its connection ends after it.
+record Message
+    # The head, a request's or a response's.
+    head: wire.Head
+    # The body's bytes, its chunks joined.
+    content: [u8]
+    # Whether the connection carries no message after this one.
+    closing: bool
+
+# The head of the next request of `r`, of version 1.x. Fails as
+# `wire.read_bytes` and `wire.parse_request` do, and `unsupported` for
+# another version.
+function request_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
+    h = wire.parse_request(wire.read_bytes(@r, most: bounds.head_bytes)?, most_fields: bounds.field_count)?
+
+    if h.major != 1
+        return fail(code: UNSUPPORTED, msg: f"reading a request: its version HTTP/{h.major}.{h.minor} is not 1.x")
+    return ok(h)
+
+# Whether a connection ends after a message whose head is `h`: for HTTP/1.0
+# unless it says `Connection: keep-alive`, else where it says
+# `Connection: close`.
+function closes(h: wire.Head) -> bool
+    connection = wire.values_of(h.fields, name: "Connection")
+
+    if h.minor == 0
+        return !syntax.has_member(connection, token: "keep-alive")
+    return syntax.has_member(connection, token: "close")
+
+# The next request of `r`, whole. Fails as `request_head` and `body.read` do,
+# and as `body.of_request` does.
+function request(@r: io.Reader, bounds: wire.Bounds) -> Message?
+    h = request_head(@r, bounds: bounds)?
+    content = body.read(@r, framing: body.of_request(h)?, bounds: bounds)?
+    return ok(Message(head: h, content: content, closing: closes(h)))
+
+# The next final response of `r`, whole, answering a request of `method`.
+# Fails as `request` does, `unsupported` for 101 or a version other than
+# 1.x, and `limit` past `MOST_INTERIM` informational responses.
+function response(@r: io.Reader, method: str, bounds: wire.Bounds) -> Message?
+    interim: i64 @= 0
+
+    while true
+        h = wire.parse_response(wire.read_bytes(@r, most: bounds.head_bytes)?, most_fields: bounds.field_count)?
+
+        if h.major != 1
+            return fail(code: UNSUPPORTED, msg: f"reading a response: its version HTTP/{h.major}.{h.minor} is not 1.x")
+
+        if h.status == 101
+            return fail(
+                code: UNSUPPORTED,
+                msg: "reading a response: 101, switching protocols, is not done by this package"
+            )
+
+        if h.status >= 200
+            framing = body.of_response(h, method: method)?
+            content = body.read(@r, framing: framing, bounds: bounds)?
+
+            to_end = match framing
+                .to_end                      => true
+                .none | .length _ | .chunked => false
+
+            return ok(Message(head: h, content: content, closing: closes(h) || to_end))
+        interim @ interim + 1
+
+        if interim > MOST_INTERIM
+            return fail(
+                code: syntax.LIMIT,
+                msg: f"reading a response: more than {MOST_INTERIM} informational responses came before it"
+            )
+
+## Tests
+
+# The usual bounds of the tests.
+function bounds_of_tests() -> wire.Bounds
+    return wire.Bounds(head_bytes: 1_000, field_count: 10, body_bytes: 1_000)
+
+test "request: two on one connection, then its end; HTTP/1.0 closes unless keep-alive"
+    r @= wire.fixture(
+        "POST /a HTTP/1.1\r\nContent-Length: 2\r\n\r\nhiGET /b HTTP/1.0\r\nConnection: Keep-Alive\r\n\r\nGET /c HTTP/1.0\r\n\r\n"
+    )
+    first = request(@r, bounds: bounds_of_tests()).must()
+    assert first.head.target == "/a" && first.content == [104, 105] && !first.closing
+    second = request(@r, bounds: bounds_of_tests()).must()
+    assert second.head.target == "/b" && second.content.len() == 0 && !second.closing
+    assert request(@r, bounds: bounds_of_tests()).must().closing
+
+    match request(@r, bounds: bounds_of_tests())
+        .ok _  => assert false
+        .err e => assert e.code == wire.CLOSED
+
+    wire.done(@r)
+
+test "request: HTTP/2.0 is unsupported, a coding other than chunked too, both lengths invalid"
+    for given in [["PRI * HTTP/2.0\r\n\r\n", UNSUPPORTED], ["GET / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n", UNSUPPORTED], ["GET / HTTP/1.1\r\nContent-Length: 1\r\nTransfer-Encoding: chunked\r\n\r\n", syntax.INVALID], ["GET / HTTP/1.1\r\nConnection: close\r\nContent-Length: 5\r\n\r\nab", syntax.INVALID]]
+        r @= wire.fixture(given[0])
+
+        match request(@r, bounds: bounds_of_tests())
+            .ok _  => assert false
+            .err e => assert e.code == given[1]
+
+        wire.done(@r)
+
+test "response: 100 and 103 skipped, HEAD bodiless, a body to the end closes, 101 unsupported"
+    r @= wire.fixture(
+        "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 103 Early Hints\r\nLink: x\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nabcHTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\n"
+    )
+    got = response(@r, method: "GET", bounds: bounds_of_tests()).must()
+    assert got.head.status == 200 && got.content == [97, 98, 99] && !got.closing
+    assert response(@r, method: "HEAD", bounds: bounds_of_tests()).must().content.len() == 0
+    wire.done(@r)
+    open_ended @= wire.fixture("HTTP/1.1 200 OK\r\n\r\nall of it")
+    whole = response(@open_ended, method: "GET", bounds: bounds_of_tests()).must()
+    assert whole.closing && wire.text_of(whole.content) == "all of it"
+    wire.done(@open_ended)
+    switching @= wire.fixture("HTTP/1.1 101 Switching Protocols\r\n\r\n")
+
+    match response(@switching, method: "GET", bounds: bounds_of_tests())
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    wire.done(@switching)

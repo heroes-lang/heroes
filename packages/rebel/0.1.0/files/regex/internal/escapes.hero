@@ -1,0 +1,379 @@
+# What a `\` and the characters after it mean in a pattern, outside a class
+# and inside one. Every escape this package reads is read here, and every one
+# it refuses is refused here, by name.
+
+use regex/internal/codes
+use regex/internal/program
+use regex/internal/sets
+use unicode
+
+# What an escape stands for: a character, a class or a place.
+variant Escape
+    # One character.
+    char
+        # Its code point.
+        code: i64
+    # A class of characters, as its members.
+    members
+        # The ranges it holds, normalized.
+        ranges: [i64]
+        # The general categories it holds.
+        categories: [str]
+        # The general categories whose every character outside it holds.
+        not_categories: [str]
+        # Whether it is every character the rest does NOT hold: `\D`, `\W`,
+        # `\S` and `\P`, negated after case folding as a negated class is.
+        negated: bool
+    # A place in the text, which reads no character.
+    assertion
+        # The instruction that asks for it.
+        inst: program.Inst
+
+# An escape read, and where the pattern goes on after it.
+record Escaped
+    # What it stands for.
+    escape: Escape
+    # The byte of the pattern just after it.
+    next: i64
+
+# The escape whose `\` is the byte `at` of `pattern`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `\`.
+# - `in_class`: whether it stands inside `[...]`, where a place is refused.
+#
+# Fails `invalid` where it is no escape this package reads, the message
+# naming it and, where there is one, what to write instead.
+function escape_at(pattern: str, at: i64, in_class: bool) -> Escaped?
+    if at + 1 >= pattern.len()
+        return codes.invalid(pattern: pattern, at: at, why: "a `\\` ends the pattern and escapes nothing")
+    letter = pattern[at + 1]
+    next = at + 2
+
+    if letter >= 0x80
+        written = pattern.slice(from: at, to: at + 1 + unicode.width_at(pattern, at + 1))
+        return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: f"`{written}` is no escape: a character that is not ASCII stands for itself without a `\\`"
+        )
+    written = pattern.slice(from: at, to: at + 2)
+
+    none: [str] = []
+
+    if letter == 'd' || letter == 'w' || letter == 's'
+        return ok(
+            Escaped(escape: .members(ranges: sets.perl_class(letter), categories: none, not_categories: none, negated: false), next: next)
+        )
+
+    if letter == 'D' || letter == 'W' || letter == 'S'
+        return ok(
+            Escaped(escape: .members(ranges: sets.perl_class(letter + 32), categories: none, not_categories: none, negated: true), next: next)
+        )
+
+    if letter == 'p' || letter == 'P'
+        return category_at(pattern: pattern, at: at, negated: letter == 'P')
+
+    if letter == 'A' || letter == 'z' || letter == 'b' || letter == 'B'
+        if in_class
+            return codes.invalid(
+                pattern: pattern,
+                at: at,
+                why: f"`{written}` is a place and not a character, and a class holds characters"
+            )
+        return ok(Escaped(escape: .assertion(inst: place_of(letter)), next: next))
+    code = control_of(letter)
+
+    if code >= 0
+        return ok(Escaped(escape: .char(code: code), next: next))
+
+    if letter == 'x'
+        return hex_at(pattern, at)
+
+    if is_punctuation(letter)
+        return ok(Escaped(escape: .char(code: codes.wide(letter)), next: next))
+    return codes.invalid(pattern: pattern, at: at, why: refusal(letter: letter, written: written))
+
+# The instruction of `\A`, `\z`, `\b` or `\B`.
+#
+# - `letter`: `A`, `z`, `b` or `B`; any other answers `\B`'s.
+function place_of(letter: u8) -> program.Inst
+    if letter == 'A'
+        return .begin_text
+
+    if letter == 'z'
+        return .end_text
+
+    if letter == 'b'
+        return .word_edge
+    return .not_word_edge
+
+# The code point of the control character `\t`, `\n`, `\r`, `\f`, `\v` or
+# `\a` write, or -1 where `letter` writes none of them.
+#
+# - `letter`: the byte after the `\`.
+function control_of(letter: u8) -> i64
+    if letter == 't'
+        return 9
+
+    if letter == 'n'
+        return 10
+
+    if letter == 'v'
+        return 11
+
+    if letter == 'f'
+        return 12
+
+    if letter == 'r'
+        return 13
+
+    if letter == 'a'
+        return 7
+    return -1
+
+# Whether `b` is a punctuation character of ASCII, which a `\` makes stand
+# for itself.
+#
+# - `b`: a byte.
+function is_punctuation(b: u8) -> bool
+    return b >= '!' && b <= '/' || b >= ':' && b <= '@' || b >= '[' && b <= '`' || b >= '{' && b <= '~'
+
+# Why the escape `written` is not read, and what to write instead where
+# something can be.
+#
+# - `letter`: the byte after the `\`.
+# - `written`: the escape as the pattern writes it.
+function refusal(letter: u8, written: str) -> str
+    if letter >= '1' && letter <= '9' || letter == 'g' || letter == 'k'
+        return f"`{written}` is a back-reference, refused: not matchable in linear time"
+
+    if letter == '0'
+        return f"`{written}` is an octal escape, which is not read: write the code in hexadecimal, `\\x00`"
+
+    if letter == 'Z'
+        return "`\\Z` is not read: write `\\z` for the end of the text"
+
+    if letter == 'Q' || letter == 'E'
+        return "`\\Q...\\E` is not read: escape each character, as `regex.escape` does"
+
+    if letter == 'u' || letter == 'U' || letter == 'N'
+        return f"`{written}` is not read: write a character by its code as `\\x{{1f600}}`"
+    return f"`{written}` is no escape this package reads"
+
+# The value of the hexadecimal digit `b`, or -1 where it is none.
+#
+# - `b`: a byte.
+function hex_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return codes.wide(b) - '0'
+
+    if b >= 'a' && b <= 'f'
+        return codes.wide(b) - 'a' + 10
+
+    if b >= 'A' && b <= 'F'
+        return codes.wide(b) - 'A' + 10
+    return -1
+
+# The character `\x41` or `\x{1f600}` writes, its `\` being the byte `at`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `\`.
+#
+# Fails `invalid` where the digits are missing or name no character.
+function hex_at(pattern: str, at: i64) -> Escaped?
+    from = at + 2
+
+    if from < pattern.len() && pattern[from] == '{'
+        value: i64 @= 0
+        pos: i64 @= from + 1
+
+        while pos < pattern.len() && hex_value(pattern[pos]) >= 0
+            if value <= sets.MAX_CODE
+                value @ value * 16 + hex_value(pattern[pos])
+            pos @ pos + 1
+
+        if pos >= pattern.len() || pattern[pos] != '}' || pos == from + 1
+            return codes.invalid(pattern: pattern, at: at, why: "`\\x{` needs hexadecimal digits and a `}` after them")
+
+        if !unicode.is_scalar_value(value)
+            return codes.invalid(
+                pattern: pattern,
+                at: at,
+                why: f"`{pattern.slice(from: at, to: pos + 1)}` names no character: a code is at most 10ffff, and not a surrogate"
+            )
+        return ok(Escaped(escape: .char(code: value), next: pos + 1))
+
+    if from + 1 < pattern.len() && hex_value(pattern[from]) >= 0 && hex_value(pattern[from + 1]) >= 0
+        return ok(
+            Escaped(escape: .char(code: hex_value(pattern[from]) * 16 + hex_value(pattern[from + 1])), next: from + 2)
+        )
+    return codes.invalid(
+        pattern: pattern,
+        at: at,
+        why: "`\\x` needs two hexadecimal digits, `\\x41`, or a code in braces, `\\x{1f600}`"
+    )
+
+# The class `\pL`, `\p{Lu}`, `\p{^Lu}` or `\PL` writes, its `\` being the
+# byte `at`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `\`.
+# - `negated`: whether it is `\P`, which holds what the category does not.
+#
+# Fails `invalid` where it names no general category, a script's name
+# included.
+function category_at(pattern: str, at: i64, negated: bool) -> Escaped?
+    from = at + 2
+    named: str @= ""
+    next: i64 @= from + 1
+
+    if from < pattern.len() && pattern[from] == '{'
+        close: i64 @= from + 1
+
+        while close < pattern.len() && pattern[close] != '}'
+            close @ close + 1
+
+        if close >= pattern.len()
+            return codes.invalid(pattern: pattern, at: at, why: "`\\p{` names a class that no `}` closes")
+        named @ pattern.slice(from: from + 1, to: close)
+        next @ close + 1
+    else if from < pattern.len() && pattern[from] >= 'A' && pattern[from] <= 'Z'
+        named @ pattern.slice(from: from, to: from + 1)
+    else
+        return codes.invalid(pattern: pattern, at: at, why: "`\\p` needs a category, `\\pL` or `\\p{Lu}`")
+    outside = named.len() > 0 && named[0] == '^'
+
+    name = if outside
+        named.slice(from: 1, to: named.len())
+    else
+        named
+
+    if !sets.is_category(name)
+        return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: f"`{pattern.slice(from: at, to: next)}` is no class this package reads: it reads Unicode's general categories, L, Lu, Ll, Lt, Lm, Lo, M, Mn, Mc, Me, N, Nd, Nl, No, P, Pc, Pd, Ps, Pe, Pi, Pf, Po, S, Sm, Sc, Sk, So, Z, Zs, Zl, Zp, C, Cc, Cf, Cs, Co and Cn, and no script"
+        )
+    none: [i64] = []
+    others: [str] = []
+    return ok(
+        Escaped(escape: .members(ranges: none, categories: [name], not_categories: others, negated: negated != outside), next: next)
+    )
+
+# `s` with a `\` before each character a pattern reads specially, which is
+# what the face's `escape` answers.
+#
+# - `s`: any text.
+function quote(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        if c.len() == 1 && is_special(c[0])
+            out @ out.push("\\")
+        out @ out.push(c)
+
+    return out.join("")
+
+# Whether `b` is a character a pattern reads specially somewhere: outside a
+# class, inside one, or after a `\`.
+#
+# - `b`: a byte.
+function is_special(b: u8) -> bool
+    return b == '\\' || b == '.' || b == '+' || b == '*' || b == '?' || b == '(' || b == ')' || b == '|' || b == '[' || b == ']' || b == '{' || b == '}' || b == '^' || b == '$' || b == '-'
+
+## Tests
+
+test "escape_at: a class, its negation, a control, punctuation, and a place outside a class"
+    match escape_at(pattern: "\\d", at: 0, in_class: false).must().escape
+        .members m             => assert m.ranges == ['0', '9'] && !m.negated
+        .char _ | .assertion _ => assert false
+
+    match escape_at(pattern: "a\\W", at: 1, in_class: false).must().escape
+        .members m             => assert m.ranges == ['0', '9', 'A', 'Z', '_', '_', 'a', 'z'] && m.negated
+        .char _ | .assertion _ => assert false
+
+    tab = escape_at(pattern: "\\t", at: 0, in_class: false).must()
+    assert tab.next == 2
+
+    match tab.escape
+        .char c                   => assert c.code == 9
+        .members _ | .assertion _ => assert false
+
+    match escape_at(pattern: "\\.", at: 0, in_class: false).must().escape
+        .char c                   => assert c.code == '.'
+        .members _ | .assertion _ => assert false
+
+    match escape_at(pattern: "\\b", at: 0, in_class: false).must().escape
+        .assertion a         => assert a.inst == .word_edge
+        .char _ | .members _ => assert false
+
+test "escape_at: codes in hexadecimal, two digits and in braces, and the largest"
+    match escape_at(pattern: "\\x41", at: 0, in_class: false).must().escape
+        .char c                   => assert c.code == 'A'
+        .members _ | .assertion _ => assert false
+
+    braced = escape_at(pattern: "\\x{1f600}z", at: 0, in_class: false).must()
+    assert braced.next == 9
+
+    match braced.escape
+        .char c                   => assert c.code == 0x1f600
+        .members _ | .assertion _ => assert false
+
+    match escape_at(pattern: "\\x{10ffff}", at: 0, in_class: false).must().escape
+        .char c                   => assert c.code == 0x10ffff
+        .members _ | .assertion _ => assert false
+
+    assert escape_at(pattern: "\\x{110000}", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\x{d800}", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\x{}", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\x4", at: 0, in_class: false).is_err()
+
+test "escape_at refuses at the end, a back-reference, a place in a class, and what it does not read"
+    match escape_at(pattern: "a\\", at: 1, in_class: false)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "a `\\` ends the pattern and escapes nothing, at byte 1 of \"a\\\""
+
+    match escape_at(pattern: "(a)\\1", at: 3, in_class: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "`\\1` is a back-reference, refused: not matchable in linear time, at byte 3 of \"(a)\\1\""
+
+    match escape_at(pattern: "\\b", at: 0, in_class: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "`\\b` is a place and not a character, and a class holds characters, at byte 0 of \"\\b\""
+
+    match escape_at(pattern: "\\Z", at: 0, in_class: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "`\\Z` is not read: write `\\z` for the end of the text, at byte 0 of \"\\Z\""
+
+    assert escape_at(pattern: "\\0", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\q", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\é", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\u0041", at: 0, in_class: false).is_err()
+
+test "category_at: one letter, two in braces, both negations, and a script refused"
+    one = escape_at(pattern: "\\pL", at: 0, in_class: false).must()
+    assert one.next == 3
+
+    match one.escape
+        .members m             => assert m.categories == ["L"] && !m.negated
+        .char _ | .assertion _ => assert false
+
+    match escape_at(pattern: "\\p{^Lu}", at: 0, in_class: false).must().escape
+        .members m             => assert m.categories == ["Lu"] && m.negated
+        .char _ | .assertion _ => assert false
+
+    match escape_at(pattern: "\\P{^Lu}", at: 0, in_class: false).must().escape
+        .members m             => assert m.categories == ["Lu"] && !m.negated
+        .char _ | .assertion _ => assert false
+
+    assert escape_at(pattern: "\\p{Greek}", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\p{L", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\p", at: 0, in_class: false).is_err()
+    assert escape_at(pattern: "\\pé", at: 0, in_class: false).is_err()
+
+test "quote: nothing, every special character, and characters of more than one byte"
+    assert quote("") == ""
+    assert quote("a.b*c-d é$") == "a\\.b\\*c\\-d é\\$"
+    assert quote("\\.+*?()|[]{}^$-") == "\\\\\\.\\+\\*\\?\\(\\)\\|\\[\\]\\{\\}\\^\\$\\-"
+    assert quote("caffè") == "caffè"

@@ -1,0 +1,148 @@
+# SHA-512's compression function, FIPS 180-4 6.4, which SHA-384,
+# SHA-512/224 and SHA-512/256 share with other starting words: eight words of
+# 64 bits carried from block to block, each block of 128 bytes read as
+# sixteen words with the first byte the highest and stretched to eighty. A
+# word is an `i64` holding its 64 bits (`crypto/internal/word`), so the
+# starting words past 2^63 are written as the negative numbers that hold
+# their bits.
+
+use crypto/internal/rounds512
+use crypto/internal/word
+
+# The eight words SHA-512 starts from: the first 64 bits of the fractional
+# parts of the square roots of the first eight primes (FIPS 180-4 5.3.5).
+constant START512: [i64]
+    [
+        7640891576956012808
+        -4942790177534073029
+        4354685564936845355
+        -6534734903238641935
+        5840696475078001361
+        -7276294671716946913
+        2270897969802886507
+        6620516959819538809
+    ]
+
+# The eight words SHA-384 starts from: the same for the ninth to the
+# sixteenth primes (FIPS 180-4 5.3.4).
+constant START384: [i64]
+    [
+        -3766243637369397544
+        7105036623409894663
+        -7973340178411365097
+        1526699215303891257
+        7436329637833083697
+        -8163818279084223215
+        -2662702644619276377
+        5167115440072839076
+    ]
+
+# The eight words SHA-512/224 starts from: SHA-512 of the text
+# "SHA-512/224" from SHA-512's words each combined with 0xa5a5a5a5a5a5a5a5
+# by exclusive or (FIPS 180-4 5.3.6); a test computes them again.
+constant START512_224: [i64]
+    [
+        -8341449602262348382
+        8350123849800275158
+        2160240930085379202
+        7466358040605728719
+        1111592415079452072
+        8638871050018654530
+        4583966954114332360
+        1230299281376055969
+    ]
+
+# The eight words SHA-512/256 starts from, made as SHA-512/224's are from
+# the text "SHA-512/256".
+constant START512_256: [i64]
+    [
+        2463787394917988140
+        -6965556091613846334
+        2563595384472711505
+        -7622211418569250115
+        -7626776825740460061
+        -4729309413028513390
+        3098927326965381290
+        1060366662362279074
+    ]
+
+# The eight words after the block of 128 bytes of `data` that begins at
+# `at`, from `words`, the eight words before it.
+function compress(words: [i64], data: [u8] lent, at: i64) -> [i64]
+    w: [i64] @= []
+    t: i64 @= 0
+
+    while t < 16
+        w @ w.push(word.load64_big(data, at + 8 * t))
+        t @ t + 1
+
+    while t < 80
+        x = w[t - 15]
+        y = w[t - 2]
+        low = word.rotate_right64(x: x, n: 1) ^ word.rotate_right64(x: x, n: 8) ^ word.shift_right(x: x, n: 7)
+        high = word.rotate_right64(x: y, n: 19) ^ word.rotate_right64(x: y, n: 61) ^ word.shift_right(x: y, n: 6)
+        w @ w.push(word.add4(a: w[t - 16], b: low, c: w[t - 7], d: high))
+        t @ t + 1
+
+    k = rounds512.SHA512_ROUNDS
+    a: i64 @= words[0]
+    b: i64 @= words[1]
+    c: i64 @= words[2]
+    d: i64 @= words[3]
+    e: i64 @= words[4]
+    f: i64 @= words[5]
+    g: i64 @= words[6]
+    h: i64 @= words[7]
+    t @ 0
+
+    while t < 80
+        big_e = word.rotate_right64(x: e, n: 14) ^ word.rotate_right64(x: e, n: 18) ^ word.rotate_right64(x: e, n: 41)
+        choice = e & f ^ ~e & g
+        first = word.add5(a: h, b: big_e, c: choice, d: k[t], e: w[t])
+        big_a = word.rotate_right64(x: a, n: 28) ^ word.rotate_right64(x: a, n: 34) ^ word.rotate_right64(x: a, n: 39)
+        majority = a & b ^ a & c ^ b & c
+        second = word.add(a: big_a, b: majority)
+        h @ g
+        g @ f
+        f @ e
+        e @ word.add(a: d, b: first)
+        d @ c
+        c @ b
+        b @ a
+        a @ word.add(a: first, b: second)
+        t @ t + 1
+
+    after: [i64] = [a, b, c, d, e, f, g, h]
+    out: [i64] @= []
+
+    for i in range(from: 0, to: 8)
+        out @ out.push(word.add(a: words[i], b: after[i]))
+
+    return out
+
+# The words of SHA-512 over one message of fewer than 112 bytes, from
+# `start`, the message padded into one block: what FIPS 180-4 5.3.6 runs to
+# make the starting words of SHA-512/t.
+function one_block(start: [i64], message: [u8]) -> [i64]
+    block: [u8] @= message
+    block @ block.push(0x80)
+
+    while block.len() < 120
+        block @ block.push(0)
+
+    word.push_big(@block, x: message.len() * 8, count: 8)
+    return compress(start, block, 0)
+
+test "sha512 compress: the one block of the message abc, from SHA-512's words and from SHA-384's"
+    abc = one_block(start: START512, message: word.bytes_of("abc"))
+    assert word.shift_right(x: abc[0], n: 32) == 0xddaf35a1 && abc[0] & word.LOW32 == 0x93617aba
+    assert word.shift_right(x: one_block(start: START384, message: word.bytes_of("abc"))[0], n: 32) == 0xcb00753f
+
+test "sha512 starting words of SHA-512/224 and SHA-512/256: computed again as FIPS 180-4 5.3.6 makes them"
+    seed: [i64] @= []
+
+    for x in START512
+        seed @ seed.push(x ^ -6510615555426900571)
+
+    assert one_block(start: seed, message: word.bytes_of("SHA-512/224")) == START512_224
+    assert one_block(start: seed, message: word.bytes_of("SHA-512/256")) == START512_256

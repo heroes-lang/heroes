@@ -1,0 +1,213 @@
+# The fewest decimal digits that read back as a float, and of those the
+# nearest to it, ties going to the even digit.
+#
+# The language's `to_str` promises only that its text reads back: it tries
+# 15, 16 and 17 digits, each the nearest of that length, and at a power of two
+# the nearest of a length can miss where its other neighbour reads back,
+# 2 to the -778th taking 17 digits where 16 do. So the search starts at the
+# length `to_str` found and asks, one digit shorter each time, whether the
+# nearest decimal of that length or its other neighbour reads back exactly.
+# A shorter text reads back only where every longer length does, its own
+# digits followed by zeros, so the first length at which neither reads back
+# ends the search.
+#
+# Most floats need none of that. Two decimals of at most 15 digits, 6 for an
+# `f32`, differ by more than the whole range of values that read back as one
+# normal float, so where `to_str`'s text is that short and reads back, no
+# other text of at most its length does, and it is the answer. A longer text
+# is checked to be the nearest of its length and shortened one digit at a
+# time, each step decided by an exact comparison with the float's midpoints
+# (`side`), which leaves out the float's exact digits; where its gap below
+# is not its gap above, at a power of two, the search above decides.
+
+use numbers/internal/exact
+use numbers/internal/near
+use numbers/internal/quick
+use numbers/internal/read
+use numbers/internal/side
+
+# Whether `d` read back as a float of `format` is `x`.
+function reads_back(d: exact.Digits, x: f64, format: near.Format) -> bool
+    return read.decimal_value(digits: d.digits, exponent: d.point - d.digits.len(), format: format) == x
+
+# Of the decimals of `keep` digits on either side of `held`, the exact
+# digits of `x`, the nearest that reads back as `x`, ties going to the even
+# digit, or the other where only it does. Fails `not_found` where neither
+# does.
+function of_length(held: exact.Digits, keep: i64, x: f64, format: near.Format) -> exact.Digits?
+    nearest = exact.rounded(d: held, keep: keep)
+
+    if reads_back(d: nearest, x: x, format: format)
+        return ok(nearest)
+    below = exact.truncated(d: held, keep: keep)
+
+    other = if nearest == below
+        exact.raised(d: held, keep: keep)
+    else
+        below
+
+    if other.digits.len() > 0 && reads_back(d: other, x: x, format: format)
+        return ok(other)
+    return fail(code: "not_found", msg: f"no decimal of {keep} digits reads back")
+
+# The most digits two decimals can both have and both read back as one
+# normal float of `format`: those of at most this many differ by more than a
+# tenth to the this-many-th of the smaller, twice the float's widest gap at
+# least, which is 2 to the -52nd of it, or the -23rd: 15 and 6.
+function unique_digits(format: near.Format) -> i64
+    limit = 1 << format.bits - 1
+    count: i64 @= 0
+    twice: i64 @= 2
+
+    while twice * 10 <= limit
+        twice @ twice * 10
+        count @ count + 1
+
+    return count
+
+# Whether the decimal `whole` times ten to the `tens`th, `whole` with no zero
+# last, is the nearest to `b` of all decimals of its digits, ties going to the
+# even last digit.
+function is_nearest(whole: i64, tens: i64, b: side.Binary) -> bool
+    even = whole % 2 == 0
+    upper = side.against_whole(a: 2 * whole + 1, tens: tens, b: b.significand, twos: b.exp + 1)
+
+    if upper < 0 || upper == 0 && !even
+        return false
+    lower = side.against_whole(a: 2 * whole - 1, tens: tens, b: b.significand, twos: b.exp + 1)
+    return lower < 0 || lower == 0 && even
+
+# `hint`, the nearest decimal of its digits to `b`, rounded to its first
+# `keep`, fewer than it has, ties going to the even digit: the nearest of
+# that length to `b` too, since `hint` and `b` share their first `keep`
+# digits and only the midpoint after them decides.
+function nearest_of(hint: exact.Digits, keep: i64, b: side.Binary) -> exact.Digits
+    cut = quick.whole_of(hint.digits.slice(from: 0, to: keep))
+    middle = side.against_whole(a: 2 * cut + 1, tens: hint.point - keep, b: b.significand, twos: b.exp + 1)
+
+    if middle > 0 || middle == 0 && cut % 2 == 0
+        return exact.truncated(d: hint, keep: keep)
+    return exact.raised(d: hint, keep: keep)
+
+# Whether `d`, at most 18 digits, reads back as `b`, a float of `format`.
+function reads_as(d: exact.Digits, b: side.Binary, format: near.Format) -> bool
+    count = d.digits.len()
+    return side.place(a: quick.whole_of(d.digits), tens: d.point - count, b: b, format: format) == 0
+
+# The fewest digits that read back as `x`, as `digits` answers them, decided
+# without the exact digits of `x`. Fails `undecided` where `x` is not normal,
+# is a power of two, or `hint` is not the nearest of its length.
+function quickly(x: f64, hint: exact.Digits, format: near.Format) -> exact.Digits?
+    if !side.is_normal(x: x, format: format)
+        return fail(code: "undecided", msg: "not a normal float")
+    count = hint.digits.len()
+
+    if count <= unique_digits(format)
+        return ok(hint)
+
+    if count > quick.DIGITS_MAX
+        return fail(code: "undecided", msg: "too many digits")
+    b = side.binary_of(x: x, format: format)?
+
+    if b.significand == 1 << format.bits - 1
+        return fail(code: "undecided", msg: "a power of two")
+
+    if !is_nearest(whole: quick.whole_of(hint.digits), tens: hint.point - count, b: b)
+        return fail(code: "undecided", msg: "not the nearest of its length")
+
+    # Its gaps both ways equal, a decimal of a length reads back only where
+    # the nearest of that length does, so the nearest is the only one asked.
+    best: exact.Digits @= hint
+    keep: i64 @= count
+
+    while keep > 1
+        keep @ keep - 1
+        shorter = nearest_of(hint: hint, keep: keep, b: b)
+
+        if !reads_as(d: shorter, b: b, format: format)
+            return ok(best)
+        best @ shorter
+
+    return ok(best)
+
+# The fewest digits that read back as `x`, a float of `format` above zero,
+# where `hint` is a text of its that reads back.
+function digits(x: f64, hint: exact.Digits, format: near.Format) -> exact.Digits
+    match quickly(x: x, hint: hint, format: format)
+        .ok d  => return d
+        .err _ => _ = 0
+
+    held = exact.of(x)
+    best: exact.Digits @= hint
+    keep: i64 @= hint.digits.len()
+
+    match of_length(held: held, keep: keep, x: x, format: format)
+        .ok d  => best @ d
+        .err _ => _ = 0
+
+    while keep > 1
+        keep @ keep - 1
+
+        match of_length(held: held, keep: keep, x: x, format: format)
+            .ok d  => best @ d
+            .err _ => return best
+
+    return best
+
+## Tests
+
+test "of_length: the nearest reads back, only the other does, and neither"
+    f64s = near.f64_format()
+    tenth = exact.of(0.1)
+    assert of_length(held: tenth, keep: 1, x: 0.1, format: f64s).must() == exact.Digits(digits: ['1'], point: 0)
+    seventeen = of_length(held: tenth, keep: 17, x: 0.1, format: f64s).must()
+    assert seventeen.digits.len() == 17 && seventeen.digits[16] == '1' && seventeen.point == 0
+    tiny = near.pow2(-778)
+    sixteen = of_length(held: exact.of(tiny), keep: 16, x: tiny, format: f64s).must()
+    assert sixteen.digits == ['6', '2', '9', '0', '1', '8', '4', '3', '4', '5', '3', '0', '9', '7', '0', '1']
+    assert of_length(held: exact.of(tiny), keep: 15, x: tiny, format: f64s).is_err()
+    assert of_length(held: exact.of(1.0 / 3.0), keep: 15, x: 1.0 / 3.0, format: f64s).is_err()
+
+test "digits: a hint already fewest, one a digit too long, and the f32 shape"
+    f64s = near.f64_format()
+    hint = exact.Digits(digits: ['1'], point: 0)
+    assert digits(x: 0.1, hint: hint, format: f64s) == hint
+    tiny = near.pow2(-778)
+    long = exact.Digits(
+        digits: ['6', '2', '9', '0', '1', '8', '4', '3', '4', '5', '3', '0', '9', '7', '0', '0', '5'],
+        point: -234
+    )
+    assert digits(x: tiny, hint: long, format: f64s).digits.len() == 16
+    big = near.pow2(554)
+    assert digits(x: big, hint: exact.of(big), format: f64s).digits == ['5', '8', '9', '6', '8', '1', '6', '2', '8', '8', '7', '8', '3', '6', '5', '9']
+    tenth: f32 = 0.1
+    f32_hint = exact.of(to_f64(tenth))
+    assert digits(x: to_f64(tenth), hint: f32_hint, format: near.f32_format()) == exact.Digits(digits: ['1'], point: 0)
+
+test "unique_digits: 15 for an f64 and 6 for an f32"
+    assert unique_digits(near.f64_format()) == 15
+    assert unique_digits(near.f32_format()) == 6
+
+test "is_nearest and nearest_of: one tenth at 17 digits and at fewer"
+    f64s = near.f64_format()
+    tenth = side.binary_of(x: 0.1, format: f64s).must()
+    assert is_nearest(whole: 10000000000000001, tens: -17, b: tenth)
+    assert !is_nearest(whole: 10000000000000002, tens: -17, b: tenth)
+    seventeen = exact.Digits(
+        digits: ['1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+        point: 0
+    )
+    assert nearest_of(hint: seventeen, keep: 16, b: tenth) == exact.Digits(digits: ['1'], point: 0)
+    assert reads_as(d: exact.Digits(digits: ['1'], point: 0), b: tenth, format: f64s)
+
+test "quickly: a short text, a long one shortened, a power of two, and what is not normal"
+    f64s = near.f64_format()
+    short = exact.Digits(digits: ['1', '2', '5'], point: 1)
+    assert quickly(x: 12.5, hint: short, format: f64s).must() == short
+    third = 1.0 / 3.0
+    long = exact.of(third)
+    sixteen = exact.rounded(d: long, keep: 16)
+    assert quickly(x: third, hint: sixteen, format: f64s).must() == sixteen
+    tiny = near.pow2(-778)
+    assert quickly(x: tiny, hint: exact.rounded(d: exact.of(tiny), keep: 17), format: f64s).is_err()
+    assert quickly(x: near.pow2(-1074), hint: exact.Digits(digits: ['5'], point: -323), format: f64s).is_err()

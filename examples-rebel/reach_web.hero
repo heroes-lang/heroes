@@ -1,0 +1,128 @@
+# Reaches Rebel's package `web`, so that `heroes test` on this file runs the
+# tests of its face and its private modules (spec § 12). It prints the media
+# type of `index.html`, `text/html; charset=utf-8`, on every run, touching no
+# network and no file.
+#
+# It also holds the two shapes of a program that serves, as a program writes
+# them: `app`, the one function of a program with no state, which `web.serve`
+# calls with the router; and `serve_conn`, the loop of a program with state,
+# which hands its `App` to its own `handle` by `@`. Their tests run them on
+# the loopback.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/web
+
+# A program's state: its routes and a count it keeps between requests.
+record App
+    # The routes, made once by `routes`.
+    router: web.Router
+    # How many visits `POST /visits` has counted.
+    visits: i64
+
+# The program's routes.
+function routes() -> web.Router
+    rt @= web.new_router()
+    web.add(@rt, method: http.METHOD_GET, pattern: "/", name: "home").must()
+    web.add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
+    web.add(@rt, method: http.METHOD_POST, pattern: "/visits", name: "visit").must()
+    return rt
+
+# The handler of a program with no state: the request routed, the route's
+# name dispatched on, a request no route takes answered by `not_routed`.
+function app(router: web.Router, r: http.Request) -> http.Response
+    match web.route(router, r)
+        .err _ => return web.not_routed(router, r)
+        .ok found =>
+            match found.name
+                "home" => return http.respond_text(http.STATUS_OK, text: "home")
+                "user" => return http.respond_text(
+                    http.STATUS_OK,
+                    text: "user " + web.param_of(found, name: "id").default("")
+                )
+                _ => return web.error_response(
+                    router.errors,
+                    status: http.STATUS_NOT_IMPLEMENTED,
+                    message: "not written yet"
+                )
+
+# The program's own function, with its own state lent by `@`: a visit
+# counted, every other route answered as `app` answers it.
+function handle(@state: App, found: web.Found, r: http.Request) -> http.Response
+    match found.name
+        "visit" =>
+            state.visits @ state.visits + 1
+            return http.respond_text(http.STATUS_OK, text: to_str(state.visits))
+        _ => return app(state.router, r)
+
+# The loop of a program with state over one connection's stream: each request
+# read, routed, answered by `handle` with `state`, until the connection ends;
+# answers how many were answered.
+function serve_conn(@state: App, stream: io.Stream) -> i64
+    reader @= io.reader(stream)
+    answered: i64 @= 0
+
+    while true
+        r = match http.next_request(@reader, limits: http.default_limits())
+            .ok got => got
+            .err _  => return answered
+
+        response = match web.route(state.router, r)
+            .ok found => handle(@state, found: found, r: r)
+            .err _    => web.not_routed(state.router, r)
+
+        match http.write_answer(reader.stream, r: r, response: response)
+            .ok _  => answered @ answered + 1
+            .err _ => return answered
+
+        if r.closing || response.closing
+            return answered
+
+function main()
+    print(web.content_type_of("index.html").default(""))
+
+test "app: a program with no state served on the loopback"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /users/7 HTTP/1.1\r\nHost: h\r\n\r\nPUT / HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    ).must()
+    assert web.serve_stream(http.default_server(), stream: two.second.stream, remote: "", router: routes(), handler: app) == 2
+    reader @= io.reader(two.first.stream)
+    first = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    second = http.read_response(@reader, method: "PUT", limits: http.default_limits()).must()
+    assert http.text_of(first).must() == "user 7" && second.status == 405 && http.value_of(second.headers, name: "Allow").must() == "GET, HEAD, OPTIONS"
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_conn: a program's state counted across its requests"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "POST /visits HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\n\r\nPOST /visits HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    ).must()
+    state @= App(router: routes(), visits: 0)
+    assert serve_conn(@state, stream: two.second.stream) == 2 && state.visits == 2
+    reader @= io.reader(two.first.stream)
+    _ = http.read_response(@reader, method: "POST", limits: http.default_limits()).must()
+    assert http.text_of(http.read_response(@reader, method: "POST", limits: http.default_limits()).must()).must() == "2"
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_conn: a program's loop answers 100 Continue, and 431 for a head past the limits"
+    two @= net.pair(deadline_ms: 5_000).must()
+    long = "x".repeat(to_u64(70_000).must())
+    io.write_text(
+        two.first.stream,
+        text: "POST /visits HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 2\r\n\r\nhiGET / HTTP/1.1\r\nHost: h\r\nX-Long: " + long + "\r\n\r\n"
+    ).must()
+    state @= App(router: routes(), visits: 0)
+    assert serve_conn(@state, stream: two.second.stream) == 1 && state.visits == 1
+    reader @= io.reader(two.first.stream)
+    assert io.read_line(@reader).must() == "HTTP/1.1 100 Continue"
+    _ = io.read_line(@reader).must()
+    assert http.text_of(http.read_response(@reader, method: "POST", limits: http.default_limits()).must()).must() == "1"
+    assert http.read_response(@reader, method: "GET", limits: http.default_limits()).must().status == 431
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()

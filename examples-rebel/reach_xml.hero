@@ -1,0 +1,15 @@
+# Reaches Rebel's `xml`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small document, takes one
+# element out of it by a path and writes the document back indented.
+
+use <rebel>/xml
+
+function main()
+    match xml.parse("<albums><album year=\"1972\"><title>Ziggy</title></album></albums>")
+        .err e => print(e.code, ": ", e.msg)
+        .ok doc =>
+            match xml.element_at(doc.root, "album/title")
+                .ok title => print(xml.text_of(title))
+                .err e    => print(e.code, ": ", e.msg)
+
+            print(xml.format_indented(doc, 2).default("?"))

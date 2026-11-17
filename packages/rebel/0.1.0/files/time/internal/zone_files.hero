@@ -1,0 +1,310 @@
+# Where a zone's TZif bytes come from: the system's zone files on Darwin and
+# Linux, read through a stream of `io`, then the IANA data Rebel carries; and
+# the machine's own zone, from `TZ` or `/etc/localtime`. A `TZ` holding a
+# POSIX rule is made a TZif file of that rule alone, so every zone is read by
+# one reader. It reads no file through `fs`, whose package uses `time`: the
+# compiler refuses the cycle.
+
+use bytes
+use io
+use io/hero_stream
+use os
+use os/hero_disk
+use time/internal/carried_blobs
+use time/internal/carried_names
+use time/internal/zone_rule
+
+# The code of a name that is no relative path, and of a `TZ` that names
+# nothing this reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a name no file and no carried data holds.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a platform whose own zone setting this does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# Where the system keeps its zone files, in the order they are asked: Python's
+# `zoneinfo.TZPATH` on this Mac.
+function system_dirs() -> [str]
+    return ["/usr/share/zoneinfo", "/usr/lib/zoneinfo", "/usr/share/lib/zoneinfo", "/etc/zoneinfo"]
+
+# The bytes of a zone and the name it takes.
+record Source
+    # The name the zone takes.
+    name: str
+    # Its TZif bytes.
+    data: [u8]
+
+# Nothing, where `name` is a relative path with no empty part, no `.` and no
+# `..`, no `\` and no zero byte. Fails `invalid` otherwise.
+function checked(name: str) -> ()?
+    if name == ""
+        return fail(code: INVALID, msg: "a zone's name is not empty")
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at <= name.len()
+        if at == name.len() || name[at] == '/'
+            part = name.slice(from: from, to: at)
+
+            if part == "" || part == "." || part == ".."
+                return fail(
+                    code: INVALID,
+                    msg: f"the zone name \"{name}\" is not a relative path with no empty part, . or .."
+                )
+            from @ at + 1
+        else if name[at] == '\\' || name[at] == 0
+            return fail(code: INVALID, msg: f"the zone name \"{name}\" holds a byte no zone name holds at {at}")
+        at @ at + 1
+
+    return ok()
+
+# The TZif bytes of the zone `name`: the first system directory holding the
+# file, on a system that keeps POSIX's rules, then the data Rebel carries.
+# Fails `invalid` where the name is no relative path, `not_found` where
+# nothing holds it, and with the stream's code where a file is there and
+# cannot be read.
+function named(name: str) -> [u8]?
+    checked(name)?
+
+    match os.family()
+        .posix =>
+            for dir in system_dirs()
+                match file_bytes(f"{dir}/{name}")
+                    .ok data => return ok(data)
+                    .err e =>
+                        if e.code != "file_not_found" && e.code != "not_a_directory" && e.code != "is_a_directory"
+                            return fail(code: e.code, msg: e.msg)
+        .windows => _ = 0
+
+    return carried(name)
+
+# The bytes Rebel carries for the zone `name`. Fails `not_found` where it
+# carries none.
+function carried(name: str) -> [u8]?
+    names = carried_names.names()
+    k: i64 @= 0
+
+    while k < names.len()
+        if names[k] == name
+            match bytes.parse_base64(carried_blobs.blob(carried_names.blob_indices()[k]))
+                .ok data => return ok(data)
+                .err e   => return fail(code: INVALID, msg: f"the carried data of \"{name}\" is not base 64: {e.msg}")
+        k @ k + 1
+
+    return fail(
+        code: NOT_FOUND,
+        msg: f"no time zone is named \"{name}\" in the system's files or in the IANA data {carried_names.VERSION} Rebel carries"
+    )
+
+# Every byte of the file at `path`, read through a stream that is closed on
+# every path. Fails with the stream's code: `file_not_found` where nothing is
+# there.
+function file_bytes(path: str) -> [u8]?
+    asked = f"reading the zone file \"{path}\""
+    handle = hero_stream.open(path, access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+
+    if handle == nullptr
+        return io.last_failure(asked: asked)
+    s: io.Stream @= io.of_handle(handle, name: f"\"{path}\"")
+    data = io.read_all(s)
+    closed = io.close(@s)
+
+    match data
+        .ok d =>
+            closed?
+            return ok(d)
+        .err e => return fail(code: e.code, msg: e.msg)
+
+# The machine's zone, its name and its bytes: `TZ` where it is set, else
+# `/etc/localtime`. Fails as `named` does, `invalid` for a `TZ` none of whose
+# forms reads, `not_found` where `/etc/localtime` is missing, and
+# `unsupported` on Windows without `TZ`.
+function local() -> Source?
+    match os.env("TZ")
+        .ok value => return from_tz(value)
+        .err e =>
+            if e.code != "not_found"
+                return fail(code: INVALID, msg: f"the variable TZ cannot be read: {e.msg}")
+
+    match os.family()
+        .posix => _ = 0
+        .windows => return fail(
+            code: UNSUPPORTED,
+            msg: "TZ is not set, and Windows names its own zone in its registry, which this does not read"
+        )
+
+    match file_bytes("/etc/localtime")
+        .ok data => return ok(Source(name: link_name("/etc/localtime"), data: data))
+        .err e =>
+            if e.code == "file_not_found"
+                return fail(code: NOT_FOUND, msg: "TZ is not set, and there is no /etc/localtime")
+            return fail(code: e.code, msg: e.msg)
+
+# The zone the value `value` of `TZ` names: UTC where empty, a file where an
+# absolute path, a zone where a name the system or Rebel holds, else a rule.
+function from_tz(value: str) -> Source?
+    if value == ""
+        return ok(Source(name: "UTC", data: rule_file("UTC0").must()))
+    text: str @= value
+
+    if text[0] == ':'
+        text @ text.slice(from: 1, to: text.len())
+
+    if text.len() > 0 && text[0] == '/'
+        if has_zero(text)
+            return fail(code: INVALID, msg: "the path in TZ holds a zero byte")
+        return ok(Source(name: zone_name_of(text), data: file_bytes(text)?))
+
+    match named(text)
+        .ok data => return ok(Source(name: text, data: data))
+        .err e =>
+            if e.code != NOT_FOUND && e.code != INVALID
+                return fail(code: e.code, msg: e.msg)
+
+    match rule_file(text)
+        .ok data => return ok(Source(name: text, data: data))
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"TZ is \"{value}\", which is no zone's name, no absolute path and no POSIX rule"
+        )
+
+# Whether `s` holds a zero byte.
+function has_zero(s: str) -> bool
+    k: i64 @= 0
+
+    while k < s.len()
+        if s[k] == 0
+            return true
+        k @ k + 1
+
+    return false
+
+# The name of the zone at `path`: the part of its link after `zoneinfo/`,
+# else `Local`.
+function link_name(path: str) -> str
+    buffer: [u8] @= []
+    length = hero_disk.link_target(path, @buffer, n: 4_096)
+
+    if length < 0 || length > 4_096
+        return "Local"
+
+    match bytes.to_text(buffer.slice(from: 0, to: length))
+        .ok target => return zone_name_of(target)
+        .err _     => return "Local"
+
+# What follows the last `zoneinfo/` in `path`, else `Local`.
+function zone_name_of(path: str) -> str
+    mark = "zoneinfo/"
+    at: i64 @= path.len() - mark.len()
+
+    while at >= 0
+        if path.slice(from: at, to: at + mark.len()) == mark && at + mark.len() < path.len()
+            return path.slice(from: at + mark.len(), to: path.len())
+        at @ at - 1
+
+    return "Local"
+
+# A TZif file of version 2 that holds the POSIX rule `text` alone, no
+# transition, its one type the rule's standard time. Fails `invalid` where
+# `text` is no rule.
+function rule_file(text: str) -> [u8]?
+    standard = match zone_rule.parse(text)?
+        .fixed f    => f.kind
+        .seasonal s => s.standard
+
+    out: [u8] @= []
+    header(@out, abbreviation_bytes: 1)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+    out @ out.push(0)
+    name = bytes.from_text(standard.abbreviation)
+    header(@out, abbreviation_bytes: name.len() + 1)
+    bytes.push_all(to: @out, from: bytes.encode_i32_be(to_i32(standard.offset)?))
+    out @ out.push(0)
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: name)
+    out @ out.push(0)
+    out @ out.push('\n')
+    bytes.push_text(to: @out, s: text)
+    out @ out.push('\n')
+    return ok(out)
+
+# Adds a TZif header of version 2 to `out`: no transition, one type,
+# `abbreviation_bytes` bytes of abbreviations.
+function header(@out: [u8], abbreviation_bytes: i64)
+    bytes.push_text(to: @out, s: "TZif2")
+    k: i64 @= 0
+
+    while k < 15
+        out @ out.push(0)
+        k @ k + 1
+
+    for n in [0, 0, 0, 0, 1, abbreviation_bytes]
+        bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(n).must()))
+
+# Python's `ZoneInfo` refused the first six names and loaded the last three.
+test "checked: Python's refusals, a backslash and a zero byte, and three names it loads"
+    for name in ["", "../etc/passwd", "/etc/localtime", "Europe/../Europe/Rome", "Europe//Rome", "Europe/Rome/", "Europe\\Rome", "./UTC"]
+        match checked(name)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    for name in ["Europe/Rome", "UTC", "europe/rome"]
+        assert !checked(name).is_err()
+
+test "carried: a zone, an alias of it, and a name Rebel does not carry"
+    rome = carried("Europe/Rome").must()
+    assert rome.slice(from: 0, to: 4) == bytes.from_text("TZif")
+    assert carried("Europe/Vatican").must() == rome
+
+    match carried("Nowhere/Land")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == f"no time zone is named \"Nowhere/Land\" in the system's files or in the IANA data {carried_names.VERSION} Rebel carries"
+
+test "rule_file: a TZif file a reader takes back, and a text that is no rule"
+    data = rule_file("CET-1CEST,M3.5.0,M10.5.0/3").must()
+    assert data.slice(from: 0, to: 5) == bytes.from_text("TZif2")
+    assert data[data.len() - 1] == '\n'
+    assert rule_file("CET-1CEST").is_err()
+
+test "zone_name_of: a link into zoneinfo, a path outside it, and zoneinfo with nothing after it"
+    assert zone_name_of("/var/db/timezone/zoneinfo/Europe/Rome") == "Europe/Rome"
+    assert zone_name_of("/usr/share/zoneinfo/zoneinfo/UTC") == "UTC"
+    assert zone_name_of("/etc/somewhere") == "Local"
+    assert zone_name_of("/x/zoneinfo/") == "Local"
+
+test "from_tz: empty, a name behind a colon, a missing absolute path, a rule, and nothing that reads"
+    assert from_tz("").must().name == "UTC"
+    assert from_tz(":Europe/Rome").must().name == "Europe/Rome"
+    assert from_tz("Europe/Rome").must().data.slice(from: 0, to: 4) == bytes.from_text("TZif")
+
+    match from_tz("/no/such/zoneinfo/file")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    rule = from_tz("CET-1CEST,M3.5.0,M10.5.0/3").must()
+    assert rule.name == "CET-1CEST,M3.5.0,M10.5.0/3" && rule.data == rule_file("CET-1CEST,M3.5.0,M10.5.0/3").must()
+
+    match from_tz("not a zone!")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "named and local: a system file or the carried one, a folder that is no zone, and the machine's own zone"
+    assert named("Europe/Rome").must().slice(from: 0, to: 4) == bytes.from_text("TZif")
+
+    match named("Europe")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND || e.code == INVALID
+
+    match local()
+        .ok s  => assert s.data.len() > 44 && s.name != ""
+        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED

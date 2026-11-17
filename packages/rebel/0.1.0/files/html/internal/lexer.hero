@@ -1,0 +1,386 @@
+# The tokenizer's state (13.2.5): where it stands in the text, which of the
+# standard's states it is in, the token it is building, and the tokens and
+# parse errors it has made. The states' rules are in the `lex_` modules and
+# `tokenizer.hero` runs them; this module holds what they share.
+#
+# What a token is built of is collected in lists of pieces and joined once,
+# so a long name, value or comment costs its length and no more.
+
+use html/internal/ascii
+use html/internal/dom
+use html/internal/refs
+use html/internal/token
+use unicode
+
+# The tokenizer's states, by the standard's names. The four kinds of end tag
+# read inside raw text share `raw_end_tag_open` and `raw_end_tag_name`, and
+# the character reference states are read at once by `reference`.
+variant State
+    data
+    rcdata
+    rawtext
+    script_data
+    plaintext
+    tag_open
+    end_tag_open
+    tag_name
+    rcdata_less_than
+    rawtext_less_than
+    raw_end_tag_open
+    raw_end_tag_name
+    script_less_than
+    script_escape_start
+    script_escape_start_dash
+    script_escaped
+    script_escaped_dash
+    script_escaped_dash_dash
+    script_escaped_less_than
+    script_double_escape_start
+    script_double_escaped
+    script_double_escaped_dash
+    script_double_escaped_dash_dash
+    script_double_escaped_less_than
+    script_double_escape_end
+    before_attribute_name
+    attribute_name
+    after_attribute_name
+    before_attribute_value
+    attribute_value_double
+    attribute_value_single
+    attribute_value_unquoted
+    after_attribute_value
+    self_closing_start_tag
+    bogus_comment
+    markup_declaration_open
+    comment_start
+    comment_start_dash
+    comment
+    comment_less_than
+    comment_less_than_bang
+    comment_less_than_bang_dash
+    comment_less_than_bang_dash_dash
+    comment_end_dash
+    comment_end
+    comment_end_bang
+    doctype
+    before_doctype_name
+    doctype_name
+    after_doctype_name
+    after_doctype_public_keyword
+    before_doctype_public_id
+    doctype_public_id_double
+    doctype_public_id_single
+    after_doctype_public_id
+    between_doctype_ids
+    after_doctype_system_keyword
+    before_doctype_system_id
+    doctype_system_id_double
+    doctype_system_id_single
+    after_doctype_system_id
+    bogus_doctype
+    cdata_section
+    cdata_section_bracket
+    cdata_section_end
+    instruction_open
+    instruction_target
+    after_instruction_target
+    instruction_data
+    instruction_questionable
+
+# The tokenizer, over one text.
+record Lexer
+    # The text, its line ends already read as line feeds.
+    text: str
+    # The byte index of the next character.
+    at: i64
+    # The state the next step runs.
+    state: State
+    # Where an end tag read inside raw text that is not the appropriate one
+    # goes back to: `rcdata`, `rawtext`, `script_data` or `script_escaped`.
+    back: State
+    # The tag being built: `token.START` or `token.END`, its name's pieces,
+    # its `/>`, and its attributes finished so far.
+    kind: i64
+    name: [str]
+    self_closing: bool
+    attributes: [dom.Attr]
+    # The attribute being built, whether there is one, and whether it repeats
+    # a name the tag has, so that it is dropped.
+    attribute_name: [str]
+    attribute_value: [str]
+    attribute_open: bool
+    attribute_dropped: bool
+    # The comment's, the instruction's or the public identifier's pieces, and
+    # the system identifier's.
+    data: [str]
+    system: [str]
+    has_public: bool
+    has_system: bool
+    force_quirks: bool
+    # The byte index where the token being built began.
+    begun: i64
+    # The temporary buffer.
+    temp: [str]
+    # Tokens made and not yet handed on, the next at `head`.
+    queue: [token.Token]
+    head: i64
+    # Characters made and not yet put in a token, and where the first began.
+    pending: [str]
+    pending_at: i64
+    # The name of the last start tag emitted, empty before the first.
+    last_start: str
+    # Whether the adjusted current node is not in the HTML namespace, set by
+    # tree construction before each token is asked for.
+    foreign: bool
+    # The parse errors, each code beside the byte index where it was met.
+    codes: [str]
+    places: [i64]
+
+# A tokenizer at the start of `text`, in the data state.
+function start(text: str) -> Lexer
+    none: [dom.Attr] = []
+    pieces: [str] = []
+    tokens: [token.Token] = []
+    numbers: [i64] = []
+    return Lexer(
+        text: text,
+        at: 0,
+        state: .data,
+        back: .data,
+        kind: token.START,
+        name: pieces,
+        self_closing: false,
+        attributes: none,
+        attribute_name: pieces,
+        attribute_value: pieces,
+        attribute_open: false,
+        attribute_dropped: false,
+        data: pieces,
+        system: pieces,
+        has_public: false,
+        has_system: false,
+        force_quirks: false,
+        begun: 0,
+        temp: pieces,
+        queue: tokens,
+        head: 0,
+        pending: pieces,
+        pending_at: 0,
+        last_start: "",
+        foreign: false,
+        codes: pieces,
+        places: numbers
+    )
+
+# Whether the whole text has been read.
+function at_end(lx: Lexer lent) -> bool
+    return lx.at >= lx.text.len()
+
+# The byte under the cursor; only asked where `at_end` is false.
+function byte(lx: Lexer lent) -> u8
+    return lx.text[lx.at]
+
+# The character under the cursor, as text.
+function current(lx: Lexer lent) -> str
+    return lx.text.slice(from: lx.at, to: lx.at + width(lx))
+
+# How many bytes the character under the cursor takes.
+function width(lx: Lexer lent) -> i64
+    if lx.text[lx.at] < 0x80
+        return 1
+    return unicode.width_at(lx.text, lx.at)
+
+# The byte index just past the run from the cursor of bytes that are not
+# `stop_a`, `stop_b`, `stop_c` nor 0; at least one past the cursor where the
+# byte under it is none of them.
+function run_end(lx: Lexer lent, stop_a: u8, stop_b: u8, stop_c: u8) -> i64
+    end: i64 @= lx.at
+
+    while end < lx.text.len()
+        b = lx.text[end]
+
+        if b == stop_a || b == stop_b || b == stop_c || b == 0
+            return end
+        end @ end + 1
+
+    return end
+
+# Notes the parse error `code` at the byte index `at`.
+function error(@lx: Lexer, code: str, at: i64)
+    lx.codes @ lx.codes.push(code)
+    lx.places @ lx.places.push(at)
+
+# Notes the parse error `code` at the cursor.
+function error_here(@lx: Lexer, code: str)
+    error(@lx, code: code, at: lx.at)
+
+# Emits `s` as character tokens, which began at the byte index `at`.
+function text_out(@lx: Lexer, s: str, at: i64)
+    if lx.pending.len() == 0
+        lx.pending_at @ at
+    lx.pending @ lx.pending.push(s)
+
+# Hands on the characters made so far as one token, where there are any.
+function flush_chars(@lx: Lexer)
+    if lx.pending.len() > 0
+        lx.queue @ lx.queue.push(token.run(data: lx.pending.join(""), at: lx.pending_at))
+        lx.pending @ []
+
+# Emits `t`, after the characters made before it.
+function emit(@lx: Lexer, t: token.Token)
+    flush_chars(@lx)
+    lx.queue @ lx.queue.push(t)
+
+# Emits the end-of-file token.
+function emit_eof(@lx: Lexer)
+    emit(@lx, token.empty(kind: token.EOF, at: lx.text.len()))
+
+# Begins a tag of `kind`, which began at `at`.
+function new_tag(@lx: Lexer, kind: i64, at: i64)
+    lx.kind @ kind
+    lx.name @ []
+    lx.self_closing @ false
+    lx.attributes @ []
+    lx.attribute_open @ false
+    lx.begun @ at
+
+# Ends the attribute being built: kept unless it repeats a name.
+function finish_attribute(@lx: Lexer)
+    if lx.attribute_open && !lx.attribute_dropped
+        lx.attributes @ lx.attributes.push(
+            dom.Attr(space: dom.NO_SPACE, name: lx.attribute_name.join(""), value: lx.attribute_value.join(""))
+        )
+    lx.attribute_open @ false
+
+# Begins an attribute, its name `first`, after finishing the one before.
+function start_attribute(@lx: Lexer, first: str)
+    finish_attribute(@lx)
+    lx.attribute_name @ [first]
+    lx.attribute_value @ []
+    lx.attribute_open @ true
+    lx.attribute_dropped @ false
+
+# Leaves the attribute name state: a name the tag has already is a
+# duplicate-attribute parse error, and the attribute is dropped.
+function leave_attribute_name(@lx: Lexer)
+    name = lx.attribute_name.join("")
+
+    for a in lx.attributes
+        if a.name == name
+            error_here(@lx, "duplicate-attribute")
+            lx.attribute_dropped @ true
+            return
+
+# Emits the tag being built.
+function emit_tag(@lx: Lexer)
+    finish_attribute(@lx)
+    name = lx.name.join("")
+    t: token.Token @= token.tag(kind: lx.kind, name: name, attributes: lx.attributes, at: lx.begun)
+    t.self_closing @ lx.self_closing
+
+    if lx.kind == token.START
+        lx.last_start @ name
+    else
+        if lx.attributes.len() > 0
+            error(@lx, code: "end-tag-with-attributes", at: lx.begun)
+
+        if lx.self_closing
+            error(@lx, code: "end-tag-with-trailing-solidus", at: lx.begun)
+    emit(@lx, t)
+
+# Whether the end tag being built is the appropriate one: named as the last
+# start tag emitted.
+function is_appropriate(lx: Lexer lent) -> bool
+    return lx.last_start != "" && lx.name.join("") == lx.last_start
+
+# Begins a comment holding `first`, which began at `at`.
+function new_comment(@lx: Lexer, first: str, at: i64)
+    lx.data @ [first]
+    lx.begun @ at
+
+# Emits the comment being built.
+function emit_comment(@lx: Lexer)
+    t: token.Token @= token.empty(kind: token.COMMENT, at: lx.begun)
+    t.data @ lx.data.join("")
+    emit(@lx, t)
+
+# Begins a doctype, with no name and no identifiers.
+function new_doctype(@lx: Lexer)
+    lx.name @ []
+    lx.data @ []
+    lx.system @ []
+    lx.has_public @ false
+    lx.has_system @ false
+    lx.force_quirks @ false
+
+# Emits the doctype being built, its force-quirks flag set where `quirks`.
+function emit_doctype(@lx: Lexer, quirks: bool)
+    t: token.Token @= token.empty(kind: token.DOCTYPE, at: lx.begun)
+    t.name @ lx.name.join("")
+    t.data @ lx.data.join("")
+    t.system @ lx.system.join("")
+    t.has_public @ lx.has_public
+    t.has_system @ lx.has_system
+    t.force_quirks @ lx.force_quirks || quirks
+    emit(@lx, t)
+
+# Reads the character reference at the cursor, an `&`, into the attribute's
+# value where `in_attribute`, into the text where not.
+function reference(@lx: Lexer, in_attribute: bool)
+    read = refs.read_at(lx.text, lx.at, in_attribute)
+
+    for i in range(from: 0, to: read.codes.len())
+        error(@lx, code: read.codes[i], at: read.places[i])
+
+    if in_attribute
+        lx.attribute_value @ lx.attribute_value.push(read.chars)
+    else
+        text_out(@lx, s: read.chars, at: lx.at)
+    lx.at @ read.end
+
+# Reads the run from the cursor that `end` closes as characters, lower-cased
+# where `lower`, and moves past it.
+function take(@lx: Lexer, end: i64, lower: bool) -> str
+    piece = lx.text.slice(from: lx.at, to: end)
+    lx.at @ end
+
+    if lower
+        return ascii.to_lower(piece)
+    return piece
+
+## Tests
+
+test "start, at_end, byte, current and width: an empty text, and a character of two bytes"
+    lx = start("")
+    assert at_end(lx) && lx.state == .data
+    two = start("éa")
+    assert !at_end(two) && byte(two) == 0xc3 && current(two) == "é" && width(two) == 2
+
+test "run_end: to a stop, to a zero byte, to the end, and nothing where the cursor stands on a stop"
+    lx = start("ab<c")
+    assert run_end(lx, stop_a: '<', stop_b: '&', stop_c: '&') == 2 && run_end(start("abc"), stop_a: '<', stop_b: '<', stop_c: '<') == 3
+    assert run_end(start("<a"), stop_a: '<', stop_b: '<', stop_c: '<') == 0
+
+test "text_out and flush_chars: runs joined into one token, which keeps where the first began"
+    lx: Lexer @= start("abc")
+    text_out(@lx, s: "a", at: 4)
+    text_out(@lx, s: "b", at: 5)
+    flush_chars(@lx)
+    flush_chars(@lx)
+    assert lx.queue.len() == 1 && lx.queue[0].data == "ab" && lx.queue[0].at == 4
+
+test "start_attribute, leave_attribute_name and emit_tag: a repeated name dropped with its error, and an end tag's attributes told"
+    lx: Lexer @= start("")
+    new_tag(@lx, kind: token.START, at: 0)
+    lx.name @ ["a"]
+    start_attribute(@lx, "x")
+    leave_attribute_name(@lx)
+    start_attribute(@lx, "x")
+    leave_attribute_name(@lx)
+    emit_tag(@lx)
+    assert lx.queue[0].attributes.len() == 1 && lx.codes == ["duplicate-attribute"] && lx.last_start == "a"
+    new_tag(@lx, kind: token.END, at: 0)
+    lx.name @ ["a"]
+    start_attribute(@lx, "y")
+    emit_tag(@lx)
+    assert lx.codes == ["duplicate-attribute", "end-tag-with-attributes"] && lx.last_start == "a"

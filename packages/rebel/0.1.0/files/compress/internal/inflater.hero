@@ -1,0 +1,300 @@
+# A DEFLATE decompressor's state, fed piece by piece, which never trusts its
+# input: the phase it is in (the wrapper's header, a block's header, a
+# stored block's bytes, a coded block's symbols, the wrapper's checksum, the
+# bytes between gzip members), the input fed and not yet dropped, and the
+# output kept: the window a repeat may reach into and the bytes not yet
+# handed out. `inflate_blocks` reads the blocks and `inflate_run` runs the
+# phases; this module feeds the state and hands its output out.
+
+use compress/internal/codes
+use compress/internal/cursor
+use compress/internal/huffman
+use compress/internal/tables
+use compress/internal/wrapping
+use hash
+
+# Reading the wrapper's header.
+constant HEADER: i64
+    0
+
+# Reading a block's first bits.
+constant BLOCK: i64
+    1
+
+# Copying a stored block's bytes.
+constant STORED: i64
+    2
+
+# Reading a coded block's symbols.
+constant CODES: i64
+    3
+
+# Reading the wrapper's checksum.
+constant TRAILER: i64
+    4
+
+# Between two gzip members: zeros, another member, or the end.
+constant GAP: i64
+    5
+
+# The stream has ended.
+constant DONE: i64
+    6
+
+# What `run` answers: the output asked for is there.
+constant MET: i64
+    0
+
+# What `run` answers: more input is needed to go on.
+constant STARVED: i64
+    1
+
+# What `run` answers: the stream has ended.
+constant ENDED: i64
+    2
+
+# How far back a repeat may reach, and so how much output is kept.
+constant WINDOW: i64
+    32768
+
+# How many bytes no longer needed are dropped at once.
+constant DROP_AT: i64
+    65536
+
+# More output than any limit lets through: what `whole` asks for.
+constant EVERYTHING: i64
+    0x4000_0000_0000_0000
+
+# A decompressor in progress.
+record State
+    # `wrapping.RAW`, `ZLIB` or `GZIP`.
+    wrap: i64
+    # Whether gzip members after the first are read too.
+    multi: bool
+    # The most output bytes the stream may make, the dictionary not counted.
+    limit: i64
+    # Which phase it is in.
+    phase: i64
+    # Whether the block in progress is the last.
+    last: bool
+    # The bytes of the stored block in progress not yet copied.
+    stored_left: i64
+    # The block in progress's literal and length code.
+    literals: huffman.Table
+    # Its distance code.
+    distances: huffman.Table
+    # The fixed literal and length code, made once.
+    fixed_literals: huffman.Table
+    # The fixed distance code.
+    fixed_distances: huffman.Table
+    # The input fed and not yet dropped.
+    input: [u8]
+    # The index in the whole input of `input`'s first byte.
+    base: i64
+    # Where reading stands in `input`.
+    cur: cursor.Cursor
+    # Whether the caller has said no more input will come.
+    at_end: bool
+    # The output kept: the window behind the newest byte, and the bytes not
+    # yet handed out.
+    out: [u8]
+    # The index in `out` of the first byte not yet handed out.
+    taken: i64
+    # The index in `out` up to which the checksum has been fed.
+    checked: i64
+    # How many bytes the stream has made, the dictionary not counted.
+    produced: i64
+    # How many bytes the gzip member in progress has made.
+    member_size: i64
+    # The checksum of the member's output so far.
+    check: hash.State32
+    # The preset dictionary the caller gave, or empty.
+    dictionary: [u8]
+    # Whether any input has been fed.
+    fed: bool
+    # The first gzip member's header, once read.
+    header: wrapping.Gzip
+    # Whether it has been read.
+    has_header: bool
+    # The code of the failure every later call repeats, "" while none.
+    broken_code: str
+    # Its message.
+    broken_msg: str
+
+# A decompressor of a stream wrapped in `wrap` that may make at most
+# `limit` bytes, reading every gzip member where `multi`.
+function start(wrap: i64, limit: i64, multi: bool) -> State
+    phase: i64 @= HEADER
+
+    if wrap == wrapping.RAW
+        phase @ BLOCK
+    check @= hash.start32(.crc32)
+
+    if wrap == wrapping.ZLIB
+        check @ hash.start32(.adler32)
+    return State(
+        wrap: wrap,
+        multi: multi,
+        limit: limit,
+        phase: phase,
+        last: false,
+        stored_left: 0,
+        literals: huffman.table_for([]).must(),
+        distances: huffman.table_for([]).must(),
+        fixed_literals: huffman.table_for(tables.fixed_literal_lengths()).must(),
+        fixed_distances: huffman.table_for(tables.fixed_distance_lengths()).must(),
+        input: [],
+        base: 0,
+        cur: cursor.start(),
+        at_end: false,
+        out: [],
+        taken: 0,
+        checked: 0,
+        produced: 0,
+        member_size: 0,
+        check: check,
+        dictionary: [],
+        fed: false,
+        header: wrapping.empty_gzip(),
+        has_header: false,
+        broken_code: "",
+        broken_msg: ""
+    )
+
+# Gives `st` the preset dictionary its stream was made with: for raw
+# DEFLATE it is the window before the first byte; for zlib, it is used
+# where the header names it. Fails `invalid` for gzip, and once input has
+# been fed.
+function set_dictionary(@st: State, dictionary: [u8]) -> ()?
+    if st.wrap == wrapping.GZIP
+        return fail(code: codes.INVALID, msg: "a dictionary for gzip, whose header has no place to name one")
+
+    if st.fed
+        return fail(code: codes.INVALID, msg: "a dictionary given after the input began; it must come first")
+    st.dictionary @ dictionary
+
+    if st.wrap == wrapping.RAW
+        prime(@st)
+    return ok()
+
+# Puts the dictionary's last 32,768 bytes in the window, before the output.
+function prime(@st: State)
+    from: i64 @= 0
+
+    if st.dictionary.len() > WINDOW
+        from @ st.dictionary.len() - WINDOW
+    st.out @ st.dictionary.slice(from: from, to: st.dictionary.len())
+    st.taken @ st.out.len()
+    st.checked @ st.out.len()
+
+# Adds `more` to the input waiting, dropping the bytes already read first
+# when there are enough of them.
+function feed(@st: State, more: [u8] lent)
+    if st.cur.pos >= DROP_AT
+        st.input @ st.input.slice(from: st.cur.pos, to: st.input.len())
+        st.base @ st.base + st.cur.pos
+        st.cur.pos @ 0
+    append(data: @st.input, more: more)
+
+    if more.len() > 0
+        st.fed @ true
+
+# Adds `more` to the end of `data`.
+function append(@data: [u8], more: [u8] lent)
+    for b in more
+        data @ data.push(b)
+
+# Says no more input will come: a step the input ends inside then fails.
+function end_input(@st: State)
+    st.at_end @ true
+
+# How many output bytes are ready and not handed out.
+function pending(st: State lent) -> i64
+    return st.out.len() - st.taken
+
+# Whether the stream has ended and all its output has been handed out.
+function is_done(st: State lent) -> bool
+    return st.phase == DONE && pending(st) == 0
+
+# The input bytes fed after the stream's end, empty before it.
+function unused(st: State lent) -> [u8]
+    if st.phase != DONE
+        return []
+    return st.input.slice(from: cursor.used(st.cur), to: st.input.len())
+
+# How many input bytes the stream took, header and checksum included.
+function used(st: State lent) -> i64
+    return st.base + cursor.used(st.cur)
+
+# Up to `most` of the bytes ready, handed out once.
+function take(@st: State, most: i64) -> [u8]
+    n: i64 @= pending(st)
+
+    if most < n
+        n @ most
+    out = st.out.slice(from: st.taken, to: st.taken + n)
+    st.taken @ st.taken + n
+    keep: i64 @= st.out.len() - WINDOW
+
+    if st.taken < keep
+        keep @ st.taken
+
+    if keep >= DROP_AT
+        sync_check(@st)
+        st.out @ st.out.slice(from: keep, to: st.out.len())
+        st.taken @ st.taken - keep
+        st.checked @ st.checked - keep
+    return out
+
+# Feeds the checksum the output it has not seen.
+function sync_check(@st: State)
+    if st.checked < st.out.len()
+        hash.update32(@st.check, st.out.slice(from: st.checked, to: st.out.len()))
+        st.checked @ st.out.len()
+
+# The byte of the whole input `st` stands at, for a message.
+function here(st: State lent) -> i64
+    return st.base + cursor.last_byte(st.cur)
+
+test "start: raw begins at a block's header, zlib and gzip at their own"
+    assert start(wrap: wrapping.RAW, limit: 0, multi: false).phase == BLOCK
+    assert start(wrap: wrapping.ZLIB, limit: 0, multi: false).phase == HEADER
+    assert start(wrap: wrapping.GZIP, limit: 0, multi: true).phase == HEADER
+
+test "set_dictionary: gzip refused, after input refused, and raw's window primed"
+    g @= start(wrap: wrapping.GZIP, limit: 10, multi: false)
+
+    match set_dictionary(@g, dictionary: [1])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    fed @= start(wrap: wrapping.RAW, limit: 10, multi: false)
+    feed(@fed, more: [1])
+
+    match set_dictionary(@fed, dictionary: [1])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    raw @= start(wrap: wrapping.RAW, limit: 10, multi: false)
+    long: [u8] @= []
+
+    for i in range(from: 0, to: WINDOW + 5)
+        long @ long.push(to_u8(i % 256).must())
+
+    set_dictionary(@raw, dictionary: long).must()
+    assert raw.out.len() == WINDOW
+    assert raw.out[0] == 5
+    assert pending(raw) == 0
+
+test "take, pending and unused: at most `most`, the rest kept, nothing unused before the end"
+    st @= start(wrap: wrapping.RAW, limit: 10, multi: false)
+    append(data: @st.out, more: [1, 2, 3, 4, 5])
+    assert pending(st) == 5
+    assert take(@st, most: 2) == [1, 2]
+    assert take(@st, most: 0).len() == 0
+    assert take(@st, most: 10) == [3, 4, 5]
+    assert pending(st) == 0
+    feed(@st, more: [9, 9])
+    assert unused(st).len() == 0
+    assert !is_done(st)
+    assert used(st) == 0

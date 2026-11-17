@@ -1,0 +1,148 @@
+# The machine's network interfaces, read from the floor's list
+# (`hero_net.interfaces`, round 3, 2026-11-16): one entry for each address of
+# each interface, and one for an interface with none, gathered here into one
+# value for each interface in the system's order.
+
+use net/hero_net
+use net/internal/failure
+use net/internal/parse
+
+# One address of an interface and its prefix length.
+record Held
+    # The address, with no port.
+    address: parse.Parsed
+    # How many of its first bits name its network.
+    bits: i64
+
+# One interface as the list gives it, its addresses gathered.
+record Found
+    # Its name, as the system gives it.
+    name: str
+    # Its index, which `net.join_group` takes.
+    index: i64
+    # Its flags, `hero_net.HERO_NET_INTERFACE_...` added together.
+    flags: i64
+    # Its addresses with their prefix lengths, in the system's order; none
+    # where it has none.
+    addresses: [Held]
+
+# The number the decimal digits of `text` write, or `failed`.
+#
+# - `text`: a field the floor wrote.
+# - `asked`: what the message of a failure begins with.
+function number_in(text: str, asked: str) -> i64?
+    if text.len() == 0
+        return failure.of(code: failure.FAILED, asked: asked, why: "the system wrote an empty number")
+    value: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        digit = text[at]
+
+        if digit < '0' || digit > '9' || value > 100_000_000_000
+            return failure.of(code: failure.FAILED, asked: asked, why: f"the system wrote no number: {text}")
+        value @ value * 10 + (digit - '0').to_i64().must()
+
+    return ok(value)
+
+# The bytes of the list, read whole: measured, then read into room enough,
+# asked again where interfaces came between the two calls.
+#
+# - `asked`: what the message of a failure begins with.
+function listed(asked: str) -> [u8]?
+    buffer: [u8] @= []
+    need: i64 @= hero_net.interfaces(@buffer, n: 0)
+
+    while true
+        if need < 0
+            return failure.last(asked: asked)
+        room = need.to_u64().must() + 1024
+        used = hero_net.interfaces(@buffer, n: room)
+
+        if used >= 0 && used.to_u64().must() <= room
+            return ok(buffer.slice(from: 0, to: used))
+        need @ used
+
+    return ok(buffer)
+
+# The machine's interfaces, each with its addresses.
+#
+# - `asked`: what the message of a failure begins with.
+#
+# Fails `failed` where the system wrote what is not a list, or a name that
+# is not text, and as the floor fails.
+function found_all(asked: str) -> [Found]?
+    list = listed(asked: asked)?
+    fields: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: list.len())
+        if list[at] == 0
+            match list.slice(from: from, to: at).validated_bytes()
+                .ok t => fields @ fields.push(t)
+                .err _ => return failure.of(
+                    code: failure.FAILED,
+                    asked: asked,
+                    why: "the system wrote a name that is not text"
+                )
+
+            from @ at + 1
+
+    if fields.len() % 5 != 0
+        return failure.of(code: failure.FAILED, asked: asked, why: "the system wrote a list cut short")
+    found: [Found] @= []
+
+    for entry in range(from: 0, to: fields.len() / 5)
+        name = fields[entry * 5]
+        index = number_in(text: fields[entry * 5 + 1], asked: asked)?
+        flags = number_in(text: fields[entry * 5 + 2], asked: asked)?
+        text = fields[entry * 5 + 3]
+        prefix = number_in(text: fields[entry * 5 + 4], asked: asked)?
+        addresses: [Held] @= []
+
+        if text.len() > 0
+            match parse.address(text)
+                .ok p => addresses @ [Held(address: p, bits: prefix)]
+                .err e => return failure.of(
+                    code: failure.FAILED,
+                    asked: asked,
+                    why: "the system wrote no address: " + e.msg
+                )
+        last = found.len() - 1
+
+        if last >= 0 && found[last].name == name && found[last].index == index
+            kept = found[last]
+            held: [Held] @= kept.addresses
+
+            for a in addresses
+                held @ held.push(a)
+
+            found @ found.slice(from: 0, to: last).push(
+                Found(name: kept.name, index: kept.index, flags: kept.flags, addresses: held)
+            )
+        else
+            found @ found.push(Found(name: name, index: index, flags: flags, addresses: addresses))
+
+    return ok(found)
+
+## Tests
+
+test "found_all: the loopback interface holds 127.0.0.1, and every interface has a name"
+    found = found_all(asked: "listing").must()
+    assert found.len() > 0
+    loopback: bool @= false
+
+    for i in found
+        assert i.name.len() > 0
+
+        for a in i.addresses
+            if a.address.bytes == [127, 0, 0, 1]
+                assert a.bits == 8 && i.flags & hero_net.HERO_NET_INTERFACE_LOOPBACK != 0
+                loopback @ true
+
+    assert loopback
+
+test "number_in: digits, none, and what is no digit"
+    assert number_in(text: "0", asked: "a").must() == 0
+    assert number_in(text: "4294967295", asked: "a").must() == 4_294_967_295
+    assert number_in(text: "", asked: "a").is_err()
+    assert number_in(text: "1a", asked: "a").is_err()

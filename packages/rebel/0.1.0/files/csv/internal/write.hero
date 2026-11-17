@@ -1,0 +1,163 @@
+# Rows written as comma-separated values, and the rows of a table keyed by
+# its header. A field is quoted where RFC 4180 needs it, or always where the
+# style says, and its quotes are doubled; its line ends are written as they
+# are.
+
+use strings
+
+# The code of a record or a header that cannot be written or read as one.
+constant INVALID: str
+    "invalid"
+
+# How rows are written.
+record Style
+    # The character between two fields.
+    separator: str
+    # The character that opens and closes a quoted field.
+    quote: str
+    # Whether every field is quoted, needed or not.
+    quote_all: bool
+    # What ends each row: "\r\n" or "\n".
+    line_end: str
+
+# The style of the options' characters. Aborts where the separator or the
+# quote is not one ASCII character or is a line end, where they are one
+# character, and where `line_end` is neither "\r\n" nor "\n".
+function new_style(separator: str, quote: str, quote_all: bool, line_end: str) -> Style
+    assert separator.len() == 1 && separator[0] < 0x80 && separator != "\n" && separator != "\r"
+    assert quote.len() == 1 && quote[0] < 0x80 && quote != "\n" && quote != "\r" && quote != separator
+    assert line_end == "\r\n" || line_end == "\n"
+    return Style(separator: separator, quote: quote, quote_all: quote_all, line_end: line_end)
+
+# Whether `field` must be quoted to be read back: it holds the separator, the
+# quote, a carriage return or a line feed.
+function needs_quotes(field: str, style: Style) -> bool
+    for k in range(from: 0, to: field.len())
+        b = field[k]
+
+        if b == style.separator[0] || b == style.quote[0] || b == '\r' || b == '\n'
+            return true
+
+    return false
+
+# `field` as a row writes it.
+function field_text(field: str, style: Style) -> str
+    if style.quote_all || needs_quotes(field, style)
+        doubled = strings.replace_all(s: field, old: style.quote, new: style.quote + style.quote)
+        return style.quote + doubled + style.quote
+    return field
+
+# `row` written, its line end after it. A row of one empty field is written
+# as two quotes, so that it is not an empty line, which a reader skips.
+function row_text(row: [str], style: Style) -> str
+    if row.len() == 1 && row[0] == ""
+        return style.quote + style.quote + style.line_end
+    parts: [str] @= []
+
+    for field in row
+        parts @ parts.push(field_text(field, style))
+
+    return parts.join(style.separator) + style.line_end
+
+# Every row of `rows` written, one after the other.
+function rows_text(rows: [[str]], style: Style) -> str
+    parts: [str] @= []
+
+    for row in rows
+        parts @ parts.push(row_text(row, style))
+
+    return parts.join("")
+
+# Fails `invalid` where `header` names one column twice.
+function check_header(header: [str]) -> ()?
+    seen: {str: bool} @= {}
+
+    for name in header
+        if seen[name].default(false)
+            return fail(code: INVALID, msg: f"the header names \"{name}\" twice")
+        seen[name] @ true
+
+    return ok()
+
+# `row` keyed by the names of `header`, in its order; a row shorter than the
+# header lacks the names past its end. Fails `invalid` where the header names
+# a column twice or the row is longer than the header.
+function record_of(header: [str], row: [str]) -> {str: str}?
+    check_header(header)?
+
+    if row.len() > header.len()
+        return fail(code: INVALID, msg: f"a row of {row.len()} fields where the header names {header.len()}")
+    keyed: {str: str} @= {}
+
+    for at in range(from: 0, to: row.len())
+        keyed[header[at]] @ row[at]
+
+    return ok(keyed)
+
+# The rows of `records` under `header`, the header first: each field the
+# record's value for its column, "" where it holds none. Fails `invalid`
+# where the header names a column twice or a record holds a key the header
+# does not name.
+function records_rows(header: [str], records: [{str: str}]) -> [[str]]?
+    check_header(header)?
+    named: {str: bool} @= {}
+
+    for name in header
+        named[name] @ true
+
+    rows: [[str]] @= [header]
+
+    for r in records
+        for key in keys(r)
+            if !named[key].default(false)
+                return fail(code: INVALID, msg: f"a record holds \"{key}\", which the header does not name")
+
+        row: [str] @= []
+
+        for name in header
+            row @ row.push(r[name].default(""))
+
+        rows @ rows.push(row)
+
+    return ok(rows)
+
+# RFC 4180's style: a comma, a double quote, a field quoted only where it
+# needs to be, CR LF after each row.
+function standard_style() -> Style
+    return new_style(separator: ",", quote: "\"", quote_all: false, line_end: "\r\n")
+
+test "row_text: the fields Python's writer quotes, and the ones it leaves"
+    assert row_text(["a", "b c", "d,e", "f\"g", "h\ni", " j", "\\.", "", "k\rl"], standard_style()) == "a,b c,\"d,e\",\"f\"\"g\",\"h\ni\", j,\\.,,\"k\rl\"\r\n"
+
+test "row_text: one empty field, no field, every field quoted, a line feed, another separator and quote"
+    assert row_text([""], standard_style()) == "\"\"\r\n"
+    assert row_text([], standard_style()) == "\r\n"
+    assert row_text(["a", ""], new_style(separator: ",", quote: "\"", quote_all: true, line_end: "\r\n")) == "\"a\",\"\"\r\n"
+    assert row_text(["a", "b"], new_style(separator: ",", quote: "\"", quote_all: false, line_end: "\n")) == "a,b\n"
+    assert row_text(["a;b", "it's", "c"], new_style(separator: ";", quote: "'", quote_all: false, line_end: "\n")) == "'a;b';'it''s';c\n"
+    assert row_text(["é", "ü,"], standard_style()) == "é,\"ü,\"\r\n"
+
+test "rows_text: none and two"
+    assert rows_text([], standard_style()) == ""
+    assert rows_text([["a"], ["b", "c"]], standard_style()) == "a\r\nb,c\r\n"
+
+test "record_of: a row as long as the header, shorter, longer, and a header naming a column twice"
+    assert record_of(header: ["a", "b"], row: ["1", "2"]).must() == {"a": "1", "b": "2"}
+    assert keys(record_of(header: ["a", "b"], row: ["4"]).must()) == ["a"]
+    assert record_of(header: ["a", "b"], row: []).must().len() == 0
+
+    match record_of(header: ["a", "b"], row: ["1", "2", "3"])
+        .ok _  => assert false
+        .err e => assert e.msg == "a row of 3 fields where the header names 2"
+
+    match record_of(header: ["a", "a"], row: ["1", "2"])
+        .ok _  => assert false
+        .err e => assert e.msg == "the header names \"a\" twice"
+
+test "records_rows: a missing key written empty as Python's DictWriter writes it, and a key the header lacks refused"
+    assert records_rows(["a", "b"], [{"a": "1"}]).must() == [["a", "b"], ["1", ""]]
+    assert records_rows(["a"], []).must() == [["a"]]
+
+    match records_rows(["a", "b"], [{"a": "1", "c": "2"}])
+        .ok _  => assert false
+        .err e => assert e.msg == "a record holds \"c\", which the header does not name"

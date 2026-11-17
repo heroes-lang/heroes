@@ -1,0 +1,116 @@
+# The tree construction dispatcher (13.2.6): each token goes to the rules of
+# foreign content or of the current insertion mode, and the steps a rule
+# answers (reprocess, use another mode's rules, foster parent) are run here,
+# where every mode is known, so that no mode module names another.
+
+use html/internal/body
+use html/internal/builder
+use html/internal/dom
+use html/internal/foreign
+use html/internal/modes_head
+use html/internal/modes_rest
+use html/internal/modes_table
+use html/internal/token
+
+# The most steps one token may take. The standard's rules reprocess a token a
+# handful of times; past this many the token is dropped, so that no text can
+# hold tree construction still, and `stuck` counts it.
+constant STEP_LIMIT: i64
+    64
+
+# Whether the token `t` goes to the rules of foreign content.
+function is_foreign(b: builder.Builder lent, t: token.Token lent) -> bool
+    if b.depth == 0 || t.kind == token.EOF
+        return false
+    node = builder.adjusted_current(b)
+
+    if b.tree.spaces[node] == dom.HTML
+        return false
+
+    if foreign.is_mathml_text_point(b.tree, node)
+        if t.kind == token.CHARS || t.kind == token.START && t.name != "mglyph" && t.name != "malignmark"
+            return false
+
+    if b.tree.spaces[node] == dom.MATHML && b.tree.names[node] == "annotation-xml" && t.kind == token.START && t.name == "svg"
+        return false
+
+    if foreign.is_html_point(b.tree, node) && (t.kind == token.START || t.kind == token.CHARS)
+        return false
+    return true
+
+# The step of the rules of `mode` for `t`.
+function run_mode(@b: builder.Builder, mode: builder.Mode, @t: token.Token) -> builder.Step
+    return match mode
+        .initial                                  => modes_head.initial(@b, @t)
+        .before_html                              => modes_head.before_html(@b, @t)
+        .before_head                              => modes_head.before_head(@b, @t)
+        .in_head                                  => modes_head.in_head(@b, @t)
+        .in_head_noscript                         => modes_head.in_head_noscript(@b, @t)
+        .after_head                               => modes_head.after_head(@b, @t)
+        .in_body                                  => body.in_body(@b, @t)
+        .text                                     => modes_rest.text(@b, t)
+        .in_table                                 => modes_table.in_table(@b, t)
+        .in_table_text                            => modes_table.in_table_text(@b, t)
+        .in_caption                               => modes_table.in_caption(@b, t)
+        .in_column_group                          => modes_table.in_column_group(@b, @t)
+        .in_table_body                            => modes_table.in_table_body(@b, t)
+        .in_row                                   => modes_table.in_row(@b, t)
+        .in_cell                                  => modes_table.in_cell(@b, t)
+        .in_template                              => modes_rest.in_template(@b, t)
+        .after_body                               => modes_rest.after_body(@b, @t)
+        .in_frameset | .after_frameset            => modes_rest.frameset(@b, t)
+        .after_after_body | .after_after_frameset => modes_rest.after_after(@b, @t)
+
+# The first step for `t`: foreign content's rules or the current mode's.
+function dispatch(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if is_foreign(b, t)
+        return foreign.foreign(@b, @t)
+    return run_mode(@b, b.mode, @t)
+
+# Runs the steps from `first` until the token is handled, within `budget`
+# steps, which it counts down.
+function settle(@b: builder.Builder, @t: token.Token, first: builder.Step, @budget: i64, @stuck: i64)
+    step: builder.Step @= first
+
+    while true
+        budget @ budget - 1
+
+        if budget < 0
+            stuck @ stuck + 1
+            return
+
+        match step
+            .done    => return
+            .again   => step @ dispatch(@b, @t)
+            .using u => step @ run_mode(@b, u.mode, @t)
+            .using_foster =>
+                b.foster @ true
+                settle(@b, @t, run_mode(@b, .in_body, @t), budget: @budget, stuck: @stuck)
+                b.foster @ false
+                return
+            .using_head =>
+                head = b.head
+                builder.push_open(@b, head)
+                settle(@b, @t, run_mode(@b, .in_head, @t), budget: @budget, stuck: @stuck)
+                builder.remove_from_stack(@b, head)
+                return
+
+# Processes the token `t`: the line feed `pre` and `textarea` drop, the rules,
+# and the parse error of a `/>` no rule acknowledged.
+function process(@b: builder.Builder, t: token.Token, @stuck: i64)
+    current: token.Token @= t
+
+    if b.skip_newline
+        b.skip_newline @ false
+
+        if current.kind == token.CHARS && current.data.len() > 0 && current.data[0] == '\n'
+            current.data @ current.data.slice(from: 1, to: current.data.len())
+
+            if current.data == ""
+                return
+    b.acknowledged @ false
+    budget: i64 @= STEP_LIMIT
+    settle(@b, @current, dispatch(@b, @current), budget: @budget, stuck: @stuck)
+
+    if current.kind == token.START && current.self_closing && !b.acknowledged
+        builder.error(@b, "non-void-html-element-start-tag-with-trailing-solidus", current)

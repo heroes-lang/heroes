@@ -1,0 +1,551 @@
+# INI read and written: sections in brackets, each holding keys and their
+# values, in the order they were written, as Python's `configparser` reads
+# them. A document is plain data a program may walk, build and change, and
+# the functions below look a value up, change one, and write the document
+# back.
+#
+# A value is text: a number is read from it with `numbers`, and no value
+# refers to another, since `%(name)s` and `${name}` are read as the text they
+# are. Keys keep their case unless the options ask for lower case. A key the
+# `DEFAULT` section holds is found in every section that does not hold it.
+#
+# Fails `invalid` where a text is not INI as the options read it, the message
+# opening `line L:`, and where a document would not read back as written;
+# `not_found` where a section or a key looked up is not there; `exists` where a
+# section added is there already.
+
+use ini/internal/read
+use ini/internal/write
+use strings
+
+## Codes
+
+# The code of a text that is not INI as the options read it, of a document
+# that would not read back, and of a value that is not a boolean.
+constant INVALID: str
+    "invalid"
+
+# The code of a section or a key looked up that is not there: `value_of`,
+# `bool_of`, `section_of`, `remove_section`, `remove_key`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a section added that is there already: `add_section`.
+constant EXISTS: str
+    "exists"
+
+# The name of the section whose keys every other section holds where it does
+# not hold its own: Python's `DEFAULTSECT`.
+constant DEFAULT_SECTION: str
+    "DEFAULT"
+
+## The document
+
+# A key and its value.
+record Entry
+    # The key, as written or in lower case as the options read it; not empty.
+    key: str
+    # The value, white space at its ends trimmed; its lines, where it went on
+    # under the key, joined by line feeds. "" for a bare key.
+    value: str
+    # Whether it stood with no delimiter and no value, which
+    # `ReadOptions.bare_keys` allows.
+    bare: bool
+    # The comment lines directly above it, each with its `#` or `;`, where
+    # `ReadOptions.keep_comments` keeps them; else empty.
+    comments: [str]
+
+# A section: a header and the keys under it.
+record Section
+    # The name between the brackets, as written; "" for the keys before the
+    # first header, which `ReadOptions.unnamed_section` allows and which only
+    # the first section may hold.
+    name: str
+    # The comment lines directly above its header, where kept.
+    comments: [str]
+    # Its keys, in the order first written; each key once.
+    entries: [Entry]
+
+# An INI document: its sections in the order first written, each name once.
+# Built by `parse`, by `from_map`, or directly.
+record Document
+    # The sections.
+    sections: [Section]
+    # The comment lines after everything else, where kept.
+    closing: [str]
+
+## Reading
+
+# How a text is read. `strict` answers Python's defaults; a program changes
+# the fields it needs.
+record ReadOptions
+    # The texts that separate a key from its value, the first standing in
+    # the line winning: `["=", ":"]`.
+    delimiters: [str]
+    # The texts that open a comment line, after any white space:
+    # `["#", ";"]`.
+    comment_prefixes: [str]
+    # The texts that open a comment at the end of a line, where white space
+    # stands before them; empty for none, so `k = a # b` is the value `a # b`.
+    inline_comment_prefixes: [str]
+    # Whether a section given twice is read as one and a key given twice
+    # keeps its last value; else either fails `invalid`.
+    duplicates: bool
+    # Whether keys are read in lower case, as Python reads them.
+    lower_keys: bool
+    # Whether a line holding a key alone, with no delimiter, is a bare key.
+    bare_keys: bool
+    # Whether keys may stand before the first header, in a section of no
+    # name.
+    unnamed_section: bool
+    # Whether comment lines are kept above the section or the key after
+    # them, and at the end; else dropped. Inline comments are always dropped.
+    keep_comments: bool
+    # Whether an empty line inside a value that goes on below it belongs to
+    # the value; else it ends the value.
+    empty_lines_in_values: bool
+
+# Python's defaults, but keys kept as written: `=` and `:`, `#` and `;`
+# comment lines and no inline ones, nothing given twice, no bare key, no key
+# before a header, comments dropped, empty lines kept inside a value.
+function strict() -> ReadOptions
+    return ReadOptions(
+        delimiters: ["=", ":"],
+        comment_prefixes: ["#", ";"],
+        inline_comment_prefixes: [],
+        duplicates: false,
+        lower_keys: false,
+        bare_keys: false,
+        unnamed_section: false,
+        keep_comments: false,
+        empty_lines_in_values: true
+    )
+
+# The document `text` holds, read as `strict` reads.
+#
+# - `text`: the INI text, line feeds or CR LF; empty for no section.
+#
+# Fails `invalid`, the message opening `line L:`, where a key stands before
+# any header, a line is neither a header nor a key and its value, a header
+# has no name, no closing bracket or text after it, or a section or a key is
+# given twice. See also `parse_with`.
+function parse(text: str) -> Document?
+    return parse_with(text, strict())
+
+# The document `text` holds, read as `options` say.
+#
+# - `text`: the INI text; empty for no section.
+# - `options`: how it is read.
+#
+# Fails `invalid` as `parse` does, where `options` refuse it. Aborts where
+# `options.delimiters` is empty or holds "".
+function parse_with(text: str, options: ReadOptions) -> Document?
+    assert options.delimiters.len() > 0
+
+    for d in options.delimiters
+        assert d != ""
+
+    rules = read.Rules(
+        delimiters: options.delimiters,
+        comments: options.comment_prefixes,
+        inline: options.inline_comment_prefixes,
+        duplicates: options.duplicates,
+        lower_keys: options.lower_keys,
+        bare_keys: options.bare_keys,
+        unnamed: options.unnamed_section,
+        keep_comments: options.keep_comments,
+        empty_lines: options.empty_lines_in_values
+    )
+    got = read.parse_text(text, rules)?
+    sections: [Section] @= []
+
+    for part in got.parts
+        entries: [Entry] @= []
+
+        for item in part.items
+            entries @ entries.push(Entry(key: item.key, value: item.value, bare: item.bare, comments: item.comments))
+
+        sections @ sections.push(Section(name: part.name, comments: part.comments, entries: entries))
+
+    return ok(Document(sections: sections, closing: got.closing))
+
+# A document of the sections of `sections`, in the map's order, each holding
+# its keys in the map's order.
+#
+# - `sections`: section names to maps of keys to values.
+function from_map(sections: {str: {str: str}}) -> Document
+    made: [Section] @= []
+
+    for name in keys(sections)
+        inner = sections[name].must()
+        entries: [Entry] @= []
+
+        for key in keys(inner)
+            entries @ entries.push(Entry(key: key, value: inner[key].must(), bare: false, comments: []))
+
+        made @ made.push(Section(name: name, comments: [], entries: entries))
+
+    return Document(sections: made, closing: [])
+
+## Looking up
+
+# The names of the sections of `doc`, in order, `DEFAULT_SECTION` left out as
+# Python leaves it out.
+#
+# - `doc`: the document.
+function sections_of(doc: Document) -> [str]
+    names: [str] @= []
+
+    for s in doc.sections
+        if s.name != DEFAULT_SECTION
+            names @ names.push(s.name)
+
+    return names
+
+# Whether `doc` holds a section named `name`.
+#
+# - `doc`: the document.
+# - `name`: the section's name, as written.
+function has_section(doc: Document, name: str) -> bool
+    for s in doc.sections
+        if s.name == name
+            return true
+
+    return false
+
+# Whether `key` has a value in the section `section` of `doc`, its own or
+# `DEFAULT_SECTION`'s.
+#
+# - `doc`: the document.
+# - `section`: the section's name.
+# - `key`: the key, as the document holds it.
+function has_key(doc: Document, section: str, key: str) -> bool
+    return !value_of(doc, section: section, key: key).is_err()
+
+# The value of `key` in the section `section` of `doc`, else in
+# `DEFAULT_SECTION`.
+#
+# - `doc`: the document.
+# - `section`: the section's name, as written.
+# - `key`: the key, as the document holds it: in lower case where it was read
+#   so.
+#
+# Fails `not_found` where `doc` holds no such section, or neither it nor
+# `DEFAULT_SECTION` holds the key. A bare key's value is "". See also
+# `section_of`.
+function value_of(doc: Document, section: str, key: str) -> str?
+    at: i64 @= -1
+
+    for k in range(from: 0, to: doc.sections.len())
+        if at < 0 && doc.sections[k].name == section
+            at @ k
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"no section \"{section}\"")
+
+    for e in doc.sections[at].entries
+        if e.key == key
+            return ok(e.value)
+
+    if section != DEFAULT_SECTION
+        for d in doc.sections
+            if d.name == DEFAULT_SECTION
+                for e in d.entries
+                    if e.key == key
+                        return ok(e.value)
+    return fail(code: NOT_FOUND, msg: f"no key \"{key}\" in the section \"{section}\"")
+
+# The value of `key` in `section` read as a boolean, as Python reads one:
+# `1`, `yes`, `true` and `on` are true, `0`, `no`, `false` and `off` false, in
+# any case.
+#
+# - `doc`: the document.
+# - `section`: the section's name.
+# - `key`: the key.
+#
+# Fails `not_found` as `value_of` does, and `invalid` where the value is none
+# of those words.
+function bool_of(doc: Document, section: str, key: str) -> bool?
+    value = value_of(doc, section: section, key: key)?
+    word = strings.to_lower_ascii(value)
+
+    if word == "1" || word == "yes" || word == "true" || word == "on"
+        return ok(true)
+
+    if word == "0" || word == "no" || word == "false" || word == "off"
+        return ok(false)
+    return fail(
+        code: INVALID,
+        msg: f"the value of \"{key}\" in the section \"{section}\" is \"{value}\", not a boolean"
+    )
+
+# The keys and values of the section `name`, its own in order, then those of
+# `DEFAULT_SECTION` it does not hold.
+#
+# - `doc`: the document.
+# - `name`: the section's name.
+#
+# Fails `not_found` where `doc` holds no such section.
+function section_of(doc: Document, name: str) -> {str: str}?
+    at: i64 @= -1
+
+    for k in range(from: 0, to: doc.sections.len())
+        if at < 0 && doc.sections[k].name == name
+            at @ k
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"no section \"{name}\"")
+    found: {str: str} @= {}
+
+    for e in doc.sections[at].entries
+        found[e.key] @ e.value
+
+    if name != DEFAULT_SECTION
+        for d in doc.sections
+            if d.name == DEFAULT_SECTION
+                for e in d.entries
+                    if found[e.key].is_err()
+                        found[e.key] @ e.value
+    return ok(found)
+
+## Changing
+
+# Gives `key` the value `value` in the section `section`: in its place where
+# the section holds it, at the end otherwise, the section added at the end
+# where `doc` has none of that name.
+#
+# - `@doc`: the document; changes.
+# - `section`: the section's name.
+# - `key`: the key; its comments stay.
+# - `value`: the value.
+function set_value(@doc: Document, section: str, key: str, value: str)
+    if !has_section(doc, section)
+        doc.sections @ doc.sections.push(Section(name: section, comments: [], entries: []))
+    at: i64 @= -1
+
+    for k in range(from: 0, to: doc.sections.len())
+        if at < 0 && doc.sections[k].name == section
+            at @ k
+
+    entries @= doc.sections[at].entries
+
+    for k in range(from: 0, to: entries.len())
+        if entries[k].key == key
+            entries[k] @ Entry(key: key, value: value, bare: false, comments: entries[k].comments)
+            doc.sections[at].entries @ entries
+            return
+
+    entries @ entries.push(Entry(key: key, value: value, bare: false, comments: []))
+    doc.sections[at].entries @ entries
+
+# Adds an empty section `name` at the end of `doc`.
+#
+# - `@doc`: the document; gains the section.
+# - `name`: the section's name.
+#
+# Fails `exists` where `doc` holds a section of that name.
+function add_section(@doc: Document, name: str) -> ()?
+    if has_section(doc, name)
+        return fail(code: EXISTS, msg: f"the section \"{name}\" is there already")
+    doc.sections @ doc.sections.push(Section(name: name, comments: [], entries: []))
+    return ok()
+
+# Removes the section `name` and every key in it.
+#
+# - `@doc`: the document; loses the section.
+# - `name`: the section's name.
+#
+# Fails `not_found` where `doc` holds no such section.
+function remove_section(@doc: Document, name: str) -> ()?
+    at: i64 @= -1
+
+    for k in range(from: 0, to: doc.sections.len())
+        if at < 0 && doc.sections[k].name == name
+            at @ k
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"no section \"{name}\"")
+    kept: [Section] @= []
+
+    for k in range(from: 0, to: doc.sections.len())
+        if k != at
+            kept @ kept.push(doc.sections[k])
+
+    doc.sections @ kept
+    return ok()
+
+# Removes `key` from the section `section`.
+#
+# - `@doc`: the document; loses the key.
+# - `section`: the section's name.
+# - `key`: the key; one `DEFAULT_SECTION` holds is not removed from it.
+#
+# Fails `not_found` where `doc` holds no such section, or the section no such
+# key.
+function remove_key(@doc: Document, section: str, key: str) -> ()?
+    at: i64 @= -1
+
+    for k in range(from: 0, to: doc.sections.len())
+        if at < 0 && doc.sections[k].name == section
+            at @ k
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"no section \"{section}\"")
+    kept: [Entry] @= []
+
+    for e in doc.sections[at].entries
+        if e.key != key
+            kept @ kept.push(e)
+
+    if kept.len() == doc.sections[at].entries.len()
+        return fail(code: NOT_FOUND, msg: f"no key \"{key}\" in the section \"{section}\"")
+    doc.sections[at].entries @ kept
+    return ok()
+
+## Writing
+
+# How a document is written. `spaced` answers Python's layout.
+record WriteOptions
+    # What stands between a key and its value: "=" or ":".
+    delimiter: str
+    # Whether a space stands on either side of it.
+    spaced: bool
+
+# Python's layout: `key = value`.
+function spaced() -> WriteOptions
+    return WriteOptions(delimiter: "=", spaced: true)
+
+# `doc` written as `spaced` writes it.
+#
+# - `doc`: the document.
+#
+# Each section is its comments, its header, its keys each after its comments,
+# and an empty line; a value's later lines are indented by a tab; the
+# section of no name, first, has no header. Fails `invalid` where a section of
+# no name is not the first, a name holds a line end or a `]`, a comment is not
+# one line opening with `#` or `;`, or a key or a value would be read back
+# otherwise by `strict`: a key empty, holding a delimiter or a line end, or
+# opening like a header or a comment; a value holding a carriage return, a
+# line with white space at an end, a later line opening like a comment, or an
+# empty last line. See also `format_with`.
+function format(doc: Document) -> str?
+    return format_with(doc, spaced())
+
+# `doc` written as `options` say.
+#
+# - `doc`: the document.
+# - `options`: how keys and values are written.
+#
+# Fails `invalid` as `format` does. Aborts where `options.delimiter` is
+# neither "=" nor ":".
+function format_with(doc: Document, options: WriteOptions) -> str?
+    parts: [read.Part] @= []
+
+    for s in doc.sections
+        items: [read.Item] @= []
+
+        for e in s.entries
+            items @ items.push(read.Item(key: e.key, value: e.value, bare: e.bare, comments: e.comments))
+
+        parts @ parts.push(read.Part(name: s.name, comments: s.comments, items: items, line: 0))
+
+    style = write.new_style(delimiter: options.delimiter, spaced: options.spaced)
+    return write.text_of(read.Read(parts: parts, closing: doc.closing), style)
+
+## Examples
+
+# Python's defaults, a key with a colon.
+test "strict: a key and its value split at a colon"
+    doc = parse_with("[server]\nport: 8080\n", strict()).must()
+    assert value_of(doc, section: "server", key: "port").must() == "8080"
+
+# A document read, two sections in order.
+test "parse: two sections"
+    doc = parse("[a]\nx = 1\n[b]\ny = 2\n").must()
+    assert sections_of(doc) == ["a", "b"]
+
+# Comments kept and keys read in lower case.
+test "parse_with: comments kept, keys lowered"
+    options @= strict()
+    options.keep_comments @ true
+    options.lower_keys @ true
+    doc = parse_with("[a]\n# the user\nName = Ana\n", options).must()
+    assert doc.sections[0].entries[0].key == "name" && doc.sections[0].entries[0].comments == ["# the user"]
+
+# A document built from maps.
+test "from_map: one section of two keys"
+    doc = from_map({"db": {"host": "localhost", "port": "5432"}})
+    assert format(doc).must() == "[db]\nhost = localhost\nport = 5432\n\n"
+
+# The section names, the default one left out.
+test "sections_of: DEFAULT left out"
+    assert sections_of(parse("[DEFAULT]\nd = 0\n[a]\n").must()) == ["a"]
+
+# Whether a section is there.
+test "has_section: one there, one not"
+    doc = parse("[a]\n").must()
+    assert has_section(doc, "a") && !has_section(doc, "b")
+
+# Whether a key has a value, the default section's counting.
+test "has_key: a key of the default section"
+    doc = parse("[DEFAULT]\ncolor = no\n[a]\n").must()
+    assert has_key(doc, section: "a", key: "color")
+
+# A value looked up, and one taken from the default section.
+test "value_of: its own and the default's"
+    doc = parse("[DEFAULT]\nport = 80\n[web]\nhost = example.org\n").must()
+    assert value_of(doc, section: "web", key: "host").must() == "example.org"
+    assert value_of(doc, section: "web", key: "port").must() == "80"
+
+# A value read as a boolean.
+test "bool_of: yes and off"
+    doc = parse("[a]\ncache = yes\ndebug = off\n").must()
+    assert bool_of(doc, section: "a", key: "cache").must() && !bool_of(doc, section: "a", key: "debug").must()
+
+# A section's keys and values, the default ones after its own.
+test "section_of: its own then the default's"
+    doc = parse("[DEFAULT]\nd = 0\n[a]\nk = 1\n").must()
+    assert keys(section_of(doc, "a").must()) == ["k", "d"]
+
+# A value changed in place and one added.
+test "set_value: one changed, one added"
+    doc @= parse("[a]\nk = 1\n").must()
+    set_value(@doc, section: "a", key: "k", value: "2")
+    set_value(@doc, section: "b", key: "j", value: "3")
+    assert format(doc).must() == "[a]\nk = 2\n\n[b]\nj = 3\n\n"
+
+# A section added, and added again.
+test "add_section: once, then exists"
+    doc @= parse("").must()
+    add_section(@doc, "a").must()
+
+    match add_section(@doc, "a")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+# A section removed.
+test "remove_section: the first of two"
+    doc @= parse("[a]\n[b]\n").must()
+    remove_section(@doc, "a").must()
+    assert sections_of(doc) == ["b"]
+
+# A key removed.
+test "remove_key: one of two"
+    doc @= parse("[a]\nk = 1\nj = 2\n").must()
+    remove_key(@doc, section: "a", key: "k").must()
+    assert format(doc).must() == "[a]\nj = 2\n\n"
+
+# Python's layout.
+test "spaced: a space either side"
+    assert format_with(from_map({"a": {"k": "v"}}), spaced()).must() == "[a]\nk = v\n\n"
+
+# A document read and written back, a value of two lines.
+test "format: a value across two lines"
+    assert format(parse("[a]\nk = one\n  two\n").must()).must() == "[a]\nk = one\n\ttwo\n\n"
+
+# A colon and no spaces.
+test "format_with: key:value"
+    options @= spaced()
+    options.delimiter @ ":"
+    options.spaced @ false
+    assert format_with(from_map({"a": {"k": "v"}}), options).must() == "[a]\nk:v\n\n"

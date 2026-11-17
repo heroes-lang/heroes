@@ -1,0 +1,657 @@
+# TOML 1.0.0 read and written: a document of tables, keys and values, read
+# into a tree a program matches on and written back as text that reads as
+# the same tree. Every rule of TOML 1.0.0 is held: a key or a table is
+# defined once, an inline table and an array written whole take nothing more,
+# and the forms TOML 1.1 adds (a time with no seconds, `\x` and `\e`, a line
+# end or a last comma inside an inline table) are refused.
+#
+# Its dates and times are `time` values: a date and a time with an offset is
+# held as written, with its offset, so that every year from 0 to 9999 is held,
+# and `instant_of` answers the instant where an `Instant` reaches it. The
+# compiler reads its own `heroes.toml` with its own code, not with this.
+#
+# Fails `invalid` where a text is not TOML 1.0.0, the message opening `line L,
+# column C:`, both from 1 and the column in characters; `does_not_fit` where an
+# integer is past an `i64`; `not_found` where a key looked up is not there.
+
+use json
+use time
+use toml/internal/doc
+use toml/internal/scalar
+use toml/internal/write
+
+## The value
+
+# One TOML value. A `match` on it answers all ten cases; a document is a
+# `table`.
+variant Value
+    # A string, its escapes read.
+    text
+        # The characters.
+        v: str
+    # An integer.
+    integer
+        # The integer.
+        v: i64
+    # A float, `inf` and `nan` included.
+    float
+        # The float.
+        v: f64
+    # `true` or `false`.
+    boolean
+        # The boolean.
+        v: bool
+    # A date and a time with an offset from UTC: `1979-05-27T07:32:00-07:00`.
+    date_time
+        # The date and the time as written, on the clock of `offset_minutes`;
+        # its nanoseconds hold the fraction's first nine digits.
+        at: time.DateTime
+        # The offset, in minutes east of UTC: `-420` for `-07:00`, `0` for
+        # `Z`, `+00:00` and `-00:00`; from -1439 to 1439.
+        offset_minutes: i64
+    # A date and a time with no offset, which no instant answers.
+    local_date_time
+        # The date and the time as written.
+        at: time.DateTime
+    # A date alone.
+    local_date
+        # The date; its hour, minute, second and nanosecond are 0.
+        at: time.DateTime
+    # A time of day alone.
+    local_time
+        # The time since midnight, from 0 to just under 24 hours.
+        since_midnight: time.Duration
+    # An array: its items in order, of any kinds.
+    array
+        # The items.
+        items: [Value]
+    # A table: its keys and their values, in the order they were defined.
+    table
+        # The members; `keys` gives them in order.
+        members: {str: Value}
+
+## Codes and limits
+
+# The code of a text that is not TOML 1.0.0, of a value that is not of the
+# kind asked for, and of a value no TOML writes.
+constant INVALID: str
+    "invalid"
+
+# The code of an integer past what an `i64` holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a key a table does not hold: `value_at`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The deepest a value may stand below the document: the keys of its path and
+# the arrays and inline tables around it counted together. `parse` and
+# `format` refuse a deeper one, so that no walk of it, `==` included, runs out
+# of stack.
+constant MAX_DEPTH: i64
+    512
+
+## Reading
+
+# The document `text` holds, as a `table`.
+#
+# - `text`: the TOML text, LF or CR LF line ends; empty for an empty table.
+#
+# Fails `invalid` where `text` is not TOML 1.0.0, a key or a table is defined
+# twice, a dotted key adds to a table a header defined, or anything adds to an
+# inline table or an array written whole, the message opening `line L, column
+# C:` and saying what was expected and what was found; where a date is no day
+# of the calendar, a time has no seconds or a second of 60; where a value is
+# nested deeper than `MAX_DEPTH`. Fails `does_not_fit` where an integer is
+# past an `i64`. A byte order mark is refused, as Python's tomllib refuses it.
+#
+# A table of `n` keys costs time in `n` squared.
+function parse(text: str) -> Value?
+    nodes = doc.parse_document(text)?
+
+    # The containers open, the root first, and the next child of each.
+    open: [i64] @= [0]
+    next: [i64] @= [0]
+
+    # The values of the innermost open container's children made so far, and
+    # those of the containers that hold it.
+    built: [Value] @= []
+    held: [[Value]] @= []
+    result: Value @= .table(members: {})
+
+    while open.len() > 0
+        top = open.len() - 1
+        n = nodes[open[top]]
+
+        if next[top] < n.children.len()
+            child = n.children[next[top]]
+            next[top] @ next[top] + 1
+            c = nodes[child]
+            v = c.value
+
+            if c.kind == scalar.TABLE || c.kind == scalar.ARRAY
+                held @ held.push(built)
+                built @ []
+                open @ open.push(child)
+                next @ next.push(0)
+            else if c.kind == scalar.TEXT
+                built @ built.push(.text(v: v.text))
+            else if c.kind == scalar.INTEGER
+                built @ built.push(.integer(v: v.integer))
+            else if c.kind == scalar.FLOAT
+                built @ built.push(.float(v: v.float))
+            else if c.kind == scalar.BOOLEAN
+                built @ built.push(.boolean(v: v.flag))
+            else if c.kind == scalar.DATE_TIME
+                built @ built.push(.date_time(at: v.date, offset_minutes: v.integer))
+            else if c.kind == scalar.LOCAL_DATE_TIME
+                built @ built.push(.local_date_time(at: v.date))
+            else if c.kind == scalar.LOCAL_DATE
+                built @ built.push(.local_date(at: v.date))
+            else
+                built @ built.push(.local_time(since_midnight: v.clock))
+        else
+            done: Value @= .array(items: built)
+
+            if n.kind == scalar.TABLE
+                members: {str: Value} @= {}
+
+                for k in range(from: 0, to: n.keys.len())
+                    members[n.keys[k]] @ built[k]
+
+                done @ .table(members: members)
+            open @ open.slice(from: 0, to: top)
+            next @ next.slice(from: 0, to: top)
+
+            if top == 0
+                result @ done
+            else
+                built @ held[top - 1]
+                built @ built.push(done)
+                held @ held.slice(from: 0, to: top - 1)
+
+    return ok(result)
+
+# The value under `path` in `v`, each key naming a member of the table the
+# one before it reached.
+#
+# - `v`: a value, a document or any table in it.
+# - `path`: the keys, outermost first; empty for `v` itself.
+#
+# Fails `not_found` where a table holds no such key, and `invalid` where a
+# key is asked of a value that is not a table, each message naming the path
+# that far.
+function value_at(v: Value, path: [str]) -> Value?
+    here @= v
+
+    for at in range(from: 0, to: path.len())
+        so_far = path.slice(from: 0, to: at + 1).join(".")
+
+        match here
+            .table t =>
+                match t.members[path[at]]
+                    .ok found => here @ found
+                    .err _    => return fail(code: NOT_FOUND, msg: f"no key \"{so_far}\"")
+            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+                return fail(code: INVALID, msg: f"\"{so_far}\" asks a key of a value that is not a table")
+
+    return ok(here)
+
+# The instant a `date_time` names.
+#
+# - `v`: a `date_time`.
+#
+# Fails `invalid` where `v` is another kind, and `does_not_fit` where the
+# instant is outside what a `time.Instant` holds, 1677 to 2262.
+function instant_of(v: Value) -> time.Instant?
+    match v
+        .date_time d =>
+            local = time.from_date_time(d.at)?
+            return time.add(local, time.minutes(-d.offset_minutes)?)
+        .text _ | .integer _ | .float _ | .boolean _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return fail(code: INVALID, msg: "only a date and a time with an offset names an instant")
+
+## Writing
+
+# `v`, a document, written as TOML 1.0.0 text that `parse` reads back as `v`.
+#
+# - `v`: a `table`, the document's root.
+#
+# Each table's plain keys come first, `key = value`, then each of its tables
+# under its header `[a.b]` and each array of tables, an array of tables alone
+# and not empty, under `[[a.b]]`; every other value is inline. A key is bare
+# where it may be, else quoted; a string is written in one line; a float in
+# the fewest digits that read back.
+#
+# Fails `invalid` where `v` is not a table, is nested deeper than
+# `MAX_DEPTH`, or holds a date that is no day of the calendar from year 0 to
+# 9999, a time outside its range, a local time outside a day, or an offset of
+# a day or more.
+function format(v: Value) -> str?
+    match v
+        .table _ => _ = 0
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            return fail(code: INVALID, msg: "a document is a table")
+
+    nodes: [doc.Node] @= [doc.container(kind: scalar.TABLE, depth: 0)]
+    work: [Value] @= [v]
+    slots: [i64] @= [0]
+
+    while work.len() > 0
+        last = work.len() - 1
+        w = work[last]
+        slot = slots[last]
+        work @ work.slice(from: 0, to: last)
+        slots @ slots.slice(from: 0, to: last)
+        depth = nodes[slot].depth
+        node @= doc.container(kind: scalar.TABLE, depth: depth)
+        children: [Value] @= []
+        names: [str] @= []
+
+        match w
+            .table t =>
+                for key in keys(t.members)
+                    names @ names.push(key)
+                    children @ children.push(t.members[key].must())
+            .array a =>
+                node.kind @ scalar.ARRAY
+                children @ a.items
+            .text s =>
+                node.kind @ scalar.TEXT
+                node.value.text @ s.v
+            .integer i =>
+                node.kind @ scalar.INTEGER
+                node.value.integer @ i.v
+            .float f =>
+                node.kind @ scalar.FLOAT
+                node.value.float @ f.v
+            .boolean b =>
+                node.kind @ scalar.BOOLEAN
+                node.value.flag @ b.v
+            .date_time d =>
+                node.kind @ scalar.DATE_TIME
+                node.value.date @ d.at
+                node.value.integer @ d.offset_minutes
+            .local_date_time d =>
+                node.kind @ scalar.LOCAL_DATE_TIME
+                node.value.date @ d.at
+            .local_date d =>
+                node.kind @ scalar.LOCAL_DATE
+                node.value.date @ d.at
+            .local_time c =>
+                node.kind @ scalar.LOCAL_TIME
+                node.value.clock @ c.since_midnight
+
+        if children.len() > 0 && depth >= MAX_DEPTH
+            return fail(code: INVALID, msg: f"a value nested deeper than {MAX_DEPTH} levels")
+        kids: [i64] @= []
+
+        for child in children
+            nodes @ nodes.push(doc.container(kind: scalar.TABLE, depth: depth + 1))
+            kids @ kids.push(nodes.len() - 1)
+            work @ work.push(child)
+            slots @ slots.push(nodes.len() - 1)
+
+        node.keys @ names
+        node.children @ kids
+        nodes[slot] @ node
+
+    return write.document_text(nodes)
+
+## JSON
+
+# The code of a value one side has no form for: a `nan` or an infinity, which
+# `to_json` fails with, and JSON's `null`, which `from_json` fails with.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# `v` as a `json.Value`: a table an object, an array a list, and a date or a
+# time the RFC 3339 text TOML writes for it.
+#
+# - `v`: the value to cross, a document or any value in one.
+#
+# A string, a boolean and a table's keys cross as they are, the keys in their
+# order; an integer and a float become numbers. A `date_time` becomes text
+# such as `1979-05-27T07:32:00-07:00`, a `local_date_time`
+# `1979-05-27T07:32:00`, a `local_date` `1979-05-27` and a `local_time`
+# `07:32:00`, a fraction of a second written as `format` writes it. What does
+# not cross back is a date's kind: `from_json` reads its text as a string.
+#
+# Fails `unsupported` where `v` holds a `nan` or an infinity, `does_not_fit`
+# where it holds an integer past `json.MAX_EXACT_INT` either way, and
+# `invalid` where it holds a date or a time no TOML writes; each message opens
+# with the JSON pointer of the value, the empty pointer naming `v` itself. See
+# also `from_json`.
+function to_json(v: Value) -> json.Value?
+    # The values in the order a document writes them, each scalar already
+    # crossed: a container's entry counts its values, and a table's names them.
+    crossed: [json.Value] @= []
+    counts: [i64] @= []
+    tables: [bool] @= []
+    names: [[str]] @= []
+    waiting: [Value] @= [v]
+    paths: [[str]] @= [[]]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        item = waiting[top]
+        path = paths[top]
+        where = json.pointer_of(path)
+        children: [Value] @= []
+        tokens: [str] @= []
+        made: json.Value @= .null_value
+
+        match item
+            .text t => made @ .text(v: t.v)
+            .integer n =>
+                if n.v > json.MAX_EXACT_INT || n.v < -json.MAX_EXACT_INT
+                    return fail(
+                        code: DOES_NOT_FIT,
+                        msg: f"at \"{where}\": {n.v} is past what a JSON number holds exactly"
+                    )
+                made @ .number(v: to_f64(n.v))
+            .float f =>
+                if f.v != f.v || f.v - f.v != 0.0
+                    return fail(code: UNSUPPORTED, msg: f"at \"{where}\": the float {to_str(f.v)} has no JSON form")
+                made @ .number(v: f.v)
+            .boolean b => made @ .boolean(v: b.v)
+            .date_time d =>
+                day = write.date_text(d.at)
+                clock = write.clock_text(
+                    hour: d.at.hour,
+                    minute: d.at.minute,
+                    second: d.at.second,
+                    nanosecond: d.at.nanosecond
+                )
+                offset = write.offset_text(d.offset_minutes)
+
+                if day.is_err() || clock.is_err() || offset.is_err()
+                    return fail(code: INVALID, msg: f"at \"{where}\": a date and time no TOML writes")
+                made @ .text(v: day.must() + "T" + clock.must() + offset.must())
+            .local_date_time d =>
+                day = write.date_text(d.at)
+                clock = write.clock_text(
+                    hour: d.at.hour,
+                    minute: d.at.minute,
+                    second: d.at.second,
+                    nanosecond: d.at.nanosecond
+                )
+
+                if day.is_err() || clock.is_err()
+                    return fail(code: INVALID, msg: f"at \"{where}\": a date and time no TOML writes")
+                made @ .text(v: day.must() + "T" + clock.must())
+            .local_date d =>
+                match write.date_text(d.at)
+                    .ok day => made @ .text(v: day)
+                    .err _  => return fail(code: INVALID, msg: f"at \"{where}\": a date no TOML writes")
+            .local_time t =>
+                n = t.since_midnight.nanoseconds
+                clock = write.clock_text(
+                    hour: n / 3600000000000,
+                    minute: n / 60000000000 % 60,
+                    second: n / 1000000000 % 60,
+                    nanosecond: n % 1000000000
+                )
+
+                if n < 0 || clock.is_err()
+                    return fail(code: INVALID, msg: f"at \"{where}\": a time of day no TOML writes")
+                made @ .text(v: clock.must())
+            .array a =>
+                children @ a.items
+
+                for k in range(from: 0, to: a.items.len())
+                    tokens @ tokens.push(to_str(k))
+            .table t =>
+                for k in keys(t.members)
+                    children @ children.push(t.members[k].must())
+                    tokens @ tokens.push(k)
+
+        is_table = match item
+            .table _ => true
+            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ => false
+
+        is_array = match item
+            .array _ => true
+            .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ => false
+
+        crossed @ crossed.push(made)
+        tables @ tables.push(is_table)
+        names @ names.push(tokens)
+
+        if is_table || is_array
+            counts @ counts.push(children.len())
+        else
+            counts @ counts.push(-1)
+
+        for k in range(from: 0, to: children.len())
+            at = children.len() - 1 - k
+
+            if top == waiting.len()
+                waiting @ waiting.push(children[at])
+                paths @ paths.push(path.push(tokens[at]))
+            else
+                waiting[top] @ children[at]
+                paths[top] @ path.push(tokens[at])
+            top @ top + 1
+
+    # Each value assembled, the last first: a container takes its values off
+    # the top of `done`, which holds `held` of them.
+    done: [json.Value] @= []
+    held: i64 @= 0
+    at: i64 @= counts.len()
+
+    while at > 0
+        at @ at - 1
+        made: json.Value @= crossed[at]
+
+        if counts[at] >= 0
+            parts: [json.Value] @= []
+
+            for k in range(from: 0, to: counts[at])
+                parts @ parts.push(done[held - 1 - k])
+
+            held @ held - counts[at]
+
+            if tables[at]
+                members: {str: json.Value} @= {}
+
+                for k in range(from: 0, to: parts.len())
+                    members[names[at][k]] @ parts[k]
+
+                made @ .object(members: members)
+            else
+                made @ .list(items: parts)
+
+        if held == done.len()
+            done @ done.push(made)
+        else
+            done[held] @ made
+        held @ held + 1
+
+    return ok(done[0])
+
+# `v` as a TOML value: an object a table, a list an array.
+#
+# - `v`: the JSON value; a number that is a whole number from -2^63 to 2^63 -
+#   1 becomes an `integer`, `-0.0` and every other number a `float`, a string
+#   a `text` whatever it holds, an object a `table` in the order of its
+#   members.
+#
+# A text that reads as a date stays a `text`: JSON names no date, so which
+# string was one is not known here. `to_json` gives `v` back. A document is
+# a table, so `format` writes the answer only where `v` is an object.
+#
+# Fails `unsupported` where `v` holds JSON's `null`, which no TOML value is,
+# the message opening with the JSON pointer of the value. See also `to_json`.
+function from_json(v: json.Value) -> Value?
+    crossed: [Value] @= []
+    counts: [i64] @= []
+    tables: [bool] @= []
+    names: [[str]] @= []
+    waiting: [json.Value] @= [v]
+    paths: [[str]] @= [[]]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        item = waiting[top]
+        path = paths[top]
+        children: [json.Value] @= []
+        tokens: [str] @= []
+        made: Value @= .boolean(v: false)
+        count: i64 @= -1
+        is_table: bool @= false
+
+        match item
+            .null_value => return fail(code: UNSUPPORTED, msg: f"at \"{json.pointer_of(path)}\": null has no TOML form")
+            .boolean b  => made @ .boolean(v: b.v)
+            .number n =>
+                x = n.v
+                whole = x == x && x - x == 0.0 && x >= -9223372036854775808.0 && x < 9223372036854775808.0 && !(x == 0.0 && 1.0 / x < 0.0)
+
+                if whole && x == to_f64(to_i64(x).must())
+                    made @ .integer(v: to_i64(x).must())
+                else
+                    made @ .float(v: x)
+            .text t => made @ .text(v: t.v)
+            .list l =>
+                children @ l.items
+                count @ l.items.len()
+
+                for k in range(from: 0, to: l.items.len())
+                    tokens @ tokens.push(to_str(k))
+            .object o =>
+                for k in keys(o.members)
+                    children @ children.push(o.members[k].must())
+                    tokens @ tokens.push(k)
+
+                count @ o.members.len()
+                is_table @ true
+
+        crossed @ crossed.push(made)
+        counts @ counts.push(count)
+        tables @ tables.push(is_table)
+        names @ names.push(tokens)
+
+        for k in range(from: 0, to: children.len())
+            at = children.len() - 1 - k
+
+            if top == waiting.len()
+                waiting @ waiting.push(children[at])
+                paths @ paths.push(path.push(tokens[at]))
+            else
+                waiting[top] @ children[at]
+                paths[top] @ path.push(tokens[at])
+            top @ top + 1
+
+    done: [Value] @= []
+    held: i64 @= 0
+    at: i64 @= counts.len()
+
+    while at > 0
+        at @ at - 1
+        made: Value @= crossed[at]
+
+        if counts[at] >= 0
+            parts: [Value] @= []
+
+            for k in range(from: 0, to: counts[at])
+                parts @ parts.push(done[held - 1 - k])
+
+            held @ held - counts[at]
+
+            if tables[at]
+                members: {str: Value} @= {}
+
+                for k in range(from: 0, to: parts.len())
+                    members[names[at][k]] @ parts[k]
+
+                made @ .table(members: members)
+            else
+                made @ .array(items: parts)
+
+        if held == done.len()
+            done @ done.push(made)
+        else
+            done[held] @ made
+        held @ held + 1
+
+    return ok(done[0])
+
+## Examples
+
+# A small document read, a value taken out of it by its path.
+test "parse: a table and a key in it"
+    doc_value = parse("[server]\nhost = \"example.org\"\nport = 8080\n").must()
+    assert value_at(doc_value, ["server", "port"]).must() == .integer(v: 8080)
+
+# A value under a path of keys.
+test "value_at: a key of an array of tables' element is reached through the array's value"
+    doc_value = parse("title = \"Low\"\n[owner]\nname = \"Ana\"\n").must()
+    assert value_at(doc_value, ["owner", "name"]).must() == .text(v: "Ana")
+
+# The instant a date and time names.
+test "instant_of: 1979-05-27T00:32:00-07:00 is 07:32 in UTC"
+    v = value_at(parse("t = 1979-05-27T00:32:00-07:00").must(), ["t"]).must()
+    assert time.format(instant_of(v).must(), .rfc3339) == "1979-05-27T07:32:00Z"
+
+# A document written.
+test "format: a table with a sub-table"
+    sub: {str: Value} = {"port": .integer(v: 8080)}
+    members: {str: Value} = {"title": .text(v: "Low"), "server": .table(members: sub)}
+    assert format(.table(members: members)).must() == "title = \"Low\"\n\n[server]\nport = 8080\n"
+
+# A TOML document read into a `json.Value`, its date crossing as RFC 3339 text.
+test "to_json: a document with a date"
+    d = parse("name = \"Ana\"\nborn = 1979-05-27T07:32:00-07:00\n").must()
+    assert json.format(to_json(d).must()).must() == "{\"name\":\"Ana\",\"born\":\"1979-05-27T07:32:00-07:00\"}"
+
+# A JSON object written as a TOML document.
+test "from_json: a JSON object as a TOML document"
+    v = json.parse("{\"title\": \"Low\", \"port\": 8080}").must()
+    assert format(from_json(v).must()).must() == "title = \"Low\"\nport = 8080\n"
+
+test "to_json: the local dates and times, a fraction of a second, arrays of tables"
+    d = parse(
+        "a = 1979-05-27T07:32:00.5\nb = 1979-05-27\nc = 07:32:00.000001\nd = 1979-05-27 07:32:00Z\n[[t]]\nx = 1\n[[t]]\nx = 2\n"
+    ).must()
+    expected = "{\"a\":\"1979-05-27T07:32:00.5\",\"b\":\"1979-05-27\",\"c\":\"07:32:00.000001\",\"d\":\"1979-05-27T07:32:00Z\",\"t\":[{\"x\":1},{\"x\":2}]}"
+    assert json.format(to_json(d).must()).must() == expected
+
+test "to_json: a nan, an infinity and an integer past 2^53, each named by its pointer"
+    nan_doc = parse("x = [1.0, nan]\n").must()
+
+    match to_json(nan_doc)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "at \"/x/1\": the float nan has no JSON form"
+
+    big = parse("[a]\nn = 9007199254740992\n").must()
+
+    match to_json(big)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "at \"/a/n\": 9007199254740992 is past what a JSON number holds exactly"
+
+    assert !to_json(parse("n = -9007199254740991\ninf_free = -0.0\n").must()).is_err()
+
+test "to_json: a scalar alone, an empty table and an empty array"
+    assert to_json(.integer(v: 3)).must() == json.parse("3").must()
+    empty: {str: Value} = {}
+    assert to_json(.table(members: empty)).must() == json.parse("{}").must()
+    assert to_json(.array(items: [])).must() == json.parse("[]").must()
+
+test "from_json: whole numbers at the edges of an i64, minus zero, a fraction, null"
+    assert from_json(json.parse("-9223372036854775808").must()).must() == .integer(v: -9223372036854775808)
+    assert from_json(json.parse("9223372036854775808").must()).must() == .float(v: 9223372036854775808.0)
+    assert from_json(json.parse("-0.0").must()).must() == .float(v: -0.0)
+    assert from_json(json.parse("2.5").must()).must() == .float(v: 2.5)
+    assert from_json(json.parse("\"1979-05-27\"").must()).must() == .text(v: "1979-05-27")
+
+    match from_json(json.parse("{\"a\": [1, null]}").must())
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "at \"/a/1\": null has no TOML form"
+
+test "from_json and to_json: a nested JSON value crosses both ways unchanged"
+    v = json.parse("{\"b\": [1, [2.5, \"x\"], {\"c\": true}], \"a\": {}}").must()
+    assert to_json(from_json(v).must()).must() == v

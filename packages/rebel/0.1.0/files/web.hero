@@ -1,0 +1,2240 @@
+# Routes for an HTTP server in the manner of Go's Echo: explicit routes,
+# values, no magic. A router is a value built by functions: routes by method
+# and pattern, `/users/:id` and `/files/*path`, each with a name, and groups
+# under a prefix. `route` answers which route takes a request and what its
+# parameters hold; the program calls its own function for that name, with its
+# own state. Steps before and after a handler are plain functions the program
+# calls in its order: a log line, CORS, a failure answered 500, a request id,
+# a body's limit, Basic and Bearer checks, gzip. Responses of a template, of a
+# file and of a folder's files, served safely, and errors as text or JSON.
+#
+# **Why the program dispatches.** The language has no closure, and a function
+# value takes no `@` parameter (spec § 9), so no handler a router held could
+# carry the program's state as Echo's closures carry it. So the router finds
+# and the program calls: it writes `match found.name` and calls its own
+# function, handing it the state it holds by `@`.
+#
+# **A program with no state** hands `serve` its router and one top-level
+# function, which routes each request and answers it; `serve` hands the
+# router to it as `http.serve_with` hands a program's value. **A program
+# with state** writes the loop itself: `net.accept` a connection, `io.reader`
+# on its stream, then for each request `http.next_request`, `route`, its own
+# function called with its `@` state (or `not_routed` where no route takes
+# the request), and `http.write_answer`, until the request or the response
+# closes the connection; `route`'s example of a program's own loop is that
+# loop, whole, and `http` answers its 100, 417, 431, 505 and 501 and keeps
+# its connection alive as `http.serve` does.
+#
+# **What it does not do.** The connection, the reading and the writing of a
+# message are `http`'s, a URL's parts `url`'s, a JSON value `json`'s, a
+# template `template`'s, a file `fs`'s, a line of log `log`'s. A query, a form,
+# a field and Basic's credentials are read by `http.query_of`, `http.form_of`,
+# `http.value_of` and `http.basic_auth_of`. A multipart body's files are not
+# read here (`http`'s pending block). A body is held whole, as `http` holds it.
+# A handler cannot be stopped midway, so no step times one out.
+#
+# The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`, and,
+# from the connection, `closed`, `timeout`, `stopped`, `limit` and `failed`.
+
+use bytes
+use compress
+use http
+use io
+use json
+use log
+use net
+use path
+use strings
+use template
+use time
+use tls
+use url
+use uuid
+use web/internal/extensions
+use web/internal/fixture
+use web/internal/folders
+use web/internal/patterns
+use web/internal/reading
+use web/internal/routing
+use web/internal/sniffing
+
+## Codes
+
+# The code of a pattern, a prefix or a name that is not one; of a request's
+# body that is not what a step reads; and of a path whose escapes do not read.
+constant INVALID: str
+    "invalid"
+
+# The code of a request no route takes, of a name no route has, of a
+# parameter, a cookie or a token the request does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a route whose method and shape a router holds already, and of
+# a name given to a second pattern.
+constant EXISTS: str
+    "exists"
+
+## Routers
+
+# One route a router holds, as `add` made it.
+record Route
+    # The method it takes, as written: `http.METHOD_GET`; "" for every method.
+    method: str
+    # The whole pattern, its groups' prefixes before it: `/admin/users/:id`.
+    pattern: str
+    # The name `route` answers for it, which the program dispatches on.
+    name: str
+    # The names of the groups it was added in, the outermost first; none for a
+    # route added to a router made by `new_router`.
+    groups: [str]
+
+# How this package writes an error's body.
+variant ErrorForm
+    # Text: the message and a line end, typed `text/plain; charset=utf-8`.
+    text
+    # JSON as Echo writes it: `{"message":"Not Found"}`, typed
+    # `application/json`.
+    json
+
+# A set of routes and how a request no route takes is answered. Made by
+# `new_router` and `new_group`; `add`, `add_any` and `mount` add its routes,
+# and the program may set `redirect_slash` and `errors` directly.
+record Router
+    # The prefix every pattern added gets before it: "" for a router `new_router`
+    # made, `/admin` for a group of that prefix.
+    prefix: str
+    # The names of the groups this router stands for, the outermost first.
+    groups: [str]
+    # Every route, in the order it was added.
+    routes: [Route]
+    # Whether a path no route takes is sent, by `not_routed`, to the same path
+    # with its last `/` added or taken away where a route takes that one:
+    # false unless the program sets it.
+    redirect_slash: bool
+    # How `not_routed` writes its bodies.
+    errors: ErrorForm
+    # What `route` reads: each route's pieces and the tree of their segments.
+    index: routing.Index
+
+# An empty router: no prefix, no group, errors written as text, no slash
+# redirected.
+#
+# See also `new_group`, `add`.
+function new_router() -> Router
+    return Router(prefix: "", groups: [], routes: [], redirect_slash: false, errors: .text, index: routing.empty())
+
+# An empty router for the group `name`, whose routes take `prefix` after the
+# prefix of `parent`, to be mounted into `parent` once its routes are added.
+#
+# - `parent`: the router the group belongs to; its prefix, its groups, its
+#   `redirect_slash` and its `errors` are copied, and its routes are not.
+# - `name`: the group's name, which a found route's `groups` holds: letters,
+#   digits and `_`, not empty.
+# - `prefix`: the prefix, beginning with `/` and not ending with one, holding
+#   no wildcard: `/admin`, `/users/:id`.
+#
+# Fails `invalid` where `name` or `prefix` is not one. See also `mount`,
+# `is_in_group`.
+function new_group(parent: Router, name: str, prefix: str) -> Router?
+    if !patterns.is_name(name)
+        return fail(code: INVALID, msg: f"the group's name \"{name}\" is not of letters, digits and `_`")
+
+    if prefix == "" || prefix[0] != '/' || prefix[prefix.len() - 1] == '/'
+        return fail(code: INVALID, msg: f"the prefix \"{prefix}\" does not begin with `/` or ends with one")
+    whole = parent.prefix + prefix
+
+    for p in patterns.parse(whole)?
+        match p
+            .fixed _ => _ = 0
+            .param _ => _ = 0
+            .rest _  => return fail(code: INVALID, msg: f"the prefix \"{prefix}\" holds a wildcard")
+
+    groups @= parent.groups
+    groups @ groups.push(name)
+    return ok(
+        Router(prefix: whole, groups: groups, routes: [], redirect_slash: parent.redirect_slash, errors: parent.errors, index: routing.empty())
+    )
+
+# Adds to `router` the route `name` for `method` and `pattern`.
+#
+# - `router`: the router, which gains the route.
+# - `method`: the method it takes, a token: `http.METHOD_GET`, `"PURGE"`. A
+#   route of `GET` takes `HEAD` too, where no route of `HEAD` does.
+# - `pattern`: the path after the router's prefix, of segments parted by `/`:
+#   a segment as written is matched as the request's segment unescaped reads;
+#   `:name` matches one segment that is not empty; `*name`, the last, matches
+#   the rest of the path, empty or not. It begins with `/`, or is "" in a
+#   group, where it names the prefix itself; it holds no empty segment but
+#   the last, and no parameter's name twice.
+# - `name`: the route's name, which `route` answers: any text but the empty
+#   one; several methods of one pattern may share it.
+#
+# Fails `invalid` where the method, the pattern or the name is not one;
+# `exists` where `router` holds a route of that method and that shape, the
+# names of its parameters set aside, or `name` on another pattern. See also
+# `add_any`, `route`.
+function add(@router: Router, method: str, pattern: str, name: str) -> ()?
+    if !routing.is_token(method)
+        return fail(code: INVALID, msg: f"the method \"{method}\" is not a token")
+
+    if pattern != "" && pattern[0] != '/'
+        return fail(code: INVALID, msg: f"the pattern \"{pattern}\" does not begin with `/`")
+    whole = router.prefix + pattern
+    routing.add(@router.index, method: method, whole: whole, name: name)?
+    router.routes @ router.routes.push(Route(method: method, pattern: whole, name: name, groups: router.groups))
+    return ok()
+
+# Adds to `router` the route `name` for every method on `pattern`.
+#
+# - `router`: the router, which gains the route.
+# - `pattern`: as `add` reads it.
+# - `name`: as `add` reads it.
+#
+# A route of one method takes a request of its method first. Fails as `add`
+# does.
+function add_any(@router: Router, pattern: str, name: str) -> ()?
+    if pattern != "" && pattern[0] != '/'
+        return fail(code: INVALID, msg: f"the pattern \"{pattern}\" does not begin with `/`")
+    whole = router.prefix + pattern
+    routing.add(@router.index, method: "", whole: whole, name: name)?
+    router.routes @ router.routes.push(Route(method: "", pattern: whole, name: name, groups: router.groups))
+    return ok()
+
+# Adds to `router` every route of `group`, which `new_group` made from it.
+#
+# - `router`: the router, which gains the routes.
+# - `group`: the group, its routes' patterns whole already.
+#
+# Fails `exists` as `add` does, adding none of them then.
+function mount(@router: Router, group: Router) -> ()?
+    routing.merge(index: @router.index, other: group.index)?
+    list @= router.routes
+
+    for each in group.routes
+        list @ list.push(each)
+
+    router.routes @ list
+    return ok()
+
+# The path of the route named `name`, its parameters filled from `params`.
+#
+# - `router`: the router.
+# - `name`: the route's name.
+# - `params`: a value for each parameter of its pattern, by name; each is
+#   escaped as one segment, and a wildcard's value keeps its `/`.
+#
+# Fails `not_found` where no route has the name or a parameter has no value,
+# and `invalid` where a parameter's value is empty, which no request would
+# match, or a wildcard's holds a `.` or `..` segment. See also `route`.
+function path_for(router: Router, name: str, params: [Param]) -> str?
+    for i in range(from: 0, to: router.index.names.len())
+        if router.index.names[i] == name
+            names: [str] @= []
+            values: [str] @= []
+
+            for p in params
+                names @ names.push(p.name)
+                values @ values.push(p.value)
+
+            return patterns.fill(router.index.pieces[i], names: names, values: values)
+
+    return fail(code: NOT_FOUND, msg: f"no route is named \"{name}\"")
+
+## Routing a request
+
+# One parameter of a route as a request fills it.
+record Param
+    # The parameter's name, as the pattern writes it after its `:` or `*`.
+    name: str
+    # Its value: the segment unescaped, or for a wildcard every segment of the
+    # rest unescaped and joined by `/`.
+    value: str
+
+# The route that takes a request, and what its parameters hold.
+record Found
+    # The route's name.
+    name: str
+    # The route's whole pattern.
+    pattern: str
+    # The names of the groups the route was added in, the outermost first.
+    groups: [str]
+    # Its parameters, in the order its pattern writes them.
+    params: [Param]
+
+# The route of `router` that takes `r`, and its parameters.
+#
+# - `router`: the router.
+# - `r`: the request; its method and its target's path are read.
+#
+# Segment by segment from the left, a segment as written is tried before a
+# parameter, and a parameter before a wildcard; where the rest does not
+# match, the next is tried. At each path that matches, a route of `r`'s
+# method takes it, then a route of `GET` for `HEAD`, then a route of every
+# method. Fails `not_found` where no route takes it, a path with a `.` or
+# `..` segment or an empty segment before its last included, and the program
+# answers `not_routed`; `invalid` and `not_text` where an escape of the path
+# does not read. See also `not_routed`, `param_of`.
+function route(router: Router, r: http.Request) -> Found?
+    if r.url.path != "" && r.url.path[0] != '/'
+        return fail(code: NOT_FOUND, msg: f"no route takes the target \"{r.url.path}\"")
+    segments = routing.at_least_root(url.parse_path(r.url.path)?)
+
+    if !patterns.is_clean(segments)
+        return fail(code: NOT_FOUND, msg: f"the path \"{r.url.path}\" holds a `.`, a `..` or an empty segment")
+    at = routing.route_of(router.index, method: r.method, segments: segments)?
+    found = patterns.values_of(router.index.pieces[at], segments: segments)
+    params: [Param] @= []
+
+    for i in range(from: 0, to: found.names.len())
+        params @ params.push(Param(name: found.names[i], value: found.values[i]))
+
+    each = router.routes[at]
+    return ok(Found(name: each.name, pattern: each.pattern, groups: each.groups, params: params))
+
+# The methods a route of `router` takes on `r`'s path, sorted by their bytes:
+# what an `Allow` field says.
+#
+# - `router`: the router.
+# - `r`: the request; its target's path is read.
+#
+# `HEAD` where `GET` is, `OPTIONS` where any is, since `not_routed` answers
+# it; none where no route takes the path.
+function allowed_of(router: Router, r: http.Request) -> [str]
+    if r.url.path != "" && r.url.path[0] != '/'
+        return []
+
+    match url.parse_path(r.url.path)
+        .ok segments => return routing.allowed(router.index, segments: routing.at_least_root(segments))
+        .err _       => return []
+
+# The answer to `r` where `route` found no route: what the client should be
+# told.
+#
+# - `router`: the router; its `errors` and `redirect_slash` are read.
+# - `r`: the request.
+#
+# 308 to the clean path where the path holds a `.` or `..` segment or an
+# empty one before its last; 204 and `Allow` for `OPTIONS` where a route
+# takes the path, and for `OPTIONS *`; 405 and `Allow` where routes take the
+# path but none its method; 308 to the path with its last `/` added or taken
+# away where `redirect_slash` asks and a route takes it; 400 where an escape
+# does not read; else 404. A redirect keeps the query. See also `allowed_of`.
+function not_routed(router: Router, r: http.Request) -> http.Response
+    m = routing.miss(
+        router.index,
+        method: r.method,
+        path: r.url.path,
+        query: r.url.query,
+        redirect_slash: router.redirect_slash
+    )
+
+    if m.status == http.STATUS_PERMANENT_REDIRECT
+        return http.respond_redirect(m.status, location: m.location)
+
+    if m.status == http.STATUS_NO_CONTENT
+        out @= http.respond_status(m.status)
+        out.headers @ [http.Header(name: "Allow", value: m.allow.join(", "))]
+        return out
+    out @= error_response(router.errors, status: m.status, message: http.status_text(m.status).default(""))
+
+    if m.allow.len() > 0
+        out.headers @ http.with_header(out.headers, name: "Allow", value: m.allow.join(", "))
+    return out
+
+# The value of the parameter `name` of `found`.
+#
+# - `found`: the route found.
+# - `name`: the parameter's name, as the pattern writes it.
+#
+# Fails `not_found` where the route has no such parameter. A number or an
+# identifier is read from the text by `numbers.parse_int` or `uuid.parse`.
+function param_of(found: Found, name: str) -> str?
+    for p in found.params
+        if p.name == name
+            return ok(p.value)
+
+    return fail(code: NOT_FOUND, msg: f"the route \"{found.name}\" has no parameter \"{name}\"")
+
+# Whether `found` was added in the group `name`, or in a group inside it.
+#
+# - `found`: the route found.
+# - `name`: the group's name.
+function is_in_group(found: Found, name: str) -> bool
+    for g in found.groups
+        if g == name
+            return true
+
+    return false
+
+## Reading a request
+
+# The body of `r` as a JSON value.
+#
+# - `r`: the request; its `Content-Type` is `application/json` or a type
+#   ending in `+json`, compared without case and without its parameters.
+#
+# Fails `invalid` where the type is another or none, or the body is no JSON;
+# `not_text` where the body is not UTF-8; and as `json.parse` does.
+function json_of(r: http.Request) -> json.Value?
+    kind = reading.media_type(http.value_of(r.headers, name: "Content-Type").default(""))
+
+    if kind != "application/json" && !strings.has_suffix(s: kind, suffix: "+json")
+        return fail(code: INVALID, msg: f"reading a JSON body: the request's body is typed \"{kind}\", not as JSON")
+    return json.parse(bytes.to_text(r.body)?)
+
+# The value of the cookie `name` that `r` sends, the first of that name.
+#
+# - `r`: the request; every `Cookie` field is read.
+# - `name`: the cookie's name, compared as written.
+#
+# Fails `not_found` where `r` sends no such cookie, and `invalid` where a
+# `Cookie` field holds a control byte.
+function cookie_of(r: http.Request, name: str) -> str?
+    for value in http.values_of(r.headers, name: "Cookie")
+        for c in http.parse_cookie(value)?
+            if c.name == name
+                return ok(c.value)
+
+    return fail(code: NOT_FOUND, msg: f"the request sends no cookie named \"{name}\"")
+
+# The token `r` carries in an `Authorization: Bearer` field, RFC 6750.
+#
+# - `r`: the request; the scheme is compared without case.
+#
+# Fails `not_found` where `r` has no `Authorization` field of that scheme,
+# and `invalid` where its token is empty or holds a character RFC 6750's
+# token does not. See also `require_bearer`.
+function bearer_token_of(r: http.Request) -> str?
+    said = http.value_of(r.headers, name: "Authorization")?
+    token = reading.credentials_of(value: said, scheme: "Bearer")?
+
+    if !reading.is_b64token(token)
+        return fail(code: INVALID, msg: "reading the Bearer token: it is empty or holds a character a token does not")
+    return ok(token)
+
+# The address of the client that sent `r`: its connection's, or, where that
+# is a proxy the program trusts, the one `X-Forwarded-For` names.
+#
+# - `r`: the request; its `remote` and its `X-Forwarded-For` fields are read.
+# - `trusted`: the addresses of the proxies the program trusts, as
+#   `net.format_address` writes a host: `"10.0.0.1"`, `"::1"`; none trusts
+#   none, and `X-Forwarded-For` is then never read.
+#
+# The address alone, its port taken away. Read from the last entry of
+# `X-Forwarded-For` back, the first that is no trusted proxy; "" where `r` has
+# no `remote`.
+function client_address_of(r: http.Request, trusted: [str]) -> str
+    if r.remote == ""
+        return ""
+    direct = reading.host_of(r.remote)
+
+    if !reading.is_listed(direct, list: trusted)
+        return direct
+    entries: [str] @= []
+
+    for value in http.values_of(r.headers, name: "X-Forwarded-For")
+        for item in strings.split(s: value, sep: ",")
+            t = strings.trim(item)
+
+            if t != ""
+                entries @ entries.push(t)
+
+    at: i64 @= entries.len() - 1
+
+    while at >= 0
+        if !reading.is_listed(entries[at], list: trusted)
+            return entries[at]
+        at @ at - 1
+
+    if entries.len() > 0
+        return entries[0]
+    return direct
+
+## Answering
+
+# A response of `status` whose body says `message` in `form`.
+#
+# - `form`: text or JSON.
+# - `status`: the status.
+# - `message`: the message, any text.
+#
+# See also `not_routed`, `recover`.
+function error_response(form: ErrorForm, status: i64, message: str) -> http.Response
+    match form
+        .text => return http.respond_text(status, text: message + "\n")
+        .json => return http.respond(
+            status,
+            content_type: "application/json",
+            body: bytes.from_text("{\"message\":" + json.quote(message) + "}")
+        )
+
+# A response of `status` whose body is the template `name` of `t` made of
+# `value`.
+#
+# - `status`: the status.
+# - `t`: the templates, read by `template.parse_html` or `template.parse`.
+# - `name`: the template run, one of `t.names`.
+# - `value`: what `.` names in it.
+#
+# Typed `text/html; charset=utf-8` where `t` was read in the HTML mode, which
+# escapes every value by its place; `text/plain; charset=utf-8` where it was
+# read in the text mode, which escapes nothing. Fails as
+# `template.render_named` does.
+function render(status: i64, t: template.Template, name: str, value: json.Value) -> http.Response?
+    text = template.render_named(t, name, value)?
+
+    if t.html
+        return ok(http.respond(status, content_type: "text/html; charset=utf-8", body: bytes.from_text(text)))
+    return ok(http.respond(status, content_type: "text/plain; charset=utf-8", body: bytes.from_text(text)))
+
+# A copy of `response` that a browser saves as the file `filename`, or shows
+# in the page under that name.
+#
+# - `response`: the response.
+# - `filename`: the name, any text; a `"`, a `\` or a control character in it
+#   is written `_`.
+# - `download`: true to save it (`attachment`), false to show it (`inline`).
+#
+# RFC 6266: `filename` in ASCII, each other character `_`, and `filename*`
+# in UTF-8 where the name is not ASCII.
+function with_disposition(response: http.Response, filename: str, download: bool) -> http.Response
+    kind: str @= "inline"
+
+    if download
+        kind @ "attachment"
+    value: str @= kind + "; filename=" + reading.quoted(reading.ascii_name(filename))
+
+    if reading.ascii_name(filename) != filename
+        value @ value + "; filename*=UTF-8''" + url.escape_segment(filename)
+    out @= response
+    out.headers @ http.with_header(response.headers, name: "Content-Disposition", value: value)
+    return out
+
+## Files
+
+# Where `serve_folder` answers from, and how. Made by `default_folder`, its
+# fields changed by the program.
+record Folder
+    # The folder's path, as `fs` reads it.
+    root: str
+    # The file answered for a folder, "" for none: `index.html`.
+    index: str
+    # Whether a folder with no index is answered with a page of its names.
+    listing: bool
+    # Whether a name beginning with `.` is answered; false refuses it 404.
+    hidden: bool
+
+# The usual way to answer from `root`: `index.html` for a folder, no
+# listing, no hidden name.
+#
+# - `root`: the folder's path.
+function default_folder(root: str) -> Folder
+    return Folder(root: root, index: "index.html", listing: false, hidden: false)
+
+# The answer to `r` from the file of `folder` that `rest` names.
+#
+# - `r`: the request: `GET` or `HEAD`, others answered 405; its
+#   `If-Modified-Since`, `Range` and `If-Range` fields are read.
+# - `folder`: where and how.
+# - `rest`: the path under the folder, `/` between its names, as a wildcard's
+#   value holds it: `css/site.css`; "" names the folder itself.
+#
+# 404 where `rest` holds a `..` or `.` name, a `\`, a zero byte or a name
+# beginning with `.` that the folder does not show, where it names nothing,
+# or where it leads through a link out of the folder. 301 to the path with a
+# `/` where a folder is named without one; then its index, or its listing, or
+# 404. A file is answered with `Last-Modified`, `Accept-Ranges` and its type,
+# as `serve_file` answers it. See also `default_folder`.
+function serve_folder(r: http.Request, folder: Folder, rest: str) -> http.Response
+    return folders.serve_folder(
+        r,
+        root: folder.root,
+        index: folder.index,
+        listing: folder.listing,
+        hidden: folder.hidden,
+        rest: rest
+    )
+
+# The answer to `r` from the file `file`.
+#
+# - `r`: the request: `GET` or `HEAD`, others answered 405; its
+#   `If-Modified-Since`, `Range` and `If-Range` fields are read.
+# - `file`: the file's path, which the program chose; nothing from the
+#   request should reach it but through `serve_folder`.
+#
+# Its type by its name, else by its first bytes; `Last-Modified` and
+# `Accept-Ranges: bytes`. 304 where `If-Modified-Since` is not older than the
+# file; 206 and `Content-Range` for one range of `Range`, the whole file for
+# several or where `If-Range` is not the file's date; 416 where no range
+# fits; 404 where `file` names nothing or a folder; 403 where the system
+# refuses it; 500 where it cannot be read.
+function serve_file(r: http.Request, file: str) -> http.Response
+    return folders.serve_file(r, file: file)
+
+# The media type of a file named `name`, by its extension, compared without
+# case: `text/html; charset=utf-8` for `index.html`.
+#
+# - `name`: a file's name or path.
+#
+# A type of text carries `charset=utf-8`. Fails `not_found` where the name has
+# no extension, or one this package's table does not hold. See also `sniff`.
+function content_type_of(name: str) -> str?
+    ext = path.ext(name)?
+    kind = extensions.type_of(ext)
+
+    if kind == ""
+        return fail(code: NOT_FOUND, msg: f"no media type is known for the extension \"{ext}\"")
+    return ok(kind)
+
+# The media type the first bytes of `data` show, by the WHATWG's rules as Go
+# reads them: `application/octet-stream` where they show none.
+#
+# - `data`: the bytes; the first 512 are read.
+#
+# See also `content_type_of`.
+function sniff(data: [u8]) -> str
+    return sniffing.sniff(data)
+
+## Steps before and after a handler
+
+# What a step before a handler answers: go on with the request, or answer
+# here.
+variant Step
+    # Go on, with this request: the one given, or a copy the step changed.
+    go_on
+        # The request the next step or the handler reads.
+        request: http.Request
+    # Stop: this response answers the request, and no handler runs.
+    answer
+        # The response.
+        response: http.Response
+
+# Runs `steps` on `r` in their order, until one answers.
+#
+# - `r`: the request the first step reads.
+# - `steps`: the steps, each given what the one before went on with; none
+#   goes on with `r`.
+#
+# The first `answer`, or `go_on` with what the last step went on with. A step
+# that needs more than the request is called by the program itself.
+function before(r: http.Request, steps: [(function(http.Request) -> Step)]) -> Step
+    current @= r
+
+    for step in steps
+        match step(current)
+            .go_on g  => current @ g.request
+            .answer a => return .answer(response: a.response)
+
+    return .go_on(request: current)
+
+# Runs `steps` on `response` in their order, each given `r` and what the one
+# before answered.
+#
+# - `r`: the request answered.
+# - `response`: the handler's response.
+# - `steps`: the steps; none answers `response`.
+function after(r: http.Request, response: http.Response, steps: [(function(http.Request, http.Response) -> http.Response)]) -> http.Response
+    current @= response
+
+    for step in steps
+        current @ step(r, current)
+
+    return current
+
+# Refuses `r` 413 where its body is longer than `most_bytes`.
+#
+# - `r`: the request.
+# - `most_bytes`: the most bytes of the body, 0 or more.
+#
+# A route's own limit; the server's is `http.Server.limits`. Aborts where
+# `most_bytes` is below 0.
+function limit_body(r: http.Request, most_bytes: i64) -> Step
+    assert most_bytes >= 0
+
+    if r.body.len() > most_bytes
+        return .answer(
+            response: error_response(.text, status: http.STATUS_CONTENT_TOO_LARGE, message: f"the body holds {r.body.len()} bytes, past {most_bytes}")
+        )
+    return .go_on(request: r)
+
+# Refuses `r` 401 unless its Basic credentials are ones `accepts` takes.
+#
+# - `r`: the request.
+# - `realm`: the realm the challenge names, any text without a `"` or `\`.
+# - `accepts`: called once with the credentials where `r` carries them;
+#   true lets `r` go on.
+#
+# The challenge is `challenge_basic`'s. A program that checks credentials
+# against its own state reads them with `http.basic_auth_of` and answers
+# `challenge_basic` itself.
+function require_basic(r: http.Request, realm: str, accepts: (function(http.Credentials) -> bool)) -> Step
+    match http.basic_auth_of(r)
+        .err _ => return .answer(response: challenge_basic(realm))
+        .ok c =>
+            if accepts(c)
+                return .go_on(request: r)
+            return .answer(response: challenge_basic(realm))
+
+# The answer 401 that asks for Basic credentials in `realm`.
+#
+# - `realm`: the realm, any text; a `"` or a `\` in it is escaped.
+#
+# `WWW-Authenticate: Basic realm="…", charset="UTF-8"`, RFC 7617.
+function challenge_basic(realm: str) -> http.Response
+    out @= error_response(.text, status: http.STATUS_UNAUTHORIZED, message: "Unauthorized")
+    out.headers @ http.with_header(
+        out.headers,
+        name: "WWW-Authenticate",
+        value: "Basic realm=" + reading.quoted(realm) + ", charset=\"UTF-8\""
+    )
+    return out
+
+# Refuses `r` unless its Bearer token is one `accepts` takes, as RFC 6750
+# answers: 401 where it has none or `accepts` refuses it, 400 where the field
+# is no token.
+#
+# - `r`: the request.
+# - `realm`: the realm the challenge names.
+# - `accepts`: called once with the token where `r` carries one; true lets
+#   `r` go on.
+#
+# See also `bearer_token_of`, `challenge_bearer`.
+function require_bearer(r: http.Request, realm: str, accepts: (function(str) -> bool)) -> Step
+    match http.value_of(r.headers, name: "Authorization")
+        .err _ => return .answer(response: challenge_bearer(realm: realm, error: ""))
+        .ok said =>
+            match reading.credentials_of(value: said, scheme: "Bearer")
+                .err _ => return .answer(response: challenge_bearer(realm: realm, error: ""))
+                .ok token =>
+                    if !reading.is_b64token(token)
+                        return .answer(response: challenge_bearer(realm: realm, error: "invalid_request"))
+
+                    if accepts(token)
+                        return .go_on(request: r)
+                    return .answer(response: challenge_bearer(realm: realm, error: "invalid_token"))
+
+# The answer that asks for a Bearer token in `realm`, RFC 6750: 401, or 400
+# for `invalid_request`.
+#
+# - `realm`: the realm, any text; a `"` or a `\` in it is escaped.
+# - `error`: RFC 6750's error code: "" where the request carried no token,
+#   `invalid_token`, `invalid_request` (answered 400) or
+#   `insufficient_scope` (answered 403).
+function challenge_bearer(realm: str, error: str) -> http.Response
+    status: i64 @= http.STATUS_UNAUTHORIZED
+
+    if error == "invalid_request"
+        status @ http.STATUS_BAD_REQUEST
+    else if error == "insufficient_scope"
+        status @ http.STATUS_FORBIDDEN
+    value: str @= "Bearer realm=" + reading.quoted(realm)
+
+    if error != ""
+        value @ value + ", error=" + reading.quoted(error)
+    out @= error_response(.text, status: status, message: http.status_text(status).default(""))
+    out.headers @ http.with_header(out.headers, name: "WWW-Authenticate", value: value)
+    return out
+
+# Which other origins a browser may let read the answers, and how, by the
+# Fetch standard's CORS. Made by `default_cors`, its fields changed by the
+# program.
+record Cors
+    # The origins allowed, as a browser writes them: `https://example.com`;
+    # `*` among them allows every one.
+    origins: [str]
+    # The methods a preflight allows, beyond the safe ones.
+    methods: [str]
+    # The request fields a preflight allows; none allows those the browser
+    # asks for.
+    headers: [str]
+    # The response fields a page may read beyond the safe ones.
+    exposed: [str]
+    # Whether the browser sends its cookies and credentials; the origin is
+    # then written, never `*`.
+    credentials: bool
+    # The seconds a browser may keep a preflight's answer, 0 for none written.
+    max_age_seconds: i64
+
+# The usual CORS for `origins`: the methods `GET`, `HEAD`, `PUT`, `PATCH`,
+# `POST` and `DELETE`, the fields the browser asks, no credentials, no age.
+#
+# - `origins`: the origins allowed; `["*"]` allows every one.
+function default_cors(origins: [str]) -> Cors
+    return Cors(
+        origins: origins,
+        methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+        headers: [],
+        exposed: [],
+        credentials: false,
+        max_age_seconds: 0
+    )
+
+# Answers `r` 204 where it is a CORS preflight, and lets every other request
+# go on.
+#
+# - `r`: the request: a preflight is an `OPTIONS` with `Origin` and
+#   `Access-Control-Request-Method`.
+# - `cors`: what is allowed.
+#
+# The answer carries `Access-Control-Allow-Origin`, `-Methods`, `-Headers`,
+# `-Credentials` and `-Max-Age` where the origin is allowed, and none of them
+# where it is not, which the browser reads as a refusal. See also
+# `with_cors`.
+function preflight(r: http.Request, cors: Cors) -> Step
+    if r.method != http.METHOD_OPTIONS
+        return .go_on(request: r)
+
+    origin = match http.value_of(r.headers, name: "Origin")
+        .ok o  => o
+        .err _ => return .go_on(request: r)
+
+    if !http.has_header(r.headers, name: "Access-Control-Request-Method")
+        return .go_on(request: r)
+    out @= http.respond_status(http.STATUS_NO_CONTENT)
+    fields @= reading.with_vary([], name: "Origin")
+    fields @ reading.with_vary(fields, name: "Access-Control-Request-Method")
+    fields @ reading.with_vary(fields, name: "Access-Control-Request-Headers")
+
+    if reading.is_allowed(origin, origins: cors.origins)
+        fields @ reading.with_allow_origin(fields, origin: origin, origins: cors.origins, credentials: cors.credentials)
+        fields @ http.with_header(fields, name: "Access-Control-Allow-Methods", value: cors.methods.join(", "))
+        asked = http.values_of(r.headers, name: "Access-Control-Request-Headers")
+
+        if cors.headers.len() > 0
+            fields @ http.with_header(fields, name: "Access-Control-Allow-Headers", value: cors.headers.join(", "))
+        else if asked.len() > 0
+            fields @ http.with_header(fields, name: "Access-Control-Allow-Headers", value: asked.join(", "))
+
+        if cors.max_age_seconds > 0
+            fields @ http.with_header(fields, name: "Access-Control-Max-Age", value: to_str(cors.max_age_seconds))
+
+    out.headers @ fields
+    return .answer(response: out)
+
+# A copy of `response` carrying what lets the page of `r`'s origin read it.
+#
+# - `r`: the request; its `Origin` is read.
+# - `response`: the response.
+# - `cors`: what is allowed.
+#
+# `Access-Control-Allow-Origin`, `-Credentials` and `-Expose-Headers` where
+# the origin is allowed, and `Vary: Origin` where the answer depends on it;
+# `response` as it is where `r` has no `Origin`.
+function with_cors(r: http.Request, response: http.Response, cors: Cors) -> http.Response
+    origin = match http.value_of(r.headers, name: "Origin")
+        .ok o  => o
+        .err _ => return response
+
+    out @= response
+    every = reading.is_listed("*", list: cors.origins) && !cors.credentials
+
+    if !every
+        out.headers @ reading.with_vary(out.headers, name: "Origin")
+
+    if !reading.is_allowed(origin, origins: cors.origins)
+        return out
+    out.headers @ reading.with_allow_origin(
+        out.headers,
+        origin: origin,
+        origins: cors.origins,
+        credentials: cors.credentials
+    )
+
+    if cors.exposed.len() > 0
+        out.headers @ http.with_header(
+            out.headers,
+            name: "Access-Control-Expose-Headers",
+            value: cors.exposed.join(", ")
+        )
+    return out
+
+# A copy of `r` whose `X-Request-Id` holds an identifier: the one the client
+# sent, or a new one.
+#
+# - `r`: the request; an `X-Request-Id` of 1 to 128 visible ASCII characters
+#   is kept, any other replaced.
+#
+# A new one is a UUID of version 4. Fails as `uuid.new_v4` does. See also
+# `copy_request_id`.
+function with_request_id(r: http.Request) -> http.Request?
+    match http.value_of(r.headers, name: "X-Request-Id")
+        .ok held =>
+            if held.len() >= 1 && held.len() <= 128 && reading.is_printable_ascii(held)
+                return ok(r)
+        .err _ => _ = 0
+
+    out @= r
+    out.headers @ http.with_header(r.headers, name: "X-Request-Id", value: uuid.format(uuid.new_v4()?))
+    return ok(out)
+
+# A copy of `response` carrying `r`'s `X-Request-Id`, where it has one.
+#
+# - `r`: the request.
+# - `response`: the response.
+function copy_request_id(r: http.Request, response: http.Response) -> http.Response
+    match http.value_of(r.headers, name: "X-Request-Id")
+        .err _ => return response
+        .ok id =>
+            out @= response
+            out.headers @ http.with_header(response.headers, name: "X-Request-Id", value: id)
+            return out
+
+# Writes one line about `r` and its `response` through `logger`.
+#
+# - `logger`: where and how; the line's time is its clock's.
+# - `r`: the request.
+# - `response`: the response.
+# - `started`: when the request began, by the logger's clock.
+#
+# Level `info` below 500 and `error` from 500; the message `request`, then
+# `method`, `path` (with its query), `status`, `bytes` (the body's),
+# `milliseconds`, `remote` and `id` where `r` has an `X-Request-Id`. Fails as
+# `log.write` does.
+function log_request(logger: log.Logger, r: http.Request, response: http.Response, started: time.Instant) -> ()?
+    read_clock = logger.clock
+    now = read_clock()?
+    took = time.between(from: started, to: now)?
+    fields: [log.Field] @= [
+        log.text(key: "method", value: r.method)
+        log.text(key: "path", value: url.request_target(r.url))
+        log.integer(key: "status", value: response.status)
+        log.integer(key: "bytes", value: response.body.len())
+        log.integer(key: "milliseconds", value: took.nanoseconds / 1_000_000)
+        log.text(key: "remote", value: r.remote)
+    ]
+
+    match http.value_of(r.headers, name: "X-Request-Id")
+        .ok id => fields @ fields.push(log.text(key: "id", value: id))
+        .err _ => _ = 0
+
+    if response.status >= 500
+        return log.error(logger, msg: "request", fields: fields)
+    return log.info(logger, msg: "request", fields: fields)
+
+# The response `answer` holds, or, where it is a failure, 500 and a line
+# through `logger` saying the failure.
+#
+# - `logger`: where the failure is written, at level `error`.
+# - `r`: the request, whose method and path the line names.
+# - `answer`: what the handler answered.
+# - `form`: how the 500's body is written; it says `Internal Server Error`,
+#   never the failure, which may hold what the client must not read.
+#
+# A failure to write the line changes nothing. An abort ends the program,
+# which no step can stop.
+function recover(logger: log.Logger, r: http.Request, answer: http.Response?, form: ErrorForm) -> http.Response
+    match answer
+        .ok got => return got
+        .err e =>
+            fields = [
+                log.text(key: "method", value: r.method)
+                log.text(key: "path", value: url.request_target(r.url))
+                log.text(key: "code", value: e.code)
+                log.text(key: "failure", value: e.msg)
+            ]
+
+            match log.error(logger, msg: "handler failed", fields: fields)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return error_response(form, status: http.STATUS_INTERNAL_SERVER_ERROR, message: "Internal Server Error")
+
+# A copy of `response` with its body compressed by gzip, where `r` accepts it
+# and it is worth it.
+#
+# - `r`: the request; its `Accept-Encoding` is read, `gzip` or `*` with a
+#   weight above 0.
+# - `response`: the response.
+# - `min_bytes`: the fewest bytes of a body compressed; 0 compresses every
+#   body.
+#
+# Not compressed: a body shorter, a response with a `Content-Encoding`, a
+# status 1xx, 204, 206 or 304. Every other response gains `Vary:
+# Accept-Encoding`, whether `r` accepts gzip or not, and `Content-Encoding:
+# gzip` where its body is compressed. A body that does not compress is
+# answered as it is.
+function gzip(r: http.Request, response: http.Response, min_bytes: i64) -> http.Response
+    if response.status < 200 || response.status == 204 || response.status == 206 || response.status == 304
+        return response
+
+    if http.has_header(response.headers, name: "Content-Encoding") || response.body.len() < min_bytes
+        return response
+    out @= response
+    out.headers @ reading.with_vary(response.headers, name: "Accept-Encoding")
+
+    if !reading.accepts_gzip(http.values_of(r.headers, name: "Accept-Encoding"))
+        return out
+
+    match compress.compress(response.body, options: compress.defaults(.gzip))
+        .err _ => return out
+        .ok packed =>
+            out.body @ packed
+            out.headers @ http.with_header(out.headers, name: "Content-Encoding", value: "gzip")
+            return out
+
+# Lets `r` go on with its body decompressed where its `Content-Encoding` is
+# `gzip`, and refuses it where that body does not read.
+#
+# - `r`: the request.
+# - `most_bytes`: the most bytes the decompressed body may hold.
+#
+# 413 past `most_bytes`, 400 where the body is no gzip, 415 for an encoding
+# other than `gzip` and `identity`. The copy holds no `Content-Encoding`.
+function gunzip_body(r: http.Request, most_bytes: i64) -> Step
+    coding = strings.to_lower_ascii(strings.trim(http.value_of(r.headers, name: "Content-Encoding").default("")))
+
+    if coding == "" || coding == "identity"
+        return .go_on(request: r)
+
+    if coding != "gzip" && coding != "x-gzip"
+        refused @= error_response(
+            .text,
+            status: http.STATUS_UNSUPPORTED_MEDIA_TYPE,
+            message: f"the body's coding \"{coding}\" is not one this server reads"
+        )
+        refused.headers @ http.with_header(refused.headers, name: "Accept-Encoding", value: "gzip")
+        return .answer(response: refused)
+
+    match compress.decompress(r.body, format: .gzip, limit: most_bytes)
+        .ok data =>
+            out @= r
+            out.body @ data
+            out.headers @ http.without_header(r.headers, name: "Content-Encoding")
+            return .go_on(request: out)
+        .err e =>
+            if e.code == compress.LIMIT
+                return .answer(
+                    response: error_response(.text, status: http.STATUS_CONTENT_TOO_LARGE, message: f"the body holds more than {most_bytes} bytes once decompressed")
+                )
+            return .answer(
+                response: error_response(.text, status: http.STATUS_BAD_REQUEST, message: "the body is no gzip: " + e.msg)
+            )
+
+# Refuses 403 a request of a method that changes something, sent by a page of
+# another origin, as Go's `CrossOriginProtection` does.
+#
+# - `r`: the request; `GET`, `HEAD` and `OPTIONS` always go on.
+# - `trusted`: the other origins allowed, as a browser writes them:
+#   `https://example.com`.
+#
+# Read from `Sec-Fetch-Site` where the browser sends it (`same-origin` and
+# `none` go on), else from `Origin` against `Host`; a request with neither is
+# no browser's and goes on.
+function refuse_cross_origin(r: http.Request, trusted: [str]) -> Step
+    if r.method == http.METHOD_GET || r.method == http.METHOD_HEAD || r.method == http.METHOD_OPTIONS
+        return .go_on(request: r)
+    origin = http.value_of(r.headers, name: "Origin")
+
+    match origin
+        .ok o =>
+            if reading.is_listed(o, list: trusted)
+                return .go_on(request: r)
+        .err _ => _ = 0
+
+    refused: Step = .answer(
+        response: error_response(.text, status: http.STATUS_FORBIDDEN, message: "cross-origin request refused")
+    )
+
+    match http.value_of(r.headers, name: "Sec-Fetch-Site")
+        .ok site =>
+            if site == "same-origin" || site == "none"
+                return .go_on(request: r)
+            return refused
+        .err _ => _ = 0
+
+    match origin
+        .err _ => return .go_on(request: r)
+        .ok o =>
+            if reading.origin_host(o) != "" && reading.origin_host(o) == http.value_of(r.headers, name: "Host").default("")
+                return .go_on(request: r)
+            return refused
+
+# Refuses `r` 415 where it has a body whose type is none of `types`.
+#
+# - `r`: the request.
+# - `types`: the media types read, `application/json`, compared without case
+#   and without parameters.
+#
+# A request with no body goes on.
+function require_type(r: http.Request, types: [str]) -> Step
+    if r.body.len() == 0
+        return .go_on(request: r)
+    kind = reading.media_type(http.value_of(r.headers, name: "Content-Type").default(""))
+
+    for t in types
+        if strings.to_lower_ascii(t) == kind
+            return .go_on(request: r)
+
+    return .answer(
+        response: error_response(.text, status: http.STATUS_UNSUPPORTED_MEDIA_TYPE, message: f"the body is typed \"{kind}\", which this route does not read")
+    )
+
+# A copy of `response` carrying the fields that keep a page from being
+# sniffed, framed by another site or followed with its full address:
+# `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN` and
+# `Referrer-Policy: strict-origin-when-cross-origin`, each where `response`
+# has none.
+#
+# - `response`: the response.
+function with_secure_headers(response: http.Response) -> http.Response
+    out @= response
+
+    for pair in [["X-Content-Type-Options", "nosniff"], ["X-Frame-Options", "SAMEORIGIN"], ["Referrer-Policy", "strict-origin-when-cross-origin"]]
+        if !http.has_header(out.headers, name: pair[0])
+            out.headers @ out.headers.push(http.Header(name: pair[0], value: pair[1]))
+
+    return out
+
+# Lets a `POST` go on as the method its `X-HTTP-Method-Override` field
+# names, for a client that can send only `GET` and `POST`, as Echo's
+# `MethodOverride` does.
+#
+# - `r`: the request; another method, or a `POST` with no such field, goes on
+#   as it is.
+#
+# The field may name `PUT`, `PATCH` or `DELETE`, in any case; another is
+# answered 400. The copy holds no such field.
+function override_method(r: http.Request) -> Step
+    if r.method != http.METHOD_POST
+        return .go_on(request: r)
+
+    match http.value_of(r.headers, name: "X-HTTP-Method-Override")
+        .err _ => return .go_on(request: r)
+        .ok said =>
+            wanted = strings.to_upper_ascii(strings.trim(said))
+
+            if wanted != http.METHOD_PUT && wanted != http.METHOD_PATCH && wanted != http.METHOD_DELETE
+                return .answer(
+                    response: error_response(.text, status: http.STATUS_BAD_REQUEST, message: f"a POST may stand for PUT, PATCH or DELETE, not \"{said}\"")
+                )
+            out @= r
+            out.method @ wanted
+            out.headers @ http.without_header(r.headers, name: "X-HTTP-Method-Override")
+            return .go_on(request: out)
+
+## Serving
+
+# Serves every connection `l` accepts, one at a time, until the program asks
+# to stop, each request answered by `handler` with `router`:
+# `http.serve_with` with the router as the program's value.
+#
+# - `server`: how it serves, as `http.serve` reads it.
+# - `l`: the listener; its owner closes it.
+# - `router`: handed to `handler` with each request, never copied while
+#   nothing writes it.
+# - `handler`: called once for each request read, on this thread, with
+#   `router` and the request; it routes the request and answers it, a step
+#   before and after included. A response it answers that cannot be written
+#   is answered 500.
+#
+# For a program with no state; a program with state writes its own loop, as
+# `route`'s example of one does. Fails as `http.serve_with` does. See also
+# `serve_stream`.
+function serve(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response)) -> ()?
+    return http.serve_with(server, l: l, state: router, handler: handler)
+
+# `serve` over the TLS connections `l` accepts: `http.serve_tls_with` with
+# the router as the program's value.
+#
+# - `server`: as `serve` reads it; its `deadline_ms` is the milliseconds a
+#   client's handshake may take.
+# - `l`: the TLS listener; its owner closes it.
+# - `router`: handed to `handler`.
+# - `handler`: as `serve` calls it.
+#
+# A handshake that fails ends that client alone. Fails as
+# `http.serve_tls_with` does.
+function serve_tls(server: http.Server, l: tls.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response)) -> ()?
+    return http.serve_tls_with(server, l: l, state: router, handler: handler)
+
+# Serves the requests that come on `stream`, one after another, and answers
+# how many were answered: `http.serve_stream_with` with the router as the
+# program's value.
+#
+# - `server`: how it serves.
+# - `stream`: the stream read and written; its owner closes it.
+# - `remote`: what each request's `remote` holds, "" where it is not known.
+# - `router`: handed to `handler`.
+# - `handler`: as `serve` calls it.
+#
+# It ends as `http.serve_stream` does: where the client closes, sends what is
+# no request (answered 400, 413, 417, 431, 501 or 505 first), or asks the
+# connection closed, and where the response closes it or cannot be written.
+function serve_stream(server: http.Server, stream: io.Stream, remote: str, router: Router, handler: (function(Router, http.Request) -> http.Response)) -> i64
+    return http.serve_stream_with(server, stream: stream, remote: remote, state: router, handler: handler)
+
+## Tests
+
+test "route: a fixed segment before a parameter before a wildcard, parameters unescaped"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/users/:id", name: "user").must()
+    add(@rt, method: "GET", pattern: "/users/new", name: "new_user").must()
+    add(@rt, method: "GET", pattern: "/files/*path", name: "files").must()
+    assert route(rt, fixture.request_of(method: "GET", target: "/users/new", headers: [])).must().name == "new_user"
+    one = route(rt, fixture.request_of(method: "GET", target: "/users/a%2Fb", headers: [])).must()
+    assert one.name == "user" && one.params == [Param(name: "id", value: "a/b")]
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/a/b%20c", headers: [])).must(), name: "path").must() == "a/b c"
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/", headers: [])).must(), name: "path").must() == ""
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files", headers: [])).must(), name: "path").must() == ""
+    assert route(rt, fixture.request_of(method: "GET", target: "/users/", headers: [])).is_err()
+
+test "route: HEAD taken by GET, every method last, a dirty path and a bad escape refused"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/a", name: "get_a").must()
+    add_any(@rt, pattern: "/a", name: "get_a").must()
+    assert route(rt, fixture.request_of(method: "HEAD", target: "/a", headers: [])).must().name == "get_a"
+    assert route(rt, fixture.request_of(method: "PATCH", target: "/a", headers: [])).must().name == "get_a"
+
+    match route(rt, fixture.request_of(method: "GET", target: "/b/../a", headers: []))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match route(rt, fixture.request_of(method: "GET", target: "/caf%C3", headers: []))
+        .ok _  => assert false
+        .err e => assert e.code == "not_text"
+
+test "not_routed: 404, 405 with Allow, OPTIONS, the clean path, a slash where asked, JSON"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/users/:id", name: "user").must()
+    add(@rt, method: "DELETE", pattern: "/users/:id", name: "user").must()
+    add(@rt, method: "GET", pattern: "/dir/", name: "dir").must()
+    missing = not_routed(rt, fixture.request_of(method: "GET", target: "/nothing", headers: []))
+    assert missing.status == 404 && http.text_of(missing).must() == "Not Found\n"
+    refused = not_routed(rt, fixture.request_of(method: "PUT", target: "/users/7", headers: []))
+    assert refused.status == 405 && http.value_of(refused.headers, name: "Allow").must() == "DELETE, GET, HEAD, OPTIONS"
+    options = not_routed(rt, fixture.request_of(method: "OPTIONS", target: "/users/7", headers: []))
+    assert options.status == 204 && options.body.len() == 0
+    dirty @= fixture.request_of(method: "GET", target: "/x?x=1", headers: [])
+    dirty.url.path @ "//users/7"
+    moved = not_routed(rt, dirty)
+    assert moved.status == 308 && http.value_of(moved.headers, name: "Location").must() == "/users/7?x=1"
+    assert not_routed(rt, fixture.request_of(method: "GET", target: "/dir", headers: [])).status == 404
+    rt.redirect_slash @ true
+    assert http.value_of(not_routed(rt, fixture.request_of(method: "GET", target: "/dir", headers: [])).headers, name: "Location").must() == "/dir/"
+    rt.errors @ .json
+    assert http.text_of(not_routed(rt, fixture.request_of(method: "GET", target: "/x", headers: []))).must() == "{\"message\":\"Not Found\"}"
+
+test "new_group: nested groups, their prefixes and names, a prefix refused"
+    rt @= new_router()
+    api @= new_group(rt, name: "api", prefix: "/api").must()
+    v1 @= new_group(api, name: "v1", prefix: "/v1").must()
+    add(@v1, method: "GET", pattern: "", name: "v1_root").must()
+    add(@v1, method: "GET", pattern: "/users/:id", name: "v1_user").must()
+    mount(router: @api, group: v1).must()
+    mount(router: @rt, group: api).must()
+    found = route(rt, fixture.request_of(method: "GET", target: "/api/v1/users/3", headers: [])).must()
+    assert found.groups == ["api", "v1"] && is_in_group(found, name: "api") && !is_in_group(found, name: "admin")
+    assert route(rt, fixture.request_of(method: "GET", target: "/api/v1", headers: [])).must().name == "v1_root"
+
+    for bad in ["", "admin", "/admin/", "/a/*b"]
+        match new_group(rt, name: "g", prefix: bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert new_group(rt, name: "a-b", prefix: "/x").is_err() && !new_group(rt, name: "u", prefix: "/users/:id").is_err()
+
+test "add: a method no token, a pattern with no slash, the same shape twice, a name on two patterns"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/u/:id", name: "u").must()
+
+    match add(@rt, method: "G T", pattern: "/x", name: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match add(@rt, method: "GET", pattern: "x", name: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match add(@rt, method: "GET", pattern: "/u/:other", name: "v")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    match add(@rt, method: "POST", pattern: "/w", name: "u")
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    assert rt.routes.len() == 1
+
+test "mount: a conflict adds none of the group's routes"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/g/b", name: "b").must()
+    g @= new_group(rt, name: "g", prefix: "/g").must()
+    add(@g, method: "GET", pattern: "/a", name: "a").must()
+    add(@g, method: "GET", pattern: "/b", name: "b2").must()
+    assert mount(router: @rt, group: g).is_err() && rt.routes.len() == 1 && route(rt, fixture.request_of(method: "GET", target: "/g/a", headers: [])).is_err()
+
+test "path_for: escaped values, a wildcard, an unknown name, a missing value"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/users/:id/files/*rest", name: "file").must()
+    assert path_for(rt, name: "file", params: [Param(name: "id", value: "a b"), Param(name: "rest", value: "x/y.txt")]).must() == "/users/a%20b/files/x/y.txt"
+    assert path_for(rt, name: "nope", params: []).is_err()
+
+    match path_for(rt, name: "file", params: [Param(name: "id", value: "1")])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "allowed_of: none, sorted, every method"
+    rt @= new_router()
+    add(@rt, method: "POST", pattern: "/a", name: "a").must()
+    add_any(@rt, pattern: "/b", name: "b").must()
+    assert allowed_of(rt, fixture.request_of(method: "GET", target: "/c", headers: [])).len() == 0
+    assert allowed_of(rt, fixture.request_of(method: "GET", target: "/a", headers: [])) == ["OPTIONS", "POST"]
+    assert allowed_of(rt, fixture.request_of(method: "GET", target: "/b", headers: [])).len() == 9
+
+test "json_of: a +json type, another type, no type, a body that is no JSON"
+    ok_one = http.with_body(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        content_type: "application/merge-patch+json; charset=utf-8",
+        body: bytes.from_text("{\"a\":1}")
+    )
+    assert json.int_of(json.member(json_of(ok_one).must(), key: "a").must()).must() == 1
+
+    for kind in ["text/plain", ""]
+        match json_of(http.with_body(fixture.request_of(method: "POST", target: "/", headers: []), content_type: kind, body: bytes.from_text("1")))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert json_of(
+        http.with_body(fixture.request_of(method: "POST", target: "/", headers: []), content_type: "application/json", body: bytes.from_text("{"))
+    ).is_err()
+
+test "cookie_of: the first of two fields, absent, a control byte"
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: "a=1; b=2"), http.Header(name: "Cookie", value: "b=3")]
+    )
+    assert cookie_of(r, name: "b").must() == "2"
+
+    match cookie_of(r, name: "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "bearer_token_of: absent, another scheme, a scheme in lower case, a token that is none"
+    assert bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [])).is_err()
+    assert bearer_token_of(
+        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Basic YTpi")])
+    ).is_err()
+    assert bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "bearer abc.def")])).must() == "abc.def"
+
+    match bearer_token_of(fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Bearer a b")]))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "client_address_of: no remote, untrusted, a chain of proxies, every entry trusted, IPv6"
+    r @= fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "X-Forwarded-For", value: "203.0.113.9, 10.0.0.2")]
+    )
+    assert client_address_of(r, trusted: ["10.0.0.1"]) == ""
+    r.remote @ "192.0.2.1:5000"
+    assert client_address_of(r, trusted: []) == "192.0.2.1"
+    r.remote @ "10.0.0.1:4000"
+    assert client_address_of(r, trusted: ["10.0.0.1"]) == "10.0.0.2"
+    assert client_address_of(r, trusted: ["10.0.0.1", "10.0.0.2"]) == "203.0.113.9"
+    assert client_address_of(r, trusted: ["10.0.0.1", "10.0.0.2", "203.0.113.9"]) == "203.0.113.9"
+    r.remote @ "[::1]:80"
+    assert client_address_of(r, trusted: []) == "::1"
+
+test "error_response: text with its line end, JSON with a quote escaped"
+    assert http.text_of(error_response(.text, status: 400, message: "bad")).must() == "bad\n"
+    j = error_response(.json, status: 409, message: "say \"no\"")
+    assert j.status == 409 && http.text_of(j).must() == "{\"message\":\"say \\\"no\\\"\"}" && http.value_of(j.headers, name: "Content-Type").must() == "application/json"
+
+test "render: the HTML mode escapes and is typed HTML, the text mode is typed text, a missing template"
+    page = template.parse_html("<p>{{ .name }}</p>").must()
+    got = render(200, t: page, name: page.main, value: .object(members: {"name": .text(v: "<b>")})).must()
+    assert http.text_of(got).must() == "<p>&lt;b&gt;</p>" && http.value_of(got.headers, name: "Content-Type").must() == "text/html; charset=utf-8"
+    plain = template.parse("{{ .name }}").must()
+    assert http.value_of(render(200, t: plain, name: plain.main, value: .object(members: {"name": .text(v: "<b>")})).must().headers, name: "Content-Type").must() == "text/plain; charset=utf-8"
+
+    match render(200, t: plain, name: "nope", value: .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "with_disposition: an ASCII name, a name above ASCII, a quote, inline"
+    base = http.respond_text(200, text: "x")
+    assert http.value_of(with_disposition(base, filename: "a.pdf", download: true).headers, name: "Content-Disposition").must() == "attachment; filename=\"a.pdf\""
+    assert http.value_of(with_disposition(base, filename: "café.txt", download: true).headers, name: "Content-Disposition").must() == "attachment; filename=\"caf_.txt\"; filename*=UTF-8''caf%C3%A9.txt"
+    assert http.value_of(with_disposition(base, filename: "a\"b", download: false).headers, name: "Content-Disposition").must() == "inline; filename=\"a_b\"; filename*=UTF-8''a%22b"
+
+test "serve_file: a file, HEAD, a folder, nothing, a method refused"
+    root = fixture.lay_out()
+    file = path.join_all([root, "a.txt"])
+    got = serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: []), file: file)
+    assert got.status == 200 && http.text_of(got).must() == "hello world"
+    assert http.value_of(got.headers, name: "Last-Modified").must() == "Sun, 06 Nov 1994 08:49:37 GMT"
+    assert http.value_of(got.headers, name: "Accept-Ranges").must() == "bytes" && http.value_of(got.headers, name: "Content-Type").must() == "text/plain; charset=utf-8"
+    assert serve_file(fixture.request_of(method: "HEAD", target: "/a.txt", headers: []), file: file).status == 200
+    assert serve_file(fixture.request_of(method: "GET", target: "/", headers: []), file: root).status == 404
+    assert serve_file(fixture.request_of(method: "GET", target: "/", headers: []), file: path.join_all([root, "none"])).status == 404
+    no = serve_file(fixture.request_of(method: "POST", target: "/a.txt", headers: []), file: file)
+    assert no.status == 405 && http.value_of(no.headers, name: "Allow").must() == "GET, HEAD"
+    fixture.remove(root)
+
+test "serve_file: ranges as Go answers them, and the whole file for several"
+    root = fixture.lay_out()
+    file = path.join_all([root, "a.txt"])
+
+    for want in [["bytes=0-4", "206", "hello", "bytes 0-4/11"], ["bytes=-3", "206", "rld", "bytes 8-10/11"], ["bytes=6-", "206", "world", "bytes 6-10/11"], ["bytes=0-100", "206", "hello world", "bytes 0-10/11"], ["bytes=-20", "206", "hello world", "bytes 0-10/11"], ["bytes=20-,0-1", "206", "he", "bytes 0-1/11"], ["bytes=0-1,3-4", "200", "hello world", ""], ["items=0-1", "200", "hello world", ""]]
+        got = serve_file(
+            fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "Range", value: want[0])]),
+            file: file
+        )
+        assert to_str(got.status) == want[1] && http.text_of(got).must() == want[2] && http.value_of(got.headers, name: "Content-Range").default("") == want[3]
+
+    for bad in ["bytes=20-", "bytes=3-1", "bytes=x", "bytes=-0"]
+        got = serve_file(
+            fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "Range", value: bad)]),
+            file: file
+        )
+        assert got.status == 416 && http.value_of(got.headers, name: "Content-Range").must() == "bytes */11"
+
+    fixture.remove(root)
+
+test "serve_file: If-Modified-Since, If-Unmodified-Since, If-Range and If-None-Match"
+    root = fixture.lay_out()
+    file = path.join_all([root, "a.txt"])
+    same = "Sun, 06 Nov 1994 08:49:37 GMT"
+    older = "Sat, 05 Nov 1994 08:49:37 GMT"
+    fresh = serve_file(
+        fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-Modified-Since", value: same)]),
+        file: file
+    )
+    assert fresh.status == 304 && fresh.body.len() == 0 && http.value_of(fresh.headers, name: "Last-Modified").must() == same
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-Modified-Since", value: older)]), file: file).status == 200
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-Modified-Since", value: "nonsense")]), file: file).status == 200
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-Unmodified-Since", value: older)]), file: file).status == 412
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "Range", value: "bytes=0-1"), http.Header(name: "If-Range", value: older)]), file: file).status == 200
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "Range", value: "bytes=0-1"), http.Header(name: "If-Range", value: same)]), file: file).status == 206
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-None-Match", value: "*"), http.Header(name: "If-Modified-Since", value: older)]), file: file).status == 304
+    assert serve_file(fixture.request_of(method: "GET", target: "/a.txt", headers: [http.Header(name: "If-None-Match", value: "\"x\""), http.Header(name: "If-Modified-Since", value: same)]), file: file).status == 200
+    fixture.remove(root)
+
+test "serve_folder: a folder's redirect, its index, its listing, a file named with a slash"
+    root = fixture.lay_out()
+    f @= default_folder(root)
+    sub = serve_folder(
+        fixture.request_of(method: "GET", target: "/static/sub?x=1", headers: []),
+        folder: f,
+        rest: "sub"
+    )
+    assert sub.status == 301 && http.value_of(sub.headers, name: "Location").must() == "sub/?x=1"
+    assert serve_folder(fixture.request_of(method: "GET", target: "/static/sub/", headers: []), folder: f, rest: "sub/").status == 404
+    assert http.text_of(serve_folder(fixture.request_of(method: "GET", target: "/static/idx/", headers: []), folder: f, rest: "idx/")).must() == "IDX"
+    index = serve_folder(
+        fixture.request_of(method: "GET", target: "/static/idx/index.html", headers: []),
+        folder: f,
+        rest: "idx/index.html"
+    )
+    assert index.status == 301 && http.value_of(index.headers, name: "Location").must() == "./"
+    slash = serve_folder(
+        fixture.request_of(method: "GET", target: "/static/a.txt/", headers: []),
+        folder: f,
+        rest: "a.txt/"
+    )
+    assert slash.status == 301 && http.value_of(slash.headers, name: "Location").must() == "../a.txt"
+    f.listing @ true
+    page = http.text_of(
+        serve_folder(fixture.request_of(method: "GET", target: "/static/sub/", headers: []), folder: f, rest: "sub/")
+    ).must()
+    assert page == "<!doctype html>\n<meta name=\"viewport\" content=\"width=device-width\">\n<pre>\n<a href=\"a%20b%26%3C.txt\">a b&amp;&lt;.txt</a>\n<a href=\"b.html\">b.html</a>\n<a href=\"dir/\">dir/</a>\n</pre>\n"
+    fixture.remove(root)
+
+test "serve_folder: a dot segment, a backslash, a hidden name, a link out, nothing, a method"
+    root = fixture.lay_out()
+    f @= default_folder(root)
+
+    for rest in ["../outside.txt", "sub/../../outside.txt", ".", "a\\b", ".hidden", "out.txt", "nothing", "sub/nothing"]
+        assert serve_folder(fixture.request_of(method: "GET", target: "/static/x", headers: []), folder: f, rest: rest).status == 404
+
+    f.hidden @ true
+    assert http.text_of(serve_folder(fixture.request_of(method: "GET", target: "/static/.hidden", headers: []), folder: f, rest: ".hidden")).must() == "s"
+    assert serve_folder(fixture.request_of(method: "DELETE", target: "/static/a.txt", headers: []), folder: f, rest: "a.txt").status == 405
+    assert http.value_of(serve_folder(fixture.request_of(method: "GET", target: "/static/sub/b.html", headers: []), folder: f, rest: "sub/b.html").headers, name: "Content-Type").must() == "text/html; charset=utf-8"
+    fixture.remove(root)
+
+test "content_type_of: by its extension in any case, a path, none, unknown"
+    assert content_type_of("a/b/Photo.JPG").must() == "image/jpeg"
+
+    for name in ["README", "a.unknown", "dir/"]
+        match content_type_of(name)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+test "before: none goes on with the request, the first answer stops the rest"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "put")]
+    )
+
+    match before(r, steps: [])
+        .go_on g  => assert g.request == r
+        .answer _ => assert false
+
+    match before(r, steps: [override_method, override_method])
+        .go_on g  => assert g.request.method == "PUT"
+        .answer _ => assert false
+
+test "after: none answers the response as it is"
+    response = http.respond_status(204)
+    assert after(fixture.request_of(method: "GET", target: "/", headers: []), response: response, steps: []) == response
+
+test "limit_body: at the limit, past it, an empty body and a limit of 0"
+    r = http.with_text(fixture.request_of(method: "POST", target: "/", headers: []), text: "four")
+
+    match limit_body(r, most_bytes: 4)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+    match limit_body(r, most_bytes: 3)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 413
+
+    match limit_body(fixture.request_of(method: "GET", target: "/", headers: []), most_bytes: 0)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "require_basic: none, wrong credentials, the right ones, a field that does not read"
+    refused: [[http.Header]] = [
+        []
+        [http.Header(name: "Authorization", value: "Basic " + bytes.format_base64(bytes.from_text("alice:x")))]
+        [http.Header(name: "Authorization", value: "Basic !!!")]
+    ]
+
+    for header in refused
+        match require_basic(fixture.request_of(method: "GET", target: "/", headers: header), realm: "admin", accepts: fixture.is_alice)
+            .go_on _  => assert false
+            .answer a => assert a.response.status == 401 && http.value_of(a.response.headers, name: "WWW-Authenticate").must() == "Basic realm=\"admin\", charset=\"UTF-8\""
+
+    right = http.with_basic_auth(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        user: "alice",
+        password: "secret"
+    )
+
+    match require_basic(right, realm: "admin", accepts: fixture.is_alice)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "require_bearer: none, another scheme, a malformed token, a refused one, the right one"
+    cases = [
+        ["", "401", "Bearer realm=\"api\""]
+        ["Basic YTpi", "401", "Bearer realm=\"api\""]
+        ["Bearer a b", "400", "Bearer realm=\"api\", error=\"invalid_request\""]
+        ["Bearer bad", "401", "Bearer realm=\"api\", error=\"invalid_token\""]
+    ]
+
+    for c in cases
+        headers: [http.Header] @= []
+
+        if c[0] != ""
+            headers @ [http.Header(name: "Authorization", value: c[0])]
+
+        match require_bearer(fixture.request_of(method: "GET", target: "/", headers: headers), realm: "api", accepts: fixture.is_good_token)
+            .go_on _  => assert false
+            .answer a => assert to_str(a.response.status) == c[1] && http.value_of(a.response.headers, name: "WWW-Authenticate").must() == c[2]
+
+    match require_bearer(http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "good-token"), realm: "api", accepts: fixture.is_good_token)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "challenge_bearer: insufficient scope is 403, a realm's quote escaped"
+    got = challenge_bearer(realm: "a\"b", error: "insufficient_scope")
+    assert got.status == 403 && http.value_of(got.headers, name: "WWW-Authenticate").must() == "Bearer realm=\"a\\\"b\", error=\"insufficient_scope\""
+
+test "preflight: an allowed origin, one refused, a request that is no preflight, the fields asked"
+    c = default_cors(["https://a.example"])
+    asking = [
+        http.Header(name: "Origin", value: "https://a.example")
+        http.Header(name: "Access-Control-Request-Method", value: "PUT")
+        http.Header(name: "Access-Control-Request-Headers", value: "X-Token")
+    ]
+
+    match preflight(fixture.request_of(method: "OPTIONS", target: "/x", headers: asking), cors: c)
+        .go_on _ => assert false
+        .answer a =>
+            h = a.response.headers
+            assert a.response.status == 204 && http.value_of(h, name: "Access-Control-Allow-Origin").must() == "https://a.example"
+            assert http.value_of(h, name: "Access-Control-Allow-Methods").must() == "GET, HEAD, PUT, PATCH, POST, DELETE"
+            assert http.value_of(h, name: "Access-Control-Allow-Headers").must() == "X-Token" && !http.has_header(h, name: "Access-Control-Max-Age")
+
+    other = [
+        http.Header(name: "Origin", value: "https://b.example")
+        http.Header(name: "Access-Control-Request-Method", value: "PUT")
+    ]
+
+    match preflight(fixture.request_of(method: "OPTIONS", target: "/x", headers: other), cors: c)
+        .go_on _  => assert false
+        .answer a => assert !http.has_header(a.response.headers, name: "Access-Control-Allow-Origin") && http.has_header(a.response.headers, name: "Vary")
+
+    match preflight(fixture.request_of(method: "OPTIONS", target: "/x", headers: [http.Header(name: "Origin", value: "https://a.example")]), cors: c)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "with_cors: no origin, every origin, credentials, exposed fields, a refused origin"
+    response = http.respond_text(200, text: "x")
+    from_a = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Origin", value: "https://a.example")]
+    )
+    assert with_cors(fixture.request_of(method: "GET", target: "/", headers: []), response: response, cors: default_cors(["*"])) == response
+    every = with_cors(from_a, response: response, cors: default_cors(["*"]))
+    assert http.value_of(every.headers, name: "Access-Control-Allow-Origin").must() == "*" && !http.has_header(every.headers, name: "Vary")
+    c @= default_cors(["*"])
+    c.credentials @ true
+    c.exposed @ ["X-Total"]
+    both = with_cors(from_a, response: response, cors: c)
+    assert http.value_of(both.headers, name: "Access-Control-Allow-Origin").must() == "https://a.example" && http.value_of(both.headers, name: "Access-Control-Allow-Credentials").must() == "true"
+    assert http.value_of(both.headers, name: "Access-Control-Expose-Headers").must() == "X-Total" && http.value_of(both.headers, name: "Vary").must() == "Origin"
+    refused = with_cors(from_a, response: response, cors: default_cors(["https://b.example"]))
+    assert !http.has_header(refused.headers, name: "Access-Control-Allow-Origin") && http.value_of(refused.headers, name: "Vary").must() == "Origin"
+
+test "with_request_id: one kept, one too long or with a space replaced, none made"
+    kept = with_request_id(
+        fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "abc-1")])
+    ).must()
+    assert http.value_of(kept.headers, name: "X-Request-Id").must() == "abc-1"
+
+    for bad in ["a b", "x".repeat(to_u64(129).must())]
+        made = with_request_id(
+            fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: bad)])
+        ).must()
+        assert http.value_of(made.headers, name: "X-Request-Id").must().len() == 36 && http.values_of(made.headers, name: "X-Request-Id").len() == 1
+
+    assert uuid.parse(http.value_of(with_request_id(fixture.request_of(method: "GET", target: "/", headers: [])).must().headers, name: "X-Request-Id").must()).must().high > 0
+
+test "copy_request_id: copied, and nothing where the request has none"
+    response = http.respond_status(204)
+    assert copy_request_id(fixture.request_of(method: "GET", target: "/", headers: []), response: response) == response
+
+test "log_request: info below 500, error from 500, the id where there is one"
+    two @= net.pair(deadline_ms: 5_000).must()
+    logger = log.with_clock(log.to(two.first.stream), clock: fixture.clock)
+    r @= fixture.request_of(method: "GET", target: "/a?b=1", headers: [http.Header(name: "X-Request-Id", value: "r1")])
+    r.remote @ "192.0.2.1:5000"
+    log_request(logger, r: r, response: http.respond_text(200, text: "four"), started: fixture.started()).must()
+    log_request(
+        logger,
+        r: fixture.request_of(method: "POST", target: "/", headers: []),
+        response: http.respond_status(503),
+        started: fixture.started()
+    ).must()
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z INFO request method=GET path=\"/a?b=1\" status=200 bytes=4 milliseconds=250 remote=192.0.2.1:5000 id=r1"
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z ERROR request method=POST path=/ status=503 bytes=0 milliseconds=250 remote=\"\""
+    io.close(@two.first.stream).must()
+    io.close(@reader.stream).must()
+
+test "recover: a response passed on, a failure answered 500 and logged, its message kept from the client"
+    two @= net.pair(deadline_ms: 5_000).must()
+    logger = log.with_clock(log.to(two.first.stream), clock: fixture.clock)
+    r = fixture.request_of(method: "GET", target: "/x", headers: [])
+    fine: http.Response? = ok(http.respond_status(204))
+    assert recover(logger, r: r, answer: fine, form: .text).status == 204
+    broken: http.Response? = fail(code: "failed", msg: "the database is gone")
+    got = recover(logger, r: r, answer: broken, form: .json)
+    assert got.status == 500 && http.text_of(got).must() == "{\"message\":\"Internal Server Error\"}"
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z ERROR handler failed method=GET path=/x code=failed failure=\"the database is gone\""
+    io.close(@two.first.stream).must()
+    io.close(@reader.stream).must()
+
+test "gzip: compressed where accepted, Vary alone where not, a short body, 204, an encoding there already"
+    body = "hello hello hello hello hello hello"
+    response = http.respond_text(200, text: body)
+    accepting = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Accept-Encoding", value: "br, gzip")]
+    )
+    packed = gzip(accepting, response: response, min_bytes: 10)
+    assert http.value_of(packed.headers, name: "Content-Encoding").must() == "gzip" && http.value_of(packed.headers, name: "Vary").must() == "Accept-Encoding"
+    assert bytes.to_text(compress.decompress(packed.body, format: .gzip, limit: 1_000).must()).must() == body
+    plain = gzip(fixture.request_of(method: "GET", target: "/", headers: []), response: response, min_bytes: 10)
+    assert plain.body == response.body && http.value_of(plain.headers, name: "Vary").must() == "Accept-Encoding"
+    assert gzip(accepting, response: response, min_bytes: 1_000) == response
+    assert gzip(accepting, response: http.respond_status(204), min_bytes: 0) == http.respond_status(204)
+    coded @= response
+    coded.headers @ http.with_header(coded.headers, name: "Content-Encoding", value: "br")
+    assert gzip(accepting, response: coded, min_bytes: 0) == coded
+
+test "gunzip_body: decompressed, past the limit, no gzip, another coding, identity"
+    data = compress.compress(bytes.from_text("hello"), options: compress.defaults(.gzip)).must()
+    sent @= http.with_body(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        content_type: "text/plain",
+        body: data
+    )
+    sent.headers @ http.with_header(sent.headers, name: "Content-Encoding", value: "gzip")
+
+    match gunzip_body(sent, most_bytes: 100)
+        .go_on g  => assert g.request.body == bytes.from_text("hello") && !http.has_header(g.request.headers, name: "Content-Encoding")
+        .answer _ => assert false
+
+    match gunzip_body(sent, most_bytes: 2)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 413
+
+    broken @= sent
+    broken.body @ bytes.from_text("nope")
+
+    match gunzip_body(broken, most_bytes: 100)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 400
+
+    other @= sent
+    other.headers @ http.with_header(sent.headers, name: "Content-Encoding", value: "br")
+
+    match gunzip_body(other, most_bytes: 100)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 415 && http.value_of(a.response.headers, name: "Accept-Encoding").must() == "gzip"
+
+    match gunzip_body(fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "Content-Encoding", value: "identity")]), most_bytes: 0)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "refuse_cross_origin: as Go's CrossOriginProtection answers"
+    cases = [
+        ["GET", "", "go"]
+        ["POST", "", "go"]
+        ["POST", "Sec-Fetch-Site: same-origin", "go"]
+        ["POST", "Sec-Fetch-Site: none", "go"]
+        ["POST", "Sec-Fetch-Site: cross-site", "refuse"]
+        ["POST", "Sec-Fetch-Site: same-site", "refuse"]
+        ["POST", "Origin: http://example.com", "go"]
+        ["POST", "Origin: https://example.com", "go"]
+        ["POST", "Origin: http://other.com", "refuse"]
+        ["POST", "Origin: https://trusted.example", "go"]
+        ["HEAD", "Sec-Fetch-Site: cross-site", "go"]
+        ["OPTIONS", "Sec-Fetch-Site: cross-site", "go"]
+        ["DELETE", "Origin: null", "refuse"]
+        ["PUT", "Origin: http://EXAMPLE.com", "refuse"]
+    ]
+
+    for c in cases
+        headers: [http.Header] @= [http.Header(name: "Host", value: "example.com")]
+
+        if c[1] != ""
+            pair = strings.split_once(s: c[1], sep: ": ").must()
+            headers @ headers.push(http.Header(name: pair.before, value: pair.after))
+
+        match refuse_cross_origin(fixture.request_of(method: c[0], target: "/x", headers: headers), trusted: ["https://trusted.example"])
+            .go_on _  => assert c[2] == "go"
+            .answer a => assert c[2] == "refuse" && a.response.status == 403
+
+    both = [
+        http.Header(name: "Host", value: "example.com")
+        http.Header(name: "Sec-Fetch-Site", value: "cross-site")
+        http.Header(name: "Origin", value: "https://trusted.example")
+    ]
+
+    match refuse_cross_origin(fixture.request_of(method: "POST", target: "/x", headers: both), trusted: ["https://trusted.example"])
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "require_type: a type read, its parameters set aside, another refused, no body"
+    r = http.with_body(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        content_type: "Application/JSON; charset=utf-8",
+        body: [49]
+    )
+
+    match require_type(r, types: ["application/json"])
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+    match require_type(r, types: ["text/csv"])
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 415
+
+    match require_type(fixture.request_of(method: "POST", target: "/", headers: []), types: [])
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+test "with_secure_headers: the three added, one the response has kept"
+    held @= http.respond_status(200)
+    held.headers @ [http.Header(name: "X-Frame-Options", value: "DENY")]
+    got = with_secure_headers(held)
+    assert http.value_of(got.headers, name: "X-Frame-Options").must() == "DENY" && http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff" && got.headers.len() == 3
+
+test "override_method: another method, no field, a method refused"
+    put = fixture.request_of(
+        method: "PUT",
+        target: "/",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "DELETE")]
+    )
+
+    match override_method(put)
+        .go_on g  => assert g.request.method == "PUT"
+        .answer _ => assert false
+
+    match override_method(fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "X-HTTP-Method-Override", value: "GET")]))
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 400
+
+test "serve_stream: what is no request answered 400, then the stream ends"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "nonsense\r\n\r\n").must()
+    assert serve_stream(http.default_server(), stream: two.second.stream, remote: "", router: new_router(), handler: not_routed) == 0
+    reader @= io.reader(two.first.stream)
+    got = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    assert got.status == 400 && got.closing
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_stream: a body past the limits answered 413"
+    small @= http.default_server()
+    small.limits.body_bytes @ 2
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 5\r\n\r\nhello").must()
+    assert serve_stream(small, stream: two.second.stream, remote: "", router: new_router(), handler: not_routed) == 0
+    reader @= io.reader(two.first.stream)
+    assert http.read_response(@reader, method: "POST", limits: http.default_limits()).must().status == 413
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "serve_stream: a head past the limits 431, an expectation 417, a version 505, a coding 501, each as http answers"
+    small @= http.default_server()
+    small.limits.head_bytes @ 60
+    given = [
+        ["GET / HTTP/1.1\r\nHost: h\r\nX-Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n", "431"]
+        ["GET / HTTP/1.1\r\nExpect: magic\r\n\r\n", "417"]
+        ["GET / HTTP/3.0\r\n\r\n", "505"]
+        ["GET / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n", "501"]
+    ]
+
+    for g in given
+        two @= net.pair(deadline_ms: 5_000).must()
+        io.write_text(two.first.stream, text: g[0]).must()
+        assert serve_stream(small, stream: two.second.stream, remote: "", router: new_router(), handler: not_routed) == 0
+        reader @= io.reader(two.first.stream)
+        assert to_str(http.read_response(@reader, method: "GET", limits: http.default_limits()).must().status) == g[1]
+        io.close(@two.second.stream).must()
+        io.close(@reader.stream).must()
+
+test "serve_stream: Expect 100-continue answered 100 before the body, HTTP/1.0 kept alive where it asks"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "POST /a HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 2\r\n\r\nhiGET /b HTTP/1.0\r\nConnection: keep-alive\r\n\r\nGET /c HTTP/1.0\r\n\r\n"
+    ).must()
+    assert serve_stream(http.default_server(), stream: two.second.stream, remote: "", router: new_router(), handler: not_routed) == 3
+    reader @= io.reader(two.first.stream)
+    assert io.read_line(@reader).must() == "HTTP/1.1 100 Continue"
+    _ = io.read_line(@reader).must()
+    assert http.read_response(@reader, method: "POST", limits: http.default_limits()).must().status == 404
+    kept = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    assert http.value_of(kept.headers, name: "Connection").must() == "keep-alive"
+    assert http.read_response(@reader, method: "GET", limits: http.default_limits()).must().closing
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+## Examples
+
+# An empty router, whose errors are text.
+test "new_router: no route, no prefix"
+    rt = new_router()
+    assert rt.routes.len() == 0 && rt.prefix == "" && rt.errors == .text
+
+# A group under `/admin`, its routes mounted into the router it came from.
+test "new_group: an admin group mounted"
+    rt @= new_router()
+    admin @= new_group(rt, name: "admin", prefix: "/admin").must()
+    add(@admin, method: http.METHOD_GET, pattern: "/users", name: "admin_users").must()
+    mount(router: @rt, group: admin).must()
+    assert rt.routes[0].pattern == "/admin/users" && rt.routes[0].groups == ["admin"]
+
+# A route named for the program's dispatch.
+test "add: a route of GET with a parameter"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
+    assert rt.routes == [Route(method: "GET", pattern: "/users/:id", name: "user", groups: [])]
+
+# A route for every method.
+test "add_any: one route, every method"
+    rt @= new_router()
+    add_any(@rt, pattern: "/echo", name: "echo").must()
+    assert route(rt, fixture.request_of(method: "PURGE", target: "/echo", headers: [])).must().name == "echo"
+
+# A group's routes taken into the router.
+test "mount: a group's route reached through the router"
+    rt @= new_router()
+    api @= new_group(rt, name: "api", prefix: "/api").must()
+    add(@api, method: http.METHOD_GET, pattern: "/ping", name: "ping").must()
+    mount(router: @rt, group: api).must()
+    assert route(rt, fixture.request_of(method: "GET", target: "/api/ping", headers: [])).must().name == "ping"
+
+# The path of a named route, for a redirect or a link.
+test "path_for: a user's path"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
+    assert path_for(rt, name: "user", params: [Param(name: "id", value: "42")]).must() == "/users/42"
+
+# The route of a request and its parameter, which the program dispatches on.
+test "route: a user's route and its id"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
+    found = route(rt, fixture.request_of(method: "GET", target: "/users/42", headers: [])).must()
+    assert found.name == "user" && param_of(found, name: "id").must() == "42"
+
+# The methods a path allows.
+test "allowed_of: GET and the two this package adds"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/a", name: "a").must()
+    assert allowed_of(rt, fixture.request_of(method: "PUT", target: "/a", headers: [])) == ["GET", "HEAD", "OPTIONS"]
+
+# The answer for a request no route takes.
+test "not_routed: 405 for a method no route of the path takes"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/a", name: "a").must()
+    got = not_routed(rt, fixture.request_of(method: "PUT", target: "/a", headers: []))
+    assert got.status == 405 && http.value_of(got.headers, name: "Allow").must() == "GET, HEAD, OPTIONS"
+
+# A parameter's value by its name.
+test "param_of: the id of a found route"
+    found = Found(name: "user", pattern: "/users/:id", groups: [], params: [Param(name: "id", value: "7")])
+    assert param_of(found, name: "id").must() == "7"
+
+# Whether a route stands in a group, for a step the group asks.
+test "is_in_group: a route of the admin group"
+    found = Found(name: "users", pattern: "/admin/users", groups: ["admin"], params: [])
+    assert is_in_group(found, name: "admin")
+
+# A JSON body read.
+test "json_of: an object"
+    r = http.with_body(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        content_type: "application/json",
+        body: bytes.from_text("{\"n\":2}")
+    )
+    assert json.int_of(json.member(json_of(r).must(), key: "n").must()).must() == 2
+
+# A cookie read by its name.
+test "cookie_of: a session cookie"
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Cookie", value: "theme=dark; session=abc")]
+    )
+    assert cookie_of(r, name: "session").must() == "abc"
+
+# A Bearer token read.
+test "bearer_token_of: a token"
+    r = http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "t0k3n")
+    assert bearer_token_of(r).must() == "t0k3n"
+
+# The client behind a proxy the program trusts.
+test "client_address_of: through one trusted proxy"
+    r @= fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "X-Forwarded-For", value: "203.0.113.9")]
+    )
+    r.remote @ "10.0.0.1:4000"
+    assert client_address_of(r, trusted: ["10.0.0.1"]) == "203.0.113.9"
+
+# An error answered as JSON.
+test "error_response: a 404 as JSON"
+    got = error_response(.json, status: 404, message: "no such user")
+    assert http.text_of(got).must() == "{\"message\":\"no such user\"}"
+
+# A page made by a template read in the HTML mode.
+test "render: a greeting page"
+    page = template.parse_html("<h1>Hello, {{ .name }}</h1>").must()
+    got = render(200, t: page, name: page.main, value: .object(members: {"name": .text(v: "Ada")})).must()
+    assert http.text_of(got).must() == "<h1>Hello, Ada</h1>"
+
+# A download under a file's name.
+test "with_disposition: a report saved"
+    got = with_disposition(
+        http.respond(200, content_type: "application/pdf", body: [37]),
+        filename: "report.pdf",
+        download: true
+    )
+    assert http.value_of(got.headers, name: "Content-Disposition").must() == "attachment; filename=\"report.pdf\""
+
+# The usual way to answer from a folder.
+test "default_folder: index.html, no listing, no hidden name"
+    assert default_folder("public") == Folder(root: "public", index: "index.html", listing: false, hidden: false)
+
+# A file of a folder, named by a wildcard's value.
+test "serve_folder: a file under the folder"
+    root = fixture.lay_out()
+    got = serve_folder(
+        fixture.request_of(method: "GET", target: "/static/a.txt", headers: []),
+        folder: default_folder(root),
+        rest: "a.txt"
+    )
+    assert got.status == 200 && http.text_of(got).must() == "hello world"
+    fixture.remove(root)
+
+# One file the program names.
+test "serve_file: a file, one range of it"
+    root = fixture.lay_out()
+    got = serve_file(
+        fixture.request_of(method: "GET", target: "/a", headers: [http.Header(name: "Range", value: "bytes=0-4")]),
+        file: path.join_all([root, "a.txt"])
+    )
+    assert got.status == 206 && http.text_of(got).must() == "hello"
+    fixture.remove(root)
+
+# A file's type by its name.
+test "content_type_of: a style sheet"
+    assert content_type_of("site.css").must() == "text/css; charset=utf-8"
+
+# A body's type by its first bytes.
+test "sniff: a PNG"
+    assert sniff([137, 80, 78, 71, 13, 10, 26, 10, 0]) == "image/png"
+
+# The steps before a handler, in their order.
+test "before: a POST standing for DELETE"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/items/3",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "DELETE")]
+    )
+
+    match before(r, steps: [override_method])
+        .go_on g  => assert g.request.method == "DELETE"
+        .answer _ => assert false
+
+# The steps after a handler, in their order.
+test "after: the request's id copied to the response"
+    r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "r-1")])
+    got = after(r, response: http.respond_status(204), steps: [copy_request_id])
+    assert http.value_of(got.headers, name: "X-Request-Id").must() == "r-1"
+
+# A body past a route's limit refused.
+test "limit_body: a body of 5 bytes past a limit of 4"
+    match limit_body(http.with_text(fixture.request_of(method: "POST", target: "/", headers: []), text: "hello"), most_bytes: 4)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 413
+
+# Basic credentials the program accepts.
+test "require_basic: alice let in"
+    r = http.with_basic_auth(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        user: "alice",
+        password: "secret"
+    )
+
+    match require_basic(r, realm: "admin", accepts: fixture.is_alice)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+# The answer that asks for Basic credentials.
+test "challenge_basic: 401 and its challenge"
+    got = challenge_basic("admin")
+    assert got.status == 401 && http.value_of(got.headers, name: "WWW-Authenticate").must() == "Basic realm=\"admin\", charset=\"UTF-8\""
+
+# A Bearer token the program accepts.
+test "require_bearer: a good token let in"
+    r = http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "good-token")
+
+    match require_bearer(r, realm: "api", accepts: fixture.is_good_token)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+# The answer to a token refused.
+test "challenge_bearer: an invalid token"
+    got = challenge_bearer(realm: "api", error: "invalid_token")
+    assert got.status == 401 && http.value_of(got.headers, name: "WWW-Authenticate").must() == "Bearer realm=\"api\", error=\"invalid_token\""
+
+# The usual CORS for one origin.
+test "default_cors: one origin, the usual methods"
+    c = default_cors(["https://app.example"])
+    assert c.origins == ["https://app.example"] && !c.credentials && c.methods.len() == 6
+
+# A preflight answered.
+test "preflight: an allowed origin's preflight"
+    r = fixture.request_of(
+        method: "OPTIONS",
+        target: "/x",
+        headers: [http.Header(name: "Origin", value: "https://app.example"), http.Header(name: "Access-Control-Request-Method", value: "PUT")]
+    )
+
+    match preflight(r, cors: default_cors(["https://app.example"]))
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 204 && http.value_of(a.response.headers, name: "Access-Control-Allow-Origin").must() == "https://app.example"
+
+# A response a page of another origin may read.
+test "with_cors: every origin allowed"
+    r = fixture.request_of(
+        method: "GET",
+        target: "/",
+        headers: [http.Header(name: "Origin", value: "https://a.example")]
+    )
+    got = with_cors(r, response: http.respond_status(204), cors: default_cors(["*"]))
+    assert http.value_of(got.headers, name: "Access-Control-Allow-Origin").must() == "*"
+
+# An identifier for a request that has none.
+test "with_request_id: a new identifier"
+    r = with_request_id(fixture.request_of(method: "GET", target: "/", headers: [])).must()
+    assert http.value_of(r.headers, name: "X-Request-Id").must().len() == 36
+
+# The request's id copied to its response.
+test "copy_request_id: the id copied"
+    r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "abc")])
+    assert http.value_of(copy_request_id(r, response: http.respond_status(204)).headers, name: "X-Request-Id").must() == "abc"
+
+# One line for one request.
+test "log_request: a line in the text form"
+    two @= net.pair(deadline_ms: 5_000).must()
+    logger = log.with_clock(log.to(two.first.stream), clock: fixture.clock)
+    log_request(
+        logger,
+        r: fixture.request_of(method: "GET", target: "/", headers: []),
+        response: http.respond_status(204),
+        started: fixture.started()
+    ).must()
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z INFO request method=GET path=/ status=204 bytes=0 milliseconds=250 remote=\"\""
+    io.close(@two.first.stream).must()
+    io.close(@reader.stream).must()
+
+# A failed handler answered 500.
+test "recover: a failure answered 500"
+    two @= net.pair(deadline_ms: 5_000).must()
+    logger = log.to(two.first.stream)
+    broken: http.Response? = fail(code: "failed", msg: "no database")
+    assert recover(logger, r: fixture.request_of(method: "GET", target: "/", headers: []), answer: broken, form: .text).status == 500
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# A response compressed for a client that accepts gzip.
+test "gzip: a long text compressed"
+    r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Accept-Encoding", value: "gzip")])
+    got = gzip(r, response: http.respond_text(200, text: "abc".repeat(to_u64(100).must())), min_bytes: 256)
+    assert http.value_of(got.headers, name: "Content-Encoding").must() == "gzip" && got.body.len() < 300
+
+# A gzip body read as the bytes it holds.
+test "gunzip_body: a compressed body read"
+    data = compress.compress(bytes.from_text("hi"), options: compress.defaults(.gzip)).must()
+    r = fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "Content-Encoding", value: "gzip")])
+
+    match gunzip_body(http.with_body(r, content_type: "text/plain", body: data), most_bytes: 1_000)
+        .go_on g  => assert g.request.body == bytes.from_text("hi")
+        .answer _ => assert false
+
+# A POST from another site refused.
+test "refuse_cross_origin: a cross-site POST"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/x",
+        headers: [http.Header(name: "Sec-Fetch-Site", value: "cross-site")]
+    )
+
+    match refuse_cross_origin(r, trusted: [])
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 403
+
+# A body of JSON let in where JSON is read.
+test "require_type: JSON let in"
+    r = http.with_body(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        content_type: "application/json",
+        body: [123, 125]
+    )
+
+    match require_type(r, types: ["application/json"])
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+# The fields that keep a page safe.
+test "with_secure_headers: nosniff added"
+    assert http.value_of(with_secure_headers(http.respond_status(200)).headers, name: "X-Content-Type-Options").must() == "nosniff"
+
+# A form's POST standing for a PATCH.
+test "override_method: PATCH"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "PATCH")]
+    )
+
+    match override_method(r)
+        .go_on g  => assert g.request.method == "PATCH" && !http.has_header(g.request.headers, name: "X-HTTP-Method-Override")
+        .answer _ => assert false
+
+# A server with no state: one connection answered, then the listener's
+# deadline ends the loop.
+test "serve: a router with no route answering 404"
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
+    io.write_text(conn.stream, text: "GET /x HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
+    net.set_accept_deadline(l, ms: 300).must()
+
+    match serve(http.default_server(), l: l, router: new_router(), handler: not_routed)
+        .ok _  => assert false
+        .err e => assert e.code == http.TIMEOUT
+
+    reader @= io.reader(conn.stream)
+    assert http.read_response(@reader, method: "GET", limits: http.default_limits()).must().status == 404
+    io.close(@reader.stream).must()
+    net.close_listener(@l).must()
+
+# The TLS loop, here over a listener closed already, which ends it.
+test "serve_tls: a closed listener ends it"
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
+    ).must()
+    tls.close_listener(@l).must()
+
+    match serve_tls(http.default_server(), l: l, router: new_router(), handler: not_routed)
+        .ok _  => assert false
+        .err e => assert e.code == http.CLOSED
+
+# The requests of one stream served, the second closing it.
+test "serve_stream: two requests"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /a HTTP/1.1\r\nHost: h\r\n\r\nGET /b HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n"
+    ).must()
+    assert serve_stream(http.default_server(), stream: two.second.stream, remote: "", router: new_router(), handler: not_routed) == 2
+    io.close(@two.second.stream).must()
+    io.close(@two.first.stream).must()
+
+# A program with state writes its own loop: each request read by
+# `http.next_request`, routed, and handed to its own function with its state
+# lent by `@`, the answer written by `http.write_answer`, until the request
+# closes the connection.
+test "route: a program's own loop, its state passed with @"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
+    two = net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET /users/1 HTTP/1.1\r\nHost: h\r\n\r\nGET /nope HTTP/1.1\r\nHost: h\r\n\r\nGET /users/2 HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n"
+    ).must()
+    hits: i64 @= 0
+    reader @= io.reader(two.second.stream)
+
+    while true
+        r = match http.next_request(@reader, limits: http.default_limits())
+            .ok got => got
+            .err _  => break
+
+        response = match route(rt, r)
+            .ok found => fixture.visit(@hits, name: found.name, id: param_of(found, name: "id").default(""))
+            .err _    => not_routed(rt, r)
+
+        http.write_answer(reader.stream, r: r, response: response).must()
+
+        if r.closing || response.closing
+            break
+
+    client @= io.reader(two.first.stream)
+    first = http.read_response(@client, method: "GET", limits: http.default_limits()).must()
+    second = http.read_response(@client, method: "GET", limits: http.default_limits()).must()
+    third = http.read_response(@client, method: "GET", limits: http.default_limits()).must()
+    assert http.text_of(first).must() == "user 1 1" && second.status == 404 && http.text_of(third).must() == "user 2 2" && hits == 2
+    io.close(@reader.stream).must()
+    io.close(@client.stream).must()

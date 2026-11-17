@@ -1,0 +1,546 @@
+# MessagePack, the binary format of msgpack.org's specification: bytes decoded
+# into a value a program matches on, and a value encoded as bytes, each object
+# in the smallest format that holds it as the specification asks. The value is
+# wider than JSON's: it keeps binaries, extensions with their types, keys of
+# any kind and every integer from -2^63 to 2^64 - 1, so an object read and
+# written again loses nothing but the width of its formats. `to_json` and
+# `from_json` cross to a `json.Value`, and `to_json` refuses what JSON cannot
+# hold, naming where it stands. The timestamp extension, type -1, is read into
+# a `time.Instant` and written from one.
+#
+# Nothing here follows the data with recursion: an object nested deep is read
+# and written on stacks this package holds, and `decode` reads no deeper than
+# `DEFAULT_MAX_DEPTH` unless it is asked to, since `==` on two values nested
+# many thousands deep follows them on the machine's stack.
+#
+# A record is not filled from MessagePack by its field names, since the
+# language has no reflection: a program writes each field with the language's
+# own `Record::field` names (spec § 9), as `cbor`'s example of `encode` shows.
+#
+# It does not read a stream: `io` reads the bytes, and `decode_next` takes
+# objects written one after another. MessagePack names no deterministic
+# encoding: `encode` keeps a map's entries as written, and `encode_with` sorts
+# them by their keys' bytes for a program that compares encodings. It fails
+# with `invalid`, `not_text`, `does_not_fit`, `not_found` and `unsupported`.
+
+use bytes
+use json
+use msgpack/internal/convert
+use msgpack/internal/decoder
+use msgpack/internal/encoder
+use msgpack/internal/event
+use msgpack/internal/stamp
+use time
+
+## The value
+
+# One MessagePack object. A `match` on it answers all ten cases.
+#
+# An integer is `unsigned` from 0 up and `negative` below 0, so the whole
+# range from -2^63 to 2^64 - 1 is held exactly; `int_of` answers one that fits
+# an `i64`, and `from_int` makes one. A float is an `f64` whether it was
+# encoded in 32 bits or 64, since every single is a double exactly. A map is a
+# list of entries, so its keys may be of any kind and keep the order they were
+# read or built in, and `==` compares two maps' entries in that order.
+variant Value
+    # MessagePack's `nil`, a word the language refuses as a name.
+    nil_value
+    # `false` or `true`.
+    boolean
+        # The truth value.
+        v: bool
+    # An integer from 0 to 2^64 - 1.
+    unsigned
+        # The integer itself.
+        v: u64
+    # An integer below 0, down to -2^63.
+    negative
+        # The integer itself, below 0: `encode` refuses 0 or more here.
+        v: i64
+    # A float, of 32 or 64 bits as encoded, held as a double, `nan` and the
+    # infinities included.
+    float
+        # The number.
+        v: f64
+    # A string: UTF-8, as every `str` is.
+    text
+        # The characters themselves.
+        v: str
+    # A binary.
+    binary
+        # The bytes, of any length up to 2^32 - 1.
+        v: [u8]
+    # An array.
+    list
+        # Its objects, in order.
+        items: [Value]
+    # A map.
+    pairs
+        # Its entries, in the order they were read or built.
+        entries: [Entry]
+    # An extension: a type the program or the specification gives a meaning,
+    # and its bytes.
+    extension
+        # The type: 0 to 127 the program's own, -128 to -1 the
+        # specification's, -1 the timestamp.
+        kind: i8
+        # The bytes, of any length up to 2^32 - 1.
+        data: [u8]
+
+# One entry of a map: a key and its value, each of any kind.
+record Entry
+    # The key.
+    key: Value
+    # The value under it.
+    value: Value
+
+## Codes and limits
+
+# The code of bytes that are not one well-formed object, of a value `encode`
+# cannot write, and of a value that is not of the kind asked for.
+constant INVALID: str
+    "invalid"
+
+# The code of a string whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of an integer past what its type holds, and of a timestamp past a
+# `time.Instant`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a key a map does not hold, which `member` fails with.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an object JSON has no form for, which `to_json` fails with: a
+# binary, an extension, a key that is not a string, a `nan` or an infinity.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The deepest nesting `decode` reads: `1` is 0 deep, `[]` is 1, `[[]]` is 2.
+constant DEFAULT_MAX_DEPTH: i64
+    512
+
+# The extension type of a timestamp, which the specification reserves.
+constant TIMESTAMP: i8
+    -1
+
+## Decoding
+
+# How bytes are decoded. `strict` answers the options of the specification's
+# well-formed objects; a program changes the fields it needs.
+record DecodeOptions
+    # The deepest nesting accepted, counted as `DEFAULT_MAX_DEPTH` counts it.
+    # An object nested deeper fails `invalid`.
+    max_depth: i64
+    # Whether a map may hold one key twice, the two keys equal where their
+    # smallest encodings are; both entries are then kept, in order. Refused,
+    # it fails `invalid`.
+    duplicate_keys: bool
+    # Whether a string whose bytes are not UTF-8 is read as a `.binary` holding
+    # them, as the specification asks a decoder to make possible. Refused, it
+    # fails `not_text`.
+    invalid_text: bool
+
+# What `decode_next` answers.
+record Decoded
+    # The object decoded.
+    value: Value
+    # The byte index past the object: the length of the data where nothing
+    # follows.
+    next: i64
+
+# The options of the specification's well-formed objects: nesting no deeper
+# than `DEFAULT_MAX_DEPTH`, no key twice in a map, every string UTF-8.
+function strict() -> DecodeOptions
+    return DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: false, invalid_text: false)
+
+# The one object `data` holds, decoded as `strict` decodes.
+#
+# - `data`: the encoded object, and nothing after it; the empty list holds no
+#   object and fails.
+#
+# Fails `invalid` where `data` is not one well-formed object (it ends inside
+# one, its first byte is `0xc1`, bytes follow it), where a count passes what
+# the remaining bytes could hold, where a map holds one key twice, or where
+# the nesting passes `DEFAULT_MAX_DEPTH`; fails `not_text` where a string is
+# not UTF-8. Each message opens `byte B:`, the index counted from 0. A length
+# no remaining byte could fill fails before anything is held for it. See also
+# `decode_with`, `decode_next`, `encode`.
+function decode(data: [u8]) -> Value?
+    return decode_with(data: data, options: strict())
+
+# The one object `data` holds, decoded as `options` asks.
+#
+# - `data`: the encoded object, and nothing after it.
+# - `options`: the depth allowed, whether a key may stand twice, whether a
+#   string that is not UTF-8 is read as a binary.
+#
+# Fails as `decode` fails, where `options` refuses. See also `decode`,
+# `strict`.
+function decode_with(data: [u8], options: DecodeOptions) -> Value?
+    got = decode_next(data: data, from: 0, options: options)?
+
+    if got.next != data.len()
+        return fail(code: INVALID, msg: f"byte {got.next}: {data.len() - got.next} bytes follow the object")
+    return ok(got.value)
+
+# The object that begins at byte `from` of `data`, and where the next begins:
+# the way through objects written one after another.
+#
+# - `data`: the bytes holding the object, and anything after it.
+# - `from`: the byte index where the object begins, 0 to the length of `data`;
+#   at the length there is no object, and it fails.
+# - `options`: as `decode_with` reads them.
+#
+# Fails as `decode_with` fails, bytes after the object excepted. Aborts where
+# `from` is negative or past the length of `data`. See also `decode`.
+function decode_next(data: [u8], from: i64, options: DecodeOptions) -> Decoded?
+    assert from >= 0 && from <= data.len()
+    reading = decoder.Reading(
+        max_depth: options.max_depth,
+        duplicate_keys: options.duplicate_keys,
+        invalid_text: options.invalid_text
+    )
+    got = decoder.read(data: data, from: from, reading: reading)?
+
+    # Each object made, the last event first: a container takes its objects
+    # off the top of `done`, which holds `top` of them.
+    done: [Value] @= []
+    top: i64 @= 0
+    at: i64 @= got.events.len()
+
+    while at > 0
+        at @ at - 1
+        e = got.events[at]
+        count = event.children_of(e)
+        held: [Value] @= []
+
+        for k in range(from: 0, to: count)
+            held @ held.push(done[top - 1 - k])
+
+        made: Value @= .nil_value
+
+        if e.kind == event.BOOLEAN
+            made @ .boolean(v: e.flag)
+        else if e.kind == event.UNSIGNED
+            made @ .unsigned(v: e.arg)
+        else if e.kind == event.NEGATIVE
+            made @ .negative(v: e.signed)
+        else if e.kind == event.FLOAT
+            made @ .float(v: e.number)
+        else if e.kind == event.TEXT
+            made @ .text(v: e.text)
+        else if e.kind == event.BINARY
+            made @ .binary(v: e.data)
+        else if e.kind == event.LIST
+            made @ .list(items: held)
+        else if e.kind == event.PAIRS
+            entries: [Entry] @= []
+
+            for k in range(from: 0, to: count / 2)
+                entries @ entries.push(Entry(key: held[2 * k], value: held[2 * k + 1]))
+
+            made @ .pairs(entries: entries)
+        else if e.kind == event.EXTENSION
+            made @ .extension(kind: to_i8(e.signed).must(), data: e.data)
+        top @ top - count
+
+        if top == done.len()
+            done @ done.push(made)
+        else
+            done[top] @ made
+        top @ top + 1
+
+    return ok(Decoded(value: done[0], next: got.next))
+
+## Encoding
+
+# The order an encoded map's entries stand in.
+variant KeyOrder
+    # The order of the value's own entries, `encode`'s.
+    as_written
+    # The bytewise order of the keys' encodings, the order CBOR's
+    # deterministic encoding uses: two equal values encode to equal bytes.
+    bytewise
+
+# `v` encoded, each object in the smallest format that holds it, a map's
+# entries in the order they stand.
+#
+# - `v`: the object to encode.
+#
+# An integer takes the fixint, uint or int format of fewest bytes; a float
+# takes float 32 where a single holds it exactly, `nan` and the infinities
+# included, else float 64; a string, a binary, an array, a map and an
+# extension take the shortest header their length allows. Fails `invalid`
+# where `v` holds a map with one key twice, a `.negative` that is not below 0,
+# or a length past 2^32 - 1. A map's keys are each encoded once more to be
+# compared. See also `encode_with`, `decode`.
+function encode(v: Value) -> [u8]?
+    return encode_with(v: v, order: .as_written)
+
+# `v` encoded as `encode` encodes it, a map's entries in the order `order`
+# names.
+#
+# - `v`: the object to encode.
+# - `order`: where each map's entries stand; `.as_written` is `encode`.
+#
+# Fails as `encode` fails. See also `encode`.
+function encode_with(v: Value, order: KeyOrder) -> [u8]?
+    # Each object waiting to be written, the next on top: a container's
+    # objects wait above it, its first on top.
+    events: [event.Event] @= []
+    waiting: [Value] @= [v]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        children: [Value] @= []
+
+        made = match waiting[top]
+            .nil_value  => event.of_kind(kind: event.NIL_VALUE, arg: 0)
+            .boolean b  => event.of_boolean(b.v)
+            .unsigned u => event.of_kind(kind: event.UNSIGNED, arg: u.v)
+            .negative n => event.of_negative(n.v)
+            .float f    => event.of_float(f.v)
+            .text t     => event.of_text(t.v)
+            .binary b   => event.of_binary(b.v)
+            .list l =>
+                children @ l.items
+                event.of_kind(kind: event.LIST, arg: to_u64(l.items.len()).must())
+            .pairs p =>
+                for entry in p.entries
+                    children @ children.push(entry.key)
+                    children @ children.push(entry.value)
+
+                event.of_kind(kind: event.PAIRS, arg: to_u64(p.entries.len()).must())
+            .extension x => event.of_extension(type_code: to_i64(x.kind).must(), data: x.data)
+
+        events @ events.push(made)
+
+        for k in range(from: 0, to: children.len())
+            child = children[children.len() - 1 - k]
+
+            if top == waiting.len()
+                waiting @ waiting.push(child)
+            else
+                waiting[top] @ child
+            top @ top + 1
+
+    code = match order
+        .as_written => encoder.AS_WRITTEN
+        .bytewise   => encoder.BYTEWISE
+
+    return encoder.write(events: events, order: code, duplicates: false)
+
+## JSON
+
+# `v` as a `json.Value`, where JSON can hold every object of it.
+#
+# - `v`: the object to cross; an integer becomes a number, a float with no
+#   `nan` or infinity a number, `nil` JSON's `null`, a map with string keys an
+#   object in the order of its entries.
+#
+# Fails `unsupported` where `v` holds a binary, an extension, a key that is
+# not a string, a `nan` or an infinity; fails `does_not_fit` where it holds an
+# integer past `json.MAX_EXACT_INT` either way; fails `invalid` where a map
+# holds one key twice or `encode` refuses `v`. Each message opens with the
+# JSON pointer of the object, the empty pointer naming `v` itself. See also
+# `from_json`.
+function to_json(v: Value) -> json.Value?
+    return convert.to_json(encode(v)?)
+
+# `v` as a MessagePack object.
+#
+# - `v`: the JSON value; a number that is a whole number from -2^63 to 2^64 -
+#   1 becomes an integer, `-0.0` and every other number a float, an object a
+#   map whose keys are strings in the order of its members.
+#
+# `to_json` gives `v` back, so a JSON value crosses both ways unchanged; a
+# MessagePack float that is a whole number comes back an integer. See also
+# `to_json`.
+function from_json(v: json.Value) -> Value
+    lenient = DecodeOptions(max_depth: 9223372036854775807, duplicate_keys: true, invalid_text: false)
+    return decode_with(data: convert.from_json(v), options: lenient).must()
+
+## Reading a value
+
+# The integer `n` as an object: `unsigned` from 0 up, `negative` below.
+#
+# - `n`: any `i64`, its smallest and largest included.
+#
+# See also `int_of`.
+function from_int(n: i64) -> Value
+    if n >= 0
+        return .unsigned(v: to_u64(n).must())
+    return .negative(v: n)
+
+# The integer `v` holds, as an `i64`.
+#
+# - `v`: the object to read; an `unsigned` or a `negative`.
+#
+# Fails `does_not_fit` where an `unsigned` is past an `i64`, and `invalid`
+# where `v` is no integer, a float included. See also `from_int`.
+function int_of(v: Value) -> i64?
+    return match v
+        .unsigned u => to_i64(u.v)
+        .negative n => ok(n.v)
+        .nil_value | .boolean _ | .float _ | .text _ | .binary _ | .list _ | .pairs _ | .extension _ =>
+            fail(code: INVALID, msg: "the object is no integer")
+
+# The value `v`, a map, holds under the string key `key`.
+#
+# - `v`: the map to read.
+# - `key`: the key, compared with each string key byte for byte; a key of
+#   another kind never matches.
+#
+# The first entry with that key answers where a map holds it twice. Fails
+# `not_found` where `v` holds no such key, and `invalid` where `v` is no map.
+# It reads the entries in order, so it costs one comparison an entry.
+function member(v: Value, key: str) -> Value?
+    wanted: Value = .text(v: key)
+
+    return match v
+        .pairs p =>
+            for entry in p.entries
+                if entry.key == wanted
+                    return ok(entry.value)
+
+            fail(code: NOT_FOUND, msg: f"no key {json.quote(key)} in the map")
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .list _ | .extension _ =>
+            fail(code: INVALID, msg: f"the object is no map, so it holds no key {json.quote(key)}")
+
+## Timestamps
+
+# The instant the timestamp `v` holds.
+#
+# - `v`: an extension of type `TIMESTAMP`, its bytes in one of the
+#   specification's three layouts: 4, 8 or 12 bytes.
+#
+# Fails `invalid` where `v` is no timestamp, its length is no layout's or its
+# nanoseconds pass 999999999; fails `does_not_fit` where the instant is
+# outside a `time.Instant`, which holds 1677 to 2262 where a timestamp of 12
+# bytes reaches far wider. See also `from_instant`.
+function instant_of(v: Value) -> time.Instant?
+    return match v
+        .extension x =>
+            if x.kind != TIMESTAMP
+                fail(code: INVALID, msg: f"an extension of type {x.kind}, where a timestamp's is -1")
+            else
+                stamp.instant_of(x.data)
+        .nil_value | .boolean _ | .unsigned _ | .negative _ | .float _ | .text _ | .binary _ | .list _ | .pairs _ =>
+            fail(code: INVALID, msg: "the object is no extension, so it holds no timestamp")
+
+# The timestamp of `t`, in the smallest of the specification's three layouts
+# that holds it: 4 bytes for whole seconds from 1970 to 2106, 8 for
+# nanoseconds from 1970 on, and 12, which only an instant before 1970 needs,
+# since a `time.Instant` ends in 2262.
+#
+# - `t`: any instant, before 1970 included.
+#
+# See also `instant_of`.
+function from_instant(t: time.Instant) -> Value
+    return .extension(kind: TIMESTAMP, data: stamp.payload_of(t))
+
+## Examples
+
+# An array of an integer and a string, read from its bytes.
+test "decode: an array of an integer and a string"
+    data: [u8] = [0x92, 0x01, 0xa2, 0x68, 0x69]
+    assert decode(data).must() == .list(items: [.unsigned(v: 1), .text(v: "hi")])
+
+# A string that is not UTF-8 kept as its bytes.
+test "decode_with: a string that is not UTF-8 read as a binary"
+    data: [u8] = [0xa1, 0xff]
+    assert decode(data).is_err()
+    options = DecodeOptions(max_depth: DEFAULT_MAX_DEPTH, duplicate_keys: false, invalid_text: true)
+    assert decode_with(data: data, options: options).must() == .binary(v: [0xff])
+
+# Two objects written one after the other, read in turn.
+test "decode_next: two objects in a row"
+    data: [u8] = [0x2a, 0xc3]
+    first = decode_next(data: data, from: 0, options: strict()).must()
+    assert first.value == .unsigned(v: 42)
+    assert decode_next(data: data, from: first.next, options: strict()).must().value == .boolean(v: true)
+
+# A map written with its entries as they stand, each in its smallest format.
+test "encode: a map of a negative integer and a float"
+    entries = [Entry(key: .text(v: "t"), value: from_int(-40)), Entry(key: .text(v: "v"), value: .float(v: 1.5))]
+    expected: [u8] = [0x82, 0xa1, 0x74, 0xd0, 0xd8, 0xa1, 0x76, 0xca, 0x3f, 0xc0, 0x00, 0x00]
+    assert encode(.pairs(entries: entries)).must() == expected
+
+# Two maps holding the same entries in two orders, encoded to the same bytes.
+test "encode_with: keys sorted by their bytes"
+    a = Entry(key: .text(v: "a"), value: from_int(1))
+    b = Entry(key: .text(v: "b"), value: from_int(2))
+    one = encode_with(v: .pairs(entries: [b, a]), order: .bytewise).must()
+    assert one == encode_with(v: .pairs(entries: [a, b]), order: .bytewise).must()
+    assert one == [0x82, 0xa1, 0x61, 0x01, 0xa1, 0x62, 0x02]
+
+# A MessagePack map read into a `json.Value` and written as JSON text.
+test "to_json: a map of a string and a list"
+    data: [u8] = [0x82, 0xa1, 0x61, 0x01, 0xa1, 0x62, 0x92, 0x02, 0x03]
+    assert json.format(to_json(decode(data).must()).must()).must() == "{\"a\":1,\"b\":[2,3]}"
+
+# JSON text written as MessagePack.
+test "from_json: a JSON object encoded"
+    v = json.parse("{\"ok\": true, \"n\": -1}").must()
+    assert encode(from_json(v)).must() == [0x82, 0xa2, 0x6f, 0x6b, 0xc3, 0xa1, 0x6e, 0xff]
+
+# The smallest `i64` as an object.
+test "from_int: the smallest i64"
+    assert encode(from_int(-9223372036854775808)).must() == [0xd3, 0x80, 0, 0, 0, 0, 0, 0, 0]
+
+# An integer read out of an object.
+test "int_of: an unsigned integer read as an i64"
+    assert int_of(decode([0xcd, 0x01, 0x00]).must()).must() == 256
+
+# A member of a map read by its key.
+test "member: the value under a string key"
+    v = decode([0x81, 0xa4, 0x6e, 0x61, 0x6d, 0x65, 0xa3, 0x61, 0x64, 0x61]).must()
+    assert member(v, key: "name").must() == .text(v: "ada")
+
+# A timestamp of whole seconds, read as an instant.
+test "instant_of: a timestamp of 32 bits"
+    v = decode([0xd6, 0xff, 0x00, 0x00, 0x00, 0x3c]).must()
+    assert instant_of(v).must() == time.from_unix(whole_seconds: 60, extra_nanoseconds: 0).must()
+
+# An instant with a fraction of a second, written as a timestamp of 64 bits.
+test "from_instant: an instant with nanoseconds"
+    t = time.from_unix(whole_seconds: 1, extra_nanoseconds: 500).must()
+    assert encode(from_instant(t)).must() == [0xd7, 0xff, 0x00, 0x00, 0x07, 0xd0, 0x00, 0x00, 0x00, 0x01]
+
+# The options that refuse a key twice.
+test "strict: a map holding one key twice is refused"
+    data: [u8] = [0x82, 0x01, 0x02, 0x01, 0x03]
+    assert decode_with(data: data, options: strict()).is_err()
+
+test "decode and encode: every format the specification lists, read and written at its smallest"
+    rows = [
+        ["c0", "c0"]
+        ["c2", "c2"]
+        ["7f", "7f"]
+        ["cc7f", "7f"]
+        ["d07f", "7f"]
+        ["cd0080", "cc80"]
+        ["ce00000100", "cd0100"]
+        ["cf0000000100000000", "cf0000000100000000"]
+        ["d3ffffffffffffffff", "ff"]
+        ["d1ff80", "d080"]
+        ["d2ffff7fff", "d2ffff7fff"]
+        ["cb3ff8000000000000", "ca3fc00000"]
+        ["cb3ff199999999999a", "cb3ff199999999999a"]
+        ["d90161", "a161"]
+        ["c50001ff", "c401ff"]
+        ["dc000101", "9101"]
+        ["df00000001a16101", "81a16101"]
+        ["c7040101020304", "d60101020304"]
+        ["c9000000020a0b0c", "d50a0b0c"]
+        ["c8000305010203", "c70305010203"]
+    ]
+
+    for row in rows
+        v = decode(bytes.parse_hex(row[0]).must()).must()
+        assert bytes.format_hex(encode(v).must()) == row[1]

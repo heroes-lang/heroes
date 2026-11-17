@@ -1,0 +1,105 @@
+# A port read as a number through `numbers`, and the port of each scheme
+# that has one of its own where a URL writes none.
+#
+# The table holds the schemes whose port this machine's services table
+# (`/etc/services`, read with Python's `socket.getservbyname` on 2026-11-15)
+# gives under the scheme's own name, and five whose defining RFC names the
+# port: `ws` and `wss` (RFC 6455 § 3), `sips` (RFC 3261 § 19.1.2), `coap`
+# and `coaps` (RFC 7252 § 6).
+
+use numbers
+use strings
+use url/internal/classes
+
+# The port `port` writes, 0 to 65535. Fails `invalid` where it is not
+# digits alone, the empty text included, and `does_not_fit` where it is past
+# 65535.
+function read(port: str) -> i64?
+    if port == ""
+        return fail(code: classes.INVALID, msg: "an empty port")
+
+    for c in port.chars()
+        if !classes.is_digit(c[0])
+            return fail(code: classes.INVALID, msg: f"the port {classes.shown(port)} is not digits alone")
+
+    match numbers.parse_int(port)
+        .ok n =>
+            if n > 65535
+                return fail(code: "does_not_fit", msg: f"the port {port} is past 65535")
+            return ok(n)
+        .err _ => return fail(code: "does_not_fit", msg: f"the port {port} is past 65535")
+
+# The port a URL of `scheme` is reached on where it writes none, the scheme
+# read in any case. Fails `not_found` for a scheme the table does not hold.
+function default_of(scheme: str) -> i64?
+    match strings.to_lower_ascii(scheme)
+        "http" | "ws" => return ok(80)
+        "https" | "wss" => return ok(443)
+        "ftp" => return ok(21)
+        "ftps" => return ok(990)
+        "ssh" => return ok(22)
+        "telnet" => return ok(23)
+        "tftp" => return ok(69)
+        "gopher" => return ok(70)
+        "pop3" => return ok(110)
+        "pop3s" => return ok(995)
+        "nntp" => return ok(119)
+        "nntps" => return ok(563)
+        "imap" => return ok(143)
+        "imaps" => return ok(993)
+        "ldap" => return ok(389)
+        "ldaps" => return ok(636)
+        "rtsp" => return ok(554)
+        "rtsps" => return ok(322)
+        "ipp" => return ok(631)
+        "rsync" => return ok(873)
+        "nfs" => return ok(2049)
+        "mysql" => return ok(3306)
+        "svn" => return ok(3690)
+        "sip" => return ok(5060)
+        "sips" => return ok(5061)
+        "postgresql" => return ok(5432)
+        "amqp" => return ok(5672)
+        "coap" => return ok(5683)
+        "coaps" => return ok(5684)
+        "git" => return ok(9418)
+        "" => return fail(code: "not_found", msg: "a URL with no scheme has no default port")
+        _ => return fail(code: "not_found", msg: f"no default port is known for the scheme {classes.shown(scheme)}")
+
+## Tests
+
+test "read: zero, the largest, one past it, zeros before, and what is not digits"
+    assert read("0").must() == 0
+    assert read("65535").must() == 65535
+    assert read("0080").must() == 80
+    assert read("65536").is_err()
+    assert read("99999999999999999999999").is_err()
+
+    match read("65536")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "the port 65536 is past 65535"
+
+    match read("8a")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the port \"8a\" is not digits alone"
+
+    assert read("").is_err()
+    assert read("+80").is_err()
+    assert read("-1").is_err()
+    assert read(" 80").is_err()
+
+test "default_of: the web's schemes in any case, a database, and the unknown"
+    assert default_of("http").must() == 80
+    assert default_of("HTTPS").must() == 443
+    assert default_of("ws").must() == 80
+    assert default_of("wss").must() == 443
+    assert default_of("postgresql").must() == 5432
+    assert default_of("ssh").must() == 22
+
+    match default_of("mailto")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no default port is known for the scheme \"mailto\""
+
+    match default_of("")
+        .ok _  => assert false
+        .err e => assert e.msg == "a URL with no scheme has no default port"

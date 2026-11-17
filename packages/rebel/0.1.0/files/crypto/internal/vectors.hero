@@ -1,0 +1,245 @@
+# The published test vectors of the digests and of the HMAC over each, run
+# against `crypto/internal/engine`: FIPS 180-4's example messages, RFC 1321's
+# test suite, RFC 2202's and RFC 4231's HMAC cases, and a chain over every
+# length from 0 to 300 that crosses each block's edges. The expected values
+# were observed from Python's `hashlib` and `hmac` on 2026-11-16, and Go's
+# `crypto/sha512` answered SHA-512/224 of "abc" alike.
+
+use bytes
+use crypto/internal/engine
+
+# The digest of `data` by `kind`, as hexadecimal in lower case.
+function hex_digest(kind: engine.Kind, data: [u8]) -> str
+    run @= engine.begin(kind)
+    engine.absorb(@run, data)
+    return bytes.format_hex(engine.finish(run))
+
+# The HMAC of `data` under `key` by `kind`, as hexadecimal in lower case.
+function hex_tag(kind: engine.Kind, key: [u8], data: [u8]) -> str
+    run @= engine.begin_keyed(kind, key)
+    engine.absorb(@run, data)
+    return bytes.format_hex(engine.finish(run))
+
+# The last digest of the chain: from no bytes, the digest of the one before
+# and then the message of each length from 0 to 300, whose byte i is
+# `(i * 31 + length) % 256`.
+function chain(kind: engine.Kind) -> str
+    last: [u8] @= []
+
+    for length in range(from: 0, to: 301)
+        message: [u8] @= last
+
+        for i in range(from: 0, to: length)
+            message @ message.push(to_u8((i * 31 + length) % 256).must())
+
+        run @= engine.begin(kind)
+        engine.absorb(@run, message)
+        last @ engine.finish(run)
+
+    return bytes.format_hex(last)
+
+test "vectors: the message abc by every digest"
+    abc = bytes.from_text("abc")
+    assert hex_digest(.md5, abc) == "900150983cd24fb0d6963f7d28e17f72"
+    assert hex_digest(.sha1, abc) == "a9993e364706816aba3e25717850c26c9cd0d89d"
+    assert hex_digest(.sha224, abc) == "23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7"
+    assert hex_digest(.sha256, abc) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    assert hex_digest(.sha384, abc) == "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"
+    assert hex_digest(.sha512, abc) == "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"
+    assert hex_digest(.sha512_224, abc) == "4634270f707b6a54daae7530460842e20e37ed265ceee9a43e8924aa"
+    assert hex_digest(.sha512_256, abc) == "53048e2681941ef99b2e29b76b4c7dabe4c2d0c634fc6d46e0e2f13107e7af23"
+
+test "vectors: the empty message, and the messages of 448 and 896 bits"
+    m448 = bytes.from_text("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq")
+    m896 = bytes.from_text(
+        "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+    )
+    assert hex_digest(.md5, []) == "d41d8cd98f00b204e9800998ecf8427e"
+    assert hex_digest(.sha1, []) == "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    assert hex_digest(.sha256, []) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert hex_digest(.sha512, []) == "cf83e1357eefb8bdf1542850d66d8007d620e4050b5715dc83f4a921d36ce9ce47d0d13c5d85f2b0ff8318d2877eec2f63b931bd47417a81a538327af927da3e"
+    assert hex_digest(.md5, m448) == "8215ef0796a20bcaaae116d3876c664a"
+    assert hex_digest(.sha1, m448) == "84983e441c3bd26ebaae4aa1f95129e5e54670f1"
+    assert hex_digest(.sha256, m448) == "248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1"
+    assert hex_digest(.sha512, m448) == "204a8fc6dda82f0a0ced7beb8e08a41657c16ef468b228a8279be331a703c33596fd15c13b1b07f9aa1d3bea57789ca031ad85c7a71dd70354ec631238ca3445"
+    assert hex_digest(.md5, m896) == "03dd8807a93175fb062dfb55dc7d359c"
+    assert hex_digest(.sha1, m896) == "a49b2446a02c645bf419f995b67091253a04a259"
+    assert hex_digest(.sha256, m896) == "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"
+    assert hex_digest(.sha512, m896) == "8e959b75dae313da8cf4f72814fc143f8f7779c6eb9f7fa17299aeadb6889018501d289e4900f7e4331b99dec4b5433ac7d329eeb6dd26545e96e55b874be909"
+
+test "vectors: a text of several bytes per character, fed as text, by every digest"
+    expected: {str: str} = {
+        "md5": "ed2ded01c09afabc73c1da19c5acb33a"
+        "sha1": "18e83d51daf9df339992a33b8fe08154b0755147"
+        "sha224": "0394a398fb99bd702366de8f822315cc7c4259e72e5c392d97f4e97c"
+        "sha256": "a504d3ab74adae949a6670c7537cba388674336f67650b5bc1fe259d927a8ec3"
+    }
+    kinds: [engine.Kind] = [.md5, .sha1, .sha224, .sha256]
+    names = ["md5", "sha1", "sha224", "sha256"]
+
+    for i in range(from: 0, to: 4)
+        run @= engine.begin(kinds[i])
+        engine.absorb_text(@run, "héros ☃")
+        assert bytes.format_hex(engine.finish(run)) == expected[names[i]].must()
+
+    wide @= engine.begin(.sha384)
+    engine.absorb_text(@wide, "héros ☃")
+    assert bytes.format_hex(engine.finish(wide)) == "cc507f2c75e176cc6d85782ef1ca4c1ab80d646edb2a69fb5d78d7597f3729a0469477863288c92f1bc5666a570a20c0"
+    assert hex_digest(.sha512, bytes.from_text("héros ☃")) == "afe72080af98ef103fb17bbef544af4d1640a1ad5d66b8ec4222277d07805b8418deba0d11fd330e52255cf803c3971c18a618740d174d4676776dbf7be60910"
+    assert hex_digest(.sha512_224, bytes.from_text("héros ☃")) == "8762c9f3f4c4aec358e8c750614e1195fefd8f75c037197d5cf8a972"
+    assert hex_digest(.sha512_256, bytes.from_text("héros ☃")) == "a256fafd283abbc19860e567a0e9c672713d9cc0e6554cd4378c6067d39ec94f"
+
+test "vectors: RFC 1321's test suite for MD5"
+    assert hex_digest(.md5, bytes.from_text("message digest")) == "f96b697d7cb7938d525a2f31aaf161d0"
+    assert hex_digest(.md5, bytes.from_text("abcdefghijklmnopqrstuvwxyz")) == "c3fcd3d76192e4007dfb496cca67e13b"
+    assert hex_digest(.md5, bytes.from_text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")) == "d174ab98d277d9f5a5611c2c9f419d9f"
+    assert hex_digest(.md5, bytes.from_text("1234567890".repeat(8))) == "57edf4a22be3c955ac49da2e2107b67a"
+
+test "vectors: a million times the letter a, fed as text"
+    million = "a".repeat(1000000)
+    kinds: [engine.Kind] = [.md5, .sha1, .sha256, .sha512]
+    expected = [
+        "7707d6ae4e027c70eea2a935c2296f21"
+        "34aa973cd4c4daa4f61eeb2bdbad27316534016f"
+        "cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0"
+        "e718483d0ce769644e2e42c7bc15b4638e1f98b13b2044285632a803afa973ebde0ff244877ea60a4cb0432ce577c31beb009c5c2c49aa2e4eadb217ad8cc09b"
+    ]
+
+    for i in range(from: 0, to: 4)
+        run @= engine.begin(kinds[i])
+        engine.absorb_text(@run, million)
+        assert bytes.format_hex(engine.finish(run)) == expected[i]
+
+test "vectors: a chain over every length from 0 to 300, by every digest, as Python answers it"
+    assert chain(.md5) == "7a1e85beabb7d2cd032f7577197930df"
+    assert chain(.sha1) == "28e8bce64d9fb63a9fbef065689515fa3989234e"
+    assert chain(.sha224) == "c1fcf2dfff4f2d8bc74b48ebd9018cd755a64f43ef9a6c0b294e63ea"
+    assert chain(.sha256) == "331b6d04e9228b1fcf85295e375ad742d74045b0e987d533326d083134b29a12"
+    assert chain(.sha384) == "23fe0238c2d2443318d182ff44f5d40736baf309d059a5aad6c947861210776abfa66a2e87ff4f3ae811bf41d8335f43"
+    assert chain(.sha512) == "e2fc5fe059dccd4f478d804667d85558175fde05a11f8738e32201d2596dbf21b379d53d1d83a3f0a1d6a09faea7eec39f8f511e35d7e63aef2b0f05fdf8aa73"
+    assert chain(.sha512_224) == "4d1d628ee8787a37a496172ba6a0b261c70bf05213ae6ee1bd83a0b3"
+    assert chain(.sha512_256) == "ecd818f3039acb6a8c9f361869dce8508865212a96eba717696115c9267a5d33"
+
+test "vectors: the message of 896 bits fed in pieces of 1, 7, 64 and 100 bytes"
+    m896 = bytes.from_text(
+        "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu"
+    )
+
+    for piece in [1, 7, 64, 100]
+        small @= engine.begin(.sha256)
+        wide @= engine.begin(.sha512)
+        at: i64 @= 0
+
+        while at < m896.len()
+            end: i64 @= at + piece
+
+            if end > m896.len()
+                end @ m896.len()
+            engine.absorb(@small, m896.slice(from: at, to: end))
+            engine.absorb(@wide, m896.slice(from: at, to: end))
+            at @ end
+
+        assert bytes.format_hex(engine.finish(small)) == "cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1"
+        assert bytes.format_hex(engine.finish(wide)) == hex_digest(.sha512, m896)
+
+test "vectors: RFC 4231's HMAC cases 1 to 4, 6 and 7, by SHA-224, SHA-256, SHA-384 and SHA-512"
+    secrets = [
+        bytes.repeated([0x0b], 20)
+        bytes.from_text("Jefe")
+        bytes.repeated([0xaa], 20)
+        [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19]
+        bytes.repeated([0xaa], 131)
+        bytes.repeated([0xaa], 131)
+    ]
+    data = [
+        bytes.from_text("Hi There")
+        bytes.from_text("what do ya want for nothing?")
+        bytes.repeated([0xdd], 50)
+        bytes.repeated([0xcd], 50)
+        bytes.from_text("Test Using Larger Than Block-Size Key - Hash Key First")
+        bytes.from_text("This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm.")
+    ]
+    by224 = [
+        "896fb1128abbdf196832107cd49df33f47b4b1169912ba4f53684b22"
+        "a30e01098bc6dbbf45690f3a7e9e6d0f8bbea2a39e6148008fd05e44"
+        "7fb3cb3588c6c1f6ffa9694d7d6ad2649365b0c1f65d69d1ec8333ea"
+        "6c11506874013cac6a2abc1bb382627cec6a90d86efc012de7afec5a"
+        "95e9a0db962095adaebe9b2d6f0dbce2d499f112f2d2b7273fa6870e"
+        "3a854166ac5d9f023f54d517d0b39dbd946770db9c2b95c9f6f565d1"
+    ]
+    by256 = [
+        "b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7"
+        "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
+        "773ea91e36800e46854db8ebd09181a72959098b3ef8c122d9635514ced565fe"
+        "82558a389a443c0ea4cc819899f2083a85f0faa3e578f8077a2e3ff46729665b"
+        "60e431591ee0b67f0d8a26aacbf5b77f8e0bc6213728c5140546040f0ee37f54"
+        "9b09ffa71b942fcb27635fbcd5b0e944bfdc63644f0713938a7f51535c3a35e2"
+    ]
+    by384 = [
+        "afd03944d84895626b0825f4ab46907f15f9dadbe4101ec682aa034c7cebc59cfaea9ea9076ede7f4af152e8b2fa9cb6"
+        "af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649"
+        "88062608d3e6ad8a0aa2ace014c8a86f0aa635d947ac9febe83ef4e55966144b2a5ab39dc13814b94e3ab6e101a34f27"
+        "3e8a69b7783c25851933ab6290af6ca77a9981480850009cc5577c6e1f573b4e6801dd23c4a7d679ccf8a386c674cffb"
+        "4ece084485813e9088d2c63a041bc5b44f9ef1012a2b588f3cd11f05033ac4c60c2ef6ab4030fe8296248df163f44952"
+        "6617178e941f020d351e2f254e8fd32c602420feb0b8fb9adccebb82461e99c5a678cc31e799176d3860e6110c46523e"
+    ]
+    by512 = [
+        "87aa7cdea5ef619d4ff0b4241a1d6cb02379f4e2ce4ec2787ad0b30545e17cdedaa833b7d6b8a702038b274eaea3f4e4be9d914eeb61f1702e696c203a126854"
+        "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"
+        "fa73b0089d56a284efb0f0756c890be9b1b5dbdd8ee81a3655f83e33b2279d39bf3e848279a722c806b485a47e67c807b946a337bee8942674278859e13292fb"
+        "b0ba465637458c6990e5a8c5f61d4af7e576d97ff94b872de76f8050361ee3dba91ca5c11aa25eb4d679275cc5788063a5f19741120c4f2de2adebeb10a298dd"
+        "80b24263c7c1a3ebb71493c1dd7be8b49b46d1f41b4aeec1121b013783f8f3526b56d037e05f2598bd0fd2215d6a1e5295e64f73f63f0aec8b915a985d786598"
+        "e37b6a775dc87dbaa4dfa9f96e5e3ffddebd71f8867289865df5a32d20cdc944b6022cac3c4982b10d5eeb55c3e4de15134676fb6de0446065c97440fa8c6a58"
+    ]
+
+    for i in range(from: 0, to: 6)
+        assert hex_tag(kind: .sha224, key: secrets[i], data: data[i]) == by224[i]
+        assert hex_tag(kind: .sha256, key: secrets[i], data: data[i]) == by256[i]
+        assert hex_tag(kind: .sha384, key: secrets[i], data: data[i]) == by384[i]
+        assert hex_tag(kind: .sha512, key: secrets[i], data: data[i]) == by512[i]
+
+test "vectors: RFC 2202's HMAC cases by MD5 and SHA-1, an empty key and message, and SHA-512/t"
+    secrets = [
+        bytes.repeated([0x0b], 16)
+        bytes.repeated([0x0b], 20)
+        bytes.from_text("Jefe")
+        bytes.repeated([0xaa], 80)
+        []
+    ]
+    data = [
+        bytes.from_text("Hi There")
+        bytes.from_text("Hi There")
+        bytes.from_text("what do ya want for nothing?")
+        bytes.from_text("Test Using Larger Than Block-Size Key - Hash Key First")
+        []
+    ]
+    by_md5 = [
+        "9294727a3638bb1c13f48ef8158bfc9d"
+        "5ccec34ea9656392457fa1ac27f08fbc"
+        "750c783e6ab0b503eaa86e310a5db738"
+        "6b1ab7fe4bd7bf8f0b62e6ce61b9d0cd"
+        "74e6f7298a9c2d168935f58c001bad88"
+    ]
+    by_sha1 = [
+        "675b0b3a1b4ddf4e124872da6c2f632bfed957e9"
+        "b617318655057264e28bc0b6fb378c8ef146be00"
+        "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
+        "aa4ae5e15272d00e95705637ce8a3b55ed402112"
+        "fbdb1d1b18aa6c08324b7d64b71fb76370690e1d"
+    ]
+
+    for i in range(from: 0, to: 5)
+        assert hex_tag(kind: .md5, key: secrets[i], data: data[i]) == by_md5[i]
+        assert hex_tag(kind: .sha1, key: secrets[i], data: data[i]) == by_sha1[i]
+
+    jefe = bytes.from_text("Jefe")
+    question = bytes.from_text("what do ya want for nothing?")
+    assert hex_tag(kind: .sha512_224, key: jefe, data: question) == "4a530b31a79ebcce36916546317c45f247d83241dfb818fd37254bde"
+    assert hex_tag(kind: .sha512_256, key: jefe, data: question) == "6df7b24630d5ccb2ee335407081a87188c221489768fa2020513b2d593359456"
+
+test "vectors: HMAC keys of a block's length and of one byte more"
+    x = bytes.from_text("x")
+    assert hex_tag(kind: .sha256, key: bytes.repeated([0x01], 64), data: x) == "c668fc54e1a2a267c502413f4580c5bb5d9229fef5fb9b4ff5f4ce5e76299783"
+    assert hex_tag(kind: .sha256, key: bytes.repeated([0x01], 65), data: x) == "fa34864aa49f680b10d9dd4d77db4bf268cdc0fe6e204c10fb63c62738e69497"
+    assert hex_tag(kind: .sha512, key: bytes.repeated([0x01], 128), data: x) == "081433e0ef981c8dd214254bf941899adedf14ccbb35dcc49a9dac0a86da45b9d921f7b5de7cf8a99705695a21e370b0323c568233d6eda551d1acde6bd17713"
+    assert hex_tag(kind: .sha512, key: bytes.repeated([0x01], 129), data: x) == "a87f56a0c2a0a9e341dac37477dba582f47e862e1fc0826ce4ddc93dea724a141490ddbcbd3f313ce16f5cc3022baab0aa9d787eaddaffb9d118164a90be9617"

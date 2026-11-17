@@ -1,0 +1,59 @@
+# What a progress bar and a spinner draw, as text: the line a bar is drawn as
+# from its count, and a spinner's frames. Pure: the face writes them, and only
+# to a terminal.
+
+use term/internal/sgr
+
+# The cells of a bar, each `#` done or `-` to do.
+constant CELLS: i64
+    30
+
+# A spinner's frames in turn: ASCII, one cell each on every terminal.
+constant FRAMES: [str]
+    ["|", "/", "-", "\\"]
+
+# `part` of `whole` scaled to `of`, rounded down, `of` where `whole` is 0;
+# never past `of`, whatever the sizes (no product overflows).
+function scaled(part: i64, whole: i64, of: i64) -> i64
+    if whole <= 0 || part >= whole
+        return of
+
+    if part <= 0
+        return 0
+
+    if part <= 9223372036854775807 / of
+        return part * of / whole
+    return part / (whole / of)
+
+# The line a bar draws: from the line's start, `label`, the cells, the share
+# done in percent, and the counts, then the rest of the line cleared.
+function bar_line(label: str, done: i64, total: i64) -> str
+    filled = scaled(part: done, whole: total, of: CELLS)
+    percent = scaled(part: done, whole: total, of: 100)
+    cells = repeat("#", to_u64(filled).must()) + repeat("-", to_u64(CELLS - filled).must())
+    return f"\r{label} [{cells}] {percent}% {done}/{total}{sgr.CSI}K"
+
+# The line a spinner draws at `frame`: from the line's start, the frame and
+# `label`, then the rest of the line cleared.
+function spinner_line(label: str, frame: i64) -> str
+    return f"\r{FRAMES[frame % FRAMES.len()]} {label}{sgr.CSI}K"
+
+test "scaled: nothing done, all done, past the whole, a whole of 0, and the largest counts without overflow"
+    assert scaled(part: 0, whole: 100, of: 30) == 0
+    assert scaled(part: -5, whole: 100, of: 30) == 0
+    assert scaled(part: 100, whole: 100, of: 30) == 30
+    assert scaled(part: 150, whole: 100, of: 30) == 30
+    assert scaled(part: 0, whole: 0, of: 100) == 100
+    assert scaled(part: 50, whole: 100, of: 100) == 50
+    assert scaled(part: 1, whole: 3, of: 100) == 33
+    assert scaled(part: 4611686018427387903, whole: 9223372036854775807, of: 100) == 50
+
+test "bar_line: an empty bar, a full one, and a share between"
+    assert bar_line("copy", done: 0, total: 10) == "\rcopy [------------------------------] 0% 0/10\u{1b}[K"
+    assert bar_line("copy", done: 10, total: 10) == "\rcopy [##############################] 100% 10/10\u{1b}[K"
+    assert bar_line("", done: 1, total: 3) == "\r [##########--------------------] 33% 1/3\u{1b}[K"
+
+test "spinner_line: the first frame, the fourth, and the frames turning again"
+    assert spinner_line("wait", frame: 0) == "\r| wait\u{1b}[K"
+    assert spinner_line("wait", frame: 3) == "\r\\ wait\u{1b}[K"
+    assert spinner_line("wait", frame: 5) == "\r/ wait\u{1b}[K"

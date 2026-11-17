@@ -1,0 +1,282 @@
+# Cookies, RFC 6265: a `Set-Cookie` value read into its attributes, a
+# `Cookie` value read into its pairs, and the matching of a host and a path
+# that says which kept cookie a request sends. The face builds its `Cookie`
+# from what is read here.
+
+use http/internal/policy
+use http/internal/syntax
+use strings
+use time
+use url
+
+# What a `Set-Cookie` value says, before the request it came with fills its
+# blanks.
+record Attributes
+    # The name, a token.
+    name: str
+    # The value, its quotes taken off.
+    value: str
+    # `Domain`, in lower case without its leading `.`; "" where none.
+    domain: str
+    # `Path`, beginning with `/`; "" where none or another.
+    path: str
+    # `Max-Age` in seconds, read where `has_max_age`.
+    max_age: i64
+    # Whether a `Max-Age` was read.
+    has_max_age: bool
+    # `Expires`, read where `has_expires`.
+    expires: time.Instant
+    # Whether an `Expires` was read.
+    has_expires: bool
+    # Whether `Secure` stands.
+    secure: bool
+    # Whether `HttpOnly` stands.
+    http_only: bool
+    # `SameSite` as `Strict`, `Lax` or `None`; "" where none or another.
+    same_site: str
+
+# Whether `b` may stand in a cookie's value as Go reads one: a visible ASCII
+# byte or a space, but `"`, `;` and `\`.
+function is_value_byte(b: u8) -> bool
+    return b >= 32 && b < 127 && b != '"' && b != ';' && b != '\\'
+
+# Whether `s` may be written in a `Set-Cookie` value: no `;` and no control
+# byte, so it cannot end the pair or the field.
+function is_value(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == ';' || s[at] < 32 || s[at] == 127
+            return false
+        at @ at + 1
+
+    return true
+
+# `value` without one pair of quotes around it.
+function unquoted(value: str) -> str
+    if value.len() >= 2 && value[0] == '"' && value[value.len() - 1] == '"'
+        return value.slice(from: 1, to: value.len() - 1)
+    return value
+
+# The attributes the `Set-Cookie` value `s` writes, RFC 6265 § 5.2. Fails
+# `invalid` where its first pair has no `=`, its name is no token, or its
+# value holds a byte `is_value_byte` refuses. An attribute that does not read
+# is dropped, as the RFC asks.
+function parse_set_cookie(s: str) -> Attributes?
+    parts = strings.split(s: s, sep: ";")
+    first = parts[0]
+    eq = strings.index_of(s: first, substr: "=")
+
+    if eq.is_err()
+        return fail(code: syntax.INVALID, msg: f"reading `Set-Cookie`: {syntax.shown(s)} has no `=` in its first pair")
+    at = eq.must()
+    name = syntax.trim_ows(first.slice(from: 0, to: at))
+    value = unquoted(syntax.trim_ows(first.slice(from: at + 1, to: first.len())))
+
+    if !syntax.is_token(name)
+        return fail(code: syntax.INVALID, msg: f"reading `Set-Cookie`: the name {syntax.shown(name)} is no token")
+    index: i64 @= 0
+
+    while index < value.len()
+        if !is_value_byte(value[index])
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading `Set-Cookie`: the value {syntax.shown(value)} holds a byte a cookie may not"
+            )
+        index @ index + 1
+
+    out @= Attributes(
+        name: name,
+        value: value,
+        domain: "",
+        path: "",
+        max_age: 0,
+        has_max_age: false,
+        expires: time.epoch(),
+        has_expires: false,
+        secure: false,
+        http_only: false,
+        same_site: ""
+    )
+
+    for part in parts.slice(from: 1, to: parts.len())
+        pair = strings.split_once(s: part, sep: "=").default(strings.Halves(before: part, after: ""))
+        key = strings.to_lower_ascii(syntax.trim_ows(pair.before))
+        said = syntax.trim_ows(pair.after)
+
+        match key
+            "expires" =>
+                match date_of(said)
+                    .ok t =>
+                        out.expires @ t
+                        out.has_expires @ true
+                    .err _ => _ = 0
+            "max-age" =>
+                match seconds_of(said)
+                    .ok n =>
+                        out.max_age @ n
+                        out.has_max_age @ true
+                    .err _ => _ = 0
+            "domain" =>
+                if said != ""
+                    out.domain @ strings.to_lower_ascii(strings.trim_prefix(s: said, prefix: "."))
+            "path" =>
+                if said != "" && said[0] == '/'
+                    out.path @ said
+            "secure"   => out.secure @ true
+            "httponly" => out.http_only @ true
+            "samesite" =>
+                for kind in ["Strict", "Lax", "None"]
+                    if syntax.same_name(a: said, b: kind)
+                        out.same_site @ kind
+            _ => _ = 0
+
+    return ok(out)
+
+# The instant an `Expires` value writes: an HTTP date, or the same with `-`
+# between its day, month and year, as Netscape wrote it.
+function date_of(said: str) -> time.Instant?
+    match policy.parse_date(said)
+        .ok t  => return ok(t)
+        .err _ => return policy.parse_date(strings.replace_all(s: said, old: "-", new: " "))
+
+# The seconds a `Max-Age` value writes: digits, a `-` before them allowed, a
+# count past an `i64` read as the largest. Fails `invalid` for anything else.
+function seconds_of(said: str) -> i64?
+    negative = said.len() > 0 && said[0] == '-'
+    digits: str @= said
+
+    if negative
+        digits @ said.slice(from: 1, to: said.len())
+
+    match syntax.decimal(s: digits, what: "reading `Max-Age`")
+        .ok n =>
+            if negative
+                return ok(0 - n)
+            return ok(n)
+        .err e =>
+            if e.code == syntax.LIMIT
+                if negative
+                    return ok(-9_223_372_036_854_775_807)
+                return ok(9_223_372_036_854_775_807)
+            return fail(code: e.code, msg: e.msg)
+
+# The names and values the `Cookie` value `s` sends, in their order, their
+# quotes taken off; a pair with no `=` or an empty name dropped. Fails
+# `invalid` where `s` holds a control byte.
+function parse_cookie(s: str) -> [url.Pair]?
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] < 32 || s[at] == 127
+            return fail(code: syntax.INVALID, msg: f"reading `Cookie`: {syntax.shown(s)} holds a control byte")
+        at @ at + 1
+
+    out: [url.Pair] @= []
+
+    for part in strings.split(s: s, sep: ";")
+        match strings.split_once(s: part, sep: "=")
+            .ok h =>
+                name = syntax.trim_ows(h.before)
+
+                if name != ""
+                    out @ out.push(url.Pair(key: name, value: unquoted(syntax.trim_ows(h.after))))
+            .err _ => _ = 0
+
+    return ok(out)
+
+# Whether `host` is an address written as numbers: IPv4's digits and dots,
+# or IPv6's with a `:`.
+function is_address(host: str) -> bool
+    at: i64 @= 0
+
+    while at < host.len()
+        b = host[at]
+
+        if b == ':'
+            return true
+
+        if b != '.' && (b < '0' || b > '9')
+            return false
+        at @ at + 1
+
+    return host != ""
+
+# Whether `host` is matched by the cookie domain `domain`, RFC 6265 § 5.1.3:
+# the same, in any case, or a name ending with `.` and `domain`, never an
+# address.
+function domain_matches(host: str, domain: str) -> bool
+    if syntax.same_name(a: host, b: domain)
+        return true
+
+    if is_address(host) || domain == "" || host.len() <= domain.len()
+        return false
+    cut = host.len() - domain.len()
+    return host[cut - 1] == '.' && syntax.same_name(a: host.slice(from: cut, to: host.len()), b: domain)
+
+# Whether a response from `host` may set a cookie for `domain`: `domain`
+# matches it and is more than one label, unless it is the host itself.
+function may_set(host: str, domain: str) -> bool
+    return domain_matches(host: host, domain: domain) && (strings.contains(s: domain, substr: ".") || syntax.same_name(a: host, b: domain))
+
+# Whether the request path `path` is matched by the cookie path
+# `cookie_path`, RFC 6265 § 5.1.4.
+function path_matches(path: str, cookie_path: str) -> bool
+    if path == cookie_path
+        return true
+
+    if !strings.has_prefix(s: path, prefix: cookie_path) || cookie_path == ""
+        return false
+    return cookie_path[cookie_path.len() - 1] == '/' || path[cookie_path.len()] == '/'
+
+# The path a cookie set without one takes from the request path `path`, RFC
+# 6265 § 5.1.4: up to its last `/`, or `/`.
+function default_path(path: str) -> str
+    if path == "" || path[0] != '/'
+        return "/"
+    last = strings.index_of_last(s: path, substr: "/").must()
+
+    if last == 0
+        return "/"
+    return path.slice(from: 0, to: last)
+
+## Tests
+
+test "parse_set_cookie: every attribute, case set aside, Max-Age and Expires read"
+    a = parse_set_cookie(
+        "id=\"a3fWa\"; expires=Wed, 21 Oct 2015 07:28:00 GMT; Max-Age=60; DOMAIN=.Example.com; Path=/docs; Secure; HttpOnly; SameSite=lax; Other=1"
+    ).must()
+    assert a.name == "id" && a.value == "a3fWa" && a.domain == "example.com" && a.path == "/docs"
+    assert a.has_max_age && a.max_age == 60 && a.has_expires && a.secure && a.http_only && a.same_site == "Lax"
+    assert time.unix_seconds(a.expires) == 1_445_412_480
+
+test "parse_set_cookie: attributes that do not read are dropped, a bare value refused"
+    a = parse_set_cookie("n=; Max-Age=soon; Path=docs; Expires=never; SameSite=odd; Domain=").must()
+    assert a.value == "" && !a.has_max_age && a.path == "" && !a.has_expires && a.same_site == "" && a.domain == ""
+    assert parse_set_cookie("n=1; Max-Age=-5").must().max_age == -5
+    assert parse_set_cookie("n=1; Max-Age=99999999999999999999").must().max_age == 9_223_372_036_854_775_807
+    assert parse_set_cookie("n=1; expires=Wed, 21-Oct-2015 07:28:00 GMT").must().has_expires
+
+    for bad in ["novalue", "=1", "a b=1", "n=a\"b", "n=a\\b", ""]
+        match parse_set_cookie(bad)
+            .ok _  => assert false
+            .err e => assert e.code == syntax.INVALID
+
+test "parse_cookie: pairs in order, quotes off, empty and nameless ones dropped, a control byte refused"
+    got = parse_cookie(" a=1; b=\"2\";; c; =d; e=").must()
+    assert got.len() == 3 && got[0].key == "a" && got[1].value == "2" && got[2].key == "e" && got[2].value == ""
+    assert parse_cookie("").must().len() == 0
+    assert parse_cookie("a=\u{1}").is_err()
+
+test "domain_matches and may_set: a subdomain, a lookalike, an address, a single label"
+    assert domain_matches(host: "www.example.com", domain: "example.com") && domain_matches(host: "Example.COM", domain: "example.com")
+    assert !domain_matches(host: "badexample.com", domain: "example.com") && !domain_matches(host: "example.com", domain: "www.example.com")
+    assert !domain_matches(host: "1.2.3.4", domain: "2.3.4") && domain_matches(host: "1.2.3.4", domain: "1.2.3.4")
+    assert !may_set(host: "a.com", domain: "com") && may_set(host: "localhost", domain: "localhost")
+
+test "path_matches and default_path: RFC 6265's cases"
+    assert path_matches(path: "/docs", cookie_path: "/docs") && path_matches(path: "/docs/a", cookie_path: "/docs")
+    assert path_matches(path: "/docs/a", cookie_path: "/docs/") && !path_matches(path: "/docsx", cookie_path: "/docs")
+    assert path_matches(path: "/a", cookie_path: "/") && !path_matches(path: "/a", cookie_path: "")
+    assert default_path("") == "/" && default_path("x") == "/" && default_path("/") == "/" && default_path("/a") == "/"
+    assert default_path("/a/b") == "/a" && default_path("/a/b/") == "/a/b"

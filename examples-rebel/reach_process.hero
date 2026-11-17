@@ -1,0 +1,9 @@
+# Reaches Rebel's package `process`, so that `heroes test` on this file runs
+# the tests of its face, its private modules and the floors under them (spec
+# § 12). It prints a line a POSIX shell reads back as two words, which is
+# `a 'b c'` on every run.
+
+use <rebel>/process
+
+function main()
+    print(process.quote_all(["a", "b c"]))

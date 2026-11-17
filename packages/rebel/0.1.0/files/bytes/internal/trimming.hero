@@ -1,0 +1,220 @@
+# Bytes taken off the ends of a list: the bytes a function accepts, the bytes
+# of a set, and a prefix or a suffix once or for as long as it repeats, with
+# the three that fail where the prefix or the suffix is not there. A result is
+# one slice of the list, cut once.
+
+use bytes/internal/ascii
+use bytes/internal/codes
+use bytes/internal/raw
+use bytes/internal/search
+
+# The index of the first byte of `s` that `accepts` does not accept, or the
+# length of `s`.
+function first_kept(s: [u8], accepts: (function(u8) -> bool)) -> i64
+    at: i64 @= 0
+
+    while at < s.len() && accepts(s[at])
+        at @ at + 1
+
+    return at
+
+# The index just after the last byte of `s` that `accepts` does not accept,
+# never below `floor`.
+function last_kept(s: [u8], accepts: (function(u8) -> bool), floor: i64) -> i64
+    at: i64 @= s.len()
+
+    while at > floor && accepts(s[at - 1])
+        at @ at - 1
+
+    return at
+
+# `s` without the bytes `accepts` accepts at either end.
+function trim_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
+    from = first_kept(s, accepts)
+    return s.slice(from: from, to: last_kept(s, accepts, from))
+
+# `s` without the bytes `accepts` accepts at its start.
+function trim_start_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
+    return s.slice(from: first_kept(s, accepts), to: s.len())
+
+# `s` without the bytes `accepts` accepts at its end.
+function trim_end_where(s: [u8], accepts: (function(u8) -> bool)) -> [u8]
+    return s.slice(from: 0, to: last_kept(s, accepts, 0))
+
+# The index of the first byte of `s` that `set` does not hold.
+function first_outside(s: [u8], set: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < s.len() && search.holds(set, s[at])
+        at @ at + 1
+
+    return at
+
+# The index just after the last byte of `s` that `set` does not hold, never
+# below `floor`.
+function last_outside(s: [u8], set: [u8], floor: i64) -> i64
+    at: i64 @= s.len()
+
+    while at > floor && search.holds(set, s[at - 1])
+        at @ at - 1
+
+    return at
+
+# `s` without the bytes of `set` at either end.
+function trim_any(s: [u8], set: [u8]) -> [u8]
+    from = first_outside(s: s, set: set)
+    return s.slice(from: from, to: last_outside(s: s, set: set, floor: from))
+
+# `s` without the bytes of `set` at its start.
+function trim_start_any(s: [u8], set: [u8]) -> [u8]
+    return s.slice(from: first_outside(s: s, set: set), to: s.len())
+
+# `s` without the bytes of `set` at its end.
+function trim_end_any(s: [u8], set: [u8]) -> [u8]
+    return s.slice(from: 0, to: last_outside(s: s, set: set, floor: 0))
+
+# `s` without `prefix` at its start, once, or `s` itself.
+function trim_prefix(s: [u8], prefix: [u8]) -> [u8]
+    if search.has_prefix_at(s: s, prefix: prefix, at: 0)
+        return s.slice(from: prefix.len(), to: s.len())
+    return s
+
+# `s` without `suffix` at its end, once, or `s` itself.
+function trim_suffix(s: [u8], suffix: [u8]) -> [u8]
+    if search.has_suffix(s: s, suffix: suffix)
+        return s.slice(from: 0, to: s.len() - suffix.len())
+    return s
+
+# `s` without `prefix` at its start for as long as what is left begins with
+# it.
+function trim_prefix_all(s: [u8], prefix: [u8]) -> [u8]
+    if prefix.len() == 0
+        return s
+    at: i64 @= 0
+
+    while search.has_prefix_at(s: s, prefix: prefix, at: at)
+        at @ at + prefix.len()
+
+    return s.slice(from: at, to: s.len())
+
+# `s` without `suffix` at its end for as long as what is left ends with it.
+function trim_suffix_all(s: [u8], suffix: [u8]) -> [u8]
+    if suffix.len() == 0
+        return s
+    end: i64 @= s.len()
+
+    while end >= suffix.len() && search.has_prefix_at(s: s, prefix: suffix, at: end - suffix.len())
+        end @ end - suffix.len()
+
+    return s.slice(from: 0, to: end)
+
+# The bytes of `s` after `prefix`, failing `not_found` where `s` does not
+# begin with it.
+function after_prefix(s: [u8], prefix: [u8]) -> [u8]?
+    if !search.has_prefix_at(s: s, prefix: prefix, at: 0)
+        return fail(code: codes.NOT_FOUND, msg: f"{raw.quoted(s)} does not begin with {raw.quoted(prefix)}")
+    return ok(s.slice(from: prefix.len(), to: s.len()))
+
+# The bytes of `s` before `suffix`, failing `not_found` where `s` does not
+# end with it.
+function before_suffix(s: [u8], suffix: [u8]) -> [u8]?
+    if !search.has_suffix(s: s, suffix: suffix)
+        return fail(code: codes.NOT_FOUND, msg: f"{raw.quoted(s)} does not end with {raw.quoted(suffix)}")
+    return ok(s.slice(from: 0, to: s.len() - suffix.len()))
+
+# The bytes of `s` between `prefix` and `suffix`, failing `not_found` where
+# either is not there or `s` is too short to hold the two apart.
+function between(s: [u8], prefix: [u8], suffix: [u8]) -> [u8]?
+    if s.len() < prefix.len() + suffix.len()
+        return fail(
+            code: codes.NOT_FOUND,
+            msg: f"{raw.quoted(s)} is too short to hold {raw.quoted(prefix)} and then {raw.quoted(suffix)}"
+        )
+    inner = after_prefix(s: s, prefix: prefix)?
+    return before_suffix(s: inner, suffix: suffix)
+
+## Tests
+
+# Python's `bytes.strip()` answered "ab" for the first; Rust's `trim_ascii`
+# keeps the vertical tab, 0x0B, and Go's `TrimSpace` takes the no-break space
+# off too, reading UTF-8.
+test "trim_where with white space: both ends, the vertical tab, all of it, nothing, and the no-break space kept"
+    t = raw.of_text
+    nothing: [u8] = []
+    spaced: [u8] = [0x20, 0x09, 0x0b, 0x0c, 0x61, 0x62, 0x20, 0x0d, 0x0a]
+    assert trim_where(spaced, ascii.is_space) == t("ab")
+    assert trim_where(t("   "), ascii.is_space) == nothing
+    assert trim_where(nothing, ascii.is_space) == nothing
+    assert trim_where(t("a b"), ascii.is_space) == t("a b")
+    assert trim_where([0xc2, 0xa0, 0x61], ascii.is_space) == [0xc2, 0xa0, 0x61]
+
+test "trim_start_where and trim_end_where: one end each, and all accepted"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert trim_start_where(t("12ab34"), ascii.is_digit) == t("ab34")
+    assert trim_end_where(t("12ab34"), ascii.is_digit) == t("12ab")
+    assert trim_start_where(t("123"), ascii.is_digit) == nothing
+    assert trim_end_where(t("123"), ascii.is_digit) == nothing
+    assert trim_where(t("123"), ascii.is_digit) == nothing
+
+# Python's `strip`, `lstrip` and `rstrip` with a set answered these.
+test "trim_any, trim_start_any and trim_end_any: a set of two, 0x00, and the empty set"
+    t = raw.of_text
+    assert trim_any(s: t("xyabyx"), set: t("xy")) == t("ab")
+    assert trim_start_any(s: t("xyabyx"), set: t("xy")) == t("abyx")
+    assert trim_end_any(s: t("xyabyx"), set: t("xy")) == t("xyab")
+    assert trim_any(s: [0x00, 0x61, 0x62, 0x00], set: [0x00]) == t("ab")
+    assert trim_any(s: t("ab"), set: t("")) == t("ab")
+    assert trim_any(s: t("xx"), set: t("x")) == t("")
+
+test "trim_prefix and trim_suffix: once, absent, and empty"
+    t = raw.of_text
+    assert trim_prefix(s: t("abab"), prefix: t("ab")) == t("ab")
+    assert trim_prefix(s: t("abc"), prefix: t("x")) == t("abc")
+    assert trim_prefix(s: t("abc"), prefix: t("")) == t("abc")
+    assert trim_prefix(s: t("a"), prefix: t("ab")) == t("a")
+    assert trim_suffix(s: t("abab"), suffix: t("ab")) == t("ab")
+    assert trim_suffix(s: t("abc"), suffix: t("x")) == t("abc")
+    assert trim_suffix(s: t("abc"), suffix: t("")) == t("abc")
+
+test "trim_prefix_all and trim_suffix_all: repeated, the whole list, and empty"
+    t = raw.of_text
+    assert trim_prefix_all(s: t("ababc"), prefix: t("ab")) == t("c")
+    assert trim_prefix_all(s: t("abab"), prefix: t("ab")) == t("")
+    assert trim_prefix_all(s: t("abc"), prefix: t("")) == t("abc")
+    assert trim_suffix_all(s: t("cabab"), suffix: t("ab")) == t("c")
+    assert trim_suffix_all(s: t("aaa"), suffix: t("aa")) == t("a")
+    assert trim_suffix_all(s: t("abc"), suffix: t("")) == t("abc")
+
+test "after_prefix and before_suffix: there, absent with its message, and empty"
+    t = raw.of_text
+    assert after_prefix(s: t("key=v"), prefix: t("key=")).must() == t("v")
+    assert after_prefix(s: t("abc"), prefix: t("")).must() == t("abc")
+    assert before_suffix(s: t("a.txt"), suffix: t(".txt")).must() == t("a")
+    assert before_suffix(s: t("abc"), suffix: t("")).must() == t("abc")
+
+    match after_prefix(s: t("abc"), prefix: t("x"))
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "\"abc\" does not begin with \"x\""
+
+    match before_suffix(s: t("abc"), suffix: t("x"))
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "\"abc\" does not end with \"x\""
+
+test "between: both there, nothing between, overlapping, and one absent"
+    t = raw.of_text
+    assert between(s: t("[a]"), prefix: t("["), suffix: t("]")).must() == t("a")
+    assert between(s: t("[]"), prefix: t("["), suffix: t("]")).must() == t("")
+    assert between(s: t("aba"), prefix: t("ab"), suffix: t("ba")).is_err()
+    assert between(s: t("[a"), prefix: t("["), suffix: t("]")).is_err()
+    assert between(s: t("a]"), prefix: t("["), suffix: t("]")).is_err()
+
+test "first_kept, last_kept, first_outside and last_outside: where the kept bytes begin and end"
+    t = raw.of_text
+    assert first_kept(t("12ab"), ascii.is_digit) == 2
+    assert first_kept(t("12"), ascii.is_digit) == 2
+    assert last_kept(t("ab12"), ascii.is_digit, 0) == 2
+    assert last_kept(t("1212"), ascii.is_digit, 3) == 3
+    assert first_outside(s: t("xxa"), set: t("x")) == 2
+    assert last_outside(s: t("axx"), set: t("x"), floor: 0) == 1
+    assert last_outside(s: t("xxx"), set: t("x"), floor: 2) == 2

@@ -1,0 +1,884 @@
+# The platform layer's doors on the file system that are reached by path,
+# `hero_disk.h`, bound thin: one function per C function, in C's order, each
+# answering what C answers. The floor of `os` and `fs`: where a call fails its
+# answer is -1 and `last_error` then the kind, which the face turns into a
+# code. Nothing here opens, reads or writes a file's bytes, which is
+# `hero_stream.h`'s.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`, and the same lines bind it on every platform. A
+# path is a `str`, and a call aborts where it holds a zero byte, which C
+# cannot read; one longer than `HERO_DISK_PATH_MOST` bytes is refused.
+#
+# A function that answers bytes or numbers is the header's fill form: it
+# leaves its buffer `n` long and answers how many the whole answer is; where
+# that is above `n` the buffer was too short and holds nothing to read, and
+# the caller asks again with at least that many, as often as it takes, since
+# a folder may grow between two calls. A name C gives back is the bytes that
+# name it, which are text wherever the system holds text: the face asks
+# `validated_bytes` of them.
+
+use io/hero_stream
+
+extern "hero_disk.h"
+    # The kinds of failure `last_error` answers. They are the same numbers on
+    # every platform; `HERO_DISK_NOT_TEXT` is Windows' alone, and
+    # `HERO_DISK_UNSUPPORTED` what it answers for an owner.
+    constant HERO_DISK_OK: i64
+    constant HERO_DISK_INVALID: i64
+    constant HERO_DISK_NOT_FOUND: i64
+    constant HERO_DISK_EXISTS: i64
+    constant HERO_DISK_DENIED: i64
+    constant HERO_DISK_NOT_A_DIRECTORY: i64
+    constant HERO_DISK_IS_A_DIRECTORY: i64
+    constant HERO_DISK_NOT_EMPTY: i64
+    constant HERO_DISK_LIMIT: i64
+    constant HERO_DISK_UNSUPPORTED: i64
+    constant HERO_DISK_OTHER: i64
+    constant HERO_DISK_NOT_TEXT: i64
+    constant HERO_DISK_CROSS_DEVICE: i64
+    constant HERO_DISK_BUSY: i64
+    # The longest path a function takes, in bytes.
+    constant HERO_DISK_PATH_MOST: i64
+    # What a path names. `HERO_DISK_KIND_UNKNOWN` is `scan`'s alone: an entry
+    # whose kind the system would not say.
+    constant HERO_DISK_KIND_FILE: i64
+    constant HERO_DISK_KIND_DIRECTORY: i64
+    constant HERO_DISK_KIND_LINK: i64
+    constant HERO_DISK_KIND_OTHER: i64
+    constant HERO_DISK_KIND_UNKNOWN: i64
+    # Where each fact stands in the numbers `facts` fills, and how many
+    # there are.
+    constant HERO_DISK_FACT_KIND: i64
+    constant HERO_DISK_FACT_SIZE: i64
+    constant HERO_DISK_FACT_PERMISSION: i64
+    constant HERO_DISK_FACT_WRITTEN: i64
+    constant HERO_DISK_FACT_READ: i64
+    constant HERO_DISK_FACT_LINKS: i64
+    constant HERO_DISK_FACTS: i64
+    function hero_disk_facts(path: cstr lent, @numbers: [i64] counted_by n lent, n: u64) -> i64
+    function hero_disk_facts_through(path: cstr lent, @numbers: [i64] counted_by n lent, n: u64) -> i64
+    function hero_disk_same(first: cstr lent, second: cstr lent) -> i64
+    function hero_disk_make_folder(path: cstr lent, permission: i64) -> i64
+    function hero_disk_remove(path: cstr lent) -> i64
+    function hero_disk_rename(from: cstr lent, to: cstr lent) -> i64
+    function hero_disk_scan(path: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_disk_link_target(path: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_disk_set_times(path: cstr lent, written: i64, read: i64) -> i64
+    function hero_disk_set_length(path: cstr lent, length: i64) -> i64
+    function hero_disk_enter(path: cstr lent) -> i64
+    function hero_disk_temp_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_disk_space(path: cstr lent, @free_bytes: i64, @total_bytes: i64) -> i64
+    function hero_disk_set_owner(path: cstr lent, user: i64, group: i64) -> i64
+    function hero_disk_set_link_owner(path: cstr lent, user: i64, group: i64) -> i64
+    function hero_disk_last_error() -> i64
+    function hero_disk_last_os_error() -> i64
+    # Round 3 (2026-11-16): a lock handed what is no open stream.
+    constant HERO_DISK_NOT_OPEN: i64
+    # What `other_kind` answers: none for a file, a folder or a link, else
+    # which other the path names.
+    constant HERO_DISK_OTHER_NONE: i64
+    constant HERO_DISK_OTHER_PIPE: i64
+    constant HERO_DISK_OTHER_SOCKET: i64
+    constant HERO_DISK_OTHER_CHARACTER_DEVICE: i64
+    constant HERO_DISK_OTHER_BLOCK_DEVICE: i64
+    constant HERO_DISK_OTHER_UNKNOWN: i64
+    # The two locks `lock` asks for.
+    constant HERO_DISK_LOCK_SHARED: i64
+    constant HERO_DISK_LOCK_EXCLUSIVE: i64
+    function hero_disk_other_kind(path: cstr lent, through: i64) -> i64
+    function hero_disk_made(path: cstr lent, through: i64, @made: i64) -> i64
+    function hero_disk_owner(path: cstr lent, through: i64, @user: i64, @group: i64) -> i64
+    function hero_disk_link(existing: cstr lent, name: cstr lent) -> i64
+    function hero_disk_symlink(target: cstr lent, name: cstr lent) -> i64
+    function hero_disk_set_permission(path: cstr lent, permission: i64) -> i64
+    function hero_disk_set_link_permission(path: cstr lent, permission: i64) -> i64
+    function hero_disk_set_link_times(path: cstr lent, written: i64, read: i64) -> i64
+    function hero_disk_lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
+    function hero_disk_unlock(s: hero_stream.Stream) -> i64
+
+# For the tests below alone: the one door that makes a symbolic link, which
+# is the runtime's (`hero_os.h`), so a test can make what `facts`, `scan` and
+# `link_target` are asked about. Windows answers it `HERO_OS_UNSUPPORTED`
+# where this user may make no link, and a test then leaves its link out.
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    function hero_fs_symlink(target: cstr lent, name: cstr lent) -> i64
+    # `.exe` on Windows alone: how a test of round 3 knows the platform whose
+    # answers differ.
+    function hero_run_exe_suffix() -> str
+
+# How many facts there are about what `path` names, the link itself where it
+# is one, or -1, `HERO_DISK_NOT_FOUND` where nothing is there. It fills the
+# first `n` of them into `numbers`, each at its `HERO_DISK_FACT_...` place:
+# the kind, the size in bytes, the permission bits, the times of the last
+# write and the last read in nanoseconds since 1970 UTC, and the count of
+# names. `numbers` is left `n` long.
+function facts(path: str, @numbers: [i64], n: u64) -> i64
+    return hero_disk_facts(path.cstr(), @numbers, n: n)
+
+# The same of what `path` names once every link is followed, or -1. A link
+# whose target is not there is `HERO_DISK_NOT_FOUND`.
+function facts_through(path: str, @numbers: [i64], n: u64) -> i64
+    return hero_disk_facts_through(path.cstr(), @numbers, n: n)
+
+# 1 where the two paths name one file, every link followed, 0 where they name
+# two, or -1 where either cannot be asked.
+function same(first: str, second: str) -> i64
+    return hero_disk_same(first: first.cstr(), second: second.cstr())
+
+# 0 once ONE directory is made at `path` with the bits `permission`, 0 to
+# 0o7777, or -1: `HERO_DISK_EXISTS` where anything is there already,
+# `HERO_DISK_NOT_FOUND` where its parent is not. The process's mask takes its
+# bits away, and Windows, which has none, only checks the number.
+function make_folder(path: str, permission: i64) -> i64
+    return hero_disk_make_folder(path.cstr(), permission: permission)
+
+# 0 once the file, the link or the EMPTY directory at `path` is removed, or
+# -1: `HERO_DISK_NOT_FOUND` where nothing is there, `HERO_DISK_NOT_EMPTY` for
+# a directory that holds something. A link is removed, never what it names.
+function remove(path: str) -> i64
+    return hero_disk_remove(path.cstr())
+
+# 0 once `from` is renamed `to`, or -1. Where `to` exists, a file takes the
+# place of a file and never of a directory (`HERO_DISK_IS_A_DIRECTORY`), and
+# a directory takes the place of nothing (`HERO_DISK_EXISTS`), the same on
+# every platform; `HERO_DISK_NOT_FOUND` where `from` names nothing, and
+# `HERO_DISK_CROSS_DEVICE` between two volumes, nothing moved.
+function rename(from: str, to: str) -> i64
+    return hero_disk_rename(from: from.cstr(), to: to.cstr())
+
+# How many bytes the listing of the directory `path` is, 0 for an empty one,
+# or -1: `HERO_DISK_NOT_FOUND` where nothing is there,
+# `HERO_DISK_NOT_A_DIRECTORY` where it is no directory. It fills `buffer`
+# with one entry after another, no link followed: a byte holding the kind,
+# `HERO_DISK_KIND_FILE` to `HERO_DISK_KIND_UNKNOWN`, the name's bytes, and a
+# zero byte. The entries are in no order, `.` and `..` never among them, and
+# `buffer` is left `n` long.
+function scan(path: str, @buffer: [u8], n: u64) -> i64
+    return hero_disk_scan(path.cstr(), @buffer, n: n)
+
+# How many bytes the target of the symbolic link `path` is, as the link holds
+# it, or -1: `HERO_DISK_INVALID` where `path` names something that is no
+# link. It fills `buffer` with them, no zero after, and leaves it `n` long.
+function link_target(path: str, @buffer: [u8], n: u64) -> i64
+    return hero_disk_link_target(path.cstr(), @buffer, n: n)
+
+# 0 once the last write and the last read of what `path` names, links
+# followed, are the times given, or -1. Each is in nanoseconds since 1970
+# UTC, as `facts` gives them, and kept as fine as the volume keeps them.
+function set_times(path: str, written: i64, read: i64) -> i64
+    return hero_disk_set_times(path.cstr(), written: written, read: read)
+
+# 0 once the file `path` names, links followed, is `length` bytes long, or
+# -1: `HERO_DISK_INVALID` for a negative length, `HERO_DISK_IS_A_DIRECTORY`
+# for a directory. Shorter, it loses its end; longer, its new bytes are zero.
+function set_length(path: str, length: i64) -> i64
+    return hero_disk_set_length(path.cstr(), length: length)
+
+# 0 once `path` is the working folder, which every relative path is read in
+# from then on, or -1. The folder is the process's, one for all its threads.
+function enter(path: str) -> i64
+    return hero_disk_enter(path.cstr())
+
+# How many bytes the name of the system's folder for temporary files is, or
+# -1. It fills `buffer` with them, no zero after and no separator at the end
+# unless the folder is a root, and leaves it `n` long. The folder is named,
+# never made.
+function temp_folder(@buffer: [u8], n: u64) -> i64
+    return hero_disk_temp_folder(@buffer, n: n)
+
+# 0 once `free_bytes` holds the bytes this user may still write on the volume
+# `path` stands on and `total_bytes` the volume's size, or -1 with neither
+# written.
+function space(path: str, @free_bytes: i64, @total_bytes: i64) -> i64
+    return hero_disk_space(path.cstr(), free_bytes: @free_bytes, total_bytes: @total_bytes)
+
+# 0 once what `path` names, links followed, belongs to the user and the group
+# of those numbers, -1 leaving either as it is, or -1. Windows has no such
+# numbers and always fails `HERO_DISK_UNSUPPORTED`.
+function set_owner(path: str, user: i64, group: i64) -> i64
+    return hero_disk_set_owner(path.cstr(), user: user, group: group)
+
+# The same of the link itself where `path` names one, or -1.
+function set_link_owner(path: str, user: i64, group: i64) -> i64
+    return hero_disk_set_link_owner(path.cstr(), user: user, group: group)
+
+# The kind of the last call's failure on this thread. It is `HERO_DISK_OK`
+# after a call that did not fail.
+function last_error() -> i64
+    return hero_disk_last_error()
+
+# The platform's own number for the last call's failure, 0 where the layer
+# itself refused.
+function last_os_error() -> i64
+    return hero_disk_last_os_error()
+
+# Which other `path` names, one of `HERO_DISK_OTHER_...`, `HERO_DISK_OTHER_NONE`
+# for a file, a folder or a link, or -1. `through` is 0 for the link itself
+# where `path` is one and 1 for what it names, links followed. Windows tells
+# a pipe and a character device alone.
+function other_kind(path: str, through: i64) -> i64
+    return hero_disk_other_kind(path.cstr(), through: through)
+
+# 0 once `ns` holds the time what `path` names was made, in nanoseconds
+# since 1970 UTC, or -1 with it left as it was: `HERO_DISK_UNSUPPORTED` where
+# the system or the volume keeps no such time. `through` as in `other_kind`.
+function made(path: str, through: i64, @ns: i64) -> i64
+    return hero_disk_made(path.cstr(), through: through, made: @ns)
+
+# 0 once `user` and `group` hold the numbers of the user and the group that
+# own what `path` names, or -1 with both left as they were. Windows has no
+# such numbers and always fails `HERO_DISK_UNSUPPORTED`.
+function owner(path: str, through: i64, @user: i64, @group: i64) -> i64
+    return hero_disk_owner(path.cstr(), through: through, user: @user, group: @group)
+
+# 0 once `name` is a second name of the file `existing` names, a hard link,
+# or -1: `HERO_DISK_EXISTS` where anything is at `name`,
+# `HERO_DISK_IS_A_DIRECTORY` for a folder, `HERO_DISK_CROSS_DEVICE` across
+# two volumes. A link `existing` names gets the second name itself.
+function link(existing: str, name: str) -> i64
+    return hero_disk_link(existing: existing.cstr(), name: name.cstr())
+
+# 0 once `name` is a symbolic link holding `target`, which is not looked for,
+# or -1: `HERO_DISK_EXISTS` where anything is at `name`, `HERO_DISK_INVALID`
+# for an empty target, and on Windows `HERO_DISK_DENIED` for a user who may
+# make no link.
+function symlink(target: str, name: str) -> i64
+    return hero_disk_symlink(target: target.cstr(), name: name.cstr())
+
+# 0 once what `path` names, links followed, has the permission bits
+# `permission`, 0 to 0o7777, no mask taking any away, or -1. Windows keeps
+# read-only alone, set where no bit of 0o222 is.
+function set_permission(path: str, permission: i64) -> i64
+    return hero_disk_set_permission(path.cstr(), permission: permission)
+
+# The same of the link itself where `path` names one, or -1. Linux keeps no
+# bits of a link's own: `HERO_DISK_UNSUPPORTED` for a link there.
+function set_link_permission(path: str, permission: i64) -> i64
+    return hero_disk_set_link_permission(path.cstr(), permission: permission)
+
+# 0 once the times of the last write and the last read of the link itself,
+# where `path` names one, else of what it names, are those given, or -1.
+function set_link_times(path: str, written: i64, read: i64) -> i64
+    return hero_disk_set_link_times(path.cstr(), written: written, read: read)
+
+# 0 once the stream `s` holds a lock on its whole file, `how` one of
+# `HERO_DISK_LOCK_SHARED` and `HERO_DISK_LOCK_EXCLUSIVE`, or -1:
+# `HERO_DISK_BUSY` where `wait` is 0 and another holds a lock that excludes
+# it, `HERO_DISK_NOT_OPEN` where `s` is no open stream. `wait` 1 waits as long
+# as it takes. Advisory on POSIX, enforced on Windows (`hero_disk.h`).
+function lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
+    return hero_disk_lock(s, how: how, wait: wait)
+
+# 0 once the stream `s` holds no lock, also where it held none, or -1.
+function unlock(s: hero_stream.Stream) -> i64
+    return hero_disk_unlock(s)
+
+## Tests
+
+# The folder a test works in, under the build area of the folder the tests
+# run from, made new: what an earlier run left of `holds` is removed first.
+function test_folder(name: str, holds: [str]) -> str
+    dir = "build/rebel-disk-" + name
+    test_clear(dir, holds: holds)
+    assert make_folder(dir, permission: 0o755) == 0
+    return dir
+
+# Removes what a test made: each of `holds` inside `dir`, in that order, then
+# `dir` itself. One not there is passed over.
+function test_clear(dir: str, holds: [str])
+    for item in holds
+        _ = remove(dir + "/" + item)
+
+    _ = remove(dir)
+
+# Whether the listing in the first `used` bytes of `buffer` holds an entry
+# called `name` of the kind `kind`.
+function test_lists(buffer: [u8], used: i64, kind: i64, name: str) -> bool
+    wanted = kind.to_u8().must()
+    at: i64 @= 0
+
+    while at < used
+        stop: i64 @= at + 1
+
+        while buffer[stop] != 0
+            stop @ stop + 1
+
+        if buffer[at] == wanted && stop - at - 1 == name.len()
+            alike: bool @= true
+
+            for i in range(from: 0, to: name.len())
+                if buffer[at + 1 + i] != name[i]
+                    alike @ false
+
+            if alike
+                return true
+        at @ stop + 1
+
+    return false
+
+# Whether a symbolic link called `name` was made, holding `target` as its
+# text. False where this user may make none, which Windows may answer.
+function test_link(target: str, name: str) -> bool
+    return hero_fs_symlink(target: target.cstr(), name: name.cstr()) == HERO_OS_OK
+
+# The one fact at `place` of what `path` names, the link itself, or -1.
+function test_fact(path: str, place: i64) -> i64
+    numbers: [i64] @= []
+
+    if facts(path, @numbers, n: 6) != HERO_DISK_FACTS
+        return -1
+
+    return numbers[place]
+
+test "facts and facts_through: a name not there, the empty path, a path past the longest, and no room"
+    numbers: [i64] @= []
+    assert facts("build/rebel-disk-none/x", @numbers, n: 6) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert last_os_error() != 0
+    assert facts_through("build/rebel-disk-none/x", @numbers, n: 6) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+
+    # The empty path names nothing, and the layer says so itself.
+    assert facts("", @numbers, n: 6) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert last_os_error() == 0
+
+    # One byte past the longest path is the layer's refusal; the longest
+    # itself goes to the system, which has no such name.
+    most = HERO_DISK_PATH_MOST.to_u64().must()
+    assert facts(repeat("a", most + 1), @numbers, n: 6) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert last_os_error() == 0
+    assert facts(repeat("a", most), @numbers, n: 6) == -1
+    assert last_error() != HERO_DISK_OK
+    assert last_os_error() != 0
+
+    # No room: the answer is how many facts there are, and no failure.
+    none: [i64] @= []
+    assert facts("build", @none, n: 0) == HERO_DISK_FACTS
+    assert none.len() == 0
+    assert last_error() == HERO_DISK_OK
+    assert last_os_error() == 0
+
+test "facts: a file's kind, size, permission, times and names, a folder's kind, and a count past the facts"
+    dir = test_folder("facts", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    numbers: [i64] @= []
+    assert facts(dir + "/f", @numbers, n: 8) == HERO_DISK_FACTS
+    assert numbers.len() == 8
+    assert numbers[HERO_DISK_FACT_KIND] == HERO_DISK_KIND_FILE
+    assert numbers[HERO_DISK_FACT_SIZE] == 5
+    assert numbers[HERO_DISK_FACT_PERMISSION] & 0o400 != 0
+
+    # Written after 2020, in nanoseconds.
+    assert numbers[HERO_DISK_FACT_WRITTEN] > 1_577_836_800_000_000_000
+    assert numbers[HERO_DISK_FACT_READ] > 0
+    assert numbers[HERO_DISK_FACT_LINKS] == 1
+    assert numbers[6] == 0 && numbers[7] == 0
+    one: [i64] @= []
+    assert facts(dir, @one, n: 1) == HERO_DISK_FACTS
+    assert one.len() == 1 && one[0] == HERO_DISK_KIND_DIRECTORY
+    assert facts_through(dir, @one, n: 1) == HERO_DISK_FACTS
+    assert one[0] == HERO_DISK_KIND_DIRECTORY
+    test_clear(dir, holds: ["f"])
+
+test "same: one file by two spellings, two files, and one not there"
+    dir = test_folder("same", holds: ["a", "b"])
+    assert !write_file(path: dir + "/a", text: "a").is_err()
+    assert !write_file(path: dir + "/b", text: "a").is_err()
+    assert same(first: dir + "/a", second: dir + "/./a") == 1
+    assert same(first: dir + "/a", second: dir + "/b") == 0
+    assert same(first: dir, second: dir + "/.") == 1
+    assert same(first: dir + "/a", second: dir + "/none") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert same(first: "", second: dir + "/a") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["a", "b"])
+
+test "make_folder: one folder with its permission, there already, under a parent not there, and a permission out of range"
+    dir = test_folder("make", holds: ["in"])
+    assert make_folder(dir + "/in", permission: 0o700) == 0
+    assert test_fact(dir + "/in", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_DIRECTORY
+
+    # The bits asked for, or Windows' one answer for what is not read-only.
+    bits = test_fact(dir + "/in", place: HERO_DISK_FACT_PERMISSION)
+    assert bits == 0o700 || bits == 0o666
+    assert make_folder(dir + "/in", permission: 0o700) == -1
+    assert last_error() == HERO_DISK_EXISTS
+    assert make_folder(dir + "/no/deeper", permission: 0o700) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert make_folder(dir + "/x", permission: 0o10000) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert last_os_error() == 0
+    assert make_folder(dir + "/x", permission: -1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert make_folder(dir + "/x", permission: 0o7777 + 1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    test_clear(dir, holds: ["in"])
+
+test "remove: a file, an empty folder, a folder that holds something, and a name not there"
+    dir = test_folder("remove", holds: ["sub/f", "sub", "f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert remove(dir + "/f") == 0
+    assert remove(dir + "/f") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert last_os_error() != 0
+    assert make_folder(dir + "/sub", permission: 0o755) == 0
+    assert !write_file(path: dir + "/sub/f", text: "x").is_err()
+    assert remove(dir + "/sub") == -1
+    assert last_error() == HERO_DISK_NOT_EMPTY
+    assert remove(dir + "/sub/f") == 0
+    assert remove(dir + "/sub") == 0
+    assert test_fact(dir + "/sub", place: HERO_DISK_FACT_KIND) == -1
+    assert remove("") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert remove(dir) == 0
+    assert remove(dir) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+
+test "rename: a file moved, a file over a file, a file over a folder, a folder over anything, itself, and a source not there"
+    holds = ["a", "b", "c", "d", "e", "g"]
+    dir = test_folder("rename", holds: holds)
+    assert !write_file(path: dir + "/a", text: "one").is_err()
+    assert !write_file(path: dir + "/b", text: "two!").is_err()
+    assert rename(from: dir + "/a", to: dir + "/c") == 0
+    assert test_fact(dir + "/c", place: HERO_DISK_FACT_SIZE) == 3
+    assert test_fact(dir + "/a", place: HERO_DISK_FACT_KIND) == -1
+
+    # A file takes the place of a file, the old one gone.
+    assert rename(from: dir + "/c", to: dir + "/b") == 0
+    assert read_file(dir + "/b").default("") == "one"
+    assert test_fact(dir + "/c", place: HERO_DISK_FACT_KIND) == -1
+
+    # Never of a directory.
+    assert make_folder(dir + "/d", permission: 0o755) == 0
+    assert rename(from: dir + "/b", to: dir + "/d") == -1
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+
+    # A directory takes the place of nothing: not of an empty directory, not
+    # of a file.
+    assert make_folder(dir + "/e", permission: 0o755) == 0
+    assert rename(from: dir + "/d", to: dir + "/e") == -1
+    assert last_error() == HERO_DISK_EXISTS
+    assert last_os_error() == 0
+    assert rename(from: dir + "/d", to: dir + "/b") == -1
+    assert last_error() == HERO_DISK_EXISTS
+    assert test_fact(dir + "/e", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_DIRECTORY
+    assert rename(from: dir + "/d", to: dir + "/g") == 0
+    assert test_fact(dir + "/g", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_DIRECTORY
+
+    # Onto itself is no failure, for a file and for a directory.
+    assert rename(from: dir + "/b", to: dir + "/b") == 0
+    assert rename(from: dir + "/g", to: dir + "/g") == 0
+    assert rename(from: dir + "/none", to: dir + "/h") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert rename(from: dir + "/b", to: dir + "/no/b") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: holds)
+
+test "scan: an empty folder, each entry with its kind, a buffer too short, a file, and a folder not there"
+    holds = ["file", "sub", "link"]
+    dir = test_folder("scan", holds: holds)
+    empty: [u8] @= []
+    assert scan(dir, @empty, n: 64) == 0
+    assert empty.len() == 64
+    assert !write_file(path: dir + "/file", text: "x").is_err()
+    assert make_folder(dir + "/sub", permission: 0o755) == 0
+    linked = test_link(target: "sub", name: dir + "/link")
+
+    # `file` and `sub` are six and five bytes of listing, `link` six more.
+    want: i64 @= 11
+
+    if linked
+        want @ want + 6
+
+    # No room, and too little: the answer is what to ask again with.
+    none: [u8] @= []
+    assert scan(dir, @none, n: 0) == want
+    assert last_error() == HERO_DISK_OK
+    short: [u8] @= []
+    assert scan(dir, @short, n: 5) == want
+    assert short.len() == 5
+    whole: [u8] @= []
+    assert scan(dir, @whole, n: want.to_u64().must()) == want
+    assert test_lists(whole, used: want, kind: HERO_DISK_KIND_FILE, name: "file")
+    assert test_lists(whole, used: want, kind: HERO_DISK_KIND_DIRECTORY, name: "sub")
+    assert !test_lists(whole, used: want, kind: HERO_DISK_KIND_FILE, name: "sub")
+    assert !test_lists(whole, used: want, kind: HERO_DISK_KIND_FILE, name: ".")
+
+    # A link to a directory is listed as a link, never followed.
+    if linked
+        assert test_lists(whole, used: want, kind: HERO_DISK_KIND_LINK, name: "link")
+    large: [u8] @= []
+    assert scan(dir, @large, n: 4096) == want
+    assert large.len() == 4096 && large[want] == 0
+    assert test_lists(large, used: want, kind: HERO_DISK_KIND_FILE, name: "file")
+    assert scan(dir + "/file", @large, n: 64) == -1
+    assert last_error() == HERO_DISK_NOT_A_DIRECTORY
+    assert scan(dir + "/none", @large, n: 64) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: holds)
+
+test "link_target, and facts of a link: the link itself, what it names, one whose target is not there, and a file"
+    holds = ["link", "dangling", "file"]
+    dir = test_folder("link", holds: holds)
+    assert !write_file(path: dir + "/file", text: "hello").is_err()
+    text: [u8] @= []
+
+    if test_link(target: "file", name: dir + "/link")
+        assert test_fact(dir + "/link", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_LINK
+        through: [i64] @= []
+        assert facts_through(dir + "/link", @through, n: 2) == HERO_DISK_FACTS
+        assert through[0] == HERO_DISK_KIND_FILE && through[1] == 5
+        assert same(first: dir + "/link", second: dir + "/file") == 1
+
+        # The target as the link holds it: no room measures it, room takes it.
+        assert link_target(dir + "/link", @text, n: 0) == 4
+        assert link_target(dir + "/link", @text, n: 3) == 4
+        assert link_target(dir + "/link", @text, n: 16) == 4
+        assert text.len() == 16 && text[0] == 'f' && text[3] == 'e' && text[4] == 0
+
+        # A link to nothing is a link, and nothing once followed.
+        assert test_link(target: "none", name: dir + "/dangling")
+        assert test_fact(dir + "/dangling", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_LINK
+        assert facts_through(dir + "/dangling", @through, n: 1) == -1
+        assert last_error() == HERO_DISK_NOT_FOUND
+        assert remove(dir + "/dangling") == 0
+
+        # Removing a link leaves what it names.
+        assert remove(dir + "/link") == 0
+        assert test_fact(dir + "/file", place: HERO_DISK_FACT_SIZE) == 5
+    assert link_target(dir + "/file", @text, n: 16) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert link_target(dir + "/none", @text, n: 16) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: holds)
+
+test "set_times: the times facts reads back, a time before 1970, and a name not there"
+    dir = test_folder("times", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert set_times(dir + "/f", written: 1_500_000_000_123_456_700, read: 1_400_000_000_000_000_000) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN) == 1_500_000_000_123_456_700
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_READ) == 1_400_000_000_000_000_000
+    assert set_times(dir + "/f", written: -1_500_000_000, read: -1_500_000_000) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN) == -1_500_000_000
+    assert set_times(dir + "/none", written: 0, read: 0) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f"])
+
+test "set_length: shorter, longer with zeros, a folder, a negative length, and a name not there"
+    dir = test_folder("length", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "hello world").is_err()
+    assert set_length(dir + "/f", length: 5) == 0
+    assert read_file(dir + "/f").default("") == "hello"
+    assert set_length(dir + "/f", length: 8) == 0
+    longer = read_file(dir + "/f").default("")
+    assert longer.len() == 8 && longer[4] == 'o' && longer[5] == 0 && longer[7] == 0
+    assert set_length(dir + "/f", length: 0) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_SIZE) == 0
+    assert set_length(dir, length: 0) == -1
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+    assert set_length(dir + "/f", length: -1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert last_os_error() == 0
+    assert set_length(dir + "/none", length: 0) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f"])
+
+# Each `test` runs as a process of its own, so the folder this one enters is
+# no other test's; it goes back all the same.
+test "enter: a relative name is read in the folder entered, a file, and a folder not there"
+    dir = test_folder("enter", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert test_fact("f", place: HERO_DISK_FACT_KIND) == -1
+    assert enter(dir) == 0
+    assert test_fact("f", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_FILE
+    assert enter("../..") == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_FILE
+    assert enter(dir + "/f") == -1
+    assert last_error() == HERO_DISK_NOT_A_DIRECTORY
+    assert enter(dir + "/none") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f"])
+
+test "temp_folder: no room measures it, the right room takes it, and it names a folder that is there"
+    none: [u8] @= []
+    need = temp_folder(@none, n: 0)
+    assert need > 0
+    assert last_error() == HERO_DISK_OK
+    short: [u8] @= []
+    assert temp_folder(@short, n: 1) == need
+    room: [u8] @= []
+    assert temp_folder(@room, n: need.to_u64().must()) == need
+    assert room.len() == need
+
+    # No separator at its end, unless it is a root.
+    assert need == 1 || room[need - 1] != '/' && room[need - 1] != '\\' || room[need - 2] == ':'
+    name = room.validated_bytes().default("")
+    assert name.len() == need
+    through: [i64] @= []
+    assert facts_through(name, @through, n: 1) == HERO_DISK_FACTS
+    assert through[0] == HERO_DISK_KIND_DIRECTORY
+
+test "space: the free bytes are at most the volume's, a file's volume is its folder's, and a name not there"
+    dir = test_folder("space", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    free_bytes: i64 @= -1
+    total_bytes: i64 @= -1
+    assert space(dir, free_bytes: @free_bytes, total_bytes: @total_bytes) == 0
+    assert total_bytes > 0 && free_bytes >= 0 && free_bytes <= total_bytes
+    of_file: i64 @= -1
+    file_total: i64 @= -1
+    assert space(dir + "/f", free_bytes: @of_file, total_bytes: @file_total) == 0
+    assert file_total == total_bytes && of_file >= 0
+    kept: i64 @= -7
+    kept_total: i64 @= -7
+    assert space(dir + "/none", free_bytes: @kept, total_bytes: @kept_total) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert kept == -7 && kept_total == -7
+    test_clear(dir, holds: ["f"])
+
+# Windows has no owner by number and answers `HERO_DISK_UNSUPPORTED` whatever
+# it is handed; elsewhere -1 and -1 change nothing and need no right.
+test "set_owner and set_link_owner: nothing to change, a number past the type, a name not there, or UNSUPPORTED"
+    dir = test_folder("owner", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert set_owner(dir + "/f", user: -1, group: -1) == 0 || last_error() == HERO_DISK_UNSUPPORTED
+    assert set_link_owner(dir + "/f", user: -1, group: -1) == 0 || last_error() == HERO_DISK_UNSUPPORTED
+    assert set_owner(dir + "/f", user: 4_294_967_295, group: -1) == -1
+    assert last_error() == HERO_DISK_INVALID || last_error() == HERO_DISK_UNSUPPORTED
+    assert last_os_error() == 0
+    assert set_link_owner(dir + "/f", user: -1, group: -2) == -1
+    assert last_error() == HERO_DISK_INVALID || last_error() == HERO_DISK_UNSUPPORTED
+    assert set_owner(dir + "/none", user: -1, group: -1) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND || last_error() == HERO_DISK_UNSUPPORTED
+    test_clear(dir, holds: ["f"])
+
+# Whether the tests run on Windows, whose answers differ where its doors say.
+function test_windows() -> bool
+    return hero_run_exe_suffix() == ".exe"
+
+# The bits `set_permission` leaves on a file asked for `bits`: all of them on
+# POSIX, and on Windows read-only alone, 0o444 or 0o666.
+function test_bits(bits: i64) -> i64
+    if !test_windows()
+        return bits
+
+    if bits & 0o222 == 0
+        return 0o444
+    return 0o666
+
+test "other_kind: a file, a folder and a link are none, the device that drops bytes is a character device, a name not there, and a through past 1"
+    dir = test_folder("other", holds: ["f", "l", "n"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert other_kind(dir + "/f", through: 0) == HERO_DISK_OTHER_NONE
+    assert other_kind(dir + "/f", through: 1) == HERO_DISK_OTHER_NONE
+    assert other_kind(dir, through: 1) == HERO_DISK_OTHER_NONE
+    device: str @= "/dev/null"
+
+    if test_windows()
+        device @ "NUL"
+    assert other_kind(device, through: 1) == HERO_DISK_OTHER_CHARACTER_DEVICE
+
+    # A link is none itself; on POSIX one to the device is the device once
+    # followed.
+    if symlink(target: "f", name: dir + "/l") == 0
+        assert other_kind(dir + "/l", through: 0) == HERO_DISK_OTHER_NONE
+        assert other_kind(dir + "/l", through: 1) == HERO_DISK_OTHER_NONE
+
+    if !test_windows()
+        assert symlink(target: "/dev/null", name: dir + "/n") == 0
+        assert other_kind(dir + "/n", through: 0) == HERO_DISK_OTHER_NONE
+        assert other_kind(dir + "/n", through: 1) == HERO_DISK_OTHER_CHARACTER_DEVICE
+    assert other_kind(dir + "/none", through: 0) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert other_kind(dir + "/f", through: 2) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert other_kind("", through: 0) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f", "l", "n"])
+
+test "made: a file made now was made after 2020 and not after it was written, a name not there, a through past 1, or UNSUPPORTED"
+    dir = test_folder("made", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    written = test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN)
+    ns: i64 @= -7
+
+    if made(dir + "/f", through: 1, ns: @ns) == 0
+        assert ns > 1_577_836_800_000_000_000
+        assert ns <= written + 1_000_000_000
+        again: i64 @= -7
+        assert made(dir + "/f", through: 0, ns: @again) == 0 && again == ns
+    else
+        assert last_error() == HERO_DISK_UNSUPPORTED && ns == -7
+    kept: i64 @= -7
+    assert made(dir + "/none", through: 1, ns: @kept) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND && kept == -7
+    assert made(dir + "/f", through: -1, ns: @kept) == -1
+    assert last_error() == HERO_DISK_INVALID && kept == -7
+    test_clear(dir, holds: ["f"])
+
+test "owner: a file is owned as the folder this process made it in, both numbers left where it fails, or UNSUPPORTED on Windows"
+    dir = test_folder("whose", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    user: i64 @= -7
+    group: i64 @= -7
+
+    if test_windows()
+        assert owner(dir + "/f", through: 1, user: @user, group: @group) == -1
+        assert last_error() == HERO_DISK_UNSUPPORTED && user == -7 && group == -7
+    else
+        assert owner(dir + "/f", through: 1, user: @user, group: @group) == 0
+        folder_user: i64 @= -7
+        folder_group: i64 @= -7
+        assert owner(dir, through: 0, user: @folder_user, group: @folder_group) == 0
+        assert user >= 0 && group >= 0 && user == folder_user
+        kept_user: i64 @= -7
+        kept_group: i64 @= -7
+        assert owner(dir + "/none", through: 0, user: @kept_user, group: @kept_group) == -1
+        assert last_error() == HERO_DISK_NOT_FOUND && kept_user == -7 && kept_group == -7
+        assert owner(dir + "/f", through: 3, user: @kept_user, group: @kept_group) == -1
+        assert last_error() == HERO_DISK_INVALID
+    test_clear(dir, holds: ["f"])
+
+test "link: a second name for a file, a name there already, a folder, a name not there, and a link given the second name itself"
+    holds = ["f", "g", "l", "m", "sub"]
+    dir = test_folder("hard", holds: holds)
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    assert link(existing: dir + "/f", name: dir + "/g") == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_LINKS) == 2
+    assert same(first: dir + "/f", second: dir + "/g") == 1
+    assert link(existing: dir + "/f", name: dir + "/g") == -1
+    assert last_error() == HERO_DISK_EXISTS
+    assert make_folder(dir + "/sub", permission: 0o755) == 0
+    assert link(existing: dir + "/sub", name: dir + "/h") == -1
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+    assert link(existing: dir + "/none", name: dir + "/h") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+
+    if symlink(target: "f", name: dir + "/l") == 0
+        assert link(existing: dir + "/l", name: dir + "/m") == 0
+        assert test_fact(dir + "/m", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_LINK
+    test_clear(dir, holds: holds)
+
+test "symlink: a link holding its target, a name there already, an empty target, a target not there, and a folder's link followed as a folder"
+    holds = ["f", "l", "d", "s", "sub"]
+    dir = test_folder("soft", holds: holds)
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert symlink(target: "", name: dir + "/e") == -1
+    assert last_error() == HERO_DISK_INVALID
+
+    if symlink(target: "f", name: dir + "/l") == 0
+        text: [u8] @= []
+        assert link_target(dir + "/l", @text, n: 8) == 1 && text[0] == 'f'
+        assert symlink(target: "f", name: dir + "/l") == -1
+        assert last_error() == HERO_DISK_EXISTS
+        assert symlink(target: "none", name: dir + "/d") == 0
+        assert test_fact(dir + "/d", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_LINK
+        assert make_folder(dir + "/sub", permission: 0o755) == 0
+        assert symlink(target: "sub", name: dir + "/s") == 0
+        through: [i64] @= []
+        assert facts_through(dir + "/s", @through, n: 1) == HERO_DISK_FACTS
+        assert through[0] == HERO_DISK_KIND_DIRECTORY
+    else
+        # Windows refuses a user who may make no link.
+        assert test_windows() && last_error() == HERO_DISK_DENIED
+    test_clear(dir, holds: holds)
+
+test "set_permission and set_link_permission: the bits read back, a link's own or UNSUPPORTED, its target left, out of range, a name not there"
+    dir = test_folder("bits", holds: ["f", "l"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert set_permission(dir + "/f", permission: 0o640) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_PERMISSION) == test_bits(0o640)
+    assert set_permission(dir + "/f", permission: 0o444) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_PERMISSION) == 0o444
+    assert set_link_permission(dir + "/f", permission: 0o600) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_PERMISSION) == test_bits(0o600)
+
+    if symlink(target: "f", name: dir + "/l") == 0
+        if set_link_permission(dir + "/l", permission: 0o444) == 0
+            assert test_fact(dir + "/l", place: HERO_DISK_FACT_PERMISSION) == 0o444
+        else
+            assert last_error() == HERO_DISK_UNSUPPORTED
+        assert test_fact(dir + "/f", place: HERO_DISK_FACT_PERMISSION) == test_bits(0o600)
+        assert set_permission(dir + "/l", permission: 0o644) == 0
+        assert test_fact(dir + "/f", place: HERO_DISK_FACT_PERMISSION) == test_bits(0o644)
+        _ = set_link_permission(dir + "/l", permission: 0o644)
+    assert set_permission(dir + "/f", permission: -1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert set_link_permission(dir + "/f", permission: 0o10000) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert set_permission(dir + "/none", permission: 0o644) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert set_permission(dir + "/f", permission: 0o644) == 0
+    test_clear(dir, holds: ["f", "l"])
+
+test "set_link_times: a link's own times read back, its target's left as they were, a file's own, and a name not there"
+    dir = test_folder("ltimes", holds: ["f", "l"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    first = 1_600_000_000_000_000_000
+    second = 1_500_000_000_000_000_000
+    assert set_times(dir + "/f", written: first, read: first) == 0
+
+    if symlink(target: "f", name: dir + "/l") == 0
+        assert set_link_times(dir + "/l", written: second, read: second) == 0
+        assert test_fact(dir + "/l", place: HERO_DISK_FACT_WRITTEN) == second
+        assert test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN) == first
+    assert set_link_times(dir + "/f", written: second, read: second) == 0
+    assert test_fact(dir + "/f", place: HERO_DISK_FACT_WRITTEN) == second
+    assert set_link_times(dir + "/none", written: first, read: first) == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f", "l"])
+
+test "lock and unlock: shared beside shared, exclusive refused at once and then given, unlocked twice, no stream, and a how or a wait that is none"
+    dir = test_folder("lock", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    a @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+    b @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ, perm: 0)
+    assert a != nullptr && b != nullptr
+    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
+    assert lock(b, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
+    assert lock(b, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 0) == -1
+    assert last_error() == HERO_DISK_BUSY
+    assert unlock(a) == 0
+    assert lock(b, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 0) == 0
+    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 0) == -1
+    assert last_error() == HERO_DISK_BUSY
+    assert unlock(b) == 0
+    assert lock(a, how: HERO_DISK_LOCK_EXCLUSIVE, wait: 1) == 0
+    assert unlock(a) == 0
+    assert unlock(a) == 0
+    assert lock(a, how: 3, wait: 0) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert lock(a, how: HERO_DISK_LOCK_SHARED, wait: 2) == -1
+    assert last_error() == HERO_DISK_INVALID
+    none: hero_stream.Stream = nullptr
+    assert lock(none, how: HERO_DISK_LOCK_SHARED, wait: 0) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert unlock(none) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert hero_stream.close(@a) == 0
+    assert hero_stream.close(@b) == 0
+    test_clear(dir, holds: ["f"])
+
+# The one place the systems part: POSIX's lock is advisory, so a write
+# through a stream holding a shared lock goes; Windows' is enforced, and a
+# shared lock refuses a write through its own stream.
+test "lock: a write through a stream holding a shared lock, which POSIX lets through and Windows refuses"
+    dir = test_folder("enforced", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    s @= hero_stream.open(dir + "/f", access: hero_stream.HERO_STREAM_ACCESS_READ_WRITE, perm: 0)
+    assert s != nullptr
+    assert lock(s, how: HERO_DISK_LOCK_SHARED, wait: 0) == 0
+    data: [u8] @= [1, 2]
+    wrote = hero_stream.write(s, @data, n: 2)
+
+    if test_windows()
+        assert wrote == -1
+    else
+        assert wrote == 2
+    assert unlock(s) == 0
+    assert hero_stream.close(@s) == 0
+    test_clear(dir, holds: ["f"])

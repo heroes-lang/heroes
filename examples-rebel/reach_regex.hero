@@ -1,0 +1,12 @@
+# Reaches Rebel's `regex`, so that `heroes test` on this file runs the tests of
+# the package and of its private modules (spec § 12). It compiles one pattern
+# and prints the words of a line that the pattern finds.
+
+use <rebel>/regex
+
+function main()
+    match regex.compile("[a-z]+")
+        .ok re =>
+            for m in regex.search_all("linear in the text", re)
+                print(m.start, " ", m.text)
+        .err e => print(e.code, ": ", e.msg)

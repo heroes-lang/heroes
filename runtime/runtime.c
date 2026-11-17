@@ -176,6 +176,12 @@
  * before `alloc.c` because it allocates nothing at all. */
 #include "parts/spawn.c"
 
+/* The platform layer's memory, which `parts/alloc.c` defines below: named
+ * here so the runtime's key covers it and clang checks the definitions
+ * against their declarations (`platform/hero_layer_alloc.h` says why the
+ * layer's members have a header of their own for it). */
+#include "platform/hero_layer_alloc.h"
+
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */
 #include "parts/alloc.c"
@@ -314,8 +320,24 @@
  * are the names below under `platform/`, in the order written, each after its
  * own header. */
 #if 0
+#include "hero_disk.h"
+#include "platform/hero_disk.c"
 #include "hero_net.h"
 #include "platform/hero_net.c"
+#include "hero_poll.h"
+#include "platform/hero_poll.c"
+#include "hero_proc.h"
+#include "platform/hero_proc.c"
+#include "hero_sys.h"
+#include "platform/hero_sys.c"
+#include "hero_term.h"
+#include "platform/hero_term.c"
+#include "hero_stream.h"
+#include "platform/hero_stream.c"
+#include "hero_stream_net.h"
+#include "platform/hero_stream_net.c"
 #include "hero_time.h"
 #include "platform/hero_time.c"
+#include "hero_tls.h"
+#include "platform/hero_tls.c"
 #endif

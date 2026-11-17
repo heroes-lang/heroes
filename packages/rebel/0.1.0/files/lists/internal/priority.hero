@@ -1,0 +1,315 @@
+# A list kept as a binary heap, the priority queue: no element goes before
+# its parent by the caller's order, the parent of the element at `i` standing
+# at `(i - 1) / 2`, so the element at 0 is one nothing goes before. Every
+# function works on the caller's own list through an `@` parameter. The
+# layouts it leaves are the ones Go's `container/heap` leaves, slot for slot,
+# since both move an element by the same comparisons.
+#
+# The language has no way to shorten a list in place: `xs @ xs.slice(from: 0,
+# to: n)` copies, measured quadratic over a loop of pops on a plain name and on
+# an `@` parameter alike. So `heap_pop` and `heap_remove_at` pay one copy of
+# the list to drop its last slot; every other function, `heap_sort_by`
+# included, moves elements in place.
+
+use lists/internal/codes
+use lists/internal/samples
+
+# Moves the element at `at` towards the root while it goes before its parent,
+# the parents it passes moving down one level each.
+function sift_up<T>(@heap: [T], at: i64, less: (function(a: T, b: T) -> bool))
+    value = heap[at]
+    hole: i64 @= at
+
+    while hole > 0
+        parent = (hole - 1) / 2
+
+        if !less(a: value, b: heap[parent])
+            break
+        heap[hole] @ heap[parent]
+        hole @ parent
+
+    heap[hole] @ value
+
+# Moves the element at `at` away from the root, within the first `size`
+# elements, while a child goes before it, the child that goes first moving up
+# in its place: the right one only where it goes before the left. Answers the
+# index where the element came to rest.
+function sift_down<T>(@heap: [T], at: i64, size: i64, less: (function(a: T, b: T) -> bool)) -> i64
+    value = heap[at]
+    hole: i64 @= at
+
+    while true
+        child: i64 @= 2 * hole + 1
+
+        if child >= size
+            break
+
+        if child + 1 < size && less(a: heap[child + 1], b: heap[child])
+            child @ child + 1
+
+        if !less(a: heap[child], b: value)
+            break
+        heap[hole] @ heap[child]
+        hole @ child
+
+    heap[hole] @ value
+    return hole
+
+# Arranges `xs` as a heap, each parent from the last one up sifted down.
+function heapify<T>(@xs: [T], less: (function(a: T, b: T) -> bool))
+    size = xs.len()
+    at: i64 @= size / 2 - 1
+
+    while at >= 0
+        _ = sift_down(heap: @xs, at: at, size: size, less: less)
+        at @ at - 1
+
+# Adds `value` at the end of `heap` and sifts it up.
+function heap_push<T>(@heap: [T], value: T, less: (function(a: T, b: T) -> bool))
+    heap @ heap.push(value)
+    sift_up(heap: @heap, at: heap.len() - 1, less: less)
+
+# Takes the first element out of `heap`: the last moves to its place, the
+# list drops its last slot and the moved element sifts down.
+function heap_pop<T>(@heap: [T], less: (function(a: T, b: T) -> bool)) -> T?
+    if heap.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no first element in an empty heap")
+    top = heap[0]
+    last = heap.len() - 1
+    heap[0] @ heap[last]
+    heap @ heap.slice(from: 0, to: last)
+
+    if last > 0
+        _ = sift_down(heap: @heap, at: 0, size: last, less: less)
+    return ok(top)
+
+# The first element of `heap`, failing `not_found` where it is empty.
+function heap_peek<T>(heap: [T]) -> T?
+    if heap.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no first element in an empty heap")
+    return ok(heap[0])
+
+# Puts the element at `at` back in its place after the caller changed it:
+# down where a child now goes before it, otherwise up.
+function heap_fix<T>(@heap: [T], at: i64, less: (function(a: T, b: T) -> bool))
+    if sift_down(heap: @heap, at: at, size: heap.len(), less: less) == at
+        sift_up(heap: @heap, at: at, less: less)
+
+# Takes the element at `at` out of `heap`: the last moves to its place and is
+# put back in order, and the list drops its last slot.
+function heap_remove_at<T>(@heap: [T], at: i64, less: (function(a: T, b: T) -> bool)) -> T
+    removed = heap[at]
+    last = heap.len() - 1
+
+    if at != last
+        heap[at] @ heap[last]
+    heap @ heap.slice(from: 0, to: last)
+
+    if at != last
+        heap_fix(heap: @heap, at: at, less: less)
+    return removed
+
+# Sorts `xs` in its own place: a heap is made, its first element exchanged
+# with the last of the part still a heap, which then shrinks by one and is
+# sifted again; that leaves the list from the last by `less` to the first, and
+# reversing it in place puts it in order.
+function heap_sort_by<T>(@xs: [T], less: (function(a: T, b: T) -> bool))
+    heapify(xs: @xs, less: less)
+    end: i64 @= xs.len() - 1
+
+    while end > 0
+        top = xs[0]
+        xs[0] @ xs[end]
+        xs[end] @ top
+        _ = sift_down(heap: @xs, at: 0, size: end, less: less)
+        end @ end - 1
+
+    low: i64 @= 0
+    high: i64 @= xs.len() - 1
+
+    while low < high
+        held = xs[low]
+        xs[low] @ xs[high]
+        xs[high] @ held
+        low @ low + 1
+        high @ high - 1
+
+# Whether no element of `xs` goes before its parent by `less`: what every
+# function of this module keeps.
+function is_heap<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> bool
+    at: i64 @= 1
+
+    while at < xs.len()
+        if less(a: xs[at], b: xs[(at - 1) / 2])
+            return false
+        at @ at + 1
+
+    return true
+
+# Every element of `heap`, taken out one by one from the first.
+function drained<T>(heap: [T], less: (function(a: T, b: T) -> bool)) -> [T]
+    left: [T] @= heap
+    out: [T] @= []
+
+    while left.len() > 0
+        out @ out.push(heap_pop(heap: @left, less: less).must())
+
+    return out
+
+test "heapify: an empty list, one element, Go's layout, and a heap left as it is"
+    nothing: [i64] @= []
+    heapify(xs: @nothing, less: samples.ascending)
+    assert nothing.len() == 0
+    one: [i64] @= [7]
+    heapify(xs: @one, less: samples.ascending)
+    assert one == [7]
+    xs: [i64] @= [5, 3, 8, 1, 9, 2, 7]
+    heapify(xs: @xs, less: samples.ascending)
+    assert xs == [1, 3, 2, 5, 9, 8, 7]
+    heapify(xs: @xs, less: samples.ascending)
+    assert xs == [1, 3, 2, 5, 9, 8, 7]
+
+test "heapify: the larger first, as Go's Init with the opposite order, and the largest and smallest i64"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    xs: [i64] @= [5, 3, 8, 1, 9, 2, 7]
+    heapify(xs: @xs, less: samples.descending)
+    assert xs == [9, 5, 8, 1, 3, 2, 7]
+    wide: [i64] @= [largest, smallest, 0, -1, largest, smallest]
+    heapify(xs: @wide, less: samples.ascending)
+    assert wide == [smallest, -1, smallest, largest, largest, 0]
+
+test "heap_push: onto an empty heap, Python's layout pushed one by one, and Go's after Init"
+    heap: [i64] @= []
+    heap_push(heap: @heap, value: 5, less: samples.ascending)
+    assert heap == [5]
+
+    for x in [3, 8, 1, 9, 2, 7]
+        heap_push(heap: @heap, value: x, less: samples.ascending)
+
+    assert heap == [1, 3, 2, 5, 9, 8, 7]
+    heap_push(heap: @heap, value: 4, less: samples.ascending)
+    assert heap == [1, 3, 2, 4, 9, 8, 7, 5]
+    assert is_heap(xs: heap, less: samples.ascending)
+
+test "heap_push: equal values, and texts by length with characters of more than one byte"
+    same: [i64] @= []
+
+    for x in [2, 2, 2]
+        heap_push(heap: @same, value: x, less: samples.ascending)
+
+    assert same == [2, 2, 2]
+    words: [str] @= []
+
+    for w in ["pear", "fig", "è", "banana", "kiwi"]
+        heap_push(heap: @words, value: w, less: samples.by_length)
+
+    assert heap_peek(words).must() == "è"
+    assert is_heap(xs: words, less: samples.by_length)
+
+test "heap_pop: an empty heap, one element, Go's layout after a pop, and every element in order"
+    nothing: [i64] @= []
+
+    match heap_pop(heap: @nothing, less: samples.ascending)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_found"
+            assert e.msg == "no first element in an empty heap"
+
+    one: [i64] @= [4]
+    assert heap_pop(heap: @one, less: samples.ascending).must() == 4
+    assert one.len() == 0
+    heap: [i64] @= [1, 3, 2, 4, 9, 8, 7, 5]
+    assert heap_pop(heap: @heap, less: samples.ascending).must() == 1
+    assert heap == [2, 3, 5, 4, 9, 8, 7]
+    assert drained(heap: [1, 3, 2, 5, 9, 8, 7], less: samples.ascending) == [1, 2, 3, 5, 7, 8, 9]
+
+test "heap_pop: the largest and smallest i64 in Go's order, and the larger first"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    wide: [i64] @= [largest, smallest, 0, -1, largest, smallest]
+    heapify(xs: @wide, less: samples.ascending)
+    assert drained(heap: wide, less: samples.ascending) == [smallest, smallest, -1, 0, largest, largest]
+    down: [i64] @= [5, 3, 8, 1, 9, 2, 7]
+    heapify(xs: @down, less: samples.descending)
+    assert drained(heap: down, less: samples.descending) == [9, 8, 7, 5, 3, 2, 1]
+
+test "heap_peek: an empty heap fails not_found, and the first element is the one heap_pop takes"
+    nothing: [str] = []
+    assert heap_peek(nothing).is_err()
+    heap: [i64] @= [5, 3, 8]
+    heapify(xs: @heap, less: samples.ascending)
+    assert heap_peek(heap).must() == 3
+    assert heap_pop(heap: @heap, less: samples.ascending).must() == 3
+
+test "heap_fix: the first element made larger and the last made smaller, Go's layouts"
+    heap: [i64] @= [2, 3, 7, 4, 9, 8]
+    heap[0] @ 10
+    heap_fix(heap: @heap, at: 0, less: samples.ascending)
+    assert heap == [3, 4, 7, 10, 9, 8]
+    heap[5] @ 0
+    heap_fix(heap: @heap, at: 5, less: samples.ascending)
+    assert heap == [0, 4, 3, 10, 9, 7]
+    unchanged: [i64] @= [1, 2, 3]
+    heap_fix(heap: @unchanged, at: 1, less: samples.ascending)
+    assert unchanged == [1, 2, 3]
+
+test "heap_remove_at: the middle and the last, Go's answers and layouts, and the only element"
+    heap: [i64] @= [2, 3, 5, 4, 9, 8, 7]
+    assert heap_remove_at(heap: @heap, at: 2, less: samples.ascending) == 5
+    assert heap == [2, 3, 7, 4, 9, 8]
+    fixed: [i64] @= [0, 4, 3, 10, 9, 7]
+    assert heap_remove_at(heap: @fixed, at: 5, less: samples.ascending) == 7
+    assert fixed == [0, 4, 3, 10, 9]
+    one: [str] @= ["è"]
+    assert heap_remove_at(heap: @one, at: 0, less: samples.by_length) == "è"
+    assert one.len() == 0
+
+test "heap_remove_at: the first element is the one heap_pop would take, and the heap stays one"
+    heap: [i64] @= [1, 3, 2, 5, 9, 8, 7]
+    assert heap_remove_at(heap: @heap, at: 0, less: samples.ascending) == 1
+    assert is_heap(xs: heap, less: samples.ascending)
+    assert drained(heap: heap, less: samples.ascending) == [2, 3, 5, 7, 8, 9]
+
+test "heap_sort_by: empty, one, two, reversed, repeated, and the largest and smallest i64 as Python's sorted"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    nothing: [i64] @= []
+    heap_sort_by(xs: @nothing, less: samples.ascending)
+    assert nothing.len() == 0
+    one: [i64] @= [1]
+    heap_sort_by(xs: @one, less: samples.ascending)
+    assert one == [1]
+    two: [i64] @= [2, 1]
+    heap_sort_by(xs: @two, less: samples.ascending)
+    assert two == [1, 2]
+    xs: [i64] @= [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+    heap_sort_by(xs: @xs, less: samples.ascending)
+    assert xs == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    wide: [i64] @= [largest, smallest, 0, -1, largest, smallest, 3, 3]
+    heap_sort_by(xs: @wide, less: samples.ascending)
+    assert wide == [smallest, smallest, -1, 0, 3, 3, largest, largest]
+
+test "heap_sort_by: the larger first, texts by length, and an order that contradicts itself never aborts"
+    xs: [i64] @= [5, 3, 8, 1, 9, 2, 7]
+    heap_sort_by(xs: @xs, less: samples.descending)
+    assert xs == [9, 8, 7, 5, 3, 2, 1]
+    words: [str] @= ["banana", "è", "fig", "kiwi!"]
+    heap_sort_by(xs: @words, less: samples.by_length)
+    assert words == ["è", "fig", "kiwi!", "banana"]
+    odd: [i64] @= [3, 1, 2, 5, 4]
+    heap_sort_by(xs: @odd, less: samples.always)
+    assert odd.len() == 5
+    assert sort(odd) == [1, 2, 3, 4, 5]
+
+test "heap_sort_by: a thousand scrambled numbers, against the built-in sort"
+    xs: [i64] @= []
+    at: i64 @= 0
+
+    while at < 1000
+        xs @ xs.push(at * 7919 % 1009)
+        at @ at + 1
+
+    expected = sort(xs)
+    heap_sort_by(xs: @xs, less: samples.ascending)
+    assert xs == expected

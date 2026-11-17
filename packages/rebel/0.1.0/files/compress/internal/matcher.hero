@@ -1,0 +1,338 @@
+# The repeats a DEFLATE compressor finds: every position of the window goes
+# into a chain of the earlier positions whose next three bytes hash alike,
+# and the longest repeat at a position is looked for along its chain, as far
+# as the level allows. A repeat is a symbol `length * 65536 + distance`, a
+# byte a symbol below 256, and both are counted for the block's codes.
+#
+# Positions are counted from the start of the stream, the dictionary
+# included, and never move: the window held in memory begins at `base`.
+
+use compress/internal/blocks
+use compress/internal/huffman
+use compress/internal/tables
+
+# Repeats looked for as the level says.
+constant STANDARD: i64
+    0
+
+# Repeats shorter than `FILTERED_SHORTEST` written as bytes.
+constant FILTERED: i64
+    1
+
+# No repeat looked for.
+constant HUFFMAN_ONLY: i64
+    2
+
+# Only repeats of the byte just before, at distance 1.
+constant RUN_LENGTH: i64
+    3
+
+# Repeats as the level says, and the fixed codes only.
+constant FIXED: i64
+    4
+
+# The shortest repeat the filtered strategy writes as one.
+constant FILTERED_SHORTEST: i64
+    6
+
+# How many chains there are: the hash of three bytes is 15 bits.
+constant HASH_SIZE: i64
+    32768
+
+# How the repeats are looked for.
+record Config
+    # How many earlier positions are tried for each one.
+    chain: i64
+    # A repeat this long ends the search at once.
+    nice: i64
+    # A repeat shorter than this waits one byte, in case the next position
+    # starts a longer one; 0 never waits.
+    lazy: i64
+    # `STANDARD`, `FILTERED`, `HUFFMAN_ONLY`, `RUN_LENGTH` or `FIXED`.
+    strategy: i64
+    # How far back a repeat may reach, in bytes: 512 to 32,768.
+    window: i64
+
+# The chains of earlier positions.
+record Chains
+    # By the hash of three bytes, the latest position holding them plus 1,
+    # or 0 for none.
+    head: [i64]
+    # By a position modulo 32,768, the position before it with the same hash
+    # plus 1, or 0 for none.
+    prev: [i64]
+    # Every position below this one is in the chains.
+    inserted: i64
+    # How many entries `head` and `prev` have once made, a power of two from
+    # 256 to 32,768: both are empty until the first position goes in, so an
+    # input too short to repeat costs no table.
+    size: i64
+
+# A repeat found: `length` 0 where none was.
+record Found
+    # How many bytes repeat, 3 to 258, or 0.
+    length: i64
+    # How far back they begin.
+    distance: i64
+
+# The way repeats are looked for at `level`, 1 to 9, under `strategy`, in a
+# window of `window` bytes. The higher the level, the more positions are
+# tried and the longer a repeat waits for a better one.
+function config_for(level: i64, strategy: i64, window: i64) -> Config
+    chains: [i64] = [0, 4, 8, 16, 32, 64, 128, 256, 1024, 4096]
+    nices: [i64] = [0, 8, 16, 32, 64, 128, 128, 258, 258, 258]
+    lazies: [i64] = [0, 0, 0, 0, 8, 16, 32, 64, 258, 258]
+    return Config(chain: chains[level], nice: nices[level], lazy: lazies[level], strategy: strategy, window: window)
+
+# Chains holding no position; the first position to go into them is `from`.
+# Where the stream's whole length is `expected` bytes, its tables are sized
+# to it; -1 where it is not known, and they take 32,768 entries.
+function empty_chains(from: i64, expected: i64) -> Chains
+    size: i64 @= 256
+
+    if expected < 0
+        size @ HASH_SIZE
+
+    while size < HASH_SIZE && size < expected
+        size @ size * 2
+
+    return Chains(head: [], prev: [], inserted: from, size: size)
+
+# Forgets every position, so that no repeat reaches before `from`: what a
+# full flush asks.
+function forget(@chains: Chains, from: i64)
+    for i in range(from: 0, to: chains.head.len())
+        chains.head[i] @ 0
+
+    chains.inserted @ from
+
+# The hash of the three bytes at index `at` of `data`.
+function hash_at(data: [u8] lent, at: i64, size: i64) -> i64
+    first = to_i64(data[at]).must()
+    second = to_i64(data[at + 1]).must()
+    third = to_i64(data[at + 2]).must()
+    return (first << 10 ^ second << 5 ^ third) & size - 1
+
+# Puts every position below `upto` into the chains, as far as three bytes
+# follow it in `data`, whose first byte is position `base` and whose last is
+# `end` - 1.
+function insert_upto(@chains: Chains, data: [u8] lent, base: i64, end: i64, upto: i64)
+    if chains.head.len() == 0 && chains.inserted < upto && chains.inserted + 2 < end
+        chains.head @ huffman.zeros(chains.size)
+        chains.prev @ huffman.zeros(chains.size)
+
+    while chains.inserted < upto && chains.inserted + 2 < end
+        at = chains.inserted
+        h = hash_at(data, at: at - base, size: chains.size)
+        chains.prev[at & chains.size - 1] @ chains.head[h]
+        chains.head[h] @ at + 1
+        chains.inserted @ at + 1
+
+# The longest repeat at position `at`, along its chain, reaching back no
+# further than `floor` nor the config's window, at most `nice` bytes long
+# once found and never past `end`.
+function longest(data: [u8] lent, base: i64, at: i64, end: i64, floor: i64, chains: Chains lent, config: Config lent) -> Found
+    none = Found(length: 0, distance: 0)
+
+    if end - at < tables.MIN_MATCH || chains.head.len() == 0
+        return none
+    most = min_of(a: tables.MAX_MATCH, b: end - at)
+    here = at - base
+    candidate: i64 @= chains.head[hash_at(data, at: here, size: chains.size)]
+    tries: i64 @= config.chain
+    best: i64 @= tables.MIN_MATCH - 1
+    distance: i64 @= 0
+    last: i64 @= at
+
+    while candidate > 0 && tries > 0
+        earlier = candidate - 1
+
+        if earlier >= last || at - earlier > config.window || earlier < floor || earlier < base
+            break
+        there = earlier - base
+
+        if data[there + best] == data[here + best]
+            n: i64 @= 0
+
+            while n < most && data[there + n] == data[here + n]
+                n @ n + 1
+
+            if n > best
+                best @ n
+                distance @ at - earlier
+
+                if n >= config.nice || n == most
+                    break
+        last @ earlier
+        candidate @ chains.prev[earlier & chains.size - 1]
+        tries @ tries - 1
+
+    if best < tables.MIN_MATCH
+        return none
+    return Found(length: best, distance: distance)
+
+# The run at position `at` of the byte just before it, as a repeat at
+# distance 1, or none where the byte before is before `floor` or the run is
+# shorter than three.
+function run_at(data: [u8] lent, base: i64, at: i64, end: i64, floor: i64) -> Found
+    if at - 1 < floor || at - 1 < base
+        return Found(length: 0, distance: 0)
+    before = data[at - 1 - base]
+    most = min_of(a: tables.MAX_MATCH, b: end - at)
+    n: i64 @= 0
+
+    while n < most && data[at - base + n] == before
+        n @ n + 1
+
+    if n < tables.MIN_MATCH
+        return Found(length: 0, distance: 0)
+    return Found(length: n, distance: 1)
+
+# The repeat to write at `at` under the config's strategy: the longest, the
+# run of the byte before, none at all, or for the filtered strategy none
+# shorter than six bytes. The chains take every position below `at` first.
+function best_at(@chains: Chains, data: [u8] lent, base: i64, at: i64, end: i64, floor: i64, config: Config lent) -> Found
+    if config.strategy == HUFFMAN_ONLY
+        return Found(length: 0, distance: 0)
+
+    if config.strategy == RUN_LENGTH
+        return run_at(data, base: base, at: at, end: end, floor: floor)
+    insert_upto(@chains, data, base: base, end: end, upto: at)
+    found = longest(data, base: base, at: at, end: end, floor: floor, chains: chains, config: config)
+
+    if config.strategy == FILTERED && found.length < FILTERED_SHORTEST
+        return Found(length: 0, distance: 0)
+    return found
+
+# Writes the byte at `at` as a symbol and counts it.
+function add_byte(@syms: [i64], @freqs: blocks.Freqs, data: [u8] lent, base: i64, at: i64)
+    byte = to_i64(data[at - base]).must()
+    syms @ syms.push(byte)
+    freqs.literals[byte] @ freqs.literals[byte] + 1
+
+# Writes a repeat as a symbol and counts its length and distance codes.
+function add_repeat(@syms: [i64], @freqs: blocks.Freqs, found: Found)
+    syms @ syms.push(found.length << 16 | found.distance)
+    lc = 257 + tables.length_code(found.length)
+    dc = tables.distance_code(found.distance)
+    freqs.literals[lc] @ freqs.literals[lc] + 1
+    freqs.distances[dc] @ freqs.distances[dc] + 1
+
+# Finds the repeats from position `from` on and writes every byte and
+# repeat to `syms`, until a step would begin at `stop` or later or `syms`
+# holds `room` symbols, and answers the position reached. `data` holds
+# positions `base` to `end` - 1; no repeat reaches before `floor`. Every pass
+# moves at least one position.
+function parse(data: [u8] lent, base: i64, from: i64, stop: i64, end: i64, floor: i64, @chains: Chains, @syms: [i64], @freqs: blocks.Freqs, config: Config lent, room: i64) -> i64
+    at: i64 @= from
+    held_at: i64 @= -1
+    held = Found(length: 0, distance: 0)
+    held_found @= held
+
+    while at < stop && syms.len() < room
+        found @= held_found
+
+        if held_at != at
+            found @ best_at(@chains, data, base: base, at: at, end: end, floor: floor, config: config)
+        held_at @ -1
+
+        if config.lazy > 0 && found.length >= tables.MIN_MATCH && found.length < config.lazy && at + 1 < end
+            next = best_at(@chains, data, base: base, at: at + 1, end: end, floor: floor, config: config)
+
+            if next.length > found.length
+                add_byte(@syms, @freqs, data, base: base, at: at)
+                held_at @ at + 1
+                held_found @ next
+                at @ at + 1
+                continue
+
+        if found.length >= tables.MIN_MATCH
+            add_repeat(@syms, @freqs, found: found)
+            at @ at + found.length
+        else
+            add_byte(@syms, @freqs, data, base: base, at: at)
+            at @ at + 1
+
+    return at
+
+# The smaller of two numbers.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The symbols and the counts of parsing `text` whole, from position 0.
+function parsed(text: [u8], config: Config) -> [i64]
+    chains @= empty_chains(from: 0, expected: -1)
+    syms: [i64] @= []
+    freqs @= blocks.empty_freqs()
+    reached = parse(
+        text,
+        base: 0,
+        from: 0,
+        stop: text.len(),
+        end: text.len(),
+        floor: 0,
+        @chains,
+        @syms,
+        @freqs,
+        config: config,
+        room: 1000
+    )
+    assert reached == text.len()
+    return syms
+
+test "parse: an empty text, one byte, and a byte repeated"
+    config = config_for(level: 6, strategy: STANDARD, window: 32768)
+    assert parsed([], config: config).len() == 0
+    assert parsed([0x61], config: config) == [0x61]
+    assert parsed([7, 7, 7, 7, 7, 7], config: config) == [7, 5 << 16 | 1]
+
+test "parse: a word said twice is the word and one repeat"
+    config = config_for(level: 1, strategy: STANDARD, window: 32768)
+    text: [u8] = [0x61, 0x62, 0x63, 0x64, 0x61, 0x62, 0x63, 0x64]
+    assert parsed(text, config: config) == [0x61, 0x62, 0x63, 0x64, 4 << 16 | 4]
+
+test "parse: a repeat beyond the window is not taken"
+    text: [u8] @= []
+    x: i64 @= 12345
+
+    for _ in range(from: 0, to: 600)
+        x @ (x * 1103515245 + 12345) % 2147483648
+        text @ text.push(to_u8(x >> 16 & 255).must())
+
+    for i in range(from: 0, to: 10)
+        text @ text.push(text[i])
+
+    wide = parsed(text, config: config_for(level: 6, strategy: STANDARD, window: 32768))
+    narrow = parsed(text, config: config_for(level: 6, strategy: STANDARD, window: 512))
+    assert wide[wide.len() - 1] == 10 << 16 | 600
+
+    for s in narrow
+        assert s < 256 || s & 0xffff <= 512
+
+test "parse: the lazy levels wait one byte for a longer repeat"
+    text: [u8] = [0x61, 0x62, 0x63, 0x78, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67]
+    greedy = parsed(text, config: config_for(level: 1, strategy: STANDARD, window: 32768))
+    lazy = parsed(text, config: config_for(level: 9, strategy: STANDARD, window: 32768))
+    assert greedy[greedy.len() - 2] == 3 << 16 | 10
+    assert greedy[greedy.len() - 1] == 4 << 16 | 7
+    assert lazy[lazy.len() - 2] == 0x61
+    assert lazy[lazy.len() - 1] == 6 << 16 | 7
+
+test "parse: the strategies other than the standard one"
+    text: [u8] = [5, 5, 5, 5, 1, 2, 3, 1, 2, 3, 1, 2]
+    assert parsed(text, config: config_for(level: 6, strategy: HUFFMAN_ONLY, window: 32768)).len() == text.len()
+    assert parsed(text, config: config_for(level: 6, strategy: RUN_LENGTH, window: 32768)) == [5, 3 << 16 | 1, 1, 2, 3, 1, 2, 3, 1, 2]
+    assert parsed(text, config: config_for(level: 6, strategy: STANDARD, window: 32768))[1] == 3 << 16 | 1
+    assert parsed(text, config: config_for(level: 6, strategy: FILTERED, window: 32768)).len() == text.len()
+
+test "longest: a floor no repeat reaches before"
+    text: [u8] = [1, 2, 3, 1, 2, 3]
+    chains @= empty_chains(from: 0, expected: 6)
+    config = config_for(level: 9, strategy: STANDARD, window: 32768)
+    insert_upto(@chains, text, base: 0, end: 6, upto: 3)
+    assert longest(text, base: 0, at: 3, end: 6, floor: 0, chains: chains, config: config) == Found(length: 3, distance: 3)
+    assert longest(text, base: 0, at: 3, end: 6, floor: 1, chains: chains, config: config).length == 0
+    forget(@chains, from: 3)
+    assert longest(text, base: 0, at: 3, end: 6, floor: 0, chains: chains, config: config).length == 0

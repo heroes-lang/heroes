@@ -1,0 +1,280 @@
+# The ledger of `term`: what a program can do with its terminal, one block per
+# capability, and what Rebel answers. The lists are this machine's,
+# 2026-11-16: Python 3.15's `getpass`, `tty`, `termios`, `curses` (296 public
+# names, read by `dir()`; its constants are grouped below by what they are) and
+# `shutil.get_terminal_size`; Go 1.27's `golang.org/x/term`, which this
+# machine holds vendored in the toolchain (`go doc golang.org/x/term`); Rust's
+# standard library's `std::io::IsTerminal`. The author's request named
+# Rust's `crossterm` and `indicatif` and Python's `rich`, none of which is on
+# this machine: their lines are their public items as their documentation
+# names them, read as capabilities, and no source of theirs was opened.
+
+capability term/is-terminal  whether a stream is a terminal
+  heroes  io.is_terminal
+  go      term.IsTerminal
+  rust    std::io::IsTerminal, crossterm::tty::IsTty
+  python  os.isatty, io.IOBase.isatty
+  note    `io`'s, which every stream has; `term.colors_on` asks it with the environment's words besides
+
+capability term/size  the terminal's columns and rows
+  heroes  os.terminal_size
+  go      term.GetSize, term.Terminal.SetSize
+  rust    crossterm::terminal::size
+  python  shutil.get_terminal_size, os.get_terminal_size, termios.tcgetwinsize, tty.tcgetwinsize, curses.update_lines_cols, curses.is_term_resized
+  note    `os`'s, read from the system; setting the size is a terminal emulator's act, below
+
+capability term/set-size  the terminal's size set by the program
+  heroes  refused: the size is the window's, which the person sets; a program that sets a pseudo-terminal's size is a terminal emulator, out of this area
+  go      -
+  rust    crossterm::terminal::SetSize
+  python  termios.tcsetwinsize, tty.tcsetwinsize, curses.resizeterm, curses.resize_term
+
+capability term/colors  the sixteen colours of text and of its background
+  heroes  term.Color, term.with_foreground, term.with_background, term.styled
+  go      -
+  rust    crossterm::style::Color, crossterm::style::SetForegroundColor, crossterm::style::SetBackgroundColor, crossterm::style::ResetColor, crossterm::style::Stylize
+  python  rich.style.Style, rich.color.Color, curses.start_color, curses.has_colors, curses.init_pair, curses.color_pair, curses.pair_content, curses.pair_number, curses.color_content, curses.use_default_colors, curses.assume_default_colors, curses.COLOR_BLACK and the seven other COLOR_ constants
+  note    the sequences are ECMA-48's (SGR 30 to 37 and 40 to 47) and the bright ones xterm's (90 to 97, 100 to 107), as crossterm writes them; asserted as those standards write them, no library being on this machine to ask
+
+capability term/colors-256  the 256 colours of the palette
+  heroes  term.Color
+  go      -
+  rust    crossterm::style::Color::AnsiValue
+  python  rich.color.Color (color(n)), curses.COLORS, curses.has_extended_color_support
+  note    `.indexed(n: u8)`: the type holds 0 to 255, so no index is out of range
+
+capability term/true-color  a colour of 24 bits
+  heroes  term.Color
+  go      -
+  rust    crossterm::style::Color::Rgb
+  python  rich.color.Color.from_rgb, rich.color.Color.parse ("#rrggbb")
+  note    `.rgb(red:, green:, blue:)`, each a `u8`; a terminal of fewer colours shows its nearest, as it does for every program
+
+capability term/palette-redefinition  a colour of the terminal's palette changed
+  heroes  refused: it changes the person's terminal past the program's end, and what it was before cannot be read back on every terminal
+  go      -
+  rust    -
+  python  curses.init_color, curses.can_change_color
+
+capability term/attributes  bold, dim, italic, underline, blink, reverse, hidden, strike
+  heroes  term.Attribute, term.with_attribute, term.Style, term.plain
+  go      -
+  rust    crossterm::style::Attribute, crossterm::style::SetAttribute, crossterm::style::SetAttributes, crossterm::style::Attributes
+  python  rich.style.Style (bold, dim, italic, underline, blink, reverse, conceal, strike), curses.A_BOLD, curses.A_DIM, curses.A_ITALIC, curses.A_UNDERLINE, curses.A_BLINK, curses.A_REVERSE, curses.A_INVIS, curses.A_STANDOUT, curses.termattrs
+  note    the eight every terminal of ECMA-48 takes; crossterm's double underline, framed, encircled and overlined are left out, most terminals drawing none of them
+
+capability term/no-color  colour written only where it shows, and plain text elsewhere
+  heroes  term.colors_on, term.write_styled
+  go      -
+  rust    crossterm::style::force_color_output, crossterm's own NO_COLOR reading
+  python  rich.console.Console (no_color, force_terminal, color_system)
+  note    no colour where the stream is no terminal, `NO_COLOR` is set and not empty (no-color.org's words), or `TERM` is `dumb`; a program that wants colour in a file writes `styled` itself
+
+capability term/windows-sequences  the Windows console made to take the sequences
+  heroes  term.colors_on, term.write_control
+  go      -
+  rust    crossterm::ansi_support::supports_ansi
+  python  rich.console.Console (legacy_windows)
+  note    the console's processing of sequences is turned on where it is off and put back when the program ends; a console too old to take them is told as no terminal, and gets plain text
+
+capability term/cursor-move  the cursor put at a cell or moved by a count
+  heroes  term.cursor_to, term.cursor_up, term.cursor_down, term.cursor_forward, term.cursor_back
+  go      -
+  rust    crossterm::cursor::MoveTo, crossterm::cursor::MoveUp, crossterm::cursor::MoveDown, crossterm::cursor::MoveLeft, crossterm::cursor::MoveRight, crossterm::cursor::MoveToColumn, crossterm::cursor::MoveToRow, crossterm::cursor::MoveToNextLine, crossterm::cursor::MoveToPreviousLine
+  python  rich.control.Control.move_to, curses.setsyx, curses.getsyx
+  note    rows and columns from 1, as the terminal counts them; crossterm counts from 0. A column alone or a row alone is `cursor_to` with the other known
+
+capability term/cursor-position  where the cursor stands, read back from the terminal
+  heroes  pending
+  go      -
+  rust    crossterm::cursor::position
+  python  curses.getsyx
+  note    it asks the terminal (`ESC [ 6 n`) and reads its answer in the raw mode, between keys the person may type: a reader that sets those keys aside for `read_key` is the work, not yet done
+
+capability term/cursor-visibility  the cursor hidden and shown
+  heroes  term.cursor_hide, term.cursor_show
+  go      -
+  rust    crossterm::cursor::Hide, crossterm::cursor::Show, crossterm::cursor::EnableBlinking, crossterm::cursor::DisableBlinking, crossterm::cursor::SetCursorStyle
+  python  curses.curs_set, rich.console.Console.show_cursor
+  note    blinking and the cursor's shape are left out, many terminals keeping their own
+
+capability term/cursor-save  the cursor's place saved and brought back
+  heroes  term.cursor_save, term.cursor_restore
+  go      -
+  rust    crossterm::cursor::SavePosition, crossterm::cursor::RestorePosition
+  python  -
+  note    DEC's `ESC 7` and `ESC 8`, which every terminal of the VT100's line takes
+
+capability term/clear  a line or the screen cleared
+  heroes  term.clear_line, term.clear_to_line_end, term.clear_screen
+  go      -
+  rust    crossterm::terminal::Clear, crossterm::terminal::ClearType
+  python  rich.console.Console.clear, curses.erasechar
+  note    ClearType's FromCursorDown, FromCursorUp and Purge are left out: a program that draws from the top clears the screen, and Purge (the scrollback) is the person's
+
+capability term/control-written  a control sequence written only to a terminal
+  heroes  term.write_control
+  go      -
+  rust    crossterm::execute, crossterm::queue
+  python  rich.console.Console.control
+  note    so a program moving the cursor writes nothing stray into a file
+
+capability term/bell  the terminal's bell
+  heroes  term.bell
+  go      -
+  rust    -
+  python  curses.beep, curses.flash
+
+capability term/alternate-screen  a screen of the program's own, the person's put back after
+  heroes  pending
+  go      -
+  rust    crossterm::terminal::EnterAlternateScreen, crossterm::terminal::LeaveAlternateScreen
+  python  rich.console.Console.screen, curses.initscr, curses.endwin, curses.isendwin
+  note    it must be left at the program's end as the raw mode is, by the layer's `atexit` and signal handlers; their sequence for it is the work, not yet done
+
+capability term/scroll  the screen's lines scrolled
+  heroes  pending
+  go      -
+  rust    crossterm::terminal::ScrollUp, crossterm::terminal::ScrollDown
+  python  -
+
+capability term/title  the window's title set
+  heroes  pending
+  go      -
+  rust    crossterm::terminal::SetTitle
+  python  rich.console.Console.set_window_title
+
+capability term/raw-mode  each key as it is pressed, nothing echoed, no key ending the program
+  heroes  term.enter_raw, term.leave_raw
+  go      term.MakeRaw, term.Restore, term.GetState, term.State
+  rust    crossterm::terminal::enable_raw_mode, crossterm::terminal::disable_raw_mode, crossterm::terminal::is_raw_mode_enabled
+  python  tty.setraw, tty.setcbreak, tty.cfmakeraw, tty.cfmakecbreak, termios.tcgetattr, termios.tcsetattr, curses.raw, curses.noraw, curses.cbreak, curses.nocbreak, curses.echo, curses.noecho, curses.nl, curses.nonl, curses.intrflush, curses.meta, curses.savetty, curses.resetty, curses.def_prog_mode, curses.def_shell_mode, curses.reset_prog_mode, curses.reset_shell_mode
+  note    one mode, raw as x/term and crossterm make it, the output's newline kept so a program's lines still return to the left; the cbreak mode (signals kept) is left out, Ctrl-C reaching the program as a key instead, so a terminal is never left raw by a Ctrl-C the program did not see. Measured in a pseudo-terminal on this Mac (2026-11-16, `rebel-scratch/term-probe`): ECHO, ICANON and ISIG off in the mode, all three back after `leave_raw`, after `exit(3)` with no leave, and after a SIGTERM that still ended the program with signal 15
+
+capability term/restored-at-exit  the terminal put back when the program ends without putting it back
+  heroes  term.enter_raw
+  go      -
+  rust    -
+  python  curses.wrapper
+  note    `main` returning, `exit`, and on POSIX SIGINT, SIGTERM, SIGHUP and SIGQUIT where the program left them to their default (measured, above); a panic, a memory fault and SIGKILL cannot be reached by any library, the runtime setting SIGABRT's default before it aborts, and the face says so. Go, crossterm and Python's tty leave it to the program's own defer or finally
+
+capability term/read-key  one key read as it is pressed, named
+  heroes  term.read_key, term.Key
+  go      -
+  rust    crossterm::event::read, crossterm::event::Event::Key, crossterm::event::KeyEvent, crossterm::event::KeyCode, crossterm::event::KeyEventKind
+  python  curses.getch, curses.getkey, curses.get_wch, curses.keyname, curses.unctrl, curses.has_key, curses.KEY_UP and the other KEY_ constants, msvcrt.getwch (Windows)
+  note    the keys of xterm's sequences, which Linux's console, macOS's Terminal and Windows' console send, and which the layer writes for a Windows key with no character; a key typed ahead is the next one read, never lost (measured: `xy` typed at once read as `x` then `y`). Escape alone is told after 50 ms with nothing after it, crossterm's and curses' way (curses.get_escdelay, curses.set_escdelay)
+
+capability term/read-key-timeout  a key waited for at most a given time
+  heroes  term.read_key_within
+  go      -
+  rust    crossterm::event::poll
+  python  curses.halfdelay, curses.napms, curses.typeahead
+  note    in milliseconds, `net`'s unit for its deadlines: `time` is not in this package's row
+
+capability term/key-modifiers  Ctrl, Alt and Shift told beside any key
+  heroes  pending
+  go      -
+  rust    crossterm::event::KeyModifiers, crossterm::event::KeyboardEnhancementFlags, crossterm::event::PushKeyboardEnhancementFlags
+  python  curses.KEY_SLEFT and the other shifted KEY_ constants
+  note    Ctrl with a letter is `Key.control`; a modified arrow (`ESC [ 1 ; 5 A`) is `Key.other` with its bytes, until its parameters are read into a key of their own
+
+capability term/mouse-paste-focus-resize  the mouse, a paste, the focus and the window's resizing as events
+  heroes  pending
+  go      term.Terminal.SetBracketedPasteMode, term.ErrPasteIndicator
+  rust    crossterm::event::EnableMouseCapture, crossterm::event::DisableMouseCapture, crossterm::event::MouseEvent, crossterm::event::EnableBracketedPaste, crossterm::event::Event::Paste, crossterm::event::EnableFocusChange, crossterm::event::Event::FocusGained, crossterm::event::Event::Resize
+  python  curses.mousemask, curses.getmouse, curses.ungetmouse, curses.mouseinterval, curses.KEY_RESIZE
+
+capability term/read-secret  a line read with nothing echoed, as a password
+  heroes  term.read_secret
+  go      term.ReadPassword, term.Terminal.ReadPassword
+  rust    -
+  python  getpass.getpass, getpass.GetPassWarning, getpass.unix_getpass, getpass.win_getpass, getpass.fallback_getpass
+  note    read from the program's terminal and its prompt written there, as getpass does on POSIX, so a program whose input is a pipe still asks the person; Ctrl-C fails `stopped` and Ctrl-D on an empty line `closed`, where getpass raises; with no terminal it fails `unsupported`, where getpass falls back to reading the input with a warning, which would echo a password
+
+capability term/user-name  the name of the user, beside getpass
+  heroes  os.user_name
+  go      -
+  rust    -
+  python  getpass.getuser
+  note    `os`'s
+
+capability term/line-editor  a line read with editing and a history
+  heroes  pending
+  go      term.NewTerminal, term.Terminal, term.Terminal.ReadLine, term.Terminal.SetPrompt, term.Terminal.Write, term.Terminal.AutoCompleteCallback, term.History, term.EscapeCodes
+  rust    -
+  python  rich.prompt.Prompt (readline's own is outside this area)
+
+capability term/progress-bar  a bar showing work done out of a total
+  heroes  term.progress, term.advance, term.finish, term.Progress
+  go      -
+  rust    indicatif::ProgressBar::new, indicatif::ProgressBar::inc, indicatif::ProgressBar::set_position, indicatif::ProgressBar::finish, indicatif::ProgressBar::finish_with_message, indicatif::ProgressBar::set_message, indicatif::ProgressBar::is_hidden, indicatif::ProgressDrawTarget
+  python  rich.progress.Progress, rich.progress.track
+  note    drawn only on a terminal and not at all elsewhere, indicatif's way; a label, thirty cells of `#` and `-`, the percent and the counts
+
+capability term/progress-style  the bar drawn by a template of the program's
+  heroes  pending
+  go      -
+  rust    indicatif::ProgressStyle, indicatif::ProgressStyle::template, indicatif::ProgressStyle::progress_chars
+  python  rich.progress.BarColumn, rich.progress.TextColumn
+
+capability term/progress-rate  the time left and the rate, beside the bar
+  heroes  refused: they need a clock, and `time` is not in this package's row (README § A1); a program shows them in the label
+  go      -
+  rust    indicatif::ProgressBar::eta, indicatif::ProgressBar::per_sec, indicatif::HumanDuration, indicatif::HumanBytes
+  python  rich.progress.TimeRemainingColumn, rich.progress.TransferSpeedColumn
+
+capability term/multi-progress  several bars drawn together
+  heroes  pending
+  go      -
+  rust    indicatif::MultiProgress
+  python  rich.progress.Progress (several tasks)
+
+capability term/spinner  a turning mark for work of unknown length
+  heroes  term.spinner, term.spin, term.stop_spinner, term.Spinner
+  go      -
+  rust    indicatif::ProgressBar::new_spinner, indicatif::ProgressBar::tick
+  python  rich.status.Status, rich.spinner.Spinner
+  note    turned by the program between its steps, `spin`; its message is written on every stream, a terminal or not
+
+capability term/steady-tick  a bar or a spinner drawn on its own while the program works
+  heroes  refused: it needs a thread of the library's drawing beside the program's, and no function of the library runs on a thread it makes; `spin` and `advance` are called between the program's steps
+  go      -
+  rust    indicatif::ProgressBar::enable_steady_tick
+  python  rich.live.Live, rich.status.Status (refreshed by a thread)
+
+capability term/text-width  how many cells a text takes on screen
+  heroes  pending
+  go      -
+  rust    - (the unicode-width crate, outside the area's libraries)
+  python  rich.cells.cell_len, unicodedata.east_asian_width
+  note    East Asian wide characters take two cells and marks none: Unicode's table of East Asian Widths, which `unicode` does not hold today (its tables are Unicode 17.0.0's categories and cases); written badly with a guess it would cut lines in the wrong place, so it waits for the table
+
+capability term/rendering  markup, tables, panels, trees, Markdown and highlighted code drawn on a terminal
+  heroes  refused: a rendering library's area, which a program or a package builds over `styled`
+  go      -
+  rust    -
+  python  rich.console.Console.print, rich.markup, rich.table.Table, rich.panel.Panel, rich.tree.Tree, rich.markdown.Markdown, rich.syntax.Syntax, rich.columns.Columns, rich.layout.Layout, rich.live.Live, rich.pretty, rich.traceback
+
+capability term/screen-library  windows, pads and panels over a screen
+  heroes  refused: curses' screen model, a library of its own over this package's sequences
+  go      -
+  rust    -
+  python  curses.newwin, curses.newpad, curses.getwin, curses.doupdate, curses.filter, curses.window (all its methods), curses.panel, curses.textpad
+
+capability term/terminfo  the terminal's own capabilities read from its database
+  heroes  refused: Rebel writes ECMA-48's and DEC's sequences, which every terminal since the VT100 takes, as crossterm does; a database of terminals is a library of its own
+  go      -
+  rust    -
+  python  curses.setupterm, curses.tigetstr, curses.tigetnum, curses.tigetflag, curses.tparm, curses.putp, curses.termname, curses.longname, curses.baudrate, curses.has_ic, curses.has_il, curses.killchar
+
+capability term/input-flush  keys typed ahead thrown away
+  heroes  pending
+  go      -
+  rust    -
+  python  curses.flushinp, termios.tcflush, tty.tcflush, curses.ungetch, curses.unget_wch
+
+dropped
+  python  termios.tcdrain, termios.tcflow, termios.tcsendbreak, tty.tcdrain, tty.tcflow, tty.tcsendbreak (a serial line's control, not a terminal's display); termios.error, tty.error, curses.error (Python's exceptions); curses.delay_output, curses.get_tabsize, curses.set_tabsize, curses.noqiflush, curses.qiflush, curses.ncurses_version (ncurses' own settings); getpass.contextlib, getpass.io, getpass.os, getpass.sys, getpass.termios (the module's imports); termios's flag constants (the raw mode sets them)
+  go      term.State (a value the raw mode keeps inside the layer)
+  rust    crossterm::Command, crossterm::ExecutableCommand, crossterm::QueueableCommand (an interface: the language has none); crossterm::terminal::window_size (pixels, which few terminals report)

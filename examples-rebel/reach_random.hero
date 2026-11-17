@@ -1,0 +1,17 @@
+# Reaches Rebel's package `random`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It throws a die three times from a
+# seeded generator and prints a float from one the system seeds.
+
+use <rebel>/random
+
+function main()
+    g @= random.Generator(high: 1, low: 2)
+
+    for _ in range(from: 0, to: 3)
+        print(random.int_in(@g, from: 1, to: 7))
+
+    match random.from_system()
+        .ok fresh =>
+            other @= fresh
+            print(random.next_f64(@other))
+        .err e => print(e.msg)

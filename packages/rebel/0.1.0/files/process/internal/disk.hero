@@ -1,0 +1,61 @@
+# What `process` asks of a path on the disk, through the floor `os/hero_disk`:
+# whether it names nothing, and whether it names a file that runs.
+
+use os/hero_disk
+use process/internal/fixture
+
+# The facts of what `path` names once its links are followed, each at its
+# `HERO_DISK_FACT_...` place, or an empty list where it cannot be asked.
+function facts_of(path: str) -> [i64]
+    count = hero_disk.HERO_DISK_FACTS
+    numbers: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        numbers @ numbers.push(0)
+
+    if hero_disk.facts_through(path, @numbers, n: count.to_u64().must()) < 0
+        none: [i64] = []
+        return none
+    return numbers
+
+# Whether `path` names nothing, its links followed: the disk said so, and
+# not that it could not be asked.
+function names_nothing(path: str) -> bool
+    numbers = facts_of(path)
+    return numbers.len() == 0 && hero_disk.last_error() == hero_disk.HERO_DISK_NOT_FOUND
+
+# Whether `path` names a file that runs, its links followed: a file, and on
+# POSIX one with a permission bit that lets someone run it; `windows` says
+# whose rules. It asks the disk nothing where `path` holds a zero byte.
+function runs(path: str, windows: bool) -> bool
+    for i in range(from: 0, to: path.len())
+        if path[i] == 0
+            return false
+
+    numbers = facts_of(path)
+
+    if numbers.len() == 0 || numbers[hero_disk.HERO_DISK_FACT_KIND] != hero_disk.HERO_DISK_KIND_FILE
+        return false
+    return windows || numbers[hero_disk.HERO_DISK_FACT_PERMISSION] & 0o111 != 0
+
+test "names_nothing: a path that is there, a folder, and one that is not"
+    assert !names_nothing(fixture.a_folder())
+    assert !names_nothing(fixture.shell_program())
+    assert names_nothing("build/rebel-process-no-such-folder")
+    assert names_nothing("")
+
+test "runs: the system's shell, a folder, a file nobody runs, nothing, and a zero byte"
+    windows = fixture.on_windows()
+    assert runs(fixture.shell_program(), windows: windows)
+    assert !runs(fixture.a_folder(), windows: windows)
+
+    # A file nobody runs is POSIX's alone: by Windows' rules every file runs,
+    # and the Windows hosts file is asked by those rules only.
+    if windows
+        assert runs(fixture.a_folder() + "\\System32\\drivers\\etc\\hosts", windows: true)
+    else
+        assert !runs("/etc/hosts", windows: false)
+        assert runs("/etc/hosts", windows: true)
+
+    assert !runs("build/rebel-process-no-such-file", windows: windows)
+    assert !runs(fixture.shell_program() + "\u{1}", windows: windows)

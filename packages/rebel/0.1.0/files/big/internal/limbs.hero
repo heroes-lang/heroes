@@ -1,0 +1,382 @@
+# Magnitudes: natural numbers of any size as a `[i64]` of limbs of 30 bits,
+# the least significant first, with no zero limb at the top, so zero is `[]`
+# and two equal numbers are equal lists. A limb times a limb is below 2^60, so
+# a product plus a limb plus a carry stays below 2^62 and no step overflows.
+# Every other module of `big` stands on these.
+
+constant BITS: i64
+    30
+
+constant BASE: i64
+    1073741824
+
+constant MASK: i64
+    1073741823
+
+# What `divided_small` answers.
+record SmallDivision
+    quotient: [i64]
+    remainder: i64
+
+# `count` zero limbs.
+function zeros(count: i64) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < count
+        out @ out.push(0)
+        at @ at + 1
+
+    return out
+
+# `a` without the zero limbs at its top.
+function trimmed(a: [i64]) -> [i64]
+    top: i64 @= a.len()
+
+    while top > 0 && a[top - 1] == 0
+        top @ top - 1
+
+    if top == a.len()
+        return a
+    return a.slice(from: 0, to: top)
+
+# The limbs of `a` from `from` to `to`, trimmed; an end past the length is
+# read as the length.
+function part(a: [i64], from: i64, to: i64) -> [i64]
+    end: i64 @= to
+
+    if end > a.len()
+        end @ a.len()
+
+    if from >= end
+        return []
+    return trimmed(a.slice(from: from, to: end))
+
+# The number `n`, which is not negative.
+function of(n: i64) -> [i64]
+    assert n >= 0
+    out: [i64] @= []
+    rest: i64 @= n
+
+    while rest > 0
+        out @ out.push(rest & MASK)
+        rest @ rest >> BITS
+
+    return out
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it.
+function compare(a: [i64], b: [i64]) -> i64
+    if a.len() != b.len()
+        if a.len() < b.len()
+            return -1
+        return 1
+    at: i64 @= a.len() - 1
+
+    while at >= 0
+        if a[at] != b[at]
+            if a[at] < b[at]
+                return -1
+            return 1
+        at @ at - 1
+
+    return 0
+
+# `a` plus `b`.
+function add(a: [i64], b: [i64]) -> [i64]
+    if a.len() < b.len()
+        return add(a: b, b: a)
+    out: [i64] @= []
+    carry: i64 @= 0
+    at: i64 @= 0
+
+    while at < a.len()
+        t: i64 @= a[at] + carry
+
+        if at < b.len()
+            t @ t + b[at]
+        out @ out.push(t & MASK)
+        carry @ t >> BITS
+        at @ at + 1
+
+    if carry > 0
+        out @ out.push(carry)
+    return out
+
+# `a` less `b`, where `b` is not above `a`.
+function sub(a: [i64], b: [i64]) -> [i64]
+    out: [i64] @= []
+    borrow: i64 @= 0
+    at: i64 @= 0
+
+    while at < a.len()
+        t: i64 @= a[at] - borrow
+
+        if at < b.len()
+            t @ t - b[at]
+        borrow @ 0
+
+        if t < 0
+            t @ t + BASE
+            borrow @ 1
+        out @ out.push(t)
+        at @ at + 1
+
+    assert borrow == 0
+    return trimmed(out)
+
+# `a` times `factor` plus `plus`, both from 0 to 2^31 - 1.
+function times_add(a: [i64], factor: i64, plus: i64) -> [i64]
+    assert factor >= 0 && factor < 2147483648 && plus >= 0 && plus < 2147483648
+    out: [i64] @= []
+    carry: i64 @= plus
+
+    for limb in a
+        t = limb * factor + carry
+        out @ out.push(t & MASK)
+        carry @ t >> BITS
+
+    while carry > 0
+        out @ out.push(carry & MASK)
+        carry @ carry >> BITS
+
+    return trimmed(out)
+
+# `a` divided by `d`, from 1 to 2^31 - 1, and what remains.
+function divided_small(a: [i64], d: i64) -> SmallDivision
+    assert d > 0 && d < 2147483648
+    out = zeros(a.len())
+    q: [i64] @= out
+    rest: i64 @= 0
+    at: i64 @= a.len() - 1
+
+    while at >= 0
+        t = rest * BASE + a[at]
+        q[at] @ t / d
+        rest @ t % d
+        at @ at - 1
+
+    return SmallDivision(quotient: trimmed(q), remainder: rest)
+
+# Adds `x` times 2^(30 `at`) into `out`, which is long enough to hold the sum.
+function add_into(@out: [i64], x: [i64], at: i64)
+    carry: i64 @= 0
+    k: i64 @= 0
+
+    while k < x.len() || carry > 0
+        t: i64 @= out[at + k] + carry
+
+        if k < x.len()
+            t @ t + x[k]
+        out[at + k] @ t & MASK
+        carry @ t >> BITS
+        k @ k + 1
+
+# `a` times 2 to the `count`th.
+function shift_left(a: [i64], count: i64) -> [i64]
+    assert count >= 0
+
+    if a.len() == 0
+        return a
+    out: [i64] @= zeros(count / BITS)
+    bits = count % BITS
+    carry: i64 @= 0
+
+    for limb in a
+        t = limb << bits | carry
+        out @ out.push(t & MASK)
+        carry @ t >> BITS
+
+    if carry > 0
+        out @ out.push(carry)
+    return out
+
+# `a` divided by 2 to the `count`th, rounded down.
+function shift_right(a: [i64], count: i64) -> [i64]
+    assert count >= 0
+    skip = count / BITS
+
+    if skip >= a.len()
+        return []
+    bits = count % BITS
+    out: [i64] @= []
+    at: i64 @= skip
+
+    while at < a.len()
+        high: i64 @= 0
+
+        if at + 1 < a.len()
+            high @ a[at + 1] << BITS - bits & MASK
+        out @ out.push(a[at] >> bits | high)
+        at @ at + 1
+
+    return trimmed(out)
+
+# How many bits `a` needs: 0 for zero.
+function bit_len(a: [i64]) -> i64
+    if a.len() == 0
+        return 0
+    top: i64 @= a[a.len() - 1]
+    bits: i64 @= 0
+
+    while top > 0
+        top @ top >> 1
+        bits @ bits + 1
+
+    return (a.len() - 1) * BITS + bits
+
+# How many zero bits end `a`: 0 for zero.
+function trailing_zeros(a: [i64]) -> i64
+    at: i64 @= 0
+
+    while at < a.len()
+        if a[at] != 0
+            limb: i64 @= a[at]
+            bits: i64 @= 0
+
+            while limb & 1 == 0
+                limb @ limb >> 1
+                bits @ bits + 1
+
+            return at * BITS + bits
+        at @ at + 1
+
+    return 0
+
+# How many bits of `a` are 1.
+function ones(a: [i64]) -> i64
+    count: i64 @= 0
+
+    for limb in a
+        rest: i64 @= limb
+
+        while rest > 0
+            count @ count + (rest & 1)
+            rest @ rest >> 1
+
+    return count
+
+# Whether bit `index` of `a` is 1.
+function bit(a: [i64], index: i64) -> bool
+    at = index / BITS
+
+    if at >= a.len()
+        return false
+    return a[at] >> index % BITS & 1 == 1
+
+# The bits of `a` and `b` joined limb by limb by `op`: 0 for and, 1 for or, 2
+# for exclusive or, 3 for `a` and not `b`.
+function joined(a: [i64], b: [i64], op: i64) -> [i64]
+    longest: i64 @= a.len()
+
+    if b.len() > longest
+        longest @ b.len()
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < longest
+        x: i64 @= 0
+        y: i64 @= 0
+
+        if at < a.len()
+            x @ a[at]
+
+        if at < b.len()
+            y @ b[at]
+
+        if op == 0
+            out @ out.push(x & y)
+        else if op == 1
+            out @ out.push(x | y)
+        else if op == 2
+            out @ out.push(x ^ y)
+        else
+            out @ out.push(x & ~y)
+        at @ at + 1
+
+    return trimmed(out)
+
+## Tests
+
+test "zeros, trimmed and part: none, top zeros, and a part past the end"
+    nothing: [i64] = []
+    assert zeros(0) == nothing
+    assert zeros(2) == [0, 0]
+    assert trimmed([0, 0]) == nothing
+    assert trimmed([5, 0]) == [5]
+    assert part(a: [1, 2, 3], from: 1, to: 9) == [2, 3]
+    assert part(a: [1, 0, 3], from: 0, to: 2) == [1]
+    assert part(a: [1, 2], from: 2, to: 2) == nothing
+
+test "of: zero, one limb, two limbs, and the largest i64"
+    nothing: [i64] = []
+    assert of(0) == nothing
+    assert of(1073741823) == [1073741823]
+    assert of(1073741824) == [0, 1]
+    assert of(9223372036854775807) == [1073741823, 1073741823, 7]
+
+test "compare: by length, by the top limb, equal, and zero"
+    nothing: [i64] = []
+    assert compare(a: [1, 1], b: [5]) == 1
+    assert compare(a: [5], b: [1, 1]) == -1
+    assert compare(a: [4, 1], b: [5, 1]) == -1
+    assert compare(a: [5, 1], b: [5, 1]) == 0
+    assert compare(a: nothing, b: nothing) == 0
+
+test "add and sub: a carry into a new limb, zero, and a borrow across limbs"
+    nothing: [i64] = []
+    assert add(a: [1073741823], b: [1]) == [0, 1]
+    assert add(a: nothing, b: [7]) == [7]
+    assert add(a: [1], b: [1073741823, 1073741823]) == [0, 0, 1]
+    assert sub(a: [0, 0, 1], b: [1]) == [1073741823, 1073741823]
+    assert sub(a: [5, 1], b: [5, 1]) == nothing
+    assert sub(a: [7], b: nothing) == [7]
+
+test "times_add and divided_small: zero, a carry, the largest factor, and a remainder"
+    nothing: [i64] = []
+    assert times_add(a: nothing, factor: 10, plus: 0) == nothing
+    assert times_add(a: nothing, factor: 10, plus: 7) == [7]
+    assert times_add(a: [1073741823], factor: 2, plus: 1) == [1073741823, 1]
+    assert times_add(a: [1], factor: 2147483647, plus: 2147483647) == [1073741822, 3]
+    d = divided_small(a: [1073741822, 3], d: 2147483647)
+    assert d.quotient == [2]
+    assert d.remainder == 0
+    assert divided_small(a: [1073741822, 3], d: 2147483646).remainder == 2
+    assert divided_small(a: nothing, d: 9).remainder == 0
+    assert divided_small(a: [9], d: 10).quotient == nothing
+
+test "add_into: at an offset, with a carry running past the addend"
+    out: [i64] @= [1073741823, 1073741823, 0, 0]
+    add_into(out: @out, x: [1], at: 0)
+    assert out == [0, 0, 1, 0]
+    add_into(out: @out, x: [5], at: 3)
+    assert out == [0, 0, 1, 5]
+
+test "shift_left and shift_right: by zero, across a limb, by many, and of zero"
+    nothing: [i64] = []
+    assert shift_left(a: [1], count: 0) == [1]
+    assert shift_left(a: [1], count: 30) == [0, 1]
+    assert shift_left(a: [3], count: 29) == [536870912, 1]
+    assert shift_left(a: nothing, count: 100) == nothing
+    assert shift_right(a: [536870912, 1], count: 29) == [3]
+    assert shift_right(a: [0, 1], count: 30) == [1]
+    assert shift_right(a: [0, 1], count: 31) == nothing
+    assert shift_right(a: [7], count: 0) == [7]
+
+test "bit_len, trailing_zeros, ones and bit: zero, one, and a number of two limbs"
+    nothing: [i64] = []
+    assert bit_len(nothing) == 0
+    assert bit_len([1]) == 1
+    assert bit_len([0, 1]) == 31
+    assert trailing_zeros(nothing) == 0
+    assert trailing_zeros([0, 4]) == 32
+    assert ones([1073741823, 1]) == 31
+    assert bit(a: [0, 4], index: 32)
+    assert !bit(a: [0, 4], index: 31)
+    assert !bit(a: [0, 4], index: 300)
+
+test "joined: and, or, exclusive or and and-not of different lengths"
+    nothing: [i64] = []
+    assert joined(a: [12, 1], b: [10], op: 0) == [8]
+    assert joined(a: [12, 1], b: [10], op: 1) == [14, 1]
+    assert joined(a: [12], b: [12], op: 2) == nothing
+    assert joined(a: [12, 1], b: [10], op: 3) == [4, 1]

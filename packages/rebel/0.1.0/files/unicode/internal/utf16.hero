@@ -1,0 +1,100 @@
+# UTF-16 read and written: a code point below U+10000 is one unit, its own
+# number, and one above is two, a high surrogate U+D800 to U+DBFF and a low
+# one U+DC00 to U+DFFF, which carry ten bits each of the code point less
+# U+10000.
+
+use unicode/internal/utf8
+use unicode/internal/written
+
+# The units that write the scalar value `n`, the high surrogate first.
+function units_of(n: i64) -> [u16]
+    if n < 0x10000
+        return [to_u16(n).must()]
+    above = n - 0x10000
+    return [to_u16(0xd800 | above >> 10).must(), to_u16(0xdc00 | above & 0x3ff).must()]
+
+# Whether `unit` is a high surrogate, U+D800 to U+DBFF.
+function is_high(unit: i64) -> bool
+    return unit >= 0xd800 && unit <= 0xdbff
+
+# Whether `unit` is a low surrogate, U+DC00 to U+DFFF.
+function is_low(unit: i64) -> bool
+    return unit >= 0xdc00 && unit <= 0xdfff
+
+# The code point the surrogates `high` and `low` write. Fails `invalid` where
+# `high` is no high surrogate or `low` no low one.
+function joined(high: i64, low: i64) -> i64?
+    if !is_high(high)
+        return fail(
+            code: utf8.INVALID,
+            msg: f"{written.code_point(high)} is no high surrogate: they run from U+D800 to U+DBFF"
+        )
+
+    if !is_low(low)
+        return fail(
+            code: utf8.INVALID,
+            msg: f"{written.code_point(low)} is no low surrogate: they run from U+DC00 to U+DFFF"
+        )
+    return ok(0x10000 + (high - 0xd800 << 10 | low - 0xdc00))
+
+# The code points `units` write. Fails `invalid` at a surrogate with no
+# partner, and the message says its index.
+function decoded(units: [u16] lent) -> [i64]?
+    points: [i64] @= []
+    at: i64 @= 0
+
+    while at < units.len()
+        unit = to_i64(units[at]).must()
+
+        if is_high(unit) && at + 1 < units.len() && is_low(to_i64(units[at + 1]).must())
+            points @ points.push(joined(high: unit, low: to_i64(units[at + 1]).must()).must())
+            at @ at + 2
+        else if is_high(unit) || is_low(unit)
+            return fail(
+                code: utf8.INVALID,
+                msg: f"the surrogate {written.code_point(unit)} at index {at} has no partner"
+            )
+        else
+            points @ points.push(unit)
+            at @ at + 1
+
+    return ok(points)
+
+## Tests
+
+# Rust 1.100's `char::encode_utf16`, observed 2026-11-15, writes U+1F600 as
+# 0xD83D 0xDE00 and U+10FFFF as 0xDBFF 0xDFFF.
+test "units_of: the smallest, the last of one unit, the first and the last of two"
+    assert units_of(0) == [0]
+    assert units_of(0xffff) == [0xffff]
+    assert units_of(0x10000) == [0xd800, 0xdc00]
+    assert units_of(0x1f600) == [0xd83d, 0xde00]
+    assert units_of(0x10ffff) == [0xdbff, 0xdfff]
+
+test "is_high and is_low: the edges of either half"
+    assert !is_high(0xd7ff) && is_high(0xd800) && is_high(0xdbff) && !is_high(0xdc00)
+    assert !is_low(0xdbff) && is_low(0xdc00) && is_low(0xdfff) && !is_low(0xe000)
+
+test "joined: the first and the last pair, and either half out of place"
+    assert joined(high: 0xd800, low: 0xdc00).must() == 0x10000
+    assert joined(high: 0xdbff, low: 0xdfff).must() == 0x10ffff
+    assert joined(high: 0xdc00, low: 0xdc00).is_err()
+
+    match joined(high: 0xd800, low: 0x41)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "U+0041 is no low surrogate: they run from U+DC00 to U+DFFF"
+
+# Rust 1.100's `char::decode_utf16`, observed 2026-11-15, answers an error for
+# a lone surrogate at either end, a low one first, and a high one before a
+# unit that is no low one.
+test "decoded: nothing, a pair, and a surrogate alone at either end and inside"
+    none: [u16] = []
+    assert decoded(none).must().len() == 0
+    assert decoded([0x61, 0xd83d, 0xde00, 0x62]).must() == [0x61, 0x1f600, 0x62]
+    assert decoded([0xd83d]).is_err()
+    assert decoded([0xde00, 0xd83d]).is_err()
+    assert decoded([0xd83d, 0x61]).is_err()
+
+    match decoded([0x61, 0x62, 0xdc00])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the surrogate U+DC00 at index 2 has no partner"

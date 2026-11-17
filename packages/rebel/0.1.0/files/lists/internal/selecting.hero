@@ -1,0 +1,278 @@
+# What a heap does for a list without the caller keeping one: the `n`
+# smallest or largest elements in order, and sorted lists merged into one.
+# Each keeps a heap of INDICES in a list of its own, so an element is never
+# copied to be compared, and breaks a tie by the index, which is what makes it
+# stable: of elements equal by the order, the earlier comes first, as Python's
+# `nsmallest`, `nlargest` and `merge` answer.
+
+use lists/internal/samples
+
+# Whether the element of `xs` at `i` ranks before the one at `j`: it goes
+# before it by `less`, or after it where `largest`, and where neither goes
+# first the earlier index ranks first.
+function ranks_first<T>(xs: [T] lent, i: i64, j: i64, less: (function(a: T, b: T) -> bool), largest: bool) -> bool
+    left = xs[i]
+    right = xs[j]
+
+    if largest
+        if less(a: right, b: left)
+            return true
+
+        if less(a: left, b: right)
+            return false
+    else
+        if less(a: left, b: right)
+            return true
+
+        if less(a: right, b: left)
+            return false
+    return i < j
+
+# Moves the index at `at` of `kept` towards the root while its element ranks
+# after its parent's: the root holds the index that ranks last.
+function last_up<T>(@kept: [i64], at: i64, xs: [T] lent, less: (function(a: T, b: T) -> bool), largest: bool)
+    index = kept[at]
+    hole: i64 @= at
+
+    while hole > 0
+        parent = (hole - 1) / 2
+
+        if !ranks_first(xs, i: kept[parent], j: index, less: less, largest: largest)
+            break
+        kept[hole] @ kept[parent]
+        hole @ parent
+
+    kept[hole] @ index
+
+# Moves the index at `at` of `kept` away from the root, within the first
+# `size`, while a child's element ranks after its own.
+function last_down<T>(@kept: [i64], at: i64, size: i64, xs: [T] lent, less: (function(a: T, b: T) -> bool), largest: bool)
+    index = kept[at]
+    hole: i64 @= at
+
+    while true
+        child: i64 @= 2 * hole + 1
+
+        if child >= size
+            break
+
+        if child + 1 < size && ranks_first(xs, i: kept[child], j: kept[child + 1], less: less, largest: largest)
+            child @ child + 1
+
+        if !ranks_first(xs, i: index, j: kept[child], less: less, largest: largest)
+            break
+        kept[hole] @ kept[child]
+        hole @ child
+
+    kept[hole] @ index
+
+# The `n` elements of `xs` that rank first, in that order: a heap of at most
+# `n` indices whose root ranks last is replaced at its root by each later
+# element that ranks before it, then sorted in place.
+function chosen_n<T>(xs: [T], n: i64, less: (function(a: T, b: T) -> bool), largest: bool) -> [T]
+    assert n >= 0
+    kept: [i64] @= []
+    at: i64 @= 0
+
+    while at < xs.len() && n > 0
+        if kept.len() < n
+            kept @ kept.push(at)
+            last_up(kept: @kept, at: kept.len() - 1, xs: xs, less: less, largest: largest)
+        else if ranks_first(xs, i: at, j: kept[0], less: less, largest: largest)
+            kept[0] @ at
+            last_down(kept: @kept, at: 0, size: kept.len(), xs: xs, less: less, largest: largest)
+        at @ at + 1
+
+    end: i64 @= kept.len() - 1
+
+    while end > 0
+        top = kept[0]
+        kept[0] @ kept[end]
+        kept[end] @ top
+        last_down(kept: @kept, at: 0, size: end, xs: xs, less: less, largest: largest)
+        end @ end - 1
+
+    out: [T] @= []
+
+    for index in kept
+        out @ out.push(xs[index])
+
+    return out
+
+# The `n` smallest elements of `xs` by `less`, the smallest first.
+function min_n_by<T>(xs: [T], n: i64, less: (function(a: T, b: T) -> bool)) -> [T]
+    return chosen_n(xs: xs, n: n, less: less, largest: false)
+
+# The `n` largest elements of `xs` by `less`, the largest first.
+function max_n_by<T>(xs: [T], n: i64, less: (function(a: T, b: T) -> bool)) -> [T]
+    return chosen_n(xs: xs, n: n, less: less, largest: true)
+
+# Whether the next element of the list `a` of `xss` goes before the next of
+# the list `b`, `next` holding each list's next index; where neither goes
+# first, the earlier list.
+function heads_first<T>(xss: [[T]] lent, next: [i64] lent, a: i64, b: i64, less: (function(a: T, b: T) -> bool)) -> bool
+    left = xss[a][next[a]]
+    right = xss[b][next[b]]
+
+    if less(a: left, b: right)
+        return true
+
+    if less(a: right, b: left)
+        return false
+    return a < b
+
+# Moves the list index at `at` of `live` towards the root while its next
+# element goes before its parent's.
+function heads_up<T>(@live: [i64], at: i64, xss: [[T]] lent, next: [i64] lent, less: (function(a: T, b: T) -> bool))
+    list = live[at]
+    hole: i64 @= at
+
+    while hole > 0
+        parent = (hole - 1) / 2
+
+        if !heads_first(xss, next, a: list, b: live[parent], less: less)
+            break
+        live[hole] @ live[parent]
+        hole @ parent
+
+    live[hole] @ list
+
+# Moves the list index at `at` of `live` away from the root, within the first
+# `size`, while a child's next element goes before its own.
+function heads_down<T>(@live: [i64], at: i64, size: i64, xss: [[T]] lent, next: [i64] lent, less: (function(a: T, b: T) -> bool))
+    list = live[at]
+    hole: i64 @= at
+
+    while true
+        child: i64 @= 2 * hole + 1
+
+        if child >= size
+            break
+
+        if child + 1 < size && heads_first(xss, next, a: live[child + 1], b: live[child], less: less)
+            child @ child + 1
+
+        if !heads_first(xss, next, a: live[child], b: list, less: less)
+            break
+        live[hole] @ live[child]
+        hole @ child
+
+    live[hole] @ list
+
+# The elements of every list of `xss` in one list: at each step the next
+# element of the list whose next goes first, the earlier list on a tie.
+function merge_sorted_by<T>(xss: [[T]], less: (function(a: T, b: T) -> bool)) -> [T]
+    next: [i64] @= []
+    live: [i64] @= []
+
+    for list in range(from: 0, to: xss.len())
+        next @ next.push(0)
+
+        if xss[list].len() > 0
+            live @ live.push(list)
+            heads_up(live: @live, at: live.len() - 1, xss: xss, next: next, less: less)
+
+    size: i64 @= live.len()
+    out: [T] @= []
+
+    while size > 0
+        list = live[0]
+        out @ out.push(xss[list][next[list]])
+        next[list] @ next[list] + 1
+
+        if next[list] == xss[list].len()
+            size @ size - 1
+            live[0] @ live[size]
+
+        if size > 0
+            heads_down(live: @live, at: 0, size: size, xss: xss, next: next, less: less)
+
+    return out
+
+# The ranks of `cards`, in their order.
+function ranks(cards: [samples.Card]) -> [i64]
+    out: [i64] @= []
+
+    for card in cards
+        out @ out.push(card.rank)
+
+    return out
+
+# The suits of `cards`, in their order, as one text.
+function suits(cards: [samples.Card]) -> str
+    out: [str] @= []
+
+    for card in cards
+        out @ out.push(card.suit)
+
+    return out.join("")
+
+# The six cards the tests choose from, ranks 3 1 3 2 1 3.
+function deck() -> [samples.Card]
+    return [
+        samples.Card(rank: 3, suit: "a")
+        samples.Card(rank: 1, suit: "b")
+        samples.Card(rank: 3, suit: "c")
+        samples.Card(rank: 2, suit: "d")
+        samples.Card(rank: 1, suit: "e")
+        samples.Card(rank: 3, suit: "f")
+    ]
+
+test "min_n_by: n of zero, one, between, the length and past it, equal ranks in their order, as Python's nsmallest"
+    cards = deck()
+    assert min_n_by(xs: cards, n: 0, less: samples.by_rank).len() == 0
+    assert suits(min_n_by(xs: cards, n: 1, less: samples.by_rank)) == "b"
+    assert suits(min_n_by(xs: cards, n: 2, less: samples.by_rank)) == "be"
+    assert suits(min_n_by(xs: cards, n: 3, less: samples.by_rank)) == "bed"
+    assert suits(min_n_by(xs: cards, n: 6, less: samples.by_rank)) == "bedacf"
+    assert suits(min_n_by(xs: cards, n: 10, less: samples.by_rank)) == "bedacf"
+    assert ranks(min_n_by(xs: cards, n: 3, less: samples.by_rank)) == [1, 1, 2]
+
+test "min_n_by: an empty list, the largest and smallest i64, and floats with both zeros"
+    nothing: [i64] = []
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    assert min_n_by(xs: nothing, n: 3, less: samples.ascending).len() == 0
+    assert min_n_by(xs: [largest, 0, smallest, largest], n: 3, less: samples.ascending) == [smallest, 0, largest]
+    floats = min_n_by(xs: [2.5, -0.0, 0.0, -1.5], n: 2, less: samples.ascending_float)
+    assert floats[0] == -1.5
+    assert floats[1] == 0.0
+    assert 1.0 / floats[1] < 0.0
+
+test "max_n_by: n of zero, one, between, the length and past it, equal ranks in their order, as Python's nlargest"
+    cards = deck()
+    assert max_n_by(xs: cards, n: 0, less: samples.by_rank).len() == 0
+    assert suits(max_n_by(xs: cards, n: 1, less: samples.by_rank)) == "a"
+    assert suits(max_n_by(xs: cards, n: 2, less: samples.by_rank)) == "ac"
+    assert suits(max_n_by(xs: cards, n: 3, less: samples.by_rank)) == "acf"
+    assert suits(max_n_by(xs: cards, n: 6, less: samples.by_rank)) == "acfdbe"
+    assert suits(max_n_by(xs: cards, n: 10, less: samples.by_rank)) == "acfdbe"
+
+test "max_n_by: an empty list, a thousand scrambled numbers against the built-in sort, and an order that contradicts itself"
+    nothing: [str] = []
+    assert max_n_by(xs: nothing, n: 1, less: samples.by_length).len() == 0
+    xs: [i64] @= []
+
+    for at in range(from: 0, to: 1000)
+        xs @ xs.push(at * 7919 % 1009)
+
+    ascending = sort(xs)
+    assert min_n_by(xs: xs, n: 10, less: samples.ascending) == ascending.slice(from: 0, to: 10)
+    assert max_n_by(xs: xs, n: 3, less: samples.ascending) == [ascending[999], ascending[998], ascending[997]]
+    assert max_n_by(xs: [3, 1, 2], n: 2, less: samples.always).len() == 2
+
+test "merge_sorted_by: no list, empty lists, one list, and lists with equal elements, as Python's merge"
+    no_lists: [[i64]] = []
+    empty: [i64] = []
+    assert merge_sorted_by(xss: no_lists, less: samples.ascending).len() == 0
+    assert merge_sorted_by(xss: [empty, empty], less: samples.ascending).len() == 0
+    assert merge_sorted_by(xss: [[1, 2, 3]], less: samples.ascending) == [1, 2, 3]
+    assert merge_sorted_by(xss: [[1, 3, 5], [1, 2, 9], empty, [3, 3]], less: samples.ascending) == [1, 1, 2, 3, 3, 3, 5, 9]
+    assert merge_sorted_by(xss: [[9, 5, 1], [8, 5, 2]], less: samples.descending) == [9, 8, 5, 5, 2, 1]
+
+test "merge_sorted_by: equal ranks from the earlier list first, and lists not sorted interleaved as Python's merge does"
+    first = [samples.Card(rank: 1, suit: "a"), samples.Card(rank: 2, suit: "b")]
+    second = [samples.Card(rank: 1, suit: "c"), samples.Card(rank: 2, suit: "d")]
+    third = [samples.Card(rank: 0, suit: "e"), samples.Card(rank: 2, suit: "f")]
+    assert suits(merge_sorted_by(xss: [first, second, third], less: samples.by_rank)) == "eacbdf"
+    assert merge_sorted_by(xss: [[3, 1], [2, 0]], less: samples.ascending) == [2, 0, 3, 1]

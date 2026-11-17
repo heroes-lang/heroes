@@ -1,0 +1,100 @@
+# The binary searches every table of `unicode` is read with: how many entries
+# of an ascending table are at or below a key, whether a code point is in a set
+# of ranges, and what a mapping of ranges or of single code points answers.
+#
+# Each caller hands a code point from 0 to U+10FFFF, so every key built here
+# by a shift fits an `i64` with room to spare.
+
+# How many entries of `table`, which ascends, are at or below `key`: 0 where
+# the first is above it, the length where the last is not. It reads about
+# log2 of the length entries.
+function count_at_or_below(table: [i64] lent, key: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= table.len()
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if table[middle] <= key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# Whether the code point `n` is in `ranges`, whose entries are ranges
+# `first << 21 | last`, both ends in it, ascending.
+function in_set(ranges: [i64] lent, n: i64) -> bool
+    count = count_at_or_below(ranges, n << 21 | 0x1fffff)
+    return count > 0 && n <= ranges[count - 1] & 0x1fffff
+
+# What a mapping answers for the code point `n`: `n` plus the delta beside the
+# range of `ranges` that holds it, or `otherwise` where none does. A range is
+# `first << 22 | last << 1 | step - 1`, holding every code point from `first`
+# to `last` where `step` is 1 and every second where it is 2.
+function mapped(ranges: [i64] lent, deltas: [i64] lent, n: i64, otherwise: i64) -> i64
+    count = count_at_or_below(ranges, n << 22 | 0x3fffff)
+
+    if count == 0
+        return otherwise
+    entry = ranges[count - 1]
+    first = entry >> 22
+    last = entry >> 1 & 0x1fffff
+    step = (entry & 1) + 1
+
+    if n <= last && (n - first) % step == 0
+        return n + deltas[count - 1]
+    return otherwise
+
+# What a mapping of single code points answers for `n`: the entry of `targets`
+# beside `n` in `sources`, which ascends, or `otherwise` where `sources` does
+# not hold `n`.
+function looked_up(sources: [i64] lent, targets: [i64] lent, n: i64, otherwise: i64) -> i64
+    count = count_at_or_below(sources, n)
+
+    if count > 0 && sources[count - 1] == n
+        return targets[count - 1]
+    return otherwise
+
+## Tests
+
+test "count_at_or_below: an empty table, below the first, on an entry, between, past the last"
+    empty: [i64] = []
+    table: [i64] = [2, 4, 6]
+    assert count_at_or_below(empty, 5) == 0
+    assert count_at_or_below(table, 1) == 0
+    assert count_at_or_below(table, 2) == 1
+    assert count_at_or_below(table, 5) == 2
+    assert count_at_or_below(table, 6) == 3
+    assert count_at_or_below(table, 9223372036854775807) == 3
+    assert count_at_or_below(table, -9223372036854775808) == 0
+
+test "in_set: before the first range, on either end, inside, between, after"
+    ranges: [i64] = [9 << 21 | 13, 32 << 21 | 32, 0x10fffe << 21 | 0x10ffff]
+    assert !in_set(ranges, 0)
+    assert in_set(ranges, 9)
+    assert in_set(ranges, 11)
+    assert in_set(ranges, 13)
+    assert !in_set(ranges, 14)
+    assert in_set(ranges, 32)
+    assert !in_set(ranges, 33)
+    assert in_set(ranges, 0x10ffff)
+
+test "mapped: a range of step 1, of step 2, a code point skipped, and none"
+    ranges: [i64] = [65 << 22 | 90 << 1, 256 << 22 | 260 << 1 | 1]
+    deltas: [i64] = [32, 1]
+    assert mapped(ranges: ranges, deltas: deltas, n: 64, otherwise: -1) == -1
+    assert mapped(ranges: ranges, deltas: deltas, n: 65, otherwise: -1) == 97
+    assert mapped(ranges: ranges, deltas: deltas, n: 90, otherwise: -1) == 122
+    assert mapped(ranges: ranges, deltas: deltas, n: 91, otherwise: -1) == -1
+    assert mapped(ranges: ranges, deltas: deltas, n: 258, otherwise: -1) == 259
+    assert mapped(ranges: ranges, deltas: deltas, n: 259, otherwise: -1) == -1
+    assert mapped(ranges: ranges, deltas: deltas, n: 261, otherwise: -1) == -1
+
+test "looked_up: a source held, one between two, and one past the last"
+    sources: [i64] = [223, 329]
+    targets: [i64] = [83 | 83 << 21, 700 | 78 << 21]
+    assert looked_up(sources: sources, targets: targets, n: 223, otherwise: 0) == 83 | 83 << 21
+    assert looked_up(sources: sources, targets: targets, n: 224, otherwise: 7) == 7
+    assert looked_up(sources: sources, targets: targets, n: 400, otherwise: 7) == 7
+    assert looked_up(sources: sources, targets: targets, n: 0, otherwise: 7) == 7

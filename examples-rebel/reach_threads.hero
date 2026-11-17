@@ -1,0 +1,16 @@
+# Reaches Rebel's `threads`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It squares three numbers on two threads at
+# a time and prints the sum of the squares, 14.
+
+use <rebel>/threads
+
+function square(n: i64) -> i64
+    return n * n
+
+function main()
+    total: i64 @= 0
+
+    for x in threads.run_all(body: square, values: [1, 2, 3], workers: 2).must()
+        total @ total + x
+
+    print(total)

@@ -1,0 +1,264 @@
+# A text without what stands at its ends: white space, the characters of a
+# set, the characters a function accepts, a prefix or a suffix. Every cut
+# stands where a character begins or ends.
+
+use strings/internal/scan
+use strings/internal/search
+use unicode
+
+# Where the run of characters at the start of `s` that `accepts` accepts
+# ends.
+function start_where(s: str, accepts: (function(str) -> bool)) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if !accepts(s.slice(from: at, to: end))
+            return at
+        at @ end
+
+    return at
+
+# Where the run of characters at the end of `s` that `accepts` accepts
+# begins, never below `floor`.
+function end_where(s: str, accepts: (function(str) -> bool), floor: i64) -> i64
+    end: i64 @= s.len()
+
+    while end > floor
+        at = scan.previous_at(s, end)
+
+        if !accepts(s.slice(from: at, to: end))
+            return end
+        end @ at
+
+    return end
+
+# Where the run of characters at the start of `s` that `set` holds ends.
+function start_any(s: str, set: str) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if !scan.holds_char(set: set, s: s, at: at, end: end)
+            return at
+        at @ end
+
+    return at
+
+# Where the run of characters at the end of `s` that `set` holds begins,
+# never below `floor`.
+function end_any(s: str, set: str, floor: i64) -> i64
+    end: i64 @= s.len()
+
+    while end > floor
+        at = scan.previous_at(s, end)
+
+        if !scan.holds_char(set: set, s: s, at: at, end: end)
+            return end
+        end @ at
+
+    return end
+
+# `s` without the characters that `accepts` accepts at either end.
+function trim_where(s: str, accepts: (function(str) -> bool)) -> str
+    from = start_where(s: s, accepts: accepts)
+    return s.slice(from: from, to: end_where(s: s, accepts: accepts, floor: from))
+
+# `s` without the characters that `accepts` accepts at its start.
+function trim_start_where(s: str, accepts: (function(str) -> bool)) -> str
+    return s.slice(from: start_where(s: s, accepts: accepts), to: s.len())
+
+# `s` without the characters that `accepts` accepts at its end.
+function trim_end_where(s: str, accepts: (function(str) -> bool)) -> str
+    return s.slice(from: 0, to: end_where(s: s, accepts: accepts, floor: 0))
+
+# `s` without the white space at either end.
+function trim(s: str) -> str
+    return trim_where(s: s, accepts: unicode.is_space)
+
+# `s` without the white space at its start.
+function trim_start(s: str) -> str
+    return trim_start_where(s: s, accepts: unicode.is_space)
+
+# `s` without the white space at its end.
+function trim_end(s: str) -> str
+    return trim_end_where(s: s, accepts: unicode.is_space)
+
+# `s` without the characters of `set` at either end.
+function trim_any(s: str, set: str) -> str
+    from = start_any(s: s, set: set)
+    return s.slice(from: from, to: end_any(s: s, set: set, floor: from))
+
+# `s` without the characters of `set` at its start.
+function trim_start_any(s: str, set: str) -> str
+    return s.slice(from: start_any(s: s, set: set), to: s.len())
+
+# `s` without the characters of `set` at its end.
+function trim_end_any(s: str, set: str) -> str
+    return s.slice(from: 0, to: end_any(s: s, set: set, floor: 0))
+
+# `s` without `prefix` at its start, once.
+function trim_prefix(s: str, prefix: str) -> str
+    if search.has_prefix_at(s: s, prefix: prefix, at: 0)
+        return s.slice(from: prefix.len(), to: s.len())
+    return s
+
+# `s` without `suffix` at its end, once.
+function trim_suffix(s: str, suffix: str) -> str
+    if search.has_suffix(s: s, suffix: suffix)
+        return s.slice(from: 0, to: s.len() - suffix.len())
+    return s
+
+# `s` without `prefix` at its start, as many times as it stands there.
+function trim_prefix_all(s: str, prefix: str) -> str
+    if prefix.len() == 0
+        return s
+    at: i64 @= 0
+
+    while search.has_prefix_at(s: s, prefix: prefix, at: at)
+        at @ at + prefix.len()
+
+    return s.slice(from: at, to: s.len())
+
+# `s` without `suffix` at its end, as many times as it stands there.
+function trim_suffix_all(s: str, suffix: str) -> str
+    if suffix.len() == 0
+        return s
+    end: i64 @= s.len()
+
+    while end >= suffix.len() && search.has_prefix_at(s: s, prefix: suffix, at: end - suffix.len())
+        end @ end - suffix.len()
+
+    return s.slice(from: 0, to: end)
+
+# The text of `s` after `prefix`, failing `not_found` where `s` does not
+# begin with it.
+function after_prefix(s: str, prefix: str) -> str?
+    if search.has_prefix_at(s: s, prefix: prefix, at: 0)
+        return ok(s.slice(from: prefix.len(), to: s.len()))
+    return fail(code: scan.NOT_FOUND, msg: f"{scan.shown(s)} does not begin with {scan.shown(prefix)}")
+
+# The text of `s` before `suffix`, failing `not_found` where `s` does not
+# end with it.
+function before_suffix(s: str, suffix: str) -> str?
+    if search.has_suffix(s: s, suffix: suffix)
+        return ok(s.slice(from: 0, to: s.len() - suffix.len()))
+    return fail(code: scan.NOT_FOUND, msg: f"{scan.shown(s)} does not end with {scan.shown(suffix)}")
+
+# The text of `s` between `prefix` and `suffix`, failing `not_found` where
+# `s` does not hold both at its ends, apart.
+function between(s: str, prefix: str, suffix: str) -> str?
+    fits = s.len() >= prefix.len() + suffix.len()
+
+    if fits && search.has_prefix_at(s: s, prefix: prefix, at: 0) && search.has_suffix(s: s, suffix: suffix)
+        return ok(s.slice(from: prefix.len(), to: s.len() - suffix.len()))
+    return fail(
+        code: scan.NOT_FOUND,
+        msg: f"{scan.shown(s)} does not hold {scan.shown(prefix)} at its start and {scan.shown(suffix)} at its end apart"
+    )
+
+## Tests
+
+# Whether `c`, one character, is an ASCII digit.
+function is_digit(c: str) -> bool
+    return c[0] >= '0' && c[0] <= '9'
+
+# Whether `c`, one character, takes more than one byte.
+function is_wide(c: str) -> bool
+    return c.len() > 1
+
+# U+00A0 and U+3000 built from their bytes: a source may not hold an
+# invisible character as itself.
+test "trim: nothing to trim, white space alone, both ends, Unicode's white space, and only at the ends"
+    no_break: [u8] = [0xc2, 0xa0]
+    ideographic: [u8] = [0xe3, 0x80, 0x80]
+    hard = no_break.validated_bytes().must()
+    wide = ideographic.validated_bytes().must()
+    assert trim("") == ""
+    assert trim(" \t\r\n ") == ""
+    assert trim("a") == "a"
+    assert trim(" \t a b \r\n") == "a b"
+    assert trim(hard + wide + " a \u{1c}") == "a \u{1c}"
+    assert trim("\u{85}x y\u{2029}") == "x y"
+    assert trim("x" + hard + "y") == "x" + hard + "y"
+    assert trim("é ") == "é"
+
+test "trim_start and trim_end: one end each, white space alone, and characters of more than one byte"
+    assert trim_start(" \tè ") == "è "
+    assert trim_end(" \tè ") == " \tè"
+    assert trim_start("   ") == ""
+    assert trim_end("   ") == ""
+    assert trim_start("") == ""
+
+test "trim_any: a set at both ends, an empty set, an empty text, everything, and characters of more than one byte"
+    assert trim_any(s: "xxhixx", set: "x") == "hi"
+    assert trim_any(s: "xyxhiyx", set: "xy") == "hi"
+    assert trim_any(s: "abc", set: "") == "abc"
+    assert trim_any(s: "", set: "x") == ""
+    assert trim_any(s: "xxx", set: "x") == ""
+    assert trim_any(s: "àbà", set: "à") == "b"
+
+test "trim_start_any and trim_end_any: one end each, and characters of more than one byte"
+    assert trim_start_any(s: "xxhixx", set: "x") == "hixx"
+    assert trim_end_any(s: "xxhixx", set: "x") == "xxhi"
+    assert trim_start_any(s: "ààbà", set: "à") == "bà"
+    assert trim_end_any(s: "àbàà", set: "à") == "àb"
+    assert trim_end_any(s: "xxx", set: "x") == ""
+
+test "trim_where: both ends, one end each, everything, and characters of more than one byte"
+    assert trim_where(s: "12a3b45", accepts: is_digit) == "a3b"
+    assert trim_where(s: "èaè", accepts: is_wide) == "a"
+    assert trim_where(s: "123", accepts: is_digit) == ""
+    assert trim_where(s: "", accepts: is_digit) == ""
+    assert trim_start_where(s: "12a3", accepts: is_digit) == "a3"
+    assert trim_end_where(s: "1a23", accepts: is_digit) == "1a"
+    assert trim_start_where(s: "éèa", accepts: is_wide) == "a"
+    assert trim_end_where(s: "aéè", accepts: is_wide) == "a"
+
+test "trim_prefix and trim_suffix: once, absent, empty, longer than the text, and characters of more than one byte"
+    assert trim_prefix(s: "aab", prefix: "a") == "ab"
+    assert trim_prefix(s: "abc", prefix: "x") == "abc"
+    assert trim_prefix(s: "abc", prefix: "") == "abc"
+    assert trim_prefix(s: "a", prefix: "ab") == "a"
+    assert trim_prefix(s: "éa", prefix: "é") == "a"
+    assert trim_suffix(s: "abb", suffix: "b") == "ab"
+    assert trim_suffix(s: "caffè", suffix: "è") == "caff"
+    assert trim_suffix(s: "caffè", suffix: "e") == "caffè"
+    assert trim_suffix(s: "abc", suffix: "") == "abc"
+
+test "trim_prefix_all and trim_suffix_all: repeats, overlapping ones, empty, and characters of more than one byte"
+    assert trim_prefix_all(s: "ababc", prefix: "ab") == "c"
+    assert trim_prefix_all(s: "aaa", prefix: "aa") == "a"
+    assert trim_prefix_all(s: "abc", prefix: "") == "abc"
+    assert trim_prefix_all(s: "ééx", prefix: "é") == "x"
+    assert trim_suffix_all(s: "cabab", suffix: "ab") == "c"
+    assert trim_suffix_all(s: "aaa", suffix: "aa") == "a"
+    assert trim_suffix_all(s: "abc", suffix: "") == "abc"
+    assert trim_suffix_all(s: "xèè", suffix: "è") == "x"
+
+test "after_prefix and before_suffix: present, absent, empty, and characters of more than one byte"
+    assert after_prefix(s: "aab", prefix: "a").must() == "ab"
+    assert after_prefix(s: "aab", prefix: "").must() == "aab"
+    assert after_prefix(s: "épée", prefix: "é").must() == "pée"
+    assert before_suffix(s: "abb", suffix: "b").must() == "ab"
+    assert before_suffix(s: "caffè", suffix: "è").must() == "caff"
+    assert before_suffix(s: "abc", suffix: "").must() == "abc"
+
+    match after_prefix(s: "aab", prefix: "x")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "\"aab\" does not begin with \"x\""
+
+    match before_suffix(s: "abc", suffix: "x")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "\"abc\" does not end with \"x\""
+
+test "between: both ends, ends that overlap, ends that meet, empty ends, and characters of more than one byte"
+    assert between(s: "[a]", prefix: "[", suffix: "]").must() == "a"
+    assert between(s: "abba", prefix: "ab", suffix: "ba").must() == ""
+    assert between(s: "x", prefix: "", suffix: "").must() == "x"
+    assert between(s: "«città»", prefix: "«", suffix: "»").must() == "città"
+    assert between(s: "aba", prefix: "ab", suffix: "ba").is_err()
+    assert between(s: "a", prefix: "a", suffix: "a").is_err()
+    assert between(s: "[a", prefix: "[", suffix: "]").is_err()

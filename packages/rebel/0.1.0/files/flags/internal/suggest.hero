@@ -1,0 +1,71 @@
+# The declared name nearest to one a user mistyped, for a message's "did you
+# mean": the fewest characters inserted, removed or changed to make one of the
+# other, counted on bytes, since every name a declaration holds is ASCII.
+
+# The code of a name with none near enough.
+constant NOT_FOUND: str
+    "not_found"
+
+# The farthest a name may be from the one asked and still be offered.
+constant NEAR: i64
+    2
+
+# The smaller of `a` and `b`.
+function smaller(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# How many bytes must be inserted, removed or changed to make `a` into `b`.
+function distance(a: str, b: str) -> i64
+    previous: [i64] @= range(from: 0, to: b.len() + 1)
+
+    for i in range(from: 1, to: a.len() + 1)
+        current: [i64] @= [i]
+
+        for j in range(from: 1, to: b.len() + 1)
+            changed: i64 @= previous[j - 1]
+
+            if a[i - 1] != b[j - 1]
+                changed @ changed + 1
+            best = smaller(a: smaller(a: previous[j] + 1, b: current[j - 1] + 1), b: changed)
+            current @ current.push(best)
+
+        previous @ current
+
+    return previous[b.len()]
+
+# The name of `names` nearest to `asked`, the first of them where several are
+# as near, where it is at most `NEAR` away and nearer than `asked` is long.
+# Fails `not_found` where none is.
+function closest(asked: str, names: [str]) -> str?
+    best: i64 @= NEAR + 1
+    found: str @= ""
+
+    for name in names
+        d = distance(a: asked, b: name)
+
+        if d < best
+            best @ d
+            found @ name
+
+    if best > NEAR || best >= asked.len()
+        return fail(code: NOT_FOUND, msg: f"no name near \"{asked}\"")
+    return ok(found)
+
+test "distance: equal, empty on either side, one changed, inserted, removed, and two apart"
+    assert distance(a: "color", b: "color") == 0
+    assert distance(a: "", b: "abc") == 3
+    assert distance(a: "abc", b: "") == 3
+    assert distance(a: "colour", b: "color") == 1
+    assert distance(a: "colr", b: "color") == 1
+    assert distance(a: "kolor", b: "color") == 1
+    assert distance(a: "verbos", b: "verbose") == 1
+    assert distance(a: "kitten", b: "sitting") == 3
+
+test "closest: one near, the first of two as near, none near, and a name too short to guess"
+    assert closest(asked: "--colour", names: ["--max", "--color"]).must() == "--color"
+    assert closest(asked: "ad", names: ["add", "and"]).must() == "add"
+    assert closest(asked: "--zzzz", names: ["--max", "--color"]).is_err()
+    assert closest(asked: "x", names: ["y"]).is_err()
+    assert closest(asked: "x", names: []).is_err()

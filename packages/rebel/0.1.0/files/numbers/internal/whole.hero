@@ -1,0 +1,304 @@
+# An integer read from text: where its digits begin and in which base, every
+# byte checked, and the value gathered without ever passing its type's range,
+# since overflow aborts and nothing wraps.
+#
+# The text is checked whole before a value is gathered, so a text that is no
+# number fails `invalid` even where its first digits are already too many.
+
+use numbers/internal/fault
+
+# How a text spells an integer, read from its first bytes.
+record Spelling
+    # Whether a `-` came first.
+    negative: bool
+    # The base its digits are in.
+    base: i64
+    # The index of its first digit.
+    from: i64
+    # Whether a `_` may stand between two digits, as in a literal.
+    grouped: bool
+    # What the text is read as, for a message.
+    what: str
+
+# The value of the byte `c` as a digit: 0 to 9 for `0` to `9`, 10 to 35 for a
+# letter of either case, and 36, a digit of no base, for any other byte.
+function value_of(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'z'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'Z'
+        return to_i64(c - 'A').must() + 10
+    return 36
+
+# The index after the sign `s` begins with, 0 where it has none.
+function after_sign(s: str) -> i64
+    if s.len() > 0 && (s[0] == '+' || s[0] == '-')
+        return 1
+    return 0
+
+# The spelling of `s` as plain digits of `base` after an optional sign.
+# Aborts where `base` is outside 2 to 36.
+function plain(s: str, base: i64) -> Spelling
+    assert base >= 2 && base <= 36
+    from = after_sign(s)
+    return Spelling(
+        negative: from == 1 && s[0] == '-',
+        base: base,
+        from: from,
+        grouped: false,
+        what: f"an integer in base {base}"
+    )
+
+# The spelling of bare digits of `base`, a sign being no digit. Aborts
+# where `base` is outside 2 to 36.
+function bare(base: i64) -> Spelling
+    assert base >= 2 && base <= 36
+    return Spelling(negative: false, base: base, from: 0, grouped: false, what: f"64 bits in base {base}")
+
+# The spelling of `s` as the language writes an integer: after an optional
+# sign, `0x`, `0o` or `0b` tell the base, and ten is the base otherwise.
+# Fails `invalid` where a decimal number begins with a zero it is not.
+function literal(s: str) -> Spelling?
+    what = "an integer literal"
+    from = after_sign(s)
+    negative = from == 1 && s[0] == '-'
+
+    if from + 1 < s.len() && s[from] == '0'
+        mark = s[from + 1]
+
+        if mark == 'x'
+            return ok(Spelling(negative: negative, base: 16, from: from + 2, grouped: true, what: what))
+
+        if mark == 'o'
+            return ok(Spelling(negative: negative, base: 8, from: from + 2, grouped: true, what: what))
+
+        if mark == 'b'
+            return ok(Spelling(negative: negative, base: 2, from: from + 2, grouped: true, what: what))
+
+        if mark == 'X' || mark == 'O' || mark == 'B'
+            return fail(
+                code: fault.INVALID,
+                msg: fault.stopped(s: s, what: what, at: from + 1, why: "writes the base in upper case")
+            )
+
+        if mark == '_' || value_of(mark) < 10
+            return fail(
+                code: fault.INVALID,
+                msg: fault.stopped(s: s, what: what, at: from, why: "is a zero before a decimal number")
+            )
+
+    return ok(Spelling(negative: negative, base: 10, from: from, grouped: true, what: what))
+
+# Nothing where every byte of `s` from the spelling's first digit is a digit
+# of its base, or a `_` between two of them where it allows one. Fails
+# `invalid`, naming the first byte that is neither, or saying that there is
+# no digit at all.
+function checked(s: str, sp: Spelling) -> ()?
+    if sp.from >= s.len()
+        return fail(code: fault.INVALID, msg: fault.unread(s: s, what: sp.what, why: "has no digit"))
+    at: i64 @= sp.from
+    after_digit: bool @= false
+
+    while at < s.len()
+        c = s[at]
+
+        if sp.grouped && c == '_'
+            if !after_digit || at + 1 >= s.len() || value_of(s[at + 1]) >= sp.base
+                return fail(
+                    code: fault.INVALID,
+                    msg: fault.stopped(s: s, what: sp.what, at: at, why: "is a `_` that is not between two digits")
+                )
+            after_digit @ false
+        else
+            if value_of(c) >= sp.base
+                return fail(
+                    code: fault.INVALID,
+                    msg: fault.stopped(s: s, what: sp.what, at: at, why: f"is no digit of base {sp.base}")
+                )
+            after_digit @ true
+        at @ at + 1
+
+    return ok()
+
+# The integer `s` spells, between `min`, which is zero or less, and `max`.
+# Fails `invalid` as `checked` does, and `does_not_fit` where the number is
+# outside the two. The value is gathered below zero, where an `i64` has one
+# more number than above it, and never leaves the range on the way.
+function signed(s: str, sp: Spelling, min: i64, max: i64, type_name: str) -> i64?
+    checked(s, sp)?
+    limit: i64 @= 0 - max
+
+    if sp.negative
+        limit @ min
+    floor = limit / sp.base
+    gathered: i64 @= 0
+    at: i64 @= sp.from
+
+    while at < s.len()
+        if s[at] != '_'
+            digit = value_of(s[at])
+
+            if gathered < floor || gathered * sp.base < limit + digit
+                return fail(
+                    code: fault.DOES_NOT_FIT,
+                    msg: fault.outside(s: s, type_name: type_name, bounds: f"{min} to {max}")
+                )
+            gathered @ gathered * sp.base - digit
+        at @ at + 1
+
+    if sp.negative
+        return ok(gathered)
+    return ok(0 - gathered)
+
+# The integer `s` spells, as a `u64`. Fails `invalid` as `checked` does, and
+# `does_not_fit` where the number is past the largest `u64` or is negative,
+# "-0" being zero.
+function unsigned(s: str, sp: Spelling) -> u64?
+    checked(s, sp)?
+    largest: u64 = 18446744073709551615
+    base = to_u64(sp.base).must()
+    ceiling = largest / base
+    gathered: u64 @= 0
+    at: i64 @= sp.from
+
+    while at < s.len()
+        if s[at] != '_'
+            digit = to_u64(value_of(s[at])).must()
+
+            if gathered > ceiling || gathered * base > largest - digit
+                return fail(
+                    code: fault.DOES_NOT_FIT,
+                    msg: fault.outside(s: s, type_name: "u64", bounds: f"0 to {largest}")
+                )
+            gathered @ gathered * base + digit
+        at @ at + 1
+
+    if sp.negative && gathered != 0
+        return fail(code: fault.DOES_NOT_FIT, msg: fault.outside(s: s, type_name: "u64", bounds: f"0 to {largest}"))
+    return ok(gathered)
+
+# The `i64` that holds the 64 bits of `u`: `u` itself up to the largest
+# `i64`, and the negative number with the same bits above it.
+function as_bits(u: u64) -> i64
+    top: u64 = 9223372036854775808
+
+    if u < top
+        return to_i64(u).must()
+    return to_i64(u - top).must() + (0 - 9223372036854775807 - 1)
+
+## Tests
+
+test "value_of: the ten digits, letters of both cases, and what is no digit"
+    assert value_of('0') == 0
+    assert value_of('9') == 9
+    assert value_of('a') == 10
+    assert value_of('z') == 35
+    assert value_of('A') == 10
+    assert value_of('Z') == 35
+    assert value_of('_') == 36
+    assert value_of(' ') == 36
+    assert value_of("é"[0]) == 36
+
+test "plain and bare: a sign is read by the first and is no digit to the second"
+    assert plain("-12", 10) == Spelling(negative: true, base: 10, from: 1, grouped: false, what: "an integer in base 10")
+    assert plain("+12", 10).from == 1
+    assert !plain("+12", 10).negative
+    assert plain("", 16).from == 0
+    assert bare(2).from == 0
+
+test "literal: the three prefixes, base ten, and a zero that begins nothing"
+    assert literal("0x1f").must().base == 16
+    assert literal("-0o17").must().base == 8
+    assert literal("-0o17").must().from == 3
+    assert literal("+0b101").must().base == 2
+    assert literal("31").must().base == 10
+    assert literal("0").must().base == 10
+    assert literal("").must().from == 0
+    assert literal("0X1f").is_err()
+    assert literal("007").is_err()
+    assert literal("0_7").is_err()
+
+    match literal("-012")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"-012\" is not an integer literal: byte 1 is a zero before a decimal number"
+
+test "checked: empty, a sign alone, a byte that is no digit, and where a `_` may stand"
+    assert !checked("12", plain("12", 10)).is_err()
+    assert checked("1_000", plain("1_000", 10)).is_err()
+    assert !checked("1_000", literal("1_000").must()).is_err()
+    assert checked("1__0", literal("1__0").must()).is_err()
+    assert checked("_1", literal("_1").must()).is_err()
+    assert checked("1_", literal("1_").must()).is_err()
+    assert checked("0x_ff", literal("0x_ff").must()).is_err()
+    assert checked("0x", literal("0x").must()).is_err()
+
+    match checked("", plain("", 10))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "\"\" is not an integer in base 10: it is empty"
+
+    match checked("-", plain("-", 10))
+        .ok _  => assert false
+        .err e => assert e.msg == "\"-\" is not an integer in base 10: it has no digit"
+
+    match checked("12é", plain("12é", 10))
+        .ok _  => assert false
+        .err e => assert e.msg == "\"12é\" is not an integer in base 10: byte 2 is no digit of base 10"
+
+test "signed: both ends of i64, one past each, and a range that begins at zero"
+    low: i64 = 0 - 9223372036854775807 - 1
+    high: i64 = 9223372036854775807
+    assert signed(s: "9223372036854775807", sp: plain("9223372036854775807", 10), min: low, max: high, type_name: "i64").must() == high
+    assert signed(s: "-9223372036854775808", sp: plain("-9223372036854775808", 10), min: low, max: high, type_name: "i64").must() == low
+    assert signed(s: "-0", sp: plain("-0", 10), min: 0, max: 255, type_name: "u8").must() == 0
+    assert signed(s: "255", sp: plain("255", 10), min: 0, max: 255, type_name: "u8").must() == 255
+    assert signed(s: "7fffffffffffffff", sp: plain("7fffffffffffffff", 16), min: low, max: high, type_name: "i64").must() == high
+    assert signed(s: "-zz", sp: plain("-zz", 36), min: low, max: high, type_name: "i64").must() == -1295
+
+    match signed(s: "9223372036854775808", sp: plain("9223372036854775808", 10), min: low, max: high, type_name: "i64")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "\"9223372036854775808\" does not fit i64, whose range is -9223372036854775808 to 9223372036854775807"
+
+    match signed(s: "-9223372036854775809", sp: plain("-9223372036854775809", 10), min: low, max: high, type_name: "i64")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    match signed(s: "-1", sp: plain("-1", 10), min: 0, max: 255, type_name: "u8")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "\"-1\" does not fit u8, whose range is 0 to 255"
+
+    match signed(s: "256", sp: plain("256", 10), min: 0, max: 255, type_name: "u8")
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "signed: a text that is no number is invalid though its digits are too many"
+    low: i64 = 0 - 9223372036854775807 - 1
+    text = "99999999999999999999999999x"
+
+    match signed(s: text, sp: plain(text, 10), min: low, max: 9223372036854775807, type_name: "i64")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "unsigned: the largest u64, one past it, and a minus"
+    largest: u64 = 18446744073709551615
+    assert unsigned("18446744073709551615", plain("18446744073709551615", 10)).must() == largest
+    assert unsigned("ffffffffffffffff", plain("ffffffffffffffff", 16)).must() == largest
+    assert unsigned("-0", plain("-0", 10)).must() == 0
+    assert unsigned("+7", plain("+7", 10)).must() == 7
+    assert unsigned("0xffff_ffff", literal("0xffff_ffff").must()).must() == 4294967295
+
+    match unsigned("18446744073709551616", plain("18446744073709551616", 10))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit" && e.msg == "\"18446744073709551616\" does not fit u64, whose range is 0 to 18446744073709551615"
+
+    match unsigned("-1", plain("-1", 10))
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+test "as_bits: zero, the largest i64, the bit above it, and every bit set"
+    assert as_bits(0) == 0
+    assert as_bits(9223372036854775807) == 9223372036854775807
+    assert as_bits(9223372036854775808) == 0 - 9223372036854775807 - 1
+    assert as_bits(18446744073709551615) == -1

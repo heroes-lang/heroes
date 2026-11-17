@@ -1,0 +1,258 @@
+# A zip archive's central directory read from a stream that can seek
+# (APPNOTE.TXT 6.3): the end record found from the stream's end, ZIP64's
+# records where a count, a size or an offset needs them, and each member's
+# central header. Every length the archive states is held to the stream's
+# size before anything is read by it. `zip_member` reads a member's data.
+
+use archive/internal/codes
+use archive/internal/cp437
+use archive/internal/zip_time
+use bytes
+use io
+use time
+
+# The signature of a member's local header.
+constant LOCAL: i64
+    0x04034b50
+
+# The signature of a central directory header.
+constant CENTRAL: i64
+    0x02014b50
+
+# The signature of the end record.
+constant END: i64
+    0x06054b50
+
+# The signature of ZIP64's end record.
+constant END64: i64
+    0x06064b50
+
+# The signature of ZIP64's locator.
+constant LOCATOR64: i64
+    0x07064b50
+
+# The id of ZIP64's extra field.
+constant ZIP64_EXTRA: i64
+    1
+
+# The flag of an encrypted member.
+constant FLAG_ENCRYPTED: i64
+    1
+
+# The flag of a name and comment in UTF-8.
+constant FLAG_UTF8: i64
+    0x800
+
+# The method of a stored member.
+constant STORED: i64
+    0
+
+# The method of a deflated member.
+constant DEFLATED: i64
+    8
+
+# A member as the central directory states it.
+record Member
+    # Its name, `/` at the end for a folder.
+    name: str
+    # Its comment.
+    comment: str
+    # How its data is compressed: 0 stored, 8 deflated, others refused.
+    method: i64
+    # Its flags.
+    flags: i64
+    # The CRC-32 of its data.
+    crc: i64
+    # Its compressed size.
+    compressed: i64
+    # Its size.
+    size: i64
+    # Where its local header begins in the stream.
+    offset: i64
+    # When it was last changed.
+    modified: time.Instant
+    # The system and version that made it: the system is the high byte.
+    made_by: i64
+    # Its external attributes: Unix's mode in the high 16 bits where Unix
+    # made it.
+    external: i64
+    # Its central extra fields.
+    extra: [u8]
+
+# The central directory.
+record Directory
+    # Its members, in order.
+    members: [Member]
+    # The archive's comment.
+    comment: str
+
+# The number of `width` bytes at `at` of `data`, the lowest first.
+function le(data: [u8] lent, at: i64, width: i64) -> i64
+    value: i64 @= 0
+
+    for i in range(from: 0, to: width)
+        value @ value | to_i64(data[at + i]).must() << 8 * i
+
+    return value
+
+# `count` bytes of `s` from `at`. Fails `invalid` where they pass `size`.
+function bytes_at(s: io.Stream, at: i64, count: i64, size: i64, what: str) -> [u8]?
+    if at < 0 || count < 0 || at + count > size
+        return codes.invalid_at(at: at, why: f"{what} reaches past the end of the archive, at {size} bytes")
+    _ = io.seek(s, offset: at, from: .start)?
+    return io.read_exact(s, count: count)
+
+# The central directory of the zip archive `s` holds. Fails `invalid` where
+# no end record is found or a record is not one, `unsupported` on an
+# archive split over several disks, and as the stream fails; a stream that
+# cannot seek fails as `io.size` does.
+function read_directory(s: io.Stream) -> Directory?
+    size = io.size(s)?
+
+    if size < 22
+        return codes.invalid_at(at: 0, why: f"{size} bytes are too few for a zip archive's end record")
+    tail_len: i64 @= 22 + 65535
+
+    if size < tail_len
+        tail_len @ size
+    tail_at = size - tail_len
+    tail = bytes_at(s, at: tail_at, count: tail_len, size: size, what: "the end record")?
+    found: i64 @= -1
+    i: i64 @= tail_len - 22
+
+    while i >= 0 && found < 0
+        if le(tail, at: i, width: 4) == END && le(tail, at: i + 20, width: 2) <= tail_len - i - 22
+            found @ i
+        i @ i - 1
+
+    if found < 0
+        return codes.invalid_at(at: size, why: "no end record of a zip archive in its last 65,557 bytes")
+    end_at = tail_at + found
+    disk = le(tail, at: found + 4, width: 2)
+    count: i64 @= le(tail, at: found + 10, width: 2)
+    dir_size: i64 @= le(tail, at: found + 12, width: 4)
+    dir_offset: i64 @= le(tail, at: found + 16, width: 4)
+    comment_len = le(tail, at: found + 20, width: 2)
+    comment = cp437.text_of(tail.slice(from: found + 22, to: found + 22 + comment_len))
+    dir_end: i64 @= end_at
+
+    if disk != 0 && disk != 0xffff
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: "a zip archive split over several disks, which this reader does not read"
+        )
+
+    if (count == 0xffff || dir_size == 0xffff_ffff || dir_offset == 0xffff_ffff) && end_at >= 20
+        locator = bytes_at(s, at: end_at - 20, count: 20, size: size, what: "ZIP64's locator")?
+
+        if le(locator, at: 0, width: 4) == LOCATOR64
+            end64_at = le(locator, at: 8, width: 8)
+            end64 = bytes_at(s, at: end64_at, count: 56, size: end_at, what: "ZIP64's end record")?
+
+            if le(end64, at: 0, width: 4) != END64
+                return codes.invalid_at(at: end64_at, why: "ZIP64's locator points at no ZIP64 end record")
+            count @ le(end64, at: 32, width: 8)
+            dir_size @ le(end64, at: 40, width: 8)
+            dir_offset @ le(end64, at: 48, width: 8)
+            dir_end @ end64_at
+
+    if dir_size < 0 || dir_offset < 0 || dir_size > dir_end || count < 0 || count > dir_size / 46 + 1
+        return codes.invalid_at(at: end_at, why: f"an end record stating {count} members in {dir_size} bytes")
+    base = dir_end - dir_size - dir_offset
+
+    if base < 0
+        return codes.invalid_at(
+            at: end_at,
+            why: f"a central directory at {dir_offset}, past where the end record stands"
+        )
+    data = bytes_at(s, at: base + dir_offset, count: dir_size, size: size, what: "the central directory")?
+    members: [Member] @= []
+    pos: i64 @= 0
+
+    for _ in range(from: 0, to: count)
+        member = parse_member(data, at: pos, base: base, where: base + dir_offset + pos)?
+        pos @ pos + 46 + le(data, at: pos + 28, width: 2) + le(data, at: pos + 30, width: 2) + le(data, at: pos + 32, width: 2)
+        members @ members.push(member)
+
+    return ok(Directory(members: members, comment: comment))
+
+# The member whose central header begins at `at` of `data`, the archive's
+# own first byte being at `base` of the stream; `where` is its place in the
+# stream, for messages.
+function parse_member(data: [u8] lent, at: i64, base: i64, where: i64) -> Member?
+    if at + 46 > data.len() || le(data, at: at, width: 4) != CENTRAL
+        return codes.invalid_at(at: where, why: "a central directory header that is not one")
+    name_len = le(data, at: at + 28, width: 2)
+    extra_len = le(data, at: at + 30, width: 2)
+    comment_len = le(data, at: at + 32, width: 2)
+
+    if at + 46 + name_len + extra_len + comment_len > data.len()
+        return codes.invalid_at(at: where, why: "a central directory header longer than the directory")
+    flags = le(data, at: at + 8, width: 2)
+    raw_name = data.slice(from: at + 46, to: at + 46 + name_len)
+    extra = data.slice(from: at + 46 + name_len, to: at + 46 + name_len + extra_len)
+    raw_comment = data.slice(from: at + 46 + name_len + extra_len, to: at + 46 + name_len + extra_len + comment_len)
+    name @= ""
+    comment @= ""
+
+    if flags & FLAG_UTF8 != 0
+        match bytes.to_text(raw_name)
+            .ok s  => name @ s
+            .err _ => return codes.invalid_at(at: where + 46, why: "a name flagged UTF-8 that is not")
+
+        comment @ bytes.to_text(raw_comment).default(cp437.text_of(raw_comment))
+    else
+        name @ cp437.text_of(raw_name)
+        comment @ cp437.text_of(raw_comment)
+    size: i64 @= le(data, at: at + 24, width: 4)
+    compressed: i64 @= le(data, at: at + 20, width: 4)
+    offset: i64 @= le(data, at: at + 42, width: 4)
+    modified @= zip_time.from_dos(date: le(data, at: at + 14, width: 2), clock: le(data, at: at + 12, width: 2))
+    pos: i64 @= 0
+
+    while pos + 4 <= extra.len()
+        id = le(extra, at: pos, width: 2)
+        field_len = le(extra, at: pos + 2, width: 2)
+
+        if pos + 4 + field_len > extra.len()
+            return codes.invalid_at(at: where, why: "an extra field longer than the extra fields")
+        field = extra.slice(from: pos + 4, to: pos + 4 + field_len)
+
+        if id == ZIP64_EXTRA
+            next: i64 @= 0
+
+            if size == 0xffff_ffff && next + 8 <= field.len()
+                size @ le(field, at: next, width: 8)
+                next @ next + 8
+
+            if compressed == 0xffff_ffff && next + 8 <= field.len()
+                compressed @ le(field, at: next, width: 8)
+                next @ next + 8
+
+            if offset == 0xffff_ffff && next + 8 <= field.len()
+                offset @ le(field, at: next, width: 8)
+        else if id == zip_time.EXTENDED_TIME
+            seconds = zip_time.extended_seconds(field)
+
+            if seconds != -1
+                modified @ time.from_unix(whole_seconds: seconds, extra_nanoseconds: 0).default(modified)
+        pos @ pos + 4 + field_len
+
+    if size < 0 || compressed < 0 || offset < 0
+        return codes.invalid_at(at: where, why: "a member whose size or offset passes what an i64 holds")
+    return ok(
+        Member(name: name, comment: comment, method: le(data, at: at + 10, width: 2), flags: flags, crc: le(data, at: at + 16, width: 4), compressed: compressed, size: size, offset: base + offset, modified: modified, made_by: le(data, at: at + 4, width: 2), external: le(data, at: at + 38, width: 4), extra: extra)
+    )
+
+test "le: two, four and eight bytes, the lowest first"
+    data: [u8] = [1, 2, 3, 4, 5, 6, 7, 8]
+    assert le(data, at: 0, width: 2) == 0x0201
+    assert le(data, at: 0, width: 4) == 0x04030201
+    assert le(data, at: 0, width: 8) == 0x0807060504030201
+
+test "parse_member: a header cut short and a header that is not one"
+    short: [u8] = [0x50, 0x4b, 1, 2]
+
+    match parse_member(short, at: 0, base: 0, where: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

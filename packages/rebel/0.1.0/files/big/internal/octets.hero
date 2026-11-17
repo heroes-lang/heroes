@@ -1,0 +1,156 @@
+# Integers read from bytes and written as bytes, unsigned or in two's
+# complement, the bytes in either order. The work is done least significant
+# byte first; the most significant first is that list turned around.
+
+use big/internal/limbs
+use big/internal/signed
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# `b` turned around.
+function reversed(b: [u8]) -> [u8]
+    out: [u8] @= []
+    at: i64 @= b.len() - 1
+
+    while at >= 0
+        out @ out.push(b[at])
+        at @ at - 1
+
+    return out
+
+# The magnitude the bytes `b` spell, the least significant first.
+function magnitude_of(b: [u8]) -> [i64]
+    out: [i64] @= []
+    acc: i64 @= 0
+    held: i64 @= 0
+
+    for byte in b
+        acc @ acc | to_i64(byte).must() << held
+        held @ held + 8
+
+        if held >= limbs.BITS
+            out @ out.push(acc & limbs.MASK)
+            acc @ acc >> limbs.BITS
+            held @ held - limbs.BITS
+
+    out @ out.push(acc)
+    return limbs.trimmed(out)
+
+# The fewest bytes that spell `magnitude`, the least significant first; zero
+# is none.
+function bytes_of(magnitude: [i64]) -> [u8]
+    out: [u8] @= []
+    acc: i64 @= 0
+    held: i64 @= 0
+
+    for limb in magnitude
+        acc @ acc | limb << held
+        held @ held + limbs.BITS
+
+        while held >= 8
+            out @ out.push(to_u8(acc & 255).must())
+            acc @ acc >> 8
+            held @ held - 8
+
+    while acc > 0
+        out @ out.push(to_u8(acc & 255).must())
+        acc @ acc >> 8
+
+    top: i64 @= out.len()
+
+    while top > 0 && out[top - 1] == 0
+        top @ top - 1
+
+    return out.slice(from: 0, to: top)
+
+# `b`, least significant first, in the order asked: turned around where the
+# most significant byte comes first.
+function ordered(b: [u8], most_first: bool) -> [u8]
+    if most_first
+        return reversed(b)
+    return b
+
+# `b` with every bit turned.
+function inverted(b: [u8]) -> [u8]
+    out: [u8] @= []
+
+    for byte in b
+        out @ out.push(255 - byte)
+
+    return out
+
+# The integer `b` spells, least significant first, unsigned or in two's
+# complement.
+function read(b: [u8], twos: bool) -> signed.Signed
+    if twos && b.len() > 0 && b[b.len() - 1] >= 128
+        m = limbs.add(a: magnitude_of(inverted(b)), b: [1])
+        return signed.make(negative: true, magnitude: m)
+    return signed.make(negative: false, magnitude: magnitude_of(b))
+
+# The fewest bytes that spell `s` in two's complement, least significant first.
+function twos_of(s: signed.Signed) -> [u8]
+    if !s.negative
+        out: [u8] @= bytes_of(s.magnitude)
+
+        if out.len() > 0 && out[out.len() - 1] >= 128
+            out @ out.push(0)
+        return out
+    out: [u8] @= inverted(bytes_of(limbs.sub(a: s.magnitude, b: [1])))
+
+    if out.len() == 0 || out[out.len() - 1] < 128
+        out @ out.push(255)
+    return out
+
+# `b`, least significant first, filled with `fill` to `width` bytes; fails
+# `does_not_fit` where it is longer.
+function widened(b: [u8], width: i64, fill: u8) -> [u8]?
+    assert width >= 0
+
+    if b.len() > width
+        return fail(code: DOES_NOT_FIT, msg: f"the integer needs {b.len()} bytes, more than {width}")
+    out: [u8] @= b
+
+    while out.len() < width
+        out @ out.push(fill)
+
+    return ok(out)
+
+## Tests
+
+test "magnitude_of and bytes_of: none, a zero byte, bytes across limbs"
+    nothing: [u8] = []
+    none: [i64] = []
+    assert magnitude_of(nothing) == none
+    assert magnitude_of([0, 0]) == none
+    assert bytes_of(none) == nothing
+    assert magnitude_of([255, 255, 255, 255]) == [1073741823, 3]
+    assert bytes_of([1073741823, 3]) == [255, 255, 255, 255]
+    assert bytes_of(magnitude_of([1, 2, 3, 4, 5, 6, 7, 8, 9])) == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+test "read: unsigned, two's complement of -1, -128, -129, and a top bit clear"
+    nothing: [u8] = []
+    assert read(b: [255], twos: false) == signed.of_int(255)
+    assert read(b: [255], twos: true) == signed.of_int(-1)
+    assert read(b: [128], twos: true) == signed.of_int(-128)
+    assert read(b: [127, 255], twos: true) == signed.of_int(-129)
+    assert read(b: [127], twos: true) == signed.of_int(127)
+    assert read(b: nothing, twos: true) == signed.of_int(0)
+
+test "twos_of: zero, 127, 128, -1, -128, -129"
+    nothing: [u8] = []
+    assert twos_of(signed.of_int(0)) == nothing
+    assert twos_of(signed.of_int(127)) == [127]
+    assert twos_of(signed.of_int(128)) == [128, 0]
+    assert twos_of(signed.of_int(-1)) == [255]
+    assert twos_of(signed.of_int(-128)) == [128]
+    assert twos_of(signed.of_int(-129)) == [127, 255]
+
+test "widened and reversed: filled, exact, too long, and turned around"
+    nothing: [u8] = []
+    assert widened(b: [1], width: 3, fill: 0).must() == [1, 0, 0]
+    assert widened(b: [1, 2], width: 2, fill: 255).must() == [1, 2]
+    assert widened(b: [1, 2], width: 1, fill: 0).is_err()
+    assert widened(b: nothing, width: 0, fill: 0).must() == nothing
+    assert reversed([1, 2, 3]) == [3, 2, 1]
+    assert reversed(nothing) == nothing

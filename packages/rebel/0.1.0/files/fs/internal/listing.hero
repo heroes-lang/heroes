@@ -1,0 +1,132 @@
+# A folder's entries, read from `hero_disk.scan`: each a name and a kind's
+# index, sorted by the names' bytes. What `fs.read_dir` answers and what
+# every walk of a tree reads one folder at a time.
+#
+# The floor fills a buffer with one entry after another: a byte of kind, the
+# name's bytes, and a zero byte. It answers how long the whole listing is, so
+# a buffer too short is asked again at that length, as often as the folder
+# grows between two calls.
+
+use fs/internal/codes
+use fs/internal/facts
+use fs/internal/fixture
+use os/hero_disk
+use path
+
+# One entry of a folder.
+record Found
+    # The entry's name; in a walk, its path below the folder walked.
+    name: str
+    # `facts.FILE` to `facts.OTHER`, the link itself where it is one.
+    kind: i64
+
+# The bytes `scan` first gives a listing, enough for about a hundred names.
+constant FIRST_ROOM: i64
+    4096
+
+# The entries of the folder `dir`, sorted by their names' bytes.
+#
+# - `dir`: the folder's path.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `file_not_found`, `not_a_directory`, and `not_text` where a name is
+# not UTF-8. An entry whose kind the system would not say is asked of
+# itself, and passed over where it was removed meanwhile.
+function listed(dir: str, asked: str) -> [Found]?
+    codes.checked(path: dir, asked: asked)?
+    buffer: [u8] @= []
+    room: i64 @= FIRST_ROOM
+    used: i64 @= 0
+
+    while true
+        answer = hero_disk.scan(dir, @buffer, n: room.to_u64().must())
+
+        if answer < 0
+            return codes.disk_failed(asked: asked)
+
+        if answer <= room
+            used @ answer
+            break
+        room @ answer
+
+    kinds: {str: i64} @= {}
+    at: i64 @= 0
+
+    while at < used
+        stop: i64 @= at + 1
+
+        while stop < used && buffer[stop] != 0
+            stop @ stop + 1
+
+        name = buffer.slice(from: at + 1, to: stop).validated_bytes()
+
+        match name
+            .err _ => return fail(code: codes.NOT_TEXT, msg: f"{asked}: the name of an entry is not UTF-8")
+            .ok n =>
+                kind = buffer[at].to_i64().must()
+
+                if kind == hero_disk.HERO_DISK_KIND_UNKNOWN
+                    asked_again = facts.presence(at: path.join_all([dir, n]), through: false, asked: asked)?
+
+                    if asked_again != facts.NOTHING
+                        kinds[n] @ asked_again
+                else
+                    kinds[n] @ facts.index_of_kind(kind)
+
+        at @ stop + 1
+
+    found: [Found] @= []
+
+    for n in sort(keys(kinds))
+        found @ found.push(Found(name: n, kind: kinds[n].must()))
+
+    return ok(found)
+
+## Tests
+
+test "listed: an empty folder, entries of each kind sorted by bytes, names of more than one byte, and a listing past the first room"
+    dir = fixture.folder("listed")
+    nothing: [Found] = []
+    assert listed(dir: dir, asked: "a").must() == nothing
+    assert !write_file(path: dir + "/b", text: "x").is_err()
+    assert !write_file(path: dir + "/caffè", text: "x").is_err()
+    assert !write_file(path: dir + "/.hidden", text: "x").is_err()
+    assert !write_file(path: dir + "/Z", text: "x").is_err()
+    assert hero_disk.make_folder(dir + "/a", permission: 0o755) == 0
+    got = listed(dir: dir, asked: "a").must()
+    names: [str] @= []
+
+    for f in got
+        names @ names.push(f.name)
+
+    assert names == [".hidden", "Z", "a", "b", "caffè"]
+    assert got[2].kind == facts.DIRECTORY && got[3].kind == facts.FILE
+    long = repeat("n", 200)
+
+    for i in range(from: 0, to: 40)
+        assert !write_file(path: f"{dir}/a/{long}{i}", text: "").is_err()
+
+    many = listed(dir: dir + "/a", asked: "a").must()
+    assert many.len() == 40
+    assert many[0].name == long + "0" && many[39].name == long + "9"
+    assert fixture.cleared(dir)
+
+test "listed: a link listed as a link, never followed, and a folder not there or no folder"
+    dir = fixture.folder("listlink")
+    assert hero_disk.make_folder(dir + "/d", permission: 0o755) == 0
+
+    if fixture.linked(target: "d", name: dir + "/l")
+        got = listed(dir: dir, asked: "a").must()
+        assert got.len() == 2 && got[1].name == "l" && got[1].kind == facts.LINK
+
+    match listed(dir: dir + "/none", asked: "reading the folder")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "reading the folder: nothing is there"
+
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    match listed(dir: dir + "/f", asked: "a")
+        .ok _  => assert false
+        .err e => assert e.code == codes.NOT_A_DIRECTORY
+
+    assert fixture.cleared(dir)

@@ -1,0 +1,310 @@
+# The tokens of a YAML stream read as events: documents with their directives,
+# nodes with their anchors and tags, block and flow collections, and the empty
+# nodes YAML leaves unwritten. It is a machine of states whose stack is a list,
+# so no recursion follows the data, however deep it nests. A tag is resolved
+# here, its handle replaced by the prefix its document declares.
+
+use yaml/internal/collections
+use yaml/internal/event
+use yaml/internal/machine
+use yaml/internal/scanner
+use yaml/internal/source
+use yaml/internal/token
+
+# The code of a text that is not YAML.
+constant INVALID: str
+    "invalid"
+
+# The code of a `%YAML` directive naming a version past 1.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The prefix of YAML's own tags, which the handle `!!` names.
+constant CORE_PREFIX: str
+    "tag:yaml.org,2002:"
+
+## The machine
+
+# The events of `tokens`, read from `text`. Fails `invalid` where the tokens
+# are not a YAML stream: a node missing, a `,` missing between two entries, a
+# directive with no `---` after it, a tag handle no `%TAG` declares. Fails
+# `unsupported` where a `%YAML` directive names a version past 1.
+function parse(tokens: [token.Token] lent, text: str) -> [event.Event]?
+    events: [event.Event] @= []
+    states: [i64] @= []
+    handles: {str: str} @= default_handles()
+    p: machine.Parsing @= machine.Parsing(i: 0, state: machine.DOCUMENT_START, top: 0)
+
+    while p.state != machine.END
+        st = p.state
+
+        if st == machine.DOCUMENT_START
+            document_start(tokens, text, @p, @states, @events, @handles)?
+        else if st == machine.DOCUMENT_CONTENT || st == machine.DOCUMENT_END
+            document_end(tokens, text, @p, states, @events)?
+        else if st == machine.BLOCK_NODE || st == machine.BLOCK_NODE_OR_INDENTLESS || st == machine.FLOW_NODE
+            node(tokens, text, @p, states, @events, handles)?
+        else if st == machine.BLOCK_SEQ_ENTRY || st == machine.INDENTLESS_SEQ_ENTRY
+            collections.block_seq(tokens, text, @p, @states, @events)?
+        else if st == machine.BLOCK_MAP_KEY || st == machine.BLOCK_MAP_VALUE
+            collections.block_map(tokens, text, @p, @states, @events)?
+        else if st >= machine.FLOW_SEQ_FIRST_ENTRY && st <= machine.FLOW_SEQ_PAIR_END
+            collections.flow_seq(tokens, text, @p, @states, @events)?
+        else
+            collections.flow_map(tokens, text, @p, @states, @events)?
+
+    return ok(events)
+
+# The handles every document knows before its directives: `!` and `!!`.
+function default_handles() -> {str: str}
+    return {"!": "!", "!!": CORE_PREFIX}
+
+# Whether `kind` is a directive's.
+function is_directive(kind: i64) -> bool
+    return kind == token.VERSION_DIRECTIVE || kind == token.TAG_DIRECTIVE
+
+# Reads past any `...`, then begins the next document with its directives, or
+# ends the stream.
+function document_start(tokens: [token.Token] lent, text: str, @p: machine.Parsing, @states: [i64], @events: [event.Event], @handles: {str: str}) -> ()?
+    while tokens[p.i].kind == token.DOC_END
+        p.i @ p.i + 1
+
+    t = tokens[p.i]
+    handles @ default_handles()
+
+    if t.kind == token.STREAM_END
+        p.state @ machine.END
+        return ok()
+
+    if !is_directive(t.kind) && t.kind != token.DOC_START
+        events @ events.push(event.closing(kind: event.DOC_START, at: t.at))
+        machine.push_state(@states, @p, machine.DOCUMENT_END)
+        p.state @ machine.BLOCK_NODE
+        return ok()
+    declared: {str: i64} @= {}
+    version_seen: bool @= false
+
+    while is_directive(tokens[p.i].kind)
+        d = tokens[p.i]
+
+        if d.kind == token.VERSION_DIRECTIVE
+            if version_seen
+                return fail(
+                    code: INVALID,
+                    msg: source.said(text: text, at: d.at, what: "a second `%YAML` directive for one document")
+                )
+            version_seen @ true
+
+            if d.text.slice(from: 0, to: 2) != "1."
+                return fail(
+                    code: UNSUPPORTED,
+                    msg: source.said(text: text, at: d.at, what: f"YAML {d.text}, which this reader does not read: it reads YAML 1.2, and 1.1 as 1.2")
+                )
+        else
+            match declared[d.text]
+                .ok first =>
+                    where = source.position(text, first)
+                    return fail(
+                        code: INVALID,
+                        msg: source.said(text: text, at: d.at, what: f"the handle `{d.text}` declared a second time for one document, first at {where}")
+                    )
+                .err _ => declared[d.text] @ d.at
+
+            handles[d.text] @ d.suffix
+        p.i @ p.i + 1
+
+    if tokens[p.i].kind != token.DOC_START
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: tokens[p.i].at, what: "`---` after the directives, which begins the document they describe")
+        )
+    events @ events.push(event.closing(kind: event.DOC_START, at: tokens[p.i].at))
+    p.i @ p.i + 1
+    machine.push_state(@states, @p, machine.DOCUMENT_END)
+    p.state @ machine.DOCUMENT_CONTENT
+    return ok()
+
+# The node after `---`, which may be empty, or the end of a document.
+function document_end(tokens: [token.Token] lent, text: str, @p: machine.Parsing, states: [i64] lent, @events: [event.Event]) -> ()?
+    t = tokens[p.i]
+    ends = is_directive(t.kind) || t.kind == token.DOC_START || t.kind == token.DOC_END || t.kind == token.STREAM_END
+
+    if p.state == machine.DOCUMENT_CONTENT
+        if ends
+            events @ events.push(event.empty(at: t.at, anchor: "", tag: ""))
+            machine.pop_state(states, @p)
+        else
+            p.state @ machine.BLOCK_NODE
+        return ok()
+
+    if is_directive(t.kind)
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: t.at, what: "`...` before a directive, which ends the document before it")
+        )
+
+    if !ends
+        return fail(
+            code: INVALID,
+            msg: source.expected(text: text, at: t.at, what: "the document to end here, with `...`, `---` or the end of the text")
+        )
+
+    if t.kind == token.DOC_END
+        p.i @ p.i + 1
+    events @ events.push(event.closing(kind: event.DOC_END, at: t.at))
+    p.state @ machine.DOCUMENT_START
+    return ok()
+
+# One node with its anchor and its tag, in the context `p.state` says.
+function node(tokens: [token.Token] lent, text: str, @p: machine.Parsing, states: [i64] lent, @events: [event.Event], handles: {str: str} lent) -> ()?
+    block = p.state != machine.FLOW_NODE
+    first = tokens[p.i]
+
+    if first.kind == token.ALIAS
+        events @ events.push(event.alias(at: first.at, name: first.text))
+        p.i @ p.i + 1
+        machine.pop_state(states, @p)
+        return ok()
+    anchor: str @= ""
+    tag: str @= ""
+    marked: bool @= false
+
+    for _ in range(from: 0, to: 2)
+        u = tokens[p.i]
+
+        if u.kind == token.ANCHOR && anchor == ""
+            anchor @ u.text
+            marked @ true
+            p.i @ p.i + 1
+        else if u.kind == token.TAG && tag == ""
+            tag @ resolve_tag(t: u, handles: handles, text: text)?
+            marked @ true
+            p.i @ p.i + 1
+
+    t = tokens[p.i]
+
+    if t.kind == token.ALIAS
+        return fail(
+            code: INVALID,
+            msg: source.said(text: text, at: t.at, what: "an alias carries no anchor and no tag of its own: they stand on the node its anchor names")
+        )
+
+    if block && p.state == machine.BLOCK_NODE_OR_INDENTLESS && t.kind == token.BLOCK_ENTRY
+        events @ events.push(event.opening(kind: event.SEQ_START, at: t.at, anchor: anchor, tag: tag))
+        p.state @ machine.INDENTLESS_SEQ_ENTRY
+        return ok()
+
+    if t.kind == token.SCALAR
+        events @ events.push(event.scalar(at: t.at, text: t.text, anchor: anchor, tag: tag, is_plain: t.is_plain))
+        p.i @ p.i + 1
+        machine.pop_state(states, @p)
+        return ok()
+    opened: i64 @= -1
+
+    if t.kind == token.FLOW_SEQ_START
+        opened @ machine.FLOW_SEQ_FIRST_ENTRY
+    else if t.kind == token.FLOW_MAP_START
+        opened @ machine.FLOW_MAP_FIRST_KEY
+    else if block && t.kind == token.BLOCK_SEQ_START
+        opened @ machine.BLOCK_SEQ_ENTRY
+    else if block && t.kind == token.BLOCK_MAP_START
+        opened @ machine.BLOCK_MAP_KEY
+
+    if opened >= 0
+        kind = if opened == machine.FLOW_SEQ_FIRST_ENTRY || opened == machine.BLOCK_SEQ_ENTRY
+            event.SEQ_START
+        else
+            event.MAP_START
+        events @ events.push(event.opening(kind: kind, at: t.at, anchor: anchor, tag: tag))
+        p.i @ p.i + 1
+        p.state @ opened
+        return ok()
+
+    if marked
+        events @ events.push(event.empty(at: t.at, anchor: anchor, tag: tag))
+        machine.pop_state(states, @p)
+        return ok()
+    return fail(code: INVALID, msg: source.expected(text: text, at: t.at, what: "a node"))
+
+# The tag `t` names, whole: its handle replaced by the prefix the document
+# declares for it. Fails `invalid` where no `%TAG` declares its handle.
+function resolve_tag(t: token.Token, handles: {str: str} lent, text: str) -> str?
+    if t.text == ""
+        return ok(t.suffix)
+
+    if t.text == "!" && t.suffix == ""
+        return ok("!")
+
+    match handles[t.text]
+        .ok prefix => return ok(prefix + t.suffix)
+        .err _ =>
+            return fail(
+                code: INVALID,
+                msg: source.said(text: text, at: t.at, what: f"the tag handle `{t.text}` is declared by no `%TAG` directive of this document")
+            )
+
+## Tests
+
+# The events of `text`, which is a YAML stream as the scanner reads it.
+function events_of(text: str) -> [event.Event]?
+    return parse(scanner.scan(text).must(), text)
+
+# The kinds of the events of `text`, or `[-1]` where the parser refuses it.
+function event_kinds(text: str) -> [i64]
+    match events_of(text)
+        .err _ => return [-1]
+        .ok events =>
+            kinds: [i64] @= []
+
+            for e in events
+                kinds @ kinds.push(e.kind)
+
+            return kinds
+
+test "parse: no document, one implicit, explicit ones ended, and empty ones"
+    nothing: [i64] = []
+    assert event_kinds("") == nothing && event_kinds("...\n") == nothing
+    assert event_kinds("a") == [event.DOC_START, event.SCALAR, event.DOC_END]
+    assert event_kinds("--- a\n...\n--- b") == [event.DOC_START, event.SCALAR, event.DOC_END, event.DOC_START, event.SCALAR, event.DOC_END]
+    empties = events_of("---\n---\n").must()
+    assert empties.len() == 6 && empties[1].is_empty && empties[4].is_empty
+
+test "parse: directives, a handle declared twice, a version past 1, and no --- after them"
+    tagged = events_of("%TAG !e! tag:x.org,2000:\n--- !e!a b\n").must()
+    assert tagged[1].tag == "tag:x.org,2000:a" && tagged[1].text == "b"
+    assert event_kinds("%YAML 1.2\n%YAML 1.2\n--- a") == [-1]
+    assert event_kinds("%TAG !e! a:\n%TAG !e! b:\n--- x") == [-1]
+    assert event_kinds("%YAML 1.2\na") == [-1]
+
+    match events_of("%YAML 2.0\n--- a")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "line 1, column 1: YAML 2.0, which this reader does not read: it reads YAML 1.2, and 1.1 as 1.2"
+
+    assert event_kinds("a: 1\n%YAML 1.2\n--- b") == [-1]
+    assert event_kinds("a\n%YAML 1.2\n--- b") == [event.DOC_START, event.SCALAR, event.DOC_END, event.DOC_START, event.SCALAR, event.DOC_END]
+
+test "node: anchors and tags in either order, an empty node with a tag, an alias, and an alias with an anchor"
+    for text in ["&a !!str x", "!!str &a x"]
+        e = events_of(text).must()[1]
+        assert e.anchor == "a" && e.tag == "tag:yaml.org,2002:str" && e.text == "x"
+
+    empty = events_of("!!str\n").must()[1]
+    assert empty.is_empty && empty.tag == "tag:yaml.org,2002:str"
+    assert events_of("[*a]").must()[2] == event.alias(at: 1, name: "a")
+    assert event_kinds("&a *b") == [-1]
+
+    match events_of("[a, ] b")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 7: expected the document to end here, with `...`, `---` or the end of the text, found \"b\""
+
+test "resolve_tag: verbatim, non-specific, a declared handle, and one no directive declares"
+    handles = default_handles()
+    verbatim = token.holding(kind: token.TAG, at: 0, end: 5, text: "", suffix: "tag:e.com,2000:x")
+    assert resolve_tag(t: verbatim, handles: handles, text: "").must() == "tag:e.com,2000:x"
+    assert resolve_tag(t: token.holding(kind: token.TAG, at: 0, end: 1, text: "!", suffix: ""), handles: handles, text: "").must() == "!"
+    assert resolve_tag(t: token.holding(kind: token.TAG, at: 0, end: 4, text: "!", suffix: "x"), handles: handles, text: "").must() == "!x"
+    assert resolve_tag(t: token.holding(kind: token.TAG, at: 0, end: 5, text: "!!", suffix: "int"), handles: handles, text: "").must() == "tag:yaml.org,2002:int"
+
+    match resolve_tag(t: token.holding(kind: token.TAG, at: 0, end: 4, text: "!e!", suffix: "x"), handles: handles, text: "!e!x")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 1: the tag handle `!e!` is declared by no `%TAG` directive of this document"

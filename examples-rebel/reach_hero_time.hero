@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's clocks and its sleep,
+# `hero_time.h`, so that `heroes test` on this file runs the floor's own tests
+# (spec § 12, § 13). It prints whether the wall clock can be read, which is
+# the same line on every run.
+
+use <rebel>/time/hero_time
+
+function main()
+    print(hero_time.wall_ns() > 0)

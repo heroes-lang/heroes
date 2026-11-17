@@ -1,0 +1,163 @@
+# A UUID read from text and written as text (RFC 9562 4): 32 hexadecimal
+# digits in groups of 8, 4, 4, 4 and 12 joined by hyphens, in lower case when
+# written and in either case when read. A UUID is held here as its two
+# halves, the first 8 bytes and the last 8 as numbers with the first byte the
+# highest.
+
+use bytes
+
+# The code reading fails with.
+constant INVALID: str
+    "invalid"
+
+# Where the four hyphens of the standard form stand.
+constant HYPHENS: [i64]
+    [8, 13, 18, 23]
+
+# The two halves a UUID's 16 bytes hold, the first byte the highest.
+record Halves
+    # The first 8 bytes as a number.
+    high: u64
+    # The last 8 bytes as a number.
+    low: u64
+
+# The halves the 16 bytes `data` hold; `data` holds exactly 16.
+function halves_of(data: [u8]) -> Halves
+    high: u64 @= 0
+    low: u64 @= 0
+
+    for at in range(from: 0, to: 8)
+        high @ high * 256 + to_u64(data[at]).must()
+        low @ low * 256 + to_u64(data[at + 8]).must()
+
+    return Halves(high: high, low: low)
+
+# The 16 bytes of `high` and `low`, the first byte the highest.
+function bytes_of(high: u64, low: u64) -> [u8]
+    out: [u8] @= []
+
+    for half in [high, low]
+        at: i64 @= 7
+
+        while at >= 0
+            out @ out.push(to_u8(half / place(at) % 256).must())
+            at @ at - 1
+
+    return out
+
+# 256 to the power `at`, for `at` from 0 to 7.
+function place(at: i64) -> u64
+    p: u64 @= 1
+
+    for _ in range(from: 0, to: at)
+        p @ p * 256
+
+    return p
+
+# The halves `s` writes: the standard form of 36 characters, the 32 digits
+# with no hyphen, either inside braces, or the standard form after
+# `urn:uuid:`. Fails `invalid` where `s` is none of these; the message says
+# where it stops being one. A byte past ASCII is refused before any cut, so no
+# slice can split a character.
+function parse(s: str) -> Halves?
+    for at in range(from: 0, to: s.len())
+        if s[at] >= 128
+            return fail(code: INVALID, msg: f"\"{s}\" is not a UUID: byte {at} is not ASCII")
+
+    body: str @= s
+
+    if s.len() == 45 && s.slice(from: 0, to: 9) == "urn:uuid:"
+        body @ s.slice(from: 9, to: 45)
+    else if s.len() == 38 && s[0] == '{' && s[37] == '}'
+        body @ s.slice(from: 1, to: 37)
+    else if s.len() == 34 && s[0] == '{' && s[33] == '}'
+        body @ s.slice(from: 1, to: 33)
+    digits: [str] @= []
+
+    if body.len() == 36
+        for at in range(from: 0, to: 36)
+            is_hyphen = body[at] == '-'
+            wanted = HYPHENS[0] == at || HYPHENS[1] == at || HYPHENS[2] == at || HYPHENS[3] == at
+
+            if is_hyphen != wanted
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{s}\" is not a UUID: byte {at} of its 36 holds a hyphen where a digit stands, or a digit where a hyphen does"
+                )
+
+        digits @ [
+            body.slice(from: 0, to: 8)
+            body.slice(from: 9, to: 13)
+            body.slice(from: 14, to: 18)
+            body.slice(from: 19, to: 23)
+            body.slice(from: 24, to: 36)
+        ]
+    else if body.len() == 32
+        digits @ [body]
+    else
+        return fail(
+            code: INVALID,
+            msg: f"\"{s}\" is not a UUID: it has {s.len()} bytes, where one is 36, 32, 38 or 34 within braces, or 45 after urn:uuid:"
+        )
+
+    match bytes.parse_hex(digits.join(""))
+        .ok data => return ok(halves_of(data))
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"\"{s}\" is not a UUID: it holds a byte that is not a hexadecimal digit"
+        )
+
+# `high` and `low` as 32 hexadecimal digits in lower case, with no hyphen.
+function hex(high: u64, low: u64) -> str
+    return bytes.format_hex(bytes_of(high: high, low: low))
+
+# `high` and `low` in the standard form, lower case.
+function format(high: u64, low: u64) -> str
+    digits = hex(high: high, low: low)
+    groups = [
+        digits.slice(from: 0, to: 8)
+        digits.slice(from: 8, to: 12)
+        digits.slice(from: 12, to: 16)
+        digits.slice(from: 16, to: 20)
+        digits.slice(from: 20, to: 32)
+    ]
+    return groups.join("-")
+
+# Python's `uuid.UUID` answered these on 2026-11-16.
+test "uuid text parse: every form, both cases, and the halves"
+    standard = parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must()
+    assert standard.high == 17878533706586264016 && standard.low == 12062047867550723062
+    assert parse("{F81D4FAE-7DEC-11D0-A765-00A0C91E6BF6}").must() == standard
+    assert parse("urn:uuid:f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must() == standard
+    assert parse("f81d4fae7dec11d0a76500a0c91e6bf6").must() == standard
+    assert parse("{f81d4fae7dec11d0a76500a0c91e6bf6}").must() == standard
+    assert parse("00000000-0000-0000-0000-000000000000").must() == Halves(high: 0, low: 0)
+    assert parse("ffffffff-ffff-ffff-ffff-ffffffffffff").must() == Halves(high: 18446744073709551615, low: 18446744073709551615)
+
+test "uuid text parse: refused, a byte short, a byte not a digit, a hyphen misplaced, a space, the URN in capitals, and the empty text"
+    assert parse("f81d4fae-7dec-11d0-a765-00a0c91e6bf").is_err()
+    assert parse("f81d4fae-7dec-11d0-a765-00a0c91e6bfg").is_err()
+    assert parse("URN:UUID:f81d4fae-7dec-11d0-a765-00a0c91e6bf6").is_err()
+    assert parse(" f81d4fae-7dec-11d0-a765-00a0c91e6bf6").is_err()
+    assert parse("").is_err()
+    assert parse("{f81d4fae-7dec-11d0-a765-00a0c91e6bf6").is_err()
+
+    match parse("f81d-4fae7dec-11d0-a765-00a0c91e6bf6")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"f81d-4fae7dec-11d0-a765-00a0c91e6bf6\" is not a UUID: byte 4 of its 36 holds a hyphen where a digit stands, or a digit where a hyphen does"
+
+    assert parse("é81d4fae-7dec-11d0-a765-00a0c91e6bf").is_err()
+    straddling = "urn:uuid" + "é" + "f81d4fae-7dec-11d0-a765-00a0c91e6bf"
+    assert straddling.len() == 45
+
+    match parse(straddling)
+        .ok _  => assert false
+        .err e => assert e.msg == f"\"{straddling}\" is not a UUID: byte 8 is not ASCII"
+
+test "uuid text format and bytes_of: the standard form, and the bytes both ways"
+    assert format(high: 17878533706586264016, low: 12062047867550723062) == "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+    assert format(high: 0, low: 0) == "00000000-0000-0000-0000-000000000000"
+    data = bytes_of(high: 17878533706586264016, low: 12062047867550723062)
+    assert data == [248, 29, 79, 174, 125, 236, 17, 208, 167, 101, 0, 160, 201, 30, 107, 246]
+    assert halves_of(data) == Halves(high: 17878533706586264016, low: 12062047867550723062)
+    assert place(0) == 1 && place(7) == 72057594037927936

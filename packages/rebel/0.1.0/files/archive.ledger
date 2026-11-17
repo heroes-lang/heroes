@@ -1,0 +1,143 @@
+# The ledger of `archive`: what Go's `archive/tar` and `archive/zip` (Go
+# 1.27) and Python's `tarfile` and `zipfile` (3.15) let a program do, one
+# block per capability, and what Rebel answers. Rust's standard library has
+# no archives, so its line is `-` in every block. The lists are this
+# machine's, 2026-11-16: `go doc -all` on both packages, and `__all__` and
+# `dir()` of both modules and of their classes. The tests read archives
+# Python made; the cross-check in the scratch folder had Python read every
+# archive Rebel wrote (tar, tar.gz, zip, 65,536 members, a 4.4 GB member)
+# and Rebel extract Python's.
+
+capability archive/tar-read  a tar archive read entry by entry, plain or gzip
+  heroes  archive.tar_reader, archive.next_entry, archive.read_data, archive.read_rest, archive.Next, archive.Compression
+  go      tar.NewReader, tar.Reader, tar.Reader.Next, tar.Reader.Read, tar.ErrHeader, tar.ErrInsecurePath
+  rust    -
+  python  tarfile.open, TarFile, TarFile.next, TarFile.extractfile, TarFile.fileobject, TarFile.gzopen, TarFile.taropen, TarFile.OPEN_METH, tarfile.ReadError, tarfile.HeaderError, tarfile.StreamError, tarfile.TarError, tarfile.CompressionError, TarFile.ignore_zeros, TarFile.errorlevel
+  note    the end is a case of `Next`, never a failure. A block of zeros ends the archive, and a header after it is refused; Python's `ignore_zeros` (concatenated archives) is not offered. A reader takes a `limit` on the archive's bytes after gzip, which neither Go nor Python has
+
+capability archive/tar-header  what a tar header says of an entry
+  heroes  archive.TarEntry, archive.tar_entry, archive.Kind
+  go      tar.Header, Header.Typeflag, Header.Name, Header.Linkname, Header.Size, Header.Mode, Header.Uid, Header.Gid, Header.Uname, Header.Gname, Header.ModTime, Header.AccessTime, Header.ChangeTime, Header.Devmajor, Header.Devminor, Header.Xattrs, Header.PAXRecords, Header.Format, tar.TypeReg, tar.TypeRegA, tar.TypeLink, tar.TypeSymlink, tar.TypeChar, tar.TypeBlock, tar.TypeDir, tar.TypeFifo, tar.TypeCont, tar.TypeXHeader, tar.TypeXGlobalHeader, tar.TypeGNULongName, tar.TypeGNULongLink, tar.TypeGNUSparse
+  rust    -
+  python  TarInfo, TarInfo.name, TarInfo.path, TarInfo.size, TarInfo.mtime, TarInfo.mode, TarInfo.type, TarInfo.linkname, TarInfo.linkpath, TarInfo.uid, TarInfo.gid, TarInfo.uname, TarInfo.gname, TarInfo.devmajor, TarInfo.devminor, TarInfo.pax_headers, TarInfo.isfile, TarInfo.isreg, TarInfo.isdir, TarInfo.issym, TarInfo.islnk, TarInfo.ischr, TarInfo.isblk, TarInfo.isfifo, TarInfo.isdev, TarInfo.replace, tarfile.REGTYPE and the other type constants
+  note    PAX records apply to their fields (`path`, `linkpath`, `size`, `uid`, `gid`, `uname`, `gname`, `mtime` with its fraction); the others, `atime`, `ctime`, `comment`, `SCHILY.xattr.*`, stay in `records` and are written back. A type this reader does not know is read as a file, as POSIX and Python read it
+
+capability archive/tar-formats  the layouts of a tar header, read and written
+  heroes  archive.next_entry, archive.write_tar_header
+  go      tar.Format, tar.FormatUnknown, tar.FormatV7, tar.FormatUSTAR, tar.FormatPAX, tar.FormatGNU, tar.Format.String
+  rust    -
+  python  tarfile.USTAR_FORMAT, tarfile.GNU_FORMAT, tarfile.PAX_FORMAT, tarfile.DEFAULT_FORMAT, TarFile.format, TarInfo.create_ustar_header, TarInfo.create_gnu_header, TarInfo.create_pax_header, TarInfo.create_pax_global_header
+  note    v7, ustar, old GNU and PAX are read, with GNU's long names and base-256 numbers; ustar is written, with a PAX entry before a header whose name, link, size, ids, owner names or time ustar cannot hold, as Go's writer chooses. GNU's layout is not written: PAX says all it says
+
+capability archive/tar-sparse  sparse members, whose holes are not stored
+  heroes  refused: their data is not laid out as their size says, and writing one back means making holes in a file; a sparse member fails `unsupported`
+  go      tar.TypeGNUSparse, Header.Format sparse maps (read)
+  rust    -
+  python  TarInfo.sparse, TarInfo.issparse
+  note    -
+
+capability archive/tar-write  a tar archive written entry by entry, plain or gzip
+  heroes  archive.tar_writer, archive.write_tar_header, archive.write_tar_data, archive.write_tar_entry, archive.finish_tar
+  go      tar.NewWriter, tar.Writer, tar.Writer.WriteHeader, tar.Writer.Write, tar.Writer.Flush, tar.Writer.Close, tar.ErrWriteTooLong, tar.ErrFieldTooLong, tar.ErrWriteAfterClose
+  rust    -
+  python  TarFile.addfile, TarFile.close, tarfile.open(mode="w"), tarfile.open(mode="w:gz"), TarInfo.tobuf, TarInfo.frombuf, TarInfo.fromtarfile
+  note    data past an entry's size, or a header written while data is owed, fails `invalid`, as Go's ErrWriteTooLong and its padding check do. The end is two blocks of zeros, as Go writes it; Python pads to 10,240 bytes, which readers do not need
+
+capability archive/tar-from-disk  entries made from files on the disk
+  heroes  archive.add_tar_file, archive.add_tar_tree
+  go      tar.FileInfoHeader, tar.Header.FileInfo, tar.FileInfoNames, tar.Writer.AddFS
+  rust    -
+  python  TarFile.add, TarFile.gettarinfo, TarFile.dereference
+  note    a link is added as a link, never followed (Python's `dereference=False`); a file that grows or shrinks while it is read fails `invalid` rather than writing an archive whose sizes lie. Owner names are not looked up: the system's user database is `os`'s
+
+capability archive/zip-read  a zip archive's directory read, and its members' data
+  heroes  archive.zip_reader, archive.ZipReader, archive.entry_of, archive.read_zip_entry
+  go      zip.NewReader, zip.Reader, zip.Reader.File, zip.Reader.Comment, zip.Reader.Open, zip.OpenReader, zip.ReadCloser, zip.ReadCloser.Close, zip.File, zip.File.Open, zip.File.DataOffset, zip.ErrFormat, zip.ErrChecksum, zip.ErrAlgorithm, zip.ErrInsecurePath
+  rust    -
+  python  zipfile.ZipFile, ZipFile.infolist, ZipFile.namelist, ZipFile.getinfo, ZipFile.read, ZipFile.open, ZipFile.comment, ZipFile.testzip, ZipFile.fp, zipfile.BadZipFile, zipfile.BadZipfile, zipfile.error, zipfile.is_zipfile
+  note    the stream must seek, as both need a seekable file; data prepended to the archive (a self-extractor) is allowed, as both allow it. A member is decompressed to no more than its stated size and its CRC-32 and size are checked at its end, as Go's checksum reader does; `limit` bounds what `read_zip_entry` answers. `testzip` is reading every member
+
+capability archive/zip-header  what the central directory says of a member
+  heroes  archive.ZipEntry, archive.zip_entry, archive.Method
+  go      zip.FileHeader, FileHeader.Name, FileHeader.Comment, FileHeader.NonUTF8, FileHeader.CreatorVersion, FileHeader.ReaderVersion, FileHeader.Flags, FileHeader.Method, FileHeader.Modified, FileHeader.ModifiedTime, FileHeader.ModifiedDate, FileHeader.CRC32, FileHeader.CompressedSize, FileHeader.UncompressedSize, FileHeader.CompressedSize64, FileHeader.UncompressedSize64, FileHeader.Extra, FileHeader.ExternalAttrs, FileHeader.Mode, FileHeader.SetMode, FileHeader.ModTime, FileHeader.SetModTime, FileHeader.FileInfo, zip.FileInfoHeader, zip.Store, zip.Deflate
+  rust    -
+  python  ZipInfo, ZipInfo.filename, ZipInfo.orig_filename, ZipInfo.date_time, ZipInfo.compress_type, ZipInfo.compress_level, ZipInfo.comment, ZipInfo.extra, ZipInfo.create_system, ZipInfo.create_version, ZipInfo.extract_version, ZipInfo.reserved, ZipInfo.flag_bits, ZipInfo.volume, ZipInfo.internal_attr, ZipInfo.external_attr, ZipInfo.header_offset, ZipInfo.CRC, ZipInfo.compress_size, ZipInfo.file_size, ZipInfo.is_dir, ZipInfo.from_file, ZipInfo.FileHeader, zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED
+  note    a name without the UTF-8 flag is read as code page 437 unless it is UTF-8 already, as many writers leave the flag off; Go keeps its bytes. The time is the extended timestamp where there is one, else the DOS time read as UTC (it holds no zone). The mode is Unix's where the archive was made on Unix. Versions, flags, disk numbers and internal attributes are the format's plumbing and are not shown
+
+capability archive/zip-methods  methods other than stored and deflated, and encryption
+  heroes  refused: they need bzip2, LZMA, Zstandard or a cipher, which Rebel does not hold; such a member fails `unsupported`
+  go      zip.RegisterCompressor, zip.RegisterDecompressor, zip.Compressor, zip.Decompressor, zip.Reader.RegisterDecompressor, zip.Writer.RegisterCompressor
+  rust    -
+  python  zipfile.ZIP_BZIP2, zipfile.ZIP_LZMA, zipfile.ZIP_ZSTANDARD, ZipFile.setpassword, ZipFile.open(pwd=), ZipFile.read(pwd=), ZipFile.extract(pwd=)
+  note    -
+
+capability archive/zip-write  a zip archive written member by member
+  heroes  archive.zip_writer, archive.write_zip_entry, archive.finish_zip
+  go      zip.NewWriter, zip.Writer, zip.Writer.Create, zip.Writer.CreateHeader, zip.Writer.Close, zip.Writer.Flush, zip.Writer.SetComment
+  rust    -
+  python  ZipFile(mode="w"), ZipFile.writestr, ZipFile.open(mode="w"), ZipFile.close, ZipFile.comment
+  note    names past ASCII are written in UTF-8 and flagged so; every member says it was made on Unix, with its mode, and carries the extended timestamp. ZIP64's fields and end records are written exactly where a size, an offset or the count passes 32 bits, as Go writes them; Python writes them where it is asked to as well (`force_zip64`)
+
+capability archive/zip-from-disk  members made from files on the disk
+  heroes  archive.add_zip_file, archive.add_zip_tree
+  go      zip.Writer.AddFS, zip.FileInfoHeader
+  rust    -
+  python  ZipFile.write, ZipFile.mkdir, ZipInfo.from_file, zipfile.PyZipFile, PyZipFile.writepy
+  note    a file's data is read and compressed 65,536 bytes at a time, with a data descriptor after it, so a file larger than memory is added. PyZipFile's compiling of Python sources is Python's own
+
+capability archive/zip-copy  a member copied from one archive into another without decompressing
+  heroes  refused: the member's compressed bytes would be written as they are, with no check that they are what their header says; reading and writing it again checks them
+  go      zip.Writer.Copy, zip.Writer.CreateRaw, zip.File.OpenRaw, zip.Writer.SetOffset
+  rust    -
+  python  -
+  note    -
+
+capability archive/zip-append  members added to an archive that is already there
+  heroes  refused: rewriting a central directory in place risks the archive on a failure; a program writes a new archive from the old one's members
+  go      -
+  rust    -
+  python  ZipFile(mode="a"), ZipFile(mode="x")
+  note    -
+
+capability archive/zip-path  a zip archive walked as a tree of paths
+  heroes  refused: `entries` holds every member with its name, which `path` cuts; a second view of the same list is a second way
+  go      zip.Reader.Open (fs.FS)
+  rust    -
+  python  zipfile.Path, Path.exists, Path.is_dir, Path.is_file, Path.is_symlink, Path.iterdir, Path.joinpath, Path.match, Path.glob, Path.rglob, Path.name, Path.filename, Path.parent, Path.stem, Path.suffix, Path.suffixes, Path.relative_to, Path.open, Path.read_bytes, Path.read_text
+  note    -
+
+capability archive/extract  an archive extracted into a folder, nothing landing outside it
+  heroes  archive.extract_tar, archive.extract_zip
+  go      zip.ErrInsecurePath, tar.ErrInsecurePath
+  rust    -
+  python  TarFile.extractall, TarFile.extract, ZipFile.extractall, ZipFile.extract, tarfile.data_filter, tarfile.tar_filter, tarfile.fully_trusted_filter, TarFile.extraction_filter, tarfile.FilterError, tarfile.AbsolutePathError, tarfile.OutsideDestinationError, tarfile.AbsoluteLinkError, tarfile.LinkOutsideDestinationError, tarfile.SpecialFileError, tarfile.LinkFallbackError, tarfile.ExtractError, TarFile.makedir, TarFile.makefile, TarFile.makelink, TarFile.makelink_with_filter, TarFile.makedev, TarFile.makefifo, TarFile.makeunknown, TarFile.chmod, TarFile.chown, TarFile.utime
+  note    one rule, Python's `data_filter` and stricter: an absolute name, a drive, a `..` part anywhere (Python allows one that stays inside), a link absolute or climbing out, a hard link to anything not already inside, a path through a link already on the disk, a device or a pipe, all refused with `invalid`; set-id, sticky and others' write bits dropped; owners never set. Go only reports `ErrInsecurePath` and leaves extraction to the program. A zip's names and total size are checked before anything is written; a tar, read as a stream, stops at the first refusal
+
+capability archive/list  the entries of an archive, without their data
+  heroes  archive.list_tar, archive.ZipReader
+  go      -
+  rust    -
+  python  TarFile.getmembers, TarFile.getnames, TarFile.getmember, TarFile.list, ZipFile.printdir, ZipFile.namelist
+  note    printing a listing is the program's: it has the entries
+
+capability archive/detect  which archive some bytes begin
+  heroes  archive.format_of, archive.Format
+  go      -
+  rust    -
+  python  tarfile.is_tarfile, zipfile.is_zipfile
+  note    zip by its first signature (Python looks for the end record; a self-extractor begins with a program, and `zip_reader` reads it anyway); tar by a header whose checksum holds
+
+capability archive/other-compressions  tar compressed by bzip2, xz or Zstandard
+  heroes  refused: those formats are not in Rebel (`compress` is DEFLATE's); gzip is offered
+  go      -
+  rust    -
+  python  TarFile.bz2open, TarFile.xzopen, TarFile.zstopen, tarfile.open(mode="r:bz2"), tarfile.open(mode="r:xz"), tarfile.open(mode="r:zst")
+  note    -
+
+dropped
+  go      tar.Header.Format, tar.FormatUnknown: which layout a header was read in; the fields are what a program uses
+  go      zip.ReadCloser, zip.OpenReader: a reader that owns its file; here the caller opens and closes it with `fs`
+  python  TarFile.debug, TarFile.errors, TarFile.encoding, tarfile.ENCODING, TarFile.tarinfo, TarInfo.chksum, TarInfo.offset, TarInfo.offset_data, TarInfo.tarfile, TarInfo.get_info: plumbing of the reader, an encoding switch (names here are UTF-8, other bytes read as Latin-1), and offsets inside the archive
+  python  ZipFile.fp, ZipFile.mkdir(mode=), ZipInfo.reserved, ZipInfo.volume: the open file object and fields of the format that hold nothing a program reads
+  python  zipfile.LargeZipFile, ZipFile(allowZip64=): ZIP64 is written where it is needed, always
+  python  tarfile.main, zipfile.main, `python -m tarfile`, `python -m zipfile`: commands of the interpreter, not the library

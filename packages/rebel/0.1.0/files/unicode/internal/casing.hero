@@ -1,0 +1,237 @@
+# The case of a code point: the one-to-one mappings Unicode calls simple, the
+# full ones that may write several characters, the folded form texts are
+# compared by, and the walk round the code points that fold together.
+#
+# A full mapping is answered packed, `first | second << 21 | third << 42`, a
+# second or third of 0 meaning none: no mapping writes U+0000 after its first
+# character, and a mapping of one code point packs as the code point itself.
+
+use unicode/internal/case_tables
+use unicode/internal/fold_tables
+use unicode/internal/search
+use unicode/internal/sweep
+use unicode/internal/utf8
+
+# Whether `n` is outside 0 to U+10FFFF, where no table reaches.
+function is_outside(n: i64) -> bool
+    return n < 0 || n > 0x10ffff
+
+# The simple upper case of `n`, or `n` where it has none.
+function simple_upper(n: i64) -> i64
+    if is_outside(n)
+        return n
+    return search.mapped(ranges: case_tables.UPPER_RANGES, deltas: case_tables.UPPER_DELTAS, n: n, otherwise: n)
+
+# The simple lower case of `n`, or `n` where it has none.
+function simple_lower(n: i64) -> i64
+    if is_outside(n)
+        return n
+    return search.mapped(ranges: case_tables.LOWER_RANGES, deltas: case_tables.LOWER_DELTAS, n: n, otherwise: n)
+
+# The simple title case of `n`, which is its upper case but where
+# `TITLE_RANGES` says otherwise, or `n` where it has none.
+function simple_title(n: i64) -> i64
+    if is_outside(n)
+        return n
+    return search.mapped(
+        ranges: case_tables.TITLE_RANGES,
+        deltas: case_tables.TITLE_DELTAS,
+        n: n,
+        otherwise: simple_upper(n)
+    )
+
+# The simple folded form of `n`, which is its lower case but where
+# `FOLD_RANGES` says otherwise.
+function simple_fold_form(n: i64) -> i64
+    return search.mapped(
+        ranges: fold_tables.FOLD_RANGES,
+        deltas: fold_tables.FOLD_DELTAS,
+        n: n,
+        otherwise: simple_lower(n)
+    )
+
+# The next code point that folds as `n` does: the smallest above it, else the
+# smallest of all; `n` where none other does.
+function next_in_fold(n: i64) -> i64
+    if is_outside(n)
+        return n
+    below = search.mapped(
+        ranges: fold_tables.ORBIT_DOWN_RANGES,
+        deltas: fold_tables.ORBIT_DOWN_DELTAS,
+        n: n,
+        otherwise: n
+    )
+    return search.mapped(
+        ranges: fold_tables.ORBIT_UP_RANGES,
+        deltas: fold_tables.ORBIT_UP_DELTAS,
+        n: n,
+        otherwise: below
+    )
+
+# The full upper case of `n`, packed.
+function full_upper(n: i64) -> i64
+    return search.looked_up(
+        sources: case_tables.UPPER_SPECIAL_FROM,
+        targets: case_tables.UPPER_SPECIAL_TO,
+        n: n,
+        otherwise: simple_upper(n)
+    )
+
+# The full lower case of `n`, packed.
+function full_lower(n: i64) -> i64
+    return search.looked_up(
+        sources: case_tables.LOWER_SPECIAL_FROM,
+        targets: case_tables.LOWER_SPECIAL_TO,
+        n: n,
+        otherwise: simple_lower(n)
+    )
+
+# The full title case of `n`, packed.
+function full_title(n: i64) -> i64
+    return search.looked_up(
+        sources: case_tables.TITLE_SPECIAL_FROM,
+        targets: case_tables.TITLE_SPECIAL_TO,
+        n: n,
+        otherwise: simple_title(n)
+    )
+
+# The full folded form of `n`, packed.
+function full_fold(n: i64) -> i64
+    return search.looked_up(
+        sources: fold_tables.FOLD_SPECIAL_FROM,
+        targets: fold_tables.FOLD_SPECIAL_TO,
+        n: n,
+        otherwise: simple_fold_form(n)
+    )
+
+# The code points of a packed mapping, one to three.
+function unpacked(packed: i64) -> [i64]
+    points: [i64] @= [packed & 0x1fffff]
+    second = packed >> 21 & 0x1fffff
+    third = packed >> 42 & 0x1fffff
+
+    if second != 0
+        points @ points.push(second)
+
+    if third != 0
+        points @ points.push(third)
+    return points
+
+# The text a full mapping of `c`, whose code point is `n`, writes: `c` itself
+# where the mapping leaves it as it is.
+function mapped_text(c: str, n: i64, packed: i64) -> str
+    if packed == n
+        return c
+    return utf8.text_of(unpacked(packed))
+
+## Tests
+
+# The expected numbers are the fold of `sweep` over what Python 3.15.2's
+# `unicodedata` and `str` methods and Go 1.27.3's `unicode` answer for the
+# same code points, observed 2026-11-15, both reading Unicode 17.0.0; the
+# seven blocks are Latin to Latin Extended-B (U+0000 to U+024F), Greek and
+# Cyrillic (U+0370 to U+052F), General Punctuation to Number Forms (U+2000
+# to U+218F), CJK Symbols and Punctuation, Hiragana and Katakana (U+3000 to
+# U+30FF), the Halfwidth and Fullwidth Forms (U+FF00 to U+FFEF), Deseret to
+# Osage (U+10400 to U+104FF) and the Mathematical Alphanumeric Symbols
+# (U+1D400 to U+1D7FF): 3,216 code points for each question.
+
+test "simple_upper: every code point of seven blocks, against Go's unicode"
+    assert sweep.folded_numbers(question: simple_upper, first: 0x0, past: 0x250) == 245452044
+    assert sweep.folded_numbers(question: simple_upper, first: 0x370, past: 0x530) == 144244140
+    assert sweep.folded_numbers(question: simple_upper, first: 0x2000, past: 0x2190) == 34641508
+    assert sweep.folded_numbers(question: simple_upper, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: simple_upper, first: 0xff00, past: 0xfff0) == 526075667
+    assert sweep.folded_numbers(question: simple_upper, first: 0x10400, past: 0x10500) == 107353088
+    assert sweep.folded_numbers(question: simple_upper, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "simple_lower: every code point of seven blocks, against Go's unicode"
+    assert sweep.folded_numbers(question: simple_lower, first: 0x0, past: 0x250) == 610671422
+    assert sweep.folded_numbers(question: simple_lower, first: 0x370, past: 0x530) == 259711448
+    assert sweep.folded_numbers(question: simple_lower, first: 0x2000, past: 0x2190) == 473247259
+    assert sweep.folded_numbers(question: simple_lower, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: simple_lower, first: 0xff00, past: 0xfff0) == 672680283
+    assert sweep.folded_numbers(question: simple_lower, first: 0x10400, past: 0x10500) == 575974035
+    assert sweep.folded_numbers(question: simple_lower, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "simple_title: every code point of seven blocks, against Go's unicode"
+    assert sweep.folded_numbers(question: simple_title, first: 0x0, past: 0x250) == 241215983
+    assert sweep.folded_numbers(question: simple_title, first: 0x370, past: 0x530) == 144244140
+    assert sweep.folded_numbers(question: simple_title, first: 0x2000, past: 0x2190) == 34641508
+    assert sweep.folded_numbers(question: simple_title, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: simple_title, first: 0xff00, past: 0xfff0) == 526075667
+    assert sweep.folded_numbers(question: simple_title, first: 0x10400, past: 0x10500) == 107353088
+    assert sweep.folded_numbers(question: simple_title, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "next_in_fold: every code point of seven blocks, against Go's unicode"
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x0, past: 0x250) == 707065930
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x370, past: 0x530) == 670951217
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x2000, past: 0x2190) == 248149952
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: next_in_fold, first: 0xff00, past: 0xfff0) == 820970340
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x10400, past: 0x10500) == 882230870
+    assert sweep.folded_numbers(question: next_in_fold, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "full_upper: every code point of seven blocks, against Python's str"
+    assert sweep.folded_numbers(question: full_upper, first: 0x0, past: 0x250) == 603061572
+    assert sweep.folded_numbers(question: full_upper, first: 0x370, past: 0x530) == 778296174
+    assert sweep.folded_numbers(question: full_upper, first: 0x2000, past: 0x2190) == 34641508
+    assert sweep.folded_numbers(question: full_upper, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: full_upper, first: 0xff00, past: 0xfff0) == 526075667
+    assert sweep.folded_numbers(question: full_upper, first: 0x10400, past: 0x10500) == 107353088
+    assert sweep.folded_numbers(question: full_upper, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "full_lower: every code point of seven blocks, against Python's str"
+    assert sweep.folded_numbers(question: full_lower, first: 0x0, past: 0x250) == 330472340
+    assert sweep.folded_numbers(question: full_lower, first: 0x370, past: 0x530) == 259711448
+    assert sweep.folded_numbers(question: full_lower, first: 0x2000, past: 0x2190) == 473247259
+    assert sweep.folded_numbers(question: full_lower, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: full_lower, first: 0xff00, past: 0xfff0) == 672680283
+    assert sweep.folded_numbers(question: full_lower, first: 0x10400, past: 0x10500) == 575974035
+    assert sweep.folded_numbers(question: full_lower, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "full_title: every code point of seven blocks, against Python's str"
+    assert sweep.folded_numbers(question: full_title, first: 0x0, past: 0x250) == 746346508
+    assert sweep.folded_numbers(question: full_title, first: 0x370, past: 0x530) == 778296174
+    assert sweep.folded_numbers(question: full_title, first: 0x2000, past: 0x2190) == 34641508
+    assert sweep.folded_numbers(question: full_title, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: full_title, first: 0xff00, past: 0xfff0) == 526075667
+    assert sweep.folded_numbers(question: full_title, first: 0x10400, past: 0x10500) == 107353088
+    assert sweep.folded_numbers(question: full_title, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "full_fold: every code point of seven blocks, against Python's str"
+    assert sweep.folded_numbers(question: full_fold, first: 0x0, past: 0x250) == 293339529
+    assert sweep.folded_numbers(question: full_fold, first: 0x370, past: 0x530) == 826047745
+    assert sweep.folded_numbers(question: full_fold, first: 0x2000, past: 0x2190) == 473247259
+    assert sweep.folded_numbers(question: full_fold, first: 0x3000, past: 0x3100) == 121411654
+    assert sweep.folded_numbers(question: full_fold, first: 0xff00, past: 0xfff0) == 672680283
+    assert sweep.folded_numbers(question: full_fold, first: 0x10400, past: 0x10500) == 575974035
+    assert sweep.folded_numbers(question: full_fold, first: 0x1d400, past: 0x1d800) == 495960294
+
+test "full_upper, full_title, full_fold: one character to several"
+    assert unpacked(full_upper(0xdf)) == [0x53, 0x53]
+    assert unpacked(full_title(0xdf)) == [0x53, 0x73]
+    assert unpacked(full_fold(0xdf)) == [0x73, 0x73]
+    assert unpacked(full_upper(0x390)) == [0x399, 0x308, 0x301]
+    assert unpacked(full_lower(0x130)) == [0x69, 0x307]
+    assert unpacked(full_upper(0x61)) == [0x41]
+
+test "next_in_fold: round the kelvin sign, a letter alone, and numbers past the range"
+    assert next_in_fold(0x4b) == 0x6b && next_in_fold(0x6b) == 0x212a && next_in_fold(0x212a) == 0x4b
+    assert next_in_fold(0x31) == 0x31
+    assert next_in_fold(-2) == -2 && next_in_fold(0x110000) == 0x110000
+
+test "simple mappings: one with none, the title case of a digraph, and numbers past the range"
+    assert simple_upper(0xdf) == 0xdf && simple_lower(0x41) == 0x61
+    assert simple_title(0x1c6) == 0x1c5 && simple_upper(0x1c6) == 0x1c4
+    assert simple_upper(-1) == -1 && simple_lower(0x110000) == 0x110000 && simple_title(9223372036854775807) == 9223372036854775807
+
+test "unpacked: one, two and three code points"
+    assert unpacked(0x41) == [0x41]
+    assert unpacked(0x53 | 0x53 << 21) == [0x53, 0x53]
+    assert unpacked(0x399 | 0x308 << 21 | 0x301 << 42) == [0x399, 0x308, 0x301]
+
+test "mapped_text: a character the mapping leaves, one it changes, one it makes two"
+    assert mapped_text(c: "1", n: 0x31, packed: full_upper(0x31)) == "1"
+    assert mapped_text(c: "a", n: 0x61, packed: full_upper(0x61)) == "A"
+    assert mapped_text(c: "ß", n: 0xdf, packed: full_upper(0xdf)) == "SS"

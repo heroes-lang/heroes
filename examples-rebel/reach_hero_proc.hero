@@ -1,0 +1,9 @@
+# Reaches Rebel's floor over the platform layer's child processes,
+# `hero_proc.h`, so that `heroes test` on this file runs the floor's own tests
+# (spec § 12, § 13). It asks for the kind of the last failure, which no call
+# has set, and prints the 0.
+
+use <rebel>/process/hero_proc
+
+function main()
+    print(hero_proc.last_error())

@@ -1,0 +1,73 @@
+# The "in body" insertion mode (13.2.6.4.7): characters, comments, doctypes
+# and the end of the text here; its start tags in `body_start.hero` and its end
+# tags in `body_end.hero`.
+
+use html/internal/ascii
+use html/internal/body_end
+use html/internal/body_start
+use html/internal/builder
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/token
+
+# 13.2.6.4.7, "in body".
+function in_body(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        characters(@b, t)
+        return .done
+
+    if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+
+    if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+
+    if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+
+    if t.kind == token.EOF
+        if b.template_count > 0
+            return .using(mode: .in_template)
+
+        if builder.has_unexpected_open(b)
+            builder.error(@b, "unexpected-end-of-file", t)
+        return .done
+
+    if t.kind == token.START
+        return body_start.start_tag(@b, @t)
+    return body_end.end_tag(@b, t)
+
+# "In body"'s characters: each zero byte a parse error and dropped, the rest
+# inserted after the active formatting elements are reconstructed.
+function characters(@b: builder.Builder, t: token.Token lent)
+    s = without_zero(@b, t)
+
+    if s == ""
+        return
+    formatting.reconstruct(@b)
+    insert.text(@b, s)
+
+    if !ascii.is_all_white(s)
+        b.frameset_ok @ false
+
+# The characters of `t` with every zero byte taken out, each one a parse
+# error.
+function without_zero(@b: builder.Builder, t: token.Token lent) -> str
+    s = t.data
+    pieces: [str] @= []
+    run: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] == 0
+            builder.error(@b, "unexpected-null-character", t)
+            pieces @ pieces.push(s.slice(from: run, to: i))
+            run @ i + 1
+
+    if run == 0
+        return s
+    pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return pieces.join("")

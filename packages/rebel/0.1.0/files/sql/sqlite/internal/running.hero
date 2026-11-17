@@ -1,0 +1,303 @@
+# A compiled statement run: its parameters bound and counted, its steps taken
+# to the end, its rows read into `sql`'s rows, and the statement reset and its
+# parameters cleared after every run, failed or not, so that it holds no lock
+# and no copy of a value between two runs.
+
+use sql
+use sql/sqlite/hero_sqlite3
+use sql/sqlite/internal/codes
+use sql/sqlite/internal/values
+use time
+
+# The columns `compiled` answers, each with its declared type, "" for an
+# expression's.
+#
+# - `compiled`: a compiled statement.
+function columns_of(compiled: hero_sqlite3.Compiled) -> [sql.Column]
+    columns: [sql.Column] @= []
+    count = hero_sqlite3.column_count(compiled)
+    at: i64 @= 0
+
+    while at < count
+        name = hero_sqlite3.column_name(compiled, at).default("")
+        declared = hero_sqlite3.column_declared_type(compiled, at).default("")
+        columns @ columns.push(sql.Column(name: name, type_name: declared))
+        at @ at + 1
+
+    return columns
+
+# Runs `compiled` with `params` to its end, as the face's `exec` does.
+#
+# - `connection`: the connection `compiled` belongs to.
+# - `compiled`: the statement, reset and cleared when this returns.
+# - `params`: the placeholders' values in order.
+#
+# Fails `invalid` where `params` holds more or fewer values than the
+# placeholders, and with SQLite's failure where a bind or a step fails.
+function run(connection: hero_sqlite3.Connection, compiled: hero_sqlite3.Compiled, params: [sql.Value]) -> sql.Result?
+    bound(connection, compiled, params)?
+    before = hero_sqlite3.total_changes(connection)
+    answered: i64 @= 0
+
+    while true
+        rc = hero_sqlite3.step(compiled)
+
+        if rc == hero_sqlite3.SQLITE_DONE
+            break
+
+        if rc != hero_sqlite3.SQLITE_ROW
+            r = codes.refusal(connection, rc)
+            done(compiled)
+            return fail(code: r.code, msg: r.msg)
+        answered @ answered + 1
+
+    done(compiled)
+
+    changed = if hero_sqlite3.total_changes(connection) != before
+        hero_sqlite3.changes(connection)
+    else if hero_sqlite3.read_only(compiled) != 0
+        answered
+    else
+        0
+
+    return ok(sql.Result(rows_affected: changed, last_id: ok(hero_sqlite3.last_insert_rowid(connection))))
+
+# Runs `compiled` with `params` and answers its columns and every row.
+#
+# - `connection`: the connection `compiled` belongs to.
+# - `compiled`: the statement, reset and cleared when this returns.
+# - `params`: the placeholders' values in order.
+#
+# Fails as `run` does, and `invalid` where a text is not UTF-8.
+function rows(connection: hero_sqlite3.Connection, compiled: hero_sqlite3.Compiled, params: [sql.Value]) -> sql.Rows?
+    bound(connection, compiled, params)?
+    columns = columns_of(compiled)
+    names = names_of(columns)
+    readings = readings_of(columns)
+    answered: [sql.Row] @= []
+
+    while true
+        rc = hero_sqlite3.step(compiled)
+
+        if rc == hero_sqlite3.SQLITE_DONE
+            break
+
+        if rc != hero_sqlite3.SQLITE_ROW
+            r = codes.refusal(connection, rc)
+            done(compiled)
+            return fail(code: r.code, msg: r.msg)
+
+        match values.row_values(compiled, readings)
+            .ok read =>
+                answered @ answered.push(sql.Row(names: names, values: read))
+            .err e =>
+                done(compiled)
+                return fail(code: e.code, msg: e.msg)
+
+    done(compiled)
+    return ok(sql.Rows(columns: columns, rows: answered))
+
+# Runs `compiled` with `params` to its first row and stops there.
+#
+# - `connection`: the connection `compiled` belongs to.
+# - `compiled`: the statement, reset and cleared when this returns.
+# - `params`: the placeholders' values in order.
+#
+# Fails `not_found` where it answers no row, and as `rows` does.
+function first_row(connection: hero_sqlite3.Connection, compiled: hero_sqlite3.Compiled, params: [sql.Value]) -> sql.Row?
+    bound(connection, compiled, params)?
+    columns = columns_of(compiled)
+    rc = hero_sqlite3.step(compiled)
+
+    if rc == hero_sqlite3.SQLITE_DONE
+        done(compiled)
+        return fail(code: sql.NOT_FOUND, msg: "the statement answered no row")
+
+    if rc != hero_sqlite3.SQLITE_ROW
+        r = codes.refusal(connection, rc)
+        done(compiled)
+        return fail(code: r.code, msg: r.msg)
+    read = values.row_values(compiled, readings_of(columns))
+    done(compiled)
+    return ok(sql.Row(names: names_of(columns), values: read?))
+
+# Binds `params` to `compiled`'s placeholders, in order from 1.
+#
+# - `connection`: the connection `compiled` belongs to.
+# - `compiled`: the statement.
+# - `params`: one value per placeholder.
+#
+# Fails `invalid` where `params` holds more or fewer values than the
+# statement's largest placeholder's number, and with SQLite's failure where a
+# bind fails, `limit` for a value past SQLite's limits.
+function bound(connection: hero_sqlite3.Connection, compiled: hero_sqlite3.Compiled, params: [sql.Value]) -> ()?
+    wanted = hero_sqlite3.parameter_count(compiled)
+
+    if wanted != params.len()
+        return fail(
+            code: sql.INVALID,
+            msg: f"the statement takes {counted(wanted)} and {counted(params.len())} were given"
+        )
+    at: i64 @= 0
+
+    while at < wanted
+        rc = values.bind(compiled, at + 1, params[at])
+
+        if rc != hero_sqlite3.SQLITE_OK
+            r = codes.refusal(connection, rc)
+            done(compiled)
+            return fail(code: r.code, msg: f"{r.msg} (binding parameter {at + 1})")
+        at @ at + 1
+
+    return ok()
+
+# Resets `compiled` and clears its parameters, ready for its next run.
+#
+# - `compiled`: the statement.
+function done(compiled: hero_sqlite3.Compiled)
+    _ = hero_sqlite3.reset(compiled)
+    _ = hero_sqlite3.clear_bindings(compiled)
+
+# `n` parameters in words: `no parameter`, `1 parameter`, `2 parameters`.
+#
+# - `n`: how many, from 0.
+function counted(n: i64) -> str
+    if n == 0
+        return "no parameter"
+
+    if n == 1
+        return "1 parameter"
+    return f"{n} parameters"
+
+# The names of `columns`, in order.
+#
+# - `columns`: the columns.
+function names_of(columns: [sql.Column]) -> [str]
+    names: [str] @= []
+
+    for c in columns
+        names @ names.push(c.name)
+
+    return names
+
+# What each of `columns`' declared types makes of its values, in order.
+#
+# - `columns`: the columns.
+function readings_of(columns: [sql.Column]) -> [values.Reading]
+    readings: [values.Reading] @= []
+
+    for c in columns
+        readings @ readings.push(values.reading_of(c.type_name))
+
+    return readings
+
+## Tests
+
+# A connection in memory holding the table `t`, for a test, which closes it.
+function opened() -> hero_sqlite3.Connection
+    connection: hero_sqlite3.Connection @= nullptr
+    flags = hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE | hero_sqlite3.SQLITE_OPEN_EXRESCODE
+    assert hero_sqlite3.open(":memory:", @connection, flags) == hero_sqlite3.SQLITE_OK
+    words @= ""
+    script = "CREATE TABLE t(id INTEGER PRIMARY KEY, name TEXT UNIQUE, ok BOOLEAN, at TIMESTAMP, data BLOB)"
+    assert hero_sqlite3.exec(connection, script: script, words: @words) == hero_sqlite3.SQLITE_OK
+    return connection
+
+# `text` compiled on `connection`, for a test.
+function compiled_for(connection: hero_sqlite3.Connection, text: str) -> hero_sqlite3.Compiled
+    compiled: hero_sqlite3.Compiled @= nullptr
+    rest @= ""
+    assert hero_sqlite3.prepare(connection, sql: text, compiled: @compiled, rest: @rest) == hero_sqlite3.SQLITE_OK
+    return compiled
+
+test "run: rows inserted and counted, the rowid, a DDL counting none, a select counting its rows"
+    connection @= opened()
+    insert @= compiled_for(connection, "INSERT INTO t(name) VALUES (?1), (?2)")
+    r = run(connection, insert, [.text(v: "a"), .text(v: "b")]).must()
+    assert r.rows_affected == 2 && r.last_id.must() == 2
+    made @= compiled_for(connection, "CREATE TABLE u(x)")
+    assert run(connection, made, []).must().rows_affected == 0
+    counted_rows @= compiled_for(connection, "SELECT * FROM t")
+    assert run(connection, counted_rows, []).must().rows_affected == 2
+    none @= compiled_for(connection, "UPDATE t SET name = ?1 WHERE id = 99")
+    nothing = run(connection, none, [.text(v: "z")]).must()
+    assert nothing.rows_affected == 0 && nothing.last_id.must() == 2
+
+    match run(connection, insert, [.text(v: "a"), .text(v: "c")])
+        .ok _  => assert false
+        .err e => assert e.code == sql.EXISTS && e.msg == "[2067] UNIQUE constraint failed: t.name"
+
+    match run(connection, insert, [.text(v: "c")])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the statement takes 2 parameters and 1 parameter were given"
+
+    _ = hero_sqlite3.finalize(@insert)
+    _ = hero_sqlite3.finalize(@made)
+    _ = hero_sqlite3.finalize(@counted_rows)
+    _ = hero_sqlite3.finalize(@none)
+    assert hero_sqlite3.close(@connection) == hero_sqlite3.SQLITE_OK
+
+test "rows: every case there and back, the declared types read as a boolean and an instant"
+    connection @= opened()
+    at = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456789).must()
+    insert @= compiled_for(connection, "INSERT INTO t(name, ok, at, data) VALUES (?1, ?2, ?3, ?4)")
+    zero: [u8] = [0]
+    nul = zero.validated_bytes().must()
+    _ = run(
+        connection,
+        insert,
+        [.text(v: "h" + nul + "é"), .boolean(v: true), .instant(v: at), .blob(v: [0, 255])]
+    ).must()
+    _ = run(connection, insert, [.text(v: ""), .integer(v: 2), .text(v: "not a time"), .blob(v: [])]).must()
+    _ = run(connection, insert, [.null_value, .null_value, .null_value, .null_value]).must()
+    read @= compiled_for(connection, "SELECT name, ok, at, data, ok + 0 AS plain FROM t ORDER BY id")
+    answer = rows(connection, read, []).must()
+    assert answer.columns.len() == 5
+    assert answer.columns[1] == sql.Column(name: "ok", type_name: "BOOLEAN")
+    assert answer.columns[4] == sql.Column(name: "plain", type_name: "")
+    assert answer.rows.len() == 3
+    assert answer.rows[0].values == [.text(v: "h" + nul + "é"), .boolean(v: true), .instant(v: at), .blob(v: [0, 255]), .integer(v: 1)]
+    assert answer.rows[1].values == [.text(v: ""), .integer(v: 2), .text(v: "not a time"), .blob(v: []), .integer(v: 2)]
+    assert answer.rows[2].values == [.null_value, .null_value, .null_value, .null_value, .null_value]
+    assert answer.rows[2].names == ["name", "ok", "at", "data", "plain"]
+    _ = hero_sqlite3.finalize(@insert)
+    _ = hero_sqlite3.finalize(@read)
+    assert hero_sqlite3.close(@connection) == hero_sqlite3.SQLITE_OK
+
+test "rows and first_row: floats at their edges, a NaN stored as NULL, no row, and text that is not UTF-8"
+    connection @= opened()
+    numbers @= compiled_for(connection, "SELECT ?1, ?2, ?3, ?4, ?5, ?6")
+    nan = 0.0 / 0.0
+    row = first_row(
+        connection,
+        numbers,
+        [.float(v: nan), .float(v: -0.0), .float(v: 1.0 / 0.0), .integer(v: 9223372036854775807), .integer(v: -9223372036854775807 - 1), .float(v: 0.1 + 0.2)]
+    ).must()
+    assert row.values[0] == .null_value
+    assert sql.float_at(row, 1).must() == 0.0
+    assert sql.float_at(row, 2).must() == 1.0 / 0.0
+    assert sql.integer_at(row, 3).must() == 9223372036854775807
+    assert sql.integer_at(row, 4).must() == -9223372036854775807 - 1
+    assert sql.float_at(row, 5).must() == 0.1 + 0.2
+    nothing @= compiled_for(connection, "SELECT 1 WHERE 0")
+
+    match first_row(connection, nothing, [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "the statement answered no row"
+
+    assert rows(connection, nothing, []).must().rows.len() == 0
+    broken @= compiled_for(connection, "SELECT CAST(x'ff' AS TEXT)")
+
+    match rows(connection, broken, [])
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "column 0 holds text that is not UTF-8"
+
+    _ = hero_sqlite3.finalize(@numbers)
+    _ = hero_sqlite3.finalize(@nothing)
+    _ = hero_sqlite3.finalize(@broken)
+    assert hero_sqlite3.close(@connection) == hero_sqlite3.SQLITE_OK
+
+test "counted: none, one and many"
+    assert counted(0) == "no parameter"
+    assert counted(1) == "1 parameter"
+    assert counted(3) == "3 parameters"

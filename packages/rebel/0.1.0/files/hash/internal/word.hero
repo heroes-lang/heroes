@@ -1,0 +1,98 @@
+# The arithmetic of words of 64 bits that CRC-64 and FNV-64 wrap by design,
+# written so that nothing overflows, since an overflow aborts in Heroes. A word
+# is an `i64` holding the word's 64 bits, the highest as the sign; `^`, `&`,
+# `|`, `~` and `<<` are already the word's, `>>` copies the sign and so is
+# replaced by `shift_right`, and a sum or a product is made in halves of 32
+# bits, each of which fits. A word of 32 bits needs none of this: it is an
+# `i64` from 0 to 2^32 - 1, masked with `LOW32` after a sum or a product.
+
+# The 32 low bits of a word, all set: 2^32 - 1.
+constant LOW32: i64
+    0xffffffff
+
+# The highest bit of a word, which is the sign of the `i64` that holds it.
+constant TOP: i64
+    1 << 63
+
+# `x` shifted right by `n` bits, with zeros coming in at the top as for an
+# unsigned word. `n` is from 0 to 63.
+function shift_right(x: i64, n: i64) -> i64
+    if n == 0
+        return x
+    return x >> n & ~(-1 << 64 - n)
+
+# `a + b` modulo 2^64: the low halves are added, and their carry goes into
+# the high halves' sum, whose bits past 32 `<<` drops.
+function add(a: i64, b: i64) -> i64
+    low = (a & LOW32) + (b & LOW32)
+    high = shift_right(x: a, n: 32) + shift_right(x: b, n: 32) + (low >> 32)
+    return high << 32 | low & LOW32
+
+# `x` times `m` modulo 2^64, for an `m` from 0 to 2^31 - 1: each half of `x`
+# is below 2^32, so its product with `m` and the carry fit an `i64`.
+function times_small(x: i64, m: i64) -> i64
+    low = (x & LOW32) * m
+    high = shift_right(x: x, n: 32) * m + (low >> 32)
+    return high << 32 | low & LOW32
+
+# The word that holds the bits of `x`.
+function from_unsigned(x: u64) -> i64
+    if x < 9223372036854775808
+        return to_i64(x).must()
+    return to_i64(x - 9223372036854775808).must() | TOP
+
+# The `u64` whose bits the word `x` holds.
+function unsigned(x: i64) -> u64
+    if x >= 0
+        return to_u64(x).must()
+    return to_u64(x & ~TOP).must() + 9223372036854775808
+
+# The bytes of `s`, its UTF-8, for the tests of the package.
+function bytes_of(s: str) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        out @ out.push(s[at])
+        at @ at + 1
+
+    return out
+
+test "word shift_right: by 0, by 1 and by 63, of a word with its top bit set and of one without"
+    assert shift_right(x: -1, n: 0) == -1
+    assert shift_right(x: -1, n: 1) == 0x7fffffffffffffff
+    assert shift_right(x: -1, n: 63) == 1
+    assert shift_right(x: TOP, n: 63) == 1
+    assert shift_right(x: 0x7fffffffffffffff, n: 62) == 1
+    assert shift_right(x: 0x100, n: 8) == 1
+
+test "word add: no carry, a carry between the halves, and a sum past 2^64 that wraps"
+    assert add(a: 1, b: 2) == 3
+    assert add(a: LOW32, b: 1) == 0x100000000
+    assert add(a: -1, b: 1) == 0
+    assert add(a: -1, b: -1) == -2
+    assert add(a: 0x7fffffffffffffff, b: 1) == TOP
+    assert add(a: TOP, b: TOP) == 0
+
+test "word times_small: by 0 and 1, a product past 2^64 that wraps, and the largest factor"
+    assert times_small(x: -1, m: 0) == 0
+    assert times_small(x: -1, m: 1) == -1
+    assert times_small(x: -1, m: 3) == -3
+    assert times_small(x: TOP, m: 2) == 0
+    assert times_small(x: -1, m: 0x7fffffff) == -0x7fffffff
+    assert times_small(x: 0x100000000, m: 0x7fffffff) == 0x7fffffff00000000
+
+test "word from_unsigned and unsigned: 0, the largest i64, 2^63 and the largest u64, both ways"
+    assert from_unsigned(0) == 0
+    assert from_unsigned(9223372036854775807) == 0x7fffffffffffffff
+    assert from_unsigned(9223372036854775808) == TOP
+    assert from_unsigned(18446744073709551615) == -1
+    assert unsigned(-1) == 18446744073709551615
+    assert unsigned(TOP) == 9223372036854775808
+    assert unsigned(0) == 0
+    assert unsigned(from_unsigned(14695981039346656037)) == 14695981039346656037
+
+test "word bytes_of: empty, ASCII and a character of three bytes"
+    assert bytes_of("").len() == 0
+    assert bytes_of("ab") == [0x61, 0x62]
+    assert bytes_of("☃") == [0xe2, 0x98, 0x83]

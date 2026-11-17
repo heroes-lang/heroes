@@ -1,0 +1,205 @@
+# The elements of a set one at a time: a set built from a list and read back
+# as one, an element asked for, added and removed. A set is a `{K: bool}` and
+# a key under `false` is no element, so every function reads a key through
+# `contains` and every set it answers holds `true` alone.
+
+use sets/internal/samples
+
+# A set of the elements of `elements`, in the order they first occur.
+function from_list<K>(elements: [K]) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for x in elements
+        out[x] @ true
+
+    return out
+
+# Whether `s` holds `element` under `true`.
+function contains<K>(s: {K: bool}, element: K) -> bool
+    return s[element].default(false)
+
+# The keys of `s` under `true`, in their order.
+function to_list<K>(s: {K: bool}) -> [K]
+    out: [K] @= []
+
+    for k in keys(s)
+        if s[k].must()
+            out @ out.push(k)
+
+    return out
+
+# `s` itself where every key is under `true`, which is every set this package
+# answers; otherwise its keys under `true` alone, in their order. A read of
+# each value decides it, so a set already clean is not built again.
+function clean<K>(s: {K: bool}) -> {K: bool}
+    for k in keys(s)
+        if !s[k].must()
+            return from_list(elements: to_list(s: s))
+
+    return s
+
+# `s` with `element` under `true`.
+function add<K>(s: {K: bool}, element: K) -> {K: bool}
+    out: {K: bool} @= clean(s: s)
+    out[element] @ true
+    return out
+
+# `s` with every element of `elements` under `true`.
+function add_all<K>(s: {K: bool}, elements: [K]) -> {K: bool}
+    out: {K: bool} @= clean(s: s)
+
+    for x in elements
+        out[x] @ true
+
+    return out
+
+# `s` without `element`.
+function remove<K>(s: {K: bool}, element: K) -> {K: bool}
+    return remove_all(s: s, elements: [element])
+
+# `s` without the elements of `elements`: one pass over each.
+function remove_all<K>(s: {K: bool}, elements: [K]) -> {K: bool}
+    gone = from_list(elements: elements)
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && !contains(s: gone, element: k)
+            out[k] @ true
+
+    return out
+
+# The elements of `s` that `keeps` accepts, `keeps` called once for each.
+function keep_where<K>(s: {K: bool}, keeps: (function(K) -> bool)) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && keeps(k)
+            out[k] @ true
+
+    return out
+
+# The elements of `s` that `removes` refuses, `removes` called once for each.
+function remove_where<K>(s: {K: bool}, removes: (function(K) -> bool)) -> {K: bool}
+    out: {K: bool} @= {}
+
+    for k in keys(s)
+        if s[k].must() && !removes(k)
+            out[k] @ true
+
+    return out
+
+test "from_list: an empty list, one element, an element twice, and the order of first occurrence"
+    nothing: [str] = []
+    assert from_list(elements: nothing).len() == 0
+    assert from_list(elements: ["a"]) == {"a": true}
+    s = from_list(elements: ["b", "a", "b", "c", "a"])
+    assert keys(s) == ["b", "a", "c"]
+    assert s == {"a": true, "b": true, "c": true}
+
+test "from_list: text of more than one byte, the largest and the smallest i64, and the two zeros as one float"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    assert keys(from_list(elements: ["è", "e", "è"])) == ["è", "e"]
+    assert keys(from_list(elements: [smallest, 0, largest, smallest])) == [smallest, 0, largest]
+    zero: f64 = 0.0
+    assert from_list(elements: [zero, -zero, 1.5]).len() == 2
+
+test "from_list: lists and records as elements, compared by their contents"
+    assert from_list(elements: [[1, 2], [2, 1], [1, 2]]).len() == 2
+    assert keys(from_list(elements: [samples.pair(first: 1, second: 2), samples.pair(first: 1, second: 2)])).len() == 1
+
+test "contains: an empty set, present, absent, a key under false, and text of more than one byte"
+    empty: {str: bool} = {}
+    assert !contains(s: empty, element: "a")
+    wide = from_list(elements: ["è"])
+    assert contains(s: wide, element: "è")
+    assert !contains(s: wide, element: "e")
+    assert !contains(s: {"a": true, "b": false}, element: "b")
+    assert contains(s: {"a": true, "b": false}, element: "a")
+
+test "contains: the largest and the smallest i64"
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    s = from_list(elements: [smallest, largest])
+    assert contains(s: s, element: smallest) && contains(s: s, element: largest)
+    assert !contains(s: s, element: 0)
+
+test "to_list: an empty set, a key under false left out, and the order after a key is written again"
+    empty: {str: bool} = {}
+    nothing: [str] = []
+    assert to_list(s: empty) == nothing
+    assert to_list(s: {"x": false}) == nothing
+    assert to_list(s: {"a": true, "b": false, "c": true}) == ["a", "c"]
+    s: {str: bool} @= {"b": true, "a": true}
+    s["b"] @ true
+    assert to_list(s: s) == ["b", "a"]
+
+test "clean: a clean set answered as it is, keys under false left out in order"
+    assert keys(clean(s: {"b": true, "a": true})) == ["b", "a"]
+    assert clean(s: {"a": false, "b": true, "c": false, "d": true}) == {"b": true, "d": true}
+    assert keys(clean(s: {"a": false, "b": true, "c": false, "d": true})) == ["b", "d"]
+    assert clean(s: {"a": false}).len() == 0
+
+test "add: to an empty set, an element held keeps its place, a new one stands last, the set given unchanged"
+    empty: {str: bool} = {}
+    assert add(s: empty, element: "a") == {"a": true}
+    s = from_list(elements: ["a", "b"])
+    assert keys(add(s: s, element: "a")) == ["a", "b"]
+    assert keys(add(s: s, element: "c")) == ["a", "b", "c"]
+    assert keys(s) == ["a", "b"]
+
+test "add: keys under false are left out, and the one added stands last"
+    added = add(s: {"a": false, "b": true}, element: "a")
+    assert keys(added) == ["b", "a"]
+    assert added == {"a": true, "b": true}
+    assert add(s: {"a": false, "b": true}, element: "c") == {"b": true, "c": true}
+
+test "add_all: an empty list, an empty set, elements held or listed twice, and the largest and smallest i64"
+    no_elements: [i64] = []
+    empty: {i64: bool} = {}
+    smallest: i64 = -9223372036854775807 - 1
+    largest: i64 = 9223372036854775807
+    assert keys(add_all(s: from_list(elements: [1, 2]), elements: no_elements)) == [1, 2]
+    assert keys(add_all(s: empty, elements: [3, 3])) == [3]
+    assert keys(add_all(s: from_list(elements: [1, 2]), elements: [2, 3, 4, 2])) == [1, 2, 3, 4]
+    assert keys(add_all(s: from_list(elements: [0]), elements: [largest, smallest])) == [0, largest, smallest]
+    assert add_all(s: {9: false}, elements: no_elements).len() == 0
+
+test "remove: from an empty set, the only element, an absent one, the first, the middle and the last"
+    empty: {str: bool} = {}
+    s = from_list(elements: ["a", "b", "c"])
+    assert remove(s: empty, element: "a").len() == 0
+    assert remove(s: from_list(elements: ["a"]), element: "a").len() == 0
+    assert keys(remove(s: s, element: "zz")) == ["a", "b", "c"]
+    assert keys(remove(s: s, element: "a")) == ["b", "c"]
+    assert keys(remove(s: s, element: "b")) == ["a", "c"]
+    assert keys(remove(s: s, element: "c")) == ["a", "b"]
+    assert keys(s) == ["a", "b", "c"]
+
+test "remove: text of more than one byte, and keys under false left out"
+    assert keys(remove(s: from_list(elements: ["è", "e"]), element: "è")) == ["e"]
+    assert remove(s: {"a": false, "b": true, "c": true}, element: "c") == {"b": true}
+
+test "remove_all: an empty list, every element, absent ones, and one listed twice"
+    no_elements: [i64] = []
+    s = from_list(elements: [1, 2, 3, 4])
+    assert keys(remove_all(s: s, elements: no_elements)) == [1, 2, 3, 4]
+    assert remove_all(s: s, elements: [4, 3, 2, 1]).len() == 0
+    assert keys(remove_all(s: s, elements: [4, 1, 9, 1])) == [2, 3]
+    assert keys(remove_all(s: s, elements: [9, 8])) == [1, 2, 3, 4]
+
+test "keep_where: an empty set, none kept, every one kept, the order, and a key under false"
+    empty: {i64: bool} = {}
+    assert keep_where(s: empty, keeps: samples.is_even).len() == 0
+    assert keep_where(s: from_list(elements: [1, 3]), keeps: samples.is_even).len() == 0
+    assert keys(keep_where(s: from_list(elements: [4, 2]), keeps: samples.is_even)) == [4, 2]
+    assert keys(keep_where(s: from_list(elements: [6, 1, 2, 3, 4]), keeps: samples.is_even)) == [6, 2, 4]
+    assert keep_where(s: {2: false, 4: true}, keeps: samples.is_even) == {4: true}
+
+test "remove_where: an empty set, none removed, every one removed, the order, and a key under false"
+    empty: {i64: bool} = {}
+    assert remove_where(s: empty, removes: samples.is_even).len() == 0
+    assert keys(remove_where(s: from_list(elements: [3, 1]), removes: samples.is_even)) == [3, 1]
+    assert remove_where(s: from_list(elements: [4, 2]), removes: samples.is_even).len() == 0
+    assert keys(remove_where(s: from_list(elements: [6, 1, 2, 3, 4]), removes: samples.is_even)) == [1, 3]
+    assert remove_where(s: {1: false, 3: true}, removes: samples.is_even) == {3: true}

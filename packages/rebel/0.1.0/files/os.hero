@@ -1,0 +1,622 @@
+# The process's world: its environment, its working folder, who it runs as and
+# on what machine. Files and folders by path are the package `fs`'s, and other
+# programs the package `process`'s.
+#
+# The environment is read and never written: in C a write of it beside another
+# thread's read is undefined, so no function here sets, removes or clears a
+# variable, and a child is given another environment through `process`. Every
+# answer the system can refuse is a `T?`, and a code says why.
+
+use os/hero_disk
+use os/hero_os
+use os/hero_sys
+use os/internal/codes
+use os/internal/expansion
+use os/internal/filled
+use os/internal/variables
+
+## The codes
+
+# A variable that is not set, or a name the machine does not give.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# A path given to `change_dir` names nothing.
+constant FILE_NOT_FOUND: str
+    codes.FILE_NOT_FOUND
+
+# A path given to `change_dir` names something that is not a folder.
+constant NOT_A_DIRECTORY: str
+    codes.NOT_A_DIRECTORY
+
+# The system refuses this to the program.
+constant PERMISSION: str
+    codes.PERMISSION
+
+# The input is not what the function reads; the message says where.
+constant INVALID: str
+    codes.INVALID
+
+# The system has no more of what the call needs.
+constant LIMIT: str
+    codes.LIMIT
+
+# This platform has no such thing: a user id on Windows, the size of an output
+# that is not a terminal.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+# Bytes the system holds that are not UTF-8, so no `str`.
+constant NOT_TEXT: str
+    codes.NOT_TEXT
+
+# The system refused for a reason none of the other codes names; the message
+# carries the system's own number.
+constant FAILED: str
+    codes.FAILED
+
+## The environment
+
+# What `env_all_bytes` answers for one variable: its name and its value as the
+# system holds them, which need not be UTF-8.
+record RawVariable
+    # The bytes before the first `=`, never empty.
+    name: [u8]
+    # The bytes after it.
+    value: [u8]
+
+# The value of the environment variable `name`. Fails `not_found` where it is
+# not set, which is never the same as set empty; `not_text` where its value is
+# not UTF-8 (`env_bytes` reads it); `invalid` where `name` is empty or holds
+# `=` or a zero byte, which name no variable on any system. On Windows a name
+# is compared without its case, as the system compares it.
+function env(name: str) -> str?
+    return variables.value_of(name)
+
+# The value of the environment variable `name` as the bytes the system holds,
+# UTF-8 or not. Fails as `env` does, but never `not_text`.
+function env_bytes(name: str) -> [u8]?
+    return variables.bytes_of(name)
+
+# Every variable of the environment, name to value, in the order the system
+# holds them. Fails `not_text` where a name or a value is not UTF-8
+# (`env_all_bytes` reads them), and with the system's code where it cannot be
+# read. An entry with no `=`, or one whose name is empty, as Windows' own
+# `=C:` are, is left out, so every name here is one `env` reads; where a name
+# stands twice its first value is kept, the one `env` answers.
+function env_all() -> {str: str}?
+    return variables.as_map()
+
+# Every variable of the environment as the bytes the system holds, in its
+# order, left out and kept as `env_all` leaves and keeps them. Fails with the
+# system's code where the environment cannot be read.
+function env_all_bytes() -> [RawVariable]?
+    every = variables.entries()?
+    out: [RawVariable] @= []
+    at: i64 @= 0
+
+    while at < every.names.len()
+        out @ out.push(RawVariable(name: every.names[at], value: every.values[at]))
+        at @ at + 1
+
+    return ok(out)
+
+# `s` with each `$NAME` and `${NAME}` replaced by what `lookup` answers for
+# `NAME`, a name being ASCII letters, digits and `_`; `$$` writes one `$`, and
+# a `$` before anything else stays as it is written. Fails with `lookup`'s own
+# error where it fails, and `invalid` where a `${` has no `}` or holds what is
+# not a name. Each name is asked once per place it stands.
+function expand(s: str, lookup: (function(str) -> str?)) -> str?
+    return expansion.expanded(s, lookup: lookup)
+
+# `s` with each `$NAME` and `${NAME}` replaced by the environment's value, as
+# `expand` reads them. Fails `not_found` naming the first variable that is not
+# set, never writing it as empty, and as `env` fails for a value.
+function expand_env(s: str) -> str?
+    return expansion.expanded(s, lookup: env)
+
+## The working folder and the user's folders
+
+# The working folder, absolute, every link on the way followed. Fails
+# `not_text` where its path is not UTF-8, and `failed` with the system's
+# number where it cannot be read: removed, or a folder above it not this
+# user's to search.
+function working_dir() -> str?
+    status: i64 @= -1
+    marks: i64 @= -1
+    here = hero_os.resolved_shown(".", status: @status, marks: @marks)
+
+    if status == hero_os.HERO_OS_NOT_TEXT
+        return fail(code: codes.NOT_TEXT, msg: "the working folder's path is not UTF-8")
+
+    if status != hero_os.HERO_OS_OK
+        return fail(
+            code: codes.FAILED,
+            msg: f"the working folder cannot be read: the system's number {hero_os.fs_why()}"
+        )
+    return ok(here)
+
+# Makes `path` the working folder, which every relative path is read in from
+# then on, a relative `path` read in the old one. Fails `file_not_found` where
+# `path` names nothing, `not_a_directory` where it names no folder,
+# `permission` where the folder is not this user's to enter, and `invalid`
+# where `path` is empty of meaning to the system or holds a zero byte. The
+# folder is the process's, one for all its threads: a thread that reads a
+# relative path while another changes it may read either folder.
+function change_dir(path: str) -> ()?
+    if codes.has_zero(path)
+        return fail(code: codes.INVALID, msg: "a path holding a zero byte names no folder")
+
+    if hero_disk.enter(path) != 0
+        return codes.disk_failed(asked: f"entering \"{path}\"")
+    return ok()
+
+# The system's folder for temporary files: on POSIX `TMPDIR` where it is set
+# and not empty, else `/tmp`; on Windows the system's own. It is named, never
+# made nor asked whether it is there. Fails `not_text` where its path is not
+# UTF-8.
+function temp_dir() -> str?
+    return filled.text_of(.temp)
+
+# The user's home folder: on POSIX `HOME`, or where that is unset or empty the
+# one the system's record of the user names; on Windows the profile folder.
+# Fails `not_found` where neither names one, `not_text` where its path is not
+# UTF-8. It is named, never made nor asked whether it is there.
+function home_dir() -> str?
+    return filled.text_of(.home)
+
+# The folder every program keeps what it can make again in, each under a name
+# of its own: `Library/Caches` under the home folder on Darwin,
+# `XDG_CACHE_HOME` where it is absolute or else `.cache` under the home folder
+# on every other POSIX, the local application data on Windows. Fails as
+# `home_dir` does.
+function cache_dir() -> str?
+    return filled.text_of(.cache)
+
+# The folder every program keeps its settings in, each under a name of its
+# own: `Library/Application Support` under the home folder on Darwin,
+# `XDG_CONFIG_HOME` where it is absolute or else `.config` under the home
+# folder on every other POSIX, the roaming application data on Windows. Fails
+# as `home_dir` does.
+function config_dir() -> str?
+    return filled.text_of(.settings)
+
+# The path of the program's own executable, absolute and with its links
+# followed. Fails `not_found` where the machine gives none (a Linux with no
+# `/proc`), never guessing from the program's first argument, and `not_text`
+# where the path is not UTF-8.
+function executable_path() -> str?
+    status: i64 @= -1
+    marks: i64 @= -1
+    exe = hero_os.exe_path_shown(status: @status, marks: @marks)
+
+    if status == hero_os.HERO_OS_NOT_FOUND
+        return fail(code: codes.NOT_FOUND, msg: "this machine gives no path for the program's executable")
+
+    if status == hero_os.HERO_OS_NOT_TEXT
+        return fail(code: codes.NOT_TEXT, msg: "the executable's path is not UTF-8")
+
+    if status != hero_os.HERO_OS_OK
+        return fail(code: codes.FAILED, msg: f"the executable's path cannot be read (status {status})")
+    return ok(exe)
+
+## Who runs the process, and where
+
+# The families of systems a program runs on, by what tells them apart here.
+variant Family
+    # Linux, Darwin and every other system that keeps POSIX's rules.
+    posix
+    # Windows.
+    windows
+
+# What `terminal_size` answers: how many characters the terminal shows.
+record TerminalSize
+    # Characters in a line, above 0.
+    columns: i64
+    # Lines on the screen, above 0.
+    rows: i64
+
+# Which system a program runs on, the one it was built for: Darwin, Linux,
+# Windows, or another that keeps POSIX's rules.
+variant System
+    # Darwin, the kernel of macOS.
+    darwin
+    # Linux.
+    linux
+    # Windows.
+    windows
+    # A system that keeps POSIX's rules and is neither Darwin nor Linux.
+    other
+
+# Which processor architecture a program is built for: x86-64, arm64, or
+# another.
+variant Architecture
+    # 64-bit x86, which some systems name `amd64`.
+    x86_64
+    # 64-bit Arm, which some systems name `aarch64`.
+    arm64
+    # Any other.
+    other
+
+# What `process_times` answers: the processor time the process has spent,
+# every thread of it counted.
+record ProcessTimes
+    # Nanoseconds spent running the program's own code.
+    user_ns: i64
+    # Nanoseconds the system spent working on the program's behalf.
+    system_ns: i64
+
+# What `load_average` answers: how many processes were running or waiting to
+# run, on average, each in thousandths, so 1500 is one and a half.
+record LoadAverage
+    # Over the last minute.
+    one_minute: i64
+    # Over the last five minutes.
+    five_minutes: i64
+    # Over the last fifteen minutes.
+    fifteen_minutes: i64
+
+# The family of the system the program runs on, told by the suffix the system
+# gives an executable: `.exe` on Windows and none on every other.
+function family() -> Family
+    if hero_os.run_exe_suffix() == ".exe"
+        return .windows
+    return .posix
+
+# The suffix an executable's file takes on this system: `.exe` on Windows,
+# where a program without it cannot be started, and "" on every other.
+function executable_suffix() -> str
+    return hero_os.run_exe_suffix()
+
+# The process's own id, as the system numbers it.
+function pid() -> i64
+    return hero_os.os_pid()
+
+# The id of the process that started this one. On POSIX, once that one has
+# ended, the id of the one the system gave this process to; on Windows the id
+# recorded when this process was made, which may by now name another. Fails
+# with the system's code where it cannot be read.
+function parent_pid() -> i64?
+    return codes.sys_number(hero_sys.parent_pid(), asked: "the parent's id")
+
+# The id of the user who started the process. Fails `unsupported` on Windows,
+# which names its users otherwise.
+function user_id() -> i64?
+    return codes.sys_number(hero_sys.user_id(), asked: "the user's id")
+
+# The id of the user whose rights the process has. Fails `unsupported` on
+# Windows.
+function effective_user_id() -> i64?
+    return codes.sys_number(hero_sys.effective_user_id(), asked: "the effective user's id")
+
+# The id of the group the process was started in. Fails `unsupported` on
+# Windows.
+function group_id() -> i64?
+    return codes.sys_number(hero_sys.group_id(), asked: "the group's id")
+
+# The id of the group whose rights the process has. Fails `unsupported` on
+# Windows.
+function effective_group_id() -> i64?
+    return codes.sys_number(hero_sys.effective_group_id(), asked: "the effective group's id")
+
+# The ids of the other groups the process belongs to, in the system's order.
+# Whether the effective group is among them is the system's choice, and Darwin
+# tells at most sixteen. Fails `unsupported` on Windows.
+function group_ids() -> [i64]?
+    return filled.group_ids()
+
+# The machine's host name: the kernel's on POSIX, qualified or not as the
+# machine was set up; the computer's DNS name on Windows, never qualified.
+# Fails `not_text` where it is not UTF-8, and with the system's code where it
+# cannot be read.
+function host_name() -> str?
+    return filled.text_of(.host_name)
+
+# The bytes of one page of memory. Fails with the system's code where it
+# cannot be read.
+function page_size() -> i64?
+    return codes.sys_number(hero_sys.page_size(), asked: "the size of a page")
+
+# How many processors the program may run on at once, at least 1: on Linux
+# the ones its thread is allowed, a container's set heeded and its quota of
+# time not; on Darwin the ones online; on Windows the ones of the process's
+# mask. Fails with the system's code where it cannot be read.
+function processor_count() -> i64?
+    return codes.sys_number(hero_sys.processor_count(), asked: "the count of processors")
+
+# The system the program runs on, the one it was built for.
+#
+# `other` is a system that keeps POSIX's rules and is neither Darwin nor Linux.
+# Nothing is asked of the machine, so it never fails.
+function system() -> System
+    named = hero_sys.system()
+
+    if named == hero_sys.HERO_SYS_SYSTEM_DARWIN
+        return .darwin
+
+    if named == hero_sys.HERO_SYS_SYSTEM_LINUX
+        return .linux
+
+    if named == hero_sys.HERO_SYS_SYSTEM_WINDOWS
+        return .windows
+    return .other
+
+# The processor architecture the program was built for.
+#
+# A program built for x86-64 and run by a translator on an Arm machine answers
+# `x86_64`. Nothing is asked of the machine, so it never fails.
+function architecture() -> Architecture
+    built = hero_sys.architecture()
+
+    if built == hero_sys.HERO_SYS_ARCH_X86_64
+        return .x86_64
+
+    if built == hero_sys.HERO_SYS_ARCH_ARM64
+        return .arm64
+    return .other
+
+# The system's version as the system writes it.
+#
+# Fails `not_text` where it is not UTF-8, and with the system's code where it
+# cannot be read. On POSIX it is the kernel's release, as `uname -r` prints it,
+# which on Darwin is the kernel's number and not macOS's own, though the two
+# may agree; on Windows it is `major.minor.build`.
+function system_version() -> str?
+    return filled.text_of(.version)
+
+# The name of the user the process runs as.
+#
+# Fails `not_found` where the machine names none, `not_text` where it is not
+# UTF-8, and with the system's code where it cannot be read. On POSIX it is the
+# name the system's record of the effective user holds, or `USER` where no
+# record names one; on Windows the thread's user, without its domain.
+function user_name() -> str?
+    return filled.text_of(.user_name)
+
+# The processor time the process has spent so far, in its own code and in the
+# system's on its behalf, every thread counted.
+#
+# Fails with the system's code where it cannot be read. The system counts it in
+# steps of its own, so two readings close together may be equal; a later one
+# is never less.
+function process_times() -> ProcessTimes?
+    user_ns: i64 @= 0
+    system_ns: i64 @= 0
+
+    if hero_sys.process_times(user_ns: @user_ns, system_ns: @system_ns) != 0
+        return codes.sys_failed(asked: "the process's processor time")
+    return ok(ProcessTimes(user_ns: user_ns, system_ns: system_ns))
+
+# The system's load averages over the last one, five and fifteen minutes, in
+# thousandths, in one reading.
+#
+# Fails `unsupported` on Windows, which keeps no such average, and with the
+# system's code where it cannot be read.
+function load_average() -> LoadAverage?
+    one: i64 @= 0
+    five: i64 @= 0
+    fifteen: i64 @= 0
+
+    if hero_sys.load_average(one: @one, five: @five, fifteen: @fifteen) != 0
+        if hero_sys.last_error() == hero_sys.HERO_SYS_UNSUPPORTED
+            return fail(code: codes.UNSUPPORTED, msg: "this system keeps no load averages")
+        return codes.sys_failed(asked: "the load averages")
+    return ok(LoadAverage(one_minute: one, five_minutes: five, fifteen_minutes: fifteen))
+
+## Random bytes and the terminal
+
+# `count` bytes from the system's generator for keys, fit for a unique name or
+# a key. Fails `invalid` where `count` is below 0, and with the system's code
+# where the generator refuses. On Linux it may wait, early in the machine's
+# start, until the generator is ready.
+function random_bytes(count: i64) -> [u8]?
+    if count < 0
+        return fail(code: codes.INVALID, msg: f"{count} random bytes asked: a count is 0 or more")
+    buffer: [u8] @= []
+
+    if hero_sys.random(@buffer, n: count.to_u64().must()) < 0
+        return codes.sys_failed(asked: f"{count} random bytes")
+    return ok(buffer)
+
+# The size of the terminal the process's standard output is, in one reading.
+# Fails `unsupported` where that output is a file, a pipe, none at all, or a
+# terminal that tells no size.
+function terminal_size() -> TerminalSize?
+    columns: i64 @= 0
+    rows: i64 @= 0
+
+    if hero_sys.terminal_size(columns: @columns, rows: @rows) != 0
+        if hero_sys.last_error() == hero_sys.HERO_SYS_UNSUPPORTED
+            return fail(code: codes.UNSUPPORTED, msg: "the standard output is not a terminal that tells its size")
+        return codes.sys_failed(asked: "the terminal's size")
+    return ok(TerminalSize(columns: columns, rows: rows))
+
+## Tests
+
+test "env: a set variable, one never set, the empty name, names holding = at either end, and a zero byte"
+    assert env("PATH").must().len() > 0
+
+    match env("REBEL_OS_NEVER_SET")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    zero: [u8] = ['P', 0]
+
+    for name in ["", "A=B", "=A", "A=", zero.validated_bytes().must()]
+        match env(name)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "env_bytes: the bytes of a set variable's text, and the failures env has"
+    path = env("PATH").must()
+    bytes = env_bytes("PATH").must()
+    assert bytes.len() == path.len()
+    assert bytes.validated_bytes().must() == path
+    assert env_bytes("REBEL_OS_NEVER_SET").is_err()
+    assert env_bytes("").is_err()
+
+test "env_all and env_all_bytes: PATH among them, every name read back by env, one order for both"
+    every = env_all().must()
+    raw = env_all_bytes().must()
+    names = keys(every)
+    assert names.len() == raw.len() && names.len() > 0
+    assert every["PATH"].must() == env("PATH").must()
+    at: i64 @= 0
+
+    while at < raw.len()
+        assert raw[at].name.validated_bytes().must() == names[at]
+        assert env(names[at]).must() == every[names[at]].must()
+        assert raw[at].value.validated_bytes().must() == every[names[at]].must()
+        at @ at + 1
+
+test "expand and expand_env: a name with and without braces, $$, a name not set, and braces unclosed"
+    path = env("PATH").must()
+    assert expand("é$PATH-${PATH}é$$PATH", lookup: env).must() == "é" + path + "-" + path + "é$PATH"
+    assert expand("", lookup: env).must() == ""
+    assert expand("$REBEL_OS_NEVER_SET", lookup: env).is_err()
+    assert expand_env("[$PATH]").must() == "[" + path + "]"
+
+    match expand_env("x ${REBEL_OS_NEVER_SET} y")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "the variable \"REBEL_OS_NEVER_SET\" is not set"
+
+    match expand_env("${PATH")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "working_dir and change_dir: absolute, the parent entered and left, and a missing path, a file, an empty one and a zero byte refused"
+    here = working_dir().must()
+    absolute = here[0] == '/' || here.len() > 2 && here[1] == ':'
+    assert absolute
+    change_dir("..").must()
+    above = working_dir().must()
+    assert above.len() < here.len() && here.slice(from: 0, to: above.len()) == above
+    change_dir(here).must()
+    assert working_dir().must() == here
+    change_dir(".").must()
+    assert working_dir().must() == here
+
+    match change_dir("rebel-os-never-there")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
+    match change_dir(executable_path().must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_A_DIRECTORY
+
+    zero: [u8] = ['.', 0]
+
+    match change_dir(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert change_dir("").is_err()
+    assert working_dir().must() == here
+
+test "temp_dir: TMPDIR without the separator at its end where it is set, /tmp where not, on POSIX"
+    temp = temp_dir().must()
+    assert temp.len() > 0
+
+    match family()
+        .windows => assert temp[temp.len() - 1] != '\\'
+        .posix =>
+            given = env("TMPDIR").default("")
+
+            if given == ""
+                assert temp == "/tmp"
+            else
+                assert temp != "/" && temp[temp.len() - 1] != '/'
+                assert given.slice(from: 0, to: temp.len()) == temp
+
+test "home_dir, cache_dir and config_dir: HOME on POSIX where it is set, and three folders apart"
+    home = home_dir().must()
+    cache = cache_dir().must()
+    config = config_dir().must()
+    assert home != cache && home != config && cache != config
+
+    match family()
+        .windows => assert home.len() > 2
+        .posix =>
+            given = env("HOME").default("")
+            assert given == "" || home == given
+
+test "executable_path, executable_suffix and family: an absolute file, one of two suffixes, the family they tell"
+    exe = executable_path().must()
+    suffix = executable_suffix()
+    assert exe.len() > suffix.len()
+    assert exe.slice(from: exe.len() - suffix.len(), to: exe.len()) == suffix
+
+    match family()
+        .windows => assert suffix == ".exe"
+        .posix   => assert suffix == "" && exe[0] == '/'
+
+test "pid and parent_pid: above 0, the same twice, and two processes"
+    assert pid() > 0 && pid() == pid()
+    parent = parent_pid().must()
+    assert parent > 0 && parent != pid()
+
+test "user_id, effective_user_id, group_id, effective_group_id, group_ids: numbers on POSIX, unsupported on Windows"
+    ids: [i64?] = [user_id(), effective_user_id(), group_id(), effective_group_id()]
+
+    for id in ids
+        match id
+            .ok n  => assert n >= 0 && family() == .posix
+            .err e => assert e.code == UNSUPPORTED && family() == .windows
+
+    match group_ids()
+        .ok groups =>
+            for g in groups
+                assert g >= 0
+        .err e => assert e.code == UNSUPPORTED && family() == .windows
+
+test "host_name, page_size and processor_count: a name, a power of two, at least one"
+    host = host_name().must()
+    assert host.len() > 0 && !codes.has_zero(host)
+    page = page_size().must()
+    assert page > 0 && page & page - 1 == 0
+    assert processor_count().must() >= 1
+
+test "system and architecture: the family the system belongs to, and the same answers twice"
+    match system()
+        .windows                  => assert family() == .windows
+        .darwin | .linux | .other => assert family() == .posix
+
+    assert system() == system()
+    assert architecture() == architecture()
+
+test "system_version and user_name: text with no zero byte, the same on a second reading"
+    version = system_version().must()
+    assert version.len() > 0 && !codes.has_zero(version)
+    assert system_version().must() == version
+    name = user_name().must()
+    assert name.len() > 0 && !codes.has_zero(name)
+    assert user_name().must() == name
+
+test "process_times: at or above 0, and a second reading never below the first"
+    first = process_times().must()
+    assert first.user_ns >= 0 && first.system_ns >= 0
+    second = process_times().must()
+    assert second.user_ns >= first.user_ns && second.system_ns >= first.system_ns
+
+test "load_average: three averages at or above 0 on POSIX, unsupported on Windows"
+    match load_average()
+        .ok load =>
+            assert family() == .posix
+            assert load.one_minute >= 0 && load.five_minutes >= 0 && load.fifteen_minutes >= 0
+        .err e => assert e.code == UNSUPPORTED && family() == .windows
+
+test "random_bytes: none, one, an odd count, two readings that differ, and counts below 0"
+    assert random_bytes(0).must() == []
+    assert random_bytes(1).must().len() == 1
+    assert random_bytes(257).must().len() == 257
+    assert random_bytes(32).must() != random_bytes(32).must()
+
+    for count in [-1, -9223372036854775807 - 1]
+        match random_bytes(count)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "terminal_size: columns and rows above 0, or unsupported where the output is no terminal"
+    match terminal_size()
+        .ok size => assert size.columns > 0 && size.rows > 0
+        .err e   => assert e.code == UNSUPPORTED

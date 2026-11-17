@@ -1,0 +1,72 @@
+# SHA-1's compression function, FIPS 180-4 6.1: five words of 32 bits
+# carried from block to block, each block of 64 bytes read as sixteen words
+# with the first byte the highest and stretched to eighty. SHA-1 is broken
+# for security: two inputs that answer alike have been made since 2017. It is
+# here for the formats and protocols that name it, Git's objects and older
+# certificates among them, never to stand for an input.
+
+use crypto/internal/word
+
+# The five words SHA-1 starts from, H0 to H4.
+constant START: [i64]
+    [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0]
+
+# The constant of each group of twenty steps: the integer parts of 2^30
+# times the square roots of 2, 3, 5 and 10.
+constant STEPS: [i64]
+    [0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6]
+
+# The five words after the block of 64 bytes of `data` that begins at `at`,
+# from `words`, the five words before it.
+function compress(words: [i64], data: [u8] lent, at: i64) -> [i64]
+    w: [i64] @= []
+    t: i64 @= 0
+
+    while t < 16
+        w @ w.push(word.load32_big(data, at + 4 * t))
+        t @ t + 1
+
+    while t < 80
+        w @ w.push(word.rotate_left32(x: w[t - 3] ^ w[t - 8] ^ w[t - 14] ^ w[t - 16], n: 1))
+        t @ t + 1
+
+    a: i64 @= words[0]
+    b: i64 @= words[1]
+    c: i64 @= words[2]
+    d: i64 @= words[3]
+    e: i64 @= words[4]
+    t @ 0
+
+    while t < 80
+        mixed: i64 @= 0
+
+        if t < 20
+            mixed @ b & c | ~b & d
+        else if t < 40 || t >= 60
+            mixed @ b ^ c ^ d
+        else
+            mixed @ b & c | b & d | c & d
+        next = word.rotate_left32(x: a, n: 5) + mixed + e + STEPS[t / 20] + w[t] & word.LOW32
+        e @ d
+        d @ c
+        c @ word.rotate_left32(x: b, n: 30)
+        b @ a
+        a @ next
+        t @ t + 1
+
+    return [
+        words[0] + a & word.LOW32
+        words[1] + b & word.LOW32
+        words[2] + c & word.LOW32
+        words[3] + d & word.LOW32
+        words[4] + e & word.LOW32
+    ]
+
+test "sha1 compress: the one block of the message abc, padded as SHA-1 pads it"
+    block: [u8] @= [0x61, 0x62, 0x63, 0x80]
+
+    while block.len() < 63
+        block @ block.push(0)
+
+    block @ block.push(24)
+    assert compress(START, block, 0) == [0xa9993e36, 0x4706816a, 0xba3e2571, 0x7850c26c, 0x9cd0d89d]

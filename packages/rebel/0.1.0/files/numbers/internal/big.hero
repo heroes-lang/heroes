@@ -1,0 +1,238 @@
+# Natural numbers of any size, as the exact arithmetic a float read from text
+# needs: built from digits, multiplied by small numbers and powers of ten,
+# shifted, compared and subtracted.
+#
+# A number is a `[i64]` of limbs of 28 bits, the least significant first, with
+# no zero limb at the top, so zero is `[]` and two equal numbers are equal
+# lists. A limb times a factor under 2 to the 31st, plus a carry, stays under
+# 2 to the 60th, so no step can overflow.
+
+constant LIMB_BITS: i64
+    28
+
+constant LIMB: i64
+    268435456
+
+constant MASK: i64
+    268435455
+
+# The largest factor `times_add` takes, 2 to the 31st less one.
+constant FACTOR_MAX: i64
+    2147483647
+
+# `a` without the zero limbs at its top.
+function trimmed(a: [i64]) -> [i64]
+    top: i64 @= a.len()
+
+    while top > 0 && a[top - 1] == 0
+        top @ top - 1
+
+    if top == a.len()
+        return a
+    return a.slice(from: 0, to: top)
+
+# The number `n`, which is not negative.
+function of(n: i64) -> [i64]
+    assert n >= 0
+    out: [i64] @= []
+    rest: i64 @= n
+
+    while rest > 0
+        out @ out.push(rest & MASK)
+        rest @ rest >> LIMB_BITS
+
+    return out
+
+# `a` times `factor` plus `add`, both from 0 to `FACTOR_MAX`.
+function times_add(a: [i64], factor: i64, add: i64) -> [i64]
+    assert factor >= 0 && factor <= FACTOR_MAX && add >= 0 && add <= FACTOR_MAX
+    out: [i64] @= []
+    carry: i64 @= add
+
+    for limb in a
+        t = limb * factor + carry
+        out @ out.push(t & MASK)
+        carry @ t >> LIMB_BITS
+
+    while carry > 0
+        out @ out.push(carry & MASK)
+        carry @ carry >> LIMB_BITS
+
+    return trimmed(out)
+
+# The number the ASCII digits `digits` spell in base ten, nine at a time.
+function of_digits(digits: [u8]) -> [i64]
+    out: [i64] @= []
+    at: i64 @= 0
+
+    while at < digits.len()
+        chunk: i64 @= 0
+        factor: i64 @= 1
+
+        while at < digits.len() && factor < 1000000000
+            chunk @ chunk * 10 + to_i64(digits[at] - '0').must()
+            factor @ factor * 10
+            at @ at + 1
+
+        out @ times_add(a: out, factor: factor, add: chunk)
+
+    return out
+
+# `a` times ten to the `k`th, `k` not negative.
+function times_pow10(a: [i64], k: i64) -> [i64]
+    out: [i64] @= a
+    left: i64 @= k
+
+    while left >= 9
+        out @ times_add(a: out, factor: 1000000000, add: 0)
+        left @ left - 9
+
+    factor: i64 @= 1
+
+    while left > 0
+        factor @ factor * 10
+        left @ left - 1
+
+    return times_add(a: out, factor: factor, add: 0)
+
+# `a` times 2 to the `k`th, `k` not negative.
+function shifted(a: [i64], k: i64) -> [i64]
+    assert k >= 0
+
+    if a.len() == 0
+        return a
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: k / LIMB_BITS)
+        out @ out.push(0)
+
+    bits = k % LIMB_BITS
+    carry: i64 @= 0
+
+    for limb in a
+        t = limb << bits | carry
+        out @ out.push(t & MASK)
+        carry @ t >> LIMB_BITS
+
+    if carry > 0
+        out @ out.push(carry)
+    return out
+
+# `a` halved, its lowest bit dropped.
+function halved(a: [i64]) -> [i64]
+    out: [i64] @= []
+
+    for at in range(from: 0, to: a.len())
+        high: i64 @= 0
+
+        if at + 1 < a.len()
+            high @ (a[at + 1] & 1) << LIMB_BITS - 1
+        out @ out.push(a[at] >> 1 | high)
+
+    return trimmed(out)
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it.
+function compare(a: [i64], b: [i64]) -> i64
+    if a.len() != b.len()
+        if a.len() < b.len()
+            return -1
+        return 1
+    at: i64 @= a.len() - 1
+
+    while at >= 0
+        if a[at] != b[at]
+            if a[at] < b[at]
+                return -1
+            return 1
+        at @ at - 1
+
+    return 0
+
+# `a` less `b`, where `b` is not above `a`.
+function minus(a: [i64], b: [i64]) -> [i64]
+    out: [i64] @= []
+    borrow: i64 @= 0
+
+    for at in range(from: 0, to: a.len())
+        t: i64 @= a[at] - borrow
+
+        if at < b.len()
+            t @ t - b[at]
+        borrow @ 0
+
+        if t < 0
+            t @ t + LIMB
+            borrow @ 1
+        out @ out.push(t)
+
+    assert borrow == 0
+    return trimmed(out)
+
+# How many bits `a` needs: 0 for zero.
+function bit_len(a: [i64]) -> i64
+    if a.len() == 0
+        return 0
+    top: i64 @= a[a.len() - 1]
+    bits: i64 @= 0
+
+    while top > 0
+        top @ top >> 1
+        bits @ bits + 1
+
+    return (a.len() - 1) * LIMB_BITS + bits
+
+## Tests
+
+test "trimmed and of: zero, one limb, and a number of three limbs"
+    nothing: [i64] = []
+    assert trimmed([0, 0]) == nothing
+    assert trimmed([5, 0]) == [5]
+    assert of(0) == nothing
+    assert of(268435455) == [268435455]
+    assert of(268435456) == [0, 1]
+    assert of(9223372036854775807) == [268435455, 268435455, 127]
+
+test "times_add: of nothing, with a carry into a new limb, and the largest factor"
+    nothing: [i64] = []
+    assert times_add(a: nothing, factor: 10, add: 0) == nothing
+    assert times_add(a: nothing, factor: 10, add: 7) == [7]
+    assert times_add(a: [268435455], factor: 2, add: 1) == [268435455, 1]
+    assert times_add(a: [268435455, 268435455], factor: 2147483647, add: 2147483647) == shifted(a: of(2147483647), k: 56)
+
+test "of_digits: zero, nine digits, ten digits, and 2 to the 63rd"
+    nothing: [i64] = []
+    assert of_digits(['0']) == nothing
+    assert of_digits(['0', '0', '7']) == [7]
+    assert of_digits(['9', '9', '9', '9', '9', '9', '9', '9', '9']) == of(999999999)
+    assert of_digits(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) == of(1234567890)
+    sixty_three: [u8] = ['9', '2', '2', '3', '3', '7', '2', '0', '3', '6', '8', '5', '4', '7', '7', '5', '8', '0', '8']
+    assert of_digits(sixty_three) == shifted(a: [1], k: 63)
+
+test "times_pow10 and shifted: by zero, by less than a step, and by many"
+    assert times_pow10(a: [3], k: 0) == [3]
+    assert times_pow10(a: [3], k: 2) == [300]
+    assert times_pow10(a: [1], k: 18) == of(1000000000000000000)
+    assert shifted(a: [1], k: 0) == [1]
+    assert shifted(a: [1], k: 28) == [0, 1]
+    assert shifted(a: [3], k: 27) == [134217728, 1]
+    nothing: [i64] = []
+    assert shifted(a: nothing, k: 100) == nothing
+
+test "halved, compare and minus: across a limb, equal numbers, and a borrow"
+    nothing: [i64] = []
+    assert halved([0, 1]) == [134217728]
+    assert halved([1]) == nothing
+    assert compare(a: [1, 1], b: [5]) == 1
+    assert compare(a: [5], b: [1, 1]) == -1
+    assert compare(a: [4, 1], b: [5, 1]) == -1
+    assert compare(a: [5, 1], b: [5, 1]) == 0
+    assert compare(a: nothing, b: nothing) == 0
+    assert minus(a: [0, 1], b: [1]) == [268435455]
+    assert minus(a: [5, 1], b: [5, 1]) == nothing
+
+test "bit_len: zero, one, a full limb, and 2 to the 63rd"
+    nothing: [i64] = []
+    assert bit_len(nothing) == 0
+    assert bit_len([1]) == 1
+    assert bit_len([268435455]) == 28
+    assert bit_len(shifted(a: [1], k: 63)) == 64

@@ -1,0 +1,490 @@
+# SQLite's C library, `sqlite3.h`, bound thin: one Heroes function per C
+# function, each answering what C answers, and nothing decided here. The floor
+# of `sql/sqlite`, which turns these answers into `sql`'s values and codes.
+#
+# The group names `link "sqlite3"`, the library's own name on Darwin, Linux and
+# Windows alike, where the program finds the header and the library on the
+# compiler's search paths; only a program that uses `sql/sqlite` links it. A
+# machine without them refuses the build at this group, naming the header.
+#
+# Two handles, each with the call that begins its life and the one that ends
+# it (spec § 13): a `Connection` begun by `sqlite3_open_v2` and ended by
+# `sqlite3_close` only where that answers 0, since SQLite refuses to close a
+# connection whose statements are not finalized and the connection then stays
+# open; and a `Compiled` statement begun by `sqlite3_prepare_v2` and ended by
+# `sqlite3_finalize` whatever it answers. A third, `Backup`, is begun by
+# `sqlite3_backup_init` and ended by `sqlite3_backup_finish`. SQLite answers
+# `nullptr` for a statement made of no statement and for a backup it refuses,
+# and its ending calls take `nullptr` and do nothing, so each is ended either
+# way.
+#
+# Text goes to SQLite with `SQLITE_TRANSIENT`, which makes SQLite copy it
+# before the call returns, so nothing SQLite keeps points into the program.
+# What SQLite lends back, a column's text or bytes, is copied out at once,
+# before the next step moves it; the bytes through `memcpy` of `string.h`, the
+# one function this floor binds from another header.
+
+extern "sqlite3.h" link "sqlite3"
+    # The answers of a call that did what it was asked.
+    constant SQLITE_OK: i64
+    constant SQLITE_ROW: i64
+    constant SQLITE_DONE: i64
+    # The primary result codes, the low byte of every extended one.
+    constant SQLITE_ERROR: i64
+    constant SQLITE_INTERNAL: i64
+    constant SQLITE_PERM: i64
+    constant SQLITE_ABORT: i64
+    constant SQLITE_BUSY: i64
+    constant SQLITE_LOCKED: i64
+    constant SQLITE_NOMEM: i64
+    constant SQLITE_READONLY: i64
+    constant SQLITE_INTERRUPT: i64
+    constant SQLITE_IOERR: i64
+    constant SQLITE_CORRUPT: i64
+    constant SQLITE_NOTFOUND: i64
+    constant SQLITE_FULL: i64
+    constant SQLITE_CANTOPEN: i64
+    constant SQLITE_PROTOCOL: i64
+    constant SQLITE_EMPTY: i64
+    constant SQLITE_SCHEMA: i64
+    constant SQLITE_TOOBIG: i64
+    constant SQLITE_CONSTRAINT: i64
+    constant SQLITE_MISMATCH: i64
+    constant SQLITE_MISUSE: i64
+    constant SQLITE_NOLFS: i64
+    constant SQLITE_AUTH: i64
+    constant SQLITE_FORMAT: i64
+    constant SQLITE_RANGE: i64
+    constant SQLITE_NOTADB: i64
+    # The extended codes the driver tells apart from their primary one.
+    constant SQLITE_CONSTRAINT_UNIQUE: i64
+    constant SQLITE_CONSTRAINT_PRIMARYKEY: i64
+    constant SQLITE_CANTOPEN_ISDIR: i64
+    # The storage class of a column's value.
+    constant SQLITE_INTEGER: i64
+    constant SQLITE_FLOAT: i64
+    constant SQLITE_TEXT: i64
+    constant SQLITE_BLOB: i64
+    constant SQLITE_NULL: i64
+    # The flags of `sqlite3_open_v2`.
+    constant SQLITE_OPEN_READONLY: i64
+    constant SQLITE_OPEN_READWRITE: i64
+    constant SQLITE_OPEN_CREATE: i64
+    constant SQLITE_OPEN_EXRESCODE: i64
+    # The encoding `sqlite3_bind_text64` is told its bytes are in.
+    constant SQLITE_UTF8: i64
+    # The destructor that makes SQLite copy what it is bound before the call
+    # returns: `((sqlite3_destructor_type)-1)` in the header.
+    constant SQLITE_TRANSIENT: ptr
+    # A connection, C's `sqlite3 *`.
+    record Connection tag sqlite3
+    # A compiled statement, C's `sqlite3_stmt *`.
+    record Compiled tag sqlite3_stmt
+    # A backup in progress, C's `sqlite3_backup *`.
+    record Backup tag sqlite3_backup
+    function sqlite3_open_v2(filename: cstr lent, @db: Connection acquires sqlite3_close, flags: i32, vfs: ptr) -> i64
+    function sqlite3_close(db: Connection consumes) -> i64 when 0
+    function sqlite3_errmsg(db: Connection) -> cstr
+    function sqlite3_extended_errcode(db: Connection) -> i32
+    function sqlite3_system_errno(db: Connection) -> i32
+    function sqlite3_error_offset(db: Connection) -> i32
+    function sqlite3_busy_timeout(db: Connection, ms: i32) -> i32
+    # The fifth argument is `char **errmsg`: SQLite allocates the message and
+    # the caller frees it with `sqlite3_free`, which `owned` makes the
+    # compiler's own call, so the program reads a `str?` and frees nothing.
+    function sqlite3_exec(db: Connection, sql: cstr lent, callback: ptr, context: ptr, @error: cstr owned sqlite3_free) -> i64
+    # The freer `owned` names, declared and never called here.
+    function sqlite3_free(p: ptr)
+    function sqlite3_prepare_v2(db: Connection, sql: cstr lent, length: i32, @statement: Compiled acquires sqlite3_finalize, @tail: cstr) -> i64
+    function sqlite3_finalize(statement: Compiled consumes) -> i64
+    function sqlite3_step(statement: Compiled) -> i64
+    function sqlite3_reset(statement: Compiled) -> i64
+    function sqlite3_clear_bindings(statement: Compiled) -> i64
+    function sqlite3_bind_parameter_count(statement: Compiled) -> i32
+    function sqlite3_bind_null(statement: Compiled, index: i32) -> i64
+    function sqlite3_bind_int64(statement: Compiled, index: i32, value: i64) -> i64
+    function sqlite3_bind_double(statement: Compiled, index: i32, value: f64) -> i64
+    # `text` carries no `lent`: with `SQLITE_TRANSIENT` SQLite copies it, but
+    # no one word says so of the parameter, so the bytes go over as a lease
+    # the binder ends once the call is back (examples/ledger's `bind_text`).
+    function sqlite3_bind_text(statement: Compiled, index: i32, text: cstr, length: i32, destructor: ptr) -> i64
+    function sqlite3_bind_text64(statement: Compiled, index: i32, @text: [i8] counted_by n lent, n: u64, destructor: ptr, encoding: u8) -> i64
+    function sqlite3_bind_zeroblob64(statement: Compiled, index: i32, n: u64) -> i64
+    function sqlite3_bind_blob64(statement: Compiled, index: i32, @data: [u8] counted_by n lent, n: u64, destructor: ptr) -> i64
+    function sqlite3_column_count(statement: Compiled) -> i32
+    function sqlite3_column_name(statement: Compiled, column: i32) -> cstr
+    function sqlite3_column_decltype(statement: Compiled, column: i32) -> cstr
+    function sqlite3_column_type(statement: Compiled, column: i32) -> i32
+    function sqlite3_column_int64(statement: Compiled, column: i32) -> i64
+    function sqlite3_column_double(statement: Compiled, column: i32) -> f64
+    function sqlite3_column_text(statement: Compiled, column: i32) -> cstr
+    function sqlite3_column_blob(statement: Compiled, column: i32) -> ptr
+    function sqlite3_column_bytes(statement: Compiled, column: i32) -> i32
+    function sqlite3_changes64(db: Connection) -> i64
+    function sqlite3_total_changes64(db: Connection) -> i64
+    function sqlite3_last_insert_rowid(db: Connection) -> i64
+    function sqlite3_get_autocommit(db: Connection) -> i32
+    function sqlite3_stmt_readonly(statement: Compiled) -> i32
+    # SQLite keeps the connection it answers: it is the statement's own.
+    function sqlite3_db_handle(statement: Compiled) -> Connection borrows
+    function sqlite3_libversion() -> cstr
+    function sqlite3_complete(sql: cstr lent) -> i32
+    function sqlite3_backup_init(destination: Connection, destination_name: cstr lent, source: Connection, source_name: cstr lent) -> Backup acquires sqlite3_backup_finish
+    function sqlite3_backup_step(backup: Backup, pages: i32) -> i64
+    function sqlite3_backup_finish(backup: Backup consumes) -> i64
+
+extern "string.h"
+    function memcpy(@destination: [u8] counted_by n lent, source: ptr, n: u64) -> ptr
+
+## Connections
+
+# What `sqlite3_open_v2` answers for `path` with `flags`, the connection
+# written into `connection` whatever it answers: SQLite hands one back even
+# from a failed open, and the caller closes it. Aborts where `path` holds a
+# zero byte.
+function open(path: str, @connection: Connection, flags: i64) -> i64
+    return sqlite3_open_v2(filename: path.cstr(), db: @connection, flags: to_i32(flags).must(), vfs: nullptr)
+
+# What `sqlite3_close` answers: 0 where the connection is ended, else a code,
+# and then the connection is still open and still the caller's.
+function close(@connection: Connection) -> i64
+    return sqlite3_close(connection)
+
+# SQLite's words for the last failure on `connection`. Fails `null_cstr` or
+# `not_text` where SQLite has none or they are not UTF-8.
+function message(connection: Connection) -> str?
+    return sqlite3_errmsg(connection).validated()
+
+# SQLite's extended result code of the last failure on `connection`.
+function extended_code(connection: Connection) -> i64
+    return to_i64(sqlite3_extended_errcode(connection)).must()
+
+# The system's own error number behind the last failure on `connection`, 0
+# where there is none.
+function system_code(connection: Connection) -> i64
+    return to_i64(sqlite3_system_errno(connection)).must()
+
+# The byte of the statement's text the last failure on `connection` points
+# at, or -1 where it points at none.
+function error_offset(connection: Connection) -> i64
+    return to_i64(sqlite3_error_offset(connection)).must()
+
+# What `sqlite3_busy_timeout` answers for `ms` milliseconds. Aborts where
+# `ms` does not fit an `i32`.
+function busy_timeout(connection: Connection, ms: i64) -> i64
+    return to_i64(sqlite3_busy_timeout(connection, to_i32(ms).must())).must()
+
+# What `sqlite3_exec` answers for `script`, every statement of it run in
+# order with no parameters, SQLite's words for a failure written into
+# `words`, "" where it gave none. Aborts where `script` holds a zero byte.
+function exec(connection: Connection, script: str, @words: str) -> i64
+    problem: str? @= fail(code: "none", msg: "")
+    rc = sqlite3_exec(db: connection, sql: script.cstr(), callback: nullptr, context: nullptr, error: @problem)
+    words @ problem.default("")
+    return rc
+
+# What `sqlite3_changes64` answers: the rows the last `INSERT`, `UPDATE` or
+# `DELETE` changed, which no other statement resets.
+function changes(connection: Connection) -> i64
+    return sqlite3_changes64(connection)
+
+# What `sqlite3_total_changes64` answers: the rows every statement since the
+# connection opened changed, those of triggers included.
+function total_changes(connection: Connection) -> i64
+    return sqlite3_total_changes64(connection)
+
+# What `sqlite3_last_insert_rowid` answers: the rowid of the last row an
+# `INSERT` made on `connection`, 0 before any.
+function last_insert_rowid(connection: Connection) -> i64
+    return sqlite3_last_insert_rowid(connection)
+
+# What `sqlite3_get_autocommit` answers: 0 inside a transaction, else not 0.
+function autocommit(connection: Connection) -> i64
+    return to_i64(sqlite3_get_autocommit(connection)).must()
+
+# SQLite's version, `3.54.0` and on. Fails `null_cstr` where it gives none.
+function library_version() -> str?
+    return sqlite3_libversion().validated()
+
+# What `sqlite3_complete` answers for `sql`: not 0 where it ends a whole
+# statement with a semicolon. Aborts where `sql` holds a zero byte.
+function complete(sql: str) -> i64
+    return to_i64(sqlite3_complete(sql.cstr())).must()
+
+## Statements
+
+# What `sqlite3_prepare_v2` answers for the first statement of `sql`: the
+# statement written into `compiled`, `nullptr` where `sql` holds none, and the
+# text after it into `rest`. Aborts where `sql` holds a zero byte.
+function prepare(connection: Connection, sql: str, @compiled: Compiled, @rest: str) -> i64
+    held: cstr @= sql.lease()
+    tail: cstr @= nullptr
+    rc = sqlite3_prepare_v2(db: connection, sql: held, length: -1, statement: @compiled, tail: @tail)
+    rest @ tail.validated().default("")
+    end_lease(@held)
+    return rc
+
+# What `sqlite3_finalize` answers. The statement is ended whatever it is.
+function finalize(@compiled: Compiled) -> i64
+    return sqlite3_finalize(compiled)
+
+# What `sqlite3_step` answers: `SQLITE_ROW`, `SQLITE_DONE` or a failure's code.
+function step(compiled: Compiled) -> i64
+    return sqlite3_step(compiled)
+
+# What `sqlite3_reset` answers: the statement is ready to run again either way.
+function reset(compiled: Compiled) -> i64
+    return sqlite3_reset(compiled)
+
+# What `sqlite3_clear_bindings` answers: every parameter is `NULL` again.
+function clear_bindings(compiled: Compiled) -> i64
+    return sqlite3_clear_bindings(compiled)
+
+# The largest parameter's number in `compiled`, 0 for none.
+function parameter_count(compiled: Compiled) -> i64
+    return to_i64(sqlite3_bind_parameter_count(compiled)).must()
+
+# What `sqlite3_db_handle` answers: the connection `compiled` belongs to.
+function owner(compiled: Compiled) -> Connection
+    return sqlite3_db_handle(compiled)
+
+# Whether `compiled` changes nothing in the database: not 0 where it does not.
+function read_only(compiled: Compiled) -> i64
+    return to_i64(sqlite3_stmt_readonly(compiled)).must()
+
+## Binding, parameters counted from 1
+
+# What `sqlite3_bind_null` answers for the parameter `index`.
+function bind_null(compiled: Compiled, index: i64) -> i64
+    return sqlite3_bind_null(compiled, to_i32(index).must())
+
+# What `sqlite3_bind_int64` answers for `value` at the parameter `index`.
+function bind_integer(compiled: Compiled, index: i64, value: i64) -> i64
+    return sqlite3_bind_int64(statement: compiled, index: to_i32(index).must(), value: value)
+
+# What `sqlite3_bind_double` answers for `value` at the parameter `index`.
+function bind_float(compiled: Compiled, index: i64, value: f64) -> i64
+    return sqlite3_bind_double(compiled, to_i32(index).must(), value)
+
+# What `sqlite3_bind_text` answers for `text` at the parameter `index`, copied
+# by SQLite. Aborts where `text` holds a zero byte: `bind_text_bytes` takes
+# one.
+function bind_text(compiled: Compiled, index: i64, text: str) -> i64
+    held: cstr @= text.lease()
+    rc = sqlite3_bind_text(
+        statement: compiled,
+        index: to_i32(index).must(),
+        text: held,
+        length: -1,
+        destructor: SQLITE_TRANSIENT
+    )
+    end_lease(@held)
+    return rc
+
+# What `sqlite3_bind_text64` answers for the UTF-8 bytes `text` at the
+# parameter `index`, copied by SQLite, a zero byte among them included.
+function bind_text_bytes(compiled: Compiled, index: i64, text: [i8]) -> i64
+    held @= text
+    return sqlite3_bind_text64(
+        statement: compiled,
+        index: to_i32(index).must(),
+        text: @held,
+        n: to_u64(held.len()).must(),
+        destructor: SQLITE_TRANSIENT,
+        encoding: to_u8(SQLITE_UTF8).must()
+    )
+
+# What `sqlite3_bind_blob64` answers for `data` at the parameter `index`,
+# copied by SQLite.
+function bind_blob(compiled: Compiled, index: i64, data: [u8]) -> i64
+    held @= data
+    return sqlite3_bind_blob64(
+        statement: compiled,
+        index: to_i32(index).must(),
+        data: @held,
+        n: to_u64(held.len()).must(),
+        destructor: SQLITE_TRANSIENT
+    )
+
+# What `sqlite3_bind_zeroblob64` answers for a blob of no bytes at the
+# parameter `index`: `bind_blob` of none would bind `NULL`, SQLite reading
+# the empty array's pointer as none.
+function bind_empty_blob(compiled: Compiled, index: i64) -> i64
+    return sqlite3_bind_zeroblob64(compiled, to_i32(index).must(), 0)
+
+## Columns, counted from 0
+
+# How many columns `compiled` answers, 0 for a statement that answers none.
+function column_count(compiled: Compiled) -> i64
+    return to_i64(sqlite3_column_count(compiled)).must()
+
+# The name of the column `column`. Fails `null_cstr` where SQLite has none.
+function column_name(compiled: Compiled, column: i64) -> str?
+    return sqlite3_column_name(compiled, to_i32(column).must()).validated()
+
+# The type the column `column` was declared with in its table. Fails
+# `null_cstr` where it is an expression's and has none.
+function column_declared_type(compiled: Compiled, column: i64) -> str?
+    return sqlite3_column_decltype(compiled, to_i32(column).must()).validated()
+
+# The storage class of the column `column` of the current row: one of
+# `SQLITE_INTEGER`, `SQLITE_FLOAT`, `SQLITE_TEXT`, `SQLITE_BLOB`, `SQLITE_NULL`.
+function column_type(compiled: Compiled, column: i64) -> i64
+    return to_i64(sqlite3_column_type(compiled, to_i32(column).must())).must()
+
+# The column `column` of the current row as an integer.
+function column_integer(compiled: Compiled, column: i64) -> i64
+    return sqlite3_column_int64(compiled, to_i32(column).must())
+
+# The column `column` of the current row as a float.
+function column_float(compiled: Compiled, column: i64) -> f64
+    return sqlite3_column_double(compiled, to_i32(column).must())
+
+# The column `column` of the current row as text, read to its first zero
+# byte. Fails `null_cstr` or `not_text` where it is `NULL` or not UTF-8.
+function column_text(compiled: Compiled, column: i64) -> str?
+    return sqlite3_column_text(compiled, to_i32(column).must()).validated()
+
+# Where the bytes of the column `column` of the current row stand, `nullptr`
+# for none; they move at the next step.
+function column_blob(compiled: Compiled, column: i64) -> ptr
+    return sqlite3_column_blob(compiled, to_i32(column).must())
+
+# How many bytes the column `column` of the current row holds, as text after
+# `column_text` and as bytes after `column_blob`.
+function column_bytes(compiled: Compiled, column: i64) -> i64
+    return to_i64(sqlite3_column_bytes(compiled, to_i32(column).must())).must()
+
+# The `n` bytes at `source`, copied, none where `n` is 0 or below.
+function copy_bytes(source: ptr, n: i64) -> [u8]
+    out: [u8] @= []
+
+    if n > 0
+        _ = memcpy(destination: @out, source: source, n: to_u64(n).must())
+    return out
+
+## Backups
+
+# What `sqlite3_backup_init` answers for copying the database `main` of
+# `source` into the database `main` of `destination`: `nullptr` where SQLite
+# refuses, its words then on `destination`.
+function backup_init(destination: Connection, source: Connection) -> Backup
+    return sqlite3_backup_init(
+        destination: destination,
+        destination_name: "main".cstr(),
+        source: source,
+        source_name: "main".cstr()
+    )
+
+# What `sqlite3_backup_step` answers for copying `pages` more pages, every
+# one where `pages` is below 0.
+function backup_step(backup: Backup, pages: i64) -> i64
+    return sqlite3_backup_step(backup, to_i32(pages).must())
+
+# What `sqlite3_backup_finish` answers. The backup is ended whatever it is.
+function backup_finish(@backup: Backup) -> i64
+    return sqlite3_backup_finish(backup)
+
+## Tests
+
+test "open, prepare, bind, step, read and close: a value of each storage class, in memory"
+    connection: Connection @= nullptr
+    assert open(":memory:", @connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXRESCODE) == SQLITE_OK
+    compiled: Compiled @= nullptr
+    rest @= "?"
+    assert prepare(connection, sql: "SELECT ?1, ?2, ?3, ?4, ?5; SELECT 2", compiled: @compiled, rest: @rest) == SQLITE_OK
+    assert rest == " SELECT 2"
+    assert owner(compiled) == connection
+    assert parameter_count(compiled) == 5
+    assert read_only(compiled) != 0
+    assert bind_null(compiled, 1) == SQLITE_OK
+    assert bind_integer(compiled, index: 2, value: -9223372036854775807 - 1) == SQLITE_OK
+    assert bind_float(compiled, 3, -0.5) == SQLITE_OK
+    assert bind_text_bytes(compiled, 4, [104, 0, -61, -87]) == SQLITE_OK
+    assert bind_blob(compiled, 5, [0, 255]) == SQLITE_OK
+    assert step(compiled) == SQLITE_ROW
+    assert column_count(compiled) == 5
+    assert column_type(compiled, 0) == SQLITE_NULL
+    assert column_integer(compiled, 1) == -9223372036854775807 - 1
+    assert column_float(compiled, 2) == -0.5
+    assert column_text(compiled, 3).must() == "h"
+    assert column_bytes(compiled, 3) == 4
+    assert copy_bytes(source: column_blob(compiled, 3), n: 4) == [104, 0, 195, 169]
+    assert copy_bytes(source: column_blob(compiled, 4), n: column_bytes(compiled, 4)) == [0, 255]
+    assert column_declared_type(compiled, 0).is_err()
+    assert step(compiled) == SQLITE_DONE
+    assert finalize(@compiled) == SQLITE_OK
+    assert close(@connection) == SQLITE_OK
+
+test "close: refused while a statement is prepared, the connection still open, then closed"
+    connection: Connection @= nullptr
+    assert open(":memory:", @connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) == SQLITE_OK
+    compiled: Compiled @= nullptr
+    rest @= ""
+    assert prepare(connection, sql: "SELECT 1", compiled: @compiled, rest: @rest) == SQLITE_OK
+    assert close(@connection) == SQLITE_BUSY
+    assert message(connection).must() == "unable to close due to unfinalized statements or unfinished backups"
+    assert finalize(@compiled) == SQLITE_OK
+    assert close(@connection) == SQLITE_OK
+
+test "prepare: no statement in a comment, and a syntax error with its code, words and place"
+    connection: Connection @= nullptr
+    assert open(":memory:", @connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXRESCODE) == SQLITE_OK
+    compiled: Compiled @= nullptr
+    rest @= "?"
+    assert prepare(connection, sql: "  -- nothing", compiled: @compiled, rest: @rest) == SQLITE_OK
+    assert compiled == nullptr && rest == ""
+    assert finalize(@compiled) == SQLITE_OK
+    again: Compiled @= nullptr
+    assert prepare(connection, sql: "SELEC 1", compiled: @again, rest: @rest) == SQLITE_ERROR
+    assert extended_code(connection) == SQLITE_ERROR
+    assert message(connection).must() == "near \"SELEC\": syntax error"
+    assert error_offset(connection) == 0
+    assert finalize(@again) == SQLITE_OK
+    assert close(@connection) == SQLITE_OK
+
+test "exec: a script run whole, and a failure's words; changes, rowid and autocommit"
+    connection: Connection @= nullptr
+    assert open(":memory:", @connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXRESCODE) == SQLITE_OK
+    words @= "?"
+    assert exec(connection, script: "CREATE TABLE t(x UNIQUE); INSERT INTO t VALUES (1), (2);", words: @words) == SQLITE_OK
+    assert words == ""
+    assert changes(connection) == 2 && total_changes(connection) == 2 && last_insert_rowid(connection) == 2
+    assert autocommit(connection) != 0
+    assert exec(connection, script: "INSERT INTO t VALUES (1)", words: @words) == SQLITE_CONSTRAINT_UNIQUE
+    assert words == "UNIQUE constraint failed: t.x"
+    assert exec(connection, script: "BEGIN", words: @words) == SQLITE_OK
+    assert autocommit(connection) == 0
+    assert exec(connection, script: "ROLLBACK", words: @words) == SQLITE_OK
+    assert close(@connection) == SQLITE_OK
+
+# The system's number is 3 on this Mac (SQLite 3.54.0 in the SDK), where
+# POSIX's `ENOENT` is 2, which a missing file opened read-only answers.
+test "open: a folder that is not there fails CANTOPEN with the system's number, and the connection is closed"
+    connection: Connection @= nullptr
+    assert open("/no/such/folder/here.db", @connection, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_EXRESCODE) == SQLITE_CANTOPEN
+    assert connection != nullptr
+    assert message(connection).must() == "unable to open database file"
+    assert system_code(connection) == 2 || system_code(connection) == 3
+    assert close(@connection) == SQLITE_OK
+
+test "complete, library_version, busy_timeout and a backup between two connections"
+    assert complete("SELECT 1;") != 0 && complete("SELECT 1") == 0 && complete("") == 0
+    assert library_version().must().len() >= 5
+    from: Connection @= nullptr
+    to: Connection @= nullptr
+    assert open(":memory:", @from, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) == SQLITE_OK
+    assert open(":memory:", @to, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) == SQLITE_OK
+    assert busy_timeout(from, 100) == SQLITE_OK
+    words @= ""
+    assert exec(from, script: "CREATE TABLE t(x); INSERT INTO t VALUES (7)", words: @words) == SQLITE_OK
+    b: Backup @= backup_init(destination: to, source: from)
+    assert b != nullptr
+    assert backup_step(b, -1) == SQLITE_DONE
+    assert backup_finish(@b) == SQLITE_OK
+    compiled: Compiled @= nullptr
+    assert prepare(to, sql: "SELECT x FROM t", compiled: @compiled, rest: @words) == SQLITE_OK
+    assert step(compiled) == SQLITE_ROW && column_integer(compiled, 0) == 7
+    assert finalize(@compiled) == SQLITE_OK
+    assert close(@from) == SQLITE_OK
+    assert close(@to) == SQLITE_OK

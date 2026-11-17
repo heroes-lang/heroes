@@ -1,0 +1,363 @@
+# The root element read, and everything inside it, into events: start and end
+# tags matched, text with its references and CDATA sections read as one, and
+# comments and instructions, every name resolved to its namespace. It holds
+# its own stacks, of the open elements and of the namespaces in scope, so no
+# nesting reaches the machine's stack; past `max_depth` it fails `limit`.
+
+use strings
+use xml/internal/characters
+use xml/internal/event
+use xml/internal/markup
+use xml/internal/refs
+use xml/internal/scan
+use xml/internal/scope
+use xml/internal/stack
+use xml/internal/tags
+
+# Reads the element whose start tag's `<` stands at byte `at` of `text`, and
+# adds its events to `events`. Answers the byte index past its end tag.
+#
+# Fails `invalid` where it is not well-formed: a tag not closed or closed by
+# another name, `]]>` in text, a reference that is not one, a prefix not
+# declared, an attribute written twice. Fails `limit` where it is nested
+# deeper than `max_depth` elements.
+function read_element(text: str, at: i64, max_depth: i64, @events: [event.Event]) -> i64?
+    # The open elements, `depth` of them: each one's name as written, where its
+    # start tag began, and how many namespace declarations were in scope
+    # before it.
+    raws: [str] @= []
+    opened: [i64] @= []
+    marks: [i64] @= []
+    depth: i64 @= 0
+
+    prefixes: [str] @= []
+    spaces: [str] @= []
+    hidden: [i64] @= []
+    innermost: {str: i64} @= {}
+    count: i64 @= 0
+
+    # The text read since the last event, a reference or a CDATA section among
+    # it, to be one text event.
+    pieces: [str] @= []
+    i: i64 @= at
+
+    while true
+        if i >= text.len()
+            top = depth - 1
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: i, what: f"`</{raws[top]}>`, which closes the <{raws[top]}> opened at {scan.position(text: text, at: opened[top])}")
+            )
+        b = text[i]
+
+        if b == '&'
+            got = refs.read_reference(text: text, at: i)?
+            pieces @ pieces.push(got.value)
+            i @ got.end
+        else if b != '<'
+            i @ text_run(text: text, at: i, pieces: @pieces)?
+        else if markup.holds_at(text: text, at: i, word: "<![CDATA[")
+            got = markup.read_cdata(text: text, at: i)?
+            pieces @ pieces.push(got.value)
+            i @ got.end
+        else
+            flush(events: @events, pieces: @pieces)
+
+            if markup.holds_at(text: text, at: i, word: "</")
+                top = depth - 1
+                close = end_tag_end(text: text, at: i, raw: raws[top], opened: opened[top])?
+                events @ events.push(event.of_text(kind: event.END, s: ""))
+                depth @ top
+                scope.leave(prefixes: prefixes, hidden: hidden, innermost: @innermost, count: @count, mark: marks[top])
+                i @ close
+
+                if depth == 0
+                    return ok(i)
+            else if markup.holds_at(text: text, at: i, word: "<!--")
+                got = markup.read_comment(text: text, at: i)?
+                events @ events.push(event.of_text(kind: event.COMMENT, s: got.value))
+                i @ got.end
+            else if markup.holds_at(text: text, at: i, word: "<?")
+                got = markup.read_instruction(text: text, at: i)?
+                events @ events.push(event.instruction(target: got.target, data: got.data))
+                i @ got.end
+            else if markup.holds_at(text: text, at: i, word: "<!")
+                return fail(
+                    code: scan.INVALID,
+                    msg: scan.said(text: text, at: i, what: "`<!` opens no comment and no CDATA section here, and a document type declaration stands only before the root")
+                )
+            else
+                if depth >= max_depth
+                    return fail(
+                        code: scan.LIMIT,
+                        msg: scan.said(text: text, at: i, what: f"nested deeper than {max_depth} levels, the most this reading allows")
+                    )
+                tag = tags.read_start_tag(text: text, at: i)?
+                stack.put(items: @marks, top: depth, item: count)
+                started = opened_element(text: text, at: i, tag: tag, prefixes: @prefixes, spaces: @spaces, hidden: @hidden, innermost: @innermost, count: @count)?
+                events @ events.push(started)
+
+                if tag.closed
+                    events @ events.push(event.of_text(kind: event.END, s: ""))
+                    scope.leave(
+                        prefixes: prefixes,
+                        hidden: hidden,
+                        innermost: @innermost,
+                        count: @count,
+                        mark: marks[depth]
+                    )
+
+                    if depth == 0
+                        return ok(tag.end)
+                else
+                    stack.put(items: @raws, top: depth, item: tag.raw)
+                    stack.put(items: @opened, top: depth, item: i)
+                    depth @ depth + 1
+
+                i @ tag.end
+
+# Adds the text `pieces` hold to `events` as one text event, unless it is
+# empty, and empties `pieces`.
+function flush(@events: [event.Event], @pieces: [str])
+    if pieces.len() > 0
+        joined = pieces.join("")
+
+        if joined != ""
+            events @ events.push(event.of_text(kind: event.TEXT, s: joined))
+        pieces @ []
+
+# Reads the text from byte `at` of `text` up to the next `<` or `&`, its line
+# ends read as line feeds, onto `pieces`, and answers where it stopped. Fails
+# `invalid` where `]]>` stands in it.
+function text_run(text: str, at: i64, @pieces: [str]) -> i64?
+    j: i64 @= at
+
+    while j < text.len() && text[j] != '<' && text[j] != '&'
+        if text[j] == ']' && markup.holds_at(text: text, at: j, word: "]]>")
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: j, what: "`]]>` stands in text, where XML allows it only to end a CDATA section: write it `]]&gt;`")
+            )
+        j @ j + 1
+
+    pieces @ pieces.push(refs.normalized(text.slice(from: at, to: j)))
+    return ok(j)
+
+# The byte index past the end tag whose `</` stands at byte `at` of `text`,
+# which must close the element named `raw` whose start tag began at byte
+# `opened`.
+function end_tag_end(text: str, at: i64, raw: str, opened: i64) -> i64?
+    first = at + 2
+    end = characters.name_end(text: text, at: first)
+
+    if end == first
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: first, what: f"`{raw}`, the name of the element `</` closes")
+        )
+    closed = text.slice(from: first, to: end)
+
+    if closed != raw
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at, what: f"`</{closed}>` closes <{raw}>, opened at {scan.position(text: text, at: opened)}: expected `</{raw}>`")
+        )
+    close = markup.skip_space(text: text, at: end)
+
+    if close >= text.len() || text[close] != '>'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: close, what: "`>`, which ends the end tag"))
+    return ok(close + 1)
+
+# The event that opens the element whose start tag `tag` began at byte `at` of
+# `text`, its namespace declarations added to the scope first and every name
+# then resolved. Fails `invalid` where a declaration is one Namespaces in XML
+# 1.0 refuses, a prefix is not declared, or two attributes are one name.
+function opened_element(text: str, at: i64, tag: tags.StartTag, @prefixes: [str], @spaces: [str], @hidden: [i64], @innermost: {str: i64}, @count: i64) -> event.Event?
+    for k in range(from: 0, to: tag.names.len())
+        name = tag.names[k]
+
+        if name == "xmlns" || strings.has_prefix(s: name, prefix: "xmlns:")
+            prefix = declared_prefix(name)
+
+            match scope.check_declaration(prefix: prefix, space: tag.values[k])
+                .err e => return fail(code: scan.INVALID, msg: scan.said(text: text, at: tag.places[k], what: e.msg))
+                .ok _ =>
+                    scope.declare(
+                        prefixes: @prefixes,
+                        spaces: @spaces,
+                        hidden: @hidden,
+                        innermost: @innermost,
+                        count: @count,
+                        prefix: prefix,
+                        space: tag.values[k]
+                    )
+
+    colon = characters.colon_index(tag.raw)
+
+    prefix = if colon == tag.raw.len()
+        ""
+    else
+        tag.raw.slice(from: 0, to: colon)
+
+    local = if colon == tag.raw.len()
+        tag.raw
+    else
+        tag.raw.slice(from: colon + 1, to: tag.raw.len())
+
+    if prefix == "xmlns"
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at + 1, what: f"<{tag.raw}> has the prefix `xmlns`, which names declarations alone")
+        )
+
+    space = match scope.space_of(spaces: spaces, innermost: innermost, prefix: prefix)
+        .ok found => found
+        .err _ =>
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: at + 1, what: f"the prefix `{prefix}` of <{tag.raw}> is not declared where it stands")
+            )
+
+    attributes: [event.Attr] @= []
+    expanded: {str: i64} @= {}
+
+    for k in range(from: 0, to: tag.names.len())
+        name = tag.names[k]
+        value = tag.values[k]
+
+        if name == "xmlns"
+            attributes @ attributes.push(event.Attr(prefix: "", local: "xmlns", space: scope.XMLNS_SPACE, value: value))
+        else if strings.has_prefix(s: name, prefix: "xmlns:")
+            attributes @ attributes.push(
+                event.Attr(prefix: "xmlns", local: declared_prefix(name), space: scope.XMLNS_SPACE, value: value)
+            )
+        else
+            mark = characters.colon_index(name)
+
+            if mark == name.len()
+                attributes @ attributes.push(event.Attr(prefix: "", local: name, space: "", value: value))
+            else
+                own_prefix = name.slice(from: 0, to: mark)
+                own_local = name.slice(from: mark + 1, to: name.len())
+
+                own_space = match scope.space_of(spaces: spaces, innermost: innermost, prefix: own_prefix)
+                    .ok found => found
+                    .err _ =>
+                        return fail(
+                            code: scan.INVALID,
+                            msg: scan.said(text: text, at: tag.places[k], what: f"the prefix `{own_prefix}` of the attribute `{name}` is not declared where it stands")
+                        )
+
+                key = f"{own_space.len()}:{own_space}{own_local}"
+
+                match expanded[key]
+                    .ok first =>
+                        return fail(
+                            code: scan.INVALID,
+                            msg: scan.said(text: text, at: tag.places[k], what: f"the attributes `{tag.names[first]}` and `{name}` of <{tag.raw}> are one name: `{own_local}` in the namespace \"{own_space}\"")
+                        )
+                    .err _ => expanded[key] @ k
+
+                attributes @ attributes.push(
+                    event.Attr(prefix: own_prefix, local: own_local, space: own_space, value: value)
+                )
+
+    return ok(event.start(prefix: prefix, local: local, space: space, attributes: attributes, laid: false))
+
+# The prefix the declaration `name` declares: the empty one for `xmlns`, and
+# what follows `xmlns:` otherwise.
+function declared_prefix(name: str) -> str
+    if name == "xmlns"
+        return ""
+    return name.slice(from: 6, to: name.len())
+
+## Tests
+
+test "read_element: an empty root, text, a reference and CDATA read as one text, and the index past the end"
+    events: [event.Event] @= []
+    assert read_element(text: "<a/>x", at: 0, max_depth: 4, events: @events).must() == 4
+    assert events.len() == 2 && events[0].local == "a" && events[1].kind == event.END
+    more: [event.Event] @= []
+    end = read_element(text: "<a>x&lt;<![CDATA[<y>]]>\r\nz</a >", at: 0, max_depth: 4, events: @more).must()
+    assert end == 31
+    assert more.len() == 3 && more[1].kind == event.TEXT && more[1].text == "x<<y>\nz"
+
+test "read_element: nested elements, a comment and an instruction among text, in order"
+    events: [event.Event] @= []
+    _ = read_element(text: "<r><a>1</a><!--c--><?p d?><b/></r>", at: 0, max_depth: 4, events: @events).must()
+    kinds: [i64] @= []
+
+    for e in events
+        kinds @ kinds.push(e.kind)
+
+    assert kinds == [event.START, event.START, event.TEXT, event.END, event.COMMENT, event.INSTRUCTION, event.START, event.END, event.END]
+    assert events[4].text == "c" && events[5].target == "p" && events[6].local == "b"
+
+test "read_element: namespaces resolved, a default one, an attribute in none, and a declaration's own name, as minidom reads them"
+    events: [event.Event] @= []
+    _ = read_element(
+        text: "<p:a xmlns:p=\"u\" xmlns=\"d\"><b p:x=\"1\" y=\"2\" xml:lang=\"it\"/></p:a>",
+        at: 0,
+        max_depth: 4,
+        events: @events
+    ).must()
+    assert events[0].prefix == "p" && events[0].local == "a" && events[0].space == "u"
+    assert events[0].attributes[0] == event.Attr(prefix: "xmlns", local: "p", space: scope.XMLNS_SPACE, value: "u")
+    assert events[0].attributes[1] == event.Attr(prefix: "", local: "xmlns", space: scope.XMLNS_SPACE, value: "d")
+    assert events[1].prefix == "" && events[1].space == "d"
+    assert events[1].attributes[0] == event.Attr(prefix: "p", local: "x", space: "u", value: "1")
+    assert events[1].attributes[1] == event.Attr(prefix: "", local: "y", space: "", value: "2")
+    assert events[1].attributes[2].space == scope.XML_SPACE
+
+test "read_element: a declaration ends with its element, and the default namespace undeclared"
+    events: [event.Event] @= []
+    _ = read_element(text: "<r><a xmlns=\"d\"><b xmlns=\"\"/></a><c/></r>", at: 0, max_depth: 4, events: @events).must()
+    assert events[1].space == "d" && events[2].space == "" && events[5].space == ""
+
+test "read_element: a prefix not declared, undeclared, xmlns as a prefix, and two attributes of one name, refused as Python refuses them"
+    for text in ["<p:a/>", "<a xmlns:p=\"\"/>", "<xmlns:a/>", "<a xmlns:xmlns=\"u\"/>", "<a p:x=\"1\"/>", "<a><p:b xmlns:p=\"u\"/><p:c/></a>"]
+        events: [event.Event] @= []
+
+        match read_element(text: text, at: 0, max_depth: 4, events: @events)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    events: [event.Event] @= []
+
+    match read_element(text: "<a xmlns:p=\"u\" xmlns:q=\"u\" p:x=\"1\" q:x=\"2\"/>", at: 0, max_depth: 4, events: @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 36: the attributes `p:x` and `q:x` of <a> are one name: `x` in the namespace \"u\""
+
+    match read_element(text: "<p:a/>", at: 0, max_depth: 4, events: @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 2: the prefix `p` of <p:a> is not declared where it stands"
+
+test "read_element: closed by another name as Go names it, never closed, `]]>` in text, and `<!` inside"
+    events: [event.Event] @= []
+
+    match read_element(text: "<a>\n<b></a>", at: 0, max_depth: 4, events: @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 4: `</a>` closes <b>, opened at line 2, column 1: expected `</b>`"
+
+    match read_element(text: "<a><b>", at: 0, max_depth: 4, events: @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 7: expected `</b>`, which closes the <b> opened at line 1, column 4, found the end of the text"
+
+    match read_element(text: "<a>]]></a>", at: 0, max_depth: 4, events: @events)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 4: `]]>` stands in text, where XML allows it only to end a CDATA section: write it `]]&gt;`"
+
+    for text in ["<a><!DOCTYPE a></a>", "<a></>", "<a></a x>", "<a>&nbsp;</a>"]
+        assert read_element(text: text, at: 0, max_depth: 4, events: @events).is_err()
+
+test "read_element: the depth allowed, and one past it"
+    events: [event.Event] @= []
+    assert !read_element(text: "<a><a><a/></a></a>", at: 0, max_depth: 3, events: @events).is_err()
+
+    match read_element(text: "<a><a><a/></a></a>", at: 0, max_depth: 2, events: @events)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "line 1, column 7: nested deeper than 2 levels, the most this reading allows"
+
+test "declared_prefix: the default namespace and a prefix"
+    assert declared_prefix("xmlns") == ""
+    assert declared_prefix("xmlns:p") == "p"

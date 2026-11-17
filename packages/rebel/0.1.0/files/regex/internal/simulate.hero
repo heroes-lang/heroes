@@ -1,0 +1,385 @@
+# The automaton run over a text with every state at once: one character at a
+# time, never going back, each state entered at most once for each position.
+# A search so costs at most the number of states for each character it reads,
+# whatever the pattern and whatever the text.
+#
+# The threads of a position are held in the order a backtracking engine
+# would try them, so the first to accept is the match Perl's rule prefers,
+# and every thread after it is dropped. The lists are made once, as large as
+# the program, and written in place.
+
+use regex/internal/casefold
+use regex/internal/parse as regex_parse
+use regex/internal/program
+use regex/internal/sets
+use unicode
+
+# How a search runs.
+record Search
+    # The byte where the search begins; the text before it is still seen by
+    # `^` and `\b`.
+    from: i64
+    # Whether a match must begin at `from` itself.
+    anchored: bool
+    # Whether a match must end at the end of the text.
+    whole: bool
+    # A position where an empty match is not taken, or -1 for none.
+    not_empty_at: i64
+    # Whether the groups are recorded, beside the whole match.
+    groups: bool
+
+# What a search works in: two lists of threads, the marks of the states
+# entered at a position, and the stack that enters them.
+record Machine
+    # The states of the threads at the position being read, in order.
+    cur_pcs: [i64]
+    # The slots each of those threads has recorded.
+    cur_caps: [[i64]]
+    # How many threads stand at the position being read.
+    cur_count: i64
+    # The states of the threads at the next position, in order.
+    nxt_pcs: [i64]
+    # The slots each of those threads has recorded.
+    nxt_caps: [[i64]]
+    # How many threads stand at the next position.
+    nxt_count: i64
+    # For each state, the round it was last entered in.
+    marks: [i64]
+    # The round being built: a state marked with it is entered already.
+    round: i64
+    # The states waiting to be entered.
+    stack_pcs: [i64]
+    # The slots each waiting state carries.
+    stack_caps: [[i64]]
+    # Slots that record nothing, which a new thread starts with.
+    blank: [i64]
+
+# A machine for `prog`, its lists as large as the program.
+#
+# - `prog`: the program it runs.
+function machine(prog: program.Program lent) -> Machine
+    n = prog.insts.len()
+    blank = filled(n: 2 * prog.groups + 3, value: -1)
+    no_caps = filled_lists(n: 2 * n + 2, value: blank)
+    return Machine(
+        cur_pcs: filled(n: n, value: 0),
+        cur_caps: no_caps,
+        cur_count: 0,
+        nxt_pcs: filled(n: n, value: 0),
+        nxt_caps: no_caps,
+        nxt_count: 0,
+        marks: filled(n: n, value: -1),
+        round: 0,
+        stack_pcs: filled(n: 2 * n + 2, value: 0),
+        stack_caps: no_caps,
+        blank: blank
+    )
+
+# A list of `n` numbers, each `value`.
+#
+# - `n`: how many.
+# - `value`: the number.
+function filled(n: i64, value: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(value)
+
+    return out
+
+# A list of `n` lists, each `value`.
+#
+# - `n`: how many.
+# - `value`: the list.
+function filled_lists(n: i64, value: [i64]) -> [[i64]]
+    out: [[i64]] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(value)
+
+    return out
+
+# The slots of the match `search` finds in `s`: two for each group, the whole
+# match first, -1 for a group that took no part, and last the number of the
+# group that closed last.
+#
+# - `m`: the machine, which the search works in; one made for `prog`.
+# - `prog`: the program.
+# - `s`: the text.
+# - `search`: where and how to search.
+#
+# Fails `not_found` where `s` holds no such match.
+function run(@m: Machine, prog: program.Program lent, s: str, search: Search) -> [i64]?
+    m.cur_count @ 0
+    m.round @ m.round + 1
+    best: [i64] @= []
+    pos: i64 @= search.from
+
+    while true
+        if best.len() == 0 && (!search.anchored || pos == search.from)
+            add(@m, prog: prog, s: s, pc: 0, pos: pos, caps: m.blank, groups: search.groups, next: false)
+
+        if m.cur_count == 0 && (best.len() > 0 || search.anchored || pos >= s.len())
+            break
+        code: i64 @= -1
+        width: i64 @= 0
+
+        if pos < s.len()
+            code @ unicode.code_point_at(s, pos)
+            width @ unicode.width_at(s, pos)
+        m.round @ m.round + 1
+        m.nxt_count @ 0
+        i: i64 @= 0
+
+        while i < m.cur_count
+            pc = m.cur_pcs[i]
+            inst = prog.insts[pc]
+
+            match inst
+                .accept =>
+                    if accepted(caps: m.cur_caps[i], pos: pos, s: s, search: search)
+                        best @ m.cur_caps[i]
+                        break
+                .char _ | .char_fold _ | .any | .any_but_line_feed | .set _ =>
+                    if reads(inst: inst, prog: prog, code: code)
+                        add(
+                            @m,
+                            prog: prog,
+                            s: s,
+                            pc: pc + 1,
+                            pos: pos + width,
+                            caps: m.cur_caps[i],
+                            groups: search.groups,
+                            next: true
+                        )
+                .split _ | .jump _ | .save _ | .begin_text | .end_text | .begin_line | .end_line | .word_edge | .not_word_edge => _ = 0
+
+            i @ i + 1
+
+        if pos >= s.len()
+            break
+        turn(@m)
+        pos @ pos + width
+
+    if best.len() == 0
+        return fail(code: "not_found", msg: "no match")
+    return ok(best)
+
+# Makes the threads of the next position the threads of the position read.
+#
+# - `m`: the machine, whose two lists change places.
+function turn(@m: Machine)
+    pcs = m.cur_pcs
+    caps = m.cur_caps
+    m.cur_pcs @ m.nxt_pcs
+    m.cur_caps @ m.nxt_caps
+    m.cur_count @ m.nxt_count
+    m.nxt_pcs @ pcs
+    m.nxt_caps @ caps
+
+# Whether a thread that accepts at `pos` is a match `search` takes.
+#
+# - `caps`: the thread's slots.
+# - `pos`: where it accepts.
+# - `s`: the text.
+# - `search`: what the search takes.
+function accepted(caps: [i64] lent, pos: i64, s: str, search: Search) -> bool
+    if search.whole && pos != s.len()
+        return false
+    return !(pos == search.not_empty_at && caps[0] == pos)
+
+# Whether the instruction `inst` reads the character `code`.
+#
+# - `inst`: an instruction that reads a character.
+# - `prog`: the program, whose classes `inst` may name.
+# - `code`: the code point of the character, or -1 at the end of the text.
+function reads(inst: program.Inst, prog: program.Program lent, code: i64) -> bool
+    if code < 0
+        return false
+
+    return match inst
+        .char c            => code == c.code
+        .char_fold c       => casefold.key(code) == c.code
+        .any               => true
+        .any_but_line_feed => code != '\n'
+        .set t             => sets.contains(set: prog.sets[t.index], code: code)
+        .split _ | .jump _ | .save _ | .begin_text | .end_text | .begin_line | .end_line | .word_edge | .not_word_edge | .accept => false
+
+# Whether the place `inst` asks for holds at `pos` of `s`.
+#
+# - `inst`: an instruction that asks for a place.
+# - `s`: the text.
+# - `pos`: the byte where it is asked.
+function holds_at(inst: program.Inst, s: str, pos: i64) -> bool
+    return match inst
+        .begin_text => pos == 0
+        .end_text => pos == s.len()
+        .begin_line => pos == 0 || s[pos - 1] == '\n'
+        .end_line => pos == s.len() || s[pos] == '\n'
+        .word_edge => word_before(s, pos) != word_after(s, pos)
+        .not_word_edge => word_before(s, pos) == word_after(s, pos)
+        .char _ | .char_fold _ | .any | .any_but_line_feed | .set _ | .split _ | .jump _ | .save _ | .accept => false
+
+# Whether the byte just before `pos` of `s` is a word character of ASCII.
+#
+# - `s`: the text.
+# - `pos`: the position.
+function word_before(s: str, pos: i64) -> bool
+    return pos > 0 && is_word(s[pos - 1])
+
+# Whether the byte at `pos` of `s` is a word character of ASCII.
+#
+# - `s`: the text.
+# - `pos`: the position.
+function word_after(s: str, pos: i64) -> bool
+    return pos < s.len() && is_word(s[pos])
+
+# Whether `b` is a word character of ASCII: a letter, a digit or `_`.
+#
+# - `b`: a byte.
+function is_word(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+# Enters the state `pc` at `pos`, and every state it leads to without reading
+# a character, in the order a backtracking engine would try them; adds each
+# state that reads a character, and `accept`, to a list of threads.
+#
+# - `m`: the machine, whose list, marks and stack this writes.
+# - `prog`: the program.
+# - `s`: the text.
+# - `pc`: the state entered.
+# - `pos`: the byte where it is entered.
+# - `caps`: the slots the thread carries.
+# - `groups`: whether the groups are recorded, beside the whole match.
+# - `next`: whether the list is the next position's, rather than this one's.
+function add(@m: Machine, prog: program.Program lent, s: str, pc: i64, pos: i64, caps: [i64], groups: bool, next: bool)
+    last = 2 * prog.groups + 2
+    m.stack_pcs[0] @ pc
+    m.stack_caps[0] @ caps
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        at = m.stack_pcs[top]
+
+        if m.marks[at] == m.round
+            continue
+        m.marks[at] @ m.round
+        held = m.stack_caps[top]
+        inst = prog.insts[at]
+
+        match inst
+            .split p =>
+                m.stack_pcs[top] @ at + p.second
+                m.stack_pcs[top + 1] @ at + p.first
+                m.stack_caps[top + 1] @ held
+                top @ top + 2
+            .jump j =>
+                m.stack_pcs[top] @ at + j.by
+                top @ top + 1
+            .save v =>
+                m.stack_pcs[top] @ at + 1
+
+                if groups || v.slot < 2
+                    marked: [i64] @= held
+                    marked[v.slot] @ pos
+
+                    if v.slot > 2 && v.slot % 2 == 1
+                        marked[last] @ v.slot / 2
+                    m.stack_caps[top] @ marked
+                top @ top + 1
+            .begin_text | .end_text | .begin_line | .end_line | .word_edge | .not_word_edge =>
+                if holds_at(inst: inst, s: s, pos: pos)
+                    m.stack_pcs[top] @ at + 1
+                    top @ top + 1
+            .char _ | .char_fold _ | .any | .any_but_line_feed | .set _ | .accept =>
+                if next
+                    m.nxt_pcs[m.nxt_count] @ at
+                    m.nxt_caps[m.nxt_count] @ held
+                    m.nxt_count @ m.nxt_count + 1
+                else
+                    m.cur_pcs[m.cur_count] @ at
+                    m.cur_caps[m.cur_count] @ held
+                    m.cur_count @ m.cur_count + 1
+
+# The slots of the match `search` finds in `s`, a machine made for this one
+# search.
+#
+# - `prog`: the program.
+# - `s`: the text.
+# - `search`: where and how to search.
+#
+# Fails `not_found` where `s` holds no such match.
+function run_once(prog: program.Program lent, s: str, search: Search) -> [i64]?
+    m: Machine @= machine(prog)
+    return run(@m, prog: prog, s: s, search: search)
+
+## Tests
+
+# The slots `pattern` answers in `s` searched as `search` says, or [-9]
+# where nothing is found.
+function slots_of(pattern: str, s: str, search: Search) -> [i64]
+    prog = regex_parse.compile(pattern).must()
+    return run_once(prog, s: s, search: search).default([-9])
+
+# A search of the whole text from its start, groups recorded.
+function anywhere() -> Search
+    return Search(from: 0, anchored: false, whole: false, not_empty_at: -1, groups: true)
+
+test "run: the leftmost match, and among those the one Perl's rule prefers"
+    assert slots_of(pattern: "a", s: "baaab", search: anywhere()) == [1, 2, -1]
+    assert slots_of(pattern: "(a|ab)(c|bcd)(d*)", s: "abcd", search: anywhere()) == [0, 4, 0, 1, 1, 4, 4, 4, 3]
+    assert slots_of(pattern: "a|ab|abc", s: "abc", search: anywhere()) == [0, 1, -1]
+    assert slots_of(pattern: "(a*?)(a*)", s: "aaa", search: anywhere()) == [0, 3, 0, 0, 0, 3, 2]
+    assert slots_of(pattern: "x", s: "", search: anywhere()) == [-9]
+    assert slots_of(pattern: "", s: "", search: anywhere()) == [0, 0, -1]
+
+test "run: groups of a repetition, a group that took no part, and an empty iteration"
+    assert slots_of(pattern: "(a|b)*", s: "ab", search: anywhere()) == [0, 2, 1, 2, 1]
+    assert slots_of(pattern: "(?:(a)|b)*", s: "ab", search: anywhere()) == [0, 2, 0, 1, 1]
+    assert slots_of(pattern: "(a)|(b)", s: "b", search: anywhere()) == [0, 1, -1, -1, 0, 1, 2]
+    assert slots_of(pattern: "(a*)*", s: "b", search: anywhere()) == [0, 0, 0, 0, 1]
+    assert slots_of(pattern: "(a|)*", s: "aa", search: anywhere()) == [0, 2, 1, 2, 1]
+
+test "run: anchored, the whole text, an empty match refused at one place, and no groups"
+    at_one = Search(from: 1, anchored: true, whole: false, not_empty_at: -1, groups: true)
+    assert slots_of(pattern: "b", s: "ab", search: at_one) == [1, 2, -1]
+    at_zero = Search(from: 0, anchored: true, whole: false, not_empty_at: -1, groups: true)
+    assert slots_of(pattern: "b", s: "ab", search: at_zero) == [-9]
+    whole = Search(from: 0, anchored: true, whole: true, not_empty_at: -1, groups: true)
+    assert slots_of(pattern: "a|ab", s: "ab", search: whole) == [0, 2, -1]
+    assert slots_of(pattern: "a", s: "ab", search: whole) == [-9]
+    not_empty = Search(from: 0, anchored: false, whole: false, not_empty_at: 0, groups: true)
+    assert slots_of(pattern: "|a", s: "a", search: not_empty) == [0, 1, -1]
+    bare = Search(from: 0, anchored: false, whole: false, not_empty_at: -1, groups: false)
+    assert slots_of(pattern: "(a)", s: "a", search: bare) == [0, 1, -1, -1, -1]
+
+test "run: the text before `from` seen by `^` and `\\b`, and a search from the end"
+    from_one = Search(from: 1, anchored: false, whole: false, not_empty_at: -1, groups: true)
+    assert slots_of(pattern: "^a", s: "aa", search: from_one) == [-9]
+    assert slots_of(pattern: "\\ba", s: "ba a", search: from_one) == [3, 4, -1]
+    at_end = Search(from: 2, anchored: false, whole: false, not_empty_at: -1, groups: true)
+    assert slots_of(pattern: "$", s: "ab", search: at_end) == [2, 2, -1]
+
+test "run: a pattern that makes a backtracking engine exponential ends at once"
+    assert slots_of(pattern: "(a+)+$", s: repeat("a", 30) + "b", search: anywhere()) == [-9]
+    assert slots_of(pattern: "(x+x+)+y", s: repeat("x", 5000), search: anywhere()) == [-9]
+    assert slots_of(pattern: "(a+)+$", s: repeat("a", 30), search: anywhere()) == [0, 30, 0, 30, 1]
+
+test "holds_at: the places at the start, the end, a line's edges and a word's"
+    assert holds_at(inst: .begin_text, s: "ab", pos: 0) && !holds_at(inst: .begin_text, s: "ab", pos: 1)
+    assert holds_at(inst: .end_text, s: "ab", pos: 2) && !holds_at(inst: .end_text, s: "a\n", pos: 1)
+    assert holds_at(inst: .begin_line, s: "a\nb", pos: 2) && !holds_at(inst: .begin_line, s: "a\nb", pos: 1)
+    assert holds_at(inst: .end_line, s: "a\nb", pos: 1) && holds_at(inst: .end_line, s: "", pos: 0)
+    assert holds_at(inst: .word_edge, s: "a b", pos: 1) && holds_at(inst: .word_edge, s: "a", pos: 0)
+    assert !holds_at(inst: .word_edge, s: "", pos: 0) && holds_at(inst: .not_word_edge, s: "", pos: 0)
+    assert !holds_at(inst: .word_edge, s: "é", pos: 0)
+    assert !holds_at(inst: .any, s: "a", pos: 0)
+
+test "reads: a character, a folded one, any, any but a line feed, and the end of the text"
+    prog = regex_parse.compile("").must()
+    assert reads(inst: .char(code: 'a'), prog: prog, code: 'a') && !reads(inst: .char(code: 'a'), prog: prog, code: 'b')
+    assert reads(inst: .char_fold(code: 'K'), prog: prog, code: 0x212a)
+    assert reads(inst: .any, prog: prog, code: '\n') && !reads(inst: .any_but_line_feed, prog: prog, code: '\n')
+    assert !reads(inst: .any, prog: prog, code: -1)
+    assert !reads(inst: .accept, prog: prog, code: 'a')

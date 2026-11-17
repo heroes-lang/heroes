@@ -1,0 +1,108 @@
+# Every match of a pattern in a text, one search after another, and the text
+# rebuilt around them. A search begins where the match before it ended; after
+# an empty match it may not take an empty match at the same place again, so
+# none is found twice and every search moves on. This is Python's rule and
+# Perl's: an empty match just after a match that is not empty is taken.
+
+use regex/internal/parse as regex_parse
+use regex/internal/program
+use regex/internal/simulate
+
+# The slots of the matches of `prog` in `s`, in order, at most `most` of
+# them.
+#
+# - `prog`: the program.
+# - `s`: the text.
+# - `most`: how many at most, or -1 for every one.
+#
+# Each search reads from where the last match ended, and may read ahead of
+# the match it finds to be sure of it; a pattern that must read far ahead can
+# so read the rest of the text again for each match.
+function all_slots(prog: program.Program lent, s: str, most: i64) -> [[i64]]
+    m: simulate.Machine @= simulate.machine(prog)
+    out: [[i64]] @= []
+    from: i64 @= 0
+    not_empty_at: i64 @= -1
+
+    while from <= s.len() && (most < 0 || out.len() < most)
+        search = simulate.Search(from: from, anchored: false, whole: false, not_empty_at: not_empty_at, groups: true)
+
+        match simulate.run(@m, prog: prog, s: s, search: search)
+            .err _ => break
+            .ok slots =>
+                out @ out.push(slots)
+                not_empty_at @ -1
+
+                if slots[1] == slots[0]
+                    not_empty_at @ slots[1]
+                from @ slots[1]
+
+    return out
+
+# `s` with each match of `found` replaced by the text of `inserts` at the same
+# index.
+#
+# - `s`: the text.
+# - `found`: the matches' slots, in order, none overlapping.
+# - `inserts`: what each match is replaced by, as many as `found`.
+function rebuilt(s: str, found: [[i64]] lent, inserts: [str] lent) -> str
+    out: [str] @= []
+    from: i64 @= 0
+
+    for i in range(from: 0, to: found.len())
+        out @ out.push(s.slice(from: from, to: found[i][0]))
+        out @ out.push(inserts[i])
+        from @ found[i][1]
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out.join("")
+
+# The pieces of `s` between the matches of `found`: one more than there are
+# matches.
+#
+# - `s`: the text.
+# - `found`: the matches' slots, in order, none overlapping.
+function pieces(s: str, found: [[i64]] lent) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for slots in found
+        out @ out.push(s.slice(from: from, to: slots[0]))
+        from @ slots[1]
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+## Tests
+
+# The matches of `pattern` in `s`, each as its start and end.
+function spans_of(pattern: str, s: str, most: i64) -> [[i64]]
+    out: [[i64]] @= []
+
+    for slots in all_slots(regex_parse.compile(pattern).must(), s: s, most: most)
+        out @ out.push([slots[0], slots[1]])
+
+    return out
+
+test "all_slots: none, one, every one, at most so many, and an empty text"
+    none: [[i64]] = []
+    assert spans_of(pattern: "x", s: "abc", most: -1) == none
+    assert spans_of(pattern: "a", s: "baaab", most: -1) == [[1, 2], [2, 3], [3, 4]]
+    assert spans_of(pattern: "a", s: "baaab", most: 2) == [[1, 2], [2, 3]]
+    assert spans_of(pattern: "a", s: "baaab", most: 0) == none
+    assert spans_of(pattern: "", s: "", most: -1) == [[0, 0]]
+
+test "all_slots: empty matches by Python's rule, after a match and after an empty one"
+    assert spans_of(pattern: "a*", s: "baaa", most: -1) == [[0, 0], [1, 4], [4, 4]]
+    assert spans_of(pattern: "x*", s: "axbc", most: -1) == [[0, 0], [1, 2], [2, 2], [3, 3], [4, 4]]
+    assert spans_of(pattern: "|a", s: "a", most: -1) == [[0, 0], [0, 1], [1, 1]]
+    assert spans_of(pattern: "", s: "é", most: -1) == [[0, 0], [2, 2]]
+
+test "rebuilt and pieces: no match, matches at either end, and an empty match"
+    none: [[i64]] = []
+    nothing: [str] = []
+    assert rebuilt("abc", found: none, inserts: nothing) == "abc"
+    assert rebuilt("abc", found: [[0, 1], [2, 3]], inserts: ["<", ">"]) == "<b>"
+    assert rebuilt("ab", found: [[1, 1]], inserts: ["-"]) == "a-b"
+    assert pieces("abc", none) == ["abc"]
+    assert pieces(",a,", [[0, 1], [2, 3]]) == ["", "a", ""]

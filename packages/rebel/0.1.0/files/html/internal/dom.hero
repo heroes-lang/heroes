@@ -1,0 +1,308 @@
+# The tree, held flat: every node a number, its kind, its names and its data
+# in lists side by side, and its links to its parent, children and siblings as
+# numbers, so that no operation on a tree follows its depth with recursion,
+# `==` included, and putting a node in or taking it out costs the same
+# whatever the tree holds. The reader builds a tree here, and the face reads
+# and changes it through the functions of this module and its neighbours.
+
+## Kinds, namespaces and modes
+
+# The document node.
+constant DOCUMENT: i64
+    1
+
+# A document fragment: what a fragment reading answers, and a template's
+# contents.
+constant FRAGMENT: i64
+    2
+
+# A doctype node.
+constant DOCTYPE: i64
+    3
+
+# An element.
+constant ELEMENT: i64
+    4
+
+# A text node.
+constant TEXT: i64
+    5
+
+# A comment node.
+constant COMMENT: i64
+    6
+
+# A processing instruction node.
+constant INSTRUCTION: i64
+    7
+
+# The HTML namespace.
+constant HTML: i64
+    0
+
+# The SVG namespace.
+constant SVG: i64
+    1
+
+# The MathML namespace.
+constant MATHML: i64
+    2
+
+# An attribute in no namespace.
+constant NO_SPACE: i64
+    0
+
+# An attribute in the XLink namespace.
+constant XLINK: i64
+    1
+
+# An attribute in the XML namespace.
+constant XML: i64
+    2
+
+# An attribute in the XMLNS namespace.
+constant XMLNS: i64
+    3
+
+# The document's three modes.
+constant NO_QUIRKS: i64
+    0
+
+constant QUIRKS: i64
+    1
+
+constant LIMITED_QUIRKS: i64
+    2
+
+# No node: a link that leads nowhere.
+constant NONE: i64
+    -1
+
+## The tree
+
+# One attribute: its namespace, its local name and its value.
+record Attr
+    # `NO_SPACE`, `XLINK`, `XML` or `XMLNS`.
+    space: i64
+    # The local name.
+    name: str
+    # The value.
+    value: str
+
+# The nodes of one document. Node `i`'s facts stand at index `i` of every
+# list; a link is a node's number, or `NONE`.
+record Tree
+    # `DOCUMENT`, `FRAGMENT`, `DOCTYPE`, `ELEMENT`, `TEXT`, `COMMENT` or
+    # `INSTRUCTION`.
+    kinds: [i64]
+    # An element's namespace, `HTML`, `SVG` or `MATHML`; `HTML` for the rest.
+    spaces: [i64]
+    # An element's local name, a doctype's name, an instruction's target.
+    names: [str]
+    # An element's attributes; empty for the rest.
+    attributes: [[Attr]]
+    # A text's, a comment's or an instruction's characters; a doctype's public
+    # identifier.
+    data: [str]
+    # A doctype's system identifier; empty for the rest.
+    systems: [str]
+    # The node holding each, or `NONE`.
+    parents: [i64]
+    # Each node's first child, or `NONE`.
+    firsts: [i64]
+    # Each node's last child, or `NONE`.
+    lasts: [i64]
+    # Each node's next sibling, or `NONE`.
+    nexts: [i64]
+    # Each node's previous sibling, or `NONE`.
+    previouses: [i64]
+    # `NO_QUIRKS`, `QUIRKS` or `LIMITED_QUIRKS`.
+    quirks: i64
+    # Whether the document was read as with scripting enabled, which makes a
+    # `noscript`'s text raw text when it is written.
+    scripting: bool
+
+# Adds `item` at the end of `items`, which the caller owns, so that a list held
+# in a field grows in place.
+function append<T>(@items: [T], item: T)
+    items @ items.push(item)
+
+# A tree of one node, number 0, of `kind`: `DOCUMENT` or `FRAGMENT`.
+function new_tree(kind: i64) -> Tree
+    none: [Attr] = []
+    return Tree(
+        kinds: [kind],
+        spaces: [HTML],
+        names: [""],
+        attributes: [none],
+        data: [""],
+        systems: [""],
+        parents: [NONE],
+        firsts: [NONE],
+        lasts: [NONE],
+        nexts: [NONE],
+        previouses: [NONE],
+        quirks: NO_QUIRKS,
+        scripting: true
+    )
+
+# A new node of `t`, held by nothing, and its number.
+function add(@t: Tree, kind: i64, space: i64, name: str, attributes: [Attr], data: str) -> i64
+    n = t.kinds.len()
+    append(items: @t.kinds, item: kind)
+    append(items: @t.spaces, item: space)
+    append(items: @t.names, item: name)
+    append(items: @t.attributes, item: attributes)
+    append(items: @t.data, item: data)
+    append(items: @t.systems, item: "")
+    append(items: @t.parents, item: NONE)
+    append(items: @t.firsts, item: NONE)
+    append(items: @t.lasts, item: NONE)
+    append(items: @t.nexts, item: NONE)
+    append(items: @t.previouses, item: NONE)
+    return n
+
+# A new element of `t` in `space`, held by nothing.
+function add_element(@t: Tree, space: i64, name: str, attributes: [Attr]) -> i64
+    return add(@t, kind: ELEMENT, space: space, name: name, attributes: attributes, data: "")
+
+# A new node of `kind` holding `data`, a text or a comment, held by nothing.
+function add_data(@t: Tree, kind: i64, data: str) -> i64
+    none: [Attr] = []
+    return add(@t, kind: kind, space: HTML, name: "", attributes: none, data: data)
+
+# Puts `child`, held by nothing, last in `parent`.
+function append_child(@t: Tree, parent: i64, child: i64)
+    last = t.lasts[parent]
+    t.parents[child] @ parent
+    t.previouses[child] @ last
+    t.nexts[child] @ NONE
+
+    if last == NONE
+        t.firsts[parent] @ child
+    else
+        t.nexts[last] @ child
+    t.lasts[parent] @ child
+
+# Puts `child`, held by nothing, in `parent` just before `before`, one of its
+# children, or last where `before` is `NONE`.
+function insert_before(@t: Tree, parent: i64, child: i64, before: i64)
+    if before == NONE
+        append_child(@t, parent: parent, child: child)
+        return
+    previous = t.previouses[before]
+    t.parents[child] @ parent
+    t.previouses[child] @ previous
+    t.nexts[child] @ before
+    t.previouses[before] @ child
+
+    if previous == NONE
+        t.firsts[parent] @ child
+    else
+        t.nexts[previous] @ child
+
+# Takes `node` out of its parent; nothing where it has none.
+function detach(@t: Tree, node: i64)
+    parent = t.parents[node]
+
+    if parent == NONE
+        return
+    previous = t.previouses[node]
+    next = t.nexts[node]
+
+    if previous == NONE
+        t.firsts[parent] @ next
+    else
+        t.nexts[previous] @ next
+
+    if next == NONE
+        t.lasts[parent] @ previous
+    else
+        t.previouses[next] @ previous
+    t.parents[node] @ NONE
+    t.previouses[node] @ NONE
+    t.nexts[node] @ NONE
+
+# Moves every child of `from` to the end of `to`, in order.
+function move_children(@t: Tree, from: i64, to: i64)
+    child: i64 @= t.firsts[from]
+
+    while child != NONE
+        next = t.nexts[child]
+        detach(@t, child)
+        append_child(@t, parent: to, child: child)
+        child @ next
+
+# The children of `node`, in order.
+function children(t: Tree lent, node: i64) -> [i64]
+    found: [i64] @= []
+    child: i64 @= t.firsts[node]
+
+    while child != NONE
+        found @ found.push(child)
+        child @ t.nexts[child]
+
+    return found
+
+# Whether `node` is an HTML element named `name`.
+function is_html(t: Tree lent, node: i64, name: str) -> bool
+    return t.kinds[node] == ELEMENT && t.spaces[node] == HTML && t.names[node] == name
+
+# Whether `ancestor` is `node` or holds it, at any depth.
+function holds(t: Tree lent, ancestor: i64, node: i64) -> bool
+    at: i64 @= node
+
+    while at != NONE
+        if at == ancestor
+            return true
+        at @ t.parents[at]
+
+    return false
+
+# The value of the attribute of `node` in no namespace named `name`, and
+# whether it has one.
+function attribute_of(t: Tree lent, node: i64, name: str) -> str?
+    for a in t.attributes[node]
+        if a.space == NO_SPACE && a.name == name
+            return ok(a.value)
+
+    return fail(code: "not_found", msg: f"no attribute `{name}`")
+
+## Tests
+
+test "new_tree and add: node 0, a new node held by nothing, and its number"
+    t: Tree @= new_tree(DOCUMENT)
+    assert t.kinds == [DOCUMENT] && t.parents == [NONE]
+    n = add_element(@t, space: HTML, name: "p", attributes: [])
+    assert n == 1 && t.parents[n] == NONE && t.names[n] == "p" && t.kinds.len() == 2
+
+test "append_child, insert_before and detach: first, last, middle, before the first, and a node held by nothing"
+    t: Tree @= new_tree(DOCUMENT)
+    a = add_data(@t, kind: TEXT, data: "a")
+    b = add_data(@t, kind: TEXT, data: "b")
+    c = add_data(@t, kind: TEXT, data: "c")
+    append_child(@t, parent: 0, child: a)
+    append_child(@t, parent: 0, child: c)
+    insert_before(@t, parent: 0, child: b, before: c)
+    assert children(t, 0) == [a, b, c] && t.firsts[0] == a && t.lasts[0] == c
+    detach(@t, b)
+    assert children(t, 0) == [a, c] && t.parents[b] == NONE && t.nexts[a] == c && t.previouses[c] == a
+    detach(@t, a)
+    detach(@t, c)
+    assert children(t, 0) == [] && t.firsts[0] == NONE && t.lasts[0] == NONE
+    detach(@t, c)
+    insert_before(@t, parent: 0, child: c, before: NONE)
+    insert_before(@t, parent: 0, child: a, before: c)
+    assert children(t, 0) == [a, c]
+
+test "move_children, holds, is_html and attribute_of"
+    t: Tree @= new_tree(DOCUMENT)
+    p = add_element(@t, space: HTML, name: "p", attributes: [Attr(space: NO_SPACE, name: "id", value: "x")])
+    q = add_element(@t, space: SVG, name: "p", attributes: [])
+    x = add_data(@t, kind: TEXT, data: "x")
+    append_child(@t, parent: 0, child: p)
+    append_child(@t, parent: p, child: x)
+    move_children(@t, from: p, to: q)
+    assert children(t, p) == [] && children(t, q) == [x] && t.parents[x] == q
+    assert holds(t, ancestor: 0, node: p) && !holds(t, ancestor: p, node: x) && holds(t, ancestor: x, node: x)
+    assert is_html(t, p, "p") && !is_html(t, q, "p") && attribute_of(t, p, "id").must() == "x" && attribute_of(t, p, "no").is_err()

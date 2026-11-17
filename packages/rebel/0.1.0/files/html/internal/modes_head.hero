@@ -1,0 +1,359 @@
+# The insertion modes before the body (13.2.6.4.1 to 13.2.6.4.6): "initial"
+# with the doctype and the mode it sets, "before html", "before head", "in
+# head", "in head noscript" and "after head". Each answers what the
+# dispatcher does next; a run of characters keeps, for the next mode, what
+# this one does not take.
+
+use html/internal/ascii
+use html/internal/builder
+use html/internal/common
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/tables
+use html/internal/token
+
+# 13.2.6.4.1, "initial".
+function initial(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        _ = common.take_white(@t)
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: 0)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, 0)
+        return .done
+    else if t.kind == token.DOCTYPE
+        if t.name != "html" || t.has_public || t.has_system && t.system != "about:legacy-compat"
+            builder.error(@b, "unexpected-doctype", t)
+        node = dom.add(@b.tree, kind: dom.DOCTYPE, space: dom.HTML, name: t.name, attributes: [], data: t.data)
+        b.tree.systems[node] @ t.system
+
+        if dom.children(b.tree, 0).len() == 0 || !has_doctype_or_element(b.tree)
+            dom.append_child(@b.tree, parent: 0, child: node)
+        b.tree.quirks @ quirks_of(t)
+        b.mode @ .before_html
+        return .done
+    builder.error(@b, "missing-doctype", t)
+    b.tree.quirks @ dom.QUIRKS
+    b.mode @ .before_html
+    return .again
+
+# Whether the document holds a doctype or an element.
+function has_doctype_or_element(t: dom.Tree lent) -> bool
+    for child in dom.children(t, 0)
+        if t.kinds[child] == dom.DOCTYPE || t.kinds[child] == dom.ELEMENT
+            return true
+
+    return false
+
+# The mode the doctype `t` sets the document to (13.2.6.4.1), its
+# identifiers compared in any ASCII case.
+function quirks_of(t: token.Token lent) -> i64
+    public = ascii.to_lower(t.data)
+    system = ascii.to_lower(t.system)
+
+    if t.force_quirks || t.name != "html"
+        return dom.QUIRKS
+
+    if t.has_public && (is_listed(public, tables.QUIRKS_PUBLIC, false) || is_listed(public, tables.QUIRKS_PUBLIC_PREFIXES, true))
+        return dom.QUIRKS
+
+    if t.has_system && is_listed(system, tables.QUIRKS_SYSTEM, false)
+        return dom.QUIRKS
+    framed = t.has_public && is_listed(public, tables.FRAMESET_PREFIXES, true)
+
+    if framed && (!t.has_system || system == "")
+        return dom.QUIRKS
+
+    if t.has_public && is_listed(public, tables.LIMITED_PUBLIC_PREFIXES, true)
+        return dom.LIMITED_QUIRKS
+
+    if framed
+        return dom.LIMITED_QUIRKS
+    return dom.NO_QUIRKS
+
+# Whether `value`, in lower case, is one of `list` in any case, or begins with
+# one where `prefix`.
+function is_listed(value: str, list: [str], prefix: bool) -> bool
+    for item in list
+        lower = ascii.to_lower(item)
+
+        if prefix && value.len() >= lower.len() && value.slice(from: 0, to: lower.len()) == lower
+            return true
+
+        if !prefix && value == lower
+            return true
+
+    return false
+
+# 13.2.6.4.2, "before html".
+function before_html(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+
+    if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: 0)
+        return .done
+
+    if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, 0)
+        return .done
+
+    if t.kind == token.CHARS
+        _ = common.take_white(@t)
+
+        if t.data == ""
+            return .done
+    none: [dom.Attr] = []
+
+    attributes = if t.kind == token.START && t.name == "html"
+        t.attributes
+    else
+        none
+
+    if t.kind == token.END && t.name != "head" && t.name != "body" && t.name != "html" && t.name != "br"
+        builder.error(@b, "unexpected-end-tag", t)
+        return .done
+    html = insert.create(@b, space: dom.HTML, name: "html", attributes: attributes)
+    insert.put(@b, node: html, place: insert.Place(parent: 0, before: dom.NONE))
+    builder.push_open(@b, html)
+    b.mode @ .before_head
+
+    if t.kind == token.START && t.name == "html"
+        return .done
+    return .again
+
+# 13.2.6.4.3, "before head".
+function before_head(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        _ = common.take_white(@t)
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.START && t.name == "html"
+        return .using(mode: .in_body)
+    else if t.kind == token.START && t.name == "head"
+        b.head @ insert.element_for(@b, t, dom.HTML)
+        b.mode @ .in_head
+        return .done
+    else if t.kind == token.END && t.name != "head" && t.name != "body" && t.name != "html" && t.name != "br"
+        builder.error(@b, "unexpected-end-tag", t)
+        return .done
+    b.head @ insert.element_named(@b, "head")
+    b.mode @ .in_head
+    return .again
+
+# 13.2.6.4.4, "in head".
+function in_head(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        insert.text(@b, common.take_white(@t))
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.START
+        name = t.name
+
+        if name == "html"
+            return .using(mode: .in_body)
+
+        if name == "base" || name == "basefont" || name == "bgsound" || name == "link" || name == "meta"
+            _ = insert.element_for(@b, t, dom.HTML)
+            builder.pop(@b)
+            builder.acknowledge(@b)
+            return .done
+
+        if name == "title"
+            return common.text_element(@b, t, builder.SWITCH_RCDATA)
+
+        if name == "noscript" && b.scripting || name == "noframes" || name == "style"
+            return common.text_element(@b, t, builder.SWITCH_RAWTEXT)
+
+        if name == "noscript"
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.mode @ .in_head_noscript
+            return .done
+
+        if name == "script"
+            return common.text_element(@b, t, builder.SWITCH_SCRIPT)
+
+        if name == "template"
+            formatting.push_marker(@b)
+            b.frameset_ok @ false
+            b.mode @ .in_template
+            builder.push_template_mode(@b, .in_template)
+            _ = insert.element_for(@b, t, dom.HTML)
+            return .done
+
+        if name == "head"
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+    else if t.kind == token.END
+        name = t.name
+
+        if name == "head"
+            builder.pop(@b)
+            b.mode @ .after_head
+            return .done
+
+        if name == "template"
+            end_template(@b, t)
+            return .done
+
+        if name != "body" && name != "html" && name != "br"
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+    builder.pop(@b)
+    b.mode @ .after_head
+    return .again
+
+# "In head"'s `</template>`.
+function end_template(@b: builder.Builder, t: token.Token lent)
+    if !builder.has_open(b, "template")
+        builder.error(@b, "unexpected-end-tag", t)
+        return
+    builder.generate_all_implied_end_tags(@b)
+
+    if !builder.current_is(b, "template")
+        builder.error(@b, "unclosed-element", t)
+    builder.pop_until(@b, "template")
+    formatting.clear_to_marker(@b)
+    builder.pop_template_mode(@b)
+    builder.reset_mode(@b)
+
+# 13.2.6.4.5, "in head noscript".
+function in_head_noscript(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        insert.text(@b, common.take_white(@t))
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.COMMENT || t.kind == token.INSTRUCTION
+        return .using(mode: .in_head)
+    else if t.kind == token.START
+        name = t.name
+
+        if name == "html"
+            return .using(mode: .in_body)
+
+        if name == "basefont" || name == "bgsound" || name == "link" || name == "meta" || name == "noframes" || name == "style"
+            return .using(mode: .in_head)
+
+        if name == "head" || name == "noscript"
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+    else if t.kind == token.END
+        if t.name == "noscript"
+            builder.pop(@b)
+            b.mode @ .in_head
+            return .done
+
+        if t.name != "br"
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+    builder.unexpected(@b, t)
+    builder.pop(@b)
+    b.mode @ .in_head
+    return .again
+
+# 13.2.6.4.6, "after head".
+function after_head(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        insert.text(@b, common.take_white(@t))
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.START
+        name = t.name
+
+        if name == "html"
+            return .using(mode: .in_body)
+
+        if name == "body"
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.frameset_ok @ false
+            b.mode @ .in_body
+            return .done
+
+        if name == "frameset"
+            _ = insert.element_for(@b, t, dom.HTML)
+            b.mode @ .in_frameset
+            return .done
+
+        match name
+            "base" | "basefont" | "bgsound" | "link" | "meta" | "noframes" | "script" | "style" | "template" | "title" =>
+                builder.error(@b, "unexpected-start-tag", t)
+                return .using_head
+            _ => _ = 0
+
+        if name == "head"
+            builder.error(@b, "unexpected-start-tag", t)
+            return .done
+    else if t.kind == token.END
+        if t.name == "template"
+            return .using(mode: .in_head)
+
+        if t.name != "body" && t.name != "html" && t.name != "br"
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+    _ = insert.element_named(@b, "body")
+    b.frameset_ok @ true
+    b.mode @ .in_body
+    return .again
+
+## Tests
+
+test "quirks_of: html, a missing name, a quirks public identifier in any case, and the two frameset ones"
+    t: token.Token @= token.empty(kind: token.DOCTYPE, at: 0)
+    t.name @ "html"
+    assert quirks_of(t) == dom.NO_QUIRKS
+    t.has_public @ true
+    t.data @ "-//w3c//dtd html 4.01 transitional//en"
+    assert quirks_of(t) == dom.QUIRKS
+    t.has_system @ true
+    t.system @ "http://www.w3.org/TR/html4/loose.dtd"
+    assert quirks_of(t) == dom.LIMITED_QUIRKS
+    t.data @ "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    assert quirks_of(t) == dom.LIMITED_QUIRKS
+    t.data @ "HTML"
+    assert quirks_of(t) == dom.QUIRKS
+    t.name @ "svg"
+    t.data @ ""
+    assert quirks_of(t) == dom.QUIRKS
+
+test "is_listed: exactly, by a beginning, and in any case"
+    assert is_listed("html", ["HTML"], false) && !is_listed("html5", ["HTML"], false) && is_listed("html5", ["HTML"], true)

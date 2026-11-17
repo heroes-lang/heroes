@@ -1,0 +1,133 @@
+# A count of seconds held in a float, turned into whole nanoseconds: the
+# nearest to the float's exact value, a tie going to the even nanosecond.
+#
+# The product of a fraction and 10^9 is rounded once by the machine, and that
+# rounding can carry it across a half: 1.5e-9 is a little less than 1.5
+# nanoseconds as a float, and its product rounds to 1.5 exactly. So the
+# product's own rounding error is computed too, by Dekker's method: each
+# factor is split into two halves of 26 bits, whose products a float holds
+# exactly, and what they sum to beyond the rounded product is the error.
+
+use time/internal/arith
+
+# The code of a float that is not a number.
+constant INVALID: str
+    "invalid"
+
+# The code of a count of seconds outside an `i64` of nanoseconds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# 2^27 + 1, which splits a float's 53 bits into two halves of 26.
+constant SPLITTER: f64
+    134_217_729.0
+
+# Nanoseconds in a second, as a float.
+constant BILLION: f64
+    1_000_000_000.0
+
+# Seconds past which no count fits an `i64` of nanoseconds, either way.
+constant BOUND: f64
+    9_223_372_037.0
+
+# A float as the sum of two whose significands are 26 bits at most.
+record Halves
+    # The half that carries the float's leading bits.
+    high: f64
+    # What is left.
+    low: f64
+
+# `x` split into two halves whose products with another's halves are exact.
+function split(x: f64) -> Halves
+    scaled = SPLITTER * x
+    high = scaled - (scaled - x)
+    return Halves(high: high, low: x - high)
+
+# What the exact product of `a` and `b` holds beyond `product`, their product
+# as the machine rounded it.
+function product_error(a: f64, b: f64, product: f64) -> f64
+    x = split(a)
+    y = split(b)
+    return x.high * y.high - product + x.high * y.low + x.low * y.high + x.low * y.low
+
+# The whole nanoseconds nearest to `fraction` seconds, from 0 up to below 1, a
+# tie going to the even one: up to 10^9, which the caller carries into a
+# second.
+function nanoseconds_of(fraction: f64) -> i64
+    product = fraction * BILLION
+    error = product_error(a: fraction, b: BILLION, product: product)
+    whole = to_i64(product).must()
+    above_half = product - to_f64(whole) - 0.5
+
+    if above_half > 0.0 || above_half == 0.0 && error > 0.0
+        return whole + 1
+
+    if above_half < 0.0 || error < 0.0
+        return whole
+
+    if whole % 2 == 0
+        return whole
+    return whole + 1
+
+# The nanoseconds nearest to `x` seconds, a tie going to the even one. Fails
+# `invalid` where `x` is not a number, and `does_not_fit` where it is infinite
+# or the count is outside an `i64`.
+function to_nanoseconds(x: f64) -> i64?
+    if x != x
+        return fail(code: INVALID, msg: "the count of seconds is not a number")
+
+    if x >= BOUND || x <= -BOUND
+        return fail(code: DOES_NOT_FIT, msg: f"{x} seconds is outside a duration, about 292 years either way")
+    whole = to_i64(x).must()
+    fraction = x - to_f64(whole)
+    nanoseconds: i64 @= 0
+
+    if fraction >= 0.0
+        nanoseconds @ nanoseconds_of(fraction)
+    else
+        nanoseconds @ -nanoseconds_of(-fraction)
+
+    match arith.from_parts(seconds: whole, nanoseconds: nanoseconds)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: DOES_NOT_FIT, msg: f"{x} seconds is outside a duration, about 292 years either way")
+
+## Tests
+
+# Expected nanoseconds observed with Rust's `Duration::try_from_secs_f64` and
+# Python's `round(Fraction(x) * 10**9)`, 2026-11-15.
+test "to_nanoseconds: products that round across a half, exact ties to even, and negative counts"
+    assert to_nanoseconds(1.5).must() == 1_500_000_000
+    assert to_nanoseconds(0.1).must() == 100_000_000
+    assert to_nanoseconds(0.3).must() == 300_000_000
+    assert to_nanoseconds(0.000000001).must() == 1
+    assert to_nanoseconds(0.0000000015).must() == 1
+    assert to_nanoseconds(0.0000000025).must() == 3
+    assert to_nanoseconds(0.0000000005).must() == 1
+    assert to_nanoseconds(0.0000000002).must() == 0
+    assert to_nanoseconds(1.0000000005).must() == 1_000_000_001
+    assert to_nanoseconds(1.9999999999999998).must() == 2_000_000_000
+    assert to_nanoseconds(0.0009765625).must() == 976_562
+    assert to_nanoseconds(0.0029296875).must() == 2_929_688
+    assert to_nanoseconds(123456.789).must() == 123_456_789_000_000
+    assert to_nanoseconds(-0.0000000015).must() == -1
+    assert to_nanoseconds(-0.0009765625).must() == -976_562
+    assert to_nanoseconds(-1.5).must() == -1_500_000_000
+    assert to_nanoseconds(0.0).must() == 0
+
+test "to_nanoseconds: the largest count that fits, past it, infinity and not a number"
+    assert to_nanoseconds(9_223_372_036.0).must() == 9_223_372_036_000_000_000
+    assert to_nanoseconds(-9_223_372_036.0).must() == -9_223_372_036_000_000_000
+
+    match to_nanoseconds(9_223_372_036.854776)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
+
+    assert to_nanoseconds(9_223_372_037.0).is_err()
+    zero: f64 = 0.0
+    infinity = 1.0 / zero
+    assert to_nanoseconds(infinity).is_err()
+    assert to_nanoseconds(-infinity).is_err()
+
+    match to_nanoseconds(zero / zero)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the count of seconds is not a number"

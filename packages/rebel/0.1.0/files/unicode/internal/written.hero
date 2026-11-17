@@ -1,0 +1,61 @@
+# How a message of `unicode` writes a number it names: a code point as
+# `U+00E9`, a byte as `0xe9`, the forms Unicode and C write them in.
+
+# The digits of base sixteen as Unicode writes a code point, in upper case.
+constant UPPER_DIGITS: str
+    "0123456789ABCDEF"
+
+# The digits of base sixteen as C writes a byte, in lower case.
+constant LOWER_DIGITS: str
+    "0123456789abcdef"
+
+# The number `n`, which is not negative, in base sixteen with the sixteen
+# `digits`, at least `width` of them, zeros before.
+function in_base_16(n: i64, width: i64, digits: str) -> str
+    backwards: [str] @= []
+    rest: i64 @= n
+
+    while rest > 0 || backwards.len() < width
+        at = rest & 15
+        backwards @ backwards.push(digits.slice(from: at, to: at + 1))
+        rest @ rest >> 4
+
+    forwards: [str] @= []
+    at: i64 @= backwards.len() - 1
+
+    while at >= 0
+        forwards @ forwards.push(backwards[at])
+        at @ at - 1
+
+    return forwards.join("")
+
+# The code point `n` as Unicode writes it, `U+` and at least four digits; a
+# number below 0 is written as the number.
+function code_point(n: i64) -> str
+    if n < 0
+        return to_str(n)
+    return "U+" + in_base_16(n: n, width: 4, digits: UPPER_DIGITS)
+
+# The byte `b` as C writes it, `0x` and two digits.
+function byte(b: u8) -> str
+    return "0x" + in_base_16(n: to_i64(b).must(), width: 2, digits: LOWER_DIGITS)
+
+## Tests
+
+test "in_base_16: zero, a width filled, a number wider than its width"
+    assert in_base_16(n: 0, width: 4, digits: UPPER_DIGITS) == "0000"
+    assert in_base_16(n: 0, width: 0, digits: UPPER_DIGITS) == ""
+    assert in_base_16(n: 0xe9, width: 4, digits: UPPER_DIGITS) == "00E9"
+    assert in_base_16(n: 0x10ffff, width: 4, digits: LOWER_DIGITS) == "10ffff"
+
+test "code_point: below 0, the smallest, one of five digits, the largest, past it"
+    assert code_point(-1) == "-1"
+    assert code_point(0) == "U+0000"
+    assert code_point(0x1f600) == "U+1F600"
+    assert code_point(0x10ffff) == "U+10FFFF"
+    assert code_point(0x110000) == "U+110000"
+
+test "byte: the smallest, one with a letter, the largest"
+    assert byte(0) == "0x00"
+    assert byte(0xe9) == "0xe9"
+    assert byte(255) == "0xff"

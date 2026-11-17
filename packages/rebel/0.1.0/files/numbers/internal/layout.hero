@@ -1,0 +1,120 @@
+# The text of a number reshaped after it is written: a sign that always
+# shows, a zero without the minus its rounding left, and digits in groups.
+# Every position cut here follows ASCII bytes, the sign, a prefix and digits,
+# so no cut splits a character.
+
+use numbers/internal/whole
+
+# `s` with a `+` before it where it begins with no sign.
+function with_sign(s: str) -> str
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        return s
+    return "+" + s
+
+# Whether the text of a number from `from` is hexadecimal, its prefix there.
+function is_hex_at(s: str, from: i64) -> bool
+    return from + 1 < s.len() && s[from] == '0' && (s[from + 1] == 'x' || s[from + 1] == 'X')
+
+# `s` without its `-` where each digit before its exponent is zero.
+function unsigned_zero(s: str) -> str
+    if s.len() == 0 || s[0] != '-'
+        return s
+    hex = is_hex_at(s: s, from: 1)
+    at: i64 @= 1
+
+    if hex
+        at @ 3
+    seen: bool @= false
+
+    while at < s.len()
+        c = s[at]
+
+        if hex && (c == 'p' || c == 'P') || !hex && (c == 'e' || c == 'E')
+            break
+
+        if c == '0'
+            seen @ true
+        else if c != '.' && whole.value_of(c) < 36
+            return s
+        else if c != '.'
+            break
+        at @ at + 1
+
+    if !seen
+        return s
+    return s.slice(from: 1, to: s.len())
+
+# `s` with `sep` between each group of `size` digits of its whole part,
+# counted from the right.
+function group_digits(s: str, sep: str, size: i64) -> str
+    assert size >= 1
+    from: i64 @= 0
+
+    if s.len() > 0 && (s[0] == '-' || s[0] == '+')
+        from @ 1
+    base: i64 @= 10
+
+    if from + 1 < s.len() && s[from] == '0'
+        mark = s[from + 1]
+
+        if mark == 'x' || mark == 'X'
+            base @ 16
+        else if mark == 'o' || mark == 'O'
+            base @ 8
+        else if mark == 'b' || mark == 'B'
+            base @ 2
+
+        if base != 10
+            from @ from + 2
+    end: i64 @= from
+
+    while end < s.len() && whole.value_of(s[end]) < base
+        end @ end + 1
+
+    if end - from <= size
+        return s
+    pieces: [str] @= []
+    first: i64 @= (end - from) % size
+
+    if first == 0
+        first @ size
+    pieces @ pieces.push(s.slice(from: from, to: from + first))
+    at: i64 @= from + first
+
+    while at < end
+        pieces @ pieces.push(s.slice(from: at, to: at + size))
+        at @ at + size
+
+    return s.slice(from: 0, to: from) + pieces.join(sep) + s.slice(from: end, to: s.len())
+
+## Tests
+
+test "with_sign: no sign, a minus, a plus, a name, and empty"
+    assert with_sign("5") == "+5"
+    assert with_sign("-5") == "-5"
+    assert with_sign("+5") == "+5"
+    assert with_sign("inf") == "+inf"
+    assert with_sign("") == "+"
+
+test "unsigned_zero: zeros with a point, an exponent, a hexadecimal zero, and what keeps its minus"
+    assert unsigned_zero("-0.00") == "0.00"
+    assert unsigned_zero("-0") == "0"
+    assert unsigned_zero("-0.00e+00") == "0.00e+00"
+    assert unsigned_zero("-0x0p+0") == "0x0p+0"
+    assert unsigned_zero("-0.00%") == "0.00%"
+    assert unsigned_zero("-0.01") == "-0.01"
+    assert unsigned_zero("-0e+05") == "0e+05"
+    assert unsigned_zero("-inf") == "-inf"
+    assert unsigned_zero("-") == "-"
+    assert unsigned_zero("0.00") == "0.00"
+
+test "group_digits: short, exact groups, a sign, a fraction, hexadecimal, and a separator of two bytes"
+    assert group_digits(s: "123", sep: ",", size: 3) == "123"
+    assert group_digits(s: "1234", sep: ",", size: 3) == "1,234"
+    assert group_digits(s: "123456", sep: ",", size: 3) == "123,456"
+    assert group_digits(s: "-1234567.891", sep: ",", size: 3) == "-1,234,567.891"
+    assert group_digits(s: "0xffffff", sep: "_", size: 4) == "0xff_ffff"
+    assert group_digits(s: "+1000", sep: "_", size: 3) == "+1_000"
+    assert group_digits(s: "1234", sep: "·", size: 2) == "12·34"
+    assert group_digits(s: "inf", sep: ",", size: 3) == "inf"
+    assert group_digits(s: "", sep: ",", size: 3) == ""

@@ -1,0 +1,22 @@
+# The life a started thread owes its `wait`, held as a handle of C so that the
+# language's own count of lives tells a thread never waited for: a block of
+# one byte from `stdlib.h`'s `malloc`, which `acquires free`, given back by
+# `free`, which `consumes` it. A handle nobody gave back stops the program
+# when `main` returns, saying how many and where each was taken (spec § 13).
+# The byte is never read or written; only its life counts.
+
+extern "stdlib.h"
+    # The block's address, the one thing the package holds of it.
+    record Life tag void
+    # A block of `size` bytes, whose life the program then owes `free`.
+    function malloc(size: u64) -> Life acquires free
+    # Gives the block back, which ends its life.
+    function free(p: Life consumes)
+
+# A new life, which the program then owes `end`.
+function begin() -> Life
+    return malloc(1)
+
+# Ends `life`, which may not be read again.
+function end(@life: Life)
+    free(life)

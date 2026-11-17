@@ -1,0 +1,9 @@
+# Reaches `fs`, so that `heroes test` runs its tests and those of its private
+# modules: the driver of the package, which names one function of its face.
+
+use <rebel>/fs
+
+function main()
+    match fs.exists(".")
+        .ok there => print(there)
+        .err e    => print(e.code)

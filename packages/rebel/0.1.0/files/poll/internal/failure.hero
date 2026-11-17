@@ -1,0 +1,115 @@
+# The codes `poll` fails with, and the one place a kind of the floor
+# `poll/hero_poll` becomes one: every failure of a set's call is built here,
+# its message saying what was asked and what the system answered (README
+# § A4).
+
+use poll/hero_poll
+
+constant INVALID: str
+    "invalid"
+
+constant CLOSED: str
+    "closed"
+
+constant NOT_FOUND: str
+    "not_found"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant STOPPED: str
+    "stopped"
+
+constant FAILED: str
+    "failed"
+
+# What a code and its words are, for one kind of the floor.
+record Told
+    # The code of README § A4.
+    code: str
+    # What the layer or the system answered, in words a reader can act on.
+    why: str
+
+# The code and the words for `kind`, one of `HERO_POLL_*`, the platform's own
+# number `os_error` in the words where the layer names no kind of its own.
+function told(kind: i64, os_error: i64) -> Told
+    if kind == hero_poll.HERO_POLL_INVALID
+        return Told(code: INVALID, why: "the layer refuses the argument, or another thread waits on the set")
+
+    if kind == hero_poll.HERO_POLL_NOT_OPEN
+        return Told(code: CLOSED, why: "the set, or what was handed to it, is closed")
+
+    if kind == hero_poll.HERO_POLL_NOT_FOUND
+        return Told(code: NOT_FOUND, why: "the key names no entry of this set")
+
+    if kind == hero_poll.HERO_POLL_LIMIT
+        return Told(code: LIMIT, why: "the set holds the most entries it was made for, or the process has no room left")
+
+    if kind == hero_poll.HERO_POLL_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this system cannot wait on what the stream stands on")
+
+    if kind == hero_poll.HERO_POLL_STOPPED
+        return Told(code: STOPPED, why: "the program was asked to stop")
+
+    return Told(code: FAILED, why: f"the system refused, its error number {os_error}")
+
+# The failure the floor's last call on this thread named, as a `T?`, its
+# message `asked` then what was answered.
+function last<T>(asked: str) -> T?
+    t = told(kind: hero_poll.last_error(), os_error: hero_poll.last_os_error())
+    return fail(code: t.code, msg: f"{asked}: {t.why}")
+
+# A failure of `code` the face itself finds before the floor is asked, its
+# message `asked` then `why`.
+function of<T>(code: str, asked: str, why: str) -> T?
+    return fail(code: code, msg: f"{asked}: {why}")
+
+# The key a floor's `add_` call answered, or the failure it named where it
+# answered -1. Called right after the floor's call, before any other call of
+# the floor on this thread, which would replace its failure.
+function key(answer: i64, asked: str) -> i64?
+    if answer < 0
+        return last(asked: asked)
+    return ok(answer)
+
+# Nothing, or the failure the floor's call named where it answered -1, as
+# `key` reads it.
+function done(answer: i64, asked: str) -> ()?
+    if answer < 0
+        return last(asked: asked)
+    return ok()
+
+test "told: every kind of the floor is a code of README § A4, and an unknown one is failed with its number"
+    assert told(kind: hero_poll.HERO_POLL_INVALID, os_error: 0).code == INVALID
+    assert told(kind: hero_poll.HERO_POLL_NOT_OPEN, os_error: 0).code == CLOSED
+    assert told(kind: hero_poll.HERO_POLL_NOT_FOUND, os_error: 0).code == NOT_FOUND
+    assert told(kind: hero_poll.HERO_POLL_LIMIT, os_error: 0).code == LIMIT
+    assert told(kind: hero_poll.HERO_POLL_UNSUPPORTED, os_error: 0).code == UNSUPPORTED
+    assert told(kind: hero_poll.HERO_POLL_STOPPED, os_error: 0).code == STOPPED
+    assert told(kind: hero_poll.HERO_POLL_OTHER, os_error: 9).code == FAILED
+    assert told(kind: hero_poll.HERO_POLL_OTHER, os_error: 9).why == "the system refused, its error number 9"
+    assert told(kind: 99, os_error: -1).code == FAILED
+
+test "key and done: an answer at or above 0 is the value, -1 is the floor's failure"
+    assert key(answer: 5, asked: "adding").must() == 5
+    assert done(answer: 0, asked: "removing") == ok()
+    assert hero_poll.remove(nullptr, key: 1) == -1
+    r = done(answer: -1, asked: "removing the entry 1")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == CLOSED
+            assert e.msg == "removing the entry 1: the set, or what was handed to it, is closed"
+
+test "last and of: the message is what was asked, then what was answered"
+    r: i64? = of(code: INVALID, asked: "making a set of 0 entries", why: "a set holds 1 to 65,535")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "making a set of 0 entries: a set holds 1 to 65,535"

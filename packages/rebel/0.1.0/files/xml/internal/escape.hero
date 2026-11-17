@@ -1,0 +1,137 @@
+# Text escaped to stand as an element's text or an attribute's value, so that
+# reading it gives back the same characters, and escaped text read back. An
+# escape is chosen by what reading would otherwise change: `&` and `<` begin
+# markup, `>` would end a CDATA section in `]]>`, a carriage return is read as
+# a line feed, and in a value a tab and a line end are read as spaces and `"`
+# would end the value.
+
+use xml/internal/refs
+use xml/internal/scan
+
+# `s` escaped to stand as an element's text: `&`, `<`, `>` and a carriage
+# return. Fails `invalid` where `s` holds a character XML cannot hold.
+function text_escaped(s: str) -> str?
+    return escaped(s: s, in_value: false)
+
+# `s` escaped to stand between `"` as an attribute's value: what
+# `text_escaped` escapes, and `"`, a tab and a line feed. Fails `invalid`
+# where `s` holds a character XML cannot hold.
+function value_escaped(s: str) -> str?
+    return escaped(s: s, in_value: true)
+
+# `s` escaped as text, or as a value where `in_value` is set, in one pass: the
+# bytes between two escapes are cut once each, at ASCII bytes, so no slice
+# splits a character.
+function escaped(s: str, in_value: bool) -> str?
+    pieces: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        b = s[i]
+        entity: str @= ""
+
+        if b == '&'
+            entity @ "&amp;"
+        else if b == '<'
+            entity @ "&lt;"
+        else if b == '>'
+            entity @ "&gt;"
+        else if b == '\r'
+            entity @ "&#13;"
+        else if in_value && b == '"'
+            entity @ "&quot;"
+        else if in_value && b == '\t'
+            entity @ "&#9;"
+        else if in_value && b == '\n'
+            entity @ "&#10;"
+        else if b < 0x20 && b != '\t' && b != '\n'
+            return fail(code: scan.INVALID, msg: refused(s: s, at: i, n: to_i64(b).must()))
+        else if b == 0xef && i + 2 < s.len() && s[i + 1] == 0xbf && (s[i + 2] == 0xbe || s[i + 2] == 0xbf)
+            n = if s[i + 2] == 0xbe
+                0xfffe
+            else
+                0xffff
+            return fail(code: scan.INVALID, msg: refused(s: s, at: i, n: n))
+
+        if entity != ""
+            if i > run
+                pieces @ pieces.push(s.slice(from: run, to: i))
+            pieces @ pieces.push(entity)
+            run @ i + 1
+        i @ i + 1
+
+    if run == 0
+        return ok(s)
+
+    if run < s.len()
+        pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return ok(pieces.join(""))
+
+# The message for the character `n` at byte `at` of `s`, which XML cannot
+# hold.
+function refused(s: str, at: i64, n: i64) -> str
+    return f"{scan.code_name(n)} at byte {at} of \"{s}\" is a character XML cannot hold, even as a reference"
+
+# `s` with its references read: the five predefined entities and every
+# character reference. Fails `invalid` where an `&` begins none, or a
+# character reference names a character XML cannot hold.
+function unescaped(s: str) -> str?
+    pieces: [str] @= []
+    run: i64 @= 0
+    i: i64 @= 0
+
+    while i < s.len()
+        if s[i] == '&'
+            if i > run
+                pieces @ pieces.push(s.slice(from: run, to: i))
+            got = refs.read_reference(text: s, at: i)?
+            pieces @ pieces.push(got.value)
+            i @ got.end
+            run @ i
+        else
+            i @ i + 1
+
+    if run == 0
+        return ok(s)
+
+    if run < s.len()
+        pieces @ pieces.push(s.slice(from: run, to: s.len()))
+    return ok(pieces.join(""))
+
+## Tests
+
+test "text_escaped: empty, nothing to escape, each escape, and the line ends Python leaves raw"
+    assert text_escaped("").must() == ""
+    assert text_escaped("città").must() == "città"
+    assert text_escaped("a<b>&c\"d'e\r\nf\tg]]>h").must() == "a&lt;b&gt;&amp;c\"d'e&#13;\nf\tg]]&gt;h"
+
+test "value_escaped: each escape, as Python's quoteattr writes them, and a quote of either kind"
+    assert value_escaped("").must() == ""
+    assert value_escaped("a<b>&c\"d'e\r\nf\tg]]>h").must() == "a&lt;b&gt;&amp;c&quot;d'e&#13;&#10;f&#9;g]]&gt;h"
+    assert value_escaped("'").must() == "'"
+
+test "escaped: a control character, U+FFFE and U+FFFF, refused where Go writes U+FFFD and Python the character itself"
+    match text_escaped("ab\u{1}")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "U+0001 at byte 2 of \"ab\u{1}\" is a character XML cannot hold, even as a reference"
+
+    fffe: [u8] = [0xef, 0xbf, 0xbe]
+
+    match value_escaped(fffe.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.msg.slice(from: 0, to: 6) == "U+FFFE"
+
+    ffff: [u8] = [0xef, 0xbf, 0xbf]
+    assert text_escaped(ffff.validated_bytes().must()).is_err()
+    nul: [u8] = [0]
+    assert text_escaped(nul.validated_bytes().must()).is_err()
+    assert text_escaped("�").must() == "�"
+
+test "unescaped: none, the five entities, character references, and an entity no DTD declares"
+    assert unescaped("").must() == ""
+    assert unescaped("a<b").must() == "a<b"
+    assert unescaped("&lt;&gt;&amp;&quot;&apos;&#65;&#x1F600;é").must() == "<>&\"'A😀é"
+    assert unescaped("&foo;").is_err()
+    assert unescaped("a & b").is_err()
+    assert unescaped("&#0;").is_err()

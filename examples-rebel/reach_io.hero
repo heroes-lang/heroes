@@ -1,0 +1,9 @@
+# Reaches Rebel's package `io`, so that `heroes test` on this file runs the
+# tests of its face, its private modules and the floor under them (spec § 12).
+# It prints whether the place it asked for the standard output was closed,
+# which is `false` on every run.
+
+use <rebel>/io
+
+function main()
+    print(io.is_closed(io.stdout()))

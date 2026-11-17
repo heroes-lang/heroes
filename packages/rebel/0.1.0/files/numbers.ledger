@@ -1,0 +1,299 @@
+capability number/parse-int  an integer read from text in base ten
+  heroes  numbers.parse_int
+  go      strconv.Atoi, strconv.ParseInt (base 10)
+  rust    i64::from_str, str::parse::<i64>
+  python  int(str), int.__new__
+  note    a sign is read, `+` included, as all three read it; nothing else is: Python's spaces around the number, its `_` between digits and its digits of other scripts (`int("١")` is 1) are `invalid` here, as in Go and Rust
+
+capability number/parse-width  an integer read into each of the language's eight widths
+  heroes  numbers.parse_i8, numbers.parse_i16, numbers.parse_i32, numbers.parse_u8, numbers.parse_u16, numbers.parse_u32, numbers.parse_u64
+  go      strconv.ParseInt (bitSize 8, 16, 32, 64), strconv.ParseUint (bitSize 8, 16, 32, 64)
+  rust    i8::from_str, i16::from_str, i32::from_str, u8::from_str, u16::from_str, u32::from_str, u64::from_str
+  python  -
+  note    a number outside the type fails `does_not_fit`, a minus before an unsigned one included, and "-0" is 0: Go and Rust call a minus there a syntax error, but the text is a number and only its type is wrong; Python has no widths, and was asked through `int` and the range
+
+capability number/parse-int-base  an integer read from text in a given base, 2 to 36
+  heroes  numbers.parse_int_base, numbers.parse_u64_base
+  go      strconv.ParseInt (base 2 to 36), strconv.ParseUint (base 2 to 36)
+  rust    i64::from_str_radix, u64::from_str_radix and the same of every width
+  python  int(str, base)
+  note    no prefix is read: Python's `int("0x1f", 16)` is 31 and here it is `invalid`, as in Go and Rust; letters of either case
+
+capability number/parse-int-literal  an integer read with its base told by its prefix
+  heroes  numbers.parse_int_literal, numbers.parse_u64_literal
+  go      strconv.ParseInt (base 0), strconv.ParseUint (base 0)
+  rust    -
+  python  int(str, 0)
+  note    the language's own spelling, so a text it reads is one the compiler reads: Python's and Go's base 0 also read `0X1F`, `0x_ff` and `00`, which the language refuses, and Go reads a lone leading zero as octal
+
+capability number/parse-bits  the 64 bits of an integer read from text as an unsigned number
+  heroes  numbers.parse_bits
+  go      -
+  rust    u64::from_str_radix then cast_signed
+  python  -
+  note    Rust reads such text into a `u64` and casts it; here the `i64` comes back whole, the bitwise operators being the `i64`'s
+
+capability number/parse-float  a float read from decimal text, the nearest value to what the text says
+  heroes  numbers.parse_float
+  go      strconv.ParseFloat (bitSize 64)
+  rust    f64::from_str, str::parse::<f64>
+  python  float(str), float.__new__
+  note    the nearest value, ties to even, for every text, checked against Python on 8,719 texts with 0 disagreeing: exact halves, 767 to 1,500 digits, both ends of range; Python's spaces, `_` and other scripts' digits are `invalid`, as in Rust; the hexadecimal form Go reads here is `parse_float_hex`
+
+capability number/parse-f32  the same into the 32-bit float, rounded once
+  heroes  numbers.parse_f32
+  go      strconv.ParseFloat (bitSize 32)
+  rust    f32::from_str
+  python  -
+  note    rounded once, where `parse_float` then `to_f32` rounds twice: "1.00000005960464477540" is 1.0000001 here and in Go, 1.0 through `f64`; 3,496 texts against Go, 0 disagreeing
+
+capability number/parse-float-hex  a float read from hexadecimal text
+  heroes  numbers.parse_float_hex
+  go      strconv.ParseFloat (the 0x form)
+  rust    -
+  python  float.fromhex
+  note    the `0x` is required, as in Go and C, where Python's `fromhex` reads "1.8p1"; a value past the largest is `inf`, where Python raises `OverflowError`; 2,266 texts against Python, 0 disagreeing
+
+capability number/parse-bool  a boolean read from text
+  heroes  numbers.parse_bool
+  go      strconv.ParseBool
+  rust    bool::from_str
+  python  -
+  note    Rust's: "true" and "false" alone, the texts `to_str` writes; Go also reads 1, t, T, TRUE, True and their falses, which a program reading a flag can test for itself
+
+capability number/format-int  an integer written in base ten
+  heroes  built-in to_str
+  go      strconv.Itoa, strconv.FormatInt (base 10), strconv.FormatUint (base 10)
+  rust    Display and Debug for every integer, ToString::to_string
+  python  str(int), repr(int), int.__str__, int.__repr__, format (type d)
+  note    base ten is the language's own `to_str`; `numbers.format_int` with base 10 writes the same
+
+capability number/format-int-base  an integer written in a given base, 2 to 36
+  heroes  numbers.format_int, numbers.format_u64
+  go      strconv.FormatInt, strconv.FormatUint
+  rust    LowerHex, Octal, Binary for every integer
+  python  format (types x, o, b)
+  note    a negative number is its sign and its magnitude, as Go and Python write it; Rust's two's complement is `format_bits`
+
+capability number/format-int-literal  an integer written with the prefix that tells its base
+  heroes  numbers.format_int_literal, numbers.format_u64_literal
+  go      -
+  rust    the `#` flag of LowerHex, Octal, Binary
+  python  hex, oct, bin, format (the `#` option)
+  note    Python's `hex`, `oct` and `bin`: the sign before the prefix, "-0xff"; `parse_int_literal` reads every one back
+
+capability number/format-bits  the 64 bits of a signed integer written as an unsigned number
+  heroes  numbers.format_bits
+  go      -
+  rust    LowerHex, Octal, Binary for a negative i64
+  python  -
+  note    Rust's `{:x}` of a negative `i64`
+
+capability number/upper-case  a number's letters written in upper case
+  heroes  strings.to_upper_ascii
+  go      -
+  rust    UpperHex, UpperExp
+  python  format (types X, E, F, G)
+  note    every text here writes letters in lower case, and `strings.to_upper_ascii` of it is Rust's `UpperHex` and `UpperExp` and Python's X, E, F and G
+
+capability number/format-float-shortest  a float written in the fewest digits that read back as it
+  heroes  numbers.format_float_shortest, numbers.format_float_exp_shortest, numbers.format_f32_shortest, numbers.format_f32_exp_shortest
+  go      strconv.FormatFloat (fmt g, precision -1)
+  rust    Debug for f64 and f32
+  python  repr(float), str(float), float.__repr__, float.__str__
+  note    the fewest digits that read back, and the nearest of them, with no exponent or in exponent form; the language's `to_str` promises only that its text reads back, and writes 2 to the -778th in 17 digits where 16 do (runtime/parts/f64.c says "shortest is not promised"); Python's `repr`, Go's `g` with -1 and Rust's `Debug` each choose between the two forms by their own thresholds, and `to_str` by its; a whole value ends ".0" as `to_str` writes it, where Go and Rust's Display write none; 11,926 cases against Go's `f` and `e` with -1, 5,963 values each written both ways, every power of two of both widths among them, 0 disagreeing
+
+capability number/format-float-plain  the same digits written with no exponent whatever the size
+  heroes  numbers.format_float_shortest
+  go      strconv.FormatFloat (fmt f, precision -1)
+  rust    Display for f64 and f32
+  python  -
+  note    Rust's `Display` and Go's `f` with -1: the shortest digits with no exponent
+
+capability number/format-float-precision  a float written with a given count of digits after the point
+  heroes  numbers.format_float
+  go      strconv.FormatFloat (fmt f)
+  rust    the precision of Display for f64 and f32
+  python  format (types f, F), float.__format__
+  note    rounded half to even from the exact value, as Python, Go and Rust do: 0.125 at 2 is "0.12" and 2.675 at 2 is "2.67"; 1,741 values against Python's `f`, 0 disagreeing
+
+capability number/format-float-exp  a float written in exponent form
+  heroes  numbers.format_float_exp
+  go      strconv.FormatFloat (fmt e, E)
+  rust    LowerExp for f64 and f32, and for every integer
+  python  format (type e)
+  note    Python's and Go's exponent, a sign and at least two digits, "1.50e+00"; Rust writes "1.50e0"; 1,741 values against Python's `e`, 0 disagreeing
+
+capability number/format-float-general  a float written to a given count of significant digits
+  heroes  numbers.format_float_general
+  go      strconv.FormatFloat (fmt g, G with a precision)
+  rust    -
+  python  format (type g, and no type with a precision)
+  note    Python's rules for `g`: the plain form where the exponent is -4 or more and under the digits, the zeros at the end left out; Go's `g` with a precision chooses its form by another threshold; 1,741 values against Python, 0 disagreeing
+
+capability number/format-float-hex  a float written in hexadecimal
+  heroes  numbers.format_float_hex
+  go      strconv.FormatFloat (fmt x, X)
+  rust    -
+  python  float.hex
+  note    C's `%a` and Go's `x` with -1: every bit and no more, "0x1.8p+1", a subnormal written from its leading one; Python's `hex` writes all thirteen digits; the exponent has no zero before it, where Go writes "p+01"; 3,790 values against Go, 0 disagreeing
+
+capability number/format-float-binary-exponent  a float written as a decimal mantissa and a power of two
+  heroes  refused: Go's `b` form writes the same exact value as `format_float_hex`, in a notation only Go reads
+  go      strconv.FormatFloat (fmt b)
+  rust    -
+  python  -
+
+capability number/format-bool  a boolean written as text
+  heroes  built-in to_str
+  go      strconv.FormatBool
+  rust    Display and Debug for bool
+  python  str(bool), repr(bool)
+  note    "true" and "false", as all three write them
+
+capability number/zero-pad  a number's text widened with zeros after its sign
+  heroes  strings.pad_zeros
+  go      -
+  rust    the `0` flag with a width
+  python  format (the `0` option, the `=` alignment)
+  note    zeros after the sign; a prefix is written after them: `"0x" + strings.pad_zeros(numbers.format_int(n: n, base: 16), 8)`, where Python's `#010x` counts the prefix in the width
+
+capability number/width-fill  a number's text widened to a width with a fill, at either side or both
+  heroes  strings.pad_start, strings.pad_end, strings.center
+  go      -
+  rust    the fill, alignment and width of every formatting trait
+  python  format (fill, the alignments < > ^, width)
+  note    a number's text is text, and the width, fill and alignment are `strings`'
+
+capability number/sign  a number's text with its sign always shown
+  heroes  numbers.with_sign
+  go      -
+  rust    the `+` flag
+  python  format (the options + and space)
+  note    Python's ` ` option, a space for no sign, is `" " + s` where `s` has none
+
+capability number/negative-zero  a zero written without the minus its rounding left
+  heroes  numbers.unsigned_zero
+  go      -
+  rust    -
+  python  format (the `z` option)
+  note    Python's `z`; 400 texts against Python, 0 disagreeing
+
+capability number/group-digits  a number's digits written in groups
+  heroes  numbers.group_digits
+  go      -
+  rust    -
+  python  format (the options `,` and `_`)
+  note    the separator and the group are the caller's: Python's `,` is `sep: ","` and 3, its `_` on hexadecimal `sep: "_"` and 4; 108 texts against Python, 0 disagreeing
+
+capability number/percent  a ratio written as a percentage
+  heroes  numbers.format_percent
+  go      -
+  rust    -
+  python  format (type %)
+  note    the exact hundredfold value, where Python multiplies by 100 in floating point first: 2.675 at 0 is "267%" here, the float being under 2.675, and "268%" in Python; against Python's exact `Decimal`, 400 values, 0 disagreeing, 146 of them differing from Python's `%`
+
+capability number/locale  a number written by the rules of a locale
+  heroes  refused: Rebel holds no locale, and a program's own separator is `group_digits`' `sep`
+  go      -
+  rust    -
+  python  format (type n)
+
+capability number/char-of-code  the character an integer is the code of
+  heroes  unicode.from_code_point
+  go      -
+  rust    -
+  python  format (type c)
+  note    Python's `c` writes the character whose code the integer is
+
+capability number/round-decimals  a float rounded at a given decimal place
+  heroes  numbers.round_to
+  go      -
+  rust    -
+  python  round(x, ndigits), float.__round__, int.__round__
+  note    Python's `round(x, n)`, half to even on the exact value, so 2.675 at 2 is 2.67; past the largest float it is `inf`, where Python raises `OverflowError`; `math` refers this to `numbers`; 488 values against Python, 0 disagreeing
+
+capability number/round-integer  a float rounded to a whole number
+  heroes  refused: rounding to a whole number is `math`'s (its round/nearest and round/floor-ceil-trunc), and its `to_i64` the language's
+  go      -
+  rust    -
+  python  round (with no ndigits), float.__trunc__, float.__floor__, float.__ceil__, int.__trunc__, int.__floor__, int.__ceil__
+
+capability number/float-to-int  a float's whole part as an integer
+  heroes  built-in to_i64
+  go      -
+  rust    -
+  python  int(float), float.__int__
+  note    truncating toward zero, as Python's `int`, and failing `does_not_fit` where Python's integer would grow
+
+capability number/int-to-float  an integer as a float
+  heroes  built-in to_f64
+  go      -
+  rust    -
+  python  float(int), float.from_number, int.__float__, float.__float__
+
+capability number/is-whole  whether a float holds a whole number
+  heroes  refused: a float is whole where its fraction is zero, which is `math`'s round/fraction
+  go      -
+  rust    -
+  python  float.is_integer, int.is_integer
+
+capability number/bit-length  how many bits an integer needs, and how many of them are set
+  heroes  refused: counting bits is `math`'s (bits/count, bits/width), which names `int.bit_count` and `int.bit_length`
+  go      -
+  rust    -
+  python  int.bit_length, int.bit_count
+
+capability number/int-bytes  an integer as bytes in a given order, and back
+  heroes  refused: an integer's bytes in an order are read and written where bytes are, as `math`'s ledger says too; no ledger of Rebel holds Python's `int.to_bytes` yet, which the report says
+  go      -
+  rust    -
+  python  int.to_bytes, int.from_bytes
+
+capability number/ratio  a number as the exact ratio of two integers
+  heroes  refused: a float's exact ratio needs integers past 64 bits; `format_float_hex` writes the same exact value as text
+  go      -
+  rust    -
+  python  float.as_integer_ratio, int.as_integer_ratio
+
+capability number/complex  a complex number read and written
+  heroes  refused: the language has no complex type
+  go      strconv.ParseComplex, strconv.FormatComplex
+  rust    -
+  python  -
+
+capability number/truthiness  any value read as a boolean
+  heroes  refused: the language has no truthiness (spec § 8); a number is compared with zero
+  go      -
+  rust    -
+  python  bool(x), int.__bool__, float.__bool__
+
+capability number/failures  the kinds of failure told apart
+  heroes  numbers.INVALID, numbers.DOES_NOT_FIT
+  go      strconv.ErrSyntax, strconv.ErrRange, strconv.NumError, NumError.Error, NumError.Unwrap
+  rust    num::ParseIntError, num::IntErrorKind, num::ParseFloatError, str::ParseBoolError, num::TryFromIntError (the built-ins `to_i8` to `to_u64`, failing `does_not_fit`)
+  python  ValueError, OverflowError
+  note    two codes: `invalid` for Rust's Empty and InvalidDigit and Go's ErrSyntax, with a message naming the byte, and `does_not_fit` for Rust's PosOverflow and NegOverflow and Go's ErrRange, with the type's range in the message; a float never fails to fit, too large being `inf` as Python's `float` and Rust answer, where Go adds ErrRange
+
+capability text/quote  a text written as a quoted literal with its escapes, and read back
+  heroes  refused: a quoted text is a language's own literal, Go's here; a JSON string is `json`'s, and the escapes of a Heroes literal are its compiler's
+  go      strconv.Quote, strconv.QuoteToASCII, strconv.QuoteToGraphic, strconv.QuoteRune, strconv.QuoteRuneToASCII, strconv.QuoteRuneToGraphic, strconv.Unquote, strconv.UnquoteChar, strconv.QuotedPrefix, strconv.CanBackquote
+  rust    -
+  python  -
+
+capability text/printable  whether a character is one a reader sees
+  heroes  unicode.is_printable, unicode.is_graphic
+  go      strconv.IsPrint, strconv.IsGraphic
+  rust    -
+  python  -
+
+dropped
+  go      strconv.AppendBool, strconv.AppendFloat, strconv.AppendInt, strconv.AppendUint, strconv.AppendQuote, strconv.AppendQuoteRune, strconv.AppendQuoteRuneToASCII, strconv.AppendQuoteRuneToGraphic, strconv.AppendQuoteToASCII, strconv.AppendQuoteToGraphic: the same texts appended to a caller's buffer, a capacity hint; a program collects pieces and joins once
+  go      strconv.IntSize: the width of Go's `int`, which no Heroes type has, every width being in its type's name
+  rust    i64::from_ascii_bytes, i64::from_ascii_bytes_radix and the same of every width: the parse of bytes not yet checked as text; `validated_bytes` makes them text and the parse reads it
+  rust    i64::format_into, fmt::NumBuffer: a caller's buffer to write the digits into, a capacity hint
+  rust    FromStr and the formatting traits of i128, u128, isize, usize, num::NonZero, num::Wrapping, num::Saturating: types the language does not have
+  rust    fmt::Formatter, fmt::FormattingOptions, fmt::Alignment, fmt::Sign, fmt::DebugAsHex: the machinery a trait's `fmt` is handed, where Heroes has no traits; what they select is in the blocks above
+  python  the operator methods of int, float and bool (`__add__`, `__sub__`, `__mul__`, `__truediv__`, `__floordiv__`, `__mod__`, `__divmod__`, `__pow__`, `__neg__`, `__pos__`, `__abs__`, `__invert__`, `__and__`, `__or__`, `__xor__`, `__lshift__`, `__rshift__`, their reflected forms `__radd__`, `__rsub__`, `__rmul__`, `__rtruediv__`, `__rfloordiv__`, `__rmod__`, `__rdivmod__`, `__rpow__`, `__rand__`, `__ror__`, `__rxor__`, `__rlshift__`, `__rrshift__`, `__eq__`, `__ne__`, `__lt__`, `__le__`, `__gt__`, `__ge__`): the language's own operators
+  python  the object protocol of int, float and bool (`__class__`, `__delattr__`, `__dir__`, `__doc__`, `__getattribute__`, `__getnewargs__`, `__getstate__`, `__hash__`, `__index__`, `__init__`, `__init_subclass__`, `__reduce__`, `__reduce_ex__`, `__setattr__`, `__sizeof__`, `__subclasshook__`, `__getformat__`): what every Python object answers, nothing about numbers
+  python  int.conjugate, int.real, int.imag, int.numerator, int.denominator, float.conjugate, float.real, float.imag: the numeric tower's identities, an integer being its own numerator, real part and conjugate

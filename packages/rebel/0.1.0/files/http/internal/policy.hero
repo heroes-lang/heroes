@@ -1,0 +1,443 @@
+# The rules around a message rather than its bytes: a client's one exchange
+# on a connection of its own, which redirects it follows and how (RFC 9110
+# § 15.4), when and how long it waits to send again, how much of its time is
+# left; and the answers a server gives what it cannot read.
+
+use http/internal/body
+use http/internal/read
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use io
+use net
+use time
+use tls
+
+# The code of a scheme this package does not speak.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of a time that ran out.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a value that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# Whether a response of `status` sends the client elsewhere: 301, 302, 303,
+# 307 or 308.
+function follows(status: i64) -> bool
+    return status == 301 || status == 302 || status == 303 || status == 307 || status == 308
+
+# Whether a redirect of `status` keeps the method and the body: 307 and 308.
+function keeps_body(status: i64) -> bool
+    return status == 307 || status == 308
+
+# The method a redirect of `status` is followed with, from `method`: the same
+# for 307 and 308, else `GET`, a `HEAD` staying `HEAD`, as Go follows them.
+function method_after(status: i64, method: str) -> str
+    if keeps_body(status) || method == "HEAD"
+        return method
+    return "GET"
+
+# Whether `method` is idempotent by RFC 9110 § 9.2.2, so sending it twice
+# does what sending it once does: `GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`,
+# `TRACE`.
+function is_idempotent(method: str) -> bool
+    return match method
+        "GET" | "HEAD" | "OPTIONS" | "PUT" | "DELETE" | "TRACE" => true
+        _                                                       => false
+
+# Whether two URLs' schemes, hosts and ports name one origin, RFC 6454: the
+# scheme and the host in any case, a port "" read as its scheme's own.
+function same_origin(a_scheme: str, a_host: str, a_port: str, b_scheme: str, b_host: str, b_port: str) -> bool
+    return syntax.same_name(a: a_scheme, b: b_scheme) && syntax.same_name(a: a_host, b: b_host) && port_or_default(scheme: a_scheme, port: a_port) == port_or_default(scheme: b_scheme, port: b_port)
+
+# The port of `scheme`'s URLs where they write none: 443 for `https`, else
+# 80.
+function default_port(scheme: str) -> i64
+    if syntax.same_name(a: scheme, b: "https")
+        return 443
+    return 80
+
+# `port`, or the default of `scheme` where it is "".
+function port_or_default(scheme: str, port: str) -> str
+    if port == ""
+        return f"{default_port(scheme)}"
+    return port
+
+# The value of a `Host` field for `host` and `port` as a URL of `scheme`
+# holds them: an IPv6 address in brackets, and the port where it is not ""
+# or the scheme's own.
+function host_field(scheme: str, host: str, port: str) -> str
+    shown: str @= host
+
+    for c in host.chars()
+        if c == ":"
+            shown @ "[" + host + "]"
+            break
+
+    if port == "" || port == f"{default_port(scheme)}"
+        return shown
+    return shown + ":" + port
+
+# `n`, or `most` where `n` is past it.
+function at_most(n: i64, most: i64) -> i64
+    if n > most
+        return most
+    return n
+
+# The milliseconds waited before the retry numbered `attempt` from 1: `base`
+# doubled `attempt - 1` times, at most `most`, never overflowing.
+function backoff_ms(attempt: i64, base: i64, most: i64) -> i64
+    wait: i64 @= at_most(n: base, most: most)
+    step: i64 @= 1
+
+    while step < attempt && wait < most
+        if wait > most / 2
+            return most
+        wait @ wait * 2
+        step @ step + 1
+
+    return at_most(n: wait, most: most)
+
+# Whether `statuses` holds `status`.
+function has_status(statuses: [i64], status: i64) -> bool
+    for s in statuses
+        if s == status
+            return true
+
+    return false
+
+# The milliseconds a `Retry-After` value asks, RFC 9110 § 10.2.3: seconds, or
+# an HTTP date counted from `now`, 0 for one passed. Fails `not_found` where
+# `value` is neither.
+function retry_after_ms(value: str, now: time.Instant) -> i64?
+    match syntax.decimal(s: value, what: "reading `Retry-After`")
+        .ok seconds =>
+            if seconds > 9_223_372_036_854_775 / 1_000
+                return ok(9_223_372_036_854_775)
+            return ok(seconds * 1_000)
+        .err _ => _ = 0
+
+    match parse_date(value)
+        .ok at =>
+            if !time.is_after(a: at, b: now)
+                return ok(0)
+            return ok(time.to_units(time.between(from: now, to: at).default(time.max_duration()), unit: .millisecond))
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"`Retry-After` {syntax.shown(value)} is neither seconds nor a date"
+        )
+
+# The instant `s` writes as an HTTP date: IMF-fixdate, RFC 850's or C's
+# asctime form. Fails `invalid` where it is none, `does_not_fit` where it is
+# outside an instant.
+function parse_date(s: str) -> time.Instant?
+    first = time.parse(s, layout: .http)
+
+    match first
+        .ok t => return ok(t)
+        .err e =>
+            if e.code == time.DOES_NOT_FIT
+                return fail(code: e.code, msg: e.msg)
+
+    match time.parse(s, layout: .rfc850)
+        .ok t  => return ok(t)
+        .err _ => _ = 0
+
+    match time.parse(s, layout: .ansic)
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: syntax.INVALID,
+            msg: f"reading an HTTP date: {syntax.shown(s)} is neither IMF-fixdate, RFC 850's form nor asctime's"
+        )
+
+# The milliseconds left of `deadline_ms` since `start`, 0 where there is no
+# deadline. Fails `timeout` where none is left, `failed` where the clock
+# cannot be read.
+function left_ms(deadline_ms: i64, start: time.Mark) -> i64?
+    if deadline_ms <= 0
+        return ok(0)
+    spent = time.to_units(time.elapsed(start)?, unit: .millisecond)
+
+    if spent >= deadline_ms
+        return fail(code: TIMEOUT, msg: f"sending a request: its {deadline_ms} ms ran out")
+    return ok(deadline_ms - spent)
+
+# Whether a wait of `wait_ms` still leaves time of `deadline_ms` since
+# `start`. Fails `failed` where the clock cannot be read.
+function may_wait(deadline_ms: i64, start: time.Mark, wait_ms: i64) -> bool?
+    if deadline_ms <= 0
+        return ok(true)
+    spent = time.to_units(time.elapsed(start)?, unit: .millisecond)
+    return ok(spent + wait_ms < deadline_ms)
+
+# Waits `ms` milliseconds, 0 or more.
+function pause(ms: i64)
+    if ms > 0
+        time.sleep(time.milliseconds(ms).default(time.max_duration()))
+
+# The response to one request on a connection of its own to `host` at
+# `port`, closed after it: TCP for "http", TLS through `tls.connect` for
+# "https", the server's certificate checked against `roots`, "" for the
+# system's store. `fields` do not hold `Host`, which `host_field` gives.
+# Fails `unsupported` for another scheme, `invalid` for no scheme, no host,
+# a port that is no number from 0 to 65535 or a certificate refused, and as
+# `write.request`, `net.connect`, `tls.connect` and `read.response` fail.
+function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: str, method: str, target: str, host_value: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> read.Message?
+    if scheme == ""
+        return fail(
+            code: syntax.INVALID,
+            msg: f"sending a request to {syntax.shown(target)}: its target is no absolute URL"
+        )
+
+    secure = syntax.same_name(a: scheme, b: "https")
+
+    if !secure && !syntax.same_name(a: scheme, b: "http")
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"sending a request to {scheme}://{host}: only http:// and https:// are spoken here"
+        )
+
+    if host == ""
+        return fail(code: syntax.INVALID, msg: "sending a request: its URL names no host")
+    number: i64 @= default_port(scheme)
+
+    if port != ""
+        number @ syntax.decimal(s: port, what: "reading the URL's port")?
+
+        if number > 65_535
+            return fail(code: syntax.INVALID, msg: f"sending a request: the port {port} is past 65535")
+    data = write.request(method: method, target: target, host: host_value, fields: fields, content: content, closing: true)?
+    reader @= io.reader(connected(secure, host: host, port: number, deadline_ms: deadline_ms, roots: roots)?)
+    answer = talk(@reader, data: data, method: method, bounds: bounds)
+
+    match io.close(@reader.stream)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+    return answer
+
+# A connection to `host` at `port`: TLS where `secure`, the certificate
+# checked against `roots` ("" the system's store) and HTTP/1.1 offered, its
+# deadline the connection's and the handshake's together, and what is left of
+# it then every read's and write's (`tls.set_deadline`); else TCP, its
+# deadline every read's and write's, as `net.connect` sets it. 0 is none.
+function connected(secure: bool, host: str, port: i64, deadline_ms: i64, roots: str) -> io.Stream?
+    if !secure
+        return ok(net.connect(host, port: port, deadline_ms: deadline_ms)?.stream)
+    began = time.mark()
+    stream @= tls.connect(host, port: port, deadline_ms: deadline_ms, client: tls.Client(roots: roots, protocols: ["http/1.1"]))?
+
+    if deadline_ms <= 0
+        return ok(stream)
+    left = deadline_ms - spent_ms(began)
+
+    if left <= 0
+        match io.close(@stream)
+            .ok _  => _ = 0
+            .err _ => _ = 0
+
+        return fail(
+            code: TIMEOUT,
+            msg: f"sending a request to {host}: its {deadline_ms} ms ran out in the TLS handshake"
+        )
+
+    match tls.set_deadline(stream, ms: left)
+        .ok _ => return ok(stream)
+        .err e =>
+            match io.close(@stream)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+
+# The milliseconds since `began`, 0 where the clock could not be read.
+function spent_ms(began: time.Mark?) -> i64
+    match began
+        .err _ => return 0
+        .ok b =>
+            match time.elapsed(b)
+                .ok d  => return time.to_units(d, unit: .millisecond)
+                .err _ => return 0
+
+# Whether a `timeout` of `tls.accept`, which waited from `began`, is the
+# listener's own deadline rather than one client's handshake: with no
+# handshake deadline every one is the listener's, and a wait shorter than
+# `handshake_ms` cannot be a handshake's. A longer wait is read as a
+# handshake's; where the listener's deadline had passed too, the next accept
+# fails at once, and is read as the listener's.
+function is_listener_timeout(began: time.Mark?, handshake_ms: i64) -> bool
+    if handshake_ms <= 0
+        return true
+    return spent_ms(began) < handshake_ms
+
+# Writes `data` to `r`'s stream and reads the response to a request of
+# `method` back.
+function talk(@r: io.Reader, data: [u8], method: str, bounds: wire.Bounds) -> read.Message?
+    io.write(r.stream, data: data)?
+    return read.response(@r, method: method, bounds: bounds)
+
+# The body after the request head `h` in `r`, `100 Continue` written first
+# where `continuing` and a body follows. Fails as `body.of_request`,
+# `io.write` and `body.read` fail.
+function body_after(@r: io.Reader, h: wire.Head, bounds: wire.Bounds, continuing: bool) -> [u8]?
+    framing = body.of_request(h)?
+
+    bodiless = match framing
+        .none              => true
+        .length l          => l.n == 0
+        .chunked | .to_end => false
+
+    if continuing && !bodiless
+        io.write(r.stream, data: [72, 84, 84, 80, 47, 49, 46, 49, 32, 49, 48, 48, 32, 67, 111, 110, 116, 105, 110, 117, 101, 13, 10, 13, 10])?
+    return body.read(@r, framing: framing, bounds: bounds)
+
+# Answers on `s`, where `code` failed reading a request, the status it calls
+# for, `why` its body, then nothing more on the connection: 400 for
+# `invalid`, 431 or 413 for `limit` in the head or the body, 505 or 501 for
+# `unsupported` in the head (a version) or the body (a coding). Any other
+# code, the connection's end or its time, is answered by nothing. A failure
+# to write is the client's end, and is dropped.
+function refuse_for(s: io.Stream, code: str, in_head: bool, why: str)
+    status_code: i64 @= 0
+
+    if code == syntax.INVALID
+        status_code @ 400
+    else if code == syntax.LIMIT && in_head
+        status_code @ 431
+    else if code == syntax.LIMIT
+        status_code @ 413
+    else if code == UNSUPPORTED && in_head
+        status_code @ 505
+    else if code == UNSUPPORTED
+        status_code @ 501
+
+    if status_code > 0
+        refuse(s, status_code: status_code, why: why)
+
+# Answers `status_code` on `s`, closing, with `why` as a plain text body, a
+# control byte in it written as a space.
+function refuse(s: io.Stream, status_code: i64, why: str)
+    data = response_or_500(
+        status_code: status_code,
+        reason: "",
+        fields: [wire.Field(name: "Content-Type", value: "text/plain; charset=utf-8")],
+        content: wire_bytes(why),
+        closing: true,
+        keep_alive: false,
+        head_only: false
+    )
+
+    match io.write(s, data: data)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# The bytes of `why` and a line feed, each control byte a space.
+function wire_bytes(why: str) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < why.len()
+        b = why[at]
+
+        if b < 32 || b == 127
+            out @ out.push(' ')
+        else
+            out @ out.push(b)
+        at @ at + 1
+
+    out @ out.push('\n')
+    return out
+
+# The bytes of a response as `write.response` makes them, or of a bare 500
+# where it refuses them.
+function response_or_500(status_code: i64, reason: str, fields: [wire.Field], content: [u8], closing: bool, keep_alive: bool, head_only: bool) -> [u8]
+    bad = status_code < 200 || status_code > 999
+
+    if !bad
+        match write.response(status_code: status_code, reason: reason, fields: fields, content: content, closing: closing, keep_alive: keep_alive, head_only: head_only)
+            .ok data => return data
+            .err _   => _ = 0
+    return write.response(
+        status_code: 500,
+        reason: "",
+        fields: [],
+        content: [],
+        closing: true,
+        keep_alive: false,
+        head_only: false
+    ).must()
+
+# The date of now as HTTP writes it. Fails `failed` where the clock cannot be
+# read.
+function date_now() -> str?
+    return ok(time.format(time.now()?, layout: .http))
+
+## Tests
+
+test "follows, keeps_body, method_after: Go's methods after each redirect"
+    for status in [301, 302, 303, 307, 308]
+        assert follows(status)
+
+    for status in [300, 304, 305, 306, 200, 0]
+        assert !follows(status)
+
+    assert method_after(status: 301, method: "POST") == "GET" && method_after(status: 302, method: "PUT") == "GET"
+    assert method_after(status: 303, method: "HEAD") == "HEAD" && method_after(status: 307, method: "POST") == "POST"
+    assert method_after(status: 308, method: "PATCH") == "PATCH" && !keeps_body(303) && keeps_body(308)
+
+test "is_idempotent, same_origin, host_field: the six methods, a port of 80 written or not, IPv6 in brackets"
+    assert is_idempotent("PUT") && is_idempotent("TRACE") && !is_idempotent("POST") && !is_idempotent("PATCH") && !is_idempotent("get")
+    assert same_origin(
+        a_scheme: "http",
+        a_host: "A.example",
+        a_port: "",
+        b_scheme: "HTTP",
+        b_host: "a.example",
+        b_port: "80"
+    )
+    assert !same_origin(a_scheme: "http", a_host: "a", a_port: "80", b_scheme: "http", b_host: "a", b_port: "8080")
+    assert !same_origin(a_scheme: "https", a_host: "a", a_port: "", b_scheme: "http", b_host: "a", b_port: "")
+    assert same_origin(a_scheme: "https", a_host: "a", a_port: "443", b_scheme: "https", b_host: "a", b_port: "")
+    assert host_field(scheme: "http", host: "::1", port: "8080") == "[::1]:8080" && host_field(scheme: "http", host: "h", port: "80") == "h"
+    assert host_field(scheme: "https", host: "h", port: "443") == "h" && host_field(scheme: "https", host: "h", port: "80") == "h:80" && host_field(scheme: "http", host: "h", port: "") == "h"
+
+test "backoff_ms: doubled from the base, held at the most, never overflowing"
+    assert backoff_ms(attempt: 1, base: 100, most: 10_000) == 100
+    assert backoff_ms(attempt: 4, base: 100, most: 10_000) == 800
+    assert backoff_ms(attempt: 9, base: 100, most: 10_000) == 10_000
+    assert backoff_ms(attempt: 9_223_372_036_854_775_807, base: 4_611_686_018_427_387_904, most: 9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
+    assert backoff_ms(attempt: 3, base: 0, most: 50) == 0
+
+test "retry_after_ms: seconds, a date to come, a date passed, and neither"
+    now = time.from_unix(whole_seconds: 1_445_412_480, extra_nanoseconds: 0).must()
+    assert retry_after_ms("120", now: now).must() == 120_000
+    assert retry_after_ms("Wed, 21 Oct 2015 07:28:10 GMT", now: now).must() == 10_000
+    assert retry_after_ms("Wed, 21 Oct 2015 07:27:00 GMT", now: now).must() == 0
+    assert retry_after_ms("soon", now: now).is_err() && retry_after_ms("", now: now).is_err() && retry_after_ms("-1", now: now).is_err()
+
+test "parse_date: the three forms RFC 9110 names, one instant"
+    want = time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 0).must()
+    assert parse_date("Sun, 06 Nov 1994 08:49:37 GMT").must() == want
+    assert parse_date("Sunday, 06-Nov-94 08:49:37 GMT").must() == want
+    assert parse_date("Sun Nov  6 08:49:37 1994").must() == want
+
+    match parse_date("06 Nov 1994")
+        .ok _  => assert false
+        .err e => assert e.code == syntax.INVALID
+
+test "exchange: a scheme other than http, none, no host, a port past 65535"
+    bounds = wire.Bounds(head_bytes: 100, field_count: 1, body_bytes: 1)
+
+    for given in [["ftp", "h", "", UNSUPPORTED], ["", "h", "", syntax.INVALID], ["http", "", "", syntax.INVALID], ["http", "h", "65536", syntax.INVALID], ["http", "h", "x", syntax.INVALID]]
+        match exchange(scheme: given[0], host: given[1], port: given[2], deadline_ms: 0, roots: "", method: "GET", target: "/", host_value: "h", fields: [], content: [], bounds: bounds)
+            .ok _  => assert false
+            .err e => assert e.code == given[3]
+
+test "response_or_500 and wire_bytes: a status a server may not send is answered 500, a control byte a space"
+    assert wire.text_of(response_or_500(status_code: 199, reason: "", fields: [], content: [], closing: false, keep_alive: false, head_only: false)) == "HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\nContent-Length: 0\r\n\r\n"
+    assert wire.text_of(response_or_500(status_code: 200, reason: "", fields: [wire.Field(name: "X", value: "a\nb")], content: [], closing: false, keep_alive: false, head_only: false)).len() == 76
+    assert wire_bytes("a\r\nb") == [97, 32, 32, 98, 10]

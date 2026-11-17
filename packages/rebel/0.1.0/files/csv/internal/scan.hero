@@ -1,0 +1,393 @@
+# One row of comma-separated values read out of a text, and the rows of a
+# whole text, by RFC 4180's grammar and the options of `Rules`. A failure's
+# message opens `line L, column C:`, both from 1 and the column in
+# characters.
+#
+# Every byte compared here is ASCII, the separator, the quote, a line feed and
+# a carriage return, so every index a slice is cut at is a character's first
+# byte and no slice splits a character.
+
+use strings
+
+# The code of a text that is not what the rules read.
+constant INVALID: str
+    "invalid"
+
+# How a text is read, every character one ASCII byte.
+record Rules
+    # The byte between two fields.
+    separator: u8
+    # The byte that opens and closes a quoted field.
+    quote: u8
+    # The byte that opens a line to skip, where `has_comment` says so.
+    comment: u8
+    # Whether a line opening with `comment` is skipped.
+    has_comment: bool
+    # Whether spaces and tabs at a field's start are dropped.
+    trim: bool
+    # Whether a quote inside a field that does not open with one, text after
+    # a closing quote, and a quoted field the text ends inside are read as
+    # they stand rather than refused.
+    lazy: bool
+    # Whether rows may hold different numbers of fields.
+    ragged: bool
+    # The most bytes a field may hold.
+    max_field: i64
+
+# A row and where it began.
+record Row
+    # The fields, in order.
+    fields: [str]
+    # The line the row began on, from 1.
+    line: i64
+
+# What `scan_row` answers.
+record Scan
+    # The row's fields, where `complete`.
+    fields: [str]
+    # The byte index past the row and its line end, where `complete`.
+    next: i64
+    # How many line ends the row holds, its own included, where `complete`.
+    lines: i64
+    # Whether the row ended; false only where the text ended inside a quoted
+    # field and more may follow.
+    complete: bool
+    # Where the quoted field left open begins, where not `complete`.
+    open_at: i64
+
+# The rules made of the options' characters. Aborts where a character is not
+# one ASCII byte, where the separator or the quote is a line end, where two of
+# them are one character, and where `max_field` is below 1.
+function new_rules(separator: str, quote: str, comment: str, trim: bool, lazy: bool, ragged: bool, max_field: i64) -> Rules
+    assert separator.len() == 1 && separator[0] < 0x80 && separator != "\n" && separator != "\r"
+    assert quote.len() == 1 && quote[0] < 0x80 && quote != "\n" && quote != "\r" && quote != separator
+    assert comment == "" || comment.len() == 1 && comment[0] < 0x80 && comment != separator && comment != quote
+    assert max_field >= 1
+    mark: u8 @= 0
+
+    if comment != ""
+        mark @ comment[0]
+    return Rules(
+        separator: separator[0],
+        quote: quote[0],
+        comment: mark,
+        has_comment: comment != "",
+        trim: trim,
+        lazy: lazy,
+        ragged: ragged,
+        max_field: max_field
+    )
+
+# How many bytes the line end at `at` of `text` holds: 1 for a line feed, 2
+# for a carriage return and a line feed, 0 for anything else.
+function line_end_len(text: str, at: i64) -> i64
+    if at < text.len() && text[at] == '\n'
+        return 1
+
+    if at + 1 < text.len() && text[at] == '\r' && text[at + 1] == '\n'
+        return 2
+    return 0
+
+# The column, in characters from 1, of byte `at` of `text` on the line that
+# begins at byte `line_start`.
+function column_of(text: str, line_start: i64, at: i64) -> i64
+    count: i64 @= 1
+
+    for k in range(from: line_start, to: at)
+        if text[k] < 0x80 || text[k] >= 0xc0
+            count @ count + 1
+
+    return count
+
+# The failure at byte `at` of `text`, on line `line` that begins at byte
+# `line_start`.
+function failure<T>(text: str, line: i64, line_start: i64, at: i64, what: str) -> T?
+    return fail(code: INVALID, msg: f"line {line}, column {column_of(text, line_start: line_start, at: at)}: {what}")
+
+# How many bytes from `at` make a line that holds no row: an empty line, or a
+# comment where the rules skip them. 0 where a row stands at `at`.
+function skipped_len(text: str, at: i64, rules: Rules) -> i64
+    blank = line_end_len(text, at)
+
+    if blank > 0
+        return blank
+
+    if rules.has_comment && at < text.len() && text[at] == rules.comment
+        k @= at
+
+        while k < text.len() && text[k] != '\n'
+            k @ k + 1
+
+        if k < text.len()
+            return k + 1 - at
+        return k - at
+    return 0
+
+# Where the unquoted text from `at` ends: at a separator, a line end, or the
+# end of the text. Fails `invalid` at a quote, unless the rules are lazy.
+function unquoted_end(text: str, at: i64, line: i64, line_start: i64, rules: Rules) -> i64?
+    k @= at
+
+    while k < text.len() && text[k] != rules.separator && line_end_len(text, k) == 0
+        if text[k] == rules.quote && !rules.lazy
+            return failure(
+                text: text,
+                line: line,
+                line_start: line_start,
+                at: k,
+                what: "a quote inside a field that does not open with one"
+            )
+        k @ k + 1
+
+    return ok(k)
+
+# The row that begins at byte `from` of `text`, the start of line
+# `first_line`. Where `partial` is set and the text ends inside a quoted
+# field, the answer is not `complete`: more text may close it.
+function scan_row(text: str, from: i64, first_line: i64, rules: Rules, partial: bool) -> Scan?
+    n = text.len()
+    fields: [str] @= []
+    i @= from
+    line @= first_line
+    line_start @= from
+    lines: i64 @= 0
+
+    while true
+        if rules.trim
+            while i < n && (text[i] == ' ' || text[i] == '\t')
+                i @ i + 1
+        pieces: [str] @= []
+        field_start = i
+
+        if i < n && text[i] == rules.quote
+            open_line = line
+            open_column = column_of(text, line_start: line_start, at: i)
+            i @ i + 1
+            closed @= false
+
+            while !closed
+                j @= i
+
+                while j < n && text[j] != rules.quote
+                    if text[j] == '\n'
+                        line @ line + 1
+                        lines @ lines + 1
+                        line_start @ j + 1
+                    j @ j + 1
+
+                if j >= n
+                    if partial
+                        return ok(Scan(fields: [], next: from, lines: 0, complete: false, open_at: field_start))
+
+                    if !rules.lazy
+                        return failure(
+                            text: text,
+                            line: line,
+                            line_start: line_start,
+                            at: n,
+                            what: f"the field opened at line {open_line}, column {open_column} has no closing quote"
+                        )
+                    pieces @ pieces.push(text.slice(from: i, to: n))
+                    i @ n
+                    closed @ true
+                else
+                    pieces @ pieces.push(text.slice(from: i, to: j))
+
+                    if j + 1 < n && text[j + 1] == rules.quote
+                        pieces @ pieces.push(text.slice(from: j, to: j + 1))
+                        i @ j + 2
+                    else
+                        i @ j + 1
+                        closed @ true
+
+            if i < n && text[i] != rules.separator && line_end_len(text, i) == 0
+                if !rules.lazy
+                    found = text.slice(from: i, to: strings.ceil_boundary(s: text, at: i + 1))
+                    return failure(
+                        text: text,
+                        line: line,
+                        line_start: line_start,
+                        at: i,
+                        what: f"\"{found}\" after a closing quote, where a separator or a line end was expected"
+                    )
+                k = unquoted_end(text, at: i, line: line, line_start: line_start, rules: rules)?
+                pieces @ pieces.push(text.slice(from: i, to: k))
+                i @ k
+        else
+            k = unquoted_end(text, at: i, line: line, line_start: line_start, rules: rules)?
+            pieces @ pieces.push(text.slice(from: i, to: k))
+            i @ k
+        field = pieces.join("")
+
+        if field.len() > rules.max_field
+            return failure(
+                text: text,
+                line: line,
+                line_start: line_start,
+                at: i,
+                what: f"a field of {field.len()} bytes, past the {rules.max_field} allowed"
+            )
+        fields @ fields.push(field)
+
+        if i < n && text[i] == rules.separator
+            i @ i + 1
+        else
+            end = line_end_len(text, i)
+
+            if end > 0
+                lines @ lines + 1
+            return ok(Scan(fields: fields, next: i + end, lines: lines, complete: true, open_at: 0))
+
+# Whether a row of `count` fields may follow rows of `width` fields, 0 before
+# the first row; records the first row's count in `width`. Fails `invalid`
+# where the rules want rows of one length and this one differs.
+function check_width(@width: i64, count: i64, line: i64, rules: Rules) -> ()?
+    if !rules.ragged
+        if width == 0
+            width @ count
+        else if count != width
+            return fail(code: INVALID, msg: f"line {line}: {count} fields where the first row has {width}")
+    return ok()
+
+# Every row of `text`, each with the line it began on; empty lines and, where
+# the rules say, comments skipped.
+function parse_rows(text: str, rules: Rules) -> [Row]?
+    rows: [Row] @= []
+    at @= 0
+    line: i64 @= 1
+    width: i64 @= 0
+
+    while at < text.len()
+        skip = skipped_len(text, at: at, rules: rules)
+
+        if skip > 0
+            at @ at + skip
+            line @ line + 1
+            continue
+        s = scan_row(text, from: at, first_line: line, rules: rules, partial: false)?
+        check_width(width: @width, count: s.fields.len(), line: line, rules: rules)?
+        rows @ rows.push(Row(fields: s.fields, line: line))
+        at @ s.next
+        line @ line + s.lines
+
+    return ok(rows)
+
+# The rules of RFC 4180: a comma, a double quote, no comment, strict, rows of
+# one length, a field of at most 131072 bytes.
+function standard_rules() -> Rules
+    return new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "",
+        trim: false,
+        lazy: false,
+        ragged: false,
+        max_field: 131072
+    )
+
+# The fields of every row of `text` read by `rules`, or the failure's message.
+function fields_of(text: str, rules: Rules) -> [[str]]
+    match parse_rows(text, rules)
+        .err e => return [[e.msg]]
+        .ok rows =>
+            found: [[str]] @= []
+
+            for r in rows
+                found @ found.push(r.fields)
+
+            return found
+
+# `standard` with one thing changed: the rules lazy.
+function lazy_rules() -> Rules
+    return new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "",
+        trim: false,
+        lazy: true,
+        ragged: false,
+        max_field: 131072
+    )
+
+test "line_end_len and column_of: a line feed, CR LF, a lone CR, the end, and characters of two bytes"
+    assert line_end_len("a\nb", 1) == 1
+    assert line_end_len("a\r\nb", 1) == 2
+    assert line_end_len("a\rb", 1) == 0
+    assert line_end_len("a\r", 1) == 0
+    assert line_end_len("a", 1) == 0
+    assert column_of("x\néé,a", line_start: 2, at: 7) == 4
+    assert column_of("abc", line_start: 0, at: 0) == 1
+
+test "parse_rows: empty, one field, a trailing separator, no last line end, blank lines and CR LF as Go reads them"
+    assert fields_of("", standard_rules()).len() == 0
+    assert fields_of("a", standard_rules()) == [["a"]]
+    assert fields_of("a,b,\n", standard_rules()) == [["a", "b", ""]]
+    assert fields_of("a,b", standard_rules()) == [["a", "b"]]
+    assert fields_of("a,b\n\nc,d\n", standard_rules()) == [["a", "b"], ["c", "d"]]
+    assert fields_of("a,b\r\nc,d\r\n", standard_rules()) == [["a", "b"], ["c", "d"]]
+    assert fields_of(" \n", standard_rules()) == [[" "]]
+    assert fields_of(",\n", standard_rules()) == [["", ""]]
+
+test "parse_rows: quoted fields, a doubled quote, line ends inside kept as written, a lone CR as data"
+    assert fields_of("\"\"\n", standard_rules()) == [[""]]
+    assert fields_of("é,\"ü\"\"x\"\n", standard_rules()) == [["é", "ü\"x"]]
+    assert fields_of("\"a\r\nb\",c\r\n", standard_rules()) == [["a\r\nb", "c"]]
+    assert fields_of("\"a\nb\"\nc\n", new_rules(separator: ",", quote: "\"", comment: "", trim: false, lazy: false, ragged: true, max_field: 100)) == [["a\nb"], ["c"]]
+    assert fields_of("a\rb,c\n", standard_rules()) == [["a\rb", "c"]]
+    assert fields_of("\"a,b\",\"\"\"\"\n", standard_rules()) == [["a,b", "\""]]
+
+test "parse_rows: a bare quote, text after a closing quote and no closing quote, each with its line and column"
+    assert fields_of("a\"b,c\n", standard_rules()) == [["line 1, column 2: a quote inside a field that does not open with one"]]
+    assert fields_of("a,b\nc,d\"e\n", standard_rules()) == [["line 2, column 4: a quote inside a field that does not open with one"]]
+    assert fields_of("\"a\"b,c\n", standard_rules()) == [["line 1, column 4: \"b\" after a closing quote, where a separator or a line end was expected"]]
+    assert fields_of("é,\"a\"ü\n", standard_rules()) == [["line 1, column 6: \"ü\" after a closing quote, where a separator or a line end was expected"]]
+    assert fields_of("a,\"bc\nd\n", standard_rules()) == [["line 3, column 1: the field opened at line 1, column 3 has no closing quote"]]
+    assert fields_of("a, \"c\"\n", standard_rules()) == [["line 1, column 4: a quote inside a field that does not open with one"]]
+
+test "parse_rows: lazy quotes read a bare quote, append after a closing quote, and end a field the text ends inside"
+    assert fields_of("a\"b,c\n", lazy_rules()) == [["a\"b", "c"]]
+    assert fields_of("\"a\"b,c\n", lazy_rules()) == [["ab", "c"]]
+    assert fields_of("a,\"bc\nd\n", lazy_rules()) == [["a", "bc\nd\n"]]
+
+test "parse_rows: rows of different lengths refused with the line, and allowed where ragged"
+    assert fields_of("a,b\nc\n", standard_rules()) == [["line 2: 1 fields where the first row has 2"]]
+    ragged = new_rules(separator: ",", quote: "\"", comment: "", trim: false, lazy: false, ragged: true, max_field: 100)
+    assert fields_of("a,b\nc\n", ragged) == [["a", "b"], ["c"]]
+
+test "parse_rows: another separator, comments skipped only at a line's start, leading space trimmed"
+    tabs = new_rules(separator: "\t", quote: "\"", comment: "", trim: false, lazy: false, ragged: false, max_field: 100)
+    assert fields_of("a\tb\n", tabs) == [["a", "b"]]
+    comments = new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "#",
+        trim: false,
+        lazy: false,
+        ragged: true,
+        max_field: 100
+    )
+    assert fields_of("#x\na,b\n #y\n#z", comments) == [["a", "b"], [" #y"]]
+    trimmed = new_rules(
+        separator: ",",
+        quote: "\"",
+        comment: "",
+        trim: true,
+        lazy: false,
+        ragged: false,
+        max_field: 100
+    )
+    assert fields_of("a,  b, \"c\"\n", trimmed) == [["a", "b", "c"]]
+    quote = new_rules(separator: ";", quote: "'", comment: "", trim: false, lazy: false, ragged: false, max_field: 100)
+    assert fields_of("'a;b';'it''s'\n", quote) == [["a;b", "it's"]]
+
+test "parse_rows: a field past the most bytes allowed, quoted and not"
+    small = new_rules(separator: ",", quote: "\"", comment: "", trim: false, lazy: false, ragged: false, max_field: 3)
+    assert fields_of("abc,d\n", small) == [["abc", "d"]]
+    assert fields_of("abcd\n", small) == [["line 1, column 5: a field of 4 bytes, past the 3 allowed"]]
+    assert fields_of("\"ab\"\"c\"\n", small) == [["line 1, column 8: a field of 4 bytes, past the 3 allowed"]]
+
+test "scan_row: partial where the text ends inside a quoted field, and the field's start"
+    s = scan_row("a,\"bc\n", from: 0, first_line: 1, rules: standard_rules(), partial: true).must()
+    assert !s.complete && s.open_at == 2
+    t = scan_row("a,\"b\nc\",d\ne\n", from: 0, first_line: 1, rules: standard_rules(), partial: true).must()
+    assert t.complete && t.fields == ["a", "b\nc", "d"] && t.next == 10 && t.lines == 2

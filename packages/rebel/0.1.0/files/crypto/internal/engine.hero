@@ -1,0 +1,217 @@
+# The running work of every digest of the package and of the HMAC over each:
+# the chaining words, the bytes of a block not yet whole, the length so far,
+# and for an HMAC the words its outer digest starts from. Bytes are fed whole
+# blocks at a time to the compression function of the digest's family, and a
+# digest is finished by padding as FIPS 180-4 5.1 and RFC 1321 3.1 pad: a byte
+# 0x80, zeros, and the length in bits, MD5's with the lowest byte first and
+# the others' with the highest first.
+
+use crypto/internal/md5
+use crypto/internal/sha1
+use crypto/internal/sha256
+use crypto/internal/sha512
+use crypto/internal/word
+
+# Which digest the work computes, the face's `Algorithm` case by case.
+variant Kind
+    # MD5, RFC 1321.
+    md5
+    # SHA-1.
+    sha1
+    # SHA-224.
+    sha224
+    # SHA-256.
+    sha256
+    # SHA-384.
+    sha384
+    # SHA-512.
+    sha512
+    # SHA-512/224.
+    sha512_224
+    # SHA-512/256.
+    sha512_256
+
+# The work of a digest or of an HMAC, fed piece by piece.
+record Run
+    # Which digest it computes.
+    kind: Kind
+    # The chaining words after every whole block fed so far.
+    words: [i64]
+    # The bytes fed since the last whole block, fewer than a block.
+    pending: [u8]
+    # How many bytes were fed in all, an HMAC's inner block included.
+    length: i64
+    # For an HMAC, the chaining words of its outer digest once the key's
+    # block combined with 0x5c has been fed, computed once so that no tag
+    # compresses that block again; empty for a digest.
+    outer: [i64]
+
+# The length of `kind`'s digest, in bytes.
+function size(kind: Kind) -> i64
+    return match kind
+        .md5                  => 16
+        .sha1                 => 20
+        .sha224 | .sha512_224 => 28
+        .sha256 | .sha512_256 => 32
+        .sha384               => 48
+        .sha512               => 64
+
+# The length of `kind`'s block, in bytes: what an HMAC pads its key to.
+function block(kind: Kind) -> i64
+    return match kind
+        .md5 | .sha1 | .sha224 | .sha256              => 64
+        .sha384 | .sha512 | .sha512_224 | .sha512_256 => 128
+
+# The work of `kind` before any byte.
+function begin(kind: Kind) -> Run
+    words = match kind
+        .md5        => md5.START
+        .sha1       => sha1.START
+        .sha224     => sha256.START224
+        .sha256     => sha256.START256
+        .sha384     => sha512.START384
+        .sha512     => sha512.START512
+        .sha512_224 => sha512.START512_224
+        .sha512_256 => sha512.START512_256
+
+    none: [u8] = []
+    no_words: [i64] = []
+    return Run(kind: kind, words: words, pending: none, length: 0, outer: no_words)
+
+# The work of the HMAC of `kind` under `key` before any byte of the message
+# (RFC 2104): a key longer than a block is first replaced by its digest, the
+# key is padded with zeros to a block, and the inner digest begins with that
+# block combined with 0x36.
+function begin_keyed(kind: Kind, key: [u8]) -> Run
+    width = block(kind)
+    short: [u8] @= key
+
+    if key.len() > width
+        whole @= begin(kind)
+        absorb(@whole, key)
+        short @ finish(whole)
+    inner: [u8] @= []
+    outer: [u8] @= []
+
+    for i in range(from: 0, to: width)
+        b: u8 @= 0
+
+        if i < short.len()
+            b @ short[i]
+        inner @ inner.push(to_u8(to_i64(b).must() ^ 0x36).must())
+        outer @ outer.push(to_u8(to_i64(b).must() ^ 0x5c).must())
+
+    run @= begin(kind)
+    absorb(@run, inner)
+    keyed_outer @= begin(kind)
+    absorb(@keyed_outer, outer)
+    run.outer @ keyed_outer.words
+    return run
+
+# The words after the block of `data` that begins at `at`, from `words`.
+function compress(kind: Kind, words: [i64], data: [u8] lent, at: i64) -> [i64]
+    return match kind
+        .md5                                          => md5.compress(words, data, at)
+        .sha1                                         => sha1.compress(words, data, at)
+        .sha224 | .sha256                             => sha256.compress(words, data, at)
+        .sha384 | .sha512 | .sha512_224 | .sha512_256 => sha512.compress(words, data, at)
+
+# Feeds `data` to `run`, which the caller holds: the bytes left from before
+# are made a block first, every whole block of `data` is compressed where it
+# stands, and what is left waits in `pending`.
+function absorb(@run: Run, data: [u8] lent)
+    width = block(run.kind)
+    words @= run.words
+    pending @= run.pending
+    at: i64 @= 0
+
+    if pending.len() > 0
+        while pending.len() < width && at < data.len()
+            pending @ pending.push(data[at])
+            at @ at + 1
+
+        if pending.len() == width
+            words @ compress(run.kind, words, pending, 0)
+            pending @ []
+
+    while data.len() - at >= width
+        words @ compress(run.kind, words, data, at)
+        at @ at + width
+
+    while at < data.len()
+        pending @ pending.push(data[at])
+        at @ at + 1
+
+    run.words @ words
+    run.pending @ pending
+    run.length @ run.length + data.len()
+
+# Feeds the bytes of `s` to `run`, copied a piece of 4096 bytes at a time
+# so that no copy of the whole text is made.
+function absorb_text(@run: Run, s: str lent)
+    at: i64 @= 0
+
+    while at < s.len()
+        end: i64 @= at + 4096
+
+        if end > s.len()
+            end @ s.len()
+        piece: [u8] @= []
+
+        while at < end
+            piece @ piece.push(s[at])
+            at @ at + 1
+
+        absorb(@run, piece)
+
+# The digest of what `run` was fed, or for an HMAC its tag; `run` itself is
+# a copy, so the caller's work goes on unchanged.
+function finish(run: Run) -> [u8]
+    done @= run
+    width = block(run.kind)
+    room = width - width / 8
+    pad: [u8] @= [0x80]
+
+    while (run.length + pad.len()) % width != room
+        pad @ pad.push(0)
+
+    bits = run.length << 3
+    above = word.shift_right(x: run.length, n: 61)
+
+    match run.kind
+        .md5                      => word.push_little(@pad, x: bits, count: 8)
+        .sha1 | .sha224 | .sha256 => word.push_big(@pad, x: bits, count: 8)
+        .sha384 | .sha512 | .sha512_224 | .sha512_256 =>
+            word.push_big(@pad, x: above, count: 8)
+            word.push_big(@pad, x: bits, count: 8)
+
+    absorb(@done, pad)
+    out: [u8] @= []
+
+    for w in done.words
+        match run.kind
+            .md5                                          => word.push_little(@out, x: w, count: 4)
+            .sha1 | .sha224 | .sha256                     => word.push_big(@out, x: w, count: 4)
+            .sha384 | .sha512 | .sha512_224 | .sha512_256 => word.push_big(@out, x: w, count: 8)
+
+    out @ out.slice(from: 0, to: size(run.kind))
+
+    if run.outer.len() == 0
+        return out
+    no_words: [i64] = []
+    tag @= Run(kind: run.kind, words: run.outer, pending: [], length: width, outer: no_words)
+    absorb(@tag, out)
+    return finish(tag)
+
+test "engine size and block: every kind"
+    assert size(.md5) == 16 && size(.sha1) == 20 && size(.sha224) == 28 && size(.sha256) == 32
+    assert size(.sha384) == 48 && size(.sha512) == 64 && size(.sha512_224) == 28 && size(.sha512_256) == 32
+    assert block(.sha256) == 64 && block(.sha512_256) == 128
+
+test "engine absorb: a block filled across three calls, then compressed once"
+    run @= begin(.sha256)
+    absorb(@run, word.bytes_of("a".repeat(30)))
+    absorb(@run, word.bytes_of("a".repeat(30)))
+    assert run.pending.len() == 60 && run.words == sha256.START256
+    absorb(@run, word.bytes_of("a".repeat(10)))
+    assert run.pending.len() == 6 && run.length == 70 && run.words != sha256.START256

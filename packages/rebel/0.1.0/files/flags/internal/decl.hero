@@ -1,0 +1,590 @@
+# The declaration of a command as the parse reads it: each argument the
+# command takes, its subcommands and its groups of options that exclude each
+# other, with the checks that hold a declaration together. A declaration is
+# the program's own text, so a broken one aborts here, at the line that
+# builds it, and never waits for a user to type the argument it names.
+
+use numbers
+use strings
+
+# What a value is read as: any text.
+constant TEXT: i64
+    0
+
+# What a value is read as: an integer as the language writes one.
+constant INTEGER: i64
+    1
+
+# What a value is read as: a decimal number, `inf` and `nan` included.
+constant FLOAT: i64
+    2
+
+# What a value is read as: one of the words of `choices`.
+constant CHOICE: i64
+    3
+
+# The most values a positional takes where any number may stand.
+constant UNBOUNDED: i64
+    9223372036854775807
+
+# The code of an argument list the declaration does not read.
+constant INVALID: str
+    "invalid"
+
+# The code of a value asked for where none was given and none is declared.
+constant NOT_FOUND: str
+    "not_found"
+
+# One argument a command takes: a flag, an option with a value, or a
+# positional.
+record Want
+    # The option's name after `--`, or "" where it has none; "" for a
+    # positional.
+    long: str
+    # The option's one character after `-`, or "" where it has none; "" for a
+    # positional.
+    short: str
+    # The word that stands for the value in the help; a positional's name; ""
+    # for a flag.
+    value_name: str
+    # One line saying what it does, for the help.
+    help: str
+    # Whether it is a positional.
+    positional: bool
+    # Whether it takes a value: false for a flag alone.
+    takes_value: bool
+    # What its values are read as: `TEXT`, `INTEGER`, `FLOAT` or `CHOICE`.
+    kind: i64
+    # The words a `CHOICE` takes, in the order the help lists them.
+    choices: [str]
+    # The values answered where none is given, in order; empty where none.
+    defaults: [str]
+    # Whether a parse fails where it is not given.
+    required: bool
+    # Whether `--no-` and its long name turn the flag off.
+    negatable: bool
+    # Whether the help and the usage leave it out.
+    hidden: bool
+    # The heading the help lists it under; "" for the command's own list.
+    section: str
+    # The fewest values a positional takes.
+    least: i64
+    # The most values a positional takes, `UNBOUNDED` for any number.
+    most: i64
+    # The environment variable whose value stands where it is not given; ""
+    # for none.
+    env: str
+    # Other long names it is read by, each without its `--`.
+    aliases: [str]
+    # Other short names it is read by, each one character without its `-`.
+    short_aliases: [str]
+    # The values an option given with none after `=` takes, which then takes
+    # no next argument; empty where it must have one.
+    missing: [str]
+    # The text each value is split at into several; "" for none.
+    delimiter: str
+    # Whether an integer's value must lie between `lowest` and `highest`.
+    ranged: bool
+    # The lowest integer taken, where `ranged`.
+    lowest: i64
+    # The highest integer taken, where `ranged`.
+    highest: i64
+
+# An option that needs another given with it.
+record Requirement
+    # The key of the option that needs.
+    member: str
+    # The key of the argument it needs.
+    needs: str
+
+# A group of options of which at most one may be given.
+record Group
+    # The keys of the options, as `key_of` names them.
+    members: [str]
+    # Whether one of them must be given.
+    required: bool
+
+# A command: its name, what it says of itself, and what it takes.
+record Spec
+    # The name the usage writes for it.
+    name: str
+    # The text the help writes under the usage; "" for none.
+    about: str
+    # The text the help writes at its end; "" for none.
+    epilog: str
+    # Its arguments, in the order they were added.
+    wants: [Want]
+    # Its subcommands, in the order they were added.
+    subs: [Spec]
+    # Its groups of options that exclude each other.
+    groups: [Group]
+    # Whether `-h` and `--help` ask for its help.
+    help: bool
+    # Whether every argument from the first positional on is positional.
+    options_first: bool
+    # The version `-V` and `--version` answer; "" where they answer none.
+    version: str
+    # The pairs of arguments of which the first needs the second.
+    requirements: [Requirement]
+    # Other names its parent's arguments may choose it by.
+    aliases: [str]
+    # Whether no argument at all asks for its help.
+    help_on_empty: bool
+    # Whether its parent's help and completions leave it out.
+    hidden: bool
+    # Whether a word that names no subcommand is taken, with every argument
+    # after it, as another program's command.
+    external: bool
+
+# A command named `name` that takes nothing yet and answers `-h` and
+# `--help`.
+function new_spec(name: str, about: str) -> Spec
+    assert name != ""
+    return Spec(
+        name: name,
+        about: about,
+        epilog: "",
+        wants: [],
+        subs: [],
+        groups: [],
+        help: true,
+        options_first: false,
+        version: "",
+        requirements: [],
+        aliases: [],
+        help_on_empty: false,
+        hidden: false,
+        external: false
+    )
+
+# Whether `long` may name an option after `--`: not empty, and no `=`, space,
+# or `-` at its start.
+function is_long_name(long: str) -> bool
+    if long == "" || long[0] == '-'
+        return false
+
+    for c in long.chars()
+        if c == "=" || c == " " || c == "\t"
+            return false
+
+    return true
+
+# Whether `short` may name an option after `-`: one ASCII letter or digit.
+function is_short_name(short: str) -> bool
+    if short.len() != 1
+        return false
+    b = short[0]
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+# An option of no value, named `long` after `--` and `short` after `-`, either
+# of them "" but not both.
+function flag_want(long: str, short: str, help: str) -> Want
+    assert long != "" || short != ""
+    assert long == "" || is_long_name(long)
+    assert short == "" || is_short_name(short)
+    return Want(
+        long: long,
+        short: short,
+        value_name: "",
+        help: help,
+        positional: false,
+        takes_value: false,
+        kind: TEXT,
+        choices: [],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 0,
+        most: 0,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+
+# An option taking one value, which the help writes as `value_name`.
+function option_want(long: str, short: str, value_name: str, help: str) -> Want
+    assert value_name != ""
+    w = flag_want(long: long, short: short, help: help)
+    return Want(
+        long: w.long,
+        short: w.short,
+        value_name: value_name,
+        help: help,
+        positional: false,
+        takes_value: true,
+        kind: TEXT,
+        choices: [],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 0,
+        most: 0,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+
+# A positional named `name`, taking exactly one value.
+function positional_want(name: str, help: str) -> Want
+    assert name != ""
+    return Want(
+        long: "",
+        short: "",
+        value_name: name,
+        help: help,
+        positional: true,
+        takes_value: true,
+        kind: TEXT,
+        choices: [],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 1,
+        most: 1,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+
+# The name a program reads `w` by: its long name, else its short one, else a
+# positional's name.
+function key_of(w: Want) -> str
+    if w.positional
+        return w.value_name
+
+    if w.long != ""
+        return w.long
+    return w.short
+
+# How a message names `w`: `--max`, `-m`, or a positional's name.
+function shown(w: Want) -> str
+    if w.positional
+        return w.value_name
+
+    if w.long != ""
+        return "--" + w.long
+    return "-" + w.short
+
+# Where `key` stands among the wants of `spec`. Fails `not_found`.
+function index_of_key(spec: Spec lent, key: str) -> i64?
+    for at in range(from: 0, to: spec.wants.len())
+        if key_of(spec.wants[at]) == key
+            return ok(at)
+
+    return fail(code: NOT_FOUND, msg: f"\"{spec.name}\" declares no \"{key}\"")
+
+# Where the option named `long` after `--` stands. Fails `not_found`.
+function index_of_long(spec: Spec lent, long: str) -> i64?
+    for at in range(from: 0, to: spec.wants.len())
+        w = spec.wants[at]
+
+        if !w.positional && (w.long == long || has_word(w.aliases, long))
+            return ok(at)
+
+    return fail(code: NOT_FOUND, msg: f"no option \"--{long}\"")
+
+# Whether `words` holds `word`.
+function has_word(words: [str], word: str) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# Where the option named `short` after `-` stands. Fails `not_found`.
+function index_of_short(spec: Spec lent, short: str) -> i64?
+    for at in range(from: 0, to: spec.wants.len())
+        if !spec.wants[at].positional && (spec.wants[at].short == short || has_word(spec.wants[at].short_aliases, short))
+            return ok(at)
+
+    return fail(code: NOT_FOUND, msg: f"no option \"-{short}\"")
+
+# Where the negatable flag that `--no-` and `long` turn off stands. Fails
+# `not_found`.
+function index_of_negation(spec: Spec lent, long: str) -> i64?
+    if strings.has_prefix(s: long, prefix: "no-")
+        at = index_of_long(spec, long.slice(from: 3, to: long.len()))?
+
+        if spec.wants[at].negatable
+            return ok(at)
+    return fail(code: NOT_FOUND, msg: f"no option \"--{long}\"")
+
+# Whether a long name of `spec` is taken: by an option, by a negation, or by
+# the help.
+function is_long_taken(spec: Spec lent, long: str) -> bool
+    if spec.help && long == "help" || spec.version != "" && long == "version"
+        return true
+    return !index_of_long(spec, long).is_err() || !index_of_negation(spec, long).is_err()
+
+# Adds `w` to `spec`, which owns it. Aborts where its key, its long name, its
+# short name or its negation is taken, and where a positional is added to a
+# command that has subcommands.
+function add_want(@spec: Spec, w: Want)
+    assert index_of_key(spec, key_of(w)).is_err()
+
+    if !w.positional
+        assert w.long == "" || !is_long_taken(spec, w.long)
+        assert w.short == "" || !(spec.help && w.short == "h")
+        assert w.short == "" || !(spec.version != "" && w.short == "V")
+
+        for alias in w.aliases
+            assert !is_long_taken(spec, alias)
+
+        for alias in w.short_aliases
+            assert index_of_short(spec, alias).is_err() && !(spec.help && alias == "h") && !(spec.version != "" && alias == "V")
+
+        assert w.short == "" || index_of_short(spec, w.short).is_err()
+        assert !w.negatable || !is_long_taken(spec, "no-" + w.long)
+    assert !w.positional || spec.subs.len() == 0
+    spec.wants @ spec.wants.push(w)
+
+# Whether `spec` takes a positional.
+function has_positional(spec: Spec lent) -> bool
+    for w in spec.wants
+        if w.positional
+            return true
+
+    return false
+
+# Adds `sub` to `spec` as a subcommand. Aborts where a subcommand of that name
+# is there already and where `spec` takes a positional.
+function add_sub(@spec: Spec, sub: Spec)
+    assert !has_positional(spec)
+
+    for s in spec.subs
+        assert s.name != sub.name && !has_word(s.aliases, sub.name)
+
+        for alias in sub.aliases
+            assert s.name != alias && !has_word(s.aliases, alias)
+
+    spec.subs @ spec.subs.push(sub)
+
+# Adds a group of options of which at most one may be given. Aborts where it
+# names fewer than two, or a key `spec` does not declare as an option.
+function add_group(@spec: Spec, members: [str], required: bool)
+    assert members.len() >= 2
+
+    for key in members
+        at = index_of_key(spec, key).must()
+        assert !spec.wants[at].positional
+
+    spec.groups @ spec.groups.push(Group(members: members, required: required))
+
+# Adds to `spec` that the argument `member` needs `needs` given with it.
+# Aborts where either is not a key of `spec`, or they are one.
+function add_requirement(@spec: Spec, member: str, needs: str)
+    assert member != needs
+    _ = index_of_key(spec, member).must()
+    _ = index_of_key(spec, needs).must()
+    spec.requirements @ spec.requirements.push(Requirement(member: member, needs: needs))
+
+# The words of `choices`, each quoted, joined by commas, as a message lists
+# them.
+function quoted_list(words: [str]) -> str
+    quoted: [str] @= []
+
+    for w in words
+        quoted @ quoted.push(f"\"{w}\"")
+
+    return quoted.join(", ")
+
+# `value`, a value of `w`, read as an integer as the language writes one.
+# Fails `invalid`, naming `w`, where it is not one or is past an `i64`.
+function read_int(w: Want, value: str) -> i64?
+    match numbers.parse_int_literal(value)
+        .ok n => return ok(n)
+        .err e =>
+            if e.code == numbers.DOES_NOT_FIT
+                return fail(code: INVALID, msg: f"{shown(w)}: \"{value}\" is past what an i64 holds")
+            return fail(code: INVALID, msg: f"{shown(w)}: \"{value}\" is not an integer")
+
+# `value`, a value of `w`, read as a decimal number. Fails `invalid`, naming
+# `w`, where it is not one.
+function read_float(w: Want, value: str) -> f64?
+    match numbers.parse_float(value)
+        .ok x  => return ok(x)
+        .err _ => return fail(code: INVALID, msg: f"{shown(w)}: \"{value}\" is not a number")
+
+# `value` read as `w` reads its values. Fails `invalid`, saying which
+# argument and what is wrong with the value.
+function check_value(w: Want, value: str) -> ()?
+    if w.kind == INTEGER
+        n = read_int(w, value)?
+
+        if w.ranged && (n < w.lowest || n > w.highest)
+            return fail(code: INVALID, msg: f"{shown(w)}: {n} is outside {w.lowest} to {w.highest}")
+        return ok()
+
+    if w.kind == FLOAT
+        _ = read_float(w, value)?
+        return ok()
+
+    if w.kind == CHOICE
+        for c in w.choices
+            if c == value
+                return ok()
+
+        return fail(code: INVALID, msg: f"{shown(w)}: \"{value}\" is not one of {quoted_list(w.choices)}")
+    return ok()
+
+# The message of `r`'s failure, "" where it succeeded: what the tests read.
+function err_msg(r: ()?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.msg
+
+test "is_long_name: a word, a dash inside, empty, a dash first, an equals sign and a space"
+    assert is_long_name("max")
+    assert is_long_name("dry-run")
+    assert !is_long_name("")
+    assert !is_long_name("-max")
+    assert !is_long_name("a=b")
+    assert !is_long_name("a b")
+
+test "is_short_name: a letter, a digit, two letters, a dash, empty and a character of two bytes"
+    assert is_short_name("v")
+    assert is_short_name("Z")
+    assert is_short_name("7")
+    assert !is_short_name("vv")
+    assert !is_short_name("-")
+    assert !is_short_name("")
+    assert !is_short_name("é")
+
+test "key_of and shown: long and short, short alone, a positional"
+    both = flag_want(long: "verbose", short: "v", help: "")
+    alone = flag_want(long: "", short: "v", help: "")
+    p = positional_want(name: "FILE", help: "")
+    assert key_of(both) == "verbose"
+    assert shown(both) == "--verbose"
+    assert key_of(alone) == "v"
+    assert shown(alone) == "-v"
+    assert key_of(p) == "FILE"
+    assert shown(p) == "FILE"
+
+test "add_want and the lookups: by key, long, short and negation, and the names absent"
+    s @= new_spec(name: "tool", about: "")
+    color = flag_want(long: "color", short: "c", help: "")
+    add_want(
+        @s,
+        Want(long: color.long, short: color.short, value_name: "", help: "", positional: false, takes_value: false, kind: TEXT, choices: [], defaults: [], required: false, negatable: true, hidden: false, section: "", least: 0, most: 0, env: "", aliases: [], short_aliases: [], missing: [], delimiter: "", ranged: false, lowest: 0, highest: 0)
+    )
+    add_want(@s, option_want(long: "", short: "m", value_name: "NUM", help: ""))
+    assert index_of_key(s, "color").must() == 0
+    assert index_of_key(s, "m").must() == 1
+    assert index_of_long(s, "color").must() == 0
+    assert index_of_short(s, "m").must() == 1
+    assert index_of_negation(s, "no-color").must() == 0
+    assert index_of_negation(s, "no-m").is_err()
+    assert index_of_key(s, "max").is_err()
+    assert is_long_taken(s, "help")
+    assert is_long_taken(s, "no-color")
+    assert !is_long_taken(s, "colour")
+
+test "check_value: an integer in every base, too large, a word; a float, inf, a word; a choice and a word outside it"
+    i = Want(
+        long: "max",
+        short: "",
+        value_name: "NUM",
+        help: "",
+        positional: false,
+        takes_value: true,
+        kind: INTEGER,
+        choices: [],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 0,
+        most: 0,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+    assert !check_value(i, "-12").is_err()
+    assert !check_value(i, "0x10").is_err()
+    assert !check_value(i, "1_000").is_err()
+    assert err_msg(check_value(i, "9223372036854775808")) == "--max: \"9223372036854775808\" is past what an i64 holds"
+    assert err_msg(check_value(i, "abc")) == "--max: \"abc\" is not an integer"
+    assert check_value(i, "007").is_err()
+    f = Want(
+        long: "",
+        short: "r",
+        value_name: "R",
+        help: "",
+        positional: false,
+        takes_value: true,
+        kind: FLOAT,
+        choices: [],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 0,
+        most: 0,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+    assert !check_value(f, "2.5e3").is_err()
+    assert !check_value(f, "inf").is_err()
+    assert err_msg(check_value(f, "x")) == "-r: \"x\" is not a number"
+    c = Want(
+        long: "color",
+        short: "",
+        value_name: "WHEN",
+        help: "",
+        positional: false,
+        takes_value: true,
+        kind: CHOICE,
+        choices: ["auto", "never"],
+        defaults: [],
+        required: false,
+        negatable: false,
+        hidden: false,
+        section: "",
+        least: 0,
+        most: 0,
+        env: "",
+        aliases: [],
+        short_aliases: [],
+        missing: [],
+        delimiter: "",
+        ranged: false,
+        lowest: 0,
+        highest: 0
+    )
+    assert !check_value(c, "auto").is_err()
+    assert err_msg(check_value(c, "blue")) == "--color: \"blue\" is not one of \"auto\", \"never\""

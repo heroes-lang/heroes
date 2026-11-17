@@ -1,0 +1,94 @@
+# Bytes written as base 64, RFC 4648's: in the standard alphabet or the one
+# safe in a URL, padded with "=" or not. `base64_read` reads it back.
+
+use bytes/internal/raw
+
+# The standard alphabet, a value from 0 to 63 indexing its character.
+constant STANDARD: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+
+# The alphabet safe in a URL and in a file's name.
+constant URL_SAFE: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+# The alphabet `url` names.
+function alphabet(url: bool) -> str
+    if url
+        return URL_SAFE
+    return STANDARD
+
+# `s` as base 64 in the alphabet `url` names, padded where `padded`.
+function formatted(s: [u8], url: bool, padded: bool) -> str
+    letters = alphabet(url)
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at + 3 <= s.len()
+        group = raw.widened(s[at]) << 16 | raw.widened(s[at + 1]) << 8 | raw.widened(s[at + 2])
+        push_sextets(out: @out, letters: letters, group: group, count: 4)
+        at @ at + 3
+
+    if s.len() - at == 1
+        push_sextets(out: @out, letters: letters, group: raw.widened(s[at]) << 16, count: 2)
+
+        if padded
+            raw.push_text(@out, "==")
+
+    if s.len() - at == 2
+        group = raw.widened(s[at]) << 16 | raw.widened(s[at + 1]) << 8
+        push_sextets(out: @out, letters: letters, group: group, count: 3)
+
+        if padded
+            raw.push_text(@out, "=")
+
+    # Every byte pushed is a character of the alphabet or "=", which is ASCII.
+    return out.validated_bytes().must()
+
+# Adds the first `count` characters that the 24 bits of `group` write, six
+# bits each from the highest, at the end of `out`.
+function push_sextets(@out: [u8], letters: str, group: i64, count: i64)
+    shift: i64 @= 18
+    k: i64 @= 0
+
+    while k < count
+        out @ out.push(letters[group >> shift & 63])
+        shift @ shift - 6
+        k @ k + 1
+
+## Tests
+
+# Python's `b64encode` and `urlsafe_b64encode`, with and without `padded`,
+# answered every text here on 2026-11-15.
+test "formatted, standard and padded: the empty list, 0x00, 0xff, and lengths 1 to 6"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert formatted(nothing, url: false, padded: true) == ""
+    assert formatted([0x00], url: false, padded: true) == "AA=="
+    assert formatted([0xff], url: false, padded: true) == "/w=="
+    assert formatted(t("f"), url: false, padded: true) == "Zg=="
+    assert formatted(t("fo"), url: false, padded: true) == "Zm8="
+    assert formatted(t("foo"), url: false, padded: true) == "Zm9v"
+    assert formatted(t("foob"), url: false, padded: true) == "Zm9vYg=="
+    assert formatted(t("fooba"), url: false, padded: true) == "Zm9vYmE="
+    assert formatted(t("foobar"), url: false, padded: true) == "Zm9vYmFy"
+    assert formatted([0xfb, 0xff, 0xbf], url: false, padded: true) == "+/+/"
+    assert formatted([0x00, 0x00, 0x00, 0x00], url: false, padded: true) == "AAAAAA=="
+
+test "formatted, unpadded and safe in a URL: the last two characters and no padding"
+    nothing: [u8] = []
+    assert formatted(nothing, url: true, padded: false) == ""
+    assert formatted([0x00], url: false, padded: false) == "AA"
+    assert formatted([0xff], url: false, padded: false) == "/w"
+    assert formatted([0xfb, 0xff], url: false, padded: false) == "+/8"
+    assert formatted([0xff], url: true, padded: true) == "_w=="
+    assert formatted([0xfb, 0xff], url: true, padded: true) == "-_8="
+    assert formatted([0xfb, 0xff, 0xbf], url: true, padded: false) == "-_-_"
+    assert formatted([0xfb, 0xff], url: true, padded: false) == "-_8"
+
+test "push_sextets and alphabet: a whole group, the first two characters of one, and the last two of each alphabet"
+    out: [u8] @= []
+    push_sextets(out: @out, letters: STANDARD, group: 0x666f6f, count: 4)
+    push_sextets(out: @out, letters: STANDARD, group: 0x660000, count: 2)
+    assert out == raw.of_text("Zm9vZg")
+    assert alphabet(false).slice(from: 62, to: 64) == "+/"
+    assert alphabet(true).slice(from: 62, to: 64) == "-_"

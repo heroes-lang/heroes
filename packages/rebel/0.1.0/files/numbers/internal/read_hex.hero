@@ -1,0 +1,88 @@
+# A float read from hexadecimal text, every byte checked: its bits are exact
+# by nature, so only the first `KEPT_HEX` significant digits are kept and a
+# `1` after them stands for any digit not zero that follows, which no rounding
+# can tell from the whole text.
+
+use numbers/internal/big
+use numbers/internal/fault
+use numbers/internal/read
+use numbers/internal/whole
+
+# The significant hexadecimal digits kept: 64 bits, where a float needs 55.
+constant KEPT_HEX: i64
+    16
+
+# The float `s` spells in hexadecimal: an optional sign, `0x` or `0X`,
+# hexadecimal digits with at most one point, and an optional exponent of two,
+# `p` or `P`; or `inf`, `infinity` or `nan` in any case. Fails `invalid`,
+# naming the byte that stopped the reading.
+function hexadecimal(s: str) -> read.Reading?
+    what = "a hexadecimal float"
+    from = whole.after_sign(s)
+    negative = from == 1 && s[0] == '-'
+
+    match read.named(s: s, from: from, negative: negative)
+        .ok r  => return ok(r)
+        .err _ => _ = 0
+
+    if from + 1 >= s.len() || s[from] != '0' || s[from + 1] != 'x' && s[from + 1] != 'X'
+        if from >= s.len()
+            return fail(code: fault.INVALID, msg: fault.unread(s: s, what: what, why: "has no digit"))
+        return fail(
+            code: fault.INVALID,
+            msg: fault.stopped(s: s, what: what, at: from, why: "is not where `0x` begins")
+        )
+    bits: [i64] @= []
+    kept: i64 @= 0
+    seen: bool @= false
+    point: bool @= false
+    after_point: i64 @= 0
+    dropped: i64 @= 0
+    sticky: bool @= false
+    at: i64 @= from + 2
+
+    while at < s.len()
+        digit = whole.value_of(s[at])
+
+        if digit < 16
+            seen @ true
+
+            if point
+                after_point @ after_point + 1
+
+            if kept > 0 || digit != 0
+                if kept < KEPT_HEX
+                    bits @ big.times_add(a: bits, factor: 16, add: digit)
+                    kept @ kept + 1
+                else
+                    dropped @ dropped + 1
+                    sticky @ sticky || digit != 0
+        else if s[at] == '.' && !point
+            point @ true
+        else
+            break
+        at @ at + 1
+
+    exponent: i64 @= 0
+
+    if seen && at < s.len() && (s[at] == 'p' || s[at] == 'P')
+        exponent @ read.exponent_at(s: s, at: at + 1, what: what)?
+    else if !seen || at < s.len()
+        return read.stopped_at(s: s, at: at, seen: seen, what: what)
+    exponent @ exponent - 4 * after_point + 4 * dropped
+
+    if sticky
+        bits @ big.times_add(a: bits, factor: 16, add: 1)
+        exponent @ exponent - 4
+    return ok(read.Reading(negative: negative, magnitude: .binary(bits: bits, exponent: exponent)))
+
+## Tests
+
+test "hexadecimal: the prefix in either case, a point, an exponent, and no prefix"
+    assert hexadecimal("0x1.8p+1").must() == read.Reading(negative: false, magnitude: .binary(bits: [24], exponent: -3))
+    assert hexadecimal("-0X.8").must() == read.Reading(negative: true, magnitude: .binary(bits: [8], exponent: -4))
+    assert hexadecimal("0x0p0").must() == read.Reading(negative: false, magnitude: .binary(bits: [], exponent: 0))
+    assert hexadecimal("inf").must() == read.Reading(negative: false, magnitude: .infinite)
+
+    for bad in ["", "1.8p1", "0x", "0xp1", "0x1p", "0x1.8.0", "0x1g", "0x1p1.5", " 0x1"]
+        assert hexadecimal(bad).is_err()

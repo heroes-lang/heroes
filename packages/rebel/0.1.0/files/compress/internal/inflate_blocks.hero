@@ -1,0 +1,336 @@
+# The blocks of a DEFLATE stream read (RFC 1951 sections 3.2.3 to 3.2.7): a
+# block's first bits, a stored block's bytes, a dynamic block's codes and a
+# coded block's symbols, each step whole or put back where the input runs
+# out, every byte counted against the caller's limit before it is written.
+
+use compress/internal/codes
+use compress/internal/cursor
+use compress/internal/huffman
+use compress/internal/inflater
+use compress/internal/samples
+use compress/internal/tables
+use compress/internal/wrap_read
+use compress/internal/wrapping
+
+# Reads a block's first three bits, and a stored block's lengths or a
+# dynamic block's codes.
+function block_header(@st: inflater.State) -> bool?
+    saved = st.cur
+
+    if !cursor.fill(@st.cur, st.input, n: 3)
+        st.cur @ saved
+        return ok(false)
+    last = cursor.take(@st.cur, n: 1) == 1
+    kind = cursor.take(@st.cur, n: 2)
+
+    if kind == 0
+        cursor.align(@st.cur)
+        length = wrap_read.read_number(@st.cur, st.input, width: 2, big: false)
+        complement = wrap_read.read_number(@st.cur, st.input, width: 2, big: false)
+
+        if complement < 0
+            st.cur @ saved
+            return ok(false)
+
+        if length != complement ^ 0xffff
+            return codes.invalid_at(
+                at: inflater.here(st),
+                why: f"a stored block of {length} bytes whose complement says {complement ^ 0xffff}"
+            )
+        st.stored_left @ length
+        st.phase @ inflater.STORED
+    else if kind == 1
+        st.literals @ st.fixed_literals
+        st.distances @ st.fixed_distances
+        st.phase @ inflater.CODES
+    else if kind == 2
+        if !dynamic_header(@st)?
+            st.cur @ saved
+            return ok(false)
+        st.phase @ inflater.CODES
+    else
+        return codes.invalid_at(at: inflater.here(st), why: "a block of type 3, which RFC 1951 reserves")
+    st.last @ last
+    return ok(true)
+
+# Reads a dynamic block's codes (RFC 1951 section 3.2.7), or answers false
+# where the input ends inside them.
+function dynamic_header(@st: inflater.State) -> bool?
+    if !cursor.fill(@st.cur, st.input, n: 14)
+        return ok(false)
+    literals_sent = cursor.take(@st.cur, n: 5) + 257
+    distances_sent = cursor.take(@st.cur, n: 5) + 1
+    lengths_sent = cursor.take(@st.cur, n: 4) + 4
+
+    if literals_sent > tables.LITERALS
+        return codes.invalid_at(
+            at: inflater.here(st),
+            why: f"a block that sends {literals_sent} literal and length codes, past the 286 there are"
+        )
+
+    if distances_sent > tables.DISTANCES
+        return codes.invalid_at(
+            at: inflater.here(st),
+            why: f"a block that sends {distances_sent} distance codes, past the 30 there are"
+        )
+    order_lengths @= huffman.zeros(tables.CODE_LENGTHS)
+
+    for i in range(from: 0, to: lengths_sent)
+        if !cursor.fill(@st.cur, st.input, n: 3)
+            return ok(false)
+        order_lengths[tables.CODE_LENGTH_ORDER[i]] @ cursor.take(@st.cur, n: 3)
+
+    if !huffman.is_complete(order_lengths)
+        return codes.invalid_at(at: inflater.here(st), why: "a code length code that is not complete")
+    header_code = huffman.table_for(order_lengths)?
+    total = literals_sent + distances_sent
+    lengths: [i64] @= []
+
+    while lengths.len() < total
+        symbol = huffman.decode(header_code, @st.cur, st.input)
+
+        if symbol == huffman.STARVED
+            return ok(false)
+
+        if symbol == huffman.NO_CODE
+            return codes.invalid_at(at: inflater.here(st), why: "bits that are no code length code")
+
+        if symbol < 16
+            lengths @ lengths.push(symbol)
+        else
+            extra = [2, 3, 7][symbol - 16]
+
+            if !cursor.fill(@st.cur, st.input, n: extra)
+                return ok(false)
+            count = cursor.take(@st.cur, n: extra) + [3, 3, 11][symbol - 16]
+            value: i64 @= 0
+
+            if symbol == 16
+                if lengths.len() == 0
+                    return codes.invalid_at(
+                        at: inflater.here(st),
+                        why: "a repeat of the length before the first length"
+                    )
+                value @ lengths[lengths.len() - 1]
+
+            for _ in range(from: 0, to: count)
+                lengths @ lengths.push(value)
+
+        if lengths.len() > total
+            return codes.invalid_at(
+                at: inflater.here(st),
+                why: f"code lengths that repeat past the {total} the block sends"
+            )
+
+    literal_lengths = lengths.slice(from: 0, to: literals_sent)
+
+    if literal_lengths[tables.END_OF_BLOCK] == 0
+        return codes.invalid_at(at: inflater.here(st), why: "a block with no code for its end")
+
+    match huffman.table_for(literal_lengths)
+        .ok t  => st.literals @ t
+        .err e => return codes.invalid_at(at: inflater.here(st), why: "the literal and length code " + e.msg)
+
+    match huffman.table_for(lengths.slice(from: literals_sent, to: total))
+        .ok t  => st.distances @ t
+        .err e => return codes.invalid_at(at: inflater.here(st), why: "the distance code " + e.msg)
+
+    return ok(true)
+
+# Copies what is there of the stored block in progress.
+function stored(@st: inflater.State) -> bool?
+    if st.stored_left == 0
+        end_block(@st)
+        return ok(true)
+    n: i64 @= cursor.left(st.cur, st.input)
+
+    if st.stored_left < n
+        n @ st.stored_left
+
+    if n == 0
+        return ok(false)
+
+    if st.produced + n > st.limit
+        return codes.past_limit(limit: st.limit, at: inflater.here(st))
+
+    copy_bytes(out: @st.out, c: @st.cur, input: st.input, n: n)
+
+    st.produced @ st.produced + n
+    st.member_size @ st.member_size + n
+    st.stored_left @ st.stored_left - n
+    return ok(true)
+
+# Copies the next `n` bytes of `input` at `c`, which stands on a byte and
+# has them, to the end of `out`.
+function copy_bytes(@out: [u8], @c: cursor.Cursor, input: [u8] lent, n: i64)
+    for _ in range(from: 0, to: n)
+        out @ out.push(to_u8(cursor.next_byte(@c, input)).must())
+
+# Moves past the end of a block: to the next block, or to the checksum.
+function end_block(@st: inflater.State)
+    if !st.last
+        st.phase @ inflater.BLOCK
+        return
+    cursor.align(@st.cur)
+
+    if st.wrap == wrapping.RAW
+        st.phase @ inflater.DONE
+    else
+        st.phase @ inflater.TRAILER
+
+# Reads symbols of the coded block in progress until `want` bytes are
+# ready, the block ends, or the input runs out.
+function coded(@st: inflater.State, want: i64) -> bool?
+    before = st.out.len()
+    status = symbols(out: @st.out, @st.cur, input: st.input, literals: st.literals, distances: st.distances, room: st.limit - st.produced, limit: st.limit, base: st.base, until: st.taken + want)?
+    made = st.out.len() - before
+    st.produced @ st.produced + made
+    st.member_size @ st.member_size + made
+
+    if status == BLOCK_ENDED
+        end_block(@st)
+        return ok(true)
+    return ok(status == MOVED)
+
+# What `symbols` answers: it read at least one symbol.
+constant MOVED: i64
+    0
+
+# What `symbols` answers: it read none, the input ending first.
+constant NONE_READ: i64
+    1
+
+# What `symbols` answers: the block's end was read.
+constant BLOCK_ENDED: i64
+    2
+
+# Reads symbols with the codes `literals` and `distances` from `input` at
+# `c` into `out`, until `out` holds `until` bytes, the block ends or the
+# input runs out inside a symbol, which is then put back. At most `room`
+# bytes more may be written, `limit` the caller's limit and `base` where
+# `input` begins, for messages. The loop that carries the most data: every
+# pass reads one symbol, at least one bit.
+function symbols(@out: [u8], @c: cursor.Cursor, input: [u8] lent, literals: huffman.Table lent, distances: huffman.Table lent, room: i64, limit: i64, base: i64, until: i64) -> i64?
+    began = out.len()
+    read: i64 @= 0
+
+    while out.len() < until
+        saved = c
+        symbol = huffman.decode(literals, @c, input)
+
+        if symbol < 0
+            if symbol == huffman.NO_CODE
+                return codes.invalid_at(at: base + cursor.last_byte(c), why: "bits that are no literal or length code")
+            c @ saved
+            return ok(starved(read))
+
+        if symbol < 256
+            if out.len() - began + 1 > room
+                return codes.past_limit(limit: limit, at: base + cursor.last_byte(c))
+            out @ out.push(to_u8(symbol).must())
+        else if symbol == tables.END_OF_BLOCK
+            return ok(BLOCK_ENDED)
+        else
+            index = symbol - 257
+
+            if index >= 29
+                return codes.invalid_at(
+                    at: base + cursor.last_byte(c),
+                    why: f"the length symbol {symbol}, past the 285 there are"
+                )
+
+            if !cursor.fill(@c, input, n: tables.LENGTH_EXTRA[index])
+                c @ saved
+                return ok(starved(read))
+            length = tables.LENGTH_BASE[index] + cursor.take(@c, n: tables.LENGTH_EXTRA[index])
+            far = huffman.decode(distances, @c, input)
+
+            if far == huffman.STARVED
+                c @ saved
+                return ok(starved(read))
+
+            if far == huffman.NO_CODE
+                return codes.invalid_at(at: base + cursor.last_byte(c), why: "bits that are no distance code")
+
+            if far >= tables.DISTANCES
+                return codes.invalid_at(
+                    at: base + cursor.last_byte(c),
+                    why: f"the distance symbol {far}, past the 29 there are"
+                )
+
+            if !cursor.fill(@c, input, n: tables.DISTANCE_EXTRA[far])
+                c @ saved
+                return ok(starved(read))
+            distance = tables.DISTANCE_BASE[far] + cursor.take(@c, n: tables.DISTANCE_EXTRA[far])
+
+            if distance > out.len()
+                return codes.invalid_at(
+                    at: base + cursor.last_byte(c),
+                    why: f"a repeat at distance {distance}, before the start of the output, which holds {out.len()} bytes"
+                )
+
+            if out.len() - began + length > room
+                return codes.past_limit(limit: limit, at: base + cursor.last_byte(c))
+
+            for _ in range(from: 0, to: length)
+                out @ out.push(out[out.len() - distance])
+        read @ read + 1
+
+    return ok(MOVED)
+
+# `MOVED` where `read` symbols were read, `NONE_READ` where none.
+function starved(read: i64) -> i64
+    if read > 0
+        return MOVED
+    return NONE_READ
+
+# A decompressor of raw DEFLATE fed `hex`, a sample, under `limit`.
+function fed(hex: str, limit: i64) -> inflater.State
+    st @= inflater.start(wrap: wrapping.RAW, limit: limit, multi: false)
+    inflater.feed(@st, more: samples.of(hex))
+    return st
+
+test "block_header: a stored block, the fixed codes, a dynamic header, and type 3"
+    fixed @= fed(samples.RAW_FIXED_OK, limit: 10)
+    assert block_header(@fixed).must()
+    assert fixed.phase == inflater.CODES && fixed.last
+    assert fixed.literals == fixed.fixed_literals
+    dynamic @= fed(samples.RAW_DYN_OK, limit: 10)
+    assert block_header(@dynamic).must()
+    assert dynamic.phase == inflater.CODES
+    assert dynamic.literals.used == 2
+    copying @= fed(samples.RAW_STORED_CUT, limit: 10)
+    assert block_header(@copying).must()
+    assert copying.phase == inflater.STORED && copying.stored_left == 5
+    reserved @= fed(samples.RAW_TYPE3, limit: 10)
+
+    match block_header(@reserved)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+test "block_header: no input yet leaves the cursor where it was"
+    st @= inflater.start(wrap: wrapping.RAW, limit: 10, multi: false)
+    assert !block_header(@st).must()
+    assert st.cur == cursor.start()
+
+test "stored: what is there is copied, and a block past the limit fails `limit`"
+    st @= fed(samples.RAW_STORED_CUT, limit: 10)
+    assert block_header(@st).must()
+    assert stored(@st).must()
+    assert st.out == [0x61, 0x62]
+    assert st.stored_left == 3
+    assert !stored(@st).must()
+    small @= fed(samples.RAW_STORED_CUT, limit: 1)
+    assert block_header(@small).must()
+
+    match stored(@small)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+test "symbols: it stops once `until` bytes are held, and the block's end is read last"
+    st @= fed(samples.RAW_FIXED_OK, limit: 10)
+    assert block_header(@st).must()
+    assert symbols(out: @st.out, c: @st.cur, input: st.input, literals: st.literals, distances: st.distances, room: 10, limit: 10, base: 0, until: 1).must() == MOVED
+    assert st.out == [0x61]
+    assert symbols(out: @st.out, c: @st.cur, input: st.input, literals: st.literals, distances: st.distances, room: 10, limit: 10, base: 0, until: 100).must() == BLOCK_ENDED
+    assert st.out == [0x61, 0x61, 0x61, 0x61]

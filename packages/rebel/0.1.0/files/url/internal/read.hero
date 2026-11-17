@@ -1,0 +1,227 @@
+# A URL read into its parts by RFC 3986's grammar, the fragment and the
+# query found first and every part held to its own set of bytes, and the
+# target of an HTTP request read by RFC 9112 § 3.2.
+#
+# Every delimiter is ASCII, so each part is cut where a character begins,
+# and every byte of the text belongs to one part that checks it: a text this
+# module accepts is a URL, and one it refuses is told where and why.
+
+use strings
+use url/internal/classes
+use url/internal/escapes
+use url/internal/hosts
+use url/internal/parts
+use url/internal/scan
+
+# The text between byte `from` and byte `to` of `s`, unescaped, its failure
+# saying where it stands.
+function decoded(s: str, from: i64, to: i64) -> str?
+    match escapes.unescape(s: s.slice(from: from, to: to), plus: false)
+        .ok text => return ok(text)
+        .err e   => return fail(code: e.code, msg: f"bytes {from} to {to} of {classes.shown(s)}: {e.msg}")
+
+# Reads the authority written between byte `from` and byte `to` of `s` into
+# `p`: the user and the password before an "@", the host and the port.
+function read_authority(@p: parts.Parts, s: str, from: i64, to: i64) -> ()?
+    host_from: i64 @= from
+    at_sign = classes.first_of(s: s, b: '@', from: from, to: to)
+
+    if at_sign < to
+        scan.check_part(s: s, from: from, to: at_sign, part: "a user name or a password", keeps: classes.in_userinfo)?
+        colon = classes.first_of(s: s, b: ':', from: from, to: at_sign)
+        p.user @ decoded(s: s, from: from, to: colon)?
+
+        if colon < at_sign
+            p.password @ decoded(s: s, from: colon + 1, to: at_sign)?
+            p.empty_password @ colon + 1 == at_sign
+        p.empty_userinfo @ at_sign == from
+        host_from @ at_sign + 1
+    place = hosts.read(s: s, from: host_from, to: to)?
+    p.host @ place.host
+    p.port @ place.port
+    p.empty_authority @ from == to
+    return ok()
+
+# The parts of `s`, a URL or a relative reference, by RFC 3986 § 3 and § 4.
+# Fails `invalid` at the first byte no part may hold, and `not_text` where
+# the escapes of the user, the password or the host are not UTF-8.
+function parse(s: str) -> parts.Parts?
+    n = s.len()
+    hash = classes.first_of(s: s, b: '#', from: 0, to: n)
+    question = classes.first_of(s: s, b: '?', from: 0, to: hash)
+    p @= parts.empty()
+    start: i64 @= 0
+    stop: i64 @= 0
+
+    while stop < question && s[stop] != ':' && s[stop] != '/'
+        stop @ stop + 1
+
+    if stop < question && s[stop] == ':'
+        name = s.slice(from: 0, to: stop)
+
+        if !classes.is_scheme(name)
+            return fail(
+                code: classes.INVALID,
+                msg: f"byte {stop} of {classes.shown(s)}: a \":\" in the first segment of a path, after {classes.shown(name)}, which is no scheme (a letter, then letters, digits, \"+\", \"-\" and \".\"); a relative path writes \"./\" before such a segment"
+            )
+        p.scheme @ strings.to_lower_ascii(name)
+        start @ stop + 1
+
+    if question - start >= 2 && s[start] == '/' && s[start + 1] == '/'
+        slash = classes.first_of(s: s, b: '/', from: start + 2, to: question)
+        read_authority(@p, s: s, from: start + 2, to: slash)?
+        start @ slash
+    scan.check_part(s: s, from: start, to: question, part: "a path", keeps: classes.in_path)?
+    p.path @ s.slice(from: start, to: question)
+
+    if question < hash
+        scan.check_part(s: s, from: question + 1, to: hash, part: "a query", keeps: classes.in_query)?
+        p.query @ s.slice(from: question + 1, to: hash)
+        p.empty_query @ question + 1 == hash
+
+    if hash < n
+        scan.check_part(s: s, from: hash + 1, to: n, part: "a fragment", keeps: classes.in_query)?
+        p.fragment @ s.slice(from: hash + 1, to: n)
+        p.empty_fragment @ hash + 1 == n
+    return ok(p)
+
+# The parts of `s`, the target of an HTTP request: an absolute path and its
+# query, read as such even where it begins "//", or a URL with a scheme.
+# Fails `invalid` where it is neither or has a fragment, and as `parse` does.
+function parse_target(s: str) -> parts.Parts?
+    if s == ""
+        return fail(code: classes.INVALID, msg: "an empty request target; the shortest is \"/\"")
+
+    if s == "*"
+        return fail(
+            code: classes.INVALID,
+            msg: "the request target \"*\" names the server itself and is no URL; compare it as a text"
+        )
+    n = s.len()
+    hash = classes.first_of(s: s, b: '#', from: 0, to: n)
+
+    if hash < n
+        return fail(
+            code: classes.INVALID,
+            msg: f"byte {hash} of {classes.shown(s)}: a request target holds no fragment"
+        )
+
+    if s[0] != '/'
+        whole = parse(s)?
+
+        if whole.scheme == ""
+            return fail(
+                code: classes.INVALID,
+                msg: f"{classes.shown(s)} is no request target: neither a path, which begins with \"/\", nor a URL with a scheme"
+            )
+        return ok(whole)
+    question = classes.first_of(s: s, b: '?', from: 0, to: n)
+    p @= parts.empty()
+    scan.check_part(s: s, from: 0, to: question, part: "a path", keeps: classes.in_path)?
+    p.path @ s.slice(from: 0, to: question)
+
+    if question < n
+        scan.check_part(s: s, from: question + 1, to: n, part: "a query", keeps: classes.in_query)?
+        p.query @ s.slice(from: question + 1, to: n)
+        p.empty_query @ question + 1 == n
+    return ok(p)
+
+## Tests
+
+test "parse: the empty reference, a whole URL, and each part alone"
+    e = parse("").must()
+    assert e == parts.empty()
+    p = parse("HTTPS://us%40er:p%3Aw@Example.COM:8080/a%20b/c?q=1&r#top").must()
+    assert p.scheme == "https" && p.user == "us@er" && p.password == "p:w"
+    assert p.host == "example.com" && p.port == "8080"
+    assert p.path == "/a%20b/c" && p.query == "q=1&r" && p.fragment == "top"
+    assert !p.empty_authority && !p.empty_userinfo && !p.empty_password && !p.empty_query && !p.empty_fragment
+    assert parse("/a").must().path == "/a"
+    assert parse("?q").must().query == "q"
+    assert parse("#f").must().fragment == "f"
+    assert parse("//h").must().host == "h"
+
+test "parse: the empty parts told from the absent ones"
+    a = parse("http://a/b?#").must()
+    assert a.query == "" && a.empty_query && a.fragment == "" && a.empty_fragment
+    b = parse("file:///etc").must()
+    assert b.empty_authority && b.host == "" && b.path == "/etc"
+    c = parse("file:/etc").must()
+    assert !c.empty_authority && c.path == "/etc"
+    d = parse("http://user:@h/").must()
+    assert d.user == "user" && d.password == "" && d.empty_password && !d.empty_userinfo
+    f = parse("http://@h/").must()
+    assert f.empty_userinfo && f.user == ""
+    g = parse("http://:pw@h/").must()
+    assert g.user == "" && g.password == "pw"
+    h = parse("http://h:/").must()
+    assert h.port == "" && h.host == "h"
+
+test "parse: no authority, a path with a colon after a scheme, a query holding a slash and a question mark"
+    m = parse("mailto:a@b").must()
+    assert m.scheme == "mailto" && m.path == "a@b" && m.host == ""
+    l = parse("localhost:80").must()
+    assert l.scheme == "localhost" && l.path == "80"
+    u = parse("urn:a:b").must()
+    assert u.path == "a:b"
+    q = parse("http://h/?a/b?c#d?e/f").must()
+    assert q.query == "a/b?c" && q.fragment == "d?e/f"
+    assert parse("///p").must().path == "/p"
+    assert parse("http://[::1]:80/").must().host == "::1"
+
+test "parse: what is no URL, and where"
+    match parse("192.168.0.1:80/x")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 11 of \"192.168.0.1:80/x\": a \":\" in the first segment of a path, after \"192.168.0.1\", which is no scheme (a letter, then letters, digits, \"+\", \"-\" and \".\"); a relative path writes \"./\" before such a segment"
+
+    match parse("http://h/a b")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 10 of \"http://h/a b\": \" \" may not stand in a path as itself; its escape is \"%20\""
+
+    match parse("http://h/?a[]=1")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 11 of \"http://h/?a[]=1\": \"[\" may not stand in a query as itself; its escape is \"%5B\""
+
+    match parse("http://h/#a#b")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 11 of \"http://h/#a#b\": \"#\" may not stand in a fragment as itself; its escape is \"%23\""
+
+    match parse("http://h/%zz")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 9 of \"http://h/%zz\": a \"%\" not followed by two hexadecimal digits; a \"%\" as itself is written \"%25\""
+
+    match parse("http://%FF@h/")
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "bytes 7 to 10 of \"http://%FF@h/\": \"%FF\": its escapes write bytes that are not UTF-8"
+
+    assert parse(":foo").is_err()
+    assert parse("1http://x").is_err()
+    assert parse("http://a@b@c/").is_err()
+    assert parse("http://h/café").is_err()
+    assert parse("http://h/a\"b").is_err()
+    assert parse("http://h:8a/").is_err()
+    assert parse("http://[::1/").is_err()
+
+test "parse_target: a path, a path beginning with two slashes, a URL, and the refusals"
+    a = parse_target("/a/b?q=1").must()
+    assert a.path == "/a/b" && a.query == "q=1" && a.scheme == "" && a.host == ""
+    b = parse_target("//a/b").must()
+    assert b.path == "//a/b" && b.host == ""
+    c = parse_target("http://h/p?q").must()
+    assert c.host == "h" && c.path == "/p" && c.query == "q"
+    assert parse_target("/?").must().empty_query
+
+    match parse_target("")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "an empty request target; the shortest is \"/\""
+
+    match parse_target("/p#f")
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of \"/p#f\": a request target holds no fragment"
+
+    match parse_target("p/q")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"p/q\" is no request target: neither a path, which begins with \"/\", nor a URL with a scheme"
+
+    assert parse_target("*").is_err()
+    assert parse_target("/a b").is_err()

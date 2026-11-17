@@ -1,0 +1,23 @@
+# Reaches Rebel's `archive`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes a tar archive of one file into
+# a pipe and lists it back.
+
+use <rebel>/archive
+use <rebel>/io
+
+function main()
+    match io.pipe()
+        .err e => print(e.code, ": ", e.msg)
+        .ok made =>
+            p @= made
+            w @= archive.tar_writer(p.writer, compression: .none)
+            entry = archive.tar_entry("hello.txt", kind: .file)
+            written = archive.write_tar_entry(@w, entry: entry, data: [0x68, 0x69])
+            finished = archive.finish_tar(@w)
+            _ = io.close(@p.writer).is_err()
+
+            match archive.list_tar(p.reader, compression: .none, limit: 1000000)
+                .ok entries => print(entries.len(), " entry, written: ", !written.is_err() && !finished.is_err())
+                .err e      => print(e.code, ": ", e.msg)
+
+            _ = io.close(@p.reader).is_err()

@@ -1,0 +1,301 @@
+# Where a text holds another, a character of a set, or a character a
+# function accepts: the searches of `strings`, each answering a byte index
+# that begins a character, or failing `not_found`.
+
+use strings/internal/scan
+use unicode
+
+# What a search that found nothing says: what was sought, in which text, and
+# from where, where the search did not start at the beginning.
+function missing(what: str, s: str, from: i64) -> str
+    if from > 0
+        return f"no {what} in {scan.shown(s)} at or after byte {from}"
+    return f"no {what} in {scan.shown(s)}"
+
+# Whether `s` holds `substr`.
+function contains(s: str, substr: str) -> bool
+    return !index_of_from(s: s, substr: substr, from: 0).is_err()
+
+# Whether `s` holds any character of `set`.
+function contains_any(s: str, set: str) -> bool
+    return !index_of_any_from(s: s, set: set, from: 0).is_err()
+
+# Whether `prefix` stands in `s` at byte `at`; the empty text stands where
+# a character begins and at the end.
+function has_prefix_at(s: str, prefix: str, at: i64) -> bool
+    if at < 0 || at > s.len()
+        return false
+
+    if prefix.len() == 0
+        return unicode.is_char_boundary(s, at)
+
+    if prefix.len() > s.len() - at
+        return false
+    i: i64 @= 0
+
+    while i < prefix.len()
+        if s[at + i] != prefix[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# Whether `s` ends with `suffix`.
+function has_suffix(s: str, suffix: str) -> bool
+    if suffix.len() > s.len()
+        return false
+    return has_prefix_at(s: s, prefix: suffix, at: s.len() - suffix.len())
+
+# Where `substr` first begins in `s` at or after byte `from`.
+function index_of_from(s: str, substr: str, from: i64) -> i64?
+    if from > s.len()
+        return fail(code: scan.NOT_FOUND, msg: missing(what: scan.shown(substr), s: s, from: from))
+    start: i64 @= from
+
+    if start < 0
+        start @ 0
+
+    if substr.len() == 0
+        return ok(unicode.ceil_char_boundary(s, start))
+
+    match scan.first_from(scan.finder(substr), s, start)
+        .ok at => return ok(at)
+        .err _ => return fail(code: scan.NOT_FOUND, msg: missing(what: scan.shown(substr), s: s, from: start))
+
+# Where `substr` last begins in `s`.
+function index_of_last(s: str, substr: str) -> i64?
+    if substr.len() == 0
+        return ok(s.len())
+    return scan.last_before(scan.finder(substr), s, s.len())
+
+# Where the first character that `set` holds begins in `s` at or after byte
+# `from`.
+function index_of_any_from(s: str, set: str, from: i64) -> i64?
+    what = f"character of {scan.shown(set)}"
+
+    if from > s.len()
+        return fail(code: scan.NOT_FOUND, msg: missing(what: what, s: s, from: from))
+    at: i64 @= unicode.ceil_char_boundary(s, from)
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if scan.holds_char(set: set, s: s, at: at, end: end)
+            return ok(at)
+        at @ end
+
+    return fail(code: scan.NOT_FOUND, msg: missing(what: what, s: s, from: from))
+
+# Where the last character that `set` holds begins in `s`.
+function index_of_any_last(s: str, set: str) -> i64?
+    end: i64 @= s.len()
+
+    while end > 0
+        at = scan.previous_at(s, end)
+
+        if scan.holds_char(set: set, s: s, at: at, end: end)
+            return ok(at)
+        end @ at
+
+    return fail(code: scan.NOT_FOUND, msg: missing(what: f"character of {scan.shown(set)}", s: s, from: 0))
+
+# Where the first character that `accepts` accepts begins in `s` at or after
+# byte `from`.
+function index_where_from(s: str, accepts: (function(str) -> bool), from: i64) -> i64?
+    if from > s.len()
+        return fail(code: scan.NOT_FOUND, msg: missing(what: "character accepted", s: s, from: from))
+    at: i64 @= unicode.ceil_char_boundary(s, from)
+
+    while at < s.len()
+        end = scan.next_at(s, at)
+
+        if accepts(s.slice(from: at, to: end))
+            return ok(at)
+        at @ end
+
+    return fail(code: scan.NOT_FOUND, msg: missing(what: "character accepted", s: s, from: from))
+
+# Where the last character that `accepts` accepts begins in `s`.
+function index_where_last(s: str, accepts: (function(str) -> bool)) -> i64?
+    end: i64 @= s.len()
+
+    while end > 0
+        at = scan.previous_at(s, end)
+
+        if accepts(s.slice(from: at, to: end))
+            return ok(at)
+        end @ at
+
+    return fail(code: scan.NOT_FOUND, msg: missing(what: "character accepted", s: s, from: 0))
+
+# How many times `s` holds `substr`, no two occurrences sharing a byte.
+function count_of(s: str, substr: str) -> i64
+    if substr.len() == 0
+        return unicode.char_count(s) + 1
+    found = scan.finder(substr)
+    count: i64 @= 0
+    from: i64 @= 0
+
+    while true
+        match scan.first_from(found, s, from)
+            .ok at =>
+                count @ count + 1
+                from @ at + substr.len()
+            .err _ => break
+
+    return count
+
+# Where each occurrence of `substr` begins in `s`, no two sharing a byte.
+function index_of_all(s: str, substr: str) -> [i64]
+    out: [i64] @= []
+
+    if substr.len() == 0
+        here: i64 @= 0
+
+        while here < s.len()
+            out @ out.push(here)
+            here @ scan.next_at(s, here)
+
+        out @ out.push(s.len())
+        return out
+    found = scan.finder(substr)
+    from: i64 @= 0
+
+    while true
+        match scan.first_from(found, s, from)
+            .ok at =>
+                out @ out.push(at)
+                from @ at + substr.len()
+            .err _ => break
+
+    return out
+
+## Tests
+
+# Whether `c`, one character, is an ASCII digit.
+function is_digit(c: str) -> bool
+    return c[0] >= '0' && c[0] <= '9'
+
+# Whether `c`, one character, takes more than one byte.
+function is_wide(c: str) -> bool
+    return c.len() > 1
+
+test "contains: the empty text, a longer one, inside, absent, and characters of more than one byte"
+    assert contains(s: "abc", substr: "")
+    assert contains(s: "", substr: "")
+    assert !contains(s: "ab", substr: "abc")
+    assert contains(s: "caffè latte", substr: "latte")
+    assert contains(s: "caffè", substr: "è")
+    assert !contains(s: "caffè", substr: "e")
+
+test "contains_any: a member, an empty set, an empty text, and an accent that is not its letter"
+    assert contains_any(s: "abc", set: "xyc")
+    assert !contains_any(s: "abc", set: "")
+    assert !contains_any(s: "", set: "a")
+    assert contains_any(s: "città", set: "àx")
+    assert !contains_any(s: "città", set: "a")
+
+test "has_prefix_at: inside, at the end, past it, before it, inside a character, and longer than the rest"
+    assert has_prefix_at(s: "abcabc", prefix: "bc", at: 1)
+    assert has_prefix_at(s: "abc", prefix: "c", at: 2)
+    assert has_prefix_at(s: "abc", prefix: "", at: 3)
+    assert !has_prefix_at(s: "abc", prefix: "", at: 4)
+    assert !has_prefix_at(s: "abc", prefix: "a", at: 0 - 1)
+    assert !has_prefix_at(s: "é", prefix: "", at: 1)
+    assert has_prefix_at(s: "aé", prefix: "é", at: 1)
+    assert !has_prefix_at(s: "abc", prefix: "cd", at: 2)
+    assert has_prefix_at(s: "épée", prefix: "é", at: 0)
+    assert !has_prefix_at(s: "épée", prefix: "e", at: 0)
+
+test "has_suffix: the empty suffix, a longer one, a match, and an accent that is not its letter"
+    assert has_suffix(s: "abc", suffix: "")
+    assert has_suffix(s: "", suffix: "")
+    assert !has_suffix(s: "bc", suffix: "abc")
+    assert has_suffix(s: "abc", suffix: "bc")
+    assert !has_suffix(s: "caffè", suffix: "e")
+    assert has_suffix(s: "caffè", suffix: "è")
+
+test "index_of_from: at the start, further in, the empty text, past the end, before the start, and inside a character"
+    assert index_of_from(s: "abc", substr: "a", from: 0).must() == 0
+    assert index_of_from(s: "caffè latte", substr: "latte", from: 0).must() == 7
+    assert index_of_from(s: "abcabc", substr: "b", from: 2).must() == 4
+    assert index_of_from(s: "abcabc", substr: "c", from: 3).must() == 5
+    assert index_of_from(s: "abc", substr: "", from: 3).must() == 3
+    assert index_of_from(s: "", substr: "", from: 0).must() == 0
+    assert index_of_from(s: "abc", substr: "", from: 5).is_err()
+    assert index_of_from(s: "abc", substr: "a", from: 0 - 5).must() == 0
+    assert index_of_from(s: "é", substr: "", from: 1).must() == 2
+    assert index_of_from(s: "caffè è", substr: "è", from: 5).must() == 7
+    assert index_of_from(s: "ab", substr: "abc", from: 0).is_err()
+
+    match index_of_from(s: "abcabc", substr: "x", from: 2)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no \"x\" in \"abcabc\" at or after byte 2"
+
+test "index_of_last: repeats, overlapping ones, the empty text, absent, and characters of more than one byte"
+    assert index_of_last(s: "abcabc", substr: "bc").must() == 4
+    assert index_of_last(s: "aaa", substr: "aa").must() == 1
+    assert index_of_last(s: "abc", substr: "").must() == 3
+    assert index_of_last(s: "", substr: "").must() == 0
+    assert index_of_last(s: "caffè è", substr: "è").must() == 7
+    assert index_of_last(s: "abc", substr: "x").is_err()
+    assert index_of_last(s: repeat("ab", 30), substr: repeat("ab", 9)).must() == 42
+
+test "index_of_any_from: the first of a set, an empty set, from inside a character, and past the end"
+    assert index_of_any_from(s: "golang", set: "ny", from: 0).must() == 4
+    assert index_of_any_from(s: "città", set: "àt", from: 0).must() == 2
+    assert index_of_any_from(s: "città", set: "à", from: 0).must() == 4
+    assert index_of_any_from(s: "abc", set: "", from: 0).is_err()
+    assert index_of_any_from(s: "", set: "a", from: 0).is_err()
+    assert index_of_any_from(s: "golang", set: "gn", from: 1).must() == 4
+    assert index_of_any_from(s: "città", set: "à", from: 5).is_err()
+    assert index_of_any_from(s: "abc", set: "c", from: 0 - 3).must() == 2
+    assert index_of_any_from(s: "abc", set: "a", from: 9).is_err()
+
+    match index_of_any_from(s: "abc", set: "xy", from: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no character of \"xy\" in \"abc\""
+
+test "index_of_any_last: the last of a set, an empty set, and characters of more than one byte"
+    assert index_of_any_last(s: "golang", set: "go").must() == 5
+    assert index_of_any_last(s: "città", set: "ct").must() == 3
+    assert index_of_any_last(s: "àbà", set: "à").must() == 3
+    assert index_of_any_last(s: "abc", set: "").is_err()
+    assert index_of_any_last(s: "", set: "a").is_err()
+
+test "index_where_from: the first accepted, from inside a character, none, and past the end"
+    assert index_where_from(s: "ab1c2", accepts: is_digit, from: 0).must() == 2
+    assert index_where_from(s: "città", accepts: is_wide, from: 0).must() == 4
+    assert index_where_from(s: "a1b2", accepts: is_digit, from: 2).must() == 3
+    assert index_where_from(s: "é1", accepts: is_digit, from: 1).must() == 2
+    assert index_where_from(s: "", accepts: is_wide, from: 0).is_err()
+    assert index_where_from(s: "a1", accepts: is_digit, from: 3).is_err()
+
+    match index_where_from(s: "abc", accepts: is_digit, from: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no character accepted in \"abc\""
+
+test "index_where_last: the last accepted, characters of more than one byte, and none"
+    assert index_where_last(s: "a1b2c", accepts: is_digit).must() == 3
+    assert index_where_last(s: "èaè", accepts: is_wide).must() == 3
+    assert index_where_last(s: "abc", accepts: is_digit).is_err()
+    assert index_where_last(s: "", accepts: is_digit).is_err()
+
+test "count_of: occurrences that would overlap, the empty text, absent, and a long pattern"
+    assert count_of(s: "aaaa", substr: "aa") == 2
+    assert count_of(s: "abc", substr: "") == 4
+    assert count_of(s: "èè", substr: "") == 3
+    assert count_of(s: "", substr: "") == 1
+    assert count_of(s: "abc", substr: "x") == 0
+    assert count_of(s: "cheese", substr: "e") == 3
+    assert count_of(s: "caffè è", substr: "è") == 2
+    assert count_of(s: repeat("ab", 30), substr: repeat("ab", 9)) == 3
+
+test "index_of_all: occurrences that would overlap, absent, the empty text, and a long pattern"
+    nothing: [i64] = []
+    assert index_of_all(s: "aaaa", substr: "aa") == [0, 2]
+    assert index_of_all(s: "abcabc", substr: "bc") == [1, 4]
+    assert index_of_all(s: "abc", substr: "x") == nothing
+    assert index_of_all(s: "èè", substr: "") == [0, 2, 4]
+    assert index_of_all(s: "", substr: "") == [0]
+    assert index_of_all(s: repeat("ab", 30), substr: repeat("ab", 9)) == [0, 18, 36]

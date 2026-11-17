@@ -1,0 +1,237 @@
+# Integers read from text and written as text in a base from 2 to 62. A text
+# is read in chunks of as many digits as fit a limb's factor, each chunk a
+# multiplication and an addition; it is written by dividing by the largest
+# power of the base below 2^31 again and again, except in a base that is a
+# power of two, whose digits are cut straight from the bits.
+
+use big/internal/limbs
+use big/internal/signed
+
+constant INVALID: str
+    "invalid"
+
+# The digits of every base up to 62, in Go's order.
+constant ALPHABET: str
+    "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+# The value of the byte `c` as a digit of `base`, or 99 where it is none. Up to
+# base 36 a letter's case does not matter; above, the upper case letters are
+# 36 to 61.
+function digit_value(c: u8, base: i64) -> i64
+    n = to_i64(c).must()
+    v: i64 @= 99
+
+    if c >= '0' && c <= '9'
+        v @ n - 48
+    else if c >= 'a' && c <= 'z'
+        v @ n - 97 + 10
+    else if c >= 'A' && c <= 'Z'
+        if base <= 36
+            v @ n - 65 + 10
+        else
+            v @ n - 65 + 36
+
+    if v >= base
+        return 99
+    return v
+
+# The largest power of `base` below 2^31.
+function chunk_power(base: i64) -> i64
+    p: i64 @= base
+
+    while p * base < 2147483648
+        p @ p * base
+
+    return p
+
+# The magnitude the digits of `s` from byte `from` to its end spell in
+# `base`; a `_` between two digits is passed over where `underscores` is true.
+# Fails `invalid` where there is no digit or a byte is no digit.
+function magnitude_of(s: str, from: i64, base: i64, underscores: bool) -> [i64]?
+    if from >= s.len()
+        return fail(code: INVALID, msg: "no digit where an integer was expected")
+    top = chunk_power(base)
+    out: [i64] @= []
+    at: i64 @= from
+
+    while at < s.len()
+        chunk: i64 @= 0
+        factor: i64 @= 1
+
+        while at < s.len() && factor < top
+            if underscores && s[at] == '_'
+                if at == from || at + 1 >= s.len() || digit_value(s[at - 1], base) == 99 || digit_value(s[at + 1], base) == 99
+                    return fail(code: INVALID, msg: f"the `_` at byte {at} does not stand between two digits")
+                at @ at + 1
+            else
+                v = digit_value(s[at], base)
+
+                if v == 99
+                    return fail(code: INVALID, msg: f"byte {at} is no digit of base {base}")
+                chunk @ chunk * base + v
+                factor @ factor * base
+                at @ at + 1
+
+        out @ limbs.times_add(a: out, factor: factor, plus: chunk)
+
+    return ok(out)
+
+# The integer `s` spells in `base`: an optional sign and digits.
+function parse(s: str, base: i64) -> signed.Signed?
+    assert base >= 2 && base <= 62
+    at: i64 @= 0
+    negative: bool @= false
+
+    if s.len() > 0 && (s[0] == '+' || s[0] == '-')
+        negative @ s[0] == '-'
+        at @ 1
+    m = magnitude_of(s: s, from: at, base: base, underscores: false)?
+    return ok(signed.make(negative: negative, magnitude: m))
+
+# The integer `s` spells as the language's literal: a sign, a lower case
+# prefix and digits with a `_` between two of them, no zero before a decimal.
+function parse_literal(s: str) -> signed.Signed?
+    at: i64 @= 0
+    negative: bool @= false
+
+    if s.len() > 0 && (s[0] == '+' || s[0] == '-')
+        negative @ s[0] == '-'
+        at @ 1
+    base: i64 @= 10
+
+    if at + 1 < s.len() && s[at] == '0'
+        if s[at + 1] == 'x'
+            base @ 16
+        else if s[at + 1] == 'o'
+            base @ 8
+        else if s[at + 1] == 'b'
+            base @ 2
+        else
+            return fail(code: INVALID, msg: f"the zero at byte {at} begins a decimal number, which is never octal")
+        at @ at + 2
+    m = magnitude_of(s: s, from: at, base: base, underscores: true)?
+    return ok(signed.make(negative: negative, magnitude: m))
+
+# The digits of `magnitude` in `base`, least significant first, with no zero
+# at the end; zero is one zero digit.
+function digits_of(magnitude: [i64], base: i64) -> [i64]
+    out: [i64] @= []
+
+    if magnitude.len() == 0
+        return [0]
+    width = power_width(base)
+
+    if width > 0
+        acc: i64 @= 0
+        held: i64 @= 0
+
+        for limb in magnitude
+            acc @ acc | limb << held
+            held @ held + limbs.BITS
+
+            while held >= width
+                out @ out.push(acc & base - 1)
+                acc @ acc >> width
+                held @ held - width
+
+        while acc > 0
+            out @ out.push(acc & base - 1)
+            acc @ acc >> width
+    else
+        top = chunk_power(base)
+        rest: [i64] @= magnitude
+
+        while rest.len() > 0
+            d = limbs.divided_small(a: rest, d: top)
+            rest @ d.quotient
+            chunk: i64 @= d.remainder
+            factor: i64 @= 1
+
+            while factor < top && (rest.len() > 0 || chunk > 0)
+                out @ out.push(chunk % base)
+                chunk @ chunk / base
+                factor @ factor * base
+
+    top_digit: i64 @= out.len()
+
+    while top_digit > 1 && out[top_digit - 1] == 0
+        top_digit @ top_digit - 1
+
+    return out.slice(from: 0, to: top_digit)
+
+# The bits of one digit where `base` is a power of two, else 0.
+function power_width(base: i64) -> i64
+    width: i64 @= 0
+    p: i64 @= 1
+
+    while p < base
+        p @ p * 2
+        width @ width + 1
+
+    if p == base
+        return width
+    return 0
+
+# `s` written in `base`: a `-` where it is negative, then its digits.
+function format(s: signed.Signed, base: i64) -> str
+    assert base >= 2 && base <= 62
+    digits = digits_of(magnitude: s.magnitude, base: base)
+    out: [u8] @= []
+
+    if s.negative
+        out @ out.push('-')
+    at: i64 @= digits.len() - 1
+
+    while at >= 0
+        out @ out.push(ALPHABET[digits[at]])
+        at @ at - 1
+
+    return out.validated_bytes().must()
+
+## Tests
+
+test "digit_value: digits, both cases up to 36, the cases apart above, and no digit"
+    assert digit_value(c: '7', base: 10) == 7
+    assert digit_value(c: '7', base: 7) == 99
+    assert digit_value(c: 'f', base: 16) == 15
+    assert digit_value(c: 'F', base: 16) == 15
+    assert digit_value(c: 'Z', base: 36) == 35
+    assert digit_value(c: 'Z', base: 62) == 61
+    assert digit_value(c: 'z', base: 62) == 35
+    assert digit_value(c: '_', base: 62) == 99
+
+test "parse: a sign, zeros before, a base above 36, and each way of failing"
+    assert parse(s: "-0042", base: 10).must() == signed.of_int(-42)
+    assert parse(s: "+ff", base: 16).must() == signed.of_int(255)
+    assert parse(s: "-0", base: 10).must() == signed.of_int(0)
+    assert parse(s: "Zz", base: 62).must() == signed.of_int(61 * 62 + 35)
+    assert parse(s: "", base: 10).is_err()
+    assert parse(s: "-", base: 10).is_err()
+    assert parse(s: "12a", base: 10).is_err()
+    assert parse(s: "1_0", base: 10).is_err()
+    assert parse(s: " 1", base: 10).is_err()
+    assert parse(s: "1234567890123456789012345", base: 10).must().magnitude == [1038278521, 1020958992, 1070816]
+
+test "parse_literal: each prefix, `_` between digits, and the shapes refused"
+    assert parse_literal("0x1f").must() == signed.of_int(31)
+    assert parse_literal("-0o17").must() == signed.of_int(-15)
+    assert parse_literal("0b1_01").must() == signed.of_int(5)
+    assert parse_literal("1_000").must() == signed.of_int(1000)
+    assert parse_literal("0").must() == signed.of_int(0)
+    assert parse_literal("0X1F").is_err()
+    assert parse_literal("0x_1").is_err()
+    assert parse_literal("1__0").is_err()
+    assert parse_literal("10_").is_err()
+    assert parse_literal("007").is_err()
+    assert parse_literal("0x").is_err()
+
+test "format: zero, a sign, a power of two base, base 62, and a number of many chunks"
+    assert format(s: signed.of_int(0), base: 10) == "0"
+    assert format(s: signed.of_int(-255), base: 16) == "-ff"
+    assert format(s: signed.of_int(255), base: 2) == "11111111"
+    assert format(s: signed.of_int(4096), base: 8) == "10000"
+    assert format(s: signed.of_int(61 * 62 + 35), base: 62) == "Zz"
+    assert format(s: signed.of_int(1000000000), base: 10) == "1000000000"
+    big = parse(s: "-1234567890123456789012345678901234567890", base: 10).must()
+    assert format(s: big, base: 10) == "-1234567890123456789012345678901234567890"
+    assert format(s: big, base: 32) == "-t0p4g7bg6ruesapf2vir73u2mi"

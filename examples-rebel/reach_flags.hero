@@ -1,0 +1,18 @@
+# Reaches Rebel's `flags`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It declares a small command, reads the
+# program's own arguments against it, and prints the help where asked.
+
+use <rebel>/flags
+
+function main()
+    cli @= flags.command(name: "reach_flags", about: "Greets someone.")
+    flags.add(@cli, flags.flag(long: "loud", short: "l", help: "greet in capitals"))
+    flags.add(@cli, flags.with_arity(flags.positional(name: "NAME", help: "who to greet"), .optional))
+
+    match flags.parse_args(cli)
+        .err e => print(e.msg)
+        .ok found =>
+            if flags.is_help(found)
+                print(flags.help_text(found))
+            else
+                print("hello, ", flags.value_of(found, "NAME").default("world"))

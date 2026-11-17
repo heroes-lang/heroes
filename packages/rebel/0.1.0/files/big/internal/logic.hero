@@ -1,0 +1,132 @@
+# The bits of integers with a sign, read as two's complement of infinite
+# width, as Go and Python read them: a negative `x` is the bits of `|x| - 1`
+# turned, ones without end to the left. Each operation is said of magnitudes
+# by that identity, so no infinite row of bits is ever held.
+
+use big/internal/limbs
+use big/internal/signed
+
+constant AND: i64
+    0
+
+constant OR: i64
+    1
+
+constant XOR: i64
+    2
+
+constant AND_NOT: i64
+    3
+
+# `m` less one, `m` above zero.
+function less_one(m: [i64]) -> [i64]
+    return limbs.sub(a: m, b: [1])
+
+# A negative integer whose bits are those of `m` turned: -(`m` + 1).
+function turned(m: [i64]) -> signed.Signed
+    return signed.make(negative: true, magnitude: limbs.add(a: m, b: [1]))
+
+# A non-negative integer of magnitude `m`.
+function plain(m: [i64]) -> signed.Signed
+    return signed.make(negative: false, magnitude: m)
+
+# The bits of `a` and `b` joined by `op`, one of the four constants.
+function joined(a: signed.Signed, b: signed.Signed, op: i64) -> signed.Signed
+    x = a.magnitude
+    y = b.magnitude
+
+    if !a.negative && !b.negative
+        return plain(limbs.joined(a: x, b: y, op: op))
+
+    if a.negative && b.negative
+        if op == AND
+            return turned(limbs.joined(a: less_one(x), b: less_one(y), op: OR))
+
+        if op == OR
+            return turned(limbs.joined(a: less_one(x), b: less_one(y), op: AND))
+
+        if op == XOR
+            return plain(limbs.joined(a: less_one(x), b: less_one(y), op: XOR))
+        return plain(limbs.joined(a: less_one(y), b: less_one(x), op: AND_NOT))
+
+    if a.negative
+        if op == AND_NOT
+            return turned(limbs.joined(a: less_one(x), b: y, op: OR))
+        return joined(a: b, b: a, op: op)
+
+    if op == AND
+        return plain(limbs.joined(a: x, b: less_one(y), op: AND_NOT))
+
+    if op == OR
+        return turned(limbs.joined(a: less_one(y), b: x, op: AND_NOT))
+
+    if op == XOR
+        return turned(limbs.joined(a: x, b: less_one(y), op: XOR))
+    return plain(limbs.joined(a: x, b: less_one(y), op: AND))
+
+# Every bit of `a` turned: -1 less `a`.
+function inverted(a: signed.Signed) -> signed.Signed
+    return signed.sub(a: signed.negate(a), b: signed.of_int(1))
+
+# `a` divided by 2 to the `count`th, rounded toward the floor.
+function shifted_right(a: signed.Signed, count: i64) -> signed.Signed
+    assert count >= 0
+
+    if !a.negative
+        return plain(limbs.shift_right(a: a.magnitude, count: count))
+    return turned(limbs.shift_right(a: less_one(a.magnitude), count: count))
+
+# Whether bit `index` of `a` is 1.
+function bit(a: signed.Signed, index: i64) -> bool
+    assert index >= 0
+
+    if !a.negative
+        return limbs.bit(a: a.magnitude, index: index)
+    return !limbs.bit(a: less_one(a.magnitude), index: index)
+
+# `m` with bit `index` set where `on`, cleared where not.
+function set_bit(m: [i64], index: i64, on: bool) -> [i64]
+    one = limbs.shift_left(a: [1], count: index)
+
+    if on
+        return limbs.joined(a: m, b: one, op: OR)
+    return limbs.joined(a: m, b: one, op: AND_NOT)
+
+# `a` with bit `index` set to `on`.
+function with_bit(a: signed.Signed, index: i64, on: bool) -> signed.Signed
+    assert index >= 0
+
+    if !a.negative
+        return plain(set_bit(m: a.magnitude, index: index, on: on))
+    return turned(set_bit(m: less_one(a.magnitude), index: index, on: !on))
+
+## Tests
+
+test "joined: and, or, exclusive or and and-not over every pair of signs"
+    a = signed.of_int(12)
+    b = signed.of_int(-10)
+    c = signed.of_int(-7)
+    assert joined(a: a, b: b, op: AND) == signed.of_int(4)
+    assert joined(a: b, b: a, op: AND) == signed.of_int(4)
+    assert joined(a: a, b: b, op: OR) == signed.of_int(-2)
+    assert joined(a: a, b: b, op: XOR) == signed.of_int(-6)
+    assert joined(a: a, b: b, op: AND_NOT) == signed.of_int(8)
+    assert joined(a: b, b: a, op: AND_NOT) == signed.of_int(-14)
+    assert joined(a: b, b: c, op: AND) == signed.of_int(-16)
+    assert joined(a: b, b: c, op: OR) == signed.of_int(-1)
+    assert joined(a: b, b: c, op: XOR) == signed.of_int(15)
+    assert joined(a: b, b: c, op: AND_NOT) == signed.of_int(6)
+    assert joined(a: a, b: signed.of_int(10), op: AND_NOT) == signed.of_int(4)
+
+test "inverted, shifted_right, bit and with_bit: zero, -1, and negatives"
+    assert inverted(signed.of_int(0)) == signed.of_int(-1)
+    assert inverted(signed.of_int(-5)) == signed.of_int(4)
+    assert shifted_right(a: signed.of_int(-1), count: 5) == signed.of_int(-1)
+    assert shifted_right(a: signed.of_int(-7), count: 1) == signed.of_int(-4)
+    assert shifted_right(a: signed.of_int(7), count: 1) == signed.of_int(3)
+    assert bit(a: signed.of_int(-2), index: 0) == false
+    assert bit(a: signed.of_int(-2), index: 500)
+    assert with_bit(a: signed.of_int(-1), index: 0, on: false) == signed.of_int(-2)
+    assert with_bit(a: signed.of_int(-2), index: 0, on: true) == signed.of_int(-1)
+    assert with_bit(a: signed.of_int(5), index: 0, on: false) == signed.of_int(4)
+    assert with_bit(a: signed.of_int(0), index: 64, on: true) == signed.make(negative: false, magnitude: [0, 0, 16])

@@ -1,0 +1,168 @@
+# The ledger of `poll`: what a program can do with readiness, timers and a
+# wait over many of them, one block per capability, and what Rebel answers.
+# The lists are this machine's, 2026-11-16: Python 3.15's `selectors` and
+# `select` (`dir()` of each module, of `DefaultSelector`, of a `select.poll()`
+# object and of `select.kqueue`), Go 1.27's `go doc syscall` (darwin) and
+# `go doc time`; Go's own network poller is internal to its runtime, and a Go
+# program reaches it through `net.Conn`'s blocking calls and deadlines, which
+# the `go` lines name. Rust's standard library has no readiness and no timer
+# wheel; the author's request named `tokio`, so the `rust` lines are `tokio`'s
+# and `mio`'s public items, read from their documentation as capabilities (no
+# crate source is on this machine, and none was opened).
+
+capability poll/set  a set of things waited on together, made and closed
+  heroes  poll.make, poll.close
+  go      syscall.Kqueue, syscall.Close
+  rust    mio::Poll::new, mio::Poll::registry, tokio::runtime::Runtime (the reactor inside it)
+  python  selectors.DefaultSelector, selectors.KqueueSelector, selectors.EpollSelector, selectors.DevpollSelector, selectors.PollSelector, selectors.SelectSelector, selectors.BaseSelector, BaseSelector.close, select.kqueue, select.epoll, select.poll, select.devpoll, kqueue.close, kqueue.closed
+  note    a set is made with the most entries it holds, 1 to 65,535, where Python and mio grow theirs: the platform layer allocates nothing outside the runtime's allocator, so a set reserves its room at making; `limit` past it
+
+capability poll/connection  a connection waited on for bytes to read, room to write, or both
+  heroes  poll.add_conn, poll.Interest
+  go      net.Conn.Read, net.Conn.Write (each waits in the runtime's poller)
+  rust    mio::Registry::register, mio::Interest::READABLE, mio::Interest::WRITABLE, tokio::net::TcpStream::ready, tokio::net::TcpStream::readable, tokio::net::TcpStream::writable, tokio::io::Interest
+  python  BaseSelector.register, selectors.EVENT_READ, selectors.EVENT_WRITE, poll.register, select.POLLIN, select.POLLOUT, select.POLLRDNORM, select.POLLWRNORM, select.KQ_FILTER_READ, select.KQ_FILTER_WRITE, select.KQ_EV_ADD, select.kevent
+  note    an interest is a variant of three cases, `read`, `write`, `read_write`, where Python and mio take a mask: a mask of none is a registration that waits for nothing, which Python refuses at run time and this refuses by its type
+
+capability poll/listener  a listener waited on for a connection to accept
+  heroes  poll.add_listener
+  go      net.Listener.Accept (waits in the runtime's poller)
+  rust    mio::net::TcpListener, tokio::net::TcpListener::accept
+  python  BaseSelector.register (a listening socket, EVENT_READ)
+  note    a listener is told `readable`, as all three tell it; the function takes no interest, a listener having nothing to write
+
+capability poll/datagram  a datagram socket waited on for a datagram to receive or room to send
+  heroes  poll.add_udp
+  go      net.UDPConn.ReadFrom (waits in the runtime's poller)
+  rust    mio::net::UdpSocket, tokio::net::UdpSocket::ready, tokio::net::UdpSocket::readable
+  python  BaseSelector.register (a datagram socket)
+
+capability poll/stream  a pipe, a terminal or a file waited on beside the sockets
+  heroes  poll.add_stream
+  go      os.File.Read on a pipe (waits in the runtime's poller where the system allows it)
+  rust    tokio::io::unix::AsyncFd, mio::unix::SourceFd, mio::unix::pipe
+  python  BaseSelector.register (any object with `fileno`), select.select, select.POLLPRI, select.POLLRDBAND, select.POLLWRBAND
+  note    a regular file is ready at every wait, on every system, as POSIX's poll defines it; Python's EpollSelector refuses one (`EPERM`, epoll's own), and this answers the same on the three systems. Windows waits on sockets alone, so a pipe or a console there is `unsupported`, said by the function and by its example; `/dev/null` is refused by Darwin's kqueue (`EINVAL`, measured 2026-11-16) and by epoll, `unsupported`
+
+capability poll/change  what an entry waits for, changed in place
+  heroes  poll.change
+  go      -
+  rust    mio::Registry::reregister
+  python  BaseSelector.modify, poll.modify, epoll.modify
+
+capability poll/remove  an entry taken out of the set
+  heroes  poll.remove
+  go      -
+  rust    mio::Registry::deregister
+  python  BaseSelector.unregister, poll.unregister, epoll.unregister, select.KQ_EV_DELETE
+  note    a key removed names nothing after, and a later entry never takes it: Python keys an entry by its descriptor, which the system may give to the next file opened
+
+capability poll/key  each entry known by a value the program keeps, carried by every event of it
+  heroes  poll.add_conn, poll.Event
+  go      -
+  rust    mio::Token, mio::event::Event::token
+  python  selectors.SelectorKey, BaseSelector.get_key, BaseSelector.get_map
+  note    the set answers the key, a positive `i64`, where mio's program picks its Token and Python's keeps any `data`: a key the set issued is checked as a handle is, so a stale key is `not_found` and never another entry; a program maps keys to its connections with a `{i64: ...}`
+
+capability poll/count  how many entries a set holds
+  heroes  poll.count
+  go      -
+  rust    -
+  python  len(BaseSelector.get_map())
+
+capability poll/wait  wait until something is ready, at most a given time, and be told what and for what
+  heroes  poll.wait, poll.Event
+  go      net.Conn.SetDeadline, syscall.Kevent, syscall.Select
+  rust    mio::Poll::poll, mio::Events, mio::event::Event::is_readable, mio::event::Event::is_writable, mio::event::Event::is_read_closed, mio::event::Event::is_write_closed, mio::event::Event::is_error, tokio::time::timeout, tokio::select!, tokio::io::Ready
+  python  BaseSelector.select, select.select, poll.poll, epoll.poll, kqueue.control, select.POLLHUP, select.POLLERR, select.POLLNVAL, select.KQ_EV_EOF, select.KQ_EV_ERROR
+  note    a limit of zero asks without waiting, as Python's select(0); a limit that passes with nothing ready answers an empty list, as all three do, and is no failure. At most 1,024 events at once, the rest told by the next wait. The hangup is told beside `readable` where the entry reads, so a loop that reads on `readable` meets the end of stream on every system (kqueue's `EV_EOF`, epoll's `EPOLLRDHUP` and `EPOLLHUP`, Windows' `POLLHUP`)
+
+capability poll/wait-forever  wait with no limit
+  heroes  poll.wait_forever
+  go      net.Conn.Read with no deadline
+  rust    mio::Poll::poll (None)
+  python  BaseSelector.select (None), poll.poll (None)
+  note    a function of its own rather than a sentinel limit, as README § A4 asks of an answer and this asks of an argument; it is `wait` with the largest limit
+
+capability poll/level-triggered  what stays ready told at every wait
+  heroes  poll.wait
+  go      -
+  rust    mio's sources are edge-triggered (a program reads until `WouldBlock`)
+  python  selectors (level-triggered), select.KQ_EV_CLEAR (edge, opt-in), select.EPOLLET (edge, opt-in)
+  note    Python's choice: `io`'s read waits for a byte, so a program cannot read "until it would block", which edge-triggering needs to lose nothing
+
+capability poll/edge-triggered  told once per change of readiness
+  heroes  refused: a program here cannot read until a read would block, `io`'s read waiting for a byte, so an edge-triggered set would lose what stays unread
+  go      -
+  rust    mio::Poll (edge-triggered by its design)
+  python  select.EPOLLET, select.KQ_EV_CLEAR
+
+capability poll/one-shot  an entry disarmed after it is told once
+  heroes  refused: it exists for several threads that share one set, which a set does not allow (one call at a time, and no number names a set); `change` and `remove` do it on the one thread
+  go      -
+  rust    tokio's internal registration
+  python  select.EPOLLONESHOT, select.KQ_EV_ONESHOT, select.KQ_EV_DISABLE, select.KQ_EV_ENABLE
+
+capability poll/timer  a timer that falls once, at a time from now
+  heroes  poll.add_timer
+  go      time.NewTimer, time.After, time.Timer.Stop
+  rust    tokio::time::sleep, tokio::time::sleep_until, tokio::time::Sleep
+  python  select.KQ_FILTER_TIMER
+  note    a timer is an entry of the set, told by `wait` with `due`, so a loop waits on its connections and its timers in one call, as `tokio::select!` over a socket and a `sleep` does; stopping one is `remove`
+
+capability poll/interval  a timer that falls again and again at a period
+  heroes  poll.add_timer
+  go      time.NewTicker, time.Tick, time.Ticker.Stop
+  rust    tokio::time::interval, tokio::time::interval_at, tokio::time::Interval::tick
+  python  -
+  note    `every` above zero; zero is a timer that falls once, so one function is both
+
+capability poll/missed-ticks  what an interval does when the program waited past several of its times
+  heroes  poll.Event
+  go      time.Ticker (drops the ticks a slow receiver missed)
+  rust    tokio::time::MissedTickBehavior::Burst, tokio::time::MissedTickBehavior::Delay, tokio::time::MissedTickBehavior::Skip
+  python  -
+  note    told once, `due` counting every time it fell, then due at the first of its times still to come: Go's and tokio's `Skip`, with the count tokio and Go do not give. Tokio's default `Burst` is not offered: a burst of events for one timer says nothing the count does not
+
+capability poll/reset-timer  a timer set again from now
+  heroes  poll.reset_timer
+  go      time.Timer.Reset, time.Ticker.Reset
+  rust    tokio::time::Sleep::reset, tokio::time::Interval::reset
+  python  -
+
+capability poll/stop  a wait ended when the program is asked to stop
+  heroes  poll.wait
+  go      os/signal.NotifyContext (with a select)
+  rust    tokio::signal::ctrl_c (with tokio::select!)
+  python  -
+  note    every wait fails `stopped` once `net`'s stop is asked, a signal caught by `net.catch_stop` or `net.ask_stop` from any thread, even with entries ready, so a loop ends under load as `net.accept` does
+
+capability poll/wake  a wait woken by another thread of the program, for a reason of its own
+  heroes  pending
+  go      a channel send seen by a select
+  rust    mio::Waker, tokio::sync::Notify
+  python  - (a pipe written by the other thread, registered in the selector)
+  note    a set crosses to no thread, a thread being handed one `i64` (spec § 13): a waker needs a number another thread rings, as `net`'s socket numbers are, and a channel of its own per set (`EVFILT_USER`, an `eventfd`, a loopback socket on Windows); the stop, which wakes every wait, is what crosses today
+
+capability poll/process-and-signal-filters  waiting on a process's end, a signal or a file's change in the same call
+  heroes  refused: each is another package's (`process` waits for a child, `net`'s stop is the one signal a wait hears, a file's change has no package yet), and kqueue has them where epoll and Windows have none to match
+  go      -
+  rust    tokio::process::Child::wait, tokio::signal::unix::signal
+  python  select.KQ_FILTER_PROC, select.KQ_FILTER_SIGNAL, select.KQ_FILTER_VNODE, select.KQ_FILTER_AIO, select.KQ_NOTE_ATTRIB, select.KQ_NOTE_CHILD, select.KQ_NOTE_DELETE, select.KQ_NOTE_EXEC, select.KQ_NOTE_EXIT, select.KQ_NOTE_EXTEND, select.KQ_NOTE_FORK, select.KQ_NOTE_LINK, select.KQ_NOTE_LOWAT, select.KQ_NOTE_PCTRLMASK, select.KQ_NOTE_PDATAMASK, select.KQ_NOTE_RENAME, select.KQ_NOTE_REVOKE, select.KQ_NOTE_TRACK, select.KQ_NOTE_TRACKERR, select.KQ_NOTE_WRITE
+
+capability poll/coroutines  a function suspended while it waits and resumed when its socket is ready
+  heroes  refused: coroutines and async functions are refused by the language (design.md Part 6); the program's own loop over `wait` is the form
+  go      goroutines over the runtime's poller
+  rust    async fn, .await, tokio::spawn, tokio::task, std::future::Future
+  python  - (asyncio is out of this area)
+
+capability poll/callback-timer  a function run when a timer falls
+  heroes  refused: no closure, and no function of the program runs on a thread the library makes; a timer's fall is an event the loop acts on
+  go      time.AfterFunc
+  rust    -
+  python  -
+
+dropped
+  python  selectors.ABCMeta, selectors.Mapping, selectors.abstractmethod, selectors.math, selectors.namedtuple, selectors.select, selectors.sys (the module's own imports); BaseSelector.fileno, kqueue.fileno, kqueue.fromfd (raw descriptors); select.PIPE_BUF (a pipe's atomic write size, `io`'s area); select.KQ_EV_FLAG1, select.KQ_EV_SYSFLAGS (kqueue's own flags); select.error (Python's alias of OSError)
+  go      syscall.SetNonblock (the layer's sockets are non-blocking already), syscall.FdSet, syscall.Kevent_t, syscall.Timeval, syscall.Timeval32 (the system's structures, which no platform type crossing the layer allows)
+  rust    mio::Events::with_capacity (an answer's room, which `wait` sizes itself), mio::event::Source (an interface: the language has none)

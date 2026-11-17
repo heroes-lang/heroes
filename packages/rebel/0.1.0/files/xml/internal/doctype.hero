@@ -1,0 +1,301 @@
+# The document type declaration, read and checked and never applied: no DTD is
+# processed and nothing it names is fetched. Its internal subset may hold
+# element and notation declarations, comments and instructions, which change
+# nothing a reader that applies no DTD answers. An entity declaration, an
+# attribute list and a parameter entity reference are refused, since each
+# would change the document read: an entity expanded without end is the
+# attack this refusal closes, and an attribute list's defaults and types
+# would add attributes and change values.
+
+use xml/internal/characters
+use xml/internal/markup
+use xml/internal/scan
+
+# The byte index past the document type declaration whose `<!DOCTYPE` begins
+# at byte `at` of `text`. Fails `invalid` where it is not one, or its internal
+# subset declares what this reader does not apply.
+function read_doctype(text: str, at: i64) -> i64?
+    first = at + 9
+
+    if first >= text.len() || !characters.is_space(text[first])
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: first, what: "white space after `<!DOCTYPE`")
+        )
+    i: i64 @= name_after(text: text, at: markup.skip_space(text: text, at: first), what: "the root element's name")?
+    next: i64 @= markup.skip_space(text: text, at: i)
+
+    if next > i && (markup.holds_at(text: text, at: next, word: "SYSTEM") || markup.holds_at(text: text, at: next, word: "PUBLIC"))
+        i @ external_id(text: text, at: next, system_needed: true)?
+        next @ markup.skip_space(text: text, at: i)
+
+    if next < text.len() && text[next] == '['
+        i @ internal_subset(text: text, at: next + 1)?
+        next @ markup.skip_space(text: text, at: i)
+
+    if next >= text.len() || text[next] != '>'
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: next, what: "`>`, which ends the document type declaration")
+        )
+    return ok(next + 1)
+
+# The byte index past the name that begins at byte `at` of `text`, a name of
+# Namespaces in XML 1.0. Fails `invalid` where none begins there; `what` says
+# what was expected.
+function name_after(text: str, at: i64, what: str) -> i64?
+    end = characters.name_end(text: text, at: at)
+
+    if end == at
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+    name = text.slice(from: at, to: end)
+
+    if !characters.is_qname(name)
+        return fail(
+            code: scan.INVALID,
+            msg: scan.said(text: text, at: at, what: f"`{name}` is not a name Namespaces in XML 1.0 reads: one colon at most, between two names")
+        )
+    return ok(end)
+
+# The byte index past `SYSTEM` and its literal, or `PUBLIC`, its public
+# identifier and its system literal, which begin at byte `at` of `text`.
+# Where `system_needed` is false, as in a notation, `PUBLIC` may stand with no
+# system literal.
+function external_id(text: str, at: i64, system_needed: bool) -> i64?
+    public = markup.holds_at(text: text, at: at, word: "PUBLIC")
+
+    if !public && !markup.holds_at(text: text, at: at, word: "SYSTEM")
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: "`SYSTEM` or `PUBLIC`"))
+    gap = at + 6
+
+    if gap >= text.len() || !characters.is_space(text[gap])
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: gap, what: "white space and a quoted literal")
+        )
+    i: i64 @= markup.skip_space(text: text, at: gap)
+
+    if public
+        i @ literal_end(text: text, at: i, public: true)?
+        next = markup.skip_space(text: text, at: i)
+
+        if next < text.len() && (text[next] == '"' || text[next] == '\'') && next > i
+            return literal_end(text: text, at: next, public: false)
+
+        if system_needed
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: next, what: "white space and the system literal")
+            )
+        return ok(i)
+    return literal_end(text: text, at: i, public: false)
+
+# The byte index past the quoted literal that begins at byte `at` of `text`. A
+# public identifier holds only the characters XML 1.0's `PubidChar` names.
+function literal_end(text: str, at: i64, public: bool) -> i64?
+    if at >= text.len() || text[at] != '"' && text[at] != '\''
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: at, what: "`\"` or `'`, which opens a literal")
+        )
+    i: i64 @= at + 1
+
+    while i < text.len() && text[i] != text[at]
+        if public && !is_pubid_byte(text[i])
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: i, what: "a character of a public identifier")
+            )
+        i @ i + 1
+
+    if i >= text.len()
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "the quote that ends the literal"))
+    return ok(i + 1)
+
+# Whether `b` may stand in a public identifier: a letter, a digit, a space, a
+# line end, or one of `-'()+,./:=?;!*#@$_%`.
+function is_pubid_byte(b: u8) -> bool
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+        return true
+    return b == ' ' || b == '\r' || b == '\n' || is_pubid_mark(b)
+
+# Whether `b` is one of the marks a public identifier may hold.
+function is_pubid_mark(b: u8) -> bool
+    for c in "-'()+,./:=?;!*#@$_%".chars()
+        if c[0] == b
+            return true
+
+    return false
+
+# The byte index past the `]` that ends the internal subset, which begins at
+# byte `at` of `text`.
+function internal_subset(text: str, at: i64) -> i64?
+    i: i64 @= at
+
+    while true
+        i @ markup.skip_space(text: text, at: i)
+
+        if i >= text.len()
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: i, what: "`]`, which ends the internal subset")
+            )
+
+        if text[i] == ']'
+            return ok(i + 1)
+
+        if markup.holds_at(text: text, at: i, word: "<!--")
+            i @ markup.read_comment(text: text, at: i)?.end
+        else if markup.holds_at(text: text, at: i, word: "<?")
+            i @ markup.read_instruction(text: text, at: i)?.end
+        else if markup.holds_at(text: text, at: i, word: "<!ENTITY")
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: i, what: "the internal subset declares an entity, and no DTD is read: an entity is never expanded, so that no document can make the reader grow without end")
+            )
+        else if markup.holds_at(text: text, at: i, word: "<!ATTLIST")
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: i, what: "the internal subset declares an attribute list, and no DTD is read: its defaults and its types would change the attributes read")
+            )
+        else if text[i] == '%'
+            return fail(
+                code: scan.INVALID,
+                msg: scan.said(text: text, at: i, what: "a parameter entity reference, and no DTD is read: no entity is ever expanded")
+            )
+        else if markup.holds_at(text: text, at: i, word: "<!ELEMENT")
+            i @ element_declaration(text: text, at: i)?
+        else if markup.holds_at(text: text, at: i, word: "<!NOTATION")
+            i @ notation_declaration(text: text, at: i)?
+        else
+            return fail(
+                code: scan.INVALID,
+                msg: scan.expected(text: text, at: i, what: "a declaration, a comment, an instruction or `]`")
+            )
+
+# The byte index past the element declaration whose `<!ELEMENT` begins at
+# byte `at` of `text`: a name, then `EMPTY`, `ANY` or a content model in
+# parentheses, which is read for its brackets and its characters.
+function element_declaration(text: str, at: i64) -> i64?
+    gap = at + 9
+
+    if gap >= text.len() || !characters.is_space(text[gap])
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: gap, what: "white space after `<!ELEMENT`"))
+    name_end = name_after(text: text, at: markup.skip_space(text: text, at: gap), what: "the element's name")?
+    i: i64 @= markup.skip_space(text: text, at: name_end)
+
+    if i == name_end
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: i, what: "white space after the element's name")
+        )
+
+    if markup.holds_at(text: text, at: i, word: "EMPTY")
+        i @ i + 5
+    else if markup.holds_at(text: text, at: i, word: "ANY")
+        i @ i + 3
+    else if i < text.len() && text[i] == '('
+        i @ content_model_end(text: text, at: i)?
+    else
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "`EMPTY`, `ANY` or `(`"))
+    i @ markup.skip_space(text: text, at: i)
+
+    if i >= text.len() || text[i] != '>'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "`>`, which ends the declaration"))
+    return ok(i + 1)
+
+# The byte index past the content model whose `(` stands at byte `at` of
+# `text`, and past the `?`, `*` or `+` after its last `)`. Inside it only
+# names, `#PCDATA`, white space and `|`, `,`, `?`, `*`, `+`, `(` and `)` may
+# stand, the brackets balanced.
+function content_model_end(text: str, at: i64) -> i64?
+    depth: i64 @= 0
+    i: i64 @= at
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '('
+            depth @ depth + 1
+            i @ i + 1
+        else if b == ')'
+            depth @ depth - 1
+            i @ i + 1
+
+            if depth == 0
+                if i < text.len() && (text[i] == '?' || text[i] == '*' || text[i] == '+')
+                    return ok(i + 1)
+                return ok(i)
+        else if characters.is_space(b) || b == '|' || b == ',' || b == '?' || b == '*' || b == '+' || b == '#'
+            i @ i + 1
+        else
+            end = characters.name_end(text: text, at: i)
+
+            if end == i
+                return fail(
+                    code: scan.INVALID,
+                    msg: scan.expected(text: text, at: i, what: "a name or a mark of a content model")
+                )
+            i @ end
+
+    return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "`)`, which closes the content model"))
+
+# The byte index past the notation declaration whose `<!NOTATION` begins at
+# byte `at` of `text`: a name, then `SYSTEM` and a literal, or `PUBLIC` and an
+# identifier with a system literal or none.
+function notation_declaration(text: str, at: i64) -> i64?
+    gap = at + 10
+
+    if gap >= text.len() || !characters.is_space(text[gap])
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: gap, what: "white space after `<!NOTATION`"))
+    name_end = name_after(text: text, at: markup.skip_space(text: text, at: gap), what: "the notation's name")?
+    id_at = markup.skip_space(text: text, at: name_end)
+
+    if id_at == name_end
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: id_at, what: "white space after the notation's name")
+        )
+    i = markup.skip_space(text: text, at: external_id(text: text, at: id_at, system_needed: false)?)
+
+    if i >= text.len() || text[i] != '>'
+        return fail(code: scan.INVALID, msg: scan.expected(text: text, at: i, what: "`>`, which ends the declaration"))
+    return ok(i + 1)
+
+## Tests
+
+test "read_doctype: a name alone, a system identifier, a public one, and an internal subset of what changes nothing"
+    assert read_doctype(text: "<!DOCTYPE a>", at: 0).must() == 12
+    assert read_doctype(text: "<!DOCTYPE html >x", at: 0).must() == 16
+    assert read_doctype(text: "<!DOCTYPE a SYSTEM \"a.dtd\">", at: 0).must() == 27
+    pub = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>"
+    assert read_doctype(text: pub, at: 0).must() == pub.len()
+    subset = "<!DOCTYPE a [\n<!ELEMENT a (#PCDATA|b)*>\n<!ELEMENT b EMPTY>\n<!-- c -->\n<?p d?>\n<!NOTATION n PUBLIC \"x\">\n] >"
+    assert read_doctype(text: subset, at: 0).must() == subset.len()
+
+test "read_doctype: an entity, the billion laughs, an attribute list and a parameter entity, refused and never expanded"
+    match read_doctype(text: "<!DOCTYPE a [<!ENTITY e \"hi\">]>", at: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "line 1, column 14: the internal subset declares an entity, and no DTD is read: an entity is never expanded, so that no document can make the reader grow without end"
+
+    laughs = "<!DOCTYPE lolz [\n <!ENTITY lol \"lol\">\n <!ENTITY lol2 \"&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;&lol;\">\n]>"
+    assert read_doctype(text: laughs, at: 0).is_err()
+    assert read_doctype(text: "<!DOCTYPE a [<!ATTLIST a x CDATA \"d\">]>", at: 0).is_err()
+    assert read_doctype(text: "<!DOCTYPE a [%p;]>", at: 0).is_err()
+
+test "read_doctype: no space, no name, a public identifier with no system literal, a bad character in one, and no end"
+    for text in ["<!DOCTYPEa>", "<!DOCTYPE >", "<!DOCTYPE a PUBLIC \"x\">", "<!DOCTYPE a PUBLIC \"{\" \"y\">", "<!DOCTYPE a", "<!DOCTYPE a [", "<!DOCTYPE a [<!ELEMENT a>]>", "<!DOCTYPE a [<!ELEMENT a (b>]>", "<!DOCTYPE a [x]>", "<!DOCTYPE a:b:c>"]
+        match read_doctype(text: text, at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+test "is_pubid_byte: letters, digits, the marks, and what is none"
+    assert is_pubid_byte('a') && is_pubid_byte('Z') && is_pubid_byte('0') && is_pubid_byte(' ')
+    assert is_pubid_byte('-') && is_pubid_byte('%') && is_pubid_byte('\'')
+    assert !is_pubid_byte('"') && !is_pubid_byte('{') && !is_pubid_byte('\t') && !is_pubid_byte(0xc3)
+
+test "content_model_end: nested, a mark after the last bracket, and unbalanced"
+    assert content_model_end(text: "(a,(b|c)*)+>", at: 0).must() == 11
+    assert content_model_end(text: "(#PCDATA)>", at: 0).must() == 9
+    assert content_model_end(text: "(a", at: 0).is_err()
+    assert content_model_end(text: "(a=b)", at: 0).is_err()

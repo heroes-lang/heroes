@@ -1,0 +1,156 @@
+# A failure the server reported, turned into one of `sql`'s codes by its
+# SQLSTATE (Appendix A of PostgreSQL's documentation, "Error Codes"), and its
+# message kept with the SQLSTATE in brackets, then the server's words, its
+# detail, its hint and the position it names. The module comment of
+# `sql/postgres` states the table this keeps.
+
+use sql
+use sql/postgres/internal/backend
+
+# The code of `sql` a failure of SQLSTATE `state` is told with.
+#
+# - `state`: the five characters of the SQLSTATE; its first two are its
+#   group.
+function code_of(state: str) -> str
+    if state == "23505" || state == "42P04" || state == "42P05" || state == "42P06" || state == "42P07" || state == "42701" || state == "42710" || state == "42712" || state == "42723" || state == "42P03"
+        return sql.EXISTS
+
+    if state == "42P01" || state == "42703" || state == "42883" || state == "42704" || state == "42P02" || state == "3D000" || state == "3F000" || state == "26000" || state == "34000"
+        return sql.NOT_FOUND
+
+    if state == "42501"
+        return sql.PERMISSION
+
+    if state == "22003" || state == "22001" || state == "22008" || state == "22015"
+        return sql.DOES_NOT_FIT
+
+    if state == "0A000"
+        return sql.UNSUPPORTED
+
+    if state == "57014"
+        return sql.STOPPED
+
+    if state == "25P03" || state == "57P05"
+        return sql.TIMEOUT
+
+    if state == "57P01" || state == "57P02" || state == "57P03"
+        return sql.CLOSED
+
+    if state == "08P01"
+        return sql.INVALID
+
+    group = if state.len() >= 2
+        state.slice(from: 0, to: 2)
+    else
+        ""
+
+    if group == "28"
+        return sql.PERMISSION
+
+    if group == "08"
+        return sql.CLOSED
+
+    if group == "53" || group == "54"
+        return sql.LIMIT
+
+    if group == "22" || group == "23" || group == "42" || group == "25" || group == "21"
+        return sql.INVALID
+    return sql.FAILED
+
+# The message of the failure `r` reports: `[SQLSTATE] message`, then `;
+# detail: ...`, `; hint: ...` and `; at character N` where the server gave
+# them.
+#
+# - `r`: the server's report.
+function message_of(r: backend.Report) -> str
+    parts: [str] @= [r.message]
+
+    if r.detail != ""
+        parts @ parts.push("detail: " + r.detail)
+
+    if r.hint != ""
+        parts @ parts.push("hint: " + r.hint)
+
+    if r.position != ""
+        parts @ parts.push("at character " + r.position)
+    return sql.failure_message(database_code: state_of(r), message: parts.join("; "))
+
+# The SQLSTATE of `r`, or `XX000`, PostgreSQL's internal error, where the
+# server sent none a message can hold: five letters and digits.
+#
+# - `r`: the server's report.
+function state_of(r: backend.Report) -> str
+    if r.code.len() != 5
+        return "XX000"
+
+    for c in r.code.chars()
+        if !(c[0] >= '0' && c[0] <= '9' || c[0] >= 'A' && c[0] <= 'Z')
+            return "XX000"
+
+    return r.code
+
+# The failure `r` reports, as a `T?`.
+#
+# - `r`: the server's report.
+function failure<T>(r: backend.Report) -> T?
+    return fail(code: code_of(state_of(r)), msg: message_of(r))
+
+# Whether `r` ends the session: a severity of `FATAL` or `PANIC`.
+#
+# - `r`: the server's report.
+function is_fatal(r: backend.Report) -> bool
+    return r.severity == "FATAL" || r.severity == "PANIC"
+
+test "code_of: one SQLSTATE of each code, and a group falling to its code"
+    assert code_of("23505") == "exists" && code_of("42P07") == "exists"
+    assert code_of("42P01") == "not_found" && code_of("3D000") == "not_found" && code_of("42883") == "not_found"
+    assert code_of("28P01") == "permission" && code_of("28000") == "permission" && code_of("42501") == "permission"
+    assert code_of("22003") == "does_not_fit" && code_of("22001") == "does_not_fit"
+    assert code_of("22P02") == "invalid" && code_of("23503") == "invalid" && code_of("42601") == "invalid" && code_of("25P02") == "invalid" && code_of("08P01") == "invalid"
+    assert code_of("53300") == "limit" && code_of("54000") == "limit"
+    assert code_of("0A000") == "unsupported"
+    assert code_of("57014") == "stopped"
+    assert code_of("25P03") == "timeout"
+    assert code_of("08006") == "closed" && code_of("57P01") == "closed"
+    assert code_of("40001") == "failed" && code_of("40P01") == "failed" && code_of("P0001") == "failed" && code_of("XX000") == "failed" && code_of("") == "failed"
+
+test "message_of: the message alone, then with a detail, a hint and a position"
+    bare = backend.Report(
+        severity: "ERROR",
+        code: "42P01",
+        message: "relation \"nope\" does not exist",
+        detail: "",
+        hint: "",
+        position: ""
+    )
+    assert message_of(bare) == "[42P01] relation \"nope\" does not exist"
+    full = backend.Report(
+        severity: "ERROR",
+        code: "23505",
+        message: "duplicate key",
+        detail: "Key (id)=(1) already exists.",
+        hint: "Try another.",
+        position: "15"
+    )
+    assert message_of(full) == "[23505] duplicate key; detail: Key (id)=(1) already exists.; hint: Try another.; at character 15"
+    odd = backend.Report(severity: "ERROR", code: "a b]", message: "m", detail: "", hint: "", position: "")
+    assert message_of(odd) == "[XX000] m"
+    assert sql.database_code_of(message_of(full)).must() == "23505"
+
+test "failure and is_fatal: the code and message of a refused login, and the severities"
+    r = backend.Report(
+        severity: "FATAL",
+        code: "28P01",
+        message: "password authentication failed for user \"ana\"",
+        detail: "",
+        hint: "",
+        position: ""
+    )
+    got: i64? = failure(r)
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == "permission" && e.msg == "[28P01] password authentication failed for user \"ana\""
+
+    assert is_fatal(r)
+    assert !is_fatal(backend.Report(severity: "ERROR", code: "", message: "", detail: "", hint: "", position: ""))

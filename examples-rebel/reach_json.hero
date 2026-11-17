@@ -1,0 +1,13 @@
+# Reaches Rebel's `json`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a small document, takes one value
+# out of it by a pointer and writes the document back indented.
+
+use <rebel>/json
+
+function main()
+    match json.parse("{\"name\": \"Ziggy\", \"albums\": [1972, 1973]}")
+        .err e => print(e.code, ": ", e.msg)
+        .ok doc =>
+            first = json.value_at(doc, "/albums/0")
+            print(json.kind_of(first.default(.null_value)))
+            print(json.format_indented(doc, 2).default("?"))

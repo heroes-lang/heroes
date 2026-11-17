@@ -1,0 +1,393 @@
+# UTF-8 read and written: the bytes of a code point, the code point that bytes
+# begin with, checked as RFC 3629 asks, and the code point at an index of a
+# text, which the language holds valid and so is read unchecked.
+#
+# A character of UTF-8 is one to four bytes. Its first byte says how many:
+# 0x00 to 0x7F one, 0xC2 to 0xDF two, 0xE0 to 0xEF three, 0xF0 to 0xF4 four.
+# Every byte after the first is 0x80 to 0xBF, and the second is narrower where
+# the first would allow a form longer than the shortest (after 0xE0, 0xA0 to
+# 0xBF; after 0xF0, 0x90 to 0xBF), a surrogate (after 0xED, 0x80 to 0x9F) or a
+# number past U+10FFFF (after 0xF4, 0x80 to 0x8F).
+
+use unicode/internal/written
+
+# The code of a failure on input that is not what the function reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a failure on bytes that are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The byte `b` as a number.
+function number_of(b: u8) -> i64
+    return to_i64(b).must()
+
+# The number `n`, 0 to 255, as a byte.
+function byte_of(n: i64) -> u8
+    return to_u8(n).must()
+
+# Whether `n` is a scalar value: 0 to U+10FFFF, the surrogates U+D800 to
+# U+DFFF left out.
+function is_scalar_value(n: i64) -> bool
+    return n >= 0 && n <= 0x10ffff && (n < 0xd800 || n > 0xdfff)
+
+# Fails `invalid` where `n` is no scalar value, saying why.
+function check_scalar_value(n: i64) -> ()?
+    if n >= 0xd800 && n <= 0xdfff
+        return fail(
+            code: INVALID,
+            msg: f"{written.code_point(n)} is a surrogate, which no character has as its code point"
+        )
+
+    if n < 0 || n > 0x10ffff
+        return fail(code: INVALID, msg: f"{written.code_point(n)} is no code point: they run from U+0000 to U+10FFFF")
+    return ok()
+
+# How many bytes write the scalar value `n`, 1 to 4.
+function len_of(n: i64) -> i64
+    if n < 0x80
+        return 1
+
+    if n < 0x800
+        return 2
+
+    if n < 0x10000
+        return 3
+    return 4
+
+# Adds the bytes that write the scalar value `n` to `out`, which the caller
+# owns.
+function add_encoded(@out: [u8], n: i64)
+    if n < 0x80
+        out @ out.push(byte_of(n))
+    else if n < 0x800
+        out @ out.push(byte_of(0xc0 | n >> 6))
+        out @ out.push(byte_of(0x80 | n & 0x3f))
+    else if n < 0x10000
+        out @ out.push(byte_of(0xe0 | n >> 12))
+        out @ out.push(byte_of(0x80 | n >> 6 & 0x3f))
+        out @ out.push(byte_of(0x80 | n & 0x3f))
+    else
+        out @ out.push(byte_of(0xf0 | n >> 18))
+        out @ out.push(byte_of(0x80 | n >> 12 & 0x3f))
+        out @ out.push(byte_of(0x80 | n >> 6 & 0x3f))
+        out @ out.push(byte_of(0x80 | n & 0x3f))
+
+# The text the scalar values `points` write, one character each.
+function text_of(points: [i64] lent) -> str
+    out: [u8] @= []
+
+    for n in points
+        add_encoded(@out, n)
+
+    return out.validated_bytes().must()
+
+# How many bytes the character takes whose first byte is `first`, 1 to 4.
+# Fails `invalid` where no character begins with `first`.
+function width_of(first: u8) -> i64?
+    if first < 0x80
+        return ok(1)
+
+    if first >= 0xc2 && first < 0xe0
+        return ok(2)
+
+    if first >= 0xe0 && first < 0xf0
+        return ok(3)
+
+    if first >= 0xf0 && first < 0xf5
+        return ok(4)
+
+    if first < 0xc0
+        return fail(code: INVALID, msg: f"the byte {written.byte(first)} continues a character and begins none")
+    return fail(code: INVALID, msg: f"the byte {written.byte(first)} is never in UTF-8")
+
+# Whether `b` may stand at place `k`, 1 to 3, of a character whose first byte
+# is `first`.
+function fits(first: u8, k: i64, b: u8) -> bool
+    if k == 1 && first == 0xe0
+        return b >= 0xa0 && b <= 0xbf
+
+    if k == 1 && first == 0xed
+        return b >= 0x80 && b <= 0x9f
+
+    if k == 1 && first == 0xf0
+        return b >= 0x90 && b <= 0xbf
+
+    if k == 1 && first == 0xf4
+        return b >= 0x80 && b <= 0x8f
+    return b >= 0x80 && b <= 0xbf
+
+# The code point of the character of UTF-8 that begins at `at` of `bytes`.
+# Fails `not_text` where none does: a byte no character begins with, a byte
+# out of its place, or a character the end cuts short; the message says which
+# and where. Aborts where `at` is not an index of `bytes`.
+function decode(bytes: [u8] lent, at: i64) -> i64?
+    first = bytes[at]
+
+    if first < 0x80
+        return ok(number_of(first))
+
+    width = match width_of(first)
+        .ok w  => w
+        .err e => return fail(code: NOT_TEXT, msg: f"{e.msg}, at index {at}")
+
+    n: i64 @= number_of(first) & 0x7f >> width
+    k: i64 @= 1
+
+    while k < width
+        if at + k >= bytes.len()
+            return fail(
+                code: NOT_TEXT,
+                msg: f"the character that begins at index {at} is cut short by the end, after {k} of its {width} bytes"
+            )
+        b = bytes[at + k]
+
+        if !fits(first: first, k: k, b: b)
+            return fail(
+                code: NOT_TEXT,
+                msg: f"the byte {written.byte(b)} at index {at + k} cannot follow {written.byte(first)} at index {at}"
+            )
+        n @ n << 6 | number_of(b) & 0x3f
+        k @ k + 1
+
+    return ok(n)
+
+# How many bytes at the start of `bytes` are whole characters of UTF-8.
+function valid_len(bytes: [u8] lent) -> i64
+    at: i64 @= 0
+
+    while at < bytes.len()
+        match decode(bytes, at)
+            .ok n  => at @ at + len_of(n)
+            .err _ => return at
+
+    return at
+
+# Whether the bytes of `bytes` from `at` to the end are the beginning of one
+# character that more bytes would complete.
+function is_cut_short(bytes: [u8] lent, at: i64) -> bool
+    width = match width_of(bytes[at])
+        .ok w  => w
+        .err _ => return false
+
+    if bytes.len() - at >= width
+        return false
+    k: i64 @= 1
+
+    while at + k < bytes.len()
+        if !fits(first: bytes[at], k: k, b: bytes[at + k])
+            return false
+        k @ k + 1
+
+    return true
+
+# Whether `b` continues a character, 0x80 to 0xBF.
+function is_continuation(b: u8) -> bool
+    return b >= 0x80 && b <= 0xbf
+
+# How many bytes the character takes that begins at `at` of `s`, 1 to 4.
+# Aborts where `at` is not the first byte of a character of `s`.
+function width_at(s: str, at: i64) -> i64
+    first = s[at]
+    assert !is_continuation(first)
+
+    if first < 0x80
+        return 1
+
+    if first < 0xe0
+        return 2
+
+    if first < 0xf0
+        return 3
+    return 4
+
+# The code point of the character that begins at `at` of `s`. A `str` is
+# UTF-8, so nothing is checked but that `at` begins a character. Aborts where
+# it does not.
+function code_point_at(s: str, at: i64) -> i64
+    width = width_at(s, at)
+
+    if width == 1
+        return number_of(s[at])
+    n: i64 @= number_of(s[at]) & 0x7f >> width
+    k: i64 @= 1
+
+    while k < width
+        n @ n << 6 | number_of(s[at + k]) & 0x3f
+        k @ k + 1
+
+    return n
+
+# The code point of `c`, one character. Aborts where `c` is not exactly one
+# character.
+function one(c: str) -> i64
+    assert c.len() > 0 && width_at(c, 0) == c.len()
+    return code_point_at(c, 0)
+
+# The code point of the character of UTF-8 that ends just before `end` in
+# `bytes`, its last byte `bytes[end - 1]`. Fails `not_text` where no whole
+# character ends there. Aborts where `end` is below 1 or past the length.
+function decode_ending(bytes: [u8] lent, end: i64) -> i64?
+    assert end >= 1 && end <= bytes.len()
+    start: i64 @= end - 1
+
+    while start > 0 && end - start < 4 && is_continuation(bytes[start])
+        start @ start - 1
+
+    match decode(bytes, start)
+        .ok n =>
+            if start + len_of(n) == end
+                return ok(n)
+        .err _ => _ = 0
+
+    return fail(code: NOT_TEXT, msg: f"no whole character of UTF-8 ends before index {end}")
+
+## Tests
+
+test "is_scalar_value: the edges of the range and of the surrogates"
+    assert is_scalar_value(0)
+    assert !is_scalar_value(-1)
+    assert is_scalar_value(0xd7ff)
+    assert !is_scalar_value(0xd800)
+    assert !is_scalar_value(0xdfff)
+    assert is_scalar_value(0xe000)
+    assert is_scalar_value(0x10ffff)
+    assert !is_scalar_value(0x110000)
+    assert !is_scalar_value(-9223372036854775808)
+    assert !is_scalar_value(9223372036854775807)
+
+test "check_scalar_value: a surrogate and a number past the range say which"
+    assert !check_scalar_value(0x41).is_err()
+
+    match check_scalar_value(0xdc00)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "U+DC00 is a surrogate, which no character has as its code point"
+
+    match check_scalar_value(-5)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "-5 is no code point: they run from U+0000 to U+10FFFF"
+
+test "len_of and add_encoded: the last code point of each width and the first of the next"
+    out: [u8] @= []
+    add_encoded(@out, 0x7f)
+    add_encoded(@out, 0x80)
+    add_encoded(@out, 0x7ff)
+    add_encoded(@out, 0x800)
+    add_encoded(@out, 0xffff)
+    add_encoded(@out, 0x10000)
+    add_encoded(@out, 0x10ffff)
+    assert out == [0x7f, 0xc2, 0x80, 0xdf, 0xbf, 0xe0, 0xa0, 0x80, 0xef, 0xbf, 0xbf, 0xf0, 0x90, 0x80, 0x80, 0xf4, 0x8f, 0xbf, 0xbf]
+    assert len_of(0) == 1 && len_of(0x7f) == 1 && len_of(0x80) == 2 && len_of(0x7ff) == 2
+    assert len_of(0x800) == 3 && len_of(0xffff) == 3 && len_of(0x10000) == 4 && len_of(0x10ffff) == 4
+
+test "text_of: nothing, one byte, and characters of two, three and four bytes"
+    none: [i64] = []
+    assert text_of(none) == ""
+    assert text_of([0x61, 0xe9, 0x20ac, 0x1f600]) == "aé€😀"
+
+test "width_of: each first byte's width, a continuation, and the bytes UTF-8 never holds"
+    assert width_of(0).must() == 1
+    assert width_of(0x7f).must() == 1
+    assert width_of(0xc2).must() == 2
+    assert width_of(0xdf).must() == 2
+    assert width_of(0xe0).must() == 3
+    assert width_of(0xef).must() == 3
+    assert width_of(0xf0).must() == 4
+    assert width_of(0xf4).must() == 4
+    assert width_of(0x80).is_err()
+    assert width_of(0xbf).is_err()
+    assert width_of(0xc0).is_err()
+    assert width_of(0xc1).is_err()
+    assert width_of(0xf5).is_err()
+    assert width_of(0xff).is_err()
+
+test "decode: one byte, each width, and where a character ends at the end"
+    assert decode([0x00], 0).must() == 0
+    assert decode([0x61, 0xc3, 0xa9], 1).must() == 0xe9
+    assert decode([0xe2, 0x82, 0xac], 0).must() == 0x20ac
+    assert decode([0xf0, 0x9f, 0x98, 0x80], 0).must() == 0x1f600
+    assert decode([0xf4, 0x8f, 0xbf, 0xbf], 0).must() == 0x10ffff
+    assert decode([0xed, 0x9f, 0xbf], 0).must() == 0xd7ff
+    assert decode([0xee, 0x80, 0x80], 0).must() == 0xe000
+
+# Python 3.15.2's `bytes.decode("utf-8")` refuses each of these, observed
+# 2026-11-15, and Go's `utf8.DecodeRune` answers `RuneError` of width 1 for
+# each.
+test "decode refuses an overlong form, a surrogate, a number past U+10FFFF, and a cut"
+    assert decode([0xc0, 0x80], 0).is_err()
+    assert decode([0xe0, 0x9f, 0xbf], 0).is_err()
+    assert decode([0xf0, 0x8f, 0xbf, 0xbf], 0).is_err()
+    assert decode([0xed, 0xa0, 0x80], 0).is_err()
+    assert decode([0xf4, 0x90, 0x80, 0x80], 0).is_err()
+    assert decode([0xe2, 0x82], 0).is_err()
+    assert decode([0xe2, 0x28, 0xac], 0).is_err()
+
+test "decode says what it found and where"
+    match decode([0x61, 0xff], 1)
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "the byte 0xff is never in UTF-8, at index 1"
+
+    match decode([0x80], 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the byte 0x80 continues a character and begins none, at index 0"
+
+    match decode([0xe2, 0x82], 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the character that begins at index 0 is cut short by the end, after 2 of its 3 bytes"
+
+    match decode([0xed, 0xa0, 0x80], 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the byte 0xa0 at index 1 cannot follow 0xed at index 0"
+
+test "valid_len: nothing, all of it, and the bytes before the first wrong one"
+    none: [u8] = []
+    assert valid_len(none) == 0
+    assert valid_len([0x61, 0xc3, 0xa9]) == 3
+    assert valid_len([0x61, 0xc3, 0xa9, 0xff, 0x61]) == 3
+    assert valid_len([0x61, 0xe2, 0x82]) == 1
+    assert valid_len([0x80]) == 0
+
+test "is_cut_short: a beginning that more bytes complete, a whole one, a wrong one"
+    assert is_cut_short([0xe2], 0)
+    assert is_cut_short([0xe2, 0x82], 0)
+    assert is_cut_short([0xf0, 0x9f, 0x98], 0)
+    assert !is_cut_short([0xe2, 0x82, 0xac], 0)
+    assert !is_cut_short([0xe0, 0x80], 0)
+    assert !is_cut_short([0xed, 0xa0], 0)
+    assert !is_cut_short([0x80], 0)
+    assert !is_cut_short([0xff], 0)
+
+test "is_continuation: the edges of 0x80 to 0xBF"
+    assert !is_continuation(0x7f)
+    assert is_continuation(0x80)
+    assert is_continuation(0xbf)
+    assert !is_continuation(0xc0)
+    assert !is_continuation(0)
+    assert !is_continuation(255)
+
+test "width_at and code_point_at: one byte, two, three and four"
+    s = "aé€😀"
+    assert width_at(s, 0) == 1 && code_point_at(s, 0) == 0x61
+    assert width_at(s, 1) == 2 && code_point_at(s, 1) == 0xe9
+    assert width_at(s, 3) == 3 && code_point_at(s, 3) == 0x20ac
+    assert width_at(s, 6) == 4 && code_point_at(s, 6) == 0x1f600
+
+test "one: a character of each width"
+    assert one("a") == 0x61
+    assert one("\u{7f}") == 0x7f
+    assert one("\u{80}") == 0x80
+    assert one("😀") == 0x1f600
+
+test "decode_ending: one byte, each width, and bytes where no character ends"
+    assert decode_ending([0x61], 1).must() == 0x61
+    assert decode_ending([0x61, 0xc3, 0xa9], 3).must() == 0xe9
+    assert decode_ending([0xe2, 0x82, 0xac], 3).must() == 0x20ac
+    assert decode_ending([0x61, 0xf0, 0x9f, 0x98, 0x80], 5).must() == 0x1f600
+    assert decode_ending([0xe2, 0x82, 0xac, 0x80], 4).is_err()
+    assert decode_ending([0xe2, 0x82], 2).is_err()
+    assert decode_ending([0x80, 0x80, 0x80, 0x80, 0x80], 5).is_err()
+
+    match decode_ending([0x61, 0xff], 2)
+        .ok _  => assert false
+        .err e => assert e.code == "not_text" && e.msg == "no whole character of UTF-8 ends before index 2"

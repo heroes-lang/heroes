@@ -1,0 +1,130 @@
+# A float written in the forms that take no precision, the fewest digits that
+# read back and every bit in hexadecimal, and a float rounded at a decimal
+# place, which is a decimal text read back.
+
+use numbers/internal/exact
+use numbers/internal/fewest
+use numbers/internal/near
+use numbers/internal/read
+use numbers/internal/write
+
+# The digits of `text`, a float as `to_str` writes it, finite.
+function digits_of_text(text: str) -> exact.Digits
+    match read.decimal(text).must().magnitude
+        .decimal d => return exact.Digits(digits: d.digits, point: d.exponent + d.digits.len())
+        .binary _ | .infinite | .not_a_number => return exact.zero()
+
+# `x`, a float of `format` whose text `to_str` wrote as `text`, in the fewest
+# digits that read back as it, with no exponent where `exponent_form` is
+# false and in exponent form where it is true.
+function shortest(text: str, x: f64, format: near.Format, exponent_form: bool) -> str
+    if text == "nan" || text == "inf" || text == "-inf"
+        return text
+    out: [u8] @= []
+
+    if text[0] == '-'
+        out @ out.push('-')
+    hint = digits_of_text(text)
+    d: exact.Digits @= hint
+
+    if hint.digits.len() > 0
+        d @ fewest.digits(x: write.size_of(x), hint: hint, format: format)
+
+    if exponent_form
+        write.push_exponent_form(@out, d)
+    else
+        write.push_plain(@out, d, true)
+    return write.text_of(out)
+
+# `x` in hexadecimal, every bit of it and no more.
+function hexadecimal(x: f64) -> str
+    name = write.named(x)
+
+    if name != ""
+        return name
+    out: [u8] @= []
+
+    if write.is_negative(x)
+        out @ out.push('-')
+
+    if x == 0.0
+        write.push_text(@out, "0x0p+0")
+        return write.text_of(out)
+    parts = exact.split(write.size_of(x))
+    significand: i64 @= parts.significand
+    exp: i64 @= parts.exp
+    leading: i64 = 4503599627370496
+
+    while significand < leading
+        significand @ significand * 2
+        exp @ exp - 1
+
+    fraction = significand - leading
+    write.push_text(@out, "0x1")
+    count: i64 @= 13
+
+    while count > 0 && fraction >> 4 * (13 - count) & 15 == 0
+        count @ count - 1
+
+    if count > 0
+        out @ out.push('.')
+
+        for at in range(from: 0, to: count)
+            nibble = fraction >> 4 * (12 - at) & 15
+            out @ out.push("0123456789abcdef"[nibble])
+
+    out @ out.push('p')
+
+    if exp + 52 >= 0
+        out @ out.push('+')
+    write.push_text(@out, to_str(exp + 52))
+    return write.text_of(out)
+
+# The `f64` nearest to `x` rounded at `decimals` digits after the point, ties
+# going to the even digit.
+function round_to(x: f64, decimals: i64) -> f64
+    if write.named(x) != "" || x == 0.0 || decimals > write.PLACES_MAX
+        return x
+    held = exact.of(write.size_of(x))
+
+    places = if decimals < -400
+        -400
+    else
+        decimals
+    d = exact.rounded(d: held, keep: held.point + places)
+    size = read.decimal_value(digits: d.digits, exponent: d.point - d.digits.len(), format: near.f64_format())
+
+    if x < 0.0
+        return -size
+    return size
+
+## Tests
+
+test "shortest: no exponent and exponent form, for a large, a small, a whole and a negative zero"
+    assert shortest(text: "1e+21", x: 1000000000000000000000.0, format: near.f64_format(), exponent_form: false) == "1000000000000000000000.0"
+    assert shortest(text: "1e-05", x: 0.00001, format: near.f64_format(), exponent_form: false) == "0.00001"
+    assert shortest(text: "100.0", x: 100.0, format: near.f64_format(), exponent_form: false) == "100.0"
+    assert shortest(text: "-0.0", x: -0.0, format: near.f64_format(), exponent_form: false) == "-0.0"
+    assert shortest(text: "1.5", x: 1.5, format: near.f64_format(), exponent_form: true) == "1.5e+00"
+    assert shortest(text: "1e+21", x: 1000000000000000000000.0, format: near.f64_format(), exponent_form: true) == "1e+21"
+    assert shortest(text: "-0.0", x: -0.0, format: near.f64_format(), exponent_form: true) == "-0e+00"
+    assert shortest(text: "inf", x: near.infinity(), format: near.f64_format(), exponent_form: true) == "inf"
+
+test "hexadecimal: zero, one, three, a fraction, the smallest and the largest float"
+    assert hexadecimal(0.0) == "0x0p+0"
+    assert hexadecimal(1.0) == "0x1p+0"
+    assert hexadecimal(3.0) == "0x1.8p+1"
+    assert hexadecimal(-0.1) == "-0x1.999999999999ap-4"
+    assert hexadecimal(near.pow2(-1074)) == "0x1p-1074"
+    assert hexadecimal(near.pow2(1023) * 1.9999999999999998) == "0x1.fffffffffffffp+1023"
+
+test "round_to: a tie the float is below, before the point, past the digits, and the sign of zero"
+    assert round_to(x: 2.675, decimals: 2) == 2.67
+    assert round_to(x: 1250.0, decimals: -2) == 1200.0
+    assert round_to(x: 1350.0, decimals: -2) == 1400.0
+    assert round_to(x: 0.1, decimals: 2000) == 0.1
+    assert round_to(x: 123.0, decimals: -1000) == 0.0
+    small = round_to(x: -0.4, decimals: 0)
+    assert small == 0.0 && 1.0 / small < 0.0
+    assert round_to(x: 0.5, decimals: 0) == 0.0
+    assert round_to(x: 1.5, decimals: 0) == 2.0

@@ -1,0 +1,162 @@
+# The end of a zip archive written: the central directory, ZIP64's end
+# record and locator where the count, the directory's size or its offset
+# passes what the plain end record holds, and the end record with the
+# archive's comment.
+
+use archive/internal/codes
+use archive/internal/zip_member
+use archive/internal/zip_read
+use archive/internal/zip_write
+use bytes
+use fs
+use io
+use path
+use time
+
+# Writes the central directory and the end records, ZIP64's where the
+# count, a size or an offset needs them, with the archive's `comment`.
+# Fails `invalid` where the comment passes 65,535 bytes.
+function finish(@sink: zip_write.Sink, comment: str) -> ()?
+    raw_comment = bytes.from_text(comment)
+
+    if raw_comment.len() > 0xffff
+        return fail(
+            code: codes.INVALID,
+            msg: f"an archive comment of {raw_comment.len()} bytes, past the 65,535 a zip end record holds"
+        )
+    dir_at = sink.written
+    directory: [u8] @= []
+
+    for w in sink.members
+        big_size = w.size >= sink.zip64_at
+        big_compressed = w.compressed >= sink.zip64_at
+        big_offset = w.offset >= sink.zip64_at
+        extra: [u8] @= zip_write.time_field(w.seconds)
+        wide: [u8] @= []
+
+        if big_size
+            zip_write.add(@wide, value: w.size, width: 8)
+
+        if big_compressed
+            zip_write.add(@wide, value: w.compressed, width: 8)
+
+        if big_offset
+            zip_write.add(@wide, value: w.offset, width: 8)
+
+        if wide.len() > 0
+            zip_write.add(@extra, value: zip_read.ZIP64_EXTRA, width: 2)
+            zip_write.add(@extra, value: wide.len(), width: 2)
+            zip_write.add_bytes(out: @extra, more: wide)
+        zip_write.add(@directory, value: zip_read.CENTRAL, width: 4)
+        zip_write.add(@directory, value: 3 << 8 | 63, width: 2)
+        version: i64 @= 20
+
+        if wide.len() > 0
+            version @ 45
+        zip_write.add(@directory, value: version, width: 2)
+        zip_write.add(@directory, value: w.flags, width: 2)
+        zip_write.add(@directory, value: w.method, width: 2)
+        zip_write.add(@directory, value: w.dos.clock, width: 2)
+        zip_write.add(@directory, value: w.dos.date, width: 2)
+        zip_write.add(@directory, value: w.crc, width: 4)
+        zip_write.add(@directory, value: capped(w.compressed, big: big_compressed), width: 4)
+        zip_write.add(@directory, value: capped(w.size, big: big_size), width: 4)
+        zip_write.add(@directory, value: w.name.len(), width: 2)
+        zip_write.add(@directory, value: extra.len(), width: 2)
+        zip_write.add(@directory, value: w.comment.len(), width: 2)
+        zip_write.add(@directory, value: 0, width: 4)
+        zip_write.add(@directory, value: w.external, width: 4)
+        zip_write.add(@directory, value: capped(w.offset, big: big_offset), width: 4)
+        zip_write.add_bytes(out: @directory, more: w.name)
+        zip_write.add_bytes(out: @directory, more: extra)
+        zip_write.add_bytes(out: @directory, more: w.comment)
+
+    zip_write.put(@sink, data: directory)?
+    count = sink.members.len()
+    big = count >= 0xffff || directory.len() >= sink.zip64_at || dir_at >= sink.zip64_at
+    tail: [u8] @= []
+
+    if big
+        end64_at = sink.written
+        zip_write.add(@tail, value: zip_read.END64, width: 4)
+        zip_write.add(@tail, value: 44, width: 8)
+        zip_write.add(@tail, value: 3 << 8 | 63, width: 2)
+        zip_write.add(@tail, value: 45, width: 2)
+        zip_write.add(@tail, value: 0, width: 8)
+        zip_write.add(@tail, value: count, width: 8)
+        zip_write.add(@tail, value: count, width: 8)
+        zip_write.add(@tail, value: directory.len(), width: 8)
+        zip_write.add(@tail, value: dir_at, width: 8)
+        zip_write.add(@tail, value: zip_read.LOCATOR64, width: 4)
+        zip_write.add(@tail, value: 0, width: 4)
+        zip_write.add(@tail, value: end64_at, width: 8)
+        zip_write.add(@tail, value: 1, width: 4)
+    zip_write.add(@tail, value: zip_read.END, width: 4)
+    zip_write.add(@tail, value: 0, width: 4)
+    zip_write.add(@tail, value: capped16(count), width: 2)
+    zip_write.add(@tail, value: capped16(count), width: 2)
+    zip_write.add(@tail, value: capped(directory.len(), big: directory.len() >= sink.zip64_at), width: 4)
+    zip_write.add(@tail, value: capped(dir_at, big: dir_at >= sink.zip64_at), width: 4)
+    zip_write.add(@tail, value: raw_comment.len(), width: 2)
+    zip_write.add_bytes(out: @tail, more: raw_comment)
+    zip_write.put(@sink, data: tail)?
+    sink.ended @ true
+    return ok()
+
+# `value`, or 0xffffffff where it is `big` and ZIP64 says it.
+function capped(value: i64, big: bool) -> i64
+    if big
+        return 0xffff_ffff
+    return value
+
+# `count`, or 0xffff where it passes 16 bits and ZIP64 says it.
+function capped16(count: i64) -> i64
+    if count >= 0xffff
+        return 0xffff
+    return count
+
+test "add_whole, add_streamed and finish: ZIP64 where sizes, offsets and the directory pass the threshold"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-zip64-*").must()
+    file = path.join_all([root, "z.zip"])
+    data = bytes.from_text(repeat("zip64 ", 20))
+    source = path.join_all([root, "source.txt"])
+    fs.write_bytes(source, data: data).must()
+    out @= fs.create(file).must()
+    sink @= zip_write.start(out, zip64_at: 10)
+    zip_write.add_whole(
+        @sink,
+        name: "whole.txt",
+        comment: "",
+        method: zip_read.DEFLATED,
+        level: 6,
+        modified: time.epoch(),
+        external: zip_write.external_of(mode: 0o644, kind: 0),
+        data: data
+    ).must()
+    from @= fs.open(source).must()
+    streamed = zip_write.add_streamed(
+        @sink,
+        name: "streamed.txt",
+        comment: "",
+        method: zip_read.STORED,
+        level: 6,
+        modified: time.epoch(),
+        external: zip_write.external_of(mode: 0o644, kind: 0),
+        from: from,
+        expected: data.len()
+    )
+    io.close(@from).must()
+    streamed.must()
+    finish(@sink, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    dir = zip_read.read_directory(s).must()
+    assert dir.members.len() == 2
+    assert dir.members[1].offset > 10
+
+    for m in dir.members
+        r @= zip_member.start_reading(s, size: io.size(s).must(), m: m, limit: 1000).must()
+        assert zip_member.read_member(@r).must() == data
+
+    io.close(@s).must()
+    fs.remove_all(root).must()

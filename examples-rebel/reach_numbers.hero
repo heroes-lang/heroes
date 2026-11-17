@@ -1,0 +1,10 @@
+# Reaches Rebel's `numbers`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a number from text, writes it in
+# another base and with a precision, and prints both.
+
+use <rebel>/numbers
+
+function main()
+    n = numbers.parse_int("255").default(0)
+    print(numbers.format_int(n: n, base: 16))
+    print(numbers.format_float(to_f64(n) / 8.0, 2))

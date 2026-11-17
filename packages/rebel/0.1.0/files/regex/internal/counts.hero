@@ -1,0 +1,148 @@
+# The repetitions of a pattern, `*`, `+`, `?` and the counts `{n}`, `{n,}`,
+# `{n,m}`, each read with its lazy form, and the bound on a count.
+
+use regex/internal/codes
+
+# The largest count a pattern may write.
+constant MAX_REPEAT: i64
+    1000
+
+# A repetition read: how many times, and where the pattern goes on.
+record Count
+    # The fewest times.
+    least: i64
+    # The most times, or -1 for no most.
+    most: i64
+    # Whether as few as can be are taken, rather than as many.
+    lazy: bool
+    # The byte just after it, its `?` included.
+    next: i64
+
+# A number of decimal digits, and where it ends.
+record Number
+    # Its value, or `MAX_REPEAT` plus one for any larger.
+    value: i64
+    # How many digits it was written with.
+    digits: i64
+    # The byte just after its last digit.
+    next: i64
+
+# The repetition that begins at the byte `at` of `pattern`.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte of the `*`, `+`, `?` or `{`.
+#
+# Fails `invalid` where a `{` begins no count, a count has no least or its
+# least is above its most, or the repetition is possessive; fails `limit`
+# where a count is above `MAX_REPEAT`.
+function count_at(pattern: str, at: i64) -> Count?
+    b = pattern[at]
+    least: i64 @= 0
+    most: i64 @= -1
+    next: i64 @= at + 1
+
+    if b == '+'
+        least @ 1
+    else if b == '?'
+        most @ 1
+    else if b == '{'
+        low = number_at(pattern, at + 1)
+
+        if low.digits == 0
+            if low.next < pattern.len() && pattern[low.next] == ','
+                return codes.invalid(pattern: pattern, at: at, why: "a count needs its least: write `{0,m}`")
+            return codes.invalid(pattern: pattern, at: at, why: "a `{` that begins no count is written `\\{`")
+        least @ low.value
+        most @ low.value
+        next @ low.next
+
+        if next < pattern.len() && pattern[next] == ','
+            high = number_at(pattern, next + 1)
+            most @ -1
+
+            if high.digits > 0
+                most @ high.value
+            next @ high.next
+
+        if next >= pattern.len() || pattern[next] != '}'
+            return codes.invalid(pattern: pattern, at: at, why: "a `{` that begins no count is written `\\{`")
+        next @ next + 1
+
+        if least > MAX_REPEAT || most > MAX_REPEAT
+            return codes.limit(
+                pattern: pattern,
+                at: at,
+                why: f"a count above {MAX_REPEAT}, the most a pattern may write"
+            )
+
+        if most >= 0 && most < least
+            return codes.invalid(pattern: pattern, at: at, why: "a count whose least is above its most")
+    lazy = next < pattern.len() && pattern[next] == '?'
+
+    if lazy
+        next @ next + 1
+    else if next < pattern.len() && pattern[next] == '+'
+        return codes.invalid(
+            pattern: pattern,
+            at: at,
+            why: "a possessive repetition is refused: a repetition that gives nothing back is not this package's"
+        )
+    return ok(Count(least: least, most: most, lazy: lazy, next: next))
+
+# The decimal number that begins at the byte `at` of `pattern`, with no
+# digit where none is there.
+#
+# - `pattern`: the pattern read.
+# - `at`: the byte where it may begin.
+function number_at(pattern: str, at: i64) -> Number
+    value: i64 @= 0
+    pos: i64 @= at
+
+    while pos < pattern.len() && pattern[pos] >= '0' && pattern[pos] <= '9'
+        if value <= MAX_REPEAT
+            value @ value * 10 + codes.wide(pattern[pos]) - '0'
+        pos @ pos + 1
+
+    if value > MAX_REPEAT
+        value @ MAX_REPEAT + 1
+    return Number(value: value, digits: pos - at, next: pos)
+
+## Tests
+
+test "count_at: the three operators, their lazy forms, and where each ends"
+    assert count_at(pattern: "a*", at: 1).must() == Count(least: 0, most: -1, lazy: false, next: 2)
+    assert count_at(pattern: "a+?", at: 1).must() == Count(least: 1, most: -1, lazy: true, next: 3)
+    assert count_at(pattern: "a?", at: 1).must() == Count(least: 0, most: 1, lazy: false, next: 2)
+    assert count_at(pattern: "a??b", at: 1).must() == Count(least: 0, most: 1, lazy: true, next: 3)
+
+test "count_at: exact, at least, between, lazy, zero and the largest count"
+    assert count_at(pattern: "a{3}", at: 1).must() == Count(least: 3, most: 3, lazy: false, next: 4)
+    assert count_at(pattern: "a{2,}", at: 1).must() == Count(least: 2, most: -1, lazy: false, next: 5)
+    assert count_at(pattern: "a{2,5}?", at: 1).must() == Count(least: 2, most: 5, lazy: true, next: 7)
+    assert count_at(pattern: "a{0}", at: 1).must() == Count(least: 0, most: 0, lazy: false, next: 4)
+    assert count_at(pattern: "a{1000}", at: 1).must().least == 1000
+
+test "count_at refuses a count past the bound, reversed, without its least, or possessive"
+    match count_at(pattern: "a{1001}", at: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "a count above 1000, the most a pattern may write, at byte 1 of \"a{1001}\""
+
+    match count_at(pattern: "a{99999999999999999999}", at: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match count_at(pattern: "a{5,2}", at: 1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match count_at(pattern: "a{,3}", at: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "a count needs its least: write `{0,m}`, at byte 1 of \"a{,3}\""
+
+    match count_at(pattern: "a*+", at: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "a possessive repetition is refused: a repetition that gives nothing back is not this package's, at byte 1 of \"a*+\""
+
+    assert count_at(pattern: "x{", at: 1).is_err()
+    assert count_at(pattern: "x{a}", at: 1).is_err()
+    assert count_at(pattern: "x{1,2", at: 1).is_err()

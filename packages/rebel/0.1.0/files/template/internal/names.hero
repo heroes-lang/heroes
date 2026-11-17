@@ -1,0 +1,210 @@
+# What the names of HTML make of the text after them: the elements whose
+# content is not HTML (a script, a style sheet, a title, a textarea), the
+# attributes whose value is a URL, a script, a style sheet or a list of images,
+# and the types of a script that make its content JavaScript. Every rule here
+# was observed from Go's `html/template` on 2026-11-16, over every attribute
+# HTML names.
+
+use strings
+
+## Elements
+
+# An element whose content is HTML.
+constant ELEMENT_NONE: i64
+    0
+
+# `script`, its content JavaScript until a `type` says otherwise.
+constant ELEMENT_SCRIPT: i64
+    1
+
+# `style`, its content a style sheet.
+constant ELEMENT_STYLE: i64
+    2
+
+# `textarea` and `title`, their content text with no tag in it.
+constant ELEMENT_TEXTAREA: i64
+    3
+
+constant ELEMENT_TITLE: i64
+    4
+
+# `meta`, whose `content` may hold a URL after `url=`.
+constant ELEMENT_META: i64
+    5
+
+# `script` with a `type` that is not JavaScript: its content is HTML.
+constant ELEMENT_SCRIPT_OTHER: i64
+    6
+
+## Attributes
+
+# An attribute whose value is text.
+constant ATTR_PLAIN: i64
+    0
+
+# An event handler, its value JavaScript.
+constant ATTR_SCRIPT: i64
+    1
+
+# `style`, its value a style sheet's declarations.
+constant ATTR_STYLE: i64
+    2
+
+# An attribute whose value is a URL.
+constant ATTR_URL: i64
+    3
+
+# `srcset`, its value a list of images, each a URL and a size.
+constant ATTR_SRCSET: i64
+    4
+
+# A script's `type`.
+constant ATTR_SCRIPT_TYPE: i64
+    5
+
+# A `meta` element's `content`.
+constant ATTR_META_CONTENT: i64
+    6
+
+# The attributes whose value is a URL, by name, in lower case.
+constant URL_NAMES: [str]
+    [
+        "action"
+        "archive"
+        "background"
+        "cite"
+        "classid"
+        "codebase"
+        "data"
+        "formaction"
+        "href"
+        "icon"
+        "longdesc"
+        "manifest"
+        "poster"
+        "profile"
+        "src"
+        "usemap"
+        "xmlns"
+    ]
+
+# The types, in lower case and with no parameter, that make a script's
+# content JavaScript or JSON; the empty type is one.
+constant SCRIPT_TYPES: [str]
+    [
+        ""
+        "application/ecmascript"
+        "application/javascript"
+        "application/json"
+        "application/ld+json"
+        "application/x-ecmascript"
+        "application/x-javascript"
+        "module"
+        "text/ecmascript"
+        "text/javascript"
+        "text/javascript1.0"
+        "text/javascript1.1"
+        "text/javascript1.2"
+        "text/javascript1.3"
+        "text/javascript1.4"
+        "text/javascript1.5"
+        "text/jscript"
+        "text/livescript"
+        "text/x-ecmascript"
+        "text/x-javascript"
+    ]
+
+# The element a tag's name opens, the name in any case.
+function element_of(name: str) -> i64
+    lower = strings.to_lower_ascii(name)
+
+    return match lower
+        "script"   => ELEMENT_SCRIPT
+        "style"    => ELEMENT_STYLE
+        "textarea" => ELEMENT_TEXTAREA
+        "title"    => ELEMENT_TITLE
+        "meta"     => ELEMENT_META
+        _          => ELEMENT_NONE
+
+# What the value of the attribute `name` holds, inside the tag of `element`.
+# `name` is in lower case. A `data-` prefix is dropped first; otherwise a
+# namespace prefix is, `xmlns:` making a URL.
+function attr_of(name: str, element: i64) -> i64
+    if element == ELEMENT_SCRIPT && name == "type"
+        return ATTR_SCRIPT_TYPE
+
+    if element == ELEMENT_META && name == "content"
+        return ATTR_META_CONTENT
+
+    if name == "style"
+        return ATTR_STYLE
+    local: str @= name
+
+    if strings.has_prefix(s: name, prefix: "data-")
+        local @ name.slice(from: 5, to: name.len())
+    else
+        match strings.split_once(s: name, sep: ":")
+            .err _ => _ = 0
+            .ok halves =>
+                if halves.before == "xmlns"
+                    return ATTR_URL
+                local @ halves.after
+
+    if strings.has_prefix(s: local, prefix: "on")
+        return ATTR_SCRIPT
+
+    if local == "srcset"
+        return ATTR_SRCSET
+
+    if local == "srcdoc" || local == "srclang"
+        return ATTR_PLAIN
+
+    for url_name in URL_NAMES
+        if local == url_name
+            return ATTR_URL
+
+    if strings.contains(s: local, substr: "src") || strings.contains(s: local, substr: "uri") || strings.contains(s: local, substr: "url")
+        return ATTR_URL
+    return ATTR_PLAIN
+
+# Whether a script whose `type` is `written` holds JavaScript: the type's
+# essence, before any `;`, white space trimmed and in any case, is one of
+# `SCRIPT_TYPES`.
+function is_script_type(written: str) -> bool
+    essence = strings.to_lower_ascii(strings.trim(strings.split_n(s: written, sep: ";", n: 2)[0]))
+
+    for known in SCRIPT_TYPES
+        if essence == known
+            return true
+
+    return false
+
+test "element_of: the four elements whose content is not HTML, meta, and the rest"
+    assert element_of("script") == ELEMENT_SCRIPT && element_of("SCRIPT") == ELEMENT_SCRIPT
+    assert element_of("style") == ELEMENT_STYLE
+    assert element_of("TextArea") == ELEMENT_TEXTAREA && element_of("title") == ELEMENT_TITLE
+    assert element_of("meta") == ELEMENT_META
+    assert element_of("scriptx") == ELEMENT_NONE && element_of("") == ELEMENT_NONE
+
+test "attr_of: URLs, scripts, styles and srcset as Go reads them, prefixes, and plain names"
+    for name in ["href", "src", "action", "data", "xmlns", "xmlns:x", "data-href", "xlink:href", "imagesrcset", "dynsrc", "srcdocx", "data-xmlns"]
+        assert attr_of(name, ELEMENT_NONE) == ATTR_URL
+
+    for name in ["onclick", "on", "data-onclick", "svg:onload", "xlink:onclick"]
+        assert attr_of(name, ELEMENT_NONE) == ATTR_SCRIPT
+
+    assert attr_of("style", ELEMENT_NONE) == ATTR_STYLE
+
+    for name in ["srcset", "data-srcset", "x:srcset"]
+        assert attr_of(name, ELEMENT_NONE) == ATTR_SRCSET
+
+    for name in ["title", "ping", "srcdoc", "srclang", "data-style", "svg:style", "data-xlink:href", "xml:lang", "content", "type", "xon"]
+        assert attr_of(name, ELEMENT_NONE) == ATTR_PLAIN
+
+    assert attr_of("type", ELEMENT_SCRIPT) == ATTR_SCRIPT_TYPE
+    assert attr_of("content", ELEMENT_META) == ATTR_META_CONTENT
+
+test "is_script_type: JavaScript and JSON in any case with a parameter, the empty type, and text that is not"
+    assert is_script_type("") && is_script_type("module") && is_script_type("text/javascript")
+    assert is_script_type("TEXT/JavaScript; charset=utf-8") && is_script_type(" application/ld+json ")
+    assert !is_script_type("text/template") && !is_script_type("text/plain") && !is_script_type("text/babel")

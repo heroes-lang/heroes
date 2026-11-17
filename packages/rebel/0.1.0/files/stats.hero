@@ -1,0 +1,386 @@
+# The statistics of a list of floats: means, medians, modes, spread,
+# quantiles, and the covariance, correlation and fitted line of two lists.
+#
+# Each answers what Python's `statistics` answers for the same floats, to the
+# last bit. Where Python computes exactly, with fractions (`mean`, the
+# variances and deviations, `harmonic_mean`), so does this package, with
+# integers of any size, and rounds once; where Python computes in floats, so
+# does this, with sums rounded once (`math.sum`, `math.dot`). Where the two
+# part, the function says so: an answer past the largest float fails
+# `does_not_fit` where Python raises or answers an infinity, and a nan in data
+# that must be ordered fails `invalid` where Python answers what its sort left.
+#
+# It does not draw random samples, which is `random`'s, nor hold a normal
+# distribution. It fails with `invalid`, for data a statistic cannot read (too
+# few values, a nan to order, lists of different lengths), and `does_not_fit`.
+
+use stats/internal/exact
+use stats/internal/order
+use stats/internal/pairs
+
+# The code of data a statistic cannot read: too few values, a nan where the
+# values are ordered, two lists of different lengths, a constant input. Every
+# function but `multimode` fails with it.
+constant INVALID: str
+    exact.INVALID
+
+# The code of an answer past the largest float, from finite data: the
+# variances, `covariance`, `fast_mean`, `weighted_mean` and the regressions
+# fail with it.
+constant DOES_NOT_FIT: str
+    exact.DOES_NOT_FIT
+
+## Means
+
+# The arithmetic mean of `data`, computed exactly and rounded once.
+#
+# - `data`: the values, at least one; a nan, or both infinities, answers a
+#   nan, and one infinity answers itself.
+#
+# Never past the largest float, since a mean lies between the values. Fails
+# `invalid` where `data` is empty. It costs integers as wide as the spread of
+# the values' powers of two. See also `fast_mean`, `median`.
+function mean(data: [f64]) -> f64?
+    return exact.mean(data)
+
+# The arithmetic mean of `data` as their sum rounded once over the count,
+# Python's `fmean`.
+#
+# - `data`: the values, at least one.
+#
+# It may differ from `mean` in the last bit, and is faster. Fails `invalid`
+# where `data` is empty, `does_not_fit` where the sum passes the largest float
+# on the way. See also `mean`.
+function fast_mean(data: [f64]) -> f64?
+    return pairs.fast_mean(data)
+
+# The mean of `data` weighted by `weights`: the sum of their products, over
+# the sum of the weights.
+#
+# - `data`: the values, at least one.
+# - `weights`: one weight for each value, in the same order; they may not sum
+#   to zero.
+#
+# Fails `invalid` where the two lists differ in length, are empty, or the
+# weights sum to zero; `does_not_fit` where a sum passes the largest float.
+# See also `fast_mean`.
+function weighted_mean(data: [f64], weights: [f64]) -> f64?
+    return pairs.weighted_mean(data: data, weights: weights)
+
+# The geometric mean of `data`: the exponential of the mean of their
+# logarithms.
+#
+# - `data`: the values, at least one, none below zero; a zero among them
+#   answers 0.0.
+#
+# Fails `invalid` where `data` is empty or holds a negative value. See also
+# `harmonic_mean`.
+function geometric_mean(data: [f64]) -> f64?
+    return pairs.geometric_mean(data)
+
+# The harmonic mean of `data`: their count over the sum of their inverses.
+#
+# - `data`: the values, at least one, none below zero; a zero among them
+#   answers 0.0, and a single value answers itself.
+#
+# The inverses are floats, their sum is exact, and the division is rounded
+# once, as Python's. Fails `invalid` where `data` is empty or holds a negative
+# value. See also `geometric_mean`.
+function harmonic_mean(data: [f64]) -> f64?
+    return exact.harmonic_mean(data)
+
+## Middles
+
+# The middle value of `data` in order, or the mean of the two middle values.
+#
+# - `data`: the values, at least one, no nan.
+#
+# The mean of two middle values is their float sum halved, so two values past
+# half the largest float answer an infinity, as Python's. Fails `invalid`
+# where `data` is empty or holds a nan. It sorts a copy. See also
+# `median_low`, `median_high`.
+function median(data: [f64]) -> f64?
+    return order.median(data)
+
+# The middle value of `data` in order, or the lower of the two middle values:
+# always one of the values.
+#
+# - `data`: the values, at least one, no nan.
+#
+# Fails `invalid` where `data` is empty or holds a nan. See also `median`.
+function median_low(data: [f64]) -> f64?
+    return order.median_low(data)
+
+# The middle value of `data` in order, or the higher of the two middle values:
+# always one of the values.
+#
+# - `data`: the values, at least one, no nan.
+#
+# Fails `invalid` where `data` is empty or holds a nan. See also `median`.
+function median_high(data: [f64]) -> f64?
+    return order.median_high(data)
+
+# The median of `data` read as classes `interval` wide, each centred on a
+# value: the lower edge of the middle value's class plus the share of it the
+# middle of the data reaches.
+#
+# - `data`: the values, at least one, no nan.
+# - `interval`: the width of a class, in the values' unit; 1.0 for counts.
+#
+# Fails `invalid` where `data` is empty or holds a nan. See also `median`.
+function median_grouped(data: [f64], interval: f64) -> f64?
+    return order.median_grouped(data: data, interval: interval)
+
+# The value of `data` that occurs most often; of several, the first to occur.
+#
+# - `data`: the values, at least one, no nan; `0.0` and `-0.0` are one value,
+#   answered as it first occurred.
+#
+# Fails `invalid` where `data` is empty or holds a nan. See also `multimode`.
+function mode(data: [f64]) -> f64?
+    return order.mode(data)
+
+# Every value of `data` that occurs most often, in the order each first
+# occurred.
+#
+# - `data`: the values, no nan; an empty list answers an empty list.
+#
+# Fails `invalid` where `data` holds a nan. See also `mode`.
+function multimode(data: [f64]) -> [f64]?
+    return order.modes(data)
+
+## Spread
+
+# The sample variance of `data`: the squared distances from their mean,
+# summed, over the count less one; exact, rounded once.
+#
+# - `data`: the values, at least two; a nan, or both infinities, answers a
+#   nan, and an infinity answers the positive infinity.
+#
+# Fails `invalid` where `data` holds fewer than two values, `does_not_fit`
+# where the variance passes the largest float. Python answers the negative
+# infinity where the only infinity is negative. See also
+# `population_variance`, `standard_deviation`.
+function variance(data: [f64]) -> f64?
+    return exact.variance_of(data, sample: true, root_of: false)
+
+# The population variance of `data`: the squared distances from their mean,
+# summed, over the count; exact, rounded once.
+#
+# - `data`: the values, at least one; a nan, or both infinities, answers a
+#   nan, and an infinity the positive infinity.
+#
+# Fails `invalid` where `data` is empty, `does_not_fit` where the variance
+# passes the largest float. See also `variance`.
+function population_variance(data: [f64]) -> f64?
+    return exact.variance_of(data, sample: false, root_of: false)
+
+# The sample standard deviation of `data`: the square root of the exact
+# sample variance, rounded once.
+#
+# - `data`: the values, at least two; a nan, or both infinities, answers a
+#   nan, and an infinity the positive infinity, where Python fails.
+#
+# Never past the largest float for finite data, even where the variance is.
+# Fails `invalid` where `data` holds fewer than two values. See also
+# `variance`.
+function standard_deviation(data: [f64]) -> f64?
+    return exact.variance_of(data, sample: true, root_of: true)
+
+# The population standard deviation of `data`: the square root of the exact
+# population variance, rounded once.
+#
+# - `data`: the values, at least one; non-finite values answer as
+#   `standard_deviation`'s.
+#
+# Fails `invalid` where `data` is empty. See also `population_variance`.
+function population_standard_deviation(data: [f64]) -> f64?
+    return exact.variance_of(data, sample: false, root_of: true)
+
+## Quantiles
+
+# The `parts - 1` points that cut `data` into `parts` groups of equal share,
+# reading `data` as a sample of a population that reaches past it.
+#
+# - `data`: the values, at least one, no nan; one value answers itself at
+#   every point.
+# - `parts`: how many groups, at least 1: 4 gives the quartiles, 10 the
+#   deciles, 100 the percentiles; 1 answers no point.
+#
+# The points are interpolated between neighbours in order, and may lie
+# beyond the smallest and the largest value. Fails `invalid` where `data` is
+# empty or holds a nan, or `parts` is below 1. See also
+# `quantiles_inclusive`.
+function quantiles(data: [f64], parts: i64) -> [f64]?
+    return order.quantiles(data: data, parts: parts, inclusive: false)
+
+# The `parts - 1` points that cut `data` into `parts` groups of equal share,
+# reading `data` as the whole population: the smallest value is the 0th
+# point and the largest the last.
+#
+# - `data`: the values, at least one, no nan.
+# - `parts`: how many groups, at least 1.
+#
+# The points lie between the smallest and the largest value. Fails `invalid`
+# where `data` is empty or holds a nan, or `parts` is below 1. See also
+# `quantiles`.
+function quantiles_inclusive(data: [f64], parts: i64) -> [f64]?
+    return order.quantiles(data: data, parts: parts, inclusive: true)
+
+## Two lists
+
+# What `linear_regression` answers: the line `slope` times x plus
+# `intercept`. Built directly, or by the two regressions.
+record Line
+    # How much y grows for each unit of x.
+    slope: f64
+    # The y of the line where x is zero.
+    intercept: f64
+
+# The sample covariance of `x` and `y`: how far they vary together.
+#
+# - `x`: the first values, at least two.
+# - `y`: the second values, one for each of `x`, in the same order.
+#
+# Fails `invalid` where the lists differ in length or hold fewer than two
+# values, `does_not_fit` where the answer passes the largest float, where
+# Python answers an infinity. See also `correlation`.
+function covariance(x: [f64], y: [f64]) -> f64?
+    return pairs.covariance(x: x, y: y)
+
+# Pearson's correlation of `x` and `y`, from -1 to 1: how close the pairs lie
+# to a line.
+#
+# - `x`: the first values, at least two, not all one value.
+# - `y`: the second values, one for each of `x`, not all one value.
+#
+# Fails `invalid` where the lists differ in length, hold fewer than two
+# values, or either is constant. See also `rank_correlation`, `covariance`.
+function correlation(x: [f64], y: [f64]) -> f64?
+    return pairs.correlation(x: x, y: y)
+
+# Spearman's rank correlation of `x` and `y`: Pearson's of their ranks, tied
+# values sharing the mean of their ranks, so any rising relation answers 1.
+#
+# - `x`: the first values, at least two, no nan.
+# - `y`: the second values, one for each of `x`, no nan.
+#
+# Fails `invalid` where the lists differ in length, hold fewer than two
+# values or a nan, or either is constant. See also `correlation`.
+function rank_correlation(x: [f64], y: [f64]) -> f64?
+    return pairs.rank_correlation(x: x, y: y)
+
+# The line of least squares through the pairs of `x` and `y`.
+#
+# - `x`: the values the line reads, at least two, not all one value.
+# - `y`: the values it predicts, one for each of `x`.
+#
+# Fails `invalid` where the lists differ in length, hold fewer than two
+# values, or every x is one value; `does_not_fit` where the slope passes the
+# largest float. See also `proportional_regression`.
+function linear_regression(x: [f64], y: [f64]) -> Line?
+    fit = pairs.linear_regression(x: x, y: y)?
+    return ok(Line(slope: fit.slope, intercept: fit.intercept))
+
+# The line of least squares through the pairs of `x` and `y` that passes
+# through the origin: its intercept is 0.0.
+#
+# - `x`: the values the line reads, at least two, not all zero.
+# - `y`: the values it predicts, one for each of `x`.
+#
+# Fails `invalid` where the lists differ in length, hold fewer than two
+# values, or every x is zero. See also `linear_regression`.
+function proportional_regression(x: [f64], y: [f64]) -> Line?
+    fit = pairs.proportional_regression(x: x, y: y)?
+    return ok(Line(slope: fit.slope, intercept: fit.intercept))
+
+## Examples
+
+# The mean of a week's temperatures.
+test "mean: the mean of five readings"
+    assert mean([18.5, 21.0, 19.5, 22.0, 19.0]).must() == 20.0
+
+# A mean computed through a sum of floats.
+test "fast_mean: the mean of three values"
+    assert fast_mean([1.0, 2.0, 4.5]).must() == 2.5
+
+# Grades weighted by their credits.
+test "weighted_mean: grades weighted by credits"
+    assert weighted_mean(data: [20.0, 30.0], weights: [1.0, 3.0]).must() == 27.5
+
+# The mean rate of growth over two years: a hair below 3, as Python answers.
+test "geometric_mean: a growth of 1.5 then 6"
+    assert geometric_mean([1.5, 6.0]).must() == 2.9999999999999996
+
+# The mean speed over two equal distances.
+test "harmonic_mean: two legs at 40 and 60"
+    assert harmonic_mean([40.0, 60.0]).must() == 48.0
+
+# The middle of a list of prices.
+test "median: four prices"
+    assert median([3.0, 1.0, 4.0, 2.0]).must() == 2.5
+
+# The lower of two middle values.
+test "median_low: four values"
+    assert median_low([3.0, 1.0, 4.0, 2.0]).must() == 2.0
+
+# The higher of two middle values.
+test "median_high: four values"
+    assert median_high([3.0, 1.0, 4.0, 2.0]).must() == 3.0
+
+# A median of ages counted in classes of one year.
+test "median_grouped: ages in classes of one year"
+    assert median_grouped(data: [52.0, 52.0, 53.0, 54.0], interval: 1.0).must() == 52.5
+
+# The shoe size sold most.
+test "mode: the size sold most"
+    assert mode([42.0, 38.0, 42.0, 40.0]).must() == 42.0
+
+# Every size sold most.
+test "multimode: two sizes sold as often"
+    assert multimode([42.0, 38.0, 42.0, 38.0, 40.0]).must() == [42.0, 38.0]
+
+# How far a sample spreads.
+test "variance: a sample of four"
+    assert variance([1.0, 2.0, 3.0, 4.0]).must() == 1.6666666666666667
+
+# How far a whole population spreads.
+test "population_variance: a population of four"
+    assert population_variance([1.0, 2.0, 3.0, 4.0]).must() == 1.25
+
+# The spread of a sample, in the values' unit.
+test "standard_deviation: a sample of three"
+    assert standard_deviation([2.0, 4.0, 6.0]).must() == 2.0
+
+# The spread of a population, in the values' unit.
+test "population_standard_deviation: a population of two"
+    assert population_standard_deviation([1.0, 3.0]).must() == 1.0
+
+# The quartiles of a sample.
+test "quantiles: the quartiles of four values"
+    assert quantiles(data: [1.0, 2.0, 4.0, 8.0], parts: 4).must() == [1.25, 3.0, 7.0]
+
+# The quartiles of a whole population.
+test "quantiles_inclusive: the quartiles of four values"
+    assert quantiles_inclusive(data: [1.0, 2.0, 4.0, 8.0], parts: 4).must() == [1.75, 3.0, 5.0]
+
+# How two measures vary together.
+test "covariance: hours studied and marks"
+    assert covariance(x: [1.0, 2.0, 3.0], y: [2.0, 4.0, 6.0]).must() == 2.0
+
+# How close pairs lie to a line.
+test "correlation: pairs on a rising line"
+    assert correlation(x: [1.0, 2.0, 3.0], y: [2.0, 4.0, 6.0]).must() == 1.0
+
+# Whether one measure rises with the other, whatever the curve.
+test "rank_correlation: a rising curve"
+    assert rank_correlation(x: [1.0, 2.0, 3.0, 4.0], y: [1.0, 8.0, 27.0, 64.0]).must() == 1.0
+
+# The line through three points.
+test "linear_regression: a line through three points"
+    line = linear_regression(x: [1.0, 2.0, 3.0], y: [3.0, 5.0, 7.0]).must()
+    assert line.slope == 2.0 && line.intercept == 1.0
+
+# The line through the origin.
+test "proportional_regression: a price per unit"
+    assert proportional_regression(x: [1.0, 2.0, 4.0], y: [2.5, 5.0, 10.0]).must().slope == 2.5

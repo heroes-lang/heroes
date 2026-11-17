@@ -1,0 +1,53 @@
+# The decision every rounding of `big` comes down to: a value lies strictly
+# between two whole numbers, the one nearer zero is known, and the mode says
+# whether the answer is the other one. The face's `Rounding` is read into a
+# `Mode` once, in its `divide`, and every rounded result passes there.
+
+use big/internal/limbs
+
+# The ways of rounding, case for case the face's `Rounding`.
+variant Mode
+    toward_zero
+    away_from_zero
+    floor
+    ceiling
+    half_even
+    half_away_from_zero
+    half_toward_zero
+    away_if_zero_or_five
+
+# Whether a value strictly between `kept` and the next whole number farther
+# from zero rounds away from zero. `kept` is the magnitude of the value
+# rounded toward zero, `negative` the value's sign, and `half` -1, 0 or 1 as
+# the part dropped is below a half, a half, or above.
+function goes_away(mode: Mode, negative: bool, half: i64, kept: [i64]) -> bool
+    return match mode
+        .toward_zero          => false
+        .away_from_zero       => true
+        .floor                => negative
+        .ceiling              => !negative
+        .half_even            => half > 0 || half == 0 && limbs.bit(a: kept, index: 0)
+        .half_away_from_zero  => half >= 0
+        .half_toward_zero     => half > 0
+        .away_if_zero_or_five => limbs.divided_small(a: kept, d: 5).remainder == 0
+
+## Tests
+
+test "goes_away: each mode, below, at and above a half, either sign"
+    nothing: [i64] = []
+    assert !goes_away(mode: .toward_zero, negative: true, half: 1, kept: [3])
+    assert goes_away(mode: .away_from_zero, negative: false, half: -1, kept: [3])
+    assert goes_away(mode: .floor, negative: true, half: -1, kept: [3])
+    assert !goes_away(mode: .floor, negative: false, half: 1, kept: [3])
+    assert goes_away(mode: .ceiling, negative: false, half: -1, kept: [3])
+    assert !goes_away(mode: .ceiling, negative: true, half: 1, kept: [3])
+    assert goes_away(mode: .half_even, negative: false, half: 0, kept: [3])
+    assert !goes_away(mode: .half_even, negative: false, half: 0, kept: [4])
+    assert !goes_away(mode: .half_even, negative: false, half: 0, kept: nothing)
+    assert goes_away(mode: .half_even, negative: false, half: 1, kept: [4])
+    assert goes_away(mode: .half_away_from_zero, negative: true, half: 0, kept: [4])
+    assert !goes_away(mode: .half_toward_zero, negative: true, half: 0, kept: [3])
+    assert goes_away(mode: .half_toward_zero, negative: true, half: 1, kept: [3])
+    assert goes_away(mode: .away_if_zero_or_five, negative: false, half: -1, kept: [15])
+    assert goes_away(mode: .away_if_zero_or_five, negative: false, half: -1, kept: nothing)
+    assert !goes_away(mode: .away_if_zero_or_five, negative: false, half: 1, kept: [16])

@@ -1,0 +1,425 @@
+# Where an HTML page stands between two of its characters, as the HTML mode
+# reads a template's text: in text, in a tag, in an attribute's value of some
+# kind, in a script or a style sheet and where in them. A value is escaped by
+# the context it lands in; two ways through a template that meet must meet in
+# one context, or in one that differs only by what is unknown of a URL's part
+# or of a script's next `/`.
+
+use template/internal/names
+use template/internal/program
+
+## States
+
+constant TEXT: i64
+    0
+
+# Inside a tag's name, `word` holding it so far, `/` first for an end tag.
+constant TAG_NAME: i64
+    1
+
+# Inside a tag, between its attributes.
+constant TAG: i64
+    2
+
+# Inside an attribute's name, `word` holding it so far in lower case.
+constant ATTR_NAME: i64
+    3
+
+# After an attribute's name, where `=` may follow.
+constant AFTER_NAME: i64
+    4
+
+# After `=`, where the value begins.
+constant BEFORE_VALUE: i64
+    5
+
+# Inside a value of text; a script's `type` gathers in `word`.
+constant VALUE: i64
+    6
+
+constant URL: i64
+    7
+
+constant SRCSET: i64
+    8
+
+constant JS: i64
+    9
+
+constant JS_DOUBLE: i64
+    10
+
+constant JS_SINGLE: i64
+    11
+
+constant JS_TEMPLATE: i64
+    12
+
+constant JS_REGEXP: i64
+    13
+
+constant JS_LINE_COMMENT: i64
+    14
+
+constant JS_BLOCK_COMMENT: i64
+    15
+
+constant CSS: i64
+    16
+
+constant CSS_DOUBLE: i64
+    17
+
+constant CSS_SINGLE: i64
+    18
+
+constant CSS_URL: i64
+    19
+
+constant CSS_DOUBLE_URL: i64
+    20
+
+constant CSS_SINGLE_URL: i64
+    21
+
+constant CSS_BLOCK_COMMENT: i64
+    22
+
+constant CSS_LINE_COMMENT: i64
+    23
+
+constant HTML_COMMENT: i64
+    24
+
+# Inside a title or a textarea, whose text holds no tag.
+constant RCDATA: i64
+    25
+
+## What delimits an attribute's value
+
+# No attribute: the content of an element.
+constant NO_DELIM: i64
+    0
+
+constant DOUBLE: i64
+    1
+
+constant SINGLE: i64
+    2
+
+constant UNQUOTED: i64
+    3
+
+## Which part of a URL
+
+constant URL_NONE: i64
+    0
+
+constant URL_PRE_QUERY: i64
+    1
+
+constant URL_QUERY: i64
+    2
+
+constant URL_UNKNOWN: i64
+    3
+
+## What a script's next `/` begins
+
+constant SLASH_REGEXP: i64
+    0
+
+constant SLASH_DIV: i64
+    1
+
+constant SLASH_UNKNOWN: i64
+    2
+
+# Where the page stands.
+record Context
+    # One of the states above.
+    state: i64
+    # The delimiter of the attribute value it stands in, `NO_DELIM` outside one.
+    delim: i64
+    # In a URL, which part of it.
+    url_part: i64
+    # In a script, what a `/` begins.
+    slash: i64
+    # The kind of the attribute named or valued, `names.ATTR_*`.
+    attr: i64
+    # The element whose tag or content it stands in, `names.ELEMENT_*`.
+    element: i64
+    # In a script inside a template literal's `${`, the `{` open in each
+    # expression, the innermost last.
+    braces: [i64]
+    # In a regular expression, whether inside `[...]`.
+    in_class: bool
+    # A name or a value being gathered.
+    word: str
+
+# What escapes a value in a context, and the context after it.
+record Choice
+    escaper: i64
+    delim: i64
+    after: Context
+
+# The context a page begins in: text.
+function initial() -> Context
+    return Context(
+        state: TEXT,
+        delim: NO_DELIM,
+        url_part: URL_NONE,
+        slash: SLASH_REGEXP,
+        attr: names.ATTR_PLAIN,
+        element: names.ELEMENT_NONE,
+        braces: [],
+        in_class: false,
+        word: ""
+    )
+
+# The context of `start` with another state, every other field as it was.
+function with_state(start: Context, state: i64) -> Context
+    next: Context @= start
+    next.state @ state
+    return next
+
+# A text that names `c` whole, for a part's key.
+function key_of(c: Context lent) -> str
+    braces: [str] @= []
+
+    for b in c.braces
+        braces @ braces.push(to_str(b))
+
+    return f"{c.state}.{c.delim}.{c.url_part}.{c.slash}.{c.attr}.{c.element}.{braces.join(",")}.{c.in_class}.{c.word}"
+
+# What a scanner answers: the text it wrote and the context it ends in, or a
+# fault, which is "" where there is none, and the byte it stands at.
+record Scanned
+    text: str
+    ctx: Context
+    fault: str
+    fault_at: i64
+
+# The part of a URL after the byte `b`, from `part`: `?` and `#` begin the
+# query or the fragment, and anything but white space at the start begins the
+# path.
+function url_after(part: i64, b: u8) -> i64
+    if b == '?' || b == '#'
+        return URL_QUERY
+
+    if part == URL_NONE && !(b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 0x0c)
+        return URL_PRE_QUERY
+    return part
+
+# The context a value begins in, after `=`, for an attribute of kind `attr`
+# delimited by `delim`.
+function value_start(around: Context, delim: i64) -> Context
+    next: Context @= initial()
+    next.delim @ delim
+    next.attr @ around.attr
+    next.element @ around.element
+
+    next.state @ match around.attr
+        1 => JS
+        2 => CSS
+        3 => URL
+        4 => SRCSET
+        _ => VALUE
+
+    return next
+
+# Whether `s` is a state of a script.
+function is_js(s: i64) -> bool
+    return s >= JS && s <= JS_BLOCK_COMMENT
+
+# Whether `s` is a state of a style sheet.
+function is_css(s: i64) -> bool
+    return s >= CSS && s <= CSS_LINE_COMMENT
+
+# Whether `s` is a state that reads a URL's parts.
+function is_url(s: i64) -> bool
+    return s == URL || s == CSS_DOUBLE || s == CSS_SINGLE || s == CSS_URL || s == CSS_DOUBLE_URL || s == CSS_SINGLE_URL
+
+# `c` described for a message.
+function describe(c: Context lent) -> str
+    place = match c.state
+        0  => "text"
+        1  => "a tag's name"
+        2  => "a tag, between its attributes"
+        3  => "an attribute's name"
+        4  => "a tag, after an attribute's name"
+        5  => "an attribute, before its value"
+        6  => "an attribute's value"
+        7  => "a URL"
+        8  => "a list of images"
+        9  => "a script"
+        10 => "a script's string"
+        11 => "a script's string"
+        12 => "a script's template literal"
+        13 => "a script's regular expression"
+        14 => "a script's comment"
+        15 => "a script's comment"
+        16 => "a style sheet"
+        17 => "a style sheet's string"
+        18 => "a style sheet's string"
+        19 => "a style sheet's url(...)"
+        20 => "a style sheet's url(...)"
+        21 => "a style sheet's url(...)"
+        22 => "a style sheet's comment"
+        23 => "a style sheet's comment"
+        24 => "an HTML comment"
+        _  => "a title or a textarea"
+
+    if c.delim != NO_DELIM && c.state >= VALUE && c.state <= CSS_LINE_COMMENT && c.state != VALUE
+        return place + " inside an attribute's value"
+    return place
+
+# The context two ways through a template meet in, `a` and `b`: either, where
+# they are one; the one with what differs unknown, where only a URL's part or
+# a script's next `/` differs. Fails `invalid` where they differ otherwise.
+function meet(a: Context, b: Context) -> Context?
+    if a == b
+        return ok(a)
+    x: Context @= nudged(a)
+    y: Context @= nudged(b)
+
+    if x.url_part != y.url_part
+        x.url_part @ URL_UNKNOWN
+        y.url_part @ URL_UNKNOWN
+
+    if x.slash != y.slash
+        x.slash @ SLASH_UNKNOWN
+        y.slash @ SLASH_UNKNOWN
+
+    if x == y
+        return ok(x)
+    return fail(
+        code: "invalid",
+        msg: f"two ways through the template meet here in different places of the page: {describe(a)}, and {describe(b)}"
+    )
+
+# `c`, where it waits for an attribute's value, as the value begun with no
+# quotes, which is what any character but white space or a quote there begins.
+function nudged(c: Context) -> Context
+    if c.state == BEFORE_VALUE
+        return value_start(c, delim: UNQUOTED)
+    return c
+
+# How a value is escaped in `c`, and the context after it. Fails `invalid`
+# where `c` is no place for a value: inside a tag's name or an attribute's,
+# a script's `type`, a URL whose part is unknown, or a script's `/` that may
+# begin either.
+function escaper_for(c: Context) -> Choice?
+    delim = match c.delim
+        0 => program.DELIM_NONE
+        3 => program.DELIM_UNQUOTED
+        _ => program.DELIM_QUOTED
+
+    s = c.state
+
+    if s == TEXT || s == RCDATA
+        return ok(Choice(escaper: program.HTML_TEXT, delim: program.DELIM_NONE, after: c))
+
+    if s == TAG || s == AFTER_NAME
+        after: Context @= c
+        after.state @ AFTER_NAME
+        after.attr @ names.ATTR_PLAIN
+        return ok(Choice(escaper: program.ATTR_NAME, delim: program.DELIM_NONE, after: after))
+
+    if s == TAG_NAME
+        return fail(code: "invalid", msg: "a value would stand in a tag's name, which the template writes whole")
+
+    if s == ATTR_NAME
+        return fail(
+            code: "invalid",
+            msg: "a value would stand in an attribute's name the template has begun: an attribute's name is written whole, or given whole by one value after white space"
+        )
+
+    if s == BEFORE_VALUE
+        return escaper_for(value_start(c, delim: UNQUOTED))
+
+    if s == VALUE
+        if c.attr == names.ATTR_SCRIPT_TYPE
+            return fail(
+                code: "invalid",
+                msg: "a value would stand in a script's `type`, which the template writes whole"
+            )
+        return ok(Choice(escaper: program.ATTR_PLAIN, delim: delim, after: c))
+
+    if s == SRCSET
+        return ok(Choice(escaper: program.SRCSET, delim: delim, after: c))
+
+    if s == JS
+        after: Context @= c
+        after.slash @ SLASH_DIV
+        return ok(Choice(escaper: program.JS_VALUE, delim: delim, after: after))
+
+    if s == JS_DOUBLE || s == JS_SINGLE
+        return ok(Choice(escaper: program.JS_STRING, delim: delim, after: c))
+
+    if s == JS_TEMPLATE
+        return ok(Choice(escaper: program.JS_TEMPLATE, delim: delim, after: c))
+
+    if s == JS_REGEXP
+        return ok(Choice(escaper: program.JS_REGEXP, delim: delim, after: c))
+
+    if s == CSS
+        return ok(Choice(escaper: program.CSS_VALUE, delim: delim, after: c))
+
+    if is_url(s)
+        if c.url_part == URL_UNKNOWN
+            return fail(
+                code: "invalid",
+                msg: "a value would stand in a URL where it is unknown whether its path or its query is reached: the ways before it leave the URL at different parts"
+            )
+
+        if c.url_part == URL_QUERY
+            return ok(Choice(escaper: program.URL_QUERY, delim: delim, after: c))
+        in_string = s == CSS_DOUBLE || s == CSS_SINGLE
+
+        if c.url_part == URL_NONE
+            start = if in_string
+                program.CSS_STRING_START
+            else
+                program.URL_START
+            return ok(Choice(escaper: start, delim: delim, after: c))
+
+        path = if in_string
+            program.CSS_STRING
+        else
+            program.URL_PATH
+        return ok(Choice(escaper: path, delim: delim, after: c))
+    return ok(Choice(escaper: program.DROPPED, delim: program.DELIM_NONE, after: c))
+
+test "meet: one context, a URL's part and a script's slash made unknown, a value begun, and places that differ"
+    text = initial()
+    assert meet(a: text, b: text).must() == text
+    url: Context @= value_start(initial(), delim: DOUBLE)
+    url.state @ URL
+    path: Context @= url
+    path.url_part @ URL_PRE_QUERY
+    assert meet(a: url, b: path).must().url_part == URL_UNKNOWN
+    script = with_state(initial(), JS)
+    divided: Context @= script
+    divided.slash @ SLASH_DIV
+    assert meet(a: script, b: divided).must().slash == SLASH_UNKNOWN
+
+    match meet(a: text, b: with_state(initial(), TAG))
+        .ok _  => assert false
+        .err e => assert e.msg == "two ways through the template meet here in different places of the page: text, and a tag, between its attributes"
+
+test "escaper_for: each place's escaper, the context after it, and each place no value stands"
+    assert escaper_for(initial()).must().escaper == program.HTML_TEXT
+    tag = escaper_for(with_state(initial(), TAG)).must()
+    assert tag.escaper == program.ATTR_NAME && tag.after.state == AFTER_NAME
+    url: Context @= value_start(initial(), delim: SINGLE)
+    url.state @ URL
+    assert escaper_for(url).must().escaper == program.URL_START && escaper_for(url).must().delim == program.DELIM_QUOTED
+    url.url_part @ URL_QUERY
+    assert escaper_for(url).must().escaper == program.URL_QUERY
+    url.url_part @ URL_UNKNOWN
+    assert escaper_for(url).is_err()
+    script = escaper_for(with_state(initial(), JS)).must()
+    assert script.escaper == program.JS_VALUE && script.after.slash == SLASH_DIV && script.delim == program.DELIM_NONE
+    assert escaper_for(with_state(initial(), TAG_NAME)).is_err() && escaper_for(with_state(initial(), ATTR_NAME)).is_err()
+    assert escaper_for(with_state(initial(), HTML_COMMENT)).must().escaper == program.DROPPED

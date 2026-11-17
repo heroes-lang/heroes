@@ -1,0 +1,70 @@
+# Products of ranges of integers, and the factorials and binomial
+# coefficients made of them. A range is multiplied in halves, so the large
+# products are of numbers of about the same length, where Karatsuba's method
+# pays.
+
+use big/internal/limbs
+use big/internal/product
+use big/internal/quotient
+use big/internal/signed
+
+# The product of the integers from `from` to `to` less one, all above zero.
+function positive(from: i64, to: i64) -> [i64]
+    if to - from <= 8
+        acc: [i64] @= [1]
+        k: i64 @= from
+
+        while k < to
+            acc @ product.multiply(a: acc, b: limbs.of(k))
+            k @ k + 1
+
+        return acc
+    middle = from + (to - from) / 2
+    return product.multiply(a: positive(from: from, to: middle), b: positive(from: middle, to: to))
+
+# The product of the integers from `from` to `to` less one.
+function range_product(from: i64, to: i64) -> signed.Signed
+    if from >= to
+        return signed.of_int(1)
+
+    if from <= 0 && to > 0
+        return signed.of_int(0)
+
+    if to <= 0
+        return signed.make(negative: to - from & 1 == 1, magnitude: positive(from: 1 - to, to: 1 - from))
+    return signed.make(negative: false, magnitude: positive(from: from, to: to))
+
+# `n` factorial, `n` not negative.
+function factorial(n: i64) -> [i64]
+    assert n >= 0
+    return positive(from: 1, to: n + 1)
+
+# The ways to choose `k` of `n`, both not negative.
+function binomial(n: i64, k: i64) -> [i64]
+    assert n >= 0 && k >= 0
+
+    if k > n
+        return []
+    least: i64 @= k
+
+    if n - k < least
+        least @ n - k
+    return quotient.divide(n: positive(from: n - least + 1, to: n + 1), by: factorial(least)).quotient
+
+## Tests
+
+test "range_product: empty, holding zero, all negative of each parity, and positive"
+    assert range_product(from: 5, to: 5) == signed.of_int(1)
+    assert range_product(from: -3, to: 4) == signed.of_int(0)
+    assert range_product(from: -4, to: -1) == signed.of_int(-24)
+    assert range_product(from: -4, to: 0) == signed.of_int(24)
+    assert range_product(from: 3, to: 7) == signed.of_int(360)
+
+test "factorial and binomial: zero, twenty, k above n, and a symmetric k"
+    nothing: [i64] = []
+    assert factorial(0) == [1]
+    assert factorial(20) == limbs.of(2432902008176640000)
+    assert binomial(n: 5, k: 7) == nothing
+    assert binomial(n: 0, k: 0) == [1]
+    assert binomial(n: 50, k: 48) == limbs.of(1225)
+    assert binomial(n: 60, k: 30) == limbs.of(118264581564861424)

@@ -1,0 +1,387 @@
+# A file in the TZif format of RFC 9636 read into its parts: the instants its
+# offset changes, its local time types, and the rule in its footer. Every
+# count and every index is held to the bytes before anything is read past
+# them, so a file from outside the program fails `invalid` and never aborts.
+# A version 1 file is read from its 32-bit block; a later one skips that block
+# and reads the 64-bit one and its footer, as the RFC tells a reader to.
+
+use bytes
+
+# The code of bytes that are not a TZif file.
+constant INVALID: str
+    "invalid"
+
+# The code of a file that counts leap seconds.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The least offset of a local time type, in seconds: RFC 9636's bound, less
+# than a day and two hours behind UTC.
+constant LEAST_OFFSET: i64
+    -89_999
+
+# The greatest offset of a local time type, in seconds, RFC 9636's bound.
+constant MOST_OFFSET: i64
+    93_599
+
+# One local time type of a file.
+record Kind
+    # Seconds ahead of UTC.
+    offset: i64
+    # Whether the file flags it as daylight saving time.
+    daylight: bool
+    # Its abbreviation, `CET`.
+    abbreviation: str
+
+# What a file holds.
+record Table
+    # The instants the offset changes, in seconds since 1970, each after the
+    # one before.
+    times: [i64]
+    # For each instant, the index in `kinds` of the type it begins.
+    indices: [i64]
+    # The local time types, at least one.
+    kinds: [Kind]
+    # The rule after the last instant, POSIX's `TZ` text, empty where the file
+    # has none.
+    footer: str
+
+# The counts of a header, which say how long its block is.
+record Counts
+    # 1 for the version byte 0, else 2, 3 or 4.
+    version: i64
+    # How many UT and local indicators the block holds.
+    ut: i64
+    # How many standard and wall indicators.
+    standard: i64
+    # How many leap second records.
+    leaps: i64
+    # How many transition times.
+    times: i64
+    # How many local time types.
+    kinds: i64
+    # How many bytes of abbreviations.
+    letters: i64
+
+# The parts of the TZif file `data`. Fails `invalid` naming the byte where
+# the file is not one, and `unsupported` where it counts leap seconds.
+function read(data: [u8]) -> Table?
+    first = counts(data, at: 0)?
+
+    if first.version == 1
+        return block(data, at: 44, c: first, width: 4, footer: false)
+    second_at = 44 + length(c: first, width: 4)
+    second = counts(data, at: second_at)?
+
+    if second.version == 1
+        return fail(
+            code: INVALID,
+            msg: f"the second header, at byte {second_at}, says version 1 where the first says {first.version}"
+        )
+    return block(data, at: second_at + 44, c: second, width: 8, footer: true)
+
+# How many bytes the block that `c` counts holds, its times `width` bytes each.
+function length(c: Counts, width: i64) -> i64
+    return c.times * width + c.times + c.kinds * 6 + c.letters + c.leaps * (width + 4) + c.standard + c.ut
+
+# The header at byte `at` of `data`.
+function counts(data: [u8], at: i64) -> Counts?
+    if at > data.len() || data.len() - at < 44
+        return fail(
+            code: INVALID,
+            msg: f"a TZif header at byte {at} takes 44 bytes, and the {data.len()} bytes end first"
+        )
+
+    if data[at] != 'T' || data[at + 1] != 'Z' || data[at + 2] != 'i' || data[at + 3] != 'f'
+        return fail(code: INVALID, msg: f"the bytes at {at} do not begin \"TZif\"")
+    version = version_of(data[at + 4])
+
+    if version == 0
+        return fail(code: INVALID, msg: f"the version byte at {at + 4} is {data[at + 4]}, none of 0, '2', '3' or '4'")
+    return ok(
+        Counts(version: version, ut: count(data, at: at + 20)?, standard: count(data, at: at + 24)?, leaps: count(data, at: at + 28)?, times: count(data, at: at + 32)?, kinds: count(data, at: at + 36)?, letters: count(data, at: at + 40)?)
+    )
+
+# The version a version byte names, 1 for the byte 0, and 0 for a byte that
+# names none.
+function version_of(b: u8) -> i64
+    if b == 0
+        return 1
+
+    if b >= '2' && b <= '4'
+        return to_i64(b - '0').must()
+    return 0
+
+# The count of four bytes at `at`, an unsigned number.
+function count(data: [u8], at: i64) -> i64?
+    return ok(to_i64(bytes.decode_u32_be(data, at: at)?).must())
+
+# The block at byte `at`, its times `width` bytes each, and the footer after
+# it where `footer`.
+function block(data: [u8], at: i64, c: Counts, width: i64, footer: bool) -> Table?
+    if c.kinds == 0
+        return fail(code: INVALID, msg: f"the header before byte {at} counts no local time type")
+
+    if c.letters == 0
+        return fail(code: INVALID, msg: f"the header before byte {at} counts no byte of abbreviations")
+
+    if c.ut != 0 && c.ut != c.kinds || c.standard != 0 && c.standard != c.kinds
+        return fail(
+            code: INVALID,
+            msg: f"the header before byte {at} counts {c.ut} and {c.standard} indicators for {c.kinds} local time types"
+        )
+
+    if c.leaps != 0
+        return fail(code: UNSUPPORTED, msg: f"the file counts {c.leaps} leap seconds, and an instant counts none")
+    end = at + length(c: c, width: width)
+
+    if data.len() < end
+        return fail(
+            code: INVALID,
+            msg: f"the block at byte {at} takes {end - at} bytes, and the {data.len()} bytes end first"
+        )
+    times = times_of(data, at: at, n: c.times, width: width)?
+    indices_at = at + c.times * width
+    indices: [i64] @= []
+    k: i64 @= 0
+
+    while k < c.times
+        index = to_i64(data[indices_at + k]).must()
+
+        if index >= c.kinds
+            return fail(
+                code: INVALID,
+                msg: f"the type index at byte {indices_at + k} is {index}, and the file has {c.kinds} types"
+            )
+        indices @ indices.push(index)
+        k @ k + 1
+
+    kinds_at = indices_at + c.times
+    kinds = kinds_of(data, at: kinds_at, n: c.kinds, chars_at: kinds_at + c.kinds * 6, letters: c.letters)?
+    text: str @= ""
+
+    if footer
+        text @ footer_of(data, at: end)?
+    return ok(Table(times: times, indices: indices, kinds: kinds, footer: text))
+
+# The `n` transition times at byte `at`, `width` bytes each. Fails `invalid`
+# where one is not after the one before.
+function times_of(data: [u8], at: i64, n: i64, width: i64) -> [i64]?
+    times: [i64] @= []
+    k: i64 @= 0
+
+    while k < n
+        place = at + k * width
+        time: i64 @= 0
+
+        if width == 4
+            time @ to_i64(bytes.decode_i32_be(data, at: place)?).must()
+        else
+            time @ bytes.decode_i64_be(data, at: place)?
+
+        if k > 0 && time <= times[k - 1]
+            return fail(code: INVALID, msg: f"the transition time at byte {place} is not after the one before it")
+        times @ times.push(time)
+        k @ k + 1
+
+    return ok(times)
+
+# The `n` local time types at byte `at`, their abbreviations in the `chars`
+# bytes at `chars_at`.
+function kinds_of(data: [u8], at: i64, n: i64, chars_at: i64, letters: i64) -> [Kind]?
+    kinds: [Kind] @= []
+    k: i64 @= 0
+
+    while k < n
+        place = at + k * 6
+        offset = to_i64(bytes.decode_i32_be(data, at: place)?).must()
+
+        if offset < LEAST_OFFSET || offset > MOST_OFFSET
+            return fail(
+                code: INVALID,
+                msg: f"the offset at byte {place} is {offset} seconds, outside {LEAST_OFFSET} to {MOST_OFFSET}"
+            )
+        flag = data[place + 4]
+
+        if flag > 1
+            return fail(code: INVALID, msg: f"the daylight flag at byte {place + 4} is {flag}, neither 0 nor 1")
+        index = to_i64(data[place + 5]).must()
+
+        if index >= letters
+            return fail(
+                code: INVALID,
+                msg: f"the abbreviation index at byte {place + 5} is {index}, and the file has {letters} bytes of them"
+            )
+        kinds @ kinds.push(
+            Kind(offset: offset, daylight: flag == 1, abbreviation: abbreviation_at(data, at: chars_at + index, end: chars_at + letters)?)
+        )
+        k @ k + 1
+
+    return ok(kinds)
+
+# The abbreviation that begins at byte `at` and ends at the zero byte before
+# `end`.
+function abbreviation_at(data: [u8], at: i64, end: i64) -> str?
+    stop: i64 @= at
+
+    while stop < end && data[stop] != 0
+        stop @ stop + 1
+
+    if stop == end
+        return fail(
+            code: INVALID,
+            msg: f"the abbreviation at byte {at} has no zero byte before the abbreviations end, at byte {end}"
+        )
+
+    match bytes.to_text(data.slice(from: at, to: stop))
+        .ok text => return ok(text)
+        .err _   => return fail(code: INVALID, msg: f"the abbreviation at byte {at} is not UTF-8")
+
+# The footer at byte `at`: the text between two line feeds, or the empty text
+# where the file ends at `at`.
+function footer_of(data: [u8], at: i64) -> str?
+    if at == data.len()
+        return ok("")
+
+    if data[at] != '\n'
+        return fail(code: INVALID, msg: f"the footer at byte {at} does not begin with a line feed")
+    stop: i64 @= at + 1
+
+    while stop < data.len() && data[stop] != '\n'
+        stop @ stop + 1
+
+    if stop == data.len()
+        return fail(code: INVALID, msg: f"the footer at byte {at} has no line feed after it")
+
+    match bytes.to_text(data.slice(from: at + 1, to: stop))
+        .ok text => return ok(text)
+        .err _   => return fail(code: INVALID, msg: f"the footer at byte {at} is not UTF-8")
+
+# A TZif file for the tests: the version byte `version`, one header and block
+# of 32-bit times, and for a later version a second of 64-bit times and the
+# footer `footer`; the 32-bit block keeps the times that fit it, as a real
+# file does. Its two types are LMT at +0:49:56 and CET at +1:00, and
+# each of `times` begins CET; `leaps` leap seconds are counted and written.
+function sample(version: u8, times: [i64], footer: str, leaps: i64) -> [u8]
+    out: [u8] @= []
+    narrow: [i64] @= []
+
+    for t in times
+        if t >= -2_147_483_648 && t <= 2_147_483_647
+            narrow @ narrow.push(t)
+
+    sample_block(@out, version: version, times: narrow, width: 4, leaps: leaps)
+
+    if version != 0
+        sample_block(@out, version: version, times: times, width: 8, leaps: leaps)
+        out @ out.push('\n')
+        bytes.push_text(to: @out, s: footer)
+        out @ out.push('\n')
+    return out
+
+# Adds a header and its block to `out`, as `sample` says.
+function sample_block(@out: [u8], version: u8, times: [i64], width: i64, leaps: i64)
+    bytes.push_text(to: @out, s: "TZif")
+    out @ out.push(version)
+    k: i64 @= 0
+
+    while k < 15
+        out @ out.push(0)
+        k @ k + 1
+
+    for n in [0, 0, leaps, times.len(), 2, 8]
+        bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(n).must()))
+
+    for t in times
+        if width == 4
+            bytes.push_all(to: @out, from: bytes.encode_i32_be(to_i32(t).must()))
+        else
+            bytes.push_all(to: @out, from: bytes.encode_i64_be(t))
+
+    for _ in times
+        out @ out.push(1)
+
+    bytes.push_all(to: @out, from: bytes.encode_i32_be(2_996))
+    out @ out.push(0)
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: bytes.encode_i32_be(3_600))
+    out @ out.push(0)
+    out @ out.push(4)
+    bytes.push_text(to: @out, s: "LMT")
+    out @ out.push(0)
+    bytes.push_text(to: @out, s: "CET")
+    out @ out.push(0)
+    j: i64 @= 0
+
+    while j < leaps * (width + 4)
+        out @ out.push(0)
+        j @ j + 1
+
+test "read: a version 1 file, a version 2 file and its footer, and no transition"
+    one = read(sample(version: 0, times: [-1_000_000_000], footer: "", leaps: 0)).must()
+    assert one.times == [-1_000_000_000] && one.indices == [1] && one.footer == ""
+    assert one.kinds == [Kind(offset: 2_996, daylight: false, abbreviation: "LMT"), Kind(offset: 3_600, daylight: false, abbreviation: "CET")]
+    two = read(
+        sample(version: '2', times: [-2_208_991_996, 5_000_000_000], footer: "CET-1CEST,M3.5.0,M10.5.0/3", leaps: 0)
+    ).must()
+    assert two.times == [-2_208_991_996, 5_000_000_000] && two.footer == "CET-1CEST,M3.5.0,M10.5.0/3"
+    none = read(sample(version: '4', times: [], footer: "", leaps: 0)).must()
+    assert none.times.len() == 0 && none.kinds.len() == 2 && none.footer == ""
+
+# Python's `ZoneInfo.from_file` refused the bad magic, the cut file and the
+# second footer; this names the byte each time.
+test "read fails: no TZif, a version 5, a file cut short, an index past the types, times out of order, leap seconds, and a footer with no end"
+    nothing: [u8] = []
+    assert read(nothing).is_err()
+
+    match read(bytes.from_text("TZjf2 is not a zone file at all, padded out to its full size"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the bytes at 0 do not begin \"TZif\""
+
+    match read(sample(version: '5', times: [], footer: "", leaps: 0))
+        .ok _  => assert false
+        .err e => assert e.msg == "the version byte at 4 is 53, none of 0, '2', '3' or '4'"
+
+    whole = sample(version: '2', times: [1, 2], footer: "CET-1", leaps: 0)
+
+    match read(whole.slice(from: 0, to: 70))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    swapped = sample(version: 0, times: [2, 1], footer: "", leaps: 0)
+
+    match read(swapped)
+        .ok _  => assert false
+        .err e => assert e.msg == "the transition time at byte 48 is not after the one before it"
+
+    bad_index: [u8] @= sample(version: 0, times: [1], footer: "", leaps: 0)
+    bad_index[48] @ 2
+
+    match read(bad_index)
+        .ok _  => assert false
+        .err e => assert e.msg == "the type index at byte 48 is 2, and the file has 2 types"
+
+    match read(sample(version: 0, times: [1], footer: "", leaps: 1))
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    unended = whole.slice(from: 0, to: whole.len() - 1)
+
+    match read(unended)
+        .ok _  => assert false
+        .err e => assert e.msg.slice(from: e.msg.len() - 25, to: e.msg.len()) == "has no line feed after it"
+
+test "read fails: an offset beyond RFC 9636's bound and a daylight flag of 2"
+    far: [u8] @= sample(version: 0, times: [], footer: "", leaps: 0)
+    far[44] @ 0x7f
+
+    match read(far)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg.slice(from: 0, to: 26) == "the offset at byte 44 is 2"
+
+    flag: [u8] @= sample(version: 0, times: [], footer: "", leaps: 0)
+    flag[48] @ 2
+
+    match read(flag)
+        .ok _  => assert false
+        .err e => assert e.msg == "the daylight flag at byte 48 is 2, neither 0 nor 1"

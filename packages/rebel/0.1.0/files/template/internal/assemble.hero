@@ -1,0 +1,120 @@
+# The texts of a set compiled together: each text's templates by
+# `syntax.compile_text`, their names checked to stand once in the set, and
+# every `include` checked to name one of them; and what is read of a part
+# compiled: the paths it reads, and the message of a name the set does not
+# hold.
+
+use json
+use template/internal/lex
+use template/internal/program
+use template/internal/syntax
+
+# What a set's texts compile to: the parts, and their names in order.
+record Compiled
+    compiled: program.Program
+    names: [str]
+
+# The set `texts` writes, each text's own template named by its key. Fails
+# `invalid` where a text is not a template, two templates share a name, or an
+# `include` names one the set does not hold.
+function compile(texts: {str: str}, left: str, right: str, html: bool) -> Compiled?
+    parts: [program.Part] @= []
+    names: [str] @= []
+    index: {str: i64} @= {}
+
+    for source in keys(texts)
+        text = texts[source].must()
+
+        match syntax.compile_text(source: source, text: text, left: left, right: right, html: html)
+            .err e => return fail(code: e.code, msg: lex.of_text(source: source, msg: e.msg))
+            .ok got =>
+                for d in got
+                    if !index[d.part.name].is_err()
+                        return fail(
+                            code: "invalid",
+                            msg: lex.of_text(source: source, msg: lex.located(d.place, f"the template {json.quote(d.part.name)} is defined twice in the set"))
+                        )
+                    index[d.part.name] @ parts.len()
+                    parts @ parts.push(d.part)
+                    names @ names.push(d.part.name)
+
+    for part in parts
+        for s in part.steps
+            if s.kind == program.INCLUDE && index[s.callee].is_err()
+                held: [str] @= []
+
+                for n in names
+                    held @ held.push(json.quote(n))
+
+                place = lex.Place(line: s.line, column: s.column)
+                return fail(
+                    code: "invalid",
+                    msg: lex.of_text(source: part.source, msg: lex.located(place, f"no template {json.quote(s.callee)} in the set, which holds {held.join(", ")}"))
+                )
+
+    return ok(Compiled(compiled: program.Program(parts: parts, index: index), names: names))
+
+# The message of a template `name` that a set whose templates are `names`
+# does not hold.
+function missing_template(names: [str] lent, name: str) -> str
+    held: [str] @= []
+
+    for n in names
+        held @ held.push(json.quote(n))
+
+    return f"no template {json.quote(name)} in the set, which holds {held.join(", ")}"
+
+# The paths `part` reads from its own `.`, as written, each once, in the order
+# they first stand.
+function paths_in(part: program.Part lent) -> [str]
+    paths: [str] @= []
+    seen: {str: bool} @= {}
+
+    for s in part.steps
+        for operand in [s.cond.left.operand, s.cond.right.operand]
+            if operand.kind == program.FROM_DOT && seen[operand.written].is_err()
+                seen[operand.written] @ true
+                paths @ paths.push(operand.written)
+
+    return paths
+
+# One text compiled alone in the text mode, for the tests.
+function one(text: str) -> Compiled?
+    texts: {str: str} @= {}
+    texts[""] @ text
+    return compile(texts, left: "{{", right: "}}", html: false)
+
+test "compile: define makes a part of its own, include names one, and the paths a part reads"
+    got = one("{{ define \"row\" }}<{{ .name }}>{{ end }}{{ include \"row\" .user }}{{ .a.b }}{{ .user }}").must()
+    assert got.names == ["", "row"]
+    assert syntax.kinds_of(got.compiled.parts[1]) == [0, 1, 0, 8]
+    assert got.compiled.index["row"].must() == 1
+    assert paths_in(got.compiled.parts[0]) == [".user", ".a.b"]
+
+test "compile: an include of a template the set does not hold, and a name defined twice"
+    cases: {str: str} = {
+        "{{ include \"x\" . }}": "line 1, column 1: no template \"x\" in the set, which holds \"\""
+        "{{ define \"a\" }}{{ end }}{{ define \"a\" }}{{ end }}": "line 1, column 26: the template \"a\" is defined twice in the set"
+    }
+
+    for text in keys(cases)
+        match one(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid" && e.msg == cases[text].must()
+
+test "compile: several texts, each one's name before its message, and a name shared"
+    texts: {str: str} @= {}
+    texts["page"] @ "{{ include \"row\" . }}"
+    texts["row"] @ "{{ .x"
+
+    match compile(texts, left: "{{", right: "}}", html: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "\"row\", line 1, column 1: the action has no `}}` to close it"
+
+    shared: {str: str} @= {}
+    shared["a"] @ "x"
+    shared["b"] @ "{{ define \"a\" }}{{ end }}"
+
+    match compile(shared, left: "{{", right: "}}", html: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "\"b\", line 1, column 1: the template \"a\" is defined twice in the set"

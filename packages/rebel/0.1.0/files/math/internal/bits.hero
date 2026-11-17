@@ -1,0 +1,121 @@
+# The 64 bits of an `i64`: counted, rotated and reversed. Bitwise operators
+# take `i64` alone (spec § 7), so these are written for it; `<<` drops what it
+# shifts out and `>>` copies the sign, so each function masks what it keeps.
+
+# How many bits of `x` are ones.
+#
+# - `x`: any `i64`.
+function count_ones(x: i64) -> i64
+    count: i64 @= 0
+
+    for place in range(from: 0, to: 64)
+        count @ count + (x >> place & 1)
+
+    return count
+
+# How many zero bits `x` begins with.
+#
+# - `x`: any `i64`.
+function leading_zeros(x: i64) -> i64
+    place: i64 @= 63
+
+    while place >= 0
+        if x >> place & 1 == 1
+            return 63 - place
+        place @ place - 1
+
+    return 64
+
+# How many zero bits `x` ends with.
+#
+# - `x`: any `i64`.
+function trailing_zeros(x: i64) -> i64
+    for place in range(from: 0, to: 64)
+        if x >> place & 1 == 1
+            return place
+
+    return 64
+
+# How many bits `x` needs.
+#
+# - `x`: any `i64`.
+function bit_width(x: i64) -> i64
+    return 64 - leading_zeros(x)
+
+# `x` rotated toward its highest bit by `by` places, modulo 64. The bits that
+# come back at the bottom are taken with `>>` and masked, since `>>` copies
+# the sign into the places they leave.
+#
+# - `x`: any `i64`.
+# - `by`: any count.
+function rotate_left(x: i64, by: i64) -> i64
+    places: i64 @= by % 64
+
+    if places < 0
+        places @ places + 64
+
+    if places == 0
+        return x
+    return x << places | x >> 64 - places & ~(-1 << places)
+
+# `x` with its bits in the opposite order.
+#
+# - `x`: any `i64`.
+function reverse_bits(x: i64) -> i64
+    reversed: i64 @= 0
+
+    for place in range(from: 0, to: 64)
+        if x >> place & 1 == 1
+            reversed @ reversed | 1 << 63 - place
+
+    return reversed
+
+# `x` with its bytes in the opposite order.
+#
+# - `x`: any `i64`.
+function swap_bytes(x: i64) -> i64
+    swapped: i64 @= 0
+
+    for place in range(from: 0, to: 8)
+        byte = x >> 8 * place & 255
+        swapped @ swapped | byte << 8 * (7 - place)
+
+    return swapped
+
+## Tests
+
+# Rust's `count_ones`, `leading_zeros` and `trailing_zeros` on `i64`, and
+# Python's `int.bit_count`, run on 2026-11-16. Python counts a negative
+# number's size, `(-1).bit_count()` being 1; the 64 bits are counted here.
+test "count_ones: zero, -1, the smallest, the largest, a pattern"
+    assert count_ones(0) == 0
+    assert count_ones(-1) == 64
+    assert count_ones(-9223372036854775808) == 1
+    assert count_ones(9223372036854775807) == 63
+    assert count_ones(81985529216486895) == 32
+
+test "leading_zeros, trailing_zeros and bit_width: zero, -1, one, the smallest, twelve"
+    assert leading_zeros(0) == 64 && trailing_zeros(0) == 64 && bit_width(0) == 0
+    assert leading_zeros(-1) == 0 && trailing_zeros(-1) == 0 && bit_width(-1) == 64
+    assert leading_zeros(1) == 63 && bit_width(1) == 1
+    assert trailing_zeros(-9223372036854775808) == 63
+    assert trailing_zeros(12) == 2
+    assert bit_width(255) == 8
+
+# Rust's `rotate_left`, `rotate_right`, `reverse_bits` and `swap_bytes` on
+# `i64`, run on 2026-11-16.
+test "rotate_left: into the sign bit, out of it, a count past 64, a negative count, zero"
+    assert rotate_left(x: 1, by: 63) == -9223372036854775808
+    assert rotate_left(x: -9223372036854775808, by: 1) == 1
+    assert rotate_left(x: -2, by: 65) == -3
+    assert rotate_left(x: 81985529216486895, by: -8) == -1224658842671273011
+    assert rotate_left(x: 81985529216486895, by: 0) == 81985529216486895
+    assert rotate_left(x: 81985529216486895, by: 64) == 81985529216486895
+
+test "reverse_bits and swap_bytes: one, a pattern, -2, twice is the number again"
+    assert reverse_bits(1) == -9223372036854775808
+    assert reverse_bits(81985529216486895) == -597899502893742976
+    assert reverse_bits(reverse_bits(-12345)) == -12345
+    assert swap_bytes(81985529216486895) == -1167088121787636991
+    assert swap_bytes(-2) == -72057594037927937
+    assert swap_bytes(swap_bytes(-12345)) == -12345

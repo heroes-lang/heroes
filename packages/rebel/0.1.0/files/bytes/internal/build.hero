@@ -1,0 +1,185 @@
+# New lists made from others: occurrences replaced, padding added, lists
+# joined and repeated. Each result is built in one local list, grown in place,
+# so its cost is the bytes it holds.
+
+use bytes/internal/raw
+use bytes/internal/search
+
+# `s` with its first `n` occurrences of `old` replaced by `new`, or every one
+# where not `bounded`. An empty `old` stands before every byte and at the
+# end.
+function replaced(s: [u8], old: [u8], new: [u8], n: u64, bounded: bool) -> [u8]
+    out: [u8] @= []
+    made: u64 @= 0
+
+    if old.len() == 0
+        at: i64 @= 0
+
+        while at <= s.len()
+            if !bounded || made < n
+                raw.push_all(to: @out, from: new)
+                made @ made + 1
+
+            if at < s.len()
+                out @ out.push(s[at])
+            at @ at + 1
+
+        return out
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at + old.len() <= s.len() && (!bounded || made < n)
+        if search.has_prefix_at(s: s, prefix: old, at: at)
+            raw.push_range(out: @out, s: s, from: start, to: at)
+            raw.push_all(to: @out, from: new)
+            at @ at + old.len()
+            start @ at
+            made @ made + 1
+        else
+            at @ at + 1
+
+    raw.push_range(out: @out, s: s, from: start, to: s.len())
+    return out
+
+# `s` with its last `old` replaced by `new`, or `s` itself where it holds
+# none.
+function replace_last(s: [u8], old: [u8], new: [u8]) -> [u8]
+    match search.index_of_last(s: s, substr: old)
+        .err _ => return s
+        .ok at =>
+            out: [u8] @= []
+            raw.push_range(out: @out, s: s, from: 0, to: at)
+            raw.push_all(to: @out, from: new)
+            raw.push_range(out: @out, s: s, from: at + old.len(), to: s.len())
+            return out
+
+# `s` with `pad` written before it, after it or on both sides until the
+# whole is `width` bytes long; on both sides the odd byte goes after. `s`
+# itself where it is that long already or `pad` is empty.
+function padded(s: [u8], width: i64, pad: [u8], before: bool, after: bool) -> [u8]
+    if width <= s.len() || pad.len() == 0
+        return s
+    need = width - s.len()
+    left: i64 @= 0
+
+    if before && after
+        left @ need / 2
+    else if before
+        left @ need
+    out: [u8] @= []
+    cycle(out: @out, pad: pad, count: left)
+    raw.push_all(to: @out, from: s)
+    cycle(out: @out, pad: pad, count: need - left)
+    return out
+
+# Adds `count` bytes of `pad`, written again and again from its first byte,
+# at the end of `out`.
+function cycle(@out: [u8], pad: [u8], count: i64)
+    k: i64 @= 0
+
+    while k < count
+        out @ out.push(pad[k % pad.len()])
+        k @ k + 1
+
+# The lists of `parts` one after another.
+function concat(parts: [[u8]]) -> [u8]
+    out: [u8] @= []
+
+    for part in parts
+        raw.push_all(to: @out, from: part)
+
+    return out
+
+# The lists of `parts` with `sep` between each two.
+function join_all(parts: [[u8]], sep: [u8]) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < parts.len()
+        if at > 0
+            raw.push_all(to: @out, from: sep)
+        raw.push_all(to: @out, from: parts[at])
+        at @ at + 1
+
+    return out
+
+# `s` written `n` times.
+function repeated(s: [u8], n: u64) -> [u8]
+    out: [u8] @= []
+
+    if s.len() == 0
+        return out
+    k: u64 @= 0
+
+    while k < n
+        raw.push_all(to: @out, from: s)
+        k @ k + 1
+
+    return out
+
+## Tests
+
+# Python's `bytes.replace` answered every one of these on 2026-11-15; Go's
+# `bytes.Replace` puts `new` after each character, not each byte, for an
+# empty `old`.
+test "replaced, every one: longer, the empty old, overlapping candidates, the empty list, none"
+    t = raw.of_text
+    every: u64 = 0
+    assert replaced(s: t("aaa"), old: t("a"), new: t("bb"), n: every, bounded: false) == t("bbbbbb")
+    assert replaced(s: t("abc"), old: t(""), new: t("-"), n: every, bounded: false) == t("-a-b-c-")
+    assert replaced(s: t("aaaa"), old: t("aa"), new: t("b"), n: every, bounded: false) == t("bb")
+    assert replaced(s: t(""), old: t(""), new: t("x"), n: every, bounded: false) == t("x")
+    assert replaced(s: t("abc"), old: t("d"), new: t("x"), n: every, bounded: false) == t("abc")
+    assert replaced(s: [0x00, 0xff, 0x00], old: [0x00], new: t(""), n: every, bounded: false) == [0xff]
+
+test "replaced, at most n: the empty old, a removal, none, and more than there are"
+    t = raw.of_text
+    assert replaced(s: t("abc"), old: t(""), new: t("-"), n: 2, bounded: true) == t("-a-bc")
+    assert replaced(s: t("a.b.c"), old: t("."), new: t(""), n: 1, bounded: true) == t("ab.c")
+    assert replaced(s: t("a.b.c"), old: t("."), new: t("!"), n: 0, bounded: true) == t("a.b.c")
+    assert replaced(s: t("a.b"), old: t("."), new: t("!"), n: 9, bounded: true) == t("a!b")
+
+test "replace_last: the last of several, the empty old at the end, and none"
+    t = raw.of_text
+    assert replace_last(s: t("a.b.c"), old: t("."), new: t("!")) == t("a.b!c")
+    assert replace_last(s: t("abc"), old: t(""), new: t("!")) == t("abc!")
+    assert replace_last(s: t("abc"), old: t("x"), new: t("!")) == t("abc")
+
+# Python's `rjust`, `ljust` and `center` answered "**ab", "ab**" and, for a
+# width of 5, "**ab*": Python puts the odd byte before, `strings` after, and
+# this follows `strings`.
+test "padded: before, after, both sides even and odd, a pad of two bytes, too wide already, the empty pad"
+    t = raw.of_text
+    assert padded(s: t("ab"), width: 4, pad: t("*"), before: true, after: false) == t("**ab")
+    assert padded(s: t("ab"), width: 4, pad: t("*"), before: false, after: true) == t("ab**")
+    assert padded(s: t("ab"), width: 6, pad: t("*"), before: true, after: true) == t("**ab**")
+    assert padded(s: t("ab"), width: 5, pad: t("*"), before: true, after: true) == t("*ab**")
+    assert padded(s: t("a"), width: 4, pad: t("xy"), before: true, after: false) == t("xyxa")
+    assert padded(s: t("a"), width: 6, pad: t("xy"), before: true, after: true) == t("xyaxyx")
+    assert padded(s: t("abc"), width: 2, pad: t("*"), before: true, after: false) == t("abc")
+    assert padded(s: t("ab"), width: 9, pad: t(""), before: false, after: true) == t("ab")
+    assert padded(s: t("ab"), width: -9223372036854775807 - 1, pad: t("*"), before: true, after: true) == t("ab")
+
+test "concat and join_all: no parts, one part, an empty part between two"
+    t = raw.of_text
+    nothing: [[u8]] = []
+    assert concat(nothing) == t("")
+    assert concat([t("a"), t(""), t("c")]) == t("ac")
+    assert join_all(parts: nothing, sep: t(", ")) == t("")
+    assert join_all(parts: [t("a")], sep: t(", ")) == t("a")
+    assert join_all(parts: [t("a"), t(""), t("c")], sep: t(", ")) == t("a, , c")
+    assert join_all(parts: [t("a"), t("b")], sep: t("")) == t("ab")
+
+test "repeated: three times, none, and the empty list many times"
+    t = raw.of_text
+    assert repeated(t("ab"), 3) == t("ababab")
+    assert repeated(t("ab"), 0) == t("")
+    assert repeated(t(""), 18446744073709551615) == t("")
+    assert repeated([0x00], 2) == [0x00, 0x00]
+
+test "cycle: none, fewer than the pad holds, and the pad again and again"
+    out: [u8] @= []
+    cycle(out: @out, pad: raw.of_text("xyz"), count: 0)
+    cycle(out: @out, pad: raw.of_text("xyz"), count: 2)
+    cycle(out: @out, pad: raw.of_text("ab"), count: 5)
+    assert out == raw.of_text("xyababa")

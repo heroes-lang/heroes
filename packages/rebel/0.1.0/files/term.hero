@@ -1,0 +1,888 @@
+# The terminal: colours and styles that fall back to plain text, the cursor
+# and the screen, one key read as it is pressed, a secret read with nothing
+# echoed, and a progress bar and a spinner drawn on a stream.
+#
+# What it does NOT do: read or write a stream (`io`); tell the terminal's size
+# (`os.terminal_size`); tell whether a stream is a terminal (`io.is_terminal`);
+# measure how many cells a text takes on screen, which needs Unicode's table
+# of East Asian widths, which `unicode` does not hold (the ledger says
+# `pending`); draw windows, menus or tables (a screen library's area).
+#
+# **Colour falls back to plain text**: `write_styled` writes the colour only to
+# a terminal that takes it, where `NO_COLOR` is unset or empty and `TERM` is
+# not `dumb`, and the text alone everywhere else, so the same program writes
+# colour to a person and clean text to a file or a pipe. The control
+# sequences of the cursor and the screen are written by `write_control`,
+# only to a terminal.
+#
+# **Keys and the terminal put back**: a key or a secret is read from the
+# program's terminal even where its input is a pipe, as a reader of
+# passwords does, in a mode where each key comes as it is pressed and nothing
+# is echoed. The terminal is put back as it was when the read ends, and, where
+# `enter_raw` left the mode standing, at `leave_raw`, when `main` returns, at
+# `exit`, and on POSIX at SIGINT, SIGTERM, SIGHUP and SIGQUIT. What no library
+# can undo: a panic, a memory fault, or SIGKILL end the program with the mode
+# standing, and `stty sane` puts a POSIX terminal back by hand.
+#
+# It fails with `invalid`, `unsupported`, `timeout`, `closed`, `stopped` and
+# `failed` (README § A4).
+
+use io
+use os
+use term/hero_term
+use term/internal/cursor
+use term/internal/draw
+use term/internal/failure
+use term/internal/keycodes
+use term/internal/sgr
+use term/internal/stream
+
+## Codes
+
+# An argument out of its range: a count below zero, a row or a column below 1.
+# The cursor's functions, `advance` and `progress` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The program has no terminal: no controlling one, and its input is none. The
+# key and secret readers and `enter_raw` fail with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# No key came in the time allowed. `read_key_within` fails with it.
+constant TIMEOUT: str
+    "timeout"
+
+# The terminal is gone, or Ctrl-D ended an empty secret. The key and secret
+# readers fail with it.
+constant CLOSED: str
+    "closed"
+
+# Ctrl-C was pressed while a secret was read. `read_secret` fails with it.
+constant STOPPED: str
+    "stopped"
+
+# The system refused for a reason none of the above names; the message
+# carries its number. Every function that reaches the terminal fails with it.
+constant FAILED: str
+    "failed"
+
+## Colours and styles
+
+# A colour of the terminal's text or of its background.
+variant Color
+    # The terminal's own colour, as it was before any style.
+    default
+    # The eight colours every colour terminal has, which its theme names.
+    black
+    red
+    green
+    yellow
+    blue
+    magenta
+    cyan
+    white
+    # Their bright forms.
+    bright_black
+    bright_red
+    bright_green
+    bright_yellow
+    bright_blue
+    bright_magenta
+    bright_cyan
+    bright_white
+    # One of the 256 colours of the terminal's palette: 0 to 15 the sixteen
+    # above, 16 to 231 a cube of 6 by 6 by 6, 232 to 255 greys.
+    indexed
+        # The colour's place in the palette.
+        n: u8
+    # A colour of 24 bits, which a terminal that has fewer shows as its
+    # nearest.
+    rgb
+        # Red, 0 to 255.
+        red: u8
+        # Green, 0 to 255.
+        green: u8
+        # Blue, 0 to 255.
+        blue: u8
+
+# A way text is drawn besides its colours.
+variant Attribute
+    # Heavier, or brighter on some terminals.
+    bold
+    # Fainter.
+    dim
+    # Slanted, where the terminal has such a font.
+    italic
+    # A line under the text.
+    underline
+    # Blinking, where the terminal allows it.
+    blink
+    # The text's colour and its background's swapped.
+    reverse
+    # Not drawn, the cells kept.
+    hidden
+    # A line through the text.
+    strike
+
+# How text is drawn: its colour, its background, and its attributes. Made by
+# `plain` and changed by `with_foreground`, `with_background` and
+# `with_attribute`, or built directly.
+record Style
+    # The text's colour.
+    foreground: Color
+    # The background's colour.
+    background: Color
+    # The attributes, each once, in the order they were added.
+    attributes: [Attribute]
+
+# The style that changes nothing: the terminal's own colours and no attribute.
+#
+# See also `with_foreground`, `styled`.
+function plain() -> Style
+    return Style(foreground: .default, background: .default, attributes: [])
+
+# A copy of `style` drawing text in `color`.
+#
+# - `style`: the style to copy.
+# - `color`: the text's colour; `.default` the terminal's own.
+#
+# See also `with_background`, `with_attribute`.
+function with_foreground(style: Style, color: Color) -> Style
+    return Style(foreground: color, background: style.background, attributes: style.attributes)
+
+# A copy of `style` drawing text on `color`.
+#
+# - `style`: the style to copy.
+# - `color`: the background's colour; `.default` the terminal's own.
+#
+# See also `with_foreground`.
+function with_background(style: Style, color: Color) -> Style
+    return Style(foreground: style.foreground, background: color, attributes: style.attributes)
+
+# A copy of `style` with the attribute `a`, added once: a style that has it
+# already is answered as it is.
+#
+# - `style`: the style to copy.
+# - `a`: the attribute to add.
+#
+# See also `with_foreground`.
+function with_attribute(style: Style, a: Attribute) -> Style
+    for had in style.attributes
+        if had == a
+            return style
+
+    added: [Attribute] @= style.attributes
+    added @ added.push(a)
+    return Style(foreground: style.foreground, background: style.background, attributes: added)
+
+# `text` with the sequences that draw it in `style` before it and the one
+# that puts the terminal's own rendition back after it, whatever the stream it
+# goes to: `write_styled` is what decides.
+#
+# - `text`: the text to draw; the empty text is wrapped too.
+# - `style`: how to draw it; `plain()` answers `text` as it is.
+#
+# See also `write_styled`.
+function styled(text: str, style: Style) -> str
+    codes: [str] @= []
+
+    for a in style.attributes
+        code = match a
+            .bold      => "1"
+            .dim       => "2"
+            .italic    => "3"
+            .underline => "4"
+            .blink     => "5"
+            .reverse   => "7"
+            .hidden    => "8"
+            .strike    => "9"
+
+        codes @ codes.push(code)
+
+    for side in [false, true]
+        color = if side
+            style.background
+        else
+            style.foreground
+
+        code = match color
+            .default        => ""
+            .black          => sgr.basic(0, background: side)
+            .red            => sgr.basic(1, background: side)
+            .green          => sgr.basic(2, background: side)
+            .yellow         => sgr.basic(3, background: side)
+            .blue           => sgr.basic(4, background: side)
+            .magenta        => sgr.basic(5, background: side)
+            .cyan           => sgr.basic(6, background: side)
+            .white          => sgr.basic(7, background: side)
+            .bright_black   => sgr.basic(8, background: side)
+            .bright_red     => sgr.basic(9, background: side)
+            .bright_green   => sgr.basic(10, background: side)
+            .bright_yellow  => sgr.basic(11, background: side)
+            .bright_blue    => sgr.basic(12, background: side)
+            .bright_magenta => sgr.basic(13, background: side)
+            .bright_cyan    => sgr.basic(14, background: side)
+            .bright_white   => sgr.basic(15, background: side)
+            .indexed i      => sgr.indexed(i.n, background: side)
+            .rgb c          => sgr.rgb(red: c.red, green: c.green, blue: c.blue, background: side)
+
+        if code != ""
+            codes @ codes.push(code)
+
+    return sgr.wrap(text, codes: codes)
+
+# Whether colour written to `s` would show: `s` is a terminal that takes the
+# terminal's sequences, `NO_COLOR` is unset or empty, and `TERM` is not
+# `dumb`. On Windows the console's processing of sequences is turned on, and
+# put back when the program ends.
+#
+# - `s`: the stream colour would be written to.
+#
+# False for a closed stream, a file, a pipe and a connection. See also
+# `write_styled`.
+function colors_on(s: io.Stream) -> bool
+    if os.env("NO_COLOR").default("") != ""
+        return false
+    return stream.controls_on(s)
+
+# Writes `text` to `s` drawn in `style` where colour shows there
+# (`colors_on`), and as plain text everywhere else.
+#
+# - `s`: the stream; it stays the caller's, who closes it.
+# - `text`: the text.
+# - `style`: how to draw it where colour shows.
+#
+# Fails as `io.write` fails. See also `styled`, `colors_on`.
+function write_styled(s: io.Stream, text: str, style: Style) -> ()?
+    if colors_on(s)
+        return io.write_text(s, text: styled(text, style: style))
+    return io.write_text(s, text: text)
+
+## The cursor and the screen
+
+# The sequence that puts the cursor at `row` and `column`, the first cell
+# being row 1, column 1.
+#
+# - `row`: from 1, the top.
+# - `column`: from 1, the left.
+#
+# Fails `invalid` where either is below 1. See also `write_control`.
+function cursor_to(row: i64, column: i64) -> str?
+    if row < 1 || column < 1
+        return failure.of(
+            code: INVALID,
+            asked: f"moving the cursor to row {row}, column {column}",
+            why: "rows and columns count from 1"
+        )
+    return ok(sgr.placed(row: row, column: column))
+
+# The sequence that moves the cursor `n` rows up, stopping at the top.
+#
+# - `n`: rows; 0 is no text.
+#
+# Fails `invalid` where `n` is below 0. See also `cursor_down`.
+function cursor_up(n: i64) -> str?
+    return cursor.moved(n, final: "A", way: "up")
+
+# The sequence that moves the cursor `n` rows down, stopping at the bottom.
+#
+# - `n`: rows; 0 is no text.
+#
+# Fails `invalid` where `n` is below 0. See also `cursor_up`.
+function cursor_down(n: i64) -> str?
+    return cursor.moved(n, final: "B", way: "down")
+
+# The sequence that moves the cursor `n` columns right, stopping at the edge.
+#
+# - `n`: columns; 0 is no text.
+#
+# Fails `invalid` where `n` is below 0. See also `cursor_back`.
+function cursor_forward(n: i64) -> str?
+    return cursor.moved(n, final: "C", way: "forward")
+
+# The sequence that moves the cursor `n` columns left, stopping at the edge.
+#
+# - `n`: columns; 0 is no text.
+#
+# Fails `invalid` where `n` is below 0. See also `cursor_forward`.
+function cursor_back(n: i64) -> str?
+    return cursor.moved(n, final: "D", way: "back")
+
+# The sequence that hides the cursor.
+#
+# See also `cursor_show`.
+function cursor_hide() -> str
+    return sgr.CSI + "?25l"
+
+# The sequence that shows the cursor again.
+#
+# See also `cursor_hide`.
+function cursor_show() -> str
+    return sgr.CSI + "?25h"
+
+# The sequence that saves the cursor's place and rendition, which
+# `cursor_restore` brings back.
+#
+# See also `cursor_restore`.
+function cursor_save() -> str
+    return "\u{1b}7"
+
+# The sequence that brings back the place and rendition `cursor_save` saved.
+#
+# See also `cursor_save`.
+function cursor_restore() -> str
+    return "\u{1b}8"
+
+# The sequence that rings the terminal's bell: a sound, or a flash where the
+# terminal is set so.
+#
+# See also `write_control`.
+function bell() -> str
+    return "\u{7}"
+
+# The sequence that clears the cursor's whole line, the cursor staying in its
+# column.
+#
+# See also `clear_to_line_end`.
+function clear_line() -> str
+    return sgr.CSI + "2K"
+
+# The sequence that clears the line from the cursor to its end.
+#
+# See also `clear_line`.
+function clear_to_line_end() -> str
+    return sgr.CSI + "K"
+
+# The sequence that clears the whole screen and puts the cursor at row 1,
+# column 1.
+#
+# See also `clear_line`.
+function clear_screen() -> str
+    return sgr.CSI + "2J" + sgr.CSI + "H"
+
+# Writes the control sequence `sequence` to `s` where `s` is a terminal that
+# takes it and `TERM` is not `dumb`, and nothing elsewhere, so a program that
+# moves the cursor writes nothing stray into a file.
+#
+# - `s`: the stream; it stays the caller's.
+# - `sequence`: what one of this package's cursor or screen functions
+#   answered.
+#
+# Fails as `io.write` fails. See also `cursor_to`, `clear_screen`.
+function write_control(s: io.Stream, sequence: str) -> ()?
+    if stream.controls_on(s)
+        return io.write_text(s, text: sequence)
+    return ok()
+
+## Keys and secrets
+
+# A key as `read_key` reads it.
+variant Key
+    # A character typed: a letter, a digit, a space, a sign, any character of
+    # any script.
+    character
+        # The character, one, as UTF-8.
+        text: str
+    # Enter.
+    enter
+    # Tab.
+    tab
+    # Backspace.
+    backspace
+    # Escape, alone.
+    escape
+    # The four arrows.
+    up
+    down
+    left
+    right
+    # Home and End.
+    home
+    end
+    # Page Up and Page Down.
+    page_up
+    page_down
+    # Insert and Delete.
+    insert
+    delete
+    # A function key.
+    function_key
+        # Its number, 1 to 12.
+        n: i64
+    # Control held with a letter: Ctrl-C is `control` with "c". Ctrl-I, Ctrl-M
+    # and Ctrl-H are `tab`, `enter` and `backspace`, as terminals send them.
+    control
+        # The letter, lower case, "a" to "z".
+        letter: str
+    # A key this package names nothing for (a key with a modifier, a sequence
+    # of a terminal of its own), or bytes that are no UTF-8.
+    other
+        # The bytes, as the terminal sent them.
+        bytes: [u8]
+
+# Puts the program's terminal where each key comes as it is pressed, nothing
+# is echoed and no key ends the program (Ctrl-C is a key), until `leave_raw`;
+# a program that reads many keys enters once, so no key typed between two
+# reads is echoed.
+#
+# Fails `unsupported` where the program has no terminal, `failed` where the
+# system refuses. See also `leave_raw`, `read_key`.
+function enter_raw() -> ()?
+    if hero_term.enter_keys() < 0
+        return failure.last(asked: "entering the raw mode")
+    return ok()
+
+# Puts the program's terminal back as it was before `enter_raw`; nothing where
+# no mode stands.
+#
+# Fails `failed` where the system refuses. See also `enter_raw`.
+function leave_raw() -> ()?
+    if hero_term.leave() < 0
+        return failure.last(asked: "leaving the raw mode")
+    return ok()
+
+# The next key pressed at the program's terminal, waiting as long as it takes;
+# a key typed before the call is the one answered. Where `enter_raw` did not
+# leave the raw mode standing, it is entered for this one key and left after.
+#
+# Fails `unsupported` where the program has no terminal, `closed` where the
+# terminal is gone, `failed` where the system refuses. See also
+# `read_key_within`.
+function read_key() -> Key?
+    # The largest limit, about 292 million years: as long as it takes.
+    return read_key_within(9223372036854775807)
+
+# The next key pressed at the program's terminal, waiting at most `limit_ms`
+# milliseconds, as `read_key` reads one.
+#
+# - `limit_ms`: the longest to wait, in milliseconds; 0 answers a key
+#   already pressed and waits not at all.
+#
+# Fails `timeout` where no key came in time, `invalid` where `limit_ms` is
+# below 0, and as `read_key` does. See also `read_key`.
+function read_key_within(limit_ms: i64) -> Key?
+    if limit_ms < 0
+        return failure.of(
+            code: INVALID,
+            asked: "reading a key",
+            why: f"a time is 0 or more, and {limit_ms} ms was asked"
+        )
+    asked = "reading a key"
+    stood = hero_term.enter_keys()
+
+    if stood < 0
+        return failure.last(asked: asked)
+    buffer: [u8] @= stream.zeros(hero_term.HERO_TERM_KEY_MOST)
+    n = hero_term.read_key(@buffer, n: to_u64(hero_term.HERO_TERM_KEY_MOST).must(), ms: limit_ms)
+
+    # The failure is read before the mode is left, which names its own.
+    read: [u8]? = if n < 0
+        failure.last(asked: asked)
+    else if n == 0
+        failure.of(code: CLOSED, asked: asked, why: "the terminal is gone")
+    else
+        ok(buffer.slice(from: 0, to: n))
+
+    if stood == 0
+        _ = hero_term.leave()
+    bytes = read?
+    named = keycodes.name_of(bytes)
+
+    return match named.name
+        "character"    => ok(.character(text: named.text))
+        "enter"        => ok(.enter)
+        "tab"          => ok(.tab)
+        "backspace"    => ok(.backspace)
+        "escape"       => ok(.escape)
+        "up"           => ok(.up)
+        "down"         => ok(.down)
+        "left"         => ok(.left)
+        "right"        => ok(.right)
+        "home"         => ok(.home)
+        "end"          => ok(.end)
+        "page_up"      => ok(.page_up)
+        "page_down"    => ok(.page_down)
+        "insert"       => ok(.insert)
+        "delete"       => ok(.delete)
+        "function_key" => ok(.function_key(n: named.n))
+        "control"      => ok(.control(letter: named.text))
+        _              => ok(.other(bytes: bytes))
+
+# A line typed at the program's terminal with nothing echoed, as a password
+# is read: `prompt` written to the terminal first, the line ended by Enter,
+# Backspace taking back the last character, and a new line written after.
+#
+# - `prompt`: what the terminal shows first; "" for nothing.
+#
+# The line without its Enter; "" where Enter alone was pressed.
+#
+# Fails `stopped` where Ctrl-C was pressed, `closed` where Ctrl-D was pressed
+# on an empty line or the terminal is gone, `unsupported` where the program
+# has no terminal, `failed` where the system refuses. See also `read_key`.
+function read_secret(prompt: str) -> str?
+    asked = "reading a secret"
+
+    if prompt != ""
+        stream.to_terminal(text: prompt, asked: asked)?
+    stood = hero_term.enter_keys()
+
+    if stood < 0
+        return failure.last(asked: asked)
+    typed: [str] @= []
+    ended: str @= ""
+
+    while ended == ""
+        match read_key()
+            .err e =>
+                ended @ e.code
+            .ok key =>
+                match key
+                    .enter => ended @ "enter"
+                    .backspace =>
+                        if typed.len() > 0
+                            typed @ typed.slice(from: 0, to: typed.len() - 1)
+                    .character c => typed @ typed.push(c.text)
+                    .control c =>
+                        if c.letter == "c"
+                            ended @ STOPPED
+                        else if c.letter == "d" && typed.len() == 0
+                            ended @ CLOSED
+                    .tab | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => _ = 0
+                    .function_key _ => _ = 0
+                    .other _ => _ = 0
+
+    if stood == 0
+        _ = hero_term.leave()
+    _ = stream.to_terminal(text: "\n", asked: asked).is_err()
+
+    if ended == "enter"
+        return ok(typed.join(""))
+
+    if ended == STOPPED
+        return failure.of(code: STOPPED, asked: asked, why: "Ctrl-C was pressed")
+
+    if ended == CLOSED
+        return failure.of(
+            code: CLOSED,
+            asked: asked,
+            why: "Ctrl-D was pressed on an empty line, or the terminal is gone"
+        )
+    return failure.of(code: ended, asked: asked, why: "the terminal could not be read")
+
+## Progress
+
+# A progress bar drawn on a stream: a label, thirty cells and the share done,
+# drawn again on its own line at each `advance`. It draws only on a terminal
+# that takes control sequences and nothing anywhere else, so a program's
+# output to a file stays clean. Made by `progress`.
+record Progress
+    # Where it draws; the caller's, who closes it.
+    stream: io.Stream
+    # What it shows first on its line.
+    label: str
+    # The count at which it is full, 0 or more.
+    total: i64
+    # The count done so far, 0 to `total`.
+    done: i64
+    # Whether it draws: `stream` is a terminal.
+    shown: bool
+
+# A progress bar on `s` for `total` steps, none done, drawn at once where `s`
+# is a terminal.
+#
+# - `s`: the stream it draws on; it stays the caller's.
+# - `total`: the count at which it is full; 0 is full from the start.
+# - `label`: what it shows first on its line.
+#
+# Fails `invalid` where `total` is below 0, and as `io.write` fails. See also
+# `advance`, `finish`.
+function progress(s: io.Stream, total: i64, label: str) -> Progress?
+    if total < 0
+        return failure.of(code: INVALID, asked: f"making a progress bar of {total} steps", why: "a total is 0 or more")
+    p = Progress(stream: s, label: label, total: total, done: 0, shown: stream.controls_on(s))
+
+    if p.shown
+        io.write_text(s, text: draw.bar_line(label, done: 0, total: total))?
+    return ok(p)
+
+# Counts `n` more steps done on `p`, never past its total, and draws it again.
+#
+# - `p`: the bar; its `done` grows.
+# - `n`: the steps done since; 0 draws it again as it is.
+#
+# Fails `invalid` where `n` is below 0, and as `io.write` fails. See also
+# `finish`.
+function advance(@p: Progress, n: i64) -> ()?
+    if n < 0
+        return failure.of(code: INVALID, asked: f"advancing a progress bar by {n}", why: "a count is 0 or more")
+
+    if n >= p.total - p.done
+        p.done @ p.total
+    else
+        p.done @ p.done + n
+
+    if p.shown
+        return io.write_text(p.stream, text: draw.bar_line(p.label, done: p.done, total: p.total))
+    return ok()
+
+# Draws `p` full and ends its line, so what is written next starts below it.
+#
+# - `p`: the bar; its `done` becomes its total.
+#
+# Fails as `io.write` fails. See also `advance`.
+function finish(@p: Progress) -> ()?
+    p.done @ p.total
+
+    if p.shown
+        return io.write_text(p.stream, text: draw.bar_line(p.label, done: p.done, total: p.total) + "\n")
+    return ok()
+
+# A spinner drawn on a stream: a turning mark and a label, one frame further
+# at each `spin`, for work whose length is not known. As a bar, it draws only
+# on a terminal. Made by `spinner`.
+record Spinner
+    # Where it draws; the caller's, who closes it.
+    stream: io.Stream
+    # What it shows after its mark.
+    label: str
+    # The frame drawn last, from 0.
+    frame: i64
+    # Whether it draws: `stream` is a terminal.
+    shown: bool
+
+# A spinner on `s`, drawn at once where `s` is a terminal.
+#
+# - `s`: the stream it draws on; it stays the caller's.
+# - `label`: what it shows after its mark.
+#
+# Fails as `io.write` fails. See also `spin`, `stop_spinner`.
+function spinner(s: io.Stream, label: str) -> Spinner?
+    sp = Spinner(stream: s, label: label, frame: 0, shown: stream.controls_on(s))
+
+    if sp.shown
+        io.write_text(s, text: draw.spinner_line(label, frame: 0))?
+    return ok(sp)
+
+# Draws `sp` one frame further. A program calls it between its steps: no
+# thread turns it.
+#
+# - `sp`: the spinner; its `frame` grows by one.
+#
+# Fails as `io.write` fails. See also `stop_spinner`.
+function spin(@sp: Spinner) -> ()?
+    sp.frame @ (sp.frame + 1) % 4
+
+    if sp.shown
+        return io.write_text(sp.stream, text: draw.spinner_line(sp.label, frame: sp.frame))
+    return ok()
+
+# Clears `sp`'s line and writes `message` there with a new line: the message
+# is written on every stream, a terminal or not, being the result the
+# spinner waited for.
+#
+# - `sp`: the spinner; it draws no more.
+# - `message`: the line written in its place; "" for an empty line.
+#
+# Fails as `io.write` fails. See also `spinner`.
+function stop_spinner(@sp: Spinner, message: str) -> ()?
+    clear = if sp.shown
+        "\r" + clear_to_line_end()
+    else
+        ""
+    sp.shown @ false
+    return io.write_text(sp.stream, text: clear + message + "\n")
+
+## Examples
+
+# The plain style, which changes nothing.
+test "plain: no colour and no attribute"
+    assert styled("hi", style: plain()) == "hi"
+
+# Red text, as the terminal writes it.
+test "with_foreground: red text"
+    assert styled("hi", style: with_foreground(plain(), color: .red)) == "\u{1b}[31mhi\u{1b}[0m"
+
+# White text on a blue background.
+test "with_background: white on blue"
+    s = with_background(with_foreground(plain(), color: .white), color: .blue)
+    assert styled("ok", style: s) == "\u{1b}[37;44mok\u{1b}[0m"
+
+# Bold and underlined, each attribute added once.
+test "with_attribute: bold and underline, bold added twice"
+    s = with_attribute(with_attribute(with_attribute(plain(), a: .bold), a: .underline), a: .bold)
+    assert s.attributes == [.bold, .underline]
+    assert styled("go", style: s) == "\u{1b}[1;4mgo\u{1b}[0m"
+
+# A colour of the 256 and one of 24 bits.
+test "styled: an indexed colour and a colour of 24 bits"
+    assert styled("x", style: with_foreground(plain(), color: .indexed(n: 208))) == "\u{1b}[38;5;208mx\u{1b}[0m"
+    assert styled("x", style: with_background(plain(), color: .rgb(red: 10, green: 20, blue: 30))) == "\u{1b}[48;2;10;20;30mx\u{1b}[0m"
+
+# A pipe takes no colour.
+test "colors_on: a pipe takes none"
+    p @= io.pipe().must()
+    assert !colors_on(p.writer)
+    io.close(@p.reader).must()
+    io.close(@p.writer).must()
+
+# Styled text written to a pipe arrives plain.
+test "write_styled: to a pipe, the text alone"
+    p @= io.pipe().must()
+    write_styled(p.writer, text: "done", style: with_foreground(plain(), color: .green)).must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "done"
+    io.close(@p.reader).must()
+
+# The cursor at the top left, and a row below 1 refused.
+test "cursor_to: the first cell, and a row of 0"
+    assert cursor_to(row: 1, column: 1).must() == "\u{1b}[1;1H"
+    assert cursor_to(row: 0, column: 1).is_err()
+
+# Up three rows; none is no text.
+test "cursor_up: three rows, and none"
+    assert cursor_up(3).must() == "\u{1b}[3A"
+    assert cursor_up(0).must() == ""
+    assert cursor_up(-1).is_err()
+
+# Down two rows.
+test "cursor_down: two rows"
+    assert cursor_down(2).must() == "\u{1b}[2B"
+
+# Right five columns.
+test "cursor_forward: five columns"
+    assert cursor_forward(5).must() == "\u{1b}[5C"
+
+# Left one column.
+test "cursor_back: one column"
+    assert cursor_back(1).must() == "\u{1b}[1D"
+
+# The cursor hidden.
+test "cursor_hide: its sequence"
+    assert cursor_hide() == "\u{1b}[?25l"
+
+# The cursor shown again.
+test "cursor_show: its sequence"
+    assert cursor_show() == "\u{1b}[?25h"
+
+# The cursor's place saved, then brought back.
+test "cursor_save: its sequence"
+    assert cursor_save() == "\u{1b}7"
+
+# The saved place brought back.
+test "cursor_restore: its sequence"
+    assert cursor_restore() == "\u{1b}8"
+
+# The bell, written only to a terminal by `write_control`.
+test "bell: its byte"
+    assert bell() == "\u{7}"
+    assert bell().len() == 1
+
+# The whole line cleared.
+test "clear_line: its sequence"
+    assert clear_line() == "\u{1b}[2K"
+
+# The line cleared from the cursor.
+test "clear_to_line_end: its sequence"
+    assert clear_to_line_end() == "\u{1b}[K"
+
+# The screen cleared and the cursor at the top left.
+test "clear_screen: its sequence"
+    assert clear_screen() == "\u{1b}[2J\u{1b}[H"
+
+# A control sequence written to a pipe writes nothing.
+test "write_control: nothing reaches a pipe"
+    p @= io.pipe().must()
+    write_control(p.writer, sequence: clear_screen()).must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == ""
+    io.close(@p.reader).must()
+
+# The raw mode entered and left on a terminal; a program with none is told.
+test "enter_raw: entered and left, or unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err e => assert e.code == UNSUPPORTED
+
+# Leaving where no mode stands changes nothing.
+test "leave_raw: with no mode standing"
+    leave_raw().must()
+
+# A key read; a program with no terminal is told.
+test "read_key: a key, or unsupported with no terminal"
+    match read_key_within(0)
+        .ok _  => _ = 0
+        .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED
+
+# A key waited for a tenth of a second.
+test "read_key_within: a tenth of a second, then timeout or unsupported"
+    match read_key_within(100)
+        .ok _  => _ = 0
+        .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED
+
+# A secret asked for where the program has no terminal, which is told; on a
+# terminal the example asks nothing, a person being needed to answer.
+test "read_secret: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err _ => assert read_secret("Password: ").is_err()
+
+# A bar of four steps advanced on a pipe: it counts, and draws nothing there.
+test "progress: four steps on a pipe"
+    pipe @= io.pipe().must()
+    p @= progress(pipe.writer, total: 4, label: "copy").must()
+    advance(@p, n: 1).must()
+    assert p.done == 1
+    io.close(@pipe.writer).must()
+    assert io.read_all_text(pipe.reader).must() == ""
+    io.close(@pipe.reader).must()
+
+# Advancing past the total stops at the total.
+test "advance: past the total"
+    pipe @= io.pipe().must()
+    p @= progress(pipe.writer, total: 3, label: "").must()
+    advance(@p, n: 10).must()
+    assert p.done == 3
+    assert advance(@p, n: -1).is_err()
+    io.close(@pipe.writer).must()
+    io.close(@pipe.reader).must()
+
+# A bar finished is full.
+test "finish: full at the end"
+    pipe @= io.pipe().must()
+    p @= progress(pipe.writer, total: 9, label: "load").must()
+    finish(@p).must()
+    assert p.done == 9
+    io.close(@pipe.writer).must()
+    io.close(@pipe.reader).must()
+
+# A spinner on a pipe draws nothing.
+test "spinner: on a pipe, nothing drawn"
+    pipe @= io.pipe().must()
+    sp @= spinner(pipe.writer, label: "waiting").must()
+    assert !sp.shown
+    stop_spinner(@sp, message: "").must()
+    io.close(@pipe.writer).must()
+    io.close(@pipe.reader).must()
+
+# Five turns of a spinner come back to its second frame.
+test "spin: five turns"
+    pipe @= io.pipe().must()
+    sp @= spinner(pipe.writer, label: "x").must()
+
+    for _ in range(from: 0, to: 5)
+        spin(@sp).must()
+
+    assert sp.frame == 1
+    stop_spinner(@sp, message: "").must()
+    io.close(@pipe.writer).must()
+    io.close(@pipe.reader).must()
+
+# A spinner stopped writes its message, on a pipe too.
+test "stop_spinner: the message written on a pipe"
+    pipe @= io.pipe().must()
+    sp @= spinner(pipe.writer, label: "fetching").must()
+    stop_spinner(@sp, message: "fetched").must()
+    io.close(@pipe.writer).must()
+    assert io.read_all_text(pipe.reader).must() == "fetched\n"
+    io.close(@pipe.reader).must()

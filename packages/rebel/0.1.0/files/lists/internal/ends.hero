@@ -1,0 +1,194 @@
+# The ends of a list and its parts counted from them: the first and the last
+# element, an element by index, and the elements before or after a count or
+# a test. Each answer is a new list; none aborts on a count larger than the
+# list, which is cut short instead.
+
+use lists/internal/codes
+use lists/internal/samples
+
+# The first element of `xs`, failing `not_found` where it is empty.
+function first<T>(xs: [T]) -> T?
+    if xs.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no first element in an empty list")
+    return ok(xs[0])
+
+# The last element of `xs`, failing `not_found` where it is empty.
+function last<T>(xs: [T]) -> T?
+    if xs.len() == 0
+        return fail(code: codes.NOT_FOUND, msg: "no last element in an empty list")
+    return ok(xs[xs.len() - 1])
+
+# The element of `xs` at `index`, failing `not_found` where `index` is below
+# zero or at or past the length.
+function get<T>(xs: [T], index: i64) -> T?
+    if index < 0 || index >= xs.len()
+        return fail(code: codes.NOT_FOUND, msg: f"no element at {index} in a list of {xs.len()}")
+    return ok(xs[index])
+
+# The first `n` elements of `xs`, all of them where it holds fewer; aborts
+# where `n` is below zero.
+function take<T>(xs: [T], n: i64) -> [T]
+    assert n >= 0
+
+    if n >= xs.len()
+        return xs
+    return xs.slice(from: 0, to: n)
+
+# `xs` without its first `n` elements; aborts where `n` is below zero.
+function skip<T>(xs: [T], n: i64) -> [T]
+    assert n >= 0
+
+    if n >= xs.len()
+        return xs.slice(from: xs.len(), to: xs.len())
+    return xs.slice(from: n, to: xs.len())
+
+# The last `n` elements of `xs`, all of them where it holds fewer; aborts
+# where `n` is below zero.
+function take_last<T>(xs: [T], n: i64) -> [T]
+    assert n >= 0
+
+    if n >= xs.len()
+        return xs
+    return xs.slice(from: xs.len() - n, to: xs.len())
+
+# `xs` without its last `n` elements; aborts where `n` is below zero.
+function skip_last<T>(xs: [T], n: i64) -> [T]
+    assert n >= 0
+
+    if n >= xs.len()
+        return xs.slice(from: 0, to: 0)
+    return xs.slice(from: 0, to: xs.len() - n)
+
+# How many leading elements of `xs` `accepts` accepts, stopping at the first
+# it refuses.
+function accepted_run<T>(xs: [T], accepts: (function(T) -> bool)) -> i64
+    at: i64 @= 0
+
+    while at < xs.len() && accepts(xs[at])
+        at @ at + 1
+
+    return at
+
+# The elements of `xs` before the first one `accepts` refuses.
+function take_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
+    return xs.slice(from: 0, to: accepted_run(xs, accepts))
+
+# `xs` from the first element `accepts` refuses to its end.
+function skip_where<T>(xs: [T], accepts: (function(T) -> bool)) -> [T]
+    return xs.slice(from: accepted_run(xs, accepts), to: xs.len())
+
+# Every `by`-th element of `xs`, its first included; aborts where `by` is
+# below one. The index never passes the length by more than `by`, and `by`
+# is added only while it stays inside the list, so it cannot overflow.
+function step<T>(xs: [T], by: i64) -> [T]
+    assert by >= 1
+    out: [T] @= []
+    at: i64 @= 0
+
+    while at < xs.len()
+        out @ out.push(xs[at])
+
+        if by >= xs.len() - at
+            break
+        at @ at + by
+
+    return out
+
+## Tests
+
+test "first: empty, one element, several, and texts of more than one byte"
+    nothing: [i64] = []
+
+    match first(nothing)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no first element in an empty list"
+
+    assert first([7]).must() == 7
+    assert first([3, 1, 2]).must() == 3
+    assert first(["é", "a"]).must() == "é"
+
+test "last: empty, one element, several"
+    nothing: [str] = []
+
+    match last(nothing)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no last element in an empty list"
+
+    assert last([7]).must() == 7
+    assert last([3, 1, 2]).must() == 2
+
+test "get: inside, at either end, below zero, at the length, and the extreme indices"
+    xs = [10, 20, 30]
+    assert get(xs, 0).must() == 10
+    assert get(xs, 2).must() == 30
+
+    match get(xs, 3)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no element at 3 in a list of 3"
+
+    assert get(xs, -1).is_err()
+    assert get(xs, 9_223_372_036_854_775_807).is_err()
+    assert get(xs, -9_223_372_036_854_775_808).is_err()
+    nothing: [i64] = []
+    assert get(nothing, 0).is_err()
+
+test "take: none, some, all, more than the list, the largest count, and an empty list"
+    xs = [1, 2, 3, 4, 5]
+    nothing: [i64] = []
+    assert take(xs, 0) == nothing
+    assert take(xs, 3) == [1, 2, 3]
+    assert take(xs, 5) == xs
+    assert take([1, 2, 3], 9) == [1, 2, 3]
+    assert take(xs, 9_223_372_036_854_775_807) == xs
+    assert take(nothing, 2) == nothing
+
+test "skip: none, some, all, more than the list, the largest count, and an empty list"
+    xs = [1, 2, 3, 4, 5]
+    nothing: [i64] = []
+    assert skip(xs, 0) == xs
+    assert skip(xs, 2) == [3, 4, 5]
+    assert skip(xs, 5) == nothing
+    assert skip([1, 2, 3], 9) == nothing
+    assert skip(xs, 9_223_372_036_854_775_807) == nothing
+    assert skip(nothing, 0) == nothing
+
+test "take_last: none, some, all, more than the list, and the largest count"
+    xs = [1, 2, 3, 4, 5]
+    nothing: [i64] = []
+    assert take_last(xs, 0) == nothing
+    assert take_last(xs, 2) == [4, 5]
+    assert take_last(xs, 9) == xs
+    assert take_last(xs, 9_223_372_036_854_775_807) == xs
+    assert take_last(nothing, 1) == nothing
+
+test "skip_last: none, some, all, more than the list, and the largest count"
+    xs = [1, 2, 3, 4, 5]
+    nothing: [i64] = []
+    assert skip_last(xs, 0) == xs
+    assert skip_last(xs, 2) == [1, 2, 3]
+    assert skip_last(xs, 5) == nothing
+    assert skip_last(xs, 9_223_372_036_854_775_807) == nothing
+    assert skip_last(nothing, 1) == nothing
+
+test "take_where: a leading run, none, all, an empty list, and later accepted elements left out"
+    nothing: [i64] = []
+    assert take_where([2, 4, 5, 6], samples.is_even) == [2, 4]
+    assert take_where([1, 2], samples.is_even) == nothing
+    assert take_where([2, 4], samples.is_even) == [2, 4]
+    assert take_where(nothing, samples.is_even) == nothing
+
+test "skip_where: a leading run, none, all, an empty list, and later accepted elements kept"
+    nothing: [i64] = []
+    assert skip_where([2, 4, 5, 6], samples.is_even) == [5, 6]
+    assert skip_where([1, 2], samples.is_even) == [1, 2]
+    assert skip_where([2, 4], samples.is_even) == nothing
+    assert skip_where(nothing, samples.is_even) == nothing
+
+test "step: one, two, three, past the length, the largest step, and an empty list"
+    nothing: [i64] = []
+    assert step([1, 2, 3], 1) == [1, 2, 3]
+    assert step([1, 2, 3, 4, 5], 2) == [1, 3, 5]
+    assert step([1, 2, 3, 4, 5, 6, 7], 3) == [1, 4, 7]
+    assert step([1, 2, 3], 9) == [1]
+    assert step([1, 2, 3], 9_223_372_036_854_775_807) == [1]
+    assert step(nothing, 2) == nothing

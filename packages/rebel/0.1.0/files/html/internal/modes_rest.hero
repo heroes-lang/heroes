@@ -1,0 +1,223 @@
+# The insertion modes after a start tag of raw text, inside a template, and
+# after the body or frameset (13.2.6.4.8 and 13.2.6.4.16 to 13.2.6.4.21):
+# "text", "in template", "after body", "in frameset", "after frameset",
+# "after after body" and "after after frameset".
+
+use html/internal/ascii
+use html/internal/body
+use html/internal/builder
+use html/internal/common
+use html/internal/dom
+use html/internal/formatting
+use html/internal/insert
+use html/internal/token
+
+# 13.2.6.4.8, "text": the characters of `title`, `textarea`, `style`,
+# `script` and their kind, up to their end tag.
+function text(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.CHARS
+        insert.text(@b, t.data)
+        return .done
+
+    if t.kind == token.EOF
+        builder.error(@b, "unexpected-end-of-file", t)
+        builder.pop(@b)
+        b.mode @ b.original
+        return .again
+
+    if t.kind == token.END
+        builder.pop(@b)
+        b.mode @ b.original
+    return .done
+
+# 13.2.6.4.16, "in template".
+function in_template(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    if t.kind == token.CHARS || t.kind == token.COMMENT || t.kind == token.INSTRUCTION || t.kind == token.DOCTYPE
+        return .using(mode: .in_body)
+
+    if t.kind == token.START
+        match t.name
+            "base" | "basefont" | "bgsound" | "link" | "meta" | "noframes" | "script" | "style" | "template" | "title" =>
+                return .using(mode: .in_head)
+            "caption" | "colgroup" | "tbody" | "tfoot" | "thead" => return switch_template(@b, .in_table)
+            "col"                                                => return switch_template(@b, .in_column_group)
+            "tr"                                                 => return switch_template(@b, .in_table_body)
+            "td" | "th"                                          => return switch_template(@b, .in_row)
+            _                                                    => return switch_template(@b, .in_body)
+
+    if t.kind == token.END
+        if t.name == "template"
+            return .using(mode: .in_head)
+        builder.error(@b, "unexpected-end-tag", t)
+        return .done
+
+    if !builder.has_open(b, "template")
+        return .done
+    builder.error(@b, "unexpected-end-of-file", t)
+    builder.pop_until(@b, "template")
+    formatting.clear_to_marker(@b)
+    builder.pop_template_mode(@b)
+    builder.reset_mode(@b)
+    return .again
+
+# Replaces the current template insertion mode with `mode`, switches to it,
+# and asks for the token again.
+function switch_template(@b: builder.Builder, mode: builder.Mode) -> builder.Step
+    builder.pop_template_mode(@b)
+    builder.push_template_mode(@b, mode)
+    b.mode @ mode
+    return .again
+
+# 13.2.6.4.17, "after body".
+function after_body(@b: builder.Builder, @t: token.Token) -> builder.Step
+    if t.kind == token.CHARS
+        white = common.take_white(@t)
+
+        if white != ""
+            body.characters(@b, token.run(data: white, at: t.at))
+
+        if t.data == ""
+            return .done
+    else if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: b.open[0])
+        return .done
+    else if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, b.open[0])
+        return .done
+    else if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+    else if t.kind == token.START && t.name == "html"
+        return .using(mode: .in_body)
+    else if t.kind == token.END && t.name == "html"
+        if b.context != dom.NONE
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        b.mode @ .after_after_body
+        return .done
+    else if t.kind == token.EOF
+        return .done
+    builder.unexpected(@b, t)
+    b.mode @ .in_body
+    return .again
+
+# The white space of `s` alone, the rest dropped.
+function white_only(s: str) -> str
+    kept: [str] @= []
+
+    for i in range(from: 0, to: s.len())
+        if ascii.is_white(s[i])
+            kept @ kept.push(s.slice(from: i, to: i + 1))
+
+    return kept.join("")
+
+# 13.2.6.4.18 and 13.2.6.4.19, "in frameset" and "after frameset".
+function frameset(@b: builder.Builder, t: token.Token lent) -> builder.Step
+    inside = b.mode == .in_frameset
+
+    if t.kind == token.CHARS
+        white = white_only(t.data)
+
+        if white.len() < t.data.len()
+            builder.error(@b, "unexpected-text", t)
+        insert.text(@b, white)
+        return .done
+
+    if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: dom.NONE)
+        return .done
+
+    if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, dom.NONE)
+        return .done
+
+    if t.kind == token.DOCTYPE
+        builder.error(@b, "unexpected-doctype", t)
+        return .done
+
+    if t.kind == token.START && t.name == "html"
+        return .using(mode: .in_body)
+
+    if t.kind == token.START && t.name == "noframes"
+        return .using(mode: .in_head)
+
+    if t.kind == token.EOF
+        if inside && b.depth > 1
+            builder.error(@b, "unexpected-end-of-file", t)
+        return .done
+
+    if inside && t.kind == token.START && t.name == "frameset"
+        _ = insert.element_for(@b, t, dom.HTML)
+        return .done
+
+    if inside && t.kind == token.START && t.name == "frame"
+        _ = insert.element_for(@b, t, dom.HTML)
+        builder.pop(@b)
+        builder.acknowledge(@b)
+        return .done
+
+    if inside && t.kind == token.END && t.name == "frameset"
+        if b.depth <= 1
+            builder.error(@b, "unexpected-end-tag", t)
+            return .done
+        builder.pop(@b)
+
+        if b.context == dom.NONE && !builder.current_is(b, "frameset")
+            b.mode @ .after_frameset
+        return .done
+
+    if !inside && t.kind == token.END && t.name == "html"
+        b.mode @ .after_after_frameset
+        return .done
+    builder.unexpected(@b, t)
+    return .done
+
+# 13.2.6.4.20 and 13.2.6.4.21, "after after body" and "after after
+# frameset".
+function after_after(@b: builder.Builder, @t: token.Token) -> builder.Step
+    body_kind = b.mode == .after_after_body
+
+    if t.kind == token.COMMENT
+        insert.comment(@b, data: t.data, parent: 0)
+        return .done
+
+    if t.kind == token.INSTRUCTION
+        insert.instruction(@b, t, 0)
+        return .done
+
+    if t.kind == token.DOCTYPE || t.kind == token.START && t.name == "html"
+        return .using(mode: .in_body)
+
+    if t.kind == token.EOF
+        return .done
+
+    if t.kind == token.CHARS
+        white = if body_kind
+            common.take_white(@t)
+        else
+            white_only(t.data)
+
+        if white != ""
+            body.characters(@b, token.run(data: white, at: t.at))
+
+        if body_kind && t.data == ""
+            return .done
+
+        if !body_kind
+            if white.len() < t.data.len()
+                builder.error(@b, "unexpected-text", t)
+            return .done
+
+    if !body_kind && t.kind == token.START && t.name == "noframes"
+        return .using(mode: .in_head)
+    builder.unexpected(@b, t)
+
+    if !body_kind
+        return .done
+    b.mode @ .in_body
+    return .again
+
+## Tests
+
+test "white_only: white space kept in order, the rest dropped"
+    assert white_only("a b\tc\n") == " \t\n" && white_only("") == "" && white_only("abc") == ""

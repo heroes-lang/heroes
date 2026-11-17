@@ -1,0 +1,1473 @@
+/* SPDX-FileCopyrightText: 2026 Giuseppe Arici
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * With the Heroes runtime exception (LICENSE-RUNTIME-EXCEPTION), as
+ * `heroes_runtime.h`.
+ *
+ * platform/hero_poll.c — the platform layer's readiness sets, one member of
+ * the archive the compiler puts on every program's link line
+ * (`selfhost/cli/layer.hero` builds, keys and links it). Its header,
+ * `hero_poll.h`, says what each function answers; this file says how each
+ * platform gets there. Written from the systems' own pages (`kqueue(2)`,
+ * `epoll(7)`, `poll(2)`, Microsoft's `WSAPoll`), never from another
+ * library's source.
+ *
+ * ITS OWN HEADER FIRST (held by the net's `runtime` suite), so an arm that
+ * defines another signature than the header's is `conflicting types`.
+ *
+ * TWO TABLES, BOTH STATIC, NEVER AN ADDRESS READ THROUGH. A set is a slot of
+ * `hero_poll_sets` and an entry a slot of `hero_poll_entries`; a handle and a
+ * key are each a slot's index and the life it held when issued, as
+ * `hero_net.c`'s sockets are, so a closed set and a removed key name a life
+ * that ended. No table grows: the runtime allocates in `parts/alloc.c` alone
+ * (the net's `runtime` suite, rule 1), so a set is made with the most entries
+ * it will hold and RESERVES THAT MANY CONTIGUOUS ENTRIES of the 65,536 the
+ * process has, its own range for its life. The range is what lets Windows'
+ * `WSAPoll`, which reads one array, wait on a set with no allocation: the
+ * array is a static one beside the entries, the set's part of it filled at
+ * each wait by the one call that may wait on the set.
+ *
+ * NO LOCK OF THIS FILE IS HELD WHILE ANOTHER MEMBER IS CALLED, BUT ONE. A
+ * stream or a socket is held (`hero_net_hold`, `hero_stream_hold`) and let go
+ * outside `hero_poll_lock`; the one call made under it is
+ * `hero_net_when_stopped`, once per process, so the order between the two
+ * locks is this file's then `hero_net.c`'s, and the function `hero_net.c`
+ * calls back at the stop, under its own lock, takes none of this file's.
+ *
+ * THE STOP: `hero_poll_hear_stop`, called by `hero_net.c` at each stop it
+ * hears (its readiness thread for a signal on POSIX, the console's thread on
+ * Windows, or the thread that asked), writes one byte down a pipe on POSIX
+ * and sends one datagram to a loopback socket of its own on Windows. Nobody
+ * reads either, so it stays ready from then on, and every set watches it
+ * beside its entries: every wait of the process wakes at once, and every
+ * later one finds it ready, as the stop is never taken back.
+ *
+ * HANGUP, BY SYSTEM: Darwin tells it as `EV_EOF` on the read or the write
+ * filter, once the peer has closed its side; Linux as `EPOLLRDHUP` (the peer
+ * closed its side) or `EPOLLHUP` (both are closed); Windows as `POLLHUP`. A
+ * wait answers READ beside it wherever READ was asked, so a loop that reads on
+ * READ meets the end of stream on every system.
+ */
+
+#include "hero_poll.h"
+
+/* The layer's one list of handle tags, after the member's own header. */
+#include "hero_handle_tag.h"
+#include "hero_stream_net.h"
+
+#include <stdatomic.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+
+#if defined(_WIN32)
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
+/* The library the member needs, named by the member, as `hero_net.c` names
+ * it: the linker reads it only where it takes this member. */
+#if defined(_MSC_VER)
+#pragma comment(lib, "ws2_32.lib")
+#endif
+#define HERO_POLL_ARRAY 1
+typedef WSAPOLLFD hero_poll_fd;
+#define HERO_POLL_IN POLLRDNORM
+#define HERO_POLL_OUT POLLWRNORM
+#else
+#include <errno.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <pthread.h>
+#include <time.h>
+#include <unistd.h>
+/* The system's wait: Linux's `epoll`, the BSDs' and Darwin's `kqueue`; on any
+ * other POSIX system `poll` over the set's array, as Windows waits. */
+#if defined(__linux__)
+#include <sys/epoll.h>
+#define HERO_POLL_EPOLL 1
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#include <sys/event.h>
+#define HERO_POLL_KQUEUE 1
+#else
+#define HERO_POLL_ARRAY 1
+typedef struct pollfd hero_poll_fd;
+#define HERO_POLL_IN POLLIN
+#define HERO_POLL_OUT POLLOUT
+#endif
+#endif
+
+/* A handle and a key each carry a slot and a life in 64 bits, as
+ * `hero_net.c`'s do: `(life << 17) | (index + 1)`, never 0.
+ *
+ * AND A SET'S HANDLE CARRIES THE TABLE'S TAG, `HERO_HANDLE_TAG_POLL`
+ * (`hero_handle_tag.h`): the program's handle set knows a handle by its value
+ * alone, so a set and the socket, stream or child of the same slot and life
+ * were one handle to it, and closing the set was told as closing the socket
+ * (measured 2026-11-16 by this member's first tests, a set and a listener
+ * both `0x20001`). A key is no handle, the runtime never holds one, and it
+ * carries no tag. */
+_Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a set's handle carries its slot and its life in 64 bits");
+#define HERO_POLL_INDEX_BITS 17
+#define HERO_POLL_INDEX_MASK ((UINT64_C(1) << HERO_POLL_INDEX_BITS) - 1)
+/* A slot whose life reached it is never issued again: below the tag. */
+#define HERO_POLL_LIFE_MOST HERO_HANDLE_LIFE_MOST(HERO_POLL_INDEX_BITS)
+#define HERO_POLL_ENTRIES 65536u
+#define HERO_POLL_SETS 1024u
+/* A wait where the stop cannot be heard asks for it this often. */
+#define HERO_POLL_SLICE_MS 50
+/* One wait in the system lasts at most an hour, then the limit is read
+ * again: no system's timeout is asked past what its type holds. */
+#define HERO_POLL_CHUNK_MS (60 * 60 * 1000)
+
+/* What an entry stands on. */
+#define HERO_POLL_ON_NOTHING 0
+/* A socket held by `hero_net_hold`, its descriptor waited on. */
+#define HERO_POLL_ON_SOCKET 1
+/* A stream's descriptor held by `hero_stream_hold`. */
+#define HERO_POLL_ON_STREAM 2
+/* A regular file, ready at every wait. */
+#define HERO_POLL_ON_FILE 3
+#define HERO_POLL_ON_TIMER 4
+
+typedef struct {
+    /* The life the entry holds or last held, which its key names. */
+    uint64_t life;
+    /* One of `HERO_POLL_ON_*`, `HERO_POLL_ON_NOTHING` while free. */
+    uint8_t on;
+    /* The `HERO_POLL_READ` and `HERO_POLL_WRITE` bits it waits for. */
+    uint8_t interest;
+    /* The descriptor waited on, the bits of a `SOCKET` on Windows. */
+    int64_t fd;
+    /* What `hero_net_hold` answered, -1 for none. */
+    int64_t net_hold;
+    /* The stream whose descriptor `hero_stream_hold` holds, NULL for none. */
+    hero_stream *stream;
+    /* A timer's next due time on `hero_poll_now`'s clock, -1 for none; and
+     * its period in nanoseconds, 0 for once. */
+    int64_t due;
+    int64_t every;
+    /* The index plus one of the next entry given back in the set, 0 none. */
+    uint32_t next;
+    /* The index plus one of the next and the previous entry of the set's list
+     * of timers or of files, which a wait walks, 0 none. */
+    uint32_t after;
+    uint32_t before;
+    /* The wait round that last told it, and where in its answer: two events
+     * of one descriptor (`kqueue` tells reading and writing apart) are one. */
+    uint64_t round;
+    uint64_t told_at;
+} hero_poll_entry;
+
+typedef struct {
+    uint64_t life;
+    /* It holds a set the program has not closed. */
+    bool held;
+    /* The program closed it while a call was in it: the last one releases it. */
+    bool closing;
+    /* A wait is in it. */
+    bool waiting;
+    /* Calls in it. */
+    uint32_t busy;
+    /* Its entries are `base` to `base + span - 1`, and the array index
+     * `base + span - 1` is the stop's on Windows; `fresh` of them have ever
+     * held an entry; `given_back` is the index plus one of the last one given
+     * back, 0 for none. */
+    uint32_t base;
+    uint32_t span;
+    uint32_t fresh;
+    uint32_t given_back;
+    uint32_t count;
+    /* The index plus one of the first timer and the first file, 0 none. */
+    uint32_t timers;
+    uint32_t files;
+    uint64_t rounds;
+    /* The `kqueue` or the `epoll` of the set, -1 on the array's systems. */
+    int queue;
+    /* The index plus one of the next set slot given back, 0 for none. */
+    uint32_t next;
+} hero_poll_slot;
+
+static hero_poll_slot hero_poll_sets[HERO_POLL_SETS];
+static hero_poll_entry hero_poll_entries[HERO_POLL_ENTRIES];
+/* Every set slot at or above it has never held a set. */
+static uint32_t hero_poll_fresh;
+/* The index plus one of the last set slot given back, 0 for none. */
+static uint32_t hero_poll_given_back;
+/* The stop was heard by `hero_net.c`'s hook, or will be: false where a wait
+ * must ask in slices. Written once, under the lock. */
+static _Atomic int hero_poll_heard;
+/* The member's once: the stop's bell made and the hook asked. Under the lock. */
+static bool hero_poll_up_done;
+
+#if defined(HERO_POLL_ARRAY)
+/* What a wait hands the system: each set's part is its range, filled by the
+ * one wait the set allows, its last place the stop's bell. */
+static hero_poll_fd hero_poll_array[HERO_POLL_ENTRIES];
+/* The entry each place of the array stands for, index plus one. */
+static uint32_t hero_poll_array_entry[HERO_POLL_ENTRIES];
+#endif
+
+static _Thread_local int64_t hero_poll_kind;
+static _Thread_local int64_t hero_poll_os;
+
+#if defined(_WIN32)
+static SRWLOCK hero_poll_lock = SRWLOCK_INIT;
+/* The stop's bell: a datagram socket on the loopback, bound to itself, which
+ * the hook sends one datagram to and nobody reads. Its address is written
+ * once, before the socket is published. */
+static _Atomic SOCKET hero_poll_bell = INVALID_SOCKET;
+static struct sockaddr_in hero_poll_bell_at;
+#else
+static pthread_mutex_t hero_poll_lock = PTHREAD_MUTEX_INITIALIZER;
+/* The stop's pipe: the hook writes `hero_poll_bell_out`, every set watches
+ * `hero_poll_bell_in`, and nobody reads it. -1 until made. */
+static _Atomic int hero_poll_bell_in = -1;
+static _Atomic int hero_poll_bell_out = -1;
+#endif
+
+static void hero_poll_enter(void) {
+#if defined(_WIN32)
+    AcquireSRWLockExclusive(&hero_poll_lock);
+#else
+    (void)pthread_mutex_lock(&hero_poll_lock);
+#endif
+}
+
+static void hero_poll_leave(void) {
+#if defined(_WIN32)
+    ReleaseSRWLockExclusive(&hero_poll_lock);
+#else
+    (void)pthread_mutex_unlock(&hero_poll_lock);
+#endif
+}
+
+static void hero_poll_fail(int64_t kind, int64_t os) {
+    hero_poll_kind = kind;
+    hero_poll_os = os;
+}
+
+static void hero_poll_clear(void) {
+    hero_poll_fail(HERO_POLL_OK, 0);
+}
+
+/* The platform's number for the failure the last system call reported. */
+static int64_t hero_poll_os_code(void) {
+#if defined(_WIN32)
+    return (int64_t)WSAGetLastError();
+#else
+    return (int64_t)errno;
+#endif
+}
+
+/* The kind a refusal to watch a descriptor is: a descriptor the system will
+ * not wait on (`epoll`'s `EPERM` for a regular file, `kqueue`'s `EINVAL` for
+ * `/dev/null`), a system with no room, or another. */
+static int64_t hero_poll_kind_of(int64_t code) {
+    switch (code) {
+#if defined(_WIN32)
+    case WSAENOTSOCK:
+        return HERO_POLL_UNSUPPORTED;
+    case WSAENOBUFS:
+    case WSAEMFILE:
+        return HERO_POLL_LIMIT;
+#else
+    case EPERM:
+    case EINVAL:
+    case ENODEV:
+    case ENOTSUP:
+        return HERO_POLL_UNSUPPORTED;
+    case ENOMEM:
+    case ENOSPC:
+    case EMFILE:
+    case ENFILE:
+        return HERO_POLL_LIMIT;
+#endif
+    default:
+        return HERO_POLL_OTHER;
+    }
+}
+
+/* Nanoseconds on a clock that never goes back, the one `hero_net.c` reads:
+ * Darwin's `CLOCK_UPTIME_RAW`, Linux's `CLOCK_MONOTONIC`, Windows'
+ * performance counter. -1 where it cannot be read or does not fit. */
+static int64_t hero_poll_now(void) {
+    int64_t whole = 0;
+    int64_t part = 0;
+    int64_t per = 0;
+#if defined(_WIN32)
+    LARGE_INTEGER count;
+    LARGE_INTEGER frequency;
+
+    if (!QueryPerformanceFrequency(&frequency) || !QueryPerformanceCounter(&count) || frequency.QuadPart <= 0 || count.QuadPart < 0) {
+        return -1;
+    }
+    whole = count.QuadPart / frequency.QuadPart;
+    part = count.QuadPart % frequency.QuadPart;
+    per = frequency.QuadPart;
+#else
+    struct timespec t;
+#if defined(__APPLE__)
+    int read = clock_gettime(CLOCK_UPTIME_RAW, &t);
+#else
+    int read = clock_gettime(CLOCK_MONOTONIC, &t);
+#endif
+
+    if (read != 0 || t.tv_sec < 0 || t.tv_nsec < 0) {
+        return -1;
+    }
+    whole = (int64_t)t.tv_sec;
+    part = (int64_t)t.tv_nsec;
+    per = INT64_C(1000000000);
+#endif
+    int64_t seconds = 0;
+    int64_t scaled = 0;
+    int64_t total = 0;
+
+    if (__builtin_mul_overflow(whole, INT64_C(1000000000), &seconds) || __builtin_mul_overflow(part, INT64_C(1000000000), &scaled) ||
+        __builtin_add_overflow(seconds, scaled / per, &total)) {
+        return -1;
+    }
+    return total;
+}
+
+/* `at` plus `ns`, or the largest time where the sum does not fit: a time so
+ * far is never reached. */
+static int64_t hero_poll_later(int64_t at, int64_t ns) {
+    int64_t sum = 0;
+
+    return __builtin_add_overflow(at, ns, &sum) ? INT64_MAX : sum;
+}
+
+/* -- the stop's bell ------------------------------------------------------- */
+
+/* THE HOOK `hero_net.c` CALLS AT A STOP, under its own lock: it takes none of
+ * this file's, allocates nothing, and calls one system function that does not
+ * wait (the bell is non-blocking). */
+static void hero_poll_hear_stop(void) {
+#if defined(_WIN32)
+    SOCKET bell = atomic_load(&hero_poll_bell);
+
+    if (bell != INVALID_SOCKET) {
+        (void)sendto(bell, "\1", 1, 0, (const struct sockaddr *)&hero_poll_bell_at, (int)sizeof hero_poll_bell_at);
+    }
+#else
+    int out = atomic_load(&hero_poll_bell_out);
+
+    if (out >= 0) {
+        char one = 1;
+        ssize_t wrote = write(out, &one, 1);
+
+        (void)wrote;
+    }
+#endif
+}
+
+#if defined(_WIN32)
+/* The bell made: a datagram socket bound to the loopback at a port the
+ * system chooses, non-blocking and never inherited. False where any of it is
+ * refused, the loopback down among the causes, nothing left made. */
+static bool hero_poll_bell_made(void) {
+    WSADATA data;
+
+    if (WSAStartup(MAKEWORD(2, 2), &data) != 0) {
+        return false;
+    }
+    SOCKET bell = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if (bell == INVALID_SOCKET) {
+        return false;
+    }
+    struct sockaddr_in at;
+    int size = (int)sizeof at;
+    u_long on = 1;
+
+    memset(&at, 0, sizeof at);
+    at.sin_family = AF_INET;
+    at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    at.sin_port = 0;
+    /* `FIONBIO` is an unsigned bit pattern the call takes as its `long`. */
+    if (bind(bell, (const struct sockaddr *)&at, (int)sizeof at) != 0 || getsockname(bell, (struct sockaddr *)&at, &size) != 0 ||
+        ioctlsocket(bell, (long)FIONBIO, &on) != 0 || !SetHandleInformation((HANDLE)bell, HANDLE_FLAG_INHERIT, 0)) {
+        (void)closesocket(bell);
+        return false;
+    }
+    hero_poll_bell_at = at;
+    atomic_store(&hero_poll_bell, bell);
+    return true;
+}
+#else
+/* The bell made: a pipe, both ends close-on-exec and non-blocking. False
+ * where any of it is refused, nothing left made. */
+static bool hero_poll_bell_made(void) {
+    int ends[2];
+
+    if (pipe(ends) != 0) {
+        return false;
+    }
+    for (int i = 0; i < 2; i += 1) {
+        int flags = fcntl(ends[i], F_GETFL);
+
+        if (fcntl(ends[i], F_SETFD, FD_CLOEXEC) != 0 || flags < 0 || fcntl(ends[i], F_SETFL, flags | O_NONBLOCK) != 0) {
+            (void)close(ends[0]);
+            (void)close(ends[1]);
+            return false;
+        }
+    }
+    atomic_store(&hero_poll_bell_in, ends[0]);
+    atomic_store(&hero_poll_bell_out, ends[1]);
+    return true;
+}
+#endif
+
+/* The member's once, under the lock: the bell made and `hero_net.c` asked to
+ * call the hook at every stop. Where either is refused the waits ask in
+ * slices; a set is made all the same. */
+static void hero_poll_up(void) {
+    if (hero_poll_up_done) {
+        return;
+    }
+    hero_poll_up_done = true;
+    if (hero_poll_bell_made() && hero_net_when_stopped(hero_poll_hear_stop) == 0) {
+        atomic_store(&hero_poll_heard, 1);
+    }
+}
+
+/* -- the tables ------------------------------------------------------------ */
+
+static hero_poll_set *hero_poll_handle(uint32_t index, uint64_t life) {
+    return (hero_poll_set *)(uintptr_t)(HERO_HANDLE_TAG(HERO_HANDLE_TAG_POLL) | (life << HERO_POLL_INDEX_BITS) | ((uint64_t)index + 1));
+}
+
+/* The set a handle names while it holds the life the handle was issued for
+ * and is not closed; NULL for any other value: the handle must be bit for bit
+ * the one that slot and life issue, so another table's handle, whose tag is
+ * not this one, and a value with any other bit set, name nothing here. Under
+ * the lock. */
+static hero_poll_slot *hero_poll_find(hero_poll_set *set) {
+    uint64_t value = (uint64_t)(uintptr_t)set;
+    uint64_t low = value & HERO_POLL_INDEX_MASK;
+
+    if (low == 0 || low > hero_poll_fresh) {
+        return NULL;
+    }
+    hero_poll_slot *slot = &hero_poll_sets[low - 1];
+
+    if (!slot->held || slot->closing || value != (uint64_t)(uintptr_t)hero_poll_handle((uint32_t)(low - 1), slot->life)) {
+        return NULL;
+    }
+    return slot;
+}
+
+/* The entry `key` names in the set, NULL for none. Under the lock. */
+static hero_poll_entry *hero_poll_entry_of(const hero_poll_slot *slot, int64_t key) {
+    if (key <= 0) {
+        return NULL;
+    }
+    uint64_t value = (uint64_t)key;
+    uint64_t low = value & HERO_POLL_INDEX_MASK;
+
+    if (low <= slot->base || low > (uint64_t)slot->base + slot->fresh) {
+        return NULL;
+    }
+    hero_poll_entry *e = &hero_poll_entries[low - 1];
+
+    if (e->on == HERO_POLL_ON_NOTHING || e->life != value >> HERO_POLL_INDEX_BITS) {
+        return NULL;
+    }
+    return e;
+}
+
+static int64_t hero_poll_key(const hero_poll_entry *e) {
+    return (int64_t)((e->life << HERO_POLL_INDEX_BITS) | ((uint64_t)(e - hero_poll_entries) + 1));
+}
+
+/* A set slot given back. Under the lock. */
+static void hero_poll_slot_free(hero_poll_slot *slot) {
+    slot->held = false;
+    slot->closing = false;
+    slot->waiting = false;
+    slot->span = 0;
+    slot->queue = -1;
+    if (slot->life < HERO_POLL_LIFE_MOST) {
+        slot->next = hero_poll_given_back;
+        hero_poll_given_back = (uint32_t)(slot - hero_poll_sets) + 1;
+    }
+}
+
+/* Where `need` contiguous entries are free, the lowest place first; false
+ * where no place holds so many. A set holds its range from its making to its
+ * release, closing or not. Under the lock. */
+static bool hero_poll_range(uint32_t need, uint32_t *base) {
+    uint32_t at = 0;
+    bool moved = true;
+
+    while (moved) {
+        moved = false;
+        if ((uint64_t)at + need > HERO_POLL_ENTRIES) {
+            return false;
+        }
+        for (uint32_t i = 0; i < hero_poll_fresh; i += 1) {
+            const hero_poll_slot *other = &hero_poll_sets[i];
+
+            if (other->span != 0 && at < other->base + other->span && other->base < at + need) {
+                at = other->base + other->span;
+                moved = true;
+            }
+        }
+    }
+    *base = at;
+    return true;
+}
+
+/* A list of timers or files, as the set heads it: `e` put at its front, or
+ * taken out of it. Under the lock. */
+static void hero_poll_link(uint32_t *head, hero_poll_entry *e) {
+    uint32_t me = (uint32_t)(e - hero_poll_entries) + 1;
+
+    e->before = 0;
+    e->after = *head;
+    if (*head != 0) {
+        hero_poll_entries[*head - 1].before = me;
+    }
+    *head = me;
+}
+
+static void hero_poll_unlink(uint32_t *head, hero_poll_entry *e) {
+    if (e->before != 0) {
+        hero_poll_entries[e->before - 1].after = e->after;
+    } else {
+        *head = e->after;
+    }
+    if (e->after != 0) {
+        hero_poll_entries[e->after - 1].before = e->before;
+    }
+    e->before = 0;
+    e->after = 0;
+}
+
+/* -- the system's wait, per arm --------------------------------------------- */
+
+#if defined(HERO_POLL_KQUEUE)
+/* The descriptor's filters moved from `was` to `now`: each added or deleted
+ * alone, and a failure of the second undoing the first. 0, or the system's
+ * number. */
+static int64_t hero_poll_watch(int q, int64_t fd, unsigned now, unsigned was, uint64_t key) {
+    static const unsigned ways[2] = { HERO_POLL_READ, HERO_POLL_WRITE };
+    static const short filters[2] = { EVFILT_READ, EVFILT_WRITE };
+    int done = -1;
+
+    for (int i = 0; i < 2; i += 1) {
+        bool want = (now & ways[i]) != 0;
+        bool had = (was & ways[i]) != 0;
+
+        if (want == had) {
+            continue;
+        }
+        struct kevent change;
+
+        EV_SET(&change, (uintptr_t)fd, filters[i], want ? EV_ADD : EV_DELETE, 0, 0, (void *)(uintptr_t)key);
+        if (kevent(q, &change, 1, NULL, 0, NULL) != 0) {
+            int64_t code = hero_poll_os_code();
+
+            if (done >= 0) {
+                bool undo = (now & ways[done]) != 0;
+
+                EV_SET(&change, (uintptr_t)fd, filters[done], undo ? EV_DELETE : EV_ADD, 0, 0, (void *)(uintptr_t)key);
+                (void)kevent(q, &change, 1, NULL, 0, NULL);
+            }
+            return code;
+        }
+        done = i;
+    }
+    return 0;
+}
+
+static int hero_poll_queue_made(void) {
+    return kqueue();
+}
+#elif defined(HERO_POLL_EPOLL)
+static int64_t hero_poll_watch(int q, int64_t fd, unsigned now, unsigned was, uint64_t key) {
+    struct epoll_event ev;
+
+    memset(&ev, 0, sizeof ev);
+    ev.events = ((now & HERO_POLL_READ) != 0 ? (uint32_t)(EPOLLIN | EPOLLRDHUP) : 0u) | ((now & HERO_POLL_WRITE) != 0 ? (uint32_t)EPOLLOUT : 0u);
+    ev.data.u64 = key;
+    int op = was == 0 ? EPOLL_CTL_ADD : (now == 0 ? EPOLL_CTL_DEL : EPOLL_CTL_MOD);
+
+    return epoll_ctl(q, op, (int)fd, &ev) != 0 ? hero_poll_os_code() : 0;
+}
+
+static int hero_poll_queue_made(void) {
+    return epoll_create1(EPOLL_CLOEXEC);
+}
+#else
+/* The array's systems keep nothing in the system between waits. */
+static int64_t hero_poll_watch(int q, int64_t fd, unsigned now, unsigned was, uint64_t key) {
+    (void)q;
+    (void)fd;
+    (void)now;
+    (void)was;
+    (void)key;
+    return 0;
+}
+#endif
+
+#if !defined(HERO_POLL_ARRAY)
+/* A set's queue, close-on-exec, the stop's pipe watched in it under the key 0
+ * where the pipe stands: -1 with the system's number where refused. */
+static int hero_poll_queue(int64_t *code) {
+    int q = hero_poll_queue_made();
+
+    if (q < 0) {
+        *code = hero_poll_os_code();
+        return -1;
+    }
+    (void)fcntl(q, F_SETFD, FD_CLOEXEC);
+    int bell = atomic_load(&hero_poll_bell_in);
+
+    if (bell >= 0) {
+        int64_t refused = hero_poll_watch(q, bell, HERO_POLL_READ, 0, 0);
+
+        if (refused != 0) {
+            (void)close(q);
+            *code = refused;
+            return -1;
+        }
+    }
+    return q;
+}
+#endif
+
+/* -- making, adding, changing, removing -------------------------------------- */
+
+hero_poll_set *hero_poll_make(int64_t most) {
+    if (most < 1 || most > HERO_POLL_MOST) {
+        hero_poll_fail(HERO_POLL_INVALID, 0);
+        return NULL;
+    }
+    hero_poll_enter();
+    hero_poll_up();
+    hero_poll_leave();
+
+    int queue = -1;
+#if !defined(HERO_POLL_ARRAY)
+    int64_t code = 0;
+
+    queue = hero_poll_queue(&code);
+    if (queue < 0) {
+        hero_poll_fail(hero_poll_kind_of(code) == HERO_POLL_LIMIT ? HERO_POLL_LIMIT : HERO_POLL_OTHER, code);
+        return NULL;
+    }
+#endif
+    uint32_t need = (uint32_t)most + 1;
+    uint32_t base = 0;
+    uint32_t index = 0;
+    bool room = true;
+    hero_poll_set *handle = NULL;
+
+    hero_poll_enter();
+    if (!hero_poll_range(need, &base)) {
+        room = false;
+    } else if (hero_poll_given_back != 0) {
+        index = hero_poll_given_back - 1;
+        hero_poll_given_back = hero_poll_sets[index].next;
+    } else if (hero_poll_fresh < HERO_POLL_SETS) {
+        index = hero_poll_fresh;
+        hero_poll_fresh += 1;
+    } else {
+        room = false;
+    }
+    if (room) {
+        hero_poll_slot *slot = &hero_poll_sets[index];
+
+        slot->life += 1;
+        slot->held = true;
+        slot->closing = false;
+        slot->waiting = false;
+        slot->busy = 0;
+        slot->base = base;
+        slot->span = need;
+        slot->fresh = 0;
+        slot->given_back = 0;
+        slot->count = 0;
+        slot->timers = 0;
+        slot->files = 0;
+        slot->rounds = 0;
+        slot->queue = queue;
+        slot->next = 0;
+        handle = hero_poll_handle(index, slot->life);
+    }
+    hero_poll_leave();
+
+    if (!room) {
+#if !defined(HERO_POLL_ARRAY)
+        (void)close(queue);
+#endif
+        hero_poll_fail(HERO_POLL_LIMIT, 0);
+        return NULL;
+    }
+    hero_poll_clear();
+    return handle;
+}
+
+/* A new entry of the set: watched where it stands on a descriptor, linked
+ * where it is a timer or a file. Its key, or -1 with the kind set; nothing of
+ * the caller's hold is let go here, which the caller does on -1. */
+static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned interest, int64_t fd, int64_t net_hold, hero_stream *stream,
+                                     int64_t due, int64_t every) {
+    int64_t kind = HERO_POLL_OK;
+    int64_t os = 0;
+    int64_t key = -1;
+
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else if (slot->count >= slot->span - 1 || (slot->given_back == 0 && slot->fresh >= slot->span - 1)) {
+        kind = HERO_POLL_LIMIT;
+    } else {
+        uint32_t index = 0;
+
+        if (slot->given_back != 0) {
+            index = slot->given_back - 1;
+            slot->given_back = hero_poll_entries[index].next;
+        } else {
+            index = slot->base + slot->fresh;
+            slot->fresh += 1;
+        }
+        hero_poll_entry *e = &hero_poll_entries[index];
+
+        e->life += 1;
+        e->on = on;
+        e->interest = (uint8_t)interest;
+        e->fd = fd;
+        e->net_hold = net_hold;
+        e->stream = stream;
+        e->due = due;
+        e->every = every;
+        e->next = 0;
+        e->after = 0;
+        e->before = 0;
+        e->round = 0;
+        e->told_at = 0;
+        key = hero_poll_key(e);
+        if (on == HERO_POLL_ON_SOCKET || on == HERO_POLL_ON_STREAM) {
+            os = hero_poll_watch(slot->queue, fd, interest, 0, (uint64_t)key);
+        }
+        if (os != 0) {
+            kind = hero_poll_kind_of(os);
+            e->on = HERO_POLL_ON_NOTHING;
+            if (e->life < HERO_POLL_LIFE_MOST) {
+                e->next = slot->given_back;
+                slot->given_back = index + 1;
+            }
+            key = -1;
+        } else {
+            slot->count += 1;
+            if (on == HERO_POLL_ON_TIMER) {
+                hero_poll_link(&slot->timers, e);
+            } else if (on == HERO_POLL_ON_FILE) {
+                hero_poll_link(&slot->files, e);
+            }
+        }
+    }
+    hero_poll_leave();
+
+    if (key < 0) {
+        hero_poll_fail(kind, os);
+        return -1;
+    }
+    hero_poll_clear();
+    return key;
+}
+
+static bool hero_poll_interest_ok(int64_t interest) {
+    return interest == HERO_POLL_READ || interest == HERO_POLL_WRITE || interest == (HERO_POLL_READ | HERO_POLL_WRITE);
+}
+
+int64_t hero_poll_add_socket(hero_poll_set *set, hero_net_socket *s, int64_t interest) {
+    if (!hero_poll_interest_ok(interest)) {
+        hero_poll_fail(HERO_POLL_INVALID, 0);
+        return -1;
+    }
+    int64_t fd = -1;
+    int64_t hold = hero_net_hold(s, &fd);
+
+    if (hold < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0);
+
+    if (key < 0) {
+        int64_t kind = hero_poll_kind;
+        int64_t os = hero_poll_os;
+
+        hero_net_unhold(hold);
+        hero_poll_fail(kind, os);
+    }
+    return key;
+}
+
+int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interest) {
+    if (!hero_poll_interest_ok(interest)) {
+        hero_poll_fail(HERO_POLL_INVALID, 0);
+        return -1;
+    }
+    int64_t kind = hero_stream_kind(s);
+
+    if (kind < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    if (kind == HERO_STREAM_KIND_FILE) {
+        return hero_poll_enter_entry(set, HERO_POLL_ON_FILE, (unsigned)interest, -1, -1, NULL, -1, 0);
+    }
+    if (kind == HERO_STREAM_KIND_SOCKET) {
+        /* The socket under the stream, held only while its own hold is
+         * taken: from then the descriptor stays open for the entry whatever
+         * closes the stream, and the stream's close shuts the socket down. */
+        hero_net_socket *socket = hero_stream_net_socket(s);
+
+        if (socket == NULL) {
+            hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
+            return -1;
+        }
+        int64_t fd = -1;
+        int64_t hold = hero_net_hold(socket, &fd);
+
+        (void)hero_stream_release(s);
+        if (hold < 0) {
+            hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+            return -1;
+        }
+        int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0);
+
+        if (key < 0) {
+            int64_t failed = hero_poll_kind;
+            int64_t os = hero_poll_os;
+
+            hero_net_unhold(hold);
+            hero_poll_fail(failed, os);
+        }
+        return key;
+    }
+#if defined(_WIN32)
+    /* `WSAPoll` waits on sockets alone: a pipe's or a console's handle is
+     * refused (`WSAENOTSOCK`, measured by `hero_net.c`'s sitting on the box). */
+    hero_poll_fail(HERO_POLL_UNSUPPORTED, 0);
+    return -1;
+#else
+    int64_t fd = hero_stream_hold(s);
+
+    if (fd < 0) {
+        hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
+        return -1;
+    }
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_STREAM, (unsigned)interest, fd, -1, s, -1, 0);
+
+    if (key < 0) {
+        int64_t failed = hero_poll_kind;
+        int64_t os = hero_poll_os;
+
+        (void)hero_stream_release(s);
+        hero_poll_fail(failed, os);
+    }
+    return key;
+#endif
+}
+
+int64_t hero_poll_add_timer(hero_poll_set *set, int64_t first_ns, int64_t every_ns) {
+    if (first_ns < 0 || every_ns < 0) {
+        hero_poll_fail(HERO_POLL_INVALID, 0);
+        return -1;
+    }
+    int64_t now = hero_poll_now();
+
+    if (now < 0) {
+        hero_poll_fail(HERO_POLL_OTHER, 0);
+        return -1;
+    }
+    return hero_poll_enter_entry(set, HERO_POLL_ON_TIMER, 0, -1, -1, NULL, hero_poll_later(now, first_ns), every_ns);
+}
+
+int64_t hero_poll_set_timer(hero_poll_set *set, int64_t key, int64_t first_ns, int64_t every_ns) {
+    int64_t now = hero_poll_now();
+    int64_t kind = HERO_POLL_OK;
+
+    if (first_ns < 0 || every_ns < 0) {
+        kind = HERO_POLL_INVALID;
+    } else if (now < 0) {
+        kind = HERO_POLL_OTHER;
+    } else {
+        hero_poll_enter();
+        hero_poll_slot *slot = hero_poll_find(set);
+        hero_poll_entry *e = slot == NULL ? NULL : hero_poll_entry_of(slot, key);
+
+        if (slot == NULL) {
+            kind = HERO_POLL_NOT_OPEN;
+        } else if (slot->waiting) {
+            kind = HERO_POLL_INVALID;
+        } else if (e == NULL) {
+            kind = HERO_POLL_NOT_FOUND;
+        } else if (e->on != HERO_POLL_ON_TIMER) {
+            kind = HERO_POLL_INVALID;
+        } else {
+            e->due = hero_poll_later(now, first_ns);
+            e->every = every_ns;
+        }
+        hero_poll_leave();
+    }
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+    hero_poll_clear();
+    return 0;
+}
+
+int64_t hero_poll_change(hero_poll_set *set, int64_t key, int64_t interest) {
+    int64_t kind = HERO_POLL_OK;
+    int64_t os = 0;
+
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+    hero_poll_entry *e = slot == NULL ? NULL : hero_poll_entry_of(slot, key);
+
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else if (e == NULL) {
+        kind = HERO_POLL_NOT_FOUND;
+    } else if (e->on == HERO_POLL_ON_TIMER || !hero_poll_interest_ok(interest)) {
+        kind = HERO_POLL_INVALID;
+    } else {
+        if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
+            os = hero_poll_watch(slot->queue, e->fd, (unsigned)interest, e->interest, (uint64_t)key);
+        }
+        if (os != 0) {
+            kind = hero_poll_kind_of(os);
+        } else {
+            e->interest = (uint8_t)interest;
+        }
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, os);
+        return -1;
+    }
+    hero_poll_clear();
+    return 0;
+}
+
+/* What an entry held, let go outside the lock. */
+typedef struct {
+    int64_t net_hold;
+    hero_stream *stream;
+} hero_poll_held;
+
+static void hero_poll_let_go(hero_poll_held held) {
+    if (held.net_hold >= 0) {
+        hero_net_unhold(held.net_hold);
+    }
+    if (held.stream != NULL) {
+        (void)hero_stream_release(held.stream);
+    }
+}
+
+/* The entry taken out of its set's lists and given back, what it held
+ * answered. Under the lock; the system forgets the descriptor separately. */
+static hero_poll_held hero_poll_entry_free(hero_poll_slot *slot, hero_poll_entry *e) {
+    hero_poll_held held = { e->net_hold, e->stream };
+
+    if (e->on == HERO_POLL_ON_TIMER) {
+        hero_poll_unlink(&slot->timers, e);
+    } else if (e->on == HERO_POLL_ON_FILE) {
+        hero_poll_unlink(&slot->files, e);
+    }
+    e->on = HERO_POLL_ON_NOTHING;
+    e->net_hold = -1;
+    e->stream = NULL;
+    e->fd = -1;
+    slot->count -= 1;
+    if (e->life < HERO_POLL_LIFE_MOST) {
+        e->next = slot->given_back;
+        slot->given_back = (uint32_t)(e - hero_poll_entries) + 1;
+    }
+    return held;
+}
+
+int64_t hero_poll_remove(hero_poll_set *set, int64_t key) {
+    int64_t kind = HERO_POLL_OK;
+    hero_poll_held held = { -1, NULL };
+
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+    hero_poll_entry *e = slot == NULL ? NULL : hero_poll_entry_of(slot, key);
+
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else if (e == NULL) {
+        kind = HERO_POLL_NOT_FOUND;
+    } else {
+        if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
+            /* Forgotten by the system before its hold is let go: the
+             * descriptor is still open, so the call reaches this entry's. */
+            (void)hero_poll_watch(slot->queue, e->fd, 0, e->interest, (uint64_t)key);
+        }
+        held = hero_poll_entry_free(slot, e);
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+    hero_poll_let_go(held);
+    hero_poll_clear();
+    return 0;
+}
+
+int64_t hero_poll_count(hero_poll_set *set) {
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+    int64_t count = slot == NULL ? -1 : (int64_t)slot->count;
+    hero_poll_leave();
+
+    if (count < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_poll_clear();
+    return count;
+}
+
+/* The set released by the one thread that owns its release: its queue closed
+ * first, so the system forgets every descriptor before any hold is let go,
+ * then each entry given back and let go, then the slot. The set is closing,
+ * so no other call finds it meanwhile. */
+static void hero_poll_release(hero_poll_slot *slot) {
+#if !defined(HERO_POLL_ARRAY)
+    if (slot->queue >= 0) {
+        (void)close(slot->queue);
+    }
+#endif
+    for (uint32_t i = 0; i < slot->fresh; i += 1) {
+        hero_poll_held held = { -1, NULL };
+
+        hero_poll_enter();
+        hero_poll_entry *e = &hero_poll_entries[slot->base + i];
+
+        if (e->on != HERO_POLL_ON_NOTHING) {
+            held = hero_poll_entry_free(slot, e);
+        }
+        hero_poll_leave();
+        hero_poll_let_go(held);
+    }
+    hero_poll_enter();
+    hero_poll_slot_free(slot);
+    hero_poll_leave();
+}
+
+int64_t hero_poll_close(hero_poll_set *set) {
+    bool now = false;
+
+    hero_poll_enter();
+    hero_poll_slot *slot = hero_poll_find(set);
+
+    if (slot != NULL) {
+        slot->closing = true;
+        now = slot->busy == 0;
+    }
+    hero_poll_leave();
+
+    if (slot == NULL) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    if (now) {
+        hero_poll_release(slot);
+    }
+    hero_poll_clear();
+    return 0;
+}
+
+/* -- the wait ---------------------------------------------------------------- */
+
+/* One event written at `at` in the caller's numbers. */
+static void hero_poll_tell(int64_t *events, uint64_t at, int64_t key, int64_t bits, int64_t times) {
+    events[at * HERO_POLL_EVENT_NUMBERS] = key;
+    events[at * HERO_POLL_EVENT_NUMBERS + 1] = bits;
+    events[at * HERO_POLL_EVENT_NUMBERS + 2] = times;
+}
+
+/* An event of the system's for `key`, the bits it says, added to the answer:
+ * merged into the event the entry already has this round, or written after
+ * the others where there is room. Where the entry is gone, or the bits hold
+ * nothing it waits for, nothing is written. Under the lock. */
+static void hero_poll_told(hero_poll_slot *slot, uint64_t key, int64_t bits, int64_t *events, uint64_t room, uint64_t *written) {
+    hero_poll_entry *e = hero_poll_entry_of(slot, (int64_t)key);
+
+    if (e == NULL || (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM)) {
+        return;
+    }
+    if ((bits & HERO_POLL_HANGUP) != 0 && (e->interest & HERO_POLL_READ) != 0) {
+        bits |= HERO_POLL_READ;
+    }
+    bits &= (int64_t)(e->interest | HERO_POLL_HANGUP | HERO_POLL_ERROR);
+    if (bits == 0) {
+        return;
+    }
+    if (e->round == slot->rounds) {
+        events[e->told_at * HERO_POLL_EVENT_NUMBERS + 1] |= bits;
+        return;
+    }
+    if (*written >= room) {
+        return;
+    }
+    e->round = slot->rounds;
+    e->told_at = *written;
+    hero_poll_tell(events, *written, (int64_t)key, bits, 0);
+    *written += 1;
+}
+
+/* The timers fallen due by `now` and the files, written first; the earliest
+ * time a timer still to come is due answered in `next`, -1 for none. Under
+ * the lock. */
+static uint64_t hero_poll_due(hero_poll_slot *slot, int64_t now, int64_t *events, uint64_t room, int64_t *next) {
+    uint64_t written = 0;
+
+    *next = -1;
+    for (uint32_t at = slot->timers; at != 0; at = hero_poll_entries[at - 1].after) {
+        hero_poll_entry *e = &hero_poll_entries[at - 1];
+
+        if (e->due < 0) {
+            continue;
+        }
+        if (e->due > now || written >= room) {
+            if (*next < 0 || e->due < *next) {
+                *next = e->due;
+            }
+            continue;
+        }
+        int64_t times = 1;
+
+        if (e->every == 0) {
+            e->due = -1;
+        } else {
+            /* Every time it fell due by now is counted, and the next is the
+             * first still to come: never a burst of the ones waited past. */
+            times += (now - e->due) / e->every;
+            int64_t step = 0;
+
+            e->due = __builtin_mul_overflow(times, e->every, &step) ? INT64_MAX : hero_poll_later(e->due, step);
+            if (*next < 0 || e->due < *next) {
+                *next = e->due;
+            }
+        }
+        hero_poll_tell(events, written, hero_poll_key(e), HERO_POLL_DUE, times);
+        written += 1;
+    }
+    for (uint32_t at = slot->files; at != 0 && written < room; at = hero_poll_entries[at - 1].after) {
+        hero_poll_entry *e = &hero_poll_entries[at - 1];
+
+        hero_poll_tell(events, written, hero_poll_key(e), (int64_t)e->interest, 0);
+        written += 1;
+    }
+    return written;
+}
+
+/* How long the system may wait, in milliseconds, rounded up so no wait ends
+ * before its time: none past `ends` or the next timer, at most a chunk, and a
+ * slice where the stop cannot be heard; -1 for no limit. */
+static int hero_poll_ms(int64_t now, int64_t ends, int64_t next, bool sliced) {
+    int64_t until = ends;
+
+    if (next >= 0 && (until < 0 || next < until)) {
+        until = next;
+    }
+    int64_t ms = -1;
+
+    if (until >= 0) {
+        int64_t left = until > now ? until - now : 0;
+
+        ms = left / 1000000 + (left % 1000000 != 0 ? 1 : 0);
+    }
+    if (ms < 0 || ms > HERO_POLL_CHUNK_MS) {
+        ms = HERO_POLL_CHUNK_MS;
+    }
+    if (sliced && ms > HERO_POLL_SLICE_MS) {
+        ms = HERO_POLL_SLICE_MS;
+    }
+    return (int)ms;
+}
+
+#if defined(HERO_POLL_ARRAY)
+/* The set's array filled for the system: every entry on a descriptor, then
+ * the bell where it stands. How many places. Under the lock. */
+static uint32_t hero_poll_fill(const hero_poll_slot *slot) {
+    uint32_t n = 0;
+
+    for (uint32_t i = 0; i < slot->fresh; i += 1) {
+        const hero_poll_entry *e = &hero_poll_entries[slot->base + i];
+
+        if (e->on != HERO_POLL_ON_SOCKET && e->on != HERO_POLL_ON_STREAM) {
+            continue;
+        }
+        hero_poll_fd *p = &hero_poll_array[slot->base + n];
+
+        memset(p, 0, sizeof *p);
+#if defined(_WIN32)
+        p->fd = (SOCKET)(uint64_t)e->fd;
+#else
+        p->fd = (int)e->fd;
+#endif
+        p->events = (short)(((e->interest & HERO_POLL_READ) != 0 ? HERO_POLL_IN : 0) | ((e->interest & HERO_POLL_WRITE) != 0 ? HERO_POLL_OUT : 0));
+        hero_poll_array_entry[slot->base + n] = slot->base + i + 1;
+        n += 1;
+    }
+#if defined(_WIN32)
+    SOCKET bell = atomic_load(&hero_poll_bell);
+
+    if (bell != INVALID_SOCKET) {
+        hero_poll_fd *p = &hero_poll_array[slot->base + n];
+
+        memset(p, 0, sizeof *p);
+        p->fd = bell;
+        p->events = HERO_POLL_IN;
+        hero_poll_array_entry[slot->base + n] = 0;
+        n += 1;
+    }
+#else
+    int bell = atomic_load(&hero_poll_bell_in);
+
+    if (bell >= 0) {
+        hero_poll_fd *p = &hero_poll_array[slot->base + n];
+
+        memset(p, 0, sizeof *p);
+        p->fd = bell;
+        p->events = HERO_POLL_IN;
+        hero_poll_array_entry[slot->base + n] = 0;
+        n += 1;
+    }
+#endif
+    return n;
+}
+#endif
+
+int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, uint64_t count) {
+    if (limit_ns < -1 || events == NULL || count < HERO_POLL_EVENT_NUMBERS) {
+        hero_poll_fail(HERO_POLL_INVALID, 0);
+        return -1;
+    }
+    if (hero_net_stop_asked() != 0) {
+        hero_poll_fail(HERO_POLL_STOPPED, 0);
+        return -1;
+    }
+    int64_t started = hero_poll_now();
+
+    if (started < 0) {
+        hero_poll_fail(HERO_POLL_OTHER, 0);
+        return -1;
+    }
+    int64_t ends = limit_ns < 0 ? -1 : hero_poll_later(started, limit_ns);
+    uint64_t room = count / HERO_POLL_EVENT_NUMBERS;
+    bool sliced = atomic_load(&hero_poll_heard) == 0;
+
+    for (;;) {
+        int64_t kind = HERO_POLL_OK;
+        int64_t next = -1;
+        uint64_t written = 0;
+        int64_t now = hero_poll_now();
+        int queue = -1;
+#if defined(HERO_POLL_ARRAY)
+        uint32_t places = 0;
+        uint32_t base = 0;
+#endif
+
+        hero_poll_enter();
+        hero_poll_slot *slot = hero_poll_find(set);
+
+        if (slot == NULL) {
+            kind = HERO_POLL_NOT_OPEN;
+        } else if (slot->waiting) {
+            kind = HERO_POLL_INVALID;
+        } else {
+            slot->waiting = true;
+            slot->busy += 1;
+            written = hero_poll_due(slot, now, events, room, &next);
+            queue = slot->queue;
+#if defined(HERO_POLL_ARRAY)
+            places = hero_poll_fill(slot);
+            base = slot->base;
+#endif
+        }
+        hero_poll_leave();
+
+        if (kind != HERO_POLL_OK) {
+            hero_poll_fail(kind, 0);
+            return -1;
+        }
+        int ms = written > 0 || (ends >= 0 && now >= ends) ? 0 : hero_poll_ms(now, ends, next, sliced);
+        bool stopped = false;
+        int64_t failed = 0;
+
+        if (written < room) {
+#if defined(HERO_POLL_KQUEUE)
+            struct kevent got[64];
+            uint64_t want = room - written < 64 ? room - written : 64;
+            struct timespec wait = { (time_t)(ms / 1000), (long)(ms % 1000) * 1000000L };
+            int n = kevent(queue, NULL, 0, got, (int)want, &wait);
+
+            if (n < 0 && errno != EINTR) {
+                failed = hero_poll_os_code();
+            }
+            hero_poll_enter();
+            slot->rounds += 1;
+            for (int i = 0; i < n; i += 1) {
+                uint64_t key = (uint64_t)(uintptr_t)got[i].udata;
+                int64_t bits = got[i].filter == EVFILT_WRITE ? HERO_POLL_WRITE : HERO_POLL_READ;
+
+                if (key == 0) {
+                    stopped = true;
+                    continue;
+                }
+                if ((got[i].flags & EV_EOF) != 0) {
+                    bits |= HERO_POLL_HANGUP;
+                    if (got[i].fflags != 0) {
+                        bits |= HERO_POLL_ERROR;
+                    }
+                }
+                if ((got[i].flags & EV_ERROR) != 0) {
+                    bits = HERO_POLL_ERROR;
+                }
+                hero_poll_told(slot, key, bits, events, room, &written);
+            }
+            hero_poll_leave();
+#elif defined(HERO_POLL_EPOLL)
+            struct epoll_event got[64];
+            uint64_t want = room - written < 64 ? room - written : 64;
+            int n = epoll_wait(queue, got, (int)want, ms);
+
+            if (n < 0 && errno != EINTR) {
+                failed = hero_poll_os_code();
+            }
+            hero_poll_enter();
+            slot->rounds += 1;
+            for (int i = 0; i < n; i += 1) {
+                uint64_t key = got[i].data.u64;
+                uint32_t said = got[i].events;
+                int64_t bits = 0;
+
+                if (key == 0) {
+                    stopped = true;
+                    continue;
+                }
+                bits |= (said & EPOLLIN) != 0 ? HERO_POLL_READ : 0;
+                bits |= (said & EPOLLOUT) != 0 ? HERO_POLL_WRITE : 0;
+                bits |= (said & (EPOLLRDHUP | EPOLLHUP)) != 0 ? HERO_POLL_HANGUP : 0;
+                bits |= (said & EPOLLERR) != 0 ? HERO_POLL_ERROR : 0;
+                hero_poll_told(slot, key, bits, events, room, &written);
+            }
+            hero_poll_leave();
+#else
+            int n = 0;
+
+            if (places == 0) {
+                /* Nothing to hand the system: the time passes all the same. */
+#if defined(_WIN32)
+                Sleep((DWORD)ms);
+#else
+                struct timespec pause = { (time_t)(ms / 1000), (long)(ms % 1000) * 1000000L };
+
+                (void)nanosleep(&pause, NULL);
+#endif
+            } else {
+#if defined(_WIN32)
+                n = WSAPoll(&hero_poll_array[base], (ULONG)places, ms);
+                if (n == SOCKET_ERROR) {
+                    failed = hero_poll_os_code();
+                    n = 0;
+                }
+#else
+                n = poll(&hero_poll_array[base], (nfds_t)places, ms);
+                if (n < 0) {
+                    if (errno != EINTR) {
+                        failed = hero_poll_os_code();
+                    }
+                    n = 0;
+                }
+#endif
+            }
+            hero_poll_enter();
+            slot->rounds += 1;
+            for (uint32_t i = 0; n > 0 && i < places; i += 1) {
+                const hero_poll_fd *p = &hero_poll_array[base + i];
+                uint32_t entry = hero_poll_array_entry[base + i];
+                int64_t bits = 0;
+
+                if (p->revents == 0) {
+                    continue;
+                }
+                if (entry == 0) {
+                    stopped = true;
+                    continue;
+                }
+                bits |= (p->revents & HERO_POLL_IN) != 0 ? HERO_POLL_READ : 0;
+                bits |= (p->revents & HERO_POLL_OUT) != 0 ? HERO_POLL_WRITE : 0;
+                bits |= (p->revents & POLLHUP) != 0 ? HERO_POLL_HANGUP : 0;
+                bits |= (p->revents & (POLLERR | POLLNVAL)) != 0 ? HERO_POLL_ERROR : 0;
+                hero_poll_told(slot, (uint64_t)hero_poll_key(&hero_poll_entries[entry - 1]), bits, events, room, &written);
+            }
+            hero_poll_leave();
+#endif
+        }
+        hero_poll_enter();
+        slot->waiting = false;
+        slot->busy -= 1;
+        bool closed = slot->closing;
+        bool release = closed && slot->busy == 0;
+        hero_poll_leave();
+
+        if (release) {
+            hero_poll_release(slot);
+        }
+        if (closed) {
+            hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+            return -1;
+        }
+        if (stopped || hero_net_stop_asked() != 0) {
+            hero_poll_fail(HERO_POLL_STOPPED, 0);
+            return -1;
+        }
+        if (failed != 0) {
+            hero_poll_fail(HERO_POLL_OTHER, failed);
+            return -1;
+        }
+        if (written > 0) {
+            hero_poll_clear();
+            return (int64_t)written;
+        }
+        now = hero_poll_now();
+        if (ends >= 0 && (now < 0 || now >= ends)) {
+            hero_poll_clear();
+            return 0;
+        }
+        (void)queue;
+    }
+}
+
+int64_t hero_poll_last_error(void) {
+    return hero_poll_kind;
+}
+
+int64_t hero_poll_last_os_error(void) {
+    return hero_poll_os;
+}

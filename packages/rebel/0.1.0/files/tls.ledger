@@ -1,0 +1,243 @@
+capability tls/available  whether this machine has TLS at all
+  heroes  tls.is_available
+  go      -
+  rust    -
+  python  ssl.HAS_TLSv1_2, ssl.HAS_TLSv1_3, ssl.OPENSSL_VERSION, ssl.OPENSSL_VERSION_INFO, ssl.OPENSSL_VERSION_NUMBER
+  note    Go and Rust's libraries are linked into the program and always there; Python asks its OpenSSL. Here only a Linux machine with no `libssl.so.3` answers false. The Rust entries of this ledger are `native-tls` 0.2's and `rustls` 0.23's public names as their documentation gives them: neither crate is on this machine, so no command listed them (the census's one unrun list)
+
+capability tls/connect  a TLS connection made to a host by name, its certificate checked for authority, dates and host
+  heroes  tls.connect
+  go      tls.Dial, tls.DialWithDialer, tls.Dialer, tls.Dialer.Dial, tls.Dialer.DialContext, tls.Config.ServerName, tls.Conn.VerifyHostname
+  rust    native_tls::TlsConnector::new, TlsConnector::builder, TlsConnectorBuilder::build, TlsConnector::connect, TlsConnectorBuilder::use_sni, rustls::ClientConfig::builder, ClientConnection::new, StreamOwned::new, pki_types::ServerName
+  python  ssl.create_default_context, ssl.SSLContext.wrap_socket (server_hostname), ssl.SSLContext.check_hostname, ssl.CERT_REQUIRED, ssl.HAS_SNI, ssl.SSLContext.verify_mode
+  note    The handshake is made by the call, within the one deadline that bounds the connection too (Go's `Dialer.Timeout`). SNI is sent for a name and never for an address (RFC 6066), as all three do; an address is checked against the certificate's IP names, measured on the three platforms. A read answers its end where the peer closes with or without close_notify, as Python's `suppress_ragged_eofs=True` does by default; Go answers `io.ErrUnexpectedEOF` there
+
+capability tls/client-over  TLS begun as the client over a stream already connected (Postgres's sslmode, a proxy's tunnel, STARTTLS)
+  heroes  tls.client_over
+  go      tls.Client, tls.Conn
+  rust    native_tls::TlsConnector::connect (any Read + Write), rustls::StreamOwned, rustls::Stream, Connection::read_tls, Connection::write_tls, Connection::process_new_packets
+  python  ssl.SSLContext.wrap_socket, ssl.SSLContext.wrap_bio, ssl.MemoryBIO, ssl.SSLObject, ssl.SSLSocket.unwrap
+  note    Fails `unsupported` on macOS: the system's one API for TLS over a stream the program holds is Secure Transport, deprecated since macOS 10.15, and Network.framework makes its own socket. Rust's native-tls uses Secure Transport there still; the author's choice of 2026-11-16 was nothing deprecated. Going back to plain text after TLS (`unwrap`, STARTTLS's end) is not offered: no protocol of this library needs it. On macOS a plaintext exchange before TLS inside the one connection `tls` makes is measured possible, `tls/preamble` below
+
+capability tls/preamble  a plaintext exchange before TLS inside a connection tls makes itself: Postgres's SSLRequest, STARTTLS of SMTP and IMAP, a proxy's CONNECT
+  heroes  tls.connect_after
+  go      -
+  rust    -
+  python  -
+  note    The three libraries do it with TLS over a stream the program holds (`tls/client-over`), which macOS refuses; here one call runs a list of steps, send, expect exactly, expect a line by its beginning (SMTP's `250-` continuations read past), on every platform: on macOS by an `nw_framer` between TCP and TLS inside the one Network.framework connection, elsewhere on the socket before TLS starts over it. No byte of TLS leaves before the last step, none of the peer's past it is read as the exchange's; a line is read up to 4096 bytes and a step up to 65536, and a step not met fails `invalid` with the bytes expected and heard, escaped (`step 2: expected "S", heard "N"`). `tls.listen_after` is the server's side. Run on macOS and Windows (the package's tests, plain and sanitized) and Linux arm64 (the C probe, plain and under ASan)
+capability tls/listen  a socket listening for TLS connections, presenting a certificate chain and proving its key
+  heroes  tls.listen
+  go      tls.Listen, tls.NewListener, tls.Config.Certificates
+  rust    native_tls::TlsAcceptor::new, TlsAcceptor::builder, TlsAcceptorBuilder::build, rustls::ServerConfig::builder, ServerConfig::with_single_cert
+  python  ssl.SSLContext (PROTOCOL_TLS_SERVER), ssl.SSLContext.wrap_socket (server_side), ssl.Purpose.CLIENT_AUTH
+  note    On Windows SChannel takes a server's key only from the key store (measured 2026-11-16: an ephemeral key is `SEC_E_NO_CREDENTIALS`), so the key is stored under a name of its own while the listener lives and removed at its close
+
+capability tls/accept  the next TLS connection a listener holds, its handshake ended within a time
+  heroes  tls.accept
+  go      tls.Server, tls.Conn.Handshake (server side)
+  rust    native_tls::TlsAcceptor::accept, rustls::ServerConnection::new
+  python  ssl.SSLSocket.accept
+  note    A client whose handshake fails is closed and its failure answered, and the caller accepts again, as Go's listener answers it at the first read
+
+capability tls/server-over  TLS begun as the server over a stream already connected
+  heroes  tls.server_over
+  go      tls.Server
+  rust    native_tls::TlsAcceptor::accept (any Read + Write)
+  python  ssl.SSLContext.wrap_socket (server_side), ssl.SSLContext.wrap_bio (server_side)
+  note    `unsupported` on macOS, as `client_over`
+
+capability tls/close-listener  a listener closed, an accept waiting on it ended
+  heroes  tls.close_listener
+  go      net.Listener.Close of tls.NewListener's
+  rust    -
+  python  ssl.SSLSocket.close (of a listening socket)
+
+capability tls/close  a TLS connection closed, TLS's end (close_notify) sent first
+  heroes  io.close
+  go      tls.Conn.Close
+  rust    native_tls::TlsStream::shutdown, rustls::Connection::send_close_notify
+  python  ssl.SSLSocket.close, ssl.SSLSocket.shutdown
+  note    The stream is an `io.Stream`, closed as every stream is (README § A6); close_notify is sent within one second where the layer made the socket
+
+capability tls/read-write  the bytes of a TLS connection read and written
+  heroes  io.read
+  go      tls.Conn.Read, tls.Conn.Write
+  rust    Read and Write of native_tls::TlsStream and rustls::StreamOwned, rustls::Connection::reader, rustls::Connection::writer
+  python  ssl.SSLSocket.read, ssl.SSLSocket.write, ssl.SSLSocket.recv, ssl.SSLSocket.send, ssl.SSLSocket.sendall, ssl.SSLObject.read, ssl.SSLObject.write
+  note    `io` reads and writes it, buffers it and splits its lines; nothing here does it twice (README § A6)
+
+capability tls/roots  the authorities trusted: the system's own store, or only those given
+  heroes  tls.Client
+  go      tls.Config.RootCAs
+  rust    native_tls::TlsConnectorBuilder::add_root_certificate, TlsConnectorBuilder::disable_built_in_roots, native_tls::Certificate::from_pem, Certificate::from_der, Certificate::stack_from_pem, rustls::RootCertStore, RootCertStore::add, RootCertStore::add_parsable_certificates, ClientConfig::with_root_certificates
+  python  ssl.SSLContext.load_verify_locations, ssl.SSLContext.load_default_certs, ssl.SSLContext.set_default_verify_paths, ssl.get_default_verify_paths, ssl.DefaultVerifyPaths, ssl.SSLContext.cert_store_stats, ssl.SSLContext.get_ca_certs
+  note    Roots given are the only ones trusted, as Go's `RootCAs` and Python's `cafile` make them; native-tls adds them to the system's unless `disable_built_in_roots`. Replacing is the stricter of the two, and pins a private authority
+
+capability tls/identity  a server's certificate chain and private key read from PEM
+  heroes  tls.Server
+  go      tls.X509KeyPair, tls.LoadX509KeyPair, tls.Certificate, tls.Certificate.Leaf, tls.Certificate.PrivateKey
+  rust    native_tls::Identity::from_pkcs8, rustls::pki_types::CertificateDer, rustls::pki_types::PrivateKeyDer
+  python  ssl.SSLContext.load_cert_chain
+  note    PKCS #8, PKCS #1 and SEC 1 keys, RSA and ECDSA on P-256, P-384 and P-521; an encrypted key is refused `invalid`, as Go refuses it, where Python asks for its password. Text, not a path: `fs.read_file` reads one
+
+capability tls/identity-pkcs12  an identity read from a PKCS #12 file
+  heroes  pending
+  go      -
+  rust    native_tls::Identity::from_pkcs12
+  python  -
+  note    Only native-tls takes it; Windows and macOS read it natively, OpenSSL by its own call. Not written: a PEM key does what it does
+
+capability tls/alpn  application protocols offered and taken, and the one chosen
+  heroes  tls.protocol_of
+  go      tls.Config.NextProtos, tls.ConnectionState.NegotiatedProtocol, tls.ConnectionState.NegotiatedProtocolIsMutual
+  rust    native_tls::TlsConnectorBuilder::request_alpns, native_tls::TlsStream::negotiated_alpn, rustls::ClientConfig::alpn_protocols, ServerConfig::alpn_protocols, Connection::alpn_protocol
+  python  ssl.SSLContext.set_alpn_protocols, ssl.SSLSocket.selected_alpn_protocol, ssl.HAS_ALPN
+  note    Offered through `Client.protocols`, taken through `Server.protocols`. A server takes the first of its own list the client offers, and where none, answers without one, as Python's OpenSSL does; Go's server refuses the handshake there since Go 1.17, which SChannel and Network.framework do not do alike
+
+capability tls/version  the version of TLS a connection speaks
+  heroes  tls.version_of
+  go      tls.ConnectionState.Version, tls.VersionName, tls.VersionTLS12, tls.VersionTLS13
+  rust    rustls::Connection::protocol_version, rustls::version::TLS12, rustls::version::TLS13
+  python  ssl.SSLSocket.version, ssl.SSLObject.version, ssl.TLSVersion
+  note    12 or 13: nothing weaker is ever spoken
+
+capability tls/least-version  a program asking for TLS 1.3 at the least
+  heroes  pending
+  go      tls.Config.MinVersion, tls.Config.MaxVersion
+  rust    native_tls::TlsConnectorBuilder::min_protocol_version, max_protocol_version, TlsAcceptorBuilder::min_protocol_version, max_protocol_version, native_tls::Protocol
+  python  ssl.SSLContext.minimum_version, ssl.SSLContext.maximum_version
+  note    TLS 1.2 at the least is fixed and nothing weaker can be asked. A stricter least, 1.3, is possible on the three platforms and not written yet
+
+capability tls/unchecked  a connection whose peer's certificate is not checked, for tests
+  heroes  tls.connect_unchecked_for_tests
+  go      tls.Config.InsecureSkipVerify
+  rust    native_tls::TlsConnectorBuilder::danger_accept_invalid_certs, rustls::ClientConfig::dangerous
+  python  ssl.CERT_NONE, ssl.CERT_OPTIONAL, ssl.SSLContext.check_hostname (False), ssl._create_unverified_context
+  note    One function whose name says it is for tests, and no option: the three libraries' flag can be set from a configuration nobody reads
+
+capability tls/unchecked-host  the certificate checked but not its host
+  heroes  refused: half a check reads as a check; the one function for tests turns every check off, and nothing turns one off alone
+  go      tls.Config.VerifyPeerCertificate, tls.Config.VerifyConnection
+  rust    native_tls::TlsConnectorBuilder::danger_accept_invalid_hostnames
+  python  ssl.SSLContext.hostname_checks_common_name, ssl.HAS_NEVER_CHECK_COMMON_NAME
+  note    Go's two callbacks run the program's own check, which a closure would need and Heroes has none of
+
+capability tls/refused-why  a certificate refused, told why: past its dates, for other hosts, an unknown authority, revoked
+  heroes  tls.connect
+  go      tls.CertificateVerificationError
+  rust    rustls::CertificateError (Expired, NotValidYet, NotValidForName, UnknownIssuer, Revoked, BadSignature)
+  python  ssl.SSLCertVerificationError, ssl.CertificateError
+  note    The code is `invalid` (README § A4 holds no code of its own for it) and the message names the reason and carries the system's words: Apple's (`"localhost" certificate is expired`), OpenSSL's (`certificate has expired`), Windows' (0x800B0101), measured 2026-11-16 on each
+
+capability tls/sni-server  a server choosing its certificate by the name the client sent
+  heroes  pending
+  go      tls.Config.GetCertificate, tls.Config.NameToCertificate, tls.Config.BuildNameToCertificate, tls.Config.GetConfigForClient, tls.ClientHelloInfo, tls.ClientHelloInfo.SupportsCertificate
+  rust    rustls::ServerConfig::with_cert_resolver, rustls::server::ResolvesServerCert
+  python  ssl.SSLContext.sni_callback, ssl.SSLContext.set_servername_callback
+  note    A callback in the three; here it would be a list of chains by name. Not written
+
+capability tls/client-certificate  a client presenting a certificate, and a server asking for one (mutual TLS)
+  heroes  pending
+  go      tls.Config.ClientAuth, tls.Config.ClientCAs, tls.Config.GetClientCertificate, tls.ClientAuthType, tls.NoClientCert, tls.RequestClientCert, tls.RequireAnyClientCert, tls.VerifyClientCertIfGiven, tls.RequireAndVerifyClientCert, tls.CertificateRequestInfo, tls.CertificateRequestInfo.SupportsCertificate
+  rust    native_tls::TlsConnectorBuilder::identity, rustls::ClientConfig::with_client_auth_cert, rustls::ServerConfig::with_client_cert_verifier
+  python  ssl.SSLContext.load_cert_chain (client side), ssl.CERT_REQUIRED (server side), ssl.SSLContext.post_handshake_auth, ssl.SSLSocket.verify_client_post_handshake, ssl.HAS_PHA
+  note    Postgres's `sslcert` needs it. Not written
+
+capability tls/peer-certificate  the peer's certificate and the chain that vouched for it, as bytes
+  heroes  pending
+  go      tls.ConnectionState.PeerCertificates, tls.ConnectionState.VerifiedChains, tls.ConnectionState.LocalCertificate
+  rust    native_tls::TlsStream::peer_certificate, native_tls::Certificate::to_der, rustls::Connection::peer_certificates
+  python  ssl.SSLSocket.getpeercert, ssl.SSLSocket.get_verified_chain, ssl.SSLSocket.get_unverified_chain, ssl.get_server_certificate, ssl.DER_cert_to_PEM_cert, ssl.PEM_cert_to_DER_cert, ssl.cert_time_to_seconds
+  note    Its DER is each platform's to give; reading a certificate's fields is another package's area, X.509, which Rebel does not hold
+
+capability tls/channel-binding  what binds an authentication to this TLS connection (tls-server-end-point, tls-exporter)
+  heroes  pending
+  go      tls.ConnectionState.TLSUnique, tls.ConnectionState.ExportKeyingMaterial
+  rust    native_tls::TlsStream::tls_server_end_point, rustls::Connection::export_keying_material
+  python  ssl.SSLSocket.get_channel_binding, ssl.CHANNEL_BINDING_TYPES
+  note    Postgres's SCRAM-SHA-256-PLUS needs `tls-server-end-point`; plain SCRAM-SHA-256 does not. Not written
+
+capability tls/deadline  a deadline on a TLS connection's reads and writes once it is made, and on a listener's wait for a client
+  heroes  tls.set_deadline
+  go      tls.Conn.SetDeadline, tls.Conn.SetReadDeadline, tls.Conn.SetWriteDeadline
+  rust    native_tls::TlsStream::get_ref, native_tls::TlsStream::get_mut (the stream under it)
+  python  ssl.SSLSocket.settimeout (the socket's)
+  note    A time, not a span, as `net.set_deadline`'s, moving a read already waiting (on macOS within the 50 ms a wait looks again); `tls.set_accept_deadline` bounds `accept`'s wait for a client, and `accept`'s own time the handshake. A read the deadline ended loses nothing; a write it ended may have sent part of a record, and every later write fails, as Go rules of its own TLS: one call sets both sides, where Go has three, since a write's end leaves the stream good only for closing anyway. Run on macOS and Windows (the package's tests, plain and sanitized) and Linux arm64 (the C probe, plain and under ASan)
+capability tls/addresses  the two addresses of a TLS connection, and the connection under it
+  heroes  pending
+  go      tls.Conn.LocalAddr, tls.Conn.RemoteAddr, tls.Conn.NetConn
+  rust    native_tls::TlsStream::get_ref, rustls::StreamOwned::get_ref
+  python  ssl.SSLSocket.getpeername, ssl.SSLSocket.getsockname
+  note    A connection of `client_over` has them in its `net.Conn`; one of `connect` does not tell them. Not written
+
+capability tls/half-close  TLS's end sent while the other way is still read
+  heroes  pending
+  go      tls.Conn.CloseWrite
+  rust    -
+  python  -
+  note    Not written
+
+capability tls/revocation  a certificate's revocation asked (OCSP, CRL, stapling, timestamps)
+  heroes  pending
+  go      tls.Conn.OCSPResponse, tls.ConnectionState.OCSPResponse, tls.ConnectionState.SignedCertificateTimestamps, tls.Certificate.OCSPStaple, tls.Certificate.SignedCertificateTimestamps
+  rust    -
+  python  ssl.VERIFY_CRL_CHECK_LEAF, ssl.VERIFY_CRL_CHECK_CHAIN, ssl.VerifyFlags, ssl.SSLContext.verify_flags
+  note    It is the platform's own: macOS asks, Windows and Linux do not as this layer calls them. A check of its own is not written
+
+capability tls/encrypted-hello  the client's hello encrypted (ECH)
+  heroes  pending
+  go      tls.Config.EncryptedClientHelloConfigList, tls.Config.EncryptedClientHelloRejectionVerify, tls.Config.GetEncryptedClientHelloKeys, tls.Config.EncryptedClientHelloKeys, tls.EncryptedClientHelloKey, tls.ECHRejectionError, tls.ECHRejectionError.Error, tls.ConnectionState.ECHAccepted
+  rust    rustls::client::EchMode
+  python  -
+  note    Not offered alike by the three platforms' libraries. Not written
+
+capability tls/ciphers  the cipher suites, curves and signatures a connection may use
+  heroes  refused: the system's library chooses them and a security update changes them, which is why the author chose it; a program choosing them is how a weak one survives
+  go      tls.CipherSuites, tls.InsecureCipherSuites, tls.CipherSuiteName, tls.CipherSuite, tls.Config.CipherSuites, tls.Config.PreferServerCipherSuites, tls.Config.CurvePreferences, tls.CurveID, tls.CurveID.String, tls.SignatureScheme, tls.SignatureScheme.String, tls.ConnectionState.CipherSuite, tls.ConnectionState.CurveID
+  rust    rustls::Connection::negotiated_cipher_suite, rustls::crypto::CryptoProvider
+  python  ssl.SSLContext.set_ciphers, ssl.SSLContext.set_ciphersuites, ssl.SSLContext.get_ciphers, ssl.SSLSocket.cipher, ssl.SSLSocket.shared_ciphers, ssl.SSLContext.set_ecdh_curve, ssl.SSLContext.set_groups, ssl.SSLContext.get_groups, ssl.SSLSocket.group, ssl.SSLContext.set_client_sigalgs, ssl.SSLContext.set_server_sigalgs, ssl.get_sigalgs, ssl.SSLSocket.client_sigalg, ssl.SSLSocket.server_sigalg, ssl.SSLContext.security_level, ssl.SSLContext.load_dh_params, ssl.HAS_ECDH, ssl.SSLSocket.compression, ssl.OP_NO_COMPRESSION, ssl.OP_SINGLE_DH_USE, ssl.OP_SINGLE_ECDH_USE, ssl.OP_CIPHER_SERVER_PREFERENCE
+
+capability tls/weak-versions  SSL 3, TLS 1.0 and 1.1
+  heroes  refused: TLS 1.2 at the least, on both sides, by the author's instruction of 2026-11-16
+  go      tls.VersionTLS10, tls.VersionTLS11, tls.VersionSSL30
+  rust    native_tls::Protocol::Sslv3, Protocol::Tlsv10, Protocol::Tlsv11
+  python  ssl.HAS_SSLv2, ssl.HAS_SSLv3, ssl.HAS_TLSv1, ssl.HAS_TLSv1_1, ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv3, ssl.OP_NO_TLSv1, ssl.OP_NO_TLSv1_1, ssl.OP_NO_TLSv1_2, ssl.OP_NO_TLSv1_3, ssl.PROTOCOL_SSLv23, ssl.OP_LEGACY_SERVER_CONNECT
+
+capability tls/renegotiation  a TLS 1.2 connection renegotiated
+  heroes  refused: TLS 1.3 has none, and the platforms' libraries refuse it or allow it each their own way
+  go      tls.Config.Renegotiation, tls.RenegotiationSupport, tls.RenegotiateNever, tls.RenegotiateOnceAsClient, tls.RenegotiateFreelyAsClient
+  rust    -
+  python  ssl.OP_NO_RENEGOTIATION
+
+capability tls/key-log  the connection's secrets written to a file for a packet reader
+  heroes  refused: it writes what decrypts every byte to a file; a debugging aid no program ships
+  go      tls.Config.KeyLogWriter
+  rust    rustls::ClientConfig::key_log, rustls::KeyLogFile
+  python  ssl.SSLContext.keylog_filename
+
+capability tls/npn-psk  the protocols chosen by NPN, and keys shared before
+  heroes  refused: NPN is ALPN's withdrawn forerunner, and pre-shared keys none of the three platforms' libraries offer alike
+  go      -
+  rust    -
+  python  ssl.HAS_NPN, ssl.SSLContext.set_npn_protocols, ssl.SSLSocket.selected_npn_protocol, ssl.HAS_PSK, ssl.HAS_PSK_TLS13, ssl.SSLContext.set_psk_client_callback, ssl.SSLContext.set_psk_server_callback
+
+capability tls/quic  TLS carried by QUIC
+  heroes  refused: QUIC is another transport, datagrams, and no stream over TCP; a package of its own if ever
+  go      tls.QUICConfig, tls.QUICConn, tls.QUICClient, tls.QUICServer, tls.QUICEncryptionLevel, tls.QUICEvent, tls.QUICEventKind, tls.QUICSessionTicketOptions, and their methods
+  rust    rustls::quic
+  python  -
+
+dropped  sessions resumed and tickets: each platform's library keeps its own cache, and the layer exposes no session
+  go      tls.ClientSessionCache, tls.NewLRUClientSessionCache, tls.ClientSessionState, tls.ClientSessionState.ResumptionState, tls.NewResumptionState, tls.SessionState, tls.SessionState.Bytes, tls.ParseSessionState, tls.Config.SessionTicketsDisabled, tls.Config.SessionTicketKey, tls.Config.SetSessionTicketKeys, tls.Config.ClientSessionCache, tls.Config.UnwrapSession, tls.Config.WrapSession, tls.Config.DecryptTicket, tls.Config.EncryptTicket, tls.ConnectionState.DidResume
+  rust    rustls::ClientConfig::resumption, rustls::ServerConfig::session_storage, rustls::ServerConfig::ticketer, rustls::ServerConfig::max_early_data_size
+  python  ssl.SSLSession, ssl.SSLSocket.session, ssl.SSLSocket.session_reused, ssl.SSLContext.session_stats, ssl.SSLContext.num_tickets, ssl.OP_NO_TICKET
+
+dropped  a configuration record, an error type or a handshake made apart: Heroes has no interface and no closure, a failure is a code and a message (README § A4), and the call that makes a connection makes its handshake, so no stream is half made
+  go      tls.Config, tls.Config.Clone, tls.Config.Rand, tls.Config.Time, tls.Config.DynamicRecordSizingDisabled, tls.Conn.Handshake, tls.Conn.HandshakeContext, tls.Conn.ConnectionState, tls.ConnectionState, tls.ConnectionState.HandshakeComplete, tls.ConnectionState.HelloRetryRequest, tls.ConnectionState.ServerName, tls.AlertError, tls.AlertError.Error, tls.RecordHeaderError, tls.RecordHeaderError.Error, tls.CertificateVerificationError.Error, tls.CertificateVerificationError.Unwrap
+  rust    native_tls::Error, native_tls::HandshakeError, HandshakeError::Failure, HandshakeError::WouldBlock, native_tls::MidHandshakeTlsStream, MidHandshakeTlsStream::handshake, MidHandshakeTlsStream::get_ref, MidHandshakeTlsStream::get_mut, native_tls::TlsStream::buffered_read_size, rustls::Error, rustls::Connection::is_handshaking, rustls::ClientConfig::enable_sni
+  python  ssl.SSLContext, ssl.SSLContext.protocol, ssl.SSLContext.options, ssl.Options, ssl.OP_ALL, ssl.OP_ENABLE_KTLS, ssl.OP_ENABLE_MIDDLEBOX_COMPAT, ssl.OP_IGNORE_UNEXPECTED_EOF, ssl.SSLContext.sslobject_class, ssl.SSLContext.sslsocket_class, ssl.SSLSocket.context, ssl.SSLSocket.do_handshake, ssl.SSLSocket.pending, ssl.PROTOCOL_TLS, ssl.PROTOCOL_TLS_CLIENT, ssl.PROTOCOL_TLS_SERVER, ssl.Purpose, ssl.Purpose.SERVER_AUTH, ssl.VerifyMode, ssl.VERIFY_DEFAULT, ssl.VERIFY_X509_STRICT, ssl.VERIFY_X509_PARTIAL_CHAIN, ssl.VERIFY_X509_TRUSTED_FIRST, ssl.VERIFY_ALLOW_PROXY_CERTS, ssl.SSLError, ssl.SSLZeroReturnError, ssl.SSLWantReadError, ssl.SSLWantWriteError, ssl.SSLSyscallError, ssl.SSLEOFError, ssl.SSLErrorNumber, ssl.SSL_ERROR_EOF, ssl.SSL_ERROR_INVALID_ERROR_CODE, ssl.SSL_ERROR_SSL, ssl.SSL_ERROR_SYSCALL, ssl.SSL_ERROR_WANT_CONNECT, ssl.SSL_ERROR_WANT_READ, ssl.SSL_ERROR_WANT_WRITE, ssl.SSL_ERROR_WANT_X509_LOOKUP, ssl.SSL_ERROR_ZERO_RETURN, ssl.AlertDescription, every ssl.ALERT_DESCRIPTION_*, ssl.get_protocol_name
+
+dropped  what another package holds: random bytes (`random`, `os`), a socket (`net`), base 64 (`bytes`), and the module's own imports
+  go      -
+  rust    -
+  python  ssl.RAND_add, ssl.RAND_bytes, ssl.RAND_status, ssl.create_connection, ssl.socket, ssl.socket_error, ssl.SOCK_STREAM, ssl.SOL_SOCKET, ssl.SO_TYPE, ssl.PEM_HEADER, ssl.PEM_FOOTER, ssl.base64, ssl.errno, ssl.namedtuple, ssl.os, ssl.sys, ssl.warnings

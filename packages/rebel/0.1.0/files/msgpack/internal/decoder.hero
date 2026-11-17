@@ -1,0 +1,367 @@
+# Bytes decoded into the flat events of one MessagePack object, by the
+# specification's formats: every first byte but `0xc1`, which it never uses,
+# and the lengths each format writes. The containers still open wait on a
+# stack this module holds, so an object nested a million deep costs a list of
+# a million entries and never the machine's stack, and the nesting a caller
+# allows is a number it sets. No length is trusted before the bytes that would
+# fill it are there.
+
+use bytes
+use msgpack/internal/encoder
+use msgpack/internal/event
+use msgpack/internal/floats
+
+# The code of bytes that are not one well-formed object.
+constant INVALID: str
+    "invalid"
+
+# The code of a string whose bytes are not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# How bytes are decoded.
+record Reading
+    # The deepest nesting accepted: `[]` is 1 deep.
+    max_depth: i64
+    # Whether a map may hold one key twice.
+    duplicate_keys: bool
+    # Whether a string whose bytes are not UTF-8 is read as a binary holding
+    # them, instead of failing.
+    invalid_text: bool
+
+# What `read` answers.
+record Read
+    # The object's events, in the order the bytes hold them.
+    events: [event.Event]
+    # The byte index past the object.
+    next: i64
+
+# One object's header read: its event, where its content begins, and how
+# many bytes of content follow, which a string, a binary and an extension
+# have.
+record Header
+    # The event, its byte index set; a container's count is in its `arg`.
+    item: event.Event
+    # The byte index past the header.
+    next: i64
+    # The bytes of content after the header: a string's, a binary's or an
+    # extension's.
+    length: i64
+
+# A container still open: how many objects it still waits for.
+record Open
+    # The objects still to come.
+    waiting: i64
+
+# The reading that accepts every well-formed object, with no limit of
+# nesting: what this package uses on bytes its own encoder wrote.
+function lenient() -> Reading
+    return Reading(max_depth: 9223372036854775807, duplicate_keys: true, invalid_text: false)
+
+# The unsigned number in the `count` bytes from `at`, the most significant
+# first. Fails `invalid` where the data ends before them.
+function number_at(data: [u8], at: i64, count: i64, start: i64) -> u64?
+    if at + count > data.len()
+        return fail(code: INVALID, msg: f"byte {start}: the data ends inside the object that begins there")
+
+    n: u64 @= 0
+
+    for k in range(from: 0, to: count)
+        n @ n * 256 + to_u64(data[at + k]).must()
+
+    return ok(n)
+
+# The negative or unsigned event of the two's complement number `n` of
+# `count` bytes.
+function signed_of(n: u64, count: i64) -> event.Event
+    half: u64 = if count == 8
+        9223372036854775808
+    else
+        to_u64(1 << 8 * count - 1).must()
+
+    if n < half
+        return event.of_kind(kind: event.UNSIGNED, arg: n)
+    else if count == 8
+        return event.of_negative(to_i64(n - half).must() - 9223372036854775807 - 1)
+    return event.of_negative(to_i64(n).must() - (1 << 8 * count))
+
+# The header of the object that begins at byte `at`. Fails `invalid` where
+# the data ends inside it, or its first byte is `0xc1`.
+function header_at(data: [u8], at: i64) -> Header?
+    if at >= data.len()
+        return fail(code: INVALID, msg: f"byte {at}: the data ends where an object was expected")
+
+    b = to_i64(data[at]).must()
+    next = at + 1
+    made: event.Event @= event.of_kind(kind: event.NIL_VALUE, arg: 0)
+    after: i64 @= next
+    length: i64 @= 0
+
+    if b <= 0x7f
+        made @ event.of_kind(kind: event.UNSIGNED, arg: to_u64(b).must())
+    else if b <= 0x8f
+        made @ event.of_kind(kind: event.PAIRS, arg: to_u64(b - 0x80).must())
+    else if b <= 0x9f
+        made @ event.of_kind(kind: event.LIST, arg: to_u64(b - 0x90).must())
+    else if b <= 0xbf
+        made @ event.of_text("")
+        length @ b - 0xa0
+    else if b == 0xc0
+        _ = 0
+    else if b == 0xc1
+        return fail(code: INVALID, msg: f"byte {at}: 0xc1, a first byte MessagePack never uses")
+    else if b == 0xc2 || b == 0xc3
+        made @ event.of_boolean(b == 0xc3)
+    else if b >= 0xc4 && b <= 0xc6
+        width = 1 << b - 0xc4
+        made @ event.of_binary([])
+        length @ to_i64(number_at(data: data, at: next, count: width, start: at)?).must()
+        after @ next + width
+    else if b >= 0xc7 && b <= 0xc9
+        width = 1 << b - 0xc7
+        size = to_i64(number_at(data: data, at: next, count: width, start: at)?).must()
+        kind = to_i64(number_at(data: data, at: next + width, count: 1, start: at)?).must()
+        made @ event.of_extension(type_code: type_of(kind), data: [])
+        length @ size
+        after @ next + width + 1
+    else if b == 0xca
+        bits = to_i64(number_at(data: data, at: next, count: 4, start: at)?).must()
+        made @ event.of_float(floats.single_value(bits))
+        after @ next + 4
+    else if b == 0xcb
+        _ = number_at(data: data, at: next, count: 8, start: at)?
+        made @ event.of_float(floats.double_value(data: data, at: next))
+        after @ next + 8
+    else if b >= 0xcc && b <= 0xcf
+        width = 1 << b - 0xcc
+        made @ event.of_kind(kind: event.UNSIGNED, arg: number_at(data: data, at: next, count: width, start: at)?)
+        after @ next + width
+    else if b >= 0xd0 && b <= 0xd3
+        width = 1 << b - 0xd0
+        made @ signed_of(n: number_at(data: data, at: next, count: width, start: at)?, count: width)
+        after @ next + width
+    else if b >= 0xd4 && b <= 0xd8
+        kind = to_i64(number_at(data: data, at: next, count: 1, start: at)?).must()
+        made @ event.of_extension(type_code: type_of(kind), data: [])
+        length @ 1 << b - 0xd4
+        after @ next + 1
+    else if b >= 0xd9 && b <= 0xdb
+        width = 1 << b - 0xd9
+        made @ event.of_text("")
+        length @ to_i64(number_at(data: data, at: next, count: width, start: at)?).must()
+        after @ next + width
+    else if b >= 0xdc && b <= 0xdf
+        width = if b == 0xdc || b == 0xde
+            2
+        else
+            4
+
+        kind = if b <= 0xdd
+            event.LIST
+        else
+            event.PAIRS
+        made @ event.of_kind(kind: kind, arg: number_at(data: data, at: next, count: width, start: at)?)
+        after @ next + width
+    else
+        made @ event.of_negative(b - 256)
+
+    return ok(Header(item: event.placed(e: made, at: at), next: after, length: length))
+
+# The extension type the byte `b` holds, read as a signed 8-bit integer.
+function type_of(b: i64) -> i64
+    if b >= 128
+        return b - 256
+    return b
+
+# The event of the header `h` with its `length` bytes of content read: a
+# string's characters, a binary's or an extension's bytes. Fails `invalid`
+# where the data ends before them, and `not_text` where a string is not UTF-8
+# and `reading` does not read it as a binary.
+function content_of(data: [u8], h: Header, reading: Reading) -> event.Event?
+    e = h.item
+
+    if h.next + h.length > data.len()
+        return fail(
+            code: INVALID,
+            msg: f"{event.where(e)}{event.kind_name(e)} of {h.length} bytes where {data.len() - h.next} remain"
+        )
+
+    piece = data.slice(from: h.next, to: h.next + h.length)
+
+    if e.kind == event.TEXT
+        return match bytes.to_text(piece)
+            .ok text => ok(event.placed(e: event.of_text(text), at: e.at))
+            .err _ =>
+                if reading.invalid_text
+                    ok(event.placed(e: event.of_binary(piece), at: e.at))
+                else
+                    fail(code: NOT_TEXT, msg: f"{event.where(e)}a string whose bytes are not UTF-8")
+    else if e.kind == event.BINARY
+        return ok(event.placed(e: event.of_binary(piece), at: e.at))
+    return ok(event.placed(e: event.of_extension(type_code: e.signed, data: piece), at: e.at))
+
+# The events of the one object that begins at byte `from` of `data`, and where
+# it ends, read as `reading` asks. Fails `invalid` where the bytes are no
+# well-formed object, a count passes what the remaining bytes could hold, the
+# nesting passes `reading.max_depth`, or a map holds one key twice `reading`
+# refuses; fails `not_text` where a string is not UTF-8 and `reading` does not
+# read it as a binary. Each message opens `byte B:`.
+function read(data: [u8], from: i64, reading: Reading) -> Read?
+    events: [event.Event] @= []
+    open: [Open] @= []
+    depth: i64 @= 0
+    at: i64 @= from
+    complete: bool @= false
+
+    while !complete
+        h = header_at(data: data, at: at)?
+        e = h.item
+        finished: bool @= true
+
+        if e.kind == event.TEXT || e.kind == event.BINARY || e.kind == event.EXTENSION
+            events @ events.push(content_of(data: data, h: h, reading: reading)?)
+            at @ h.next + h.length
+        else if e.kind == event.LIST || e.kind == event.PAIRS
+            if depth + 1 > reading.max_depth
+                return fail(code: INVALID, msg: f"byte {at}: the nesting passes {reading.max_depth} levels")
+
+            count = event.children_of(e)
+
+            if count > data.len() - h.next
+                return fail(code: INVALID, msg: f"byte {at}: {count} objects where {data.len() - h.next} bytes remain")
+            events @ events.push(e)
+
+            if count > 0
+                if depth == open.len()
+                    open @ open.push(Open(waiting: count))
+                else
+                    open[depth] @ Open(waiting: count)
+                depth @ depth + 1
+                finished @ false
+            at @ h.next
+        else
+            events @ events.push(e)
+            at @ h.next
+
+        while finished && depth > 0
+            if open[depth - 1].waiting > 1
+                open[depth - 1].waiting @ open[depth - 1].waiting - 1
+                finished @ false
+            else
+                depth @ depth - 1
+
+        complete @ finished && depth == 0
+
+    if !reading.duplicate_keys
+        _ = encoder.write(events: events, order: encoder.AS_WRITTEN, duplicates: false)?
+    return ok(Read(events: events, next: at))
+
+# The code and message `read` fails with on the bytes `hex` writes, or ""
+# where they are read.
+function failure_of(hex: str, reading: Reading) -> str
+    return match read(data: bytes.parse_hex(hex).must(), from: 0, reading: reading)
+        .ok _  => ""
+        .err e => f"{e.code}: {e.msg}"
+
+# The reading of `strict`.
+function strictly() -> Reading
+    return Reading(max_depth: 512, duplicate_keys: false, invalid_text: false)
+
+# The events `hex` decodes to, read strictly.
+function events_of(hex: str) -> [event.Event]
+    return read(data: bytes.parse_hex(hex).must(), from: 0, reading: strictly()).must().events
+
+test "read: every integer format, positive values in the signed ones included"
+    assert events_of("7f")[0].arg == 127
+    assert events_of("cc80")[0].arg == 128
+    assert events_of("cdffff")[0].arg == 65535
+    assert events_of("ceffffffff")[0].arg == 4294967295
+    assert events_of("cfffffffffffffffff")[0].arg == 18446744073709551615
+    assert events_of("e0")[0].signed == -32
+    assert events_of("ff")[0].signed == -1
+    assert events_of("d080")[0].signed == -128
+    assert events_of("d17fff")[0].arg == 32767
+    assert events_of("d1ff7f")[0].signed == -129
+    assert events_of("d2ffff7fff")[0].signed == -32769
+    assert events_of("d38000000000000000")[0].signed == -9223372036854775808
+    assert events_of("d37fffffffffffffff")[0].arg == 9223372036854775807
+    assert events_of("d005")[0].kind == event.UNSIGNED
+
+test "read: nil, the booleans, both floats, strings and binaries of each format"
+    assert events_of("c0")[0].kind == event.NIL_VALUE
+    assert !events_of("c2")[0].flag && events_of("c3")[0].flag
+    assert events_of("ca3fc00000")[0].number == 1.5
+    assert events_of("cb3ff199999999999a")[0].number == 1.1
+    assert events_of("a0")[0].text == ""
+    assert events_of("a2c3bc")[0].text == "ü"
+    assert events_of("d90161")[0].text == "a"
+    assert events_of("da000161")[0].text == "a"
+    assert events_of("db0000000161")[0].text == "a"
+    assert events_of("c400")[0].data.len() == 0
+    assert events_of("c50002abcd")[0].data == [0xab, 0xcd]
+    assert events_of("c60000000107")[0].data == [7]
+
+test "read: extensions of every format, a type read as signed"
+    fixed = events_of("d4ff07")[0]
+    assert fixed.kind == event.EXTENSION && fixed.signed == -1 && fixed.data == [7]
+    assert events_of("d87f000102030405060708090a0b0c0d0e0f")[0].data.len() == 16
+    assert events_of("c70080")[0].signed == -128
+    assert events_of("c8000105ff")[0].data == [0xff]
+    assert events_of("c9000000010501")[0].data == [1]
+
+test "read: arrays and maps of each format, nested"
+    assert events_of("90").len() == 1
+    assert events_of("920191ff").len() == 4
+    assert events_of("dc0001c0")[0].arg == 1
+    assert events_of("dd00000001c0")[0].arg == 1
+    assert events_of("de0001a161c0")[0].kind == event.PAIRS
+    assert events_of("df00000001a161c0").len() == 3
+    assert events_of("81a16182a162c0a163c3").len() == 7
+
+test "read: the messages of an empty input, 0xc1, data that ends early"
+    assert failure_of(hex: "", reading: strictly()) == "invalid: byte 0: the data ends where an object was expected"
+    assert failure_of(hex: "c1", reading: strictly()) == "invalid: byte 0: 0xc1, a first byte MessagePack never uses"
+    assert failure_of(hex: "cd01", reading: strictly()) == "invalid: byte 0: the data ends inside the object that begins there"
+    assert failure_of(hex: "a3616263", reading: strictly()) == ""
+    assert failure_of(hex: "a36162", reading: strictly()) == "invalid: byte 0: a string of 3 bytes where 2 remain"
+    assert failure_of(hex: "92", reading: strictly()) == "invalid: byte 0: 2 objects where 0 bytes remain"
+    assert failure_of(hex: "9201", reading: strictly()) == "invalid: byte 0: 2 objects where 1 bytes remain"
+    assert failure_of(hex: "dbffffffff", reading: strictly()) == "invalid: byte 0: a string of 4294967295 bytes where 0 remain"
+    assert failure_of(hex: "ddffffffff00", reading: strictly()) == "invalid: byte 0: 4294967295 objects where 1 bytes remain"
+
+test "read: a string not UTF-8, refused or read as a binary"
+    assert failure_of(hex: "a1ff", reading: strictly()) == "not_text: byte 0: a string whose bytes are not UTF-8"
+    lossy = Reading(max_depth: 512, duplicate_keys: false, invalid_text: true)
+    got = read(data: bytes.parse_hex("a1ff").must(), from: 0, reading: lossy).must()
+    assert got.events[0].kind == event.BINARY && got.events[0].data == [0xff]
+
+test "read: the depth allowed at its edge and past it, a key twice"
+    shallow = Reading(max_depth: 2, duplicate_keys: false, invalid_text: false)
+    assert failure_of(hex: "919100", reading: shallow) == ""
+    assert failure_of(hex: "91919100", reading: shallow) == "invalid: byte 2: the nesting passes 2 levels"
+    assert failure_of(hex: "82a161c0a161c0", reading: strictly()) == "invalid: byte 0: a map holds one key twice, encoded a161"
+    assert failure_of(hex: "82d00101cc0101", reading: strictly()) == "invalid: byte 0: a map holds one key twice, encoded 01"
+    allowed = Reading(max_depth: 512, duplicate_keys: true, invalid_text: false)
+    assert failure_of(hex: "82a161c0a161c0", reading: allowed) == ""
+
+test "read: an object from an offset, and where the next begins"
+    data = bytes.parse_hex("01a161c0").must()
+    assert read(data: data, from: 0, reading: strictly()).must().next == 1
+    second = read(data: data, from: 1, reading: strictly()).must()
+    assert second.next == 3 && second.events[0].at == 1
+    assert read(data: data, from: 3, reading: strictly()).must().next == 4
+
+test "signed_of and type_of: two's complement at each width"
+    assert signed_of(n: 0x80, count: 1) == event.of_negative(-128)
+    assert signed_of(n: 0x7f, count: 1) == event.of_kind(kind: event.UNSIGNED, arg: 127)
+    assert signed_of(n: 0xffff, count: 2) == event.of_negative(-1)
+    assert signed_of(n: 18446744073709551615, count: 8) == event.of_negative(-1)
+    assert type_of(255) == -1
+    assert type_of(127) == 127
+
+test "number_at, header_at and content_of: lengths at the end of the data"
+    assert number_at(data: [1, 2], at: 0, count: 2, start: 0).must() == 258
+    assert number_at(data: [1], at: 0, count: 2, start: 0).is_err()
+    h = header_at(data: [0xa1, 0x61], at: 0).must()
+    assert h.length == 1 && h.next == 1
+    assert content_of(data: [0xa1, 0x61], h: h, reading: strictly()).must().text == "a"

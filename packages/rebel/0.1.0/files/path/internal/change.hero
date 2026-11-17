@@ -1,0 +1,197 @@
+# A path with one thing changed: its last name, the stem or the extension of
+# that name, the separators it is written with, or a separator at its end.
+# Each keeps the rest of the text as written. A rules value reaches it as
+# `windows`.
+
+use path/internal/codes
+use path/internal/lexical
+use path/internal/roots
+use path/internal/scan
+
+# Where the last name of a path stands in its text, in bytes.
+record Span
+    # Where the name begins.
+    from: i64
+    # Where it ends.
+    to: i64
+
+# Where the last name of `path` stands, failing `not_found` where the path ends
+# in no name: what follows it, separators and `.` parts, is not part of it.
+function name_span(path: str, windows: bool) -> Span?
+    anchor = roots.split(path, windows)
+    offset = anchor.volume.len() + anchor.root.len()
+    rest = anchor.rest
+    found: Span @= Span(from: -1, to: -1)
+    start: i64 @= 0
+
+    for at in range(from: 0, to: rest.len() + 1)
+        if at == rest.len() || scan.is_sep(rest[at], windows)
+            piece = rest.slice(from: start, to: at)
+
+            if piece != "" && piece != "."
+                found @ Span(from: offset + start, to: offset + at)
+            start @ at + 1
+
+    if found.from < 0 || path.slice(from: found.from, to: found.to) == ".."
+        return fail(code: codes.NOT_FOUND, msg: f"\"{path}\" ends in no name")
+    return ok(found)
+
+# Whether `name` is one name by the rules: not empty, `.` or `..`, holding no
+# separator and, by Windows' rules, read as no volume.
+function is_one_name(name: str, windows: bool) -> bool
+    if name == "" || name == "." || name == ".." || scan.has_sep(name, windows)
+        return false
+    return !windows || roots.split(name, true).volume == ""
+
+# `path` with its last name changed to `to`.
+function with_name(path: str, to: str, windows: bool) -> str?
+    span = name_span(path, windows)?
+
+    if !is_one_name(to, windows)
+        return fail(code: codes.INVALID, msg: f"\"{to}\" is not one name")
+    return ok(path.slice(from: 0, to: span.from) + to)
+
+# `path` with the stem of its last name changed to `to`, its extension kept.
+function with_stem(path: str, to: str, windows: bool) -> str?
+    span = name_span(path, windows)?
+
+    if to == ""
+        return fail(code: codes.INVALID, msg: f"an empty stem leaves no name in \"{path}\"")
+    old = path.slice(from: span.from, to: span.to)
+    fresh = to + lexical.ext_of_name(old).default("")
+
+    if !is_one_name(fresh, windows)
+        return fail(code: codes.INVALID, msg: f"\"{fresh}\" is not one name")
+    return ok(path.slice(from: 0, to: span.from) + fresh)
+
+# `path` with the extension of its last name changed to `to`, added where it
+# has none and removed where `to` is "".
+function with_ext(path: str, to: str, windows: bool) -> str?
+    span = name_span(path, windows)?
+
+    if to != "" && (to[0] != '.' || scan.has_sep(to, windows))
+        return fail(
+            code: codes.INVALID,
+            msg: f"\"{to}\" is not an extension: it is \"\" or a dot followed by text with no separator"
+        )
+    old = path.slice(from: span.from, to: span.to)
+    dots = lexical.dots_of(old)
+
+    end = if dots.len() == 0
+        old.len()
+    else
+        dots[dots.len() - 1]
+
+    return ok(path.slice(from: 0, to: span.from) + old.slice(from: 0, to: end) + to)
+
+# Whether `path` ends with a separator after a part.
+function has_trailing_sep(path: str, windows: bool) -> bool
+    rest = roots.split(path, windows).rest
+    return rest != "" && scan.is_sep(rest[rest.len() - 1], windows)
+
+# `path` ending with a separator of the rules; where a separator alone would
+# make it a root, a `.` goes before it.
+function with_trailing_sep(path: str, windows: bool) -> str
+    sep = scan.separator(windows)
+
+    if path == ""
+        return "." + sep
+
+    if scan.is_sep(path[path.len() - 1], windows)
+        return path
+    anchor = roots.split(path, windows)
+
+    if anchor.volume != "" && !anchor.share && anchor.root == "" && anchor.rest == ""
+        return path + "." + sep
+    return path + sep
+
+# `path` without the separators at its end, its root kept.
+function trim_trailing_sep(path: str, windows: bool) -> str
+    anchor = roots.split(path, windows)
+    end: i64 @= anchor.rest.len()
+
+    while end > 0 && scan.is_sep(anchor.rest[end - 1], windows)
+        end @ end - 1
+
+    return anchor.volume + anchor.root + anchor.rest.slice(from: 0, to: end)
+
+## Tests
+
+test "name_span: the last name, separators and dots after it, and none"
+    assert name_span("a/b.txt", false).must() == Span(from: 2, to: 7)
+    assert name_span("a/b//./", false).must() == Span(from: 2, to: 3)
+    assert name_span("C:x", true).must() == Span(from: 2, to: 3)
+    assert name_span("é/è", false).must() == Span(from: 3, to: 5)
+    assert name_span("", false).is_err() && name_span("a/..", false).is_err()
+    assert name_span("/", false).is_err() && name_span("\\\\h\\s", true).is_err()
+
+test "with_name: the answers Python's `with_name` gave on 2026-11-15, and what follows the name dropped"
+    assert with_name(path: "a/b.txt", to: "c", windows: false).must() == "a/c"
+    assert with_name(path: "a\\b.txt", to: "c", windows: true).must() == "a\\c"
+    assert with_name(path: "a/b/", to: "c", windows: false).must() == "a/c"
+    assert with_name(path: "a//b", to: "c", windows: false).must() == "a//c"
+    assert with_name(path: "a/b.txt", to: ".txt", windows: false).must() == "a/.txt"
+    assert with_name(path: "a/b.txt", to: "a\\b", windows: false).must() == "a/a\\b"
+    assert with_name(path: "x", to: "é", windows: true).must() == "é"
+    assert with_name(path: "a/x", to: "a:b", windows: false).must() == "a/a:b"
+
+test "with_name refuses what is not one name, and a path that ends in none"
+    for to in ["", ".", "..", "a/b"]
+        match with_name(path: "a/b.txt", to: to, windows: false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    assert with_name(path: "a/b.txt", to: "a\\b", windows: true).is_err()
+    assert with_name(path: "a/b.txt", to: "C:", windows: true).is_err()
+    assert with_name(path: "C:\\x", to: "a:b", windows: true).is_err()
+
+    match with_name(path: "/", to: "x", windows: false)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "with_stem: the answers Python's `with_stem` gave on 2026-11-15"
+    assert with_stem(path: "a/b.txt", to: "c", windows: false).must() == "a/c.txt"
+    assert with_stem(path: "a/b.txt", to: ".x", windows: false).must() == "a/.x.txt"
+    assert with_stem(path: "a/.bashrc", to: "x", windows: false).must() == "a/x"
+    assert with_stem(path: "a/b.tar.gz", to: "c", windows: false).must() == "a/c.gz"
+    assert with_stem(path: "a/b.txt", to: "", windows: false).is_err()
+    assert with_stem(path: "a/b.txt", to: "a/b", windows: false).is_err()
+    assert with_stem(path: "b.txt", to: "C:", windows: true).is_err()
+
+test "with_ext: the answers Python's `with_suffix` gave on 2026-11-15"
+    assert with_ext(path: "a/b.txt", to: ".md", windows: false).must() == "a/b.md"
+    assert with_ext(path: "a/b.txt", to: "", windows: false).must() == "a/b"
+    assert with_ext(path: "a/b.txt", to: ".", windows: false).must() == "a/b."
+    assert with_ext(path: "a/b.txt", to: ".a.b", windows: false).must() == "a/b.a.b"
+    assert with_ext(path: "a/b.txt", to: ". ", windows: false).must() == "a/b. "
+    assert with_ext(path: "a/b.txt", to: "..", windows: false).must() == "a/b.."
+    assert with_ext(path: ".bashrc", to: ".x", windows: false).must() == ".bashrc.x"
+    assert with_ext(path: "a/b", to: ".c", windows: false).must() == "a/b.c"
+    assert with_ext(path: "x/caffè.txt/", to: ".md", windows: false).must() == "x/caffè.md"
+
+    for to in ["md", "./x"]
+        match with_ext(path: "a/b.txt", to: to, windows: false)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    assert with_ext(path: "a/b.txt", to: ".x\\y", windows: true).is_err()
+    assert with_ext(path: "a/..", to: ".x", windows: false).is_err()
+
+test "has_trailing_sep: after a part, never a root alone"
+    assert has_trailing_sep("a/", false) && !has_trailing_sep("a", false)
+    assert !has_trailing_sep("/", false) && !has_trailing_sep("C:\\", true)
+    assert has_trailing_sep("a\\", true) && !has_trailing_sep("a\\", false)
+    assert !has_trailing_sep("", false)
+
+test "with_trailing_sep: one added, one there kept, and a dot before it where it would make a root"
+    assert with_trailing_sep("a", false) == "a/" && with_trailing_sep("a/", false) == "a/"
+    assert with_trailing_sep("/", false) == "/" && with_trailing_sep("", false) == "./"
+    assert with_trailing_sep("a", true) == "a\\" && with_trailing_sep("a/", true) == "a/"
+    assert with_trailing_sep("C:", true) == "C:.\\" && with_trailing_sep("\\\\h\\s", true) == "\\\\h\\s\\"
+    assert with_trailing_sep("", true) == ".\\"
+
+test "trim_trailing_sep: every separator at the end, a root kept"
+    assert trim_trailing_sep("a//", false) == "a" && trim_trailing_sep("a", false) == "a"
+    assert trim_trailing_sep("/", false) == "/" && trim_trailing_sep("///", false) == "///"
+    assert trim_trailing_sep("C:\\a\\/", true) == "C:\\a" && trim_trailing_sep("C:\\", true) == "C:\\"
+    assert trim_trailing_sep("a\\", false) == "a\\" && trim_trailing_sep("", false) == ""

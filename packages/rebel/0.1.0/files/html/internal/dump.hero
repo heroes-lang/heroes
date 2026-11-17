@@ -1,0 +1,78 @@
+# A tree printed in the format of html5lib-tests' tree construction cases, one
+# line a node, so that a test states the whole tree a text must read into: `|`
+# and two spaces a level, `<svg name>` and `<math name>` for foreign elements,
+# attributes sorted under their element, `"text"`, `<!-- comment -->`, and a
+# template's contents under `content`.
+
+use html/internal/dom
+use html/internal/query
+
+# The lines of `t`, node 0 left out.
+function lines_of(t: dom.Tree lent) -> [str]
+    found: [str] @= []
+
+    for node in query.descendants(t, 0)
+        depth: i64 @= 0
+        at: i64 @= t.parents[node]
+
+        while at != 0 && at != dom.NONE
+            depth @ depth + 1
+            at @ t.parents[at]
+
+        pad = "| " + repeat("  ", depth.to_u64().must())
+        kind = t.kinds[node]
+
+        if kind == dom.ELEMENT
+            prefix = if t.spaces[node] == dom.SVG
+                "svg "
+            else if t.spaces[node] == dom.MATHML
+                "math "
+            else
+                ""
+            found @ found.push(pad + "<" + prefix + t.names[node] + ">")
+            attributes: [str] @= []
+
+            for a in t.attributes[node]
+                name = if a.space == dom.XLINK
+                    "xlink " + a.name
+                else if a.space == dom.XML
+                    "xml " + a.name
+                else if a.space == dom.XMLNS
+                    "xmlns " + a.name
+                else
+                    a.name
+                attributes @ attributes.push(pad + "  " + name + "=\"" + a.value + "\"")
+
+            for line in sort(attributes)
+                found @ found.push(line)
+        else if kind == dom.TEXT
+            found @ found.push(pad + "\"" + t.data[node] + "\"")
+        else if kind == dom.COMMENT
+            found @ found.push(pad + "<!-- " + t.data[node] + " -->")
+        else if kind == dom.INSTRUCTION
+            found @ found.push(pad + "<?" + t.names[node] + " " + t.data[node] + ">")
+        else if kind == dom.FRAGMENT
+            found @ found.push(pad + "content")
+        else if kind == dom.DOCTYPE
+            ids = if t.data[node] == "" && t.systems[node] == ""
+                ""
+            else
+                " \"" + t.data[node] + "\" \"" + t.systems[node] + "\""
+            found @ found.push(pad + "<!DOCTYPE " + t.names[node] + ids + ">")
+
+    return found
+
+## Tests
+
+test "lines_of: an element with sorted attributes, a text, and a comment"
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    p = dom.add_element(
+        @t,
+        space: dom.HTML,
+        name: "p",
+        attributes: [dom.Attr(space: dom.NO_SPACE, name: "z", value: "1"), dom.Attr(space: dom.NO_SPACE, name: "a", value: "2")]
+    )
+    dom.append_child(@t, parent: 0, child: p)
+    dom.append_child(@t, parent: p, child: dom.add_data(@t, kind: dom.TEXT, data: "x"))
+    dom.append_child(@t, parent: 0, child: dom.add_data(@t, kind: dom.COMMENT, data: "c"))
+    assert lines_of(t) == ["| <p>", "|   a=\"2\"", "|   z=\"1\"", "|   \"x\"", "| <!-- c -->"]

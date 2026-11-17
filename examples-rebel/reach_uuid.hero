@@ -1,0 +1,14 @@
+# Reaches Rebel's package `uuid`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints a new identifier of version 4
+# and one of version 7.
+
+use <rebel>/uuid
+
+function main()
+    match uuid.new_v4()
+        .ok id => print(uuid.format(id))
+        .err e => print(e.msg)
+
+    match uuid.new_v7()
+        .ok id => print(uuid.format(id))
+        .err e => print(e.msg)

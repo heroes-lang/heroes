@@ -1,0 +1,369 @@
+# CSS selectors matched against a tree as a browser matches them in an HTML
+# document: type selectors and attribute names in any case on HTML elements,
+# the attribute values the HTML standard lists in any case (4.16.2), ids and
+# classes in any case in quirks mode alone. A complex selector is matched
+# right to left on a stack of its own, and every answer for a compound and a
+# node is kept in a memo, so a selector costs at most its compounds times the
+# nodes it reaches. Only `:not()` and `:is()` recurse, as deep as they nest,
+# which reading bounds.
+
+use html/internal/ascii
+use html/internal/dom
+use html/internal/query
+use html/internal/select_parse
+
+# Whether `node` is an element `sel` matches.
+function matches(t: dom.Tree lent, sel: select_parse.Selector lent, node: i64, @memo: {i64: bool}) -> bool
+    return group_matches(t, sel, group: sel.top, node: node, memo: @memo)
+
+# Whether a complex of the list `group` matches `node`.
+function group_matches(t: dom.Tree lent, sel: select_parse.Selector lent, group: i64, node: i64, @memo: {i64: bool}) -> bool
+    if t.kinds[node] != dom.ELEMENT
+        return false
+
+    for c in sel.groups[group]
+        if complex_matches(t, sel, c, node, @memo)
+            return true
+
+    return false
+
+# The memo's key of the compound `id` at `node`.
+function key(t: dom.Tree lent, id: i64, node: i64) -> i64
+    return id * t.kinds.len() + node
+
+# The first node the combinator `kind` leads to from `node`, the one to its
+# left that must match: an ancestor, the parent, or a sibling before it.
+function first_of(t: dom.Tree lent, kind: i64, node: i64) -> i64
+    if kind == select_parse.DESCENDANT || kind == select_parse.CHILD
+        parent = t.parents[node]
+
+        if parent == dom.NONE || t.kinds[parent] != dom.ELEMENT
+            return dom.NONE
+        return parent
+    return element_before(t, node)
+
+# The node after `node` among those the combinator `kind` leads to from the
+# same place, or `dom.NONE`.
+function next_of(t: dom.Tree lent, kind: i64, node: i64) -> i64
+    if kind == select_parse.DESCENDANT
+        return first_of(t, kind: select_parse.CHILD, node: node)
+
+    if kind == select_parse.LATER
+        return element_before(t, node)
+    return dom.NONE
+
+# The element just before `node` among its siblings, or `dom.NONE`.
+function element_before(t: dom.Tree lent, node: i64) -> i64
+    at: i64 @= t.previouses[node]
+
+    while at != dom.NONE && t.kinds[at] != dom.ELEMENT
+        at @ t.previouses[at]
+
+    return at
+
+# The element just after `node` among its siblings, or `dom.NONE`.
+function element_after(t: dom.Tree lent, node: i64) -> i64
+    at: i64 @= t.nexts[node]
+
+    while at != dom.NONE && t.kinds[at] != dom.ELEMENT
+        at @ t.nexts[at]
+
+    return at
+
+# Whether the complex `c` matches `node`, right to left: each compound of it
+# must match an element its combinator leads to from the one on its right.
+function complex_matches(t: dom.Tree lent, sel: select_parse.Selector lent, c: select_parse.Complex lent, node: i64, @memo: {i64: bool}) -> bool
+    # Frames waiting for an answer: the compound, the node it is asked of,
+    # and the candidate on its left being tried; `NEW` before any.
+    js: [i64] @= [c.compounds.len() - 1]
+    nodes: [i64] @= [node]
+    tried: [i64] @= [NEW]
+    top: i64 @= 1
+    answer: bool @= false
+    answered: bool @= false
+
+    while top > 0
+        i = top - 1
+        j = js[i]
+        here = nodes[i]
+        candidate: i64 @= dom.NONE
+
+        if answered
+            answered @ false
+
+            if answer
+                memo[key(t, id: c.compounds[j].id, node: here)] @ true
+                top @ top - 1
+                answered @ true
+                continue
+            candidate @ next_of(t, kind: c.combinators[j - 1], node: tried[i])
+        else
+            k = key(t, id: c.compounds[j].id, node: here)
+
+            match memo[k]
+                .ok known =>
+                    answer @ known
+                    top @ top - 1
+                    answered @ true
+                    continue
+                .err _ => _ = 0
+
+            if !compound_matches(t, sel, c.compounds[j], here, @memo)
+                memo[k] @ false
+                answer @ false
+                top @ top - 1
+                answered @ true
+                continue
+
+            if j == 0
+                memo[k] @ true
+                answer @ true
+                top @ top - 1
+                answered @ true
+                continue
+            candidate @ first_of(t, kind: c.combinators[j - 1], node: here)
+
+        if candidate == dom.NONE
+            memo[key(t, id: c.compounds[j].id, node: here)] @ false
+            answer @ false
+            top @ top - 1
+            answered @ true
+            continue
+        tried[i] @ candidate
+        put(items: @js, top: top, item: j - 1)
+        put(items: @nodes, top: top, item: candidate)
+        put(items: @tried, top: top, item: NEW)
+        top @ top + 1
+
+    return answer
+
+# The mark of a frame that has tried no candidate yet.
+constant NEW: i64
+    -2
+
+# Writes `item` at `top` of `items`, growing it by one at its end.
+function put(@items: [i64], top: i64, item: i64)
+    if top == items.len()
+        items @ items.push(item)
+    else
+        items[top] @ item
+
+# Whether the element `node` passes every rule of `compound`.
+function compound_matches(t: dom.Tree lent, sel: select_parse.Selector lent, compound: select_parse.Compound lent, node: i64, @memo: {i64: bool}) -> bool
+    if t.kinds[node] != dom.ELEMENT
+        return false
+
+    for rule in compound.tests
+        if !passes(t, sel, rule, node, @memo)
+            return false
+
+    return true
+
+# Whether the element `node` passes `rule`.
+function passes(t: dom.Tree lent, sel: select_parse.Selector lent, rule: select_parse.Test lent, node: i64, @memo: {i64: bool}) -> bool
+    kind = rule.kind
+    quirks = t.quirks == dom.QUIRKS
+
+    if kind == select_parse.TYPE
+        return query.is_named(t, node, rule.name)
+
+    if kind == select_parse.ID
+        at = query.attribute_index(t, node: node, name: "id")
+        return at >= 0 && same(a: t.attributes[node][at].value, b: rule.name, any_case: quirks)
+
+    if kind == select_parse.CLASS
+        for c in query.classes(t, node)
+            if same(a: c, b: rule.name, any_case: quirks)
+                return true
+
+        return false
+
+    if kind == select_parse.HAS_ATTRIBUTE
+        return query.attribute_index(t, node: node, name: rule.name) >= 0
+
+    if kind == select_parse.ATTRIBUTE
+        return attribute_passes(t, rule, node)
+
+    if kind == select_parse.NTH
+        return nth_passes(t, rule, node)
+
+    if kind == select_parse.ONLY
+        return nth_passes(t, select_parse.nth(a: 0, b: 1, last: false, of_type: rule.of_type), node) && nth_passes(t, select_parse.nth(a: 0, b: 1, last: true, of_type: rule.of_type), node)
+
+    if kind == select_parse.EMPTY
+        child: i64 @= t.firsts[node]
+
+        while child != dom.NONE
+            if t.kinds[child] == dom.ELEMENT || t.kinds[child] == dom.TEXT && t.data[child] != ""
+                return false
+            child @ t.nexts[child]
+
+        return true
+
+    if kind == select_parse.ROOT
+        parent = t.parents[node]
+        return parent != dom.NONE && t.kinds[parent] == dom.DOCUMENT
+
+    if kind == select_parse.NOT
+        return !group_matches(t, sel, group: rule.group, node: node, memo: @memo)
+    return group_matches(t, sel, group: rule.group, node: node, memo: @memo)
+
+# Whether `a` and `b` are the same text, in any ASCII case where `any_case`.
+function same(a: str, b: str, any_case: bool) -> bool
+    if any_case
+        return ascii.equals_ignoring_case(a: a, b: b)
+    return a == b
+
+# Whether the attribute rule `rule` passes on `node`.
+function attribute_passes(t: dom.Tree lent, rule: select_parse.Test lent, node: i64) -> bool
+    at = query.attribute_index(t, node: node, name: rule.name)
+
+    if at < 0
+        return false
+    any_case = rule.case_flag == 1 || rule.case_flag == 0 && t.spaces[node] == dom.HTML && is_any_case_attribute(ascii.to_lower(rule.name))
+
+    value = if any_case
+        ascii.to_lower(t.attributes[node][at].value)
+    else
+        t.attributes[node][at].value
+
+    wanted = if any_case
+        ascii.to_lower(rule.value)
+    else
+        rule.value
+    op = rule.op
+
+    if op == select_parse.EQUALS
+        return value == wanted
+
+    if op == select_parse.INCLUDES
+        if wanted == "" || ascii.split_white(wanted).len() != 1 || wanted.len() != ascii.trim_white(wanted).len()
+            return false
+
+        for word in ascii.split_white(value)
+            if word == wanted
+                return true
+
+        return false
+
+    if op == select_parse.DASH
+        return value == wanted || value.len() > wanted.len() && value.slice(from: 0, to: wanted.len()) == wanted && value[wanted.len()] == '-'
+
+    if wanted == "" || wanted.len() > value.len()
+        return false
+
+    if op == select_parse.PREFIX
+        return value.slice(from: 0, to: wanted.len()) == wanted
+
+    if op == select_parse.SUFFIX
+        return value.slice(from: value.len() - wanted.len(), to: value.len()) == wanted
+    return contains(s: value, part: wanted)
+
+# Whether `s` holds `part`, compared by bytes.
+function contains(s: str, part: str) -> bool
+    last = s.len() - part.len()
+    at: i64 @= 0
+
+    while at <= last
+        matched: i64 @= 0
+
+        while matched < part.len() && s[at + matched] == part[matched]
+            matched @ matched + 1
+
+        if matched == part.len()
+            return true
+        at @ at + 1
+
+    return false
+
+# Whether the HTML standard reads the attribute `name`'s value in any case in
+# a selector (4.16.2).
+function is_any_case_attribute(name: str) -> bool
+    return match name
+        "accept" | "accept-charset" | "align" | "alink" | "axis" | "bgcolor" | "charset" | "checked" | "clear" | "codetype" => true
+        "color" | "compact" | "declare" | "defer" | "dir" | "direction" | "disabled" | "enctype" | "face" | "frame" => true
+        "hreflang" | "http-equiv" | "lang" | "language" | "link" | "media" | "method" | "multiple" | "nohref" => true
+        "noresize" | "noshade" | "nowrap" | "readonly" | "rel" | "rev" | "rules" | "scope" | "scrolling" | "selected" => true
+        "shape" | "target" | "text" | "type" | "valign" | "valuetype" | "vlink" => true
+        _                                                                       => false
+
+# Whether `node` stands at a place `an+b` names among its element siblings,
+# counted from the end where `rule.last`, among those of its type where
+# `rule.of_type`.
+function nth_passes(t: dom.Tree lent, rule: select_parse.Test lent, node: i64) -> bool
+    index: i64 @= 1
+
+    at: i64 @= if rule.last
+        element_after(t, node)
+    else
+        element_before(t, node)
+
+    while at != dom.NONE
+        if !rule.of_type || t.names[at] == t.names[node] && t.spaces[at] == t.spaces[node]
+            index @ index + 1
+
+        at @ if rule.last
+            element_after(t, at)
+        else
+            element_before(t, at)
+
+    difference = index - rule.b
+
+    if rule.a == 0
+        return difference == 0
+
+    if rule.a > 0
+        return difference >= 0 && difference % rule.a == 0
+    return difference <= 0 && (0 - difference) % (0 - rule.a) == 0
+
+## Tests
+
+# The tree of `<ul><li class=a>1</li><li>2</li><li lang=EN>3</li></ul>` in a
+# document, `ul` at 1 and the items at 2, 4 and 6.
+function sample() -> dom.Tree
+    t: dom.Tree @= dom.new_tree(dom.DOCUMENT)
+    ul = dom.add_element(@t, space: dom.HTML, name: "ul", attributes: [])
+    dom.append_child(@t, parent: 0, child: ul)
+    attributes: [[dom.Attr]] = [
+        [dom.Attr(space: dom.NO_SPACE, name: "class", value: "a")]
+        []
+        [dom.Attr(space: dom.NO_SPACE, name: "lang", value: "EN")]
+    ]
+
+    for i in range(from: 0, to: 3)
+        li = dom.add_element(@t, space: dom.HTML, name: "li", attributes: attributes[i])
+        dom.append_child(@t, parent: ul, child: li)
+        dom.append_child(@t, parent: li, child: dom.add_data(@t, kind: dom.TEXT, data: to_str(i + 1)))
+
+    return t
+
+# The nodes of `t` that `text` matches, in document order.
+function hits(t: dom.Tree lent, text: str) -> [i64]
+    sel = select_parse.parse(text).must()
+    memo: {i64: bool} @= {}
+    found: [i64] @= []
+
+    for n in query.descendants(t, 0)
+        if matches(t, sel, n, @memo)
+            found @ found.push(n)
+
+    return found
+
+test "matches: types, classes, combinators and the structural pseudo-classes, as a browser matches them"
+    t = sample()
+    assert hits(t, "li") == [2, 4, 6] && hits(t, "ul > .a") == [2] && hits(t, ".a + li") == [4] && hits(t, ".a ~ li") == [4, 6]
+    assert hits(t, "li:first-child") == [2] && hits(t, "li:last-child") == [6] && hits(t, "li:nth-child(odd)") == [2, 6]
+    assert hits(t, "li:nth-last-child(1)") == [6] && hits(t, "ul:only-child") == [1] && hits(t, "li:not(.a)") == [4, 6]
+    assert hits(t, ":root") == [1] && hits(t, "li:empty") == [] && hits(t, "ul li, ul") == [1, 2, 4, 6] && hits(t, "* > li:is(.a, [lang])") == [2, 6]
+
+test "matches: attribute values, `lang` in any case as the standard lists it, and the `s` and `i` flags"
+    t = sample()
+    assert hits(t, "[lang=en]") == [6] && hits(t, "[lang=en s]") == [] && hits(t, "[class=A]") == [] && hits(t, "[class=A i]") == [2]
+    assert hits(t, "[lang|=en]") == [6] && hits(t, "[lang^=E]") == [6] && hits(t, "[lang$=n]") == [6] && hits(t, "[lang*=\"\"]") == []
+
+test "nth_passes: an+b with a negative a, and of-type counting"
+    t = sample()
+    assert hits(t, "li:nth-child(-n+2)") == [2, 4] && hits(t, "li:nth-of-type(3)") == [6] && hits(t, "li:nth-child(0n+0)") == []
+
+test "contains and same: bytes, the empty part, and any case"
+    assert contains(s: "abc", part: "bc") && contains(s: "abc", part: "") && !contains(s: "ab", part: "abc") && same(a: "A", b: "a", any_case: true) && !same(a: "A", b: "a", any_case: false)

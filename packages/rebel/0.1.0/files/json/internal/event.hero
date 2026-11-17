@@ -1,0 +1,102 @@
+# What a JSON text is between the reader and the writer: a flat list of
+# events in the order the text writes them, a container's opening, each of its
+# members' keys and values, and its closing.
+#
+# The package's private modules work on this list and never on `json.Value`,
+# which only the face can name: a module the face uses may not use the face.
+# The face turns the list into a value and a value into the list, each on a
+# stack of its own, so that no function follows the data with recursion.
+
+# A `null`.
+constant NULL_VALUE: i64
+    0
+
+# A `true` or a `false`, the event's `flag`.
+constant BOOLEAN: i64
+    1
+
+# A number: its value in `number` and its digits as written in `raw`.
+constant NUMBER: i64
+    2
+
+# A string: its characters in `text` and the string as written in `raw`.
+constant TEXT: i64
+    3
+
+# An object's key: its characters in `text` and as written in `raw`.
+constant KEY: i64
+    4
+
+# A `[`.
+constant BEGIN_LIST: i64
+    5
+
+# A `]`.
+constant END_LIST: i64
+    6
+
+# A `{`.
+constant BEGIN_OBJECT: i64
+    7
+
+# A `}`.
+constant END_OBJECT: i64
+    8
+
+# Not a token: the mark of a value still to be walked, on the stack of what
+# the face has left to write.
+constant WALK: i64
+    9
+
+# One token of a JSON text, or of a value walked as if it were one.
+record Event
+    # What the token is: one of the constants of this module.
+    kind: i64
+    # The byte index where the token begins in the text it was read from, 0
+    # for a value's own.
+    at: i64
+    # A boolean's value.
+    flag: bool
+    # A number's value.
+    number: f64
+    # A string's or a key's characters, its escapes read.
+    text: str
+    # The token as written in the text, kept where the reader is asked to keep
+    # it and empty otherwise: a number's digits, a string with its escapes.
+    raw: str
+
+# The event of a token with no value of its own: a `null` or a bracket.
+function mark(kind: i64) -> Event
+    return Event(kind: kind, at: 0, flag: false, number: 0.0, text: "", raw: "")
+
+# The event of a boolean.
+function boolean(flag: bool) -> Event
+    return Event(kind: BOOLEAN, at: 0, flag: flag, number: 0.0, text: "", raw: "")
+
+# The event of a number, with no digits as written: the writer writes them.
+function number(n: f64) -> Event
+    return Event(kind: NUMBER, at: 0, flag: false, number: n, text: "", raw: "")
+
+# The event of a string or a key, `kind` saying which.
+function text(kind: i64, s: str) -> Event
+    return Event(kind: kind, at: 0, flag: false, number: 0.0, text: s, raw: "")
+
+# Whether an event of `kind` is a whole value, where a bracket or a key is a
+# part of one.
+function is_scalar(kind: i64) -> bool
+    return kind == NULL_VALUE || kind == BOOLEAN || kind == NUMBER || kind == TEXT
+
+## Tests
+
+test "mark, boolean, number and text: each event's kind and value"
+    assert mark(BEGIN_LIST).kind == BEGIN_LIST
+    assert boolean(true).flag
+    assert !boolean(false).flag
+    assert number(1.5).number == 1.5
+    assert text(kind: KEY, s: "k").text == "k"
+    assert text(kind: TEXT, s: "").raw == ""
+
+test "is_scalar: the four scalars, and a bracket and a key that are not"
+    assert is_scalar(NULL_VALUE) && is_scalar(BOOLEAN)
+    assert is_scalar(NUMBER) && is_scalar(TEXT)
+    assert !is_scalar(KEY) && !is_scalar(BEGIN_LIST) && !is_scalar(END_OBJECT)

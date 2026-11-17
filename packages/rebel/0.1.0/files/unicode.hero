@@ -1,0 +1,1414 @@
+# What a character is: its code point, its classes, its case, and how UTF-8
+# and UTF-16 write it. The tables hold Unicode 17.0.0, which `UNICODE_VERSION`
+# says; a code point that version leaves unassigned is in no class and has no
+# case.
+#
+# A character is a `str` of exactly one character, which is what the built-in
+# `chars()` yields; a code point is an `i64`. `code_point` and
+# `from_code_point` go between the two. A function that takes a character
+# aborts where it is handed the empty text or more than one character: cut a
+# text with `chars()` first. Every index and every width is counted in bytes.
+
+use unicode/internal/casing
+use unicode/internal/classes
+use unicode/internal/radix
+use unicode/internal/utf16
+use unicode/internal/utf8
+
+## Codes
+
+# The code of a failure on input that is not what the function reads: a number
+# that is no code point of a character, a byte that begins no character.
+constant INVALID: str
+    "invalid"
+
+# The code of a failure on bytes that are not UTF-8, the language's own.
+constant NOT_TEXT: str
+    "not_text"
+
+## Limits
+
+# The version of Unicode the tables hold.
+constant UNICODE_VERSION: str
+    "17.0.0"
+
+# The largest code point, U+10FFFF.
+constant MAX_CODE_POINT: i64
+    0x10ffff
+
+# The character U+FFFD, written where a character could not be read.
+constant REPLACEMENT_CHARACTER: str
+    "�"
+
+# The most bytes one character takes in UTF-8.
+constant MAX_UTF8_LEN: i64
+    4
+
+## The general categories
+
+# What `category` answers for an upper case letter.
+constant UPPERCASE_LETTER: str
+    "Lu"
+
+# What `category` answers for a lower case letter.
+constant LOWERCASE_LETTER: str
+    "Ll"
+
+# What `category` answers for a title case letter, one character that writes
+# an upper case letter and a lower case one.
+constant TITLECASE_LETTER: str
+    "Lt"
+
+# What `category` answers for a modifier letter.
+constant MODIFIER_LETTER: str
+    "Lm"
+
+# What `category` answers for a letter with no case, an ideograph among them.
+constant OTHER_LETTER: str
+    "Lo"
+
+# What `category` answers for a mark that takes no room of its own.
+constant NONSPACING_MARK: str
+    "Mn"
+
+# What `category` answers for a mark that takes room.
+constant SPACING_MARK: str
+    "Mc"
+
+# What `category` answers for a mark that encloses the character before it.
+constant ENCLOSING_MARK: str
+    "Me"
+
+# What `category` answers for a decimal digit.
+constant DECIMAL_NUMBER: str
+    "Nd"
+
+# What `category` answers for a number written as a letter, a Roman numeral
+# among them.
+constant LETTER_NUMBER: str
+    "Nl"
+
+# What `category` answers for any other number, a fraction among them.
+constant OTHER_NUMBER: str
+    "No"
+
+# What `category` answers for punctuation that joins two words, as `_` does.
+constant CONNECTOR_PUNCTUATION: str
+    "Pc"
+
+# What `category` answers for a dash or a hyphen.
+constant DASH_PUNCTUATION: str
+    "Pd"
+
+# What `category` answers for an opening bracket.
+constant OPEN_PUNCTUATION: str
+    "Ps"
+
+# What `category` answers for a closing bracket.
+constant CLOSE_PUNCTUATION: str
+    "Pe"
+
+# What `category` answers for an opening quotation mark.
+constant INITIAL_PUNCTUATION: str
+    "Pi"
+
+# What `category` answers for a closing quotation mark.
+constant FINAL_PUNCTUATION: str
+    "Pf"
+
+# What `category` answers for any other punctuation.
+constant OTHER_PUNCTUATION: str
+    "Po"
+
+# What `category` answers for a symbol of mathematics.
+constant MATH_SYMBOL: str
+    "Sm"
+
+# What `category` answers for a sign of a currency.
+constant CURRENCY_SYMBOL: str
+    "Sc"
+
+# What `category` answers for a modifier symbol, as `^` is.
+constant MODIFIER_SYMBOL: str
+    "Sk"
+
+# What `category` answers for any other symbol.
+constant OTHER_SYMBOL: str
+    "So"
+
+# What `category` answers for a space.
+constant SPACE_SEPARATOR: str
+    "Zs"
+
+# What `category` answers for U+2028, the line separator.
+constant LINE_SEPARATOR: str
+    "Zl"
+
+# What `category` answers for U+2029, the paragraph separator.
+constant PARAGRAPH_SEPARATOR: str
+    "Zp"
+
+# What `category` answers for a control code.
+constant CONTROL: str
+    "Cc"
+
+# What `category` answers for a format character, drawn as nothing.
+constant FORMAT: str
+    "Cf"
+
+# What `category` answers for a character kept for private use.
+constant PRIVATE_USE: str
+    "Co"
+
+# What `category` answers for a code point this version of Unicode assigns
+# nothing to.
+constant UNASSIGNED: str
+    "Cn"
+
+## Characters and code points
+
+# The code point of `c`, one character. Aborts where `c` is not exactly one
+# character.
+function code_point(c: str) -> i64
+    return utf8.one(c)
+
+# The character whose code point is `n`. Fails `invalid` where `n` is no
+# scalar value: below 0, above `MAX_CODE_POINT`, or a surrogate, U+D800 to
+# U+DFFF.
+function from_code_point(n: i64) -> str?
+    utf8.check_scalar_value(n)?
+    return ok(utf8.text_of([n]))
+
+# The code points of `s`, one for each character, in order.
+function code_points(s: str) -> [i64]
+    points: [i64] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        points @ points.push(utf8.code_point_at(s, at))
+        at @ at + utf8.width_at(s, at)
+
+    return points
+
+# The text that `points` write, one character for each. Fails `invalid` at the
+# first number that is no scalar value, as `from_code_point` does, and the
+# message says which and where.
+function from_code_points(points: [i64]) -> str?
+    at: i64 @= 0
+
+    while at < points.len()
+        match utf8.check_scalar_value(points[at])
+            .ok _  => at @ at + 1
+            .err e => return fail(code: INVALID, msg: f"{e.msg}, at index {at}")
+
+    return ok(utf8.text_of(points))
+
+# Whether `n` is a scalar value, a code point a character can have: 0 to
+# `MAX_CODE_POINT`, the surrogates U+D800 to U+DFFF left out.
+function is_scalar_value(n: i64) -> bool
+    return utf8.is_scalar_value(n)
+
+## Classes
+
+# Whether `c` is a letter: its general category is one of the five that begin
+# with `L`. Aborts where `c` is not exactly one character.
+function is_letter(c: str) -> bool
+    return classes.is_letter(utf8.one(c))
+
+# Whether `c` is alphabetic, Unicode's Alphabetic property: a letter, a number
+# written as a letter, or a sign a script writes as part of a word, a vowel
+# sign among them. Aborts where `c` is not exactly one character.
+function is_alphabetic(c: str) -> bool
+    return classes.is_alphabetic(utf8.one(c))
+
+# Whether `c` is a decimal digit, general category `Nd`: one of the ten digits
+# of some script. `digit_value` answers which. Aborts where `c` is not exactly
+# one character.
+function is_digit(c: str) -> bool
+    return classes.is_digit(utf8.one(c))
+
+# Whether `c` is a number of any kind, a general category that begins with
+# `N`: a decimal digit, a Roman numeral, a fraction, a circled number. Aborts
+# where `c` is not exactly one character.
+function is_number(c: str) -> bool
+    return classes.is_number(utf8.one(c))
+
+# Whether `c` is alphabetic or a number: `is_alphabetic` or `is_number`. Aborts
+# where `c` is not exactly one character.
+function is_alphanumeric(c: str) -> bool
+    return classes.is_alphanumeric(utf8.one(c))
+
+# Whether `c` is white space, Unicode's White_Space property: space, tab, line
+# feed, vertical tab, form feed, carriage return, U+0085, U+00A0, and the
+# spaces and separators above them, 25 code points in all. Aborts where `c` is
+# not exactly one character.
+function is_space(c: str) -> bool
+    return classes.is_space(utf8.one(c))
+
+# Whether `c` is upper case, Unicode's Uppercase property: an upper case
+# letter, or a sign that is one by its use, as a Roman numeral or a circled
+# capital. Aborts where `c` is not exactly one character.
+function is_upper(c: str) -> bool
+    return classes.is_upper(utf8.one(c))
+
+# Whether `c` is lower case, Unicode's Lowercase property: a lower case
+# letter, or a sign that is one by its use, as the ordinal indicators. Aborts
+# where `c` is not exactly one character.
+function is_lower(c: str) -> bool
+    return classes.is_lower(utf8.one(c))
+
+# Whether `c` is a title case letter, general category `Lt`: one character
+# that writes two letters, the first upper case. Aborts where `c` is not
+# exactly one character.
+function is_title(c: str) -> bool
+    return classes.is_title(utf8.one(c))
+
+# Whether `c` has a case, Unicode's Cased property: `is_upper`, `is_lower` or
+# `is_title`. Aborts where `c` is not exactly one character.
+function is_cased(c: str) -> bool
+    return classes.is_cased(utf8.one(c))
+
+# Whether `c` is passed over when the letters around it are asked their case,
+# Unicode's Case_Ignorable property: a mark, a modifier, an apostrophe, a full
+# stop. A sigma that ends a word is told from one inside it by this class.
+# Aborts where `c` is not exactly one character.
+function is_case_ignorable(c: str) -> bool
+    return classes.is_case_ignorable(utf8.one(c))
+
+# Whether `c` is punctuation, a general category that begins with `P`. The
+# signs of mathematics and of currencies are symbols, not punctuation: `+`,
+# `$` and `^` answer false here and true to `is_symbol`. Aborts where `c` is
+# not exactly one character.
+function is_punctuation(c: str) -> bool
+    return classes.is_punctuation(utf8.one(c))
+
+# Whether `c` is a symbol, a general category that begins with `S`. Aborts
+# where `c` is not exactly one character.
+function is_symbol(c: str) -> bool
+    return classes.is_symbol(utf8.one(c))
+
+# Whether `c` is a mark, a general category that begins with `M`: an accent or
+# a sign that combines with the character before it. Aborts where `c` is not
+# exactly one character.
+function is_mark(c: str) -> bool
+    return classes.is_mark(utf8.one(c))
+
+# Whether `c` is a control code, general category `Cc`: U+0000 to U+001F and
+# U+007F to U+009F. Aborts where `c` is not exactly one character.
+function is_control(c: str) -> bool
+    return classes.is_control(utf8.one(c))
+
+# Whether `c` is drawn or leaves a space: a letter, a mark, a number,
+# punctuation, a symbol, or a space of category `Zs`. Aborts where `c` is not
+# exactly one character.
+function is_graphic(c: str) -> bool
+    return classes.is_graphic(utf8.one(c))
+
+# Whether `c` may be printed as itself: `is_graphic`, with U+0020 the only
+# space. Aborts where `c` is not exactly one character.
+function is_printable(c: str) -> bool
+    return classes.is_printable(utf8.one(c))
+
+# Whether `c` is ASCII, a code point below 128. Aborts where `c` is not
+# exactly one character.
+function is_ascii(c: str) -> bool
+    return utf8.one(c) < 0x80
+
+# The general category of `c`, Unicode's two letters for it: one of the
+# constants `UPPERCASE_LETTER` to `UNASSIGNED` above. The first letter is the
+# major class, so a category that begins with `Z` is a separator. Aborts where
+# `c` is not exactly one character.
+function category(c: str) -> str
+    return classes.name_of(utf8.one(c))
+
+## Numbers
+
+# The value of `c`, a decimal digit of any script, 0 to 9. Fails `invalid`
+# where `c` is not one, which is where `is_digit` answers false. Aborts where
+# `c` is not exactly one character.
+function digit_value(c: str) -> i64?
+    return classes.digit_value(utf8.one(c))
+
+## Digits of a base
+
+# The value of `c` as a digit of `base`, 0 to `base` less one: `0` to `9`,
+# then the letters `a` to `z`, of either case, for ten to thirty-five. Fails
+# `invalid` where `c` is no digit of `base`. Aborts where `base` is not 2 to
+# 36, or `c` is not exactly one character. It reads ASCII alone, as a number
+# is written in a base; `digit_value` reads the decimal digits of every
+# script.
+function to_digit(c: str, base: i64) -> i64?
+    return radix.digit_of(n: utf8.one(c), base: base)
+
+# The character that writes `value` as a digit of `base`: `0` to `9`, then a
+# letter in lower case. Fails `invalid` where `value` is not 0 to `base` less
+# one. Aborts where `base` is not 2 to 36.
+function from_digit(value: i64, base: i64) -> str?
+    return radix.digit_text(value: value, base: base)
+
+## Case
+
+# The upper case of `c`, one character, as a text of one to three characters:
+# the upper case of `ß` is `SS`. A character with no upper case is answered as
+# it is. Aborts where `c` is not exactly one character.
+function to_upper(c: str) -> str
+    n = utf8.one(c)
+    return casing.mapped_text(c: c, n: n, packed: casing.full_upper(n))
+
+# The lower case of `c`, one character, as a text of one or two characters. A
+# character with no lower case is answered as it is. It reads `c` alone: a
+# sigma that ends a word is the caller's to tell. Aborts where `c` is not
+# exactly one character.
+function to_lower(c: str) -> str
+    n = utf8.one(c)
+    return casing.mapped_text(c: c, n: n, packed: casing.full_lower(n))
+
+# The title case of `c`, one character, as a text of one to three characters:
+# the form a word's first letter takes, where the title case of `ǆ` is `ǅ` and
+# its upper case is `Ǆ`. A character with no title case is answered as it is.
+# Aborts where `c` is not exactly one character.
+function to_title(c: str) -> str
+    n = utf8.one(c)
+    return casing.mapped_text(c: c, n: n, packed: casing.full_title(n))
+
+# The folded form of `c`, one character, as a text of one to three characters:
+# two texts are the same ignoring case where their characters fold to the same
+# texts. It is Unicode's full case folding, so `ß` folds to `ss`; a folded
+# text is for comparing, never for showing. Aborts where `c` is not exactly
+# one character.
+function to_casefold(c: str) -> str
+    n = utf8.one(c)
+    return casing.mapped_text(c: c, n: n, packed: casing.full_fold(n))
+
+# The next code point that is the same letter as `n` ignoring case, one to
+# one: the smallest such above `n`, or the smallest of all where `n` is the
+# largest. Asked again and again it walks the whole set and comes back: `K`,
+# `k`, U+212A the kelvin sign, `K`. A number with no such other, a number that
+# is no code point among them, is answered as it is.
+function simple_fold(n: i64) -> i64
+    return casing.next_in_fold(n)
+
+# The upper case of the code point `n` where that is one code point, by
+# Unicode's simple mapping, which leaves `ß` as it is. A number with none, a
+# number that is no code point among them, is answered as it is.
+function simple_upper(n: i64) -> i64
+    return casing.simple_upper(n)
+
+# The lower case of the code point `n` where that is one code point, by
+# Unicode's simple mapping. A number with none, a number that is no code point
+# among them, is answered as it is.
+function simple_lower(n: i64) -> i64
+    return casing.simple_lower(n)
+
+# The title case of the code point `n` where that is one code point, by
+# Unicode's simple mapping. A number with none, a number that is no code point
+# among them, is answered as it is.
+function simple_title(n: i64) -> i64
+    return casing.simple_title(n)
+
+## UTF-8, on bytes
+
+# What `decode_at` and `decode_before` answer: one character read from bytes.
+record Decoded
+    # The code point of the character.
+    code_point: i64
+    # How many bytes write it, 1 to 4.
+    width: i64
+
+# The bytes that write the code point `n` in UTF-8, one to four. Fails
+# `invalid` where `n` is no scalar value.
+function to_utf8(n: i64) -> [u8]?
+    utf8.check_scalar_value(n)?
+    out: [u8] @= []
+    utf8.add_encoded(@out, n)
+    return ok(out)
+
+# How many bytes write the code point `n` in UTF-8, 1 to 4. Fails `invalid`
+# where `n` is no scalar value.
+function utf8_len(n: i64) -> i64?
+    utf8.check_scalar_value(n)?
+    return ok(utf8.len_of(n))
+
+# How many bytes the character takes whose first byte is `first`, 1 to 4.
+# Fails `invalid` where no character begins with `first`: a byte that
+# continues one, 0x80 to 0xBF, and the bytes UTF-8 never holds, 0xC0, 0xC1 and
+# 0xF5 to 0xFF.
+function utf8_width(first: u8) -> i64?
+    return utf8.width_of(first)
+
+# The code points that `bytes` write in UTF-8, in order. Fails `not_text`
+# where the bytes are not UTF-8, and the message says the index of the first
+# byte that is not. The built-in `validated_bytes` reads the same bytes as a
+# text.
+function from_utf8(bytes: [u8]) -> [i64]?
+    points: [i64] @= []
+    at: i64 @= 0
+
+    while at < bytes.len()
+        n = utf8.decode(bytes, at)?
+        points @ points.push(n)
+        at @ at + utf8.len_of(n)
+
+    return ok(points)
+
+# The character that begins at `index` of `bytes`. Fails `not_text` where the
+# bytes from there begin no whole character of UTF-8: a wrong byte, a
+# character the end cuts short, a surrogate, a form longer than the shortest.
+# Aborts where `index` is not an index of `bytes`.
+function decode_at(bytes: [u8], index: i64) -> Decoded?
+    n = utf8.decode(bytes, index)?
+    return ok(Decoded(code_point: n, width: utf8.len_of(n)))
+
+# The character that ends just before `end` in `bytes`: its last byte is
+# `bytes[end - 1]`. Fails `not_text` where no whole character of UTF-8 ends
+# there. Aborts where `end` is below 1 or above the length of `bytes`.
+function decode_before(bytes: [u8], end: i64) -> Decoded?
+    n = utf8.decode_ending(bytes, end)?
+    return ok(Decoded(code_point: n, width: utf8.len_of(n)))
+
+# Whether `bytes` are UTF-8 from the first to the last. No bytes are.
+function is_utf8(bytes: [u8]) -> bool
+    return utf8.valid_len(bytes) == bytes.len()
+
+# How many bytes at the start of `bytes` are whole characters of UTF-8: the
+# length of `bytes` where `is_utf8`, else the index of the first byte that is
+# not.
+function utf8_prefix_len(bytes: [u8]) -> i64
+    return utf8.valid_len(bytes)
+
+# Whether `bytes` are the beginning of UTF-8: they are UTF-8, or they stop
+# inside a last character that more bytes could complete. A reader of a stream
+# asks it to tell bytes cut short, which wait for more, from bytes that are
+# wrong.
+function is_utf8_prefix(bytes: [u8]) -> bool
+    valid = utf8.valid_len(bytes)
+    return valid == bytes.len() || utf8.is_cut_short(bytes, valid)
+
+# Whether `byte` continues a character, 0x80 to 0xBF: in UTF-8 no such byte
+# begins one, and every byte of a character after its first is one.
+function is_continuation(byte: u8) -> bool
+    return utf8.is_continuation(byte)
+
+## UTF-8, on a text
+
+# The code point of the character that begins at `index` of `s`. It cuts no
+# slice. Aborts where `index` is not the first byte of a character of `s`.
+function code_point_at(s: str, index: i64) -> i64
+    return utf8.code_point_at(s, index)
+
+# How many bytes the character takes that begins at `index` of `s`, 1 to 4, so
+# the next begins at `index` plus it. Aborts where `index` is not the first
+# byte of a character of `s`.
+function width_at(s: str, index: i64) -> i64
+    return utf8.width_at(s, index)
+
+# How many characters `s` holds, where `s.len()` counts its bytes. It reads
+# every byte once and builds nothing.
+function char_count(s: str) -> i64
+    count: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if !utf8.is_continuation(s[at])
+            count @ count + 1
+        at @ at + 1
+
+    return count
+
+# Whether `index` is where a character of `s` begins, or the end of `s`: where
+# a slice may cut. Any other number, one outside `s` among them, answers
+# false.
+function is_char_boundary(s: str, index: i64) -> bool
+    if index == s.len()
+        return true
+    return index >= 0 && index < s.len() && !utf8.is_continuation(s[index])
+
+# The nearest index at or before `index` where a character of `s` begins, or
+# the end of `s`: the largest that `is_char_boundary` accepts and is not above
+# `index`. An `index` below 0 answers 0, one above the length the length.
+function floor_char_boundary(s: str, index: i64) -> i64
+    if index >= s.len()
+        return s.len()
+
+    if index <= 0
+        return 0
+    at: i64 @= index
+
+    while at > 0 && utf8.is_continuation(s[at])
+        at @ at - 1
+
+    return at
+
+# The nearest index at or after `index` where a character of `s` begins, or
+# the end of `s`: the smallest that `is_char_boundary` accepts and is not
+# below `index`. An `index` below 0 answers 0, one above the length the
+# length.
+function ceil_char_boundary(s: str, index: i64) -> i64
+    if index <= 0
+        return 0
+
+    if index >= s.len()
+        return s.len()
+    at: i64 @= index
+
+    while at < s.len() && utf8.is_continuation(s[at])
+        at @ at + 1
+
+    return at
+
+## UTF-16
+
+# The units that write the code point `n` in UTF-16: one, or the two
+# surrogates of a code point above U+FFFF, the high one first. Fails `invalid`
+# where `n` is no scalar value.
+function to_utf16(n: i64) -> [u16]?
+    utf8.check_scalar_value(n)?
+    return ok(utf16.units_of(n))
+
+# The code points that `units` write in UTF-16, in order. Fails `invalid` at a
+# surrogate with no partner, and the message says its index.
+function from_utf16(units: [u16]) -> [i64]?
+    return utf16.decoded(units)
+
+# The code point that the surrogates `high` and `low` write together, U+10000
+# or above. Fails `invalid` where `high` is not U+D800 to U+DBFF or `low` is
+# not U+DC00 to U+DFFF.
+function from_surrogates(high: i64, low: i64) -> i64?
+    return utf16.joined(high: high, low: low)
+
+## Tests
+
+# Every expected answer below is what Python 3.15.2 (`unicodedata`, `str`),
+# Go 1.27.3 (`unicode`, `unicode/utf8`) or Rust 1.100 (`str`, `char`)
+# answered for the same input, observed 2026-11-15. The classes and the case
+# of every code point are held to the reference libraries in the tests of
+# `unicode/internal/classes` and `unicode/internal/casing`; these hold the
+# face to them, a character at a time.
+
+test "is_letter to is_ascii: 36 characters, the six edges among them, each answer a bit"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        from_code_point(0x9).must()
+        from_code_point(0x20).must()
+        "a"
+        "A"
+        "5"
+        "_"
+        "+"
+        "$"
+        from_code_point(0xa0).must()
+        "ª"
+        "½"
+        "ß"
+        "é"
+        "ǅ"
+        "ʰ"
+        from_code_point(0x300).must()
+        from_code_point(0x345).must()
+        "Σ"
+        "٣"
+        from_code_point(0x903).must()
+        from_code_point(0x200b).must()
+        "’"
+        "€"
+        "Ⅻ"
+        "Ⓐ"
+        from_code_point(0x3000).must()
+        "京"
+        "Ａ"
+        "𝐀"
+        "😀"
+    ]
+    questions: [(function(str) -> bool)] = [
+        is_letter
+        is_alphabetic
+        is_digit
+        is_number
+        is_alphanumeric
+        is_space
+        is_upper
+        is_lower
+        is_title
+        is_cased
+        is_case_ignorable
+        is_punctuation
+        is_symbol
+        is_mark
+        is_control
+        is_graphic
+        is_printable
+        is_ascii
+    ]
+    expected: [i64] = [
+        147456
+        147456
+        16384
+        0
+        0
+        0
+        147488
+        229408
+        230035
+        229971
+        229404
+        231424
+        233472
+        233472
+        32800
+        98963
+        98328
+        98963
+        98963
+        99091
+        99987
+        107520
+        108178
+        98899
+        98332
+        106514
+        1024
+        101376
+        102400
+        98906
+        102994
+        32800
+        98323
+        98899
+        98899
+        102400
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        mask: i64 @= 0
+        k: i64 @= 0
+
+        while k < questions.len()
+            if questions[k](samples[at])
+                mask @ mask | 1 << k
+            k @ k + 1
+
+        assert [code_point(samples[at]), mask] == [code_point(samples[at]), expected[at]]
+        at @ at + 1
+
+test "category: 36 characters, the six edges among them"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        from_code_point(0x9).must()
+        from_code_point(0x20).must()
+        "a"
+        "A"
+        "5"
+        "_"
+        "+"
+        "$"
+        from_code_point(0xa0).must()
+        "ª"
+        "½"
+        "ß"
+        "é"
+        "ǅ"
+        "ʰ"
+        from_code_point(0x300).must()
+        from_code_point(0x345).must()
+        "Σ"
+        "٣"
+        from_code_point(0x903).must()
+        from_code_point(0x200b).must()
+        "’"
+        "€"
+        "Ⅻ"
+        "Ⓐ"
+        from_code_point(0x3000).must()
+        "京"
+        "Ａ"
+        "𝐀"
+        "😀"
+    ]
+    expected = [
+        "Cc"
+        "Cc"
+        "Cc"
+        "Cn"
+        "Co"
+        "Cn"
+        "Cc"
+        "Zs"
+        "Ll"
+        "Lu"
+        "Nd"
+        "Pc"
+        "Sm"
+        "Sc"
+        "Zs"
+        "Lo"
+        "No"
+        "Ll"
+        "Ll"
+        "Lt"
+        "Lm"
+        "Mn"
+        "Mn"
+        "Lu"
+        "Nd"
+        "Mc"
+        "Cf"
+        "Pf"
+        "Sc"
+        "Nl"
+        "So"
+        "Zs"
+        "Lo"
+        "Lu"
+        "Lu"
+        "So"
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        assert [to_str(code_point(samples[at])), category(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        at @ at + 1
+
+test "the category constants: each is what category answers for the first character of it"
+    assert category("A") == UPPERCASE_LETTER
+    assert category("a") == LOWERCASE_LETTER
+    assert category("ǅ") == TITLECASE_LETTER
+    assert category("ʰ") == MODIFIER_LETTER
+    assert category("ª") == OTHER_LETTER
+    assert category(from_code_point(0x300).must()) == NONSPACING_MARK
+    assert category(from_code_point(0x903).must()) == SPACING_MARK
+    assert category(from_code_point(0x488).must()) == ENCLOSING_MARK
+    assert category("0") == DECIMAL_NUMBER
+    assert category("ᛮ") == LETTER_NUMBER
+    assert category("²") == OTHER_NUMBER
+    assert category("_") == CONNECTOR_PUNCTUATION
+    assert category("-") == DASH_PUNCTUATION
+    assert category("(") == OPEN_PUNCTUATION
+    assert category(")") == CLOSE_PUNCTUATION
+    assert category("«") == INITIAL_PUNCTUATION
+    assert category("»") == FINAL_PUNCTUATION
+    assert category("!") == OTHER_PUNCTUATION
+    assert category("+") == MATH_SYMBOL
+    assert category("$") == CURRENCY_SYMBOL
+    assert category("^") == MODIFIER_SYMBOL
+    assert category("¦") == OTHER_SYMBOL
+    assert category(from_code_point(0x20).must()) == SPACE_SEPARATOR
+    assert category(from_code_point(0x2028).must()) == LINE_SEPARATOR
+    assert category(from_code_point(0x2029).must()) == PARAGRAPH_SEPARATOR
+    assert category(from_code_point(0x0).must()) == CONTROL
+    assert category(from_code_point(0xad).must()) == FORMAT
+    assert category(from_code_point(0xe000).must()) == PRIVATE_USE
+    assert category(from_code_point(0x378).must()) == UNASSIGNED
+
+test "to_upper: 27 characters, the six edges and characters that become several among them"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "A"
+        "5"
+        "ß"
+        "Ǆ"
+        "ǅ"
+        "ǆ"
+        "Σ"
+        "ς"
+        "İ"
+        "ŉ"
+        "ﬁ"
+        "ΐ"
+        "K"
+        "é"
+        "京"
+        "𐐀"
+        "𐐨"
+        "Ⓐ"
+        "ⓐ"
+        from_code_point(0x345).must()
+    ]
+    expected = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "A"
+        "A"
+        "5"
+        "SS"
+        "Ǆ"
+        "Ǆ"
+        "Ǆ"
+        "Σ"
+        "Σ"
+        "İ"
+        "ʼN"
+        "FI"
+        from_code_points([0x399, 0x308, 0x301]).must()
+        "K"
+        "É"
+        "京"
+        "𐐀"
+        "𐐀"
+        "Ⓐ"
+        "Ⓐ"
+        "Ι"
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        assert [to_str(code_point(samples[at])), to_upper(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        at @ at + 1
+
+test "to_lower: 27 characters, the six edges and characters that become several among them"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "A"
+        "5"
+        "ß"
+        "Ǆ"
+        "ǅ"
+        "ǆ"
+        "Σ"
+        "ς"
+        "İ"
+        "ŉ"
+        "ﬁ"
+        "ΐ"
+        "K"
+        "é"
+        "京"
+        "𐐀"
+        "𐐨"
+        "Ⓐ"
+        "ⓐ"
+        from_code_point(0x345).must()
+    ]
+    expected = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "a"
+        "5"
+        "ß"
+        "ǆ"
+        "ǆ"
+        "ǆ"
+        "σ"
+        "ς"
+        from_code_points([0x69, 0x307]).must()
+        "ŉ"
+        "ﬁ"
+        "ΐ"
+        "k"
+        "é"
+        "京"
+        "𐐨"
+        "𐐨"
+        "ⓐ"
+        "ⓐ"
+        from_code_point(0x345).must()
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        assert [to_str(code_point(samples[at])), to_lower(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        at @ at + 1
+
+test "to_title: 27 characters, the six edges and characters that become several among them"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "A"
+        "5"
+        "ß"
+        "Ǆ"
+        "ǅ"
+        "ǆ"
+        "Σ"
+        "ς"
+        "İ"
+        "ŉ"
+        "ﬁ"
+        "ΐ"
+        "K"
+        "é"
+        "京"
+        "𐐀"
+        "𐐨"
+        "Ⓐ"
+        "ⓐ"
+        from_code_point(0x345).must()
+    ]
+    expected = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "A"
+        "A"
+        "5"
+        "Ss"
+        "ǅ"
+        "ǅ"
+        "ǅ"
+        "Σ"
+        "Σ"
+        "İ"
+        "ʼN"
+        "Fi"
+        from_code_points([0x399, 0x308, 0x301]).must()
+        "K"
+        "É"
+        "京"
+        "𐐀"
+        "𐐀"
+        "Ⓐ"
+        "Ⓐ"
+        "Ι"
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        assert [to_str(code_point(samples[at])), to_title(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        at @ at + 1
+
+test "to_casefold: 27 characters, the six edges and characters that become several among them"
+    samples = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "A"
+        "5"
+        "ß"
+        "Ǆ"
+        "ǅ"
+        "ǆ"
+        "Σ"
+        "ς"
+        "İ"
+        "ŉ"
+        "ﬁ"
+        "ΐ"
+        "K"
+        "é"
+        "京"
+        "𐐀"
+        "𐐨"
+        "Ⓐ"
+        "ⓐ"
+        from_code_point(0x345).must()
+    ]
+    expected = [
+        from_code_point(0x0).must()
+        from_code_point(0x7f).must()
+        from_code_point(0x80).must()
+        from_code_point(0xd7ff).must()
+        from_code_point(0xe000).must()
+        from_code_point(0x10ffff).must()
+        "a"
+        "a"
+        "5"
+        "ss"
+        "ǆ"
+        "ǆ"
+        "ǆ"
+        "σ"
+        "σ"
+        from_code_points([0x69, 0x307]).must()
+        "ʼn"
+        "fi"
+        from_code_points([0x3b9, 0x308, 0x301]).must()
+        "k"
+        "é"
+        "京"
+        "𐐨"
+        "𐐨"
+        "ⓐ"
+        "ⓐ"
+        "ι"
+    ]
+    at: i64 @= 0
+
+    while at < samples.len()
+        assert [to_str(code_point(samples[at])), to_casefold(samples[at])] == [to_str(code_point(samples[at])), expected[at]]
+        at @ at + 1
+
+test "simple_upper: letters of one, two and three cases, the edges, and numbers past the range"
+    assert simple_upper(0xdf) == 0xdf
+    assert simple_upper(0x1c4) == 0x1c4
+    assert simple_upper(0x1c5) == 0x1c4
+    assert simple_upper(0x1c6) == 0x1c4
+    assert simple_upper(0x130) == 0x130
+    assert simple_upper(0x3c2) == 0x3a3
+    assert simple_upper(0x4b) == 0x4b
+    assert simple_upper(0x6b) == 0x4b
+    assert simple_upper(0x212a) == 0x212a
+    assert simple_upper(0x10428) == 0x10400
+    assert simple_upper(0x31) == 0x31
+    assert simple_upper(0x0) == 0x0
+    assert simple_upper(0x7f) == 0x7f
+    assert simple_upper(0x80) == 0x80
+    assert simple_upper(0xd7ff) == 0xd7ff
+    assert simple_upper(0xe000) == 0xe000
+    assert simple_upper(0x10ffff) == 0x10ffff
+    assert simple_upper(-2) == -2
+    assert simple_upper(0x110000) == 0x110000
+    assert simple_upper(-9223372036854775808) == -9223372036854775808
+
+test "simple_lower: letters of one, two and three cases, the edges, and numbers past the range"
+    assert simple_lower(0xdf) == 0xdf
+    assert simple_lower(0x1c4) == 0x1c6
+    assert simple_lower(0x1c5) == 0x1c6
+    assert simple_lower(0x1c6) == 0x1c6
+    assert simple_lower(0x130) == 0x69
+    assert simple_lower(0x3c2) == 0x3c2
+    assert simple_lower(0x4b) == 0x6b
+    assert simple_lower(0x6b) == 0x6b
+    assert simple_lower(0x212a) == 0x6b
+    assert simple_lower(0x10428) == 0x10428
+    assert simple_lower(0x31) == 0x31
+    assert simple_lower(0x0) == 0x0
+    assert simple_lower(0x7f) == 0x7f
+    assert simple_lower(0x80) == 0x80
+    assert simple_lower(0xd7ff) == 0xd7ff
+    assert simple_lower(0xe000) == 0xe000
+    assert simple_lower(0x10ffff) == 0x10ffff
+    assert simple_lower(-2) == -2
+    assert simple_lower(0x110000) == 0x110000
+    assert simple_lower(-9223372036854775808) == -9223372036854775808
+
+test "simple_title: letters of one, two and three cases, the edges, and numbers past the range"
+    assert simple_title(0xdf) == 0xdf
+    assert simple_title(0x1c4) == 0x1c5
+    assert simple_title(0x1c5) == 0x1c5
+    assert simple_title(0x1c6) == 0x1c5
+    assert simple_title(0x130) == 0x130
+    assert simple_title(0x3c2) == 0x3a3
+    assert simple_title(0x4b) == 0x4b
+    assert simple_title(0x6b) == 0x4b
+    assert simple_title(0x212a) == 0x212a
+    assert simple_title(0x10428) == 0x10400
+    assert simple_title(0x31) == 0x31
+    assert simple_title(0x0) == 0x0
+    assert simple_title(0x7f) == 0x7f
+    assert simple_title(0x80) == 0x80
+    assert simple_title(0xd7ff) == 0xd7ff
+    assert simple_title(0xe000) == 0xe000
+    assert simple_title(0x10ffff) == 0x10ffff
+    assert simple_title(-2) == -2
+    assert simple_title(0x110000) == 0x110000
+    assert simple_title(-9223372036854775808) == -9223372036854775808
+
+test "simple_fold: letters of one, two and three cases, the edges, and numbers past the range"
+    assert simple_fold(0xdf) == 0x1e9e
+    assert simple_fold(0x1c4) == 0x1c5
+    assert simple_fold(0x1c5) == 0x1c6
+    assert simple_fold(0x1c6) == 0x1c4
+    assert simple_fold(0x130) == 0x130
+    assert simple_fold(0x3c2) == 0x3c3
+    assert simple_fold(0x4b) == 0x6b
+    assert simple_fold(0x6b) == 0x212a
+    assert simple_fold(0x212a) == 0x4b
+    assert simple_fold(0x10428) == 0x10400
+    assert simple_fold(0x31) == 0x31
+    assert simple_fold(0x0) == 0x0
+    assert simple_fold(0x7f) == 0x7f
+    assert simple_fold(0x80) == 0x80
+    assert simple_fold(0xd7ff) == 0xd7ff
+    assert simple_fold(0xe000) == 0xe000
+    assert simple_fold(0x10ffff) == 0x10ffff
+    assert simple_fold(-2) == -2
+    assert simple_fold(0x110000) == 0x110000
+    assert simple_fold(-9223372036854775808) == -9223372036854775808
+
+test "digit_value: digits of four scripts, and characters that are numbers but no decimal digit"
+    assert digit_value("0").must() == 0
+    assert digit_value("9").must() == 9
+    assert digit_value("٣").must() == 3
+    assert digit_value("𝟿").must() == 9
+    assert digit_value("９").must() == 9
+    assert digit_value("Ⅻ").is_err()
+    assert digit_value("½").is_err()
+    assert digit_value("a").is_err()
+    assert digit_value(from_code_point(0x0).must()).is_err()
+    assert digit_value(from_code_point(0x7f).must()).is_err()
+    assert digit_value(from_code_point(0x80).must()).is_err()
+    assert digit_value(from_code_point(0xd7ff).must()).is_err()
+    assert digit_value(from_code_point(0xe000).must()).is_err()
+    assert digit_value(from_code_point(0x10ffff).must()).is_err()
+
+    match digit_value("x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "U+0078 is no decimal digit: its category is Ll"
+
+test "the limits: the tables' version is Python's, the largest code point, the replacement character"
+    assert UNICODE_VERSION == "17.0.0"
+    assert MAX_CODE_POINT == 0x10ffff
+    assert code_point(REPLACEMENT_CHARACTER) == 0xfffd
+    assert to_utf8(MAX_CODE_POINT).must().len() == MAX_UTF8_LEN
+
+test "code_point: the six edges and a character of each width"
+    assert code_point(from_code_point(0).must()) == 0
+    assert code_point(from_code_point(0x7f).must()) == 0x7f
+    assert code_point(from_code_point(0x80).must()) == 0x80
+    assert code_point(from_code_point(0xd7ff).must()) == 0xd7ff
+    assert code_point(from_code_point(0xe000).must()) == 0xe000
+    assert code_point(from_code_point(0x10ffff).must()) == 0x10ffff
+    assert code_point("a") == 97
+    assert code_point("é") == 233
+    assert code_point("€") == 0x20ac
+    assert code_point("😀") == 0x1f600
+
+test "from_code_point: each width, and what is no scalar value, refused with why"
+    assert from_code_point(0x61).must() == "a"
+    assert from_code_point(0xe9).must() == "é"
+    assert from_code_point(0x20ac).must() == "€"
+    assert from_code_point(0x1f600).must() == "😀"
+    assert from_code_point(0x10ffff).must().len() == 4
+    assert from_code_point(-1).is_err()
+    assert from_code_point(0xdfff).is_err()
+    assert from_code_point(-9223372036854775808).is_err()
+    assert from_code_point(9223372036854775807).is_err()
+
+    match from_code_point(0xd800)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "U+D800 is a surrogate, which no character has as its code point"
+
+    match from_code_point(0x110000)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "U+110000 is no code point: they run from U+0000 to U+10FFFF"
+
+test "code_points and from_code_points: nothing, characters of each width, a surrogate at an index"
+    none: [i64] = []
+    assert code_points("") == none
+    assert code_points("aé€😀") == [0x61, 0xe9, 0x20ac, 0x1f600]
+    assert from_code_points(none).must() == ""
+    assert from_code_points([0x61, 0xe9, 0x20ac, 0x1f600]).must() == "aé€😀"
+
+    match from_code_points([0x61, 0xd800])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "U+D800 is a surrogate, which no character has as its code point, at index 1"
+
+test "is_scalar_value: the edges of the range and of the surrogates, and the widest numbers"
+    assert is_scalar_value(0)
+    assert is_scalar_value(0xd7ff)
+    assert !is_scalar_value(0xd800)
+    assert !is_scalar_value(0xdfff)
+    assert is_scalar_value(0xe000)
+    assert is_scalar_value(0x10ffff)
+    assert !is_scalar_value(0x110000)
+    assert !is_scalar_value(-1)
+    assert !is_scalar_value(-9223372036854775808)
+    assert !is_scalar_value(9223372036854775807)
+
+test "is_alphanumeric and is_number: a number that is no digit, and a vowel sign that is alphabetic"
+    assert is_number("½") && !is_digit("½") && is_alphanumeric("½")
+    assert is_alphabetic(from_code_point(0x903).must()) && !is_letter(from_code_point(0x903).must())
+
+test "to_utf8: the last code point of each width and the first of the next, and what is refused"
+    assert to_utf8(0).must() == [0]
+    assert to_utf8(0x7f).must() == [0x7f]
+    assert to_utf8(0x80).must() == [0xc2, 0x80]
+    assert to_utf8(0x7ff).must() == [0xdf, 0xbf]
+    assert to_utf8(0x800).must() == [0xe0, 0xa0, 0x80]
+    assert to_utf8(0xffff).must() == [0xef, 0xbf, 0xbf]
+    assert to_utf8(0x10000).must() == [0xf0, 0x90, 0x80, 0x80]
+    assert to_utf8(0x10ffff).must() == [0xf4, 0x8f, 0xbf, 0xbf]
+    assert to_utf8(0xd800).is_err()
+    assert to_utf8(0x110000).is_err()
+    assert to_utf8(-1).is_err()
+
+test "utf8_len: as Go's RuneLen answers, and what it answers -1 for refused"
+    assert utf8_len(0).must() == 1
+    assert utf8_len(0x7f).must() == 1
+    assert utf8_len(0x80).must() == 2
+    assert utf8_len(0x7ff).must() == 2
+    assert utf8_len(0x800).must() == 3
+    assert utf8_len(0xffff).must() == 3
+    assert utf8_len(0x10000).must() == 4
+    assert utf8_len(0x10ffff).must() == 4
+    assert utf8_len(0xd800).is_err()
+    assert utf8_len(0x110000).is_err()
+    assert utf8_len(-1).is_err()
+
+test "utf8_width: a first byte of each width, a continuation, and the bytes UTF-8 never holds"
+    assert utf8_width(0).must() == 1
+    assert utf8_width(0x61).must() == 1
+    assert utf8_width(0xc3).must() == 2
+    assert utf8_width(0xe2).must() == 3
+    assert utf8_width(0xf0).must() == 4
+    assert utf8_width(0xc0).is_err()
+    assert utf8_width(255).is_err()
+
+    match utf8_width(0x80)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the byte 0x80 continues a character and begins none"
+
+test "from_utf8: nothing, characters of each width, and the first wrong byte named"
+    none: [u8] = []
+    nothing: [i64] = []
+    assert from_utf8(none).must() == nothing
+    assert from_utf8([0x61, 0xc3, 0xa9, 0xe2, 0x82, 0xac, 0xf0, 0x9f, 0x98, 0x80]).must() == [0x61, 0xe9, 0x20ac, 0x1f600]
+    assert from_utf8([0xc0, 0x80]).is_err()
+    assert from_utf8([0xed, 0xa0, 0x80]).is_err()
+    assert from_utf8([0xf4, 0x90, 0x80, 0x80]).is_err()
+
+    match from_utf8([0x61, 0xff])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_TEXT && e.msg == "the byte 0xff is never in UTF-8, at index 1"
+
+test "decode_at: as Go's DecodeRune answers, and where it answers RuneError"
+    first = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 0).must()
+    assert first.code_point == 0x61 && first.width == 1
+    second = decode_at(bytes: [0x61, 0xc3, 0xa9], index: 1).must()
+    assert second.code_point == 0xe9 && second.width == 2
+    euro = decode_at(bytes: [0xe2, 0x82, 0xac, 0x80], index: 0).must()
+    assert euro.code_point == 0x20ac && euro.width == 3
+    assert decode_at(bytes: [0xc0, 0x80], index: 0).is_err()
+    assert decode_at(bytes: [0xed, 0xa0, 0x80], index: 0).is_err()
+    assert decode_at(bytes: [0xf4, 0x90, 0x80, 0x80], index: 0).is_err()
+    assert decode_at(bytes: [0xe2, 0x82], index: 0).is_err()
+
+test "decode_before: as Go's DecodeLastRune answers, and where it answers RuneError"
+    last = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 3).must()
+    assert last.code_point == 0xe9 && last.width == 2
+    before = decode_before(bytes: [0x61, 0xc3, 0xa9], end: 1).must()
+    assert before.code_point == 0x61 && before.width == 1
+    assert decode_before(bytes: [0xe2, 0x82, 0xac, 0x80], end: 4).is_err()
+    assert decode_before(bytes: [0xc0, 0x80], end: 2).is_err()
+    assert decode_before(bytes: [0xed, 0xa0, 0x80], end: 3).is_err()
+    assert decode_before(bytes: [0xe2, 0x82], end: 2).is_err()
+
+test "is_utf8: as Go's Valid answers, nothing among them"
+    none: [u8] = []
+    assert is_utf8(none)
+    assert is_utf8([0x61, 0xc3, 0xa9])
+    assert !is_utf8([0xe2, 0x82, 0xac, 0x80])
+    assert !is_utf8([0xc0, 0x80])
+    assert !is_utf8([0xed, 0xa0, 0x80])
+    assert !is_utf8([0xf4, 0x90, 0x80, 0x80])
+    assert !is_utf8([0xe2, 0x82])
+
+test "utf8_prefix_len and is_utf8_prefix: as Rust's valid_up_to and error_len answer"
+    none: [u8] = []
+    assert utf8_prefix_len(none) == 0
+    assert utf8_prefix_len([0x61, 0xc3, 0xa9]) == 3
+    assert utf8_prefix_len([0x61, 0xff]) == 1
+    assert utf8_prefix_len([0x61, 0xe2, 0x82]) == 1
+    assert is_utf8_prefix(none)
+    assert is_utf8_prefix([0x61, 0xc3, 0xa9])
+    assert is_utf8_prefix([0x61, 0xe2, 0x82])
+    assert !is_utf8_prefix([0x61, 0xff])
+    assert !is_utf8_prefix([0x61, 0xe2, 0x82, 0x61])
+    assert !is_utf8_prefix([0xed, 0xa0])
+
+test "is_continuation: as Go's RuneStart answers, the other way round"
+    assert !is_continuation(0)
+    assert !is_continuation(0x7f)
+    assert is_continuation(0x80)
+    assert is_continuation(0xbf)
+    assert !is_continuation(0xc0)
+    assert !is_continuation(255)
+
+test "code_point_at and width_at: the first byte of a character of each width"
+    s = "aé€😀"
+    assert code_point_at(s: s, index: 0) == 0x61 && width_at(s: s, index: 0) == 1
+    assert code_point_at(s: s, index: 1) == 0xe9 && width_at(s: s, index: 1) == 2
+    assert code_point_at(s: s, index: 3) == 0x20ac && width_at(s: s, index: 3) == 3
+    assert code_point_at(s: s, index: 6) == 0x1f600 && width_at(s: s, index: 6) == 4
+
+test "char_count: nothing, one byte, and characters of each width, as Rust's chars().count() answers"
+    assert char_count("") == 0
+    assert char_count("a") == 1
+    assert char_count("aé€😀") == 4
+    assert char_count("😀😀") == 2
+
+test "is_char_boundary: every index of a text, its end, and past it on either side, as Rust answers"
+    s = "aé€😀"
+    expected = [true, true, false, true, false, false, true, false, false, false, true, false, false]
+    at: i64 @= 0
+
+    while at < expected.len()
+        assert [to_str(at), to_str(is_char_boundary(s: s, index: at))] == [to_str(at), to_str(expected[at])]
+        at @ at + 1
+
+    assert !is_char_boundary(s: s, index: -1)
+    assert is_char_boundary(s: "", index: 0)
+
+test "floor_char_boundary and ceil_char_boundary: every index of a text and past it, as Rust answers"
+    s = "aé€😀"
+    floors = [0, 1, 1, 3, 3, 3, 6, 6, 6, 6, 10, 10, 10]
+    ceilings = [0, 1, 3, 3, 6, 6, 6, 10, 10, 10, 10, 10, 10]
+    at: i64 @= 0
+
+    while at < floors.len()
+        assert [at, floor_char_boundary(s: s, index: at)] == [at, floors[at]]
+        assert [at, ceil_char_boundary(s: s, index: at)] == [at, ceilings[at]]
+        at @ at + 1
+
+    assert floor_char_boundary(s: s, index: -5) == 0
+    assert ceil_char_boundary(s: s, index: -5) == 0
+    assert floor_char_boundary(s: "", index: 3) == 0
+    assert ceil_char_boundary(s: "", index: 3) == 0
+
+test "to_utf16: one unit, two, and what is refused"
+    assert to_utf16(0).must() == [0]
+    assert to_utf16(0xffff).must() == [0xffff]
+    assert to_utf16(0x1f600).must() == [0xd83d, 0xde00]
+    assert to_utf16(0x10ffff).must() == [0xdbff, 0xdfff]
+    assert to_utf16(0xd800).is_err()
+    assert to_utf16(0x110000).is_err()
+
+test "from_utf16 and from_surrogates: a pair, a surrogate alone, a half out of place"
+    assert from_utf16([0x61, 0xd83d, 0xde00]).must() == [0x61, 0x1f600]
+    assert from_utf16([0xde00]).is_err()
+    assert from_surrogates(high: 0xd83d, low: 0xde00).must() == 0x1f600
+    assert from_surrogates(high: 0xde00, low: 0xd83d).is_err()
+
+test "to_digit and from_digit: a digit of each run, either case, a digit of another script refused"
+    assert to_digit(c: "7", base: 8).must() == 7
+    assert to_digit(c: "8", base: 8).is_err()
+    assert to_digit(c: "F", base: 16).must() == 15
+    assert to_digit(c: "z", base: 36).must() == 35
+    assert to_digit(c: "٣", base: 10).is_err()
+    assert to_digit(c: "é", base: 36).is_err()
+    assert from_digit(value: 10, base: 16).must() == "a"
+    assert from_digit(value: 35, base: 36).must() == "z"
+    assert from_digit(value: 36, base: 36).is_err()

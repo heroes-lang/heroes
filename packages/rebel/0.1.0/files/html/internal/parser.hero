@@ -1,0 +1,243 @@
+# The parser run: the text prepared as the input stream (13.2.3.5), the
+# tokenizer and tree construction taking turns one token at a time, a
+# fragment's context set up (13.4), and the parse errors gathered in the order
+# they were met, each with its line and column.
+
+use html/internal/builder
+use html/internal/construct
+use html/internal/dom
+use html/internal/insert
+use html/internal/lexer
+use html/internal/token
+use html/internal/tokenizer
+use strings
+use unicode
+
+# What a reading answers: the tree, the parse errors side by side, and the
+# counts of the guards that keep a step from standing still, which tests
+# hold at 0.
+record Result
+    # The tree read.
+    tree: dom.Tree
+    # Each error's code, tag name, line and column, side by side.
+    codes: [str]
+    tags: [str]
+    lines: [i64]
+    columns: [i64]
+    # How often the tokenizer's and tree construction's guards fired.
+    stalls: i64
+    stuck: i64
+
+# The input stream of `text`: a leading byte order mark taken off, and every
+# carriage return, with the line feed after it, read as a line feed.
+function prepared(text: str) -> str
+    s: str @= text
+
+    if s.len() >= 3 && s[0] == 0xef && s[1] == 0xbb && s[2] == 0xbf
+        s @ s.slice(from: 3, to: s.len())
+
+    if !strings.contains(s: s, substr: "\r")
+        return s
+    return strings.replace_all(s: strings.replace_all(s: s, old: "\r\n", new: "\n"), old: "\r", new: "\n")
+
+# The input stream's own parse errors, codes and byte indices: a control that
+# is not white space or a zero byte, and a noncharacter.
+function stream_errors(s: str, @codes: [str], @places: [i64])
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            if b < 0x20 && b != 0 && b != '\t' && b != '\n' && b != 12 && b != '\r' || b == 0x7f
+                codes @ codes.push("control-character-in-input-stream")
+                places @ places.push(at)
+            at @ at + 1
+        else
+            n = unicode.code_point_at(s, at)
+
+            if n >= 0x80 && n <= 0x9f
+                codes @ codes.push("control-character-in-input-stream")
+                places @ places.push(at)
+            else if n >= 0xfdd0 && n <= 0xfdef || n & 0xfffe == 0xfffe
+                codes @ codes.push("noncharacter-in-input-stream")
+                places @ places.push(at)
+            at @ at + unicode.width_at(s, at)
+
+# The tokenizer state the builder asked for.
+function state_of(switch_to: i64) -> lexer.State
+    if switch_to == builder.SWITCH_RCDATA
+        return .rcdata
+
+    if switch_to == builder.SWITCH_RAWTEXT
+        return .rawtext
+
+    if switch_to == builder.SWITCH_SCRIPT
+        return .script_data
+    return .plaintext
+
+# The tokenizer state a fragment read inside the HTML element `context`
+# starts in (13.4).
+function context_state(context: str, scripting: bool) -> lexer.State
+    return match context
+        "title" | "textarea"                                => .rcdata
+        "style" | "xmp" | "iframe" | "noembed" | "noframes" => .rawtext
+        "script"                                            => .script_data
+        "plaintext"                                         => .plaintext
+        "noscript" =>
+            if scripting
+                .rawtext
+            else
+                .data
+        _ => .data
+
+# `text` read as a document, or as a fragment inside an element of
+# `context_space` named `context` where `context` is not empty.
+function run(text: str, scripting: bool, max_depth: i64, context: str, context_space: i64) -> Result
+    input = prepared(text)
+    lx: lexer.Lexer @= lexer.start(input)
+    b: builder.Builder @= builder.start(scripting: scripting, max_depth: max_depth)
+    stream_codes: [str] @= []
+    stream_places: [i64] @= []
+    stream_errors(input, @stream_codes, @stream_places)
+    root: i64 @= dom.NONE
+
+    if context != ""
+        none: [dom.Attr] = []
+        b.context @ insert.create(@b, space: context_space, name: context, attributes: none)
+        root @ insert.create(@b, space: dom.HTML, name: "html", attributes: none)
+        dom.append_child(@b.tree, parent: 0, child: root)
+        builder.push_open(@b, root)
+
+        if context_space == dom.HTML
+            lx.state @ context_state(context, scripting)
+
+            if context == "template"
+                builder.push_template_mode(@b, .in_template)
+
+            if context == "form"
+                b.form @ b.context
+        builder.reset_mode(@b)
+    codes: [str] @= []
+    tags: [str] @= []
+    places: [i64] @= []
+    stalls: i64 @= 0
+    stuck: i64 @= 0
+    from_stream: i64 @= 0
+    from_lexer: i64 @= 0
+    from_builder: i64 @= 0
+
+    while true
+        lx.foreign @ builder.is_foreign_now(b)
+        t = tokenizer.next(@lx, @stalls)
+        construct.process(@b, t, @stuck)
+
+        if b.switch_to != builder.NO_SWITCH
+            lx.state @ state_of(b.switch_to)
+            b.switch_to @ builder.NO_SWITCH
+
+        # The errors met for this token, in the order they were met: the
+        # stream's before the tokenizer reached them, then the tokenizer's,
+        # then tree construction's.
+        while from_stream < stream_places.len() && stream_places[from_stream] < lx.at
+            codes @ codes.push(stream_codes[from_stream])
+            tags @ tags.push("")
+            places @ places.push(stream_places[from_stream])
+            from_stream @ from_stream + 1
+
+        while from_lexer < lx.codes.len()
+            codes @ codes.push(lx.codes[from_lexer])
+            tags @ tags.push("")
+            places @ places.push(lx.places[from_lexer])
+            from_lexer @ from_lexer + 1
+
+        while from_builder < b.codes.len()
+            codes @ codes.push(b.codes[from_builder])
+            tags @ tags.push(b.tags[from_builder])
+            places @ places.push(b.places[from_builder])
+            from_builder @ from_builder + 1
+
+        if t.kind == token.EOF
+            break
+
+    insert.flush_text(@b)
+    b.tree.scripting @ scripting
+
+    if context != ""
+        b.tree.kinds[0] @ dom.FRAGMENT
+        dom.move_children(@b.tree, from: root, to: 0)
+        dom.detach(@b.tree, root)
+    lines: [i64] @= []
+    columns: [i64] @= []
+    starts = line_starts(input)
+
+    for place in places
+        line = line_of(starts, place)
+        lines @ lines.push(line + 1)
+        columns @ columns.push(column_of(s: input, from: starts[line], to: place) + 1)
+
+    return Result(tree: b.tree, codes: codes, tags: tags, lines: lines, columns: columns, stalls: stalls, stuck: stuck)
+
+# The byte index where each line of `s` begins, the first at 0.
+function line_starts(s: str) -> [i64]
+    starts: [i64] @= [0]
+
+    for i in range(from: 0, to: s.len())
+        if s[i] == '\n'
+            starts @ starts.push(i + 1)
+
+    return starts
+
+# The index of the line holding the byte index `at`, found by halving.
+function line_of(starts: [i64] lent, at: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= starts.len() - 1
+
+    while low < high
+        middle = (low + high + 1) / 2
+
+        if starts[middle] <= at
+            low @ middle
+        else
+            high @ middle - 1
+
+    return low
+
+# How many characters of `s` stand from the byte index `from` to `to`.
+function column_of(s: str, from: i64, to: i64) -> i64
+    count: i64 @= 0
+
+    end = if to > s.len()
+        s.len()
+    else
+        to
+
+    for i in range(from: from, to: end)
+        if s[i] < 0x80 || s[i] >= 0xc0
+            count @ count + 1
+
+    return count
+
+## Tests
+
+test "prepared: a byte order mark taken off, and every kind of line end read as a line feed"
+    bom = unicode.from_code_point(0xfeff).must()
+    assert prepared(bom + "a") == "a" && prepared("a\r\nb\rc\n") == "a\nb\nc\n" && prepared("") == ""
+
+test "stream_errors: a control, a C1 control and a noncharacter, and white space with none"
+    codes: [str] @= []
+    places: [i64] @= []
+    odd = unicode.from_code_point(0xfffe).must()
+    stream_errors("a\u{1}b\u{85}" + odd + "\t\n", @codes, @places)
+    assert codes == ["control-character-in-input-stream", "control-character-in-input-stream", "noncharacter-in-input-stream"]
+    assert places == [1, 3, 5]
+
+test "line_starts, line_of and column_of: the first line, a later one, and characters of more than one byte"
+    starts = line_starts("ab\ncé\nd")
+    assert starts == [0, 3, 7] && line_of(starts, 0) == 0 && line_of(starts, 4) == 1 && line_of(starts, 7) == 2
+    assert column_of(s: "cé!", from: 0, to: 3) == 2
+
+test "run: a document, its three elements put in, and no guard fired"
+    got = run(text: "<p>x", scripting: true, max_depth: 512, context: "", context_space: dom.HTML)
+    assert got.stalls == 0 && got.stuck == 0 && got.tree.kinds[0] == dom.DOCUMENT
+    assert got.codes.len() == 1 && got.codes[0] == "missing-doctype" && got.lines == [1] && got.columns == [1]

@@ -1,0 +1,22 @@
+# The cursor's moves by a count, checked: the one place a count below zero is
+# refused before a sequence is made.
+
+use term/internal/failure
+use term/internal/sgr
+
+# The sequence that moves the cursor `n` cells by `final`, or no text for 0;
+# fails `invalid` where `n` is below 0, `way` naming the move in the message.
+function moved(n: i64, final: str, way: str) -> str?
+    if n < 0
+        return failure.of(code: failure.INVALID, asked: f"moving the cursor {way} by {n}", why: "a count is 0 or more")
+    return ok(sgr.moved(n, final: final))
+
+test "moved: none, one, and a count below 0 refused with its way named"
+    assert moved(0, final: "A", way: "up").must() == ""
+    assert moved(1, final: "C", way: "forward").must() == "\u{1b}[1C"
+
+    match moved(-2, final: "B", way: "down")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "moving the cursor down by -2: a count is 0 or more"
