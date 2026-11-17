@@ -1,0 +1,174 @@
+# The rules changed: what becomes of elements, the checks of attributes and
+# style properties, the attributes refused, kept by a prefix or forced, the
+# classes kept, and the URL schemes; every function takes the rules with `@`
+# and changes them in place, as the face's builders ask.
+
+use html/sanitize/internal/rules
+use regex
+use strings
+use url
+
+# Sets what becomes of every element of `names`, written as a program writes
+# them; an element of the baseline is never allowed.
+function set_actions(@r: rules.Rules, names: [str], action: i64)
+    actions @= r.actions
+
+    for name in names
+        k = rules.key_of(name)
+
+        if k != "*" && !(action == rules.ALLOW && rules.is_unsafe(k))
+            actions[k] @ action
+
+    r.actions @ actions
+
+# Adds `check` to every attribute of `names` on every element of `on`; the
+# name `style` allows every style property instead, with values checked as
+# `check` says.
+function add_attribute_check(@r: rules.Rules, names: [str], on: [str], check: rules.Check)
+    attributes @= r.attributes
+    styles @= r.styles
+
+    for element in on
+        k = rules.key_of(element)
+
+        for name in names
+            written = if rules.is_foreign(k)
+                name
+            else
+                strings.to_lower_ascii(name)
+
+            at = if written == "style"
+                rules.pair(element: k, name: "*")
+            else
+                rules.pair(element: k, name: written)
+
+            found: [rules.Check] @= if written == "style"
+                styles[at].default([])
+            else
+                attributes[at].default([])
+            found @ found.push(check)
+
+            if written == "style"
+                styles[at] @ found
+            else
+                attributes[at] @ found
+
+    r.attributes @ attributes
+    r.styles @ styles
+
+# Adds `check` to every style property of `properties` on every element of
+# `on`.
+function add_style_check(@r: rules.Rules, properties: [str], on: [str], check: rules.Check)
+    styles @= r.styles
+
+    for element in on
+        for property in properties
+            at = rules.pair(element: rules.key_of(element), name: strings.to_lower_ascii(property))
+            found: [rules.Check] @= styles[at].default([])
+            found @ found.push(check)
+            styles[at] @ found
+
+    r.styles @ styles
+
+# Refuses every attribute of `names` on every element of `on`, whatever
+# allows it.
+function forbid(@r: rules.Rules, names: [str], on: [str])
+    forbidden @= r.forbidden
+
+    for element in on
+        for name in names
+            forbidden[rules.pair(element: rules.key_of(element), name: strings.to_lower_ascii(name))] @ true
+
+    r.forbidden @ forbidden
+
+# Keeps every attribute whose name begins with one of `prefixes` on every
+# element of `on`.
+function add_prefixes(@r: rules.Rules, prefixes: [str], on: [str])
+    found_prefixes @= r.prefixes
+
+    for element in on
+        k = rules.key_of(element)
+        found: [str] @= found_prefixes[k].default([])
+
+        for prefix in prefixes
+            found @ found.push(strings.to_lower_ascii(prefix))
+
+        found_prefixes[k] @ found
+
+    r.prefixes @ found_prefixes
+
+# Keeps the classes `names` on every element of `on`, and the `class`
+# attribute with them.
+function add_classes(@r: rules.Rules, on: [str], names: [str])
+    found_classes @= r.classes
+
+    for element in on
+        k = rules.key_of(element)
+        found: {str: bool} @= found_classes[k].default({})
+
+        for name in names
+            found[name] @ true
+
+        found_classes[k] @ found
+
+    r.classes @ found_classes
+
+# Sets `name` to `value` on every element of `on`.
+function add_forced(@r: rules.Rules, on: [str], name: str, value: str)
+    forced @= r.forced
+
+    for element in on
+        forced @ forced.push(
+            rules.Forced(element: rules.key_of(element), name: strings.to_lower_ascii(name), value: value)
+        )
+
+    r.forced @ forced
+
+# Keeps the URL schemes `schemes`, or refuses them where `keep` is false.
+function set_schemes(@r: rules.Rules, schemes: [str], keep: bool)
+    kept @= r.schemes
+    checks @= r.scheme_checks
+
+    for scheme in schemes
+        s = strings.to_lower_ascii(scheme)
+        kept[s] @ keep
+
+        if !keep
+            none: [(function(url.Url) -> bool)] = []
+            checks[s] @ none
+
+    r.schemes @ kept
+    r.scheme_checks @ checks
+
+# Lets `accepts` keep a URL of `scheme`.
+function add_scheme_check(@r: rules.Rules, scheme: str, accepts: (function(url.Url) -> bool))
+    checks @= r.scheme_checks
+    s = strings.to_lower_ascii(scheme)
+    found: [(function(url.Url) -> bool)] @= checks[s].default([])
+    found @ found.push(accepts)
+    checks[s] @ found
+    r.scheme_checks @ checks
+
+## Tests
+
+test "action_of: the baseline never allowed, a foreign element dropped unless allowed, an rules.HTML one as listed"
+    r @= rules.empty()
+    set_actions(@r, names: ["script", "B", "svg:svg", "math:mi"], action: rules.ALLOW)
+    assert rules.action_of(r, rules.HTML, "script") == rules.DROP && rules.action_of(r, rules.HTML, "b") == rules.ALLOW
+    assert rules.action_of(r, rules.SVG, "svg") == rules.ALLOW && rules.action_of(r, rules.SVG, "circle") == rules.DROP
+    assert rules.action_of(r, rules.MATHML, "mi") == rules.ALLOW && rules.action_of(r, rules.HTML, "span") == rules.UNWRAP
+    set_actions(@r, names: ["script"], action: rules.ESCAPE)
+    assert rules.action_of(r, rules.HTML, "script") == rules.ESCAPE && rules.action_of(r, rules.HTML, "style") == rules.DROP
+
+test "add_attribute_check: `style` named as an attribute allows every property"
+    r @= rules.empty()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    add_attribute_check(
+        @r,
+        names: ["STYLE", "title"],
+        on: ["P", "svg:circle"],
+        check: rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    )
+    assert r.styles["p *"].default([]).len() == 1 && r.attributes["p title"].default([]).len() == 1
+    assert r.attributes["svg:circle title"].default([]).len() == 1 && r.attributes["p style"].default([]).len() == 0

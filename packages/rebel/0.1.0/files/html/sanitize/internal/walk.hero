@@ -1,0 +1,269 @@
+# The walk that cleans a tree in place by the rules, node after node in
+# document order with no recursion, and the readings that check its answer:
+# the tree written, read again inside the context element as a browser would
+# read it, and cleaned again, until a reading takes nothing out.
+
+use html
+use html/sanitize/internal/attrs
+use html/sanitize/internal/build
+use html/sanitize/internal/links
+use html/sanitize/internal/rules
+use strings
+
+# The number of no node: the end of the walk.
+constant NONE: i64
+    -1
+
+# How many times a text is read before it is given up as text alone: the
+# first reading and seven that check the answer.
+constant ROUNDS: i64
+    8
+
+# The namespace number of `space`.
+function space_of(space: html.Space) -> i64
+    return match space
+        .html   => rules.HTML
+        .svg    => rules.SVG
+        .mathml => rules.MATHML
+
+# The node after `node` and everything it holds, in document order; `NONE`
+# where the tree ends there.
+function after(doc: html.Document, node: i64) -> i64
+    at: i64 @= node
+
+    while at != html.ROOT
+        match html.next_sibling(doc, at)
+            .ok n  => return n
+            .err _ => _ = 0
+
+        match html.parent(doc, at)
+            .ok p  => at @ p
+            .err _ => return NONE
+
+    return NONE
+
+# The first node inside `node`, or the node after it where it holds none.
+function descend(doc: html.Document, node: i64) -> i64
+    return match html.first_child(doc, node)
+        .ok c  => c
+        .err _ => after(doc, node)
+
+# The first node `node` holds that its unwrapping puts in its place: its
+# first child, or the first child of a `template`'s contents; `NONE` where it
+# holds nothing.
+function first_content(doc: html.Document, node: i64) -> i64
+    first = match html.first_child(doc, node)
+        .ok c  => c
+        .err _ => NONE
+
+    if first == NONE
+        return NONE
+
+    return match html.node_of(doc, first)
+        .fragment =>
+            match html.first_child(doc, first)
+                .ok c  => c
+                .err _ => NONE
+        .document | .doctype _ | .element _ | .text _ | .comment _ | .instruction _ => first
+
+# Whether the HTML element `name` has no end tag.
+function is_void(name: str) -> bool
+    return match name
+        "area" | "base" | "basefont" | "bgsound" | "br" | "col" | "embed" | "frame" | "hr" | "img" | "input" | "keygen" | "link" | "meta" | "param" | "source" | "track" | "wbr" => true
+        _ => false
+
+# The start tag of the element `name` with `attributes`, as text a reader is
+# shown: each value between `"`, escaped as `html.escape_attribute` escapes
+# it.
+function start_tag(name: str, attributes: [html.Attribute]) -> str
+    pieces: [str] @= ["<" + name]
+
+    for a in attributes
+        pieces @ pieces.push(" " + attrs.qualified(a) + "=\"" + html.escape_attribute(a.value) + "\"")
+
+    pieces @ pieces.push(">")
+    return pieces.join("")
+
+# Puts a text node holding `text` just before `sibling`.
+function put_before(@doc: html.Document, sibling: i64, text: str)
+    made = html.create_text(@doc, text)
+
+    match html.insert_before(@doc, node: made, sibling: sibling)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Puts a text node holding `text` just after `sibling`.
+function put_after(@doc: html.Document, sibling: i64, text: str)
+    made = html.create_text(@doc, text)
+
+    match html.insert_after(@doc, node: made, sibling: sibling)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+# Whether the comment `v` stays where comments do: one that holds `<`, `>` or
+# `--`, or begins with `-` or `[`, or ends with `-`, never does.
+function is_safe_comment(v: str) -> bool
+    return !(strings.contains(s: v, substr: "<") || strings.contains(s: v, substr: ">") || strings.contains(s: v, substr: "--") || strings.has_prefix(s: v, prefix: "-") || strings.has_prefix(s: v, prefix: "[") || strings.has_suffix(s: v, suffix: "-"))
+
+# Puts `kept` in place of the attributes `old` of the element `node`.
+function rewrite(@doc: html.Document, node: i64, old: [html.Attribute], kept: [links.Kept])
+    for a in old
+        html.remove_attribute(@doc, node: node, name: attrs.qualified(a))
+
+    for k in kept
+        html.set_attribute(@doc, node: node, name: k.name, value: k.value)
+
+# Cleans `doc` in place by `r` and answers how many things it took out,
+# changed or added; `first` on the first reading, where the program's
+# filters run.
+function clean(r: rules.Rules, @doc: html.Document, first: bool) -> i64
+    changes: i64 @= 0
+    at: i64 @= descend(doc, html.ROOT)
+
+    while at != NONE
+        next: i64 @= NONE
+
+        match html.node_of(doc, at)
+            .element e =>
+                space = space_of(e.space)
+                action = rules.action_of(r, space, e.name)
+
+                if action == rules.ALLOW
+                    outcome = attrs.cleaned(r, space, name: e.name, attributes: e.attributes, first: first)
+
+                    if outcome.changes > 0
+                        rewrite(@doc, node: at, old: e.attributes, kept: outcome.kept)
+                        changes @ changes + outcome.changes
+                    next @ descend(doc, at)
+                else if action == rules.DROP
+                    next @ after(doc, at)
+                    html.remove(@doc, at)
+                    changes @ changes + 1
+                else
+                    if action == rules.ESCAPE
+                        put_before(@doc, sibling: at, text: start_tag(e.name, e.attributes))
+
+                        if !is_void(e.name)
+                            put_after(@doc, sibling: at, text: "</" + e.name + ">")
+                    else if r.spaces
+                        put_before(@doc, sibling: at, text: " ")
+
+                        if !is_void(e.name)
+                            put_after(@doc, sibling: at, text: " ")
+                    inner = first_content(doc, at)
+                    beyond = after(doc, at)
+                    html.unwrap(@doc, at)
+                    changes @ changes + 1
+
+                    next @ if inner != NONE
+                        inner
+                    else
+                        beyond
+            .comment c =>
+                next @ after(doc, at)
+
+                if !(r.comments && is_safe_comment(c.v))
+                    html.remove(@doc, at)
+                    changes @ changes + 1
+            .doctype _ | .instruction _ =>
+                next @ after(doc, at)
+                html.remove(@doc, at)
+                changes @ changes + 1
+            .text _               => next @ after(doc, at)
+            .document | .fragment => next @ descend(doc, at)
+
+        at @ next
+
+    return changes
+
+# `text` cleaned by `r` and written: read inside the context element,
+# cleaned and written, then read again until a reading takes nothing out and
+# writes the same bytes, so that the answer is a text whose reading the rules
+# keep whole and which reads back to itself; where `ROUNDS` readings do not
+# settle, the text of the last alone, escaped.
+function cleaned_text(r: rules.Rules, text: str) -> str
+    doc: html.Document @= html.parse_fragment(text: text, context: r.context)
+    _ = clean(r, @doc, true)
+    written: str @= html.format(doc)
+    round: i64 @= 1
+
+    while round < ROUNDS
+        again: html.Document @= html.parse_fragment(text: written, context: r.context)
+        changes = clean(r, @again, false)
+        rewritten = html.format(again)
+
+        if changes == 0 && rewritten == written
+            return written
+        written @ rewritten
+        round @ round + 1
+
+    last = html.parse_fragment(text: written, context: r.context)
+    return html.escape_text(html.text_of(last, html.ROOT))
+
+# Whether `text`, read inside a `div`, holds a node that is not text.
+function has_markup(text: str) -> bool
+    doc = html.parse_fragment(text: text, context: "div")
+
+    for n in html.descendants(doc, html.ROOT)
+        match html.node_of(doc, n)
+            .text _                                                                       => _ = 0
+            .document | .fragment | .doctype _ | .element _ | .comment _ | .instruction _ => return true
+
+    return false
+
+## Tests
+
+test "clean: unwrapped, dropped with its content, a comment and an instruction out"
+    r = rules.empty()
+    doc: html.Document @= html.parse_fragment(
+        text: "a<b>b<i>c</i></b><script>x</script><!--c--><?pi d?>e",
+        context: "div"
+    )
+    assert clean(r, @doc, true) == 5 && html.format(doc) == "abce"
+
+test "clean: escaped tags, a void element's and a template's contents"
+    r @= rules.empty()
+    r.unlisted @ rules.ESCAPE
+    doc: html.Document @= html.parse_fragment(
+        text: "<u title='a\"b'>x</u><br><template><i>t</i></template>",
+        context: "div"
+    )
+    _ = clean(r, @doc, true)
+    assert html.format(doc) == "&lt;u title=\"a&amp;quot;b\"&gt;x&lt;/u&gt;&lt;br&gt;&lt;template&gt;&lt;i&gt;t&lt;/i&gt;&lt;/template&gt;"
+
+test "clean: spaces where tags were, none where an element went with its content"
+    r @= rules.empty()
+    r.spaces @ true
+    doc: html.Document @= html.parse_fragment(text: "<p>Hello</p><p>World</p>x<script>y</script>z<br>w", context: "div")
+    _ = clean(r, @doc, true)
+    assert html.format(doc) == " Hello  World xz w"
+
+test "clean: a foreign element dropped, an allowed one kept with its allowed attribute"
+    r @= rules.empty()
+    build.set_actions(@r, names: ["svg:svg", "p"], action: rules.ALLOW)
+    doc: html.Document @= html.parse_fragment(
+        text: "<svg viewBox='0 0 1 1'><circle r=1></circle><desc>d</desc></svg><math><mi>x</mi></math><p>y</p>",
+        context: "div"
+    )
+    _ = clean(r, @doc, true)
+    assert html.format(doc) == "<svg></svg><p>y</p>"
+
+test "clean: nothing to change on a second walk of what a first walk wrote"
+    r @= rules.empty()
+    build.set_actions(@r, names: ["b", "p"], action: rules.ALLOW)
+    doc: html.Document @= html.parse_fragment(text: "<p onclick=x>a<b>b<u>c</u></b></p>", context: "div")
+    _ = clean(r, @doc, true)
+    again: html.Document @= html.parse_fragment(text: html.format(doc), context: "div")
+    assert clean(r, @again, false) == 0 && html.format(again) == "<p>a<b>bc</b></p>"
+
+test "is_safe_comment: plain, a tag, two dashes, a bracket first and a dash last"
+    assert is_safe_comment(" plain ") && !is_safe_comment("<b>") && !is_safe_comment("a--b") && !is_safe_comment("[if IE]") && !is_safe_comment("a-")
+
+test "cleaned_text: the empty text, text alone, and a tree deeper than the reading keeps"
+    r = rules.empty()
+    assert cleaned_text(r, "") == "" && cleaned_text(r, "a &amp; b") == "a &amp; b"
+    assert cleaned_text(r, repeat("<div>", 3000) + "x") == "x"
+
+test "has_markup: text, a lone bracket, a reference, an element, a comment"
+    assert !has_markup("plain text") && !has_markup("a < b") && !has_markup("&amp;") && !has_markup("")
+    assert has_markup("<b>x</b>") && has_markup("<!-- c -->") && has_markup("Vec::<u8>::new()")

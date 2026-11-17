@@ -276,10 +276,11 @@ capability html/prettify  a tree written indented, one element to a line
   python  Tag.prettify
 
 capability html/sanitize  markup cleaned of what a policy forbids
-  heroes  refused: a sanitizer is a policy of its own, the standard's Sanitizer API included; this package reads and writes what the markup says, and `template` escapes by context
+  heroes  html/sanitize.clean, html/sanitize.Policy
   go      -
   rust    -
   python  html5lib filters.sanitizer
+  note    a sanitizer is a policy of its own, so it stands apart from the parser, in the subpackage `html/sanitize` (the author's decision of 2026-11-17), whose ledger answers Go's bluemonday, Rust's ammonia and Python's bleach and nh3; this package reads and writes what the markup says, and `template` escapes by context
 
 capability html/escape  text escaped to stand in a page
   heroes  html.escape, html.escape_text, html.escape_attribute

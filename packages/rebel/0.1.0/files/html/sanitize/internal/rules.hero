@@ -1,0 +1,317 @@
+# The policy as the package holds it: what becomes of each element, which
+# attributes and style properties stay and how their values are checked,
+# which URLs stay, and what is added to what stays. The face's `Policy` holds
+# one `Rules`, since a private module cannot name the face; every function
+# here reads or changes a `Rules` and nothing else.
+#
+# An element is named by its key: its local name for an HTML element, in
+# lower case, `svg:` before it for an SVG element and `math:` for a MathML
+# one, in the case the standard gives (`svg:foreignObject`). `*` stands for
+# every element. An attribute is named as it is written, `xlink:href` for
+# the XLink one.
+
+use regex
+use strings
+use url
+
+## What becomes of an element
+
+# The element stays, with the attributes the rules keep.
+constant ALLOW: i64
+    0
+
+# The element goes with everything inside it.
+constant DROP: i64
+    1
+
+# The element goes and what it holds stays in its place.
+constant UNWRAP: i64
+    2
+
+# The element's tags stay as text and what it holds stays.
+constant ESCAPE: i64
+    3
+
+## Namespaces
+
+# The HTML namespace.
+constant HTML: i64
+    0
+
+# The SVG namespace.
+constant SVG: i64
+    1
+
+# The MathML namespace.
+constant MATHML: i64
+    2
+
+## Checks
+
+# A check that accepts every value.
+constant ANY: i64
+    0
+
+# A check that accepts a value its pattern matches whole.
+constant PATTERN: i64
+    1
+
+# A check that accepts one of its values, compared exactly.
+constant VALUES: i64
+    2
+
+# A check that accepts a value its function accepts.
+constant WHERE: i64
+    3
+
+## Relative URLs
+
+# A relative URL is refused.
+constant REFUSED: i64
+    0
+
+# A relative URL is kept as it is written.
+constant KEPT: i64
+    1
+
+# A relative URL is resolved against the base and kept as the URL it names.
+constant RESOLVED: i64
+    2
+
+# A relative URL is resolved into the base, its root: one whose path begins
+# with `/` against the base, any other against the base and the root path.
+constant ROOTED: i64
+    3
+
+# How one value of an attribute or a style property is checked.
+record Check
+    # `ANY`, `PATTERN`, `VALUES` or `WHERE`.
+    kind: i64
+    # The pattern, one where `kind` is `PATTERN`, none otherwise.
+    patterns: [regex.Regex]
+    # The values accepted where `kind` is `VALUES`.
+    values: [str]
+    # The function asked where `kind` is `WHERE`; `accept_all` otherwise.
+    accepts: (function(str) -> bool)
+
+# An attribute set on every element of a key, whatever the input says.
+record Forced
+    # The element's key, or `*`.
+    element: str
+    # The attribute's name as written.
+    name: str
+    # Its value.
+    value: str
+
+# Everything a policy says.
+record Rules
+    # What becomes of each element named, by key: `ALLOW`, `DROP`, `UNWRAP`
+    # or `ESCAPE`.
+    actions: {str: i64}
+    # What becomes of an HTML element no entry names: `DROP`, `UNWRAP` or
+    # `ESCAPE`.
+    unlisted: i64
+    # The checks of each attribute kept, by `<element key> <name>`.
+    attributes: {str: [Check]}
+    # The name prefixes of attributes kept with any value, by element key.
+    prefixes: {str: [str]}
+    # Whether every `data-` attribute of a valid name stays.
+    data_attributes: bool
+    # The attributes refused whatever allows them, by `<element key> <name>`.
+    forbidden: {str: bool}
+    # The attributes set whatever the input says, in order.
+    forced: [Forced]
+    # The program's filters, called in order on every attribute kept.
+    filters: [(function(element: str, name: str, value: str) -> str?)]
+    # The classes kept, by element key, where the classes are listed.
+    classes: {str: {str: bool}}
+    # The text put before every `id`; empty for none.
+    id_prefix: str
+    # The checks of each style property kept, by `<element key> <property>`,
+    # `*` standing for every property.
+    styles: {str: [Check]}
+    # The URL schemes kept, in lower case.
+    schemes: {str: bool}
+    # The functions that may accept a URL of a scheme otherwise refused.
+    scheme_checks: {str: [(function(url.Url) -> bool)]}
+    # `REFUSED`, `KEPT`, `RESOLVED` or `ROOTED`.
+    relative: i64
+    # The URL a relative one is resolved against where `relative` is
+    # `RESOLVED`, the root where it is `ROOTED`.
+    base: url.Url
+    # The path, under the root, that a relative URL not beginning with `/` is
+    # found in where `relative` is `ROOTED`.
+    root_path: str
+    # Whether an `img`'s `src` may be a `data:` URL of a PNG, JPEG, GIF or
+    # WebP image.
+    data_images: bool
+    # The tokens added to the `rel` of every link.
+    link_rel: [str]
+    # Whether `link_rel` is added to the links that leave the site alone.
+    rel_external_only: bool
+    # The `target` set on every link; empty for none.
+    target: str
+    # Whether `target` is set on the links that leave the site alone.
+    target_external_only: bool
+    # Whether comments stay.
+    comments: bool
+    # Whether a space stands where an element was taken out.
+    spaces: bool
+    # The HTML element the text is read inside, as `innerHTML` reads it.
+    context: str
+
+# Accepts every value; the function of a check that asks none.
+function accept_all(_: str) -> bool
+    return true
+
+# The rules that keep text alone: no element, no attribute, no URL; an
+# element is unwrapped but the ones whose content is no text a reader wrote
+# (`script`, `style`, `title` and the others of the list), which go with what
+# they hold.
+function empty() -> Rules
+    actions: {str: i64} @= {}
+
+    for name in ["frame", "frameset", "iframe", "noembed", "noframes", "noscript", "object", "script", "style", "title"]
+        actions[name] @ DROP
+
+    no_checks: {str: [Check]} = {}
+    no_prefixes: {str: [str]} = {}
+    no_flags: {str: bool} = {}
+    no_forced: [Forced] = []
+    no_filters: [(function(element: str, name: str, value: str) -> str?)] = []
+    no_classes: {str: {str: bool}} = {}
+    no_scheme_checks: {str: [(function(url.Url) -> bool)]} = {}
+    no_tokens: [str] = []
+    return Rules(
+        actions: actions,
+        unlisted: UNWRAP,
+        attributes: no_checks,
+        prefixes: no_prefixes,
+        data_attributes: false,
+        forbidden: no_flags,
+        forced: no_forced,
+        filters: no_filters,
+        classes: no_classes,
+        id_prefix: "",
+        styles: no_checks,
+        schemes: no_flags,
+        scheme_checks: no_scheme_checks,
+        relative: REFUSED,
+        base: url.parse("http://localhost/").must(),
+        root_path: "",
+        data_images: false,
+        link_rel: no_tokens,
+        rel_external_only: false,
+        target: "",
+        target_external_only: false,
+        comments: false,
+        spaces: false,
+        context: "div"
+    )
+
+## Keys
+
+# The key of the element `name` of the namespace `space`.
+function key(space: i64, name: str) -> str
+    if space == SVG
+        return "svg:" + name
+
+    if space == MATHML
+        return "math:" + name
+    return name
+
+# Whether the key `k` names an SVG or a MathML element.
+function is_foreign(k: str) -> bool
+    return strings.has_prefix(s: k, prefix: "svg:") || strings.has_prefix(s: k, prefix: "math:")
+
+# The key a program's `name` writes: `svg:` and `math:` kept with the local
+# name as written, any other name in lower case.
+function key_of(name: str) -> str
+    if is_foreign(name) || name == "*"
+        return name
+    return strings.to_lower_ascii(name)
+
+# The key of an attribute check or a style check: the element's key, a
+# space, the name.
+function pair(element: str, name: str) -> str
+    return element + " " + name
+
+# Whether `element` names an element no policy keeps: the standard's safe
+# baseline (`base`, `embed`, `frame`, `iframe`, `object`, `script`, SVG's
+# `script` and `use`); `style`, HTML's and SVG's, whose sheet reaches the
+# whole page; and `plaintext`, which makes the rest of a page text where the
+# answer is written into one.
+function is_unsafe(element: str) -> bool
+    return match element
+        "base" | "embed" | "frame" | "iframe" | "object" | "plaintext" | "script" | "style" | "svg:script" | "svg:style" | "svg:use" => true
+        _ => false
+
+## Reading rules
+
+# What becomes of the element `name` of `space`: the baseline's elements and
+# an SVG or MathML element the rules do not allow go with what they hold,
+# whatever the rules say, but `plaintext`, which is unlisted if allowed.
+function action_of(r: Rules, space: i64, name: str) -> i64
+    k = key(space, name)
+
+    if is_unsafe(k)
+        otherwise = if k == "plaintext"
+            r.unlisted
+        else
+            DROP
+        got = r.actions[k].default(otherwise)
+
+        if got == ALLOW
+            return otherwise
+        return got
+
+    if space != HTML
+        got = r.actions[k].default(DROP)
+
+        if got == ALLOW
+            return ALLOW
+        return DROP
+    return r.actions[k].default(r.unlisted)
+
+# Whether `value` passes `check`.
+function passes(check: Check, value: str) -> bool
+    if check.kind == ANY
+        return true
+
+    if check.kind == PATTERN
+        return match regex.full_match(value, check.patterns[0])
+            .ok _  => true
+            .err _ => false
+
+    if check.kind == VALUES
+        for v in check.values
+            if v == value
+                return true
+
+        return false
+    return check.accepts(value)
+
+# Whether any check of `checks` passes `value`; false where there is none.
+function any_passes(checks: [Check], value: str) -> bool
+    for c in checks
+        if passes(c, value)
+            return true
+
+    return false
+
+## Tests
+
+test "key_of: an HTML name in lower case, a foreign one as written, every element as it is"
+    assert key_of("DIV") == "div" && key_of("svg:foreignObject") == "svg:foreignObject" && key_of("*") == "*"
+    assert key(SVG, "clipPath") == "svg:clipPath" && key(MATHML, "mi") == "math:mi" && key(HTML, "p") == "p"
+
+test "passes: every kind of check, the empty value included"
+    re = regex.compile("[0-9]+").must()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    assert passes(Check(kind: ANY, patterns: none, values: no_values, accepts: accept_all), "")
+    assert passes(Check(kind: PATTERN, patterns: [re], values: no_values, accepts: accept_all), "12")
+    assert !passes(Check(kind: PATTERN, patterns: [re], values: no_values, accepts: accept_all), "12a")
+    assert passes(Check(kind: VALUES, patterns: none, values: ["a", "b"], accepts: accept_all), "b")
+    assert !passes(Check(kind: VALUES, patterns: none, values: ["a"], accepts: accept_all), "A")
+    assert !any_passes([], "x")

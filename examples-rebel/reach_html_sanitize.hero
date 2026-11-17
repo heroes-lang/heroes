@@ -1,0 +1,11 @@
+# Reaches Rebel's `html/sanitize`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), the XSS vectors of OWASP's cheat sheet among
+# them. It cleans a comment a visitor wrote by the policy for user-generated
+# content and prints what stays.
+
+use <rebel>/html/sanitize
+
+function main()
+    print(
+        sanitize.clean(sanitize.ugc_policy(), "<p onclick=\"steal()\">Hi <a href=\"javascript:steal()\">there</a><script>steal()</script></p>")
+    )

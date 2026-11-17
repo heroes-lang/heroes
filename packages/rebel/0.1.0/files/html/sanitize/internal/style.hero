@@ -1,0 +1,278 @@
+# A `style` attribute read into its declarations, each checked against the
+# rules and written again: `property: value`, joined by `; `. A value stays
+# only where it can load nothing and run nothing: no backslash, comment,
+# angle bracket, brace or control character, and no function but those of
+# colours, gradients, transforms, filters and arithmetic.
+
+use html/sanitize/internal/build
+use html/sanitize/internal/rules
+use regex
+use strings
+
+# One declaration: a property and its value.
+record Declaration
+    # The property, in lower case but for a custom one, `--name`.
+    property: str
+    # The value, white space cut from both ends and `!important` taken off.
+    value: str
+
+# Whether `b` is ASCII white space as CSS counts it.
+function is_white(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == 12 || b == '\r'
+
+# `s` with its ASCII white space cut from both ends.
+function trim(s: str) -> str
+    first: i64 @= 0
+    last: i64 @= s.len()
+
+    while first < last && is_white(s[first])
+        first @ first + 1
+
+    while last > first && is_white(s[last - 1])
+        last @ last - 1
+
+    return s.slice(from: first, to: last)
+
+# The parts of `text` between the semicolons that stand outside a string, a
+# comment and parentheses, in order, each as written.
+function parts_of(text: str) -> [str]
+    parts: [str] @= []
+    start: i64 @= 0
+    at: i64 @= 0
+    quote: u8 @= 0
+    depth: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == 92
+            at @ at + 2
+        else if quote != 0
+            if b == quote
+                quote @ 0
+            at @ at + 1
+        else if b == '/' && at + 1 < text.len() && text[at + 1] == '*'
+            close = strings.index_of(s: text.slice(from: at + 2, to: text.len()), substr: "*/").default(text.len())
+            at @ at + 2 + close + 2
+        else
+            if b == '"' || b == 39
+                quote @ b
+            else if b == '('
+                depth @ depth + 1
+            else if b == ')' && depth > 0
+                depth @ depth - 1
+            else if b == ';' && depth == 0
+                parts @ parts.push(text.slice(from: start, to: at))
+                start @ at + 1
+            at @ at + 1
+
+    if start < text.len()
+        parts @ parts.push(text.slice(from: start, to: text.len()))
+    return parts
+
+# Whether `p` is a property name as written: letters, digits, `-` and `_`,
+# not empty, beginning with no digit.
+function is_property(p: str) -> bool
+    if p.len() == 0 || p[0] >= '0' && p[0] <= '9'
+        return false
+
+    for i in range(from: 0, to: p.len())
+        b = p[i]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-' || b == '_')
+            return false
+
+    return true
+
+# The declarations of the `style` attribute `text`, in order: a part with no
+# `:`, or whose property is no name, is left out; a value loses its
+# `!important`.
+function read(text: str) -> [Declaration]
+    found: [Declaration] @= []
+
+    for part in parts_of(text)
+        colon = strings.index_of(s: part, substr: ":").default(-1)
+
+        if colon > 0
+            written = trim(part.slice(from: 0, to: colon))
+            value = trim(part.slice(from: colon + 1, to: part.len()))
+
+            if is_property(written)
+                property = if strings.has_prefix(s: written, prefix: "--")
+                    written
+                else
+                    strings.to_lower_ascii(written)
+                found @ found.push(Declaration(property: property, value: without_important(value)))
+
+    return found
+
+# `value` without a final `!important`, in any ASCII case, white space before
+# and inside it.
+function without_important(value: str) -> str
+    at: i64 @= value.len()
+
+    while at > 0 && is_white(value[at - 1])
+        at @ at - 1
+
+    word = "important"
+
+    if at < word.len()
+        return value
+    start = at - word.len()
+
+    if strings.to_lower_ascii(value.slice(from: start, to: at)) != word
+        return value
+    bang: i64 @= start
+
+    while bang > 0 && is_white(value[bang - 1])
+        bang @ bang - 1
+
+    if bang == 0 || value[bang - 1] != '!'
+        return value
+    return trim(value.slice(from: 0, to: bang - 1))
+
+# Whether `name`, in lower case, is a function a style value may call: those
+# of colours, gradients, transforms, filters, arithmetic, counters and grids,
+# none of which loads anything.
+function is_safe_function(name: str) -> bool
+    return match name
+        "rgb" | "rgba" | "hsl" | "hsla" | "hwb" | "lab" | "lch" | "oklab" | "oklch" | "color" | "color-mix" | "light-dark" => true
+        "calc" | "min" | "max" | "clamp" | "round" | "mod" | "rem" | "abs" | "sign" | "sin" | "cos" | "tan" | "asin" | "acos" | "atan" | "atan2" | "pow" | "sqrt" | "hypot" | "log" | "exp" => true
+        "linear-gradient" | "radial-gradient" | "conic-gradient" | "repeating-linear-gradient" | "repeating-radial-gradient" | "repeating-conic-gradient" => true
+        "translate" | "translatex" | "translatey" | "translatez" | "translate3d" | "scale" | "scalex" | "scaley" | "scalez" | "scale3d" | "rotate" | "rotatex" | "rotatey" | "rotatez" => true
+        "rotate3d" | "skew" | "skewx" | "skewy" | "matrix" | "matrix3d" | "perspective" | "cubic-bezier" | "steps" | "linear" => true
+        "blur" | "brightness" | "contrast" | "drop-shadow" | "grayscale" | "hue-rotate" | "invert" | "opacity" | "saturate" | "sepia" => true
+        "counter" | "counters" | "fit-content" | "minmax" | "repeat" => true
+        _                                                            => false
+
+# Whether `b` may stand in a function's name.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-' || b == '_'
+
+# Whether `value` can load nothing and run nothing: not empty; no backslash,
+# `/*`, `<`, `>`, `{`, `}`, `;` or control character but white space; its
+# strings closed and its parentheses balanced; and every function it calls one
+# `is_safe_function` names.
+function is_safe(value: str) -> bool
+    if value.len() == 0 || strings.contains(s: value, substr: "/*")
+        return false
+    quote: u8 @= 0
+    depth: i64 @= 0
+    at: i64 @= 0
+
+    while at < value.len()
+        b = value[at]
+
+        if b == 92 || b == '<' || b == '>' || b == '{' || b == '}' || b == ';' || b == 127 || b < 32 && !is_white(b)
+            return false
+
+        if quote != 0
+            if b == quote
+                quote @ 0
+        else if b == '"' || b == 39
+            quote @ b
+        else if b == '('
+            start: i64 @= at
+
+            while start > 0 && is_name_byte(value[start - 1])
+                start @ start - 1
+
+            if start < at && !is_safe_function(strings.to_lower_ascii(value.slice(from: start, to: at)))
+                return false
+            depth @ depth + 1
+        else if b == ')'
+            if depth == 0
+                return false
+            depth @ depth - 1
+        at @ at + 1
+
+    return quote == 0 && depth == 0
+
+# Whether `property` never stays, whatever the rules say: `behavior` and
+# `-moz-binding`, which ran code in old browsers.
+function is_refused(property: str) -> bool
+    return property == "behavior" || property == "-moz-binding" || property == "-ms-behavior"
+
+# Whether `value` passes `check`, a style's: as `rules.passes`, but values
+# compared in any ASCII case.
+function passes(check: rules.Check, value: str) -> bool
+    if check.kind == rules.VALUES
+        lower = strings.to_lower_ascii(value)
+
+        for v in check.values
+            if strings.to_lower_ascii(v) == lower
+                return true
+
+        return false
+    return rules.passes(check, value)
+
+# The checks `r` holds for `property` on the element whose key is `element`:
+# its own and every element's, for the property and for every property.
+function checks_of(r: rules.Rules, element: str, property: str) -> [rules.Check]
+    found: [rules.Check] @= []
+
+    for at in [rules.pair(element: element, name: property), rules.pair(element: "*", name: property), rules.pair(element: element, name: "*"), rules.pair(element: "*", name: "*")]
+        for c in r.styles[at].default([])
+            found @ found.push(c)
+
+    return found
+
+# Whether `r` keeps any style property on the element whose key is `element`.
+function has_styles(r: rules.Rules, element: str) -> bool
+    for at in keys(r.styles)
+        if strings.has_prefix(s: at, prefix: element + " ") || strings.has_prefix(s: at, prefix: "* ")
+            return true
+
+    return false
+
+# The `style` attribute `text` with only the declarations `r` keeps on the
+# element whose key is `element`, written again; empty where none stays.
+function cleaned(r: rules.Rules, element: str, text: str) -> str
+    kept: [str] @= []
+
+    for d in read(text)
+        if !is_refused(d.property) && is_safe(d.value)
+            for c in checks_of(r, element: element, property: d.property)
+                if passes(c, d.value)
+                    kept @ kept.push(d.property + ": " + d.value)
+                    break
+
+    return kept.join("; ")
+
+## Tests
+
+test "read: two declarations, a name in capitals, white space, an empty part and a part with no colon"
+    got = read(" color:red;TEXT-ALIGN : center ;; width ; --Gap: 1px ")
+    assert got == [Declaration(property: "color", value: "red"), Declaration(property: "text-align", value: "center"), Declaration(property: "--Gap", value: "1px")]
+    assert read("") == [] && read(";") == []
+
+test "parts_of: a semicolon in a string, in parentheses, in a comment and after a backslash"
+    assert parts_of("a: 'x;y'; b: f(1;2); c: /* ; */ d; e: \\;f") == ["a: 'x;y'", " b: f(1;2)", " c: /* ; */ d", " e: \\;f"]
+
+test "without_important: in any case, with white space, and a word that only ends so"
+    assert without_important("red !important") == "red" && without_important("red ! IMPORTANT ") == "red"
+    assert without_important("unimportant") == "unimportant" && without_important("!important") == ""
+
+test "is_safe: a colour, a function, url, expression, an escape, a comment and an open string"
+    assert is_safe("red") && is_safe("rgb(1, 2, 3)") && is_safe("calc(100% - (2px * 3))") && is_safe("'Times New Roman', serif")
+    assert !is_safe("url(http://e.com/a.png)") && !is_safe("expression(alert(1))") && !is_safe("re\\64") && !is_safe("a /* b */")
+    assert !is_safe("'open") && !is_safe("f(1") && !is_safe("1)") && !is_safe("") && !is_safe("x\u{1}") && !is_safe("IMAGE-SET(x)")
+
+test "cleaned: kept, refused, a pattern in any case, a refused property and none left"
+    r @= rules.empty()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    build.add_style_check(
+        @r,
+        properties: ["color", "behavior"],
+        on: ["*"],
+        check: rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    )
+    build.add_style_check(
+        @r,
+        properties: ["float"],
+        on: ["p"],
+        check: rules.Check(kind: rules.VALUES, patterns: none, values: ["left"], accepts: rules.accept_all)
+    )
+    assert cleaned(r, element: "p", text: "color:red; float: LEFT; behavior: x; font-size: 2px") == "color: red; float: LEFT"
+    assert cleaned(r, element: "div", text: "float: left") == "" && has_styles(r, element: "div") && !has_styles(rules.empty(), element: "p")

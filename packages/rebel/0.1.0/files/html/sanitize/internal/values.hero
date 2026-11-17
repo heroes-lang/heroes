@@ -1,0 +1,245 @@
+# The checks of attribute values the ready policies use: numbers, the
+# keywords of alignment, direction and list types, a language tag, a date
+# and time, a name, and text a sentence holds. Each is a function of one
+# `str` answering `bool`, so that a `Check` holds it; none reads past its
+# value, and every one compares bytes or whole characters.
+
+use unicode
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# Whether `b` is ASCII white space as HTML counts it: tab, line feed, form
+# feed, carriage return and space.
+function is_white(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == 12 || b == '\r'
+
+# Whether `s` is one or more ASCII digits.
+function is_integer(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if !is_digit(s[i])
+            return false
+
+    return true
+
+# Whether `s` is one or more ASCII digits, a `%` after them or not.
+function is_number_or_percent(s: str) -> bool
+    if s.len() > 1 && s[s.len() - 1] == '%'
+        return is_integer(s.slice(from: 0, to: s.len() - 1))
+    return is_integer(s)
+
+# Whether `s` is one of `words`, compared in any ASCII case.
+function is_word_of(s: str, words: [str]) -> bool
+    for w in words
+        if s.len() == w.len()
+            same: bool @= true
+
+            for i in range(from: 0, to: s.len())
+                a = s[i]
+                b = w[i]
+
+                lower_a: u8 = if a >= 'A' && a <= 'Z'
+                    a + 32
+                else
+                    a
+
+                lower_b: u8 = if b >= 'A' && b <= 'Z'
+                    b + 32
+                else
+                    b
+
+                if lower_a != lower_b
+                    same @ false
+
+            if same
+                return true
+
+    return false
+
+# Whether `s` is a cell's horizontal alignment: `center`, `justify`, `left`,
+# `right` or `char`, in any ASCII case.
+function is_cell_align(s: str) -> bool
+    return is_word_of(s, ["center", "justify", "left", "right", "char"])
+
+# Whether `s` is a cell's vertical alignment: `baseline`, `bottom`, `middle`
+# or `top`, in any ASCII case.
+function is_cell_vertical_align(s: str) -> bool
+    return is_word_of(s, ["baseline", "bottom", "middle", "top"])
+
+# Whether `s` is a direction, `ltr` or `rtl`, in any ASCII case.
+function is_direction(s: str) -> bool
+    return is_word_of(s, ["ltr", "rtl"])
+
+# Whether `s` is an image's alignment: `left`, `right`, `top`, `texttop`,
+# `middle`, `absmiddle`, `baseline`, `bottom` or `absbottom`, in any ASCII
+# case.
+function is_image_align(s: str) -> bool
+    return is_word_of(s, ["left", "right", "top", "texttop", "middle", "absmiddle", "baseline", "bottom", "absbottom"])
+
+# Whether `s` is a list's marker type: `circle`, `disc`, `square`, `a`, `i` or
+# `1`, in any ASCII case.
+function is_list_type(s: str) -> bool
+    return is_word_of(s, ["circle", "disc", "square", "a", "i", "1"])
+
+# Whether `s` is a header cell's scope: `row`, `col`, `rowgroup` or
+# `colgroup`, in any ASCII case.
+function is_scope(s: str) -> bool
+    return is_word_of(s, ["row", "col", "rowgroup", "colgroup"])
+
+# Whether `s` is an area's shape: `default`, `rect`, `circle` or `poly`, or
+# the old `circ`, `polygon` and `rectangle`, in any ASCII case.
+function is_shape(s: str) -> bool
+    return is_word_of(s, ["default", "rect", "circle", "poly", "circ", "polygon", "rectangle"])
+
+# Whether `s` is an area's coordinates: numbers, a `-` or `.` in them, parted
+# by commas and spaces; not empty.
+function is_coords(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for i in range(from: 0, to: s.len())
+        b = s[i]
+
+        if !(is_digit(b) || b == ',' || b == '.' || b == '-' || b == ' ')
+            return false
+
+    return true
+
+# Whether `s` is a `details` element's `open`: empty, or `open` in any ASCII
+# case.
+function is_open(s: str) -> bool
+    return s == "" || is_word_of(s, ["open"])
+
+# Whether `s` is a reference to a map by its name: `#` and at least one
+# character, none of them white space.
+function is_map_reference(s: str) -> bool
+    return s.len() > 1 && s[0] == '#' && is_name(s.slice(from: 1, to: s.len()))
+
+# Whether `s` is a name an `id` may hold: at least one character, none of
+# them ASCII white space.
+function is_name(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if is_white(s[i])
+            return false
+
+    return true
+
+# Whether `s` is a language tag: subtags of one to eight ASCII letters and
+# digits joined by `-`, the first two to eight letters, as `en`, `en-US`,
+# `zh-Hant-TW`; or empty, which says the language is unknown.
+function is_language(s: str) -> bool
+    if s == ""
+        return true
+    at: i64 @= 0
+    first: bool @= true
+
+    while at <= s.len()
+        end: i64 @= at
+
+        while end < s.len() && s[end] != '-'
+            if !(is_letter(s[end]) || is_digit(s[end]) && !first)
+                return false
+            end @ end + 1
+
+        size = end - at
+
+        if size < 1 || size > 8 || first && size < 2
+            return false
+        first @ false
+        at @ end + 1
+
+    return true
+
+# Whether `s` is a date, a time, a date and a time or a duration as HTML's
+# `datetime` writes them: digits, `-`, `:`, `.`, `+`, `T`, `Z`, `W`, a space,
+# and in a duration `P`, `D`, `H`, `M` and `S`; it begins with a digit or a
+# `P` and is at most 64 bytes.
+function is_datetime(s: str) -> bool
+    if s.len() == 0 || s.len() > 64 || !(is_digit(s[0]) || s[0] == 'P')
+        return false
+
+    for i in range(from: 0, to: s.len())
+        b = s[i]
+
+        if !(is_digit(b) || b == '-' || b == ':' || b == '.' || b == '+' || b == ' ' || b == 'T' || b == 'Z' || b == 'W' || b == 'P' || b == 'D' || b == 'H' || b == 'M' || b == 'S')
+            return false
+
+    return true
+
+# Whether `s` holds the letters, numbers and white space of a sentence and its
+# plain punctuation alone: `-`, `_`, `'`, `,`, `[`, `]`, `!`, `.`, `/`, `\`,
+# `(` and `)`; the empty text included. So no `<`, `>`, `"`, `&`, `:` or
+# `=`.
+function is_paragraph(s: str) -> bool
+    for c in s.chars()
+        b = c[0]
+
+        if c.len() == 1
+            if !(is_letter(b) || is_digit(b) || is_white(b) || b == '-' || b == '_' || b == 39 || b == ',' || b == '[' || b == ']' || b == '!' || b == '.' || b == '/' || b == 92 || b == '(' || b == ')')
+                return false
+        else if !(unicode.is_letter(c) || unicode.is_number(c) || unicode.is_space(c))
+            return false
+
+    return true
+
+# Whether `s` is tokens parted by white space: letters, numbers, white space,
+# `_` and `-`, at least one character.
+function is_tokens(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for c in s.chars()
+        b = c[0]
+
+        if c.len() == 1
+            if !(is_letter(b) || is_digit(b) || is_white(b) || b == '_' || b == '-')
+                return false
+        else if !(unicode.is_letter(c) || unicode.is_number(c) || unicode.is_space(c))
+            return false
+
+    return true
+
+## Tests
+
+test "is_integer: empty, one digit, a sign, a space and a large number"
+    assert !is_integer("") && is_integer("0") && !is_integer("-1") && !is_integer("1 ") && is_integer("99999999999999999999")
+
+test "is_number_or_percent: a number, a percent, a lone percent and a fraction"
+    assert is_number_or_percent("10") && is_number_or_percent("50%") && !is_number_or_percent("%") && !is_number_or_percent("1.5")
+
+test "is_word_of: any ASCII case, a longer word and the empty text"
+    assert is_cell_align("CENTER") && is_cell_vertical_align("Top") && is_direction("rtl") && !is_direction("rtll")
+    assert is_image_align("absmiddle") && is_list_type("A") && is_list_type("I") && !is_list_type("b") && !is_scope("")
+    assert is_shape("poly") && is_scope("colgroup") && is_open("") && is_open("OPEN") && !is_open("closed")
+
+test "is_coords: numbers and commas, a letter and the empty text"
+    assert is_coords("1,2, 3.5,-4") && !is_coords("1,a") && !is_coords("")
+
+test "is_name: white space, a character of two bytes and the empty text"
+    assert is_name("a1") && is_name("é") && !is_name("a b") && !is_name("") && is_map_reference("#m") && !is_map_reference("#")
+
+test "is_language: a language, a region, a script, a digit first and a long subtag"
+    assert is_language("en") && is_language("en-US") && is_language("zh-Hant-TW") && is_language("")
+    assert !is_language("e") && !is_language("1a") && !is_language("en-") && !is_language("abcdefghi") && !is_language("en US")
+
+test "is_datetime: a date, a time with its zone, a duration, a letter and the empty text"
+    assert is_datetime("2020-01-01") && is_datetime("2020-01-01T10:00:00.5+02:00") && is_datetime("PT4H")
+    assert !is_datetime("") && !is_datetime("tomorrow") && !is_datetime("2020-01-01<") && !is_datetime(repeat("1", 65))
+
+test "is_paragraph: letters of more than one byte, punctuation kept and refused"
+    assert is_paragraph("") && is_paragraph("Ciao, è un po' (strano) [x]! a/b\\c.") && is_paragraph("日本語 テキスト")
+    assert !is_paragraph("a:b") && !is_paragraph("a<b") && !is_paragraph("a\"b") && !is_paragraph("a=b") && !is_paragraph("a&b")
+
+test "is_tokens: words, a character of two bytes, punctuation and the empty text"
+    assert is_tokens("h1 h2_x-y") && is_tokens("é") && !is_tokens("") && !is_tokens("a,b")

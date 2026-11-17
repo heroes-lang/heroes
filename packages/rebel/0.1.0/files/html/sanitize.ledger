@@ -1,0 +1,343 @@
+# The ledger of `html/sanitize`: what the HTML sanitizers of the three
+# languages let a program do, one block per capability, and what Rebel
+# answers. None of the three standard libraries has one, so the yardstick is
+# the author's of 2026-11-17: Go's `github.com/microcosm-cc/bluemonday`
+# v1.0.27 (2,859 importers), Rust's `ammonia` 4.2.5, Python's `bleach` 6.4.0
+# and `nh3` 0.3.8 (ammonia's binding), and the WHATWG HTML standard's
+# Sanitizer API as the measure of what a sanitizer must hold, named in the
+# notes. The lists are this machine's, 2026-11-17: `go doc -all` and
+# `go doc -all -u` of bluemonday fetched into the scratch folder's module
+# cache, `dir()` and the signatures of bleach and nh3 installed in a virtual
+# environment of the scratch folder, the item list and the `Builder` methods
+# docs.rs prints for ammonia 4.2.5, and the standard's section 8.6, "HTML
+# sanitization", fetched from html.spec.whatwg.org (dynamic-markup-insertion
+# and the pages of each element's sanitization category).
+#
+# The expected answers of the tests were observed: bluemonday's by a Go
+# program of the scratch folder, nh3's and bleach's by Python there. The
+# elements and attributes of `ugc_policy` are bluemonday's `UGCPolicy` as it
+# answered 144 element names and 160 attribute names with twelve values each;
+# its value checks are this package's own, the ones bluemonday exports named
+# as it names them. The XSS vectors of OWASP's cheat sheet (395 inputs, the
+# module `html/sanitize/internal/owasp`) were cleaned by the three ready
+# policies, and every answer was read by Go's `golang.org/x/net/html`, which
+# found nothing a policy refuses and wrote back the same tree, its escapes
+# aside; the answers of
+# the policy for user-generated content agree with nh3's, given the same
+# lists, on 391 of the 395, the four others noted below.
+
+capability sanitize/clean  a fragment from outside cleaned by a policy and written as text
+  heroes  html/sanitize.clean
+  go      Policy.Sanitize, Policy.SanitizeBytes
+  rust    clean, Builder::clean, Document, Document::to_string, Document::write_to
+  python  bleach.clean, bleach.Cleaner, Cleaner.clean, nh3.clean, nh3.Cleaner, nh3.Cleaner.clean, html5lib filters.sanitizer
+  note    read as a browser reads it, by `html` (the WHATWG tree construction), as ammonia and html5lib read it; bluemonday filters the tokens of a text and builds no tree, so its answer keeps a tag unclosed where the input did (observed: `<b>unclosed <i>nest</b> after` stays so, here `<b>unclosed <i>nest</i></b><i> after</i>`) and writes a table with no `tbody`. Bytes are text once read as UTF-8, so `SanitizeBytes` is `clean` after the language's conversion
+
+capability sanitize/settled  the answer read again and cleaned again until a reading takes nothing out (mutation XSS)
+  heroes  html/sanitize.clean
+  go      -
+  rust    -
+  python  -
+  note    none of the three reads its answer again; the standard's 8.6.6.4 names mutation XSS and its own Sanitizer works on the tree it parses, never on a text. Here the answer is read inside the context element and cleaned again, at most eight times, until a reading takes nothing out and writes the same bytes; so `clean(p, clean(p, x)) == clean(p, x)`, held by a test for every ready policy and every OWASP vector. Where eight readings do not settle, the answer is the text alone, escaped
+
+capability sanitize/tree  the cleaned fragment as a tree a program walks
+  heroes  html/sanitize.clean_fragment
+  go      -
+  rust    Builder::clean (its `Document`)
+  python  -
+  note    the tree of the settled answer, read as a browser reads it; the standard's `setHTML` and `parseHTML` answer a tree too
+
+capability sanitize/stream  a stream cleaned as it is read
+  heroes  refused: the tree is built from the whole text and the answer is read again before it is given, so nothing can be written before the last byte is read; a stream is read whole by `io` first
+  go      Policy.SanitizeReader, Policy.SanitizeReaderToWriter
+  rust    Builder::clean_from_reader
+  python  -
+
+capability sanitize/policy  a policy held as a value, made and changed
+  heroes  html/sanitize.Policy, html/sanitize.strict_policy
+  go      Policy, NewPolicy
+  rust    Builder, Builder::new, Builder::empty
+  python  bleach.Cleaner, nh3.Cleaner
+  note    a value, copied like any other, changed by functions that take it with `@`; the standard's `Sanitizer` and its `SanitizerConfig`. `strict_policy` is the empty policy every other starts from, as bluemonday's `NewPolicy`
+
+capability sanitize/strict  a ready policy that keeps the text alone
+  heroes  html/sanitize.strict_policy
+  go      StrictPolicy, StripTagsPolicy
+  rust    Builder::empty
+  python  -
+  note    as bluemonday's: every element unwrapped but frame, frameset, iframe, noembed, noframes, noscript, object, script, style and title, which go with their content (observed); an SVG or MathML element goes with its content too, where bluemonday keeps the text of both (observed `xafter` and `tafter`)
+
+capability sanitize/ugc  a ready policy for user-generated content
+  heroes  html/sanitize.ugc_policy
+  go      UGCPolicy
+  rust    Builder::default
+  python  nh3.ALLOWED_TAGS, nh3.ALLOWED_ATTRIBUTES, nh3.ALLOWED_URL_SCHEMES, nh3.CLEAN_CONTENT_TAGS, bleach.ALLOWED_TAGS, bleach.ALLOWED_ATTRIBUTES, bleach.ALLOWED_PROTOCOLS
+  note    bluemonday's elements and attributes, observed, with `nofollow` on every link. Where they differ, decided: an `a` or `img` left with no attribute stays, as ammonia keeps it, where bluemonday takes it out; the `cite` of `del` and `ins` is checked as the URL it is, where bluemonday checks it as text (observed `x` kept, `http://e.com/a` refused); `rel` is added only to a link that has an `href`, where nh3 adds it to every `a`; a relative URL that `url` cannot read (`java\0script:...`, a colon in its first segment) is refused, where nh3 keeps it. nh3's default, ammonia's (75 elements, 25 schemes, `noopener noreferrer`) and bleach's (12 elements) are their own lists, not offered: a program builds either from `strict_policy`
+
+capability sanitize/rich-text  a ready policy for rich text, the standard's default
+  heroes  html/sanitize.rich_text_policy
+  go      -
+  rust    -
+  python  -
+  note    the standard's built-in safe default configuration (8.6.5): its HTML elements of the category Default with their attributes, its MathML and SVG table, its global attributes. Its URLs are `http`, `https`, `mailto` and relative ones, where the standard's keeps every scheme but `javascript`: a `data:` or `blob:` link is refused here
+
+capability sanitize/elements  elements allowed by name
+  heroes  html/sanitize.allow_elements
+  go      Policy.AllowElements, Policy.AllowNoAttrs, attrPolicyBuilder.AllowNoAttrs
+  rust    Builder::tags, Builder::add_tags
+  python  bleach.clean(tags=), nh3.clean(tags=)
+  note    an SVG element `svg:name`, a MathML one `math:name`, as the standard's `SanitizerElementNamespace` names them; an element allowed stays with no attribute, so bluemonday's `AllowNoAttrs` has nothing to do. The standard's `allowElement`
+
+capability sanitize/elements-matching  elements allowed by a pattern over their names
+  heroes  refused: an element is named or not; a pattern lets in elements nobody named, custom elements a page's scripts may act on (the standard's 8.6.6.3, script gadgets)
+  go      Policy.AllowElementsMatching, attrPolicyBuilder.OnElementsMatching, stylePolicyBuilder.OnElementsMatching
+  rust    -
+  python  -
+
+capability sanitize/drop  an element taken out with everything inside it
+  heroes  html/sanitize.remove_elements, html/sanitize.Removal
+  go      Policy.SkipElementsContent
+  rust    Builder::clean_content_tags, Builder::add_clean_content_tags, Builder::rm_clean_content_tags
+  python  nh3.clean(clean_content_tags=), nh3.CLEAN_CONTENT_TAGS
+  note    the standard's `removeElement`. An SVG or MathML element not allowed always goes with its content: the standard's non-replaceable list keeps `svg` and `math` from being unwrapped, since what they hold is read by other rules once their tags are gone
+
+capability sanitize/unwrap  an element taken out and its content kept
+  heroes  html/sanitize.remove_elements, html/sanitize.set_unlisted
+  go      Policy.AllowElementsContent
+  rust    Builder::rm_tags
+  python  bleach.clean(strip=True)
+  note    what becomes of an element no list names is the policy's: unwrapped in the ready ones, as ammonia and nh3 do; the standard's `replaceElementWithChildren`
+
+capability sanitize/escape  an element not allowed written as text
+  heroes  html/sanitize.remove_elements, html/sanitize.set_unlisted
+  go      -
+  rust    -
+  python  bleach.clean(strip=False)
+  note    bleach's default (observed `<u>y</u>` written `&lt;u&gt;y&lt;/u&gt;`). bleach shows the tag as the input wrote it; the tree keeps no source, so the tag is written again, each value between `"` (`id=y` is shown `id="y"`)
+
+capability sanitize/unsafe  elements that run a script kept where a policy asks
+  heroes  refused: a policy that can keep a script is no sanitizer; `html` reads and writes such markup. The standard's safe baseline (base, embed, frame, iframe, object, script, SVG script and use) is never kept, nor `style` and SVG `style`, whose sheet reaches the whole page, nor `plaintext`, which would make the rest of a page text, nor an event handler or `srcdoc`
+  go      Policy.AllowUnsafe
+  rust    -
+  python  -
+  note    the standard's `removeUnsafe` and its safe methods, applied whatever the policy says; bluemonday refuses `script` and `style` unless `AllowUnsafe`. Naming one of them in `allow_elements` changes nothing, as the face says
+
+capability sanitize/iframes  inline frames kept with a sandbox
+  heroes  refused: `iframe` is in the standard's safe baseline: it loads a page of its own, and its `srcdoc` is HTML
+  go      Policy.AllowIFrames, Policy.RequireSandboxOnIFrame, SandboxValue, SandboxAllowDownloads, SandboxAllowDownloadsWithoutUserActivation, SandboxAllowForms, SandboxAllowModals, SandboxAllowOrientationLock, SandboxAllowPointerLock, SandboxAllowPopups, SandboxAllowPopupsToEscapeSandbox, SandboxAllowPresentation, SandboxAllowSameOrigin, SandboxAllowScripts, SandboxAllowStorageAccessByUserActivation, SandboxAllowTopNavigation, SandboxAllowTopNavigationByUserActivation
+  rust    -
+  python  -
+
+capability sanitize/attributes  attributes allowed by name, on some elements or on every one
+  heroes  html/sanitize.allow_attributes, html/sanitize.EVERY_ELEMENT
+  go      Policy.AllowAttrs, attrPolicyBuilder.OnElements, attrPolicyBuilder.Globally
+  rust    Builder::tag_attributes, Builder::add_tag_attributes, Builder::generic_attributes, Builder::add_generic_attributes
+  python  bleach.clean(attributes=) as a dict or a list, nh3.clean(attributes=)
+  note    `*` for every element, as bleach and nh3 write it; the standard's `allowAttribute` and an element's `attributes`. An event handler and `srcdoc` never stay
+
+capability sanitize/attribute-pattern  an attribute kept where a pattern matches its value
+  heroes  html/sanitize.allow_attributes_matching
+  go      attrPolicyBuilder.Matching
+  rust    -
+  python  -
+  note    `regex` matches the whole value, so a pattern needs no anchors where bluemonday's do
+
+capability sanitize/attribute-values  an attribute kept where its value is one of a list
+  heroes  html/sanitize.allow_attribute_values
+  go      -
+  rust    Builder::tag_attribute_values, Builder::add_tag_attribute_values, Builder::rm_tag_attribute_values
+  python  nh3.clean(tag_attribute_values=)
+  note    compared exactly, as nh3 compares (observed with its documentation's `role` example)
+
+capability sanitize/attribute-function  an attribute kept where a function of the program accepts its value
+  heroes  html/sanitize.allow_attributes_where
+  go      -
+  rust    -
+  python  bleach.clean(attributes=) as a function, bleach.sanitizer.attribute_filter_factory
+  note    a top-level function of the program, the language having no closure
+
+capability sanitize/attribute-filter  every attribute kept rewritten or taken out by a function of the program
+  heroes  html/sanitize.filter_attributes
+  go      Policy.RewriteSrc
+  rust    Builder::attribute_filter, AttributeFilter, UrlRelative::Custom, UrlRelativeEvaluate, Builder::is_url_relative_custom
+  python  nh3.clean(attribute_filter=), nh3.clean(url_relative=) as a function
+  note    run before the URL, style and class of the attribute are checked, so what it writes is checked as any other value (a test proxies an image's `src` and still refuses it once `https` is forbidden); run on the first reading alone, as a rewrite read again would be rewritten twice
+
+capability sanitize/attribute-prefixes  attributes kept by the beginning of their name
+  heroes  html/sanitize.allow_attribute_prefixes
+  go      -
+  rust    Builder::generic_attribute_prefixes, Builder::add_generic_attribute_prefixes, Builder::rm_generic_attribute_prefixes
+  python  nh3.clean(generic_attribute_prefixes=)
+  note    past the prefix, one or more lower-case ASCII letters, digits, `-`, `_` and `.`, where nh3 keeps `aria-` with nothing after it (observed)
+
+capability sanitize/data-attributes  every `data-` attribute kept
+  heroes  html/sanitize.allow_data_attributes
+  go      Policy.AllowDataAttributes
+  rust    -
+  python  -
+  note    the standard's `setDataAttributes`; `data-` with nothing after it goes, as bluemonday drops it (observed)
+
+capability sanitize/forbid-attributes  attributes taken out whatever else allows them
+  heroes  html/sanitize.forbid_attributes
+  go      -
+  rust    Builder::rm_tag_attributes, Builder::rm_generic_attributes
+  python  -
+  note    the standard's `removeAttribute` and an element's `removeAttributes`
+
+capability sanitize/forced-attributes  an attribute set on every element of a kind, whatever the input says
+  heroes  html/sanitize.force_attribute
+  go      Policy.RequireCrossOriginAnonymous
+  rust    Builder::set_tag_attribute_value, Builder::set_tag_attribute_values, Builder::rm_set_tag_attribute_value
+  python  nh3.clean(set_tag_attribute_values=)
+  note    bluemonday's `RequireCrossOriginAnonymous` is `force_attribute` of `crossorigin` on `audio`, `img`, `link`, `script` and `video` (its documentation); an event handler is never set, and a URL set is checked as any other
+
+capability sanitize/classes  the classes an element keeps, by name
+  heroes  html/sanitize.allow_classes
+  go      Policy.AllowStyling
+  rust    Builder::allowed_classes, Builder::add_allowed_classes, Builder::rm_allowed_classes
+  python  nh3.clean(allowed_classes=)
+  note    bluemonday's `AllowStyling` keeps every class, which `allow_attributes` of `class` does. Where no listed class is left the attribute goes, where nh3 writes `class=""` (observed)
+
+capability sanitize/id-prefix  every `id` kept prefixed, against DOM clobbering
+  heroes  html/sanitize.prefix_ids
+  go      -
+  rust    Builder::id_prefix
+  python  nh3.clean(id_prefix=)
+  note    prefixed on the first reading; the readings that check the answer prefix only an `id` that lacks the prefix, so the answer settles. The standard's 8.6.6.2 names DOM clobbering
+
+capability sanitize/styles  the properties of a `style` attribute kept by name, and their values checked
+  heroes  html/sanitize.allow_styles, html/sanitize.allow_styles_matching, html/sanitize.allow_style_values, html/sanitize.allow_styles_where
+  go      Policy.AllowStyles, stylePolicyBuilder.Globally, stylePolicyBuilder.OnElements, stylePolicyBuilder.Matching, stylePolicyBuilder.MatchingEnum, stylePolicyBuilder.MatchingHandler
+  rust    Builder::filter_style_properties
+  python  bleach.css_sanitizer.CSSSanitizer, bleach.css_sanitizer.ALLOWED_CSS_PROPERTIES, bleach.css_sanitizer.ALLOWED_SVG_PROPERTIES, bleach.clean(css_sanitizer=), bleach.sanitizer.NoCssSanitizerWarning, nh3.clean(filter_style_properties=)
+  note    written again `property: value` joined by `; `, as bluemonday writes it (observed), the property in lower case and `!important` taken off as bluemonday takes it off. A value that calls `url()`, `image-set()`, `expression()` or any function but those of colours, gradients, transforms, filters and arithmetic never stays, nor one with a backslash or a comment: bluemonday keeps `background: url(http://...)` and nh3 keeps `color: url("x")` (observed), which load what the author of the fragment chooses. No ready list of properties as bleach's: a program names its own
+
+capability sanitize/url-schemes  the URL schemes kept in every attribute that holds a URL
+  heroes  html/sanitize.allow_url_schemes, html/sanitize.forbid_url_schemes
+  go      Policy.AllowURLSchemes, Policy.RequireParseableURLs
+  rust    Builder::url_schemes, Builder::add_url_schemes, Builder::rm_url_schemes
+  python  bleach.clean(protocols=), nh3.clean(url_schemes=)
+  note    the scheme read as the standard's URL parser reads it (controls and spaces cut, tabs and line breaks taken out), so every spelling of `javascript:` in OWASP's cheat sheet is refused; `javascript` and `vbscript` never stay, the standard's `setJavascriptURLs(false)`. A URL kept is one `url.parse_loose` reads, as bluemonday's `RequireParseableURLs`; it is written in the form the browser reads
+
+capability sanitize/url-schemes-matching  URL schemes kept by a pattern
+  heroes  refused: a scheme is named or not; a pattern lets in schemes nobody named
+  go      Policy.AllowURLSchemesMatching
+  rust    -
+  python  -
+
+capability sanitize/url-scheme-function  URLs of a scheme kept where a function of the program accepts them
+  heroes  html/sanitize.allow_url_scheme_where
+  go      Policy.AllowURLSchemeWithCustomPolicy
+  rust    -
+  python  -
+  note    the function reads the URL as `url.Url`
+
+capability sanitize/relative-urls  relative URLs refused, kept, resolved against a base, or put under a root
+  heroes  html/sanitize.set_relative_urls, html/sanitize.Relative
+  go      Policy.AllowRelativeURLs
+  rust    Builder::url_relative, UrlRelative, UrlRelative::Deny, UrlRelative::PassThrough, UrlRelative::RewriteWithBase, UrlRelative::RewriteWithRoot, Builder::is_url_relative_deny, Builder::is_url_relative_pass_through, Builder::is_url_relative_rewrite_with_base, Builder::is_url_relative_rewrite_with_root, Builder::url_relative_base
+  python  nh3.clean(url_relative=)
+  note    resolved by `url.resolve`, and the scheme of the URL it names checked as any other. Put under a root as ammonia's `RewriteWithRoot` puts it, its documentation's table and nh3's answers observed: `/x` against the root, any other against the root and the path, `..` still climbing out of the root (observed with nh3), ammonia's documentation saying the root makes content portable and stops no link. `//host/x` is relative here as it is to ammonia
+
+capability sanitize/data-images  images written into the page as `data:` URLs
+  heroes  html/sanitize.allow_data_images
+  go      Policy.AllowDataURIImages
+  rust    -
+  python  -
+  note    PNG, JPEG, GIF and WebP in base 64, as bluemonday's documentation names them; bluemonday also keeps `image/svg+xml` (observed), which its documentation does not name
+
+capability sanitize/link-rel  tokens added to the `rel` of every link, or of those that leave the site
+  heroes  html/sanitize.add_link_rel
+  go      Policy.RequireNoFollowOnLinks, Policy.RequireNoFollowOnFullyQualifiedLinks, Policy.RequireNoReferrerOnLinks, Policy.RequireNoReferrerOnFullyQualifiedLinks
+  rust    Builder::link_rel, Builder::get_link_rel
+  python  nh3.clean(link_rel=)
+  note    on `a`, `area` and `link` that keep an `href`, after the tokens a kept `rel` holds; a link whose `target` opens another window gets `noopener` whatever the policy says. A link leaves the site where it names a host
+
+capability sanitize/link-target  the `target` of every link, or of those that leave the site
+  heroes  html/sanitize.set_link_target
+  go      Policy.AddTargetBlankToFullyQualifiedLinks
+  rust    -
+  python  -
+  note    `rel` then `target`, with `noopener`, as bluemonday writes them (observed)
+
+capability sanitize/comments  comments kept
+  heroes  html/sanitize.allow_comments
+  go      Policy.AllowComments
+  rust    Builder::strip_comments, Builder::will_strip_comments
+  python  bleach.clean(strip_comments=), nh3.clean(strip_comments=)
+  note    the standard's `setComments`; a comment holding `<`, `>` or `--`, or beginning with `-` or `[`, or ending with `-`, goes even then, where bluemonday keeps Internet Explorer's conditional comments on purpose
+
+capability sanitize/spaces  a space where a tag was taken out
+  heroes  html/sanitize.add_spaces
+  go      Policy.AddSpaceWhenStrippingTag
+  rust    -
+  python  -
+  note    one space for each tag unwrapped, none for an element dropped with its content, as bluemonday writes them (observed ` Hello  World `)
+
+capability sanitize/context  the element the fragment is read inside and the answer stands in
+  heroes  html/sanitize.set_context
+  go      -
+  rust    -
+  python  -
+  note    the standard's sanitizer reads a fragment inside the element its `setHTML` is called on; a `div` is the default here, and nh3 reads `<td>x</td>` as `x` as a `div` reads it (observed). An element whose text a browser reads as it is (`script`, `style` and the others) is refused as a context, since no answer is clean inside it
+
+capability sanitize/groups  the ready groups: standard attributes and URLs, images, lists, tables
+  heroes  html/sanitize.allow_standard_attributes, html/sanitize.allow_standard_urls, html/sanitize.allow_images, html/sanitize.allow_lists, html/sanitize.allow_tables
+  go      Policy.AllowStandardAttributes, Policy.AllowStandardURLs, Policy.AllowImages, Policy.AllowLists, Policy.AllowTables
+  rust    -
+  python  -
+  note    bluemonday's groups, their elements and attributes observed; `ugc_policy` is made of them
+
+capability sanitize/value-checks  the ready checks of attribute values
+  heroes  refused: they are the checks the ready groups run, each a function of this package; a program that wants one writes it as a pattern of `regex` or a function of its own
+  go      CellAlign, CellVerticalAlign, Direction, ImageAlign, Integer, ListType, Number, NumberOrPercent, Paragraph, SpaceSeparatedTokens
+  rust    -
+  python  -
+  note    the ready groups check `align`, `valign`, `dir`, list types, integers, sizes, `title`, `alt`, `abbr`, `summary` and `headers` as these patterns say, read from bluemonday's documentation; `lang` as a language tag, `datetime` as HTML writes a date, a time or a duration, which bluemonday checks by patterns it does not export
+
+capability sanitize/has-markup  whether a text holds markup
+  heroes  html/sanitize.has_markup
+  go      -
+  rust    is_html
+  python  nh3.is_html
+  note    an element, a comment, a doctype or an instruction, read inside a `div`; a lone `<` and a character reference are text (observed with nh3)
+
+capability sanitize/escape-everywhere  text escaped to stand anywhere, an unquoted attribute value included
+  heroes  refused: no writer of Rebel writes a value unquoted; text and a quoted value are escaped by `html.escape`, and `template` escapes by context
+  go      -
+  rust    clean_text
+  python  nh3.clean_text, nh3.escape
+  note    nh3 writes a space as `&#32;` and `=` as `&#61;` (observed) so that the text stands even in an unquoted attribute. nh3's `escape(tags=)` keeps some tags with no attribute: `clean` with a policy of those elements
+
+capability sanitize/linkify  links made of the URLs a plain text holds
+  heroes  refused: finding URLs in text is no cleaning; `regex` finds them and `html` builds the links
+  go      -
+  rust    -
+  python  bleach.linkify, bleach.Linker, bleach.linkifier, bleach.callbacks, bleach.DEFAULT_CALLBACKS
+
+capability sanitize/control-characters  control characters of the text replaced
+  heroes  refused: a control character is text and runs nothing; it stays as the parser read it, as nh3 keeps it (observed), a zero byte dropped by the parser
+  go      -
+  rust    -
+  python  bleach.sanitizer.INVISIBLE_CHARACTERS, bleach.sanitizer.INVISIBLE_CHARACTERS_RE, bleach.sanitizer.INVISIBLE_REPLACEMENT_CHAR
+  note    bleach writes `?` for U+0001 and keeps U+007F (observed)
+
+capability sanitize/processing-instructions  processing instructions kept
+  heroes  refused: a browser before the 2025 standard reads `<?x a>b?>` as a comment that ends at the first `>`, so what follows would be markup to it; an instruction never stays
+  go      -
+  rust    -
+  python  -
+  note    the standard's `allowProcessingInstruction` and `removeProcessingInstruction`
+
+capability sanitize/filters  html5lib's filters run over the token stream
+  heroes  refused: a filter is a class of html5lib's, which needs an interface; `filter_attributes` rewrites attributes and the policy decides elements
+  go      -
+  rust    -
+  python  bleach.Cleaner(filters=), bleach.sanitizer.BleachSanitizerFilter
+
+dropped
+  go      Query, Query.Key, Query.Value, Query.HasValue: a part of a query string, which `url.parse_query` reads as `url.Pair`
+  rust    Builder::clone_tags, Builder::clone_clean_content_tags, Builder::clone_tag_attributes, Builder::clone_tag_attribute_values, Builder::clone_set_tag_attribute_values, Builder::clone_generic_attributes, Builder::clone_generic_attribute_prefixes, Builder::clone_url_schemes, Builder::clone_allowed_classes, Builder::get_set_tag_attribute_value: a builder's sets read back or copied; a policy is a value the program built, copied by `=`
+  rust    Builder::borrow, Builder::borrow_mut, Builder::fmt, Builder::from, Builder::into, Builder::try_from, Builder::try_into, Builder::type_id: traits of Rust's, which the language has no form for
+  rust    Url: the `url` crate's type, re-exported; `url.Url` here
+  python  bleach.html5lib_shim, bleach.parse_shim, bleach.six_shim, bleach.sanitizer, bleach.css_sanitizer, nh3.nh3: the modules that carry the names above, and the vendored html5lib and six

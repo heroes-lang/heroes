@@ -1,0 +1,309 @@
+# The attributes of one element a policy keeps: those it allows whose value
+# passes, each URL, style and class checked, the `id` prefixed, and what the
+# policy adds (attributes it forces, the `rel` and `target` of links). What
+# never stays whatever the policy says is here too: an event handler,
+# `srcdoc`, and an SVG animation of an `href` or a handler.
+
+use html
+use html/sanitize/internal/build
+use html/sanitize/internal/links
+use html/sanitize/internal/rules
+use html/sanitize/internal/style
+use html/sanitize/internal/urls
+use regex
+use strings
+
+# What `cleaned` answers: the attributes kept, in order, and how many things
+# it took out, changed or added.
+record Outcome
+    # The attributes kept, in their order, those added after them.
+    kept: [links.Kept]
+    # How many attributes went, changed their value, or were added.
+    changes: i64
+
+# The name of `a` as written: `href`, `xlink:href`, `xml:lang`, `xmlns`.
+function qualified(a: html.Attribute) -> str
+    return match a.space
+        .none  => a.name
+        .xlink => "xlink:" + a.name
+        .xml   => "xml:" + a.name
+        .xmlns =>
+            if a.name == "xmlns"
+                "xmlns"
+            else
+                "xmlns:" + a.name
+
+# Whether the attribute `name` of value `value` never stays on the element
+# of `space`: an event handler, `srcdoc`, or an SVG animation whose
+# `attributeName` is an `href` or a handler.
+function is_unsafe(space: i64, name: str, value: str) -> bool
+    lower = strings.to_lower_ascii(name)
+
+    if strings.has_prefix(s: lower, prefix: "on") || lower == "srcdoc"
+        return true
+
+    if space == rules.SVG && lower == "attributename"
+        target = strings.to_lower_ascii(style.trim(value))
+        return target == "href" || target == "xlink:href" || strings.has_prefix(s: target, prefix: "on")
+    return false
+
+# Whether `name`, past a prefix of `length` bytes, is one or more ASCII
+# lower-case letters, digits, `-`, `_` and `.`.
+function is_plain_after(name: str, length: i64) -> bool
+    if name.len() <= length
+        return false
+
+    for i in range(from: length, to: name.len())
+        b = name[i]
+
+        if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '-' || b == '_' || b == '.')
+            return false
+
+    return true
+
+# Whether `r` allows the attribute `name` of value `value` on the element
+# whose key is `element`, before its URL, style or class is checked.
+function is_allowed(r: rules.Rules, element: str, name: str, value: str) -> bool
+    if r.forbidden[rules.pair(element: element, name: name)].default(false) || r.forbidden[rules.pair(element: "*", name: name)].default(false)
+        return false
+
+    if name == "style"
+        return style.has_styles(r, element: element)
+
+    if name == "class" && (r.classes[element].default({}).len() > 0 || r.classes["*"].default({}).len() > 0)
+        return true
+    checks: [rules.Check] @= r.attributes[rules.pair(element: element, name: name)].default([])
+
+    for c in r.attributes[rules.pair(element: "*", name: name)].default([])
+        checks @ checks.push(c)
+
+    if checks.len() > 0
+        return rules.any_passes(checks, value)
+
+    for at in [element, "*"]
+        for prefix in r.prefixes[at].default([])
+            if strings.has_prefix(s: name, prefix: prefix) && is_plain_after(name, prefix.len())
+                return true
+
+    return r.data_attributes && strings.has_prefix(s: name, prefix: "data-") && is_plain_after(name, 5)
+
+# The classes of `value` that `r` keeps on the element whose key is
+# `element`, in their order, joined by a space; every class where no list
+# names the element.
+function classes_kept(r: rules.Rules, element: str, value: str) -> str
+    own = r.classes[element].default({})
+    every = r.classes["*"].default({})
+
+    if own.len() == 0 && every.len() == 0
+        return value
+    kept: [str] @= []
+
+    for c in strings.split_where(s: value, separates: urls.is_html_white)
+        if c != "" && (own[c].default(false) || every[c].default(false))
+            kept @ kept.push(c)
+
+    return kept.join(" ")
+
+# The value `r` keeps of the attribute `name` of the element whose key is
+# `element` in `space`, its filters run where `first`; fails where it goes.
+function value_of(r: rules.Rules, space: i64, element: str, name: str, value: str, first: bool) -> str?
+    v: str @= value
+
+    if first
+        for rewrite in r.filters
+            v @ rewrite(element: element, name: name, value: v)?
+
+    if name == "style"
+        v @ style.cleaned(r, element: element, text: v)
+    else if name == "class"
+        v @ classes_kept(r, element: element, value: v)
+    else if name == "id" && r.id_prefix != "" && v != "" && (first || !strings.has_prefix(s: v, prefix: r.id_prefix))
+        v @ r.id_prefix + v
+
+    if (name == "style" || name == "class") && v == ""
+        return fail(code: "invalid", msg: f"nothing of `{name}` stays")
+
+    if space == rules.SVG && name == "attributeName" && is_unsafe(space, name: name, value: v)
+        return fail(code: "invalid", msg: "an animation of a link")
+    kind = urls.kind_of(space, name)
+
+    if kind == urls.ONE
+        return urls.checked(r, element: element, name: name, value: v)
+
+    if kind == urls.SPACED
+        return urls.checked_spaced(r, element: element, name: name, value: v)
+
+    if kind == urls.CANDIDATES
+        return urls.checked_candidates(r, element: element, name: name, value: v)
+    return ok(v)
+
+# The attributes `r` keeps of `attributes`, those of the element `name` of
+# `space`, and what it adds; `first` on the first reading, where the
+# program's filters run and every `id` is prefixed.
+function cleaned(r: rules.Rules, space: i64, name: str, attributes: [html.Attribute], first: bool) -> Outcome
+    element = rules.key(space, name)
+    before: [links.Kept] @= []
+    kept: [links.Kept] @= []
+
+    for a in attributes
+        written = qualified(a)
+        before @ before.push(links.Kept(name: written, value: a.value))
+
+        if !is_unsafe(space, name: written, value: a.value) && is_allowed(r, element: element, name: written, value: a.value)
+            match value_of(r, space, element: element, name: written, value: a.value, first: first)
+                .ok v  => kept @ kept.push(links.Kept(name: written, value: v))
+                .err _ => _ = 0
+
+    for f in r.forced
+        if (f.element == element || f.element == "*") && !is_unsafe(space, name: f.name, value: f.value)
+            if urls.kind_of(space, f.name) == urls.NOT_URL || !urls.checked(r, element: element, name: f.name, value: f.value).is_err()
+                _ = links.put(@kept, name: f.name, value: f.value)
+
+    if space == rules.HTML && (name == "a" || name == "area" || name == "link") && links.holds(kept, "href")
+        _ = links.links(r, @kept)
+    return Outcome(kept: kept, changes: differences(before: before, after: kept))
+
+# How many attributes of `before` are not in `after` as they were, and of
+# `after` not in `before`; at least 1 where the two differ in order alone.
+function differences(before: [links.Kept], after: [links.Kept]) -> i64
+    if before == after
+        return 0
+    count: i64 @= 0
+
+    for k in before
+        if !after.any_of(k)
+            count @ count + 1
+
+    for k in after
+        if !before.any_of(k)
+            count @ count + 1
+
+    if count == 0
+        return 1
+    return count
+
+# Whether `kept` holds `k`, its name and its value.
+function any_of(kept: [links.Kept], k: links.Kept) -> bool
+    for each in kept
+        if each == k
+            return true
+
+    return false
+
+## Tests
+
+test "qualified: no namespace, XLink, XML and the two XMLNS names"
+    assert qualified(html.Attribute(space: .none, name: "href", value: "")) == "href"
+    assert qualified(html.Attribute(space: .xlink, name: "href", value: "")) == "xlink:href"
+    assert qualified(html.Attribute(space: .xml, name: "lang", value: "")) == "xml:lang"
+    assert qualified(html.Attribute(space: .xmlns, name: "xmlns", value: "")) == "xmlns" && qualified(html.Attribute(space: .xmlns, name: "xlink", value: "")) == "xmlns:xlink"
+
+test "is_unsafe: a handler in any case, srcdoc, an animation of href or of a handler, and an ordinary one"
+    assert is_unsafe(rules.HTML, name: "OnClick", value: "") && is_unsafe(rules.HTML, name: "srcdoc", value: "")
+    assert is_unsafe(rules.SVG, name: "attributeName", value: " HREF ") && is_unsafe(rules.SVG, name: "attributeName", value: "onbegin")
+    assert !is_unsafe(rules.SVG, name: "attributeName", value: "x") && !is_unsafe(rules.HTML, name: "title", value: "on")
+
+test "cleaned: a handler and an unknown attribute out, a URL refused, a value refused, a title kept"
+    r @= rules.empty()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    build.add_attribute_check(
+        @r,
+        names: ["href", "title", "onclick"],
+        on: ["a"],
+        check: rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    )
+    build.set_schemes(@r, schemes: ["https"], keep: true)
+    attributes = [
+        html.Attribute(space: .none, name: "onclick", value: "x()")
+        html.Attribute(space: .none, name: "href", value: "javascript:x")
+        html.Attribute(space: .none, name: "title", value: "t")
+        html.Attribute(space: .none, name: "id", value: "i")
+    ]
+    got = cleaned(r, space: rules.HTML, name: "a", attributes: attributes, first: true)
+    assert got.kept == [links.Kept(name: "title", value: "t")] && got.changes == 3
+
+test "cleaned: rel added after the kept ones, target set on an external link, noopener for a new window"
+    r @= rules.empty()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    build.add_attribute_check(
+        @r,
+        names: ["href", "rel"],
+        on: ["a"],
+        check: rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    )
+    build.set_schemes(@r, schemes: ["https"], keep: true)
+    r.relative @ rules.KEPT
+    r.link_rel @ ["nofollow"]
+    r.target @ "_blank"
+    r.target_external_only @ true
+    outside = cleaned(
+        r,
+        space: rules.HTML,
+        name: "a",
+        attributes: [html.Attribute(space: .none, name: "href", value: "https://e.com/"), html.Attribute(space: .none, name: "rel", value: "Author")],
+        first: true
+    )
+    assert outside.kept == [links.Kept(name: "href", value: "https://e.com/"), links.Kept(name: "rel", value: "author nofollow noopener"), links.Kept(name: "target", value: "_blank")]
+    inside = cleaned(
+        r,
+        space: rules.HTML,
+        name: "a",
+        attributes: [html.Attribute(space: .none, name: "href", value: "/x")],
+        first: true
+    )
+    assert inside.kept == [links.Kept(name: "href", value: "/x"), links.Kept(name: "rel", value: "nofollow")] && inside.changes == 1
+    again = cleaned(
+        r,
+        space: rules.HTML,
+        name: "a",
+        attributes: [html.Attribute(space: .none, name: "href", value: "/x"), html.Attribute(space: .none, name: "rel", value: "nofollow")],
+        first: false
+    )
+    assert again.changes == 0
+
+test "cleaned: classes filtered, an id prefixed once, a data attribute and a prefix"
+    r @= rules.empty()
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    build.add_classes(@r, on: ["span"], names: ["hi", "lo"])
+    build.add_attribute_check(
+        @r,
+        names: ["id"],
+        on: ["*"],
+        check: rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    )
+    build.add_prefixes(@r, prefixes: ["aria-"], on: ["*"])
+    r.id_prefix @ "u-"
+    r.data_attributes @ true
+    attributes = [
+        html.Attribute(space: .none, name: "class", value: " lo  x hi ")
+        html.Attribute(space: .none, name: "id", value: "a")
+        html.Attribute(space: .none, name: "data-k", value: "v")
+        html.Attribute(space: .none, name: "data-", value: "v")
+        html.Attribute(space: .none, name: "aria-label", value: "l")
+    ]
+    got = cleaned(r, space: rules.HTML, name: "span", attributes: attributes, first: true)
+    assert got.kept == [links.Kept(name: "class", value: "lo hi"), links.Kept(name: "id", value: "u-a"), links.Kept(name: "data-k", value: "v"), links.Kept(name: "aria-label", value: "l")]
+    again = cleaned(
+        r,
+        space: rules.HTML,
+        name: "span",
+        attributes: [html.Attribute(space: .none, name: "id", value: "u-a")],
+        first: false
+    )
+    assert again.kept == [links.Kept(name: "id", value: "u-a")] && again.changes == 0
+
+test "cleaned: a forced attribute replaces the input's, a forced handler never set"
+    r @= rules.empty()
+    build.add_forced(@r, on: ["img"], name: "crossorigin", value: "anonymous")
+    build.add_forced(@r, on: ["img"], name: "onload", value: "x()")
+    got = cleaned(
+        r,
+        space: rules.HTML,
+        name: "img",
+        attributes: [html.Attribute(space: .none, name: "crossorigin", value: "use-credentials")],
+        first: true
+    )
+    assert got.kept == [links.Kept(name: "crossorigin", value: "anonymous")] && got.changes == 2

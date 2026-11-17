@@ -1,0 +1,96 @@
+# The attributes a link keeps and what a policy adds to them: the `rel`
+# tokens it asks for, the `target` it sets, and `noopener` on a link that
+# opens another window; and the list of attributes kept, changed in place.
+
+use html/sanitize/internal/rules
+use html/sanitize/internal/urls
+use strings
+
+# One attribute kept: its name as written and its value.
+record Kept
+    # The name, `xlink:href` for the XLink one.
+    name: str
+    # The value, as the walk writes it back.
+    value: str
+
+# Sets `name` to `value` in `kept`: in its place where it is there, after the
+# others where not. Answers whether anything changed.
+function put(@kept: [Kept], name: str, value: str) -> bool
+    for i in range(from: 0, to: kept.len())
+        if kept[i].name == name
+            if kept[i].value == value
+                return false
+            kept[i] @ Kept(name: name, value: value)
+            return true
+
+    kept @ kept.push(Kept(name: name, value: value))
+    return true
+
+# The value of `name` in `kept`; empty where it is not there.
+function value_in(kept: [Kept], name: str) -> str
+    for k in kept
+        if k.name == name
+            return k.value
+
+    return ""
+
+# Whether `kept` holds `name`.
+function holds(kept: [Kept], name: str) -> bool
+    for k in kept
+        if k.name == name
+            return true
+
+    return false
+
+# Sets the `target` and adds to the `rel` of a link whose attributes are
+# `kept`, as `r` says; answers whether anything changed.
+function links(r: rules.Rules, @kept: [Kept]) -> bool
+    external = urls.is_external(value_in(kept, "href"))
+    sets_target = r.target != "" && (external || !r.target_external_only)
+
+    target = if sets_target
+        r.target
+    else
+        value_in(kept, "target")
+    tokens: [str] @= []
+
+    for t in strings.split_where(s: strings.to_lower_ascii(value_in(kept, "rel")), separates: urls.is_html_white)
+        if t != ""
+            tokens @ add_token(tokens, t)
+
+    if external || !r.rel_external_only
+        for t in r.link_rel
+            tokens @ add_token(tokens, strings.to_lower_ascii(t))
+
+    lower = strings.to_lower_ascii(target)
+
+    if (sets_target || holds(kept, "target")) && lower != "_self" && lower != "_parent" && lower != "_top" && lower != ""
+        tokens @ add_token(tokens, "noopener")
+    changed: bool @= false
+
+    if tokens.len() > 0
+        changed @ put(@kept, name: "rel", value: tokens.join(" "))
+
+    if sets_target && put(@kept, name: "target", value: target)
+        changed @ true
+    return changed
+
+# `tokens` with `token` after them where it is not among them already.
+function add_token(tokens: [str], token: str) -> [str]
+    if token == ""
+        return tokens
+
+    for t in tokens
+        if t == token
+            return tokens
+
+    out @= tokens
+    out @ out.push(token)
+    return out
+
+## Tests
+
+test "put: replaced in its place, the same value unchanged, a new one after"
+    kept: [Kept] @= [Kept(name: "a", value: "1"), Kept(name: "b", value: "2")]
+    assert put(@kept, name: "a", value: "3") && !put(@kept, name: "b", value: "2") && put(@kept, name: "c", value: "4")
+    assert kept == [Kept(name: "a", value: "3"), Kept(name: "b", value: "2"), Kept(name: "c", value: "4")]

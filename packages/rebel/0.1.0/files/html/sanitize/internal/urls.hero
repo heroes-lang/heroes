@@ -1,0 +1,333 @@
+# URLs as a browser reads them in an attribute: which attributes hold one,
+# a list of them or the candidates of a `srcset`; the URL as the WHATWG URL
+# parser sees it before anything else (control characters and spaces cut
+# from both ends, tabs and line breaks taken out); its scheme as that parser
+# reads it; and whether the rules keep it.
+
+use html/sanitize/internal/build
+use html/sanitize/internal/rules
+use strings
+use url
+
+# The attribute holds no URL.
+constant NOT_URL: i64
+    0
+
+# The attribute holds one URL.
+constant ONE: i64
+    1
+
+# The attribute holds URLs parted by white space: `ping`, `archive`,
+# `itemtype`.
+constant SPACED: i64
+    2
+
+# The attribute holds the candidates of a `srcset`: a URL and its
+# descriptors, parted by commas.
+constant CANDIDATES: i64
+    3
+
+# What the attribute `name` of an element of `space` holds.
+function kind_of(space: i64, name: str) -> i64
+    if space != rules.HTML
+        if name == "href" || name == "xlink:href"
+            return ONE
+        return NOT_URL
+
+    return match name
+        "href" | "src" | "cite" | "action" | "formaction" | "poster" | "background" | "longdesc" | "lowsrc" | "dynsrc" | "data" | "codebase" | "classid" | "manifest" | "icon" | "profile" | "itemid" | "xlink:href" => ONE
+        "ping" | "archive" | "itemtype" => SPACED
+        "srcset" | "imagesrcset"        => CANDIDATES
+        _                               => NOT_URL
+
+# Whether `b` is cut from either end of a URL: a C0 control or a space.
+function is_cut(b: u8) -> bool
+    return b <= 32
+
+# `value` as the URL parser reads it before anything else: every C0 control
+# and space cut from both ends, every tab, line feed and carriage return
+# taken out.
+function browser_form(value: str) -> str
+    first: i64 @= 0
+    last: i64 @= value.len()
+
+    while first < last && is_cut(value[first])
+        first @ first + 1
+
+    while last > first && is_cut(value[last - 1])
+        last @ last - 1
+
+    pieces: [str] @= []
+    start: i64 @= first
+    at: i64 @= first
+
+    while at < last
+        b = value[at]
+
+        if b == '\t' || b == '\n' || b == '\r'
+            pieces @ pieces.push(value.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    pieces @ pieces.push(value.slice(from: start, to: last))
+    return pieces.join("")
+
+# Whether `b` is an ASCII letter.
+function is_alpha(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+# The scheme of `form`, a URL in its browser form, in lower case, as the URL
+# parser's scheme state reads it: a letter, then letters, digits, `+`, `-`
+# and `.`, then `:`; empty where `form` has none and is relative.
+function scheme_of(form: str) -> str
+    if form.len() == 0 || !is_alpha(form[0])
+        return ""
+    at: i64 @= 1
+
+    while at < form.len() && (is_alpha(form[at]) || form[at] >= '0' && form[at] <= '9' || form[at] == '+' || form[at] == '-' || form[at] == '.')
+        at @ at + 1
+
+    if at < form.len() && form[at] == ':'
+        return strings.to_lower_ascii(form.slice(from: 0, to: at))
+    return ""
+
+# Whether `form` is a `data:` URL of a PNG, JPEG, GIF or WebP image in base
+# 64: `data:image/png;base64,` and at least one character of base 64, its
+# media type in any ASCII case.
+function is_data_image(form: str) -> bool
+    comma = strings.index_of(s: form, substr: ",").default(-1)
+
+    if comma < 0
+        return false
+    head = strings.to_lower_ascii(form.slice(from: 0, to: comma))
+
+    if !(head == "data:image/png;base64" || head == "data:image/jpeg;base64" || head == "data:image/gif;base64" || head == "data:image/webp;base64")
+        return false
+
+    if comma + 1 >= form.len()
+        return false
+
+    for i in range(from: comma + 1, to: form.len())
+        b = form[i]
+
+        if !(is_alpha(b) || b >= '0' && b <= '9' || b == '+' || b == '/' || b == '=')
+            return false
+
+    return true
+
+# Whether the URL `form` leaves the site: it names a host, with a scheme or
+# after `//`.
+function is_external(form: str) -> bool
+    if strings.has_prefix(s: form, prefix: "//")
+        return true
+
+    if scheme_of(form) == ""
+        return false
+
+    return match url.parse_loose(form)
+        .ok u  => u.host != ""
+        .err _ => false
+
+# The text `r` keeps of the URL `value`, an attribute of the element whose key
+# is `element`, named `name`: its browser form, or the URL it names where a
+# relative one is resolved. Fails `invalid` where the rules refuse it.
+function checked(r: rules.Rules, element: str, name: str, value: str) -> str?
+    form = browser_form(value)
+    scheme = scheme_of(form)
+
+    if scheme == "javascript" || scheme == "vbscript"
+        return fail(code: "invalid", msg: f"the scheme `{scheme}` runs a script")
+
+    if scheme == "data" && r.data_images && element == "img" && name == "src" && is_data_image(form)
+        return ok(form)
+
+    if scheme != ""
+        return absolute(r, form: form, scheme: scheme)
+
+    if r.relative == rules.REFUSED
+        return fail(code: "invalid", msg: f"the relative URL \"{form}\" is refused")
+
+    reference = url.parse_loose(form)?
+
+    if r.relative == rules.KEPT
+        return ok(form)
+
+    found = if r.relative == rules.RESOLVED
+        url.format(url.resolve(base: r.base, reference: reference))
+    else
+        rooted(r, form: form, reference: reference)?
+    resolved_scheme = scheme_of(found)
+
+    if resolved_scheme == "javascript" || resolved_scheme == "vbscript" || resolved_scheme == ""
+        return fail(code: "invalid", msg: f"\"{form}\" resolves to \"{found}\"")
+    return absolute(r, form: found, scheme: resolved_scheme)
+
+# The URL the relative `form` names under the root of `r`: a path that
+# begins with one `/` against the root, any other reference against the root
+# and its path, as Rust's ammonia's `RewriteWithRoot` resolves it. Fails
+# `invalid` where the root path cannot be read.
+function rooted(r: rules.Rules, form: str, reference: url.Url) -> str?
+    if strings.has_prefix(s: form, prefix: "/") && !strings.has_prefix(s: form, prefix: "//")
+        rest = url.parse_loose(form.slice(from: 1, to: form.len()))?
+        return ok(url.format(url.resolve(base: r.base, reference: rest)))
+    directory = url.resolve(base: r.base, reference: url.parse_loose(r.root_path)?)
+    return ok(url.format(url.resolve(base: directory, reference: reference)))
+
+# The text `r` keeps of the absolute URL `form` of the scheme `scheme`.
+function absolute(r: rules.Rules, form: str, scheme: str) -> str?
+    listed = r.schemes[scheme].default(false)
+    checks = r.scheme_checks[scheme].default([])
+
+    if !listed && checks.len() == 0
+        return fail(code: "invalid", msg: f"the scheme `{scheme}` is not allowed")
+    parsed = url.parse_loose(form)?
+
+    if listed
+        return ok(form)
+
+    for accepts in checks
+        if accepts(parsed)
+            return ok(form)
+
+    return fail(code: "invalid", msg: f"no check of `{scheme}` accepts \"{form}\"")
+
+# The text `r` keeps of `value`, URLs parted by white space, every one kept;
+# fails `invalid` where one is refused or none is there.
+function checked_spaced(r: rules.Rules, element: str, name: str, value: str) -> str?
+    kept: [str] @= []
+
+    for part in strings.split_where(s: value, separates: is_html_white)
+        if part != ""
+            kept @ kept.push(checked(r, element: element, name: name, value: part)?)
+
+    if kept.len() == 0
+        return fail(code: "invalid", msg: "no URL")
+    return ok(kept.join(" "))
+
+# Whether `c`, one character, is ASCII white space as HTML counts it.
+function is_html_white(c: str) -> bool
+    return c == " " || c == "\t" || c == "\n" || c == "\r" || c == "\u{c}"
+
+# The text `r` keeps of `value`, the candidates of a `srcset`, read by the
+# standard's algorithm: every URL kept, each candidate written `URL
+# descriptors` and joined by `, `. Fails `invalid` where one URL is refused or
+# none is there.
+function checked_candidates(r: rules.Rules, element: str, name: str, value: str) -> str?
+    kept: [str] @= []
+    at: i64 @= 0
+
+    while at < value.len()
+        while at < value.len() && (is_cut_white(value[at]) || value[at] == ',')
+            at @ at + 1
+
+        if at >= value.len()
+            break
+        start = at
+
+        while at < value.len() && !is_cut_white(value[at])
+            at @ at + 1
+
+        end: i64 @= at
+        descriptors: str @= ""
+
+        if value[end - 1] == ','
+            while end > start && value[end - 1] == ','
+                end @ end - 1
+        else
+            from = at
+            depth: i64 @= 0
+
+            while at < value.len() && !(value[at] == ',' && depth == 0)
+                if value[at] == '('
+                    depth @ depth + 1
+                else if value[at] == ')' && depth > 0
+                    depth @ depth - 1
+                at @ at + 1
+
+            descriptors @ strings.trim_where(s: value.slice(from: from, to: at), accepts: is_html_white)
+
+        if end == start
+            return fail(code: "invalid", msg: "a candidate with no URL")
+        written = checked(r, element: element, name: name, value: value.slice(from: start, to: end))?
+
+        if descriptors == ""
+            kept @ kept.push(written)
+        else
+            kept @ kept.push(written + " " + descriptors)
+
+    if kept.len() == 0
+        return fail(code: "invalid", msg: "no candidate")
+    return ok(kept.join(", "))
+
+# Whether `b` is ASCII white space as HTML counts it.
+function is_cut_white(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == 12 || b == '\r'
+
+## Tests
+
+test "browser_form: controls and spaces cut, tabs and line breaks taken out, the empty text"
+    assert browser_form(" \u{e}  jav\tas\ncr\ript:x \u{1} ") == "javascript:x"
+    assert browser_form("") == "" && browser_form("   ") == "" && browser_form("a b") == "a b"
+
+test "scheme_of: a scheme in any case, a relative URL, a digit first and a colon after a slash"
+    assert scheme_of("JavaScript:alert(1)") == "javascript" && scheme_of("/a:b") == "" && scheme_of("1a:b") == ""
+    assert scheme_of("mailto:a@b") == "mailto" && scheme_of("a+b.c-d:x") == "a+b.c-d" && scheme_of("") == "" && scheme_of("http") == ""
+
+test "is_data_image: the four types, another type, no comma and a byte outside base 64"
+    assert is_data_image("data:image/png;base64,iVBORw0KGgo=") && is_data_image("DATA:IMAGE/WEBP;BASE64,AAAA")
+    assert !is_data_image("data:image/svg+xml;base64,AAAA") && !is_data_image("data:image/png;base64") && !is_data_image("data:image/png;base64,AA A")
+    assert !is_data_image("data:image/png;base64,")
+
+test "is_external: a host after a scheme, after `//`, a path and a mail address"
+    assert is_external("https://e.com/x") && is_external("//e.com") && !is_external("/x") && !is_external("mailto:a@b")
+
+test "checked: a scheme refused, kept, a script refused whatever is listed, relative URLs three ways"
+    r @= rules.empty()
+    build.set_schemes(@r, schemes: ["HTTPS", "javascript"], keep: true)
+    assert checked(r, element: "a", name: "href", value: "https://e.com/").must() == "https://e.com/"
+    assert checked(r, element: "a", name: "href", value: "http://e.com/").is_err()
+    assert checked(r, element: "a", name: "href", value: "java\tscript:alert(1)").is_err()
+    assert checked(r, element: "a", name: "href", value: "/x").is_err()
+    r.relative @ rules.KEPT
+    assert checked(r, element: "a", name: "href", value: " /x ").must() == "/x"
+    r.relative @ rules.RESOLVED
+    r.base @ url.parse("https://e.com/a/b").must()
+    assert checked(r, element: "a", name: "href", value: "../c").must() == "https://e.com/c"
+    r.base @ url.parse("http://e.com/a/b").must()
+    assert checked(r, element: "a", name: "href", value: "../c").is_err()
+
+test "checked: relative URLs under a root, as ammonia's documentation and nh3 resolve them"
+    r @= rules.empty()
+    build.set_schemes(@r, schemes: ["https"], keep: true)
+    r.relative @ rules.ROOTED
+    r.base @ url.parse("https://e.com/root/").must()
+    r.root_path @ "dir/sub"
+
+    for pair in [["test", "https://e.com/root/dir/test"], ["/test", "https://e.com/root/test"], ["../../x", "https://e.com/x"], ["//e.com/t", "https://e.com/t"], ["?q", "https://e.com/root/dir/sub?q"], ["#f", "https://e.com/root/dir/sub#f"]]
+        assert checked(r, element: "a", name: "href", value: pair[0]).must() == pair[1]
+
+    r.base @ url.parse("https://github.com/rust-ammonia/ammonia/blob/master").must()
+    r.root_path @ "README.md"
+    assert checked(r, element: "a", name: "href", value: "/CONTRIBUTING.md").must() == "https://github.com/rust-ammonia/ammonia/blob/CONTRIBUTING.md"
+
+test "checked: a data image kept only on an image's src, only where the rules say so"
+    r @= rules.empty()
+    assert checked(r, element: "img", name: "src", value: "data:image/gif;base64,R0lG").is_err()
+    r.data_images @ true
+    assert checked(r, element: "img", name: "src", value: "data:image/gif;base64,R0lG").must() == "data:image/gif;base64,R0lG"
+    assert checked(r, element: "a", name: "href", value: "data:image/gif;base64,R0lG").is_err()
+
+test "checked_candidates: two candidates, a URL with a comma, a refused one and the empty text"
+    r @= rules.empty()
+    build.set_schemes(@r, schemes: ["https", "data"], keep: true)
+    assert checked_candidates(r, element: "img", name: "srcset", value: " https://e.com/a.png 1x,https://e.com/b.png  2x ").must() == "https://e.com/a.png 1x, https://e.com/b.png 2x"
+    assert checked_candidates(r, element: "img", name: "srcset", value: "data:image/png;base64,AA,BB 2x").must() == "data:image/png;base64,AA,BB 2x"
+    assert checked_candidates(r, element: "img", name: "srcset", value: "https://e.com/a.png, javascript:x 2x").is_err()
+    assert checked_candidates(r, element: "img", name: "srcset", value: " , ").is_err()
+
+test "checked_spaced: two URLs, a refused one and white space alone"
+    r @= rules.empty()
+    build.set_schemes(@r, schemes: ["https"], keep: true)
+    assert checked_spaced(r, element: "a", name: "ping", value: " https://e.com/1  https://e.com/2").must() == "https://e.com/1 https://e.com/2"
+    assert checked_spaced(r, element: "a", name: "ping", value: "https://e.com/1 http://e.com/2").is_err()
+    assert checked_spaced(r, element: "a", name: "ping", value: "  ").is_err()

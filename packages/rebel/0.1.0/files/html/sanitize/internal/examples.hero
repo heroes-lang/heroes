@@ -1,0 +1,63 @@
+# The functions the face's examples and tests hand to a policy, since a
+# function given as a value is a top-level one and a face declares only what
+# a program names. Nothing else here.
+
+use strings
+use url
+
+# Whether `value` is at most eight bytes: a check a policy runs on an
+# attribute's value.
+function is_short(value: str) -> bool
+    return value.len() <= 8
+
+# Keeps only the class `mention` of an `a`, and every other attribute as it
+# is: a filter a policy runs on every attribute it keeps. Fails where an
+# `a`'s `class` holds no `mention`.
+function mention_only(element: str, name: str, value: str) -> str?
+    if element == "a" && name == "class"
+        for c in strings.words(value)
+            if c == "mention"
+                return ok("mention")
+
+        return fail(code: "invalid", msg: f"no `mention` in \"{value}\"")
+    return ok(value)
+
+# Writes every `src` through a proxy, the others as they are.
+function proxied(element: str, name: str, value: str) -> str?
+    if name == "src" && element == "img"
+        return ok("https://proxy.example/?u=" + url.escape_query(value))
+    return ok(value)
+
+# Whether the URL `u` names the host `example.com`.
+function is_example_host(u: url.Url) -> bool
+    return u.host == "example.com"
+
+# Whether a style value is a size in pixels: digits and `px`.
+function is_pixels(value: str) -> bool
+    if !strings.has_suffix(s: value, suffix: "px") || value.len() < 3
+        return false
+
+    for i in range(from: 0, to: value.len() - 2)
+        if value[i] < '0' || value[i] > '9'
+            return false
+
+    return true
+
+## Tests
+
+test "is_short: eight bytes and nine"
+    assert is_short("12345678") && !is_short("123456789") && is_short("")
+
+test "mention_only: kept, refused, and another attribute as it is"
+    assert mention_only(element: "a", name: "class", value: "x mention").must() == "mention"
+    assert mention_only(element: "a", name: "class", value: "x").is_err() && mention_only(element: "p", name: "class", value: "x").must() == "x"
+
+test "proxied: an image's source escaped into the proxy's query, another attribute kept"
+    assert proxied(element: "img", name: "src", value: "https://e.com/a b.png").must() == "https://proxy.example/?u=https%3A%2F%2Fe.com%2Fa+b.png"
+    assert proxied(element: "img", name: "alt", value: "a").must() == "a"
+
+test "is_example_host: the host and another"
+    assert is_example_host(url.parse("https://example.com/x").must()) && !is_example_host(url.parse("https://e.com/").must())
+
+test "is_pixels: pixels, em, a lone unit and a sign"
+    assert is_pixels("12px") && !is_pixels("1em") && !is_pixels("px") && !is_pixels("-1px")

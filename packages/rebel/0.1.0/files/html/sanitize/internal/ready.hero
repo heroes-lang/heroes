@@ -1,0 +1,255 @@
+# The ready policies and the groups they are made of: the standard
+# attributes, URLs, images, lists and tables of Go's bluemonday, its policy
+# for user-generated content as version 1.0.27 answers, and the default of
+# the WHATWG HTML standard's Sanitizer API, as the standard's text lists it
+# (html.spec.whatwg.org, fetched 2026-11-17).
+
+use html/sanitize/internal/build
+use html/sanitize/internal/rules
+use html/sanitize/internal/values
+use regex
+
+# A check that accepts every value.
+function any_value() -> rules.Check
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    return rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+
+# A check that accepts what `accepts` accepts.
+function where(accepts: (function(str) -> bool)) -> rules.Check
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    return rules.Check(kind: rules.WHERE, patterns: none, values: no_values, accepts: accepts)
+
+# Lets `names` stay on `on` where `accepts` accepts their value.
+function allow(@r: rules.Rules, names: [str], on: [str], accepts: (function(str) -> bool))
+    build.add_attribute_check(@r, names: names, on: on, check: where(accepts))
+
+# Lets `names` stay on `on` with any value.
+function allow_any(@r: rules.Rules, names: [str], on: [str])
+    build.add_attribute_check(@r, names: names, on: on, check: any_value())
+
+# `dir`, `id`, `lang` and `title` on every element, each value checked.
+function standard_attributes(@r: rules.Rules)
+    allow(@r, names: ["dir"], on: ["*"], accepts: values.is_direction)
+    allow(@r, names: ["id"], on: ["*"], accepts: values.is_name)
+    allow(@r, names: ["lang"], on: ["*"], accepts: values.is_language)
+    allow(@r, names: ["title"], on: ["*"], accepts: values.is_paragraph)
+
+# URLs of `http`, `https` and `mailto` and relative ones, and `nofollow` on
+# every link.
+function standard_urls(@r: rules.Rules)
+    build.set_schemes(@r, schemes: ["http", "https", "mailto"], keep: true)
+    r.relative @ rules.KEPT
+    r.link_rel @ ["nofollow"]
+    r.rel_external_only @ false
+
+# `img` with `src`, `alt`, `title`, `width`, `height`, `align` and `usemap`.
+function images(@r: rules.Rules)
+    build.set_actions(@r, names: ["img"], action: rules.ALLOW)
+    allow_any(@r, names: ["src"], on: ["img"])
+    allow(@r, names: ["alt", "title"], on: ["img"], accepts: values.is_paragraph)
+    allow(@r, names: ["width", "height"], on: ["img"], accepts: values.is_number_or_percent)
+    allow(@r, names: ["align"], on: ["img"], accepts: values.is_image_align)
+    allow(@r, names: ["usemap"], on: ["img"], accepts: values.is_map_reference)
+
+# The lists, with `type` and a `li`'s `value`.
+function lists(@r: rules.Rules)
+    build.set_actions(@r, names: ["ol", "ul", "li", "dl", "dt", "dd"], action: rules.ALLOW)
+    allow(@r, names: ["type"], on: ["ol", "ul", "li"], accepts: values.is_list_type)
+    allow(@r, names: ["value"], on: ["li"], accepts: values.is_integer)
+
+# The tables, with their sizes, alignments, spans, headers and scopes.
+function tables(@r: rules.Rules)
+    build.set_actions(
+        @r,
+        names: ["table", "caption", "col", "colgroup", "thead", "tbody", "tfoot", "tr", "th", "td"],
+        action: rules.ALLOW
+    )
+    allow(@r, names: ["summary"], on: ["table"], accepts: values.is_paragraph)
+    allow(
+        @r,
+        names: ["width", "height"],
+        on: ["table", "col", "colgroup", "th", "td"],
+        accepts: values.is_number_or_percent
+    )
+    allow(@r, names: ["span"], on: ["col", "colgroup"], accepts: values.is_integer)
+    allow(
+        @r,
+        names: ["align"],
+        on: ["col", "colgroup", "thead", "tbody", "tfoot", "tr", "th", "td"],
+        accepts: values.is_cell_align
+    )
+    allow(
+        @r,
+        names: ["valign"],
+        on: ["col", "colgroup", "thead", "tbody", "tfoot", "tr", "th", "td"],
+        accepts: values.is_cell_vertical_align
+    )
+    allow(@r, names: ["abbr"], on: ["th", "td"], accepts: values.is_paragraph)
+    allow(@r, names: ["colspan", "rowspan"], on: ["th", "td"], accepts: values.is_integer)
+    allow(@r, names: ["headers"], on: ["th", "td"], accepts: values.is_tokens)
+    allow_any(@r, names: ["nowrap"], on: ["th", "td"])
+    allow(@r, names: ["scope"], on: ["th"], accepts: values.is_scope)
+
+# The rules of user-generated content, as bluemonday 1.0.27's `UGCPolicy`
+# keeps elements and attributes.
+function ugc() -> rules.Rules
+    r @= rules.empty()
+    standard_attributes(@r)
+    standard_urls(@r)
+    lists(@r)
+    tables(@r)
+    images(@r)
+    build.set_actions(
+        @r,
+        names: ["h1", "h2", "h3", "h4", "h5", "h6", "p", "div", "span", "br", "hr", "wbr", "pre", "blockquote", "q", "cite"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["abbr", "acronym", "b", "bdi", "code", "del", "dfn", "em", "i", "ins", "mark", "s", "samp", "small", "strike", "strong", "sub", "sup", "time", "tt", "u", "var"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["article", "aside", "section", "hgroup", "details", "summary", "figure", "figcaption", "ruby", "rp", "rt"],
+        action: rules.ALLOW
+    )
+    build.set_actions(@r, names: ["a", "area", "map"], action: rules.ALLOW)
+    allow_any(@r, names: ["href"], on: ["a", "area"])
+    allow(@r, names: ["alt"], on: ["area"], accepts: values.is_paragraph)
+    allow(@r, names: ["shape"], on: ["area"], accepts: values.is_shape)
+    allow(@r, names: ["coords"], on: ["area"], accepts: values.is_coords)
+    allow_any(@r, names: ["name"], on: ["map"])
+    allow_any(@r, names: ["cite"], on: ["blockquote", "q", "del", "ins"])
+    allow(@r, names: ["datetime"], on: ["del", "ins", "time"], accepts: values.is_datetime)
+    allow(@r, names: ["open"], on: ["details"], accepts: values.is_open)
+    return r
+
+# The rules of rich text, as the WHATWG standard's Sanitizer API keeps it by
+# default, with the URLs of `standard_urls` and no `rel` added.
+function rich_text() -> rules.Rules
+    r @= rules.empty()
+    build.set_schemes(@r, schemes: ["http", "https", "mailto"], keep: true)
+    r.relative @ rules.KEPT
+    build.set_actions(
+        @r,
+        names: ["a", "abbr", "address", "article", "aside", "b", "bdi", "bdo", "blockquote", "body", "br", "caption", "cite", "code", "col", "colgroup", "data", "dd", "del", "dfn", "div", "dl", "dt", "em"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["figcaption", "figure", "footer", "h1", "h2", "h3", "h4", "h5", "h6", "head", "header", "hgroup", "hr", "html", "i", "ins", "kbd", "li", "main", "mark", "menu", "nav", "ol", "p", "pre", "q"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["rp", "rt", "ruby", "s", "samp", "search", "section", "small", "span", "strong", "sub", "sup", "table", "tbody", "td", "tfoot", "th", "thead", "time", "title", "tr", "u", "ul", "var", "wbr"],
+        action: rules.ALLOW
+    )
+    allow_any(@r, names: ["href", "hreflang", "type"], on: ["a"])
+    allow_any(@r, names: ["cite"], on: ["blockquote"])
+    allow_any(@r, names: ["span"], on: ["col", "colgroup"])
+    allow_any(@r, names: ["value"], on: ["data", "li"])
+    allow_any(@r, names: ["cite", "datetime"], on: ["del", "ins"])
+    allow_any(@r, names: ["reversed", "start", "type"], on: ["ol"])
+    allow_any(@r, names: ["colspan", "headers", "rowspan"], on: ["td", "th"])
+    allow_any(@r, names: ["abbr", "scope"], on: ["th"])
+    allow_any(@r, names: ["datetime"], on: ["time"])
+    allow_any(@r, names: ["dir", "lang", "title"], on: ["*"])
+    allow_any(
+        @r,
+        names: ["alignment-baseline", "baseline-shift", "clip-path", "clip-rule", "color", "color-interpolation", "cursor", "direction", "display", "displaystyle", "dominant-baseline", "fill", "fill-opacity", "fill-rule"],
+        on: ["*"]
+    )
+    allow_any(
+        @r,
+        names: ["font-family", "font-size", "font-size-adjust", "font-stretch", "font-style", "font-variant", "font-weight", "letter-spacing", "marker-end", "marker-mid", "marker-start", "mathbackground", "mathcolor", "mathsize"],
+        on: ["*"]
+    )
+    allow_any(
+        @r,
+        names: ["opacity", "paint-order", "pointer-events", "scriptlevel", "shape-rendering", "stop-color", "stop-opacity", "stroke", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit"],
+        on: ["*"]
+    )
+    allow_any(
+        @r,
+        names: ["stroke-opacity", "stroke-width", "text-anchor", "text-decoration", "text-overflow", "text-rendering", "transform", "transform-origin", "unicode-bidi", "vector-effect", "visibility", "white-space", "word-spacing", "writing-mode"],
+        on: ["*"]
+    )
+    mathml(@r)
+    svg(@r)
+    return r
+
+# The MathML elements and attributes of the standard's default.
+function mathml(@r: rules.Rules)
+    build.set_actions(
+        @r,
+        names: ["math:a", "math:math", "math:merror", "math:mfrac", "math:mi", "math:mmultiscripts", "math:mn", "math:mo", "math:mover", "math:mpadded", "math:mphantom", "math:mprescripts", "math:mroot"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["math:mrow", "math:ms", "math:mspace", "math:msqrt", "math:mstyle", "math:msub", "math:msubsup", "math:msup", "math:mtable", "math:mtd", "math:mtext", "math:mtr", "math:munder", "math:munderover", "math:semantics"],
+        action: rules.ALLOW
+    )
+    allow_any(@r, names: ["href", "hreflang", "type"], on: ["math:a"])
+    allow_any(
+        @r,
+        names: ["fence", "form", "largeop", "lspace", "maxsize", "minsize", "movablelimits", "rspace", "separator", "stretchy", "symmetric"],
+        on: ["math:mo"]
+    )
+    allow_any(@r, names: ["accent"], on: ["math:mover", "math:munderover"])
+    allow_any(@r, names: ["accentunder"], on: ["math:munder", "math:munderover"])
+    allow_any(@r, names: ["depth", "height", "lspace", "voffset", "width"], on: ["math:mpadded"])
+    allow_any(@r, names: ["depth", "height", "width"], on: ["math:mspace"])
+    allow_any(@r, names: ["columnspan", "rowspan"], on: ["math:mtd"])
+
+# The SVG elements and attributes of the standard's default.
+function svg(@r: rules.Rules)
+    build.set_actions(
+        @r,
+        names: ["svg:a", "svg:circle", "svg:defs", "svg:desc", "svg:ellipse", "svg:foreignObject", "svg:g", "svg:line", "svg:marker", "svg:metadata", "svg:path", "svg:polygon", "svg:polyline"],
+        action: rules.ALLOW
+    )
+    build.set_actions(
+        @r,
+        names: ["svg:rect", "svg:svg", "svg:text", "svg:textPath", "svg:title", "svg:tspan"],
+        action: rules.ALLOW
+    )
+    allow_any(@r, names: ["href", "hreflang", "type"], on: ["svg:a"])
+    allow_any(@r, names: ["cx", "cy", "pathLength", "r"], on: ["svg:circle"])
+    allow_any(@r, names: ["cx", "cy", "pathLength", "rx", "ry"], on: ["svg:ellipse"])
+    allow_any(@r, names: ["height", "width", "x", "y"], on: ["svg:foreignObject"])
+    allow_any(@r, names: ["pathLength", "x1", "x2", "y1", "y2"], on: ["svg:line"])
+    allow_any(
+        @r,
+        names: ["markerHeight", "markerUnits", "markerWidth", "orient", "preserveAspectRatio", "refX", "refY", "viewBox"],
+        on: ["svg:marker"]
+    )
+    allow_any(@r, names: ["d", "pathLength"], on: ["svg:path"])
+    allow_any(@r, names: ["pathLength", "points"], on: ["svg:polygon", "svg:polyline"])
+    allow_any(@r, names: ["height", "pathLength", "rx", "ry", "width", "x", "y"], on: ["svg:rect"])
+    allow_any(@r, names: ["height", "preserveAspectRatio", "viewBox", "width", "x", "y"], on: ["svg:svg"])
+    allow_any(@r, names: ["dx", "dy", "lengthAdjust", "rotate", "textLength", "x", "y"], on: ["svg:text", "svg:tspan"])
+    allow_any(
+        @r,
+        names: ["lengthAdjust", "method", "path", "side", "spacing", "startOffset", "textLength"],
+        on: ["svg:textPath"]
+    )
+
+## Tests
+
+test "ugc: the elements bluemonday keeps, an attribute on each kind, nofollow, and the baseline out"
+    r = ugc()
+    assert rules.action_of(r, rules.HTML, "blockquote") == rules.ALLOW && rules.action_of(r, rules.HTML, "img") == rules.ALLOW
+    assert rules.action_of(r, rules.HTML, "kbd") == rules.UNWRAP && rules.action_of(r, rules.HTML, "script") == rules.DROP
+    assert rules.action_of(r, rules.SVG, "svg") == rules.DROP && r.link_rel == ["nofollow"] && r.relative == rules.KEPT
+    assert r.attributes[rules.pair(element: "td", name: "colspan")].default([]).len() == 1
+
+test "rich_text: HTML, MathML and SVG elements of the standard's default, and a presentation attribute everywhere"
+    r = rich_text()
+    assert rules.action_of(r, rules.HTML, "kbd") == rules.ALLOW && rules.action_of(r, rules.HTML, "img") == rules.UNWRAP
+    assert rules.action_of(r, rules.MATHML, "mfrac") == rules.ALLOW && rules.action_of(r, rules.SVG, "foreignObject") == rules.ALLOW
+    assert rules.action_of(r, rules.SVG, "use") == rules.DROP && r.attributes[rules.pair(element: "*", name: "fill")].default([]).len() == 1

@@ -1,0 +1,982 @@
+# HTML from outside cleaned by an allow-list policy: a fragment someone the
+# page does not trust wrote is read as a browser reads it, by `html`, every
+# element, attribute, URL and style property the policy does not allow is
+# taken out, and the tree is written back, so that the answer can stand inside
+# an element of the page and run nothing. A policy is a value: three are ready
+# (`strict_policy`, text alone; `ugc_policy`, user-generated content as Go's
+# bluemonday keeps it; `rich_text_policy`, the default of the WHATWG HTML
+# standard's Sanitizer API), and a program changes any of them into its own.
+#
+# Whatever a policy says, nothing that runs a script stays: the elements of
+# the standard's safe baseline (`script`, `iframe`, `object`, `embed`,
+# `frame`, `base`, SVG's `script` and `use`), `style`, HTML's and SVG's, and
+# `plaintext`, which would make the rest of a page text; every event handler
+# attribute (a name that begins with `on`), `srcdoc`, a URL whose scheme is
+# `javascript` or `vbscript` as a browser reads the scheme, and an SVG
+# animation of an `href`. The answer is read again as a browser would read it,
+# inside the policy's context element, and cleaned again until a reading finds
+# nothing to take out, so markup that means something else once written and
+# read again (mutation XSS) does not survive.
+#
+# An element is named as a program writes it: an HTML element by its local
+# name in any case (`p`, `a`), an SVG element by `svg:` and its local name as
+# the standard writes it (`svg:circle`, `svg:foreignObject`), a MathML element
+# by `math:` and its name (`math:mi`); `EVERY_ELEMENT`, `*`, stands for every
+# element where a function takes a list of them. An attribute is named as it is
+# written: `href`, `xlink:href`.
+#
+# It cleans a fragment, the text an element holds, and no whole page with its
+# head. It does not read or write HTML that needs no cleaning, which `html`
+# does; text is escaped to stand in a page by `html.escape`, and a page is made
+# from a template and values, escaped by context, by `template`. It finds no
+# links in plain text. It fails with no code: every text is cleaned, and an
+# element, an attribute or a URL that cannot be read is taken out.
+
+use html
+use html/sanitize/internal/build
+use html/sanitize/internal/examples
+use html/sanitize/internal/owasp
+use html/sanitize/internal/ready
+use html/sanitize/internal/rules
+use html/sanitize/internal/walk
+use regex
+use strings
+use url
+
+## Policies
+
+# What a policy allows, and what it adds to what it keeps: a value, copied
+# like any other, changed by the functions of this package that take it with
+# `@`.
+#
+# Made by `strict_policy`, `ugc_policy` or `rich_text_policy`, never directly.
+record Policy
+    # The rules, held by the package itself: a program changes them through
+    # the functions below and reads what it set from its own code.
+    rules: rules.Rules
+
+# What becomes of an element a policy does not keep.
+variant Removal
+    # It goes, with everything inside it.
+    drop
+    # It goes, and what it holds stays in its place: `<u>a</u>` becomes `a`.
+    unwrap
+    # Its tags stay as text, escaped, and what it holds is cleaned as if the
+    # element were not there: `<u>a</u>` becomes `&lt;u&gt;a&lt;/u&gt;`, as
+    # Python's bleach writes it.
+    escape
+
+# What becomes of a relative URL, one with no scheme: `/a`, `b.html`, `#top`,
+# `//example.com/c`.
+variant Relative
+    # It is taken out with its attribute.
+    refused
+    # It stays as it is written, where `url` can read it.
+    kept
+    # It is resolved against `base`, and the URL it names is kept where its
+    # scheme is.
+    resolved
+        # The URL relative ones are found in, an absolute one.
+        base: url.Url
+    # It is put under `root`: a path that begins with one `/` is resolved
+    # against `root`, any other reference against `root` and `path`, as Rust's
+    # ammonia's `RewriteWithRoot` puts it; `..` may still climb out of
+    # `root`. The URL it names is kept where its scheme is.
+    rooted
+        # The root, an absolute URL: `https://example.com/docs/`.
+        root: url.Url
+        # The path under `root` the content stands at, as `guide/intro.html`;
+        # empty for `root` itself.
+        path: str
+
+# The name that stands for every element in a list of elements: `*`.
+constant EVERY_ELEMENT: str
+    "*"
+
+# The policy that keeps text alone: no element, no attribute and no URL stay.
+# An element is unwrapped, its text kept, but `frame`, `frameset`, `iframe`,
+# `noembed`, `noframes`, `noscript`, `object`, `script`, `style` and `title`,
+# which go with what they hold, as Go's bluemonday's `StrictPolicy` does, and
+# an SVG or MathML element, which goes with what it holds. Comments go.
+#
+# It is the policy a program starts from to allow only what it names. See
+# also `ugc_policy`, `rich_text_policy`.
+function strict_policy() -> Policy
+    return Policy(rules: rules.empty())
+
+# The policy for user-generated content, the HTML of an editor or of Markdown
+# converted: the elements and attributes Go's bluemonday's `UGCPolicy` keeps,
+# observed on version 1.0.27, each value checked.
+#
+# It keeps headings, paragraphs, `div`, `span`, the inline elements of text
+# (`b`, `i`, `em`, `strong`, `code`, `sub`, `sup` and the others), lists,
+# tables, `blockquote`, `pre`, `details`, `figure`, `ruby`, links and images;
+# `dir`, `id`, `lang` and `title` on each; URLs that are relative or of
+# `http`, `https` or `mailto`; and adds `rel="nofollow"` to every link. No
+# style and no class stay.
+#
+# See also `strict_policy`, `rich_text_policy`.
+function ugc_policy() -> Policy
+    return Policy(rules: ready.ugc())
+
+# The policy of rich text as the WHATWG HTML standard's Sanitizer API keeps it
+# by default: the HTML elements the standard calls Default with the
+# attributes it gives each, the MathML and SVG elements of its table with
+# theirs, and `dir`, `lang`, `title` and the presentation attributes of SVG
+# and MathML on every element.
+#
+# Its URLs are the ones `ugc_policy` keeps, relative or of `http`, `https` or
+# `mailto`, where the standard's keeps every scheme but `javascript`; no
+# image, which the standard's default leaves out; comments go.
+#
+# See also `strict_policy`, `ugc_policy`.
+function rich_text_policy() -> Policy
+    return Policy(rules: ready.rich_text())
+
+## Elements
+
+# Lets the elements `names` stay, with the attributes allowed on them.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the elements, named as the module's opening says; `*` is not
+#   read here. An element of the safe baseline (`script`, `style`, `iframe`
+#   and the rest the module's opening names) is never allowed, and naming one
+#   changes nothing.
+#
+# See also `remove_elements`.
+function allow_elements(@policy: Policy, names: [str])
+    build.set_actions(@policy.rules, names: names, action: rules.ALLOW)
+
+# Sets what becomes of the elements `names` where they are not allowed.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the elements, named as the module's opening says. An element
+#   allowed before is not any more.
+# - `how`: drop it with what it holds, unwrap it, or write its tags as text.
+#   An SVG or MathML element that is not allowed is always dropped, since what
+#   it holds is read by other rules once its tags are gone.
+#
+# See also `set_unlisted`, `allow_elements`.
+function remove_elements(@policy: Policy, names: [str], how: Removal)
+    action = match how
+        .drop   => rules.DROP
+        .unwrap => rules.UNWRAP
+        .escape => rules.ESCAPE
+
+    build.set_actions(@policy.rules, names: names, action: action)
+
+# Sets what becomes of an HTML element the policy names nowhere: unwrapped in
+# the ready policies.
+#
+# - `policy`: the policy, changed in place.
+# - `how`: drop it with what it holds, unwrap it, or write its tags as text,
+#   as Python's bleach does by default.
+#
+# See also `remove_elements`.
+function set_unlisted(@policy: Policy, how: Removal)
+    policy.rules.unlisted @ match how
+        .drop   => rules.DROP
+        .unwrap => rules.UNWRAP
+        .escape => rules.ESCAPE
+
+## Attributes
+
+# Lets the attributes `names` stay on the elements `on`, with any value.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the attributes, named as written; an HTML element's in any case.
+#   `style` lets every style property stay, each value checked as
+#   `allow_styles` checks one; `class` lets every class stay unless
+#   `allow_classes` lists the element's. An event handler and `srcdoc` never
+#   stay, and a URL is checked as `allow_url_schemes` says.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them; an attribute stays
+#   only on an element the policy keeps.
+#
+# See also `allow_attributes_matching`, `allow_attribute_values`,
+# `allow_attributes_where`, `forbid_attributes`.
+function allow_attributes(@policy: Policy, names: [str], on: [str])
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    check = rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    build.add_attribute_check(@policy.rules, names: names, on: on, check: check)
+
+# Lets the attributes `names` stay on the elements `on` where `pattern`
+# matches the whole of their value.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the attributes, as `allow_attributes` reads them.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `pattern`: matched against the whole value, so it needs no `^` and `$`;
+#   the empty value is matched like any other.
+#
+# Several checks of one attribute keep a value any of them accepts. See also
+# `allow_attributes`.
+function allow_attributes_matching(@policy: Policy, names: [str], on: [str], pattern: regex.Regex)
+    no_values: [str] = []
+    check = rules.Check(kind: rules.PATTERN, patterns: [pattern], values: no_values, accepts: rules.accept_all)
+    build.add_attribute_check(@policy.rules, names: names, on: on, check: check)
+
+# Lets the attributes `names` stay on the elements `on` where their value is
+# one of `values`.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the attributes, as `allow_attributes` reads them.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `values`: the values kept, compared exactly; empty keeps none.
+#
+# See also `allow_attributes`.
+function allow_attribute_values(@policy: Policy, names: [str], on: [str], values: [str])
+    none: [regex.Regex] = []
+    check = rules.Check(kind: rules.VALUES, patterns: none, values: values, accepts: rules.accept_all)
+    build.add_attribute_check(@policy.rules, names: names, on: on, check: check)
+
+# Lets the attributes `names` stay on the elements `on` where `accepts`
+# accepts their value.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the attributes, as `allow_attributes` reads them.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `accepts`: called with each value read, its character references read;
+#   true keeps it.
+#
+# See also `allow_attributes`, `filter_attributes`.
+function allow_attributes_where(@policy: Policy, names: [str], on: [str], accepts: (function(str) -> bool))
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    check = rules.Check(kind: rules.WHERE, patterns: none, values: no_values, accepts: accepts)
+    build.add_attribute_check(@policy.rules, names: names, on: on, check: check)
+
+# Lets every attribute whose name begins with one of `prefixes` stay on the
+# elements `on`, with any value.
+#
+# - `policy`: the policy, changed in place.
+# - `prefixes`: the beginnings of names, compared in any ASCII case: `aria-`.
+#   A name that begins with `on` still never stays.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+#
+# See also `allow_data_attributes`.
+function allow_attribute_prefixes(@policy: Policy, prefixes: [str], on: [str])
+    build.add_prefixes(@policy.rules, prefixes: prefixes, on: on)
+
+# Lets every `data-` attribute stay on every element kept, with any value,
+# where its name is one a browser makes a custom data attribute of: `data-`
+# and at least one character, none an ASCII upper-case letter.
+#
+# - `policy`: the policy, changed in place.
+#
+# See also `allow_attribute_prefixes`.
+function allow_data_attributes(@policy: Policy)
+    policy.rules.data_attributes @ true
+
+# Takes the attributes `names` out of the elements `on`, whatever else allows
+# them.
+#
+# - `policy`: the policy, changed in place.
+# - `names`: the attributes, named as written.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+#
+# See also `allow_attributes`.
+function forbid_attributes(@policy: Policy, names: [str], on: [str])
+    build.forbid(@policy.rules, names: names, on: on)
+
+# Sets the attribute `name` to `value` on every element of `on` the policy
+# keeps, whatever the input says, as Go's bluemonday's
+# `RequireCrossOriginAnonymous` sets `crossorigin`.
+#
+# - `policy`: the policy, changed in place.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `name`: the attribute; an event handler or `srcdoc` is never set.
+# - `value`: the value, written as it is; a URL is checked as any other.
+#
+# See also `add_link_rel`.
+function force_attribute(@policy: Policy, on: [str], name: str, value: str)
+    build.add_forced(@policy.rules, on: on, name: name, value: value)
+
+# Lets `rewrite` change or take out every attribute the policy keeps, before
+# its URL, style or class is checked.
+#
+# - `policy`: the policy, changed in place; the filters added before run
+#   first.
+# - `rewrite`: called with the element's name as the module's opening names
+#   it, the attribute's name and its value; its answer is the value kept, and a
+#   failure takes the attribute out. It is called on the first reading alone,
+#   never on the readings that check the answer.
+#
+# See also `allow_attributes_where`.
+function filter_attributes(@policy: Policy, rewrite: (function(element: str, name: str, value: str) -> str?))
+    filters @= policy.rules.filters
+    filters @ filters.push(rewrite)
+    policy.rules.filters @ filters
+
+# Lets the classes `classes` stay on the elements `on`, and no other class:
+# the `class` attribute stays with the classes listed, in their order, and
+# goes where none is left.
+#
+# - `policy`: the policy, changed in place.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `classes`: the class names, compared exactly.
+#
+# See also `allow_attributes`.
+function allow_classes(@policy: Policy, on: [str], classes: [str])
+    build.add_classes(@policy.rules, on: on, names: classes)
+
+# Puts `prefix` before the value of every `id` the policy keeps, so that no
+# `id` of the input names an element of the page (DOM clobbering).
+#
+# - `policy`: the policy, changed in place.
+# - `prefix`: the text put before, as `user-content-`; empty puts none.
+#
+# An `id` is kept only where the policy allows it.
+function prefix_ids(@policy: Policy, prefix: str)
+    policy.rules.id_prefix @ prefix
+
+## Styles
+
+# Lets the style properties `properties` stay in the `style` of the elements
+# `on`, where their value can load nothing and run nothing.
+#
+# - `policy`: the policy, changed in place.
+# - `properties`: the properties, in any ASCII case: `color`, `text-align`.
+#   `behavior` and `-moz-binding` never stay.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+#
+# A value stays where it holds no backslash, comment, `<`, `>`, `{`, `}` or
+# control character, and calls no function but those of colours, gradients,
+# transforms, filters and arithmetic (`rgb`, `calc`, `linear-gradient`); so
+# `url()`, `image-set()` and `expression()` never stay. The `style` attribute
+# is written again, `property: value` joined by `; `, and goes where no
+# declaration is left.
+#
+# See also `allow_styles_matching`, `allow_style_values`,
+# `allow_styles_where`.
+function allow_styles(@policy: Policy, properties: [str], on: [str])
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    check = rules.Check(kind: rules.ANY, patterns: none, values: no_values, accepts: rules.accept_all)
+    build.add_style_check(@policy.rules, properties: properties, on: on, check: check)
+
+# Lets the style properties `properties` stay on the elements `on` where
+# `pattern` matches the whole of their value, and `allow_styles` would keep
+# it.
+#
+# - `policy`: the policy, changed in place.
+# - `properties`: the properties, in any ASCII case.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `pattern`: matched against the whole value, its `!important` included.
+#
+# See also `allow_styles`.
+function allow_styles_matching(@policy: Policy, properties: [str], on: [str], pattern: regex.Regex)
+    no_values: [str] = []
+    check = rules.Check(kind: rules.PATTERN, patterns: [pattern], values: no_values, accepts: rules.accept_all)
+    build.add_style_check(@policy.rules, properties: properties, on: on, check: check)
+
+# Lets the style properties `properties` stay on the elements `on` where
+# their value is one of `values`.
+#
+# - `policy`: the policy, changed in place.
+# - `properties`: the properties, in any ASCII case.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `values`: the values kept, compared in any ASCII case, as CSS compares
+#   its keywords.
+#
+# See also `allow_styles`.
+function allow_style_values(@policy: Policy, properties: [str], on: [str], values: [str])
+    none: [regex.Regex] = []
+    check = rules.Check(kind: rules.VALUES, patterns: none, values: values, accepts: rules.accept_all)
+    build.add_style_check(@policy.rules, properties: properties, on: on, check: check)
+
+# Lets the style properties `properties` stay on the elements `on` where
+# `accepts` accepts their value, and `allow_styles` would keep it.
+#
+# - `policy`: the policy, changed in place.
+# - `properties`: the properties, in any ASCII case.
+# - `on`: the elements, `EVERY_ELEMENT` for all of them.
+# - `accepts`: called with the value, white space cut from both ends; true
+#   keeps it.
+#
+# See also `allow_styles`.
+function allow_styles_where(@policy: Policy, properties: [str], on: [str], accepts: (function(str) -> bool))
+    none: [regex.Regex] = []
+    no_values: [str] = []
+    check = rules.Check(kind: rules.WHERE, patterns: none, values: no_values, accepts: accepts)
+    build.add_style_check(@policy.rules, properties: properties, on: on, check: check)
+
+## URLs
+
+# Lets URLs of the schemes `schemes` stay in every attribute that holds a URL.
+#
+# - `policy`: the policy, changed in place.
+# - `schemes`: the schemes, in any ASCII case, without their `:`: `https`,
+#   `mailto`. `javascript` and `vbscript` never stay.
+#
+# A URL is read as a browser reads it: spaces and control characters cut from
+# both ends, tabs and line breaks taken out, so `jav&#x09;ascript:` is
+# `javascript:`; it stays, written so, where `url.parse_loose` reads it. The
+# attributes that hold a URL are `href`, `src`, `cite`, `action`,
+# `formaction`, `poster`, `background`, `longdesc`, `lowsrc`, `dynsrc`,
+# `data`, `codebase`, `classid`, `manifest`, `icon`, `profile`, `itemid` and
+# `xlink:href`, every `href` of an SVG or MathML element, the lists of
+# `ping`, `archive` and `itemtype`, and the candidates of `srcset` and
+# `imagesrcset`, where every URL must stay for the attribute to stay.
+#
+# See also `forbid_url_schemes`, `allow_url_scheme_where`,
+# `set_relative_urls`.
+function allow_url_schemes(@policy: Policy, schemes: [str])
+    build.set_schemes(@policy.rules, schemes: schemes, keep: true)
+
+# Takes the schemes `schemes` out of the ones a policy keeps.
+#
+# - `policy`: the policy, changed in place.
+# - `schemes`: the schemes, in any ASCII case; the functions
+#   `allow_url_scheme_where` gave them go too.
+function forbid_url_schemes(@policy: Policy, schemes: [str])
+    build.set_schemes(@policy.rules, schemes: schemes, keep: false)
+
+# Lets a URL of `scheme` stay where `accepts` accepts it.
+#
+# - `policy`: the policy, changed in place.
+# - `scheme`: the scheme, in any ASCII case; a scheme `allow_url_schemes`
+#   keeps stays whatever `accepts` answers.
+# - `accepts`: called with the URL as `url.parse_loose` reads it; true keeps
+#   it. Several for one scheme keep a URL any of them accepts.
+#
+# See also `allow_url_schemes`.
+function allow_url_scheme_where(@policy: Policy, scheme: str, accepts: (function(url.Url) -> bool))
+    build.add_scheme_check(@policy.rules, scheme: scheme, accepts: accepts)
+
+# Sets what becomes of a relative URL: refused in `strict_policy`, kept in the
+# other two.
+#
+# - `policy`: the policy, changed in place.
+# - `how`: refused, kept, resolved against a base, or put under a root,
+#   after which the scheme of the URL it names is checked as any other. A
+#   relative URL `url.parse_loose` cannot read is refused in every case.
+function set_relative_urls(@policy: Policy, how: Relative)
+    match how
+        .refused => policy.rules.relative @ rules.REFUSED
+        .kept    => policy.rules.relative @ rules.KEPT
+        .resolved r =>
+            policy.rules.relative @ rules.RESOLVED
+            policy.rules.base @ r.base
+        .rooted r =>
+            policy.rules.relative @ rules.ROOTED
+            policy.rules.base @ r.root
+            policy.rules.root_path @ r.path
+
+# Lets an `img`'s `src` be a `data:` URL of a PNG, JPEG, GIF or WebP image,
+# written in base 64, as Go's bluemonday's `AllowDataURIImages` does.
+#
+# - `policy`: the policy, changed in place.
+#
+# Any other `data:` URL stays only where `allow_url_schemes` names `data`.
+function allow_data_images(@policy: Policy)
+    policy.rules.data_images @ true
+
+## Links
+
+# Adds `tokens` to the `rel` of every `a`, `area` and `link` that has an
+# `href`, after the tokens its `rel` keeps, each once.
+#
+# - `policy`: the policy, changed in place.
+# - `tokens`: the tokens, as `nofollow`, `noopener`, `noreferrer`; empty adds
+#   none.
+# - `external_only`: true adds them only to links that name a host, as
+#   `https://example.com/` and `//example.com/` do.
+#
+# A link whose `target` opens another window gets `noopener` in any case.
+# See also `set_link_target`.
+function add_link_rel(@policy: Policy, tokens: [str], external_only: bool)
+    policy.rules.link_rel @ tokens
+    policy.rules.rel_external_only @ external_only
+
+# Sets the `target` of every `a`, `area` and `link` that has an `href`, as
+# Go's bluemonday's `AddTargetBlankToFullyQualifiedLinks` sets `_blank`.
+#
+# - `policy`: the policy, changed in place.
+# - `target`: the target, as `_blank`; empty sets none.
+# - `external_only`: true sets it only on links that name a host.
+#
+# A link whose `target` opens another window gets `noopener` in its `rel`.
+function set_link_target(@policy: Policy, target: str, external_only: bool)
+    policy.rules.target @ target
+    policy.rules.target_external_only @ external_only
+
+## Comments, spaces and context
+
+# Lets comments stay, but one that holds `<`, `>` or `--`, or begins with
+# `-` or `[`, or ends with `-`, which some reader would take for markup (old
+# Internet Explorer's conditional comments among them).
+#
+# - `policy`: the policy, changed in place.
+function allow_comments(@policy: Policy)
+    policy.rules.comments @ true
+
+# Puts a space where an element was dropped or unwrapped, so that
+# `<p>a</p><p>b</p>` does not run its words together, as Go's bluemonday's
+# `AddSpaceWhenStrippingTag` does.
+#
+# - `policy`: the policy, changed in place.
+function add_spaces(@policy: Policy)
+    policy.rules.spaces @ true
+
+# Sets the HTML element the text is read inside, and where the answer is to
+# stand: `div` in the ready policies.
+#
+# - `policy`: the policy, changed in place.
+# - `element`: the element's name, in any case: `td` reads the text as a cell
+#   holds it, `title` and `textarea` read it all as text.
+#
+# The answer is clean where it is put inside an element of that name, as
+# `innerHTML`; put elsewhere, inside an attribute or another element, a browser
+# may read it otherwise.
+#
+# Aborts where `element` is one whose text a browser reads as it is and
+# never as markup, so that no answer would be clean inside it: `script`,
+# `style`, `xmp`, `iframe`, `noembed`, `noframes`, `noscript` and
+# `plaintext`, in any case.
+function set_context(@policy: Policy, element: str)
+    lower = strings.to_lower_ascii(element)
+    assert !(lower == "script" || lower == "style" || lower == "xmp" || lower == "iframe" || lower == "noembed" || lower == "noframes" || lower == "noscript" || lower == "plaintext")
+    policy.rules.context @ lower
+
+## Ready groups
+
+# Lets `id`, `title`, `dir` and `lang` stay on every element, as Go's
+# bluemonday's `AllowStandardAttributes` does: `dir` where it is `ltr` or
+# `rtl`, `id` where it holds no white space, `lang` where it is a language
+# tag, `title` where it holds letters, numbers, white space and the
+# punctuation of a sentence alone.
+#
+# - `policy`: the policy, changed in place.
+function allow_standard_attributes(@policy: Policy)
+    ready.standard_attributes(@policy.rules)
+
+# Lets URLs of `http`, `https` and `mailto` and relative ones stay, and adds
+# `nofollow` to the `rel` of every link, as Go's bluemonday's
+# `AllowStandardURLs` does.
+#
+# - `policy`: the policy, changed in place.
+function allow_standard_urls(@policy: Policy)
+    ready.standard_urls(@policy.rules)
+
+# Lets `img` stay with `src`, `alt`, `title`, `width`, `height`, `align` and
+# `usemap`, each value checked, as Go's bluemonday's `AllowImages` does.
+#
+# - `policy`: the policy, changed in place.
+#
+# Its `src` stays only where its URL does; see `allow_data_images`.
+function allow_images(@policy: Policy)
+    ready.images(@policy.rules)
+
+# Lets the lists stay, `ol`, `ul`, `li`, `dl`, `dt` and `dd`, with `type` and
+# a `li`'s `value`, as Go's bluemonday's `AllowLists` does.
+#
+# - `policy`: the policy, changed in place.
+function allow_lists(@policy: Policy)
+    ready.lists(@policy.rules)
+
+# Lets the tables stay, `table`, `caption`, `col`, `colgroup`, `thead`,
+# `tbody`, `tfoot`, `tr`, `th` and `td`, with the attributes Go's bluemonday's
+# `AllowTables` keeps, each value checked.
+#
+# - `policy`: the policy, changed in place.
+function allow_tables(@policy: Policy)
+    ready.tables(@policy.rules)
+
+## Cleaning
+
+# `text` cleaned by `policy`: what it keeps of the fragment, written as
+# `html.format` writes a tree.
+#
+# - `policy`: the policy.
+# - `text`: the fragment, any text at all, read inside the policy's context
+#   element as a browser reads `innerHTML`.
+#
+# The answer read again inside that element is a tree the policy keeps
+# whole, and written again it is the same bytes: it is read, cleaned and
+# written again until a reading takes nothing out and writes what it read, at
+# most eight times, and where eight readings do not settle, the answer is the
+# text alone, escaped. Empty where nothing is kept.
+#
+# It costs a reading by `html.parse_fragment`, a walk of the tree and a
+# writing by `html.format` for each reading, two for most texts.
+#
+# See also `clean_fragment`, `has_markup`.
+function clean(policy: Policy, text: str) -> str
+    return walk.cleaned_text(policy.rules, text)
+
+# The tree of `clean`'s answer, read as a browser reads it inside the
+# policy's context element: a fragment whose node `html.ROOT` holds what was
+# kept.
+#
+# - `policy`: the policy.
+# - `text`: the fragment, any text at all.
+#
+# See also `clean`.
+function clean_fragment(policy: Policy, text: str) -> html.Document
+    return html.parse_fragment(text: walk.cleaned_text(policy.rules, text), context: policy.rules.context)
+
+# Whether `text` holds markup: an element, a comment, a doctype or a
+# processing instruction, read as a browser reads a `div`'s `innerHTML`, as
+# Rust's ammonia's `is_html` answers.
+#
+# - `text`: any text; a character reference and a lone `<` are text, not
+#   markup.
+function has_markup(text: str) -> bool
+    return walk.has_markup(text)
+
+## Tests
+
+test "clean: the empty text, text alone, and character references kept as references"
+    assert clean(ugc_policy(), "") == "" && clean(strict_policy(), "plain") == "plain"
+    assert clean(strict_policy(), "a < b & c &lt; d&nbsp;e") == "a &lt; b &amp; c &lt; d&nbsp;e"
+
+test "clean: sanitize, write, read again, sanitize again: the same bytes, for every ready policy"
+    for text in ["<b>a<i>b</b>c</i>", "<p>a<p>b", "<table><a href=/x>t</a><tr><td>1</table>", "<svg><p>x</p></svg>", "<math><mi><mglyph><svg><mtext><style><img src=x onerror=alert(1)>", "<h1>a<h6>b</h6></h1>", "<form><math><mtext></form><form><mglyph><style></math><img src onerror=alert(1)>"]
+        for policy in [strict_policy(), ugc_policy(), rich_text_policy()]
+            once = clean(policy, text)
+            assert clean(policy, once) == once
+
+test "clean: a tree nested deeper than a reading keeps, and a thousand links"
+    deep = clean(ugc_policy(), repeat("<div>", 100000) + "x")
+    assert strings.count_of(s: deep, substr: "<div>") == 100000 && strings.count_of(s: deep, substr: "x") == 1 && clean(ugc_policy(), deep) == deep
+    links = repeat("<a href=\"/x\" onclick=\"y()\">z</a>", 1000)
+    assert clean(ugc_policy(), links) == repeat("<a href=\"/x\" rel=\"nofollow\">z</a>", 1000)
+
+test "clean: a policy is a copy, so changing one changes no other"
+    base = ugc_policy()
+    changed @= base
+    allow_elements(@changed, ["kbd"])
+    assert clean(base, "<kbd>k</kbd>") == "k" && clean(changed, "<kbd>k</kbd>") == "<kbd>k</kbd>"
+
+test "clean: the baseline stays out whatever the policy allows"
+    policy @= strict_policy()
+    allow_elements(@policy, ["script", "style", "iframe", "svg:use", "svg:svg", "p"])
+    allow_attributes(@policy, names: ["onclick", "srcdoc", "href"], on: [EVERY_ELEMENT])
+    allow_url_schemes(@policy, ["javascript", "vbscript", "https"])
+    got = clean(
+        policy,
+        "<script>a</script><style>b</style><iframe srcdoc=x></iframe><svg><use href=#x /></svg><p onclick=x href=\"javascript:y\">c</p><p href=\"https://e.com/\">d</p>"
+    )
+    assert got == "<svg></svg><p>c</p><p href=\"https://e.com/\">d</p>"
+
+test "clean: an animation of a link, a MathML link and an SVG link to a script"
+    got = clean(
+        rich_text_policy(),
+        "<math href=\"javascript:alert(1)\"><mi>x</mi></math><svg><a href=\"javascript:alert(1)\"><text>y</text></a><animate attributeName=\"href\" values=\"javascript:alert(1)\"/></svg>"
+    )
+    assert got == "<math><mi>x</mi></math><svg><a><text>y</text></a></svg>"
+
+test "clean: a URL that the parser of a browser reads as javascript, written in every way"
+    for href in ["javascript:x", "JaVaScRiPt:x", " javascript:x", "\u{1}javascript:x", "java\tscript:x", "java\nscript:x", "&#x6A;avascript:x", "javascript&colon;x", "&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;x", "vbscript:x"]
+        assert clean(ugc_policy(), "<a href=\"" + href + "\">l</a>") == "<a>l</a>"
+
+test "clean: a relative URL refused, kept, and resolved to a scheme refused"
+    policy @= ugc_policy()
+    set_relative_urls(@policy, .refused)
+    assert clean(policy, "<a href=\"/x\">l</a>") == "<a>l</a>"
+    set_relative_urls(@policy, .resolved(base: url.parse("ftp://example.com/a/").must()))
+    assert clean(policy, "<a href=\"b\">l</a>") == "<a>l</a>"
+    set_relative_urls(@policy, .kept)
+    assert clean(policy, "<a href=\"b\">l</a>") == "<a href=\"b\" rel=\"nofollow\">l</a>"
+
+test "clean: the context element, a table's row and a title's text"
+    policy @= ugc_policy()
+    set_context(@policy, "TR")
+    assert clean(policy, "<td>1</td><td onclick=x>2</td>") == "<td>1</td><td>2</td>"
+    set_context(@policy, "title")
+    assert clean(policy, "<b>x</b>") == "&lt;b&gt;x&lt;/b&gt;"
+
+test "clean: comments where allowed, the ones a reader would take for markup still out"
+    policy @= ugc_policy()
+    allow_comments(@policy)
+    assert clean(policy, "<!-- a --><!--[if IE]><b>x</b><![endif]--><!-- b -- c --><!-- d-->") == "<!-- a --><!-- d-->"
+
+test "clean: an id prefixed once though the answer is read again"
+    policy @= ugc_policy()
+    prefix_ids(@policy, "user-content-")
+    once = clean(policy, "<h2 id=\"intro\">x</h2>")
+    assert once == "<h2 id=\"user-content-intro\">x</h2>" && clean(policy, once) == "<h2 id=\"user-content-user-content-intro\">x</h2>"
+
+test "clean: a filter's rewritten URL checked as any other"
+    policy @= ugc_policy()
+    filter_attributes(@policy, examples.proxied)
+    assert clean(policy, "<img src=\"https://e.com/a.png\" alt=\"a\">") == "<img src=\"https://proxy.example/?u=https%3A%2F%2Fe.com%2Fa.png\" alt=\"a\">"
+    forbid_url_schemes(@policy, ["https"])
+    assert clean(policy, "<img src=\"https://e.com/a.png\">") == "<img>"
+
+test "clean: styles kept, refused, and the style attribute gone where nothing stays"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_attributes(@policy, names: ["style"], on: ["p"])
+    got = clean(
+        policy,
+        "<p style=\"COLOR: red !important; background: url(x); width: calc(100% - 2px); b\\61ckground: red\">a</p><p style=\"x: expression(alert(1))\">b</p>"
+    )
+    assert got == "<p style=\"color: red; width: calc(100% - 2px)\">a</p><p>b</p>"
+
+test "clean: srcset and ping, every URL checked"
+    policy @= ugc_policy()
+    allow_attributes(@policy, names: ["srcset"], on: ["img"])
+    allow_attributes(@policy, names: ["ping"], on: ["a"])
+    assert clean(policy, "<img srcset=\"/a.png 1x, /b.png 2x\">") == "<img srcset=\"/a.png 1x, /b.png 2x\">"
+    assert clean(policy, "<img srcset=\"/a.png 1x, javascript:x 2x\">") == "<img>"
+    assert clean(policy, "<a href=\"/\" ping=\"/p https://e.com/q\">l</a>") == "<a href=\"/\" ping=\"/p https://e.com/q\" rel=\"nofollow\">l</a>"
+
+test "clean_fragment: the tree of the answer, searched"
+    doc = clean_fragment(ugc_policy(), "<p><a href=\"/x\" onclick=\"y()\">z</a></p>")
+    a = html.select(doc, html.ROOT, "a").must()
+    assert html.attribute(doc, a, "rel").must() == "nofollow" && !html.has_attribute(doc, a, "onclick")
+
+test "OWASP: the cheat sheet the vectors were taken from"
+    assert owasp.SOURCE == "XSS_Filter_Evasion_Cheat_Sheet.md sha256 7e298e2905c7c4ad"
+
+## Examples
+
+# Text kept, every element taken out, a script's text with it.
+test "strict_policy: a paragraph's text"
+    assert clean(strict_policy(), "<p>Hello <b>World</b><script>x</script></p>") == "Hello World"
+
+# A link kept with `nofollow` added, its handler taken out.
+test "ugc_policy: a comment's link"
+    assert clean(ugc_policy(), "<a href=\"https://example.com\" onclick=\"x()\">site</a>") == "<a href=\"https://example.com\" rel=\"nofollow\">site</a>"
+
+# A keyboard key and a direction kept, an image taken out.
+test "rich_text_policy: a key and no image"
+    assert clean(rich_text_policy(), "<p dir=\"rtl\"><kbd>Ctrl</kbd><img src=\"a.png\"></p>") == "<p dir=\"rtl\"><kbd>Ctrl</kbd></p>"
+
+# Bold and italic allowed, underline unwrapped.
+test "allow_elements: bold and italic"
+    policy @= strict_policy()
+    allow_elements(@policy, ["b", "i"])
+    assert clean(policy, "<b>x</b><u>y</u>") == "<b>x</b>y"
+
+# A quotation dropped with what it holds.
+test "remove_elements: a quotation dropped"
+    policy @= strict_policy()
+    remove_elements(@policy, names: ["blockquote"], how: .drop)
+    assert clean(policy, "<blockquote>quoted</blockquote>reply") == "reply"
+
+# What is not allowed shown as text, as Python's bleach shows it.
+test "set_unlisted: tags shown as text"
+    policy @= strict_policy()
+    allow_elements(@policy, ["b"])
+    set_unlisted(@policy, .escape)
+    assert clean(policy, "<b>x</b><u>y</u>") == "<b>x</b>&lt;u&gt;y&lt;/u&gt;"
+
+# A title kept on a paragraph, a class taken out.
+test "allow_attributes: a paragraph's title"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_attributes(@policy, names: ["title"], on: ["p"])
+    assert clean(policy, "<p title=\"t\" class=\"c\">x</p>") == "<p title=\"t\">x</p>"
+
+# A width kept where it is digits alone.
+test "allow_attributes_matching: an image's width in digits"
+    policy @= strict_policy()
+    allow_elements(@policy, ["img"])
+    allow_attributes_matching(@policy, names: ["width"], on: ["img"], pattern: regex.compile("[0-9]+").must())
+    assert clean(policy, "<img width=\"10\"><img width=\"10px\">") == "<img width=\"10\"><img>"
+
+# A role kept where it is one of two values.
+test "allow_attribute_values: a role of a list"
+    policy @= strict_policy()
+    allow_elements(@policy, ["div"])
+    allow_attribute_values(@policy, names: ["role"], on: ["div"], values: ["alert", "status"])
+    assert clean(policy, "<div role=\"alert\">a</div><div role=\"banner\">b</div>") == "<div role=\"alert\">a</div><div>b</div>"
+
+# A title kept where a function accepts it.
+test "allow_attributes_where: a short title"
+    policy @= strict_policy()
+    allow_elements(@policy, ["abbr"])
+    allow_attributes_where(@policy, names: ["title"], on: ["abbr"], accepts: examples.is_short)
+    assert clean(policy, "<abbr title=\"HTML\">a</abbr><abbr title=\"far too long\">b</abbr>") == "<abbr title=\"HTML\">a</abbr><abbr>b</abbr>"
+
+# Every `aria-` attribute kept, another taken out.
+test "allow_attribute_prefixes: the attributes of accessibility"
+    policy @= strict_policy()
+    allow_elements(@policy, ["span"])
+    allow_attribute_prefixes(@policy, prefixes: ["aria-"], on: [EVERY_ELEMENT])
+    assert clean(policy, "<span aria-label=\"l\" role=\"r\">x</span>") == "<span aria-label=\"l\">x</span>"
+
+# Data attributes kept, one with no name after `data-` taken out.
+test "allow_data_attributes: an identifier for a script of the page"
+    policy @= strict_policy()
+    allow_elements(@policy, ["span"])
+    allow_data_attributes(@policy)
+    assert clean(policy, "<span data-id=\"7\" data-X=\"1\" data-=\"e\">x</span>") == "<span data-id=\"7\" data-x=\"1\">x</span>"
+
+# An `id` taken out of a policy that keeps it.
+test "forbid_attributes: no id"
+    policy @= ugc_policy()
+    forbid_attributes(@policy, names: ["id"], on: [EVERY_ELEMENT])
+    assert clean(policy, "<p id=\"a\" title=\"t\">x</p>") == "<p title=\"t\">x</p>"
+
+# Every image loaded without credentials.
+test "force_attribute: crossorigin on images"
+    policy @= ugc_policy()
+    force_attribute(@policy, on: ["img"], name: "crossorigin", value: "anonymous")
+    assert clean(policy, "<img src=\"https://e.com/a.png\">") == "<img src=\"https://e.com/a.png\" crossorigin=\"anonymous\">"
+
+# A class kept only where it is `mention`, as nh3's documentation shows.
+test "filter_attributes: mentions alone"
+    policy @= strict_policy()
+    allow_elements(@policy, ["a"])
+    allow_attributes(@policy, names: ["class"], on: ["a"])
+    filter_attributes(@policy, examples.mention_only)
+    assert clean(policy, "<a class=\"mention unwanted\">@foo</a>") == "<a class=\"mention\">@foo</a>"
+
+# One class of two kept.
+test "allow_classes: a highlight"
+    policy @= strict_policy()
+    allow_elements(@policy, ["span"])
+    allow_classes(@policy, on: ["span"], classes: ["highlight"])
+    assert clean(policy, "<span class=\"highlight big\">x</span>") == "<span class=\"highlight\">x</span>"
+
+# A heading's `id` that can name nothing of the page.
+test "prefix_ids: a heading's anchor"
+    policy @= ugc_policy()
+    prefix_ids(@policy, "user-content-")
+    assert clean(policy, "<h2 id=\"intro\">x</h2>") == "<h2 id=\"user-content-intro\">x</h2>"
+
+# A colour kept, a position taken out.
+test "allow_styles: a colour"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_styles(@policy, properties: ["color"], on: ["p"])
+    assert clean(policy, "<p style=\"color: red; position: fixed\">x</p>") == "<p style=\"color: red\">x</p>"
+
+# A colour kept where it is written in hexadecimal.
+test "allow_styles_matching: a colour in hexadecimal"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_styles_matching(@policy, properties: ["color"], on: ["p"], pattern: regex.compile("#[0-9a-fA-F]{6}").must())
+    assert clean(policy, "<p style=\"color: #FF0000\">a</p><p style=\"color: red\">b</p>") == "<p style=\"color: #FF0000\">a</p><p>b</p>"
+
+# An alignment kept where it is one of three, in any case.
+test "allow_style_values: an alignment"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_style_values(@policy, properties: ["text-align"], on: ["p"], values: ["left", "right", "center"])
+    assert clean(policy, "<p style=\"text-align: CENTER\">a</p><p style=\"text-align: justify\">b</p>") == "<p style=\"text-align: CENTER\">a</p><p>b</p>"
+
+# A width kept where it is in pixels.
+test "allow_styles_where: a width in pixels"
+    policy @= strict_policy()
+    allow_elements(@policy, ["div"])
+    allow_styles_where(@policy, properties: ["width"], on: ["div"], accepts: examples.is_pixels)
+    assert clean(policy, "<div style=\"width: 12px\">a</div><div style=\"width: 50%\">b</div>") == "<div style=\"width: 12px\">a</div><div>b</div>"
+
+# Links to HTTPS kept, to HTTP not.
+test "allow_url_schemes: HTTPS alone"
+    policy @= strict_policy()
+    allow_elements(@policy, ["a"])
+    allow_attributes(@policy, names: ["href"], on: ["a"])
+    allow_url_schemes(@policy, ["https"])
+    assert clean(policy, "<a href=\"https://e.com\">a</a><a href=\"http://e.com\">b</a>") == "<a href=\"https://e.com\">a</a><a>b</a>"
+
+# Mail addresses taken out of a policy that keeps them.
+test "forbid_url_schemes: no mail"
+    policy @= ugc_policy()
+    forbid_url_schemes(@policy, ["mailto"])
+    assert clean(policy, "<a href=\"mailto:a@e.com\">m</a>") == "<a>m</a>"
+
+# HTTPS kept for one host alone.
+test "allow_url_scheme_where: one host"
+    policy @= strict_policy()
+    allow_elements(@policy, ["a"])
+    allow_attributes(@policy, names: ["href"], on: ["a"])
+    allow_url_scheme_where(@policy, scheme: "https", accepts: examples.is_example_host)
+    assert clean(policy, "<a href=\"https://example.com/x\">a</a><a href=\"https://e.com/\">b</a>") == "<a href=\"https://example.com/x\">a</a><a>b</a>"
+
+# A relative link made absolute, as nh3's documentation shows.
+test "set_relative_urls: resolved against the site"
+    policy @= ugc_policy()
+    set_relative_urls(@policy, .resolved(base: url.parse("https://example.com").must()))
+    assert clean(policy, "<a href=\"/foo\">x</a>") == "<a href=\"https://example.com/foo\" rel=\"nofollow\">x</a>"
+
+# An image written into the page kept, a page written into a link not.
+test "allow_data_images: a PNG"
+    policy @= ugc_policy()
+    allow_data_images(@policy)
+    assert clean(policy, "<img src=\"data:image/png;base64,iVBORw0KGgo=\"><a href=\"data:text/html,x\">l</a>") == "<img src=\"data:image/png;base64,iVBORw0KGgo=\"><a>l</a>"
+
+# The tokens nh3 adds by default.
+test "add_link_rel: noopener and noreferrer"
+    policy @= strict_policy()
+    allow_elements(@policy, ["a"])
+    allow_attributes(@policy, names: ["href"], on: ["a"])
+    allow_url_schemes(@policy, ["https"])
+    add_link_rel(@policy, tokens: ["noopener", "noreferrer"], external_only: false)
+    assert clean(policy, "<a href=\"https://e.com\">x</a>") == "<a href=\"https://e.com\" rel=\"noopener noreferrer\">x</a>"
+
+# Links that leave the site opened in a new window, as bluemonday opens them.
+test "set_link_target: a new window for another site"
+    policy @= ugc_policy()
+    set_link_target(@policy, target: "_blank", external_only: true)
+    assert clean(policy, "<a href=\"https://e.com\">x</a><a href=\"/local\">y</a>") == "<a href=\"https://e.com\" rel=\"nofollow noopener\" target=\"_blank\">x</a><a href=\"/local\" rel=\"nofollow\">y</a>"
+
+# A comment kept.
+test "allow_comments: a note"
+    policy @= ugc_policy()
+    allow_comments(@policy)
+    assert clean(policy, "<!-- note --><p>x</p>") == "<!-- note --><p>x</p>"
+
+# Words kept apart, as bluemonday keeps them.
+test "add_spaces: two paragraphs"
+    policy @= strict_policy()
+    add_spaces(@policy)
+    assert clean(policy, "<p>Hello</p><p>World</p>") == " Hello  World "
+
+# Cells read as a row holds them.
+test "set_context: the cells of a row"
+    policy @= ugc_policy()
+    set_context(@policy, "tr")
+    assert clean(policy, "<td>a</td><td>b</td>") == "<td>a</td><td>b</td>"
+
+# The four attributes every element may keep.
+test "allow_standard_attributes: a paragraph's"
+    policy @= strict_policy()
+    allow_elements(@policy, ["p"])
+    allow_standard_attributes(@policy)
+    assert clean(policy, "<p id=\"a\" lang=\"en\" dir=\"ltr\" title=\"t\" class=\"c\">x</p>") == "<p id=\"a\" lang=\"en\" dir=\"ltr\" title=\"t\">x</p>"
+
+# A link kept with `nofollow`.
+test "allow_standard_urls: a link"
+    policy @= strict_policy()
+    allow_elements(@policy, ["a"])
+    allow_attributes(@policy, names: ["href"], on: ["a"])
+    allow_standard_urls(@policy)
+    assert clean(policy, "<a href=\"https://e.com\">x</a>") == "<a href=\"https://e.com\" rel=\"nofollow\">x</a>"
+
+# An image kept with its text, its border taken out.
+test "allow_images: an image"
+    policy @= strict_policy()
+    allow_images(@policy)
+    allow_standard_urls(@policy)
+    assert clean(policy, "<img src=\"https://e.com/a.png\" alt=\"a\" border=\"1\">") == "<img src=\"https://e.com/a.png\" alt=\"a\">"
+
+# A list kept with its marker type and an item's number.
+test "allow_lists: a list"
+    policy @= strict_policy()
+    allow_lists(@policy)
+    assert clean(policy, "<ul type=\"disc\"><li value=\"2\">a</li></ul>") == "<ul type=\"disc\"><li value=\"2\">a</li></ul>"
+
+# A table kept, its cell's colour taken out, its body put in as a browser does.
+test "allow_tables: a table"
+    policy @= strict_policy()
+    allow_tables(@policy)
+    assert clean(policy, "<table><tr><td colspan=\"2\" bgcolor=\"red\">x</td></tr></table>") == "<table><tbody><tr><td colspan=\"2\">x</td></tr></tbody></table>"
+
+# A visitor's comment cleaned.
+test "clean: a comment with a script"
+    assert clean(ugc_policy(), "<p onclick=\"steal()\">Hi <script>steal()</script></p>") == "<p>Hi </p>"
+
+# The tree of a cleaned fragment.
+test "clean_fragment: a paragraph's text"
+    doc = clean_fragment(ugc_policy(), "<p>Hi <b onclick=\"x()\">there</b></p>")
+    assert html.text_of(doc, html.ROOT) == "Hi there"
+
+# Text and markup told apart.
+test "has_markup: text and a tag"
+    assert !has_markup("Hi there") && has_markup("Hi <b>there</b>")
