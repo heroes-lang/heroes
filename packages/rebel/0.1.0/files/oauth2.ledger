@@ -1,0 +1,221 @@
+# The ledger of `oauth2`: what the OAuth 2.0 and OpenID Connect client
+# libraries of Go, Python and Rust let a program do, one block per
+# capability, and what Rebel answers. None of the three standard libraries
+# has OAuth, so the yardstick is the census of third-party libraries the
+# author chose on 2026-11-17. Measured on this machine: Go's
+# `golang.org/x/oauth2` v0.36.0 with `clientcredentials` and `jwt` (`go doc
+# -all`, from the module cache, no download); Python's authlib 1.9.1 (its
+# `OAuth2Client`, `OAuth2Session` and the RFC modules it names) and
+# google-auth 2.62.0 (`dir()`, in the Python 3.15 environment of an
+# application installed here, run with `-I`). Not on this machine, so their
+# entries are recalled from their documentation and are a question rather
+# than a measurement: Go's coreos/go-oidc, Python's oauthlib, Rust's
+# `oauth2` and `openidconnect` crates. The behaviour is tested against the
+# RFCs' own examples (RFC 7636 Appendix B, RFC 8414, RFC 8628, RFC 9728) and
+# against an authorization server of the tests' own on the loopback.
+#
+# Added 2026-11-17 by the coordinator, for a later `mcp` package (the Model
+# Context Protocol's authorization of 2026-07-28): RFC 9728's protected
+# resource metadata, RFC 8707's `resource`, RFC 9207's `iss` and the OAuth
+# Client ID Metadata Documents.
+
+capability client/config  a client described: its id and secret, how it authenticates, the server's endpoints, its redirect and scopes
+  heroes  oauth2.Config, oauth2.default_config, oauth2.config_from
+  go      oauth2.Config, oauth2.Config.ClientID, oauth2.Config.ClientSecret, oauth2.Config.RedirectURL, oauth2.Config.Scopes, oauth2.Endpoint, oauth2.Endpoint.AuthURL, oauth2.Endpoint.TokenURL, oauth2.Endpoint.DeviceAuthURL, oauth2.Endpoint.AuthStyle, clientcredentials.Config
+  rust    oauth2::BasicClient, oauth2::Client::new, ClientId, ClientSecret, AuthUrl, TokenUrl, RedirectUrl, DeviceAuthorizationUrl, RevocationUrl, IntrospectionUrl, Scope
+  python  OAuth2Client, OAuth2Session, OAuth2Client.EXTRA_AUTHORIZE_PARAMS, OAuth2Client.SESSION_REQUEST_PARAMS
+
+capability client/authentication  the client authenticated at the token endpoint: secret in the header, in the body, none, or a JWT signed by its key (RFC 7523)
+  heroes  oauth2.Authentication, oauth2.post_form
+  go      oauth2.AuthStyle, oauth2.AuthStyleAutoDetect, oauth2.AuthStyleInParams, oauth2.AuthStyleInHeader, oauth2.RegisterBrokenAuthHeaderProvider
+  rust    oauth2::AuthType, Client::set_auth_type
+  python  OAuth2Client.client_auth, OAuth2Client.client_auth_class, OAuth2Client.register_client_auth_method, authlib.oauth2.rfc6749.ClientAuthentication, authlib.oauth2.rfc7523.PrivateKeyJWT, authlib.oauth2.rfc7523.ClientSecretJWT
+  note    The auto-detection Go does, trying the header and then the body, is refused: the server's metadata says which it takes, and a secret is sent one way
+
+capability pkce  a PKCE verifier made and its S256 challenge (RFC 7636)
+  heroes  oauth2.new_verifier, oauth2.challenge_of
+  go      oauth2.GenerateVerifier, oauth2.S256ChallengeFromVerifier, oauth2.S256ChallengeOption, oauth2.VerifierOption
+  rust    oauth2::PkceCodeChallenge::new_random_sha256, PkceCodeVerifier, PkceCodeChallenge::from_code_verifier_sha256
+  python  authlib.oauth2.rfc7636.create_s256_code_challenge, authlib.oauth2.rfc7636.CodeChallenge, authlib.oauth2.rfc7636.challenge
+  note    `plain` is refused: RFC 9700 § 2.1.1 asks S256 of every client that can compute it, and every Heroes program can
+
+capability state  a state and a nonce drawn from the system's generator
+  heroes  oauth2.new_state
+  go      -
+  rust    oauth2::CsrfToken::new_random, openidconnect::Nonce::new_random
+  python  authlib.common.security.generate_token, authlib.common.security.UNICODE_ASCII_CHARACTER_SET
+
+capability code/url  the URL a user is sent to, with the state, the PKCE challenge, the scopes, the resources and other parameters
+  heroes  oauth2.authorization_url
+  go      oauth2.Config.AuthCodeURL, oauth2.AuthCodeOption, oauth2.SetAuthURLParam, oauth2.AccessTypeOnline, oauth2.AccessTypeOffline, oauth2.ApprovalForce
+  rust    Client::authorize_url, AuthorizationRequest::add_scope, AuthorizationRequest::set_pkce_challenge, AuthorizationRequest::add_extra_param
+  python  OAuth2Client.create_authorization_url
+
+capability code/redirect  the redirect read: the code taken, the state checked, an error answered, the issuer checked (RFC 9207)
+  heroes  oauth2.read_redirect
+  go      -
+  rust    -
+  python  OAuth2Client.fetch_token(authorization_response=...), authlib.oauth2.rfc6749.MismatchingStateException, MissingCodeException, AccessDeniedError
+  note    RFC 9207's `iss` is checked where the caller names the issuer, as the MCP authorization of 2026-07-28 requires; Go and the Rust crate leave it to the program
+
+capability code/exchange  an authorization code exchanged for tokens, with its PKCE verifier
+  heroes  oauth2.exchange
+  go      oauth2.Config.Exchange
+  rust    Client::exchange_code, CodeTokenRequest::set_pkce_verifier, AuthorizationCode
+  python  OAuth2Client.fetch_token, OAuth2Session.fetch_access_token
+
+capability resource-indicators  the resources a token is for, sent on the authorization and the token requests (RFC 8707)
+  heroes  oauth2.Config, oauth2.authorization_url, oauth2.exchange
+  go      oauth2.SetAuthURLParam("resource", ...)
+  rust    -
+  python  -
+
+capability grant/client-credentials  a token for the client itself
+  heroes  oauth2.client_credentials
+  go      clientcredentials.Config.Token, clientcredentials.Config.TokenSource, clientcredentials.Config.Client
+  rust    Client::exchange_client_credentials
+  python  OAuth2Client.fetch_token(grant_type="client_credentials")
+
+capability grant/refresh  a token renewed by its refresh token, kept where the server sends none
+  heroes  oauth2.refresh, oauth2.renewed
+  go      oauth2.Config.TokenSource, oauth2.ReuseTokenSource, oauth2.ReuseTokenSourceWithExpiry, oauth2.TokenSource, oauth2.StaticTokenSource
+  rust    Client::exchange_refresh_token
+  python  OAuth2Client.refresh_token, OAuth2Client.ensure_active_token
+
+capability grant/device  the device authorization grant (RFC 8628): the codes asked, the user told, the token awaited at the interval asked
+  heroes  oauth2.start_device, oauth2.poll_device, oauth2.DeviceAuthorization
+  go      oauth2.Config.DeviceAuth, oauth2.Config.DeviceAccessToken, oauth2.DeviceAuthResponse, DeviceAuthResponse.MarshalJSON, DeviceAuthResponse.UnmarshalJSON
+  rust    Client::exchange_device_code, Client::exchange_device_access_token, StandardDeviceAuthorizationResponse
+  python  authlib.oauth2.rfc8628.DEVICE_CODE_GRANT_TYPE, AuthorizationPendingError, SlowDownError, ExpiredTokenError
+  note    `slow_down` adds five seconds to the interval, as RFC 8628 § 3.5 asks; a denial fails `permission`, an expiry `timeout`
+
+capability grant/jwt-bearer  a JWT given as the grant (RFC 7523 § 2.1), as Google's service accounts ask
+  heroes  oauth2.exchange_assertion
+  go      jwt.Config, jwt.Config.TokenSource, jwt.Config.Client, jws.Encode, jws.ClaimSet
+  rust    -
+  python  authlib.oauth2.rfc7523.JWTBearerGrant, google.oauth2.service_account.Credentials
+
+capability grant/any  a token asked by any grant the program names, its parameters its own: token exchange (RFC 8693) among them
+  heroes  oauth2.request_token
+  go      -
+  rust    -
+  python  OAuth2Client.fetch_token(grant_type=...)
+
+capability grant/password  the resource owner's password sent for a token
+  heroes  refused: RFC 9700 § 2.4 says it MUST NOT be used; a program that must is a `request_token` with its own parameters
+  go      oauth2.Config.PasswordCredentialsToken
+  rust    Client::exchange_password
+  python  OAuth2Client.fetch_token(username=..., password=...), authlib.oauth2.rfc6749.ResourceOwnerPasswordCredentialsGrant
+
+capability grant/implicit  a token read from a redirect's fragment
+  heroes  refused: the implicit grant leaks the token to the browser's history and is removed by RFC 9700 § 2.1.2 and OAuth 2.1
+  go      -
+  rust    -
+  python  OAuth2Client.token_from_fragment, authlib.oauth2.rfc6749.ImplicitGrant
+
+capability token/value  a token answered: the access token, its type, its expiry, the refresh token, the scopes, an ID token, every other member
+  heroes  oauth2.Token, oauth2.read_token
+  go      oauth2.Token, oauth2.Token.AccessToken, oauth2.Token.TokenType, oauth2.Token.RefreshToken, oauth2.Token.Expiry, oauth2.Token.ExpiresIn, oauth2.Token.Extra, oauth2.Token.Type, oauth2.Token.WithExtra
+  rust    oauth2::StandardTokenResponse, TokenResponse::access_token, token_type, expires_in, refresh_token, scopes
+  python  authlib.oauth2.rfc6749.OAuth2Token, OAuth2Client.token, OAuth2Client.parse_response_token
+  note    A `token_type` absent or `bearer` in any case is read as `Bearer`, as Go's `Token.Type` answers; `expires_in` is read as a number or a text of digits, as Go reads it
+
+capability token/expiry  whether a token has expired, a little early
+  heroes  oauth2.is_expired
+  go      oauth2.Token.Valid
+  rust    -
+  python  OAuth2Token.is_expired
+
+capability token/use  a request carrying a token as `Authorization: Bearer`
+  heroes  oauth2.authorize
+  go      oauth2.Token.SetAuthHeader, oauth2.NewClient, oauth2.Config.Client, oauth2.Transport
+  rust    -
+  python  OAuth2Client.token_auth_class, OAuth2Session.request
+  note    The token is a value the program adds to each request it sends; a client that refreshes inside the transport is Go's `Transport`, which a language without interfaces composes from `renewed` and `authorize`
+
+capability token/errors  an error the token endpoint answers (RFC 6749 § 5.2) told with its code, description and URI
+  heroes  oauth2.read_token
+  go      oauth2.RetrieveError, RetrieveError.Error, RetrieveError.ErrorCode, RetrieveError.ErrorDescription, RetrieveError.ErrorURI, RetrieveError.Response, RetrieveError.Body
+  rust    oauth2::RequestTokenError, StandardErrorResponse, BasicErrorResponseType
+  python  authlib.oauth2.rfc6749.OAuth2Error, InvalidClientError, InvalidGrantError, InvalidRequestError, InvalidScopeError, UnauthorizedClientError, UnsupportedGrantTypeError, UnsupportedResponseTypeError, OAuth2Client.oauth_error_class
+
+capability revoke  a token revoked (RFC 7009)
+  heroes  oauth2.revoke
+  go      -
+  rust    Client::revoke_token, StandardRevocableToken
+  python  OAuth2Client.revoke_token
+
+capability introspect  a token introspected (RFC 7662)
+  heroes  oauth2.introspect, oauth2.Introspection
+  go      -
+  rust    Client::introspect, StandardTokenIntrospectionResponse
+  python  OAuth2Client.introspect_token
+
+capability metadata/server  an authorization server's metadata read (RFC 8414) and from OpenID Connect's discovery, its issuer checked
+  heroes  oauth2.fetch_metadata, oauth2.parse_metadata, oauth2.metadata_url, oauth2.openid_configuration_url, oauth2.Metadata
+  go      -
+  rust    openidconnect::core::CoreProviderMetadata::discover
+  python  authlib.oauth2.rfc8414.AuthorizationServerMetadata, authlib.oauth2.rfc8414.get_well_known_url, authlib.oauth2.rfc8414.well_known, authlib.oidc.discovery.OpenIDProviderMetadata, authlib.oidc.discovery.get_well_known_url
+  note    go-oidc's `NewProvider` (recalled); the issuer a document names must be the one asked, as RFC 8414 § 3.3 requires
+
+capability metadata/resource  a protected resource's metadata read and followed to its authorization server (RFC 9728), the `resource_metadata` of a 401's challenge read, and a server's document and challenge written
+  heroes  oauth2.fetch_resource_metadata, oauth2.parse_resource_metadata, oauth2.resource_metadata_url, oauth2.resource_metadata_of, oauth2.format_resource_metadata, oauth2.format_challenge, oauth2.ResourceMetadata
+  go      -
+  rust    -
+  python  -
+
+capability metadata/client-id  a client's metadata document, its `client_id` its own URL (OAuth Client ID Metadata Documents, draft), written by a client and read by a server
+  heroes  oauth2.format_client_metadata, oauth2.parse_client_metadata, oauth2.fetch_client_metadata, oauth2.ClientMetadata
+  go      -
+  rust    -
+  python  -
+
+capability registration  a client registered at the server (RFC 7591)
+  heroes  pending
+  go      -
+  rust    openidconnect::registration
+  python  authlib.oauth2.rfc7591
+  note    The request is a JSON POST a program writes with `http`; its response is the metadata `parse_client_metadata` reads
+
+capability oidc/id-token  an ID token verified: its signature by the provider's keys, its issuer, audience, `azp`, nonce, times, `auth_time` and `at_hash`
+  heroes  oauth2.verify_id_token, oauth2.id_token_rules, oauth2.IdTokenRules
+  go      -
+  rust    openidconnect::IdTokenVerifier, IdToken::claims, Nonce
+  python  authlib.oidc.core.IDToken, CodeIDToken, HybridIDToken, ImplicitIDToken, authlib.oidc.core.claims, google.oauth2.id_token.verify_oauth2_token, google.oauth2.id_token.verify_token
+  note    go-oidc's `IDTokenVerifier.Verify` (recalled)
+
+capability oidc/keys  a provider's JWK set fetched from its `jwks_uri`
+  heroes  oauth2.fetch_key_set
+  go      -
+  rust    openidconnect::JsonWebKeySet::fetch
+  python  jwt.PyJWKClient, google.auth.jwt
+  note    No cache: a program keeps the keys and fetches again where a token names a `kid` none has, which `jose`'s `not_found` tells
+
+capability oidc/userinfo  the UserInfo endpoint asked with the access token, its `sub` held to the ID token's
+  heroes  oauth2.userinfo
+  go      -
+  rust    openidconnect::UserInfoRequest
+  python  authlib.oidc.core.UserInfo, authlib.oidc.core.UserInfoEndpoint
+  note    A signed or encrypted UserInfo (`application/jwt`) is not read
+
+capability par  a pushed authorization request (RFC 9126)
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability dpop  tokens bound to a key by DPoP proofs (RFC 9449)
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+dropped  a server's own machinery: authorization, token and introspection endpoints, grants and models, which a program serves with `http` or `web`
+  go      -
+  rust    -
+  python  authlib.oauth2.rfc6749.AuthorizationServer, ResourceProtector, TokenEndpoint, AuthorizationCodeGrant, ClientCredentialsGrant, RefreshTokenGrant, BaseGrant, ClientMixin, AuthorizationCodeMixin, TokenMixin, TokenValidator, authlib.oauth2.rfc8628.DeviceAuthorizationEndpoint, DeviceCodeGrant, DeviceCredentialMixin, DeviceCredentialDict, authlib.oidc.core.OpenIDCode, OpenIDHybridGrant, OpenIDImplicitGrant, OpenIDToken, AuthorizationCodeMixin, OpenIDJWTAuthenticationRequest, grants, models, authorization_server, resource_protector, token_endpoint, endpoint, wrappers
+
+dropped  a context, an HTTP client or a session handed in, hooks and the type plumbing of each language
+  go      oauth2.NoContext, oauth2.HTTPClient, oauth2.NewClient's context, oauth2.Config.Client, clientcredentials.Config.Client, jwt.Config.Client
+  rust    oauth2::reqwest, oauth2::ureq, oauth2::curl, the async variants, ErrorResponse trait
+  python  OAuth2Client.register_compliance_hook, authlib.oauth2.rfc6749.hooks, util, list_to_scope, scope_to_list, parameters, requests, OAuth2Request, OAuth2Payload, JsonPayload, JsonRequest, EndpointRequest, InsecureTransportError, MissingAuthorizationError, MissingTokenException, MissingTokenTypeException, UnsupportedTokenTypeError, authlib.common.security.is_secure_transport

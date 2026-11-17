@@ -1,0 +1,338 @@
+# An authorization server and a protected resource for this package's tests
+# alone, on a thread of their own and on the loopback, while the test's
+# thread is the client: RFC 8414's and OpenID Connect's metadata, a JWK set
+# of a P-256 key drawn at its start, the token endpoint of every grant, the
+# device authorization, revocation, introspection and UserInfo endpoints,
+# and a resource that answers RFC 9728's challenge. It serves one request a
+# connection until it is asked `/stop`, and gives back what it read. Nothing
+# outside the tests calls it.
+
+use bytes
+use crypto
+use http
+use io
+use jose
+use json
+use net
+use threads
+use time
+use url
+
+# What parts the requests `serve` gives back.
+constant SEPARATOR: str
+    "\u{1e}"
+
+# The client the server knows with a secret.
+constant CLIENT_ID: str
+    "app"
+
+# Its secret.
+constant CLIENT_SECRET: str
+    "s3cret"
+
+# RFC 7636 Appendix B's verifier, the one the server's code is bound to.
+constant VERIFIER: str
+    "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+
+# The nonce the server writes in its ID tokens.
+constant NONCE: str
+    "n-0S6_WzA2Mj"
+
+# The subject of the user the server knows.
+constant SUBJECT: str
+    "248289761001"
+
+# A server started, and the port it listens on.
+record Started
+    # The port, which the system chose.
+    port: i64
+    # The server's thread.
+    thread: threads.TextThread
+
+# What the server keeps between requests.
+record State
+    # The base of its URLs, `http://127.0.0.1:<port>`.
+    base: str
+    # The key it signs ID tokens with.
+    key: jose.Key
+    # How many times the device has polled.
+    polls: i64
+    # Each request read: its method, its path and its body.
+    log: [str]
+
+# The server started on a thread, its port told back over a connection to a
+# listener of the caller's, so no port is assumed free.
+function start() -> Started
+    control @= net.listen(host: "127.0.0.1", port: 0).must()
+    t = threads.spawn_text(body: serve, arg: f"{control.address.port}")
+    told = net.accept(control, deadline_ms: 10_000).must()
+    r @= io.reader(told.stream)
+    port = number_of(io.read_rest_text(@r).must())
+    io.close(@r.stream).must()
+    net.close_listener(@control).must()
+    return Started(port: port, thread: t)
+
+# The server at `s` asked to stop and waited for; what it read.
+function stop(s: Started) -> str
+    _ = http.get(http.default_client(), target: f"http://127.0.0.1:{s.port}/stop").must()
+    thread @= s.thread
+    return threads.wait_text(@thread)
+
+# The decimal number `s` writes.
+function number_of(s: str) -> i64
+    n: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        n @ n * 10 + to_i64(s[at] - '0').must()
+
+    return n
+
+# A JSON answer of `status` holding `members`.
+function answer_json(status: i64, members: {str: json.Value}) -> http.Response
+    r @= http.respond_json(status, value: .object(members: members)).must()
+    r.closing @ true
+    return r
+
+# An OAuth error answer.
+function oauth_error(status: i64, error: str) -> http.Response
+    members: {str: json.Value} = {
+        "error": .text(v: error)
+        "error_description": .text(v: f"the test server refused: {error}")
+    }
+    return answer_json(status, members: members)
+
+# The value of `key` in the form of `r`, "" where it is absent.
+function form_value(r: http.Request, key: str) -> str
+    match http.form_of(r)
+        .err _    => return ""
+        .ok pairs => return url.value_of(pairs, key: key).default("")
+
+# The client `r` authenticates as, "" where it does not: Basic with the
+# known secret, a public client's id, or a client assertion.
+function client_of(r: http.Request) -> str
+    match http.basic_auth_of(r)
+        .ok credentials =>
+            if credentials.user == CLIENT_ID && credentials.password == CLIENT_SECRET
+                return CLIENT_ID
+            return ""
+        .err _ => _ = 0
+
+    if form_value(r, key: "client_assertion") != ""
+        match jose.read_unverified(form_value(r, key: "client_assertion"))
+            .ok t  => return jose.claim_text(t.claims, name: "iss").default("")
+            .err _ => return ""
+    return form_value(r, key: "client_id")
+
+# A token answer: the access token, a refresh token where given, and an ID
+# token where `client` asked OpenID.
+function token_answer(state: State, access: str, refresh: str, client: str, openid: bool) -> http.Response
+    members: {str: json.Value} @= {}
+    members["access_token"] @ .text(v: access)
+    members["token_type"] @ .text(v: "bearer")
+    members["expires_in"] @ .number(v: 3600.0)
+
+    if refresh != ""
+        members["refresh_token"] @ .text(v: refresh)
+    members["scope"] @ .text(v: "openid files:read")
+
+    if openid
+        now = time.unix_seconds(time.now().must())
+        half = crypto.sha256_text(access).slice(from: 0, to: 16)
+        claims: {str: json.Value} = {
+            "iss": .text(v: state.base)
+            "sub": .text(v: SUBJECT)
+            "aud": .text(v: client)
+            "exp": .number(v: to_f64(now + 300))
+            "iat": .number(v: to_f64(now))
+            "nonce": .text(v: NONCE)
+            "at_hash": .text(v: bytes.format_base64_url_unpadded(half))
+        }
+        members["id_token"] @ .text(v: jose.sign_token(claims, key: state.key, algorithm: .es256).must())
+    return answer_json(200, members: members)
+
+# The token endpoint's answer to `r`.
+function token_endpoint(@state: State, r: http.Request) -> http.Response
+    client = client_of(r)
+
+    if client == ""
+        return oauth_error(401, error: "invalid_client")
+    grant = form_value(r, key: "grant_type")
+
+    if grant == "authorization_code"
+        if form_value(r, key: "code") != "code-1"
+            return oauth_error(400, error: "invalid_grant")
+
+        if bytes.format_base64_url_unpadded(crypto.sha256_text(form_value(r, key: "code_verifier"))) != "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+            return oauth_error(400, error: "invalid_grant")
+        return token_answer(state, access: "access-1", refresh: "refresh-1", client: client, openid: true)
+
+    if grant == "refresh_token"
+        if form_value(r, key: "refresh_token") != "refresh-1"
+            return oauth_error(400, error: "invalid_grant")
+        return token_answer(state, access: "access-2", refresh: "", client: client, openid: false)
+
+    if grant == "client_credentials"
+        return token_answer(state, access: "machine-1", refresh: "", client: client, openid: false)
+
+    if grant == "urn:ietf:params:oauth:grant-type:jwt-bearer"
+        return token_answer(state, access: "assertion-1", refresh: "", client: client, openid: false)
+
+    if grant == "urn:ietf:params:oauth:grant-type:device_code"
+        if form_value(r, key: "device_code") == "denied"
+            return oauth_error(400, error: "access_denied")
+        state.polls @ state.polls + 1
+
+        if state.polls == 1
+            return oauth_error(400, error: "authorization_pending")
+        return token_answer(state, access: "device-1", refresh: "", client: client, openid: false)
+    return oauth_error(400, error: "unsupported_grant_type")
+
+# The metadata of the server, for `issuer`.
+function metadata(state: State, issuer: str) -> http.Response
+    base = state.base
+    members: {str: json.Value} = {
+        "issuer": .text(v: issuer)
+        "authorization_endpoint": .text(v: base + "/authorize")
+        "token_endpoint": .text(v: base + "/token")
+        "jwks_uri": .text(v: base + "/jwks")
+        "userinfo_endpoint": .text(v: base + "/userinfo")
+        "revocation_endpoint": .text(v: base + "/revoke")
+        "introspection_endpoint": .text(v: base + "/introspect")
+        "device_authorization_endpoint": .text(v: base + "/device_authorization")
+        "code_challenge_methods_supported": .list(items: [.text(v: "S256")])
+        "id_token_signing_alg_values_supported": .list(items: [.text(v: "ES256"), .text(v: "ES512")])
+        "authorization_response_iss_parameter_supported": .boolean(v: true)
+    }
+    return answer_json(200, members: members)
+
+# Whether `r` carries the access token `token` as Bearer.
+function bears(r: http.Request, token: str) -> bool
+    return http.value_of(r.headers, name: "Authorization").default("") == "Bearer " + token
+
+# The answer to `r`, the server's `state` kept.
+function answer(@state: State, r: http.Request) -> http.Response
+    path = r.url.path
+    base = state.base
+
+    if path == "/.well-known/oauth-authorization-server"
+        return metadata(state, issuer: base)
+
+    if path == "/tenant/.well-known/openid-configuration"
+        return metadata(state, issuer: base + "/tenant")
+
+    if path == "/.well-known/oauth-protected-resource/mcp"
+        members: {str: json.Value} = {
+            "resource": .text(v: base + "/mcp")
+            "authorization_servers": .list(items: [.text(v: base)])
+            "scopes_supported": .list(items: [.text(v: "files:read")])
+            "bearer_methods_supported": .list(items: [.text(v: "header")])
+        }
+        return answer_json(200, members: members)
+
+    if path == "/mcp"
+        if bears(r, token: "access-1")
+            return http.respond_text(200, text: "hello")
+        refused @= http.respond_status(401)
+        refused.headers @ http.with_header(
+            refused.headers,
+            name: "WWW-Authenticate",
+            value: "Bearer resource_metadata=\"" + base + "/.well-known/oauth-protected-resource/mcp\", scope=\"files:read\""
+        )
+        return refused
+
+    if path == "/jwks"
+        members: {str: json.Value} = {"keys": .list(items: [jose.to_json(jose.public_of(state.key).must())])}
+        return answer_json(200, members: members)
+
+    if path == "/token"
+        return token_endpoint(@state, r: r)
+
+    if path == "/device_authorization"
+        if client_of(r) == ""
+            return oauth_error(401, error: "invalid_client")
+        members: {str: json.Value} = {
+            "device_code": .text(v: "device-1")
+            "user_code": .text(v: "WDJB-MJHT")
+            "verification_uri": .text(v: base + "/device")
+            "verification_uri_complete": .text(v: base + "/device?user_code=WDJB-MJHT")
+            "expires_in": .number(v: 60.0)
+            "interval": .number(v: 0.0)
+        }
+        return answer_json(200, members: members)
+
+    if path == "/revoke"
+        if client_of(r) == ""
+            return oauth_error(401, error: "invalid_client")
+        return http.respond_status(200)
+
+    if path == "/introspect"
+        if client_of(r) == ""
+            return oauth_error(401, error: "invalid_client")
+
+        if form_value(r, key: "token") != "access-1"
+            inactive: {str: json.Value} = {"active": .boolean(v: false)}
+            return answer_json(200, members: inactive)
+        members: {str: json.Value} = {
+            "active": .boolean(v: true)
+            "scope": .text(v: "files:read")
+            "client_id": .text(v: CLIENT_ID)
+            "sub": .text(v: SUBJECT)
+            "aud": .text(v: base + "/mcp")
+            "iss": .text(v: base)
+            "exp": .number(v: 4102444800.0)
+        }
+        return answer_json(200, members: members)
+
+    if path == "/userinfo"
+        if !bears(r, token: "access-1")
+            return http.respond_status(401)
+        members: {str: json.Value} = {"sub": .text(v: SUBJECT), "name": .text(v: "Jane Doe")}
+        return answer_json(200, members: members)
+    return http.respond_status(404)
+
+# Listens on a port the system chooses, tells it to the control port `arg`
+# names, and answers each request until `/stop` or until 20 s pass with no
+# connection; gives back each request read, `METHOD path body`, parted by
+# `SEPARATOR`.
+function serve(arg: str) -> str
+    control = number_of(arg)
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    told @= net.connect("127.0.0.1", port: control, deadline_ms: 10_000).must()
+    io.write_text(told.stream, text: f"{port}").must()
+    io.close(@told.stream).must()
+    state @= State(base: f"http://127.0.0.1:{port}", key: jose.generate_key(.p256).must(), polls: 0, log: [])
+    serving: bool @= true
+
+    while serving
+        match net.accept(l, deadline_ms: 20_000)
+            .err _ => serving @ false
+            .ok c =>
+                reader @= io.reader(c.stream)
+
+                match http.read_request(@reader, limits: http.default_limits())
+                    .err _ => _ = 0
+                    .ok request =>
+                        line = request.method + " " + request.url.path + " " + bytes.to_text_lossy(request.body)
+                        log @= state.log
+                        log @ log.push(line)
+                        state.log @ log
+
+                        response: http.Response @= http.respond_status(200)
+
+                        if request.url.path == "/stop"
+                            serving @ false
+                        else
+                            response @ answer(@state, r: request)
+                        response.closing @ true
+
+                        match http.write_response(reader.stream, response: response, method: request.method)
+                            .ok _  => _ = 0
+                            .err _ => _ = 0
+
+                match io.close(@reader.stream)
+                    .ok _  => _ = 0
+                    .err _ => _ = 0
+
+    net.close_listener(@l).must()
+    return state.log.join(SEPARATOR)

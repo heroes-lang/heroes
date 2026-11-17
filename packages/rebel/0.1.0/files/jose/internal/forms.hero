@@ -1,0 +1,447 @@
+# A JWK written as the DER `crypto/keypairs` reads, SubjectPublicKeyInfo
+# (RFC 5280) and PKCS #8 (RFC 5208) with RSAPrivateKey (RFC 8017) and
+# ECPrivateKey (RFC 5915) inside, and read back from them; and an ECDSA
+# signature turned between X9.62's DER, which `crypto/keypairs` makes, and
+# JOSE's R and S of fixed length (RFC 7518 § 3.4).
+
+use asn1
+use big
+use crypto/keypairs
+use jose/internal/jwk
+
+# The code of bytes or a key not of their form.
+constant INVALID: str
+    "invalid"
+
+# The code of an algorithm or a curve this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# rsaEncryption.
+constant RSA_OID: str
+    "1.2.840.113549.1.1.1"
+
+# id-ecPublicKey.
+constant EC_OID: str
+    "1.2.840.10045.2.1"
+
+# The identifier of the curve or the key algorithm named `curve` as a JWK's
+# `crv` names it, "" for one this package does not write.
+function oid_of_curve(curve: str) -> str
+    return match curve
+        "P-256"   => "1.2.840.10045.3.1.7"
+        "P-384"   => "1.3.132.0.34"
+        "P-521"   => "1.3.132.0.35"
+        "X25519"  => "1.3.101.110"
+        "X448"    => "1.3.101.111"
+        "Ed25519" => "1.3.101.112"
+        "Ed448"   => "1.3.101.113"
+        _         => ""
+
+# The `crv` the identifier `dotted` names, "" for none known.
+function curve_of_oid(dotted: str) -> str
+    return match dotted
+        "1.2.840.10045.3.1.7" => "P-256"
+        "1.3.132.0.34"        => "P-384"
+        "1.3.132.0.35"        => "P-521"
+        "1.3.101.110"         => "X25519"
+        "1.3.101.111"         => "X448"
+        "1.3.101.112"         => "Ed25519"
+        "1.3.101.113"         => "Ed448"
+        _                     => ""
+
+# The member `name` of `key`, which must be there.
+function member(key: jwk.Jwk, name: str) -> [u8]?
+    match key.material[name]
+        .ok b  => return ok(b)
+        .err _ => return fail(code: INVALID, msg: f"a {key.key_type} key without its \"{name}\"")
+
+# The INTEGER whose unsigned big-endian bytes are `b`.
+function unsigned(b: [u8]) -> asn1.Value
+    return asn1.from_integer(big.from_bytes(b, order: .big_endian))
+
+# The unsigned big-endian bytes of the INTEGER `v`, the fewest, never
+# negative.
+function unsigned_of(v: asn1.Value, what: str) -> [u8]?
+    n = within(r: asn1.integer_of(v), what: what)?
+
+    match big.to_bytes(n, order: .big_endian)
+        .ok b =>
+            if b.len() == 0
+                return ok([0])
+            return ok(b)
+        .err _ => return fail(code: INVALID, msg: f"{what} is negative")
+
+# `b` with zeros before it to `size` bytes; fails where it is longer.
+function padded(b: [u8], size: i64, what: str) -> [u8]?
+    if b.len() > size
+        return fail(code: INVALID, msg: f"{what} of {b.len()} bytes, past the curve's {size}")
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: size - b.len())
+        out @ out.push(0)
+
+    for byte in b
+        out @ out.push(byte)
+
+    return ok(out)
+
+# `r` with its failure said as `what` being malformed, `invalid`.
+function within<T>(r: T?, what: str) -> T?
+    match r
+        .ok v  => return ok(v)
+        .err e => return fail(code: INVALID, msg: f"{what} is malformed: {e.msg}")
+
+# The AlgorithmIdentifier of `key`'s type and curve.
+function algorithm_of(key: jwk.Jwk) -> asn1.Value?
+    if key.key_type == "RSA"
+        return ok(.sequence(items: [.oid(v: asn1.Oid(dotted: RSA_OID)), .null_value]))
+    dotted = oid_of_curve(key.curve)
+
+    if key.key_type == "oct" || dotted == ""
+        return fail(code: INVALID, msg: f"a {key.key_type} key has no DER form")
+
+    if key.key_type == "EC"
+        return ok(.sequence(items: [.oid(v: asn1.Oid(dotted: EC_OID)), .oid(v: asn1.Oid(dotted: dotted))]))
+    return ok(.sequence(items: [.oid(v: asn1.Oid(dotted: dotted))]))
+
+# The uncompressed point of an EC `key`: 4, then `x` and `y`.
+function point_of(key: jwk.Jwk) -> [u8]?
+    point: [u8] @= [4]
+
+    for b in member(key, name: "x")?
+        point @ point.push(b)
+
+    for b in member(key, name: "y")?
+        point @ point.push(b)
+
+    return ok(point)
+
+# The bits of the public key a SubjectPublicKeyInfo holds for `key`.
+function public_bits(key: jwk.Jwk) -> [u8]?
+    if key.key_type == "RSA"
+        inner: asn1.Value = .sequence(items: [unsigned(member(key, name: "n")?), unsigned(member(key, name: "e")?)])
+        return within(r: asn1.encode_der(inner), what: "an RSA public key")
+
+    if key.key_type == "EC"
+        return point_of(key)
+    return member(key, name: "x")
+
+# `key`'s public half as SubjectPublicKeyInfo DER.
+function public_der(key: jwk.Jwk) -> [u8]?
+    algorithm = algorithm_of(key)?
+    bits = public_bits(key)?
+    spki: asn1.Value = .sequence(
+        items: [algorithm, .bit_string(v: asn1.BitString(bytes: bits, bit_len: bits.len() * 8))]
+    )
+    return within(r: asn1.encode_der(spki), what: "a SubjectPublicKeyInfo")
+
+# The private key's own structure `key` holds, as PKCS #8's OCTET STRING
+# carries it.
+function private_inner(key: jwk.Jwk) -> [u8]?
+    d = member(key, name: "d")?
+
+    if key.key_type == "RSA"
+        parts: [asn1.Value] @= [.integer(v: 0)]
+
+        for name in ["n", "e", "d", "p", "q", "dp", "dq", "qi"]
+            match key.material[name]
+                .ok b => parts @ parts.push(unsigned(b))
+                .err _ =>
+                    return fail(
+                        code: UNSUPPORTED,
+                        msg: f"an RSA private key without its \"{name}\": the system's RSA reads a key with its primes and their exponents alone"
+                    )
+
+        return within(r: asn1.encode_der(.sequence(items: parts)), what: "an RSAPrivateKey")
+
+    if key.key_type == "EC"
+        point = point_of(key)?
+        ec: asn1.Value = .sequence(
+            items: [.integer(v: 1), .octet_string(v: d), asn1.tagged(.bit_string(v: asn1.BitString(bytes: point, bit_len: point.len() * 8)), number: 1)]
+        )
+        return within(r: asn1.encode_der(ec), what: "an ECPrivateKey")
+    return within(r: asn1.encode_der(.octet_string(v: d)), what: "a CurvePrivateKey")
+
+# `key` as PKCS #8 DER, unencrypted.
+function private_der(key: jwk.Jwk) -> [u8]?
+    if key.key_type == "oct"
+        return fail(code: INVALID, msg: "an oct key has no DER form: its secret is its bytes")
+
+    if !jwk.is_private(key)
+        return fail(code: INVALID, msg: f"a public {key.key_type} key, where a private one was asked")
+    algorithm = algorithm_of(key)?
+    inner = private_inner(key)?
+    pkcs8: asn1.Value = .sequence(items: [.integer(v: 0), algorithm, .octet_string(v: inner)])
+    return within(r: asn1.encode_der(pkcs8), what: "a PKCS #8")
+
+# The type and curve an AlgorithmIdentifier `v` names: `RSA` with "", `EC`
+# or `OKP` with the curve.
+record Named
+    # `kty`.
+    key_type: str
+    # `crv`, "" for RSA.
+    curve: str
+
+# What the AlgorithmIdentifier `v` names.
+function named(v: asn1.Value) -> Named?
+    items = within(r: asn1.items_of(v), what: "an AlgorithmIdentifier")?
+
+    if items.len() == 0 || items.len() > 2
+        return fail(code: INVALID, msg: f"an AlgorithmIdentifier of {items.len()} elements")
+    oid = within(r: asn1.oid_of(items[0]), what: "an AlgorithmIdentifier")?.dotted
+
+    if oid == RSA_OID
+        return ok(Named(key_type: "RSA", curve: ""))
+
+    if oid == EC_OID
+        if items.len() != 2
+            return fail(code: INVALID, msg: "an EC key's AlgorithmIdentifier without its curve")
+        curve = curve_of_oid(within(r: asn1.oid_of(items[1]), what: "an EC key's curve")?.dotted)
+
+        if curve == "" || jwk.curve_size(curve) == 0 || !(curve == "P-256" || curve == "P-384" || curve == "P-521")
+            return fail(code: UNSUPPORTED, msg: "an EC key on a curve other than P-256, P-384 and P-521")
+        return ok(Named(key_type: "EC", curve: curve))
+    curve = curve_of_oid(oid)
+
+    if curve == "" || curve == "P-256" || curve == "P-384" || curve == "P-521"
+        return fail(code: UNSUPPORTED, msg: f"a key of the algorithm {oid}, which no JWK here writes")
+
+    if items.len() != 1
+        return fail(code: INVALID, msg: f"an {curve} key's AlgorithmIdentifier with parameters, which RFC 8410 forbids")
+    return ok(Named(key_type: "OKP", curve: curve))
+
+# A key with no member but `material`, of `named`'s type and curve.
+function bare(n: Named, material: {str: [u8]}) -> jwk.Jwk
+    return jwk.Jwk(
+        key_type: n.key_type,
+        curve: n.curve,
+        id: "",
+        usage: "",
+        operations: [],
+        algorithm: "",
+        material: material,
+        chain: [],
+        extra: {}
+    )
+
+# The members `x` and `y` of the uncompressed point `point` on `curve`.
+function coordinates(@material: {str: [u8]}, point: [u8], curve: str)
+    size = jwk.curve_size(curve)
+    material["x"] @ point.slice(from: 1, to: 1 + size)
+    material["y"] @ point.slice(from: 1 + size, to: 1 + size * 2)
+
+# Whether `point` is an uncompressed point of `curve`'s length.
+function is_point(point: [u8], curve: str) -> bool
+    size = jwk.curve_size(curve)
+    return point.len() == 1 + size * 2 && point[0] == 4
+
+# The key the SubjectPublicKeyInfo `der` holds.
+function read_public(der: [u8]) -> jwk.Jwk?
+    v = within(r: asn1.decode_der(der), what: "a SubjectPublicKeyInfo")?
+    items = within(r: asn1.items_of(v), what: "a SubjectPublicKeyInfo")?
+
+    if items.len() != 2
+        return fail(code: INVALID, msg: f"a SubjectPublicKeyInfo of {items.len()} elements, where 2 are its")
+    n = named(items[0])?
+    bits = within(r: asn1.bits_of(items[1]), what: "a SubjectPublicKeyInfo's key")?
+
+    if bits.bit_len % 8 != 0
+        return fail(code: INVALID, msg: "a public key whose bits are not whole bytes")
+    material: {str: [u8]} @= {}
+
+    if n.key_type == "RSA"
+        inner = within(r: asn1.decode_der(bits.bytes), what: "an RSA public key")?
+        parts = within(r: asn1.items_of(inner), what: "an RSA public key")?
+
+        if parts.len() != 2
+            return fail(code: INVALID, msg: "an RSA public key that is not a modulus and an exponent")
+        material["n"] @ unsigned_of(parts[0], what: "an RSA modulus")?
+        material["e"] @ unsigned_of(parts[1], what: "an RSA exponent")?
+    else if n.key_type == "EC"
+        if !is_point(point: bits.bytes, curve: n.curve)
+            return fail(code: INVALID, msg: f"an EC point that is not uncompressed on {n.curve}")
+        coordinates(@material, point: bits.bytes, curve: n.curve)
+    else
+        if bits.bytes.len() != jwk.curve_size(n.curve)
+            return fail(code: INVALID, msg: f"an {n.curve} key of {bits.bytes.len()} bytes")
+        material["x"] @ bits.bytes
+
+    return ok(bare(n, material: material))
+
+# The key the PKCS #8 `der` holds, with its public members; an EC key
+# without its point and an OKP key have them computed by `crypto/keypairs`.
+function read_private(der: [u8]) -> jwk.Jwk?
+    v = within(r: asn1.decode_der(der), what: "a PKCS #8")?
+    items = within(r: asn1.items_of(v), what: "a PKCS #8")?
+
+    if items.len() < 3 || items.len() > 5
+        return fail(code: INVALID, msg: f"a PKCS #8 of {items.len()} elements")
+    version = within(r: asn1.int_of(items[0]), what: "a PKCS #8's version")?
+
+    if version != 0 && version != 1
+        return fail(code: INVALID, msg: f"a PKCS #8 of the version {version}")
+    n = named(items[1])?
+    inner = within(r: asn1.octets_of(items[2]), what: "a PKCS #8's key")?
+    material: {str: [u8]} @= {}
+
+    if n.key_type == "RSA"
+        parts = within(r: asn1.items_of(within(r: asn1.decode_der(inner), what: "an RSAPrivateKey")?), what: "an RSAPrivateKey")?
+
+        if parts.len() != 9
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"an RSAPrivateKey of {parts.len()} elements: two primes alone are read"
+            )
+        names = ["n", "e", "d", "p", "q", "dp", "dq", "qi"]
+
+        for at in range(from: 0, to: 8)
+            name = names[at]
+            material[name] @ unsigned_of(parts[at + 1], what: f"an RSAPrivateKey's {name}")?
+
+        return ok(bare(n, material: material))
+
+    if n.key_type == "EC"
+        parts = within(r: asn1.items_of(within(r: asn1.decode_der(inner), what: "an ECPrivateKey")?), what: "an ECPrivateKey")?
+
+        if parts.len() < 2
+            return fail(code: INVALID, msg: "an ECPrivateKey without its key")
+        d = within(r: asn1.octets_of(parts[1]), what: "an ECPrivateKey's key")?
+        material["d"] @ padded(d, size: jwk.curve_size(n.curve), what: "an EC private key")?
+
+        for part in parts.slice(from: 2, to: parts.len())
+            match asn1.untagged(part, number: 1)
+                .err _ => _ = 0
+                .ok held =>
+                    point = within(r: asn1.bits_of(held), what: "an ECPrivateKey's public key")?.bytes
+
+                    if !is_point(point: point, curve: n.curve)
+                        return fail(code: INVALID, msg: f"an EC point that is not uncompressed on {n.curve}")
+                    coordinates(@material, point: point, curve: n.curve)
+
+        if material["x"].is_err()
+            point = computed_public(der: der, curve: n.curve)?
+            coordinates(@material, point: point, curve: n.curve)
+        return ok(bare(n, material: material))
+    seed = within(r: asn1.octets_of(within(r: asn1.decode_der(inner), what: "a CurvePrivateKey")?), what: "a CurvePrivateKey")?
+
+    if seed.len() != jwk.curve_size(n.curve)
+        return fail(code: INVALID, msg: f"an {n.curve} private key of {seed.len()} bytes")
+    material["x"] @ computed_public(der: der, curve: n.curve)?
+    material["d"] @ seed
+    return ok(bare(n, material: material))
+
+# The raw public key of the private key PKCS #8 `der` holds, computed by the
+# system: an EC point uncompressed, or an OKP key's 32 bytes.
+function computed_public(der: [u8], curve: str) -> [u8]?
+    if curve == "Ed448" || curve == "X448"
+        return fail(code: UNSUPPORTED, msg: f"an {curve} key, which `crypto/keypairs` lacks")
+    key @= keypairs.parse_private_der(der)?
+    public_r = keypairs.public_of(key)
+
+    match public_r
+        .err e =>
+            match keypairs.close(@key)
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            return fail(code: e.code, msg: e.msg)
+        .ok p =>
+            public @= p
+            raw = keypairs.format_public_raw(public)
+            keypairs.close_public(@public)?
+            keypairs.close(@key)?
+            return raw
+
+# JOSE's form of the ECDSA signature `der`: R and S, each `size` bytes.
+function ecdsa_raw(der: [u8], size: i64) -> [u8]?
+    v = within(r: asn1.decode_der(der), what: "an ECDSA signature")?
+    parts = within(r: asn1.items_of(v), what: "an ECDSA signature")?
+
+    if parts.len() != 2
+        return fail(code: INVALID, msg: "an ECDSA signature that is not R and S")
+    r = padded(unsigned_of(parts[0], what: "an ECDSA signature's R")?, size: size, what: "R")?
+    s = padded(unsigned_of(parts[1], what: "an ECDSA signature's S")?, size: size, what: "S")?
+    out: [u8] @= r
+
+    for b in s
+        out @ out.push(b)
+
+    return ok(out)
+
+# X9.62's DER of the JOSE ECDSA signature `raw`, R and S of `size` bytes.
+function ecdsa_der(raw: [u8], size: i64) -> [u8]?
+    if raw.len() != size * 2
+        return fail(code: INVALID, msg: f"an ECDSA signature of {raw.len()} bytes, where {size * 2} are its")
+    r = raw.slice(from: 0, to: size)
+    s = raw.slice(from: size, to: size * 2)
+    return within(r: asn1.encode_der(.sequence(items: [unsigned(r), unsigned(s)])), what: "an ECDSA signature")
+
+test "ecdsa_raw and ecdsa_der: R with its high bit set, S short, both ways"
+    raw: [u8] @= [128]
+
+    for _ in range(from: 1, to: 32)
+        raw @ raw.push(1)
+
+    for _ in range(from: 0, to: 31)
+        raw @ raw.push(0)
+
+    raw @ raw.push(7)
+    der = ecdsa_der(raw, size: 32).must()
+    assert der[0] == 0x30 && der[2] == 2 && der[3] == 33 && der[4] == 0
+    assert der[der.len() - 3] == 2 && der[der.len() - 2] == 1 && der[der.len() - 1] == 7
+    assert ecdsa_raw(der, size: 32).must() == raw
+    assert ecdsa_der(raw.slice(from: 0, to: 63), size: 32).is_err()
+    assert ecdsa_raw([0x30, 0], size: 32).is_err()
+
+test "padded: shorter, the same length, longer refused"
+    assert padded([1, 2], size: 4, what: "x").must() == [0, 0, 1, 2]
+    assert padded([1, 2], size: 2, what: "x").must() == [1, 2]
+    assert padded([1, 2, 3], size: 2, what: "x").is_err()
+
+test "public_der and read_public: an EC P-256 key both ways, an oct key refused"
+    material: {str: [u8]} @= {}
+    material["x"] @ range(from: 0, to: 32).map(to_u8_of)
+    material["y"] @ range(from: 32, to: 64).map(to_u8_of)
+    key = bare(Named(key_type: "EC", curve: "P-256"), material: material)
+    der = public_der(key).must()
+    back = read_public(der).must()
+    assert back == key
+    assert public_der(bare(Named(key_type: "oct", curve: ""), material: material)).is_err()
+
+test "public_der and read_public: an RSA modulus with its high bit set, its exponent 65537"
+    material: {str: [u8]} @= {}
+    n: [u8] @= [0xc0]
+
+    for _ in range(from: 1, to: 256)
+        n @ n.push(0x11)
+
+    material["n"] @ n
+    material["e"] @ [1, 0, 1]
+    key = bare(Named(key_type: "RSA", curve: ""), material: material)
+    assert read_public(public_der(key).must()).must() == key
+
+test "read_public: refused, not DER, an EC point compressed, an unknown algorithm"
+    assert read_public([1, 2, 3]).is_err()
+    material: {str: [u8]} @= {}
+    material["x"] @ range(from: 0, to: 32).map(to_u8_of)
+    material["y"] @ range(from: 32, to: 64).map(to_u8_of)
+    der @= public_der(bare(Named(key_type: "EC", curve: "P-256"), material: material)).must()
+    der[der.len() - 65] @ 2
+    assert read_public(der).is_err()
+
+test "private_der: refused for an oct key and a public key, an RSA key without its primes unsupported"
+    material: {str: [u8]} @= {}
+    material["n"] @ [1, 2, 3]
+    material["e"] @ [1, 0, 1]
+    public = bare(Named(key_type: "RSA", curve: ""), material: material)
+    assert private_der(public).is_err()
+    material["d"] @ [5]
+
+    match private_der(bare(Named(key_type: "RSA", curve: ""), material: material))
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+# The byte `n`, for building test keys.
+function to_u8_of(n: i64) -> u8
+    return n.to_u8().must()

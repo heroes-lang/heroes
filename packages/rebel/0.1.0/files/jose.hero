@@ -1,0 +1,1311 @@
+# JSON Web Signatures, Keys, Tokens and Encryption (RFC 7515, 7517, 7519 and
+# 7516, the algorithms of RFC 7518 and RFC 8037): a payload signed and
+# verified in the compact and the JSON serializations, a key read from and
+# written as its JSON or as DER and PEM, a JWT's claims checked, and a
+# plaintext encrypted where the system's cryptography allows it.
+#
+# **The caller names the algorithms it accepts**, and a token's header never
+# chooses one alone: `none` has no case and a header naming it is refused,
+# an empty list accepts nothing, and a key serves only the algorithms of its
+# type (RFC 8725 § 2.1, § 3.1), so an RSA key's public bytes are never taken
+# for an HMAC secret. A key whose `alg`, `use` or `key_ops` says otherwise is
+# not used. Keys shorter than RFC 7518 allows (an HMAC secret below the
+# hash's length, RSA below 2048 bits) are refused on both sides.
+#
+# **What computes**: HMAC is `crypto`'s, every signature, key agreement and
+# RSA encryption is `crypto/keypairs`', every AES-GCM is `crypto/seal`'s, so
+# a secret is never computed on by Heroes code but in an HMAC. What the
+# system lacks fails `unsupported`: Ed25519 on macOS and Windows, and every
+# encryption on macOS, which offers C no AES-GCM; P-521 (`ES512`), Ed448,
+# AES key wrap, AES-CBC and AES-192 on every platform, since no package
+# below offers them.
+#
+# **A key is a value**, never a handle: a JWK's private members stand in
+# the program's memory as its JSON held them, and each signature or
+# decryption hands them to `crypto/keypairs` for that call alone. A key
+# whose secret must never enter the program is `crypto/keypairs`' own.
+#
+# **What it does not do.** It fetches no key set (`oauth2.fetch_key_set`
+# does), checks no certificate chain (`x509` does, and a certificate's key is
+# read by `key_from_public_der` from `x509`'s `public_key.der`), keeps no
+# record of the `jti` already seen, and writes no JWE in the JSON
+# serialization. A JWT's times are `time`'s, so a program using this package
+# carries `time` (about 2 MB a program, the coordinator's measure of
+# 2026-11-17).
+#
+# It fails with `invalid` (a token, a key or a text not of its form, a
+# signature that does not hold, a claim refused, a key that serves no
+# accepted algorithm), `not_found` (no key has the header's `kid`, a claim is
+# absent), `does_not_fit` (a time past what `time.Instant` holds),
+# `unsupported` (an algorithm this platform or Rebel lacks), and, from
+# `crypto/keypairs` and `crypto/seal`, `limit` and `failed`.
+
+use bytes
+use crypto
+use crypto/keypairs
+use jose/internal/algorithms as names
+use jose/internal/claims as claims_check
+use jose/internal/compact
+use jose/internal/encryption as sealing
+use jose/internal/forms
+use jose/internal/general
+use jose/internal/jwk
+use jose/internal/segments
+use jose/internal/vectors
+use json
+use pem
+use time
+
+## Codes
+
+# A token, a key or a text not of its form, a signature that does not hold,
+# a claim the rules refuse, a key that serves none of the algorithms asked:
+# every function that reads or checks.
+constant INVALID: str
+    "invalid"
+
+# No key given has the header's `kid` (`verify_compact`, `verify_json`,
+# `verify_token`, `decrypt_compact`), no key has the id asked
+# (`key_by_id`), a claim is absent (`claim_text`, `claim_texts`,
+# `claim_time`).
+constant NOT_FOUND: str
+    "not_found"
+
+# A time past what a `time.Instant` holds: `claim_time`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# An algorithm, a curve or a key type that this platform's cryptography, or
+# Rebel's, lacks: Ed25519 on macOS and Windows, every encryption on macOS,
+# `ES512`, Ed448, AES key wrap and AES-CBC everywhere.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The system has no memory or key left, from `crypto/keypairs` and
+# `crypto/seal`.
+constant LIMIT: str
+    "limit"
+
+# The system's cryptography failed for another reason, its words in the
+# message.
+constant FAILED: str
+    "failed"
+
+## Algorithms
+
+# A signature's algorithm (RFC 7518 § 3, RFC 8037, RFC 9864): what a JWS
+# header's `alg` names. There is no `none`.
+variant Algorithm
+    # `HS256`: HMAC with SHA-256, a secret of 32 bytes or more.
+    hs256
+    # `HS384`: HMAC with SHA-384, a secret of 48 bytes or more.
+    hs384
+    # `HS512`: HMAC with SHA-512, a secret of 64 bytes or more.
+    hs512
+    # `RS256`: RSA PKCS #1 v1.5 with SHA-256, a modulus of 2048 bits or more.
+    rs256
+    # `RS384`: RSA PKCS #1 v1.5 with SHA-384.
+    rs384
+    # `RS512`: RSA PKCS #1 v1.5 with SHA-512.
+    rs512
+    # `PS256`: RSA-PSS with SHA-256, MGF1 over SHA-256 and a salt of 32 bytes.
+    ps256
+    # `PS384`: RSA-PSS with SHA-384 and a salt of 48 bytes.
+    ps384
+    # `PS512`: RSA-PSS with SHA-512 and a salt of 64 bytes.
+    ps512
+    # `ES256`: ECDSA on P-256 with SHA-256, the signature 64 bytes.
+    es256
+    # `ES384`: ECDSA on P-384 with SHA-384, the signature 96 bytes.
+    es384
+    # `EdDSA` (RFC 8037) with an Ed25519 key: the signature 64 bytes.
+    eddsa
+    # `Ed25519` (RFC 9864): the same signature as `EdDSA` by Ed25519, under
+    # the name that says the curve.
+    ed25519
+
+# How a JWE's content key reaches its recipient: what its header's `alg`
+# names (RFC 7518 § 4).
+variant KeyAlgorithm
+    # `dir`: the key given is the content key itself, as long as the content
+    # algorithm asks.
+    direct
+    # `RSA-OAEP-256`: a content key drawn for the message and encrypted to an
+    # RSA key by OAEP over SHA-256.
+    rsa_oaep_256
+    # `ECDH-ES`: the content key agreed between an ephemeral key, written in
+    # the header as `epk`, and the recipient's P-256, P-384 or X25519 key,
+    # through RFC 7518's Concat KDF.
+    ecdh_es
+    # `A128GCMKW`: a content key drawn and sealed by AES-128-GCM under a
+    # secret of 16 bytes, its nonce and tag in the header's `iv` and `tag`.
+    a128gcmkw
+    # `A256GCMKW`: the same under a secret of 32 bytes.
+    a256gcmkw
+
+# How a JWE's content is sealed: what its header's `enc` names (RFC 7518
+# § 5.3).
+variant ContentAlgorithm
+    # `A128GCM`: AES-128-GCM, a content key of 16 bytes.
+    a128gcm
+    # `A256GCM`: AES-256-GCM, a content key of 32 bytes.
+    a256gcm
+
+# The JOSE name of `algorithm`: `HS256`, `RS256`, `ES256`, `EdDSA`,
+# `Ed25519` and the others.
+#
+# - `algorithm`: the algorithm named.
+#
+# See also `parse_algorithm`.
+function format_algorithm(algorithm: Algorithm) -> str
+    return match algorithm
+        .hs256   => "HS256"
+        .hs384   => "HS384"
+        .hs512   => "HS512"
+        .rs256   => "RS256"
+        .rs384   => "RS384"
+        .rs512   => "RS512"
+        .ps256   => "PS256"
+        .ps384   => "PS384"
+        .ps512   => "PS512"
+        .es256   => "ES256"
+        .es384   => "ES384"
+        .eddsa   => "EdDSA"
+        .ed25519 => "Ed25519"
+
+# The algorithm a JWS header's `alg` names.
+#
+# - `name`: the name, compared as written: `RS256`, never `rs256`.
+#
+# Fails `invalid` for `none`, which is refused by design, and for a name no
+# JWS algorithm has; `unsupported` for `ES512`, `ES256K` and an `EdDSA` that
+# is not Ed25519's, which Rebel's cryptography lacks, each said. See also
+# `format_algorithm`.
+function parse_algorithm(name: str) -> Algorithm?
+    every: [Algorithm] = [
+        .hs256
+        .hs384
+        .hs512
+        .rs256
+        .rs384
+        .rs512
+        .ps256
+        .ps384
+        .ps512
+        .es256
+        .es384
+        .eddsa
+        .ed25519
+    ]
+
+    for algorithm in every
+        if format_algorithm(algorithm) == name
+            return ok(algorithm)
+
+    _ = names.signature(name)?
+    return fail(code: INVALID, msg: f"no JWS algorithm is named \"{name}\"")
+
+# Whether this machine's cryptography signs and verifies by `algorithm`:
+# false for `EdDSA` and `Ed25519` on macOS and Windows.
+#
+# - `algorithm`: the algorithm asked about.
+#
+# See also `keypairs.is_available`.
+function is_available(algorithm: Algorithm) -> bool
+    return match algorithm
+        .eddsa | .ed25519 => keypairs.is_available(.ed25519)
+        .hs256 | .hs384 | .hs512 | .rs256 | .rs384 | .rs512 | .ps256 | .ps384 | .ps512 | .es256 | .es384 => true
+
+# The JOSE name of `algorithm`: `dir`, `RSA-OAEP-256`, `ECDH-ES`,
+# `A128GCMKW` or `A256GCMKW`.
+#
+# - `algorithm`: the algorithm named.
+#
+# See also `parse_key_algorithm`.
+function format_key_algorithm(algorithm: KeyAlgorithm) -> str
+    return match algorithm
+        .direct       => "dir"
+        .rsa_oaep_256 => "RSA-OAEP-256"
+        .ecdh_es      => "ECDH-ES"
+        .a128gcmkw    => "A128GCMKW"
+        .a256gcmkw    => "A256GCMKW"
+
+# The key algorithm a JWE header's `alg` names.
+#
+# - `name`: the name, compared as written.
+#
+# Fails `invalid` for `RSA1_5`, refused by design (RFC 8725 § 3.2), and for a
+# name no JWE algorithm has; `unsupported` for `RSA-OAEP`, the AES key wraps,
+# `ECDH-ES+A128KW` and its kin, `A192GCMKW` and `PBES2-*`, which Rebel's
+# cryptography lacks, each said. See also `format_key_algorithm`.
+function parse_key_algorithm(name: str) -> KeyAlgorithm?
+    every: [KeyAlgorithm] = [.direct, .rsa_oaep_256, .ecdh_es, .a128gcmkw, .a256gcmkw]
+
+    for algorithm in every
+        if format_key_algorithm(algorithm) == name
+            return ok(algorithm)
+
+    names.refused_key_algorithm(name)?
+    return fail(code: INVALID, msg: f"no JWE key algorithm is named \"{name}\"")
+
+# The JOSE name of `algorithm`: `A128GCM` or `A256GCM`.
+#
+# - `algorithm`: the algorithm named.
+#
+# See also `parse_content_algorithm`.
+function format_content_algorithm(algorithm: ContentAlgorithm) -> str
+    return match algorithm
+        .a128gcm => "A128GCM"
+        .a256gcm => "A256GCM"
+
+# The content algorithm a JWE header's `enc` names.
+#
+# - `name`: the name, compared as written.
+#
+# Fails `unsupported` for `A192GCM` and the three `CBC-HS` algorithms, which
+# Rebel's cryptography lacks, and `invalid` for any other name. See also
+# `format_content_algorithm`.
+function parse_content_algorithm(name: str) -> ContentAlgorithm?
+    every: [ContentAlgorithm] = [.a128gcm, .a256gcm]
+
+    for algorithm in every
+        if format_content_algorithm(algorithm) == name
+            return ok(algorithm)
+
+    names.refused_content_algorithm(name)?
+    return fail(code: INVALID, msg: f"no JWE content algorithm is named \"{name}\"")
+
+## Keys
+
+# A JSON Web Key (RFC 7517): a key as its JSON holds it, its members read and
+# their base 64 undone. Made by `to_key`, `parse_key` and the `key_from_`
+# functions, or built directly, where the functions that use it check it.
+record Key
+    # `kty`: `RSA`, `EC`, `OKP` or `oct`.
+    key_type: str
+    # `crv`: `P-256`, `P-384` or `P-521` for `EC`, `Ed25519`, `Ed448`,
+    # `X25519` or `X448` for `OKP`; "" for `RSA` and `oct`.
+    curve: str
+    # `kid`: the key's id, compared byte for byte; "" for none.
+    id: str
+    # `use`: `sig` or `enc`, what the key is for; "" for anything.
+    usage: str
+    # `key_ops`: the operations allowed, `sign`, `verify`, `encrypt`,
+    # `decrypt`, `wrapKey`, `unwrapKey`, `deriveKey`, `deriveBits`; empty
+    # for any.
+    operations: [str]
+    # `alg`: the one algorithm the key serves, as its JOSE name; "" for any
+    # its type serves.
+    algorithm: str
+    # The key's own members by their JWK names, their base64url undone:
+    # `n`, `e` and for a private key `d`, `p`, `q`, `dp`, `dq`, `qi` for
+    # RSA; `x`, `y` and `d` for EC; `x` and `d` for OKP; `k` for oct.
+    material: {str: [u8]}
+    # `x5c`: the certificates that hold the key, DER, its own first; empty
+    # for none. Nothing here checks them: `x509` does.
+    chain: [[u8]]
+    # Every other member, as read: `x5u`, `x5t`, `x5t#S256`, a provider's
+    # own. Written back after the others.
+    extra: {str: json.Value}
+
+# The key the JSON object `v` writes.
+#
+# - `v`: a JWK as a JSON value.
+#
+# Fails `invalid` where `v` is no object, lacks `kty` or a member its type
+# requires, holds a member of the wrong JSON kind or base 64 that is not
+# base64url without padding, or an `EC` point of the wrong length for its
+# curve; `unsupported` for a `kty` other than the four, and for RSA's `oth`.
+# See also `to_json`, `parse_key`.
+function to_key(v: json.Value) -> Key?
+    j = jwk.read(v)?
+    return ok(
+        Key(key_type: j.key_type, curve: j.curve, id: j.id, usage: j.usage, operations: j.operations, algorithm: j.algorithm, material: j.material, chain: j.chain, extra: j.extra)
+    )
+
+# `key` as a JSON object: `kty`, `crv`, `kid`, `use`, `key_ops`, `alg`, the
+# key's members in RFC 7517's order, `x5c`, then `extra`, each only where it
+# is set.
+#
+# - `key`: the key, written as it is, private members included.
+#
+# See also `to_key`, `format_key`, `public_of`.
+function to_json(key: Key) -> json.Value
+    return jwk.write(
+        jwk.Jwk(key_type: key.key_type, curve: key.curve, id: key.id, usage: key.usage, operations: key.operations, algorithm: key.algorithm, material: key.material, chain: key.chain, extra: key.extra)
+    )
+
+# The key the JSON text `text` writes.
+#
+# - `text`: one JWK, read as `json.parse` reads.
+#
+# Fails as `json.parse` and `to_key` do. See also `format_key`.
+function parse_key(text: str) -> Key?
+    return to_key(json.parse(text)?)
+
+# `key` as JSON text on one line, as `to_json` orders it.
+#
+# - `key`: the key, private members included.
+#
+# Fails `invalid` where `extra` holds a `nan` or an infinity. See also
+# `parse_key`.
+function format_key(key: Key) -> str?
+    return json.format(to_json(key))
+
+# The keys of a JWK set's JSON text, `{"keys": [...]}`, in their order.
+#
+# - `text`: the set, as a provider's `jwks_uri` serves it.
+#
+# A key of a type, a curve or a member this package does not read is passed
+# over, as RFC 7517 § 5 asks; an empty list is a set with no key it reads.
+# Fails `invalid` where `text` is no JSON object holding a list `keys`. See
+# also `format_key_set`, `key_by_id`.
+function parse_key_set(text: str) -> [Key]?
+    v = json.parse(text)?
+
+    listed = match json.member(v, key: "keys")
+        .ok l  => l
+        .err e => return fail(code: INVALID, msg: f"a JWK set is an object holding \"keys\": {e.msg}")
+
+    items = match json.items_of(listed)
+        .ok l => l
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a JWK set's \"keys\" is {json.kind_of(listed)}, where a list was expected"
+        )
+
+    out: [Key] @= []
+
+    for item in items
+        match to_key(item)
+            .ok k  => out @ out.push(k)
+            .err _ => _ = 0
+
+    return ok(out)
+
+# `key_set` as a JWK set's JSON text on one line.
+#
+# - `key_set`: the keys, in their order, written as `to_json` writes each.
+#
+# Fails as `format_key` does. See also `parse_key_set`.
+function format_key_set(key_set: [Key]) -> str?
+    members: {str: json.Value} = {"keys": .list(items: key_set.map(to_json))}
+    return json.format(.object(members: members))
+
+# The first key of `key_set` whose `kid` is `id`.
+#
+# - `key_set`: the keys searched, in their order.
+# - `id`: the id sought, compared byte for byte.
+#
+# Fails `not_found` where no key has it. See also `parse_key_set`.
+function key_by_id(key_set: [Key], id: str) -> Key?
+    for k in key_set
+        if k.id == id
+            return ok(k)
+
+    return fail(code: NOT_FOUND, msg: f"no key of the {key_set.len()} given has the id \"{id}\"")
+
+# A symmetric key, `kty` `oct`, made of `secret`'s bytes: an HMAC's, or a
+# content key for `dir`.
+#
+# - `secret`: the bytes, any length; a signature or encryption then asks
+#   the length its algorithm needs.
+#
+# See also `generate_key`.
+function key_from_secret(secret: [u8]) -> Key
+    material: {str: [u8]} = {"k": secret}
+    return Key(
+        key_type: "oct",
+        curve: "",
+        id: "",
+        usage: "",
+        operations: [],
+        algorithm: "",
+        material: material,
+        chain: [],
+        extra: {}
+    )
+
+# The public key a SubjectPublicKeyInfo holds (RFC 5280), as a JWK.
+#
+# - `der`: the DER: `crypto/keypairs.format_public_der`'s, a PEM `PUBLIC
+#   KEY`'s bytes, or a certificate's `x509` `public_key.der`.
+#
+# Fails `invalid` where `der` is no SubjectPublicKeyInfo of RSA, EC on P-256,
+# P-384 or P-521, Ed25519 or X25519; `unsupported` for another algorithm or
+# curve. See also `format_public_der`, `key_from_pem`.
+function key_from_public_der(der: [u8]) -> Key?
+    return to_key(jwk.write(forms.read_public(der)?))
+
+# The private key a PKCS #8 holds (RFC 5208), unencrypted, as a JWK with its
+# public members.
+#
+# - `der`: the DER, as `crypto/keypairs.format_private_der` writes it.
+#
+# An EC key that does not hold its public point has it computed by the
+# system, and Ed25519's public key is computed too, so both fail
+# `unsupported` where `crypto/keypairs` lacks the kind. Fails `invalid` where
+# `der` is no PKCS #8 of RSA, EC, Ed25519 or X25519. See also
+# `format_private_der`.
+function key_from_private_der(der: [u8]) -> Key?
+    return to_key(jwk.write(forms.read_private(der)?))
+
+# The key of the first `PUBLIC KEY` or `PRIVATE KEY` block of PEM in `text`.
+#
+# - `text`: PEM, other text before and after the block passed over.
+#
+# Fails `not_found` where `text` holds neither block, and as `pem.parse_all`,
+# `key_from_public_der` and `key_from_private_der` do. See also
+# `format_public_pem`, `format_private_pem`.
+function key_from_pem(text: str) -> Key?
+    found = pem.parse_all(text)?
+
+    for block in found
+        if block.label == "PUBLIC KEY"
+            return key_from_public_der(block.data)
+
+        if block.label == "PRIVATE KEY"
+            return key_from_private_der(block.data)
+
+    return fail(code: NOT_FOUND, msg: "no PEM block labelled PUBLIC KEY or PRIVATE KEY")
+
+# `key`'s public half as SubjectPublicKeyInfo DER, which
+# `crypto/keypairs.parse_public_der` reads.
+#
+# - `key`: an `RSA`, `EC` or `OKP` key, public or private.
+#
+# Fails `invalid` for `oct`, which has no public half, and for a key missing
+# a member or whose point is of the wrong length; `unsupported` for a curve
+# other than P-256, P-384, P-521, Ed25519 and X25519. See also
+# `key_from_public_der`.
+function format_public_der(key: Key) -> [u8]?
+    return forms.public_der(jwk.read(to_json(key))?)
+
+# `key` as PKCS #8 DER, unencrypted: the secret, handed to the caller.
+#
+# - `key`: an `RSA`, `EC` or `OKP` private key.
+#
+# An EC key's public point is written inside it, as `crypto/keypairs` on
+# macOS needs. Fails `invalid` for `oct`, for a public key and for a key
+# missing a member; `unsupported` as `format_public_der` does. See also
+# `key_from_private_der`.
+function format_private_der(key: Key) -> [u8]?
+    return forms.private_der(jwk.read(to_json(key))?)
+
+# `key`'s public half as PEM's `PUBLIC KEY`, lines of 64 characters each
+# ending in `\n`.
+#
+# - `key`: an `RSA`, `EC` or `OKP` key.
+#
+# Fails as `format_public_der` does. See also `key_from_pem`.
+function format_public_pem(key: Key) -> str?
+    return pem.format(pem.Block(label: "PUBLIC KEY", headers: [], data: format_public_der(key)?))
+
+# `key` as PEM's `PRIVATE KEY`: the secret, handed to the caller.
+#
+# - `key`: an `RSA`, `EC` or `OKP` private key.
+#
+# Fails as `format_private_der` does. See also `key_from_pem`.
+function format_private_pem(key: Key) -> str?
+    return pem.format(pem.Block(label: "PRIVATE KEY", headers: [], data: format_private_der(key)?))
+
+# A new private key of `kind`, drawn by the system's generator, as a JWK.
+#
+# - `kind`: the kind, as `crypto/keypairs.generate` takes it.
+#
+# Fails as `crypto/keypairs.generate` does: `unsupported` for Ed25519 and
+# X25519 on macOS and Windows. An RSA key of 4096 bits takes seconds. See
+# also `key_from_secret`, `public_of`.
+function generate_key(kind: keypairs.Kind) -> Key?
+    made @= keypairs.generate(kind)?
+    der = keypairs.format_private_der(made)
+    keypairs.close(@made)?
+    return key_from_private_der(der?)
+
+# `key` with its private members taken out: what may be published.
+#
+# - `key`: an `RSA`, `EC` or `OKP` key, public or private.
+#
+# Fails `invalid` for `oct`, whose one member is the secret. See also
+# `is_private`.
+function public_of(key: Key) -> Key?
+    return to_key(jwk.write(jwk.public_of(jwk.read(to_json(key))?)?))
+
+# Whether `key` holds a secret: a `d` member, or any `oct` key.
+#
+# - `key`: the key.
+#
+# See also `public_of`.
+function is_private(key: Key) -> bool
+    if key.key_type == "oct"
+        return true
+    return !key.material["d"].is_err()
+
+# `key`'s thumbprint (RFC 7638): the digest by `algorithm` of the JSON of its
+# required public members, in the order of their names, with no space.
+#
+# - `key`: the key; a private key's thumbprint is its public half's.
+# - `algorithm`: the digest; RFC 7638 and RFC 9278 use `.sha256`.
+#
+# Fails `invalid` where a required member is missing. See also `public_of`.
+function thumbprint(key: Key, algorithm: crypto.Algorithm) -> [u8]?
+    return jwk.thumbprint(jwk.read(to_json(key))?, algorithm: algorithm)
+
+## Signatures
+
+# A JWS verified: its headers and its payload.
+record Message
+    # The protected header's members, as signed; empty for a JSON
+    # serialization's signature with none.
+    protected: {str: json.Value}
+    # The unprotected header's members, which nothing signed; always empty
+    # for the compact serialization.
+    unprotected: {str: json.Value}
+    # The payload's bytes, its base 64 undone.
+    payload: [u8]
+
+# One signature of a JWS in the JSON serialization: the key, the algorithm
+# and the two headers it is made with. Built directly.
+record Signer
+    # The private key, or the secret for HMAC, that signs.
+    key: Key
+    # The algorithm; written as the protected header's `alg`.
+    algorithm: Algorithm
+    # Other members of the protected header, written after `alg`; none may
+    # be `alg`.
+    protected: {str: json.Value}
+    # The unprotected header's members; none may stand in `protected` too.
+    unprotected: {str: json.Value}
+
+# `payload` signed by `key` with `algorithm`, in the compact serialization:
+# three parts of base64url between two dots.
+#
+# - `payload`: the bytes signed, any length.
+# - `key`: the private key, or the secret for HMAC, of a type `algorithm`
+#   serves, whose `alg`, `use` and `key_ops` allow it.
+# - `algorithm`: the algorithm, written as the header's `alg`.
+# - `header`: the header's other members, written after `alg` in their
+#   order, then `kid` where the key has an id and `header` none; `{}` for
+#   none. `b64` false (RFC 7797) signs the payload as it is, and asks `crit`
+#   to name it.
+#
+# HMAC, RSA PKCS #1 v1.5 and Ed25519 answer the same token every time, ECDSA
+# and RSA-PSS another each time. Fails `invalid` for a key that does not
+# serve `algorithm`, a public key, a secret or a modulus too short, a
+# `header` holding `alg`, or a `b64` payload holding a dot; `unsupported`.
+# See also `verify_compact`, `sign_token`.
+function sign_compact(payload: [u8], key: Key, algorithm: Algorithm, header: {str: json.Value}) -> str?
+    return compact.sign(payload, key: to_json(key), name: format_algorithm(algorithm), header: header)
+
+# The JWS `token`, compact, verified by one of `trusted` with one of
+# `algorithms`.
+#
+# - `token`: the compact serialization, three parts between two dots.
+# - `trusted`: the keys that may have signed it; where the header names a
+#   `kid`, only the keys with that id are tried.
+# - `algorithms`: the algorithms accepted; the header's `alg` must be one.
+#
+# The keys tried are those of `trusted` whose type serves the header's
+# algorithm and whose `alg`, `use` and `key_ops` allow verifying, in their
+# order, until one verifies. Fails `invalid` where `token` is not of the
+# form, its header names `none`, an algorithm not in `algorithms` or a
+# `crit` member not understood, no key given serves its algorithm, or the
+# signature does not hold; `not_found` where no key has the header's `kid`;
+# `unsupported`. See also `sign_compact`, `verify_token`, `header_of`.
+function verify_compact(token: str, trusted: [Key], algorithms: [Algorithm]) -> Message?
+    got = compact.verify(token, given: [], detached: false, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
+
+# The JWS `token`, compact with its payload carried apart (RFC 7515
+# Appendix F), verified over `payload`.
+#
+# - `token`: the compact serialization, its middle part empty or the
+#   payload's own.
+# - `payload`: the content signed.
+# - `trusted`: the keys that may have signed it, as `verify_compact` tries
+#   them.
+# - `algorithms`: the algorithms accepted.
+#
+# Fails as `verify_compact` does, and `invalid` where the token carries a
+# payload that is not `payload`. See also `verify_compact`.
+function verify_detached(token: str, payload: [u8], trusted: [Key], algorithms: [Algorithm]) -> Message?
+    got = compact.verify(token, given: payload, detached: true, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
+
+# The protected header of the compact JWS or JWE `token`, read and NOT
+# verified: what names the key (`kid`) before one is chosen.
+#
+# - `token`: a compact serialization.
+#
+# Nothing in it is to be trusted until a verification has used it. Fails
+# `invalid` where the first part is not base64url of a JSON object. See also
+# `verify_compact`.
+function header_of(token: str) -> {str: json.Value}?
+    first = segments.pieces(token)[0]
+    return segments.header_members(segment: first, what: "the header")
+
+# `payload` signed by each of `signers`, in the general JSON serialization:
+# `{"payload": ..., "signatures": [...]}`.
+#
+# - `payload`: the bytes signed.
+# - `signers`: one signer or more, in the order their signatures stand.
+#
+# Fails `invalid` where `signers` is empty, a protected and an unprotected
+# header share a member, and as `sign_compact` does for each. See also
+# `sign_flattened`, `verify_json`.
+function sign_json(payload: [u8], signers: [Signer]) -> str?
+    signing: [general.Signing] @= []
+
+    for s in signers
+        signing @ signing.push(
+            general.Signing(key: to_json(s.key), algorithm: format_algorithm(s.algorithm), protected: s.protected, unprotected: s.unprotected)
+        )
+
+    return general.sign(payload, signers: signing, flattened: false)
+
+# `payload` signed by `signer`, in the flattened JSON serialization:
+# `{"payload": ..., "protected": ..., "header": ..., "signature": ...}`.
+#
+# - `payload`: the bytes signed.
+# - `signer`: the key, the algorithm and the headers.
+#
+# Fails as `sign_json` does. See also `sign_json`, `verify_json`.
+function sign_flattened(payload: [u8], signer: Signer) -> str?
+    one = general.Signing(
+        key: to_json(signer.key),
+        algorithm: format_algorithm(signer.algorithm),
+        protected: signer.protected,
+        unprotected: signer.unprotected
+    )
+    return general.sign(payload, signers: [one], flattened: true)
+
+# The JWS `text`, in the general or the flattened JSON serialization,
+# verified: the first of its signatures that one of `trusted` verifies with
+# one of `algorithms`.
+#
+# - `text`: the JSON.
+# - `trusted`: the keys, as `verify_compact` tries them for each signature.
+# - `algorithms`: the algorithms accepted.
+#
+# Each signature's `alg` and `kid` are read from its two headers joined,
+# which may not share a member; `crit` must be protected. Fails `invalid`
+# where `text` is not of the form or no signature holds; `not_found` where
+# every signature names a `kid` no key has. See also `sign_json`.
+function verify_json(text: str, trusted: [Key], algorithms: [Algorithm]) -> Message?
+    got = general.verify(text, trusted: trusted.map(to_json), accepted: algorithms.map(format_algorithm))?
+    return ok(Message(protected: got.protected, unprotected: got.unprotected, payload: got.payload))
+
+## Tokens
+
+# What a JWT must answer to be accepted: the algorithms, the claims expected
+# and the time it is judged at. `default_rules` makes one; a program sets the
+# fields it checks.
+record Rules
+    # The algorithms accepted; empty accepts nothing.
+    algorithms: [Algorithm]
+    # The `iss` required, compared byte for byte; "" checks none.
+    issuer: str
+    # The audience the verifier is: `aud`, a text or a list of texts, must
+    # hold it. "" refuses a token that names any audience, as PyJWT does.
+    audience: str
+    # The `sub` required; "" checks none.
+    subject: str
+    # The header's `typ` required, compared in any case of its ASCII letters
+    # (`JWT`, `at+jwt`); "" checks none.
+    token_type: str
+    # The claims that must stand in the token, `exp` for one.
+    required: [str]
+    # How far `exp`, `nbf` and `iat` may miss `now`, 0 or more: a minute is
+    # usual between clocks.
+    leeway: time.Duration
+    # The time the token is judged at.
+    now: time.Instant
+
+# A JWT read: its header and its claims.
+record Token
+    # The protected header's members.
+    header: {str: json.Value}
+    # The claims set's members.
+    claims: {str: json.Value}
+
+# Rules that accept `algorithms` and nothing else, judge at the wall clock's
+# time, with no leeway, and check no issuer, audience, subject, type or
+# required claim.
+#
+# - `algorithms`: the algorithms accepted.
+#
+# Fails `failed` where the wall clock cannot be read. See also
+# `verify_token`.
+function default_rules(algorithms: [Algorithm]) -> Rules?
+    return ok(
+        Rules(algorithms: algorithms, issuer: "", audience: "", subject: "", token_type: "", required: [], leeway: time.nanoseconds(0), now: time.now()?)
+    )
+
+# The JWT of `claims` signed by `key` with `algorithm`: a header
+# `{"alg":...,"typ":"JWT"}` and the key's `kid` where it has one.
+#
+# - `claims`: the claims set, written in its order; `numeric_date` writes a
+#   time.
+# - `key`: the private key, or the secret for HMAC.
+# - `algorithm`: the algorithm.
+#
+# Fails as `sign_compact` does, and `invalid` where a claim holds a `nan`.
+# See also `verify_token`.
+function sign_token(claims: {str: json.Value}, key: Key, algorithm: Algorithm) -> str?
+    header: {str: json.Value} = {"typ": .text(v: "JWT")}
+    text = json.format(.object(members: claims))?
+    return sign_compact(bytes.from_text(text), key: key, algorithm: algorithm, header: header)
+
+# The JWT `token` verified by one of `trusted` and its claims checked by
+# `rules`.
+#
+# - `token`: the compact serialization.
+# - `trusted`: the keys that may have signed it, as `verify_compact` tries
+#   them.
+# - `rules`: the algorithms accepted and the claims checked.
+#
+# Fails as `verify_compact` and `check_claims` do, and `invalid` where the
+# payload is not a JSON object. See also `sign_token`, `check_claims`.
+function verify_token(token: str, trusted: [Key], rules: Rules) -> Token?
+    if rules.token_type != ""
+        named = segments.text_of(header_of(token)?, name: "typ")?
+
+        if !bytes.equals_ignoring_case_ascii(a: bytes.from_text(named), b: bytes.from_text(rules.token_type))
+            return fail(code: INVALID, msg: f"the token's type is \"{named}\", and \"{rules.token_type}\" is required")
+    got = verify_compact(token, trusted: trusted, algorithms: rules.algorithms)?
+    claims = claims_check.of_payload(got.payload)?
+    check_claims(claims, rules: rules)?
+    return ok(Token(header: got.protected, claims: claims))
+
+# Whether `claims` answer `rules`, the algorithms aside: `exp` after `now`,
+# `nbf` and `iat` not after it, each with the leeway, and `iss`, `aud`,
+# `sub` and the required claims as the rules ask.
+#
+# - `claims`: a claims set, verified elsewhere, as one inside a JWE.
+# - `rules`: what is checked.
+#
+# Fails `invalid` naming the first claim refused and why: expired, not yet
+# valid, issued in the future, another issuer, subject or audience, a
+# required claim missing, a time that is not a number or an audience that is
+# not text. See also `verify_token`.
+function check_claims(claims: {str: json.Value}, rules: Rules) -> ()?
+    return claims_check.check(
+        claims,
+        issuer: rules.issuer,
+        audience: rules.audience,
+        subject: rules.subject,
+        required: rules.required,
+        leeway: rules.leeway,
+        now: rules.now
+    )
+
+# The header and claims of the JWT `token`, read and NOT verified: for a
+# program that must look inside before it can choose a key, or one that
+# trusts the channel the token came by.
+#
+# - `token`: a compact JWS.
+#
+# Fails `invalid` where `token` is not of the form or its payload not a JSON
+# object. See also `verify_token`, `header_of`.
+function read_unverified(token: str) -> Token?
+    parts = segments.pieces(token)
+
+    if parts.len() != 3
+        return fail(code: INVALID, msg: f"a compact JWS has 3 parts between dots, and this one has {parts.len()}")
+    header = segments.header_members(segment: parts[0], what: "the JWT header")?
+    payload = segments.decoded(segment: parts[1], what: "the JWT payload")?
+    return ok(Token(header: header, claims: claims_check.of_payload(payload)?))
+
+# The text of the claim `name` in `claims`: `iss`, `sub`, `jti`, `nonce`.
+#
+# - `claims`: the claims set.
+# - `name`: the claim's name.
+#
+# Fails `not_found` where it is absent, `invalid` where it is no text. See
+# also `claim_texts`, `claim_time`.
+function claim_text(claims: {str: json.Value}, name: str) -> str?
+    return claims_check.text_claim(claims, name: name)
+
+# The texts of the claim `name`, which is one text or a list of texts, as
+# `aud` is (RFC 7519 § 4.1.3).
+#
+# - `claims`: the claims set.
+# - `name`: the claim's name.
+#
+# A text is answered as a list of one. Fails `not_found` where it is absent,
+# `invalid` where it is neither. See also `claim_text`.
+function claim_texts(claims: {str: json.Value}, name: str) -> [str]?
+    return claims_check.texts_claim(claims, name: name)
+
+# The instant the claim `name` gives as a NumericDate, seconds since 1970 in
+# UTC: `exp`, `nbf`, `iat`, `auth_time`.
+#
+# - `claims`: the claims set.
+# - `name`: the claim's name.
+#
+# A fraction is kept to the microsecond. Fails `not_found` where it is
+# absent, `invalid` where it is no number, `does_not_fit` where it is past
+# what a `time.Instant` holds. See also `numeric_date`.
+function claim_time(claims: {str: json.Value}, name: str) -> time.Instant?
+    return claims_check.instant_of(claims_check.number_claim(claims, name: name)?, name: name)
+
+# `t` as a NumericDate: its whole seconds since 1970, the fraction dropped
+# toward the past, as golang-jwt writes them.
+#
+# - `t`: the instant, within 2^53 seconds of 1970, which every `time.Instant`
+#   is.
+#
+# See also `claim_time`.
+function numeric_date(t: time.Instant) -> json.Value
+    return .number(v: to_f64(time.unix_seconds(t)))
+
+## Encryption
+
+# A JWE decrypted: its protected header and its plaintext.
+record Decrypted
+    # The protected header's members, `alg` and `enc` among them.
+    protected: {str: json.Value}
+    # The plaintext.
+    plaintext: [u8]
+
+# `plaintext` encrypted to `key` in the compact serialization: five parts of
+# base64url between four dots.
+#
+# - `plaintext`: the bytes, any length up to `crypto/seal`'s bound.
+# - `key`: the recipient's key: the content key for `.direct`, an RSA
+#   public key for `.rsa_oaep_256`, an `EC` or `X25519` public key for
+#   `.ecdh_es`, the secret for the GCM key wraps.
+# - `algorithm`: how the content key reaches the recipient.
+# - `encryption`: how the content is sealed.
+# - `header`: the protected header's other members, written after `alg` and
+#   `enc`, then `kid` where the key has one; `{}` for none.
+#
+# The content key and the nonces are drawn by the system for each call, so
+# two calls answer two tokens. Fails `invalid` for a key of the wrong type or
+# length, a `header` holding `alg`, `enc`, `epk`, `iv` or `tag`;
+# `unsupported` on macOS, whose cryptography offers C no AES-GCM. See also
+# `decrypt_compact`.
+function encrypt_compact(plaintext: [u8], key: Key, algorithm: KeyAlgorithm, encryption: ContentAlgorithm, header: {str: json.Value}) -> str?
+    return sealing.encrypt(
+        plaintext,
+        key: to_json(key),
+        alg: format_key_algorithm(algorithm),
+        enc: format_content_algorithm(encryption),
+        header: header
+    )
+
+# The JWE `token`, compact, decrypted by one of `trusted`.
+#
+# - `token`: the compact serialization, five parts between four dots.
+# - `trusted`: the keys that may decrypt it, private for RSA and ECDH-ES;
+#   where the header names a `kid`, only the keys with that id are tried.
+# - `algorithms`: the key algorithms accepted; the header's `alg` must be one.
+# - `encryptions`: the content algorithms accepted; its `enc` must be one.
+#
+# Fails `invalid` where `token` is not of the form, its algorithms are not
+# accepted, its `crit` names a member, or no key opens it, and then nothing
+# of the plaintext is told; `not_found` where no key has the header's `kid`;
+# `unsupported` on macOS. See also `encrypt_compact`.
+function decrypt_compact(token: str, trusted: [Key], algorithms: [KeyAlgorithm], encryptions: [ContentAlgorithm]) -> Decrypted?
+    got = sealing.decrypt(token, trusted: trusted.map(to_json), accepted_algorithms: algorithms.map(format_key_algorithm), accepted_encryptions: encryptions.map(format_content_algorithm))?
+    return ok(Decrypted(protected: got.protected, plaintext: got.plaintext))
+
+## Tests
+
+test "verify_compact and sign_compact: RFC 7520 § 4.1's RS256 through the face, byte for byte"
+    token = vectors.compact_of(vectors.rs256_flattened())
+    public = parse_key(vectors.rsa_public()).must()
+    got = verify_compact(token, trusted: [public], algorithms: [.rs256]).must()
+    none: {str: json.Value} = {}
+    assert sign_compact(got.payload, key: parse_key(vectors.rsa_private()).must(), algorithm: .rs256, header: none).must() == token
+    assert verify_compact(token, trusted: [public], algorithms: [.ps256, .hs256]).is_err()
+    assert verify_compact(token, trusted: [public], algorithms: []).is_err()
+
+test "verify_compact: an RSA key's public bytes taken for an HMAC secret are refused, the confusion of RFC 8725 § 2.1"
+    public = parse_key(vectors.rsa_public()).must()
+    secret = key_from_secret(format_public_der(public).must())
+    none: {str: json.Value} = {}
+    forged = sign_compact(bytes.from_text("{\"sub\":\"admin\"}"), key: secret, algorithm: .hs256, header: none).must()
+    assert verify_compact(forged, trusted: [public], algorithms: [.rs256, .hs256]).is_err()
+
+test "key_from_private_der and format_private_der: RFC 7520's RSA key through PKCS #8, and crypto/keypairs reads it"
+    key = parse_key(vectors.rsa_private()).must()
+    der = format_private_der(key).must()
+    back = key_from_private_der(der).must()
+    assert back.material == key.material
+    handle @= keypairs.parse_private_der(der).must()
+    assert handle.kind == .rsa(bits: 2048)
+    keypairs.close(@handle).must()
+    assert key_from_public_der(format_public_der(key).must()).must().material == public_of(key).must().material
+
+test "generate_key: P-256 and P-384 made, signed with and verified, their public halves alone verifying"
+    kinds: [keypairs.Kind] = [.p256, .p384]
+
+    for kind in kinds
+        key = generate_key(kind).must()
+        assert is_private(key) && key.key_type == "EC"
+        algorithm: Algorithm @= .es256
+
+        if kind == .p384
+            algorithm @ .es384
+        none: {str: json.Value} = {}
+        token = sign_compact(bytes.from_text("x"), key: key, algorithm: algorithm, header: none).must()
+        assert verify_compact(token, trusted: [public_of(key).must()], algorithms: [algorithm]).must().payload == bytes.from_text("x")
+
+test "verify_token: the claims checked after the signature, a wrong audience and an expired token refused"
+    key = parse_key(vectors.hmac_key()).must()
+    claims: {str: json.Value} = {
+        "iss": .text(v: "https://a.example")
+        "aud": .text(v: "api")
+        "exp": .number(v: 2000.0)
+    }
+    token = sign_token(claims, key: key, algorithm: .hs256).must()
+    rules @= default_rules([.hs256]).must()
+    rules.now @ time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
+    rules.issuer @ "https://a.example"
+    rules.audience @ "api"
+    rules.token_type @ "jwt"
+    assert verify_token(token, trusted: [key], rules: rules).must().claims["aud"].must() == .text(v: "api")
+    other @= rules
+    other.audience @ "mail"
+    assert verify_token(token, trusted: [key], rules: other).is_err()
+    late @= rules
+    late.now @ time.from_unix(whole_seconds: 2000, extra_nanoseconds: 0).must()
+    assert verify_token(token, trusted: [key], rules: late).is_err()
+    typed @= rules
+    typed.token_type @ "at+jwt"
+    assert verify_token(token, trusted: [key], rules: typed).is_err()
+
+test "sign_token: the same bytes as PyJWT 2.15.1's jwt.encode of the same claims and secret"
+    secret = key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok"))
+    claims: {str: json.Value} = {
+        "sub": .text(v: "1234567890")
+        "name": .text(v: "John Doe")
+        "iat": .number(v: 1516239022.0)
+    }
+    assert sign_token(claims, key: secret, algorithm: .hs256).must() == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.wu3F1aO0Octws7DCzsVRF9U3MDn9LEe64aYUwagxmA8"
+
+test "parse_key_set: RFC 7517 Appendix A.1's set, a key of an unknown type passed over, no keys member refused"
+    text = "{\"keys\":[{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"MKBCTNIcKUSDii11ySs3526iDZ8AiTo7Tu6KPAqv7D4\",\"y\":\"4Etl6SRW2YiLUrN5vfvVHuhp7x8PxltmWWlbbM4IFyM\",\"use\":\"enc\",\"kid\":\"1\"},{\"kty\":\"RSA\",\"n\":\"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw\",\"e\":\"AQAB\",\"alg\":\"RS256\",\"kid\":\"2011-04-29\"},{\"kty\":\"DSA\",\"kid\":\"old\"}]}"
+    set = parse_key_set(text).must()
+    assert set.len() == 2
+    assert key_by_id(set, id: "2011-04-29").must().algorithm == "RS256"
+    assert parse_key_set("{\"key\":[]}").is_err()
+    assert parse_key_set(format_key_set(set).must()).must() == set
+
+test "decrypt_compact and encrypt_compact: RSA-OAEP-256 with A256GCM, ECDH-ES on P-256, A128GCMKW, or unsupported where the platform has no AES-GCM"
+    rsa = parse_key(vectors.rsa_private()).must()
+    rsa_use @= rsa
+    rsa_use.usage @ ""
+    ec = generate_key(.p256).must()
+    wrap = key_from_secret(bytes.from_text("sixteen bytes ok"))
+    cases: [Key] = [rsa_use, ec, wrap]
+    algorithms: [KeyAlgorithm] = [.rsa_oaep_256, .ecdh_es, .a128gcmkw]
+    none: {str: json.Value} = {}
+
+    for at in range(from: 0, to: cases.len())
+        recipient = cases[at]
+        sending: Key @= recipient
+
+        if recipient.key_type != "oct"
+            sending @ public_of(recipient).must()
+
+        match encrypt_compact(bytes.from_text("ground control"), key: sending, algorithm: algorithms[at], encryption: .a256gcm, header: none)
+            .err e => assert e.code == UNSUPPORTED
+            .ok token =>
+                got = decrypt_compact(
+                    token,
+                    trusted: [recipient],
+                    algorithms: [algorithms[at]],
+                    encryptions: [.a256gcm]
+                ).must()
+                assert got.plaintext == bytes.from_text("ground control")
+                assert decrypt_compact(
+                    token,
+                    trusted: [recipient],
+                    algorithms: [algorithms[at]],
+                    encryptions: [.a128gcm]
+                ).is_err()
+
+## Examples
+
+# An algorithm written as a JWS header names it.
+test "format_algorithm: RS256 and EdDSA"
+    assert format_algorithm(.rs256) == "RS256"
+    assert format_algorithm(.eddsa) == "EdDSA"
+
+# A header's `alg` read, and `none` refused.
+test "parse_algorithm: ES256 read, none refused, ES512 lacking"
+    assert parse_algorithm("ES256").must() == .es256
+    assert parse_algorithm("none").is_err()
+
+    match parse_algorithm("ES512")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+# Whether this machine signs by Ed25519: false on macOS and Windows.
+test "is_available: HMAC everywhere, EdDSA where the system has Ed25519"
+    assert is_available(.hs256)
+    assert is_available(.eddsa) == keypairs.is_available(.ed25519)
+
+# A JWE key algorithm written.
+test "format_key_algorithm: dir and RSA-OAEP-256"
+    assert format_key_algorithm(.direct) == "dir"
+    assert format_key_algorithm(.rsa_oaep_256) == "RSA-OAEP-256"
+
+# A JWE header's `alg` read, and RSA1_5 refused.
+test "parse_key_algorithm: ECDH-ES read, RSA1_5 refused, A128KW lacking"
+    assert parse_key_algorithm("ECDH-ES").must() == .ecdh_es
+    assert parse_key_algorithm("RSA1_5").is_err()
+
+    match parse_key_algorithm("A128KW")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+# A JWE content algorithm written.
+test "format_content_algorithm: A256GCM"
+    assert format_content_algorithm(.a256gcm) == "A256GCM"
+
+# A JWE header's `enc` read, and AES-CBC lacking.
+test "parse_content_algorithm: A128GCM read, A128CBC-HS256 lacking"
+    assert parse_content_algorithm("A128GCM").must() == .a128gcm
+
+    match parse_content_algorithm("A128CBC-HS256")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+# A JWK read from a JSON value.
+test "to_key: an HMAC key of RFC 7520 § 3.5"
+    key = to_key(json.parse(vectors.hmac_key()).must()).must()
+    assert key.key_type == "oct" && key.id == "018c0ae5-4d9b-471b-bfd6-eef314bc7037" && key.algorithm == "HS256"
+
+# A JWK written as a JSON value, read back the same.
+test "to_json: a key read back the same"
+    key = parse_key(vectors.rsa_public()).must()
+    assert to_key(to_json(key)).must() == key
+
+# A JWK read from its text.
+test "parse_key: RFC 7520 § 3.3's RSA public key"
+    key = parse_key(vectors.rsa_public()).must()
+    assert key.key_type == "RSA" && key.material["n"].must().len() == 256 && !is_private(key)
+
+# A JWK written as text, its members in RFC 7517's order.
+test "format_key: a secret written"
+    assert format_key(key_from_secret([1, 2, 3])).must() == "{\"kty\":\"oct\",\"k\":\"AQID\"}"
+
+# The keys of a JWK set, as a provider's `jwks_uri` serves them.
+test "parse_key_set: two keys in a set"
+    set = parse_key_set("{\"keys\":[" + vectors.hmac_key() + "," + vectors.rsa_public() + "]}").must()
+    assert set.len() == 2 && set[1].key_type == "RSA"
+
+# A JWK set written.
+test "format_key_set: one key"
+    assert format_key_set([key_from_secret([1])]).must() == "{\"keys\":[{\"kty\":\"oct\",\"k\":\"AQ\"}]}"
+
+# The key a header's `kid` names.
+test "key_by_id: found, and not found"
+    set = [parse_key(vectors.hmac_key()).must(), parse_key(vectors.rsa_public()).must()]
+    assert key_by_id(set, id: "bilbo.baggins@hobbiton.example").must().key_type == "RSA"
+    assert key_by_id(set, id: "nobody").is_err()
+
+# A secret as a key for HMAC.
+test "key_from_secret: a secret of 32 bytes"
+    key = key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok"))
+    assert key.key_type == "oct" && key.material["k"].must().len() == 32
+
+# A public key read from SubjectPublicKeyInfo, as a certificate holds it.
+test "key_from_public_der: an RSA key back from its DER"
+    key = parse_key(vectors.rsa_public()).must()
+    assert key_from_public_der(format_public_der(key).must()).must().material == key.material
+
+# A private key read from PKCS #8.
+test "key_from_private_der: an RSA private key back from its DER"
+    key = parse_key(vectors.rsa_private()).must()
+    assert key_from_private_der(format_private_der(key).must()).must().material == key.material
+
+# A key read from PEM.
+test "key_from_pem: a public key's PEM"
+    key = parse_key(vectors.rsa_public()).must()
+    assert key_from_pem(format_public_pem(key).must()).must().material == key.material
+
+# A key written as SubjectPublicKeyInfo DER.
+test "format_public_der: an RSA key, 294 bytes"
+    assert format_public_der(parse_key(vectors.rsa_public()).must()).must().len() == 294
+
+# A private key written as PKCS #8 DER, which `crypto/keypairs` reads.
+test "format_private_der: an EC private key read by crypto/keypairs"
+    key = generate_key(.p256).must()
+    handle @= keypairs.parse_private_der(format_private_der(key).must()).must()
+    assert handle.kind == .p256
+    keypairs.close(@handle).must()
+
+# A public key written as PEM.
+test "format_public_pem: the PUBLIC KEY block"
+    text = format_public_pem(parse_key(vectors.rsa_public()).must()).must()
+    assert text.slice(from: 0, to: 26) == "-----BEGIN PUBLIC KEY-----"
+
+# A private key written as PEM.
+test "format_private_pem: the PRIVATE KEY block"
+    text = format_private_pem(parse_key(vectors.rsa_private()).must()).must()
+    assert text.slice(from: 0, to: 27) == "-----BEGIN PRIVATE KEY-----"
+
+# A new key pair made as a JWK.
+test "generate_key: a P-256 key"
+    key = generate_key(.p256).must()
+    assert key.curve == "P-256" && is_private(key)
+
+# The public half of a key, to publish.
+test "public_of: RFC 7520's RSA private key without its secret"
+    public = public_of(parse_key(vectors.rsa_private()).must()).must()
+    assert !is_private(public) && public.material["d"].is_err()
+
+# Whether a key holds a secret.
+test "is_private: a public key and a secret"
+    assert !is_private(parse_key(vectors.rsa_public()).must())
+    assert is_private(key_from_secret([1]))
+
+# A key's thumbprint, RFC 7638.
+test "thumbprint: RFC 7638 § 3.1's key"
+    key = parse_key(
+        "{\"kty\":\"RSA\",\"n\":\"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw\",\"e\":\"AQAB\"}"
+    ).must()
+    assert bytes.format_base64_url_unpadded(thumbprint(key, algorithm: .sha256).must()) == "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs"
+
+# A payload signed with HMAC in the compact serialization: RFC 7520 § 4.4's token.
+test "sign_compact: RFC 7520 § 4.4's HS256"
+    none: {str: json.Value} = {}
+    payload = bytes.parse_base64_url_unpadded(
+        vectors.member_text(text: vectors.rs256_flattened(), name: "payload")
+    ).must()
+    token = sign_compact(payload, key: parse_key(vectors.hmac_key()).must(), algorithm: .hs256, header: none).must()
+    assert token.slice(from: token.len() - 43, to: token.len()) == "s0h6KThzkfBBBkLspW1h84VsJZFTsPPqMDA7g1Md7p0"
+
+# A compact JWS verified by the key its header names, with the algorithms accepted.
+test "verify_compact: RFC 7520 § 4.1's RS256"
+    token = vectors.compact_of(vectors.rs256_flattened())
+    got = verify_compact(token, trusted: [parse_key(vectors.rsa_public()).must()], algorithms: [.rs256]).must()
+    assert got.protected["kid"].must() == .text(v: "bilbo.baggins@hobbiton.example")
+
+# A JWS whose content travels apart, verified over it.
+test "verify_detached: RFC 7520 § 4.5"
+    form = vectors.detached_flattened()
+    token = vectors.member_text(text: form, name: "protected") + ".." + vectors.member_text(text: form, name: "signature")
+    payload = bytes.parse_base64_url_unpadded(
+        vectors.member_text(text: vectors.rs256_flattened(), name: "payload")
+    ).must()
+    assert verify_detached(token, payload: payload, trusted: [parse_key(vectors.hmac_key()).must()], algorithms: [.hs256]).must().payload == payload
+
+# The header of a token read before any key is chosen.
+test "header_of: the kid of RFC 7520 § 4.1's token"
+    header = header_of(vectors.compact_of(vectors.rs256_flattened())).must()
+    assert header["kid"].must() == .text(v: "bilbo.baggins@hobbiton.example")
+
+# A payload signed by two keys in the general JSON serialization.
+test "sign_json: two signers, each verified"
+    a = key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok"))
+    b = parse_key(vectors.rsa_private()).must()
+    none: {str: json.Value} = {}
+    text = sign_json(
+        bytes.from_text("hello"),
+        signers: [Signer(key: a, algorithm: .hs256, protected: none, unprotected: none), Signer(key: b, algorithm: .rs256, protected: none, unprotected: none)]
+    ).must()
+    assert verify_json(text, trusted: [public_of(b).must()], algorithms: [.rs256]).must().payload == bytes.from_text("hello")
+
+# A payload signed in the flattened JSON serialization.
+test "sign_flattened: one signer with an unprotected header"
+    a = key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok"))
+    none: {str: json.Value} = {}
+    note: {str: json.Value} = {"note": .text(v: "x")}
+    text = sign_flattened(
+        bytes.from_text("hello"),
+        signer: Signer(key: a, algorithm: .hs256, protected: none, unprotected: note)
+    ).must()
+    assert verify_json(text, trusted: [a], algorithms: [.hs256]).must().unprotected["note"].must() == .text(v: "x")
+
+# A JWS in the JSON serialization verified: RFC 7520 § 4.8's three signatures.
+test "verify_json: RFC 7520 § 4.8, the HMAC signature"
+    got = verify_json(
+        vectors.three_signatures(),
+        trusted: [parse_key(vectors.hmac_key()).must()],
+        algorithms: [.hs256]
+    ).must()
+    assert got.payload.len() == 167
+
+# Rules that accept HS256, judged now.
+test "default_rules: HS256 and nothing checked but the times"
+    rules = default_rules([.hs256]).must()
+    assert rules.algorithms == [.hs256] && rules.issuer == "" && rules.leeway.nanoseconds == 0
+
+# A JWT signed with HMAC, as PyJWT writes it.
+test "sign_token: a claims set signed"
+    claims: {str: json.Value} = {"sub": .text(v: "ana")}
+    token = sign_token(
+        claims,
+        key: key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok")),
+        algorithm: .hs256
+    ).must()
+    assert token.slice(from: 0, to: 36) == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+
+# A JWT verified and its issuer checked.
+test "verify_token: a token of the expected issuer"
+    key = key_from_secret(bytes.from_text("a secret of thirty-two bytes, ok"))
+    claims: {str: json.Value} = {"iss": .text(v: "me")}
+    rules @= default_rules([.hs256]).must()
+    rules.issuer @ "me"
+    assert verify_token(sign_token(claims, key: key, algorithm: .hs256).must(), trusted: [key], rules: rules).must().claims["iss"].must() == .text(v: "me")
+
+# Claims checked against rules, a token read elsewhere.
+test "check_claims: RFC 7519 § 3.1's claims, expired today"
+    set: {str: json.Value} = {"iss": .text(v: "joe"), "exp": .number(v: 1300819380.0)}
+    rules = default_rules([.hs256]).must()
+    assert check_claims(set, rules: rules).is_err()
+
+# A JWT's claims read without its signature.
+test "read_unverified: RFC 7515 Appendix A.1's claims"
+    token = "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    assert claim_text(read_unverified(token).must().claims, name: "iss").must() == "joe"
+
+# A text claim read.
+test "claim_text: iss, and a claim absent"
+    claims: {str: json.Value} = {"iss": .text(v: "joe")}
+    assert claim_text(claims, name: "iss").must() == "joe"
+
+    match claim_text(claims, name: "sub")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+# An audience read whether it is one text or a list.
+test "claim_texts: aud as a text and as a list"
+    one: {str: json.Value} = {"aud": .text(v: "api")}
+    many: {str: json.Value} = {"aud": .list(items: [.text(v: "a"), .text(v: "b")])}
+    assert claim_texts(one, name: "aud").must() == ["api"]
+    assert claim_texts(many, name: "aud").must() == ["a", "b"]
+
+# A time claim read as an instant.
+test "claim_time: RFC 7519 § 3.1's exp"
+    claims: {str: json.Value} = {"exp": .number(v: 1300819380.0)}
+    assert time.unix_seconds(claim_time(claims, name: "exp").must()) == 1300819380
+
+# An instant written as a NumericDate.
+test "numeric_date: a second and a half after 1970, the half dropped"
+    assert numeric_date(time.from_unix(whole_seconds: 1, extra_nanoseconds: 500_000_000).must()) == .number(v: 1.0)
+
+# A plaintext encrypted to a secret shared beforehand, where the platform has AES-GCM.
+test "encrypt_compact: dir with A128GCM"
+    key = parse_key(vectors.dir_key()).must()
+    none: {str: json.Value} = {}
+
+    match encrypt_compact(bytes.from_text("hello"), key: key, algorithm: .direct, encryption: .a128gcm, header: none)
+        .err e    => assert e.code == UNSUPPORTED
+        .ok token => assert decrypt_compact(token, trusted: [key], algorithms: [.direct], encryptions: [.a128gcm]).must().plaintext == bytes.from_text("hello")
+
+# A JWE decrypted: RFC 7520 § 5.6, where the platform has AES-GCM.
+test "decrypt_compact: RFC 7520 § 5.6"
+    form = vectors.dir_general()
+    token = [vectors.member_text(text: form, name: "protected"), "", vectors.member_text(text: form, name: "iv"), vectors.member_text(text: form, name: "ciphertext"), vectors.member_text(text: form, name: "tag")].join(
+        "."
+    )
+
+    match decrypt_compact(token, trusted: [parse_key(vectors.dir_key()).must()], algorithms: [.direct], encryptions: [.a128gcm])
+        .err e  => assert e.code == UNSUPPORTED
+        .ok got => assert got.plaintext.len() == 273

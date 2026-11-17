@@ -1,0 +1,454 @@
+# A JWE in the compact serialization (RFC 7516 § 7.1): the content sealed
+# by AES-GCM under a content key, and the key brought to its recipient by
+# `dir`, `RSA-OAEP-256`, `ECDH-ES` with RFC 7518's Concat KDF, or a GCM key
+# wrap. Every cipher is `crypto/seal`'s and every key agreement and RSA
+# decryption `crypto/keypairs`', so macOS, which offers C no AES-GCM,
+# answers `unsupported`. A key that does not open a token is never told
+# apart from a token changed: both are "no key opens it".
+
+use bytes
+use crypto
+use crypto/keypairs
+use crypto/seal
+use jose/internal/algorithms
+use jose/internal/forms
+use jose/internal/jwk
+use jose/internal/segments
+use jose/internal/signing
+use json
+use os
+
+# The code of a token, a key or an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a `kid` no key has.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of what the platform's cryptography lacks.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A JWE opened, as the face's `Decrypted` holds it.
+record Opened
+    # The protected header's members.
+    protected: {str: json.Value}
+    # The plaintext.
+    plaintext: [u8]
+
+# The cipher of `crypto/seal` that seals with `size` bytes of key.
+function cipher_of(size: i64) -> seal.Algorithm
+    if size == 16
+        return .aes_128_gcm
+    return .aes_256_gcm
+
+# `n` as four bytes, the most significant first.
+function four_bytes(n: i64) -> [u8]
+    return [
+        (n >> 24 & 255).to_u8().must()
+        (n >> 16 & 255).to_u8().must()
+        (n >> 8 & 255).to_u8().must()
+        (n & 255).to_u8().must()
+    ]
+
+# `data` after its length as four bytes, as the Concat KDF's fields are.
+function counted(@into: [u8], data: [u8])
+    bytes.push_all(to: @into, from: four_bytes(data.len()))
+    bytes.push_all(to: @into, from: data)
+
+# The key of `bits` bits RFC 7518 § 4.6.2's Concat KDF derives from the
+# shared secret `z` for `algorithm_id`, with `party_u` and `party_v`.
+function concat_kdf(z: [u8], algorithm_id: str, party_u: [u8], party_v: [u8], bits: i64) -> [u8]
+    other: [u8] @= []
+    counted(into: @other, data: bytes.from_text(algorithm_id))
+    counted(into: @other, data: party_u)
+    counted(into: @other, data: party_v)
+    bytes.push_all(to: @other, from: four_bytes(bits))
+    out: [u8] @= []
+    round: i64 @= 1
+
+    while out.len() * 8 < bits
+        input: [u8] @= four_bytes(round)
+        bytes.push_all(to: @input, from: z)
+        bytes.push_all(to: @input, from: other)
+        bytes.push_all(to: @out, from: crypto.sha256(input))
+        round @ round + 1
+
+    return out.slice(from: 0, to: bits / 8)
+
+# `data` sealed by AES-GCM under `secret` with `associated`, as `crypto/seal`
+# writes it: the nonce, the ciphertext and the tag.
+function sealed(secret: [u8], data: [u8], associated: [u8]) -> [u8]?
+    key @= seal.from_secret(cipher_of(secret.len()), secret: secret)?
+    out = seal.seal(key, text: data, associated: associated)
+    seal.close(@key)?
+    return out
+
+# What `nonce`, `data` and `tag` open to under `secret` with `associated`.
+function opened(secret: [u8], nonce: [u8], data: [u8], tag: [u8], associated: [u8]) -> [u8]?
+    whole: [u8] @= nonce
+    bytes.push_all(to: @whole, from: data)
+    bytes.push_all(to: @whole, from: tag)
+    key @= seal.from_secret(cipher_of(secret.len()), secret: secret)?
+    out = seal.open(key, sealed: whole, associated: associated)
+    seal.close(@key)?
+    return out
+
+# The kind of `crypto/keypairs` key a JWK of `curve` is.
+function kind_of(curve: str) -> keypairs.Kind?
+    return match curve
+        "P-256"  => ok(.p256)
+        "P-384"  => ok(.p384)
+        "X25519" => ok(.x25519)
+        _        => fail(code: UNSUPPORTED, msg: f"ECDH-ES on {curve}: P-256, P-384 and X25519 agree here")
+
+# The secret `mine`, a private JWK, agrees with `theirs`, a public one.
+function agreed(mine: jwk.Jwk, theirs: jwk.Jwk) -> [u8]?
+    private @= keypairs.parse_private_der(forms.private_der(mine)?)?
+
+    match keypairs.parse_public_der(forms.public_der(theirs)?)
+        .err e =>
+            keypairs.close(@private)?
+            return fail(code: e.code, msg: e.msg)
+        .ok p =>
+            public @= p
+            z = keypairs.agree(mine: private, theirs: public)
+            keypairs.close_public(@public)?
+            keypairs.close(@private)?
+            return z
+
+# The bytes the base64url member `name` of `members` holds; empty where it
+# is absent.
+function member_bytes(members: {str: json.Value}, name: str) -> [u8]?
+    text = segments.text_of(members, name: name)?
+    return segments.decoded(segment: text, what: f"the header's \"{name}\"")
+
+# The facts every recipient's key must answer for `alg` with a content key
+# of `size` bytes, and its use: the operation it allows.
+function check_key(k: jwk.Jwk, alg: str, enc: str, size: i64, decrypting: bool) -> ()?
+    unwrap: str @= "wrapKey"
+    content: str @= "encrypt"
+
+    if decrypting
+        unwrap @ "unwrapKey"
+        content @ "decrypt"
+
+    if alg == "dir"
+        if k.key_type != "oct" || k.material["k"].must().len() != size
+            return fail(code: INVALID, msg: f"dir with {enc} takes an oct key of {size} bytes")
+        named: str @= alg
+
+        if k.algorithm == enc
+            named @ enc
+        return jwk.allows(k, algorithm: named, operation: content)
+
+    if alg == "RSA-OAEP-256"
+        if k.key_type != "RSA" || signing.bit_length(k.material["n"].must()) < 2048
+            return fail(code: INVALID, msg: "RSA-OAEP-256 takes an RSA key of 2048 bits or more")
+
+        if decrypting && !jwk.is_private(k)
+            return fail(code: INVALID, msg: "RSA-OAEP-256 decrypts with the private key")
+        return jwk.allows(k, algorithm: alg, operation: unwrap)
+
+    if alg == "ECDH-ES"
+        if k.key_type != "EC" && !(k.key_type == "OKP" && k.curve == "X25519")
+            return fail(code: INVALID, msg: "ECDH-ES takes an EC key or an X25519 key")
+
+        if decrypting && !jwk.is_private(k)
+            return fail(code: INVALID, msg: "ECDH-ES decrypts with the private key")
+        return jwk.allows(k, algorithm: alg, operation: "deriveKey")
+    wrap = algorithms.wrap_key_size(alg)
+
+    if k.key_type != "oct" || k.material["k"].must().len() != wrap
+        return fail(code: INVALID, msg: f"{alg} takes an oct key of {wrap} bytes")
+    return jwk.allows(k, algorithm: alg, operation: unwrap)
+
+# `plaintext` encrypted to `key`.
+function encrypt(plaintext: [u8], key: json.Value, alg: str, enc: str, header: {str: json.Value}) -> str?
+    k = jwk.read(key)?
+    size = algorithms.content_key_size(enc)
+
+    for name in ["alg", "enc", "epk", "iv", "tag"]
+        if !header[name].is_err()
+            return fail(code: INVALID, msg: f"a header given with \"{name}\", which the call writes")
+
+    if !header["zip"].is_err()
+        return fail(code: UNSUPPORTED, msg: "\"zip\": the plaintext compressed is not written here (RFC 8725 § 3.6)")
+
+    if !header["crit"].is_err()
+        return fail(code: INVALID, msg: "\"crit\": no JWE extension is understood here")
+    check_key(k, alg: alg, enc: enc, size: size, decrypting: false)?
+    members: {str: json.Value} @= {}
+    members["alg"] @ .text(v: alg)
+    members["enc"] @ .text(v: enc)
+
+    for name in keys(header)
+        members[name] @ header[name].must()
+
+    if k.id != "" && members["kid"].is_err()
+        members["kid"] @ .text(v: k.id)
+    content_key: [u8] @= []
+    wrapped: [u8] @= []
+
+    if alg == "dir"
+        content_key @ k.material["k"].must()
+    else if alg == "ECDH-ES"
+        own @= keypairs.generate(kind_of(k.curve)?)?
+        own_der = keypairs.format_private_der(own)
+        keypairs.close(@own)?
+        mine = forms.read_private(own_der?)?
+        z = agreed(mine: mine, theirs: jwk.public_of(k)?)?
+        epk = jwk.public_of(mine)?
+        members["epk"] @ jwk.write(epk)
+        party_u = member_bytes(members, name: "apu")?
+        party_v = member_bytes(members, name: "apv")?
+        content_key @ concat_kdf(z: z, algorithm_id: enc, party_u: party_u, party_v: party_v, bits: size * 8)
+    else
+        content_key @ os.random_bytes(size)?
+
+        if alg == "RSA-OAEP-256"
+            public @= keypairs.parse_public_der(forms.public_der(k)?)?
+            made = keypairs.encrypt(public, text: content_key)
+            keypairs.close_public(@public)?
+            wrapped @ made?
+        else
+            whole = sealed(secret: k.material["k"].must(), data: content_key, associated: [])?
+            members["iv"] @ .text(v: bytes.format_base64_url_unpadded(whole.slice(from: 0, to: 12)))
+            members["tag"] @ .text(
+                v: bytes.format_base64_url_unpadded(whole.slice(from: whole.len() - 16, to: whole.len()))
+            )
+            wrapped @ whole.slice(from: 12, to: whole.len() - 16)
+    segment = segments.header_segment(members)?
+    content = sealed(secret: content_key, data: plaintext, associated: bytes.from_text(segment))?
+    parts = [
+        segment
+        bytes.format_base64_url_unpadded(wrapped)
+        bytes.format_base64_url_unpadded(content.slice(from: 0, to: 12))
+        bytes.format_base64_url_unpadded(content.slice(from: 12, to: content.len() - 16))
+        bytes.format_base64_url_unpadded(content.slice(from: content.len() - 16, to: content.len()))
+    ]
+    return ok(parts.join("."))
+
+# The content key `k` recovers from the token's header and wrapped key.
+function content_key_of(k: jwk.Jwk, alg: str, enc: str, size: i64, protected: {str: json.Value}, wrapped: [u8]) -> [u8]?
+    if alg == "dir" || alg == "ECDH-ES"
+        if wrapped.len() != 0
+            return fail(code: INVALID, msg: f"{alg} carries no encrypted key, and this token carries one")
+
+    if alg == "dir"
+        return ok(k.material["k"].must())
+
+    if alg == "ECDH-ES"
+        epk = match protected["epk"]
+            .ok v  => jwk.read(v)?
+            .err _ => return fail(code: INVALID, msg: "ECDH-ES with no \"epk\" in the header")
+
+        if epk.key_type != k.key_type || epk.curve != k.curve || jwk.is_private(epk)
+            return fail(code: INVALID, msg: f"an \"epk\" on {epk.curve}, and the key is on {k.curve}")
+        z = agreed(mine: k, theirs: epk)?
+        party_u = member_bytes(protected, name: "apu")?
+        party_v = member_bytes(protected, name: "apv")?
+        return ok(concat_kdf(z: z, algorithm_id: enc, party_u: party_u, party_v: party_v, bits: size * 8))
+
+    if alg == "RSA-OAEP-256"
+        private @= keypairs.parse_private_der(forms.private_der(k)?)?
+        got = keypairs.decrypt(private, data: wrapped)
+        keypairs.close(@private)?
+
+        match got
+            .ok cek =>
+                if cek.len() == size
+                    return ok(cek)
+                return os.random_bytes(size)
+            .err e =>
+                if e.code == UNSUPPORTED
+                    return fail(code: e.code, msg: e.msg)
+                return os.random_bytes(size)
+    nonce = member_bytes(protected, name: "iv")?
+    tag = member_bytes(protected, name: "tag")?
+
+    if nonce.len() != 12 || tag.len() != 16
+        return fail(
+            code: INVALID,
+            msg: f"{alg}'s \"iv\" of {nonce.len()} bytes and \"tag\" of {tag.len()}, where 12 and 16 are theirs"
+        )
+    return opened(secret: k.material["k"].must(), nonce: nonce, data: wrapped, tag: tag, associated: [])
+
+# The compact JWE `token` decrypted by one of `trusted`.
+function decrypt(token: str, trusted: [json.Value], accepted_algorithms: [str], accepted_encryptions: [str]) -> Opened?
+    parts = segments.pieces(token)
+
+    if parts.len() != 5
+        return fail(code: INVALID, msg: f"a compact JWE has 5 parts between dots, and this one has {parts.len()}")
+    protected = segments.header_members(segment: parts[0], what: "the JWE header")?
+
+    if !protected["crit"].is_err()
+        return fail(code: INVALID, msg: "the JWE header's \"crit\" names an extension, and none is understood here")
+
+    if !protected["zip"].is_err()
+        return fail(code: UNSUPPORTED, msg: "a JWE whose plaintext is compressed (\"zip\"), which is not read here")
+    alg = segments.text_of(protected, name: "alg")?
+    enc = segments.text_of(protected, name: "enc")?
+
+    if !is_listed(alg, names: accepted_algorithms)
+        algorithms.refused_key_algorithm(alg)?
+        return fail(code: INVALID, msg: f"the header names {alg}, which is not among the key algorithms accepted")
+
+    if !is_listed(enc, names: accepted_encryptions)
+        algorithms.refused_content_algorithm(enc)?
+        return fail(code: INVALID, msg: f"the header names {enc}, which is not among the content algorithms accepted")
+    size = algorithms.content_key_size(enc)
+    wrapped = segments.decoded(segment: parts[1], what: "the encrypted key")?
+    nonce = segments.decoded(segment: parts[2], what: "the initialization vector")?
+    data = segments.decoded(segment: parts[3], what: "the ciphertext")?
+    tag = segments.decoded(segment: parts[4], what: "the tag")?
+
+    if nonce.len() != 12 || tag.len() != 16
+        return fail(
+            code: INVALID,
+            msg: f"an initialization vector of {nonce.len()} bytes and a tag of {tag.len()}, where AES-GCM's are 12 and 16"
+        )
+    kid = segments.text_of(protected, name: "kid")?
+    tried: i64 @= 0
+    named: i64 @= 0
+
+    for k in segments.readable(trusted)
+        if protected["kid"].is_err() || k.id == kid
+            named @ named + 1
+
+            match check_key(k, alg: alg, enc: enc, size: size, decrypting: true)
+                .err _ => _ = 0
+                .ok _ =>
+                    tried @ tried + 1
+
+                    match content_key_of(k, alg: alg, enc: enc, size: size, protected: protected, wrapped: wrapped)
+                        .err e =>
+                            if e.code == UNSUPPORTED
+                                return fail(code: e.code, msg: e.msg)
+                        .ok cek =>
+                            match opened(secret: cek, nonce: nonce, data: data, tag: tag, associated: bytes.from_text(parts[0]))
+                                .ok plain => return ok(Opened(protected: protected, plaintext: plain))
+                                .err e =>
+                                    if e.code == UNSUPPORTED
+                                        return fail(code: e.code, msg: e.msg)
+
+    if named == 0 && !protected["kid"].is_err()
+        return fail(code: NOT_FOUND, msg: f"no key given has the id \"{kid}\" the header names")
+
+    if tried == 0
+        return fail(code: INVALID, msg: f"no key given serves {alg} with {enc}")
+    return fail(code: INVALID, msg: "no key given opens the JWE")
+
+# Whether `name` is one of `names`.
+function is_listed(name: str, names: [str]) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+test "concat_kdf: RFC 7518 Appendix C's Z, Alice and Bob, A128GCM's 128 bits"
+    z: [u8] = [
+        158
+        86
+        217
+        29
+        129
+        113
+        53
+        211
+        114
+        131
+        66
+        131
+        191
+        132
+        38
+        156
+        251
+        49
+        110
+        163
+        218
+        128
+        106
+        72
+        246
+        218
+        167
+        121
+        140
+        254
+        144
+        196
+    ]
+    key = concat_kdf(
+        z: z,
+        algorithm_id: "A128GCM",
+        party_u: bytes.from_text("Alice"),
+        party_v: bytes.from_text("Bob"),
+        bits: 128
+    )
+    assert bytes.format_base64_url_unpadded(key) == "VqqN6vgjbSBcIijNcacQGg"
+    assert concat_kdf(z: z, algorithm_id: "A256GCM", party_u: [], party_v: [], bits: 512).len() == 64
+
+test "agreed: RFC 7518 Appendix C's two P-256 keys agree on its Z, either way round"
+    alice = jwk.read(
+        json.parse("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"gI0GAILBdu7T53akrFmMyGcsF3n5dO7MmwNBHKW5SV0\",\"y\":\"SLW_xSffzlPWrHEVI30DHM_4egVwt3NQqeUD7nMFpps\",\"d\":\"0_NxaRPUMQoAJt50Gz8YiTr8gRTwyEaCumd-MToTmIo\"}").must()
+    ).must()
+    bob = jwk.read(
+        json.parse("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"weNJy2HscCSM6AEDTDg04biOvhFhyyWvOHQfeF_PxMQ\",\"y\":\"e8lnCO-AlStT-NJVX-crhB7QRYhiix03illJOVAOyck\",\"d\":\"VEmDZpDXXK8p8N0Cndsxs924q6nS1RXFASRl6BfUqdw\"}").must()
+    ).must()
+    z = agreed(mine: bob, theirs: jwk.public_of(alice).must()).must()
+    assert bytes.format_hex(z) == "9e56d91d817135d372834283bf84269cfb316ea3da806a48f6daa7798cfe90c4"
+    assert agreed(mine: alice, theirs: jwk.public_of(bob).must()).must() == z
+
+test "encrypt and decrypt: dir with A128GCM both ways, or unsupported where the platform has no AES-GCM"
+    key = json.parse("{\"kty\":\"oct\",\"kid\":\"k\",\"k\":\"XctOhJAkA-pD9Lh7ZgW_2A\"}").must()
+    none: {str: json.Value} = {}
+
+    match encrypt(bytes.from_text("ground control"), key: key, alg: "dir", enc: "A128GCM", header: none)
+        .err e => assert e.code == UNSUPPORTED
+        .ok token =>
+            got = decrypt(token, trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"]).must()
+            assert got.plaintext == bytes.from_text("ground control")
+            assert decrypt(
+                token,
+                trusted: [key],
+                accepted_algorithms: ["dir"],
+                accepted_encryptions: ["A256GCM"]
+            ).is_err()
+
+test "encrypt: refused, a header holding alg, a key of the wrong length for dir, zip"
+    key = json.parse("{\"kty\":\"oct\",\"k\":\"AQID\"}").must()
+    none: {str: json.Value} = {}
+    with_alg: {str: json.Value} = {"alg": .text(v: "dir")}
+    assert encrypt([1], key: key, alg: "dir", enc: "A128GCM", header: with_alg).is_err()
+
+    match encrypt([1], key: key, alg: "dir", enc: "A128GCM", header: none)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    zipped: {str: json.Value} = {"zip": .text(v: "DEF")}
+
+    match encrypt([1], key: key, alg: "dir", enc: "A128GCM", header: zipped)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+test "decrypt: refused, four parts, RSA1_5, an algorithm not accepted, a kid no key has"
+    key = json.parse("{\"kty\":\"oct\",\"k\":\"XctOhJAkA-pD9Lh7ZgW_2A\"}").must()
+    assert decrypt("a.b.c.d", trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"]).is_err()
+    rsa15 = "eyJhbGciOiJSU0ExXzUiLCJlbmMiOiJBMTI4R0NNIn0.AA.AAAAAAAAAAAAAAAA.AA.AAAAAAAAAAAAAAAAAAAAAA"
+    assert decrypt(rsa15, trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"]).is_err()
+    direct = "eyJhbGciOiJkaXIiLCJlbmMiOiJBMTI4R0NNIiwia2lkIjoibm8ifQ..AAAAAAAAAAAAAAAA.AA.AAAAAAAAAAAAAAAAAAAAAA"
+    assert decrypt(
+        direct,
+        trusted: [key],
+        accepted_algorithms: ["RSA-OAEP-256"],
+        accepted_encryptions: ["A128GCM"]
+    ).is_err()
+
+    match decrypt(direct, trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND

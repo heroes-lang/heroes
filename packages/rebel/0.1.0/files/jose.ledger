@@ -1,0 +1,388 @@
+# The ledger of `jose`: what the JOSE libraries of Go, Python and Rust let a
+# program do with signatures (JWS, RFC 7515), keys (JWK, RFC 7517), tokens
+# (JWT, RFC 7519) and encryption (JWE, RFC 7516), one block per capability,
+# and what Rebel answers. None of the three standard libraries has JOSE, so
+# the yardstick is the census of third-party libraries the author chose on
+# 2026-11-17. Measured on this machine: Go's golang-jwt v5.2.2 and
+# `golang.org/x/oauth2/jws` v0.36.0 (`go doc -all`, from the module cache,
+# no download); Python's PyJWT 2.15.1, authlib 1.9.1's `authlib.jose` and
+# joserfc 1.7.7 (`dir()`, in the Python 3.15 environment of an application
+# installed here, run with `-I`). Not on this machine, so their entries are
+# recalled from their documentation and are a question rather than a
+# measurement: Go's go-jose v4, python-jose, Rust's `jsonwebtoken` and
+# `josekit`. Expected values in the tests come from the RFCs' own examples
+# (RFC 7515 Appendix A, RFC 7517 Appendix A, RFC 7518 Appendix C, RFC 7519
+# § 3.1, RFC 7520 §§ 3 to 5, RFC 7638 § 3.1, RFC 8037 Appendix A) and from
+# PyJWT's and joserfc's answers to the same inputs.
+
+capability jws/algorithms  the signature algorithms named, written and read by their JOSE names
+  heroes  jose.Algorithm, jose.format_algorithm, jose.parse_algorithm, jose.is_available
+  go      jwt.GetAlgorithms, jwt.GetSigningMethod, jwt.SigningMethod, jwt.SigningMethod.Alg, jwt.RegisterSigningMethod
+  rust    jsonwebtoken::Algorithm, Algorithm::from_str
+  python  jwt.get_algorithm_by_name, jwt.algorithms.Algorithm, PyJWS.get_algorithms, PyJWS.get_algorithm_by_name, PyJWS.register_algorithm, PyJWS.unregister_algorithm, jwt.register_algorithm, jwt.unregister_algorithm, JsonWebSignature.ALGORITHMS_REGISTRY, JsonWebSignature.register_algorithm, joserfc.jws.JWSRegistry, joserfc.jws.JWSAlgModel, joserfc.jws.construct_registry, joserfc.jws.default_registry, joserfc.jws.setup_jws_algorithms
+  note    A closed variant, so a misspelt algorithm is a compile error; registering one's own is refused, since a signature here is computed by `crypto` or `crypto/keypairs` and never by the program's function
+
+capability jws/hmac  HS256, HS384 and HS512 (RFC 7518 § 3.2)
+  heroes  jose.Algorithm.hs256, jose.Algorithm.hs384, jose.Algorithm.hs512
+  go      jwt.SigningMethodHMAC, jwt.SigningMethodHS256, jwt.SigningMethodHS384, jwt.SigningMethodHS512, SigningMethodHMAC.Sign, SigningMethodHMAC.Verify
+  rust    Algorithm::HS256, Algorithm::HS384, Algorithm::HS512, EncodingKey::from_secret, DecodingKey::from_secret
+  python  jwt.algorithms.HMACAlgorithm, authlib.jose.OctKey, joserfc.jwk.OctKey
+
+capability jws/rsa-pkcs1  RS256, RS384 and RS512 (RFC 7518 § 3.3)
+  heroes  jose.Algorithm.rs256, jose.Algorithm.rs384, jose.Algorithm.rs512
+  go      jwt.SigningMethodRSA, jwt.SigningMethodRS256, jwt.SigningMethodRS384, jwt.SigningMethodRS512, SigningMethodRSA.Sign, SigningMethodRSA.Verify, jws.Encode, jws.Verify
+  rust    Algorithm::RS256, Algorithm::RS384, Algorithm::RS512, EncodingKey::from_rsa_pem, DecodingKey::from_rsa_components
+  python  jwt.algorithms.RSAAlgorithm, authlib.jose.RSAKey, joserfc.jwk.RSAKey
+
+capability jws/rsa-pss  PS256, PS384 and PS512 (RFC 7518 § 3.5)
+  heroes  jose.Algorithm.ps256, jose.Algorithm.ps384, jose.Algorithm.ps512
+  go      jwt.SigningMethodRSAPSS, jwt.SigningMethodPS256, jwt.SigningMethodPS384, jwt.SigningMethodPS512
+  rust    Algorithm::PS256, Algorithm::PS384, Algorithm::PS512
+  python  jwt.algorithms.RSAPSSAlgorithm
+
+capability jws/ecdsa  ES256 and ES384 (RFC 7518 § 3.4), the signature as R and S of fixed length
+  heroes  jose.Algorithm.es256, jose.Algorithm.es384
+  go      jwt.SigningMethodECDSA, jwt.SigningMethodES256, jwt.SigningMethodES384, jwt.ErrECDSAVerification
+  rust    Algorithm::ES256, Algorithm::ES384, EncodingKey::from_ec_pem, DecodingKey::from_ec_components
+  python  jwt.algorithms.ECAlgorithm, jwt.algorithms.ECDSA, authlib.jose.ECKey, joserfc.jwk.ECKey
+
+capability jws/ecdsa-p521  ES512 over P-521
+  heroes  pending
+  go      jwt.SigningMethodES512
+  rust    -
+  python  jwt.algorithms.SECP521R1
+  note    `crypto/keypairs` has no P-521; `parse_algorithm("ES512")` fails `unsupported` saying so
+
+capability jws/secp256k1  ES256K (RFC 8812)
+  heroes  pending
+  go      -
+  rust    -
+  python  jwt.algorithms.SECP256K1, joserfc.jwk.register_secp256k1
+  note    `crypto/keypairs` has no secp256k1
+
+capability jws/eddsa  EdDSA and Ed25519 (RFC 8037, RFC 9864) over Ed25519
+  heroes  jose.Algorithm.eddsa, jose.Algorithm.ed25519
+  go      jwt.SigningMethodEd25519, jwt.SigningMethodEdDSA
+  rust    Algorithm::EdDSA, EncodingKey::from_ed_pem, DecodingKey::from_ed_components
+  python  jwt.algorithms.OKPAlgorithm, authlib.jose.OKPKey, joserfc.jwk.OKPKey
+  note    The system's own Ed25519: Linux has it, macOS and Windows answer `unsupported`
+
+capability jws/ed448  EdDSA over Ed448
+  heroes  pending
+  go      -
+  rust    -
+  python  jwt.algorithms.Ed448PrivateKey, jwt.algorithms.Ed448PublicKey
+  note    `crypto/keypairs` has no Ed448
+
+capability jws/none  the algorithm `none`, a token with no signature
+  heroes  refused: a token anybody can write is never accepted (RFC 8725 § 3.2); no case of `Algorithm` names it, and a header naming it fails `invalid`
+  go      jwt.SigningMethodNone, jwt.UnsafeAllowNoneSignatureType, jwt.NoneSignatureTypeDisallowedError
+  rust    -
+  python  jwt.algorithms.NoneAlgorithm
+
+capability jws/accepted  the algorithms a verifier accepts named by the caller, the token's own `alg` never trusted alone
+  heroes  jose.verify_compact, jose.verify_json, jose.Rules
+  go      jwt.WithValidMethods
+  rust    Validation::algorithms
+  python  jwt.decode(algorithms=...), JsonWebSignature(algorithms=...)
+  note    An empty list accepts nothing; a key is used only for the algorithms its type serves, so an RSA key's public bytes are never an HMAC secret (the algorithm confusion of RFC 8725 § 2.1)
+
+capability jws/compact-sign  a payload signed in the compact serialization
+  heroes  jose.sign_compact
+  go      jwt.Token.SignedString, jwt.Token.SigningString, jwt.Token.EncodeSegment, jws.Encode, jws.EncodeWithSigner, jws.Signer
+  rust    jsonwebtoken::encode
+  python  PyJWS.encode, JsonWebSignature.serialize_compact, joserfc.jws.serialize_compact, joserfc.jws.sign_compact, joserfc.jws.sign_rfc7515_compact
+
+capability jws/compact-verify  a compact serialization verified by one of several keys
+  heroes  jose.verify_compact
+  go      jwt.Parse, jwt.Parser.Parse, jwt.Keyfunc, jws.Verify, jwt.Parser.DecodeSegment, jwt.WithPaddingAllowed, jwt.WithStrictDecoding
+  rust    jsonwebtoken::decode, DecodingKey
+  python  PyJWS.decode, PyJWS.decode_complete, JsonWebSignature.deserialize_compact, JsonWebSignature.deserialize, joserfc.jws.deserialize_compact, joserfc.jws.verify_compact, joserfc.jws.extract_compact, joserfc.jws.validate_compact, joserfc.jws.CompactSignature
+  note    The key is chosen by the header's `kid` among those given, as a `Keyfunc` would; base 64 is read strictly, no padding and no other alphabet, as golang-jwt's `WithStrictDecoding`
+
+capability jws/unverified-header  the header of a compact serialization read before any key is chosen
+  heroes  jose.header_of
+  go      jwt.Parser.ParseUnverified
+  rust    jsonwebtoken::decode_header, Header
+  python  jwt.get_unverified_header, PyJWS.get_unverified_header
+
+capability jws/json  the general and flattened JSON serializations, signed and verified, several signatures
+  heroes  jose.sign_json, jose.sign_flattened, jose.verify_json, jose.Signer, jose.Message
+  go      -
+  rust    -
+  python  JsonWebSignature.serialize_json, JsonWebSignature.deserialize_json, joserfc.jws.serialize_json, joserfc.jws.deserialize_json, joserfc.jws.sign_general_json, joserfc.jws.sign_flattened_json, joserfc.jws.verify_general_json, joserfc.jws.verify_flattened_json, joserfc.jws.extract_general_json, joserfc.jws.extract_flattened_json, joserfc.jws.GeneralJSONSerialization, joserfc.jws.FlattenedJSONSerialization, joserfc.jws.GeneralJSONSignature, joserfc.jws.FlattenedJSONSignature, joserfc.jws.HeaderMember
+  note    go-jose's `JSONWebSignature.FullSerialize` (recalled); golang-jwt has the compact form alone
+
+capability jws/detached  a signature over content carried apart (RFC 7515 Appendix F)
+  heroes  jose.verify_detached
+  go      -
+  rust    -
+  python  jwt.decode(detached_payload=...), joserfc.jws.detach_content, joserfc.jws.detach_compact_content, joserfc.jws.detach_json_content
+
+capability jws/unencoded-payload  the payload signed as it is, `b64` false (RFC 7797)
+  heroes  jose.sign_compact, jose.verify_compact
+  go      -
+  rust    -
+  python  PyJWS.encode(is_payload_detached=...), joserfc.jws.sign_rfc7797_json, joserfc.jws.is_rfc7797_enabled
+
+capability jws/critical  the `crit` header read: an extension not understood refuses the signature
+  heroes  jose.verify_compact, jose.verify_json
+  go      -
+  rust    -
+  python  JsonWebSignature.REGISTERED_HEADER_PARAMETER_NAMES, joserfc.jws.Header
+
+capability jwk/value  a key as a value: its type, curve, id, use, operations, algorithm and members
+  heroes  jose.Key
+  go      -
+  rust    jsonwebtoken::jwk::Jwk, jwk::CommonParameters, jwk::AlgorithmParameters, jwk::KeyOperations, jwk::PublicKeyUse
+  python  PyJWK, PyJWK.key_id, PyJWK.key_type, PyJWK.public_key_use, authlib.jose.Key, RSAKey.kid, RSAKey.kty, RSAKey.tokens, RSAKey.keys, RSAKey.ALLOWED_PARAMS, joserfc.jwk.KeyBase, joserfc.jwk.KeyParameters, joserfc.jwk.DictKey
+
+capability jwk/read  a key read from its JSON
+  heroes  jose.to_key, jose.parse_key
+  go      -
+  rust    jsonwebtoken::DecodingKey::from_jwk, serde's reading of `Jwk`
+  python  PyJWK.from_dict, PyJWK.from_json, JsonWebKey.import_key, RSAKey.import_key, RSAKey.import_dict_key, RSAKey.load_dict_key, RSAKey.check_required_fields, RSAKey.REQUIRED_JSON_FIELDS, joserfc.jwk.import_key, joserfc.jwk.guess_key, joserfc.jwk.JWKRegistry, joserfc.jwk.InvalidKeyTypeError
+
+capability jwk/write  a key written as its JSON
+  heroes  jose.to_json, jose.format_key
+  go      -
+  rust    serde's writing of `Jwk`
+  python  RSAKey.as_dict, RSAKey.as_json, authlib.jose.KeySet.as_dict, KeySet.as_json
+
+capability jwk/set  a JWK set read and written, a key found in it by `kid`
+  heroes  jose.parse_key_set, jose.format_key_set, jose.key_by_id
+  go      -
+  rust    jsonwebtoken::jwk::JwkSet, JwkSet::find
+  python  PyJWKSet, PyJWKSet.from_dict, PyJWKSet.from_json, JsonWebKey.import_key_set, authlib.jose.KeySet, KeySet.find_by_kid, joserfc.jwk.KeySet, joserfc.jwk.KeySetSerialization
+  note    A key of a type or curve not understood is passed over, as RFC 7517 § 5 asks and PyJWKSet does
+
+capability jwk/remote-set  a provider's JWK set fetched from its URL and cached
+  heroes  refused: `jose` makes no request; `oauth2.fetch_key_set` fetches a provider's set
+  go      -
+  rust    -
+  python  PyJWKClient, PyJWKClient.fetch_data, PyJWKClient.get_jwk_set, PyJWKClient.get_signing_key, PyJWKClient.get_signing_key_from_jwt, PyJWKClient.get_signing_keys, PyJWKClient.match_kid, jwt.PyJWKClientError, jwt.PyJWKClientConnectionError, jwt.jwk_set_cache, jwt.jwks_client
+
+capability jwk/thumbprint  a key's thumbprint (RFC 7638)
+  heroes  jose.thumbprint
+  go      -
+  rust    jsonwebtoken::jwk::Jwk::thumbprint
+  python  RSAKey.thumbprint, joserfc.jwk.thumbprint, joserfc.jwk.thumbprint_uri
+  note    go-jose's `JSONWebKey.Thumbprint` (recalled); the URI of RFC 9278 is `urn:ietf:params:oauth:jwk-thumbprint:sha-256:` and the base 64 of the thumbprint, which a program writes
+
+capability jwk/public  a private key's public half, as a key
+  heroes  jose.public_of, jose.is_private
+  go      -
+  rust    -
+  python  RSAKey.public_only, RSAKey.get_public_key, RSAKey.dumps_public_key, RSAKey.PUBLIC_KEY_FIELDS, RSAKey.PRIVATE_KEY_FIELDS
+
+capability jwk/secret  a symmetric key made of a secret's bytes
+  heroes  jose.key_from_secret
+  go      -
+  rust    jsonwebtoken::EncodingKey::from_secret, EncodingKey::from_base64_secret, DecodingKey::from_secret, DecodingKey::from_base64_secret
+  python  OctKey.import_key, joserfc.jwk.OctKey
+
+capability jwk/der  a key read from and written as SubjectPublicKeyInfo and PKCS #8
+  heroes  jose.key_from_public_der, jose.key_from_private_der, jose.key_from_pem, jose.format_public_der, jose.format_private_der, jose.format_public_pem, jose.format_private_pem
+  go      jwt.ParseRSAPublicKeyFromPEM, jwt.ParseRSAPrivateKeyFromPEM, jwt.ParseECPublicKeyFromPEM, jwt.ParseECPrivateKeyFromPEM, jwt.ParseEdPublicKeyFromPEM, jwt.ParseEdPrivateKeyFromPEM, jwt.ErrKeyMustBePEMEncoded, jwt.ErrNotRSAPrivateKey, jwt.ErrNotRSAPublicKey, jwt.ErrNotECPublicKey, jwt.ErrNotECPrivateKey, jwt.ErrNotEdPrivateKey, jwt.ErrNotEdPublicKey
+  rust    EncodingKey::from_rsa_der, EncodingKey::from_ec_der, EncodingKey::from_ed_der, DecodingKey::from_rsa_der, DecodingKey::from_ec_der, DecodingKey::from_ed_der, EncodingKey::from_rsa_pem, DecodingKey::from_rsa_pem
+  python  RSAKey.as_der, RSAKey.as_pem, RSAKey.as_bytes, RSAKey.load_private_key, RSAKey.load_public_key, RSAKey.load_raw_key, RSAKey.validate_raw_key, RSAKey.dumps_private_key, joserfc.jwk.import_from_pem_key
+  note    A certificate's key is `x509`'s to read: `x509.parse_certificate(text)` answers its `public_key.der`, which `key_from_public_der` reads
+
+capability jwk/pem-encrypted  a private key read from an encrypted PEM
+  heroes  refused: `crypto/keypairs` reads no encrypted PKCS #8, so there is nothing to decrypt it with
+  go      jwt.ParseRSAPrivateKeyFromPEMWithPassword
+  rust    -
+  python  RSAKey.import_key(password=...)
+
+capability jwk/ssh  a key read from OpenSSH's public form
+  heroes  refused: an SSH key is not JOSE's; no Rebel package reads OpenSSH's forms
+  go      -
+  rust    -
+  python  RSAKey.SSH_PUBLIC_PREFIX, joserfc.jwk.import_from_ssh_key
+
+capability jwk/generate  a new key pair or secret made as a JWK
+  heroes  jose.generate_key
+  go      -
+  rust    -
+  python  JsonWebKey.generate_key, RSAKey.generate_key, joserfc.jwk.generate_key
+
+capability jwk/operations  a key's `use`, `key_ops` and `alg` held to the call that uses it
+  heroes  jose.Key
+  go      -
+  rust    -
+  python  RSAKey.check_key_op, RSAKey.get_op_key, RSAKey.PRIVATE_KEY_OPS, RSAKey.PUBLIC_KEY_OPS
+
+capability jwk/certificates  a key's `x5c` chain kept, its certificates as DER
+  heroes  jose.Key
+  go      -
+  rust    jwk::CommonParameters::x509_chain
+  python  -
+  note    Checking the chain is `x509`'s (`x509.decode_certificate`, `x509.verify_chain`)
+
+capability jwt/sign  a claims set signed as a JWT
+  heroes  jose.sign_token
+  go      jwt.New, jwt.NewWithClaims, jwt.Token, jwt.TokenOption, jwt.Token.SignedString
+  rust    jsonwebtoken::encode, jsonwebtoken::Header
+  python  jwt.encode, PyJWT.encode, JsonWebToken.encode, joserfc.jwt.encode
+  note    The header is `{"alg":...,"typ":"JWT"}`, its members in that order, and the key's `kid` after them, the same bytes as PyJWT and golang-jwt write
+
+capability jwt/verify  a JWT verified and its claims checked
+  heroes  jose.verify_token
+  go      jwt.ParseWithClaims, jwt.Parser, jwt.NewParser, jwt.ParserOption, jwt.Parser.ParseWithClaims, jwt.Validator, jwt.NewValidator, jwt.Claims, jwt.ClaimsValidator, jwt.MapClaims, jwt.RegisteredClaims, jwt.WithoutClaimsValidation
+  rust    jsonwebtoken::decode, Validation, TokenData
+  python  jwt.decode, jwt.decode_complete, PyJWT.decode, PyJWT.decode_complete, JsonWebToken.decode, authlib.jose.JWTClaims, JWTClaims.validate, joserfc.jwt.decode, joserfc.jwt.Token, joserfc.jwt.JWTClaimsRegistry, joserfc.jwt.BaseClaimsRegistry, joserfc.jwt.ClaimsOption
+
+capability jwt/times  `exp`, `nbf` and `iat` checked against a time, with a leeway
+  heroes  jose.check_claims, jose.Rules
+  go      jwt.WithLeeway, jwt.WithTimeFunc, jwt.WithIssuedAt, jwt.WithExpirationRequired, jwt.TimePrecision, jwt.ErrTokenExpired, jwt.ErrTokenNotValidYet, jwt.ErrTokenUsedBeforeIssued
+  rust    Validation::leeway, Validation::validate_exp, Validation::validate_nbf
+  python  jwt.decode(leeway=...), jwt.ExpiredSignatureError, jwt.ImmatureSignatureError, jwt.InvalidIssuedAtError, JWTClaims.validate_exp, JWTClaims.validate_nbf, JWTClaims.validate_iat
+  note    `iat` in the future past the leeway is refused, as PyJWT does and golang-jwt does with `WithIssuedAt`
+
+capability jwt/issuer-audience-subject  `iss`, `aud` and `sub` held to what the verifier expects
+  heroes  jose.check_claims, jose.Rules
+  go      jwt.WithIssuer, jwt.WithAudience, jwt.WithSubject, jwt.ErrTokenInvalidIssuer, jwt.ErrTokenInvalidAudience, jwt.ErrTokenInvalidSubject
+  rust    Validation::set_issuer, Validation::set_audience, Validation::sub
+  python  jwt.decode(issuer=..., audience=..., subject=...), jwt.InvalidIssuerError, jwt.InvalidAudienceError, JWTClaims.validate_iss, JWTClaims.validate_aud, JWTClaims.validate_sub
+  note    A token that names an audience is refused by a verifier that names none, as PyJWT refuses it: golang-jwt accepts it, and a token for another service would pass
+
+capability jwt/required  claims that must stand in the token
+  heroes  jose.Rules
+  go      jwt.ErrTokenRequiredClaimMissing, jwt.WithExpirationRequired
+  rust    Validation::required_spec_claims
+  python  jwt.decode(options={"require": [...]}), jwt.MissingRequiredClaimError
+
+capability jwt/type  the header's `typ` held to the kind of token expected (RFC 8725 § 3.11)
+  heroes  jose.verify_token, jose.Rules
+  go      -
+  rust    -
+  python  PyJWS.header_typ
+
+capability jwt/claims-read  a registered claim read with its type checked
+  heroes  jose.claim_text, jose.claim_texts, jose.claim_time, jose.numeric_date
+  go      jwt.NumericDate, jwt.NewNumericDate, jwt.ClaimStrings, jwt.MarshalSingleStringAsArray, MapClaims.GetAudience, MapClaims.GetExpirationTime, MapClaims.GetIssuedAt, MapClaims.GetIssuer, MapClaims.GetNotBefore, MapClaims.GetSubject, RegisteredClaims.GetAudience, RegisteredClaims.GetExpirationTime, RegisteredClaims.GetIssuedAt, RegisteredClaims.GetIssuer, RegisteredClaims.GetNotBefore, RegisteredClaims.GetSubject, jwt.ErrInvalidType, jwt.WithJSONNumber, jws.ClaimSet, jws.Decode, jws.Header
+  rust    -
+  python  JWTClaims.get_registered_claims, JWTClaims.REGISTERED_CLAIMS, joserfc.jwt.Claims, joserfc.jwt.convert_claims
+
+capability jwt/unverified  a JWT's claims read without its signature checked
+  heroes  jose.read_unverified
+  go      jwt.Parser.ParseUnverified
+  rust    jsonwebtoken::dangerous::insecure_decode
+  python  jwt.decode(options={"verify_signature": False})
+
+capability jwt/id  the `jti` claim checked against tokens already seen
+  heroes  refused: what was seen is the program's store; `claim_text(claims, "jti")` reads the claim, and a program refuses a replay with its own record
+  go      jwt.ErrTokenInvalidId
+  rust    -
+  python  JWTClaims.validate_jti
+
+capability jwt/sensitive  a claims set searched for a password or a card number before it is signed
+  heroes  refused: a guess about the program's data; what a program signs is its own
+  go      -
+  rust    -
+  python  JsonWebToken.check_sensitive_data, JsonWebToken.SENSITIVE_NAMES, JsonWebToken.SENSITIVE_VALUES, joserfc.jwt.check_sensitive_data
+
+capability jwe/compact  a plaintext encrypted and decrypted in the compact serialization
+  heroes  jose.encrypt_compact, jose.decrypt_compact, jose.Decrypted
+  go      -
+  rust    -
+  python  JsonWebEncryption.serialize_compact, JsonWebEncryption.deserialize_compact, joserfc.jwe.encrypt_compact, joserfc.jwe.decrypt_compact, joserfc.jwe.CompactEncryption, joserfc.jwe.extract_compact, joserfc.jwe.represent_compact
+  note    go-jose's `Encrypter` and `ParseEncrypted` (recalled)
+
+capability jwe/json  the general and flattened JSON serializations, several recipients
+  heroes  pending
+  go      -
+  rust    -
+  python  JsonWebEncryption.serialize_json, JsonWebEncryption.deserialize_json, JsonWebEncryption.parse_json, joserfc.jwe.encrypt_json, joserfc.jwe.decrypt_json, joserfc.jwe.GeneralJSONEncryption, joserfc.jwe.FlattenedJSONEncryption, joserfc.jwe.Recipient, joserfc.jwe.extract_general_json, joserfc.jwe.extract_flattened_json, joserfc.jwe.represent_general_json, joserfc.jwe.represent_flattened_json
+  note    Not written in this wave: its ciphers run nowhere this package was tested (macOS has no AES-GCM for C), and RFC 7520's JSON examples use AES key wrap and AES-CBC, which nothing below offers, so none of them could be held
+
+capability jwe/direct  `dir`: the key is the content key
+  heroes  jose.KeyAlgorithm.direct
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 DirectAlgorithm
+
+capability jwe/rsa-oaep-256  `RSA-OAEP-256`: the content key encrypted to an RSA key
+  heroes  jose.KeyAlgorithm.rsa_oaep_256
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 RSAAlgorithm
+
+capability jwe/rsa-oaep  `RSA-OAEP`, OAEP over SHA-1
+  heroes  pending
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 RSAAlgorithm
+  note    `crypto/keypairs` encrypts by OAEP over SHA-256 alone
+
+capability jwe/rsa1-5  `RSA1_5`, PKCS #1 v1.5 encryption
+  heroes  refused: open to Bleichenbacher's attack on the decrypting side; RFC 8725 § 3.2 asks it be avoided, and `crypto/keypairs` offers no such encryption
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 RSAAlgorithm
+
+capability jwe/ecdh-es  `ECDH-ES`: the content key agreed with an ephemeral key, Concat KDF (RFC 7518 § 4.6)
+  heroes  jose.KeyAlgorithm.ecdh_es
+  go      -
+  rust    -
+  python  authlib.jose.ECDHESAlgorithm, ECKey.exchange_shared_key, OKPKey.exchange_shared_key
+
+capability jwe/key-wrap  `A128KW`, `A192KW`, `A256KW`, `ECDH-ES+A128KW` and the others, and `PBES2-*` (RFC 3394 key wrap)
+  heroes  pending
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 AESAlgorithm, PBES2HSAlgorithm
+  note    `crypto/seal` has no AES key wrap, and AES is computed by the system alone
+
+capability jwe/gcm-key-wrap  `A128GCMKW` and `A256GCMKW`: the content key sealed by AES-GCM
+  heroes  jose.KeyAlgorithm.a128gcmkw, jose.KeyAlgorithm.a256gcmkw
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 AESGCMAlgorithm
+
+capability jwe/aes-gcm  the content sealed by `A128GCM` and `A256GCM`
+  heroes  jose.ContentAlgorithm, jose.format_content_algorithm, jose.parse_content_algorithm
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 GCMEncAlgorithm, JsonWebEncryption.ENC_REGISTRY
+
+capability jwe/aes-cbc-hmac  `A128CBC-HS256`, `A192CBC-HS384`, `A256CBC-HS512` and `A192GCM`
+  heroes  pending
+  go      -
+  rust    -
+  python  authlib.jose.rfc7518 CBCHS2EncAlgorithm
+  note    `crypto/seal` has no AES-CBC and no AES-192
+
+capability jwe/compression  `zip: DEF`, the plaintext compressed before it is sealed
+  heroes  pending
+  go      -
+  rust    -
+  python  JsonWebEncryption.ZIP_REGISTRY, JsonWebEncryption.get_header_zip, authlib.jose.JWEZipAlgorithm
+  note    RFC 8725 § 3.6 warns that compression before encryption tells the plaintext's length; deflating is `compress`'s, a package `jose` does not use yet: a token with `zip` fails `unsupported`
+
+capability jwe/headers  the algorithms read from a JWE's header before it is decrypted
+  heroes  jose.header_of, jose.parse_key_algorithm, jose.format_key_algorithm, jose.KeyAlgorithm
+  go      -
+  rust    -
+  python  JsonWebEncryption.get_header_alg, JsonWebEncryption.get_header_enc, JsonWebEncryption.REGISTERED_HEADER_PARAMETER_NAMES, joserfc.jwe.reject_unprotected_crit_header, joserfc.jwe.JWERegistry, joserfc.jwe.default_registry, joserfc.jwe.setup_jwe_algorithms, JsonWebEncryption.ALG_REGISTRY, JsonWebEncryption.register_algorithm
+
+capability jwt/nested  a JWT signed and then encrypted (RFC 7519 § 5.2, `cty: JWT`)
+  heroes  refused: a nested JWT is `jose.encrypt_compact` of `jose.sign_token`'s token with `cty: JWT`, and `jose.verify_token` of the plaintext `jose.decrypt_compact` answers; a function for the pair would be a second way to do what two do
+  go      -
+  rust    -
+  python  joserfc.jwt.encrypt_compact, joserfc.jwt.decrypt_compact
+
+dropped  an error type or an exception for each way a token fails: a failure here is a code and a message (README § A4)
+  go      jwt.ErrInvalidKey, jwt.ErrInvalidKeyType, jwt.ErrHashUnavailable, jwt.ErrTokenMalformed, jwt.ErrTokenUnverifiable, jwt.ErrTokenSignatureInvalid, jwt.ErrTokenInvalidClaims, jwt.ErrSignatureInvalid
+  rust    jsonwebtoken::errors::Error, ErrorKind
+  python  jwt.PyJWTError, jwt.InvalidTokenError, jwt.DecodeError, jwt.InvalidSignatureError, jwt.InvalidAlgorithmError, jwt.InvalidKeyError, jwt.PyJWKError, jwt.PyJWKSetError, jwt.InsecureKeyLengthWarning, jwt.exceptions, jwt.warnings, authlib.jose.JoseError, authlib.jose.errors, joserfc.errors, joserfc.jws.BadSignatureError, joserfc.jws.MissingKeyError, joserfc.jwt.InvalidPayloadError, joserfc.jwk.SecurityWarning
+
+dropped  a key type of the host language, a protocol or a callback that picks a key: a key here is the one value `Key`, and the keys given are searched by `kid`
+  go      jwt.Keyfunc
+  rust    EncodingKey, DecodingKey's other forms
+  python  jwt.algorithms.AllowedKeys, AllowedPrivateKeys, AllowedPublicKeys, AllowedRSAKeys, AllowedECKeys, AllowedOKPKeys, the `cryptography` key classes re-exported by `jwt.algorithms`, RSAKey.PRIVATE_KEY_CLS, RSAKey.PUBLIC_KEY_CLS, RSAKey.as_key, RSAKey.get_private_key, joserfc.jwk.KeyCallable, joserfc.jwk.KeyFlexible, joserfc.jwk.GuestProtocol, joserfc.jwk.AnyKey, joserfc.jws.KeyFlexible, joserfc.jwe.KeyFlexible
+
+dropped  a JSON encoder or decoder handed in, typing helpers and module plumbing: JSON is `json`'s
+  go      -
+  rust    -
+  python  jwt.encode(json_encoder=...), jwt.api_jwk, jwt.api_jws, jwt.api_jwt, jwt.types, jwt.utils, joserfc.jwt.JSONEncoder, joserfc.jwt.JSONDecoder, joserfc.util, joserfc.registry, authlib.jose.util, authlib.jose.deprecate, authlib.jose.rfc7515, authlib.jose.rfc7516, authlib.jose.rfc7517, authlib.jose.rfc7518, authlib.jose.rfc7519, authlib.jose.rfc8037, authlib.jose.register_jws_rfc7518, authlib.jose.register_jwe_rfc7518, authlib.jose.register_jws_rfc8037, authlib.jose.JWSHeader, authlib.jose.JWSObject, authlib.jose.BaseClaims, authlib.jose.JWSAlgorithm, authlib.jose.JWEAlgorithm, authlib.jose.JWEEncAlgorithm, JsonWebSignature.MAX_CONTENT_LENGTH

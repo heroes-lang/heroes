@@ -1,0 +1,175 @@
+# One signature made and checked by an algorithm and a key: HMAC by
+# `crypto`, every other by `crypto/keypairs` on the DER `forms` writes, an
+# ECDSA signature turned to and from JOSE's R and S. A key serves an
+# algorithm only where its type and curve are the algorithm's, its secret or
+# modulus long enough, and its own `alg`, `use` and `key_ops` allow it.
+
+use bytes
+use crypto
+use crypto/keypairs
+use jose/internal/algorithms
+use jose/internal/forms
+use jose/internal/jwk
+use json
+
+# The code of a key or a signature refused.
+constant INVALID: str
+    "invalid"
+
+# The bits of the unsigned big-endian `b`, its leading zeros not counted.
+function bit_length(b: [u8]) -> i64
+    at: i64 @= 0
+
+    while at < b.len() && b[at] == 0
+        at @ at + 1
+
+    if at == b.len()
+        return 0
+    top: i64 @= to_i64(b[at]).must()
+    bits: i64 @= 0
+
+    while top > 0
+        bits @ bits + 1
+        top @ top >> 1
+
+    return (b.len() - at - 1) * 8 + bits
+
+# Whether `key` serves the algorithm `facts` for `operation`, `sign` or
+# `verify`: its type and curve, the length of its secret or modulus, and
+# what its own members allow.
+function serves(key: jwk.Jwk, facts: algorithms.Facts, operation: str) -> ()?
+    wanted = algorithms.key_type_of(facts)
+
+    if key.key_type != wanted
+        return fail(
+            code: INVALID,
+            msg: f"{facts.name} takes a key of the type {wanted}, and the key \"{key.id}\" is {key.key_type}"
+        )
+
+    if facts.curve != "" && key.curve != facts.curve
+        return fail(
+            code: INVALID,
+            msg: f"{facts.name} takes a key on {facts.curve}, and the key \"{key.id}\" is on {key.curve}"
+        )
+
+    if facts.family == "hmac"
+        secret = key.material["k"].must()
+
+        if secret.len() < facts.size
+            return fail(
+                code: INVALID,
+                msg: f"{facts.name} takes a secret of {facts.size} bytes or more (RFC 7518 § 3.2), and the key \"{key.id}\" holds {secret.len()}"
+            )
+
+    if facts.family == "rsa" || facts.family == "pss"
+        bits = bit_length(key.material["n"].must())
+
+        if bits < 2048
+            return fail(
+                code: INVALID,
+                msg: f"{facts.name} takes a modulus of 2048 bits or more (RFC 7518 § 3.3), and the key \"{key.id}\" has {bits}"
+            )
+
+    if operation == "sign" && !jwk.is_private(key)
+        return fail(code: INVALID, msg: f"the key \"{key.id}\" is public, and signing takes the private key")
+    return jwk.allows(key, algorithm: facts.name, operation: operation)
+
+# The signature of `input` by `key` with `facts`; `key` serves it.
+function sign(input: [u8], key: jwk.Jwk, facts: algorithms.Facts) -> [u8]?
+    if facts.family == "hmac"
+        return ok(crypto.hmac(facts.digest, key: key.material["k"].must(), data: input))
+    der = forms.private_der(key)?
+    private @= keypairs.parse_private_der(der)?
+    made = keypairs.sign(key: private, scheme: facts.scheme, message: input)
+    keypairs.close(@private)?
+    signature = made?
+
+    if facts.family == "ecdsa"
+        return forms.ecdsa_raw(signature, size: facts.size)
+    return ok(signature)
+
+# Whether `signature` is the signature of `input` by `key` with `facts`;
+# `key` serves it. Bytes of no signature's form are false.
+function verify(input: [u8], signature: [u8], key: jwk.Jwk, facts: algorithms.Facts) -> bool?
+    if facts.family == "hmac"
+        return ok(
+            crypto.equals_constant_time(a: signature, b: crypto.hmac(facts.digest, key: key.material["k"].must(), data: input))
+        )
+    public = forms.public_der(key)?
+    held: [u8] @= signature
+
+    if facts.family == "ecdsa"
+        match forms.ecdsa_der(signature, size: facts.size)
+            .ok der => held @ der
+            .err _  => return ok(false)
+
+    return keypairs.verify_der(public_der: public, scheme: facts.scheme, message: input, signature: held)
+
+test "bit_length: none, a zero, leading zeros, a byte's top bit"
+    assert bit_length([]) == 0
+    assert bit_length([0, 0]) == 0
+    assert bit_length([0, 1]) == 1
+    assert bit_length([128, 0]) == 16
+    assert bit_length([0, 0x7f, 0]) == 15
+
+test "sign and verify: RFC 7515 Appendix A.1's HMAC, its key, input and signature"
+    key = jwk.read(
+        json_of("{\"kty\":\"oct\",\"k\":\"AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow\"}")
+    ).must()
+    facts = algorithms.signature("HS256").must()
+    input = bytes_of(
+        "eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ"
+    )
+    assert !serves(key, facts: facts, operation: "sign").is_err()
+    signature = sign(input, key: key, facts: facts).must()
+    assert format_url(signature) == "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+    assert verify(input: input, signature: signature, key: key, facts: facts).must()
+    assert !verify(input: bytes_of("x"), signature: signature, key: key, facts: facts).must()
+
+test "serves: the wrong type, the wrong curve, a short secret, a public key signing, an alg the key refuses"
+    short = jwk.read(json_of("{\"kty\":\"oct\",\"k\":\"AQID\"}")).must()
+    assert serves(short, facts: algorithms.signature("HS256").must(), operation: "verify").is_err()
+    long = jwk.read(
+        json_of("{\"kty\":\"oct\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\",\"alg\":\"HS256\"}")
+    ).must()
+    assert serves(long, facts: algorithms.signature("RS256").must(), operation: "verify").is_err()
+    assert serves(long, facts: algorithms.signature("HS384").must(), operation: "verify").is_err()
+    assert !serves(long, facts: algorithms.signature("HS256").must(), operation: "verify").is_err()
+    ec = jwk.read(
+        json_of("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\",\"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\"}")
+    ).must()
+    assert serves(ec, facts: algorithms.signature("ES384").must(), operation: "verify").is_err()
+    assert !serves(ec, facts: algorithms.signature("ES256").must(), operation: "verify").is_err()
+    assert serves(ec, facts: algorithms.signature("ES256").must(), operation: "sign").is_err()
+
+test "sign and verify: ES256 by a P-256 key read from its JWK, RFC 7515 Appendix A.3's key"
+    key = jwk.read(
+        json_of("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\",\"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\",\"d\":\"jpsQnnGQmL-YBIffH1136cspYG6-0iY7X1fCE9-E9LI\"}")
+    ).must()
+    facts = algorithms.signature("ES256").must()
+    input = bytes_of(
+        "eyJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ"
+    )
+    signature = sign(input, key: key, facts: facts).must()
+    assert signature.len() == 64
+    public = jwk.public_of(key).must()
+    assert verify(input: input, signature: signature, key: public, facts: facts).must()
+    rfc = parse_url("DtEhU3ljbEg8L38VWAfUAqOyKAM6-Xx-F4GawxaepmXFCgfTjDxw5djxLa8ISlSApmWQxfKTUJqPP3-Kg6NU1Q")
+    assert verify(input: input, signature: rfc, key: public, facts: facts).must()
+    assert !verify(input: input, signature: rfc.slice(from: 0, to: 63), key: public, facts: facts).must()
+
+# The JSON value of `text`, for the tests.
+function json_of(text: str) -> json.Value
+    return json.parse(text).must()
+
+# The bytes of `s`, for the tests.
+function bytes_of(s: str) -> [u8]
+    return bytes.from_text(s)
+
+# `b` as base64url, for the tests.
+function format_url(b: [u8]) -> str
+    return bytes.format_base64_url_unpadded(b)
+
+# The bytes of the base64url `s`, for the tests.
+function parse_url(s: str) -> [u8]
+    return bytes.parse_base64_url_unpadded(s).must()

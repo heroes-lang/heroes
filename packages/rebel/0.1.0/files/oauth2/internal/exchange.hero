@@ -1,0 +1,384 @@
+# A request to a token-like endpoint and its answer: the form sent with the
+# client authenticated (RFC 6749 § 2.3, RFC 7523 § 2.2), a token read from
+# the answer (§ 5.1) or the server's error told (§ 5.2), and the polls of a
+# device authorization (RFC 8628 § 3.4, § 3.5).
+
+use bytes
+use http
+use jose
+use json
+use random
+use time
+use url
+
+# The code of an answer not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of an OAuth error the server answered.
+constant FAILED: str
+    "failed"
+
+# The code of a user's denial.
+constant PERMISSION: str
+    "permission"
+
+# The code of a code that expired.
+constant TIMEOUT: str
+    "timeout"
+
+# How the client authenticates, as the face's `Authentication` says it.
+record Auth
+    # `basic`, `post`, `none` or `private_key_jwt`.
+    method: str
+    # The client's id.
+    client_id: str
+    # The client's secret.
+    client_secret: str
+    # The key a `private_key_jwt` signs with; any key otherwise.
+    key: jose.Key
+    # The algorithm it signs with.
+    algorithm: jose.Algorithm
+
+# A token answered, as the face's `Token` holds it.
+record Fields
+    # `access_token`.
+    access_token: str
+    # `token_type`, `Bearer` in that case where it was `bearer`.
+    token_type: str
+    # `refresh_token`, "" for none.
+    refresh_token: str
+    # The instant `expires_in` names, `time.max_instant()` for none.
+    expiry: time.Instant
+    # `scope`, split at its spaces.
+    scopes: [str]
+    # `id_token`, "" for none.
+    id_token: str
+    # Every member.
+    members: {str: json.Value}
+
+# An OAuth error's three members.
+record ServerError
+    # `error`, "" where the answer holds none.
+    error: str
+    # `error_description`, "" for none.
+    description: str
+    # `error_uri`, "" for none.
+    uri: str
+
+# The JWT a `private_key_jwt` client sends to `audience` (RFC 7523 § 3):
+# itself its issuer and subject, a minute to live, an id drawn at random.
+function assertion(auth: Auth, audience: str) -> str?
+    now = time.now()?
+    seconds = time.unix_seconds(now)
+    claims: {str: json.Value} @= {}
+    claims["iss"] @ .text(v: auth.client_id)
+    claims["sub"] @ .text(v: auth.client_id)
+    claims["aud"] @ .text(v: audience)
+    claims["jti"] @ .text(v: random.secure_token_base64_url(24)?)
+    claims["iat"] @ .number(v: to_f64(seconds))
+    claims["exp"] @ .number(v: to_f64(seconds + 60))
+    return jose.sign_token(claims, key: auth.key, algorithm: auth.algorithm)
+
+# The POST of `form` to `endpoint`, the client authenticated as `auth` says.
+function prepared(endpoint: str, auth: Auth, form: [url.Pair]) -> http.Request?
+    pairs: [url.Pair] @= form
+
+    if auth.method == "post"
+        pairs @ pairs.push(url.Pair(key: "client_id", value: auth.client_id))
+        pairs @ pairs.push(url.Pair(key: "client_secret", value: auth.client_secret))
+    else if auth.method == "none"
+        pairs @ pairs.push(url.Pair(key: "client_id", value: auth.client_id))
+    else if auth.method == "private_key_jwt"
+        pairs @ pairs.push(url.Pair(key: "client_id", value: auth.client_id))
+        pairs @ pairs.push(
+            url.Pair(key: "client_assertion_type", value: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer")
+        )
+        pairs @ pairs.push(url.Pair(key: "client_assertion", value: assertion(auth, audience: endpoint)?))
+
+    made = match http.request(method: http.METHOD_POST, target: endpoint)
+        .ok r  => r
+        .err e => return fail(code: INVALID, msg: f"the endpoint \"{endpoint}\" is no URL: {e.msg}")
+
+    r @= http.with_form(made, pairs: pairs)
+    r.headers @ http.with_header(r.headers, name: "Accept", value: "application/json")
+
+    if auth.method == "basic"
+        return ok(
+            http.with_basic_auth(r, user: url.escape_query(auth.client_id), password: url.escape_query(auth.client_secret))
+        )
+    return ok(r)
+
+# The members of the JSON object `response` carries.
+function members_of(response: http.Response) -> {str: json.Value}?
+    v = match http.json_of(response)
+        .ok parsed => parsed
+        .err e => return fail(
+            code: INVALID,
+            msg: f"the server answered {response.status} with a body that is no JSON: {e.msg}"
+        )
+
+    match json.members_of(v)
+        .ok m => return ok(m)
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the server answered {response.status} with {json.kind_of(v)}, where a JSON object was expected"
+        )
+
+# The text member `name` of `members`, "" where it is absent.
+function text_member(members: {str: json.Value}, name: str) -> str?
+    match members[name]
+        .err _ => return ok("")
+        .ok v =>
+            match json.text_of(v)
+                .ok t => return ok(t)
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"the answer's \"{name}\" is {json.kind_of(v)}, where a text was expected"
+                )
+
+# The OAuth error `response` carries; an empty `error` where it carries none.
+function error_of(response: http.Response) -> ServerError
+    match members_of(response)
+        .err _ => return ServerError(error: "", description: "", uri: "")
+        .ok m =>
+            return ServerError(
+                error: text_member(m, name: "error").default(""),
+                description: text_member(m, name: "error_description").default(""),
+                uri: text_member(m, name: "error_uri").default("")
+            )
+
+# The failure `response`, not a success, is told as: `failed` with the
+# server's error, its description and URI, or its status alone.
+function refused<T>(response: http.Response) -> T?
+    e = error_of(response)
+
+    if e.error == ""
+        return fail(code: FAILED, msg: f"the server answered {response.status} {response.reason} and no OAuth error")
+    words: [str] @= [f"the server answered {response.status} {e.error}"]
+
+    if e.description != ""
+        words @ words.push(e.description)
+
+    if e.uri != ""
+        words @ words.push(f"see {e.uri}")
+    return fail(code: FAILED, msg: words.join(": "))
+
+# The seconds `members[name]` gives, a number or a text of digits; -1 where
+# it is absent.
+function seconds_member(members: {str: json.Value}, name: str) -> i64?
+    match members[name]
+        .err _ => return ok(-1)
+        .ok v =>
+            match json.int_of(v)
+                .ok n =>
+                    if n < 0
+                        return fail(code: INVALID, msg: f"the answer's \"{name}\" is {n}, below 0")
+                    return ok(n)
+                .err _ => _ = 0
+
+            text = match json.text_of(v)
+                .ok t  => t
+                .err _ => return fail(code: INVALID, msg: f"the answer's \"{name}\" is no whole number of seconds")
+
+            if text.len() == 0 || text.len() > 12
+                return fail(code: INVALID, msg: f"the answer's \"{name}\" is \"{text}\", no whole number of seconds")
+            n: i64 @= 0
+
+            for at in range(from: 0, to: text.len())
+                c = text[at]
+
+                if c < '0' || c > '9'
+                    return fail(
+                        code: INVALID,
+                        msg: f"the answer's \"{name}\" is \"{text}\", no whole number of seconds"
+                    )
+                n @ n * 10 + to_i64(c - '0').must()
+
+            return ok(n)
+
+# The instant `seconds` after `now`, the end of time where `seconds` is -1.
+function after(now: time.Instant, seconds: i64) -> time.Instant
+    if seconds < 0
+        return time.max_instant()
+
+    match time.seconds(seconds)
+        .err _ => return time.max_instant()
+        .ok d =>
+            match time.add(now, d: d)
+                .ok t  => return t
+                .err _ => return time.max_instant()
+
+# The words of `scope`, a space-separated list.
+function scopes_of(scope: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: scope.len() + 1)
+        if at == scope.len() || scope[at] == ' '
+            if at > from
+                out @ out.push(scope.slice(from: from, to: at))
+            from @ at + 1
+
+    return out
+
+# The token `response` answers, received at `now`.
+function read_token(response: http.Response, now: time.Instant) -> Fields?
+    if response.status != 200
+        return refused(response)
+    members = members_of(response)?
+    access = text_member(members, name: "access_token")?
+
+    if access == ""
+        return fail(code: INVALID, msg: "the token endpoint answered no \"access_token\"")
+    kind: str @= text_member(members, name: "token_type")?
+
+    if kind == "" || bytes.equals_ignoring_case_ascii(a: bytes.from_text(kind), b: bytes.from_text("bearer"))
+        kind @ "Bearer"
+    return ok(
+        Fields(access_token: access, token_type: kind, refresh_token: text_member(members, name: "refresh_token")?, expiry: after(now, seconds: seconds_member(members, name: "expires_in")?), scopes: scopes_of(text_member(members, name: "scope")?), id_token: text_member(members, name: "id_token")?, members: members)
+    )
+
+# The answer to `form` POSTed to `endpoint` through `transport`.
+function sent(transport: http.Client, endpoint: str, auth: Auth, form: [url.Pair]) -> http.Response?
+    return http.send(transport, r: prepared(endpoint, auth: auth, form: form)?)
+
+# The token `endpoint` answers `form`.
+function request_token(transport: http.Client, endpoint: str, auth: Auth, form: [url.Pair]) -> Fields?
+    if endpoint == ""
+        return fail(code: INVALID, msg: "a token asked of a client with no token endpoint")
+    response = sent(transport, endpoint: endpoint, auth: auth, form: form)?
+    return read_token(response, now: time.now()?)
+
+# What the device's next poll does after the error `error`: wait the
+# interval, wait five seconds longer, or stop with a failure.
+function next_interval(error: str, interval: i64) -> i64?
+    if error == "authorization_pending"
+        return ok(interval)
+
+    if error == "slow_down"
+        return ok(interval + 5)
+
+    if error == "access_denied"
+        return fail(code: PERMISSION, msg: "the user denied the device its authorization")
+
+    if error == "expired_token"
+        return fail(code: TIMEOUT, msg: "the device code expired before the user answered")
+    return fail(code: FAILED, msg: f"the server answered the device's poll with {error}")
+
+# The token the device's approval gives, `endpoint` polled every `interval`
+# seconds, longer after `slow_down`, until `expiry`.
+function poll(transport: http.Client, endpoint: str, auth: Auth, device_code: str, interval: i64, expiry: time.Instant) -> Fields?
+    wait: i64 @= interval
+
+    while true
+        if !time.is_before(a: time.now()?, b: expiry)
+            return fail(code: TIMEOUT, msg: "the device code expired before the user answered")
+        form = [
+            url.Pair(key: "grant_type", value: "urn:ietf:params:oauth:grant-type:device_code")
+            url.Pair(key: "device_code", value: device_code)
+        ]
+        response = sent(transport, endpoint: endpoint, auth: auth, form: form)?
+
+        if response.status == 200
+            return read_token(response, now: time.now()?)
+        e = error_of(response)
+
+        if e.error == ""
+            return refused(response)
+        wait @ next_interval(e.error, interval: wait)?
+        time.sleep(time.seconds(wait).must())
+
+test "scopes_of: none, one, several, spaces at either end and doubled"
+    assert scopes_of("") == []
+    assert scopes_of("openid") == ["openid"]
+    assert scopes_of(" openid  profile email ") == ["openid", "profile", "email"]
+
+test "next_interval: pending keeps it, slow_down adds five, denied, expired, another error"
+    assert next_interval("authorization_pending", interval: 5).must() == 5
+    assert next_interval("slow_down", interval: 5).must() == 10
+    errors = ["access_denied", "expired_token", "invalid_grant"]
+    codes = [PERMISSION, TIMEOUT, FAILED]
+
+    for at in range(from: 0, to: errors.len())
+        match next_interval(errors[at], interval: 5)
+            .ok _  => assert false
+            .err e => assert e.code == codes[at]
+
+test "read_token: RFC 6749 § 5.1's answer, a type in lower case, expires_in as text, none of it"
+    now = time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
+    body = "{\"access_token\":\"2YotnFZFEjr1zCsicMWpAA\",\"token_type\":\"example\",\"expires_in\":3600,\"refresh_token\":\"tGzv3JOkF0XG5Qx2TlKWIA\",\"example_parameter\":\"example_value\"}"
+    r = http.respond(200, content_type: "application/json", body: bytes.from_text(body))
+    t = read_token(r, now: now).must()
+    assert t.access_token == "2YotnFZFEjr1zCsicMWpAA" && t.token_type == "example" && t.refresh_token == "tGzv3JOkF0XG5Qx2TlKWIA"
+    assert time.unix_seconds(t.expiry) == 4600
+    assert t.members["example_parameter"].must() == .text(v: "example_value")
+    lower = http.respond(
+        200,
+        content_type: "application/json",
+        body: bytes.from_text("{\"access_token\":\"a\",\"token_type\":\"bearer\",\"expires_in\":\"60\",\"scope\":\"x y\"}")
+    )
+    l = read_token(lower, now: now).must()
+    assert l.token_type == "Bearer" && time.unix_seconds(l.expiry) == 1060 && l.scopes == ["x", "y"]
+    bare = http.respond(200, content_type: "application/json", body: bytes.from_text("{\"access_token\":\"a\"}"))
+    assert read_token(bare, now: now).must().expiry == time.max_instant()
+
+test "read_token: RFC 6749 § 5.2's error told, no access token, a body that is no JSON, a negative expires_in"
+    now = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    error = http.respond(
+        400,
+        content_type: "application/json",
+        body: bytes.from_text("{\"error\":\"invalid_request\",\"error_description\":\"no code\"}")
+    )
+
+    match read_token(error, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == FAILED && e.msg == "the server answered 400 invalid_request: no code"
+
+    assert read_token(
+        http.respond(200, content_type: "application/json", body: bytes.from_text("{}")),
+        now: now
+    ).is_err()
+    assert read_token(http.respond(200, content_type: "text/plain", body: bytes.from_text("ok")), now: now).is_err()
+    assert read_token(
+        http.respond(200, content_type: "application/json", body: bytes.from_text("{\"access_token\":\"a\",\"expires_in\":-5}")),
+        now: now
+    ).is_err()
+
+test "prepared: basic escapes the id and the secret, post and none put them in the body"
+    auth = Auth(
+        method: "basic",
+        client_id: "s6BhdRkqt3",
+        client_secret: "7Fjfp0ZBr1KtDRbnfVdmIw",
+        key: jose.key_from_secret([]),
+        algorithm: .hs256
+    )
+    r = prepared(
+        "https://server.example.com/token",
+        auth: auth,
+        form: [url.Pair(key: "grant_type", value: "client_credentials")]
+    ).must()
+    assert http.value_of(r.headers, name: "Authorization").must() == "Basic czZCaGRSa3F0Mzo3RmpmcDBaQnIxS3REUmJuZlZkbUl3"
+    odd = Auth(
+        method: "basic",
+        client_id: "a:b",
+        client_secret: "c d",
+        key: jose.key_from_secret([]),
+        algorithm: .hs256
+    )
+    o = prepared("https://s.example/token", auth: odd, form: []).must()
+    assert http.value_of(o.headers, name: "Authorization").must() == "Basic " + bytes.format_base64(bytes.from_text("a%3Ab:c+d"))
+    post = Auth(
+        method: "post",
+        client_id: "id",
+        client_secret: "secret",
+        key: jose.key_from_secret([]),
+        algorithm: .hs256
+    )
+    p = prepared(
+        "https://s.example/token",
+        auth: post,
+        form: [url.Pair(key: "grant_type", value: "client_credentials")]
+    ).must()
+    assert p.body == bytes.from_text("grant_type=client_credentials&client_id=id&client_secret=secret")
+    assert !http.has_header(p.headers, name: "Authorization")

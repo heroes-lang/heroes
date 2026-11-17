@@ -1,0 +1,166 @@
+# What each JOSE algorithm is, by its name: the signature algorithms of RFC
+# 7518 § 3, RFC 8037 and RFC 9864 with the digest or the scheme that computes
+# them and the key they need, the JWE algorithms of RFC 7518 §§ 4 and 5, and
+# for every name this package refuses or lacks, the code and the reason.
+
+use crypto
+use crypto/keypairs
+
+# The code of a name refused by design or unknown.
+constant INVALID: str
+    "invalid"
+
+# The code of a name whose algorithm Rebel's cryptography lacks.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A signature algorithm's facts.
+record Facts
+    # Its JOSE name, `RS256`.
+    name: str
+    # Its family: `hmac`, `rsa`, `pss`, `ecdsa` or `eddsa`.
+    family: str
+    # The digest an HMAC is made of; SHA-256 where no HMAC is.
+    digest: crypto.Algorithm
+    # The scheme `crypto/keypairs` signs by; Ed25519's for an HMAC, unused.
+    scheme: keypairs.Scheme
+    # The curve its key must be on, as a JWK's `crv` names it; "" for none.
+    curve: str
+    # The least bytes of an HMAC's secret, the bytes of each of ECDSA's R and
+    # S, the least bytes of an RSA modulus.
+    size: i64
+
+# The `kty` a key of the algorithm `facts` must have.
+function key_type_of(facts: Facts) -> str
+    return match facts.family
+        "hmac"        => "oct"
+        "rsa" | "pss" => "RSA"
+        "ecdsa"       => "EC"
+        _             => "OKP"
+
+# The facts of the signature algorithm `name`.
+function signature(name: str) -> Facts?
+    return match name
+        "HS256" => ok(Facts(name: name, family: "hmac", digest: .sha256, scheme: .ed25519, curve: "", size: 32))
+        "HS384" => ok(Facts(name: name, family: "hmac", digest: .sha384, scheme: .ed25519, curve: "", size: 48))
+        "HS512" => ok(Facts(name: name, family: "hmac", digest: .sha512, scheme: .ed25519, curve: "", size: 64))
+        "RS256" => ok(
+            Facts(name: name, family: "rsa", digest: .sha256, scheme: .rsa_pkcs1_sha256, curve: "", size: 256)
+        )
+        "RS384" => ok(
+            Facts(name: name, family: "rsa", digest: .sha256, scheme: .rsa_pkcs1_sha384, curve: "", size: 256)
+        )
+        "RS512" => ok(
+            Facts(name: name, family: "rsa", digest: .sha256, scheme: .rsa_pkcs1_sha512, curve: "", size: 256)
+        )
+        "PS256" => ok(Facts(name: name, family: "pss", digest: .sha256, scheme: .rsa_pss_sha256, curve: "", size: 256))
+        "PS384" => ok(Facts(name: name, family: "pss", digest: .sha256, scheme: .rsa_pss_sha384, curve: "", size: 256))
+        "PS512" => ok(Facts(name: name, family: "pss", digest: .sha256, scheme: .rsa_pss_sha512, curve: "", size: 256))
+        "ES256" => ok(
+            Facts(name: name, family: "ecdsa", digest: .sha256, scheme: .ecdsa_sha256, curve: "P-256", size: 32)
+        )
+        "ES384" => ok(
+            Facts(name: name, family: "ecdsa", digest: .sha256, scheme: .ecdsa_sha384, curve: "P-384", size: 48)
+        )
+        "EdDSA" => ok(Facts(name: name, family: "eddsa", digest: .sha256, scheme: .ed25519, curve: "Ed25519", size: 32))
+        "Ed25519" => ok(
+            Facts(name: name, family: "eddsa", digest: .sha256, scheme: .ed25519, curve: "Ed25519", size: 32)
+        )
+        _ => refused_signature(name)
+
+# The failure of a signature algorithm's name this package has no case for.
+function refused_signature(name: str) -> Facts?
+    if name == "none"
+        return fail(
+            code: INVALID,
+            msg: "the algorithm \"none\", a token with no signature, is refused by design (RFC 8725 § 3.2)"
+        )
+
+    if name == "ES512"
+        return fail(code: UNSUPPORTED, msg: "ES512 is ECDSA on P-521, which `crypto/keypairs` lacks")
+
+    if name == "ES256K"
+        return fail(code: UNSUPPORTED, msg: "ES256K is ECDSA on secp256k1, which `crypto/keypairs` lacks")
+
+    if name == "Ed448"
+        return fail(code: UNSUPPORTED, msg: "Ed448, which `crypto/keypairs` lacks")
+    return fail(code: INVALID, msg: f"no JWS algorithm is named \"{name}\"")
+
+# The failure of a JWE key algorithm's name this package has no case for.
+function refused_key_algorithm(name: str) -> ()?
+    if name == "RSA1_5"
+        return fail(
+            code: INVALID,
+            msg: "RSA1_5 is refused by design: PKCS #1 v1.5 encryption is open to Bleichenbacher's attack (RFC 8725 § 3.2)"
+        )
+
+    if name == "RSA-OAEP"
+        return fail(
+            code: UNSUPPORTED,
+            msg: "RSA-OAEP is OAEP over SHA-1, and `crypto/keypairs` encrypts by OAEP over SHA-256 alone: RSA-OAEP-256 is"
+        )
+
+    if name == "RSA-OAEP-384" || name == "RSA-OAEP-512"
+        return fail(code: UNSUPPORTED, msg: f"{name}: `crypto/keypairs` encrypts by OAEP over SHA-256 alone")
+
+    if name == "A128KW" || name == "A192KW" || name == "A256KW" || name == "ECDH-ES+A128KW" || name == "ECDH-ES+A192KW" || name == "ECDH-ES+A256KW"
+        return fail(code: UNSUPPORTED, msg: f"{name} wraps a key by AES key wrap (RFC 3394), which `crypto/seal` lacks")
+
+    if name == "A192GCMKW"
+        return fail(code: UNSUPPORTED, msg: "A192GCMKW is AES-192, which `crypto/seal` lacks")
+
+    if name == "PBES2-HS256+A128KW" || name == "PBES2-HS384+A192KW" || name == "PBES2-HS512+A256KW"
+        return fail(code: UNSUPPORTED, msg: f"{name} wraps a key by AES key wrap, which `crypto/seal` lacks")
+    return fail(code: INVALID, msg: f"no JWE key algorithm is named \"{name}\"")
+
+# The failure of a JWE content algorithm's name this package has no case for.
+function refused_content_algorithm(name: str) -> ()?
+    if name == "A192GCM"
+        return fail(code: UNSUPPORTED, msg: "A192GCM is AES-192, which `crypto/seal` lacks")
+
+    if name == "A128CBC-HS256" || name == "A192CBC-HS384" || name == "A256CBC-HS512"
+        return fail(code: UNSUPPORTED, msg: f"{name} seals by AES-CBC, which `crypto/seal` lacks")
+    return fail(code: INVALID, msg: f"no JWE content algorithm is named \"{name}\"")
+
+# The bytes of a content key for the content algorithm `name`, 0 for none.
+function content_key_size(name: str) -> i64
+    return match name
+        "A128GCM" => 16
+        "A256GCM" => 32
+        _         => 0
+
+# The bytes of the secret a GCM key wrap `name` takes, 0 for another.
+function wrap_key_size(name: str) -> i64
+    return match name
+        "A128GCMKW" => 16
+        "A256GCMKW" => 32
+        _           => 0
+
+test "signature: each name's family and key, the refused and the lacking"
+    assert signature("HS384").must().size == 48
+    assert key_type_of(signature("PS512").must()) == "RSA"
+    assert signature("ES384").must().curve == "P-384"
+    assert key_type_of(signature("Ed25519").must()) == "OKP"
+    names = ["none", "ES512", "ES256K", "Ed448", "hs256", ""]
+    codes = [INVALID, UNSUPPORTED, UNSUPPORTED, UNSUPPORTED, INVALID, INVALID]
+
+    for at in range(from: 0, to: names.len())
+        match signature(names[at])
+            .ok _  => assert false
+            .err e => assert e.code == codes[at]
+
+test "refused_key_algorithm and refused_content_algorithm: refused by design, lacking, unknown"
+    assert refused_key_algorithm("RSA1_5").is_err()
+    names = ["RSA1_5", "RSA-OAEP", "A128KW", "ECDH-ES+A256KW", "A192GCMKW", "PBES2-HS256+A128KW", "rsa-oaep-256"]
+    codes = [INVALID, UNSUPPORTED, UNSUPPORTED, UNSUPPORTED, UNSUPPORTED, UNSUPPORTED, INVALID]
+
+    for at in range(from: 0, to: names.len())
+        match refused_key_algorithm(names[at])
+            .ok _  => assert false
+            .err e => assert e.code == codes[at]
+
+    match refused_content_algorithm("A128CBC-HS256")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    assert content_key_size("A256GCM") == 32 && wrap_key_size("A128GCMKW") == 16 && content_key_size("A192GCM") == 0

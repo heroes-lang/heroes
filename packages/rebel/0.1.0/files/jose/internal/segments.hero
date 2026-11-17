@@ -1,0 +1,282 @@
+# What every JWS and JWE serialization shares: a token cut at its dots, a
+# header read from its base64url, the `crit` and `b64` members checked
+# (RFC 7515 § 4.1.11, RFC 7797), the algorithm a header names held to those
+# the caller accepts, and the keys a header's `kid` and algorithm leave to
+# try.
+
+use bytes
+use jose/internal/algorithms
+use jose/internal/jwk
+use jose/internal/signing
+use json
+
+# The code of a token or a header not of its form, a refusal.
+constant INVALID: str
+    "invalid"
+
+# The code of a `kid` no key has.
+constant NOT_FOUND: str
+    "not_found"
+
+# The parts of `token` between its dots, every dot a separator; a dot is
+# one byte, so no cut splits a character.
+function pieces(token: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < token.len()
+        if token[at] == '.'
+            out @ out.push(token.slice(from: from, to: at))
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(token.slice(from: from, to: token.len()))
+    return out
+
+# The bytes of `segment`, base64url with no padding, as `what` names it.
+function decoded(segment: str, what: str) -> [u8]?
+    match bytes.parse_base64_url_unpadded(segment)
+        .ok b  => return ok(b)
+        .err e => return fail(code: INVALID, msg: f"{what} is not base64url without padding: {e.msg}")
+
+# The members of the header whose base64url is `segment`.
+function header_members(segment: str, what: str) -> {str: json.Value}?
+    raw = decoded(segment: segment, what: what)?
+
+    text = match bytes.to_text(raw)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: f"{what} is not UTF-8")
+
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"{what} is not JSON: {e.msg}")
+
+    match json.members_of(v)
+        .ok m  => return ok(m)
+        .err _ => return fail(code: INVALID, msg: f"{what} is {json.kind_of(v)}, where a JSON object was expected")
+
+# The text of the member `name` of `members`, "" where it is absent.
+function text_of(members: {str: json.Value}, name: str) -> str?
+    match members[name]
+        .err _ => return ok("")
+        .ok v =>
+            match json.text_of(v)
+                .ok t => return ok(t)
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"a header's \"{name}\" is {json.kind_of(v)}, where a text was expected"
+                )
+
+# Whether the payload is base64url, read from the protected header's `b64`
+# and `crit` (RFC 7797): true unless `b64` is false and `crit` names it.
+# `crit` must stand in the protected header alone, hold texts, each a member
+# the protected header has and this package understands, `b64` alone.
+function encoded_payload(protected: {str: json.Value}, unprotected: {str: json.Value}) -> bool?
+    if !unprotected["crit"].is_err()
+        return fail(code: INVALID, msg: "\"crit\" stands in an unprotected header, where RFC 7515 § 4.1.11 forbids it")
+    critical: [str] @= []
+
+    match protected["crit"]
+        .err _ => _ = 0
+        .ok v =>
+            items = match json.items_of(v)
+                .ok l  => l
+                .err _ => return fail(code: INVALID, msg: f"\"crit\" is {json.kind_of(v)}, where a list was expected")
+
+            if items.len() == 0
+                return fail(code: INVALID, msg: "\"crit\" is an empty list, which RFC 7515 § 4.1.11 forbids")
+
+            for item in items
+                name = match json.text_of(item)
+                    .ok t  => t
+                    .err _ => return fail(code: INVALID, msg: "\"crit\" holds something other than a text")
+
+                if name != "b64"
+                    return fail(
+                        code: INVALID,
+                        msg: f"\"crit\" names \"{name}\", an extension this package does not understand"
+                    )
+
+                if protected[name].is_err()
+                    return fail(
+                        code: INVALID,
+                        msg: f"\"crit\" names \"{name}\", which the protected header does not hold"
+                    )
+                critical @ critical.push(name)
+
+    match protected["b64"]
+        .err _ => _ = 0
+        .ok v =>
+            b64 = match json.bool_of(v)
+                .ok b  => b
+                .err _ => return fail(code: INVALID, msg: f"\"b64\" is {json.kind_of(v)}, where a boolean was expected")
+
+            if critical.len() == 0
+                return fail(
+                    code: INVALID,
+                    msg: "\"b64\" stands in a header whose \"crit\" does not name it (RFC 7797 § 6)"
+                )
+            return ok(b64)
+
+    if !unprotected["b64"].is_err()
+        return fail(code: INVALID, msg: "\"b64\" stands in an unprotected header (RFC 7797 § 3)")
+    return ok(true)
+
+# The facts of the algorithm `joined` names, one of `accepted`.
+function accepted_facts(joined: {str: json.Value}, accepted: [str]) -> algorithms.Facts?
+    if joined["alg"].is_err()
+        return fail(code: INVALID, msg: "a JWS header with no \"alg\"")
+    name = text_of(joined, name: "alg")?
+
+    for a in accepted
+        if a == name
+            return algorithms.signature(name)
+
+    if name == "none"
+        return algorithms.signature(name)
+
+    if accepted.len() == 0
+        return fail(code: INVALID, msg: f"the header names {name}, and no algorithm is accepted")
+    return fail(
+        code: INVALID,
+        msg: f"the header names {name}, which is not among the algorithms accepted, {accepted.join(", ")}"
+    )
+
+# The keys of `trusted` read; a key that does not read is passed over.
+function readable(trusted: [json.Value]) -> [jwk.Jwk]
+    out: [jwk.Jwk] @= []
+
+    for v in trusted
+        match jwk.read(v)
+            .ok k  => out @ out.push(k)
+            .err _ => _ = 0
+
+    return out
+
+# The keys of `trusted` that may have signed under `joined` with `facts`:
+# those with its `kid` where it names one, that serve `facts` for
+# `operation`.
+function candidates(trusted: [jwk.Jwk], joined: {str: json.Value}, facts: algorithms.Facts, operation: str) -> [jwk.Jwk]?
+    kid = text_of(joined, name: "kid")?
+    named: [jwk.Jwk] @= []
+
+    for k in trusted
+        if joined["kid"].is_err() || k.id == kid
+            named @ named.push(k)
+
+    if named.len() == 0
+        if !joined["kid"].is_err()
+            return fail(code: NOT_FOUND, msg: f"no key given has the id \"{kid}\" the header names")
+        return fail(code: INVALID, msg: "no key was given")
+    serving: [jwk.Jwk] @= []
+    refusal: str @= ""
+
+    for k in named
+        match signing.serves(k, facts: facts, operation: operation)
+            .ok _ => serving @ serving.push(k)
+            .err e =>
+                if refusal == ""
+                    refusal @ e.msg
+
+    if serving.len() == 0
+        return fail(code: INVALID, msg: f"no key given serves {facts.name}: {refusal}")
+    return ok(serving)
+
+# Whether one of `serving` verifies `signature` over `input` with `facts`.
+function verify_by_any(input: [u8], signature: [u8], serving: [jwk.Jwk], facts: algorithms.Facts) -> ()?
+    for k in serving
+        if signing.verify(input: input, signature: signature, key: k, facts: facts)?
+            return ok()
+
+    if serving.len() == 1
+        return fail(code: INVALID, msg: f"the {facts.name} signature does not hold for the key \"{serving[0].id}\"")
+    return fail(
+        code: INVALID,
+        msg: f"the {facts.name} signature does not hold for any of the {serving.len()} keys that serve it"
+    )
+
+# The signing input of RFC 7515 § 5.1: the protected header's base64url, a
+# dot, and the payload's base64url, or the payload itself where `encoded` is
+# false (RFC 7797 § 3).
+function signing_input(protected_segment: str, payload: [u8], encoded: bool) -> [u8]
+    input: [u8] @= bytes.from_text(protected_segment)
+    input @ input.push('.')
+
+    if encoded
+        bytes.push_text(@input, bytes.format_base64_url_unpadded(payload))
+    else
+        bytes.push_all(to: @input, from: payload)
+    return input
+
+# `members` as the base64url of their JSON, as a protected header is
+# written.
+function header_segment(members: {str: json.Value}) -> str?
+    text = json.format(.object(members: members))?
+    return ok(bytes.format_base64_url_unpadded(bytes.from_text(text)))
+
+test "pieces: none, one, a dot at either end, two dots side by side"
+    assert pieces("") == [""]
+    assert pieces("a") == ["a"]
+    assert pieces(".a.") == ["", "a", ""]
+    assert pieces("a..b") == ["a", "", "b"]
+
+test "header_members: an object, and refused: padding, not UTF-8, not JSON, a list, a key twice"
+    assert header_members(segment: "eyJhbGciOiJIUzI1NiJ9", what: "h").must()["alg"].must() == .text(v: "HS256")
+    assert header_members(segment: "eyJhbGciOiJIUzI1NiJ9==", what: "h").is_err()
+    assert header_members(segment: bytes.format_base64_url_unpadded([0xff]), what: "h").is_err()
+    assert header_members(segment: bytes.format_base64_url_unpadded(bytes.from_text("{")), what: "h").is_err()
+    assert header_members(segment: bytes.format_base64_url_unpadded(bytes.from_text("[]")), what: "h").is_err()
+    assert header_members(
+        segment: bytes.format_base64_url_unpadded(bytes.from_text("{\"a\":1,\"a\":2}")),
+        what: "h"
+    ).is_err()
+
+test "encoded_payload: none, b64 false named by crit, b64 not named, crit unknown, empty, unprotected, absent member"
+    none: {str: json.Value} = {}
+    assert encoded_payload(protected: none, unprotected: none).must()
+    plain: {str: json.Value} = {"b64": .boolean(v: false), "crit": .list(items: [.text(v: "b64")])}
+    assert !encoded_payload(protected: plain, unprotected: none).must()
+    loose: {str: json.Value} = {"b64": .boolean(v: false)}
+    assert encoded_payload(protected: loose, unprotected: none).is_err()
+    unknown: {str: json.Value} = {"crit": .list(items: [.text(v: "exp")]), "exp": .number(v: 1.0)}
+    assert encoded_payload(protected: unknown, unprotected: none).is_err()
+    empty: {str: json.Value} = {"crit": .list(items: [])}
+    assert encoded_payload(protected: empty, unprotected: none).is_err()
+    assert encoded_payload(protected: none, unprotected: plain).is_err()
+    absent: {str: json.Value} = {"crit": .list(items: [.text(v: "b64")])}
+    assert encoded_payload(protected: absent, unprotected: none).is_err()
+
+test "accepted_facts: accepted, not accepted, none refused even when listed, nothing accepted, no alg"
+    hs: {str: json.Value} = {"alg": .text(v: "HS256")}
+    assert accepted_facts(hs, accepted: ["RS256", "HS256"]).must().name == "HS256"
+    assert accepted_facts(hs, accepted: ["RS256"]).is_err()
+    assert accepted_facts(hs, accepted: []).is_err()
+    nothing: {str: json.Value} = {"alg": .text(v: "none")}
+    assert accepted_facts(nothing, accepted: ["none"]).is_err()
+    bare: {str: json.Value} = {}
+    assert accepted_facts(bare, accepted: ["HS256"]).is_err()
+
+test "candidates: by kid, a kid no key has, keys of the wrong type passed over, none serving"
+    a = jwk.read(
+        json.parse("{\"kty\":\"oct\",\"kid\":\"a\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\"}").must()
+    ).must()
+    b = jwk.read(
+        json.parse("{\"kty\":\"oct\",\"kid\":\"b\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\"}").must()
+    ).must()
+    facts = algorithms.signature("HS256").must()
+    by_b: {str: json.Value} = {"kid": .text(v: "b")}
+    assert candidates([a, b], joined: by_b, facts: facts, operation: "verify").must() == [b]
+    no_kid: {str: json.Value} = {}
+    assert candidates([a, b], joined: no_kid, facts: facts, operation: "verify").must().len() == 2
+    by_c: {str: json.Value} = {"kid": .text(v: "c")}
+
+    match candidates([a, b], joined: by_c, facts: facts, operation: "verify")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert candidates([a, b], joined: no_kid, facts: algorithms.signature("HS512").must(), operation: "verify").is_err()
+
+test "signing_input: encoded, and the payload as it is"
+    assert signing_input(protected_segment: "e30", payload: [0x24], encoded: true) == bytes.from_text("e30.JA")
+    assert signing_input(protected_segment: "e30", payload: [0x24], encoded: false) == bytes.from_text("e30.$")

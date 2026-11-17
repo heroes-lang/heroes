@@ -1,0 +1,483 @@
+# A JSON Web Key (RFC 7517) read from its JSON and written back, and the
+# rules every use of one asks: the members its type requires, their lengths,
+# which algorithms its type serves, and whether its `alg`, `use` and
+# `key_ops` allow an operation. The face's `Key` holds the same fields as
+# `Jwk`; the face hands keys here as their JSON, since a private module does
+# not see its face.
+
+use bytes
+use crypto
+use json
+
+# A key as `jose.Key` holds it, field for field.
+record Jwk
+    # `kty`.
+    key_type: str
+    # `crv`, "" for none.
+    curve: str
+    # `kid`, "" for none.
+    id: str
+    # `use`, "" for none.
+    usage: str
+    # `key_ops`, empty for none.
+    operations: [str]
+    # `alg`, "" for none.
+    algorithm: str
+    # The key's members by name, base64url undone.
+    material: {str: [u8]}
+    # `x5c`, DER each.
+    chain: [[u8]]
+    # Every other member.
+    extra: {str: json.Value}
+
+# The code of a key not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of a key type or curve this package does not read.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The members of the key's own a type holds, in RFC 7517's order: public
+# ones first.
+function member_names(key_type: str) -> [str]
+    if key_type == "RSA"
+        return ["n", "e", "d", "p", "q", "dp", "dq", "qi"]
+
+    if key_type == "EC"
+        return ["x", "y", "d"]
+
+    if key_type == "OKP"
+        return ["x", "d"]
+
+    if key_type == "oct"
+        return ["k"]
+    return []
+
+# The members a key of `key_type` must hold to be a key at all: its public
+# ones, and `k` for a secret.
+function required_names(key_type: str) -> [str]
+    if key_type == "RSA"
+        return ["n", "e"]
+
+    if key_type == "EC"
+        return ["x", "y"]
+
+    if key_type == "OKP"
+        return ["x"]
+    return ["k"]
+
+# The members that are secret in a key of `key_type`.
+function private_names(key_type: str) -> [str]
+    if key_type == "RSA"
+        return ["d", "p", "q", "dp", "dq", "qi"]
+
+    if key_type == "EC" || key_type == "OKP"
+        return ["d"]
+    return ["k"]
+
+# The bytes of a coordinate, and of `d`, on the curve `curve` (RFC 7518
+# § 6.2.1.2, RFC 8037 § 2); 0 for a curve this package does not know.
+function curve_size(curve: str) -> i64
+    return match curve
+        "P-256"   => 32
+        "P-384"   => 48
+        "P-521"   => 66
+        "Ed25519" => 32
+        "X25519"  => 32
+        "Ed448"   => 57
+        "X448"    => 56
+        _         => 0
+
+# Whether `name` is one of `names`.
+function is_one_of(name: str, names: [str]) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# The text of the member `name` of `members`, "" where it is absent.
+function text_member(members: {str: json.Value}, name: str) -> str?
+    match members[name]
+        .err _ => return ok("")
+        .ok v =>
+            match json.text_of(v)
+                .ok t => return ok(t)
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"a JWK's \"{name}\" is {json.kind_of(v)}, where a text was expected"
+                )
+
+# The bytes the member `name` holds, base64url with no padding.
+function bytes_member(name: str, v: json.Value) -> [u8]?
+    text = match json.text_of(v)
+        .ok t => t
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a JWK's \"{name}\" is {json.kind_of(v)}, where base64url text was expected"
+        )
+
+    match bytes.parse_base64_url_unpadded(text)
+        .ok b  => return ok(b)
+        .err e => return fail(code: INVALID, msg: f"a JWK's \"{name}\" is not base64url without padding: {e.msg}")
+
+# The key `v` writes.
+function read(v: json.Value) -> Jwk?
+    members = match json.members_of(v)
+        .ok m  => m
+        .err _ => return fail(code: INVALID, msg: f"a JWK is a JSON object, and {json.kind_of(v)} was found")
+
+    if members["kty"].is_err()
+        return fail(code: INVALID, msg: "a JWK has no \"kty\"")
+    key_type = text_member(members, name: "kty")?
+
+    if key_type != "RSA" && key_type != "EC" && key_type != "OKP" && key_type != "oct"
+        return fail(code: UNSUPPORTED, msg: f"a JWK of the key type \"{key_type}\": RSA, EC, OKP and oct are read")
+    curve = text_member(members, name: "crv")?
+
+    if key_type == "EC" || key_type == "OKP"
+        if curve == ""
+            return fail(code: INVALID, msg: f"a JWK of the type {key_type} has no \"crv\"")
+
+        if curve_size(curve) == 0
+            return fail(code: UNSUPPORTED, msg: f"a JWK on the curve \"{curve}\", which this package does not read")
+
+        if key_type == "EC" && curve != "P-256" && curve != "P-384" && curve != "P-521"
+            return fail(code: INVALID, msg: f"an EC JWK on \"{curve}\", an OKP curve")
+
+        if key_type == "OKP" && (curve == "P-256" || curve == "P-384" || curve == "P-521")
+            return fail(code: INVALID, msg: f"an OKP JWK on \"{curve}\", an EC curve")
+
+    if key_type == "RSA" && !members["oth"].is_err()
+        return fail(
+            code: UNSUPPORTED,
+            msg: "an RSA JWK of more than two primes (\"oth\"), which no system's RSA here reads"
+        )
+    own = member_names(key_type)
+    material: {str: [u8]} @= {}
+    extra: {str: json.Value} @= {}
+    operations: [str] @= []
+    chain: [[u8]] @= []
+    known = ["kty", "crv", "kid", "use", "key_ops", "alg", "x5c"]
+
+    for name in keys(members)
+        value = members[name].must()
+
+        if is_one_of(name, names: own)
+            material[name] @ bytes_member(name, v: value)?
+        else if name == "key_ops"
+            operations @ text_list(name: name, v: value)?
+        else if name == "x5c"
+            chain @ certificates(value)?
+        else if !is_one_of(name, names: known)
+            extra[name] @ value
+
+    for name in required_names(key_type)
+        if material[name].is_err()
+            return fail(code: INVALID, msg: f"a JWK of the type {key_type} has no \"{name}\"")
+
+    seen: {str: bool} @= {}
+
+    for name in operations
+        if !seen[name].is_err()
+            return fail(code: INVALID, msg: f"a JWK's \"key_ops\" holds \"{name}\" twice")
+        seen[name] @ true
+
+    sized = Jwk(
+        key_type: key_type,
+        curve: curve,
+        id: text_member(members, name: "kid")?,
+        usage: text_member(members, name: "use")?,
+        operations: operations,
+        algorithm: text_member(members, name: "alg")?,
+        material: material,
+        chain: chain,
+        extra: extra
+    )
+    check_lengths(sized)?
+    return ok(sized)
+
+# The texts of the list `v`, the member `name`.
+function text_list(name: str, v: json.Value) -> [str]?
+    items = match json.items_of(v)
+        .ok l  => l
+        .err _ => return fail(code: INVALID, msg: f"a JWK's \"{name}\" is {json.kind_of(v)}, where a list was expected")
+
+    texts: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t => texts @ texts.push(t)
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"a JWK's \"{name}\" holds {json.kind_of(item)}, where texts were expected"
+            )
+
+    return ok(texts)
+
+# The certificates of `x5c`: a list of standard base 64, padded (RFC 7517
+# § 4.7).
+function certificates(v: json.Value) -> [[u8]]?
+    texts = text_list(name: "x5c", v: v)?
+    out: [[u8]] @= []
+
+    for text in texts
+        match bytes.parse_base64(text)
+            .ok der =>
+                if der.len() == 0
+                    return fail(code: INVALID, msg: "a JWK's \"x5c\" holds an empty certificate")
+                out @ out.push(der)
+            .err e => return fail(code: INVALID, msg: f"a JWK's \"x5c\" holds text that is not base 64: {e.msg}")
+
+    return ok(out)
+
+# Whether the lengths of `key`'s members are those its curve asks: every
+# coordinate and `d` exactly as long, and no member empty.
+function check_lengths(key: Jwk) -> ()?
+    size = curve_size(key.curve)
+
+    for name in keys(key.material)
+        got = key.material[name].must()
+
+        if got.len() == 0 && key.key_type != "oct"
+            return fail(code: INVALID, msg: f"a JWK's \"{name}\" is empty")
+
+        if (key.key_type == "EC" || key.key_type == "OKP") && got.len() != size
+            return fail(
+                code: INVALID,
+                msg: f"a JWK on {key.curve} whose \"{name}\" holds {got.len()} bytes, where {size} are its curve's"
+            )
+
+    return ok()
+
+# `key` as its JSON object, members in RFC 7517's order and `extra` last.
+function write(key: Jwk) -> json.Value
+    members: {str: json.Value} @= {}
+    members["kty"] @ .text(v: key.key_type)
+
+    if key.curve != ""
+        members["crv"] @ .text(v: key.curve)
+
+    if key.id != ""
+        members["kid"] @ .text(v: key.id)
+
+    if key.usage != ""
+        members["use"] @ .text(v: key.usage)
+
+    if key.operations.len() > 0
+        ops: [json.Value] @= []
+
+        for op in key.operations
+            ops @ ops.push(.text(v: op))
+
+        members["key_ops"] @ .list(items: ops)
+
+    if key.algorithm != ""
+        members["alg"] @ .text(v: key.algorithm)
+    own = member_names(key.key_type)
+
+    for name in own
+        match key.material[name]
+            .ok b  => members[name] @ .text(v: bytes.format_base64_url_unpadded(b))
+            .err _ => _ = 0
+
+    for name in keys(key.material)
+        if !is_one_of(name, names: own)
+            members[name] @ .text(v: bytes.format_base64_url_unpadded(key.material[name].must()))
+
+    if key.chain.len() > 0
+        certs: [json.Value] @= []
+
+        for der in key.chain
+            certs @ certs.push(.text(v: bytes.format_base64(der)))
+
+        members["x5c"] @ .list(items: certs)
+
+    for name in keys(key.extra)
+        if members[name].is_err()
+            members[name] @ key.extra[name].must()
+
+    return .object(members: members)
+
+# Whether `key` holds a secret.
+function is_private(key: Jwk) -> bool
+    if key.key_type == "oct"
+        return true
+    return !key.material["d"].is_err()
+
+# The operation a public key is used for in place of a private key's.
+function public_operation(op: str) -> str
+    return match op
+        "sign"      => "verify"
+        "decrypt"   => "encrypt"
+        "unwrapKey" => "wrapKey"
+        _           => op
+
+# `key` with its secret members taken out, its private operations turned to
+# their public ones.
+function public_of(key: Jwk) -> Jwk?
+    if key.key_type == "oct"
+        return fail(code: INVALID, msg: "an oct key has no public half: its one member is the secret")
+    secret = private_names(key.key_type)
+    material: {str: [u8]} @= {}
+
+    for name in keys(key.material)
+        if !is_one_of(name, names: secret)
+            material[name] @ key.material[name].must()
+
+    operations: [str] @= []
+
+    for op in key.operations
+        public = public_operation(op)
+
+        if !is_one_of(public, names: operations)
+            operations @ operations.push(public)
+
+    return ok(
+        Jwk(key_type: key.key_type, curve: key.curve, id: key.id, usage: key.usage, operations: operations, algorithm: key.algorithm, material: material, chain: key.chain, extra: key.extra)
+    )
+
+# The JSON RFC 7638 digests: the required members in the order of their
+# names, no white space.
+function thumbprint_input(key: Jwk) -> str?
+    members: {str: json.Value} @= {}
+    names: [str] @= ["kty"]
+
+    if key.key_type == "EC" || key.key_type == "OKP"
+        names @ names.push("crv")
+
+    for name in required_names(key.key_type)
+        names @ names.push(name)
+
+    for name in sort(names)
+        if name == "kty"
+            members["kty"] @ .text(v: key.key_type)
+        else if name == "crv"
+            members["crv"] @ .text(v: key.curve)
+        else
+            match key.material[name]
+                .ok b => members[name] @ .text(v: bytes.format_base64_url_unpadded(b))
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"a thumbprint of a {key.key_type} key without its \"{name}\""
+                )
+
+    return json.format(.object(members: members))
+
+# `key`'s thumbprint by `algorithm` (RFC 7638).
+function thumbprint(key: Jwk, algorithm: crypto.Algorithm) -> [u8]?
+    input = thumbprint_input(key)?
+    state @= crypto.start(algorithm)
+    crypto.update_text(@state, input)
+    return ok(crypto.digest(state))
+
+# Whether `key`'s own `alg`, `use` and `key_ops` allow it to be used by the
+# algorithm named `algorithm` for `operation`, one of `sign`, `verify`,
+# `encrypt`, `decrypt`, `wrapKey`, `unwrapKey` or `deriveKey`; the message
+# says what refused it.
+function allows(key: Jwk, algorithm: str, operation: str) -> ()?
+    if key.algorithm != "" && key.algorithm != algorithm
+        return fail(code: INVALID, msg: f"the key \"{key.id}\" serves {key.algorithm} alone, and {algorithm} was asked")
+    signing = operation == "sign" || operation == "verify"
+
+    if key.usage == "sig" && !signing
+        return fail(
+            code: INVALID,
+            msg: f"the key \"{key.id}\" is for signatures (\"use\": \"sig\"), and {operation} was asked"
+        )
+
+    if key.usage == "enc" && signing
+        return fail(
+            code: INVALID,
+            msg: f"the key \"{key.id}\" is for encryption (\"use\": \"enc\"), and {operation} was asked"
+        )
+
+    if key.usage != "" && key.usage != "sig" && key.usage != "enc"
+        return fail(code: INVALID, msg: f"the key \"{key.id}\" has the use \"{key.usage}\", which allows nothing here")
+
+    if key.operations.len() == 0
+        return ok()
+
+    for op in key.operations
+        if op == operation || operation == "deriveKey" && op == "deriveBits"
+            return ok()
+
+    return fail(
+        code: INVALID,
+        msg: f"the key \"{key.id}\" allows {key.operations.join(", ")}, and {operation} was asked"
+    )
+
+test "read: an RSA public key, RFC 7517 Appendix A.1's second, and its members' bytes"
+    text = "{\"kty\":\"RSA\",\"n\": \"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw\",\"e\":\"AQAB\",\"alg\":\"RS256\",\"kid\":\"2011-04-29\"}"
+    key = read(json.parse(text).must()).must()
+    assert key.key_type == "RSA" && key.id == "2011-04-29" && key.algorithm == "RS256"
+    assert key.material["n"].must().len() == 256
+    assert key.material["e"].must() == [1, 0, 1]
+    assert !is_private(key)
+
+test "read: refused, no kty, an unknown kty, an EC key without crv, a coordinate of the wrong length, padded base 64, oth"
+    cases = [
+        "{\"n\":\"AQAB\",\"e\":\"AQAB\"}"
+        "{\"kty\":\"DSA\"}"
+        "{\"kty\":\"EC\",\"x\":\"AQAB\",\"y\":\"AQAB\"}"
+        "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"AQAB\",\"y\":\"AQAB\"}"
+        "{\"kty\":\"oct\",\"k\":\"AQ==\"}"
+        "{\"kty\":\"RSA\",\"n\":\"AQAB\",\"e\":\"AQAB\",\"d\":\"AQAB\",\"oth\":[]}"
+        "[]"
+        "{\"kty\":\"oct\"}"
+        "{\"kty\":\"oct\",\"k\":\"AQ\",\"key_ops\":[\"sign\",\"sign\"]}"
+        "{\"kty\":\"OKP\",\"crv\":\"P-256\",\"x\":\"AQ\"}"
+    ]
+    codes = [INVALID, UNSUPPORTED, INVALID, INVALID, INVALID, UNSUPPORTED, INVALID, INVALID, INVALID, INVALID]
+
+    for at in range(from: 0, to: cases.len())
+        match read(json.parse(cases[at]).must())
+            .ok _  => assert false
+            .err e => assert e.code == codes[at]
+
+test "write: members in RFC 7517's order, extra after, read back the same"
+    text = "{\"x5t\":\"abc\",\"k\":\"AQID\",\"kid\":\"one\",\"kty\":\"oct\",\"use\":\"sig\"}"
+    key = read(json.parse(text).must()).must()
+    assert json.format(write(key)).must() == "{\"kty\":\"oct\",\"kid\":\"one\",\"use\":\"sig\",\"k\":\"AQID\",\"x5t\":\"abc\"}"
+    assert read(write(key)).must() == key
+
+test "public_of: an EC private key's d taken out and sign turned to verify; an oct key refused"
+    text = "{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\",\"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\",\"d\":\"jpsQnnGQmL-YBIffH1136cspYG6-0iY7X1fCE9-E9LI\",\"key_ops\":[\"sign\"]}"
+    key = read(json.parse(text).must()).must()
+    assert is_private(key)
+    public = public_of(key).must()
+    assert !is_private(public) && public.operations == ["verify"] && public.material["x"].must().len() == 32
+    assert public_of(read(json.parse("{\"kty\":\"oct\",\"k\":\"AQ\"}").must()).must()).is_err()
+
+test "thumbprint: RFC 7638 § 3.1's RSA key, its JSON and its SHA-256"
+    text = "{\"kty\":\"RSA\",\"n\":\"0vx7agoebGcQSuuPiLJXZptN9nndrQmbXEps2aiAFbWhM78LhWx4cbbfAAtVT86zwu1RK7aPFFxuhDR1L6tSoc_BJECPebWKRXjBZCiFV4n3oknjhMstn64tZ_2W-5JsGY4Hc5n9yBXArwl93lqt7_RN5w6Cf0h4QyQ5v-65YGjQR0_FDW2QvzqY368QQMicAtaSqzs8KJZgnYb9c7d0zgdAZHzu6qMQvRL5hajrn1n91CbOpbISD08qNLyrdkt-bFTWhAI4vMQFh6WeZu0fM4lFd2NcRwr3XPksINHaQ-G_xBniIqbw0Ls1jF44-csFCur-kEgU8awapJzKnqDKgw\",\"e\":\"AQAB\",\"alg\":\"RS256\",\"kid\":\"2011-04-29\"}"
+    key = read(json.parse(text).must()).must()
+    assert thumbprint_input(key).must().slice(from: 0, to: 30) == "{\"e\":\"AQAB\",\"kty\":\"RSA\",\"n\":\"0"
+    assert bytes.format_base64_url_unpadded(thumbprint(key, algorithm: .sha256).must()) == "NzbLsXh8uDCcd-6MNwXF4W_7noWXFZAfHkxZsRGC9Xs"
+
+test "thumbprint: an EC key and an OKP key, the members their types require, a missing one refused"
+    ec = read(
+        json.parse("{\"kty\":\"EC\",\"crv\":\"P-256\",\"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\",\"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\",\"kid\":\"a\"}").must()
+    ).must()
+    assert thumbprint_input(ec).must() == "{\"crv\":\"P-256\",\"kty\":\"EC\",\"x\":\"f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU\",\"y\":\"x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0\"}"
+    okp = read(
+        json.parse("{\"kty\":\"OKP\",\"crv\":\"Ed25519\",\"x\":\"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo\"}").must()
+    ).must()
+    assert bytes.format_base64_url_unpadded(thumbprint(okp, algorithm: .sha256).must()) == "kPrK_qmxVWaYVA9wwBF6Iuo3vVzz7TxHCTwXBygrS4k"
+    bare: {str: [u8]} = {}
+    assert thumbprint_input(
+        Jwk(key_type: "RSA", curve: "", id: "", usage: "", operations: [], algorithm: "", material: bare, chain: [], extra: {})
+    ).is_err()
+
+test "allows: alg, use and key_ops each refusing, deriveBits read as deriveKey, and a key with none allowing all"
+    open = read(json.parse("{\"kty\":\"oct\",\"k\":\"AQ\"}").must()).must()
+    assert !allows(open, algorithm: "HS256", operation: "sign").is_err()
+    held = read(json.parse("{\"kty\":\"oct\",\"k\":\"AQ\",\"alg\":\"HS512\"}").must()).must()
+    assert allows(held, algorithm: "HS256", operation: "sign").is_err()
+    enc = read(json.parse("{\"kty\":\"oct\",\"k\":\"AQ\",\"use\":\"enc\"}").must()).must()
+    assert allows(enc, algorithm: "HS256", operation: "verify").is_err()
+    assert !allows(enc, algorithm: "dir", operation: "decrypt").is_err()
+    ops = read(json.parse("{\"kty\":\"oct\",\"k\":\"AQ\",\"key_ops\":[\"deriveBits\"]}").must()).must()
+    assert !allows(ops, algorithm: "ECDH-ES", operation: "deriveKey").is_err()
+    assert allows(ops, algorithm: "HS256", operation: "verify").is_err()

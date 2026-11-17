@@ -1,0 +1,223 @@
+# A JWS in the general and the flattened JSON serializations (RFC 7515
+# § 7.2): several signatures over one payload, each with a protected and an
+# unprotected header, written and verified.
+
+use bytes
+use jose/internal/compact
+use jose/internal/segments
+use json
+
+# The code of a serialization or an argument refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a `kid` no key has.
+constant NOT_FOUND: str
+    "not_found"
+
+# One signer, as the face's `Signer` holds it, its key as JSON.
+record Signing
+    # The key's JWK.
+    key: json.Value
+    # The algorithm's JOSE name.
+    algorithm: str
+    # The protected header's other members.
+    protected: {str: json.Value}
+    # The unprotected header's members.
+    unprotected: {str: json.Value}
+
+# `payload` signed by each of `signers`: the general serialization, or the
+# flattened one where `flattened`, which takes one signer.
+function sign(payload: [u8], signers: [Signing], flattened: bool) -> str?
+    if signers.len() == 0
+        return fail(code: INVALID, msg: "a JWS in the JSON serialization signed by no signer")
+    signatures: [json.Value] @= []
+    encoded_all: bool @= true
+
+    for at in range(from: 0, to: signers.len())
+        s = signers[at]
+        m = compact.made(payload, key: s.key, name: s.algorithm, header: s.protected, unprotected: s.unprotected)?
+
+        if at == 0
+            encoded_all @ m.encoded
+        else if m.encoded != encoded_all
+            return fail(code: INVALID, msg: "signatures that disagree on \"b64\", which RFC 7797 § 3 forbids")
+        one: {str: json.Value} @= {}
+        one["protected"] @ .text(v: m.protected_segment)
+
+        if s.unprotected.len() > 0
+            one["header"] @ .object(members: s.unprotected)
+        one["signature"] @ .text(v: bytes.format_base64_url_unpadded(m.signature))
+        signatures @ signatures.push(.object(members: one))
+
+    out: {str: json.Value} @= {}
+    out["payload"] @ .text(v: compact.payload_segment(payload, encoded: encoded_all)?)
+
+    if flattened
+        for name in keys(json.members_of(signatures[0]).must())
+            out[name] @ json.member(signatures[0], key: name).must()
+    else
+        out["signatures"] @ .list(items: signatures)
+    return json.format(.object(members: out))
+
+# One signature of a JSON serialization, read.
+record Entry
+    # The protected header's base64url, "" for none.
+    segment: str
+    # Its members.
+    protected: {str: json.Value}
+    # The unprotected header's members.
+    unprotected: {str: json.Value}
+    # The signature.
+    signature: [u8]
+
+# The signature object `v` holds.
+function entry(v: json.Value) -> Entry?
+    members = match json.members_of(v)
+        .ok m  => m
+        .err _ => return fail(code: INVALID, msg: f"a signature is {json.kind_of(v)}, where an object was expected")
+
+    segment = segments.text_of(members, name: "protected")?
+    protected: {str: json.Value} @= {}
+
+    if segment != ""
+        protected @ segments.header_members(segment: segment, what: "a protected header")?
+    unprotected: {str: json.Value} @= {}
+
+    match members["header"]
+        .err _ => _ = 0
+        .ok h =>
+            match json.members_of(h)
+                .ok m => unprotected @ m
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"an unprotected header is {json.kind_of(h)}, where an object was expected"
+                )
+
+    if members["protected"].is_err() && members["header"].is_err()
+        return fail(code: INVALID, msg: "a signature with neither a protected nor an unprotected header")
+
+    if members["signature"].is_err()
+        return fail(code: INVALID, msg: "a signature object with no \"signature\"")
+    signature = segments.decoded(segment: segments.text_of(members, name: "signature")?, what: "a signature")?
+    return ok(Entry(segment: segment, protected: protected, unprotected: unprotected, signature: signature))
+
+# The two headers of `e` joined, which may share no member.
+function joined(e: Entry) -> {str: json.Value}?
+    out: {str: json.Value} @= e.protected
+
+    for name in keys(e.unprotected)
+        if !out[name].is_err()
+            return fail(code: INVALID, msg: f"\"{name}\" stands in both headers, which RFC 7515 § 7.2.1 forbids")
+        out[name] @ e.unprotected[name].must()
+
+    return ok(out)
+
+# `e` verified over `payload_text` by one of `trusted` with one of
+# `accepted`; the payload it signs answered.
+function verify_entry(e: Entry, payload_text: str, trusted: [json.Value], accepted: [str]) -> compact.Verified?
+    header = joined(e)?
+    encoded = segments.encoded_payload(protected: e.protected, unprotected: e.unprotected)?
+    facts = segments.accepted_facts(header, accepted: accepted)?
+    payload: [u8] @= bytes.from_text(payload_text)
+
+    if encoded
+        payload @ segments.decoded(segment: payload_text, what: "the JWS payload")?
+    serving = segments.candidates(segments.readable(trusted), joined: header, facts: facts, operation: "verify")?
+    input = segments.signing_input(protected_segment: e.segment, payload: payload, encoded: encoded)
+    segments.verify_by_any(input: input, signature: e.signature, serving: serving, facts: facts)?
+    return ok(compact.Verified(protected: e.protected, unprotected: e.unprotected, payload: payload))
+
+# The JWS `text` verified: the first signature one of `trusted` verifies.
+function verify(text: str, trusted: [json.Value], accepted: [str]) -> compact.Verified?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"a JWS in the JSON serialization is not JSON: {e.msg}")
+
+    members = match json.members_of(v)
+        .ok m => m
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a JWS in the JSON serialization is {json.kind_of(v)}, where an object was expected"
+        )
+
+    if members["payload"].is_err()
+        return fail(code: INVALID, msg: "a JWS in the JSON serialization with no \"payload\"")
+    payload_text = segments.text_of(members, name: "payload")?
+    entries: [json.Value] @= []
+
+    match members["signatures"]
+        .ok list =>
+            for name in ["protected", "header", "signature"]
+                if !members[name].is_err()
+                    return fail(code: INVALID, msg: f"a general JWS with \"{name}\" beside \"signatures\"")
+
+            match json.items_of(list)
+                .ok items => entries @ items
+                .err _    => return fail(code: INVALID, msg: "\"signatures\" is not a list")
+        .err _ => entries @ [v]
+
+    if entries.len() == 0
+        return fail(code: INVALID, msg: "a JWS with no signature")
+    reasons: [str] @= []
+    every_absent: bool @= true
+
+    for item in entries
+        match entry(item)
+            .err e =>
+                every_absent @ false
+                reasons @ reasons.push(e.msg)
+            .ok one =>
+                match verify_entry(one, payload_text: payload_text, trusted: trusted, accepted: accepted)
+                    .ok got => return ok(got)
+                    .err e =>
+                        if e.code != NOT_FOUND
+                            every_absent @ false
+
+                        if e.code != INVALID && e.code != NOT_FOUND
+                            return fail(code: e.code, msg: e.msg)
+                        reasons @ reasons.push(e.msg)
+
+    if every_absent
+        return fail(code: NOT_FOUND, msg: reasons.join("; "))
+    return fail(code: INVALID, msg: f"no signature holds: {reasons.join("; ")}")
+
+test "sign and verify: two signers in the general form, the flattened form of one, a member in both headers refused"
+    a = json.parse("{\"kty\":\"oct\",\"kid\":\"a\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\"}").must()
+    b = json.parse(
+        "{\"kty\":\"oct\",\"kid\":\"b\",\"k\":\"AyM1SysPpbyDfgZld3umj1qzKObwVMkoqQ-EstJQLr_T-1qS0gZH75aKtMN3Yj0iPS4hcgUuTwjAzZr1Z9CAow\"}"
+    ).must()
+    none: {str: json.Value} = {}
+    note: {str: json.Value} = {"note": .text(v: "x")}
+    signers = [
+        Signing(key: a, algorithm: "HS256", protected: none, unprotected: note)
+        Signing(key: b, algorithm: "HS512", protected: none, unprotected: none)
+    ]
+    text = sign(bytes.from_text("hello"), signers: signers, flattened: false).must()
+    got = verify(text, trusted: [b], accepted: ["HS512"]).must()
+    assert got.payload == bytes.from_text("hello")
+    first = verify(text, trusted: [a], accepted: ["HS256"]).must()
+    assert first.unprotected["note"].must() == .text(v: "x")
+    flat = sign(bytes.from_text("hello"), signers: [signers[0]], flattened: true).must()
+    assert !json.members_of(json.parse(flat).must()).must()["signature"].is_err()
+    assert verify(flat, trusted: [a], accepted: ["HS256"]).must().payload == bytes.from_text("hello")
+    both = [Signing(key: a, algorithm: "HS256", protected: note, unprotected: note)]
+    assert sign(bytes.from_text("hello"), signers: both, flattened: true).is_err()
+    assert sign(bytes.from_text("hello"), signers: [], flattened: false).is_err()
+
+test "verify: refused, no payload, flattened members beside signatures, an empty list, no key with the kid"
+    a = json.parse("{\"kty\":\"oct\",\"kid\":\"a\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\"}").must()
+    assert verify("{\"signatures\":[]}", trusted: [a], accepted: ["HS256"]).is_err()
+    assert verify("{\"payload\":\"\",\"signatures\":[],\"signature\":\"\"}", trusted: [a], accepted: ["HS256"]).is_err()
+    assert verify("{\"payload\":\"\",\"signatures\":[]}", trusted: [a], accepted: ["HS256"]).is_err()
+    none: {str: json.Value} = {}
+    other = json.parse("{\"kty\":\"oct\",\"kid\":\"z\",\"k\":\"hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYg\"}").must()
+    text = sign(
+        bytes.from_text("x"),
+        signers: [Signing(key: other, algorithm: "HS256", protected: none, unprotected: none)],
+        flattened: false
+    ).must()
+
+    match verify(text, trusted: [a], accepted: ["HS256"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND

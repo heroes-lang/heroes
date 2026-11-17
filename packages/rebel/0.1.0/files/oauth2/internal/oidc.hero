@@ -1,0 +1,139 @@
+# What OpenID Connect Core § 3.1.3.7 asks of an ID token beyond `jose`'s
+# checks: `azp` where `aud` holds several, the nonce, `auth_time` against
+# `max_age`, and `at_hash` against the access token issued beside it.
+
+use bytes
+use crypto
+use jose
+use json
+use time
+
+# The code of an ID token refused.
+constant INVALID: str
+    "invalid"
+
+# The digest `at_hash` is made with for the algorithm named `alg`: the hash
+# of its signature, SHA-512 for Ed25519 (OpenID Connect Core § 3.1.3.6 and
+# its errata).
+function digest_of(alg: str) -> crypto.Algorithm
+    if alg == "HS384" || alg == "RS384" || alg == "PS384" || alg == "ES384"
+        return .sha384
+
+    if alg == "HS512" || alg == "RS512" || alg == "PS512" || alg == "EdDSA" || alg == "Ed25519"
+        return .sha512
+    return .sha256
+
+# The `at_hash` of `access_token` under `alg`: the left half of its digest,
+# base64url.
+function access_hash(access_token: str, alg: str) -> str
+    full = match digest_of(alg)
+        .sha384 => crypto.sha384_text(access_token)
+        .sha512 => crypto.sha512_text(access_token)
+        .md5 | .sha1 | .sha224 | .sha256 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 => crypto.sha256_text(
+            access_token
+        )
+
+    return bytes.format_base64_url_unpadded(full.slice(from: 0, to: full.len() / 2))
+
+# Whether `claims`, of a token signed by `alg`, answer OpenID Connect's
+# checks for `client_id`, `nonce`, `max_age` and `access_token`.
+function check(claims: {str: json.Value}, alg: str, client_id: str, nonce: str, max_age: i64, access_token: str, leeway: time.Duration, now: time.Instant) -> ()?
+    audiences = jose.claim_texts(claims, name: "aud")?
+    party: str @= ""
+
+    if !claims["azp"].is_err()
+        party @ jose.claim_text(claims, name: "azp")?
+
+        if party != client_id
+            return fail(code: INVALID, msg: f"the ID token's azp is \"{party}\", and the client is \"{client_id}\"")
+
+    if audiences.len() > 1 && party == ""
+        return fail(code: INVALID, msg: "an ID token for several audiences with no azp")
+
+    if nonce != ""
+        got = match jose.claim_text(claims, name: "nonce")
+            .ok t  => t
+            .err _ => return fail(code: INVALID, msg: "the ID token holds no nonce, and one was sent")
+
+        if got != nonce
+            return fail(code: INVALID, msg: "the ID token's nonce is not the one sent")
+
+    if max_age > 0
+        auth = match jose.claim_time(claims, name: "auth_time")
+            .ok t => t
+            .err e => return fail(
+                code: INVALID,
+                msg: f"max_age was asked, and the ID token's auth_time is not read: {e.msg}"
+            )
+
+        allowed = time.sum(a: time.seconds(max_age)?, b: leeway)?
+
+        if time.is_after(a: now, b: time.add(auth, d: allowed)?)
+            return fail(code: INVALID, msg: f"the user authenticated more than {max_age} seconds ago")
+
+    if access_token != "" && !claims["at_hash"].is_err()
+        got = jose.claim_text(claims, name: "at_hash")?
+
+        if got != access_hash(access_token: access_token, alg: alg)
+            return fail(code: INVALID, msg: "the ID token's at_hash is not the access token's")
+    return ok()
+
+test "access_hash: OpenID Connect Core Appendix A.3's access token and at_hash, RS256"
+    assert access_hash(access_token: "jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", alg: "RS256") == "77QmUPtjPfzWtF2AnpK9RQ"
+
+test "digest_of: SHA-256, SHA-384, SHA-512, Ed25519's SHA-512"
+    assert digest_of("RS256") == .sha256
+    assert digest_of("ES384") == .sha384
+    assert digest_of("PS512") == .sha512
+    assert digest_of("EdDSA") == .sha512
+
+test "check: one audience, several with azp and without, a nonce right and wrong, max_age, at_hash"
+    now = time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
+    none = time.nanoseconds(0)
+    one = json.members_of(json.parse("{\"aud\":\"c\",\"nonce\":\"n\",\"auth_time\":900}").must()).must()
+    assert !check(one, alg: "RS256", client_id: "c", nonce: "n", max_age: 100, access_token: "", leeway: none, now: now).is_err()
+    assert check(
+        one,
+        alg: "RS256",
+        client_id: "c",
+        nonce: "m",
+        max_age: 0,
+        access_token: "",
+        leeway: none,
+        now: now
+    ).is_err()
+    assert check(
+        one,
+        alg: "RS256",
+        client_id: "c",
+        nonce: "",
+        max_age: 50,
+        access_token: "",
+        leeway: none,
+        now: now
+    ).is_err()
+    many = json.members_of(json.parse("{\"aud\":[\"c\",\"d\"]}").must()).must()
+    assert check(
+        many,
+        alg: "RS256",
+        client_id: "c",
+        nonce: "",
+        max_age: 0,
+        access_token: "",
+        leeway: none,
+        now: now
+    ).is_err()
+    party = json.members_of(json.parse("{\"aud\":[\"c\",\"d\"],\"azp\":\"c\"}").must()).must()
+    assert !check(party, alg: "RS256", client_id: "c", nonce: "", max_age: 0, access_token: "", leeway: none, now: now).is_err()
+    hashed = json.members_of(json.parse("{\"aud\":\"c\",\"at_hash\":\"77QmUPtjPfzWtF2AnpK9RQ\"}").must()).must()
+    assert !check(hashed, alg: "RS256", client_id: "c", nonce: "", max_age: 0, access_token: "jHkWEdUXMU1BwAsC4vtUsZwnNvTIxEl0z9K3vx5KF0Y", leeway: none, now: now).is_err()
+    assert check(
+        hashed,
+        alg: "RS256",
+        client_id: "c",
+        nonce: "",
+        max_age: 0,
+        access_token: "other",
+        leeway: none,
+        now: now
+    ).is_err()

@@ -1,0 +1,275 @@
+# A JWT's claims read and checked (RFC 7519 § 4.1): the times against an
+# instant with a leeway, the issuer, the audience and the subject against
+# what the verifier expects, and the claims it requires. PyJWT's order and
+# its rules: `exp` refuses at or after it, `nbf` and `iat` refuse after the
+# time, each widened by the leeway, and a token naming an audience is
+# refused by a verifier that names none.
+
+use bytes
+use json
+use time
+
+# The code of a claim refused.
+constant INVALID: str
+    "invalid"
+
+# The code of a claim absent.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a time past what a `time.Instant` holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The claims set a JWT's `payload` holds: a JSON object.
+function of_payload(payload: [u8]) -> {str: json.Value}?
+    text = match bytes.to_text(payload)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "a JWT whose payload is not UTF-8")
+
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"a JWT whose payload is not JSON: {e.msg}")
+
+    match json.members_of(v)
+        .ok m => return ok(m)
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a JWT whose claims set is {json.kind_of(v)}, where a JSON object was expected"
+        )
+
+# The number the claim `name` holds.
+function number_claim(claims: {str: json.Value}, name: str) -> f64?
+    v = match claims[name]
+        .ok found => found
+        .err _    => return fail(code: NOT_FOUND, msg: f"the token has no \"{name}\"")
+
+    match json.number_of(v)
+        .ok n => return ok(n)
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the claim \"{name}\" is {json.kind_of(v)}, where a NumericDate, a number, was expected"
+        )
+
+# The text the claim `name` holds.
+function text_claim(claims: {str: json.Value}, name: str) -> str?
+    v = match claims[name]
+        .ok found => found
+        .err _    => return fail(code: NOT_FOUND, msg: f"the token has no \"{name}\"")
+
+    match json.text_of(v)
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the claim \"{name}\" is {json.kind_of(v)}, where a text was expected"
+        )
+
+# The texts the claim `name` holds: one text, or a list of texts.
+function texts_claim(claims: {str: json.Value}, name: str) -> [str]?
+    v = match claims[name]
+        .ok found => found
+        .err _    => return fail(code: NOT_FOUND, msg: f"the token has no \"{name}\"")
+
+    match json.text_of(v)
+        .ok t  => return ok([t])
+        .err _ => _ = 0
+
+    items = match json.items_of(v)
+        .ok l => l
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the claim \"{name}\" is {json.kind_of(v)}, where a text or a list of texts was expected"
+        )
+
+    out: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t => out @ out.push(t)
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the claim \"{name}\" holds {json.kind_of(item)}, where texts were expected"
+            )
+
+    return ok(out)
+
+# The instant `seconds` since 1970 names, its fraction kept to the
+# microsecond.
+function instant_of(seconds: f64, name: str) -> time.Instant?
+    if seconds != seconds || seconds > 9223372035.0 || seconds < -9223372035.0
+        return fail(code: DOES_NOT_FIT, msg: f"the claim \"{name}\", {seconds}, is past what a time.Instant holds")
+    whole: i64 @= seconds.to_i64().must()
+
+    if to_f64(whole) > seconds
+        whole @ whole - 1
+    micro = (seconds - to_f64(whole)) * 1000000.0
+    rounded: i64 @= micro.to_i64().must()
+
+    if micro - to_f64(rounded) >= 0.5
+        rounded @ rounded + 1
+
+    match time.from_unix(whole_seconds: whole, extra_nanoseconds: rounded * 1000)
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: DOES_NOT_FIT,
+            msg: f"the claim \"{name}\", {seconds}, is past what a time.Instant holds"
+        )
+
+# The seconds since 1970 of `t`, as a float.
+function seconds_of(t: time.Instant) -> f64
+    return to_f64(t.unix_nanoseconds) / 1000000000.0
+
+# Whether `claims` answer what the verifier expects at `now` with
+# `leeway`.
+function check(claims: {str: json.Value}, issuer: str, audience: str, subject: str, required: [str], leeway: time.Duration, now: time.Instant) -> ()?
+    if leeway.nanoseconds < 0
+        return fail(code: INVALID, msg: "a leeway below 0")
+
+    for name in required
+        if claims[name].is_err()
+            return fail(code: INVALID, msg: f"the token has no \"{name}\", which the rules require")
+
+    at = seconds_of(now)
+    slack = to_f64(leeway.nanoseconds) / 1000000000.0
+
+    if !claims["exp"].is_err()
+        exp = number_claim(claims, name: "exp")?
+
+        if at >= exp + slack
+            return fail(code: INVALID, msg: f"the token expired at {exp}, and it is judged at {at}")
+
+    if !claims["nbf"].is_err()
+        nbf = number_claim(claims, name: "nbf")?
+
+        if nbf > at + slack
+            return fail(code: INVALID, msg: f"the token is not valid before {nbf}, and it is judged at {at}")
+
+    if !claims["iat"].is_err()
+        iat = number_claim(claims, name: "iat")?
+
+        if iat > at + slack
+            return fail(code: INVALID, msg: f"the token was issued at {iat}, after the time it is judged at, {at}")
+
+    if issuer != ""
+        got = match text_claim(claims, name: "iss")
+            .ok t  => t
+            .err e => return fail(code: INVALID, msg: f"{e.msg}, and the issuer \"{issuer}\" is required")
+
+        if got != issuer
+            return fail(code: INVALID, msg: f"the token's issuer is \"{got}\", and \"{issuer}\" is required")
+
+    if subject != ""
+        got = match text_claim(claims, name: "sub")
+            .ok t  => t
+            .err e => return fail(code: INVALID, msg: f"{e.msg}, and the subject \"{subject}\" is required")
+
+        if got != subject
+            return fail(code: INVALID, msg: f"the token's subject is \"{got}\", and \"{subject}\" is required")
+
+    if claims["aud"].is_err()
+        if audience != ""
+            return fail(code: INVALID, msg: f"the token names no audience, and \"{audience}\" is required")
+        return ok()
+
+    named = match texts_claim(claims, name: "aud")
+        .ok t  => t
+        .err e => return fail(code: INVALID, msg: e.msg)
+
+    if audience == ""
+        return fail(code: INVALID, msg: f"the token is for the audience {named.join(", ")}, and the rules name none")
+
+    for a in named
+        if a == audience
+            return ok()
+
+    return fail(code: INVALID, msg: f"the token is for {named.join(", ")}, not for \"{audience}\"")
+
+test "check: RFC 7519 § 3.1's claims before and after their exp, a leeway, a negative leeway"
+    claims = json.members_of(
+        json.parse("{\"iss\":\"joe\",\"exp\":1300819380,\"http://example.com/is_root\":true}").must()
+    ).must()
+    before = time.from_unix(whole_seconds: 1300819379, extra_nanoseconds: 0).must()
+    at = time.from_unix(whole_seconds: 1300819380, extra_nanoseconds: 0).must()
+    none = time.nanoseconds(0)
+    assert !check(claims, issuer: "joe", audience: "", subject: "", required: ["exp"], leeway: none, now: before).is_err()
+    assert check(claims, issuer: "joe", audience: "", subject: "", required: [], leeway: none, now: at).is_err()
+    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(1).must(), now: at).is_err()
+    assert check(
+        claims,
+        issuer: "",
+        audience: "",
+        subject: "",
+        required: [],
+        leeway: time.nanoseconds(-1),
+        now: before
+    ).is_err()
+
+test "check: nbf and iat in the future, with and without a leeway, a time that is text"
+    claims = json.members_of(json.parse("{\"nbf\":100,\"iat\":100.5}").must()).must()
+    at = time.from_unix(whole_seconds: 99, extra_nanoseconds: 0).must()
+    assert check(
+        claims,
+        issuer: "",
+        audience: "",
+        subject: "",
+        required: [],
+        leeway: time.nanoseconds(0),
+        now: at
+    ).is_err()
+    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(2).must(), now: at).is_err()
+    text = json.members_of(json.parse("{\"exp\":\"tomorrow\"}").must()).must()
+    assert check(
+        text,
+        issuer: "",
+        audience: "",
+        subject: "",
+        required: [],
+        leeway: time.nanoseconds(0),
+        now: at
+    ).is_err()
+
+test "check: the audience as a text and as a list, absent, unexpected, another, not text"
+    at = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    none = time.nanoseconds(0)
+    one = json.members_of(json.parse("{\"aud\":\"api\"}").must()).must()
+    many = json.members_of(json.parse("{\"aud\":[\"web\",\"api\"]}").must()).must()
+    empty: {str: json.Value} = {}
+    assert !check(one, issuer: "", audience: "api", subject: "", required: [], leeway: none, now: at).is_err()
+    assert !check(many, issuer: "", audience: "api", subject: "", required: [], leeway: none, now: at).is_err()
+    assert check(many, issuer: "", audience: "mail", subject: "", required: [], leeway: none, now: at).is_err()
+    assert check(one, issuer: "", audience: "", subject: "", required: [], leeway: none, now: at).is_err()
+    assert check(empty, issuer: "", audience: "api", subject: "", required: [], leeway: none, now: at).is_err()
+    bad = json.members_of(json.parse("{\"aud\":[1]}").must()).must()
+    assert check(bad, issuer: "", audience: "api", subject: "", required: [], leeway: none, now: at).is_err()
+
+test "check: the issuer and the subject, matching, another, absent; a required claim missing"
+    at = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    none = time.nanoseconds(0)
+    claims = json.members_of(json.parse("{\"iss\":\"https://a.example\",\"sub\":\"ana\"}").must()).must()
+    assert !check(claims, issuer: "https://a.example", audience: "", subject: "ana", required: ["sub"], leeway: none, now: at).is_err()
+    assert check(
+        claims,
+        issuer: "https://b.example",
+        audience: "",
+        subject: "",
+        required: [],
+        leeway: none,
+        now: at
+    ).is_err()
+    assert check(claims, issuer: "", audience: "", subject: "bea", required: [], leeway: none, now: at).is_err()
+    assert check(claims, issuer: "", audience: "", subject: "", required: ["jti"], leeway: none, now: at).is_err()
+
+test "instant_of: whole seconds, a fraction, before 1970, past an Instant"
+    assert instant_of(1300819380.0, name: "exp").must().unix_nanoseconds == 1300819380000000000
+    assert instant_of(1.25, name: "exp").must().unix_nanoseconds == 1250000000
+    assert instant_of(-1.5, name: "exp").must().unix_nanoseconds == -1500000000
+    assert instant_of(99999999999999.0, name: "exp").is_err()
+
+test "texts_claim: a text, a list, absent"
+    claims = json.members_of(json.parse("{\"a\":\"x\",\"b\":[\"y\",\"z\"]}").must()).must()
+    assert texts_claim(claims, name: "a").must() == ["x"]
+    assert texts_claim(claims, name: "b").must() == ["y", "z"]
+
+    match texts_claim(claims, name: "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND

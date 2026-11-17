@@ -87,7 +87,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `strings`, `unicode` |  |
 | 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `io`, `hash` |  |
-| 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `url` |  |
+| 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
@@ -111,12 +111,12 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `i18n` | message catalogs (gettext), plural rules, numbers and dates written for a language, text ordered for a language, from CLDR; its tables in subpackages | `unicode`, `time`, `strings`, `numbers` |  |
 | 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
 | 4 | `serial` | serial ports listed, opened, set and read and written as a stream | `io`, `time` | `hero_serial.h` |
-| 4 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `json`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `time` |  |
 | 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
 | 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `strings`, `unicode`, `unicode/segment`, `markdown`, `tokenizer` |  |
 | 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `bytes`, `big`, `json`, `time` |  |
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
+| 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -138,10 +138,10 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
-| 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `fs`, `http`, `io`, `json`, `log`, `net`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
+| 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `http`, `io`, `json`, `log`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `http2`, `protobuf`, `compress`, `tls`, `time` |  |
 | 6 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
-| 6 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `http`, `url`, `json`, `jose`, `crypto`, `random`, `time` |  |
+| 6 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `threads`, `time`, `url` |  |
 | 6 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `strings`, `numbers`, `time`, `http` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `xml`, `time`, `numbers` |  |
 | 6 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `compress`, `bytes`, `image`, `time` |  |

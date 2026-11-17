@@ -1,0 +1,9 @@
+# Reaches Rebel's package `jose`, so that `heroes test` on this file runs the
+# tests of its face, its private modules and the floors under them (spec
+# § 12). It prints the JOSE name of the algorithm a JWT signed with an
+# RSA key most often names, `RS256`, on every run, touching no key.
+
+use <rebel>/jose
+
+function main()
+    print(jose.format_algorithm(.rs256))

@@ -1,0 +1,324 @@
+# Metadata documents: where a well-known document stands (RFC 8414 § 3.1,
+# RFC 9728 § 3.1, OpenID Connect Discovery § 4), a document's members read
+# with their kinds checked, and the `WWW-Authenticate` challenge read and
+# written (RFC 9110 § 11.6.1, RFC 6750 § 3, RFC 9728 § 5.1).
+
+use bytes
+use json
+use url
+
+# The code of a document, a URL or a challenge not of its form.
+constant INVALID: str
+    "invalid"
+
+# The code of a parameter or a document absent.
+constant NOT_FOUND: str
+    "not_found"
+
+# `target` read as an absolute `http://` or `https://` URL, `what` naming
+# it.
+function absolute(target: str, what: str) -> url.Url?
+    u = match url.parse(target)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"{what} \"{target}\" is no URL: {e.msg}")
+
+    if u.scheme != "https" && u.scheme != "http" || u.host == ""
+        return fail(code: INVALID, msg: f"{what} \"{target}\" is not an absolute http or https URL")
+
+    if u.fragment != "" || u.empty_fragment
+        return fail(code: INVALID, msg: f"{what} \"{target}\" holds a fragment")
+    return ok(u)
+
+# `base` read as an absolute `http://` or `https://` URL with no query and no
+# fragment, `what` naming it.
+function base_url(base: str, what: str) -> url.Url?
+    u = match url.parse(base)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"{what} \"{base}\" is no URL: {e.msg}")
+
+    if u.scheme != "https" && u.scheme != "http" || u.host == ""
+        return fail(code: INVALID, msg: f"{what} \"{base}\" is not an absolute http or https URL")
+
+    if u.query != "" || u.empty_query || u.fragment != "" || u.empty_fragment
+        return fail(code: INVALID, msg: f"{what} \"{base}\" holds a query or a fragment")
+    return ok(u)
+
+# The URL of the well-known document `suffix` of `base`: inserted between
+# its host and its path where `inserted`, else after its path.
+function well_known(base: str, suffix: str, inserted: bool, what: str) -> str?
+    u @= base_url(base: base, what: what)?
+    path: str @= u.path
+
+    if path == "/"
+        path @ ""
+
+    if inserted
+        u.path @ "/.well-known/" + suffix + path
+    else
+        if path.len() > 0 && path[path.len() - 1] == '/'
+            path @ path.slice(from: 0, to: path.len() - 1)
+        u.path @ path + "/.well-known/" + suffix
+    return ok(url.format(u))
+
+# The members of the JSON object `text`.
+function object_of(text: str, what: str) -> {str: json.Value}?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"{what} is not JSON: {e.msg}")
+
+    match json.members_of(v)
+        .ok m  => return ok(m)
+        .err _ => return fail(code: INVALID, msg: f"{what} is {json.kind_of(v)}, where a JSON object was expected")
+
+# The text member `name`, "" where it is absent.
+function text_member(members: {str: json.Value}, name: str) -> str?
+    match members[name]
+        .err _ => return ok("")
+        .ok v =>
+            match json.text_of(v)
+                .ok t  => return ok(t)
+                .err _ => return fail(code: INVALID, msg: f"\"{name}\" is {json.kind_of(v)}, where a text was expected")
+
+# The list of texts `name`, empty where it is absent.
+function texts_member(members: {str: json.Value}, name: str) -> [str]?
+    match members[name]
+        .err _ => return ok([])
+        .ok v =>
+            items = match json.items_of(v)
+                .ok l => l
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"\"{name}\" is {json.kind_of(v)}, where a list of texts was expected"
+                )
+
+            out: [str] @= []
+
+            for item in items
+                match json.text_of(item)
+                    .ok t => out @ out.push(t)
+                    .err _ => return fail(
+                        code: INVALID,
+                        msg: f"\"{name}\" holds {json.kind_of(item)}, where texts were expected"
+                    )
+
+            return ok(out)
+
+# The boolean `name`, false where it is absent.
+function bool_member(members: {str: json.Value}, name: str) -> bool?
+    match members[name]
+        .err _ => return ok(false)
+        .ok v =>
+            match json.bool_of(v)
+                .ok b => return ok(b)
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"\"{name}\" is {json.kind_of(v)}, where a boolean was expected"
+                )
+
+# `members` with `text` set at `name` where it is not "".
+function put_text(@members: {str: json.Value}, name: str, text: str)
+    if text != ""
+        members[name] @ .text(v: text)
+
+# `members` with the texts `list` at `name` where it is not empty.
+function put_texts(@members: {str: json.Value}, name: str, list: [str])
+    if list.len() > 0
+        items: [json.Value] @= []
+
+        for t in list
+            items @ items.push(.text(v: t))
+
+        members[name] @ .list(items: items)
+
+# The first `json` of `extra`'s members not in `members`, added after them.
+function put_rest(@members: {str: json.Value}, extra: {str: json.Value})
+    for name in keys(extra)
+        if members[name].is_err()
+            members[name] @ extra[name].must()
+
+# Whether `c` is a byte of a token (RFC 9110 § 5.6.2).
+function is_token_byte(c: u8) -> bool
+    if c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+        return true
+    marks = "!#$%&'*+-.^_`|~"
+
+    for at in range(from: 0, to: marks.len())
+        if marks[at] == c
+            return true
+
+    return false
+
+# The value of the parameter `name` of the first challenge of the scheme
+# `scheme` among the `WWW-Authenticate` values `values`, compared in any
+# case of their letters.
+function challenge_parameter(values: [str], scheme: str, name: str) -> str?
+    for value in values
+        match parameter_in(value: value, scheme: scheme, name: name)
+            .ok found => return ok(found)
+            .err _    => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no {scheme} challenge names \"{name}\"")
+
+# `s` with its ASCII letters in lower case; lowering ASCII bytes keeps
+# UTF-8 whole, so the bytes stay text.
+function lower(s: str) -> str
+    return bytes.to_text(bytes.to_lower_ascii(bytes.from_text(s))).must()
+
+# The parameter `name` of the challenge of `scheme` in the one header value
+# `value`: challenges and their parameters read left to right, a token not
+# followed by `=` beginning a challenge.
+function parameter_in(value: str, scheme: str, name: str) -> str?
+    at: i64 @= 0
+    current: str @= ""
+    wanted_scheme = lower(scheme)
+    wanted_name = lower(name)
+
+    while at < value.len()
+        c = value[at]
+
+        if c == ' ' || c == '\t' || c == ','
+            at @ at + 1
+            continue
+
+        if !is_token_byte(c)
+            return fail(code: INVALID, msg: f"a WWW-Authenticate value with an unexpected byte at {at}")
+        start = at
+
+        while at < value.len() && is_token_byte(value[at])
+            at @ at + 1
+
+        word = value.slice(from: start, to: at)
+        look: i64 @= at
+
+        while look < value.len() && (value[look] == ' ' || value[look] == '\t')
+            look @ look + 1
+
+        if look < value.len() && value[look] == '='
+            at @ look + 1
+
+            while at < value.len() && (value[at] == ' ' || value[at] == '\t')
+                at @ at + 1
+
+            read = parameter_value(value, from: at)?
+            at @ read.next
+
+            if current == wanted_scheme && lower(word) == wanted_name
+                return ok(read.text)
+        else
+            current @ lower(word)
+
+            while at < value.len() && value[at] == '='
+                at @ at + 1
+
+    return fail(code: NOT_FOUND, msg: f"no {scheme} challenge names \"{name}\"")
+
+# A parameter's value read and where reading ended.
+record Read
+    # The value, its quotes and escapes undone.
+    text: str
+    # The byte after it.
+    next: i64
+
+# The value at `from` of `value`: a quoted string or a token.
+function parameter_value(value: str, from: i64) -> Read?
+    if from >= value.len()
+        return ok(Read(text: "", next: from))
+
+    if value[from] != '"'
+        at: i64 @= from
+
+        while at < value.len() && is_token_byte(value[at])
+            at @ at + 1
+
+        return ok(Read(text: value.slice(from: from, to: at), next: at))
+    pieces: [str] @= []
+    at: i64 @= from + 1
+    start: i64 @= at
+
+    while at < value.len()
+        c = value[at]
+
+        if c == '"'
+            pieces @ pieces.push(value.slice(from: start, to: at))
+            return ok(Read(text: pieces.join(""), next: at + 1))
+
+        if c == '\\'
+            if at + 1 >= value.len()
+                return fail(code: INVALID, msg: "a quoted string ends with a backslash")
+            pieces @ pieces.push(value.slice(from: start, to: at))
+            start @ at + 1
+            at @ at + 2
+        else
+            at @ at + 1
+
+    return fail(code: INVALID, msg: "a quoted string with no closing quote")
+
+# `s` as a quoted string: between quotes, `"` and `\` escaped.
+function quoted(s: str) -> str
+    pieces: [str] @= ["\""]
+    start: i64 @= 0
+
+    for at in range(from: 0, to: s.len())
+        if s[at] == '"' || s[at] == '\\'
+            pieces @ pieces.push(s.slice(from: start, to: at))
+            pieces @ pieces.push("\\")
+            start @ at
+
+    pieces @ pieces.push(s.slice(from: start, to: s.len()))
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+# Whether `client_id` is a client id that is its metadata's URL: `https://`,
+# a path, no fragment, no user or password, no dot segment.
+function check_client_id(client_id: str) -> url.Url?
+    u = match url.parse(client_id)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"the client id \"{client_id}\" is no URL: {e.msg}")
+
+    if u.scheme != "https" || u.host == ""
+        return fail(code: INVALID, msg: f"the client id \"{client_id}\" is no https URL")
+
+    if u.path == "" || u.path == "/"
+        return fail(code: INVALID, msg: f"the client id \"{client_id}\" has no path")
+
+    if u.fragment != "" || u.empty_fragment || u.user != "" || u.password != ""
+        return fail(code: INVALID, msg: f"the client id \"{client_id}\" holds a fragment or a user")
+
+    if url.remove_dot_segments(u.path) != u.path
+        return fail(code: INVALID, msg: f"the client id \"{client_id}\" holds a dot segment")
+    return ok(u)
+
+test "well_known: RFC 8414 § 3.1's issuer with a path, an issuer without one, OpenID's appended form"
+    assert well_known(base: "https://example.com/issuer1", suffix: "oauth-authorization-server", inserted: true, what: "x").must() == "https://example.com/.well-known/oauth-authorization-server/issuer1"
+    assert well_known(base: "https://example.com", suffix: "oauth-authorization-server", inserted: true, what: "x").must() == "https://example.com/.well-known/oauth-authorization-server"
+    assert well_known(base: "https://example.com/", suffix: "oauth-authorization-server", inserted: true, what: "x").must() == "https://example.com/.well-known/oauth-authorization-server"
+    assert well_known(base: "https://example.com/issuer1/", suffix: "openid-configuration", inserted: false, what: "x").must() == "https://example.com/issuer1/.well-known/openid-configuration"
+    assert well_known(base: "https://resource.example.com/resource1", suffix: "oauth-protected-resource", inserted: true, what: "x").must() == "https://resource.example.com/.well-known/oauth-protected-resource/resource1"
+
+test "well_known: refused, a relative reference, a query, a fragment, another scheme"
+    assert well_known(base: "/issuer", suffix: "x", inserted: true, what: "x").is_err()
+    assert well_known(base: "https://e.com/?a=1", suffix: "x", inserted: true, what: "x").is_err()
+    assert well_known(base: "https://e.com/#a", suffix: "x", inserted: true, what: "x").is_err()
+    assert well_known(base: "ftp://e.com/", suffix: "x", inserted: true, what: "x").is_err()
+
+test "parameter_in: RFC 9728 § 5.1's challenge, several challenges, a token value, case, absent"
+    one = "Bearer resource_metadata=\"https://resource.example.com/.well-known/oauth-protected-resource\""
+    assert parameter_in(value: one, scheme: "Bearer", name: "resource_metadata").must() == "https://resource.example.com/.well-known/oauth-protected-resource"
+    many = "Basic realm=\"x, y\", bearer error=invalid_token, Resource_Metadata=\"https://r.example/m\", scope=\"a b\""
+    assert parameter_in(value: many, scheme: "Bearer", name: "resource_metadata").must() == "https://r.example/m"
+    assert parameter_in(value: many, scheme: "Bearer", name: "error").must() == "invalid_token"
+    assert parameter_in(value: many, scheme: "Basic", name: "error").is_err()
+    assert parameter_in(value: "Bearer realm=\"a\\\"b\"", scheme: "Bearer", name: "realm").must() == "a\"b"
+    assert parameter_in(value: "Bearer realm=\"open", scheme: "Bearer", name: "realm").is_err()
+    assert parameter_in(value: "Negotiate abc==", scheme: "Bearer", name: "realm").is_err()
+
+test "quoted: none, a quote and a backslash escaped"
+    assert quoted("") == "\"\""
+    assert quoted("a\"b\\c") == "\"a\\\"b\\\\c\""
+
+test "check_client_id: an https URL with a path, and refused: http, no path, a fragment, a dot segment"
+    assert !check_client_id("https://app.example.com/oauth/client.json").is_err()
+    assert check_client_id("http://app.example.com/client.json").is_err()
+    assert check_client_id("https://app.example.com").is_err()
+    assert check_client_id("https://app.example.com/c#x").is_err()
+    assert check_client_id("https://app.example.com/a/../c").is_err()

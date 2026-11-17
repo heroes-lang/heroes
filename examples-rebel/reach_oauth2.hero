@@ -1,0 +1,10 @@
+# Reaches Rebel's package `oauth2`, so that `heroes test` on this file runs
+# the tests of its face, its private modules and the floors under them
+# (spec § 12). It prints the S256 challenge of RFC 7636 Appendix B's
+# verifier, `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`, on every run,
+# touching no network.
+
+use <rebel>/oauth2
+
+function main()
+    print(oauth2.challenge_of("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"))

@@ -1,0 +1,1674 @@
+# An OAuth 2.0 client (RFC 6749 as RFC 9700 hardens it) and OpenID Connect:
+# the authorization code grant with PKCE, the client credentials, device
+# authorization (RFC 8628), JWT bearer (RFC 7523) and refresh grants, a
+# token's revocation (RFC 7009) and introspection (RFC 7662), an
+# authorization server's metadata (RFC 8414, OpenID Connect Discovery), a
+# protected resource's (RFC 9728), resource indicators (RFC 8707), the
+# issuer of a redirect checked (RFC 9207), a client's metadata document
+# whose URL is its id, and an ID token verified through `jose`.
+#
+# **The safe way is the only way**: PKCE's challenge is S256, never
+# `plain`; the state and the nonce are drawn from the system's generator;
+# a redirect's state, and its issuer where the server writes one, are
+# checked before its code is read; the implicit and the password grants are
+# not offered (RFC 9700 § 2.1.2, § 2.4). Every request goes through `http`,
+# so `https://` is checked against the system's own authorities.
+#
+# **A token is a value** the program keeps and adds to its requests with
+# `authorize`; `renewed` refreshes one that has expired. Nothing here keeps
+# a token, a key set or a session between calls.
+#
+# **What it does not do.** It serves no authorization server: its endpoints
+# are a program's own, written with `http` or `web`; it writes a protected
+# resource's metadata and challenge, which such a server serves. It does
+# not register a client (RFC 7591), push an authorization request (RFC
+# 9126), bind a token to a key by DPoP (RFC 9449), or read a signed
+# UserInfo. A JWT is `jose`'s, a URL `url`'s, a request `http`'s.
+#
+# It fails with `invalid` (an answer or an argument not of its form, a
+# redirect whose state or issuer is not the one expected, an ID token
+# refused), `not_found` (a member, a document or a parameter absent),
+# `failed` (the server answered an OAuth error, its code and description in
+# the message), `permission` (the user denied the device), `timeout` (a
+# device code expired), `unsupported`, and as `http.send` fails: `closed`,
+# `limit`, `stopped`.
+
+use bytes
+use http
+use jose
+use json
+use oauth2/internal/discovery
+use oauth2/internal/exchange as wire
+use oauth2/internal/loopback
+use oauth2/internal/oidc
+use oauth2/internal/pkce
+use time
+use url
+
+## Codes
+
+# An answer or an argument not of its form, a redirect's state or issuer
+# not the one expected, an ID token refused.
+constant INVALID: str
+    "invalid"
+
+# A member, a well-known document, or a challenge's parameter absent.
+constant NOT_FOUND: str
+    "not_found"
+
+# The server answered an OAuth error (RFC 6749 § 5.2): its `error`, its
+# `error_description` and its `error_uri` in the message.
+constant FAILED: str
+    "failed"
+
+# The user denied a device its authorization (`access_denied`).
+constant PERMISSION: str
+    "permission"
+
+# A device code expired before the user answered (`expired_token`).
+constant TIMEOUT: str
+    "timeout"
+
+# What `jose` or the platform lacks: an ID token signed by an algorithm
+# this platform cannot verify.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Clients
+
+# How a client proves itself at the token endpoint (RFC 6749 § 2.3, RFC
+# 7523 § 2.2).
+variant Authentication
+    # `client_secret_basic`: the id and the secret in `Authorization:
+    # Basic`, each form-escaped first, as RFC 6749 § 2.3.1 writes them.
+    basic
+    # `client_secret_post`: the id and the secret in the request's body.
+    post
+    # `none`: a public client, its id alone in the body; PKCE is its proof.
+    none
+    # `private_key_jwt`: a JWT the client signs for each request, its
+    # `client_assertion`.
+    private_key_jwt
+        # The client's private key.
+        key: jose.Key
+        # The algorithm it signs with.
+        algorithm: jose.Algorithm
+
+# A client of one authorization server: who it is, how it authenticates,
+# where the server's endpoints are and what it asks. Made by
+# `default_config` or `config_from`, its fields set by the program.
+record Config
+    # The client's id, as the server issued it, or the URL of its metadata
+    # document.
+    client_id: str
+    # The client's secret, "" for a public client.
+    client_secret: str
+    # How it authenticates at the token endpoint.
+    authentication: Authentication
+    # The server's authorization endpoint, an absolute URL.
+    authorization_endpoint: str
+    # The server's token endpoint, an absolute URL.
+    token_endpoint: str
+    # The device authorization endpoint (RFC 8628), "" for none.
+    device_authorization_endpoint: str
+    # The revocation endpoint (RFC 7009), "" for none.
+    revocation_endpoint: str
+    # The introspection endpoint (RFC 7662), "" for none.
+    introspection_endpoint: str
+    # The redirect URI registered for the client, "" to send none.
+    redirect_uri: str
+    # The scopes asked, sent space-separated; empty sends none.
+    scopes: [str]
+    # The resources the tokens are for (RFC 8707), each an absolute URL
+    # with no fragment, sent as one `resource` each; empty sends none.
+    resources: [str]
+    # How each request is sent: its deadline, limits and authorities.
+    transport: http.Client
+
+# A client of `client_id` with no secret (`.none`), no endpoint, no scope
+# and `http.default_client()`.
+#
+# - `client_id`: the client's id.
+#
+# See also `config_from`.
+function default_config(client_id: str) -> Config
+    return Config(
+        client_id: client_id,
+        client_secret: "",
+        authentication: .none,
+        authorization_endpoint: "",
+        token_endpoint: "",
+        device_authorization_endpoint: "",
+        revocation_endpoint: "",
+        introspection_endpoint: "",
+        redirect_uri: "",
+        scopes: [],
+        resources: [],
+        transport: http.default_client()
+    )
+
+# A client of `client_id` whose endpoints are those `metadata` names.
+#
+# - `metadata`: the server's metadata, as `fetch_metadata` reads it.
+# - `client_id`: the client's id.
+#
+# The authentication is `.none` and the secret ""; a confidential client
+# sets both. See also `default_config`, `fetch_metadata`.
+function config_from(metadata: Metadata, client_id: str) -> Config
+    c @= default_config(client_id)
+    c.authorization_endpoint @ metadata.authorization_endpoint
+    c.token_endpoint @ metadata.token_endpoint
+    c.device_authorization_endpoint @ metadata.device_authorization_endpoint
+    c.revocation_endpoint @ metadata.revocation_endpoint
+    c.introspection_endpoint @ metadata.introspection_endpoint
+    return c
+
+## PKCE, state and nonce
+
+# A new PKCE code verifier (RFC 7636 § 4.1): 32 bytes from the system's
+# generator in base64url, 43 characters.
+#
+# Fails as `random.secure_token_base64_url` does. See also `challenge_of`.
+function new_verifier() -> str?
+    return pkce.drawn()
+
+# The S256 challenge of `verifier` (RFC 7636 § 4.2): the base64url of its
+# SHA-256.
+#
+# - `verifier`: the verifier, 43 to 128 characters of RFC 7636's alphabet.
+#
+# Aborts where `verifier` is shorter or longer, or holds another character:
+# `new_verifier` makes one. See also `new_verifier`.
+function challenge_of(verifier: str) -> str
+    assert pkce.is_verifier(verifier)
+    return pkce.challenge(verifier)
+
+# A new state or nonce: 32 bytes from the system's generator in base64url,
+# which a redirect or an ID token must give back.
+#
+# Fails as `random.secure_token_base64_url` does. See also `authorization_url`.
+function new_state() -> str?
+    return pkce.drawn()
+
+## The authorization code grant
+
+# The URL the user's browser is sent to (RFC 6749 § 4.1.1): the
+# authorization endpoint with `response_type=code`, the client's id, its
+# redirect, its scopes, `state`, the S256 `challenge`, its resources, then
+# `extra`.
+#
+# - `c`: the client.
+# - `state`: what the redirect must give back, as `new_state` makes it.
+# - `challenge`: the PKCE challenge, as `challenge_of` makes it.
+# - `extra`: other parameters, in their order: `nonce` for OpenID Connect,
+#   `prompt`, `login_hint`; empty for none.
+#
+# Fails `invalid` where the authorization endpoint is no absolute URL. See
+# also `read_redirect`.
+function authorization_url(c: Config, state: str, challenge: str, extra: [url.Pair]) -> str?
+    u @= discovery.absolute(target: c.authorization_endpoint, what: "the authorization endpoint")?
+    pairs: [url.Pair] @= [
+        url.Pair(key: "response_type", value: "code")
+        url.Pair(key: "client_id", value: c.client_id)
+    ]
+
+    if c.redirect_uri != ""
+        pairs @ pairs.push(url.Pair(key: "redirect_uri", value: c.redirect_uri))
+
+    if c.scopes.len() > 0
+        pairs @ pairs.push(url.Pair(key: "scope", value: c.scopes.join(" ")))
+    pairs @ pairs.push(url.Pair(key: "state", value: state))
+    pairs @ pairs.push(url.Pair(key: "code_challenge", value: challenge))
+    pairs @ pairs.push(url.Pair(key: "code_challenge_method", value: "S256"))
+
+    for r in c.resources
+        pairs @ pairs.push(url.Pair(key: "resource", value: r))
+
+    for p in extra
+        pairs @ pairs.push(p)
+
+    added = url.format_query(pairs)
+
+    if u.query == ""
+        u.query @ added
+    else
+        u.query @ u.query + "&" + added
+    return ok(url.format(u))
+
+# The authorization code the redirect `target` carries, its state and
+# issuer checked first.
+#
+# - `target`: the URL the browser came back to, or its path and query.
+# - `state`: the state `authorization_url` was given.
+# - `issuer`: the server's issuer (RFC 9207): where it is not "", the
+#   redirect's `iss` must be it, and a redirect with none is refused; ""
+#   checks no `iss`, for a server whose metadata does not say
+#   `authorization_response_iss_parameter_supported`.
+#
+# Fails `invalid` where the state is not `state`, the issuer not `issuer`,
+# or no code is given; `failed` where the redirect carries an `error`, its
+# code and description in the message, `permission` for `access_denied`.
+# See also `authorization_url`, `exchange`.
+function read_redirect(target: str, state: str, issuer: str) -> str?
+    if state == ""
+        return fail(code: INVALID, msg: "a redirect read with no state to expect: `new_state` makes one")
+
+    u = match url.parse(target)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: f"the redirect is no URL: {e.msg}")
+
+    pairs = url.parse_query(u.query)?
+
+    for name in ["state", "code", "iss", "error"]
+        if url.values_of(pairs, key: name).len() > 1
+            return fail(code: INVALID, msg: f"the redirect holds \"{name}\" twice, which RFC 6749 § 3.1 forbids")
+
+    if issuer != ""
+        got = match url.value_of(pairs, key: "iss")
+            .ok i => i
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the redirect names no issuer, and \"{issuer}\" is expected (RFC 9207)"
+            )
+
+        if got != issuer
+            return fail(
+                code: INVALID,
+                msg: f"the redirect comes from the issuer \"{got}\", and \"{issuer}\" is expected (RFC 9207)"
+            )
+
+    if url.value_of(pairs, key: "state").default("") != state
+        return fail(code: INVALID, msg: "the redirect's state is not the one sent")
+
+    match url.value_of(pairs, key: "error")
+        .err _ => _ = 0
+        .ok error =>
+            said = url.value_of(pairs, key: "error_description").default("")
+
+            if error == "access_denied"
+                return fail(code: PERMISSION, msg: f"the user or the server denied the authorization: {said}")
+            return fail(code: FAILED, msg: f"the server answered the authorization with {error}: {said}")
+
+    match url.value_of(pairs, key: "code")
+        .ok code => return ok(code)
+        .err _   => return fail(code: INVALID, msg: "the redirect holds no code")
+
+# The tokens `code` is exchanged for at the token endpoint, with the PKCE
+# `verifier` and the client's redirect and resources.
+#
+# - `c`: the client.
+# - `code`: the code `read_redirect` answered.
+# - `verifier`: the verifier whose challenge the authorization URL carried.
+#
+# Fails `failed` where the server answers an OAuth error (`invalid_grant`
+# for a code used or a verifier that does not match), `invalid` where its
+# answer is not a token, and as `http.send` does. See also `refresh`.
+function exchange(c: Config, code: str, verifier: str) -> Token?
+    form: [url.Pair] @= [
+        url.Pair(key: "grant_type", value: "authorization_code")
+        url.Pair(key: "code", value: code)
+    ]
+
+    if c.redirect_uri != ""
+        form @ form.push(url.Pair(key: "redirect_uri", value: c.redirect_uri))
+    form @ form.push(url.Pair(key: "code_verifier", value: verifier))
+
+    for r in c.resources
+        form @ form.push(url.Pair(key: "resource", value: r))
+
+    return request_token(c, form: form)
+
+# The response of `endpoint` to `form` POSTed with the client
+# authenticated as `c` says: the one request every grant, a revocation and
+# an introspection send, for an endpoint this package has no function for
+# (a pushed authorization request, a token exchange).
+#
+# - `c`: the client and how it authenticates; `private_key_jwt` signs a new
+#   assertion for `endpoint`.
+# - `endpoint`: an absolute URL.
+# - `form`: the parameters, in their order; the client's are added after
+#   them.
+#
+# Any status is answered. Fails `invalid` where `endpoint` is no URL, and as
+# `http.send` and `jose.sign_token` do. See also `request_token`.
+function post_form(c: Config, endpoint: str, form: [url.Pair]) -> http.Response?
+    auth = match c.authentication
+        .basic => wire.Auth(
+            method: "basic",
+            client_id: c.client_id,
+            client_secret: c.client_secret,
+            key: jose.key_from_secret([]),
+            algorithm: .hs256
+        )
+        .post => wire.Auth(
+            method: "post",
+            client_id: c.client_id,
+            client_secret: c.client_secret,
+            key: jose.key_from_secret([]),
+            algorithm: .hs256
+        )
+        .none => wire.Auth(
+            method: "none",
+            client_id: c.client_id,
+            client_secret: "",
+            key: jose.key_from_secret([]),
+            algorithm: .hs256
+        )
+        .private_key_jwt p => wire.Auth(
+            method: "private_key_jwt",
+            client_id: c.client_id,
+            client_secret: "",
+            key: p.key,
+            algorithm: p.algorithm
+        )
+
+    return wire.sent(c.transport, endpoint: endpoint, auth: auth, form: form)
+
+# The token a token endpoint's response `r` holds, received at `now`.
+#
+# - `r`: the response.
+# - `now`: when it was received, from which `expires_in` counts.
+#
+# Fails `failed` for a status other than 200, its OAuth error in the
+# message; `invalid` where the body is no JSON object, holds no
+# `access_token`, or a member of the wrong kind. See also `request_token`.
+function read_token(r: http.Response, now: time.Instant) -> Token?
+    f = wire.read_token(r, now: now)?
+    return ok(
+        Token(access_token: f.access_token, token_type: f.token_type, refresh_token: f.refresh_token, expiry: f.expiry, scopes: f.scopes, id_token: f.id_token, members: f.members)
+    )
+
+## Other grants
+
+# A token for the client itself (RFC 6749 § 4.4), its scopes and resources
+# asked.
+#
+# - `c`: the client, which must authenticate.
+#
+# Fails as `exchange` does. See also `request_token`.
+function client_credentials(c: Config) -> Token?
+    form: [url.Pair] @= [url.Pair(key: "grant_type", value: "client_credentials")]
+
+    if c.scopes.len() > 0
+        form @ form.push(url.Pair(key: "scope", value: c.scopes.join(" ")))
+
+    for r in c.resources
+        form @ form.push(url.Pair(key: "resource", value: r))
+
+    return request_token(c, form: form)
+
+# `token` renewed by its refresh token (RFC 6749 § 6), the refresh token
+# kept where the server sends none.
+#
+# - `c`: the client.
+# - `token`: a token holding a refresh token.
+#
+# Fails `invalid` where `token` holds none, and as `exchange` does. See also
+# `renewed`.
+function refresh(c: Config, token: Token) -> Token?
+    if token.refresh_token == ""
+        return fail(code: INVALID, msg: "a token refreshed that holds no refresh token")
+    form: [url.Pair] @= [
+        url.Pair(key: "grant_type", value: "refresh_token")
+        url.Pair(key: "refresh_token", value: token.refresh_token)
+    ]
+
+    for r in c.resources
+        form @ form.push(url.Pair(key: "resource", value: r))
+
+    renewed_token @= request_token(c, form: form)?
+
+    if renewed_token.refresh_token == ""
+        renewed_token.refresh_token @ token.refresh_token
+    return ok(renewed_token)
+
+# `token` itself where it has not expired at `now`, else `refresh`'s answer.
+#
+# - `c`: the client.
+# - `token`: the token kept.
+# - `now`: the time it is judged at.
+#
+# Fails as `refresh` does. See also `is_expired`.
+function renewed(c: Config, token: Token, now: time.Instant) -> Token?
+    if !is_expired(token, now: now)
+        return ok(token)
+    return refresh(c, token: token)
+
+# A token for the JWT `assertion` given as the grant (RFC 7523 § 2.1):
+# `urn:ietf:params:oauth:grant-type:jwt-bearer`.
+#
+# - `c`: the client.
+# - `assertion`: the JWT, as `jose.sign_token` makes it.
+#
+# Fails as `exchange` does. See also `request_token`.
+function exchange_assertion(c: Config, assertion: str) -> Token?
+    form: [url.Pair] @= [
+        url.Pair(key: "grant_type", value: "urn:ietf:params:oauth:grant-type:jwt-bearer")
+        url.Pair(key: "assertion", value: assertion)
+    ]
+
+    if c.scopes.len() > 0
+        form @ form.push(url.Pair(key: "scope", value: c.scopes.join(" ")))
+
+    for r in c.resources
+        form @ form.push(url.Pair(key: "resource", value: r))
+
+    return request_token(c, form: form)
+
+# A token asked of the token endpoint with `form` as its parameters, the
+# client authenticated as `c` says: any grant, token exchange (RFC 8693)
+# among them.
+#
+# - `c`: the client; its scopes and resources are not added.
+# - `form`: the parameters, `grant_type` first, in their order.
+#
+# Fails as `exchange` does. See also `exchange`.
+function request_token(c: Config, form: [url.Pair]) -> Token?
+    if c.token_endpoint == ""
+        return fail(code: INVALID, msg: "a token asked of a client with no token endpoint")
+    response = post_form(c, endpoint: c.token_endpoint, form: form)?
+    return read_token(response, now: time.now()?)
+
+## Devices
+
+# What a device authorization answers (RFC 8628 § 3.2).
+record DeviceAuthorization
+    # The code the device polls with, which the user never sees.
+    device_code: str
+    # The code the user types.
+    user_code: str
+    # Where the user types it.
+    verification_uri: str
+    # A URL holding the code, for a QR code; "" where the server sends none.
+    verification_uri_complete: str
+    # When the codes expire.
+    expiry: time.Instant
+    # The seconds to wait between two polls, 5 where the server names none.
+    interval: i64
+
+# The codes a device asks (RFC 8628 § 3.1), its scopes and resources asked.
+#
+# - `c`: the client; its `device_authorization_endpoint` is asked.
+#
+# Fails `invalid` where the client has no such endpoint or the answer lacks
+# a code; `failed` for an OAuth error; and as `http.send` does. See also
+# `poll_device`.
+function start_device(c: Config) -> DeviceAuthorization?
+    if c.device_authorization_endpoint == ""
+        return fail(code: INVALID, msg: "a device's codes asked of a client with no device authorization endpoint")
+    form: [url.Pair] @= []
+
+    if c.scopes.len() > 0
+        form @ form.push(url.Pair(key: "scope", value: c.scopes.join(" ")))
+
+    for r in c.resources
+        form @ form.push(url.Pair(key: "resource", value: r))
+
+    response = post_form(c, endpoint: c.device_authorization_endpoint, form: form)?
+
+    if response.status != 200
+        return wire.refused(response)
+    now = time.now()?
+    members = wire.members_of(response)?
+    device_code = wire.text_member(members, name: "device_code")?
+    user_code = wire.text_member(members, name: "user_code")?
+    verification: str @= wire.text_member(members, name: "verification_uri")?
+
+    if verification == ""
+        verification @ wire.text_member(members, name: "verification_url")?
+
+    if device_code == "" || user_code == "" || verification == ""
+        return fail(code: INVALID, msg: "a device authorization without its device_code, user_code or verification_uri")
+    lasts = wire.seconds_member(members, name: "expires_in")?
+
+    if lasts < 0
+        return fail(code: INVALID, msg: "a device authorization without its expires_in")
+    interval: i64 @= wire.seconds_member(members, name: "interval")?
+
+    if interval < 0
+        interval @ 5
+    return ok(
+        DeviceAuthorization(device_code: device_code, user_code: user_code, verification_uri: verification, verification_uri_complete: wire.text_member(members, name: "verification_uri_complete")?, expiry: wire.after(now, seconds: lasts), interval: interval)
+    )
+
+# The token the user's approval gives, the token endpoint asked at the
+# interval `device` names (RFC 8628 § 3.4), five seconds more after each
+# `slow_down`, until `device` expires.
+#
+# - `c`: the client.
+# - `device`: what `start_device` answered.
+#
+# It sleeps between polls. Fails `permission` where the user denies it,
+# `timeout` where the code expires, `failed` for another OAuth error. See
+# also `start_device`.
+function poll_device(c: Config, device: DeviceAuthorization) -> Token?
+    wait: i64 @= device.interval
+    form = [
+        url.Pair(key: "grant_type", value: "urn:ietf:params:oauth:grant-type:device_code")
+        url.Pair(key: "device_code", value: device.device_code)
+    ]
+
+    while true
+        now = time.now()?
+
+        if !time.is_before(a: now, b: device.expiry)
+            return fail(code: TIMEOUT, msg: "the device code expired before the user answered")
+        response = post_form(c, endpoint: c.token_endpoint, form: form)?
+
+        if response.status == 200
+            return read_token(response, now: now)
+        e = wire.error_of(response)
+
+        if e.error == ""
+            return wire.refused(response)
+        wait @ wire.next_interval(e.error, interval: wait)?
+        time.sleep(time.seconds(wait)?)
+
+## Tokens
+
+# A token endpoint's answer (RFC 6749 § 5.1).
+record Token
+    # The access token, sent to a resource.
+    access_token: str
+    # Its type, `Bearer` where the server wrote it in any case.
+    token_type: str
+    # The refresh token, "" for none.
+    refresh_token: str
+    # When the access token expires, `time.max_instant()` where the server
+    # named no `expires_in`.
+    expiry: time.Instant
+    # The scopes granted, where the server named them; empty otherwise.
+    scopes: [str]
+    # OpenID Connect's ID token, "" for none; `verify_id_token` checks it.
+    id_token: str
+    # Every member of the answer, these included.
+    members: {str: json.Value}
+
+# Whether `token` has expired at `now`, counting ten seconds early, as Go's
+# `Token.Valid` does, so a request does not carry one that expires on the
+# way.
+#
+# - `token`: the token.
+# - `now`: the time it is judged at.
+#
+# A token with no expiry never expires. See also `renewed`.
+function is_expired(token: Token, now: time.Instant) -> bool
+    if token.expiry == time.max_instant()
+        return false
+
+    match time.add(now, d: time.seconds(10).must())
+        .ok early => return !time.is_before(a: early, b: token.expiry)
+        .err _    => return true
+
+# `r` with `Authorization: Bearer` and `token`'s access token, any other
+# `Authorization` replaced.
+#
+# - `r`: the request to the resource.
+# - `token`: the token.
+#
+# See also `http.with_bearer_auth`.
+function authorize(r: http.Request, token: Token) -> http.Request
+    out @= r
+    out.headers @ http.with_header(r.headers, name: "Authorization", value: token.token_type + " " + token.access_token)
+    return out
+
+# Revokes `token` at the revocation endpoint (RFC 7009).
+#
+# - `c`: the client.
+# - `token`: the access or refresh token revoked.
+# - `hint`: `access_token`, `refresh_token`, or "" for none.
+#
+# Fails `invalid` where the client has no revocation endpoint, `failed` for
+# an OAuth error. See also `introspect`.
+function revoke(c: Config, token: str, hint: str) -> ()?
+    if c.revocation_endpoint == ""
+        return fail(code: INVALID, msg: "a token revoked by a client with no revocation endpoint")
+    form: [url.Pair] @= [url.Pair(key: "token", value: token)]
+
+    if hint != ""
+        form @ form.push(url.Pair(key: "token_type_hint", value: hint))
+    response = post_form(c, endpoint: c.revocation_endpoint, form: form)?
+
+    if response.status != 200
+        return wire.refused(response)
+    return ok()
+
+# What the server says of `token` (RFC 7662).
+record Introspection
+    # Whether the token is active; every other member is read only where it
+    # is.
+    active: bool
+    # The scopes, empty where none is named.
+    scopes: [str]
+    # The client it was issued to, "" for none.
+    client_id: str
+    # The user it stands for, as a person reads it, "" for none.
+    username: str
+    # The subject, `sub`, "" for none.
+    subject: str
+    # The audiences, `aud`, empty for none.
+    audiences: [str]
+    # The issuer, `iss`, "" for none.
+    issuer: str
+    # When it expires, `time.max_instant()` where the server names none.
+    expiry: time.Instant
+    # Every member of the answer.
+    members: {str: json.Value}
+
+# What the introspection endpoint answers of `token` (RFC 7662).
+#
+# - `c`: the client, which must authenticate.
+# - `token`: the token asked about.
+# - `hint`: `access_token`, `refresh_token`, or "" for none.
+#
+# An inactive token is an answer, not a failure. Fails `invalid` where the
+# client has no introspection endpoint or the answer has no `active`;
+# `failed` for an OAuth error. See also `revoke`.
+function introspect(c: Config, token: str, hint: str) -> Introspection?
+    if c.introspection_endpoint == ""
+        return fail(code: INVALID, msg: "a token introspected by a client with no introspection endpoint")
+    form: [url.Pair] @= [url.Pair(key: "token", value: token)]
+
+    if hint != ""
+        form @ form.push(url.Pair(key: "token_type_hint", value: hint))
+    response = post_form(c, endpoint: c.introspection_endpoint, form: form)?
+
+    if response.status != 200
+        return wire.refused(response)
+    members = wire.members_of(response)?
+
+    if members["active"].is_err()
+        return fail(code: INVALID, msg: "an introspection's answer without \"active\"")
+    active = discovery.bool_member(members, name: "active")?
+    audiences: [str] @= []
+
+    if !members["aud"].is_err()
+        audiences @ jose.claim_texts(members, name: "aud")?
+    expiry: time.Instant @= time.max_instant()
+
+    if !members["exp"].is_err()
+        expiry @ jose.claim_time(members, name: "exp")?
+    return ok(
+        Introspection(active: active, scopes: wire.scopes_of(discovery.text_member(members, name: "scope")?), client_id: discovery.text_member(members, name: "client_id")?, username: discovery.text_member(members, name: "username")?, subject: discovery.text_member(members, name: "sub")?, audiences: audiences, issuer: discovery.text_member(members, name: "iss")?, expiry: expiry, members: members)
+    )
+
+## Server metadata
+
+# An authorization server's metadata (RFC 8414 § 2, OpenID Connect
+# Discovery § 3): its endpoints and what it supports. Read by
+# `parse_metadata` and `fetch_metadata`.
+record Metadata
+    # The issuer, which the document was asked for.
+    issuer: str
+    # The endpoints, "" where the server names none.
+    authorization_endpoint: str
+    # The token endpoint.
+    token_endpoint: str
+    # The JWK set's URL.
+    jwks_uri: str
+    # OpenID Connect's UserInfo endpoint.
+    userinfo_endpoint: str
+    # RFC 7009's revocation endpoint.
+    revocation_endpoint: str
+    # RFC 7662's introspection endpoint.
+    introspection_endpoint: str
+    # RFC 8628's device authorization endpoint.
+    device_authorization_endpoint: str
+    # RFC 7591's registration endpoint.
+    registration_endpoint: str
+    # The scopes supported, empty where none is named.
+    scopes_supported: [str]
+    # The grant types supported.
+    grant_types_supported: [str]
+    # The PKCE methods supported.
+    code_challenge_methods_supported: [str]
+    # The client authentications supported.
+    token_endpoint_auth_methods_supported: [str]
+    # The algorithms ID tokens are signed with.
+    id_token_signing_alg_values_supported: [str]
+    # Whether redirects carry `iss` (RFC 9207).
+    authorization_response_iss_parameter_supported: bool
+    # Whether the server reads a client's id as its metadata document's URL.
+    client_id_metadata_document_supported: bool
+    # Every member of the document, these included.
+    members: {str: json.Value}
+
+# Where RFC 8414 puts `issuer`'s metadata: `/.well-known/oauth-authorization-server`
+# between its host and its path.
+#
+# - `issuer`: the issuer, an `https://` or `http://` URL with no query and
+#   no fragment.
+#
+# Fails `invalid` where `issuer` is not such a URL. See also
+# `openid_configuration_url`.
+function metadata_url(issuer: str) -> str?
+    return discovery.well_known(base: issuer, suffix: "oauth-authorization-server", inserted: true, what: "the issuer")
+
+# Where OpenID Connect Discovery puts `issuer`'s configuration: its URL with
+# `/.well-known/openid-configuration` after its path.
+#
+# - `issuer`: the issuer.
+#
+# Fails `invalid` as `metadata_url` does. See also `metadata_url`.
+function openid_configuration_url(issuer: str) -> str?
+    return discovery.well_known(base: issuer, suffix: "openid-configuration", inserted: false, what: "the issuer")
+
+# The metadata `text` holds, its `issuer` required to be `issuer`.
+#
+# - `text`: the JSON document.
+# - `issuer`: the issuer it was asked for, compared byte for byte.
+#
+# Fails `invalid` where `text` is not a JSON object, its issuer is another,
+# or a member is of the wrong kind. See also `fetch_metadata`.
+function parse_metadata(text: str, issuer: str) -> Metadata?
+    members = discovery.object_of(text: text, what: "the server's metadata")?
+    got = discovery.text_member(members, name: "issuer")?
+
+    if got != issuer
+        return fail(
+            code: INVALID,
+            msg: f"the metadata names the issuer \"{got}\", and it was asked for \"{issuer}\" (RFC 8414 § 3.3)"
+        )
+    return ok(
+        Metadata(issuer: got, authorization_endpoint: discovery.text_member(members, name: "authorization_endpoint")?, token_endpoint: discovery.text_member(members, name: "token_endpoint")?, jwks_uri: discovery.text_member(members, name: "jwks_uri")?, userinfo_endpoint: discovery.text_member(members, name: "userinfo_endpoint")?, revocation_endpoint: discovery.text_member(members, name: "revocation_endpoint")?, introspection_endpoint: discovery.text_member(members, name: "introspection_endpoint")?, device_authorization_endpoint: discovery.text_member(members, name: "device_authorization_endpoint")?, registration_endpoint: discovery.text_member(members, name: "registration_endpoint")?, scopes_supported: discovery.texts_member(members, name: "scopes_supported")?, grant_types_supported: discovery.texts_member(members, name: "grant_types_supported")?, code_challenge_methods_supported: discovery.texts_member(members, name: "code_challenge_methods_supported")?, token_endpoint_auth_methods_supported: discovery.texts_member(members, name: "token_endpoint_auth_methods_supported")?, id_token_signing_alg_values_supported: discovery.texts_member(members, name: "id_token_signing_alg_values_supported")?, authorization_response_iss_parameter_supported: discovery.bool_member(members, name: "authorization_response_iss_parameter_supported")?, client_id_metadata_document_supported: discovery.bool_member(members, name: "client_id_metadata_document_supported")?, members: members)
+    )
+
+# `issuer`'s metadata, asked at `metadata_url`, then at
+# `openid_configuration_url` and at OpenID Connect's well-known path
+# inserted as RFC 8414 inserts its own, the first that answers.
+#
+# - `transport`: how the requests are sent.
+# - `issuer`: the issuer.
+#
+# Fails `not_found` where none answers 200, and as `parse_metadata` and
+# `http.send` do. See also `config_from`, `fetch_resource_metadata`.
+function fetch_metadata(transport: http.Client, issuer: str) -> Metadata?
+    places: [str] @= [metadata_url(issuer)?, openid_configuration_url(issuer)?]
+    inserted = discovery.well_known(base: issuer, suffix: "openid-configuration", inserted: true, what: "the issuer")?
+
+    if inserted != places[1]
+        places @ places.push(inserted)
+    statuses: [str] @= []
+
+    for place in places
+        response = http.get(transport, target: place)?
+
+        if response.status == 200
+            return parse_metadata(text: http.text_of(response)?, issuer: issuer)
+        statuses @ statuses.push(f"{place} answered {response.status}")
+
+    return fail(code: NOT_FOUND, msg: f"no metadata for the issuer \"{issuer}\": {statuses.join(", ")}")
+
+## Protected resources
+
+# A protected resource's metadata (RFC 9728 § 2).
+record ResourceMetadata
+    # The resource's identifier, the URL it was asked for.
+    resource: str
+    # The issuers of the authorization servers it trusts, in its order.
+    authorization_servers: [str]
+    # Its JWK set's URL, "" for none.
+    jwks_uri: str
+    # The scopes it takes, empty where none is named.
+    scopes_supported: [str]
+    # How it takes a bearer token: `header`, `body`, `query`.
+    bearer_methods_supported: [str]
+    # Its name for a person, "" for none.
+    resource_name: str
+    # Every member of the document, these included.
+    members: {str: json.Value}
+
+# Where RFC 9728 puts `resource`'s metadata: `/.well-known/oauth-protected-resource`
+# between its host and its path.
+#
+# - `resource`: the resource's identifier, an absolute URL with no fragment.
+#
+# Fails `invalid` where `resource` is not such a URL. See also
+# `fetch_resource_metadata`.
+function resource_metadata_url(resource: str) -> str?
+    return discovery.well_known(
+        base: resource,
+        suffix: "oauth-protected-resource",
+        inserted: true,
+        what: "the resource"
+    )
+
+# The metadata URL a 401's `WWW-Authenticate: Bearer` challenge names in
+# its `resource_metadata` (RFC 9728 § 5.1).
+#
+# - `r`: the resource's response.
+#
+# Fails `not_found` where no Bearer challenge names one. See also
+# `fetch_resource_metadata`, `format_challenge`.
+function resource_metadata_of(r: http.Response) -> str?
+    return discovery.challenge_parameter(
+        http.values_of(r.headers, name: "WWW-Authenticate"),
+        scheme: "Bearer",
+        name: "resource_metadata"
+    )
+
+# The metadata `text` holds, its `resource` required to be `resource`.
+#
+# - `text`: the JSON document.
+# - `resource`: the identifier it was asked for.
+#
+# Fails `invalid` where it is not a JSON object, names another resource, or
+# a member is of the wrong kind. See also `format_resource_metadata`.
+function parse_resource_metadata(text: str, resource: str) -> ResourceMetadata?
+    members = discovery.object_of(text: text, what: "the resource's metadata")?
+    got = discovery.text_member(members, name: "resource")?
+
+    if got != resource
+        return fail(
+            code: INVALID,
+            msg: f"the metadata names the resource \"{got}\", and it was asked for \"{resource}\" (RFC 9728 § 3.3)"
+        )
+    return ok(
+        ResourceMetadata(resource: got, authorization_servers: discovery.texts_member(members, name: "authorization_servers")?, jwks_uri: discovery.text_member(members, name: "jwks_uri")?, scopes_supported: discovery.texts_member(members, name: "scopes_supported")?, bearer_methods_supported: discovery.texts_member(members, name: "bearer_methods_supported")?, resource_name: discovery.text_member(members, name: "resource_name")?, members: members)
+    )
+
+# `resource`'s metadata, asked at `location`, or at `resource_metadata_url`
+# where `location` is "".
+#
+# - `transport`: how the request is sent.
+# - `resource`: the resource's identifier.
+# - `location`: the URL a challenge named (`resource_metadata_of`), or "".
+#
+# Fails `not_found` where the server answers 404, and as
+# `parse_resource_metadata` and `http.send` do. See also `fetch_metadata`.
+function fetch_resource_metadata(transport: http.Client, resource: str, location: str) -> ResourceMetadata?
+    place: str @= location
+
+    if place == ""
+        place @ resource_metadata_url(resource)?
+    response = http.get(transport, target: place)?
+
+    if response.status == 404
+        return fail(code: NOT_FOUND, msg: f"no metadata for the resource \"{resource}\" at {place}")
+
+    if response.status != 200
+        return fail(code: FAILED, msg: f"the resource's metadata at {place} answered {response.status}")
+    return parse_resource_metadata(text: http.text_of(response)?, resource: resource)
+
+# `m` as the JSON document a resource serves at its `resource_metadata_url`.
+#
+# - `m`: the metadata; its `members` are written after the named fields,
+#   those already written passed over.
+#
+# Fails `invalid` where a member holds a `nan`. See also
+# `parse_resource_metadata`.
+function format_resource_metadata(m: ResourceMetadata) -> str?
+    members: {str: json.Value} @= {}
+    members["resource"] @ .text(v: m.resource)
+    discovery.put_texts(@members, name: "authorization_servers", list: m.authorization_servers)
+    discovery.put_text(@members, name: "jwks_uri", text: m.jwks_uri)
+    discovery.put_texts(@members, name: "scopes_supported", list: m.scopes_supported)
+    discovery.put_texts(@members, name: "bearer_methods_supported", list: m.bearer_methods_supported)
+    discovery.put_text(@members, name: "resource_name", text: m.resource_name)
+    discovery.put_rest(members: @members, extra: m.members)
+    return json.format(.object(members: members))
+
+# The `WWW-Authenticate` value a resource answers a request without a valid
+# token with: `Bearer resource_metadata="..."`, and the scope where given.
+#
+# - `location`: the URL of the resource's metadata, as
+#   `resource_metadata_url` makes it.
+# - `scope`: the scopes the request needs, space-separated; "" for none.
+#
+# A `"` or a `\` in either is escaped. See also `resource_metadata_of`.
+function format_challenge(location: str, scope: str) -> str
+    if scope == ""
+        return "Bearer resource_metadata=" + discovery.quoted(location)
+    return "Bearer resource_metadata=" + discovery.quoted(location) + ", scope=" + discovery.quoted(scope)
+
+## Client metadata documents
+
+# A client's metadata (RFC 7591 § 2) as a document served at the URL that is
+# its `client_id` (OAuth Client ID Metadata Documents).
+record ClientMetadata
+    # The URL the document is served at, its own id.
+    client_id: str
+    # Its name for a person, "" for none.
+    client_name: str
+    # Its home page, "" for none.
+    client_uri: str
+    # Its logo, "" for none.
+    logo_uri: str
+    # Where the server may send its redirects.
+    redirect_uris: [str]
+    # The grants it uses, empty for the server's default.
+    grant_types: [str]
+    # How it authenticates: `none` or `private_key_jwt`; a secret has no
+    # place in a public document.
+    token_endpoint_auth_method: str
+    # Its JWK set's URL, for `private_key_jwt`; "" for none.
+    jwks_uri: str
+    # Every member, these included.
+    members: {str: json.Value}
+
+# `m` as the JSON document a client serves at its `client_id`.
+#
+# - `m`: the metadata.
+#
+# Fails `invalid` where `client_id` is no `https://` URL with a path, or a
+# member holds a `nan`. See also `parse_client_metadata`.
+function format_client_metadata(m: ClientMetadata) -> str?
+    _ = discovery.check_client_id(m.client_id)?
+    members: {str: json.Value} @= {}
+    members["client_id"] @ .text(v: m.client_id)
+    discovery.put_text(@members, name: "client_name", text: m.client_name)
+    discovery.put_text(@members, name: "client_uri", text: m.client_uri)
+    discovery.put_text(@members, name: "logo_uri", text: m.logo_uri)
+    discovery.put_texts(@members, name: "redirect_uris", list: m.redirect_uris)
+    discovery.put_texts(@members, name: "grant_types", list: m.grant_types)
+    discovery.put_text(@members, name: "token_endpoint_auth_method", text: m.token_endpoint_auth_method)
+    discovery.put_text(@members, name: "jwks_uri", text: m.jwks_uri)
+    discovery.put_rest(members: @members, extra: m.members)
+    return json.format(.object(members: members))
+
+# The client metadata `text` holds, its `client_id` required to be the URL
+# `client_id` it was fetched from.
+#
+# - `text`: the JSON document.
+# - `client_id`: the URL it was fetched from.
+#
+# Fails `invalid` where it names another id, holds a `client_secret`, names
+# a secret's authentication, or a member is of the wrong kind. See also
+# `fetch_client_metadata`.
+function parse_client_metadata(text: str, client_id: str) -> ClientMetadata?
+    _ = discovery.check_client_id(client_id)?
+    members = discovery.object_of(text: text, what: "the client's metadata")?
+    got = discovery.text_member(members, name: "client_id")?
+
+    if got != client_id
+        return fail(
+            code: INVALID,
+            msg: f"the document names the client \"{got}\", and it was fetched from \"{client_id}\""
+        )
+
+    if !members["client_secret"].is_err()
+        return fail(
+            code: INVALID,
+            msg: "a client's metadata document holds a client_secret, which a public document must not"
+        )
+    method = discovery.text_member(members, name: "token_endpoint_auth_method")?
+
+    if method == "client_secret_basic" || method == "client_secret_post" || method == "client_secret_jwt"
+        return fail(
+            code: INVALID,
+            msg: f"a client's metadata document names {method}, an authentication by a secret it cannot hold"
+        )
+    return ok(
+        ClientMetadata(client_id: got, client_name: discovery.text_member(members, name: "client_name")?, client_uri: discovery.text_member(members, name: "client_uri")?, logo_uri: discovery.text_member(members, name: "logo_uri")?, redirect_uris: discovery.texts_member(members, name: "redirect_uris")?, grant_types: discovery.texts_member(members, name: "grant_types")?, token_endpoint_auth_method: method, jwks_uri: discovery.text_member(members, name: "jwks_uri")?, members: members)
+    )
+
+# The metadata document at the URL `client_id`, as a server reads a client
+# it has never seen.
+#
+# - `transport`: how the request is sent.
+# - `client_id`: the client's id, an `https://` URL.
+#
+# Fails `invalid` where `client_id` is no `https://` URL, and as
+# `parse_client_metadata` and `http.send` do. See also
+# `parse_client_metadata`.
+function fetch_client_metadata(transport: http.Client, client_id: str) -> ClientMetadata?
+    _ = discovery.check_client_id(client_id)?
+    response = http.get(transport, target: client_id)?
+
+    if response.status != 200
+        return fail(code: FAILED, msg: f"the client's metadata at {client_id} answered {response.status}")
+    return parse_client_metadata(text: http.text_of(response)?, client_id: client_id)
+
+## OpenID Connect
+
+# What an ID token must answer (OpenID Connect Core § 3.1.3.7). Made by
+# `id_token_rules`.
+record IdTokenRules
+    # The provider's issuer, `iss`.
+    issuer: str
+    # The client's id: `aud` must hold it, and `azp` be it where `aud` holds
+    # others.
+    client_id: str
+    # The nonce `authorization_url` sent, "" where none was.
+    nonce: str
+    # The algorithms accepted.
+    algorithms: [jose.Algorithm]
+    # How far `exp` and `iat` may miss `now`.
+    leeway: time.Duration
+    # The time the token is judged at.
+    now: time.Instant
+    # The seconds since `auth_time` allowed, as `max_age` asked; 0 for no
+    # bound.
+    max_age: i64
+    # The access token issued beside it, whose `at_hash` is checked where
+    # the ID token has one; "" for none.
+    access_token: str
+
+# Rules for an ID token of `metadata`'s issuer to `client_id` with `nonce`:
+# the algorithms the provider names that `jose` knows, `RS256` where it
+# names none, a leeway of a minute, the wall clock's time.
+#
+# - `metadata`: the provider's metadata.
+# - `client_id`: the client's id.
+# - `nonce`: the nonce sent, "" for none.
+#
+# Fails `failed` where the wall clock cannot be read. See also
+# `verify_id_token`.
+function id_token_rules(metadata: Metadata, client_id: str, nonce: str) -> IdTokenRules?
+    accepted: [jose.Algorithm] @= []
+
+    for name in metadata.id_token_signing_alg_values_supported
+        match jose.parse_algorithm(name)
+            .ok a  => accepted @ accepted.push(a)
+            .err _ => _ = 0
+
+    if metadata.id_token_signing_alg_values_supported.len() == 0
+        accepted @ [.rs256]
+    return ok(
+        IdTokenRules(issuer: metadata.issuer, client_id: client_id, nonce: nonce, algorithms: accepted, leeway: time.seconds(60)?, now: time.now()?, max_age: 0, access_token: "")
+    )
+
+# The ID token `id_token` verified by one of `trusted` and checked by
+# `rules`: its signature, `iss`, `aud`, `azp`, `exp`, `iat`, `nonce`,
+# `auth_time` and `at_hash`.
+#
+# - `id_token`: the compact JWS.
+# - `trusted`: the provider's keys, as `fetch_key_set` reads them.
+# - `rules`: what it must answer.
+#
+# Fails `invalid` naming the first check refused, `not_found` where no key
+# has its `kid`, and as `jose.verify_token` does. See also `fetch_key_set`.
+function verify_id_token(id_token: str, trusted: [jose.Key], rules: IdTokenRules) -> jose.Token?
+    if rules.issuer == "" || rules.client_id == ""
+        return fail(code: INVALID, msg: "an ID token checked against no issuer or no client")
+    checks = jose.Rules(
+        algorithms: rules.algorithms,
+        issuer: rules.issuer,
+        audience: rules.client_id,
+        subject: "",
+        token_type: "",
+        required: ["iss", "sub", "aud", "exp", "iat"],
+        leeway: rules.leeway,
+        now: rules.now
+    )
+    t = jose.verify_token(id_token, trusted: trusted, rules: checks)?
+    alg = jose.claim_text(t.header, name: "alg")?
+    oidc.check(t.claims, alg: alg, client_id: rules.client_id, nonce: rules.nonce, max_age: rules.max_age, access_token: rules.access_token, leeway: rules.leeway, now: rules.now)?
+    return ok(t)
+
+# The keys of the JWK set at `jwks_uri`, as `jose.parse_key_set` reads them.
+#
+# - `transport`: how the request is sent.
+# - `jwks_uri`: the set's URL.
+#
+# Fails `failed` for a status of 400 or more, and as `jose.parse_key_set`
+# and `http.send` do. See also `verify_id_token`.
+function fetch_key_set(transport: http.Client, jwks_uri: str) -> [jose.Key]?
+    response = http.require_success(http.get(transport, target: jwks_uri)?)?
+    return jose.parse_key_set(http.text_of(response)?)
+
+# The claims the UserInfo endpoint answers for `token` (OpenID Connect Core
+# § 5.3), its `sub` required to be `subject`.
+#
+# - `transport`: how the request is sent.
+# - `endpoint`: the UserInfo endpoint.
+# - `token`: the access token's holder.
+# - `subject`: the ID token's `sub`; "" checks none.
+#
+# Fails `invalid` where the answer is not a JSON object or its `sub` is
+# another; `unsupported` for a signed answer (`application/jwt`); `failed`
+# for a status of 400 or more. See also `verify_id_token`.
+function userinfo(transport: http.Client, endpoint: str, token: Token, subject: str) -> {str: json.Value}?
+    asked = authorize(http.request(method: http.METHOD_GET, target: endpoint)?, token: token)
+    response = http.require_success(http.send(transport, r: asked)?)?
+    kind = http.value_of(response.headers, name: "Content-Type").default("")
+
+    if kind.len() >= 15 && kind.slice(from: 0, to: 15) == "application/jwt"
+        return fail(code: UNSUPPORTED, msg: "a signed UserInfo answer (application/jwt), which is not read here")
+    members = wire.members_of(response)?
+
+    if subject != ""
+        got = discovery.text_member(members, name: "sub")?
+
+        if got != subject
+            return fail(code: INVALID, msg: f"the UserInfo answer is for \"{got}\", and the ID token for \"{subject}\"")
+    return ok(members)
+
+## Tests
+
+test "the authorization code grant on the loopback: metadata, the URL, the redirect and its issuer, PKCE and a resource, the ID token, UserInfo, a refresh, a revocation and an introspection"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    transport = http.default_client()
+    m = fetch_metadata(transport, issuer: base).must()
+    assert m.token_endpoint == base + "/token" && m.authorization_response_iss_parameter_supported
+    c @= config_from(m, client_id: loopback.CLIENT_ID)
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    c.redirect_uri @ "http://127.0.0.1/callback"
+    c.scopes @ ["openid", "files:read"]
+    c.resources @ [base + "/mcp"]
+    link = authorization_url(
+        c,
+        state: "xyz",
+        challenge: challenge_of(loopback.VERIFIER),
+        extra: [url.Pair(key: "nonce", value: loopback.NONCE)]
+    ).must()
+    query = url.parse_query(url.parse(link).must().query).must()
+    assert url.value_of(query, key: "code_challenge").must() == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+    assert url.value_of(query, key: "resource").must() == base + "/mcp"
+    redirect = "http://127.0.0.1/callback?code=code-1&state=xyz&iss=" + url.escape_query(base)
+    code = read_redirect(target: redirect, state: "xyz", issuer: base).must()
+    t = exchange(c, code: code, verifier: loopback.VERIFIER).must()
+    assert t.access_token == "access-1" && t.token_type == "Bearer" && t.refresh_token == "refresh-1"
+    provider_keys = fetch_key_set(transport, jwks_uri: m.jwks_uri).must()
+    rules @= id_token_rules(m, client_id: loopback.CLIENT_ID, nonce: loopback.NONCE).must()
+    assert rules.algorithms == [.es256]
+    rules.access_token @ t.access_token
+    id = verify_id_token(t.id_token, trusted: provider_keys, rules: rules).must()
+    assert jose.claim_text(id.claims, name: "sub").must() == loopback.SUBJECT
+    wrong_nonce @= rules
+    wrong_nonce.nonce @ "other"
+    assert verify_id_token(t.id_token, trusted: provider_keys, rules: wrong_nonce).is_err()
+    info = userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: loopback.SUBJECT).must()
+    assert info["name"].must() == .text(v: "Jane Doe")
+    assert userinfo(transport, endpoint: m.userinfo_endpoint, token: t, subject: "someone else").is_err()
+    again = refresh(c, token: t).must()
+    assert again.access_token == "access-2" && again.refresh_token == "refresh-1"
+    revoke(c, token: again.access_token, hint: "access_token").must()
+    seen = introspect(c, token: "access-1", hint: "access_token").must()
+    assert seen.active && seen.subject == loopback.SUBJECT && seen.audiences == [base + "/mcp"]
+    assert !introspect(c, token: "spent", hint: "").must().active
+    wrong = exchange(c, code: code, verifier: repeat("a", 43))
+
+    match wrong
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    log = loopback.stop(s)
+    assert strings_hold(log: log, piece: "code_verifier=dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+
+test "a protected resource on the loopback: its 401 read, its metadata followed to its server, a token for it, the resource answering"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    transport = http.default_client()
+    refused = http.get(transport, target: base + "/mcp").must()
+    assert refused.status == 401
+    location = resource_metadata_of(refused).must()
+    assert location == resource_metadata_url(base + "/mcp").must()
+    rm = fetch_resource_metadata(transport, resource: base + "/mcp", location: location).must()
+    assert rm.authorization_servers == [base] && rm.scopes_supported == ["files:read"]
+    m = fetch_metadata(transport, issuer: rm.authorization_servers[0]).must()
+    c @= config_from(m, client_id: loopback.CLIENT_ID)
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .post
+    c.resources @ [rm.resource]
+    t = exchange(c, code: "code-1", verifier: loopback.VERIFIER).must()
+    answered = http.send(
+        transport,
+        r: authorize(http.request(method: http.METHOD_GET, target: base + "/mcp").must(), token: t)
+    ).must()
+    assert answered.status == 200 && http.text_of(answered).must() == "hello"
+    assert fetch_resource_metadata(transport, resource: base + "/other", location: "").is_err()
+    _ = loopback.stop(s)
+
+test "the device grant, client credentials, a JWT bearer grant, private_key_jwt, and OpenID discovery under a path, on the loopback"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    transport = http.default_client()
+    m = fetch_metadata(transport, issuer: base).must()
+    c = config_from(m, client_id: "tv")
+    device = start_device(c).must()
+    assert device.user_code == "WDJB-MJHT" && device.interval == 0
+    t = poll_device(c, device: device).must()
+    assert t.access_token == "device-1"
+    denied @= device
+    denied.device_code @ "denied"
+
+    match poll_device(c, device: denied)
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION
+
+    machine @= c
+    machine.client_id @ loopback.CLIENT_ID
+    machine.client_secret @ loopback.CLIENT_SECRET
+    machine.authentication @ .basic
+    assert client_credentials(machine).must().access_token == "machine-1"
+    assert exchange_assertion(machine, assertion: "eyJ.e30.sig").must().access_token == "assertion-1"
+    signed @= c
+    signed.client_id @ "signed-app"
+    signed.authentication @ .private_key_jwt(key: jose.generate_key(.p256).must(), algorithm: .es256)
+    assert client_credentials(signed).must().access_token == "machine-1"
+    tenant = fetch_metadata(transport, issuer: base + "/tenant").must()
+    assert tenant.issuer == base + "/tenant"
+    assert fetch_metadata(transport, issuer: base + "/nobody").is_err()
+    _ = loopback.stop(s)
+
+# Whether `log` holds `piece`, for the tests.
+function strings_hold(log: str, piece: str) -> bool
+    if piece.len() > log.len()
+        return false
+
+    for at in range(from: 0, to: log.len() - piece.len() + 1)
+        if log[at] == piece[0] && log.slice(from: at, to: at + piece.len()) == piece
+            return true
+
+    return false
+
+test "read_redirect: refused, another state, no state expected, another issuer, no issuer, an error, access denied, two codes"
+    good = "https://app.example/cb?code=c&state=s&iss=https%3A%2F%2Fa.example"
+    assert read_redirect(target: good, state: "s", issuer: "https://a.example").must() == "c"
+    assert read_redirect(target: good, state: "t", issuer: "https://a.example").is_err()
+    assert read_redirect(target: good, state: "", issuer: "").is_err()
+    assert read_redirect(target: good, state: "s", issuer: "https://b.example").is_err()
+    assert read_redirect(
+        target: "https://app.example/cb?code=c&state=s",
+        state: "s",
+        issuer: "https://a.example"
+    ).is_err()
+    assert read_redirect(target: "https://app.example/cb?code=c&state=s", state: "s", issuer: "").must() == "c"
+
+    match read_redirect(target: "https://app.example/cb?error=server_error&state=s", state: "s", issuer: "")
+        .ok _  => assert false
+        .err e => assert e.code == FAILED
+
+    match read_redirect(target: "https://app.example/cb?error=access_denied&state=s", state: "s", issuer: "")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION
+
+    assert read_redirect(target: "https://app.example/cb?code=c&code=d&state=s", state: "s", issuer: "").is_err()
+
+test "parse_metadata: RFC 8414 § 3.2's example, another issuer refused, a member of the wrong kind"
+    text = "{\"issuer\":\"https://server.example.com\",\"authorization_endpoint\":\"https://server.example.com/authorize\",\"token_endpoint\":\"https://server.example.com/token\",\"token_endpoint_auth_methods_supported\":[\"client_secret_basic\",\"private_key_jwt\"],\"token_endpoint_auth_signing_alg_values_supported\":[\"RS256\",\"ES256\"],\"userinfo_endpoint\":\"https://server.example.com/userinfo\",\"jwks_uri\":\"https://server.example.com/jwks.json\",\"registration_endpoint\":\"https://server.example.com/register\",\"scopes_supported\":[\"openid\",\"profile\",\"email\",\"address\",\"phone\",\"offline_access\"],\"response_types_supported\":[\"code\",\"code token\"],\"service_documentation\":\"http://server.example.com/service_documentation.html\",\"ui_locales_supported\":[\"en-US\",\"en-GB\",\"en-CA\",\"fr-FR\",\"fr-CA\"]}"
+    m = parse_metadata(text: text, issuer: "https://server.example.com").must()
+    assert m.token_endpoint_auth_methods_supported == ["client_secret_basic", "private_key_jwt"]
+    assert m.scopes_supported.len() == 6 && m.revocation_endpoint == ""
+    assert parse_metadata(text: text, issuer: "https://other.example.com").is_err()
+    assert parse_metadata(
+        text: "{\"issuer\":\"https://a\",\"scopes_supported\":\"openid\"}",
+        issuer: "https://a"
+    ).is_err()
+
+test "parse_client_metadata and format_client_metadata: a document both ways, its id another, a secret, a secret's method"
+    m = ClientMetadata(
+        client_id: "https://app.example.com/oauth/client.json",
+        client_name: "Example",
+        client_uri: "",
+        logo_uri: "",
+        redirect_uris: ["http://127.0.0.1:3000/callback"],
+        grant_types: ["authorization_code"],
+        token_endpoint_auth_method: "none",
+        jwks_uri: "",
+        members: {}
+    )
+    text = format_client_metadata(m).must()
+    back = parse_client_metadata(text: text, client_id: m.client_id).must()
+    assert back.redirect_uris == m.redirect_uris && back.client_name == "Example"
+    assert parse_client_metadata(text: text, client_id: "https://evil.example.com/client.json").is_err()
+    assert parse_client_metadata(
+        text: "{\"client_id\":\"https://app.example.com/c\",\"client_secret\":\"x\"}",
+        client_id: "https://app.example.com/c"
+    ).is_err()
+    assert parse_client_metadata(
+        text: "{\"client_id\":\"https://app.example.com/c\",\"token_endpoint_auth_method\":\"client_secret_post\"}",
+        client_id: "https://app.example.com/c"
+    ).is_err()
+    bad @= m
+    bad.client_id @ "http://app.example.com/c"
+    assert format_client_metadata(bad).is_err()
+
+test "is_expired: no expiry, ten seconds early, after"
+    now = time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
+    t @= Token(
+        access_token: "a",
+        token_type: "Bearer",
+        refresh_token: "",
+        expiry: time.max_instant(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    assert !is_expired(t, now: now)
+    t.expiry @ time.from_unix(whole_seconds: 1011, extra_nanoseconds: 0).must()
+    assert !is_expired(t, now: now)
+    t.expiry @ time.from_unix(whole_seconds: 1010, extra_nanoseconds: 0).must()
+    assert is_expired(t, now: now)
+
+## Examples
+
+# A public client with nothing set.
+test "default_config: a public client"
+    c = default_config("my-app")
+    assert c.client_id == "my-app" && c.authentication == .none && c.token_endpoint == ""
+
+# A client whose endpoints a server's metadata names.
+test "config_from: the endpoints of RFC 8414's example"
+    m = parse_metadata(
+        text: "{\"issuer\":\"https://server.example.com\",\"token_endpoint\":\"https://server.example.com/token\"}",
+        issuer: "https://server.example.com"
+    ).must()
+    assert config_from(m, client_id: "app").token_endpoint == "https://server.example.com/token"
+
+# A PKCE verifier, 43 characters drawn by the system.
+test "new_verifier: 43 characters"
+    assert new_verifier().must().len() == 43
+
+# The S256 challenge of RFC 7636 Appendix B's verifier.
+test "challenge_of: RFC 7636 Appendix B"
+    assert challenge_of("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk") == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+
+# A state, drawn anew each time.
+test "new_state: two states apart"
+    assert new_state().must() != new_state().must()
+
+# The URL a user is sent to.
+test "authorization_url: the code, the state and the challenge"
+    c @= default_config("s6BhdRkqt3")
+    c.authorization_endpoint @ "https://server.example.com/authorize"
+    c.redirect_uri @ "https://client.example.com/cb"
+    link = authorization_url(
+        c,
+        state: "xyz",
+        challenge: "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+        extra: []
+    ).must()
+    assert link == "https://server.example.com/authorize?response_type=code&client_id=s6BhdRkqt3&redirect_uri=https%3A%2F%2Fclient.example.com%2Fcb&state=xyz&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256"
+
+# The code of RFC 6749 § 4.1.2's redirect.
+test "read_redirect: RFC 6749 § 4.1.2's redirect"
+    assert read_redirect(target: "https://client.example.com/cb?code=SplxlOBeZQQYbYS6WxSbIA&state=xyz", state: "xyz", issuer: "").must() == "SplxlOBeZQQYbYS6WxSbIA"
+
+# A code exchanged for tokens, on the loopback.
+test "exchange: a code and its verifier"
+    s = loopback.start()
+    c @= default_config(loopback.CLIENT_ID)
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    assert exchange(c, code: "code-1", verifier: loopback.VERIFIER).must().id_token != ""
+    _ = loopback.stop(s)
+
+# A form posted to an endpoint with the client authenticated.
+test "post_form: a revocation by hand"
+    s = loopback.start()
+    c @= default_config(loopback.CLIENT_ID)
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    assert post_form(c, endpoint: f"http://127.0.0.1:{s.port}/revoke", form: [url.Pair(key: "token", value: "x")]).must().status == 200
+    _ = loopback.stop(s)
+
+# A token read from a token endpoint's response.
+test "read_token: RFC 6749 § 5.1's example"
+    body = "{\"access_token\":\"2YotnFZFEjr1zCsicMWpAA\",\"token_type\":\"example\",\"expires_in\":3600,\"refresh_token\":\"tGzv3JOkF0XG5Qx2TlKWIA\"}"
+    t = read_token(
+        http.respond(200, content_type: "application/json", body: bytes.from_text(body)),
+        now: time.epoch()
+    ).must()
+    assert t.refresh_token == "tGzv3JOkF0XG5Qx2TlKWIA" && time.unix_seconds(t.expiry) == 3600
+
+# A token for the client itself, on the loopback.
+test "client_credentials: a machine's token"
+    s = loopback.start()
+    c @= default_config(loopback.CLIENT_ID)
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    assert client_credentials(c).must().access_token == "machine-1"
+    _ = loopback.stop(s)
+
+# A token renewed, its refresh token kept.
+test "refresh: the refresh token kept where none is sent"
+    s = loopback.start()
+    c @= default_config("public-app")
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    old = Token(
+        access_token: "access-1",
+        token_type: "Bearer",
+        refresh_token: "refresh-1",
+        expiry: time.epoch(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    assert refresh(c, token: old).must().refresh_token == "refresh-1"
+    _ = loopback.stop(s)
+
+# A token that has not expired kept as it is.
+test "renewed: a token with no expiry kept"
+    t = Token(
+        access_token: "a",
+        token_type: "Bearer",
+        refresh_token: "",
+        expiry: time.max_instant(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    assert renewed(default_config("x"), token: t, now: time.epoch()).must() == t
+
+# A JWT given as the grant, on the loopback.
+test "exchange_assertion: a JWT bearer grant"
+    s = loopback.start()
+    c @= default_config("public-app")
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    assert exchange_assertion(c, assertion: "eyJ.e30.sig").must().access_token == "assertion-1"
+    _ = loopback.stop(s)
+
+# Any grant, its parameters the program's.
+test "request_token: client credentials by hand"
+    s = loopback.start()
+    c @= default_config("public-app")
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    assert request_token(c, form: [url.Pair(key: "grant_type", value: "client_credentials")]).must().access_token == "machine-1"
+    _ = loopback.stop(s)
+
+# The codes a device shows its user.
+test "start_device: the user code"
+    s = loopback.start()
+    c @= default_config("tv")
+    c.device_authorization_endpoint @ f"http://127.0.0.1:{s.port}/device_authorization"
+    assert start_device(c).must().user_code == "WDJB-MJHT"
+    _ = loopback.stop(s)
+
+# The token a device waits for while its user approves.
+test "poll_device: pending once, then the token"
+    s = loopback.start()
+    c @= default_config("tv")
+    c.device_authorization_endpoint @ f"http://127.0.0.1:{s.port}/device_authorization"
+    c.token_endpoint @ f"http://127.0.0.1:{s.port}/token"
+    assert poll_device(c, device: start_device(c).must()).must().access_token == "device-1"
+    _ = loopback.stop(s)
+
+# Whether a token is still good.
+test "is_expired: a token past its expiry"
+    t = Token(
+        access_token: "a",
+        token_type: "Bearer",
+        refresh_token: "",
+        expiry: time.epoch(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    assert is_expired(t, now: time.epoch())
+
+# A request carrying a token.
+test "authorize: Authorization: Bearer"
+    t = Token(
+        access_token: "mF_9.B5f-4.1JqM",
+        token_type: "Bearer",
+        refresh_token: "",
+        expiry: time.max_instant(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    r = authorize(http.request(method: http.METHOD_GET, target: "https://resource.example.com/").must(), token: t)
+    assert http.value_of(r.headers, name: "Authorization").must() == "Bearer mF_9.B5f-4.1JqM"
+
+# A token revoked, on the loopback.
+test "revoke: a refresh token"
+    s = loopback.start()
+    c @= default_config(loopback.CLIENT_ID)
+    c.revocation_endpoint @ f"http://127.0.0.1:{s.port}/revoke"
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    revoke(c, token: "refresh-1", hint: "refresh_token").must()
+    _ = loopback.stop(s)
+
+# What the server says of a token, on the loopback.
+test "introspect: an active token"
+    s = loopback.start()
+    c @= default_config(loopback.CLIENT_ID)
+    c.introspection_endpoint @ f"http://127.0.0.1:{s.port}/introspect"
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    assert introspect(c, token: "access-1", hint: "").must().scopes == ["files:read"]
+    _ = loopback.stop(s)
+
+# Where RFC 8414 puts an issuer's metadata.
+test "metadata_url: RFC 8414 § 3.1's issuer with a path"
+    assert metadata_url("https://example.com/issuer1").must() == "https://example.com/.well-known/oauth-authorization-server/issuer1"
+
+# Where OpenID Connect puts a provider's configuration.
+test "openid_configuration_url: after the issuer's path"
+    assert openid_configuration_url("https://example.com/issuer1").must() == "https://example.com/issuer1/.well-known/openid-configuration"
+
+# A server's metadata read.
+test "parse_metadata: an issuer and its token endpoint"
+    m = parse_metadata(
+        text: "{\"issuer\":\"https://a.example\",\"token_endpoint\":\"https://a.example/token\"}",
+        issuer: "https://a.example"
+    ).must()
+    assert m.token_endpoint == "https://a.example/token"
+
+# A server's metadata fetched, on the loopback.
+test "fetch_metadata: the loopback server's"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    assert fetch_metadata(http.default_client(), issuer: base).must().issuer == base
+    _ = loopback.stop(s)
+
+# Where RFC 9728 puts a resource's metadata.
+test "resource_metadata_url: RFC 9728 § 3.1's resource with a path"
+    assert resource_metadata_url("https://resource.example.com/resource1").must() == "https://resource.example.com/.well-known/oauth-protected-resource/resource1"
+
+# The metadata URL a 401 names.
+test "resource_metadata_of: RFC 9728 § 5.1's challenge"
+    r @= http.respond_status(401)
+    r.headers @ http.with_header(
+        r.headers,
+        name: "WWW-Authenticate",
+        value: "Bearer resource_metadata=\"https://resource.example.com/.well-known/oauth-protected-resource\""
+    )
+    assert resource_metadata_of(r).must() == "https://resource.example.com/.well-known/oauth-protected-resource"
+
+# A resource's metadata read: RFC 9728 § 3.2's example.
+test "parse_resource_metadata: RFC 9728 § 3.2"
+    text = "{\"resource\":\"https://resource.example.com\",\"authorization_servers\":[\"https://as1.example.com\",\"https://as2.example.net\"],\"bearer_methods_supported\":[\"header\",\"body\"],\"scopes_supported\":[\"profile\",\"email\",\"phone\"],\"resource_documentation\":\"https://resource.example.com/resource_documentation.html\"}"
+    m = parse_resource_metadata(text: text, resource: "https://resource.example.com").must()
+    assert m.authorization_servers == ["https://as1.example.com", "https://as2.example.net"]
+
+# A resource's metadata fetched, on the loopback.
+test "fetch_resource_metadata: the loopback resource's"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    assert fetch_resource_metadata(http.default_client(), resource: base + "/mcp", location: "").must().authorization_servers == [base]
+    _ = loopback.stop(s)
+
+# A resource's metadata written, read back the same.
+test "format_resource_metadata: written and read back"
+    m = ResourceMetadata(
+        resource: "https://r.example/mcp",
+        authorization_servers: ["https://a.example"],
+        jwks_uri: "",
+        scopes_supported: ["files:read"],
+        bearer_methods_supported: ["header"],
+        resource_name: "Files",
+        members: {}
+    )
+    back = parse_resource_metadata(text: format_resource_metadata(m).must(), resource: m.resource).must()
+    assert back.authorization_servers == m.authorization_servers && back.resource_name == "Files"
+
+# The challenge a resource answers a request without a token with.
+test "format_challenge: the metadata's URL and a scope"
+    assert format_challenge(location: "https://r.example/.well-known/oauth-protected-resource/mcp", scope: "files:read") == "Bearer resource_metadata=\"https://r.example/.well-known/oauth-protected-resource/mcp\", scope=\"files:read\""
+
+# A client's metadata document written.
+test "format_client_metadata: a public client's document"
+    m = ClientMetadata(
+        client_id: "https://app.example.com/client.json",
+        client_name: "",
+        client_uri: "",
+        logo_uri: "",
+        redirect_uris: ["http://127.0.0.1/cb"],
+        grant_types: [],
+        token_endpoint_auth_method: "none",
+        jwks_uri: "",
+        members: {}
+    )
+    assert format_client_metadata(m).must() == "{\"client_id\":\"https://app.example.com/client.json\",\"redirect_uris\":[\"http://127.0.0.1/cb\"],\"token_endpoint_auth_method\":\"none\"}"
+
+# A client's metadata document read, its id the URL it came from.
+test "parse_client_metadata: a public client's document"
+    m = parse_client_metadata(
+        text: "{\"client_id\":\"https://app.example.com/client.json\",\"client_name\":\"App\"}",
+        client_id: "https://app.example.com/client.json"
+    ).must()
+    assert m.client_name == "App"
+
+# A client's metadata fetched: refused before any request for an id that is no https URL.
+test "fetch_client_metadata: an http id refused"
+    assert fetch_client_metadata(http.default_client(), client_id: "http://app.example.com/client.json").is_err()
+
+# Rules for an ID token from a provider's metadata.
+test "id_token_rules: RS256 where the provider names none"
+    m = parse_metadata(text: "{\"issuer\":\"https://a.example\"}", issuer: "https://a.example").must()
+    rules = id_token_rules(m, client_id: "app", nonce: "n").must()
+    assert rules.algorithms == [.rs256] && rules.issuer == "https://a.example"
+
+# An ID token verified, on the loopback.
+test "verify_id_token: the loopback provider's"
+    s = loopback.start()
+    base = f"http://127.0.0.1:{s.port}"
+    m = fetch_metadata(http.default_client(), issuer: base).must()
+    c @= config_from(m, client_id: loopback.CLIENT_ID)
+    c.client_secret @ loopback.CLIENT_SECRET
+    c.authentication @ .basic
+    t = exchange(c, code: "code-1", verifier: loopback.VERIFIER).must()
+    provider_keys = fetch_key_set(http.default_client(), jwks_uri: m.jwks_uri).must()
+    id = verify_id_token(
+        t.id_token,
+        trusted: provider_keys,
+        rules: id_token_rules(m, client_id: loopback.CLIENT_ID, nonce: loopback.NONCE).must()
+    ).must()
+    assert jose.claim_text(id.claims, name: "nonce").must() == loopback.NONCE
+    _ = loopback.stop(s)
+
+# A provider's keys fetched, on the loopback.
+test "fetch_key_set: one P-256 key"
+    s = loopback.start()
+    provider_keys = fetch_key_set(http.default_client(), jwks_uri: f"http://127.0.0.1:{s.port}/jwks").must()
+    assert provider_keys.len() == 1 && provider_keys[0].curve == "P-256"
+    _ = loopback.stop(s)
+
+# The user's claims, on the loopback.
+test "userinfo: the user's name"
+    s = loopback.start()
+    t = Token(
+        access_token: "access-1",
+        token_type: "Bearer",
+        refresh_token: "",
+        expiry: time.max_instant(),
+        scopes: [],
+        id_token: "",
+        members: {}
+    )
+    info = userinfo(
+        http.default_client(),
+        endpoint: f"http://127.0.0.1:{s.port}/userinfo",
+        token: t,
+        subject: loopback.SUBJECT
+    ).must()
+    assert info["name"].must() == .text(v: "Jane Doe")
+    _ = loopback.stop(s)
