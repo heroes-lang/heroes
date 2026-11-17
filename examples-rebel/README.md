@@ -26,7 +26,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | layer | package | what it holds | may use | C under it |
 |---|---|---|---|---|
 | 0 | `unicode` | what a character is: classes, case, the tables, UTF-8 read and written |  |  |
-| 0 | `math` | the functions of mathematics, and the integer helpers that cannot overflow in silence | `math/libm` | `math.h` |
+| 0 | `math` | the functions of mathematics, complex numbers by C11 Annex G, and the integer helpers that cannot overflow in silence | `math/libm` | `math.h` |
 | 0 | `lists` | what the built-ins do not do for a `[T]`: a stable sort by an order, search, slices of a list, pairs |  |  |
 | 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, entries, merging, removing |  |  |
 | 0 | `numbers` | a number read from text and written as text, in every base and precision |  |  |
@@ -52,7 +52,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `regex` | a regular expression matched in linear time | `unicode` |  |
 | 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
-| 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms; complex numbers as a record | `math` |  |
+| 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
 | 1 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text | `lists` |  |
 | 1 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one | `lists` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |

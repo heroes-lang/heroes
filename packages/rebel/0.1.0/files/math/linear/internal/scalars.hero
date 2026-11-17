@@ -1,0 +1,238 @@
+# The numbers beneath `math/linear`: the length of three and four floats
+# without overflow on the way, the comparisons that answer false for a nan
+# where ordering one would abort (spec § 7), and the small operations of games
+# (`lerp`, `inverse_lerp`, `smoothstep`, `smootherstep`) on plain floats.
+
+use math
+
+# Whether `x` is above zero; a nan is not.
+#
+# - `x`: any float.
+function is_positive(x: f64) -> bool
+    return !math.is_nan(x) && x > 0.0
+
+# Whether `a` is above `b`; a nan on either side answers false.
+#
+# - `a`: any float.
+# - `b`: any float.
+function is_above(a: f64, b: f64) -> bool
+    return !math.is_nan(a) && !math.is_nan(b) && a > b
+
+# The length of `(x, y, z, w)`, the square root of the sum of the squares:
+# where the largest part is far from 1 every part is first scaled by a power
+# of two, exactly, so that nothing overflows or underflows before the answer
+# does. An infinite part answers the infinity, even beside a nan; a nan
+# otherwise answers a nan.
+#
+# - `x`: the first part.
+# - `y`: the second part.
+# - `z`: the third part.
+# - `w`: the fourth part, 0.0 for three.
+function length4(x: f64, y: f64, z: f64, w: f64) -> f64
+    if math.is_inf(x) || math.is_inf(y) || math.is_inf(z) || math.is_inf(w)
+        return math.INF
+
+    if math.is_nan(x) || math.is_nan(y) || math.is_nan(z) || math.is_nan(w)
+        return math.NAN
+    big = math.max(a: math.max(a: math.abs(x), b: math.abs(y)), b: math.max(a: math.abs(z), b: math.abs(w)))
+
+    if big == 0.0
+        return 0.0
+    e = math.exponent_of(big).default(0)
+
+    if e > -500 && e < 500
+        return math.sqrt(x * x + y * y + z * z + w * w)
+    a = math.scale(x: x, exponent: -e)
+    b = math.scale(x: y, exponent: -e)
+    c = math.scale(x: z, exponent: -e)
+    d = math.scale(x: w, exponent: -e)
+    return math.scale(x: math.sqrt(a * a + b * b + c * c + d * d), exponent: e)
+
+# The four nans `unit4` and `inverse4` answer for no answer.
+function nans() -> [f64]
+    return [math.NAN, math.NAN, math.NAN, math.NAN]
+
+# The power of two the largest of `(x, y, z, w)` in size lies at, all four
+# finite and one not zero.
+#
+# - `x`: the first part.
+# - `y`: the second part.
+# - `z`: the third part.
+# - `w`: the fourth part.
+function largest_exponent(x: f64, y: f64, z: f64, w: f64) -> i64
+    big = math.max(a: math.max(a: math.abs(x), b: math.abs(y)), b: math.max(a: math.abs(z), b: math.abs(w)))
+    return math.exponent_of(big).default(0)
+
+# Whether `(x, y, z, w)` has a direction: every part finite and one not zero.
+#
+# - `x`: the first part.
+# - `y`: the second part.
+# - `z`: the third part.
+# - `w`: the fourth part.
+function has_direction(x: f64, y: f64, z: f64, w: f64) -> bool
+    finite = math.is_finite(x) && math.is_finite(y) && math.is_finite(z) && math.is_finite(w)
+    return finite && (x != 0.0 || y != 0.0 || z != 0.0 || w != 0.0)
+
+# `(x, y, z, w)` divided by its length, four floats of length 1: first scaled
+# by a power of two, exactly, so that its largest part lies from 1 up to 2 and
+# its length can neither overflow nor underflow, whatever the size of the
+# parts. Zero, or a part infinite or a nan, answers four nans.
+#
+# - `x`: the first part.
+# - `y`: the second part.
+# - `z`: the third part, 0.0 for two.
+# - `w`: the fourth part, 0.0 for three.
+function unit4(x: f64, y: f64, z: f64, w: f64) -> [f64]
+    if !has_direction(x: x, y: y, z: z, w: w)
+        return nans()
+    e = largest_exponent(x: x, y: y, z: z, w: w)
+    a = math.scale(x: x, exponent: -e)
+    b = math.scale(x: y, exponent: -e)
+    c = math.scale(x: z, exponent: -e)
+    d = math.scale(x: w, exponent: -e)
+    n = math.sqrt(a * a + b * b + c * c + d * d)
+    return [a / n, b / n, c / n, d / n]
+
+# The inverse of the quaternion `(x, y, z, w)`, its conjugate over its squared
+# length, scaled as `unit4` scales so that no step overflows or underflows
+# before the answer does. Zero, or a part infinite or a nan, answers four
+# nans.
+#
+# - `x`: the part along i.
+# - `y`: the part along j.
+# - `z`: the part along k.
+# - `w`: the real part.
+function inverse4(x: f64, y: f64, z: f64, w: f64) -> [f64]
+    if !has_direction(x: x, y: y, z: z, w: w)
+        return nans()
+    e = largest_exponent(x: x, y: y, z: z, w: w)
+    a = math.scale(x: x, exponent: -e)
+    b = math.scale(x: y, exponent: -e)
+    c = math.scale(x: z, exponent: -e)
+    d = math.scale(x: w, exponent: -e)
+    n2 = a * a + b * b + c * c + d * d
+    return [
+        math.scale(x: -a / n2, exponent: -e)
+        math.scale(x: -b / n2, exponent: -e)
+        math.scale(x: -c / n2, exponent: -e)
+        math.scale(x: d / n2, exponent: -e)
+    ]
+
+# The number a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+function lerp(from: f64, to: f64, t: f64) -> f64
+    return (1.0 - t) * from + t * to
+
+# The fraction of the way `x` stands from `from` to `to`, `lerp`'s inverse.
+#
+# - `from`: where the answer is 0.
+# - `to`: where the answer is 1.
+# - `x`: the number placed; a nan answers a nan.
+#
+# Fails `invalid` where `from` and `to` are equal, which places nothing.
+function inverse_lerp(from: f64, to: f64, x: f64) -> f64?
+    if from == to
+        return fail(code: math.INVALID, msg: f"no fraction places {x} between {from} and itself")
+    return ok((x - from) / (to - from))
+
+# `t` held from 0 to 1, a nan answering a nan.
+#
+# - `t`: any float.
+function clamp01(t: f64) -> f64
+    if math.is_nan(t)
+        return t
+
+    if t < 0.0
+        return 0.0
+
+    if t > 1.0
+        return 1.0
+    return t
+
+# Where `x` stands from `low` to `high`, held from 0 to 1, for the steps below;
+# where `low` and `high` are equal, 0 below them and 1 from them on.
+#
+# - `low`: where the answer is 0.
+# - `high`: where the answer is 1.
+# - `x`: the number placed.
+function placed(low: f64, high: f64, x: f64) -> f64
+    if math.is_nan(x) || math.is_nan(low) || math.is_nan(high)
+        return math.NAN
+
+    if low == high
+        if x < low
+            return 0.0
+        return 1.0
+    return clamp01((x - low) / (high - low))
+
+# Hermite's smooth step from 0 at `low` to 1 at `high`: `3t^2 - 2t^3` of where
+# `x` stands between them, held from 0 to 1.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1.
+# - `x`: the number placed.
+function smoothstep(low: f64, high: f64, x: f64) -> f64
+    t = placed(low: low, high: high, x: x)
+    return t * t * (3.0 - 2.0 * t)
+
+# Perlin's smoother step, `6t^5 - 15t^4 + 10t^3`, whose second derivative is
+# zero at both ends too.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1.
+# - `x`: the number placed.
+function smootherstep(low: f64, high: f64, x: f64) -> f64
+    t = placed(low: low, high: high, x: x)
+    return t * t * t * (t * (6.0 * t - 15.0) + 10.0)
+
+## Tests
+
+test "is_positive and is_above: a nan is neither"
+    assert is_positive(1.0) && !is_positive(0.0) && !is_positive(-0.0) && !is_positive(math.NAN)
+    assert is_above(a: 2.0, b: 1.0) && !is_above(a: math.NAN, b: 1.0) && !is_above(a: 1.0, b: math.NAN)
+
+test "length4: zero, a 3-4-5 triangle, the largest and the smallest parts, an infinity beside a nan, a nan"
+    assert length4(x: 0.0, y: -0.0, z: 0.0, w: 0.0) == 0.0
+    assert length4(x: 3.0, y: 0.0, z: -4.0, w: 0.0) == 5.0
+    assert length4(x: 2.0, y: 4.0, z: 5.0, w: 6.0) == 9.0
+    assert length4(x: math.MAX_F64, y: 0.0, z: 0.0, w: 0.0) == math.MAX_F64
+    assert length4(x: math.MAX_F64, y: math.MAX_F64, z: 0.0, w: 0.0) == math.INF
+    assert length4(x: math.SMALLEST_F64 * 3.0, y: math.SMALLEST_F64 * 4.0, z: 0.0, w: 0.0) == math.SMALLEST_F64 * 5.0
+    assert length4(x: math.NAN, y: math.INF, z: 0.0, w: 0.0) == math.INF
+    assert math.is_nan(length4(x: math.NAN, y: 1.0, z: 0.0, w: 0.0))
+
+test "lerp and inverse_lerp: both ends exactly, the middle, past the end, an empty range"
+    assert lerp(from: 0.1, to: 0.7, t: 0.0) == 0.1
+    assert lerp(from: 0.1, to: 0.7, t: 1.0) == 0.7
+    assert lerp(from: -2.0, to: 2.0, t: 0.5) == 0.0
+    assert lerp(from: 0.0, to: 10.0, t: 1.5) == 15.0
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 15.0).must() == 0.5
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 30.0).must() == 2.0
+    assert inverse_lerp(from: 3.0, to: 3.0, x: 3.0).is_err()
+
+test "smoothstep and smootherstep: below, at both ends, the middle, above, an empty range, a nan"
+    assert smoothstep(low: 0.0, high: 1.0, x: -1.0) == 0.0
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.25) == 0.15625
+    assert smoothstep(low: 0.0, high: 1.0, x: 2.0) == 1.0
+    assert smoothstep(low: 1.0, high: 1.0, x: 0.5) == 0.0 && smoothstep(low: 1.0, high: 1.0, x: 1.0) == 1.0
+    assert math.is_nan(smoothstep(low: 0.0, high: 1.0, x: math.NAN))
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.25) == 0.103515625
+    assert smootherstep(low: 0.0, high: 2.0, x: 2.0) == 1.0
+
+test "unit4 and inverse4: the largest parts, the smallest, zero, an infinity, a nan"
+    huge = unit4(x: math.MAX_F64, y: math.MAX_F64, z: 0.0, w: 0.0)
+    assert huge[0] == 1.0 / math.SQRT_2 && huge[1] == huge[0] && huge[2] == 0.0
+    tiny = unit4(x: 0.0, y: math.SMALLEST_F64 * 3.0, z: math.SMALLEST_F64 * -4.0, w: 0.0)
+    assert tiny == [0.0, 0.6, -0.8, 0.0]
+    assert math.is_nan(unit4(x: 0.0, y: 0.0, z: 0.0, w: 0.0)[0])
+    assert math.is_nan(unit4(x: math.INF, y: 0.0, z: 0.0, w: 0.0)[0])
+    assert math.is_nan(unit4(x: math.NAN, y: 1.0, z: 0.0, w: 0.0)[3])
+    assert inverse4(x: 0.0, y: 0.0, z: 0.0, w: 2.0) == [-0.0, -0.0, -0.0, 0.5]
+    assert inverse4(x: 0.0, y: 0.0, z: math.MAX_F64, w: 0.0)[2] < 0.0
+    assert math.is_nan(inverse4(x: 0.0, y: 0.0, z: 0.0, w: 0.0)[3])

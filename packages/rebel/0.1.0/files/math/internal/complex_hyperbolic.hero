@@ -1,0 +1,220 @@
+# The hyperbolic and the circular functions of complex numbers: `sinh`,
+# `cosh` and `tanh` computed on the first quadrant and given their signs back
+# by the symmetries Annex G states (`sinh` and `tanh` odd, `cosh` even, each
+# the conjugate at the conjugate), so a signed zero comes out as C11's does;
+# and `sin`, `cos`, `tan` as Annex G defines them, by a quarter turn:
+# `sin(z) = -i sinh(iz)`, `cos(z) = cosh(iz)`, `tan(z) = -i tanh(iz)`.
+
+use math/internal/complex_arithmetic
+use math/internal/complex_exponential
+use math/internal/elementary
+use math/internal/floats
+use math/internal/limits
+use math/internal/trig
+
+# Past this size of the real part, `tanh` is 1 to the last bit, and the
+# imaginary part is computed from e raised to minus twice it.
+constant TANH_FLAT: f64
+    20.0
+
+# Whether `x` is a number whose sign bit is set: a nan carries no sign here,
+# so it never turns the sign of an answer.
+#
+# - `x`: any float.
+function is_negative(x: f64) -> bool
+    return floats.has_minus_sign(x) && !floats.is_nan(x)
+
+# `p` with each part's sign turned where asked: how a function computed on the
+# first quadrant gives its signs back.
+#
+# - `p`: the answer on the first quadrant.
+# - `turn_re`: whether the real part's sign turns.
+# - `turn_im`: whether the imaginary part's sign turns.
+function turned(p: complex_arithmetic.Pair, turn_re: bool, turn_im: bool) -> complex_arithmetic.Pair
+    re @= p.re
+    im @= p.im
+
+    if turn_re
+        re @ -re
+
+    if turn_im
+        im @ -im
+    return complex_arithmetic.Pair(re: re, im: im)
+
+# Half e raised to `x`, times `factor`, for `x` of 0 or more: past
+# `LOG_LARGE` without overflow on the way, where `sinh` and `cosh` are both
+# that to the last bit.
+#
+# - `x`: the real part's size.
+# - `factor`: the cosine or the sine of the imaginary part.
+function half_exp_times(x: f64, factor: f64) -> f64
+    return complex_exponential.exp_times(x: x, factor: factor * 0.5)
+
+# `sinh` on the first quadrant, `x` and `y` of a clear sign bit.
+#
+# - `x`: the real part's size.
+# - `y`: the imaginary part's size.
+function sinh_first(x: f64, y: f64) -> complex_arithmetic.Pair
+    if floats.is_finite(x) && floats.is_finite(y)
+        if y == 0.0
+            return complex_arithmetic.Pair(re: trig.sinh(x), im: y)
+
+        if x <= complex_exponential.LOG_LARGE
+            return complex_arithmetic.Pair(re: trig.sinh(x) * trig.cos(y), im: trig.cosh(x) * trig.sin(y))
+        return complex_arithmetic.Pair(
+            re: half_exp_times(x: x, factor: trig.cos(y)),
+            im: half_exp_times(x: x, factor: trig.sin(y))
+        )
+
+    if floats.is_nan(x)
+        if y == 0.0
+            return complex_arithmetic.Pair(re: x, im: y)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if x == limits.INF
+        if y == 0.0
+            return complex_arithmetic.Pair(re: x, im: y)
+
+        if floats.is_finite(y)
+            return complex_arithmetic.Pair(re: x * trig.cos(y), im: x * trig.sin(y))
+        return complex_arithmetic.Pair(re: x, im: limits.NAN)
+
+    if x == 0.0
+        return complex_arithmetic.Pair(re: x, im: limits.NAN)
+    return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+# The hyperbolic sine of `re + im i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sinh(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = sinh_first(x: floats.abs(re), y: floats.abs(im))
+    return turned(p: p, turn_re: is_negative(re) && !floats.is_nan(im), turn_im: is_negative(im))
+
+# `cosh` on the first quadrant, `x` and `y` of a clear sign bit.
+#
+# - `x`: the real part's size.
+# - `y`: the imaginary part's size.
+function cosh_first(x: f64, y: f64) -> complex_arithmetic.Pair
+    if floats.is_finite(x) && floats.is_finite(y)
+        if y == 0.0
+            return complex_arithmetic.Pair(re: trig.cosh(x), im: x * y)
+
+        if x <= complex_exponential.LOG_LARGE
+            return complex_arithmetic.Pair(re: trig.cosh(x) * trig.cos(y), im: trig.sinh(x) * trig.sin(y))
+        return complex_arithmetic.Pair(
+            re: half_exp_times(x: x, factor: trig.cos(y)),
+            im: half_exp_times(x: x, factor: trig.sin(y))
+        )
+
+    if floats.is_nan(x)
+        if y == 0.0
+            return complex_arithmetic.Pair(re: x, im: y)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if x == limits.INF
+        if y == 0.0
+            return complex_arithmetic.Pair(re: x, im: y)
+
+        if floats.is_finite(y)
+            return complex_arithmetic.Pair(re: x * trig.cos(y), im: x * trig.sin(y))
+        return complex_arithmetic.Pair(re: x, im: limits.NAN)
+
+    if x == 0.0
+        return complex_arithmetic.Pair(re: limits.NAN, im: x)
+    return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+# The hyperbolic cosine of `re + im i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function cosh(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = cosh_first(x: floats.abs(re), y: floats.abs(im))
+    return turned(
+        p: p,
+        turn_re: false,
+        turn_im: !floats.is_nan(re) && !floats.is_nan(im) && is_negative(re) != is_negative(im)
+    )
+
+# `tanh` on the first quadrant, `x` and `y` of a clear sign bit: Kahan's form,
+# `(beta * rho * s + t i) / (1 + beta * s^2)` with `t = tan(y)`, `beta = 1 +
+# t^2`, `s = sinh(x)` and `rho = sqrt(1 + s^2)`, which loses nothing where
+# `cosh(2x) + cos(2y)` would cancel; past `TANH_FLAT` the real part is 1.
+#
+# - `x`: the real part's size.
+# - `y`: the imaginary part's size.
+function tanh_first(x: f64, y: f64) -> complex_arithmetic.Pair
+    if floats.is_finite(x) && floats.is_finite(y)
+        if x > TANH_FLAT
+            return complex_arithmetic.Pair(re: 1.0, im: 2.0 * trig.sin(2.0 * y) * elementary.exp(-2.0 * x))
+        t = trig.tan(y)
+        beta = 1.0 + t * t
+        s = trig.sinh(x)
+        rho = elementary.sqrt(1.0 + s * s)
+        d = 1.0 + beta * s * s
+        return complex_arithmetic.Pair(re: beta * rho * s / d, im: t / d)
+
+    if floats.is_nan(x)
+        if y == 0.0
+            return complex_arithmetic.Pair(re: x, im: y)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if x == limits.INF
+        if floats.is_finite(y)
+            return complex_arithmetic.Pair(re: 1.0, im: floats.with_sign(x: 0.0, of: trig.sin(2.0 * y)))
+        return complex_arithmetic.Pair(re: 1.0, im: 0.0)
+
+    if x == 0.0
+        return complex_arithmetic.Pair(re: x, im: limits.NAN)
+    return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+# The hyperbolic tangent of `re + im i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function tanh(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = tanh_first(x: floats.abs(re), y: floats.abs(im))
+    flat = floats.is_inf(re) && !floats.is_finite(im)
+    return turned(p: p, turn_re: is_negative(re), turn_im: is_negative(im) && !flat)
+
+# The sine of `re + im i`: `-i sinh(iz)`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sin(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = sinh(re: -im, im: re)
+    return complex_arithmetic.Pair(re: p.im, im: -p.re)
+
+# The cosine of `re + im i`: `cosh(iz)`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function cos(re: f64, im: f64) -> complex_arithmetic.Pair
+    return cosh(re: -im, im: re)
+
+# The tangent of `re + im i`: `-i tanh(iz)`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function tan(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = tanh(re: -im, im: re)
+    return complex_arithmetic.Pair(re: p.im, im: -p.re)
+
+## Tests
+
+test "sinh, cosh and tanh: the zeros, a real part past the overflow beside a tiny angle, a huge one, a nan part"
+    assert sinh(re: 0.0, im: 0.0) == complex_arithmetic.Pair(re: 0.0, im: 0.0)
+    assert cosh(re: -0.0, im: 0.0) == complex_arithmetic.Pair(re: 1.0, im: -0.0)
+    assert floats.has_minus_sign(cosh(re: -0.0, im: 0.0).im)
+    s = sinh(re: 711.0, im: 0.000000000000000000000000000001)
+    assert s.re == limits.INF && floats.is_finite(s.im)
+    assert tanh(re: 1000.0, im: 1.0) == complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    assert tanh(re: -1000.0, im: -1.0).re == -1.0
+    assert floats.has_minus_sign(tanh(re: -0.0, im: limits.NAN).re)
+    assert !floats.has_minus_sign(sinh(re: -0.0, im: limits.NAN).re)
+
+test "sin, cos and tan: the quarter turn to the hyperbolic ones, a huge imaginary part"
+    assert sin(re: 0.0, im: 0.0) == complex_arithmetic.Pair(re: 0.0, im: 0.0)
+    assert cos(re: 0.0, im: 0.0) == complex_arithmetic.Pair(re: 1.0, im: -0.0)
+    assert tan(re: 1.0, im: 1000.0) == complex_arithmetic.Pair(re: 0.0, im: 1.0)
+    assert tan(re: 1.0, im: -1000.0).im == -1.0

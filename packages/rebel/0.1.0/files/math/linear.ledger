@@ -1,0 +1,458 @@
+# The ledger of `math/linear`: vectors, matrices, quaternions and the
+# transforms of graphics, one block per capability, and what Heroes answers to
+# each.
+#
+# The census, taken on this machine on 2026-11-17: Go 1.27, Rust 1.100 and
+# Python 3.15 have no vectors, matrices or quaternions in their standard
+# libraries (Go's `image.Point` is an integer point of `image`'s; Rust's
+# `std::simd` is lanes of a processor, not geometry; Python's `math.dist`,
+# `math.hypot` and `math.sumprod` work on lists and stand in `math.ledger`),
+# so their lines read `-` throughout. The yardstick installed here is Odin's
+# `core:math/linalg`, its public names listed from its declarations, every
+# width's copy (`_f16`, `_f32`, `_f64`) counted once; Zig 0.15's standard
+# library has none. .NET's `System.Numerics` and Rust's `glam` and `nalgebra`
+# are named in notes from their documentation: neither `dotnet` nor those
+# crates are on this machine, so no list of theirs was taken here.
+
+## Vectors
+
+capability vector/type  a vector of two, three or four floats, built and read by its parts
+  heroes  linear.Vec2, linear.Vec3, linear.Vec4
+  go      -
+  rust    -
+  python  -
+  odin    Vector2f64, Vector3f64, Vector4f64, Vector2_Components, Vector3_Components, Vector4_Components
+  note    a record of fixed size for each, since a record takes no type parameter; `f64` alone, as `math` is. .NET's `Vector2`, `Vector3`, `Vector4` and glam's `DVec2` to `DVec4` are the same three
+
+capability vector/arithmetic  vectors added, taken away, negated, scaled, multiplied part by part
+  heroes  linear.add_vec2, linear.sub_vec2, linear.neg_vec2, linear.scale_vec2, linear.mul_vec2, and the same for `vec3` and `vec4`
+  go      -
+  rust    -
+  python  -
+  odin    hadamard_product, and the operators on arrays
+
+capability vector/dot  the dot product
+  heroes  linear.dot_vec2, linear.dot_vec3, linear.dot_vec4
+  go      -
+  rust    -
+  python  -
+  odin    dot, vector_dot, inner_product, scalar_dot
+
+capability vector/cross  the cross product, of space and of the plane
+  heroes  linear.cross_vec3, linear.cross_vec2
+  go      -
+  rust    -
+  python  -
+  odin    cross, vector_cross2, vector_cross3, scalar_cross
+  note    the plane's is the number `a.x * b.y - a.y * b.x`, glam's `perp_dot`
+
+capability vector/length  the length, the squared length and the distance
+  heroes  linear.length_vec2, linear.length_squared_vec2, linear.distance_vec2, and the same for `vec3` and `vec4`
+  go      -
+  rust    -
+  python  -
+  odin    length, length2, vector_length, vector_length2, distance
+  note    the length scales its parts by a power of two where they are huge or tiny, so it overflows only where the answer does
+
+capability vector/normalize  a vector's direction, of length 1
+  heroes  linear.normalize_vec2, linear.normalize_vec3, linear.normalize_vec4
+  go      -
+  rust    -
+  python  -
+  odin    normalize, normalize0, vector_normalize, vector_normalize0
+  note    fails `invalid` for a zero, infinite or nan vector, where Odin's `normalize` divides by zero and its `normalize0` answers zero (glam's `try_normalize` answers an option, as here); a vector of huge or tiny parts is scaled exactly first, so it has its direction too
+
+capability vector/lerp  the point a fraction of the way between two
+  heroes  linear.lerp_vec2, linear.lerp_vec3, linear.lerp_vec4
+  go      -
+  rust    -
+  python  -
+  odin    lerp, mix
+  note    `(1 - t) a + t b`, exact at both ends
+
+capability vector/angle  the angle between two vectors
+  heroes  linear.angle_vec2, linear.angle_vec3, linear.angle_vec4
+  go      -
+  rust    -
+  python  -
+  odin    angle_between, vector_angle_between
+  note    Kahan's `2 atan2(|u - v|, |u + v|)` of the directions, which keeps its digits for nearly parallel and nearly opposite vectors where the arc cosine of the dot product loses half of them; unsigned, from 0 to pi
+
+capability vector/reflect  a vector reflected off a surface
+  heroes  linear.reflect_vec2, linear.reflect_vec3
+  go      -
+  rust    -
+  python  -
+  odin    reflect
+  note    the normal of any length, normalized inside; Odin's and GLSL's want it of length 1 already
+
+capability vector/refract  a vector refracted through a surface, and a normal turned to face a vector
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    refract, face_forward
+  note    not written in time; refraction needs its total internal reflection said as a value
+
+capability vector/project  a vector's part along another, and its part across it; a set of vectors made orthonormal
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    projection, orthogonal, vector_orthogonal, orthonormalize, vector_orthonormalize
+  note    glam's `project_onto` and `reject_from`; not written in time
+
+capability vector/part-by-part-order  the smaller, the larger and the clamped of two vectors part by part, a part's size, a vector's length held below a bound
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    min, max, min_double, min_single, min_triple, max_double, max_single, max_triple, clamp, abs, clamp_length
+  note    what bounding boxes are built with; not written in time, and `math.min` on each part meanwhile, which answers a nan for a nan
+
+capability vector/part-by-part-functions  a function of one float applied to every part
+  heroes  refused: `math`'s function on each part, the record built from its parts in one line; GLSL's elementwise functions belong to a language whose vectors are numbers
+  go      -
+  rust    -
+  python  -
+  odin    sign, floor, ceil, round, trunc, fract, mod, saturate, step, sqrt, inverse_sqrt, exp, exp2, exp10, ln, log, log2, log10, pow, sin, cos, tan, asin, acos, atan, atan2, to_degrees, to_radians, is_nan, is_inf, is_nan_single, is_nan_array, is_inf_single, is_inf_array, classify, classify_single, classify_array
+
+capability vector/compare  vectors compared part by part
+  heroes  refused: `==` is structural on records and compares every part; an order part by part is `<` on the parts, which a program writes as it means it
+  go      -
+  rust    -
+  python  -
+  odin    equal, not_equal, less_than, less_than_equal, greater_than, greater_than_equal, equal_array, not_equal_array, less_than_array, less_than_equal_array, greater_than_array, greater_than_equal_array, any, all, not
+
+capability vector/swizzle  a vector of another one's parts, reordered or repeated
+  heroes  refused: built directly, `linear.Vec2(x: v.y, y: v.x)`; a name for every arrangement is a list with no end
+  go      -
+  rust    -
+  python  -
+  odin    swizzle, scalar_swizzle, scalar_swizzle1, scalar_swizzle2, scalar_swizzle3, scalar_swizzle4, vectorN_swizzle, vectorNf64_swizzle1, vectorNf64_swizzle2, vectorNf64_swizzle3, vectorNf64_swizzle4
+
+capability vector/products-of-three  the scalar and the vector triple products, and the outer product
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    scalar_triple_product, vector_triple_product, outer_product
+  note    the two triple products are a dot of a cross and a cross of a cross, `linear.dot_vec3(a: a, b: linear.cross_vec3(a: b, b: c))`; the outer product, a matrix, was not written in time
+
+capability vector/polar  a point of the plane or of space by its distance and angles, and back
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    euclidean_from_polar, polar_from_euclidean
+  note    the plane's is `math.to_polar` of a `math.Complex`; space's spherical coordinates were not written in time
+
+capability vector/curves  a direction turned along a sphere, and the curves of Catmull and Rom and of Hermite
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    vector_slerp, catmull_rom, hermite, cubic
+  note    not written in time
+
+capability vector/colour  colours converted between RGB, HSL and sRGB's curve
+  heroes  refused: colour spaces are `image`'s
+  go      -
+  rust    -
+  python  -
+  odin    vectorN_hsl_to_rgb, vectorN_rgb_to_hsl, vectorN_linear_to_srgb, vectorN_srgb_to_linear
+
+## Matrices
+
+capability matrix/type  a matrix of two, three or four rows and columns
+  heroes  linear.Mat2, linear.Mat3, linear.Mat4
+  go      -
+  rust    -
+  python  -
+  odin    Matrix1f64, Matrix2f64, Matrix3f64, Matrix4f64, Matrixf64
+  note    held by its columns, `x_axis` to `w_axis`, glam's layout and OpenGL's order in memory; a vector is a column the matrix acts on from the left. .NET's `Matrix4x4` is the transpose, rows acting on row vectors. A matrix of one row and column is a float
+
+capability matrix/identity  the identity matrix
+  heroes  linear.identity_mat2, linear.identity_mat3, linear.identity_mat4
+  go      -
+  rust    -
+  python  -
+  odin    identity, identity_matrix, identity_array_based_matrix, MATRIX2F64_IDENTITY, MATRIX3F64_IDENTITY, MATRIX4F64_IDENTITY, MATRIX1F64_IDENTITY
+  note    functions, since a constant may not hold a record
+
+capability matrix/arithmetic  matrices added, taken away and scaled, entry by entry
+  heroes  linear.add_mat2, linear.sub_mat2, linear.scale_mat2, and the same for `mat3` and `mat4`
+  go      -
+  rust    -
+  python  -
+  odin    matrix_comp_mul, and the operators on matrices
+  note    the product entry by entry, Odin's `matrix_comp_mul`, is not offered: no transform composes so
+
+capability matrix/product  a matrix times a matrix, and a matrix times a vector
+  heroes  linear.mul_mat2, linear.mul_mat2_vec2, and the same for `mat3` and `mat4`
+  go      -
+  rust    -
+  python  -
+  odin    mul, matrix_mul, matrix_mul_differ, matrix_mul_vector
+
+capability matrix/transpose  a matrix's rows made its columns
+  heroes  linear.transpose_mat2, linear.transpose_mat3, linear.transpose_mat4
+  go      -
+  rust    -
+  python  -
+  odin    transpose
+
+capability matrix/determinant  the determinant
+  heroes  linear.determinant_mat2, linear.determinant_mat3, linear.determinant_mat4
+  go      -
+  rust    -
+  python  -
+  odin    determinant, matrixN_determinant, matrix_determinant_generic
+  note    Laplace's expansion, which orders nothing and so answers any entries; exact for every generated matrix of eighths against Python's `fractions` (run 2026-11-17)
+
+capability matrix/inverse  the inverse, failing where the matrix is singular
+  heroes  linear.inverse_mat2, linear.inverse_mat3, linear.inverse_mat4
+  go      -
+  rust    -
+  python  -
+  odin    inverse, matrixN_inverse, matrix_inverse_gauss_jordan, matrix_inverse_lu_decomposition
+  note    Gauss and Jordan's elimination with partial pivoting; fails `invalid` where a pivot is zero, an entry is not finite, or the inverse does not fit the floats, where glam's `inverse` answers a matrix of infinities and nans
+
+capability matrix/adjugate  the adjugate, the cofactors, the minors, the trace, the inverse transpose
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    adjugate, cofactor, minor, trace, hermitian_adjoint, inverse_transpose, matrixN_adjoint, matrixN_adjugate, matrixN_cofactor, matrixN_minor, matrixN_inverse_transpose, matrix_adjugate_general, matrix_cofactor_general, matrix_minor
+  note    the inverse transpose, what normals are sent by, is `linear.transpose_mat3(linear.inverse_mat3(m)?)`; the rest was not written in time
+
+capability matrix/orthonormalize  a matrix's columns made orthonormal
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    matrixN_orthonormalize, matrixN_gram_schmidt
+  note    not written in time
+
+capability matrix/sizes  a matrix of another size than its own: the upper left 3 by 3 of a transform, a 3 by 3 made a transform
+  heroes  linear.upper_mat3, linear.extend_mat3
+  go      -
+  rust    -
+  python  -
+  odin    matrixN_from_matrixN, to_matrixN, to_matrixNf, to_matrixNf16, to_matrixNf32, to_matrixNf64, matrix_cast, array_cast
+  note    the casts between widths are not offered: `f64` alone
+
+capability matrix/any-size  linear algebra of any size: a matrix of n columns, systems solved, decompositions, the pseudo-inverse
+  heroes  refused: outside this package, which holds the fixed sizes of geometry; no package of Rebel offers it yet
+  go      -
+  rust    -
+  python  -
+  odin    pseudo_inverse, matrix_pseudo_inverse, matrix_flatten
+
+## Transforms
+
+capability transform/translate-scale  the translation and the scaling of the plane and of space as matrices
+  heroes  linear.translation_mat3, linear.translation_mat4, linear.scaling_mat2, linear.scaling_mat3, linear.scaling_mat4
+  go      -
+  rust    -
+  python  -
+  odin    matrix4_translate, matrix4_scale, matrixN_from_scalar
+  note    `translation_mat3` is the plane's affine map, `.NET`'s `Matrix3x2` as a 3 by 3
+
+capability transform/rotate  the rotation of the plane, and of space about an axis or about x, y or z, as matrices
+  heroes  linear.rotation_mat2, linear.rotation_mat3, linear.rotation_mat4, linear.rotation_x_mat3, linear.rotation_y_mat3, linear.rotation_z_mat3, linear.rotation_x_mat4, linear.rotation_y_mat4, linear.rotation_z_mat4
+  go      -
+  rust    -
+  python  -
+  odin    matrixN_rotate, matrixN_from_euler_angle_x, matrixN_from_euler_angle_y, matrixN_from_euler_angle_z, matrixN_from_derived_euler_angle_x, matrixN_from_derived_euler_angle_y, matrixN_from_derived_euler_angle_z
+  note    counterclockwise by the right-hand rule; an axis of any length, normalized inside, failing `invalid` where it is zero; `1 - cos` taken as `2 sin^2` of the half angle, so a small angle keeps its digits
+
+capability transform/apply  a point or a direction sent by a transform, and a point projected
+  heroes  linear.transform_point2, linear.transform_vector2, linear.transform_point3, linear.transform_vector3, linear.project_point3
+  go      -
+  rust    -
+  python  -
+  odin    -
+  note    glam's three names for space; `project_point3` divides by the weight and fails `invalid` where it is zero
+
+capability transform/compose  a transform made of a translation, a rotation and a scaling, and taken back apart
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    matrixN_from_trs
+  note    the making is two `linear.mul_mat4`; the taking apart (glam's `to_scale_rotation_translation`) was not written in time
+
+capability camera/look-at  the view matrix of a camera at a point looking at another
+  heroes  linear.look_at
+  go      -
+  rust    -
+  python  -
+  odin    matrix4_look_at, matrix4_look_at_from_fru
+  note    the handedness named at the call, `.right` as `gluLookAt` and glam's `look_at_rh`, `.left` as Direct3D's and glam's `look_at_lh`; fails `invalid` for a camera at its target and for an up within 16 epsilons of the direction of view, where the side direction would be noise
+
+capability camera/perspective  the perspective projection, in either hand and either depth range
+  heroes  linear.perspective
+  go      -
+  rust    -
+  python  -
+  odin    matrix4_perspective, matrix4_infinite_perspective
+  note    one function where glam has six (`perspective_rh_gl`, `perspective_rh`, `perspective_lh`, `perspective_infinite_rh`, `_lh`, and the reversed ones): the hand and the depth range named at the call, `math.INF` as the far plane for the infinite one, a far plane nearer than the near one for reversed depth
+
+capability camera/orthographic  the orthographic projection of a box, in either hand and either depth range
+  heroes  linear.orthographic
+  go      -
+  rust    -
+  python  -
+  odin    matrix_ortho3d
+  note    glam's `orthographic_rh_gl`, `orthographic_rh` and `orthographic_lh`, and .NET's `CreateOrthographicOffCenter`, as one function
+
+## Quaternions
+
+capability quat/type  a quaternion, a rotation of space
+  heroes  linear.Quat
+  go      -
+  rust    -
+  python  -
+  odin    Quaternionf64, QUATERNIONF64_IDENTITY
+  note    the parts `x, y, z, w`, the real part last, as glam, .NET and Odin order them
+
+capability quat/identity  the quaternion of no rotation
+  heroes  linear.identity_quat
+  go      -
+  rust    -
+  python  -
+  odin    QUATERNIONF64_IDENTITY, quaternion_from_scalar
+
+capability quat/axis-angle  a quaternion from an axis and an angle, and back
+  heroes  linear.rotation_quat, linear.to_axis_angle, linear.AxisAngle
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_angle_axis, angle_axis_from_quaternion, axis_from_quaternion, angle_from_quaternion
+  note    the angle answered from 0 to pi, the quaternion turned to a non-negative real part first
+
+capability quat/euler  a rotation from three angles about the axes of a named order, and back
+  heroes  linear.euler_quat, linear.to_euler, linear.axes_of, linear.Euler, linear.EulerOrder
+  go      -
+  rust    -
+  python  -
+  odin    Euler_Angle_Order, quaternion_from_euler_angles, quaternion_from_euler_angle_x, quaternion_from_euler_angle_y, quaternion_from_euler_angle_z, euler_angles_from_quaternion, euler_angles_xyz_from_quaternion, euler_angles_xzy_from_quaternion, euler_angles_yxz_from_quaternion, euler_angles_yzx_from_quaternion, euler_angles_zxy_from_quaternion, euler_angles_zyx_from_quaternion, euler_angles_xyx_from_quaternion, euler_angles_xzx_from_quaternion, euler_angles_yxy_from_quaternion, euler_angles_yzy_from_quaternion, euler_angles_zxz_from_quaternion, euler_angles_zyz_from_quaternion, euler_angles_from_matrixN, the twelve euler_angles_..._from_matrixN, matrixN_from_euler_angles, the twelve matrixN_from_euler_angles_..., matrixN_from_euler_angles_xy, _xz, _yx, _yz, _zx, _zy, quaternion_from_pitch_yaw_roll, pitch_yaw_roll_from_quaternion, pitch_from_quaternion, yaw_from_quaternion, roll_from_quaternion, matrixN_from_yaw_pitch_roll
+  note    the twelve orders, Tait and Bryan's six and Euler's six proper ones, every turn about the axes as the turns before left them; a matrix from angles is `linear.to_mat3` of the quaternion, two angles a third of 0, and yaw, pitch and roll an order (`zyx` for a frame whose z is up). Taken back with no threshold for gimbal lock: the third angle from the matrix with the first turn taken out, so the angles rebuild the rotation to its last bits in every order (run 2026-11-17)
+
+capability quat/matrix  a quaternion as a rotation matrix, and a rotation matrix as a quaternion
+  heroes  linear.to_mat3, linear.to_mat4, linear.to_quat
+  go      -
+  rust    -
+  python  -
+  odin    matrixN_from_quaternion, quaternion_from_matrixN, to_quaternion, to_quaternionf64
+  note    Shepperd's method, its square root of the largest of four combinations; its four branches each taken back to their quaternion in the tests
+
+capability quat/product  quaternions multiplied, and a vector turned by one
+  heroes  linear.mul_quat, linear.rotate_vec3
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_mul_quaternion, quaternion_mul_vectorN, quaternionN_mul_vectorN
+
+capability quat/conjugate-inverse  the conjugate and the inverse
+  heroes  linear.conjugate_quat, linear.inverse_quat
+  go      -
+  rust    -
+  python  -
+  odin    conj, quaternion_inverse
+  note    the inverse fails `invalid` for the zero quaternion, and scales exactly first so a quaternion of huge or tiny parts has one
+
+capability quat/normalize  the length, the dot product and the quaternion of length 1
+  heroes  linear.normalize_quat, linear.length_quat, linear.dot_quat
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_normalize, quaternion_normalize0, quaternion_length, quaternion_length2, quaternionN_dot
+  note    the squared length is `linear.dot_quat(a: q, b: q)`
+
+capability quat/slerp  the rotation a fraction of the way between two, at a constant speed
+  heroes  linear.slerp
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_slerp
+  note    the shorter arc, its angle by Kahan's `2 atan2(|a - b|, |a + b|)` so close rotations keep their digits with no switch to a linear blend
+
+capability quat/arc  the shortest rotation from one direction to another
+  heroes  linear.arc_quat
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_between_two_vectorN
+  note    glam's `from_rotation_arc`; its axis `(u - v) x (u + v)`, which keeps its digits for nearly opposite directions, and a half turn about a perpendicular for opposite ones
+
+capability quat/nlerp-squad  the normalized linear blend of two rotations, and the spherical spline of four
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_nlerp, quaternion_squad
+  note    not written in time; `linear.slerp` is the exact blend meanwhile
+
+capability quat/angle-between  the angle between two rotations
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    quaternionN_angle_between
+  note    not written in time
+
+capability quat/look  the rotation that looks along a direction with an up
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  odin    quaternion_look_at, quaternion_from_forward_and_up, matrixN_orientation
+  note    `linear.to_quat(linear.upper_mat3(view))` of `linear.look_at`'s matrix, transposed, is it meanwhile; not written as one function in time
+
+## The small operations of games
+
+capability scalar/lerp  the number a fraction of the way between two, and the fraction of a number's place
+  heroes  linear.lerp, linear.inverse_lerp
+  go      -
+  rust    -
+  python  -
+  odin    lerp, mix, unlerp
+  note    the inverse fails `invalid` for an empty range, where Odin's divides by zero
+
+capability scalar/remap  a number moved from one range to another
+  heroes  linear.remap
+  go      -
+  rust    -
+  python  -
+  odin    -
+  note    not held inside the ranges; `math.clamp` holds it
+
+capability scalar/smoothstep  Hermite's smooth step and Perlin's smoother one
+  heroes  linear.smoothstep, linear.smootherstep
+  go      -
+  rust    -
+  python  -
+  odin    smoothstep, smootherstep
+  note    equal edges make a sudden step, where GLSL leaves them undefined; a nan answers a nan
+
+capability scalar/clamp  a number held between two
+  heroes  math.clamp
+  go      -
+  rust    f64::clamp
+  python  -
+  odin    clamp, saturate
+  note    `math`'s; Odin's `saturate` is `math.clamp(x: x, low: 0.0, high: 1.0)`
+
+dropped
+  odin    DEG_PER_RAD, RAD_PER_DEG, E, PI, TAU, LN2, LN10, SQRT_TWO, SQRT_THREE, SQRT_FIVE, F16_EPSILON, F32_EPSILON, F64_EPSILON, MAX_F32_PRECISION, MAX_F64_PRECISION
+  reason  `math`'s constants and conversions, `math.to_radians` among them
+  odin    VECTOR3F64_X_AXIS, VECTOR3F64_Y_AXIS, VECTOR3F64_Z_AXIS, Scalar_Components
+  reason  a constant may not hold a record: an axis is built directly, `linear.Vec3(x: 1.0, y: 0.0, z: 0.0)`
+  odin    to_ptr, vector_to_ptr, matrix_to_ptr
+  reason  pointers to a value's floats, for a graphics library's C: the foreign boundary's, not geometry
+  odin    the `_f16` and `_f32` copies of every name, Vector2f16 to Matrix4f32, Quaternionf16, Quaternionf32
+  reason  `f64` alone, as `math` is; a narrower float is `to_f32` of a part
+  odin    quaternion_cross
+  reason  named by Odin alone, and what it answers was not asked of Odin here

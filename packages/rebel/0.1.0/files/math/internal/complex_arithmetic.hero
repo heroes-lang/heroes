@@ -1,0 +1,430 @@
+# The arithmetic of complex numbers held as two floats, the work beneath the
+# face's `Complex`: the product and the quotient as C11's Annex G computes
+# them, an infinity recovered where the plain formula answers a nan; the size,
+# the angle and the polar form; and the comparison the tests of every complex
+# module judge with.
+#
+# A private module cannot name the face's types, so a complex number here is a
+# `Pair` and the face converts. Every function answers a value and never a
+# failure, as the float functions of `math` do.
+
+use math/internal/elementary
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+use math/internal/trig
+
+# A complex number as its two parts: the face's `Complex` inside the package.
+record Pair
+    # The real part.
+    re: f64
+    # The imaginary part.
+    im: f64
+
+# 1.0 with the sign of `x` where `x` is an infinity, else 0.0 with its sign:
+# how Annex G stands an infinite part in before it recomputes.
+#
+# - `x`: any float.
+function boxed(x: f64) -> f64
+    if floats.is_inf(x)
+        return floats.with_sign(x: 1.0, of: x)
+    return floats.with_sign(x: 0.0, of: x)
+
+# `x`, or a zero of its sign where it is a nan.
+#
+# - `x`: any float.
+function nan_to_zero(x: f64) -> f64
+    if floats.is_nan(x)
+        return floats.with_sign(x: 0.0, of: x)
+    return x
+
+# `p * q + r * s` rounded about once: the product `r * s` split exactly into
+# its rounded value and its error by a fused multiply-add, the other product
+# added to the rounded value by another, the error last, so a sum that
+# cancels keeps its digits. An exact zero is the plain formula's, signed as
+# IEEE signs it. Every product finite.
+#
+# - `p`: the first product's one factor.
+# - `q`: its other factor.
+# - `r`: the second product's one factor.
+# - `s`: its other factor.
+function dot2(p: f64, q: f64, r: f64, s: f64) -> f64
+    w = r * s
+    e = parts.mul_add(x: r, times: s, plus: -w)
+    f = parts.mul_add(x: p, times: q, plus: w)
+    sum = f + e
+
+    if sum == 0.0
+        return p * q + r * s
+    return sum
+
+# The product of `a` and `b`: `(a.re * b.re - a.im * b.im) + (a.re * b.im +
+# a.im * b.re)i`, each sum taken by `dot2` where every product is finite so
+# that a cancelling one keeps its digits, and where both parts come out a nan though a factor is
+# infinite or a partial product overflowed, an infinity recomputed as Annex G
+# says.
+#
+# - `a`: one factor.
+# - `b`: the other.
+function mul(a: Pair, b: Pair) -> Pair
+    ac = a.re * b.re
+    bd = a.im * b.im
+    ad = a.re * b.im
+    bc = a.im * b.re
+    x = ac - bd
+    y = ad + bc
+
+    if floats.is_finite(ac) && floats.is_finite(bd) && floats.is_finite(ad) && floats.is_finite(bc) && floats.is_finite(x) && floats.is_finite(y)
+        return Pair(re: dot2(p: a.re, q: b.re, r: -a.im, s: b.im), im: dot2(p: a.re, q: b.im, r: a.im, s: b.re))
+
+    if !floats.is_nan(x) || !floats.is_nan(y)
+        return Pair(re: x, im: y)
+    ar @= a.re
+    ai @= a.im
+    br @= b.re
+    bi @= b.im
+    again @= false
+
+    if floats.is_inf(ar) || floats.is_inf(ai)
+        ar @ boxed(ar)
+        ai @ boxed(ai)
+        br @ nan_to_zero(br)
+        bi @ nan_to_zero(bi)
+        again @ true
+
+    if floats.is_inf(br) || floats.is_inf(bi)
+        br @ boxed(br)
+        bi @ boxed(bi)
+        ar @ nan_to_zero(ar)
+        ai @ nan_to_zero(ai)
+        again @ true
+
+    if !again && (floats.is_inf(ac) || floats.is_inf(bd) || floats.is_inf(ad) || floats.is_inf(bc))
+        ar @ nan_to_zero(ar)
+        ai @ nan_to_zero(ai)
+        br @ nan_to_zero(br)
+        bi @ nan_to_zero(bi)
+        again @ true
+
+    if !again
+        return Pair(re: x, im: y)
+    return Pair(re: limits.INF * (ar * br - ai * bi), im: limits.INF * (ar * bi + ai * br))
+
+# What `smith_step` answers: the quotient's two parts.
+record Parts
+    # The real part.
+    first: f64
+    # The imaginary part.
+    second: f64
+
+# `(a + bi) / (c + di)` where `|d| <= |c|`, Smith's step: the ratio `r = d /
+# c`, then `(a + b r) / (c + d r)` and `(b - a r) / (c + d r)`, each one
+# division; where `r` underflows to zero, the products taken in the other
+# order so that nothing of `b` or `a` is lost (Baudin and Smith, 2012).
+#
+# - `a`: the dividend's real part.
+# - `b`: the dividend's imaginary part.
+# - `c`: the divisor's real part, the larger in size.
+# - `d`: the divisor's imaginary part.
+function smith_step(a: f64, b: f64, c: f64, d: f64) -> Parts
+    r = d / c
+    den = c + d * r
+
+    if r != 0.0
+        return Parts(first: (a + b * r) / den, second: (b - a * r) / den)
+    return Parts(first: (a + d * (b / c)) / den, second: (b - d * (a / c)) / den)
+
+# Smith's quotient on the larger part of the divisor, unscaled.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+function smith(a: Pair, b: Pair) -> Pair
+    if floats.is_nan(b.re) || floats.is_nan(b.im)
+        return Pair(re: limits.NAN, im: limits.NAN)
+
+    if floats.abs(b.im) <= floats.abs(b.re)
+        p = smith_step(a: a.re, b: a.im, c: b.re, d: b.im)
+        return Pair(re: p.first, im: p.second)
+
+    if floats.abs(b.re) < floats.abs(b.im)
+        p = smith_step(a: a.im, b: a.re, c: b.im, d: b.re)
+        return Pair(re: p.first, im: -p.second)
+    return Pair(re: limits.NAN, im: limits.NAN)
+
+# The power of two the larger part of `z` lies at, `z` finite and not zero.
+#
+# - `z`: the number.
+function exponent_of_larger(z: Pair) -> i64
+    return parts.exponent_of(floats.max(a: floats.abs(z.re), b: floats.abs(z.im))).default(0)
+
+# The quotient `a / b`. Where both are finite and neither is zero, each is
+# first scaled by a power of two, exactly, so that its larger part lies from 1
+# up to 2, where nothing overflows; there `((a.re b.re + a.im b.im) + (a.im
+# b.re - a.re b.im) i) / (b.re^2 + b.im^2)`, each sum by `dot2`, so a number
+# over itself is exactly 1, and the power is put back once, rounding only
+# where the answer itself is subnormal. Elsewhere Smith's step on the numbers as given, and
+# where both parts come out a nan, Annex G's recovery: a nonzero number over a
+# zero is an infinity, an infinity over a finite number an infinity, a finite
+# number over an infinity a zero.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+function div(a: Pair, b: Pair) -> Pair
+    finite = floats.is_finite(a.re) && floats.is_finite(a.im) && floats.is_finite(b.re) && floats.is_finite(b.im)
+
+    if finite && (a.re != 0.0 || a.im != 0.0) && (b.re != 0.0 || b.im != 0.0)
+        ea = exponent_of_larger(a)
+        eb = exponent_of_larger(b)
+        top = Pair(re: parts.scale(x: a.re, exponent: -ea), im: parts.scale(x: a.im, exponent: -ea))
+        bottom = Pair(re: parts.scale(x: b.re, exponent: -eb), im: parts.scale(x: b.im, exponent: -eb))
+        den = dot2(p: bottom.re, q: bottom.re, r: bottom.im, s: bottom.im)
+        x = dot2(p: top.re, q: bottom.re, r: top.im, s: bottom.im) / den
+        y = dot2(p: top.im, q: bottom.re, r: -top.re, s: bottom.im) / den
+        return Pair(re: parts.scale(x: x, exponent: ea - eb), im: parts.scale(x: y, exponent: ea - eb))
+    q = smith(a: a, b: b)
+
+    if !floats.is_nan(q.re) || !floats.is_nan(q.im)
+        return q
+    return recovered_quotient(a: a, b: b, x: q.re, y: q.im)
+
+# Annex G's recovery of a quotient whose two parts came out a nan.
+#
+# - `a`: the dividend, as given.
+# - `b`: the divisor, as given.
+# - `x`: the real part computed.
+# - `y`: the imaginary part computed.
+function recovered_quotient(a: Pair, b: Pair, x: f64, y: f64) -> Pair
+    if b.re == 0.0 && b.im == 0.0 && (!floats.is_nan(a.re) || !floats.is_nan(a.im))
+        side = floats.with_sign(x: limits.INF, of: b.re)
+        return Pair(re: side * a.re, im: side * a.im)
+
+    if (floats.is_inf(a.re) || floats.is_inf(a.im)) && floats.is_finite(b.re) && floats.is_finite(b.im)
+        p = boxed(a.re)
+        q = boxed(a.im)
+        return Pair(re: limits.INF * (p * b.re + q * b.im), im: limits.INF * (q * b.re - p * b.im))
+
+    if (floats.is_inf(b.re) || floats.is_inf(b.im)) && floats.is_finite(a.re) && floats.is_finite(a.im)
+        p = boxed(b.re)
+        q = boxed(b.im)
+        return Pair(re: 0.0 * (a.re * p + a.im * q), im: 0.0 * (a.im * p - a.re * q))
+    return Pair(re: x, im: y)
+
+# The size of `re + im i`, its distance from zero, without overflow on the way.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function size(re: f64, im: f64) -> f64
+    return elementary.hypot(x: re, y: im)
+
+# The angle of `re + im i` from the positive real axis, from -pi to pi, the
+# sign of a zero imaginary part choosing the side of the negative real axis.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function angle(re: f64, im: f64) -> f64
+    return trig.atan2(y: im, x: re)
+
+# The complex number of size `modulus` at the angle `phase`: `modulus *
+# (cos(phase) + sin(phase) i)`, as Python's `cmath.rect` answers it. An
+# infinite size at a zero angle keeps a zero imaginary part, signed as the
+# product of the two signs; a nan size at a zero angle is `nan + 0i`; a zero
+# size at an infinite or nan angle is zero. Where Python raises, an infinite
+# angle beside a size that is not zero, an infinite size answers `inf + nan i`
+# as it does at a nan angle, and a finite one `nan + nan i`.
+#
+# - `modulus`: the size, of either sign.
+# - `phase`: the angle in radians.
+function from_polar(modulus: f64, phase: f64) -> Pair
+    if floats.is_nan(modulus)
+        if phase == 0.0
+            return Pair(re: modulus, im: 0.0)
+        return Pair(re: limits.NAN, im: limits.NAN)
+
+    if floats.is_finite(phase)
+        if floats.is_inf(modulus) && phase == 0.0
+            sign = floats.with_sign(x: 1.0, of: modulus) * floats.with_sign(x: 1.0, of: phase)
+            return Pair(re: modulus, im: floats.with_sign(x: 0.0, of: sign))
+        return Pair(re: modulus * trig.cos(phase), im: modulus * trig.sin(phase))
+
+    if modulus == 0.0
+        return Pair(re: 0.0, im: 0.0)
+
+    if floats.is_inf(modulus)
+        return Pair(re: limits.INF, im: limits.NAN)
+    return Pair(re: limits.NAN, im: limits.NAN)
+
+# The point of the Riemann sphere `re + im i` stands for: itself where both
+# parts are finite or a nan, and the one infinity `inf + 0i`, the zero signed as
+# `im`, where either part is infinite. C's `cproj`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function project(re: f64, im: f64) -> Pair
+    if floats.is_inf(re) || floats.is_inf(im)
+        return Pair(re: limits.INF, im: floats.with_sign(x: 0.0, of: im))
+    return Pair(re: re, im: im)
+
+# Whether `a` and `b` are equal, or the size of their difference is within
+# `relative` times the larger of their sizes or within `absolute`: Python's
+# `cmath.isclose`. Two infinities are close only where equal; a nan is close to
+# nothing.
+#
+# - `a`: one number.
+# - `b`: the other.
+# - `relative`: the tolerance relative to the larger size; a nan allows
+#   nothing.
+# - `absolute`: the tolerance in size alone; a nan allows nothing.
+function is_close(a: Pair, b: Pair, relative: f64, absolute: f64) -> bool
+    if a.re == b.re && a.im == b.im
+        return true
+
+    if !floats.is_finite(a.re) || !floats.is_finite(a.im) || !floats.is_finite(b.re) || !floats.is_finite(b.im)
+        return false
+    gap = size(re: a.re - b.re, im: a.im - b.im)
+    larger = floats.max(a: size(re: a.re, im: a.im), b: size(re: b.re, im: b.im))
+    return is_within(gap: gap, limit: relative * larger) || is_within(gap: gap, limit: absolute)
+
+# Whether `gap` is at most `limit`, a nan on either side answering false where
+# ordering it would abort.
+#
+# - `gap`: the distance measured.
+# - `limit`: the distance allowed.
+function is_within(gap: f64, limit: f64) -> bool
+    return !floats.is_nan(gap) && !floats.is_nan(limit) && gap <= limit
+
+## What the tests judge with
+
+# Whether `got` is `want_re + want_im i` as the tests of the complex functions
+# hold one: a nan where a nan is wanted, the same infinity or the zero of the
+# same sign where one is wanted, and otherwise each part within `ulps` units in
+# the last place of that part as wanted.
+#
+# - `got`: the answer to judge.
+# - `want_re`: the real part wanted.
+# - `want_im`: the imaginary part wanted.
+# - `ulps`: how far apart the finite parts may be.
+function agrees(got: Pair, want_re: f64, want_im: f64, ulps: f64) -> bool
+    return part_agrees(got: got.re, want: want_re, ulps: ulps) && part_agrees(got: got.im, want: want_im, ulps: ulps)
+
+# One part of `agrees`.
+#
+# - `got`: the part computed.
+# - `want`: the part wanted.
+# - `ulps`: how far apart they may be where `want` is finite and not zero.
+function part_agrees(got: f64, want: f64, ulps: f64) -> bool
+    if floats.is_nan(want)
+        return floats.is_nan(got)
+
+    if floats.is_inf(want) || want == 0.0
+        return got == want && floats.has_minus_sign(got) == floats.has_minus_sign(want)
+    return parts.within_ulps(x: got, expected: want, ulps: ulps)
+
+# The places in `cases` where `f` does not agree: each case holds four floats,
+# the input's two parts then the answer's, and the answer is the list of the
+# case numbers from 0 that fail, empty where every one agrees.
+#
+# - `f`: the function judged.
+# - `cases`: the cases, four floats each.
+# - `ulps`: how far apart the finite parts may be.
+function misses(f: (function(re: f64, im: f64) -> Pair), cases: [[f64]], ulps: f64) -> [i64]
+    failed: [i64] @= []
+    at @= 0
+
+    for c in cases
+        if !agrees(got: f(re: c[0], im: c[1]), want_re: c[2], want_im: c[3], ulps: ulps)
+            failed @ failed.push(at)
+        at @ at + 1
+
+    return failed
+
+# The places in `cases` where `f`, of two complex numbers, does not agree:
+# each case holds six floats, the two inputs' parts then the answer's.
+#
+# - `f`: the function judged.
+# - `cases`: the cases, six floats each.
+# - `ulps`: how far apart the finite parts may be.
+function misses_of_two(f: (function(a: Pair, b: Pair) -> Pair), cases: [[f64]], ulps: f64) -> [i64]
+    failed: [i64] @= []
+    at @= 0
+
+    for c in cases
+        got = f(a: Pair(re: c[0], im: c[1]), b: Pair(re: c[2], im: c[3]))
+
+        if !agrees(got: got, want_re: c[4], want_im: c[5], ulps: ulps)
+            failed @ failed.push(at)
+        at @ at + 1
+
+    return failed
+
+## Tests
+
+test "mul: the plain product, an infinity recovered from a nan, an overflow kept infinite"
+    inf = limits.INF
+    nan = limits.NAN
+    assert mul(a: Pair(re: 1.0, im: 2.0), b: Pair(re: 3.0, im: -4.0)) == Pair(re: 11.0, im: 2.0)
+    assert mul(a: Pair(re: inf, im: inf), b: Pair(re: 1.0, im: 0.0)) == Pair(re: inf, im: inf)
+    assert mul(a: Pair(re: inf, im: nan), b: Pair(re: 2.0, im: 1.0)) == Pair(re: inf, im: inf)
+    big = limits.MAX_F64
+    assert agrees(got: mul(a: Pair(re: big, im: big), b: Pair(re: big, im: big)), want_re: nan, want_im: inf, ulps: 0.0)
+    assert agrees(got: mul(a: Pair(re: nan, im: 1.0), b: Pair(re: 1.0, im: 1.0)), want_re: nan, want_im: nan, ulps: 0.0)
+
+test "div: an exact quotient, a zero divisor, an infinite dividend, an infinite divisor, the extremes"
+    inf = limits.INF
+    nan = limits.NAN
+    assert div(a: Pair(re: 11.0, im: 2.0), b: Pair(re: 3.0, im: -4.0)) == Pair(re: 1.0, im: 2.0)
+    assert div(a: Pair(re: 1.0, im: 1.0), b: Pair(re: 0.0, im: 0.0)) == Pair(re: inf, im: inf)
+    assert div(a: Pair(re: -1.0, im: 0.5), b: Pair(re: -0.0, im: 0.0)) == Pair(re: inf, im: -inf)
+    assert agrees(got: div(a: Pair(re: 0.0, im: 0.0), b: Pair(re: 0.0, im: 0.0)), want_re: nan, want_im: nan, ulps: 0.0)
+    assert agrees(got: div(a: Pair(re: inf, im: 1.0), b: Pair(re: 2.0, im: 0.0)), want_re: inf, want_im: nan, ulps: 0.0)
+    assert div(a: Pair(re: 1.0, im: 1.0), b: Pair(re: inf, im: inf)) == Pair(re: 0.0, im: 0.0)
+    big = limits.MAX_F64
+    assert div(a: Pair(re: big, im: big), b: Pair(re: big, im: big)) == Pair(re: 1.0, im: 0.0)
+    least = limits.SMALLEST_F64
+    assert div(a: Pair(re: least, im: least), b: Pair(re: least, im: least)) == Pair(re: 1.0, im: 0.0)
+    assert agrees(
+        got: div(a: Pair(re: 1.0, im: 0.0), b: Pair(re: big, im: big)),
+        want_re: 0.5 / big,
+        want_im: -0.5 / big,
+        ulps: 2.0
+    )
+
+test "size, angle and from_polar: the axes, the signed zeros of the cut, an overflow kept off, the infinities"
+    inf = limits.INF
+    assert size(re: 3.0, im: -4.0) == 5.0
+    assert size(re: limits.MAX_F64, im: 1.0) == limits.MAX_F64
+    assert size(re: limits.NAN, im: inf) == inf
+    assert angle(re: -1.0, im: 0.0) == limits.PI
+    assert angle(re: -1.0, im: -0.0) == -limits.PI
+    assert floats.has_minus_sign(angle(re: 0.0, im: -0.0))
+    assert from_polar(modulus: 2.0, phase: 0.0) == Pair(re: 2.0, im: 0.0)
+    assert floats.has_minus_sign(from_polar(modulus: -2.0, phase: 0.0).im)
+    assert from_polar(modulus: inf, phase: 0.0) == Pair(re: inf, im: 0.0)
+    assert from_polar(modulus: 0.0, phase: inf) == Pair(re: 0.0, im: 0.0)
+
+test "project: a finite number, an infinite part beside a nan, the sign of the zero"
+    inf = limits.INF
+    nan = limits.NAN
+    assert project(re: 1.0, im: -2.0) == Pair(re: 1.0, im: -2.0)
+    assert project(re: nan, im: -inf) == Pair(re: inf, im: -0.0)
+    assert floats.has_minus_sign(project(re: nan, im: -inf).im)
+    assert floats.is_nan(project(re: nan, im: 1.0).re)
+
+test "is_close: equal, within the relative tolerance, the absolute one near zero, the infinities, a nan"
+    inf = limits.INF
+    assert is_close(a: Pair(re: 1.0, im: 1.0), b: Pair(re: 1.0, im: 1.0000000001), relative: 0.000000001, absolute: 0.0)
+    assert !is_close(a: Pair(re: 1.0, im: 1.0), b: Pair(re: 1.0, im: 1.001), relative: 0.000000001, absolute: 0.0)
+    assert is_close(
+        a: Pair(re: 0.0, im: 0.0),
+        b: Pair(re: 0.0, im: 0.00000001),
+        relative: 0.000000001,
+        absolute: 0.0000001
+    )
+    assert is_close(a: Pair(re: inf, im: 0.0), b: Pair(re: inf, im: 0.0), relative: 0.0, absolute: 0.0)
+    assert !is_close(a: Pair(re: inf, im: 0.0), b: Pair(re: inf, im: 1.0), relative: 0.5, absolute: 0.0)
+    assert !is_close(a: Pair(re: limits.NAN, im: 0.0), b: Pair(re: limits.NAN, im: 0.0), relative: 0.5, absolute: 1.0)
+
+test "div and is_close: a nan in the divisor, a nan tolerance, which order nothing"
+    nan = limits.NAN
+    assert agrees(got: div(a: Pair(re: 1.0, im: 1.0), b: Pair(re: nan, im: 1.0)), want_re: nan, want_im: nan, ulps: 0.0)
+    assert agrees(got: div(a: Pair(re: 1.0, im: 1.0), b: Pair(re: 2.0, im: nan)), want_re: nan, want_im: nan, ulps: 0.0)
+    assert !is_close(a: Pair(re: 1.0, im: 0.0), b: Pair(re: 1.5, im: 0.0), relative: nan, absolute: nan)

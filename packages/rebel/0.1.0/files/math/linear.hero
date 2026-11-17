@@ -1,0 +1,2330 @@
+# Vectors of two, three and four floats, matrices of two, three and four
+# columns, quaternions, and the transforms of graphics built from them: the
+# geometry of games and of the screen, in `f64`, every value a copy.
+#
+# It does not do linear algebra of any size (a matrix of n columns, a solver
+# of systems, a decomposition), which no package of Rebel offers yet; complex
+# numbers are `math.Complex`, and the functions of one float are `math`'s,
+# `math.clamp` and `math.to_radians` among them.
+#
+# Said once for every function: a vector is a column, and a matrix acts on it
+# from the left, `m * v`. A matrix holds its columns, `x_axis` to `w_axis`,
+# which are where it sends the axes, so a transform's translation is its
+# `w_axis`. A product composes right to left: `mul_mat4(a: a, b: b)` applies
+# `b` first, then `a`. A positive angle turns counterclockwise as seen from
+# the tip of its axis looking back at the origin, the right-hand rule; a
+# left-handed program sees the same matrix turn clockwise. Handedness and the
+# depth range matter only to `look_at`, `perspective` and `orthographic`, and
+# each names both at the call.
+#
+# Every function answers a value, or fails `invalid` where its input has no
+# answer: a zero vector to normalize, a singular matrix to invert, a camera
+# looking at itself. A quaternion is read as the rotation of its normalized
+# self, and the zero quaternion, which is no rotation, answers nans, as a
+# float function of `math` answers a nan.
+
+use math
+use math/linear/internal/rotations
+use math/linear/internal/scalars
+use math/linear/internal/solve
+
+## The code `math/linear` fails with
+
+# The input has no answer: a zero vector or axis, a singular matrix, an empty
+# view; the message says what was given. `normalize_vec2` and its kin,
+# `angle_vec2` and its kin, `reflect_vec2`, `reflect_vec3`, `inverse_mat2` and
+# its kin, the `rotation_` functions of an axis, `look_at`, `perspective`,
+# `orthographic`, `project_point3`, `arc_quat`, `normalize_quat`,
+# `inverse_quat`, `inverse_lerp` and `remap` fail with it.
+constant INVALID: str
+    math.INVALID
+
+## The kinds
+
+# Which way a frame turns: where its z axis points once x points right and y
+# points up.
+variant Hand
+    # z toward the viewer: OpenGL's frame, glTF's, Blender's and most physics'.
+    right
+    # z away from the viewer: Direct3D's frame and Unity's.
+    left
+
+# Where a projection sends the near and the far planes, in the depth of
+# normalized device coordinates.
+variant Depth
+    # The near plane to -1 and the far one to 1: OpenGL's.
+    minus_one_to_one
+    # The near plane to 0 and the far one to 1: Direct3D's, Vulkan's, Metal's
+    # and WebGPU's.
+    zero_to_one
+
+# The axes of three rotations, in the order they are made, each about the axes
+# as the turns before it left them (intrinsic); the same rotation is the three
+# made about the fixed axes in the other order, the last first. Six orders
+# turn about three different axes (Tait and Bryan's, yaw, pitch and roll among
+# them) and six about the first axis again (Euler's proper angles).
+variant EulerOrder
+    # x, then y, then z.
+    xyz
+    # x, then z, then y.
+    xzy
+    # y, then x, then z.
+    yxz
+    # y, then z, then x: yaw, pitch and roll for a frame whose y is up.
+    yzx
+    # z, then x, then y.
+    zxy
+    # z, then y, then x: yaw, pitch and roll for a frame whose z is up.
+    zyx
+    # x, then y, then x again.
+    xyx
+    # x, then z, then x again.
+    xzx
+    # y, then x, then y again.
+    yxy
+    # y, then z, then y again.
+    yzy
+    # z, then x, then z again.
+    zxz
+    # z, then y, then z again.
+    zyz
+
+# A vector of two floats: a point or a direction of the plane. Built directly;
+# any two floats make one.
+record Vec2
+    # The first part, along x.
+    x: f64
+    # The second part, along y.
+    y: f64
+
+# A vector of three floats: a point or a direction of space. Built directly.
+record Vec3
+    # The first part, along x.
+    x: f64
+    # The second part, along y.
+    y: f64
+    # The third part, along z.
+    z: f64
+
+# A vector of four floats: a point of space with its homogeneous weight `w`,
+# 1 for a point and 0 for a direction, or any four numbers. Built directly.
+record Vec4
+    # The first part, along x.
+    x: f64
+    # The second part, along y.
+    y: f64
+    # The third part, along z.
+    z: f64
+    # The fourth part, the weight.
+    w: f64
+
+# A matrix of two rows and two columns, held by its columns. Built directly, or
+# by `identity_mat2`, `rotation_mat2` and `scaling_mat2`.
+record Mat2
+    # The first column: where the matrix sends the x axis.
+    x_axis: Vec2
+    # The second column: where it sends the y axis.
+    y_axis: Vec2
+
+# A matrix of three rows and three columns, held by its columns: a linear map
+# of space, or an affine map of the plane whose `z_axis` holds its
+# translation. Built directly, or by `identity_mat3` and the functions that
+# answer one.
+record Mat3
+    # The first column: where the matrix sends the x axis.
+    x_axis: Vec3
+    # The second column: where it sends the y axis.
+    y_axis: Vec3
+    # The third column: where it sends the z axis, or the translation of a map
+    # of the plane.
+    z_axis: Vec3
+
+# A matrix of four rows and four columns, held by its columns: a transform of
+# space in homogeneous coordinates, its translation in `w_axis`, or a
+# projection. Built directly, or by `identity_mat4` and the functions that
+# answer one.
+record Mat4
+    # The first column: where the matrix sends the x axis.
+    x_axis: Vec4
+    # The second column: where it sends the y axis.
+    y_axis: Vec4
+    # The third column: where it sends the z axis.
+    z_axis: Vec4
+    # The fourth column: where it sends the origin, the translation.
+    w_axis: Vec4
+
+# A quaternion `w + xi + yj + zk`, the rotation by the angle `2 acos(w)` about
+# the axis `(x, y, z)` where its length is 1. Built directly, or by
+# `identity_quat`, `rotation_quat`, `euler_quat`, `arc_quat` and `to_quat`;
+# `q` and `-q` are one rotation.
+record Quat
+    # The part along i, the axis's x times the sine of half the angle.
+    x: f64
+    # The part along j.
+    y: f64
+    # The part along k.
+    z: f64
+    # The real part, the cosine of half the angle.
+    w: f64
+
+# A rotation as an axis and an angle: what `to_axis_angle` answers.
+record AxisAngle
+    # The axis, of length 1.
+    axis: Vec3
+    # The angle in radians, from 0 to pi, counterclockwise about `axis`.
+    angle: f64
+
+# A rotation as three angles about the axes of an order: what `to_euler`
+# answers and `euler_quat` reads. Built directly; any three angles make one.
+record Euler
+    # The axes, and the order the turns are made in.
+    order: EulerOrder
+    # The angle about the order's first axis, in radians.
+    first: f64
+    # The angle about its second axis, in radians.
+    second: f64
+    # The angle about its third axis, in radians.
+    third: f64
+
+## Vectors of two
+
+# The sum `a + b`, part by part.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function add_vec2(a: Vec2, b: Vec2) -> Vec2
+    return Vec2(x: a.x + b.x, y: a.y + b.y)
+
+# The difference `a - b`, part by part: the vector from the point `b` to the
+# point `a`.
+#
+# - `a`: the vector taken from.
+# - `b`: the vector taken away.
+function sub_vec2(a: Vec2, b: Vec2) -> Vec2
+    return Vec2(x: a.x - b.x, y: a.y - b.y)
+
+# `v` pointing the other way: every part negated.
+#
+# - `v`: any vector.
+function neg_vec2(v: Vec2) -> Vec2
+    return Vec2(x: -v.x, y: -v.y)
+
+# `v` times the number `by`, every part.
+#
+# - `v`: any vector.
+# - `by`: the factor; a negative one turns the vector around, zero makes it
+#   zero.
+function scale_vec2(v: Vec2, by: f64) -> Vec2
+    return Vec2(x: v.x * by, y: v.y * by)
+
+# The product of `a` and `b` part by part, Hadamard's: not the dot product,
+# which is `dot_vec2`.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function mul_vec2(a: Vec2, b: Vec2) -> Vec2
+    return Vec2(x: a.x * b.x, y: a.y * b.y)
+
+# The dot product of `a` and `b`: the sum of their parts' products, the
+# product of their lengths and the cosine of the angle between them.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# See also `angle_vec2`.
+function dot_vec2(a: Vec2, b: Vec2) -> f64
+    return a.x * b.x + a.y * b.y
+
+# The length of `v`, computed so that it overflows or underflows only where
+# the answer does.
+#
+# - `v`: any vector; an infinite part answers the infinity, even beside a nan,
+#   and a nan part otherwise a nan.
+#
+# See also `length_squared_vec2`.
+function length_vec2(v: Vec2) -> f64
+    return scalars.length4(x: v.x, y: v.y, z: 0.0, w: 0.0)
+
+# The squared length of `v`, its dot product with itself: what compares two
+# lengths without a square root.
+#
+# - `v`: any vector.
+function length_squared_vec2(v: Vec2) -> f64
+    return dot_vec2(a: v, b: v)
+
+# The distance between the points `a` and `b`: the length of `a - b`.
+#
+# - `a`: one point.
+# - `b`: the other.
+function distance_vec2(a: Vec2, b: Vec2) -> f64
+    return length_vec2(sub_vec2(a: a, b: b))
+
+# `v` scaled to length 1, its direction: first scaled by a power of two,
+# exactly, so that a vector of huge or tiny parts has its direction too.
+#
+# - `v`: any vector.
+#
+# Fails `invalid` where `v` is zero, or has an infinite or a nan part, which
+# have no direction.
+function normalize_vec2(v: Vec2) -> Vec2?
+    u = scalars.unit4(x: v.x, y: v.y, z: 0.0, w: 0.0)
+
+    if math.is_nan(u[0])
+        return fail(code: INVALID, msg: f"the vector ({v.x}, {v.y}) has no direction")
+    return ok(Vec2(x: u[0], y: u[1]))
+
+# The point a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, part by part, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+function lerp_vec2(from: Vec2, to: Vec2, t: f64) -> Vec2
+    return Vec2(x: scalars.lerp(from: from.x, to: to.x, t: t), y: scalars.lerp(from: from.y, to: to.y, t: t))
+
+# The angle between `a` and `b`, in radians from 0 to pi, by Kahan's
+# `2 atan2(|u - v|, |u + v|)` of their directions, which keeps its digits
+# where the vectors are nearly parallel or nearly opposite, as the arc cosine
+# of the dot product does not.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# Fails `invalid` where either is zero or has an infinite or a nan part.
+function angle_vec2(a: Vec2, b: Vec2) -> f64?
+    u = normalize_vec2(a)?
+    v = normalize_vec2(b)?
+    return ok(2.0 * math.atan2(y: length_vec2(sub_vec2(a: u, b: v)), x: length_vec2(add_vec2(a: u, b: v))))
+
+# The cross product of two vectors of the plane, a number: `a.x * b.y - a.y *
+# b.x`, the signed area of their parallelogram, positive where `b` turns
+# counterclockwise from `a`.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function cross_vec2(a: Vec2, b: Vec2) -> f64
+    return a.x * b.y - a.y * b.x
+
+# `v` reflected off a surface whose normal is `normal`: `v - 2 (v . n) n`
+# with `n` the normal's direction.
+#
+# - `v`: the vector reflected.
+# - `normal`: a vector perpendicular to the surface, of any length.
+#
+# Fails `invalid` where `normal` is zero or has an infinite or a nan part.
+function reflect_vec2(v: Vec2, normal: Vec2) -> Vec2?
+    u = normalize_vec2(normal)?
+    return ok(sub_vec2(a: v, b: scale_vec2(v: u, by: 2.0 * dot_vec2(a: v, b: u))))
+
+## Vectors of three
+
+# The sum `a + b`, part by part.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function add_vec3(a: Vec3, b: Vec3) -> Vec3
+    return Vec3(x: a.x + b.x, y: a.y + b.y, z: a.z + b.z)
+
+# The difference `a - b`, part by part: the vector from the point `b` to the
+# point `a`.
+#
+# - `a`: the vector taken from.
+# - `b`: the vector taken away.
+function sub_vec3(a: Vec3, b: Vec3) -> Vec3
+    return Vec3(x: a.x - b.x, y: a.y - b.y, z: a.z - b.z)
+
+# `v` pointing the other way: every part negated.
+#
+# - `v`: any vector.
+function neg_vec3(v: Vec3) -> Vec3
+    return Vec3(x: -v.x, y: -v.y, z: -v.z)
+
+# `v` times the number `by`, every part.
+#
+# - `v`: any vector.
+# - `by`: the factor; a negative one turns the vector around, zero makes it
+#   zero.
+function scale_vec3(v: Vec3, by: f64) -> Vec3
+    return Vec3(x: v.x * by, y: v.y * by, z: v.z * by)
+
+# The product of `a` and `b` part by part, Hadamard's: not the dot product,
+# which is `dot_vec3`.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function mul_vec3(a: Vec3, b: Vec3) -> Vec3
+    return Vec3(x: a.x * b.x, y: a.y * b.y, z: a.z * b.z)
+
+# The dot product of `a` and `b`: the sum of their parts' products, the
+# product of their lengths and the cosine of the angle between them.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# See also `angle_vec3`.
+function dot_vec3(a: Vec3, b: Vec3) -> f64
+    return a.x * b.x + a.y * b.y + a.z * b.z
+
+# The length of `v`, computed so that it overflows or underflows only where
+# the answer does.
+#
+# - `v`: any vector; an infinite part answers the infinity, even beside a nan,
+#   and a nan part otherwise a nan.
+#
+# See also `length_squared_vec3`.
+function length_vec3(v: Vec3) -> f64
+    return scalars.length4(x: v.x, y: v.y, z: v.z, w: 0.0)
+
+# The squared length of `v`, its dot product with itself: what compares two
+# lengths without a square root.
+#
+# - `v`: any vector.
+function length_squared_vec3(v: Vec3) -> f64
+    return dot_vec3(a: v, b: v)
+
+# The distance between the points `a` and `b`: the length of `a - b`.
+#
+# - `a`: one point.
+# - `b`: the other.
+function distance_vec3(a: Vec3, b: Vec3) -> f64
+    return length_vec3(sub_vec3(a: a, b: b))
+
+# `v` scaled to length 1, its direction: first scaled by a power of two,
+# exactly, so that a vector of huge or tiny parts has its direction too.
+#
+# - `v`: any vector.
+#
+# Fails `invalid` where `v` is zero, or has an infinite or a nan part, which
+# have no direction.
+function normalize_vec3(v: Vec3) -> Vec3?
+    u = scalars.unit4(x: v.x, y: v.y, z: v.z, w: 0.0)
+
+    if math.is_nan(u[0])
+        return fail(code: INVALID, msg: f"the vector ({v.x}, {v.y}, {v.z}) has no direction")
+    return ok(Vec3(x: u[0], y: u[1], z: u[2]))
+
+# The point a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, part by part, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+function lerp_vec3(from: Vec3, to: Vec3, t: f64) -> Vec3
+    return Vec3(
+        x: scalars.lerp(from: from.x, to: to.x, t: t),
+        y: scalars.lerp(from: from.y, to: to.y, t: t),
+        z: scalars.lerp(from: from.z, to: to.z, t: t)
+    )
+
+# The angle between `a` and `b`, in radians from 0 to pi, by Kahan's
+# `2 atan2(|u - v|, |u + v|)` of their directions, which keeps its digits
+# where the vectors are nearly parallel or nearly opposite, as the arc cosine
+# of the dot product does not.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# Fails `invalid` where either is zero or has an infinite or a nan part.
+function angle_vec3(a: Vec3, b: Vec3) -> f64?
+    u = normalize_vec3(a)?
+    v = normalize_vec3(b)?
+    return ok(2.0 * math.atan2(y: length_vec3(sub_vec3(a: u, b: v)), x: length_vec3(add_vec3(a: u, b: v))))
+
+# The cross product `a x b`: perpendicular to both, of the length of their
+# parallelogram's area, pointing by the right-hand rule.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function cross_vec3(a: Vec3, b: Vec3) -> Vec3
+    return Vec3(x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x)
+
+# `v` reflected off a surface whose normal is `normal`: `v - 2 (v . n) n`
+# with `n` the normal's direction.
+#
+# - `v`: the vector reflected.
+# - `normal`: a vector perpendicular to the surface, of any length.
+#
+# Fails `invalid` where `normal` is zero or has an infinite or a nan part.
+function reflect_vec3(v: Vec3, normal: Vec3) -> Vec3?
+    u = normalize_vec3(normal)?
+    return ok(sub_vec3(a: v, b: scale_vec3(v: u, by: 2.0 * dot_vec3(a: v, b: u))))
+
+## Vectors of four
+
+# The sum `a + b`, part by part.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function add_vec4(a: Vec4, b: Vec4) -> Vec4
+    return Vec4(x: a.x + b.x, y: a.y + b.y, z: a.z + b.z, w: a.w + b.w)
+
+# The difference `a - b`, part by part: the vector from the point `b` to the
+# point `a`.
+#
+# - `a`: the vector taken from.
+# - `b`: the vector taken away.
+function sub_vec4(a: Vec4, b: Vec4) -> Vec4
+    return Vec4(x: a.x - b.x, y: a.y - b.y, z: a.z - b.z, w: a.w - b.w)
+
+# `v` pointing the other way: every part negated.
+#
+# - `v`: any vector.
+function neg_vec4(v: Vec4) -> Vec4
+    return Vec4(x: -v.x, y: -v.y, z: -v.z, w: -v.w)
+
+# `v` times the number `by`, every part.
+#
+# - `v`: any vector.
+# - `by`: the factor; a negative one turns the vector around, zero makes it
+#   zero.
+function scale_vec4(v: Vec4, by: f64) -> Vec4
+    return Vec4(x: v.x * by, y: v.y * by, z: v.z * by, w: v.w * by)
+
+# The product of `a` and `b` part by part, Hadamard's: not the dot product,
+# which is `dot_vec4`.
+#
+# - `a`: one vector.
+# - `b`: the other.
+function mul_vec4(a: Vec4, b: Vec4) -> Vec4
+    return Vec4(x: a.x * b.x, y: a.y * b.y, z: a.z * b.z, w: a.w * b.w)
+
+# The dot product of `a` and `b`: the sum of their parts' products, the
+# product of their lengths and the cosine of the angle between them.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# See also `angle_vec4`.
+function dot_vec4(a: Vec4, b: Vec4) -> f64
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
+
+# The length of `v`, computed so that it overflows or underflows only where
+# the answer does.
+#
+# - `v`: any vector; an infinite part answers the infinity, even beside a nan,
+#   and a nan part otherwise a nan.
+#
+# See also `length_squared_vec4`.
+function length_vec4(v: Vec4) -> f64
+    return scalars.length4(x: v.x, y: v.y, z: v.z, w: v.w)
+
+# The squared length of `v`, its dot product with itself: what compares two
+# lengths without a square root.
+#
+# - `v`: any vector.
+function length_squared_vec4(v: Vec4) -> f64
+    return dot_vec4(a: v, b: v)
+
+# The distance between the points `a` and `b`: the length of `a - b`.
+#
+# - `a`: one point.
+# - `b`: the other.
+function distance_vec4(a: Vec4, b: Vec4) -> f64
+    return length_vec4(sub_vec4(a: a, b: b))
+
+# `v` scaled to length 1, its direction: first scaled by a power of two,
+# exactly, so that a vector of huge or tiny parts has its direction too.
+#
+# - `v`: any vector.
+#
+# Fails `invalid` where `v` is zero, or has an infinite or a nan part, which
+# have no direction.
+function normalize_vec4(v: Vec4) -> Vec4?
+    u = scalars.unit4(x: v.x, y: v.y, z: v.z, w: v.w)
+
+    if math.is_nan(u[0])
+        return fail(code: INVALID, msg: f"the vector ({v.x}, {v.y}, {v.z}, {v.w}) has no direction")
+    return ok(Vec4(x: u[0], y: u[1], z: u[2], w: u[3]))
+
+# The point a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, part by part, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+function lerp_vec4(from: Vec4, to: Vec4, t: f64) -> Vec4
+    return Vec4(
+        x: scalars.lerp(from: from.x, to: to.x, t: t),
+        y: scalars.lerp(from: from.y, to: to.y, t: t),
+        z: scalars.lerp(from: from.z, to: to.z, t: t),
+        w: scalars.lerp(from: from.w, to: to.w, t: t)
+    )
+
+# The angle between `a` and `b`, in radians from 0 to pi, by Kahan's
+# `2 atan2(|u - v|, |u + v|)` of their directions, which keeps its digits
+# where the vectors are nearly parallel or nearly opposite, as the arc cosine
+# of the dot product does not.
+#
+# - `a`: one vector.
+# - `b`: the other.
+#
+# Fails `invalid` where either is zero or has an infinite or a nan part.
+function angle_vec4(a: Vec4, b: Vec4) -> f64?
+    u = normalize_vec4(a)?
+    v = normalize_vec4(b)?
+    return ok(2.0 * math.atan2(y: length_vec4(sub_vec4(a: u, b: v)), x: length_vec4(add_vec4(a: u, b: v))))
+
+## Matrices of two
+
+# The identity matrix of size 2: ones on the diagonal, which changes
+# nothing it multiplies.
+function identity_mat2() -> Mat2
+    return Mat2(x_axis: Vec2(x: 1.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 1.0))
+
+# The sum `a + b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: the other.
+function add_mat2(a: Mat2, b: Mat2) -> Mat2
+    return Mat2(x_axis: add_vec2(a: a.x_axis, b: b.x_axis), y_axis: add_vec2(a: a.y_axis, b: b.y_axis))
+
+# The difference `a - b`, entry by entry.
+#
+# - `a`: the matrix taken from.
+# - `b`: the matrix taken away.
+function sub_mat2(a: Mat2, b: Mat2) -> Mat2
+    return Mat2(x_axis: sub_vec2(a: a.x_axis, b: b.x_axis), y_axis: sub_vec2(a: a.y_axis, b: b.y_axis))
+
+# `m` times the number `by`, every entry.
+#
+# - `m`: any matrix.
+# - `by`: the factor.
+function scale_mat2(m: Mat2, by: f64) -> Mat2
+    return Mat2(x_axis: scale_vec2(v: m.x_axis, by: by), y_axis: scale_vec2(v: m.y_axis, by: by))
+
+# The product `m * v`: the vector `v` sent by `m`, its columns weighed by
+# `v`'s parts.
+#
+# - `m`: the matrix.
+# - `v`: the vector.
+function mul_mat2_vec2(m: Mat2, v: Vec2) -> Vec2
+    return Vec2(x: m.x_axis.x * v.x + m.y_axis.x * v.y, y: m.x_axis.y * v.x + m.y_axis.y * v.y)
+
+# The product `a * b`, the map that applies `b` first, then `a`: each column
+# of `b` sent by `a`.
+#
+# - `a`: the matrix applied second.
+# - `b`: the matrix applied first.
+function mul_mat2(a: Mat2, b: Mat2) -> Mat2
+    return Mat2(x_axis: mul_mat2_vec2(m: a, v: b.x_axis), y_axis: mul_mat2_vec2(m: a, v: b.y_axis))
+
+# `m` with its rows made its columns.
+#
+# - `m`: any matrix.
+#
+# A rotation's transpose is its inverse.
+function transpose_mat2(m: Mat2) -> Mat2
+    return Mat2(x_axis: Vec2(x: m.x_axis.x, y: m.y_axis.x), y_axis: Vec2(x: m.x_axis.y, y: m.y_axis.y))
+
+# The determinant of `m`: the factor by which it scales areas, negative
+# where it turns the space over.
+#
+# - `m`: any matrix; a nan entry answers a nan.
+#
+# By Laplace's expansion along the first row.
+function determinant_mat2(m: Mat2) -> f64
+    return solve.determinant([m.x_axis.x, m.x_axis.y, m.y_axis.x, m.y_axis.y], n: 2)
+
+# The inverse of `m`, the matrix that undoes it, by Gauss and Jordan's
+# elimination with partial pivoting.
+#
+# - `m`: any matrix.
+#
+# Fails `invalid` where `m` is singular, where an entry is infinite or a nan,
+# and where the inverse does not fit the floats. See also
+# `determinant_mat2`.
+function inverse_mat2(m: Mat2) -> Mat2?
+    xs = solve.inverse([m.x_axis.x, m.x_axis.y, m.y_axis.x, m.y_axis.y], n: 2)?
+    return ok(Mat2(x_axis: Vec2(x: xs[0], y: xs[1]), y_axis: Vec2(x: xs[2], y: xs[3])))
+
+## Matrices of three
+
+# The identity matrix of size 3: ones on the diagonal, which changes
+# nothing it multiplies.
+function identity_mat3() -> Mat3
+    return Mat3(
+        x_axis: Vec3(x: 1.0, y: 0.0, z: 0.0),
+        y_axis: Vec3(x: 0.0, y: 1.0, z: 0.0),
+        z_axis: Vec3(x: 0.0, y: 0.0, z: 1.0)
+    )
+
+# The sum `a + b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: the other.
+function add_mat3(a: Mat3, b: Mat3) -> Mat3
+    return Mat3(
+        x_axis: add_vec3(a: a.x_axis, b: b.x_axis),
+        y_axis: add_vec3(a: a.y_axis, b: b.y_axis),
+        z_axis: add_vec3(a: a.z_axis, b: b.z_axis)
+    )
+
+# The difference `a - b`, entry by entry.
+#
+# - `a`: the matrix taken from.
+# - `b`: the matrix taken away.
+function sub_mat3(a: Mat3, b: Mat3) -> Mat3
+    return Mat3(
+        x_axis: sub_vec3(a: a.x_axis, b: b.x_axis),
+        y_axis: sub_vec3(a: a.y_axis, b: b.y_axis),
+        z_axis: sub_vec3(a: a.z_axis, b: b.z_axis)
+    )
+
+# `m` times the number `by`, every entry.
+#
+# - `m`: any matrix.
+# - `by`: the factor.
+function scale_mat3(m: Mat3, by: f64) -> Mat3
+    return Mat3(
+        x_axis: scale_vec3(v: m.x_axis, by: by),
+        y_axis: scale_vec3(v: m.y_axis, by: by),
+        z_axis: scale_vec3(v: m.z_axis, by: by)
+    )
+
+# The product `m * v`: the vector `v` sent by `m`, its columns weighed by
+# `v`'s parts.
+#
+# - `m`: the matrix.
+# - `v`: the vector.
+function mul_mat3_vec3(m: Mat3, v: Vec3) -> Vec3
+    return Vec3(
+        x: m.x_axis.x * v.x + m.y_axis.x * v.y + m.z_axis.x * v.z,
+        y: m.x_axis.y * v.x + m.y_axis.y * v.y + m.z_axis.y * v.z,
+        z: m.x_axis.z * v.x + m.y_axis.z * v.y + m.z_axis.z * v.z
+    )
+
+# The product `a * b`, the map that applies `b` first, then `a`: each column
+# of `b` sent by `a`.
+#
+# - `a`: the matrix applied second.
+# - `b`: the matrix applied first.
+function mul_mat3(a: Mat3, b: Mat3) -> Mat3
+    return Mat3(
+        x_axis: mul_mat3_vec3(m: a, v: b.x_axis),
+        y_axis: mul_mat3_vec3(m: a, v: b.y_axis),
+        z_axis: mul_mat3_vec3(m: a, v: b.z_axis)
+    )
+
+# `m` with its rows made its columns.
+#
+# - `m`: any matrix.
+#
+# A rotation's transpose is its inverse.
+function transpose_mat3(m: Mat3) -> Mat3
+    return Mat3(
+        x_axis: Vec3(x: m.x_axis.x, y: m.y_axis.x, z: m.z_axis.x),
+        y_axis: Vec3(x: m.x_axis.y, y: m.y_axis.y, z: m.z_axis.y),
+        z_axis: Vec3(x: m.x_axis.z, y: m.y_axis.z, z: m.z_axis.z)
+    )
+
+# The determinant of `m`: the factor by which it scales areas and volumes, negative
+# where it turns the space over.
+#
+# - `m`: any matrix; a nan entry answers a nan.
+#
+# By Laplace's expansion along the first row.
+function determinant_mat3(m: Mat3) -> f64
+    return solve.determinant(
+        [m.x_axis.x, m.x_axis.y, m.x_axis.z, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.z_axis.x, m.z_axis.y, m.z_axis.z],
+        n: 3
+    )
+
+# The inverse of `m`, the matrix that undoes it, by Gauss and Jordan's
+# elimination with partial pivoting.
+#
+# - `m`: any matrix.
+#
+# Fails `invalid` where `m` is singular, where an entry is infinite or a nan,
+# and where the inverse does not fit the floats. See also
+# `determinant_mat3`.
+function inverse_mat3(m: Mat3) -> Mat3?
+    xs = solve.inverse([m.x_axis.x, m.x_axis.y, m.x_axis.z, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.z_axis.x, m.z_axis.y, m.z_axis.z], n: 3)?
+    return ok(
+        Mat3(x_axis: Vec3(x: xs[0], y: xs[1], z: xs[2]), y_axis: Vec3(x: xs[3], y: xs[4], z: xs[5]), z_axis: Vec3(x: xs[6], y: xs[7], z: xs[8]))
+    )
+
+## Matrices of four
+
+# The identity matrix of size 4: ones on the diagonal, which changes
+# nothing it multiplies.
+function identity_mat4() -> Mat4
+    return Mat4(
+        x_axis: Vec4(x: 1.0, y: 0.0, z: 0.0, w: 0.0),
+        y_axis: Vec4(x: 0.0, y: 1.0, z: 0.0, w: 0.0),
+        z_axis: Vec4(x: 0.0, y: 0.0, z: 1.0, w: 0.0),
+        w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 1.0)
+    )
+
+# The sum `a + b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: the other.
+function add_mat4(a: Mat4, b: Mat4) -> Mat4
+    return Mat4(
+        x_axis: add_vec4(a: a.x_axis, b: b.x_axis),
+        y_axis: add_vec4(a: a.y_axis, b: b.y_axis),
+        z_axis: add_vec4(a: a.z_axis, b: b.z_axis),
+        w_axis: add_vec4(a: a.w_axis, b: b.w_axis)
+    )
+
+# The difference `a - b`, entry by entry.
+#
+# - `a`: the matrix taken from.
+# - `b`: the matrix taken away.
+function sub_mat4(a: Mat4, b: Mat4) -> Mat4
+    return Mat4(
+        x_axis: sub_vec4(a: a.x_axis, b: b.x_axis),
+        y_axis: sub_vec4(a: a.y_axis, b: b.y_axis),
+        z_axis: sub_vec4(a: a.z_axis, b: b.z_axis),
+        w_axis: sub_vec4(a: a.w_axis, b: b.w_axis)
+    )
+
+# `m` times the number `by`, every entry.
+#
+# - `m`: any matrix.
+# - `by`: the factor.
+function scale_mat4(m: Mat4, by: f64) -> Mat4
+    return Mat4(
+        x_axis: scale_vec4(v: m.x_axis, by: by),
+        y_axis: scale_vec4(v: m.y_axis, by: by),
+        z_axis: scale_vec4(v: m.z_axis, by: by),
+        w_axis: scale_vec4(v: m.w_axis, by: by)
+    )
+
+# The product `m * v`: the vector `v` sent by `m`, its columns weighed by
+# `v`'s parts.
+#
+# - `m`: the matrix.
+# - `v`: the vector.
+function mul_mat4_vec4(m: Mat4, v: Vec4) -> Vec4
+    return Vec4(
+        x: m.x_axis.x * v.x + m.y_axis.x * v.y + m.z_axis.x * v.z + m.w_axis.x * v.w,
+        y: m.x_axis.y * v.x + m.y_axis.y * v.y + m.z_axis.y * v.z + m.w_axis.y * v.w,
+        z: m.x_axis.z * v.x + m.y_axis.z * v.y + m.z_axis.z * v.z + m.w_axis.z * v.w,
+        w: m.x_axis.w * v.x + m.y_axis.w * v.y + m.z_axis.w * v.z + m.w_axis.w * v.w
+    )
+
+# The product `a * b`, the map that applies `b` first, then `a`: each column
+# of `b` sent by `a`.
+#
+# - `a`: the matrix applied second.
+# - `b`: the matrix applied first.
+function mul_mat4(a: Mat4, b: Mat4) -> Mat4
+    return Mat4(
+        x_axis: mul_mat4_vec4(m: a, v: b.x_axis),
+        y_axis: mul_mat4_vec4(m: a, v: b.y_axis),
+        z_axis: mul_mat4_vec4(m: a, v: b.z_axis),
+        w_axis: mul_mat4_vec4(m: a, v: b.w_axis)
+    )
+
+# `m` with its rows made its columns.
+#
+# - `m`: any matrix.
+#
+# A rotation's transpose is its inverse.
+function transpose_mat4(m: Mat4) -> Mat4
+    return Mat4(
+        x_axis: Vec4(x: m.x_axis.x, y: m.y_axis.x, z: m.z_axis.x, w: m.w_axis.x),
+        y_axis: Vec4(x: m.x_axis.y, y: m.y_axis.y, z: m.z_axis.y, w: m.w_axis.y),
+        z_axis: Vec4(x: m.x_axis.z, y: m.y_axis.z, z: m.z_axis.z, w: m.w_axis.z),
+        w_axis: Vec4(x: m.x_axis.w, y: m.y_axis.w, z: m.z_axis.w, w: m.w_axis.w)
+    )
+
+# The determinant of `m`: the factor by which it scales areas and volumes, negative
+# where it turns the space over.
+#
+# - `m`: any matrix; a nan entry answers a nan.
+#
+# By Laplace's expansion along the first row.
+function determinant_mat4(m: Mat4) -> f64
+    return solve.determinant(
+        [m.x_axis.x, m.x_axis.y, m.x_axis.z, m.x_axis.w, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.y_axis.w, m.z_axis.x, m.z_axis.y, m.z_axis.z, m.z_axis.w, m.w_axis.x, m.w_axis.y, m.w_axis.z, m.w_axis.w],
+        n: 4
+    )
+
+# The inverse of `m`, the matrix that undoes it, by Gauss and Jordan's
+# elimination with partial pivoting.
+#
+# - `m`: any matrix.
+#
+# Fails `invalid` where `m` is singular, where an entry is infinite or a nan,
+# and where the inverse does not fit the floats. See also
+# `determinant_mat4`.
+function inverse_mat4(m: Mat4) -> Mat4?
+    xs = solve.inverse([m.x_axis.x, m.x_axis.y, m.x_axis.z, m.x_axis.w, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.y_axis.w, m.z_axis.x, m.z_axis.y, m.z_axis.z, m.z_axis.w, m.w_axis.x, m.w_axis.y, m.w_axis.z, m.w_axis.w], n: 4)?
+    return ok(
+        Mat4(x_axis: Vec4(x: xs[0], y: xs[1], z: xs[2], w: xs[3]), y_axis: Vec4(x: xs[4], y: xs[5], z: xs[6], w: xs[7]), z_axis: Vec4(x: xs[8], y: xs[9], z: xs[10], w: xs[11]), w_axis: Vec4(x: xs[12], y: xs[13], z: xs[14], w: xs[15]))
+    )
+
+## Transforms of the plane
+
+# The rotation of the plane by `angle`, counterclockwise.
+#
+# - `angle`: in radians; a negative one turns clockwise.
+function rotation_mat2(angle: f64) -> Mat2
+    c = math.cos(angle)
+    s = math.sin(angle)
+    return Mat2(x_axis: Vec2(x: c, y: s), y_axis: Vec2(x: -s, y: c))
+
+# The scaling of the plane by `by.x` along x and `by.y` along y.
+#
+# - `by`: the two factors; a negative one mirrors, zero flattens.
+function scaling_mat2(by: Vec2) -> Mat2
+    return Mat2(x_axis: Vec2(x: by.x, y: 0.0), y_axis: Vec2(x: 0.0, y: by.y))
+
+# The translation of the plane by `by`, as an affine map: a 3 by 3 matrix
+# acting on `(x, y, 1)`, its translation in `z_axis`.
+#
+# - `by`: how far it moves every point.
+#
+# Composed with `rotation_z_mat3` and `scaling_mat3` by `mul_mat3`. See also
+# `transform_point2`.
+function translation_mat3(by: Vec2) -> Mat3
+    return Mat3(
+        x_axis: Vec3(x: 1.0, y: 0.0, z: 0.0),
+        y_axis: Vec3(x: 0.0, y: 1.0, z: 0.0),
+        z_axis: Vec3(x: by.x, y: by.y, z: 1.0)
+    )
+
+# The point `p` of the plane sent by the affine map `m`: `m * (p.x, p.y, 1)`,
+# its third part dropped, so the translation applies.
+#
+# - `m`: an affine map of the plane, its last row `(0, 0, 1)`.
+# - `p`: the point.
+#
+# See also `transform_vector2`.
+function transform_point2(m: Mat3, p: Vec2) -> Vec2
+    return Vec2(
+        x: m.x_axis.x * p.x + m.y_axis.x * p.y + m.z_axis.x,
+        y: m.x_axis.y * p.x + m.y_axis.y * p.y + m.z_axis.y
+    )
+
+# The direction `v` of the plane sent by the affine map `m`: `m * (v.x, v.y,
+# 0)`, so the translation does not apply.
+#
+# - `m`: an affine map of the plane.
+# - `v`: the direction.
+function transform_vector2(m: Mat3, v: Vec2) -> Vec2
+    return Vec2(x: m.x_axis.x * v.x + m.y_axis.x * v.y, y: m.x_axis.y * v.x + m.y_axis.y * v.y)
+
+## Transforms of space
+
+# The scaling of space by `by.x`, `by.y` and `by.z` along the three axes; with
+# `by.z` 1, the scaling of the plane as an affine map.
+#
+# - `by`: the three factors; a negative one mirrors.
+function scaling_mat3(by: Vec3) -> Mat3
+    return Mat3(
+        x_axis: Vec3(x: by.x, y: 0.0, z: 0.0),
+        y_axis: Vec3(x: 0.0, y: by.y, z: 0.0),
+        z_axis: Vec3(x: 0.0, y: 0.0, z: by.z)
+    )
+
+# The rotation of space by `angle` about `axis`, counterclockwise as seen from
+# the axis's tip: Rodrigues' matrix, `1 - cos(angle)` taken as `2 sin^2(angle
+# / 2)` so a small angle keeps its digits.
+#
+# - `axis`: the axis, of any length.
+# - `angle`: in radians.
+#
+# Fails `invalid` where `axis` is zero or has an infinite or a nan part. See
+# also `rotation_x_mat3`, `rotation_quat`.
+function rotation_mat3(axis: Vec3, angle: f64) -> Mat3?
+    u = normalize_vec3(axis)?
+    c = math.cos(angle)
+    s = math.sin(angle)
+    h = math.sin(angle * 0.5)
+    t = 2.0 * h * h
+    x_axis = Vec3(x: t * u.x * u.x + c, y: t * u.x * u.y + s * u.z, z: t * u.x * u.z - s * u.y)
+    y_axis = Vec3(x: t * u.x * u.y - s * u.z, y: t * u.y * u.y + c, z: t * u.y * u.z + s * u.x)
+    z_axis = Vec3(x: t * u.x * u.z + s * u.y, y: t * u.y * u.z - s * u.x, z: t * u.z * u.z + c)
+    return ok(Mat3(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis))
+
+# The rotation of space by `angle` about the x axis, turning y toward z.
+#
+# - `angle`: in radians.
+function rotation_x_mat3(angle: f64) -> Mat3
+    c = math.cos(angle)
+    s = math.sin(angle)
+    return Mat3(
+        x_axis: Vec3(x: 1.0, y: 0.0, z: 0.0),
+        y_axis: Vec3(x: 0.0, y: c, z: s),
+        z_axis: Vec3(x: 0.0, y: -s, z: c)
+    )
+
+# The rotation of space by `angle` about the y axis, turning z toward x.
+#
+# - `angle`: in radians.
+function rotation_y_mat3(angle: f64) -> Mat3
+    c = math.cos(angle)
+    s = math.sin(angle)
+    return Mat3(
+        x_axis: Vec3(x: c, y: 0.0, z: -s),
+        y_axis: Vec3(x: 0.0, y: 1.0, z: 0.0),
+        z_axis: Vec3(x: s, y: 0.0, z: c)
+    )
+
+# The rotation of space by `angle` about the z axis, turning x toward y: also
+# the rotation of the plane as an affine map.
+#
+# - `angle`: in radians.
+function rotation_z_mat3(angle: f64) -> Mat3
+    c = math.cos(angle)
+    s = math.sin(angle)
+    return Mat3(
+        x_axis: Vec3(x: c, y: s, z: 0.0),
+        y_axis: Vec3(x: -s, y: c, z: 0.0),
+        z_axis: Vec3(x: 0.0, y: 0.0, z: 1.0)
+    )
+
+# The 3 by 3 matrix `m` as a transform of space: in the upper left of the
+# identity of size 4, which translates nothing.
+#
+# - `m`: any 3 by 3 matrix.
+#
+# See also `upper_mat3`.
+function extend_mat3(m: Mat3) -> Mat4
+    x_axis = Vec4(x: m.x_axis.x, y: m.x_axis.y, z: m.x_axis.z, w: 0.0)
+    y_axis = Vec4(x: m.y_axis.x, y: m.y_axis.y, z: m.y_axis.z, w: 0.0)
+    z_axis = Vec4(x: m.z_axis.x, y: m.z_axis.y, z: m.z_axis.z, w: 0.0)
+    return Mat4(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis, w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 1.0))
+
+# The upper left 3 by 3 of `m`: a transform's linear part, its rotation and
+# scaling without its translation.
+#
+# - `m`: any 4 by 4 matrix.
+#
+# See also `extend_mat3`.
+function upper_mat3(m: Mat4) -> Mat3
+    x_axis = Vec3(x: m.x_axis.x, y: m.x_axis.y, z: m.x_axis.z)
+    y_axis = Vec3(x: m.y_axis.x, y: m.y_axis.y, z: m.y_axis.z)
+    return Mat3(x_axis: x_axis, y_axis: y_axis, z_axis: Vec3(x: m.z_axis.x, y: m.z_axis.y, z: m.z_axis.z))
+
+# The translation of space by `by`.
+#
+# - `by`: how far it moves every point.
+#
+# See also `transform_point3`.
+function translation_mat4(by: Vec3) -> Mat4
+    i = identity_mat4()
+    return Mat4(x_axis: i.x_axis, y_axis: i.y_axis, z_axis: i.z_axis, w_axis: Vec4(x: by.x, y: by.y, z: by.z, w: 1.0))
+
+# The scaling of space by `by.x`, `by.y` and `by.z` along the three axes.
+#
+# - `by`: the three factors; a negative one mirrors.
+function scaling_mat4(by: Vec3) -> Mat4
+    return extend_mat3(scaling_mat3(by))
+
+# The rotation of space by `angle` about `axis`, as a transform.
+#
+# - `axis`: the axis, of any length.
+# - `angle`: in radians, counterclockwise as seen from the axis's tip.
+#
+# Fails `invalid` where `axis` is zero or has an infinite or a nan part. See
+# also `rotation_mat3`.
+function rotation_mat4(axis: Vec3, angle: f64) -> Mat4?
+    return ok(extend_mat3(rotation_mat3(axis: axis, angle: angle)?))
+
+# The rotation of space by `angle` about the x axis, as a transform.
+#
+# - `angle`: in radians, turning y toward z.
+function rotation_x_mat4(angle: f64) -> Mat4
+    return extend_mat3(rotation_x_mat3(angle))
+
+# The rotation of space by `angle` about the y axis, as a transform.
+#
+# - `angle`: in radians, turning z toward x.
+function rotation_y_mat4(angle: f64) -> Mat4
+    return extend_mat3(rotation_y_mat3(angle))
+
+# The rotation of space by `angle` about the z axis, as a transform.
+#
+# - `angle`: in radians, turning x toward y.
+function rotation_z_mat4(angle: f64) -> Mat4
+    return extend_mat3(rotation_z_mat3(angle))
+
+# The point `p` sent by the transform `m`: `m * (p, 1)`, its weight dropped,
+# so the translation applies and no division is made; for an affine `m`,
+# whose last row is `(0, 0, 0, 1)`.
+#
+# - `m`: an affine transform.
+# - `p`: the point.
+#
+# See also `project_point3`, `transform_vector3`.
+function transform_point3(m: Mat4, p: Vec3) -> Vec3
+    v = mul_mat4_vec4(m: m, v: Vec4(x: p.x, y: p.y, z: p.z, w: 1.0))
+    return Vec3(x: v.x, y: v.y, z: v.z)
+
+# The direction `v` sent by the transform `m`: `m * (v, 0)`, so the
+# translation does not apply.
+#
+# - `m`: a transform.
+# - `v`: the direction.
+function transform_vector3(m: Mat4, v: Vec3) -> Vec3
+    r = mul_mat4_vec4(m: m, v: Vec4(x: v.x, y: v.y, z: v.z, w: 0.0))
+    return Vec3(x: r.x, y: r.y, z: r.z)
+
+# The point `p` sent by the projection `m` and divided by its weight: `m * (p,
+# 1)` over its `w`, the point in normalized device coordinates.
+#
+# - `m`: a projection, or any transform.
+# - `p`: the point.
+#
+# Fails `invalid` where the weight comes out zero, infinite or a nan: the
+# point is on the camera's plane, or the input was not finite.
+function project_point3(m: Mat4, p: Vec3) -> Vec3?
+    v = mul_mat4_vec4(m: m, v: Vec4(x: p.x, y: p.y, z: p.z, w: 1.0))
+
+    if v.w == 0.0 || !math.is_finite(v.w)
+        return fail(code: INVALID, msg: f"the point ({p.x}, {p.y}, {p.z}) has the weight {v.w} under this projection")
+    return ok(Vec3(x: v.x / v.w, y: v.y / v.w, z: v.z / v.w))
+
+## Cameras
+
+# The view matrix of a camera at `eye` looking at `target`: it sends `eye` to
+# the origin and the direction of view to minus z in a right-handed frame,
+# plus z in a left-handed one, with `up` as near to plus y as it can be. A
+# right-handed one is `gluLookAt`'s, a left-handed one Direct3D's
+# `LookAtLH`.
+#
+# - `eye`: where the camera stands.
+# - `target`: the point it looks at.
+# - `up`: which way is up, of any length, not along the view.
+# - `hand`: the frame's handedness.
+#
+# Fails `invalid` where `target` is `eye`, where `up` is zero, and where a
+# part is infinite or a nan; and where `up` is along the direction of view,
+# within 16 times `math.EPSILON` radians of it, where the side direction
+# would be the noise of rounding.
+function look_at(eye: Vec3, target: Vec3, up: Vec3, hand: Hand) -> Mat4?
+    ahead = match normalize_vec3(sub_vec3(a: target, b: eye))
+        .ok d => d
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a camera at ({eye.x}, {eye.y}, {eye.z}) looking at ({target.x}, {target.y}, {target.z}) has no direction of view"
+        )
+
+    above = match normalize_vec3(up)
+        .ok d  => d
+        .err _ => return fail(code: INVALID, msg: f"the up ({up.x}, {up.y}, {up.z}) has no direction")
+
+    turned = match hand
+        .right => cross_vec3(a: ahead, b: above)
+        .left  => cross_vec3(a: above, b: ahead)
+
+    if length_vec3(turned) <= 16.0 * math.EPSILON
+        return fail(code: INVALID, msg: f"the up ({up.x}, {up.y}, {up.z}) is along the direction of view")
+    side = normalize_vec3(turned)?
+
+    top = match hand
+        .right => cross_vec3(a: side, b: ahead)
+        .left  => cross_vec3(a: ahead, b: side)
+
+    back = match hand
+        .right => neg_vec3(ahead)
+        .left  => ahead
+
+    x_axis = Vec4(x: side.x, y: top.x, z: back.x, w: 0.0)
+    y_axis = Vec4(x: side.y, y: top.y, z: back.y, w: 0.0)
+    z_axis = Vec4(x: side.z, y: top.z, z: back.z, w: 0.0)
+    w_axis = Vec4(x: -dot_vec3(a: side, b: eye), y: -dot_vec3(a: top, b: eye), z: -dot_vec3(a: back, b: eye), w: 1.0)
+    return ok(Mat4(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis, w_axis: w_axis))
+
+# The perspective projection of a camera that sees `fov_y` radians from its
+# bottom edge to its top one: it sends the near plane to the depth's near end
+# and the far plane to its far end, and leaves the division by `w` to
+# `project_point3` or to the graphics card. `far` may be the infinity, the
+# projection's limit, which keeps the depth of any distance.
+#
+# - `fov_y`: the vertical field of view in radians, above 0 and below pi.
+# - `aspect`: the width over the height of the view, above 0.
+# - `near`: the distance of the near plane, above 0.
+# - `far`: the distance of the far plane, above 0 and not `near`, or
+#   `math.INF`; below `near` it reverses the depth, as a reversed-z buffer
+#   wants.
+# - `hand`: the frame's handedness: the camera looks down minus z in a
+#   right-handed one, down plus z in a left-handed one.
+# - `depth`: the range the near and the far planes go to.
+#
+# Fails `invalid` where a parameter is outside its range or a nan. See also
+# `orthographic`.
+function perspective(fov_y: f64, aspect: f64, near: f64, far: f64, hand: Hand, depth: Depth) -> Mat4?
+    if !scalars.is_positive(fov_y) || !scalars.is_above(a: math.PI, b: fov_y)
+        return fail(code: INVALID, msg: f"the field of view {fov_y} is not above 0 and below pi")
+
+    if !scalars.is_positive(aspect) || math.is_inf(aspect)
+        return fail(code: INVALID, msg: f"the aspect {aspect} is not a finite number above 0")
+
+    if !scalars.is_positive(near) || math.is_inf(near) || !scalars.is_positive(far) || far == near
+        return fail(code: INVALID, msg: f"the near plane {near} and the far plane {far} make no depth")
+    f = 1.0 / math.tan(fov_y * 0.5)
+    endless = math.is_inf(far)
+    a @= 0.0
+    b @= 0.0
+
+    match depth
+        .minus_one_to_one =>
+            if endless
+                a @ -1.0
+                b @ -2.0 * near
+            else
+                a @ (far + near) / (near - far)
+                b @ 2.0 * far * near / (near - far)
+        .zero_to_one =>
+            if endless
+                a @ -1.0
+                b @ -near
+            else
+                a @ far / (near - far)
+                b @ far * near / (near - far)
+
+    toward = match hand
+        .right => -1.0
+        .left  => 1.0
+
+    x_axis = Vec4(x: f / aspect, y: 0.0, z: 0.0, w: 0.0)
+    y_axis = Vec4(x: 0.0, y: f, z: 0.0, w: 0.0)
+    z_axis = Vec4(x: 0.0, y: 0.0, z: -toward * a, w: toward)
+    return ok(Mat4(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis, w_axis: Vec4(x: 0.0, y: 0.0, z: b, w: 0.0)))
+
+# The orthographic projection of the box from `left` to `right`, `bottom` to
+# `top` and `near` to `far` in front of the camera: it sends the box to the
+# cube of normalized device coordinates, the near face to the depth's near end
+# and the far one to its far end, with no perspective.
+#
+# - `left`: the x of the box's left side.
+# - `right`: the x of its right side, not `left`.
+# - `bottom`: the y of its bottom.
+# - `top`: the y of its top, not `bottom`.
+# - `near`: the distance of the near face in front of the camera.
+# - `far`: the distance of the far face, not `near`.
+# - `hand`: the frame's handedness: the camera looks down minus z in a
+#   right-handed one, down plus z in a left-handed one.
+# - `depth`: the range the near and the far faces go to.
+#
+# Fails `invalid` where two sides meet, or a parameter is infinite or a nan.
+# See also `perspective`.
+function orthographic(left: f64, right: f64, bottom: f64, top: f64, near: f64, far: f64, hand: Hand, depth: Depth) -> Mat4?
+    finite = math.is_finite(left) && math.is_finite(right) && math.is_finite(bottom) && math.is_finite(top) && math.is_finite(near) && math.is_finite(far)
+
+    if !finite || left == right || bottom == top || near == far
+        return fail(
+            code: INVALID,
+            msg: f"the box from {left} to {right}, {bottom} to {top}, {near} to {far} is empty or not finite"
+        )
+    depth_scale @= 0.0
+    depth_move @= 0.0
+
+    match depth
+        .minus_one_to_one =>
+            depth_scale @ 2.0 / (far - near)
+            depth_move @ -(far + near) / (far - near)
+        .zero_to_one =>
+            depth_scale @ 1.0 / (far - near)
+            depth_move @ -near / (far - near)
+
+    toward = match hand
+        .right => -1.0
+        .left  => 1.0
+
+    x_axis = Vec4(x: 2.0 / (right - left), y: 0.0, z: 0.0, w: 0.0)
+    y_axis = Vec4(x: 0.0, y: 2.0 / (top - bottom), z: 0.0, w: 0.0)
+    z_axis = Vec4(x: 0.0, y: 0.0, z: toward * depth_scale, w: 0.0)
+    w_axis = Vec4(x: -(right + left) / (right - left), y: -(top + bottom) / (top - bottom), z: depth_move, w: 1.0)
+    return ok(Mat4(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis, w_axis: w_axis))
+
+## Quaternions
+
+# The quaternion of no rotation, `1 + 0i + 0j + 0k`.
+function identity_quat() -> Quat
+    return Quat(x: 0.0, y: 0.0, z: 0.0, w: 1.0)
+
+# The unit quaternion of the rotation by `angle` about `axis`.
+#
+# - `axis`: the axis, of any length.
+# - `angle`: in radians, counterclockwise as seen from the axis's tip.
+#
+# Fails `invalid` where `axis` is zero or has an infinite or a nan part. See
+# also `to_axis_angle`.
+function rotation_quat(axis: Vec3, angle: f64) -> Quat?
+    u = normalize_vec3(axis)?
+    s = math.sin(angle * 0.5)
+    return ok(Quat(x: u.x * s, y: u.y * s, z: u.z * s, w: math.cos(angle * 0.5)))
+
+# The axes of `order`, 0 for x, 1 for y and 2 for z, in the order of the
+# turns.
+#
+# - `order`: any order.
+function axes_of(order: EulerOrder) -> [i64]
+    return match order
+        .xyz => [0, 1, 2]
+        .xzy => [0, 2, 1]
+        .yxz => [1, 0, 2]
+        .yzx => [1, 2, 0]
+        .zxy => [2, 0, 1]
+        .zyx => [2, 1, 0]
+        .xyx => [0, 1, 0]
+        .xzx => [0, 2, 0]
+        .yxy => [1, 0, 1]
+        .yzy => [1, 2, 1]
+        .zxz => [2, 0, 2]
+        .zyz => [2, 1, 2]
+
+# The unit quaternion of the rotation `angles` names: the turn by
+# `angles.first` about the order's first axis, then `angles.second` about its
+# second as the first turn left it, then `angles.third` about its third.
+#
+# - `angles`: the order and the three angles, in radians.
+#
+# See also `to_euler`.
+function euler_quat(angles: Euler) -> Quat
+    q = rotations.euler_quaternion(axes: axes_of(angles.order), angles: [angles.first, angles.second, angles.third])
+    return Quat(x: q[0], y: q[1], z: q[2], w: q[3])
+
+# The three angles of the rotation `q` stands for, in the order `order`: the
+# outer two from -pi to pi, the middle one from -pi/2 to pi/2 for Tait and
+# Bryan's orders and from 0 to pi for the proper ones.
+#
+# - `q`: any quaternion; its rotation is its normalized self's, and zero
+#   answers nans.
+# - `order`: the order the angles are wanted in.
+#
+# In gimbal lock, where the middle angle stands at its range's end, only a sum
+# or a difference of the outer two is fixed; the angles answered still rebuild
+# the rotation to its last bits. See also `euler_quat`.
+function to_euler(q: Quat, order: EulerOrder) -> Euler
+    m = to_mat3(q)
+    xs = [m.x_axis.x, m.x_axis.y, m.x_axis.z, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.z_axis.x, m.z_axis.y, m.z_axis.z]
+    axes = axes_of(order)
+    a = rotations.euler_angles(xs, first: axes[0], second: axes[1], third: axes[2])
+    return Euler(order: order, first: a[0], second: a[1], third: a[2])
+
+# The shortest rotation that turns the direction of `from` into the direction
+# of `to`, about their common perpendicular; for opposite directions, a half
+# turn about an axis perpendicular to `from`.
+#
+# - `from`: the direction turned, of any length.
+# - `to`: the direction it is turned to, of any length.
+#
+# The axis is taken as `(u - v) x (u + v)` of the two directions, twice `u x
+# v`, which keeps its digits where they are nearly opposite. Fails `invalid`
+# where either is zero or has an infinite or a nan part.
+function arc_quat(from: Vec3, to: Vec3) -> Quat?
+    u = normalize_vec3(from)?
+    v = normalize_vec3(to)?
+    angle = angle_vec3(a: u, b: v)?
+    axis = cross_vec3(a: sub_vec3(a: u, b: v), b: add_vec3(a: u, b: v))
+
+    if scalars.is_positive(length_vec3(axis))
+        return rotation_quat(axis: axis, angle: angle)
+
+    if angle == 0.0
+        return ok(identity_quat())
+    least @= Vec3(x: 1.0, y: 0.0, z: 0.0)
+
+    if math.abs(u.x) > 0.5
+        least @ Vec3(x: 0.0, y: 1.0, z: 0.0)
+    return rotation_quat(axis: cross_vec3(a: u, b: least), angle: angle)
+
+# The rotation `q` stands for, as an axis and an angle from 0 to pi.
+#
+# - `q`: any quaternion; its rotation is its normalized self's, zero and a
+#   quaternion with an infinite or a nan part answer nans.
+#
+# No rotation answers the angle 0 about the x axis. See also `rotation_quat`.
+function to_axis_angle(q: Quat) -> AxisAngle
+    u = scalars.unit4(x: q.x, y: q.y, z: q.z, w: q.w)
+
+    if math.is_nan(u[0])
+        return AxisAngle(axis: Vec3(x: math.NAN, y: math.NAN, z: math.NAN), angle: math.NAN)
+    turn @= 1.0
+
+    if u[3] < 0.0
+        turn @ -1.0
+    v = Vec3(x: u[0] * turn, y: u[1] * turn, z: u[2] * turn)
+    s = length_vec3(v)
+    angle = 2.0 * math.atan2(y: s, x: u[3] * turn)
+
+    if s == 0.0
+        return AxisAngle(axis: Vec3(x: 1.0, y: 0.0, z: 0.0), angle: angle)
+    return AxisAngle(axis: scale_vec3(v: v, by: 1.0 / s), angle: angle)
+
+# The rotation matrix of `q`.
+#
+# - `q`: any quaternion; its rotation is its normalized self's, and zero
+#   answers nans.
+#
+# See also `to_mat4`, `to_quat`.
+function to_mat3(q: Quat) -> Mat3
+    u = scalars.unit4(x: q.x, y: q.y, z: q.z, w: q.w)
+    x = u[0]
+    y = u[1]
+    z = u[2]
+    w = u[3]
+    x_axis = Vec3(x: 1.0 - 2.0 * (y * y + z * z), y: 2.0 * (x * y + w * z), z: 2.0 * (x * z - w * y))
+    y_axis = Vec3(x: 2.0 * (x * y - w * z), y: 1.0 - 2.0 * (x * x + z * z), z: 2.0 * (y * z + w * x))
+    z_axis = Vec3(x: 2.0 * (x * z + w * y), y: 2.0 * (y * z - w * x), z: 1.0 - 2.0 * (x * x + y * y))
+    return Mat3(x_axis: x_axis, y_axis: y_axis, z_axis: z_axis)
+
+# The rotation of `q` as a transform.
+#
+# - `q`: any quaternion; as `to_mat3` reads it.
+function to_mat4(q: Quat) -> Mat4
+    return extend_mat3(to_mat3(q))
+
+# The unit quaternion of the rotation matrix `m`, by Shepperd's method, its
+# real part never negative.
+#
+# - `m`: a rotation; another matrix answers a unit quaternion all the same,
+#   and a nan entry nans.
+#
+# See also `to_mat3`.
+function to_quat(m: Mat3) -> Quat
+    q = rotations.quaternion_of(
+        [m.x_axis.x, m.x_axis.y, m.x_axis.z, m.y_axis.x, m.y_axis.y, m.y_axis.z, m.z_axis.x, m.z_axis.y, m.z_axis.z]
+    )
+    return Quat(x: q[0], y: q[1], z: q[2], w: q[3])
+
+# The product `a * b`, Hamilton's: the rotation `b`, then the rotation `a`.
+#
+# - `a`: the rotation made second.
+# - `b`: the rotation made first.
+function mul_quat(a: Quat, b: Quat) -> Quat
+    x = a.w * b.x + a.x * b.w + a.y * b.z - a.z * b.y
+    y = a.w * b.y - a.x * b.z + a.y * b.w + a.z * b.x
+    z = a.w * b.z + a.x * b.y - a.y * b.x + a.z * b.w
+    return Quat(x: x, y: y, z: z, w: a.w * b.w - a.x * b.x - a.y * b.y - a.z * b.z)
+
+# The vector `v` turned by the rotation `q`.
+#
+# - `q`: any quaternion; as `to_mat3` reads it.
+# - `v`: the vector.
+function rotate_vec3(q: Quat, v: Vec3) -> Vec3
+    return mul_mat3_vec3(m: to_mat3(q), v: v)
+
+# The conjugate of `q`, its vector part negated: the inverse rotation, for a
+# unit quaternion.
+#
+# - `q`: any quaternion.
+function conjugate_quat(q: Quat) -> Quat
+    return Quat(x: -q.x, y: -q.y, z: -q.z, w: q.w)
+
+# The inverse of `q`, its conjugate over its squared length, so `mul_quat` of
+# the two is 1.
+#
+# - `q`: any quaternion.
+#
+# Fails `invalid` where `q` is zero or has an infinite or a nan part.
+function inverse_quat(q: Quat) -> Quat?
+    r = scalars.inverse4(x: q.x, y: q.y, z: q.z, w: q.w)
+
+    if math.is_nan(r[0])
+        return fail(code: INVALID, msg: f"the quaternion ({q.x}, {q.y}, {q.z}, {q.w}) has no inverse")
+    return ok(Quat(x: r[0], y: r[1], z: r[2], w: r[3]))
+
+# `q` scaled to length 1, a rotation's own quaternion.
+#
+# - `q`: any quaternion.
+#
+# Fails `invalid` where `q` is zero or has an infinite or a nan part.
+function normalize_quat(q: Quat) -> Quat?
+    u = scalars.unit4(x: q.x, y: q.y, z: q.z, w: q.w)
+
+    if math.is_nan(u[0])
+        return fail(code: INVALID, msg: f"the quaternion ({q.x}, {q.y}, {q.z}, {q.w}) has no direction")
+    return ok(Quat(x: u[0], y: u[1], z: u[2], w: u[3]))
+
+# The dot product of `a` and `b` as four numbers: the cosine of half the angle
+# between their rotations, for unit quaternions, up to its sign.
+#
+# - `a`: one quaternion.
+# - `b`: the other.
+function dot_quat(a: Quat, b: Quat) -> f64
+    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w
+
+# The length of `q` as four numbers, computed so that it overflows or
+# underflows only where the answer does.
+#
+# - `q`: any quaternion; an infinite part answers the infinity.
+function length_quat(q: Quat) -> f64
+    return scalars.length4(x: q.x, y: q.y, z: q.z, w: q.w)
+
+# The rotation a fraction `t` of the way from `from` to `to` along the shorter
+# arc, at a constant speed: spherical linear interpolation, its angle taken as
+# `2 atan2(|a - b|, |a + b|)`, which keeps its digits for close rotations.
+#
+# - `from`: where `t` is 0; its rotation is its normalized self's.
+# - `to`: where `t` is 1, as `from` is read.
+# - `t`: the fraction; outside 0 to 1 it turns on past either end.
+#
+# A unit quaternion, `from`'s own at 0 and `to`'s or its negation at 1; a zero
+# or not finite quaternion answers nans.
+function slerp(from: Quat, to: Quat, t: f64) -> Quat
+    ua = scalars.unit4(x: from.x, y: from.y, z: from.z, w: from.w)
+    ub = scalars.unit4(x: to.x, y: to.y, z: to.z, w: to.w)
+    a = Quat(x: ua[0], y: ua[1], z: ua[2], w: ua[3])
+    b @= Quat(x: ub[0], y: ub[1], z: ub[2], w: ub[3])
+    d = dot_quat(a: a, b: b)
+
+    if math.is_nan(d) || math.is_nan(t)
+        return Quat(x: math.NAN, y: math.NAN, z: math.NAN, w: math.NAN)
+
+    if d < 0.0
+        b @ Quat(x: -b.x, y: -b.y, z: -b.z, w: -b.w)
+    apart = scalars.length4(x: a.x - b.x, y: a.y - b.y, z: a.z - b.z, w: a.w - b.w)
+    together = scalars.length4(x: a.x + b.x, y: a.y + b.y, z: a.z + b.z, w: a.w + b.w)
+    theta = 2.0 * math.atan2(y: apart, x: together)
+
+    if theta == 0.0
+        return a
+    s = math.sin(theta)
+    wa = math.sin((1.0 - t) * theta) / s
+    wb = math.sin(t * theta) / s
+    r = Quat(x: wa * a.x + wb * b.x, y: wa * a.y + wb * b.y, z: wa * a.z + wb * b.z, w: wa * a.w + wb * b.w)
+    n = length_quat(r)
+    return Quat(x: r.x / n, y: r.y / n, z: r.z / n, w: r.w / n)
+
+## The small operations of games
+
+# The number a fraction `t` of the way from `from` to `to`: `(1 - t) * from + t
+# * to`, exactly `from` at 0 and exactly `to` at 1.
+#
+# - `from`: where `t` is 0.
+# - `to`: where `t` is 1.
+# - `t`: the fraction; outside 0 to 1 it goes on past either end.
+#
+# See also `inverse_lerp`, `lerp_vec3`.
+function lerp(from: f64, to: f64, t: f64) -> f64
+    return scalars.lerp(from: from, to: to, t: t)
+
+# The fraction of the way `x` stands from `from` to `to`, `lerp`'s inverse.
+#
+# - `from`: where the answer is 0.
+# - `to`: where the answer is 1.
+# - `x`: the number placed; a nan answers a nan.
+#
+# Fails `invalid` where `from` and `to` are equal, which places nothing.
+function inverse_lerp(from: f64, to: f64, x: f64) -> f64?
+    return scalars.inverse_lerp(from: from, to: to, x: x)
+
+# `x` moved from the range `from_low` to `from_high` to the range `to_low` to
+# `to_high`, keeping its place: `lerp` of `inverse_lerp`, not held inside
+# either range.
+#
+# - `x`: the number moved.
+# - `from_low`: the start of the range it is in.
+# - `from_high`: that range's end, not `from_low`.
+# - `to_low`: where `from_low` goes.
+# - `to_high`: where `from_high` goes.
+#
+# Fails `invalid` where `from_low` and `from_high` are equal. Hold the answer
+# with `math.clamp` where it must stay inside.
+function remap(x: f64, from_low: f64, from_high: f64, to_low: f64, to_high: f64) -> f64?
+    t = scalars.inverse_lerp(from: from_low, to: from_high, x: x)?
+    return ok(scalars.lerp(from: to_low, to: to_high, t: t))
+
+# Hermite's smooth step: 0 up to `low`, 1 from `high` on, and between them
+# `3t^2 - 2t^3` of where `x` stands, so it leaves 0 and reaches 1 with a
+# slope of zero. GLSL's `smoothstep`.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1; equal to `low`, the step is sudden, 0 below
+#   it and 1 from it on, and below `low` the step runs backwards.
+# - `x`: the number placed; a nan answers a nan.
+#
+# See also `smootherstep`.
+function smoothstep(low: f64, high: f64, x: f64) -> f64
+    return scalars.smoothstep(low: low, high: high, x: x)
+
+# Perlin's smoother step, `6t^5 - 15t^4 + 10t^3` of where `x` stands, whose
+# curvature is zero at both ends too.
+#
+# - `low`: where the answer leaves 0.
+# - `high`: where it reaches 1, as `smoothstep` reads it.
+# - `x`: the number placed; a nan answers a nan.
+function smootherstep(low: f64, high: f64, x: f64) -> f64
+    return scalars.smootherstep(low: low, high: high, x: x)
+
+## Tests
+
+test "inverse_mat4 and inverse_mat3: a rigid transform undone, a singular matrix, an infinite entry"
+    rotation = rotation_mat4(axis: Vec3(x: 1.0, y: 1.0, z: 0.0), angle: 0.7).must()
+    m = mul_mat4(a: translation_mat4(Vec3(x: 1.0, y: -2.0, z: 3.0)), b: rotation)
+    d = sub_mat4(a: mul_mat4(a: inverse_mat4(m).must(), b: m), b: identity_mat4())
+    gaps = [
+        d.x_axis.x
+        d.x_axis.y
+        d.x_axis.z
+        d.x_axis.w
+        d.y_axis.x
+        d.y_axis.y
+        d.y_axis.z
+        d.y_axis.w
+        d.z_axis.x
+        d.z_axis.y
+        d.z_axis.z
+        d.z_axis.w
+        d.w_axis.x
+        d.w_axis.y
+        d.w_axis.z
+        d.w_axis.w
+    ]
+
+    for g in gaps
+        assert math.abs(g) <= 0.000000000000001
+
+    assert inverse_mat3(scaling_mat3(Vec3(x: 1.0, y: 0.0, z: 1.0))).is_err()
+    assert inverse_mat2(Mat2(x_axis: Vec2(x: math.INF, y: 0.0), y_axis: Vec2(x: 0.0, y: 1.0))).is_err()
+    assert math.abs(determinant_mat4(rotation) - 1.0) <= 0.000000000000001
+
+test "to_mat3 against rotation_mat3: one rotation by the quaternion and by Rodrigues' matrix"
+    axis = Vec3(x: 1.0, y: -2.0, z: 3.0)
+
+    for angle in [0.0, 0.000001, 1.0, 3.0, -2.5]
+        a = to_mat3(rotation_quat(axis: axis, angle: angle).must())
+        b = rotation_mat3(axis: axis, angle: angle).must()
+        d = sub_mat3(a: a, b: b)
+
+        for g in [d.x_axis.x, d.x_axis.y, d.x_axis.z, d.y_axis.x, d.y_axis.y, d.y_axis.z, d.z_axis.x, d.z_axis.y, d.z_axis.z]
+            assert math.abs(g) <= 0.000000000000001
+
+test "euler_quat: the order xyz turns about moving axes, as the product of the three rotations"
+    q = euler_quat(Euler(order: .xyz, first: 0.3, second: -0.4, third: 1.2))
+    m = mul_mat3(a: mul_mat3(a: rotation_x_mat3(0.3), b: rotation_y_mat3(-0.4)), b: rotation_z_mat3(1.2))
+    d = sub_mat3(a: to_mat3(q), b: m)
+
+    for g in [d.x_axis.x, d.x_axis.y, d.x_axis.z, d.y_axis.x, d.y_axis.y, d.y_axis.z, d.z_axis.x, d.z_axis.y, d.z_axis.z]
+        assert math.abs(g) <= 0.000000000000001
+
+    z = euler_quat(Euler(order: .zxz, first: 0.0, second: 0.0, third: 0.5))
+    w = rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: 0.5).must()
+    assert distance_vec4(a: Vec4(x: z.x, y: z.y, z: z.z, w: z.w), b: Vec4(x: w.x, y: w.y, z: w.z, w: w.w)) <= 0.000000000000001
+
+test "to_euler: the twelve orders there and back, and gimbal lock rebuilding its rotation"
+    orders: [EulerOrder] = [.xyz, .xzy, .yxz, .yzx, .zxy, .zyx, .xyx, .xzx, .yxy, .yzy, .zxz, .zyz]
+
+    for order in orders
+        axes = axes_of(order)
+        proper = axes[0] == axes[2]
+        middle @= -0.4
+        lock @= math.PI * 0.5
+
+        if proper
+            middle @ 1.1
+            lock @ math.PI
+        back = to_euler(euler_quat(Euler(order: order, first: 0.3, second: middle, third: -2.5)), order: order)
+        assert back.order == order
+        assert math.abs(back.first - 0.3) <= 0.00000000000001
+        assert math.abs(back.second - middle) <= 0.00000000000001
+        assert math.abs(back.third + 2.5) <= 0.00000000000001
+        q = euler_quat(Euler(order: order, first: 0.7, second: lock, third: 0.2))
+        d = sub_mat3(a: to_mat3(q), b: to_mat3(euler_quat(to_euler(q, order: order))))
+
+        for g in [d.x_axis.x, d.x_axis.y, d.x_axis.z, d.y_axis.x, d.y_axis.y, d.y_axis.z, d.z_axis.x, d.z_axis.y, d.z_axis.z]
+            assert math.abs(g) <= 0.000000000000001
+
+test "to_quat: back from the matrix on each of Shepperd's four branches, a nan"
+    for axis in [Vec3(x: 1.0, y: 2.0, z: 3.0), Vec3(x: 1.0, y: 0.1, z: 0.1), Vec3(x: 0.1, y: 1.0, z: 0.1), Vec3(x: 0.1, y: 0.1, z: 1.0)]
+        for angle in [0.5, 3.0]
+            q = rotation_quat(axis: axis, angle: angle).must()
+            r = to_quat(to_mat3(q))
+            assert r.w >= 0.0
+            assert distance_vec4(a: Vec4(x: q.x, y: q.y, z: q.z, w: q.w), b: Vec4(x: r.x, y: r.y, z: r.z, w: r.w)) <= 0.000000000000001
+
+    assert math.is_nan(
+        to_quat(Mat3(x_axis: Vec3(x: math.NAN, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 1.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 1.0))).w
+    )
+
+test "to_axis_angle: there and back, no rotation, a negative real part, the zero quaternion"
+    axis = normalize_vec3(Vec3(x: 1.0, y: 2.0, z: 2.0)).must()
+    back = to_axis_angle(rotation_quat(axis: axis, angle: 1.25).must())
+    assert math.abs(back.angle - 1.25) <= 0.000000000000001
+    assert distance_vec3(a: back.axis, b: axis) <= 0.000000000000001
+    assert to_axis_angle(identity_quat()) == AxisAngle(axis: Vec3(x: 1.0, y: 0.0, z: 0.0), angle: 0.0)
+    turned = to_axis_angle(Quat(x: 0.0, y: 0.0, z: -0.6, w: -0.8))
+    assert turned.axis == Vec3(x: 0.0, y: 0.0, z: 1.0) && turned.angle <= math.PI
+    assert math.is_nan(to_axis_angle(Quat(x: 0.0, y: 0.0, z: 0.0, w: 0.0)).angle)
+
+test "slerp: both ends, the half way of one axis, the shorter arc of a negated end, a nan"
+    a = identity_quat()
+    b = rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: 1.0).must()
+    half = rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: 0.5).must()
+    assert slerp(from: a, to: b, t: 0.0) == a
+    end = slerp(from: a, to: b, t: 1.0)
+    assert distance_vec4(a: Vec4(x: end.x, y: end.y, z: end.z, w: end.w), b: Vec4(x: b.x, y: b.y, z: b.z, w: b.w)) <= 0.000000000000001
+    mid = slerp(from: a, to: b, t: 0.5)
+    assert distance_vec4(a: Vec4(x: mid.x, y: mid.y, z: mid.z, w: mid.w), b: Vec4(x: half.x, y: half.y, z: half.z, w: half.w)) <= 0.000000000000001
+    negated = Quat(x: -b.x, y: -b.y, z: -b.z, w: -b.w)
+    short = slerp(from: a, to: negated, t: 0.5)
+    assert distance_vec4(a: Vec4(x: short.x, y: short.y, z: short.z, w: short.w), b: Vec4(x: half.x, y: half.y, z: half.z, w: half.w)) <= 0.000000000000001
+    assert math.is_nan(slerp(from: a, to: b, t: math.NAN).w)
+    assert math.is_nan(slerp(from: Quat(x: 0.0, y: 0.0, z: 0.0, w: 0.0), to: b, t: 0.5).w)
+
+test "arc_quat: a quarter turn, opposite directions, nearly opposite ones, a zero vector"
+    x = Vec3(x: 1.0, y: 0.0, z: 0.0)
+    y = Vec3(x: 0.0, y: 1.0, z: 0.0)
+    assert distance_vec3(a: rotate_vec3(q: arc_quat(from: x, to: y).must(), v: x), b: y) <= 0.000000000000001
+    minus_x = Vec3(x: -1.0, y: 0.0, z: 0.0)
+    assert distance_vec3(a: rotate_vec3(q: arc_quat(from: x, to: minus_x).must(), v: x), b: minus_x) <= 0.000000000000001
+    near = Vec3(x: -1.0, y: 0.000000001, z: 0.0)
+    turned = rotate_vec3(q: arc_quat(from: x, to: near).must(), v: x)
+    assert distance_vec3(a: turned, b: normalize_vec3(near).must()) <= 0.000000000000001
+    assert arc_quat(from: x, to: x).must() == identity_quat()
+    assert arc_quat(from: Vec3(x: 0.0, y: 0.0, z: 0.0), to: x).is_err()
+
+test "look_at: the eye to the origin and the target down the view, in both hands; the camera that cannot see"
+    eye = Vec3(x: 1.0, y: 2.0, z: 3.0)
+    target = Vec3(x: 4.0, y: 6.0, z: 3.0)
+    up = Vec3(x: 0.0, y: 0.0, z: 1.0)
+    right = look_at(eye: eye, target: target, up: up, hand: .right).must()
+    left = look_at(eye: eye, target: target, up: up, hand: .left).must()
+    assert length_vec3(transform_point3(m: right, p: eye)) <= 0.000000000000001
+    assert distance_vec3(a: transform_point3(m: right, p: target), b: Vec3(x: 0.0, y: 0.0, z: -5.0)) <= 0.000000000000005
+    assert distance_vec3(a: transform_point3(m: left, p: target), b: Vec3(x: 0.0, y: 0.0, z: 5.0)) <= 0.000000000000005
+    assert distance_vec3(a: transform_vector3(m: right, v: up), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+    assert distance_vec3(a: transform_vector3(m: left, v: up), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+    assert look_at(eye: eye, target: eye, up: up, hand: .right).is_err()
+    assert look_at(eye: eye, target: target, up: Vec3(x: 3.0, y: 4.0, z: 0.0), hand: .left).is_err()
+    assert look_at(eye: eye, target: Vec3(x: math.NAN, y: 0.0, z: 0.0), up: up, hand: .right).is_err()
+
+test "perspective: the near and the far planes to the depth's ends in both hands, the endless far, the reversed depth, every refusal"
+    hands: [Hand] = [.right, .left]
+    depths: [Depth] = [.minus_one_to_one, .zero_to_one]
+
+    for hand in hands
+        ahead @= -1.0
+
+        match hand
+            .right => _ = 0
+            .left  => ahead @ 1.0
+
+        for depth in depths
+            near_end @= -1.0
+
+            match depth
+                .minus_one_to_one => _ = 0
+                .zero_to_one      => near_end @ 0.0
+
+            p = perspective(fov_y: 1.0, aspect: 1.5, near: 0.5, far: 50.0, hand: hand, depth: depth).must()
+            assert math.abs(project_point3(m: p, p: Vec3(x: 0.0, y: 0.0, z: 0.5 * ahead)).must().z - near_end) <= 0.000000000000001
+            assert math.abs(project_point3(m: p, p: Vec3(x: 0.0, y: 0.0, z: 50.0 * ahead)).must().z - 1.0) <= 0.000000000000001
+            endless = perspective(fov_y: 1.0, aspect: 1.5, near: 0.5, far: math.INF, hand: hand, depth: depth).must()
+            assert math.abs(project_point3(m: endless, p: Vec3(x: 0.0, y: 0.0, z: 0.5 * ahead)).must().z - near_end) <= 0.000000000000001
+            deep = project_point3(m: endless, p: Vec3(x: 0.0, y: 0.0, z: 1000000.0 * ahead)).must().z
+            assert deep < 1.0 && deep > 0.999
+            reversed = perspective(fov_y: 1.0, aspect: 1.5, near: 50.0, far: 0.5, hand: hand, depth: depth).must()
+            assert math.abs(project_point3(m: reversed, p: Vec3(x: 0.0, y: 0.0, z: 0.5 * ahead)).must().z - 1.0) <= 0.000000000000001
+
+    lens = perspective(
+        fov_y: math.PI * 0.5,
+        aspect: 2.0,
+        near: 1.0,
+        far: 10.0,
+        hand: .right,
+        depth: .zero_to_one
+    ).must()
+    corner = project_point3(m: lens, p: Vec3(x: 2.0, y: 1.0, z: -1.0)).must()
+    assert math.abs(corner.x - 1.0) <= 0.000000000000001 && math.abs(corner.y - 1.0) <= 0.000000000000001
+    assert perspective(fov_y: 0.0, aspect: 1.0, near: 1.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(fov_y: math.PI, aspect: 1.0, near: 1.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(fov_y: math.NAN, aspect: 1.0, near: 1.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(fov_y: 1.0, aspect: 0.0, near: 1.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(fov_y: 1.0, aspect: 1.0, near: 0.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(fov_y: 1.0, aspect: 1.0, near: 2.0, far: 2.0, hand: .right, depth: .zero_to_one).is_err()
+    assert perspective(
+        fov_y: 1.0,
+        aspect: 1.0,
+        near: math.INF,
+        far: math.INF,
+        hand: .right,
+        depth: .zero_to_one
+    ).is_err()
+
+test "orthographic: the box's corners to the cube's in both hands and depths, an empty box"
+    hands: [Hand] = [.right, .left]
+    depths: [Depth] = [.minus_one_to_one, .zero_to_one]
+
+    for hand in hands
+        ahead @= -1.0
+
+        match hand
+            .right => _ = 0
+            .left  => ahead @ 1.0
+
+        for depth in depths
+            near_end @= -1.0
+
+            match depth
+                .minus_one_to_one => _ = 0
+                .zero_to_one      => near_end @ 0.0
+
+            o = orthographic(
+                left: -2.0,
+                right: 6.0,
+                bottom: -1.0,
+                top: 3.0,
+                near: 1.0,
+                far: 9.0,
+                hand: hand,
+                depth: depth
+            ).must()
+            assert transform_point3(m: o, p: Vec3(x: -2.0, y: -1.0, z: ahead)) == Vec3(x: -1.0, y: -1.0, z: near_end)
+            assert transform_point3(m: o, p: Vec3(x: 6.0, y: 3.0, z: 9.0 * ahead)) == Vec3(x: 1.0, y: 1.0, z: 1.0)
+
+    assert orthographic(
+        left: 1.0,
+        right: 1.0,
+        bottom: 0.0,
+        top: 1.0,
+        near: 0.0,
+        far: 1.0,
+        hand: .right,
+        depth: .zero_to_one
+    ).is_err()
+    assert orthographic(
+        left: 0.0,
+        right: 1.0,
+        bottom: 0.0,
+        top: 1.0,
+        near: 0.0,
+        far: math.INF,
+        hand: .left,
+        depth: .zero_to_one
+    ).is_err()
+
+test "transform_point3, transform_vector3 and project_point3: the translation applies to a point alone, the weight zero refused"
+    t = translation_mat4(Vec3(x: 1.0, y: 2.0, z: 3.0))
+    assert transform_point3(m: t, p: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 2.0, y: 3.0, z: 4.0)
+    assert transform_vector3(m: t, v: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 1.0, y: 1.0, z: 1.0)
+    assert project_point3(m: t, p: Vec3(x: 1.0, y: 1.0, z: 1.0)).must() == Vec3(x: 2.0, y: 3.0, z: 4.0)
+    flat = Mat4(x_axis: t.x_axis, y_axis: t.y_axis, z_axis: t.z_axis, w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 0.0))
+    assert project_point3(m: flat, p: Vec3(x: 0.0, y: 0.0, z: 0.0)).is_err()
+
+test "transform_point2: a quarter turn then a translation of the plane"
+    m = mul_mat3(a: translation_mat3(Vec2(x: 1.0, y: 2.0)), b: rotation_z_mat3(math.PI * 0.5))
+    p = transform_point2(m: m, p: Vec2(x: 1.0, y: 0.0))
+    assert distance_vec2(a: p, b: Vec2(x: 1.0, y: 3.0)) <= 0.000000000000001
+    assert distance_vec2(a: transform_vector2(m: m, v: Vec2(x: 1.0, y: 0.0)), b: Vec2(x: 0.0, y: 1.0)) <= 0.000000000000001
+
+test "normalize_vec3 and angle_vec3: zero, an infinity, a nan, nearly parallel and nearly opposite vectors"
+    assert normalize_vec3(Vec3(x: 0.0, y: 0.0, z: 0.0)).is_err()
+    assert normalize_vec3(Vec3(x: math.INF, y: 0.0, z: 0.0)).is_err()
+    assert normalize_vec3(Vec3(x: math.NAN, y: 0.0, z: 0.0)).is_err()
+    assert normalize_vec3(Vec3(x: math.MAX_F64, y: math.MAX_F64, z: 0.0)).must().x == 1.0 / math.SQRT_2
+    x = Vec3(x: 1.0, y: 0.0, z: 0.0)
+    assert math.abs(angle_vec3(a: x, b: Vec3(x: 1.0, y: 0.00000001, z: 0.0)).must() - 0.00000001) <= 0.0000000000000000000001
+    assert math.abs(angle_vec3(a: x, b: Vec3(x: -1.0, y: 0.00000001, z: 0.0)).must() - (math.PI - 0.00000001)) <= 0.000000000000001
+    assert angle_vec3(a: x, b: Vec3(x: 0.0, y: 0.0, z: 0.0)).is_err()
+
+test "inverse_quat and normalize_quat: a product with the inverse is 1, the zero quaternion refused"
+    q = Quat(x: 1.0, y: 2.0, z: -3.0, w: 4.0)
+    one = mul_quat(a: q, b: inverse_quat(q).must())
+    assert distance_vec4(a: Vec4(x: one.x, y: one.y, z: one.z, w: one.w), b: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 1.0)) <= 0.000000000000001
+    assert inverse_quat(Quat(x: 0.0, y: 0.0, z: 0.0, w: 0.0)).is_err()
+    assert normalize_quat(Quat(x: 0.0, y: math.NAN, z: 0.0, w: 1.0)).is_err()
+    assert math.abs(length_quat(normalize_quat(q).must()) - 1.0) <= 0.000000000000001
+
+## Examples
+
+# Two vectors added part by part.
+test "add_vec2: two vectors"
+    assert add_vec2(a: Vec2(x: 1.0, y: 2.0), b: Vec2(x: 3.0, y: 4.0)) == Vec2(x: 4.0, y: 6.0)
+
+# The vector from one point to another.
+test "sub_vec2: the vector between two points"
+    assert sub_vec2(a: Vec2(x: 3.0, y: 4.0), b: Vec2(x: 1.0, y: 2.0)) == Vec2(x: 2.0, y: 2.0)
+
+# A vector pointing the other way.
+test "neg_vec2: a vector turned around"
+    assert neg_vec2(Vec2(x: 1.0, y: 2.0)) == Vec2(x: -1.0, y: -2.0)
+
+# A vector three times as long.
+test "scale_vec2: a vector tripled"
+    assert scale_vec2(v: Vec2(x: 1.0, y: 2.0), by: 3.0) == Vec2(x: 3.0, y: 6.0)
+
+# Two vectors multiplied part by part.
+test "mul_vec2: part by part"
+    assert mul_vec2(a: Vec2(x: 1.0, y: 2.0), b: Vec2(x: 3.0, y: 4.0)) == Vec2(x: 3.0, y: 8.0)
+
+# The dot product of two vectors.
+test "dot_vec2: two vectors"
+    assert dot_vec2(a: Vec2(x: 1.0, y: 2.0), b: Vec2(x: 3.0, y: 4.0)) == 11.0
+
+# A vector whose length is a whole number.
+test "length_vec2: a whole length"
+    assert length_vec2(Vec2(x: 3.0, y: 4.0)) == 5.0
+
+# Its squared length, with no square root.
+test "length_squared_vec2: a whole length, squared"
+    assert length_squared_vec2(Vec2(x: 3.0, y: 4.0)) == 25.0
+
+# The distance between two points a whole length apart.
+test "distance_vec2: two points"
+    assert distance_vec2(a: Vec2(x: 1.0, y: 1.0), b: Vec2(x: 4.0, y: 5.0)) == 5.0
+
+# A vector made of length 1.
+test "normalize_vec2: a direction"
+    assert normalize_vec2(Vec2(x: 3.0, y: 4.0)).must() == Vec2(x: 3.0 / 5.0, y: 4.0 / 5.0)
+
+# The point half way between two others.
+test "lerp_vec2: half way"
+    assert lerp_vec2(from: Vec2(x: 0.0, y: 0.0), to: Vec2(x: 6.0, y: 8.0), t: 0.5) == Vec2(x: 3.0, y: 4.0)
+
+# Two axes stand a quarter turn apart.
+test "angle_vec2: a right angle"
+    assert math.is_close(
+        a: angle_vec2(a: Vec2(x: 1.0, y: 0.0), b: Vec2(x: 0.0, y: 1.0)).must(),
+        b: math.PI * 0.5,
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The y axis turns counterclockwise from the x axis.
+test "cross_vec2: the x axis and the y axis"
+    assert cross_vec2(a: Vec2(x: 1.0, y: 0.0), b: Vec2(x: 0.0, y: 1.0)) == 1.0
+
+# A ball falling to the right bounces off the floor.
+test "reflect_vec2: off the floor"
+    assert reflect_vec2(v: Vec2(x: 1.0, y: -1.0), normal: Vec2(x: 0.0, y: 2.0)).must() == Vec2(x: 1.0, y: 1.0)
+
+# Two vectors added part by part.
+test "add_vec3: two vectors"
+    assert add_vec3(a: Vec3(x: 1.0, y: 2.0, z: 3.0), b: Vec3(x: 4.0, y: 5.0, z: 6.0)) == Vec3(x: 5.0, y: 7.0, z: 9.0)
+
+# The vector from one point to another.
+test "sub_vec3: the vector between two points"
+    assert sub_vec3(a: Vec3(x: 4.0, y: 5.0, z: 6.0), b: Vec3(x: 1.0, y: 2.0, z: 3.0)) == Vec3(x: 3.0, y: 3.0, z: 3.0)
+
+# A vector pointing the other way.
+test "neg_vec3: a vector turned around"
+    assert neg_vec3(Vec3(x: 1.0, y: 2.0, z: 3.0)) == Vec3(x: -1.0, y: -2.0, z: -3.0)
+
+# A vector three times as long.
+test "scale_vec3: a vector tripled"
+    assert scale_vec3(v: Vec3(x: 1.0, y: 2.0, z: 3.0), by: 3.0) == Vec3(x: 3.0, y: 6.0, z: 9.0)
+
+# Two vectors multiplied part by part.
+test "mul_vec3: part by part"
+    assert mul_vec3(a: Vec3(x: 1.0, y: 2.0, z: 3.0), b: Vec3(x: 4.0, y: 5.0, z: 6.0)) == Vec3(x: 4.0, y: 10.0, z: 18.0)
+
+# The dot product of two vectors.
+test "dot_vec3: two vectors"
+    assert dot_vec3(a: Vec3(x: 1.0, y: 2.0, z: 3.0), b: Vec3(x: 4.0, y: 5.0, z: 6.0)) == 32.0
+
+# A vector whose length is a whole number.
+test "length_vec3: a whole length"
+    assert length_vec3(Vec3(x: 2.0, y: 3.0, z: 6.0)) == 7.0
+
+# Its squared length, with no square root.
+test "length_squared_vec3: a whole length, squared"
+    assert length_squared_vec3(Vec3(x: 2.0, y: 3.0, z: 6.0)) == 49.0
+
+# The distance between two points a whole length apart.
+test "distance_vec3: two points"
+    assert distance_vec3(a: Vec3(x: 1.0, y: 1.0, z: 1.0), b: Vec3(x: 3.0, y: 4.0, z: 7.0)) == 7.0
+
+# A vector made of length 1.
+test "normalize_vec3: a direction"
+    assert normalize_vec3(Vec3(x: 2.0, y: 3.0, z: 6.0)).must() == Vec3(x: 2.0 / 7.0, y: 3.0 / 7.0, z: 6.0 / 7.0)
+
+# The point half way between two others.
+test "lerp_vec3: half way"
+    assert lerp_vec3(from: Vec3(x: 0.0, y: 0.0, z: 0.0), to: Vec3(x: 8.0, y: 10.0, z: 12.0), t: 0.5) == Vec3(x: 4.0, y: 5.0, z: 6.0)
+
+# Two axes stand a quarter turn apart.
+test "angle_vec3: a right angle"
+    assert math.is_close(
+        a: angle_vec3(a: Vec3(x: 1.0, y: 0.0, z: 0.0), b: Vec3(x: 0.0, y: 1.0, z: 0.0)).must(),
+        b: math.PI * 0.5,
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The right-hand rule.
+test "cross_vec3: x cross y is z"
+    assert cross_vec3(a: Vec3(x: 1.0, y: 0.0, z: 0.0), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) == Vec3(x: 0.0, y: 0.0, z: 1.0)
+
+# A ray going down bounces up.
+test "reflect_vec3: off the floor"
+    assert reflect_vec3(v: Vec3(x: 1.0, y: -1.0, z: 0.0), normal: Vec3(x: 0.0, y: 3.0, z: 0.0)).must() == Vec3(x: 1.0, y: 1.0, z: 0.0)
+
+# Two vectors added part by part.
+test "add_vec4: two vectors"
+    assert add_vec4(a: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), b: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)) == Vec4(x: 6.0, y: 8.0, z: 10.0, w: 12.0)
+
+# The vector from one point to another.
+test "sub_vec4: the vector between two points"
+    assert sub_vec4(a: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), b: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0)) == Vec4(x: 4.0, y: 4.0, z: 4.0, w: 4.0)
+
+# A vector pointing the other way.
+test "neg_vec4: a vector turned around"
+    assert neg_vec4(Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0)) == Vec4(x: -1.0, y: -2.0, z: -3.0, w: -4.0)
+
+# A vector three times as long.
+test "scale_vec4: a vector tripled"
+    assert scale_vec4(v: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), by: 3.0) == Vec4(x: 3.0, y: 6.0, z: 9.0, w: 12.0)
+
+# Two vectors multiplied part by part.
+test "mul_vec4: part by part"
+    assert mul_vec4(a: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), b: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)) == Vec4(x: 5.0, y: 12.0, z: 21.0, w: 32.0)
+
+# The dot product of two vectors.
+test "dot_vec4: two vectors"
+    assert dot_vec4(a: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), b: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)) == 70.0
+
+# A vector whose length is a whole number.
+test "length_vec4: a whole length"
+    assert length_vec4(Vec4(x: 2.0, y: 4.0, z: 5.0, w: 6.0)) == 9.0
+
+# Its squared length, with no square root.
+test "length_squared_vec4: a whole length, squared"
+    assert length_squared_vec4(Vec4(x: 2.0, y: 4.0, z: 5.0, w: 6.0)) == 81.0
+
+# The distance between two points a whole length apart.
+test "distance_vec4: two points"
+    assert distance_vec4(a: Vec4(x: 1.0, y: 1.0, z: 1.0, w: 1.0), b: Vec4(x: 3.0, y: 5.0, z: 6.0, w: 7.0)) == 9.0
+
+# A vector made of length 1.
+test "normalize_vec4: a direction"
+    assert normalize_vec4(Vec4(x: 2.0, y: 4.0, z: 5.0, w: 6.0)).must() == Vec4(x: 2.0 / 9.0, y: 4.0 / 9.0, z: 5.0 / 9.0, w: 6.0 / 9.0)
+
+# The point half way between two others.
+test "lerp_vec4: half way"
+    assert lerp_vec4(from: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 0.0), to: Vec4(x: 10.0, y: 12.0, z: 14.0, w: 16.0), t: 0.5) == Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)
+
+# Two axes stand a quarter turn apart.
+test "angle_vec4: a right angle"
+    assert math.is_close(
+        a: angle_vec4(a: Vec4(x: 1.0, y: 0.0, z: 0.0, w: 0.0), b: Vec4(x: 0.0, y: 1.0, z: 0.0, w: 0.0)).must(),
+        b: math.PI * 0.5,
+        relative: 0.000000000000001,
+        absolute: 0.0
+    )
+
+# The identity sends a vector to itself.
+test "identity_mat2: changes nothing"
+    assert mul_mat2_vec2(m: identity_mat2(), v: Vec2(x: 5.0, y: 6.0)) == Vec2(x: 5.0, y: 6.0)
+
+# A matrix with one added down its diagonal.
+test "add_mat2: the identity added"
+    assert add_mat2(a: Mat2(x_axis: Vec2(x: 1.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 4.0)), b: identity_mat2()) == Mat2(x_axis: Vec2(x: 2.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 5.0))
+
+# A matrix with one taken from its diagonal.
+test "sub_mat2: the identity taken away"
+    assert sub_mat2(a: Mat2(x_axis: Vec2(x: 1.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 4.0)), b: identity_mat2()) == Mat2(x_axis: Vec2(x: 0.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 3.0))
+
+# Every entry doubled.
+test "scale_mat2: doubled"
+    assert scale_mat2(m: Mat2(x_axis: Vec2(x: 1.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 4.0)), by: 2.0) == Mat2(x_axis: Vec2(x: 2.0, y: 4.0), y_axis: Vec2(x: 6.0, y: 8.0))
+
+# A vector of ones sums the columns.
+test "mul_mat2_vec2: the columns summed"
+    assert mul_mat2_vec2(m: Mat2(x_axis: Vec2(x: 1.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 4.0)), v: Vec2(x: 1.0, y: 1.0)) == Vec2(x: 4.0, y: 6.0)
+
+# Two scalings make one.
+test "mul_mat2: two scalings"
+    assert mul_mat2(a: Mat2(x_axis: Vec2(x: 2.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 3.0)), b: Mat2(x_axis: Vec2(x: 6.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 7.0))) == Mat2(x_axis: Vec2(x: 12.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 21.0))
+
+# The rows become the columns.
+test "transpose_mat2: rows and columns swapped"
+    assert transpose_mat2(Mat2(x_axis: Vec2(x: 1.0, y: 2.0), y_axis: Vec2(x: 3.0, y: 4.0))) == Mat2(x_axis: Vec2(x: 1.0, y: 3.0), y_axis: Vec2(x: 2.0, y: 4.0))
+
+# A scaling's determinant is the product of its factors.
+test "determinant_mat2: a scaling"
+    assert determinant_mat2(Mat2(x_axis: Vec2(x: 2.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 3.0))) == 6.0
+
+# The inverse of a scaling by powers of two.
+test "inverse_mat2: a scaling undone"
+    assert inverse_mat2(Mat2(x_axis: Vec2(x: 2.0, y: 0.0), y_axis: Vec2(x: 0.0, y: 4.0))).must() == Mat2(x_axis: Vec2(x: 0.5, y: 0.0), y_axis: Vec2(x: 0.0, y: 0.25))
+
+# The identity sends a vector to itself.
+test "identity_mat3: changes nothing"
+    assert mul_mat3_vec3(m: identity_mat3(), v: Vec3(x: 5.0, y: 6.0, z: 7.0)) == Vec3(x: 5.0, y: 6.0, z: 7.0)
+
+# A matrix with one added down its diagonal.
+test "add_mat3: the identity added"
+    assert add_mat3(a: Mat3(x_axis: Vec3(x: 1.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 5.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 9.0)), b: identity_mat3()) == Mat3(x_axis: Vec3(x: 2.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 6.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 10.0))
+
+# A matrix with one taken from its diagonal.
+test "sub_mat3: the identity taken away"
+    assert sub_mat3(a: Mat3(x_axis: Vec3(x: 1.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 5.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 9.0)), b: identity_mat3()) == Mat3(x_axis: Vec3(x: 0.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 4.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 8.0))
+
+# Every entry doubled.
+test "scale_mat3: doubled"
+    assert scale_mat3(m: Mat3(x_axis: Vec3(x: 1.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 5.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 9.0)), by: 2.0) == Mat3(x_axis: Vec3(x: 2.0, y: 4.0, z: 6.0), y_axis: Vec3(x: 8.0, y: 10.0, z: 12.0), z_axis: Vec3(x: 14.0, y: 16.0, z: 18.0))
+
+# A vector of ones sums the columns.
+test "mul_mat3_vec3: the columns summed"
+    assert mul_mat3_vec3(m: Mat3(x_axis: Vec3(x: 1.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 5.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 9.0)), v: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 12.0, y: 15.0, z: 18.0)
+
+# Two scalings make one.
+test "mul_mat3: two scalings"
+    assert mul_mat3(a: Mat3(x_axis: Vec3(x: 2.0, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 3.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 4.0)), b: Mat3(x_axis: Vec3(x: 6.0, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 7.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 8.0))) == Mat3(x_axis: Vec3(x: 12.0, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 21.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 32.0))
+
+# The rows become the columns.
+test "transpose_mat3: rows and columns swapped"
+    assert transpose_mat3(Mat3(x_axis: Vec3(x: 1.0, y: 2.0, z: 3.0), y_axis: Vec3(x: 4.0, y: 5.0, z: 6.0), z_axis: Vec3(x: 7.0, y: 8.0, z: 9.0))) == Mat3(x_axis: Vec3(x: 1.0, y: 4.0, z: 7.0), y_axis: Vec3(x: 2.0, y: 5.0, z: 8.0), z_axis: Vec3(x: 3.0, y: 6.0, z: 9.0))
+
+# A scaling's determinant is the product of its factors.
+test "determinant_mat3: a scaling"
+    assert determinant_mat3(Mat3(x_axis: Vec3(x: 2.0, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 3.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 4.0))) == 24.0
+
+# The inverse of a scaling by powers of two.
+test "inverse_mat3: a scaling undone"
+    assert inverse_mat3(Mat3(x_axis: Vec3(x: 2.0, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 4.0, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 8.0))).must() == Mat3(x_axis: Vec3(x: 0.5, y: 0.0, z: 0.0), y_axis: Vec3(x: 0.0, y: 0.25, z: 0.0), z_axis: Vec3(x: 0.0, y: 0.0, z: 0.125))
+
+# The identity sends a vector to itself.
+test "identity_mat4: changes nothing"
+    assert mul_mat4_vec4(m: identity_mat4(), v: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)) == Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0)
+
+# A matrix with one added down its diagonal.
+test "add_mat4: the identity added"
+    assert add_mat4(a: Mat4(x_axis: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 11.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 16.0)), b: identity_mat4()) == Mat4(x_axis: Vec4(x: 2.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 7.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 12.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 17.0))
+
+# A matrix with one taken from its diagonal.
+test "sub_mat4: the identity taken away"
+    assert sub_mat4(a: Mat4(x_axis: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 11.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 16.0)), b: identity_mat4()) == Mat4(x_axis: Vec4(x: 0.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 5.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 10.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 15.0))
+
+# Every entry doubled.
+test "scale_mat4: doubled"
+    assert scale_mat4(m: Mat4(x_axis: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 11.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 16.0)), by: 2.0) == Mat4(x_axis: Vec4(x: 2.0, y: 4.0, z: 6.0, w: 8.0), y_axis: Vec4(x: 10.0, y: 12.0, z: 14.0, w: 16.0), z_axis: Vec4(x: 18.0, y: 20.0, z: 22.0, w: 24.0), w_axis: Vec4(x: 26.0, y: 28.0, z: 30.0, w: 32.0))
+
+# A vector of ones sums the columns.
+test "mul_mat4_vec4: the columns summed"
+    assert mul_mat4_vec4(m: Mat4(x_axis: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 11.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 16.0)), v: Vec4(x: 1.0, y: 1.0, z: 1.0, w: 1.0)) == Vec4(x: 28.0, y: 32.0, z: 36.0, w: 40.0)
+
+# Two scalings make one.
+test "mul_mat4: two scalings"
+    assert mul_mat4(a: Mat4(x_axis: Vec4(x: 2.0, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 3.0, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 4.0, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 5.0)), b: Mat4(x_axis: Vec4(x: 6.0, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 7.0, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 8.0, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 9.0))) == Mat4(x_axis: Vec4(x: 12.0, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 21.0, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 32.0, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 45.0))
+
+# The rows become the columns.
+test "transpose_mat4: rows and columns swapped"
+    assert transpose_mat4(Mat4(x_axis: Vec4(x: 1.0, y: 2.0, z: 3.0, w: 4.0), y_axis: Vec4(x: 5.0, y: 6.0, z: 7.0, w: 8.0), z_axis: Vec4(x: 9.0, y: 10.0, z: 11.0, w: 12.0), w_axis: Vec4(x: 13.0, y: 14.0, z: 15.0, w: 16.0))) == Mat4(x_axis: Vec4(x: 1.0, y: 5.0, z: 9.0, w: 13.0), y_axis: Vec4(x: 2.0, y: 6.0, z: 10.0, w: 14.0), z_axis: Vec4(x: 3.0, y: 7.0, z: 11.0, w: 15.0), w_axis: Vec4(x: 4.0, y: 8.0, z: 12.0, w: 16.0))
+
+# A scaling's determinant is the product of its factors.
+test "determinant_mat4: a scaling"
+    assert determinant_mat4(Mat4(x_axis: Vec4(x: 2.0, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 3.0, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 4.0, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 5.0))) == 120.0
+
+# The inverse of a scaling by powers of two.
+test "inverse_mat4: a scaling undone"
+    assert inverse_mat4(Mat4(x_axis: Vec4(x: 2.0, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 4.0, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 8.0, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 16.0))).must() == Mat4(x_axis: Vec4(x: 0.5, y: 0.0, z: 0.0, w: 0.0), y_axis: Vec4(x: 0.0, y: 0.25, z: 0.0, w: 0.0), z_axis: Vec4(x: 0.0, y: 0.0, z: 0.125, w: 0.0), w_axis: Vec4(x: 0.0, y: 0.0, z: 0.0, w: 0.0625))
+
+# A quarter turn of the plane sends x to y.
+test "rotation_mat2: a quarter turn"
+    assert distance_vec2(a: mul_mat2_vec2(m: rotation_mat2(math.PI * 0.5), v: Vec2(x: 1.0, y: 0.0)), b: Vec2(x: 0.0, y: 1.0)) <= 0.000000000000001
+
+# A scaling of the plane.
+test "scaling_mat2: twice along x, three times along y"
+    assert mul_mat2_vec2(m: scaling_mat2(Vec2(x: 2.0, y: 3.0)), v: Vec2(x: 1.0, y: 1.0)) == Vec2(x: 2.0, y: 3.0)
+
+# A translation of the plane moves the origin.
+test "translation_mat3: the origin moved"
+    assert transform_point2(m: translation_mat3(Vec2(x: 1.0, y: 2.0)), p: Vec2(x: 0.0, y: 0.0)) == Vec2(x: 1.0, y: 2.0)
+
+# A point of the plane moved.
+test "transform_point2: a point translated"
+    assert transform_point2(m: translation_mat3(Vec2(x: 1.0, y: 2.0)), p: Vec2(x: 3.0, y: 4.0)) == Vec2(x: 4.0, y: 6.0)
+
+# A direction is not translated.
+test "transform_vector2: a direction kept"
+    assert transform_vector2(m: translation_mat3(Vec2(x: 1.0, y: 2.0)), v: Vec2(x: 3.0, y: 4.0)) == Vec2(x: 3.0, y: 4.0)
+
+# A scaling of space.
+test "scaling_mat3: three factors"
+    assert mul_mat3_vec3(m: scaling_mat3(Vec3(x: 2.0, y: 3.0, z: 4.0)), v: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 2.0, y: 3.0, z: 4.0)
+
+# A quarter turn about z sends x to y, whatever the axis's length.
+test "rotation_mat3: a quarter turn about z"
+    m = rotation_mat3(axis: Vec3(x: 0.0, y: 0.0, z: 2.0), angle: math.PI * 0.5).must()
+    assert distance_vec3(a: mul_mat3_vec3(m: m, v: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# A quarter turn about x sends y to z.
+test "rotation_x_mat3: a quarter turn"
+    assert distance_vec3(a: mul_mat3_vec3(m: rotation_x_mat3(math.PI * 0.5), v: Vec3(x: 0.0, y: 1.0, z: 0.0)), b: Vec3(x: 0.0, y: 0.0, z: 1.0)) <= 0.000000000000001
+
+# A quarter turn about y sends z to x.
+test "rotation_y_mat3: a quarter turn"
+    assert distance_vec3(a: mul_mat3_vec3(m: rotation_y_mat3(math.PI * 0.5), v: Vec3(x: 0.0, y: 0.0, z: 1.0)), b: Vec3(x: 1.0, y: 0.0, z: 0.0)) <= 0.000000000000001
+
+# A quarter turn about z sends x to y.
+test "rotation_z_mat3: a quarter turn"
+    assert distance_vec3(a: mul_mat3_vec3(m: rotation_z_mat3(math.PI * 0.5), v: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# The identity of size 3 extended is the identity of size 4.
+test "extend_mat3: the identity"
+    assert extend_mat3(identity_mat3()) == identity_mat4()
+
+# A translation has no linear part.
+test "upper_mat3: a translation's linear part"
+    assert upper_mat3(translation_mat4(Vec3(x: 1.0, y: 2.0, z: 3.0))) == identity_mat3()
+
+# A translation moves the origin.
+test "translation_mat4: the origin moved"
+    assert transform_point3(m: translation_mat4(Vec3(x: 1.0, y: 2.0, z: 3.0)), p: Vec3(x: 0.0, y: 0.0, z: 0.0)) == Vec3(x: 1.0, y: 2.0, z: 3.0)
+
+# A scaling of space as a transform.
+test "scaling_mat4: three factors"
+    assert transform_point3(m: scaling_mat4(Vec3(x: 2.0, y: 3.0, z: 4.0)), p: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 2.0, y: 3.0, z: 4.0)
+
+# A quarter turn about z as a transform.
+test "rotation_mat4: a quarter turn about z"
+    m = rotation_mat4(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: math.PI * 0.5).must()
+    assert distance_vec3(a: transform_point3(m: m, p: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# A quarter turn about x as a transform.
+test "rotation_x_mat4: a quarter turn"
+    assert distance_vec3(a: transform_point3(m: rotation_x_mat4(math.PI * 0.5), p: Vec3(x: 0.0, y: 1.0, z: 0.0)), b: Vec3(x: 0.0, y: 0.0, z: 1.0)) <= 0.000000000000001
+
+# A quarter turn about y as a transform.
+test "rotation_y_mat4: a quarter turn"
+    assert distance_vec3(a: transform_point3(m: rotation_y_mat4(math.PI * 0.5), p: Vec3(x: 0.0, y: 0.0, z: 1.0)), b: Vec3(x: 1.0, y: 0.0, z: 0.0)) <= 0.000000000000001
+
+# A quarter turn about z as a transform.
+test "rotation_z_mat4: a quarter turn"
+    assert distance_vec3(a: transform_point3(m: rotation_z_mat4(math.PI * 0.5), p: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# A point is translated.
+test "transform_point3: a point translated"
+    assert transform_point3(m: translation_mat4(Vec3(x: 1.0, y: 2.0, z: 3.0)), p: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 2.0, y: 3.0, z: 4.0)
+
+# A direction is not.
+test "transform_vector3: a direction kept"
+    assert transform_vector3(m: translation_mat4(Vec3(x: 1.0, y: 2.0, z: 3.0)), v: Vec3(x: 1.0, y: 1.0, z: 1.0)) == Vec3(x: 1.0, y: 1.0, z: 1.0)
+
+# A point on the near plane of a right-handed OpenGL projection goes to depth -1.
+test "project_point3: the near plane"
+    lens = perspective(fov_y: 1.0, aspect: 1.0, near: 2.0, far: 10.0, hand: .right, depth: .minus_one_to_one).must()
+    assert math.abs(project_point3(m: lens, p: Vec3(x: 0.0, y: 0.0, z: -2.0)).must().z + 1.0) <= 0.000000000000001
+
+# A camera five steps back on z sees the origin five steps ahead, down minus z.
+test "look_at: a camera on the z axis"
+    view = look_at(
+        eye: Vec3(x: 0.0, y: 0.0, z: 5.0),
+        target: Vec3(x: 0.0, y: 0.0, z: 0.0),
+        up: Vec3(x: 0.0, y: 1.0, z: 0.0),
+        hand: .right
+    ).must()
+    assert transform_point3(m: view, p: Vec3(x: 0.0, y: 0.0, z: 0.0)) == Vec3(x: 0.0, y: 0.0, z: -5.0)
+
+# Vulkan's depth: the far plane of a right-handed projection goes to 1.
+test "perspective: the far plane, depth from 0 to 1"
+    lens = perspective(fov_y: 1.0, aspect: 1.5, near: 0.1, far: 100.0, hand: .right, depth: .zero_to_one).must()
+    assert math.abs(project_point3(m: lens, p: Vec3(x: 0.0, y: 0.0, z: -100.0)).must().z - 1.0) <= 0.000000000000001
+
+# The box's near bottom left corner goes to the cube's.
+test "orthographic: a corner of the box"
+    o = orthographic(
+        left: 0.0,
+        right: 800.0,
+        bottom: 0.0,
+        top: 600.0,
+        near: -1.0,
+        far: 1.0,
+        hand: .right,
+        depth: .minus_one_to_one
+    ).must()
+    assert transform_point3(m: o, p: Vec3(x: 0.0, y: 0.0, z: 1.0)) == Vec3(x: -1.0, y: -1.0, z: -1.0)
+
+# No rotation leaves a vector where it was.
+test "identity_quat: no rotation"
+    assert rotate_vec3(q: identity_quat(), v: Vec3(x: 1.0, y: 2.0, z: 3.0)) == Vec3(x: 1.0, y: 2.0, z: 3.0)
+
+# A quarter turn about z.
+test "rotation_quat: a quarter turn about z"
+    q = rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: math.PI * 0.5).must()
+    assert distance_vec3(a: rotate_vec3(q: q, v: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# The axes of yaw, pitch and roll for a frame whose z is up.
+test "axes_of: z, then y, then x"
+    assert axes_of(.zyx) == [2, 1, 0]
+
+# A yaw alone is a turn about z.
+test "euler_quat: a yaw"
+    q = euler_quat(Euler(order: .zyx, first: 0.75, second: 0.0, third: 0.0))
+    assert q == rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: 0.75).must()
+
+# A turn about x read back as angles of the order xyz.
+test "to_euler: a turn about x"
+    e = to_euler(rotation_quat(axis: Vec3(x: 1.0, y: 0.0, z: 0.0), angle: 0.5).must(), order: .xyz)
+    assert math.abs(e.first - 0.5) <= 0.000000000000001 && math.abs(e.second) <= 0.000000000000001 && math.abs(e.third) <= 0.000000000000001
+
+# The turn from x to y.
+test "arc_quat: from x to y"
+    q = arc_quat(from: Vec3(x: 2.0, y: 0.0, z: 0.0), to: Vec3(x: 0.0, y: 3.0, z: 0.0)).must()
+    assert distance_vec3(a: rotate_vec3(q: q, v: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: 0.0, y: 1.0, z: 0.0)) <= 0.000000000000001
+
+# A turn about y read back as an axis and an angle.
+test "to_axis_angle: a turn about y"
+    a = to_axis_angle(rotation_quat(axis: Vec3(x: 0.0, y: 1.0, z: 0.0), angle: 1.0).must())
+    assert a.axis == Vec3(x: 0.0, y: 1.0, z: 0.0) && math.abs(a.angle - 1.0) <= 0.000000000000001
+
+# No rotation is the identity matrix.
+test "to_mat3: no rotation"
+    assert to_mat3(identity_quat()) == identity_mat3()
+
+# No rotation is the identity transform.
+test "to_mat4: no rotation"
+    assert to_mat4(identity_quat()) == identity_mat4()
+
+# The identity matrix is no rotation.
+test "to_quat: the identity"
+    assert to_quat(identity_mat3()) == identity_quat()
+
+# Two eighths of a turn about z make a quarter turn.
+test "mul_quat: two turns about one axis"
+    z = Vec3(x: 0.0, y: 0.0, z: 1.0)
+    q = mul_quat(a: rotation_quat(axis: z, angle: 0.25).must(), b: rotation_quat(axis: z, angle: 0.25).must())
+    half = rotation_quat(axis: z, angle: 0.5).must()
+    assert math.abs(q.z - half.z) <= 0.000000000000001 && math.abs(q.w - half.w) <= 0.000000000000001
+
+# A half turn about z sends x to minus x.
+test "rotate_vec3: a half turn"
+    q = rotation_quat(axis: Vec3(x: 0.0, y: 0.0, z: 1.0), angle: math.PI).must()
+    assert distance_vec3(a: rotate_vec3(q: q, v: Vec3(x: 1.0, y: 0.0, z: 0.0)), b: Vec3(x: -1.0, y: 0.0, z: 0.0)) <= 0.000000000000001
+
+# The conjugate negates the vector part.
+test "conjugate_quat: a quaternion"
+    assert conjugate_quat(Quat(x: 1.0, y: 2.0, z: 3.0, w: 4.0)) == Quat(x: -1.0, y: -2.0, z: -3.0, w: 4.0)
+
+# The inverse of twice the identity.
+test "inverse_quat: a scaled identity"
+    assert inverse_quat(Quat(x: 0.0, y: 0.0, z: 0.0, w: 2.0)).must() == Quat(x: 0.0, y: 0.0, z: 0.0, w: 0.5)
+
+# A quaternion made of length 1.
+test "normalize_quat: a scaled identity"
+    assert normalize_quat(Quat(x: 0.0, y: 0.0, z: 0.0, w: 2.0)).must() == identity_quat()
+
+# A unit quaternion's dot with itself is 1.
+test "dot_quat: the identity with itself"
+    assert dot_quat(a: identity_quat(), b: identity_quat()) == 1.0
+
+# A whole length.
+test "length_quat: a whole length"
+    assert length_quat(Quat(x: 1.0, y: 2.0, z: 2.0, w: 4.0)) == 5.0
+
+# Half way from no rotation to one radian about z is half a radian about z.
+test "slerp: half way"
+    z = Vec3(x: 0.0, y: 0.0, z: 1.0)
+    q = slerp(from: identity_quat(), to: rotation_quat(axis: z, angle: 1.0).must(), t: 0.5)
+    half = rotation_quat(axis: z, angle: 0.5).must()
+    assert math.abs(q.z - half.z) <= 0.000000000000001 && math.abs(q.w - half.w) <= 0.000000000000001
+
+# A quarter of the way from 10 to 20.
+test "lerp: a quarter of the way"
+    assert lerp(from: 10.0, to: 20.0, t: 0.25) == 12.5
+
+# Where 12.5 stands from 10 to 20.
+test "inverse_lerp: a quarter of the way"
+    assert inverse_lerp(from: 10.0, to: 20.0, x: 12.5).must() == 0.25
+
+# A percentage made a range of hundreds.
+test "remap: from 0 to 10 onto 100 to 200"
+    assert remap(x: 5.0, from_low: 0.0, from_high: 10.0, to_low: 100.0, to_high: 200.0).must() == 150.0
+
+# Half way, the smooth step is half way too.
+test "smoothstep: half way"
+    assert smoothstep(low: 0.0, high: 1.0, x: 0.5) == 0.5
+
+# As is the smoother one.
+test "smootherstep: half way"
+    assert smootherstep(low: 0.0, high: 1.0, x: 0.5) == 0.5

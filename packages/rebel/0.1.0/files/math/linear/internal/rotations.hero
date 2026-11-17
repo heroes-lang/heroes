@@ -1,0 +1,186 @@
+# Rotations as plain floats: the Euler angles of a rotation matrix in any of
+# the twelve orders, and the unit quaternion of a rotation matrix by
+# Shepperd's method. A matrix here is nine floats, a column after another, as
+# the face's `Mat3` holds them; an axis is 0, 1 or 2 for x, y and z.
+#
+# The angles come with no threshold for gimbal lock: the middle angle from the
+# entries that fix it well, the first from its pair, and the third from the
+# matrix with the first rotation taken back out, whose entries are of size 1;
+# so the three always rebuild the matrix to its last bits, even where the first
+# is ill-determined and only a sum or a difference of the outer two is.
+
+use math
+use math/linear/internal/scalars
+
+# The entry at `row` and `column` of the 3 by 3 matrix `m`.
+#
+# - `m`: nine floats, a column after another.
+# - `row`: 0, 1 or 2.
+# - `column`: 0, 1 or 2.
+function entry(m: [f64] lent, row: i64, column: i64) -> f64
+    return m[column * 3 + row]
+
+# 1.0 where the axes `i`, `j`, `k` run in the cyclic order x, y, z, -1.0
+# where they run against it.
+#
+# - `i`: the first axis.
+# - `j`: the second, not `i`.
+function parity(i: i64, j: i64) -> f64
+    if j == (i + 1) % 3
+        return 1.0
+    return -1.0
+
+# The three angles, in radians, of the rotation matrix `m` taken as `R_i(a)
+# R_j(b) R_t(c)` with `t` the third axis: about moving axes, the first angle
+# first. With `third` other than `first` the order is Tait and Bryan's, its
+# middle angle from -pi/2 to pi/2; with `third == first` it is a proper Euler
+# order, its middle angle from 0 to pi; the outer two run from -pi to pi.
+#
+# - `m`: nine floats, a column after another, a rotation.
+# - `first`: the first axis.
+# - `second`: the second axis, not the first.
+# - `third`: the third axis, not the second.
+#
+# A matrix that is not a rotation answers angles all the same; a nan entry
+# answers nans.
+function euler_angles(m: [f64], first: i64, second: i64, third: i64) -> [f64]
+    i = first
+    j = second
+    k = 3 - i - j
+    p = parity(i: i, j: j)
+
+    if third != first
+        b = math.atan2(
+            y: p * entry(m, row: i, column: k),
+            x: math.hypot(x: entry(m, row: i, column: i), y: entry(m, row: i, column: j))
+        )
+        a = math.atan2(y: -p * entry(m, row: j, column: k), x: entry(m, row: k, column: k))
+        ca = math.cos(a)
+        sa = math.sin(a)
+        mji = ca * entry(m, row: j, column: i) + p * sa * entry(m, row: k, column: i)
+        mjj = ca * entry(m, row: j, column: j) + p * sa * entry(m, row: k, column: j)
+        return [a, b, math.atan2(y: p * mji, x: mjj)]
+    b = math.atan2(
+        y: math.hypot(x: entry(m, row: i, column: j), y: entry(m, row: i, column: k)),
+        x: entry(m, row: i, column: i)
+    )
+    a = math.atan2(y: entry(m, row: j, column: i), x: -p * entry(m, row: k, column: i))
+    ca = math.cos(a)
+    sa = math.sin(a)
+    mjj = ca * entry(m, row: j, column: j) + p * sa * entry(m, row: k, column: j)
+    mjk = ca * entry(m, row: j, column: k) + p * sa * entry(m, row: k, column: k)
+    return [a, b, math.atan2(y: -p * mjk, x: mjj)]
+
+# The unit quaternion `[x, y, z, w]` of the rotation matrix `m`, by
+# Shepperd's method: the square root taken of the largest of the trace and the
+# three diagonal entries' combinations, so it never divides by a small number;
+# `w` never negative, `q` and `-q` being one rotation.
+#
+# - `m`: nine floats, a column after another, a rotation.
+#
+# A matrix that is not a rotation answers the unit quaternion of the
+# combinations all the same; a nan entry answers nans.
+function quaternion_of(m: [f64]) -> [f64]
+    for e in m
+        if math.is_nan(e)
+            return [math.NAN, math.NAN, math.NAN, math.NAN]
+
+    r00 = entry(m, row: 0, column: 0)
+    r11 = entry(m, row: 1, column: 1)
+    r22 = entry(m, row: 2, column: 2)
+    r01 = entry(m, row: 0, column: 1)
+    r10 = entry(m, row: 1, column: 0)
+    r02 = entry(m, row: 0, column: 2)
+    r20 = entry(m, row: 2, column: 0)
+    r12 = entry(m, row: 1, column: 2)
+    r21 = entry(m, row: 2, column: 1)
+    trace = r00 + r11 + r22
+    q @= [0.0, 0.0, 0.0, 0.0]
+
+    if scalars.is_above(a: trace, b: 0.0)
+        s = math.sqrt(trace + 1.0) * 2.0
+        q @ [(r21 - r12) / s, (r02 - r20) / s, (r10 - r01) / s, 0.25 * s]
+    else if scalars.is_above(a: r00, b: r11) && scalars.is_above(a: r00, b: r22)
+        s = math.sqrt(1.0 + r00 - r11 - r22) * 2.0
+        q @ [0.25 * s, (r01 + r10) / s, (r02 + r20) / s, (r21 - r12) / s]
+    else if scalars.is_above(a: r11, b: r22)
+        s = math.sqrt(1.0 + r11 - r00 - r22) * 2.0
+        q @ [(r01 + r10) / s, 0.25 * s, (r12 + r21) / s, (r02 - r20) / s]
+    else
+        s = math.sqrt(1.0 + r22 - r00 - r11) * 2.0
+        q @ [(r02 + r20) / s, (r12 + r21) / s, 0.25 * s, (r10 - r01) / s]
+    size = scalars.length4(x: q[0], y: q[1], z: q[2], w: q[3])
+    turn @= 1.0
+
+    if q[3] < 0.0
+        turn @ -1.0
+    return [q[0] * turn / size, q[1] * turn / size, q[2] * turn / size, q[3] * turn / size]
+
+# The unit quaternion `[x, y, z, w]` of the turn by `angle` about the axis
+# `axis`.
+#
+# - `axis`: 0, 1 or 2 for x, y and z.
+# - `angle`: in radians, counterclockwise as seen from the axis's tip.
+function axis_quaternion(axis: i64, angle: f64) -> [f64]
+    s = math.sin(angle * 0.5)
+    c = math.cos(angle * 0.5)
+
+    if axis == 0
+        return [s, 0.0, 0.0, c]
+
+    if axis == 1
+        return [0.0, s, 0.0, c]
+    return [0.0, 0.0, s, c]
+
+# Hamilton's product `a * b` of two quaternions `[x, y, z, w]`: the rotation
+# `b`, then `a`.
+#
+# - `a`: the rotation made second.
+# - `b`: the rotation made first.
+function product(a: [f64] lent, b: [f64] lent) -> [f64]
+    x = a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1]
+    y = a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0]
+    z = a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3]
+    return [x, y, z, a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]]
+
+# The unit quaternion `[x, y, z, w]` of three turns about moving axes: by
+# `angles[0]` about `axes[0]`, then `angles[1]` about `axes[1]`, then
+# `angles[2]` about `axes[2]`, which is `q0 * q1 * q2`.
+#
+# - `axes`: the three axes, 0, 1 or 2 each.
+# - `angles`: the three angles in radians.
+function euler_quaternion(axes: [i64], angles: [f64]) -> [f64]
+    first = axis_quaternion(axis: axes[0], angle: angles[0])
+    second = axis_quaternion(axis: axes[1], angle: angles[1])
+    third = axis_quaternion(axis: axes[2], angle: angles[2])
+    return product(a: product(a: first, b: second), b: third)
+
+## Tests
+
+test "euler_angles: the identity in a Tait-Bryan and a proper order, one turn about each axis"
+    identity = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+    zeros = euler_angles(identity, first: 0, second: 1, third: 2)
+    assert zeros[0] == 0.0 && zeros[1] == 0.0 && zeros[2] == 0.0
+    proper = euler_angles(identity, first: 2, second: 0, third: 2)
+    assert proper[1] == 0.0 && proper[0] + proper[2] == 0.0
+    c = math.cos(0.5)
+    s = math.sin(0.5)
+    about_x = [1.0, 0.0, 0.0, 0.0, c, s, 0.0, -s, c]
+    xyz = euler_angles(about_x, first: 0, second: 1, third: 2)
+    assert math.is_close(a: xyz[0], b: 0.5, relative: 0.000000000000001, absolute: 0.0) && xyz[1] == 0.0 && xyz[2] == 0.0
+    zyx = euler_angles(about_x, first: 2, second: 1, third: 0)
+    assert zyx[0] == 0.0 && zyx[1] == 0.0 && math.is_close(a: zyx[2], b: 0.5, relative: 0.000000000000001, absolute: 0.0)
+
+test "quaternion_of: the identity, a half turn about each axis, a nan"
+    assert quaternion_of([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]) == [0.0, 0.0, 0.0, 1.0]
+    assert quaternion_of([1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, -1.0]) == [1.0, 0.0, 0.0, 0.0]
+    assert quaternion_of([-1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, -1.0]) == [0.0, 1.0, 0.0, 0.0]
+    assert quaternion_of([-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]) == [0.0, 0.0, 1.0, 0.0]
+    assert math.is_nan(quaternion_of([math.NAN, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])[0])
+
+test "euler_quaternion and product: one turn about each axis, a turn undone"
+    assert euler_quaternion(axes: [0, 1, 2], angles: [0.0, 0.0, 0.0]) == [0.0, 0.0, 0.0, 1.0]
+    q = euler_quaternion(axes: [2, 0, 2], angles: [0.0, 0.0, 1.0])
+    assert q == axis_quaternion(axis: 2, angle: 1.0)
+    back = product(a: axis_quaternion(axis: 1, angle: 0.75), b: axis_quaternion(axis: 1, angle: -0.75))
+    assert back[3] == 1.0 && back[0] == 0.0 && back[1] == 0.0 && back[2] == 0.0

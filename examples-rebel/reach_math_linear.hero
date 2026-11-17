@@ -1,0 +1,33 @@
+# Reaches Rebel's `math/linear`, so that `heroes test` on this file runs the
+# tests of the package's modules (spec § 12). It prints where a right-handed
+# camera at (0, 0, 5) looking at the origin sees the point (1, 1, 0): the
+# point in normalized device coordinates under a 90 degree perspective, depth
+# from -1 to 1.
+
+use <rebel>/math/linear
+
+function main()
+    view = linear.look_at(
+        eye: linear.Vec3(x: 0.0, y: 0.0, z: 5.0),
+        target: linear.Vec3(x: 0.0, y: 0.0, z: 0.0),
+        up: linear.Vec3(x: 0.0, y: 1.0, z: 0.0),
+        hand: .right
+    )
+    lens = linear.perspective(
+        fov_y: 1.5707963267948966,
+        aspect: 1.0,
+        near: 1.0,
+        far: 100.0,
+        hand: .right,
+        depth: .minus_one_to_one
+    )
+
+    match view
+        .err e => print(e.msg)
+        .ok v =>
+            match lens
+                .err e => print(e.msg)
+                .ok p =>
+                    match linear.project_point3(m: linear.mul_mat4(a: p, b: v), p: linear.Vec3(x: 1.0, y: 1.0, z: 0.0))
+                        .ok q  => print(q.x, " ", q.y, " ", q.z)
+                        .err e => print(e.msg)

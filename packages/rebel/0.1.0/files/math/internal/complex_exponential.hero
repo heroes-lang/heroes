@@ -1,0 +1,344 @@
+# The exponential, the logarithms, the square root and the powers of complex
+# numbers, as C11's Annex G and Python's `cmath` answer them: an edge of the
+# plane (an infinity, a nan, a signed zero) answers Annex G's value, and a
+# finite number is computed so that no step overflows or underflows before the
+# answer does.
+
+use math/internal/complex_arithmetic
+use math/internal/elementary
+use math/internal/floats
+use math/internal/limits
+use math/internal/parts
+use math/internal/rounding
+use math/internal/trig
+
+# The natural logarithm of a quarter of the largest float: past it, e raised
+# to `x` is computed in two steps so that it does not overflow before the
+# factor beside it is applied.
+constant LOG_LARGE: f64
+    708.3964185322641
+
+# A quarter of the largest float: past it, a size is halved before it is
+# measured.
+constant LARGE: f64
+    44942328371557893000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000.0
+
+# Below this size, 2 to the -500th, a number is lifted by 2 to the 600th before
+# its size is measured, so that its square does not underflow.
+constant TINY: f64
+    0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003054936363499605
+
+# The largest integer exponent multiplied out by `pow`; past it, the polar
+# form. Python's `**` on complex numbers draws the line at the same place.
+constant MULTIPLIED_UP_TO: i64
+    100
+
+# E raised to `x`, times `factor`, where `x` is past `LOG_LARGE`: `x` is taken
+# down by 700 at a time, exactly, and e raised to 700 multiplied back after
+# the factor, so a small factor keeps the answer finite where it is.
+#
+# - `x`: the exponent, past `LOG_LARGE`.
+# - `factor`: what the power is multiplied by, not zero.
+function exp_times(x: f64, factor: f64) -> f64
+    big = elementary.exp(700.0)
+
+    if x - 700.0 <= LOG_LARGE
+        return elementary.exp(x - 700.0) * factor * big
+    return elementary.exp(x - 1400.0) * factor * big * big
+
+# E raised to `re + im i`.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part, an angle in radians.
+function exp(re: f64, im: f64) -> complex_arithmetic.Pair
+    if !floats.is_finite(re) || !floats.is_finite(im)
+        return exp_edge(re: re, im: im)
+
+    if im == 0.0
+        return complex_arithmetic.Pair(re: elementary.exp(re), im: im)
+    c = trig.cos(im)
+    s = trig.sin(im)
+
+    if re <= LOG_LARGE
+        size = elementary.exp(re)
+        return complex_arithmetic.Pair(re: size * c, im: size * s)
+    return complex_arithmetic.Pair(re: exp_times(x: re, factor: c), im: exp_times(x: re, factor: s))
+
+# `exp` where a part is an infinity or a nan, by Annex G's table.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function exp_edge(re: f64, im: f64) -> complex_arithmetic.Pair
+    if floats.is_nan(re)
+        if im == 0.0
+            return complex_arithmetic.Pair(re: re, im: im)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if re == limits.INF
+        if im == 0.0
+            return complex_arithmetic.Pair(re: re, im: im)
+
+        if floats.is_finite(im)
+            return complex_arithmetic.Pair(re: re * trig.cos(im), im: re * trig.sin(im))
+        return complex_arithmetic.Pair(re: re, im: limits.NAN)
+
+    if re == -limits.INF
+        if floats.is_finite(im)
+            return complex_arithmetic.Pair(re: 0.0 * trig.cos(im), im: 0.0 * trig.sin(im))
+        return complex_arithmetic.Pair(re: 0.0, im: 0.0)
+    return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+# `a + b` as a sum and the error its rounding made, exactly: `a + b == sum +
+# error`. Knuth's two-sum.
+record Sum
+    # The rounded sum.
+    sum: f64
+    # What rounding left out.
+    error: f64
+
+# Knuth's two-sum of `a` and `b`.
+#
+# - `a`: one term.
+# - `b`: the other.
+function two_sum(a: f64, b: f64) -> Sum
+    s = a + b
+    b_part = s - a
+    return Sum(sum: s, error: a - (s - b_part) + (b - b_part))
+
+# `big * big + small * small - 1` to nearly the last bit, each square split
+# exactly by a fused multiply-add and the sum carried with its errors, for
+# the logarithm of a size near 1.
+#
+# - `big`: the larger part, in size.
+# - `small`: the smaller part, in size.
+function squares_less_one(big: f64, small: f64) -> f64
+    a2 = big * big
+    a2_error = parts.mul_add(x: big, times: big, plus: -a2)
+    b2 = small * small
+    b2_error = parts.mul_add(x: small, times: small, plus: -b2)
+    first = two_sum(a: a2, b: -1.0)
+    second = two_sum(a: first.sum, b: b2)
+    return second.sum + (first.error + second.error + a2_error + b2_error)
+
+# The natural logarithm of the size of `re + im i`, both finite: halved first
+# past `LARGE`, lifted first below `TINY`, and near 1 taken as half `log1p` of
+# the squares less one, so a size a hair from 1 keeps its digits.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function ln_size(re: f64, im: f64) -> f64
+    ax = floats.abs(re)
+    ay = floats.abs(im)
+    big = floats.max(a: ax, b: ay)
+    small = floats.min(a: ax, b: ay)
+
+    if big == 0.0
+        return -limits.INF
+
+    if big > LARGE
+        return elementary.ln(elementary.hypot(x: ax * 0.5, y: ay * 0.5)) + limits.LN_2
+
+    if big < TINY
+        lifted = elementary.hypot(x: parts.scale(x: ax, exponent: 600), y: parts.scale(x: ay, exponent: 600))
+        return elementary.ln(lifted) - 600.0 * limits.LN_2
+    h = elementary.hypot(x: ax, y: ay)
+
+    if h < 0.5 || h > 2.0
+        return elementary.ln(h)
+    return elementary.ln_1_plus(squares_less_one(big: big, small: small)) * 0.5
+
+# The natural logarithm of `re + im i`, the principal one: its imaginary part
+# is the angle, from -pi to pi, so the cut is the negative real axis and the
+# sign of a zero imaginary part chooses its side. The log of a zero is minus
+# the infinity, Annex G's value, where Python raises.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function ln(re: f64, im: f64) -> complex_arithmetic.Pair
+    if floats.is_inf(re) || floats.is_inf(im)
+        return complex_arithmetic.Pair(re: limits.INF, im: trig.atan2(y: im, x: re))
+
+    if floats.is_nan(re) || floats.is_nan(im)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+    return complex_arithmetic.Pair(re: ln_size(re: re, im: im), im: trig.atan2(y: im, x: re))
+
+# The logarithm in base 10 of `re + im i`: `ln` with both parts divided by the
+# natural logarithm of 10.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function log10(re: f64, im: f64) -> complex_arithmetic.Pair
+    p = ln(re: re, im: im)
+    return complex_arithmetic.Pair(re: p.re / limits.LN_10, im: p.im / limits.LN_10)
+
+# The principal square root of `re + im i`: its real part is never negative,
+# and its imaginary part has the sign of `im`, so the cut is the negative real
+# axis and a zero's sign chooses its side.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sqrt(re: f64, im: f64) -> complex_arithmetic.Pair
+    if !floats.is_finite(re) || !floats.is_finite(im)
+        return sqrt_edge(re: re, im: im)
+
+    if re == 0.0 && im == 0.0
+        return complex_arithmetic.Pair(re: 0.0, im: im)
+    ax = floats.abs(re)
+    ay = floats.abs(im)
+    root @= 0.0
+
+    if ax > LARGE || ay > LARGE
+        root @ 2.0 * elementary.sqrt((ax * 0.25 + elementary.hypot(x: ax * 0.25, y: ay * 0.25)) * 0.5)
+    else if ax < TINY && ay < TINY
+        x = parts.scale(x: ax, exponent: 600)
+        y = parts.scale(x: ay, exponent: 600)
+        root @ parts.scale(x: elementary.sqrt((x + elementary.hypot(x: x, y: y)) * 0.5), exponent: -300)
+    else
+        root @ elementary.sqrt((ax + elementary.hypot(x: ax, y: ay)) * 0.5)
+    other = ay / root * 0.5
+
+    if re >= 0.0
+        return complex_arithmetic.Pair(re: root, im: floats.with_sign(x: other, of: im))
+    return complex_arithmetic.Pair(re: other, im: floats.with_sign(x: root, of: im))
+
+# `sqrt` where a part is an infinity or a nan, by Annex G's table.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function sqrt_edge(re: f64, im: f64) -> complex_arithmetic.Pair
+    if floats.is_inf(im)
+        return complex_arithmetic.Pair(re: limits.INF, im: im)
+
+    if re == limits.INF
+        if floats.is_nan(im)
+            return complex_arithmetic.Pair(re: re, im: im)
+        return complex_arithmetic.Pair(re: re, im: floats.with_sign(x: 0.0, of: im))
+
+    if re == -limits.INF
+        if floats.is_nan(im)
+            return complex_arithmetic.Pair(re: limits.NAN, im: limits.INF)
+        return complex_arithmetic.Pair(re: 0.0, im: floats.with_sign(x: limits.INF, of: im))
+    return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+# `base` raised to the whole power `n`, by squaring, the bits of `n` read from
+# the lowest; a negative `n` is 1 over the power of its size.
+#
+# - `base`: the base.
+# - `n`: the exponent, from `-MULTIPLIED_UP_TO` to `MULTIPLIED_UP_TO`.
+function whole_power(base: complex_arithmetic.Pair, n: i64) -> complex_arithmetic.Pair
+    one = complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    left @= n
+
+    if n < 0
+        left @ -n
+    result @= one
+    square @= base
+
+    while left > 0
+        if left % 2 == 1
+            result @ complex_arithmetic.mul(a: result, b: square)
+        left @ left / 2
+
+        if left > 0
+            square @ complex_arithmetic.mul(a: square, b: square)
+
+    if n < 0
+        return complex_arithmetic.div(a: one, b: result)
+    return result
+
+# `base` raised to `exponent`, the principal power `exp(exponent * ln(base))`:
+# a zero exponent answers 1, a zero base 0 where the exponent's real part is
+# positive, an infinity beside a nan where it is negative, and a nan where it
+# is zero; a whole real exponent from -100 to 100 is multiplied out, so
+# `(1 + 1i)^2` is exactly `2i`; any other is taken through the polar form.
+#
+# - `base`: the base.
+# - `exponent`: the exponent.
+function pow(base: complex_arithmetic.Pair, exponent: complex_arithmetic.Pair) -> complex_arithmetic.Pair
+    if exponent.re == 0.0 && exponent.im == 0.0
+        return complex_arithmetic.Pair(re: 1.0, im: 0.0)
+
+    if floats.is_nan(exponent.re) || floats.is_nan(exponent.im)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if base.re == 0.0 && base.im == 0.0
+        if exponent.re > 0.0
+            return complex_arithmetic.Pair(re: 0.0, im: 0.0)
+
+        if exponent.re < 0.0
+            return complex_arithmetic.Pair(re: limits.INF, im: limits.NAN)
+        return complex_arithmetic.Pair(re: limits.NAN, im: limits.NAN)
+
+    if exponent.im == 0.0 && floats.abs(exponent.re) <= to_f64(MULTIPLIED_UP_TO) && exponent.re == rounding.trunc(exponent.re)
+        return whole_power(base: base, n: to_i64(exponent.re).must())
+    size = elementary.hypot(x: base.re, y: base.im)
+    angle = trig.atan2(y: base.im, x: base.re)
+    length @= elementary.pow(base: size, exponent: exponent.re)
+    phase @= angle * exponent.re
+
+    if exponent.im != 0.0
+        length @ length / elementary.exp(angle * exponent.im)
+        phase @ phase + exponent.im * elementary.ln(size)
+    return complex_arithmetic.Pair(re: length * trig.cos(phase), im: length * trig.sin(phase))
+
+## Tests
+
+test "exp: zero, a half turn, a real part past the overflow kept finite beside a tiny angle"
+    assert exp(re: 0.0, im: 0.0) == complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    assert floats.has_minus_sign(exp(re: 1.0, im: -0.0).im)
+    assert complex_arithmetic.agrees(
+        got: exp(re: 0.0, im: limits.PI),
+        want_re: -1.0,
+        want_im: 0.00000000000000012246467991473532,
+        ulps: 1.0
+    )
+    big = exp(re: 720.0, im: 0.000000000000000000000000000000000000000000000000001)
+    assert big.re == limits.INF && floats.is_finite(big.im)
+
+test "ln and log10: the two sides of the cut, zero, a size a hair above 1, the largest"
+    assert ln(re: -1.0, im: 0.0) == complex_arithmetic.Pair(re: 0.0, im: limits.PI)
+    assert ln(re: -1.0, im: -0.0) == complex_arithmetic.Pair(re: 0.0, im: -limits.PI)
+    assert ln(re: 0.0, im: 0.0) == complex_arithmetic.Pair(re: -limits.INF, im: 0.0)
+    assert ln(re: 0.6, im: 0.8).re == 0.000000000000000022204460492503132
+    assert complex_arithmetic.agrees(
+        got: ln(re: limits.MAX_F64, im: limits.MAX_F64),
+        want_re: 710.1292864836639,
+        want_im: limits.PI * 0.25,
+        ulps: 2.0
+    )
+    assert log10(re: 100.0, im: 0.0) == complex_arithmetic.Pair(re: 2.0, im: 0.0)
+
+test "sqrt: the cut's two sides, the zeros, the largest and the smallest, an infinite part"
+    assert sqrt(re: -4.0, im: 0.0) == complex_arithmetic.Pair(re: 0.0, im: 2.0)
+    assert sqrt(re: -4.0, im: -0.0) == complex_arithmetic.Pair(re: 0.0, im: -2.0)
+    assert floats.has_minus_sign(sqrt(re: -0.0, im: -0.0).im) && !floats.has_minus_sign(sqrt(re: -0.0, im: -0.0).re)
+    assert floats.is_finite(sqrt(re: limits.MAX_F64, im: limits.MAX_F64).re)
+    assert sqrt(re: limits.SMALLEST_F64, im: 0.0).re > 0.0
+    assert sqrt(re: limits.NAN, im: -limits.INF) == complex_arithmetic.Pair(re: limits.INF, im: -limits.INF)
+
+test "pow: a zero exponent beside a nan, a zero base, a nan exponent, a whole power exactly, a root on the cut"
+    nan = limits.NAN
+    zero = complex_arithmetic.Pair(re: 0.0, im: 0.0)
+    one_one = complex_arithmetic.Pair(re: 1.0, im: 1.0)
+    assert pow(base: complex_arithmetic.Pair(re: nan, im: nan), exponent: zero) == complex_arithmetic.Pair(re: 1.0, im: 0.0)
+    assert pow(base: zero, exponent: complex_arithmetic.Pair(re: 2.0, im: 1.0)) == zero
+    assert complex_arithmetic.agrees(
+        got: pow(base: zero, exponent: complex_arithmetic.Pair(re: -1.0, im: 0.0)),
+        want_re: limits.INF,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert complex_arithmetic.agrees(
+        got: pow(base: zero, exponent: complex_arithmetic.Pair(re: nan, im: 0.0)),
+        want_re: nan,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert complex_arithmetic.agrees(
+        got: pow(base: one_one, exponent: complex_arithmetic.Pair(re: nan, im: 0.0)),
+        want_re: nan,
+        want_im: nan,
+        ulps: 0.0
+    )
+    assert pow(base: one_one, exponent: complex_arithmetic.Pair(re: 2.0, im: 0.0)) == complex_arithmetic.Pair(re: 0.0, im: 2.0)
+    assert whole_power(base: one_one, n: -2) == complex_arithmetic.Pair(re: 0.0, im: -0.5)
