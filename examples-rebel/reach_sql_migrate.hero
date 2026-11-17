@@ -1,0 +1,331 @@
+# Reaches Rebel's `sql/migrate`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), and runs its plans against SQLite in
+# memory: migrations read from a folder applied, stepped back, refused when
+# changed, rolled back when they fail, and planned for a dry run; and
+# against the PostgreSQL server `REBEL_POSTGRES_URL` names, under its
+# advisory lock, saying it skipped where the variable is unset or no server
+# answers. Its `main`
+# plans two migrations given as values for a database that has applied none,
+# and prints the dry run.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/path
+use <rebel>/sql
+use <rebel>/sql/migrate
+use <rebel>/sql/postgres
+use <rebel>/sql/sqlite
+
+function main()
+    migrations = [
+        migrate.Migration(version: 1, name: "create_singer", up: "CREATE TABLE singer(id INTEGER PRIMARY KEY)", down: ok("DROP TABLE singer"))
+        migrate.Migration(version: 2, name: "add_name", up: "ALTER TABLE singer ADD COLUMN name TEXT", down: ok("ALTER TABLE singer DROP COLUMN name"))
+    ]
+
+    match migrate.plan_up(migrations, applied: [], opts: migrate.options(.sqlite))
+        .err e   => print(e.code, ": ", e.msg)
+        .ok plan => print(migrate.format_plan(plan))
+
+# Runs `s`'s script, then its version statement.
+function run_step(@db: sqlite.Db, s: migrate.Step) -> ()?
+    sqlite.exec_script(@db, s.script)?
+    _ = sqlite.exec(@db, s.version_statement.text, s.version_statement.params)?
+    return ok()
+
+# Runs `steps` in order, each between `begin` and `commit` where it says
+# so; the first that fails is rolled back, and the run stops there.
+function run_steps(@db: sqlite.Db, steps: [migrate.Step]) -> ()?
+    for s in steps
+        if s.in_transaction
+            sqlite.begin(@db)?
+
+        match run_step(@db, s)
+            .ok _ =>
+                if s.in_transaction
+                    sqlite.commit(@db)?
+            .err e =>
+                if sqlite.in_transaction(db)
+                    match sqlite.rollback(@db)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+
+                return fail(code: e.code, msg: f"the migration {s.version} ({s.name}): {e.msg}")
+
+    return ok()
+
+# The versions `db` has applied, its table made first where it is not there.
+function applied_of(@db: sqlite.Db, opts: migrate.Options) -> [migrate.Applied]?
+    made = migrate.create_table(opts)?
+    _ = sqlite.exec(@db, made.text, made.params)?
+    asked = migrate.select_applied(opts)?
+    rows = sqlite.query(@db, asked.text, asked.params)?
+    return migrate.read_applied(rows)
+
+# The names of the tables of `db`, the table of versions aside, in order.
+function tables_of(@db: sqlite.Db) -> [str]?
+    rows = sqlite.query(@db, "SELECT name FROM sqlite_master WHERE type = ?1 AND name <> ?2 ORDER BY name", [.text(v: "table"), .text(v: migrate.DEFAULT_TABLE)])?
+
+    names: [str] @= []
+
+    for row in rows.rows
+        names @ names.push(sql.text_at(row, 0)?)
+
+    return ok(names)
+
+# Three migrations as files in a new folder under `build`, the third run
+# outside a transaction.
+function folder() -> str?
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-migrate-run-*")?
+    write_file(path: path.join_all([root, "0001_create_singer.up.sql"]), text: "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT NOT NULL);")?
+    write_file(path: path.join_all([root, "0001_create_singer.down.sql"]), text: "DROP TABLE singer;")?
+    write_file(path: path.join_all([root, "0002_create_song.up.sql"]), text: "CREATE TABLE song(id INTEGER PRIMARY KEY, title TEXT);\nCREATE INDEX song_title ON song(title);")?
+    write_file(path: path.join_all([root, "0002_create_song.down.sql"]), text: "DROP TABLE song;")?
+    write_file(path: path.join_all([root, "0003_vacuum.up.sql"]), text: "-- no-transaction\nVACUUM;")?
+    write_file(path: path.join_all([root, "0003_vacuum.down.sql"]), text: "SELECT 1;")?
+    return ok(root)
+
+test "sqlite: a folder applied, applied again as nothing, stepped back one, then every one"
+    root = folder().must()
+    migrations = migrate.read_migrations(root).must()
+    fs.remove_all(root).must()
+    opts = migrate.options(.sqlite)
+    db @= sqlite.open_memory().must()
+    plan = migrate.plan_up(migrations, applied: applied_of(@db, opts).must(), opts: opts).must()
+    assert plan.len() == 3 && !plan[2].in_transaction
+    run_steps(@db, plan).must()
+    applied = applied_of(@db, opts).must()
+    assert applied.len() == 3 && migrate.current_version(applied).must() == 3
+    assert applied[0].name == "create_singer" && applied[0].checksum == migrate.checksum_of(migrations[0].up)
+    assert tables_of(@db).must() == ["singer", "song"]
+    assert migrate.plan_up(migrations, applied: applied, opts: opts).must().len() == 0
+    run_steps(@db, migrate.plan_down(migrations, applied: applied, opts: opts).must()).must()
+    assert migrate.current_version(applied_of(@db, opts).must()).must() == 2
+    run_steps(
+        @db,
+        migrate.plan_down_to(migrations, applied: applied_of(@db, opts).must(), version: 0, opts: opts).must()
+    ).must()
+    assert applied_of(@db, opts).must().len() == 0
+    assert tables_of(@db).must() == []
+    sqlite.close(@db).must()
+
+test "sqlite: a migration that fails leaves nothing of itself and no version"
+    good = migrate.Migration(
+        version: 1,
+        name: "create_singer",
+        up: "CREATE TABLE singer(id INTEGER PRIMARY KEY);",
+        down: ok("DROP TABLE singer;")
+    )
+    bad = migrate.Migration(
+        version: 2,
+        name: "broken",
+        up: "CREATE TABLE song(id INTEGER);\nINSERT INTO nowhere VALUES (1);",
+        down: ok("DROP TABLE song;")
+    )
+    opts = migrate.options(.sqlite)
+    db @= sqlite.open_memory().must()
+    plan = migrate.plan_up([good, bad], applied: applied_of(@db, opts).must(), opts: opts).must()
+
+    match run_steps(@db, plan)
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND
+
+    assert migrate.current_version(applied_of(@db, opts).must()).must() == 1
+    assert tables_of(@db).must() == ["singer"]
+    assert !sqlite.in_transaction(db)
+    sqlite.close(@db).must()
+
+test "sqlite: a migration changed after it ran is refused, and one applied twice fails on its version"
+    first = migrate.Migration(
+        version: 1,
+        name: "create_singer",
+        up: "CREATE TABLE IF NOT EXISTS singer(id INTEGER PRIMARY KEY);",
+        down: ok("DROP TABLE singer;")
+    )
+    opts = migrate.options(.sqlite)
+    db @= sqlite.open_memory().must()
+    plan = migrate.plan_up([first], applied: applied_of(@db, opts).must(), opts: opts).must()
+    run_steps(@db, plan).must()
+    edited = migrate.Migration(
+        version: 1,
+        name: "create_singer",
+        up: "CREATE TABLE IF NOT EXISTS singer(id INTEGER PRIMARY KEY, name TEXT);",
+        down: ok("DROP TABLE singer;")
+    )
+
+    match migrate.plan_up([edited], applied: applied_of(@db, opts).must(), opts: opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+    match run_steps(@db, plan)
+        .ok _  => assert false
+        .err e => assert e.code == sql.EXISTS
+
+    assert applied_of(@db, opts).must().len() == 1
+    sqlite.close(@db).must()
+
+test "sqlite: a dry run runs nothing"
+    first = migrate.Migration(
+        version: 1,
+        name: "create_singer",
+        up: "CREATE TABLE singer(id INTEGER PRIMARY KEY);",
+        down: ok("DROP TABLE singer;")
+    )
+    opts = migrate.options(.sqlite)
+    db @= sqlite.open_memory().must()
+    text = migrate.format_plan(migrate.plan_up([first], applied: applied_of(@db, opts).must(), opts: opts).must())
+    assert text != ""
+    assert tables_of(@db).must() == []
+    assert applied_of(@db, opts).must().len() == 0
+    sqlite.close(@db).must()
+
+# A connection to the server `REBEL_POSTGRES_URL` names. Fails `not_found`
+# where the variable is unset, and as `postgres.open` does where no server
+# answers there.
+function live() -> postgres.Db?
+    url = os.env("REBEL_POSTGRES_URL")?
+    return postgres.open(postgres.parse_url(url)?)
+
+# Runs `s`'s script, then its version statement, on PostgreSQL.
+function pg_run_step(@db: postgres.Db, s: migrate.Step) -> ()?
+    postgres.exec_script(@db, s.script)?
+    _ = postgres.exec(@db, s.version_statement.text, s.version_statement.params)?
+    return ok()
+
+# Runs `steps` on PostgreSQL in order, each between `begin` and `commit`
+# where it says so; the first that fails is rolled back, and the run stops.
+function pg_run_steps(@db: postgres.Db, steps: [migrate.Step]) -> ()?
+    for s in steps
+        if s.in_transaction
+            postgres.begin(@db)?
+
+        match pg_run_step(@db, s)
+            .ok _ =>
+                if s.in_transaction
+                    postgres.commit(@db)?
+            .err e =>
+                if postgres.transaction_of(db) != .idle
+                    match postgres.rollback(@db)
+                        .ok _  => _ = 0
+                        .err _ => _ = 0
+
+                return fail(code: e.code, msg: f"the migration {s.version} ({s.name}): {e.msg}")
+
+    return ok()
+
+# The versions the PostgreSQL database has applied, its table made first.
+function pg_applied_of(@db: postgres.Db, opts: migrate.Options) -> [migrate.Applied]?
+    made = migrate.create_table(opts)?
+    _ = postgres.exec(@db, made.text, made.params)?
+    asked = migrate.select_applied(opts)?
+    rows = postgres.query(@db, asked.text, asked.params)?
+    return migrate.read_applied(rows)
+
+# How many of the live test's two tables stand.
+function pg_tables(@db: postgres.Db) -> i64?
+    row = postgres.query_one(@db, "SELECT count(*) AS n FROM information_schema.tables WHERE table_name IN ($1, $2)", [.text(v: "rebel_live_singer"), .text(v: "rebel_live_song")])?
+
+    return sql.integer_named(row, "n")
+
+# How many indexes named `rebel_live_song_title` stand.
+function pg_indexes(@db: postgres.Db) -> i64?
+    row = postgres.query_one(@db, "SELECT count(*) AS n FROM pg_indexes WHERE indexname = $1", [.text(v: "rebel_live_song_title")])?
+    return sql.integer_named(row, "n")
+
+# The live test's migrations as files in a new folder under `build`: two
+# tables in transactions, then an index made and dropped outside one, as
+# PostgreSQL makes an index CONCURRENTLY.
+function pg_folder() -> str?
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-migrate-live-*")?
+    write_file(path: path.join_all([root, "0001_create_singer.up.sql"]), text: "CREATE TABLE rebel_live_singer(id BIGINT PRIMARY KEY, name TEXT NOT NULL);")?
+    write_file(path: path.join_all([root, "0001_create_singer.down.sql"]), text: "DROP TABLE rebel_live_singer;")?
+    write_file(path: path.join_all([root, "0002_create_song.up.sql"]), text: "CREATE TABLE rebel_live_song(id BIGINT PRIMARY KEY, singer_id BIGINT REFERENCES rebel_live_singer(id), title TEXT);\nINSERT INTO rebel_live_song(id, title) VALUES (1, 'Starman');")?
+    write_file(path: path.join_all([root, "0002_create_song.down.sql"]), text: "DROP TABLE rebel_live_song;")?
+    write_file(path: path.join_all([root, "0003_index_title.up.sql"]), text: "-- no-transaction\nCREATE INDEX CONCURRENTLY rebel_live_song_title ON rebel_live_song(title)")?
+    write_file(path: path.join_all([root, "0003_index_title.down.sql"]), text: "-- no-transaction\nDROP INDEX CONCURRENTLY rebel_live_song_title")?
+    return ok(root)
+
+test "postgres live: the TIMESTAMPTZ table, a folder applied under the lock, a second session kept waiting, planned again as nothing, stepped back"
+    match live()
+        .err e => print("postgres live (sql/migrate): skipped, ", e.code, ": ", e.msg)
+        .ok first =>
+            db @= first
+            other @= live().must()
+            opts @= migrate.options(.postgres)
+            opts.table @ "rebel_live_versions"
+            postgres.exec_script(
+                @db,
+                "DROP TABLE IF EXISTS rebel_live_versions; DROP TABLE IF EXISTS rebel_live_song; DROP TABLE IF EXISTS rebel_live_singer"
+            ).must()
+            lock = migrate.lock_statement(opts).must()
+            _ = postgres.query(@db, lock.text, lock.params).must()
+            held = postgres.query_one(@other, "SELECT pg_try_advisory_lock($1) AS got", lock.params).must()
+            assert !sql.boolean_named(held, "got").must()
+            _ = postgres.exec(@other, "SET statement_timeout = 300", []).must()
+
+            match postgres.query(@other, lock.text, lock.params)
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == sql.STOPPED
+                    print(
+                        "postgres live (sql/migrate): a second session's lock_statement waited until its statement_timeout, ",
+                        e.code,
+                        ": ",
+                        e.msg
+                    )
+
+            _ = postgres.exec(@other, "SET statement_timeout = 0", []).must()
+            applied = pg_applied_of(@db, opts).must()
+            assert applied.len() == 0
+            kind = postgres.query_one(
+                @db,
+                "SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2",
+                [.text(v: "rebel_live_versions"), .text(v: "applied_at")]
+            ).must()
+
+            assert sql.text_named(kind, "data_type").must() == "timestamp with time zone"
+            root = pg_folder().must()
+            migrations = migrate.read_migrations(root).must()
+            fs.remove_all(root).must()
+            plan = migrate.plan_up(migrations, applied: applied, opts: opts).must()
+            assert plan.len() == 3 && plan[0].in_transaction && !plan[2].in_transaction
+            pg_run_steps(@db, plan).must()
+            ran = pg_applied_of(@db, opts).must()
+            assert ran.len() == 3 && migrate.current_version(ran).must() == 3
+            assert ran[1].checksum == migrate.checksum_of(migrations[1].up)
+            assert pg_tables(@db).must() == 2 && pg_indexes(@db).must() == 1
+            assert migrate.plan_up(migrations, applied: ran, opts: opts).must().len() == 0
+            broken = migrate.Migration(
+                version: 4,
+                name: "broken",
+                up: "CREATE TABLE rebel_live_x(id INT);\nINSERT INTO nowhere VALUES (1);",
+                down: ok("DROP TABLE rebel_live_x;")
+            )
+            with_broken = [migrations[0], migrations[1], migrations[2], broken]
+
+            match pg_run_steps(@db, migrate.plan_up(with_broken, applied: ran, opts: opts).must())
+                .ok _ => assert false
+                .err e =>
+                    assert e.code == sql.NOT_FOUND
+                    print("postgres live (sql/migrate): a failing migration rolled back, ", e.code, ": ", e.msg)
+
+            assert postgres.transaction_of(db) == .idle
+            assert migrate.current_version(pg_applied_of(@db, opts).must()).must() == 3
+            pg_run_steps(@db, migrate.plan_down(migrations, applied: ran, opts: opts).must()).must()
+            assert migrate.current_version(pg_applied_of(@db, opts).must()).must() == 2 && pg_indexes(@db).must() == 0
+            pg_run_steps(
+                @db,
+                migrate.plan_down_to(migrations, applied: pg_applied_of(@db, opts).must(), version: 0, opts: opts).must()
+            ).must()
+            assert pg_applied_of(@db, opts).must().len() == 0 && pg_tables(@db).must() == 0
+            unlock = migrate.unlock_statement(opts).must()
+            released = postgres.query_one(@db, unlock.text, unlock.params).must()
+            assert sql.boolean_at(released, 0).must()
+            taken = postgres.query_one(@other, "SELECT pg_try_advisory_lock($1) AS got", lock.params).must()
+            assert sql.boolean_named(taken, "got").must()
+            _ = postgres.query(@other, unlock.text, unlock.params).must()
+            postgres.exec_script(@db, "DROP TABLE rebel_live_versions").must()
+            print(
+                "postgres live (sql/migrate): table TIMESTAMPTZ, 3 applied under the lock, 0 to plan again, a step back and back to 0, the lock released"
+            )
+            postgres.close(@other).must()
+            postgres.close(@db).must()

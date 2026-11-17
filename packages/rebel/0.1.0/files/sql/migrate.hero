@@ -1,0 +1,847 @@
+# Numbered migrations of a database's schema: read from the SQL files of a
+# folder or given as values, checked against a table of the versions already
+# applied, and planned as steps, each applying or undoing one migration in
+# its own transaction, that the program runs with its driver.
+#
+# It runs no statement and depends on no driver: every function answers the
+# statements, as `sql/build` writes them for PostgreSQL or SQLite, and the
+# program runs them with `sql/postgres` or `sql/sqlite`. A run is: the
+# statement of `create_table`, run with the driver's `exec`; the rows of
+# `select_applied`, read by `read_applied`; a plan, `plan_up` or another;
+# and for each step `begin` where `in_transaction` holds, `exec_script` of
+# its `script`, `exec` of its `version_statement`, then `commit`, or
+# `rollback` where one of them failed. `format_plan` writes a plan as text
+# for a dry run.
+#
+# Migrations are files named `0001_create_users.up.sql` and
+# `0001_create_users.down.sql`: a version of digits, an underscore, a name,
+# the direction. The table of versions keeps each one's name, the SHA-256 of
+# its up script and when it ran; **a migration whose up script changed after
+# it ran is refused**, never run again or stepped back in silence. A script
+# whose first line is `-- no-transaction` runs outside a transaction, for a
+# statement neither database runs inside one (`CREATE INDEX CONCURRENTLY`,
+# `VACUUM`); a failure halfway through it leaves what ran, and no version.
+#
+# It fails `invalid` for a file named almost as a migration, two migrations
+# of one version, a changed migration or an older one found after a newer
+# ran; `not_found` for a version no migration has and a step back with no
+# down script; `unsupported` for a lock SQLite has no form for; and with the
+# codes of `fs` and of reading a file where the folder cannot be read.
+
+use bytes
+use crypto
+use fs
+use path
+use sql
+use sql/build
+use sql/migrate/internal/files
+use sql/migrate/internal/versions
+use strings
+use time
+
+## Migrations
+
+# The table of applied versions unless `Options` names another.
+constant DEFAULT_TABLE: str
+    "applied_migrations"
+
+# The first line of a script that runs outside a transaction, for a
+# statement neither database runs inside one; `step` reads it.
+constant NO_TRANSACTION: str
+    versions.NO_TRANSACTION
+
+# A change to a database's schema, with the way back where there is one.
+# Built directly, or read by `read_migrations`.
+record Migration
+    # The version, above 0: migrations apply in its order, and no two share
+    # one.
+    version: i64
+    # What it does, in a few words: `create_users`. Not empty.
+    name: str
+    # The statements that apply it, separated by semicolons, as a driver's
+    # `exec_script` runs them.
+    up: str
+    # The statements that undo it; a failure (`not_found`) where there are
+    # none, and stepping back past it fails.
+    down: str?
+
+# The migrations in the folder `dir`, in the order of their versions.
+#
+# - `dir`: the folder. Each file whose name ends in `.sql`, in any case, is
+#   a migration's: `<version>_<name>.up.sql` or `<version>_<name>.down.sql`,
+#   the version digits (`0001` and `1` are one version), the name not
+#   empty. Every other file, and every folder, is left alone.
+#
+# The up file and the down file of one version must give one name; a
+# version with no down file has no way back.
+#
+# Fails `invalid` where a `.sql` file is not so named, where two files give
+# one version and direction, where a down file has no up file, or where the
+# names of a version's two files differ, the message naming the files; fails
+# as `fs.read_dir` and the language's `read_file` do where the folder or a
+# file cannot be read. See also `Migration`.
+function read_migrations(dir: str) -> [Migration]?
+    entries = fs.read_dir(dir)?
+    found: [files.File] @= []
+
+    for entry in entries
+        if (entry.kind == .file || entry.kind == .link) && files.is_sql(entry.name)
+            text = read_file(path.join_all([dir, entry.name]))?
+            found @ found.push(files.File(name: entry.name, text: text))
+
+    migrations: [Migration] @= []
+
+    for g in files.gathered(found)?
+        migrations @ migrations.push(Migration(version: g.version, name: g.name, up: g.up, down: g.down))
+
+    return ok(migrations)
+
+# The checksum the table of versions keeps of `script`: its SHA-256, in 64
+# lowercase hexadecimal digits.
+#
+# - `script`: an up script, compared byte for byte, so a space changed is a
+#   change.
+#
+# See also `status`.
+function checksum_of(script: str) -> str
+    return bytes.format_hex(crypto.sha256_text(script))
+
+## The table of versions
+
+# How a database keeps its versions.
+record Options
+    # The database the statements are written for.
+    dialect: build.Dialect
+    # The table of applied versions, cut at its dots: `DEFAULT_TABLE`, or
+    # `app.migrations` in a schema.
+    table: str
+    # Whether a migration older than the last applied may still apply,
+    # where two branches of work each added one; refused unless set.
+    allow_out_of_order: bool
+    # Whether a version applied that no migration has is passed over, where
+    # old files were removed; refused unless set.
+    ignore_missing: bool
+
+# The options of a database of `dialect`, its versions in `DEFAULT_TABLE`,
+# refusing an out-of-order or a missing migration.
+#
+# - `dialect`: the database.
+#
+# See also `Options`.
+function options(dialect: build.Dialect) -> Options
+    return Options(dialect: dialect, table: DEFAULT_TABLE, allow_out_of_order: false, ignore_missing: false)
+
+# A version recorded in the table, as `read_applied` reads it.
+record Applied
+    # The version.
+    version: i64
+    # Its migration's name when it ran.
+    name: str
+    # The checksum of its up script when it ran, as `checksum_of` writes it.
+    checksum: str
+    # When it ran, by the database's clock.
+    applied_at: time.Instant
+
+# The statement that makes the table of versions where it is not there:
+# `CREATE TABLE IF NOT EXISTS`, with the columns `version`, `name`,
+# `checksum` and `applied_at`, the version its primary key.
+#
+# - `opts`: the database and the table.
+#
+# Run it with the driver's `exec` before anything else, every time: it does
+# nothing where the table is there. Fails `invalid` where the table's name
+# has an empty part or a zero byte. See also `select_applied`.
+function create_table(opts: Options) -> build.Statement?
+    table = match sql.quote_qualified(strings.split(s: opts.table, sep: "."))
+        .ok q  => q
+        .err e => return fail(code: e.code, msg: f"the table of versions \"{opts.table}\": {e.msg}")
+
+    moment = match opts.dialect
+        .postgres => "TIMESTAMPTZ"
+        .sqlite   => "TIMESTAMP"
+
+    text = f"CREATE TABLE IF NOT EXISTS {table} (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" {moment} NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    return ok(build.Statement(text: text, params: []))
+
+# The query of every version applied, in the order of the versions.
+#
+# - `opts`: the database and the table.
+#
+# Run it with the driver's `query` and give the rows to `read_applied`.
+# Fails as `create_table` does. See also `read_applied`.
+function select_applied(opts: Options) -> build.Statement?
+    q @= build.select(
+        from: opts.table,
+        columns: build.columns_named([Applied::version, Applied::name, Applied::checksum, Applied::applied_at])
+    )
+
+    q.order_by @ [build.ascending(Applied::version)]
+    return build.to_sql(.select(query: q), opts.dialect)
+
+# The versions in `rows`, as `select_applied`'s query answers them.
+#
+# - `rows`: the rows, each holding `version`, `name`, `checksum` and
+#   `applied_at` by name.
+#
+# The answer keeps the rows' order. Fails as `sql.integer_named` and the
+# other reads of a row do, `not_found` for a column missing and `invalid`
+# for a value of another kind. See also `select_applied`, `current_version`.
+function read_applied(rows: sql.Rows) -> [Applied]?
+    found: [Applied] @= []
+
+    for row in rows.rows
+        found @ found.push(
+            Applied(version: sql.integer_named(row, Applied::version)?, name: sql.text_named(row, Applied::name)?, checksum: sql.text_named(row, Applied::checksum)?, applied_at: sql.instant_named(row, Applied::applied_at)?)
+        )
+
+    return ok(found)
+
+# The version a database stands at: the largest applied.
+#
+# - `applied`: the versions applied, in any order.
+#
+# Fails `not_found` where none is. See also `status`.
+function current_version(applied: [Applied]) -> i64?
+    if applied.len() == 0
+        return fail(code: sql.NOT_FOUND, msg: "no version is applied")
+    largest: i64 @= applied[0].version
+
+    for a in applied
+        if a.version > largest
+            largest @ a.version
+
+    return ok(largest)
+
+## Plans
+
+# Which migrations a database has applied and which wait.
+record Status
+    # The migrations applied, in the order of their versions.
+    applied: [Migration]
+    # The migrations not applied, in the order of their versions.
+    pending: [Migration]
+
+# The migrations applied and waiting, each applied version checked against
+# its migration.
+#
+# - `migrations`: the migrations, in any order.
+# - `applied`: the versions applied, as `read_applied` reads them.
+# - `opts`: the options; `allow_out_of_order` and `ignore_missing` relax
+#   two refusals.
+#
+# Fails `invalid` where a version is 0 or below, two migrations share one,
+# a name is empty, an applied migration's up script changed since it ran
+# (the message giving both checksums), or a migration waits below the
+# largest applied version; fails `not_found` where a version applied has no
+# migration. See also `plan_up`, `plan_down`.
+function status(migrations: [Migration], applied: [Applied], opts: Options) -> Status?
+    known: [versions.Known] @= []
+    done: [versions.Done] @= []
+
+    for m in migrations
+        known @ known.push(versions.Known(version: m.version, name: m.name, checksum: checksum_of(m.up)))
+
+    for a in applied
+        done @ done.push(versions.Done(version: a.version, name: a.name, checksum: a.checksum))
+
+    split = versions.split(known, done: done, allow_out_of_order: opts.allow_out_of_order, ignore_missing: opts.ignore_missing)?
+    ran: [Migration] @= []
+    waiting: [Migration] @= []
+
+    for i in split.applied
+        ran @ ran.push(migrations[i])
+
+    for i in split.pending
+        waiting @ waiting.push(migrations[i])
+
+    return ok(Status(applied: ran, pending: waiting))
+
+# Which way a step goes.
+variant Direction
+    # The migration applied: its up script, and its version recorded.
+    up
+    # The migration undone: its down script, and its version removed.
+    down
+
+# One migration applied or undone: what the program runs, in order.
+record Step
+    # The migration's version.
+    version: i64
+    # The migration's name.
+    name: str
+    # Which way it goes.
+    direction: Direction
+    # The script, run with the driver's `exec_script`.
+    script: str
+    # Whether the program runs it between `begin` and `commit`; false where
+    # the script's first line is `-- no-transaction`.
+    in_transaction: bool
+    # The statement that records the version (an INSERT going up) or
+    # removes it (a DELETE going down), run with `exec` after the script.
+    version_statement: build.Statement
+
+# The step that applies or undoes `migration`.
+#
+# - `migration`: the migration.
+# - `direction`: which way.
+# - `opts`: the database and the table.
+#
+# Recording a version by its step's `version_statement` alone marks it
+# applied without running it, as for a database made before its migrations.
+# Fails `not_found` going down where the migration has no down script, and
+# as `create_table` does. See also `plan_up`.
+function step(migration: Migration, direction: Direction, opts: Options) -> Step?
+    script = match direction
+        .up => migration.up
+        .down =>
+            match migration.down
+                .ok text => text
+                .err _ => return fail(
+                    code: sql.NOT_FOUND,
+                    msg: f"the migration {migration.version} (\"{migration.name}\") has no down script, so it cannot be stepped back"
+                )
+
+    row: [sql.Value] = [.integer(v: migration.version), .text(v: migration.name), .text(v: checksum_of(migration.up))]
+
+    statement = match direction
+        .up => build.to_sql(.insert(query: build.insert(into: opts.table, columns: [Applied::version, Applied::name, Applied::checksum], rows: [row])), opts.dialect)?
+        .down =>
+            d @= build.delete(opts.table)
+            d.where @ [build.equal(Applied::version, .integer(v: migration.version))]
+            build.to_sql(.delete(query: d), opts.dialect)?
+
+    return ok(
+        Step(version: migration.version, name: migration.name, direction: direction, script: script, in_transaction: !versions.outside_transaction(script), version_statement: statement)
+    )
+
+# The steps that apply every migration waiting, the oldest first.
+#
+# - `migrations`: the migrations, in any order.
+# - `applied`: the versions applied.
+# - `opts`: the options.
+#
+# Nothing waiting is no step. Fails as `status` does. See also
+# `plan_up_to`, `plan_down`.
+function plan_up(migrations: [Migration], applied: [Applied], opts: Options) -> [Step]?
+    s = status(migrations, applied: applied, opts: opts)?
+    steps: [Step] @= []
+
+    for m in s.pending
+        steps @ steps.push(step(m, direction: .up, opts: opts)?)
+
+    return ok(steps)
+
+# The steps that apply every migration waiting up to `version`, it
+# included.
+#
+# - `migrations`: the migrations, in any order.
+# - `applied`: the versions applied.
+# - `version`: the last version to apply; one applied already gives no
+#   step.
+# - `opts`: the options.
+#
+# Fails `not_found` where no migration has `version`, and as `status` does.
+# See also `plan_up`.
+function plan_up_to(migrations: [Migration], applied: [Applied], version: i64, opts: Options) -> [Step]?
+    known: bool @= false
+
+    for m in migrations
+        if m.version == version
+            known @ true
+
+    if !known
+        return fail(code: sql.NOT_FOUND, msg: f"no migration has version {version}")
+    s = status(migrations, applied: applied, opts: opts)?
+    steps: [Step] @= []
+
+    for m in s.pending
+        if m.version <= version
+            steps @ steps.push(step(m, direction: .up, opts: opts)?)
+
+    return ok(steps)
+
+# The step that undoes the last migration applied; none where none is.
+#
+# - `migrations`: the migrations, in any order.
+# - `applied`: the versions applied.
+# - `opts`: the options.
+#
+# Fails `not_found` where that migration has no down script, and as
+# `status` does. See also `plan_down_to`.
+function plan_down(migrations: [Migration], applied: [Applied], opts: Options) -> [Step]?
+    s = status(migrations, applied: applied, opts: opts)?
+
+    if applied.len() == 0
+        return ok([])
+    current = current_version(applied)?
+    last = s.applied.len() - 1
+
+    if last < 0 || s.applied[last].version != current
+        return fail(
+            code: sql.NOT_FOUND,
+            msg: f"version {current} is applied and no migration has it, so no step goes back past it"
+        )
+    return ok([step(s.applied[last], direction: .down, opts: opts)?])
+
+# The steps that undo every migration applied above `version`, the newest
+# first.
+#
+# - `migrations`: the migrations, in any order.
+# - `applied`: the versions applied.
+# - `version`: the version to stand at after them; 0 undoes every one, and
+#   one at or above the current version gives no step.
+# - `opts`: the options.
+#
+# Fails `not_found` where `version` is neither 0 nor a migration's, or
+# where a migration to undo has no down script, before any step is
+# answered; fails as `status` does. See also `plan_down`.
+function plan_down_to(migrations: [Migration], applied: [Applied], version: i64, opts: Options) -> [Step]?
+    if version != 0
+        known: bool @= false
+
+        for m in migrations
+            if m.version == version
+                known @ true
+
+        if !known
+            return fail(code: sql.NOT_FOUND, msg: f"no migration has version {version}, and 0 undoes every one")
+    s = status(migrations, applied: applied, opts: opts)?
+
+    for a in applied
+        if a.version > version
+            held: bool @= false
+
+            for m in s.applied
+                if m.version == a.version
+                    held @ true
+
+            if !held
+                return fail(
+                    code: sql.NOT_FOUND,
+                    msg: f"version {a.version} (\"{a.name}\") is applied and no migration has it, so no step goes back past it"
+                )
+
+    steps: [Step] @= []
+    at: i64 @= s.applied.len() - 1
+
+    while at >= 0
+        if s.applied[at].version > version
+            steps @ steps.push(step(s.applied[at], direction: .down, opts: opts)?)
+        at @ at - 1
+
+    return ok(steps)
+
+# `steps` as the text of a dry run: for each, a comment naming it, `BEGIN;`
+# where it runs in a transaction, its script, its version statement with its
+# parameters in a comment, and `COMMIT;`.
+#
+# - `steps`: the plan; `[]` gives "".
+#
+# The text is for a person to read: the version statements hold
+# placeholders, so it is not a script to run. See also `plan_up`.
+function format_plan(steps: [Step]) -> str
+    lines: [str] @= []
+
+    for s in steps
+        if lines.len() > 0
+            lines @ lines.push("")
+
+        way = match s.direction
+            .up   => "up"
+            .down => "down"
+
+        lines @ lines.push(f"-- {s.version} {s.name} ({way})")
+
+        if s.in_transaction
+            lines @ lines.push("BEGIN;")
+        lines @ lines.push(s.script)
+        lines @ lines.push(s.version_statement.text + ";")
+        shown: [str] @= []
+
+        for v in s.version_statement.params
+            shown @ shown.push(versions.shown(v))
+
+        lines @ lines.push("-- parameters: " + shown.join(", "))
+
+        if s.in_transaction
+            lines @ lines.push("COMMIT;")
+
+    return lines.join("\n")
+
+## Locking
+
+# The statement that waits until no other program migrates the database
+# and keeps it so until `unlock_statement`: PostgreSQL's
+# `pg_advisory_lock`, its key taken from the table's name.
+#
+# - `opts`: the database and the table.
+#
+# Run it with `query` on the connection that migrates, before
+# `select_applied`. Fails `unsupported` for SQLite, whose own lock lets one
+# writer at a time: a second program's step fails on the version's primary
+# key and rolls back. See also `unlock_statement`.
+function lock_statement(opts: Options) -> build.Statement?
+    match opts.dialect
+        .postgres => return versions.advisory(table: opts.table, function_name: "pg_advisory_lock")
+        .sqlite => return fail(
+            code: sql.UNSUPPORTED,
+            msg: "SQLite has no advisory lock: its own lock lets one writer at a time, and the version's primary key refuses a second program's step"
+        )
+
+# The statement that lets another program migrate again, after
+# `lock_statement`'s: PostgreSQL's `pg_advisory_unlock`.
+#
+# - `opts`: the database and the table.
+#
+# Fails `unsupported` for SQLite. See also `lock_statement`.
+function unlock_statement(opts: Options) -> build.Statement?
+    match opts.dialect
+        .postgres => return versions.advisory(table: opts.table, function_name: "pg_advisory_unlock")
+        .sqlite => return fail(
+            code: sql.UNSUPPORTED,
+            msg: "SQLite has no advisory lock: its own lock lets one writer at a time, and the version's primary key refuses a second program's step"
+        )
+
+## Tests
+
+test "checksum_of: the empty script, a text of more than one byte, a space added"
+    assert checksum_of("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert checksum_of("città") == "74486d610c94568c13bdf76de467bf3fb915a5f6023979874dcd4cca877c0649"
+    assert checksum_of("CREATE TABLE users(id INTEGER PRIMARY KEY)") != checksum_of("CREATE TABLE users(id INTEGER PRIMARY KEY) ")
+
+test "read_migrations: in order, other files and folders left alone, a misnamed file refused, no folder"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-migrate-*").must()
+    write_file(path: path.join_all([root, "0002_add_name.up.sql"]), text: "ALTER TABLE users ADD name TEXT").must()
+    write_file(
+        path: path.join_all([root, "0001_create_users.up.sql"]),
+        text: "CREATE TABLE users(id INTEGER PRIMARY KEY)"
+    ).must()
+    write_file(path: path.join_all([root, "0001_create_users.down.sql"]), text: "DROP TABLE users").must()
+    write_file(path: path.join_all([root, "README.md"]), text: "notes").must()
+    fs.make_dir(path.join_all([root, "old.sql"])).must()
+    found = read_migrations(root).must()
+    assert found.len() == 2
+    assert found[0].version == 1 && found[0].name == "create_users" && found[0].down.must() == "DROP TABLE users"
+    assert found[1].version == 2 && found[1].up == "ALTER TABLE users ADD name TEXT" && found[1].down.is_err()
+    write_file(path: path.join_all([root, "3-bad.up.sql"]), text: "").must()
+
+    match read_migrations(root)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+    fs.remove_all(root).must()
+
+    match read_migrations(root)
+        .ok _  => assert false
+        .err e => assert e.code == fs.FILE_NOT_FOUND
+
+test "create_table and select_applied: each database, a table in a schema, an empty part"
+    pg = create_table(options(.postgres)).must()
+    assert pg.text == "CREATE TABLE IF NOT EXISTS \"applied_migrations\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    assert pg.params == []
+    opts @= options(.sqlite)
+    opts.table @ "app.versions"
+    assert create_table(opts).must().text == "CREATE TABLE IF NOT EXISTS \"app\".\"versions\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+    assert select_applied(opts).must().text == "SELECT \"version\", \"name\", \"checksum\", \"applied_at\" FROM \"app\".\"versions\" ORDER BY \"version\""
+    opts.table @ "app."
+
+    match create_table(opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the table of versions \"app.\": part 1 of the name is empty, and no database keeps an empty name"
+
+    assert select_applied(opts).is_err()
+
+test "read_applied and current_version: no row, several, a column missing, a value of another kind"
+    names = ["version", "name", "checksum", "applied_at"]
+    two = sql.Row(names: names, values: [.integer(v: 2), .text(v: "b"), .text(v: "c2"), .instant(v: time.epoch())])
+    one = sql.Row(names: names, values: [.integer(v: 1), .text(v: "a"), .text(v: "c1"), .instant(v: time.epoch())])
+    found = read_applied(sql.Rows(columns: [], rows: [two, one])).must()
+    assert found == [Applied(version: 2, name: "b", checksum: "c2", applied_at: time.epoch()), Applied(version: 1, name: "a", checksum: "c1", applied_at: time.epoch())]
+    assert current_version(found).must() == 2
+    assert read_applied(sql.Rows(columns: [], rows: [])).must() == []
+
+    match current_version([])
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND
+
+    short = sql.Row(names: ["version", "name", "checksum"], values: [.integer(v: 1), .text(v: "a"), .text(v: "c1")])
+
+    match read_applied(sql.Rows(columns: [], rows: [short]))
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND
+
+    texts = sql.Row(names: names, values: [.text(v: "1"), .text(v: "a"), .text(v: "c1"), .instant(v: time.epoch())])
+
+    match read_applied(sql.Rows(columns: [], rows: [texts]))
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+test "status: applied and waiting in order, a changed migration refused"
+    first = Migration(version: 1, name: "a", up: "A", down: ok("a"))
+    second = Migration(version: 2, name: "b", up: "B", down: ok("b"))
+    ran = [Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())]
+    s = status([second, first], applied: ran, opts: options(.sqlite)).must()
+    assert s.applied.len() == 1 && s.applied[0].version == 1 && s.pending.len() == 1 && s.pending[0].version == 2
+    changed = [Applied(version: 1, name: "a", checksum: checksum_of("A "), applied_at: time.epoch())]
+
+    match status([first, second], applied: changed, opts: options(.sqlite))
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID
+
+test "step: up and down for each database, no down script, outside a transaction"
+    m = Migration(
+        version: 3,
+        name: "add_index",
+        up: "-- no-transaction\nCREATE INDEX CONCURRENTLY i ON users(name)",
+        down: ok("DROP INDEX i")
+    )
+    going_up = step(m, direction: .up, opts: options(.postgres)).must()
+    assert !going_up.in_transaction && going_up.direction == .up
+    assert going_up.version_statement.text == "INSERT INTO \"applied_migrations\" (\"version\", \"name\", \"checksum\") VALUES ($1, $2, $3)"
+    assert going_up.version_statement.params == [.integer(v: 3), .text(v: "add_index"), .text(v: checksum_of(m.up))]
+    going_down = step(m, direction: .down, opts: options(.sqlite)).must()
+    assert going_down.in_transaction && going_down.script == "DROP INDEX i"
+    assert going_down.version_statement == build.Statement(text: "DELETE FROM \"applied_migrations\" WHERE \"version\" = ?1", params: [.integer(v: 3)])
+    one_way = Migration(version: 4, name: "x", up: "X", down: fail(code: sql.NOT_FOUND, msg: "no down script"))
+
+    match step(one_way, direction: .down, opts: options(.sqlite))
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "the migration 4 (\"x\") has no down script, so it cannot be stepped back"
+
+test "plan_up_to and plan_down_to: a version no migration has, 0, a version already passed, a step back with no script"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+        Migration(version: 3, name: "c", up: "C", down: fail(code: sql.NOT_FOUND, msg: "no down script"))
+    ]
+
+    opts = options(.sqlite)
+
+    match plan_up_to(ms, applied: [], version: 7, opts: opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "no migration has version 7"
+
+    assert plan_up_to(ms, applied: [], version: 2, opts: opts).must().len() == 2
+    ran = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: checksum_of("B"), applied_at: time.epoch())
+    ]
+    assert plan_up_to(ms, applied: ran, version: 1, opts: opts).must().len() == 0
+    back = plan_down_to(ms, applied: ran, version: 0, opts: opts).must()
+    assert back.len() == 2 && back[0].version == 2 && back[1].version == 1 && back[1].direction == .down
+    assert plan_down_to(ms, applied: ran, version: 2, opts: opts).must().len() == 0
+
+    match plan_down_to(ms, applied: ran, version: 5, opts: opts)
+        .ok _  => assert false
+        .err e => assert e.msg == "no migration has version 5, and 0 undoes every one"
+
+    all_three = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: checksum_of("B"), applied_at: time.epoch())
+        Applied(version: 3, name: "c", checksum: checksum_of("C"), applied_at: time.epoch())
+    ]
+
+    match plan_down_to(ms, applied: all_three, version: 0, opts: opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND
+
+test "plan_down: none applied, the last applied, a last applied whose file is gone"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+    ]
+    assert plan_down(ms, applied: [], opts: options(.sqlite)).must().len() == 0
+    ran = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: checksum_of("B"), applied_at: time.epoch())
+    ]
+    back = plan_down(ms, applied: ran, opts: options(.sqlite)).must()
+    assert back.len() == 1 && back[0].version == 2 && back[0].script == "b"
+    gone = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 9, name: "z", checksum: "x", applied_at: time.epoch())
+    ]
+    opts @= options(.sqlite)
+    opts.ignore_missing @ true
+    opts.allow_out_of_order @ true
+
+    match plan_down(ms, applied: gone, opts: opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND && e.msg == "version 9 is applied and no migration has it, so no step goes back past it"
+
+    match plan_down_to(ms, applied: gone, version: 0, opts: opts)
+        .ok _  => assert false
+        .err e => assert e.code == sql.NOT_FOUND
+
+test "format_plan: none, a step in a transaction, one outside"
+    assert format_plan([]) == ""
+    m = Migration(
+        version: 1,
+        name: "create_users",
+        up: "CREATE TABLE users(id INTEGER PRIMARY KEY);",
+        down: ok("DROP TABLE users;")
+    )
+    s = step(m, direction: .up, opts: options(.sqlite)).must()
+    assert format_plan([s]) == f"-- 1 create_users (up)\nBEGIN;\nCREATE TABLE users(id INTEGER PRIMARY KEY);\nINSERT INTO \"applied_migrations\" (\"version\", \"name\", \"checksum\") VALUES (?1, ?2, ?3);\n-- parameters: 1, 'create_users', '{checksum_of(m.up)}'\nCOMMIT;"
+    outside = step(
+        Migration(version: 2, name: "v", up: "-- no-transaction\nVACUUM;", down: ok("")),
+        direction: .up,
+        opts: options(.sqlite)
+    ).must()
+    assert !outside.in_transaction
+    assert format_plan([s, outside]) == format_plan([s]) + f"\n\n-- 2 v (up)\n-- no-transaction\nVACUUM;\nINSERT INTO \"applied_migrations\" (\"version\", \"name\", \"checksum\") VALUES (?1, ?2, ?3);\n-- parameters: 2, 'v', '{checksum_of(outside.script)}'"
+    back = step(
+        Migration(version: 2, name: "v", up: "V", down: ok("")),
+        direction: .down,
+        opts: options(.sqlite)
+    ).must()
+    assert format_plan([back]) == "-- 2 v (down)\nBEGIN;\n\nDELETE FROM \"applied_migrations\" WHERE \"version\" = ?1;\n-- parameters: 2\nCOMMIT;"
+
+test "lock_statement and unlock_statement: one key for both, SQLite unsupported"
+    lock = lock_statement(options(.postgres)).must()
+    unlock = unlock_statement(options(.postgres)).must()
+    assert lock.text == "SELECT pg_advisory_lock($1)" && unlock.text == "SELECT pg_advisory_unlock($1)"
+    assert lock.params == unlock.params && lock.params.len() == 1
+
+    match lock_statement(options(.sqlite))
+        .ok _  => assert false
+        .err e => assert e.code == sql.UNSUPPORTED
+
+    assert unlock_statement(options(.sqlite)).is_err()
+
+## Examples
+
+# The migrations of a folder, read in the order of their versions.
+test "read_migrations: a folder of two files"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-migrate-*").must()
+    write_file(
+        path: path.join_all([root, "0001_create_users.up.sql"]),
+        text: "CREATE TABLE users(id INTEGER PRIMARY KEY)"
+    ).must()
+    write_file(path: path.join_all([root, "0001_create_users.down.sql"]), text: "DROP TABLE users").must()
+    found = read_migrations(root).must()
+    assert found.len() == 1 && found[0].name == "create_users" && found[0].down.must() == "DROP TABLE users"
+    fs.remove_all(root).must()
+
+# The checksum the table keeps of an up script.
+test "checksum_of: the SHA-256 of a script"
+    assert checksum_of("CREATE TABLE users(id INTEGER PRIMARY KEY)") == "21b34fbcdb8c7f4dc42c9c69592ac375ab25b05e0cc03f046148e1ff1cbd258e"
+
+# The options of a PostgreSQL database, every refusal kept.
+test "options: the default table"
+    opts = options(.postgres)
+    assert opts.table == DEFAULT_TABLE && !opts.allow_out_of_order && !opts.ignore_missing
+
+# The table of versions, made where it is not there.
+test "create_table: the table for SQLite"
+    s = create_table(options(.sqlite)).must()
+    assert s.text == "CREATE TABLE IF NOT EXISTS \"applied_migrations\" (\"version\" BIGINT PRIMARY KEY, \"name\" TEXT NOT NULL, \"checksum\" TEXT NOT NULL, \"applied_at\" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
+
+# The query of the versions applied, which `read_applied` reads.
+test "select_applied: the query for PostgreSQL"
+    s = select_applied(options(.postgres)).must()
+    assert s.text == "SELECT \"version\", \"name\", \"checksum\", \"applied_at\" FROM \"applied_migrations\" ORDER BY \"version\""
+
+# The versions a query answered, read by the record's field names.
+test "read_applied: one row"
+    row = sql.Row(
+        names: ["version", "name", "checksum", "applied_at"],
+        values: [.integer(v: 1), .text(v: "create_users"), .text(v: "21b3"), .instant(v: time.epoch())]
+    )
+    found = read_applied(sql.Rows(columns: [], rows: [row])).must()
+    assert found == [Applied(version: 1, name: "create_users", checksum: "21b3", applied_at: time.epoch())]
+
+# The version a database stands at.
+test "current_version: the largest applied"
+    ran = [
+        Applied(version: 1, name: "a", checksum: "", applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: "", applied_at: time.epoch())
+    ]
+    assert current_version(ran).must() == 2
+
+# One migration applied and one waiting.
+test "status: applied and waiting"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+    ]
+    ran = [Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())]
+    s = status(ms, applied: ran, opts: options(.sqlite)).must()
+    assert s.applied[0].name == "a" && s.pending[0].name == "b"
+
+# The step that applies one migration: its script, then the INSERT that
+# records it.
+test "step: one migration applied"
+    m = Migration(
+        version: 1,
+        name: "create_users",
+        up: "CREATE TABLE users(id INTEGER PRIMARY KEY)",
+        down: ok("DROP TABLE users")
+    )
+    s = step(m, direction: .up, opts: options(.postgres)).must()
+    assert s.in_transaction && s.script == m.up
+    assert s.version_statement.text == "INSERT INTO \"applied_migrations\" (\"version\", \"name\", \"checksum\") VALUES ($1, $2, $3)"
+
+# Every migration waiting, the oldest first.
+test "plan_up: two migrations waiting"
+    ms = [
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+    ]
+    steps = plan_up(ms, applied: [], opts: options(.sqlite)).must()
+    assert steps.len() == 2 && steps[0].name == "a" && steps[1].name == "b"
+
+# The migrations waiting up to a version, and not past it.
+test "plan_up_to: up to the second of three"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+        Migration(version: 3, name: "c", up: "C", down: ok("c"))
+    ]
+    steps = plan_up_to(ms, applied: [], version: 2, opts: options(.sqlite)).must()
+    assert steps.len() == 2 && steps[1].version == 2
+
+# The last migration applied, stepped back.
+test "plan_down: one step back"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+    ]
+    ran = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: checksum_of("B"), applied_at: time.epoch())
+    ]
+    steps = plan_down(ms, applied: ran, opts: options(.sqlite)).must()
+    assert steps.len() == 1 && steps[0].version == 2 && steps[0].direction == .down
+
+# Every migration undone, the newest first.
+test "plan_down_to: back to no version"
+    ms = [
+        Migration(version: 1, name: "a", up: "A", down: ok("a"))
+        Migration(version: 2, name: "b", up: "B", down: ok("b"))
+    ]
+    ran = [
+        Applied(version: 1, name: "a", checksum: checksum_of("A"), applied_at: time.epoch())
+        Applied(version: 2, name: "b", checksum: checksum_of("B"), applied_at: time.epoch())
+    ]
+    steps = plan_down_to(ms, applied: ran, version: 0, opts: options(.sqlite)).must()
+    assert steps.len() == 2 && steps[0].version == 2 && steps[1].version == 1
+
+# A dry run: the plan written for a person to read.
+test "format_plan: the first line of a dry run"
+    m = Migration(
+        version: 1,
+        name: "create_users",
+        up: "CREATE TABLE users(id INTEGER PRIMARY KEY);",
+        down: ok("DROP TABLE users;")
+    )
+    text = format_plan(plan_up([m], applied: [], opts: options(.sqlite)).must())
+    assert strings.has_prefix(s: text, prefix: "-- 1 create_users (up)\nBEGIN;\nCREATE TABLE users")
+
+# PostgreSQL's lock, taken before reading the versions.
+test "lock_statement: an advisory lock"
+    assert lock_statement(options(.postgres)).must().text == "SELECT pg_advisory_lock($1)"
+
+# PostgreSQL's lock, given back after the last step.
+test "unlock_statement: the lock given back"
+    assert unlock_statement(options(.postgres)).must().text == "SELECT pg_advisory_unlock($1)"

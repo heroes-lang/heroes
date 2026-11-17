@@ -1,0 +1,1629 @@
+# Queries as values: a SELECT, an INSERT, an UPDATE or a DELETE built by
+# functions and composed as any value is, then written by `to_sql` as the
+# text and the parameters a driver of Rebel runs, with each database's own
+# placeholders: `$1` for PostgreSQL, `?1` for SQLite.
+#
+# It talks to no database and depends on no driver: `to_sql` answers a
+# `Statement`, whose `text` and `params` go to `exec` or `query` of
+# `sql/postgres` or `sql/sqlite` as they are. Reading the rows back is
+# `sql`'s (`sql.text_named` and the rest), and a record's own field names,
+# `User::name` (spec § 9), name the columns on both sides, so the compiler
+# checks them. It makes no table (a migration's SQL does, `sql/migrate`),
+# and it is no ORM: no object is tracked, saved or loaded behind a program,
+# for that needs reflection and objects shared between places, and here
+# every value is a copy.
+#
+# **A value is a parameter, always.** No function takes a value into the
+# text: a value goes in as a `sql.Value` and comes out in `params`, so no
+# value can change what a statement means. Every name is quoted, always, by
+# `sql.quote_identifier`. A name given as text is cut at its dots into its
+# parts: `users.id` is the column `id` of the table `users`. The one way to
+# write SQL this package does not offer is `raw_without_values`, whose text
+# may hold no value and is refused where it holds a quote, a semicolon, a
+# comment, a `?` or a `$`.
+#
+# A query is checked whole when `to_sql` writes it, and a mistake fails
+# there, never in the database: `invalid` for a name that is empty or holds
+# a zero byte, a row of the wrong length, an UPDATE or a DELETE with no
+# condition, a `NULL` where no comparison can match it, and a fragment, an
+# operator or a type that could carry a value; `unsupported` for what
+# PostgreSQL writes and SQLite does not; and `limit` for more parameters than
+# PostgreSQL's protocol carries.
+
+use sql
+use sql/build/internal/clauses
+use sql/build/internal/statements
+use sql/build/internal/tokens
+
+## Databases
+
+# The database a statement is written for: the placeholders it reads and
+# what it supports.
+variant Dialect
+    # PostgreSQL: placeholders `$1`, `$2` and on.
+    postgres
+    # SQLite: placeholders `?1`, `?2` and on.
+    sqlite
+
+# A statement as a driver takes it: `postgres.query(@db, s.text, s.params)`.
+record Statement
+    # The statement's text, every value in it a placeholder.
+    text: str
+    # The values of the placeholders, in order: the first is `$1` or `?1`.
+    params: [sql.Value]
+
+## Expressions
+
+# A value a statement computes: a column, a parameter, a function's call,
+# an operation. Only the functions under this heading and `subquery` make
+# one. Its one field is its private pieces, which only this package reads.
+record Expr
+    # The pieces of its text and what kind of expression it is.
+    part: clauses.Part
+
+# The column `name`: `"name"`, or `"users"."id"` for `users.id`.
+#
+# - `name`: the column's name, cut at its dots into its parts, the table's
+#   (and the schema's) before the column's; `User::name` names a record's
+#   field (spec § 9).
+#
+# An empty part, as in `users.` or "", fails `to_sql` `invalid`. See also
+# `columns_named`, `every_column`.
+function column(name: str) -> Expr
+    return Expr(part: clauses.column_part(name))
+
+# The columns `names`, in order, as `column` makes each one.
+#
+# - `names`: the columns' names, each cut at its dots; `[]` gives `[]`.
+#
+# The answer is as long as `names`. See also `column`.
+function columns_named(names: [str]) -> [Expr]
+    return names.map(column)
+
+# Every column of every table a SELECT reads: `*`.
+#
+# See also `every_column_of`, `count_all`.
+function every_column() -> Expr
+    return Expr(part: clauses.star_part())
+
+# Every column of the table `name`: `"users".*`.
+#
+# - `name`: the table's name or its other name in the query, cut at its
+#   dots.
+#
+# See also `every_column`.
+function every_column_of(name: str) -> Expr
+    return Expr(part: clauses.star_of_part(name))
+
+# The value `v`, as a parameter: `$1` or `?1`, with `v` in the statement's
+# `params`.
+#
+# - `v`: the value; `.null_value` is SQL's `NULL`, which `compare` and
+#   `equal` write as `IS NULL`.
+#
+# See also `equal`.
+function parameter(v: sql.Value) -> Expr
+    return Expr(part: clauses.parameter_part(v))
+
+# A call of the function of SQL `name` on `arguments`: `lower("name")`,
+# `coalesce("nick", $1)`.
+#
+# - `name`: the function's name as the database knows it, written as it is:
+#   letters, digits and `_`, a letter or `_` first, with dots between a
+#   schema's name and the function's.
+# - `arguments`: the arguments, in order; `[]` for none, `now()`.
+#
+# A name of any other form fails `to_sql` `invalid`, since it is written
+# unquoted. See also `call_distinct`, `count_all`.
+function call(name: str, arguments: [Expr]) -> Expr
+    parts: [clauses.Part] @= []
+
+    for a in arguments
+        parts @ parts.push(a.part)
+
+    return Expr(part: clauses.call_part(name, arguments: parts, distinct: false))
+
+# A call of the aggregate `name` on the distinct values of `arguments` alone:
+# `count(DISTINCT "city")`.
+#
+# - `name`: the aggregate's name, as `call` takes it.
+# - `arguments`: the arguments, at least one.
+#
+# Fails `to_sql` `invalid` where `arguments` is empty, or the name as `call`
+# says. See also `call`.
+function call_distinct(name: str, arguments: [Expr]) -> Expr
+    parts: [clauses.Part] @= []
+
+    for a in arguments
+        parts @ parts.push(a.part)
+
+    return Expr(part: clauses.call_part(name, arguments: parts, distinct: true))
+
+# The count of the rows: `count(*)`.
+#
+# See also `call`, `aliased`.
+function count_all() -> Expr
+    return Expr(part: clauses.count_all_part())
+
+# `e` read as the type `type_name`: `CAST($1 AS uuid)`.
+#
+# - `e`: the expression converted.
+# - `type_name`: the type as the database writes it, `bigint`, `numeric(10,
+#   2)`, `timestamp with time zone`, `int[]`: letters, digits, `_`, spaces,
+#   dots, commas, parentheses and brackets, a letter or `_` first.
+#
+# A type of any other form fails `to_sql` `invalid`, since it is written as
+# it is. See also `parameter`.
+function cast(e: Expr, type_name: str) -> Expr
+    return Expr(part: clauses.cast_part(e.part, type_name: type_name))
+
+# `left` and `right` joined by `operator`: `"price" * "quantity"`, `"first"
+# || $1`.
+#
+# - `left`: the operand before the operator, in parentheses where it is an
+#   operation itself.
+# - `operator`: the operator as the database writes it: either characters
+#   of `+ - * / % < > = ~ ! @ # ^ & | ?` alone, or letters and spaces
+#   alone (`COLLATE` is not one: it takes a name).
+# - `right`: the operand after it, in parentheses where it is an operation.
+#
+# An operator of any other form, one holding `--` or `/*`, and `?` for
+# SQLite, where it would be read as a placeholder, fail `to_sql` `invalid`.
+# See also `compare`.
+function operation(left: Expr, operator: str, right: Expr) -> Expr
+    return Expr(part: clauses.operation_part(left: left.part, operator: operator, right: right.part))
+
+# `e` under the other name `alias`: `count(*) AS "total"`. A row names the
+# column so, which a record's field can name: `aliased(count_all(), alias:
+# Stats::total)`.
+#
+# - `e`: the expression named.
+# - `alias`: the name the column takes, quoted.
+#
+# Only a column of a SELECT or of a RETURNING may be aliased: one anywhere
+# else fails `to_sql` `invalid`. See also `table_as`.
+function aliased(e: Expr, alias: str) -> Expr
+    return Expr(part: clauses.aliased_part(e.part, alias: alias))
+
+# The value an INSERT proposed for the column `name` and could not insert, inside
+# its `do_update`: `excluded."count"`.
+#
+# - `name`: the column's name, one part.
+#
+# See also `Conflict`, `assign`.
+function excluded(name: str) -> Expr
+    return Expr(part: clauses.excluded_part(name))
+
+# `query` as a value inside another statement, in parentheses: a column
+# computed by a SELECT, or the operand of `in_query`.
+#
+# - `query`: the SELECT; it should answer one column, and one row where it
+#   stands as a value, which the database checks.
+#
+# Its parameters are numbered with the statement's own. See also
+# `in_query`, `exists`, `from_subquery`.
+function subquery(query: Select) -> Expr
+    columns: [clauses.Part] @= []
+    tables: [[tokens.Token]] @= []
+    joins: [[tokens.Token]] @= []
+    where: [clauses.Clause] @= []
+    group_by: [clauses.Part] @= []
+    having: [clauses.Clause] @= []
+    order_by: [[tokens.Token]] @= []
+    combined: [[tokens.Token]] @= []
+
+    for e in query.columns
+        columns @ columns.push(e.part)
+
+    for t in query.from
+        tables @ tables.push(t.pieces)
+
+    for j in query.joins
+        on: [clauses.Clause] @= []
+
+        for c in j.on
+            on @ on.push(c.clause)
+
+        keyword = match j.kind
+            .inner => "INNER JOIN"
+            .left  => "LEFT JOIN"
+            .right => "RIGHT JOIN"
+            .full  => "FULL JOIN"
+            .cross => "CROSS JOIN"
+
+        joins @ joins.push(
+            statements.join_piece(keyword: keyword, table: j.table.pieces, on: on, cross: j.kind == .cross)
+        )
+
+    for c in query.where
+        where @ where.push(c.clause)
+
+    for e in query.group_by
+        group_by @ group_by.push(e.part)
+
+    for c in query.having
+        having @ having.push(c.clause)
+
+    for o in query.order_by
+        order_by @ order_by.push(
+            statements.order_piece(o.by.part, descending: o.descending, nulls_first: o.nulls == .first, nulls_last: o.nulls == .last)
+        )
+
+    for c in query.combined
+        keyword = match c.operation
+            .union_distinct     => "UNION"
+            .union_all          => "UNION ALL"
+            .intersect_distinct => "INTERSECT"
+            .intersect_all      => "INTERSECT ALL"
+            .except_distinct    => "EXCEPT"
+            .except_all         => "EXCEPT ALL"
+
+        whole = subquery(c.query).part.pieces
+        own = c.query.order_by.len() > 0 || !c.query.limit.is_err() || !c.query.offset.is_err()
+        postgres_only = c.operation == .intersect_all || c.operation == .except_all
+        combined @ combined.push(
+            statements.combined_piece(keyword: keyword, select: whole.slice(from: 1, to: whole.len() - 1), postgres_only: postgres_only, own_order: own)
+        )
+
+    parts = statements.SelectParts(
+        distinct: query.distinct,
+        columns: columns,
+        from: tables,
+        joins: joins,
+        where: where,
+        group_by: group_by,
+        having: having,
+        order_by: order_by,
+        limit: query.limit,
+        offset: query.offset,
+        combined: combined
+    )
+
+    return Expr(part: clauses.subquery_part(statements.select_pieces(parts)))
+
+# What a `choose` answers where `condition` holds.
+record When
+    # The condition asked, in the order written: the first that holds
+    # chooses.
+    condition: Condition
+    # The value answered where it holds.
+    result: Expr
+
+# The `result` of the first of `whens` whose condition holds, `otherwise`
+# where none does: `CASE WHEN ... THEN ... ELSE ... END`.
+#
+# - `whens`: the conditions and their results, at least one.
+# - `otherwise`: the value where no condition holds; `parameter(.null_value)`
+#   for `NULL`.
+#
+# Fails `to_sql` `invalid` where `whens` is empty. See also `When`.
+function choose(whens: [When], otherwise: Expr) -> Expr
+    conditions: [clauses.Clause] @= []
+    results: [clauses.Part] @= []
+
+    for w in whens
+        conditions @ conditions.push(w.condition.clause)
+        results @ results.push(w.result.part)
+
+    return Expr(part: clauses.chosen_part(conditions, results: results, otherwise: otherwise.part))
+
+# A fragment of SQL written as it is, for what this package does not offer:
+# `raw_without_values("CURRENT_DATE")`. **It must hold no value**: a value
+# goes in a parameter, through `parameter`.
+#
+# - `text`: the fragment. It may not be empty, and may not hold a `'` (a
+#   text's quote), a `;` (a second statement), `--` or `/*` (a comment), a
+#   `?` or a `$` (a placeholder, which would break the numbering), or a zero
+#   byte.
+#
+# A fragment that does fails `to_sql` `invalid`, saying which. It is put in
+# parentheses where it is an operand. See also `holds`, `parameter`.
+function raw_without_values(text: str) -> Expr
+    return Expr(part: clauses.raw_part(text))
+
+## Conditions
+
+# A condition a row holds or not: built by the functions under this heading
+# and combined by `all_of`, `any_of` and `negate`. Its one field is its
+# private pieces, which only this package reads.
+record Condition
+    # The pieces of its text and how it is joined.
+    clause: clauses.Clause
+
+# How `compare` compares.
+variant Op
+    # `=`; `IS NULL` where one side is the value `NULL`.
+    equal
+    # `<>`; `IS NOT NULL` where one side is the value `NULL`.
+    not_equal
+    # `<`.
+    less
+    # `<=`.
+    less_or_equal
+    # `>`.
+    greater
+    # `>=`.
+    greater_or_equal
+    # `LIKE`, the right side a pattern, its escape a backslash.
+    like
+    # Another operator of the database, as `operation` takes it: `ILIKE`,
+    # `~`, `IS DISTINCT FROM`, `@>`.
+    other
+        # The operator, checked as `operation` checks it.
+        operator: str
+
+# Whether the column `name` holds `value`: `"name" = $1`, or `"left_at" IS NULL`
+# where `value` is `NULL`, since `= NULL` holds for no row.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the value compared, a parameter.
+#
+# See also `not_equal`, `compare`, `in_values`.
+function equal(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .equal, right: clauses.parameter_part(value))
+    )
+
+# Whether the column `name` holds another value than `value`: `"name" <> $1`, or
+# `"left_at" IS NOT NULL` where `value` is `NULL`. A row whose column is
+# `NULL` holds neither `equal` nor this.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the value compared, a parameter.
+#
+# See also `equal`.
+function not_equal(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .not_equal, right: clauses.parameter_part(value))
+    )
+
+# Whether the column `name` holds less than `value`: `"age" < $1`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the bound, a parameter; `NULL` fails `to_sql` `invalid`, since
+#   nothing is less than it.
+#
+# See also `less_or_equal`, `between`.
+function less(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .ordered(symbol: "<"), right: clauses.parameter_part(value))
+    )
+
+# Whether the column `name` holds at most `value`: `"age" <= $1`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the bound, a parameter; `NULL` fails `to_sql` `invalid`.
+#
+# See also `less`.
+function less_or_equal(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .ordered(symbol: "<="), right: clauses.parameter_part(value))
+    )
+
+# Whether the column `name` holds more than `value`: `"age" > $1`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the bound, a parameter; `NULL` fails `to_sql` `invalid`.
+#
+# See also `greater_or_equal`.
+function greater(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .ordered(symbol: ">"), right: clauses.parameter_part(value))
+    )
+
+# Whether the column `name` holds at least `value`: `"age" >= $1`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `value`: the bound, a parameter; `NULL` fails `to_sql` `invalid`.
+#
+# See also `greater`.
+function greater_or_equal(name: str, value: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .ordered(symbol: ">="), right: clauses.parameter_part(value))
+    )
+
+# Whether the text in the column `name` matches `pattern`: `"name" LIKE $1 ESCAPE
+# $2`, where `%` matches any text and `_` any one character.
+#
+# - `name`: the column's name, cut at its dots.
+# - `pattern`: the pattern, a parameter; a backslash before `%`, `_` or a
+#   backslash matches that character itself, and `escape_like` writes a
+#   text so.
+#
+# The backslash is named as the escape in a second parameter, so a pattern
+# means the same in both databases. PostgreSQL compares case for case;
+# SQLite ignores the case of ASCII letters. See also `escape_like`,
+# `compare`.
+function like(name: str, pattern: str) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(name), how: .like, right: clauses.parameter_part(.text(v: pattern)))
+    )
+
+# `text` with a backslash before each `%`, `_` and backslash, so that
+# `like` matches it as itself: `escape_like(s) + "%"` matches what begins
+# with `s`.
+#
+# - `text`: the text to match as it is; "" gives "".
+#
+# See also `like`.
+function escape_like(text: str) -> str
+    pieces: [str] @= []
+
+    for c in text.chars()
+        if c == "%" || c == "_" || c == "\\"
+            pieces @ pieces.push("\\")
+        pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+# Whether the column `name` holds one of `values`: `"id" IN ($1, $2, $3)`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `values`: the values, each a parameter. An empty list holds for no row,
+#   written `1 = 0`, since PostgreSQL reads no `IN ()`. A `NULL` among them
+#   fails `to_sql` `invalid`: it matches no row, and under `negate` it would
+#   make the condition hold for none.
+#
+# See also `in_query`, `equal`.
+function in_values(name: str, values: [sql.Value]) -> Condition
+    return Condition(clause: clauses.in_values_clause(clauses.column_part(name), values: values))
+
+# Whether the column `name` holds a value from `low` to `high`, both included:
+# `"age" BETWEEN $1 AND $2`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `low`: the smallest value that holds, a parameter.
+# - `high`: the largest value that holds, a parameter; where it is below
+#   `low`, no row holds.
+#
+# A `NULL` bound fails `to_sql` `invalid`. See also `less`, `greater`.
+function between(name: str, low: sql.Value, high: sql.Value) -> Condition
+    return Condition(
+        clause: clauses.between_clause(subject: clauses.column_part(name), low: clauses.parameter_part(low), high: clauses.parameter_part(high))
+    )
+
+# Whether two columns hold the same value: `"users"."id" =
+# "posts"."user_id"`, as a join's condition is.
+#
+# - `left`: the first column's name, cut at its dots.
+# - `right`: the second column's name, cut at its dots.
+#
+# A row where either is `NULL` does not hold it. See also `inner_join`,
+# `compare`.
+function columns_equal(left: str, right: str) -> Condition
+    return Condition(
+        clause: clauses.compared(left: clauses.column_part(left), how: .equal, right: clauses.column_part(right))
+    )
+
+# Whether `left` and `right` compare by `op`: the general form of `equal`
+# and the rest, for any two expressions.
+#
+# - `left`: the expression before the operator.
+# - `op`: how they compare; `.equal` and `.not_equal` write `IS NULL` and
+#   `IS NOT NULL` where one side is `parameter(.null_value)`.
+# - `right`: the expression after it.
+#
+# A `NULL` value beside any other `op` fails `to_sql` `invalid`, and an
+# operator `.other` names as `operation` says. See also `equal`,
+# `operation`.
+function compare(left: Expr, op: Op, right: Expr) -> Condition
+    how: clauses.Comparison = match op
+        .equal            => .equal
+        .not_equal        => .not_equal
+        .less             => .ordered(symbol: "<")
+        .less_or_equal    => .ordered(symbol: "<=")
+        .greater          => .ordered(symbol: ">")
+        .greater_or_equal => .ordered(symbol: ">=")
+        .like             => .like
+        .other o          => .other(operator: o.operator)
+
+    return Condition(clause: clauses.compared(left: left.part, how: how, right: right.part))
+
+# Whether the column `name` holds a value among the rows `query` answers: `"id" IN
+# (SELECT ...)`.
+#
+# - `name`: the column's name, cut at its dots.
+# - `query`: a SELECT of one column.
+#
+# See also `in_values`, `exists`.
+function in_query(name: str, query: Select) -> Condition
+    whole = subquery(query).part.pieces
+    return Condition(
+        clause: clauses.in_query_clause(clauses.column_part(name), select: whole.slice(from: 1, to: whole.len() - 1))
+    )
+
+# Whether `query` answers at least one row: `EXISTS (SELECT ...)`.
+#
+# - `query`: the SELECT; its columns do not matter.
+#
+# See also `in_query`, `negate`.
+function exists(query: Select) -> Condition
+    whole = subquery(query).part.pieces
+    return Condition(clause: clauses.exists_clause(whole.slice(from: 1, to: whole.len() - 1)))
+
+# Whether every one of `conditions` holds: each in parentheses where it is
+# an `any_of`, joined by `AND`.
+#
+# - `conditions`: the conditions, in order. An empty list holds for every
+#   row, written `1 = 1`; one condition is itself.
+#
+# See also `any_of`, `negate`.
+function all_of(conditions: [Condition]) -> Condition
+    parts: [clauses.Clause] @= []
+
+    for c in conditions
+        parts @ parts.push(c.clause)
+
+    return Condition(clause: clauses.all_clause(parts))
+
+# Whether at least one of `conditions` holds: each in parentheses where it
+# is an `all_of`, joined by `OR`.
+#
+# - `conditions`: the conditions, in order. An empty list holds for no row,
+#   written `1 = 0`; one condition is itself.
+#
+# See also `all_of`.
+function any_of(conditions: [Condition]) -> Condition
+    parts: [clauses.Clause] @= []
+
+    for c in conditions
+        parts @ parts.push(c.clause)
+
+    return Condition(clause: clauses.any_clause(parts))
+
+# Whether `condition` does not hold: `NOT (...)`. A row for which it is
+# unknown, because of a `NULL`, holds neither it nor this.
+#
+# - `condition`: the condition denied.
+#
+# See also `all_of`, `any_of`.
+function negate(condition: Condition) -> Condition
+    return Condition(clause: clauses.negated(condition.clause))
+
+# The condition that `e` is true: a column of booleans, or a fragment
+# `raw_without_values` writes.
+#
+# - `e`: an expression the database reads as a boolean; it checks that it
+#   is one.
+#
+# See also `raw_without_values`.
+function holds(e: Expr) -> Condition
+    return Condition(clause: clauses.holds_clause(e.part))
+
+# The condition every row holds, `1 = 1`, which an UPDATE or a DELETE meant
+# for every row of its table names in its `where`: one with an empty
+# `where` fails `to_sql` `invalid`.
+#
+# See also `update`, `delete`.
+function every_row() -> Condition
+    return Condition(clause: clauses.all_clause([]))
+
+## Tables and joins
+
+# A table a statement reads, under its own name or another, or a subquery
+# read as one. Only `table`, `table_as` and `from_subquery` make one. Its
+# field is its private pieces.
+record Table
+    # The pieces of its text.
+    pieces: [tokens.Token]
+
+# The table `name`: `"users"`, `"app"."users"`.
+#
+# - `name`: the table's name, cut at its dots, a schema's before it.
+#
+# See also `table_as`, `select`.
+function table(name: str) -> Table
+    return Table(pieces: tokens.named(name))
+
+# The table `name` under the other name `alias`, which the query's columns
+# name it by: `"users" AS "u"`.
+#
+# - `name`: the table's name, cut at its dots.
+# - `alias`: its name in the query, one part.
+#
+# See also `table`, `from_subquery`.
+function table_as(name: str, alias: str) -> Table
+    return Table(pieces: tokens.concat(first: tokens.named(name), second: [.word(text: " AS "), .name(parts: [alias])]))
+
+# The rows of `query` read as a table named `alias`: `(SELECT ...) AS
+# "recent"`.
+#
+# - `query`: the SELECT.
+# - `alias`: the name its columns are read under; both databases need one.
+#
+# See also `subquery`, `table_as`.
+function from_subquery(query: Select, alias: str) -> Table
+    return Table(
+        pieces: tokens.concat(first: subquery(query).part.pieces, second: [.word(text: " AS "), .name(parts: [alias])])
+    )
+
+# How a join keeps rows that find no match.
+variant JoinKind
+    # `INNER JOIN`: only the rows that match.
+    inner
+    # `LEFT JOIN`: every row of the tables before it, the joined table's
+    # columns `NULL` where none matches.
+    left
+    # `RIGHT JOIN`: every row of the joined table; SQLite reads it from
+    # 3.39.
+    right
+    # `FULL JOIN`: every row of both sides; SQLite reads it from 3.39.
+    full
+    # `CROSS JOIN`: every row with every row, and no condition.
+    cross
+
+# A table joined to the ones a SELECT reads before it.
+record Join
+    # How rows with no match are kept.
+    kind: JoinKind
+    # The table joined.
+    table: Table
+    # The conditions a pair of rows holds, joined by `AND`: at least one,
+    # but none for a `cross` join.
+    on: [Condition]
+
+# `table` joined where `on` holds, keeping only the rows that match.
+#
+# - `name`: the table's name, cut at its dots; `Join` built whole takes
+#   `table_as` for another name.
+# - `on`: the condition; `columns_equal` for the usual one.
+#
+# See also `left_join`, `cross_join`, `Join`.
+function inner_join(name: str, on: Condition) -> Join
+    return Join(kind: .inner, table: table(name), on: [on])
+
+# `table` joined where `on` holds, keeping every row before it.
+#
+# - `name`: the table's name, cut at its dots.
+# - `on`: the condition.
+#
+# See also `inner_join`.
+function left_join(name: str, on: Condition) -> Join
+    return Join(kind: .left, table: table(name), on: [on])
+
+# `table` joined where `on` holds, keeping every row of `table`.
+#
+# - `name`: the table's name, cut at its dots.
+# - `on`: the condition.
+#
+# See also `left_join`.
+function right_join(name: str, on: Condition) -> Join
+    return Join(kind: .right, table: table(name), on: [on])
+
+# `table` joined where `on` holds, keeping every row of both sides.
+#
+# - `name`: the table's name, cut at its dots.
+# - `on`: the condition.
+#
+# See also `left_join`, `right_join`.
+function full_join(name: str, on: Condition) -> Join
+    return Join(kind: .full, table: table(name), on: [on])
+
+# `table` joined with no condition: each row with each of its rows.
+#
+# - `name`: the table's name, cut at its dots.
+#
+# See also `inner_join`.
+function cross_join(name: str) -> Join
+    return Join(kind: .cross, table: table(name), on: [])
+
+## Order
+
+# Where `NULL` goes in an order.
+variant NullsAt
+    # Where the database puts it: last going up and first going down for
+    # PostgreSQL, first going up for SQLite.
+    database_default
+    # Before every value: `NULLS FIRST`.
+    first
+    # After every value: `NULLS LAST`.
+    last
+
+# One key of a SELECT's order.
+record Order
+    # What is ordered by.
+    by: Expr
+    # Whether from the largest down: `DESC`.
+    descending: bool
+    # Where `NULL` goes.
+    nulls: NullsAt
+
+# The order by the column `name` from the smallest up, `NULL` where the database
+# puts it.
+#
+# - `name`: the column's name, cut at its dots.
+#
+# See also `descending`, `Order`.
+function ascending(name: str) -> Order
+    return Order(by: column(name), descending: false, nulls: .database_default)
+
+# The order by the column `name` from the largest down, `NULL` where the database
+# puts it.
+#
+# - `name`: the column's name, cut at its dots.
+#
+# See also `ascending`.
+function descending(name: str) -> Order
+    return Order(by: column(name), descending: true, nulls: .database_default)
+
+## Statements
+
+# How a SELECT's rows are combined with another's.
+variant SetOperation
+    # `UNION`: the rows of either, duplicates dropped.
+    union_distinct
+    # `UNION ALL`: the rows of either, every one.
+    union_all
+    # `INTERSECT`: the rows of both, duplicates dropped.
+    intersect_distinct
+    # `INTERSECT ALL`: PostgreSQL's alone.
+    intersect_all
+    # `EXCEPT`: the rows of the first that the second does not answer.
+    except_distinct
+    # `EXCEPT ALL`: PostgreSQL's alone.
+    except_all
+
+# A SELECT whose rows are combined with the rows before it.
+record Combined
+    # How they combine.
+    operation: SetOperation
+    # The SELECT, with no order, limit or offset of its own: the first
+    # SELECT's apply to the whole.
+    query: Select
+
+# A SELECT. `select` makes one; a program sets the fields it needs with `@`
+# and every other keeps its empty value, which writes nothing.
+record Select
+    # Whether duplicate rows are dropped: `SELECT DISTINCT`.
+    distinct: bool
+    # The columns answered, in order, at least one; `every_column` for `*`.
+    columns: [Expr]
+    # The tables read, `[]` for a SELECT of values alone.
+    from: [Table]
+    # The tables joined after them, in order.
+    joins: [Join]
+    # The conditions a row holds, joined by `AND`; `[]` for every row.
+    where: [Condition]
+    # What the rows are grouped by.
+    group_by: [Expr]
+    # The conditions a group holds, joined by `AND`.
+    having: [Condition]
+    # The order of the rows, the first key first.
+    order_by: [Order]
+    # At most so many rows, a parameter; `ok(10)` sets it, and a failure,
+    # as `select` leaves it, sets none.
+    limit: i64?
+    # The rows skipped before the first answered, a parameter; a failure
+    # for none.
+    offset: i64?
+    # The SELECTs combined with this one, in order.
+    combined: [Combined]
+
+# The SELECT of `columns` from the table `from`, every other part empty.
+#
+# - `from`: the table's name, cut at its dots; a program sets `from`
+#   itself for another name, a subquery or none.
+# - `columns`: the columns answered, at least one.
+#
+# Fails `to_sql` `invalid` where `columns` is empty. See also `Select`,
+# `to_sql`.
+function select(from: str, columns: [Expr]) -> Select
+    return Select(
+        distinct: false,
+        columns: columns,
+        from: [table(from)],
+        joins: [],
+        where: [],
+        group_by: [],
+        having: [],
+        order_by: [],
+        limit: fail(code: sql.NOT_FOUND, msg: "no limit"),
+        offset: fail(code: sql.NOT_FOUND, msg: "no offset"),
+        combined: []
+    )
+
+# What an INSERT inserts.
+variant Source
+    # Rows of values, each holding one value per column, in the columns'
+    # order.
+    rows
+        # The rows, at least one.
+        values: [[sql.Value]]
+    # The rows a SELECT answers.
+    query
+        # The SELECT, answering one column per column inserted.
+        select: Select
+    # One row of the table's defaults, `DEFAULT VALUES`, with no column
+    # named.
+    defaults
+
+# A column and the value an UPDATE, or an INSERT's `do_update`, gives it.
+record Assignment
+    # The column's name, one part.
+    column: str
+    # The value: `parameter` for a parameter, `excluded` for the value an INSERT
+    # proposed, any expression.
+    value: Expr
+
+# The column `name` given `value`, a parameter: `"name" = $1`.
+#
+# - `name`: the column's name, one part.
+# - `value`: its new value.
+#
+# See also `Assignment`, `update`.
+function assign(name: str, value: sql.Value) -> Assignment
+    return Assignment(column: name, value: parameter(value))
+
+# What an INSERT does with a row a unique key already holds.
+variant Conflict
+    # Nothing written: the database refuses the row, and the driver fails
+    # `exists`.
+    unhandled
+    # `ON CONFLICT (...) DO NOTHING`: the row is skipped.
+    do_nothing
+        # The columns of the unique key; `[]` for any key.
+        target: [str]
+    # `ON CONFLICT (...) DO UPDATE SET ...`: the row there is changed.
+    do_update
+        # The columns of the unique key, at least one.
+        target: [str]
+        # The changes, at least one; `excluded` reads the row proposed.
+        set: [Assignment]
+
+# An INSERT. `insert` and `insert_select` make one.
+record Insert
+    # The table's name, cut at its dots.
+    into: str
+    # The columns given, in order.
+    columns: [str]
+    # What is inserted.
+    source: Source
+    # What a row a unique key holds does.
+    conflict: Conflict
+    # The columns answered of each row inserted, `[]` for none; the driver's
+    # `query` reads them.
+    returning: [Expr]
+
+# The INSERT of `rows` into `columns` of `into`.
+#
+# - `into`: the table's name, cut at its dots.
+# - `columns`: the columns, at least one.
+# - `rows`: the rows, at least one, each one value per column.
+#
+# Fails `to_sql` `invalid` where `rows` is empty or a row's length is not
+# `columns`'s, the message saying which row, counted from 0. See also
+# `insert_select`, `Insert`.
+function insert(into: str, columns: [str], rows: [[sql.Value]]) -> Insert
+    return Insert(into: into, columns: columns, source: .rows(values: rows), conflict: .unhandled, returning: [])
+
+# The INSERT of the rows `query` answers into `columns` of `into`.
+#
+# - `into`: the table's name, cut at its dots.
+# - `columns`: the columns, at least one, one per column `query` answers.
+# - `query`: the SELECT.
+#
+# See also `insert`.
+function insert_select(into: str, columns: [str], query: Select) -> Insert
+    return Insert(into: into, columns: columns, source: .query(select: query), conflict: .unhandled, returning: [])
+
+# An UPDATE. `update` makes one.
+record Update
+    # The table's name, cut at its dots.
+    table: str
+    # The changes, at least one.
+    set: [Assignment]
+    # The conditions a row changed holds, joined by `AND`, at least one:
+    # `[every_row()]` for every row.
+    where: [Condition]
+    # The columns answered of each row changed, `[]` for none.
+    returning: [Expr]
+
+# The UPDATE of the table `name` that makes `set`'s changes, with no condition yet:
+# a program sets `where` before `to_sql`, which refuses it empty.
+#
+# - `name`: the table's name, cut at its dots.
+# - `set`: the changes, at least one.
+#
+# See also `assign`, `every_row`, `Update`.
+function update(name: str, set: [Assignment]) -> Update
+    return Update(table: name, set: set, where: [], returning: [])
+
+# A DELETE. `delete` makes one.
+record Delete
+    # The table's name, cut at its dots.
+    from: str
+    # The conditions a row deleted holds, joined by `AND`, at least one:
+    # `[every_row()]` for every row.
+    where: [Condition]
+    # The columns answered of each row deleted, `[]` for none.
+    returning: [Expr]
+
+# The DELETE from `from`, with no condition yet: a program sets `where`
+# before `to_sql`, which refuses it empty.
+#
+# - `from`: the table's name, cut at its dots.
+#
+# See also `every_row`, `Delete`.
+function delete(from: str) -> Delete
+    return Delete(from: from, where: [], returning: [])
+
+# A statement `to_sql` writes.
+variant Query
+    # A SELECT.
+    select
+        # The SELECT.
+        query: Select
+    # An INSERT.
+    insert
+        # The INSERT.
+        query: Insert
+    # An UPDATE.
+    update
+        # The UPDATE.
+        query: Update
+    # A DELETE.
+    delete
+        # The DELETE.
+        query: Delete
+
+## Writing
+
+# `query` written for `dialect`: its text, every name quoted and every
+# value a placeholder, and the values in order.
+#
+# - `query`: the statement.
+# - `dialect`: the database: `$1` placeholders for `.postgres`, `?1` for
+#   `.sqlite`.
+#
+# The same query writes the same bytes every time.
+#
+# Fails `invalid` where the query has a mistake (the module's comment), the
+# message saying where; `unsupported` where it asks of SQLite what only
+# PostgreSQL does (`INTERSECT ALL`, `EXCEPT ALL`); `limit` where it holds
+# more than 65535 values for PostgreSQL. See also `Statement`.
+function to_sql(query: Query, dialect: Dialect) -> Statement?
+    pieces: [tokens.Token] = match query
+        .select s =>
+            whole = subquery(s.query).part.pieces
+            whole.slice(from: 1, to: whole.len() - 1)
+        .insert i =>
+            q = i.query
+            set: [[tokens.Token]] @= []
+            returning: [clauses.Part] @= []
+            defaults: bool @= false
+
+            for e in q.returning
+                returning @ returning.push(e.part)
+
+            conflict: [tokens.Token] = match q.conflict
+                .unhandled    => []
+                .do_nothing d => statements.conflict_nothing(d.target)
+                .do_update d =>
+                    for a in d.set
+                        set @ set.push(statements.assignment_piece(column: a.column, value: a.value.part))
+
+                    statements.conflict_update(names: d.target, set: set)
+
+            source: [tokens.Token] = match q.source
+                .rows r => statements.rows_piece(width: q.columns.len(), rows: r.values)
+                .query x =>
+                    chosen @= x.select
+
+                    if conflict.len() > 0 && chosen.where.len() == 0
+                        chosen.where @ [every_row()]
+                    whole = subquery(chosen).part.pieces
+                    tokens.concat(first: [.word(text: " ")], second: whole.slice(from: 1, to: whole.len() - 1))
+                .defaults =>
+                    defaults @ true
+                    []
+
+            statements.insert_pieces(
+                into: q.into,
+                columns: q.columns,
+                source: source,
+                defaults: defaults,
+                conflict: conflict,
+                returning: returning
+            )
+        .update u =>
+            q = u.query
+            set: [[tokens.Token]] @= []
+            where: [clauses.Clause] @= []
+            returning: [clauses.Part] @= []
+
+            for a in q.set
+                set @ set.push(statements.assignment_piece(column: a.column, value: a.value.part))
+
+            for c in q.where
+                where @ where.push(c.clause)
+
+            for e in q.returning
+                returning @ returning.push(e.part)
+
+            statements.update_pieces(table: q.table, set: set, where: where, returning: returning)
+        .delete d =>
+            q = d.query
+            where: [clauses.Clause] @= []
+            returning: [clauses.Part] @= []
+
+            for c in q.where
+                where @ where.push(c.clause)
+
+            for e in q.returning
+                returning @ returning.push(e.part)
+
+            statements.delete_pieces(from: q.from, where: where, returning: returning)
+
+    written = tokens.written(pieces, postgres: dialect == .postgres)?
+    return ok(Statement(text: written.text, params: written.params))
+
+## Tests
+
+test "column and columns_named: one part, two, none, an empty part refused"
+    q @= select(from: "app.users", columns: columns_named(["id", "users.name"]))
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\", \"users\".\"name\" FROM \"app\".\"users\""
+    assert columns_named([]) == []
+    q.columns @ [column("users.")]
+
+    match to_sql(.select(query: q), .postgres)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the name \"users.\": part 1 of the name is empty, and no database keeps an empty name"
+
+    q.columns @ [column("")]
+    assert to_sql(.select(query: q), .sqlite).is_err()
+
+test "select: no column refused, a SELECT of values alone, a name of more than one byte"
+    match to_sql(.select(query: select(from: "t", columns: [])), .postgres)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "a SELECT names no column; every_column() names every one"
+
+    q @= select(from: "t", columns: [parameter(.integer(v: 1))])
+    q.from @ []
+    assert to_sql(.select(query: q), .sqlite).must() == Statement(text: "SELECT ?1", params: [.integer(v: 1)])
+    assert to_sql(.select(query: select(from: "città", columns: [column("è")])), .sqlite).must().text == "SELECT \"è\" FROM \"città\""
+
+test "equal and not_equal: NULL written IS NULL and IS NOT NULL, with no parameter"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [equal("left_at", .null_value), not_equal("joined_at", .null_value)]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\" FROM \"users\" WHERE \"left_at\" IS NULL AND \"joined_at\" IS NOT NULL"
+    assert s.params == []
+    q.where @ [compare(left: parameter(.null_value), op: .equal, right: column("a"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"a\" IS NULL"
+
+test "less, less_or_equal, greater, greater_or_equal, between: a NULL refused, the largest and smallest i64"
+    q @= select(from: "t", columns: [column("id")])
+
+    for c in [less("a", .null_value), less_or_equal("a", .null_value), greater("a", .null_value), greater_or_equal("a", .null_value), between("a", low: .null_value, high: .integer(v: 1))]
+        q.where @ [c]
+
+        match to_sql(.select(query: q), .postgres)
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID
+
+    q.where @ [between("a", low: .integer(v: -9223372036854775808), high: .integer(v: 9223372036854775807))]
+    s = to_sql(.select(query: q), .sqlite).must()
+    assert s.text == "SELECT \"id\" FROM \"t\" WHERE \"a\" BETWEEN ?1 AND ?2"
+    assert s.params == [.integer(v: -9223372036854775808), .integer(v: 9223372036854775807)]
+    q.where @ [
+        less("a", .integer(v: 1))
+        less_or_equal("b", .integer(v: 2))
+        greater("c", .integer(v: 3))
+        greater_or_equal("d", .integer(v: 4))
+    ]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE \"a\" < $1 AND \"b\" <= $2 AND \"c\" > $3 AND \"d\" >= $4"
+
+test "like and escape_like: empty, every special character, a text of more than one byte"
+    assert escape_like("") == ""
+    assert escape_like("100%_a\\b") == "100\\%\\_a\\\\b"
+    assert escape_like("città%") == "città\\%"
+    q @= select(from: "t", columns: [column("id")])
+    q.where @ [like(name: "name", pattern: "")]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\" FROM \"t\" WHERE \"name\" LIKE $1 ESCAPE $2" && s.params == [.text(v: ""), .text(v: "\\")]
+
+test "in_values: none, one, a NULL refused"
+    q @= select(from: "t", columns: [column("id")])
+    q.where @ [in_values("id", values: [])]
+    assert to_sql(.select(query: q), .postgres).must() == Statement(text: "SELECT \"id\" FROM \"t\" WHERE 1 = 0", params: [])
+    q.where @ [negate(in_values("id", values: []))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE NOT (1 = 0)"
+    q.where @ [in_values("id", values: [.text(v: "é")])]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"id\" FROM \"t\" WHERE \"id\" IN (?1)"
+    q.where @ [in_values("id", values: [.integer(v: 1), .null_value])]
+    assert to_sql(.select(query: q), .sqlite).is_err()
+
+test "all_of, any_of, negate, every_row: none, one, nested"
+    a = equal("a", .integer(v: 1))
+    b = equal("b", .integer(v: 2))
+    q @= select(from: "t", columns: [column("id")])
+    q.where @ [all_of([])]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE 1 = 1"
+    q.where @ [any_of([])]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE 1 = 0"
+    q.where @ [all_of([a]), any_of([a, b]), every_row()]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE \"a\" = $1 AND (\"a\" = $2 OR \"b\" = $3) AND 1 = 1"
+    q.where @ [negate(negate(a))]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"id\" FROM \"t\" WHERE NOT (NOT (\"a\" = ?1))"
+
+test "compare and operation: other operators, a question mark for SQLite, an alias where none may stand"
+    q @= select(from: "docs", columns: [column("id")])
+    q.where @ [compare(left: column("body"), op: .other(operator: "?"), right: parameter(.text(v: "k")))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"docs\" WHERE \"body\" ? $1"
+
+    match to_sql(.select(query: q), .sqlite)
+        .ok _  => assert false
+        .err e => assert e.code == sql.UNSUPPORTED
+
+    q.where @ [compare(left: column("a"), op: .other(operator: "= 1 --"), right: column("b"))]
+    assert to_sql(.select(query: q), .postgres).is_err()
+    q.where @ [compare(left: aliased(column("a"), alias: "x"), op: .equal, right: column("b"))]
+
+    match to_sql(.select(query: q), .postgres)
+        .ok _  => assert false
+        .err e => assert e.msg == "an expression with another name (AS) stands only among the columns of a SELECT or of a RETURNING"
+
+    q.where @ [
+        compare(left: operation(left: column("a"), operator: "+", right: column("b")), op: .like, right: parameter(.text(v: "x")))
+    ]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"docs\" WHERE (\"a\" + \"b\") LIKE $1 ESCAPE $2"
+
+test "raw_without_values: each refusal, and a fragment as a condition"
+    q @= select(from: "t", columns: [column("id")])
+
+    for text in ["", "name = 'x'", "1; DROP TABLE t", "a -- b", "a /* b", "a = ?", "a = $1"]
+        q.where @ [holds(raw_without_values(text))]
+
+        match to_sql(.select(query: q), .postgres)
+            .ok _  => assert false
+            .err e => assert e.code == sql.INVALID
+
+    q.where @ [holds(raw_without_values("\"tsv\" @@ \"query\""))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"t\" WHERE (\"tsv\" @@ \"query\")"
+
+test "call, call_distinct, cast, choose: a bad name, no argument, a bad type, no WHEN"
+    for e in [call("lower(x)", arguments: []), call_distinct("count", arguments: []), cast(column("a"), type_name: "int; DROP"), choose([], otherwise: column("a"))]
+        match to_sql(.select(query: select(from: "t", columns: [e])), .postgres)
+            .ok _  => assert false
+            .err x => assert x.code == sql.INVALID
+
+test "limit and offset: zero, negative, an offset alone for each database"
+    q @= select(from: "t", columns: [every_column()])
+    q.limit @ ok(0)
+    assert to_sql(.select(query: q), .postgres).must() == Statement(text: "SELECT * FROM \"t\" LIMIT $1", params: [.integer(v: 0)])
+    q.limit @ fail(code: sql.NOT_FOUND, msg: "no limit")
+    q.offset @ ok(5)
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT * FROM \"t\" OFFSET $1"
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT * FROM \"t\" LIMIT -1 OFFSET ?1"
+    q.offset @ ok(-1)
+    assert to_sql(.select(query: q), .sqlite).is_err()
+
+test "combined: UNION ALL with the first's order, a combined SELECT's own limit refused, INTERSECT ALL for SQLite"
+    q @= select(from: "a", columns: [column("id")])
+    q.combined @ [Combined(operation: .union_all, query: select(from: "b", columns: [column("id")]))]
+    q.order_by @ [ascending("id")]
+    q.limit @ ok(2)
+    s = to_sql(.select(query: q), .sqlite).must()
+    assert s.text == "SELECT \"id\" FROM \"a\" UNION ALL SELECT \"id\" FROM \"b\" ORDER BY \"id\" LIMIT ?1"
+    late @= select(from: "b", columns: [column("id")])
+    late.limit @ ok(1)
+    q.combined @ [Combined(operation: .union_distinct, query: late)]
+    assert to_sql(.select(query: q), .postgres).is_err()
+    q.combined @ [Combined(operation: .intersect_all, query: select(from: "b", columns: [column("id")]))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"a\" INTERSECT ALL SELECT \"id\" FROM \"b\" ORDER BY \"id\" LIMIT $1"
+
+    match to_sql(.select(query: q), .sqlite)
+        .ok _  => assert false
+        .err e => assert e.code == sql.UNSUPPORTED && e.msg == "INTERSECT ALL is PostgreSQL's alone, and SQLite has no form for it"
+
+test "joins: each kind, a join with no condition, a cross join with one, nulls placed"
+    q @= select(from: "a", columns: [every_column()])
+    q.joins @ [
+        left_join("b", on: columns_equal(left: "a.id", right: "b.a_id"))
+        right_join("c", on: every_row())
+        full_join("d", on: every_row())
+        cross_join("e")
+    ]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT * FROM \"a\" LEFT JOIN \"b\" ON \"a\".\"id\" = \"b\".\"a_id\" RIGHT JOIN \"c\" ON 1 = 1 FULL JOIN \"d\" ON 1 = 1 CROSS JOIN \"e\""
+    q.joins @ [Join(kind: .inner, table: table("b"), on: [])]
+    assert to_sql(.select(query: q), .postgres).is_err()
+    q.joins @ [Join(kind: .cross, table: table("b"), on: [every_row()])]
+    assert to_sql(.select(query: q), .postgres).is_err()
+    q.joins @ []
+    q.order_by @ [
+        Order(by: column("a"), descending: false, nulls: .first)
+        Order(by: column("b"), descending: true, nulls: .last)
+    ]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT * FROM \"a\" ORDER BY \"a\" NULLS FIRST, \"b\" DESC NULLS LAST"
+
+test "insert: none, a row of the wrong length, defaults, a conflict each way, from a SELECT with a conflict"
+    match to_sql(.insert(query: insert(into: "t", columns: ["a"], rows: [])), .postgres)
+        .ok _  => assert false
+        .err e => assert e.msg == "an INSERT has no row to insert"
+
+    match to_sql(.insert(query: insert(into: "t", columns: ["a", "b"], rows: [[.integer(v: 1), .integer(v: 2)], [.integer(v: 3)]])), .postgres)
+        .ok _  => assert false
+        .err e => assert e.msg == "row 1 of the INSERT holds 1 values for 2 columns"
+
+    d @= insert(into: "t", columns: [], rows: [])
+    d.source @ .defaults
+    d.returning @ [column("id")]
+    assert to_sql(.insert(query: d), .sqlite).must().text == "INSERT INTO \"t\" DEFAULT VALUES RETURNING \"id\""
+    i @= insert(into: "t", columns: ["id", "name"], rows: [[.integer(v: 1), .text(v: "a")]])
+    i.conflict @ .do_nothing(target: ["id"])
+    assert to_sql(.insert(query: i), .postgres).must().text == "INSERT INTO \"t\" (\"id\", \"name\") VALUES ($1, $2) ON CONFLICT (\"id\") DO NOTHING"
+    i.conflict @ .do_update(target: [], set: [assign("name", .text(v: "b"))])
+    assert to_sql(.insert(query: i), .postgres).is_err()
+    i.conflict @ .do_update(target: ["id"], set: [])
+    assert to_sql(.insert(query: i), .postgres).is_err()
+    from_users @= insert_select(into: "archive", columns: ["id"], query: select(from: "users", columns: [column("id")]))
+    from_users.conflict @ .do_nothing(target: [])
+    assert to_sql(.insert(query: from_users), .sqlite).must().text == "INSERT INTO \"archive\" (\"id\") SELECT \"id\" FROM \"users\" WHERE 1 = 1 ON CONFLICT DO NOTHING"
+
+test "update and delete: no condition refused, no change refused, a dotted column refused"
+    u @= update("users", set: [assign("name", .text(v: "z"))])
+
+    match to_sql(.update(query: u), .postgres)
+        .ok _  => assert false
+        .err e => assert e.code == sql.INVALID && e.msg == "the UPDATE of \"users\" has no condition, so it would change every row; every_row() in its where says that is meant"
+
+    u.where @ [every_row()]
+    assert to_sql(.update(query: u), .postgres).must().text == "UPDATE \"users\" SET \"name\" = $1 WHERE 1 = 1"
+    u.set @ []
+    assert to_sql(.update(query: u), .postgres).is_err()
+    u.set @ [assign("users.name", .text(v: "z"))]
+    assert to_sql(.update(query: u), .postgres).is_err()
+    assert to_sql(.delete(query: delete("users")), .sqlite).is_err()
+
+test "to_sql: the same bytes twice, and parameters numbered across subqueries in order"
+    inner @= select(from: "posts", columns: [column("user_id")])
+    inner.where @ [equal("title", .text(v: "b"))]
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [equal("name", .text(v: "a")), in_query("id", query: inner), equal("city", .text(v: "c"))]
+    first = to_sql(.select(query: q), .postgres).must()
+    assert first == to_sql(.select(query: q), .postgres).must()
+    assert first.text == "SELECT \"id\" FROM \"users\" WHERE \"name\" = $1 AND \"id\" IN (SELECT \"user_id\" FROM \"posts\" WHERE \"title\" = $2) AND \"city\" = $3"
+    assert first.params == [.text(v: "a"), .text(v: "b"), .text(v: "c")]
+
+## Examples
+
+# A column named with its table.
+test "column: a column of a named table"
+    q = select(from: "users", columns: [column("users.name")])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"users\".\"name\" FROM \"users\""
+
+# A record's field names as a SELECT's columns, and a row read back into
+# the record by the same names: `sql.Column::name` is the text `"name"`, and
+# a field misspelt is a compile error on both sides. A program writes
+# `user_of(row: sql.Row) -> User?` so, with `?` after each read.
+test "columns_named: a record's fields as the columns, and its row read back by them"
+    q = select(from: "catalog", columns: columns_named([sql.Column::name, sql.Column::type_name]))
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"name\", \"type_name\" FROM \"catalog\""
+    row = sql.Row(names: ["name", "type_name"], values: [.text(v: "id"), .text(v: "INTEGER")])
+    read = sql.Column(
+        name: sql.text_named(row, sql.Column::name).must(),
+        type_name: sql.text_named(row, sql.Column::type_name).must()
+    )
+    assert read == sql.Column(name: "id", type_name: "INTEGER")
+
+# Every column of the table read.
+test "every_column: SELECT *"
+    q = select(from: "users", columns: [every_column()])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT * FROM \"users\""
+
+# Every column of one table of a join.
+test "every_column_of: the columns of one table"
+    q = select(from: "users", columns: [every_column_of("users")])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"users\".* FROM \"users\""
+
+# A value compared with a column travels as a parameter.
+test "parameter: a value beside the text"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [compare(left: column("age"), op: .greater, right: parameter(.integer(v: 18)))]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\" FROM \"users\" WHERE \"age\" > $1" && s.params == [.integer(v: 18)]
+
+# A function of SQL called on a column.
+test "call: lower of a column"
+    q = select(from: "users", columns: [call("lower", arguments: [column("name")])])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT lower(\"name\") FROM \"users\""
+
+# The count of the cities, each counted once.
+test "call_distinct: count of distinct values"
+    q = select(from: "users", columns: [call_distinct("count", arguments: [column("city")])])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT count(DISTINCT \"city\") FROM \"users\""
+
+# The rows of a table counted.
+test "count_all: count(*)"
+    q = select(from: "users", columns: [count_all()])
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT count(*) FROM \"users\""
+
+# A text parameter read as PostgreSQL's `uuid`.
+test "cast: a parameter as a uuid"
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [
+        compare(left: column("id"), op: .equal, right: cast(parameter(.text(v: "8f14e45f-ceea-467a-9c4e-0f3a8e6b6a1d")), type_name: "uuid"))
+    ]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" WHERE \"id\" = CAST($1 AS uuid)"
+
+# A price times a quantity.
+test "operation: a product of two columns"
+    q = select(from: "lines", columns: [operation(left: column("price"), operator: "*", right: column("quantity"))])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"price\" * \"quantity\" FROM \"lines\""
+
+# A count under the name a record's field reads it by.
+test "aliased: count(*) AS total"
+    q = select(from: "users", columns: [aliased(count_all(), alias: "total")])
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT count(*) AS \"total\" FROM \"users\""
+
+# A counter inserted, or raised by the hits proposed where its name is
+# there already.
+test "excluded: an upsert adding to a counter"
+    i @= insert(into: "counters", columns: ["name", "hits"], rows: [[.text(v: "home"), .integer(v: 1)]])
+    hits = operation(left: column("counters.hits"), operator: "+", right: excluded("hits"))
+    i.conflict @ .do_update(target: ["name"], set: [Assignment(column: "hits", value: hits)])
+    assert to_sql(.insert(query: i), .postgres).must().text == "INSERT INTO \"counters\" (\"name\", \"hits\") VALUES ($1, $2) ON CONFLICT (\"name\") DO UPDATE SET \"hits\" = \"counters\".\"hits\" + excluded.\"hits\""
+
+# The users older than the average, a SELECT inside a condition.
+test "subquery: a SELECT as a value"
+    average = select(from: "users", columns: [call("avg", arguments: [column("age")])])
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [compare(left: column("age"), op: .greater, right: subquery(average))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" WHERE \"age\" > (SELECT avg(\"age\") FROM \"users\")"
+
+# A word chosen by a condition.
+test "choose: CASE WHEN"
+    kind = choose(
+        [When(condition: greater("age", .integer(v: 17)), result: parameter(.text(v: "adult")))],
+        otherwise: parameter(.text(v: "minor"))
+    )
+    s = to_sql(.select(query: select(from: "users", columns: [kind])), .postgres).must()
+    assert s.text == "SELECT CASE WHEN \"age\" > $1 THEN $2 ELSE $3 END FROM \"users\""
+    assert s.params == [.integer(v: 17), .text(v: "adult"), .text(v: "minor")]
+
+# A word of SQL the package does not offer, holding no value.
+test "raw_without_values: the current date"
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [compare(left: column("born"), op: .less, right: raw_without_values("CURRENT_DATE"))]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"name\" FROM \"users\" WHERE \"born\" < (CURRENT_DATE)"
+
+# The users of one name.
+test "equal: a column equal to a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [equal("name", .text(v: "Ziggy"))]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\" FROM \"users\" WHERE \"name\" = $1" && s.params == [.text(v: "Ziggy")]
+
+# The users who left, a NULL told by IS NOT NULL.
+test "not_equal: a column that is not NULL"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [not_equal("left_at", .null_value)]
+    assert to_sql(.select(query: q), .postgres).must() == Statement(text: "SELECT \"id\" FROM \"users\" WHERE \"left_at\" IS NOT NULL", params: [])
+
+# The users under eighteen.
+test "less: a column below a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [less("age", .integer(v: 18))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"age\" < $1"
+
+# The users of eighteen or under.
+test "less_or_equal: a column at most a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [less_or_equal("age", .integer(v: 18))]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"id\" FROM \"users\" WHERE \"age\" <= ?1"
+
+# The users over sixty-five.
+test "greater: a column above a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [greater("age", .integer(v: 65))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"age\" > $1"
+
+# The users of eighteen or over.
+test "greater_or_equal: a column at least a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [greater_or_equal("age", .integer(v: 18))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"age\" >= $1"
+
+# The names that begin with "Zig", the escape a parameter beside the
+# pattern.
+test "like: names beginning with a text"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [like(name: "name", pattern: "Zig%")]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\" FROM \"users\" WHERE \"name\" LIKE $1 ESCAPE $2"
+    assert s.params == [.text(v: "Zig%"), .text(v: "\\")]
+
+# A text a person typed, matched as itself at the start of a column.
+test "escape_like: a percent sign matched as itself"
+    assert escape_like("50%") + "%" == "50\\%%"
+
+# The users of three ids.
+test "in_values: a column among values"
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [in_values("id", values: [.integer(v: 1), .integer(v: 2), .integer(v: 3)])]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" WHERE \"id\" IN ($1, $2, $3)"
+
+# The users from eighteen to sixty-five.
+test "between: a column within two values"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [between("age", low: .integer(v: 18), high: .integer(v: 65))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"age\" BETWEEN $1 AND $2"
+
+# Each user's posts, joined where the ids meet.
+test "columns_equal: a join's condition"
+    q @= select(from: "users", columns: columns_named(["users.name", "posts.title"]))
+    q.joins @ [inner_join("posts", on: columns_equal(left: "users.id", right: "posts.user_id"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"users\".\"name\", \"posts\".\"title\" FROM \"users\" INNER JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\""
+
+# An e-mail address compared without its case.
+test "compare: an expression equal to a value"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [
+        compare(left: call("lower", arguments: [column("email")]), op: .equal, right: parameter(.text(v: "z@example.org")))
+    ]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE lower(\"email\") = $1"
+
+# The users who wrote a post.
+test "in_query: a column among a SELECT's rows"
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [in_query("id", query: select(from: "posts", columns: [column("user_id")]))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" WHERE \"id\" IN (SELECT \"user_id\" FROM \"posts\")"
+
+# The users who wrote a post, asked as whether one exists.
+test "exists: a SELECT that answers a row"
+    posts @= select(from: "posts", columns: [column("id")])
+    posts.where @ [columns_equal(left: "posts.user_id", right: "users.id")]
+    q @= select(from: "users", columns: [column("name")])
+    q.where @ [exists(posts)]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"name\" FROM \"users\" WHERE EXISTS (SELECT \"id\" FROM \"posts\" WHERE \"posts\".\"user_id\" = \"users\".\"id\")"
+
+# Adults who are active, or any admin.
+test "all_of: conditions that all hold, inside one of two"
+    adult_and_active = all_of([greater_or_equal("age", .integer(v: 18)), equal("active", .boolean(v: true))])
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [any_of([adult_and_active, equal("admin", .boolean(v: true))])]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE (\"age\" >= $1 AND \"active\" = $2) OR \"admin\" = $3"
+
+# The users of one city or another.
+test "any_of: one of two conditions"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [any_of([equal("city", .text(v: "London")), equal("city", .text(v: "Berlin"))])]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"city\" = $1 OR \"city\" = $2"
+
+# The users of no listed id.
+test "negate: NOT IN"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [negate(in_values("id", values: [.integer(v: 1), .integer(v: 2)]))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE NOT (\"id\" IN ($1, $2))"
+
+# The users whose column of booleans is true.
+test "holds: a column of booleans as the condition"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [holds(column("active"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"active\""
+
+# Every session deleted, said on purpose.
+test "every_row: a DELETE of every row"
+    d @= delete("sessions")
+    d.where @ [every_row()]
+    assert to_sql(.delete(query: d), .postgres).must().text == "DELETE FROM \"sessions\" WHERE 1 = 1"
+
+# A table in a schema.
+test "table: a table with its schema"
+    q @= select(from: "users", columns: [column("id")])
+    q.from @ [table("app.users")]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"app\".\"users\""
+
+# A table read under a short name.
+test "table_as: a table under another name"
+    q @= select(from: "users", columns: [column("u.name")])
+    q.from @ [table_as(name: "users", alias: "u")]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"u\".\"name\" FROM \"users\" AS \"u\""
+
+# The ten newest posts read as a table.
+test "from_subquery: a SELECT read as a table"
+    recent @= select(from: "posts", columns: [column("id")])
+    recent.order_by @ [descending("id")]
+    recent.limit @ ok(10)
+    q @= select(from: "posts", columns: [column("recent.id")])
+    q.from @ [from_subquery(recent, alias: "recent")]
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"recent\".\"id\" FROM (SELECT \"id\" FROM \"posts\" ORDER BY \"id\" DESC LIMIT $1) AS \"recent\""
+
+# The users with at least one post.
+test "inner_join: the rows that match"
+    q @= select(from: "users", columns: [column("users.name")])
+    q.joins @ [inner_join("posts", on: columns_equal(left: "users.id", right: "posts.user_id"))]
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"users\".\"name\" FROM \"users\" INNER JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\""
+
+# Every user, with their posts where they have some.
+test "left_join: every row before it kept"
+    q @= select(from: "users", columns: columns_named(["users.name", "posts.title"]))
+    q.joins @ [left_join("posts", on: columns_equal(left: "users.id", right: "posts.user_id"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"users\".\"name\", \"posts\".\"title\" FROM \"users\" LEFT JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\""
+
+# Every post, with its user where there is one.
+test "right_join: every row of the joined table kept"
+    q @= select(from: "users", columns: [column("posts.title")])
+    q.joins @ [right_join("posts", on: columns_equal(left: "users.id", right: "posts.user_id"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"posts\".\"title\" FROM \"users\" RIGHT JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\""
+
+# Every user and every post, matched where they meet.
+test "full_join: every row of both sides kept"
+    q @= select(from: "users", columns: [every_column()])
+    q.joins @ [full_join("posts", on: columns_equal(left: "users.id", right: "posts.user_id"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT * FROM \"users\" FULL JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\""
+
+# Every size with every colour.
+test "cross_join: every row with every row"
+    q @= select(from: "sizes", columns: columns_named(["sizes.name", "colours.name"]))
+    q.joins @ [cross_join("colours")]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"sizes\".\"name\", \"colours\".\"name\" FROM \"sizes\" CROSS JOIN \"colours\""
+
+# The users by name, from A.
+test "ascending: ORDER BY a column"
+    q @= select(from: "users", columns: [column("name")])
+    q.order_by @ [ascending("name")]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" ORDER BY \"name\""
+
+# The oldest users first.
+test "descending: ORDER BY a column DESC"
+    q @= select(from: "users", columns: [column("name")])
+    q.order_by @ [descending("age")]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"name\" FROM \"users\" ORDER BY \"age\" DESC"
+
+# The first page of the active users by name.
+test "select: a page of rows"
+    q @= select(from: "users", columns: columns_named(["id", "name"]))
+    q.where @ [equal("active", .boolean(v: true))]
+    q.order_by @ [ascending("name")]
+    q.limit @ ok(10)
+    s = to_sql(.select(query: q), .postgres).must()
+    assert s.text == "SELECT \"id\", \"name\" FROM \"users\" WHERE \"active\" = $1 ORDER BY \"name\" LIMIT $2"
+    assert s.params == [.boolean(v: true), .integer(v: 10)]
+
+# A user renamed.
+test "assign: a column given a value"
+    u @= update("users", set: [assign("name", .text(v: "Aladdin"))])
+    u.where @ [equal("id", .integer(v: 7))]
+    s = to_sql(.update(query: u), .postgres).must()
+    assert s.text == "UPDATE \"users\" SET \"name\" = $1 WHERE \"id\" = $2" && s.params == [.text(v: "Aladdin"), .integer(v: 7)]
+
+# Two users inserted, their new ids answered.
+test "insert: two rows, RETURNING"
+    i @= insert(
+        into: "users",
+        columns: ["name", "email"],
+        rows: [[.text(v: "Ziggy"), .text(v: "z@example.org")], [.text(v: "Aladdin"), .text(v: "a@example.org")]]
+    )
+    i.returning @ [column("id")]
+    s = to_sql(.insert(query: i), .postgres).must()
+    assert s.text == "INSERT INTO \"users\" (\"name\", \"email\") VALUES ($1, $2), ($3, $4) RETURNING \"id\""
+    assert s.params.len() == 4
+
+# The inactive users copied into an archive.
+test "insert_select: rows from a SELECT"
+    inactive @= select(from: "users", columns: columns_named(["id", "name"]))
+    inactive.where @ [equal("active", .boolean(v: false))]
+    i = insert_select(into: "archive", columns: ["id", "name"], query: inactive)
+    assert to_sql(.insert(query: i), .sqlite).must().text == "INSERT INTO \"archive\" (\"id\", \"name\") SELECT \"id\", \"name\" FROM \"users\" WHERE \"active\" = ?1"
+
+# The users not seen since a moment made inactive, their ids answered.
+test "update: rows changed, RETURNING"
+    u @= update("users", set: [assign("active", .boolean(v: false))])
+    u.where @ [less("seen", .integer(v: 1700000000))]
+    u.returning @ [column("id")]
+    assert to_sql(.update(query: u), .postgres).must().text == "UPDATE \"users\" SET \"active\" = $1 WHERE \"seen\" < $2 RETURNING \"id\""
+
+# One user deleted.
+test "delete: one row"
+    d @= delete("users")
+    d.where @ [equal("id", .integer(v: 7))]
+    assert to_sql(.delete(query: d), .sqlite).must() == Statement(text: "DELETE FROM \"users\" WHERE \"id\" = ?1", params: [.integer(v: 7)])
+
+# One query written for each database: only the placeholders differ.
+test "to_sql: the same query for PostgreSQL and for SQLite"
+    q @= select(from: "users", columns: [column("id")])
+    q.where @ [equal("name", .text(v: "Ziggy"))]
+    assert to_sql(.select(query: q), .postgres).must().text == "SELECT \"id\" FROM \"users\" WHERE \"name\" = $1"
+    assert to_sql(.select(query: q), .sqlite).must().text == "SELECT \"id\" FROM \"users\" WHERE \"name\" = ?1"

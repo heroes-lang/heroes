@@ -1,0 +1,283 @@
+# The pieces a statement's text is made of before it is written for one
+# database: words the builder writes itself, names to quote, values to bind
+# as parameters, and the mistakes found while a piece was made. Every
+# expression, condition and query of `sql/build` is a list of these, joined
+# as the program composes them; `written` turns one list into a text and its
+# parameters for PostgreSQL or for SQLite.
+
+use sql
+use strings
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+constant LIMIT: str
+    "limit"
+
+# The most parameters one statement carries to PostgreSQL: its `Bind`
+# message counts them in sixteen bits.
+constant POSTGRES_MAX_PARAMETERS: i64
+    65535
+
+# One piece of a statement's text.
+variant Token
+    # Text the builder writes itself: a keyword, a bracket, a comma, or an
+    # operator or a function's name already checked.
+    word
+        text: str
+    # A name, written with each part quoted and the parts joined by dots.
+    name
+        parts: [str]
+    # Every column: `*`, or `"t".*` where `parts` names the table.
+    star
+        parts: [str]
+    # A value, written as the database's placeholder and carried in the
+    # parameters.
+    parameter
+        v: sql.Value
+    # A mistake found when a piece was made; writing the list fails with it.
+    refusal
+        code: str
+        msg: str
+    # Text PostgreSQL reads and SQLite does not; writing it for SQLite fails
+    # `unsupported`, the message naming `what`.
+    postgres_only
+        text: str
+        what: str
+    # Text written for SQLite alone, and for PostgreSQL nothing.
+    sqlite_only
+        text: str
+
+# What an expression is, as the pieces around it need to know.
+variant Form
+    # A name, a value, a call, a cast or a subquery: never put in
+    # parentheses.
+    plain
+    # An operation or a fragment: put in parentheses where it is an operand.
+    compound
+    # An expression with its other name, `AS`: only a column of a SELECT or
+    # of a RETURNING.
+    aliased
+    # The value NULL alone, which `=` never matches.
+    null_value
+
+# What a condition is, as a condition around it needs to know.
+variant Grouping
+    # A comparison, a test or a negation, which needs no parentheses.
+    single
+    # Conditions joined by `AND`.
+    conjunction
+    # Conditions joined by `OR`.
+    disjunction
+
+# A list of pieces written for one database.
+record Written
+    # The statement's text.
+    text: str
+    # The values of its placeholders, in order.
+    params: [sql.Value]
+
+# The parts of a name given as text: `app.users` is `["app", "users"]`, a
+# name with no dot its own one part. An empty part stays, so quoting it
+# fails and says where.
+function parts_of(name: str) -> [str]
+    return strings.split(s: name, sep: ".")
+
+# The pieces of `name`, a name given as text.
+function named(name: str) -> [Token]
+    return [.name(parts: parts_of(name))]
+
+# The pieces of each of `names`, separated by commas.
+function name_list(names: [str]) -> [Token]
+    pieces: [Token] @= []
+
+    for name in names
+        if pieces.len() > 0
+            pieces @ pieces.push(.word(text: ", "))
+        pieces @ pieces.push(.name(parts: parts_of(name)))
+
+    return pieces
+
+# The pieces of each list of `lists`, separated by `sep`.
+function joined(lists: [[Token]], sep: str) -> [Token]
+    pieces: [Token] @= []
+
+    for list in lists
+        if pieces.len() > 0
+            pieces @ pieces.push(.word(text: sep))
+
+        for t in list
+            pieces @ pieces.push(t)
+
+    return pieces
+
+# `pieces` between parentheses.
+function bracketed(pieces: [Token]) -> [Token]
+    out: [Token] @= [.word(text: "(")]
+
+    for t in pieces
+        out @ out.push(t)
+
+    out @ out.push(.word(text: ")"))
+    return out
+
+# `first`, then `second`.
+function concat(first: [Token], second: [Token]) -> [Token]
+    out: [Token] @= first
+
+    for t in second
+        out @ out.push(t)
+
+    return out
+
+# The first refusal among `pieces`, so a caller that must not go on with a
+# broken piece stops at once. Fails `not_found` where there is none.
+function refusal_in(pieces: [Token]) -> Token?
+    for t in pieces
+        match t
+            .refusal _                                                                     => return ok(t)
+            .word _ | .name _ | .star _ | .parameter _ | .postgres_only _ | .sqlite_only _ => _ = 0
+
+    return fail(code: "not_found", msg: "no refusal")
+
+# `parts` quoted as `sql.quote_qualified` quotes them. Fails `invalid` where a
+# part is empty or holds a zero byte, the message naming the name as the
+# program wrote it.
+function quoted(parts: [str]) -> str?
+    match sql.quote_qualified(parts)
+        .ok q  => return ok(q)
+        .err e => return fail(code: e.code, msg: f"the name \"{parts.join(".")}\": {e.msg}")
+
+# `pieces` written for PostgreSQL where `postgres` holds, for SQLite where
+# not: each name quoted, each value a placeholder numbered from 1, `$1` or
+# `?1`. Fails with the first refusal among the pieces, `invalid` where a
+# name has an empty part or a zero byte, `unsupported` where a piece is
+# PostgreSQL's alone and the database is SQLite, and `limit` where
+# PostgreSQL is given more than 65535 parameters.
+function written(pieces: [Token], postgres: bool) -> Written?
+    text: [str] @= []
+    params: [sql.Value] @= []
+
+    for t in pieces
+        match t
+            .word w => text @ text.push(w.text)
+            .name n => text @ text.push(quoted(n.parts)?)
+            .star s =>
+                if s.parts.len() == 0
+                    text @ text.push("*")
+                else
+                    text @ text.push(quoted(s.parts)? + ".*")
+            .parameter p =>
+                params @ params.push(p.v)
+
+                mark = if postgres
+                    "$"
+                else
+                    "?"
+
+                text @ text.push(mark + params.len().to_str())
+            .refusal r => return fail(code: r.code, msg: r.msg)
+            .postgres_only p =>
+                if !postgres
+                    return fail(
+                        code: UNSUPPORTED,
+                        msg: p.what + " is PostgreSQL's alone, and SQLite has no form for it"
+                    )
+                text @ text.push(p.text)
+            .sqlite_only s =>
+                if !postgres
+                    text @ text.push(s.text)
+
+    if postgres && params.len() > POSTGRES_MAX_PARAMETERS
+        return fail(
+            code: LIMIT,
+            msg: f"the statement holds {params.len()} parameters, past the {POSTGRES_MAX_PARAMETERS} PostgreSQL's protocol carries"
+        )
+    return ok(Written(text: text.join(""), params: params))
+
+test "parts_of: one part, two, three, and empty parts kept"
+    assert parts_of("id") == ["id"]
+    assert parts_of("users.id") == ["users", "id"]
+    assert parts_of("app.users.id") == ["app", "users", "id"]
+    assert parts_of("") == [""]
+    assert parts_of("u.") == ["u", ""]
+
+test "name_list and joined: none, one, several"
+    assert name_list([]) == []
+    assert name_list(["a"]) == [.name(parts: ["a"])]
+    assert name_list(["a", "b.c"]) == [.name(parts: ["a"]), .word(text: ", "), .name(parts: ["b", "c"])]
+    assert joined([], sep: " AND ") == []
+    assert joined([[.word(text: "x")]], sep: " AND ") == [.word(text: "x")]
+    assert joined([[.word(text: "x")], [.word(text: "y")]], sep: ", ") == [.word(text: "x"), .word(text: ", "), .word(text: "y")]
+
+test "bracketed and concat: empty and whole"
+    assert bracketed([]) == [.word(text: "("), .word(text: ")")]
+    assert concat(first: [], second: []) == []
+    assert concat(first: [.word(text: "a")], second: [.word(text: "b")]) == [.word(text: "a"), .word(text: "b")]
+
+test "refusal_in: none, the first of two"
+    assert refusal_in([.word(text: "x")]).is_err()
+    found = refusal_in(
+        [.word(text: "x"), .refusal(code: "invalid", msg: "one"), .refusal(code: "limit", msg: "two")]
+    ).must()
+    assert found == .refusal(code: "invalid", msg: "one")
+
+test "written: placeholders numbered for each database, names quoted, the star"
+    pieces: [Token] = [
+        .word(text: "SELECT ")
+        .star(parts: [])
+        .word(text: ", ")
+        .star(parts: ["u"])
+        .word(text: " FROM ")
+        .name(parts: ["app", "my \"users\""])
+        .word(text: " WHERE ")
+        .name(parts: ["id"])
+        .word(text: " = ")
+        .parameter(v: .integer(v: 7))
+        .word(text: " OR ")
+        .name(parts: ["name"])
+        .word(text: " = ")
+        .parameter(v: .text(v: "é"))
+    ]
+
+    pg = written(pieces, postgres: true).must()
+    assert pg.text == "SELECT *, \"u\".* FROM \"app\".\"my \"\"users\"\"\" WHERE \"id\" = $1 OR \"name\" = $2"
+    assert pg.params == [.integer(v: 7), .text(v: "é")]
+    lite = written(pieces, postgres: false).must()
+    assert lite.text == "SELECT *, \"u\".* FROM \"app\".\"my \"\"users\"\"\" WHERE \"id\" = ?1 OR \"name\" = ?2"
+
+test "written: nothing, a refusal, an empty name, a piece for one database alone"
+    assert written([], postgres: true).must() == Written(text: "", params: [])
+
+    match written([.word(text: "x"), .refusal(code: INVALID, msg: "why")], postgres: false)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "why"
+
+    match written([.name(parts: ["u", ""])], postgres: true)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the name \"u.\": part 1 of the name is empty, and no database keeps an empty name"
+
+    match written([.postgres_only(text: " INTERSECT ALL ", what: "INTERSECT ALL")], postgres: false)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && e.msg == "INTERSECT ALL is PostgreSQL's alone, and SQLite has no form for it"
+
+    assert written([.postgres_only(text: "A", what: "A"), .sqlite_only(text: "B")], postgres: true).must().text == "A"
+    assert written([.sqlite_only(text: "B")], postgres: false).must().text == "B"
+
+test "written: PostgreSQL's last parameter and one past it"
+    pieces: [Token] @= []
+
+    for _ in range(from: 0, to: POSTGRES_MAX_PARAMETERS)
+        pieces @ pieces.push(.parameter(v: .null_value))
+
+    assert written(pieces, postgres: true).must().params.len() == POSTGRES_MAX_PARAMETERS
+    pieces @ pieces.push(.parameter(v: .null_value))
+
+    match written(pieces, postgres: true)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert written(pieces, postgres: false).must().params.len() == POSTGRES_MAX_PARAMETERS + 1

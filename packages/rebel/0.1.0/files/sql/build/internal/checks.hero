@@ -1,0 +1,207 @@
+# The checks of the words `sql/build` writes into a statement unquoted, as
+# a program gave them: a function's name, a type's name, an operator, and a
+# fragment of SQL. Each is held to the characters its kind is written with,
+# so that none can carry a value, a second statement or a comment.
+
+constant INVALID: str
+    "invalid"
+
+# Whether `c` is an ASCII letter or `_`.
+function is_letter(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
+
+# Whether `c` is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# Whether `c` is one of the characters an operator is written with.
+function is_symbol(c: u8) -> bool
+    for s in ["+", "-", "*", "/", "%", "<", ">", "=", "~", "!", "@", "#", "^", "&", "|", "?"]
+        if c == s[0]
+            return true
+
+    return false
+
+# Checks `name`, a function's name: letters, digits and `_`, a letter or
+# `_` first, with single dots between a schema's name and the function's.
+# Fails `invalid` saying why.
+function function_name(name: str) -> ()?
+    if name == ""
+        return fail(code: INVALID, msg: "a function's name is empty")
+    at_start: bool @= true
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+
+        if c == '.'
+            if at_start || i == name.len() - 1
+                return fail(code: INVALID, msg: f"the function's name \"{name}\" has an empty part")
+            at_start @ true
+        else if at_start
+            if !is_letter(c)
+                return fail(
+                    code: INVALID,
+                    msg: f"the function's name \"{name}\" holds a part that does not begin with a letter or _"
+                )
+            at_start @ false
+        else if !is_letter(c) && !is_digit(c)
+            return fail(
+                code: INVALID,
+                msg: f"the function's name \"{name}\" holds a character other than a letter, a digit, _ and ."
+            )
+
+    return ok()
+
+# Checks `name`, a type's name: letters, digits, `_`, spaces, dots, commas,
+# parentheses and brackets, a letter or `_` first. Fails `invalid` saying
+# why.
+function type_name(name: str) -> ()?
+    if name == ""
+        return fail(code: INVALID, msg: "a type's name is empty")
+
+    if !is_letter(name[0])
+        return fail(code: INVALID, msg: f"the type \"{name}\" does not begin with a letter or _")
+
+    for i in range(from: 0, to: name.len())
+        c = name[i]
+        kept = is_letter(c) || is_digit(c) || c == ' ' || c == '.' || c == ',' || c == '(' || c == ')' || c == '[' || c == ']'
+
+        if !kept
+            return fail(
+                code: INVALID,
+                msg: f"the type \"{name}\" holds a character other than letters, digits, _, spaces, dots, commas, parentheses and brackets"
+            )
+
+    return ok()
+
+# Checks `op`, an operator: characters of `+ - * / % < > = ~ ! @ # ^ & | ?`
+# alone, or letters and spaces alone with a letter at each end, and no
+# `--` or `/*`, which open a comment. Fails `invalid` saying why.
+function operator(op: str) -> ()?
+    if op == ""
+        return fail(code: INVALID, msg: "an operator is empty")
+    symbols: bool @= true
+    words: bool @= true
+
+    for i in range(from: 0, to: op.len())
+        c = op[i]
+
+        if !is_symbol(c)
+            symbols @ false
+
+        if !is_letter(c) && c != ' '
+            words @ false
+
+    if words && op[0] != ' ' && op[op.len() - 1] != ' '
+        return ok()
+
+    if !symbols
+        return fail(
+            code: INVALID,
+            msg: f"the operator \"{op}\" is neither symbols alone nor letters and spaces alone"
+        )
+
+    for i in range(from: 0, to: op.len() - 1)
+        if op[i] == '-' && op[i + 1] == '-' || op[i] == '/' && op[i + 1] == '*'
+            return fail(code: INVALID, msg: f"the operator \"{op}\" opens a comment")
+
+    return ok()
+
+# Whether `op` holds a `?`, which SQLite reads as a placeholder.
+function holds_question_mark(op: str) -> bool
+    for i in range(from: 0, to: op.len())
+        if op[i] == '?'
+            return true
+
+    return false
+
+# Checks `text`, a fragment that must hold no value: not empty, and no `'`,
+# `;`, `--`, `/*`, `?`, `$` or zero byte. Fails `invalid` naming the first
+# found and its byte.
+function fragment(text: str) -> ()?
+    if text == ""
+        return fail(code: INVALID, msg: "a fragment of SQL is empty")
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        what = if c == '\''
+            "a quote, which opens a value"
+        else if c == ';'
+            "a semicolon, which ends the statement"
+        else if c == '?' || c == '$'
+            "a placeholder's character, which would break the numbering of the parameters"
+        else if c == 0
+            "a zero byte"
+        else if i + 1 < text.len() && (c == '-' && text[i + 1] == '-' || c == '/' && text[i + 1] == '*')
+            "a comment"
+        else
+            ""
+
+        if what != ""
+            return fail(
+                code: INVALID,
+                msg: f"the fragment \"{text}\" holds {what}, at byte {i}; a value goes in a parameter"
+            )
+
+    return ok()
+
+# Checks `name`, a name written as one part: a column of SET, of a conflict's
+# target or of `excluded`. Fails `invalid` where it holds a dot.
+function one_part(name: str, which: str) -> ()?
+    for i in range(from: 0, to: name.len())
+        if name[i] == '.'
+            return fail(code: INVALID, msg: f"{which} \"{name}\" holds a dot, and is one name of one part")
+
+    return ok()
+
+test "function_name: plain, with a schema, and every refusal"
+    assert function_name("count").is_err() == false
+    assert function_name("pg_catalog.lower").is_err() == false
+    assert function_name("_f2").is_err() == false
+
+    for bad in ["", "2f", "a..b", ".a", "a.", "lower(x)", "a b", "a;b", "città", "a-b"]
+        match function_name(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "type_name: the usual ones, and a quote, a semicolon, a comment refused"
+    for good in ["bigint", "numeric(10, 2)", "timestamp with time zone", "int[]", "pg_catalog.int8", "varchar(20)"]
+        assert type_name(good).is_err() == false
+
+    for bad in ["", "1int", "text'", "int; DROP", "int--x", "(int)"]
+        match type_name(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "operator: symbols, words, and what is neither"
+    for good in ["=", "||", "@>", "->>", "~*", "?|", "ILIKE", "IS DISTINCT FROM", "NOT ILIKE", "-", "/"]
+        assert operator(good).is_err() == false
+
+    for bad in ["", " ", "ILIKE ", "a1", "=x", "--", "/*", "+--", "'", "$", ";"]
+        match operator(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    assert holds_question_mark("?|") && !holds_question_mark("@>")
+
+test "fragment: a keyword passes; each forbidden character at its byte"
+    assert fragment("CURRENT_DATE").is_err() == false
+    assert fragment("\"a\" @@ \"b\"").is_err() == false
+    assert fragment("x - 1").is_err() == false
+
+    match fragment("name = 'x'")
+        .ok _  => assert false
+        .err e => assert e.msg == "the fragment \"name = 'x'\" holds a quote, which opens a value, at byte 7; a value goes in a parameter"
+
+    for bad in ["", "a; DROP TABLE t", "a -- b", "a /* b */", "a = ?", "a = $1", "é?"]
+        match fragment(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "one_part: a name, and a dotted one refused"
+    assert one_part(name: "name", which: "the column").is_err() == false
+
+    match one_part(name: "u.name", which: "the column")
+        .ok _  => assert false
+        .err e => assert e.msg == "the column \"u.name\" holds a dot, and is one name of one part"

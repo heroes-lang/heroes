@@ -1,0 +1,265 @@
+# The versions a database applied, checked against the migrations it has:
+# which are applied, which wait, and the mistakes that stop every plan. It
+# knows a migration by its version, its name and the checksum of its up
+# script alone. It also makes PostgreSQL's lock key of a digest, and writes a
+# parameter's value for a person reading a dry run.
+
+use bytes
+use crypto
+use sql
+use sql/build
+use time
+
+constant INVALID: str
+    "invalid"
+
+constant NOT_FOUND: str
+    "not_found"
+
+# A migration as the check knows it.
+record Known
+    # Its version.
+    version: i64
+    # Its name.
+    name: str
+    # The checksum of its up script now.
+    checksum: str
+
+# A version the table says was applied.
+record Done
+    # The version.
+    version: i64
+    # Its migration's name when it ran.
+    name: str
+    # The checksum of its up script when it ran.
+    checksum: str
+
+# Which migrations are applied and which wait: places in the list the check
+# was given, each list in the order of the versions.
+record Split
+    # The places of the migrations applied.
+    applied: [i64]
+    # The places of the migrations waiting.
+    pending: [i64]
+
+# Which of `known` are applied, as `done` says, and which wait. Fails
+# `invalid` where a version is 0 or below, two share one, a name is empty,
+# an applied migration's checksum differs from the one kept, or a migration
+# waits below the largest version applied and `allow_out_of_order` is
+# false; fails `not_found` where a version of `done` has no migration and
+# `ignore_missing` is false.
+function split(known: [Known], done: [Done], allow_out_of_order: bool, ignore_missing: bool) -> Split?
+    at_version: {i64: i64} @= {}
+    versions: [i64] @= []
+
+    for i in range(from: 0, to: known.len())
+        k = known[i]
+
+        if k.version <= 0
+            return fail(
+                code: INVALID,
+                msg: f"the migration \"{k.name}\" has version {k.version}, and a version is above 0"
+            )
+
+        if k.name == ""
+            return fail(code: INVALID, msg: f"the migration of version {k.version} has an empty name")
+
+        match at_version[k.version]
+            .ok other => return fail(
+                code: INVALID,
+                msg: f"two migrations have version {k.version}: \"{known[other].name}\" and \"{k.name}\""
+            )
+            .err _ => _ = 0
+
+        at_version[k.version] @ i
+        versions @ versions.push(k.version)
+
+    is_applied: {i64: bool} @= {}
+    largest: i64 @= 0
+
+    for d in done
+        match at_version[d.version]
+            .err _ =>
+                if !ignore_missing
+                    return fail(
+                        code: NOT_FOUND,
+                        msg: f"version {d.version} (\"{d.name}\") is applied, and no migration has it"
+                    )
+            .ok i =>
+                if known[i].checksum != d.checksum
+                    return fail(
+                        code: INVALID,
+                        msg: f"the migration {d.version} (\"{known[i].name}\") changed after it ran: its up script's checksum was {d.checksum} and is {known[i].checksum} now"
+                    )
+
+        is_applied[d.version] @ true
+
+        if d.version > largest
+            largest @ d.version
+
+    applied: [i64] @= []
+    pending: [i64] @= []
+
+    for v in sort(versions)
+        i = at_version[v].must()
+
+        if is_applied[v].default(false)
+            applied @ applied.push(i)
+        else
+            if v < largest && !allow_out_of_order
+                return fail(
+                    code: INVALID,
+                    msg: f"the migration {v} (\"{known[i].name}\") waits below version {largest}, the largest applied"
+                )
+            pending @ pending.push(i)
+
+    return ok(Split(applied: applied, pending: pending))
+
+# The first line of a script that runs outside a transaction.
+constant NO_TRANSACTION: str
+    "-- no-transaction"
+
+# Whether `script` runs outside a transaction: its first line, spaces, tabs
+# and a carriage return at either end aside, is `NO_TRANSACTION`.
+function outside_transaction(script: str) -> bool
+    end: i64 @= 0
+
+    while end < script.len() && script[end] != '\n'
+        end @ end + 1
+
+    start: i64 @= 0
+
+    while start < end && (script[start] == ' ' || script[start] == '\t')
+        start @ start + 1
+
+    while end > start && (script[end - 1] == ' ' || script[end - 1] == '\t' || script[end - 1] == '\r')
+        end @ end - 1
+
+    return script.slice(from: start, to: end) == NO_TRANSACTION
+
+# The key of PostgreSQL's advisory lock made of `digest`'s first eight bytes,
+# the first the highest. Aborts where `digest` holds fewer than eight.
+function lock_key(digest: [u8]) -> i64
+    key: i64 @= 0
+
+    for i in range(from: 0, to: 8)
+        key @ key << 8 | digest[i].to_i64().must()
+
+    return key
+
+# PostgreSQL's statement calling `function_name`, an advisory lock's
+# function, on the key `lock_key` makes of the SHA-256 of `table`'s name.
+function advisory(table: str, function_name: str) -> build.Statement?
+    key = lock_key(crypto.sha256_text(table))
+    q @= build.select(from: table, columns: [build.call(function_name, arguments: [build.parameter(.integer(v: key))])])
+    q.from @ []
+    return build.to_sql(.select(query: q), .postgres)
+
+# `v` as a person reads it in a dry run: a number as itself, a text in
+# single quotes with each quote doubled, bytes in hexadecimal, a moment in
+# RFC 3339, `NULL`, `TRUE` and `FALSE`.
+function shown(v: sql.Value) -> str
+    return match v
+        .null_value => "NULL"
+        .boolean b =>
+            if b.v
+                "TRUE"
+            else
+                "FALSE"
+        .integer n => n.v.to_str()
+        .float x   => x.v.to_str()
+        .text t =>
+            pieces: [str] @= ["'"]
+
+            for c in t.v.chars()
+                if c == "'"
+                    pieces @ pieces.push("''")
+                else
+                    pieces @ pieces.push(c)
+
+            pieces @ pieces.push("'")
+            pieces.join("")
+        .blob b    => "X'" + bytes.format_hex(b.v) + "'"
+        .instant t => "'" + time.format(t.v, .rfc3339) + "'"
+
+test "split: nothing, all waiting, all applied, some of each"
+    known = [
+        Known(version: 2, name: "b", checksum: "c2")
+        Known(version: 1, name: "a", checksum: "c1")
+        Known(version: 3, name: "c", checksum: "c3")
+    ]
+    assert split([], done: [], allow_out_of_order: false, ignore_missing: false).must() == Split(applied: [], pending: [])
+    assert split(known, done: [], allow_out_of_order: false, ignore_missing: false).must() == Split(applied: [], pending: [1, 0, 2])
+
+    every = [
+        Done(version: 1, name: "a", checksum: "c1")
+        Done(version: 2, name: "b", checksum: "c2")
+        Done(version: 3, name: "c", checksum: "c3")
+    ]
+    assert split(known, done: every, allow_out_of_order: false, ignore_missing: false).must() == Split(applied: [1, 0, 2], pending: [])
+    assert split(known, done: [Done(version: 1, name: "a", checksum: "c1")], allow_out_of_order: false, ignore_missing: false).must() == Split(applied: [1], pending: [0, 2])
+
+test "split: a version 0, a negative one, an empty name, two of one version"
+    for k in [[Known(version: 0, name: "a", checksum: "")], [Known(version: -9223372036854775808, name: "a", checksum: "")], [Known(version: 1, name: "", checksum: "")]]
+        match split(k, done: [], allow_out_of_order: false, ignore_missing: false)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match split([Known(version: 4, name: "a", checksum: ""), Known(version: 4, name: "b", checksum: "")], done: [], allow_out_of_order: false, ignore_missing: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "two migrations have version 4: \"a\" and \"b\""
+
+test "split: a changed migration, a missing one, one out of order, and each allowed"
+    known = [Known(version: 1, name: "a", checksum: "new"), Known(version: 3, name: "c", checksum: "c3")]
+
+    match split(known, done: [Done(version: 1, name: "a", checksum: "old")], allow_out_of_order: true, ignore_missing: true)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the migration 1 (\"a\") changed after it ran: its up script's checksum was old and is new now"
+
+    missing = [Done(version: 1, name: "a", checksum: "new"), Done(version: 2, name: "gone", checksum: "x")]
+
+    match split(known, done: missing, allow_out_of_order: false, ignore_missing: false)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "version 2 (\"gone\") is applied, and no migration has it"
+
+    assert split(known, done: missing, allow_out_of_order: false, ignore_missing: true).must() == Split(applied: [0], pending: [1])
+
+    late = [Done(version: 3, name: "c", checksum: "c3")]
+
+    match split(known, done: late, allow_out_of_order: false, ignore_missing: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "the migration 1 (\"a\") waits below version 3, the largest applied"
+
+    assert split(known, done: late, allow_out_of_order: true, ignore_missing: false).must() == Split(applied: [1], pending: [0])
+
+test "outside_transaction: the marker alone, before statements, with a carriage return, and not first"
+    assert outside_transaction("-- no-transaction")
+    assert outside_transaction("-- no-transaction\r\nCREATE INDEX CONCURRENTLY i ON t(a);")
+    assert outside_transaction("  -- no-transaction  \nVACUUM;")
+    assert !outside_transaction("")
+    assert !outside_transaction("CREATE TABLE t(a INT);\n-- no-transaction")
+    assert !outside_transaction("-- no-transactions\n")
+    assert !outside_transaction("--no-transaction")
+
+test "lock_key: the first eight bytes, the highest first, a high bit set"
+    assert lock_key([0, 0, 0, 0, 0, 0, 1, 2, 99]) == 258
+    assert lock_key([255, 255, 255, 255, 255, 255, 255, 255]) == -1
+    assert lock_key([128, 0, 0, 0, 0, 0, 0, 0]) == -9223372036854775808
+    assert lock_key([127, 255, 255, 255, 255, 255, 255, 255]) == 9223372036854775807
+
+test "advisory: the lock's statement, its key the same for one table and another for another"
+    first = advisory(table: "applied_migrations", function_name: "pg_advisory_lock").must()
+    assert first.text == "SELECT pg_advisory_lock($1)"
+    assert first == advisory(table: "applied_migrations", function_name: "pg_advisory_lock").must()
+    assert first.params != advisory(table: "app.applied_migrations", function_name: "pg_advisory_lock").must().params
+    assert first.params == [.integer(v: lock_key(crypto.sha256_text("applied_migrations")))]
+
+test "shown: every case, and a quote doubled"
+    assert shown(.null_value) == "NULL"
+    assert shown(.boolean(v: true)) == "TRUE" && shown(.boolean(v: false)) == "FALSE"
+    assert shown(.integer(v: -9223372036854775808)) == "-9223372036854775808"
+    assert shown(.float(v: 1.5)) == "1.5"
+    assert shown(.text(v: "it's é")) == "'it''s é'"
+    assert shown(.text(v: "")) == "''"
+    assert shown(.blob(v: [0, 255])) == "X'00ff'"
+    assert shown(.instant(v: time.epoch())) == "'1970-01-01T00:00:00Z'"

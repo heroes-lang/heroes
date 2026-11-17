@@ -1,0 +1,402 @@
+# The ledger of `sql/build`: queries as values, measured against the yardstick
+# the author named on 2026-11-16, which is no standard library: Go's
+# `github.com/Masterminds/squirrel` v1.5.4 and `github.com/doug-martin/goqu/v9` v9.25.0
+# (with `goqu/v9/exp`), `go doc -all` on each in a module of the scratch
+# folder; Rust's `sea-query` 1.0.2, its item list on docs.rs; and Python's
+# SQLAlchemy 2.1.8 Core, `dir()` of its modules installed in the scratch
+# folder, counted as capabilities and not entry by entry, as the author asked.
+# Every entry of squirrel and goqu that builds or renders SQL stands in a
+# block; what runs a statement, scans into a struct or configures a global
+# stands in `dropped`. Expected texts were written by hand from PostgreSQL's
+# and SQLite's documentation and set beside SQLAlchemy's own rendering of the
+# same queries (`compile` with `paramstyle` `numeric_dollar` and `numeric`),
+# then run live on 2026-11-17 against this Mac's SQLite and PostgreSQL 16.15 (the
+# drivers' tests, PostgreSQL's where `REBEL_POSTGRES_URL` names a server).
+
+capability build/select  a SELECT made as a value: its columns and its table
+  heroes  sql/build.select, sql/build.Select, sql/build.to_sql
+  go      squirrel.Select, squirrel.SelectBuilder.Columns, squirrel.SelectBuilder.Column, squirrel.SelectBuilder.From, squirrel.StatementBuilder, squirrel.StatementBuilderType.Select, goqu.From, goqu.Select, goqu.SelectDataset.Select, goqu.SelectDataset.SelectAppend, goqu.SelectDataset.From, goqu.Star, goqu.S, goqu.T
+  rust    sea_query::Query::select, SelectStatement::column, SelectStatement::columns, SelectStatement::from, SelectStatement::expr, Asterisk
+  python  sqlalchemy.select, Select.add_columns, Select.with_only_columns, Select.select_from, sqlalchemy.table, sqlalchemy.column, Table.c
+
+capability build/select-no-table  a SELECT of expressions alone, with no FROM
+  heroes  sql/build.Select (`from` set to `[]`)
+  go      squirrel.Select with no From, goqu.Select
+  rust    SelectStatement with no from
+  python  sqlalchemy.select of literals
+
+capability build/distinct  rows told apart, duplicates dropped
+  heroes  sql/build.Select (`distinct`)
+  go      squirrel.SelectBuilder.Distinct, goqu.SelectDataset.Distinct, goqu.SelectDataset.SelectDistinct, goqu.DISTINCT
+  rust    SelectStatement::distinct, SelectDistinct
+  python  Select.distinct, sqlalchemy.distinct
+
+capability build/distinct-on  PostgreSQL's DISTINCT ON
+  heroes  pending
+  go      goqu.SelectDataset.Distinct with columns
+  rust    SelectStatement::distinct_on
+  python  Select.distinct with columns (PostgreSQL)
+
+capability build/identifiers  a table's or a column's name quoted, a qualified name as its parts
+  heroes  sql/build.column, sql/build.table, sql.quote_identifier
+  go      goqu.I, goqu.C, goqu.T, goqu.S, exp.ParseIdentifier, exp.NewIdentifierExpression, exp.IdentifierExpression
+  rust    sea_query::Alias, Iden, ColumnRef, TableRef, types::is_static_iden
+  python  sqlalchemy.quoted_name, sqlalchemy.column, sqlalchemy.table, sqlalchemy.literal_column
+  note    every name is quoted, always, by `sql.quote_identifier`; squirrel quotes nothing, goqu quotes, SQLAlchemy quotes only where a name needs it. A name given as text is cut at its dots into its parts
+
+capability build/alias  a column's or a table's other name, `AS`
+  heroes  sql/build.aliased, sql/build.table_as
+  go      squirrel.Alias, goqu.SelectDataset.As, exp.Aliaseable.As, exp.NewAliasExpression, exp.AliasedExpression
+  rust    SelectStatement::expr_as, SelectStatement::from_as, Alias
+  python  ColumnElement.label, FromClause.alias, sqlalchemy.alias
+
+capability build/joins  a table joined: inner, left, right, full, cross
+  heroes  sql/build.inner_join, sql/build.left_join, sql/build.right_join, sql/build.full_join, sql/build.cross_join, sql/build.Join, sql/build.JoinKind
+  go      squirrel.SelectBuilder.Join, squirrel.SelectBuilder.InnerJoin, squirrel.SelectBuilder.LeftJoin, squirrel.SelectBuilder.RightJoin, squirrel.SelectBuilder.CrossJoin, squirrel.SelectBuilder.JoinClause, goqu.SelectDataset.Join, goqu.SelectDataset.InnerJoin, goqu.SelectDataset.LeftJoin, goqu.SelectDataset.LeftOuterJoin, goqu.SelectDataset.RightJoin, goqu.SelectDataset.RightOuterJoin, goqu.SelectDataset.FullJoin, goqu.SelectDataset.FullOuterJoin, goqu.SelectDataset.CrossJoin, goqu.SelectDataset.CustomJoin, goqu.On, exp.JoinType, exp.JoinCondition, exp.NewJoinOnCondition, exp.ConditionedJoinExpression, exp.NewConditionedJoinExpression, exp.NewUnConditionedJoinExpression, exp.JoinExpressions
+  rust    SelectStatement::join, inner_join, left_join, right_join, full_outer_join, cross_join, join_as, JoinType, JoinOn, JoinExpr
+  python  sqlalchemy.join, sqlalchemy.outerjoin, Select.join, Select.outerjoin, Select.join_from, Select.outerjoin_from
+
+capability build/join-natural-using  a join on the columns two tables share by name: NATURAL, USING
+  heroes  refused: a NATURAL join's condition changes in silence when either table gains a column whose name the other has; `columns_equal` in `on` names the columns, and USING would be a second way to write that
+  go      goqu.SelectDataset.NaturalJoin, goqu.SelectDataset.NaturalLeftJoin, goqu.SelectDataset.NaturalRightJoin, goqu.SelectDataset.NaturalFullJoin, goqu.SelectDataset.StraightJoin, goqu.Using, exp.NewJoinUsingCondition, exp.JoinUsingCondition
+  rust    JoinOn::Columns
+  python  -
+
+capability build/where  the rows a statement reads, changes or deletes, chosen by a condition
+  heroes  sql/build.Select (`where`), sql/build.Update (`where`), sql/build.Delete (`where`)
+  go      squirrel.SelectBuilder.Where, squirrel.UpdateBuilder.Where, squirrel.DeleteBuilder.Where, squirrel.StatementBuilderType.Where, goqu.SelectDataset.Where, goqu.UpdateDataset.Where, goqu.DeleteDataset.Where, goqu.SelectDataset.ClearWhere
+  rust    SelectStatement::and_where, cond_where, UpdateStatement::and_where, DeleteStatement::and_where, ConditionalStatement
+  python  Select.where, Select.filter, Update.where, Delete.where
+
+capability build/and-or-not  conditions combined: all hold, one holds, it does not hold
+  heroes  sql/build.all_of, sql/build.any_of, sql/build.negate
+  go      squirrel.And, squirrel.Or, goqu.And, goqu.Or, goqu.Ex, goqu.ExOr, exp.Ex, exp.ExOr, exp.ExpressionList, exp.NewExpressionList, exp.ExpressionListType, exp.BooleanExpression, exp.NewBooleanExpression, exp.BooleanOperation
+  rust    Condition::all, Condition::any, Condition::not, all!, any!, ConditionHolder, ConditionHolderContents, ConditionType, LogicalChainOper, UnOper
+  python  sqlalchemy.and_, sqlalchemy.or_, sqlalchemy.not_, sqlalchemy.true, sqlalchemy.false
+  note    `AND` binds closer than `OR` in SQL; every combined part is put in parentheses here, so the text reads as the program wrote it
+
+capability build/compare  a value compared: equal, not equal, less, greater, and their or-equal
+  heroes  sql/build.equal, sql/build.not_equal, sql/build.less, sql/build.less_or_equal, sql/build.greater, sql/build.greater_or_equal
+  go      squirrel.Eq, squirrel.NotEq, squirrel.Lt, squirrel.LtOrEq, squirrel.Gt, squirrel.GtOrEq, goqu.Ex, exp.Comparable.Eq, exp.Comparable.Neq, exp.Comparable.Gt, exp.Comparable.Gte, exp.Comparable.Lt, exp.Comparable.Lte, exp.Op
+  rust    Expr::eq, Expr::ne, Expr::lt, Expr::lte, Expr::gt, Expr::gte, Expr::equals, BinOper
+  python  ColumnOperators.__eq__, __ne__, __lt__, __le__, __gt__, __ge__, ColumnOperators.op, sqlalchemy.bindparam, sqlalchemy.literal
+  note    the value is always a parameter; squirrel's Eq with a nil writes IS NULL, and so does `equal` here with `NULL`, since `= NULL` is never true. A `NULL` given to `<`, `<=`, `>`, `>=`, `LIKE` or `BETWEEN` is refused `invalid`: such a condition holds for no row
+
+capability build/compare-columns  two columns or two expressions compared
+  heroes  sql/build.columns_equal, sql/build.compare, sql/build.Op
+  go      goqu.C(...).Eq(goqu.C(...)), squirrel.Expr
+  rust    Expr::col(...).equals(...)
+  python  table.c.a == other.c.b
+
+capability build/in-list  a value among a list, or not
+  heroes  sql/build.in_values
+  go      squirrel.Eq with a slice, squirrel.NotEq with a slice, exp.Inable.In, exp.Inable.NotIn
+  rust    Expr::is_in, Expr::is_not_in
+  python  ColumnOperators.in_, ColumnOperators.not_in
+  note    NOT IN is `negate` over `in_values`. An empty list holds for no row, written `1 = 0` since PostgreSQL refuses `IN ()`, and under `negate` for every row; SQLAlchemy writes an empty set the same way in other words. A NULL in the list is refused: it matches nothing, and under NOT it makes the condition hold for no row
+
+capability build/in-query  a value among a subquery's rows, and a subquery that answers a row
+  heroes  sql/build.in_query, sql/build.exists
+  go      goqu.SelectDataset.Exists, goqu.Exists, exp.Inable.In with a dataset
+  rust    Expr::in_subquery, Expr::not_in_subquery, Expr::exists, SubQueryOper, SubQueryStatement
+  python  sqlalchemy.exists, ColumnOperators.in_ with a select, Select.exists
+
+capability build/any-all  a value compared with ANY or ALL of an array or a subquery
+  heroes  pending
+  go      goqu.Any, goqu.All
+  rust    Expr::any, Expr::all
+  python  sqlalchemy.any_, sqlalchemy.all_
+
+capability build/between  a value between two others
+  heroes  sql/build.between
+  go      exp.Rangeable.Between, exp.Rangeable.NotBetween, goqu.Range, exp.RangeExpression, exp.NewRangeExpression, exp.RangeOperation, exp.RangeVal, exp.NewRangeVal
+  rust    Expr::between, Expr::not_between
+  python  ColumnOperators.between, sqlalchemy.between
+
+capability build/like  text matched by a pattern, and a text matched as itself
+  heroes  sql/build.like, sql/build.escape_like, sql/build.Op (`.like`, `.other`)
+  go      squirrel.Like, squirrel.NotLike, squirrel.ILike, squirrel.NotILike, exp.Likeable.Like, exp.Likeable.NotLike, exp.Likeable.ILike, exp.Likeable.NotILike
+  rust    Expr::like, Expr::not_like, LikeExpr, LikeExpr::escape
+  python  ColumnOperators.like, not_like, ilike, not_ilike, contains, startswith, endswith, the `escape` and `autoescape` arguments
+  note    every LIKE names its escape, a backslash, as a parameter: PostgreSQL's default escape is a backslash and SQLite has none, and a `'\'` in the text would mean another thing where `standard_conforming_strings` is off. ILIKE is PostgreSQL's and is written with `compare` and `.other`
+
+capability build/regex  text matched by a regular expression
+  heroes  sql/build.compare with `.other`
+  go      exp.Likeable.RegexpLike, RegexpNotLike, RegexpILike, RegexpNotILike
+  rust    PgBinOper::Matches, SqliteBinOper::Match, SqliteBinOper::Glob
+  python  ColumnOperators.regexp_match, regexp_replace
+  note    the operator is the database's own (`~` for PostgreSQL; SQLite's `REGEXP` needs a function the program registers), so it is written with `compare` and `.other`
+
+capability build/is-null  a value that is NULL, or is not
+  heroes  sql/build.equal, sql/build.not_equal, sql/build.compare (beside `parameter(.null_value)`)
+  go      squirrel.Eq with nil, exp.Isable.Is, IsNot, IsNull, IsNotNull, IsTrue, IsNotTrue, IsFalse, IsNotFalse
+  rust    Expr::is_null, Expr::is_not_null, Expr::is, Expr::is_not
+  python  ColumnOperators.is_, is_not, `== None`, sqlalchemy.null
+
+capability build/group-by  rows grouped
+  heroes  sql/build.Select (`group_by`)
+  go      squirrel.SelectBuilder.GroupBy, goqu.SelectDataset.GroupBy, goqu.SelectDataset.GroupByAppend
+  rust    SelectStatement::group_by_col, group_by_columns, add_group_by
+  python  Select.group_by
+
+capability build/having  groups chosen by a condition
+  heroes  sql/build.Select (`having`)
+  go      squirrel.SelectBuilder.Having, goqu.SelectDataset.Having
+  rust    SelectStatement::and_having, cond_having
+  python  Select.having
+
+capability build/order-by  rows ordered, up or down, NULLs first or last
+  heroes  sql/build.ascending, sql/build.descending, sql/build.Order, sql/build.NullsAt
+  go      squirrel.SelectBuilder.OrderBy, squirrel.SelectBuilder.OrderByClause, goqu.SelectDataset.Order, OrderAppend, OrderPrepend, ClearOrder, exp.Orderable.Asc, exp.Orderable.Desc, exp.OrderedExpression, exp.NewOrderedExpression, exp.NewOrderedColumnList, exp.SortDirection, exp.NullSortType
+  rust    SelectStatement::order_by, order_by_columns, order_by_with_nulls, order_by_expr, Order, NullOrdering
+  python  Select.order_by, sqlalchemy.asc, sqlalchemy.desc, sqlalchemy.nulls_first, sqlalchemy.nulls_last
+
+capability build/limit-offset  a page of rows: at most so many, after so many
+  heroes  sql/build.Select (`limit`, `offset`)
+  go      squirrel.SelectBuilder.Limit, Offset, RemoveLimit, RemoveOffset, goqu.SelectDataset.Limit, LimitAll, Offset, ClearLimit, ClearOffset
+  rust    SelectStatement::limit, offset, reset_limit, reset_offset
+  python  Select.limit, Select.offset, Select.fetch, Select.slice
+  note    both are parameters, as SQLAlchemy binds them; SQLite reads no OFFSET without a LIMIT, so an offset alone is written `LIMIT -1 OFFSET ?2` there, as SQLAlchemy does with a parameter
+
+capability build/functions  a function of SQL called: count, sum, lower, coalesce and the rest
+  heroes  sql/build.call, sql/build.call_distinct, sql/build.count_all
+  go      goqu.Func, goqu.COUNT, goqu.SUM, goqu.AVG, goqu.MIN, goqu.MAX, goqu.COALESCE, goqu.NULLIF, goqu.FIRST, goqu.LAST, goqu.DISTINCT, exp.SQLFunctionExpression, exp.NewSQLFunctionExpression
+  rust    Func, FunctionCall, FuncArgMod, Func::count, Func::sum, Func::avg, Func::max, Func::min, Func::coalesce, Func::lower, Func::upper, Func::cust
+  python  sqlalchemy.func, sqlalchemy.funcfilter, sqlalchemy.extract
+
+capability build/windows  window functions: OVER, PARTITION BY, frames
+  heroes  pending
+  go      goqu.W, goqu.ROW_NUMBER, goqu.RANK, goqu.DENSE_RANK, goqu.PERCENT_RANK, goqu.CUME_DIST, goqu.NTILE, goqu.FIRST_VALUE, goqu.LAST_VALUE, goqu.NTH_VALUE, goqu.SelectDataset.Window, WindowAppend, ClearWindow, exp.WindowExpression, exp.NewWindowExpression, exp.SQLWindowFunctionExpression, exp.NewSQLWindowFunctionExpression, exp.Windowable
+  rust    WindowStatement, FrameClause, Frame, FrameType, WindowSelectType, SelectStatement::window
+  python  FunctionElement.over, sqlalchemy.over, sqlalchemy.within_group
+
+capability build/case  a value chosen by conditions, CASE WHEN
+  heroes  sql/build.choose, sql/build.When
+  go      squirrel.Case, squirrel.CaseBuilder.When, squirrel.CaseBuilder.Else, goqu.Case, exp.CaseExpression, exp.NewCaseExpression, exp.CaseWhen, exp.NewCaseWhen, exp.CaseElse, exp.NewCaseElse
+  rust    CaseStatement, Expr::case
+  python  sqlalchemy.case
+
+capability build/cast  a value read as another type, CAST
+  heroes  sql/build.cast
+  go      goqu.Cast, exp.Castable.Cast, exp.CastExpression, exp.NewCastExpression
+  rust    Expr::cast_as
+  python  sqlalchemy.cast, sqlalchemy.type_coerce
+
+capability build/collate  a text compared by a named collation
+  heroes  pending
+  go      goqu.Collate, exp.CollateExpression, exp.NewCollateExpression, exp.Collateable
+  rust    -
+  python  sqlalchemy.collate
+
+capability build/operators  arithmetic, concatenation and the database's own operators
+  heroes  sql/build.operation
+  go      exp.Bitwiseable.BitwiseInversion, BitwiseOr, BitwiseAnd, BitwiseXor, BitwiseLeftShift, BitwiseRightShift, exp.BitwiseExpression, exp.NewBitwiseExpression, exp.BitwiseOperation, squirrel.ConcatExpr
+  rust    Expr::add, Expr::sub, Expr::mul, Expr::div, Expr::modulo, Expr::concat, Expr::binary, Expr::bit_and, Expr::bit_or, BinOper, PgBinOper, SqliteBinOper
+  python  ColumnOperators.__add__, __sub__, __mul__, __truediv__, __mod__, concat, ColumnOperators.op, bitwise_and, bitwise_or, bitwise_xor, bitwise_not, bitwise_lshift, bitwise_rshift
+  note    an operator given as text is held to the characters an operator is written with, or to letters and spaces (`ILIKE`, `IS DISTINCT FROM`), so it can carry no value and no comment
+
+capability build/subquery  a SELECT inside another: as a value, and as a table
+  heroes  sql/build.subquery, sql/build.from_subquery
+  go      squirrel.SelectBuilder.FromSelect, goqu.SelectDataset.FromSelf, goqu.SelectDataset.From with a dataset, goqu.SelectDataset.CompoundFromSelf
+  rust    SelectStatement::from_subquery, SubQueryStatement, Expr::subquery, TableRef::SubQuery
+  python  Select.subquery, Select.scalar_subquery, Select.alias
+
+capability build/lateral  a subquery that reads the tables before it, LATERAL
+  heroes  pending
+  go      goqu.Lateral, exp.LateralExpression, exp.NewLateralExpression
+  rust    JoinExpr lateral
+  python  sqlalchemy.lateral, Select.lateral
+
+capability build/compound  two selects combined: UNION, INTERSECT, EXCEPT, with ALL or not
+  heroes  sql/build.Combined, sql/build.SetOperation, sql/build.Select (`combined`)
+  go      goqu.SelectDataset.Union, UnionAll, Intersect, IntersectAll, exp.CompoundExpression, exp.NewCompoundExpression, exp.CompoundType
+  rust    SelectStatement::union, unions, UnionType
+  python  sqlalchemy.union, union_all, intersect, intersect_all, except_, except_all, Select.union, Select.union_all
+  note    INTERSECT ALL and EXCEPT ALL are PostgreSQL's alone and fail `unsupported` for SQLite; a part after the first holds no ORDER BY, LIMIT or OFFSET, which SQLite does not read there, and the first's apply to the whole
+
+capability build/cte  named subqueries before the statement, WITH and WITH RECURSIVE
+  heroes  pending
+  go      goqu.SelectDataset.With, WithRecursive, goqu.InsertDataset.With, goqu.UpdateDataset.With, goqu.DeleteDataset.With, exp.CommonTableExpression, exp.NewCommonTableExpression
+  rust    WithClause, WithQuery, CommonTableExpression, Cycle, Search, SearchOrder
+  python  Select.cte, HasCTE.add_cte, CTE
+
+capability build/locking  rows locked as they are read: FOR UPDATE, FOR SHARE, SKIP LOCKED, NOWAIT
+  heroes  pending
+  go      goqu.SelectDataset.ForUpdate, ForNoKeyUpdate, ForShare, ForKeyShare, exp.Lock, exp.NewLock, exp.LockStrength, exp.WaitOption
+  rust    SelectStatement::lock, lock_shared, lock_exclusive, lock_with_behavior, LockClause, LockType, LockBehavior
+  python  Select.with_for_update
+
+capability build/insert  rows inserted: one, or several in one statement
+  heroes  sql/build.insert, sql/build.Insert, sql/build.Source (`.rows`)
+  go      squirrel.Insert, squirrel.InsertBuilder.Into, Columns, Values, SetMap, Options, goqu.Insert, goqu.InsertDataset.Into, Cols, ColsAppend, Vals, Rows, ClearCols, ClearVals, ClearRows, goqu.Vals, goqu.Record, exp.Vals, exp.Record, exp.InsertExpression, exp.NewInsertExpression
+  rust    Query::insert, InsertStatement::into_table, columns, values, values_panic
+  python  sqlalchemy.insert, Insert.values
+  note    every row is checked to hold one value per column before any text is written
+
+capability build/insert-default  a row of the table's defaults alone, DEFAULT VALUES
+  heroes  sql/build.Source (`.defaults`)
+  go      goqu.Default, exp.Default
+  rust    InsertStatement::or_default_values
+  python  sqlalchemy.insert with no values
+
+capability build/insert-select  rows inserted from a SELECT
+  heroes  sql/build.insert_select, sql/build.Source (`.query`)
+  go      squirrel.InsertBuilder.Select, goqu.InsertDataset.FromQuery
+  rust    InsertStatement::select_from
+  python  Insert.from_select
+
+capability build/returning  the rows an INSERT, UPDATE or DELETE touched, answered
+  heroes  sql/build.Insert, sql/build.Update, sql/build.Delete (`returning`)
+  go      goqu.InsertDataset.Returning, goqu.UpdateDataset.Returning, goqu.DeleteDataset.Returning, squirrel.InsertBuilder.Suffix
+  rust    InsertStatement::returning, returning_col, returning_all, Returning, ReturningClause
+  python  Insert.returning, Update.returning, Delete.returning
+
+capability build/upsert  an insert that meets a row a unique key holds: do nothing, or update it
+  heroes  sql/build.Conflict, sql/build.excluded, sql/build.Assignment
+  go      goqu.InsertDataset.OnConflict, ClearOnConflict, goqu.DoNothing, goqu.DoUpdate, exp.ConflictExpression, exp.ConflictAction, exp.ConflictNothingExpression, exp.NewDoNothingConflictExpression, exp.ConflictUpdateExpression, exp.NewDoUpdateConflictExpression
+  rust    OnConflict, OnConflictAction, OnConflictTarget, OnConflictUpdate, OnConflictIdentifier, InsertStatement::on_conflict
+  python  sqlalchemy.dialects.postgresql.insert.on_conflict_do_nothing, on_conflict_do_update, excluded, and sqlite.insert's
+  note    PostgreSQL and SQLite (3.24 on) read the same `ON CONFLICT (...) DO NOTHING` and `DO UPDATE SET ... = excluded."c"`
+
+capability build/replace  a row replaced whole where a key holds one: REPLACE, INSERT OR REPLACE
+  heroes  refused: a second way to write over a row, and it deletes the row it replaces first, with its other columns and what a foreign key cascades from it; `Conflict.do_update` changes the row in place
+  go      squirrel.Replace, squirrel.StatementBuilderType.Replace
+  rust    InsertStatement::replace
+  python  Insert.prefix_with("OR REPLACE")
+
+capability build/update  rows changed
+  heroes  sql/build.update, sql/build.assign, sql/build.Update, sql/build.Assignment
+  go      squirrel.Update, squirrel.UpdateBuilder.Table, Set, SetMap, goqu.Update, goqu.UpdateDataset.Table, Set, exp.Updateable.Set, exp.UpdateExpression, exp.NewUpdateExpressions
+  rust    Query::update, UpdateStatement::table, value, values
+  python  sqlalchemy.update, Update.values
+
+capability build/update-from  rows changed by what another table holds, UPDATE ... FROM
+  heroes  pending
+  go      squirrel.UpdateBuilder.From, squirrel.UpdateBuilder.FromSelect, goqu.UpdateDataset.From
+  rust    UpdateStatement::from
+  python  Update.where on another table (rendered UPDATE ... FROM)
+
+capability build/delete  rows deleted
+  heroes  sql/build.delete, sql/build.Delete
+  go      squirrel.Delete, squirrel.DeleteBuilder.From, goqu.Delete, goqu.DeleteDataset.From
+  rust    Query::delete, DeleteStatement::from_table
+  python  sqlalchemy.delete
+
+capability build/delete-using  rows deleted by what another table holds, DELETE ... USING
+  heroes  pending
+  go      -
+  rust    -
+  python  Delete.where on another table (rendered DELETE ... USING for PostgreSQL)
+
+capability build/every-row  an UPDATE or a DELETE of every row, said on purpose
+  heroes  sql/build.every_row
+  go      -
+  rust    -
+  python  -
+  note    an UPDATE or a DELETE with no condition fails `invalid` here, the message naming `every_row`: the three write every row in silence
+
+capability build/update-delete-order-limit  an UPDATE or a DELETE with ORDER BY and LIMIT
+  heroes  refused: PostgreSQL has neither, and SQLite reads them only where it was built with SQLITE_ENABLE_UPDATE_DELETE_LIMIT; `in_query` over a SELECT of the keys, ordered and limited, does it on both
+  go      squirrel.UpdateBuilder.OrderBy, Limit, Offset, squirrel.DeleteBuilder.OrderBy, Limit, Offset, goqu.UpdateDataset.Order, OrderAppend, OrderPrepend, ClearOrder, Limit, LimitAll, ClearLimit, goqu.DeleteDataset.Order, OrderAppend, OrderPrepend, ClearOrder, Limit, LimitAll, ClearLimit
+  rust    UpdateStatement::order_by, limit, DeleteStatement::order_by, limit
+  python  -
+
+capability build/truncate  every row of a table emptied at once, TRUNCATE
+  heroes  refused: SQLite has no TRUNCATE; `delete` with `every_row` empties a table on both
+  go      goqu.Truncate, goqu.TruncateDataset, goqu.TruncateOptions, exp.TruncateClauses, exp.NewTruncateClauses, exp.TruncateOptions
+  rust    Table::truncate, TableTruncateStatement
+  python  -
+
+capability build/placeholders  each database's own placeholders, numbered in order
+  heroes  sql/build.Dialect, sql/build.to_sql
+  go      squirrel.Question, squirrel.Dollar, squirrel.Colon, squirrel.AtP, squirrel.PlaceholderFormat, squirrel.Placeholders, squirrel.SelectBuilder.PlaceholderFormat, squirrel.InsertBuilder.PlaceholderFormat, squirrel.UpdateBuilder.PlaceholderFormat, squirrel.DeleteBuilder.PlaceholderFormat, squirrel.StatementBuilderType.PlaceholderFormat, goqu.SelectDataset.Prepared, goqu.SetDefaultPrepared, goqu.SelectDataset.IsPrepared
+  rust    PostgresQueryBuilder, SqliteQueryBuilder, QueryBuilder, SqlWriterValues
+  python  Dialect.paramstyle, sqlalchemy.bindparam
+  note    `$1` for PostgreSQL, `?1` for SQLite, as `sql`'s opening comment names them: a numbered `?` says which value each place takes, where a bare `?` would only count
+
+capability build/dialects  the database a statement is written for
+  heroes  sql/build.Dialect
+  go      goqu.Dialect, goqu.GetDialect, goqu.MustDialect, goqu.RequireDialect, goqu.SQLDialect, goqu.SQLDialectOptions, goqu.DialectWrapper, goqu.SelectDataset.Dialect, SetDialect, WithDialect, AppendSQLWithDialect
+  rust    PostgresQueryBuilder, SqliteQueryBuilder, MysqlQueryBuilder, backend::Mode, backend::Oper
+  python  sqlalchemy.dialects.postgresql, sqlalchemy.dialects.sqlite, Compiled.dialect
+
+capability build/dialect-mysql  MySQL's and MariaDB's text: backquoted names, bare `?`
+  heroes  pending
+  go      goqu's mysql dialect, squirrel.Question
+  rust    MysqlQueryBuilder, MySqlType, IndexHint, IndexHintScope, IndexHintType, ExplainTable
+  python  sqlalchemy.dialects.mysql
+  note    waits for `sql/mysql`, whose face is not written: its quoting of a name is that package's to say
+
+capability build/dialects-registered  a dialect added at run time by a name
+  heroes  refused: a dialect is a case of `Dialect`, which the compiler checks every `match` on; a registry by name needs an interface the language does not have
+  go      goqu.RegisterDialect, goqu.DeregisterDialect, goqu.SetDefaultDialect
+  rust    -
+  python  sqlalchemy.dialects.registry
+
+capability build/render  a query written as its text and its parameters
+  heroes  sql/build.to_sql, sql/build.Statement
+  go      squirrel.SelectBuilder.ToSql, MustSql, squirrel.InsertBuilder.ToSql, MustSql, squirrel.UpdateBuilder.ToSql, MustSql, squirrel.DeleteBuilder.ToSql, MustSql, squirrel.CaseBuilder.ToSql, MustSql, squirrel.Sqlizer, squirrel.And.ToSql, squirrel.Or.ToSql, squirrel.Eq.ToSql, squirrel.NotEq.ToSql, squirrel.Lt.ToSql, squirrel.LtOrEq.ToSql, squirrel.Gt.ToSql, squirrel.GtOrEq.ToSql, squirrel.Like.ToSql, squirrel.NotLike.ToSql, squirrel.ILike.ToSql, squirrel.NotILike.ToSql, goqu.SelectDataset.ToSQL, AppendSQL, goqu.InsertDataset.ToSQL, goqu.UpdateDataset.ToSQL, goqu.DeleteDataset.ToSQL, goqu.SelectDataset.Error, SetError, exp.SQLExpression, exp.AppendableExpression
+  rust    SelectStatement::build, InsertStatement::build, UpdateStatement::build, DeleteStatement::build, QueryStatementBuilder, QueryStatementWriter
+  python  ClauseElement.compile, Compiled.params, Compiled.string
+  note    the text and the list of values a driver's `exec` and `query` take; a mistake in a query (a column with no name, a row of the wrong length) is a failure of this call, where squirrel and goqu keep it in the builder until ToSql
+
+capability build/inline-values  a statement written with its values inside its text
+  heroes  refused: a value inside the text is what this package exists to prevent; the text and `params` side by side show the same, and `sql/migrate.format_plan` writes them for a person
+  go      squirrel.DebugSqlizer, goqu.L, goqu.Literal, goqu.V, goqu's non-prepared mode, exp.LiteralExpression, exp.NewLiteralExpression
+  rust    SelectStatement::to_string, prepare::inject_parameters, raw_sql::seaql::debug, DebugQuery
+  python  `compile_kwargs={"literal_binds": True}`, sqlalchemy.literal_column, alembic's inline_literal
+
+capability build/raw  a fragment of SQL the builder does not offer
+  heroes  sql/build.raw_without_values, sql/build.holds
+  go      squirrel.Expr, squirrel.SelectBuilder.Prefix, PrefixExpr, Suffix, SuffixExpr, Options, the same on InsertBuilder, UpdateBuilder and DeleteBuilder, goqu.L, goqu.Literal
+  rust    Expr::cust, Expr::cust_with_values, raw_query!, raw_sql!, RawSqlQueryBuilder, raw_sql::seaql::query
+  python  sqlalchemy.text, sqlalchemy.literal_column, Select.prefix_with, Select.suffix_with
+  note    the three take values into a fragment; here a fragment holds no value, and a quote, a semicolon, a comment, a `?` or a `$` in it fails `invalid`
+
+capability build/row-to-record  a row read into a record, the columns named by its fields
+  heroes  sql.text_named, sql.integer_named and the other reads of `sql` by name, given `Record::field` (spec § 9); sql/build.columns_named names the same fields as the columns
+  go      goqu.SelectDataset.ScanStruct, ScanStructs, ScanVal, ScanVals, Pluck, ScanStructContext, ScanStructsContext, ScanValContext, ScanValsContext, PluckContext, squirrel.Row.Scan, squirrel.RowScanner
+  rust    -
+  python  Row._mapping, Row._asdict
+  note    the field names come from `Record::field`, which the compiler checks (spec § 9); goqu reads a struct's tags by reflection at run time
+
+capability build/record-to-row  a record's fields written as the columns and values of an INSERT
+  heroes  refused: reading a record's fields at run time is reflection, which the language does not have; a program lists `[User::name, User::email]` and their values, which the compiler checks
+  go      exp.NewRecordFromStruct, goqu.Insert with a struct, goqu.Update with a struct, goqu.SetIgnoreUntaggedFields, goqu.SetColumnRenameFunction
+  rust    -
+  python  -
+
+capability build/orm  objects mapped to tables, tracked and saved: a session, an identity map, relations loaded when read
+  heroes  refused: objects tracked and saved, an identity map and relations loaded when read need reflection (refused) and objects shared between places, and every value here is a copy; a program reads rows into records with `sql`'s reads by `Record::field` and writes them with `insert` and `update`
+  go      -
+  rust    -
+  python  sqlalchemy.orm (Session, Mapped, mapped_column, relationship, DeclarativeBase, selectinload, joinedload), outside SQLAlchemy Core
+
+capability build/schema  tables, indexes and keys made, changed and dropped as values (DDL)
+  heroes  refused: a table is made by a migration's SQL in the database's own words (`sql/migrate`); DDL as values would be a second language for what each database writes differently
+  go      -
+  rust    Table::create, Table::alter, Table::drop, Table::rename, TableCreateStatement, TableAlterStatement, TableDropStatement, TableRenameStatement, ColumnDef, ColumnType, Index, IndexCreateStatement, IndexDropStatement, ForeignKey, ForeignKeyCreateStatement, ForeignKeyDropStatement, ForeignKeyAction, Check, TableOpt, TableAlterOption, TableDropOpt, StringLen, PartitionBy, PartitionValues, Type, TypeCreateStatement, TypeAlterStatement, TypeDropStatement, Extension, ExtensionCreateStatement, ExtensionDropStatement
+  python  sqlalchemy.MetaData, Table, Column, Index, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, UniqueConstraint, CheckConstraint, Sequence, schema.CreateTable, schema.DropTable, schema.CreateIndex, schema.DropIndex, types
+
+capability build/run  a built statement run on a connection
+  heroes  refused: the package names no driver; `Statement.text` and `params` go to the driver's `exec` and `query` as they are
+  go      squirrel.SelectBuilder.RunWith, Exec, ExecContext, Query, QueryContext, QueryRow, QueryRowContext, Scan, ScanContext, the same on InsertBuilder, UpdateBuilder and DeleteBuilder, squirrel.ExecWith, ExecContextWith, QueryWith, QueryContextWith, QueryRowWith, QueryRowContextWith, squirrel.BaseRunner, Runner, RunnerContext, StdSql, StdSqlCtx, WrapStdSql, WrapStdSqlCtx, Execer, ExecerContext, Queryer, QueryerContext, QueryRower, QueryRowerContext, Preparer, PreparerContext, DBProxy, DBProxyBeginner, DBProxyContext, goqu.New, goqu.Database, goqu.SQLDatabase, goqu.TxDatabase, goqu.NewTx, goqu.SQLTx, goqu.SelectDataset.Executor, Count, CountContext, goqu.InsertDataset.Executor, goqu.UpdateDataset.Executor, goqu.DeleteDataset.Executor
+  rust    sqlx::query, sqlx::query_as (sea-query's sqlx feature)
+  python  Connection.execute, Engine.connect
+
+capability build/statement-cache  prepared statements kept and run again by their text
+  heroes  refused: a connection's own: `sql/sqlite` keeps the statements it compiled, and every driver's `prepare` keeps one
+  go      squirrel.StmtCache, squirrel.NewStmtCache, squirrel.NewStmtCacheProxy, squirrel.NewStmtCacher, squirrel.StmtCache.Clear, Exec, ExecContext, Prepare, PrepareContext, Query, QueryContext, QueryRow, QueryRowContext
+  rust    -
+  python  the compiled cache of an Engine
+
+capability build/explain  a statement's plan asked for, EXPLAIN
+  heroes  refused: the plan's form is each database's own; `EXPLAIN ` before `to_sql`'s text, which holds no value, asks it
+  go      -
+  rust    ExplainStatement, ExplainFormat, ExplainableStatement, PgExplainSerialize
+  python  -
+
+dropped
+  go      goqu.SelectDataset.Clone, GetClauses, Expression, ReturnsColumns, GetAs, goqu.InsertDataset.Clone, GetClauses, Expression, ReturnsColumns, GetAs, goqu.UpdateDataset.Clone, GetClauses, Expression, ReturnsColumns, GetAs, goqu.DeleteDataset.Clone, GetClauses, Expression, ReturnsColumns, GetAs, exp.SelectClauses, exp.NewSelectClauses, exp.InsertClauses, exp.NewInsertClauses, exp.UpdateClauses, exp.NewUpdateClauses, exp.DeleteClauses, exp.NewDeleteClauses, exp.Expression, exp.ColumnListExpression, exp.NewColumnListExpression, exp.ArrayExpression, exp.NewArrayExpression, exp.Distinctable, exp.Comparable, exp.Inable, exp.Isable, exp.Likeable, exp.Rangeable, exp.Orderable, exp.Castable, exp.Updateable: the inner clauses and the interfaces a dataset is made of; every value here is a copy, so a query is copied by `=` and its fields read by name
+  go      goqu.SetTimeLocation, goqu.SetColumnRenameFunction, goqu.SetIgnoreUntaggedFields, goqu.Logger, squirrel.NoContextSupport, squirrel.RunnerNotQueryRunner, squirrel.RunnerNotSet: settings of a package-wide mutable global, which the language refuses, and errors of running
+  python  sqlalchemy.inspect, sqlalchemy.event, sqlalchemy.engine, sqlalchemy.pool, sqlalchemy.exc: the engine, its events and its pool, which are a connection's and stand in `sql/postgres` and `sql/sqlite`

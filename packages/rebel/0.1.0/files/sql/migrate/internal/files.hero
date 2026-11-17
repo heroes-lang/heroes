@@ -1,0 +1,196 @@
+# The names of a folder's migration files read, and its files gathered into
+# migrations, one per version, its up script and its down script side by
+# side. It reads no disk: `sql/migrate` lists the folder and reads each file,
+# then gives the names and the texts here.
+
+use numbers
+use strings
+
+constant INVALID: str
+    "invalid"
+
+# What a migration's file name says.
+record Named
+    # The version its digits spell.
+    version: i64
+    # The name between the underscore and the direction.
+    name: str
+    # Whether it is the up script, rather than the down one.
+    up: bool
+
+# A file of a folder, as `gathered` takes it.
+record File
+    # The file's name in the folder.
+    name: str
+    # What it holds.
+    text: str
+
+# One version's files gathered.
+record Found
+    # The version.
+    version: i64
+    # The name its files give.
+    name: str
+    # Its up script.
+    up: str
+    # Its down script; a failure where it has none.
+    down: str?
+
+# Whether `file` names a migration's file at all: it ends in `.sql`, in any
+# case.
+function is_sql(file: str) -> bool
+    return strings.has_suffix(s: strings.to_lower_ascii(file), suffix: ".sql")
+
+# What the name `file` says: `0001_create_users.up.sql` is version 1, the
+# name `create_users`, going up. Fails `invalid` where it is not
+# `<digits>_<name>.up.sql` or `<digits>_<name>.down.sql`, the name not
+# empty and the version above 0 and within an `i64`.
+function named(file: str) -> Named?
+    up = strings.has_suffix(s: file, suffix: ".up.sql")
+    down = strings.has_suffix(s: file, suffix: ".down.sql")
+    shape = f"the file \"{file}\" is not named as a migration, <version>_<name>.up.sql or <version>_<name>.down.sql"
+
+    if !up && !down
+        return fail(code: INVALID, msg: shape)
+
+    stem_end = if up
+        file.len() - ".up.sql".len()
+    else
+        file.len() - ".down.sql".len()
+
+    digits: i64 @= 0
+
+    while digits < stem_end && file[digits] >= '0' && file[digits] <= '9'
+        digits @ digits + 1
+
+    if digits == 0 || digits >= stem_end || file[digits] != '_' || digits + 1 == stem_end
+        return fail(code: INVALID, msg: shape)
+
+    match numbers.parse_int(file.slice(from: 0, to: digits))
+        .err _ => return fail(code: INVALID, msg: f"the version of \"{file}\" is past the largest an i64 holds")
+        .ok version =>
+            if version == 0
+                return fail(code: INVALID, msg: f"the version of \"{file}\" is 0, and a version is above 0")
+            return ok(Named(version: version, name: file.slice(from: digits + 1, to: stem_end), up: up))
+
+# The migrations `files` hold, in the order of their versions. Every file
+# must be a migration's (`named`). Fails `invalid` where two files give one
+# version and direction, a version's two files give two names, or a version
+# has a down file and no up file, the message naming the files.
+function gathered(files: [File]) -> [Found]?
+    found: [Found] @= []
+    file_of_up: [str] @= []
+    file_of_down: [str] @= []
+    at_version: {i64: i64} @= {}
+
+    for f in files
+        n = named(f.name)?
+        at: i64 @= -1
+
+        match at_version[n.version]
+            .ok i => at @ i
+            .err _ =>
+                at @ found.len()
+                at_version[n.version] @ at
+                found @ found.push(
+                    Found(version: n.version, name: n.name, up: "", down: fail(code: "not_found", msg: ""))
+                )
+                file_of_up @ file_of_up.push("")
+                file_of_down @ file_of_down.push("")
+
+        if found[at].name != n.name
+            other = if file_of_up[at] != ""
+                file_of_up[at]
+            else
+                file_of_down[at]
+
+            return fail(code: INVALID, msg: f"\"{f.name}\" and \"{other}\" give version {n.version} two names")
+
+        if n.up
+            if file_of_up[at] != ""
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{f.name}\" and \"{file_of_up[at]}\" are both the up script of version {n.version}"
+                )
+            file_of_up[at] @ f.name
+            found[at].up @ f.text
+        else
+            if file_of_down[at] != ""
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{f.name}\" and \"{file_of_down[at]}\" are both the down script of version {n.version}"
+                )
+            file_of_down[at] @ f.name
+            found[at].down @ ok(f.text)
+
+    versions: [i64] @= []
+
+    for i in range(from: 0, to: found.len())
+        if file_of_up[i] == ""
+            return fail(
+                code: INVALID,
+                msg: f"\"{file_of_down[i]}\" is a down script with no up script of version {found[i].version}"
+            )
+        versions @ versions.push(found[i].version)
+
+    ordered: [Found] @= []
+
+    for v in sort(versions)
+        ordered @ ordered.push(found[at_version[v].must()])
+
+    return ok(ordered)
+
+test "is_sql: the extension in any case, and other files"
+    assert is_sql("0001_a.up.sql") && is_sql("0001_a.UP.SQL") && is_sql(".sql")
+    assert !is_sql("README.md") && !is_sql("0001_a.up.sql.bak") && !is_sql("")
+
+test "named: up and down, leading zeros, a long name with dots and underscores"
+    assert named("0001_create_users.up.sql").must() == Named(version: 1, name: "create_users", up: true)
+    assert named("20261116120000_add.index.down.sql").must() == Named(version: 20261116120000, name: "add.index", up: false)
+    assert named("7_città_è.up.sql").must() == Named(version: 7, name: "città_è", up: true)
+    assert named("9223372036854775807_x.up.sql").must().version == 9223372036854775807
+
+test "named: every shape refused"
+    for bad in ["0001_create_users.sql", "create_users.up.sql", "_x.up.sql", "0001.up.sql", "0001_.up.sql", "00a1_x.up.sql", "0001-x.up.sql", "0001_x.UP.SQL", ".up.sql"]
+        match named(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match named("0000_x.up.sql")
+        .ok _  => assert false
+        .err e => assert e.msg == "the version of \"0000_x.up.sql\" is 0, and a version is above 0"
+
+    match named("9223372036854775808_x.up.sql")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the version of \"9223372036854775808_x.up.sql\" is past the largest an i64 holds"
+
+test "gathered: none, up alone, both, out of order, leading zeros joined"
+    assert gathered([]).must() == []
+    one = gathered([File(name: "1_a.up.sql", text: "U")]).must()
+    assert one.len() == 1 && one[0].up == "U" && one[0].down.is_err()
+
+    found = gathered(
+        [File(name: "0002_b.down.sql", text: "D2"), File(name: "0002_b.up.sql", text: "U2"), File(name: "10_c.up.sql", text: "U10"), File(name: "0001_a.up.sql", text: "U1"), File(name: "1_a.down.sql", text: "D1")]
+    ).must()
+
+    assert found.len() == 3
+    assert found[0].version == 1 && found[0].up == "U1" && found[0].down.must() == "D1"
+    assert found[1].version == 2 && found[1].down.must() == "D2"
+    assert found[2].version == 10 && found[2].down.is_err()
+
+test "gathered: two ups, two downs, two names, a down alone"
+    match gathered([File(name: "1_a.up.sql", text: ""), File(name: "001_a.up.sql", text: "")])
+        .ok _  => assert false
+        .err e => assert e.msg == "\"001_a.up.sql\" and \"1_a.up.sql\" are both the up script of version 1"
+
+    match gathered([File(name: "1_a.down.sql", text: ""), File(name: "01_a.down.sql", text: ""), File(name: "1_a.up.sql", text: "")])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match gathered([File(name: "1_a.up.sql", text: ""), File(name: "1_b.down.sql", text: "")])
+        .ok _  => assert false
+        .err e => assert e.msg == "\"1_b.down.sql\" and \"1_a.up.sql\" give version 1 two names"
+
+    match gathered([File(name: "3_x.down.sql", text: "")])
+        .ok _  => assert false
+        .err e => assert e.msg == "\"3_x.down.sql\" is a down script with no up script of version 3"

@@ -1,0 +1,428 @@
+# Expressions and conditions made of pieces: what `sql/build`'s functions
+# under `## Expressions` and `## Conditions` do. Each piece is checked as it
+# is made; a mistake becomes a refusal among its pieces, which `to_sql`
+# reports, so a program composes freely and learns of a mistake in one
+# place.
+
+use sql
+use sql/build/internal/checks
+use sql/build/internal/tokens
+
+# An expression's pieces and what kind it is.
+record Part
+    # Its pieces.
+    pieces: [tokens.Token]
+    # Its kind.
+    form: tokens.Form
+
+# A condition's pieces and how it is joined.
+record Clause
+    # Its pieces.
+    pieces: [tokens.Token]
+    # How it is joined.
+    grouping: tokens.Grouping
+
+# How a comparison compares.
+variant Comparison
+    # `=`, or `IS NULL` beside the value NULL.
+    equal
+    # `<>`, or `IS NOT NULL` beside the value NULL.
+    not_equal
+    # `<`, `<=`, `>` or `>=`, which no NULL satisfies.
+    ordered
+        # The operator.
+        symbol: str
+    # `LIKE`, its escape a backslash given as a parameter.
+    like
+    # An operator the program gave.
+    other
+        # The operator.
+        operator: str
+
+constant ALIASED: str
+    "an expression with another name (AS) stands only among the columns of a SELECT or of a RETURNING"
+
+# A refusal of code `invalid` with `msg`.
+function refused(msg: str) -> [tokens.Token]
+    return [.refusal(code: tokens.INVALID, msg: msg)]
+
+# `p` as the operand of an operator: in parentheses where it is an
+# operation or a fragment, refused where it has another name.
+function operand(p: Part) -> [tokens.Token]
+    return match p.form
+        .plain | .null_value => p.pieces
+        .compound            => tokens.bracketed(p.pieces)
+        .aliased             => refused(ALIASED)
+
+# `p` where any expression stands whole, as an argument or a column of
+# GROUP BY: refused where it has another name.
+function inner(p: Part) -> [tokens.Token]
+    return match p.form
+        .plain | .null_value | .compound => p.pieces
+        .aliased                         => refused(ALIASED)
+
+# `parts` separated by commas, each as `inner` takes it, or as it is where
+# `aliases` holds.
+function listed(parts: [Part], aliases: bool) -> [tokens.Token]
+    lists: [[tokens.Token]] @= []
+
+    for p in parts
+        if aliases
+            lists @ lists.push(p.pieces)
+        else
+            lists @ lists.push(inner(p))
+
+    return tokens.joined(lists, sep: ", ")
+
+# The column `name`, cut at its dots.
+function column_part(name: str) -> Part
+    return Part(pieces: tokens.named(name), form: .plain)
+
+# Every column, `*`.
+function star_part() -> Part
+    return Part(pieces: [.star(parts: [])], form: .plain)
+
+# Every column of the table `name`, `"t".*`.
+function star_of_part(name: str) -> Part
+    return Part(pieces: [.star(parts: tokens.parts_of(name))], form: .plain)
+
+# The value `v` as a parameter.
+function parameter_part(v: sql.Value) -> Part
+    form: tokens.Form = if v == .null_value
+        .null_value
+    else
+        .plain
+
+    return Part(pieces: [.parameter(v: v)], form: form)
+
+# A call of `name` on `arguments`, with `DISTINCT` before them where
+# `distinct` holds.
+function call_part(name: str, arguments: [Part], distinct: bool) -> Part
+    match checks.function_name(name)
+        .err e => return Part(pieces: refused(e.msg), form: .plain)
+        .ok _  => _ = 0
+
+    if distinct && arguments.len() == 0
+        return Part(pieces: refused(f"the call of {name} with DISTINCT has no argument"), form: .plain)
+
+    head = if distinct
+        name + "(DISTINCT "
+    else
+        name + "("
+
+    pieces = tokens.concat(first: [.word(text: head)], second: listed(arguments, aliases: false))
+    return Part(pieces: tokens.concat(first: pieces, second: [.word(text: ")")]), form: .plain)
+
+# `count(*)`.
+function count_all_part() -> Part
+    return Part(pieces: [.word(text: "count("), .star(parts: []), .word(text: ")")], form: .plain)
+
+# `CAST(e AS type_name)`.
+function cast_part(e: Part, type_name: str) -> Part
+    match checks.type_name(type_name)
+        .err x => return Part(pieces: refused(x.msg), form: .plain)
+        .ok _  => _ = 0
+
+    pieces = tokens.concat(first: [.word(text: "CAST(")], second: inner(e))
+    return Part(pieces: tokens.concat(first: pieces, second: [.word(text: " AS " + type_name + ")")]), form: .plain)
+
+# The pieces of `operator` itself, checked: PostgreSQL's alone where it
+# holds a `?`, which SQLite reads as a placeholder.
+function operator_pieces(operator: str) -> [tokens.Token]
+    match checks.operator(operator)
+        .err e => return refused(e.msg)
+        .ok _  => _ = 0
+
+    if checks.holds_question_mark(operator)
+        return [.postgres_only(text: " " + operator + " ", what: f"the operator {operator}")]
+    return [.word(text: " " + operator + " ")]
+
+# `left operator right`, each operand in parentheses where it is an
+# operation.
+function operation_part(left: Part, operator: str, right: Part) -> Part
+    pieces = tokens.concat(first: operand(left), second: operator_pieces(operator))
+    return Part(pieces: tokens.concat(first: pieces, second: operand(right)), form: .compound)
+
+# `e AS "alias"`.
+function aliased_part(e: Part, alias: str) -> Part
+    pieces = tokens.concat(first: inner(e), second: [.word(text: " AS "), .name(parts: [alias])])
+    return Part(pieces: pieces, form: .aliased)
+
+# `excluded."name"`.
+function excluded_part(name: str) -> Part
+    match checks.one_part(name: name, which: "the column of excluded")
+        .err e => return Part(pieces: refused(e.msg), form: .plain)
+        .ok _  => _ = 0
+
+    return Part(pieces: [.word(text: "excluded."), .name(parts: [name])], form: .plain)
+
+# A SELECT, its pieces `select` bare, as a value: in parentheses.
+function subquery_part(select: [tokens.Token]) -> Part
+    return Part(pieces: tokens.bracketed(select), form: .plain)
+
+# `CASE WHEN ... THEN ... ELSE otherwise END`, `conditions[i]` choosing
+# `results[i]`.
+function chosen_part(conditions: [Clause], results: [Part], otherwise: Part) -> Part
+    if conditions.len() == 0
+        return Part(pieces: refused("a CASE has no WHEN"), form: .plain)
+    pieces: [tokens.Token] @= [.word(text: "CASE")]
+
+    for i in range(from: 0, to: conditions.len())
+        pieces @ tokens.concat(first: pieces, second: [.word(text: " WHEN ")])
+        pieces @ tokens.concat(first: pieces, second: conditions[i].pieces)
+        pieces @ tokens.concat(first: pieces, second: [.word(text: " THEN ")])
+        pieces @ tokens.concat(first: pieces, second: inner(results[i]))
+
+    pieces @ tokens.concat(first: pieces, second: [.word(text: " ELSE ")])
+    pieces @ tokens.concat(first: pieces, second: inner(otherwise))
+    pieces @ tokens.concat(first: pieces, second: [.word(text: " END")])
+    return Part(pieces: pieces, form: .plain)
+
+# `text`, a fragment that holds no value, checked.
+function raw_part(text: str) -> Part
+    match checks.fragment(text)
+        .err e => return Part(pieces: refused(e.msg), form: .compound)
+        .ok _  => return Part(pieces: [.word(text: text)], form: .compound)
+
+# A condition of one piece list, needing no parentheses.
+function single(pieces: [tokens.Token]) -> Clause
+    return Clause(pieces: pieces, grouping: .single)
+
+# `left` compared with `right` by `how`.
+function compared(left: Part, how: Comparison, right: Part) -> Clause
+    null_beside = left.form == .null_value || right.form == .null_value
+
+    other_side = if right.form == .null_value
+        left
+    else
+        right
+
+    return match how
+        .equal =>
+            if null_beside
+                single(tokens.concat(first: operand(other_side), second: [.word(text: " IS NULL")]))
+            else
+                single(
+                    tokens.concat(first: tokens.concat(first: operand(left), second: [.word(text: " = ")]), second: operand(right))
+                )
+        .not_equal =>
+            if null_beside
+                single(tokens.concat(first: operand(other_side), second: [.word(text: " IS NOT NULL")]))
+            else
+                single(
+                    tokens.concat(first: tokens.concat(first: operand(left), second: [.word(text: " <> ")]), second: operand(right))
+                )
+        .ordered o =>
+            if null_beside
+                single(refused(f"a NULL compared by {o.symbol} holds for no row"))
+            else
+                single(
+                    tokens.concat(first: tokens.concat(first: operand(left), second: [.word(text: " " + o.symbol + " ")]), second: operand(right))
+                )
+        .like =>
+            if null_beside
+                single(refused("a NULL compared by LIKE holds for no row"))
+            else
+                pieces = tokens.concat(
+                    first: tokens.concat(first: operand(left), second: [.word(text: " LIKE ")]),
+                    second: operand(right)
+                )
+                single(tokens.concat(first: pieces, second: [.word(text: " ESCAPE "), .parameter(v: .text(v: "\\"))]))
+        .other x =>
+            pieces = tokens.concat(first: operand(left), second: operator_pieces(x.operator))
+            single(tokens.concat(first: pieces, second: operand(right)))
+
+# `left IN (values...)`, or `1 = 0` for no value.
+function in_values_clause(left: Part, values: [sql.Value]) -> Clause
+    if values.len() == 0
+        return single([.word(text: "1 = 0")])
+    lists: [[tokens.Token]] @= []
+
+    for i in range(from: 0, to: values.len())
+        if values[i] == .null_value
+            return single(
+                refused(f"value {i} of an IN list is NULL, which matches no row, and under NOT makes the condition hold for none")
+            )
+        lists @ lists.push([.parameter(v: values[i])])
+
+    pieces = tokens.concat(first: operand(left), second: [.word(text: " IN ")])
+    return single(tokens.concat(first: pieces, second: tokens.bracketed(tokens.joined(lists, sep: ", "))))
+
+# `left IN (select)`, the SELECT's pieces bare.
+function in_query_clause(left: Part, select: [tokens.Token]) -> Clause
+    pieces = tokens.concat(first: operand(left), second: [.word(text: " IN ")])
+    return single(tokens.concat(first: pieces, second: tokens.bracketed(select)))
+
+# `EXISTS (select)`, the SELECT's pieces bare.
+function exists_clause(select: [tokens.Token]) -> Clause
+    return single(tokens.concat(first: [.word(text: "EXISTS ")], second: tokens.bracketed(select)))
+
+# `subject BETWEEN low AND high`.
+function between_clause(subject: Part, low: Part, high: Part) -> Clause
+    if low.form == .null_value || high.form == .null_value || subject.form == .null_value
+        return single(refused("a NULL compared by BETWEEN holds for no row"))
+    pieces = tokens.concat(first: operand(subject), second: [.word(text: " BETWEEN ")])
+    pieces_low = tokens.concat(first: pieces, second: operand(low))
+    pieces_and = tokens.concat(first: pieces_low, second: [.word(text: " AND ")])
+    return single(tokens.concat(first: pieces_and, second: operand(high)))
+
+# Every one of `parts`, joined by `AND`, an `OR` among them in parentheses;
+# `1 = 1` for none, and one part itself.
+function all_clause(parts: [Clause]) -> Clause
+    if parts.len() == 0
+        return single([.word(text: "1 = 1")])
+
+    if parts.len() == 1
+        return parts[0]
+    lists: [[tokens.Token]] @= []
+
+    for p in parts
+        match p.grouping
+            .disjunction           => lists @ lists.push(tokens.bracketed(p.pieces))
+            .single | .conjunction => lists @ lists.push(p.pieces)
+
+    return Clause(pieces: tokens.joined(lists, sep: " AND "), grouping: .conjunction)
+
+# One of `parts`, joined by `OR`, an `AND` among them in parentheses; `1 =
+# 0` for none, and one part itself.
+function any_clause(parts: [Clause]) -> Clause
+    if parts.len() == 0
+        return single([.word(text: "1 = 0")])
+
+    if parts.len() == 1
+        return parts[0]
+    lists: [[tokens.Token]] @= []
+
+    for p in parts
+        match p.grouping
+            .conjunction           => lists @ lists.push(tokens.bracketed(p.pieces))
+            .single | .disjunction => lists @ lists.push(p.pieces)
+
+    return Clause(pieces: tokens.joined(lists, sep: " OR "), grouping: .disjunction)
+
+# `NOT (c)`.
+function negated(c: Clause) -> Clause
+    return single(tokens.concat(first: [.word(text: "NOT ")], second: tokens.bracketed(c.pieces)))
+
+# The condition that `e` is true.
+function holds_clause(e: Part) -> Clause
+    return single(operand(e))
+
+test "operand and inner: plain, compound, aliased, NULL"
+    plain = column_part("a")
+    assert operand(plain) == [.name(parts: ["a"])]
+    sum = operation_part(left: plain, operator: "+", right: parameter_part(.integer(v: 1)))
+    assert operand(sum)[0] == .word(text: "(")
+    assert inner(sum)[0] == .name(parts: ["a"])
+    named = aliased_part(plain, alias: "x")
+    assert operand(named) == refused(ALIASED) && inner(named) == refused(ALIASED)
+    assert parameter_part(.null_value).form == .null_value
+
+test "listed: none, aliases kept or refused"
+    assert listed([], aliases: false) == []
+    two = [column_part("a"), aliased_part(count_all_part(), alias: "n")]
+    assert tokens.written(listed(two, aliases: true), postgres: true).must().text == "\"a\", count(*) AS \"n\""
+    assert tokens.written(listed(two, aliases: false), postgres: true).is_err()
+
+test "call_part: no argument, several, DISTINCT, a bad name"
+    assert tokens.written(call_part("now", arguments: [], distinct: false).pieces, postgres: true).must().text == "now()"
+    w = tokens.written(
+        call_part("coalesce", arguments: [column_part("nick"), parameter_part(.text(v: "?"))], distinct: false).pieces,
+        postgres: false
+    ).must()
+    assert w.text == "coalesce(\"nick\", ?1)" && w.params == [.text(v: "?")]
+    assert tokens.written(call_part("count", arguments: [column_part("city")], distinct: true).pieces, postgres: true).must().text == "count(DISTINCT \"city\")"
+    assert tokens.written(call_part("count", arguments: [], distinct: true).pieces, postgres: true).is_err()
+    assert tokens.written(call_part("x(1); DROP", arguments: [], distinct: false).pieces, postgres: true).is_err()
+
+test "cast_part and operation_part: written, nested in parentheses, a question mark for PostgreSQL alone"
+    c = cast_part(parameter_part(.text(v: "1")), type_name: "numeric(10, 2)")
+    assert tokens.written(c.pieces, postgres: true).must().text == "CAST($1 AS numeric(10, 2))"
+    assert tokens.written(cast_part(column_part("a"), type_name: "int'").pieces, postgres: true).is_err()
+    inner_sum = operation_part(left: column_part("a"), operator: "+", right: column_part("b"))
+    product = operation_part(left: inner_sum, operator: "*", right: parameter_part(.integer(v: 2)))
+    assert tokens.written(product.pieces, postgres: true).must().text == "(\"a\" + \"b\") * $1"
+    has_key = operation_part(left: column_part("doc"), operator: "?", right: parameter_part(.text(v: "k")))
+    assert tokens.written(has_key.pieces, postgres: true).must().text == "\"doc\" ? $1"
+
+    match tokens.written(has_key.pieces, postgres: false)
+        .ok _  => assert false
+        .err e => assert e.code == tokens.UNSUPPORTED
+
+test "excluded_part, chosen_part, raw_part"
+    assert tokens.written(excluded_part("count").pieces, postgres: true).must().text == "excluded.\"count\""
+    assert tokens.written(excluded_part("a.b").pieces, postgres: true).is_err()
+    chosen = chosen_part(
+        [compared(left: column_part("n"), how: .ordered(symbol: ">"), right: parameter_part(.integer(v: 9)))],
+        results: [parameter_part(.text(v: "many"))],
+        otherwise: parameter_part(.text(v: "few"))
+    )
+
+    assert tokens.written(chosen.pieces, postgres: true).must().text == "CASE WHEN \"n\" > $1 THEN $2 ELSE $3 END"
+    assert tokens.written(chosen_part([], results: [], otherwise: star_part()).pieces, postgres: true).is_err()
+    assert tokens.written(raw_part("CURRENT_DATE").pieces, postgres: true).must().text == "CURRENT_DATE"
+    assert tokens.written(raw_part("1; DROP TABLE t").pieces, postgres: true).is_err()
+
+test "compared: each comparison, and NULL on either side"
+    a = column_part("a")
+    one = parameter_part(.integer(v: 1))
+    nothing = parameter_part(.null_value)
+    assert tokens.written(compared(left: a, how: .equal, right: one).pieces, postgres: true).must().text == "\"a\" = $1"
+    assert tokens.written(compared(left: a, how: .equal, right: nothing).pieces, postgres: true).must() == tokens.Written(text: "\"a\" IS NULL", params: [])
+    assert tokens.written(compared(left: nothing, how: .not_equal, right: a).pieces, postgres: true).must().text == "\"a\" IS NOT NULL"
+    assert tokens.written(compared(left: a, how: .not_equal, right: one).pieces, postgres: true).must().text == "\"a\" <> $1"
+    assert tokens.written(compared(left: a, how: .ordered(symbol: "<="), right: one).pieces, postgres: false).must().text == "\"a\" <= ?1"
+    assert tokens.written(compared(left: a, how: .ordered(symbol: "<"), right: nothing).pieces, postgres: true).is_err()
+    like = tokens.written(
+        compared(left: a, how: .like, right: parameter_part(.text(v: "x%"))).pieces,
+        postgres: true
+    ).must()
+    assert like.text == "\"a\" LIKE $1 ESCAPE $2" && like.params == [.text(v: "x%"), .text(v: "\\")]
+    assert tokens.written(compared(left: a, how: .like, right: nothing).pieces, postgres: true).is_err()
+    assert tokens.written(compared(left: a, how: .other(operator: "IS DISTINCT FROM"), right: nothing).pieces, postgres: true).must().text == "\"a\" IS DISTINCT FROM $1"
+    assert tokens.written(
+        compared(left: a, how: .other(operator: "= 1 OR"), right: one).pieces,
+        postgres: true
+    ).is_err()
+
+test "in_values_clause: none, one, several, a NULL among them"
+    a = column_part("a")
+    assert tokens.written(in_values_clause(a, values: []).pieces, postgres: true).must().text == "1 = 0"
+    assert tokens.written(in_values_clause(a, values: [.integer(v: 1)]).pieces, postgres: true).must().text == "\"a\" IN ($1)"
+    assert tokens.written(in_values_clause(a, values: [.integer(v: 1), .text(v: "é")]).pieces, postgres: false).must().text == "\"a\" IN (?1, ?2)"
+
+    match tokens.written(in_values_clause(a, values: [.integer(v: 1), .null_value]).pieces, postgres: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "value 1 of an IN list is NULL, which matches no row, and under NOT makes the condition hold for none"
+
+test "between_clause, in_query_clause, exists_clause"
+    b = between_clause(
+        subject: column_part("age"),
+        low: parameter_part(.integer(v: 1)),
+        high: parameter_part(.integer(v: 9))
+    )
+    assert tokens.written(b.pieces, postgres: true).must().text == "\"age\" BETWEEN $1 AND $2"
+    assert tokens.written(
+        between_clause(subject: column_part("age"), low: parameter_part(.null_value), high: parameter_part(.integer(v: 9))).pieces,
+        postgres: true
+    ).is_err()
+    sub: [tokens.Token] = [.word(text: "SELECT 1")]
+    assert tokens.written(in_query_clause(column_part("id"), select: sub).pieces, postgres: true).must().text == "\"id\" IN (SELECT 1)"
+    assert tokens.written(exists_clause(sub).pieces, postgres: true).must().text == "EXISTS (SELECT 1)"
+
+test "all_clause, any_clause, negated: none, one, nested in parentheses where AND and OR meet"
+    a = compared(left: column_part("a"), how: .equal, right: parameter_part(.integer(v: 1)))
+    b = compared(left: column_part("b"), how: .equal, right: parameter_part(.integer(v: 2)))
+    c = compared(left: column_part("c"), how: .equal, right: parameter_part(.integer(v: 3)))
+    assert tokens.written(all_clause([]).pieces, postgres: true).must().text == "1 = 1"
+    assert tokens.written(any_clause([]).pieces, postgres: true).must().text == "1 = 0"
+    assert all_clause([a]) == a && any_clause([a]) == a
+    either = any_clause([a, b])
+    both = all_clause([either, c, all_clause([a, b])])
+    assert tokens.written(both.pieces, postgres: true).must().text == "(\"a\" = $1 OR \"b\" = $2) AND \"c\" = $3 AND \"a\" = $4 AND \"b\" = $5"
+    assert tokens.written(any_clause([all_clause([a, b]), c]).pieces, postgres: true).must().text == "(\"a\" = $1 AND \"b\" = $2) OR \"c\" = $3"
+    assert tokens.written(negated(either).pieces, postgres: true).must().text == "NOT (\"a\" = $1 OR \"b\" = $2)"
+
+test "holds_clause: a column, a fragment in parentheses"
+    assert tokens.written(holds_clause(column_part("active")).pieces, postgres: true).must().text == "\"active\""
+    assert tokens.written(holds_clause(raw_part("\"tsv\" @@ \"q\"")).pieces, postgres: true).must().text == "(\"tsv\" @@ \"q\")"

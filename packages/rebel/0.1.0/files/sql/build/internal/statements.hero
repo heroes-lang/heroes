@@ -1,0 +1,416 @@
+# The four statements made of their parts' pieces, clause by clause in the
+# order SQL reads them: what `sql/build`'s `subquery` and `to_sql` write.
+# A part missing or misplaced becomes a refusal, which `to_sql` reports.
+
+use sql
+use sql/build/internal/checks
+use sql/build/internal/clauses
+use sql/build/internal/tokens
+
+# A SELECT's parts, each already pieces where it holds a table, a join, an
+# order or a combined SELECT.
+record SelectParts
+    # `SELECT DISTINCT`.
+    distinct: bool
+    # The columns, aliases allowed.
+    columns: [clauses.Part]
+    # The tables read.
+    from: [[tokens.Token]]
+    # The joins, each as `join_piece` writes it.
+    joins: [[tokens.Token]]
+    # The conditions of WHERE.
+    where: [clauses.Clause]
+    # The expressions of GROUP BY.
+    group_by: [clauses.Part]
+    # The conditions of HAVING.
+    having: [clauses.Clause]
+    # The keys of ORDER BY, each as `order_piece` writes it.
+    order_by: [[tokens.Token]]
+    # The limit, a failure for none.
+    limit: i64?
+    # The offset, a failure for none.
+    offset: i64?
+    # The SELECTs combined, each as `combined_piece` writes it.
+    combined: [[tokens.Token]]
+
+# `c`'s pieces after `pieces`.
+function then(pieces: [tokens.Token], c: [tokens.Token]) -> [tokens.Token]
+    return tokens.concat(first: pieces, second: c)
+
+# One key of ORDER BY.
+function order_piece(by: clauses.Part, descending: bool, nulls_first: bool, nulls_last: bool) -> [tokens.Token]
+    pieces: [tokens.Token] @= clauses.inner(by)
+
+    if descending
+        pieces @ then(pieces: pieces, c: [.word(text: " DESC")])
+
+    if nulls_first
+        pieces @ then(pieces: pieces, c: [.word(text: " NULLS FIRST")])
+
+    if nulls_last
+        pieces @ then(pieces: pieces, c: [.word(text: " NULLS LAST")])
+
+    return pieces
+
+# One join: `keyword` and the table, then ON and its conditions, none for a
+# cross join.
+function join_piece(keyword: str, table: [tokens.Token], on: [clauses.Clause], cross: bool) -> [tokens.Token]
+    if cross && on.len() > 0
+        return clauses.refused("a CROSS JOIN takes no condition")
+
+    if !cross && on.len() == 0
+        return clauses.refused(keyword + " has no condition")
+    pieces = then(pieces: [.word(text: " " + keyword + " ")], c: table)
+
+    if cross
+        return pieces
+    return then(pieces: then(pieces: pieces, c: [.word(text: " ON ")]), c: clauses.all_clause(on).pieces)
+
+# A SELECT combined by `keyword`, its pieces `select` bare; refused where it
+# holds an order, a limit or an offset of its own, and PostgreSQL's alone
+# where `postgres_only` holds.
+function combined_piece(keyword: str, select: [tokens.Token], postgres_only: bool, own_order: bool) -> [tokens.Token]
+    if own_order
+        return clauses.refused(
+            f"a SELECT combined by {keyword} holds an ORDER BY, a LIMIT or an OFFSET, which apply to the whole and belong to the first SELECT"
+        )
+
+    head: tokens.Token = if postgres_only
+        .postgres_only(text: " " + keyword + " ", what: keyword)
+    else
+        .word(text: " " + keyword + " ")
+
+    return then(pieces: [head], c: select)
+
+# A count of rows a clause takes, as a parameter; refused below 0.
+function count_piece(keyword: str, n: i64) -> [tokens.Token]
+    if n < 0
+        return clauses.refused(f"{keyword} is {n}, and a count of rows is 0 or more")
+    return [.word(text: " " + keyword + " "), .parameter(v: .integer(v: n))]
+
+# A SELECT, bare: no parentheses around it.
+function select_pieces(p: SelectParts) -> [tokens.Token]
+    if p.columns.len() == 0
+        return clauses.refused("a SELECT names no column; every_column() names every one")
+
+    head = if p.distinct
+        "SELECT DISTINCT "
+    else
+        "SELECT "
+
+    pieces: [tokens.Token] @= then(pieces: [.word(text: head)], c: clauses.listed(p.columns, aliases: true))
+
+    if p.from.len() > 0
+        pieces @ then(pieces: pieces, c: [.word(text: " FROM ")])
+        pieces @ then(pieces: pieces, c: tokens.joined(p.from, sep: ", "))
+
+    for j in p.joins
+        pieces @ then(pieces: pieces, c: j)
+
+    if p.where.len() > 0
+        pieces @ then(pieces: pieces, c: [.word(text: " WHERE ")])
+        pieces @ then(pieces: pieces, c: clauses.all_clause(p.where).pieces)
+
+    if p.group_by.len() > 0
+        pieces @ then(pieces: pieces, c: [.word(text: " GROUP BY ")])
+        pieces @ then(pieces: pieces, c: clauses.listed(p.group_by, aliases: false))
+
+    if p.having.len() > 0
+        pieces @ then(pieces: pieces, c: [.word(text: " HAVING ")])
+        pieces @ then(pieces: pieces, c: clauses.all_clause(p.having).pieces)
+
+    for c in p.combined
+        pieces @ then(pieces: pieces, c: c)
+
+    if p.order_by.len() > 0
+        pieces @ then(pieces: pieces, c: [.word(text: " ORDER BY ")])
+        pieces @ then(pieces: pieces, c: tokens.joined(p.order_by, sep: ", "))
+
+    match p.limit
+        .ok n => pieces @ then(pieces: pieces, c: count_piece(keyword: "LIMIT", n: n))
+        .err _ =>
+            if !p.offset.is_err()
+                pieces @ then(pieces: pieces, c: [.sqlite_only(text: " LIMIT -1")])
+
+    match p.offset
+        .ok n  => pieces @ then(pieces: pieces, c: count_piece(keyword: "OFFSET", n: n))
+        .err _ => _ = 0
+
+    return pieces
+
+# The table `name` of a statement that changes rows, cut at its dots.
+function target(keyword: str, name: str) -> [tokens.Token]
+    return then(pieces: [.word(text: keyword)], c: tokens.named(name))
+
+# ` RETURNING` and `parts`, aliases allowed; nothing for none.
+function returning_piece(parts: [clauses.Part]) -> [tokens.Token]
+    if parts.len() == 0
+        return []
+    return then(pieces: [.word(text: " RETURNING ")], c: clauses.listed(parts, aliases: true))
+
+# ` VALUES (...), (...)`, each row `width` values long.
+function rows_piece(width: i64, rows: [[sql.Value]]) -> [tokens.Token]
+    if rows.len() == 0
+        return clauses.refused("an INSERT has no row to insert")
+    lists: [[tokens.Token]] @= []
+
+    for i in range(from: 0, to: rows.len())
+        if rows[i].len() != width
+            return clauses.refused(f"row {i} of the INSERT holds {rows[i].len()} values for {width} columns")
+        values: [[tokens.Token]] @= []
+
+        for v in rows[i]
+            values @ values.push([.parameter(v: v)])
+
+        lists @ lists.push(tokens.bracketed(tokens.joined(values, sep: ", ")))
+
+    return then(pieces: [.word(text: " VALUES ")], c: tokens.joined(lists, sep: ", "))
+
+# `"column" = value`, the column one part.
+function assignment_piece(column: str, value: clauses.Part) -> [tokens.Token]
+    match checks.one_part(name: column, which: "the column set")
+        .err e => return clauses.refused(e.msg)
+        .ok _  => _ = 0
+
+    return then(pieces: [.name(parts: [column]), .word(text: " = ")], c: clauses.inner(value))
+
+# The names of a conflict's target, one part each, in parentheses; nothing
+# for none.
+function target_names(names: [str]) -> [tokens.Token]
+    if names.len() == 0
+        return []
+    lists: [[tokens.Token]] @= []
+
+    for n in names
+        match checks.one_part(name: n, which: "the column of a conflict's target")
+            .err e => return clauses.refused(e.msg)
+            .ok _  => lists @ lists.push([.name(parts: [n])])
+
+    return then(pieces: [.word(text: " ")], c: tokens.bracketed(tokens.joined(lists, sep: ", ")))
+
+# ` ON CONFLICT (...) DO NOTHING`.
+function conflict_nothing(names: [str]) -> [tokens.Token]
+    return then(
+        pieces: then(pieces: [.word(text: " ON CONFLICT")], c: target_names(names)),
+        c: [.word(text: " DO NOTHING")]
+    )
+
+# ` ON CONFLICT (...) DO UPDATE SET ...`, its target and its changes at
+# least one each.
+function conflict_update(names: [str], set: [[tokens.Token]]) -> [tokens.Token]
+    if names.len() == 0
+        return clauses.refused("an INSERT's DO UPDATE names no column of a unique key")
+
+    if set.len() == 0
+        return clauses.refused("an INSERT's DO UPDATE changes no column")
+    pieces = then(
+        pieces: then(pieces: [.word(text: " ON CONFLICT")], c: target_names(names)),
+        c: [.word(text: " DO UPDATE SET ")]
+    )
+    return then(pieces: pieces, c: tokens.joined(set, sep: ", "))
+
+# An INSERT: its columns, then `source`, the rows or the SELECT as
+# `rows_piece` or a bare SELECT after a space, or `DEFAULT VALUES` where
+# `defaults` holds, then `conflict` and RETURNING.
+function insert_pieces(into: str, columns: [str], source: [tokens.Token], defaults: bool, conflict: [tokens.Token], returning: [clauses.Part]) -> [tokens.Token]
+    pieces: [tokens.Token] @= target(keyword: "INSERT INTO ", name: into)
+
+    if defaults
+        if columns.len() > 0
+            return clauses.refused("an INSERT of DEFAULT VALUES names no column")
+        pieces @ then(pieces: pieces, c: [.word(text: " DEFAULT VALUES")])
+    else
+        if columns.len() == 0
+            return clauses.refused(f"the INSERT into \"{into}\" names no column")
+        pieces @ then(pieces: pieces, c: [.word(text: " ")])
+        pieces @ then(pieces: pieces, c: tokens.bracketed(tokens.name_list(columns)))
+        pieces @ then(pieces: pieces, c: source)
+
+    return then(pieces: then(pieces: pieces, c: conflict), c: returning_piece(returning))
+
+# An UPDATE, its changes and its conditions at least one each.
+function update_pieces(table: str, set: [[tokens.Token]], where: [clauses.Clause], returning: [clauses.Part]) -> [tokens.Token]
+    if set.len() == 0
+        return clauses.refused(f"the UPDATE of \"{table}\" changes no column")
+
+    if where.len() == 0
+        return clauses.refused(
+            f"the UPDATE of \"{table}\" has no condition, so it would change every row; every_row() in its where says that is meant"
+        )
+    pieces = then(pieces: target(keyword: "UPDATE ", name: table), c: [.word(text: " SET ")])
+    pieces_set = then(pieces: then(pieces: pieces, c: tokens.joined(set, sep: ", ")), c: [.word(text: " WHERE ")])
+    return then(pieces: then(pieces: pieces_set, c: clauses.all_clause(where).pieces), c: returning_piece(returning))
+
+# A DELETE, its conditions at least one.
+function delete_pieces(from: str, where: [clauses.Clause], returning: [clauses.Part]) -> [tokens.Token]
+    if where.len() == 0
+        return clauses.refused(
+            f"the DELETE from \"{from}\" has no condition, so it would delete every row; every_row() in its where says that is meant"
+        )
+    pieces = then(pieces: target(keyword: "DELETE FROM ", name: from), c: [.word(text: " WHERE ")])
+    return then(pieces: then(pieces: pieces, c: clauses.all_clause(where).pieces), c: returning_piece(returning))
+
+# The parts of the SELECT of `columns` from `table`, every other part empty.
+function plain_select(table: str, columns: [clauses.Part]) -> SelectParts
+    return SelectParts(
+        distinct: false,
+        columns: columns,
+        from: [tokens.named(table)],
+        joins: [],
+        where: [],
+        group_by: [],
+        having: [],
+        order_by: [],
+        limit: fail(code: "not_found", msg: "no limit"),
+        offset: fail(code: "not_found", msg: "no offset"),
+        combined: []
+    )
+
+# The text of `pieces` for PostgreSQL, where there is one.
+function for_postgres(pieces: [tokens.Token]) -> str
+    return tokens.written(pieces, postgres: true).must().text
+
+# The text of `pieces` for SQLite.
+function for_sqlite(pieces: [tokens.Token]) -> str
+    return tokens.written(pieces, postgres: false).must().text
+
+test "select_pieces: the columns alone, none, DISTINCT, every clause in SQL's order"
+    p = plain_select(table: "users", columns: [clauses.column_part("id")])
+    assert for_postgres(select_pieces(p)) == "SELECT \"id\" FROM \"users\""
+    none = plain_select(table: "users", columns: [])
+    assert tokens.written(select_pieces(none), postgres: true).is_err()
+    whole @= p
+    whole.distinct @ true
+    whole.joins @ [
+        join_piece(keyword: "LEFT JOIN", table: tokens.named("posts"), on: [clauses.compared(left: clauses.column_part("users.id"), how: .equal, right: clauses.column_part("posts.user_id"))], cross: false)
+    ]
+    whole.where @ [
+        clauses.compared(left: clauses.column_part("age"), how: .ordered(symbol: ">"), right: clauses.parameter_part(.integer(v: 18)))
+    ]
+    whole.group_by @ [clauses.column_part("id")]
+    whole.having @ [
+        clauses.compared(left: clauses.count_all_part(), how: .ordered(symbol: ">"), right: clauses.parameter_part(.integer(v: 2)))
+    ]
+    whole.order_by @ [order_piece(clauses.column_part("id"), descending: true, nulls_first: false, nulls_last: true)]
+    whole.limit @ ok(10)
+    whole.offset @ ok(20)
+    w = tokens.written(select_pieces(whole), postgres: true).must()
+    assert w.text == "SELECT DISTINCT \"id\" FROM \"users\" LEFT JOIN \"posts\" ON \"users\".\"id\" = \"posts\".\"user_id\" WHERE \"age\" > $1 GROUP BY \"id\" HAVING count(*) > $2 ORDER BY \"id\" DESC NULLS LAST LIMIT $3 OFFSET $4"
+    assert w.params == [.integer(v: 18), .integer(v: 2), .integer(v: 10), .integer(v: 20)]
+
+test "select_pieces: an offset alone for each database, a negative limit"
+    p @= plain_select(table: "t", columns: [clauses.star_part()])
+    p.offset @ ok(5)
+    assert for_postgres(select_pieces(p)) == "SELECT * FROM \"t\" OFFSET $1"
+    assert for_sqlite(select_pieces(p)) == "SELECT * FROM \"t\" LIMIT -1 OFFSET ?1"
+    p.limit @ ok(-1)
+
+    match tokens.written(select_pieces(p), postgres: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "LIMIT is -1, and a count of rows is 0 or more"
+
+    p.limit @ ok(0)
+    assert for_sqlite(select_pieces(p)) == "SELECT * FROM \"t\" LIMIT ?1 OFFSET ?2"
+
+test "join_piece and combined_piece: a cross join, a join with no condition, a combined SELECT's own order"
+    assert for_postgres(join_piece(keyword: "CROSS JOIN", table: tokens.named("b"), on: [], cross: true)) == " CROSS JOIN \"b\""
+    assert tokens.written(
+        join_piece(keyword: "INNER JOIN", table: tokens.named("b"), on: [], cross: false),
+        postgres: true
+    ).is_err()
+    assert tokens.written(
+        join_piece(keyword: "CROSS JOIN", table: tokens.named("b"), on: [clauses.all_clause([])], cross: true),
+        postgres: true
+    ).is_err()
+    sub: [tokens.Token] = [.word(text: "SELECT 2")]
+    assert for_postgres(combined_piece(keyword: "UNION ALL", select: sub, postgres_only: false, own_order: false)) == " UNION ALL SELECT 2"
+    assert tokens.written(
+        combined_piece(keyword: "UNION", select: sub, postgres_only: false, own_order: true),
+        postgres: true
+    ).is_err()
+    assert for_postgres(combined_piece(keyword: "EXCEPT ALL", select: sub, postgres_only: true, own_order: false)) == " EXCEPT ALL SELECT 2"
+    assert tokens.written(
+        combined_piece(keyword: "EXCEPT ALL", select: sub, postgres_only: true, own_order: false),
+        postgres: false
+    ).is_err()
+
+test "rows_piece: none, one, several, a row too short"
+    assert tokens.written(rows_piece(width: 1, rows: []), postgres: true).is_err()
+    assert for_postgres(rows_piece(width: 2, rows: [[.integer(v: 1), .text(v: "a")]])) == " VALUES ($1, $2)"
+    assert for_sqlite(rows_piece(width: 1, rows: [[.integer(v: 1)], [.null_value]])) == " VALUES (?1), (?2)"
+
+    match tokens.written(rows_piece(width: 2, rows: [[.integer(v: 1), .integer(v: 2)], [.integer(v: 3)]]), postgres: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "row 1 of the INSERT holds 1 values for 2 columns"
+
+test "insert_pieces: rows, defaults, a conflict each way, returning"
+    rows = rows_piece(width: 2, rows: [[.integer(v: 1), .text(v: "a")]])
+    plain = insert_pieces(
+        into: "app.users",
+        columns: ["id", "name"],
+        source: rows,
+        defaults: false,
+        conflict: [],
+        returning: []
+    )
+    assert for_postgres(plain) == "INSERT INTO \"app\".\"users\" (\"id\", \"name\") VALUES ($1, $2)"
+    defaults = insert_pieces(
+        into: "t",
+        columns: [],
+        source: [],
+        defaults: true,
+        conflict: [],
+        returning: [clauses.column_part("id")]
+    )
+    assert for_sqlite(defaults) == "INSERT INTO \"t\" DEFAULT VALUES RETURNING \"id\""
+    assert tokens.written(
+        insert_pieces(into: "t", columns: ["a"], source: [], defaults: true, conflict: [], returning: []),
+        postgres: true
+    ).is_err()
+    assert tokens.written(
+        insert_pieces(into: "t", columns: [], source: rows, defaults: false, conflict: [], returning: []),
+        postgres: true
+    ).is_err()
+    nothing = insert_pieces(
+        into: "t",
+        columns: ["id", "name"],
+        source: rows,
+        defaults: false,
+        conflict: conflict_nothing([]),
+        returning: []
+    )
+    assert for_postgres(nothing) == "INSERT INTO \"t\" (\"id\", \"name\") VALUES ($1, $2) ON CONFLICT DO NOTHING"
+    set = [assignment_piece(column: "name", value: clauses.excluded_part("name"))]
+    upsert = insert_pieces(
+        into: "t",
+        columns: ["id", "name"],
+        source: rows,
+        defaults: false,
+        conflict: conflict_update(names: ["id"], set: set),
+        returning: []
+    )
+    assert for_sqlite(upsert) == "INSERT INTO \"t\" (\"id\", \"name\") VALUES (?1, ?2) ON CONFLICT (\"id\") DO UPDATE SET \"name\" = excluded.\"name\""
+    assert tokens.written(conflict_update(names: [], set: set), postgres: true).is_err()
+    assert tokens.written(conflict_update(names: ["id"], set: []), postgres: true).is_err()
+    assert tokens.written(conflict_nothing(["t.id"]), postgres: true).is_err()
+
+test "update_pieces and delete_pieces: written, and refused with no change or no condition"
+    set = [assignment_piece(column: "name", value: clauses.parameter_part(.text(v: "z")))]
+    by_id = [
+        clauses.compared(left: clauses.column_part("id"), how: .equal, right: clauses.parameter_part(.integer(v: 3)))
+    ]
+    u = tokens.written(
+        update_pieces(table: "users", set: set, where: by_id, returning: [clauses.column_part("id")]),
+        postgres: true
+    ).must()
+    assert u.text == "UPDATE \"users\" SET \"name\" = $1 WHERE \"id\" = $2 RETURNING \"id\"" && u.params == [.text(v: "z"), .integer(v: 3)]
+    assert tokens.written(update_pieces(table: "users", set: [], where: by_id, returning: []), postgres: true).is_err()
+
+    match tokens.written(update_pieces(table: "users", set: set, where: [], returning: []), postgres: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "the UPDATE of \"users\" has no condition, so it would change every row; every_row() in its where says that is meant"
+
+    assert for_sqlite(delete_pieces(from: "users", where: by_id, returning: [])) == "DELETE FROM \"users\" WHERE \"id\" = ?1"
+    assert for_postgres(delete_pieces(from: "users", where: [clauses.all_clause([])], returning: [])) == "DELETE FROM \"users\" WHERE 1 = 1"
+    assert tokens.written(delete_pieces(from: "users", where: [], returning: []), postgres: true).is_err()
+    assert tokens.written(assignment_piece(column: "u.name", value: clauses.star_part()), postgres: true).is_err()

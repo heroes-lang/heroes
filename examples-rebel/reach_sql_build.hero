@@ -1,0 +1,323 @@
+# Reaches Rebel's `sql/build`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), and runs the statements it builds against
+# SQLite in memory: rows inserted, read back into a record by its field
+# names, changed, joined, grouped, upserted and deleted; and against the
+# PostgreSQL server `REBEL_POSTGRES_URL` names, saying it skipped where the
+# variable is unset or no server answers. Its `main` builds a
+# SELECT and prints the text and the parameters it writes for PostgreSQL.
+
+use <rebel>/os
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/postgres
+use <rebel>/sql/sqlite
+
+function main()
+    q = build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name]))
+
+    match build.to_sql(.select(query: q), .postgres)
+        .err e => print(e.code, ": ", e.msg)
+        .ok s  => print(s.text, " with ", s.params.len(), " parameters")
+
+# A singer as the table `singer` keeps one.
+record Singer
+    # The singer's id.
+    id: i64
+    # The singer's name.
+    name: str
+    # The year the singer was born.
+    born: i64
+
+# The singer a row holds, read by the record's own field names.
+function singer_of(row: sql.Row) -> Singer?
+    return ok(
+        Singer(id: sql.integer_named(row, Singer::id)?, name: sql.text_named(row, Singer::name)?, born: sql.integer_named(row, Singer::born)?)
+    )
+
+# The singers `q` answers, in its order.
+function singers(@db: sqlite.Db, q: build.Select) -> [Singer]?
+    s = build.to_sql(.select(query: q), .sqlite)?
+    rows = sqlite.query(@db, s.text, s.params)?
+    found: [Singer] @= []
+
+    for row in rows.rows
+        found @ found.push(singer_of(row)?)
+
+    return ok(found)
+
+# The names of `singers`, in order.
+function names_of(found: [Singer]) -> [str]
+    names: [str] @= []
+
+    for s in found
+        names @ names.push(s.name)
+
+    return names
+
+# Runs `q`, a statement that answers no rows, and answers what it changed.
+function run(@db: sqlite.Db, q: build.Query) -> sql.Result?
+    s = build.to_sql(q, .sqlite)?
+    return sqlite.exec(@db, s.text, s.params)
+
+# The rows `q` answers, a SELECT or a statement with RETURNING.
+function answered(@db: sqlite.Db, q: build.Query) -> sql.Rows?
+    s = build.to_sql(q, .sqlite)?
+    return sqlite.query(@db, s.text, s.params)
+
+# A database in memory holding the table `singer` and four singers, one
+# whose name is SQL that must stay a value.
+function opened() -> sqlite.Db?
+    db @= sqlite.open_memory()?
+    made = sqlite.exec_script(
+        @db,
+        "CREATE TABLE singer(id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, born INTEGER NOT NULL, left_at TEXT);CREATE TABLE song(id INTEGER PRIMARY KEY, singer_id INTEGER, title TEXT NOT NULL)"
+    )
+
+    match made
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    rows: [[sql.Value]] = [
+        [.text(v: "Ziggy"), .integer(v: 1947)]
+        [.text(v: "Aladdin"), .integer(v: 1973)]
+        [.text(v: "Robert'); DROP TABLE singer;--"), .integer(v: 1980)]
+        [.text(v: "50% Thin"), .integer(v: 1976)]
+    ]
+
+    match run(@db, .insert(query: build.insert(into: "singer", columns: [Singer::name, Singer::born], rows: rows)))
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => return ok(db)
+
+test "sqlite: rows read back into records, a value holding SQL kept a value"
+    db @= opened().must()
+    q @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    q.order_by @ [build.ascending(Singer::id)]
+    found = singers(@db, q).must()
+    assert found.len() == 4
+    assert found[0] == Singer(id: 1, name: "Ziggy", born: 1947)
+    assert found[2].name == "Robert'); DROP TABLE singer;--"
+    sqlite.close(@db).must()
+
+test "sqlite: conditions filter, order and page as written"
+    db @= opened().must()
+    q @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    q.where @ [build.between(Singer::born, low: .integer(v: 1950), high: .integer(v: 1980))]
+    q.order_by @ [build.descending(Singer::born)]
+    assert names_of(singers(@db, q).must()) == ["Robert'); DROP TABLE singer;--", "50% Thin", "Aladdin"]
+    q.limit @ ok(1)
+    q.offset @ ok(1)
+    assert names_of(singers(@db, q).must()) == ["50% Thin"]
+    q.limit @ fail(code: sql.NOT_FOUND, msg: "no limit")
+    assert names_of(singers(@db, q).must()) == ["50% Thin", "Aladdin"]
+    q.offset @ fail(code: sql.NOT_FOUND, msg: "no offset")
+    q.where @ [build.like(name: Singer::name, pattern: build.escape_like("50%") + "%")]
+    assert names_of(singers(@db, q).must()) == ["50% Thin"]
+    q.where @ [build.like(name: Singer::name, pattern: "%a%")]
+    assert names_of(singers(@db, q).must()) == ["Robert'); DROP TABLE singer;--", "Aladdin"]
+    q.where @ [build.in_values(Singer::id, values: [.integer(v: 1), .integer(v: 4)])]
+    assert names_of(singers(@db, q).must()) == ["50% Thin", "Ziggy"]
+    q.where @ [build.negate(build.in_values(Singer::id, values: []))]
+    assert singers(@db, q).must().len() == 4
+    q.where @ [
+        build.any_of([build.equal(Singer::name, .text(v: "Ziggy")), build.all_of([build.greater(Singer::born, .integer(v: 1970)), build.less(Singer::born, .integer(v: 1975))])])
+    ]
+    assert names_of(singers(@db, q).must()) == ["Aladdin", "Ziggy"]
+    sqlite.close(@db).must()
+
+test "sqlite: NULL found by equal, changed by an update, every row named on purpose"
+    db @= opened().must()
+    u @= build.update("singer", set: [build.assign("left_at", .text(v: "1973-07-03"))])
+    u.where @ [build.equal(Singer::name, .text(v: "Ziggy"))]
+    assert run(@db, .update(query: u)).must().rows_affected == 1
+    q @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    q.where @ [build.equal("left_at", .null_value)]
+    assert singers(@db, q).must().len() == 3
+    q.where @ [build.not_equal("left_at", .null_value)]
+    assert names_of(singers(@db, q).must()) == ["Ziggy"]
+    every @= build.update("singer", set: [build.assign("left_at", .null_value)])
+    assert run(@db, .update(query: every)).is_err()
+    every.where @ [build.every_row()]
+    assert run(@db, .update(query: every)).must().rows_affected == 4
+    sqlite.close(@db).must()
+
+test "sqlite: RETURNING, an upsert each way, a delete answering what it deleted"
+    db @= opened().must()
+    i @= build.insert(
+        into: "singer",
+        columns: [Singer::name, Singer::born],
+        rows: [[.text(v: "Halloween Jack"), .integer(v: 1974)]]
+    )
+    i.returning @ [build.column(Singer::id)]
+    made = answered(@db, .insert(query: i)).must()
+    assert sql.integer_named(made.rows[0], Singer::id).must() == 5
+    again @= build.insert(
+        into: "singer",
+        columns: [Singer::name, Singer::born],
+        rows: [[.text(v: "Ziggy"), .integer(v: 2000)]]
+    )
+
+    match run(@db, .insert(query: again))
+        .ok _  => assert false
+        .err e => assert e.code == sql.EXISTS
+
+    again.conflict @ .do_nothing(target: [Singer::name])
+    assert run(@db, .insert(query: again)).must().rows_affected == 0
+    again.conflict @ .do_update(
+        target: [Singer::name],
+        set: [build.Assignment(column: Singer::born, value: build.excluded(Singer::born))]
+    )
+    assert run(@db, .insert(query: again)).must().rows_affected == 1
+    q @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    q.where @ [build.equal(Singer::name, .text(v: "Ziggy"))]
+    assert singers(@db, q).must() == [Singer(id: 1, name: "Ziggy", born: 2000)]
+    d @= build.delete("singer")
+    d.where @ [build.greater(Singer::born, .integer(v: 1975))]
+    d.returning @ [build.column(Singer::name)]
+    gone = answered(@db, .delete(query: d)).must()
+    assert gone.rows.len() == 3
+    sqlite.close(@db).must()
+
+test "sqlite: a join grouped and counted, a subquery, EXISTS, INSERT SELECT and UNION ALL"
+    db @= opened().must()
+    songs: [[sql.Value]] = [
+        [.integer(v: 1), .text(v: "Starman")]
+        [.integer(v: 1), .text(v: "Changes")]
+        [.integer(v: 2), .text(v: "Drive-In Saturday")]
+    ]
+    _ = run(@db, .insert(query: build.insert(into: "song", columns: ["singer_id", "title"], rows: songs))).must()
+    q @= build.select(
+        from: "singer",
+        columns: [build.column("singer.name"), build.aliased(build.count_all(), alias: "songs")]
+    )
+    q.joins @ [build.inner_join("song", on: build.columns_equal(left: "singer.id", right: "song.singer_id"))]
+    q.group_by @ [build.column("singer.name")]
+    q.having @ [build.compare(left: build.count_all(), op: .greater, right: build.parameter(.integer(v: 1)))]
+    rows = answered(@db, .select(query: q)).must()
+    assert rows.rows.len() == 1
+    assert sql.text_named(rows.rows[0], "name").must() == "Ziggy" && sql.integer_named(rows.rows[0], "songs").must() == 2
+    singing @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    singing.where @ [
+        build.in_query(Singer::id, query: build.select(from: "song", columns: [build.column("singer_id")]))
+    ]
+    singing.order_by @ [build.ascending(Singer::id)]
+    assert names_of(singers(@db, singing).must()) == ["Ziggy", "Aladdin"]
+    by_song @= build.select(from: "song", columns: [build.column("id")])
+    by_song.where @ [build.columns_equal(left: "song.singer_id", right: "singer.id")]
+    silent @= build.select(from: "singer", columns: build.columns_named([Singer::id, Singer::name, Singer::born]))
+    silent.where @ [build.negate(build.exists(by_song))]
+    silent.order_by @ [build.ascending(Singer::id)]
+    assert singers(@db, silent).must().len() == 2
+    copy = build.insert_select(
+        into: "song",
+        columns: ["singer_id", "title"],
+        query: build.select(from: "singer", columns: [build.column(Singer::id), build.column(Singer::name)])
+    )
+    assert run(@db, .insert(query: copy)).must().rows_affected == 4
+    both @= build.select(from: "singer", columns: [build.column(Singer::name)])
+    both.combined @ [
+        build.Combined(operation: .union_all, query: build.select(from: "song", columns: [build.column("title")]))
+    ]
+    assert answered(@db, .select(query: both)).must().rows.len() == 11
+    sqlite.close(@db).must()
+
+# A connection to the server `REBEL_POSTGRES_URL` names. Fails `not_found`
+# where the variable is unset, and as `postgres.open` does where no server
+# answers there.
+function live() -> postgres.Db?
+    url = os.env("REBEL_POSTGRES_URL")?
+    return postgres.open(postgres.parse_url(url)?)
+
+# The rows `q` answers on PostgreSQL.
+function pg_answered(@db: postgres.Db, q: build.Query) -> sql.Rows?
+    s = build.to_sql(q, .postgres)?
+    return postgres.query(@db, s.text, s.params)
+
+# Runs `q` on PostgreSQL, a statement that answers no rows.
+function pg_run(@db: postgres.Db, q: build.Query) -> sql.Result?
+    s = build.to_sql(q, .postgres)?
+    return postgres.exec(@db, s.text, s.params)
+
+# The names of the singers `q` answers on PostgreSQL, in its order.
+function pg_names(@db: postgres.Db, q: build.Select) -> [str]?
+    rows = pg_answered(@db, .select(query: q))?
+    names: [str] @= []
+
+    for row in rows.rows
+        names @ names.push(singer_of(row)?.name)
+
+    return ok(names)
+
+test "postgres live: LIKE with an escape, a page by parameters, an upsert and RETURNING"
+    match live()
+        .err e => print("postgres live (sql/build): skipped, ", e.code, ": ", e.msg)
+        .ok first =>
+            db @= first
+            postgres.exec_script(
+                @db,
+                "DROP TABLE IF EXISTS rebel_build_live; CREATE TABLE rebel_build_live(id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, name TEXT NOT NULL UNIQUE, born BIGINT NOT NULL)"
+            ).must()
+            rows: [[sql.Value]] = [
+                [.text(v: "50% off"), .integer(v: 1)]
+                [.text(v: "a_b"), .integer(v: 2)]
+                [.text(v: "axb"), .integer(v: 3)]
+                [.text(v: "back\\slash"), .integer(v: 4)]
+                [.text(v: "backxslash"), .integer(v: 5)]
+            ]
+
+            i @= build.insert(into: "rebel_build_live", columns: [Singer::name, Singer::born], rows: rows)
+            i.returning @ [build.column(Singer::id)]
+            made = pg_answered(@db, .insert(query: i)).must()
+            assert made.rows.len() == 5 && sql.integer_named(made.rows[4], Singer::id).must() == 5
+            q @= build.select(
+                from: "rebel_build_live",
+                columns: build.columns_named([Singer::id, Singer::name, Singer::born])
+            )
+            q.order_by @ [build.ascending(Singer::id)]
+            q.where @ [build.like(name: Singer::name, pattern: build.escape_like("50%") + "%")]
+            assert pg_names(@db, q).must() == ["50% off"]
+            q.where @ [build.like(name: Singer::name, pattern: build.escape_like("a_b"))]
+            assert pg_names(@db, q).must() == ["a_b"]
+            q.where @ [build.like(name: Singer::name, pattern: build.escape_like("back\\slash"))]
+            assert pg_names(@db, q).must() == ["back\\slash"]
+            q.where @ [build.like(name: Singer::name, pattern: "a_b")]
+            assert pg_names(@db, q).must() == ["a_b", "axb"]
+            q.where @ []
+            q.limit @ ok(2)
+            q.offset @ ok(1)
+            assert pg_names(@db, q).must() == ["a_b", "axb"]
+            q.limit @ fail(code: sql.NOT_FOUND, msg: "no limit")
+            q.offset @ ok(3)
+            assert pg_names(@db, q).must() == ["back\\slash", "backxslash"]
+            again @= build.insert(
+                into: "rebel_build_live",
+                columns: [Singer::name, Singer::born],
+                rows: [[.text(v: "axb"), .integer(v: 30)]]
+            )
+
+            match pg_run(@db, .insert(query: again))
+                .ok _  => assert false
+                .err e => assert e.code == sql.EXISTS
+
+            again.conflict @ .do_nothing(target: [Singer::name])
+            assert pg_run(@db, .insert(query: again)).must().rows_affected == 0
+            again.conflict @ .do_update(
+                target: [Singer::name],
+                set: [build.Assignment(column: Singer::born, value: build.excluded(Singer::born))]
+            )
+            again.returning @ [build.column(Singer::id), build.column(Singer::born)]
+            upserted = pg_answered(@db, .insert(query: again)).must()
+            assert sql.integer_named(upserted.rows[0], Singer::id).must() == 3 && sql.integer_named(upserted.rows[0], Singer::born).must() == 30
+            d @= build.delete("rebel_build_live")
+            d.where @ [build.greater(Singer::born, .integer(v: 3))]
+            d.returning @ [build.column(Singer::name)]
+            gone = pg_answered(@db, .delete(query: d)).must()
+            assert gone.rows.len() == 3
+            postgres.exec_script(@db, "DROP TABLE rebel_build_live").must()
+            print(
+                "postgres live (sql/build): LIKE ESCAPE, LIMIT and OFFSET, an upsert each way and RETURNING answered as expected"
+            )
+            postgres.close(@db).must()

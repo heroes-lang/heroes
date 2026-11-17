@@ -1,0 +1,153 @@
+# The ledger of `sql/migrate`: numbered migrations, measured against the
+# yardstick the author named on 2026-11-16, which is no standard library:
+# Go's `github.com/golang-migrate/migrate/v4` v4.20.1 and
+# `github.com/pressly/goose/v3` v3.30.1, `go doc -all` on each in a module of
+# the scratch folder; Rust's `sqlx` 0.9.0 (`sqlx::migrate`, its pages on
+# docs.rs, and the `sqlx migrate` command it documents); and Python's Alembic
+# 1.20.1, `dir()` of `alembic.command` and `alembic.op` installed in the
+# scratch folder, counted as capabilities, as the author asked. The package
+# runs no statement: it answers each one, and the program runs it with its
+# driver, `sql/postgres` or `sql/sqlite`, which it does not name. Its plans
+# were run live on 2026-11-17 against this Mac's SQLite and PostgreSQL 16.15.
+
+capability migrate/files  migrations read from numbered SQL files in a folder
+  heroes  sql/migrate.read_migrations
+  go      migrate.New with a `file://` source, migrate.NewWithSourceInstance, goose.CollectMigrations, goose.SetBaseFS, goose.Provider.ListSources, goose.Source, goose.NumericComponent
+  rust    sqlx::migrate!, Migrator::new, MigrationSource, ResolveWith, ResolveConfig
+  python  alembic.command.init, ScriptDirectory
+  note    `0001_create_users.up.sql` and `0001_create_users.down.sql`, golang-migrate's and sqlx's naming; goose keeps both directions in one file between annotations, and Alembic writes Python
+
+capability migrate/values  migrations given as values by the program
+  heroes  sql/migrate.Migration
+  go      migrate.NewWithInstance with a source driver, goose.Migration, goose.NewGoMigration, goose.SetGlobalMigrations, goose.ResetGlobalMigrations, goose.WithGoMigrations
+  rust    Migrator::with_migrations, Migration::new, Migration, MigrationType
+  python  -
+
+capability migrate/code  a migration written as code of the program rather than SQL
+  heroes  refused: a migration here is SQL the database runs; a step written in Heroes would need a driver, which the package does not name, and a program runs its own code between two plans (`plan_up_to`)
+  go      goose.AddMigration, AddMigrationContext, AddMigrationNoTx, AddMigrationNoTxContext, AddNamedMigration, AddNamedMigrationContext, AddNamedMigrationNoTx, AddNamedMigrationNoTxContext, goose.GoFunc, GoMigration, GoMigrationContext, GoMigrationNoTx, GoMigrationNoTxContext, goose.Migration.Up, UpContext, Down, DownContext
+  rust    -
+  python  alembic.op (add_column, alter_column, batch_alter_table, bulk_insert, create_check_constraint, create_exclude_constraint, create_foreign_key, create_index, create_primary_key, create_table, create_table_comment, create_unique_constraint, drop_column, drop_constraint, drop_index, drop_table, drop_table_comment, execute, rename_table, f, get_bind, get_context, invoke, implementation_for, register_operation, create_module_class_proxy, run_async, Operations)
+
+capability migrate/table  a table of the versions applied, made where it is not there
+  heroes  sql/migrate.create_table, sql/migrate.Options (`table`), sql/migrate.DEFAULT_TABLE
+  go      golang-migrate's `schema_migrations`, goose.DefaultTablename, goose.SetTableName, goose.TableName, goose.WithTableName, goose.EnsureDBVersion, EnsureDBVersionContext, goose.WithStore
+  rust    `_sqlx_migrations`, Migrator::dangerous_set_table_name, Migrator::create_schema, Migrate::ensure_migrations_table
+  python  `alembic_version`, the `version_table` option, alembic.command.ensure_version
+
+capability migrate/checksum  a checksum of each migration kept, so a file changed after it ran is refused
+  heroes  sql/migrate.checksum_of, sql/migrate.status
+  go      -
+  rust    Migration::checksum, MigrateError::VersionMismatch
+  python  -
+  note    SHA-256 of the up script, through `crypto`, kept in hexadecimal; sqlx keeps a SHA-384 and refuses the same way; golang-migrate, goose and Alembic keep none and run a changed file's later steps in silence
+
+capability migrate/up  every migration not applied, applied in order
+  heroes  sql/migrate.plan_up
+  go      migrate.Migrate.Up, goose.Up, UpContext, goose.Provider.Up, goose.Run, RunContext, RunWithOptions, RunWithOptionsContext
+  rust    Migrator::run
+  python  alembic.command.upgrade (head)
+  note    nothing to apply is an empty plan, where golang-migrate fails with ErrNoChange
+
+capability migrate/up-to  the migrations not applied up to a version, or so many of them
+  heroes  sql/migrate.plan_up_to
+  go      migrate.Migrate.Migrate (upward), migrate.Migrate.Steps (n above 0), goose.UpTo, UpToContext, UpByOne, UpByOneContext, goose.Provider.UpTo, UpByOne, ApplyVersion
+  rust    Migrator::run_to
+  python  alembic.command.upgrade (a revision, or +n)
+  note    a version no migration has fails `not_found`, where goose applies what stands below it
+
+capability migrate/down-one  the last migration applied, stepped back
+  heroes  sql/migrate.plan_down
+  go      migrate.Migrate.Steps (-1), goose.Down, DownContext, goose.Provider.Down
+  rust    Migrator::undo
+  python  alembic.command.downgrade (-1)
+
+capability migrate/down-to  every migration above a version stepped back, the newest first, or every one
+  heroes  sql/migrate.plan_down_to
+  go      migrate.Migrate.Migrate (downward), migrate.Migrate.Down, migrate.Migrate.Steps (n below 0), goose.DownTo, DownToContext, goose.Reset, ResetContext, goose.Provider.DownTo
+  rust    Migrator::undo (a target)
+  python  alembic.command.downgrade (a revision, or base)
+
+capability migrate/redo  the last migration stepped back and applied again
+  heroes  sql/migrate.plan_down, then sql/migrate.plan_up
+  go      goose.Redo, RedoContext
+  rust    -
+  python  -
+  note    two plans, run one after the other: the step back, then the steps up
+
+capability migrate/current  the version a database stands at, and the migrations applied
+  heroes  sql/migrate.current_version, sql/migrate.read_applied, sql/migrate.select_applied
+  go      migrate.Migrate.Version, goose.GetDBVersion, GetDBVersionContext, goose.Version, VersionContext, goose.Provider.GetDBVersion, goose.MigrationRecord
+  rust    Migrator::version_exists, Migrate::list_applied_migrations, AppliedMigration
+  python  alembic.command.current, alembic.command.heads
+
+capability migrate/status  which migrations wait and which are applied
+  heroes  sql/migrate.status, sql/migrate.Status
+  go      goose.Status, StatusContext, goose.Provider.Status, HasPending, GetVersions, goose.MigrationStatus, goose.State, goose.Migrations.Current, Last, Next, Previous, Len, Less, Swap, String
+  rust    Migrator::iter
+  python  alembic.command.history, alembic.command.show, alembic.command.check
+
+capability migrate/transactions  each migration in its own transaction, and one taken out of it
+  heroes  sql/migrate.Step (`in_transaction`), sql/migrate.NO_TRANSACTION
+  go      goose.AddMigrationNoTx, goose.TransactionMode, goose.WithIsolateDDL, golang-migrate's files (which hold their own BEGIN and COMMIT)
+  rust    Migration::no_tx
+  python  the `transaction_per_migration` option, MigrationContext.autocommit_block
+  note    PostgreSQL and SQLite both run DDL in a transaction, so a migration that fails leaves nothing of itself and no row in the table; a first line `-- no-transaction` takes one out, for `CREATE INDEX CONCURRENTLY` or `VACUUM`, which neither database runs inside one
+
+capability migrate/dry-run  the statements a run would make, answered without running them
+  heroes  sql/migrate.format_plan
+  go      -
+  rust    -
+  python  alembic.command.upgrade and downgrade with `sql=True` (offline mode)
+
+capability migrate/out-of-order  a migration older than the last applied, and an applied one whose file is gone
+  heroes  sql/migrate.Options (`allow_out_of_order`, `ignore_missing`)
+  go      goose.WithAllowMissing, goose.WithAllowOutofOrder
+  rust    Migrator::set_ignore_missing
+  python  -
+  note    both refused unless the program asks: an older migration found after a newer ran fails `invalid`, an applied version no migration has fails `not_found`
+
+capability migrate/lock  one program at a time migrating a database
+  heroes  sql/migrate.lock_statement, sql/migrate.unlock_statement
+  go      migrate.DefaultLockTimeout, migrate.ErrLocked, migrate.ErrLockTimeout, goose.WithLocker, goose.WithSessionLocker
+  rust    Migrator::set_locking, Migrate::lock, Migrate::unlock
+  python  -
+  note    PostgreSQL's advisory lock, its key taken from the table's name; SQLite's file lock already lets one writer at a time, and a second program's step fails on the version's primary key and rolls back
+
+capability migrate/mark  a version recorded as applied without running it, or a dirty one forced
+  heroes  sql/migrate.step (its `version_statement` run alone)
+  go      migrate.Migrate.Force, migrate.ErrDirty, migrate.ErrNilVersion, migrate.ErrInvalidVersion, goose.WithNoVersioning
+  rust    Migrator::skip, Migrate::skip, Migrate::dirty_version, MigrateError::Dirty
+  python  alembic.command.stamp
+  note    a step in a transaction that fails leaves no row and nothing of itself, so there is no dirty version to force; one outside a transaction leaves what ran and no version, and its file says so
+
+capability migrate/drop  every table of the database dropped
+  heroes  refused: it drops every table of the database, the program's or another's; `plan_down_to` version 0 undoes what the migrations made
+  go      migrate.Migrate.Drop
+  rust    -
+  python  -
+
+capability migrate/create  a new migration's files made from a template
+  heroes  refused: a command's work, not a library's; the files are written by hand or with `fs`, named as `read_migrations` reads them
+  go      goose.Create, CreateWithTemplate, goose.Fix, goose.SetSequential
+  rust    `sqlx migrate add`
+  python  alembic.command.revision, alembic.command.edit, alembic.command.list_templates, alembic.command.merge
+
+capability migrate/branches  migrations as a graph of revisions with branches and merges
+  heroes  refused: versions are numbers in one order; two lines of work meet by `allow_out_of_order`
+  go      -
+  rust    -
+  python  alembic.command.branches, alembic.command.merge, alembic.command.heads, down_revision
+
+capability migrate/autogenerate  a migration written by comparing the program's model with the database
+  heroes  refused: needs the program's model as data at run time, reflection, as the ORM refused in `sql/build` does
+  go      -
+  rust    -
+  python  alembic.command.revision with autogenerate, alembic.command.check
+
+dropped
+  go      migrate.Migrate.Close, migrate.Migrate.Run, migrate.NewWithDatabaseInstance, migrate.Migration, migrate.NewMigration, migrate.Migration.Buffer, LogString, String, migrate.DefaultBufferSize, migrate.DefaultPrefetchMigrations, migrate.FilterCustomQuery, migrate.ErrShortLimit, migrate.MultiError, migrate.NewMultiError, migrate.ErrNoChange: a migrator holding the connection and reading its files in a buffer as it runs; here the plan is a list of values and the program's driver runs it
+  go      migrate.Logger, goose.Logger, goose.NopLogger, goose.SetLogger, goose.SetVerbose, goose.WithLogger, goose.WithSlog, goose.WithVerbose, goose.WithNoColor: logging; the program prints each step as it runs it, `format_plan` writing the lot
+  go      goose.OpenDBWithDriver, goose.SetDialect, goose.Dialect, goose.Provider, goose.NewProvider, goose.Provider.Close, Ping, goose.ProviderOption, goose.OptionsFunc, goose.WithDisableGlobalRegistry, goose.WithExcludeNames, goose.WithExcludeVersions, goose.MigrationResult, goose.MigrationType, goose.PartialError, goose.ErrNoMigrationFiles, ErrNoCurrentVersion, ErrNoNextVersion, ErrVersionNotFound, ErrNoMigrations, ErrAlreadyApplied, ErrNotApplied, goose.VERSION: the provider that opens and holds a connection, its options and its errors; a program filters its own list of migrations
+  rust    Migrate::apply, Migrate::revert, Migrate::create_schema_if_not_exists, MigrateDatabase, MigrateError, Migrate: the trait a database implements for sqlx to call; here the program calls its driver
+  python  alembic.command.EnvironmentContext, alembic.command.ScriptDirectory, the `env.py` and `alembic.ini` configuration: Alembic's environment, which runs Python of the project's
