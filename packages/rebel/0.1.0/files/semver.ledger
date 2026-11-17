@@ -1,0 +1,243 @@
+# The ledger of `semver`: what Go's golang.org/x/mod/semver (v0.37.0), Rust's
+# `semver` crate (1.0.28, the one Cargo builds with) and Python's
+# `packaging` (26.3: `packaging.version` and `packaging.specifiers`) let a
+# program do with versions and ranges, one block per capability, and what
+# Rebel answers. npm's `semver` (7.8.5, the copy npm itself carries) is named
+# in the notes where it was asked, since the range's `||` is its own.
+#
+# The lists are this machine's, 2026-11-16: `go doc -all
+# golang.org/x/mod/semver`; the items of `cargo doc -p semver` (structs,
+# fields, variants, methods and trait implementations of its own); `dir()` of
+# `packaging.version`, `packaging.version.Version`, `packaging.specifiers`,
+# `SpecifierSet` and `Specifier`; `Object.keys` of npm's module. PEP 440 is
+# another grammar than SemVer (epochs, `.post`, `.dev`, local versions,
+# normalisation), so Python's column names its entries as a contrast and none
+# of its versions is read here.
+#
+# The differential, 2026-11-16 and 17, with a Rust probe built in the scratch
+# folder and Rebel's answers printed by a program beside it: 3,000 generated
+# version texts read alike (1,526 versions); 3,000 range texts read and
+# written back alike, union lines compared set by set (2,274 without `||`,
+# and 1,452 sets of the 726 with it); 3,000 pairs ordered alike by precedence and by the total
+# order; 4,279 generated pairs and a grid of 28,800 (120 ranges by 240
+# versions) admitted alike; `lowest_possible` checked on 130 ranges against
+# the lowest version of a grid of 512 that Cargo's crate admits; `intersects`
+# and `is_subset` checked on 4,000 pairs of ranges against the 1,378 versions
+# of a grid, each admitted or not by Cargo's crate. No difference remained.
+
+capability version/parse  a version read from text by SemVer 2.0.0's grammar
+  heroes  semver.parse, semver.Version
+  go      IsValid
+  rust    Version, Version::parse, FromStr for Version, Error
+  python  packaging.version.Version, packaging.version.parse, packaging.version.InvalidVersion, packaging.version.VERSION_PATTERN
+  note    exactly the standard's grammar, as Cargo's crate reads it, every refusal of 3,000 generated texts the same: no `v` before it (Go asks for one, npm drops one), no white space, no missing number (Go reads `v1.2` as `v1.2.0`), no leading zero. A number past 18446744073709551615 fails `does_not_fit`, as Cargo's crate refuses it; Go compares any length, npm stops at 2^53. Python's grammar is PEP 440's and is not read
+
+capability version/valid  whether a text is a version
+  heroes  semver.is_valid
+  go      IsValid
+  rust    -
+  python  -
+  note    npm's `valid` answers the text or null; here a `bool`
+
+capability version/new  a release made from its three numbers
+  heroes  semver.new
+  go      -
+  rust    Version::new
+  python  packaging.version.Version.from_parts
+  note    -
+
+capability version/parts  the numbers, the pre-release and the build metadata of a version
+  heroes  semver.Version.major, semver.Version.minor, semver.Version.patch, semver.Version.pre, semver.Version.build
+  go      Major, MajorMinor, Prerelease, Build
+  rust    Version.major, Version.minor, Version.patch, Version.pre, Version.build, Prerelease::as_str, BuildMetadata::as_str
+  python  packaging.version.Version.major, packaging.version.Version.minor, packaging.version.Version.micro, packaging.version.Version.release, packaging.version.Version.pre, packaging.version.Version.local, packaging.version.Version.base_version, packaging.version.Version.public
+  note    identifiers are held as a list, `["alpha", "1"]`, where Rust holds one text and Go a text with its `-`; npm holds a list too. Python's `epoch`, `post` and `dev` have no SemVer counterpart (version/pep440)
+
+capability version/format  a version written as text
+  heroes  semver.format
+  go      Canonical
+  rust    Display for Version, Display for Prerelease, Display for BuildMetadata
+  python  packaging.version.Version.__str__
+  note    written as read, the build metadata kept; Go's `Canonical` drops it and fills a shorthand, which is not read here
+
+capability version/identifiers  a pre-release or build metadata set, checked
+  heroes  semver.with_pre, semver.with_build
+  go      -
+  rust    Prerelease, Prerelease::new, Prerelease::EMPTY, Prerelease::is_empty, BuildMetadata, BuildMetadata::new, BuildMetadata::EMPTY, BuildMetadata::is_empty, Default for Prerelease, Default for BuildMetadata
+  python  -
+  note    the empty text clears; a numeric pre-release identifier with a leading zero is refused, a build one allowed, as the standard says
+
+capability version/prerelease  whether a version is a pre-release
+  heroes  semver.is_prerelease
+  go      Prerelease
+  rust    Prerelease::is_empty
+  python  packaging.version.Version.is_prerelease, packaging.version.Version.is_devrelease, packaging.version.Version.is_postrelease
+  note    npm's `prerelease` answers the identifiers, here `Version.pre`
+
+capability version/precedence  two versions ordered by SemVer's precedence
+  heroes  semver.compare
+  go      Compare
+  rust    Version::cmp_precedence
+  python  packaging.version.Version.__lt__, packaging.version.Version.__eq__
+  note    -1, 0 or 1, build metadata ignored; a numeric pre-release identifier of any length compared by value, as Rust and Go compare it; npm compares one past 2^53 as text. npm's `compare`, `rcompare`, `gt`, `lt`, `gte`, `lte`, `eq`, `neq` and `cmp` are this function and an operator
+
+capability version/total-order  two versions ordered with build metadata breaking a tie
+  heroes  semver.compare_build
+  go      -
+  rust    Ord for Version, PartialOrd for Version, Ord for Prerelease, Ord for BuildMetadata
+  python  -
+  note    as Cargo's crate orders metadata: digits by value and, at one value, the one with more leading zeros higher (`+001` above `+1`), below any other identifier; npm's `compareBuild` compares digits by value alone. Agrees with `==`, where precedence does not
+
+capability version/sort  a list of versions sorted
+  heroes  semver.is_before
+  go      Sort, ByVersion, ByVersion.Len, ByVersion.Less, ByVersion.Swap
+  rust    Ord for Version
+  python  -
+  note    `lists.sort_by(versions, semver.is_before)` sorts from the lowest, stably; npm's `sort` and `rsort` are this and `lists.reverse`. Go's `ByVersion` is an interface's three methods
+
+capability version/max  the highest of versions
+  heroes  semver.highest
+  go      Max
+  rust    Ord::max for Version
+  python  -
+  note    of a list, where Go's and Rust's take two; empty fails `not_found`
+
+capability version/increment  the next major, minor or patch release
+  heroes  semver.next_major, semver.next_minor, semver.next_patch
+  go      -
+  rust    -
+  python  -
+  note    npm's `inc` with `major`, `minor`, `patch`, observed: a pre-release of the release asked for gives that release (`2.0.0-rc.1` to `2.0.0`), build metadata dropped. Its `premajor`, `preminor`, `prepatch` and `prerelease` steps and its `RELEASE_TYPES` are version/pre-increment
+
+capability version/pre-increment  the next pre-release, `1.2.3-rc.0` to `1.2.3-rc.1`
+  heroes  refused: npm's steps invent an identifier (`rc.0`, or `0` where none was given) by a rule of its own that no standard or Cargo follows; a program makes the pre-release it means with `semver.with_pre`
+  go      -
+  rust    -
+  python  -
+  note    npm's `inc` with `premajor`, `preminor`, `prepatch`, `prerelease`
+
+capability version/difference  which part of two versions differs
+  heroes  refused: npm's `diff` answers one word that folds the pre-release into the release steps (`premajor` for `1.0.0-1` to `2.0.0`) by rules a program must learn; the fields say it plainly, `a.major != b.major`
+  go      -
+  rust    -
+  python  -
+  note    npm's `diff`
+
+capability version/coerce  a version guessed from text that is not one
+  heroes  refused: the package manager must refuse what is not a version and never guess one; `v1.2`, `1.2` or `1.2.3.4` are refused by `parse` with where they stop being one
+  go      Canonical
+  rust    -
+  python  -
+  note    npm's `coerce`, `clean`, `truncate` and its loose comparisons, `compareLoose`; Go's `Canonical` fills a shorthand `v1.2`
+
+capability version/pep440  Python's versions: epochs, post, dev and local releases, normalisation
+  heroes  refused: PEP 440 is another grammar with another order (an epoch first, `.post` above its release, `.dev` below every pre-release), and one package that read both would let a program mix them; Rebel reads SemVer
+  go      -
+  rust    -
+  python  packaging.version.Version.epoch, packaging.version.Version.post, packaging.version.Version.dev, packaging.version.Version.is_postrelease, packaging.version.Version.is_devrelease, packaging.version.normalize_pre
+  note    -
+
+capability range/parse  a range of versions read, Cargo's grammar and npm's `||`
+  heroes  semver.parse_range, semver.Range, semver.MAX_COMPARATORS
+  go      -
+  rust    VersionReq, VersionReq::parse, FromStr for VersionReq, Comparator::parse, FromStr for Comparator
+  python  packaging.specifiers.SpecifierSet, packaging.specifiers.Specifier, packaging.specifiers.InvalidSpecifier, packaging.specifiers.BaseSpecifier
+  note    Cargo's grammar exactly, every one of 3,000 generated texts read or refused alike set by set: a bare version is `^`, comparators are separated by `,`, `*`, `x` and `X` are wildcards, `*` stands alone in its set, at most 32 comparators a set, build metadata read and dropped. npm's `||` added between sets. Where npm reads otherwise this reads as Cargo: a bare `1.2.3` is `=1.2.3` to npm; npm separates comparators by spaces and refuses commas; npm's hyphen range `1.2 - 2.3`, its `v` and its empty range (`*` to npm) are refused here. npm's `validRange` and `toComparators` are this and `comparators_of`
+
+capability range/comparators  the comparators of a range read, and a range built from them
+  heroes  semver.comparators_of, semver.from_comparators, semver.Comparator, semver.Op
+  go      -
+  rust    VersionReq.comparators, FromIterator for VersionReq, Comparator, Comparator.op, Comparator.major, Comparator.minor, Comparator.patch, Comparator.pre, Op, Op::Exact, Op::Greater, Op::GreaterEq, Op::Less, Op::LessEq, Op::Tilde, Op::Caret, Op::Wildcard
+  python  packaging.specifiers.Specifier.operator, packaging.specifiers.Specifier.version
+  note    Rust's `Option` minor and patch are `written`, 1 to 3; npm's `Comparator` class is the same record
+
+capability range/format  a range written as text
+  heroes  semver.format_range
+  go      -
+  rust    Display for VersionReq, Display for Comparator
+  python  packaging.specifiers.SpecifierSet.__str__
+  note    as Cargo's crate writes it, the same text for every one of 1,736 ranges read without `||`: `^` before a bare version, `, ` between comparators, `1.*` for a wildcard; ` || ` between sets
+
+capability range/any  the range that admits every release
+  heroes  semver.parse_range
+  go      -
+  rust    VersionReq::STAR, Default for VersionReq
+  python  -
+  note    `parse_range("*")`; a record holds no constant, and its set is empty
+
+capability range/matches  whether a range admits a version
+  heroes  semver.admits
+  go      -
+  rust    VersionReq::matches, Comparator::matches
+  python  packaging.specifiers.SpecifierSet.contains, packaging.specifiers.Specifier.contains, packaging.specifiers.SpecifierSet.__contains__
+  note    Cargo's rule, every one of 33,079 pairs answered alike: a pre-release only where a comparator of the same set names a pre-release of the same three numbers, as npm's `satisfies` reads it set by set, and a comparator of fewer than three numbers admitting no pre-release that begins with them but `^` (Cargo's crate refuses `1.2.5-alpha` to `>=1.2` and admits it to `^1.2`, observed). A comparator is a range of one, so `Comparator::matches` is `admits` on such a range
+
+capability range/prereleases  a switch that admits every pre-release
+  heroes  refused: Cargo has none, and a second rule beside its own would let two programs read one requirement differently; a range admits a pre-release where it names one, `>=1.0.0-0`
+  go      -
+  rust    -
+  python  packaging.specifiers.SpecifierSet.prereleases, packaging.specifiers.Specifier.prereleases
+  note    npm's `includePrerelease` option
+
+capability range/filter  the versions of a list a range admits
+  heroes  semver.admitted_of
+  go      -
+  rust    -
+  python  packaging.specifiers.SpecifierSet.filter, packaging.specifiers.Specifier.filter
+  note    in the list's order; the built-in `filter` takes no range, since a function value holds no closure
+
+capability range/max-satisfying  the highest version of a list a range admits
+  heroes  semver.highest_admitted
+  go      -
+  rust    -
+  python  -
+  note    npm's `maxSatisfying`; the choice Rebel's package manager makes. None admitted fails `not_found`, where npm answers null
+
+capability range/min-satisfying  the lowest version of a list a range admits
+  heroes  semver.lowest_admitted
+  go      -
+  rust    -
+  python  -
+  note    npm's `minSatisfying`
+
+capability range/min-version  the lowest version of all a range admits
+  heroes  semver.lowest_possible
+  go      -
+  rust    -
+  python  packaging.specifiers.SpecifierSet.is_unsatisfiable, packaging.specifiers.SpecifierSet.to_range
+  note    npm's `minVersion`, read by Cargo's rule and exact: `>1.2.2, <1.2.3-beta` gives `1.2.3-0`, which both Cargo's crate and npm admit, where npm's `minVersion` answers null. A range that admits nothing fails `not_found`, which answers Python's `is_unsatisfiable`
+
+capability range/intersects  whether two ranges admit a version in common
+  heroes  semver.intersects
+  go      -
+  rust    -
+  python  packaging.specifiers.SpecifierSet.is_disjoint
+  note    npm's `intersects`; exact by Cargo's rule, pre-releases included: the lowest version both admit, where there is one, is one of a finite list of bounds the comparators write
+
+capability range/subset  whether every version one range admits, another admits
+  heroes  semver.is_subset
+  go      -
+  rust    -
+  python  packaging.specifiers.SpecifierSet.is_subset, packaging.specifiers.SpecifierSet.is_superset
+  note    npm's `subset`; `is_subset(a: b, b: a)` is Python's `is_superset`
+
+capability range/outside  whether a version lies above or below everything a range admits
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    npm's `outside`, `gtr` and `ltr`; with intervals and pre-releases it wants the same care as `is_subset`, not done in this round
+
+capability range/simplify  a range rewritten shorter over a list of versions
+  heroes  refused: npm's `simplifyRange` answers a text that depends on the list it is given, and Rebel's package manager keeps the requirement as written
+  go      -
+  rust    -
+  python  -
+  note    npm's `simplifyRange`
+
+dropped
+  rust    Error's `source`, `description` and `cause`, and the traits every type derives (Clone, Debug, Hash, Eq, Send, Sync, Borrow, Into, TryFrom, ToOwned, ToString, Any, Unpin): a value here is copied and compared by the language itself
+  rust    Prerelease's and BuildMetadata's methods through `Deref` to `str` (`as_bytes`, `len`, `split`, `trim` and the rest): text functions of `strings` over `join(v.pre, ".")`
+  python  packaging.specifiers.SpecifierSet.__iter__, __len__, __and__, __hash__: a set's container methods; here `comparators_of` and `lists`
+  python  packaging.version.Version.__hash__, __repr__, _key: the language's own equality and printing
+  go      -: every entry of golang.org/x/mod/semver stands in a block

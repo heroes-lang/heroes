@@ -1,0 +1,171 @@
+# Patience ordering: the elements that stand once in each list are matched
+# first, the longest run of them in the same order in both kept as anchors,
+# and the parts between anchors compared again the same way; a part with no
+# such element falls to Myers. The answer is a matching that keeps unique
+# lines together, not always a shortest script. The parts wait on an
+# explicit stack.
+
+use diff/internal/myers
+use diff/internal/script
+
+# A part of the two lists still to compare.
+record Part
+    # Its first old element.
+    a_from: i64
+    # The old element after its last.
+    a_to: i64
+    # Its first new element.
+    b_from: i64
+    # The new element after its last.
+    b_to: i64
+
+# An element unique in both parts: where it stands in each.
+record Pair
+    # Its place in the old list.
+    a: i64
+    # Its place in the new list.
+    b: i64
+
+# The pairs of `pairs`, ordered by `a`, whose `b` rise the longest way:
+# patience sorting, each pair laid on the leftmost pile whose top is above
+# it, the piles found by halving.
+function rising(pairs: [Pair]) -> [Pair]
+    tops: [i64] @= []
+    before: [i64] @= []
+
+    for k in range(from: 0, to: pairs.len())
+        low @= 0
+        high @= tops.len()
+
+        while low < high
+            mid = (low + high) / 2
+
+            if pairs[tops[mid]].b < pairs[k].b
+                low @ mid + 1
+            else
+                high @ mid
+
+        if low > 0
+            before @ before.push(tops[low - 1])
+        else
+            before @ before.push(-1)
+
+        if low == tops.len()
+            tops @ tops.push(k)
+        else
+            tops[low] @ k
+
+    if tops.len() == 0
+        return []
+    chain: [Pair] @= []
+    at @= tops[tops.len() - 1]
+
+    while at >= 0
+        chain @ chain.push(pairs[at])
+        at @ before[at]
+
+    out: [Pair] @= []
+    back @= chain.len()
+
+    while back > 0
+        back @ back - 1
+        out @ out.push(chain[back])
+
+    return out
+
+# The pairs of elements that stand once in each part, in old order.
+function unique_pairs(old: [i64], new: [i64], part: Part) -> [Pair]
+    in_old: {i64: i64} @= {}
+    in_new: {i64: i64} @= {}
+    place: {i64: i64} @= {}
+
+    for i in range(from: part.a_from, to: part.a_to)
+        in_old[old[i]] @ in_old[old[i]].default(0) + 1
+
+    for j in range(from: part.b_from, to: part.b_to)
+        in_new[new[j]] @ in_new[new[j]].default(0) + 1
+        place[new[j]] @ j
+
+    pairs: [Pair] @= []
+
+    for i in range(from: part.a_from, to: part.a_to)
+        id = old[i]
+
+        if in_old[id].default(0) == 1 && in_new[id].default(0) == 1
+            pairs @ pairs.push(Pair(a: i, b: place[id].must()))
+
+    return pairs
+
+# Puts `part` at `at` of the stack `todo`, which grows where it is full.
+function push_part(@todo: [Part], at: i64, part: Part)
+    if at < todo.len()
+        todo[at] @ part
+    else
+        todo @ todo.push(part)
+
+# The matching blocks of `old` and `new` by patience ordering.
+function blocks(old: [i64], new: [i64]) -> [script.Block]
+    found: [script.Block] @= []
+    todo: [Part] @= [Part(a_from: 0, a_to: old.len(), b_from: 0, b_to: new.len())]
+    depth @= 1
+
+    while depth > 0
+        depth @ depth - 1
+        p = todo[depth]
+        a0 @= p.a_from
+        a1 @= p.a_to
+        b0 @= p.b_from
+        b1 @= p.b_to
+
+        while a0 < a1 && b0 < b1 && old[a0] == new[b0]
+            found @ found.push(script.Block(old_at: a0, new_at: b0, size: 1))
+            a0 @ a0 + 1
+            b0 @ b0 + 1
+
+        while a1 > a0 && b1 > b0 && old[a1 - 1] == new[b1 - 1]
+            a1 @ a1 - 1
+            b1 @ b1 - 1
+            found @ found.push(script.Block(old_at: a1, new_at: b1, size: 1))
+
+        if a0 == a1 || b0 == b1
+            continue
+        part = Part(a_from: a0, a_to: a1, b_from: b0, b_to: b1)
+        anchors = rising(unique_pairs(old: old, new: new, part: part))
+
+        if anchors.len() == 0
+            sub = myers.blocks(old: old.slice(from: a0, to: a1), new: new.slice(from: b0, to: b1), same: script.same_id)
+
+            for blk in sub
+                found @ found.push(script.Block(old_at: blk.old_at + a0, new_at: blk.new_at + b0, size: blk.size))
+
+            continue
+        prev_a @= a0
+        prev_b @= b0
+
+        for anchor in anchors
+            found @ found.push(script.Block(old_at: anchor.a, new_at: anchor.b, size: 1))
+            push_part(@todo, depth, Part(a_from: prev_a, a_to: anchor.a, b_from: prev_b, b_to: anchor.b))
+            depth @ depth + 1
+            prev_a @ anchor.a + 1
+            prev_b @ anchor.b + 1
+
+        push_part(@todo, depth, Part(a_from: prev_a, a_to: a1, b_from: prev_b, b_to: b1))
+        depth @ depth + 1
+
+    return script.joined(found)
+
+test "rising: empty, one, and the longest rise kept"
+    assert rising([]).len() == 0
+    assert rising([Pair(a: 0, b: 5)]) == [Pair(a: 0, b: 5)]
+    got = rising([Pair(a: 0, b: 3), Pair(a: 1, b: 1), Pair(a: 2, b: 2), Pair(a: 3, b: 0), Pair(a: 4, b: 4)])
+    assert got == [Pair(a: 1, b: 1), Pair(a: 2, b: 2), Pair(a: 4, b: 4)]
+
+test "blocks: a function moved keeps its unique lines together"
+    old = [1, 2, 9, 3, 9, 4]
+    new = [1, 3, 9, 2, 9, 4]
+    kept @= 0
+
+    for blk in blocks(old: old, new: new)
+        kept @ kept + blk.size
+
+    assert kept >= 4

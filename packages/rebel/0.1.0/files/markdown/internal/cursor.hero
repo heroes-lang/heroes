@@ -1,0 +1,151 @@
+# Where the block reader stands in the line it reads: the byte and the
+# column, tabs counted to the next multiple of four and a tab partly used by
+# a container marker remembered, the next character that is not a space, the
+# indentation, and the open blocks the line has matched.
+
+use markdown/internal/scan
+
+# How many columns of indentation make a line indented code.
+constant CODE_INDENT: i64
+    4
+
+# The reader's place in the text and in the tree.
+record Cursor
+    # The line read, its line ending taken off.
+    line: str
+    # Its number, from 1.
+    number: i64
+    # The byte reached.
+    offset: i64
+    # The column reached.
+    column: i64
+    # The first byte from `offset` that is not a space or a tab.
+    next_nonspace: i64
+    # Its column.
+    next_nonspace_column: i64
+    # The columns from `column` to it.
+    indent: i64
+    # Whether `indent` is 4 or more.
+    indented: bool
+    # Whether the rest of the line is blank.
+    blank: bool
+    # Whether the tab at `offset` is partly used.
+    partial_tab: bool
+    # The innermost open block.
+    tip: i64
+    # The tip when the line began.
+    old_tip: i64
+    # The innermost block the line matched.
+    last_matched: i64
+    # Whether every open block was matched.
+    all_closed: bool
+    # The most containers one inside another.
+    max_depth: i64
+    # Whether tables are read.
+    tables: bool
+    # Whether task list items are read.
+    tasks: bool
+    # The line whose next non-space character was last found, so that the
+    # open blocks of a deep line do not each read its indentation again.
+    seen_line: i64
+    # The byte that search began at.
+    seen_from: i64
+
+# Finds the next character that is not a space or a tab, and the
+# indentation before it.
+function find_next_nonspace(@c: Cursor)
+    if c.seen_line == c.number && c.offset >= c.seen_from && c.offset <= c.next_nonspace
+        c.indent @ c.next_nonspace_column - c.column
+        c.indented @ c.indent >= CODE_INDENT
+        return
+    s = c.line
+    i @= c.offset
+    cols @= c.column
+    c.seen_line @ c.number
+    c.seen_from @ c.offset
+
+    while i < s.len() && scan.is_space_or_tab(s[i])
+        if s[i] == ' '
+            cols @ cols + 1
+        else
+            cols @ cols + 4 - cols % 4
+        i @ i + 1
+
+    c.blank @ i >= s.len()
+    c.next_nonspace @ i
+    c.next_nonspace_column @ cols
+    c.indent @ cols - c.column
+    c.indented @ c.indent >= CODE_INDENT
+
+# Moves to the next character that is not a space or a tab.
+function advance_next_nonspace(@c: Cursor)
+    c.offset @ c.next_nonspace
+    c.column @ c.next_nonspace_column
+    c.partial_tab @ false
+
+# Moves `count` characters, or `count` columns where `columns`, a tab
+# counted as the columns to the next multiple of four and partly used where
+# fewer are asked.
+function advance(@c: Cursor, count: i64, columns: bool)
+    s = c.line
+    left @= count
+
+    while left > 0 && c.offset < s.len()
+        if s[c.offset] == '\t'
+            to_tab = 4 - c.column % 4
+
+            if columns
+                c.partial_tab @ to_tab > left
+
+                step = if to_tab < left
+                    to_tab
+                else
+                    left
+                c.column @ c.column + step
+
+                if !c.partial_tab
+                    c.offset @ c.offset + 1
+                left @ left - step
+            else
+                c.partial_tab @ false
+                c.column @ c.column + to_tab
+                c.offset @ c.offset + 1
+                left @ left - 1
+        else
+            c.partial_tab @ false
+            c.offset @ c.offset + 1
+            c.column @ c.column + 1
+            left @ left - 1
+
+# The character at byte `at` of the line, 0 past its end.
+function byte_at(c: Cursor lent, at: i64) -> u8
+    if at < c.line.len()
+        return c.line[at]
+    return 0
+
+test "find_next_nonspace and advance: a tab counted to the next stop, and one partly used"
+    c @= Cursor(
+        line: " \tfoo",
+        number: 1,
+        offset: 0,
+        column: 0,
+        next_nonspace: 0,
+        next_nonspace_column: 0,
+        indent: 0,
+        indented: false,
+        blank: false,
+        partial_tab: false,
+        tip: 0,
+        old_tip: 0,
+        last_matched: 0,
+        all_closed: true,
+        max_depth: 100,
+        tables: true,
+        tasks: true,
+        seen_line: 0,
+        seen_from: 0
+    )
+    find_next_nonspace(@c)
+    assert c.indent == 4 && c.indented && c.next_nonspace == 2
+    advance(@c, count: 2, columns: true)
+    assert c.column == 2 && c.offset == 1 && c.partial_tab

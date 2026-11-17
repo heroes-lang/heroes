@@ -1,0 +1,21 @@
+# Reaches Rebel's `semver`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It picks the highest version of a list that
+# a requirement admits, as a package manager does.
+
+use <rebel>/semver
+
+function main()
+    offered = ["1.2.0", "1.9.9", "2.0.0", "1.10.0-beta.1"]
+    versions: [semver.Version] @= []
+
+    for text in offered
+        match semver.parse(text)
+            .ok v  => versions @ versions.push(v)
+            .err e => print(e.msg)
+
+    match semver.parse_range("^1.2")
+        .err e => print(e.msg)
+        .ok r =>
+            match semver.highest_admitted(r, versions)
+                .ok v  => print(semver.format(v))
+                .err e => print(e.msg)

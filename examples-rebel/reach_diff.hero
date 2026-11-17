@@ -1,0 +1,11 @@
+# Reaches Rebel's `diff`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes the unified difference of two
+# small texts and how alike they are.
+
+use <rebel>/diff
+
+function main()
+    old = diff.lines_of("one\ntwo\nthree\n")
+    new = diff.lines_of("one\n2\nthree\nfour\n")
+    print(diff.format_unified(old: old, new: new, options: diff.default_options(old_name: "a.txt", new_name: "b.txt")))
+    print(diff.ratio(a: old, b: new))

@@ -1,0 +1,54 @@
+# Texts cut into the elements a difference compares: lines, each with its
+# line feed, and words, each run of white space an element of its own, so that
+# the pieces joined give the text back.
+
+use unicode
+
+# The lines of `text`, each with its `\n`; the last without one where the
+# text does not end with one. Empty for the empty text.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    start @= 0
+    at @= 0
+
+    while at < text.len()
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: start, to: at + 1))
+            start @ at + 1
+        at @ at + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# The words of `text` and the runs of white space between them, in order.
+function words_of(text: str) -> [str]
+    out: [str] @= []
+    run: [str] @= []
+    spaces @= false
+
+    for c in text.chars()
+        is_space = unicode.is_space(c)
+
+        if run.len() > 0 && is_space != spaces
+            out @ out.push(join(run, ""))
+            run @ []
+        spaces @ is_space
+        run @ run.push(c)
+
+    if run.len() > 0
+        out @ out.push(join(run, ""))
+    return out
+
+test "lines_of: empty, one line with and without its end, an empty line, CR LF"
+    assert lines_of("").len() == 0
+    assert lines_of("a") == ["a"]
+    assert lines_of("a\n") == ["a\n"]
+    assert lines_of("\n\nb") == ["\n", "\n", "b"]
+    assert lines_of("a\r\nb\r\n") == ["a\r\n", "b\r\n"]
+
+test "words_of: empty, spaces at either end, a no-break space, words of two-byte letters"
+    assert words_of("").len() == 0
+    assert words_of(" a  b ") == [" ", "a", "  ", "b", " "]
+    assert words_of("café olé") == ["café", " ", "olé"]
+    assert join(words_of("x\ty\nz"), "") == "x\ty\nz"

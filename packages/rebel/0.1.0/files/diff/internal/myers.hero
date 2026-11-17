@@ -1,0 +1,193 @@
+# Myers's O(ND) difference algorithm in linear space (Myers 1986, section 4b):
+# each part of the two lists is cut where a shortest edit path crosses its
+# middle diagonal, found from both ends at once, and the halves are cut again.
+# The parts wait on an explicit stack, so no input can deepen the call stack;
+# the common beginning and end of each part are matched first. The answer is
+# the matching blocks of a shortest edit script.
+
+use diff/internal/script
+
+# A part of the two lists still to compare: old elements `old_from` to
+# `old_to`, new elements `new_from` to `new_to`.
+record Part
+    # Its first old element.
+    old_from: i64
+    # The old element after its last.
+    old_to: i64
+    # Its first new element.
+    new_from: i64
+    # The new element after its last.
+    new_to: i64
+
+# Where a shortest edit path of a part crosses the middle: `x` old and `y` new
+# elements from the part's start; `found` false where the part has no element
+# in common.
+record Split
+    # Old elements before the cut.
+    x: i64
+    # New elements before the cut.
+    y: i64
+    # Whether a cut was found.
+    found: bool
+
+# The matching blocks of a shortest edit script turning `old` into `new`, two
+# elements matching where `same` says so.
+function blocks<T>(old: [T], new: [T], same: (function(left: T, right: T) -> bool)) -> [script.Block]
+    found: [script.Block] @= []
+    todo: [Part] @= [Part(old_from: 0, old_to: old.len(), new_from: 0, new_to: new.len())]
+    depth @= 1
+
+    while depth > 0
+        depth @ depth - 1
+        part = todo[depth]
+        a0 @= part.old_from
+        a1 @= part.old_to
+        b0 @= part.new_from
+        b1 @= part.new_to
+        head @= 0
+
+        while a0 + head < a1 && b0 + head < b1 && same(left: old[a0 + head], right: new[b0 + head])
+            head @ head + 1
+
+        if head > 0
+            found @ found.push(script.Block(old_at: a0, new_at: b0, size: head))
+            a0 @ a0 + head
+            b0 @ b0 + head
+        tail @= 0
+
+        while a1 - tail > a0 && b1 - tail > b0 && same(left: old[a1 - tail - 1], right: new[b1 - tail - 1])
+            tail @ tail + 1
+
+        if tail > 0
+            found @ found.push(script.Block(old_at: a1 - tail, new_at: b1 - tail, size: tail))
+            a1 @ a1 - tail
+            b1 @ b1 - tail
+
+        if a0 < a1 && b0 < b1
+            cut = middle(old: old, new: new, same: same, part: Part(old_from: a0, old_to: a1, new_from: b0, new_to: b1))
+            n = a1 - a0
+            m = b1 - b0
+
+            if cut.found && cut.x + cut.y > 0 && cut.x + cut.y < n + m
+                push_part(@todo, depth, Part(old_from: a0 + cut.x, old_to: a1, new_from: b0 + cut.y, new_to: b1))
+                push_part(@todo, depth + 1, Part(old_from: a0, old_to: a0 + cut.x, new_from: b0, new_to: b0 + cut.y))
+                depth @ depth + 2
+
+    return script.joined(found)
+
+# Puts `part` at `at` of the stack `todo`, which grows where it is full.
+function push_part(@todo: [Part], at: i64, part: Part)
+    if at < todo.len()
+        todo[at] @ part
+    else
+        todo @ todo.push(part)
+
+# Where a shortest edit path of `part` crosses the middle, its common
+# beginning and end already taken off, both sides not empty: the furthest
+# reaching paths of each cost are followed forward from the start and
+# backward from the end until they overlap.
+function middle<T>(old: [T], new: [T], same: (function(left: T, right: T) -> bool), part: Part) -> Split
+    a0 = part.old_from
+    b0 = part.new_from
+    n = part.old_to - a0
+    m = part.new_to - b0
+    max_d = (n + m + 1) / 2
+    offset = max_d
+    size = 2 * max_d + 2
+    forward: [i64] @= []
+    backward: [i64] @= []
+
+    for _ in range(from: 0, to: size)
+        forward @ forward.push(-1)
+        backward @ backward.push(-1)
+
+    forward[offset + 1] @ 0
+    backward[offset + 1] @ 0
+    delta = n - m
+    odd = delta % 2 != 0
+    k1_start @= 0
+    k1_end @= 0
+    k2_start @= 0
+    k2_end @= 0
+
+    for d in range(from: 0, to: max_d)
+        k1 @= -d + k1_start
+
+        while k1 <= d - k1_end
+            at = offset + k1
+
+            x1 @= if k1 == -d || k1 != d && forward[at - 1] < forward[at + 1]
+                forward[at + 1]
+            else
+                forward[at - 1] + 1
+            y1 @= x1 - k1
+
+            while x1 < n && y1 < m && same(left: old[a0 + x1], right: new[b0 + y1])
+                x1 @ x1 + 1
+                y1 @ y1 + 1
+
+            forward[at] @ x1
+
+            if x1 > n
+                k1_end @ k1_end + 2
+            else if y1 > m
+                k1_start @ k1_start + 2
+            else if odd
+                other = offset + delta - k1
+
+                if other >= 0 && other < size && backward[other] != -1
+                    if x1 >= n - backward[other]
+                        return Split(x: x1, y: y1, found: true)
+            k1 @ k1 + 2
+
+        k2 @= -d + k2_start
+
+        while k2 <= d - k2_end
+            at = offset + k2
+
+            x2 @= if k2 == -d || k2 != d && backward[at - 1] < backward[at + 1]
+                backward[at + 1]
+            else
+                backward[at - 1] + 1
+            y2 @= x2 - k2
+
+            while x2 < n && y2 < m && same(left: old[a0 + n - x2 - 1], right: new[b0 + m - y2 - 1])
+                x2 @ x2 + 1
+                y2 @ y2 + 1
+
+            backward[at] @ x2
+
+            if x2 > n
+                k2_end @ k2_end + 2
+            else if y2 > m
+                k2_start @ k2_start + 2
+            else if !odd
+                other = offset + delta - k2
+
+                if other >= 0 && other < size && forward[other] != -1
+                    x1 = forward[other]
+                    y1 = offset + x1 - other
+
+                    if x1 >= n - x2
+                        return Split(x: x1, y: y1, found: true)
+            k2 @ k2 + 2
+
+    return Split(x: 0, y: 0, found: false)
+
+test "blocks: empty lists, one empty, the same, nothing in common"
+    none: [i64] = []
+    assert blocks(old: none, new: none, same: script.same_id).len() == 0
+    assert blocks(old: none, new: [1, 2], same: script.same_id).len() == 0
+    assert blocks(old: [1, 2, 3], new: [1, 2, 3], same: script.same_id) == [script.Block(old_at: 0, new_at: 0, size: 3)]
+    assert blocks(old: [1, 2], new: [3, 4], same: script.same_id).len() == 0
+
+test "blocks: the paper's example, a shortest script of five edits"
+    a = [1, 2, 3, 1, 2, 2, 1]
+    b = [3, 2, 1, 2, 1, 3]
+    got = blocks(old: a, new: b, same: script.same_id)
+    kept @= 0
+
+    for blk in got
+        kept @ kept + blk.size
+
+    assert kept == 4

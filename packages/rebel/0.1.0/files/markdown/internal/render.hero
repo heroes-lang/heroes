@@ -1,0 +1,314 @@
+# A tree written as HTML, the way the specification's reference renderer
+# writes it, so that its examples come out byte for byte: a walk in document
+# order that follows the links and keeps no stack, each node written as it
+# is entered and as it is left. Raw HTML is escaped unless kept, and a link
+# or an image to `javascript:`, `vbscript:`, `file:` or `data:` that is not
+# an image is written with an empty destination unless kept.
+
+use markdown/internal/scan
+use markdown/internal/tree
+use strings
+
+# How the tree is written.
+record Style
+    # Whether raw HTML is written as it is; else it is escaped as text.
+    keep_html: bool
+    # Whether dangerous destinations are written as they are.
+    keep_unsafe: bool
+
+# Where the writer stands; the pieces it writes are a list of their own,
+# lent to each call, so that adding one copies nothing.
+record Out
+    # Whether the last piece written is a line feed alone, or nothing is
+    # written yet: the reference renderer's test, so that a line feed is
+    # written after raw HTML that ends with one.
+    at_line_start: bool
+    # How many images are open: inside one, only text is written.
+    in_image: i64
+
+# Writes `s` as it is.
+function put(@out: Out, @parts: [str], s: str)
+    if s.len() == 0
+        return
+    parts @ parts.push(s)
+    out.at_line_start @ s == "\n"
+
+# Ends the line, unless the last piece written is a line feed alone.
+function cr(@out: Out, @parts: [str])
+    if !out.at_line_start
+        put(@out, @parts, "\n")
+
+# Writes a tag, unless inside an image.
+function tag(@out: Out, @parts: [str], s: str)
+    if out.in_image == 0
+        put(@out, @parts, s)
+
+# Whether `url` is dangerous: `javascript:`, `vbscript:`, `file:`, or `data:`
+# but for an image of PNG, GIF, JPEG or WebP.
+function is_unsafe(url: str) -> bool
+    low = strings.to_lower_ascii(url)
+
+    if strings.has_prefix(s: low, prefix: "javascript:") || strings.has_prefix(s: low, prefix: "vbscript:") || strings.has_prefix(s: low, prefix: "file:")
+        return true
+
+    if strings.has_prefix(s: low, prefix: "data:")
+        for kind in ["png", "gif", "jpeg", "webp"]
+            if strings.has_prefix(s: low, prefix: "data:image/" + kind)
+                return false
+
+        return true
+    return false
+
+# The destination as written: escaped, or empty where it is dangerous and not
+# kept.
+function destination(url: str, style: Style) -> str
+    if !style.keep_unsafe && is_unsafe(url)
+        return ""
+    return scan.escape(url)
+
+# The language an info string names: its first word, up to white space;
+# none where it begins with white space, as the reference renderer reads an
+# info string that begins with `&nbsp;`.
+function language_of(info: str) -> str
+    word: [str] @= []
+
+    for c in info.chars()
+        if scan.is_whitespace(c) || c == "\u{b}"
+            return join(word, "")
+        word @ word.push(c)
+
+    return join(word, "")
+
+# Whether the paragraph `node` stands in a tight list, and so is written
+# without `<p>`.
+function in_tight_list(nodes: [tree.Node] lent, node: i64) -> bool
+    parent = nodes[node].parent
+
+    if parent == tree.NONE
+        return false
+    grand = nodes[parent].parent
+    return grand != tree.NONE && nodes[grand].kind == tree.LIST && nodes[grand].flag
+
+# The `align` attribute of alignment `align`.
+function align_attribute(align: i64) -> str
+    if align == 1
+        return " align=\"left\""
+
+    if align == 2
+        return " align=\"center\""
+
+    if align == 3
+        return " align=\"right\""
+    return ""
+
+# Writes what entering `node` writes.
+function enter(@out: Out, @parts: [str], nodes: [tree.Node] lent, node: i64, style: Style)
+    n = nodes[node]
+    kind = n.kind
+
+    if kind == tree.TEXT
+        put(@out, @parts, scan.escape(n.literal))
+    else if kind == tree.SOFT_BREAK
+        put(@out, @parts, "\n")
+    else if kind == tree.LINE_BREAK
+        tag(@out, @parts, "<br />")
+        cr(@out, @parts)
+    else if kind == tree.CODE
+        tag(@out, @parts, "<code>")
+        put(@out, @parts, scan.escape(n.literal))
+        tag(@out, @parts, "</code>")
+    else if kind == tree.HTML_INLINE
+        if style.keep_html
+            put(@out, @parts, n.literal)
+        else
+            put(@out, @parts, scan.escape(n.literal))
+    else if kind == tree.EMPHASIS
+        tag(@out, @parts, "<em>")
+    else if kind == tree.STRONG
+        tag(@out, @parts, "<strong>")
+    else if kind == tree.STRIKETHROUGH
+        tag(@out, @parts, "<del>")
+    else if kind == tree.LINK
+        title = if n.title.len() > 0
+            " title=\"" + scan.escape(n.title) + "\""
+        else
+            ""
+        tag(@out, @parts, "<a href=\"" + destination(n.literal, style: style) + "\"" + title + ">")
+    else if kind == tree.IMAGE
+        if out.in_image == 0
+            put(@out, @parts, "<img src=\"" + destination(n.literal, style: style) + "\" alt=\"")
+        out.in_image @ out.in_image + 1
+    else if kind == tree.PARAGRAPH
+        if !in_tight_list(nodes, node)
+            cr(@out, @parts)
+            tag(@out, @parts, "<p>")
+    else if kind == tree.HEADING
+        cr(@out, @parts)
+        tag(@out, @parts, f"<h{n.number}>")
+    else if kind == tree.BLOCK_QUOTE
+        cr(@out, @parts)
+        tag(@out, @parts, "<blockquote>")
+        cr(@out, @parts)
+    else if kind == tree.LIST
+        cr(@out, @parts)
+
+        if n.ordered && n.number != 1
+            tag(@out, @parts, f"<ol start=\"{n.number}\">")
+        else if n.ordered
+            tag(@out, @parts, "<ol>")
+        else
+            tag(@out, @parts, "<ul>")
+        cr(@out, @parts)
+    else if kind == tree.ITEM
+        tag(@out, @parts, "<li>")
+
+        if n.state == 1
+            tag(@out, @parts, "<input disabled=\"\" type=\"checkbox\"> ")
+        else if n.state == 2
+            tag(@out, @parts, "<input checked=\"\" disabled=\"\" type=\"checkbox\"> ")
+    else if kind == tree.THEMATIC_BREAK
+        cr(@out, @parts)
+        tag(@out, @parts, "<hr />")
+        cr(@out, @parts)
+    else if kind == tree.CODE_BLOCK
+        cr(@out, @parts)
+        language = language_of(n.title)
+
+        if language.len() > 0
+            tag(@out, @parts, "<pre><code class=\"language-" + scan.escape(language) + "\">")
+        else
+            tag(@out, @parts, "<pre><code>")
+        put(@out, @parts, scan.escape(n.literal))
+        tag(@out, @parts, "</code></pre>")
+        cr(@out, @parts)
+    else if kind == tree.HTML_BLOCK
+        cr(@out, @parts)
+
+        if style.keep_html
+            put(@out, @parts, n.literal)
+        else
+            put(@out, @parts, "<p>" + scan.escape(n.literal) + "</p>")
+        cr(@out, @parts)
+    else if kind == tree.TABLE
+        cr(@out, @parts)
+        tag(@out, @parts, "<table>\n")
+    else if kind == tree.TABLE_ROW
+        if n.flag
+            tag(@out, @parts, "<thead>\n")
+        else if n.prev != tree.NONE && nodes[n.prev].flag
+            tag(@out, @parts, "<tbody>\n")
+        tag(@out, @parts, "<tr>\n")
+    else if kind == tree.TABLE_CELL
+        row = n.parent
+
+        cell_tag = if nodes[row].flag
+            "th"
+        else
+            "td"
+        tag(@out, @parts, "<" + cell_tag + align_attribute(n.state) + ">")
+
+# Writes what leaving `node` writes.
+function leave(@out: Out, @parts: [str], nodes: [tree.Node] lent, node: i64)
+    n = nodes[node]
+    kind = n.kind
+
+    if kind == tree.EMPHASIS
+        tag(@out, @parts, "</em>")
+    else if kind == tree.STRONG
+        tag(@out, @parts, "</strong>")
+    else if kind == tree.STRIKETHROUGH
+        tag(@out, @parts, "</del>")
+    else if kind == tree.LINK
+        tag(@out, @parts, "</a>")
+    else if kind == tree.IMAGE
+        out.in_image @ out.in_image - 1
+
+        if out.in_image == 0
+            if n.title.len() > 0
+                put(@out, @parts, "\" title=\"" + scan.escape(n.title))
+            put(@out, @parts, "\" />")
+    else if kind == tree.PARAGRAPH
+        if !in_tight_list(nodes, node)
+            tag(@out, @parts, "</p>")
+            cr(@out, @parts)
+    else if kind == tree.HEADING
+        tag(@out, @parts, f"</h{n.number}>")
+        cr(@out, @parts)
+    else if kind == tree.BLOCK_QUOTE
+        cr(@out, @parts)
+        tag(@out, @parts, "</blockquote>")
+        cr(@out, @parts)
+    else if kind == tree.LIST
+        cr(@out, @parts)
+
+        if n.ordered
+            tag(@out, @parts, "</ol>")
+        else
+            tag(@out, @parts, "</ul>")
+        cr(@out, @parts)
+    else if kind == tree.ITEM
+        tag(@out, @parts, "</li>")
+        cr(@out, @parts)
+    else if kind == tree.TABLE
+        last = n.last
+
+        if last != tree.NONE && !nodes[last].flag
+            tag(@out, @parts, "</tbody>\n")
+        tag(@out, @parts, "</table>")
+        cr(@out, @parts)
+    else if kind == tree.TABLE_ROW
+        tag(@out, @parts, "</tr>\n")
+
+        if n.flag
+            tag(@out, @parts, "</thead>\n")
+    else if kind == tree.TABLE_CELL
+        cell_tag = if nodes[n.parent].flag
+            "th"
+        else
+            "td"
+        tag(@out, @parts, "</" + cell_tag + ">\n")
+
+# The HTML of the tree under `root`.
+function html_of(nodes: [tree.Node] lent, root: i64, style: Style) -> str
+    out @= Out(at_line_start: true, in_image: 0)
+    parts: [str] @= []
+    at @= root
+    down @= true
+
+    while true
+        if down
+            enter(@out, @parts, nodes, node: at, style: style)
+
+            if nodes[at].first != tree.NONE
+                at @ nodes[at].first
+                continue
+        leave(@out, @parts, nodes, node: at)
+
+        if at == root
+            break
+
+        if nodes[at].next != tree.NONE
+            at @ nodes[at].next
+            down @ true
+        else
+            at @ nodes[at].parent
+            down @ false
+
+    return join(parts, "")
+
+test "is_unsafe: the four schemes, any case, and the images allowed"
+    assert is_unsafe("javascript:alert(1)") && is_unsafe("JavaScript:x") && is_unsafe("vbscript:x") && is_unsafe("file:///etc")
+    assert is_unsafe("data:text/html,x") && !is_unsafe("data:image/png;base64,x") && !is_unsafe("https://x")
+
+test "language_of: a word, two words, a leading no-break space, empty"
+    assert language_of("go") == "go" && language_of("rust ignore") == "rust"
+    assert language_of(" x") == "" && language_of("") == ""
+
+test "cr: a line ended once"
+    out @= Out(at_line_start: true, in_image: 0)
+    parts: [str] @= []
+    cr(@out, @parts)
+    put(@out, @parts, "a")
+    cr(@out, @parts)
+    cr(@out, @parts)
+    assert join(parts, "") == "a\n"

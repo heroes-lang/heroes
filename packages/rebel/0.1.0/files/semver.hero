@@ -1,0 +1,679 @@
+# Versions by Semantic Versioning 2.0.0 (semver.org), read, written and
+# ordered, and ranges of versions as Cargo reads them: which versions a
+# requirement such as `^1.2`, `~1.4.3` or `>=1.2, <1.5` admits, and the
+# highest of a list it admits. Rebel's package manager reads its requirements
+# with this package, so its semantics are Cargo's, the `semver` crate's
+# (1.0.28, the one Cargo builds with), and no other.
+#
+# A version is SemVer 2.0.0 exactly: three numbers with no leading zero, a
+# pre-release after `-` and build metadata after `+`, each dot-separated
+# identifiers of ASCII letters, digits and `-`. Precedence is the standard's:
+# the numbers in order, a pre-release before its release, identifiers compared
+# one by one, numbers by value and below words, and build metadata ignored.
+# Nothing else is read as a version: no `v` before it, no white space, no
+# missing number.
+#
+# A range is Cargo's grammar: comparators separated by commas, all of which a
+# version must meet; a bare version means `^`; `~`, `=`, `>`, `>=`, `<`, `<=`;
+# `*`, `x` and `X` as wildcards. A pre-release is admitted only where a
+# comparator of the same set names a pre-release of the same three numbers,
+# Cargo's rule. To Cargo's grammar it adds one thing, npm's `||` between sets
+# of comparators, a version admitted where one set admits it. Where npm reads
+# otherwise, this package reads as Cargo: a bare `1.2.3` is `^1.2.3`, where
+# npm reads `=1.2.3`; comparators are separated by `,`, where npm separates
+# them by spaces; npm's `1.2 - 2.3`, its `v` before a version and its empty
+# range are refused.
+#
+# It does not read PEP 440's versions (Python's `packaging`: epochs, `.post`,
+# `.dev`, local versions), which are another grammar, nor Go's `v1.2` modules'
+# shorthand. It fetches nothing and knows no registry.
+#
+# Fails `invalid` where a text is not a version, a range or an identifier the
+# standard allows, the message saying where; `does_not_fit` where a number
+# passes 18446744073709551615; `not_found` where no version of a list is
+# admitted, and where a range admits none.
+
+use semver/internal/admit
+use semver/internal/model
+use semver/internal/order
+use semver/internal/ranges
+use semver/internal/read
+
+## Codes
+
+# The code of a text that is not a version, a range, or the identifiers asked:
+# `parse`, `parse_range`, `with_pre`, `with_build`.
+constant INVALID: str
+    "invalid"
+
+# The code of a number past 18446744073709551615: `parse`, `parse_range`,
+# `next_major`, `next_minor`, `next_patch`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a search that admits nothing: `highest`, `highest_admitted`,
+# `lowest_admitted`, `lowest_possible`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The most comparators a set of a range may hold, as Cargo's crate allows:
+# `parse_range` refuses more.
+constant MAX_COMPARATORS: i64
+    32
+
+## Versions
+
+# A version: three numbers, a pre-release and build metadata. A valid one is
+# made by `parse` or `new`, and changed by `with_pre` and `with_build`; built
+# directly, it is valid where its identifiers are what those two accept.
+record Version
+    # The major number: a change that breaks what a program relied on.
+    major: u64
+    # The minor number: a change that adds and breaks nothing.
+    minor: u64
+    # The patch number: a repair.
+    patch: u64
+    # The pre-release identifiers, in order: `["alpha", "1"]` for `-alpha.1`;
+    # empty for a release. Each is ASCII letters, digits and `-`, not empty,
+    # and one of digits alone has no leading zero.
+    pre: [str]
+    # The build metadata identifiers, in order: `["build", "5"]` for
+    # `+build.5`; empty for none. Each is ASCII letters, digits and `-`, not
+    # empty; leading zeros allowed. Ignored by precedence, kept in the text.
+    build: [str]
+
+# The version `text` holds, by SemVer 2.0.0's grammar.
+#
+# - `text`: the version, as `1.2.3`, `1.0.0-rc.1` or `2.0.0+build.7`; nothing
+#   before or after it, white space included.
+#
+# Fails `invalid` where `text` is not a version, the message saying what was
+# found where: a missing number, a leading zero, an empty identifier, a
+# character the grammar does not allow. Fails `does_not_fit` where a number
+# passes 18446744073709551615. See also `is_valid`, `format`.
+function parse(text: str) -> Version?
+    w = read.version_of(text)?
+    return ok(Version(major: w.major, minor: w.minor, patch: w.patch, pre: w.pre, build: w.build))
+
+# Whether `text` is a version that `parse` reads.
+#
+# - `text`: the text asked about; the empty text is not a version.
+function is_valid(text: str) -> bool
+    return !parse(text).is_err()
+
+# The release `major.minor.patch`, with no pre-release and no metadata.
+#
+# - `major`: the major number; any.
+# - `minor`: the minor number; any.
+# - `patch`: the patch number; any.
+function new(major: u64, minor: u64, patch: u64) -> Version
+    return Version(major: major, minor: minor, patch: patch, pre: [], build: [])
+
+# `v` written as SemVer writes it: `1.2.3-alpha.1+build.5`, the build
+# metadata kept.
+#
+# - `v`: the version.
+function format(v: Version) -> str
+    return read.version_text(major: v.major, minor: v.minor, patch: v.patch, pre: v.pre, build: v.build)
+
+# `v` with the pre-release `pre`.
+#
+# - `v`: the version; its numbers and build metadata kept.
+# - `pre`: the pre-release as written after `-`, `alpha.1`; empty for none,
+#   which makes `v` a release.
+#
+# Fails `invalid` where `pre` is not dot-separated identifiers of ASCII
+# letters, digits and `-`, none empty and none of digits alone with a leading
+# zero.
+function with_pre(v: Version, pre: str) -> Version?
+    ids = read.identifiers_of(text: pre, numeric_zeros: false, what: "pre-release")?
+    return ok(Version(major: v.major, minor: v.minor, patch: v.patch, pre: ids, build: v.build))
+
+# `v` with the build metadata `build`.
+#
+# - `v`: the version; its numbers and pre-release kept.
+# - `build`: the metadata as written after `+`, `build.5`; empty for none.
+#
+# Fails `invalid` where `build` is not dot-separated identifiers of ASCII
+# letters, digits and `-`, none empty.
+function with_build(v: Version, build: str) -> Version?
+    ids = read.identifiers_of(text: build, numeric_zeros: true, what: "build metadata")?
+    return ok(Version(major: v.major, minor: v.minor, patch: v.patch, pre: v.pre, build: ids))
+
+# Whether `v` is a pre-release: whether it has pre-release identifiers.
+#
+# - `v`: the version.
+function is_prerelease(v: Version) -> bool
+    return v.pre.len() > 0
+
+## Order
+
+# Which of `a` and `b` has the higher precedence by SemVer 2.0.0: -1 where `a`
+# is lower, 1 where it is higher, 0 where they have the same.
+#
+# - `a`: a version.
+# - `b`: another.
+#
+# The numbers are compared in order; a pre-release is lower than its release;
+# pre-release identifiers are compared one by one, digits alone by value and
+# lower than any other, the others by ASCII bytes, and a shorter list that
+# begins the longer is lower. Build metadata is ignored, so two versions that
+# differ only there answer 0 though `==` tells them apart. See also
+# `compare_build`.
+function compare(a: Version, b: Version) -> i64
+    if a.major != b.major
+        return order.compare_numbers(a: a.major, b: b.major)
+
+    if a.minor != b.minor
+        return order.compare_numbers(a: a.minor, b: b.minor)
+
+    if a.patch != b.patch
+        return order.compare_numbers(a: a.patch, b: b.patch)
+    return order.compare_pre(a: a.pre, b: b.pre)
+
+# Which of `a` and `b` orders first in a total order that agrees with `==`:
+# precedence first, as `compare`, then build metadata, as Cargo's crate orders
+# it.
+#
+# - `a`: a version.
+# - `b`: another.
+#
+# Build metadata is compared identifier by identifier: digits alone by value,
+# and at an equal value the one with more leading zeros higher, below any
+# other, the others by ASCII bytes; no metadata is lower than any. 0 only
+# where `a == b`.
+function compare_build(a: Version, b: Version) -> i64
+    first = compare(a: a, b: b)
+
+    if first != 0
+        return first
+    return order.compare_build(a: a.build, b: b.build)
+
+# Whether `a` orders before `b` by `compare_build`: the order to give
+# `lists.sort_by`, which then sorts versions from the lowest.
+#
+# - `a`: a version.
+# - `b`: another.
+function is_before(a: Version, b: Version) -> bool
+    return compare_build(a: a, b: b) < 0
+
+# The highest of `versions` by `compare_build`.
+#
+# - `versions`: the versions, in any order.
+#
+# Of two with the same precedence, the one `compare_build` puts later. Fails
+# `not_found` where `versions` is empty.
+function highest(versions: [Version]) -> Version?
+    if versions.len() == 0
+        return fail(code: NOT_FOUND, msg: "no highest version of an empty list")
+    best @= versions[0]
+
+    for v in versions
+        if compare_build(a: v, b: best) > 0
+            best @ v
+
+    return ok(best)
+
+# The next major release after `v`: `1.4.2` gives `2.0.0`, and a pre-release
+# of a major release, `2.0.0-rc.1`, gives that release, `2.0.0`, as npm's
+# `inc` answers.
+#
+# - `v`: the version; its build metadata is dropped.
+#
+# Fails `does_not_fit` where the major number would pass
+# 18446744073709551615.
+function next_major(v: Version) -> Version?
+    if v.pre.len() > 0 && v.minor == 0 && v.patch == 0
+        return ok(new(major: v.major, minor: 0, patch: 0))
+
+    if v.major == model.HIGHEST
+        return fail(code: DOES_NOT_FIT, msg: f"{format(v)} has no next major release: its major number is the largest")
+    return ok(new(major: v.major + 1, minor: 0, patch: 0))
+
+# The next minor release after `v`: `1.4.2` gives `1.5.0`, and a pre-release
+# of a minor release, `1.5.0-rc.1`, gives `1.5.0`, as npm's `inc` answers.
+#
+# - `v`: the version; its build metadata is dropped.
+#
+# Fails `does_not_fit` where the minor number would pass
+# 18446744073709551615.
+function next_minor(v: Version) -> Version?
+    if v.pre.len() > 0 && v.patch == 0
+        return ok(new(major: v.major, minor: v.minor, patch: 0))
+
+    if v.minor == model.HIGHEST
+        return fail(code: DOES_NOT_FIT, msg: f"{format(v)} has no next minor release: its minor number is the largest")
+    return ok(new(major: v.major, minor: v.minor + 1, patch: 0))
+
+# The next patch release after `v`: `1.4.2` gives `1.4.3`, and a pre-release,
+# `1.4.3-rc.1`, gives its release, `1.4.3`, as npm's `inc` answers.
+#
+# - `v`: the version; its build metadata is dropped.
+#
+# Fails `does_not_fit` where the patch number would pass
+# 18446744073709551615.
+function next_patch(v: Version) -> Version?
+    if v.pre.len() > 0
+        return ok(new(major: v.major, minor: v.minor, patch: v.patch))
+
+    if v.patch == model.HIGHEST
+        return fail(code: DOES_NOT_FIT, msg: f"{format(v)} has no next patch release: its patch number is the largest")
+    return ok(new(major: v.major, minor: v.minor, patch: v.patch + 1))
+
+## Ranges
+
+# What a comparator compares a version with. A `match` answers all eight.
+variant Op
+    # `=`: the same version; with fewer numbers written, any version that
+    # begins with them.
+    exact
+    # `>`: a higher version; `>1.2` is `>=1.3.0`.
+    greater
+    # `>=`: the same or a higher version.
+    greater_eq
+    # `<`: a lower version; `<1.2` is `<1.2.0`.
+    less
+    # `<=`: the same or a lower version; `<=1.2` is `<1.3.0`.
+    less_eq
+    # `~`: the same or a higher patch: `~1.2.3` is `>=1.2.3, <1.3.0`, `~1`
+    # is `>=1.0.0, <2.0.0`.
+    tilde
+    # `^`, and a bare version: no change of the leftmost number that is not
+    # zero: `^1.2.3` is `>=1.2.3, <2.0.0`, `^0.2.3` is `>=0.2.3, <0.3.0`,
+    # `^0.0.3` is `=0.0.3`.
+    caret
+    # `1.*`, `1.2.*`, with `x` or `X` as well as `*`: any version that begins
+    # with the numbers written.
+    wildcard
+
+# One comparison a range makes: an operator and a version, partial or whole.
+# Made by `parse_range`, or directly.
+record Comparator
+    # The operator.
+    op: Op
+    # The major number.
+    major: u64
+    # The minor number; 0 where `written` is 1.
+    minor: u64
+    # The patch number; 0 where `written` is less than 3.
+    patch: u64
+    # How many of the three numbers were written: 1, 2 or 3. A `wildcard`
+    # writes 1 or 2.
+    written: i64
+    # The pre-release identifiers, as `Version.pre`; only where `written` is 3.
+    pre: [str]
+
+# A range of versions: sets of comparators, a version admitted where every
+# comparator of one set admits it. Made by `parse_range` or
+# `from_comparators`; its comparators are read by `comparators_of`.
+record Range
+    # The sets, held by the package itself in the order written between
+    # `||`: a program reads them through `comparators_of`. A set of no
+    # comparator is `*`, which admits every release; a range of no set admits
+    # nothing.
+    sets: [[model.Cmp]]
+
+# The range `text` holds, by Cargo's grammar and npm's `||`.
+#
+# - `text`: the range: comparators separated by `,`, sets by `||`, spaces
+#   allowed around each; `*` alone in its set.
+#
+# Fails `invalid` where `text` is empty, a comparator is not an operator and
+# a version, partial or whole, a wildcard stands in the middle of a version or
+# beside another comparator of its set, or a set holds more than
+# `MAX_COMPARATORS`; `does_not_fit` where a number passes
+# 18446744073709551615. Build metadata written in a comparator is read and
+# dropped, as Cargo drops it. See also `format_range`.
+function parse_range(text: str) -> Range?
+    return ok(Range(sets: ranges.range_of(text)?))
+
+# The range of the sets of comparators `sets`, a version admitted where every
+# comparator of one set admits it.
+#
+# - `sets`: the sets; an empty set is `*`, and no set admits nothing. A
+#   comparator's `written` below 1 is read as 1 and above 3 as 3, and a
+#   `wildcard` that writes 3 is read as writing 2.
+function from_comparators(sets: [[Comparator]]) -> Range
+    held: [[model.Cmp]] @= []
+
+    for set in sets
+        cmps: [model.Cmp] @= []
+
+        for c in set
+            op = match c.op
+                .exact      => model.EXACT
+                .greater    => model.GREATER
+                .greater_eq => model.GREATER_EQ
+                .less       => model.LESS
+                .less_eq    => model.LESS_EQ
+                .tilde      => model.TILDE
+                .caret      => model.CARET
+                .wildcard   => model.WILDCARD
+
+            cmps @ cmps.push(
+                ranges.comparator(op: op, major: c.major, minor: c.minor, patch: c.patch, written: c.written, pre: c.pre)
+            )
+
+        held @ held.push(cmps)
+
+    return Range(sets: held)
+
+# The sets of comparators of `r`, in the order written: what `parse_range`
+# read, a bare version as `caret`.
+#
+# - `r`: the range.
+#
+# A set that was `*` is empty.
+function comparators_of(r: Range) -> [[Comparator]]
+    made: [[Comparator]] @= []
+
+    for set in r.sets
+        cmps: [Comparator] @= []
+
+        for c in set
+            op: Op = if c.op == model.EXACT
+                .exact
+            else if c.op == model.GREATER
+                .greater
+            else if c.op == model.GREATER_EQ
+                .greater_eq
+            else if c.op == model.LESS
+                .less
+            else if c.op == model.LESS_EQ
+                .less_eq
+            else if c.op == model.TILDE
+                .tilde
+            else if c.op == model.WILDCARD
+                .wildcard
+            else
+                .caret
+            cmps @ cmps.push(
+                Comparator(op: op, major: c.major, minor: c.minor, patch: c.patch, written: c.written, pre: c.pre)
+            )
+
+        made @ made.push(cmps)
+
+    return made
+
+# `r` written as Cargo writes a requirement: each comparator with its
+# operator, a bare version as `^`, comparators joined by `, ` and sets by
+# ` || `.
+#
+# - `r`: the range.
+#
+# A range of no set is the empty text, which `parse_range` refuses.
+function format_range(r: Range) -> str
+    return ranges.range_text(r.sets)
+
+# Whether `r` admits `v`, by Cargo's rule.
+#
+# - `r`: the range.
+# - `v`: the version; its build metadata is ignored.
+#
+# A pre-release is admitted only by a set that holds a comparator naming a
+# pre-release of the same three numbers: `>=1.2.3-alpha` admits
+# `1.2.3-beta` and not `1.2.4-beta`; `*` admits no pre-release.
+function admits(r: Range, v: Version) -> bool
+    return admit.admits(r.sets, model.Ver(major: v.major, minor: v.minor, patch: v.patch, pre: v.pre, build: []))
+
+# The versions of `versions` that `r` admits, in their order.
+#
+# - `r`: the range.
+# - `versions`: the versions; empty gives empty.
+function admitted_of(r: Range, versions: [Version]) -> [Version]
+    kept: [Version] @= []
+
+    for v in versions
+        if admits(r, v)
+            kept @ kept.push(v)
+
+    return kept
+
+# The highest version of `versions` that `r` admits: the one a package
+# manager picks.
+#
+# - `r`: the range.
+# - `versions`: the versions on offer, in any order.
+#
+# Of two with the same precedence, the one `compare_build` puts later. Fails
+# `not_found` where `r` admits none of them. See also `lowest_admitted`.
+function highest_admitted(r: Range, versions: [Version]) -> Version?
+    found = admitted_of(r, versions)
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"none of {versions.len()} versions is admitted by \"{format_range(r)}\"")
+    return highest(found)
+
+# The lowest version of `versions` that `r` admits.
+#
+# - `r`: the range.
+# - `versions`: the versions on offer, in any order.
+#
+# Of two with the same precedence, the one `compare_build` puts first. Fails
+# `not_found` where `r` admits none of them.
+function lowest_admitted(r: Range, versions: [Version]) -> Version?
+    found = admitted_of(r, versions)
+
+    if found.len() == 0
+        return fail(code: NOT_FOUND, msg: f"none of {versions.len()} versions is admitted by \"{format_range(r)}\"")
+    best @= found[0]
+
+    for v in found
+        if compare_build(a: v, b: best) < 0
+            best @ v
+
+    return ok(best)
+
+# The lowest version of all that `r` admits, as npm's `minVersion` answers
+# it, read by Cargo's rule.
+#
+# - `r`: the range.
+#
+# `>1.2.3` gives `1.2.4`, `>=1.0.0-alpha` gives `1.0.0-alpha`, `*` gives
+# `0.0.0`. Fails `not_found` where `r` admits no version, as `<0.0.0`. See
+# also `intersects`.
+function lowest_possible(r: Range) -> Version?
+    w = admit.lowest_possible(r.sets)?
+    return ok(Version(major: w.major, minor: w.minor, patch: w.patch, pre: w.pre, build: []))
+
+# Whether some version is admitted by both `a` and `b`, by Cargo's rule.
+#
+# - `a`: a range.
+# - `b`: another.
+#
+# A range that admits nothing intersects none, itself included. See also
+# `is_subset`.
+function intersects(a: Range, b: Range) -> bool
+    return admit.intersects(a: a.sets, b: b.sets)
+
+# Whether every version `a` admits, `b` admits too, by Cargo's rule.
+#
+# - `a`: the narrower range, as asked.
+# - `b`: the wider.
+#
+# A range that admits nothing is a subset of every range. See also
+# `intersects`.
+function is_subset(a: Range, b: Range) -> bool
+    return admit.is_subset(a: a.sets, b: b.sets)
+
+## Examples
+
+# A version read, its parts and its text.
+test "parse: a pre-release with build metadata"
+    v = parse("1.0.0-rc.1+build.5").must()
+    assert v.major == 1 && v.pre == ["rc", "1"] && v.build == ["build", "5"]
+
+# A text asked whether it is a version.
+test "is_valid: a version and a shorthand"
+    assert is_valid("1.2.3") && !is_valid("1.2")
+
+# A release made from its numbers.
+test "new: a release"
+    assert format(new(major: 1, minor: 2, patch: 3)) == "1.2.3"
+
+# A version written back, its metadata kept.
+test "format: every part"
+    assert format(parse("2.0.0-beta.2+exp.sha.5114f85").must()) == "2.0.0-beta.2+exp.sha.5114f85"
+
+# A release made a pre-release.
+test "with_pre: a release candidate"
+    assert format(with_pre(new(major: 2, minor: 0, patch: 0), pre: "rc.1").must()) == "2.0.0-rc.1"
+
+# Build metadata added.
+test "with_build: a commit"
+    assert format(with_build(new(major: 1, minor: 0, patch: 0), build: "sha.5114f85").must()) == "1.0.0+sha.5114f85"
+
+# A pre-release told from a release.
+test "is_prerelease: alpha and release"
+    assert is_prerelease(parse("1.0.0-alpha").must()) && !is_prerelease(new(major: 1, minor: 0, patch: 0))
+
+# The standard's own order of pre-releases.
+test "compare: a pre-release before its release"
+    assert compare(a: parse("1.0.0-rc.1").must(), b: parse("1.0.0").must()) == -1
+
+# Metadata ignored by precedence and ordered by the total order.
+test "compare_build: metadata breaks a tie"
+    a = parse("1.0.0+a").must()
+    b = parse("1.0.0+b").must()
+    assert compare(a: a, b: b) == 0 && compare_build(a: a, b: b) == -1
+
+# Versions sorted by `lists.sort_by` with this order.
+test "is_before: one version before another"
+    assert is_before(a: parse("1.0.0-alpha").must(), b: parse("1.0.0").must())
+
+# The highest of a list.
+test "highest: of three"
+    vs = [parse("1.2.0").must(), parse("1.10.0").must(), parse("1.9.0").must()]
+    assert format(highest(vs).must()) == "1.10.0"
+
+# The next major release.
+test "next_major: from a minor release"
+    assert format(next_major(parse("1.4.2").must()).must()) == "2.0.0"
+
+# The next minor release.
+test "next_minor: from a patch release"
+    assert format(next_minor(parse("1.4.2").must()).must()) == "1.5.0"
+
+# The next patch release.
+test "next_patch: from a release"
+    assert format(next_patch(parse("1.4.2").must()).must()) == "1.4.3"
+
+# A range of two comparators read.
+test "parse_range: a lower and an upper bound"
+    sets = comparators_of(parse_range(">=1.2, <1.5").must())
+    assert sets.len() == 1 && sets[0].len() == 2
+
+# A bare version written back as Cargo writes it.
+test "format_range: a bare version is a caret"
+    assert format_range(parse_range("1.2.3").must()) == "^1.2.3"
+
+# A caret range asked about two versions.
+test "admits: a caret range"
+    r = parse_range("^1.2.3").must()
+    assert admits(r, parse("1.9.0").must()) && !admits(r, parse("2.0.0").must())
+
+# The versions a range admits.
+test "admitted_of: a tilde range"
+    vs = [parse("1.2.2").must(), parse("1.2.9").must(), parse("1.3.0").must()]
+    assert admitted_of(parse_range("~1.2.3").must(), vs) == [parse("1.2.9").must()]
+
+# The version a package manager picks.
+test "highest_admitted: the newest compatible"
+    vs = [parse("1.2.0").must(), parse("1.9.9").must(), parse("2.0.0").must()]
+    assert format(highest_admitted(parse_range("^1.2").must(), vs).must()) == "1.9.9"
+
+# The oldest version of a list a range admits.
+test "lowest_admitted: the oldest compatible"
+    vs = [parse("1.9.9").must(), parse("1.2.0").must(), parse("2.0.0").must()]
+    assert format(lowest_admitted(parse_range("^1.2").must(), vs).must()) == "1.2.0"
+
+# A range built from its comparators.
+test "from_comparators: a tilde and an upper bound"
+    tilde = Comparator(op: .tilde, major: 1, minor: 2, patch: 0, written: 2, pre: [])
+    below = Comparator(op: .less, major: 1, minor: 2, patch: 7, written: 3, pre: [])
+    assert format_range(from_comparators([[tilde, below]])) == "~1.2, <1.2.7"
+
+# The comparators of a range read back.
+test "comparators_of: a bare version is a caret"
+    c = comparators_of(parse_range("1.2").must())[0][0]
+    assert c.op == .caret && c.written == 2 && c.minor == 2
+
+# Two ranges asked whether one version meets both.
+test "intersects: two carets that overlap"
+    assert intersects(a: parse_range("^1.2").must(), b: parse_range(">=1.5, <3").must())
+
+# A range asked whether it lies inside another.
+test "is_subset: a tilde inside a caret"
+    assert is_subset(a: parse_range("~1.4.2").must(), b: parse_range("^1.2").must())
+
+# The lowest version a range could admit.
+test "lowest_possible: above a bound"
+    assert format(lowest_possible(parse_range(">1.2.3").must()).must()) == "1.2.4"
+
+test "next_major, next_minor, next_patch: npm's answers from pre-releases, and the largest numbers"
+    assert format(next_major(parse("2.1.0-rc.1").must()).must()) == "3.0.0"
+    assert format(next_major(parse("1.0.0-0").must()).must()) == "1.0.0"
+    assert format(next_minor(parse("1.2.0-rc.1").must()).must()) == "1.2.0"
+    assert format(next_minor(parse("1.2.3-rc.1").must()).must()) == "1.3.0"
+    assert format(next_patch(parse("1.4.3-rc.1").must()).must()) == "1.4.3"
+    assert format(next_patch(parse("1.4.2+b").must()).must()) == "1.4.3"
+    top: u64 = 18446744073709551615
+
+    match next_major(new(major: top, minor: 0, patch: 0))
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    assert next_minor(new(major: 0, minor: top, patch: 0)).is_err()
+    assert next_patch(new(major: 0, minor: 0, patch: top)).is_err()
+
+test "highest, highest_admitted, lowest_admitted: an empty list and none admitted"
+    none: [Version] = []
+    assert highest(none).is_err()
+
+    match highest_admitted(parse_range("^2").must(), [new(major: 1, minor: 0, patch: 0)])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    assert lowest_admitted(parse_range("^2").must(), none).is_err()
+    assert admitted_of(parse_range("*").must(), none).len() == 0
+
+test "highest: of two the same by precedence, the later by metadata"
+    vs = [parse("1.0.0+b").must(), parse("1.0.0+a").must()]
+    assert format(highest(vs).must()) == "1.0.0+b"
+    assert format(lowest_admitted(parse_range("1").must(), vs).must()) == "1.0.0+a"
+
+test "compare_build: Cargo's crate's order of metadata"
+    assert compare_build(a: parse("1.0.0+001").must(), b: parse("1.0.0+1").must()) == 1
+    assert compare_build(a: parse("1.0.0+2").must(), b: parse("1.0.0+10").must()) == -1
+    assert compare_build(a: parse("1.0.0").must(), b: parse("1.0.0+a").must()) == -1
+    assert compare_build(a: parse("1.0.0+b").must(), b: parse("1.0.0+a.b").must()) == 1
+
+test "with_pre, with_build: empty clears, and what is refused"
+    v = parse("1.0.0-alpha+b").must()
+    assert format(with_pre(v, pre: "").must()) == "1.0.0+b"
+    assert format(with_build(v, build: "").must()) == "1.0.0-alpha"
+    assert with_pre(v, pre: "01").is_err()
+    assert format(with_build(v, build: "01").must()) == "1.0.0-alpha+01"
+    assert with_pre(v, pre: "a..b").is_err()
+
+test "parse: the codes of a text that is not a version and a number too large"
+    match parse("1.2")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match parse("18446744073709551616.0.0")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "lowest_possible: a pre-release only a bound names, npm answering none"
+    assert format(lowest_possible(parse_range(">1.2.2, <1.2.3-beta").must()).must()) == "1.2.3-0"
+    assert format(lowest_possible(parse_range(">1.2.3-alpha").must()).must()) == "1.2.3-alpha.0"
+    assert format(lowest_possible(parse_range("*").must()).must()) == "0.0.0"
+
+    match lowest_possible(parse_range("<0.0.0").must())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "format_range: an empty range, every operator, a wildcard"
+    assert format_range(from_comparators([])) == ""
+    assert format_range(parse_range("=1.2.3-a, >1, >=1.2, <1, <=1, ~1.2, ^0, 1.2.x").must()) == "=1.2.3-a, >1, >=1.2, <1, <=1, ~1.2, ^0, 1.2.*"

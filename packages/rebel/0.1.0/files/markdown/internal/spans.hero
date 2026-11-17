@@ -1,0 +1,176 @@
+# The spans of text an inline reader matches by scanning alone, with no node
+# made: the runs of backticks of a text grouped by length, a code span's
+# text, and an autolink in `<` and `>`, a URI or an email address.
+
+use markdown/internal/scan
+
+# The runs of backticks of a text, grouped by length, made the first time a
+# backtick is read, so that finding the run that closes a code span never
+# reads the text again.
+record Ticks
+    # Whether the runs are found yet.
+    built: bool
+    # The group of each run length.
+    group_of: {i64: i64}
+    # Where each group's runs begin in `flat`, and one more for the end.
+    starts: [i64]
+    # The first byte of every run, by group, each group in order.
+    flat: [i64]
+
+# The runs of backticks of `s`, and a cursor for each group at its first run.
+function ticks_of(s: str, @cursor: [i64]) -> Ticks
+    group_of: {i64: i64} @= {}
+    at_of: [i64] @= []
+    group_seen: [i64] @= []
+    counts: [i64] @= []
+    k @= 0
+
+    while k < s.len()
+        if s[k] != '`'
+            k @ k + 1
+        else
+            start = k
+
+            while k < s.len() && s[k] == '`'
+                k @ k + 1
+
+            size = k - start
+            g = group_of[size].default(-1)
+
+            id = if g < 0
+                counts.len()
+            else
+                g
+
+            if g < 0
+                group_of[size] @ id
+                counts @ counts.push(0)
+            counts[id] @ counts[id] + 1
+            at_of @ at_of.push(start)
+            group_seen @ group_seen.push(id)
+
+    starts: [i64] @= [0]
+
+    for c in counts
+        starts @ starts.push(starts[starts.len() - 1] + c)
+
+    flat: [i64] @= []
+
+    for _ in at_of
+        flat @ flat.push(0)
+
+    next @= starts.slice(from: 0, to: counts.len())
+
+    for r in range(from: 0, to: at_of.len())
+        g = group_seen[r]
+        flat[next[g]] @ at_of[r]
+        next[g] @ next[g] + 1
+
+    cursor @ starts.slice(from: 0, to: counts.len())
+    return Ticks(built: true, group_of: group_of, starts: starts, flat: flat)
+
+# A code span's text: line feeds made spaces, and one space taken off each
+# end where both ends hold one and not every character is a space.
+function code_text(raw: str) -> str
+    pieces: [str] @= []
+    start @= 0
+
+    for k in range(from: 0, to: raw.len())
+        if raw[k] == '\n'
+            pieces @ pieces.push(raw.slice(from: start, to: k))
+            pieces @ pieces.push(" ")
+            start @ k + 1
+
+    pieces @ pieces.push(raw.slice(from: start, to: raw.len()))
+    t = join(pieces, "")
+
+    if t.len() >= 2 && t[0] == ' ' && t[t.len() - 1] == ' '
+        for k in range(from: 0, to: t.len())
+            if t[k] != ' '
+                return t.slice(from: 1, to: t.len() - 1)
+    return t
+
+# An autolink read: the byte after its `>`, where it points and what it
+# shows; `end` 0 where none begins at the `<`.
+record Angle
+    # The byte after the `>`, or 0.
+    end: i64
+    # The destination, percent-encoded; `mailto:` before an address.
+    destination: str
+    # The text shown.
+    text: str
+
+# The autolink at the `<` at byte `at` of `s`: a scheme of 2 to 32
+# characters, a colon and no space, `<` or control character; or an email
+# address.
+function angle_at(s: str, at: i64) -> Angle
+    k @= at + 1
+
+    if k < s.len() && scan.is_letter(s[k])
+        k @ k + 1
+
+        while k < s.len() && (scan.is_alnum(s[k]) || s[k] == '+' || s[k] == '.' || s[k] == '-')
+            k @ k + 1
+
+        scheme = k - at - 1
+
+        if scheme >= 2 && scheme <= 32 && k < s.len() && s[k] == ':'
+            k @ k + 1
+
+            while k < s.len() && s[k] != '>' && s[k] != '<' && s[k] > 32
+                k @ k + 1
+
+            if k < s.len() && s[k] == '>'
+                uri = s.slice(from: at + 1, to: k)
+                return Angle(end: k + 1, destination: scan.normalize_uri(uri), text: uri)
+    end = email_end(s, at + 1)
+
+    if end > 0
+        address = s.slice(from: at + 1, to: end)
+        return Angle(end: end + 1, destination: scan.normalize_uri("mailto:" + address), text: address)
+    return Angle(end: 0, destination: "", text: "")
+
+# Whether `b` may stand in the local part of an email address.
+function is_local(b: u8) -> bool
+    return scan.is_alnum(b) || b == '.' || b == '!' || b == '#' || b == '$' || b == '%' || b == '&' || b == '\'' || b == '*' || b == '+' || b == '/' || b == '=' || b == '?' || b == '^' || b == '_' || b == '`' || b == '{' || b == '|' || b == '}' || b == '~' || b == '-'
+
+# The byte of the `>` after the email address at `at` of `s`; 0 where none.
+function email_end(s: str, at: i64) -> i64
+    k @= at
+
+    while k < s.len() && is_local(s[k])
+        k @ k + 1
+
+    if k == at || k >= s.len() || s[k] != '@'
+        return 0
+    k @ k + 1
+
+    while true
+        start = k
+
+        while k < s.len() && (scan.is_alnum(s[k]) || s[k] == '-') && k - start < 63
+            k @ k + 1
+
+        if k == start || s[start] == '-' || s[k - 1] == '-'
+            return 0
+
+        if k < s.len() && s[k] == '.'
+            k @ k + 1
+        else if k < s.len() && s[k] == '>'
+            return k
+        else
+            return 0
+
+test "code_text: a space each side, all spaces, a line feed"
+    assert code_text(" a ") == "a" && code_text("  ") == "  " && code_text("a\nb") == "a b" && code_text(" a") == " a"
+
+test "angle_at: a URI, an address, a scheme of one letter, a space"
+    assert angle_at("<http://a.b>", at: 0).text == "http://a.b"
+    assert angle_at("<a@b.c>", at: 0).destination == "mailto:a@b.c"
+    assert angle_at("<a:b>", at: 0).end == 0
+    assert angle_at("<http://a b>", at: 0).end == 0
+
+test "email_end: an address, a hyphen at a label's end, no at sign"
+    assert email_end("<a.b@c-d.e>", 1) == 10
+    assert email_end("<a@b-.c>", 1) == 0
+    assert email_end("<abc>", 1) == 0

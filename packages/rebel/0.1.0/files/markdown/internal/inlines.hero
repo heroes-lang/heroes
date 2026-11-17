@@ -1,0 +1,382 @@
+# The second phase of reading: the raw text of a paragraph, a heading or a
+# table cell read into inlines, one character after another: line breaks,
+# backslash escapes, code spans, runs of emphasis delimiters, brackets that
+# may close into links and images, autolinks, raw HTML and character
+# references. Brackets and delimiters wait in lists, never on the call
+# stack, so no nesting deepens it.
+
+use markdown/internal/emphasis
+use markdown/internal/htmltag
+use markdown/internal/links
+use markdown/internal/scan
+use markdown/internal/spans
+use markdown/internal/tree
+
+# A `[` or `![` waiting for its `]`.
+record Bracket
+    # The text node holding it.
+    node: i64
+    # The delimiter run on top when it was read.
+    prev_delim: i64
+    # The byte of its `[`.
+    index: i64
+    # Whether it is `![`.
+    image: bool
+    # Whether it may still close into a link.
+    active: bool
+    # Whether another bracket was read after it.
+    bracket_after: bool
+
+# Where the reader of one text stands.
+record State
+    # The text read.
+    s: str
+    # The byte reached.
+    pos: i64
+    # The node the inlines are added to.
+    parent: i64
+    # The delimiter run on top, or `tree.NONE`.
+    head: i64
+    # How many brackets wait.
+    brackets: i64
+    # Whether `~` makes strikethrough.
+    strike: bool
+
+# Adds a text node holding `text` to the parent.
+function add_text(@nodes: [tree.Node], st: State lent, text: str) -> i64
+    return tree.append(@nodes, parent: st.parent, node: tree.make_literal(tree.TEXT, literal: text))
+
+# Adds a node of `kind` to the parent.
+function add_kind(@nodes: [tree.Node], st: State lent, kind: i64) -> i64
+    made @= tree.make(kind)
+    made.open @ false
+    return tree.append(@nodes, parent: st.parent, node: made)
+
+# `s` with spaces, tabs and line feeds taken off both ends.
+function trim_ends(s: str) -> str
+    from @= 0
+    to @= s.len()
+
+    while from < to && (s[from] == ' ' || s[from] == '\t' || s[from] == '\n')
+        from @ from + 1
+
+    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t' || s[to - 1] == '\n')
+        to @ to - 1
+
+    return s.slice(from: from, to: to)
+
+# Whether `b` stops a run of plain text.
+function is_special(b: u8, strike: bool) -> bool
+    return b == '\n' || b == '\\' || b == '`' || b == '*' || b == '_' || b == '[' || b == ']' || b == '!' || b == '<' || b == '&' || strike && b == '~'
+
+# Reads `text`, the raw text of the block `block`, into its inline children.
+function read(@nodes: [tree.Node], refs: {str: links.Target} lent, block: i64, text: str, strike: bool)
+    st @= State(s: trim_ends(text), pos: 0, parent: block, head: tree.NONE, brackets: 0, strike: strike)
+    delims: [emphasis.Delim] @= []
+    brackets: [Bracket] @= []
+    ticks @= spans.Ticks(built: false, group_of: {}, starts: [], flat: [])
+    cursor: [i64] @= []
+    memo @= links.no_close(st.s.len())
+    tags @= htmltag.no_close(st.s.len())
+
+    while st.pos < st.s.len()
+        step(@nodes, refs, @st, @delims, @brackets, @ticks, cursor: @cursor, memo: @memo, tags: @tags)
+
+    emphasis.process(@nodes, @delims, head: st.head, bottom: tree.NONE)
+
+# Reads what begins at the reader's byte.
+function step(@nodes: [tree.Node], refs: {str: links.Target} lent, @st: State, @delims: [emphasis.Delim], @brackets: [Bracket], @ticks: spans.Ticks, @cursor: [i64], @memo: [i64], @tags: [i64])
+    s = st.s
+    at = st.pos
+    b = s[at]
+
+    if b == '\n'
+        newline(@nodes, @st)
+    else if b == '\\'
+        backslash(@nodes, @st)
+    else if b == '`'
+        backticks(@nodes, @st, @ticks, @cursor)
+    else if b == '*' || b == '_' || b == '~' && st.strike
+        delimiter_run(@nodes, @st, @delims)
+    else if b == '['
+        open_bracket(@nodes, @st, @brackets, at: at, image: false)
+    else if b == '!' && at + 1 < s.len() && s[at + 1] == '['
+        open_bracket(@nodes, @st, @brackets, at: at, image: true)
+    else if b == ']'
+        close_bracket(@nodes, refs, @st, @delims, @brackets, @memo)
+    else if b == '<'
+        if !autolink(@nodes, @st) && !raw_html(@nodes, @st, @tags)
+            _ = add_text(@nodes, st, text: "<")
+            st.pos @ at + 1
+    else if b == '&'
+        found = scan.reference_at(s, at)
+
+        if found.end > 0
+            _ = add_text(@nodes, st, text: found.text)
+            st.pos @ found.end
+        else
+            _ = add_text(@nodes, st, text: "&")
+            st.pos @ at + 1
+    else
+        end @= at + 1
+
+        while end < s.len() && !is_special(s[end], strike: st.strike)
+            end @ end + 1
+
+        _ = add_text(@nodes, st, text: s.slice(from: at, to: end))
+        st.pos @ end
+
+# A line feed: a hard break after two spaces or more, else a soft one; the
+# spaces at either side taken off.
+function newline(@nodes: [tree.Node], @st: State)
+    st.pos @ st.pos + 1
+    last = nodes[st.parent].last
+    hard @= false
+
+    if last != tree.NONE && nodes[last].kind == tree.TEXT
+        text = nodes[last].literal
+        end @= text.len()
+
+        while end > 0 && text[end - 1] == ' '
+            end @ end - 1
+
+        hard @ text.len() - end >= 2
+        nodes[last].literal @ text.slice(from: 0, to: end)
+
+    kind = if hard
+        tree.LINE_BREAK
+    else
+        tree.SOFT_BREAK
+    _ = add_kind(@nodes, st, kind: kind)
+
+    while st.pos < st.s.len() && (st.s[st.pos] == ' ' || st.s[st.pos] == '\t')
+        st.pos @ st.pos + 1
+
+# A backslash: a hard break before a line feed, the character it escapes, or
+# itself.
+function backslash(@nodes: [tree.Node], @st: State)
+    s = st.s
+    at = st.pos
+
+    if at + 1 < s.len() && s[at + 1] == '\n'
+        _ = add_kind(@nodes, st, kind: tree.LINE_BREAK)
+        st.pos @ at + 2
+
+        while st.pos < s.len() && (s[st.pos] == ' ' || s[st.pos] == '\t')
+            st.pos @ st.pos + 1
+
+        return
+
+    if at + 1 < s.len() && scan.is_ascii_punctuation(s[at + 1])
+        _ = add_text(@nodes, st, text: s.slice(from: at + 1, to: at + 2))
+        st.pos @ at + 2
+        return
+    _ = add_text(@nodes, st, text: "\\")
+    st.pos @ at + 1
+
+# A run of backticks: a code span where the next run of the same length
+# closes it, else the run as text. The runs are found once, and each length's
+# cursor only moves forward. A run that follows an escaped backtick is
+# shorter than the run the index holds there, and where no run of its length
+# stands anywhere, nothing closes it.
+function backticks(@nodes: [tree.Node], @st: State, @ticks: spans.Ticks, @cursor: [i64])
+    s = st.s
+    from = st.pos
+    open_end @= from
+
+    while open_end < s.len() && s[open_end] == '`'
+        open_end @ open_end + 1
+
+    size = open_end - from
+
+    if !ticks.built
+        ticks @ spans.ticks_of(s, @cursor)
+    g = ticks.group_of[size].default(-1)
+
+    last = if g >= 0
+        ticks.starts[g + 1]
+    else
+        0
+
+    k @= if g >= 0
+        cursor[g]
+    else
+        0
+
+    while k < last && ticks.flat[k] < open_end
+        k @ k + 1
+
+    if g >= 0
+        cursor[g] @ k
+
+    if k < last
+        run_start = ticks.flat[k]
+        content = spans.code_text(s.slice(from: open_end, to: run_start))
+        _ = tree.append(@nodes, parent: st.parent, node: tree.make_literal(tree.CODE, literal: content))
+        st.pos @ run_start + size
+        return
+    _ = add_text(@nodes, st, text: s.slice(from: from, to: open_end))
+    st.pos @ open_end
+
+# A run of `*`, `_` or `~`: its text added, and the run put on the
+# delimiter list with whether it may open and close.
+function delimiter_run(@nodes: [tree.Node], @st: State, @delims: [emphasis.Delim])
+    s = st.s
+    from = st.pos
+    mark = s[from]
+    end @= from
+
+    while end < s.len() && s[end] == mark
+        end @ end + 1
+
+    count = end - from
+    before = scan.char_before(s, from)
+    after = scan.char_at(s, end)
+    after_space = scan.is_whitespace(after)
+    after_punct = scan.is_punctuation(after)
+    before_space = scan.is_whitespace(before)
+    before_punct = scan.is_punctuation(before)
+    left = !after_space && (!after_punct || before_space || before_punct)
+    right = !before_space && (!before_punct || after_space || after_punct)
+
+    can_open = if mark == '_'
+        left && (!right || before_punct)
+    else
+        left
+
+    can_close = if mark == '_'
+        right && (!left || after_punct)
+    else
+        right
+    node = add_text(@nodes, st, text: s.slice(from: from, to: end))
+    st.pos @ end
+
+    if mark == '~' && count > 2
+        return
+    at = delims.len()
+    delims @ delims.push(
+        emphasis.Delim(mark: mark, count: count, orig: count, node: node, prev: st.head, next: tree.NONE, can_open: can_open, can_close: can_close)
+    )
+
+    if st.head != tree.NONE
+        delims[st.head].next @ at
+    st.head @ at
+
+# A `[` or `![`: its text added and a bracket put on the stack.
+function open_bracket(@nodes: [tree.Node], @st: State, @brackets: [Bracket], at: i64, image: bool)
+    text = if image
+        "!["
+    else
+        "["
+    node = add_text(@nodes, st, text: text)
+
+    if st.brackets > 0
+        brackets[st.brackets - 1].bracket_after @ true
+
+    index = if image
+        at + 1
+    else
+        at
+    made = Bracket(node: node, prev_delim: st.head, index: index, image: image, active: true, bracket_after: false)
+
+    if st.brackets < brackets.len()
+        brackets[st.brackets] @ made
+    else
+        brackets @ brackets.push(made)
+    st.brackets @ st.brackets + 1
+    st.pos @ at + text.len()
+
+# A `]`: a link or an image where the bracket on the stack closes into one,
+# else text.
+function close_bracket(@nodes: [tree.Node], refs: {str: links.Target} lent, @st: State, @delims: [emphasis.Delim], @brackets: [Bracket], @memo: [i64])
+    s = st.s
+    close = st.pos
+
+    if st.brackets == 0
+        _ = add_text(@nodes, st, text: "]")
+        st.pos @ close + 1
+        return
+    opener = brackets[st.brackets - 1]
+
+    if !opener.active
+        st.brackets @ st.brackets - 1
+        _ = add_text(@nodes, st, text: "]")
+        st.pos @ close + 1
+        return
+    got = links.closing_of(s, refs, close: close, index: opener.index, bracket_after: opener.bracket_after, @memo)
+
+    if !got.found
+        st.brackets @ st.brackets - 1
+        _ = add_text(@nodes, st, text: "]")
+        st.pos @ close + 1
+        return
+
+    kind = if opener.image
+        tree.IMAGE
+    else
+        tree.LINK
+    made @= tree.make(kind)
+    made.open @ false
+    made.literal @ got.destination
+    made.title @ got.title
+    link = nodes.len()
+    nodes @ nodes.push(made)
+    tree.move_children(@nodes, start: nodes[opener.node].next, stop: tree.NONE, to: link)
+    tree.link_last(@nodes, parent: st.parent, child: link)
+    emphasis.process(@nodes, @delims, head: st.head, bottom: opener.prev_delim)
+    st.head @ opener.prev_delim
+
+    if st.head != tree.NONE
+        delims[st.head].next @ tree.NONE
+    st.brackets @ st.brackets - 1
+    tree.unlink(@nodes, opener.node)
+
+    if !opener.image
+        for k in range(from: 0, to: st.brackets)
+            if !brackets[k].image
+                brackets[k].active @ false
+
+    st.pos @ got.end
+
+# An autolink in `<` and `>`: a URI or an email address; answers whether
+# one was read.
+function autolink(@nodes: [tree.Node], @st: State) -> bool
+    got = spans.angle_at(st.s, at: st.pos)
+
+    if got.end == 0
+        return false
+    add_autolink(@nodes, st, destination: got.destination, text: got.text)
+    st.pos @ got.end
+    return true
+
+# Adds a link to `destination` holding `text`.
+function add_autolink(@nodes: [tree.Node], st: State lent, destination: str, text: str)
+    made @= tree.make(tree.LINK)
+    made.open @ false
+    made.literal @ destination
+    link = tree.append(@nodes, parent: st.parent, node: made)
+    _ = tree.append(@nodes, parent: link, node: tree.make_literal(tree.TEXT, literal: text))
+
+# Raw HTML at a `<`; answers whether some was read.
+function raw_html(@nodes: [tree.Node], @st: State, @tags: [i64]) -> bool
+    end = htmltag.tag_end(st.s, st.pos, @tags)
+
+    if end < 0
+        return false
+    _ = tree.append(
+        @nodes,
+        parent: st.parent,
+        node: tree.make_literal(tree.HTML_INLINE, literal: st.s.slice(from: st.pos, to: end))
+    )
+    st.pos @ end
+    return true
+
+test "trim_ends: spaces, tabs, line feeds"
+    assert trim_ends(" \ta b\n ") == "a b" && trim_ends("") == ""
+
+test "backticks: a run after an escaped backtick, with no run of its length"
+    nodes: [tree.Node] @= [tree.make(tree.DOCUMENT)]
+    p = tree.append(@nodes, parent: 0, node: tree.make(tree.PARAGRAPH))
+    refs: {str: links.Target} = {}
+    read(@nodes, refs, block: p, text: "\\``a", strike: false)
+    assert tree.children(nodes, p).len() >= 1

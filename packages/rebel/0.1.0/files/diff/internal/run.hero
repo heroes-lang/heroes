@@ -1,0 +1,44 @@
+# The algorithm a program chose, run on two lists of texts: the texts made
+# numbers, the matching blocks found, and the edit script made from them.
+
+use diff/internal/myers
+use diff/internal/patience
+use diff/internal/ratcliff
+use diff/internal/script
+
+# Myers's algorithm.
+constant MYERS: i64
+    0
+
+# Patience ordering.
+constant PATIENCE: i64
+    1
+
+# Ratcliff and Obershelp's.
+constant RATCLIFF: i64
+    2
+
+# The edit script turning `old` into `new` by `algorithm`, one of the three
+# above.
+function ops_of(old: [str], new: [str], algorithm: i64) -> [script.Op]
+    ids = script.intern(old: old, new: new)
+
+    blocks = if algorithm == PATIENCE
+        patience.blocks(old: ids.old, new: ids.new)
+    else if algorithm == RATCLIFF
+        ratcliff.matching(ids.old, ratcliff.index_of_second(ids.new, ids.count))
+    else
+        myers.blocks(old: ids.old, new: ids.new, same: script.same_id)
+    return script.ops_of(blocks, old_len: old.len(), new_len: new.len())
+
+# Whether two bytes are the same.
+function same_byte(left: u8, right: u8) -> bool
+    return left == right
+
+test "ops_of: the three algorithms agree where one change is all"
+    old = ["a", "b", "c"]
+    new = ["a", "x", "c"]
+
+    for algorithm in [MYERS, PATIENCE, RATCLIFF]
+        ops = ops_of(old: old, new: new, algorithm: algorithm)
+        assert ops.len() == 3 && ops[1].tag == script.REPLACE

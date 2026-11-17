@@ -1,0 +1,364 @@
+# Ranges read from text by Cargo's grammar, comparators separated by commas,
+# with npm's `||` between sets, and written back as Cargo writes them. Each
+# loop moves at least one byte a pass, as the version reader's do.
+
+use semver/internal/model
+use semver/internal/read
+
+# A comparator read, and the byte after it; `star` where it was `*` alone.
+record Read
+    # The comparator; meaningless where `star`.
+    cmp: model.Cmp
+    # Whether it was a bare `*`, `x` or `X`.
+    star: bool
+    # The byte after it.
+    end: i64
+
+# A set read, and the byte after it.
+record Set
+    # The comparators; empty for `*`.
+    cmps: [model.Cmp]
+    # The byte after the set.
+    end: i64
+
+# The byte after the spaces that begin at `at`.
+function spaces_end(text: str, at: i64) -> i64
+    end @= at
+
+    while end < text.len() && text[end] == ' '
+        end @ end + 1
+
+    return end
+
+# Whether byte `at` of `text` is `*`, `x` or `X`.
+function is_wild(text: str, at: i64) -> bool
+    return at < text.len() && (text[at] == '*' || text[at] == 'x' || text[at] == 'X')
+
+# The operator at byte `at`, as one of the model's codes, and how many bytes
+# it takes; a bare version is `^` of no byte.
+record Operator
+    # The code.
+    op: i64
+    # Its bytes: 0, 1 or 2.
+    size: i64
+
+# The operator that begins at byte `at` of `text`.
+function operator_at(text: str, at: i64) -> Operator
+    if at >= text.len()
+        return Operator(op: model.CARET, size: 0)
+    b = text[at]
+    then_eq = at + 1 < text.len() && text[at + 1] == '='
+
+    if b == '='
+        return Operator(op: model.EXACT, size: 1)
+
+    if b == '>' && then_eq
+        return Operator(op: model.GREATER_EQ, size: 2)
+
+    if b == '>'
+        return Operator(op: model.GREATER, size: 1)
+
+    if b == '<' && then_eq
+        return Operator(op: model.LESS_EQ, size: 2)
+
+    if b == '<'
+        return Operator(op: model.LESS, size: 1)
+
+    if b == '~'
+        return Operator(op: model.TILDE, size: 1)
+
+    if b == '^'
+        return Operator(op: model.CARET, size: 1)
+    return Operator(op: model.CARET, size: 0)
+
+# Where a comparator's version ends: the byte after a wildcard must end it.
+function after_wild(text: str, at: i64) -> i64?
+    if at < text.len() && (text[at] == '.' || text[at] == '-' || text[at] == '+' || read.is_id_byte(text[at]))
+        return fail(
+            code: model.INVALID,
+            msg: f"\"{text}\": {read.found_at(text, at)} after a wildcard, which ends a version"
+        )
+    return ok(at)
+
+# The comparator that begins at byte `from` of `text`.
+function comparator_at(text: str, from: i64) -> Read?
+    operator = operator_at(text, from)
+    written_op = operator.size > 0
+    at @= spaces_end(text, from + operator.size)
+    none: [str] = []
+
+    if is_wild(text, at)
+        if written_op
+            return fail(
+                code: model.INVALID,
+                msg: f"\"{text}\": a wildcard at byte {at} after an operator, where a number should be"
+            )
+        end = after_wild(text, at + 1)?
+        cmp = model.Cmp(op: model.WILDCARD, major: 0, minor: 0, patch: 0, written: 0, pre: none)
+        return ok(Read(cmp: cmp, star: true, end: end))
+    major = read.number_at(text: text, from: at, what: "major")?
+    at @ major.end
+
+    op = if written_op
+        operator.op
+    else
+        model.CARET
+
+    if at >= text.len() || text[at] != '.'
+        cmp = model.Cmp(op: op, major: major.value, minor: 0, patch: 0, written: 1, pre: none)
+        return ok(Read(cmp: cmp, star: false, end: at))
+
+    if is_wild(text, at + 1)
+        end @= at + 2
+
+        if end < text.len() && text[end] == '.' && is_wild(text, end + 1)
+            end @ end + 2
+
+        wild_op = if written_op
+            op
+        else
+            model.WILDCARD
+        cmp = model.Cmp(op: wild_op, major: major.value, minor: 0, patch: 0, written: 1, pre: none)
+        return ok(Read(cmp: cmp, star: false, end: after_wild(text, end)?))
+    minor = read.number_at(text: text, from: at + 1, what: "minor")?
+    at @ minor.end
+
+    if at >= text.len() || text[at] != '.'
+        cmp = model.Cmp(op: op, major: major.value, minor: minor.value, patch: 0, written: 2, pre: none)
+        return ok(Read(cmp: cmp, star: false, end: at))
+
+    if is_wild(text, at + 1)
+        wild_op = if written_op
+            op
+        else
+            model.WILDCARD
+        cmp = model.Cmp(op: wild_op, major: major.value, minor: minor.value, patch: 0, written: 2, pre: none)
+        return ok(Read(cmp: cmp, star: false, end: after_wild(text, at + 2)?))
+    patch = read.number_at(text: text, from: at + 1, what: "patch")?
+    at @ patch.end
+    pre: [str] @= []
+
+    if at < text.len() && text[at] == '-'
+        got = read.identifiers_at(text: text, from: at + 1, numeric_zeros: false, what: "pre-release")?
+        pre @ got.ids
+        at @ got.end
+
+    if at < text.len() && text[at] == '+'
+        got = read.identifiers_at(text: text, from: at + 1, numeric_zeros: true, what: "build metadata")?
+        at @ got.end
+    cmp = model.Cmp(op: op, major: major.value, minor: minor.value, patch: patch.value, written: 3, pre: pre)
+    return ok(Read(cmp: cmp, star: false, end: at))
+
+# A comparator made from a program's fields: `written` held to 1 to 3, a
+# wildcard's to 1 or 2, and the numbers and identifiers not written dropped.
+function comparator(op: i64, major: u64, minor: u64, patch: u64, written: i64, pre: [str]) -> model.Cmp
+    held @= written
+
+    if held < 1
+        held @ 1
+
+    if held > 3
+        held @ 3
+
+    if op == model.WILDCARD && held > 2
+        held @ 2
+    none: [str] = []
+
+    kept_minor: u64 = if held >= 2
+        minor
+    else
+        0
+
+    kept_patch: u64 = if held >= 3
+        patch
+    else
+        0
+
+    kept_pre = if held >= 3
+        pre
+    else
+        none
+    return model.Cmp(op: op, major: major, minor: kept_minor, patch: kept_patch, written: held, pre: kept_pre)
+
+# Whether `||` begins at byte `at` of `text`.
+function is_union(text: str, at: i64) -> bool
+    return at + 1 < text.len() && text[at] == '|' && text[at + 1] == '|'
+
+# The set of comparators that begins at byte `from` of `text`, read up to the
+# end or a `||`.
+function set_at(text: str, from: i64) -> Set?
+    cmps: [model.Cmp] @= []
+    stars @= 0
+    count @= 0
+    at @= spaces_end(text, from)
+
+    while true
+        if at >= text.len() || text[at] == '|' || text[at] == ','
+            return fail(code: model.INVALID, msg: f"\"{text}\": {read.found_at(text, at)} where a comparator should be")
+        got = comparator_at(text, at)?
+        count @ count + 1
+
+        if got.star
+            stars @ stars + 1
+        else
+            cmps @ cmps.push(got.cmp)
+        at @ spaces_end(text, got.end)
+
+        if at < text.len() && text[at] == ','
+            at @ spaces_end(text, at + 1)
+        else if at >= text.len() || is_union(text, at)
+            if stars > 0 && count > 1
+                return fail(code: model.INVALID, msg: f"\"{text}\": a wildcard `*` must stand alone in its set")
+
+            if count > model.MAX_COMPARATORS
+                return fail(
+                    code: model.INVALID,
+                    msg: f"\"{text}\": {count} comparators in one set, more than {model.MAX_COMPARATORS}"
+                )
+            return ok(Set(cmps: cmps, end: at))
+        else
+            return fail(
+                code: model.INVALID,
+                msg: f"\"{text}\": {read.found_at(text, at)} where a comma, `||` or the end should be"
+            )
+
+# The sets of the range `text` holds.
+function range_of(text: str) -> [[model.Cmp]]?
+    if text.len() == 0
+        return fail(code: model.INVALID, msg: "the empty text is not a range; `*` admits every release")
+    sets: [[model.Cmp]] @= []
+    at @= 0
+
+    while true
+        got = set_at(text, at)?
+        sets @ sets.push(got.cmps)
+
+        if got.end >= text.len()
+            return ok(sets)
+        at @ got.end + 2
+
+# The operator's text, as Cargo writes it; a wildcard writes none.
+function op_text(op: i64) -> str
+    if op == model.EXACT
+        return "="
+
+    if op == model.GREATER
+        return ">"
+
+    if op == model.GREATER_EQ
+        return ">="
+
+    if op == model.LESS
+        return "<"
+
+    if op == model.LESS_EQ
+        return "<="
+
+    if op == model.TILDE
+        return "~"
+
+    if op == model.CARET
+        return "^"
+    return ""
+
+# A comparator written as Cargo writes it.
+function comparator_text(c: model.Cmp) -> str
+    parts: [str] @= [op_text(c.op), read.number_text(c.major)]
+
+    if c.written >= 2
+        parts @ parts.push(".")
+        parts @ parts.push(read.number_text(c.minor))
+
+    if c.written >= 3
+        parts @ parts.push(".")
+        parts @ parts.push(read.number_text(c.patch))
+
+    if c.op == model.WILDCARD
+        parts @ parts.push(".*")
+
+    if c.pre.len() > 0
+        parts @ parts.push("-")
+        parts @ parts.push(join(c.pre, "."))
+    return join(parts, "")
+
+# A range written: comparators joined by `, `, sets by ` || `, `*` for an
+# empty set.
+function range_text(sets: [[model.Cmp]]) -> str
+    written: [str] @= []
+
+    for set in sets
+        if set.len() == 0
+            written @ written.push("*")
+        else
+            texts: [str] @= []
+
+            for c in set
+                texts @ texts.push(comparator_text(c))
+
+            written @ written.push(join(texts, ", "))
+
+    return join(written, " || ")
+
+test "range_of: Cargo's spellings written back"
+    pairs = [
+        ["1.2.3", "^1.2.3"]
+        ["=1.2", "=1.2"]
+        [">= 1.2 , < 1.5", ">=1.2, <1.5"]
+        ["*", "*"]
+        ["x", "*"]
+        ["1.x", "1.*"]
+        ["1.2.X", "1.2.*"]
+        ["1.x.x", "1.*"]
+        [">=1.*", ">=1"]
+        ["=1.*", "=1"]
+        ["~1.2.*", "~1.2"]
+        ["1.2.3+build", "^1.2.3"]
+        [" ^1.2.3 ", "^1.2.3"]
+        ["^ 1.2", "^1.2"]
+        [">=1.2.3-alpha.1, <2", ">=1.2.3-alpha.1, <2"]
+        ["1.*, >=1.5", "1.*, >=1.5"]
+        ["^1.2 || ~2.3.4 || >=5, <6", "^1.2 || ~2.3.4 || >=5, <6"]
+        ["* || 1", "* || ^1"]
+    ]
+
+    for pair in pairs
+        assert range_text(range_of(pair[0]).must()) == pair[1]
+
+test "range_of: what Cargo's crate refuses, and npm's spellings"
+    refused = [
+        ""
+        " "
+        ">=1.2 <1.5"
+        "*, >=1"
+        "^1.2-alpha"
+        "v1"
+        "1.*.3"
+        "01"
+        "1.2.3,"
+        ",1"
+        "1.2.3 - 2"
+        "*.1"
+        "*.*"
+        "=*"
+        "1.2.3\t"
+        "1 .2"
+        "~>1.2"
+        "1 ||"
+        "|| 1"
+        "1 | 2"
+        "1.2.*-alpha"
+        "1 ,, 2"
+    ]
+
+    for text in refused
+        assert range_of(text).is_err()
+
+test "range_of: the most comparators in a set, and one more"
+    many: [str] @= []
+
+    for _ in range(from: 0, to: 32)
+        many @ many.push("1.2.3")
+
+    assert range_of(join(many, ", ")).must()[0].len() == 32
+    many @ many.push("1.2.3")
+    assert range_of(join(many, ", ")).is_err()

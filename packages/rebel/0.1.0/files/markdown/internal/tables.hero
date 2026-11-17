@@ -1,0 +1,119 @@
+# GFM's tables: the delimiter row under a header that makes a paragraph's
+# last line a table, its column alignments, a row cut into cells at the pipes
+# that are not escaped, and the rows and cells added to the tree.
+
+use markdown/internal/tree
+use strings
+
+# The cells of the row `line`: a pipe at either end dropped, each cell's
+# white space trimmed, an escaped pipe kept with its backslash.
+function cells_of(line: str) -> [str]
+    s = strings.trim(line)
+    start @= 0
+    end @= s.len()
+
+    if end > 0 && s[0] == '|'
+        start @ 1
+
+    if end > start && s[end - 1] == '|' && !(end >= 2 && s[end - 2] == '\\')
+        end @ end - 1
+    cells: [str] @= []
+    from @= start
+    at @= start
+
+    while at < end
+        if s[at] == '\\' && at + 1 < end
+            at @ at + 2
+        else if s[at] == '|'
+            cells @ cells.push(strings.trim(s.slice(from: from, to: at)))
+            at @ at + 1
+            from @ at
+        else
+            at @ at + 1
+
+    cells @ cells.push(strings.trim(s.slice(from: from, to: end)))
+    return cells
+
+# The alignments of the delimiter row `line`, 1 left, 2 center, 3 right and 0
+# none for each column; empty where `line` is not a delimiter row: cells of
+# at least one `-` with an optional `:` at either end, and a pipe somewhere.
+function alignments_of(line: str) -> [i64]
+    if !strings.contains(s: line, substr: "|")
+        return []
+    out: [i64] @= []
+
+    for cell in cells_of(line)
+        if cell.len() == 0
+            return []
+        left = cell[0] == ':'
+        right = cell[cell.len() - 1] == ':'
+
+        from = if left
+            1
+        else
+            0
+
+        to = if right && cell.len() > from
+            cell.len() - 1
+        else
+            cell.len()
+
+        if to <= from
+            return []
+
+        for k in range(from: from, to: to)
+            if cell[k] != '-'
+                return []
+
+        align = if left && right
+            2
+        else if left
+            1
+        else if right
+            3
+        else
+            0
+        out @ out.push(align)
+
+    return out
+
+# `cell` with each escaped pipe written as a pipe.
+function unescape_pipes(cell: str) -> str
+    return strings.replace_all(s: cell, old: "\\|", new: "|")
+
+# Adds to `table` its rows: `rows[0]` the header, the rest the body, each with
+# as many cells as the table has columns, empty ones added and extra ones
+# dropped. A blank row, what is left of the delimiter row's line, is not a
+# row: a blank line ends a table.
+function add_rows(@nodes: [tree.Node], table: i64, rows: [str])
+    columns = nodes[table].aligns.len()
+
+    for k in range(from: 0, to: rows.len())
+        if k > 0 && strings.trim(rows[k]).len() == 0
+            continue
+        made @= tree.make(tree.TABLE_ROW)
+        made.flag @ k == 0
+        made.open @ false
+        row = tree.append(@nodes, parent: table, node: made)
+        cells = cells_of(rows[k])
+
+        for col in range(from: 0, to: columns)
+            cell @= tree.make(tree.TABLE_CELL)
+            cell.open @ false
+            cell.state @ nodes[table].aligns[col]
+
+            if col < cells.len()
+                cell.literal @ unescape_pipes(cells[col])
+            _ = tree.append(@nodes, parent: row, node: cell)
+
+test "cells_of: pipes at the ends, an escaped pipe, an empty cell"
+    assert cells_of("| a | b |") == ["a", "b"]
+    assert cells_of("a | b") == ["a", "b"]
+    assert cells_of("| a \\| b | |") == ["a \\| b", ""]
+
+test "alignments_of: the four, and rows that are not delimiter rows"
+    assert alignments_of("| :-- | :-: | --: | --- |") == [1, 2, 3, 0]
+    assert alignments_of("---|---") == [0, 0]
+    assert alignments_of("---").len() == 0
+    assert alignments_of("| a | b |").len() == 0
+    assert alignments_of("| : |").len() == 0

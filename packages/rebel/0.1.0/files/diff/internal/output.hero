@@ -1,0 +1,239 @@
+# An edit script cut into hunks with their context, as Python's
+# `get_grouped_opcodes` cuts it, and the hunks written in the unified and the
+# context formats of POSIX `diff -u` and `diff -c`: their headers, the
+# ranges of each hunk, and the `\ No newline at end of file` line after a
+# last line that has no line feed.
+
+use diff/internal/script
+
+# The line written after a line that has no line feed.
+constant NO_NEWLINE: str
+    "\\ No newline at end of file\n"
+
+# The smaller of `a` and `b`.
+function least(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# The larger of `a` and `b`.
+function most(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# `ops` cut into hunks of changes with up to `context` equal elements around
+# them; a run of more than twice `context` equal elements ends a hunk.
+function groups(ops: [script.Op], context: i64) -> [[script.Op]]
+    n = context
+    codes @= ops
+
+    if codes.len() == 0
+        codes @ [script.Op(tag: script.EQUAL, old_from: 0, old_to: 1, new_from: 0, new_to: 1)]
+    first = codes[0]
+
+    if first.tag == script.EQUAL
+        codes[0] @ script.Op(
+            tag: script.EQUAL,
+            old_from: most(a: first.old_from, b: first.old_to - n),
+            old_to: first.old_to,
+            new_from: most(a: first.new_from, b: first.new_to - n),
+            new_to: first.new_to
+        )
+    last_at = codes.len() - 1
+    last = codes[last_at]
+
+    if last.tag == script.EQUAL
+        codes[last_at] @ script.Op(
+            tag: script.EQUAL,
+            old_from: last.old_from,
+            old_to: least(a: last.old_to, b: last.old_from + n),
+            new_from: last.new_from,
+            new_to: least(a: last.new_to, b: last.new_from + n)
+        )
+    out: [[script.Op]] @= []
+    group: [script.Op] @= []
+
+    for c in codes
+        old_from @= c.old_from
+        new_from @= c.new_from
+
+        if c.tag == script.EQUAL && c.old_to - c.old_from > n + n
+            group @ group.push(
+                script.Op(tag: script.EQUAL, old_from: c.old_from, old_to: least(a: c.old_to, b: c.old_from + n), new_from: c.new_from, new_to: least(a: c.new_to, b: c.new_from + n))
+            )
+            out @ out.push(group)
+            group @ []
+            old_from @ most(a: old_from, b: c.old_to - n)
+            new_from @ most(a: new_from, b: c.new_to - n)
+        group @ group.push(
+            script.Op(tag: c.tag, old_from: old_from, old_to: c.old_to, new_from: new_from, new_to: c.new_to)
+        )
+
+    if group.len() > 0 && !(group.len() == 1 && group[0].tag == script.EQUAL)
+        out @ out.push(group)
+    return out
+
+# A hunk's range in the unified format: its first line counted from 1 and
+# its length, the length left out where it is 1, and the line before where it
+# is 0.
+function range_unified(from: i64, to: i64) -> str
+    length = to - from
+
+    if length == 1
+        return f"{from + 1}"
+
+    if length == 0
+        return f"{from},0"
+    return f"{from + 1},{length}"
+
+# A hunk's range in the context format: its first and last lines counted from
+# 1, one number where it holds one line or none.
+function range_context(from: i64, to: i64) -> str
+    length = to - from
+
+    if length == 0
+        return f"{from}"
+
+    if length == 1
+        return f"{from + 1}"
+    return f"{from + 1},{to}"
+
+# Adds `prefix` and `line` to `out`, a line feed after a line that has none
+# and the line that says so.
+function add_line(@out: [str], prefix: str, line: str)
+    out @ out.push(prefix)
+    out @ out.push(line)
+
+    if line.len() == 0 || line[line.len() - 1] != '\n'
+        out @ out.push("\n")
+        out @ out.push(NO_NEWLINE)
+
+# A file's header line: `mark`, the name, and a tab and the date where there
+# is one.
+function header_line(mark: str, name: str, date: str) -> str
+    if date.len() == 0
+        return f"{mark} {name}\n"
+    return f"{mark} {name}\t{date}\n"
+
+# The names and dates the headers write.
+record Names
+    # The old file's name.
+    old_name: str
+    # Its date, or empty.
+    old_date: str
+    # The new file's name.
+    new_name: str
+    # Its date, or empty.
+    new_date: str
+
+# The hunks of `ops` written in the unified format.
+function unified(old: [str], new: [str], ops: [script.Op], names: Names, context: i64) -> str
+    hunks = groups(ops, context)
+
+    if hunks.len() == 0
+        return ""
+    out: [str] @= [
+        header_line(mark: "---", name: names.old_name, date: names.old_date)
+        header_line(mark: "+++", name: names.new_name, date: names.new_date)
+    ]
+
+    for hunk in hunks
+        first = hunk[0]
+        last = hunk[hunk.len() - 1]
+        out @ out.push(
+            f"@@ -{range_unified(from: first.old_from, to: last.old_to)} +{range_unified(from: first.new_from, to: last.new_to)} @@\n"
+        )
+
+        for op in hunk
+            if op.tag == script.EQUAL
+                for i in range(from: op.old_from, to: op.old_to)
+                    add_line(@out, prefix: " ", line: old[i])
+            else
+                for i in range(from: op.old_from, to: op.old_to)
+                    add_line(@out, prefix: "-", line: old[i])
+
+                for j in range(from: op.new_from, to: op.new_to)
+                    add_line(@out, prefix: "+", line: new[j])
+
+    return join(out, "")
+
+# Whether a hunk changes the old side, or the new one when `new_side`.
+function changes(hunk: [script.Op], new_side: bool) -> bool
+    for op in hunk
+        if op.tag == script.REPLACE || new_side && op.tag == script.INSERT || !new_side && op.tag == script.DELETE
+            return true
+
+    return false
+
+# The two-character mark of a line of the context format.
+function mark_of(tag: i64) -> str
+    if tag == script.EQUAL
+        return "  "
+
+    if tag == script.REPLACE
+        return "! "
+
+    if tag == script.DELETE
+        return "- "
+    return "+ "
+
+# The hunks of `ops` written in the context format.
+function context_text(old: [str], new: [str], ops: [script.Op], names: Names, context: i64) -> str
+    hunks = groups(ops, context)
+
+    if hunks.len() == 0
+        return ""
+    out: [str] @= [
+        header_line(mark: "***", name: names.old_name, date: names.old_date)
+        header_line(mark: "---", name: names.new_name, date: names.new_date)
+    ]
+
+    for hunk in hunks
+        first = hunk[0]
+        last = hunk[hunk.len() - 1]
+        out @ out.push("***************\n")
+        out @ out.push(f"*** {range_context(from: first.old_from, to: last.old_to)} ****\n")
+
+        if changes(hunk, new_side: false)
+            for op in hunk
+                if op.tag != script.INSERT
+                    for i in range(from: op.old_from, to: op.old_to)
+                        add_line(@out, prefix: mark_of(op.tag), line: old[i])
+        out @ out.push(f"--- {range_context(from: first.new_from, to: last.new_to)} ----\n")
+
+        if changes(hunk, new_side: true)
+            for op in hunk
+                if op.tag != script.DELETE
+                    for j in range(from: op.new_from, to: op.new_to)
+                        add_line(@out, prefix: mark_of(op.tag), line: new[j])
+
+    return join(out, "")
+
+test "range_unified: none, one, several"
+    assert range_unified(from: 3, to: 3) == "3,0"
+    assert range_unified(from: 0, to: 0) == "0,0"
+    assert range_unified(from: 4, to: 5) == "5"
+    assert range_unified(from: 0, to: 4) == "1,4"
+
+test "range_context: none, one, several"
+    assert range_context(from: 3, to: 3) == "3"
+    assert range_context(from: 4, to: 5) == "5"
+    assert range_context(from: 0, to: 4) == "1,4"
+
+test "groups: no change gives no hunk, and a long equal run cuts two"
+    same = [script.Op(tag: script.EQUAL, old_from: 0, old_to: 10, new_from: 0, new_to: 10)]
+    assert groups(same, context: 3).len() == 0
+    assert groups([], context: 3).len() == 0
+    two = [
+        script.Op(tag: script.REPLACE, old_from: 0, old_to: 1, new_from: 0, new_to: 1)
+        script.Op(tag: script.EQUAL, old_from: 1, old_to: 9, new_from: 1, new_to: 9)
+        script.Op(tag: script.DELETE, old_from: 9, old_to: 10, new_from: 9, new_to: 9)
+    ]
+    assert groups(two, context: 3).len() == 2
+    assert groups(two, context: 4).len() == 1
+
+test "add_line: a last line with no line feed"
+    out: [str] @= []
+    add_line(@out, prefix: "-", line: "a")
+    assert join(out, "") == "-a\n\\ No newline at end of file\n"

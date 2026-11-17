@@ -1,0 +1,185 @@
+# The order of versions: SemVer 2.0.0's precedence, which compares the three
+# numbers and then the pre-release identifiers one by one, and the order of
+# build metadata Cargo's crate keeps to break a tie of precedence. Nothing here reads text: the identifiers are already checked.
+
+use semver/internal/model
+use strings
+
+# Whether `id` is digits alone, and not empty.
+function is_numeric(id: str) -> bool
+    if id.len() == 0
+        return false
+
+    for k in range(from: 0, to: id.len())
+        if id[k] < '0' || id[k] > '9'
+            return false
+
+    return true
+
+# -1, 0 or 1 as `a` is lower than, equal to or higher than `b`.
+function compare_numbers(a: u64, b: u64) -> i64
+    if a < b
+        return -1
+
+    if a > b
+        return 1
+    return 0
+
+# Where the digits of `id` begin once its leading zeros are passed, the last
+# digit kept, so that `0` and `000` both keep one.
+function zeros_end(id: str) -> i64
+    at @= 0
+
+    while at + 1 < id.len() && id[at] == '0'
+        at @ at + 1
+
+    return at
+
+# Two texts of digits compared by value, of any length.
+function compare_digits(a: str, b: str) -> i64
+    a_from = zeros_end(a)
+    b_from = zeros_end(b)
+    a_len = a.len() - a_from
+    b_len = b.len() - b_from
+
+    if a_len != b_len
+        return compare_numbers(a: to_u64(a_len).must(), b: to_u64(b_len).must())
+
+    for k in range(from: 0, to: a_len)
+        if a[a_from + k] != b[b_from + k]
+            return compare_numbers(a: to_u64(a[a_from + k]).must(), b: to_u64(b[b_from + k]).must())
+
+    return 0
+
+# Two pre-release identifiers: digits alone by value and lower than any other,
+# the others by ASCII bytes.
+function compare_pre_id(a: str, b: str) -> i64
+    a_num = is_numeric(a)
+    b_num = is_numeric(b)
+
+    if a_num && b_num
+        return compare_digits(a: a, b: b)
+
+    if a_num
+        return -1
+
+    if b_num
+        return 1
+    return strings.compare(a: a, b: b)
+
+# Two pre-release lists: none, a release, is higher than any; otherwise
+# identifier by identifier, and a list that begins the other is lower.
+function compare_pre(a: [str], b: [str]) -> i64
+    if a.len() == 0 && b.len() == 0
+        return 0
+
+    if a.len() == 0
+        return 1
+
+    if b.len() == 0
+        return -1
+
+    shorter = if a.len() < b.len()
+        a.len()
+    else
+        b.len()
+
+    for k in range(from: 0, to: shorter)
+        found = compare_pre_id(a: a[k], b: b[k])
+
+        if found != 0
+            return found
+
+    return compare_numbers(a: to_u64(a.len()).must(), b: to_u64(b.len()).must())
+
+# SemVer 2.0.0's precedence of `a` against `b`: -1, 0 or 1.
+function precedence(a: model.Ver, b: model.Ver) -> i64
+    if a.major != b.major
+        return compare_numbers(a: a.major, b: b.major)
+
+    if a.minor != b.minor
+        return compare_numbers(a: a.minor, b: b.minor)
+
+    if a.patch != b.patch
+        return compare_numbers(a: a.patch, b: b.patch)
+    return compare_pre(a: a.pre, b: b.pre)
+
+# Two build identifiers: digits alone by value, at an equal value the longer
+# higher, and lower than any other; the others by ASCII bytes.
+function compare_build_id(a: str, b: str) -> i64
+    a_num = is_numeric(a)
+    b_num = is_numeric(b)
+
+    if a_num && b_num
+        by_value = compare_digits(a: a, b: b)
+
+        if by_value != 0
+            return by_value
+        return compare_numbers(a: to_u64(a.len()).must(), b: to_u64(b.len()).must())
+
+    if a_num
+        return -1
+
+    if b_num
+        return 1
+    return strings.compare(a: a, b: b)
+
+# Two build lists: none is lower than any; identifier by identifier, and a
+# list that begins the other is lower.
+function compare_build(a: [str], b: [str]) -> i64
+    shorter = if a.len() < b.len()
+        a.len()
+    else
+        b.len()
+
+    for k in range(from: 0, to: shorter)
+        found = compare_build_id(a: a[k], b: b[k])
+
+        if found != 0
+            return found
+
+    return compare_numbers(a: to_u64(a.len()).must(), b: to_u64(b.len()).must())
+
+test "is_numeric: empty, digits, a letter among them"
+    assert !is_numeric("") && is_numeric("0") && is_numeric("0123") && !is_numeric("1a") && !is_numeric("-1")
+
+test "compare_digits: by length, by digit, past the u64 range, leading zeros"
+    assert compare_digits(a: "2", b: "10") == -1
+    assert compare_digits(a: "19", b: "10") == 1
+    assert compare_digits(a: "99999999999999999999999", b: "100") == 1
+    assert compare_digits(a: "001", b: "1") == 0
+    assert compare_digits(a: "0", b: "000") == 0
+
+test "compare_pre: the standard's example chain"
+    chain = [["alpha"], ["alpha", "1"], ["alpha", "beta"], ["beta"], ["beta", "2"], ["beta", "11"], ["rc", "1"], []]
+
+    for k in range(from: 0, to: chain.len() - 1)
+        assert compare_pre(a: chain[k], b: chain[k + 1]) == -1
+        assert compare_pre(a: chain[k + 1], b: chain[k]) == 1
+        assert compare_pre(a: chain[k], b: chain[k]) == 0
+
+test "compare_pre_id: digits below words, bytes between words, upper case first"
+    assert compare_pre_id(a: "99", b: "a") == -1
+    assert compare_pre_id(a: "a1", b: "a") == 1
+    assert compare_pre_id(a: "Z", b: "a") == -1
+    assert compare_pre_id(a: "0a", b: "1") == 1
+    assert compare_pre_id(a: "-", b: "0") == 1
+
+test "compare_build_id: by value, then the longer, and digits below words"
+    assert compare_build_id(a: "2", b: "10") == -1
+    assert compare_build_id(a: "001", b: "1") == 1
+    assert compare_build_id(a: "1", b: "a") == -1
+    assert compare_build_id(a: "0a", b: "1") == 1
+
+test "compare_build: none lower, a prefix lower"
+    assert compare_build(a: [], b: ["a"]) == -1
+    assert compare_build(a: ["a"], b: ["a", "b"]) == -1
+    assert compare_build(a: ["b"], b: ["a", "b"]) == 1
+    assert compare_build(a: [], b: []) == 0
+
+test "precedence: numbers first, the largest u64, a pre-release below its release"
+    top: u64 = 18446744073709551615
+    assert precedence(a: model.release(major: 1, minor: 0, patch: 0), b: model.release(major: 0, minor: top, patch: top)) == 1
+    assert precedence(a: model.release(major: 1, minor: 2, patch: 3), b: model.release(major: 1, minor: 10, patch: 0)) == -1
+    pre = model.Ver(major: 1, minor: 0, patch: 0, pre: ["rc", "1"], build: [])
+    assert precedence(a: pre, b: model.release(major: 1, minor: 0, patch: 0)) == -1

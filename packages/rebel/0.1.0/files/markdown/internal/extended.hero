@@ -1,0 +1,254 @@
+# GFM's extended autolinks, found in text once the inlines are read: `www.`
+# and a valid domain, `http://`, `https://` or `ftp://` and a valid domain,
+# and email addresses, each at the start of a text or after white space,
+# `*`, `_`, `~` or `(`, their trailing punctuation, unbalanced closing
+# parentheses and an entity-like ending left out. Text inside a link stays
+# text.
+
+use markdown/internal/scan
+use markdown/internal/tree
+use strings
+
+# A link found in a text: where it begins and ends, and where it points.
+record Found
+    # Its first byte.
+    from: i64
+    # The byte after its last.
+    to: i64
+    # Its destination.
+    destination: str
+
+# The byte after the valid domain at `at` of `s`: segments of letters,
+# digits, `_` and `-` between dots, at least one dot, no `_` in the last two
+# segments; `at` where there is none.
+function domain_end(s: str, at: i64) -> i64
+    k @= at
+    dots @= 0
+    last_under @= false
+    before_under @= false
+    seg_under @= false
+    seg_len @= 0
+
+    while k < s.len()
+        b = s[k]
+
+        if scan.is_alnum(b) || b == '-' || b == '_' || b >= 128
+            if b == '_'
+                seg_under @ true
+            seg_len @ seg_len + 1
+            k @ k + 1
+        else if b == '.' && seg_len > 0 && k + 1 < s.len() && (scan.is_alnum(s[k + 1]) || s[k + 1] == '-' || s[k + 1] == '_' || s[k + 1] >= 128)
+            dots @ dots + 1
+            before_under @ seg_under
+            seg_under @ false
+            seg_len @ 0
+            k @ k + 1
+        else
+            break
+
+    last_under @ seg_under
+
+    if dots == 0 || last_under || before_under || seg_len == 0
+        return at
+    return k
+
+# The end of a link's path from `at` of `s`: up to white space or `<`, then
+# trailing punctuation, unbalanced `)` and an entity-like ending taken off.
+function path_end(s: str, at: i64) -> i64
+    k @= at
+
+    while k < s.len() && !scan.is_ascii_space(s[k]) && s[k] != '<'
+        k @ k + 1
+
+    end @= k
+
+    while end > at
+        b = s[end - 1]
+
+        if b == '?' || b == '!' || b == '.' || b == ',' || b == ':' || b == '*' || b == '_' || b == '~'
+            end @ end - 1
+        else if b == ')'
+            opens @= 0
+            closes @= 0
+
+            for j in range(from: at, to: end)
+                if s[j] == '('
+                    opens @ opens + 1
+                else if s[j] == ')'
+                    closes @ closes + 1
+
+            if closes > opens
+                end @ end - 1
+            else
+                break
+        else if b == ';'
+            j @= end - 2
+
+            while j >= at && scan.is_alnum(s[j])
+                j @ j - 1
+
+            if j >= at && j < end - 2 && s[j] == '&'
+                end @ j
+            else
+                break
+        else
+            break
+
+    return end
+
+# Whether a link may begin at byte `at` of `s`: at its start, or after white
+# space, `*`, `_`, `~` or `(`.
+function may_begin(s: str, at: i64, first: bool) -> bool
+    if at == 0
+        return first
+    b = s[at - 1]
+    return scan.is_ascii_space(b) || b == '*' || b == '_' || b == '~' || b == '('
+
+# The first extended autolink in `s` from byte `from`; `to` 0 where none.
+function next_link(s: str, from: i64, first: bool) -> Found
+    k @= from
+
+    while k < s.len()
+        b = s[k]
+
+        if (b == 'w' || b == 'W' || b == 'h' || b == 'f') && may_begin(s, at: k, first: first)
+            rest_www = strings.has_prefix_at(s: s, prefix: "www.", at: k)
+
+            scheme_len = if strings.has_prefix_at(s: s, prefix: "http://", at: k)
+                7
+            else if strings.has_prefix_at(s: s, prefix: "https://", at: k)
+                8
+            else if strings.has_prefix_at(s: s, prefix: "ftp://", at: k)
+                6
+            else
+                0
+
+            if rest_www
+                d = domain_end(s, at: k)
+
+                if d > k
+                    e = path_end(s, at: d)
+                    return Found(from: k, to: e, destination: "http://" + s.slice(from: k, to: e))
+
+            if scheme_len > 0
+                d = domain_end(s, at: k + scheme_len)
+
+                if d > k + scheme_len
+                    e = path_end(s, at: d)
+                    return Found(from: k, to: e, destination: s.slice(from: k, to: e))
+
+        if b == '@'
+            found = email_around(s, at: k, from: from)
+
+            if found.to > 0
+                return found
+        k @ k + 1
+
+    return Found(from: 0, to: 0, destination: "")
+
+# The email address around the `@` at byte `at` of `s`, its local part not
+# before `from`; `to` 0 where none.
+function email_around(s: str, at: i64, from: i64) -> Found
+    none = Found(from: 0, to: 0, destination: "")
+    start @= at
+
+    while start > from && (scan.is_alnum(s[start - 1]) || s[start - 1] == '.' || s[start - 1] == '-' || s[start - 1] == '_' || s[start - 1] == '+')
+        start @ start - 1
+
+    if start == at
+        return none
+    k @= at + 1
+    dots @= 0
+    seg @= 0
+
+    while k < s.len()
+        b = s[k]
+
+        if scan.is_alnum(b) || b == '-' || b == '_'
+            seg @ seg + 1
+            k @ k + 1
+        else if b == '.' && seg > 0 && k + 1 < s.len() && (scan.is_alnum(s[k + 1]) || s[k + 1] == '-' || s[k + 1] == '_')
+            dots @ dots + 1
+            seg @ 0
+            k @ k + 1
+        else
+            break
+
+    if dots == 0 || seg == 0 || s[k - 1] == '-' || s[k - 1] == '_'
+        return none
+    return Found(from: start, to: k, destination: "mailto:" + s.slice(from: start, to: k))
+
+# Cuts the text node `node` around the extended autolinks it holds.
+function link_text(@nodes: [tree.Node], node: i64)
+    s = nodes[node].literal
+    prev = nodes[node].prev
+    first = prev == tree.NONE || nodes[prev].kind == tree.SOFT_BREAK || nodes[prev].kind == tree.LINE_BREAK
+    found @= next_link(s, from: 0, first: first)
+
+    if found.to == 0
+        return
+    at @= node
+    start @= 0
+
+    while found.to > 0
+        before = s.slice(from: start, to: found.from)
+        made @= tree.make(tree.LINK)
+        made.open @ false
+        made.literal @ scan.normalize_uri(found.destination)
+        link = nodes.len()
+        nodes @ nodes.push(made)
+        text_node = nodes.len()
+        nodes @ nodes.push(tree.make_literal(tree.TEXT, literal: s.slice(from: found.from, to: found.to)))
+        tree.link_last(@nodes, parent: link, child: text_node)
+
+        if at == node
+            nodes[node].literal @ before
+            tree.link_after(@nodes, sibling: node, node: link)
+        else
+            piece = nodes.len()
+            nodes @ nodes.push(tree.make_literal(tree.TEXT, literal: before))
+            tree.link_after(@nodes, sibling: at, node: piece)
+            tree.link_after(@nodes, sibling: piece, node: link)
+        at @ link
+        start @ found.to
+        found @ next_link(s, from: start, first: true)
+
+    if start < s.len()
+        tail = nodes.len()
+        nodes @ nodes.push(tree.make_literal(tree.TEXT, literal: s.slice(from: start, to: s.len())))
+        tree.link_after(@nodes, sibling: at, node: tail)
+
+# Finds the extended autolinks in every text under `root` that is not inside
+# a link: the walk does not enter links and images.
+function link_all(@nodes: [tree.Node], root: i64)
+    texts: [i64] @= []
+    at @= nodes[root].first
+
+    while at != tree.NONE
+        if nodes[at].kind == tree.TEXT
+            texts @ texts.push(at)
+
+        if nodes[at].first != tree.NONE && nodes[at].kind != tree.LINK && nodes[at].kind != tree.IMAGE
+            at @ nodes[at].first
+        else
+            at @ tree.after_node(nodes, node: at, root: root)
+
+    for t in texts
+        link_text(@nodes, t)
+
+test "domain_end: a domain, an underscore in the last two segments, no dot"
+    assert domain_end("www.commonmark.org/x", at: 0) == 18
+    assert domain_end("www.a_b.org", at: 0) == 0
+    assert domain_end("localhost", at: 0) == 0
+
+test "path_end: trailing punctuation, parentheses, an entity"
+    s = "a.b/c?q=(x)). "
+    assert s.slice(from: 0, to: path_end(s, at: 0)) == "a.b/c?q=(x)"
+    t = "a.b/?q=1&hl;"
+    assert t.slice(from: 0, to: path_end(t, at: 0)) == "a.b/?q=1"
+
+test "next_link: www, a scheme, an email, and none in the middle of a word"
+    assert next_link("Visit www.commonmark.org.", from: 0, first: true).destination == "http://www.commonmark.org"
+    assert next_link("(https://a.b/c)", from: 0, first: true).destination == "https://a.b/c"
+    assert next_link("mail foo@bar.baz now", from: 0, first: true).destination == "mailto:foo@bar.baz"
+    assert next_link("awww.a.b", from: 0, first: true).to == 0

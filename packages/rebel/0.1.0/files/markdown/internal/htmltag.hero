@@ -1,0 +1,334 @@
+# Raw HTML as CommonMark recognises it: an open or closing tag, a comment, a
+# processing instruction, a declaration or a CDATA section inside a
+# paragraph, and the seven start and end conditions of an HTML block.
+
+use markdown/internal/scan
+use strings
+
+# The tag names of an HTML block of kind 6.
+constant BLOCK_NAMES: [str]
+    [
+        "address"
+        "article"
+        "aside"
+        "base"
+        "basefont"
+        "blockquote"
+        "body"
+        "caption"
+        "center"
+        "col"
+        "colgroup"
+        "dd"
+        "details"
+        "dialog"
+        "dir"
+        "div"
+        "dl"
+        "dt"
+        "fieldset"
+        "figcaption"
+        "figure"
+        "footer"
+        "form"
+        "frame"
+        "frameset"
+        "h1"
+        "h2"
+        "h3"
+        "h4"
+        "h5"
+        "h6"
+        "head"
+        "header"
+        "hr"
+        "html"
+        "iframe"
+        "legend"
+        "li"
+        "link"
+        "main"
+        "menu"
+        "menuitem"
+        "nav"
+        "noframes"
+        "ol"
+        "optgroup"
+        "option"
+        "p"
+        "param"
+        "search"
+        "section"
+        "summary"
+        "table"
+        "tbody"
+        "td"
+        "tfoot"
+        "th"
+        "thead"
+        "title"
+        "tr"
+        "track"
+        "ul"
+    ]
+
+# Whether `b` is white space inside a tag: a space, a tab or a line feed.
+function is_tag_space(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 12
+
+# The byte after the white space at `at` of `s`.
+function spaces_end(s: str, at: i64) -> i64
+    k @= at
+
+    while k < s.len() && is_tag_space(s[k])
+        k @ k + 1
+
+    return k
+
+# The byte after the tag name at `at` of `s`; `at` where none begins there.
+function name_end(s: str, at: i64) -> i64
+    if at >= s.len() || !scan.is_letter(s[at])
+        return at
+    k @= at + 1
+
+    while k < s.len() && (scan.is_alnum(s[k]) || s[k] == '-')
+        k @ k + 1
+
+    return k
+
+# The byte after the open tag at `at` of `s`, at its `<`; -1 where none.
+function open_tag_end(s: str, at: i64) -> i64
+    k @= name_end(s, at + 1)
+
+    if k == at + 1
+        return -1
+
+    while true
+        after_space = spaces_end(s, k)
+
+        if after_space >= s.len()
+            return -1
+        b = s[after_space]
+
+        if b == '>'
+            return after_space + 1
+
+        if b == '/'
+            if after_space + 1 < s.len() && s[after_space + 1] == '>'
+                return after_space + 2
+            return -1
+
+        if after_space == k || !(scan.is_letter(b) || b == '_' || b == ':')
+            return -1
+        k @ after_space + 1
+
+        while k < s.len() && (scan.is_alnum(s[k]) || s[k] == '_' || s[k] == '.' || s[k] == ':' || s[k] == '-')
+            k @ k + 1
+
+        before_value = spaces_end(s, k)
+
+        if before_value < s.len() && s[before_value] == '='
+            v = spaces_end(s, before_value + 1)
+
+            if v >= s.len()
+                return -1
+            q = s[v]
+
+            if q == '"' || q == '\''
+                close = strings.index_of_from(s: s, substr: s.slice(from: v, to: v + 1), from: v + 1)
+
+                match close
+                    .ok c  => k @ c + 1
+                    .err _ => return -1
+            else
+                e @= v
+
+                while e < s.len() && !(s[e] <= 32 || s[e] == '"' || s[e] == '\'' || s[e] == '=' || s[e] == '<' || s[e] == '>' || s[e] == '`')
+                    e @ e + 1
+
+                if e == v
+                    return -1
+                k @ e
+
+# The byte after the closing tag at `at` of `s`, at its `<`; -1 where none.
+function close_tag_end(s: str, at: i64) -> i64
+    if at + 1 >= s.len() || s[at + 1] != '/'
+        return -1
+    k = name_end(s, at + 2)
+
+    if k == at + 2
+        return -1
+    e = spaces_end(s, k)
+
+    if e < s.len() && s[e] == '>'
+        return e + 1
+    return -1
+
+# Where each closing text is known to stand nowhere: from that byte on,
+# `?>` first, `-->` second, `]]>` third, `>` fourth; past the end where
+# nothing is known.
+function no_close(size: i64) -> [i64]
+    return [size + 1, size + 1, size + 1, size + 1]
+
+# The byte after `close`, the closing text of `slot`, found from byte `from`
+# of `s`; -1 where absent. `@memo`, made by `no_close`, keeps where a search
+# found nothing, so that no stretch of `s` is searched twice in vain.
+function after_text(s: str, close: str, from: i64, slot: i64, @memo: [i64]) -> i64
+    if memo[slot] <= from
+        return -1
+
+    match strings.index_of_from(s: s, substr: close, from: from)
+        .ok k => return k + close.len()
+        .err _ =>
+            memo[slot] @ from
+            return -1
+
+# The byte after the raw HTML at the `<` at byte `at` of `s`: a tag, a
+# comment, a processing instruction, a declaration or a CDATA section; -1
+# where none. `@memo` is `after_text`'s.
+function tag_end(s: str, at: i64, @memo: [i64]) -> i64
+    if at + 1 >= s.len()
+        return -1
+    b = s[at + 1]
+
+    if scan.is_letter(b)
+        return open_tag_end(s, at)
+
+    if b == '/'
+        return close_tag_end(s, at)
+
+    if b == '?'
+        return after_text(s: s, close: "?>", from: at + 2, slot: 0, @memo)
+
+    if b != '!'
+        return -1
+
+    if strings.has_prefix_at(s: s, prefix: "<!-->", at: at)
+        return at + 5
+
+    if strings.has_prefix_at(s: s, prefix: "<!--->", at: at)
+        return at + 6
+
+    if strings.has_prefix_at(s: s, prefix: "<!--", at: at)
+        return after_text(s: s, close: "-->", from: at + 4, slot: 1, @memo)
+
+    if strings.has_prefix_at(s: s, prefix: "<![CDATA[", at: at)
+        return after_text(s: s, close: "]]>", from: at + 9, slot: 2, @memo)
+
+    if at + 2 < s.len() && scan.is_letter(s[at + 2])
+        return after_text(s: s, close: ">", from: at + 3, slot: 3, @memo)
+    return -1
+
+# Whether byte `at` of `s` ends a tag name of a block start: the end, a
+# space, a tab, `>` or `/>`.
+function ends_name(s: str, at: i64, slash: bool) -> bool
+    if at >= s.len()
+        return true
+    b = s[at]
+    return b == ' ' || b == '\t' || b == '>' || slash && b == '/' && at + 1 < s.len() && s[at + 1] == '>'
+
+# The kind, 1 to 7, of the HTML block that line `s`, from its first
+# character that is not a space, would begin; 0 for none. Kind 7 is not
+# answered where `in_paragraph`, which it cannot interrupt.
+function block_start(s: str, in_paragraph: bool) -> i64
+    if s.len() < 2 || s[0] != '<'
+        return 0
+    low = strings.to_lower_ascii(s)
+
+    for name in ["script", "pre", "textarea", "style"]
+        if strings.has_prefix_at(s: low, prefix: name, at: 1) && ends_name(low, at: 1 + name.len(), slash: false)
+            return 1
+
+    if strings.has_prefix(s: low, prefix: "<!--")
+        return 2
+
+    if low[1] == '?'
+        return 3
+
+    if strings.has_prefix(s: low, prefix: "<![cdata[")
+        return 5
+
+    if low[1] == '!' && low.len() > 2 && scan.is_letter(low[2])
+        return 4
+
+    from = if low[1] == '/'
+        2
+    else
+        1
+    end = name_end(low, from)
+
+    if end > from
+        name = low.slice(from: from, to: end)
+
+        for known in BLOCK_NAMES
+            if known == name && ends_name(low, at: end, slash: true)
+                return 6
+
+    if in_paragraph
+        return 0
+
+    tag = if from == 2
+        close_tag_end(s, 0)
+    else
+        open_tag_end(s, 0)
+
+    if tag < 0
+        return 0
+
+    if from == 1
+        name = low.slice(from: 1, to: name_end(low, 1))
+
+        if name == "script" || name == "style" || name == "pre" || name == "textarea"
+            return 0
+
+    for k in range(from: tag, to: s.len())
+        if !scan.is_space_or_tab(s[k])
+            return 0
+
+    return 7
+
+# Whether the line `s` ends an HTML block of `kind` 1 to 5.
+function block_ends(s: str, kind: i64) -> bool
+    if kind == 1
+        low = strings.to_lower_ascii(s)
+        return strings.contains(s: low, substr: "</script>") || strings.contains(s: low, substr: "</pre>") || strings.contains(s: low, substr: "</textarea>") || strings.contains(s: low, substr: "</style>")
+
+    if kind == 2
+        return strings.contains(s: s, substr: "-->")
+
+    if kind == 3
+        return strings.contains(s: s, substr: "?>")
+
+    if kind == 4
+        return strings.contains(s: s, substr: ">")
+
+    if kind == 5
+        return strings.contains(s: s, substr: "]]>")
+    return false
+
+test "tag_end: open tags with attributes, closing, comments, a bad attribute"
+    memo @= no_close(100)
+    assert tag_end("<a href=\"x\" b='y' c=z d>t", 0, @memo) == 24
+    assert tag_end("<br/>", 0, @memo) == 5
+    assert tag_end("</a >", 0, @memo) == 5
+    assert tag_end("<!-- a -- b -->", 0, @memo) == 15
+    assert tag_end("<!-->", 0, @memo) == 5
+    assert tag_end("<?php x ?>", 0, @memo) == 10
+    assert tag_end("<!DOCTYPE html>", 0, @memo) == 15
+    assert tag_end("<![CDATA[ x ]]>", 0, @memo) == 15
+    assert tag_end("<a h*=x>", 0, @memo) == -1
+    assert tag_end("<33>", 0, @memo) == -1
+
+test "block_start: the seven kinds, and kind 7 not in a paragraph"
+    assert block_start("<script>", in_paragraph: false) == 1
+    assert block_start("<!-- x", in_paragraph: false) == 2
+    assert block_start("<?x", in_paragraph: false) == 3
+    assert block_start("<!DOCTYPE", in_paragraph: false) == 4
+    assert block_start("<![CDATA[", in_paragraph: false) == 5
+    assert block_start("</DIV>", in_paragraph: false) == 6
+    assert block_start("<a href=\"x\">  ", in_paragraph: false) == 7
+    assert block_start("<a href=\"x\">", in_paragraph: true) == 0
+    assert block_start("<a> b", in_paragraph: false) == 0
+
+test "block_ends: each kind's end"
+    assert block_ends("x </STYLE> y", 1) && block_ends("-->", 2) && block_ends("?>", 3) && block_ends(">", 4) && block_ends("]]>", 5) && !block_ends("x", 6)

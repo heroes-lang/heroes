@@ -1,0 +1,89 @@
+# Reading whole: the blocks read, each paragraph's, heading's and table
+# cell's text read into inlines, a task list item's box taken from its first
+# paragraph, texts side by side joined, and GFM's extended autolinks found.
+
+use markdown/internal/blocks
+use markdown/internal/extended
+use markdown/internal/inlines
+use markdown/internal/links
+use markdown/internal/render
+use markdown/internal/tree
+
+# How a text is read.
+record Rules
+    # The most containers one inside another.
+    max_depth: i64
+    # Whether GFM tables are read.
+    tables: bool
+    # Whether GFM strikethrough is read.
+    strikethrough: bool
+    # Whether GFM extended autolinks are read.
+    autolinks: bool
+    # Whether GFM task list items are read.
+    tasks: bool
+
+# What reading answers.
+record Read
+    # The tree, node 0 the document.
+    nodes: [tree.Node]
+    # The link reference definitions by normalised label.
+    refs: {str: links.Target}
+
+# The task box at the start of `text`: 1 for `[ ]`, 2 for `[x]` or `[X]`,
+# followed by a space or a tab; 0 for none.
+function task_of(text: str) -> i64
+    if text.len() < 4 || text[0] != '[' || text[2] != ']' || text[3] != ' ' && text[3] != '\t'
+        return 0
+
+    if text[1] == ' '
+        return 1
+
+    if text[1] == 'x' || text[1] == 'X'
+        return 2
+    return 0
+
+# The tree of `text`.
+function read(text: str, rules: Rules) -> Read
+    got = blocks.read(text, blocks.Rules(max_depth: rules.max_depth, tables: rules.tables, tasks: rules.tasks))
+    nodes @= got.nodes
+    holders: [i64] @= []
+    at @= 0
+
+    while at != tree.NONE
+        kind = nodes[at].kind
+
+        if kind == tree.PARAGRAPH || kind == tree.HEADING || kind == tree.TABLE_CELL
+            holders @ holders.push(at)
+
+        if nodes[at].first != tree.NONE
+            at @ nodes[at].first
+        else
+            at @ tree.after_node(nodes, node: at, root: 0)
+
+    for h in holders
+        text_of @= nodes[h].literal
+        parent = nodes[h].parent
+
+        if rules.tasks && nodes[h].kind == tree.PARAGRAPH && parent != tree.NONE && nodes[parent].kind == tree.ITEM && nodes[parent].first == h
+            task = task_of(text_of)
+
+            if task > 0
+                nodes[parent].state @ task
+                text_of @ text_of.slice(from: 4, to: text_of.len())
+        nodes[h].literal @ ""
+        inlines.read(@nodes, got.refs, block: h, text: text_of, strike: rules.strikethrough)
+
+    tree.merge_texts(@nodes, root: 0)
+
+    if rules.autolinks
+        extended.link_all(@nodes, root: 0)
+    return Read(nodes: nodes, refs: got.refs)
+
+# The HTML of `text`.
+function html_of(text: str, rules: Rules, style: render.Style) -> str
+    got = read(text, rules)
+    return render.html_of(got.nodes, root: 0, style: style)
+
+test "task_of: unchecked, checked in either case, and not a box"
+    assert task_of("[ ] a") == 1 && task_of("[x] a") == 2 && task_of("[X]\ta") == 2
+    assert task_of("[ ]") == 0 && task_of("[y] a") == 0 && task_of("[ ]a") == 0

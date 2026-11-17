@@ -1,0 +1,254 @@
+# Which versions a range admits, by Cargo's rule: each comparator of a set
+# by its operator and the numbers written, and a pre-release only where a
+# comparator of the same set names a pre-release of the same three numbers.
+# Also the lowest version a range admits, and the next releases of a version.
+
+use semver/internal/model
+use semver/internal/order
+use semver/internal/ranges
+use semver/internal/read
+
+# The version a comparator names, the numbers not written read as 0.
+function named(c: model.Cmp) -> model.Ver
+    return model.Ver(major: c.major, minor: c.minor, patch: c.patch, pre: c.pre, build: [])
+
+# -1, 0 or 1 as `v` is below, within or above the numbers `c` writes, read as
+# a prefix: `1.2` holds every `1.2.x`.
+function against_prefix(c: model.Cmp, v: model.Ver) -> i64
+    if v.major != c.major || c.written == 1
+        return order.compare_numbers(a: v.major, b: c.major)
+    return order.compare_numbers(a: v.minor, b: c.minor)
+
+# Whether the one comparator `c` admits `v`, the pre-release rule aside. A
+# comparator that writes fewer than three numbers admits no pre-release that
+# begins with them, but `^`: Cargo's crate refuses `1.2.5-alpha` to `<=1.2`,
+# `=1.2`, `>=1.2`, `~1.2` and `1.2.*` and admits it to `^1.2`.
+function comparator_admits(c: model.Cmp, v: model.Ver) -> bool
+    whole = c.written == 3
+
+    by = if whole
+        order.precedence(a: v, b: named(c))
+    else
+        against_prefix(c, v)
+
+    if !whole && by == 0 && v.pre.len() > 0 && c.op != model.CARET
+        return false
+
+    if c.op == model.EXACT || c.op == model.WILDCARD
+        return by == 0
+
+    if c.op == model.GREATER
+        return by > 0
+
+    if c.op == model.GREATER_EQ
+        return by >= 0
+
+    if c.op == model.LESS
+        return by < 0
+
+    if c.op == model.LESS_EQ
+        return by <= 0
+
+    if c.op == model.TILDE
+        if c.written == 1
+            return v.major == c.major
+        return v.major == c.major && v.minor == c.minor && by >= 0
+    return caret_admits(c, v)
+
+# Whether `^c` admits `v`: no change of the leftmost number that is not zero.
+function caret_admits(c: model.Cmp, v: model.Ver) -> bool
+    if v.major != c.major
+        return false
+
+    if c.written == 1
+        return true
+
+    if c.written == 2
+        if c.major > 0
+            return v.minor >= c.minor
+        return v.minor == c.minor
+    at_least = order.precedence(a: v, b: named(c)) >= 0
+
+    if c.major > 0
+        return at_least
+
+    if c.minor > 0
+        return v.minor == c.minor && at_least
+    return v.minor == 0 && v.patch == c.patch && at_least
+
+# Whether every comparator of `set` admits `v`, and a pre-release `v` has the
+# three numbers of a pre-release some comparator names.
+function set_admits(set: [model.Cmp], v: model.Ver) -> bool
+    for c in set
+        if !comparator_admits(c, v)
+            return false
+
+    if v.pre.len() == 0
+        return true
+
+    for c in set
+        if c.written == 3 && c.pre.len() > 0 && c.major == v.major && c.minor == v.minor && c.patch == v.patch
+            return true
+
+    return false
+
+# Whether one set of `sets` admits `v`.
+function admits(sets: [[model.Cmp]], v: model.Ver) -> bool
+    for set in sets
+        if set_admits(set, v)
+            return true
+
+    return false
+
+# Adds to `found` the versions where what `c` admits can begin or end: its
+# version, that version's release, the first pre-release of its numbers, the
+# version just above it, and the releases above each number it writes. The
+# lowest version a set of intervals admits, or a difference of them, is the
+# highest of their lower bounds, so it is one of these or 0.0.0.
+function add_candidates(@found: [model.Ver], c: model.Cmp)
+    found @ found.push(named(c))
+    found @ found.push(model.release(major: c.major, minor: c.minor, patch: c.patch))
+
+    if c.pre.len() > 0
+        found @ found.push(model.Ver(major: c.major, minor: c.minor, patch: c.patch, pre: ["0"], build: []))
+        found @ found.push(
+            model.Ver(major: c.major, minor: c.minor, patch: c.patch, pre: lists_with(c.pre, "0"), build: [])
+        )
+
+    if c.patch < model.HIGHEST
+        found @ found.push(model.release(major: c.major, minor: c.minor, patch: c.patch + 1))
+
+    if c.minor < model.HIGHEST
+        found @ found.push(model.release(major: c.major, minor: c.minor + 1, patch: 0))
+
+    if c.major < model.HIGHEST
+        found @ found.push(model.release(major: c.major + 1, minor: 0, patch: 0))
+
+# `ids` with `last` after them.
+function lists_with(ids: [str], last: str) -> [str]
+    out @= ids
+    out @ out.push(last)
+    return out
+
+# The candidates of the comparators of `sets`, and 0.0.0.
+function candidates(sets: [[model.Cmp]]) -> [model.Ver]
+    found: [model.Ver] @= [model.release(major: 0, minor: 0, patch: 0)]
+
+    for set in sets
+        for c in set
+            add_candidates(@found, c)
+
+    return found
+
+# The lowest version `sets` admits.
+function lowest_possible(sets: [[model.Cmp]]) -> model.Ver?
+    best: [model.Ver] @= []
+
+    for v in candidates(sets)
+        if admits(sets, v) && (best.len() == 0 || order.precedence(a: v, b: best[0]) < 0)
+            best @ [v]
+
+    if best.len() == 0
+        return fail(code: model.NOT_FOUND, msg: "the range admits no version")
+    return ok(best[0])
+
+# Whether a version is admitted by a set of `a` and by a set of `b`.
+function intersects(a: [[model.Cmp]], b: [[model.Cmp]]) -> bool
+    for left in a
+        for right in b
+            for v in candidates([left, right])
+                if set_admits(left, v) && set_admits(right, v)
+                    return true
+
+    return false
+
+# Whether every version a set of `a` admits, a set of `b` admits.
+function is_subset(a: [[model.Cmp]], b: [[model.Cmp]]) -> bool
+    others = candidates(b)
+
+    for left in a
+        for v in candidates([left])
+            if set_admits(left, v) && !admits(b, v)
+                return false
+
+        for v in others
+            if set_admits(left, v) && !admits(b, v)
+                return false
+
+    return true
+
+test "caret_admits: the leftmost number that is not zero"
+    c = model.Cmp(op: model.CARET, major: 0, minor: 0, patch: 3, written: 3, pre: [])
+    assert caret_admits(c, model.release(major: 0, minor: 0, patch: 3))
+    assert !caret_admits(c, model.release(major: 0, minor: 0, patch: 4))
+
+test "add_candidates: no release above the largest patch"
+    found: [model.Ver] @= []
+    add_candidates(
+        @found,
+        model.Cmp(op: model.GREATER, major: 1, minor: 2, patch: 18446744073709551615, written: 3, pre: [])
+    )
+    assert found.len() == 4
+
+test "lowest_possible: nothing below 0.0.0, and a pre-release only a bound names"
+    nothing = [[model.Cmp(op: model.LESS, major: 0, minor: 0, patch: 0, written: 3, pre: [])]]
+    assert lowest_possible(nothing).is_err()
+    between = [
+        [model.Cmp(op: model.GREATER, major: 1, minor: 2, patch: 2, written: 3, pre: []), model.Cmp(op: model.LESS, major: 1, minor: 2, patch: 3, written: 3, pre: ["beta"])]
+    ]
+    assert lowest_possible(between).must().pre == ["0"]
+
+test "admits: Cargo's crate's answers for each operator, partial versions and pre-releases"
+    cases = [
+        ["^1.2.3", "1.2.3", "true"]
+        ["^1.2.3", "2.0.0", "false"]
+        ["^1.2.3", "1.2.2", "false"]
+        ["^0.2.3", "0.2.9", "true"]
+        ["^0.2.3", "0.3.0", "false"]
+        ["^0.0.3", "0.0.4", "false"]
+        ["^0.0", "0.0.9", "true"]
+        ["^0.0", "0.1.0", "false"]
+        ["^0", "0.9.9", "true"]
+        ["^0", "1.0.0", "false"]
+        ["~1.2.3", "1.3.0", "false"]
+        ["~1", "1.9.0", "true"]
+        ["=1.2", "1.2.7", "true"]
+        ["=1.2", "1.3.0", "false"]
+        [">1.2", "1.2.9", "false"]
+        [">1.2", "1.3.0", "true"]
+        ["<1.2", "1.1.9", "true"]
+        ["<1.2", "1.2.0", "false"]
+        ["<=1.2", "1.2.9", "true"]
+        ["<=1.2", "1.3.0", "false"]
+        [">1", "1.9.9", "false"]
+        ["*", "1.0.0-alpha", "false"]
+        ["^1.2.3", "1.2.4-alpha", "false"]
+        ["^1.2.3-alpha", "1.2.3-beta", "true"]
+        ["^1.2.3-alpha", "1.2.4-alpha", "false"]
+        ["^1.2.3-alpha", "1.2.3-0", "false"]
+        [">=1.2.3-alpha, <2", "1.5.0-beta", "false"]
+        ["<2", "2.0.0-alpha", "false"]
+        ["=1.2.3-alpha", "1.2.3-alpha+b", "true"]
+        ["~1.2.3-beta", "1.2.4", "true"]
+        ["1.*", "1.0.0-alpha", "false"]
+        [">1.2.3-alpha", "1.2.3-alpha.1", "true"]
+        ["<1.2.3-beta", "1.2.3-alpha", "true"]
+        ["^0.0.3-alpha", "0.0.3", "true"]
+        ["~0.0", "0.1.0", "false"]
+        ["^1.2.3-alpha || ^1.2.4", "1.2.4-beta", "false"]
+        ["1 || 2", "2.5.0", "true"]
+        ["1 || 2", "3.0.0", "false"]
+    ]
+
+    for c in cases
+        v = read.version_of(c[1]).must()
+        assert admits(ranges.range_of(c[0]).must(), v) == (c[2] == "true")
+
+test "comparator_admits: a pre-release inside a partial version, refused but by a caret"
+    for op in [model.EXACT, model.GREATER_EQ, model.LESS_EQ, model.TILDE, model.WILDCARD]
+        c = model.Cmp(op: op, major: 1, minor: 2, patch: 0, written: 2, pre: [])
+        assert !comparator_admits(c, model.Ver(major: 1, minor: 2, patch: 5, pre: ["alpha"], build: []))
+        assert comparator_admits(c, model.release(major: 1, minor: 2, patch: 5))
+
+    caret = model.Cmp(op: model.CARET, major: 1, minor: 2, patch: 0, written: 2, pre: [])
+    assert comparator_admits(caret, model.Ver(major: 1, minor: 2, patch: 5, pre: ["alpha"], build: []))

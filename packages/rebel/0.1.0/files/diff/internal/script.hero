@@ -1,0 +1,164 @@
+# The package's own picture of a difference: matching blocks, the runs of
+# elements two lists share, and the edit script made from them, its tags as
+# numbers. Every algorithm of the package answers blocks; the script, the
+# hunks and the output are made from them here and in `output`.
+
+use lists
+
+# Elements the same in both lists.
+constant EQUAL: i64
+    0
+
+# Elements of the old list alone.
+constant DELETE: i64
+    1
+
+# Elements of the new list alone.
+constant INSERT: i64
+    2
+
+# Elements of the old list that elements of the new one replace.
+constant REPLACE: i64
+    3
+
+# A run the two lists share: `size` elements from `old_at` and `new_at`.
+record Block
+    # Where it begins in the old list.
+    old_at: i64
+    # Where it begins in the new list.
+    new_at: i64
+    # How many elements.
+    size: i64
+
+# One run of an edit script.
+record Op
+    # One of the four tags above.
+    tag: i64
+    # The run's first element in the old list.
+    old_from: i64
+    # The element after its last in the old list.
+    old_to: i64
+    # The run's first element in the new list.
+    new_from: i64
+    # The element after its last in the new list.
+    new_to: i64
+
+# Whether `a` begins before `b` in the old list.
+function is_earlier(a: Block, b: Block) -> bool
+    return a.old_at < b.old_at
+
+# `blocks` sorted by where they begin, the empty dropped, and each two that
+# touch in both lists joined into one.
+function joined(blocks: [Block]) -> [Block]
+    sorted = lists.sort_by(blocks, is_earlier)
+    out: [Block] @= []
+    at @= 0
+    old_at @= 0
+    new_at @= 0
+    size @= 0
+
+    while at < sorted.len()
+        b = sorted[at]
+        at @ at + 1
+
+        if b.size == 0
+            continue
+
+        if size > 0 && old_at + size == b.old_at && new_at + size == b.new_at
+            size @ size + b.size
+        else
+            if size > 0
+                out @ out.push(Block(old_at: old_at, new_at: new_at, size: size))
+            old_at @ b.old_at
+            new_at @ b.new_at
+            size @ b.size
+
+    if size > 0
+        out @ out.push(Block(old_at: old_at, new_at: new_at, size: size))
+    return out
+
+# The edit script that turns a list of `old_len` elements into one of
+# `new_len`, from their matching blocks: sorted, apart, none empty.
+function ops_of(blocks: [Block], old_len: i64, new_len: i64) -> [Op]
+    out: [Op] @= []
+    i @= 0
+    j @= 0
+    ends @= blocks
+    ends @ ends.push(Block(old_at: old_len, new_at: new_len, size: 0))
+
+    for b in ends
+        tag = if i < b.old_at && j < b.new_at
+            REPLACE
+        else if i < b.old_at
+            DELETE
+        else if j < b.new_at
+            INSERT
+        else
+            -1
+
+        if tag >= 0
+            out @ out.push(Op(tag: tag, old_from: i, old_to: b.old_at, new_from: j, new_to: b.new_at))
+        i @ b.old_at + b.size
+        j @ b.new_at + b.size
+
+        if b.size > 0
+            out @ out.push(Op(tag: EQUAL, old_from: b.old_at, old_to: i, new_from: b.new_at, new_to: j))
+
+    return out
+
+# Two lists of texts as numbers, a text the same number wherever it stands.
+record Interned
+    # The old list's numbers.
+    old: [i64]
+    # The new list's numbers.
+    new: [i64]
+    # How many different texts.
+    count: i64
+
+# `old` and `new` as numbers, so that comparing two elements compares two
+# numbers.
+function intern(old: [str], new: [str]) -> Interned
+    seen: {str: i64} @= {}
+    a: [i64] @= []
+    b: [i64] @= []
+
+    for s in old
+        id = seen[s].default(-1)
+
+        if id < 0
+            seen[s] @ seen.len()
+            a @ a.push(seen.len() - 1)
+        else
+            a @ a.push(id)
+
+    for s in new
+        id = seen[s].default(-1)
+
+        if id < 0
+            seen[s] @ seen.len()
+            b @ b.push(seen.len() - 1)
+        else
+            b @ b.push(id)
+
+    return Interned(old: a, new: b, count: seen.len())
+
+# Whether two numbers are the same.
+function same_id(left: i64, right: i64) -> bool
+    return left == right
+
+test "joined: sorted, the empty dropped, two that touch made one"
+    got = joined(
+        [Block(old_at: 5, new_at: 6, size: 1), Block(old_at: 0, new_at: 0, size: 2), Block(old_at: 2, new_at: 2, size: 1), Block(old_at: 4, new_at: 4, size: 0)]
+    )
+    assert got == [Block(old_at: 0, new_at: 0, size: 3), Block(old_at: 5, new_at: 6, size: 1)]
+
+test "ops_of: two empty lists, one empty, and every tag"
+    assert ops_of([], old_len: 0, new_len: 0).len() == 0
+    assert ops_of([], old_len: 0, new_len: 2) == [Op(tag: INSERT, old_from: 0, old_to: 0, new_from: 0, new_to: 2)]
+    got = ops_of([Block(old_at: 1, new_at: 0, size: 1), Block(old_at: 3, new_at: 2, size: 1)], old_len: 4, new_len: 4)
+    assert got.len() == 5
+    assert got[0].tag == DELETE && got[1].tag == EQUAL && got[2].tag == REPLACE && got[4].tag == INSERT
+
+test "intern: a text the same number in both lists"
+    got = intern(old: ["a", "b", "a"], new: ["b", "c"])
+    assert got.old == [0, 1, 0] && got.new == [1, 2] && got.count == 3

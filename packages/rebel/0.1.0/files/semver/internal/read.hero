@@ -1,0 +1,227 @@
+# Versions read from text by SemVer 2.0.0's grammar alone, and written back,
+# with the numbers and identifiers that ranges read too. The reader walks
+# bytes, moves at least one byte on every pass of every loop, and cuts a
+# slice only at ASCII bytes it has read, so no input splits a character or
+# stands it still.
+
+use semver/internal/model
+use strings
+
+# A number read, and the byte after it.
+record Number
+    # The value.
+    value: u64
+    # The byte after its last digit.
+    end: i64
+
+# Identifiers read, and the byte after them.
+record Ids
+    # The identifiers, in order.
+    ids: [str]
+    # The byte after the last.
+    end: i64
+
+# Whether `b` may stand in an identifier: an ASCII letter, a digit or `-`.
+function is_id_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '-'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The character of `text` that begins at byte `at`, for a message.
+function char_at(text: str, at: i64) -> str
+    return text.slice(from: at, to: strings.ceil_boundary(text, at + 1))
+
+# What stands at byte `at` of `text`, for a message: the character quoted, or
+# the end.
+function found_at(text: str, at: i64) -> str
+    if at >= text.len()
+        return "the end of the text"
+    return f"\"{char_at(text, at)}\" at byte {at}"
+
+# The number of digits beginning at byte `from` of `text`, which is a version
+# or a range; `what` names it for a message.
+function number_at(text: str, from: i64, what: str) -> Number?
+    if from >= text.len() || !is_digit(text[from])
+        return fail(code: model.INVALID, msg: f"\"{text}\": {found_at(text, from)} where the {what} number should be")
+
+    if text[from] == '0' && from + 1 < text.len() && is_digit(text[from + 1])
+        return fail(code: model.INVALID, msg: f"\"{text}\": the {what} number has a leading zero at byte {from}")
+    value: u64 @= 0
+    at @= from
+
+    while at < text.len() && is_digit(text[at])
+        digit = to_u64(text[at] - '0').must()
+
+        if value > (model.HIGHEST - digit) / 10
+            return fail(code: model.DOES_NOT_FIT, msg: f"\"{text}\": the {what} number passes 18446744073709551615")
+        value @ value * 10 + digit
+        at @ at + 1
+
+    return ok(Number(value: value, end: at))
+
+# The dot-separated identifiers beginning at byte `from` of `text`, read up to
+# the first byte that is neither a dot nor an identifier's. A pre-release's
+# numeric identifier may have no leading zero unless `numeric_zeros`.
+function identifiers_at(text: str, from: i64, numeric_zeros: bool, what: str) -> Ids?
+    ids: [str] @= []
+    at @= from
+
+    while true
+        start = at
+
+        while at < text.len() && is_id_byte(text[at])
+            at @ at + 1
+
+        if at == start
+            return fail(code: model.INVALID, msg: f"\"{text}\": an empty identifier in the {what} at byte {at}")
+        id = text.slice(from: start, to: at)
+
+        if !numeric_zeros && id.len() > 1 && id[0] == '0' && all_digits(id)
+            return fail(code: model.INVALID, msg: f"\"{text}\": the {what} identifier \"{id}\" has a leading zero")
+        ids @ ids.push(id)
+
+        if at < text.len() && text[at] == '.'
+            at @ at + 1
+        else
+            return ok(Ids(ids: ids, end: at))
+
+# Whether `id` is digits alone.
+function all_digits(id: str) -> bool
+    for k in range(from: 0, to: id.len())
+        if !is_digit(id[k])
+            return false
+
+    return true
+
+# The identifiers `text` holds whole, for `with_pre` and `with_build`; empty
+# for none.
+function identifiers_of(text: str, numeric_zeros: bool, what: str) -> [str]?
+    if text.len() == 0
+        return ok([])
+    got = identifiers_at(text: text, from: 0, numeric_zeros: numeric_zeros, what: what)?
+
+    if got.end < text.len()
+        return fail(code: model.INVALID, msg: f"\"{text}\": {found_at(text, got.end)} may not stand in the {what}")
+    return ok(got.ids)
+
+# The version `text` holds, by SemVer 2.0.0's grammar.
+function version_of(text: str) -> model.Ver?
+    if text.len() == 0
+        return fail(code: model.INVALID, msg: "the empty text is not a version")
+    major = number_at(text: text, from: 0, what: "major")?
+    minor = number_at(text: text, from: dot_after(text: text, major.end, what: "major")?, what: "minor")?
+    patch = number_at(text: text, from: dot_after(text: text, minor.end, what: "minor")?, what: "patch")?
+    at @= patch.end
+    pre: [str] @= []
+    build: [str] @= []
+
+    if at < text.len() && text[at] == '-'
+        got = identifiers_at(text: text, from: at + 1, numeric_zeros: false, what: "pre-release")?
+        pre @ got.ids
+        at @ got.end
+
+    if at < text.len() && text[at] == '+'
+        got = identifiers_at(text: text, from: at + 1, numeric_zeros: true, what: "build metadata")?
+        build @ got.ids
+        at @ got.end
+
+    if at < text.len()
+        return fail(
+            code: model.INVALID,
+            msg: f"\"{text}\" is not a version: {found_at(text, at)} after the {last_part(pre: pre, build: build)}"
+        )
+    return ok(model.Ver(major: major.value, minor: minor.value, patch: patch.value, pre: pre, build: build))
+
+# The name of what a version read last ends with, for a message.
+function last_part(pre: [str], build: [str]) -> str
+    if build.len() > 0
+        return "build metadata"
+
+    if pre.len() > 0
+        return "pre-release"
+    return "patch number"
+
+# The byte after the dot that must stand at `at` of a version, after its
+# `what` number.
+function dot_after(text: str, at: i64, what: str) -> i64?
+    if at >= text.len() || text[at] != '.'
+        return fail(
+            code: model.INVALID,
+            msg: f"\"{text}\" is not a version: {found_at(text, at)} where a dot should follow the {what} number"
+        )
+    return ok(at + 1)
+
+# `n` as text.
+function number_text(n: u64) -> str
+    return f"{n}"
+
+# A version written: numbers, pre-release and build metadata.
+function version_text(major: u64, minor: u64, patch: u64, pre: [str], build: [str]) -> str
+    parts: [str] @= [number_text(major), ".", number_text(minor), ".", number_text(patch)]
+
+    if pre.len() > 0
+        parts @ parts.push("-")
+        parts @ parts.push(join(pre, "."))
+
+    if build.len() > 0
+        parts @ parts.push("+")
+        parts @ parts.push(join(build, "."))
+    return join(parts, "")
+
+test "number_at: zero, a leading zero, the largest u64 and one past it"
+    assert number_at(text: "0", from: 0, what: "major").must().value == 0
+    assert number_at(text: "01", from: 0, what: "major").is_err()
+    assert number_at(text: "18446744073709551615", from: 0, what: "major").must().value == 18446744073709551615
+
+    match number_at(text: "18446744073709551616", from: 0, what: "major")
+        .ok _  => assert false
+        .err e => assert e.code == model.DOES_NOT_FIT
+
+test "identifiers_at: an empty one, a leading zero, zeros allowed in metadata"
+    assert identifiers_at(text: "a..b", from: 0, numeric_zeros: false, what: "pre-release").is_err()
+    assert identifiers_at(text: "01", from: 0, numeric_zeros: false, what: "pre-release").is_err()
+    assert identifiers_at(text: "01", from: 0, numeric_zeros: true, what: "build metadata").must().ids == ["01"]
+    assert identifiers_at(text: "0a.00a.-", from: 0, numeric_zeros: false, what: "pre-release").must().ids == ["0a", "00a", "-"]
+
+test "identifiers_of: empty, whole, and a character not allowed"
+    assert identifiers_of(text: "", numeric_zeros: false, what: "pre-release").must().len() == 0
+    assert identifiers_of(text: "rc.1", numeric_zeros: false, what: "pre-release").must() == ["rc", "1"]
+    assert identifiers_of(text: "a_1", numeric_zeros: false, what: "pre-release").is_err()
+    assert identifiers_of(text: "café", numeric_zeros: true, what: "build metadata").is_err()
+
+test "version_of: what Cargo's crate refuses"
+    refused = [
+        ""
+        "v1.2.3"
+        "1.2"
+        "01.2.3"
+        "1.2.3-01"
+        "1.2.3-"
+        "1.2.3+"
+        "1.2.3-a..b"
+        " 1.2.3"
+        "1.2.3 "
+        "1.2.3-alpha_1"
+        "1.2.3-é"
+        "1.2.3+.a"
+        "1.2.3.4"
+        "1..2.3"
+        "1.2.3-a+b+c"
+    ]
+
+    for text in refused
+        assert version_of(text).is_err()
+
+test "version_of: what Cargo's crate reads"
+    v = version_of("1.2.3-a-b+c-d").must()
+    assert v.pre == ["a-b"] && v.build == ["c-d"]
+    assert version_of("1.2.3--").must().pre == ["-"]
+    assert version_of("1.2.3+001").must().build == ["001"]
+    assert version_of("1.2.3-99999999999999999999999").must().pre == ["99999999999999999999999"]
+    assert version_of("18446744073709551615.0.0").must().major == 18446744073709551615
+
+test "version_text: a release and every part"
+    assert version_text(major: 1, minor: 2, patch: 3, pre: [], build: []) == "1.2.3"
+    assert version_text(major: 1, minor: 0, patch: 0, pre: ["alpha", "1"], build: ["b"]) == "1.0.0-alpha.1+b"

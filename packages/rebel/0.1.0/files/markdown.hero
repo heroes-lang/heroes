@@ -1,0 +1,788 @@
+# Markdown read as CommonMark 0.31.2 reads it, every rule of the
+# specification, with GFM's tables, strikethrough, extended autolinks and
+# task list items; the document a tree of nodes a program walks and changes;
+# and HTML written from it as the specification's reference renderer writes
+# it, so that each of the specification's 652 examples comes out byte for
+# byte. The examples are this package's tests.
+#
+# Reading never fails: CommonMark gives every text a meaning. Raw HTML in the
+# text is escaped by default, so it shows as text, and a link or an image to
+# `javascript:`, `vbscript:`, `file:` or `data:` (but for an image of PNG,
+# GIF, JPEG or WebP) gets an empty destination; `Options` keeps either. Block
+# quotes and lists nest at most `max_depth` deep, the markers beyond read as
+# text. Nothing follows the text with recursion: blocks are matched against
+# the open ones, inlines wait in lists, and the tree is walked and written by
+# following its links.
+#
+# It does not read GFM's other extensions (the tag filter, footnotes),
+# Python-Markdown's or other dialects' extensions, front matter, or math; it
+# does not write Markdown back, and it reads no HTML: `html` does.
+#
+# Fails `not_found` where a node asked about has no parent or sibling, and
+# where a node is added beside one that has no parent.
+
+use markdown/internal/examples
+use markdown/internal/links
+use markdown/internal/pipeline
+use markdown/internal/render
+use markdown/internal/tree
+
+## Codes
+
+# The code of a node with no parent or no sibling where one is asked for:
+# `parent`, `next_sibling`, `previous_sibling`, `insert_before`,
+# `insert_after`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The node of the document itself, the root of every tree `parse` reads.
+constant ROOT: i64
+    0
+
+# How deep block quotes and lists nest at most by default.
+constant DEFAULT_MAX_DEPTH: i64
+    1000
+
+# The version of the CommonMark specification read, whose examples are the
+# tests.
+constant COMMONMARK_VERSION: str
+    examples.VERSION
+
+## Options
+
+# How a text is read and written. `default_options` reads GFM and writes
+# safely; `commonmark_options` reads and writes as the specification's
+# reference does.
+record Options
+    # Whether GFM's tables are read.
+    tables: bool
+    # Whether GFM's strikethrough, `~one~` and `~~two~~`, is read.
+    strikethrough: bool
+    # Whether GFM's extended autolinks are read: `www.example.com`,
+    # `https://example.com` and `a@example.com` without `<` and `>`.
+    autolinks: bool
+    # Whether GFM's task list items, `- [ ]` and `- [x]`, are read.
+    task_lists: bool
+    # Whether raw HTML is written as it stands; else it is escaped and shows
+    # as text.
+    keep_html: bool
+    # Whether a link or an image to a dangerous scheme keeps its destination;
+    # else the destination is empty.
+    keep_unsafe_links: bool
+    # How deep block quotes and lists nest at most, 1 or more; the markers
+    # of a deeper one are read as text.
+    max_depth: i64
+
+# GFM read whole, raw HTML escaped, dangerous destinations dropped, nesting
+# to `DEFAULT_MAX_DEPTH`.
+function default_options() -> Options
+    return Options(
+        tables: true,
+        strikethrough: true,
+        autolinks: true,
+        task_lists: true,
+        keep_html: false,
+        keep_unsafe_links: false,
+        max_depth: DEFAULT_MAX_DEPTH
+    )
+
+# CommonMark alone, as its specification's examples are written: no GFM
+# extension, raw HTML and every destination kept.
+function commonmark_options() -> Options
+    return Options(
+        tables: false,
+        strikethrough: false,
+        autolinks: false,
+        task_lists: false,
+        keep_html: true,
+        keep_unsafe_links: true,
+        max_depth: DEFAULT_MAX_DEPTH
+    )
+
+## The tree
+
+# How a table's column, and each of its cells, is aligned.
+variant Align
+    # As the browser aligns it.
+    none
+    # `:--`.
+    left
+    # `:-:`.
+    center
+    # `--:`.
+    right
+
+# The box of a GFM task list item.
+variant Task
+    # The item has no box.
+    no_box
+    # `[ ]`.
+    unchecked
+    # `[x]` or `[X]`.
+    checked
+
+# What a node is, and what it holds. A `match` answers all twenty-two
+# cases. Blocks hold blocks or inlines; inlines hold inlines; the leaves
+# hold their text.
+variant Node
+    # The document, `ROOT`.
+    document
+    # A block quote.
+    block_quote
+    # A list, holding items.
+    list
+        # Whether it is numbered.
+        ordered: bool
+        # The first number of an ordered list; 0 for a bullet list.
+        start: i64
+        # Its marker: `-`, `+` or `*` for bullets, `.` or `)` after numbers.
+        marker: str
+        # Whether it is tight: no blank line between its items or inside
+        # one, and so its paragraphs are written without `<p>`.
+        tight: bool
+    # A list item.
+    item
+        # Its task box.
+        task: Task
+    # A paragraph, holding inlines.
+    paragraph
+    # A heading, holding inlines.
+    heading
+        # Its level, 1 to 6.
+        level: i64
+    # A thematic break, `---`.
+    thematic_break
+    # A code block.
+    code_block
+        # The info string after the opening fence; empty for none and for
+        # indented code. Its first word names the language.
+        info: str
+        # The code, each line ending with a line feed.
+        text: str
+        # Whether it was fenced rather than indented.
+        fenced: bool
+    # An HTML block.
+    html_block
+        # The HTML as written, its last line feed taken off.
+        text: str
+    # A GFM table, holding its rows: the header first.
+    table
+        # Each column's alignment.
+        alignments: [Align]
+    # A row of a table, holding one cell for each column.
+    table_row
+        # Whether it is the header.
+        header: bool
+    # A cell of a row, holding inlines.
+    table_cell
+        # Its column's alignment.
+        align: Align
+    # Text, its escapes and references read.
+    text
+        # The characters.
+        text: str
+    # A line ending that is not a hard break.
+    soft_break
+    # A hard line break: two spaces or a backslash before a line ending.
+    line_break
+    # A code span.
+    code
+        # The code.
+        text: str
+    # Emphasis, `*a*`.
+    emphasis
+    # Strong emphasis, `**a**`.
+    strong
+    # GFM strikethrough, `~~a~~`.
+    strikethrough
+    # A link, holding its text.
+    link
+        # Where it points: unescaped, then percent-encoded.
+        destination: str
+        # Its title; empty for none.
+        title: str
+    # An image, holding its description.
+    image
+        # Its source.
+        destination: str
+        # Its title; empty for none.
+        title: str
+    # Raw HTML inside a paragraph.
+    html_inline
+        # The HTML as written.
+        text: str
+
+# A link reference definition: where a label points.
+record Reference
+    # The destination.
+    destination: str
+    # The title; empty for none.
+    title: str
+
+# A document read: its nodes and its link reference definitions. Made by
+# `parse` and `parse_with`.
+record Document
+    # The nodes, numbered from `ROOT`, held by the package itself: a program
+    # reads them through `node_of` and the functions below, and changes them
+    # through the functions of `## Changing`.
+    nodes: [tree.Node]
+    # The link reference definitions, held by the package itself: read
+    # through `references_of`.
+    refs: {str: links.Target}
+
+## Reading and writing
+
+# The document `text` holds, read with `default_options`.
+#
+# - `text`: any text; line feeds, carriage returns or both end lines.
+#
+# See also `parse_with`, `to_html`.
+function parse(text: str) -> Document
+    return parse_with(text, default_options())
+
+# The document `text` holds, read as `options` say.
+#
+# - `text`: any text.
+# - `options`: the extensions read and the depth allowed.
+#
+# Aborts where `options.max_depth` is below 1.
+function parse_with(text: str, options: Options) -> Document
+    assert options.max_depth >= 1
+    got = pipeline.read(
+        text,
+        pipeline.Rules(max_depth: options.max_depth, tables: options.tables, strikethrough: options.strikethrough, autolinks: options.autolinks, tasks: options.task_lists)
+    )
+    return Document(nodes: got.nodes, refs: got.refs)
+
+# The HTML of `text`, read and written with `default_options`.
+#
+# - `text`: any text.
+#
+# See also `to_html_with`, `format_html`.
+function to_html(text: str) -> str
+    return to_html_with(text, default_options())
+
+# The HTML of `text`, read and written as `options` say.
+#
+# - `text`: any text.
+# - `options`: the extensions read, whether raw HTML and dangerous
+#   destinations are kept, and the depth allowed.
+#
+# Aborts where `options.max_depth` is below 1.
+function to_html_with(text: str, options: Options) -> str
+    assert options.max_depth >= 1
+    rules = pipeline.Rules(
+        max_depth: options.max_depth,
+        tables: options.tables,
+        strikethrough: options.strikethrough,
+        autolinks: options.autolinks,
+        tasks: options.task_lists
+    )
+    return pipeline.html_of(
+        text,
+        rules: rules,
+        style: render.Style(keep_html: options.keep_html, keep_unsafe: options.keep_unsafe_links)
+    )
+
+# The HTML of `doc`, written as the reference renderer writes it.
+#
+# - `doc`: the document, as read or as changed.
+# - `options`: whether raw HTML and dangerous destinations are kept; the
+#   other fields are not read.
+function format_html(doc: Document, options: Options) -> str
+    return render.html_of(
+        doc.nodes,
+        root: ROOT,
+        style: render.Style(keep_html: options.keep_html, keep_unsafe: options.keep_unsafe_links)
+    )
+
+## Walking
+
+# What node `node` of `doc` is, and what it holds.
+#
+# - `doc`: the document.
+# - `node`: a node's number, from `ROOT`.
+#
+# Aborts where `node` is not a node of `doc`.
+function node_of(doc: Document, node: i64) -> Node
+    n = doc.nodes[node]
+    kind = n.kind
+
+    if kind == tree.BLOCK_QUOTE
+        return .block_quote
+
+    if kind == tree.LIST
+        return .list(ordered: n.ordered, start: n.number, marker: n.marker, tight: n.flag)
+
+    if kind == tree.ITEM
+        task: Task = if n.state == 1
+            .unchecked
+        else if n.state == 2
+            .checked
+        else
+            .no_box
+        return .item(task: task)
+
+    if kind == tree.PARAGRAPH
+        return .paragraph
+
+    if kind == tree.HEADING
+        return .heading(level: n.number)
+
+    if kind == tree.THEMATIC_BREAK
+        return .thematic_break
+
+    if kind == tree.CODE_BLOCK
+        return .code_block(info: n.title, text: n.literal, fenced: n.flag)
+
+    if kind == tree.HTML_BLOCK
+        return .html_block(text: n.literal)
+
+    if kind == tree.TABLE
+        aligns: [Align] @= []
+
+        for a in n.aligns
+            one: Align = if a == 1
+                .left
+            else if a == 2
+                .center
+            else if a == 3
+                .right
+            else
+                .none
+            aligns @ aligns.push(one)
+
+        return .table(alignments: aligns)
+
+    if kind == tree.TABLE_ROW
+        return .table_row(header: n.flag)
+
+    if kind == tree.TABLE_CELL
+        align: Align = if n.state == 1
+            .left
+        else if n.state == 2
+            .center
+        else if n.state == 3
+            .right
+        else
+            .none
+        return .table_cell(align: align)
+
+    if kind == tree.TEXT
+        return .text(text: n.literal)
+
+    if kind == tree.SOFT_BREAK
+        return .soft_break
+
+    if kind == tree.LINE_BREAK
+        return .line_break
+
+    if kind == tree.CODE
+        return .code(text: n.literal)
+
+    if kind == tree.EMPHASIS
+        return .emphasis
+
+    if kind == tree.STRONG
+        return .strong
+
+    if kind == tree.STRIKETHROUGH
+        return .strikethrough
+
+    if kind == tree.LINK
+        return .link(destination: n.literal, title: n.title)
+
+    if kind == tree.IMAGE
+        return .image(destination: n.literal, title: n.title)
+
+    if kind == tree.HTML_INLINE
+        return .html_inline(text: n.literal)
+    return .document
+
+# The children of `node`, in order.
+#
+# - `doc`: the document.
+# - `node`: a node's number.
+#
+# Empty for a leaf. Aborts where `node` is not a node of `doc`.
+function children(doc: Document, node: i64) -> [i64]
+    return tree.children(doc.nodes, node)
+
+# The parent of `node`.
+#
+# - `doc`: the document.
+# - `node`: a node's number.
+#
+# Fails `not_found` for `ROOT` and for a node `remove` took out. Aborts where
+# `node` is not a node of `doc`.
+function parent(doc: Document, node: i64) -> i64?
+    p = doc.nodes[node].parent
+
+    if p == tree.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no parent")
+    return ok(p)
+
+# The sibling after `node`.
+#
+# - `doc`: the document.
+# - `node`: a node's number.
+#
+# Fails `not_found` for the last child and for a node with no parent.
+function next_sibling(doc: Document, node: i64) -> i64?
+    n = doc.nodes[node].next
+
+    if n == tree.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no sibling after it")
+    return ok(n)
+
+# The sibling before `node`.
+#
+# - `doc`: the document.
+# - `node`: a node's number.
+#
+# Fails `not_found` for the first child and for a node with no parent.
+function previous_sibling(doc: Document, node: i64) -> i64?
+    p = doc.nodes[node].prev
+
+    if p == tree.NONE
+        return fail(code: NOT_FOUND, msg: f"node {node} has no sibling before it")
+    return ok(p)
+
+# Every node under `node`, in document order: each before its children.
+#
+# - `doc`: the document.
+# - `node`: a node's number; itself is not in the answer.
+#
+# Empty for a leaf. It follows the links, keeping no stack.
+function descendants(doc: Document, node: i64) -> [i64]
+    out: [i64] @= []
+    at @= doc.nodes[node].first
+
+    while at != tree.NONE
+        out @ out.push(at)
+
+        if doc.nodes[at].first != tree.NONE
+            at @ doc.nodes[at].first
+        else
+            at @ tree.after_node(doc.nodes, node: at, root: node)
+
+    return out
+
+# The plain text under `node`: its texts and code, a line ending for each
+# break, as an image's description is written.
+#
+# - `doc`: the document.
+# - `node`: a node's number; a leaf answers its own text.
+function text_of(doc: Document, node: i64) -> str
+    pieces: [str] @= []
+    every: [i64] @= [node]
+
+    for d in descendants(doc, node)
+        every @ every.push(d)
+
+    for at in every
+        kind = doc.nodes[at].kind
+
+        if kind == tree.TEXT || kind == tree.CODE
+            pieces @ pieces.push(doc.nodes[at].literal)
+        else if kind == tree.SOFT_BREAK || kind == tree.LINE_BREAK
+            pieces @ pieces.push("\n")
+
+    return join(pieces, "")
+
+# The link reference definitions of `doc`, each label as the specification
+# compares labels: case folded, white space collapsed.
+#
+# - `doc`: the document.
+#
+# The first definition of a label wins, as in reading.
+function references_of(doc: Document) -> {str: Reference}
+    out: {str: Reference} @= {}
+
+    for label in keys(doc.refs)
+        target = doc.refs[label].must()
+        out[label] @ Reference(destination: target.destination, title: target.title)
+
+    return out
+
+## Changing
+
+# Adds a node holding `value` as the last child of `under`, and answers its
+# number.
+#
+# - `@doc`: the document; gains the node.
+# - `under`: the parent's number.
+# - `value`: what the node is; it has no children until some are added.
+#
+# Nothing checks that the parent may hold such a node: a paragraph under a
+# text is written as the writer meets it. It copies the node list, so a
+# document built a node at a time costs the square of its size. Aborts where
+# `under` is not a node of `doc`.
+function add_child(@doc: Document, under: i64, value: Node) -> i64
+    made = match value
+        .document    => tree.make(tree.DOCUMENT)
+        .block_quote => tree.make(tree.BLOCK_QUOTE)
+        .list l =>
+            n @= tree.make(tree.LIST)
+            n.ordered @ l.ordered
+            n.number @ l.start
+            n.marker @ l.marker
+            n.flag @ l.tight
+            n
+        .item i =>
+            n @= tree.make(tree.ITEM)
+
+            n.state @ match i.task
+                .no_box    => 0
+                .unchecked => 1
+                .checked   => 2
+
+            n
+        .paragraph => tree.make(tree.PARAGRAPH)
+        .heading h =>
+            n @= tree.make(tree.HEADING)
+            n.number @ h.level
+            n
+        .thematic_break => tree.make(tree.THEMATIC_BREAK)
+        .code_block c =>
+            n @= tree.make(tree.CODE_BLOCK)
+            n.title @ c.info
+            n.literal @ c.text
+            n.flag @ c.fenced
+            n
+        .html_block h => tree.make_literal(tree.HTML_BLOCK, literal: h.text)
+        .table t =>
+            n @= tree.make(tree.TABLE)
+            codes: [i64] @= []
+
+            for a in t.alignments
+                code = match a
+                    .none   => 0
+                    .left   => 1
+                    .center => 2
+                    .right  => 3
+
+                codes @ codes.push(code)
+
+            n.aligns @ codes
+            n
+        .table_row r =>
+            n @= tree.make(tree.TABLE_ROW)
+            n.flag @ r.header
+            n
+        .table_cell c =>
+            n @= tree.make(tree.TABLE_CELL)
+
+            n.state @ match c.align
+                .none   => 0
+                .left   => 1
+                .center => 2
+                .right  => 3
+
+            n
+        .text t        => tree.make_literal(tree.TEXT, literal: t.text)
+        .soft_break    => tree.make(tree.SOFT_BREAK)
+        .line_break    => tree.make(tree.LINE_BREAK)
+        .code c        => tree.make_literal(tree.CODE, literal: c.text)
+        .emphasis      => tree.make(tree.EMPHASIS)
+        .strong        => tree.make(tree.STRONG)
+        .strikethrough => tree.make(tree.STRIKETHROUGH)
+        .link l =>
+            n @= tree.make_literal(tree.LINK, literal: l.destination)
+            n.title @ l.title
+            n
+        .image m =>
+            n @= tree.make_literal(tree.IMAGE, literal: m.destination)
+            n.title @ m.title
+            n
+        .html_inline h => tree.make_literal(tree.HTML_INLINE, literal: h.text)
+
+    nodes @= doc.nodes
+    at = tree.append(@nodes, parent: under, node: made)
+    doc.nodes @ nodes
+    return at
+
+# Adds a node holding `value` just before `sibling`, and answers its number.
+#
+# - `@doc`: the document; gains the node.
+# - `sibling`: the node it goes before.
+# - `value`: what the node is.
+#
+# Fails `not_found` where `sibling` has no parent. Aborts where `sibling` is
+# not a node of `doc`.
+function insert_before(@doc: Document, sibling: i64, value: Node) -> i64?
+    holder = doc.nodes[sibling].parent
+
+    if holder == tree.NONE
+        return fail(code: NOT_FOUND, msg: f"node {sibling} has no parent to hold a node before it")
+    at = add_child(@doc, under: holder, value: value)
+    nodes @= doc.nodes
+    tree.unlink(@nodes, at)
+    tree.link_before(@nodes, sibling: sibling, node: at)
+    doc.nodes @ nodes
+    return ok(at)
+
+# Adds a node holding `value` just after `sibling`, and answers its number.
+#
+# - `@doc`: the document; gains the node.
+# - `sibling`: the node it goes after.
+# - `value`: what the node is.
+#
+# Fails `not_found` where `sibling` has no parent. Aborts where `sibling` is
+# not a node of `doc`.
+function insert_after(@doc: Document, sibling: i64, value: Node) -> i64?
+    holder = doc.nodes[sibling].parent
+
+    if holder == tree.NONE
+        return fail(code: NOT_FOUND, msg: f"node {sibling} has no parent to hold a node after it")
+    at = add_child(@doc, under: holder, value: value)
+    nodes @= doc.nodes
+    tree.unlink(@nodes, at)
+    tree.link_after(@nodes, sibling: sibling, node: at)
+    doc.nodes @ nodes
+    return ok(at)
+
+# Takes `node` and its children out of the tree; their numbers stay, linked
+# to nothing.
+#
+# - `@doc`: the document; loses the node.
+# - `node`: the node's number; `ROOT` and a node already out change nothing.
+function remove(@doc: Document, node: i64)
+    nodes @= doc.nodes
+    tree.unlink(@nodes, node)
+    doc.nodes @ nodes
+
+# Makes `node` hold `value` instead of what it held; its children and its
+# place stay.
+#
+# - `@doc`: the document; the node changes.
+# - `node`: the node's number.
+# - `value`: what it is now.
+#
+# The node list grows by one number, linked to nothing. Aborts where `node`
+# is not a node of `doc`.
+function set_node(@doc: Document, node: i64, value: Node)
+    temp = add_child(@doc, under: ROOT, value: value)
+    nodes @= doc.nodes
+    tree.unlink(@nodes, temp)
+    made @= nodes[temp]
+    old = nodes[node]
+    made.parent @ old.parent
+    made.first @ old.first
+    made.last @ old.last
+    made.prev @ old.prev
+    made.next @ old.next
+    nodes[node] @ made
+    doc.nodes @ nodes
+
+## Examples
+
+# A heading and a paragraph written as HTML.
+test "to_html: a heading and emphasis"
+    assert to_html("# Low\n\n*Heroes*, 1977\n") == "<h1>Low</h1>\n<p><em>Heroes</em>, 1977</p>\n"
+
+# Raw HTML kept, as the specification's examples keep it.
+test "to_html_with: raw HTML kept"
+    assert to_html_with("<b>x</b>", commonmark_options()) == "<p><b>x</b></p>\n"
+
+# GFM read, raw HTML escaped.
+test "default_options: a table and escaped HTML"
+    assert to_html("a <b>\n") == "<p>a &lt;b&gt;</p>\n"
+
+# The specification's own options.
+test "commonmark_options: no table read"
+    assert to_html_with("| a |\n| - |\n", commonmark_options()) == "<p>| a |\n| - |</p>\n"
+
+# A document read into its tree.
+test "parse: a list of two items"
+    doc = parse("- a\n- b\n")
+    assert children(doc, ROOT).len() == 1 && children(doc, children(doc, ROOT)[0]).len() == 2
+
+# A document read with options.
+test "parse_with: a strikethrough left as text"
+    options @= default_options()
+    options.strikethrough @ false
+    doc = parse_with("~~a~~", options)
+    assert text_of(doc, ROOT) == "~~a~~"
+
+# A changed document written back.
+test "format_html: a heading's level changed"
+    doc @= parse("# a\n")
+    set_node(@doc, children(doc, ROOT)[0], .heading(level: 2))
+    assert format_html(doc, default_options()) == "<h2>a</h2>\n"
+
+# What a node is.
+test "node_of: a fenced code block"
+    doc = parse("```go\nx\n```\n")
+
+    match node_of(doc, children(doc, ROOT)[0])
+        .code_block c => assert c.info == "go" && c.text == "x\n" && c.fenced
+        .document | .block_quote | .list _ | .item _ | .paragraph | .heading _ | .thematic_break | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => assert false
+
+# A node's children.
+test "children: a paragraph's inlines"
+    doc = parse("a *b*")
+    assert children(doc, children(doc, ROOT)[0]).len() == 2
+
+# A node's parent.
+test "parent: of the first block"
+    doc = parse("a")
+    assert parent(doc, children(doc, ROOT)[0]).must() == ROOT
+
+# The sibling after.
+test "next_sibling: two paragraphs"
+    doc = parse("a\n\nb")
+    kids = children(doc, ROOT)
+    assert next_sibling(doc, kids[0]).must() == kids[1]
+
+# The sibling before.
+test "previous_sibling: two paragraphs"
+    doc = parse("a\n\nb")
+    kids = children(doc, ROOT)
+    assert previous_sibling(doc, kids[1]).must() == kids[0]
+
+# Every node, in order.
+test "descendants: a paragraph and its text"
+    assert descendants(parse("a"), ROOT).len() == 2
+
+# The plain text of a heading.
+test "text_of: a heading with emphasis"
+    doc = parse("# a *b* `c`")
+    assert text_of(doc, ROOT) == "a b c"
+
+# The definitions of a document.
+test "references_of: one definition"
+    doc = parse("[Low]: /low \"1977\"\n")
+    assert references_of(doc)["low"].must() == Reference(destination: "/low", title: "1977")
+
+# A node added at the end.
+test "add_child: a paragraph after a heading"
+    doc @= parse("# a\n")
+    p = add_child(@doc, under: ROOT, value: .paragraph)
+    _ = add_child(@doc, under: p, value: .text(text: "b"))
+    assert format_html(doc, default_options()) == "<h1>a</h1>\n<p>b</p>\n"
+
+# A node added before another.
+test "insert_before: a rule before a paragraph"
+    doc @= parse("a\n")
+    _ = insert_before(@doc, sibling: children(doc, ROOT)[0], value: .thematic_break).must()
+    assert format_html(doc, default_options()) == "<hr />\n<p>a</p>\n"
+
+# A node added after another.
+test "insert_after: a rule after a paragraph"
+    doc @= parse("a\n")
+    _ = insert_after(@doc, sibling: children(doc, ROOT)[0], value: .thematic_break).must()
+    assert format_html(doc, default_options()) == "<p>a</p>\n<hr />\n"
+
+# A node taken out.
+test "remove: the first of two paragraphs"
+    doc @= parse("a\n\nb\n")
+    remove(@doc, children(doc, ROOT)[0])
+    assert format_html(doc, default_options()) == "<p>b</p>\n"
+
+# A node changed in place.
+test "set_node: a link's destination"
+    doc @= parse("[a](/x)")
+    link = children(doc, children(doc, ROOT)[0])[0]
+    set_node(@doc, link, .link(destination: "/y", title: ""))
+    assert format_html(doc, default_options()) == "<p><a href=\"/y\">a</a></p>\n"

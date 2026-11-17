@@ -1,0 +1,202 @@
+# The open blocks of the block reader: a block added under the tip, the
+# blocks a line did not match closed, and a block finished as it closes: a
+# paragraph's link reference definitions taken out, a code block's info
+# string and contents, an HTML block's contents, a table's rows and cells,
+# and whether a list is tight.
+
+use markdown/internal/cursor
+use markdown/internal/links
+use markdown/internal/scan
+use markdown/internal/tables
+use markdown/internal/tree
+use strings
+
+# Whether a block of `parent` kind may hold a block of `child` kind.
+function can_contain(parent: i64, child: i64) -> bool
+    if parent == tree.DOCUMENT || parent == tree.BLOCK_QUOTE || parent == tree.ITEM
+        return child != tree.ITEM
+
+    if parent == tree.LIST
+        return child == tree.ITEM
+    return false
+
+# Whether a block of `kind` takes the lines that follow its start.
+function accepts_lines(kind: i64) -> bool
+    return kind == tree.PARAGRAPH || kind == tree.CODE_BLOCK || kind == tree.HTML_BLOCK || kind == tree.TABLE
+
+# Adds a block of `kind` under the tip, closing the tip and its parents until
+# one may hold it, and makes it the tip; answers its number.
+function add_child(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target}, kind: i64) -> i64
+    while !can_contain(parent: nodes[c.tip].kind, child: kind)
+        finalize(@c, @nodes, @lines, @refs, block: c.tip, line: c.number - 1)
+
+    made @= tree.make(kind)
+    made.start_line @ c.number
+    at = tree.append(@nodes, parent: c.tip, node: made)
+    c.tip @ at
+    return at
+
+# Closes the open blocks the line did not match, innermost first.
+function close_unmatched(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target})
+    if c.all_closed
+        return
+
+    while c.old_tip != c.last_matched && c.old_tip != tree.NONE
+        parent = nodes[c.old_tip].parent
+        finalize(@c, @nodes, @lines, @refs, block: c.old_tip, line: c.number - 1)
+        c.old_tip @ parent
+
+    c.all_closed @ true
+
+# Takes the link reference definitions from the start of `content`, a
+# paragraph's, into `refs`, and answers what is left.
+function take_definitions(content: str, @refs: {str: links.Target}) -> str
+    at @= 0
+    memo @= links.no_close(content.len())
+
+    while at < content.len() && content[at] == '['
+        next = links.definition_at(content, at, @refs, @memo)
+
+        if next == at
+            break
+        at @ next
+
+    return content.slice(from: at, to: content.len())
+
+# Whether `s` holds only spaces, tabs and line feeds.
+function is_blank(s: str) -> bool
+    for k in range(from: 0, to: s.len())
+        if !scan.is_ascii_space(s[k])
+            return false
+
+    return true
+
+# `content` with its last lines of spaces and tabs alone taken off, one line
+# feed kept.
+function trim_blank_end(content: str) -> str
+    end @= content.len()
+
+    while end > 0 && (content[end - 1] == '\n' || content[end - 1] == ' ' || content[end - 1] == '\t')
+        end @ end - 1
+
+    keep @= end
+
+    while keep < content.len() && content[keep] != '\n'
+        keep @ keep + 1
+
+    if keep < content.len()
+        return content.slice(from: 0, to: keep + 1)
+    return content.slice(from: 0, to: keep)
+
+# Closes `block`, which ended on `line`, finishes what it holds, and makes its
+# parent the tip.
+function finalize(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target}, block: i64, line: i64)
+    above = nodes[block].parent
+    kind = nodes[block].kind
+    nodes[block].open @ false
+    nodes[block].end_line @ line
+
+    if kind == tree.PARAGRAPH
+        rest = take_definitions(join(lines, ""), @refs)
+
+        if is_blank(rest)
+            tree.unlink(@nodes, block)
+        else
+            nodes[block].literal @ rest
+    else if kind == tree.CODE_BLOCK
+        content = join(lines, "")
+
+        if nodes[block].flag
+            first_end = strings.index_of(s: content, substr: "\n").default(content.len())
+            nodes[block].title @ scan.unescape(strings.trim(content.slice(from: 0, to: first_end)))
+
+            from = if first_end < content.len()
+                first_end + 1
+            else
+                first_end
+            nodes[block].literal @ content.slice(from: from, to: content.len())
+        else
+            nodes[block].literal @ trim_blank_end(content)
+    else if kind == tree.HTML_BLOCK
+        content = join(lines, "")
+
+        end = if content.len() > 0 && content[content.len() - 1] == '\n'
+            content.len() - 1
+        else
+            content.len()
+        nodes[block].literal @ content.slice(from: 0, to: end)
+    else if kind == tree.TABLE
+        tables.add_rows(@nodes, table: block, rows: lines)
+    else if kind == tree.ITEM
+        last = nodes[block].last
+
+        if last != tree.NONE
+            nodes[block].end_line @ nodes[last].end_line
+        else
+            nodes[block].end_line @ nodes[block].start_line
+    else if kind == tree.LIST
+        last = nodes[block].last
+
+        if last != tree.NONE
+            nodes[block].end_line @ nodes[last].end_line
+        nodes[block].flag @ is_tight(@nodes, list: block)
+
+    if accepts_lines(kind)
+        lines @ []
+    c.tip @ above
+
+# Whether `block` ends with a blank line, as the reference reads it: its
+# own last line, or for a list or an item not asked before, its last
+# child's.
+function ends_blank(@nodes: [tree.Node], block: i64) -> bool
+    at @= block
+
+    while at != tree.NONE
+        if nodes[at].last_blank
+            return true
+        kind = nodes[at].kind
+        checked = nodes[at].last_checked
+        nodes[at].last_checked @ true
+
+        if !checked && (kind == tree.LIST || kind == tree.ITEM)
+            at @ nodes[at].last
+        else
+            return false
+
+    return false
+
+# Whether a list is tight: no item but the last ends with a blank line, and
+# no block of an item does where a block or an item follows it.
+function is_tight(@nodes: [tree.Node], list: i64) -> bool
+    item @= nodes[list].first
+
+    while item != tree.NONE
+        item_next = nodes[item].next
+
+        if ends_blank(@nodes, item) && item_next != tree.NONE
+            return false
+        sub @= nodes[item].first
+
+        while sub != tree.NONE
+            sub_next = nodes[sub].next
+
+            if ends_blank(@nodes, sub) && (item_next != tree.NONE || sub_next != tree.NONE)
+                return false
+            sub @ sub_next
+
+        item @ item_next
+
+    return true
+
+test "can_contain: a list holds items alone, an item no item"
+    assert can_contain(parent: tree.LIST, child: tree.ITEM) && !can_contain(parent: tree.LIST, child: tree.PARAGRAPH)
+    assert !can_contain(parent: tree.ITEM, child: tree.ITEM) && !can_contain(parent: tree.PARAGRAPH, child: tree.TEXT)
+
+test "take_definitions: two definitions, then text"
+    refs: {str: links.Target} @= {}
+    assert take_definitions("[a]: /x\n[b]: /y\nrest\n", @refs) == "rest\n"
+    assert refs.len() == 2
+
+test "trim_blank_end: blank lines at the end, and none"
+    assert trim_blank_end("a\n  \n\t\n") == "a\n"
+    assert trim_blank_end("a\n") == "a\n"

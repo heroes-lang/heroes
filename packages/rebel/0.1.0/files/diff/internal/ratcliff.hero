@@ -1,0 +1,279 @@
+# Ratcliff and Obershelp's "gestalt pattern matching", as Python's
+# `difflib.SequenceMatcher` answers it with no junk function and its
+# automatic junk heuristic on: the longest run the two lists share is found,
+# then the longest on each side of it, again and again. Another algorithm than
+# Myers's, with other blocks; its ratio is twice the elements matched over the
+# elements of both. The parts wait on an explicit stack.
+
+use diff/internal/script
+use lists
+use strings
+
+# What is known of the second list before any matching: where each element
+# stands in it, the elements too common to start a match left out.
+record Index
+    # The second list, as numbers.
+    b: [i64]
+    # For each number, where it stands in `b`, in order; empty where it is
+    # popular.
+    places: [[i64]]
+
+# The index of `b`, whose elements are numbers below `count`. Where `b` holds
+# 200 elements or more, an element standing more than `b.len() / 100 + 1`
+# times is popular, Python's heuristic, and starts no match.
+function index_of_second(b: [i64], count: i64) -> Index
+    starts: [i64] @= []
+
+    for _ in range(from: 0, to: count + 1)
+        starts @ starts.push(0)
+
+    for id in b
+        starts[id + 1] @ starts[id + 1] + 1
+
+    for id in range(from: 0, to: count)
+        starts[id + 1] @ starts[id + 1] + starts[id]
+
+    flat: [i64] @= []
+
+    for _ in b
+        flat @ flat.push(0)
+
+    next @= starts.slice(from: 0, to: count)
+
+    for j in range(from: 0, to: b.len())
+        id = b[j]
+        flat[next[id]] @ j
+        next[id] @ next[id] + 1
+
+    most = if b.len() >= 200
+        b.len() / 100 + 1
+    else
+        b.len()
+    places: [[i64]] @= []
+
+    for id in range(from: 0, to: count)
+        if starts[id + 1] - starts[id] > most
+            places @ places.push([])
+        else
+            places @ places.push(flat.slice(from: starts[id], to: starts[id + 1]))
+
+    return Index(b: b, places: places)
+
+# Two rows of lengths for a second list of `size` elements, by parity of
+# the first list's element: the length of the run ending before each place,
+# or the element of the first list whose row wrote it, -1 for none.
+function row_of(size: i64, fill: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: 2 * (size + 1))
+        out @ out.push(fill)
+
+    return out
+
+# The longest run `a` and `b` share inside old elements `a_from` to `a_to`
+# and new elements `b_from` to `b_to`: of the longest, the one that begins
+# first in `a`, then first in `b`, then grown over popular elements on either
+# side. `@lens` and `@rows`, made by `row_of`, hold what any earlier search
+# left; a length is read only where this search wrote it.
+function longest(a: [i64], index: Index, a_from: i64, a_to: i64, b_from: i64, b_to: i64, @lens: [i64], @rows: [i64]) -> script.Block
+    b = index.b
+    best_i @= a_from
+    best_j @= b_from
+    best @= 0
+    width = b.len() + 1
+
+    for i in range(from: a_from, to: a_to)
+        here = i % 2 * width
+        there = (i + 1) % 2 * width
+        found = index.places[a[i]]
+
+        for j in found
+            if j >= b_to
+                break
+
+            if j >= b_from
+                before = if i > a_from && j > b_from && rows[there + j] == i - 1
+                    lens[there + j]
+                else
+                    0
+                k = before + 1
+                lens[here + j + 1] @ k
+                rows[here + j + 1] @ i
+
+                if k > best
+                    best_i @ i - k + 1
+                    best_j @ j - k + 1
+                    best @ k
+
+    while best_i > a_from && best_j > b_from && a[best_i - 1] == b[best_j - 1]
+        best_i @ best_i - 1
+        best_j @ best_j - 1
+        best @ best + 1
+
+    while best_i + best < a_to && best_j + best < b_to && a[best_i + best] == b[best_j + best]
+        best @ best + 1
+
+    return script.Block(old_at: best_i, new_at: best_j, size: best)
+
+# A part of the two lists still to match.
+record Part
+    # Its first old element.
+    a_from: i64
+    # The old element after its last.
+    a_to: i64
+    # Its first new element.
+    b_from: i64
+    # The new element after its last.
+    b_to: i64
+
+# The matching blocks of `a` and the list `index` holds, sorted, those that
+# touch joined.
+function matching(a: [i64], index: Index) -> [script.Block]
+    todo: [Part] @= [Part(a_from: 0, a_to: a.len(), b_from: 0, b_to: index.b.len())]
+    depth @= 1
+    found: [script.Block] @= []
+    lens @= row_of(size: index.b.len(), fill: 0)
+    rows @= row_of(size: index.b.len(), fill: -1)
+
+    while depth > 0
+        depth @ depth - 1
+        p = todo[depth]
+        m = longest(
+            a: a,
+            index,
+            a_from: p.a_from,
+            a_to: p.a_to,
+            b_from: p.b_from,
+            b_to: p.b_to,
+            lens: @lens,
+            rows: @rows
+        )
+
+        if m.size > 0
+            found @ found.push(m)
+
+            if p.a_from < m.old_at && p.b_from < m.new_at
+                push_part(@todo, depth, Part(a_from: p.a_from, a_to: m.old_at, b_from: p.b_from, b_to: m.new_at))
+                depth @ depth + 1
+
+            if m.old_at + m.size < p.a_to && m.new_at + m.size < p.b_to
+                push_part(
+                    @todo,
+                    depth,
+                    Part(a_from: m.old_at + m.size, a_to: p.a_to, b_from: m.new_at + m.size, b_to: p.b_to)
+                )
+                depth @ depth + 1
+
+    return script.joined(found)
+
+# Puts `part` at `at` of the stack `todo`, which grows where it is full.
+function push_part(@todo: [Part], at: i64, part: Part)
+    if at < todo.len()
+        todo[at] @ part
+    else
+        todo @ todo.push(part)
+
+# Twice `matched` over `total`, and 1 where `total` is 0.
+function ratio_of(matched: i64, total: i64) -> f64
+    if total == 0
+        return 1.0
+    return 2.0 * to_f64(matched) / to_f64(total)
+
+# The ratio of the matching blocks of `a` and `b`.
+function ratio(a: [i64], b: [i64], count: i64) -> f64
+    matched @= 0
+
+    for blk in matching(a, index_of_second(b, count))
+        matched @ matched + blk.size
+
+    return ratio_of(matched: matched, total: a.len() + b.len())
+
+# The ratio of the elements the two lists share, counted as bags with no
+# regard to order: an upper bound of `ratio`.
+function quick_ratio(a: [i64], b: [i64], count: i64) -> f64
+    left: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        left @ left.push(0)
+
+    for id in b
+        left[id] @ left[id] + 1
+
+    matched @= 0
+
+    for id in a
+        if left[id] > 0
+            left[id] @ left[id] - 1
+            matched @ matched + 1
+
+    return ratio_of(matched: matched, total: a.len() + b.len())
+
+test "longest: the first of the longest, and none"
+    index = index_of_second([1, 2, 3, 1, 2], 4)
+    lens @= row_of(size: 5, fill: 0)
+    rows @= row_of(size: 5, fill: -1)
+    assert longest(a: [1, 2, 0, 1, 2], index, a_from: 0, a_to: 5, b_from: 0, b_to: 5, lens: @lens, rows: @rows) == script.Block(old_at: 0, new_at: 0, size: 2)
+    assert longest(a: [0, 0], index, a_from: 0, a_to: 2, b_from: 0, b_to: 5, lens: @lens, rows: @rows).size == 0
+
+test "matching: Python's example of the ratio 0.75"
+    got = matching([0, 1, 2, 3], index_of_second([1, 2, 3, 4], 5))
+    assert got == [script.Block(old_at: 1, new_at: 0, size: 3)]
+
+test "ratio_of: two empty lists are the same"
+    assert ratio_of(matched: 0, total: 0) == 1.0
+    assert ratio_of(matched: 3, total: 8) == 0.75
+
+test "quick_ratio: the bags, with no order"
+    assert quick_ratio(a: [0, 1, 2], b: [2, 1, 0], 3) == 1.0
+
+# A text and its ratio against the word asked about.
+record Scored
+    # The ratio.
+    score: f64
+    # The text.
+    text: str
+
+# Whether `a` comes before `b` in Python's `nlargest` order: the higher
+# ratio first, and of one ratio the later text by bytes.
+function is_better(a: Scored, b: Scored) -> bool
+    if a.score != b.score
+        return a.score > b.score
+    return strings.compare(a: a.text, b: b.text) > 0
+
+# The texts of `possibilities` whose ratio against `word`, by characters, is
+# `cutoff` or more, best first, at most `n`; the two quick bounds are asked
+# first, as Python asks them.
+function close_matches(word: str, possibilities: [str], n: i64, cutoff: f64) -> [str]
+    target = word.chars()
+    scored: [Scored] @= []
+
+    for text in possibilities
+        letters = text.chars()
+
+        shorter = if letters.len() < target.len()
+            letters.len()
+        else
+            target.len()
+
+        if ratio_of(matched: shorter, total: letters.len() + target.len()) >= cutoff
+            ids = script.intern(old: letters, new: target)
+
+            if quick_ratio(a: ids.old, b: ids.new, count: ids.count) >= cutoff
+                score = ratio(a: ids.old, b: ids.new, count: ids.count)
+
+                if score >= cutoff
+                    scored @ scored.push(Scored(score: score, text: text))
+
+    best = lists.sort_by(scored, is_better)
+    out: [str] @= []
+
+    for s in best
+        if out.len() < n
+            out @ out.push(s.text)
+
+    return out
+
+test "close_matches: none above the cutoff, an empty word, ties by text"
+    assert close_matches("xyz", possibilities: ["abc"], n: 3, cutoff: 0.6).len() == 0
+    assert close_matches("", possibilities: ["", "a"], n: 3, cutoff: 0.0) == ["", "a"]
+    assert close_matches("ab", possibilities: ["ac", "ad", "ab"], n: 2, cutoff: 0.5) == ["ab", "ad"]

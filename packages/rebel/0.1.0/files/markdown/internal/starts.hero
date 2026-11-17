@@ -1,0 +1,292 @@
+# The starts of blocks, tried in CommonMark's order on what is left of a
+# line once its open blocks are matched: a block quote, an ATX heading, a
+# code fence, an HTML block, a GFM table under a paragraph, a setext heading
+# underline, a thematic break, a list item, indented code. Each answers 0
+# where the line does not start it, 1 where it opened a container that may
+# hold more starts, and 2 where it opened a block that takes the line.
+
+use markdown/internal/build
+use markdown/internal/cursor
+use markdown/internal/htmltag
+use markdown/internal/links
+use markdown/internal/scan
+use markdown/internal/tables
+use markdown/internal/tree
+use strings
+
+# How deep `node` stands: its number of parents.
+function depth_of(nodes: [tree.Node] lent, node: i64) -> i64
+    count @= 0
+    at @= nodes[node].parent
+
+    while at != tree.NONE
+        count @ count + 1
+        at @ nodes[at].parent
+
+    return count
+
+# The kind of the block the line starts, if any, and what it opened.
+function try_starts(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target}, container: i64) -> i64
+    deep = depth_of(nodes, container) >= c.max_depth
+    rest = c.line.slice(from: c.next_nonspace, to: c.line.len())
+    first = cursor.byte_at(c, at: c.next_nonspace)
+    in_paragraph = nodes[container].kind == tree.PARAGRAPH
+
+    if !c.indented && first == '>' && !deep
+        cursor.advance_next_nonspace(@c)
+        cursor.advance(@c, count: 1, columns: false)
+
+        if scan.is_space_or_tab(cursor.byte_at(c, at: c.offset))
+            cursor.advance(@c, count: 1, columns: true)
+        build.close_unmatched(@c, @nodes, @lines, @refs)
+        _ = build.add_child(@c, @nodes, @lines, @refs, kind: tree.BLOCK_QUOTE)
+        return 1
+
+    if !c.indented && first == '#'
+        level @= 0
+
+        while level < rest.len() && rest[level] == '#'
+            level @ level + 1
+
+        if level <= 6 && (level == rest.len() || scan.is_space_or_tab(rest[level]))
+            cursor.advance_next_nonspace(@c)
+            cursor.advance(@c, count: level, columns: false)
+            build.close_unmatched(@c, @nodes, @lines, @refs)
+            h = build.add_child(@c, @nodes, @lines, @refs, kind: tree.HEADING)
+            nodes[h].number @ level
+            nodes[h].literal @ heading_text(c.line.slice(from: c.offset, to: c.line.len()))
+            cursor.advance(@c, count: c.line.len() - c.offset, columns: false)
+            return 2
+
+    if !c.indented && (first == '`' || first == '~')
+        size @= 0
+
+        while size < rest.len() && rest[size] == first
+            size @ size + 1
+
+        if size >= 3 && !(first == '`' && strings.contains(s: rest.slice(from: size, to: rest.len()), substr: "`"))
+            build.close_unmatched(@c, @nodes, @lines, @refs)
+            code = build.add_child(@c, @nodes, @lines, @refs, kind: tree.CODE_BLOCK)
+            nodes[code].flag @ true
+            nodes[code].number @ size
+            nodes[code].marker @ rest.slice(from: 0, to: 1)
+            nodes[code].width @ c.indent
+            cursor.advance_next_nonspace(@c)
+            cursor.advance(@c, count: size, columns: false)
+            return 2
+
+    if !c.indented && first == '<'
+        lazy = !c.all_closed && !c.blank && nodes[c.tip].kind == tree.PARAGRAPH
+        kind = htmltag.block_start(rest, in_paragraph: in_paragraph || lazy)
+
+        if kind > 0
+            build.close_unmatched(@c, @nodes, @lines, @refs)
+            b = build.add_child(@c, @nodes, @lines, @refs, kind: tree.HTML_BLOCK)
+            nodes[b].state @ kind
+            return 2
+
+    if !c.indented && in_paragraph && c.tables && lines.len() > 0
+        aligns = tables.alignments_of(rest)
+        header = lines[lines.len() - 1]
+
+        if aligns.len() > 0 && tables.cells_of(header).len() == aligns.len()
+            build.close_unmatched(@c, @nodes, @lines, @refs)
+            before = lines.slice(from: 0, to: lines.len() - 1)
+            lines @ before
+            paragraph = c.tip
+
+            if before.len() > 0
+                build.finalize(@c, @nodes, @lines, @refs, block: paragraph, line: c.number - 2)
+            else
+                c.tip @ nodes[paragraph].parent
+                tree.unlink(@nodes, paragraph)
+            t = build.add_child(@c, @nodes, @lines, @refs, kind: tree.TABLE)
+            nodes[t].start_line @ c.number - 1
+            nodes[t].aligns @ aligns
+            lines @ [header]
+            cursor.advance(@c, count: c.line.len() - c.offset, columns: false)
+            return 2
+
+    if !c.indented && in_paragraph && (first == '=' || first == '-') && is_underline(rest) && setext_content(@c, @nodes, @lines, @refs).len() > 0
+        content = setext_content(@c, @nodes, @lines, @refs)
+        paragraph = c.tip
+        heading @= tree.make(tree.HEADING)
+
+        heading.number @ if first == '='
+            1
+        else
+            2
+        heading.literal @ content
+        heading.start_line @ nodes[paragraph].start_line
+        h = nodes.len()
+        nodes @ nodes.push(heading)
+        tree.link_after(@nodes, sibling: paragraph, node: h)
+        tree.unlink(@nodes, paragraph)
+        lines @ []
+        c.tip @ h
+        cursor.advance(@c, count: c.line.len() - c.offset, columns: false)
+        return 2
+
+    if !c.indented && (first == '*' || first == '-' || first == '_') && is_thematic_break(rest)
+        build.close_unmatched(@c, @nodes, @lines, @refs)
+        _ = build.add_child(@c, @nodes, @lines, @refs, kind: tree.THEMATIC_BREAK)
+        cursor.advance(@c, count: c.line.len() - c.offset, columns: false)
+        return 2
+
+    if (!c.indented || nodes[container].kind == tree.LIST) && !deep
+        if start_item(@c, @nodes, @lines, @refs, container: container)
+            return 1
+
+    if c.indented && nodes[c.tip].kind != tree.PARAGRAPH && nodes[c.tip].kind != tree.TABLE && !c.blank
+        cursor.advance(@c, count: cursor.CODE_INDENT, columns: true)
+        build.close_unmatched(@c, @nodes, @lines, @refs)
+        _ = build.add_child(@c, @nodes, @lines, @refs, kind: tree.CODE_BLOCK)
+        return 2
+    return 0
+
+# What a setext heading under the open paragraph would hold: the
+# paragraph's text, its link reference definitions taken into `refs` first;
+# empty where only definitions stand there, and the underline is then tried
+# as another block.
+function setext_content(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target}) -> str
+    build.close_unmatched(@c, @nodes, @lines, @refs)
+    return build.take_definitions(join(lines, ""), @refs)
+
+# The text of an ATX heading from after its opening sequence: white space at
+# its ends and a closing sequence of `#` after a space taken off.
+function heading_text(s: str) -> str
+    t = strings.trim_where(s, accepts: is_space_or_tab_char)
+    end @= t.len()
+
+    while end > 0 && t[end - 1] == '#'
+        end @ end - 1
+
+    if end == 0
+        return ""
+
+    if scan.is_space_or_tab(t[end - 1])
+        return strings.trim_end_where(t.slice(from: 0, to: end), accepts: is_space_or_tab_char)
+    return t
+
+# Whether `c`, one character, is a space or a tab.
+function is_space_or_tab_char(c: str) -> bool
+    return c == " " || c == "\t"
+
+# Whether `s` is a setext underline: `=` or `-` alone, then spaces or tabs.
+function is_underline(s: str) -> bool
+    mark = s[0]
+    k @= 0
+
+    while k < s.len() && s[k] == mark
+        k @ k + 1
+
+    while k < s.len() && scan.is_space_or_tab(s[k])
+        k @ k + 1
+
+    return k == s.len()
+
+# Whether `s` is a thematic break: three or more of one of `*`, `-`, `_`,
+# spaces and tabs between them.
+function is_thematic_break(s: str) -> bool
+    mark = s[0]
+    count @= 0
+
+    for k in range(from: 0, to: s.len())
+        if s[k] == mark
+            count @ count + 1
+        else if !scan.is_space_or_tab(s[k])
+            return false
+
+    return count >= 3
+
+# Starts a list item, and the list around it where the tip is not a list of
+# the same kind; answers whether one started.
+function start_item(@c: cursor.Cursor, @nodes: [tree.Node], @lines: [str], @refs: {str: links.Target}, container: i64) -> bool
+    if c.indent >= 4
+        return false
+    s = c.line
+    at = c.next_nonspace
+    b = cursor.byte_at(c, at: at)
+    marker_offset = c.indent
+    ordered @= false
+    start @= 0
+    mark @= ""
+    size @= 0
+
+    if b == '*' || b == '+' || b == '-'
+        mark @ s.slice(from: at, to: at + 1)
+        size @ 1
+    else if scan.is_digit(b)
+        k @= at
+
+        while k < s.len() && k - at < 10 && scan.is_digit(s[k])
+            start @ start * 10 + to_i64(s[k] - '0').must()
+            k @ k + 1
+
+        if k - at > 9 || k >= s.len() || s[k] != '.' && s[k] != ')'
+            return false
+
+        if nodes[container].kind == tree.PARAGRAPH && start != 1
+            return false
+        ordered @ true
+        mark @ s.slice(from: k, to: k + 1)
+        size @ k - at + 1
+    else
+        return false
+    after = cursor.byte_at(c, at: at + size)
+
+    if after != 0 && after != ' ' && after != '\t'
+        return false
+
+    if nodes[container].kind == tree.PARAGRAPH
+        empty @= true
+
+        for k in range(from: at + size, to: s.len())
+            if !scan.is_space_or_tab(s[k])
+                empty @ false
+
+        if empty
+            return false
+    cursor.advance_next_nonspace(@c)
+    cursor.advance(@c, count: size, columns: true)
+    spaces_column = c.column
+    spaces_offset = c.offset
+    spaces_partial = c.partial_tab
+    cursor.advance(@c, count: 1, columns: true)
+
+    while c.column - spaces_column < 5 && scan.is_space_or_tab(cursor.byte_at(c, at: c.offset))
+        cursor.advance(@c, count: 1, columns: true)
+
+    blank_item = c.offset >= s.len()
+    spaces = c.column - spaces_column
+    padding @= size + spaces
+
+    if spaces >= 5 || spaces < 1 || blank_item
+        padding @ size + 1
+        c.column @ spaces_column
+        c.offset @ spaces_offset
+        c.partial_tab @ spaces_partial
+
+        if scan.is_space_or_tab(cursor.byte_at(c, at: c.offset))
+            cursor.advance(@c, count: 1, columns: true)
+    build.close_unmatched(@c, @nodes, @lines, @refs)
+    tip = c.tip
+
+    if nodes[tip].kind != tree.LIST || nodes[tip].ordered != ordered || nodes[tip].marker != mark
+        list = build.add_child(@c, @nodes, @lines, @refs, kind: tree.LIST)
+        nodes[list].ordered @ ordered
+        nodes[list].marker @ mark
+        nodes[list].number @ start
+    item = build.add_child(@c, @nodes, @lines, @refs, kind: tree.ITEM)
+    nodes[item].width @ marker_offset + padding
+    return true
+
+test "heading_text: a closing sequence, one that is text, none"
+    assert heading_text(" foo ##  ") == "foo"
+    assert heading_text("foo#") == "foo#"
+    assert heading_text(" ### ") == ""
+    assert heading_text("foo \\#") == "foo \\#"
+
+test "is_underline and is_thematic_break"
+    assert is_underline("===  ") && !is_underline("= =")
+    assert is_thematic_break("- - -") && is_thematic_break("***") && !is_thematic_break("--a")

@@ -1,0 +1,216 @@
+# The ledger of `diff`: what Python's `difflib` (3.15), Go's `internal/diff`
+# (1.27) and go-diff (github.com/sergi/go-diff v1.4.5, `diffmatchpatch`), and
+# Rust's `similar` (2.x) let a program do with the differences of two lists
+# or texts, one block per capability, and what Rebel answers. Go's own
+# standard library offers no difference beyond `internal/diff`, which a
+# program outside Go cannot import; go-diff stands for Go's side.
+#
+# The lists are this machine's, 2026-11-17: `dir(difflib)` and of its
+# classes; `go doc -all internal/diff` and `go doc -all` of `diffmatchpatch`
+# fetched into the scratch folder; the items of `cargo doc -p similar` (its
+# functions, structs, enums and their methods), fetched the same way.
+#
+# The differential, 2026-11-17, a program printing Rebel's answers beside
+# Python run on generated texts: 3,120 pairs of texts by characters (alphabets
+# of 2 to 10 letters, letters of two and three bytes among them, 120 pairs of
+# 190 to 420 characters past the junk heuristic), each Myers script checked
+# shortest against a longest common subsequence and checked to turn one text
+# into the other, each Ratcliff script equal to `get_opcodes`, each patience
+# script checked to turn one into the other, `ratio`, `quick_ratio`,
+# `real_quick_ratio` and `get_matching_blocks` equal to Python's; 400 calls of
+# `get_close_matches` equal; 300 pairs of files at contexts 0 to 5 written
+# byte for byte as Python's `unified_diff` and `context_diff` write them from
+# the Ratcliff script, and, from Myers's, the same number of changed lines as
+# the system's `diff -u` (Apple's, after FreeBSD) in every pair and the same
+# bytes in 243 of 300, where the two shortest scripts differ only in which of
+# two equal lines they keep. 50,000 lines with 300 changes take 0.09 s and 21
+# MB by Myers.
+
+capability edits/lines  the edit script of two lists of lines
+  heroes  diff.edits, diff.lines_of, diff.Op, diff.Tag
+  go      DiffMatchPatch.DiffLinesToChars, DiffMatchPatch.DiffLinesToRunes, DiffMatchPatch.DiffCharsToLines, Diff, Operation, DiffDelete, DiffInsert, DiffEqual, Operation.String
+  rust    TextDiff::from_lines, TextDiffConfig::diff_lines, utils::diff_lines, DiffOp, DiffTag, DiffOp::tag, DiffOp::old_range, DiffOp::new_range, DiffOp::as_tag_tuple, TextDiff::ops
+  python  SequenceMatcher.get_opcodes
+  note    the script is Myers's shortest, as GNU diff, go-diff and `similar` find it, where Python's is Ratcliff and Obershelp's (edits/algorithm). Its runs are Python's opcodes, ranges into both lists with the tags equal, delete, insert and replace; go-diff holds the text of each run instead, and a program reads the text from the ranges. A line keeps its line feed, as `similar`'s lines do
+
+capability edits/words  the edit script of two texts by words
+  heroes  diff.words_of, diff.edits
+  go      -
+  rust    TextDiff::from_words, TextDiff::from_unicode_words, TextDiffConfig::diff_words, TextDiffConfig::diff_unicode_words, utils::diff_words, utils::diff_unicode_words
+  python  -
+  note    a word and each run of white space between words are elements, as `similar`'s `from_words` cuts; Unicode's word boundaries (`from_unicode_words`) are `unicode/segment`'s, and its words go to `edits` the same way
+
+capability edits/characters  the edit script of two texts by characters
+  heroes  diff.edits
+  go      DiffMatchPatch.DiffMain, DiffMatchPatch.DiffMainRunes
+  rust    TextDiff::from_chars, TextDiffConfig::diff_chars, utils::diff_chars
+  python  SequenceMatcher.get_opcodes
+  note    `edits(old: a.chars(), new: b.chars())`; grapheme clusters (`similar`'s `from_graphemes`) are `unicode/segment`'s, given the same way
+
+capability edits/bytes  the edit script of two lists of bytes
+  heroes  diff.edits_of_bytes
+  go      -
+  rust    TextDiff::from_slices, TextDiffConfig::diff_slices, utils::diff_slices
+  python  diff_bytes
+  note    -
+
+capability edits/any  the edit script of two lists of any values
+  heroes  diff.edits_by
+  go      -
+  rust    capture_diff_slices, capture_diff, algorithms::diff, algorithms::diff_slices, algorithms::Capture, algorithms::DiffHook, algorithms::NoFinishHook, algorithms::Replace, algorithms::Compact, algorithms::IdentifyDistinct
+  python  SequenceMatcher, SequenceMatcher.set_seqs, SequenceMatcher.set_seq1, SequenceMatcher.set_seq2
+  note    equality is a function the program passes, since a value of a type parameter has no `==`; `similar`'s hooks, which a trait's methods receive one edit at a time, are the script walked as a list
+
+capability edits/algorithm  the algorithm that finds the script: Myers's, patience, or Python's
+  heroes  diff.edits_with, diff.Algorithm, diff.Options.algorithm
+  go      DiffMatchPatch.DiffBisect, DiffMatchPatch.DiffHalfMatch, Diff
+  rust    Algorithm, Algorithm::Myers, Algorithm::Patience, Algorithm::Lcs, TextDiff::algorithm, TextDiffConfig::algorithm, algorithms::myers, algorithms::patience, algorithms::lcs
+  python  SequenceMatcher.get_opcodes
+  note    Myers's in linear space by default, the shortest script; patience as `similar`'s, unique lines matched first in their longest common order, Myers's between them; Ratcliff and Obershelp's, the same script as Python's `get_opcodes` in every one of 3,120 pairs. Go's `internal/diff` writes an anchored diff, which is patience. `similar`'s `Lcs` is a third way to a script of the same length as Myers's, not offered; go-diff's half-match speed-up is not taken
+
+capability edits/deadline  a time after which a comparison stops and answers a script that is not the shortest
+  heroes  pending
+  go      DiffMatchPatch.DiffTimeout
+  rust    TextDiffConfig::deadline, TextDiffConfig::timeout, capture_diff_deadline, capture_diff_slices_deadline, algorithms::diff_deadline, algorithms::diff_slices_deadline, TextDiff::iter_inline_changes_deadline
+  python  -
+  note    Myers's cost is O((N+M)D), so two long texts with nothing in common take time in the product of their lengths; a bound on D, as GNU diff's heuristics bound it, is the way, not done in this round
+
+capability edits/distance  how many elements a script changes
+  heroes  diff.distance
+  go      DiffMatchPatch.DiffLevenshtein
+  rust    -
+  python  -
+  note    a replace counts its longer side, as go-diff counts; from Myers's script of characters it is the Levenshtein distance
+
+capability edits/sides  the old and the new text read back from a script
+  heroes  refused: a run holds ranges into the two lists, which the program has; `old.slice(from: op.old_from, to: op.old_to)` is either side of a run
+  go      DiffMatchPatch.DiffText1, DiffMatchPatch.DiffText2, DiffMatchPatch.DiffXIndex
+  rust    TextDiff::old_slices, TextDiff::new_slices, DiffOp::iter_slices, utils::TextDiffRemapper
+  python  restore
+  note    go-diff's `DiffXIndex` maps a place in the old text to the new: the runs' ranges answer it
+
+capability edits/changes  the script walked element by element, each with its old and new index
+  heroes  diff.edits
+  go      -
+  rust    TextDiff::iter_changes, TextDiff::iter_all_changes, DiffOp::iter_changes, Change, Change::tag, Change::old_index, Change::new_index, Change::value, Change::missing_newline, ChangeTag
+  python  -
+  note    a run's ranges give each element and its index; `missing_newline` is a last line without its line feed, which `lines_of` keeps visible
+
+capability edits/inline  the words or characters that changed inside changed lines
+  heroes  pending
+  go      DiffMatchPatch.DiffCleanupSemantic, DiffMatchPatch.DiffCleanupSemanticLossless
+  rust    TextDiff::iter_inline_changes, InlineChange, InlineChange::values, InlineChange::iter_strings_lossy, InlineChange::tag
+  python  Differ, Differ.compare, ndiff
+  note    a second difference by words inside each replaced pair of lines, and Python's `?` guide lines; not done in this round
+
+capability edits/cleanup  a script made easier to read by moving and merging its edits
+  heroes  pending
+  go      DiffMatchPatch.DiffCleanupSemantic, DiffMatchPatch.DiffCleanupSemanticLossless, DiffMatchPatch.DiffCleanupEfficiency, DiffMatchPatch.DiffCleanupMerge, DiffMatchPatch.DiffEditCost, DiffMatchPatch.DiffCommonOverlap
+  rust    -
+  python  -
+  note    go-diff's heuristics for character differences shown to people; a script with ranges is already merged (no two equal runs touch, a delete and an insert side by side are one replace)
+
+capability edits/common  the length of the common beginning and end of two texts
+  heroes  refused: `strings` and `lists` answer the common beginning (`lists.has_prefix` by length), and `edits` matches both ends first itself
+  go      DiffMatchPatch.DiffCommonPrefix, DiffMatchPatch.DiffCommonSuffix
+  rust    -
+  python  -
+  note    -
+
+capability edits/hunks  a script cut into hunks with lines of context
+  heroes  diff.hunks
+  go      -
+  rust    TextDiff::grouped_ops, group_diff_ops, udiff::UnifiedDiff::iter_hunks, udiff::UnifiedDiffHunk, udiff::UnifiedDiffHunk::ops, udiff::UnifiedDiffHunk::iter_changes
+  python  SequenceMatcher.get_grouped_opcodes
+  note    as Python cuts them: a run of more than twice the context ends a hunk, and the first and last equal runs are cut to the context
+
+capability output/unified  two lists of lines written in the unified format
+  heroes  diff.format_unified, diff.Options, diff.default_options
+  go      internal/diff.Diff
+  rust    TextDiff::unified_diff, udiff::unified_diff, udiff::UnifiedDiff, udiff::UnifiedDiff::context_radius, udiff::UnifiedDiff::header, udiff::UnifiedDiff::missing_newline_hint, udiff::UnifiedDiff::from_text_diff, udiff::UnifiedDiff::to_writer, udiff::UnifiedDiffHunk::header, udiff::UnifiedDiffHunk::to_writer, udiff::UnifiedDiffHunk::missing_newline_hint, udiff::UnifiedHunkHeader
+  python  unified_diff
+  note    the headers and ranges exact: byte for byte as Python's `unified_diff` writes from the same script in 300 of 300 pairs, and as the system's `diff -u` writes wherever the two shortest scripts agree, `\ No newline at end of file` included, which Python leaves out. Python's `lineterm` is the line feed alone; its colour (`color=`, `get_theme`, `can_colorize`) is `term`'s
+
+capability output/context  two lists of lines written in the context format
+  heroes  diff.format_context
+  go      -
+  rust    -
+  python  context_diff
+  note    as Python's `context_diff` and `diff -c` write it, the side of a hunk with no change writing its range alone
+
+capability output/html  a difference written as an HTML table or with HTML marks
+  heroes  refused: the edit script and `html.escape` make any page a program means; one table layout fixed here would be one more template to keep
+  go      DiffMatchPatch.DiffPrettyHtml
+  rust    -
+  python  HtmlDiff, HtmlDiff.make_file, HtmlDiff.make_table
+  note    -
+
+capability output/terminal  a difference written with terminal colours
+  heroes  refused: colours are `term`'s; the script and `term`'s styles write it
+  go      DiffMatchPatch.DiffPrettyText
+  rust    -
+  python  can_colorize, get_theme
+  note    -
+
+capability output/delta  a script written in go-diff's compact delta and read back
+  heroes  refused: one library's own encoding, which no other reads; a unified difference is the exchange format
+  go      DiffMatchPatch.DiffToDelta, DiffMatchPatch.DiffFromDelta
+  rust    -
+  python  -
+  note    -
+
+capability patch/apply  a unified difference read back and applied to a text, exactly or near its place
+  heroes  pending
+  go      DiffMatchPatch.PatchMake, DiffMatchPatch.PatchApply, DiffMatchPatch.PatchToText, DiffMatchPatch.PatchFromText, DiffMatchPatch.PatchAddContext, DiffMatchPatch.PatchAddPadding, DiffMatchPatch.PatchSplitMax, DiffMatchPatch.PatchDeepCopy, DiffMatchPatch.PatchDeleteThreshold, DiffMatchPatch.PatchMargin, Patch, Patch.String
+  rust    -
+  python  -
+  note    `patch`'s work: reading the hunks back and placing them where the text has moved; not done in this round
+
+capability match/fuzzy  where a short text best stands in a long one, near a place, allowing errors
+  heroes  refused: go-diff's Bitap search serves its patches alone; `regex` and `strings` search, and `ratio` scores a candidate
+  go      DiffMatchPatch.MatchMain, DiffMatchPatch.MatchBitap, DiffMatchPatch.MatchAlphabet, DiffMatchPatch.MatchThreshold, DiffMatchPatch.MatchDistance, DiffMatchPatch.MatchMaxBits
+  rust    -
+  python  -
+  note    -
+
+capability similarity/ratio  how alike two lists are, as Python measures it
+  heroes  diff.ratio
+  go      -
+  rust    TextDiff::ratio, get_diff_ratio
+  python  SequenceMatcher.ratio
+  note    Ratcliff and Obershelp's matching, another algorithm than the script's, with Python's automatic junk (an element in more than one in a hundred places of a second list of 200 or more starts no match); equal to Python's in every one of 3,120 pairs. `similar`'s `ratio` was not asked
+
+capability similarity/bounds  quick upper bounds of the ratio
+  heroes  diff.quick_ratio, diff.real_quick_ratio
+  go      -
+  rust    -
+  python  SequenceMatcher.quick_ratio, SequenceMatcher.real_quick_ratio
+  note    -
+
+capability similarity/blocks  the runs two lists share, and the longest of them
+  heroes  diff.matching_blocks, diff.longest_match, diff.Block
+  go      -
+  rust    -
+  python  SequenceMatcher.get_matching_blocks, SequenceMatcher.find_longest_match, Match
+  note    the last block is Python's `(len(a), len(b), 0)`
+
+capability similarity/junk  elements a program marks as junk, which start no match
+  heroes  pending
+  go      -
+  rust    -
+  python  SequenceMatcher(isjunk=), SequenceMatcher(autojunk=), IS_LINE_JUNK, IS_CHARACTER_JUNK
+  note    the automatic heuristic is always on, as Python's default; a junk function given by the program and the switch are not done in this round
+
+capability similarity/close  the texts of a list most like a word
+  heroes  diff.close_matches
+  go      -
+  rust    get_close_matches, text::get_close_matches
+  python  get_close_matches
+  note    Python's answers in 400 of 400 calls: ratio by characters, best first, ties by the later text
+
+dropped
+  python  GenericAlias: a typing name `difflib` imports, not its own
+  go      DiffMatchPatch, New: the settings a method reads; here each setting is a parameter or a field of `Options`
+  go      FOUR_BYTE_BITS, ONE_BYTE_BITS, THREE_BYTE_BITS, TWO_BYTE_BITS, UNICODE_INVALID_RANGE_START, UNICODE_INVALID_RANGE_END, UNICODE_INVALID_RANGE_DELTA, UNICODE_RANGE_MAX: constants of go-diff's own encoding of lines as runes
+  rust    TextDiff::configure, TextDiffConfig::default, TextDiff::newline_terminated, TextDiffConfig::newline_terminated, TextDiff::from: builders of the configuration; `lines_of` keeps the line feed of every line
+  rust    Change::value_ref, Change::value_mut, Change::to_string_lossy, Change::as_str, DiffOp::apply_to_hook, algorithms::Capture::into_ops, algorithms::Capture::into_grouped_ops, algorithms::Compact::into_inner, the DiffableStr and DiffableStrRef traits, and the traits every type derives: borrowing and conversions a value here does not need

@@ -1,0 +1,544 @@
+# The differences of two lists: of lines, of words, of characters, of bytes
+# or of any values, as an edit script a program walks, cut into hunks, and
+# written in the unified and context formats of `diff -u` and `diff -c`; and
+# how alike two lists are, as Python's `difflib` measures it.
+#
+# The edit script is Myers's: the shortest one, found in O(ND) time and
+# linear space ("An O(ND) Difference Algorithm and Its Variations", 1986).
+# Patience ordering, which matches the lines that stand once in each list
+# first, is an option. Similarity is another algorithm, Ratcliff and
+# Obershelp's "gestalt pattern matching" as `difflib.SequenceMatcher` runs it,
+# junk heuristic included, so `ratio` and `close_matches` answer Python's
+# numbers; its blocks are not Myers's, and an edit script made from them
+# (`Algorithm.ratcliff`) is the one Python's `unified_diff` writes. Nothing
+# here follows the data with recursion: the parts of a comparison wait on
+# explicit stacks.
+#
+# It does not apply a patch to a text, read a unified diff back, or write
+# HTML; it compares no files by path: a program reads them with `read_file`
+# or `fs` and splits them with `lines_of`.
+#
+# It fails with no code: every function answers whatever lists it is given.
+# It aborts where a caller breaks a precondition the doc comment names: a
+# negative context, a range outside its list, `close_matches` asked for no
+# match or a cutoff outside 0 to 1.
+
+use diff/internal/myers
+use diff/internal/output
+use diff/internal/ratcliff
+use diff/internal/run
+use diff/internal/script
+use diff/internal/split
+
+## The edit script
+
+# What a run of an edit script does.
+variant Tag
+    # The elements are the same in both lists.
+    equal
+    # The old list's elements are removed; the new list has none there.
+    delete
+    # The new list's elements are added; the old list has none there.
+    insert
+    # The old list's elements are replaced by the new list's.
+    replace
+
+# One run of an edit script, as Python's `get_opcodes` writes one: the old
+# elements `old_from` to `old_to` become the new elements `new_from` to
+# `new_to`. A script's runs follow one another in both lists, from 0 to
+# their lengths, and no two `equal` runs touch.
+record Op
+    # What the run does: `delete` has no new element, `insert` no old one.
+    tag: Tag
+    # Its first element in the old list, from 0.
+    old_from: i64
+    # The old element after its last; `old_from` for an `insert`.
+    old_to: i64
+    # Its first element in the new list, from 0.
+    new_from: i64
+    # The new element after its last; `new_from` for a `delete`.
+    new_to: i64
+
+# A run of elements the two lists share, as Python's `Match`.
+record Block
+    # Where it begins in the old list, from 0.
+    old_at: i64
+    # Where it begins in the new list, from 0.
+    new_at: i64
+    # How many elements; 0 where nothing matched.
+    size: i64
+
+# How an edit script is found.
+variant Algorithm
+    # Myers's: a shortest script, the default.
+    myers
+    # Patience ordering: the elements that stand once in each list matched
+    # first in order, Myers's between them. Hunks keep unique lines, such as a
+    # function's first line, together; the script is not always the shortest.
+    patience
+    # Ratcliff and Obershelp's, as Python's `SequenceMatcher.get_opcodes`
+    # answers: the longest run first, then the longest on each side. What
+    # Python's `unified_diff` writes.
+    ratcliff
+
+## Splitting
+
+# The lines of `text`, each with its line feed: what a difference of texts
+# compares, and what `format_unified` writes.
+#
+# - `text`: any text; only `\n` ends a line, so a `\r` before it stays in
+#   the line.
+#
+# Empty for the empty text. The last line has no line feed where the text
+# does not end with one. Joined with `join(lines, "")` they give `text` back.
+function lines_of(text: str) -> [str]
+    return split.lines_of(text)
+
+# The words of `text` and the runs of white space between them, each an
+# element of its own: what a difference of words compares.
+#
+# - `text`: any text; white space is Unicode's.
+#
+# Empty for the empty text. Joined with `join(words, "")` they give `text`
+# back. Characters are `text.chars()`, bytes `strings.to_bytes(text)`.
+function words_of(text: str) -> [str]
+    return split.words_of(text)
+
+## Differences
+
+# The shortest edit script that turns `old` into `new`, by Myers's
+# algorithm: lines, words, characters or any texts.
+#
+# - `old`: the list before; empty, every element is inserted.
+# - `new`: the list after; empty, every element is deleted.
+#
+# Empty where both are empty. A `delete` and an `insert` side by side are one
+# `replace`. Its cost is O((N+M)D) time and O(N+M) memory, for N and M
+# elements and D edits. See also `edits_with`, `edits_by`.
+function edits(old: [str], new: [str]) -> [Op]
+    return edits_with(old: old, new: new, algorithm: .myers)
+
+# The edit script that turns `old` into `new`, found by `algorithm`.
+#
+# - `old`: the list before.
+# - `new`: the list after.
+# - `algorithm`: Myers's, patience ordering or Ratcliff and Obershelp's.
+#
+# Patience and Ratcliff and Obershelp's cost up to O(NM) where few elements
+# are unique.
+function edits_with(old: [str], new: [str], algorithm: Algorithm) -> [Op]
+    code = match algorithm
+        .myers    => run.MYERS
+        .patience => run.PATIENCE
+        .ratcliff => run.RATCLIFF
+
+    made: [Op] @= []
+
+    for op in run.ops_of(old: old, new: new, algorithm: code)
+        tag: Tag = if op.tag == script.EQUAL
+            .equal
+        else if op.tag == script.DELETE
+            .delete
+        else if op.tag == script.INSERT
+            .insert
+        else
+            .replace
+        made @ made.push(
+            Op(tag: tag, old_from: op.old_from, old_to: op.old_to, new_from: op.new_from, new_to: op.new_to)
+        )
+
+    return made
+
+# The shortest edit script that turns the bytes `old` into the bytes `new`,
+# by Myers's algorithm.
+#
+# - `old`: the bytes before.
+# - `new`: the bytes after.
+#
+# See also `edits_by`.
+function edits_of_bytes(old: [u8], new: [u8]) -> [Op]
+    return edits_by(old: old, new: new, same: run.same_byte)
+
+# The shortest edit script that turns `old` into `new`, lists of any values,
+# by Myers's algorithm.
+#
+# - `old`: the list before.
+# - `new`: the list after.
+# - `same`: called with an old element and a new one, it answers whether they
+#   are the same; it must answer alike for alike values.
+#
+# Bytes are compared with a `same` of two `u8`. See also `edits`.
+function edits_by<T>(old: [T], new: [T], same: (function(left: T, right: T) -> bool)) -> [Op]
+    made: [Op] @= []
+
+    for op in script.ops_of(myers.blocks(old: old, new: new, same: same), old_len: old.len(), new_len: new.len())
+        tag: Tag = if op.tag == script.EQUAL
+            .equal
+        else if op.tag == script.DELETE
+            .delete
+        else if op.tag == script.INSERT
+            .insert
+        else
+            .replace
+        made @ made.push(
+            Op(tag: tag, old_from: op.old_from, old_to: op.old_to, new_from: op.new_from, new_to: op.new_to)
+        )
+
+    return made
+
+# How many elements an edit script inserts, deletes or replaces: a
+# `replace` counts its longer side, as go-diff's `DiffLevenshtein` counts.
+#
+# - `ops`: the script.
+#
+# 0 where nothing changes. For characters it is the Levenshtein distance
+# where the script is the shortest.
+function distance(ops: [Op]) -> i64
+    total @= 0
+
+    for op in ops
+        old_size = op.old_to - op.old_from
+        new_size = op.new_to - op.new_from
+
+        match op.tag
+            .equal  => _ = 0
+            .delete => total @ total + old_size
+            .insert => total @ total + new_size
+            .replace =>
+                if old_size > new_size
+                    total @ total + old_size
+                else
+                    total @ total + new_size
+
+    return total
+
+# The hunks of an edit script: its changes, each with up to `context` equal
+# elements before and after, as Python's `get_grouped_opcodes` cuts them.
+#
+# - `ops`: the script, as `edits` answers it.
+# - `context`: how many equal elements stand around a change; 0 or more. A
+#   run of more than twice as many ends a hunk.
+#
+# Empty where the script changes nothing. Aborts where `context` is negative.
+function hunks(ops: [Op], context: i64) -> [[Op]]
+    assert context >= 0
+    inner: [script.Op] @= []
+
+    for op in ops
+        tag = match op.tag
+            .equal   => script.EQUAL
+            .delete  => script.DELETE
+            .insert  => script.INSERT
+            .replace => script.REPLACE
+
+        inner @ inner.push(
+            script.Op(tag: tag, old_from: op.old_from, old_to: op.old_to, new_from: op.new_from, new_to: op.new_to)
+        )
+
+    made: [[Op]] @= []
+
+    for group in output.groups(inner, context: context)
+        hunk: [Op] @= []
+
+        for op in group
+            tag: Tag = if op.tag == script.EQUAL
+                .equal
+            else if op.tag == script.DELETE
+                .delete
+            else if op.tag == script.INSERT
+                .insert
+            else
+                .replace
+            hunk @ hunk.push(
+                Op(tag: tag, old_from: op.old_from, old_to: op.old_to, new_from: op.new_from, new_to: op.new_to)
+            )
+
+        made @ made.push(hunk)
+
+    return made
+
+## Output
+
+# How a difference is written: the files' names and dates in the headers,
+# the context around each change, and the algorithm. Made by `default_options`, its
+# fields then changed as needed.
+record Options
+    # The old file's name, after `---` or `***`.
+    old_name: str
+    # Its date, after a tab; empty for none.
+    old_date: str
+    # The new file's name, after `+++` or `---`.
+    new_name: str
+    # Its date, after a tab; empty for none.
+    new_date: str
+    # How many equal lines stand around a change: 3, as `diff -u` writes; 0
+    # or more.
+    context: i64
+    # How the edit script is found: Myers's, as `diff` finds it.
+    algorithm: Algorithm
+
+# The options `diff -u` writes with: the two names, no dates, 3 lines of
+# context, Myers's algorithm.
+#
+# - `old_name`: the old file's name.
+# - `new_name`: the new file's name.
+function default_options(old_name: str, new_name: str) -> Options
+    return Options(old_name: old_name, old_date: "", new_name: new_name, new_date: "", context: 3, algorithm: .myers)
+
+# The difference of `old` and `new` in the unified format, as `diff -u`
+# writes it: `---` and `+++` headers, then each hunk, `@@ -1,3 +1,4 @@` and its
+# lines after ` `, `-` or `+`.
+#
+# - `old`: the old lines, as `lines_of` gives them, each with its line feed.
+# - `new`: the new lines.
+# - `options`: the names, dates, context and algorithm.
+#
+# Empty where the lines are the same. A range of one line writes its first
+# line alone, a range of none the line before it. A last line with no line
+# feed is followed by `\ No newline at end of file`. Aborts where
+# `options.context` is negative. See also `format_context`.
+function format_unified(old: [str], new: [str], options: Options) -> str
+    assert options.context >= 0
+    names = output.Names(
+        old_name: options.old_name,
+        old_date: options.old_date,
+        new_name: options.new_name,
+        new_date: options.new_date
+    )
+
+    code = match options.algorithm
+        .myers    => run.MYERS
+        .patience => run.PATIENCE
+        .ratcliff => run.RATCLIFF
+
+    ops = run.ops_of(old: old, new: new, algorithm: code)
+    return output.unified(old: old, new: new, ops: ops, names: names, context: options.context)
+
+# The difference of `old` and `new` in the context format, as `diff -c`
+# writes it: `***` and `---` headers, then each hunk after `***************`,
+# its old lines under `*** 1,4 ****` and its new under `--- 1,4 ----`, marked
+# `  `, `- `, `+ ` or `! `.
+#
+# - `old`: the old lines, as `lines_of` gives them.
+# - `new`: the new lines.
+# - `options`: the names, dates, context and algorithm.
+#
+# Empty where the lines are the same; a side with no change in a hunk writes
+# its range alone. Aborts where `options.context` is negative. See also
+# `format_unified`.
+function format_context(old: [str], new: [str], options: Options) -> str
+    assert options.context >= 0
+    names = output.Names(
+        old_name: options.old_name,
+        old_date: options.old_date,
+        new_name: options.new_name,
+        new_date: options.new_date
+    )
+
+    code = match options.algorithm
+        .myers    => run.MYERS
+        .patience => run.PATIENCE
+        .ratcliff => run.RATCLIFF
+
+    ops = run.ops_of(old: old, new: new, algorithm: code)
+    return output.context_text(old: old, new: new, ops: ops, names: names, context: options.context)
+
+## Similarity
+
+# How alike `a` and `b` are, from 0 to 1, as Python's
+# `SequenceMatcher(None, a, b).ratio()` answers: twice the elements of the
+# Ratcliff and Obershelp matching over the elements of both.
+#
+# - `a`: a list; characters are `text.chars()`.
+# - `b`: another; where it holds 200 elements or more, those that stand in
+#   more than one in a hundred of its places begin no match, Python's
+#   heuristic.
+#
+# 1.0 where both are empty. Not symmetric in general. Its cost is up to
+# O(NM). See also `quick_ratio`, `close_matches`.
+function ratio(a: [str], b: [str]) -> f64
+    ids = script.intern(old: a, new: b)
+    return ratcliff.ratio(a: ids.old, b: ids.new, count: ids.count)
+
+# An upper bound of `ratio`, quickly: the elements the two share counted
+# with no regard to their order, as Python's `quick_ratio`.
+#
+# - `a`: a list.
+# - `b`: another.
+#
+# 1.0 where both are empty.
+function quick_ratio(a: [str], b: [str]) -> f64
+    ids = script.intern(old: a, new: b)
+    return ratcliff.quick_ratio(a: ids.old, b: ids.new, count: ids.count)
+
+# An upper bound of `quick_ratio`, at once: from the two lengths alone, as
+# Python's `real_quick_ratio`.
+#
+# - `a`: a list.
+# - `b`: another.
+#
+# 1.0 where both are empty.
+function real_quick_ratio(a: [str], b: [str]) -> f64
+    shorter = if a.len() < b.len()
+        a.len()
+    else
+        b.len()
+    return ratcliff.ratio_of(matched: shorter, total: a.len() + b.len())
+
+# The runs `a` and `b` share by Ratcliff and Obershelp's matching, as
+# Python's `get_matching_blocks`: in order in both, those that touch joined.
+#
+# - `a`: a list.
+# - `b`: another; Python's heuristic applies as for `ratio`.
+#
+# The last block is always `Block(old_at: a.len(), new_at: b.len(), size:
+# 0)`, as Python's is.
+function matching_blocks(a: [str], b: [str]) -> [Block]
+    ids = script.intern(old: a, new: b)
+    made: [Block] @= []
+
+    for blk in ratcliff.matching(ids.old, ratcliff.index_of_second(ids.new, ids.count))
+        made @ made.push(Block(old_at: blk.old_at, new_at: blk.new_at, size: blk.size))
+
+    made @ made.push(Block(old_at: a.len(), new_at: b.len(), size: 0))
+    return made
+
+# The longest run `a` and `b` share inside the given ranges, as Python's
+# `find_longest_match`: of several, the one that begins first in `a`, then
+# first in `b`.
+#
+# - `a`: a list.
+# - `b`: another; Python's heuristic applies as for `ratio`.
+# - `a_from`: where the range of `a` begins, from 0.
+# - `a_to`: the element after its last; at least `a_from`, at most
+#   `a.len()`.
+# - `b_from`: where the range of `b` begins.
+# - `b_to`: the element after its last; at least `b_from`, at most
+#   `b.len()`.
+#
+# A block of size 0 at `a_from` and `b_from` where nothing is shared. Aborts
+# where a range is outside its list.
+function longest_match(a: [str], b: [str], a_from: i64, a_to: i64, b_from: i64, b_to: i64) -> Block
+    assert a_from >= 0 && a_from <= a_to && a_to <= a.len()
+    assert b_from >= 0 && b_from <= b_to && b_to <= b.len()
+    ids = script.intern(old: a, new: b)
+    index = ratcliff.index_of_second(ids.new, ids.count)
+    lens @= ratcliff.row_of(size: b.len(), fill: 0)
+    rows @= ratcliff.row_of(size: b.len(), fill: -1)
+    m = ratcliff.longest(
+        a: ids.old,
+        index,
+        a_from: a_from,
+        a_to: a_to,
+        b_from: b_from,
+        b_to: b_to,
+        lens: @lens,
+        rows: @rows
+    )
+    return Block(old_at: m.old_at, new_at: m.new_at, size: m.size)
+
+# The texts of `possibilities` most like `word`, best first, as Python's
+# `get_close_matches` answers: those whose `ratio` against `word`, by
+# characters, is `cutoff` or more, at most `n` of them.
+#
+# - `word`: the text to match.
+# - `possibilities`: the texts to choose from; empty gives empty.
+# - `n`: the most texts answered; more than 0.
+# - `cutoff`: the least ratio admitted, from 0.0 to 1.0; Python's default is
+#   0.6.
+#
+# Of two with the same ratio, the later by bytes comes first, as Python's
+# `heapq.nlargest` orders them. Aborts where `n` is not above 0 or `cutoff`
+# is outside 0.0 to 1.0.
+function close_matches(word: str, possibilities: [str], n: i64, cutoff: f64) -> [str]
+    assert n > 0
+    assert cutoff >= 0.0 && cutoff <= 1.0
+    return ratcliff.close_matches(word, possibilities: possibilities, n: n, cutoff: cutoff)
+
+## Examples
+
+# Two lists of lines, one changed.
+test "lines_of: a text of three lines"
+    assert lines_of("a\nb\nc") == ["a\n", "b\n", "c"]
+
+# Words and the spaces between them.
+test "words_of: two words"
+    assert words_of("hello  world") == ["hello", "  ", "world"]
+
+# The shortest script between two lists of lines.
+test "edits: one line changed"
+    ops = edits(old: ["a\n", "b\n", "c\n"], new: ["a\n", "B\n", "c\n"])
+    assert ops.len() == 3 && ops[1] == Op(tag: .replace, old_from: 1, old_to: 2, new_from: 1, new_to: 2)
+
+# The script Python's `SequenceMatcher` finds.
+test "edits_with: Ratcliff and Obershelp's script"
+    ops = edits_with(old: "qabxcd".chars(), new: "abycdf".chars(), algorithm: .ratcliff)
+    assert ops.len() == 5 && ops[0].tag == .delete
+
+# A difference of bytes.
+test "edits_of_bytes: one byte removed"
+    ops = edits_of_bytes(old: [1, 2, 3], new: [1, 3])
+    assert ops == [Op(tag: .equal, old_from: 0, old_to: 1, new_from: 0, new_to: 1), Op(tag: .delete, old_from: 1, old_to: 2, new_from: 1, new_to: 1), Op(tag: .equal, old_from: 2, old_to: 3, new_from: 1, new_to: 2)]
+
+# A difference of any values, by a function that compares them.
+test "edits_by: two lists of numbers"
+    ops = edits_by(old: [1, 2], new: [2], same: script.same_id)
+    assert ops.len() == 2 && ops[0].tag == .delete
+
+# How many characters change.
+test "distance: kitten and sitting"
+    assert distance(edits(old: "kitten".chars(), new: "sitting".chars())) == 3
+
+# Hunks with one line of context.
+test "hunks: two changes far apart"
+    old = ["1", "2", "3", "4", "5", "6", "7", "8"]
+    new = ["x", "2", "3", "4", "5", "6", "7", "y"]
+    assert hunks(edits(old: old, new: new), context: 1).len() == 2
+
+# The options of `diff -u`.
+test "default_options: three lines of context"
+    assert default_options(old_name: "a", new_name: "b").context == 3
+
+# A unified difference.
+test "format_unified: one line changed"
+    got = format_unified(
+        old: lines_of("a\nb\n"),
+        new: lines_of("a\nc\n"),
+        options: default_options(old_name: "old", new_name: "new")
+    )
+    assert got == "--- old\n+++ new\n@@ -1,2 +1,2 @@\n a\n-b\n+c\n"
+
+# A context difference.
+test "format_context: one line changed"
+    got = format_context(
+        old: lines_of("a\nb\n"),
+        new: lines_of("a\nc\n"),
+        options: default_options(old_name: "old", new_name: "new")
+    )
+    assert got == "*** old\n--- new\n***************\n*** 1,2 ****\n  a\n! b\n--- 1,2 ----\n  a\n! c\n"
+
+# Python's own example of a ratio.
+test "ratio: abcd and bcde"
+    assert ratio(a: "abcd".chars(), b: "bcde".chars()) == 0.75
+
+# The quick bound.
+test "quick_ratio: the same letters in another order"
+    assert quick_ratio(a: "abc".chars(), b: "cba".chars()) == 1.0
+
+# The quickest bound.
+test "real_quick_ratio: from the lengths"
+    assert real_quick_ratio(a: "ab".chars(), b: "abcd".chars()) == 2.0 / 3.0
+
+# The runs two texts share.
+test "matching_blocks: Python's example"
+    got = matching_blocks(a: "abxcd".chars(), b: "abcd".chars())
+    assert got == [Block(old_at: 0, new_at: 0, size: 2), Block(old_at: 3, new_at: 2, size: 2), Block(old_at: 5, new_at: 4, size: 0)]
+
+# The longest run two texts share.
+test "longest_match: Python's example"
+    got = longest_match(a: " abcd".chars(), b: "abcd abcd".chars(), a_from: 0, a_to: 5, b_from: 0, b_to: 9)
+    assert got == Block(old_at: 0, new_at: 4, size: 5)
+
+# Python's own example of close matches.
+test "close_matches: apple"
+    assert close_matches("appel", possibilities: ["ape", "apple", "peach", "puppy"], n: 3, cutoff: 0.6) == ["apple", "ape"]

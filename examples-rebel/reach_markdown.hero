@@ -1,0 +1,15 @@
+# Reaches Rebel's `markdown`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), the CommonMark specification's examples
+# among them. It writes a small document as HTML and lists its headings.
+
+use <rebel>/markdown
+
+function main()
+    text = "# Heroes\n\nA *song* by [Bowie](https://www.davidbowie.com).\n\n- [x] written\n- [ ] sung\n"
+    print(markdown.to_html(text))
+    doc = markdown.parse(text)
+
+    for node in markdown.descendants(doc, markdown.ROOT)
+        match markdown.node_of(doc, node)
+            .heading h => print(f"heading {h.level}: {markdown.text_of(doc, node)}")
+            .document | .block_quote | .list _ | .item _ | .paragraph | .thematic_break | .code_block _ | .html_block _ | .table _ | .table_row _ | .table_cell _ | .text _ | .soft_break | .line_break | .code _ | .emphasis | .strong | .strikethrough | .link _ | .image _ | .html_inline _ => _ = 0

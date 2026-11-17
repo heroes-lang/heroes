@@ -1,0 +1,327 @@
+# The parts of a link CommonMark reads in two places, inline links and link
+# reference definitions: a label in brackets, a destination, a title, the
+# white space between them, and a whole definition with the map it fills.
+
+use markdown/internal/scan
+
+# A destination or a title read: its text, unescaped, and the byte after it;
+# `found` false where there is none.
+record Part
+    # The text.
+    text: str
+    # The byte after it.
+    end: i64
+    # Whether one was read.
+    found: bool
+
+# What a link reference definition gives a label.
+record Target
+    # The destination, unescaped and percent-encoded.
+    destination: str
+    # The title, unescaped; empty for none.
+    title: str
+
+# The byte after the spaces and tabs at `at` of `s`, then one line feed, then
+# spaces and tabs.
+function spaces_end(s: str, at: i64) -> i64
+    k @= at
+
+    while k < s.len() && scan.is_space_or_tab(s[k])
+        k @ k + 1
+
+    if k < s.len() && s[k] == '\n'
+        k @ k + 1
+
+        while k < s.len() && scan.is_space_or_tab(s[k])
+            k @ k + 1
+    return k
+
+# The byte after the link label that begins with the `[` at byte `at` of
+# `s`; -1 where none closes: an unescaped `[` inside, or more than 999
+# characters.
+function label_end(s: str, at: i64) -> i64
+    if at >= s.len() || s[at] != '['
+        return -1
+    k @= at + 1
+    count @= 0
+
+    while k < s.len() && count <= 999
+        b = s[k]
+
+        if b == ']'
+            return k + 1
+
+        if b == '['
+            return -1
+
+        if b == '\\' && k + 1 < s.len() && scan.is_ascii_punctuation(s[k + 1])
+            k @ k + 2
+            count @ count + 2
+        else
+            k @ k + 1
+
+            if b < 128 || b >= 192
+                count @ count + 1
+
+    return -1
+
+# The most parentheses one inside another in a destination, as cmark
+# allows: more is no destination, so that a line of unclosed links is read
+# in linear time.
+constant MAX_PARENS: i64
+    32
+
+# The link destination at byte `at` of `s`: in `<` and `>` with no line
+# feed, or a run with no space or control character and its parentheses
+# balanced, nested at most `MAX_PARENS` deep.
+function destination_at(s: str, at: i64) -> Part
+    none = Part(text: "", end: at, found: false)
+
+    if at < s.len() && s[at] == '<'
+        k @= at + 1
+
+        while k < s.len()
+            b = s[k]
+
+            if b == '>'
+                return Part(
+                    text: scan.normalize_uri(scan.unescape(s.slice(from: at + 1, to: k))),
+                    end: k + 1,
+                    found: true
+                )
+
+            if b == '\n' || b == '<'
+                return none
+
+            if b == '\\' && k + 1 < s.len() && scan.is_ascii_punctuation(s[k + 1])
+                k @ k + 2
+            else
+                k @ k + 1
+
+        return none
+    k @= at
+    depth @= 0
+
+    while k < s.len()
+        b = s[k]
+
+        if b == '\\' && k + 1 < s.len() && scan.is_ascii_punctuation(s[k + 1])
+            k @ k + 2
+        else if b == '('
+            depth @ depth + 1
+
+            if depth > MAX_PARENS
+                return none
+            k @ k + 1
+        else if b == ')'
+            if depth == 0
+                break
+            depth @ depth - 1
+            k @ k + 1
+        else if b <= 32 || b == 127
+            break
+        else
+            k @ k + 1
+
+    if depth != 0
+        return none
+
+    if k == at && (k >= s.len() || s[k] != ')')
+        return none
+    return Part(text: scan.normalize_uri(scan.unescape(s.slice(from: at, to: k))), end: k, found: true)
+
+# Where a title of each kind is known to find no close: from that byte on,
+# `"` first, `'` second, `(` third; past the end where nothing is known.
+function no_close(size: i64) -> [i64]
+    return [size + 1, size + 1, size + 1]
+
+# The link title at byte `at` of `s`: in `"`, `'` or parentheses, a
+# parenthesis inside the last escaped. `@memo`, made by `no_close`, keeps
+# where a search found no close, so that no stretch of `s` is searched twice
+# in vain.
+function title_at(s: str, at: i64, @memo: [i64]) -> Part
+    none = Part(text: "", end: at, found: false)
+
+    if at >= s.len()
+        return none
+    open = s[at]
+
+    slot = if open == '"'
+        0
+    else if open == '\''
+        1
+    else
+        2
+
+    if (open == '"' || open == '\'' || open == '(') && memo[slot] <= at
+        return none
+
+    close: u8 = if open == '('
+        ')'
+    else
+        open
+
+    if open != '"' && open != '\'' && open != '('
+        return none
+    k @= at + 1
+
+    while k < s.len()
+        b = s[k]
+
+        if b == close
+            return Part(text: scan.unescape(s.slice(from: at + 1, to: k)), end: k + 1, found: true)
+
+        if open == '(' && b == '('
+            return none
+
+        if b == '\\' && k + 1 < s.len() && scan.is_ascii_punctuation(s[k + 1])
+            k @ k + 2
+        else
+            k @ k + 1
+
+    if memo[slot] > at
+        memo[slot] @ at
+    return none
+
+# Whether only spaces and tabs stand between byte `at` of `s` and the end of
+# its line.
+function at_line_end(s: str, at: i64) -> bool
+    k @= at
+
+    while k < s.len() && scan.is_space_or_tab(s[k])
+        k @ k + 1
+
+    return k >= s.len() || s[k] == '\n'
+
+# The byte after the end of the line `at` stands on, its line feed included.
+function line_after(s: str, at: i64) -> i64
+    k @= at
+
+    while k < s.len() && s[k] != '\n'
+        k @ k + 1
+
+    if k < s.len()
+        return k + 1
+    return k
+
+# Reads the link reference definition at byte `at` of `s`, the content of a
+# paragraph, into `refs` where its label is new there, and answers the byte
+# after it; `at` where none stands there.
+function definition_at(s: str, at: i64, @refs: {str: Target}, @memo: [i64]) -> i64
+    end = label_end(s, at)
+
+    if end < 0 || end >= s.len() || s[end] != ':'
+        return at
+    label = s.slice(from: at, to: end)
+    dest = destination_at(s, spaces_end(s, end + 1))
+
+    if !dest.found
+        return at
+    before_title = dest.end
+    after_spaces = spaces_end(s, before_title)
+    title @= Part(text: "", end: before_title, found: false)
+
+    if after_spaces > before_title
+        title @ title_at(s, after_spaces, @memo)
+    finish @= before_title
+    words @= ""
+
+    if title.found && at_line_end(s, title.end)
+        finish @ title.end
+        words @ title.text
+    else if !at_line_end(s, before_title)
+        return at
+    key = scan.normalize_label(label)
+
+    if key.len() == 0
+        return at
+
+    if refs[key].is_err()
+        refs[key] @ Target(destination: dest.text, title: words)
+    return line_after(s, finish)
+
+# What a `]` closes into: the destination and the title, `found` false where
+# it closes into nothing.
+record Closing
+    # Whether a link was found.
+    found: bool
+    # Its destination.
+    destination: str
+    # Its title.
+    title: str
+    # The byte after it.
+    end: i64
+
+# The inline link or the reference after the `]` at byte `close` of `s`,
+# whose opener began at byte `index`.
+function closing_of(s: str, refs: {str: Target} lent, close: i64, index: i64, bracket_after: bool, @memo: [i64]) -> Closing
+    none = Closing(found: false, destination: "", title: "", end: close + 1)
+    after = close + 1
+
+    if after < s.len() && s[after] == '('
+        k = spaces_end(s, after + 1)
+        dest = destination_at(s, k)
+
+        if dest.found
+            after_dest = spaces_end(s, dest.end)
+            title @= Part(text: "", end: after_dest, found: false)
+
+            if after_dest > dest.end
+                title @ title_at(s, after_dest, @memo)
+
+            end = if title.found
+                spaces_end(s, title.end)
+            else
+                after_dest
+
+            if end < s.len() && s[end] == ')'
+                return Closing(found: true, destination: dest.text, title: title.text, end: end + 1)
+    label_stop = label_end(s, after)
+    label @= ""
+
+    if label_stop > after + 2
+        label @ s.slice(from: after, to: label_stop)
+    else if !bracket_after
+        label @ s.slice(from: index, to: close + 1)
+
+    if label.len() == 0
+        return none
+
+    match refs[scan.normalize_label(label)]
+        .ok target =>
+            end = if label_stop > after
+                label_stop
+            else
+                after
+            return Closing(found: true, destination: target.destination, title: target.title, end: end)
+        .err _ => return none
+
+test "label_end: closed, escaped bracket, a bracket inside, unclosed"
+    assert label_end("[foo] x", 0) == 5
+    assert label_end("[fo\\]o]", 0) == 7
+    assert label_end("[a[b]", 0) == -1
+    assert label_end("[abc", 0) == -1
+
+test "destination_at: pointy, bare, balanced, empty pointy, a space"
+    assert destination_at("<a b>", 0).text == "a%20b"
+    assert destination_at("/url)", 0).text == "/url"
+    assert destination_at("a(b)c", 0).text == "a(b)c"
+    assert destination_at("<>", 0).found
+    assert !destination_at("(a", 0).found
+
+test "title_at: three quotes, escapes, an open parenthesis inside"
+    memo @= no_close(10)
+    assert title_at("\"a\\\"b\"", 0, @memo).text == "a\"b"
+    assert title_at("'x'", 0, @memo).text == "x"
+    assert !title_at("(a(b)", 0, @memo).found
+    assert !title_at("\"ab", 0, @memo).found && memo[0] == 0
+
+test "definition_at: a definition, a title on the next line, a title then text"
+    refs: {str: Target} @= {}
+    s = "[Foo]: /url\n  \"the title\"\nrest"
+    memo @= no_close(s.len())
+    end = definition_at(s, 0, @refs, @memo)
+    assert end == 26 && refs["foo"].must().title == "the title"
+    other = "[x]: /u \"t\" text"
+    memo @ no_close(other.len())
+    assert definition_at(other, 0, @refs, @memo) == 0

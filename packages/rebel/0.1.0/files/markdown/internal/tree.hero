@@ -1,0 +1,339 @@
+# The package's own tree of a document while it is read and written: nodes
+# held flat in a list and linked by number to their parent, children and
+# siblings, so that adding, moving and removing a node costs the same at any
+# depth and nothing walks the tree by recursion. The face turns it into its
+# own records once reading ends.
+
+# The document, node 0.
+constant DOCUMENT: i64
+    0
+
+# A block quote.
+constant BLOCK_QUOTE: i64
+    1
+
+# A list.
+constant LIST: i64
+    2
+
+# A list item.
+constant ITEM: i64
+    3
+
+# A paragraph.
+constant PARAGRAPH: i64
+    4
+
+# A heading.
+constant HEADING: i64
+    5
+
+# A thematic break.
+constant THEMATIC_BREAK: i64
+    6
+
+# A code block.
+constant CODE_BLOCK: i64
+    7
+
+# An HTML block.
+constant HTML_BLOCK: i64
+    8
+
+# A table.
+constant TABLE: i64
+    9
+
+# A row of a table.
+constant TABLE_ROW: i64
+    10
+
+# A cell of a row.
+constant TABLE_CELL: i64
+    11
+
+# Text.
+constant TEXT: i64
+    12
+
+# A soft line break.
+constant SOFT_BREAK: i64
+    13
+
+# A hard line break.
+constant LINE_BREAK: i64
+    14
+
+# A code span.
+constant CODE: i64
+    15
+
+# Emphasis.
+constant EMPHASIS: i64
+    16
+
+# Strong emphasis.
+constant STRONG: i64
+    17
+
+# Strikethrough.
+constant STRIKETHROUGH: i64
+    18
+
+# A link.
+constant LINK: i64
+    19
+
+# An image.
+constant IMAGE: i64
+    20
+
+# Raw HTML inside a paragraph.
+constant HTML_INLINE: i64
+    21
+
+# No node.
+constant NONE: i64
+    -1
+
+# A node, its links and what its kind holds; the fields a kind does not use
+# stay empty.
+record Node
+    # One of the kinds above.
+    kind: i64
+    # The parent, or `NONE`.
+    parent: i64
+    # The first child, or `NONE`.
+    first: i64
+    # The last child, or `NONE`.
+    last: i64
+    # The sibling before, or `NONE`.
+    prev: i64
+    # The sibling after, or `NONE`.
+    next: i64
+    # Text, code, raw HTML, a code block's contents, a link's destination.
+    literal: str
+    # A link's or an image's title; a code block's info string.
+    title: str
+    # A heading's level, an ordered list's start, a code fence's length.
+    number: i64
+    # A list's bullet, `-`, `+` or `*`, or its delimiter, `.` or `)`; a code
+    # fence's character.
+    marker: str
+    # Whether a list is ordered.
+    ordered: bool
+    # Whether a list is tight; whether a code block is fenced; whether a row
+    # is the header.
+    flag: bool
+    # An item's task: 0 none, 1 unchecked, 2 checked; a cell's alignment: 0
+    # none, 1 left, 2 center, 3 right; an HTML block's kind, 1 to 7, while it
+    # is read.
+    state: i64
+    # A table's column alignments, as `state` writes one.
+    aligns: [i64]
+    # Whether a block still takes lines while the text is read.
+    open: bool
+    # The line a block begins on, from 1.
+    start_line: i64
+    # The line a block ends on.
+    end_line: i64
+    # An item's content column, its marker's offset and its padding; a
+    # fenced code block's indentation.
+    width: i64
+    # Whether the last line read into the block was blank, as the
+    # reference reads it for a list's tightness.
+    last_blank: bool
+    # Whether that was asked of it already.
+    last_checked: bool
+
+# A node of `kind` linked to nothing.
+function make(kind: i64) -> Node
+    return Node(
+        kind: kind,
+        parent: NONE,
+        first: NONE,
+        last: NONE,
+        prev: NONE,
+        next: NONE,
+        literal: "",
+        title: "",
+        number: 0,
+        marker: "",
+        ordered: false,
+        flag: false,
+        state: 0,
+        aligns: [],
+        open: true,
+        start_line: 0,
+        end_line: 0,
+        width: 0,
+        last_blank: false,
+        last_checked: false
+    )
+
+# A node of `kind` holding `literal`.
+function make_literal(kind: i64, literal: str) -> Node
+    n @= make(kind)
+    n.literal @ literal
+    return n
+
+# Adds `node` to `nodes` as the last child of `parent`, and answers its
+# number.
+function append(@nodes: [Node], parent: i64, node: Node) -> i64
+    at = nodes.len()
+    n @= node
+    n.parent @ parent
+    n.prev @ NONE
+    n.next @ NONE
+    nodes @ nodes.push(n)
+    link_last(@nodes, parent: parent, child: at)
+    return at
+
+# Links the node `child`, linked to nothing, as the last child of `parent`.
+function link_last(@nodes: [Node], parent: i64, child: i64)
+    last = nodes[parent].last
+    nodes[child].parent @ parent
+    nodes[child].prev @ last
+    nodes[child].next @ NONE
+
+    if last == NONE
+        nodes[parent].first @ child
+    else
+        nodes[last].next @ child
+    nodes[parent].last @ child
+
+# Takes `node` out of its parent's children; it keeps its own.
+function unlink(@nodes: [Node], node: i64)
+    parent = nodes[node].parent
+    prev = nodes[node].prev
+    next = nodes[node].next
+
+    if prev != NONE
+        nodes[prev].next @ next
+    else if parent != NONE
+        nodes[parent].first @ next
+
+    if next != NONE
+        nodes[next].prev @ prev
+    else if parent != NONE
+        nodes[parent].last @ prev
+    nodes[node].parent @ NONE
+    nodes[node].prev @ NONE
+    nodes[node].next @ NONE
+
+# Links the node `node`, linked to nothing, after `sibling`.
+function link_after(@nodes: [Node], sibling: i64, node: i64)
+    parent = nodes[sibling].parent
+    next = nodes[sibling].next
+    nodes[node].parent @ parent
+    nodes[node].prev @ sibling
+    nodes[node].next @ next
+    nodes[sibling].next @ node
+
+    if next != NONE
+        nodes[next].prev @ node
+    else if parent != NONE
+        nodes[parent].last @ node
+
+# Links the node `node`, linked to nothing, before `sibling`.
+function link_before(@nodes: [Node], sibling: i64, node: i64)
+    parent = nodes[sibling].parent
+    prev = nodes[sibling].prev
+    nodes[node].parent @ parent
+    nodes[node].prev @ prev
+    nodes[node].next @ sibling
+    nodes[sibling].prev @ node
+
+    if prev != NONE
+        nodes[prev].next @ node
+    else if parent != NONE
+        nodes[parent].first @ node
+
+# The children of `node`, in order.
+function children(nodes: [Node] lent, node: i64) -> [i64]
+    out: [i64] @= []
+    at @= nodes[node].first
+
+    while at != NONE
+        out @ out.push(at)
+        at @ nodes[at].next
+
+    return out
+
+# Moves every child of `from` after `start`, up to `stop` left out, to the end
+# of `to`'s children.
+function move_children(@nodes: [Node], start: i64, stop: i64, to: i64)
+    at @= start
+
+    while at != NONE && at != stop
+        next = nodes[at].next
+        unlink(@nodes, at)
+        link_last(@nodes, parent: to, child: at)
+        at @ next
+
+# Joins each two text nodes side by side under `root`, and drops the empty
+# ones, in one walk that follows the links and keeps no stack.
+function merge_texts(@nodes: [Node], root: i64)
+    at @= nodes[root].first
+
+    while at != NONE
+        if nodes[at].kind == TEXT
+            pieces: [str] @= [nodes[at].literal]
+            run @= nodes[at].next
+
+            while run != NONE && nodes[run].kind == TEXT
+                pieces @ pieces.push(nodes[run].literal)
+                after = nodes[run].next
+                unlink(@nodes, run)
+                run @ after
+
+            if pieces.len() > 1
+                nodes[at].literal @ join(pieces, "")
+
+        if nodes[at].kind == TEXT && nodes[at].literal.len() == 0
+            gone = at
+            at @ after_node(nodes, node: at, root: root)
+            unlink(@nodes, gone)
+        else if nodes[at].first != NONE
+            at @ nodes[at].first
+        else
+            at @ after_node(nodes, node: at, root: root)
+
+# The node a walk in document order visits after `node` and all of its
+# children: its next sibling, or the next sibling of the nearest parent that
+# has one, below `root`; `NONE` at the end.
+function after_node(nodes: [Node] lent, node: i64, root: i64) -> i64
+    at @= node
+
+    while at != root && at != NONE
+        if nodes[at].next != NONE
+            return nodes[at].next
+        at @ nodes[at].parent
+
+    return NONE
+
+test "append, unlink, link_after and children keep the links"
+    nodes: [Node] @= [make(DOCUMENT)]
+    a = append(@nodes, parent: 0, node: make(PARAGRAPH))
+    b = append(@nodes, parent: 0, node: make(PARAGRAPH))
+    c = append(@nodes, parent: 0, node: make(PARAGRAPH))
+    assert children(nodes, 0) == [a, b, c]
+    unlink(@nodes, b)
+    assert children(nodes, 0) == [a, c]
+    link_after(@nodes, sibling: c, node: b)
+    assert children(nodes, 0) == [a, c, b]
+    unlink(@nodes, a)
+    link_before(@nodes, sibling: c, node: a)
+    assert children(nodes, 0) == [a, c, b] && nodes[0].first == a && nodes[0].last == b
+
+test "merge_texts: three texts made one, an empty one dropped"
+    nodes: [Node] @= [make(DOCUMENT)]
+    p = append(@nodes, parent: 0, node: make(PARAGRAPH))
+    _ = append(@nodes, parent: p, node: make_literal(TEXT, literal: "a"))
+    _ = append(@nodes, parent: p, node: make_literal(TEXT, literal: "b"))
+    _ = append(@nodes, parent: p, node: make_literal(TEXT, literal: "c"))
+    _ = append(@nodes, parent: p, node: make(SOFT_BREAK))
+    _ = append(@nodes, parent: p, node: make_literal(TEXT, literal: ""))
+    merge_texts(@nodes, root: 0)
+    kids = children(nodes, p)
+    assert kids.len() == 2 && nodes[kids[0]].literal == "abc"

@@ -1,0 +1,91 @@
+# The package's own picture of a version and a comparator, which the private
+# modules work on and the face turns into its records: a version's three
+# numbers and identifiers, a comparator's operator as a number, and the codes.
+
+# The code of a text that is not what the function reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a number past the largest `u64`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a search that found nothing.
+constant NOT_FOUND: str
+    "not_found"
+
+# The largest number a version holds.
+constant HIGHEST: u64
+    18446744073709551615
+
+# The most comparators one set holds.
+constant MAX_COMPARATORS: i64
+    32
+
+# `=`.
+constant EXACT: i64
+    0
+
+# `>`.
+constant GREATER: i64
+    1
+
+# `>=`.
+constant GREATER_EQ: i64
+    2
+
+# `<`.
+constant LESS: i64
+    3
+
+# `<=`.
+constant LESS_EQ: i64
+    4
+
+# `~`.
+constant TILDE: i64
+    5
+
+# `^`, and a bare version.
+constant CARET: i64
+    6
+
+# `*`, `x` and `X` after the numbers written.
+constant WILDCARD: i64
+    7
+
+# A version.
+record Ver
+    # The major number.
+    major: u64
+    # The minor number.
+    minor: u64
+    # The patch number.
+    patch: u64
+    # The pre-release identifiers.
+    pre: [str]
+    # The build metadata identifiers.
+    build: [str]
+
+# A comparator.
+record Cmp
+    # The operator, one of the constants above.
+    op: i64
+    # The major number.
+    major: u64
+    # The minor number, 0 where not written.
+    minor: u64
+    # The patch number, 0 where not written.
+    patch: u64
+    # How many numbers were written, 1 to 3.
+    written: i64
+    # The pre-release identifiers.
+    pre: [str]
+
+# The release `major.minor.patch`.
+function release(major: u64, minor: u64, patch: u64) -> Ver
+    return Ver(major: major, minor: minor, patch: patch, pre: [], build: [])
+
+test "release: no identifiers"
+    v = release(major: 1, minor: 2, patch: 3)
+    assert v.pre.len() == 0 && v.build.len() == 0 && v.patch == 3

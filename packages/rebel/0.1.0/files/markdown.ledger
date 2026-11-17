@@ -1,0 +1,249 @@
+# The ledger of `markdown`: what Go's goldmark (github.com/yuin/goldmark
+# v1.8.7, with its `extension`, `ast`, `parser` and `renderer/html`
+# packages), Rust's pulldown-cmark (0.13) and comrak (0.40), and Python's
+# markdown-it-py (4.3.0) and Python-Markdown (3.11.3) let a program do with
+# Markdown, one block per capability, and what Rebel answers. No standard
+# library of the three reads Markdown.
+#
+# The lists are this machine's, 2026-11-17: `go doc` of goldmark's packages
+# fetched into the scratch folder; the items of `cargo doc` of pulldown-cmark
+# and comrak (structs, enums, functions, options' fields and constants); and
+# `dir()` of `markdown_it`, `MarkdownIt`, `Token`, `SyntaxTreeNode`,
+# `markdown` and `markdown.Markdown`.
+#
+# The tests hold every example of the CommonMark specification 0.31.2, 652,
+# and GFM's 23 examples of tables, strikethrough, extended autolinks and task
+# list items, each passing byte for byte. The differential, 2026-11-17,
+# against commonmark.js 0.31.2 (the specification's reference in JavaScript,
+# fetched into the scratch folder): 48,000 generated documents, 18,000 of
+# inline fragments and 30,000 of block structure (indentation, tabs, every
+# container marker), written alike but for 4, which the notes of md/read and
+# md/lists name. 40 pathological inputs of 50,000 repetitions (nested
+# brackets, emphasis, backticks, unclosed links, titles, raw HTML and
+# comments, 50,000 block quotes, 3,000 nested lists, 200,000 lines) each read
+# in 1.2 s or less and 200 MB or less.
+
+capability md/read  CommonMark read whole: every block and inline of the specification
+  heroes  markdown.parse, markdown.parse_with, markdown.Document
+  go      Markdown, New, DefaultParser, parser.Parser, parser.NewParser, parser.Context, parser.NewContext, parser.DefaultBlockParsers, parser.DefaultInlineParsers, parser.DefaultParagraphTransformers, parser.LinkReferenceParagraphTransformer, parser.ProcessDelimiters
+  rust    pulldown_cmark::Parser, pulldown_cmark::Parser::new, pulldown_cmark::Parser::new_ext, comrak::parse_document, comrak::Arena
+  python  MarkdownIt, MarkdownIt.parse, markdown.Markdown, markdown.Markdown.reset
+  note    CommonMark 0.31.2: its 652 examples pass. Two of the generated documents differ from commonmark.js the same way, and follow the specification: a paragraph that holds only link reference definitions, under a setext underline, is no paragraph, where commonmark.js writes `<p></p>`; a paragraph whose definitions are taken out is none elsewhere in both
+
+capability md/html  a document written as HTML
+  heroes  markdown.to_html, markdown.to_html_with, markdown.format_html
+  go      Convert, Markdown.Convert, DefaultRenderer, renderer/html.NewRenderer, renderer/html.Renderer, renderer/html.Config, renderer/html.DefaultWriter, renderer/html.Writer, renderer/html.WriterConfig, renderer/html.WithWriter, renderer/html.WithXHTML
+  rust    pulldown_cmark::html::push_html, comrak::markdown_to_html, comrak::format_html, comrak::RenderOptions
+  python  MarkdownIt.render, markdown.markdown, markdown.Markdown.convert, markdown.markdownFromFile, markdown.Markdown.convertFile, markdown.Markdown.set_output_format, markdown.Markdown.output_formats
+  note    as the reference renderer writes it, empty elements as `<br />`, `<hr />` and `<img ... />`, which goldmark writes with `WithXHTML`; a file is read with `read_file` or `fs` first
+
+capability md/tree  the document as a tree a program walks
+  heroes  markdown.node_of, markdown.children, markdown.parent, markdown.next_sibling, markdown.previous_sibling, markdown.descendants, markdown.Node, markdown.ROOT, markdown.Align, markdown.Task
+  go      ast.Node, ast.Walk, ast.Walker, ast.WalkStatus, ast.NodeKind, ast.NodeType, ast.BaseNode, ast.BaseBlock, ast.BaseInline, ast.Document, ast.Paragraph, ast.Heading, ast.Blockquote, ast.List, ast.ListItem, ast.CodeBlock, ast.FencedCodeBlock, ast.HTMLBlock, ast.HTMLBlockType, ast.ThematicBreak, ast.TextBlock, ast.Text, ast.String, ast.CodeSpan, ast.Emphasis, ast.Link, ast.Image, ast.AutoLink, ast.AutoLinkType, ast.RawHTML, ast.LinkReferenceDefinition, ast.IsParagraph, ast.KindDocument, ast.KindParagraph, ast.KindHeading, ast.KindBlockquote, ast.KindList, ast.KindListItem, ast.KindCodeBlock, ast.KindFencedCodeBlock, ast.KindHTMLBlock, ast.KindThematicBreak, ast.KindTextBlock, ast.KindText, ast.KindString, ast.KindCodeSpan, ast.KindEmphasis, ast.KindLink, ast.KindImage, ast.KindAutoLink, ast.KindRawHTML, ast.KindLinkReferenceDefinition
+  rust    pulldown_cmark::Event, pulldown_cmark::Tag, pulldown_cmark::TagEnd, pulldown_cmark::HeadingLevel, pulldown_cmark::CodeBlockKind, pulldown_cmark::LinkType, pulldown_cmark::Alignment, pulldown_cmark::CowStr, pulldown_cmark::InlineStr, comrak::nodes, comrak::arena_tree
+  python  Token, Token.type, Token.tag, Token.children, Token.content, Token.info, Token.markup, Token.nesting, Token.level, Token.block, Token.hidden, SyntaxTreeNode, SyntaxTreeNode.walk, SyntaxTreeNode.parent, SyntaxTreeNode.children, SyntaxTreeNode.next_sibling, SyntaxTreeNode.previous_sibling, SyntaxTreeNode.siblings, SyntaxTreeNode.is_root, SyntaxTreeNode.is_nested, SyntaxTreeNode.pretty, SyntaxTreeNode.to_tokens
+  note    nodes numbered in one list and linked to their parent, children and siblings, as comrak's arena and goldmark's tree hold them; pulldown-cmark answers a stream of events, which `descendants` gives in the same order. A `match` on `Node` answers every kind, so a program that misses one does not compile
+
+capability md/change  the tree changed and written again
+  heroes  markdown.add_child, markdown.insert_before, markdown.insert_after, markdown.remove, markdown.set_node
+  go      ast.Node
+  rust    comrak::arena_tree
+  python  Token.attrSet, Token.attrPush, Token.attrJoin, Token.attrGet, Token.attrIndex, Token.attrItems, Token.attrs, Token.copy, Token.as_dict, Token.from_dict, Token.meta, SyntaxTreeNode.attrGet, SyntaxTreeNode.attrs
+  note    goldmark's node methods (AppendChild, InsertBefore, RemoveChild and the rest) and comrak's arena do the same; an attribute map on a node, markdown-it's, has no counterpart: a node holds what its kind holds
+
+capability md/text  the plain text of a node
+  heroes  markdown.text_of
+  go      ast.Node
+  rust    -
+  python  SyntaxTreeNode.content
+  note    texts and code joined, a line ending for each break, as an image's description is written
+
+capability md/references  the link reference definitions of a document
+  heroes  markdown.references_of, markdown.Reference
+  go      parser.Reference, parser.Context, ast.LinkReferenceDefinition, ast.ReferenceLink, ast.ReferenceLinkType
+  rust    pulldown_cmark::RefDefs, comrak::ResolvedReference
+  python  MarkdownIt.parse
+  note    labels as the specification compares them, case folded and white space collapsed; the first definition of a label wins
+
+capability md/broken-links  a function asked for the destination of a reference no definition names
+  heroes  pending
+  go      -
+  rust    pulldown_cmark::BrokenLink, pulldown_cmark::BrokenLinkCallback, pulldown_cmark::DefaultBrokenLinkCallback, pulldown_cmark::Parser::new_with_broken_link_callback, comrak::BrokenLinkCallback, comrak::BrokenLinkReference, comrak::parse_document_with_broken_link_callback
+  python  -
+  note    the brackets of a reference that names nothing stay text; a top-level function given in `Options` could answer them, not done in this round
+
+capability md/gfm  GFM read: its tables, strikethrough, extended autolinks and task list items
+  heroes  markdown.default_options, markdown.Options
+  go      extension.GFM
+  rust    pulldown_cmark::Options::ENABLE_GFM, comrak::ExtensionOptions, comrak::ParseOptions
+  python  MarkdownIt
+  note    `default_options` reads the four, as GFM's specification writes them (its 23 examples pass). GFM's tag filter is md/tag-filter
+
+capability md/commonmark-only  CommonMark alone, as the specification's examples are written
+  heroes  markdown.commonmark_options
+  go      New
+  rust    pulldown_cmark::Options
+  python  MarkdownIt
+  note    no extension, raw HTML and every destination kept: the reference renderer's answers
+
+capability md/tables  GFM tables, with their column alignments
+  heroes  markdown.Options.tables, markdown.Node, markdown.Align
+  go      extension.Table, extension.NewTable, extension.NewTableParser, extension.NewTableHTMLRenderer, extension.NewTableASTTransformer, extension.NewTableParagraphTransformer, extension.TableConfig, extension.TableOption, extension.TableCellAlignMethod, extension.TableHTMLRenderer, extension.TableAttributeFilter, extension.TableHeaderAttributeFilter, extension.TableRowAttributeFilter, extension.TableThCellAttributeFilter, extension.TableTdCellAttributeFilter
+  rust    pulldown_cmark::Options::ENABLE_TABLES, comrak::ExtensionOptions.table
+  python  MarkdownIt.enable
+  note    a delimiter row turns the paragraph's last line into a header, the lines before it staying a paragraph (GFM's examples do not settle a paragraph of several lines; cmark-gfm was not asked); a row shorter than the header is filled, a longer one cut; `align="..."` on each cell
+
+capability md/strikethrough  GFM strikethrough, `~a~` and `~~a~~`
+  heroes  markdown.Options.strikethrough
+  go      extension.Strikethrough, extension.NewStrikethroughParser, extension.NewStrikethroughHTMLRenderer, extension.StrikethroughHTMLRenderer, extension.StrikethroughAttributeFilter
+  rust    pulldown_cmark::Options::ENABLE_STRIKETHROUGH, comrak::ExtensionOptions.strikethrough
+  python  MarkdownIt.enable
+  note    an opener and a closer of the same length, one or two tildes; three or more are text
+
+capability md/autolinks  GFM's extended autolinks: `www.`, `http://`, `https://`, `ftp://` and email addresses without `<` and `>`
+  heroes  markdown.Options.autolinks
+  go      extension.Linkify, extension.NewLinkify, extension.NewLinkifyParser, extension.LinkifyConfig, extension.LinkifyOption
+  rust    comrak::ExtensionOptions.autolink, comrak::ParseOptions.relaxed_autolinks
+  python  -
+  note    found in text after reading, never inside a link, by the GFM specification's rules: valid domains, trailing punctuation, unbalanced parentheses and entity-like endings left out. comrak's relaxed autolinks, another rule, are not taken
+
+capability md/task-lists  GFM task list items, `- [ ]` and `- [x]`
+  heroes  markdown.Options.task_lists, markdown.Task
+  go      extension.TaskList, extension.NewTaskCheckBoxParser, extension.NewTaskCheckBoxHTMLRenderer, extension.TaskCheckBoxHTMLRenderer
+  rust    pulldown_cmark::Options::ENABLE_TASKLISTS, comrak::ExtensionOptions.tasklist, comrak::ParseOptions.relaxed_tasklist_matching, comrak::RenderOptions.tasklist_classes
+  python  -
+  note    written as GFM's examples write them, `<input disabled="" type="checkbox">`; a box is `[ ]`, `[x]` or `[X]` before a space or a tab, as GFM reads it
+
+capability md/raw-html  raw HTML escaped, or kept
+  heroes  markdown.Options.keep_html
+  go      renderer/html.WithUnsafe
+  rust    comrak::RenderOptions.unsafe_, comrak::RenderOptions.escape
+  python  MarkdownIt
+  note    escaped by default, so that it shows as text, an HTML block inside `<p>`; kept, it is written as the reference writes it. What the other libraries do by default was not asked
+
+capability md/tag-filter  GFM's tag filter: a fixed list of tags escaped while other raw HTML is kept
+  heroes  refused: half a filter; HTML is escaped whole by default, and a program that keeps it decides which tags to keep by walking the tree
+  go      -
+  rust    comrak::ExtensionOptions.tagfilter
+  python  -
+  note    -
+
+capability md/unsafe-links  a link or an image to `javascript:`, `vbscript:`, `file:` or `data:` written with an empty destination
+  heroes  markdown.Options.keep_unsafe_links
+  go      renderer/html.IsDangerousURL
+  rust    comrak::RenderOptions.unsafe_
+  python  MarkdownIt.validateLink, MarkdownIt.normalizeLink, MarkdownIt.normalizeLinkText
+  note    refused by default, an image of PNG, GIF, JPEG or WebP in `data:` kept
+
+capability md/depth  how deep block quotes and lists may nest, and no stack to overflow
+  heroes  markdown.Options.max_depth, markdown.DEFAULT_MAX_DEPTH
+  go      -
+  rust    -
+  python  -
+  note    markers past the depth are read as text; nothing recurses on the data, so a deep document cannot overflow the stack, and a link destination nests at most 32 parentheses, cmark's limit, so that a line of unclosed links reads in linear time
+
+capability md/configure  rules enabled and disabled one by one, a parser built from parts
+  heroes  refused: the options are the switches; Heroes has no interface for a rule of a program's own to stand in the reader, and a program changes the tree between reading and writing instead
+  go      Extender, Option, WithExtensions, WithParser, WithParserOptions, WithRenderer, WithRendererOptions, parser.BlockParser, parser.InlineParser, parser.ParagraphTransformer, parser.ASTTransformer, parser.DelimiterProcessor, parser.Delimiter, parser.CloseBlocker, parser.SetOptioner, parser.Option, parser.OptionName, parser.Config, parser.ParseConfig, parser.ParseOption, parser.ContextConfig, parser.ContextOption, parser.ContextKey, parser.State, parser.Block, parser.Attribute, parser.Attributes, renderer/html.Option, renderer/html.RenderAttributes, renderer/html.GlobalAttributeFilter, renderer/html.BlockquoteAttributeFilter, renderer/html.CodeAttributeFilter, renderer/html.EmphasisAttributeFilter, renderer/html.HeadingAttributeFilter, renderer/html.ImageAttributeFilter, renderer/html.LinkAttributeFilter, renderer/html.ListAttributeFilter, renderer/html.ListItemAttributeFilter, renderer/html.ParagraphAttributeFilter, renderer/html.ThematicAttributeFilter
+  rust    comrak::Plugins, comrak::RenderPlugins, comrak::URLRewriter, comrak::RenderOptions, comrak::create_formatter
+  python  MarkdownIt.use, MarkdownIt.enable, MarkdownIt.disable, MarkdownIt.configure, MarkdownIt.set, MarkdownIt.reset_rules, MarkdownIt.get_all_rules, MarkdownIt.get_active_rules, MarkdownIt.add_render_rule, markdown.Extension, markdown.Markdown.registerExtension, markdown.Markdown.registerExtensions, markdown.Markdown.build_extension, markdown.Markdown.build_parser, markdown.blockprocessors, markdown.inlinepatterns, markdown.treeprocessors, markdown.preprocessors, markdown.postprocessors
+  note    -
+
+capability md/inline-only  a text read as inlines alone, no blocks
+  heroes  pending
+  go      -
+  rust    -
+  python  MarkdownIt.parseInline, MarkdownIt.renderInline
+  note    a heading's or a table cell's text read alone, without `<p>`; not done in this round
+
+capability md/hard-breaks  every line ending written as a hard break
+  heroes  pending
+  go      renderer/html.WithHardWraps
+  rust    comrak::RenderOptions.hardbreaks
+  python  MarkdownIt.set
+  note    a switch of the writer; not done in this round
+
+capability md/smart-punctuation  straight quotes, `--` and `...` written as typographic ones
+  heroes  pending
+  go      extension.Typographer, extension.NewTypographer, extension.NewTypographerParser, extension.TypographerConfig, extension.TypographerOption, extension.TypographicPunctuation, extension.TypographicSubstitutions
+  rust    pulldown_cmark::Options::ENABLE_SMART_PUNCTUATION, comrak::ParseOptions.smart
+  python  MarkdownIt.enable
+  note    commonmark.js's smart punctuation; not done in this round
+
+capability md/footnotes  footnote references and definitions
+  heroes  pending
+  go      extension.Footnote, extension.NewFootnote, extension.NewFootnoteParser, extension.NewFootnoteBlockParser, extension.NewFootnoteASTTransformer, extension.NewFootnoteHTMLRenderer, extension.FootnoteConfig, extension.FootnoteOption, extension.FootnoteHTMLRenderer
+  rust    pulldown_cmark::Options::ENABLE_FOOTNOTES, pulldown_cmark::Options::ENABLE_OLD_FOOTNOTES, comrak::ExtensionOptions.footnotes
+  python  -
+  note    GFM's footnotes are outside its specification's examples; not done in this round
+
+capability md/heading-ids  an `id` for each heading, from its text
+  heroes  pending
+  go      parser.IDs, parser.HeadingConfig, parser.HeadingOption
+  rust    pulldown_cmark::Options::ENABLE_HEADING_ATTRIBUTES, comrak::ExtensionOptions.header_ids, comrak::Anchorizer
+  python  -
+  note    `text_of` gives the text a program makes one from; the rule of making it, GitHub's, not done in this round
+
+capability md/definition-lists  definition lists
+  heroes  pending
+  go      extension.DefinitionList, extension.NewDefinitionListParser, extension.NewDefinitionDescriptionParser, extension.NewDefinitionListHTMLRenderer, extension.DefinitionListHTMLRenderer, extension.DefinitionListAttributeFilter, extension.DefinitionTermAttributeFilter, extension.DefinitionDescriptionAttributeFilter
+  rust    pulldown_cmark::Options::ENABLE_DEFINITION_LIST, comrak::ExtensionOptions.description_lists
+  python  -
+  note    an extension of PHP Markdown Extra; not done in this round
+
+capability md/front-matter  a metadata block before the document
+  heroes  pending
+  go      -
+  rust    pulldown_cmark::Options::ENABLE_YAML_STYLE_METADATA_BLOCKS, pulldown_cmark::Options::ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS, pulldown_cmark::MetadataBlockKind, comrak::ExtensionOptions.front_matter_delimiter
+  python  -
+  note    the block a program would read with `yaml` or `toml`; not done in this round
+
+capability md/math  math between dollars
+  heroes  pending
+  go      -
+  rust    pulldown_cmark::Options::ENABLE_MATH, comrak::ExtensionOptions.math_dollars, comrak::ExtensionOptions.math_code
+  python  -
+  note    no shared specification; not done in this round
+
+capability md/write-markdown  a tree written back as Markdown
+  heroes  pending
+  go      -
+  rust    comrak::format_commonmark, comrak::format_commonmark_with_plugins, comrak::markdown_to_commonmark, comrak::ParseOptions.default_info_string
+  python  -
+  note    a writer that reads back to the same tree, escaping what it must; not done in this round
+
+capability md/xml  a tree written as CommonMark's XML
+  heroes  refused: the tree is values a program walks; `xml` writes any document the program builds from it
+  go      ast.DumpHelper
+  rust    comrak::format_xml, comrak::format_xml_with_plugins, comrak::markdown_to_commonmark_xml, comrak::markdown_to_commonmark_xml_with_plugins
+  python  SyntaxTreeNode.pretty
+  note    -
+
+capability md/source-positions  where each node stands in the text, by line and column
+  heroes  pending
+  go      ast.Node
+  rust    pulldown_cmark::OffsetIter, pulldown_cmark::Parser::into_offset_iter, comrak::RenderOptions.sourcepos
+  python  Token.map
+  note    the reader knows each block's lines while it reads; the tree does not keep them in this round
+
+capability md/dialects  extensions of other dialects than CommonMark and GFM: alerts, wiki links, sub- and superscript, underline, spoilers, greentext, East Asian line breaks
+  heroes  refused: no specification shared by two implementations; each would be one library's dialect, and Rebel reads CommonMark and GFM
+  go      extension.CJK, extension.NewCJK, extension.CJKOption, extension.EastAsianLineBreaks, renderer/html.EastAsianLineBreaks, renderer/html.WithEastAsianLineBreaks
+  rust    pulldown_cmark::BlockQuoteKind, pulldown_cmark::Options::ENABLE_SUPERSCRIPT, pulldown_cmark::Options::ENABLE_SUBSCRIPT, pulldown_cmark::Options::ENABLE_WIKILINKS, comrak::ExtensionOptions.alerts, comrak::ExtensionOptions.wikilinks_title_after_pipe, comrak::ExtensionOptions.wikilinks_title_before_pipe, comrak::WikiLinksMode, comrak::ExtensionOptions.subscript, comrak::ExtensionOptions.superscript, comrak::ExtensionOptions.underline, comrak::ExtensionOptions.spoiler, comrak::ExtensionOptions.greentext, comrak::ExtensionOptions.multiline_block_quotes, comrak::ParseOptions.escaped_char_spans, comrak::RenderOptions.figure_with_caption, comrak::RenderOptions.ignore_setext, comrak::RenderOptions.ignore_empty_links, comrak::RenderOptions.gfm_quirks, comrak::RenderOptions.github_pre_lang, comrak::RenderOptions.full_info_string, comrak::RenderOptions.list_style, comrak::ListStyleType, comrak::RenderOptions.prefer_fenced, comrak::RenderOptions.width, comrak::RenderOptions.ol_width, comrak::RenderOptions.experimental_minimize_commonmark, comrak::ParseOptions.broken_link_callback, comrak::RenderOptions.image_url_rewriter, comrak::RenderOptions.link_url_rewriter
+  python  markdown.extensions
+  note    -
+
+capability md/lists  lists, tight and loose
+  heroes  markdown.Node
+  go      ast.List, ast.ListItem
+  rust    pulldown_cmark::Tag
+  python  Token
+  note    tightness read as commonmark.js reads it, from the blank last lines of blocks; two of the 48,000 generated documents differ, a block quote holding a list and ending with a `>` line alone, which commonmark.js reads tight and this reads loose
+
+dropped
+  go      DefaultRenderer, DefaultParser: constructors of the configurable parts; md/configure
+  go      ast.MergeOrAppendTextSegment, ast.MergeOrReplaceTextSegment, ast.Attribute: goldmark's own text segments into its source buffer and attribute lists
+  rust    comrak::version, comrak::Options, the `Comrak*` type aliases, comrak::ExtensionOptions.description_lists' and the other options' builders: the crate's own version and configuration plumbing
+  rust    pulldown_cmark::InvalidHeadingLevel: the error of a conversion from a number; a heading's level here is a number
+  python  markdown_it.common, markdown_it.helpers, markdown_it.main, markdown_it.parser_block, markdown_it.parser_core, markdown_it.parser_inline, markdown_it.presets, markdown_it.renderer, markdown_it.ruler, markdown_it.rules_block, markdown_it.rules_core, markdown_it.rules_inline, markdown_it.token, markdown_it.utils: the modules the package is made of
+  python  markdown.blockparser, markdown.core, markdown.htmlparser, markdown.serializers, markdown.util, markdown.annotations, markdown.Markdown.doc_tag, markdown.Markdown.is_block_level: Python-Markdown's internals; it reads its own dialect, not CommonMark

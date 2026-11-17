@@ -1,0 +1,151 @@
+# Emphasis, strong emphasis and GFM strikethrough, made from the runs of `*`,
+# `_` and `~` once their text is read: the specification's "process
+# emphasis" over a list of delimiter runs linked both ways, with the lowest
+# opener each kind of closer may still reach remembered, so that no run is
+# looked at twice in vain.
+
+use markdown/internal/tree
+
+# A run of delimiters waiting to be matched.
+record Delim
+    # Its character: `*`, `_` or `~`.
+    mark: u8
+    # How many are left.
+    count: i64
+    # How many there were.
+    orig: i64
+    # The text node holding them.
+    node: i64
+    # The run before, or `tree.NONE`.
+    prev: i64
+    # The run after, or `tree.NONE`.
+    next: i64
+    # Whether it may open.
+    can_open: bool
+    # Whether it may close.
+    can_close: bool
+
+# Where the lowest opener for closers of one kind is kept.
+function bottom_index(mark: u8, can_open: bool, orig: i64) -> i64
+    kind = if mark == '*'
+        0
+    else if mark == '_'
+        1
+    else
+        2
+
+    opens = if can_open
+        3
+    else
+        0
+    return kind * 6 + opens + orig % 3
+
+# Takes run `d` out of the list.
+function remove(@delims: [Delim], d: i64)
+    p = delims[d].prev
+    n = delims[d].next
+
+    if p != tree.NONE
+        delims[p].next @ n
+
+    if n != tree.NONE
+        delims[n].prev @ p
+
+# Whether the opener `o` may match the closer `d`.
+function matches(o: Delim, d: Delim) -> bool
+    if o.mark != d.mark || !o.can_open
+        return false
+
+    if o.mark == '~'
+        return o.count == d.count
+    odd = (d.can_open || o.can_close) && d.orig % 3 != 0 && (o.orig + d.orig) % 3 == 0
+    return !odd
+
+# Matches the runs above `bottom`, the last of which is `head`, into
+# emphasis, strong emphasis and strikethrough, and takes every run above
+# `bottom` out of the list.
+function process(@nodes: [tree.Node], @delims: [Delim], head: i64, bottom: i64)
+    if head == bottom
+        return
+    bottoms: [i64] @= []
+
+    for _ in range(from: 0, to: 18)
+        bottoms @ bottoms.push(bottom)
+
+    closer @= head
+
+    while closer != tree.NONE && delims[closer].prev != bottom
+        closer @ delims[closer].prev
+
+    while closer != tree.NONE
+        d = delims[closer]
+
+        if !d.can_close
+            closer @ d.next
+            continue
+        index = bottom_index(d.mark, can_open: d.can_open, orig: d.orig)
+        opener @= d.prev
+        found @= false
+
+        while opener != tree.NONE && opener != bottom && opener != bottoms[index]
+            if matches(o: delims[opener], d: d)
+                found @ true
+                break
+            opener @ delims[opener].prev
+
+        if !found
+            bottoms[index] @ d.prev
+
+            if !d.can_open
+                remove(@delims, closer)
+            closer @ d.next
+            continue
+        o = delims[opener]
+
+        taken = if d.mark == '~'
+            d.count
+        else if d.count >= 2 && o.count >= 2
+            2
+        else
+            1
+
+        kind = if d.mark == '~'
+            tree.STRIKETHROUGH
+        else if taken == 2
+            tree.STRONG
+        else
+            tree.EMPHASIS
+        delims[opener].count @ o.count - taken
+        delims[closer].count @ d.count - taken
+        open_text = nodes[o.node].literal
+        nodes[o.node].literal @ open_text.slice(from: 0, to: open_text.len() - taken)
+        close_text = nodes[d.node].literal
+        nodes[d.node].literal @ close_text.slice(from: 0, to: close_text.len() - taken)
+        made @= tree.make(kind)
+        made.open @ false
+        wrap = nodes.len()
+        nodes @ nodes.push(made)
+        tree.move_children(@nodes, start: nodes[o.node].next, stop: d.node, to: wrap)
+        tree.link_after(@nodes, sibling: o.node, node: wrap)
+        delims[opener].next @ closer
+        delims[closer].prev @ opener
+
+        if delims[opener].count == 0
+            tree.unlink(@nodes, o.node)
+            remove(@delims, opener)
+
+        if delims[closer].count == 0
+            tree.unlink(@nodes, d.node)
+            after = delims[closer].next
+            remove(@delims, closer)
+            closer @ after
+
+test "bottom_index: eighteen places"
+    assert bottom_index('*', can_open: false, orig: 0) == 0
+    assert bottom_index('~', can_open: true, orig: 5) == 17
+
+test "matches: the rule of three"
+    a = Delim(mark: '*', count: 1, orig: 1, node: 0, prev: -1, next: -1, can_open: true, can_close: true)
+    b = Delim(mark: '*', count: 2, orig: 2, node: 0, prev: -1, next: -1, can_open: true, can_close: true)
+    assert !matches(o: a, d: b)
+    assert matches(o: b, d: b)
