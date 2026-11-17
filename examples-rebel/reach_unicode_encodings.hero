@@ -1,0 +1,9 @@
+# Reaches Rebel's `unicode/encodings`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It reads a word written in Shift_JIS
+# and prints it, then the name `latin1` gives: "日本 windows-1252".
+
+use <rebel>/unicode/encodings
+
+function main()
+    word = encodings.decode([0x93, 0xfa, 0x96, 0x7b], encoding: encodings.SHIFT_JIS).must()
+    print(word, " ", encodings.name_of("latin1").must())

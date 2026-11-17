@@ -1,0 +1,806 @@
+# Bytes in the encodings of the WHATWG Encoding Standard read as text and text
+# written back as bytes, as a browser reads a page: the 40 encodings of the
+# standard (UTF-8, UTF-16, the 28 single-byte ones from IBM866 to
+# windows-1258, gb18030 and GBK, Big5 with Hong Kong's extensions, EUC-JP,
+# ISO-2022-JP, Shift_JIS, EUC-KR, and the two of its own), every label it
+# reads them by, its byte order marks, and its two error modes each way; and
+# the encoding of bytes nobody declared, guessed with a confidence. Its tables
+# are the standard's index files of 2024-09-18 (the Living Standard of 19
+# October 2026), held in modules of their own.
+#
+# An encoding is named by a `str`: a label of the standard, in any case and
+# with white space around it, as a `charset` writes it, or its name, which the
+# constants below hold. `latin1`, `iso-8859-1` and `ascii` name windows-1252,
+# as in every browser; bytes that mean their own numbers, as an HTTP header's
+# do, are `decode_isomorphic`'s.
+#
+# It does not read the `charset` of a page, a header or a mail: `html`,
+# `http` and `mail` find the label, and call `decode` with it. It does not
+# turn code points into UTF-8 or UTF-16 units, which `unicode` does, nor bytes
+# into hexadecimal, which `bytes` does. A `str` holds UTF-8, so what is read
+# is always text, and what cannot be read is U+FFFD or a failure.
+#
+# It fails `not_found` for a label the standard does not read, `invalid` for
+# bytes an encoding cannot read where the call is strict, and `unsupported`
+# for a character an encoding has no bytes for where the call is strict, and
+# for writing in the encoding `replacement`, which has no bytes for anything.
+
+use bytes
+use unicode
+use unicode/encodings/internal/codes
+use unicode/encodings/internal/guess
+use unicode/encodings/internal/machine
+use unicode/encodings/internal/registry
+use unicode/encodings/internal/run
+use unicode/encodings/internal/single
+
+## Codes
+
+# The code of a label the standard reads as no encoding: every function that
+# takes an encoding fails with it, and `sniff_bom` where no byte order mark
+# begins the bytes.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of bytes an encoding cannot read, where the call is strict:
+# `decode_strict` and `decode_chunk_strict`.
+constant INVALID: str
+    codes.INVALID
+
+# The code of a character an encoding has no bytes for, where the call is
+# strict (`encode`, `encode_chunk`, `encode_isomorphic`), and of writing in the
+# encoding `replacement`.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+## The encodings
+
+# UTF-8, the encoding every new text is written in.
+constant UTF_8: str
+    "UTF-8"
+
+# IBM866, the DOS code page of Russian.
+constant IBM866: str
+    "IBM866"
+
+# ISO-8859-2, Latin-2, of Central Europe.
+constant ISO_8859_2: str
+    "ISO-8859-2"
+
+# ISO-8859-3, Latin-3, of Maltese and Esperanto.
+constant ISO_8859_3: str
+    "ISO-8859-3"
+
+# ISO-8859-4, Latin-4, of the Baltic languages.
+constant ISO_8859_4: str
+    "ISO-8859-4"
+
+# ISO-8859-5, of Cyrillic.
+constant ISO_8859_5: str
+    "ISO-8859-5"
+
+# ISO-8859-6, of Arabic.
+constant ISO_8859_6: str
+    "ISO-8859-6"
+
+# ISO-8859-7, of Greek.
+constant ISO_8859_7: str
+    "ISO-8859-7"
+
+# ISO-8859-8, of Hebrew written in the order it is shown.
+constant ISO_8859_8: str
+    "ISO-8859-8"
+
+# ISO-8859-8-I, of Hebrew written in the order it is read: ISO-8859-8's bytes,
+# which a browser lays out by the bidirectional algorithm.
+constant ISO_8859_8_I: str
+    "ISO-8859-8-I"
+
+# ISO-8859-10, Latin-6, of the Nordic languages.
+constant ISO_8859_10: str
+    "ISO-8859-10"
+
+# ISO-8859-13, Latin-7, of the Baltic languages.
+constant ISO_8859_13: str
+    "ISO-8859-13"
+
+# ISO-8859-14, Latin-8, of the Celtic languages.
+constant ISO_8859_14: str
+    "ISO-8859-14"
+
+# ISO-8859-15, Latin-9: Latin-1 with the euro sign.
+constant ISO_8859_15: str
+    "ISO-8859-15"
+
+# ISO-8859-16, Latin-10, of South-Eastern Europe.
+constant ISO_8859_16: str
+    "ISO-8859-16"
+
+# KOI8-R, of Russian.
+constant KOI8_R: str
+    "KOI8-R"
+
+# KOI8-U, of Ukrainian.
+constant KOI8_U: str
+    "KOI8-U"
+
+# The Mac OS Roman encoding.
+constant MACINTOSH: str
+    "macintosh"
+
+# windows-874, of Thai.
+constant WINDOWS_874: str
+    "windows-874"
+
+# windows-1250, of Central Europe.
+constant WINDOWS_1250: str
+    "windows-1250"
+
+# windows-1251, of Cyrillic.
+constant WINDOWS_1251: str
+    "windows-1251"
+
+# windows-1252, of Western Europe: the encoding `latin1`, `iso-8859-1` and
+# `ascii` name.
+constant WINDOWS_1252: str
+    "windows-1252"
+
+# windows-1253, of Greek.
+constant WINDOWS_1253: str
+    "windows-1253"
+
+# windows-1254, of Turkish, which `iso-8859-9` names.
+constant WINDOWS_1254: str
+    "windows-1254"
+
+# windows-1255, of Hebrew.
+constant WINDOWS_1255: str
+    "windows-1255"
+
+# windows-1256, of Arabic.
+constant WINDOWS_1256: str
+    "windows-1256"
+
+# windows-1257, of the Baltic languages.
+constant WINDOWS_1257: str
+    "windows-1257"
+
+# windows-1258, of Vietnamese.
+constant WINDOWS_1258: str
+    "windows-1258"
+
+# The Mac OS Cyrillic encoding, with the euro sign.
+constant X_MAC_CYRILLIC: str
+    "x-mac-cyrillic"
+
+# GBK, of simplified Chinese: gb18030 read, and written without its four-byte
+# sequences. `gb2312` names it.
+constant GBK: str
+    "GBK"
+
+# gb18030, of Chinese: GB18030-2022, which has bytes for every character.
+constant GB18030: str
+    "gb18030"
+
+# Big5, of traditional Chinese, with the Hong Kong Supplementary Character Set
+# read.
+constant BIG5: str
+    "Big5"
+
+# EUC-JP, of Japanese, with JIS X 0212 read.
+constant EUC_JP: str
+    "EUC-JP"
+
+# ISO-2022-JP, of Japanese in seven bits, switched by escape sequences.
+constant ISO_2022_JP: str
+    "ISO-2022-JP"
+
+# Shift_JIS, of Japanese, with the extensions of Windows code page 932.
+constant SHIFT_JIS: str
+    "Shift_JIS"
+
+# EUC-KR, of Korean, with the Unified Hangul Code of Windows code page 949.
+constant EUC_KR: str
+    "EUC-KR"
+
+# The encoding `replacement`, which reads any bytes as one U+FFFD and writes
+# nothing: the labels of ISO-2022-KR, ISO-2022-CN and HZ name it, so that text
+# in them cannot slip markup past a filter.
+constant REPLACEMENT: str
+    "replacement"
+
+# UTF-16 with the high byte of each unit first.
+constant UTF_16BE: str
+    "UTF-16BE"
+
+# UTF-16 with the low byte of each unit first: the encoding `utf-16` names.
+constant UTF_16LE: str
+    "UTF-16LE"
+
+# x-user-defined: ASCII, and each byte from 0x80 as U+F780 plus its number
+# less 0x80.
+constant X_USER_DEFINED: str
+    "x-user-defined"
+
+## Names and labels
+
+# The name of the encoding `label` names, as the standard writes it: `latin1`
+# answers `windows-1252`, `sjis` answers `Shift_JIS`.
+#
+# - `label`: a label of the standard, in any case; ASCII white space at either
+#   end (space, tab, line feed, form feed, carriage return) is taken off. A
+#   name is a label of its own encoding.
+#
+# Fails `not_found` where the standard reads `label` as no encoding: the empty
+# text, `utf-32`, `ebcdic`. See also `labels_of`.
+function name_of(label: str) -> str?
+    n = registry.number_of(label)?
+    return ok(registry.name(n))
+
+# Every label the standard reads as `encoding`, in lower case and in the order
+# of their bytes.
+#
+# - `encoding`: a label or a name of the encoding.
+#
+# Its name in lower case is always among them. Fails `not_found` where
+# `encoding` names none. See also `name_of`.
+function labels_of(encoding: str) -> [str]?
+    n = registry.number_of(encoding)?
+    return ok(registry.labels(n))
+
+# The name of every encoding of the standard, 40, in its order: UTF-8, the
+# single-byte ones, the Chinese, the Japanese, the Korean, then `replacement`,
+# UTF-16BE, UTF-16LE and x-user-defined. See also `name_of`.
+function names() -> [str]
+    return registry.every_name()
+
+# The encoding a page in `encoding` writes a form or a URL in: UTF-8 in place
+# of `replacement` and the two UTF-16s, which a browser never writes, and
+# `encoding` itself otherwise.
+#
+# - `encoding`: a label or a name of the page's encoding.
+#
+# It answers a name. Fails `not_found` where `encoding` names none.
+function output_encoding(encoding: str) -> str?
+    n = registry.number_of(encoding)?
+
+    if n == registry.REPLACEMENT || n == registry.UTF_16BE || n == registry.UTF_16LE
+        return ok(UTF_8)
+    return ok(registry.name(n))
+
+# Whether `encoding` writes every character it has in one byte: the 28
+# single-byte encodings and x-user-defined.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none. See also `is_ascii_compatible`.
+function is_single_byte(encoding: str) -> bool?
+    n = registry.number_of(encoding)?
+    return ok(machine.is_single_byte(n))
+
+# Whether `encoding` writes the ASCII characters as their own bytes and uses no
+# byte below 0x80 for anything else, so that bytes in it may be searched for
+# `<`, `"` or a line feed as ASCII: every encoding but ISO-2022-JP,
+# `replacement` and the two UTF-16s.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none.
+function is_ascii_compatible(encoding: str) -> bool?
+    n = registry.number_of(encoding)?
+    return ok(machine.is_ascii_compatible(n))
+
+# Whether `encoding` has bytes for every character: UTF-8, UTF-16BE and
+# UTF-16LE. gb18030 has bytes for every character but U+E5E5, which the
+# standard leaves out so that bytes read and written back stay the same.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none.
+function can_encode_everything(encoding: str) -> bool?
+    n = registry.number_of(encoding)?
+    return ok(n == registry.UTF_8 || n == registry.UTF_16BE || n == registry.UTF_16LE)
+
+## Byte order marks
+
+# The encoding the byte order mark at the start of `data` names, as the
+# standard reads one: `UTF-8` for EF BB BF, `UTF-16BE` for FE FF, `UTF-16LE`
+# for FF FE.
+#
+# - `data`: bytes, of any length.
+#
+# Fails `not_found` where `data` begins with none of the three. See also
+# `bom_of`, `decode`.
+function sniff_bom(data: [u8]) -> str?
+    found = machine.bom_number(data)
+
+    if found < 0
+        return fail(code: NOT_FOUND, msg: f"no byte order mark begins the {data.len()} bytes")
+    return ok(registry.name(found))
+
+# The byte order mark `encoding` begins a text with, or no bytes: EF BB BF for
+# UTF-8, FE FF for UTF-16BE, FF FE for UTF-16LE, none for the others. Nothing
+# here writes one unasked.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none. See also `sniff_bom`.
+function bom_of(encoding: str) -> [u8]?
+    n = registry.number_of(encoding)?
+    return ok(machine.bom_bytes(n))
+
+## Decoding
+
+# `data` read as text in `encoding`, as a browser reads a page: a byte order
+# mark at the start chooses the encoding in its place and is dropped, and what
+# cannot be read is U+FFFD.
+#
+# - `data`: the bytes; none read as the empty text.
+# - `encoding`: a label or a name, the encoding the bytes are said to be in.
+#
+# Each wrong sequence is one U+FFFD, the longest that begins a character and
+# cannot go on, as the standard's decoders say; `replacement` reads any bytes
+# as one U+FFFD. Fails `not_found` where `encoding` names none, and never on
+# the bytes. See also `decode_strict`, `decode_without_bom`, `detect`.
+function decode(data: [u8], encoding: str) -> str?
+    n = registry.number_of(encoding)?
+    return ok(machine.whole(data: data, n: n, sniffs: true, strict: false).text)
+
+# `data` read as text in `encoding` and no other: a byte order mark is read as
+# the character it writes, U+FEFF, and what cannot be read is U+FFFD.
+#
+# - `data`: the bytes.
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none. See also `decode`.
+function decode_without_bom(data: [u8], encoding: str) -> str?
+    n = registry.number_of(encoding)?
+    return ok(machine.whole(data: data, n: n, sniffs: false, strict: false).text)
+
+# `data` read as text in `encoding`, failing where a byte cannot be read: what
+# an XML reader or a protocol that refuses bad input asks. No byte order mark
+# is looked for: one is read as U+FEFF.
+#
+# - `data`: the bytes.
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none, and `invalid` at the first
+# sequence `encoding` cannot read, the message saying the index where it
+# begins, which `valid_prefix_len` answers. See also `decode`.
+function decode_strict(data: [u8], encoding: str) -> str?
+    n = registry.number_of(encoding)?
+    read = machine.whole(data: data, n: n, sniffs: false, strict: true)
+
+    if read.failed_at >= 0
+        return fail(code: INVALID, msg: machine.wrong_bytes(data: data, at: read.failed_at, n: n))
+    return ok(read.text)
+
+# How many bytes at the start of `data` read in `encoding` with no error: the
+# length of `data` where all of them do, else the index where the first wrong
+# sequence begins.
+#
+# - `data`: the bytes.
+# - `encoding`: a label or a name; no byte order mark is looked for.
+#
+# Bytes that stop inside a character are a wrong sequence at the end. Fails
+# `not_found` where `encoding` names none. See also `decode_strict`.
+function valid_prefix_len(data: [u8], encoding: str) -> i64?
+    n = registry.number_of(encoding)?
+    read = machine.whole(data: data, n: n, sniffs: false, strict: true)
+
+    if read.failed_at >= 0
+        return ok(read.failed_at)
+    return ok(data.len())
+
+## Decoding a piece at a time
+
+# A text read from bytes that come in pieces, a file read a block at a time or
+# a body read from a socket: what is cut at the end of one piece is held and
+# read with the next. Made by `decoder` or `decoder_without_bom` and read by
+# `decode_chunk`; it holds no handle.
+record Decoder
+    # The name of the encoding the decoder reads: the label's, or the one the
+    # byte order mark named once the first bytes have come.
+    encoding: str
+    # What the decoder holds between pieces: the bytes of a character cut
+    # short, the state of ISO-2022-JP, the byte order mark not yet decided.
+    # This package's own, read by nothing outside it.
+    state: machine.State
+
+# A decoder of `encoding` that reads a byte order mark first, as `decode` does.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none. See also `decode_chunk`.
+function decoder(encoding: str) -> Decoder?
+    n = registry.number_of(encoding)?
+    return ok(Decoder(encoding: registry.name(n), state: machine.start(n: n, sniffs: true)))
+
+# A decoder of `encoding` that reads a byte order mark as a character, as
+# `decode_without_bom` does.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none. See also `decode_chunk`.
+function decoder_without_bom(encoding: str) -> Decoder?
+    n = registry.number_of(encoding)?
+    return ok(Decoder(encoding: registry.name(n), state: machine.start(n: n, sniffs: false)))
+
+# The text the next piece of the bytes writes, what cannot be read U+FFFD.
+#
+# - `reader`: the caller's decoder, which keeps what the piece leaves cut
+#   short, and the state of a stateful encoding, for the next call.
+# - `data`: the next bytes, of any length; none add nothing.
+# - `last`: true for the last piece, so that a character cut short at its end
+#   is U+FFFD rather than held; a decoder given it is done.
+#
+# The pieces' texts joined are what `decode` answers for the bytes joined,
+# wherever they were cut. See also `decode_chunk_strict`.
+function decode_chunk(@reader: Decoder, data: [u8], last: bool) -> str
+    read = machine.chunk(state: reader.state, data: data, last: last, strict: false)
+    reader.state @ read.state
+    reader.encoding @ registry.name(read.state.reading)
+    return read.text
+
+# The text the next piece of the bytes writes, failing where a byte cannot be
+# read.
+#
+# - `reader`: the caller's decoder; it moves on past the piece only where the
+#   call succeeds, and is left as it was where it fails.
+# - `data`: the next bytes.
+# - `last`: true for the last piece: a character cut short at its end fails.
+#
+# Fails `invalid` at the first sequence the encoding cannot read, the message
+# saying its index in the whole of the bytes given so far. See also
+# `decode_strict`.
+function decode_chunk_strict(@reader: Decoder, data: [u8], last: bool) -> str?
+    read = machine.chunk(state: reader.state, data: data, last: last, strict: true)
+
+    if read.failed_at >= 0
+        return fail(
+            code: INVALID,
+            msg: f"{registry.name(reader.state.reading)} cannot read the bytes from index {read.failed_at} of the stream"
+        )
+    reader.state @ read.state
+    reader.encoding @ registry.name(read.state.reading)
+    return ok(read.text)
+
+## Encoding
+
+# `s` written as bytes in `encoding`, failing at the first character it has
+# no bytes for.
+#
+# - `s`: the text.
+# - `encoding`: a label or a name. UTF-16BE and UTF-16LE are written, though
+#   the standard writes them as UTF-8 (`output_encoding`).
+#
+# No byte order mark is written: `bom_of` gives it. ISO-2022-JP ends in ASCII,
+# with an escape back to it where the text left it. Fails `not_found` where
+# `encoding` names none, and `unsupported` at the first character `encoding`
+# has no bytes for, the message saying which and its byte index in `s`, and
+# for `replacement`. See also `encode_html`.
+function encode(s: str, encoding: str) -> [u8]?
+    n = registry.number_of(encoding)?
+    state = machine.writable(n)?
+    return machine.written(s: s, state: state, html: false, last: true)
+
+# `s` written as bytes in `encoding`, a character it has no bytes for written
+# as an HTML numeric reference, `&#` its code point in decimal and `;`, as a
+# browser writes a form.
+#
+# - `s`: the text.
+# - `encoding`: a label or a name.
+#
+# A reference cannot be told from the same characters typed, so what reads the
+# bytes back sees `&#8364;` where `€` was: it is the standard's mode for forms,
+# and UTF-8, which has bytes for everything, needs it never. Fails `not_found`
+# where `encoding` names none, and `unsupported` for `replacement`. See also
+# `encode`.
+function encode_html(s: str, encoding: str) -> [u8]?
+    n = registry.number_of(encoding)?
+    state = machine.writable(n)?
+    return ok(machine.written(s: s, state: state, html: true, last: true).must())
+
+## Encoding a piece at a time
+
+# A text written as bytes in pieces, the state of ISO-2022-JP kept between
+# them. Made by `encoder`, written by `encode_chunk`; it holds no handle.
+record Encoder
+    # The name of the encoding written.
+    encoding: str
+    # What the encoder holds between pieces: the escape ISO-2022-JP last wrote.
+    # This package's own, read by nothing outside it.
+    state: machine.Shift
+
+# An encoder of `encoding`.
+#
+# - `encoding`: a label or a name.
+#
+# Fails `not_found` where `encoding` names none, and `unsupported` for
+# `replacement`. See also `encode_chunk`.
+function encoder(encoding: str) -> Encoder?
+    n = registry.number_of(encoding)?
+    state = machine.writable(n)?
+    return ok(Encoder(encoding: registry.name(n), state: state))
+
+# The bytes the next piece of the text writes, failing at the first character
+# the encoding has no bytes for.
+#
+# - `writer`: the caller's encoder; it moves on past the piece only where the
+#   call succeeds.
+# - `s`: the next piece of the text.
+# - `last`: true for the last piece, after which ISO-2022-JP writes its escape
+#   back to ASCII.
+#
+# The pieces' bytes joined are what `encode` answers for the text joined.
+# Fails `unsupported` at the first character the encoding has no bytes for,
+# the message saying which and its byte index in `s`. See also
+# `encode_chunk_html`.
+function encode_chunk(@writer: Encoder, s: str, last: bool) -> [u8]?
+    state @= writer.state
+    out: [u8] @= []
+    at = machine.encode_run(n: state.number, s: s, out: @out, html: false, last: last, set: @state.set)
+
+    if at >= 0
+        return fail(code: UNSUPPORTED, msg: machine.no_bytes(s: s, at: at, n: state.number))
+    writer.state @ state
+    return ok(out)
+
+# The bytes the next piece of the text writes, a character the encoding has no
+# bytes for written as an HTML numeric reference, as `encode_html` does.
+#
+# - `writer`: the caller's encoder.
+# - `s`: the next piece of the text.
+# - `last`: true for the last piece.
+#
+# See also `encode_chunk`.
+function encode_chunk_html(@writer: Encoder, s: str, last: bool) -> [u8]
+    state @= writer.state
+    out: [u8] @= []
+    _ = machine.encode_run(n: state.number, s: s, out: @out, html: true, last: last, set: @state.set)
+    writer.state @ state
+    return out
+
+## Bytes as their own numbers
+
+# `data` read as the characters whose code points are their numbers, U+0000 to
+# U+00FF: the Infra standard's isomorphic decoding, which HTTP's headers ask,
+# and what other libraries call Latin-1. It never fails.
+#
+# - `data`: the bytes.
+#
+# See also `encode_isomorphic`, and `decode` with `windows-1252`, which a
+# browser reads `latin1` as.
+function decode_isomorphic(data: [u8]) -> str
+    out: [u8] @= []
+    _ = single.decode_isomorphic(data: data, from: 0, out: @out)
+    return out.validated_bytes().must()
+
+# The bytes whose numbers are the code points of `s`: the Infra standard's
+# isomorphic encoding.
+#
+# - `s`: a text of characters U+0000 to U+00FF.
+#
+# Fails `unsupported` at the first character above U+00FF, the message saying
+# which and its byte index. See also `decode_isomorphic`.
+function encode_isomorphic(s: str) -> [u8]?
+    out: [u8] @= []
+    at = single.encode(slot: -2, s: s, out: @out, html: false)
+
+    if at >= 0
+        point = unicode.code_point_at(s, at)
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"{run.code_name(point)}, at byte {at}, is above U+00FF and has no byte of its own number"
+        )
+    return ok(out)
+
+## Guessing the encoding
+
+# What `detect` and `detect_all` answer: an encoding the bytes may be in, and
+# how sure the guess is.
+record Guess
+    # The name of the encoding.
+    encoding: str
+    # How sure, from 0 to 1: the share this reading holds of the plausibility
+    # of every reading of the bytes that gives another text. 1 where no other
+    # encoding reads them otherwise, as for ASCII.
+    confidence: f64
+
+# The likeliest encoding of `data`, whose encoding nobody declared, and how
+# sure the guess is.
+#
+# - `data`: the bytes, of any length; only the first 65,536 are read, and a
+#   character they cut at the end is left out.
+#
+# The method, in order. A byte order mark answers with confidence 1; so do the
+# empty bytes and bytes that are ASCII with no NUL and no escape, as UTF-8.
+# Otherwise each encoding that reads the bytes with no error gives a reading,
+# and each reading is charged for what text seldom holds: a control, private-
+# use or unassigned character; a symbol touching a letter, or punctuation, a
+# space or a number inside a word; a word that changes script or goes from a
+# small letter to a capital; the letters no single language's alphabet holds,
+# and letters far from that language's proportions, both measured on macOS's
+# localized text of 28 languages; a Chinese, Japanese or Korean character
+# outside the first level of its standards, the commonest; kana in Chinese or
+# Korean, Hangul in Chinese or Japanese, Japanese with no kana, Hangul words
+# longer than words are, and Chinese characters spaced like words. A reading
+# is worth less the more it is charged for each character above ASCII, and its
+# confidence is its share of the worth of every reading. UTF-8 that reads with
+# no error and holds a character above ASCII comes first. See also
+# `detect_all`, `decode`.
+function detect(data: [u8]) -> Guess
+    best = guess.ranked(data)[0]
+    return Guess(encoding: registry.name(best.number), confidence: best.confidence)
+
+# Every encoding that reads `data` with no error, the likeliest first, each
+# with its confidence, as `detect` scores them.
+#
+# - `data`: the bytes; only the first 65,536 are read.
+#
+# Encodings that read the bytes as the same text are one guess, the commonest
+# on the web named. Where `detect` answers with confidence 1 it is the only
+# guess. Never empty: windows-1252 reads every byte. See also `detect`.
+function detect_all(data: [u8]) -> [Guess]
+    out: [Guess] @= []
+
+    for c in guess.ranked(data)
+        out @ out.push(Guess(encoding: registry.name(c.number), confidence: c.confidence))
+
+    return out
+
+## Examples
+
+# The answers below are encoding_rs 0.8.42's, the standard's implementation in
+# Firefox, and Python 3.15.2's codecs where they read the standard's way,
+# asked the same on 2026-11-17.
+
+# A `charset` from a header, in any case, names its encoding.
+test "name_of: a charset as a page writes it"
+    assert name_of(" Shift-JIS ").must() == SHIFT_JIS
+    assert name_of("shift_jis").must() == SHIFT_JIS
+    assert name_of("ISO-8859-1").must() == WINDOWS_1252
+    assert name_of("utf-32").is_err()
+
+# The labels a browser reads as GBK.
+test "labels_of: GBK's"
+    assert labels_of("gb2312").must() == ["chinese", "csgb2312", "csiso58gb231280", "gb2312", "gb_2312", "gb_2312-80", "gbk", "iso-ir-58", "x-gbk"]
+
+# The standard's encodings, first and last.
+test "names: forty, UTF-8 first"
+    every = names()
+    assert every.len() == 40 && every[0] == UTF_8 && every[39] == X_USER_DEFINED
+
+# A page in UTF-16 sends its forms in UTF-8.
+test "output_encoding: UTF-16 and replacement write UTF-8, the others themselves"
+    assert output_encoding("utf-16").must() == UTF_8
+    assert output_encoding("iso-2022-kr").must() == UTF_8
+    assert output_encoding("sjis").must() == SHIFT_JIS
+
+# KOI8-R takes one byte a character, Big5 two.
+test "is_single_byte: KOI8-R and Big5"
+    assert is_single_byte("koi8-r").must() && !is_single_byte("big5").must()
+    assert is_single_byte("x-user-defined").must()
+
+# ASCII's bytes mean ASCII in Shift_JIS, not in UTF-16.
+test "is_ascii_compatible: Shift_JIS, UTF-16 and ISO-2022-JP"
+    assert is_ascii_compatible("shift_jis").must()
+    assert !is_ascii_compatible("utf-16be").must() && !is_ascii_compatible("iso-2022-jp").must()
+
+# UTF-8 writes everything; windows-1252 does not.
+test "can_encode_everything: UTF-8, gb18030 and windows-1252"
+    assert can_encode_everything("utf-8").must()
+    assert !can_encode_everything("gb18030").must() && !can_encode_everything("latin1").must()
+
+# The mark at the start of a file says it is UTF-16 with the low byte first.
+test "sniff_bom: UTF-16LE's mark, and none"
+    assert sniff_bom([0xff, 0xfe, 0x61, 0]).must() == UTF_16LE
+    assert sniff_bom([0x61, 0x62]).is_err()
+
+# The bytes UTF-8 begins a text with where it is asked to mark it.
+test "bom_of: UTF-8's and windows-1252's"
+    assert bom_of("utf-8").must() == [0xef, 0xbb, 0xbf]
+    assert bom_of("windows-1252").must() == []
+
+# A body declared Shift_JIS, read as text; a wrong byte is U+FFFD.
+test "decode: Shift_JIS, a wrong byte, and a mark that overrules the label"
+    assert decode([0x93, 0xfa, 0x96, 0x7b], encoding: "shift_jis").must() == "日本"
+    assert decode([0x82, 0xa0, 0xa0], encoding: "shift_jis").must() == "あ�"
+    assert decode([0xef, 0xbb, 0xbf, 0xc3, 0xa9], encoding: "windows-1252").must() == "é"
+
+# Without sniffing, UTF-8's mark is read as the character it writes.
+test "decode_without_bom: the mark kept as U+FEFF"
+    assert unicode.code_points(decode_without_bom([0xef, 0xbb, 0xbf, 0x61], encoding: "utf-8").must()) == [0xfeff, 0x61]
+
+# A strict read refuses EUC-KR cut inside a character.
+test "decode_strict: EUC-KR whole, then cut short"
+    assert decode_strict([0xb0, 0xa1], encoding: "euc-kr").must() == "가"
+
+    match decode_strict([0xb0, 0xa1, 0xb0], encoding: "euc-kr")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# Where gb18030 bytes stop being readable.
+test "valid_prefix_len: gb18030 with a broken four-byte sequence"
+    assert valid_prefix_len([0x61, 0x81, 0x30, 0x41], encoding: "gb18030").must() == 1
+    assert valid_prefix_len([0x61, 0x62], encoding: "gb18030").must() == 2
+
+# A decoder made for a body in pieces.
+test "decoder: Shift_JIS's"
+    reader = decoder("sjis").must()
+    assert reader.encoding == SHIFT_JIS
+
+# A decoder that reads the mark as a character.
+test "decoder_without_bom: UTF-8's"
+    reader @= decoder_without_bom("utf-8").must()
+    assert unicode.code_points(decode_chunk(@reader, [0xef, 0xbb, 0xbf], true)) == [0xfeff]
+
+# A character cut between two pieces of a socket's reads comes out whole.
+test "decode_chunk: 日本 in Shift_JIS, cut inside each character"
+    reader @= decoder("shift_jis").must()
+    first = decode_chunk(@reader, [0x93], false)
+    second = decode_chunk(@reader, [0xfa, 0x96], false)
+    third = decode_chunk(@reader, [0x7b], true)
+    assert first + second + third == "日本"
+
+# A strict decoder refuses a wrong byte and is left where it was.
+test "decode_chunk_strict: a wrong byte in the second piece"
+    reader @= decoder("utf-8").must()
+    assert decode_chunk_strict(@reader, [0x61, 0xe2], false).must() == "a"
+    assert decode_chunk_strict(@reader, [0x41], true).is_err()
+    assert decode_chunk_strict(@reader, [0x82, 0xac], true).must() == "€"
+
+# Text written for a Korean server, and a character EUC-KR has no bytes for.
+test "encode: EUC-KR, and an emoji it refuses"
+    assert encode(s: "가€", encoding: "euc-kr").must() == [0xb0, 0xa1, 0xa2, 0xe6]
+
+    match encode(s: "a😀", encoding: "euc-kr")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+# A form in windows-1252 sends a Cyrillic letter as a reference.
+test "encode_html: windows-1252 and a letter it has no byte for"
+    assert encode_html(s: "ж€", encoding: "windows-1252").must() == bytes.concat([bytes.from_text("&#1078;"), [0x80]])
+
+# An encoder for a text written in pieces.
+test "encoder: ISO-2022-JP's, and replacement's refused"
+    writer = encoder("iso-2022-jp").must()
+    assert writer.encoding == ISO_2022_JP
+    assert encoder("replacement").is_err()
+
+# ISO-2022-JP keeps its escape between pieces and ends in ASCII.
+test "encode_chunk: 亜 in two pieces of ISO-2022-JP"
+    writer @= encoder("iso-2022-jp").must()
+    first = encode_chunk(@writer, "亜", false).must()
+    last = encode_chunk(@writer, "a", true).must()
+    assert first == [0x1b, 0x24, 0x42, 0x30, 0x21] && last == [0x1b, 0x28, 0x42, 0x61]
+
+# A piece with a character the encoding lacks becomes a reference.
+test "encode_chunk_html: a euro sign in ISO-8859-5"
+    writer @= encoder("iso-8859-5").must()
+    assert encode_chunk_html(@writer, "€ж", true) == bytes.concat([bytes.from_text("&#8364;"), [0xd6]])
+
+# An HTTP header's bytes, each its own number.
+test "decode_isomorphic: 0x80 and 0xE9"
+    assert unicode.code_points(decode_isomorphic([0x41, 0x80, 0xe9])) == [0x41, 0x80, 0xe9]
+
+# A header's text back to its bytes; the euro sign has no byte of its number.
+test "encode_isomorphic: é, and € refused"
+    assert encode_isomorphic("é").must() == [0xe9]
+    assert encode_isomorphic("€").is_err()
+
+# Bytes from a file nobody labelled: a Russian sentence in windows-1251, which
+# its likeliest reading names; and ASCII, which is UTF-8 for certain.
+test "detect: Russian in windows-1251, and ASCII"
+    data = bytes.parse_hex(
+        "d1fae5f8fc20e6e520e5f9b820fdf2e8f520ecffe3eae8f520f4f0e0edf6f3e7f1eae8f520e1f3ebeeea2c20e4e020e2fbefe5e920f7e0fe2e"
+    ).must()
+    likely = detect(data)
+    assert likely.encoding == WINDOWS_1251 && likely.confidence > detect_all(data)[1].confidence
+    assert decode(data, encoding: likely.encoding).must() == "Съешь же ещё этих мягких французских булок, да выпей чаю."
+    assert detect(bytes.from_text("plain")) == Guess(encoding: UTF_8, confidence: 1.0)
+
+# Every reading of Japanese bytes, the likeliest first.
+test "detect_all: Japanese in Shift_JIS"
+    every = detect_all([0x82, 0xb1, 0x82, 0xf1, 0x82, 0xc9, 0x82, 0xbf, 0x82, 0xcd, 0x90, 0xa2, 0x8a, 0x45])
+    assert every[0].encoding == SHIFT_JIS && every.len() > 1

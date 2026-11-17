@@ -307,6 +307,45 @@ notes did not read them from a clock.
     stream the library keeps). How it is spelled (`use`, `heroes add`) and how
     it meets panel 242's R2 and panel 250's whole placement is sitting C's,
     with these measurements.
+36. **And 130, from what the communities use** (2026-11-17, the author: *read
+    in the communities of the various languages, and in other standard
+    libraries, what is missing so that web services, microservices, command
+    lines and AI agents can be written*). A census agent looked for each
+    candidate in the table, in every ledger's rows, in the queued tasks and in
+    the sources, and counted it missing only where all four were silent; it
+    read the awesome lists of Go, Rust, Python and Node, the 2025 surveys of
+    Go, Rust and Stack Overflow, JetBrains' Python survey, Deno's `@std`,
+    Nim's, Erlang's, Kotlin's, Swift's, Crystal's and D's libraries, the SDKs
+    of Anthropic and OpenAI, LangChain and LlamaIndex, and measured each
+    candidate's downloads or stars that evening (GitHub, PyPI, npm,
+    crates.io). Of its rows the coordinator recommended fifteen and the author
+    took all fifteen. **Twelve new packages**: `llm/anthropic` and
+    `llm/openai` (the second also reaching Ollama and vLLM), raw HTTP from the
+    providers' published references since Heroes has no SDK; `tokenizer`
+    (byte-pair encoding as tiktoken does it, its tables in a subpackage) and
+    `chunks`; `vectors` (an HNSW index in memory) and `search` (BM25, which the
+    package index will use); `bson` and `mongodb`; `tui`, immediate mode as
+    ratatui; `webauthn`, `acme` and `qr`. **And additions to finished
+    packages**: partial JSON in `json`, for a tool's arguments a model streams;
+    markdown written, and HTML read into markdown; health endpoints and
+    Standard Webhooks signatures in `web`; prompts, menus, OSC 8 links and
+    OSC 52 clipboard writes in `term`; byte sizes for people in `numbers`; the
+    data, state, cache and runtime folders and opening a URL in its
+    application in `os`; the public suffix list and a client through a proxy
+    in `http`; logs exported by OTLP with their trace ids, and StatsD, beside
+    `metrics`; a distributed lock on Redis; line breaking by UAX #14 and
+    wrapping by display width in `unicode/segment`. Rows of the census not
+    recommended that evening, kept here so they are not lost: a Kubernetes
+    client, an SSH client, CloudEvents, Web Push, RSS, Atom and JSON Feed
+    (left out by decision 27), systemd's notify and socket activation,
+    consistent hashing; and the census's own *not now*: readability
+    extraction, vector database clients, Jaro-Winkler, Elasticsearch, feature
+    flags, Vault, process supervision, Consul and etcd, idempotency keys,
+    pseudo-terminals, self-update, GeoIP, WebP. The same census found the
+    MCP task written against an older revision: 2026-07-28 drops the
+    initialize handshake and asks RFC 9728, 8707 and 9207 of authorization;
+    the task was amended that evening. The table reads 130 rows, layers 0 to
+    7 and no package using one of its own layer or above.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

@@ -1,0 +1,545 @@
+# The Japanese encodings both ways (§ 12 of the standard): EUC-JP, which
+# reads JIS X 0212 too, ISO-2022-JP, and Shift_JIS. The first and the last are
+# written to look ahead over the bytes they have, as the Chinese are.
+# ISO-2022-JP switches between sets by escape sequences, so it keeps the set in
+# force between pieces; its decoder reads an escape sequence or a pair whole
+# and emits nothing before it ends, so a piece that stops inside one is left,
+# with the state of its start, for the next.
+
+use bytes
+use unicode
+use unicode/encodings/internal/jis0208_table
+use unicode/encodings/internal/jis0212_table
+use unicode/encodings/internal/lookup
+use unicode/encodings/internal/run
+use unicode/encodings/internal/utf
+
+# ISO-2022-JP's set of ASCII, and its encoder's state of the same name.
+constant ASCII: i64
+    0
+
+# ISO-2022-JP's set of JIS X 0201 Roman: ASCII with U+00A5 and U+203E in
+# place of `\` and `~`.
+constant ROMAN: i64
+    1
+
+# ISO-2022-JP's set of half-width katakana, which only its decoder reads.
+constant KATAKANA: i64
+    2
+
+# ISO-2022-JP's set of JIS X 0208, two bytes a character: the decoder's
+# "leading byte" state and the encoder's "jis0208".
+constant JIS0208: i64
+    3
+
+# The code point of `pointer` in index jis0208, or -1.
+function jis0208_point(pointer: i64) -> i64
+    return lookup.point_of(words: jis0208_table.DECODE, size: jis0208_table.POINTERS, pointer: pointer)
+
+# The first pointer of `point` in index jis0208, or -1.
+function jis0208_pointer(point: i64) -> i64
+    return lookup.pointer_of(
+        decode: jis0208_table.DECODE,
+        size: jis0208_table.POINTERS,
+        encode: jis0208_table.ENCODE,
+        count: jis0208_table.ENCODE_COUNT,
+        point: point
+    )
+
+# Whether `b` is 0xA1 to 0xFE, the range of both bytes of a JIS pair in EUC-JP.
+function is_euc(b: u8) -> bool
+    return b >= 0xa1 && b <= 0xfe
+
+# How many bytes a wrong pair takes, its second byte read again where ASCII.
+function wrong_width(second: u8) -> i64
+    if second < 0x80
+        return 1
+    return 2
+
+## EUC-JP
+
+# Reads `data` from `from` as EUC-JP into `out`.
+function decode_euc_jp(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+        point: i64 @= -1
+        taken: i64 @= 1
+
+        if b < 0x80
+            point @ run.wide(b)
+        else if b == 0x8e || b == 0x8f || is_euc(b)
+            if at + 1 >= data.len()
+                return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            second = data[at + 1]
+            taken @ wrong_width(second)
+
+            if b == 0x8e
+                if second >= 0xa1 && second <= 0xdf
+                    point @ 0xff61 - 0xa1 + run.wide(second)
+            else if b == 0x8f
+                if is_euc(second)
+                    if at + 2 >= data.len()
+                        return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+                    third = data[at + 2]
+                    taken @ 1 + wrong_width(third)
+
+                    if is_euc(third)
+                        point @ lookup.point_of(
+                            words: jis0212_table.DECODE,
+                            size: jis0212_table.POINTERS,
+                            pointer: (run.wide(second) - 0xa1) * 94 + run.wide(third) - 0xa1
+                        )
+            else if is_euc(second)
+                point @ jis0208_point((run.wide(b) - 0xa1) * 94 + run.wide(second) - 0xa1)
+
+        if point >= 0
+            run.add_point(out: @out, n: point)
+        else if strict
+            return run.Stop(at: at, failed: true)
+        else
+            run.add_replacement(out: @out)
+        at @ at + taken
+
+    return run.Stop(at: at, failed: false)
+
+# Writes `s` in EUC-JP at the end of `out`: -1 where every character was
+# written, else, where `html` is false, the byte index in `s` of the first that
+# has no bytes.
+function encode_euc_jp(s: str lent, @out: [u8], html: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+
+            if point == 0xa5
+                out @ out.push(0x5c)
+            else if point == 0x203e
+                out @ out.push(0x7e)
+            else if point >= 0xff61 && point <= 0xff9f
+                out @ out.push(0x8e)
+                out @ out.push(run.narrow(point - 0xff61 + 0xa1))
+            else
+                pointer = jis0208_pointer(wide_minus(point))
+
+                if pointer >= 0
+                    out @ out.push(run.narrow(pointer / 94 + 0xa1))
+                    out @ out.push(run.narrow(pointer % 94 + 0xa1))
+                else if html
+                    run.add_reference(out: @out, n: point)
+                else
+                    return at
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+# `point`, the minus sign U+2212 read as the full-width hyphen-minus U+FF0D,
+# as the three Japanese encoders write it.
+function wide_minus(point: i64) -> i64
+    if point == 0x2212
+        return 0xff0d
+    return point
+
+## ISO-2022-JP
+
+# What ISO-2022-JP's decoder keeps between pieces.
+record Iso2022
+    # The set in force: `ASCII`, `ROMAN`, `KATAKANA` or `JIS0208`.
+    set: i64
+    # Whether the last thing read was an escape sequence, so that a second one
+    # in a row is an error: the standard's "ISO-2022-JP output".
+    escaped: bool
+
+# The state ISO-2022-JP's decoder begins in.
+function iso2022_start() -> Iso2022
+    return Iso2022(set: ASCII, escaped: false)
+
+# The set the escape sequence ESC `intro` `final` switches to, or -1 where it
+# switches to none.
+function set_of(intro: u8, final: u8) -> i64
+    if intro == 0x28 && final == 0x42
+        return ASCII
+
+    if intro == 0x28 && final == 0x4a
+        return ROMAN
+
+    if intro == 0x28 && final == 0x49
+        return KATAKANA
+
+    if intro == 0x24 && (final == 0x40 || final == 0x42)
+        return JIS0208
+    return -1
+
+# Reads `data` from `from` as ISO-2022-JP into `out`, from the state `@iso`
+# and leaving it where it ends.
+function decode_iso_2022_jp(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool, @iso: Iso2022) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+        point: i64 @= -1
+        taken: i64 @= 1
+        wrong: bool @= false
+
+        if b == 0x1b
+            if at + 1 >= data.len()
+                if !last
+                    return run.Stop(at: at, failed: false)
+                wrong @ true
+                iso.escaped @ false
+            else
+                intro = data[at + 1]
+
+                if intro != 0x24 && intro != 0x28
+                    wrong @ true
+                    iso.escaped @ false
+                else if at + 2 >= data.len()
+                    if !last
+                        return run.Stop(at: at, failed: false)
+                    wrong @ true
+                    iso.escaped @ false
+                else
+                    set = set_of(intro: intro, final: data[at + 2])
+
+                    if set >= 0
+                        wrong @ iso.escaped
+                        iso.set @ set
+                        iso.escaped @ true
+                        taken @ 3
+                    else
+                        wrong @ true
+                        iso.escaped @ false
+        else if iso.set == JIS0208
+            if b >= 0x21 && b <= 0x7e
+                if at + 1 >= data.len()
+                    if !last
+                        return run.Stop(at: at, failed: false)
+                    iso.escaped @ false
+                    wrong @ true
+                else
+                    iso.escaped @ false
+                    second = data[at + 1]
+
+                    if second == 0x1b
+                        wrong @ true
+                    else if second >= 0x21 && second <= 0x7e
+                        taken @ 2
+                        point @ jis0208_point((run.wide(b) - 0x21) * 94 + run.wide(second) - 0x21)
+                        wrong @ point < 0
+                    else
+                        taken @ 2
+                        wrong @ true
+            else
+                iso.escaped @ false
+                wrong @ true
+        else
+            iso.escaped @ false
+
+            if iso.set == KATAKANA
+                if b >= 0x21 && b <= 0x5f
+                    point @ 0xff61 - 0x21 + run.wide(b)
+            else if b <= 0x7f && b != 0x0e && b != 0x0f
+                point @ run.wide(b)
+
+                if iso.set == ROMAN && b == 0x5c
+                    point @ 0xa5
+                else if iso.set == ROMAN && b == 0x7e
+                    point @ 0x203e
+            wrong @ point < 0
+
+        if wrong
+            if strict
+                return run.Stop(at: at, failed: true)
+            run.add_replacement(out: @out)
+        else if point >= 0
+            run.add_point(out: @out, n: point)
+        at @ at + taken
+
+    return run.Stop(at: at, failed: false)
+
+# Writes `s` in ISO-2022-JP at the end of `out`, from the set `@set` and
+# leaving it where it ends: `ASCII`, `ROMAN` or `JIS0208`. Where `last`, it
+# ends in ASCII, writing the escape back to it. It answers -1 where every
+# character was written, else, where `html` is false, the byte index in `s` of
+# the first that has no bytes; `@set` is then where that character found it.
+function encode_iso_2022_jp(s: str lent, @out: [u8], html: bool, last: bool, @set: i64) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        point = unicode.code_point_at(s, at)
+        width = unicode.width_at(s, at)
+
+        if set != JIS0208 && (point == 0x0e || point == 0x0f || point == 0x1b)
+            if !html
+                return at
+            run.add_reference(out: @out, n: 0xfffd)
+            at @ at + width
+        else if set == ASCII && point < 0x80
+            out @ out.push(run.narrow(point))
+            at @ at + width
+        else if set == ROMAN && (point < 0x80 && point != 0x5c && point != 0x7e || point == 0xa5 || point == 0x203e)
+            if point == 0xa5
+                out @ out.push(0x5c)
+            else if point == 0x203e
+                out @ out.push(0x7e)
+            else
+                out @ out.push(run.narrow(point))
+            at @ at + width
+        else if point < 0x80
+            add_escape(out: @out, intro: 0x28, final: 0x42)
+            set @ ASCII
+        else if point == 0xa5 || point == 0x203e
+            add_escape(out: @out, intro: 0x28, final: 0x4a)
+            set @ ROMAN
+        else
+            full: i64 @= wide_minus(point)
+
+            if full >= 0xff61 && full <= 0xff9f
+                full @ jis0208_table.KATAKANA[full - 0xff61]
+            pointer = jis0208_pointer(full)
+
+            if pointer < 0 && set == JIS0208
+                add_escape(out: @out, intro: 0x28, final: 0x42)
+                set @ ASCII
+            else if pointer < 0
+                if !html
+                    return at
+                run.add_reference(out: @out, n: point)
+                at @ at + width
+            else if set != JIS0208
+                add_escape(out: @out, intro: 0x24, final: 0x42)
+                set @ JIS0208
+            else
+                out @ out.push(run.narrow(pointer / 94 + 0x21))
+                out @ out.push(run.narrow(pointer % 94 + 0x21))
+                at @ at + width
+
+    if last && set != ASCII
+        add_escape(out: @out, intro: 0x28, final: 0x42)
+        set @ ASCII
+    return -1
+
+# Writes ESC `intro` `final` at the end of `out`.
+function add_escape(@out: [u8], intro: u8, final: u8)
+    out @ out.push(0x1b)
+    out @ out.push(intro)
+    out @ out.push(final)
+
+## Shift_JIS
+
+# Reads `data` from `from` as Shift_JIS into `out`.
+function decode_shift_jis(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+        point: i64 @= -1
+        taken: i64 @= 1
+
+        if b <= 0x80
+            point @ run.wide(b)
+        else if b >= 0xa1 && b <= 0xdf
+            point @ 0xff61 - 0xa1 + run.wide(b)
+        else if b >= 0x81 && b <= 0x9f || b >= 0xe0 && b <= 0xfc
+            if at + 1 >= data.len()
+                return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            second = data[at + 1]
+            taken @ wrong_width(second)
+
+            if second >= 0x40 && second <= 0x7e || second >= 0x80 && second <= 0xfc
+                offset: i64 @= 0x41
+
+                if second < 0x7f
+                    offset @ 0x40
+                lead_offset: i64 @= 0xc1
+
+                if b < 0xa0
+                    lead_offset @ 0x81
+                pointer = (run.wide(b) - lead_offset) * 188 + run.wide(second) - offset
+
+                if pointer >= 8836 && pointer <= 10715
+                    point @ 0xe000 - 8836 + pointer
+                else
+                    point @ jis0208_point(pointer)
+
+                if point >= 0
+                    taken @ 2
+
+        if point >= 0
+            run.add_point(out: @out, n: point)
+        else if strict
+            return run.Stop(at: at, failed: true)
+        else
+            run.add_replacement(out: @out)
+        at @ at + taken
+
+    return run.Stop(at: at, failed: false)
+
+# The pointer Shift_JIS writes `point` as, or -1: the index Shift_JIS pointer,
+# which leaves out the pointers 8272 to 8835.
+function shift_jis_pointer(point: i64) -> i64
+    later = lookup.value_of(pairs: jis0208_table.SHIFT_JIS_ENCODE, key: point, shift: 15)
+
+    if later >= 0
+        return later
+    return jis0208_pointer(point)
+
+# Writes `s` in Shift_JIS at the end of `out`: -1 where every character was
+# written, else, where `html` is false, the byte index in `s` of the first that
+# has no bytes.
+function encode_shift_jis(s: str lent, @out: [u8], html: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+
+            if point == 0x80
+                out @ out.push(0x80)
+            else if point == 0xa5
+                out @ out.push(0x5c)
+            else if point == 0x203e
+                out @ out.push(0x7e)
+            else if point >= 0xff61 && point <= 0xff9f
+                out @ out.push(run.narrow(point - 0xff61 + 0xa1))
+            else
+                pointer = shift_jis_pointer(wide_minus(point))
+
+                if pointer >= 0
+                    lead = pointer / 188
+                    lead_offset: i64 @= 0xc1
+
+                    if lead < 0x1f
+                        lead_offset @ 0x81
+                    trail = pointer % 188
+                    offset: i64 @= 0x41
+
+                    if trail < 0x3f
+                        offset @ 0x40
+                    out @ out.push(run.narrow(lead + lead_offset))
+                    out @ out.push(run.narrow(trail + offset))
+                else if html
+                    run.add_reference(out: @out, n: point)
+                else
+                    return at
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+## Tests
+
+# Every expected value below is what encoding_rs 0.8.42 answered for the same
+# input on 2026-11-17. Python 3.15.2's `cp932` agrees with the standard's
+# Shift_JIS on all 7,724 pointers of index jis0208; its `shift_jis`,
+# `euc_jp` and `iso2022_jp` differ on 851, 463 and 463 of them: they map
+# 0x8160 to U+301C where Windows and the standard map it to U+FF5E, and so on
+# for the rows that differ, and read no IBM or NEC extension. Where a
+# redundant escape sequence makes ISO-2022-JP's reading wrong, encoding_rs
+# names the first of the two escapes and this package the second, which is
+# where the bytes stop reading.
+
+# The text a decoder reads from the whole of `data`, replacing: EUC-JP's,
+# Shift_JIS's or ISO-2022-JP's, by `which`, 0, 1 or 2.
+function text_of(data: [u8], which: i64) -> str
+    out: [u8] @= []
+
+    if which == 0
+        _ = decode_euc_jp(data: data, from: 0, out: @out, strict: false, last: true)
+    else if which == 1
+        _ = decode_shift_jis(data: data, from: 0, out: @out, strict: false, last: true)
+    else
+        iso @= iso2022_start()
+        _ = decode_iso_2022_jp(data: data, from: 0, out: @out, strict: false, last: true, iso: @iso)
+    return out.validated_bytes().must()
+
+# The bytes an encoder writes for `s`, or none where it fails: EUC-JP's,
+# Shift_JIS's or ISO-2022-JP's, by `which`.
+function bytes_for(s: str, which: i64, html: bool) -> [u8]
+    out: [u8] @= []
+    at: i64 @= 0
+
+    if which == 0
+        at @ encode_euc_jp(s: s, out: @out, html: html)
+    else if which == 1
+        at @ encode_shift_jis(s: s, out: @out, html: html)
+    else
+        set @= ASCII
+        at @ encode_iso_2022_jp(s: s, out: @out, html: html, last: true, set: @set)
+
+    if at >= 0
+        return []
+    return out
+
+test "decode_euc_jp: a pair, half-width katakana, JIS X 0212, and wrong or cut sequences"
+    assert text_of(data: [0xa4, 0xa2, 0x8e, 0xb1], which: 0) == "あｱ"
+    assert text_of(data: [0x8f, 0xb0, 0xa1], which: 0) == "丂"
+    assert text_of(data: [0x8f, 0xa2, 0xb7, 0xa1, 0xc1], which: 0) == "～～"
+    assert text_of(data: [0x8e, 0xe0], which: 0) == "�"
+    assert text_of(data: [0x8f, 0x41], which: 0) == "�A"
+    assert text_of(data: [0x8f, 0xb0, 0x41], which: 0) == "�A"
+    assert text_of(data: [0xa4], which: 0) == "�"
+    out: [u8] @= []
+    assert decode_euc_jp(data: [0xa1, 0xa1, 0xa4], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 2, failed: true)
+
+test "encode_euc_jp: the yen sign, the overline, the minus sign, half-width katakana, and JIS X 0212 refused"
+    assert bytes_for(s: "¥‾−ｱ", which: 0, html: false) == [0x5c, 0x7e, 0xa1, 0xdd, 0x8e, 0xb1]
+    assert bytes_for(s: "纊", which: 0, html: false) == [0xf9, 0xa1]
+    assert bytes_for(s: "丂", which: 0, html: false) == []
+
+test "decode_shift_jis: a pair, a single byte, 0x80, a byte that begins nothing, the private use, and a restored byte"
+    assert text_of(data: [0x82, 0xa0, 0xb1, 0x80, 0xa0], which: 1) == "あｱ\u{80}�"
+    assert unicode.code_points(text_of(data: [0xf0, 0x40], which: 1)) == [0xe000]
+    assert text_of(data: [0x81, 0x7f], which: 1) == "�\u{7f}"
+    assert text_of(data: [0xfd], which: 1) == "�"
+    out: [u8] @= []
+    assert decode_shift_jis(data: [0x82, 0xa0, 0x81], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 2, failed: true)
+
+test "encode_shift_jis and shift_jis_pointer: IBM's extension where EUC-JP takes NEC's, the minus sign, katakana, 0x80"
+    assert bytes_for(s: "纊", which: 1, html: false) == [0xfa, 0x5c]
+    assert bytes_for(s: "−", which: 1, html: false) == [0x81, 0x7c]
+    assert bytes_for(s: "ｱ\u{80}", which: 1, html: false) == [0xb1, 0x80]
+    assert shift_jis_pointer(0x7e8a) != jis0208_pointer(0x7e8a)
+
+test "decode_iso_2022_jp: each set, a redundant escape, controls, cut pairs and escapes"
+    assert text_of(data: [0x1b, 0x24, 0x42, 0x30, 0x21, 0x1b, 0x28, 0x42], which: 2) == "亜"
+    assert text_of(data: [0x1b, 0x28, 0x4a, 0x5c, 0x7e], which: 2) == "¥‾"
+    assert text_of(data: [0x1b, 0x28, 0x49, 0x31], which: 2) == "ｱ"
+    assert text_of(data: [0x1b, 0x24, 0x42, 0x1b, 0x28, 0x42], which: 2) == "�"
+    assert text_of(data: [0x0e], which: 2) == "�"
+    assert text_of(data: [0x1b, 0x24, 0x42, 0x30], which: 2) == "�"
+    assert text_of(data: [0x1b, 0x24, 0x42, 0x30, 0x0a], which: 2) == "�"
+    assert text_of(data: [0x1b, 0x41], which: 2) == "�A"
+    assert text_of(data: [0x1b, 0x24], which: 2) == "�$"
+    assert text_of(data: [0x1b, 0x24, 0x42, 0x30, 0x1b, 0x28, 0x42], which: 2) == "�"
+    assert text_of(data: [0x1b], which: 2) == "�"
+
+test "decode_iso_2022_jp: a piece that ends inside an escape or a pair is left whole for the next"
+    out: [u8] @= []
+    iso @= iso2022_start()
+    assert decode_iso_2022_jp(data: [0x1b, 0x24, 0x42, 0x30], from: 0, out: @out, strict: false, last: false, iso: @iso) == run.Stop(at: 3, failed: false)
+    assert iso == Iso2022(set: JIS0208, escaped: true)
+    assert decode_iso_2022_jp(data: [0x30, 0x21, 0x1b, 0x28], from: 0, out: @out, strict: false, last: false, iso: @iso) == run.Stop(at: 2, failed: false)
+    assert out.validated_bytes().must() == "亜"
+    fresh @= iso2022_start()
+    assert decode_iso_2022_jp(data: [0x61, 0x1b, 0x24, 0x42, 0x1b, 0x28, 0x42], from: 0, out: @out, strict: true, last: true, iso: @fresh) == run.Stop(at: 4, failed: true)
+
+test "encode_iso_2022_jp: the escapes in and out, katakana made full width, and the references"
+    assert bytes_for(s: "a¥b", which: 2, html: false) == [0x61, 0x1b, 0x28, 0x4a, 0x5c, 0x62, 0x1b, 0x28, 0x42]
+    assert bytes_for(s: "亜", which: 2, html: false) == [0x1b, 0x24, 0x42, 0x30, 0x21, 0x1b, 0x28, 0x42]
+    assert bytes_for(s: "ｱ", which: 2, html: false) == [0x1b, 0x24, 0x42, 0x25, 0x22, 0x1b, 0x28, 0x42]
+    assert bytes_for(s: "€", which: 2, html: false) == []
+    assert bytes_for(s: "亜€", which: 2, html: true) == bytes.parse_hex("1b244230211b28422623383336343b").must()
+    assert bytes_for(s: "\u{e}", which: 2, html: true) == bytes.from_text("&#65533;")
+    assert bytes_for(s: "¥\u{1b}", which: 2, html: true) == bytes.parse_hex("1b284a5c262336353533333b1b2842").must()

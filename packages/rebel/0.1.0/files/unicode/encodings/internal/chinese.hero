@@ -1,0 +1,407 @@
+# The Chinese encodings both ways: gb18030 and GBK (§ 10 of the standard) and
+# Big5 (§ 11), written to look ahead over the bytes they have: a sequence is
+# read whole or, where the input ends inside it and more is to come, left for
+# the next piece. A byte the standard "restores" is one this decoder never
+# went past.
+
+use bytes
+use unicode
+use unicode/encodings/internal/big5_table
+use unicode/encodings/internal/gb18030_table
+use unicode/encodings/internal/lookup
+use unicode/encodings/internal/run
+use unicode/encodings/internal/utf
+
+# The gb18030 encoder's side table (§ 10.2.2): the private-use code points
+# GB18030-2005 wrote with two bytes that GB18030-2022 gives to other
+# characters, written as they were and never read back to them. Each
+# `code point << 16 | first byte << 8 | second byte`, ascending.
+constant SIDE_TABLE: [i64]
+    [
+        0xe78d << 16 | 0xa6d9
+        0xe78e << 16 | 0xa6da
+        0xe78f << 16 | 0xa6db
+        0xe790 << 16 | 0xa6dc
+        0xe791 << 16 | 0xa6dd
+        0xe792 << 16 | 0xa6de
+        0xe793 << 16 | 0xa6df
+        0xe794 << 16 | 0xa6ec
+        0xe795 << 16 | 0xa6ed
+        0xe796 << 16 | 0xa6f3
+        0xe81e << 16 | 0xfe59
+        0xe826 << 16 | 0xfe61
+        0xe82b << 16 | 0xfe66
+        0xe82c << 16 | 0xfe67
+        0xe832 << 16 | 0xfe6d
+        0xe843 << 16 | 0xfe7e
+        0xe854 << 16 | 0xfe90
+        0xe864 << 16 | 0xfea0
+    ]
+
+## gb18030 and GBK
+
+# The code point of `pointer` in index gb18030 ranges (§ 5), or -1 where it
+# names none.
+function ranges_point(pointer: i64) -> i64
+    if pointer > 39419 && pointer < 189000 || pointer > 1237575
+        return -1
+
+    if pointer == 7457
+        return 0xe7c7
+    ranges = gb18030_table.RANGES
+    low: i64 @= 0
+    high: i64 @= ranges.len()
+
+    while high - low > 1
+        middle = (low + high) / 2
+
+        if ranges[middle] >> 21 <= pointer
+            low @ middle
+        else
+            high @ middle
+
+    return (ranges[low] & 0x1fffff) + pointer - (ranges[low] >> 21)
+
+# The pointer of `point` in index gb18030 ranges (§ 5).
+function ranges_pointer(point: i64) -> i64
+    if point == 0xe7c7
+        return 7457
+    ranges = gb18030_table.RANGES
+    low: i64 @= 0
+    high: i64 @= ranges.len()
+
+    while high - low > 1
+        middle = (low + high) / 2
+
+        if ranges[middle] & 0x1fffff <= point
+            low @ middle
+        else
+            high @ middle
+
+    return (ranges[low] >> 21) + point - (ranges[low] & 0x1fffff)
+
+# The code point of `pointer` in index gb18030, or -1.
+function gb18030_point(pointer: i64) -> i64
+    return lookup.point_of(words: gb18030_table.DECODE, size: gb18030_table.POINTERS, pointer: pointer)
+
+# The first pointer of `point` in index gb18030, or -1.
+function gb18030_pointer(point: i64) -> i64
+    return lookup.pointer_of(
+        decode: gb18030_table.DECODE,
+        size: gb18030_table.POINTERS,
+        encode: gb18030_table.ENCODE,
+        count: gb18030_table.ENCODE_COUNT,
+        point: point
+    )
+
+# Whether `b` is an ASCII digit, which the second and fourth bytes of a
+# four-byte sequence are.
+function is_digit(b: u8) -> bool
+    return b >= 0x30 && b <= 0x39
+
+# Reads `data` from `from` as gb18030 into `out`; GBK reads the same.
+function decode_gb18030(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+        point: i64 @= -1
+        taken: i64 @= 1
+
+        if b < 0x80
+            point @ run.wide(b)
+        else if b == 0x80
+            point @ 0x20ac
+        else if b <= 0xfe
+            if at + 1 >= data.len()
+                return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            second = data[at + 1]
+
+            if is_digit(second)
+                if at + 2 >= data.len()
+                    return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+                third = data[at + 2]
+
+                if third >= 0x81 && third <= 0xfe
+                    if at + 3 >= data.len()
+                        return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+                    fourth = data[at + 3]
+
+                    if is_digit(fourth)
+                        taken @ 4
+                        point @ ranges_point(
+                            (run.wide(b) - 0x81) * 12600 + (run.wide(second) - 0x30) * 1260 + (run.wide(third) - 0x81) * 10 + run.wide(fourth) - 0x30
+                        )
+            else
+                if second >= 0x40 && second <= 0x7e || second >= 0x80 && second <= 0xfe
+                    offset: i64 @= 0x41
+
+                    if second < 0x7f
+                        offset @ 0x40
+                    point @ gb18030_point((run.wide(b) - 0x81) * 190 + run.wide(second) - offset)
+
+                if point >= 0 || second >= 0x80
+                    taken @ 2
+
+        if point >= 0
+            run.add_point(out: @out, n: point)
+        else if strict
+            return run.Stop(at: at, failed: true)
+        else
+            run.add_replacement(out: @out)
+        at @ at + taken
+
+    return run.Stop(at: at, failed: false)
+
+# Writes `s` in gb18030 at the end of `out`, or in GBK where `gbk`, which has
+# no four-byte sequences: -1 where every character was written, else, where
+# `html` is false, the byte index in `s` of the first that has no bytes.
+function encode_gb18030(s: str lent, @out: [u8], html: bool, gbk: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+            side = lookup.value_of(pairs: SIDE_TABLE, key: point, shift: 16)
+            pointer = gb18030_pointer(point)
+
+            if point == 0xe5e5 || gbk && point != 0x20ac && side < 0 && pointer < 0
+                if !html
+                    return at
+                run.add_reference(out: @out, n: point)
+            else if gbk && point == 0x20ac
+                out @ out.push(0x80)
+            else if side >= 0
+                out @ out.push(run.narrow(side >> 8))
+                out @ out.push(run.narrow(side & 0xff))
+            else if pointer >= 0
+                trail = pointer % 190
+                offset: i64 @= 0x41
+
+                if trail < 0x3f
+                    offset @ 0x40
+                out @ out.push(run.narrow(pointer / 190 + 0x81))
+                out @ out.push(run.narrow(trail + offset))
+            else
+                rest: i64 @= ranges_pointer(point)
+                out @ out.push(run.narrow(rest / 12600 + 0x81))
+                rest @ rest % 12600
+                out @ out.push(run.narrow(rest / 1260 + 0x30))
+                rest @ rest % 1260
+                out @ out.push(run.narrow(rest / 10 + 0x81))
+                out @ out.push(run.narrow(rest % 10 + 0x30))
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+## Big5
+
+# The code point of `pointer` in index Big5, or -1.
+function big5_point(pointer: i64) -> i64
+    return lookup.point_of(words: big5_table.DECODE, size: big5_table.POINTERS, pointer: pointer)
+
+# The two code points Big5 reads the pointers 1133, 1135, 1164 and 1166 as,
+# the first `<< 21 | ` the second, or -1 for any other pointer.
+function big5_pair(pointer: i64) -> i64
+    if pointer == 1133
+        return 0xca << 21 | 0x304
+
+    if pointer == 1135
+        return 0xca << 21 | 0x30c
+
+    if pointer == 1164
+        return 0xea << 21 | 0x304
+
+    if pointer == 1166
+        return 0xea << 21 | 0x30c
+    return -1
+
+# The index Big5 pointer of `point`, Hong Kong's extensions left out, or -1.
+function big5_pointer(point: i64) -> i64
+    return lookup.pointer_of(
+        decode: big5_table.DECODE,
+        size: big5_table.POINTERS,
+        encode: big5_table.ENCODE,
+        count: big5_table.ENCODE_COUNT,
+        point: point
+    )
+
+# Reads `data` from `from` as Big5 into `out`.
+function decode_big5(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else if b >= 0x81 && b <= 0xfe
+            if at + 1 >= data.len()
+                return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            second = data[at + 1]
+            pointer: i64 @= -1
+
+            if second >= 0x40 && second <= 0x7e || second >= 0xa1 && second <= 0xfe
+                offset: i64 @= 0x62
+
+                if second < 0x7f
+                    offset @ 0x40
+                pointer @ (run.wide(b) - 0x81) * 157 + run.wide(second) - offset
+            pair = big5_pair(pointer)
+            point = big5_point(pointer)
+
+            if pair >= 0
+                run.add_point(out: @out, n: pair >> 21)
+                run.add_point(out: @out, n: pair & 0x1fffff)
+                at @ at + 2
+            else if point >= 0
+                run.add_point(out: @out, n: point)
+                at @ at + 2
+            else if strict
+                return run.Stop(at: at, failed: true)
+            else
+                run.add_replacement(out: @out)
+
+                if second < 0x80
+                    at @ at + 1
+                else
+                    at @ at + 2
+        else if strict
+            return run.Stop(at: at, failed: true)
+        else
+            run.add_replacement(out: @out)
+            at @ at + 1
+
+    return run.Stop(at: at, failed: false)
+
+# Writes `s` in Big5 at the end of `out`: -1 where every character was
+# written, else, where `html` is false, the byte index in `s` of the first that
+# has no bytes.
+function encode_big5(s: str lent, @out: [u8], html: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+            pointer = big5_pointer(point)
+
+            if pointer >= 0
+                trail = pointer % 157
+                offset: i64 @= 0x62
+
+                if trail < 0x3f
+                    offset @ 0x40
+                out @ out.push(run.narrow(pointer / 157 + 0x81))
+                out @ out.push(run.narrow(trail + offset))
+            else if html
+                run.add_reference(out: @out, n: point)
+            else
+                return at
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+## Tests
+
+# Every expected value below is what encoding_rs 0.8.42 answered for the same
+# input on 2026-11-17. Python 3.15.2's `gb18030` codec differs from the
+# standard on 20 pairs of index gb18030 (0xA3 0xA0 is U+E5E5 there, U+3000
+# here; it keeps GB18030-2005's private-use code points where 2022 gave 18
+# characters) and writes U+E5E5 as 0xA3 0xA0, which the standard refuses; its
+# `big5hkscs` differs on 203 of index Big5's 18,590 pointers.
+
+# The text a decoder reads from the whole of `data`, replacing: gb18030's,
+# or Big5's where `big5`.
+function text_of(data: [u8], big5: bool) -> str
+    out: [u8] @= []
+
+    if big5
+        _ = decode_big5(data: data, from: 0, out: @out, strict: false, last: true)
+    else
+        _ = decode_gb18030(data: data, from: 0, out: @out, strict: false, last: true)
+    return out.validated_bytes().must()
+
+# The bytes `encode_gb18030` writes for `s`, or none where it fails.
+function gb_bytes(s: str, gbk: bool, html: bool) -> [u8]
+    out: [u8] @= []
+
+    if encode_gb18030(s: s, out: @out, html: html, gbk: gbk) >= 0
+        return []
+    return out
+
+test "decode_gb18030: one, two and four bytes, the ranges' edges, and the restored bytes"
+    assert text_of(data: [0x81, 0x30, 0x81, 0x30], big5: false) == "\u{80}"
+    assert unicode.code_points(text_of(data: [0x84, 0x31, 0xa4, 0x39], big5: false)) == [0xffff]
+    assert text_of(data: [0x90, 0x30, 0x81, 0x30], big5: false) == unicode.from_code_point(0x10000).must()
+    assert text_of(data: [0xe3, 0x32, 0x9a, 0x35], big5: false) == unicode.from_code_point(0x10ffff).must()
+    assert text_of(data: [0x84, 0x31, 0xa5, 0x30], big5: false) == "�"
+    assert text_of(data: [0xfe, 0x39, 0xfe, 0x39], big5: false) == "�"
+    assert unicode.code_points(text_of(data: [0x81, 0x35, 0xf4, 0x37], big5: false)) == [0xe7c7]
+    assert text_of(data: [0x84, 0x31, 0x87, 0x30], big5: false) == "ﹰ"
+    assert unicode.code_points(text_of(data: [0x80, 0xa3, 0xa0], big5: false)) == [0x20ac, 0x3000]
+    assert text_of(data: [0x81, 0x40], big5: false) == "丂"
+    assert text_of(data: [0x81, 0x7f], big5: false) == "�\u{7f}"
+    assert text_of(data: [0xff, 0x41], big5: false) == "�A"
+    assert text_of(data: [0x81, 0x30, 0x81], big5: false) == "�"
+    assert text_of(data: [0x81, 0x30, 0x41], big5: false) == "�0A"
+    assert text_of(data: [0x81, 0x30, 0x81, 0x41], big5: false) == "�0丄"
+
+test "decode_gb18030: a strict read stops at the sequence's first byte"
+    out: [u8] @= []
+    assert decode_gb18030(data: [0x61, 0x81, 0x30, 0x41], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 1, failed: true)
+    assert decode_gb18030(data: [0x81, 0x30], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 0, failed: true)
+    assert decode_gb18030(data: [0x81, 0x30], from: 0, out: @out, strict: false, last: false) == run.Stop(at: 0, failed: false)
+
+test "encode_gb18030: two bytes and four, the euro in GBK, the side table, U+E5E5, and GBK's refusals"
+    assert gb_bytes(s: "€", gbk: false, html: false) == [0xa2, 0xe3]
+    assert gb_bytes(s: "€", gbk: true, html: false) == [0x80]
+    assert gb_bytes(s: "得", gbk: true, html: false) == [0xb5, 0xc3]
+    assert gb_bytes(s: unicode.from_code_point(0xe78d).must(), gbk: false, html: false) == [0xa6, 0xd9]
+    assert gb_bytes(s: unicode.from_code_point(0xe7c7).must(), gbk: false, html: false) == [0x81, 0x35, 0xf4, 0x37]
+    assert gb_bytes(s: "😀", gbk: false, html: false) == [0x94, 0x39, 0xfc, 0x36]
+    assert gb_bytes(s: "\u{80}", gbk: false, html: false) == [0x81, 0x30, 0x81, 0x30]
+    assert gb_bytes(s: unicode.from_code_point(0xe5e5).must(), gbk: false, html: false) == []
+    assert gb_bytes(s: unicode.from_code_point(0xe5e5).must(), gbk: false, html: true) == bytes.from_text("&#58853;")
+    assert gb_bytes(s: "😀", gbk: true, html: false) == []
+    assert gb_bytes(s: "a😀", gbk: true, html: true) == bytes.from_text("a&#128512;")
+
+test "ranges_point and ranges_pointer: the ranges' first, a pointer between, U+E7C7, and what names none"
+    assert ranges_point(0) == 0x80
+    assert ranges_point(7457) == 0xe7c7
+    assert ranges_point(39419) == 0xffff
+    assert ranges_point(39420) == -1
+    assert ranges_point(189000) == 0x10000
+    assert ranges_point(1237575) == 0x10ffff
+    assert ranges_point(1237576) == -1
+    assert ranges_pointer(0x80) == 0
+    assert ranges_pointer(0xe7c7) == 7457
+    assert ranges_pointer(0x10000) == 189000
+
+test "decode_big5: the four pointers of two code points, a pair, Hong Kong's, and wrong bytes"
+    assert text_of(data: [0x88, 0x62, 0x88, 0x64, 0x88, 0xa3, 0x88, 0xa5], big5: true) == "Ê̄Ê̌ê̄ê̌"
+    assert text_of(data: [0xa4, 0x40, 0xa4, 0x41], big5: true) == "一乙"
+    assert text_of(data: [0x87, 0x7a], big5: true) == "㡵"
+    assert text_of(data: [0x81, 0x40], big5: true) == "�@"
+    assert text_of(data: [0xa4, 0x7f], big5: true) == "�\u{7f}"
+    assert text_of(data: [0x80, 0xff], big5: true) == "��"
+    assert text_of(data: [0xa4], big5: true) == "�"
+    out: [u8] @= []
+    assert decode_big5(data: [0xa4, 0x40, 0xa4], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 2, failed: true)
+
+test "encode_big5: a pair, the last pointer of U+2550 and U+5341, and Hong Kong's left out"
+    out: [u8] @= []
+    assert encode_big5(s: "一══十", out: @out, html: false) == -1
+    assert out == [0xa4, 0x40, 0xf9, 0xf9, 0xf9, 0xf9, 0xa4, 0x51]
+    refused: [u8] @= []
+    assert encode_big5(s: "a㡵", out: @refused, html: false) == 1

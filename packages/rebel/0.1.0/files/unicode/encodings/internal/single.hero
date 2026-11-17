@@ -1,0 +1,197 @@
+# The single-byte encodings both ways (§ 9 of the standard), x-user-defined
+# (§ 14.5), and the Infra standard's isomorphic decoding and encoding: every
+# byte one character, so no sequence is ever cut short and no state is kept.
+#
+# `slot` numbers a single-byte encoding from 0, IBM866, to 27,
+# x-mac-cyrillic, in the standard's order, which `single_byte_table.hero`
+# follows.
+
+use unicode
+use unicode/encodings/internal/run
+use unicode/encodings/internal/single_byte_table
+
+# How many words of `single_byte_table.DECODE` each encoding takes.
+constant WORDS: i64
+    43
+
+# The code point the single-byte encoding `slot` reads `b` as, or -1 where it
+# reads it as none.
+function point_of(slot: i64, b: u8) -> i64
+    if b < 0x80
+        return run.wide(b)
+    pointer = run.wide(b) - 0x80
+    point = single_byte_table.DECODE[slot * WORDS + pointer / 3] >> 21 * (pointer % 3) & 0x1fffff
+
+    if point == 0
+        return -1
+    return point
+
+# The byte the single-byte encoding `slot` writes `point` as, or -1 where it
+# has none.
+function byte_of(slot: i64, point: i64) -> i64
+    if point < 0x80
+        return point
+    low: i64 @= single_byte_table.ENCODE_STARTS[slot]
+    high: i64 @= single_byte_table.ENCODE_STARTS[slot + 1]
+
+    while low < high
+        middle = (low + high) / 2
+        pair = single_byte_table.ENCODE[middle]
+
+        if pair >> 7 == point
+            return (pair & 0x7f) + 0x80
+
+        if pair >> 7 < point
+            low @ middle + 1
+        else
+            high @ middle
+
+    return -1
+
+# Reads `data` from `from` in the single-byte encoding `slot` into `out`.
+function decode(slot: i64, data: [u8] lent, from: i64, @out: [u8], strict: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+
+        if b < 0x80
+            out @ out.push(b)
+        else
+            point = point_of(slot: slot, b: b)
+
+            if point >= 0
+                run.add_point(out: @out, n: point)
+            else if strict
+                return run.Stop(at: at, failed: true)
+            else
+                run.add_replacement(out: @out)
+        at @ at + 1
+
+    return run.Stop(at: at, failed: false)
+
+# Reads `data` from `from` as x-user-defined into `out`: it reads every byte.
+function decode_user_defined(data: [u8] lent, from: i64, @out: [u8]) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+
+        if b < 0x80
+            out @ out.push(b)
+        else
+            run.add_point(out: @out, n: 0xf780 + run.wide(b) - 0x80)
+        at @ at + 1
+
+    return run.Stop(at: at, failed: false)
+
+# Reads `data` from `from` as its own numbers into `out`.
+function decode_isomorphic(data: [u8] lent, from: i64, @out: [u8]) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        run.add_point(out: @out, n: run.wide(data[at]))
+        at @ at + 1
+
+    return run.Stop(at: at, failed: false)
+
+# The byte x-user-defined writes `point` as, or -1 where it has none.
+function user_defined_byte(point: i64) -> i64
+    if point < 0x80
+        return point
+
+    if point >= 0xf780 && point <= 0xf7ff
+        return point - 0xf780 + 0x80
+    return -1
+
+# Writes `s` in the single-byte encoding `slot`, or x-user-defined where
+# `slot` is -1, or as its own numbers where it is -2, at the end of `out`. It
+# answers -1 where every character was written, else the byte index in `s` of
+# the first that has no byte, where `html` is false; where it is true such a
+# character is written as an HTML numeric reference.
+function encode(slot: i64, s: str lent, @out: [u8], html: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+            byte: i64 @= -1
+
+            if slot >= 0
+                byte @ byte_of(slot: slot, point: point)
+            else if slot == -1
+                byte @ user_defined_byte(point)
+            else if point <= 0xff
+                byte @ point
+
+            if byte >= 0
+                out @ out.push(run.narrow(byte))
+            else if html
+                run.add_reference(out: @out, n: point)
+            else
+                return at
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+## Tests
+
+# The expected values are Python 3.15.2's codecs, whose `cp1252`, `koi8_r` and
+# `cp866` agree with the standard on the bytes asked here, observed
+# 2026-11-17: b"\x80\x9f\xff".decode("cp1252") and so on.
+
+test "point_of: ASCII, a byte of each table's ends, and a byte a table reads as none"
+    assert point_of(slot: 20, b: 'A') == 0x41
+    assert point_of(slot: 20, b: 0x80) == 0x20ac
+    assert point_of(slot: 20, b: 0x81) == 0x81
+    assert point_of(slot: 20, b: 0xff) == 0xff
+    assert point_of(slot: 14, b: 0xc1) == 0x430
+    assert point_of(slot: 0, b: 0x80) == 0x410
+    assert point_of(slot: 0, b: 0xff) == 0xa0
+    assert point_of(slot: 2, b: 0xa5) == -1
+
+test "byte_of: ASCII, a character of the table, one it has twice, one it has not"
+    assert byte_of(slot: 20, point: 0x41) == 0x41
+    assert byte_of(slot: 20, point: 0x20ac) == 0x80
+    assert byte_of(slot: 20, point: 0xff) == 0xff
+    assert byte_of(slot: 14, point: 0x430) == 0xc1
+    assert byte_of(slot: 20, point: 0x430) == -1
+    assert byte_of(slot: 0, point: 0xa0) == 0xff
+
+test "decode: nothing, ASCII, a table's character, and a byte it reads as none, strict and not"
+    out: [u8] @= []
+    assert decode(slot: 20, data: [], from: 0, out: @out, strict: false) == run.Stop(at: 0, failed: false)
+    assert decode(slot: 20, data: [0x61, 0x80, 0xe9], from: 0, out: @out, strict: false) == run.Stop(at: 3, failed: false)
+    assert out.validated_bytes().must() == "a€é"
+    loose: [u8] @= []
+    assert decode(slot: 2, data: [0x61, 0xa5, 0x62], from: 1, out: @loose, strict: false) == run.Stop(at: 3, failed: false)
+    assert loose.validated_bytes().must() == "�b"
+    strict: [u8] @= []
+    assert decode(slot: 2, data: [0x61, 0xa5, 0x62], from: 0, out: @strict, strict: true) == run.Stop(at: 1, failed: true)
+
+test "decode_user_defined and decode_isomorphic: ASCII and the byte 0x80 and 0xFF"
+    user: [u8] @= []
+    _ = decode_user_defined(data: [0x41, 0x80, 0xff], from: 0, out: @user)
+    assert unicode.code_points(user.validated_bytes().must()) == [0x41, 0xf780, 0xf7ff]
+    same: [u8] @= []
+    _ = decode_isomorphic(data: [0x41, 0x80, 0xff], from: 0, out: @same)
+    assert unicode.code_points(same.validated_bytes().must()) == [0x41, 0x80, 0xff]
+
+test "encode: a table, x-user-defined and own numbers, a character with none, strict and as a reference"
+    out: [u8] @= []
+    assert encode(slot: 20, s: "a€é", out: @out, html: false) == -1
+    assert out == [0x61, 0x80, 0xe9]
+    user: [u8] @= []
+    assert encode(slot: -1, s: unicode.from_code_points([0x61, 0xf780, 0xf7ff]).must(), out: @user, html: false) == -1
+    assert user == [0x61, 0x80, 0xff]
+    own: [u8] @= []
+    assert encode(slot: -2, s: "aé€", out: @own, html: false) == 3
+    assert own == [0x61, 0xe9]
+    html: [u8] @= []
+    assert encode(slot: 20, s: "ж!", out: @html, html: true) == -1
+    assert html.validated_bytes().must() == "&#1078;!"

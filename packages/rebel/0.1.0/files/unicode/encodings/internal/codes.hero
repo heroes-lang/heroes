@@ -1,0 +1,16 @@
+# The codes `unicode/encodings` fails with, which its face names again: kept
+# here so that its private modules, which cannot read the face, fail with the
+# same words.
+
+# A label the standard reads as no encoding.
+constant NOT_FOUND: str
+    "not_found"
+
+# Bytes an encoding cannot read, where the call is strict.
+constant INVALID: str
+    "invalid"
+
+# A character an encoding has no bytes for, where the call is strict, and any
+# writing in the encoding `replacement`.
+constant UNSUPPORTED: str
+    "unsupported"

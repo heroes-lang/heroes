@@ -1,0 +1,252 @@
+# UTF-8's decoder (§ 8.1.1 of the standard), UTF-16's (§ 14.2), and the
+# decoder of `replacement` (§ 14.1), each written to look ahead over the bytes
+# it has rather than to take them one at a time: a sequence is read whole, or
+# where the input ends inside it and more is to come, left for the next piece.
+# And UTF-16's encoder, which the standard does not define.
+
+use unicode
+use unicode/encodings/internal/run
+
+# Reads `data` from `from` as UTF-8 into `out`. Each wrong sequence is one
+# U+FFFD: the bytes that begin a character and the continuation bytes that
+# fit it, the first that does not being read again.
+function decode_utf8(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            needed: i64 @= 0
+            lower: u8 @= 0x80
+            upper: u8 @= 0xbf
+
+            if b >= 0xc2 && b <= 0xdf
+                needed @ 1
+            else if b >= 0xe0 && b <= 0xef
+                needed @ 2
+
+                if b == 0xe0
+                    lower @ 0xa0
+
+                if b == 0xed
+                    upper @ 0x9f
+            else if b >= 0xf0 && b <= 0xf4
+                needed @ 3
+
+                if b == 0xf0
+                    lower @ 0x90
+
+                if b == 0xf4
+                    upper @ 0x8f
+
+            if needed == 0
+                if strict
+                    return run.Stop(at: at, failed: true)
+                run.add_replacement(out: @out)
+                at @ at + 1
+            else
+                seen: i64 @= 1
+                wrong: bool @= false
+
+                while !wrong && seen <= needed
+                    if at + seen >= data.len()
+                        if !last
+                            return run.Stop(at: at, failed: false)
+
+                        if strict
+                            return run.Stop(at: at, failed: true)
+                        run.add_replacement(out: @out)
+                        return run.Stop(at: data.len(), failed: false)
+                    c = data[at + seen]
+
+                    if c < lower || c > upper
+                        wrong @ true
+                    else
+                        lower @ 0x80
+                        upper @ 0xbf
+                        seen @ seen + 1
+
+                if wrong
+                    if strict
+                        return run.Stop(at: at, failed: true)
+                    run.add_replacement(out: @out)
+                    at @ at + seen
+                else
+                    for k in range(from: 0, to: needed + 1)
+                        out @ out.push(data[at + k])
+
+                    at @ at + needed + 1
+
+    return run.Stop(at: at, failed: false)
+
+# The UTF-16 code unit at `at` of `data`, the high byte first where `big`.
+function unit_at(data: [u8] lent, at: i64, big: bool) -> i64
+    if big
+        return run.wide(data[at]) << 8 | run.wide(data[at + 1])
+    return run.wide(data[at + 1]) << 8 | run.wide(data[at])
+
+# Reads `data` from `from` as UTF-16 into `out`, the high byte of each unit
+# first where `big`. A surrogate with no partner is U+FFFD, and so is a last
+# byte or a last high surrogate the input ends on.
+function decode_utf16(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool, big: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        if at + 1 >= data.len()
+            return cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+        unit = unit_at(data: data, at: at, big: big)
+
+        if unit >= 0xd800 && unit <= 0xdbff
+            if at + 3 >= data.len()
+                return cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            next = unit_at(data: data, at: at + 2, big: big)
+
+            if next >= 0xdc00 && next <= 0xdfff
+                run.add_point(out: @out, n: 0x10000 + (unit - 0xd800 << 10) + next - 0xdc00)
+                at @ at + 4
+            else if strict
+                return run.Stop(at: at, failed: true)
+            else
+                run.add_replacement(out: @out)
+                at @ at + 2
+        else if unit >= 0xdc00 && unit <= 0xdfff
+            if strict
+                return run.Stop(at: at, failed: true)
+            run.add_replacement(out: @out)
+            at @ at + 2
+        else
+            run.add_point(out: @out, n: unit)
+            at @ at + 2
+
+    return run.Stop(at: at, failed: false)
+
+# Where the input ends inside a sequence that begins at `at`: it waits for
+# more where `last` is false, fails where `strict`, and is one U+FFFD else.
+function cut_short(at: i64, end: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    if !last
+        return run.Stop(at: at, failed: false)
+
+    if strict
+        return run.Stop(at: at, failed: true)
+    run.add_replacement(out: @out)
+    return run.Stop(at: end, failed: false)
+
+# Reads `data` from `from` as `replacement`: one U+FFFD for bytes of any
+# length, once, which `@replaced` remembers between pieces; nothing for none.
+function decode_replacement(data: [u8] lent, from: i64, @out: [u8], strict: bool, @replaced: bool) -> run.Stop
+    if from < data.len() && !replaced
+        if strict
+            return run.Stop(at: from, failed: true)
+        run.add_replacement(out: @out)
+        replaced @ true
+    return run.Stop(at: data.len(), failed: false)
+
+# Writes `s` as UTF-16 at the end of `out`, the high byte of each unit first
+# where `big`. Every character has units.
+function encode_utf16(s: str lent, @out: [u8], big: bool)
+    at: i64 @= 0
+
+    while at < s.len()
+        point = unicode.code_point_at(s, at)
+
+        if point < 0x10000
+            add_unit(out: @out, unit: point, big: big)
+        else
+            add_unit(out: @out, unit: 0xd800 + (point - 0x10000 >> 10), big: big)
+            add_unit(out: @out, unit: 0xdc00 + (point - 0x10000 & 0x3ff), big: big)
+        at @ at + unicode.width_at(s, at)
+
+# Writes the unit `unit` as two bytes at the end of `out`.
+function add_unit(@out: [u8], unit: i64, big: bool)
+    if big
+        out @ out.push(run.narrow(unit >> 8))
+        out @ out.push(run.narrow(unit & 0xff))
+    else
+        out @ out.push(run.narrow(unit & 0xff))
+        out @ out.push(run.narrow(unit >> 8))
+
+## Tests
+
+# Every expected value below is what encoding_rs 0.8.42, the standard's
+# implementation in Firefox, answered for the same bytes on 2026-11-17
+# (`decode_without_bom_handling`, and the decoder `_without_replacement` for
+# the index where a strict read stops); Python 3.15.2's `utf-8` and
+# `utf-16-le` codecs with `errors="replace"` answer the same texts.
+
+# The text `decode_utf8` reads from the whole of `data`, replacing.
+function utf8_text(data: [u8]) -> str
+    out: [u8] @= []
+    _ = decode_utf8(data: data, from: 0, out: @out, strict: false, last: true)
+    return out.validated_bytes().must()
+
+# The text `decode_utf16` reads from the whole of `data`, replacing.
+function utf16_text(data: [u8], big: bool) -> str
+    out: [u8] @= []
+    _ = decode_utf16(data: data, from: 0, out: @out, strict: false, last: true, big: big)
+    return out.validated_bytes().must()
+
+test "decode_utf8: nothing, each width, and each kind of wrong sequence"
+    assert utf8_text([]) == ""
+    assert utf8_text([0x61, 0xc3, 0xa9]) == "aé"
+    assert utf8_text([0xf0, 0x9f, 0x98, 0x80]) == "😀"
+    assert utf8_text([0xc3]) == "�"
+    assert utf8_text([0xe0, 0x80]) == "��"
+    assert utf8_text([0xed, 0xa0, 0x80]) == "���"
+    assert utf8_text([0xf0, 0x9f, 0x98]) == "�"
+    assert utf8_text([0xf4, 0x90, 0x80, 0x80]) == "����"
+    assert utf8_text([0xc0, 0xaf]) == "��"
+    assert utf8_text([0xe2, 0x82, 0x41]) == "�A"
+
+test "decode_utf8: a strict read stops where the wrong sequence begins, and a cut one waits"
+    out: [u8] @= []
+    assert decode_utf8(data: [0x61, 0xe2, 0x82, 0x41], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 1, failed: true)
+    assert decode_utf8(data: [0xc3], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 0, failed: true)
+    waits: [u8] @= []
+    assert decode_utf8(data: [0x61, 0xf0, 0x9f, 0x98], from: 0, out: @waits, strict: false, last: false) == run.Stop(at: 1, failed: false)
+    assert waits == [0x61]
+
+test "decode_utf16: a unit, a pair, and a surrogate alone, cut or out of place, both orders"
+    assert utf16_text(data: [0x61, 0], big: false) == "a"
+    assert utf16_text(data: [0x3d, 0xd8, 0, 0xde], big: false) == "😀"
+    assert utf16_text(data: [0x3d, 0xd8, 0x61, 0], big: false) == "�a"
+    assert utf16_text(data: [0, 0xde, 0x61, 0], big: false) == "�a"
+    assert utf16_text(data: [0x61], big: false) == "�"
+    assert utf16_text(data: [0x3d, 0xd8], big: false) == "�"
+    assert utf16_text(data: [0x3d, 0xd8, 0], big: false) == "�"
+    assert utf16_text(data: [0, 0x61, 0xd8, 0x3d, 0xde, 0], big: true) == "a😀"
+    assert utf16_text(data: [0xd8, 0x3d, 0, 0x61], big: true) == "�a"
+    out: [u8] @= []
+    assert decode_utf16(data: [0x61, 0, 0x3d, 0xd8], from: 0, out: @out, strict: true, last: true, big: false) == run.Stop(at: 2, failed: true)
+    assert decode_utf16(data: [0, 0x61, 0xd8], from: 0, out: @out, strict: true, last: true, big: true) == run.Stop(at: 2, failed: true)
+
+test "decode_replacement: nothing is nothing, anything else one U+FFFD, once"
+    out: [u8] @= []
+    replaced @= false
+    assert decode_replacement(data: [], from: 0, out: @out, strict: false, replaced: @replaced) == run.Stop(at: 0, failed: false)
+    assert out == [] && !replaced
+    assert decode_replacement(data: [0x41, 0x42], from: 0, out: @out, strict: false, replaced: @replaced) == run.Stop(at: 2, failed: false)
+    assert decode_replacement(data: [0x43], from: 0, out: @out, strict: false, replaced: @replaced) == run.Stop(at: 1, failed: false)
+    assert out.validated_bytes().must() == "�"
+    fresh @= false
+    assert decode_replacement(data: [0x41], from: 0, out: @out, strict: true, replaced: @fresh) == run.Stop(at: 0, failed: true)
+
+test "cut_short: waits, fails, or is one U+FFFD to the end"
+    out: [u8] @= []
+    assert cut_short(at: 3, end: 5, out: @out, strict: false, last: false) == run.Stop(at: 3, failed: false)
+    assert cut_short(at: 3, end: 5, out: @out, strict: true, last: true) == run.Stop(at: 3, failed: true)
+    assert out == []
+    assert cut_short(at: 3, end: 5, out: @out, strict: false, last: true) == run.Stop(at: 5, failed: false)
+    assert out.validated_bytes().must() == "�"
+
+test "encode_utf16 and unit_at: a unit and a pair, in both orders"
+    little: [u8] @= []
+    encode_utf16(s: "a😀", out: @little, big: false)
+    assert little == [0x61, 0, 0x3d, 0xd8, 0, 0xde]
+    big: [u8] @= []
+    encode_utf16(s: "a😀", out: @big, big: true)
+    assert big == [0, 0x61, 0xd8, 0x3d, 0xde, 0]
+    assert unit_at(data: big, at: 2, big: true) == 0xd83d && unit_at(data: little, at: 2, big: false) == 0xd83d

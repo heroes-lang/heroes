@@ -1,0 +1,473 @@
+# How plausible a reading of bytes is as text: the measures `guess.hero`
+# ranks the readings of bytes by, each a mess charged for what text seldom
+# holds, and the scripts, alphabets and levels of Chinese characters they
+# rest on. `guess.hero`'s comment states the method whole.
+
+use unicode
+use unicode/encodings/internal/alphabets_table
+use unicode/encodings/internal/chinese
+use unicode/encodings/internal/japanese
+use unicode/encodings/internal/korean
+use unicode/encodings/internal/registry
+
+# A script, for the words of a reading: Latin, ASCII's letters among them.
+constant LATIN: i64
+    1
+
+# Greek.
+constant GREEK: i64
+    2
+
+# Cyrillic.
+constant CYRILLIC: i64
+    3
+
+# Hebrew.
+constant HEBREW: i64
+    4
+
+# Arabic.
+constant ARABIC: i64
+    5
+
+# Thai.
+constant THAI: i64
+    6
+
+# The Chinese characters, the kana and the full-width forms, which Japanese and
+# Chinese write together.
+constant CJK: i64
+    7
+
+# Hangul.
+constant HANGUL: i64
+    8
+
+# Any other script.
+constant OTHER: i64
+    9
+
+# The script of the letter `n`.
+function script_of(n: i64) -> i64
+    if n < 0x250 || n >= 0x1e00 && n <= 0x1eff || n >= 0x2c60 && n <= 0x2c7f || n >= 0xa720 && n <= 0xa7ff
+        return LATIN
+
+    if n >= 0x370 && n <= 0x3ff || n >= 0x1f00 && n <= 0x1fff
+        return GREEK
+
+    if n >= 0x400 && n <= 0x52f
+        return CYRILLIC
+
+    if n >= 0x590 && n <= 0x5ff || n >= 0xfb1d && n <= 0xfb4f
+        return HEBREW
+
+    if n >= 0x600 && n <= 0x6ff || n >= 0x750 && n <= 0x77f || n >= 0x8a0 && n <= 0x8ff || n >= 0xfb50 && n <= 0xfdff || n >= 0xfe70 && n <= 0xfeff
+        return ARABIC
+
+    if n >= 0xe00 && n <= 0xe7f
+        return THAI
+
+    if n >= 0xac00 && n <= 0xd7ff || n >= 0x1100 && n <= 0x11ff || n >= 0x3130 && n <= 0x318f || n >= 0xa960 && n <= 0xa97f
+        return HANGUL
+
+    if n >= 0x2e80 && n <= 0x31ff || n >= 0x3400 && n <= 0x4dbf || n >= 0x4e00 && n <= 0x9fff || n >= 0xf900 && n <= 0xfaff || n >= 0xff00 && n <= 0xffef || n >= 0x20000 && n <= 0x3ffff
+        return CJK
+    return OTHER
+
+# Whether `n` joins or parts letters unseen, U+200C and U+200D, which Arabic
+# and Hebrew text writes and no Latin text does.
+function is_joiner(n: i64) -> bool
+    return n == 0x200c || n == 0x200d
+
+# Whether `n` is a Chinese character, the kana and the forms left out.
+function is_han(n: i64) -> bool
+    return n >= 0x3400 && n <= 0x4dbf || n >= 0x4e00 && n <= 0x9fff || n >= 0xf900 && n <= 0xfaff || n >= 0x20000 && n <= 0x3ffff
+
+# Whether `n` is hiragana or katakana, in full width or half.
+function is_kana(n: i64) -> bool
+    return n >= 0x3040 && n <= 0x30ff || n >= 0x31f0 && n <= 0x31ff || n >= 0xff66 && n <= 0xff9f
+
+# Whether the Chinese character `n` is among the commonest: GB2312's first
+# level (0xB0A1 to 0xD7F9), Big5's frequent characters (0xA440 to 0xC67E), or
+# JIS X 0208's first level (rows 16 to 47).
+function is_common_han(n: i64) -> bool
+    gb = chinese.gb18030_pointer(n)
+
+    if gb >= 0 && gb / 190 + 0x81 >= 0xb0 && gb / 190 + 0x81 <= 0xd7 && gb % 190 >= 0xa1 - 0x41
+        return true
+    big = chinese.big5_pointer(n)
+
+    if big >= 0
+        trail = big % 157
+        offset: i64 @= 0x62
+
+        if trail < 0x3f
+            offset @ 0x40
+        code = big / 157 + 0x81 << 8 | trail + offset
+
+        if code >= 0xa440 && code <= 0xc67e
+            return true
+    jis = japanese.jis0208_pointer(n)
+    return jis >= 1410 && jis < 4418
+
+# Whether the Hangul syllable `n` is among the 2,350 of KS X 1001, the
+# commonest (0xB0A1 to 0xC8FE in EUC-KR).
+function is_common_hangul(n: i64) -> bool
+    pointer = korean.pointer_of(n)
+    return pointer >= 0 && pointer / 190 + 0x81 >= 0xb0 && pointer / 190 + 0x81 <= 0xc8 && pointer % 190 + 0x41 >= 0xa1
+
+# Whether the symbol `n` stands beside letters in ordinary text: the degree
+# after a number, the copyright, registered and trade marks.
+function is_letters_symbol(n: i64) -> bool
+    return n == 0xb0 || n == 0xa9 || n == 0xae || n == 0x2122
+
+# Whether the punctuation `n` stands inside words in ordinary text: the
+# apostrophes, the hyphens, Hebrew's geresh, gershayim and maqaf. Catalan's
+# middle dot, between two `l`, is its caller's to tell.
+function is_word_punctuation(n: i64) -> bool
+    return n == 0x2019 || n == 0x2018 || n == 0x2010 || n == 0x2011 || n == 0x5be || n == 0x5f3 || n == 0x5f4
+
+# What a reading of the encoding numbered `n` gives, `text`, is worth: 1 for
+# a text with nothing against it, towards 0 as its mess grows.
+function plausibility(text: str, n: i64) -> f64
+    mess: f64 @= 0.0
+    above: i64 @= 0
+    characters: i64 @= 0
+    letters: {i64: i64} @= {}
+    han: i64 @= 0
+    kana: i64 @= 0
+    hangul: i64 @= 0
+    spaced: i64 @= 0
+    previous_script: i64 @= 0
+    previous_lower: bool @= false
+    previous_letter: bool @= false
+    previous_han: bool @= false
+    space_after_han: bool @= false
+    loose: i64 @= 0
+    run: i64 @= 0
+    half_kana: i64 @= 0
+    previous_digit: bool @= false
+    previous_point: i64 @= 0
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+        characters @ characters + 1
+        width = unicode.width_at(text, at)
+        point = unicode.code_point_at(text, at)
+        letter: bool @= false
+        lower: bool @= false
+        script: i64 @= 0
+
+        if b < 0x80
+            if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+                letter @ true
+                lower @ b >= 'a'
+                script @ LATIN
+                small = point | 0x20
+                letters[small] @ letters[small].default(0) + 1
+            else if b < 0x20 && b != 9 && b != 10 && b != 12 && b != 13 || b == 0x7f
+                mess @ mess + 3.0
+        else
+            above @ above + 1
+            kind = unicode.category(text.slice(from: at, to: at + width))
+            major = kind.slice(from: 0, to: 1)
+
+            if kind == "Cc" || kind == "Co" || kind == "Cn" || kind == "Cs" || point == 0xfffd
+                mess @ mess + 3.0
+            else if major == "L" || major == "M"
+                letter @ true
+                script @ script_of(point)
+                lower @ kind == "Ll"
+
+                if major == "M"
+                    lower @ previous_lower
+
+                    if script == OTHER
+                        script @ previous_script
+            else if major == "S" && !(is_letters_symbol(point) && (point != 0xb0 || previous_digit)) || kind == "Cf" && point != 0xad && !(is_joiner(point) && (previous_script == ARABIC || previous_script == HEBREW))
+                if kind != "Sc"
+                    mess @ mess + 0.5
+
+                if previous_letter
+                    mess @ mess + 1.0
+                else
+                    loose @ 2
+            else if major == "P" && !(is_word_punctuation(point) || point == 0xb7 && (previous_point == 'l' || previous_point == 'L')) || major == "N" || major == "Z"
+                if previous_letter
+                    loose @ 1
+
+        if letter
+            if loose > 0
+                mess @ mess + 1.0
+
+            if previous_letter && previous_script != 0 && script != previous_script
+                mess @ mess + 1.0
+
+            if previous_letter && previous_lower && !lower && point >= 0x80 && unicode.simple_lower(point) != point
+                mess @ mess + 1.0
+
+            if point >= 0x80 && script != CJK && script != HANGUL && script != OTHER
+                low = unicode.simple_lower(point)
+                letters[low] @ letters[low].default(0) + 1
+
+            if is_han(point)
+                han @ han + 1
+
+                if !is_common_han(point)
+                    mess @ mess + 1.0
+
+                if space_after_han
+                    spaced @ spaced + 1
+            else if is_kana(point)
+                kana @ kana + 1
+
+                if point >= 0xff61
+                    half_kana @ half_kana + 1
+
+            if script == HANGUL
+                hangul @ hangul + 1
+                run @ run + 1
+
+                if point < 0xac00 || point > 0xd7a3 || !is_common_hangul(point)
+                    mess @ mess + 1.0
+
+                if run > 10
+                    mess @ mess + 1.0
+            else
+                run @ 0
+            previous_script @ script
+            previous_lower @ lower
+            loose @ 0
+        else
+            run @ 0
+
+            if loose == 2
+                loose @ 0
+
+        space_after_han @ b == ' ' && previous_han
+        previous_han @ letter && is_han(point)
+        previous_letter @ letter
+        previous_digit @ b >= '0' && b <= '9'
+        previous_point @ point
+        at @ at + width
+
+    mess @ mess + uncovered(letters)
+    family = family_of(n)
+
+    if family == CHINESE
+        mess @ mess + to_f64(kana + hangul + spaced)
+    else if family == JAPANESE
+        mess @ mess + to_f64(hangul + spaced) + to_f64(half_kana) * 0.5
+
+        if han >= 8 && kana * 10 < han
+            mess @ mess + to_f64(han) * 0.25
+    else if family == KOREAN
+        mess @ mess + to_f64(kana) + to_f64(han) * 0.25
+
+    weight = to_f64(above) + 0.1 * to_f64(characters - above)
+
+    if weight < 1.0
+        return exp_of(-6.0 * mess)
+    return exp_of(-6.0 * mess / weight)
+
+# The mess of the letters counted in `letters`, each a lower-case code point
+# and how often it stands, against the language of `alphabets_table` they fit
+# best: each letter above ASCII that language does not use counts 1; and where
+# 8 letters or more were counted, the share of all of them that differs from
+# the language's own proportions counts a half for each letter above ASCII, so
+# that a reading in one alphabet's letters but not in its proportions is
+# charged, and the letters ASCII shares with every reading choose the
+# language.
+function uncovered(letters: {i64: i64}) -> f64
+    total: i64 @= 0
+    covered: [i64] @= []
+    common: [i64] @= []
+
+    for _ in alphabets_table.LANGUAGES
+        covered @ covered.push(0)
+        common @ common.push(0)
+
+    above: i64 @= 0
+
+    for point in keys(letters)
+        total @ total + letters[point].must()
+
+        if point >= 0x80
+            above @ above + letters[point].must()
+
+    if above == 0
+        return 0.0
+
+    for point in keys(letters)
+        count = letters[point].must()
+        mine = count * 100000 / total
+        at: i64 @= first_letter_at(point)
+
+        while at < alphabets_table.LETTERS.len() && alphabets_table.LETTERS[at] >> 32 == point
+            entry = alphabets_table.LETTERS[at]
+            language = entry & 0xff
+            share = entry >> 8 & 0xffffff
+
+            if point >= 0x80
+                covered[language] @ covered[language] + count
+
+            if mine < share
+                common[language] @ common[language] + mine
+            else
+                common[language] @ common[language] + share
+            at @ at + 1
+
+    best: f64 @= to_f64(above) * 1.5
+
+    for language in range(from: 0, to: covered.len())
+        mess: f64 @= to_f64(above - covered[language])
+
+        if total >= 8
+            mess @ mess + 0.5 * to_f64(above) * (1.0 - to_f64(common[language]) / 100000.0)
+
+        if mess < best
+            best @ mess
+
+    return best
+
+# The index of the first entry of `alphabets_table.LETTERS` for `point`, or
+# where one would go.
+function first_letter_at(point: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= alphabets_table.LETTERS.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if alphabets_table.LETTERS[middle] >> 32 < point
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# The family of the encoding numbered `n`: Chinese, Japanese, Korean, or none.
+function family_of(n: i64) -> i64
+    if n == registry.GBK || n == registry.GB18030 || n == registry.BIG5
+        return CHINESE
+
+    if n == registry.EUC_JP || n == registry.SHIFT_JIS || n == registry.ISO_2022_JP
+        return JAPANESE
+
+    if n == registry.EUC_KR
+        return KOREAN
+    return 0
+
+# The family of the Chinese encodings.
+constant CHINESE: i64
+    1
+
+# The family of the Japanese encodings.
+constant JAPANESE: i64
+    2
+
+# The family of the Korean encoding.
+constant KOREAN: i64
+    3
+
+# e raised to `x`, for `x` at or below 0: the sum of its series on `x` halved
+# until small, squared back. It needs no library of C.
+function exp_of(x: f64) -> f64
+    if x < -60.0
+        return 0.0
+    small: f64 @= x
+    halvings: i64 @= 0
+
+    while small < -0.5
+        small @ small / 2.0
+        halvings @ halvings + 1
+
+    sum: f64 @= 1.0
+    term: f64 @= 1.0
+
+    for k in range(from: 1, to: 12)
+        term @ term * small / to_f64(k)
+        sum @ sum + term
+
+    for _ in range(from: 0, to: halvings)
+        sum @ sum * sum
+
+    return sum
+
+## Tests
+
+# The levels of the characters below are what Python 3.15.2's `gb2312`,
+# `big5` and `euc_jp` codecs write them as, observed 2026-11-17: 的 is
+# 0xB5C4 in GB2312, 們 0xADCC in Big5, 亜 0xB0A1 in EUC-JP, 鑫 0xF6CE in
+# GB2312's second level and 0xF8CA in Big5's less frequent block, and 갂 is
+# 0x8141 in Windows code page 949, outside KS X 1001. `exp_of`'s values are
+# Python's `math.exp`.
+
+test "script_of: a letter of each script, an ASCII one, and one of none"
+    assert script_of('a') == LATIN && script_of(0x1ea1) == LATIN
+    assert script_of(0x3b1) == GREEK && script_of(0x436) == CYRILLIC
+    assert script_of(0x5d0) == HEBREW && script_of(0x627) == ARABIC && script_of(0xe01) == THAI
+    assert script_of(0xac00) == HANGUL && script_of(0x3131) == HANGUL
+    assert script_of(0x65e5) == CJK && script_of(0x3042) == CJK && script_of(0xff71) == CJK
+    assert script_of(0x10a0) == OTHER
+
+test "is_han and is_kana: an ideograph, kana of each width, and neither"
+    assert is_han(0x65e5) && is_han(0x20000) && !is_han(0x3042)
+    assert is_kana(0x3042) && is_kana(0x30a2) && is_kana(0xff71) && !is_kana(0x65e5)
+
+test "is_common_han: the first level of each standard, the second, and none"
+    assert is_common_han(0x7684)
+    assert is_common_han(0x4eec)
+    assert is_common_han(0x5011)
+    assert is_common_han(0x4e9c)
+    assert !is_common_han(0x946b)
+    assert !is_common_han(0x4e02)
+
+test "is_common_hangul: KS X 1001's first and the Unified Hangul Code's"
+    assert is_common_hangul(0xac00)
+    assert !is_common_hangul(0xac02)
+    assert !is_common_hangul(0xd7a3)
+
+test "is_letters_symbol, is_word_punctuation and is_joiner: each kept, and one not"
+    assert is_letters_symbol(0xa9) && is_letters_symbol(0x2122) && !is_letters_symbol(0x2116)
+    assert is_word_punctuation(0x2019) && is_word_punctuation(0x5f3) && !is_word_punctuation(0xb7)
+    assert is_joiner(0x200c) && !is_joiner(0x200e)
+
+test "family_of: each family, and a single-byte encoding of none"
+    assert family_of(registry.GBK) == CHINESE && family_of(registry.BIG5) == CHINESE
+    assert family_of(registry.SHIFT_JIS) == JAPANESE && family_of(registry.ISO_2022_JP) == JAPANESE
+    assert family_of(registry.EUC_KR) == KOREAN && family_of(registry.WINDOWS_1252) == 0
+
+test "exp_of: 0, -0.5, -1, -6, a value near the floor, and below -60"
+    assert exp_of(0.0) == 1.0
+    assert diff_of(a: exp_of(-0.5), b: 0.6065306597126334) < 0.000000000001
+    assert diff_of(a: exp_of(-1.0), b: 0.36787944117144233) < 0.000000000001
+    assert diff_of(a: exp_of(-6.0), b: 0.0024787521766663585) < 0.000000000001
+    assert exp_of(-59.0) > 0.0 && exp_of(-59.0) * exp_of(-1.0) < exp_of(-59.0)
+    assert exp_of(-61.0) == 0.0
+
+# How far apart `a` and `b` are.
+function diff_of(a: f64, b: f64) -> f64
+    if a > b
+        return a - b
+    return b - a
+
+test "uncovered and first_letter_at: nothing, a language's own letters, and letters none uses"
+    none: {i64: i64} = {}
+    assert uncovered(none) == 0.0
+    ascii: {i64: i64} = {'a': 3}
+    assert uncovered(ascii) == 0.0
+    czech: {i64: i64} = {0x159: 1, 0x11b: 1}
+    assert uncovered(czech) == 0.0
+    mixed: {i64: i64} = {0x159: 1, 0xf8: 1, 0x436: 1}
+    assert uncovered(mixed) == 2.0
+    assert alphabets_table.LETTERS[first_letter_at('a')] >> 32 == 'a'
+    assert first_letter_at(0x2e80) == alphabets_table.LETTERS.len()
+
+test "plausibility: a clean reading is 1, controls, private use and mixed scripts weigh it down"
+    assert plausibility(text: "plain words", n: registry.UTF_8) == 1.0
+    assert plausibility(text: "dobrý den", n: registry.WINDOWS_1252) > plausibility(text: "dobr² den", n: registry.WINDOWS_1252)
+    assert plausibility(text: "a\u{1}b", n: registry.WINDOWS_1252) < 0.0001
+    assert plausibility(text: "Pol¹ki", n: registry.WINDOWS_1252) < plausibility(text: "Polski", n: registry.WINDOWS_1252)
+    assert plausibility(text: "abжcd", n: registry.WINDOWS_1252) < 0.01

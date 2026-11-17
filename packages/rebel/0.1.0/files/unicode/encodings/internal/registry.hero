@@ -1,0 +1,189 @@
+# The encodings by number, and the standard's way to find one from a label
+# ("get an encoding", § 4.2): white space taken off, ASCII made lower case,
+# the label looked for among every label of `names_table.hero`.
+#
+# An encoding's number is its index in `names_table.NAMES`, the standard's
+# order; the constants below name the numbers the other modules switch on.
+
+use unicode/encodings/internal/codes
+use unicode/encodings/internal/names_table
+
+# UTF-8's number.
+constant UTF_8: i64
+    0
+
+# IBM866's number: the first single-byte encoding.
+constant FIRST_SINGLE_BYTE: i64
+    1
+
+# x-mac-cyrillic's number: the last single-byte encoding.
+constant LAST_SINGLE_BYTE: i64
+    28
+
+# windows-1252's number.
+constant WINDOWS_1252: i64
+    21
+
+# GBK's number.
+constant GBK: i64
+    29
+
+# gb18030's number.
+constant GB18030: i64
+    30
+
+# Big5's number.
+constant BIG5: i64
+    31
+
+# EUC-JP's number.
+constant EUC_JP: i64
+    32
+
+# ISO-2022-JP's number.
+constant ISO_2022_JP: i64
+    33
+
+# Shift_JIS's number.
+constant SHIFT_JIS: i64
+    34
+
+# EUC-KR's number.
+constant EUC_KR: i64
+    35
+
+# replacement's number.
+constant REPLACEMENT: i64
+    36
+
+# UTF-16BE's number.
+constant UTF_16BE: i64
+    37
+
+# UTF-16LE's number.
+constant UTF_16LE: i64
+    38
+
+# x-user-defined's number.
+constant X_USER_DEFINED: i64
+    39
+
+# How many encodings the standard names.
+constant COUNT: i64
+    40
+
+# The name of the encoding numbered `n`. Aborts where `n` is not 0 to 39.
+function name(n: i64) -> str
+    return names_table.NAMES[n]
+
+# The name of every encoding, in the standard's order.
+function every_name() -> [str]
+    return names_table.NAMES
+
+# The number of the encoding `label` names. Fails `not_found` where it names
+# none.
+function number_of(label: str) -> i64?
+    first: i64 @= 0
+    last: i64 @= label.len()
+
+    while first < last && is_ascii_space(label[first])
+        first @ first + 1
+
+    while last > first && is_ascii_space(label[last - 1])
+        last @ last - 1
+
+    low: i64 @= 0
+    high: i64 @= names_table.LABELS.len()
+
+    while low < high
+        middle = (low + high) / 2
+        order = compare_lower(text: label, from: first, to: last, other: names_table.LABELS[middle])
+
+        if order == 0
+            return ok(names_table.LABEL_ENCODINGS[middle])
+
+        if order < 0
+            high @ middle
+        else
+            low @ middle + 1
+
+    return fail(code: codes.NOT_FOUND, msg: f"\"{label}\" is no label of the WHATWG Encoding Standard")
+
+# Whether `b` is ASCII white space as the standard counts it: tab, line feed,
+# form feed, carriage return and space.
+function is_ascii_space(b: u8) -> bool
+    return b == 9 || b == 10 || b == 12 || b == 13 || b == 32
+
+# How the bytes of `text` from `from` to `to`, ASCII made lower case, order
+# against `other`: below 0, 0, above 0. It cuts no slice.
+function compare_lower(text: str lent, from: i64, to: i64, other: str lent) -> i64
+    at: i64 @= 0
+
+    while from + at < to && at < other.len()
+        mine = lower(text[from + at])
+
+        if mine != other[at]
+            if mine < other[at]
+                return -1
+            return 1
+        at @ at + 1
+
+    return to - from - other.len()
+
+# `b` with an ASCII capital made small.
+function lower(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+    return b
+
+# The labels of the encoding numbered `n`, in the order of their bytes.
+function labels(n: i64) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < names_table.LABELS.len()
+        if names_table.LABEL_ENCODINGS[at] == n
+            out @ out.push(names_table.LABELS[at])
+        at @ at + 1
+
+    return out
+
+# Whether the encoding numbered `n` is one of the 28 single-byte encodings.
+function is_single_byte_table(n: i64) -> bool
+    return n >= FIRST_SINGLE_BYTE && n <= LAST_SINGLE_BYTE
+
+## Tests
+
+test "number_of: names, labels in any case, white space, and what names nothing"
+    assert number_of("UTF-8").must() == UTF_8
+    assert number_of(" \tLaTiN1\n").must() == WINDOWS_1252
+    assert number_of("sjis").must() == SHIFT_JIS
+    assert number_of("gb2312").must() == GBK
+    assert number_of("utf-16").must() == UTF_16LE
+    assert number_of("x-user-defined").must() == X_USER_DEFINED
+    assert number_of("iso-2022-kr").must() == REPLACEMENT
+    assert number_of("").default(-1) == -1
+    assert number_of("utf-32").default(-1) == -1
+    assert number_of("utf-8 x").default(-1) == -1
+    assert number_of("utf-8\u{b}").default(-1) == -1
+    assert number_of("utf-8").must() == number_of("UTF-8").must()
+
+test "name: each constant number names the encoding the standard gives it"
+    assert name(UTF_8) == "UTF-8"
+    assert name(FIRST_SINGLE_BYTE) == "IBM866"
+    assert name(LAST_SINGLE_BYTE) == "x-mac-cyrillic"
+    assert name(WINDOWS_1252) == "windows-1252"
+    assert name(GBK) == "GBK" && name(GB18030) == "gb18030" && name(BIG5) == "Big5"
+    assert name(EUC_JP) == "EUC-JP" && name(ISO_2022_JP) == "ISO-2022-JP" && name(SHIFT_JIS) == "Shift_JIS"
+    assert name(EUC_KR) == "EUC-KR" && name(REPLACEMENT) == "replacement"
+    assert name(UTF_16BE) == "UTF-16BE" && name(UTF_16LE) == "UTF-16LE" && name(X_USER_DEFINED) == "x-user-defined"
+    assert names_table.NAMES.len() == COUNT
+
+test "labels: every encoding has its name among them, in lower case"
+    assert labels(UTF_8) == ["unicode-1-1-utf-8", "unicode11utf8", "unicode20utf8", "utf-8", "utf8", "x-unicode20utf8"]
+    total: i64 @= 0
+
+    for n in range(from: 0, to: COUNT)
+        total @ total + labels(n).len()
+
+    assert total == 228

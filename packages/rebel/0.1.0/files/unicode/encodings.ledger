@@ -1,0 +1,378 @@
+# The ledger of `unicode/encodings`: the legacy encodings of the WHATWG
+# Encoding Standard (the Living Standard of 19 October 2026, its indexes dated
+# 2024-09-18) read and written, and the encoding of bytes nobody declared
+# guessed. One block per capability, and what Heroes answers to each.
+#
+# The census, by the author's decision of 2026-11-17, is wider than the three
+# libraries of README § A8, since Go's and Rust's standard libraries hold no
+# legacy encoding: `go` is Go 1.27's `unicode/utf16` with
+# `golang.org/x/text` v0.38.0's `encoding` packages (`go doc -all`, from the
+# module cache); `rust` is Rust 1.100's `String` and `char` with the crate
+# `encoding_rs` 0.8.42, the yardstick (its `cargo doc`, built offline from the
+# cargo registry; no source opened); `python` is Python 3.15.2's `codecs`,
+# `encodings` and the codecs it lists (`dir()`); `java` is Java SE 25's
+# `java.nio.charset` with the `jdk.charsets` module, and `dotnet` is .NET's
+# `System.Text.Encoding` with `System.Text.Encoding.CodePages`, both read from
+# their documentation on the web on 2026-11-17, since neither runtime is on
+# this machine (the census's one unrun list).
+
+## Names and labels
+
+capability label/lookup  the encoding a label names, as a browser reads a `charset`
+  heroes  encodings.name_of
+  go      htmlindex.Get, ianaindex.Index.Encoding, ianaindex.MIME, ianaindex.IANA, ianaindex.MIB
+  rust    Encoding::for_label, Encoding::for_label_no_replacement
+  python  codecs.lookup, encodings.search_function, encodings.normalize_encoding, encodings.aliases.aliases, encodings.CodecRegistryError, LookupError
+  java    Charset.forName, Charset.isSupported, IllegalCharsetNameException, UnsupportedCharsetException
+  dotnet  Encoding.GetEncoding, CodePagesEncodingProvider.GetEncoding, EncodingProvider.GetEncoding, CodePagesEncodingProvider.Instance
+  note    a label is matched as the standard says, ASCII white space taken off and ASCII case ignored, and nothing else is: `latin1`, `iso-8859-1` and `ascii` name windows-1252, `utf-16` names UTF-16LE, `gb2312` GBK, ISO-2022-KR, ISO-2022-CN and HZ `replacement`. Python's `lookup` normalizes `-` and `_` and reads `latin_1` as true Latin-1, Java and .NET read their own aliases; a label the standard does not read fails `not_found` (Go answers an error, Rust None, Python LookupError). 228 labels, `encodings.json` of the standard
+
+capability label/name  the name of an encoding, the one the standard writes
+  heroes  encodings.name_of
+  go      htmlindex.Name, ianaindex.Index.Name, charmap.Charmap.String
+  rust    Encoding::name
+  python  codecs.CodecInfo.name
+  java    Charset.name, Charset.displayName, Charset.toString
+  dotnet  Encoding.WebName, Encoding.EncodingName, Encoding.HeaderName, Encoding.BodyName, EncodingInfo.Name, EncodingInfo.DisplayName
+  note    the name as the standard writes it, `Shift_JIS`, `windows-1252`, `gb18030`; `name_of` of a name is that name
+
+capability label/labels  every label of an encoding
+  heroes  encodings.labels_of
+  go      -
+  rust    -
+  python  encodings.aliases.aliases
+  java    Charset.aliases, Charset.isRegistered
+  dotnet  -
+
+capability label/every-encoding  every encoding there is, in order
+  heroes  encodings.names
+  go      charmap.All, japanese.All, korean.All, simplifiedchinese.All, traditionalchinese.All, unicode.All
+  rust    -
+  python  encodings.aliases.aliases
+  java    Charset.availableCharsets, CharsetProvider.charsets, CharsetProvider.charsetForName
+  dotnet  Encoding.GetEncodings, CodePagesEncodingProvider.GetEncodings, EncodingProvider.GetEncodings, EncodingInfo, EncodingInfo.GetEncoding
+  note    the 40 of the standard and no other
+
+capability label/constants  each encoding named in the program's text, so a misspelt one is a compile error
+  heroes  encodings.UTF_8, encodings.IBM866, encodings.ISO_8859_2 to encodings.ISO_8859_16, encodings.ISO_8859_8_I, encodings.KOI8_R, encodings.KOI8_U, encodings.MACINTOSH, encodings.WINDOWS_874, encodings.WINDOWS_1250 to encodings.WINDOWS_1258, encodings.X_MAC_CYRILLIC, encodings.GBK, encodings.GB18030, encodings.BIG5, encodings.EUC_JP, encodings.ISO_2022_JP, encodings.SHIFT_JIS, encodings.EUC_KR, encodings.REPLACEMENT, encodings.UTF_16BE, encodings.UTF_16LE, encodings.X_USER_DEFINED
+  go      charmap.IBM866, charmap.CodePage866, charmap.ISO8859_2 to charmap.ISO8859_16, charmap.ISO8859_6E, charmap.ISO8859_6I, charmap.ISO8859_8E, charmap.ISO8859_8I, charmap.KOI8R, charmap.KOI8U, charmap.Macintosh, charmap.MacintoshCyrillic, charmap.Windows874, charmap.Windows1250 to charmap.Windows1258, charmap.XUserDefined, simplifiedchinese.GBK, simplifiedchinese.GB18030, traditionalchinese.Big5, japanese.EUCJP, japanese.ISO2022JP, japanese.ShiftJIS, korean.EUCKR, encoding.Replacement, unicode.UTF8, unicode.UTF16
+  rust    encoding_rs::BIG5, EUC_JP, EUC_KR, GB18030, GBK, IBM866, ISO_2022_JP, ISO_8859_2 to ISO_8859_16, ISO_8859_8_I, KOI8_R, KOI8_U, MACINTOSH, REPLACEMENT, SHIFT_JIS, UTF_16BE, UTF_16LE, UTF_8, WINDOWS_874, WINDOWS_1250 to WINDOWS_1258, X_MAC_CYRILLIC, X_USER_DEFINED, and their `_INIT` twins
+  python  -
+  java    StandardCharsets.UTF_8, StandardCharsets.UTF_16BE, StandardCharsets.UTF_16LE, StandardCharsets.UTF_16, StandardCharsets.US_ASCII, StandardCharsets.ISO_8859_1
+  dotnet  Encoding.UTF8, Encoding.Unicode, Encoding.BigEndianUnicode, Encoding.ASCII, Encoding.Latin1, Encoding.Default
+  note    a constant is the encoding's name, a `str`, which every function takes as it takes a label
+
+capability label/output-encoding  the encoding a form or a URL writes in, given the page's
+  heroes  encodings.output_encoding
+  go      -
+  rust    Encoding::output_encoding
+  python  -
+  java    -
+  dotnet  -
+  note    UTF-8 for `replacement`, UTF-16BE and UTF-16LE, as encoding_rs answers, observed
+
+capability label/code-page  the number Windows or IANA gives an encoding
+  heroes  refused: the standard gives encodings names and labels and no number; a number is a second name for the same thing, and a program that holds one from Windows maps it itself
+  go      charmap.Charmap.ID, ianaindex.MIB
+  rust    -
+  python  -
+  java    -
+  dotnet  Encoding.CodePage, Encoding.WindowsCodePage, EncodingInfo.CodePage
+
+## What an encoding is
+
+capability property/single-byte  whether an encoding writes every character in one byte
+  heroes  encodings.is_single_byte
+  go      -
+  rust    Encoding::is_single_byte
+  python  -
+  java    CharsetEncoder.maxBytesPerChar, CharsetDecoder.maxCharsPerByte
+  dotnet  Encoding.IsSingleByte
+  note    x-user-defined is single-byte, as encoding_rs answers, observed
+
+capability property/ascii-compatible  whether an encoding writes ASCII as ASCII and uses no ASCII byte for anything else
+  heroes  encodings.is_ascii_compatible
+  go      -
+  rust    Encoding::is_ascii_compatible
+  python  -
+  java    -
+  dotnet  -
+  note    false for ISO-2022-JP, UTF-16 and `replacement`, as encoding_rs answers, observed
+
+capability property/encodes-everything  whether an encoding has bytes for every character
+  heroes  encodings.can_encode_everything
+  go      -
+  rust    Encoding::can_encode_everything
+  python  -
+  java    Charset.contains
+  dotnet  -
+  note    true for UTF-8, UTF-16BE and UTF-16LE, false for gb18030 (U+E5E5), as encoding_rs answers; encoding_rs answers true for `replacement`, whose encoder is UTF-8's there, where `encode` here refuses it
+
+capability property/browser-flags  whether a browser or a mail reader shows or saves an encoding
+  heroes  refused: every encoding here is one a browser reads, by the standard's own rule that a browser supports these and no other
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  Encoding.IsBrowserDisplay, Encoding.IsBrowserSave, Encoding.IsMailNewsDisplay, Encoding.IsMailNewsSave
+
+## Byte order marks
+
+capability bom/sniff  the encoding the byte order mark at the start of bytes names
+  heroes  encodings.sniff_bom
+  go      unicode.BOMOverride, unicode.UseBOM, unicode.ExpectBOM, unicode.IgnoreBOM, unicode.BOMPolicy, unicode.ErrMissingBOM
+  rust    Encoding::for_bom
+  python  -
+  java    -
+  dotnet  -
+  note    the standard's BOM sniff: EF BB BF, FE FF, FF FE, in that order; no UTF-32 mark is looked for
+
+capability bom/bytes  the byte order mark an encoding writes
+  heroes  encodings.bom_of
+  go      unicode.UTF8BOM
+  rust    -
+  python  codecs.BOM, codecs.BOM_BE, codecs.BOM_LE, codecs.BOM_UTF8, codecs.BOM_UTF16, codecs.BOM_UTF16_BE, codecs.BOM_UTF16_LE
+  java    -
+  dotnet  Encoding.GetPreamble, Encoding.Preamble
+
+## Decoding
+
+capability decode/replacing  bytes read as text in an encoding, a byte order mark first, what cannot be read replaced by U+FFFD
+  heroes  encodings.decode
+  go      encoding.Decoder.Bytes, encoding.Decoder.String, charmap.Charmap.DecodeByte, charmap.Charmap.NewDecoder, encoding.Encoding.NewDecoder
+  rust    Encoding::decode, Encoding::decode_with_bom_removal
+  python  bytes.decode, codecs.decode, codecs.getdecoder, codecs.replace_errors, codecs.Codec.decode
+  java    Charset.decode, CodingErrorAction.REPLACE, CharsetDecoder.replaceWith, CharsetDecoder.replacement, CharsetDecoder.onMalformedInput, CharsetDecoder.onUnmappableCharacter, CharsetDecoder.malformedInputAction, CharsetDecoder.unmappableCharacterAction
+  dotnet  Encoding.GetString, Encoding.GetChars, Encoding.TryGetChars, Encoding.DecoderFallback, DecoderFallback.ReplacementFallback, DecoderReplacementFallback, DecoderReplacementFallback.DefaultString
+  note    the standard's decode: a byte order mark overrules the label, each wrong sequence is one U+FFFD as the standard's decoders say. Differential of 2026-11-17 against encoding_rs 0.8.42 (built offline, its answers asked through a program of the round's scratch folder): every byte of every single-byte encoding, every pair from a lead 0x80 to 0xFF of the six double-byte encodings, every JIS X 0212 triple, 40,000 random four-byte gb18030 sequences and the ranges' edges, every code point of every index written both ways, every BMP code point and 3,000 others written in gb18030, and 3,500 ISO-2022-JP pairs: 628,034 cases, all equal; and twice 328,800 random cases (bytes read whole, without a mark, strict, and in random pieces; texts written strict, with references and in pieces) equal but for the shape `decode/valid-prefix` names. Python's codecs, where they are the standard's, agree on the single-byte indexes but for the bytes 0x80 to 0x9F that Windows leaves undefined (the standard reads them as the C1 controls, Python fails) and KOI8-U's 0xAE and 0xBE; `cp932` and `cp949` agree on every pointer of index jis0208 and EUC-KR; `gb18030` differs on 20 pointers, `big5hkscs` on 203, `euc_jp` and `iso2022_jp` on 463, `shift_jis` on 851
+
+capability decode/without-bom  bytes read in the encoding named, a byte order mark read as a character
+  heroes  encodings.decode_without_bom
+  go      unicode.IgnoreBOM
+  rust    Encoding::decode_without_bom_handling
+  python  -
+  java    -
+  dotnet  -
+
+capability decode/strict  bytes read in an encoding, failing at the first that cannot be read
+  heroes  encodings.decode_strict
+  go      encoding.Decoder.Bytes
+  rust    Encoding::decode_without_bom_handling_and_without_replacement
+  python  codecs.strict_errors, UnicodeDecodeError
+  java    CodingErrorAction.REPORT, CharsetDecoder.decode, CharacterCodingException, MalformedInputException, UnmappableCharacterException, CoderResult.isError, CoderResult.isMalformed, CoderResult.isUnmappable, CoderResult.throwException
+  dotnet  DecoderExceptionFallback, DecoderFallback.ExceptionFallback, DecoderFallbackException
+  note    the standard's "fatal" mode; no byte order mark is looked for, as encoding_rs's `_without_replacement` decoder does; the web-platform-tests' vectors, fetched 2026-11-17 into the round's scratch folder, answer as they say: the 34 of `encoding/textdecoder-fatal.any.js` each fail, and the 5 of `textdecoder-utf16-surrogates.any.js` read as they expect replacing and fail strict
+
+capability decode/valid-prefix  how many bytes at the start read without an error, where the first error is
+  heroes  encodings.valid_prefix_len
+  go      -
+  rust    Encoding::utf8_valid_up_to, Encoding::ascii_valid_up_to, Encoding::iso_2022_jp_ascii_valid_up_to
+  python  UnicodeDecodeError.start, UnicodeDecodeError.end
+  java    CoderResult.length, CoderResult.malformedForLength, CoderResult.unmappableForLength, MalformedInputException.getInputLength
+  dotnet  DecoderFallbackException.Index, DecoderFallbackException.BytesUnknown
+  note    the index where the first wrong sequence begins, encoding_rs's index on every case of the differential but one shape: where ISO-2022-JP holds two escape sequences in a row, encoding_rs names the first and this the second, where the bytes stop reading (11 of 1,500 random ISO-2022-JP cases)
+
+capability decode/stream  bytes read as text a piece at a time, a character cut between two pieces kept whole
+  heroes  encodings.decoder, encodings.decoder_without_bom, encodings.decode_chunk, encodings.decode_chunk_strict
+  go      encoding.Decoder.Reader, transform.Transformer
+  rust    Encoding::new_decoder, Encoding::new_decoder_with_bom_removal, Encoding::new_decoder_without_bom_handling, Decoder::decode_to_string, Decoder::decode_to_string_without_replacement, Decoder::decode_to_str, Decoder::decode_to_str_without_replacement, Decoder::decode_to_utf8, Decoder::decode_to_utf8_without_replacement, Decoder::encoding, DecoderResult, CoderResult
+  python  codecs.getincrementaldecoder, codecs.IncrementalDecoder, codecs.BufferedIncrementalDecoder, codecs.iterdecode
+  java    Charset.newDecoder, CharsetDecoder.decode, CharsetDecoder.flush, CharsetDecoder.reset, CharsetDecoder.charset, CoderResult.UNDERFLOW, CoderResult.OVERFLOW, CoderResult.isUnderflow, CoderResult.isOverflow
+  dotnet  Encoding.GetDecoder, Decoder.GetChars, Decoder.Convert, Decoder.Reset, Decoder.Fallback, Decoder.FallbackBuffer
+  note    the pieces' texts joined are the whole's, held to encoding_rs's decoder over random cuts of 1,500 random inputs an encoding; a strict piece that fails leaves the decoder as it was
+
+## Encoding
+
+capability encode/strict  text written as bytes in an encoding, failing at the first character it has no bytes for
+  heroes  encodings.encode
+  go      encoding.Encoder.Bytes, encoding.Encoder.String, charmap.Charmap.EncodeRune, charmap.Charmap.NewEncoder, encoding.Encoding.NewEncoder
+  rust    Encoder::encode_from_utf8_without_replacement, Encoder::encode_from_utf8_to_vec_without_replacement, EncoderResult::Unmappable
+  python  str.encode, codecs.encode, codecs.getencoder, codecs.Codec.encode, UnicodeEncodeError
+  java    CharsetEncoder.encode, CharsetEncoder.canEncode, Charset.canEncode, Charset.newEncoder
+  dotnet  Encoding.GetBytes, Encoding.TryGetBytes, EncoderExceptionFallback, EncoderFallback.ExceptionFallback, EncoderFallbackException, EncoderFallbackException.CharUnknown, EncoderFallbackException.Index
+  note    the standard's "fatal" mode; UTF-16BE and UTF-16LE are written as UTF-16, where the standard and encoding_rs write UTF-8 in their place (`output_encoding`); `replacement` fails `unsupported`
+
+capability encode/html  text written as bytes in an encoding, a character it has no bytes for written as an HTML numeric reference
+  heroes  encodings.encode_html
+  go      encoding.HTMLEscapeUnsupported
+  rust    Encoding::encode, Encoder::encode_from_utf8, Encoder::encode_from_utf8_to_vec
+  python  codecs.xmlcharrefreplace_errors
+  java    -
+  dotnet  -
+  note    the standard's "html" mode, which encoding_rs's `encode` uses; equal to it on every case of the differential
+
+capability encode/stream  text written as bytes a piece at a time, the state of a stateful encoding kept between pieces
+  heroes  encodings.encoder, encodings.encode_chunk, encodings.encode_chunk_html
+  go      encoding.Encoder.Writer
+  rust    Encoding::new_encoder, Encoder::encoding, Encoder::has_pending_state
+  python  codecs.getincrementalencoder, codecs.IncrementalEncoder, codecs.BufferedIncrementalEncoder, codecs.iterencode
+  java    CharsetEncoder.flush, CharsetEncoder.reset, CharsetEncoder.charset
+  dotnet  Encoding.GetEncoder, Encoder.GetBytes, Encoder.Convert, Encoder.Reset, Encoder.Fallback, Encoder.FallbackBuffer
+  note    ISO-2022-JP's set is kept between pieces and the escape back to ASCII written after the last; held to encoding_rs's encoder over random cuts
+
+capability encode/replace-with-a-sign  a character an encoding has no bytes for written as `?` or another sign
+  heroes  refused: the standard's error modes are failing and the HTML reference alone; a `?` loses the character in silence, which `encode` failing says aloud and `encode_html` keeps readable
+  go      encoding.ReplaceUnsupported, encoding.ASCIISub
+  rust    -
+  python  codecs.replace_errors
+  java    CodingErrorAction.REPLACE, CharsetEncoder.replaceWith, CharsetEncoder.replacement, CharsetEncoder.isLegalReplacement, CharsetEncoder.onUnmappableCharacter, CharsetEncoder.unmappableCharacterAction, CharsetEncoder.onMalformedInput, CharsetEncoder.malformedInputAction
+  dotnet  EncoderReplacementFallback, EncoderReplacementFallback.DefaultString, EncoderFallback.ReplacementFallback, Encoding.EncoderFallback
+
+## Error modes the standard does not have
+
+capability errors/ignore  what cannot be read or written dropped in silence
+  heroes  refused: a byte or a character lost with no sign is the silent loss the standard's modes exist to prevent
+  go      -
+  rust    -
+  python  codecs.ignore_errors
+  java    CodingErrorAction.IGNORE
+  dotnet  -
+
+capability errors/escapes  what cannot be read or written kept as an escape: `\x80`, `\N{...}`, a lone surrogate
+  heroes  refused: a `str` holds UTF-8 alone, so a lone surrogate cannot be kept; `bytes.format_escaped` writes bytes as escapes for a person to read
+  go      -
+  rust    -
+  python  codecs.backslashreplace_errors, codecs.namereplace_errors, surrogateescape, surrogatepass
+  java    -
+  dotnet  -
+
+capability errors/handlers  a function of the program's called on each error, or a registry of them
+  heroes  refused: a handler registered by name is a mutable global, which the language has not; a program that wants another rule decodes with `decode_strict` and reads `valid_prefix_len`
+  go      -
+  rust    -
+  python  codecs.register_error, codecs.lookup_error
+  java    CharsetDecoder.implOnMalformedInput, CharsetDecoder.implOnUnmappableCharacter, CharsetDecoder.implReplaceWith, CharsetEncoder.implOnMalformedInput, CharsetEncoder.implOnUnmappableCharacter, CharsetEncoder.implReplaceWith
+  dotnet  EncoderFallback, DecoderFallback, EncoderFallbackBuffer, DecoderFallbackBuffer, EncoderFallback.CreateFallbackBuffer, DecoderFallback.CreateFallbackBuffer, EncoderFallback.MaxCharCount, DecoderFallback.MaxCharCount
+
+## Encodings outside the standard
+
+capability isomorphic/latin1  bytes read as the characters U+0000 to U+00FF of their numbers, and written back, the Infra standard's isomorphic decoding
+  heroes  encodings.decode_isomorphic, encodings.encode_isomorphic
+  go      charmap.ISO8859_1
+  rust    encoding_rs::mem::decode_latin1, mem::encode_latin1_lossy, mem::convert_latin1_to_utf8, mem::convert_latin1_to_str, mem::convert_utf8_to_latin1_lossy, mem::is_str_latin1, mem::is_utf8_latin1, mem::utf8_latin1_up_to, mem::str_latin1_up_to
+  python  codecs.latin_1_decode, codecs.latin_1_encode, the codec latin_1
+  java    StandardCharsets.ISO_8859_1
+  dotnet  Encoding.Latin1
+  note    the standard reads the label `latin1` and `iso-8859-1` as windows-1252, as every browser does; a protocol that means each byte as its own number, an HTTP header among them, asks this instead
+
+capability ascii/strict  bytes read as ASCII, failing on a byte above 127
+  heroes  bytes.is_ascii
+  go      -
+  rust    -
+  python  codecs.ascii_decode, codecs.ascii_encode, the codec ascii
+  java    StandardCharsets.US_ASCII
+  dotnet  Encoding.ASCII
+  note    bytes that pass are text as they are, `bytes.to_text`; the standard reads `ascii` and `us-ascii` as windows-1252
+
+capability utf16/units  UTF-16 bytes with no byte order mark read and written, in either order
+  heroes  encodings.decode, encodings.encode
+  go      unicode.UTF16, unicode.BigEndian, unicode.LittleEndian, unicode.Endianness
+  rust    String::from_utf16le, String::from_utf16be, String::from_utf16le_lossy, String::from_utf16be_lossy
+  python  codecs.utf_16_be_decode, codecs.utf_16_be_encode, codecs.utf_16_le_decode, codecs.utf_16_le_encode, codecs.utf_16_decode, codecs.utf_16_encode, codecs.utf_16_ex_decode, the codecs utf_16, utf_16_be, utf_16_le
+  java    StandardCharsets.UTF_16, StandardCharsets.UTF_16BE, StandardCharsets.UTF_16LE, x-UTF-16LE-BOM
+  dotnet  Encoding.Unicode, Encoding.BigEndianUnicode
+  note    the standard defines UTF-16BE and UTF-16LE decoders and no encoder, and a browser writes UTF-8 in their place (`output_encoding`); written here, since every other library writes them
+
+capability utf32/units  UTF-32 bytes read and written
+  heroes  refused: no browser reads UTF-32 and the standard names no such encoding; its four bytes a character are `bytes.encode_u32_le` and `bytes.decode_u32_le` over the code points, and `unicode.from_code_points` checks them
+  go      -
+  rust    -
+  python  codecs.utf_32_decode, codecs.utf_32_encode, codecs.utf_32_be_decode, codecs.utf_32_be_encode, codecs.utf_32_le_decode, codecs.utf_32_le_encode, codecs.utf_32_ex_decode, codecs.BOM_UTF32, codecs.BOM_UTF32_BE, codecs.BOM_UTF32_LE, codecs.BOM32_BE, codecs.BOM32_LE, codecs.BOM64_BE, codecs.BOM64_LE, the codecs utf_32, utf_32_be, utf_32_le
+  java    StandardCharsets.UTF_32, StandardCharsets.UTF_32BE, StandardCharsets.UTF_32LE, X-UTF-32BE-BOM, X-UTF-32LE-BOM
+  dotnet  Encoding.UTF32
+
+capability utf7/units  UTF-7 read and written
+  heroes  refused: the standard leaves it out because a text in it can smuggle markup past a filter, and .NET marks it obsolete
+  go      -
+  rust    -
+  python  codecs.utf_7_decode, codecs.utf_7_encode, the codec utf_7
+  java    -
+  dotnet  Encoding.UTF7
+
+capability legacy/outside-the-standard  an encoding the WHATWG standard does not name: EBCDIC, the DOS code pages, ISO-8859-9 and 11, the other Mac encodings, KOI8-T, HZ, ISO-2022-KR and CN, Johab, JIS X 0213, CESU-8
+  heroes  refused: the standard's set is closed, a browser reading no other; ISO-2022-KR, ISO-2022-CN and HZ are the label `replacement`, which reads them as one U+FFFD so that no filter is fooled; ISO-8859-9 and 11 are windows-1254 and windows-874 by label, as the standard reads them
+  go      charmap.CodePage037, charmap.CodePage1047, charmap.CodePage1140, charmap.CodePage437, charmap.CodePage850, charmap.CodePage852, charmap.CodePage855, charmap.CodePage858, charmap.CodePage860, charmap.CodePage862, charmap.CodePage863, charmap.CodePage865, charmap.ISO8859_9, simplifiedchinese.HZGB2312
+  rust    -
+  python  the codecs cp037, cp1006, cp1026, cp1125, cp1140, cp273, cp424, cp437, cp500, cp720, cp737, cp775, cp850, cp852, cp855, cp856, cp857, cp858, cp860, cp861, cp862, cp863, cp864, cp865, cp869, cp875, cp932, cp949, cp950, euc_jis_2004, euc_jisx0213, gb2312, hp_roman8, hz, iso2022_jp_1, iso2022_jp_2, iso2022_jp_2004, iso2022_jp_3, iso2022_jp_ext, iso2022_kr, iso8859_9, iso8859_11, johab, koi8_t, kz1048, mac_arabic, mac_croatian, mac_farsi, mac_greek, mac_iceland, mac_latin2, mac_romanian, mac_turkish, palmos, ptcp154, shift_jis_2004, shift_jisx0213, tis_620, big5, mbcs, oem
+  java    every charset of `jdk.charsets` outside the standard's list: the IBM and EBCDIC sets, x-MacArabic and the other Mac sets, ISO-2022-CN, ISO-2022-KR, ISO-2022-JP-2, x-Johab, x-SJIS_0213, x-EUC-TW, JIS_X0201, CESU-8, x-ISCII91, and the rest of the page
+  dotnet  the code pages of `CodePagesEncodingProvider` outside the standard's list
+  note    Python's `cp932`, `cp949` and `big5hkscs` are the nearest of its codecs to the standard's Shift_JIS, EUC-KR and Big5, which read the vendors' extensions as browsers do; the differences are measured in the tests' comments
+
+## Guessing an encoding
+
+capability detect/likeliest  the encoding of bytes whose encoding nobody declared, with how sure the guess is
+  heroes  encodings.detect
+  go      -
+  rust    -
+  python  -
+  java    CharsetDecoder.isAutoDetecting, CharsetDecoder.isCharsetDetected, CharsetDecoder.detectedCharset, x-JISAutoDetect
+  dotnet  -
+  note    no standard library guesses; PyPI's `charset-normalizer`, the seventh most downloaded project, is the program this answers to (the author's decision of 2026-11-17); measured 2026-11-17 on 3,626 samples of 40, 300 and 3,000 characters cut from macOS 27's localized strings of 31 languages (the frameworks', held out from the applications' strings the alphabets were measured on), each written by Python's codecs in an encoding its language is written in, a guess counted right where it reads the bytes as the text that made them: this package 3,537 right (97.5 %: 94.3 % at 40 characters, 99.2 % at 300 and at 3,000), charset-normalizer 3.5.2, installed in the round's scratch folder for the comparison, 2,784 (76.8 %: 64.6 %, 81.2 % and 85.1 %); on 3,616 samples of the applications' strings themselves, 97.3 % and 75.6 %. The confidence is a share among the readings, so a short text that several encodings read plausibly gets a low one: twelve bytes of Russian in windows-1251 are guessed right with 0.25
+
+capability detect/candidates  every encoding that reads the bytes, the likeliest first
+  heroes  encodings.detect_all
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  -
+
+capability detect/language-default  the encoding a browser assumes for a page with none declared, by the reader's language
+  heroes  pending
+  go      htmlindex.LanguageDefault
+  rust    -
+  python  -
+  java    -
+  dotnet  Encoding.Default
+  note    HTML's table of the encoding a locale assumes (the HTML standard's "suggested default encoding") belongs to the encoding sniffing of `html`, which would call `decode` with it; not written here on 2026-11-17, and not fetched
+
+## Dropped
+
+dropped buffer-sizing  the length of a buffer to give a decoder or an encoder before it writes: a `[u8]` and a `str` grow as they are written
+  go      -
+  rust    Decoder::max_utf8_buffer_length, Decoder::max_utf8_buffer_length_without_replacement, Decoder::max_utf16_buffer_length, Encoder::max_buffer_length_from_utf8_if_no_unmappables, Encoder::max_buffer_length_from_utf8_without_replacement, Encoder::max_buffer_length_from_utf16_if_no_unmappables, Encoder::max_buffer_length_from_utf16_without_replacement
+  python  -
+  java    CharsetDecoder.averageCharsPerByte, CharsetEncoder.averageBytesPerChar
+  dotnet  Encoding.GetByteCount, Encoding.GetCharCount, Encoding.GetMaxByteCount, Encoding.GetMaxCharCount, Decoder.GetCharCount, Encoder.GetByteCount
+
+dropped utf16-buffers  decoding into and encoding from UTF-16 code units, the native text of Java, .NET and JavaScript: a `str` is UTF-8, and `unicode.to_utf16` and `unicode.from_utf16` turn code points into units and back
+  go      utf16.AppendRune, utf16.Decode, utf16.DecodeRune, utf16.Encode, utf16.EncodeRune, utf16.IsSurrogate, utf16.RuneLen
+  rust    Decoder::decode_to_utf16, Decoder::decode_to_utf16_without_replacement, Encoder::encode_from_utf16, Encoder::encode_from_utf16_without_replacement, String::from_utf16, String::from_utf16_lossy, str::encode_utf16, String::encode_utf16, char::encode_utf16, char::decode_utf16, char::len_utf16, mem::convert_utf8_to_utf16, mem::convert_utf8_to_utf16_without_replacement, mem::convert_str_to_utf16, mem::convert_utf16_to_utf8, mem::convert_utf16_to_utf8_partial, mem::convert_utf16_to_str, mem::convert_utf16_to_str_partial, mem::convert_latin1_to_utf16, mem::convert_utf16_to_latin1_lossy, mem::utf16_valid_up_to, mem::ensure_utf16_validity, mem::is_utf16_latin1
+  python  -
+  java    -
+  dotnet  -
+
+dropped stream-plumbing  a stream read or written through an encoding: `io` carries bytes, and `decode_chunk` over each piece read is the reader
+  go      encoding.Decoder.Reader, encoding.Encoder.Writer
+  rust    -
+  python  codecs.open, codecs.EncodedFile, codecs.getreader, codecs.getwriter, codecs.StreamReader, codecs.StreamWriter, codecs.StreamReaderWriter, codecs.StreamRecoder, codecs.CodecInfo
+  java    -
+  dotnet  Encoding.CreateTranscodingStream
+
+dropped codec-building  a codec made by the program from a table, or registered by it: the set of encodings is the standard's
+  go      -
+  rust    -
+  python  codecs.register, codecs.unregister, codecs.charmap_build, codecs.charmap_decode, codecs.charmap_encode, codecs.make_encoding_map, codecs.make_identity_dict, codecs.Codec, codecs.CodecInfo
+  java    spi.CharsetProvider, Charset.Charset, CharsetDecoder.CharsetDecoder, CharsetEncoder.CharsetEncoder, CharsetDecoder.decodeLoop, CharsetEncoder.encodeLoop, CharsetDecoder.implFlush, CharsetDecoder.implReset, CharsetEncoder.implFlush, CharsetEncoder.implReset, CoderMalfunctionError
+  dotnet  Encoding.RegisterProvider, EncodingProvider, Encoding.Encoding, Encoding.Clone, Encoding.IsReadOnly
+
+dropped not-character-encodings  transforms of bytes that Python files as codecs and that are no character encoding: other packages hold them
+  go      -
+  rust    -
+  python  the codecs base64_codec (`bytes`), hex_codec (`bytes`), bz2_codec and zlib_codec (`compress`), quopri_codec (`mail`), uu_codec, rot_13, idna and punycode (`url`), unicode_escape, raw_unicode_escape, codecs.escape_decode, codecs.escape_encode, codecs.unicode_escape_decode, codecs.unicode_escape_encode, codecs.raw_unicode_escape_decode, codecs.raw_unicode_escape_encode, codecs.readbuffer_encode, codecs.utf_8_decode, codecs.utf_8_encode, the codecs utf_8 and utf_8_sig (`bytes.to_text` and `decode` with a byte order mark)
+  java    CESU-8
+  dotnet  -
+
+dropped interfaces  what an interface or a value's identity would have needed: an encoding here is its name, a `str`, compared with `==`
+  go      encoding.Encoding, encoding.Nop, encoding.UTF8Validator, encoding.ErrInvalidUTF8, charmap.Charmap, ianaindex.Index
+  rust    Clone, Copy, Debug, Eq, Hash, PartialEq, Encoding::new_decoder_with_bom_removal's lifetime, EncoderResult::InputEmpty, EncoderResult::OutputFull, DecoderResult::InputEmpty, DecoderResult::OutputFull, DecoderResult::Malformed, CoderResult::InputEmpty, CoderResult::OutputFull
+  python  -
+  java    Charset.compareTo, Charset.equals, Charset.hashCode, CoderResult.toString, CodingErrorAction.toString, Charset.defaultCharset
+  dotnet  Encoding.Equals, Encoding.GetHashCode, Encoding.IsAlwaysNormalized, EncodingInfo.Equals, EncodingInfo.GetHashCode
+
+dropped mem-helpers  encoding_rs's fast paths over buffers: ASCII and Latin-1 copies, and whether a text holds right-to-left characters, which is the direction class of `unicode`
+  go      -
+  rust    mem::is_ascii, mem::is_basic_latin, mem::copy_ascii_to_ascii, mem::copy_ascii_to_basic_latin, mem::copy_basic_latin_to_ascii, mem::convert_latin1_to_utf8_partial, mem::convert_latin1_to_str_partial, mem::is_char_bidi, mem::is_str_bidi, mem::is_utf8_bidi, mem::is_utf16_bidi, mem::is_utf16_code_unit_bidi, mem::check_str_for_latin1_and_bidi, mem::check_utf8_for_latin1_and_bidi, mem::check_utf16_for_latin1_and_bidi, mem::Latin1Bidi, Decoder::latin1_byte_compatible_up_to
+  python  -
+  java    -
+  dotnet  -

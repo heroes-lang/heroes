@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eighteen packages, in layers. **A package may use any package of a layer below
+A hundred and thirty packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -43,6 +43,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 0 | `containers/indexed` | a map that keeps the order its keys were first put in and answers by position |  |  |
 | 0 | `containers/heap` | a heap over the program's own list: a priority queue |  |  |
 | 0 | `graphs` | the orders, cycles, components, reachability and shortest paths of a graph |  |  |
+| 0 | `qr` | QR codes made, every version and correction level, written as modules, SVG or text for a terminal |  |  |
 | 1 | `unicode/normalize` | NFC, NFD, NFKC, NFKD, case folding for comparison; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `unicode/segment` | the boundaries of graphemes, words and sentences (UAX #29), the width of a text on a screen (UAX #11) | `unicode` |  |
 | 1 | `unicode/names` | the name of a character and the character of a name, scripts, blocks | `unicode` |  |
@@ -72,6 +73,9 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `strings`, `unicode`, `numbers` |  |
 | 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `random`, `lists` |  |
+| 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `random` |  |
+| 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in a subpackage | `regex`, `bytes`, `unicode`, `strings` |  |
+| 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `strings`, `unicode` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
@@ -109,6 +113,10 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `serial` | serial ports listed, opened, set and read and written as a stream | `io`, `time` | `hero_serial.h` |
 | 4 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `json`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `time` |  |
 | 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
+| 4 | `chunks` | text cut into pieces for retrieval, by characters, sentences, markdown headings or tokens, with overlap | `strings`, `unicode`, `unicode/segment`, `markdown`, `tokenizer` |  |
+| 4 | `bson` | BSON read and written exactly, every type, and Extended JSON | `bytes`, `big`, `json`, `time` |  |
+| 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
+| 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
 | 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -128,6 +136,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `net`, `tls`, `time`, `bytes` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `net`, `tls`, `bytes`, `time` |  |
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `net`, `tls`, `bytes`, `compress`, `hash`, `time` |  |
+| 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `net`, `tls`, `dns`, `crypto`, `io`, `strings`, `time` |  |
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `fs`, `http`, `io`, `json`, `log`, `net`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `http2`, `protobuf`, `compress`, `tls`, `time` |  |
@@ -140,6 +149,9 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 6 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `json`, `io`, `http` |  |
 | 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
 | 6 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `http`, `protobuf`, `random`, `time` |  |
+| 6 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded | `http`, `jose`, `json`, `x509`, `crypto/keypairs`, `time` |  |
+| 6 | `llm/anthropic` | Claude's Messages API: messages, streaming, tools driven by the program, token counting, batches | `http`, `json`, `io`, `strings`, `time`, `os` |  |
+| 6 | `llm/openai` | Chat Completions and Responses, which Ollama and vLLM also speak: streaming, tools, embeddings | `http`, `json`, `io`, `strings`, `time`, `os` |  |
 | 7 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `jsonrpc`, `json`, `http`, `io` |  |
 | 7 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
 | 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `json`, `http`, `web` |  |

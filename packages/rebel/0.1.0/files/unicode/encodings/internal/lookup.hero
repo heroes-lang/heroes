@@ -1,0 +1,95 @@
+# The two ways the generated tables are read: a decoder's table, the code
+# point of each pointer packed three to a word, and an encoder's, the pointers
+# ordered by their code points packed four to a word. The tables' modules say
+# how each was packed.
+#
+# A lookup that finds nothing answers -1, the standard's null: these are read
+# once a byte or a character, inside the decoders, and the caller turns -1
+# into U+FFFD or a failure.
+
+# The code point of `pointer` in `words`, a decoder's table of `size`
+# pointers, or -1 where it has none, a pointer outside it among them.
+function point_of(words: [i64] lent, size: i64, pointer: i64) -> i64
+    if pointer < 0 || pointer >= size
+        return -1
+    point = words[pointer / 3] >> 21 * (pointer % 3) & 0x1fffff
+
+    if point == 0
+        return -1
+    return point
+
+# The `k`th pointer of an encoder's table.
+function pointer_at(words: [i64] lent, k: i64) -> i64
+    return words[k / 4] >> 15 * (k % 4) & 0x7fff
+
+# The pointer an encoder writes for `point`, or -1 where it has none: a
+# search by halves over `encode`, the `count` pointers ordered by their code
+# points, each pointer's code point read from `decode`, of `size` pointers.
+function pointer_of(decode: [i64] lent, size: i64, encode: [i64] lent, count: i64, point: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= count
+
+    while low < high
+        middle = (low + high) / 2
+        pointer = pointer_at(encode, middle)
+        found = point_of(words: decode, size: size, pointer: pointer)
+
+        if found == point
+            return pointer
+
+        if found < point
+            low @ middle + 1
+        else
+            high @ middle
+
+    return -1
+
+# The value `key` reaches in `pairs`, each `key << shift | value`, ascending,
+# or -1 where no pair has it.
+function value_of(pairs: [i64] lent, key: i64, shift: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= pairs.len()
+    mask = (1 << shift) - 1
+
+    while low < high
+        middle = (low + high) / 2
+        found = pairs[middle] >> shift
+
+        if found == key
+            return pairs[middle] & mask
+
+        if found < key
+            low @ middle + 1
+        else
+            high @ middle
+
+    return -1
+
+## Tests
+
+test "point_of: each of the three places in a word, an empty slot, and pointers outside"
+    words = [1 | 2 << 21 | 0x10ffff << 42, 0 | 5 << 21]
+    assert point_of(words: words, size: 5, pointer: 0) == 1
+    assert point_of(words: words, size: 5, pointer: 1) == 2
+    assert point_of(words: words, size: 5, pointer: 2) == 0x10ffff
+    assert point_of(words: words, size: 5, pointer: 3) == -1
+    assert point_of(words: words, size: 5, pointer: 4) == 5
+    assert point_of(words: words, size: 5, pointer: 5) == -1
+    assert point_of(words: words, size: 5, pointer: -1) == -1
+
+test "pointer_of: found at either end and inside, and a code point no pointer has"
+    decode = [0x30 | 0x10 << 21 | 0x20 << 42]
+    encode = [1 | 2 << 15 | 0 << 30]
+    assert pointer_of(decode: decode, size: 3, encode: encode, count: 3, point: 0x10) == 1
+    assert pointer_of(decode: decode, size: 3, encode: encode, count: 3, point: 0x20) == 2
+    assert pointer_of(decode: decode, size: 3, encode: encode, count: 3, point: 0x30) == 0
+    assert pointer_of(decode: decode, size: 3, encode: encode, count: 3, point: 0x11) == -1
+    assert pointer_of(decode: decode, size: 3, encode: encode, count: 0, point: 0x10) == -1
+
+test "value_of: a key at either end and inside, and one absent"
+    pairs = [3 << 7 | 1, 9 << 7 | 2, 200 << 7 | 127]
+    assert value_of(pairs: pairs, key: 3, shift: 7) == 1
+    assert value_of(pairs: pairs, key: 9, shift: 7) == 2
+    assert value_of(pairs: pairs, key: 200, shift: 7) == 127
+    assert value_of(pairs: pairs, key: 4, shift: 7) == -1
+    assert value_of(pairs: [], key: 4, shift: 7) == -1

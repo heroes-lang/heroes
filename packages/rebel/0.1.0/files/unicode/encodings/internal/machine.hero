@@ -1,0 +1,397 @@
+# The standard's hooks over every encoding: decode, with its byte order mark
+# sniffed (§ 6.1), or without; strict or replacing; whole or a piece at a
+# time; and encode, failing or with HTML references. It switches on an
+# encoding's number to the module that holds its decoder and encoder.
+
+use bytes
+use unicode
+use unicode/encodings/internal/chinese
+use unicode/encodings/internal/codes
+use unicode/encodings/internal/japanese
+use unicode/encodings/internal/korean
+use unicode/encodings/internal/registry
+use unicode/encodings/internal/run
+use unicode/encodings/internal/single
+use unicode/encodings/internal/utf
+
+# What a decoder keeps between pieces.
+record State
+    # The number of the encoding the label named.
+    asked: i64
+    # Whether a byte order mark is looked for at the start.
+    sniffs: bool
+    # The number of the encoding being read: `asked`, or the byte order mark's.
+    reading: i64
+    # Whether the byte order mark is still to be decided, the first bytes not
+    # yet come.
+    sniffing: bool
+    # The bytes of a sequence the last piece cut short, read with the next.
+    carry: [u8]
+    # How many bytes of the stream came before `carry`.
+    read: i64
+    # ISO-2022-JP's set and escape, where it is read.
+    iso: japanese.Iso2022
+    # Whether `replacement` has written its one U+FFFD.
+    replaced: bool
+
+# What an encoder keeps between pieces: the set ISO-2022-JP's encoder left the
+# text in.
+record Shift
+    # The number of the encoding written.
+    number: i64
+    # ISO-2022-JP's encoder state: `japanese.ASCII`, `ROMAN` or `JIS0208`.
+    set: i64
+
+# What `chunk` answers: the text of a piece, or where it failed, and the
+# decoder's state after it.
+record Chunk
+    # The text the piece wrote.
+    text: str
+    # The index in the whole stream of the first wrong sequence, strict; -1
+    # where there was none.
+    failed_at: i64
+    # The state to read the next piece from.
+    state: State
+
+# The state a decoder of the encoding numbered `n` begins in, sniffing a byte
+# order mark where `sniffs`.
+function start(n: i64, sniffs: bool) -> State
+    return State(
+        asked: n,
+        sniffs: sniffs,
+        reading: n,
+        sniffing: sniffs,
+        carry: [],
+        read: 0,
+        iso: japanese.iso2022_start(),
+        replaced: false
+    )
+
+# The encoding the byte order mark at the start of `data` names, or -1: the
+# standard's "BOM sniff".
+function bom_number(data: [u8] lent) -> i64
+    if data.len() >= 3 && data[0] == 0xef && data[1] == 0xbb && data[2] == 0xbf
+        return registry.UTF_8
+
+    if data.len() >= 2 && data[0] == 0xfe && data[1] == 0xff
+        return registry.UTF_16BE
+
+    if data.len() >= 2 && data[0] == 0xff && data[1] == 0xfe
+        return registry.UTF_16LE
+    return -1
+
+# How many bytes the byte order mark of the encoding numbered `n` takes.
+function bom_len(n: i64) -> i64
+    if n == registry.UTF_8
+        return 3
+    return 2
+
+# The byte order mark the encoding numbered `n` writes, or none.
+function bom_bytes(n: i64) -> [u8]
+    if n == registry.UTF_8
+        return [0xef, 0xbb, 0xbf]
+
+    if n == registry.UTF_16BE
+        return [0xfe, 0xff]
+
+    if n == registry.UTF_16LE
+        return [0xff, 0xfe]
+    return []
+
+# Whether the first bytes of a stream, `data`, decide its byte order mark:
+# three bytes, or fewer that no mark could begin.
+function decides_bom(data: [u8] lent) -> bool
+    if data.len() >= 3
+        return true
+
+    if data.len() == 0
+        return false
+
+    if data.len() == 1
+        return data[0] != 0xef && data[0] != 0xfe && data[0] != 0xff
+    return !(data[0] == 0xef && data[1] == 0xbb)
+
+# Whether the encoding numbered `n` writes ASCII as itself and uses no ASCII
+# byte for anything else.
+function is_ascii_compatible(n: i64) -> bool
+    return n != registry.ISO_2022_JP && n != registry.REPLACEMENT && n != registry.UTF_16BE && n != registry.UTF_16LE
+
+# Whether the encoding numbered `n` writes every character it has in one byte.
+function is_single_byte(n: i64) -> bool
+    return registry.is_single_byte_table(n) || n == registry.X_USER_DEFINED
+
+# Reads `data` from `from` in the encoding numbered `n` into `out`.
+function decode_run(n: i64, data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool, @iso: japanese.Iso2022, @replaced: bool) -> run.Stop
+    if registry.is_single_byte_table(n)
+        return single.decode(slot: n - registry.FIRST_SINGLE_BYTE, data: data, from: from, out: @out, strict: strict)
+
+    if n == registry.UTF_8
+        return utf.decode_utf8(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.GBK || n == registry.GB18030
+        return chinese.decode_gb18030(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.BIG5
+        return chinese.decode_big5(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.EUC_JP
+        return japanese.decode_euc_jp(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.ISO_2022_JP
+        return japanese.decode_iso_2022_jp(data: data, from: from, out: @out, strict: strict, last: last, iso: @iso)
+
+    if n == registry.SHIFT_JIS
+        return japanese.decode_shift_jis(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.EUC_KR
+        return korean.decode(data: data, from: from, out: @out, strict: strict, last: last)
+
+    if n == registry.REPLACEMENT
+        return utf.decode_replacement(data: data, from: from, out: @out, strict: strict, replaced: @replaced)
+
+    if n == registry.UTF_16BE || n == registry.UTF_16LE
+        return utf.decode_utf16(
+            data: data,
+            from: from,
+            out: @out,
+            strict: strict,
+            last: last,
+            big: n == registry.UTF_16BE
+        )
+    return single.decode_user_defined(data: data, from: from, out: @out)
+
+# What `whole` answers: the text, or where the first wrong sequence begins.
+record Whole
+    # The text read; empty where it failed.
+    text: str
+    # The index of the first byte of the first wrong sequence, strict; -1
+    # where there was none.
+    failed_at: i64
+
+# `data` read whole in the encoding numbered `n`, its byte order mark sniffed
+# where `sniffs`, strict where `strict`.
+function whole(data: [u8], n: i64, sniffs: bool, strict: bool) -> Whole
+    reading: i64 @= n
+    from: i64 @= 0
+
+    if sniffs
+        found = bom_number(data)
+
+        if found >= 0
+            reading @ found
+            from @ bom_len(found)
+
+    if reading == registry.UTF_8 || is_ascii_compatible(reading) && bytes.is_ascii(data)
+        match bytes.to_text(data.slice(from: from, to: data.len()))
+            .ok text => return Whole(text: text, failed_at: -1)
+            .err _   => _ = 0
+    out: [u8] @= []
+    iso @= japanese.iso2022_start()
+    replaced @= false
+    stop = decode_run(
+        n: reading,
+        data: data,
+        from: from,
+        out: @out,
+        strict: strict,
+        last: true,
+        iso: @iso,
+        replaced: @replaced
+    )
+
+    if stop.failed
+        return Whole(text: "", failed_at: stop.at)
+    return Whole(text: out.validated_bytes().must(), failed_at: -1)
+
+# The next piece of a stream, `data`, read from `state`: the last where
+# `last`, after which the state begins again.
+function chunk(state: State, data: [u8], last: bool, strict: bool) -> Chunk
+    next @= state
+    queue: [u8] @= next.carry
+    bytes.push_all(to: @queue, from: data)
+    from: i64 @= 0
+
+    if next.sniffing
+        if !last && !decides_bom(queue)
+            next.carry @ queue
+            return Chunk(text: "", failed_at: -1, state: next)
+        found = bom_number(queue)
+
+        if found >= 0
+            next.reading @ found
+            from @ bom_len(found)
+        next.sniffing @ false
+    out: [u8] @= []
+    iso @= next.iso
+    replaced @= next.replaced
+    stop = decode_run(
+        n: next.reading,
+        data: queue,
+        from: from,
+        out: @out,
+        strict: strict,
+        last: last,
+        iso: @iso,
+        replaced: @replaced
+    )
+
+    if stop.failed
+        return Chunk(text: "", failed_at: next.read + stop.at, state: state)
+    text = out.validated_bytes().must()
+
+    if last
+        return Chunk(text: text, failed_at: -1, state: start(n: next.asked, sniffs: next.sniffs))
+    next.carry @ queue.slice(from: stop.at, to: queue.len())
+    next.read @ next.read + stop.at
+    next.iso @ iso
+    next.replaced @ replaced
+    return Chunk(text: text, failed_at: -1, state: next)
+
+# Writes `s` in the encoding numbered `n` at the end of `out`, from the set
+# `@set` where ISO-2022-JP: -1 where every character was written, else, where
+# `html` is false, the byte index in `s` of the first that has no bytes.
+# `replacement` writes nothing: its caller refuses it first.
+function encode_run(n: i64, s: str lent, @out: [u8], html: bool, last: bool, @set: i64) -> i64
+    if n == registry.UTF_8
+        bytes.push_text(to: @out, s: s)
+        return -1
+
+    if registry.is_single_byte_table(n)
+        return single.encode(slot: n - registry.FIRST_SINGLE_BYTE, s: s, out: @out, html: html)
+
+    if n == registry.X_USER_DEFINED
+        return single.encode(slot: -1, s: s, out: @out, html: html)
+
+    if n == registry.GBK || n == registry.GB18030
+        return chinese.encode_gb18030(s: s, out: @out, html: html, gbk: n == registry.GBK)
+
+    if n == registry.BIG5
+        return chinese.encode_big5(s: s, out: @out, html: html)
+
+    if n == registry.EUC_JP
+        return japanese.encode_euc_jp(s: s, out: @out, html: html)
+
+    if n == registry.ISO_2022_JP
+        return japanese.encode_iso_2022_jp(s: s, out: @out, html: html, last: last, set: @set)
+
+    if n == registry.SHIFT_JIS
+        return japanese.encode_shift_jis(s: s, out: @out, html: html)
+
+    if n == registry.EUC_KR
+        return korean.encode(s: s, out: @out, html: html)
+
+    if n == registry.UTF_16BE || n == registry.UTF_16LE
+        utf.encode_utf16(s: s, out: @out, big: n == registry.UTF_16BE)
+    return -1
+
+# The state an encoder of the encoding numbered `n` begins in.
+function shift_start(n: i64) -> Shift
+    return Shift(number: n, set: japanese.ASCII)
+
+## Messages and the writer's start
+
+# The state an encoder of the encoding numbered `n` begins in. Fails
+# `unsupported` for `replacement`, which has no bytes for anything.
+function writable(n: i64) -> Shift?
+    if n == registry.REPLACEMENT
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: "the encoding replacement has no bytes for any character: it exists to read what must not be read"
+        )
+    return ok(shift_start(n))
+
+# The bytes `s` writes from `state`, the last piece where `last`. Fails
+# `unsupported` at the first character with no bytes, where `html` is false.
+function written(s: str, state: Shift, html: bool, last: bool) -> [u8]?
+    out: [u8] @= []
+    set @= state.set
+    at = encode_run(n: state.number, s: s, out: @out, html: html, last: last, set: @set)
+
+    if at >= 0
+        return fail(code: codes.UNSUPPORTED, msg: no_bytes(s: s, at: at, n: state.number))
+    return ok(out)
+
+# The message of a character the encoding numbered `n` has no bytes for, at
+# byte `at` of `s`.
+function no_bytes(s: str, at: i64, n: i64) -> str
+    point = unicode.code_point_at(s, at)
+    return f"{registry.name(n)} has no bytes for {run.code_name(point)} \"{s.slice(from: at, to: at + unicode.width_at(s, at))}\", at byte {at}"
+
+# The message of bytes the encoding numbered `n` cannot read, from `at`.
+function wrong_bytes(data: [u8], at: i64, n: i64) -> str
+    end: i64 @= at + 4
+
+    if end > data.len()
+        end @ data.len()
+    return f"{registry.name(n)} cannot read the bytes from index {at}: {bytes.format_hex(data.slice(from: at, to: end))}"
+
+## Tests
+
+# Every expected value below is what encoding_rs 0.8.42 answered for the same
+# input on 2026-11-17: `Encoding::decode` for a byte order mark sniffed, and a
+# decoder given the bytes in pieces.
+
+# The text the pieces of `data` cut at `cuts` read as, from a decoder of the
+# encoding numbered `n` that sniffs a byte order mark.
+function pieces(data: [u8], cuts: [i64], n: i64) -> str
+    state @= start(n: n, sniffs: true)
+    texts: [str] @= []
+    at: i64 @= 0
+
+    for cut in cuts
+        read = chunk(state: state, data: data.slice(from: at, to: cut), last: false, strict: false)
+        texts @ texts.push(read.text)
+        state @ read.state
+        at @ cut
+
+    texts @ texts.push(chunk(state: state, data: data.slice(from: at, to: data.len()), last: true, strict: false).text)
+    return texts.join("")
+
+test "bom_number, bom_len and bom_bytes: each mark, one cut short, and none"
+    assert bom_number([0xef, 0xbb, 0xbf, 0x61]) == registry.UTF_8
+    assert bom_number([0xfe, 0xff]) == registry.UTF_16BE
+    assert bom_number([0xff, 0xfe, 0]) == registry.UTF_16LE
+    assert bom_number([0xef, 0xbb]) == -1
+    assert bom_number([]) == -1
+    assert bom_len(registry.UTF_8) == 3 && bom_len(registry.UTF_16LE) == 2
+    assert bom_bytes(registry.UTF_16BE) == [0xfe, 0xff] && bom_bytes(registry.WINDOWS_1252) == []
+
+test "decides_bom: none, a byte no mark begins, the start of each mark, and three bytes"
+    assert !decides_bom([])
+    assert decides_bom([0x61])
+    assert !decides_bom([0xef]) && !decides_bom([0xfe]) && !decides_bom([0xff])
+    assert !decides_bom([0xef, 0xbb])
+    assert decides_bom([0xef, 0x61]) && decides_bom([0xff, 0xfe]) && decides_bom([0xfe, 0x61])
+    assert decides_bom([0xef, 0xbb, 0x61])
+
+test "whole: a byte order mark wins over the label, or is a character where none is sniffed"
+    assert whole(data: [0xef, 0xbb, 0xbf, 0x61], n: registry.UTF_8, sniffs: true, strict: false).text == "a"
+    assert whole(data: [0xff, 0xfe, 0x61, 0], n: registry.WINDOWS_1252, sniffs: true, strict: false).text == "a"
+    assert whole(data: [0xfe, 0xff, 0, 0x61], n: registry.WINDOWS_1252, sniffs: true, strict: false).text == "a"
+    assert whole(data: [0xef, 0xbb, 0xbf, 0xc3, 0xa9], n: registry.UTF_16LE, sniffs: true, strict: false).text == "é"
+    assert unicode.code_points(whole(data: [0xef, 0xbb, 0xbf, 0x61], n: registry.UTF_8, sniffs: false, strict: false).text) == [0xfeff, 0x61]
+    assert whole(data: [0xef, 0xbb], n: registry.WINDOWS_1252, sniffs: true, strict: false).text == "ï»"
+    assert whole(data: [0x61, 0xaa, 0x62], n: 22, sniffs: false, strict: true) == Whole(text: "", failed_at: 1)
+
+test "chunk: a character, a byte order mark and an escape cut between pieces read as whole"
+    assert pieces(data: [0x93, 0xfa, 0x96, 0x7b], cuts: [1, 2, 3], n: registry.SHIFT_JIS) == "日本"
+    assert pieces(data: [0xff, 0xfe, 0x61, 0], cuts: [1, 2], n: registry.UTF_16LE) == "a"
+    assert pieces(data: [0xef, 0xbb, 0xbf, 0xe6, 0x97, 0xa5], cuts: [1, 2, 4], n: registry.UTF_8) == "日"
+    assert pieces(data: [0x1b, 0x24, 0x42, 0x30, 0x21, 0x1b, 0x28, 0x42], cuts: [1, 2, 4], n: registry.ISO_2022_JP) == "亜"
+    assert pieces(data: [0x81, 0x30, 0x81, 0x30, 0x61], cuts: [1, 2, 3], n: registry.GB18030) == "\u{80}a"
+
+test "chunk: a strict piece fails at its index in the whole stream, the state left as it was"
+    state = start(n: registry.UTF_8, sniffs: false)
+    first = chunk(state: state, data: [0x61, 0x62, 0xe2], last: false, strict: true)
+    assert first.text == "ab" && first.failed_at == -1 && first.state.carry == [0xe2] && first.state.read == 2
+    second = chunk(state: first.state, data: [0x82, 0x41], last: true, strict: true)
+    assert second.failed_at == 2 && second.state == first.state
+
+test "encode_run: UTF-8, a single-byte table, UTF-16, and a character with no byte"
+    out: [u8] @= []
+    set @= 0
+    assert encode_run(n: registry.UTF_8, s: "é", out: @out, html: false, last: true, set: @set) == -1
+    assert encode_run(n: registry.WINDOWS_1252, s: "é", out: @out, html: false, last: true, set: @set) == -1
+    assert encode_run(n: registry.UTF_16BE, s: "é", out: @out, html: false, last: true, set: @set) == -1
+    assert out == [0xc3, 0xa9, 0xe9, 0, 0xe9]
+    assert encode_run(n: registry.WINDOWS_1252, s: "aж", out: @out, html: false, last: true, set: @set) == 1

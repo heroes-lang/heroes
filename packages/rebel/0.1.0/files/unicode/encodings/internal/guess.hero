@@ -1,0 +1,234 @@
+# The encoding of bytes nobody declared, guessed: each encoding that reads
+# the bytes with no error gives a reading, and each reading is judged by the
+# characters it holds.
+#
+# The method, which the face states too. A byte order mark answers alone. Bytes
+# that are ASCII alone, with no NUL and no escape, are UTF-8. Otherwise every
+# candidate below reads the first `SAMPLE` bytes strictly, a character cut at
+# the end of the sample left out; one that fails is no candidate, and readings
+# that give the same text are one, named by the commonest encoding. A reading
+# is charged a mess for each control, private-use or unassigned character; a
+# symbol touching a letter, or punctuation or a number inside a word; a word
+# that changes script or goes from small letters to capitals; the letters of
+# the alphabetic scripts that no single language's alphabet (`alphabets_table`, read by `judge.hero`)
+# accounts for; a Chinese, Japanese or Korean character outside the first
+# level of its standards, the commonest; kana in Chinese or Korean, Hangul in
+# Chinese or Japanese, Japanese with no kana, Hangul words longer than words
+# are, and Chinese characters spaced as words are. Its plausibility is
+# `exp(-6 * mess / weight)`, the weight its characters above ASCII and a tenth
+# of the others, and its confidence its share of the plausibility of every
+# reading. A reading of UTF-8 with no error and a character above ASCII is
+# worth as much as the best, and comes first, being first in the order.
+
+use unicode/encodings/internal/judge
+use unicode/encodings/internal/machine
+use unicode/encodings/internal/registry
+
+# How many bytes at the start are read: enough for every measure to settle, few
+# enough that the 35 readings stay quick.
+constant SAMPLE: i64
+    65536
+
+# The encodings guessed among, in the order a tie goes, the commonest on the
+# web first. GBK is gb18030's reading, named so where the text needs no
+# four-byte sequence; ISO-8859-8-I reads as ISO-8859-8; `replacement` and
+# x-user-defined are never guessed.
+constant CANDIDATES: [i64]
+    [
+        0
+        21
+        20
+        30
+        34
+        35
+        31
+        32
+        19
+        2
+        25
+        23
+        22
+        7
+        24
+        8
+        18
+        26
+        27
+        15
+        16
+        5
+        1
+        28
+        13
+        4
+        11
+        10
+        12
+        14
+        3
+        6
+        17
+        33
+        38
+        37
+    ]
+
+# A candidate: an encoding's number and how sure the guess is.
+record Candidate
+    # The encoding's number.
+    number: i64
+    # How sure, 0 to 1.
+    confidence: f64
+
+# Every candidate, the likeliest first; never empty.
+function ranked(data: [u8]) -> [Candidate]
+    if data.len() == 0
+        return [Candidate(number: registry.UTF_8, confidence: 1.0)]
+    marked = machine.bom_number(data)
+
+    if marked >= 0
+        return [Candidate(number: marked, confidence: 1.0)]
+    whole = data.len() <= SAMPLE
+    sample = sample_of(data)
+
+    if is_plain_ascii(sample)
+        return [Candidate(number: registry.UTF_8, confidence: 1.0)]
+    numbers: [i64] @= []
+    texts: [str] @= []
+    worths: [f64] @= []
+
+    for n in CANDIDATES
+        if n != registry.ISO_2022_JP || has_escape(sample)
+            read = machine.chunk(state: machine.start(n: n, sniffs: false), data: sample, last: whole, strict: true)
+
+            if read.failed_at < 0 && !holds_text(texts: texts, text: read.text)
+                numbers @ numbers.push(named(n: n, text: read.text))
+                texts @ texts.push(read.text)
+                worths @ worths.push(judge.plausibility(text: read.text, n: n))
+
+    if numbers.len() > 0 && numbers[0] == registry.UTF_8 && !is_ascii(sample)
+        best: f64 @= 0.0
+
+        for w in worths
+            if w > best
+                best @ w
+
+        worths[0] @ best
+    return in_order(numbers: numbers, worths: worths)
+
+# The first `SAMPLE` bytes of `data`, or all of them.
+function sample_of(data: [u8]) -> [u8]
+    if data.len() <= SAMPLE
+        return data
+    return data.slice(from: 0, to: SAMPLE)
+
+# Whether `data` is ASCII with no NUL and no escape: text every candidate but
+# UTF-16 and ISO-2022-JP reads as itself.
+function is_plain_ascii(data: [u8] lent) -> bool
+    for b in data
+        if b >= 0x80 || b == 0 || b == 0x1b
+            return false
+
+    return true
+
+# Whether `data` is ASCII alone.
+function is_ascii(data: [u8] lent) -> bool
+    for b in data
+        if b >= 0x80
+            return false
+
+    return true
+
+# Whether `data` holds ESC, which ISO-2022-JP's sets are switched by.
+function has_escape(data: [u8] lent) -> bool
+    for b in data
+        if b == 0x1b
+            return true
+
+    return false
+
+# Whether `texts` holds `text` already.
+function holds_text(texts: [str] lent, text: str) -> bool
+    for t in texts
+        if t == text
+            return true
+
+    return false
+
+# The number to name gb18030's reading by: GBK where the text has bytes in GBK,
+# which wants no four-byte sequence; `n` for any other.
+function named(n: i64, text: str) -> i64
+    if n != registry.GB18030
+        return n
+    out: [u8] @= []
+    set @= 0
+
+    if machine.encode_run(n: registry.GBK, s: text, out: @out, html: false, last: true, set: @set) < 0
+        return registry.GBK
+    return n
+
+# The candidates by plausibility, the highest first, a tie in `numbers`'s
+# order, each with its share of the whole.
+function in_order(numbers: [i64], worths: [f64]) -> [Candidate]
+    total: f64 @= 0.0
+
+    for w in worths
+        total @ total + w
+
+    order: [i64] @= []
+
+    for k in range(from: 0, to: numbers.len())
+        at: i64 @= order.len()
+
+        while at > 0 && worths[order[at - 1]] < worths[k]
+            at @ at - 1
+
+        order @ inserted(xs: order, at: at, value: k)
+
+    out: [Candidate] @= []
+
+    for k in order
+        share: f64 @= 1.0
+
+        if total > 0.0
+            share @ worths[k] / total
+        out @ out.push(Candidate(number: numbers[k], confidence: share))
+
+    if out.len() == 0
+        out @ out.push(Candidate(number: registry.WINDOWS_1252, confidence: 1.0))
+    return out
+
+# `xs` with `value` put at `at`.
+function inserted(xs: [i64], at: i64, value: i64) -> [i64]
+    out: [i64] @= []
+
+    for k in range(from: 0, to: xs.len() + 1)
+        if k == at
+            out @ out.push(value)
+
+        if k < xs.len()
+            out @ out.push(xs[k])
+
+    return out
+
+## Tests
+
+test "ranked: nothing, a mark, plain ASCII, and the sample's helpers"
+    assert ranked([]) == [Candidate(number: registry.UTF_8, confidence: 1.0)]
+    assert ranked([0xfe, 0xff, 0, 0x61]) == [Candidate(number: registry.UTF_16BE, confidence: 1.0)]
+    assert ranked([0x61, 0x62]) == [Candidate(number: registry.UTF_8, confidence: 1.0)]
+    assert ranked([0x68, 0, 0x69, 0])[0].number == registry.UTF_16LE
+    assert is_plain_ascii([0x61]) && !is_plain_ascii([0x61, 0]) && !is_plain_ascii([0x1b]) && !is_plain_ascii([0x80])
+    assert has_escape([0x61, 0x1b]) && !has_escape([0x61])
+    assert is_ascii([0x7f]) && !is_ascii([0x80])
+    assert holds_text(texts: ["a", "b"], text: "b") && !holds_text(texts: [], text: "b")
+    assert sample_of([1, 2]) == [1, 2]
+
+test "named, in_order and inserted: GBK for a text it writes, the order of ties, a list grown"
+    assert named(n: registry.GB18030, text: "中文") == registry.GBK
+    assert named(n: registry.GB18030, text: "😀") == registry.GB18030
+    assert named(n: registry.BIG5, text: "中文") == registry.BIG5
+    order = in_order(numbers: [5, 6, 7], worths: [1.0, 3.0, 1.0])
+    assert order == [Candidate(number: 6, confidence: 0.6), Candidate(number: 5, confidence: 0.2), Candidate(number: 7, confidence: 0.2)]
+    assert in_order(numbers: [], worths: []) == [Candidate(number: registry.WINDOWS_1252, confidence: 1.0)]
+    assert inserted(xs: [1, 3], at: 1, value: 2) == [1, 2, 3] && inserted(xs: [], at: 0, value: 9) == [9]

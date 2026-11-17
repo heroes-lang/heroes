@@ -1,0 +1,102 @@
+# What every decoder and encoder of `unicode/encodings` shares: where a run
+# over the input stopped and why, the bytes of a character written as UTF-8,
+# U+FFFD, and an HTML numeric reference.
+#
+# A decoder reads `data` from an index and writes UTF-8 into the caller's
+# `[u8]`, an `@` parameter so that it grows in place. It emits nothing for a
+# sequence it has not finished, so that where the input ends before a
+# sequence does and more is to come, it stops at the sequence's first byte
+# and the caller keeps those bytes for the next piece.
+
+# Where a decoder stopped: past the last byte of its input, at the first byte
+# of a sequence the input cut short (more to come), or at the first byte of a
+# wrong sequence (strict).
+record Stop
+    # The index of the first byte not read.
+    at: i64
+    # Whether the decoder stopped on a wrong sequence, strict.
+    failed: bool
+
+# `b` as an `i64`.
+function wide(b: u8) -> i64
+    return to_i64(b).must()
+
+# `n`, 0 to 255, as a byte. Aborts on any other number.
+function narrow(n: i64) -> u8
+    return to_u8(n).must()
+
+# Writes the code point `n`, a scalar value, as UTF-8 at the end of `out`.
+function add_point(@out: [u8], n: i64)
+    if n < 0x80
+        out @ out.push(narrow(n))
+    else if n < 0x800
+        out @ out.push(narrow(0xc0 | n >> 6))
+        out @ out.push(narrow(0x80 | n & 0x3f))
+    else if n < 0x10000
+        out @ out.push(narrow(0xe0 | n >> 12))
+        out @ out.push(narrow(0x80 | n >> 6 & 0x3f))
+        out @ out.push(narrow(0x80 | n & 0x3f))
+    else
+        out @ out.push(narrow(0xf0 | n >> 18))
+        out @ out.push(narrow(0x80 | n >> 12 & 0x3f))
+        out @ out.push(narrow(0x80 | n >> 6 & 0x3f))
+        out @ out.push(narrow(0x80 | n & 0x3f))
+
+# Writes U+FFFD, the replacement character, at the end of `out`.
+function add_replacement(@out: [u8])
+    out @ out.push(0xef)
+    out @ out.push(0xbf)
+    out @ out.push(0xbd)
+
+# Writes `&#`, `n` in decimal and `;` at the end of `out`: the standard's
+# "html" error mode of an encoder.
+function add_reference(@out: [u8], n: i64)
+    out @ out.push('&')
+    out @ out.push('#')
+
+    for c in f"{n}".chars()
+        out @ out.push(c[0])
+
+    out @ out.push(';')
+
+# `n` as Unicode writes a code point: `U+` and at least four hexadecimal
+# digits in upper case, `U+00E9`, `U+1F600`.
+function code_name(n: i64) -> str
+    digits: [str] @= []
+    rest: i64 @= n
+
+    while rest > 0 || digits.len() < 4
+        digits @ digits.push("0123456789ABCDEF".slice(from: rest % 16, to: rest % 16 + 1))
+        rest @ rest / 16
+
+    out: [str] @= []
+    at: i64 @= digits.len() - 1
+
+    while at >= 0
+        out @ out.push(digits[at])
+        at @ at - 1
+
+    return "U+" + out.join("")
+
+## Tests
+
+test "code_name: four digits at least, and six"
+    assert code_name(0) == "U+0000"
+    assert code_name(0xe9) == "U+00E9"
+    assert code_name(0x1f600) == "U+1F600"
+    assert code_name(0x10ffff) == "U+10FFFF"
+
+test "add_point: the last code point of each width and the first of the next"
+    out: [u8] @= []
+
+    for n in [0, 0x7f, 0x80, 0x7ff, 0x800, 0xffff, 0x10000, 0x10ffff]
+        add_point(out: @out, n: n)
+
+    assert out == [0, 127, 194, 128, 223, 191, 224, 160, 128, 239, 191, 191, 240, 144, 128, 128, 244, 143, 191, 191]
+
+test "add_replacement and add_reference: U+FFFD, and a reference of one digit and of seven"
+    out: [u8] @= []
+    add_replacement(out: @out)
+    add_reference(out: @out, n: 9)
+    add_reference(out: @out, n: 1114111)
+    assert out == [239, 191, 189, 38, 35, 57, 59, 38, 35, 49, 49, 49, 52, 49, 49, 49, 59]

@@ -1,0 +1,122 @@
+# EUC-KR both ways (§ 13 of the standard), KS X 1001 with the Unified Hangul
+# Code, written to look ahead over the bytes it has: a pair is read whole or,
+# where the input ends after its first byte and more is to come, left for the
+# next piece.
+
+use bytes
+use unicode
+use unicode/encodings/internal/euc_kr_table
+use unicode/encodings/internal/lookup
+use unicode/encodings/internal/run
+use unicode/encodings/internal/utf
+
+# The code point of `pointer` in index EUC-KR, or -1.
+function point_of(pointer: i64) -> i64
+    return lookup.point_of(words: euc_kr_table.DECODE, size: euc_kr_table.POINTERS, pointer: pointer)
+
+# The pointer EUC-KR writes `point` as, or -1.
+function pointer_of(point: i64) -> i64
+    return lookup.pointer_of(
+        decode: euc_kr_table.DECODE,
+        size: euc_kr_table.POINTERS,
+        encode: euc_kr_table.ENCODE,
+        count: euc_kr_table.ENCODE_COUNT,
+        point: point
+    )
+
+# Reads `data` from `from` as EUC-KR into `out`.
+function decode(data: [u8] lent, from: i64, @out: [u8], strict: bool, last: bool) -> run.Stop
+    at: i64 @= from
+
+    while at < data.len()
+        b = data[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else if b >= 0x81 && b <= 0xfe
+            if at + 1 >= data.len()
+                return utf.cut_short(at: at, end: data.len(), out: @out, strict: strict, last: last)
+            second = data[at + 1]
+            point: i64 @= -1
+
+            if second >= 0x41 && second <= 0xfe
+                point @ point_of((run.wide(b) - 0x81) * 190 + run.wide(second) - 0x41)
+
+            if point >= 0
+                run.add_point(out: @out, n: point)
+                at @ at + 2
+            else if strict
+                return run.Stop(at: at, failed: true)
+            else
+                run.add_replacement(out: @out)
+
+                if second < 0x80
+                    at @ at + 1
+                else
+                    at @ at + 2
+        else if strict
+            return run.Stop(at: at, failed: true)
+        else
+            run.add_replacement(out: @out)
+            at @ at + 1
+
+    return run.Stop(at: at, failed: false)
+
+# Writes `s` in EUC-KR at the end of `out`: -1 where every character was
+# written, else, where `html` is false, the byte index in `s` of the first that
+# has no bytes.
+function encode(s: str lent, @out: [u8], html: bool) -> i64
+    at: i64 @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b < 0x80
+            out @ out.push(b)
+            at @ at + 1
+        else
+            point = unicode.code_point_at(s, at)
+            pointer = pointer_of(point)
+
+            if pointer >= 0
+                out @ out.push(run.narrow(pointer / 190 + 0x81))
+                out @ out.push(run.narrow(pointer % 190 + 0x41))
+            else if html
+                run.add_reference(out: @out, n: point)
+            else
+                return at
+            at @ at + unicode.width_at(s, at)
+
+    return -1
+
+## Tests
+
+# Every expected value below is what encoding_rs 0.8.42 answered for the same
+# input on 2026-11-17. Python 3.15.2's `cp949` agrees with the standard on all
+# 17,048 pointers of index EUC-KR; its `euc_kr` reads 8,225 of them, KS X 1001
+# without the Unified Hangul Code.
+
+# The text `decode` reads from the whole of `data`, replacing.
+function text_of(data: [u8]) -> str
+    out: [u8] @= []
+    _ = decode(data: data, from: 0, out: @out, strict: false, last: true)
+    return out.validated_bytes().must()
+
+test "decode: KS X 1001, the Unified Hangul Code, and wrong, restored or cut bytes"
+    assert text_of([0xb0, 0xa1, 0x81, 0x41]) == "가갂"
+    assert text_of([0x80]) == "�"
+    assert text_of([0x81, 0x40]) == "�@"
+    assert text_of([0xb0]) == "�"
+    out: [u8] @= []
+    assert decode(data: [0xb0, 0xa1, 0xb0], from: 0, out: @out, strict: true, last: true) == run.Stop(at: 2, failed: true)
+
+test "encode: KS X 1001, the Unified Hangul Code, the euro, and a character with no bytes"
+    out: [u8] @= []
+    assert encode(s: "가갂€", out: @out, html: false) == -1
+    assert out == [0xb0, 0xa1, 0x81, 0x41, 0xa2, 0xe6]
+    refused: [u8] @= []
+    assert encode(s: "a😀", out: @refused, html: false) == 1
+    html: [u8] @= []
+    assert encode(s: "😀", out: @html, html: true) == -1
+    assert html == bytes.from_text("&#128512;")
