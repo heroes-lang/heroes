@@ -1,0 +1,74 @@
+# A Tab in the line editor, once the program's completion has answered:
+# the candidates put in the line, their common start, or listed below it.
+
+use term/internal/editing
+use term/internal/tables
+use term/internal/words
+
+# Does a Tab to `edit` whose completion answered `candidates` for the bytes
+# from `from` to the cursor: one candidate takes their place; several put
+# their common start there where it is longer; where nothing can be added a
+# first Tab rings the bell and a second lists them below the line, laid in
+# columns, and draws the line again. A `from` outside 0 to the cursor or
+# inside a character completes nothing.
+function complete(@edit: editing.Edit, prompt: str, from: i64, candidates: [str]) -> editing.Outcome
+    tabbed = edit.tabbed
+    edit.tabbed @ false
+    edit.killing @ false
+    edit.escaped @ false
+    s = edit.line
+    at = edit.cursor
+
+    if from < 0 || from > at || from < s.len() && s[from] >= 0x80 && s[from] < 0xc0 || candidates.len() == 0
+        return editing.Outcome(draw: editing.BELL, end: .going, line: "")
+
+    if candidates.len() == 1
+        editing.replace(@edit, from: from, to: at, text: candidates[0])
+        return editing.Outcome(draw: editing.render(edit, prompt), end: .going, line: "")
+    start = words.common_start(candidates)
+
+    if start.len() > at - from
+        editing.replace(@edit, from: from, to: at, text: start)
+        return editing.Outcome(draw: editing.render(edit, prompt), end: .going, line: "")
+
+    if !tabbed
+        edit.tabbed @ true
+        return editing.Outcome(draw: editing.BELL, end: .going, line: "")
+
+    wide = if edit.columns > 0
+        edit.columns
+    else
+        80
+    listed = tables.columns(items: candidates, room: wide)
+    return editing.Outcome(draw: "\r\n" + crlf(listed) + editing.render(edit, prompt), end: .going, line: "")
+
+# `s` with each line break written as a carriage return and a line feed, as
+# a terminal in the raw mode is written to.
+function crlf(s: str) -> str
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] == '\n'
+            pieces @ pieces.push(s.slice(from: from, to: i))
+            from @ i + 1
+
+    pieces @ pieces.push(s.slice(from: from, to: s.len()))
+    return pieces.join("\r\n")
+
+test "completing complete: none, one, a common start, the bell then the list, and a from out of range"
+    e @= editing.fresh()
+    e.line @ "he"
+    e.cursor @ 2
+    assert complete(@e, prompt: "", from: 0, candidates: []).draw == editing.BELL
+    _ = complete(@e, prompt: "", from: 0, candidates: ["help "])
+    assert e.line == "help " && e.cursor == 5
+    e.line @ "x h"
+    e.cursor @ 3
+    _ = complete(@e, prompt: "", from: 2, candidates: ["hello", "help"])
+    assert e.line == "x hel"
+    assert complete(@e, prompt: "", from: 2, candidates: ["hello", "help"]).draw == editing.BELL
+    listed = complete(@e, prompt: "", from: 2, candidates: ["hello", "help"])
+    assert listed.draw.slice(from: 0, to: 16) == "\r\nhello  help\r\n\r"
+    assert complete(@e, prompt: "", from: 9, candidates: ["x"]).draw == editing.BELL
+    assert complete(@e, prompt: "", from: -1, candidates: ["x"]).draw == editing.BELL

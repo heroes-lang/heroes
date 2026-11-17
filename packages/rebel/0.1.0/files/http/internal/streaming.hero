@@ -1,0 +1,700 @@
+# A response read as it comes and an answer written as it is made: a final
+# response's head read apart from its body, the body then read piece by piece
+# by its framing (a length, chunks or the connection's end) and never held
+# whole; the events of a `text/event-stream` body read by the WHATWG HTML
+# standard's algorithm ("Interpreting an event stream", § 9.2.6); and the head
+# of an answer whose body runs to the connection's end (RFC 9112 § 6.3, its
+# eighth rule), which every HTTP/1.x client reads.
+
+use bytes
+use http/internal/body
+use http/internal/read
+use http/internal/status
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use io
+
+# The most bytes a piece of a body is read in when an event stream asks for
+# one: what a reader reads of its stream at once.
+constant PIECE_BYTES: i64
+    65_536
+
+# How far a body is read.
+record Body
+    # How its end is known.
+    framing: body.Framing
+    # The bytes left of a body of a length, or of the chunk being read.
+    left: i64
+    # Whether a chunk's data was read, so its line end comes before the next
+    # size line.
+    started: bool
+    # Whether its end was read.
+    ended: bool
+    # The most field lines of a chunked body's trailer.
+    most_fields: i64
+
+# The head of the next final response of `r`, its body left unread: the
+# head, no content, and whether the connection ends after it, a body framed
+# by the connection's end included. Fails as `read.final_head` and
+# `body.of_response` do.
+function response_head(@r: io.Reader, method: str, bounds: wire.Bounds) -> read.Message?
+    h = read.final_head(@r, bounds: bounds)?
+
+    to_end = match body.of_response(h, method: method)?
+        .to_end                      => true
+        .none | .length _ | .chunked => false
+
+    return ok(read.Message(head: h, content: [], closing: read.closes(h) || to_end))
+
+# How far the body of a response of `status_code` with `fields`, answering a
+# request of `method`, is read before a byte of it. Fails as
+# `body.of_response` does.
+function body_of(status_code: i64, fields: [wire.Field], method: str, most_fields: i64) -> Body?
+    h = wire.Head(method: "", target: "", status: status_code, reason: "", major: 1, minor: 1, fields: fields)
+    framing = body.of_response(h, method: method)?
+
+    left = match framing
+        .length l                  => l.n
+        .none | .chunked | .to_end => 0
+
+    return ok(Body(framing: framing, left: left, started: false, ended: false, most_fields: most_fields))
+
+# At most `most` bytes of what `r` holds or reads next, waiting only where it
+# holds none: an empty list at the stream's end.
+function some(@r: io.Reader, most: i64) -> [u8]?
+    if io.at_end(@r)?
+        return ok([])
+    held = io.buffered(r)
+    n: i64 @= held.len()
+
+    if n > most
+        n @ most
+    _ = io.skip(@r, n: n)?
+    return ok(held.slice(from: 0, to: n))
+
+# The next piece of the body `b` frames, at most `most` bytes, `b` advanced
+# past it: an empty list once its end is read, and at every call after.
+# Fails `invalid` where the stream ends inside the body or a chunk is
+# malformed, `limit` where a chunk's line passes `body.CHUNK_LINE_BYTES` or a
+# trailer `b.most_fields` fields, and as `io` fails.
+function piece(@r: io.Reader, @b: Body, most: i64) -> [u8]?
+    if b.ended || most == 0
+        return ok([])
+
+    match b.framing
+        .none =>
+            b.ended @ true
+            return ok([])
+        .to_end =>
+            got = some(@r, most: most)?
+
+            if got.len() == 0
+                b.ended @ true
+            return ok(got)
+        .length _ =>
+            if b.left == 0
+                b.ended @ true
+                return ok([])
+            return within(@r, @b, most: most)
+        .chunked =>
+            if b.left == 0
+                if b.started
+                    body.end_of_chunk(@r)?
+                line = wire.text_of(body.text_line(@r)?)
+                size = syntax.hexadecimal(s: syntax.trim_ows(body.strings_before(line, stop: ';')), what: "reading a chunk's size")?
+                b.started @ true
+
+                if size == 0
+                    body.trailer(@r, most: b.most_fields)?
+                    b.ended @ true
+                    return ok([])
+                b.left @ size
+            return within(@r, @b, most: most)
+
+# At most `most` of the `b.left` bytes the body still holds here, `b.left`
+# lessened by as many. Fails `invalid` where the stream ends first.
+function within(@r: io.Reader, @b: Body, most: i64) -> [u8]?
+    n: i64 @= b.left
+
+    if n > most
+        n @ most
+    got = some(@r, most: n)?
+
+    if got.len() == 0
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading a body: the stream ended with {b.left} bytes of it still to come"
+        )
+    b.left @ b.left - got.len()
+    return ok(got)
+
+## The head of an answer made as it goes
+
+# The bytes of a response's head whose body runs to the connection's end:
+# HTTP/1.1 `status_code` `reason`, `fields` but the framing's and
+# `Connection`, then `Connection: close`, and no length. Fails `invalid`
+# where `status_code` is outside 200 to 999, or the reason or a field is not
+# one, as `write.others` says.
+function head(status_code: i64, reason: str, fields: [wire.Field]) -> [u8]?
+    if status_code < 200 || status_code > 999
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing the head of a response made as it goes: the status {status_code} is not a final one, 200 to 999"
+        )
+    said: str @= reason
+
+    if said == ""
+        said @ status.text_of(status_code).default("")
+
+    if !syntax.is_value(said)
+        return fail(
+            code: syntax.INVALID,
+            msg: f"writing a response: the reason {syntax.shown(said)} holds a line end or a control byte"
+        )
+    kept: [wire.Field] @= []
+
+    for f in fields
+        if !syntax.same_name(a: f.name, b: "Connection")
+            kept @ kept.push(f)
+
+    lines: [str] @= [f"HTTP/1.1 {status_code} {said}"]
+    write.others(@lines, fields: kept, skip_host: false)?
+    lines @ lines.push("Connection: close")
+    return ok(bytes.from_text(lines.join("\r\n") + "\r\n\r\n"))
+
+## Events
+
+# What the scanning of an event stream keeps between two lines: WHATWG's
+# buffers and where the scan stands.
+record Scan
+    # Where the scan stands in the piece being scanned.
+    at: i64
+    # The bytes the data lines of the event being read hold, their line
+    # feeds counted.
+    held: i64
+    # Whether the last byte scanned was a carriage return, so a line feed
+    # next ends no line.
+    after_cr: bool
+    # Whether no line has ended yet, so a byte order mark may lead the first.
+    first: bool
+    # The event type buffer.
+    kind: str
+    # The last event ID buffer.
+    id: str
+    # The last event ID string: the buffer as the last empty line found it.
+    last_id: str
+    # The reconnection time in milliseconds.
+    retry_ms: i64
+    # The most bytes the line being read and the data before it may hold.
+    most_bytes: i64
+
+# An event stream being read: its body, the piece being scanned, the line
+# begun, the event's data lines, and the scan.
+record Events
+    # How far the body is read.
+    body: Body
+    # The last piece of the body read, scanned up to `scan.at`.
+    rest: [u8]
+    # The bytes of the line not yet ended.
+    line: [u8]
+    # The data lines of the event being read.
+    data: [str]
+    # The buffers and where the scan stands.
+    scan: Scan
+
+# An event a stream's empty line made, or none.
+record Dispatched
+    # Whether the line made one; the other fields are empty where not.
+    ready: bool
+    # Its type, "message" where the stream named none.
+    kind: str
+    # Its data lines, joined by a line feed.
+    data: str
+    # The last event ID string when it was made.
+    id: str
+
+# The reconnection time before a stream says one, in milliseconds: three
+# seconds, as Chrome waits.
+constant FIRST_RETRY_MS: i64
+    3_000
+
+# The reading of an event stream framed by `b`, before any byte of it.
+function begin_events(b: Body, most_bytes: i64) -> Events
+    scan = Scan(
+        at: 0,
+        held: 0,
+        after_cr: false,
+        first: true,
+        kind: "",
+        id: "",
+        last_id: "",
+        retry_ms: FIRST_RETRY_MS,
+        most_bytes: most_bytes
+    )
+    return Events(body: b, rest: [], line: [], data: [], scan: scan)
+
+# The next event of the stream `e` reads, from what it holds and then from
+# `r`. Fails `closed` where the body ends first, an unfinished event dropped
+# as the standard drops it; `limit` where a line and the event's data pass
+# `scan.most_bytes`; and as `piece` fails.
+function next_event(@r: io.Reader, @e: Events) -> Dispatched?
+    return next_in(@r, @e.body, rest: @e.rest, line: @e.line, @e.data, @e.scan)
+
+# `next_event` on the parts of an `Events`, each lent apart so every list
+# grows where it stands.
+function next_in(@r: io.Reader, @b: Body, @rest: [u8], @line: [u8], @data: [str], @s: Scan) -> Dispatched?
+    while true
+        got = scan_rest(rest: rest, line: @line, @data, @s)?
+
+        if got.ready
+            return ok(got)
+        rest @ piece(@r, @b, most: PIECE_BYTES)?
+        s.at @ 0
+
+        if rest.len() == 0
+            return fail(code: wire.CLOSED, msg: "reading an event stream: its body ended")
+
+# Scans `rest` from `s.at` until an empty line makes an event, answered
+# ready, or to its end, answered not ready. Fails `limit` where a line and
+# the data before it pass `s.most_bytes`.
+function scan_rest(rest: [u8] lent, @line: [u8], @data: [str], @s: Scan) -> Dispatched?
+    while s.at < rest.len()
+        c = rest[s.at]
+        s.at @ s.at + 1
+
+        if c == '\n' && s.after_cr
+            s.after_cr @ false
+        else if c == '\n' || c == '\r'
+            s.after_cr @ c == '\r'
+            got = ended(@line, @data, @s)
+
+            if got.ready
+                return ok(got)
+        else
+            s.after_cr @ false
+
+            if line.len() + s.held >= s.most_bytes
+                return fail(
+                    code: syntax.LIMIT,
+                    msg: f"reading an event stream: an event's lines pass the limit of {s.most_bytes} bytes"
+                )
+            line @ line.push(c)
+
+    return ok(nothing())
+
+# No event.
+function nothing() -> Dispatched
+    return Dispatched(ready: false, kind: "", data: "", id: "")
+
+# The line `line` holds, ended: a field taken into the buffers, a comment
+# skipped, or an empty line that makes the event the buffers hold, as the
+# standard reads each. `line` is emptied.
+function ended(@line: [u8], @data: [str], @s: Scan) -> Dispatched
+    from: i64 @= 0
+
+    if s.first && line.len() >= 3 && line[0] == 0xef && line[1] == 0xbb && line[2] == 0xbf
+        from @ 3
+    s.first @ false
+
+    if line.len() == from
+        line @ []
+        return dispatched(@data, @s)
+
+    if line[from] == ':'
+        line @ []
+        return nothing()
+    colon: i64 @= from
+
+    while colon < line.len() && line[colon] != ':'
+        colon @ colon + 1
+
+    field = bytes.to_text_lossy(line.slice(from: from, to: colon))
+    start: i64 @= colon
+
+    if colon < line.len()
+        start @ colon + 1
+
+        if start < line.len() && line[start] == ' '
+            start @ start + 1
+    value_bytes = line.slice(from: start, to: line.len())
+    line @ []
+
+    match field
+        "event" => s.kind @ bytes.to_text_lossy(value_bytes)
+        "data" =>
+            value = bytes.to_text_lossy(value_bytes)
+            data @ data.push(value)
+            s.held @ s.held + value.len() + 1
+        "id" =>
+            if !has_zero(value_bytes)
+                s.id @ bytes.to_text_lossy(value_bytes)
+        "retry" =>
+            match digits_of(value_bytes)
+                .ok n  => s.retry_ms @ n
+                .err _ => _ = 0
+        _ => _ = 0
+
+    return nothing()
+
+# The event the buffers hold, made by an empty line, and the buffers
+# emptied: not ready where no data line came, as the standard drops it.
+function dispatched(@data: [str], @s: Scan) -> Dispatched
+    s.last_id @ s.id
+
+    if data.len() == 0
+        s.kind @ ""
+        return nothing()
+    kind: str @= s.kind
+
+    if kind == ""
+        kind @ "message"
+    out = Dispatched(ready: true, kind: kind, data: data.join("\n"), id: s.last_id)
+    data @ []
+    s.held @ 0
+    s.kind @ ""
+    return out
+
+# Whether `b` holds a zero byte.
+function has_zero(b: [u8]) -> bool
+    for x in b
+        if x == 0
+            return true
+
+    return false
+
+# The number the ASCII digits `b` write. Fails `invalid` where `b` is empty
+# or holds anything else, and `does_not_fit` past an `i64`.
+function digits_of(b: [u8]) -> i64?
+    if b.len() == 0
+        return fail(code: syntax.INVALID, msg: "a retry holds no digit")
+    n: i64 @= 0
+
+    for x in b
+        if x < '0' || x > '9'
+            return fail(code: syntax.INVALID, msg: "a retry holds a byte that is no digit")
+        d = syntax.widen(x) - '0'
+
+        if n > (9_223_372_036_854_775_807 - d) / 10
+            return fail(code: "does_not_fit", msg: "a retry past an i64")
+        n @ n * 10 + d
+
+    return ok(n)
+
+# The events a whole body `content` holds, each ended by an empty line; an
+# event left unfinished at its end is dropped, as the standard drops it.
+function events_in(content: [u8]) -> [Dispatched]
+    line: [u8] @= []
+    data: [str] @= []
+    s @= begin_events(Body(framing: .none, left: 0, started: false, ended: true, most_fields: 0), most_bytes: content.len() + 1).scan
+    out: [Dispatched] @= []
+
+    while true
+        got = scan_rest(rest: content, line: @line, @data, @s).must()
+
+        if !got.ready
+            return out
+        out @ out.push(got)
+
+# Whether a response of `status_code` with `fields` is an event stream an
+# `EventSource` reads: 200, `Content-Type: text/event-stream`, its parameters
+# and its case aside, and no `Content-Encoding` but `identity`. Fails
+# `invalid` where the status or the type is another, and `unsupported` where
+# a coding would have to be undone.
+function is_event_stream(status_code: i64, fields: [wire.Field]) -> ()?
+    if status_code != 200
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading an event stream: the status is {status_code}, where an event stream answers 200"
+        )
+    types = wire.values_of(fields, name: "Content-Type")
+    said: str @= ""
+
+    if types.len() > 0
+        said @ syntax.trim_ows(body.strings_before(types[0], stop: ';'))
+
+    if !syntax.same_name(a: said, b: "text/event-stream")
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading an event stream: the type is {syntax.shown(said)}, where an event stream is text/event-stream"
+        )
+
+    for value in wire.values_of(fields, name: "Content-Encoding")
+        for member in syntax.members(value)
+            if !syntax.same_name(a: member, b: "identity")
+                return fail(
+                    code: "unsupported",
+                    msg: f"reading an event stream: its coding {syntax.shown(member)} would have to be undone as it comes, which is not done here"
+                )
+
+    return ok()
+
+## Tests
+
+# A reader over a pipe that holds `data` and then ends.
+function fed(data: [u8]) -> io.Reader
+    p = io.pipe().must()
+    io.write(p.writer, data: data).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    return io.reader(p.reader)
+
+# Every piece `b` frames in `r`, read `most` bytes at most at a time, joined,
+# and how many pieces came.
+function all_pieces(@r: io.Reader, @b: Body, most: i64) -> [u8]
+    out: [u8] @= []
+
+    while true
+        got = piece(@r, @b, most: most).must()
+
+        if got.len() == 0
+            return out
+
+        for x in got
+            out @ out.push(x)
+
+# The kinds, data and ids of `events`, one line each.
+function shown(events: [Dispatched]) -> [str]
+    out: [str] @= []
+
+    for e in events
+        out @ out.push(f"{e.kind}|{e.data}|{e.id}")
+
+    return out
+
+test "piece: a length read in pieces of at most two, then the end, and a body cut short"
+    r @= wire.fixture("abcdeXYZ")
+    b @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Content-Length", value: "5")],
+        method: "GET",
+        most_fields: 10
+    ).must()
+    assert piece(@r, @b, most: 2).must() == ['a', 'b']
+    assert all_pieces(@r, @b, most: 2) == ['c', 'd', 'e']
+    assert piece(@r, @b, most: 2).must().len() == 0
+    assert io.read_n(@r, n: 3).must() == ['X', 'Y', 'Z']
+    wire.done(@r)
+    short @= wire.fixture("ab")
+    c @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Content-Length", value: "5")],
+        method: "GET",
+        most_fields: 10
+    ).must()
+    assert piece(@short, @c, most: 10).must() == ['a', 'b']
+
+    match piece(@short, @c, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.INVALID
+
+    wire.done(@short)
+
+test "piece: chunks with extensions read across their sizes, the trailer, then nothing after"
+    r @= wire.fixture("3;x=1\r\nabc\r\n2\r\nde\r\n0\r\nA: b\r\n\r\nNEXT")
+    b @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Transfer-Encoding", value: "chunked")],
+        method: "GET",
+        most_fields: 10
+    ).must()
+    assert piece(@r, @b, most: 2).must() == ['a', 'b']
+    assert piece(@r, @b, most: 100).must() == ['c']
+    assert piece(@r, @b, most: 100).must() == ['d', 'e']
+    assert piece(@r, @b, most: 100).must().len() == 0 && b.ended
+    assert piece(@r, @b, most: 100).must().len() == 0
+    assert io.read_n(@r, n: 4).must() == ['N', 'E', 'X', 'T']
+    wire.done(@r)
+
+test "piece: a body to the connection's end, none for HEAD, 204 and 304, and a most of 0"
+    r @= wire.fixture("all of it")
+    b @= body_of(status_code: 200, fields: [], method: "GET", most_fields: 10).must()
+    assert piece(@r, @b, most: 0).must().len() == 0
+    assert all_pieces(@r, @b, most: 4) == bytes.from_text("all of it")
+    wire.done(@r)
+
+    for status_code in [204, 304]
+        n @= body_of(
+            status_code: status_code,
+            fields: [wire.Field(name: "Content-Length", value: "5")],
+            method: "GET",
+            most_fields: 10
+        ).must()
+        empty @= wire.fixture("abcde")
+        assert piece(@empty, @n, most: 10).must().len() == 0
+        wire.done(@empty)
+
+    h @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Content-Length", value: "5")],
+        method: "HEAD",
+        most_fields: 10
+    ).must()
+    none @= wire.fixture("abcde")
+    assert piece(@none, @h, most: 10).must().len() == 0
+    wire.done(@none)
+
+test "piece: a malformed chunk size and a trailer past its fields fail"
+    r @= wire.fixture("zz\r\nabc\r\n")
+    b @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Transfer-Encoding", value: "chunked")],
+        method: "GET",
+        most_fields: 1
+    ).must()
+
+    match piece(@r, @b, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.INVALID
+
+    wire.done(@r)
+    t @= wire.fixture("0\r\nA: 1\r\nB: 2\r\n\r\n")
+    c @= body_of(
+        status_code: 200,
+        fields: [wire.Field(name: "Transfer-Encoding", value: "chunked")],
+        method: "GET",
+        most_fields: 1
+    ).must()
+
+    match piece(@t, @c, most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == syntax.LIMIT
+
+    wire.done(@t)
+
+test "head: the status's own text, Connection replaced by close, no length, and the refusals"
+    fields = [
+        wire.Field(name: "Content-Type", value: "text/event-stream")
+        wire.Field(name: "Connection", value: "keep-alive")
+        wire.Field(name: "Content-Length", value: "9")
+    ]
+    assert wire.text_of(head(status_code: 200, reason: "", fields: fields).must()) == "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n"
+    assert head(status_code: 101, reason: "", fields: []).is_err()
+    assert head(status_code: 1000, reason: "", fields: []).is_err()
+    assert head(status_code: 200, reason: "a\r\nb", fields: []).is_err()
+    assert head(status_code: 200, reason: "", fields: [wire.Field(name: "X", value: "a\nb")]).is_err()
+
+# Node's EventSource (undici, `--experimental-eventsource`) answered these
+# three streams so on 2026-11-17, each sent in the pieces written here.
+test "events_in: what Node's EventSource dispatched for a stream of every line end, comments and odd fields"
+    text = "data: a\r\ndata:  b\rdata\n: comment\nevent: greet\nid: 7\n\ndata:x\nid\n\nretry: 12x\nretry: 2500\ndata: y\r\n\r\nevent: only\n\n"
+    got: [u8] @= [0xef, 0xbb, 0xbf]
+
+    for x in bytes.from_text(text)
+        got @ got.push(x)
+
+    with_zero: [u8] = ['i', 'd', ':', ' ', 'a', 0, 'b', '\n', 'd', 'a', 't', 'a', ':', ' ', 'z', '\n', '\n']
+
+    for x in with_zero
+        got @ got.push(x)
+
+    for x in bytes.from_text("foo: bar\ndata: tail")
+        got @ got.push(x)
+
+    assert shown(events_in(got)) == ["greet|a\n b\n|7", "message|x|", "message|y|", "message|z|"]
+
+test "scan_rest: a carriage return at a piece's end and its line feed in the next, and an id kept past an empty event"
+    line: [u8] @= []
+    data: [str] @= []
+    s @= begin_events(Body(framing: .none, left: 0, started: false, ended: true, most_fields: 0), most_bytes: 1000).scan
+    pieces = ["data: one\r", "\ndata: two\r", "\r", "id: 9\n", "\n", "data: été\n\n"]
+    out: [str] @= []
+
+    for p in pieces
+        rest = bytes.from_text(p)
+        s.at @ 0
+
+        while s.at < rest.len()
+            got = scan_rest(rest: rest, line: @line, @data, @s).must()
+
+            if got.ready
+                out @ out.push(f"{got.kind}|{got.data}|{got.id}")
+
+    assert out == ["message|one\ntwo|", "message|été|9"]
+    assert s.last_id == "9" && s.retry_ms == FIRST_RETRY_MS
+
+test "events_in: a second byte order mark is a field's, empty data dispatched, a comment and empty lines alone dispatch nothing"
+    got: [u8] @= [0xef, 0xbb, 0xbf, 0xef, 0xbb, 0xbf]
+
+    for x in bytes.from_text("data: twice\n\ndata:\n\ndata\n\n:only comment\n\n\n\n")
+        got @ got.push(x)
+
+    assert shown(events_in(got)) == ["message||", "message||"]
+
+test "events_in: retry read from digits alone, its largest, and one past an i64 left as it was"
+    s @= begin_events(Body(framing: .none, left: 0, started: false, ended: true, most_fields: 0), most_bytes: 1000).scan
+    line: [u8] @= []
+    data: [str] @= []
+    rest = bytes.from_text("retry: 250\nretry: -1\nretry:\nretry: 9223372036854775807\nretry: 9223372036854775808\n")
+    _ = scan_rest(rest: rest, line: @line, @data, @s).must()
+    assert s.retry_ms == 9_223_372_036_854_775_807
+
+test "events_in: bytes that are not UTF-8 read as the replacement character, and the empty body"
+    assert shown(events_in(['d', 'a', 't', 'a', ':', 0xff, 'x', '\n', '\n'])) == ["message|�x|"]
+    assert events_in([]).len() == 0
+
+test "next_event: events read from a stream, then closed, the unfinished event dropped"
+    r @= wire.fixture("data: 1\n\nid: 2\ndata: 2\n\ndata: half")
+    e @= begin_events(body_of(status_code: 200, fields: [], method: "GET", most_fields: 10).must(), most_bytes: 100)
+    first = next_event(@r, @e).must()
+    second = next_event(@r, @e).must()
+    assert first.data == "1" && first.id == "" && second.data == "2" && second.id == "2"
+
+    match next_event(@r, @e)
+        .ok _  => assert false
+        .err x => assert x.code == wire.CLOSED
+
+    match next_event(@r, @e)
+        .ok _  => assert false
+        .err x => assert x.code == wire.CLOSED
+
+    wire.done(@r)
+
+test "next_event: a line past the limit fails, and data counts toward it"
+    r @= wire.fixture("data: 12345\ndata: 67890\n\n")
+    e @= begin_events(body_of(status_code: 200, fields: [], method: "GET", most_fields: 10).must(), most_bytes: 16)
+
+    match next_event(@r, @e)
+        .ok _  => assert false
+        .err x => assert x.code == syntax.LIMIT
+
+    wire.done(@r)
+
+test "next_event: events in chunks, a chunk ending inside a line"
+    r @= wire.fixture("5\r\ndata:\r\n6\r\n x\n\nda\r\n7\r\nta: y\n\n\r\n0\r\n\r\n")
+    e @= begin_events(
+        body_of(status_code: 200, fields: [wire.Field(name: "Transfer-Encoding", value: "chunked")], method: "GET", most_fields: 10).must(),
+        most_bytes: 100
+    )
+    assert next_event(@r, @e).must().data == "x"
+    assert next_event(@r, @e).must().data == "y"
+    assert next_event(@r, @e).is_err()
+    wire.done(@r)
+
+test "response_head: informational heads skipped, the body left, closing where it runs to the end"
+    r @= wire.fixture(
+        "HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\ndata: 1\n\n"
+    )
+    m = response_head(@r, method: "GET", bounds: read.bounds_of_tests()).must()
+    assert m.head.status == 200 && m.closing && m.content.len() == 0
+    assert io.read_n(@r, n: 7).must() == bytes.from_text("data: 1")
+    wire.done(@r)
+
+test "is_event_stream: the type with a parameter and in capitals, then another status, another type, none, and a coding"
+    assert !is_event_stream(status_code: 200, fields: [wire.Field(name: "Content-Type", value: "Text/Event-Stream; charset=utf-8")]).is_err()
+    assert is_event_stream(
+        status_code: 204,
+        fields: [wire.Field(name: "Content-Type", value: "text/event-stream")]
+    ).is_err()
+    assert is_event_stream(status_code: 200, fields: [wire.Field(name: "Content-Type", value: "text/plain")]).is_err()
+    assert is_event_stream(status_code: 200, fields: []).is_err()
+    coded = [
+        wire.Field(name: "Content-Type", value: "text/event-stream")
+        wire.Field(name: "Content-Encoding", value: "gzip")
+    ]
+
+    match is_event_stream(status_code: 200, fields: coded)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    assert !is_event_stream(status_code: 200, fields: [wire.Field(name: "Content-Type", value: "text/event-stream"), wire.Field(name: "Content-Encoding", value: "identity")]).is_err()

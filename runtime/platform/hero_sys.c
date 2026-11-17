@@ -87,6 +87,16 @@ extern char **environ;
 #if defined(__linux__)
 #include <sys/syscall.h>
 #endif
+/* The machine's memory: Darwin's counters of pages and its `sysctl`, and
+ * Linux's `/proc/meminfo` with `sysinfo` behind it. */
+#if defined(__APPLE__)
+#include <mach/mach.h>
+#include <sys/sysctl.h>
+#endif
+#if defined(__linux__)
+#include <fcntl.h>
+#include <sys/sysinfo.h>
+#endif
 #endif
 
 /* The room a host name is read into: POSIX promises at most 255 bytes, and a
@@ -616,6 +626,33 @@ int64_t hero_sys_load_average(int64_t *one, int64_t *five, int64_t *fifteen) {
     return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
 }
 
+/* `ullAvailPhys` is the memory of the standby, free and zeroed lists, which
+ * Windows hands a program without writing anything out (the reference of
+ * `MEMORYSTATUSEX`). */
+int64_t hero_sys_memory(int64_t *total, int64_t *available) {
+    MEMORYSTATUSEX status;
+    DWORDLONG free_now = 0;
+
+    if (total == NULL || available == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    memset(&status, 0, sizeof status);
+    status.dwLength = (DWORD)sizeof status;
+    if (!GlobalMemoryStatusEx(&status)) {
+        DWORD code = GetLastError();
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    if (status.ullTotalPhys == 0 || status.ullTotalPhys > (DWORDLONG)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    free_now = status.ullAvailPhys < status.ullTotalPhys ? status.ullAvailPhys : status.ullTotalPhys;
+    *total = (int64_t)status.ullTotalPhys;
+    *available = (int64_t)free_now;
+    hero_sys_fine();
+    return 0;
+}
+
 #else
 
 /* The most `getentropy` hands in one call (its page: `EIO` past 256). */
@@ -1052,5 +1089,183 @@ int64_t hero_sys_load_average(int64_t *one, int64_t *five, int64_t *fifteen) {
     hero_sys_fine();
     return 0;
 }
+
+#if defined(__APPLE__) || defined(__linux__)
+
+/* The two answers of `hero_sys_memory` written, the available never above
+ * the total: two readings of counters that move apart are not one. */
+static int64_t hero_sys_memory_answer(uint64_t whole, uint64_t free_now, int64_t *total, int64_t *available) {
+    if (whole == 0 || whole > (uint64_t)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    *total = (int64_t)whole;
+    *available = (int64_t)(free_now < whole ? free_now : whole);
+    hero_sys_fine();
+    return 0;
+}
+
+#endif
+
+#if defined(__APPLE__)
+
+int64_t hero_sys_memory(int64_t *total, int64_t *available) {
+    uint64_t whole = 0;
+    size_t whole_size = sizeof whole;
+    vm_statistics64_data_t pages;
+    mach_msg_type_number_t words = HOST_VM_INFO64_COUNT;
+    vm_size_t page = 0;
+    mach_port_t host = MACH_PORT_NULL;
+    kern_return_t counted = KERN_SUCCESS;
+    kern_return_t paged = KERN_SUCCESS;
+    uint64_t free_pages = 0;
+    uint64_t free_now = 0;
+
+    if (total == NULL || available == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (sysctlbyname("hw.memsize", &whole, &whole_size, NULL, 0) != 0) {
+        int code = errno;
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    if (whole_size != sizeof whole) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    memset(&pages, 0, sizeof pages);
+    /* `mach_host_self` adds a reference to the host's port each call, which
+     * is given back below whatever the two questions answered. */
+    host = mach_host_self();
+    counted = host_statistics64(host, HOST_VM_INFO64, (host_info64_t)&pages, &words);
+    paged = host_page_size(host, &page);
+    (void)mach_port_deallocate(mach_task_self(), host);
+    if (counted != KERN_SUCCESS || paged != KERN_SUCCESS || page == 0) {
+        return hero_sys_fail(HERO_SYS_OTHER, counted != KERN_SUCCESS ? (int64_t)counted : (int64_t)paged);
+    }
+    /* The free count holds the speculative pages already (`vm_stat` prints
+     * them apart by taking them out of it), so they are not added again. */
+    free_pages = (uint64_t)pages.free_count + (uint64_t)pages.inactive_count;
+    if (__builtin_mul_overflow(free_pages, (uint64_t)page, &free_now)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    return hero_sys_memory_answer(whole, free_now, total, available);
+}
+
+#elif defined(__linux__)
+
+/* The room `/proc/meminfo` is read into: its two lines asked are its first
+ * and third, and the whole file is about 1.5 KB on Linux 6. */
+#define HERO_SYS_MEMINFO_ROOM 8192
+
+/* The bytes the line of `text` named `name` gives, its number of KiB times
+ * 1024, into `*bytes`; false where no line opens with `name`, its number has
+ * no digit or does not fit, or it is not counted in `kB`. */
+static bool hero_sys_meminfo_line(const char *text, size_t length, const char *name, uint64_t *bytes) {
+    size_t named = strlen(name);
+    size_t at = 0;
+
+    while (at < length) {
+        size_t end = at;
+
+        while (end < length && text[end] != '\n') {
+            end += 1;
+        }
+        if (end - at > named && memcmp(text + at, name, named) == 0) {
+            size_t i = at + named;
+            uint64_t kib = 0;
+            bool digits = false;
+
+            while (i < end && (text[i] == ' ' || text[i] == '\t')) {
+                i += 1;
+            }
+            while (i < end && text[i] >= '0' && text[i] <= '9') {
+                if (__builtin_mul_overflow(kib, (uint64_t)10, &kib) || __builtin_add_overflow(kib, (uint64_t)(text[i] - '0'), &kib)) {
+                    return false;
+                }
+                digits = true;
+                i += 1;
+            }
+            while (i < end && text[i] == ' ') {
+                i += 1;
+            }
+            if (!digits || end - i < 2 || text[i] != 'k' || text[i + 1] != 'B') {
+                return false;
+            }
+            return !__builtin_mul_overflow(kib, (uint64_t)1024, bytes);
+        }
+        at = end + 1;
+    }
+    return false;
+}
+
+/* `/proc/meminfo` read whole into `room`, its length into `*length`; false
+ * where it cannot be opened or read, a Linux with no `/proc`. */
+static bool hero_sys_meminfo(char *room, size_t size, size_t *length) {
+    int file = open("/proc/meminfo", O_RDONLY | O_CLOEXEC);
+    size_t got = 0;
+
+    if (file < 0) {
+        return false;
+    }
+    while (got < size) {
+        ssize_t read_now = read(file, room + got, size - got);
+
+        if (read_now < 0 && errno == EINTR) {
+            continue;
+        }
+        if (read_now < 0) {
+            (void)close(file);
+            return false;
+        }
+        if (read_now == 0) {
+            break;
+        }
+        got += (size_t)read_now;
+    }
+    (void)close(file);
+    *length = got;
+    return true;
+}
+
+int64_t hero_sys_memory(int64_t *total, int64_t *available) {
+    char room[HERO_SYS_MEMINFO_ROOM];
+    size_t length = 0;
+    uint64_t whole = 0;
+    uint64_t free_now = 0;
+    struct sysinfo info;
+    uint64_t unit = 0;
+    uint64_t loose = 0;
+
+    if (total == NULL || available == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    if (hero_sys_meminfo(room, sizeof room, &length) && hero_sys_meminfo_line(room, length, "MemTotal:", &whole) && hero_sys_meminfo_line(room, length, "MemAvailable:", &free_now)) {
+        return hero_sys_memory_answer(whole, free_now, total, available);
+    }
+    memset(&info, 0, sizeof info);
+    if (sysinfo(&info) != 0) {
+        int code = errno;
+
+        return hero_sys_fail(hero_sys_kind_of(code), code);
+    }
+    /* `mem_unit` is 0 on kernels before 2.3.23, whose sizes are bytes. */
+    unit = info.mem_unit == 0 ? 1 : (uint64_t)info.mem_unit;
+    if (__builtin_mul_overflow((uint64_t)info.totalram, unit, &whole) || __builtin_add_overflow((uint64_t)info.freeram, (uint64_t)info.bufferram, &loose) || __builtin_mul_overflow(loose, unit, &free_now)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    return hero_sys_memory_answer(whole, free_now, total, available);
+}
+
+#else
+
+/* A POSIX system neither Darwin nor Linux: no reading of its memory is
+ * written for it, and none is invented. */
+int64_t hero_sys_memory(int64_t *total, int64_t *available) {
+    if (total == NULL || available == NULL) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
+}
+
+#endif
 
 #endif

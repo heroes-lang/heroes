@@ -1,0 +1,269 @@
+# BLAKE2b and BLAKE2s (RFC 7693), keyed or not, with a salt and a
+# personalization: eight chaining words, of 64 bits for BLAKE2b over blocks
+# of 128 bytes and of 32 bits for BLAKE2s over blocks of 64. The last block
+# is compressed with a flag of its own, so the work holds a whole block
+# back until it knows another byte comes; a key is fed as a first block of
+# its own, padded with zeros. Argon2 builds on BLAKE2b (`crypto/internal/argon2`).
+
+use crypto/internal/orders
+use crypto/internal/sha256
+use crypto/internal/sha512
+use crypto/internal/word
+
+# The work of a BLAKE2 digest, fed piece by piece.
+record Run
+    # BLAKE2b when true, BLAKE2s when false.
+    wide: bool
+    # The chaining words after every block compressed so far.
+    words: [i64]
+    # The bytes not yet compressed: up to a whole block, held back until a
+    # byte after them shows they are not the last.
+    pending: [u8]
+    # How many bytes were compressed so far, the counter of the blocks.
+    length: i64
+    # The length of the digest, in bytes.
+    size: i64
+
+# The length of a block, in bytes: 128 for BLAKE2b, 64 for BLAKE2s.
+function block(wide: bool) -> i64
+    if wide
+        return 128
+    return 64
+
+# The word of 64 bits that the eight bytes of `data` from `at` write, the
+# first byte the lowest.
+function load64_little(data: [u8] lent, at: i64) -> i64
+    return word.load32_little(data, at + 4) << 32 | word.load32_little(data, at)
+
+# The words that `bytes`, zero-padded to `count` words, write, each the
+# lowest byte first: a salt's or a personalization's.
+function words_of(bytes_given: [u8], wide: bool, count: i64) -> [i64]
+    width: i64 = if wide
+        8
+    else
+        4
+
+    padded: [u8] @= bytes_given
+
+    while padded.len() < width * count
+        padded @ padded.push(0)
+
+    out: [i64] @= []
+
+    for i in range(from: 0, to: count)
+        if wide
+            out @ out.push(load64_little(padded, width * i))
+        else
+            out @ out.push(word.load32_little(padded, width * i))
+
+    return out
+
+# The work of a digest of `size` bytes before any byte of the message, under
+# `key`, `salt` and `person` (RFC 7693 2.5 and 3.3, and the parameter block
+# BLAKE2's own paper gives salt and personalization). The face has checked
+# every length.
+function begin(wide: bool, size: i64, key: [u8], salt: [u8], person: [u8]) -> Run
+    start: [i64] = if wide
+        sha512.START512
+    else
+        sha256.START256
+
+    words @= start
+    words[0] @ words[0] ^ 0x01010000 ^ key.len() << 8 ^ size
+    half = words_of(bytes_given: salt, wide: wide, count: 2)
+    named = words_of(bytes_given: person, wide: wide, count: 2)
+    words[4] @ words[4] ^ half[0]
+    words[5] @ words[5] ^ half[1]
+    words[6] @ words[6] ^ named[0]
+    words[7] @ words[7] ^ named[1]
+    pending: [u8] @= key
+
+    if key.len() > 0
+        while pending.len() < block(wide)
+            pending @ pending.push(0)
+    return Run(wide: wide, words: words, pending: pending, length: 0, size: size)
+
+# The chaining words after the block of `data` that begins at `at`, from
+# `words`: `counter` bytes compressed in all with this block, `last` for the
+# message's final block (RFC 7693 3.2).
+function compress(wide: bool, words: [i64], data: [u8] lent, at: i64, counter: i64, last: bool) -> [i64]
+    sigma = orders.SIGMA
+    mixed = orders.MIXED
+    m: [i64] @= []
+    v: [i64] @= words
+    rounds: i64 @= 10
+
+    if wide
+        rounds @ 12
+
+        for i in range(from: 0, to: 16)
+            m @ m.push(load64_little(data, at + 8 * i))
+
+        for x in sha512.START512
+            v @ v.push(x)
+
+        v[12] @ v[12] ^ counter
+    else
+        for i in range(from: 0, to: 16)
+            m @ m.push(word.load32_little(data, at + 4 * i))
+
+        for x in sha256.START256
+            v @ v.push(x)
+
+        v[12] @ v[12] ^ counter & word.LOW32
+        v[13] @ v[13] ^ word.shift_right(x: counter, n: 32)
+
+    if last && wide
+        v[14] @ ~v[14]
+    else if last
+        v[14] @ v[14] ^ word.LOW32
+    round: i64 @= 0
+
+    while round < rounds
+        order = 16 * (round % 10)
+        g: i64 @= 0
+
+        while g < 8
+            ia = mixed[4 * g]
+            ib = mixed[4 * g + 1]
+            ic = mixed[4 * g + 2]
+            id = mixed[4 * g + 3]
+            x = m[sigma[order + 2 * g]]
+            y = m[sigma[order + 2 * g + 1]]
+
+            if wide
+                a1 = word.add4(a: v[ia], b: v[ib], c: x, d: 0)
+                d1 = word.rotate_right64(x: v[id] ^ a1, n: 32)
+                c1 = word.add(a: v[ic], b: d1)
+                b1 = word.rotate_right64(x: v[ib] ^ c1, n: 24)
+                a2 = word.add4(a: a1, b: b1, c: y, d: 0)
+                d2 = word.rotate_right64(x: d1 ^ a2, n: 16)
+                c2 = word.add(a: c1, b: d2)
+                v[ia] @ a2
+                v[ib] @ word.rotate_right64(x: b1 ^ c2, n: 63)
+                v[ic] @ c2
+                v[id] @ d2
+            else
+                a1 = v[ia] + v[ib] + x & word.LOW32
+                d1 = word.rotate_right32(x: v[id] ^ a1, n: 16)
+                c1 = v[ic] + d1 & word.LOW32
+                b1 = word.rotate_right32(x: v[ib] ^ c1, n: 12)
+                a2 = a1 + b1 + y & word.LOW32
+                d2 = word.rotate_right32(x: d1 ^ a2, n: 8)
+                c2 = c1 + d2 & word.LOW32
+                v[ia] @ a2
+                v[ib] @ word.rotate_right32(x: b1 ^ c2, n: 7)
+                v[ic] @ c2
+                v[id] @ d2
+            g @ g + 1
+
+        round @ round + 1
+
+    out: [i64] @= []
+
+    for i in range(from: 0, to: 8)
+        out @ out.push(words[i] ^ v[i] ^ v[i + 8])
+
+    return out
+
+# Feeds `data` to `run`, which the caller holds: a block is compressed only
+# once a byte after it has come, so the last one waits for `finish`.
+function absorb(@run: Run, data: [u8] lent)
+    width = block(run.wide)
+    words @= run.words
+    pending @= run.pending
+    length @= run.length
+    at: i64 @= 0
+
+    while at < data.len()
+        if pending.len() == width
+            length @ length + width
+            words @ compress(wide: run.wide, words, pending, at: 0, counter: length, last: false)
+            pending @ []
+
+        if pending.len() == 0
+            while data.len() - at > width
+                length @ length + width
+                words @ compress(wide: run.wide, words, data, at: at, counter: length, last: false)
+                at @ at + width
+
+        while pending.len() < width && at < data.len()
+            pending @ pending.push(data[at])
+            at @ at + 1
+
+    run.words @ words
+    run.pending @ pending
+    run.length @ length
+
+# The digest of what `run` was fed: the bytes held back compressed as the
+# last block, padded with zeros, and the words written the lowest byte
+# first, cut to `size`. `run` is a copy, so the caller's goes on.
+function finish(run: Run) -> [u8]
+    width = block(run.wide)
+    last: [u8] @= run.pending
+
+    while last.len() < width
+        last @ last.push(0)
+
+    counter = run.length + run.pending.len()
+    words = compress(wide: run.wide, run.words, last, at: 0, counter: counter, last: true)
+    out: [u8] @= []
+
+    for w in words
+        if run.wide
+            word.push_little(@out, x: w, count: 8)
+        else
+            word.push_little(@out, x: w, count: 4)
+
+    return out.slice(from: 0, to: run.size)
+
+# The digest of `data` in one call, for this package's own uses.
+function digest(wide: bool, size: i64, key: [u8], data: [u8]) -> [u8]
+    run @= begin(wide: wide, size: size, key: key, salt: [], person: [])
+    absorb(@run, data)
+    return finish(run)
+
+# RFC 7693 E's sequence: `count` bytes from a Fibonacci generator over words
+# of 32 bits seeded by `seed`, each the top byte of its word.
+function sequence(count: i64, seed: i64) -> [u8]
+    a: i64 @= 0xdead4bad * seed & word.LOW32
+    b: i64 @= 1
+    out: [u8] @= []
+
+    while out.len() < count
+        t = a + b & word.LOW32
+        a @ b
+        b @ t
+        out @ out.push(to_u8(t >> 24).must())
+
+    return out
+
+# RFC 7693 E's grand hash: a digest of 32 bytes over the digests, unkeyed
+# and keyed, of every length of `sizes` over every input of `inputs`.
+function grand(wide: bool, sizes: [i64], inputs: [i64]) -> [u8]
+    hashes @= begin(wide: wide, size: 32, key: [], salt: [], person: [])
+
+    for size in sizes
+        for count in inputs
+            message = sequence(count: count, seed: count)
+            absorb(@hashes, digest(wide: wide, size: size, key: [], data: message))
+            absorb(@hashes, digest(wide: wide, size: size, key: sequence(count: size, seed: size), data: message))
+
+    return finish(hashes)
+
+# Python's `hashlib.blake2b` and `hashlib.blake2s` answered the RFC's own
+# grand hashes on 2026-11-17, as Appendix E prints them.
+test "blake2 RFC 7693 appendix E: the grand hashes of BLAKE2b and BLAKE2s, keyed and not, over the blocks' edges"
+    wide = grand(wide: true, sizes: [20, 32, 48, 64], inputs: [0, 3, 128, 129, 255, 1024])
+    assert wide.slice(from: 0, to: 4) == [0xc2, 0x3a, 0x78, 0x00] && wide[31] == 0x75
+    narrow = grand(wide: false, sizes: [16, 20, 28, 32], inputs: [0, 3, 64, 65, 255, 1024])
+    assert narrow.slice(from: 0, to: 4) == [0x6a, 0x41, 0x1f, 0x08] && narrow[31] == 0xfe
+
+test "blake2 absorb: a block held back across calls, and fed whole at once alike"
+    one @= begin(wide: false, size: 32, key: [], salt: [], person: [])
+    absorb(@one, sequence(count: 64, seed: 1))
+    assert one.pending.len() == 64 && one.length == 0
+    absorb(@one, sequence(count: 1, seed: 2))
+    assert one.pending.len() == 1 && one.length == 64
+    whole = digest(wide: false, size: 32, key: [], data: [])
+    assert whole.len() == 32 && whole[0] == 0x69

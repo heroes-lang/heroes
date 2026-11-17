@@ -1,0 +1,74 @@
+# Random bytes written as text for a token: lower-case hexadecimal, and the
+# URL-safe alphabet of base 64 (RFC 4648 section 5) with no padding, as
+# Python's `secrets.token_hex` and `secrets.token_urlsafe` write them. The
+# package `bytes` writes both too, but it stands on the same layer as
+# `random`, which may use only the layers below, so the two encodings are
+# written here again for this one use.
+
+# The sixteen digits of hexadecimal, in order.
+constant HEX: str
+    "0123456789abcdef"
+
+# The 64 characters of base 64's URL-safe alphabet, in order.
+constant URL_SAFE: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+# `data` written as two lower-case hexadecimal digits a byte, the high digit
+# first.
+function hex_of(data: [u8] lent) -> str
+    out: [str] @= []
+
+    for b in data
+        x = to_i64(b).must()
+        out @ out.push(HEX.slice(from: x >> 4, to: (x >> 4) + 1))
+        out @ out.push(HEX.slice(from: x & 15, to: (x & 15) + 1))
+
+    return out.join("")
+
+# `data` in base 64's URL-safe alphabet with no padding: every three bytes
+# four characters, and a last one or two bytes two or three.
+function url_safe_of(data: [u8] lent) -> str
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        left = data.len() - at
+        x: i64 @= to_i64(data[at]).must() << 16
+
+        if left > 1
+            x @ x | to_i64(data[at + 1]).must() << 8
+
+        if left > 2
+            x @ x | to_i64(data[at + 2]).must()
+        written: i64 @= 4
+
+        if left == 1
+            written @ 2
+        else if left == 2
+            written @ 3
+
+        for k in range(from: 0, to: written)
+            digit = x >> 18 - 6 * k & 63
+            out @ out.push(URL_SAFE.slice(from: digit, to: digit + 1))
+
+        at @ at + 3
+
+    return out.join("")
+
+# Python's `bytes.hex` and `base64.urlsafe_b64encode`, padding taken off,
+# answered these on 2026-11-17.
+test "token hex_of: none, one byte, the highest byte, and several"
+    assert hex_of([]) == ""
+    assert hex_of([0]) == "00"
+    assert hex_of([255]) == "ff"
+    assert hex_of([0x01, 0xab, 0x7f, 0x80]) == "01ab7f80"
+
+test "token url_safe_of: none, one, two and three bytes, and the two characters of the URL alphabet"
+    assert url_safe_of([]) == ""
+    assert url_safe_of([0]) == "AA"
+    assert url_safe_of([255]) == "_w"
+    assert url_safe_of([255, 255]) == "__8"
+    assert url_safe_of([255, 255, 255]) == "____"
+    assert url_safe_of([0xfb, 0xff, 0xbf]) == "-_-_"
+    assert url_safe_of([0x66, 0x6f, 0x6f, 0x62, 0x61, 0x72]) == "Zm9vYmFy"
+    assert url_safe_of([0x66, 0x6f, 0x6f, 0x62]) == "Zm9vYg"

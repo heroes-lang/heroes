@@ -55,6 +55,21 @@ function request(@r: io.Reader, bounds: wire.Bounds) -> Message?
 # Fails as `request` does, `unsupported` for 101 or a version other than
 # 1.x, and `limit` past `MOST_INTERIM` informational responses.
 function response(@r: io.Reader, method: str, bounds: wire.Bounds) -> Message?
+    h = final_head(@r, bounds: bounds)?
+    framing = body.of_response(h, method: method)?
+    content = body.read(@r, framing: framing, bounds: bounds)?
+
+    to_end = match framing
+        .to_end                      => true
+        .none | .length _ | .chunked => false
+
+    return ok(Message(head: h, content: content, closing: closes(h) || to_end))
+
+# The head of the next final response of `r`, the informational ones before
+# it read and skipped, its body left unread. Fails as `wire.read_bytes` and
+# `wire.parse_response` do, `unsupported` for 101 or a version other than
+# 1.x, and `limit` past `MOST_INTERIM` informational responses.
+function final_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
     interim: i64 @= 0
 
     while true
@@ -70,14 +85,7 @@ function response(@r: io.Reader, method: str, bounds: wire.Bounds) -> Message?
             )
 
         if h.status >= 200
-            framing = body.of_response(h, method: method)?
-            content = body.read(@r, framing: framing, bounds: bounds)?
-
-            to_end = match framing
-                .to_end                      => true
-                .none | .length _ | .chunked => false
-
-            return ok(Message(head: h, content: content, closing: closes(h) || to_end))
+            return ok(h)
         interim @ interim + 1
 
         if interim > MOST_INTERIM

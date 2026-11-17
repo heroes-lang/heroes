@@ -5,8 +5,9 @@
 # parameters hold; the program calls its own function for that name, with its
 # own state. Steps before and after a handler are plain functions the program
 # calls in its order: a log line, CORS, a failure answered 500, a request id,
-# a body's limit, Basic and Bearer checks, gzip. Responses of a template, of a
-# file and of a folder's files, served safely, and errors as text or JSON.
+# a body's limit, Basic and Bearer checks, gzip, a rate limit per client.
+# Responses of a template, of a file and of a folder's files, served safely,
+# errors as text or JSON, and server-sent events written as they are made.
 #
 # **Why the program dispatches.** The language has no closure, and a function
 # value takes no `@` parameter (spec § 9), so no handler a router held could
@@ -30,7 +31,9 @@
 # template `template`'s, a file `fs`'s, a line of log `log`'s. A query, a form,
 # a field and Basic's credentials are read by `http.query_of`, `http.form_of`,
 # `http.value_of` and `http.basic_auth_of`. A multipart body's files are not
-# read here (`http`'s pending block). A body is held whole, as `http` holds it.
+# read here (`http`'s pending block). A body is held whole, as `http` holds it,
+# but an event stream's, which `start_events` begins and the program writes
+# as it goes; a client reads one with `http.event_reader`.
 # A handler cannot be stopped midway, so no step times one out.
 #
 # The codes it fails with: `invalid`, `not_found`, `exists`, `not_text`, and,
@@ -50,9 +53,11 @@ use time
 use tls
 use url
 use uuid
+use web/internal/event_stream
 use web/internal/extensions
 use web/internal/fixture
 use web/internal/folders
+use web/internal/limiting
 use web/internal/patterns
 use web/internal/reading
 use web/internal/routing
@@ -1112,6 +1117,223 @@ function override_method(r: http.Request) -> Step
             out.method @ wanted
             out.headers @ http.without_header(r.headers, name: "X-HTTP-Method-Override")
             return .go_on(request: out)
+
+## Server-sent events
+
+# The text of `event` in the `text/event-stream` format of the WHATWG HTML
+# standard: an `id` line where its id is not "", an `event` line where its
+# name is not "", one `data` line for each line of its data, and the empty
+# line that makes a reader dispatch it.
+#
+# - `event`: the event; its data is cut into lines at a carriage return and
+#   a line feed, a line feed, or a carriage return alone, as a reader cuts
+#   them, so it reads back the same with its line ends made line feeds; "" is
+#   one empty `data` line, which a reader dispatches as an event of no data.
+#
+# Every value is written after a colon and one space, which a reader drops.
+# Fails `invalid` where the name or the id holds a line end, or the id a zero
+# byte, which a reader would read as another line or ignore. See also
+# `write_event` and `http.events_of`, which reads the text back.
+function format_event(event: http.Event) -> str?
+    return event_stream.format(event)
+
+# Writes to `s` the head of an event stream kept open: 200,
+# `Content-Type: text/event-stream`, `Cache-Control: no-cache` where
+# `headers` sets none, and `Connection: close`, the stream running to the
+# connection's end.
+#
+# - `s`: the connection's stream, which the program's own loop read the
+#   request from; it writes the events on it as they are made and closes it
+#   to end the stream.
+# - `headers`: fields added to the head, `Access-Control-Allow-Origin` for
+#   instance; a `Content-Type` among them is replaced.
+#
+# **How a stream is kept open.** `serve` answers each request with a
+# response held whole, so a program that streams writes its own loop, as
+# `route`'s example does: where the route is the stream's, it calls
+# `start_events` on the connection in place of `http.write_answer`, writes
+# each event with `write_event` as it is made (each write goes to the
+# connection at once, with nothing to flush), a comment now and then where
+# nothing is said for long, since a proxy closes a silent connection, and
+# closes the connection when it is done or a write fails `closed`, the client
+# gone. The loop serves nothing else while it streams; a program with several
+# streams at once waits on their connections with `poll`. A program with no
+# state answers `respond_events`, a stream held whole. Fails as
+# `http.write_response_head` does. See also `write_event`.
+function start_events(s: io.Stream, headers: [http.Header]) -> ()?
+    fields @= http.with_header(headers, name: "Content-Type", value: "text/event-stream")
+
+    if !http.has_header(fields, name: "Cache-Control")
+        fields @ http.with_header(fields, name: "Cache-Control", value: "no-cache")
+    return http.write_response_head(
+        s,
+        response: http.Response(status: http.STATUS_OK, reason: "", headers: fields, body: [], closing: true)
+    )
+
+# Writes `event` to the event stream `s` carries, as `format_event` writes
+# it, at once.
+#
+# - `s`: the connection's stream, after `start_events`.
+# - `event`: the event.
+#
+# Fails `invalid` before writing a byte as `format_event` fails, and as
+# `io.write` fails: `closed` where the client has gone. See also
+# `start_events`, `write_comment`.
+function write_event(s: io.Stream, event: http.Event) -> ()?
+    return io.write_text(s, text: format_event(event)?)
+
+# Writes to the event stream `s` carries a `retry` line: the milliseconds a
+# client waits before it connects again once the stream ends.
+#
+# - `s`: the connection's stream, after `start_events`.
+# - `ms`: the milliseconds, 0 or more.
+#
+# Fails `invalid` where `ms` is below 0, and as `io.write` fails. See also
+# `http.EventReader`, whose `retry_ms` reads it.
+function write_retry(s: io.Stream, ms: i64) -> ()?
+    if ms < 0
+        return fail(code: INVALID, msg: f"a retry of {ms} ms, where a client reads 0 or more")
+    return io.write_text(s, text: f"retry: {ms}\n")
+
+# Writes to the event stream `s` carries a comment, which a reader skips: a
+# line opening with a colon for each line of `text`, what keeps a proxy from
+# closing a connection where no event is said for long.
+#
+# - `s`: the connection's stream, after `start_events`.
+# - `text`: the comment, any text; each of its lines is a comment line, and
+#   "" writes a lone colon.
+#
+# Fails as `io.write` fails. See also `write_event`.
+function write_comment(s: io.Stream, text: str) -> ()?
+    return io.write_text(s, text: event_stream.comment(text))
+
+# A response holding `events` whole as an event stream, for a handler that
+# cannot keep a connection open: the client reads them, and connects again
+# once the response ends, after its `retry`.
+#
+# - `events`: the events, in their order; none makes an empty stream.
+#
+# Typed `text/event-stream`, with `Cache-Control: no-cache`. Fails `invalid`
+# as `format_event` fails on any of them. See also `start_events`.
+function respond_events(events: [http.Event]) -> http.Response?
+    texts: [str] @= []
+
+    for event in events
+        texts @ texts.push(format_event(event)?)
+
+    out @= http.respond(http.STATUS_OK, content_type: "text/event-stream", body: bytes.from_text(texts.join("")))
+    out.headers @ http.with_header(out.headers, name: "Cache-Control", value: "no-cache")
+    return ok(out)
+
+## Rate limits
+
+# The token buckets of many clients, one per key, as golang.org/x/time/rate
+# documents one: a bucket holds up to `burst` tokens, refills at `rate`
+# tokens a second, and each request takes one. The program holds it and lends
+# it by `@` to `allow` and `limit_rate` with the time it read itself, so
+# nothing reads a clock here and nothing is global. Made by `new_limiter`;
+# a program may change its first three fields, keeping what `new_limiter`
+# checks.
+record Limiter
+    # The tokens a bucket gains each second, above 0 and finite: 0.5 is one
+    # request every two seconds.
+    rate: f64
+    # The most tokens a bucket holds, 1 or more: how many requests a client
+    # makes at once after resting.
+    burst: i64
+    # The most clients whose buckets are not full again held at once, 1 or
+    # more; past it, those seen longest ago are forgotten, half at a time.
+    most_keys: i64
+    # The buckets not full again, by key. A full one is forgotten, which
+    # loses nothing, since a client met anew starts full. Only this package
+    # reads it.
+    buckets: {str: limiting.Bucket}
+
+# A limiter of `rate` tokens a second and `burst` at once, for at most
+# `most_keys` clients at once, every bucket full.
+#
+# - `rate`: the tokens a bucket gains each second, above 0 and finite.
+# - `burst`: the most tokens a bucket holds, 1 or more.
+# - `most_keys`: the most clients held at once, 1 or more: the memory it
+#   holds is about that many keys and buckets.
+#
+# Fails `invalid` where `rate` is not above 0, is not a number or is
+# infinite, or `burst` or `most_keys` is below 1. See also `allow`.
+function new_limiter(rate: f64, burst: i64, most_keys: i64) -> Limiter?
+    if rate != rate || rate - rate != 0.0 || rate <= 0.0
+        return fail(code: INVALID, msg: f"a rate of {rate} tokens a second, where a limit takes a finite rate above 0")
+
+    if burst < 1
+        return fail(code: INVALID, msg: f"a burst of {burst}, where a bucket holds 1 token or more")
+
+    if most_keys < 1
+        return fail(code: INVALID, msg: f"at most {most_keys} clients, where a limit holds 1 or more")
+    return ok(Limiter(rate: rate, burst: burst, most_keys: most_keys, buckets: {}))
+
+# Takes a token from the bucket of `key` and answers true where it holds one
+# at `now`; else takes none, leaves the bucket as it was and answers false:
+# Go's `Limiter.AllowN` for one.
+#
+# - `limiter`: the limiter, whose bucket of `key` changes.
+# - `key`: the client, as the program names it: its address
+#   (`client_address_of`), a user, a token; a key met anew starts full.
+# - `now`: the time, as the program read it (`time.now`); one earlier than
+#   the bucket's last token taken counts no time, as Go's limiter counts it.
+#
+# Aborts where the limiter's fields break what `new_limiter` checks. It costs
+# a lookup, and where `most_keys` buckets are held and `key` is new, a pass
+# over them. See also `wait_of` and `limit_rate`.
+function allow(@limiter: Limiter, key: str, now: time.Instant) -> bool
+    assert limiting.is_valid(rate: limiter.rate, burst: limiter.burst, most_keys: limiter.most_keys)
+    return limiting.take(
+        @limiter.buckets,
+        key: key,
+        now: now.unix_nanoseconds,
+        rate: limiter.rate,
+        burst: limiter.burst,
+        most_keys: limiter.most_keys
+    )
+
+# How long from `now` until the bucket of `key` holds a token: zero where it
+# holds one, so `allow` would answer true.
+#
+# - `limiter`: the limiter, read.
+# - `key`: the client.
+# - `now`: the time, as the program read it.
+#
+# Rounded up to the nanosecond, and at most about 292 years. Aborts where
+# the limiter's fields break what `new_limiter` checks. See also `allow`.
+function wait_of(limiter: Limiter, key: str, now: time.Instant) -> time.Duration
+    assert limiting.is_valid(rate: limiter.rate, burst: limiter.burst, most_keys: limiter.most_keys)
+    return time.nanoseconds(
+        limiting.wait_ns(limiter.buckets, key: key, now: now.unix_nanoseconds, rate: limiter.rate, burst: limiter.burst)
+    )
+
+# Lets `r` go on where the bucket of `key` holds a token at `now`, taking
+# it; else answers 429 with `Retry-After`, the whole seconds until it holds
+# one, rounded up.
+#
+# - `limiter`: the limiter, whose bucket of `key` changes.
+# - `r`: the request.
+# - `key`: the client, as `allow` reads it.
+# - `now`: the time, as the program read it.
+# - `form`: how the 429 says it, as text or JSON; its message is Echo's,
+#   "rate limit exceeded", and the wait.
+#
+# A step the program calls in its own loop with its own limiter, since a
+# step `before` calls takes no `@` value. Aborts where the limiter's fields
+# break what `new_limiter` checks. See also `allow`.
+function limit_rate(@limiter: Limiter, r: http.Request, key: str, now: time.Instant, form: ErrorForm) -> Step
+    if allow(@limiter, key: key, now: now)
+        return .go_on(request: r)
+    seconds = limiting.seconds_up(wait_of(limiter, key: key, now: now).nanoseconds)
+    out @= error_response(
+        form,
+        status: http.STATUS_TOO_MANY_REQUESTS,
+        message: f"rate limit exceeded: the next request is allowed in {seconds} s"
+    )
+    out.headers @ http.with_header(out.headers, name: "Retry-After", value: to_str(seconds))
+    return .answer(response: out)
 
 ## Serving
 
@@ -2238,3 +2460,122 @@ test "route: a program's own loop, its state passed with @"
     assert http.text_of(first).must() == "user 1 1" && second.status == 404 && http.text_of(third).must() == "user 2 2" && hits == 2
     io.close(@reader.stream).must()
     io.close(@client.stream).must()
+
+# Two events written as a stream's text: a named one with an id, and plain
+# data of two lines.
+test "format_event: a named event with an id, and data of two lines"
+    assert format_event(http.Event(name: "tick", data: "1", id: "41")).must() == "id: 41\nevent: tick\ndata: 1\n\n"
+    assert format_event(http.Event(name: "", data: "a\nb", id: "")).must() == "data: a\ndata: b\n\n"
+
+# A program's own loop answering the route of a stream: the head written in
+# place of an answer, two events and a comment as they are made, then the
+# connection closed; the client reads them as they come.
+test "start_events: a stream kept open by a program's own loop"
+    rt @= new_router()
+    add(@rt, method: http.METHOD_GET, pattern: "/events", name: "events").must()
+    two = net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "GET /events HTTP/1.1\r\nHost: h\r\nAccept: text/event-stream\r\n\r\n").must()
+    reader @= io.reader(two.second.stream)
+    r = http.next_request(@reader, limits: http.default_limits()).must()
+    assert route(rt, r).must().name == "events"
+    start_events(reader.stream, headers: [http.Header(name: "Access-Control-Allow-Origin", value: "*")]).must()
+    write_event(reader.stream, event: http.Event(name: "", data: "first", id: "1")).must()
+    write_comment(reader.stream, text: "keep-alive").must()
+    write_event(reader.stream, event: http.Event(name: "done", data: "second", id: "2")).must()
+    io.close(@reader.stream).must()
+    client @= io.reader(two.first.stream)
+    started = http.read_response_head(@client, method: http.METHOD_GET, limits: http.default_limits()).must()
+    assert http.value_of(started.headers, name: "Cache-Control").must() == "no-cache"
+    events @= http.event_reader(started, limits: http.default_limits()).must()
+    first = http.read_event(@client, @events).must()
+    second = http.read_event(@client, @events).must()
+    assert first.data == "first" && first.id == "1" && second.name == "done" && events.last_id == "2"
+    assert http.read_event(@client, @events).is_err()
+    io.close(@client.stream).must()
+
+# An event written as it is made, read back by a client.
+test "write_event: one event on an open stream"
+    p = io.pipe().must()
+    start_events(p.writer, headers: []).must()
+    write_event(p.writer, event: http.Event(name: "price", data: "42", id: "")).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    got = http.events_of(
+        http.read_response(@reader, method: http.METHOD_GET, limits: http.default_limits()).must()
+    ).must()
+    assert got.len() == 1 && got[0].name == "price" && got[0].data == "42"
+    io.close(@reader.stream).must()
+
+# A stream telling its client to wait ten seconds before it connects again.
+test "write_retry: ten seconds"
+    p = io.pipe().must()
+    start_events(p.writer, headers: []).must()
+    write_retry(p.writer, ms: 10_000).must()
+    writer @= p.writer
+    io.close(@writer).must()
+    reader @= io.reader(p.reader)
+    started = http.read_response_head(@reader, method: http.METHOD_GET, limits: http.default_limits()).must()
+    events @= http.event_reader(started, limits: http.default_limits()).must()
+    assert http.read_event(@reader, @events).is_err() && events.retry_ms == 10_000
+    io.close(@reader.stream).must()
+
+# A comment a reader skips, written where no event is said for long.
+test "write_comment: a keep-alive between two events"
+    p = io.pipe().must()
+    write_comment(p.writer, text: "keep-alive").must()
+    writer @= p.writer
+    io.close(@writer).must()
+    assert io.read_all_text(p.reader).must() == ": keep-alive\n"
+    rest @= p.reader
+    io.close(@rest).must()
+
+# The events of a handler with no state, answered whole.
+test "respond_events: two events held whole"
+    response = respond_events(
+        [http.Event(name: "", data: "a", id: "1"), http.Event(name: "", data: "b", id: "2")]
+    ).must()
+    assert http.value_of(response.headers, name: "Content-Type").must() == "text/event-stream"
+    got = http.events_of(response).must()
+    assert got.len() == 2 && got[1].data == "b" && got[1].id == "2"
+
+# A limit of two requests a second, five at once.
+test "new_limiter: two a second, five at once, for ten thousand clients"
+    limiter = new_limiter(rate: 2.0, burst: 5, most_keys: 10_000).must()
+    assert limiter.burst == 5 && limiter.buckets.len() == 0
+    assert new_limiter(rate: 0.0, burst: 5, most_keys: 1).is_err()
+
+# A client allowed its burst at once, then refused until a token comes back.
+test "allow: a burst of two, the third refused, one back after a second"
+    limiter @= new_limiter(rate: 1.0, burst: 2, most_keys: 100).must()
+    start = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    assert allow(@limiter, key: "203.0.113.7", now: start)
+    assert allow(@limiter, key: "203.0.113.7", now: start)
+    assert !allow(@limiter, key: "203.0.113.7", now: start)
+    assert allow(@limiter, key: "198.51.100.1", now: start)
+    assert allow(@limiter, key: "203.0.113.7", now: time.add(start, d: time.seconds(1).must()).must())
+
+# How long a refused client waits for its next token.
+test "wait_of: a quarter of a second at four a second"
+    limiter @= new_limiter(rate: 4.0, burst: 1, most_keys: 100).must()
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    assert wait_of(limiter, key: "a", now: now).nanoseconds == 0
+    assert allow(@limiter, key: "a", now: now)
+    assert wait_of(limiter, key: "a", now: now) == time.milliseconds(250).must()
+
+# A program's loop limiting each client by its address: the second request
+# of a client within its second is answered 429, with the seconds to wait.
+test "limit_rate: 429 and Retry-After past one request a second"
+    limiter @= new_limiter(rate: 1.0, burst: 1, most_keys: 100).must()
+    now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    r = http.request(method: http.METHOD_GET, target: "/").must()
+
+    match limit_rate(@limiter, r: r, key: "203.0.113.7", now: now, form: .json)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+    match limit_rate(@limiter, r: r, key: "203.0.113.7", now: now, form: .json)
+        .go_on _ => assert false
+        .answer a =>
+            assert a.response.status == http.STATUS_TOO_MANY_REQUESTS
+            assert http.value_of(a.response.headers, name: "Retry-After").must() == "1"

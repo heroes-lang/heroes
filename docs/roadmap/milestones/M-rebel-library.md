@@ -238,6 +238,58 @@ notes did not read them from a clock.
       that lives, do two packages answer the same question two ways. Every
       finding is fixed or written down with its reason before the gate, and
       the list of what moved is the review's record.
+32. **What a complete web framework needs, checked against the ledgers**
+    (2026-11-17, the author: *think of everything a web framework needs: do
+    we have every package?*). Read from Echo and Gin, Flask and FastAPI,
+    Django and Rails, each capability looked for in Rebel's ledgers. Absent,
+    and added by the author's choice: security headers, the client behind a
+    proxy, a test client with no network, ETags and 304 for dynamic
+    responses, a graceful shutdown, content negotiation and CSRF tokens in
+    `web` and `http`; TOTP in `crypto` and slugs in `strings`; and three
+    packages, `openapi` (a document built as data, served, requests
+    validated), `graphql` (the program resolving each field, no closures) and
+    `jobs` (background jobs in PostgreSQL or Redis). Rebel is 111 packages.
+    **And a sitting on threads that share nothing**, by the author's choice:
+    a server serving connections in parallel rebuilds its router in each
+    thread and shares no connection, cache or session (`mail/smtp` refused a
+    pool for it; `web` and `http` said it), the limit a web application with
+    traffic meets first, which only the language can decide.
+33. **The open questions sit as three sittings, after the last package and
+    before the review of coherence** (2026-11-17, the author: *can we merge
+    the sittings?*). Read that evening: sittings 251 and 252 had their briefs
+    and the critic's reading and no seat's report, their seats stopped by the
+    usage limit, and 253 had nothing written, so nothing sat is reopened.
+    **A, threads and signals**: 251 (a Heroes function a C handler reaches,
+    defect 2522), 252 (the end of `main` and the threads still running,
+    defect 2552), and threads that share nothing (decision 32); their briefs
+    are A's input. **B, the language as Rebel met it**: a private module that
+    cannot use its own face (more than ten packages' witnesses), a type
+    parameter not taken from a map literal's key (spec § 9), records with no
+    type parameter (`containers`), a byte in `f"..."` written as its number
+    with no word from the compiler, `print` writing `1e-06` where a literal
+    with an exponent is refused. **C, Rebel's place and its tools**:
+    design.md §1.11's sentence and the verb `heroes doc` (what 253 was to
+    hold), the route of the system's cryptography on macOS (a member written
+    in Swift, or primitives in Heroes under a checked constant-time
+    discipline; decision 29), and a skipped outcome for `heroes test`. Each
+    sitting takes the seats its questions ask for; numbers are given when
+    they convene.
+34. **And 118, from a list of forty kinds of library the author brought**
+    (2026-11-17), each looked for in Rebel's ledgers and the coordinator
+    asked to suggest only what is truly worth it. Added: `json/jq`, an
+    interpreter of jq over `json.Value` (so also over YAML, TOML, CBOR,
+    MessagePack and XML read into one), with a small jq among Rebel's
+    examples; `scanner`, a lexer as Go's standard `text/scanner`; Aho-Corasick
+    in `strings`; `containers/trie` and `containers/disjoint`; `property`
+    (property-based testing with shrinking) and `bench`; `tracing` with
+    OpenTelemetry's export; logs written to rotating files in `log` and a
+    circuit breaker in `time`; and the whole stack of calls when a program
+    aborts, which is the runtime's, joins sitting C. Not suggested, with
+    their reasons: JMESPath beside jq and JSONPath, CEL for now, a Bloom
+    filter, a PEG parser (`scanner` first), a data table in Polars' manner
+    (data science stays out), events inside one process (no closures),
+    reflection, arenas and object pools (the language's), mocks (no
+    interfaces).
 
 ## Decided on the fly by the coordinator, for the author to turn
 

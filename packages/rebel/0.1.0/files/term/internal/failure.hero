@@ -22,6 +22,9 @@ constant STOPPED: str
 constant FAILED: str
     "failed"
 
+constant NOT_TEXT: str
+    "not_text"
+
 # What a code and its words are, for one kind of the floor.
 record Told
     # The code of README § A4.

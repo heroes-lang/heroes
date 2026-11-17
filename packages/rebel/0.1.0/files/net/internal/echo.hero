@@ -1,0 +1,190 @@
+# An ICMP echo over the floor `net/hero_net`: a host read as an address or
+# looked up for its first, the echo's data made, the echo asked within its
+# time, and the reply read into what the face answers. The floor's socket
+# lives inside its one call, so nothing here is held or closed.
+
+use net/hero_net
+use net/internal/failure
+use net/internal/hosts
+use net/internal/names
+use net/internal/parse
+use net/internal/sockets
+
+# The largest sequence number an echo carries: its field is 16 bits.
+constant SEQUENCE_MOST: i64
+    65535
+
+# The most data bytes an echo carries, the floor's `HERO_NET_PING_MOST`: an
+# IPv4 datagram's 65,535 less its header and the echo's.
+constant SIZE_MOST: i64
+    65507
+
+# The longest time an echo waits, in milliseconds: what the systems' own
+# calls take, a 32-bit count on Windows; about 24 days.
+constant TIMEOUT_MOST: i64
+    2147483647
+
+# What one echo was answered with, which the face makes a `net.Echo`.
+record Answered
+    # The address the reply came from, without a port.
+    from: parse.Parsed
+    # The round trip, in nanoseconds.
+    nanoseconds: i64
+    # The reply's time to live or hop limit, -1 where the system did not
+    # say.
+    ttl: i64
+    # The reply's bytes, its 8-byte header and its data.
+    bytes: i64
+    # The sequence number the echo carried.
+    sequence: i64
+
+# One echo to `host`, carrying `size` bytes of data and `sequence`, and its
+# reply, waited for `timeout_ms` at most.
+#
+# - `host`: an address as text, with its zone where it has one, or a name,
+#   whose first address in the resolver's order is asked; "" and a zero byte
+#   are refused.
+# - `sequence`: 0 to 65535.
+# - `size`: the data bytes, 0 to 65507, each the byte of its index modulo
+#   256.
+# - `timeout_ms`: 1 to 2,147,483,647 milliseconds.
+#
+# Fails `invalid` for an argument out of its range, as `names.lookup` fails
+# for a name, and as the floor fails: `timeout`, `failed` where the host
+# cannot be reached, `permission` where the system refuses the program an
+# ICMP socket, `unsupported` where it has none, `stopped`.
+function ping(host: str, sequence: i64, size: i64, timeout_ms: i64) -> Answered?
+    asked = f"pinging {host} with {size} bytes, sequence {sequence}"
+    hosts.checked_host(host: host, asked: asked)?
+
+    if sequence < 0 || sequence > SEQUENCE_MOST
+        return failure.of(code: failure.INVALID, asked: asked, why: "a sequence number is 0 to 65535")
+
+    if size < 0 || size > SIZE_MOST
+        return failure.of(code: failure.INVALID, asked: asked, why: "an echo carries 0 to 65507 bytes of data")
+
+    if timeout_ms < 1 || timeout_ms > TIMEOUT_MOST
+        return failure.of(
+            code: failure.INVALID,
+            asked: asked,
+            why: "the time to wait is 1 to 2147483647 milliseconds: an echo always has a limit"
+        )
+    target = address_of(host)?
+    data: [u8] @= []
+
+    for i in range(from: 0, to: size)
+        data @ data.push(to_u8(i % 256).must())
+
+    from: [u8] @= []
+    ttl: i64 @= -1
+    took: i64 @= 0
+    got = hero_net.ping(
+        target,
+        sequence: sequence,
+        data: @data,
+        n: to_u64(size).must(),
+        ms: timeout_ms,
+        from: @from,
+        m: hero_net.HERO_NET_ADDRESS_MOST,
+        ttl: @ttl,
+        nanoseconds: @took
+    )
+
+    if got < 0
+        return refused(asked: asked)
+    replier = sockets.address_in(from, port: 0, asked: asked)?
+    return ok(
+        Answered(from: parse.Parsed(bytes: replier.bytes, zone: replier.zone, has_port: false, port: 0), nanoseconds: took, ttl: ttl, bytes: got, sequence: sequence)
+    )
+
+# The address `host` names, as text the floor reads: itself where it is an
+# address, else the first address the resolver gives for the name.
+#
+# - `host`: an address or a name, checked already.
+#
+# Fails as `names.lookup` fails.
+function address_of(host: str) -> str?
+    match parse.address(host)
+        .ok p => return ok(names.text_of(p.bytes, zone: p.zone))
+        .err _ =>
+            found = names.lookup(host)?
+            first = found[0]
+            return ok(names.text_of(first.bytes, zone: first.zone))
+
+# The failure the floor's echo left, its message beginning with `asked`: a
+# refused socket says where a system refuses it, a router's answer and an
+# echo too long say what they are, which the floor's kinds alone do not.
+#
+# - `asked`: what the message begins with.
+function refused<T>(asked: str) -> T?
+    kind = hero_net.last_error()
+
+    if kind == hero_net.HERO_NET_DENIED
+        return failure.of(
+            code: failure.PERMISSION,
+            asked: asked,
+            why: "the system refuses the program an ICMP socket (on Linux, the program's group is outside net.ipv4.ping_group_range)"
+        )
+
+    if kind == hero_net.HERO_NET_UNREACHABLE && hero_net.last_os_error() == 0
+        return failure.of(
+            code: failure.FAILED,
+            asked: asked,
+            why: "a router answered that the host cannot be reached, or that the echo expired on its way"
+        )
+
+    if kind == hero_net.HERO_NET_TOO_LONG
+        return failure.of(code: failure.INVALID, asked: asked, why: "the system sends no echo so long")
+    return failure.last(asked: asked)
+
+## Tests
+
+test "ping: an empty host, a sequence and a size each one past either end, no time and a time past the most"
+    cases: [Answered?] = [
+        ping("", sequence: 0, size: 8, timeout_ms: 100)
+        ping("127.0.0.1", sequence: -1, size: 8, timeout_ms: 100)
+        ping("127.0.0.1", sequence: 65536, size: 8, timeout_ms: 100)
+        ping("127.0.0.1", sequence: 0, size: -1, timeout_ms: 100)
+        ping("127.0.0.1", sequence: 0, size: 65508, timeout_ms: 100)
+        ping("127.0.0.1", sequence: 0, size: 8, timeout_ms: 0)
+        ping("127.0.0.1", sequence: 0, size: 8, timeout_ms: 2147483648)
+    ]
+
+    for c in cases
+        match c
+            .ok _  => assert false
+            .err e => assert e.code == failure.INVALID
+
+test "ping: a zero byte in the host is refused before C reads it"
+    nothing: [u8] = [0]
+    zero = nothing.validated_bytes().must()
+
+    match ping("127.0.0.1" + zero, sequence: 0, size: 8, timeout_ms: 100)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+test "ping: the loopback by its address and by its name answers with its sizes, or the system's refusal"
+    for host in ["127.0.0.1", "localhost", "::1"]
+        for size in [0, 1, 56]
+            match ping(host, sequence: 7, size: size, timeout_ms: 5000)
+                .ok a =>
+                    assert a.bytes == size + 8 && a.sequence == 7
+                    assert a.from.bytes == [127, 0, 0, 1] || a.from.bytes == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+                    assert !a.from.has_port && a.from.port == 0
+                    assert a.nanoseconds > 0 && a.nanoseconds < 5000000000
+                    assert a.ttl == -1 || a.ttl >= 1 && a.ttl <= 255
+                .err e => assert e.code == failure.PERMISSION || e.code == failure.UNSUPPORTED || host == "::1" && (e.code == failure.INVALID || e.code == failure.FAILED)
+
+test "ping: a name nobody has fails as lookup fails it, and TEST-NET-1 ends at its time or is unreachable"
+    match ping("no-such-host.invalid", sequence: 0, size: 8, timeout_ms: 300)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_FOUND || e.code == failure.FAILED
+
+    match ping("192.0.2.1", sequence: 0, size: 8, timeout_ms: 300)
+        .ok _  => assert false
+        .err e => assert e.code == failure.TIMEOUT || e.code == failure.FAILED || e.code == failure.PERMISSION || e.code == failure.UNSUPPORTED
+
+test "ping: an echo longer than the system sends fails invalid, as a datagram too long does"
+    match ping("127.0.0.1", sequence: 0, size: 65507, timeout_ms: 2000)
+        .ok a  => assert a.bytes == 65515
+        .err e => assert e.code == failure.INVALID || e.code == failure.PERMISSION || e.code == failure.UNSUPPORTED

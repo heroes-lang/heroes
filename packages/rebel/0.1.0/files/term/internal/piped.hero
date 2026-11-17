@@ -1,0 +1,61 @@
+# A line read from a stream that is no terminal, as Python's `input` reads
+# one from a pipe: a byte at a time, so that nothing past the line's end is
+# taken from a stream another reader of the program goes on with.
+
+use io
+use term/internal/failure
+
+# The next line of `s` without its line feed, or a carriage return before
+# it; the last line of `s` where no line feed ends it. Fails `closed` where
+# `s` is at its end before any byte, `not_text` where the line is not UTF-8,
+# and where `io.read` fails, with its code.
+function read_line(s: io.Stream) -> str?
+    asked = "reading a line"
+    line: [u8] @= []
+    ended @= false
+
+    while !ended
+        got = io.read(s, most: 1)?
+
+        if got.len() == 0
+            if line.len() == 0
+                return failure.of(code: failure.CLOSED, asked: asked, why: "the input ended")
+            ended @ true
+        else if got[0] == '\n'
+            ended @ true
+        else
+            line @ line.push(got[0])
+
+    if line.len() > 0 && line[line.len() - 1] == '\r'
+        line @ line.slice(from: 0, to: line.len() - 1)
+
+    return match line.validated_bytes()
+        .ok text => ok(text)
+        .err _   => failure.of(code: failure.NOT_TEXT, asked: asked, why: "the line is not UTF-8")
+
+test "piped read_line: lines, a carriage return, the last line with no line feed, then the end"
+    p @= io.pipe().must()
+    io.write_text(p.writer, text: "one\r\n\ntwo\nlast").must()
+    io.close(@p.writer).must()
+    assert read_line(p.reader).must() == "one"
+    assert read_line(p.reader).must() == ""
+    assert read_line(p.reader).must() == "two"
+    assert read_line(p.reader).must() == "last"
+
+    match read_line(p.reader)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+    io.close(@p.reader).must()
+
+test "piped read_line: bytes that are not UTF-8 fail not_text, and the line after is read"
+    p @= io.pipe().must()
+    io.write(p.writer, data: [0xff, 0x0a, 'o', 'k', 0x0a]).must()
+    io.close(@p.writer).must()
+
+    match read_line(p.reader)
+        .ok _  => assert false
+        .err e => assert e.code == failure.NOT_TEXT
+
+    assert read_line(p.reader).must() == "ok"
+    io.close(@p.reader).must()

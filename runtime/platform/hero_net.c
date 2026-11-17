@@ -129,6 +129,10 @@
 /* The tag that keeps this table's handles apart from every other member's
  * (2026-11-16): `HERO_HANDLE_TAG_NET`. */
 #include "hero_handle_tag.h"
+/* The layer's memory, for the one buffer an echo takes for its request and
+ * its reply (round 4, 2026-11-17): up to 65,507 bytes of data each way, too
+ * many for a thread's stack. */
+#include "hero_layer_alloc.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -152,11 +156,22 @@
 #if defined(_MSC_VER)
 #pragma comment(lib, "iphlpapi.lib")
 #endif
+/* `IcmpSendEcho2` and `Icmp6SendEcho2`, for `hero_net_ping` alone (round 4),
+ * which `iphlpapi` holds too; after `iphlpapi.h`, which defines what it
+ * names. */
+#include <icmpapi.h>
 typedef SOCKET hero_net_fd;
 typedef int hero_net_len;
 #define HERO_NET_NO_FD INVALID_SOCKET
 #define HERO_NET_SEND_FLAGS 0
 #else
+/* Darwin names RFC 3542's options, the hop limit an IPv6 reply arrived with
+ * among them (`IPV6_RECVHOPLIMIT`, round 4), only where this is defined
+ * before its `netinet/in.h` is first read, which is below: this member's own
+ * header reads `stdint.h` alone. Other systems name them without it. */
+#if defined(__APPLE__) && !defined(__APPLE_USE_RFC_3542)
+#define __APPLE_USE_RFC_3542 1
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -3717,6 +3732,614 @@ int64_t hero_net_interfaces(void *buffer, uint64_t count) {
 }
 
 #endif
+
+/* -- round 4: an echo asked by ICMP, without privileges (M-rebel-library,
+ * 2026-11-17) ------------------------------------------------------------
+ *
+ * ONE DOOR AND NO HANDLE. Windows answers an echo with one call that waits
+ * in the system (`IcmpSendEcho2`), on a handle of its own that is no socket
+ * this table could hold, so a door that opened a socket, sent and waited in
+ * three calls would have no Windows arm to match. And an echo is asked
+ * once, answered once: on Darwin and Linux the socket is made, kept in a
+ * slot of the table for as long as the call waits, so it waits through the
+ * layer's own thread with the deadline and the stop every wait has, and
+ * given back before the call returns. No state of its own outlives the
+ * call.
+ *
+ * NEVER A RAW SOCKET. A datagram socket of the ICMP protocol is the one a
+ * system lets a program without privileges make, where it lets it at all:
+ * Darwin always (measured 2026-11-17, this Mac, as its own `ping` does
+ * without root), Linux where the program's group is in
+ * `net.ipv4.ping_group_range` (`EACCES` otherwise, which is `DENIED`). What
+ * the two hand back differs, measured on this Mac: Darwin gives an IPv4
+ * socket the reply WITH its IP header, and an IPv6 socket on the loopback
+ * the request it sent before the reply; Linux gives the ICMP message alone,
+ * and only the replies bearing the identifier it wrote over the request's.
+ * So a datagram is read for what it is, a header first where one stands,
+ * and every datagram that is not this echo's reply is passed over, each
+ * receive moving one datagram, until the deadline. */
+
+#if !defined(_WIN32)
+
+/* The bytes past the echo's data a receive takes room for: an IPv4 header
+ * at its longest, 60, before a reply on Darwin, and an ICMP error naming
+ * the echo, which quotes the request's headers (8 + 60 + 8 for IPv4, 8 +
+ * 40 + 8 for IPv6), with room beside. A datagram longer than the room is no
+ * reply to this echo and is passed over. */
+#define HERO_NET_ECHO_ROOM 136u
+
+/* What one datagram the echo's socket received is to the echo. */
+typedef enum {
+    /* Another's, or one this echo did not ask. */
+    HERO_NET_ECHO_OTHER,
+    /* This echo's reply, its sequence and its data. */
+    HERO_NET_ECHO_REPLY,
+    /* An ICMP error quoting this echo's request: unreachable, or expired on
+     * its way. */
+    HERO_NET_ECHO_ERROR
+} hero_net_echo_is;
+
+/* The ones' complement of the ones' complement sum of `n` bytes taken two at
+ * a time, the first the higher (RFC 792, RFC 1071): the checksum an IPv4
+ * ICMP message carries, computed with its own field at 0. IPv6's covers a
+ * header the system writes, and the system computes it (RFC 3542 3.1). */
+static uint16_t hero_net_echo_sum(const unsigned char *bytes, size_t n) {
+    uint64_t sum = 0;
+
+    for (size_t i = 0; i + 1 < n; i += 2) {
+        sum += (uint64_t)bytes[i] << 8 | (uint64_t)bytes[i + 1];
+    }
+    if (n % 2 == 1) {
+        sum += (uint64_t)bytes[n - 1] << 8;
+    }
+    while (sum >> 16 != 0) {
+        sum = (sum & UINT64_C(0xffff)) + (sum >> 16);
+    }
+    return (uint16_t)(~sum & UINT64_C(0xffff));
+}
+
+/* The 16-bit number at `at` in `bytes`, the first byte the higher. */
+static uint32_t hero_net_echo_word(const unsigned char *bytes, size_t at) {
+    return (uint32_t)bytes[at] << 8 | (uint32_t)bytes[at + 1];
+}
+
+/* Whether the `n` bytes at `icmp` begin this echo's request: its type, its
+ * sequence, and where the system keeps the request's identifier, which
+ * Linux writes over, the identifier. */
+static bool hero_net_echo_asked(const unsigned char *icmp, size_t n, bool six, uint32_t id, uint32_t sequence) {
+    if (n < 8 || icmp[0] != (six ? 128u : 8u)) {
+        return false;
+    }
+#if defined(__linux__)
+    (void)id;
+#else
+    if (hero_net_echo_word(icmp, 4) != id) {
+        return false;
+    }
+#endif
+    return hero_net_echo_word(icmp, 6) == sequence;
+}
+
+/* What the `n` bytes received at `got` are to the echo of `id`, `sequence`
+ * and the `count` bytes of `data`; for an IPv4 datagram that arrived with
+ * its header, the header's time to live in `*header_ttl`, else -1. */
+static hero_net_echo_is hero_net_echo_read(const unsigned char *got, size_t n, bool six, uint32_t id, uint32_t sequence, const unsigned char *data,
+                                           uint64_t count, int64_t *header_ttl) {
+    *header_ttl = -1;
+    /* An ICMP message begins with its type, and no type is 0x45 to 0x4f, so
+     * a first half-byte of 4 is an IPv4 header Darwin left on. */
+    if (!six && n >= 20 && got[0] >> 4 == 4) {
+        size_t header = (size_t)(got[0] & 0x0f) * 4;
+
+        if (header < 20 || header > n) {
+            return HERO_NET_ECHO_OTHER;
+        }
+        *header_ttl = (int64_t)got[8];
+        got += header;
+        n -= header;
+    }
+    if (n < 8) {
+        return HERO_NET_ECHO_OTHER;
+    }
+    unsigned type = got[0];
+
+    if (type == (six ? 129u : 0u)) {
+        if (got[1] != 0) {
+            return HERO_NET_ECHO_OTHER;
+        }
+#if !defined(__linux__)
+        if (hero_net_echo_word(got, 4) != id) {
+            return HERO_NET_ECHO_OTHER;
+        }
+#endif
+        if (hero_net_echo_word(got, 6) != sequence || (uint64_t)(n - 8) != count || (count > 0 && memcmp(got + 8, data, (size_t)count) != 0)) {
+            return HERO_NET_ECHO_OTHER;
+        }
+        return HERO_NET_ECHO_REPLY;
+    }
+    /* Destination unreachable and time exceeded: IPv4's 3 and 11, IPv6's 1
+     * and 3 (RFC 792, RFC 4443), each quoting the request after its own 8
+     * bytes. */
+    bool error = six ? (type == 1 || type == 3) : (type == 3 || type == 11);
+
+    if (!error) {
+        return HERO_NET_ECHO_OTHER;
+    }
+    const unsigned char *quoted = got + 8;
+    size_t left = n - 8;
+
+    if (six) {
+        /* The request's IPv6 header, 40 bytes, its next header ICMPv6 (58):
+         * this call sends no extension header between them. */
+        if (left < 40 || quoted[6] != 58) {
+            return HERO_NET_ECHO_OTHER;
+        }
+        quoted += 40;
+        left -= 40;
+    } else {
+        if (left < 20 || quoted[0] >> 4 != 4 || quoted[9] != 1) {
+            return HERO_NET_ECHO_OTHER;
+        }
+        size_t header = (size_t)(quoted[0] & 0x0f) * 4;
+
+        if (header < 20 || header > left) {
+            return HERO_NET_ECHO_OTHER;
+        }
+        quoted += header;
+        left -= header;
+    }
+    return hero_net_echo_asked(quoted, left, six, id, sequence) ? HERO_NET_ECHO_ERROR : HERO_NET_ECHO_OTHER;
+}
+
+/* The time to live, or the hop limit, the system told beside a datagram it
+ * handed `heard`, 0 to 255, or -1 where it told none: Linux's `IP_TTL` as
+ * an `int`, Darwin's `IP_RECVTTL` as one byte, and `IPV6_HOPLIMIT` as an
+ * `int` on both (RFC 3542 6.3). */
+static int64_t hero_net_echo_told(struct msghdr *heard) {
+    for (struct cmsghdr *c = CMSG_FIRSTHDR(heard); c != NULL; c = CMSG_NXTHDR(heard, c)) {
+        bool four = c->cmsg_level == IPPROTO_IP && (c->cmsg_type == IP_TTL
+#if defined(IP_RECVTTL)
+                                                    || c->cmsg_type == IP_RECVTTL
+#endif
+                                                   );
+#if defined(IPV6_HOPLIMIT)
+        bool six = c->cmsg_level == IPPROTO_IPV6 && c->cmsg_type == IPV6_HOPLIMIT;
+#else
+        bool six = false;
+#endif
+
+        if (!four && !six) {
+            continue;
+        }
+        if ((size_t)c->cmsg_len >= (size_t)CMSG_LEN(sizeof(int))) {
+            int told = 0;
+
+            memcpy(&told, CMSG_DATA(c), sizeof told);
+            return told >= 0 && told <= 255 ? (int64_t)told : -1;
+        }
+        if ((size_t)c->cmsg_len >= (size_t)CMSG_LEN(1)) {
+            unsigned char told = 0;
+
+            memcpy(&told, CMSG_DATA(c), 1);
+            return (int64_t)told;
+        }
+    }
+    return -1;
+}
+
+/* One datagram the echo's socket received into `buffer`, its sender in
+ * `from` and `from_size`, the time to live told beside it in `*told`:
+ * tried first, then waited for on the layer's poller with the slot's
+ * deadline and the stop, as `hero_net_datagram_in` waits. `*cut` where it
+ * was longer than `count`. The bytes, or -1 with the kind and the code. */
+static int64_t hero_net_echo_in(hero_net_slot *slot, hero_net_fd fd, unsigned char *buffer, size_t count, struct sockaddr_storage *from,
+                                hero_net_len *from_size, bool *cut, int64_t *told, int64_t *kind, int64_t *code) {
+    for (;;) {
+        /* Aligned as a `cmsghdr`, which the system writes into it. */
+        union {
+            struct cmsghdr header;
+            unsigned char bytes[256];
+        } control;
+        struct iovec into = { buffer, count };
+        struct msghdr heard;
+
+        memset(&control, 0, sizeof control);
+        memset(&heard, 0, sizeof heard);
+        memset(from, 0, sizeof *from);
+        heard.msg_name = from;
+        heard.msg_namelen = (socklen_t)sizeof *from;
+        heard.msg_iov = &into;
+        heard.msg_iovlen = 1;
+        heard.msg_control = control.bytes;
+        heard.msg_controllen = (socklen_t)sizeof control.bytes;
+        ssize_t got = recvmsg(fd, &heard, 0);
+
+        if (got >= 0) {
+            *cut = (heard.msg_flags & MSG_TRUNC) != 0;
+            *from_size = heard.msg_namelen;
+            *told = hero_net_echo_told(&heard);
+            return (int64_t)got;
+        }
+        *code = hero_net_os_code();
+        if (hero_net_interrupted(*code)) {
+            continue;
+        }
+        if (!hero_net_would_wait(*code)) {
+            *kind = hero_net_kind_of(*code);
+            return -1;
+        }
+        if (!hero_net_datagram_waited(slot, fd, false, kind, code)) {
+            return -1;
+        }
+    }
+}
+
+/* The kind a refusal to make the echo's socket is: no such socket for the
+ * family or the protocol, `UNSUPPORTED`; every other as `hero_net_kind_of`
+ * names it, Linux's `EACCES` outside `ping_group_range` `DENIED`. */
+static int64_t hero_net_echo_refused(int64_t code) {
+    if (code == EPROTONOSUPPORT || code == EAFNOSUPPORT || code == EPROTOTYPE
+#if defined(ESOCKTNOSUPPORT)
+        || code == ESOCKTNOSUPPORT
+#endif
+#if defined(EPFNOSUPPORT)
+        || code == EPFNOSUPPORT
+#endif
+    ) {
+        return HERO_NET_UNSUPPORTED;
+    }
+    return hero_net_kind_of(code);
+}
+
+/* The echo of `hero_net_ping`, its arguments checked, to `where`. */
+static int64_t hero_net_echo(const struct sockaddr_storage *where, hero_net_len size, uint32_t sequence, const void *data, uint64_t count, int64_t ms,
+                             char *from, int64_t *ttl, int64_t *nanoseconds) {
+    bool six = where->ss_family == AF_INET6;
+    int family = six ? AF_INET6 : AF_INET;
+    hero_net_fd fd = socket(family, SOCK_DGRAM, six ? IPPROTO_ICMPV6 : IPPROTO_ICMP);
+
+    if (fd == HERO_NET_NO_FD) {
+        int64_t code = hero_net_os_code();
+
+        hero_net_fail(hero_net_echo_refused(code), code);
+        return -1;
+    }
+    if (!hero_net_ready(fd) || !hero_net_blocking(fd, false)) {
+        int64_t kind = hero_net_kind;
+        int64_t code = hero_net_os;
+
+        (void)hero_net_close_fd(fd);
+        hero_net_fail(kind, code);
+        return -1;
+    }
+    /* Asked, never required: where the system refuses, Darwin's IPv4 reply
+     * still carries its header's, and elsewhere the answer is -1. */
+    int on = 1;
+
+    if (six) {
+#if defined(IPV6_RECVHOPLIMIT)
+        (void)setsockopt(fd, IPPROTO_IPV6, IPV6_RECVHOPLIMIT, &on, (hero_net_len)sizeof on);
+#endif
+    } else {
+#if defined(IP_RECVTTL)
+        (void)setsockopt(fd, IPPROTO_IP, IP_RECVTTL, &on, (hero_net_len)sizeof on);
+#endif
+    }
+    (void)on;
+    /* The process and the descriptor, which no two sockets of one process
+     * share at once: two echoes of one process at once are told apart where
+     * the system keeps the identifier. */
+    uint32_t id = ((uint32_t)getpid() * 31u + (uint32_t)fd) & 0xffffu;
+    hero_net_socket *handle = hero_net_keep_datagram(fd, family);
+
+    if (handle == NULL) {
+        return -1;
+    }
+    int64_t kind = HERO_NET_OK;
+    int64_t code = 0;
+    int64_t answer = -1;
+
+    if (hero_net_set_deadline(handle, ms) != 0) {
+        kind = hero_net_kind;
+        code = hero_net_os;
+        (void)hero_net_close(handle);
+        hero_net_fail(kind, code);
+        return -1;
+    }
+    hero_net_slot *slot = hero_net_take(handle, &fd);
+
+    if (slot == NULL) {
+        kind = hero_net_kind;
+        (void)hero_net_close(handle);
+        hero_net_fail(kind, 0);
+        return -1;
+    }
+    size_t asked = (size_t)8 + (size_t)count;
+    size_t room = (size_t)count + HERO_NET_ECHO_ROOM;
+    unsigned char *block = hero_layer_alloc(asked + room);
+
+    if (block == NULL) {
+        kind = HERO_NET_LIMIT;
+    } else {
+        unsigned char *request = block;
+        unsigned char *heard = block + asked;
+
+        request[0] = (unsigned char)(six ? 128u : 8u);
+        request[1] = 0;
+        request[2] = 0;
+        request[3] = 0;
+        request[4] = (unsigned char)(id >> 8);
+        request[5] = (unsigned char)(id & 0xffu);
+        request[6] = (unsigned char)(sequence >> 8);
+        request[7] = (unsigned char)(sequence & 0xffu);
+        if (count > 0) {
+            memcpy(request + 8, data, (size_t)count);
+        }
+        if (!six) {
+            uint16_t sum = hero_net_echo_sum(request, asked);
+
+            request[2] = (unsigned char)(sum >> 8);
+            request[3] = (unsigned char)(sum & 0xffu);
+        }
+        int64_t began = hero_net_now();
+
+        if (hero_net_datagram_out(slot, fd, request, (uint64_t)asked, where, size, &kind, &code) >= 0) {
+            for (;;) {
+                struct sockaddr_storage replier;
+                hero_net_len replier_size = 0;
+                bool cut = false;
+                int64_t told = -1;
+                int64_t got = hero_net_echo_in(slot, fd, heard, room, &replier, &replier_size, &cut, &told, &kind, &code);
+
+                if (got < 0) {
+                    break;
+                }
+                if (cut) {
+                    continue;
+                }
+                int64_t header_ttl = -1;
+                hero_net_echo_is is = hero_net_echo_read(heard, (size_t)got, six, id, sequence, request + 8, count, &header_ttl);
+
+                if (is == HERO_NET_ECHO_OTHER) {
+                    continue;
+                }
+                if (is == HERO_NET_ECHO_ERROR) {
+                    kind = HERO_NET_UNREACHABLE;
+                    code = 0;
+                    break;
+                }
+                int64_t ended = hero_net_now();
+                int64_t port = 0;
+
+                *nanoseconds = began < 0 || ended < began ? 0 : ended - began;
+                *ttl = told >= 0 ? told : header_ttl;
+                if (replier_size == 0 || hero_net_text_of((const struct sockaddr *)&replier, replier_size, from, &port) < 0) {
+                    from[0] = '\0';
+                }
+                answer = (int64_t)asked;
+                break;
+            }
+        }
+        hero_layer_free(block);
+    }
+    (void)hero_net_done(slot);
+    (void)hero_net_close(handle);
+
+    if (answer < 0) {
+        from[0] = '\0';
+        *ttl = -1;
+        *nanoseconds = 0;
+        hero_net_fail(kind, code);
+        return -1;
+    }
+    hero_net_clear();
+    return answer;
+}
+
+#else
+
+/* The room past the reply and its data Microsoft's pages ask the reply
+ * buffer to have: 8 bytes for an ICMP error and an `IO_STATUS_BLOCK`, 16
+ * bytes on 64-bit Windows, with room beside. */
+#define HERO_NET_ECHO_ROOM 64u
+
+/* The kind an echo's status is, `IcmpSendEcho2`'s `GetLastError` or a
+ * reply's `Status` (`ipexport.h`'s `IP_*` numbers, and the system's own
+ * error numbers): the same kinds the POSIX arm answers. */
+static int64_t hero_net_echo_kind(DWORD status) {
+    if (status == IP_REQ_TIMED_OUT) {
+        return HERO_NET_TIMED_OUT;
+    }
+    if (status == IP_DEST_NET_UNREACHABLE || status == IP_DEST_HOST_UNREACHABLE || status == IP_DEST_PROT_UNREACHABLE ||
+        status == IP_DEST_PORT_UNREACHABLE || status == IP_BAD_ROUTE || status == IP_BAD_DESTINATION || status == IP_TTL_EXPIRED_TRANSIT ||
+        status == IP_TTL_EXPIRED_REASSEM || status == ERROR_NETWORK_UNREACHABLE || status == ERROR_HOST_UNREACHABLE ||
+        status == ERROR_PROTOCOL_UNREACHABLE || status == ERROR_PORT_UNREACHABLE
+#if defined(IP_DEST_UNREACHABLE)
+        || status == IP_DEST_UNREACHABLE
+#endif
+#if defined(IP_TIME_EXCEEDED)
+        || status == IP_TIME_EXCEEDED
+#endif
+    ) {
+        return HERO_NET_UNREACHABLE;
+    }
+    if (status == IP_PACKET_TOO_BIG) {
+        return HERO_NET_TOO_LONG;
+    }
+    if (status == IP_NO_RESOURCES || status == ERROR_NOT_ENOUGH_MEMORY || status == ERROR_OUTOFMEMORY) {
+        return HERO_NET_LIMIT;
+    }
+    if (status == ERROR_ACCESS_DENIED) {
+        return HERO_NET_DENIED;
+    }
+    if (status == ERROR_NOT_SUPPORTED) {
+        return HERO_NET_UNSUPPORTED;
+    }
+    if (status == ERROR_INVALID_PARAMETER) {
+        return HERO_NET_INVALID;
+    }
+    return HERO_NET_OTHER;
+}
+
+/* The echo of `hero_net_ping`, its arguments checked, to `where`: one call
+ * of the system's, which waits for the reply or `ms` itself. */
+static int64_t hero_net_echo(const struct sockaddr_storage *where, hero_net_len size, uint32_t sequence, const void *data, uint64_t count, int64_t ms,
+                             char *from, int64_t *ttl, int64_t *nanoseconds) {
+    (void)size;
+    /* Windows chooses the identifier and the sequence itself. */
+    (void)sequence;
+    bool six = where->ss_family == AF_INET6;
+    HANDLE icmp = six ? Icmp6CreateFile() : IcmpCreateFile();
+
+    if (icmp == INVALID_HANDLE_VALUE) {
+        DWORD said = GetLastError();
+
+        hero_net_fail(hero_net_echo_kind(said), (int64_t)said);
+        return -1;
+    }
+    size_t reply_size = (six ? sizeof(ICMPV6_ECHO_REPLY) : sizeof(ICMP_ECHO_REPLY)) + (size_t)count + HERO_NET_ECHO_ROOM;
+    unsigned char *reply = hero_layer_alloc(reply_size);
+
+    if (reply == NULL) {
+        (void)IcmpCloseHandle(icmp);
+        hero_net_fail(HERO_NET_LIMIT, 0);
+        return -1;
+    }
+    memset(reply, 0, reply_size);
+    /* The system reads the request and never writes it; a request of no
+     * bytes still hands it a place. */
+    unsigned char none = 0;
+    LPVOID request = count == 0 ? (LPVOID)&none : (LPVOID)(uintptr_t)data;
+    int64_t began = hero_net_now();
+    DWORD replies = 0;
+
+    if (six) {
+        struct sockaddr_in6 source;
+        struct sockaddr_in6 target;
+
+        memset(&source, 0, sizeof source);
+        source.sin6_family = AF_INET6;
+        memcpy(&target, where, sizeof target);
+        replies = Icmp6SendEcho2(icmp, NULL, NULL, NULL, &source, &target, request, (WORD)count, NULL, reply, (DWORD)reply_size, (DWORD)ms);
+        if (replies != 0) {
+            replies = Icmp6ParseReplies(reply, (DWORD)reply_size);
+        }
+    } else {
+        struct sockaddr_in target;
+
+        memcpy(&target, where, sizeof target);
+        replies = IcmpSendEcho2(icmp, NULL, NULL, NULL, target.sin_addr.S_un.S_addr, request, (WORD)count, NULL, reply, (DWORD)reply_size, (DWORD)ms);
+    }
+    DWORD said = replies == 0 ? GetLastError() : 0;
+    int64_t ended = hero_net_now();
+
+    (void)IcmpCloseHandle(icmp);
+
+    int64_t kind = HERO_NET_OK;
+    int64_t code = 0;
+    int64_t answer = -1;
+    int64_t port = 0;
+
+    if (replies == 0) {
+        kind = hero_net_echo_kind(said);
+        code = (int64_t)said;
+    } else if (six) {
+        ICMPV6_ECHO_REPLY got;
+
+        memcpy(&got, reply, sizeof got);
+        if (got.Status != IP_SUCCESS) {
+            kind = hero_net_echo_kind(got.Status);
+            code = (int64_t)got.Status;
+        } else {
+            struct sockaddr_in6 replier;
+
+            memset(&replier, 0, sizeof replier);
+            replier.sin6_family = AF_INET6;
+            memcpy(&replier.sin6_addr, got.Address.sin6_addr, sizeof replier.sin6_addr);
+            replier.sin6_scope_id = got.Address.sin6_scope_id;
+            if (hero_net_text_of((const struct sockaddr *)&replier, (hero_net_len)sizeof replier, from, &port) < 0) {
+                from[0] = '\0';
+            }
+            *ttl = -1;
+            answer = (int64_t)count + 8;
+        }
+    } else {
+        ICMP_ECHO_REPLY got;
+
+        memcpy(&got, reply, sizeof got);
+        uintptr_t first = (uintptr_t)reply;
+        uintptr_t at = (uintptr_t)got.Data;
+        /* The reply's data, where the system put it inside the buffer, is
+         * this echo's own: anything else is no answer to it. */
+        bool inside = count == 0 || (at >= first && at - first <= reply_size && reply_size - (at - first) >= (size_t)count);
+
+        if (got.Status != IP_SUCCESS) {
+            kind = hero_net_echo_kind(got.Status);
+            code = (int64_t)got.Status;
+        } else if ((uint64_t)got.DataSize != count || !inside || (count > 0 && memcmp(got.Data, data, (size_t)count) != 0)) {
+            kind = HERO_NET_OTHER;
+        } else {
+            struct sockaddr_in replier;
+
+            memset(&replier, 0, sizeof replier);
+            replier.sin_family = AF_INET;
+            replier.sin_addr.S_un.S_addr = got.Address;
+            if (hero_net_text_of((const struct sockaddr *)&replier, (hero_net_len)sizeof replier, from, &port) < 0) {
+                from[0] = '\0';
+            }
+            *ttl = (int64_t)got.Options.Ttl;
+            answer = (int64_t)count + 8;
+        }
+    }
+    hero_layer_free(reply);
+
+    if (answer < 0) {
+        from[0] = '\0';
+        *ttl = -1;
+        *nanoseconds = 0;
+        hero_net_fail(kind, code);
+        return -1;
+    }
+    *nanoseconds = began < 0 || ended < began ? 0 : ended - began;
+    hero_net_clear();
+    return answer;
+}
+
+#endif
+
+int64_t hero_net_ping(const char *address, int64_t sequence, const void *data, uint64_t count, int64_t ms, void *from, uint64_t from_count, int64_t *ttl,
+                      int64_t *nanoseconds) {
+    if (from != NULL && from_count > 0) {
+        ((char *)from)[0] = '\0';
+    }
+    if (ttl != NULL) {
+        *ttl = -1;
+    }
+    if (nanoseconds != NULL) {
+        *nanoseconds = 0;
+    }
+    if (address == NULL || sequence < 0 || sequence > 65535 || (data == NULL && count > 0) || count > HERO_NET_PING_MOST || ms < 1 || ms > INT32_MAX ||
+        from == NULL || from_count < HERO_NET_ADDRESS_MOST || ttl == NULL || nanoseconds == NULL) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return -1;
+    }
+    if (hero_net_stopping()) {
+        hero_net_fail(HERO_NET_STOPPED, 0);
+        return -1;
+    }
+    if (!hero_net_started()) {
+        return -1;
+    }
+    struct sockaddr_storage where;
+    hero_net_len size = 0;
+    int64_t code = 0;
+
+    if (!hero_net_literal(address, 0, 0, &where, &size, &code)) {
+        hero_net_fail(HERO_NET_ADDRESS, code);
+        return -1;
+    }
+    return hero_net_echo(&where, size, (uint32_t)sequence, data, count, ms, (char *)from, ttl, nanoseconds);
+}
 
 /* -- for the other members of the layer (M-rebel-library, 2026-11-16) -----
  *

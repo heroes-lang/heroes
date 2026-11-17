@@ -17,9 +17,11 @@
 # **What it does not do.** HTTP/2 and HTTP/3 are not here, nor a proxy or
 # its tunnel, routing by pattern, a time limit on making a plain connection,
 # Brotli or Zstandard, or a file server: a file is read by `fs` and answered
-# by `respond`. A body is held whole in memory, read within `Limits`, never
-# streamed. The connection is `net`'s, a URL `url`'s, a JSON value `json`'s,
-# an instant `time`'s.
+# by `respond`. A body is held whole in memory, read within `Limits`, but
+# where a program reads it as it comes (`read_response_head`, `read_piece`),
+# an event stream's included (`read_event`), or writes it as it is made
+# (`write_response_head`). The connection is `net`'s, a URL `url`'s, a JSON
+# value `json`'s, an instant `time`'s.
 #
 # The client is `requests`' beside Go's: a `Session` keeps the fields, the
 # base URL and the cookies of many requests; a request's body is made from
@@ -45,6 +47,7 @@ use http/internal/multipart
 use http/internal/policy
 use http/internal/read
 use http/internal/status as texts
+use http/internal/streaming
 use http/internal/syntax
 use http/internal/wire
 use http/internal/write
@@ -1560,6 +1563,215 @@ function round_trip(@reader: io.Reader, r: Request, limits: Limits) -> Response?
     write_request(reader.stream, r: r)?
     return read_response(@reader, method: r.method, limits: limits)
 
+## Bodies as they come
+
+# A response's body read piece by piece as it comes, where `read_response`
+# holds it whole: made by `body_reader` from a head `read_response_head`
+# read, and read by `read_piece` until it answers an empty list. The pieces
+# are the body's bytes as they came, a `Content-Encoding` not undone.
+record BodyReader
+    # How the body ends, its length, its chunks or the connection's end, and
+    # how much of it is read. Only this package reads it.
+    state: streaming.Body
+
+# The head of the next final response `reader` holds, the informational ones
+# before it skipped, its body left unread on the connection: what a client
+# reads before a body that comes as it is made, an event stream's.
+#
+# - `reader`: the reader of the connection, advanced past the head alone.
+# - `method`: the method of the request answered; a response to `HEAD` has
+#   no body whatever its fields say.
+# - `limits`: what the head may hold; the body is not read.
+#
+# The response's `body` is empty, and `closing` is true where the body runs
+# to the connection's end. Fails as `read_response` does on a head:
+# `closed`, `invalid`, `limit`, and `unsupported` for 101. See also
+# `body_reader` and `event_reader`.
+function read_response_head(@reader: io.Reader, method: str, limits: Limits) -> Response?
+    m = streaming.response_head(@reader, method: method, bounds: wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes))?
+    headers: [Header] @= []
+
+    for f in m.head.fields
+        headers @ headers.push(Header(name: f.name, value: f.value))
+
+    return ok(Response(status: m.head.status, reason: m.head.reason, headers: headers, body: [], closing: m.closing))
+
+# How the body of `response` is read as it comes, before a byte of it.
+#
+# - `response`: a response whose head `read_response_head` read; its status
+#   and its framing fields are read.
+# - `method`: the method of the request it answers; for `HEAD`, and for 1xx,
+#   204 and 304, the body is empty.
+# - `limits`: its `field_count` bounds a chunked body's trailer; the body
+#   itself has no bound, since it comes as it is made.
+#
+# Fails `invalid` where both `Content-Length` and `Transfer-Encoding` stand
+# or a length is no number, `limit` where a length is past an `i64`, and
+# `unsupported` for a transfer coding other than chunked. See also
+# `read_piece`.
+function body_reader(response: Response, method: str, limits: Limits) -> BodyReader?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    return ok(
+        BodyReader(state: streaming.body_of(status_code: response.status, fields: fields, method: method, most_fields: limits.field_count)?)
+    )
+
+# The next piece of a body, at most `most` bytes: what `reader` holds of it,
+# or what comes next, waiting only where it holds none. An empty list once
+# the body has ended, and at every call after.
+#
+# - `reader`: the reader of the connection, advanced past the piece.
+# - `body`: the body's reader, advanced past the piece.
+# - `most`: the most bytes answered, 0 or more; 0 answers an empty list.
+#
+# A chunk's size line, its extensions and the trailer are read and checked
+# on the way and never answered. Fails `invalid` where the stream ends inside
+# a body of a length or inside a chunk, or a chunk is malformed; `limit`
+# where a chunk's size line passes 4,096 bytes or its trailer the fields
+# `body_reader` was told; and as `io.read_n` fails. Aborts where `most` is
+# below 0. See also `body_reader`.
+function read_piece(@reader: io.Reader, @body: BodyReader, most: i64) -> [u8]?
+    assert most >= 0
+    return streaming.piece(@reader, @body.state, most: most)
+
+# Writes the head of `response` to `s` for a body the program writes as it
+# is made and ends by closing the connection: the status line, its fields, a
+# `Date` where it has none, and `Connection: close`, with no length, which
+# RFC 9112 § 6.3 lets end a body and every HTTP/1.x client reads.
+# `response.body`, where it holds bytes, is written after the head.
+#
+# - `s`: the connection's stream; the program writes the body with
+#   `io.write`, each write going to the connection at once with no buffer to
+#   flush, and closes it, which ends the body.
+# - `response`: the status, 200 to 999, and the fields; its
+#   `Content-Length`, `Transfer-Encoding` and `Connection` are left out.
+#
+# Fails `invalid` before writing a byte where the status is outside 200 to
+# 999, the reason holds a line end, a name is no token or a value holds a
+# line end or a zero byte; and as `io.write` fails. See also `write_answer`,
+# which writes a body held whole.
+function write_response_head(s: io.Stream, response: Response) -> ()?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    if !has_header(response.headers, name: "Date")
+        match policy.date_now()
+            .ok d  => fields @ fields.push(wire.Field(name: "Date", value: d))
+            .err _ => _ = 0
+
+    data = streaming.head(status_code: response.status, reason: response.reason, fields: fields)?
+    io.write(s, data: data)?
+
+    if response.body.len() > 0
+        return io.write(s, data: response.body)
+    return ok()
+
+## Server-sent events
+
+# An event of a `text/event-stream` body, as the WHATWG HTML standard
+# dispatches it: read by `read_event` and `events_of`, and written by the
+# package `web`.
+record Event
+    # Its type, which a browser's `addEventListener` listens for: the
+    # stream's `event` field as read, "message" where it named none; written
+    # as `event:` where it is not "".
+    name: str
+    # Its data: its `data` lines joined by a line feed, "" for one empty
+    # line; written as one `data:` line for each of its lines.
+    data: str
+    # The last event id the stream had set when the event came, "" where it
+    # set none; written as `id:` where it is not "", so an event cannot write
+    # the id back to "".
+    id: str
+
+# An event stream being read: what a client keeps of it between two events.
+# Made by `event_reader` and advanced by `read_event`, which writes its two
+# fields.
+record EventReader
+    # The last event id the stream set, as its last empty line found it:
+    # what a reconnection sends as `Last-Event-ID`, "" where it set none.
+    last_id: str
+    # The milliseconds to wait before reconnecting: 3,000, as Chrome waits,
+    # until the stream's `retry` field says another.
+    retry_ms: i64
+    # The body, the line begun and the event being read. Only this package
+    # reads it.
+    state: streaming.Events
+
+# The reader of the event stream `response`'s body holds, before a byte of
+# it, as a browser's `EventSource` reads one.
+#
+# - `response`: a response to a `GET` whose head `read_response_head` read.
+# - `limits`: `body_bytes` bounds the lines of one event, and `field_count`
+#   a chunked body's trailer; the stream itself has no bound.
+#
+# Fails `invalid` where the status is not 200 or the type is not
+# `text/event-stream`, its parameters and its case aside, as `EventSource`
+# fails a connection; `unsupported` where a `Content-Encoding` other than
+# `identity` would have to be undone; and as `body_reader` fails. See also
+# `read_event`.
+function event_reader(response: Response, limits: Limits) -> EventReader?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    streaming.is_event_stream(status_code: response.status, fields: fields)?
+    b = streaming.body_of(status_code: response.status, fields: fields, method: METHOD_GET, most_fields: limits.field_count)?
+    state = streaming.begin_events(b, most_bytes: limits.body_bytes)
+    return ok(EventReader(last_id: "", retry_ms: state.scan.retry_ms, state: state))
+
+# The next event of the stream `events` reads, waiting for it: its lines read
+# by the WHATWG HTML standard's algorithm, a line ended by a carriage return
+# and a line feed, a line feed or a carriage return, a leading byte order
+# mark dropped, a comment skipped, `retry` taken where it is digits alone,
+# an `id` holding a zero byte ignored, bytes that are not UTF-8 read as
+# U+FFFD.
+#
+# - `reader`: the reader of the connection, advanced as the stream is read.
+# - `events`: the stream's reader; its `last_id` and `retry_ms` are written
+#   at every call, a failure's included.
+#
+# Fails `closed` where the body ends before another event, an event left
+# unfinished dropped as the standard drops it, at which a client waits
+# `retry_ms` and asks again with `Last-Event-ID`; `limit` where an event's
+# lines pass the limit `event_reader` was told; and as `read_piece` fails.
+# See also `events_of`.
+function read_event(@reader: io.Reader, @events: EventReader) -> Event?
+    outcome = streaming.next_event(@reader, @events.state)
+    events.last_id @ events.state.scan.last_id
+    events.retry_ms @ events.state.scan.retry_ms
+    got = outcome?
+    return ok(Event(name: got.kind, data: got.data, id: got.id))
+
+# The events of an event stream `response` holds whole, as `send` reads a
+# stream the server ends: each ended by an empty line, read as `read_event`
+# reads them; an event left unfinished at the end is dropped.
+#
+# - `response`: the response, its body whole.
+#
+# The events in their order, an empty list where the body holds none. Fails
+# as `event_reader` fails on the status, the type and the coding. See also
+# `read_event`.
+function events_of(response: Response) -> [Event]?
+    fields: [wire.Field] @= []
+
+    for h in response.headers
+        fields @ fields.push(wire.Field(name: h.name, value: h.value))
+
+    streaming.is_event_stream(status_code: response.status, fields: fields)?
+    out: [Event] @= []
+
+    for got in streaming.events_in(response.body)
+        out @ out.push(Event(name: got.kind, data: got.data, id: got.id))
+
+    return ok(out)
+
 ## The server
 
 # How a server serves: made by `default_server`, its fields changed by the
@@ -3026,3 +3238,120 @@ test "write_answer: keep-alive told to an HTTP/1.0 client"
     got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
     assert value_of(got.headers, name: "Connection").must() == "keep-alive" && has_header(got.headers, name: "Date")
     io.close(@reader.stream).must()
+
+# A client reading an event stream as it comes: the request written, the
+# head read, then each event as the server sends it.
+test "read_response_head: a stream's head, its body left on the connection"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\ndata: hello\n\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    started = read_response_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    assert started.status == STATUS_OK && started.closing && started.body.len() == 0
+    assert io.read_n(@reader, n: 11).must() == bytes.from_text("data: hello")
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# A chunked body read a piece at a time, as it comes.
+test "body_reader: a chunked body's pieces"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    started = read_response_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    body @= body_reader(started, method: METHOD_GET, limits: default_limits()).must()
+    got: [u8] @= []
+
+    while true
+        piece = read_piece(@reader, @body, most: 4).must()
+
+        if piece.len() == 0
+            break
+
+        for b in piece
+            got @ got.push(b)
+
+    assert got == bytes.from_text("hello world")
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# A body of a known length read in two pieces, then its end.
+test "read_piece: a body of 7 bytes in pieces of at most 4"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(two.first.stream, text: "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\nabcdefg").must()
+    reader @= io.reader(two.second.stream)
+    started = read_response_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    body @= body_reader(started, method: METHOD_GET, limits: default_limits()).must()
+    assert read_piece(@reader, @body, most: 4).must() == bytes.from_text("abcd")
+    assert read_piece(@reader, @body, most: 4).must() == bytes.from_text("efg")
+    assert read_piece(@reader, @body, most: 4).must().len() == 0
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# A server's answer made as it goes: the head, then the body written as it
+# comes, ended by closing the connection.
+test "write_response_head: a head with no length, then the body as it comes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    write_response_head(
+        two.second.stream,
+        response: respond(STATUS_OK, content_type: "text/plain", body: bytes.from_text("one "))
+    ).must()
+    io.write_text(two.second.stream, text: "two").must()
+    io.close(@two.second.stream).must()
+    client @= io.reader(two.first.stream)
+    got = read_response(@client, method: METHOD_GET, limits: default_limits()).must()
+    assert text_of(got).must() == "one two" && got.closing && !has_header(got.headers, name: "Content-Length")
+    io.close(@client.stream).must()
+
+# The events of a stream the server keeps open, read one at a time, and the
+# id a reconnection would send.
+test "event_reader: a stream's events as they come"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\nretry: 1000\nid: 1\nevent: tick\ndata: one\n\n"
+    ).must()
+    reader @= io.reader(two.second.stream)
+    started = read_response_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    events @= event_reader(started, limits: default_limits()).must()
+    first = read_event(@reader, @events).must()
+    assert first.name == "tick" && first.data == "one" && first.id == "1"
+    assert events.last_id == "1" && events.retry_ms == 1000
+    io.close(@reader.stream).must()
+    io.close(@two.first.stream).must()
+
+# An event of two data lines, then the stream ended by the server.
+test "read_event: two data lines, then the end"
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\n\r\ndata: {\"a\":\ndata: 1}\n\n"
+    ).must()
+    io.close(@two.first.stream).must()
+    reader @= io.reader(two.second.stream)
+    started = read_response_head(@reader, method: METHOD_GET, limits: default_limits()).must()
+    events @= event_reader(started, limits: default_limits()).must()
+    got = read_event(@reader, @events).must()
+    assert got.name == "message" && got.data == "{\"a\":\n1}"
+
+    match read_event(@reader, @events)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@reader.stream).must()
+
+# The events of a finite stream a response holds whole.
+test "events_of: a stream answered whole"
+    r = Response(
+        status: STATUS_OK,
+        reason: "",
+        headers: [Header(name: "Content-Type", value: "text/event-stream")],
+        body: bytes.from_text(": hello\n\nevent: a\ndata: 1\n\ndata: 2\n\n"),
+        closing: true
+    )
+    got = events_of(r).must()
+    assert got.len() == 2 && got[0].name == "a" && got[0].data == "1" && got[1].name == "message" && got[1].data == "2"

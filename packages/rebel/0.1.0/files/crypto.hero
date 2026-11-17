@@ -1,38 +1,66 @@
-# Cryptographic digests, the HMAC over each, keys derived from a secret, and
-# the comparison of two byte lists in constant time: MD5, SHA-1, SHA-224,
-# SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4 and RFC
-# 1321), all at once or in steps; HMAC (RFC 2104); HKDF (RFC 5869); and
-# PBKDF2 (RFC 8018). A text is digested as its UTF-8 bytes, and a digest is
-# its bytes: `bytes.format_hex` writes them as hexadecimal.
+# Cryptographic digests, the MACs and key derivations over them, password
+# hashing, and the comparison of two byte lists in constant time: MD5,
+# SHA-1, SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224 and SHA-512/256
+# (FIPS 180-4 and RFC 1321) and SHA3-224 to SHA3-512 (FIPS 202), all at once
+# or in steps; SHAKE128, SHAKE256 and cSHAKE read to any length (FIPS 202,
+# SP 800-185); BLAKE2b and BLAKE2s keyed or not (RFC 7693) and BLAKE3 in its
+# three modes; HMAC (RFC 2104); HKDF (RFC 5869); PBKDF2 (RFC 8018) and
+# scrypt (RFC 7914); Argon2 (RFC 9106) and bcrypt, with the PHC and modular
+# crypt strings a password's hash is stored in. A text is digested as its
+# UTF-8 bytes, and a digest is its bytes: `bytes.format_hex` writes them as
+# hexadecimal.
 #
 # There is no encryption here, no cipher and no signature: a cipher must
 # compute in a time that its key and its text do not decide, and nothing in
 # this wave proves that of the C the compiler makes. A digest needs no such
 # proof; the comparison `equals_constant_time` is written with no branch on
-# the bytes, and says how far that goes. Checksums that are not cryptographic
-# are the package `hash`'s, and random bytes, a key's or a salt's, are the
-# package `random`'s.
+# the bytes, and says how far that goes. Ciphers and signatures by the
+# system's own cryptography are the packages `crypto/seal` and
+# `crypto/keypairs`. Checksums that are not cryptographic are the package
+# `hash`'s, and random bytes, a key's or a salt's, are the package
+# `random`'s: no function here makes a salt, so that `crypto` stands on no C.
 #
 # MD5 and SHA-1 are broken for security: two inputs that answer alike can be
 # made. They are kept for the formats and protocols that name them, never to
 # stand for an input against someone who chooses it.
 #
-# It fails with `invalid` alone, where a length or a count is outside what a
-# derivation can make, or a name names no algorithm.
+# It fails with `invalid` alone, where a length, a count or a cost is outside
+# what a function can make, a name names no algorithm, or a stored password
+# hash is not one; the memory a derivation fills is bounded by
+# `MOST_MEMORY`.
 
 use bytes
+use crypto/internal/argon2 as argon2_work
+use crypto/internal/bcrypt as bcrypt_work
+use crypto/internal/blake2 as blake2_work
+use crypto/internal/blake3 as blake3_work
+use crypto/internal/blake3_vectors
 use crypto/internal/compare
 use crypto/internal/derive
 use crypto/internal/engine
+use crypto/internal/passwords
+use crypto/internal/scrypt as scrypt_work
+use crypto/internal/sha256 as sha256_work
+use crypto/internal/sponges
 use crypto/internal/vectors
 
 ## Codes
 
 # The code a function fails with where its input is not what it reads: a
-# length or a count `hkdf_expand`, `hkdf` or `pbkdf2` cannot make, or a name
-# `parse_algorithm` does not know.
+# length or a count `hkdf_expand`, `hkdf`, `pbkdf2`, `shake128`, `blake2b`,
+# `blake3_derive_key` or `scrypt` cannot make, a cost `argon2` or
+# `hash_bcrypt` refuses, a stored hash `verify_argon2` or `verify_bcrypt`
+# cannot read, or a name `parse_algorithm` does not know.
 constant INVALID: str
     "invalid"
+
+# The most memory, in bytes, that `scrypt` and `argon2` may be asked to
+# fill: 2 GiB, which admits RFC 9106's first recommendation (Argon2id over
+# 2 GiB) and RFC 7914's largest vector (1 GiB). Parameters read from a
+# stored password hash ask no more than this, so verifying one cannot be
+# made to take the memory without bound.
+constant MOST_MEMORY: i64
+    2147483648
 
 ## Algorithms
 
@@ -54,6 +82,14 @@ variant Algorithm
     sha512_224
     # SHA-512/256, 32 bytes: SHA-512 from its own starting words, cut short.
     sha512_256
+    # SHA3-224 (FIPS 202), 28 bytes: Keccak's sponge, not SHA-2's chain.
+    sha3_224
+    # SHA3-256, 32 bytes.
+    sha3_256
+    # SHA3-384, 48 bytes.
+    sha3_384
+    # SHA3-512, 64 bytes.
+    sha3_512
 
 # The length of a digest by `algorithm`, in bytes: Python's `digest_size`.
 #
@@ -62,15 +98,17 @@ variant Algorithm
 # See also `block_size`.
 function digest_size(algorithm: Algorithm) -> i64
     return match algorithm
-        .md5                  => 16
-        .sha1                 => 20
-        .sha224 | .sha512_224 => 28
-        .sha256 | .sha512_256 => 32
-        .sha384               => 48
-        .sha512               => 64
+        .md5                              => 16
+        .sha1                             => 20
+        .sha224 | .sha512_224 | .sha3_224 => 28
+        .sha256 | .sha512_256 | .sha3_256 => 32
+        .sha384 | .sha3_384               => 48
+        .sha512 | .sha3_512               => 64
 
 # The length of the blocks `algorithm` digests, in bytes: 64 for MD5, SHA-1,
-# SHA-224 and SHA-256, 128 for the others. An HMAC pads its key to it.
+# SHA-224 and SHA-256, 128 for the other SHA-2 digests, and for SHA-3 its
+# rate, 144, 136, 104 and 72 bytes from SHA3-224 to SHA3-512, as Python's
+# `block_size` answers. An HMAC pads its key to it.
 #
 # - `algorithm`: the digest asked about.
 #
@@ -79,9 +117,14 @@ function block_size(algorithm: Algorithm) -> i64
     return match algorithm
         .md5 | .sha1 | .sha224 | .sha256              => 64
         .sha384 | .sha512 | .sha512_224 | .sha512_256 => 128
+        .sha3_224                                     => 144
+        .sha3_256                                     => 136
+        .sha3_384                                     => 104
+        .sha3_512                                     => 72
 
 # The name of `algorithm` as Python's `hashlib` writes it: `md5`, `sha1`,
-# `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224` or `sha512_256`.
+# `sha224`, `sha256`, `sha384`, `sha512`, `sha512_224`, `sha512_256`,
+# `sha3_224`, `sha3_256`, `sha3_384` or `sha3_512`.
 #
 # - `algorithm`: the digest to name.
 #
@@ -96,6 +139,10 @@ function format_algorithm(algorithm: Algorithm) -> str
         .sha512     => "sha512"
         .sha512_224 => "sha512_224"
         .sha512_256 => "sha512_256"
+        .sha3_224   => "sha3_224"
+        .sha3_256   => "sha3_256"
+        .sha3_384   => "sha3_384"
+        .sha3_512   => "sha3_512"
 
 # The algorithm `s` names, as `format_algorithm` writes it.
 #
@@ -114,9 +161,13 @@ function parse_algorithm(s: str) -> Algorithm?
         "sha512"     => ok(.sha512)
         "sha512_224" => ok(.sha512_224)
         "sha512_256" => ok(.sha512_256)
+        "sha3_224"   => ok(.sha3_224)
+        "sha3_256"   => ok(.sha3_256)
+        "sha3_384"   => ok(.sha3_384)
+        "sha3_512"   => ok(.sha3_512)
         _ => fail(
             code: INVALID,
-            msg: f"no algorithm named \"{s}\": the names are md5, sha1, sha224, sha256, sha384, sha512, sha512_224 and sha512_256"
+            msg: f"no algorithm named \"{s}\": the names are md5, sha1, sha224, sha256, sha384, sha512, sha512_224, sha512_256, sha3_224, sha3_256, sha3_384 and sha3_512"
         )
 
 ## Digests
@@ -294,6 +345,87 @@ function sha512_256_text(s: str) -> [u8]
     update_text(@state, s)
     return digest(state)
 
+# The SHA3-224 digest of `data`, 28 bytes. FIPS 202's Keccak sponge, of
+# another make than SHA-2's, so a weakness of one is not the other's.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha3_224_text`, `sha256` and `shake128`.
+function sha3_224(data: [u8]) -> [u8]
+    state @= start(.sha3_224)
+    update(@state, data)
+    return digest(state)
+
+# The SHA3-224 digest of the bytes of `s`, what `sha3_224` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha3_224`.
+function sha3_224_text(s: str) -> [u8]
+    state @= start(.sha3_224)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA3-256 digest of `data`, 32 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha3_256_text`.
+function sha3_256(data: [u8]) -> [u8]
+    state @= start(.sha3_256)
+    update(@state, data)
+    return digest(state)
+
+# The SHA3-256 digest of the bytes of `s`, what `sha3_256` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha3_256`.
+function sha3_256_text(s: str) -> [u8]
+    state @= start(.sha3_256)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA3-384 digest of `data`, 48 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha3_384_text`.
+function sha3_384(data: [u8]) -> [u8]
+    state @= start(.sha3_384)
+    update(@state, data)
+    return digest(state)
+
+# The SHA3-384 digest of the bytes of `s`, what `sha3_384` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha3_384`.
+function sha3_384_text(s: str) -> [u8]
+    state @= start(.sha3_384)
+    update_text(@state, s)
+    return digest(state)
+
+# The SHA3-512 digest of `data`, 64 bytes.
+#
+# - `data`: the bytes to digest.
+#
+# See also `sha3_512_text`.
+function sha3_512(data: [u8]) -> [u8]
+    state @= start(.sha3_512)
+    update(@state, data)
+    return digest(state)
+
+# The SHA3-512 digest of the bytes of `s`, what `sha3_512` answers for its UTF-8.
+#
+# - `s`: the text to digest, read where it stands.
+#
+# See also `sha3_512`.
+function sha3_512_text(s: str) -> [u8]
+    state @= start(.sha3_512)
+    update_text(@state, s)
+    return digest(state)
+
 ## Steps
 
 # A digest or an HMAC computed in steps: the caller holds it, feeds it piece
@@ -324,6 +456,10 @@ function start(algorithm: Algorithm) -> State
         .sha512     => .sha512
         .sha512_224 => .sha512_224
         .sha512_256 => .sha512_256
+        .sha3_224   => .sha3_224
+        .sha3_256   => .sha3_256
+        .sha3_384   => .sha3_384
+        .sha3_512   => .sha3_512
 
     return State(algorithm: algorithm, run: engine.begin(kind))
 
@@ -414,6 +550,353 @@ function hmac_text(algorithm: Algorithm, key: [u8], s: str) -> [u8]
 function equals_constant_time(a: [u8], b: [u8]) -> bool
     return compare.equals(a: a, b: b)
 
+## Extendable output
+
+# Which of FIPS 202's extendable-output functions a `ShakeState` computes:
+# its output is as long as the caller asks.
+variant Shake
+    # SHAKE128 and cSHAKE128: 128 bits of strength, a rate of 168 bytes.
+    shake128
+    # SHAKE256 and cSHAKE256: 256 bits of strength, a rate of 136 bytes.
+    shake256
+
+# SHAKE or cSHAKE computed in steps: fed with `update_shake`, and read with
+# `digest_shake` to any length, which answers the first bytes of one
+# endless output, so a longer read begins with a shorter one. It is made by
+# `start_shake` or `start_cshake` and copied with `=`.
+record ShakeState
+    # Which function it computes.
+    shake: Shake
+    # The work so far: Keccak's lanes, the bytes of an unfinished block and
+    # the length. Only this package reads it.
+    run: engine.Run
+
+# The first `length` bytes of SHAKE128 over `data` (FIPS 202 6.2): an
+# output of any length, 32 bytes giving its full strength.
+#
+# - `data`: the bytes read.
+# - `length`: how many bytes to answer, 0 or more; 0 answers none.
+#
+# Fails `invalid` where `length` is below 0. See also `shake256` and
+# `start_shake`.
+function shake128(data: [u8], length: i64) -> [u8]?
+    state @= start_shake(.shake128)
+    update_shake(@state, data)
+    return digest_shake(state: state, length: length)
+
+# The first `length` bytes of SHAKE256 over `data` (FIPS 202 6.2), 64 bytes
+# giving its full strength.
+#
+# - `data`: the bytes read.
+# - `length`: how many bytes to answer, 0 or more; 0 answers none.
+#
+# Fails `invalid` where `length` is below 0. See also `shake128`.
+function shake256(data: [u8], length: i64) -> [u8]?
+    state @= start_shake(.shake256)
+    update_shake(@state, data)
+    return digest_shake(state: state, length: length)
+
+# A state of `shake` that has been fed nothing.
+#
+# - `shake`: SHAKE128 or SHAKE256.
+#
+# See also `update_shake`, `digest_shake` and `start_cshake`.
+function start_shake(shake: Shake) -> ShakeState
+    kind: engine.Kind = match shake
+        .shake128 => .shake128
+        .shake256 => .shake256
+
+    return ShakeState(shake: shake, run: engine.begin(kind))
+
+# A state of cSHAKE (SP 800-185 3) that has been fed nothing: SHAKE kept
+# apart from every other use by a function's name and a customization, so
+# two uses of one input answer unrelated bytes. With both empty it is
+# `start_shake`, as the standard says.
+#
+# - `shake`: cSHAKE128 or cSHAKE256, by the SHAKE under it.
+# - `name`: the name of a function NIST defines on cSHAKE, empty for any
+#   other use.
+# - `custom`: the customization the program chooses, its UTF-8 for a text
+#   (`bytes.from_text`); it may be empty.
+#
+# See also `start_shake`.
+function start_cshake(shake: Shake, name: [u8], custom: [u8]) -> ShakeState
+    if name.len() == 0 && custom.len() == 0
+        return start_shake(shake)
+
+    kind: engine.Kind = match shake
+        .shake128 => .cshake128
+        .shake256 => .cshake256
+
+    return ShakeState(shake: shake, run: engine.begin_custom(kind, name: name, custom: custom))
+
+# Feeds `data` to `state`, whose output then covers what it was fed before
+# and then `data`.
+#
+# - `state`: the state fed, which the caller holds.
+# - `data`: the bytes fed; no bytes change nothing.
+#
+# See also `digest_shake`.
+function update_shake(@state: ShakeState, data: [u8])
+    engine.absorb(@state.run, data)
+
+# The first `length` bytes of the output of every byte `state` was fed.
+# `state` is a copy, so the caller's can be fed further and read again.
+#
+# - `state`: the state read.
+# - `length`: how many bytes to answer, 0 or more.
+#
+# Fails `invalid` where `length` is below 0. Go's `Read` goes on from where
+# the last read stopped; here each read starts from the output's first byte,
+# as Python's `digest` does. See also `update_shake`.
+function digest_shake(state: ShakeState, length: i64) -> [u8]?
+    if length < 0
+        return fail(code: INVALID, msg: f"a length of {length} bytes, where SHAKE answers 0 or more")
+    return ok(engine.squeeze(state.run, length: length))
+
+## BLAKE2
+
+# Which BLAKE2 (RFC 7693) a `Blake2State` computes.
+variant Blake2
+    # BLAKE2b: words of 64 bits, digests of 1 to 64 bytes, keys to 64.
+    blake2b
+    # BLAKE2s: words of 32 bits, digests of 1 to 32 bytes, keys to 32.
+    blake2s
+
+# A BLAKE2 digest computed in steps: fed with `update_blake2`, read with
+# `digest_blake2` at any moment. Made by `start_blake2`, which checks every
+# length, and copied with `=`.
+record Blake2State
+    # Which BLAKE2 it computes.
+    blake2: Blake2
+    # The work so far, its last block held back. Only this package reads it.
+    run: blake2_work.Run
+
+# The BLAKE2b digest of `data`, `size` bytes, under `key` when it is not
+# empty: a digest at least as strong as SHA-3, faster, and a MAC of its own
+# when keyed, with no HMAC around it.
+#
+# - `data`: the bytes to digest.
+# - `size`: the digest's length in bytes, 1 to 64; 64 is Python's default.
+# - `key`: the secret key, 0 to 64 bytes; empty for a plain digest.
+#
+# Fails `invalid` where `size` or the key's length is outside those. See
+# also `blake2s` and `start_blake2`.
+function blake2b(data: [u8], size: i64, key: [u8]) -> [u8]?
+    state @= start_blake2(blake2: .blake2b, size: size, key: key, salt: [], person: [])?
+    update_blake2(@state, data)
+    return ok(digest_blake2(state))
+
+# The BLAKE2s digest of `data`, `size` bytes, under `key` when it is not
+# empty: BLAKE2 for machines of 32 bits and for small digests.
+#
+# - `data`: the bytes to digest.
+# - `size`: the digest's length in bytes, 1 to 32; 32 is Python's default.
+# - `key`: the secret key, 0 to 32 bytes; empty for a plain digest.
+#
+# Fails `invalid` where `size` or the key's length is outside those. See
+# also `blake2b`.
+function blake2s(data: [u8], size: i64, key: [u8]) -> [u8]?
+    state @= start_blake2(blake2: .blake2s, size: size, key: key, salt: [], person: [])?
+    update_blake2(@state, data)
+    return ok(digest_blake2(state))
+
+# A state of `blake2` that has been fed nothing, with every parameter of
+# the sequential mode Python's `hashlib` takes.
+#
+# - `blake2`: BLAKE2b or BLAKE2s.
+# - `size`: the digest's length in bytes, 1 to 64 for BLAKE2b and 1 to 32
+#   for BLAKE2s; it changes every byte of the digest, not only its length.
+# - `key`: the secret key, 0 to 64 bytes for BLAKE2b and 0 to 32 for
+#   BLAKE2s; empty for a plain digest.
+# - `salt`: 0 to 16 bytes for BLAKE2b and 0 to 8 for BLAKE2s, padded with
+#   zeros; empty for none.
+# - `person`: a personalization of the same lengths, which keeps one use of
+#   the digest apart from another; empty for none.
+#
+# Fails `invalid` where a length is outside those; the message names which.
+# BLAKE2's tree mode (fanout, depth, node offsets) is not offered. See also
+# `update_blake2` and `digest_blake2`.
+function start_blake2(blake2: Blake2, size: i64, key: [u8], salt: [u8], person: [u8]) -> Blake2State?
+    wide = blake2 == .blake2b
+
+    most: i64 = if wide
+        64
+    else
+        32
+
+    if size < 1 || size > most
+        return fail(code: INVALID, msg: f"a digest of {size} bytes, where {format_blake2(blake2)} makes 1 to {most}")
+
+    if key.len() > most
+        return fail(code: INVALID, msg: f"a key of {key.len()} bytes, where {format_blake2(blake2)} takes 0 to {most}")
+
+    if salt.len() > most / 4
+        return fail(
+            code: INVALID,
+            msg: f"a salt of {salt.len()} bytes, where {format_blake2(blake2)} takes 0 to {most / 4}"
+        )
+
+    if person.len() > most / 4
+        return fail(
+            code: INVALID,
+            msg: f"a personalization of {person.len()} bytes, where {format_blake2(blake2)} takes 0 to {most / 4}"
+        )
+    run = blake2_work.begin(wide: wide, size: size, key: key, salt: salt, person: person)
+    return ok(Blake2State(blake2: blake2, run: run))
+
+# Feeds `data` to `state`, whose digest then covers what it was fed before
+# and then `data`.
+#
+# - `state`: the state fed, which the caller holds.
+# - `data`: the bytes fed; no bytes change nothing.
+#
+# See also `digest_blake2`.
+function update_blake2(@state: Blake2State, data: [u8])
+    blake2_work.absorb(@state.run, data)
+
+# The digest of every byte `state` was fed, of the size it was started
+# with. `state` is a copy, so the caller's can be fed further and read
+# again.
+#
+# - `state`: the state read.
+#
+# See also `update_blake2`.
+function digest_blake2(state: Blake2State) -> [u8]
+    return blake2_work.finish(state.run)
+
+# The name of `blake2`, `blake2b` or `blake2s`, as Python's `hashlib` writes
+# it.
+#
+# - `blake2`: the function to name.
+#
+# See also `start_blake2`.
+function format_blake2(blake2: Blake2) -> str
+    return match blake2
+        .blake2b => "blake2b"
+        .blake2s => "blake2s"
+
+## BLAKE3
+
+# A BLAKE3 hash computed in steps, in one of its three modes: a plain hash,
+# a keyed hash, or a key derived under a context. It is fed with
+# `update_blake3` and read to any length with `digest_blake3`. Made by
+# `start_blake3`, `start_blake3_keyed` or `start_blake3_derive_key`, and
+# copied with `=`.
+record Blake3State
+    # The work so far: the chunk being fed and the chaining values of the
+    # tree's open subtrees. Only this package reads it.
+    run: blake3_work.Run
+
+# The BLAKE3 hash of `data`, 32 bytes: a digest as strong as SHA-3 and much
+# faster, its input cut in chunks joined by a tree.
+#
+# - `data`: the bytes to hash.
+#
+# See also `blake3_keyed`, `blake3_derive_key` and `start_blake3`, which
+# reads the output to any length.
+function blake3(data: [u8]) -> [u8]
+    state @= start_blake3()
+    update_blake3(@state, data)
+    return blake3_work.finish(state.run, length: 32)
+
+# The BLAKE3 keyed hash of `data` under `key`, 32 bytes: a MAC with no HMAC
+# around it.
+#
+# - `key`: the secret key, exactly 32 bytes.
+# - `data`: the message.
+#
+# Fails `invalid` where `key` is not 32 bytes. See also `blake3`.
+function blake3_keyed(key: [u8], data: [u8]) -> [u8]?
+    state @= start_blake3_keyed(key)?
+    update_blake3(@state, data)
+    return ok(blake3_work.finish(state.run, length: 32))
+
+# `length` bytes of key derived by BLAKE3 from `material` under `context`:
+# the context names the use, so one material gives unrelated keys to two
+# uses.
+#
+# - `context`: a text fixed in the program, unique to it and to the use,
+#   such as "example.com 2026-11-17 session tokens"; never a secret, never
+#   made at run time.
+# - `material`: the secret the key is made from.
+# - `length`: how many bytes to make, 0 or more; 32 is the usual.
+#
+# Fails `invalid` where `length` is below 0. See also
+# `start_blake3_derive_key` and `hkdf`.
+function blake3_derive_key(context: str, material: [u8], length: i64) -> [u8]?
+    state @= start_blake3_derive_key(context)
+    update_blake3(@state, material)
+    return digest_blake3(state: state, length: length)
+
+# A state of the plain BLAKE3 hash that has been fed nothing.
+#
+# See also `update_blake3` and `digest_blake3`.
+function start_blake3() -> Blake3State
+    return Blake3State(run: blake3_work.begin(key: sha256_work.START256, flags: 0))
+
+# A state of the BLAKE3 keyed hash under `key` that has been fed nothing.
+#
+# - `key`: the secret key, exactly 32 bytes.
+#
+# Fails `invalid` where `key` is not 32 bytes. See also `blake3_keyed`.
+function start_blake3_keyed(key: [u8]) -> Blake3State?
+    if key.len() != 32
+        return fail(code: INVALID, msg: f"a key of {key.len()} bytes, where BLAKE3 takes 32")
+    words = blake3_work.words_of(key, at: 0, count: 8)
+    return ok(Blake3State(run: blake3_work.begin(key: words, flags: blake3_work.KEYED_HASH)))
+
+# A state of BLAKE3's key derivation under `context` that has been fed none
+# of the key material.
+#
+# - `context`: a text fixed in the program, unique to it and to the use.
+#
+# See also `blake3_derive_key`.
+function start_blake3_derive_key(context: str) -> Blake3State
+    key = blake3_work.context_key(bytes.from_text(context))
+    return Blake3State(run: blake3_work.begin(key: key, flags: blake3_work.DERIVE_KEY_MATERIAL))
+
+# Feeds `data` to `state`, whose output then covers what it was fed before
+# and then `data`.
+#
+# - `state`: the state fed, which the caller holds.
+# - `data`: the bytes fed; no bytes change nothing.
+#
+# See also `digest_blake3`.
+function update_blake3(@state: Blake3State, data: [u8])
+    blake3_work.absorb(@state.run, data)
+
+# The first `length` bytes of the output of every byte `state` was fed; 32
+# bytes are the hash. `state` is a copy, so the caller's can be fed further
+# and read again.
+#
+# - `state`: the state read.
+# - `length`: how many bytes to answer, 0 or more.
+#
+# Fails `invalid` where `length` is below 0. See also `digest_blake3_from`.
+function digest_blake3(state: Blake3State, length: i64) -> [u8]?
+    return digest_blake3_from(state: state, offset: 0, length: length)
+
+# `length` bytes of the output of every byte `state` was fed, from the byte
+# `offset` of it: the output is computed from there, not from its start,
+# as Python's `seek` and Rust's `set_position` read it.
+#
+# - `state`: the state read.
+# - `offset`: where in the output to begin, in bytes, 0 or more.
+# - `length`: how many bytes to answer, 0 or more.
+#
+# Fails `invalid` where `offset` or `length` is below 0, or the two together
+# pass 2^63 - 1. See also `digest_blake3`.
+function digest_blake3_from(state: Blake3State, offset: i64, length: i64) -> [u8]?
+    if offset < 0 || length < 0 || offset > 9223372036854775807 - length - 64
+        return fail(
+            code: INVALID,
+            msg: f"an offset of {offset} and a length of {length}, where BLAKE3 reads 0 or more of each"
+        )
+    skip = offset % 64
+    out = blake3_work.finish_from(state.run, length: skip + length, block: offset / 64)
+    return ok(out.slice(from: skip, to: skip + length))
+
 ## Keys from secrets
 
 # HKDF's extraction (RFC 5869 2.2): a pseudorandom key of `digest_size`
@@ -495,6 +978,252 @@ function pbkdf2(algorithm: Algorithm, password: [u8], salt: [u8], iterations: i6
     keyed = start_hmac(algorithm: algorithm, key: password)
     return ok(derive.pbkdf2(keyed: keyed.run, salt: salt, iterations: iterations, length: length))
 
+# scrypt (RFC 7914): `length` bytes of key made from a password, each guess
+# costing 128 × `r` × `n` bytes of memory and as many steps, so that a
+# guesser's hardware buys little over the program's.
+#
+# - `password`: the password, its UTF-8 for a text (`bytes.from_text`).
+# - `salt`: a value of the caller's, unique to the password, 16 random bytes
+#   for instance; it may be empty.
+# - `n`: the cost, a power of two from 2, and below 2^(16 × `r`) as the RFC
+#   asks; RFC 7914 names 2^14 for a login and 2^20 for a file's key.
+# - `r`: the block size, 1 or more; 8 is the usual.
+# - `p`: the parallelization, 1 or more, computed one after another here.
+# - `length`: how many bytes to make, 1 to 2^32 - 1 times 32.
+#
+# Fails `invalid` where `n` is not such a power of two, `r` or `p` is below
+# 1, `r` × `p` reaches 2^30, 128 × `r` × (`n` + `p`) bytes pass
+# `MOST_MEMORY`, or `length` is outside its range; Python refuses each. It
+# takes 128 × `r` × (`n` + `p`) bytes and 4 × `n` × `r` × `p` Salsa20/8
+# rounds of 64 bytes. See also `pbkdf2` and `argon2`.
+function scrypt(password: [u8], salt: [u8], n: i64, r: i64, p: i64, length: i64) -> [u8]?
+    if n < 2 || n > MOST_MEMORY || n & n - 1 != 0
+        return fail(code: INVALID, msg: f"a cost n of {n}, where scrypt takes a power of two from 2")
+
+    if r < 1 || p < 1 || r > MOST_MEMORY || p > MOST_MEMORY
+        return fail(
+            code: INVALID,
+            msg: f"a block size r of {r} and a parallelization p of {p}, where scrypt takes 1 or more of each"
+        )
+
+    if r * p >= 1 << 30
+        return fail(code: INVALID, msg: f"r × p of {r * p}, where scrypt takes less than 2^30")
+
+    if r < 4 && n >= 1 << 16 * r
+        return fail(code: INVALID, msg: f"a cost n of {n} with r of {r}, where scrypt takes n below 2^{16 * r}")
+
+    if n + p > MOST_MEMORY / (128 * r)
+        return fail(
+            code: INVALID,
+            msg: f"n of {n}, r of {r} and p of {p}, which ask more than the {MOST_MEMORY} bytes of memory scrypt takes here"
+        )
+
+    if length < 1 || length > 4294967295 * 32
+        return fail(code: INVALID, msg: f"a length of {length} bytes, where scrypt makes 1 to {4294967295 * 32}")
+    return ok(scrypt_work.derive_key(password: password, salt: salt, n: n, r: r, p: p, length: length))
+
+## Passwords
+
+# Which Argon2 (RFC 9106) a function computes.
+variant Argon2
+    # Argon2d: the blocks read are chosen by the password's own bytes, the
+    # strongest against guessing hardware and open to a program that watches
+    # which memory is read; for keys, not for logins on a shared machine.
+    argon2d
+    # Argon2i: the blocks read are chosen by a counter, so the memory read
+    # tells nothing of the password.
+    argon2i
+    # Argon2id: Argon2i for the first half of the first pass and Argon2d
+    # after it; RFC 9106's choice for passwords.
+    argon2id
+
+# What an Argon2 hash costs and makes. Built directly, or taken from
+# `argon2_low_memory` or `argon2_high_memory`; `argon2` and `hash_argon2`
+# check every field.
+record Argon2Params
+    # Which Argon2.
+    argon2: Argon2
+    # How many passes over the memory, 1 to 2^32 - 1: the time each guess
+    # costs beyond the memory's own.
+    passes: i64
+    # The memory filled, in KiB, from 8 a lane to `MOST_MEMORY` / 1024;
+    # Argon2 rounds it down to a multiple of 4 × `lanes`.
+    memory: i64
+    # How many lanes the memory is cut into, 1 to 2^24 - 1; computed one
+    # after another here, so more lanes change the tag and not the time.
+    lanes: i64
+    # The tag's length in bytes, 4 to 2^32 - 1; 32 is the usual.
+    length: i64
+
+# RFC 9106 4's second recommendation, for a machine short of memory:
+# Argon2id, 3 passes over 64 MiB in 4 lanes, a tag of 32 bytes, to be used
+# with a salt of 16 bytes; Python's `argon2.profiles.RFC_9106_LOW_MEMORY`.
+#
+# See also `argon2_high_memory` and `hash_argon2`.
+function argon2_low_memory() -> Argon2Params
+    return Argon2Params(argon2: .argon2id, passes: 3, memory: 65536, lanes: 4, length: 32)
+
+# RFC 9106 4's first recommendation: Argon2id, 1 pass over 2 GiB in 4
+# lanes, a tag of 32 bytes, to be used with a salt of 16 bytes; Python's
+# `argon2.profiles.RFC_9106_HIGH_MEMORY`.
+#
+# See also `argon2_low_memory`.
+function argon2_high_memory() -> Argon2Params
+    return Argon2Params(argon2: .argon2id, passes: 1, memory: 2097152, lanes: 4, length: 32)
+
+# The Argon2 tag of `password` (RFC 9106): `params.length` bytes that cost
+# `params.memory` KiB and `params.passes` passes to make, as a password's
+# hash or as a key.
+#
+# - `params`: the type and the costs.
+# - `password`: the password, its UTF-8 for a text (`bytes.from_text`).
+# - `salt`: 8 bytes or more, unique to the password; 16 random bytes are
+#   RFC 9106's, from `random` or `os.random_bytes`.
+# - `secret`: a key the program keeps apart from the stored hashes, a
+#   pepper; empty for none.
+# - `data`: associated data bound into the tag; empty for none.
+#
+# Fails `invalid` where a field of `params` is outside its range, the salt
+# is shorter than 8 bytes, or an input passes 2^32 - 1 bytes; the message
+# names which. It takes `params.memory` KiB and `params.passes` ×
+# `params.memory` compressions of 1 KiB. See also `hash_argon2` and
+# `scrypt`.
+function argon2(params: Argon2Params, password: [u8], salt: [u8], secret: [u8], data: [u8]) -> [u8]?
+    kind = match params.argon2
+        .argon2d  => 0
+        .argon2i  => 1
+        .argon2id => 2
+
+    inputs = argon2_work.Inputs(
+        kind: kind,
+        version: 0x13,
+        passes: params.passes,
+        memory: params.memory,
+        lanes: params.lanes,
+        length: params.length
+    )
+    passwords.check_argon2(inputs, password: password.len(), salt: salt.len(), secret: secret.len(), data: data.len())?
+    return ok(argon2_work.derive(inputs, password: password, salt: salt, secret: secret, data: data))
+
+# The PHC string of `password`'s Argon2 hash, the form a password is
+# stored in: `$argon2id$v=19$m=65536,t=3,p=4$` and the salt and the tag in
+# base 64 with no padding.
+#
+# - `params`: the type and the costs, written into the string.
+# - `password`: the password, its UTF-8 for a text.
+# - `salt`: 8 bytes or more, new for every password stored: 16 random
+#   bytes from `random` or `os.random_bytes`, never a constant. `crypto`
+#   makes none itself, so that it stands on no C.
+#
+# Fails `invalid` as `argon2` does. A secret and associated data have no
+# place in the string, so it is made with neither. See also
+# `verify_argon2`.
+function hash_argon2(params: Argon2Params, password: [u8], salt: [u8]) -> str?
+    tag = argon2(params: params, password: password, salt: salt, secret: [], data: [])?
+
+    kind = match params.argon2
+        .argon2d  => 0
+        .argon2i  => 1
+        .argon2id => 2
+
+    inputs = argon2_work.Inputs(
+        kind: kind,
+        version: 0x13,
+        passes: params.passes,
+        memory: params.memory,
+        lanes: params.lanes,
+        length: params.length
+    )
+    return ok(passwords.format_argon2(inputs, salt: salt, tag: tag))
+
+# Whether `password` is the one `hash`, a PHC string of Argon2, was made
+# from: the tag computed again with the string's type, version, costs and
+# salt, and compared in constant time.
+#
+# - `password`: the password given, its UTF-8 for a text.
+# - `hash`: the stored string, as `hash_argon2` or another Argon2 library
+#   writes it; with no `v=`, version 16 (Argon2 1.0) is read.
+#
+# Fails `invalid` where `hash` is not such a string, or asks a cost
+# `argon2` refuses, more memory than `MOST_MEMORY` included, so a string
+# from outside cannot make it allocate without bound. Its cost is what the
+# string asks. See also `hash_argon2` and `parse_argon2`.
+function verify_argon2(password: [u8], hash: str) -> bool?
+    stored = passwords.parse_argon2(hash)?
+    tag = argon2_work.derive(stored.inputs, password: password, salt: stored.salt, secret: [], data: [])
+    return ok(compare.equals(a: tag, b: stored.tag))
+
+# The type and the costs a PHC string of Argon2 was made with, to tell a
+# hash stored with costs now too low, which the program then hashes again.
+#
+# - `hash`: the stored string.
+#
+# Fails `invalid` where `verify_argon2` does. See also `verify_argon2`.
+function parse_argon2(hash: str) -> Argon2Params?
+    stored = passwords.parse_argon2(hash)?
+    inputs = stored.inputs
+
+    kind: Argon2 = if inputs.kind == 0
+        .argon2d
+    else if inputs.kind == 1
+        .argon2i
+    else
+        .argon2id
+
+    return ok(
+        Argon2Params(argon2: kind, passes: inputs.passes, memory: inputs.memory, lanes: inputs.lanes, length: inputs.length)
+    )
+
+# The string of `password`'s bcrypt hash, `$2b$`, the cost in two digits,
+# `$`, the salt and the hash in bcrypt's own base 64, 60 characters: OpenBSD's
+# form, which every bcrypt reads.
+#
+# - `password`: the password, 72 bytes at most and with no zero byte.
+# - `salt`: exactly 16 bytes, new for every password stored, from `random`
+#   or `os.random_bytes`, never a constant.
+# - `cost`: 4 to 31; each step doubles the time. Go's default is 10 and
+#   Python's 12.
+#
+# Fails `invalid` where `password` is longer than 72 bytes (OpenBSD's and
+# Python's cut it there in silence; Go and Python 5 refuse it, as here),
+# holds a zero byte (where OpenBSD's would stop), where `salt` is not 16
+# bytes, or `cost` is outside 4 to 31. See also `verify_bcrypt` and
+# `hash_argon2`, the stronger choice.
+function hash_bcrypt(password: [u8], salt: [u8], cost: i64) -> str?
+    passwords.check_bcrypt(password, cost: cost)?
+
+    if salt.len() != 16
+        return fail(code: INVALID, msg: f"a salt of {salt.len()} bytes, where bcrypt takes 16")
+    made = bcrypt_work.hash(password: bytes.concat([password, [0]]), salt: salt, cost: cost)
+    return ok(passwords.format_bcrypt(minor: "b", cost: cost, salt: salt, hash: made))
+
+# Whether `password` is the one `hash`, a bcrypt string, was made from: the
+# string made again with its own salt and cost and compared whole, in
+# constant time, as OpenBSD's does.
+#
+# - `password`: the password given, 72 bytes at most and with no zero byte.
+# - `hash`: the stored string, `$2b$`, `$2a$` or `$2y$` (PHP's and Apache's
+#   name for the same).
+#
+# Fails `invalid` where `hash` is not such a string, or `password` is one
+# `hash_bcrypt` refuses. Its cost is the string's. See also `hash_bcrypt`.
+function verify_bcrypt(password: [u8], hash: str) -> bool?
+    kept = passwords.parse_bcrypt(hash)?
+    passwords.check_bcrypt(password, cost: kept.cost)?
+    made = bcrypt_work.hash(password: bytes.concat([password, [0]]), salt: kept.salt, cost: kept.cost)
+    again = passwords.format_bcrypt(minor: kept.minor, cost: kept.cost, salt: kept.salt, hash: made)
+    return ok(compare.equals(a: bytes.from_text(again), b: bytes.from_text(hash)))
+
+# The cost a bcrypt string was made with, 4 to 31, to tell a hash stored
+# with a cost now too low: Go's `bcrypt.Cost`.
+#
+# - `hash`: the stored string.
+#
+# Fails `invalid` where `verify_bcrypt` does. See also `verify_bcrypt`.
+function parse_bcrypt_cost(hash: str) -> i64?
+    kept = passwords.parse_bcrypt(hash)?
+    return ok(kept.cost)
+
 ## Tests
 
 test "the code is the vocabulary's word"
@@ -506,7 +1235,20 @@ test "the vectors' digest is the one-shot function's"
     assert vectors.hex_digest(.sha256, []) == bytes.format_hex(sha256([]))
 
 test "parse_algorithm and format_algorithm: every name both ways, and names that are not one"
-    every: [Algorithm] = [.md5, .sha1, .sha224, .sha256, .sha384, .sha512, .sha512_224, .sha512_256]
+    every: [Algorithm] = [
+        .md5
+        .sha1
+        .sha224
+        .sha256
+        .sha384
+        .sha512
+        .sha512_224
+        .sha512_256
+        .sha3_224
+        .sha3_256
+        .sha3_384
+        .sha3_512
+    ]
 
     for a in every
         assert parse_algorithm(format_algorithm(a)).must() == a
@@ -557,6 +1299,265 @@ test "pbkdf2: no iterations, a length of 0, and a negative count"
 
     assert pbkdf2(algorithm: .sha256, password: [0x70], salt: [0x73], iterations: 1, length: 0).is_err()
     assert pbkdf2(algorithm: .sha256, password: [0x70], salt: [0x73], iterations: -1, length: 10).is_err()
+
+# The published vectors of FIPS 202 and SP 800-185 are run by
+# `crypto/internal/sponges`, and RFC 7693's by `crypto/internal/blake2`.
+test "the sponges' vectors read through the face's SHAKE alike"
+    assert sponges.hex_read(start: engine.begin(.shake128), data: [], length: 7) == bytes.format_hex(shake128(data: [], length: 7).must())
+
+# Python's `hashlib` answered every value on 2026-11-17, and refused a
+# negative SHAKE length with ValueError.
+test "shake128, shake256 and digest_shake: a length of 0, a negative one, and a longer read beginning with a shorter"
+    assert shake128(data: [0x61], length: 0).must().len() == 0
+
+    match shake256(data: [0x61], length: -1)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a length of -1 bytes, where SHAKE answers 0 or more"
+
+    state @= start_shake(.shake256)
+    update_shake(@state, bytes.from_text("abc"))
+    short = digest_shake(state: state, length: 16).must()
+    long = digest_shake(state: state, length: 300).must()
+    assert long.slice(from: 0, to: 16) == short && long.len() == 300
+    assert start_cshake(shake: .shake128, name: [], custom: []) == start_shake(.shake128)
+
+# Python's `hashlib.blake2b` and `hashlib.blake2s` refused each with
+# ValueError on 2026-11-17, and answered the longest key, salt and
+# personalization.
+test "start_blake2: sizes of 0, 65 and 33, keys, salts and personalizations one byte too long, and the longest of each"
+    match start_blake2(blake2: .blake2b, size: 0, key: [], salt: [], person: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a digest of 0 bytes, where blake2b makes 1 to 64"
+
+    assert start_blake2(blake2: .blake2b, size: 65, key: [], salt: [], person: []).is_err()
+    assert start_blake2(blake2: .blake2s, size: 33, key: [], salt: [], person: []).is_err()
+    assert blake2s(data: [], size: 32, key: bytes.repeated([1], 33)).is_err()
+    assert start_blake2(blake2: .blake2b, size: 64, key: [], salt: bytes.repeated([1], 17), person: []).is_err()
+    assert start_blake2(blake2: .blake2s, size: 32, key: [], salt: [], person: bytes.repeated([1], 9)).is_err()
+    assert bytes.format_hex(blake2b(data: [], size: 64, key: bytes.repeated([1], 64)).must()).slice(from: 0, to: 16) == "7b13175b4043c658"
+    assert bytes.format_hex(blake2s(data: bytes.from_text("x"), size: 1, key: []).must()) == "e4"
+    long_b = start_blake2(
+        blake2: .blake2b,
+        size: 64,
+        key: [],
+        salt: bytes.from_text("0123456789abcdef"),
+        person: bytes.from_text("fedcba9876543210")
+    )
+    fed_b @= long_b.must()
+    update_blake2(@fed_b, bytes.repeated([0x61], 200))
+    assert bytes.format_hex(digest_blake2(fed_b)) == "fb3a3ab950c2c7de4779a5b0aa29f377aae6fa313c578ea7dbc9f22a1ca4b96ab5f73d91ac79bb9776d6dbaad94fe48b61b9d8a62563f22cea5b077f94c0ae5e"
+    long_s = start_blake2(
+        blake2: .blake2s,
+        size: 32,
+        key: [],
+        salt: bytes.from_text("01234567"),
+        person: bytes.from_text("76543210")
+    )
+    fed_s @= long_s.must()
+    update_blake2(@fed_s, bytes.repeated([0x61], 200))
+    assert bytes.format_hex(digest_blake2(fed_s)) == "9aa70a73f38099ea8c4f32673b10ce44879eaf10300a28e740bad9023f55340a"
+
+test "start_blake2: a size, a key, a salt and a personalization together, by BLAKE2b and BLAKE2s"
+    both: [Blake2] = [.blake2b, .blake2s]
+    answers: [str] = ["612c276bb1dc743547d3018eee41e28bd58afb27", "9befd4490a26fb5c0b5c421777a1b38010f571bc"]
+
+    for i in range(from: 0, to: 2)
+        state @= start_blake2(
+            blake2: both[i],
+            size: 20,
+            key: bytes.from_text("key"),
+            salt: bytes.from_text("salt"),
+            person: bytes.from_text("me")
+        ).must()
+        update_blake2(@state, bytes.from_text("abc"))
+        assert bytes.format_hex(digest_blake2(state)) == answers[i]
+
+# Python's `hashlib.scrypt` refused each with ValueError on 2026-11-17.
+test "scrypt: costs that are no power of two, 1 and 2^16 with r of 1, r and p of 0, r × p of 2^30, too much memory, and lengths of 0"
+    pw = bytes.from_text("pw")
+    salt = bytes.from_text("salt")
+
+    match scrypt(password: pw, salt: salt, n: 3, r: 1, p: 1, length: 16)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a cost n of 3, where scrypt takes a power of two from 2"
+
+    assert scrypt(password: pw, salt: salt, n: 1, r: 1, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 0, r: 1, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: -4, r: 1, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 65536, r: 1, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 16, r: 0, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 16, r: 1, p: 0, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 16, r: 1 << 15, p: 1 << 15, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 1 << 24, r: 8, p: 1, length: 16).is_err()
+    assert scrypt(password: pw, salt: salt, n: 16, r: 1, p: 1, length: 0).is_err()
+    assert scrypt(password: pw, salt: salt, n: 16, r: 1, p: 1, length: -1).is_err()
+    assert bytes.format_hex(scrypt(password: pw, salt: salt, n: 2, r: 1, p: 1, length: 16).must()) == "a22ef056777184a8f40be275b0749299"
+    assert bytes.format_hex(scrypt(password: pw, salt: salt, n: 64, r: 2, p: 3, length: 100).must()) == "7fe3eecc7e41f91d1481c3c35fe925c01abd6782990ab8f058c2370b71c6122f79ceb38b98aa44e52ce2baf6e9eb4393def463d608f612fc34b6bc065c607e79556d814ba636722bce6eb5ba254e28649cb3fea7e7d88a0f73d14deea37e360ba00c0dda"
+
+# RFC 7914 12's second and third vectors, which Python's `hashlib.scrypt`
+# answered alike on 2026-11-17; the fourth asks 1 GiB, and runs nowhere
+# here.
+test "scrypt: RFC 7914's vectors of 1 MiB with p of 16 and of 16 MiB"
+    second = scrypt(
+        password: bytes.from_text("password"),
+        salt: bytes.from_text("NaCl"),
+        n: 1024,
+        r: 8,
+        p: 16,
+        length: 64
+    )
+    assert bytes.format_hex(second.must()) == "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640"
+    third = scrypt(
+        password: bytes.from_text("pleaseletmein"),
+        salt: bytes.from_text("SodiumChloride"),
+        n: 16384,
+        r: 8,
+        p: 1,
+        length: 64
+    )
+    assert bytes.format_hex(third.must()) == "7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887"
+
+# BLAKE3's official vectors are run by `crypto/internal/blake3_vectors`;
+# Zig's `std.crypto.hash.Blake3` answered the values below on 2026-11-17.
+test "blake3 through the face: the official input of 1025 bytes, a key of 31 and 33 bytes, and lengths below 0"
+    data = blake3_vectors.input(1025)
+    assert bytes.format_hex(blake3(data)) == blake3_vectors.HASHES[17].slice(from: 0, to: 64)
+    assert blake3_keyed(key: bytes.repeated([0x42], 31), data: []).is_err()
+
+    match start_blake3_keyed(bytes.repeated([0x42], 33))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a key of 33 bytes, where BLAKE3 takes 32"
+
+    assert blake3_derive_key(context: "c", material: [], length: -1).is_err()
+    assert blake3_derive_key(context: "c", material: [], length: 0).must().len() == 0
+    state = start_blake3()
+    assert digest_blake3_from(state: state, offset: -1, length: 1).is_err()
+    assert digest_blake3_from(state: state, offset: 9223372036854775807, length: 1).is_err()
+
+test "digest_blake3_from: every offset from 0 to 130 reads the bytes the whole output holds there"
+    state @= start_blake3()
+    update_blake3(@state, bytes.from_text("hello world"))
+    whole = digest_blake3(state: state, length: 200).must()
+
+    for offset in range(from: 0, to: 131)
+        assert digest_blake3_from(state: state, offset: offset, length: 7).must() == whole.slice(from: offset, to: offset + 7)
+
+test "MOST_MEMORY is the bound the stored strings are read under"
+    assert MOST_MEMORY == passwords.MOST_MEMORY && INVALID == passwords.INVALID
+
+# Zig's `std.crypto.pwhash.argon2.strHash` wrote the three strings on
+# 2026-11-17, each with its own salt of 32 bytes; OpenSSL's `kdf` answered
+# the tags of the versions 16 and 19 under two lanes and two passes, which
+# differ only past the first pass.
+test "verify_argon2: strings written by Zig in the three types, a wrong password, and the versions 16 and 19"
+    zig: [str] = [
+        "$argon2id$v=19$m=64,t=2,p=2$FRrlDmCwbd6TtgRDvtVHMkQzgpyWPj7S7dIcAbDtG+8$iaIHcH9o+lSyczBpQdQV1rW2UJTlEtea5IVQhoh4UC0"
+        "$argon2i$v=19$m=64,t=2,p=2$+/2oiqVoBOCXOFQnhs2L1UcqxOOXtocyONfqz7mYdGo$Yw9wFaaz0SkW3WVV8G6i8rk5ZluUWRXT086NoWpAq8k"
+        "$argon2d$v=19$m=64,t=2,p=2$nsr+fZUoUH8skIzPPpdQKf7V9IjQCGbJfaP2a88SlMQ$JEEQOe2R/aZGW5o4gF5i4RZqSyl3iz142zVs4+WYse4"
+    ]
+
+    for stored in zig
+        assert verify_argon2(password: bytes.from_text("correct horse"), hash: stored).must()
+        assert !verify_argon2(password: bytes.from_text("correct horse!"), hash: stored).must()
+
+    password = bytes.from_text("password")
+    assert verify_argon2(password: password, hash: "$argon2i$m=32,t=3,p=1$c29tZXNhbHQ$y6zy/QsDFaTgYgppE8dt3A").must()
+    assert verify_argon2(
+        password: password,
+        hash: "$argon2id$v=16$m=64,t=2,p=2$c29tZXNhbHQ$7aP1rFb7IcHDugZp7K4hcl5xnaoI5W8y4bRE/WJimb0"
+    ).must()
+    assert verify_argon2(
+        password: password,
+        hash: "$argon2id$v=19$m=64,t=2,p=2$c29tZXNhbHQ$lDh0Fd+4TtGXdGWh6GJgc630K9Turh+qHdTiOh/2hZ8"
+    ).must()
+    assert !verify_argon2(password: password, hash: "$argon2id$v=19$m=64,t=2,p=2$c29tZXNhbHQ$7aP1rFb7IcHDugZp7K4hcl5xnaoI5W8y4bRE/WJimb0").must()
+
+# Python's `argon2-cffi` refuses each of these; RFC 9106 3.1 gives the
+# ranges.
+test "argon2: no passes, no lanes, too little and too much memory, a tag of 3 bytes and a salt of 7"
+    salt = bytes.from_text("somesalt")
+    base = Argon2Params(argon2: .argon2id, passes: 1, memory: 8, lanes: 1, length: 4)
+    assert argon2(params: base, password: [], salt: salt, secret: [], data: []).must().len() == 4
+    no_passes = Argon2Params(argon2: .argon2id, passes: 0, memory: 8, lanes: 1, length: 4)
+
+    match argon2(params: no_passes, password: [], salt: salt, secret: [], data: [])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "0 passes, where argon2id takes 1 to 4294967295"
+
+    no_lanes = Argon2Params(argon2: .argon2d, passes: 1, memory: 8, lanes: 0, length: 4)
+    assert argon2(params: no_lanes, password: [], salt: salt, secret: [], data: []).is_err()
+    short = Argon2Params(argon2: .argon2i, passes: 1, memory: 15, lanes: 2, length: 4)
+    assert argon2(params: short, password: [], salt: salt, secret: [], data: []).is_err()
+    huge = Argon2Params(argon2: .argon2id, passes: 1, memory: 2097153, lanes: 1, length: 4)
+    assert argon2(params: huge, password: [], salt: salt, secret: [], data: []).is_err()
+    tiny_tag = Argon2Params(argon2: .argon2id, passes: 1, memory: 8, lanes: 1, length: 3)
+    assert argon2(params: tiny_tag, password: [], salt: salt, secret: [], data: []).is_err()
+    assert argon2(params: base, password: [], salt: bytes.from_text("seven!!"), secret: [], data: []).is_err()
+    assert hash_argon2(params: base, password: [], salt: []).is_err()
+
+test "hash_argon2 and parse_argon2: a string read back to its costs, and verified"
+    params = Argon2Params(argon2: .argon2d, passes: 2, memory: 33, lanes: 4, length: 20)
+    stored = hash_argon2(
+        params: params,
+        password: bytes.from_text("password"),
+        salt: bytes.from_text("somesalt")
+    ).must()
+    assert stored == "$argon2d$v=19$m=33,t=2,p=4$c29tZXNhbHQ$cAFmSjchmCYCwDwWUq+2V0MtNBc"
+    assert parse_argon2(stored).must() == params
+    assert verify_argon2(password: bytes.from_text("password"), hash: stored).must()
+    assert parse_argon2("$argon2id$v=19$m=4194304,t=1,p=4$c29tZXNhbHQ$aGFzaGhhc2g").is_err()
+
+# Apache's `htpasswd -vb` accepted each of the five strings on 2026-11-17,
+# OpenBSD's and Solar Designer's own vectors; `htpasswd -bnBC` wrote the two
+# `$2y$` strings, Zig's `std.crypto.pwhash.bcrypt.strHash` the `$2b$`.
+test "verify_bcrypt: the classic vectors, $2y$ from Apache, $2b$ from Zig, and a wrong password"
+    assert verify_bcrypt(
+        password: bytes.from_text("U*U"),
+        hash: "$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW"
+    ).must()
+    assert verify_bcrypt(
+        password: bytes.from_text("U*U*"),
+        hash: "$2a$05$CCCCCCCCCCCCCCCCCCCCC.VGOzA784oUp/Z0DY336zx7pLYAy0lwK"
+    ).must()
+    assert verify_bcrypt(
+        password: bytes.from_text("U*U*U"),
+        hash: "$2a$05$XXXXXXXXXXXXXXXXXXXXXOAcXxm9kjPGEMsLznoKqmqw7tc8WCx4a"
+    ).must()
+    assert verify_bcrypt(password: [], hash: "$2a$05$CCCCCCCCCCCCCCCCCCCCC.7uG0VCzI2bS7j6ymqJi9CdcdxiRTWNy").must()
+    long = bytes.from_text("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+    assert long.len() == 72
+    assert verify_bcrypt(password: long, hash: "$2a$05$abcdefghijklmnopqrstuu5s2v8.iXieOjg/.AySBTTZIIVFJeBui").must()
+    horse = bytes.from_text("correct horse")
+    assert verify_bcrypt(password: horse, hash: "$2y$04$PeBN6yi1JEM.xcgXkztsB.wFZjr0jfqHp063eGGJEd4.KqmBEeIoO").must()
+    assert verify_bcrypt(password: horse, hash: "$2y$05$Rl8WOxIqAYnOssp8dvMTQe7lX6t7CEO22xXfxfT98A3scBix/fbDS").must()
+    assert verify_bcrypt(password: horse, hash: "$2b$04$eu.za/43bG5b9naiVvZume3Itl.eXgxQyUGA3KnE7L60sQIz/2JE.").must()
+    assert !verify_bcrypt(password: bytes.from_text("U*V"), hash: "$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW").must()
+
+# Zig's `std.crypto.pwhash.bcrypt.bcrypt` answered the hashes under the salt
+# 1, 2, ..., 16 on 2026-11-17; Go and Python 5 refuse a password of 73
+# bytes, as here.
+test "hash_bcrypt: the empty password, a text of several bytes per character, 72 bytes and 73, a zero byte, salts of 15 and 17, costs of 3 and 32"
+    salt: [u8] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    assert hash_bcrypt(password: [], salt: salt, cost: 4).must() == "$2b$04$.OGB/.SE/ueHAeqKBO2NC.D1QL1WdpCs1DfgGQ5r57LcGEksv.CJ."
+    assert hash_bcrypt(password: bytes.from_text("U*U"), salt: salt, cost: 4).must() == "$2b$04$.OGB/.SE/ueHAeqKBO2NC.lI.wVBPjTQuHWvVfsLCqREv7VpQuneC"
+    assert hash_bcrypt(password: bytes.from_text("héros ☃"), salt: salt, cost: 4).must() == "$2b$04$.OGB/.SE/ueHAeqKBO2NC.d4BXUBdyCwyAc/dTjQR5cfVt5KErKlq"
+    long = bytes.from_text("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+    assert hash_bcrypt(password: long, salt: salt, cost: 4).must() == "$2b$04$.OGB/.SE/ueHAeqKBO2NC.w9eneOmvHbOpwSwm5MRB58jG/wwCWZW"
+
+    match hash_bcrypt(password: bytes.concat([long, [0x21]]), salt: salt, cost: 4)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a password of 73 bytes, where bcrypt reads 72 at most"
+
+    assert verify_bcrypt(
+        password: bytes.concat([long, [0x21]]),
+        hash: "$2b$04$.OGB/.SE/ueHAeqKBO2NC.w9eneOmvHbOpwSwm5MRB58jG/wwCWZW"
+    ).is_err()
+    assert hash_bcrypt(password: [0x61, 0, 0x62], salt: salt, cost: 4).is_err()
+    assert hash_bcrypt(password: [], salt: salt.slice(from: 0, to: 15), cost: 4).is_err()
+    assert hash_bcrypt(password: [], salt: bytes.concat([salt, [0]]), cost: 4).is_err()
+    assert hash_bcrypt(password: [], salt: salt, cost: 3).is_err()
+    assert hash_bcrypt(password: [], salt: salt, cost: 32).is_err()
+    assert parse_bcrypt_cost("$2b$04$.OGB/.SE/ueHAeqKBO2NC.D1QL1WdpCs1DfgGQ5r57LcGEksv.CJ").is_err()
 
 ## Examples
 
@@ -719,3 +1720,229 @@ test "pbkdf2: RFC 6070's second case"
         length: 20
     ).must()
     assert bytes.format_hex(key) == "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957"
+
+# The SHA3-224 digest of three letters, FIPS 202's example.
+test "sha3_224: the digest of abc"
+    assert bytes.format_hex(sha3_224(bytes.from_text("abc"))) == "e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf"
+
+# The SHA3-224 digest of a text read as its UTF-8.
+test "sha3_224_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha3_224_text("héros ☃")) == "a7694f3593dd77dfbb4a5c5138b28591fb8076ef4a6b373ff3cfc46d"
+
+# The SHA3-256 digest of the bytes of a word.
+test "sha3_256: the digest of a word's bytes"
+    assert bytes.format_hex(sha3_256(bytes.from_text("Heroes"))) == "a14eb08dcc336f9bbb93a28f763f3f3a55199fde2b52b13e45519f24b293380a"
+
+# The SHA3-256 digest of a text, FIPS 202's example.
+test "sha3_256_text: the digest of abc"
+    assert bytes.format_hex(sha3_256_text("abc")) == "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"
+
+# The SHA3-384 digest of no bytes.
+test "sha3_384: the digest of no bytes"
+    assert bytes.format_hex(sha3_384([])) == "0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004"
+
+# The SHA3-384 digest of a text read as its UTF-8.
+test "sha3_384_text: a text with accents and a snowman"
+    assert bytes.format_hex(sha3_384_text("héros ☃")) == "7293bb8c22dffa29049ab2993e10d4fc37739af42517abfbabf2caba1abc5bd2e4e876b4d1f629889189e8be5c182b94"
+
+# The SHA3-512 digest of no bytes.
+test "sha3_512: the digest of no bytes"
+    assert bytes.format_hex(sha3_512([])) == "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26"
+
+# The SHA3-512 digest of a text, FIPS 202's example.
+test "sha3_512_text: the digest of abc"
+    assert bytes.format_hex(sha3_512_text("abc")) == "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"
+
+# Thirty-two bytes of SHAKE128 over three letters.
+test "shake128: 32 bytes over abc"
+    assert bytes.format_hex(shake128(data: bytes.from_text("abc"), length: 32).must()) == "5881092dd818bf5cf8a3ddb793fbcba74097d5c526a6d35f97b83351940f2cc8"
+
+# Thirty-two bytes of SHAKE256 over three letters.
+test "shake256: 32 bytes over abc"
+    assert bytes.format_hex(shake256(data: bytes.from_text("abc"), length: 32).must()) == "483366601360a8771c6863080cc4114d8db44530f8f1e1ee4f94ea37e78b5739"
+
+# A SHAKE128 fed in two pieces, read once.
+test "start_shake: SHAKE128 fed in two pieces"
+    state @= start_shake(.shake128)
+    update_shake(@state, bytes.from_text("hello "))
+    update_shake(@state, bytes.from_text("world"))
+    assert bytes.format_hex(digest_shake(state: state, length: 20).must()) == "3a9159f071e4dd1c8c4f968607c30942e120d815"
+
+# cSHAKE128 under SP 800-185's customization "Email Signature", its first
+# sample.
+test "start_cshake: SP 800-185's first sample"
+    state @= start_cshake(shake: .shake128, name: [], custom: bytes.from_text("Email Signature"))
+    update_shake(@state, [0x00, 0x01, 0x02, 0x03])
+    assert bytes.format_hex(digest_shake(state: state, length: 32).must()) == "c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"
+
+# A SHAKE256 fed a word.
+test "update_shake: a SHAKE256 fed a word"
+    state @= start_shake(.shake256)
+    update_shake(@state, bytes.from_text("abc"))
+    assert bytes.format_hex(digest_shake(state: state, length: 16).must()) == "483366601360a8771c6863080cc4114d"
+
+# The same output read twice, the second time longer.
+test "digest_shake: read twice, the second longer"
+    state @= start_shake(.shake128)
+    update_shake(@state, bytes.from_text("abc"))
+    assert digest_shake(state: state, length: 64).must().slice(from: 0, to: 16) == digest_shake(state: state, length: 16).must()
+
+# A BLAKE2b digest of 32 bytes, and a keyed one of 16, a MAC.
+test "blake2b: a digest of 32 bytes and a keyed one of 16"
+    assert bytes.format_hex(blake2b(data: bytes.from_text("abc"), size: 32, key: []).must()) == "bddd813c634239723171ef3fee98579b94964e3bb1cb3e427262c8c068d52319"
+    tag = blake2b(data: bytes.from_text("message"), size: 16, key: bytes.from_text("secret key")).must()
+    assert bytes.format_hex(tag) == "db5104a95c3d7a3e12dcdd0d07b445d8"
+
+# BLAKE2s of three letters, RFC 7693's example, and keyed.
+test "blake2s: RFC 7693's example, and a keyed digest of 16 bytes"
+    assert bytes.format_hex(blake2s(data: bytes.from_text("abc"), size: 32, key: []).must()) == "508c5e8c327c14e2e1a72ba34eeb452f37458b209ed63a294d999b4c86675982"
+    assert bytes.format_hex(blake2s(data: bytes.from_text("abc"), size: 16, key: bytes.from_text("k")).must()) == "f335237426ff5582d0c607ef240684b5"
+
+# A BLAKE2b kept apart for one program's use by a personalization.
+test "start_blake2: a digest personalized for one program"
+    state @= start_blake2(blake2: .blake2b, size: 32, key: [], salt: [], person: bytes.from_text("MyApp files")).must()
+    update_blake2(@state, bytes.from_text("data"))
+    assert bytes.format_hex(digest_blake2(state)) == "acbd5be61b9455f879ee6e04c3f1dc33d39b7016b303632b90a58a86e52e6335"
+
+# A BLAKE2b fed in two pieces.
+test "update_blake2: a BLAKE2b fed in two pieces"
+    state @= start_blake2(blake2: .blake2b, size: 20, key: [], salt: [], person: []).must()
+    update_blake2(@state, bytes.from_text("hello "))
+    update_blake2(@state, bytes.from_text("world"))
+    assert bytes.format_hex(digest_blake2(state)) == "70e8ece5e293e1bda064deef6b080edde357010f"
+
+# A digest read, the state fed further, and read again.
+test "digest_blake2: read, fed further, and read again"
+    state @= start_blake2(blake2: .blake2s, size: 32, key: [], salt: [], person: []).must()
+    update_blake2(@state, bytes.from_text("ab"))
+    first = digest_blake2(state)
+    update_blake2(@state, bytes.from_text("c"))
+    assert first != digest_blake2(state)
+    assert digest_blake2(state) == blake2s(data: bytes.from_text("abc"), size: 32, key: []).must()
+
+# The name Python gives BLAKE2b.
+test "format_blake2: BLAKE2b's name"
+    assert format_blake2(.blake2b) == "blake2b"
+
+# RFC 7914's first vector: the empty password and salt, at the smallest
+# cost.
+test "scrypt: RFC 7914's first vector"
+    key = scrypt(password: [], salt: [], n: 16, r: 1, p: 1, length: 64).must()
+    assert bytes.format_hex(key) == "77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906"
+
+# The BLAKE3 hash of three letters.
+test "blake3: the hash of abc"
+    assert bytes.format_hex(blake3(bytes.from_text("abc"))) == "6437b3ac38465133ffb63b75273a8db548c558465d79db03fd359c6cd5bd9d85"
+
+# A tag of BLAKE3's keyed hash under a key of 32 bytes.
+test "blake3_keyed: a message under a key of 32 bytes"
+    tag = blake3_keyed(key: bytes.repeated([0x42], 32), data: bytes.from_text("message")).must()
+    assert bytes.format_hex(tag) == "24d1bf830e815520bb9838b0ffa1d027fc806534f2537f42326b38557370990a"
+
+# A key of 32 bytes derived for one use of a program.
+test "blake3_derive_key: a session key derived under its context"
+    key = blake3_derive_key(
+        context: "example.com 2026-11-17 session tokens",
+        material: bytes.from_text("secret"),
+        length: 32
+    )
+    assert bytes.format_hex(key.must()) == "6168ef9dd85177c9dae77427e4c3b6007f443e37f26d060a9c9abcf9525eb793"
+
+# A plain BLAKE3 hash of no bytes, read from a state.
+test "start_blake3: the hash of no bytes"
+    assert bytes.format_hex(digest_blake3(state: start_blake3(), length: 32).must()) == "af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262"
+
+# A keyed state fed in two pieces.
+test "start_blake3_keyed: a keyed hash fed in two pieces"
+    state @= start_blake3_keyed(bytes.repeated([0x42], 32)).must()
+    update_blake3(@state, bytes.from_text("mess"))
+    update_blake3(@state, bytes.from_text("age"))
+    assert bytes.format_hex(digest_blake3(state: state, length: 32).must()) == "24d1bf830e815520bb9838b0ffa1d027fc806534f2537f42326b38557370990a"
+
+# A derivation's state, its material fed in steps.
+test "start_blake3_derive_key: the material fed in steps"
+    state @= start_blake3_derive_key("example.com 2026-11-17 session tokens")
+    update_blake3(@state, bytes.from_text("sec"))
+    update_blake3(@state, bytes.from_text("ret"))
+    assert bytes.format_hex(digest_blake3(state: state, length: 32).must()) == "6168ef9dd85177c9dae77427e4c3b6007f443e37f26d060a9c9abcf9525eb793"
+
+# A BLAKE3 fed two words.
+test "update_blake3: a hash fed in two pieces"
+    state @= start_blake3()
+    update_blake3(@state, bytes.from_text("hello "))
+    update_blake3(@state, bytes.from_text("world"))
+    assert bytes.format_hex(digest_blake3(state: state, length: 32).must()) == "d74981efa70a0c880b8d8c1985d075dbcbf679b99a5f9914e5aaf96b831a9e24"
+
+# An output of 120 bytes, past BLAKE3's first block of output.
+test "digest_blake3: an output of 120 bytes"
+    state @= start_blake3()
+    update_blake3(@state, bytes.from_text("hello world"))
+    long = digest_blake3(state: state, length: 120).must()
+    assert long.len() == 120 && bytes.format_hex(long.slice(from: 100, to: 120)) == "7ef9a714a47a4cdef62c5402a25d7994384b07bf"
+
+# Sixteen bytes of the output from its byte 64, its second block, computed
+# from there.
+test "digest_blake3_from: 16 bytes from the output's byte 64"
+    state @= start_blake3()
+    update_blake3(@state, bytes.from_text("hello world"))
+    assert bytes.format_hex(digest_blake3_from(state: state, offset: 64, length: 16).must()) == "68612e1a556fee6cf726bcb0994f7d3e"
+
+# RFC 9106's Argon2id vector: a password, a salt, a secret and associated
+# data, 32 KiB in four lanes over three passes.
+test "argon2: RFC 9106's Argon2id vector"
+    params = Argon2Params(argon2: .argon2id, passes: 3, memory: 32, lanes: 4, length: 32)
+    tag = argon2(
+        params: params,
+        password: bytes.repeated([0x01], 32),
+        salt: bytes.repeated([0x02], 16),
+        secret: bytes.repeated([0x03], 8),
+        data: bytes.repeated([0x04], 12)
+    )
+    assert bytes.format_hex(tag.must()) == "0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659"
+
+# The costs RFC 9106 recommends where memory is short.
+test "argon2_low_memory: Argon2id over 64 MiB"
+    params = argon2_low_memory()
+    assert params.argon2 == .argon2id && params.memory == 65536 && params.passes == 3 && params.lanes == 4
+
+# The costs RFC 9106 recommends first.
+test "argon2_high_memory: Argon2id over 2 GiB, one pass"
+    params = argon2_high_memory()
+    assert params.memory == 2097152 && params.passes == 1 && params.length == 32
+
+# A password stored as a PHC string, with small costs so that the example
+# runs at once; a real one takes `argon2_low_memory()` and a random salt.
+test "hash_argon2: a password stored as a PHC string"
+    params = Argon2Params(argon2: .argon2id, passes: 2, memory: 64, lanes: 1, length: 16)
+    stored = hash_argon2(params: params, password: bytes.from_text("password"), salt: bytes.from_text("somesalt"))
+    assert stored.must() == "$argon2id$v=19$m=64,t=2,p=1$c29tZXNhbHQ$CpahY97MNWo2uyGWQjji4g"
+
+# A password checked against the string stored for it.
+test "verify_argon2: the right password and a wrong one"
+    stored = "$argon2id$v=19$m=64,t=2,p=1$c29tZXNhbHQ$CpahY97MNWo2uyGWQjji4g"
+    assert verify_argon2(password: bytes.from_text("password"), hash: stored).must()
+    assert !verify_argon2(password: bytes.from_text("Password"), hash: stored).must()
+
+# The costs a stored string was made with, read to decide whether to hash
+# the password again.
+test "parse_argon2: the costs of a stored string"
+    params = parse_argon2("$argon2id$v=19$m=64,t=2,p=1$c29tZXNhbHQ$CpahY97MNWo2uyGWQjji4g").must()
+    assert params == Argon2Params(argon2: .argon2id, passes: 2, memory: 64, lanes: 1, length: 16)
+    assert params.memory < argon2_low_memory().memory
+
+# A password stored with bcrypt at the smallest cost, under a fixed salt so
+# that the example's string is known.
+test "hash_bcrypt: a password at cost 4"
+    salt: [u8] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    assert hash_bcrypt(password: bytes.from_text("password"), salt: salt, cost: 4).must() == "$2b$04$.OGB/.SE/ueHAeqKBO2NC.5JB7Ndzwajh4Jm9f5iirW8kHOw1undW"
+
+# OpenBSD's first vector, checked.
+test "verify_bcrypt: OpenBSD's first vector"
+    assert verify_bcrypt(
+        password: bytes.from_text("U*U"),
+        hash: "$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW"
+    ).must()
+
+# The cost of a stored string.
+test "parse_bcrypt_cost: the cost of a stored string"
+    assert parse_bcrypt_cost("$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW").must() == 5

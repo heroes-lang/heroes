@@ -1,0 +1,222 @@
+# Files mapped in memory, read and written by copy: what `fs.open_mapping`,
+# `fs.read_at`, `fs.write_at`, `fs.sync_mapping` and `fs.close_mapping` do
+# over `hero_disk.h`'s maps (the small additions, 2026-11-17). Every range is
+# checked here against the map's size before a byte of room is made, so a
+# count read from outside never makes a large buffer, and checked again in C
+# before a byte is copied; no address of a map ever reaches Heroes.
+
+use fs/internal/codes
+use fs/internal/fixture
+use os/hero_disk
+
+# What `opened` answers: the floor's handle and the map's size.
+record Opened
+    # The handle, which `closed` gives back.
+    handle: hero_disk.Mapping
+    # The size in bytes, the file's when it was mapped.
+    size: i64
+
+# How a message names the map of `at`.
+#
+# - `at`: the path the file was mapped from.
+function label(at: str) -> str
+    return f"the map of \"{at}\""
+
+# The file at `at` mapped for `how`, with its size.
+#
+# - `at`: the path, links followed.
+# - `how`: one of `hero_disk.HERO_DISK_MAP_...`.
+#
+# Fails `invalid` for a zero byte in `at` or what is no file,
+# `file_not_found`, `is_a_directory`, `permission`, `limit` where the system
+# or the layer has no more room, `unsupported` where the volume maps no file.
+function opened(at: str, how: i64) -> Opened?
+    asked = f"mapping \"{at}\""
+    codes.checked(path: at, asked: asked)?
+    handle = hero_disk.map_open(at, how: how)
+
+    if handle == nullptr
+        return codes.disk_failed(asked: asked)
+    return ok(Opened(handle: handle, size: hero_disk.map_size(handle)))
+
+# Nothing where `count` bytes from `offset` stand inside a map of `size`
+# bytes, else `invalid`, before any room is made.
+#
+# - `offset`: the first byte's place.
+# - `count`: how many bytes.
+# - `size`: the map's size.
+# - `asked`: what a failure's message says was asked.
+function inside(offset: i64, count: i64, size: i64, asked: str) -> ()?
+    if offset < 0 || count < 0 || offset > size || count > size - offset
+        return fail(code: codes.INVALID, msg: f"{asked}: the map holds {size} bytes")
+    return ok()
+
+# Nothing where `handle` is open, else `closed`.
+#
+# - `handle`: the handle, `nullptr` once closed.
+# - `asked`: what a failure's message says was asked.
+function open_now(handle: hero_disk.Mapping, asked: str) -> ()?
+    if handle == nullptr
+        return fail(code: codes.CLOSED, msg: f"{asked}: the map is closed")
+    return ok()
+
+# A copy of the `count` bytes of the map from `offset`.
+#
+# - `handle`: the map's handle.
+# - `at`: its path, for messages.
+# - `size`: its size.
+# - `offset`: the first byte's place, 0 to `size`.
+# - `count`: how many bytes, 0 to `size - offset`.
+#
+# Fails `invalid` for a range outside the map, `closed`, and `failed` where
+# another program cut the file shorter.
+function read_at(handle: hero_disk.Mapping, at: str, size: i64, offset: i64, count: i64) -> [u8]?
+    asked = f"reading {count} bytes at {offset} of {label(at)}"
+    open_now(handle, asked: asked)?
+    inside(offset: offset, count: count, size: size, asked: asked)?
+    room: [u8] @= []
+
+    if hero_disk.map_read(handle, offset: offset, @room, n: count.to_u64().must()) < 0
+        return codes.disk_failed(asked: asked)
+    return ok(room)
+
+# Copies `data` into the map from `offset`.
+#
+# - `handle`: the map's handle.
+# - `at`: its path, for messages.
+# - `size`: its size.
+# - `writes`: whether it was mapped to be written, as `read_write` or `copy`.
+# - `offset`: the first byte's place.
+# - `data`: the bytes, all inside the map.
+#
+# Fails `invalid` for a range outside the map or a map to read alone,
+# `closed`, and `failed` where another program cut the file shorter.
+function write_at(handle: hero_disk.Mapping, at: str, size: i64, writes: bool, offset: i64, data: [u8]) -> ()?
+    asked = f"writing {data.len()} bytes at {offset} of {label(at)}"
+    open_now(handle, asked: asked)?
+
+    if !writes
+        return fail(code: codes.INVALID, msg: f"{asked}: it was mapped to be read alone")
+    inside(offset: offset, count: data.len(), size: size, asked: asked)?
+    copy @= data
+
+    if hero_disk.map_write(handle, offset: offset, @copy, n: data.len().to_u64().must()) < 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+# Puts what was written into the map on the storage.
+#
+# - `handle`: the map's handle.
+# - `at`: its path, for messages.
+#
+# Fails `closed`, and with the system's code.
+function synced(handle: hero_disk.Mapping, at: str) -> ()?
+    asked = f"putting {label(at)} on the storage"
+    open_now(handle, asked: asked)?
+
+    if hero_disk.map_flush(handle) != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+# Unmaps the map and closes its file, emptying `handle`.
+#
+# - `handle`: the caller's handle, `nullptr` after.
+# - `at`: its path, for messages.
+#
+# Fails `closed` where it is closed already, and with the system's code, the
+# map ended either way.
+function closed(@handle: hero_disk.Mapping, at: str) -> ()?
+    asked = f"closing {label(at)}"
+    open_now(handle, asked: asked)?
+    answer = hero_disk.map_close(@handle)
+    handle @ nullptr
+
+    if answer != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+## Tests
+
+test "opened and closed: a file mapped with its size, closed, and closed again"
+    dir = fixture.folder("mapped")
+    assert !write_file(path: dir + "/f", text: "abc").is_err()
+    made @= opened(at: dir + "/f", how: hero_disk.HERO_DISK_MAP_READ).must()
+    assert made.size == 3
+    assert !closed(@made.handle, at: dir + "/f").is_err()
+    assert made.handle == nullptr
+
+    match closed(@made.handle, at: dir + "/f")
+        .ok _  => assert false
+        .err e => assert e.code == codes.CLOSED && e.msg == f"closing the map of \"{dir}/f\": the map is closed"
+
+    match read_at(made.handle, at: "f", size: 3, offset: 0, count: 1)
+        .ok _  => assert false
+        .err e => assert e.code == codes.CLOSED
+
+    assert fixture.cleared(dir)
+
+test "opened: nothing there, a folder, an empty file of size 0, and a zero byte"
+    dir = fixture.folder("mapopened")
+
+    match opened(at: dir + "/none", how: hero_disk.HERO_DISK_MAP_READ)
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == f"mapping \"{dir}/none\": nothing is there"
+
+    match opened(at: dir, how: hero_disk.HERO_DISK_MAP_READ)
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    assert !write_file(path: dir + "/e", text: "").is_err()
+    empty @= opened(at: dir + "/e", how: hero_disk.HERO_DISK_MAP_READ_WRITE).must()
+    assert empty.size == 0
+    nothing: [u8] = []
+    assert read_at(empty.handle, at: "e", size: 0, offset: 0, count: 0).must() == nothing
+    assert !closed(@empty.handle, at: "e").is_err()
+    zero: [u8] = ['a', 0]
+
+    match opened(at: zero.validated_bytes().must(), how: hero_disk.HERO_DISK_MAP_READ)
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)
+
+test "inside: the whole, nothing at the end, one past, a negative offset or count, and counts past the largest i64"
+    assert !inside(offset: 0, count: 5, size: 5, asked: "a").is_err()
+    assert !inside(offset: 5, count: 0, size: 5, asked: "a").is_err()
+    assert inside(offset: 5, count: 1, size: 5, asked: "a").is_err()
+    assert inside(offset: 6, count: 0, size: 5, asked: "a").is_err()
+    assert inside(offset: -1, count: 1, size: 5, asked: "a").is_err()
+    assert inside(offset: 0, count: -1, size: 5, asked: "a").is_err()
+    assert inside(offset: 4, count: 9223372036854775807, size: 5, asked: "a").is_err()
+
+    match inside(offset: 3, count: 3, size: 5, asked: "reading")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == "reading: the map holds 5 bytes"
+
+test "read_at and write_at: a read-write map reaches the file once synced and closed, a map to read refuses a write, and a copy never reaches the file"
+    dir = fixture.folder("mapwrites")
+    at = dir + "/f"
+    assert !write_file(path: at, text: "hello").is_err()
+    shared @= opened(at: at, how: hero_disk.HERO_DISK_MAP_READ_WRITE).must()
+    reader @= opened(at: at, how: hero_disk.HERO_DISK_MAP_READ).must()
+    copy @= opened(at: at, how: hero_disk.HERO_DISK_MAP_COPY).must()
+    assert !write_at(shared.handle, at: at, size: 5, writes: true, offset: 1, data: ['E', 'L']).is_err()
+    assert read_at(reader.handle, at: at, size: 5, offset: 0, count: 5).must() == ['h', 'E', 'L', 'l', 'o']
+
+    match write_at(reader.handle, at: at, size: 5, writes: false, offset: 0, data: ['x'])
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == f"writing 1 bytes at 0 of the map of \"{at}\": it was mapped to be read alone"
+
+    match write_at(shared.handle, at: at, size: 5, writes: true, offset: 4, data: ['x', 'y'])
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert !write_at(copy.handle, at: at, size: 5, writes: true, offset: 4, data: ['!']).is_err()
+    assert read_at(copy.handle, at: at, size: 5, offset: 4, count: 1).must() == ['!']
+    assert !synced(shared.handle, at: at).is_err()
+    assert !synced(copy.handle, at: at).is_err()
+    assert !closed(@copy.handle, at: at).is_err()
+    assert !closed(@reader.handle, at: at).is_err()
+    assert !closed(@shared.handle, at: at).is_err()
+    assert read_file(at).must() == "hELlo"
+    assert fixture.cleared(dir)

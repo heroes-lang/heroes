@@ -83,6 +83,11 @@ extern "hero_net.h"
     function hero_net_join_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
     function hero_net_leave_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
     function hero_net_interfaces(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    # Round 4 (2026-11-17): the kind of a system with no such socket for a
+    # program, the most data bytes an echo carries, and the echo itself.
+    constant HERO_NET_UNSUPPORTED: i64
+    constant HERO_NET_PING_MOST: u64
+    function hero_net_ping(address: cstr lent, sequence: i64, @data: [u8] counted_by n lent, n: u64, ms: i64, @from: [u8] counted_by m lent, m: u64, @ttl: i64, @nanoseconds: i64) -> i64
 
 # A socket listening on `address` at `port`, or `nullptr`. The address is
 # `127.0.0.1`, `::1`, or "" for every address of the machine, and port 0 asks
@@ -270,6 +275,31 @@ function leave_group(s: Socket, group: str, interface_index: i64) -> i64
 # to be read; `buffer` is left `n` long.
 function interfaces(@buffer: [u8], n: u64) -> i64
     return hero_net_interfaces(@buffer, n: n)
+
+# The bytes of the reply to one ICMP echo, its 8-byte header and its data,
+# or -1. The echo carries the first `n` bytes of `data` and the sequence
+# `sequence`, 0 to 65535, to `address`, a number, and its reply is waited for
+# `ms` milliseconds at most, 1 to 2,147,483,647. Once answered, `from` holds
+# the address that replied, text ended by a zero byte (`m` is `from`'s bytes,
+# at least `HERO_NET_ADDRESS_MOST`), `ttl` the reply's time to live or hop
+# limit, -1 where the system did not say, and `nanoseconds` the round trip.
+# No reply in time fails `HERO_NET_TIMED_OUT`; a system that refuses the
+# program an ICMP socket `HERO_NET_DENIED` (Linux's `ping_group_range`), one
+# with none `HERO_NET_UNSUPPORTED`; an ICMP error naming the echo
+# `HERO_NET_UNREACHABLE`. `data` is left `n` long and `from` `m` long; it
+# aborts where `address` holds a zero byte.
+function ping(address: str, sequence: i64, @data: [u8], n: u64, ms: i64, @from: [u8], m: u64, @ttl: i64, @nanoseconds: i64) -> i64
+    return hero_net_ping(
+        address: address.cstr(),
+        sequence: sequence,
+        data: @data,
+        n: n,
+        ms: ms,
+        from: @from,
+        m: m,
+        ttl: @ttl,
+        nanoseconds: @nanoseconds
+    )
 
 ## Tests
 
@@ -815,3 +845,125 @@ test "of: a number carrying another table's tag is one never given, not open, as
     also = of(socket_tagged)
     assert also == nullptr
     assert last_error() == HERO_NET_NOT_OPEN
+
+## Tests of round 4: an echo asked by ICMP
+
+# The text of an address the layer wrote into `buffer`, up to its zero byte.
+function test_text(buffer: [u8]) -> str
+    end: i64 @= 0
+
+    while end < buffer.len() && buffer[end] != 0
+        end @ end + 1
+
+    return buffer.slice(from: 0, to: end).validated_bytes().must()
+
+# The edges first: each refusal a kind before anything is sent, `from`,
+# `ttl` and `nanoseconds` left saying nothing.
+test "ping refuses: a sequence below 0 and past 65535, data past the most, no time and a time past an int, a short address buffer, a name"
+    data: [u8] @= [1, 2, 3]
+    from: [u8] @= []
+    ttl: i64 @= 7
+    took: i64 @= 7
+    most = HERO_NET_ADDRESS_MOST
+    assert ping("127.0.0.1", sequence: -1, data: @data, n: 3, ms: 100, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID && ttl == -1 && took == 0
+    assert ping("127.0.0.1", sequence: 65536, data: @data, n: 3, ms: 100, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    big: [u8] @= []
+    assert ping("127.0.0.1", sequence: 0, data: @big, n: HERO_NET_PING_MOST + 1, ms: 100, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert ping("127.0.0.1", sequence: 0, data: @data, n: 3, ms: 0, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert ping("127.0.0.1", sequence: 0, data: @data, n: 3, ms: -5, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert ping("127.0.0.1", sequence: 0, data: @data, n: 3, ms: 2147483648, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    short: [u8] @= []
+    assert ping("127.0.0.1", sequence: 0, data: @data, n: 3, ms: 100, from: @short, m: most - 1, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_INVALID
+    assert ping("localhost", sequence: 0, data: @data, n: 3, ms: 100, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert ping("", sequence: 0, data: @data, n: 3, ms: 100, from: @from, m: most, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_ADDRESS
+    assert data == [1, 2, 3] && ttl == -1 && took == 0
+
+# The loopback answers itself where the system lets a program ask; where it
+# does not (Linux outside `ping_group_range`), the refusal is a kind.
+test "ping: the IPv4 loopback answers with the data sent, its address, a time to live and a round trip, or the system's refusal"
+    data: [u8] @= [104, 101, 114, 111, 101, 115, 0, 255]
+    from: [u8] @= []
+    ttl: i64 @= 0
+    took: i64 @= 0
+    got = ping(
+        "127.0.0.1",
+        sequence: 513,
+        data: @data,
+        n: 8,
+        ms: 5000,
+        from: @from,
+        m: HERO_NET_ADDRESS_MOST,
+        ttl: @ttl,
+        nanoseconds: @took
+    )
+
+    if got == -1
+        assert last_error() == HERO_NET_DENIED || last_error() == HERO_NET_UNSUPPORTED
+    else
+        assert got == 16
+        assert test_text(from) == "127.0.0.1"
+        assert ttl >= 1 && ttl <= 255
+        assert took > 0 && took < 5000000000
+        assert data == [104, 101, 114, 111, 101, 115, 0, 255]
+
+test "ping: the IPv6 loopback answers, with no data and with an odd count, or the system's refusal"
+    for size in [0, 1, 57]
+        data: [u8] @= []
+
+        for i in range(from: 0, to: size)
+            data @ data.push(to_u8(i % 256).must())
+
+        from: [u8] @= []
+        ttl: i64 @= 0
+        took: i64 @= 0
+        got = ping(
+            "::1",
+            sequence: 65535,
+            data: @data,
+            n: to_u64(size).must(),
+            ms: 5000,
+            from: @from,
+            m: HERO_NET_ADDRESS_MOST,
+            ttl: @ttl,
+            nanoseconds: @took
+        )
+
+        if got == -1
+            kind = last_error()
+            assert kind == HERO_NET_DENIED || kind == HERO_NET_UNSUPPORTED || kind == HERO_NET_ADDRESS || kind == HERO_NET_UNREACHABLE
+        else
+            assert got == size + 8
+            assert test_text(from) == "::1"
+            assert ttl == -1 || ttl >= 1 && ttl <= 255
+            assert took > 0
+
+# TEST-NET-1 (RFC 5737) is routed nowhere: the time passes, or the system
+# says at once that no route reaches it, or refuses the socket.
+test "ping: an address that never answers ends at its time"
+    data: [u8] @= [1]
+    from: [u8] @= []
+    ttl: i64 @= 0
+    took: i64 @= 0
+    assert ping("192.0.2.1", sequence: 1, data: @data, n: 1, ms: 300, from: @from, m: HERO_NET_ADDRESS_MOST, ttl: @ttl, nanoseconds: @took) == -1
+    kind = last_error()
+    assert kind == HERO_NET_TIMED_OUT || kind == HERO_NET_UNREACHABLE || kind == HERO_NET_DENIED || kind == HERO_NET_UNSUPPORTED
+    assert test_text(from) == "" && ttl == -1 && took == 0
+
+# Each `test` runs as a process of its own, so this stop ends no other's.
+test "ping: a stop asked before is stopped, nothing sent"
+    ask_stop()
+    data: [u8] @= [1]
+    from: [u8] @= []
+    ttl: i64 @= 0
+    took: i64 @= 0
+    assert ping("127.0.0.1", sequence: 1, data: @data, n: 1, ms: 1000, from: @from, m: HERO_NET_ADDRESS_MOST, ttl: @ttl, nanoseconds: @took) == -1
+    assert last_error() == HERO_NET_STOPPED

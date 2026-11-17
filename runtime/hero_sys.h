@@ -9,7 +9,8 @@
  * program, how large a page is and how many processors it may use, where the
  * user's folders are, what the environment holds, random bytes, how large
  * the terminal is, which system and processor it runs on, the system's
- * version, the user's name, the processor time spent and the load.
+ * version, the user's name, the processor time spent, the load and the
+ * machine's memory.
  *
  * A HEADER OF THE PLATFORM LAYER, AND NOT OF THE RUNTIME, as `hero_net.h` is:
  * its functions are defined in `platform/hero_sys.c`, a member of the archive
@@ -227,6 +228,22 @@ int64_t hero_sys_process_times(int64_t *user_ns, int64_t *system_ns);
  * left as they were; on Windows, which keeps no such average, -1 with
  * `HERO_SYS_UNSUPPORTED`. */
 int64_t hero_sys_load_average(int64_t *one, int64_t *five, int64_t *fifteen);
+
+/* The machine's memory, in bytes, in one reading: all of it the system
+ * manages into `*total`, and what it could give programs now without
+ * writing anything out to disk into `*available`, never above `*total`.
+ * Answers 0, or -1 with the two left as they were.
+ * On Darwin the total is `sysctl`'s `hw.memsize` and the available the
+ * free and inactive pages `host_statistics64` counts, times the kernel's
+ * page; the pages the compressor holds are not counted as available. On
+ * Linux both are `/proc/meminfo`'s, `MemTotal` and `MemAvailable` (the
+ * kernel's own estimate, since 3.14), and where that file cannot be read or
+ * names no `MemAvailable`, `sysinfo`'s total and its free and buffer
+ * memory, which is less than the kernel could give; a container's limit is
+ * not read on either path. On Windows `GlobalMemoryStatusEx`'s
+ * `ullTotalPhys` and `ullAvailPhys`. On a POSIX system neither Darwin nor
+ * Linux, -1 with `HERO_SYS_UNSUPPORTED`. */
+int64_t hero_sys_memory(int64_t *total, int64_t *available);
 
 /* The kind of the last call's failure on this thread, `HERO_SYS_OK` after a
  * call that did not fail, and the platform's own number for it (0 where the

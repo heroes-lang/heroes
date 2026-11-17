@@ -1,0 +1,151 @@
+# What the line editor's readers do around the keys: the raw mode entered
+# and left, the terminal's width read before each key, the bytes of each
+# key's change written to the terminal, the line read from an input that is
+# no terminal, and the history written to a file and read from one.
+
+use io
+use os
+use term/hero_term
+use term/internal/editing
+use term/internal/failure
+use term/internal/piped
+use term/internal/stream
+
+# Empties `edit` for a new line, enters the raw mode and draws `prompt`:
+# answers 0 where this call entered the mode, which `finish` leaves, and 1
+# where it stood already. Fails as the floor fails.
+function begin(@edit: editing.Edit, prompt: str) -> i64?
+    editing.reset(@edit)
+    stood = hero_term.enter_keys()
+
+    if stood < 0
+        return failure.last(asked: "reading a line")
+    measure(@edit)
+    show(editing.render(edit, prompt: prompt), stood: stood)?
+    return ok(stood)
+
+# Sets `edit`'s width to the terminal's columns, 0 where they are not known.
+function measure(@edit: editing.Edit)
+    edit.columns @ match os.terminal_size()
+        .ok size => size.columns
+        .err _   => 0
+
+# Writes `draw` to the terminal, leaving the mode where `stood` is 0 and the
+# write fails.
+function show(draw: str, stood: i64) -> ()?
+    if draw == ""
+        return ok()
+
+    match stream.to_terminal(text: draw, asked: "drawing a line")
+        .ok _ => return ok()
+        .err e =>
+            finish(stood)
+            return fail(code: e.code, msg: e.msg)
+
+# Leaves the raw mode where `stood` is 0, `begin` having entered it.
+function finish(stood: i64)
+    if stood == 0
+        _ = hero_term.leave()
+
+# The line a reader answers: `line` where it was entered, `stopped` where it
+# was given up, `closed` where the input ended.
+function ended(entered: bool, interrupted: bool, line: str) -> str?
+    if entered
+        return ok(line)
+
+    if interrupted
+        return failure.of(code: failure.STOPPED, asked: "reading a line", why: "Ctrl-C was pressed")
+    return failure.of(code: failure.CLOSED, asked: "reading a line", why: "Ctrl-D was pressed on an empty line")
+
+# The next line of `input`, no terminal, added to `history`, the caller's,
+# as the editor adds a line entered.
+function piped_line(@history: [str], input: io.Stream, most: i64) -> str?
+    line = piped.read_line(input)?
+    editing.remember(@history, line: line, most: most)
+    return ok(line)
+
+# Writes `history` to the file at `path`, a line each.
+function save(history: [str], path: str) -> ()?
+    for line in history
+        for i in range(from: 0, to: line.len())
+            if line[i] == '\n' || line[i] == '\r'
+                return failure.of(
+                    code: failure.INVALID,
+                    asked: f"saving a history to {path}",
+                    why: f"the line \"{line}\" holds a line break, which a file of lines cannot keep"
+                )
+
+    if history.len() == 0
+        return write_file(path: path, text: "")
+    return write_file(path: path, text: history.join("\n") + "\n")
+
+# Adds the lines of the file at `path` to `history`, the caller's.
+function load(@history: [str], path: str, most: i64) -> ()?
+    text = read_file(path)?
+    from: i64 @= 0
+
+    for i in range(from: 0, to: text.len() + 1)
+        if i == text.len() || text[i] == '\n'
+            end: i64 @= i
+
+            if end > from && text[end - 1] == '\r'
+                end @ end - 1
+
+            if end > from
+                history @ history.push(text.slice(from: from, to: end))
+            from @ i + 1
+
+    if most <= 0
+        history @ []
+    else if history.len() > most
+        history @ history.slice(from: history.len() - most, to: history.len())
+    return ok()
+
+test "reading ended: entered, interrupted and closed"
+    assert ended(entered: true, interrupted: false, line: "x").must() == "x"
+
+    match ended(entered: false, interrupted: true, line: "")
+        .ok _  => assert false
+        .err e => assert e.code == failure.STOPPED
+
+    match ended(entered: false, interrupted: false, line: "")
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+test "reading piped_line: lines added to the history but an empty one"
+    p @= io.pipe().must()
+    io.write_text(p.writer, text: "a\n\nb\n").must()
+    io.close(@p.writer).must()
+    h @= ["z"]
+    assert piped_line(@h, input: p.reader, most: 10).must() == "a"
+    assert piped_line(@h, input: p.reader, most: 10).must() == ""
+    assert piped_line(@h, input: p.reader, most: 10).must() == "b"
+    assert h == ["z", "a", "b"]
+    io.close(@p.reader).must()
+
+test "reading save and load: an empty history, lines both ways, a line break refused, the most kept, a missing file"
+    path = "build/rebel-term-history-test.txt"
+    save([], path: path).must()
+    none @= ["kept"]
+    load(@none, path: path, most: 10).must()
+    assert none == ["kept"]
+    save(["one", "two words", "é"], path: path).must()
+    h @= ["zero"]
+    load(@h, path: path, most: 3).must()
+    assert h == ["one", "two words", "é"]
+
+    match save(["a\nb"], path: path)
+        .ok _  => assert false
+        .err e => assert e.code == failure.INVALID
+
+    write_file(path: path, text: "x\r\n\r\ny").must()
+    w: [str] @= []
+    load(@w, path: path, most: 10).must()
+    assert w == ["x", "y"]
+    zero @= ["q"]
+    load(@zero, path: path, most: 0).must()
+    assert zero.len() == 0
+
+    match load(@w, path: path + ".none", most: 10)
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"

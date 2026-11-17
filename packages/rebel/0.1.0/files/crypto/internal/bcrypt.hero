@@ -1,0 +1,217 @@
+# bcrypt, as OpenBSD's `$2b$` defines it: Blowfish's key schedule made
+# expensive (EksBlowfish) by 2^cost passes over the password and the salt,
+# then the text "OrpheanBeholderScryDoubt" enciphered 64 times; and its
+# string, `$2b$`, the cost in two digits, `$`, the salt in 22 characters and
+# the hash's first 23 bytes in 31, of bcrypt's own base 64. The state is
+# Blowfish's 1042 words of 32 bits in one list, the P-array first. Two words
+# travel together as one `i64`, the left one high. The face checks the
+# password, the cost and the string before it calls.
+
+use crypto/internal/blowfish
+use crypto/internal/word
+
+# The alphabet of bcrypt's base 64, which is not RFC 4648's.
+constant ALPHABET: str
+    "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+# Blowfish's F over the word `x`, by the S-boxes of `state`.
+function feistel(state: [i64] lent, x: i64) -> i64
+    a = state[18 + (x >> 24)]
+    b = state[274 + (x >> 16 & 0xff)]
+    c = state[530 + (x >> 8 & 0xff)]
+    d = state[786 + (x & 0xff)]
+    return (a + b & word.LOW32 ^ c) + d & word.LOW32
+
+# The two words `pair` holds, enciphered by Blowfish under `state`, as one
+# `i64`, the left word high.
+function encipher(state: [i64] lent, pair: i64) -> i64
+    left: i64 @= word.shift_right(x: pair, n: 32) ^ state[0]
+    right: i64 @= pair & word.LOW32
+    i: i64 @= 1
+
+    while i <= 16
+        right @ right ^ feistel(state, left) ^ state[i]
+        left @ left ^ feistel(state, right) ^ state[i + 1]
+        i @ i + 2
+
+    return (right ^ state[17]) << 32 | left
+
+# The next word of 32 bits of `data`, read the first byte highest and
+# cycling past its end from `at`, which the caller holds and which moves by
+# four.
+function next_word(data: [u8] lent, @at: i64) -> i64
+    w: i64 @= 0
+
+    for _ in range(from: 0, to: 4)
+        if at >= data.len()
+            at @ 0
+        w @ w << 8 | to_i64(data[at]).must()
+        at @ at + 1
+
+    return w
+
+# Blowfish's key schedule over `state`, the caller's: `key` combined into
+# the P-array, then every pair of words enciphered in turn and written
+# back, each first combined with the next two words of `salt` where it is
+# not empty.
+function expand(@state: [i64], key: [u8] lent, salt: [u8] lent)
+    at: i64 @= 0
+
+    for i in range(from: 0, to: 18)
+        state[i] @ state[i] ^ next_word(key, @at)
+
+    pair: i64 @= 0
+    from_salt: i64 @= 0
+    i: i64 @= 0
+
+    while i < 1042
+        if salt.len() > 0
+            high = next_word(salt, @from_salt)
+            low = next_word(salt, @from_salt)
+            pair @ pair ^ (high << 32 | low)
+        pair @ encipher(state, pair)
+        state[i] @ word.shift_right(x: pair, n: 32)
+        state[i + 1] @ pair & word.LOW32
+        i @ i + 2
+
+# The 23 bytes bcrypt makes of `password`, its zero byte already added, and
+# the 16 bytes of `salt`, at `cost`, 4 to 31.
+function hash(password: [u8], salt: [u8], cost: i64) -> [u8]
+    state @= blowfish.start()
+    expand(@state, key: password, salt: salt)
+    none: [u8] = []
+    rounds: i64 @= 1 << cost
+
+    while rounds > 0
+        expand(@state, key: password, salt: none)
+        expand(@state, key: salt, salt: none)
+        rounds @ rounds - 1
+
+    text: [u8] = [
+        0x4f
+        0x72
+        0x70
+        0x68
+        0x65
+        0x61
+        0x6e
+        0x42
+        0x65
+        0x68
+        0x6f
+        0x6c
+        0x64
+        0x65
+        0x72
+        0x53
+        0x63
+        0x72
+        0x79
+        0x44
+        0x6f
+        0x75
+        0x62
+        0x74
+    ]
+    pairs: [i64] @= []
+    at: i64 @= 0
+
+    while at < 24
+        pairs @ pairs.push(word.load32_big(text, at) << 32 | word.load32_big(text, at + 4))
+        at @ at + 8
+
+    for _ in range(from: 0, to: 64)
+        for k in range(from: 0, to: 3)
+            pairs[k] @ encipher(state, pairs[k])
+
+    out: [u8] @= []
+
+    for p in pairs
+        word.push_big(@out, x: p, count: 8)
+
+    return out.slice(from: 0, to: 23)
+
+# `data` in bcrypt's base 64, with no padding: four characters for each
+# three bytes, two or three for the last one or two.
+function encode(data: [u8]) -> str
+    alphabet = ALPHABET
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        b0 = to_i64(data[at]).must()
+        b1: i64 @= 0
+        b2: i64 @= 0
+
+        if at + 1 < data.len()
+            b1 @ to_i64(data[at + 1]).must()
+
+        if at + 2 < data.len()
+            b2 @ to_i64(data[at + 2]).must()
+        sextets = [b0 >> 2, (b0 & 3) << 4 | b1 >> 4, (b1 & 0xf) << 2 | b2 >> 6, b2 & 0x3f]
+        count: i64 @= 4
+
+        if at + 1 >= data.len()
+            count @ 2
+        else if at + 2 >= data.len()
+            count @ 3
+
+        for k in range(from: 0, to: count)
+            out @ out.push(alphabet.slice(from: sextets[k], to: sextets[k] + 1))
+
+        at @ at + 3
+
+    return out.join("")
+
+# The value of `c` in bcrypt's base 64, from 0 to 63; -1 where it is not
+# one of its characters.
+function value_of(c: u8) -> i64
+    x = to_i64(c).must()
+
+    if x == 0x2e || x == 0x2f
+        return x - 0x2e
+
+    if x >= 0x41 && x <= 0x5a
+        return x - 0x41 + 2
+
+    if x >= 0x61 && x <= 0x7a
+        return x - 0x61 + 28
+
+    if x >= 0x30 && x <= 0x39
+        return x - 0x30 + 54
+    return -1
+
+# The `count` bytes the characters of `s` from `at` write in bcrypt's base
+# 64, the bits past them dropped; empty where a character is not of its
+# alphabet. The caller has checked that enough characters stand there.
+function decode(s: str lent, at: i64, count: i64) -> [u8]
+    out: [u8] @= []
+    bits: i64 @= 0
+    held: i64 @= 0
+    i: i64 @= at
+
+    while out.len() < count
+        v = value_of(s[i])
+
+        if v < 0
+            return []
+        bits @ bits << 6 | v
+        held @ held + 6
+
+        if held >= 8
+            held @ held - 8
+            out @ out.push(to_u8(bits >> held & 0xff).must())
+            bits @ bits & (1 << held) - 1
+        i @ i + 1
+
+    return out
+
+test "bcrypt encode and decode: a byte, two, three, and 16 bytes both ways"
+    assert encode([0]) == ".."
+    assert encode([0xff, 0xff]) == "996"
+    assert encode([0xff, 0xff, 0xff]) == "9999"
+    salt: [u8] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    text = encode(salt)
+    assert text.len() == 22
+    assert decode(text, at: 0, count: 16) == salt
+    assert decode("..*.", at: 0, count: 2).len() == 0

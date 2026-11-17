@@ -23,8 +23,11 @@
 # (`hero_os.h`), a path resolved. Since round 3 (2026-11-16) links are made,
 # permission bits set, owners and times of making read, and files locked
 # through `hero_disk.h`'s own doors; what is still not here is in the ledger,
-# `fs.ledger`, as `pending`.
+# `fs.ledger`, as `pending`. Since round 4 (2026-11-17) a file is written
+# atomically, and a file is mapped in memory and read and written by copy,
+# no address of it reaching the program.
 
+use fs/internal/atomic
 use fs/internal/changes
 use fs/internal/codes
 use fs/internal/copying
@@ -33,6 +36,7 @@ use fs/internal/fixture
 use fs/internal/links
 use fs/internal/listing
 use fs/internal/locks
+use fs/internal/mapped
 use fs/internal/special
 use fs/internal/temporary
 use fs/internal/tree
@@ -40,6 +44,7 @@ use fs/internal/walking
 use fs/internal/whole
 use io
 use io/hero_stream
+use os/hero_disk
 use path as paths
 use time
 
@@ -249,6 +254,49 @@ function write_new_bytes(path: str, data: [u8]) -> ()?
         asked: f"writing the new file \"{path}\""
     )
 
+# Writes `data` as the whole of the file at `path` in one step that no reader
+# of `path`, and no crash of the machine, sees half done: a reader finds the
+# old file or the new one, never a part of either.
+#
+# - `path`: the file to write, made where nothing is there and replaced where
+#   a file is. A symbolic link at `path` is replaced itself by the file, never
+#   what it names written, as Go's and Python's renaming do.
+# - `data`: the bytes, all of them; none makes an empty file.
+#
+# The bytes go to a new temporary file beside `path`, in the same folder,
+# which is written, put on the storage (Darwin's `F_FULLFSYNC`, `fsync`
+# elsewhere, as `io.sync`), closed, given the permission bits of the file it
+# replaces, and renamed over `path` in one step of the system; then the folder
+# is put on the storage, so the new name outlives a crash too. A new file
+# takes 0o666 less the process's mask, as `write_bytes` makes one. The owner
+# is not kept: the file is this process's user's.
+#
+# Fails `invalid` where `path` ends in no name of a file (`a/..`, a root),
+# `is_a_directory` where it names a folder, `file_not_found` where its folder
+# is not there, `permission` where the folder refuses a new file. On every
+# failure before the rename the temporary is removed and the file at `path`
+# stands as it was; a failure of the folder's last step alone leaves the new
+# file in place, and its message says so.
+#
+# Windows renames with `MoveFileExW`'s write-through, which waits for the
+# disk, and has no call that puts a folder on the storage; no page of its
+# reference promises that rename is one step, so there the promise above is
+# POSIX's alone, and it is expected to refuse to replace a file marked
+# read-only, `permission` (unrun until the Windows machine runs it). See also
+# `write_atomic_text`, `write_bytes`.
+function write_atomic_bytes(path: str, data: [u8]) -> ()?
+    return atomic.written(at: path, data: data)
+
+# Writes the UTF-8 of `text` as the whole of the file at `path` in one step,
+# as `write_atomic_bytes` writes bytes.
+#
+# - `path`: the file to write, as `write_atomic_bytes` takes it.
+# - `text`: the text, all of it; the empty text makes an empty file.
+#
+# Fails as `write_atomic_bytes` does. See also `write_atomic_bytes`.
+function write_atomic_text(path: str, text: str) -> ()?
+    return atomic.written_text(at: path, text: text)
+
 # Makes an empty file at `path` where nothing is there, and sets the times of
 # what is there to now where something is. Fails `file_not_found` where the
 # folder it would stand in is not there.
@@ -412,6 +460,23 @@ function rename(from: str, to: str) -> ()?
 # the volumes; a copy across volumes that fails leaves `from` whole.
 function move(from: str, to: str) -> ()?
     return copying.moved(from: from, to: to)
+
+# Puts the entries of the folder at `path` on the storage itself, so a name
+# made, renamed or removed in it outlives a crash of the machine: what a
+# program that renames a file into place by itself owes after the rename,
+# and what `write_atomic_bytes` does.
+#
+# - `path`: the folder, links followed.
+#
+# It asks Darwin's `F_FULLFSYNC` first, whose `fsync` leaves the drive's own
+# buffer unwritten, and `fsync` where the volume has none.
+#
+# Fails `not_a_directory` where `path` names something else,
+# `file_not_found` where nothing is there, and `unsupported` on Windows, which
+# has no call that promises it of a folder: a rename there is written through
+# by `write_atomic_bytes` instead. See also `rename`, `write_atomic_bytes`.
+function sync_dir(path: str) -> ()?
+    return atomic.folder_synced(path)
 
 ## Trees
 
@@ -742,6 +807,130 @@ function try_lock(s: io.Stream, exclusive: bool) -> bool?
 # Fails `closed` where `s` is closed. See also `lock`.
 function unlock(s: io.Stream) -> ()?
     return locks.unlocked(s)
+
+## Files mapped in memory
+
+# How `open_mapping` maps a file.
+variant MapAccess
+    # To read alone: `write_at` fails `invalid`.
+    read
+    # To read and write the file itself: what is written reaches every other
+    # map of the file and every reader of it, and the file when the system
+    # writes it back, at the latest at `sync_mapping`.
+    read_write
+    # To read the file and write this map's memory alone: the file is opened
+    # to read and never changed, Python's `ACCESS_COPY`.
+    copy
+
+# A file mapped in memory, which `open_mapping` answers and `close_mapping`
+# closes. It holds a handle: every copy of it reaches the same map, and a copy
+# made before `close_mapping` aborts where it is used after, as an
+# `io.Stream`'s does. No address inside the map ever reaches the program,
+# which reads and writes copies of its bytes.
+#
+# **The one hazard a copy cannot remove**: on POSIX another program may cut
+# the file shorter while it is mapped, and the system then ends a process that
+# touches a page past the new end (SIGBUS). Each `read_at` and `write_at` asks
+# the file's size first and fails `failed` past it, saying so; a cut that
+# falls between that question and the copy still ends the process. Windows
+# refuses to cut a file while it is mapped.
+record Mapping
+    # The floor's handle, `nullptr` once `close_mapping` has emptied this
+    # place.
+    handle: hero_disk.Mapping
+    # The path the file was mapped from, as it was given.
+    path: str
+    # How it was mapped.
+    access: MapAccess
+    # Its size in bytes: the file's when it was mapped, which stays, whatever
+    # the file becomes.
+    size: i64
+
+# The file at `path` mapped whole in memory for `access`, read and written by
+# `read_at` and `write_at` with no system call for the bytes themselves.
+#
+# - `path`: the file, links followed; it is mapped at the size it has now. A
+#   file is made longer first, with `truncate`, to be written past its end.
+# - `access`: to read, to read and write the file, or to write a private
+#   copy.
+#
+# An empty file is a map of size 0, which reads and writes no byte, where
+# Python refuses to map one. The map keeps its file open until
+# `close_mapping`, so the process's bound on open files bounds the maps too,
+# and the layer takes 4,096 at once.
+#
+# Fails `file_not_found` where nothing is there, `is_a_directory` for a
+# folder, `invalid` for what is no file (a device, a pipe), `permission`
+# where the file cannot be opened for `access`, `limit` where the system or
+# the layer has no more room for a map, and `unsupported` where its volume
+# maps no file. See also `read_at`, `write_at`, `close_mapping`.
+function open_mapping(path: str, access: MapAccess) -> Mapping?
+    how = match access
+        .read       => hero_disk.HERO_DISK_MAP_READ
+        .read_write => hero_disk.HERO_DISK_MAP_READ_WRITE
+        .copy       => hero_disk.HERO_DISK_MAP_COPY
+
+    made = mapped.opened(at: path, how: how)?
+    return ok(Mapping(handle: made.handle, path: path, access: access, size: made.size))
+
+# A copy of `count` bytes of the map `m` from `offset`.
+#
+# - `m`: the map.
+# - `offset`: the first byte's place, 0 to `m.size`.
+# - `count`: how many bytes, 0 to `m.size - offset`; 0 copies none.
+#
+# What another program writes to the file meanwhile may be read half old and
+# half new. Where a `copy` map shows a write another made to the file after it
+# was mapped is the system's (POSIX leaves it unspecified).
+#
+# Fails `invalid` where any byte asked stands outside the map, before a byte
+# is read or room made for one, `closed` where `m` is closed, and `failed`
+# where another program cut the file shorter than the bytes asked. See also
+# `write_at`.
+function read_at(m: Mapping, offset: i64, count: i64) -> [u8]?
+    return mapped.read_at(m.handle, at: m.path, size: m.size, offset: offset, count: count)
+
+# Copies `data` into the map `m` at `offset`.
+#
+# - `m`: the map, mapped `read_write` or `copy`.
+# - `offset`: the first byte's place, 0 to `m.size`.
+# - `data`: the bytes, which must all stand inside the map; a write never
+#   makes the file longer.
+#
+# Fails `invalid` where `m` was mapped to read alone or any byte would stand
+# outside the map, before a byte is written, `closed` where `m` is closed,
+# and `failed` where another program cut the file shorter. See also
+# `read_at`, `sync_mapping`.
+function write_at(m: Mapping, offset: i64, data: [u8]) -> ()?
+    writes = m.access != .read
+    return mapped.write_at(m.handle, at: m.path, size: m.size, writes: writes, offset: offset, data: data)
+
+# Puts what was written into the map `m` on the storage itself, as `io.sync`
+# puts a stream's writes there: the map's pages, then the file (Darwin's
+# `F_FULLFSYNC`, `FlushViewOfFile` and `FlushFileBuffers` on Windows).
+#
+# - `m`: the map; one mapped `read` or `copy` has nothing to put there, and
+#   the call answers at once.
+#
+# Fails `closed` where `m` is closed, and with the system's code where the
+# storage refused. See also `write_at`.
+function sync_mapping(m: Mapping) -> ()?
+    return mapped.synced(m.handle, at: m.path)
+
+# Unmaps `m` and closes its file, emptying this place, so every later call
+# through it fails `closed`.
+#
+# - `m`: the map, which the caller owns.
+#
+# What a `read_write` map was written reaches the file when the system writes
+# it back, closed or not; only `sync_mapping` waits for the storage. A read or
+# a write another thread is in on the map runs to its end, and the map is
+# unmapped after it.
+#
+# Fails `closed` where `m` is closed already, and with the system's code,
+# the map ended either way. See also `open_mapping`.
+function close_mapping(@m: Mapping) -> ()?
+    return mapped.closed(@m.handle, at: m.path)
 
 ## Tests
 
@@ -1338,6 +1527,85 @@ test "lock: an exclusive lock held, then let go"
     assert !lock(s, exclusive: true).is_err()
     assert !unlock(s).is_err()
     assert !io.close(@s).is_err()
+    assert fixture.cleared(dir)
+
+# A settings file written whole: a reader finds the old text or the new.
+test "write_atomic_text: a settings file replaced in one step"
+    dir = fixture.folder("example-atomic-text")
+    assert !write_file(path: dir + "/settings.toml", text: "size = 1\n").is_err()
+    assert !write_atomic_text(path: dir + "/settings.toml", text: "size = 2\n").is_err()
+    assert read_file(dir + "/settings.toml").must() == "size = 2\n"
+    assert fixture.cleared(dir)
+
+# Bytes written whole where no file was.
+test "write_atomic_bytes: a new file of bytes"
+    dir = fixture.folder("example-atomic-bytes")
+    assert !write_atomic_bytes(dir + "/state.bin", data: [0xca, 0xfe]).is_err()
+    assert read_bytes(dir + "/state.bin").must() == [0xca, 0xfe]
+    assert fixture.cleared(dir)
+
+# A file mapped to read, and closed.
+test "open_mapping: a file mapped to read"
+    dir = fixture.folder("example-open-mapping")
+    assert !write_file(path: dir + "/data", text: "abcdef").is_err()
+    m @= open_mapping(dir + "/data", access: .read).must()
+    assert m.size == 6
+    assert !close_mapping(@m).is_err()
+    assert fixture.cleared(dir)
+
+# A few bytes in the middle of a mapped file.
+test "read_at: three bytes from the middle"
+    dir = fixture.folder("example-read-at")
+    assert !write_file(path: dir + "/data", text: "abcdef").is_err()
+    m @= open_mapping(dir + "/data", access: .read).must()
+    assert read_at(m, offset: 2, count: 3).must() == ['c', 'd', 'e']
+    assert !close_mapping(@m).is_err()
+    assert fixture.cleared(dir)
+
+# A byte changed in place, which the file then holds.
+test "write_at: a byte changed in the file"
+    dir = fixture.folder("example-write-at")
+    assert !write_file(path: dir + "/data", text: "abcdef").is_err()
+    m @= open_mapping(dir + "/data", access: .read_write).must()
+    assert !write_at(m, offset: 0, data: ['A']).is_err()
+    assert !close_mapping(@m).is_err()
+    assert read_file(dir + "/data").must() == "Abcdef"
+    assert fixture.cleared(dir)
+
+# A write put on the storage before the program goes on.
+test "sync_mapping: a write made durable"
+    dir = fixture.folder("example-sync-mapping")
+    assert !write_file(path: dir + "/data", text: "abcdef").is_err()
+    m @= open_mapping(dir + "/data", access: .read_write).must()
+    assert !write_at(m, offset: 5, data: ['!']).is_err()
+    assert !sync_mapping(m).is_err()
+    assert read_file(dir + "/data").must() == "abcde!"
+    assert !close_mapping(@m).is_err()
+    assert fixture.cleared(dir)
+
+# A map closed, and closed again.
+test "close_mapping: once, and a second time refused"
+    dir = fixture.folder("example-close-mapping")
+    assert !write_file(path: dir + "/data", text: "x").is_err()
+    m @= open_mapping(dir + "/data", access: .copy).must()
+    assert !close_mapping(@m).is_err()
+
+    match close_mapping(@m)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    assert fixture.cleared(dir)
+
+# A file renamed into place, and its folder made to keep the new name.
+test "sync_dir: a rename made to outlive a crash"
+    dir = fixture.folder("example-sync-dir")
+    assert !write_file(path: dir + "/new", text: "x").is_err()
+    assert !rename(from: dir + "/new", to: dir + "/current").is_err()
+
+    match sync_dir(dir)
+        .ok _  => assert read_file(dir + "/current").must() == "x"
+        .err e => assert e.code == UNSUPPORTED
+
     assert fixture.cleared(dir)
 
 # A second stream on a file asks without waiting, and is told no.

@@ -638,6 +638,13 @@ capability unix/sockets  sockets of the local machine named by a path
   python  socket.AF_UNIX, socket.send_fds, socket.recv_fds
   note    `ipc` holds them since 2026-11-17: `ipc.listen`, `ipc.accept`, `ipc.connect`, `ipc.close_listener`, `ipc.set_deadline`, `ipc.close_write`, `ipc.peer_of`, and Linux's abstract names; `ipc.ledger`'s blocks `ipc/listen-path` to `ipc/datagrams` place every entry above, the datagrams and the passing of descriptors pending there
 
+capability icmp/ping  one ICMP echo sent to a host and its reply waited for within a time, without privileges: who replied, the round trip, the time to live, the bytes
+  heroes  net.ping
+  go      -
+  rust    -
+  python  socket.IPPROTO_ICMP, socket.IPPROTO_ICMPV6
+  note    none of the three has a ping: Go's standard library reaches ICMP only through a raw socket, `net.ListenPacket("ip4:icmp")`, which needs privileges (`ip/raw` below), and the datagram socket that does not is `golang.org/x/net/icmp`'s, outside it; Python hands a program the same socket with these two constants and leaves the echo to it; Rust has none. The yardstick is the system's own `ping`, asked on this Mac on 2026-11-17: `ping -c 1 127.0.0.1` printed `64 bytes from 127.0.0.1: icmp_seq=0 ttl=64`, and `net.ping("127.0.0.1", sequence: 0, size: 56, ...)` answers 64 bytes, from 127.0.0.1, ttl 64; `ping6 -c 1 ::1` printed `hlim=64`, as the answer's `ttl`; `ping -s 9000` refused `Message too long` without privileges, which is `invalid`; and 192.0.2.1 drew `Destination Host Unreachable` from a router to both, which is `failed`. The round trip is in nanoseconds on the clock a deadline reads, since `time` stands on `net`'s own layer and cannot be used here. Linux lets a program make the socket only where its group is in `net.ipv4.ping_group_range` (`permission` otherwise, said in the message), and writes its own identifier over the echo's; Windows asks `IcmpSendEcho2` and `Icmp6SendEcho2`, which choose the sequence themselves and give no IPv6 hop limit, and wait in the system, the stop ending only a wait not begun. The Linux and Windows arms are unrun (no Linux leg and the box off on 2026-11-17)
+
 capability ip/raw  raw IP packets sent and received
   heroes  refused: they need privileges, and no floor binds a raw socket
   go      net.DialIP, net.ListenIP, net.IPConn, net.IPConn.Close, net.IPConn.File, net.IPConn.LocalAddr, net.IPConn.Read, net.IPConn.ReadFrom, net.IPConn.ReadFromIP, net.IPConn.ReadMsgIP, net.IPConn.RemoteAddr, net.IPConn.SetDeadline, net.IPConn.SetReadBuffer, net.IPConn.SetReadDeadline, net.IPConn.SetWriteBuffer, net.IPConn.SetWriteDeadline, net.IPConn.SyscallConn, net.IPConn.Write, net.IPConn.WriteMsgIP, net.IPConn.WriteTo, net.IPConn.WriteToIP

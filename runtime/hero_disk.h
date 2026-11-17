@@ -378,4 +378,133 @@ int64_t hero_disk_lock(hero_stream *s, int64_t how, int64_t wait);
  * kinds of `hero_disk_lock`. */
 int64_t hero_disk_unlock(hero_stream *s);
 
+/* -- ROUND 4: A FILE PUT IN PLACE FOR GOOD, AND A FILE MAPPED IN MEMORY
+ * (M-rebel-library, the small additions, 2026-11-17) ------------------------
+ *
+ * Added for Rebel's `fs`: its atomic write, and its files mapped in memory.
+ * Everything above stands as it was, its names, its signatures and what it
+ * answers; the opening comment's "there is no handle here" is true of every
+ * door above, and the maps below are the one handle this header issues. */
+
+/* Puts the FILE `from` in the place of `to`, the old one gone: 0, or -1 with
+ * nothing moved. On POSIX in one step of the system (`rename`), so a reader
+ * of `to` finds the old file or the new one and never a part of either; on
+ * Windows by `MoveFileExW`, of which no page promises one step, as
+ * `hero_disk_rename` says. `from` names
+ * anything that is no directory (a link is moved itself); `to` names a file,
+ * a link, or nothing. Either naming a directory is
+ * `HERO_DISK_IS_A_DIRECTORY`; `HERO_DISK_NOT_FOUND` where `from` names
+ * nothing or the folder of `to` is not there; `HERO_DISK_CROSS_DEVICE`
+ * across two volumes. `to` naming `from` itself is 0, nothing moved.
+ *
+ * WHAT IT ADDS TO `hero_disk_rename`: on Windows `MoveFileExW` is asked with
+ * `MOVEFILE_WRITE_THROUGH` beside `MOVEFILE_REPLACE_EXISTING`, so it does not
+ * return before the move is on the disk (its page); a file marked read-only
+ * at `to` is expected to be refused there, `HERO_DISK_DENIED`, where POSIX
+ * lets the folder decide (unrun until the box runs it). On POSIX it is
+ * `rename`, whose new name reaches the
+ * storage only once the folder is: `hero_disk_sync_folder` does that. */
+int64_t hero_disk_replace(const char *from, const char *to);
+
+/* Puts the entries of the folder `path` on the storage itself, so a name
+ * made, renamed or removed in it outlives a crash of the machine: 0, or -1
+ * with `HERO_DISK_NOT_A_DIRECTORY` where `path` names something else. On
+ * POSIX the folder is opened to read and synced, Darwin's `F_FULLFSYNC`
+ * asked first since its `fsync` leaves the drive's own buffer unwritten
+ * (fcntl(2)), `fsync` where the volume has none, as `hero_stream_sync` does
+ * a file. Windows has no call a page promises this of for a folder:
+ * `HERO_DISK_UNSUPPORTED` there, always, and a rename reaches its disk by
+ * `hero_disk_replace`'s write-through instead. */
+int64_t hero_disk_sync_folder(const char *path);
+
+/* A FILE MAPPED IN MEMORY, READ AND WRITTEN BY COPY. A handle the layer
+ * issues and checks as `hero_net.h`'s sockets are: a slot and a life in one
+ * pointer's bits, never an address, so one closed already, NULL, one of
+ * another table, or one the layer never issued is `HERO_DISK_NOT_OPEN`,
+ * never a read of memory no longer mapped. No door hands out an address
+ * inside a map: bytes are copied in and out through the caller's buffer,
+ * every offset and count checked against the map's size first.
+ *
+ * THE MAP IS THE FILE'S SIZE WHEN IT WAS OPENED, and stays so: a write never
+ * makes the file longer, and a file made longer meanwhile is mapped no
+ * further; a file is made longer first (`hero_disk_set_length`) and mapped
+ * after. An EMPTY FILE is a map of size 0, which every system refuses to map
+ * (POSIX's `mmap` of no bytes is `EINVAL`, Windows' mapping of an empty file
+ * `ERROR_FILE_INVALID`): its handle is issued with nothing mapped, and only
+ * a read or a write of 0 bytes at 0 is taken.
+ *
+ * THE ONE HAZARD A COPY CANNOT REMOVE: on POSIX another program may cut the
+ * file shorter while it is mapped, and a read or a write of a page past its
+ * new end raises SIGBUS, which ends the process (mmap(2)). Each read and
+ * write therefore asks the file's size first (`fstat`) and answers
+ * `HERO_DISK_SHRUNK` where the range is past it; a cut that falls between
+ * that question and the copy still ends the process, and no door can close
+ * that window. Windows refuses to cut a file a view maps
+ * (`ERROR_USER_MAPPED_FILE`, SetEndOfFile's page), so there the hazard is a
+ * volume that goes away, a network share or a removable disk, whose read
+ * fails in the copy itself (`EXCEPTION_IN_PAGE_ERROR`), as on POSIX. */
+typedef struct hero_disk_map hero_disk_map;
+
+/* How a file is mapped. READ: read only. READ_WRITE: a write reaches the
+ * file and every other map of it (`MAP_SHARED`; `PAGE_READWRITE`). COPY: a
+ * write changes this map's memory alone, never the file, which is opened to
+ * read only (`MAP_PRIVATE`; `PAGE_WRITECOPY`), Python's `ACCESS_COPY`;
+ * whether it shows what another writes to the file after it was opened is
+ * the system's (POSIX leaves it unspecified; on Darwin, measured 2026-11-17,
+ * a page it had not written did not show another map's write). */
+#define HERO_DISK_MAP_READ 1
+#define HERO_DISK_MAP_READ_WRITE 2
+#define HERO_DISK_MAP_COPY 3
+
+/* The kind of a read or a write past the end of a file another program cut
+ * shorter while it was mapped (above), nothing copied. */
+#define HERO_DISK_SHRUNK 16
+
+/* The file `path` names, links followed, mapped whole in memory for `how`,
+ * one of the three above: its handle, or NULL with `HERO_DISK_INVALID` for a
+ * `how` that is none of them or a path that names no file (a device, a
+ * pipe), `HERO_DISK_IS_A_DIRECTORY` for a directory, `HERO_DISK_NOT_FOUND`
+ * where nothing is there, `HERO_DISK_DENIED` where the file cannot be opened
+ * for `how`, `HERO_DISK_LIMIT` where the system has no more room for a map
+ * or the layer no more slots, 4,096 maps open at once, and
+ * `HERO_DISK_UNSUPPORTED` where the volume maps no file (POSIX's `ENODEV`).
+ * The map keeps its file open until it is closed, so the process's bound on
+ * open files bounds the maps too. The handle is the caller's, owed one
+ * `hero_disk_map_close`. */
+hero_disk_map *hero_disk_map_open(const char *path, int64_t how);
+
+/* The size of the map `m`, the file's in bytes when it was opened, or -1
+ * with `HERO_DISK_NOT_OPEN`. */
+int64_t hero_disk_map_size(hero_disk_map *m);
+
+/* Copies the `count` bytes of the map `m` from `offset` into `buffer`:
+ * answers `count`, or -1 with `HERO_DISK_NOT_OPEN`, `HERO_DISK_INVALID`
+ * where `offset` is negative, the range ends past the map's size, or a
+ * count has no buffer behind it, and `HERO_DISK_SHRUNK` (above), nothing
+ * copied either way. */
+int64_t hero_disk_map_read(hero_disk_map *m, int64_t offset, void *buffer, uint64_t count);
+
+/* Copies the `count` bytes of `data` into the map `m` from `offset`:
+ * answers `count`, or -1 with the kinds of `hero_disk_map_read`, and
+ * `HERO_DISK_INVALID` for a map opened READ. A READ_WRITE map's bytes reach
+ * the file when the system writes them back, at the latest at
+ * `hero_disk_map_flush` or at the close; a COPY map's never do. */
+int64_t hero_disk_map_write(hero_disk_map *m, int64_t offset, const void *data, uint64_t count);
+
+/* Puts what was written into the READ_WRITE map `m` on the storage itself,
+ * the map's pages and then the file, as `hero_disk_sync_folder` says Darwin
+ * needs: `msync` with `MS_SYNC` and then `F_FULLFSYNC` or `fsync` on POSIX,
+ * `FlushViewOfFile` and then `FlushFileBuffers` on Windows. 0, also for a
+ * READ or COPY map and an empty one, which have nothing to put there, or -1
+ * with `HERO_DISK_NOT_OPEN`. */
+int64_t hero_disk_map_flush(hero_disk_map *m);
+
+/* Unmaps `m` and closes its file: 0, or -1 with `HERO_DISK_NOT_OPEN`, or
+ * with the system's failure, the map ended either way. A read, a write or a
+ * flush another thread is still in on it runs to its end, and the last of
+ * them unmaps. What a READ_WRITE map was written reaches the file all the
+ * same, when the system writes it back; only `hero_disk_map_flush` waits
+ * for the storage. */
+int64_t hero_disk_map_close(hero_disk_map *m);
+
 #endif

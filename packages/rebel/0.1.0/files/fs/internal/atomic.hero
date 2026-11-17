@@ -1,0 +1,330 @@
+# A file written whole in one step no reader sees half done: what
+# `fs.write_atomic_bytes` and `fs.write_atomic_text` do (the small additions,
+# 2026-11-17). The bytes go to a temporary file beside the target, in the same
+# folder so the last step is a rename and never a copy, made new in the same
+# step as its name is tried; the temporary is written, put on the storage
+# (`io.sync`, Darwin's `F_FULLFSYNC` first), closed, given the permission of
+# the file it replaces, and then put in the target's place by one rename of the
+# system (`hero_disk.replace`, written through to the disk on Windows); last
+# the folder is put on the storage (`hero_disk.sync_folder`), so the new name
+# outlives a crash too, which Windows has no call for and its write-through
+# rename stands for. On every failure before the rename the temporary is
+# removed, and the target stands as it was.
+
+use bytes
+use fs/internal/codes
+use fs/internal/fixture
+use fs/internal/listing
+use fs/internal/temporary
+use fs/internal/whole
+use io
+use io/hero_stream
+use os/hero_disk
+use path
+
+# The longest name of a target kept inside its temporary's name, in bytes: a
+# temporary a crash left behind then says what it was for, and a longer name
+# with the twenty bytes around it could pass the 255 a folder's entry takes.
+constant LONGEST_NAME: i64
+    120
+
+# The pattern of the temporary beside the file called `name`: its name kept
+# where it is short, a dot first so a listing hides it.
+#
+# - `name`: the target's last part, never empty and holding no separator.
+function pattern_for(name: str) -> str
+    if name.len() <= LONGEST_NAME
+        return "." + name + ".*.tmp"
+    return ".atomic.*.tmp"
+
+# The permission the file at `at` has, which the file put in its place takes,
+# or -1 where nothing is there or what is there is no file, a new file then
+# taking 0o666 less the process's mask.
+#
+# - `at`: the target's path, a link there read through.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails `is_a_directory` where `at` names a folder, the link itself where it
+# is one, and with the floor's code where its facts cannot be asked.
+function kept_permission(at: str, asked: str) -> i64?
+    own: [i64] @= []
+
+    if hero_disk.facts(at, @own, n: 6) != hero_disk.HERO_DISK_FACTS
+        if codes.last_was(hero_disk.HERO_DISK_NOT_FOUND)
+            return ok(-1)
+        return codes.disk_failed(asked: asked)
+
+    if own[hero_disk.HERO_DISK_FACT_KIND] == hero_disk.HERO_DISK_KIND_DIRECTORY
+        return fail(code: codes.IS_A_DIRECTORY, msg: f"{asked}: it is a folder")
+    through: [i64] @= []
+
+    if hero_disk.facts_through(at, @through, n: 6) != hero_disk.HERO_DISK_FACTS
+        return ok(-1)
+
+    if through[hero_disk.HERO_DISK_FACT_KIND] != hero_disk.HERO_DISK_KIND_FILE
+        return ok(-1)
+    return ok(through[hero_disk.HERO_DISK_FACT_PERMISSION])
+
+# A new temporary file in `folder` for the target called `name`, open to
+# write, 0o666 less the process's mask.
+#
+# - `folder`: the target's folder.
+# - `name`: the target's last part.
+# - `asked`: what a failure's message says was asked.
+#
+# Fails as `whole.opened` does, `file_not_found` where `folder` is not there.
+function made_beside(folder: str, name: str, asked: str) -> temporary.Made?
+    pieces = temporary.pieces_of(pattern: pattern_for(name), asked: asked)?
+    tries: i64 @= 1
+
+    while true
+        candidate = temporary.candidate(folder, pieces: pieces)?
+
+        match whole.opened(at: candidate, access: hero_stream.HERO_STREAM_ACCESS_CREATE, permission: 0o666, asked: asked)
+            .ok s => return ok(temporary.Made(at: candidate, stream: s))
+            .err e =>
+                if e.code != codes.EXISTS || tries >= temporary.TRIES
+                    return fail(code: e.code, msg: e.msg)
+
+        tries @ tries + 1
+
+# `failure`, once the temporary at `left` is removed: what every step before
+# the rename answers when it fails. The removal's own failure is not told, the
+# step's being the one that matters.
+#
+# - `left`: the temporary's path.
+# - `failure`: what the failed step answered.
+function abandoned(left: str, failure: ()?) -> ()?
+    _ = hero_disk.remove(left)
+    return failure
+
+# Writes `data` as the whole of the file at `at`, in one step a reader of
+# `at` never sees half done.
+#
+# - `at`: the target's path; a link there is replaced itself, never what it
+#   names written.
+# - `data`: the bytes, all of them.
+#
+# Fails `invalid` where `at` holds a zero byte or ends in no name,
+# `is_a_directory` where it names a folder, `file_not_found` where its folder
+# is not there, and with the floor's code where a step fails; nothing changes
+# at `at` but where the folder alone failed to reach the storage, which the
+# message says.
+function written(at: str, data: [u8]) -> ()?
+    asked = f"writing \"{at}\" atomically"
+    codes.checked(path: at, asked: asked)?
+
+    name = match path.name(at)
+        .ok n  => n
+        .err _ => return fail(code: codes.INVALID, msg: f"{asked}: the path ends in no name of a file")
+
+    folder = path.parent(at)
+    permission = kept_permission(at: at, asked: asked)?
+    made @= made_beside(folder: folder, name: name, asked: asked)?
+    work: ()? @= io.write(made.stream, data)
+
+    if !work.is_err()
+        work @ io.sync(made.stream)
+    closed = io.close(@made.stream)
+    stored = whole.first_of(value: work, closed: closed)
+
+    if stored.is_err()
+        return abandoned(left: made.at, failure: stored)
+
+    if permission >= 0 && hero_disk.set_permission(made.at, permission: permission) != 0
+        return abandoned(left: made.at, failure: codes.disk_failed(asked: asked))
+
+    if hero_disk.replace(from: made.at, to: at) != 0
+        return abandoned(left: made.at, failure: codes.disk_failed(asked: asked))
+
+    if hero_disk.sync_folder(folder) == 0 || codes.last_was(hero_disk.HERO_DISK_UNSUPPORTED)
+        return ok()
+    kind = hero_disk.last_error()
+    return fail(
+        code: codes.code_of(kind),
+        msg: f"{asked}: the file is in place, but its folder \"{folder}\" was not put on the storage: {codes.words_of(kind: kind, number: hero_disk.last_os_error())}"
+    )
+
+# Puts the entries of the folder `at` on the storage.
+#
+# - `at`: the folder's path.
+#
+# Fails `not_a_directory`, `file_not_found`, `invalid` for a zero byte, and
+# `unsupported` on Windows.
+function folder_synced(at: str) -> ()?
+    asked = f"putting the folder \"{at}\" on the storage"
+    codes.checked(path: at, asked: asked)?
+
+    if hero_disk.sync_folder(at) != 0
+        return codes.disk_failed(asked: asked)
+    return ok()
+
+# Writes the UTF-8 of `text` as `written` writes bytes.
+#
+# - `at`: the target's path.
+# - `text`: the text, all of it.
+function written_text(at: str, text: str) -> ()?
+    return written(at: at, data: bytes.from_text(text))
+
+## Tests
+
+# The names in `dir`, sorted, for a test to see what a write left there.
+function names_in(dir: str) -> [str]
+    names: [str] @= []
+
+    for found in listing.listed(dir: dir, asked: "listing").must()
+        names @ names.push(found.name)
+
+    return names
+
+test "pattern_for: a short name kept, the longest kept, and one byte past it left out"
+    assert pattern_for("a.txt") == ".a.txt.*.tmp"
+    assert pattern_for("é".repeat(60)) == "." + "é".repeat(60) + ".*.tmp"
+    assert pattern_for("a".repeat(121)) == ".atomic.*.tmp"
+
+test "kept_permission: nothing there, a file's bits, a folder, a link to a file, and a link to nothing"
+    dir = fixture.folder("keptperm")
+    assert kept_permission(at: dir + "/none", asked: "a").must() == -1
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+    assert hero_disk.set_permission(dir + "/f", permission: 0o640) == 0
+
+    expected = if fixture.windows()
+        0o666
+    else
+        0o640
+
+    assert kept_permission(at: dir + "/f", asked: "a").must() == expected
+
+    match kept_permission(at: dir, asked: "writing")
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY && e.msg == "writing: it is a folder"
+
+    if fixture.linked(target: "f", name: dir + "/l")
+        assert kept_permission(at: dir + "/l", asked: "a").must() == expected
+
+    if fixture.linked(target: "gone", name: dir + "/dangling")
+        assert kept_permission(at: dir + "/dangling", asked: "a").must() == -1
+    assert fixture.cleared(dir)
+
+test "written: a new file, a file replaced, no bytes, text of more than one byte a character, and no temporary left"
+    dir = fixture.folder("atomic")
+    assert !written(at: dir + "/f", data: [1, 2, 3]).is_err()
+    assert whole.read_all(dir + "/f").must() == [1, 2, 3]
+    assert !written(at: dir + "/f", data: [9]).is_err()
+    assert whole.read_all(dir + "/f").must() == [9]
+    nothing: [u8] = []
+    assert !written(at: dir + "/f", data: nothing).is_err()
+    assert read_file(dir + "/f").must() == ""
+    assert !written_text(at: dir + "/t", text: "caffè ☃\n").is_err()
+    assert read_file(dir + "/t").must() == "caffè ☃\n"
+    assert names_in(dir) == ["f", "t"]
+    assert fixture.cleared(dir)
+
+test "written: the permission of the file replaced is kept, and a new file takes the mask's"
+    dir = fixture.folder("atomicperm")
+    assert !write_file(path: dir + "/secret", text: "old").is_err()
+
+    if !fixture.windows()
+        assert hero_disk.set_permission(dir + "/secret", permission: 0o600) == 0
+        assert !written_text(at: dir + "/secret", text: "new").is_err()
+        assert read_file(dir + "/secret").must() == "new"
+        numbers: [i64] @= []
+        assert hero_disk.facts(dir + "/secret", @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+        assert numbers[hero_disk.HERO_DISK_FACT_PERMISSION] == 0o600
+    assert !written_text(at: dir + "/fresh", text: "x").is_err()
+    fresh: [i64] @= []
+    assert hero_disk.facts(dir + "/fresh", @fresh, n: 6) == hero_disk.HERO_DISK_FACTS
+    assert fresh[hero_disk.HERO_DISK_FACT_PERMISSION] & 0o600 == 0o600
+    assert fixture.cleared(dir)
+
+test "written: a folder at the path, a folder not there, a path ending in no name, and a zero byte"
+    dir = fixture.folder("atomicfail")
+
+    match written_text(at: dir, text: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.IS_A_DIRECTORY
+
+    match written_text(at: dir + "/none/f", text: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.FILE_NOT_FOUND
+
+    match written_text(at: dir + "/..", text: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID && e.msg == f"writing \"{dir}/..\" atomically: the path ends in no name of a file"
+
+    match written_text(at: "", text: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    zero: [u8] = ['a', 0]
+
+    match written_text(at: zero.validated_bytes().must(), text: "x")
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert names_in(dir).len() == 0
+    assert fixture.cleared(dir)
+
+test "written: a link at the path is replaced itself, and what it named stays"
+    dir = fixture.folder("atomiclink")
+    assert !write_file(path: dir + "/target", text: "kept").is_err()
+
+    if fixture.linked(target: "target", name: dir + "/l")
+        assert !written_text(at: dir + "/l", text: "new").is_err()
+        assert read_file(dir + "/l").must() == "new"
+        assert read_file(dir + "/target").must() == "kept"
+        numbers: [i64] @= []
+        assert hero_disk.facts(dir + "/l", @numbers, n: 6) == hero_disk.HERO_DISK_FACTS
+        assert numbers[hero_disk.HERO_DISK_FACT_KIND] == hero_disk.HERO_DISK_KIND_FILE
+    assert fixture.cleared(dir)
+
+test "folder_synced: a folder, a file, nothing there, and a zero byte; or unsupported on Windows"
+    dir = fixture.folder("foldersynced")
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    if fixture.windows()
+        match folder_synced(dir)
+            .ok _  => assert false
+            .err e => assert e.code == codes.UNSUPPORTED
+    else
+        assert !folder_synced(dir).is_err()
+
+        match folder_synced(dir + "/f")
+            .ok _  => assert false
+            .err e => assert e.code == codes.NOT_A_DIRECTORY && e.msg == f"putting the folder \"{dir}/f\" on the storage: a part of the path is not a folder"
+
+        match folder_synced(dir + "/none")
+            .ok _  => assert false
+            .err e => assert e.code == codes.FILE_NOT_FOUND
+    zero: [u8] = ['a', 0]
+
+    match folder_synced(zero.validated_bytes().must())
+        .ok _  => assert false
+        .err e => assert e.code == codes.INVALID
+
+    assert fixture.cleared(dir)
+
+# A folder this user may not write into refuses the temporary, and the target
+# stands as it was. Where the folder takes a file all the same, the test asks
+# no more: Windows' read-only mark on a folder refuses no file made in it, and
+# POSIX's super-user (a container's) passes every permission, so a probe file
+# made first says which world the test runs in.
+test "written: a folder that refuses the temporary leaves the target as it was, and no temporary"
+    dir = fixture.folder("atomicshut")
+    assert !write_file(path: dir + "/f", text: "old").is_err()
+    assert hero_disk.set_permission(dir, permission: 0o500) == 0
+    probed = write_file(path: dir + "/probe", text: "x")
+
+    if probed.is_err()
+        refused = written_text(at: dir + "/f", text: "new")
+        assert hero_disk.set_permission(dir, permission: 0o700) == 0
+
+        match refused
+            .ok _  => assert false
+            .err e => assert e.code == codes.PERMISSION
+
+        assert read_file(dir + "/f").must() == "old"
+        assert names_in(dir) == ["f"]
+    else
+        assert hero_disk.set_permission(dir, permission: 0o700) == 0
+    assert fixture.cleared(dir)

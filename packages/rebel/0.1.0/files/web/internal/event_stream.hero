@@ -1,0 +1,119 @@
+# Server-sent events written in the `text/event-stream` format of the WHATWG
+# HTML standard (§ 9.2.5): an event's `id`, `event` and `data` lines and the
+# empty line that ends it, a `retry` line, and comments. A reader splits the
+# stream at a carriage return and a line feed, a line feed, or a carriage
+# return alone, so data is cut into lines at each of the three and a name or
+# an id holding one is refused; the reader drops one space after a field's
+# colon, so every value is written after one.
+
+use bytes
+use http
+
+# The code of an event that cannot be written.
+constant INVALID: str
+    "invalid"
+
+# The lines of `s` as an event stream's reader splits them: at each carriage
+# return and line feed, line feed, or carriage return alone. The empty text
+# is one empty line, and a line end at the end leaves one after it.
+function lines_of(s: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '\r' || s[at] == '\n'
+            out @ out.push(s.slice(from: from, to: at))
+
+            if s[at] == '\r' && at + 1 < s.len() && s[at + 1] == '\n'
+                at @ at + 1
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(s.slice(from: from, to: s.len()))
+    return out
+
+# Whether `s` holds a carriage return or a line feed.
+function has_line_end(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == '\r' || s[at] == '\n'
+            return true
+
+    return false
+
+# Whether `s` holds a zero byte.
+function has_zero(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == 0
+            return true
+
+    return false
+
+# `field`'s line holding `value`: `field: value`, or `field:` alone where
+# `value` is empty.
+function field_line(field: str, value: str) -> str
+    if value == ""
+        return field + ":"
+    return field + ": " + value
+
+# The text of `event` in the event-stream format: its `id` line where its id
+# is not "", its `event` line where its name is not "", one `data` line for
+# each of its data's lines, and the empty line that makes a reader dispatch
+# it. Fails `invalid` where the name or the id holds a line end, or the id a
+# zero byte, which a reader would read as another line or ignore.
+function format(event: http.Event) -> str?
+    if has_line_end(event.name)
+        return fail(code: INVALID, msg: f"an event's name holds a line end: \"{event.name}\"")
+
+    if has_line_end(event.id) || has_zero(event.id)
+        return fail(code: INVALID, msg: f"an event's id holds a line end or a zero byte: \"{event.id}\"")
+    lines: [str] @= []
+
+    if event.id != ""
+        lines @ lines.push(field_line(field: "id", value: event.id))
+
+    if event.name != ""
+        lines @ lines.push(field_line(field: "event", value: event.name))
+
+    for line in lines_of(event.data)
+        lines @ lines.push(field_line(field: "data", value: line))
+
+    return ok(lines.join("\n") + "\n\n")
+
+# The comment lines of `text`, one for each of its lines, each opening with a
+# colon: what a reader skips and a proxy sees as traffic.
+function comment(text: str) -> str
+    lines: [str] @= []
+
+    for line in lines_of(text)
+        lines @ lines.push(field_line(field: "", value: line))
+
+    return lines.join("\n") + "\n"
+
+## Tests
+
+test "lines_of: empty, one line, every line end, two ends together, and an end at the end"
+    assert lines_of("") == [""]
+    assert lines_of("a") == ["a"]
+    assert lines_of("a\r\nb\rc\nd") == ["a", "b", "c", "d"]
+    assert lines_of("a\n\nb") == ["a", "", "b"]
+    assert lines_of("a\r\r\nb") == ["a", "", "b"]
+    assert lines_of("é\n") == ["é", ""]
+
+test "format: an event whole, data alone, empty data, data ending in a line end, a value opening with a space"
+    whole = http.Event(name: "tick", data: "one\ntwo", id: "7")
+    assert format(whole).must() == "id: 7\nevent: tick\ndata: one\ndata: two\n\n"
+    assert format(http.Event(name: "", data: "x", id: "")).must() == "data: x\n\n"
+    assert format(http.Event(name: "", data: "", id: "")).must() == "data:\n\n"
+    assert format(http.Event(name: "", data: "a\r\n", id: "")).must() == "data: a\ndata:\n\n"
+    assert format(http.Event(name: "", data: " lead", id: "")).must() == "data:  lead\n\n"
+
+test "format: a name or an id with a line end, and an id with a zero byte, refused"
+    assert format(http.Event(name: "a\nb", data: "", id: "")).is_err()
+    assert format(http.Event(name: "", data: "", id: "a\rb")).is_err()
+    assert format(http.Event(name: "", data: "", id: bytes.to_text_lossy([0x61, 0, 0x62]))).is_err()
+
+test "comment: one line, several, and none"
+    assert comment("keep-alive") == ": keep-alive\n"
+    assert comment("a\nb") == ": a\n: b\n"
+    assert comment("") == ":\n"

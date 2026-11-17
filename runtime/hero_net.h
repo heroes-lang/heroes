@@ -438,6 +438,69 @@ int64_t hero_net_leave_group(hero_net_socket *s, const char *group, int64_t inte
 #define HERO_NET_INTERFACE_POINT_TO_POINT 32
 int64_t hero_net_interfaces(void *buffer, uint64_t count);
 
+/* -- ROUND 4: AN ECHO ASKED BY ICMP, WITHOUT PRIVILEGES (M-rebel-library,
+ * 2026-11-17) ----------------------------------------------------------------
+ *
+ * Added for Rebel's `net.ping`. Everything above stands as it was, its names,
+ * its signatures and what it answers; one kind is added, which no call above
+ * answers. */
+
+/* The system has no such thing for a program: no ICMP socket a program
+ * without privileges may make, of that family, on this machine. */
+#define HERO_NET_UNSUPPORTED 15
+
+/* The most data bytes one echo carries: an IPv4 datagram's 65,535 less its
+ * 20-byte header and the echo's 8, the same bound for IPv6. A system may
+ * refuse fewer, `HERO_NET_TOO_LONG` (Darwin refuses 9,000 to a program
+ * without privileges, measured 2026-11-17 with its own `ping -s 9000`). */
+#define HERO_NET_PING_MOST UINT64_C(65507)
+
+/* ONE ECHO: an ICMP echo request (IPv4's type 8, IPv6's 128) carrying the
+ * `count` bytes of `data` and the sequence number `sequence`, 0 to 65535,
+ * sent to `address`, a number (AN ADDRESS AS TEXT, above), and its reply
+ * waited for, `ms` milliseconds at most, 1 to 2,147,483,647: a ping always
+ * has a limit, since a host that never answers would hold the call for
+ * ever. Answers the bytes of the reply, its 8-byte ICMP header and its
+ * data, as the system's `ping` counts them; `from` then holds the address
+ * that replied AS TEXT, `*ttl` the reply's time to live (IPv4) or hop
+ * limit (IPv6), 0 to 255, or -1 where the system did not say, and
+ * `*nanoseconds` the round trip on the clock a deadline is read on, which
+ * never goes back, from just before the request left to the reply read.
+ * Or -1, nothing to be read in `from`, `*ttl` -1 and `*nanoseconds` 0:
+ * `HERO_NET_INVALID` for a `sequence`, `count`, `ms` or `from_count` out of
+ * its range (`from_count` at least `HERO_NET_ADDRESS_MOST`), `data` NULL
+ * with bytes behind it, or `ttl` or `nanoseconds` NULL; `HERO_NET_ADDRESS`
+ * for what is no number; `HERO_NET_TIMED_OUT` where no reply came in time;
+ * `HERO_NET_UNREACHABLE` where the system, or a router by an ICMP error
+ * naming this echo, said the host cannot be reached or the echo expired on
+ * its way; `HERO_NET_TOO_LONG` where the system refuses an echo so long;
+ * `HERO_NET_DENIED` where the system refuses the program such a socket
+ * (Linux, where the program's group is outside `net.ipv4.ping_group_range`,
+ * which no group is by default on several distributions);
+ * `HERO_NET_UNSUPPORTED` where the system has no such socket for the
+ * family; `HERO_NET_STOPPED`, `HERO_NET_LIMIT`.
+ *
+ * NEVER A RAW SOCKET AND NEVER A PRIVILEGE: on Darwin and Linux a datagram
+ * socket of the ICMP protocol (`SOCK_DGRAM` with `IPPROTO_ICMP`, or
+ * `IPPROTO_ICMPV6`), which the system lets a program make where it allows
+ * it at all; on Windows the system's echo calls (`IcmpSendEcho2`,
+ * `Icmp6SendEcho2`), which ask none either. The reply is the one carrying
+ * this echo's sequence and data, and on Darwin its identifier, which the
+ * layer chooses from the process and the socket so two echoes of one
+ * process at once are told apart; Linux writes its own identifier over the
+ * request's and gives the socket only the replies bearing it. Windows
+ * chooses the identifier and the sequence itself, `sequence` going nowhere
+ * there, and gives no hop limit for IPv6.
+ *
+ * IT WAITS AS EVERY CALL OF THE LAYER WAITS on Darwin and Linux, through the
+ * layer's own thread, so the stop ends it at once, `HERO_NET_STOPPED`. On
+ * Windows the system's call waits, as the resolver does in THE NAMES above:
+ * a stop asked before the call answers `HERO_NET_STOPPED` and sends
+ * nothing, and one asked while it waits lets it run to its reply or its
+ * time. No handle is made and none kept: the socket lives inside the call. */
+int64_t hero_net_ping(const char *address, int64_t sequence, const void *data, uint64_t count, int64_t ms, void *from, uint64_t from_count, int64_t *ttl,
+                      int64_t *nanoseconds);
+
 /* -- FOR THE OTHER MEMBERS OF THE LAYER, AND BOUND BY NO HEROES GROUP
  * (M-rebel-library, 2026-11-16, for `hero_poll.h`) ---------------------------
  *

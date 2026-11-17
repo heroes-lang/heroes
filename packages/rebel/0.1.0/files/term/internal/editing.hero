@@ -1,0 +1,422 @@
+# The line editor's work, a pure machine: an act in, the line changed, and
+# the bytes that show the change out. The face names the keys and turns each
+# into an `Act`; nothing here reads a terminal or a file. The line is drawn on
+# one row from its left edge: where it is wider than the row, a window of it
+# around the cursor is shown, and the cursor is put back by the terminal's own
+# saving of its place (DEC's `ESC 7` and `ESC 8`), so a character the
+# terminal draws wider or narrower than `width` measures still leaves the
+# cursor where the terminal drew it.
+
+use term/internal/acts
+use term/internal/width
+use term/internal/words
+use unicode
+
+# How an act left the line.
+variant End
+    # The line goes on.
+    going
+    # Enter: the line is done.
+    entered
+    # Ctrl-C: the line is given up.
+    interrupted
+    # Ctrl-D on an empty line: no more input.
+    closed
+
+# What an act did: the bytes that show it, how it left the line, and the line
+# entered where it ended so.
+record Outcome
+    # The bytes to write to the terminal; "" where nothing changed.
+    draw: str
+    # How the line stands.
+    end: End
+    # The line, where `end` is `entered`; else "".
+    line: str
+
+# The state of a line being edited, kept between acts.
+record Edit
+    # The line as it stands.
+    line: str
+    # Where the cursor stands, a byte index at a character's start, 0 to
+    # `line.len()`.
+    cursor: i64
+    # How far back in the history the line shown is: 0 for the line being
+    # typed, 1 for the newest line entered, and so on.
+    back: i64
+    # The line being typed, kept while the history is shown.
+    draft: str
+    # The text the last kills took, which a yank puts back.
+    killed: str
+    # Whether the act before was a kill, so that kills in a row add up.
+    killing: bool
+    # Whether the act before was a Tab that completed nothing, so that a
+    # second lists the candidates.
+    tabbed: bool
+    # Whether the act before was Escape, so that this one is read with Alt.
+    escaped: bool
+    # The cells of the terminal's row, 0 where they are not known.
+    columns: i64
+
+# The bell, rung where an act can do nothing.
+constant BELL: str
+    "\u{7}"
+
+# An empty line, nothing killed, the terminal's width not known.
+function fresh() -> Edit
+    return Edit(
+        line: "",
+        cursor: 0,
+        back: 0,
+        draft: "",
+        killed: "",
+        killing: false,
+        tabbed: false,
+        escaped: false,
+        columns: 0
+    )
+
+# The bytes that draw `edit`'s line after `prompt` on the row the cursor is
+# on: from its left edge, the prompt, the part of the line the row has room
+# for, the rest of the row cleared, and the cursor put back after the part
+# before it.
+function render(edit: Edit lent, prompt: str lent) -> str
+    s = edit.line
+    room = edit.columns - 1 - width.cells_of(prompt)
+    from: i64 @= 0
+    to: i64 @= s.len()
+
+    if edit.columns > 0 && room >= 1 && width.cells_of(s) > room
+        while width.cells_between(s, from: from, to: edit.cursor) > room
+            from @ width.next_at(s, from)
+
+        to @ edit.cursor
+
+        while to < s.len() && width.cells_between(s, from: from, to: width.next_at(s, to)) <= room
+            to @ width.next_at(s, to)
+    before = s.slice(from: from, to: edit.cursor)
+    after = s.slice(from: edit.cursor, to: to)
+    return "\r" + prompt + before + "\u{1b}7" + after + "\u{1b}[K\u{1b}8"
+
+# The line put back to empty for the next one; what was killed stays.
+function reset(@edit: Edit)
+    edit.line @ ""
+    edit.cursor @ 0
+    edit.back @ 0
+    edit.draft @ ""
+    edit.killing @ false
+    edit.tabbed @ false
+    edit.escaped @ false
+
+# `edit`'s line with the bytes from `from` to `to` replaced by `text`, the
+# cursor put after `text`.
+function replace(@edit: Edit, from: i64, to: i64, text: str)
+    s = edit.line
+    edit.line @ s.slice(from: 0, to: from) + text + s.slice(from: to, to: s.len())
+    edit.cursor @ from + text.len()
+
+# Kills the bytes from `from` to `to` of `edit`'s line, adding them to what
+# the kill before took where the act before was a kill: after it for a kill
+# forward, before it for a kill back.
+function kill(@edit: Edit, from: i64, to: i64, forward: bool)
+    taken = edit.line.slice(from: from, to: to)
+
+    if !edit.killing
+        edit.killed @ taken
+    else if forward
+        edit.killed @ edit.killed + taken
+    else
+        edit.killed @ taken + edit.killed
+    replace(@edit, from: from, to: to, text: "")
+    edit.killing @ true
+
+# The line `back` steps back in `history`, the oldest first, or the draft at
+# 0; `back` from 0 to `history.len()`.
+function shown(history: [str] lent, back: i64, draft: str) -> str
+    if back == 0
+        return draft
+    return history[history.len() - back]
+
+# Does `act` to `edit`, with `history` the lines entered before, the oldest
+# first, and `prompt` what is drawn before the line. A Tab rings the bell:
+# `complete` is the act of a Tab with candidates.
+function apply(@edit: Edit, history: [str] lent, prompt: str, act: acts.Act) -> Outcome
+    was_killing = edit.killing
+    edit.killing @ false
+    edit.tabbed @ false
+
+    done: acts.Act = if edit.escaped
+        acts.meta_of(act)
+    else
+        act
+    edit.escaped @ false
+
+    if edit.back > history.len()
+        edit.back @ history.len()
+    s = edit.line
+    at = edit.cursor
+
+    match done
+        .insert c =>
+            if unicode.is_control(c.text)
+                return Outcome(draw: "", end: .going, line: "")
+            replace(@edit, from: at, to: at, text: c.text)
+        .back_char =>
+            if at > 0
+                edit.cursor @ words.group_start(s, at)
+        .forward_char =>
+            if at < s.len()
+                edit.cursor @ words.group_end(s, at)
+        .line_start   => edit.cursor @ 0
+        .line_end     => edit.cursor @ s.len()
+        .back_word    => edit.cursor @ words.word_start(s, at)
+        .forward_word => edit.cursor @ words.word_end(s, at)
+        .delete_back =>
+            if at == 0
+                return Outcome(draw: BELL, end: .going, line: "")
+            replace(@edit, from: words.group_start(s, at), to: at, text: "")
+        .delete_here =>
+            if at == s.len()
+                return Outcome(draw: BELL, end: .going, line: "")
+            replace(@edit, from: at, to: words.group_end(s, at), text: "")
+            edit.cursor @ at
+        .end_or_delete =>
+            if s == ""
+                reset(@edit)
+                return Outcome(draw: "\r\n", end: .closed, line: "")
+
+            if at < s.len()
+                replace(@edit, from: at, to: words.group_end(s, at), text: "")
+                edit.cursor @ at
+        .kill_to_end =>
+            edit.killing @ was_killing
+            kill(@edit, from: at, to: s.len(), forward: true)
+            edit.cursor @ at
+        .kill_to_start =>
+            edit.killing @ was_killing
+            kill(@edit, from: 0, to: at, forward: false)
+        .kill_back_spaced =>
+            edit.killing @ was_killing
+            kill(@edit, from: words.spaced_start(s, at), to: at, forward: false)
+        .kill_back_word =>
+            edit.killing @ was_killing
+            kill(@edit, from: words.word_start(s, at), to: at, forward: false)
+        .kill_forward_word =>
+            edit.killing @ was_killing
+            kill(@edit, from: at, to: words.word_end(s, at), forward: true)
+            edit.cursor @ at
+        .yank => replace(@edit, from: at, to: at, text: edit.killed)
+        .older =>
+            if edit.back >= history.len()
+                return Outcome(draw: BELL, end: .going, line: "")
+
+            if edit.back == 0
+                edit.draft @ s
+            edit.back @ edit.back + 1
+            edit.line @ shown(history, back: edit.back, draft: edit.draft)
+            edit.cursor @ edit.line.len()
+        .newer =>
+            if edit.back == 0
+                return Outcome(draw: BELL, end: .going, line: "")
+            edit.back @ edit.back - 1
+            edit.line @ shown(history, back: edit.back, draft: edit.draft)
+            edit.cursor @ edit.line.len()
+        .enter =>
+            reset(@edit)
+            return Outcome(draw: "\r\n", end: .entered, line: s)
+        .interrupt =>
+            reset(@edit)
+            return Outcome(draw: "^C\r\n", end: .interrupted, line: "")
+        .redraw   => return Outcome(draw: "\u{1b}[H\u{1b}[2J" + render(edit, prompt), end: .going, line: "")
+        .complete => return Outcome(draw: BELL, end: .going, line: "")
+        .meta =>
+            edit.killing @ was_killing
+            edit.escaped @ true
+            return Outcome(draw: "", end: .going, line: "")
+        .nothing => return Outcome(draw: "", end: .going, line: "")
+
+    return Outcome(draw: render(edit, prompt), end: .going, line: "")
+
+# Adds `line` to `history`, the caller's, as the newest: not an empty line,
+# nor one equal to the newest; the oldest dropped past `most`, and every one
+# where `most` is 0 or less.
+function remember(@history: [str], line: str, most: i64)
+    if most <= 0
+        history @ []
+        return
+
+    if line == "" || history.len() > 0 && history[history.len() - 1] == line
+        return
+    history @ history.push(line)
+
+    if history.len() > most
+        history @ history.slice(from: history.len() - most, to: history.len())
+
+# Each act of `steps` done in turn to a fresh edit of `columns` cells, with
+# `history`: the edit after the last, for the tests.
+function edited_by(steps: [acts.Act], history: [str], columns: i64) -> Edit
+    edit @= fresh()
+    edit.columns @ columns
+
+    for a in steps
+        _ = apply(@edit, history: history, prompt: "> ", act: a)
+
+    return edit
+
+test "editing insert and the cursor: characters put in at the cursor, a control refused, moves at both ends"
+    e @= edited_by(
+        steps: [.insert(text: "a"), .insert(text: "c"), .back_char, .insert(text: "b")],
+        history: [],
+        columns: 0
+    )
+    assert e.line == "abc" && e.cursor == 2
+    out = apply(@e, history: [], prompt: "> ", act: .insert(text: "\u{1b}"))
+    assert out.draw == "" && e.line == "abc"
+    _ = apply(@e, history: [], prompt: "> ", act: .line_start)
+    _ = apply(@e, history: [], prompt: "> ", act: .back_char)
+    assert e.cursor == 0
+    _ = apply(@e, history: [], prompt: "> ", act: .line_end)
+    _ = apply(@e, history: [], prompt: "> ", act: .forward_char)
+    assert e.cursor == 3
+
+test "editing moves over a character of more than one byte and a letter with its accent as one"
+    e @= edited_by(
+        steps: [.insert(text: "中"), .insert(text: "e"), .insert(text: "́"), .insert(text: "x")],
+        history: [],
+        columns: 0
+    )
+    assert e.cursor == e.line.len()
+    _ = apply(@e, history: [], prompt: "", act: .back_char)
+    _ = apply(@e, history: [], prompt: "", act: .back_char)
+    assert e.cursor == 3
+    _ = apply(@e, history: [], prompt: "", act: .back_char)
+    assert e.cursor == 0
+    _ = apply(@e, history: [], prompt: "", act: .forward_char)
+    _ = apply(@e, history: [], prompt: "", act: .forward_char)
+    assert e.cursor == 6
+
+test "editing delete_back and delete_here: at the start, at the end, an accent with its letter, and the bell"
+    e @= edited_by(steps: [.insert(text: "a"), .insert(text: "e"), .insert(text: "́")], history: [], columns: 0)
+    _ = apply(@e, history: [], prompt: "", act: .delete_back)
+    assert e.line == "a" && e.cursor == 1
+    assert apply(@e, history: [], prompt: "", act: .delete_here).draw == BELL
+    _ = apply(@e, history: [], prompt: "", act: .line_start)
+    assert apply(@e, history: [], prompt: "", act: .delete_back).draw == BELL
+    _ = apply(@e, history: [], prompt: "", act: .delete_here)
+    assert e.line == "" && e.cursor == 0
+
+test "editing words: back and on over spaces and punctuation, at both ends"
+    e @= fresh()
+    e.line @ "  foo-bar baz "
+    e.cursor @ e.line.len()
+    _ = apply(@e, history: [], prompt: "", act: .back_word)
+    assert e.cursor == 10
+    _ = apply(@e, history: [], prompt: "", act: .back_word)
+    assert e.cursor == 6
+    _ = apply(@e, history: [], prompt: "", act: .back_word)
+    _ = apply(@e, history: [], prompt: "", act: .back_word)
+    assert e.cursor == 0
+    _ = apply(@e, history: [], prompt: "", act: .forward_word)
+    assert e.cursor == 5
+    _ = apply(@e, history: [], prompt: "", act: .forward_word)
+    _ = apply(@e, history: [], prompt: "", act: .forward_word)
+    _ = apply(@e, history: [], prompt: "", act: .forward_word)
+    assert e.cursor == e.line.len()
+
+test "editing kills and yank: to the end, to the start, by spaces and by words, kills in a row added up"
+    e @= fresh()
+    e.line @ "one two three"
+    e.cursor @ 4
+    _ = apply(@e, history: [], prompt: "", act: .kill_to_end)
+    assert e.line == "one " && e.killed == "two three" && e.cursor == 4
+    _ = apply(@e, history: [], prompt: "", act: .kill_back_spaced)
+    assert e.line == "" && e.killed == "one two three"
+    _ = apply(@e, history: [], prompt: "", act: .yank)
+    _ = apply(@e, history: [], prompt: "", act: .yank)
+    assert e.line == "one two threeone two three"
+    e.line @ "a.b c"
+    e.cursor @ 3
+    _ = apply(@e, history: [], prompt: "", act: .kill_back_word)
+    assert e.line == "a. c" && e.killed == "b"
+    _ = apply(@e, history: [], prompt: "", act: .line_start)
+    _ = apply(@e, history: [], prompt: "", act: .kill_forward_word)
+    assert e.line == ". c" && e.killed == "a"
+    e.cursor @ 2
+    _ = apply(@e, history: [], prompt: "", act: .kill_to_start)
+    assert e.line == "c" && e.cursor == 0
+
+test "editing history: back past the oldest rings, the draft kept, forward to the draft, an empty history"
+    history = ["first", "second"]
+    e @= edited_by(steps: [.insert(text: "d")], history: history, columns: 0)
+    _ = apply(@e, history: history, prompt: "", act: .older)
+    assert e.line == "second" && e.cursor == 6
+    _ = apply(@e, history: history, prompt: "", act: .older)
+    assert e.line == "first"
+    assert apply(@e, history: history, prompt: "", act: .older).draw == BELL
+    _ = apply(@e, history: history, prompt: "", act: .newer)
+    _ = apply(@e, history: history, prompt: "", act: .newer)
+    assert e.line == "d" && e.back == 0
+    assert apply(@e, history: history, prompt: "", act: .newer).draw == BELL
+    empty: [str] = []
+    assert apply(@e, history: empty, prompt: "", act: .older).draw == BELL
+
+test "editing endings: Enter answers the line and empties it, Ctrl-C gives it up, Ctrl-D ends only an empty line"
+    e @= edited_by(steps: [.insert(text: "x")], history: [], columns: 0)
+    out = apply(@e, history: [], prompt: "", act: .enter)
+    assert out.end == .entered && out.line == "x" && out.draw == "\r\n" && e.line == ""
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "y"))
+    assert apply(@e, history: [], prompt: "", act: .interrupt).end == .interrupted && e.line == ""
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "z"))
+    _ = apply(@e, history: [], prompt: "", act: .line_start)
+    assert apply(@e, history: [], prompt: "", act: .end_or_delete).end == .going && e.line == ""
+    assert apply(@e, history: [], prompt: "", act: .end_or_delete).end == .closed
+
+test "editing render: the whole line, the cursor put back, and a window around the cursor on a narrow row"
+    e @= edited_by(steps: [.insert(text: "a"), .insert(text: "b")], history: [], columns: 0)
+    assert render(e, prompt: "> ") == "\r> ab\u{1b}7\u{1b}[K\u{1b}8"
+    _ = apply(@e, history: [], prompt: "> ", act: .back_char)
+    assert render(e, prompt: "> ") == "\r> a\u{1b}7b\u{1b}[K\u{1b}8"
+    narrow @= fresh()
+    narrow.columns @ 8
+    narrow.line @ "abcdefghij"
+    narrow.cursor @ 10
+    assert render(narrow, prompt: "> ") == "\r> fghij\u{1b}7\u{1b}[K\u{1b}8"
+    narrow.cursor @ 0
+    assert render(narrow, prompt: "> ") == "\r> \u{1b}7abcde\u{1b}[K\u{1b}8"
+    wide @= fresh()
+    wide.columns @ 6
+    wide.line @ "中文字"
+    wide.cursor @ 9
+    assert render(wide, prompt: "") == "\r文字\u{1b}7\u{1b}[K\u{1b}8"
+
+test "editing remember: empty lines and repeats left out, the oldest dropped, and none kept at 0"
+    h @= ["a"]
+    remember(@h, line: "", most: 3)
+    remember(@h, line: "a", most: 3)
+    assert h == ["a"]
+    remember(@h, line: "b", most: 3)
+    remember(@h, line: "c", most: 3)
+    remember(@h, line: "d", most: 3)
+    assert h == ["b", "c", "d"]
+    remember(@h, line: "e", most: 0)
+    assert h.len() == 0
+
+test "editing meta: Escape then a letter is Alt and the letter, kills with Alt in a row added up, any other key as itself"
+    e @= fresh()
+    e.line @ "one two three"
+    e.cursor @ e.line.len()
+    _ = apply(@e, history: [], prompt: "", act: .meta)
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "b"))
+    assert e.cursor == 8 && e.line == "one two three"
+    _ = apply(@e, history: [], prompt: "", act: .line_start)
+    _ = apply(@e, history: [], prompt: "", act: .meta)
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "d"))
+    _ = apply(@e, history: [], prompt: "", act: .meta)
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "d"))
+    assert e.line == " three" && e.killed == "one two"
+    _ = apply(@e, history: [], prompt: "", act: .line_end)
+    _ = apply(@e, history: [], prompt: "", act: .meta)
+    _ = apply(@e, history: [], prompt: "", act: .delete_back)
+    assert e.line == " " && e.killed == "three"
+    _ = apply(@e, history: [], prompt: "", act: .meta)
+    _ = apply(@e, history: [], prompt: "", act: .insert(text: "x"))
+    assert e.line == " x" && !e.escaped

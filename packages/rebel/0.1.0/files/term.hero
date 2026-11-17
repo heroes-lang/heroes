@@ -1,12 +1,15 @@
 # The terminal: colours and styles that fall back to plain text, the cursor
 # and the screen, one key read as it is pressed, a secret read with nothing
-# echoed, and a progress bar and a spinner drawn on a stream.
+# echoed, a line read with editing and a history, a progress bar and a
+# spinner drawn on a stream, and tables and columns of text aligned by the
+# cells their characters take.
 #
 # What it does NOT do: read or write a stream (`io`); tell the terminal's size
 # (`os.terminal_size`); tell whether a stream is a terminal (`io.is_terminal`);
-# measure how many cells a text takes on screen, which needs Unicode's table
-# of East Asian widths, which `unicode` does not hold (the ledger says
-# `pending`); draw windows, menus or tables (a screen library's area).
+# answer how many cells a text takes as a function of its own, which waits for
+# `unicode/segment` (the ledger says `pending`; the line editor and the tables
+# measure with a table of Unicode 17.0.0's widths kept inside this package);
+# draw windows or menus (a screen library's area).
 #
 # **Colour falls back to plain text**: `write_styled` writes the colour only to
 # a terminal that takes it, where `NO_COLOR` is unset or empty and `TERM` is
@@ -24,18 +27,24 @@
 # can undo: a panic, a memory fault, or SIGKILL end the program with the mode
 # standing, and `stty sane` puts a POSIX terminal back by hand.
 #
-# It fails with `invalid`, `unsupported`, `timeout`, `closed`, `stopped` and
-# `failed` (README § A4).
+# It fails with `invalid`, `unsupported`, `timeout`, `closed`, `stopped`,
+# `not_text` and `failed` (README § A4).
 
 use io
 use os
 use term/hero_term
-use term/internal/cursor
+use term/internal/acts
+use term/internal/completing
+use term/internal/cursor as moves
 use term/internal/draw
+use term/internal/editing
 use term/internal/failure
 use term/internal/keycodes
+use term/internal/reading
 use term/internal/sgr
 use term/internal/stream
+use term/internal/tables
+use term/internal/words
 
 ## Codes
 
@@ -66,6 +75,11 @@ constant STOPPED: str
 # carries its number. Every function that reaches the terminal fails with it.
 constant FAILED: str
     "failed"
+
+# A line of the input is not UTF-8. `read_line` and `read_line_completing`
+# fail with it.
+constant NOT_TEXT: str
+    "not_text"
 
 ## Colours and styles
 
@@ -283,7 +297,7 @@ function cursor_to(row: i64, column: i64) -> str?
 #
 # Fails `invalid` where `n` is below 0. See also `cursor_down`.
 function cursor_up(n: i64) -> str?
-    return cursor.moved(n, final: "A", way: "up")
+    return moves.moved(n, final: "A", way: "up")
 
 # The sequence that moves the cursor `n` rows down, stopping at the bottom.
 #
@@ -291,7 +305,7 @@ function cursor_up(n: i64) -> str?
 #
 # Fails `invalid` where `n` is below 0. See also `cursor_up`.
 function cursor_down(n: i64) -> str?
-    return cursor.moved(n, final: "B", way: "down")
+    return moves.moved(n, final: "B", way: "down")
 
 # The sequence that moves the cursor `n` columns right, stopping at the edge.
 #
@@ -299,7 +313,7 @@ function cursor_down(n: i64) -> str?
 #
 # Fails `invalid` where `n` is below 0. See also `cursor_back`.
 function cursor_forward(n: i64) -> str?
-    return cursor.moved(n, final: "C", way: "forward")
+    return moves.moved(n, final: "C", way: "forward")
 
 # The sequence that moves the cursor `n` columns left, stopping at the edge.
 #
@@ -307,7 +321,7 @@ function cursor_forward(n: i64) -> str?
 #
 # Fails `invalid` where `n` is below 0. See also `cursor_forward`.
 function cursor_back(n: i64) -> str?
-    return cursor.moved(n, final: "D", way: "back")
+    return moves.moved(n, final: "D", way: "back")
 
 # The sequence that hides the cursor.
 #
@@ -570,6 +584,266 @@ function read_secret(prompt: str) -> str?
         )
     return failure.of(code: ended, asked: asked, why: "the terminal could not be read")
 
+## Line editing
+
+# A line being read with editing, and the lines entered before it: a
+# program keeps one and reads every line through it, with `read_line`, or
+# with `press` one key at a time. Made by `line_editor`; its `prompt`, `history`
+# and `history_most` may be changed directly.
+record Editor
+    # What is drawn before the line; it may hold styles (`styled`), which
+    # take no cell.
+    prompt: str
+    # The lines entered, the oldest first; Up shows the newest first. Each
+    # line entered is added, but an empty one or one equal to the newest.
+    history: [str]
+    # How many lines `history` keeps at most, the oldest dropped past it; 0
+    # keeps none.
+    history_most: i64
+    # The line being edited and what the keys keep between them: the
+    # cursor, the line being typed while the history is shown, the text the
+    # last kills took, the terminal's width in `edit.columns`. Only this
+    # package reads it.
+    edit: editing.Edit
+
+# How a key left the line being edited.
+variant Ending
+    # The line goes on.
+    editing
+    # Enter was pressed: the line is done.
+    entered
+    # Ctrl-C was pressed: the line is given up.
+    interrupted
+    # Ctrl-D was pressed on an empty line: no more input.
+    closed
+
+# What one key did to a line being edited: the bytes that show it, and
+# whether the line is done.
+record Pressed
+    # The bytes that show the change on the terminal, its control sequences
+    # included, to be written to it as they are; "" where nothing changed.
+    draw: str
+    # Whether the line goes on, or how it ended.
+    ending: Ending
+    # The line entered, where `ending` is `.entered`; "" otherwise.
+    line: str
+
+# What a program's completion function answers for the line being edited:
+# the text before the cursor it would replace, and what may replace it.
+record Completions
+    # Where the replaced text begins, a byte index from 0 to the cursor: the
+    # text from it to the cursor is replaced. One outside that range, or
+    # inside a character, completes nothing.
+    from: i64
+    # The texts that may stand there, each whole, in the order to list
+    # them; none completes nothing.
+    candidates: [str]
+
+# An editor of lines drawn after `prompt`, with an empty history that keeps
+# the last 1,000 lines entered.
+#
+# - `prompt`: what is drawn before each line; "" for nothing.
+#
+# See also `read_line`, `press`.
+function line_editor(prompt: str) -> Editor
+    return Editor(prompt: prompt, history: [], history_most: 1000, edit: editing.fresh())
+
+# Does `key` to the line `editor` holds, as `read_line` does for each key it
+# reads, and answers what to draw and whether the line is done: the machine
+# under `read_line`, for a program that reads its own keys, or a test.
+#
+# - `editor`: the editor; its line, its cursor and, at Enter, its history
+#   change.
+# - `key`: the key pressed. A character is put in at the cursor, a control
+#   character never; Left, Right, Home, End, Ctrl-B, Ctrl-F, Ctrl-A and
+#   Ctrl-E move by a character or to an end, a letter and its accents as
+#   one; Alt-B, Alt-F, and Ctrl or Alt with Left and Right move by a word of
+#   letters and digits; Backspace and Delete take a character out; Ctrl-K
+#   kills to the end, Ctrl-U to the start, Ctrl-W back to a space,
+#   Alt-Backspace and Alt-D a word, kills in a row adding up; Ctrl-Y puts
+#   back what was killed; Up, Down, Ctrl-P and Ctrl-N show the history;
+#   Ctrl-L clears the screen; Enter, Ctrl-C, and Ctrl-D on an empty line end
+#   the line, Ctrl-D elsewhere being Delete. Tab rings the bell, which
+#   `press_completing` completes instead; every other key does nothing.
+#
+# The draw starts at the left edge of the row the cursor is on and writes the
+# prompt and the line again; where they are wider than the row
+# (`edit.columns`, 0 for no limit) it shows the part of the line around the
+# cursor. See also `read_line`.
+function press(@editor: Editor, key: Key) -> Pressed
+    act: acts.Act = match key
+        .character c    => .insert(text: c.text)
+        .enter          => .enter
+        .tab            => .complete
+        .backspace      => .delete_back
+        .escape         => .meta
+        .up             => .older
+        .down           => .newer
+        .left           => .back_char
+        .right          => .forward_char
+        .home           => .line_start
+        .end            => .line_end
+        .page_up        => .nothing
+        .page_down      => .nothing
+        .insert         => .nothing
+        .delete         => .delete_here
+        .function_key _ => .nothing
+        .control c      => acts.control_act(c.letter)
+        .other o        => acts.escaped_act(o.bytes)
+
+    out = editing.apply(@editor.edit, history: editor.history, prompt: editor.prompt, act: act)
+
+    ending: Ending = match out.end
+        .going       => .editing
+        .entered     => .entered
+        .interrupted => .interrupted
+        .closed      => .closed
+
+    if ending == .entered
+        editing.remember(@editor.history, line: out.line, most: editor.history_most)
+    return Pressed(draw: out.draw, ending: ending, line: out.line)
+
+# Does `key` to the line `editor` holds as `press` does, and a Tab by asking
+# `complete` what may stand before the cursor: one candidate takes the place
+# of the text it replaces, several put their common start there where it
+# adds to it, and where nothing can be added a first Tab rings the bell and a
+# second lists them below the line, as GNU Readline does.
+#
+# - `editor`: the editor, as `press` changes it.
+# - `key`: the key pressed.
+# - `complete`: the program's completion, called at each Tab with `state`,
+#   the line and the cursor's byte index in it, never for another key; what
+#   it answers is used as `Completions` says.
+# - `state`: what `complete` needs besides the line, the program's own (the
+#   names of its commands, for instance), handed to it as it is.
+#
+# See also `read_line_completing`.
+function press_completing<S>(@editor: Editor, key: Key, complete: (function(state: S, line: str, cursor: i64) -> Completions), state: S) -> Pressed
+    if key != .tab
+        return press(@editor, key: key)
+    edit = editor.edit
+    answered = complete(state: state, line: edit.line, cursor: edit.cursor)
+    out = completing.complete(@editor.edit, prompt: editor.prompt, from: answered.from, candidates: answered.candidates)
+    return Pressed(draw: out.draw, ending: .editing, line: "")
+
+# The next line read from `input`: where it is a terminal, the line the
+# person types, edited as `press` edits it, the prompt drawn first and the
+# keys read from the program's terminal; where it is none, its next line as
+# it is, with no prompt drawn, as Python's own prompt and Rust's `rustyline`
+# read a pipe. The line is added to the history either way.
+#
+# - `editor`: the editor; its history grows by the line.
+# - `input`: where the lines come from, the program's `io.stdin()` most
+#   often; it stays the caller's. Where it is no terminal it is read a byte
+#   at a time, so that nothing after the line is taken from it.
+#
+# The line, without its Enter or its line feed. Fails `stopped` where Ctrl-C
+# was pressed, `closed` where Ctrl-D was pressed on an empty line or `input`
+# ended, `not_text` where a line of `input` is not UTF-8, `failed` where the
+# system refuses, and where `io.read` fails, with its code. The line is drawn
+# on one row, as `press` says. See also `read_line_completing`.
+function read_line(@editor: Editor, input: io.Stream) -> str?
+    if !io.is_terminal(input).default(false)
+        return reading.piped_line(@editor.history, input: input, most: editor.history_most)
+    stood = reading.begin(@editor.edit, prompt: editor.prompt)?
+    pressed @= Pressed(draw: "", ending: .editing, line: "")
+
+    while pressed.ending == .editing
+        reading.measure(@editor.edit)
+
+        match read_key()
+            .err e =>
+                reading.finish(stood)
+                return fail(code: e.code, msg: e.msg)
+            .ok key =>
+                pressed @ press(@editor, key: key)
+                reading.show(pressed.draw, stood: stood)?
+
+    reading.finish(stood)
+    return reading.ended(
+        entered: pressed.ending == .entered,
+        interrupted: pressed.ending == .interrupted,
+        line: pressed.line
+    )
+
+# The next line read from `input`, as `read_line` reads it, a Tab asking
+# `complete` as `press_completing` does.
+#
+# - `editor`: the editor; its history grows by the line.
+# - `input`: where the lines come from; it stays the caller's.
+# - `complete`: the program's completion, called at each Tab with `state`,
+#   the line and the cursor's byte index; never where `input` is no
+#   terminal.
+# - `state`: what `complete` needs besides the line, handed to it as it is.
+#
+# Fails as `read_line` fails. See also `read_line`.
+function read_line_completing<S>(@editor: Editor, input: io.Stream, complete: (function(state: S, line: str, cursor: i64) -> Completions), state: S) -> str?
+    if !io.is_terminal(input).default(false)
+        return reading.piped_line(@editor.history, input: input, most: editor.history_most)
+    stood = reading.begin(@editor.edit, prompt: editor.prompt)?
+    pressed @= Pressed(draw: "", ending: .editing, line: "")
+
+    while pressed.ending == .editing
+        reading.measure(@editor.edit)
+
+        match read_key()
+            .err e =>
+                reading.finish(stood)
+                return fail(code: e.code, msg: e.msg)
+            .ok key =>
+                pressed @ press_completing(@editor, key: key, complete: complete, state: state)
+                reading.show(pressed.draw, stood: stood)?
+
+    reading.finish(stood)
+    return reading.ended(
+        entered: pressed.ending == .entered,
+        interrupted: pressed.ending == .interrupted,
+        line: pressed.line
+    )
+
+# Writes `editor`'s history to the file at `path`, a line each, the oldest
+# first, replacing what the file held, as Python's `write_history_file` does.
+#
+# - `editor`: the editor whose history is written.
+# - `path`: the file; made where it is not there.
+#
+# Fails `invalid` where a line of the history holds a line break, which a
+# file of lines could not keep, naming it; and where `write_file` fails, with
+# its code. See also `load_history`.
+function save_history(editor: Editor, path: str) -> ()?
+    return reading.save(editor.history, path: path)
+
+# Adds the lines of the file at `path` to `editor`'s history, the file's
+# first as the oldest, empty lines left out, as Python's `read_history_file`
+# does; the oldest are dropped past `history_most`.
+#
+# - `editor`: the editor whose history grows.
+# - `path`: the file, as `save_history` writes it; a carriage return before a
+#   line feed is left out.
+#
+# Fails where `read_file` fails, with its code: `file_not_found` where no file
+# is there, which a program reading its history the first time expects. See
+# also `save_history`.
+function load_history(@editor: Editor, path: str) -> ()?
+    return reading.load(@editor.history, path: path, most: editor.history_most)
+
+# The words of `state` that begin with the word before the cursor, the text
+# from the last space before it: a completion for `press_completing` and
+# `read_line_completing` in a program whose commands are a list, as Python's
+# `cmd.Cmd.completenames` completes a command's name.
+#
+# - `state`: the words, in the order to offer them.
+# - `line`: the line being edited.
+# - `cursor`: the cursor's byte index in `line`; one past the line's end is
+#   its end, one inside a character the start of that character.
+#
+# The words that begin with that text, compared byte by byte, the text itself
+# included where it is one; all of them where it is empty. See also
+# `press_completing`.
+function complete_words(state: [str], line: str, cursor: i64) -> Completions
+    found = words.words_from(words: state, line: line, cursor: cursor)
+    return Completions(from: found.from, candidates: found.candidates)
+
 ## Progress
 
 # A progress bar drawn on a stream: a label, thirty cells and the share done,
@@ -692,6 +966,95 @@ function stop_spinner(@sp: Spinner, message: str) -> ()?
         ""
     sp.shown @ false
     return io.write_text(sp.stream, text: clear + message + "\n")
+
+## Tables
+
+# Where the cells of a table's column stand in its width.
+variant Align
+    # Against the left, the rest spaces.
+    left
+    # Against the right.
+    right
+    # In the middle, an odd space to the right.
+    center
+    # Against the right where every cell of the column under the header that
+    # is not empty reads as a number (`-1,234.5`, `6.02e23`, `45%`), against
+    # the left otherwise.
+    auto
+
+# The lines a table is drawn with.
+variant Border
+    # None: the columns two spaces apart, no space at a line's end.
+    none
+    # None, and a line of `-` under the header.
+    simple
+    # ASCII's `+`, `-` and `|` around and between the cells.
+    ascii
+    # The box-drawing characters: `┌`, `─`, `│` and their kin.
+    box
+    # A table of GitHub's Markdown: `|` around every cell, the alignment in
+    # colons under the header, and a `|` in a cell escaped.
+    markdown
+
+# A table of text: rows of cells under a header, built directly and written
+# by `format_table`.
+record Table
+    # The columns' titles, drawn first and set apart; empty for a table with
+    # none.
+    header: [str]
+    # The rows, each a list of cells, drawn in this order; a row shorter than
+    # the widest has empty cells at its end.
+    rows: [[str]]
+    # Where each column's cells stand, the first column's first; a column
+    # past the list's end is `.auto`.
+    align: [Align]
+    # The lines it is drawn with.
+    border: Border
+
+# `t` as text: each column as wide as its widest cell on a terminal, a wide
+# character of East Asian scripts taking two cells, a mark none and a style's
+# sequences none, every cell padded with spaces on the side its column
+# stands against, and the header in its column's alignment.
+#
+# - `t`: the table. A control character in a cell, a tab or a line break, is
+#   drawn as one space, so every row stays one line.
+#
+# Each line ended by a line feed; "" for a table of no column. Markdown gives
+# every column at least three cells and writes a header of empty cells where
+# `t` has none, GitHub's tables needing one. See also `format_columns`.
+function format_table(t: Table) -> str
+    sides: [tables.Side] @= []
+
+    for a in t.align
+        side: tables.Side = match a
+            .left   => .left
+            .right  => .right
+            .center => .center
+            .auto   => .auto
+
+        sides @ sides.push(side)
+
+    lines: tables.Lines = match t.border
+        .none     => .none
+        .simple   => .simple
+        .ascii    => .ascii
+        .box      => .box
+        .markdown => .markdown
+
+    return tables.format(header: t.header, rows: t.rows, sides: sides, lines: lines)
+
+# `items` laid in columns two spaces apart, down each column first, in as
+# few rows as `width` cells hold, as Python's `cmd.Cmd.columnize` lays them;
+# the line editor lists its candidates so.
+#
+# - `items`: the texts, in the order to read them down the columns.
+# - `width`: the cells a line may take, the terminal's columns most often
+#   (`os.terminal_size`); an item wider than it stands alone on its line.
+#
+# Each line ended by a line feed, with no space at its end; "" for no items,
+# where Python writes `<empty>`. See also `format_table`.
+function format_columns(items: [str], width: i64) -> str
+    return tables.columns(items: items, room: width)
 
 ## Examples
 
@@ -886,3 +1249,94 @@ test "stop_spinner: the message written on a pipe"
     io.close(@pipe.writer).must()
     assert io.read_all_text(pipe.reader).must() == "fetched\n"
     io.close(@pipe.reader).must()
+
+# An editor with its prompt and an empty history.
+test "line_editor: a prompt and an empty history"
+    ed = line_editor("> ")
+    assert ed.prompt == "> " && ed.history.len() == 0 && ed.history_most == 1000
+
+# A word typed key by key, its last character taken back, and Enter: the line
+# answered and kept in the history.
+test "press: a word typed, a character taken back, and Enter"
+    ed @= line_editor("> ")
+
+    for c in ["l", "s", "x"]
+        _ = press(@ed, key: .character(text: c))
+
+    _ = press(@ed, key: .backspace)
+    p = press(@ed, key: .enter)
+    assert p.ending == .entered && p.line == "ls"
+    assert ed.history == ["ls"]
+
+# A command's name completed at Tab from the program's list of commands.
+test "press_completing: a command completed at Tab"
+    commands = ["history", "help", "quit"]
+    ed @= line_editor("> ")
+    _ = press(@ed, key: .character(text: "q"))
+    _ = press_completing(@ed, key: .tab, complete: complete_words, state: commands)
+    p = press_completing(@ed, key: .enter, complete: complete_words, state: commands)
+    assert p.line == "quit"
+
+# The commands that begin with what was typed before the cursor.
+test "complete_words: two commands begin with he"
+    found = complete_words(["history", "help", "quit"], line: "he", cursor: 2)
+    assert found.from == 0 && found.candidates == ["help"]
+
+# Lines read from an input that is no terminal, a pipe here: each as it
+# stands, then `closed` at its end.
+test "read_line: two lines from a pipe, then its end"
+    p @= io.pipe().must()
+    io.write_text(p.writer, text: "ls\nquit\n").must()
+    io.close(@p.writer).must()
+    ed @= line_editor("> ")
+    assert read_line(@ed, input: p.reader).must() == "ls"
+    assert read_line(@ed, input: p.reader).must() == "quit"
+
+    match read_line(@ed, input: p.reader)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    io.close(@p.reader).must()
+    assert ed.history == ["ls", "quit"]
+
+# A line read with completion from a pipe, where no Tab is pressed.
+test "read_line_completing: a line from a pipe"
+    p @= io.pipe().must()
+    io.write_text(p.writer, text: "help\n").must()
+    io.close(@p.writer).must()
+    ed @= line_editor("> ")
+    assert read_line_completing(@ed, input: p.reader, complete: complete_words, state: ["help", "quit"]).must() == "help"
+    io.close(@p.reader).must()
+
+# A history saved to a file, then read into a new editor; the file is in
+# `build/`, the folder `heroes test` builds in.
+test "save_history: two lines written and read back"
+    path = "build/rebel-term-save-example.txt"
+    ed @= line_editor("> ")
+    ed.history @ ["ls", "cd /"]
+    save_history(ed, path: path).must()
+    again @= line_editor("> ")
+    load_history(@again, path: path).must()
+    assert again.history == ["ls", "cd /"]
+
+# A history read from a file written before; no file is told
+# `file_not_found`.
+test "load_history: a file of three lines, and none"
+    path = "build/rebel-term-load-example.txt"
+    write_file(path: path, text: "a\nb\nc\n").must()
+    ed @= line_editor("> ")
+    load_history(@ed, path: path).must()
+    assert ed.history == ["a", "b", "c"]
+
+    match load_history(@ed, path: path + ".none")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+# A table of names and sizes in ASCII lines, the sizes to the right.
+test "format_table: names and sizes in an ASCII box"
+    t = Table(header: ["name", "size"], rows: [["a.txt", "120"], ["b.txt", "4"]], align: [], border: .ascii)
+    assert format_table(t) == "+-------+------+\n| name  | size |\n+-------+------+\n| a.txt |  120 |\n| b.txt |    4 |\n+-------+------+\n"
+
+# Five names laid in columns of ten cells.
+test "format_columns: five names in ten cells"
+    assert format_columns(["a", "bb", "ccc", "dddd", "e"], width: 10) == "a    dddd\nbb   e\nccc\n"

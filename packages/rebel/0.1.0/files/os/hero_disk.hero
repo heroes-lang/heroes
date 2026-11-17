@@ -96,6 +96,27 @@ extern "hero_disk.h"
     function hero_disk_set_link_times(path: cstr lent, written: i64, read: i64) -> i64
     function hero_disk_lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
     function hero_disk_unlock(s: hero_stream.Stream) -> i64
+    # Round 4 (2026-11-17): a file mapped in memory, a handle the layer issues
+    # and checks. One closed already, `nullptr`, or one it never issued is
+    # `HERO_DISK_NOT_OPEN`, never a read of memory no longer mapped; no door
+    # hands out an address inside a map.
+    record Mapping tag hero_disk_map
+    # How a file is mapped: to read, to read and write the file itself, or
+    # to write this map's memory alone.
+    constant HERO_DISK_MAP_READ: i64
+    constant HERO_DISK_MAP_READ_WRITE: i64
+    constant HERO_DISK_MAP_COPY: i64
+    # A read or a write past the end of a file another program cut shorter
+    # while it was mapped, nothing copied.
+    constant HERO_DISK_SHRUNK: i64
+    function hero_disk_replace(from: cstr lent, to: cstr lent) -> i64
+    function hero_disk_sync_folder(path: cstr lent) -> i64
+    function hero_disk_map_open(path: cstr lent, how: i64) -> Mapping acquires hero_disk_map_close
+    function hero_disk_map_size(m: Mapping) -> i64
+    function hero_disk_map_read(m: Mapping, offset: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_disk_map_write(m: Mapping, offset: i64, @data: [u8] counted_by n lent, n: u64) -> i64
+    function hero_disk_map_flush(m: Mapping) -> i64
+    function hero_disk_map_close(m: Mapping consumes) -> i64
 
 # For the tests below alone: the one door that makes a symbolic link, which
 # is the runtime's (`hero_os.h`), so a test can make what `facts`, `scan` and
@@ -274,6 +295,55 @@ function lock(s: hero_stream.Stream, how: i64, wait: i64) -> i64
 # 0 once the stream `s` holds no lock, also where it held none, or -1.
 function unlock(s: hero_stream.Stream) -> i64
     return hero_disk_unlock(s)
+
+# 0 once the file `from` stands in the place of `to`, the old one gone, in
+# one step of the system on POSIX, or -1 with nothing moved:
+# `HERO_DISK_IS_A_DIRECTORY` where either names a folder. On Windows the move is written through to the
+# disk before it answers; on POSIX the folder's entry is the disk's once
+# `sync_folder` has put it there.
+function replace(from: str, to: str) -> i64
+    return hero_disk_replace(from: from.cstr(), to: to.cstr())
+
+# 0 once the entries of the folder `path` are on the storage itself, or -1:
+# `HERO_DISK_NOT_A_DIRECTORY` for something else, and on Windows
+# `HERO_DISK_UNSUPPORTED` always.
+function sync_folder(path: str) -> i64
+    return hero_disk_sync_folder(path.cstr())
+
+# The file at `path`, links followed, mapped whole in memory for `how`, one of
+# `HERO_DISK_MAP_...`, or `nullptr`: `HERO_DISK_IS_A_DIRECTORY` for a folder,
+# `HERO_DISK_INVALID` for what is no file or a `how` that is none. An empty
+# file is a map of size 0. The handle is closed by `map_close`.
+function map_open(path: str, how: i64) -> Mapping
+    return hero_disk_map_open(path.cstr(), how: how)
+
+# The size of the map `m` in bytes, the file's when it was opened, or -1.
+function map_size(m: Mapping) -> i64
+    return hero_disk_map_size(m)
+
+# `n` once the `n` bytes of the map `m` from `offset` are copied into
+# `buffer`, or -1 with nothing copied: `HERO_DISK_INVALID` for a range past
+# the map, `HERO_DISK_SHRUNK` where another program cut the file shorter.
+# `buffer` is left `n` long.
+function map_read(m: Mapping, offset: i64, @buffer: [u8], n: u64) -> i64
+    return hero_disk_map_read(m, offset: offset, buffer: @buffer, n: n)
+
+# `n` once the first `n` bytes of `data` are copied into the map `m` from
+# `offset`, or -1 with nothing copied, as `map_read`, and `HERO_DISK_INVALID`
+# for a map opened to read. `data` is left `n` long.
+function map_write(m: Mapping, offset: i64, @data: [u8], n: u64) -> i64
+    return hero_disk_map_write(m, offset: offset, data: @data, n: n)
+
+# 0 once what was written into the map `m`, opened to read and write, is on
+# the storage itself, or -1; a map of the other two kinds has nothing to put
+# there and answers 0.
+function map_flush(m: Mapping) -> i64
+    return hero_disk_map_flush(m)
+
+# 0 once the map `m` is unmapped and its file closed, or -1 where the system
+# failed; `m` is given back either way.
+function map_close(@m: Mapping) -> i64
+    return hero_disk_map_close(m)
 
 ## Tests
 
@@ -881,4 +951,187 @@ test "lock: a write through a stream holding a shared lock, which POSIX lets thr
         assert wrote == 2
     assert unlock(s) == 0
     assert hero_stream.close(@s) == 0
+    test_clear(dir, holds: ["f"])
+
+# Round 4 (2026-11-17): a file put in place for good.
+test "replace: a file over a file, over nothing, a folder either side, a link replaced itself, the same name, and a source not there"
+    dir = test_folder("replace", holds: ["a", "b", "c", "d/x", "d", "l", "t"])
+    assert !write_file(path: dir + "/a", text: "new").is_err()
+    assert !write_file(path: dir + "/b", text: "old").is_err()
+    assert replace(from: dir + "/a", to: dir + "/b") == 0
+    assert last_error() == HERO_DISK_OK
+    assert read_file(dir + "/b").must() == "new"
+    assert test_fact(dir + "/a", place: HERO_DISK_FACT_KIND) == -1
+    assert replace(from: dir + "/b", to: dir + "/c") == 0
+    assert read_file(dir + "/c").must() == "new"
+    assert make_folder(dir + "/d", permission: 0o755) == 0
+    assert replace(from: dir + "/c", to: dir + "/d") == -1
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+    assert replace(from: dir + "/d", to: dir + "/x") == -1
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+    assert read_file(dir + "/c").must() == "new"
+    assert replace(from: dir + "/c", to: dir + "/c") == 0
+    assert read_file(dir + "/c").must() == "new"
+    assert replace(from: dir + "/none", to: dir + "/c") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert replace(from: dir + "/c", to: dir + "/none/c") == -1
+    assert last_error() == HERO_DISK_NOT_FOUND
+
+    if test_link(target: "c", name: dir + "/l")
+        assert !write_file(path: dir + "/t", text: "over").is_err()
+        assert replace(from: dir + "/t", to: dir + "/l") == 0
+        assert test_fact(dir + "/l", place: HERO_DISK_FACT_KIND) == HERO_DISK_KIND_FILE
+        assert read_file(dir + "/l").must() == "over"
+        assert read_file(dir + "/c").must() == "new"
+    test_clear(dir, holds: ["a", "b", "c", "d/x", "d", "l", "t"])
+
+test "sync_folder: a folder, the folder of a file just renamed, a file, a name not there, and the empty path; or UNSUPPORTED on Windows"
+    dir = test_folder("sync", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "x").is_err()
+
+    if test_windows()
+        assert sync_folder(dir) == -1
+        assert last_error() == HERO_DISK_UNSUPPORTED
+    else
+        assert sync_folder(dir) == 0
+        assert last_error() == HERO_DISK_OK
+        assert sync_folder(".") == 0
+        assert sync_folder(dir + "/f") == -1
+        assert last_error() == HERO_DISK_NOT_A_DIRECTORY
+        assert sync_folder(dir + "/none") == -1
+        assert last_error() == HERO_DISK_NOT_FOUND
+        assert sync_folder("") == -1
+        assert last_error() == HERO_DISK_NOT_FOUND
+    test_clear(dir, holds: ["f"])
+
+# Round 4 (2026-11-17): a file mapped in memory.
+test "map: nullptr is no map, every door answers -1 with HERO_DISK_NOT_OPEN, the layer's own refusal"
+    none: Mapping @= nullptr
+    bytes: [u8] @= [1, 2, 3]
+    assert map_size(none) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert last_os_error() == 0
+    assert map_read(none, offset: 0, @bytes, n: 3) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert map_write(none, offset: 0, @bytes, n: 3) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert map_flush(none) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+    assert map_close(@none) == -1
+    assert last_error() == HERO_DISK_NOT_OPEN
+
+test "map_open: a folder, a name not there, the empty path, a how that is none, and an empty file whose map is of size 0"
+    dir = test_folder("mapopen", holds: ["e"])
+    assert map_open(dir, how: HERO_DISK_MAP_READ) == nullptr
+    assert last_error() == HERO_DISK_IS_A_DIRECTORY
+    assert map_open(dir + "/none", how: HERO_DISK_MAP_READ) == nullptr
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert map_open("", how: HERO_DISK_MAP_READ) == nullptr
+    assert last_error() == HERO_DISK_NOT_FOUND
+    assert !write_file(path: dir + "/e", text: "").is_err()
+    assert map_open(dir + "/e", how: 0) == nullptr
+    assert last_error() == HERO_DISK_INVALID
+    assert map_open(dir + "/e", how: 4) == nullptr
+    assert last_error() == HERO_DISK_INVALID
+    empty @= map_open(dir + "/e", how: HERO_DISK_MAP_READ_WRITE)
+    assert empty != nullptr
+    assert map_size(empty) == 0
+    nothing: [u8] @= []
+    assert map_read(empty, offset: 0, @nothing, n: 0) == 0
+    assert map_write(empty, offset: 0, @nothing, n: 0) == 0
+    one: [u8] @= [7]
+    assert map_read(empty, offset: 0, @one, n: 1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_read(empty, offset: 1, @nothing, n: 0) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_flush(empty) == 0
+    assert map_close(@empty) == 0
+    test_clear(dir, holds: ["e"])
+
+test "map_read: the whole, the last byte, nothing at the end, past the end, a negative offset, and a write refused on a map to read"
+    dir = test_folder("mapread", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    m @= map_open(dir + "/f", how: HERO_DISK_MAP_READ)
+    assert m != nullptr
+    assert map_size(m) == 5
+    whole: [u8] @= []
+    assert map_read(m, offset: 0, @whole, n: 5) == 5
+    assert whole == ['h', 'e', 'l', 'l', 'o']
+    last: [u8] @= []
+    assert map_read(m, offset: 4, @last, n: 1) == 1
+    assert last == ['o']
+    none: [u8] @= []
+    assert map_read(m, offset: 5, @none, n: 0) == 0
+    over: [u8] @= []
+    assert map_read(m, offset: 3, @over, n: 3) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_read(m, offset: -1, @over, n: 1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_read(m, offset: 6, @none, n: 0) == -1
+    assert last_error() == HERO_DISK_INVALID
+    data: [u8] @= ['j']
+    assert map_write(m, offset: 0, @data, n: 1) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_flush(m) == 0
+    assert map_close(@m) == 0
+    assert read_file(dir + "/f").must() == "hello"
+    test_clear(dir, holds: ["f"])
+
+test "map_write: a map to read and write reaches the file, two maps of one file see each other, and a copy never reaches it"
+    dir = test_folder("mapwrite", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "hello").is_err()
+    m @= map_open(dir + "/f", how: HERO_DISK_MAP_READ_WRITE)
+    other @= map_open(dir + "/f", how: HERO_DISK_MAP_READ)
+    copy @= map_open(dir + "/f", how: HERO_DISK_MAP_COPY)
+    assert m != nullptr && other != nullptr && copy != nullptr
+    data: [u8] @= ['J']
+    assert map_write(m, offset: 0, @data, n: 1) == 1
+    seen: [u8] @= []
+    assert map_read(other, offset: 0, @seen, n: 1) == 1
+    assert seen == ['J']
+    tail: [u8] @= ['!', '?']
+    assert map_write(m, offset: 3, @tail, n: 2) == 2
+    past: [u8] @= ['x', 'y']
+    assert map_write(m, offset: 4, @past, n: 2) == -1
+    assert last_error() == HERO_DISK_INVALID
+    assert map_flush(m) == 0
+    mine: [u8] @= ['C']
+    assert map_write(copy, offset: 1, @mine, n: 1) == 1
+    kept: [u8] @= []
+    assert map_read(copy, offset: 0, @kept, n: 5) == 5
+
+    # Whether a copy sees what another map wrote after it was opened is the
+    # system's: POSIX leaves it unspecified, and Darwin's did not.
+    assert kept[1] == 'C' && kept[2] == 'l'
+    assert map_flush(copy) == 0
+    assert map_close(@copy) == 0
+    assert map_close(@other) == 0
+    assert map_close(@m) == 0
+    assert read_file(dir + "/f").must() == "Jel!?"
+    test_clear(dir, holds: ["f"])
+
+# The one place the systems part: POSIX lets another program cut a mapped
+# file, and the map then answers SHRUNK past the new end; Windows refuses to
+# cut a file a view maps.
+test "map_read: a file cut shorter while it is mapped, which POSIX answers SHRUNK past the cut and Windows refuses to cut"
+    dir = test_folder("mapcut", holds: ["f"])
+    assert !write_file(path: dir + "/f", text: "0123456789").is_err()
+    m @= map_open(dir + "/f", how: HERO_DISK_MAP_READ_WRITE)
+    assert m != nullptr
+    cut = set_length(dir + "/f", length: 4)
+    bytes: [u8] @= []
+
+    if test_windows()
+        assert cut == -1
+        assert map_read(m, offset: 6, @bytes, n: 4) == 4
+    else
+        assert cut == 0
+        assert map_read(m, offset: 0, @bytes, n: 4) == 4
+        assert bytes == ['0', '1', '2', '3']
+        assert map_read(m, offset: 2, @bytes, n: 4) == -1
+        assert last_error() == HERO_DISK_SHRUNK
+        assert map_write(m, offset: 8, @bytes, n: 2) == -1
+        assert last_error() == HERO_DISK_SHRUNK
+        assert map_size(m) == 10
+    assert map_close(@m) == 0
     test_clear(dir, holds: ["f"])

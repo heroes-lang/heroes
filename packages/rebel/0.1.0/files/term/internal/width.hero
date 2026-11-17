@@ -1,0 +1,146 @@
+# How many cells of a terminal a character or a text takes, read from the
+# runs `width_table.hero` holds (Unicode 17.0.0): 2 for a wide character of
+# East Asian scripts or an emoji drawn wide, 0 for a mark, a format character
+# or a control, 1 for every other. A control sequence a style writes
+# (`ESC [` up to its final byte, or `ESC` and one character) takes none, so a
+# styled text measures as it shows. It is the measure the line editor and the
+# tables align by; a character is measured alone, so a sequence of emoji
+# joined into one picture counts each of its parts.
+
+use term/internal/width_table
+
+# The cells the code point `n` takes, 0, 1 or 2; `n` from 0 to 0x10ffff.
+function cells_of_point(n: i64) -> i64
+    low: i64 @= 0
+    high: i64 @= width_table.RUNS.len() - 1
+
+    while low < high
+        middle = (low + high + 1) / 2
+
+        if width_table.RUNS[middle] >> 2 <= n
+            low @ middle
+        else
+            high @ middle - 1
+
+    return width_table.RUNS[low] & 3
+
+# The code point of the character that starts at byte `at` of `s`, a valid
+# UTF-8 text; `at` is the start of a character.
+function point_at(s: str lent, at: i64) -> i64
+    first = to_i64(s[at]).must()
+
+    if first < 0x80
+        return first
+
+    if first < 0xe0
+        return (first & 0x1f) << 6 | to_i64(s[at + 1]).must() & 0x3f
+
+    if first < 0xf0
+        return (first & 0x0f) << 12 | (to_i64(s[at + 1]).must() & 0x3f) << 6 | to_i64(s[at + 2]).must() & 0x3f
+    return (first & 0x07) << 18 | (to_i64(s[at + 1]).must() & 0x3f) << 12 | (to_i64(s[at + 2]).must() & 0x3f) << 6 | to_i64(s[at + 3]).must() & 0x3f
+
+# The byte just after the character that starts at byte `at` of `s`.
+function next_at(s: str lent, at: i64) -> i64
+    first = s[at]
+
+    if first < 0x80
+        return at + 1
+
+    if first < 0xe0
+        return at + 2
+
+    if first < 0xf0
+        return at + 3
+    return at + 4
+
+# The start of the character that ends at byte `at` of `s`, `at` above 0 and
+# at a character's start or the text's end.
+function previous_at(s: str lent, at: i64) -> i64
+    back: i64 @= at - 1
+
+    while back > 0 && s[back] >= 0x80 && s[back] < 0xc0
+        back @ back - 1
+
+    return back
+
+# The byte just after the control sequence that starts with the `ESC` at
+# byte `at` of `s`: `ESC [`, its parameters and its final byte from `@` to
+# `~`, or `ESC` and one character; the text's end where it stops first.
+function sequence_end(s: str lent, at: i64) -> i64
+    if at + 1 >= s.len()
+        return s.len()
+
+    if s[at + 1] != '['
+        return next_at(s, at + 1)
+    end: i64 @= at + 2
+
+    while end < s.len() && (s[end] < 0x40 || s[end] > 0x7e)
+        end @ end + 1
+
+    if end < s.len()
+        return end + 1
+    return end
+
+# The cells `s` takes on a terminal: the sum of its characters', its control
+# sequences taking none.
+function cells_of(s: str lent) -> i64
+    total: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 27
+            at @ sequence_end(s, at)
+        else
+            total @ total + cells_of_point(point_at(s, at))
+            at @ next_at(s, at)
+
+    return total
+
+# The cells the bytes of `s` from `from` to `to` take, both at a character's
+# start or the text's end.
+function cells_between(s: str lent, from: i64, to: i64) -> i64
+    total: i64 @= 0
+    at: i64 @= from
+
+    while at < to
+        total @ total + cells_of_point(point_at(s, at))
+        at @ next_at(s, at)
+
+    return total
+
+test "width cells_of_point: a control, ASCII, a mark, a wide ideograph, an emoji, a Hangul vowel, the soft hyphen and the last code point"
+    assert cells_of_point(0) == 0
+    assert cells_of_point(0x1b) == 0
+    assert cells_of_point('a') == 1
+    assert cells_of_point(0x301) == 0
+    assert cells_of_point(0x4e2d) == 2
+    assert cells_of_point(0x1f600) == 2
+    assert cells_of_point(0x1161) == 0
+    assert cells_of_point(0xad) == 1
+    assert cells_of_point(0x200b) == 0
+    assert cells_of_point(0xff21) == 2
+    assert cells_of_point(0x10ffff) == 1
+
+test "width point_at, next_at and previous_at: a character of each length"
+    s = "aé中😀"
+    assert point_at(s, 0) == 0x61 && next_at(s, 0) == 1
+    assert point_at(s, 1) == 0xe9 && next_at(s, 1) == 3
+    assert point_at(s, 3) == 0x4e2d && next_at(s, 3) == 6
+    assert point_at(s, 6) == 0x1f600 && next_at(s, 6) == 10
+    assert previous_at(s, 10) == 6 && previous_at(s, 6) == 3 && previous_at(s, 3) == 1 && previous_at(s, 1) == 0
+
+test "width cells_of: empty, ASCII, wide, a combining accent, and a styled text whose sequences take none"
+    assert cells_of("") == 0
+    assert cells_of("abc") == 3
+    assert cells_of("中文") == 4
+    assert cells_of("é") == 1
+    assert cells_of("\u{1b}[1;31mred\u{1b}[0m") == 3
+    assert cells_of("\u{1b}7x") == 1
+    assert cells_of("x\u{1b}") == 1
+    assert cells_of("x\u{1b}[12") == 1
+
+test "width cells_between: a part of a text of wide characters"
+    s = "a中b"
+    assert cells_between(s, from: 0, to: s.len()) == 4
+    assert cells_between(s, from: 1, to: 4) == 2
+    assert cells_between(s, from: 4, to: 4) == 0

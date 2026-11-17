@@ -1,0 +1,370 @@
+# Text laid out in columns by the cells each character takes on a terminal:
+# a table of rows under a header, its columns aligned to the left, the right
+# or the centre and drawn with or without lines, and a list laid in as many
+# columns as a width holds, as Python's `cmd.Cmd.columnize` lays it.
+
+use term/internal/width
+
+# Where a cell's text stands in its column's width.
+variant Side
+    # Against the left, the rest spaces.
+    left
+    # Against the right.
+    right
+    # In the middle, an odd space to the right.
+    center
+    # Right where every cell of the column under the header that is not
+    # empty reads as a number, left otherwise.
+    auto
+
+# The lines drawn around and between cells.
+variant Lines
+    # None: columns two spaces apart.
+    none
+    # None, and a line of `-` under the header.
+    simple
+    # ASCII: `+`, `-` and `|`.
+    ascii
+    # The box-drawing characters: corners, `─` and `│`.
+    box
+    # A table of GitHub's Markdown: `|` around every cell, the alignment
+    # under the header in colons.
+    markdown
+
+# `n` spaces, `n` at or above 0.
+function spaces(n: i64) -> str
+    return " ".repeat(to_u64(n).must())
+
+# `cell` made one line: each control character a space, and for Markdown
+# each `|` escaped.
+function cleaned(cell: str, lines: Lines) -> str
+    pieces: [str] @= []
+    from: i64 @= 0
+
+    for i in range(from: 0, to: cell.len())
+        c = cell[i]
+
+        if c < 32 && c != 27 || c == 127
+            pieces @ pieces.push(cell.slice(from: from, to: i))
+            pieces @ pieces.push(" ")
+            from @ i + 1
+        else if c == '|' && lines == .markdown
+            pieces @ pieces.push(cell.slice(from: from, to: i))
+            pieces @ pieces.push("\\|")
+            from @ i + 1
+
+    pieces @ pieces.push(cell.slice(from: from, to: cell.len()))
+    return pieces.join("")
+
+# Whether the bytes of `s` from `at` hold digits, at least one, `_` or `,`
+# allowed between two; the byte after them.
+function digits_end(s: str lent, at: i64, separated: bool) -> i64
+    end: i64 @= at
+
+    while end < s.len()
+        c = s[end]
+
+        if c >= '0' && c <= '9'
+            end @ end + 1
+        else if separated && (c == '_' || c == ',') && end > at && end + 1 < s.len() && s[end + 1] >= '0' && s[end + 1] <= '9'
+            end @ end + 1
+        else
+            return end
+
+    return end
+
+# Whether `s` reads as a number: a sign, digits that `_` or `,` may group, a
+# fraction, an exponent, and a `%`, each but the digits optional.
+function is_number(s: str) -> bool
+    at: i64 @= 0
+
+    if at < s.len() && (s[at] == '+' || s[at] == '-')
+        at @ at + 1
+    whole = digits_end(s, at: at, separated: true)
+
+    if whole == at
+        return false
+    at @ whole
+
+    if at < s.len() && s[at] == '.'
+        fraction = digits_end(s, at: at + 1, separated: false)
+
+        if fraction == at + 1
+            return false
+        at @ fraction
+
+    if at < s.len() && (s[at] == 'e' || s[at] == 'E')
+        at @ at + 1
+
+        if at < s.len() && (s[at] == '+' || s[at] == '-')
+            at @ at + 1
+        power = digits_end(s, at: at, separated: false)
+
+        if power == at
+            return false
+        at @ power
+
+    if at < s.len() && s[at] == '%'
+        at @ at + 1
+    return at == s.len()
+
+# `cell` padded with spaces to `cells` cells on the side `side` asks; a cell
+# already as wide is as it is.
+function padded(cell: str, cells: i64, side: Side) -> str
+    room = cells - width.cells_of(cell)
+
+    if room <= 0
+        return cell
+
+    return match side
+        .right  => spaces(room) + cell
+        .center => spaces(room / 2) + cell + spaces(room - room / 2)
+        .left   => cell + spaces(room)
+        .auto   => cell + spaces(room)
+
+# `s` without the spaces at its end.
+function trimmed(s: str) -> str
+    end: i64 @= s.len()
+
+    while end > 0 && s[end - 1] == ' '
+        end @ end - 1
+
+    return s.slice(from: 0, to: end)
+
+# The rule drawn across columns of `widths` cells: `left`, then each column's
+# `fill` with `pad` more on each side, `middle` between two, and `right`.
+function rule(widths: [i64] lent, fill: str, pad: i64, left: str, middle: str, right: str) -> str
+    parts: [str] @= []
+
+    for w in widths
+        parts @ parts.push(fill.repeat(to_u64(w + 2 * pad).must()))
+
+    return left + parts.join(middle) + right
+
+# The Markdown rule under the header: dashes as wide as each column, a colon
+# at the side each column stands against.
+function markdown_rule(widths: [i64] lent, sides: [Side] lent) -> str
+    parts: [str] @= []
+
+    for i in range(from: 0, to: widths.len())
+        w = widths[i]
+
+        part = match sides[i]
+            .right  => "-".repeat(to_u64(w + 1).must()) + ":"
+            .center => ":" + "-".repeat(to_u64(w).must()) + ":"
+            .left   => ":" + "-".repeat(to_u64(w + 1).must())
+            .auto   => ":" + "-".repeat(to_u64(w + 1).must())
+
+        parts @ parts.push(part)
+
+    return "|" + parts.join("|") + "|"
+
+# One row's cells, padded to `widths` on `sides`, drawn with `lines`.
+function row_line(cells: [str] lent, widths: [i64] lent, sides: [Side] lent, lines: Lines) -> str
+    parts: [str] @= []
+
+    for i in range(from: 0, to: widths.len())
+        cell = if i < cells.len()
+            cleaned(cell: cells[i], lines: lines)
+        else
+            ""
+        parts @ parts.push(padded(cell: cell, cells: widths[i], side: sides[i]))
+
+    return match lines
+        .none | .simple    => trimmed(parts.join("  "))
+        .ascii | .markdown => "| " + parts.join(" | ") + " |"
+        .box               => "│ " + parts.join(" │ ") + " │"
+
+# Adds `line` and a line break to `out`, the caller's.
+function add_line(@out: [str], line: str)
+    out @ out.push(line)
+    out @ out.push("\n")
+
+# The table of `rows` under `header`, its columns standing on `sides` (`auto`
+# past the list's end) and drawn with `lines`, each line ended by a line
+# break; "" for a table of no column.
+function format(header: [str], rows: [[str]], sides: [Side], lines: Lines) -> str
+    count: i64 @= header.len()
+
+    for r in rows
+        if r.len() > count
+            count @ r.len()
+
+    if count == 0
+        return ""
+    widths: [i64] @= []
+    resolved: [Side] @= []
+
+    for i in range(from: 0, to: count)
+        most: i64 @= 0
+        numbers: i64 @= 0
+        texts: i64 @= 0
+
+        if i < header.len()
+            most @ width.cells_of(cleaned(cell: header[i], lines: lines))
+
+        for r in rows
+            if i < r.len()
+                cell = cleaned(cell: r[i], lines: lines)
+                cells = width.cells_of(cell)
+
+                if cells > most
+                    most @ cells
+
+                if cell != "" && is_number(cell)
+                    numbers @ numbers + 1
+                else if cell != ""
+                    texts @ texts + 1
+
+        if lines == .markdown && most < 3
+            most @ 3
+        widths @ widths.push(most)
+
+        given: Side = if i < sides.len()
+            sides[i]
+        else
+            .auto
+
+        side: Side = if given == .auto && numbers > 0 && texts == 0
+            .right
+        else if given == .auto
+            .left
+        else
+            given
+        resolved @ resolved.push(side)
+
+    out: [str] @= []
+    headed = header.len() > 0 || lines == .markdown
+
+    match lines
+        .ascii => add_line(@out, rule(widths, fill: "-", pad: 1, left: "+", middle: "+", right: "+"))
+        .box => add_line(@out, rule(widths, fill: "─", pad: 1, left: "┌", middle: "┬", right: "┐"))
+        .none | .simple | .markdown => _ = 0
+
+    if headed
+        add_line(@out, row_line(cells: header, widths: widths, sides: resolved, lines: lines))
+
+        match lines
+            .simple   => add_line(@out, rule(widths, fill: "-", pad: 0, left: "", middle: "  ", right: ""))
+            .ascii    => add_line(@out, rule(widths, fill: "-", pad: 1, left: "+", middle: "+", right: "+"))
+            .box      => add_line(@out, rule(widths, fill: "─", pad: 1, left: "├", middle: "┼", right: "┤"))
+            .markdown => add_line(@out, markdown_rule(widths, sides: resolved))
+            .none     => _ = 0
+
+    for r in rows
+        add_line(@out, row_line(cells: r, widths: widths, sides: resolved, lines: lines))
+
+    match lines
+        .ascii => add_line(@out, rule(widths, fill: "-", pad: 1, left: "+", middle: "+", right: "+"))
+        .box => add_line(@out, rule(widths, fill: "─", pad: 1, left: "└", middle: "┴", right: "┘"))
+        .none | .simple | .markdown => _ = 0
+
+    return out.join("")
+
+# `items` laid in columns two spaces apart, down each column first, in as few
+# rows as `room` cells hold, each line ended by a line break; one to a line
+# where one is wider than `room`, "" for none.
+function columns(items: [str], room: i64) -> str
+    if items.len() == 0
+        return ""
+    cells: [i64] @= []
+
+    for item in items
+        cells @ cells.push(width.cells_of(cleaned(cell: item, lines: .none)))
+
+    rows: i64 @= 1
+
+    while rows < items.len()
+        across = (items.len() + rows - 1) / rows
+        total: i64 @= 2 * (across - 1)
+
+        for c in range(from: 0, to: across)
+            most: i64 @= 0
+
+            for r in range(from: 0, to: rows)
+                i = c * rows + r
+
+                if i < items.len() && cells[i] > most
+                    most @ cells[i]
+
+            total @ total + most
+
+        if total <= room
+            break
+        rows @ rows + 1
+
+    across = (items.len() + rows - 1) / rows
+    widths: [i64] @= []
+
+    for c in range(from: 0, to: across)
+        most: i64 @= 0
+
+        for r in range(from: 0, to: rows)
+            i = c * rows + r
+
+            if i < items.len() && cells[i] > most
+                most @ cells[i]
+
+        widths @ widths.push(most)
+
+    out: [str] @= []
+
+    for r in range(from: 0, to: rows)
+        parts: [str] @= []
+
+        for c in range(from: 0, to: across)
+            i = c * rows + r
+
+            if i < items.len()
+                parts @ parts.push(padded(cell: cleaned(cell: items[i], lines: .none), cells: widths[c], side: .left))
+
+        add_line(@out, trimmed(parts.join("  ")))
+
+    return out.join("")
+
+test "tables is_number: integers, signs, groups, fractions, exponents, a percent, and what is none"
+    assert is_number("0") && is_number("-12") && is_number("+3") && is_number("1,234") && is_number("1_000")
+    assert is_number("3.25") && is_number("1e10") && is_number("6.02E+23") && is_number("45%")
+    assert !is_number("") && !is_number("-") && !is_number("1.") && !is_number(".5") && !is_number("1,")
+    assert !is_number("1e") && !is_number("abc") && !is_number("1 2") && !is_number("١٢")
+
+test "tables padded: each side, an odd room, a cell already wide, and a wide character"
+    assert padded(cell: "ab", cells: 5, side: .left) == "ab   "
+    assert padded(cell: "ab", cells: 5, side: .right) == "   ab"
+    assert padded(cell: "ab", cells: 5, side: .center) == " ab  "
+    assert padded(cell: "abcdef", cells: 3, side: .right) == "abcdef"
+    assert padded(cell: "中", cells: 3, side: .left) == "中 "
+
+test "tables cleaned: a tab and a line break made spaces, a style kept, a bar escaped for Markdown only"
+    assert cleaned(cell: "a\tb\nc", lines: .none) == "a b c"
+    assert cleaned(cell: "\u{1b}[1mx", lines: .none) == "\u{1b}[1mx"
+    assert cleaned(cell: "a|b", lines: .markdown) == "a\\|b"
+    assert cleaned(cell: "a|b", lines: .box) == "a|b"
+
+test "tables format: no column, a header alone, rows shorter than the header, and every side"
+    assert format(header: [], rows: [], sides: [], lines: .none) == ""
+    assert format(header: [], rows: [[], []], sides: [], lines: .ascii) == ""
+    assert format(header: ["a", "b"], rows: [], sides: [], lines: .none) == "a  b\n"
+    t = format(
+        header: ["n", "name", "c"],
+        rows: [["1", "x"], ["10", "yy", "z"]],
+        sides: [.auto, .right, .center],
+        lines: .simple
+    )
+    assert t == " n  name  c\n--  ----  -\n 1     x\n10    yy  z\n"
+
+test "tables format: the boxes, ASCII and Markdown, numbers to the right, and a wide character"
+    rows = [["中文", "3.5"], ["b", "12"]]
+    assert format(header: ["k", "v"], rows: rows, sides: [], lines: .ascii) == "+------+-----+\n| k    |   v |\n+------+-----+\n| 中文 | 3.5 |\n| b    |  12 |\n+------+-----+\n"
+    assert format(header: ["k", "v"], rows: rows, sides: [], lines: .box) == "┌──────┬─────┐\n│ k    │   v │\n├──────┼─────┤\n│ 中文 │ 3.5 │\n│ b    │  12 │\n└──────┴─────┘\n"
+    assert format(header: ["k", "v"], rows: [["a|b", "1"]], sides: [], lines: .markdown) == "| k    |   v |\n|:-----|----:|\n| a\\|b |   1 |\n"
+    assert format(header: [], rows: [["x"]], sides: [.center], lines: .markdown) == "|     |\n|:---:|\n|  x  |\n"
+
+test "tables format: a column of numbers with empty cells still to the right, one of none to the left"
+    assert format(header: [], rows: [["1", ""], ["", ""], ["100", ""]], sides: [], lines: .none) == "  1\n\n100\n"
+
+test "tables columns: none, one, as Python's columnize lays them, and one wider than the width"
+    assert columns(items: [], room: 80) == ""
+    assert columns(items: ["a"], room: 80) == "a\n"
+    assert columns(items: ["a", "bb", "ccc", "dddd", "e"], room: 10) == "a    dddd\nbb   e\nccc\n"
+    assert columns(items: ["toolong", "x"], room: 3) == "toolong\nx\n"

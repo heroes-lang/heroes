@@ -1,0 +1,130 @@
+# What is drawn from a ChaCha8 generator's numbers, by the same methods
+# `pick` draws by from PCG's: a number below a bound by Lemire's method, a
+# float from 53 bits, a list shuffled or sampled by Fisher and Yates's method,
+# and a choice by weights. Each takes the generator's state, which the caller
+# holds. The methods are written again rather than shared, since a function
+# taking the caller's place cannot be handed as a value, and a state copied in
+# and out on every number would cost a copy of its numbers each time. Go's
+# `rand.New(rand.NewChaCha8(seed))` answered the tests' numbers.
+
+use random/internal/chacha
+use random/internal/pick
+use random/internal/wide
+
+# A number from 0 to `n` - 1, every one as likely: for a power of two, the
+# low bits of a number; else the high word of a number times `n`, drawn again
+# in the rare case its low word falls where some answers would have one chance
+# more, as Go's `Uint64N` draws. `n` is 1 or more.
+function below(@state: chacha.State, n: u64) -> u64
+    bound = wide.from_unsigned(n)
+    mask = wide.add(a: bound, b: -1)
+
+    if bound & mask == 0
+        return wide.unsigned(chacha.next(@state) & mask)
+    p @= wide.product(a: chacha.next(@state), b: bound)
+
+    if wide.is_below(a: p.low, b: bound)
+        threshold = wide.from_unsigned((18446744073709551615 - (n - 1)) % n)
+
+        while wide.is_below(a: p.low, b: threshold)
+            p @ wide.product(a: chacha.next(@state), b: bound)
+    return wide.unsigned(p.high)
+
+# A float in [0, 1): the low 53 bits of a number, divided by 2^53, as Go's
+# `Float64` takes them.
+function fraction(@state: chacha.State) -> f64
+    bits = chacha.next(@state) & 0x1fffffffffffff
+    return to_f64(bits) / 9007199254740992.0
+
+# Shuffles `xs`, which the caller holds, from its last element down: each
+# trades places with one drawn from those before it and itself.
+function shuffle<T>(@state: chacha.State, @xs: [T])
+    at: i64 @= xs.len() - 1
+
+    while at > 0
+        other = to_i64(below(@state, n: to_u64(at + 1).must())).must()
+        held = xs[at]
+        xs[at] @ xs[other]
+        xs[other] @ held
+        at @ at - 1
+
+# `count` elements of `xs`, none drawn twice, in the order drawn: the first
+# `count` places of a shuffle begun from the front. `count` is from 0 to
+# `xs.len()`.
+function sample<T>(@state: chacha.State, xs: [T], count: i64) -> [T]
+    pool: [T] @= xs
+    at: i64 @= 0
+
+    while at < count
+        left = to_u64(pool.len() - at).must()
+        other = at + to_i64(below(@state, n: left)).must()
+        held = pool[at]
+        pool[at] @ pool[other]
+        pool[other] @ held
+        at @ at + 1
+
+    return pool.slice(from: 0, to: count)
+
+# The index of an element drawn as likely as its weight among `weights`.
+# Fails `invalid` as `pick.weighable` fails, before any number is drawn.
+function weighted(@state: chacha.State, weights: [f64]) -> i64?
+    drawable = pick.weighable(weights)?
+    return ok(pick.place(weights, drawable, fraction(@state)))
+
+# The state Go's `rand.NewChaCha8` starts from the seed 0, 1, ..., 31.
+function counting() -> chacha.State
+    return chacha.begin(chacha.counting_seed())
+
+# Go's `rand.New(rand.NewChaCha8(seed))` answered, in this order,
+# `Uint64N(10)` three times, `Uint64N(1000000007)`, `Float64` twice and
+# `Int64N(1 << 40)` on 2026-11-17.
+test "strong below and fraction: Go's draws from the seed 0 to 31, in order"
+    state @= counting()
+    assert below(@state, n: 10) == 6
+    assert below(@state, n: 10) == 6
+    assert below(@state, n: 10) == 1
+    assert below(@state, n: 1000000007) == 479443875
+    assert fraction(@state) == 0.5464797057555771
+    assert fraction(@state) == 0.35105818799664523
+    assert below(@state, n: 1099511627776) == 703434219453
+
+test "strong below: a bound of 1, the largest bound, and a die's spread"
+    state @= counting()
+    assert below(@state, n: 1) == 0
+    assert below(@state, n: 18446744073709551615) < 18446744073709551615
+    counts: [i64] @= [0, 0, 0, 0, 0, 0]
+
+    for _ in range(from: 0, to: 6000)
+        at = to_i64(below(@state, n: 6)).must()
+        counts[at] @ counts[at] + 1
+
+    for c in counts
+        assert c > 850 && c < 1150
+
+test "strong shuffle and sample: the same elements, none drawn twice, one element, and none"
+    state @= counting()
+    xs: [i64] @= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    shuffle(@state, @xs)
+    assert xs != [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] && sort(xs) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    one: [str] @= ["only"]
+    shuffle(@state, @one)
+    assert one == ["only"]
+    none: [str] @= []
+    shuffle(@state, @none)
+    assert none.len() == 0
+    letters = ["a", "b", "c", "d", "e"]
+    assert sample(@state, letters, 0).len() == 0
+    assert sort(sample(@state, letters, 5)) == letters
+    some = sample(@state, letters, 3)
+    assert some.len() == 3 && some[0] != some[1] && some[1] != some[2] && some[0] != some[2]
+
+test "strong weighted: a zero weight never drawn, and weights refused before a number is drawn"
+    state @= counting()
+
+    for _ in range(from: 0, to: 50)
+        assert weighted(@state, [0.0, 3.0, 0.0]).must() == 1
+
+    before = state
+    assert weighted(@state, []).is_err()
+    assert weighted(@state, [1.0, -1.0]).is_err()
+    assert state == before

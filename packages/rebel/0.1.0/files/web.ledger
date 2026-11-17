@@ -263,11 +263,18 @@ capability response/xml  a response of XML or YAML
   note    the text the format's own package writes, answered by `http.respond` with its type
 
 capability response/stream  a body written piece by piece while it is made
-  heroes  pending
-  go      echo.Context.Stream, gin.Context.Stream, DataFromReader, SSEvent
+  heroes  http.write_response_head, web.start_events
+  go      echo.Context.Stream, gin.Context.Stream, DataFromReader
   rust    -
   python  flask.stream_with_context, flask.Response with a generator
-  note    `http` holds every body whole and writes it at once; a body written in pieces waits for `http` to write one
+  note    in a program's own loop, as `route`'s example writes it: the head written by `http.write_response_head` in place of `http.write_answer`, then the body by `io.write` as it is made, ended by closing the connection; `serve`'s handler answers a response held whole and cannot stream
+
+capability response/server-sent-events  server-sent events written as they are made, a stream kept open
+  heroes  web.format_event, web.start_events, web.write_event, web.write_retry, web.write_comment, web.respond_events
+  go      gin.Context.SSEvent, net/http.Flusher as an SSE handler uses it
+  rust    -
+  python  -
+  note    the format of the WHATWG HTML standard (9.2.5): `id`, `event`, one `data` line for each line of the data cut at CR LF, LF and CR as a reader cuts them, a `retry` line, comments as keep-alive; a name or an id with a line end, or an id with a zero byte, refused `invalid` where gin writes them; the head is 200, `text/event-stream`, `Cache-Control: no-cache` and `Connection: close`, the stream running to the connection's end; read back by `http.read_event` in the tests; Echo offers no helper, its cookbook writes the lines by hand
 
 capability response/attachment  a response a browser saves, or shows, under a file name
   heroes  web.with_disposition
@@ -443,8 +450,15 @@ capability middleware/redirects  HTTP sent to HTTPS, or a host to its `www.` for
   python  -
 
 capability middleware/rate-limit  requests of one client counted and refused 429 past a rate
-  heroes  pending
-  go      echo/middleware.RateLimiter, RateLimiterMemoryStore, chi/middleware.Throttle, ThrottleBacklog
+  heroes  web.Limiter, web.new_limiter, web.allow, web.wait_of, web.limit_rate
+  go      echo/middleware.RateLimiter, RateLimiterMemoryStore, RateLimiterConfig, golang.org/x/time/rate.NewLimiter, Limiter.Allow, Limiter.AllowN, Limiter.Reserve, Reservation.DelayFrom
+  rust    -
+  python  -
+  note    a token bucket per client key, as golang.org/x/time/rate keeps one, observed with its v0.16.0 on 2026-11-17: a burst of 3 at 2 a second allowed three, refused the fourth with a delay of 500 ms, refused a nanosecond before it and allowed at it; a refused request leaves the bucket as it was and a time before its last token counts none, as Go's; the wait is rounded up to the nanosecond where Go truncates (333.333334 ms against 333.333333 at 3 a second), so waiting it always finds a token; the time is the caller's, never a clock read here; 429 says Echo's words, "rate limit exceeded", with `Retry-After` in whole seconds rounded up, which Echo does not send; a full bucket is forgotten, losing nothing, and past `most_keys` the older half, where Echo's memory store forgets a visitor after `ExpiresIn` and holds no bound; a step the program calls with its own `@` limiter, since a step `before` calls takes none
+
+capability middleware/throttle  requests in flight at once bounded, the rest made to wait or refused
+  heroes  refused: one connection is served at a time on the thread that serves (`http.serve`), so no two requests are ever in flight together
+  go      chi/middleware.Throttle, ThrottleBacklog
   rust    -
   python  -
 

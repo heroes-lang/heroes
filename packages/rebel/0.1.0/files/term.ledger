@@ -8,6 +8,10 @@
 # Rust's `crossterm` and `indicatif` and Python's `rich`, none of which is on
 # this machine: their lines are their public items as their documentation
 # names them, read as capabilities, and no source of theirs was opened.
+# Added 2026-11-17 (the line editor and the tables, the author's decision of
+# that day after a census of Odin, Zig, Java and .NET): Python 3.15's
+# `readline` (28 public names, read by `dir()`) and `cmd.Cmd` (30), and Go
+# 1.27's `text/tabwriter` (`go doc -all text/tabwriter`).
 
 capability term/is-terminal  whether a stream is a terminal
   heroes  io.is_terminal
@@ -199,11 +203,59 @@ capability term/user-name  the name of the user, beside getpass
   python  getpass.getuser
   note    `os`'s
 
-capability term/line-editor  a line read with editing and a history
-  heroes  pending
-  go      term.NewTerminal, term.Terminal, term.Terminal.ReadLine, term.Terminal.SetPrompt, term.Terminal.Write, term.Terminal.AutoCompleteCallback, term.History, term.EscapeCodes
+capability term/line-editor  a line read with editing: the cursor moved by a character, a word or to an end, characters taken out, text killed and yanked
+  heroes  term.read_line, term.press, term.line_editor, term.Editor, term.Pressed, term.Ending
+  go      term.NewTerminal, term.Terminal, term.Terminal.ReadLine, term.Terminal.SetPrompt
   rust    -
-  python  rich.prompt.Prompt (readline's own is outside this area)
+  python  input (with readline loaded), readline.get_line_buffer, readline.redisplay, readline.backend, rich.prompt.Prompt
+  note    Emacs's keys as GNU Readline and x/term bind them: Ctrl-A, E, B, F, K, U, W, Y, D, L, P, N, Alt-B, Alt-F, Alt-D, Alt-Backspace, Ctrl and Alt with the arrows; kills in a row add up, as Readline's do. Alt comes as Escape and the key, Readline's Meta prefix, the layer handing Escape alone. `press` is the machine, a key in and the bytes to draw out, so every key is tested with no terminal; driven in a pseudo-terminal on this Mac (2026-11-17, `rebel-scratch/term-probe/small`): words, a kill and its yank, a completion listed, the history, Ctrl-C and Ctrl-D, the terminal put back after. The line is drawn on one row, a window of it around the cursor where it is wider (linenoise's way), and the cursor put back by DEC's `ESC 7`/`ESC 8` so the terminal's own widths place it; Readline's lines that wrap over several rows are not drawn. An input that is no terminal is read as it stands with no prompt, as Python's own prompt and rustyline do, where Python's `input` writes its prompt; a letter and its accents move and go as one, where Readline takes one code point
+
+capability term/line-history  the lines entered kept, browsed with Up and Down, and saved to a file and read back
+  heroes  term.Editor, term.save_history, term.load_history
+  go      term.History, term.Terminal.History
+  rust    -
+  python  readline.add_history, readline.clear_history, readline.get_current_history_length, readline.get_history_item, readline.get_history_length, readline.set_history_length, readline.remove_history_item, readline.replace_history_item, readline.read_history_file, readline.write_history_file, readline.set_auto_history
+  note    the history is the editor's list, `history`, the oldest first: adding, clearing, reading, removing and replacing an entry are the list's built-ins, and its bound is `history_most`, 1,000 at first where Readline keeps all and x/term 100. A line entered is added as Readline's auto-history adds it, but an empty one or one equal to the newest (bash's `ignoredups`, x/term adding every one); `history_most` 0 keeps none, Python's `set_auto_history(False)`. The file is a line each, as Python's; a line holding a line break fails `invalid` rather than be split
+
+capability term/line-completion  the word before the cursor completed by the program at Tab
+  heroes  term.press_completing, term.read_line_completing, term.Completions, term.complete_words
+  go      term.Terminal.AutoCompleteCallback
+  rust    -
+  python  readline.set_completer, readline.get_completer, readline.get_begidx, readline.get_endidx, readline.set_completer_delims, readline.get_completer_delims, readline.get_completion_type, readline.set_completion_display_matches_hook, cmd.Cmd.complete, cmd.Cmd.completenames, cmd.Cmd.completedefault, cmd.Cmd.complete_help
+  note    no closure: the program's function takes its own state by value, the line and the cursor, and answers where the replaced text begins (Readline's begidx, the cursor its endidx) and the candidates, so its delimiters are its own; one candidate replaces, several put their common start, a first Tab with nothing to add rings and a second lists them in columns, as Readline does. A candidate is put as it is, where Readline adds a space after a single one; `complete_words` is `cmd.Cmd.completenames` over a list
+
+capability term/line-search  the history searched as letters are typed, Readline's Ctrl-R
+  heroes  pending
+  go      -
+  rust    -
+  python  - (a binding of readline, no entry of the module)
+  note    an incremental search draws its own prompt over the line and needs its own state in the editor; not written, x/term having none
+
+capability term/line-prefilled  a line read with text already in it
+  heroes  pending
+  go      -
+  rust    -
+  python  readline.insert_text, readline.set_startup_hook, readline.set_pre_input_hook, readline.get_pre_input_hook
+  note    the hooks are a function called back before the line is read; the same text put in the editor's edit before `read_line` begins would be the way, and `read_line` empties it today
+
+capability term/line-written-beside  output written above a line being edited, the line drawn again below it
+  heroes  pending
+  go      term.Terminal.Write
+  rust    -
+  python  -
+  note    a program writing from another thread while a line is read; the editor's draw is the bytes `press` answers, and a write between two keys would need the line cleared first and drawn after, which no function does yet
+
+capability term/line-editor-configuration  the keys bound by the person's own file, vi's mode
+  heroes  refused: GNU Readline's own language of key bindings and its vi mode are a library of their own; the keys here are Emacs's, fixed, as x/term's are
+  go      -
+  rust    -
+  python  readline.parse_and_bind, readline.read_init_file
+
+capability term/command-loop  a loop reading commands and calling a method named for each
+  heroes  refused: `cmd.Cmd` calls the methods named `do_` and the command, and Heroes has no methods; a program writes its loop over `read_line` and a `match` on the command
+  go      -
+  rust    -
+  python  cmd.Cmd.cmdloop, cmd.Cmd.onecmd, cmd.Cmd.parseline, cmd.Cmd.default, cmd.Cmd.emptyline, cmd.Cmd.do_help, cmd.Cmd.print_topics, cmd.Cmd.get_names, cmd.Cmd.precmd, cmd.Cmd.postcmd, cmd.Cmd.preloop, cmd.Cmd.postloop, cmd.Cmd.intro, cmd.Cmd.prompt, cmd.Cmd.identchars, cmd.Cmd.lastcmd, cmd.Cmd.ruler, cmd.Cmd.doc_header, cmd.Cmd.doc_leader, cmd.Cmd.misc_header, cmd.Cmd.undoc_header, cmd.Cmd.nohelp, cmd.Cmd.use_rawinput
 
 capability term/progress-bar  a bar showing work done out of a total
   heroes  term.progress, term.advance, term.finish, term.Progress
@@ -248,13 +300,27 @@ capability term/text-width  how many cells a text takes on screen
   go      -
   rust    - (the unicode-width crate, outside the area's libraries)
   python  rich.cells.cell_len, unicodedata.east_asian_width
-  note    East Asian wide characters take two cells and marks none: Unicode's table of East Asian Widths, which `unicode` does not hold today (its tables are Unicode 17.0.0's categories and cases); written badly with a guess it would cut lines in the wrong place, so it waits for the table
+  note    East Asian wide characters take two cells and marks none: Unicode's table of East Asian Widths, which `unicode` does not hold (its tables are Unicode 17.0.0's categories and cases) and `unicode/segment` is to hold with UAX #29's clusters. Since 2026-11-17 the line editor and the tables measure with a table inside this package, `term/internal/width_table.hero`, made by a program from Python's `unicodedata` 17.0.0 (Wide and Fullwidth two cells; marks, format characters, controls and the Hangul medial vowels none; a style's sequences none) and held to Python's answer on all 1,114,112 code points; it is not offered as a function, so that the one public measure is `unicode/segment`'s when it comes, with its clusters
 
 capability term/rendering  markup, tables, panels, trees, Markdown and highlighted code drawn on a terminal
   heroes  refused: a rendering library's area, which a program or a package builds over `styled`
   go      -
   rust    -
-  python  rich.console.Console.print, rich.markup, rich.table.Table, rich.panel.Panel, rich.tree.Tree, rich.markdown.Markdown, rich.syntax.Syntax, rich.columns.Columns, rich.layout.Layout, rich.live.Live, rich.pretty, rich.traceback
+  python  rich.console.Console.print, rich.markup, rich.panel.Panel, rich.tree.Tree, rich.markdown.Markdown, rich.syntax.Syntax, rich.columns.Columns, rich.layout.Layout, rich.live.Live, rich.pretty, rich.traceback
+
+capability term/text-table  rows of cells under a header, the columns aligned by the cells their characters take on a terminal, drawn with lines or none
+  heroes  term.format_table, term.Table, term.Align, term.Border
+  go      tabwriter.Writer, tabwriter.NewWriter, tabwriter.Writer.Init, tabwriter.Writer.Write, tabwriter.Writer.Flush, tabwriter.AlignRight, tabwriter.Debug, tabwriter.DiscardEmptyColumns, tabwriter.TabIndent, tabwriter.FilterHTML, tabwriter.StripEscape, tabwriter.Escape
+  rust    -
+  python  rich.table.Table, rich.box
+  note    a table is a value written to a `str` in one call, where tabwriter is a stream fed cells between tabs and flushed: its padding and minimum widths are the two spaces and the widest cell, `AlignRight` a column's `.right`, `Debug` the `|` of `.ascii`, `StripEscape` the style sequences a cell holds, which take no cell here; `DiscardEmptyColumns`, `TabIndent` and `FilterHTML` are a stream's concerns and left out. A column of numbers is right-aligned by itself (`.auto`), a decision where tabwriter and rich leave a column to the left unless told; borders none, a rule under the header, ASCII, the box-drawing characters and GitHub's Markdown. A control character in a cell is drawn as a space, so a row stays a line
+
+capability term/columns  a list laid in as many columns as a width holds
+  heroes  term.format_columns
+  go      -
+  rust    -
+  python  cmd.Cmd.columnize
+  note    down each column first in the fewest rows that fit, as `columnize` lays them, answered the same for every case tried (2026-11-17); no list is "" where Python writes `<empty>`, and no line ends in spaces, where Python pads its last column
 
 capability term/screen-library  windows, pads and panels over a screen
   heroes  refused: curses' screen model, a library of its own over this package's sequences

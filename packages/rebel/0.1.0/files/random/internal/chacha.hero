@@ -1,0 +1,344 @@
+# ChaCha8rand, the generator Go's `math/rand/v2.ChaCha8` runs: ChaCha with
+# eight rounds over a key of 32 bytes, its blocks taken four at a time with
+# the counters of a group, their words interleaved, and every fourth group's
+# last 32 bytes made the next key, so that a state seen later tells nothing of
+# the numbers before it. Each key gives 124 numbers. The words of 32 bits are
+# `i64`s from 0 to 2^32 - 1, masked after every sum, since an overflow aborts
+# in Heroes where ChaCha wraps by design. Written from the behaviour Go's
+# generator shows: the tests hold its numbers to the ones Go answered on
+# 2026-11-17, across three changes of key.
+
+use random/internal/wide
+
+# The 32 low bits of a word, all set.
+constant LOW32: i64
+    0xffffffff
+
+# The first word of ChaCha's constant, "expa".
+constant SIGMA0: i64
+    0x61707865
+
+# The second word of ChaCha's constant, "nd 3".
+constant SIGMA1: i64
+    0x3320646e
+
+# The third word of ChaCha's constant, "2-by".
+constant SIGMA2: i64
+    0x79622d32
+
+# The fourth word of ChaCha's constant, "te k".
+constant SIGMA3: i64
+    0x6b206574
+
+# How many numbers a group of four blocks gives.
+constant GROUP: i64
+    32
+
+# How many numbers the last group of a key gives: its last four make the next
+# key.
+constant LAST_GROUP: i64
+    28
+
+# The work of the generator: its key, the numbers of the group being read and
+# where the next one stands, and the bytes a read cut from a number.
+record State
+    # The key, eight words of 32 bits, the first from the seed's first four
+    # bytes, the lowest byte first.
+    key: [i64]
+    # The group the next refill computes, from 0 to 3; after group 3 the key
+    # changes and the count starts again.
+    group: i64
+    # The numbers of the group being read, each the bits of a `u64`.
+    numbers: [i64]
+    # Where the next number stands in `numbers`; at its end, a refill.
+    at: i64
+    # The bytes a read took a number for and did not use, in order, which the
+    # next read gives first; fewer than eight.
+    spare: [u8]
+
+# The state of the generator seeded by `seed`, which holds 32 bytes; before
+# its first number.
+function begin(seed: [u8] lent) -> State
+    key: [i64] @= []
+
+    for at in range(from: 0, to: 8)
+        key @ key.push(load32(seed, 4 * at))
+
+    numbers: [i64] = []
+    spare: [u8] = []
+    return State(key: key, group: 0, numbers: numbers, at: 0, spare: spare)
+
+# The word of 32 bits that the four bytes of `data` from `at` write, the first
+# byte the lowest.
+function load32(data: [u8] lent, at: i64) -> i64
+    return to_i64(data[at + 3]).must() << 24 | to_i64(data[at + 2]).must() << 16 | to_i64(data[at + 1]).must() << 8 | to_i64(data[at]).must()
+
+# The word of 32 bits `x` rotated left by `n` bits, `n` from 1 to 31.
+function rotate(x: i64, n: i64) -> i64
+    return (x << n | x >> 32 - n) & LOW32
+
+# ChaCha's quarter round on four words of the caller's.
+function quarter(@a: i64, @b: i64, @c: i64, @d: i64)
+    a @ a + b & LOW32
+    d @ rotate(x: d ^ a, n: 16)
+    c @ c + d & LOW32
+    b @ rotate(x: b ^ c, n: 12)
+    a @ a + b & LOW32
+    d @ rotate(x: d ^ a, n: 8)
+    c @ c + d & LOW32
+    b @ rotate(x: b ^ c, n: 7)
+
+# The sixteen words of ChaCha8's block of `key` at `counter`: four double
+# rounds, then the key added back to the words it began in, and to no other.
+function block(key: [i64] lent, counter: i64) -> [i64]
+    x0 @= SIGMA0
+    x1 @= SIGMA1
+    x2 @= SIGMA2
+    x3 @= SIGMA3
+    x4 @= key[0]
+    x5 @= key[1]
+    x6 @= key[2]
+    x7 @= key[3]
+    x8 @= key[4]
+    x9 @= key[5]
+    x10 @= key[6]
+    x11 @= key[7]
+    x12 @= counter
+    x13: i64 @= 0
+    x14: i64 @= 0
+    x15: i64 @= 0
+
+    for _ in range(from: 0, to: 4)
+        quarter(a: @x0, b: @x4, c: @x8, d: @x12)
+        quarter(a: @x1, b: @x5, c: @x9, d: @x13)
+        quarter(a: @x2, b: @x6, c: @x10, d: @x14)
+        quarter(a: @x3, b: @x7, c: @x11, d: @x15)
+        quarter(a: @x0, b: @x5, c: @x10, d: @x15)
+        quarter(a: @x1, b: @x6, c: @x11, d: @x12)
+        quarter(a: @x2, b: @x7, c: @x8, d: @x13)
+        quarter(a: @x3, b: @x4, c: @x9, d: @x14)
+
+    return [
+        x0
+        x1
+        x2
+        x3
+        x4 + key[0] & LOW32
+        x5 + key[1] & LOW32
+        x6 + key[2] & LOW32
+        x7 + key[3] & LOW32
+        x8 + key[4] & LOW32
+        x9 + key[5] & LOW32
+        x10 + key[6] & LOW32
+        x11 + key[7] & LOW32
+        x12
+        x13
+        x14
+        x15
+    ]
+
+# The 32 numbers of the group `group` of `key`: its four blocks, at the
+# counters `4 * group` to `4 * group + 3`, read word by word across the four,
+# and every two words a number, the first the low half.
+function group_numbers(key: [i64] lent, group: i64) -> [i64]
+    blocks: [[i64]] @= []
+
+    for j in range(from: 0, to: 4)
+        blocks @ blocks.push(block(key, 4 * group + j))
+
+    first = blocks[0]
+    second = blocks[1]
+    third = blocks[2]
+    fourth = blocks[3]
+    numbers: [i64] @= []
+
+    for w in range(from: 0, to: 16)
+        numbers @ numbers.push(first[w] | second[w] << 32)
+        numbers @ numbers.push(third[w] | fourth[w] << 32)
+
+    return numbers
+
+# Computes the next group of `state`, which the caller holds: after the
+# fourth group of a key, its last four numbers become the next key and are
+# never given out.
+function refill(@state: State)
+    numbers @= group_numbers(state.key, state.group)
+
+    if state.group == 3
+        key: [i64] @= []
+
+        for at in range(from: LAST_GROUP, to: GROUP)
+            x = numbers[at]
+            key @ key.push(x & LOW32)
+            key @ key.push(wide.shift_right(x: x, n: 32))
+
+        state.key @ key
+        state.group @ 0
+        numbers @ numbers.slice(from: 0, to: LAST_GROUP)
+    else
+        state.group @ state.group + 1
+    state.numbers @ numbers
+    state.at @ 0
+
+# The next number of `state`, which the caller holds, as the word holding its
+# bits.
+function next(@state: State) -> i64
+    if state.at == state.numbers.len()
+        refill(@state)
+    at = state.at
+    state.at @ at + 1
+    return state.numbers[at]
+
+# `count` bytes of `state`, as Go's `ChaCha8.Read` gives them: first the
+# bytes an earlier read left, then each number's eight bytes, the lowest
+# first, and the bytes of the last number not used kept for the next read.
+# `count` is 0 or more.
+function read(@state: State, count: i64) -> [u8]
+    out: [u8] @= []
+    spare = state.spare
+    taken: i64 @= 0
+
+    while taken < spare.len() && out.len() < count
+        out @ out.push(spare[taken])
+        taken @ taken + 1
+
+    state.spare @ spare.slice(from: taken, to: spare.len())
+
+    while out.len() < count
+        x = next(@state)
+        left: [u8] @= []
+
+        for at in range(from: 0, to: 8)
+            b = to_u8(wide.shift_right(x: x, n: 8 * at) & 0xff).must()
+
+            if out.len() < count
+                out @ out.push(b)
+            else
+                left @ left.push(b)
+
+        state.spare @ left
+
+    return out
+
+# Go's `rand.NewChaCha8` answered these on 2026-11-17, from the seed of 32
+# zero bytes: the first numbers, the first of the second key, and the
+# thousandth, past seven changes of key.
+test "chacha next: the zero seed's numbers, across changes of key"
+    zero: [u8] @= []
+
+    for _ in range(from: 0, to: 32)
+        zero @ zero.push(0)
+
+    state @= begin(zero)
+    seen: [i64] @= []
+
+    for _ in range(from: 0, to: 1000)
+        seen @ seen.push(next(@state))
+
+    assert wide.unsigned(seen[0]) == 12432809566553409497
+    assert wide.unsigned(seen[1]) == 7766219816435805978
+    assert wide.unsigned(seen[31]) == 125952780581614778
+    assert wide.unsigned(seen[32]) == 11456203247299035011
+    assert wide.unsigned(seen[123]) == 8184198519316962464
+    assert wide.unsigned(seen[124]) == 10179668788428909817
+    assert wide.unsigned(seen[247]) == 7420841827674394489
+    assert wide.unsigned(seen[248]) == 10937539205284161074
+    assert wide.unsigned(seen[999]) == 8902220404351907515
+
+# Go answered these from the seed 0, 1, ..., 31, the key's words added back
+# showing in numbers 8 to 23 of every group, and the xor of the first
+# thousand numbers.
+test "chacha next: the seed 0 to 31, the numbers the key shows in, and the xor of a thousand"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    state @= begin(seed)
+    folded: i64 @= 0
+    seen: [i64] @= []
+
+    for _ in range(from: 0, to: 1000)
+        x = next(@state)
+        seen @ seen.push(x)
+        folded @ folded ^ x
+
+    assert wide.unsigned(seen[0]) == 12537355132343524571
+    assert wide.unsigned(seen[8]) == 14853910266614616055
+    assert wide.unsigned(seen[9]) == 6621246549929691492
+    assert wide.unsigned(seen[16]) == 9940059490855263999
+    assert wide.unsigned(seen[23]) == 2416020941692956684
+    assert wide.unsigned(seen[371]) == 16534914931032675201
+    assert wide.unsigned(seen[372]) == 9337503077864249277
+    assert wide.unsigned(folded) == 4141277537472831966
+
+test "chacha next: a seed of text and the seed 100 to 131, the xor of a thousand"
+    text = "chacha8rand example seed 0123456"
+    ascii: [u8] @= []
+
+    for at in range(from: 0, to: text.len())
+        ascii @ ascii.push(text[at])
+
+    state @= begin(ascii)
+    folded: i64 @= 0
+
+    for _ in range(from: 0, to: 1000)
+        folded @ folded ^ next(@state)
+
+    assert wide.unsigned(folded) == 568923600264802166
+    high: [u8] @= []
+
+    for at in range(from: 100, to: 132)
+        high @ high.push(to_u8(at).must())
+
+    other @= begin(high)
+    assert wide.unsigned(next(@other)) == 5374060040326334627
+    other_folded: i64 @= wide.from_unsigned(5374060040326334627)
+
+    for _ in range(from: 1, to: 1000)
+        other_folded @ other_folded ^ next(@other)
+
+    assert wide.unsigned(other_folded) == 16561070542501053481
+
+# Go's `Read` of 3 bytes, then 10, then `Uint64`, then `Read` of 6: the bytes
+# a read cut are kept past the number drawn between.
+test "chacha read: none, a number cut, the rest given first, and a number drawn between reads"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    state @= begin(seed)
+    assert read(@state, 0).len() == 0
+    assert read(@state, 3) == [219, 156, 65]
+    assert read(@state, 10) == [46, 17, 162, 253, 173, 221, 254, 14, 141, 244]
+    assert wide.unsigned(next(@state)) == 2781058919287139840
+    assert read(@state, 6) == [59, 179, 154, 27, 83, 9]
+
+# Go read 2000 bytes at once: their sum, the first eight, and the eight from
+# byte 992, the first number of the second key.
+test "chacha read: two thousand bytes, across a change of key"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    state @= begin(seed)
+    got = read(@state, 2000)
+    sum: i64 @= 0
+
+    for b in got
+        sum @ sum + to_i64(b).must()
+
+    assert got.len() == 2000 && sum == 254549
+    assert got.slice(from: 0, to: 8) == [219, 156, 65, 46, 17, 162, 253, 173]
+    assert got.slice(from: 992, to: 1000) == [191, 144, 171, 37, 52, 71, 198, 101]
+
+# The seed 0, 1, ..., 31, which the tests share with Go's.
+function counting_seed() -> [u8]
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    return seed

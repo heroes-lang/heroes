@@ -120,6 +120,9 @@ function words_of(kind: i64, number: i64) -> str
 
     if kind == hero_disk.HERO_DISK_NOT_OPEN
         return "the stream is closed"
+
+    if kind == hero_disk.HERO_DISK_SHRUNK
+        return "another program cut the file shorter than its map"
     return f"the system refused it, its number {number}"
 
 # The failure of `asked` where a door of `hero_disk` answered -1: its kind as
@@ -174,6 +177,10 @@ test "disk_failed: the kind the floor last answered, as a code and the words of 
     match failure
         .ok _  => assert false
         .err e => assert e.code == FILE_NOT_FOUND && e.msg == "reading \"x\": nothing is there"
+
+test "words_of and code_of: a file cut shorter than its map, round 4's kind, is failed with its own words"
+    assert code_of(hero_disk.HERO_DISK_SHRUNK) == FAILED
+    assert words_of(kind: hero_disk.HERO_DISK_SHRUNK, number: 0) == "another program cut the file shorter than its map"
 
 test "checked: an empty path, a plain one, one of more than one byte a character, and a zero byte at either end"
     assert !checked(path: "", asked: "a").is_err()

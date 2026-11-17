@@ -1,0 +1,247 @@
+# Keccak-f[1600], the permutation under SHA-3, SHAKE and cSHAKE (FIPS 202
+# 3.2 and 3.3), and the sponge's two moves: a block of bytes combined into
+# the state and permuted, and bytes read out of it. The state is 25 words of
+# 64 bits, the lane (x, y) at x + 5y, each an `i64` holding its bits
+# (`crypto/internal/word`); a lane takes and gives its bytes the lowest
+# first. The constants below are computed again by a test from the steps
+# FIPS 202 gives for them.
+
+use crypto/internal/word
+
+# The 24 round constants of the step iota (FIPS 202 3.2.5), as `i64`s
+# holding their 64 bits.
+constant ROUNDS: [i64]
+    [
+        1
+        32898
+        -9223372036854742902
+        -9223372034707259392
+        32907
+        2147483649
+        -9223372034707259263
+        -9223372036854743031
+        138
+        136
+        2147516425
+        2147483658
+        2147516555
+        -9223372036854775669
+        -9223372036854742903
+        -9223372036854743037
+        -9223372036854743038
+        -9223372036854775680
+        32778
+        -9223372034707292150
+        -9223372034707259263
+        -9223372036854742912
+        2147483649
+        -9223372034707259384
+    ]
+
+# How far the step rho rotates each lane left, by lane (FIPS 202 3.2.2).
+constant OFFSETS: [i64]
+    [0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 2, 61, 56, 14]
+
+# Where the step pi moves each lane, by lane: (x, y) goes to (y, 2x + 3y)
+# (FIPS 202 3.2.3).
+constant TARGETS: [i64]
+    [0, 10, 20, 5, 15, 16, 1, 11, 21, 6, 7, 17, 2, 12, 22, 23, 8, 18, 3, 13, 14, 24, 9, 19, 4]
+
+# The word of 64 bits `x` rotated left by `n` bits, `n` from 0 to 63.
+function rotate_left64(x: i64, n: i64) -> i64
+    if n == 0
+        return x
+    return x << n | word.shift_right(x: x, n: 64 - n)
+
+# The word of 64 bits that the eight bytes of `data` from `at` write, the
+# first byte the lowest.
+function load64_little(data: [u8] lent, at: i64) -> i64
+    return word.load32_little(data, at + 4) << 32 | word.load32_little(data, at)
+
+# The 25 lanes of a state no byte has entered, all zero.
+function empty() -> [i64]
+    lanes: [i64] @= []
+
+    while lanes.len() < 25
+        lanes @ lanes.push(0)
+
+    return lanes
+
+# Applies the 24 rounds of Keccak-f[1600] to `lanes`, the caller's 25.
+function permute(@lanes: [i64])
+    rounds = ROUNDS
+    offsets = OFFSETS
+    targets = TARGETS
+    columns: [i64] @= [0, 0, 0, 0, 0]
+    moved: [i64] @= empty()
+    round: i64 @= 0
+
+    while round < 24
+        x: i64 @= 0
+
+        while x < 5
+            columns[x] @ lanes[x] ^ lanes[x + 5] ^ lanes[x + 10] ^ lanes[x + 15] ^ lanes[x + 20]
+            x @ x + 1
+
+        x @ 0
+
+        while x < 5
+            d = columns[(x + 4) % 5] ^ rotate_left64(x: columns[(x + 1) % 5], n: 1)
+            lane: i64 @= x
+
+            while lane < 25
+                lanes[lane] @ lanes[lane] ^ d
+                lane @ lane + 5
+
+            x @ x + 1
+
+        i: i64 @= 0
+
+        while i < 25
+            moved[targets[i]] @ rotate_left64(x: lanes[i], n: offsets[i])
+            i @ i + 1
+
+        row: i64 @= 0
+
+        while row < 25
+            lanes[row] @ moved[row] ^ ~moved[row + 1] & moved[row + 2]
+            lanes[row + 1] @ moved[row + 1] ^ ~moved[row + 2] & moved[row + 3]
+            lanes[row + 2] @ moved[row + 2] ^ ~moved[row + 3] & moved[row + 4]
+            lanes[row + 3] @ moved[row + 3] ^ ~moved[row + 4] & moved[row]
+            lanes[row + 4] @ moved[row + 4] ^ ~moved[row] & moved[row + 1]
+            row @ row + 5
+
+        lanes[0] @ lanes[0] ^ rounds[round]
+        round @ round + 1
+
+# The lanes after the `rate` bytes of `data` from `at` are combined into the
+# first lanes of `lanes` and the state permuted; `rate` is a multiple of 8.
+function compress(lanes: [i64], data: [u8] lent, at: i64, rate: i64) -> [i64]
+    state @= lanes
+    i: i64 @= 0
+
+    while i < rate / 8
+        state[i] @ state[i] ^ load64_little(data, at + 8 * i)
+        i @ i + 1
+
+    permute(@state)
+    return state
+
+# The first `length` bytes the sponge gives from `lanes`, which have taken
+# their last block: `rate` bytes at a time, the state permuted between.
+function squeeze(lanes: [i64], rate: i64, length: i64) -> [u8]
+    state @= lanes
+    out: [u8] @= []
+
+    while out.len() < length
+        i: i64 @= 0
+
+        while i < rate / 8 && out.len() < length
+            word.push_little(@out, x: state[i], count: 8)
+            i @ i + 1
+
+        if out.len() < length
+            permute(@state)
+
+    return out.slice(from: 0, to: length)
+
+# The bytes of `x`, 0 or more, as FIPS SP 800-185 2.3.1's `left_encode`
+# writes them: how many bytes follow, then the bytes, the highest first.
+function left_encode(x: i64) -> [u8]
+    digits: [u8] @= []
+    rest: i64 @= x
+
+    while rest > 0 || digits.len() == 0
+        digits @ digits.push(to_u8(rest & 0xff).must())
+        rest @ rest >> 8
+
+    out: [u8] @= [to_u8(digits.len()).must()]
+    at: i64 @= digits.len() - 1
+
+    while at >= 0
+        out @ out.push(digits[at])
+        at @ at - 1
+
+    return out
+
+# What cSHAKE absorbs before its message (SP 800-185 3.3): the name and the
+# customization, each preceded by its length in bits, the whole preceded by
+# the rate and padded with zeros to a multiple of it.
+function prefix(name: [u8], custom: [u8], rate: i64) -> [u8]
+    out: [u8] @= left_encode(rate)
+
+    for b in left_encode(name.len() * 8)
+        out @ out.push(b)
+
+    for b in name
+        out @ out.push(b)
+
+    for b in left_encode(custom.len() * 8)
+        out @ out.push(b)
+
+    for b in custom
+        out @ out.push(b)
+
+    while out.len() % rate != 0
+        out @ out.push(0)
+
+    return out
+
+test "keccak constants: the round constants by FIPS 202's register, the offsets and the targets by its walk"
+    rounds: [i64] @= []
+    register: i64 @= 1
+
+    for _ in range(from: 0, to: 24)
+        constant_bits: i64 @= 0
+
+        for j in range(from: 0, to: 7)
+            if register & 1 == 1
+                constant_bits @ constant_bits | 1 << (1 << j) - 1
+            register @ register << 1
+
+            if register & 0x100 != 0
+                register @ register & 0xff ^ 0x71
+
+        rounds @ rounds.push(constant_bits)
+
+    assert rounds == ROUNDS
+    offsets: [i64] @= empty()
+    x: i64 @= 1
+    y: i64 @= 0
+
+    for t in range(from: 0, to: 24)
+        offsets[x + 5 * y] @ (t + 1) * (t + 2) / 2 % 64
+        next_y = (2 * x + 3 * y) % 5
+        x @ y
+        y @ next_y
+
+    assert offsets == OFFSETS
+    targets: [i64] @= empty()
+
+    for lane in range(from: 0, to: 25)
+        targets[lane] @ lane / 5 + 5 * ((2 * (lane % 5) + 3 * (lane / 5)) % 5)
+
+    assert targets == TARGETS
+
+# Python's `hashlib.sha3_256` answered the empty message on 2026-11-17; its
+# padding block is 0x06, zeros and 0x80 over the rate of 136 bytes.
+test "keccak compress and squeeze: the empty message of SHA3-256, and a squeeze across a permutation"
+    block: [u8] @= [0x06]
+
+    while block.len() < 135
+        block @ block.push(0)
+
+    block @ block.push(0x80)
+    lanes = compress(empty(), block, at: 0, rate: 136)
+    out = squeeze(lanes, rate: 136, length: 32)
+    assert out[0] == 0xa7 && out[1] == 0xff && out[31] == 0x4a
+    long = squeeze(lanes, rate: 136, length: 300)
+    assert long.len() == 300 && long.slice(from: 0, to: 32) == out
+
+test "keccak left_encode and prefix: 0, one byte, two bytes, and the padding to the rate"
+    assert left_encode(0) == [1, 0]
+    assert left_encode(255) == [1, 255]
+    assert left_encode(256) == [2, 1, 0]
+    assert left_encode(168) == [1, 168]
+    p = prefix(name: [], custom: [0x41], rate: 168)
+    assert p.len() == 168 && p.slice(from: 0, to: 7) == [1, 168, 1, 0, 1, 8, 0x41] && p[7] == 0

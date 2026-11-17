@@ -27,10 +27,10 @@ capability crypto/sha512  the SHA-384, SHA-512, SHA-512/224 and SHA-512/256 dige
 
 capability crypto/algorithm  a digest named as a value, its sizes, and its name read and written
   heroes  crypto.Algorithm, crypto.digest_size, crypto.block_size, crypto.format_algorithm, crypto.parse_algorithm
-  go      crypto.Hash, crypto.Hash.Size, crypto.Hash.String, crypto.Hash.HashFunc, crypto.Hash.New, crypto.Hash.Available
+  go      crypto.Hash, crypto.Hash.Size, crypto.Hash.String, crypto.Hash.HashFunc, crypto.Hash.New, crypto.Hash.Available, crypto.SHA3_224, crypto.SHA3_256, crypto.SHA3_384, crypto.SHA3_512
   rust    -
   python  hashlib.new, hashlib.algorithms_guaranteed, hashlib.algorithms_available
-  note    the names are Python's, `sha512_256`; Go's `String` writes `SHA-512/256`, which `parse_algorithm` does not read, and Python's `new` also takes upper case. Every algorithm is always available here, so Go's `Available` and Python's two sets are the variant's cases
+  note    the names are Python's, `sha512_256`, `sha3_256`; Go's `String` writes `SHA-512/256`, which `parse_algorithm` does not read, and Python's `new` also takes upper case. Every algorithm is always available here, so Go's `Available` and Python's two sets are the variant's cases. Since 2026-11-17 the four SHA-3 digests are cases of `Algorithm` too, their block their rate (144, 136, 104, 72) as Python's `block_size` answers, so the HMAC, HKDF and PBKDF2 over SHA-3 come from the same functions; Python's `hmac` and `pbkdf2_hmac` answered them alike. Go's `BLAKE2b_256` and its kin name a digest of `golang.org/x/crypto`, outside the standard library; BLAKE2 has its own functions here, below
 
 capability crypto/steps  a digest or an HMAC fed piece by piece and read at any moment
   heroes  crypto.start, crypto.update, crypto.update_text, crypto.digest
@@ -80,23 +80,39 @@ capability crypto/pbkdf2  a key derived from a password by PBKDF2
   python  hashlib.pbkdf2_hmac
   note    RFC 6070's and RFC 7914's first cases answered as Python did; no iterations fail `invalid` as Python refuses them, where Go answered a key, since RFC 8018 asks a positive count; a length of 0 fails as both refuse it
 
-capability crypto/sha3  the SHA-3 digests and the SHAKE functions
-  heroes  pending
-  go      sha3.Sum224, sha3.Sum256, sha3.Sum384, sha3.Sum512, sha3.SumSHAKE128, sha3.SumSHAKE256, sha3.SHA3, sha3.New224, sha3.New256, sha3.New384, sha3.New512, sha3.SHA3.BlockSize, sha3.SHA3.Reset, sha3.SHA3.Size, sha3.SHA3.Sum, sha3.SHA3.Write, sha3.SHAKE, sha3.NewSHAKE128, sha3.NewSHAKE256, sha3.NewCSHAKE128, sha3.NewCSHAKE256, sha3.SHAKE.BlockSize, sha3.SHAKE.Read, sha3.SHAKE.Reset, sha3.SHAKE.Write
+capability crypto/sha3  the SHA-3 digests, at once or in steps
+  heroes  crypto.sha3_224, crypto.sha3_224_text, crypto.sha3_256, crypto.sha3_256_text, crypto.sha3_384, crypto.sha3_384_text, crypto.sha3_512, crypto.sha3_512_text, crypto.start
+  go      sha3.Sum224, sha3.Sum256, sha3.Sum384, sha3.Sum512, sha3.SHA3, sha3.New224, sha3.New256, sha3.New384, sha3.New512, sha3.SHA3.BlockSize, sha3.SHA3.Reset, sha3.SHA3.Size, sha3.SHA3.Sum, sha3.SHA3.Write
   rust    -
-  python  hashlib.sha3_224, hashlib.sha3_256, hashlib.sha3_384, hashlib.sha3_512, hashlib.shake_128, hashlib.shake_256
+  python  hashlib.sha3_224, hashlib.sha3_256, hashlib.sha3_384, hashlib.sha3_512
+  note    FIPS 202's examples ("abc" and 200 bytes 0xa3), the empty message and a chain over every length from 0 to 300 that crosses each rate's edges answered as Python did on 2026-11-17; Keccak's round constants and offsets are computed again by a test from FIPS 202's register and walk. In steps they are `start(.sha3_256)` and the rest of `crypto/steps`
 
-capability crypto/blake2  the BLAKE2b and BLAKE2s digests, keyed or not
-  heroes  pending
+capability crypto/shake  SHAKE128 and SHAKE256 read to any length, and cSHAKE under a name and a customization
+  heroes  crypto.shake128, crypto.shake256, crypto.Shake, crypto.ShakeState, crypto.start_shake, crypto.start_cshake, crypto.update_shake, crypto.digest_shake
+  go      sha3.SumSHAKE128, sha3.SumSHAKE256, sha3.SHAKE, sha3.NewSHAKE128, sha3.NewSHAKE256, sha3.NewCSHAKE128, sha3.NewCSHAKE256, sha3.SHAKE.BlockSize, sha3.SHAKE.Read, sha3.SHAKE.Reset, sha3.SHAKE.Write
+  rust    -
+  python  hashlib.shake_128, hashlib.shake_256
+  note    each read answers the output from its first byte, as Python's `digest(length)` does, where Go's `Read` goes on from the last read; a longer read begins with a shorter one, so Go's two reads are one read of their sum. A negative length is `invalid`, as Python refuses it. cSHAKE answered SP 800-185's samples 1 and 4 and a named case as Go did on 2026-11-17; with an empty name and customization it is SHAKE, as both standard and Go say. Python offers no cSHAKE
+
+capability crypto/blake2  the BLAKE2b and BLAKE2s digests, keyed or not, with a size, a salt and a personalization, at once or in steps
+  heroes  crypto.blake2b, crypto.blake2s, crypto.Blake2, crypto.Blake2State, crypto.start_blake2, crypto.update_blake2, crypto.digest_blake2, crypto.format_blake2
   go      -
   rust    -
-  python  hashlib.blake2b, hashlib.blake2s
+  python  hashlib.blake2b, hashlib.blake2s, hashlib.blake2b.MAX_DIGEST_SIZE, hashlib.blake2b.MAX_KEY_SIZE, hashlib.blake2b.PERSON_SIZE, hashlib.blake2b.SALT_SIZE, hashlib.blake2s.MAX_DIGEST_SIZE, hashlib.blake2s.MAX_KEY_SIZE, hashlib.blake2s.PERSON_SIZE, hashlib.blake2s.SALT_SIZE
+  note    RFC 7693's examples and its appendix E's grand hashes (every size over inputs that cross the blocks' edges, keyed and not) answered as Python did on 2026-11-17, and so did a size, key, salt and personalization together; Python's size constants are the ranges `start_blake2` states and checks, refusing what Python refuses. Python's `usedforsecurity` is dropped: every function here is for security or says it is not. Go's BLAKE2 is in `golang.org/x/crypto`, outside its standard library
+
+capability crypto/blake2-tree  BLAKE2's tree mode: fanout, depth, leaf size, node offset and depth, inner size, the last node
+  heroes  refused: the tree mode serves a program that hashes in parallel and builds its own tree; nothing in Rebel does, no vector of RFC 7693 covers it, and the sequential mode's parameters, which every use above needs, are offered whole
+  go      -
+  rust    -
+  python  hashlib.blake2b (fanout, depth, leaf_size, node_offset, node_depth, inner_size, last_node), hashlib.blake2s (the same)
 
 capability crypto/scrypt  a key derived from a password by scrypt
-  heroes  pending
+  heroes  crypto.scrypt, crypto.MOST_MEMORY
   go      -
   rust    -
   python  hashlib.scrypt
+  note    RFC 7914's vectors 1 to 3 and its Salsa20/8 vector answered as Python did on 2026-11-17 (vectors 2 and 3, 1 MiB × 16 and 16 MiB: the test run of the whole package grew from 9.65 s to 14.33 s of wall when they and their checks came in); vector 4 asks 1 GiB and runs nowhere here. Python's `maxmem` (32 MiB by default, OpenSSL's) is the constant `MOST_MEMORY`, 2 GiB, over 128 × r × (n + p) bytes, so vector 4 is allowed and a call cannot ask without bound; every refusal of Python's (n no power of two, n not below 2^(16r), r × p from 2^30, a length of 0) is one here. Go's is `golang.org/x/crypto/scrypt`, outside its standard library
 
 capability crypto/file-digest  the digest of a stream or a file
   heroes  crypto.update
@@ -111,6 +127,34 @@ capability crypto/ciphers  encryption, decryption, signatures and key agreement
   rust    -
   python  -
   note    Go's packages `crypto/aes`, `cipher`, `des`, `rc4`, `rsa`, `dsa`, `ecdsa`, `ed25519`, `ecdh`, `elliptic`, `mlkem`, `tls` and `x509` stand here whole; `subtle`'s selections serve the writing of such code. Refused for a cipher written in Heroes, and only for that: since 2026-11-17 `crypto/seal` (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305) and `crypto/keypairs` (Ed25519, ECDSA on P-256 and P-384, RSA-PSS and PKCS #1 v1.5 signatures, RSA-OAEP, X25519 and ECDH, keys as PKCS #8, SPKI, PEM and raw bytes) give these capabilities from the system's own cryptography: Linux's OpenSSL 3 offers them all; macOS offers neither sealing, nor Ed25519, nor X25519 to C (pending there, measured: CommonCrypto has no authenticated mode, `SecKey` no Curve25519 key, CryptoKit is Swift's alone); Windows' CNG has no Ed25519, and its X25519 is pending until the box measures its byte orders; the Windows arm is unrun (the box was off)
+
+capability crypto/blake3  the BLAKE3 hash, keyed hash and key derivation, read to any length and from any offset
+  heroes  crypto.blake3, crypto.blake3_keyed, crypto.blake3_derive_key, crypto.Blake3State, crypto.start_blake3, crypto.start_blake3_keyed, crypto.start_blake3_derive_key, crypto.update_blake3, crypto.digest_blake3, crypto.digest_blake3_from
+  go      -
+  rust    -
+  python  -
+  note    none of the three standard libraries has BLAKE3; Zig's `std.crypto.hash.Blake3` does, and the yardstick is its behaviour and the BLAKE3 team's own crate's names (`hash`, `keyed_hash`, `derive_key`, `OutputReader::set_position` as `digest_blake3_from`). All 35 cases of the official `test_vectors.json` (fetched 2026-11-17) pass in all three modes to 131 bytes, and Zig answered three of them alike; a key that is not 32 bytes is `invalid`, where the crate's type takes only 32
+
+capability crypto/argon2  a password hashed, or a key derived, by Argon2d, Argon2i or Argon2id, with a secret and associated data
+  heroes  crypto.argon2, crypto.Argon2, crypto.Argon2Params, crypto.argon2_low_memory, crypto.argon2_high_memory, crypto.MOST_MEMORY
+  go      -
+  rust    -
+  python  -
+  note    RFC 9106's three vectors and eight more cases (two lanes, segments past 128 blocks, memory no multiple of 4 × lanes, a tag past 64 bytes, the smallest memory and tag, version 16) answered as OpenSSL 4.1's `kdf ARGON2*` did on 2026-11-17; the lanes are computed one after another, which answers what threads would. The bounds are RFC 9106's but the memory, which is `MOST_MEMORY` (2 GiB, RFC 9106's first recommendation exactly). Python's standard library has none (`argon2-cffi` is not of it; its profiles `RFC_9106_LOW_MEMORY` and `RFC_9106_HIGH_MEMORY` are the two functions here), nor Go's (`golang.org/x/crypto/argon2`), nor Rust's
+
+capability crypto/bcrypt  a password hashed by bcrypt, its cost and the limit of 72 bytes said
+  heroes  crypto.hash_bcrypt, crypto.verify_bcrypt, crypto.parse_bcrypt_cost
+  go      -
+  rust    -
+  python  -
+  note    OpenBSD's and Solar Designer's classic vectors, which Apache's `htpasswd -vb` accepted, verify; Zig's `bcrypt` answered the hashes of five passwords under one salt, and `htpasswd -bnBC` and Zig's `strHash` wrote strings that verify, on 2026-11-17. A password past 72 bytes is `invalid` (Go's `x/crypto` and Python's `bcrypt` 5 refuse it; OpenBSD's cut it in silence), and so is a zero byte, at which OpenBSD's stops and Go's does not. `$2a$`, `$2b$` and `$2y$` are read, `$2b$` written; the whole string is made again and compared in constant time, as OpenBSD's does, so a salt written with stray low bits does not verify. The salt is the caller's, 16 bytes. Go's `bcrypt.MinCost`, `MaxCost` and `DefaultCost` are 4, 31 and 10, the range `hash_bcrypt` states; none of the three standard libraries has bcrypt
+
+capability crypto/password-strings  a password's hash stored as a string and verified against it
+  heroes  crypto.hash_argon2, crypto.verify_argon2, crypto.parse_argon2, crypto.hash_bcrypt, crypto.verify_bcrypt, crypto.parse_bcrypt_cost
+  go      -
+  rust    -
+  python  -
+  note    Argon2's PHC string (`$argon2id$v=19$m=..,t=..,p=..$salt$tag`, base 64 with no padding) as the reference implementation writes it; strings Zig wrote in the three types verify, a string with no `v=` is version 16 as the reference reads it, and every part read from a stored string is bounded before anything is allocated, its memory by `MOST_MEMORY`. `parse_argon2` and `parse_bcrypt_cost` answer what a hash was made with, which `argon2-cffi`'s `check_needs_rehash` and Go's `bcrypt.Cost` ask. No salt is made here: `crypto` stands on no C, and the salt comes from `random` or `os.random_bytes`. A secret and associated data have no field in the string, so `hash_argon2` takes neither
 
 dropped registry  Go's table of hash constructors filled at start-up: there are no mutable globals, and `Algorithm` is closed
   go      crypto.RegisterHash

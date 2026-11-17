@@ -420,11 +420,33 @@ capability client/proxy  a request sent through a proxy
   python  urllib.request.ProxyHandler, getproxies, getproxies_environment, getproxies_macosx_sysconf, proxy_bypass, proxy_bypass_environment, proxy_bypass_macosx_sysconf, requests' proxies, requests.exceptions.ProxyError, requests.Session.rebuild_proxies, trust_env
   note    an https:// request through a proxy is a CONNECT tunnel with TLS over it, which needs `tls.client_over`, unsupported on macOS
 
-capability client/streaming  a body read or sent as it comes, not held whole
-  heroes  pending
-  go      net/http.Response.Body as a reader, net/http.Request.Body, net/http.NoBody, net/http.Request.GetBody
+capability client/streaming-read  a response's body read as it comes, not held whole
+  heroes  http.read_response_head, http.BodyReader, http.body_reader, http.read_piece
+  go      net/http.Response.Body as a reader
   rust    -
   python  requests' stream argument, requests.Response.iter_content, iter_lines, raw, close, http.client.HTTPResponse.read with an amount, urllib.request.urlretrieve, urlcleanup, requests.exceptions.StreamConsumedError, ChunkedEncodingError
+  note    on a connection the program holds, as `round_trip`'s: `write_request`, then the head alone, then pieces of a length, of chunks or to the connection's end, a piece answering what the reader holds without waiting for more; no bound on the whole body, which is the point, a chunk's line bounded at 4,096 bytes and its trailer by `field_count`; a `Content-Encoding` is not undone as it comes; lines are `iter_lines`' work, done by `io` over the pieces the program keeps
+
+capability client/streaming-send  a request's body sent as it is made, not held whole
+  heroes  pending
+  go      net/http.Request.Body, net/http.NoBody, net/http.Request.GetBody
+  rust    -
+  python  http.client.HTTPConnection.request's encode_chunked with an iterable, requests' generator body
+  note    a request is written whole by `write_request`; a head with chunks to follow, and the chunks, wait
+
+capability client/event-stream  server-sent events read by a client as they come, as a browser's EventSource reads them
+  heroes  http.Event, http.EventReader, http.event_reader, http.read_event, http.events_of
+  go      -
+  rust    -
+  python  -
+  note    none of the three offers it; the WHATWG HTML standard's algorithm (9.2.6), observed with Node 26's EventSource (undici, `--experimental-eventsource`) on 2026-11-17 over three streams of every line end, a byte order mark twice, comments, `retry` not digits, an `id` with a zero byte, a carriage return and its line feed in two pieces, and an event left unfinished; status 200 and `text/event-stream` asked as EventSource asks them, a `Content-Encoding` refused `unsupported`; `retry_ms` starts at 3,000, Chrome's wait; reconnecting with `Last-Event-ID` after `retry_ms` is the program's, since no thread or timer runs here; an event's lines bounded by `body_bytes`
+
+capability server/streaming  a response's body written as it is made, each write at once
+  heroes  http.write_response_head
+  go      net/http.Flusher, net/http.ResponseController.Flush, a ResponseWriter written without Content-Length
+  rust    -
+  python  http.server.BaseHTTPRequestHandler.wfile written as it goes
+  note    the body runs to the connection's end under `Connection: close` (RFC 9112 6.3, its eighth rule), since a request `next_request` read keeps no version and chunks are refused to HTTP/1.0 (RFC 9112 6.1); `io.write` holds no buffer, so nothing is flushed; in a program's own loop, which closes the connection to end the body
 
 capability server/https  a server over TLS
   heroes  http.serve_tls, http.serve_stream
@@ -518,7 +540,7 @@ capability date/parse  an HTTP date read in its three forms
   note    Go reads the three as one instant, 784111777, and so does this (observed)
 
 dropped  an interface, an error type or a context: Heroes has none, a failure is a code and a message (README § A4)
-  go      net/http.ErrNotSupported, ErrBodyNotAllowed, ErrAbortHandler, ErrBodyReadAfterClose, ErrHandlerTimeout, ErrLineTooLong, ErrNoCookie, ErrNoLocation, ErrSkipAltProtocol, ServerContextKey, LocalAddrContextKey, ProtocolError.Error, ProtocolError.Is, MaxBytesError.Error, Request.Context, Request.WithContext, NewRequestWithContext, ResponseWriter, Flusher, Hijacker, CloseNotifier, Pusher, PushOptions, ResponseController and its EnableFullDuplex, Flush, Hijack, SetReadDeadline, SetWriteDeadline, HandlerFunc.ServeHTTP, ConnState.String
+  go      net/http.ErrNotSupported, ErrBodyNotAllowed, ErrAbortHandler, ErrBodyReadAfterClose, ErrHandlerTimeout, ErrLineTooLong, ErrNoCookie, ErrNoLocation, ErrSkipAltProtocol, ServerContextKey, LocalAddrContextKey, ProtocolError.Error, ProtocolError.Is, MaxBytesError.Error, Request.Context, Request.WithContext, NewRequestWithContext, ResponseWriter, Hijacker, CloseNotifier, Pusher, PushOptions, ResponseController and its EnableFullDuplex, Hijack, SetReadDeadline, SetWriteDeadline, HandlerFunc.ServeHTTP, ConnState.String
   rust    -
   python  http.client.HTTPException, NotConnected, InvalidURL, UnknownProtocol, UnknownTransferEncoding, UnimplementedFileMode, IncompleteRead, ImproperConnectionState, CannotSendRequest, CannotSendHeader, ResponseNotReady, BadStatusLine, RemoteDisconnected, error, urllib.request.URLError, ContentTooShortError, requests.exceptions.RequestException, HTTPError, ConnectionError, URLRequired, TooManyRedirects, MissingSchema, InvalidSchema, InvalidURL, InvalidHeader, UnrewindableBodyError, JSONDecodeError, requests.auth.AuthBase, requests.hooks
 

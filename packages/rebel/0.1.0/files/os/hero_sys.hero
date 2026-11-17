@@ -51,6 +51,7 @@ extern "hero_sys.h"
     function hero_sys_user_name(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_process_times(@user_ns: i64, @system_ns: i64) -> i64
     function hero_sys_load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
+    function hero_sys_memory(@total: i64, @available: i64) -> i64
     function hero_sys_last_error() -> i64
     function hero_sys_last_os_error() -> i64
 
@@ -169,6 +170,13 @@ function process_times(@user_ns: i64, @system_ns: i64) -> i64
 # Windows. The three are left as they were where it fails.
 function load_average(@one: i64, @five: i64, @fifteen: i64) -> i64
     return hero_sys_load_average(one: @one, five: @five, fifteen: @fifteen)
+
+# 0, once `total` holds the bytes of memory the machine has and `available`
+# the bytes it could give programs now without writing anything out, never
+# above `total`, or -1 with the two left as they were: `HERO_SYS_UNSUPPORTED`
+# on a POSIX system neither Darwin nor Linux.
+function memory(@total: i64, @available: i64) -> i64
+    return hero_sys_memory(total: @total, available: @available)
 
 # The kind of the last call's failure on this thread. It is `HERO_SYS_OK`
 # after a call that did not fail.
@@ -442,3 +450,20 @@ test "load_average: three averages at or above 0, or on Windows -1 with HERO_SYS
     else
         assert answer == 0 && kind == HERO_SYS_OK
         assert one >= 0 && five >= 0 && fifteen >= 0
+
+test "memory: a total above 0, the available above 0 and never above it, twice, or -1 with HERO_SYS_UNSUPPORTED and the two left as they were"
+    total: i64 @= -1
+    available: i64 @= -1
+    answer = memory(total: @total, available: @available)
+    kind = last_error()
+
+    if system() == HERO_SYS_SYSTEM_OTHER
+        assert answer == -1 && kind == HERO_SYS_UNSUPPORTED
+        assert total == -1 && available == -1
+    else
+        assert answer == 0 && kind == HERO_SYS_OK
+        assert total > 0 && available > 0 && available <= total
+        again_total: i64 @= -1
+        again_available: i64 @= -1
+        assert memory(total: @again_total, available: @again_available) == 0
+        assert again_total > 0 && again_available > 0 && again_available <= again_total

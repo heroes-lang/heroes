@@ -1,0 +1,115 @@
+# The acts a key asks of a line being edited, and the keys that ask them:
+# Ctrl and a letter, the sequences of Ctrl and Alt with an arrow, and Alt and
+# a letter, which a terminal sends as Escape then the letter.
+
+# What a key asks of the line.
+variant Act
+    # A character typed, put in at the cursor.
+    insert
+        # The character, one, as UTF-8.
+        text: str
+    # Left and Ctrl-B: back one character.
+    back_char
+    # Right and Ctrl-F: on one character.
+    forward_char
+    # Home and Ctrl-A: to the start.
+    line_start
+    # End and Ctrl-E: to the end.
+    line_end
+    # Alt-B and Ctrl-Left: back to the start of a word.
+    back_word
+    # Alt-F and Ctrl-Right: on to the end of a word.
+    forward_word
+    # Backspace: the character before the cursor taken out.
+    delete_back
+    # Delete: the character at the cursor taken out.
+    delete_here
+    # Ctrl-D: the end of the input on an empty line, else Delete.
+    end_or_delete
+    # Ctrl-K: from the cursor to the end killed.
+    kill_to_end
+    # Ctrl-U: from the start to the cursor killed.
+    kill_to_start
+    # Ctrl-W: back to the last space killed.
+    kill_back_spaced
+    # Alt-Backspace: back to the start of a word killed.
+    kill_back_word
+    # Alt-D: on to the end of a word killed.
+    kill_forward_word
+    # Ctrl-Y: the text killed last put in at the cursor.
+    yank
+    # Up and Ctrl-P: the line entered before the one shown.
+    older
+    # Down and Ctrl-N: the line entered after the one shown.
+    newer
+    # Enter.
+    enter
+    # Ctrl-C.
+    interrupt
+    # Ctrl-L: the screen cleared and the line drawn again at its top.
+    redraw
+    # Tab.
+    complete
+    # Escape: the next key is read with Alt, as a terminal sends Alt and a
+    # letter (`ESC` then the letter), GNU Readline's Meta prefix.
+    meta
+    # A key that does nothing to a line.
+    nothing
+
+# The act of Ctrl and `letter`, a lower-case letter.
+function control_act(letter: str) -> Act
+    return match letter
+        "a" => .line_start
+        "b" => .back_char
+        "c" => .interrupt
+        "d" => .end_or_delete
+        "e" => .line_end
+        "f" => .forward_char
+        "k" => .kill_to_end
+        "l" => .redraw
+        "n" => .newer
+        "p" => .older
+        "u" => .kill_to_start
+        "w" => .kill_back_spaced
+        "y" => .yank
+        _   => .nothing
+
+# The act of a key sent as bytes the face names nothing for: Ctrl or Alt
+# with Left or Right, and Ctrl with Delete, as xterm sends them. Alt and a
+# letter come as Escape and the letter, which `meta_of` reads.
+function escaped_act(b: [u8]) -> Act
+    if b == [27, '[', '1', ';', '5', 'D'] || b == [27, '[', '1', ';', '3', 'D']
+        return .back_word
+
+    if b == [27, '[', '1', ';', '5', 'C'] || b == [27, '[', '1', ';', '3', 'C']
+        return .forward_word
+
+    if b == [27, '[', '3', ';', '5', '~']
+        return .kill_forward_word
+    return .nothing
+
+# What `act` asks with Alt held, the key after an Escape: Alt-B and Alt-F a
+# word back and on, Alt-D a word killed on and Alt-Backspace back, any other
+# key as itself.
+function meta_of(act: Act) -> Act
+    return match act
+        .insert c =>
+            if c.text == "b" || c.text == "B"
+                .back_word
+            else if c.text == "f" || c.text == "F"
+                .forward_word
+            else if c.text == "d" || c.text == "D"
+                .kill_forward_word
+            else
+                act
+        .delete_back                                                                         => .kill_back_word
+        .back_char | .forward_char | .line_start | .line_end | .back_word | .forward_word    => act
+        .delete_here | .end_or_delete | .kill_to_end | .kill_to_start | .kill_back_spaced    => act
+        .kill_back_word | .kill_forward_word | .yank | .older | .newer | .enter | .interrupt => act
+        .redraw | .complete | .meta | .nothing                                               => act
+
+test "acts control_act and escaped_act: the letters and sequences named, and the rest nothing"
+    assert control_act("a") == .line_start && control_act("w") == .kill_back_spaced && control_act("z") == .nothing
+    assert escaped_act([27, '[', '1', ';', '5', 'D']) == .back_word && escaped_act([27, '[', '1', ';', '5', 'C']) == .forward_word
+    assert escaped_act([27, '[', '3', ';', '5', '~']) == .kill_forward_word
+    assert escaped_act([27, 'b']) == .nothing && escaped_act([]) == .nothing

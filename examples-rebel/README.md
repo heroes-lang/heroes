@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eight packages, in layers. **A package may use any package of a layer below
+A hundred and eighteen packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -52,6 +52,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms; complex numbers as a record | `math` |  |
+| 1 | `containers/trie` | a prefix tree of texts to values: prefixes, the longest prefix of a text | `lists` |  |
+| 1 | `containers/disjoint` | union-find: sets merged and asked whether two values are in one | `lists` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
 | 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
@@ -64,10 +66,12 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `semver` | versions (SemVer 2.0.0) compared, and ranges as Cargo reads them | `strings` |  |
 | 2 | `diff` | the differences of two lists or texts, as values and as unified output, and their similarity | `lists`, `strings`, `unicode` |  |
 | 2 | `pem` | PEM blocks read and written, their labels and headers | `bytes`, `strings` |  |
-| 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `unicode`, `bytes` |  |
+| 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `bytes`, `unicode` |  |
 | 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `strings` | `hero_keyring.h` |
 | 2 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
+| 2 | `scanner` | a configurable lexer: identifiers, numbers, strings, comments, each token with its place | `strings`, `unicode`, `numbers` |  |
+| 2 | `property` | property-based testing: generated cases, a seed that reproduces, the failing case shrunk | `random`, `lists` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
@@ -80,11 +84,12 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `strings`, `unicode` |  |
 | 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `io`, `hash` |  |
 | 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `url` |  |
-| 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `json`, `regex`, `url`, `numbers` |  |
-| 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json` |  |
-| 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `regex` |  |
+| 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
+| 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
+| 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
+| 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR, MessagePack and XML read into one | `json`, `regex`, `numbers`, `bytes` |  |
 | 4 | `ipc` | communication between processes of one machine: a local channel by name, shared memory, a lock and a semaphore between processes | `bytes`, `io`, `os`, `process`, `threads` | `hero_ipc.h` |
-| 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
+| 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into and written from a `json.Value`, bytes and extensions kept | `bytes`, `json`, `lists`, `time` |  |
 | 4 | `poll` | waiting on many streams, sockets and timers at once, and being told which are ready | `io`, `net`, `time` | `hero_poll.h` |
 | 4 | `tls` | TLS client and server as an `io.Stream`, certificates checked by the system's own store: SChannel on Windows, Apple's Security framework on macOS, OpenSSL on Linux | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time` | `hero_tls.h` |
@@ -100,9 +105,10 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `bytes`, `hash`, `io`, `numbers`, `os`, `strings`, `time` |  |
 | 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `big`, `bytes`, `lists`, `math`, `numbers`, `time`, `unicode` |  |
 | 4 | `i18n` | message catalogs (gettext), plural rules, numbers and dates written for a language, text ordered for a language, from CLDR; its tables in subpackages | `unicode`, `time`, `strings`, `numbers` |  |
-| 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `net`, `bytes`, `strings`, `time` |  |
+| 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `bytes`, `io`, `net`, `os`, `strings`, `threads` |  |
 | 4 | `serial` | serial ports listed, opened, set and read and written as a stream | `io`, `time` | `hero_serial.h` |
 | 4 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `json`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `time` |  |
+| 4 | `bench` | a function measured: warm-up, rounds, median and spread, two versions compared | `stats`, `time` |  |
 | 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
@@ -117,7 +123,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `sql`, `bytes`, `strings`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `net`, `tls`, `strings` |  |
-| 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `json`, `toml`, `yaml`, `ini`, `flags`, `os`, `fs` |  |
+| 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `nats` | a NATS client: publish, subscribe, request and reply, over TLS | `net`, `tls`, `json`, `time` |  |
 | 5 | `mqtt` | an MQTT 3.1.1 and 5 client, every quality of service | `net`, `tls`, `time`, `bytes` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `net`, `tls`, `bytes`, `time` |  |
@@ -132,7 +138,11 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 6 | `pdf` | PDF documents written (text, standard fonts, images, simple tables) and their text read | `compress`, `bytes`, `image`, `time` |  |
 | 6 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `http`, `crypto`, `xml`, `time`, `url` |  |
 | 6 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `json`, `io`, `http` |  |
+| 6 | `jobs` | background jobs kept in PostgreSQL or Redis, claimed by workers, retried, scheduled | `sql/postgres`, `json`, `time` |  |
+| 6 | `tracing` | spans with their context propagated in HTTP requests, exported by OpenTelemetry | `http`, `protobuf`, `random`, `time` |  |
 | 7 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `jsonrpc`, `json`, `http`, `io` |  |
+| 7 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `json`, `json/schema`, `yaml`, `http`, `web` |  |
+| 7 | `graphql` | GraphQL documents and schemas parsed, validated and executed, the program resolving each field | `json`, `http`, `web` |  |
 
 **The types other packages name**, each owned by one package and named
 qualified everywhere else, never redefined:

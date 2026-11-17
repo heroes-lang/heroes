@@ -1,5 +1,5 @@
 # The network: TCP connections and listeners, UDP datagrams, names looked up,
-# and addresses as values. An address is a `net.Address`, IPv4 or IPv6 over
+# an echo asked by ICMP (`ping`), and addresses as values. An address is a `net.Address`, IPv4 or IPv6 over
 # its bytes, with a port where one belongs, and every function on addresses
 # is pure: it parses, writes, classifies and compares without touching the
 # network. A connection's bytes are read and written through its `io.Stream`
@@ -32,6 +32,7 @@ use net/hero_net
 use net/internal/adapters
 use net/internal/classes
 use net/internal/control
+use net/internal/echo
 use net/internal/failure
 use net/internal/format
 use net/internal/hosts
@@ -93,6 +94,11 @@ constant DOES_NOT_FIT: str
 # the host among them. The message carries the system's own number.
 constant FAILED: str
     failure.FAILED
+
+# This system has no such thing for a program: `ping`'s ICMP socket, where
+# the system lets no program without privileges make one of that family.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
 
 ## Addresses
 
@@ -1226,6 +1232,61 @@ function interfaces() -> [Interface]?
 
     return ok(answer)
 
+## Ping
+
+# What a host answered one echo `ping` sent it: who replied, how long the
+# round trip took, and what the reply held. Built by `ping`.
+record Echo
+    # The address the reply came from, without a port: the host's own, since
+    # a router's word that the host cannot be reached fails `failed`.
+    from: Address
+    # The round trip, in nanoseconds, from just before the request left to
+    # the reply read, on a clock that never goes back; above 0.
+    nanoseconds: i64
+    # The reply's time to live (IPv4) or hop limit (IPv6), 0 to 255: what the
+    # routers on the way left of the sender's count; -1 where the system does
+    # not say, IPv6 on Windows.
+    ttl: i64
+    # The reply's bytes, its 8-byte ICMP header and its data, as the system's
+    # `ping` counts them: the size asked plus 8.
+    bytes: i64
+    # The sequence number the echo carried, as it was asked.
+    sequence: i64
+
+# One ICMP echo sent to `host` and its reply, waited for `timeout_ms` at
+# most: what the system's `ping` does once, without privileges.
+#
+# - `host`: an address without brackets, with its zone where it has one, or
+#   a name, whose first address in the resolver's order is pinged; "" or a
+#   zero byte fails `invalid`.
+# - `sequence`: the echo's sequence number, 0 to 65535, which the reply
+#   carries back; a program pinging again counts it up, as `ping` does.
+#   Windows chooses its own and the answer carries the one asked.
+# - `size`: the bytes of data the echo carries, 0 to 65507, each the byte of
+#   its index modulo 256; `ping`'s default is 56. A system refuses more than
+#   it sends in one echo: Darwin 9,000 to a program without privileges.
+# - `timeout_ms`: milliseconds the reply is waited for, 1 to 2,147,483,647;
+#   an echo always has a limit, since a host may never answer.
+#
+# Fails `timeout` where no reply came in time; `failed` where no route
+# reaches the host, or a router answered that it cannot be reached or that
+# the echo expired on its way; `permission` where the system refuses the
+# program an ICMP socket, which Linux does where the program's group is
+# outside `net.ipv4.ping_group_range`, every group on several distributions;
+# `unsupported` where the system has no such socket for the family;
+# `not_found` where the name has no address; `invalid` as said above and
+# for an echo longer than the system sends; `stopped` where the stop is
+# asked, which on Windows ends the wait only before it begins; `limit`.
+#
+# No raw socket and no privilege: a datagram socket of the ICMP protocol on
+# Darwin and Linux, the system's echo calls on Windows. The name's lookup
+# is the resolver's and is not bounded by `timeout_ms`. See also `lookup`.
+function ping(host: str, sequence: i64, size: i64, timeout_ms: i64) -> Echo?
+    a = echo.ping(host, sequence: sequence, size: size, timeout_ms: timeout_ms)?
+    return ok(
+        Echo(from: Address(bytes: a.from.bytes, zone: a.from.zone, has_port: false, port: 0), nanoseconds: a.nanoseconds, ttl: a.ttl, bytes: a.bytes, sequence: a.sequence)
+    )
+
 ## The stop
 
 # Makes Ctrl-C and SIGTERM, on Windows Ctrl-C, Ctrl-Break and the console
@@ -1878,3 +1939,10 @@ test "interfaces: the loopback interface found"
             found @ true
 
     assert found
+
+# One echo to the machine itself, as `ping -c 1 127.0.0.1` sends it, within
+# a second; a system that refuses a program an ICMP socket says so.
+test "ping: the loopback answers 64 bytes"
+    match ping("127.0.0.1", sequence: 0, size: 56, timeout_ms: 1000)
+        .ok e  => assert e.bytes == 64 && format_address(e.from) == "127.0.0.1"
+        .err e => assert e.code == PERMISSION || e.code == UNSUPPORTED

@@ -1,0 +1,299 @@
+# BLAKE3, from its specification (2020-01-09): the input cut into chunks of
+# 1024 bytes, each chunk compressed block by block into a chaining value,
+# the chunks' values joined pairwise up a binary tree, and the root's output
+# read to any length. Words are of 32 bits, held in `i64`s. A block is held
+# back until a byte after it comes, since the last block of a chunk and the
+# root are compressed with flags of their own; the tree's open subtrees wait
+# on a stack of chaining values, eight words each, popped by a depth and
+# never by a slice.
+
+use crypto/internal/orders
+use crypto/internal/sha256
+use crypto/internal/word
+
+# The flag of a chunk's first block.
+constant CHUNK_START: i64
+    1
+
+# The flag of a chunk's last block.
+constant CHUNK_END: i64
+    2
+
+# The flag of a node joining two chaining values.
+constant PARENT: i64
+    4
+
+# The flag of the root's output.
+constant ROOT: i64
+    8
+
+# The flag of every compression of the keyed hash.
+constant KEYED_HASH: i64
+    16
+
+# The flag of every compression over a derivation's context.
+constant DERIVE_KEY_CONTEXT: i64
+    32
+
+# The flag of every compression over a derivation's key material.
+constant DERIVE_KEY_MATERIAL: i64
+    64
+
+# The work of a BLAKE3 hash, fed piece by piece.
+record Run
+    # The key's eight words: the starting words for a plain hash, the key's
+    # for a keyed one, the context's hash for a derivation.
+    key: [i64]
+    # The mode's flag, 0, `KEYED_HASH` or `DERIVE_KEY_MATERIAL`.
+    flags: i64
+    # The chaining value of the chunk being fed.
+    cv: [i64]
+    # The number of that chunk, from 0.
+    chunk: i64
+    # How many of its blocks were compressed.
+    blocks: i64
+    # The bytes of its block not yet compressed, up to 64.
+    pending: [u8]
+    # The chaining values of the subtrees still open, eight words each.
+    stack: [i64]
+    # How many values `stack` holds; the words past them are stale.
+    depth: i64
+
+# The words that `count` × 4 bytes of `data` from `at` write, zero past its
+# end, each the lowest byte first.
+function words_of(data: [u8] lent, at: i64, count: i64) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < count
+        if at + 4 * i + 4 <= data.len()
+            out @ out.push(word.load32_little(data, at + 4 * i))
+        else
+            w: i64 @= 0
+            k: i64 @= 3
+
+            while k >= 0
+                w @ w << 8
+
+                if at + 4 * i + k < data.len()
+                    w @ w | to_i64(data[at + 4 * i + k]).must()
+                k @ k - 1
+
+            out @ out.push(w)
+        i @ i + 1
+
+    return out
+
+# The sixteen words BLAKE3's compression answers for the chaining value
+# `cv`, the message words `m`, the 64-bit `counter`, the block's length in
+# bytes and its `flags`.
+function compress(cv: [i64] lent, m: [i64] lent, counter: i64, length: i64, flags: i64) -> [i64]
+    schedule = orders.SCHEDULE
+    mixed = orders.MIXED
+    v: [i64] @= cv
+    start = sha256.START256
+    v @ v.push(start[0])
+    v @ v.push(start[1])
+    v @ v.push(start[2])
+    v @ v.push(start[3])
+    v @ v.push(counter & word.LOW32)
+    v @ v.push(word.shift_right(x: counter, n: 32))
+    v @ v.push(length)
+    v @ v.push(flags)
+    round: i64 @= 0
+
+    while round < 7
+        order = 16 * round
+        g: i64 @= 0
+
+        while g < 8
+            ia = mixed[4 * g]
+            ib = mixed[4 * g + 1]
+            ic = mixed[4 * g + 2]
+            id = mixed[4 * g + 3]
+            a1 = v[ia] + v[ib] + m[schedule[order + 2 * g]] & word.LOW32
+            d1 = word.rotate_right32(x: v[id] ^ a1, n: 16)
+            c1 = v[ic] + d1 & word.LOW32
+            b1 = word.rotate_right32(x: v[ib] ^ c1, n: 12)
+            a2 = a1 + b1 + m[schedule[order + 2 * g + 1]] & word.LOW32
+            d2 = word.rotate_right32(x: d1 ^ a2, n: 8)
+            c2 = c1 + d2 & word.LOW32
+            v[ia] @ a2
+            v[ib] @ word.rotate_right32(x: b1 ^ c2, n: 7)
+            v[ic] @ c2
+            v[id] @ d2
+            g @ g + 1
+
+        round @ round + 1
+
+    for i in range(from: 0, to: 8)
+        v[i] @ v[i] ^ v[i + 8]
+        v[i + 8] @ v[i + 8] ^ cv[i]
+
+    return v
+
+# The first eight of `words`, a chaining value.
+function first_eight(words: [i64]) -> [i64]
+    return words.slice(from: 0, to: 8)
+
+# The work of a hash keyed by the eight words `key` in the mode `flags`.
+function begin(key: [i64], flags: i64) -> Run
+    none: [u8] = []
+    no_words: [i64] = []
+    return Run(key: key, flags: flags, cv: key, chunk: 0, blocks: 0, pending: none, stack: no_words, depth: 0)
+
+# The flags of the next block of the chunk being fed: the mode's, and
+# `CHUNK_START` for its first block.
+function block_flags(run: Run lent) -> i64
+    if run.blocks == 0
+        return run.flags | CHUNK_START
+    return run.flags
+
+# Adds the chaining value `cv` of the chunk numbered `chunk` to the stack,
+# joining it first with every subtree it completes (the specification's
+# `add_chunk_chaining_value`).
+function push_chunk(@stack: [i64], @depth: i64, cv: [i64], chunk: i64, key: [i64], flags: i64)
+    value @= cv
+    total: i64 @= chunk + 1
+
+    while total & 1 == 0
+        depth @ depth - 1
+        block @= stack.slice(from: 8 * depth, to: 8 * depth + 8)
+
+        for w in value
+            block @ block.push(w)
+
+        value @ first_eight(compress(cv: key, m: block, counter: 0, length: 64, flags: flags | PARENT))
+        total @ total >> 1
+
+    at = 8 * depth
+
+    for i in range(from: 0, to: 8)
+        if at + i < stack.len()
+            stack[at + i] @ value[i]
+        else
+            stack @ stack.push(value[i])
+
+    depth @ depth + 1
+
+# Feeds `data` to `run`, which the caller holds.
+function absorb(@run: Run, data: [u8] lent)
+    cv @= run.cv
+    chunk @= run.chunk
+    blocks @= run.blocks
+    pending @= run.pending
+    stack @= run.stack
+    depth @= run.depth
+    at: i64 @= 0
+
+    while at < data.len()
+        if pending.len() == 64
+            m = words_of(pending, at: 0, count: 16)
+
+            start: i64 = if blocks == 0
+                CHUNK_START
+            else
+                0
+
+            if blocks == 15
+                done = compress(cv: cv, m: m, counter: chunk, length: 64, flags: run.flags | start | CHUNK_END)
+                push_chunk(
+                    stack: @stack,
+                    depth: @depth,
+                    cv: first_eight(done),
+                    chunk: chunk,
+                    key: run.key,
+                    flags: run.flags
+                )
+                cv @ run.key
+                chunk @ chunk + 1
+                blocks @ 0
+            else
+                cv @ first_eight(compress(cv: cv, m: m, counter: chunk, length: 64, flags: run.flags | start))
+                blocks @ blocks + 1
+            pending @ []
+
+        while pending.len() < 64 && at < data.len()
+            pending @ pending.push(data[at])
+            at @ at + 1
+
+    run.cv @ cv
+    run.chunk @ chunk
+    run.blocks @ blocks
+    run.pending @ pending
+    run.stack @ stack
+    run.depth @ depth
+
+# The first `length` bytes of the root's output for what `run` was fed:
+# the last chunk's last block, joined with every open subtree from the
+# deepest, then compressed as the root once for each 64 bytes asked.
+function finish(run: Run, length: i64) -> [u8]
+    return finish_from(run: run, length: length, block: 0)
+
+# The eight words of the key a derivation's `context` makes: the context
+# hashed in the mode `DERIVE_KEY_CONTEXT` to 32 bytes.
+function context_key(context: [u8]) -> [i64]
+    run @= begin(key: sha256.START256, flags: DERIVE_KEY_CONTEXT)
+    absorb(@run, context)
+    return words_of(finish(run, length: 32), at: 0, count: 8)
+
+# `length` bytes of the root's output for what `run` was fed, from its
+# output block numbered `block`, 64 bytes each.
+function finish_from(run: Run, length: i64, block: i64) -> [u8]
+    start: i64 = if run.blocks == 0
+        CHUNK_START
+    else
+        0
+
+    cv @= run.cv
+    m @= words_of(run.pending, at: 0, count: 16)
+    counter: i64 @= run.chunk
+    size: i64 @= run.pending.len()
+    flags: i64 @= run.flags | start | CHUNK_END
+    level: i64 @= run.depth
+
+    while level > 0
+        level @ level - 1
+        right = first_eight(compress(cv: cv, m: m, counter: counter, length: size, flags: flags))
+        m @ run.stack.slice(from: 8 * level, to: 8 * level + 8)
+
+        for w in right
+            m @ m.push(w)
+
+        cv @ run.key
+        counter @ 0
+        size @ 64
+        flags @ run.flags | PARENT
+
+    out: [u8] @= []
+    next: i64 @= block
+
+    while out.len() < length
+        for w in compress(cv: cv, m: m, counter: next, length: size, flags: flags | ROOT)
+            word.push_little(@out, x: w, count: 4)
+
+        next @ next + 1
+
+    return out.slice(from: 0, to: length)
+
+test "blake3 schedule: each round's order is the one before permuted"
+    permutation: [i64] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8]
+    order: [i64] @= range(from: 0, to: 16)
+    schedule: [i64] @= []
+
+    for _ in range(from: 0, to: 7)
+        for x in order
+            schedule @ schedule.push(x)
+
+        next: [i64] @= []
+
+        for i in range(from: 0, to: 16)
+            next @ next.push(order[permutation[i]])
+
+        order @ next
+
+    assert schedule == orders.SCHEDULE
+
+test "blake3 words_of: whole words, a word cut by the end, and past it"
+    data: [u8] = [1, 2, 3, 4, 5, 6]
+    assert words_of(data, at: 0, count: 3) == [0x04030201, 0x0605, 0]

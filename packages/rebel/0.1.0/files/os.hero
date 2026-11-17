@@ -256,6 +256,15 @@ record LoadAverage
     # Over the last fifteen minutes.
     fifteen_minutes: i64
 
+# What `memory` answers: the machine's memory in bytes, read at one moment.
+# `available_bytes` is never above `total_bytes`, and both are above 0.
+record Memory
+    # Bytes of memory the system manages, all of it.
+    total_bytes: i64
+    # Bytes the system could give programs now without writing anything out
+    # to disk, from 0 to `total_bytes`.
+    available_bytes: i64
+
 # The family of the system the program runs on, told by the suffix the system
 # gives an executable: `.exe` on Windows and none on every other.
 function family() -> Family
@@ -402,6 +411,30 @@ function load_average() -> LoadAverage?
             return fail(code: codes.UNSUPPORTED, msg: "this system keeps no load averages")
         return codes.sys_failed(asked: "the load averages")
     return ok(LoadAverage(one_minute: one, five_minutes: five, fifteen_minutes: fifteen))
+
+# The machine's memory, all of it and what is available now, in bytes, in one
+# reading.
+#
+# What counts as available is each system's own: on Darwin the free and the
+# inactive pages, the ones the compressor holds not counted; on Linux the
+# kernel's `MemAvailable`, or where it gives none its free and buffer memory,
+# which is less; on Windows the standby, free and zeroed memory. A container's
+# limit is not read, so inside one both are the host's.
+#
+# Fails `unsupported` on a POSIX system neither Darwin nor Linux, and with the
+# system's code where it cannot be read. See also `page_size`.
+function memory() -> Memory?
+    total: i64 @= 0
+    available: i64 @= 0
+
+    if hero_sys.memory(total: @total, available: @available) != 0
+        if hero_sys.last_error() == hero_sys.HERO_SYS_UNSUPPORTED
+            return fail(
+                code: codes.UNSUPPORTED,
+                msg: "the memory of this system is not read: Darwin, Linux and Windows are"
+            )
+        return codes.sys_failed(asked: "the machine's memory")
+    return ok(Memory(total_bytes: total, available_bytes: available))
 
 ## Random bytes and the terminal
 
@@ -605,6 +638,16 @@ test "load_average: three averages at or above 0 on POSIX, unsupported on Window
             assert load.one_minute >= 0 && load.five_minutes >= 0 && load.fifteen_minutes >= 0
         .err e => assert e.code == UNSUPPORTED && family() == .windows
 
+test "memory: a total above 0, the available above 0 and never above it, read twice, or unsupported on another POSIX system"
+    match memory()
+        .ok first =>
+            assert system() != .other
+            assert first.total_bytes > 0 && first.available_bytes > 0
+            assert first.available_bytes <= first.total_bytes
+            second = memory().must()
+            assert second.available_bytes <= second.total_bytes
+        .err e => assert e.code == UNSUPPORTED && system() == .other
+
 test "random_bytes: none, one, an odd count, two readings that differ, and counts below 0"
     assert random_bytes(0).must() == []
     assert random_bytes(1).must().len() == 1
@@ -620,3 +663,13 @@ test "terminal_size: columns and rows above 0, or unsupported where the output i
     match terminal_size()
         .ok size => assert size.columns > 0 && size.rows > 0
         .err e   => assert e.code == UNSUPPORTED
+
+## Examples
+
+# The share of the machine's memory available now, as a percentage.
+test "memory: the share of the memory available now"
+    match memory()
+        .ok memory_now =>
+            share = memory_now.available_bytes.to_f64() / memory_now.total_bytes.to_f64() * 100.0
+            assert share > 0.0 && share <= 100.0
+        .err e => assert e.code == UNSUPPORTED

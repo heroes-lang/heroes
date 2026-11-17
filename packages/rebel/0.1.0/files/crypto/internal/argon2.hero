@@ -1,0 +1,402 @@
+# Argon2 (RFC 9106): a password hashed into a table of blocks of 1024
+# bytes in `lanes` rows, each block made by the compression G from the one
+# before it and one chosen elsewhere, by the password's own bytes (Argon2d),
+# by a counter (Argon2i), or by the counter for the first half of the first
+# pass and the bytes after (Argon2id). A block is 128 words of 64 bits held
+# in `i64`s, and the whole table one list of them; the lanes are computed
+# one after another, which answers what threads would. The face checks
+# every parameter before it calls.
+
+use crypto/internal/blake2
+use crypto/internal/orders
+use crypto/internal/word
+
+# What a derivation takes besides the password, the salt, the secret and
+# the associated data.
+record Inputs
+    # The type: 0 for Argon2d, 1 for Argon2i, 2 for Argon2id.
+    kind: i64
+    # The version, 0x10 or 0x13.
+    version: i64
+    # How many passes over the table, 1 or more.
+    passes: i64
+    # The memory asked, in KiB, at least 8 a lane.
+    memory: i64
+    # How many lanes.
+    lanes: i64
+    # The tag's length, in bytes.
+    length: i64
+
+# The product of two words of 32 bits, modulo 2^64: their halves of 16
+# bits multiplied apart, so no step passes 2^34.
+function multiply(a: i64, b: i64) -> i64
+    a1 = a >> 16
+    a0 = a & 0xffff
+    b1 = b >> 16
+    b0 = b & 0xffff
+    middle = a1 * b0 + a0 * b1
+    low = a0 * b0 + ((middle & 0xffff) << 16)
+    high = a1 * b1 + (middle >> 16) + (low >> 32)
+    return high << 32 | low & word.LOW32
+
+# BlaMka's sum, `x + y + 2 × lo(x) × lo(y)` modulo 2^64 (RFC 9106 3.6).
+function blamka(x: i64, y: i64) -> i64
+    product = multiply(a: x & word.LOW32, b: y & word.LOW32)
+    return word.add(a: word.add(a: x, b: y), b: product << 1)
+
+# The 256 places the sixteen applications of P read in a block: its eight
+# rows of 16 words, then its eight columns of eight pairs.
+function places() -> [i64]
+    out: [i64] @= []
+
+    for row in range(from: 0, to: 8)
+        for k in range(from: 0, to: 16)
+            out @ out.push(16 * row + k)
+
+    for column in range(from: 0, to: 8)
+        for k in range(from: 0, to: 16)
+            out @ out.push(2 * column + 16 * (k / 2) + k % 2)
+
+    return out
+
+# Applies P to each row of `r`, the caller's block, then to each column
+# (RFC 9106 3.5 and 3.6): BLAKE2b's round, its sums BlaMka's.
+function permute(@r: [i64], at: [i64] lent)
+    mixed = orders.MIXED
+    group: i64 @= 0
+
+    while group < 16
+        base = 16 * group
+        g: i64 @= 0
+
+        while g < 8
+            ia = at[base + mixed[4 * g]]
+            ib = at[base + mixed[4 * g + 1]]
+            ic = at[base + mixed[4 * g + 2]]
+            id = at[base + mixed[4 * g + 3]]
+            a1 = blamka(x: r[ia], y: r[ib])
+            d1 = word.rotate_right64(x: r[id] ^ a1, n: 32)
+            c1 = blamka(x: r[ic], y: d1)
+            b1 = word.rotate_right64(x: r[ib] ^ c1, n: 24)
+            a2 = blamka(x: a1, y: b1)
+            d2 = word.rotate_right64(x: d1 ^ a2, n: 16)
+            c2 = blamka(x: c1, y: d2)
+            r[ia] @ a2
+            r[ib] @ word.rotate_right64(x: b1 ^ c2, n: 63)
+            r[ic] @ c2
+            r[id] @ d2
+            g @ g + 1
+
+        group @ group + 1
+
+# Makes the block of `memory` at `next` by G from the blocks at `previous`
+# and `reference`, all offsets in words; with `xor`, the block that stood
+# at `next` is combined in, as version 0x13 does after the first pass.
+function fill(@memory: [i64], previous: i64, reference: i64, next: i64, xor: bool, at: [i64] lent)
+    r: [i64] @= []
+    k: i64 @= 0
+
+    while k < 128
+        r @ r.push(memory[previous + k] ^ memory[reference + k])
+        k @ k + 1
+
+    kept: [i64] @= r
+
+    if xor
+        k @ 0
+
+        while k < 128
+            kept[k] @ kept[k] ^ memory[next + k]
+            k @ k + 1
+    permute(r: @r, at: at)
+    k @ 0
+
+    while k < 128
+        memory[next + k] @ kept[k] ^ r[k]
+        k @ k + 1
+
+# G(0, G(0, `input`)): the next block of 128 addresses for Argon2i's
+# choice of blocks.
+function addresses(input: [i64], at: [i64] lent) -> [i64]
+    zero: [i64] @= []
+
+    while zero.len() < 128
+        zero @ zero.push(0)
+
+    once: [i64] @= zero
+
+    for x in input
+        once @ once.push(x)
+
+    fill(memory: @once, previous: 0, reference: 128, next: 128, xor: false, at: at)
+    twice: [i64] @= zero
+
+    for i in range(from: 128, to: 256)
+        twice @ twice.push(once[i])
+
+    fill(memory: @twice, previous: 0, reference: 128, next: 128, xor: false, at: at)
+    return twice.slice(from: 128, to: 256)
+
+# The bytes of `x` as four, the lowest first.
+function four(x: i64) -> [u8]
+    out: [u8] @= []
+    word.push_little(@out, x: x, count: 4)
+    return out
+
+# H' (RFC 9106 3.3): `size` bytes made from `data` by BLAKE2b, 64 at a time
+# chained, the first 32 of each kept.
+function long_hash(size: i64, data: [u8]) -> [u8]
+    prefixed: [u8] @= four(size)
+
+    for b in data
+        prefixed @ prefixed.push(b)
+
+    if size <= 64
+        return blake2.digest(wide: true, size: size, key: [], data: prefixed)
+    out: [u8] @= []
+    v @= blake2.digest(wide: true, size: 64, key: [], data: prefixed)
+    rounds = (size + 31) / 32 - 2
+    i: i64 @= 1
+
+    while i <= rounds
+        if i > 1
+            v @ blake2.digest(wide: true, size: 64, key: [], data: v)
+
+        for k in range(from: 0, to: 32)
+            out @ out.push(v[k])
+
+        i @ i + 1
+
+    for b in blake2.digest(wide: true, size: size - 32 * rounds, key: [], data: v)
+        out @ out.push(b)
+
+    return out
+
+# H0 (RFC 9106 3.2): BLAKE2b's 64 bytes over the parameters and the four
+# inputs, each input after its length.
+function first_hash(inputs: Inputs, password: [u8], salt: [u8], secret: [u8], data: [u8]) -> [u8]
+    run @= blake2.begin(wide: true, size: 64, key: [], salt: [], person: [])
+
+    for x in [inputs.lanes, inputs.length, inputs.memory, inputs.passes, inputs.version, inputs.kind]
+        blake2.absorb(@run, four(x))
+
+    for part in [password, salt, secret, data]
+        blake2.absorb(@run, four(part.len()))
+        blake2.absorb(@run, part)
+
+    return blake2.finish(run)
+
+# Where in its lane the block a pass reads is, from `pseudo`'s low word
+# (RFC 9106 3.4.2): a place among the blocks the rules allow, the nearest
+# the likeliest.
+function reference_column(pseudo: i64, area: i64, start: i64, columns: i64) -> i64
+    j1 = pseudo & word.LOW32
+    high = j1 >> 16
+    low = j1 & 0xffff
+    x = high * high + ((2 * high * low << 16) + low * low >> 32)
+    y = area * x >> 32
+    return (start + area - 1 - y) % columns
+
+# The tag of `length` bytes Argon2 makes of the inputs.
+function derive(inputs: Inputs, password: [u8], salt: [u8], secret: [u8], data: [u8]) -> [u8]
+    at = places()
+    lanes = inputs.lanes
+    columns = inputs.memory / (4 * lanes) * 4
+    segment = columns / 4
+    total = columns * lanes
+    h0 = first_hash(inputs, password: password, salt: salt, secret: secret, data: data)
+    memory: [i64] @= []
+
+    while memory.len() < 128 * total
+        memory @ memory.push(0)
+
+    for lane in range(from: 0, to: lanes)
+        for column in range(from: 0, to: 2)
+            seed: [u8] @= h0
+
+            for b in four(column)
+                seed @ seed.push(b)
+
+            for b in four(lane)
+                seed @ seed.push(b)
+
+            block = long_hash(size: 1024, data: seed)
+            base = 128 * (lane * columns + column)
+
+            for k in range(from: 0, to: 128)
+                memory[base + k] @ word.load32_little(block, 8 * k + 4) << 32 | word.load32_little(block, 8 * k)
+
+    for pass in range(from: 0, to: inputs.passes)
+        for quarter in range(from: 0, to: 4)
+            for lane in range(from: 0, to: lanes)
+                independent = inputs.kind == 1 || inputs.kind == 2 && pass == 0 && quarter < 2
+
+                first: i64 = if pass == 0 && quarter == 0
+                    2
+                else
+                    0
+
+                input: [i64] @= [pass, lane, quarter, total, inputs.passes, inputs.kind]
+
+                while input.len() < 128
+                    input @ input.push(0)
+
+                chosen: [i64] @= []
+
+                if independent && first == 2
+                    input[6] @ input[6] + 1
+                    chosen @ addresses(input: input, at: at)
+                c: i64 @= first
+
+                while c < segment
+                    column = quarter * segment + c
+                    previous: i64 @= column - 1
+
+                    if column == 0
+                        previous @ columns - 1
+
+                    if independent && c % 128 == 0
+                        input[6] @ input[6] + 1
+                        chosen @ addresses(input: input, at: at)
+                    pseudo: i64 @= 0
+
+                    if independent
+                        pseudo @ chosen[c % 128]
+                    else
+                        pseudo @ memory[128 * (lane * columns + previous)]
+                    other: i64 @= word.shift_right(x: pseudo, n: 32) % lanes
+
+                    if pass == 0 && quarter == 0
+                        other @ lane
+                    area: i64 @= 0
+
+                    if pass == 0 && other == lane
+                        area @ quarter * segment + c - 1
+                    else if pass == 0 && c == 0
+                        area @ quarter * segment - 1
+                    else if pass == 0
+                        area @ quarter * segment
+                    else if other == lane
+                        area @ columns - segment + c - 1
+                    else if c == 0
+                        area @ columns - segment - 1
+                    else
+                        area @ columns - segment
+                    start: i64 @= 0
+
+                    if pass > 0 && quarter < 3
+                        start @ (quarter + 1) * segment
+                    reference = reference_column(pseudo: pseudo, area: area, start: start, columns: columns)
+                    fill(
+                        memory: @memory,
+                        previous: 128 * (lane * columns + previous),
+                        reference: 128 * (other * columns + reference),
+                        next: 128 * (lane * columns + column),
+                        xor: pass > 0 && inputs.version == 0x13,
+                        at: at
+                    )
+                    c @ c + 1
+
+    last: [i64] @= memory.slice(from: 128 * (columns - 1), to: 128 * columns)
+
+    for lane in range(from: 1, to: lanes)
+        base = 128 * (lane * columns + columns - 1)
+
+        for k in range(from: 0, to: 128)
+            last[k] @ last[k] ^ memory[base + k]
+
+    joined: [u8] @= []
+
+    for w in last
+        word.push_little(@joined, x: w, count: 8)
+
+    return long_hash(size: inputs.length, data: joined)
+
+test "argon2 multiply: zero, one, the largest words, and halves that carry"
+    assert multiply(a: 0, b: 0xffffffff) == 0
+    assert multiply(a: 1, b: 0xffffffff) == 0xffffffff
+    assert multiply(a: 0xffffffff, b: 0xffffffff) == -8589934591
+    assert multiply(a: 0x10000, b: 0x10000) == 0x100000000
+    assert multiply(a: 0x12345678, b: 0x9abcdef0) == 0x0b00ea4e242d2080
+
+# OpenSSL's `kdf ARGON2D`, `ARGON2I` and `ARGON2ID` answered RFC 9106 5's
+# inputs on 2026-11-17 as the RFC prints its tags.
+test "argon2 derive: RFC 9106's three vectors, a secret and associated data, four lanes of 32 KiB, three passes"
+    inputs: [Inputs] = [
+        Inputs(kind: 0, version: 0x13, passes: 3, memory: 32, lanes: 4, length: 32)
+        Inputs(kind: 1, version: 0x13, passes: 3, memory: 32, lanes: 4, length: 32)
+        Inputs(kind: 2, version: 0x13, passes: 3, memory: 32, lanes: 4, length: 32)
+    ]
+    tags: [str] = [
+        "512b391b6f1162975371d30919734294f868e3be3984f3c1a13a4db9fabe4acb"
+        "c814d9d1dc7f37aa13f0d77f2494bda1c8de6b016dd388d29952a4c4672b6ce8"
+        "0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659"
+    ]
+    password: [u8] @= []
+    salt: [u8] @= []
+    secret: [u8] @= []
+    data: [u8] @= []
+
+    while password.len() < 32
+        password @ password.push(0x01)
+
+    while salt.len() < 16
+        salt @ salt.push(0x02)
+
+    while secret.len() < 8
+        secret @ secret.push(0x03)
+
+    while data.len() < 12
+        data @ data.push(0x04)
+
+    for i in range(from: 0, to: 3)
+        tag = derive(inputs[i], password: password, salt: salt, secret: secret, data: data)
+        hex: [str] @= []
+
+        for b in tag
+            hex @ hex.push(digit(to_i64(b).must() >> 4))
+            hex @ hex.push(digit(to_i64(b).must() & 0xf))
+
+        assert hex.join("") == tags[i]
+
+# OpenSSL's `kdf` answered each on 2026-11-17 for the password "password"
+# and the salt "somesalt": segments past 128 blocks, so Argon2i makes its
+# addresses twice; memory that is no multiple of 4 × lanes; a tag past 64
+# bytes; the smallest memory and tag with an empty password.
+test "argon2 derive: segments of 256 blocks, 33 KiB in four lanes, a tag of 100 bytes, and 8 KiB with a tag of 4"
+    password: [u8] = [0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64]
+    salt: [u8] = [0x73, 0x6f, 0x6d, 0x65, 0x73, 0x61, 0x6c, 0x74]
+    cases: [Inputs] = [
+        Inputs(kind: 1, version: 0x13, passes: 1, memory: 1024, lanes: 1, length: 32)
+        Inputs(kind: 2, version: 0x13, passes: 1, memory: 1024, lanes: 2, length: 32)
+        Inputs(kind: 0, version: 0x13, passes: 2, memory: 33, lanes: 4, length: 20)
+        Inputs(kind: 2, version: 0x13, passes: 2, memory: 64, lanes: 1, length: 100)
+        Inputs(kind: 1, version: 0x10, passes: 3, memory: 32, lanes: 1, length: 16)
+    ]
+    tags: [str] = [
+        "95466cc4f92f874954617eec0aa1195d22980abd625e5cac44763ae3a9cb6ab7"
+        "448311c513e970d016855a583533e125eb3c7abdf304f4ad86db87f6f29c8e83"
+        "7001664a3721982602c03c1652afb657432d3417"
+        "7712f6cfaea89a90b11559e10e234f92f892db147d4c3b6e628a51836a20dcd07537028d562157088d11c966eced97430f53e747196cd7d99ddfb21b159e05ae131bd627e4a4b3452d5800c3351986221ec89db7698fcf4f91a1f5f4b73ef5e692c2fbc1"
+        "cbacf2fd0b0315a4e0620a6913c76ddc"
+    ]
+
+    for i in range(from: 0, to: cases.len())
+        assert hex_of(derive(cases[i], password: password, salt: salt, secret: [], data: [])) == tags[i]
+
+    empty = Inputs(kind: 2, version: 0x13, passes: 1, memory: 8, lanes: 1, length: 4)
+    assert hex_of(derive(empty, password: [], salt: [0x73, 0x61, 0x6c, 0x74, 0x73, 0x61, 0x6c, 0x74], secret: [], data: [])) == "477bbdbc"
+
+# `data` as hexadecimal, for the tests.
+function hex_of(data: [u8]) -> str
+    out: [str] @= []
+
+    for b in data
+        out @ out.push(digit(to_i64(b).must() >> 4))
+        out @ out.push(digit(to_i64(b).must() & 0xf))
+
+    return out.join("")
+
+# The hexadecimal digit of `x`, 0 to 15, for the tests.
+function digit(x: i64) -> str
+    return "0123456789abcdef".slice(from: x, to: x + 1)

@@ -84,6 +84,21 @@ function sample<T>(@high: u64, @low: u64, xs: [T], count: i64) -> [T]
 # Fails `invalid` where `weights` is empty, holds a weight below 0 or not
 # finite, or adds up to 0 or to more than a float holds.
 function weighted(@high: u64, @low: u64, weights: [f64]) -> i64?
+    drawable = weighable(weights)?
+    return ok(place(weights, drawable, fraction(high: @high, low: @low)))
+
+# What `place` needs of weights that can be drawn from: their sum, and the
+# last place whose weight is above 0.
+record Drawable
+    # The sum of the weights, above 0 and finite.
+    total: f64
+    # The last place whose weight is above 0.
+    last: i64
+
+# The sum of `weights` and their last place above 0. Fails `invalid` where
+# `weights` is empty, holds a weight below 0 or not finite, or adds up to 0 or
+# to more than a float holds.
+function weighable(weights: [f64] lent) -> Drawable?
     total: f64 @= 0.0
     last: i64 @= -1
 
@@ -102,16 +117,22 @@ function weighted(@high: u64, @low: u64, weights: [f64]) -> i64?
             code: codes.INVALID,
             msg: f"weights adding up to {total}: they add up to more than 0 and stay finite"
         )
-    target = fraction(high: @high, low: @low) * total
+    return ok(Drawable(total: total, last: last))
+
+# The place the float `drawn`, from 0 to 1, falls on among `weights`, each
+# place as wide as its weight; `drawable` is what `weighable` answered for
+# them.
+function place(weights: [f64] lent, drawable: Drawable, drawn: f64) -> i64
+    target = drawn * drawable.total
     running: f64 @= 0.0
 
-    for at in range(from: 0, to: last)
+    for at in range(from: 0, to: drawable.last)
         running @ running + weights[at]
 
         if target < running
-            return ok(at)
+            return at
 
-    return ok(last)
+    return drawable.last
 
 # A number from 0 to `n` - 1, every one as likely, from the system's
 # generator for keys: Lemire's method over eight bytes at a time of

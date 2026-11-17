@@ -1,0 +1,194 @@
+# The token buckets of a rate limit, one per client key, as golang.org/x/time/
+# rate keeps one: a bucket holds up to `burst` tokens, refills at `rate`
+# tokens a second, and a request takes one. The time is the caller's, in
+# nanoseconds since 1970. As Go's limiter, a bucket is written only when a
+# token is taken, so a refused request leaves it as it was, and a reading
+# earlier than its last counts no time. A bucket full again is forgotten,
+# which loses nothing, since a client met anew starts full; past `most_keys`
+# buckets not yet full, those read longest ago are forgotten, half at a
+# time, so the memory a limit holds is bounded.
+
+# The most an `i64` holds.
+constant MOST: i64
+    9_223_372_036_854_775_807
+
+# The nanoseconds of a second, as a float.
+constant NANOSECONDS: f64
+    1_000_000_000.0
+
+# One client's bucket.
+record Bucket
+    # The tokens it held when last read, 0 to the burst, a fraction included.
+    tokens: f64
+    # When it was last read, in nanoseconds since 1970.
+    seen: i64
+
+# Whether `rate`, `burst` and `most_keys` make a limit: a finite rate above
+# 0, a burst and a count of 1 or more.
+function is_valid(rate: f64, burst: i64, most_keys: i64) -> bool
+    return rate == rate && rate - rate == 0.0 && rate > 0.0 && burst >= 1 && most_keys >= 1
+
+# The seconds from `from` to `to`, both in nanoseconds since 1970, 0 where
+# `to` is not later.
+function seconds_between(from: i64, to: i64) -> f64
+    if to <= from
+        return 0.0
+
+    if from >= 0 == (to >= 0)
+        return to_f64(to - from) / NANOSECONDS
+    return (to_f64(to) - to_f64(from)) / NANOSECONDS
+
+# `b` as it stands at `now`: refilled at `rate` tokens a second for the time
+# since it was read, never past `burst`, and read at `now`.
+function refilled(b: Bucket, now: i64, rate: f64, burst: i64) -> Bucket
+    most = to_f64(burst)
+    tokens: f64 @= b.tokens + seconds_between(from: b.seen, to: now) * rate
+
+    if tokens > most
+        tokens @ most
+    return Bucket(tokens: tokens, seen: now)
+
+# The bucket of `key` at `now`: its own refilled, or a full one where
+# `buckets` holds none.
+function bucket_of(buckets: {str: Bucket} lent, key: str, now: i64, rate: f64, burst: i64) -> Bucket
+    return match buckets[key]
+        .ok b  => refilled(b, now: now, rate: rate, burst: burst)
+        .err _ => Bucket(tokens: to_f64(burst), seen: now)
+
+# Takes a token from the bucket of `key` at `now` and answers true where it
+# holds one, the bucket then read at `now`; else answers false and leaves
+# the bucket as it was, as Go's limiter does. A key met anew starts with a
+# full bucket, `buckets` swept first where it holds `most_keys` already.
+function take(@buckets: {str: Bucket}, key: str, now: i64, rate: f64, burst: i64, most_keys: i64) -> bool
+    if buckets[key].is_err() && buckets.len() >= most_keys
+        sweep(@buckets, now: now, rate: rate, burst: burst, most_keys: most_keys)
+    b @= bucket_of(buckets, key: key, now: now, rate: rate, burst: burst)
+
+    if b.tokens < 1.0
+        return false
+    b.tokens @ b.tokens - 1.0
+    buckets[key] @ b
+    return true
+
+# The nanoseconds from `now` until the bucket of `key` holds a token: 0
+# where it holds one, at most `MOST`.
+function wait_ns(buckets: {str: Bucket} lent, key: str, now: i64, rate: f64, burst: i64) -> i64
+    b = bucket_of(buckets, key: key, now: now, rate: rate, burst: burst)
+
+    if b.tokens >= 1.0
+        return 0
+    w = (1.0 - b.tokens) / rate * NANOSECONDS
+    n = to_i64(w).default(MOST)
+
+    if to_f64(n) < w && n < MOST
+        return n + 1
+    return n
+
+# The whole seconds `ns` nanoseconds take, rounded up: what `Retry-After`
+# says.
+function seconds_up(ns: i64) -> i64
+    whole = ns / 1_000_000_000
+
+    if ns % 1_000_000_000 != 0
+        return whole + 1
+    return whole
+
+# Forgets the buckets of `buckets` full again at `now`, and where as many as
+# `most_keys` are still held, those read before the median reading too.
+function sweep(@buckets: {str: Bucket}, now: i64, rate: f64, burst: i64, most_keys: i64)
+    most = to_f64(burst)
+    kept: {str: Bucket} @= {}
+    seen: [i64] @= []
+
+    for k in keys(buckets)
+        b = buckets[k].must()
+
+        if refilled(b, now: now, rate: rate, burst: burst).tokens < most
+            kept[k] @ b
+            seen @ seen.push(b.seen)
+
+    if kept.len() < most_keys
+        buckets @ kept
+        return
+    middle = sort(seen)[seen.len() / 2]
+    newer: {str: Bucket} @= {}
+
+    for k in keys(kept)
+        b = kept[k].must()
+
+        if b.seen > middle
+            newer[k] @ b
+
+    buckets @ newer
+
+## Tests
+
+# A second, in nanoseconds.
+constant SECOND: i64
+    1_000_000_000
+
+# Go's x/time/rate v0.16.0 answered the same on 2026-11-17: three allowed,
+# the fourth refused, a delay of 500 ms, refused a nanosecond before it and
+# allowed at it.
+test "take: a burst of 3 at 2 a second, a fourth refused, one back half a second later"
+    buckets: {str: Bucket} @= {}
+    assert take(@buckets, key: "a", now: 0, rate: 2.0, burst: 3, most_keys: 10)
+    assert take(@buckets, key: "a", now: 0, rate: 2.0, burst: 3, most_keys: 10)
+    assert take(@buckets, key: "a", now: 0, rate: 2.0, burst: 3, most_keys: 10)
+    assert !take(@buckets, key: "a", now: 0, rate: 2.0, burst: 3, most_keys: 10)
+    assert wait_ns(buckets, key: "a", now: 0, rate: 2.0, burst: 3) == SECOND / 2
+    assert take(@buckets, key: "b", now: 0, rate: 2.0, burst: 3, most_keys: 10)
+    assert !take(@buckets, key: "a", now: SECOND / 2 - 1, rate: 2.0, burst: 3, most_keys: 10)
+    assert take(@buckets, key: "a", now: SECOND / 2, rate: 2.0, burst: 3, most_keys: 10)
+    assert !take(@buckets, key: "a", now: SECOND / 2, rate: 2.0, burst: 3, most_keys: 10)
+
+# Go's x/time/rate v0.16.0 answered the same on 2026-11-17: true, true,
+# false, then false at 50 s and at 51 s, the refusals leaving the bucket
+# read at 100 s.
+test "take: never past the burst after a long rest, and readings back in time refused without moving the bucket"
+    buckets: {str: Bucket} @= {}
+    assert take(@buckets, key: "a", now: 0, rate: 1.0, burst: 1, most_keys: 10)
+    assert take(@buckets, key: "a", now: 100 * SECOND, rate: 1.0, burst: 1, most_keys: 10)
+    assert !take(@buckets, key: "a", now: 100 * SECOND, rate: 1.0, burst: 1, most_keys: 10)
+    assert !take(@buckets, key: "a", now: 50 * SECOND, rate: 1.0, burst: 1, most_keys: 10)
+    assert !take(@buckets, key: "a", now: 51 * SECOND, rate: 1.0, burst: 1, most_keys: 10)
+    assert take(@buckets, key: "a", now: 101 * SECOND, rate: 1.0, burst: 1, most_keys: 10)
+
+# Go's `DelayFrom` answered 333.333333 ms for the rate of 3, truncated; it
+# is rounded up here, so waiting it always finds a token.
+test "wait_ns: a key never met, a fraction rounded up, the slowest rate, and the instants at the ends"
+    buckets: {str: Bucket} @= {}
+    assert wait_ns(buckets, key: "x", now: 0, rate: 3.0, burst: 1) == 0
+    _ = take(@buckets, key: "x", now: 0, rate: 3.0, burst: 1, most_keys: 10)
+    assert wait_ns(buckets, key: "x", now: 0, rate: 3.0, burst: 1) == 333_333_334
+    slow: {str: Bucket} @= {}
+    _ = take(@slow, key: "x", now: 0, rate: 0.0000000001, burst: 1, most_keys: 10)
+    assert wait_ns(slow, key: "x", now: 0, rate: 0.0000000001, burst: 1) == MOST
+    ends: {str: Bucket} @= {}
+    _ = take(@ends, key: "x", now: -MOST - 1, rate: 1.0, burst: 1, most_keys: 10)
+    assert wait_ns(ends, key: "x", now: MOST, rate: 1.0, burst: 1) == 0
+
+test "is_valid: a rate, then none, below 0, not a number, infinite, and the counts at 0"
+    zero = 0.0
+    assert is_valid(rate: 0.5, burst: 1, most_keys: 1)
+    assert !is_valid(rate: 0.0, burst: 1, most_keys: 1) && !is_valid(rate: -1.0, burst: 1, most_keys: 1)
+    assert !is_valid(rate: zero / zero, burst: 1, most_keys: 1) && !is_valid(rate: 1.0 / zero, burst: 1, most_keys: 1)
+    assert !is_valid(rate: 1.0, burst: 0, most_keys: 1) && !is_valid(rate: 1.0, burst: 1, most_keys: 0)
+
+test "seconds_up: 0, a nanosecond, a whole second, a second and a nanosecond, the largest"
+    assert seconds_up(0) == 0 && seconds_up(1) == 1 && seconds_up(SECOND) == 1 && seconds_up(SECOND + 1) == 2
+    assert seconds_up(MOST) == 9_223_372_037
+
+test "sweep: full buckets forgotten, then the older half where still too many"
+    buckets: {str: Bucket} @= {}
+    _ = take(@buckets, key: "old", now: 0, rate: 1.0, burst: 2, most_keys: 2)
+    _ = take(@buckets, key: "mid", now: 10 * SECOND, rate: 1.0, burst: 2, most_keys: 2)
+    _ = take(@buckets, key: "new", now: 10 * SECOND, rate: 1.0, burst: 2, most_keys: 2)
+    assert buckets.len() == 2 && buckets["old"].is_err() && !buckets["new"].is_err()
+    full: {str: Bucket} @= {}
+
+    for k in ["a", "b", "c", "d"]
+        _ = take(@full, key: k, now: 0, rate: 1.0, burst: 1, most_keys: 4)
+
+    _ = take(@full, key: "e", now: 0, rate: 1.0, burst: 1, most_keys: 4)
+    assert full.len() == 1 && !full["e"].is_err()

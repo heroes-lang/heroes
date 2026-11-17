@@ -1,0 +1,159 @@
+# Where the line editor's cursor goes in a text: over a character and the
+# marks after it as one, over a word of letters and digits, back to a space;
+# the longest start some texts share, and the words of a list that begin with
+# the word before the cursor.
+
+use term/internal/width
+use unicode
+
+# The start of the character the cursor would go back over at `at`: one of
+# some cells and every mark after it, so that a letter and its accents move
+# as one. `at` is above 0.
+function group_start(s: str lent, at: i64) -> i64
+    back: i64 @= width.previous_at(s, at)
+
+    while back > 0 && width.cells_of_point(width.point_at(s, back)) == 0
+        back @ width.previous_at(s, back)
+
+    return back
+
+# The end of the character the cursor would go on over at `at`: one and
+# every mark after it. `at` is below the text's end.
+function group_end(s: str lent, at: i64) -> i64
+    end: i64 @= width.next_at(s, at)
+
+    while end < s.len() && width.cells_of_point(width.point_at(s, end)) == 0
+        end @ width.next_at(s, end)
+
+    return end
+
+# Whether the character at `at` is part of a word: a letter, a digit, or a
+# mark on one.
+function in_word(s: str lent, at: i64) -> bool
+    c = s.slice(from: at, to: width.next_at(s, at))
+    return unicode.is_alphanumeric(c) || unicode.is_mark(c)
+
+# Whether the character at `at` is a space.
+function is_space_at(s: str lent, at: i64) -> bool
+    return unicode.is_space(s.slice(from: at, to: width.next_at(s, at)))
+
+# Where a move back by a word from `at` lands: over what is not a word, then
+# over the word, to its start.
+function word_start(s: str lent, at: i64) -> i64
+    back: i64 @= at
+
+    while back > 0 && !in_word(s, width.previous_at(s, back))
+        back @ width.previous_at(s, back)
+
+    while back > 0 && in_word(s, width.previous_at(s, back))
+        back @ width.previous_at(s, back)
+
+    return back
+
+# Where a move on by a word from `at` lands: over what is not a word, then
+# over the word, to its end.
+function word_end(s: str lent, at: i64) -> i64
+    on: i64 @= at
+
+    while on < s.len() && !in_word(s, on)
+        on @ width.next_at(s, on)
+
+    while on < s.len() && in_word(s, on)
+        on @ width.next_at(s, on)
+
+    return on
+
+# Where Ctrl-W's kill from `at` begins: back over spaces, then over what is
+# not a space.
+function spaced_start(s: str lent, at: i64) -> i64
+    back: i64 @= at
+
+    while back > 0 && is_space_at(s, width.previous_at(s, back))
+        back @ width.previous_at(s, back)
+
+    while back > 0 && !is_space_at(s, width.previous_at(s, back))
+        back @ width.previous_at(s, back)
+
+    return back
+
+# The longest start every one of `texts` shares, cut at a character's start;
+# `texts` holds at least one.
+function common_start(texts: [str] lent) -> str
+    first = texts[0]
+    end: i64 @= first.len()
+
+    for t in texts
+        same: i64 @= 0
+
+        while same < end && same < t.len() && t[same] == first[same]
+            same @ same + 1
+
+        end @ same
+
+    while end > 0 && end < first.len() && first[end] >= 0x80 && first[end] < 0xc0
+        end @ end - 1
+
+    return first.slice(from: 0, to: end)
+
+# What `words_from` answers: where the word before the cursor begins, and
+# the words that begin with it.
+record Found
+    # The word's first byte in the line.
+    from: i64
+    # The words that begin with it, in their order.
+    candidates: [str]
+
+# Whether the bytes of `s` begin with those of `prefix`.
+function begins_with(s: str lent, prefix: str lent) -> bool
+    if prefix.len() > s.len()
+        return false
+
+    for i in range(from: 0, to: prefix.len())
+        if s[i] != prefix[i]
+            return false
+
+    return true
+
+# The words of `words` that begin with the text of `line` from the last space
+# before `cursor` to it; `cursor` past the end is the end, inside a character
+# that character's start.
+function words_from(words: [str], line: str, cursor: i64) -> Found
+    at: i64 @= cursor
+
+    if at > line.len()
+        at @ line.len()
+
+    if at < 0
+        at @ 0
+
+    while at > 0 && at < line.len() && line[at] >= 0x80 && line[at] < 0xc0
+        at @ at - 1
+
+    from: i64 @= at
+
+    while from > 0 && line[from - 1] != ' '
+        from @ from - 1
+
+    typed = line.slice(from: from, to: at)
+    kept: [str] @= []
+
+    for w in words
+        if begins_with(s: w, prefix: typed)
+            kept @ kept.push(w)
+
+    return Found(from: from, candidates: kept)
+
+test "words common_start: one text, none shared, and a character of two bytes never split"
+    assert common_start(["abc"]) == "abc"
+    assert common_start(["abc", "xyz"]) == ""
+    assert common_start(["é1", "è2"]) == ""
+    assert common_start(["aé", "aé2"]) == "aé"
+
+test "words words_from: the word after the last space, none typed, a cursor past the end and inside a character"
+    f = words_from(words: ["help", "hello", "quit"], line: "x he", cursor: 4)
+    assert f.from == 2 && f.candidates == ["help", "hello"]
+    assert words_from(words: ["a", "b"], line: "", cursor: 0).candidates == ["a", "b"]
+    assert words_from(words: ["quit"], line: "q", cursor: 9).candidates == ["quit"]
+    g = words_from(words: ["é"], line: "é", cursor: 1)
+    assert g.from == 0 && g.candidates == ["é"]
+    assert words_from(words: ["ab"], line: "abc", cursor: 3).candidates.len() == 0

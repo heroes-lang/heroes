@@ -36,6 +36,9 @@ constant DOES_NOT_FIT: str
 constant FAILED: str
     "failed"
 
+constant UNSUPPORTED: str
+    "unsupported"
+
 # What a code and its words are, for one kind of the floor.
 record Told
     # The code of README § A4.
@@ -87,6 +90,9 @@ function told(kind: i64, os_error: i64) -> Told
 
     if kind == hero_net.HERO_NET_NOT_FOUND
         return Told(code: NOT_FOUND, why: "the resolver knows no address for it")
+
+    if kind == hero_net.HERO_NET_UNSUPPORTED
+        return Told(code: UNSUPPORTED, why: "this system has no such socket for a program")
     return Told(code: FAILED, why: f"the system failed, its error {os_error} (kind {kind})")
 
 # The failure the floor's last call on this thread left, its message `asked`
@@ -115,6 +121,7 @@ test "told: every kind of the floor is a code of the closed list, the unknown on
     assert told(kind: hero_net.HERO_NET_STOPPED, os_error: 0).code == STOPPED
     assert told(kind: hero_net.HERO_NET_TOO_LONG, os_error: 40).code == INVALID
     assert told(kind: hero_net.HERO_NET_NOT_FOUND, os_error: 0).code == NOT_FOUND
+    assert told(kind: hero_net.HERO_NET_UNSUPPORTED, os_error: 43).code == UNSUPPORTED
     other = told(kind: hero_net.HERO_NET_OTHER, os_error: 99)
     assert other.code == FAILED
     assert other.why == "the system failed, its error 99 (kind 11)"

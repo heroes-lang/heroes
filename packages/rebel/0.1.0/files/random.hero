@@ -1,32 +1,44 @@
 # Numbers drawn at random from a seeded generator the caller holds: whole
 # numbers below a bound or in a range without bias, floats in [0, 1), bytes,
 # a list shuffled, an element chosen, a sample drawn without replacement, and
-# a choice by weights; and a number below a bound from the system's generator
-# for keys.
+# a choice by weights; and from the system's generator for keys, a number
+# below a bound, an element chosen, and a token written as text.
 #
-# The generator is PCG with 128 bits of state and the DXSM output (O'Neill,
-# 2014 and 2019), the one Go's `math/rand/v2.PCG` runs: from the same two
-# words it answers the same numbers, and `below`, `next_f64` and `shuffle`
-# draw from them as Go's `Uint64N` and `Float64` do. It is fast
-# and its numbers are well spread, and anyone who sees a few of them can
-# tell the next: a key, a token or a salt comes from `os.random_bytes` or
-# `secure_below`, never from a `Generator`. Bytes made into a digest are the
-# package `crypto`'s, and the mean or the spread of numbers the package
-# `stats`'s.
+# Two generators are offered. `Generator` is PCG with 128 bits of state and
+# the DXSM output (O'Neill, 2014 and 2019), the one Go's `math/rand/v2.PCG`
+# runs: from the same two words it answers the same numbers, and `below`,
+# `next_f64` and `shuffle` draw from them as Go's `Uint64N` and `Float64` do.
+# Its numbers are well spread, and anyone who sees a few of them can tell the
+# next. `ChaCha8` is the generator Go's `math/rand/v2.ChaCha8` runs, ChaCha
+# with eight rounds whose key changes every 124 numbers: from the same seed it
+# answers Go's numbers, and nobody who sees its numbers can tell the next
+# without the seed. Here it is the faster of the two: two million numbers
+# took 0.9 s against PCG's 1.5 s, measured on 2026-11-17. Every draw of a `ChaCha8` is the `Generator` draw's name
+# with `_chacha8` after it, and draws by the same method. A key, a token or a
+# salt comes from `os.random_bytes`, the `secure_` functions, or a `ChaCha8`
+# seeded by the system, never from a `Generator`. Bytes made into a digest
+# are the package `crypto`'s, and the mean or the spread of numbers the
+# package `stats`'s.
 #
-# It fails with `invalid` where a list or weights cannot be drawn from, and
-# `from_system` and `secure_below` with the codes of `os.random_bytes`.
+# It fails with `invalid` where a list, weights or a seed cannot be drawn
+# from, and the functions that read the system's generator with the codes of
+# `os.random_bytes`.
 
 use os
+use random/internal/chacha
 use random/internal/codes
 use random/internal/pcg
 use random/internal/pick
+use random/internal/strong
+use random/internal/token
 use random/internal/wide
 
 ## Codes
 
-# The code `choose`, `sample` and `choose_weighted` fail with where the list
-# or the weights cannot be drawn from.
+# The code `choose`, `sample` and `choose_weighted` and their `_chacha8`
+# forms fail with where the list or the weights cannot be drawn from,
+# `from_seed_chacha8` where the seed is not 32 bytes, and `secure_choose`
+# where the list is empty.
 constant INVALID: str
     codes.INVALID
 
@@ -185,6 +197,165 @@ function choose_weighted<T>(@generator: Generator, xs: [T], weights: [f64]) -> T
     at = pick.weighted(high: @generator.high, low: @generator.low, weights)?
     return ok(xs[at])
 
+## The ChaCha8 generator
+
+# A generator whose numbers nobody can tell from the ones before without its
+# seed: ChaCha with eight rounds, as Go's `math/rand/v2.ChaCha8` runs it,
+# whose key is a seed of 32 bytes and becomes, every 124 numbers, 32 bytes of
+# its own output never given out, so that a state seen later tells nothing of
+# the numbers before it. The caller holds it and every draw advances it with
+# `@`. It is made by `from_seed_chacha8`, which answers Go's numbers for the
+# same seed, or `from_system_chacha8`; copied with `=`, the copy answers what
+# the original would.
+record ChaCha8
+    # The work: the key, the numbers of the group of four blocks being read,
+    # where the next one stands, and the bytes a read cut from a number. Only
+    # this package reads it.
+    state: chacha.State
+
+# A ChaCha8 generator seeded by `seed`, before its first number: Go's
+# `rand.NewChaCha8(seed)`, whose numbers it answers. Seeding again, Go's
+# `Seed`, is making a new one.
+#
+# - `seed`: the 32 bytes of the key, which decide every number.
+#
+# Fails `invalid` where `seed` is not 32 bytes long. See also
+# `from_system_chacha8`.
+function from_seed_chacha8(seed: [u8]) -> ChaCha8?
+    if seed.len() != 32
+        return fail(code: INVALID, msg: f"a seed of {seed.len()} bytes, where ChaCha8 takes 32")
+    return ok(ChaCha8(state: chacha.begin(seed)))
+
+# A ChaCha8 generator seeded by 32 bytes of the system's generator for keys,
+# different on every call: as strong as its seed, and reading the system only
+# once.
+#
+# Fails with the code of `os.random_bytes` where the system's generator
+# refuses. See also `from_seed_chacha8` and `secure_below`.
+function from_system_chacha8() -> ChaCha8?
+    seed = os.random_bytes(32)?
+    return ok(ChaCha8(state: chacha.begin(seed)))
+
+# The next number of `generator`, any `u64` as likely as any other: Go's
+# `ChaCha8.Uint64`.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one number, and bytes an earlier `next_bytes_chacha8` left are
+#   kept for the next one.
+#
+# See also `next_u64`.
+function next_u64_chacha8(@generator: ChaCha8) -> u64
+    return wide.unsigned(chacha.next(@generator.state))
+
+# A float from 0 to 1, 0 included and 1 left out, every multiple of 2^-53 in
+# it as likely, as `next_f64` takes it.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one number.
+#
+# See also `next_u64_chacha8`.
+function next_f64_chacha8(@generator: ChaCha8) -> f64
+    return strong.fraction(@generator.state)
+
+# `count` bytes from `generator`, as Go's `ChaCha8.Read` gives them: first the
+# bytes an earlier call left, then eight from each number, its lowest byte
+# first; the bytes of the last number not used wait for the next call.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one number for each eight bytes or part of them not left
+#   from before.
+# - `count`: how many bytes, 0 or more; 0 draws nothing.
+#
+# Aborts where `count` is below 0. See also `next_bytes`, which keeps no
+# bytes.
+function next_bytes_chacha8(@generator: ChaCha8, count: i64) -> [u8]
+    assert count >= 0
+    return chacha.read(@generator.state, count)
+
+# A number from 0 to `n` - 1, every one as likely, drawn as `below` draws:
+# Go's `Uint64N` from the same ChaCha8.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one number, and very rarely by more.
+# - `n`: the bound, which is never answered; 1 answers 0.
+#
+# Aborts where `n` is 0. See also `int_in_chacha8`.
+function below_chacha8(@generator: ChaCha8, n: u64) -> u64
+    assert n > 0
+    return strong.below(@generator.state, n: n)
+
+# A whole number from `from` to `to`, `to` left out, every one as likely, as
+# `int_in` draws it.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `from`: the smallest number answered, any `i64`.
+# - `to`: one past the largest, above `from`; the whole width of `i64` is
+#   allowed.
+#
+# Aborts where `to` is not above `from`. See also `below_chacha8`.
+function int_in_chacha8(@generator: ChaCha8, from: i64, to: i64) -> i64
+    assert to > from
+    width = wide.add(a: wide.add(a: to, b: ~from), b: 1)
+    drawn = strong.below(@generator.state, n: wide.unsigned(width))
+    return wide.add(a: from, b: wide.from_unsigned(drawn))
+
+# Puts the elements of `xs` in an order drawn at random, every order as
+# likely, as `shuffle` does.
+#
+# - `generator`: the generator drawn from, which the caller holds; one
+#   number for each element but the first.
+# - `xs`: the list shuffled, which the caller holds; an empty list and a
+#   list of one stay as they are.
+#
+# See also `sample_chacha8`.
+function shuffle_chacha8<T>(@generator: ChaCha8, @xs: [T])
+    strong.shuffle(@generator.state, @xs)
+
+# An element of `xs` drawn at random, every place as likely.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `xs`: the list chosen from.
+#
+# Fails `invalid` where `xs` is empty. See also `choose` and `secure_choose`.
+function choose_chacha8<T>(@generator: ChaCha8, xs: [T]) -> T?
+    if xs.len() == 0
+        return fail(code: INVALID, msg: "an element chosen from an empty list")
+    at = strong.below(@generator.state, n: to_u64(xs.len()).must())
+    return ok(xs[to_i64(at).must()])
+
+# `count` elements of `xs` drawn without replacement, in the order drawn, as
+# `sample` draws them.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `xs`: the list drawn from, which is not changed.
+# - `count`: how many, from 0 to `xs.len()`; 0 answers the empty list and
+#   `xs.len()` a shuffled copy.
+#
+# Fails `invalid` where `count` is below 0 or above `xs.len()`. It copies
+# `xs` once. See also `choose_chacha8`.
+function sample_chacha8<T>(@generator: ChaCha8, xs: [T], count: i64) -> [T]?
+    if count < 0 || count > xs.len()
+        return fail(code: INVALID, msg: f"{count} elements drawn from a list of {xs.len()}")
+    return ok(strong.sample(@generator.state, xs, count))
+
+# An element of `xs` drawn as likely as its weight, as `choose_weighted`
+# draws it.
+#
+# - `generator`: the generator drawn from, which the caller holds; nothing
+#   is drawn where the weights are refused.
+# - `xs`: the list chosen from.
+# - `weights`: one weight for each element of `xs`, in its order, each
+#   finite and 0 or more.
+#
+# Fails `invalid` where `weights` is not as long as `xs`, where `xs` is
+# empty, and where a weight is below 0 or not finite or the weights add up to
+# 0 or to more than a float holds. See also `choose_chacha8`.
+function choose_weighted_chacha8<T>(@generator: ChaCha8, xs: [T], weights: [f64]) -> T?
+    if weights.len() != xs.len()
+        return fail(code: INVALID, msg: f"{weights.len()} weights for {xs.len()} elements")
+    at = strong.weighted(@generator.state, weights)?
+    return ok(xs[at])
+
 ## The system's generator
 
 # A number from 0 to `n` - 1, every one as likely, drawn from the system's
@@ -198,6 +369,48 @@ function choose_weighted<T>(@generator: Generator, xs: [T], weights: [f64]) -> T
 function secure_below(n: u64) -> u64?
     assert n > 0
     return pick.secure_below(n)
+
+# An element of `xs` drawn from the system's generator for keys, every place
+# as likely: Python's `secrets.choice`, for a word of a passphrase or a
+# character of a password.
+#
+# - `xs`: the list chosen from.
+#
+# Fails `invalid` where `xs` is empty, and with the code of `os.random_bytes`
+# where the system's generator refuses. See also `secure_below` and `choose`.
+function secure_choose<T>(xs: [T]) -> T?
+    if xs.len() == 0
+        return fail(code: INVALID, msg: "an element chosen from an empty list")
+    at = pick.secure_below(to_u64(xs.len()).must())?
+    return ok(xs[to_i64(at).must()])
+
+# A token of `count` bytes from the system's generator for keys, written as
+# two lower-case hexadecimal digits a byte: Python's `secrets.token_hex`.
+#
+# - `count`: how many random bytes, 0 or more; the text is twice as long. 32
+#   bytes, Python's default, are 256 bits; 0 answers the empty text.
+#
+# Fails `invalid` where `count` is below 0, and with the code of
+# `os.random_bytes` where the system's generator refuses. See also
+# `secure_token_base64_url`.
+function secure_token_hex(count: i64) -> str?
+    drawn = os.random_bytes(count)?
+    return ok(token.hex_of(drawn))
+
+# A token of `count` bytes from the system's generator for keys, written in
+# base 64's URL-safe alphabet with no padding, fit for a URL or a file name:
+# Python's `secrets.token_urlsafe`.
+#
+# - `count`: how many random bytes, 0 or more; the text holds four characters
+#   for each three bytes, and two or three for a last one or two. 32 bytes are
+#   43 characters; 0 answers the empty text.
+#
+# Fails `invalid` where `count` is below 0, and with the code of
+# `os.random_bytes` where the system's generator refuses. See also
+# `secure_token_hex`.
+function secure_token_base64_url(count: i64) -> str?
+    drawn = os.random_bytes(count)?
+    return ok(token.url_safe_of(drawn))
 
 ## Tests
 
@@ -245,6 +458,87 @@ test "a generator copied answers what the original answers"
     copy @= original
     assert next_u64(@original) == next_u64(@copy)
     assert next_u64(@original) == next_u64(@copy)
+
+test "from_seed_chacha8: no bytes, 31, 33, and the message"
+    none: [u8] = []
+    assert from_seed_chacha8(none).is_err()
+    short = chacha.counting_seed().slice(from: 0, to: 31)
+    assert from_seed_chacha8(short).is_err()
+    long @= chacha.counting_seed()
+    long @ long.push(32)
+
+    match from_seed_chacha8(long)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a seed of 33 bytes, where ChaCha8 takes 32"
+
+test "from_system_chacha8: two generators that differ, and a ChaCha8 copied answers what the original answers"
+    first @= from_system_chacha8().must()
+    second = from_system_chacha8().must()
+    assert first != second
+    copy @= first
+    assert next_u64_chacha8(@first) == next_u64_chacha8(@copy)
+    assert next_bytes_chacha8(@first, 5) == next_bytes_chacha8(@copy, 5)
+    assert next_u64_chacha8(@first) == next_u64_chacha8(@copy)
+
+test "int_in_chacha8: the whole width of i64, a range of one, and a range of negative numbers"
+    g @= from_seed_chacha8(chacha.counting_seed()).must()
+
+    for _ in range(from: 0, to: 20)
+        assert int_in_chacha8(@g, from: -3, to: -2) == -3
+        x = int_in_chacha8(@g, from: -10, to: -5)
+        assert x >= -10 && x < -5
+
+    wide_draw = int_in_chacha8(@g, from: -9223372036854775807 - 1, to: 9223372036854775807)
+    assert wide_draw < 9223372036854775807
+
+test "choose_chacha8, sample_chacha8 and choose_weighted_chacha8: the edges refused"
+    g @= from_seed_chacha8(chacha.counting_seed()).must()
+    none: [str] = []
+    assert choose_chacha8(@g, none).is_err()
+    assert sample_chacha8(@g, ["a", "b"], 3).is_err()
+    assert sample_chacha8(@g, ["a", "b"], -1).is_err()
+    assert choose_weighted_chacha8(@g, ["a", "b"], weights: [1.0]).is_err()
+    assert choose_weighted_chacha8(@g, none, weights: []).is_err()
+    assert choose_weighted_chacha8(@g, ["a"], weights: [-1.0]).is_err()
+
+test "secure_choose: an empty list refused, a list of one, and every element drawn in time"
+    none: [str] = []
+
+    match secure_choose(none)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert secure_choose(["only"]).must() == "only"
+    seen: {str: bool} @= {}
+
+    for _ in range(from: 0, to: 200)
+        seen[secure_choose(["a", "b", "c"]).must()] @ true
+
+    assert keys(seen).len() == 3
+
+test "secure_token_hex and secure_token_base64_url: no bytes, one, two, 32, their alphabets, and a count below 0"
+    assert secure_token_hex(0).must() == ""
+    assert secure_token_base64_url(0).must() == ""
+    assert secure_token_hex(1).must().len() == 2
+    assert secure_token_base64_url(1).must().len() == 2
+    assert secure_token_base64_url(2).must().len() == 3
+    assert secure_token_base64_url(3).must().len() == 4
+    hex = secure_token_hex(32).must()
+    url = secure_token_base64_url(32).must()
+    assert hex.len() == 64 && url.len() == 43
+    assert hex != secure_token_hex(32).must()
+
+    for c in hex.chars()
+        assert c[0] >= '0' && c[0] <= '9' || c[0] >= 'a' && c[0] <= 'f'
+
+    for c in url.chars()
+        assert c[0] >= 'A' && c[0] <= 'Z' || c[0] >= 'a' && c[0] <= 'z' || c[0] >= '0' && c[0] <= '9' || c[0] == '-' || c[0] == '_'
+
+    match secure_token_hex(-1)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert secure_token_base64_url(-1).is_err()
 
 ## Examples
 
@@ -305,3 +599,128 @@ test "secure_below: a code of six digits"
 test "from_system: a generator for one run"
     g @= from_system().must()
     assert next_f64(@g) >= 0.0
+
+# The first number from the seed Go's `rand.NewChaCha8` is given here.
+test "from_seed_chacha8: Go's first number for the seed 0 to 31"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert next_u64_chacha8(@g) == 12537355132343524571
+
+# A ChaCha8 seeded by the system, for numbers nobody can foresee.
+test "from_system_chacha8: a generator nobody can foresee"
+    g @= from_system_chacha8().must()
+    assert below_chacha8(@g, 100) < 100
+
+# The second number of the same seed, as Go's `Uint64` answers it.
+test "next_u64_chacha8: the first two numbers"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert next_u64_chacha8(@g) == 12537355132343524571
+    assert next_u64_chacha8(@g) == 11147319424196738781
+
+# A float in [0, 1), Go's first `Float64` from the same seed.
+test "next_f64_chacha8: the first float"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert next_f64_chacha8(@g) == 0.9260335830157617
+
+# Three bytes and then five, as Go's `Read` gives them: the five begin with
+# the five the first number had left.
+test "next_bytes_chacha8: three bytes, then five"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert next_bytes_chacha8(@g, 3) == [219, 156, 65]
+    assert next_bytes_chacha8(@g, 5) == [46, 17, 162, 253, 173]
+
+# A number below ten, as Go's `Uint64N(10)` draws it.
+test "below_chacha8: a digit"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert below_chacha8(@g, 10) == 6
+
+# A die thrown, as Go's `Int64N(6) + 1` throws it.
+test "int_in_chacha8: a die thrown"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert int_in_chacha8(@g, from: 1, to: 7) == 5
+
+# Ten numbers shuffled: the same ten, in another order.
+test "shuffle_chacha8: ten numbers"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    xs: [i64] @= [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    shuffle_chacha8(@g, @xs)
+    assert sort(xs) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+# One of ten names, the place Go's `Uint64N(10)` draws.
+test "choose_chacha8: one of ten names"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    names = ["ann", "bob", "cid", "dee", "eve", "fay", "gus", "hal", "ivy", "jon"]
+    assert choose_chacha8(@g, names).must() == "gus"
+
+# Three of five drawn without replacement, from Go's `Uint64N` of 5, 4 and 3.
+test "sample_chacha8: three of five"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert sample_chacha8(@g, ["a", "b", "c", "d", "e"], 3).must() == ["d", "c", "b"]
+
+# A weight of 0 is never drawn.
+test "choose_weighted_chacha8: a weight of zero never drawn"
+    seed: [u8] @= []
+
+    for at in range(from: 0, to: 32)
+        seed @ seed.push(to_u8(at).must())
+
+    g @= from_seed_chacha8(seed).must()
+    assert choose_weighted_chacha8(@g, ["never", "always"], weights: [0.0, 1.0]).must() == "always"
+
+# A word of a passphrase, drawn so that nobody can guess it.
+test "secure_choose: a word of a passphrase"
+    words = ["correct", "horse", "battery", "staple"]
+    word = secure_choose(words).must()
+    assert word == "correct" || word == "horse" || word == "battery" || word == "staple"
+
+# A token of 16 bytes for a link sent by mail, 32 hexadecimal digits.
+test "secure_token_hex: a token of sixteen bytes"
+    assert secure_token_hex(16).must().len() == 32
+
+# A token of 32 bytes for a URL, 43 characters with no padding.
+test "secure_token_base64_url: a token for a URL"
+    assert secure_token_base64_url(32).must().len() == 43

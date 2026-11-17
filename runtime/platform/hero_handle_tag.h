@@ -70,6 +70,9 @@
 #define HERO_HANDLE_TAG_IPC_LOCK 10
 /* `hero_crypto.c`'s keys (2026-11-17). */
 #define HERO_HANDLE_TAG_CRYPTO 11
-/* 12 to 15 are free; the next member takes 12. */
+/* `hero_disk.c`'s files mapped in memory (2026-11-17, the small additions:
+ * until then that member issued no handle). */
+#define HERO_HANDLE_TAG_DISK_MAP 12
+/* 13 to 15 are free; the next member takes 13. */
 
 #endif

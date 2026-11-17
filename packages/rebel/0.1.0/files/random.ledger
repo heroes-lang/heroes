@@ -41,10 +41,11 @@ capability random/float  a float in [0, 1)
   note    the low 53 bits of a number over 2^53, as Go's `Float64` takes them, and its numbers answered; a float in another range is `a + (b - a) * next_f64`, which is Python's `uniform`
 
 capability random/bytes  bytes from a seeded generator
-  heroes  random.next_bytes
+  heroes  random.next_bytes, random.next_bytes_chacha8
   go      rand.ChaCha8.Read
   rust    -
   python  random.randbytes
+  note    `next_bytes_chacha8` gives Go's `ChaCha8.Read`'s bytes, a number's bytes a read did not use kept for the next read and kept across a `Uint64` between, as Go answered on 2026-11-17; PCG's `next_bytes` keeps none, Go's `PCG` having no `Read`
 
 capability random/shuffle  a list put in an order drawn at random
   heroes  random.shuffle
@@ -54,11 +55,18 @@ capability random/shuffle  a list put in an order drawn at random
   note    Fisher and Yates's method from the last element down; Go's own puts the elements in another order from the same state, so the tests hold the order's spread and not Go's order. Go's `Perm(n)` is `shuffle` of `range(from: 0, to: n)`
 
 capability random/choose  an element drawn from a list
-  heroes  random.choose
+  heroes  random.choose, random.choose_chacha8
   go      -
   rust    -
-  python  random.choice, secrets.choice
-  note    an empty list fails `invalid`, where Python raises; `secrets.choice` is `xs[secure_below(n)]`
+  python  random.choice
+  note    an empty list fails `invalid`, where Python raises
+
+capability random/secure-choose  an element drawn from a list by the system's generator for keys
+  heroes  random.secure_choose
+  go      -
+  rust    -
+  python  secrets.choice
+  note    Lemire's method over eight bytes at a time of `os.random_bytes`, as `secure_below` draws, so no element is favoured; an empty list fails `invalid`, where Python raises
 
 capability random/sample  elements drawn without replacement
   heroes  random.sample
@@ -79,7 +87,7 @@ capability random/secure  a number below a bound from the system's generator for
   go      -
   rust    random::SystemRng
   python  secrets.randbelow, secrets.randbits, random.SystemRandom
-  note    random bytes for a key are `os.random_bytes`, and a token is `bytes.format_hex` or `bytes.format_base64_url` of them: Python's `token_bytes`, `token_hex` and `token_urlsafe`
+  note    random bytes for a key are `os.random_bytes`, Python's `token_bytes`; a token written as text is `secure_token_hex` or `secure_token_base64_url`
 
 capability random/distributions  numbers drawn by a distribution other than the uniform one
   heroes  pending
@@ -89,11 +97,18 @@ capability random/distributions  numbers drawn by a distribution other than the 
   note    each needs its own method and a test by its own moments; `uniform` is a line of arithmetic over `next_f64`
 
 capability random/chacha8  a generator whose numbers cannot be told from the ones before
-  heroes  pending
+  heroes  random.ChaCha8, random.from_seed_chacha8, random.from_system_chacha8, random.next_u64_chacha8, random.next_f64_chacha8, random.below_chacha8, random.int_in_chacha8, random.shuffle_chacha8, random.choose_chacha8, random.sample_chacha8, random.choose_weighted_chacha8
   go      rand.ChaCha8, rand.NewChaCha8, rand.ChaCha8.Seed, rand.ChaCha8.Uint64
   rust    -
   python  -
-  note    until it is written, a secret comes from `os.random_bytes` and `secure_below`
+  note    Go's ChaCha8rand: ChaCha with eight rounds, four blocks a group interleaved word by word, the key added back to its own words alone, and the last 32 bytes of every fourth group made the next key, 124 numbers a key; the first thousand numbers of four seeds answered as Go's did on 2026-11-17, seven changes of key crossed, and Go's `Uint64N`, `Float64` and `Int64N` through `rand.New` drew the same. Go's `Seed` is a new `from_seed_chacha8`. Without interfaces a draw cannot take either generator, so each draw of `Generator` has its `_chacha8` twin by the same method, as `hash` names `start32` and `start64`. Two million numbers took 0.9 s against PCG's 1.5 s, plain build, measured that day
+
+capability random/token  a token of random bytes written as text, for a link, a key or a session
+  heroes  random.secure_token_hex, random.secure_token_base64_url
+  go      -
+  rust    -
+  python  secrets.token_hex, secrets.token_urlsafe, secrets.token_bytes, secrets.DEFAULT_ENTROPY
+  note    `token_bytes` is `os.random_bytes`; hexadecimal in lower case and base 64's URL-safe alphabet with no padding, as Python wrote them on 2026-11-17; the count of bytes is always given, where Python's default is `DEFAULT_ENTROPY`, 32 bytes, which the documentation names; `random` may not use `bytes`, of its own layer, so the two encodings are written again privately for this use
 
 dropped state-bytes  Go's saving of a generator to bytes and back; a `Generator` is two numbers a program keeps as it keeps any record
   go      rand.PCG.AppendBinary, rand.PCG.MarshalBinary, rand.PCG.UnmarshalBinary, rand.ChaCha8.AppendBinary, rand.ChaCha8.MarshalBinary, rand.ChaCha8.UnmarshalBinary

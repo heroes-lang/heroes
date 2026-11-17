@@ -187,6 +187,20 @@ capability fs/rename  a path given another name on the same volume, replacing a 
   python  os.rename, os.replace, Path.rename, Path.replace
   note    a file takes the place of a file and never of a folder, and a folder of nothing, on every system
 
+capability fs/write-atomic  a file written whole in one step that no reader and no crash of the machine sees half done
+  heroes  fs.write_atomic_bytes, fs.write_atomic_text
+  go      -
+  rust    -
+  python  -
+  note    none of the three offers it whole, and each program writes it from parts (Go's os.CreateTemp, File.Sync and os.Rename; Rust's File::sync_all and fs::rename; Python's tempfile.NamedTemporaryFile with delete=False, os.fsync and os.replace, each in its own block): this does those parts in that order, a temporary beside the target made new, written, put on the storage (F_FULLFSYNC on Darwin), closed and renamed over the target in one step, then the folder put on the storage on POSIX, the rename written through on Windows (MoveFileExW with MOVEFILE_WRITE_THROUGH, unrun until the box runs it). A link at the path is replaced itself, as os.Rename and os.replace do; the replaced file's permission bits are kept, which none of the parts does unasked, so a 0o600 file stays private; the owner is not kept. Go's renameio and Python's atomicwrites, which do the same, are outside the standard libraries
+
+capability fs/sync-dir  a folder's entries put on the storage, so a name made, renamed or removed in it outlives a crash
+  heroes  fs.sync_dir
+  go      -
+  rust    -
+  python  -
+  note    Go's File.Sync and Python's os.fsync on a folder opened to read do it on POSIX, and Rust's File::sync_all where the folder can be opened, each in the stream's block; Darwin's F_FULLFSYNC is asked first, as io.sync asks it of a file. Windows has no call a page promises it of a folder: `unsupported` there, where write_atomic's rename is written through instead
+
 capability fs/rename-making-parents  a rename that first makes the folders the new name needs
   heroes  refused: two calls a program writes, `make_dir_all` of the parent and `rename`, which say which folders are made
   go      -
@@ -369,6 +383,27 @@ capability fs/confined  operations held inside one folder, links unable to leave
   python  -
   note    it needs doors that work relative to a folder held open (`openat` and its kin on POSIX, a handle-relative `NtCreateFile` on Windows), each refusing a link that leaves the folder; round 3 (2026-11-16) did not write them on the three systems
 
+capability fs/mapped-file  a file mapped in memory, read and written by copy at an offset, its writes put on the storage, unmapped
+  heroes  fs.open_mapping, fs.read_at, fs.write_at, fs.sync_mapping, fs.close_mapping, fs.Mapping, fs.MapAccess
+  go      syscall.Mmap, syscall.Munmap
+  rust    -
+  python  mmap.mmap, mmap.ACCESS_READ, mmap.ACCESS_WRITE, mmap.ACCESS_COPY, mmap.ACCESS_DEFAULT, mmap.mmap.read, mmap.mmap.write, mmap.mmap.flush, mmap.mmap.close, mmap.mmap.closed, mmap.mmap.size, mmap.error
+  note    no address of a map reaches the program: bytes are copied out and in at an offset the call names, an io.ReaderAt's shape (Go's golang.org/x/exp/mmap, outside the standard library, as is Rust's memmap2), every range checked against the map's size before room is made, so a count from outside never makes a large buffer. A read past the end fails `invalid` where Python's slice is cut short (measured: `m[3:9]` of five bytes answers two) and an io.ReaderAt answers fewer bytes with an error. An empty file is a map of size 0, every system refusing to map no bytes, where Python refuses the file (measured: ValueError, `cannot mmap an empty file`). `copy` is Python's ACCESS_COPY, MAP_PRIVATE and PAGE_WRITECOPY. A file is mapped whole at its size then; Python's offset and length, which map a part, are not taken. On POSIX another program may cut a mapped file and the system then ends a process touching past the cut (SIGBUS): each copy asks the file's size first and fails `failed` past it, which narrows the window and cannot close it; Windows refuses the cut. The Windows arm is unrun until the box runs it
+
+capability fs/mapped-file-cursor  a map read and written through a position of its own, a byte or a line at a time
+  heroes  refused: a map is read and written at the offset each call names, `read_at` and `write_at`; a position kept beside the bytes is the stream's, `io`, and a line is `io.Reader`'s
+  go      -
+  rust    -
+  python  mmap.mmap.seek, mmap.mmap.tell, mmap.mmap.seekable, mmap.mmap.read_byte, mmap.mmap.write_byte, mmap.mmap.readline
+  note    -
+
+capability fs/mapped-file-in-place  bytes searched or moved inside a map where they stand
+  heroes  refused: no address of a map reaches the program, so a search reads what it searches, `read_at` then `bytes.index_of`, and a move is `read_at` then `write_at`
+  go      -
+  rust    -
+  python  mmap.mmap.find, mmap.mmap.rfind, mmap.mmap.move
+  note    -
+
 capability fs/lock  a file locked against other processes
   heroes  fs.lock, fs.try_lock, fs.unlock
   go      -
@@ -410,6 +445,11 @@ capability fs/change-root  the process's root folder changed
   rust    -
   python  os.chroot
   note    -
+
+dropped page-control  the system's own controls over a map's pages and memory not backed by a file: advice, locking in memory, protection, the flags and page sizes of mmap(2), a name for an anonymous map; no address reaches the program, so none of them changes what it can do, and memory shared without a file is `ipc`'s
+  go      syscall.Mprotect, syscall.Mlock, syscall.Munlock
+  rust    -
+  python  mmap.mmap.madvise, mmap.mmap.set_name, mmap.MADV_DONTNEED, mmap.MADV_FREE, mmap.MADV_FREE_REUSABLE, mmap.MADV_FREE_REUSE, mmap.MADV_NORMAL, mmap.MADV_RANDOM, mmap.MADV_SEQUENTIAL, mmap.MADV_WILLNEED, mmap.MAP_32BIT, mmap.MAP_ANON, mmap.MAP_ANONYMOUS, mmap.MAP_HASSEMAPHORE, mmap.MAP_JIT, mmap.MAP_NOCACHE, mmap.MAP_NOEXTEND, mmap.MAP_NORESERVE, mmap.MAP_PRIVATE, mmap.MAP_RESILIENT_CODESIGN, mmap.MAP_RESILIENT_MEDIA, mmap.MAP_SHARED, mmap.MAP_TPRO, mmap.MAP_TRANSLATED_ALLOW_EXECUTE, mmap.MAP_UNIX03, mmap.MS_ASYNC, mmap.MS_INVALIDATE, mmap.MS_SYNC, mmap.PAGESIZE, mmap.ALLOCATIONGRANULARITY, mmap.PROT_EXEC, mmap.PROT_READ, mmap.PROT_WRITE
 
 dropped streams  a file once open is an `io.Stream`, read, written, sought, cut, flushed and closed by `io`
   go      File.Read, File.ReadAt, File.Write, File.WriteAt, File.WriteString, File.ReadFrom, File.WriteTo, File.Seek, File.Truncate, File.Sync, File.Close, File.Stat, File.Chmod, File.Chown, File.Chdir, File.Name, File.SetDeadline, File.SetReadDeadline, File.SetWriteDeadline, File.SyscallConn, os.File, os.Pipe

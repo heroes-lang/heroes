@@ -1,0 +1,228 @@
+# scrypt (RFC 7914): a key derived from a password with PBKDF2-HMAC-SHA256
+# around ROMix, which fills a table of `n` blocks of 128 × r bytes and reads
+# it back in an order the blocks themselves decide, so each guess costs that
+# memory as well as time. Words are of 32 bits, held in `i64`s; the table
+# packs two words into each `i64`, so it takes 128 × r × n bytes and no
+# more. The face checks every parameter before it calls.
+
+use crypto/internal/derive
+use crypto/internal/engine
+use crypto/internal/word
+
+# Applies Salsa20/8 (RFC 7914 3) to the 16 words of `x`, the caller's: four
+# double rounds, then each word added to the one it began as.
+function salsa(@x: [i64])
+    start = x
+    round: i64 @= 0
+
+    while round < 4
+        x[4] @ x[4] ^ word.rotate_left32(x: x[0] + x[12] & word.LOW32, n: 7)
+        x[8] @ x[8] ^ word.rotate_left32(x: x[4] + x[0] & word.LOW32, n: 9)
+        x[12] @ x[12] ^ word.rotate_left32(x: x[8] + x[4] & word.LOW32, n: 13)
+        x[0] @ x[0] ^ word.rotate_left32(x: x[12] + x[8] & word.LOW32, n: 18)
+        x[9] @ x[9] ^ word.rotate_left32(x: x[5] + x[1] & word.LOW32, n: 7)
+        x[13] @ x[13] ^ word.rotate_left32(x: x[9] + x[5] & word.LOW32, n: 9)
+        x[1] @ x[1] ^ word.rotate_left32(x: x[13] + x[9] & word.LOW32, n: 13)
+        x[5] @ x[5] ^ word.rotate_left32(x: x[1] + x[13] & word.LOW32, n: 18)
+        x[14] @ x[14] ^ word.rotate_left32(x: x[10] + x[6] & word.LOW32, n: 7)
+        x[2] @ x[2] ^ word.rotate_left32(x: x[14] + x[10] & word.LOW32, n: 9)
+        x[6] @ x[6] ^ word.rotate_left32(x: x[2] + x[14] & word.LOW32, n: 13)
+        x[10] @ x[10] ^ word.rotate_left32(x: x[6] + x[2] & word.LOW32, n: 18)
+        x[3] @ x[3] ^ word.rotate_left32(x: x[15] + x[11] & word.LOW32, n: 7)
+        x[7] @ x[7] ^ word.rotate_left32(x: x[3] + x[15] & word.LOW32, n: 9)
+        x[11] @ x[11] ^ word.rotate_left32(x: x[7] + x[3] & word.LOW32, n: 13)
+        x[15] @ x[15] ^ word.rotate_left32(x: x[11] + x[7] & word.LOW32, n: 18)
+        x[1] @ x[1] ^ word.rotate_left32(x: x[0] + x[3] & word.LOW32, n: 7)
+        x[2] @ x[2] ^ word.rotate_left32(x: x[1] + x[0] & word.LOW32, n: 9)
+        x[3] @ x[3] ^ word.rotate_left32(x: x[2] + x[1] & word.LOW32, n: 13)
+        x[0] @ x[0] ^ word.rotate_left32(x: x[3] + x[2] & word.LOW32, n: 18)
+        x[6] @ x[6] ^ word.rotate_left32(x: x[5] + x[4] & word.LOW32, n: 7)
+        x[7] @ x[7] ^ word.rotate_left32(x: x[6] + x[5] & word.LOW32, n: 9)
+        x[4] @ x[4] ^ word.rotate_left32(x: x[7] + x[6] & word.LOW32, n: 13)
+        x[5] @ x[5] ^ word.rotate_left32(x: x[4] + x[7] & word.LOW32, n: 18)
+        x[11] @ x[11] ^ word.rotate_left32(x: x[10] + x[9] & word.LOW32, n: 7)
+        x[8] @ x[8] ^ word.rotate_left32(x: x[11] + x[10] & word.LOW32, n: 9)
+        x[9] @ x[9] ^ word.rotate_left32(x: x[8] + x[11] & word.LOW32, n: 13)
+        x[10] @ x[10] ^ word.rotate_left32(x: x[9] + x[8] & word.LOW32, n: 18)
+        x[12] @ x[12] ^ word.rotate_left32(x: x[15] + x[14] & word.LOW32, n: 7)
+        x[13] @ x[13] ^ word.rotate_left32(x: x[12] + x[15] & word.LOW32, n: 9)
+        x[14] @ x[14] ^ word.rotate_left32(x: x[13] + x[12] & word.LOW32, n: 13)
+        x[15] @ x[15] ^ word.rotate_left32(x: x[14] + x[13] & word.LOW32, n: 18)
+        round @ round + 1
+
+    for i in range(from: 0, to: 16)
+        x[i] @ x[i] + start[i] & word.LOW32
+
+# The 2 × r blocks of 16 words that BlockMix (RFC 7914 4) makes of `b`:
+# each block combined into a running block and mixed by Salsa20/8, the even
+# ones first and then the odd ones.
+function block_mix(b: [i64] lent, r: i64) -> [i64]
+    width = 32 * r
+    x: [i64] @= b.slice(from: width - 16, to: width)
+    out: [i64] @= b
+    i: i64 @= 0
+
+    while i < 2 * r
+        k: i64 @= 0
+
+        while k < 16
+            x[k] @ x[k] ^ b[16 * i + k]
+            k @ k + 1
+
+        salsa(@x)
+        place: i64 @= 16 * (i / 2)
+
+        if i % 2 == 1
+            place @ 16 * (r + i / 2)
+        k @ 0
+
+        while k < 16
+            out[place + k] @ x[k]
+            k @ k + 1
+
+        i @ i + 1
+
+    return out
+
+# ROMix (RFC 7914 5) over the block `block` of 32 × r words: `n` blocks
+# written to the table, then `n` read back, each chosen by the low bits of
+# the last block's first word. `n` is a power of two up to 2^24.
+function romix(block: [i64], n: i64, r: i64) -> [i64]
+    width = 32 * r
+    x @= block
+    table: [i64] @= []
+    i: i64 @= 0
+
+    while i < n
+        h: i64 @= 0
+
+        while h < width
+            table @ table.push(x[h] | x[h + 1] << 32)
+            h @ h + 2
+
+        x @ block_mix(x, r)
+        i @ i + 1
+
+    i @ 0
+
+    while i < n
+        base = (x[width - 16] & n - 1) * (width / 2)
+        h: i64 @= 0
+
+        while h < width
+            packed = table[base + h / 2]
+            x[h] @ x[h] ^ packed & word.LOW32
+            x[h + 1] @ x[h + 1] ^ word.shift_right(x: packed, n: 32)
+            h @ h + 2
+
+        x @ block_mix(x, r)
+        i @ i + 1
+
+    return x
+
+# The `length` bytes of scrypt's key from `password` and `salt` under `n`,
+# `r` and `p` (RFC 7914 6), every one of them already checked.
+function derive_key(password: [u8], salt: [u8], n: i64, r: i64, p: i64, length: i64) -> [u8]
+    keyed = engine.begin_keyed(.sha256, password)
+    width = 128 * r
+    b = derive.pbkdf2(keyed: keyed, salt: salt, iterations: 1, length: p * width)
+    mixed: [u8] @= []
+    part: i64 @= 0
+
+    while part < p
+        words: [i64] @= []
+        at: i64 @= part * width
+
+        while at < (part + 1) * width
+            words @ words.push(word.load32_little(b, at))
+            at @ at + 4
+
+        for w in romix(block: words, n: n, r: r)
+            word.push_little(@mixed, x: w, count: 4)
+
+        part @ part + 1
+
+    return derive.pbkdf2(keyed: keyed, salt: mixed, iterations: 1, length: length)
+
+# RFC 7914 8's own vector for Salsa20/8; a Python transcription of its section 3
+# answered the same bytes on 2026-11-17.
+test "scrypt salsa: RFC 7914's Salsa20/8 vector"
+    input: [u8] = [
+        0x7e
+        0x87
+        0x9a
+        0x21
+        0x4f
+        0x3e
+        0xc9
+        0x86
+        0x7c
+        0xa9
+        0x40
+        0xe6
+        0x41
+        0x71
+        0x8f
+        0x26
+        0xba
+        0xee
+        0x55
+        0x5b
+        0x8c
+        0x61
+        0xc1
+        0xb5
+        0x0d
+        0xf8
+        0x46
+        0x11
+        0x6d
+        0xcd
+        0x3b
+        0x1d
+        0xee
+        0x24
+        0xf3
+        0x19
+        0xdf
+        0x9b
+        0x3d
+        0x85
+        0x14
+        0x12
+        0x1e
+        0x4b
+        0x5a
+        0xc5
+        0xaa
+        0x32
+        0x76
+        0x02
+        0x1d
+        0x29
+        0x09
+        0xc7
+        0x48
+        0x29
+        0xed
+        0xeb
+        0xc6
+        0x8d
+        0xb8
+        0xb8
+        0xc2
+        0x5e
+    ]
+    x: [i64] @= []
+
+    for i in range(from: 0, to: 16)
+        x @ x.push(word.load32_little(input, 4 * i))
+
+    salsa(@x)
+    out: [u8] @= []
+
+    for w in x
+        word.push_little(@out, x: w, count: 4)
+
+    assert out.slice(from: 0, to: 8) == [0xa4, 0x1f, 0x85, 0x9c, 0x66, 0x08, 0xcc, 0x99]
+    assert out.slice(from: 56, to: 64) == [0x24, 0xad, 0x67, 0x3d, 0xc7, 0x61, 0x8f, 0x81]

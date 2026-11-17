@@ -77,8 +77,12 @@
 
 #include "hero_disk.h"
 
+/* Round 4's maps are the one handle this member issues, and carry its tag. */
+#include "hero_handle_tag.h"
+
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #if defined(_WIN32)
@@ -91,7 +95,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #if defined(__APPLE__)
@@ -1941,3 +1947,671 @@ int64_t hero_disk_unlock(hero_stream *s) {
 }
 
 #endif
+
+/* -- round 4 (M-rebel-library, the small additions, 2026-11-17) ----------
+ *
+ * A file put in place for good, `hero_disk_replace` and
+ * `hero_disk_sync_folder`, and a file mapped in memory, read and written by
+ * copy. The maps are the one handle this member issues, so this round brings
+ * what the opening comment says the member had no need of: a table of slots,
+ * issued and checked as `hero_net.c`'s sockets are (a slot and a life in one
+ * pointer's bits, under this table's own tag, `hero_handle_tag.h`), and a
+ * lock over it on both platforms. Still no allocation: the table is static,
+ * and a map's memory is the system's own, made by `mmap` or `MapViewOfFile`
+ * and given back by `munmap` or `UnmapViewOfFile`.
+ *
+ * A COPY NEVER HOLDS THE LOCK: a read, a write or a flush marks its slot
+ * busy under the lock, copies outside it, and lets the slot go under it
+ * again; a close meanwhile marks the slot closing, which no handle then
+ * finds, and the last call to let it go unmaps it, so no copy ever reaches
+ * memory that is no longer mapped.
+ *
+ * WINDOWS, UNRUN ON THE MACHINE THIS WAS WRITTEN ON: `MoveFileExW` with
+ * `MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH`,
+ * `GetFileAttributesW`, `CreateFileW`, `GetFileType`, `GetFileSizeEx`,
+ * `CreateFileMappingW`, `MapViewOfFile`, `FlushViewOfFile`,
+ * `FlushFileBuffers`, `UnmapViewOfFile`, `CloseHandle`, `GetLastError`,
+ * and an SRW lock. */
+
+/* A map's handle: this table's tag, a life and a slot, `HERO_HANDLE_TAG(
+ * HERO_HANDLE_TAG_DISK_MAP) | (life << HERO_DISK_MAP_INDEX_BITS) | (index +
+ * 1)`, so no handle is NULL and none is another member's. */
+_Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a map's handle carries its slot and its life in 64 bits");
+#define HERO_DISK_MAP_INDEX_BITS 13
+#define HERO_DISK_MAP_INDEX_MASK ((UINT64_C(1) << HERO_DISK_MAP_INDEX_BITS) - 1)
+/* The last life a slot is given, 2^45 - 1: a slot at it is never issued
+ * again, which costs a slot and never a wrong handle. */
+#define HERO_DISK_MAP_LIFE_MOST HERO_HANDLE_LIFE_MOST(HERO_DISK_MAP_INDEX_BITS)
+/* The most maps open at once, which the header names: a process meets the
+ * system's own bound on open files sooner on most machines (256 descriptors
+ * by default on Darwin), since each map keeps its file open. */
+#define HERO_DISK_MAP_SLOTS 4096u
+_Static_assert(HERO_DISK_MAP_SLOTS <= HERO_DISK_MAP_INDEX_MASK, "an index plus one fits below a handle's life");
+_Static_assert((HERO_DISK_MAP_LIFE_MOST << HERO_DISK_MAP_INDEX_BITS) < (UINT64_C(1) << HERO_HANDLE_TAG_SHIFT),
+               "a life stays below the tag");
+
+/* The file a map keeps open: for a flush, and on POSIX for the size each
+ * copy asks first. */
+#if defined(_WIN32)
+typedef HANDLE hero_disk_file;
+#else
+typedef int hero_disk_file;
+#endif
+
+typedef struct {
+    /* The first mapped byte, NULL for an empty file, which nothing maps. */
+    unsigned char *base;
+    /* How many bytes are mapped, the file's size when it was opened. */
+    uint64_t size;
+    /* The life the slot holds or last held, which its handle names. */
+    uint64_t life;
+    hero_disk_file file;
+    /* One of `HERO_DISK_MAP_READ` to `HERO_DISK_MAP_COPY`. */
+    int64_t how;
+    /* Calls copying through it now. */
+    uint32_t busy;
+    /* The index plus one of the next slot given back, 0 for none. */
+    uint32_t next;
+    /* It holds a map the program has not closed. */
+    bool held;
+    /* The program closed it while a call was copying: the last one unmaps. */
+    bool closing;
+} hero_disk_map_slot;
+
+static hero_disk_map_slot hero_disk_maps[HERO_DISK_MAP_SLOTS];
+/* Every slot at or above it has never held a map. */
+static uint32_t hero_disk_maps_fresh;
+/* The index plus one of the last slot given back, 0 for none. */
+static uint32_t hero_disk_maps_given_back;
+
+#if defined(_WIN32)
+static SRWLOCK hero_disk_maps_lock = SRWLOCK_INIT;
+#else
+static pthread_mutex_t hero_disk_maps_lock = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+static void hero_disk_maps_enter(void) {
+#if defined(_WIN32)
+    AcquireSRWLockExclusive(&hero_disk_maps_lock);
+#else
+    (void)pthread_mutex_lock(&hero_disk_maps_lock);
+#endif
+}
+
+static void hero_disk_maps_leave(void) {
+#if defined(_WIN32)
+    ReleaseSRWLockExclusive(&hero_disk_maps_lock);
+#else
+    (void)pthread_mutex_unlock(&hero_disk_maps_lock);
+#endif
+}
+
+/* What a call copying through a map holds of it, read under the lock. */
+typedef struct {
+    hero_disk_map_slot *slot;
+    unsigned char *base;
+    uint64_t size;
+    hero_disk_file file;
+    int64_t how;
+} hero_disk_map_use;
+
+static hero_disk_map *hero_disk_map_handle(uint32_t index, uint64_t life) {
+    return (hero_disk_map *)(uintptr_t)(HERO_HANDLE_TAG(HERO_HANDLE_TAG_DISK_MAP) |
+                                        (life << HERO_DISK_MAP_INDEX_BITS) | ((uint64_t)index + 1));
+}
+
+/* The slot `m` names while it holds the life `m` was issued for and is not
+ * closed; NULL for any other value, one of another table's tag before any
+ * slot is looked at. Under the lock. */
+static hero_disk_map_slot *hero_disk_map_slot_of(hero_disk_map *m) {
+    uint64_t value = (uint64_t)(uintptr_t)m;
+    uint64_t low = value & HERO_DISK_MAP_INDEX_MASK;
+    hero_disk_map_slot *slot;
+
+    if ((value & HERO_HANDLE_TAG_MASK) != HERO_HANDLE_TAG(HERO_HANDLE_TAG_DISK_MAP) || low == 0 ||
+        low > hero_disk_maps_fresh) {
+        return NULL;
+    }
+    slot = &hero_disk_maps[low - 1];
+    if (!slot->held || slot->closing || slot->life != (value & ~HERO_HANDLE_TAG_MASK) >> HERO_DISK_MAP_INDEX_BITS) {
+        return NULL;
+    }
+    return slot;
+}
+
+/* The slot given back, what it held forgotten. Under the lock, with no call
+ * copying through it. */
+static void hero_disk_map_release(hero_disk_map_slot *slot) {
+    slot->held = false;
+    slot->closing = false;
+    slot->base = NULL;
+    slot->size = 0;
+    if (slot->life < HERO_DISK_MAP_LIFE_MOST) {
+        slot->next = hero_disk_maps_given_back;
+        hero_disk_maps_given_back = (uint32_t)(slot - hero_disk_maps) + 1;
+    }
+}
+
+/* Unmaps `base`, `size` bytes, and closes `file`: 0, or the system's number
+ * of the first failure, both done either way. Outside the lock. */
+static int64_t hero_disk_map_end(unsigned char *base, uint64_t size, hero_disk_file file);
+
+/* A map just made, given a slot and a new life; unmapped and closed, and
+ * NULL with `HERO_DISK_LIMIT`, where every slot holds one. */
+static hero_disk_map *hero_disk_map_keep(unsigned char *base, uint64_t size, hero_disk_file file, int64_t how) {
+    hero_disk_map *handle = NULL;
+    uint32_t index = 0;
+    bool room = true;
+
+    hero_disk_maps_enter();
+    if (hero_disk_maps_given_back != 0) {
+        index = hero_disk_maps_given_back - 1;
+        hero_disk_maps_given_back = hero_disk_maps[index].next;
+    } else if (hero_disk_maps_fresh < HERO_DISK_MAP_SLOTS) {
+        index = hero_disk_maps_fresh;
+        hero_disk_maps_fresh += 1;
+    } else {
+        room = false;
+    }
+    if (room) {
+        hero_disk_map_slot *slot = &hero_disk_maps[index];
+
+        slot->life += 1;
+        slot->base = base;
+        slot->size = size;
+        slot->file = file;
+        slot->how = how;
+        slot->busy = 0;
+        slot->next = 0;
+        slot->held = true;
+        slot->closing = false;
+        handle = hero_disk_map_handle(index, slot->life);
+    }
+    hero_disk_maps_leave();
+
+    if (!room) {
+        (void)hero_disk_map_end(base, size, file);
+        hero_disk_fail(HERO_DISK_LIMIT, 0);
+        return NULL;
+    }
+    hero_disk_clear();
+    return handle;
+}
+
+/* The slot `m` names, marked busy, what it holds in `use`; false with
+ * `HERO_DISK_NOT_OPEN` where it names none. */
+static bool hero_disk_map_take(hero_disk_map *m, hero_disk_map_use *use) {
+    hero_disk_map_slot *slot;
+
+    hero_disk_maps_enter();
+    slot = hero_disk_map_slot_of(m);
+    if (slot != NULL) {
+        slot->busy += 1;
+        use->slot = slot;
+        use->base = slot->base;
+        use->size = slot->size;
+        use->file = slot->file;
+        use->how = slot->how;
+    }
+    hero_disk_maps_leave();
+
+    if (slot == NULL) {
+        hero_disk_fail(HERO_DISK_NOT_OPEN, 0);
+        return false;
+    }
+    return true;
+}
+
+/* A call done with the slot it took; the last call of a slot closed
+ * meanwhile unmaps it, its failure no call's to tell. The last failure of
+ * the thread is left as the call set it. */
+static void hero_disk_map_done(hero_disk_map_use *use) {
+    hero_disk_map_slot *slot = use->slot;
+    bool last = false;
+
+    hero_disk_maps_enter();
+    slot->busy -= 1;
+    if (slot->closing && slot->busy == 0) {
+        last = true;
+        hero_disk_map_release(slot);
+    }
+    hero_disk_maps_leave();
+
+    if (last) {
+        (void)hero_disk_map_end(use->base, use->size, use->file);
+    }
+}
+
+/* Whether the file under a map is now shorter than `end` bytes, where
+ * another program cut it: false where it is not, or where the size could not
+ * be asked, which the copy then meets as it would have. */
+static bool hero_disk_map_shrunk(hero_disk_file file, uint64_t end);
+
+/* Whether `offset` and `count`, and a buffer behind the count, are a range
+ * of the map `use` holds that the file still holds: false with the kind
+ * set where not. */
+static bool hero_disk_map_range_ok(const hero_disk_map_use *use, int64_t offset, const void *buffer, uint64_t count) {
+    if (offset < 0 || (uint64_t)offset > use->size || count > use->size - (uint64_t)offset ||
+        (buffer == NULL && count > 0)) {
+        hero_disk_fail(HERO_DISK_INVALID, 0);
+        return false;
+    }
+    if (count > 0 && hero_disk_map_shrunk(use->file, (uint64_t)offset + count)) {
+        hero_disk_fail(HERO_DISK_SHRUNK, 0);
+        return false;
+    }
+    return true;
+}
+
+#if defined(_WIN32)
+
+int64_t hero_disk_replace(const char *from, const char *to) {
+    wchar_t source[HERO_DISK_WIDE];
+    wchar_t target[HERO_DISK_WIDE];
+    DWORD was;
+    DWORD there;
+
+    hero_disk_clear();
+    if (!hero_disk_wide(from, NULL, source) || !hero_disk_wide(to, NULL, target)) {
+        return -1;
+    }
+    was = GetFileAttributesW(source);
+    if (was == INVALID_FILE_ATTRIBUTES) {
+        return hero_disk_failed();
+    }
+    if ((was & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+        return hero_disk_refused(HERO_DISK_IS_A_DIRECTORY);
+    }
+    if (wcscmp(source, target) == 0) {
+        return 0;
+    }
+    there = GetFileAttributesW(target);
+    if (there != INVALID_FILE_ATTRIBUTES && (there & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+        return hero_disk_refused(HERO_DISK_IS_A_DIRECTORY);
+    }
+    /* No `MOVEFILE_COPY_ALLOWED`: a move between volumes fails and moves
+     * nothing, so the step stays one step. */
+    if (!MoveFileExW(source, target, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+        return hero_disk_failed();
+    }
+    return 0;
+}
+
+int64_t hero_disk_sync_folder(const char *path) {
+    (void)path;
+    hero_disk_clear();
+    return hero_disk_refused(HERO_DISK_UNSUPPORTED);
+}
+
+static int64_t hero_disk_map_end(unsigned char *base, uint64_t size, hero_disk_file file) {
+    int64_t code = 0;
+
+    (void)size;
+    if (base != NULL && !UnmapViewOfFile(base)) {
+        code = (int64_t)GetLastError();
+    }
+    if (!CloseHandle(file) && code == 0) {
+        code = (int64_t)GetLastError();
+    }
+    return code;
+}
+
+/* Windows refuses to cut a file a view maps, so it is never shorter. */
+static bool hero_disk_map_shrunk(hero_disk_file file, uint64_t end) {
+    (void)file;
+    (void)end;
+    return false;
+}
+
+hero_disk_map *hero_disk_map_open(const char *path, int64_t how) {
+    wchar_t wide[HERO_DISK_WIDE];
+    LARGE_INTEGER length;
+    DWORD attributes;
+    DWORD code;
+    HANDLE file;
+    HANDLE mapping;
+    unsigned char *base = NULL;
+    uint64_t size;
+
+    hero_disk_clear();
+    if (how < HERO_DISK_MAP_READ || how > HERO_DISK_MAP_COPY) {
+        (void)hero_disk_refused(HERO_DISK_INVALID);
+        return NULL;
+    }
+    if (!hero_disk_wide(path, NULL, wide)) {
+        return NULL;
+    }
+    /* `CreateFileW` opens no directory without the backup flag, and refuses
+     * one with a number it gives other refusals too, so it is asked first. */
+    attributes = GetFileAttributesW(wide);
+    if (attributes == INVALID_FILE_ATTRIBUTES) {
+        (void)hero_disk_failed();
+        return NULL;
+    }
+    if ((attributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+        (void)hero_disk_refused(HERO_DISK_IS_A_DIRECTORY);
+        return NULL;
+    }
+    file = CreateFileW(wide, GENERIC_READ | (how == HERO_DISK_MAP_READ_WRITE ? GENERIC_WRITE : 0), HERO_DISK_SHARE,
+                       NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (file == INVALID_HANDLE_VALUE) {
+        (void)hero_disk_failed();
+        return NULL;
+    }
+    if (GetFileType(file) != FILE_TYPE_DISK) {
+        (void)CloseHandle(file);
+        (void)hero_disk_refused(HERO_DISK_INVALID);
+        return NULL;
+    }
+    if (!GetFileSizeEx(file, &length) || length.QuadPart < 0) {
+        (void)hero_disk_failed_closing(file);
+        return NULL;
+    }
+    size = (uint64_t)length.QuadPart;
+    if (size > 0) {
+        DWORD protect = how == HERO_DISK_MAP_READ         ? PAGE_READONLY
+                        : how == HERO_DISK_MAP_READ_WRITE ? PAGE_READWRITE
+                                                          : PAGE_WRITECOPY;
+        DWORD view = how == HERO_DISK_MAP_READ         ? FILE_MAP_READ
+                     : how == HERO_DISK_MAP_READ_WRITE ? FILE_MAP_WRITE
+                                                       : FILE_MAP_COPY;
+
+        mapping = CreateFileMappingW(file, NULL, protect, 0, 0, NULL);
+        if (mapping == NULL) {
+            (void)hero_disk_failed_closing(file);
+            return NULL;
+        }
+        /* The view keeps the mapping alive, so its handle is closed at once. */
+        base = MapViewOfFile(mapping, view, 0, 0, 0);
+        code = base == NULL ? GetLastError() : 0;
+        (void)CloseHandle(mapping);
+        if (base == NULL) {
+            (void)CloseHandle(file);
+            (void)hero_disk_failed_with((int64_t)code);
+            return NULL;
+        }
+    }
+    return hero_disk_map_keep(base, size, file, how);
+}
+
+/* The flush of a READ_WRITE map's `size` bytes from `base`: 0 or the
+ * system's number. */
+static int64_t hero_disk_map_put(unsigned char *base, uint64_t size, hero_disk_file file) {
+    (void)size;
+    if (!FlushViewOfFile(base, 0) || !FlushFileBuffers(file)) {
+        return (int64_t)GetLastError();
+    }
+    return 0;
+}
+
+#else
+
+int64_t hero_disk_replace(const char *from, const char *to) {
+    struct stat source;
+    struct stat target;
+
+    hero_disk_clear();
+    if (!hero_disk_path_ok(from) || !hero_disk_path_ok(to)) {
+        return -1;
+    }
+    if (lstat(from, &source) != 0) {
+        return hero_disk_failed();
+    }
+    if (S_ISDIR(source.st_mode)) {
+        return hero_disk_refused(HERO_DISK_IS_A_DIRECTORY);
+    }
+    /* A link at `to` is replaced itself, whatever it names. */
+    if (lstat(to, &target) == 0 && S_ISDIR(target.st_mode)) {
+        return hero_disk_refused(HERO_DISK_IS_A_DIRECTORY);
+    }
+    if (rename(from, to) != 0) {
+        return hero_disk_failed();
+    }
+    return 0;
+}
+
+/* `F_FULLFSYNC` where the system has it and the volume takes it, else
+ * `fsync`, a signal waited through: 0, or the system's number. */
+static int hero_disk_full_sync(int fd) {
+    int done = -1;
+
+#if defined(F_FULLFSYNC)
+    do {
+        done = fcntl(fd, F_FULLFSYNC);
+    } while (done < 0 && errno == EINTR);
+#endif
+    if (done < 0) {
+        do {
+            done = fsync(fd);
+        } while (done < 0 && errno == EINTR);
+    }
+    return done < 0 ? errno : 0;
+}
+
+int64_t hero_disk_sync_folder(const char *path) {
+    int fd;
+    int code;
+
+    hero_disk_clear();
+    if (!hero_disk_path_ok(path)) {
+        return -1;
+    }
+    do {
+        fd = open(path, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+    } while (fd < 0 && errno == EINTR);
+    if (fd < 0) {
+        return hero_disk_failed();
+    }
+    code = hero_disk_full_sync(fd);
+    (void)close(fd);
+    if (code != 0) {
+        return hero_disk_failed_with((int64_t)code);
+    }
+    return 0;
+}
+
+static int64_t hero_disk_map_end(unsigned char *base, uint64_t size, hero_disk_file file) {
+    int64_t code = 0;
+
+    if (base != NULL && munmap(base, (size_t)size) != 0) {
+        code = (int64_t)errno;
+    }
+    /* A close interrupted has closed the descriptor all the same on Darwin
+     * and Linux, so it is never asked twice. */
+    if (close(file) != 0 && code == 0 && errno != EINTR) {
+        code = (int64_t)errno;
+    }
+    return code;
+}
+
+static bool hero_disk_map_shrunk(hero_disk_file file, uint64_t end) {
+    struct stat info;
+
+    if (fstat(file, &info) != 0 || info.st_size < 0) {
+        return false;
+    }
+    return (uint64_t)info.st_size < end;
+}
+
+hero_disk_map *hero_disk_map_open(const char *path, int64_t how) {
+    struct stat info;
+    unsigned char *base = NULL;
+    uint64_t size;
+    int code;
+    int fd;
+
+    hero_disk_clear();
+    if (how < HERO_DISK_MAP_READ || how > HERO_DISK_MAP_COPY) {
+        (void)hero_disk_refused(HERO_DISK_INVALID);
+        return NULL;
+    }
+    if (!hero_disk_path_ok(path)) {
+        return NULL;
+    }
+    /* `O_NONBLOCK`, so a named pipe at the path is opened at once and then
+     * refused, never waited on for a writer; a file it changes nothing of. */
+    do {
+        fd = open(path, (how == HERO_DISK_MAP_READ_WRITE ? O_RDWR : O_RDONLY) | O_CLOEXEC | O_NOCTTY | O_NONBLOCK);
+    } while (fd < 0 && errno == EINTR);
+    if (fd < 0) {
+        (void)hero_disk_failed();
+        return NULL;
+    }
+    if (fstat(fd, &info) != 0) {
+        code = errno;
+        (void)close(fd);
+        (void)hero_disk_failed_with((int64_t)code);
+        return NULL;
+    }
+    if (!S_ISREG(info.st_mode) || info.st_size < 0) {
+        (void)close(fd);
+        (void)hero_disk_refused(S_ISDIR(info.st_mode) ? HERO_DISK_IS_A_DIRECTORY : HERO_DISK_INVALID);
+        return NULL;
+    }
+    size = (uint64_t)info.st_size;
+    if (size > 0) {
+        void *made = mmap(NULL, (size_t)size, PROT_READ | (how == HERO_DISK_MAP_READ ? 0 : PROT_WRITE),
+                          how == HERO_DISK_MAP_COPY ? MAP_PRIVATE : MAP_SHARED, fd, 0);
+
+        if (made == MAP_FAILED) {
+            code = errno;
+            (void)close(fd);
+            /* A volume that maps no file says so with `ENODEV`. */
+            if (code == ENODEV) {
+                hero_disk_fail(HERO_DISK_UNSUPPORTED, (int64_t)code);
+                return NULL;
+            }
+            (void)hero_disk_failed_with((int64_t)code);
+            return NULL;
+        }
+        base = made;
+    }
+    return hero_disk_map_keep(base, size, fd, how);
+}
+
+static int64_t hero_disk_map_put(unsigned char *base, uint64_t size, hero_disk_file file) {
+    int code;
+
+    if (msync(base, (size_t)size, MS_SYNC) != 0) {
+        return (int64_t)errno;
+    }
+    code = hero_disk_full_sync(file);
+    return (int64_t)code;
+}
+
+#endif
+
+int64_t hero_disk_map_size(hero_disk_map *m) {
+    hero_disk_map_slot *slot;
+    int64_t size = -1;
+
+    hero_disk_maps_enter();
+    slot = hero_disk_map_slot_of(m);
+    if (slot != NULL) {
+        size = (int64_t)slot->size;
+    }
+    hero_disk_maps_leave();
+
+    if (slot == NULL) {
+        hero_disk_fail(HERO_DISK_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_disk_clear();
+    return size;
+}
+
+int64_t hero_disk_map_read(hero_disk_map *m, int64_t offset, void *buffer, uint64_t count) {
+    hero_disk_map_use use;
+
+    hero_disk_clear();
+    if (!hero_disk_map_take(m, &use)) {
+        return -1;
+    }
+    if (!hero_disk_map_range_ok(&use, offset, buffer, count)) {
+        hero_disk_map_done(&use);
+        return -1;
+    }
+    if (count > 0) {
+        memcpy(buffer, use.base + offset, (size_t)count);
+    }
+    hero_disk_map_done(&use);
+    return (int64_t)count;
+}
+
+int64_t hero_disk_map_write(hero_disk_map *m, int64_t offset, const void *data, uint64_t count) {
+    hero_disk_map_use use;
+
+    hero_disk_clear();
+    if (!hero_disk_map_take(m, &use)) {
+        return -1;
+    }
+    if (use.how == HERO_DISK_MAP_READ) {
+        hero_disk_map_done(&use);
+        hero_disk_fail(HERO_DISK_INVALID, 0);
+        return -1;
+    }
+    if (!hero_disk_map_range_ok(&use, offset, data, count)) {
+        hero_disk_map_done(&use);
+        return -1;
+    }
+    if (count > 0) {
+        memcpy(use.base + offset, data, (size_t)count);
+    }
+    hero_disk_map_done(&use);
+    return (int64_t)count;
+}
+
+int64_t hero_disk_map_flush(hero_disk_map *m) {
+    hero_disk_map_use use;
+    int64_t code = 0;
+
+    hero_disk_clear();
+    if (!hero_disk_map_take(m, &use)) {
+        return -1;
+    }
+    if (use.how == HERO_DISK_MAP_READ_WRITE && use.size > 0) {
+        code = hero_disk_map_put(use.base, use.size, use.file);
+    }
+    hero_disk_map_done(&use);
+    if (code != 0) {
+        return hero_disk_failed_with(code);
+    }
+    return 0;
+}
+
+int64_t hero_disk_map_close(hero_disk_map *m) {
+    hero_disk_map_slot *slot;
+    unsigned char *base = NULL;
+    uint64_t size = 0;
+    hero_disk_file file;
+    bool last = false;
+    int64_t code = 0;
+
+    memset(&file, 0, sizeof file);
+    hero_disk_maps_enter();
+    slot = hero_disk_map_slot_of(m);
+    if (slot != NULL) {
+        slot->closing = true;
+        if (slot->busy == 0) {
+            last = true;
+            base = slot->base;
+            size = slot->size;
+            file = slot->file;
+            hero_disk_map_release(slot);
+        }
+    }
+    hero_disk_maps_leave();
+
+    if (slot == NULL) {
+        hero_disk_fail(HERO_DISK_NOT_OPEN, 0);
+        return -1;
+    }
+    hero_disk_clear();
+    if (last) {
+        code = hero_disk_map_end(base, size, file);
+    }
+    if (code != 0) {
+        return hero_disk_failed_with(code);
+    }
+    return 0;
+}

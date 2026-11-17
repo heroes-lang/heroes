@@ -244,6 +244,13 @@ capability machine/load  the system's load averages
   python  os.getloadavg
   note    the three as a record of integers in thousandths (`getloadavg` read once), where Python answers three floats; `unsupported` on Windows, which keeps no such average; Python's documentation gives getloadavg for Unix alone (unrun on Windows)
 
+capability machine/memory  the machine's memory, all of it and what is available to programs now
+  heroes  os.memory, os.Memory
+  go      syscall.Sysinfo, syscall.Sysinfo_t
+  rust    -
+  python  -
+  note    added 2026-11-17 (queue 46); none of the three offers it on every system: Go's `syscall.Sysinfo` is Linux's alone and its `Freeram` leaves the kernel's cache out, Python reaches the total through `os.sysconf("SC_PHYS_PAGES")` times `SC_PAGE_SIZE` (block machine/limits; 25769803776 here, as `os.memory` and `sysctl hw.memsize` answered) and the free pages through `SC_AVPHYS_PAGES` on Linux alone (absent here); the available is each system's own word, measured: Darwin's free and inactive pages (10579836928 here, against `vm_stat`'s free, speculative and inactive pages read a moment apart), Linux's `MemAvailable` (equal to `/proc/meminfo`'s in the arm64 container, plain and sanitized, and the `sysinfo` fallback equal to MemFree and Buffers there), Windows' `ullAvailPhys` (unrun, the box was off); a container's limit is read by none
+
 capability machine/family  whether the system is Windows or keeps POSIX's rules
   heroes  os.family
   go      -

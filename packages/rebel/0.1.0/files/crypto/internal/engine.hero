@@ -4,8 +4,12 @@
 # blocks at a time to the compression function of the digest's family, and a
 # digest is finished by padding as FIPS 180-4 5.1 and RFC 1321 3.1 pad: a byte
 # 0x80, zeros, and the length in bits, MD5's with the lowest byte first and
-# the others' with the highest first.
+# the others' with the highest first. The sponges of FIPS 202 (SHA-3, SHAKE
+# and cSHAKE) run here too: their words are Keccak's 25 lanes, their block
+# is the rate, and they are finished by their own padding, a byte naming the
+# function, zeros and a last bit (`crypto/internal/keccak`).
 
+use crypto/internal/keccak
 use crypto/internal/md5
 use crypto/internal/sha1
 use crypto/internal/sha256
@@ -30,6 +34,22 @@ variant Kind
     sha512_224
     # SHA-512/256.
     sha512_256
+    # SHA3-224, FIPS 202.
+    sha3_224
+    # SHA3-256.
+    sha3_256
+    # SHA3-384.
+    sha3_384
+    # SHA3-512.
+    sha3_512
+    # SHAKE128, read to any length.
+    shake128
+    # SHAKE256, read to any length.
+    shake256
+    # cSHAKE128 under a name or a customization (SP 800-185), its prefix fed.
+    cshake128
+    # cSHAKE256 under a name or a customization.
+    cshake256
 
 # The work of a digest or of an HMAC, fed piece by piece.
 record Run
@@ -49,18 +69,31 @@ record Run
 # The length of `kind`'s digest, in bytes.
 function size(kind: Kind) -> i64
     return match kind
-        .md5                  => 16
-        .sha1                 => 20
-        .sha224 | .sha512_224 => 28
-        .sha256 | .sha512_256 => 32
-        .sha384               => 48
-        .sha512               => 64
+        .md5                                         => 16
+        .sha1                                        => 20
+        .sha224 | .sha512_224 | .sha3_224            => 28
+        .sha256 | .sha512_256 | .sha3_256            => 32
+        .shake128 | .cshake128                       => 32
+        .sha384 | .sha3_384                          => 48
+        .sha512 | .sha3_512 | .shake256 | .cshake256 => 64
 
-# The length of `kind`'s block, in bytes: what an HMAC pads its key to.
+# The length of `kind`'s block, in bytes: what an HMAC pads its key to, and
+# for a sponge its rate.
 function block(kind: Kind) -> i64
     return match kind
         .md5 | .sha1 | .sha224 | .sha256              => 64
         .sha384 | .sha512 | .sha512_224 | .sha512_256 => 128
+        .sha3_224                                     => 144
+        .sha3_256 | .shake256 | .cshake256            => 136
+        .sha3_384                                     => 104
+        .sha3_512                                     => 72
+        .shake128 | .cshake128                        => 168
+
+# Whether `kind` is one of FIPS 202's sponges.
+function is_sponge(kind: Kind) -> bool
+    return match kind
+        .md5 | .sha1 | .sha224 | .sha256 | .sha384 | .sha512 | .sha512_224 | .sha512_256                => false
+        .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 => true
 
 # The work of `kind` before any byte.
 function begin(kind: Kind) -> Run
@@ -73,10 +106,19 @@ function begin(kind: Kind) -> Run
         .sha512     => sha512.START512
         .sha512_224 => sha512.START512_224
         .sha512_256 => sha512.START512_256
+        .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 => keccak.empty()
 
     none: [u8] = []
     no_words: [i64] = []
     return Run(kind: kind, words: words, pending: none, length: 0, outer: no_words)
+
+# The work of cSHAKE by `kind` under `name` and `custom` before any byte of
+# the message: their prefix, padded to the rate, already fed (SP 800-185
+# 3.3). `kind` is `.cshake128` or `.cshake256`.
+function begin_custom(kind: Kind, name: [u8], custom: [u8]) -> Run
+    run @= begin(kind)
+    absorb(@run, keccak.prefix(name: name, custom: custom, rate: block(kind)))
+    return run
 
 # The work of the HMAC of `kind` under `key` before any byte of the message
 # (RFC 2104): a key longer than a block is first replaced by its digest, the
@@ -115,6 +157,8 @@ function compress(kind: Kind, words: [i64], data: [u8] lent, at: i64) -> [i64]
         .sha1                                         => sha1.compress(words, data, at)
         .sha224 | .sha256                             => sha256.compress(words, data, at)
         .sha384 | .sha512 | .sha512_224 | .sha512_256 => sha512.compress(words, data, at)
+        .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 =>
+            keccak.compress(words, data, at: at, rate: block(kind))
 
 # Feeds `data` to `run`, which the caller holds: the bytes left from before
 # are made a block first, every whole block of `data` is compressed where it
@@ -167,6 +211,42 @@ function absorb_text(@run: Run, s: str lent)
 # The digest of what `run` was fed, or for an HMAC its tag; `run` itself is
 # a copy, so the caller's work goes on unchanged.
 function finish(run: Run) -> [u8]
+    out = if is_sponge(run.kind)
+        squeeze(run, length: size(run.kind))
+    else
+        padded(run)
+
+    if run.outer.len() == 0
+        return out
+    no_words: [i64] = []
+    tag @= Run(kind: run.kind, words: run.outer, pending: [], length: block(run.kind), outer: no_words)
+    absorb(@tag, out)
+    return finish(tag)
+
+# The first `length` bytes a sponge gives once `run`'s last block is padded:
+# the byte naming the function (0x06 for SHA-3, 0x1f for SHAKE, 0x04 for
+# cSHAKE), zeros, and the rate's last bit set (FIPS 202 B.2).
+function squeeze(run: Run, length: i64) -> [u8]
+    rate = block(run.kind)
+
+    named: u8 = match run.kind
+        .shake128 | .shake256   => 0x1f
+        .cshake128 | .cshake256 => 0x04
+        .md5 | .sha1 | .sha224 | .sha256 | .sha384 | .sha512 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 =>
+            0x06
+
+    last: [u8] @= run.pending
+    last @ last.push(named)
+
+    while last.len() < rate
+        last @ last.push(0)
+
+    last[rate - 1] @ to_u8(to_i64(last[rate - 1]).must() | 0x80).must()
+    return keccak.squeeze(keccak.compress(run.words, last, at: 0, rate: rate), rate: rate, length: length)
+
+# The digest of what a digest of FIPS 180-4 or RFC 1321 was fed, padded as
+# they pad; never an HMAC's tag, which `finish` makes from it.
+function padded(run: Run) -> [u8]
     done @= run
     width = block(run.kind)
     room = width - width / 8
@@ -178,30 +258,26 @@ function finish(run: Run) -> [u8]
     bits = run.length << 3
     above = word.shift_right(x: run.length, n: 61)
 
-    match run.kind
-        .md5                      => word.push_little(@pad, x: bits, count: 8)
-        .sha1 | .sha224 | .sha256 => word.push_big(@pad, x: bits, count: 8)
-        .sha384 | .sha512 | .sha512_224 | .sha512_256 =>
-            word.push_big(@pad, x: above, count: 8)
-            word.push_big(@pad, x: bits, count: 8)
+    if run.kind == .md5
+        word.push_little(@pad, x: bits, count: 8)
+    else if width == 64
+        word.push_big(@pad, x: bits, count: 8)
+    else
+        word.push_big(@pad, x: above, count: 8)
+        word.push_big(@pad, x: bits, count: 8)
 
     absorb(@done, pad)
     out: [u8] @= []
 
     for w in done.words
-        match run.kind
-            .md5                                          => word.push_little(@out, x: w, count: 4)
-            .sha1 | .sha224 | .sha256                     => word.push_big(@out, x: w, count: 4)
-            .sha384 | .sha512 | .sha512_224 | .sha512_256 => word.push_big(@out, x: w, count: 8)
+        if run.kind == .md5
+            word.push_little(@out, x: w, count: 4)
+        else if width == 64
+            word.push_big(@out, x: w, count: 4)
+        else
+            word.push_big(@out, x: w, count: 8)
 
-    out @ out.slice(from: 0, to: size(run.kind))
-
-    if run.outer.len() == 0
-        return out
-    no_words: [i64] = []
-    tag @= Run(kind: run.kind, words: run.outer, pending: [], length: width, outer: no_words)
-    absorb(@tag, out)
-    return finish(tag)
+    return out.slice(from: 0, to: size(run.kind))
 
 test "engine size and block: every kind"
     assert size(.md5) == 16 && size(.sha1) == 20 && size(.sha224) == 28 && size(.sha256) == 32

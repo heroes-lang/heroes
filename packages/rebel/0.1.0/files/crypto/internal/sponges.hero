@@ -1,0 +1,72 @@
+# The published vectors of FIPS 202 and SP 800-185 run against the sponges
+# of `crypto/internal/engine`: SHA-3 of "abc" and of 200 bytes 0xa3, SHAKE's
+# outputs read far past a permutation, a chain over every length from 0 to
+# 300 that crosses each rate's edges, the HMAC over SHA-3, and cSHAKE. The
+# expected values were observed from Python's `hashlib` and `hmac`, and for
+# cSHAKE from Go's `crypto/sha3`, on 2026-11-17.
+
+use bytes
+use crypto/internal/engine
+use crypto/internal/vectors
+
+# The first `length` bytes of `kind`'s output over `data`, as hexadecimal;
+# `kind` is a SHAKE or a cSHAKE begun by `start`.
+function hex_read(start: engine.Run, data: [u8], length: i64) -> str
+    run @= start
+    engine.absorb(@run, data)
+    return bytes.format_hex(engine.squeeze(run, length: length))
+
+test "sponges: SHA-3 of abc and of 200 bytes 0xa3, as FIPS 202's examples"
+    abc = bytes.from_text("abc")
+    a3 = bytes.repeated([0xa3], 200)
+    assert vectors.hex_digest(.sha3_224, abc) == "e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf"
+    assert vectors.hex_digest(.sha3_224, a3) == "9376816aba503f72f96ce7eb65ac095deee3be4bf9bbc2a1cb7e11e0"
+    assert vectors.hex_digest(.sha3_256, abc) == "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"
+    assert vectors.hex_digest(.sha3_256, a3) == "79f38adec5c20307a98ef76e8324afbfd46cfd81b22e3973c65fa1bd9de31787"
+    assert vectors.hex_digest(.sha3_384, abc) == "ec01498288516fc926459f58e2c6ad8df9b473cb0fc08c2596da7cf0e49be4b298d88cea927ac7f539f1edf228376d25"
+    assert vectors.hex_digest(.sha3_384, a3) == "1881de2ca7e41ef95dc4732b8f5f002b189cc1e42b74168ed1732649ce1dbcdd76197a31fd55ee989f2d7050dd473e8f"
+    assert vectors.hex_digest(.sha3_512, abc) == "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0"
+    assert vectors.hex_digest(.sha3_512, a3) == "e76dfad22084a8b1467fcf2ffa58361bec7628edf5f3fdc0e4805dc48caeeca81b7c13c30adf52a3659584739a2df46be589c51ca1a4a8416df6545a1ce8ba00"
+
+test "sponges: the empty message by SHA3-224 and SHA3-512, and SHAKE of it to the full strength"
+    assert vectors.hex_digest(.sha3_224, []) == "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7"
+    assert vectors.hex_digest(.sha3_512, []) == "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26"
+    assert hex_read(start: engine.begin(.shake128), data: [], length: 32) == "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26"
+    assert hex_read(start: engine.begin(.shake256), data: [], length: 64) == "46b9dd2b0ba88d13233b3feb743eeb243fcd52ea62b81b82b50c27646ed5762fd75dc4ddd8c0f200cb05019d67b592f6fc821c49479ab48640292eacb3b7c4be"
+
+test "sponges: SHAKE of 200 bytes 0xa3 read to 512 bytes, its last 16, and a read of 0"
+    a3 = bytes.repeated([0xa3], 200)
+    long128 = hex_read(start: engine.begin(.shake128), data: a3, length: 512)
+    assert long128.slice(from: 992, to: 1024) == "f17d7259ab075216c0699511643b6439"
+    long256 = hex_read(start: engine.begin(.shake256), data: a3, length: 512)
+    assert long256.slice(from: 992, to: 1024) == "ca92bf0be5615e96959d767197a0beeb"
+    assert hex_read(start: engine.begin(.shake256), data: a3, length: 0) == ""
+
+test "sponges: a chain over every length from 0 to 300, by every SHA-3 and SHAKE"
+    assert vectors.chain(.sha3_224) == "ddf7d39084abc48796d66c0fea55a5485dd573614d134f7c3934e06c"
+    assert vectors.chain(.sha3_256) == "dd3ec929dedb7f63399adf84bed64a658d3c4020dbd1807f0ae0f28f35477e82"
+    assert vectors.chain(.sha3_384) == "dfa507f84518d5ad6bf3efe47b2fd617f419b86aa3b8c6ad9b6ed4b51ccbe791e17c9084f85b1644b39d66d825e7831a"
+    assert vectors.chain(.sha3_512) == "c50e4f91c74bed54f6623879f25e3dd62d17eaa54994e61fdeb550b9a8f3c0657138ddec7798d9b2050e918db82400be984dcbbfed9f82a6eb08451c59203846"
+    assert vectors.chain(.shake128) == "c1ee7626b6ff4d9ec75ae8cc7f41ef45212be260f598965c875ac3c545262d4f"
+    assert vectors.chain(.shake256) == "0c0f8464c74dd63ef74ca30499dc08b1641beb5936583058b0a1173e2c5fef1006432248732ae9762ae1162f4ba6d22457dfd9d75f36f668a5bfe04cd4890ea2"
+
+test "sponges: the HMAC over SHA-3, a short key, a key past the rate, and a key of the rate and one more"
+    fox = bytes.from_text("The quick brown fox jumps over the lazy dog")
+    assert vectors.hex_tag(.sha3_256, key: bytes.from_text("key"), data: fox) == "8c6e0683409427f8931711b10ca92a506eb1fafa48fadd66d76126f47ac2c333"
+    assert vectors.hex_tag(.sha3_512, key: bytes.repeated([0x6b], 100), data: bytes.from_text("msg")) == "11f8010ffeacd2dc20d9e636f67b319bb0bb57a2941c12c0c5d54767d44b66dfa04239e470212e9b00400613833ed0053f7415cf3b070dab6b550b6f1413c910"
+    assert vectors.hex_tag(.sha3_224, key: bytes.repeated([0x6b], 145), data: bytes.from_text("msg")) == "a7e99f5be56eac4d22515cd17d9fbd989eaf1c2b9895d3e425884ba3"
+
+test "sponges: cSHAKE, SP 800-185's first and fourth samples, a name and a customization, and both empty as SHAKE"
+    counted: [u8] @= []
+
+    for i in range(from: 0, to: 200)
+        counted @ counted.push(to_u8(i).must())
+
+    signature = bytes.from_text("Email Signature")
+    first = engine.begin_custom(.cshake128, name: [], custom: signature)
+    assert hex_read(start: first, data: counted.slice(from: 0, to: 4), length: 32) == "c1c36925b6409a04f1b504fcbca9d82b4017277cb5ed2b2065fc1d3814d5aaf5"
+    fourth = engine.begin_custom(.cshake256, name: [], custom: signature)
+    assert hex_read(start: fourth, data: counted, length: 64) == "07dc27b11e51fbac75bc7b3c1d983e8b4b85fb1defaf218912ac86430273091727f42b17ed1df63e8ec118f04b23633c1dfb1574c8fb55cb45da8e25afb092bb"
+    named = engine.begin_custom(.cshake256, name: bytes.from_text("KMAC"), custom: bytes.from_text("app"))
+    assert hex_read(start: named, data: bytes.from_text("abc"), length: 64) == "cbd172bb86e2e847d6fe41d771ae0b6c8151d0aa13ce5fc7d7639da52a50d5c018a68efdc4888ffea7b694a14ae0054a030230316e3e42cd567c84160304c4e0"
+    assert hex_read(start: engine.begin(.shake128), data: bytes.from_text("abc"), length: 16) == "5881092dd818bf5cf8a3ddb793fbcba7"
