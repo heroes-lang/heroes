@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and thirty-two packages, in layers. **A package may use any package of a layer below
+A hundred and thirty-three packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -77,16 +77,17 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `vectors` | vectors of f32 compared (dot, cosine, distance) and the nearest found, exactly or by an HNSW index | `random` |  |
 | 2 | `tokenizer` | byte-pair encoding as tiktoken does it: encode, decode, count; its tables in a subpackage | `regex`, `bytes`, `unicode`, `strings` |  |
 | 2 | `search` | an inverted index in memory, ranked by BM25, with phrase and prefix queries | `strings`, `unicode` |  |
+| 2 | `http/suffixes` | the Public Suffix List, so cookies for a public suffix are refused and a site's registrable domain is known; its data apart | `strings` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
 | 3 | `yaml` | a YAML document parsed into values and written back | `json`, `numbers`, `strings`, `unicode` |  |
 | 3 | `cbor` | CBOR (RFC 8949) read into and written from a `json.Value`, bytes and tags kept | `big`, `bytes`, `json`, `lists` |  |
-| 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `io`, `os`, `unicode` | `hero_term.h` |
+| 3 | `term` | colours and styles that fall back to plain text, the cursor, the screen, a key and a secret read without echo, a progress bar | `bytes`, `io`, `os`, `unicode` | `hero_term.h` |
 | 3 | `csv` | comma-separated values read and written by RFC 4180 | `io`, `strings` |  |
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `json`, `strings`, `unicode` |  |
-| 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `strings`, `unicode` |  |
+| 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `numbers`, `strings`, `unicode` |  |
 | 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `io`, `hash` |  |
 | 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `regex`, `strings`, `unicode`, `url` |  |
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `bytes`, `json`, `numbers`, `regex`, `strings`, `unicode`, `url` |  |
@@ -118,7 +119,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `tui` | full-screen terminal programs in immediate mode: widgets, layout by constraints, only the changed cells written | `term`, `unicode`, `strings` |  |
 | 4 | `webauthn` | a WebAuthn relying party: registration and authentication ceremonies, attestation and assertion verified | `cbor`, `crypto`, `crypto/keypairs`, `json`, `bytes`, `url` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
-| 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `strings`, `threads`, `time`, `tls`, `url` |  |
+| 5 | `http` | HTTP/1.1, client and server, over `net` | `bytes`, `compress`, `io`, `json`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `image` | images in memory; PNG, JPEG, GIF and BMP read and written; crop, resize, rotate, colours, simple drawing; a broken file is `invalid`, never a memory fault | `compress`, `bytes`, `hash`, `math`, `io`, `fs` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |

@@ -1,0 +1,708 @@
+# An HTML tree read into a Markdown tree: each element Markdown has a form
+# for made that node, the elements that only group read through, white space
+# collapsed as a browser shows it, text standing directly in a block gathered
+# into paragraphs, and what has no form kept as raw HTML or read through, as
+# the caller asks. The HTML tree is walked on a stack this module holds, so
+# no page is too deep for it.
+
+use html
+use markdown/internal/html_names
+use markdown/internal/scan
+use markdown/internal/tree
+use markdown/internal/write_blocks
+use numbers
+use strings
+
+# What a work item does.
+constant VISIT: i64
+    0
+
+# Begins a run of inlines: a paragraph, a heading or a cell.
+constant START_RUN: i64
+    1
+
+# Ends a run of inlines, dropping its paragraph where it holds nothing.
+constant END_RUN: i64
+    2
+
+# Ends the paragraph open in a block container.
+constant CLOSE: i64
+    3
+
+# Makes the next text begin after a space, where a block read inside a line
+# ended.
+constant SPACE: i64
+    4
+
+# What the node a work item visits is read into: blocks, inlines, or a
+# list's items.
+constant BLOCKS: i64
+    0
+
+# Inlines.
+constant INLINES: i64
+    1
+
+# A list's items.
+constant ITEMS: i64
+    2
+
+# One thing left to do, on the walk's stack.
+record Work
+    # `VISIT`, `START_RUN`, `END_RUN`, `CLOSE` or `SPACE`.
+    action: i64
+    # The HTML node visited.
+    page_node: i64
+    # The Markdown node it is read into.
+    target: i64
+    # What `target` holds: `BLOCKS`, `INLINES` or `ITEMS`.
+    mode: i64
+
+# The white space between two pieces of text in the run of inlines being
+# read.
+record Run
+    # Whether white space was met since the last text written.
+    pending: bool
+    # Whether nothing is written yet in the run, or only a break: white space
+    # there is dropped.
+    at_start: bool
+
+# The Markdown nodes the HTML under `node` of `page` writes, the first of
+# them the document. `keep_html` keeps an element with no Markdown form as
+# raw HTML; else its tags are dropped and what it holds is read, but where it
+# holds nothing a reader sees.
+function convert(page: html.Document, node: i64, keep_html: bool) -> [tree.Node]
+    nodes: [tree.Node] @= [tree.make(tree.DOCUMENT)]
+    paras: {i64: i64} @= {}
+    skip: {i64: bool} @= {}
+    run @= Run(pending: false, at_start: true)
+    work: [Work] @= []
+    top @= 0
+    push_children(@work, top: @top, page: page, of: node, target: 0, mode: BLOCKS)
+
+    while top > 0
+        top @ top - 1
+        w = work[top]
+
+        if w.action == START_RUN
+            run @ Run(pending: false, at_start: true)
+        else if w.action == END_RUN
+            end_run(@nodes, @run, block: w.target)
+        else if w.action == CLOSE
+            close_paragraph(@nodes, @paras, @run, block: w.target)
+        else if w.action == SPACE
+            run.pending @ true
+        else if !skip[w.page_node].default(false)
+            match html.node_of(page, w.page_node)
+                .text t =>
+                    if w.mode == INLINES
+                        add_run_text(@nodes, @run, target: w.target, s: t.v)
+                    else if strings.trim(t.v).len() > 0
+                        block = if w.mode == ITEMS
+                            tree.append(@nodes, parent: w.target, node: tree.make(tree.ITEM))
+                        else
+                            w.target
+                        holder = holder_of(@nodes, @paras, @run, target: block, mode: BLOCKS)
+                        add_run_text(@nodes, @run, target: holder, s: t.v)
+                .comment c =>
+                    if keep_html && w.mode != ITEMS
+                        raw(
+                            @nodes,
+                            @paras,
+                            @run,
+                            target: w.target,
+                            html_text: "<!--" + c.v + "-->",
+                            block: w.mode != INLINES
+                        )
+                .element e =>
+                    is_html = match e.space
+                        .html          => true
+                        .svg | .mathml => false
+
+                    name = if is_html
+                        e.name
+                    else
+                        "svg"
+
+                    if w.mode == INLINES
+                        visit_inline(
+                            @nodes,
+                            @run,
+                            @work,
+                            top: @top,
+                            page: page,
+                            node: w.page_node,
+                            name: name,
+                            target: w.target,
+                            keep_html: keep_html
+                        )
+                    else
+                        visit_block(
+                            @nodes,
+                            @paras,
+                            @run,
+                            @work,
+                            top: @top,
+                            @skip,
+                            page: page,
+                            node: w.page_node,
+                            name: name,
+                            target: w.target,
+                            mode: w.mode,
+                            keep_html: keep_html
+                        )
+                .document | .fragment =>
+                    push_children(@work, top: @top, page: page, of: w.page_node, target: w.target, mode: w.mode)
+                .doctype _ | .instruction _ => _ = 0
+
+    close_paragraph(@nodes, @paras, @run, block: 0)
+    tidy(@nodes)
+    return nodes
+
+# Pushes a visit of each child of `of`, the first on top.
+function push_children(@work: [Work], @top: i64, page: html.Document, of: i64, target: i64, mode: i64)
+    kids = html.children(page, of)
+    at @= kids.len()
+
+    while at > 0
+        at @ at - 1
+        put_work(@work, top: @top, item: Work(action: VISIT, page_node: kids[at], target: target, mode: mode))
+
+# Pushes `item` on the stack.
+function put_work(@work: [Work], @top: i64, item: Work)
+    if top == work.len()
+        work @ work.push(item)
+    else
+        work[top] @ item
+    top @ top + 1
+
+# Pushes an action on no HTML node.
+function act(@work: [Work], @top: i64, action: i64, target: i64)
+    put_work(@work, top: @top, item: Work(action: action, page_node: 0, target: target, mode: BLOCKS))
+
+# Reads the element `node`, named `name`, into the block container `target`,
+# which holds blocks, or items where `mode` is `ITEMS`.
+function visit_block(@nodes: [tree.Node], @paras: {i64: i64}, @run: Run, @work: [Work], @top: i64, @skip: {i64: bool}, page: html.Document, node: i64, name: str, target: i64, mode: i64, keep_html: bool)
+    if html_names.is_metadata(name) || html_names.is_hidden(name) && !keep_html
+        return
+
+    if mode == ITEMS
+        item = tree.append(@nodes, parent: target, node: tree.make(tree.ITEM))
+
+        if name == "li"
+            nodes[item].state @ task_of(page, item: node, @skip)
+            act(@work, top: @top, action: CLOSE, target: item)
+            push_children(@work, top: @top, page: page, of: node, target: item, mode: BLOCKS)
+        else
+            act(@work, top: @top, action: CLOSE, target: item)
+            put_work(@work, top: @top, item: Work(action: VISIT, page_node: node, target: item, mode: BLOCKS))
+        return
+
+    if name == "br"
+        open = paras[target].default(tree.NONE)
+
+        if open != tree.NONE
+            visit_inline(
+                @nodes,
+                @run,
+                @work,
+                top: @top,
+                page: page,
+                node: node,
+                name: name,
+                target: open,
+                keep_html: keep_html
+            )
+        return
+
+    if html_names.is_phrasing(name) && !html_names.is_grouping(name)
+        holder = holder_of(@nodes, @paras, @run, target: target, mode: mode)
+        visit_inline(
+            @nodes,
+            @run,
+            @work,
+            top: @top,
+            page: page,
+            node: node,
+            name: name,
+            target: holder,
+            keep_html: keep_html
+        )
+        return
+    close_paragraph(@nodes, @paras, @run, block: target)
+    level = html_names.heading_level(name)
+
+    if name == "p" || level > 0
+        block @= tree.make(tree.PARAGRAPH)
+
+        if level > 0
+            block @ tree.make(tree.HEADING)
+            block.number @ level
+        at = tree.append(@nodes, parent: target, node: block)
+        act(@work, top: @top, action: END_RUN, target: at)
+        push_children(@work, top: @top, page: page, of: node, target: at, mode: INLINES)
+        act(@work, top: @top, action: START_RUN, target: at)
+    else if name == "blockquote"
+        quote = tree.append(@nodes, parent: target, node: tree.make(tree.BLOCK_QUOTE))
+        act(@work, top: @top, action: CLOSE, target: quote)
+        push_children(@work, top: @top, page: page, of: node, target: quote, mode: BLOCKS)
+    else if name == "ul" || name == "ol"
+        list = tree.append(@nodes, parent: target, node: list_node(page, list: node, ordered: name == "ol"))
+        push_children(@work, top: @top, page: page, of: node, target: list, mode: ITEMS)
+    else if name == "pre"
+        code @= html.text_of(page, node)
+
+        if code.len() > 0 && code[code.len() - 1] != '\n'
+            code @ code + "\n"
+        block @= tree.make_literal(tree.CODE_BLOCK, literal: code)
+        block.flag @ true
+        block.title @ info_of(page, pre: node)
+        _ = tree.append(@nodes, parent: target, node: block)
+    else if name == "hr"
+        _ = tree.append(@nodes, parent: target, node: tree.make(tree.THEMATIC_BREAK))
+    else if name == "table"
+        add_table(@nodes, @work, top: @top, page: page, table: node, target: target)
+    else if keep_html && !html_names.is_grouping(name) && !html_names.is_markdown_block(name)
+        _ = tree.append(
+            @nodes,
+            parent: target,
+            node: tree.make_literal(tree.HTML_BLOCK, literal: html.format_node(page, node))
+        )
+    else
+        act(@work, top: @top, action: CLOSE, target: target)
+        push_children(@work, top: @top, page: page, of: node, target: target, mode: BLOCKS)
+
+# Reads the element `node`, named `name`, into the inline holder `target`.
+function visit_inline(@nodes: [tree.Node], @run: Run, @work: [Work], @top: i64, page: html.Document, node: i64, name: str, target: i64, keep_html: bool)
+    if html_names.is_metadata(name) || html_names.is_hidden(name) && !keep_html
+        return
+    kind = inline_kind(name)
+
+    if kind != tree.NONE
+        flush(@nodes, @run, target: target)
+        holder = tree.append(@nodes, parent: target, node: tree.make(kind))
+        push_children(@work, top: @top, page: page, of: node, target: holder, mode: INLINES)
+    else if name == "a"
+        match html.attribute(page, node, "href")
+            .err _ => push_children(@work, top: @top, page: page, of: node, target: target, mode: INLINES)
+            .ok href =>
+                flush(@nodes, @run, target: target)
+                link @= tree.make_literal(tree.LINK, literal: scan.normalize_uri(strings.trim(href)))
+                link.title @ html.attribute(page, node, "title").default("")
+                holder = tree.append(@nodes, parent: target, node: link)
+                push_children(@work, top: @top, page: page, of: node, target: holder, mode: INLINES)
+    else if name == "img"
+        flush(@nodes, @run, target: target)
+        image @= tree.make_literal(
+            tree.IMAGE,
+            literal: scan.normalize_uri(strings.trim(html.attribute(page, node, "src").default("")))
+        )
+        image.title @ html.attribute(page, node, "title").default("")
+        at = tree.append(@nodes, parent: target, node: image)
+        alt = html.attribute(page, node, "alt").default("")
+
+        if alt.len() > 0
+            _ = tree.append(@nodes, parent: at, node: tree.make_literal(tree.TEXT, literal: alt))
+    else if name == "code" || name == "tt"
+        flush(@nodes, @run, target: target)
+        text = strings.replace_all(s: html.text_of(page, node), old: "\n", new: " ")
+
+        if text.len() > 0
+            _ = tree.append(@nodes, parent: target, node: tree.make_literal(tree.CODE, literal: text))
+    else if name == "br"
+        _ = tree.append(@nodes, parent: target, node: tree.make(tree.LINE_BREAK))
+        run @ Run(pending: false, at_start: true)
+    else if name == "wbr"
+        return
+    else if keep_html && !html_names.is_grouping(name) && !html_names.is_markdown_block(name) && html_names.is_phrasing(name)
+        flush(@nodes, @run, target: target)
+        _ = tree.append(
+            @nodes,
+            parent: target,
+            node: tree.make_literal(tree.HTML_INLINE, literal: html.format_node(page, node))
+        )
+    else if html_names.is_phrasing(name) || html_names.is_grouping(name)
+        push_children(@work, top: @top, page: page, of: node, target: target, mode: INLINES)
+    else
+        act(@work, top: @top, action: SPACE, target: target)
+        push_children(@work, top: @top, page: page, of: node, target: target, mode: INLINES)
+        act(@work, top: @top, action: SPACE, target: target)
+
+# The kind of inline node a formatting element makes; `tree.NONE` for any
+# other.
+function inline_kind(name: str) -> i64
+    if name == "em" || name == "i"
+        return tree.EMPHASIS
+
+    if name == "strong" || name == "b"
+        return tree.STRONG
+
+    if name == "del" || name == "s" || name == "strike"
+        return tree.STRIKETHROUGH
+    return tree.NONE
+
+# The inline holder text and inline elements go into under `target`: itself
+# where it holds inlines, else its open paragraph, made where none is open.
+function holder_of(@nodes: [tree.Node], @paras: {i64: i64}, @run: Run, target: i64, mode: i64) -> i64
+    if mode == INLINES
+        return target
+    open = paras[target].default(tree.NONE)
+
+    if open != tree.NONE
+        return open
+    at = tree.append(@nodes, parent: target, node: tree.make(tree.PARAGRAPH))
+    paras[target] @ at
+    run @ Run(pending: false, at_start: true)
+    return at
+
+# Ends the paragraph open in `block`, where one is.
+function close_paragraph(@nodes: [tree.Node], @paras: {i64: i64}, @run: Run, block: i64)
+    open = paras[block].default(tree.NONE)
+
+    if open != tree.NONE
+        paras[block] @ tree.NONE
+        end_run(@nodes, @run, block: open)
+
+# Ends the run of inlines of `block`: the white space after its last text
+# dropped, and a paragraph that holds nothing taken out.
+function end_run(@nodes: [tree.Node], @run: Run, block: i64)
+    run @ Run(pending: false, at_start: true)
+
+    if nodes[block].kind == tree.PARAGRAPH && nodes[block].first == tree.NONE
+        tree.unlink(@nodes, block)
+
+# Adds raw HTML: a block in a container of blocks, inline in a holder of
+# inlines.
+function raw(@nodes: [tree.Node], @paras: {i64: i64}, @run: Run, target: i64, html_text: str, block: bool)
+    if block
+        close_paragraph(@nodes, @paras, @run, block: target)
+        _ = tree.append(@nodes, parent: target, node: tree.make_literal(tree.HTML_BLOCK, literal: html_text))
+    else
+        flush(@nodes, @run, target: target)
+        _ = tree.append(@nodes, parent: target, node: tree.make_literal(tree.HTML_INLINE, literal: html_text))
+
+# Adds the text `s` to `target` as a browser shows it: each run of white space
+# one space, none at the run's start, and none written until text follows it.
+function add_run_text(@nodes: [tree.Node], @run: Run, target: i64, s: str)
+    pieces: [str] @= []
+    i @= 0
+
+    while i < s.len()
+        b = s[i]
+
+        if b == ' ' || b == '\t' || b == '\n' || b == '\r' || b == 12
+            run.pending @ true
+            i @ i + 1
+        else
+            j @= i
+
+            while j < s.len() && !(s[j] == ' ' || s[j] == '\t' || s[j] == '\n' || s[j] == '\r' || s[j] == 12)
+                j @ j + 1
+
+            if run.pending && !run.at_start
+                pieces @ pieces.push(" ")
+            pieces @ pieces.push(s.slice(from: i, to: j))
+            run @ Run(pending: false, at_start: false)
+            i @ j
+
+    if pieces.len() > 0
+        add_text(@nodes, target: target, s: pieces.join(""))
+
+# Writes the space the run waits on, where text came before it.
+function flush(@nodes: [tree.Node], @run: Run, target: i64)
+    if run.pending && !run.at_start
+        add_text(@nodes, target: target, s: " ")
+    run.pending @ false
+
+# Adds `s` to `target`, joined to its last child where that is text.
+function add_text(@nodes: [tree.Node], target: i64, s: str)
+    last = nodes[target].last
+
+    if last != tree.NONE && nodes[last].kind == tree.TEXT
+        nodes[last].literal @ nodes[last].literal + s
+    else
+        _ = tree.append(@nodes, parent: target, node: tree.make_literal(tree.TEXT, literal: s))
+
+# The list node the `ul` or `ol` element `list` makes: its first number from
+# `start`, and tight where no item holds a `p`.
+function list_node(page: html.Document, list: i64, ordered: bool) -> tree.Node
+    n @= tree.make(tree.LIST)
+    n.ordered @ ordered
+
+    n.marker @ if ordered
+        "."
+    else
+        "-"
+    n.number @ 1
+
+    if ordered
+        start = strings.trim(html.attribute(page, list, "start").default("1"))
+
+        match numbers.parse_int(start)
+            .ok k =>
+                if k >= 0 && k <= 999999999
+                    n.number @ k
+            .err _ => n.number @ 1
+    tight @= true
+
+    for item in html.child_elements(page, list)
+        for inner in html.child_elements(page, item)
+            if html.is_named(page, inner, "p")
+                tight @ false
+
+    n.flag @ tight
+    return n
+
+# The task box of the `li` element `item`, as the tree numbers it: 1 an
+# unchecked box, 2 a checked one, 0 none. A box is a checkbox `input` before
+# any text of the item or of its first paragraph, which is then left out.
+function task_of(page: html.Document, item: i64, @skip: {i64: bool}) -> i64
+    holder @= item
+
+    for round in range(from: 0, to: 2)
+        for kid in html.children(page, holder)
+            match html.node_of(page, kid)
+                .text t =>
+                    if strings.trim(t.v).len() > 0
+                        return 0
+                .element e =>
+                    if e.name == "input" && strings.to_lower_ascii(html.attribute(page, kid, "type").default("")) == "checkbox"
+                        skip[kid] @ true
+
+                        if html.has_attribute(page, kid, "checked")
+                            return 2
+                        return 1
+
+                    if round == 0 && e.name == "p"
+                        holder @ kid
+                        break
+                    return 0
+                .document | .fragment | .doctype _ | .comment _ | .instruction _ => _ = 0
+
+        if holder == item
+            return 0
+
+    return 0
+
+# The info string of the `pre` element `pre`: the language its first `code`
+# child's class names, else its own.
+function info_of(page: html.Document, pre: i64) -> str
+    for kid in html.child_elements(page, pre)
+        if html.is_named(page, kid, "code")
+            got = html_names.language_of(html.attribute(page, kid, "class").default(""))
+
+            if got.len() > 0
+                return got
+
+    return html_names.language_of(html.attribute(page, pre, "class").default(""))
+
+# Adds the table `table` under `target`: its rows in order, the first the
+# header, each with as many cells as its widest row, each cell's content left
+# on the stack to read as inlines. A table with no row adds nothing.
+function add_table(@nodes: [tree.Node], @work: [Work], @top: i64, page: html.Document, table: i64, target: i64)
+    rows: [i64] @= []
+
+    for part in html.child_elements(page, table)
+        if html.is_named(page, part, "tr")
+            rows @ rows.push(part)
+        else if html.is_named(page, part, "thead") || html.is_named(page, part, "tbody") || html.is_named(page, part, "tfoot")
+            for row in html.child_elements(page, part)
+                if html.is_named(page, row, "tr")
+                    rows @ rows.push(row)
+
+    if rows.len() == 0
+        return
+    cells: [[i64]] @= []
+    width @= 1
+
+    for row in rows
+        one: [i64] @= []
+
+        for cell in html.child_elements(page, row)
+            if html.is_named(page, cell, "td") || html.is_named(page, cell, "th")
+                one @ one.push(cell)
+
+        if one.len() > width
+            width @ one.len()
+        cells @ cells.push(one)
+
+    aligns: [i64] @= []
+
+    for k in range(from: 0, to: width)
+        align @= 0
+
+        if k < cells[0].len()
+            cell = cells[0][k]
+            align @ html_names.align_of(
+                align: html.attribute(page, cell, "align").default(""),
+                style: html.attribute(page, cell, "style").default("")
+            )
+        aligns @ aligns.push(align)
+
+    made @= tree.make(tree.TABLE)
+    made.aligns @ aligns
+    at = tree.append(@nodes, parent: target, node: made)
+    pending: [Work] @= []
+
+    for r in range(from: 0, to: rows.len())
+        row @= tree.make(tree.TABLE_ROW)
+        row.flag @ r == 0
+        row_at = tree.append(@nodes, parent: at, node: row)
+
+        for k in range(from: 0, to: width)
+            cell @= tree.make(tree.TABLE_CELL)
+            cell.state @ aligns[k]
+            cell_at = tree.append(@nodes, parent: row_at, node: cell)
+
+            if k < cells[r].len()
+                pending @ pending.push(Work(action: VISIT, page_node: cells[r][k], target: cell_at, mode: INLINES))
+
+    k @= pending.len()
+
+    while k > 0
+        k @ k - 1
+        act(@work, top: @top, action: END_RUN, target: pending[k].target)
+        push_children(@work, top: @top, page: page, of: pending[k].page_node, target: pending[k].target, mode: INLINES)
+        act(@work, top: @top, action: START_RUN, target: pending[k].target)
+
+# Puts the white space at the edges of emphasis, strong emphasis and
+# strikethrough outside them, where Markdown can write it, takes out the ones
+# left empty and the lists that hold no item, and joins texts side by side.
+# The nodes are taken children before parents, so a space moved out of one
+# is moved out of the one around it too.
+function tidy(@nodes: [tree.Node])
+    order: [i64] @= []
+    at @= nodes[0].first
+
+    while at != tree.NONE
+        order @ order.push(at)
+
+        if nodes[at].first != tree.NONE
+            at @ nodes[at].first
+        else
+            at @ tree.after_node(nodes, node: at, root: 0)
+
+    k @= order.len()
+
+    while k > 0
+        k @ k - 1
+        node = order[k]
+        kind = nodes[node].kind
+
+        if kind == tree.EMPHASIS || kind == tree.STRONG || kind == tree.STRIKETHROUGH
+            edges_outside(@nodes, node: node)
+
+            if nodes[node].first == tree.NONE
+                tree.unlink(@nodes, node)
+        else if kind == tree.LIST && nodes[node].first == tree.NONE
+            tree.unlink(@nodes, node)
+
+    tree.merge_texts(@nodes, root: 0)
+
+# Moves the spaces that open and close the inlines of `node` to before and
+# after it.
+function edges_outside(@nodes: [tree.Node], node: i64)
+    first = nodes[node].first
+
+    if first != tree.NONE && nodes[first].kind == tree.TEXT && strings.has_prefix(s: nodes[first].literal, prefix: " ")
+        nodes[first].literal @ strings.trim_start(nodes[first].literal)
+
+        if nodes[first].literal.len() == 0
+            tree.unlink(@nodes, first)
+        space_beside(@nodes, node: node, before: true)
+    last = nodes[node].last
+
+    if last != tree.NONE && nodes[last].kind == tree.TEXT && strings.has_suffix(s: nodes[last].literal, suffix: " ")
+        nodes[last].literal @ strings.trim_end(nodes[last].literal)
+
+        if nodes[last].literal.len() == 0
+            tree.unlink(@nodes, last)
+        space_beside(@nodes, node: node, before: false)
+
+# Puts one space before `node`, or after it, unless one stands there or the
+# node begins or ends its block, where a space is dropped anyway.
+function space_beside(@nodes: [tree.Node], node: i64, before: bool)
+    other = if before
+        nodes[node].prev
+    else
+        nodes[node].next
+
+    if other == tree.NONE
+        parent = nodes[node].parent
+
+        if !is_inline_holder(nodes[parent].kind)
+            return
+        made = tree.append(@nodes, parent: parent, node: tree.make_literal(tree.TEXT, literal: " "))
+        tree.unlink(@nodes, made)
+
+        if before
+            tree.link_before(@nodes, sibling: node, node: made)
+        else
+            tree.link_after(@nodes, sibling: node, node: made)
+        return
+
+    if nodes[other].kind == tree.TEXT
+        if before && !strings.has_suffix(s: nodes[other].literal, suffix: " ")
+            nodes[other].literal @ nodes[other].literal + " "
+        else if !before && !strings.has_prefix(s: nodes[other].literal, prefix: " ")
+            nodes[other].literal @ " " + nodes[other].literal
+        return
+    made = tree.append(@nodes, parent: nodes[node].parent, node: tree.make_literal(tree.TEXT, literal: " "))
+    tree.unlink(@nodes, made)
+
+    if before
+        tree.link_before(@nodes, sibling: node, node: made)
+    else
+        tree.link_after(@nodes, sibling: node, node: made)
+
+# Whether a node of `kind` is an inline holding inlines, inside which a space
+# at an edge still shows.
+function is_inline_holder(kind: i64) -> bool
+    return kind == tree.EMPHASIS || kind == tree.STRONG || kind == tree.STRIKETHROUGH || kind == tree.LINK || kind == tree.IMAGE
+
+## Tests
+
+# The Markdown `text`, an HTML page, reads into, written back.
+function written(text: str, keep_html: bool) -> str
+    return write_blocks.markdown_of(convert(html.parse(text), node: html.ROOT, keep_html: keep_html), root: 0)
+
+test "convert: headings, paragraphs and emphasis, a space at emphasis's edge put outside"
+    assert written("<h2>Title</h2><p>a<em> b </em>c <strong>d</strong></p>", keep_html: false) == "## Title\n\na *b* c **d**\n"
+    assert written("<p><b><i> x </i></b>y</p>", keep_html: false) == "***x*** y\n"
+    assert written("<p><em> </em>a</p>", keep_html: false) == "a\n"
+    assert written("", keep_html: false) == ""
+
+test "convert: white space collapsed, text in a block gathered into paragraphs, a break"
+    assert written("<div>  one\n two <div>three</div> four</div>", keep_html: false) == "one two\n\nthree\n\nfour\n"
+    assert written("<p>a<br>  b</p>", keep_html: false) == "a\\\nb\n"
+    no_break = html.unescape("&nbsp;")
+    assert written("<p>a&nbsp;b</p>", keep_html: false) == "a" + no_break + "b\n"
+
+test "convert: lists, a first number, a nested list, task boxes, and a loose list"
+    page = "<ol start=\"3\"><li>a</li><li>b<ul><li><input type=\"checkbox\" checked> c</li><li><input type=\"checkbox\">d</li></ul></li></ol>"
+    assert written(page, keep_html: false) == "3. a\n4. b\n   - [x] c\n   - [ ] d\n"
+    assert written("<ul><li><p>a</p></li><li><p>b</p></li></ul>", keep_html: false) == "- a\n\n- b\n"
+    assert written("<ul></ul><p>x</p>", keep_html: false) == "x\n"
+
+test "convert: pre as fenced code with its language, code spans, a rule and a quote"
+    assert written("<pre><code class=\"language-go\">x := 1\n</code></pre>", keep_html: false) == "```go\nx := 1\n```\n"
+    assert written("<p>run <code>a`b</code></p><hr><blockquote><p>q</p></blockquote>", keep_html: false) == "run ``a`b``\n\n***\n\n> q\n"
+
+test "convert: a table, its alignments, and rows as wide as the widest"
+    page = "<table><tr><th align=\"left\">a</th><th style=\"text-align: right\">b|c</th></tr><tr><td>1</td><td>2</td><td>3</td></tr></table>"
+    assert written(page, keep_html: false) == "| a | b\\|c |  |\n| :-- | --: | --- |\n| 1 | 2 | 3 |\n"
+
+test "convert: links, titles and images, their destinations percent-encoded"
+    page = "<p><a href=\"/x y\" title=\"t\">go</a> <img src=\"i.png\" alt=\"pic\"> <a>plain</a></p>"
+    assert written(page, keep_html: false) == "[go](/x%20y \"t\") ![pic](i.png) plain\n"
+
+test "convert: what has no form kept as HTML, or read through and hidden content dropped"
+    page = "<html><head><title>T</title></head><body><script>x()</script><p>x<kbd>Ctrl</kbd></p><details><summary>s</summary>t</details></body></html>"
+    assert written(page, keep_html: true) == "<script>x()</script>\n\nx<kbd>Ctrl</kbd>\n\n<details><summary>s</summary>t</details>\n"
+    assert written(page, keep_html: false) == "xCtrl\n\ns\n\nt\n"
+    assert written("<p>a<!-- n -->b</p>", keep_html: true) == "a<!-- n -->b\n"
+    assert written("<p>a<!-- n -->b</p>", keep_html: false) == "ab\n"
+
+test "convert: a page nested past html's depth, walked on the module's own stack"
+    page = repeat("<div>", 3000) + "deep" + repeat("</div>", 3000)
+    assert written(page, keep_html: false) == "deep\n"

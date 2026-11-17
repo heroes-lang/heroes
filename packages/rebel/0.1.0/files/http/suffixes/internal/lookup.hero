@@ -1,0 +1,126 @@
+# The Public Suffix List's algorithm (publicsuffix.org/list/, "Formal
+# Definition") over the rules `rules` holds: each suffix of a name's labels
+# asked of the sorted rules by a binary search, as a rule, as the wildcard
+# above it and as an exception; an exception prevails, else the longest
+# match, else the implicit rule `*`, one label.
+
+use http/suffixes/internal/rules
+use strings
+
+# The code of a name that is no domain name.
+constant INVALID: str
+    "invalid"
+
+# What `prevailing` answers: how many labels of the name the public suffix
+# takes, and whether the rule that decided is ICANN's.
+record Match
+    # The labels of the public suffix, 1 or more.
+    labels: i64
+    # Whether the prevailing rule stands in the list's ICANN section; false
+    # for the implicit `*`.
+    icann: bool
+
+# The labels of `host`, lower case, checked to be a domain name: no empty
+# label, so no dot at either end and no two together, and not an IPv4
+# address. Fails `invalid` otherwise.
+function labels_of(host: str) -> [str]?
+    if host.len() == 0
+        return fail(code: INVALID, msg: "an empty host has no public suffix")
+    labels = strings.split(s: strings.to_lower_ascii(host), sep: ".")
+
+    for label in labels
+        if label.len() == 0
+            return fail(code: INVALID, msg: f"\"{host}\" holds an empty label: a dot at an end or two together")
+
+    if is_address(labels)
+        return fail(code: INVALID, msg: f"\"{host}\" is an address, which has no public suffix")
+    return ok(labels)
+
+# Whether `labels` write an IPv4 address: four, each of digits alone.
+function is_address(labels: [str]) -> bool
+    if labels.len() != 4
+        return false
+
+    for label in labels
+        for c in label.chars()
+            if c[0] < '0' || c[0] > '9'
+                return false
+
+    return true
+
+# The last `count` of `labels`, joined by dots.
+function last_of(labels: [str], count: i64) -> str
+    return labels.slice(from: labels.len() - count, to: labels.len()).join(".")
+
+# The index of `rule` in `rules.RULES`, by a binary search over its bytes;
+# not found where it holds none.
+function index_of(rule: str) -> i64?
+    low @= 0
+    high @= rules.RULES.len() - 1
+
+    while low <= high
+        middle = (low + high) / 2
+        order = strings.compare(a: rules.RULES[middle], b: rule)
+
+        if order == 0
+            return ok(middle)
+
+        if order < 0
+            low @ middle + 1
+        else
+            high @ middle - 1
+
+    return fail(code: "not_found", msg: f"no rule \"{rule}\"")
+
+# The prevailing rule for `labels`, a domain name's.
+function prevailing(labels: [str]) -> Match
+    best @= Match(labels: 1, icann: false)
+    found @= false
+
+    for count in range(from: 1, to: labels.len() + 1)
+        suffix = last_of(labels, count: count)
+
+        match index_of("!" + suffix)
+            .ok at => return Match(labels: count - 1, icann: rules.ICANN[at])
+            .err _ => _ = 0
+
+        match index_of(suffix)
+            .ok at =>
+                best @ Match(labels: count, icann: rules.ICANN[at])
+                found @ true
+            .err _ => _ = 0
+
+        if count >= 2
+            match index_of("*." + last_of(labels, count: count - 1))
+                .ok at =>
+                    best @ Match(labels: count, icann: rules.ICANN[at])
+                    found @ true
+                .err _ => _ = 0
+
+    if !found
+        return Match(labels: 1, icann: false)
+    return best
+
+## Tests
+
+test "labels_of: lower case, an empty label at either end or inside, and an address"
+    assert labels_of("WwW.Example.COM").must() == ["www", "example", "com"]
+
+    for host in ["", ".com", "com.", "a..b", "192.0.2.1"]
+        assert labels_of(host).is_err()
+
+    assert labels_of("1.2.3").must() == ["1", "2", "3"]
+
+test "index_of: the first rule, the last, one between, and none"
+    assert index_of(rules.RULES[0]).must() == 0
+    assert index_of(rules.RULES[rules.RULES.len() - 1]).must() == rules.RULES.len() - 1
+    assert rules.RULES[index_of("co.uk").must()] == "co.uk"
+    assert index_of("no-such-suffix.invalid").is_err()
+
+test "prevailing: a rule, a wildcard, an exception, a private one, and the implicit rule"
+    assert prevailing(["example", "co", "uk"]) == Match(labels: 2, icann: true)
+    assert prevailing(["a", "b", "ck"]) == Match(labels: 2, icann: true)
+    assert prevailing(["www", "ck"]) == Match(labels: 1, icann: true)
+    assert prevailing(["foo", "github", "io"]).labels == 2
+    assert !prevailing(["foo", "github", "io"]).icann
+    assert prevailing(["example", "example"]) == Match(labels: 1, icann: false)

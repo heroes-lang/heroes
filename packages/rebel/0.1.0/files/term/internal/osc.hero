@@ -1,0 +1,66 @@
+# The operating system commands of a terminal this package writes: OSC 8,
+# which makes a text a link to a target, as the terminals that follow Egmont
+# Koblinger's proposal read it, and OSC 52, which puts a text on the
+# terminal's clipboard, as xterm defines it. Each is `ESC ]`, its fields
+# parted by `;`, and the string terminator `ESC \`.
+
+use bytes
+
+# What opens an operating system command.
+constant OSC: str
+    "\u{1b}]"
+
+# The string terminator that ends one.
+constant ST: str
+    "\u{1b}\\"
+
+# The hexadecimal digits, upper case.
+constant HEX: str
+    "0123456789ABCDEF"
+
+# `target` as OSC 8 carries it: every byte from 32 to 126 as it is, every
+# other percent-encoded, so that no byte of it can end the command.
+function target_text(target: str) -> str
+    out: [str] @= []
+    run @= 0
+
+    for i in range(from: 0, to: target.len())
+        b = target[i]
+
+        if b < 32 || b > 126
+            # A run of printable bytes is ASCII, so it is cut only between
+            # characters; between two encoded bytes it is empty, and not cut.
+            if i > run
+                out @ out.push(target.slice(from: run, to: i))
+            n = to_i64(b).must()
+            high = n >> 4
+            low = n & 15
+            out @ out.push("%" + HEX.slice(from: high, to: high + 1) + HEX.slice(from: low, to: low + 1))
+            run @ i + 1
+
+    out @ out.push(target.slice(from: run, to: target.len()))
+    return out.join("")
+
+# `text` made a link to `target` by OSC 8: the opening command with the
+# target, the text, and the closing command with none.
+function link(text: str, target: str) -> str
+    return OSC + "8;;" + target_text(target) + ST + text + OSC + "8;;" + ST
+
+# The OSC 52 command that puts `text` on the clipboard: `c` for the
+# clipboard, and the text in standard base 64.
+function clipboard(text: str) -> str
+    return OSC + "52;c;" + bytes.format_base64(bytes.from_text(text)) + ST
+
+## Tests
+
+test "target_text: ASCII kept, a space kept, a control, an escape and a character of two bytes encoded"
+    assert target_text("https://example.com/a?b=c") == "https://example.com/a?b=c"
+    assert target_text("a b") == "a b"
+    assert target_text("a\u{1b}b\u{7}") == "a%1Bb%07"
+    assert target_text("é") == "%C3%A9"
+    assert target_text("") == ""
+
+test "link and clipboard: the commands as kitty, iTerm2 and xterm read them"
+    assert link(text: "Bowie", target: "https://www.davidbowie.com") == "\u{1b}]8;;https://www.davidbowie.com\u{1b}\\Bowie\u{1b}]8;;\u{1b}\\"
+    assert clipboard("hi") == "\u{1b}]52;c;aGk=\u{1b}\\"
+    assert clipboard("") == "\u{1b}]52;c;\u{1b}\\"

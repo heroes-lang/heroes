@@ -14,8 +14,17 @@
 # without measure fail `limit`; a server compresses a response only where
 # the program asks, by `with_compression`, and the client accepts it.
 #
-# **What it does not do.** HTTP/2 and HTTP/3 are not here, nor a proxy or
-# its tunnel, routing by pattern, a time limit on making a plain connection,
+# **A proxy is the program's choice**: a `Client` sends through the proxies
+# its `proxy` names, an `http://` request with its whole URL as its target
+# and an `https://` one through a tunnel opened at `CONNECT` with TLS over
+# it, which macOS's TLS does not begin (`tls.client_over`), so there it
+# fails `unsupported`; the environment's `HTTP_PROXY`, `HTTPS_PROXY` and
+# `NO_PROXY` are read only by `proxy_from_env`. A cookie's `Domain` is held
+# to the Public Suffix List where a `Session`'s `is_public_suffix` is the
+# subpackage `http/suffixes`'s, which only a program that asks carries.
+#
+# **What it does not do.** HTTP/2 and HTTP/3 are not here, nor routing by
+# pattern, a time limit on making a plain connection,
 # Brotli or Zstandard, or a file server: a file is read by `fs` and answered
 # by `respond`. A body is held whole in memory, read within `Limits`, but
 # where a program reads it as it comes (`read_response_head`, `read_piece`),
@@ -57,6 +66,7 @@ use http/internal/multipart
 use http/internal/negotiate
 use http/internal/params
 use http/internal/policy
+use http/internal/proxying
 use http/internal/read
 use http/internal/status as texts
 use http/internal/streaming
@@ -1115,13 +1125,40 @@ function matching_cookies(jar: [Cookie], target: url.Url, now: time.Instant) -> 
 #
 # A field that does not read, a `Domain` that does not match the host or
 # names a single label, and a `Secure` cookie from `http://` are dropped.
-# Without a list of public suffixes a `Domain` such as `co.uk` is taken.
+# Without a list of public suffixes a `Domain` such as `co.uk` is taken:
+# `store_cookies_by` asks the list. See also `store_cookies_by`.
 function store_cookies(@jar: [Cookie], target: url.Url, response: Response, now: time.Instant)
+    store_cookies_by(@jar, target: target, response: response, now: now, is_public_suffix: is_single_label)
+
+# Keeps in `jar` each cookie `response`'s `Set-Cookie` fields set, as
+# `store_cookies` keeps them, a `Domain` that `is_public_suffix` says is a
+# public suffix refused, RFC 6265 § 5.3's step 5.
+#
+# - `jar`: the cookies kept; one of the same name, domain and path is
+#   replaced, and one whose new end has passed is taken out.
+# - `target`: the URL the response came from.
+# - `response`: the response read.
+# - `now`: the instant ends are compared with.
+# - `is_public_suffix`: called with each cookie's `Domain`, lower case, and
+#   true where it is a public suffix: `suffixes.is_public_suffix` of
+#   `http/suffixes` asks the Public Suffix List, `is_single_label` knows the
+#   suffixes of one label alone.
+#
+# A cookie whose `Domain` is a public suffix is kept for the host alone where
+# the suffix is the host itself, as RFC 6265 says, and dropped otherwise, so
+# a response from `example.co.uk` sets nothing for every site under `co.uk`.
+#
+# See also `store_cookies`, `is_single_label`.
+function store_cookies_by(@jar: [Cookie], target: url.Url, response: Response, now: time.Instant, is_public_suffix: (function(str) -> bool))
     for value in values_of(response.headers, name: "Set-Cookie")
         match parse_set_cookie(value, now: now)
             .err _ => _ = 0
             .ok read_one =>
                 c @= read_one
+                public = !c.host_only && is_public_suffix(strings.to_lower_ascii(c.domain))
+
+                if public && syntax.same_name(a: c.domain, b: target.host)
+                    c.host_only @ true
 
                 if c.host_only
                     c.domain @ target.host
@@ -1129,7 +1166,7 @@ function store_cookies(@jar: [Cookie], target: url.Url, response: Response, now:
                 if c.path == "" || c.path[0] != '/'
                     c.path @ cookies.default_path(target.path)
                 secure_ok = !c.secure || syntax.same_name(a: target.scheme, b: "https")
-                kept = secure_ok && (c.host_only || cookies.may_set(host: target.host, domain: c.domain))
+                kept = secure_ok && (c.host_only || !public && cookies.may_set(host: target.host, domain: c.domain))
 
                 if kept
                     others: [Cookie] @= []
@@ -1141,6 +1178,16 @@ function store_cookies(@jar: [Cookie], target: url.Url, response: Response, now:
                     if !c.persistent || time.is_after(a: c.expires, b: now)
                         others @ others.push(c)
                     jar @ others
+
+# Whether `domain` is a single label, `com` or `localhost`: the public
+# suffixes this package knows without a list, as a session's
+# `is_public_suffix` asks by default.
+#
+# - `domain`: a cookie's domain; "" is no label and no suffix.
+#
+# See also `store_cookies_by`.
+function is_single_label(domain: str) -> bool
+    return domain != "" && !strings.contains(s: domain, substr: ".")
 
 ## Messages on a stream
 
@@ -1316,17 +1363,23 @@ record Client
     # status of `statuses`, or after the connection failed `closed`,
     # `timeout` or `failed`.
     retries: Retries
+    # The proxies requests go through, and the hosts reached directly;
+    # `no_proxy()` sends every request directly, `proxy_from_env()` as the
+    # environment says.
+    proxy: Proxy
 
 # The usual client: 10 redirects, as Go and Python follow, a time limit of
-# 30 seconds, `default_limits()`, the system's own authorities, and no retry,
-# whose waits would be 100 ms doubled up to 10 s.
+# 30 seconds, `default_limits()`, the system's own authorities, no retry,
+# whose waits would be 100 ms doubled up to 10 s, and no proxy: the
+# environment's are read only where the program asks, `proxy_from_env()`.
 function default_client() -> Client
     return Client(
         max_redirects: 10,
         deadline_ms: 30_000,
         limits: default_limits(),
         roots: "",
-        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff_ms: 100, max_backoff_ms: 10_000)
+        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff_ms: 100, max_backoff_ms: 10_000),
+        proxy: no_proxy()
     )
 
 # What a program keeps between requests, as `requests`' session does: how they
@@ -1343,10 +1396,16 @@ record Session
     base: str
     # The cookies kept, received by `Set-Cookie` and sent where they match.
     cookies: [Cookie]
+    # Whether a cookie's `Domain` is a public suffix, which no response may
+    # set a cookie for: `is_single_label` by default, which knows a suffix of
+    # one label alone; `suffixes.is_public_suffix` of `http/suffixes`, the
+    # Public Suffix List, where the program asks for it.
+    is_public_suffix: (function(str) -> bool)
 
-# A session with `default_client()`, no field, no base and no cookie.
+# A session with `default_client()`, no field, no base, no cookie, and the
+# public suffixes of one label alone.
 function default_session() -> Session
-    return Session(client: default_client(), headers: [], base: "", cookies: [])
+    return Session(client: default_client(), headers: [], base: "", cookies: [], is_public_suffix: is_single_label)
 
 # The response to `r`, sent as `send` sends it, through `s`: its target
 # resolved against `s.base`, `s.headers` added where `r` has none of the
@@ -1442,19 +1501,37 @@ function fetch_once(@s: Session, r: Request) -> Response?
         if !has_header(out.headers, name: "Accept-Encoding")
             fields @ fields.push(wire.Field(name: "Accept-Encoding", value: "gzip, deflate"))
         left = policy.left_ms(deadline_ms: c.deadline_ms, start: start)?
-        outcome = policy.exchange(
-            scheme: out.url.scheme,
-            host: out.url.host,
-            port: out.url.port,
-            deadline_ms: left,
-            roots: c.roots,
-            method: out.method,
-            target: url.request_target(out.url),
-            host_value: value_of(out.headers, name: "Host").default(policy.host_field(scheme: out.url.scheme, host: out.url.host, port: out.url.port)),
-            fields: fields,
-            content: out.body,
-            bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes)
-        )
+        via = proxy_for(c.proxy, target: out.url).default("")
+
+        outcome = if via != ""
+            proxying.exchange(
+                proxy: via,
+                scheme: out.url.scheme,
+                host: out.url.host,
+                port: out.url.port,
+                deadline_ms: left,
+                roots: c.roots,
+                method: out.method,
+                target: url.request_target(out.url),
+                host_value: value_of(out.headers, name: "Host").default(policy.host_field(scheme: out.url.scheme, host: out.url.host, port: out.url.port)),
+                fields: fields,
+                content: out.body,
+                bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes)
+            )
+        else
+            policy.exchange(
+                scheme: out.url.scheme,
+                host: out.url.host,
+                port: out.url.port,
+                deadline_ms: left,
+                roots: c.roots,
+                method: out.method,
+                target: url.request_target(out.url),
+                host_value: value_of(out.headers, name: "Host").default(policy.host_field(scheme: out.url.scheme, host: out.url.host, port: out.url.port)),
+                fields: fields,
+                content: out.body,
+                bounds: wire.Bounds(head_bytes: c.limits.head_bytes, field_count: c.limits.field_count, body_bytes: c.limits.body_bytes)
+            )
         retry = policy.is_idempotent(out.method) && tries < c.retries.count
         wait: i64 @= policy.backoff_ms(attempt: tries + 1, base: c.retries.backoff_ms, most: c.retries.max_backoff_ms)
 
@@ -1472,7 +1549,13 @@ function fetch_once(@s: Session, r: Request) -> Response?
                     body: m.content,
                     closing: m.closing
                 )
-                store_cookies(@s.cookies, target: out.url, response: answer, now: now)
+                store_cookies_by(
+                    @s.cookies,
+                    target: out.url,
+                    response: answer,
+                    now: now,
+                    is_public_suffix: s.is_public_suffix
+                )
 
                 if !retry || !policy.has_status(c.retries.statuses, status: answer.status)
                     return decode_body(answer, limit: c.limits.body_bytes)
@@ -1515,7 +1598,7 @@ function fetch_once(@s: Session, r: Request) -> Response?
 # `net.connect` and `tls.connect` fail. See also `fetch`, `get`,
 # `round_trip`.
 function send(c: Client, r: Request) -> Response?
-    s @= Session(client: c, headers: [], base: "", cookies: [])
+    s @= Session(client: c, headers: [], base: "", cookies: [], is_public_suffix: is_single_label)
     return fetch(@s, r: r)
 
 # The response to a `GET` of `target`, as `send` answers it.
@@ -1574,6 +1657,80 @@ function post_form(c: Client, target: str, pairs: [url.Pair]) -> Response?
 function round_trip(@reader: io.Reader, r: Request, limits: Limits) -> Response?
     write_request(reader.stream, r: r)?
     return read_response(@reader, method: r.method, limits: limits)
+
+## Proxies
+
+# The proxies a client's requests go through: one for `http://` targets, one
+# for `https://` targets, and the hosts reached directly. A field of
+# `Client`; `no_proxy` and `proxy_from_env` make one, and a program may set
+# its fields itself.
+record Proxy
+    # The proxy `http://` requests are sent to, which is handed each
+    # request's whole URL as its target: `http://proxy.example:3128`, a user
+    # and a password in it (`http://user:secret@proxy.example:3128`) sent as
+    # `Proxy-Authorization: Basic`; a proxy written with no scheme is read as
+    # `http://`, and one with no port at 80. "" sends them directly.
+    http: str
+    # The proxy `https://` requests are tunnelled through: it is asked to
+    # `CONNECT` to the server, and TLS runs over the tunnel with the server's
+    # own name checked, so the proxy sees no byte of the request. The same
+    # form; "" sends them directly.
+    https: str
+    # The hosts reached directly, as `NO_PROXY` lists them: `*` for every
+    # host; a name, which matches itself and every name under it
+    # (`example.com` matches `api.example.com`), or a name after a dot, which
+    # matches the names under it alone; an address; a network,
+    # `10.0.0.0/8`; any of them with `:port`, then for that port alone.
+    # `localhost` and the loopback addresses are always reached directly.
+    bypass: [str]
+
+# No proxy: every request sent directly, as `default_client` sends them.
+#
+# See also `proxy_from_env`.
+function no_proxy() -> Proxy
+    return Proxy(http: "", https: "", bypass: [])
+
+# The proxies the environment names, as curl and Python read them:
+# `http_proxy` or `HTTP_PROXY`, `https_proxy` or `HTTPS_PROXY`, and
+# `no_proxy` or `NO_PROXY` parted by commas, the lower case name first.
+#
+# Read only where a program asks: `default_client` reads none. `HTTP_PROXY`
+# in capitals is not read where `REQUEST_METHOD` is set, since a CGI
+# program's variables then hold the request's own `Proxy` field (httpoxy);
+# its lower case name still is.
+#
+# See also `no_proxy`, `proxy_for`.
+function proxy_from_env() -> Proxy
+    return Proxy(
+        http: proxying.env_of("HTTP_PROXY"),
+        https: proxying.env_of("HTTPS_PROXY"),
+        bypass: proxying.bypass_of(proxying.env_of("NO_PROXY"))
+    )
+
+# The proxy a request to `target` goes through by `p`: its `https` proxy for
+# an `https://` target, its `http` one for any other.
+#
+# - `p`: the proxies.
+# - `target`: the request's absolute URL.
+#
+# Fails `not_found` where the request goes directly: no proxy is set for its
+# scheme, or `p.bypass` names its host. See also `Proxy`.
+function proxy_for(p: Proxy, target: url.Url) -> str?
+    chosen = if syntax.same_name(a: target.scheme, b: "https")
+        p.https
+    else
+        p.http
+
+    if chosen == ""
+        return fail(code: NOT_FOUND, msg: f"no proxy is set for {target.scheme}:// requests")
+
+    port = match syntax.decimal(s: policy.port_or_default(scheme: target.scheme, port: target.port), what: "the port")
+        .ok n  => n
+        .err _ => 0
+
+    if proxying.is_bypassed(p.bypass, host: target.host, port: port)
+        return fail(code: NOT_FOUND, msg: f"{target.host} is reached directly, as the proxies' bypass says")
+    return ok(chosen)
 
 ## Bodies as they come
 
@@ -3027,6 +3184,102 @@ test "store_cookies: Max-Age=0 deletes, a Secure cookie and another host's domai
     store_cookies(@jar, target: target, response: answer, now: now)
     assert jar.len() == 0
 
+test "store_cookies_by: a public suffix refused, kept for the host alone where it is the host, a domain under it kept"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    jar: [Cookie] @= []
+    answer @= respond_status(STATUS_OK)
+    answer.headers @ [
+        Header(name: "Set-Cookie", value: "wide=1; Domain=co.uk")
+        Header(name: "Set-Cookie", value: "own=1; Domain=example.co.uk")
+        Header(name: "Set-Cookie", value: "top=1; Domain=uk")
+    ]
+    store_cookies_by(
+        @jar,
+        target: url.parse("http://www.example.co.uk/").must(),
+        response: answer,
+        now: now,
+        is_public_suffix: cookies.is_co_uk_suffix
+    )
+    assert jar.len() == 1 && jar[0].name == "own" && jar[0].domain == "example.co.uk"
+    plain: [Cookie] @= []
+    store_cookies(@plain, target: url.parse("http://www.example.co.uk/").must(), response: answer, now: now)
+    assert plain.len() == 2
+    itself: [Cookie] @= []
+    answer.headers @ [Header(name: "Set-Cookie", value: "a=1; Domain=CO.UK")]
+    store_cookies_by(
+        @itself,
+        target: url.parse("http://co.uk/").must(),
+        response: answer,
+        now: now,
+        is_public_suffix: cookies.is_co_uk_suffix
+    )
+    assert itself.len() == 1 && itself[0].host_only && itself[0].domain == "co.uk"
+
+test "is_single_label: one label, two, and none"
+    assert is_single_label("com") && is_single_label("localhost")
+    assert !is_single_label("co.uk") && !is_single_label("")
+
+test "proxy_for: none set, the scheme's own, a bypass, and loopback reached directly"
+    target = url.parse("https://api.example.com/v1").must()
+    assert proxy_for(no_proxy(), target: target).is_err()
+    p = Proxy(
+        http: "http://plain.example:3128",
+        https: "http://tunnel.example:3128",
+        bypass: ["internal.example", "10.0.0.0/8"]
+    )
+    assert proxy_for(p, target: target).must() == "http://tunnel.example:3128"
+    assert proxy_for(p, target: url.parse("http://api.example.com/").must()).must() == "http://plain.example:3128"
+    assert proxy_for(p, target: url.parse("http://db.internal.example/").must()).is_err()
+    assert proxy_for(p, target: url.parse("http://10.2.3.4/").must()).is_err()
+    assert proxy_for(p, target: url.parse("http://127.0.0.1:8080/").must()).is_err()
+
+test "proxy_from_env: read without failing, its bypass holding no empty entry"
+    p = proxy_from_env()
+
+    for entry in p.bypass
+        assert entry != "" && strings.trim(entry) == entry
+
+test "send: an http:// request through a proxy, its whole URL its target, the proxy's credentials sent"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok"]))
+    c @= default_client()
+    c.proxy @ Proxy(http: f"http://u:p@127.0.0.1:{t.port}", https: "", bypass: [])
+    got = get(c, target: "http://example.test/a?b=1").must()
+    seen = threads.wait_text(@t.thread)
+    assert got.status == 200 && got.body == [111, 107]
+    lines = strings.split(s: seen, sep: "\n")
+    assert lines[0] == "GET http://example.test/a?b=1"
+    assert strings.contains(s: seen, substr: "Host: example.test\n")
+    assert strings.contains(s: seen, substr: "Proxy-Authorization: Basic dTpw\n")
+
+test "send: an https:// request through a proxy that refuses the tunnel, CONNECT and its status said"
+    t @= canned.start(
+        canned.script(responses: ["HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n"])
+    )
+    c @= default_client()
+    c.proxy @ Proxy(http: "", https: f"127.0.0.1:{t.port}", bypass: [])
+
+    match get(c, target: "https://example.test/secret")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == FAILED
+            assert strings.contains(s: e.msg, substr: "407")
+
+    seen = threads.wait_text(@t.thread)
+    assert strings.has_prefix(s: seen, prefix: "CONNECT example.test:443\nHost: example.test:443\n")
+    assert !strings.contains(s: seen, substr: "secret")
+
+test "send: a tunnel opened, then TLS over it, which macOS's TLS does not begin"
+    t @= canned.start(canned.script(responses: ["HTTP/1.1 200 Connection established\r\n\r\n"]))
+    c @= default_client()
+    c.deadline_ms @ 10_000
+    c.proxy @ Proxy(http: "", https: f"http://127.0.0.1:{t.port}", bypass: [])
+
+    match get(c, target: "https://example.test/")
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED || e.code == CLOSED || e.code == FAILED || e.code == INVALID
+
+    _ = threads.wait_text(@t.thread)
+
 test "matching_cookies: an ended cookie, a secure one and a host-only one of another host are not sent"
     now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
     base = Cookie(
@@ -4120,3 +4373,43 @@ test "serve_stream_until_stopped: two requests answered, none cut"
     assert got == Served(connections: 1, answered: 2, cut: 0)
     io.close(@two.first.stream).must()
     io.close(@two.second.stream).must()
+
+# No proxy, as `default_client` sends every request.
+test "no_proxy: every request sent directly"
+    assert no_proxy() == Proxy(http: "", https: "", bypass: [])
+
+# A client sending through the proxies its environment names, where the
+# program asks for them.
+test "proxy_from_env: a client behind the environment's proxy"
+    c @= default_client()
+    c.proxy @ proxy_from_env()
+    assert c.max_redirects == 10
+
+# Which proxy a request goes through, and a host reached directly.
+test "proxy_for: a request through a corporate proxy, an internal host direct"
+    p = Proxy(
+        http: "http://proxy.corp.example:3128",
+        https: "http://proxy.corp.example:3128",
+        bypass: [".corp.example"]
+    )
+    assert proxy_for(p, target: url.parse("https://example.com/").must()).must() == "http://proxy.corp.example:3128"
+    assert proxy_for(p, target: url.parse("https://wiki.corp.example/").must()).is_err()
+
+# A cookie a response may not set, for every site under `co.uk`.
+test "store_cookies_by: a cookie for co.uk refused"
+    now = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    jar: [Cookie] @= []
+    answer @= respond_status(STATUS_OK)
+    answer.headers @ [Header(name: "Set-Cookie", value: "track=1; Domain=co.uk")]
+    store_cookies_by(
+        @jar,
+        target: url.parse("https://shop.example.co.uk/").must(),
+        response: answer,
+        now: now,
+        is_public_suffix: cookies.is_co_uk_suffix
+    )
+    assert jar.len() == 0
+
+# A single label, which no response may set a cookie for.
+test "is_single_label: com"
+    assert is_single_label("com")

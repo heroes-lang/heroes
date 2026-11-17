@@ -550,6 +550,27 @@ capability serve/graceful  serving ended at the stop, the requests in hand answe
   python  -
   note    `http.serve_until_stopped` with the router as the program's value; what the stop of `net` lets it finish is said in http's server/graceful block
 
+capability serve/health  health, liveness and readiness endpoints answered from the program's own checks
+  heroes  web.health_response, web.Check
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; none of the three frameworks the census read (Echo, Flask, werkzeug) offers it. The program runs its checks with its own state, as it dispatches its routes, and hands what they found; the answer is 200 or 503 and never cached. Text is Kubernetes's: `ok`, or `[+]name ok` and `[-]name failed: reason` a line each and `health check passed` or `failed`, with `?verbose` listing every check and a failure's reason withheld unless the caller trusts the client. JSON is the IETF draft "Health Check Response Format for HTTP APIs" (draft-inadarei-api-health-check-06), `application/health+json`, chosen where `Accept` weighs it or `application/json` above text
+
+capability webhook/standard  webhooks signed and verified by the Standard Webhooks specification
+  heroes  web.sign_webhook, web.verify_webhook, web.webhook_signature, web.new_webhook_secret, web.WEBHOOK_TOLERANCE_S
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; standardwebhooks.com, the form Svix, Resend, Clerk and others send. HMAC-SHA256 over `id.timestamp.payload`, keyed by the bytes of a `whsec_` and base 64 secret, written `v1,` and standard base 64; several signatures in the field, parted by spaces, any one matching; several secrets, any one signing, so a secret rotates; a timestamp refused more than the tolerance either way, 300 s as the specification's libraries allow, its edge itself accepted. The specification's example (`msg_p5jXN8AQM9LWM0D4loKWxJek`, 1614265330, `v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE=`) was computed again with Python's hmac and base64 on this machine and is a test. A signature of the asymmetric version `v1a` is passed over, as the next block says
+
+capability webhook/standard-asymmetric  webhooks signed and verified with Ed25519, the specification's `v1a`, `whsk_` and `whpk_` keys
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    the specification's optional asymmetric form; it would stand on `crypto/keypairs`'s Ed25519, which the system's cryptography offers on Linux alone (macOS offers it to Swift alone, Windows not at all), so it waits for an Ed25519 that runs on every platform
+
 dropped  a context, an interface, a handler type or an error type: the language has none (README § A4, § B3)
   go      echo.Context and its Get, Set, Request, SetRequest, Response, Logger, Echo, Reset, echo.Response, echo.Map, echo.Echo.NewContext, AcquireContext, ReleaseContext, echo.WrapHandler, WrapMiddleware, gin.Context.Copy, Keys, Errors, Error, gin.WrapF, WrapH, gin.HandlerFunc, chi.RouteContext, chi.NewRouteContext, chi.Context, echo.Echo.Validator, Binder, JSONSerializer, IPExtractor as fields
   rust    -

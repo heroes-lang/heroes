@@ -295,6 +295,41 @@ capability term/steady-tick  a bar or a spinner drawn on its own while the progr
   rust    indicatif::ProgressBar::enable_steady_tick
   python  rich.live.Live, rich.status.Status (refreshed by a thread)
 
+capability term/confirm  a question answered yes or no at the terminal, a default for Enter
+  heroes  term.confirm
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; none of the three standard libraries asks one (the libraries people reach for are survey, dialoguer and questionary). `y` or `n` in either case, Enter the default, shown as the capital of `[Y/n]`; Escape and Ctrl-C fail `stopped`, Ctrl-D `closed`; the answer written out as `yes` or `no`. Asked at the program's terminal even where its input is a pipe, as `read_secret` asks, and `unsupported` with none
+
+capability term/menu  a menu of one choice or of several, filtered as the person types, answered with keys
+  heroes  term.menu, term.Menu, term.draw_menu, term.press_menu, term.MenuPressed, term.run_menu, term.select_one, term.select_many
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; none of the three standard libraries draws one. The arrows, Ctrl-P and Ctrl-N, Home, End, Page Up and Page Down move; Space marks in a menu of many, Tab where the menu filters; `k` and `j` move where it does not; the filter keeps the choices that hold it, letter case set aside by `unicode.to_lower`, a substring as survey's and promptui's filters take it rather than a fuzzy match; Enter answers, Escape and Ctrl-C give up, Ctrl-D ends. `press_menu` is the machine, a key in and the bytes to draw out, as `press` is the line editor's, so every key is tested with no terminal; the window of choices follows the cursor, a line is cut before the terminal's last column so none wraps, and the menu leaves one line, the prompt and the answer. Driven by a person at a terminal: unrun, the tests running with no terminal
+
+capability term/password  a password typed twice and the two compared
+  heroes  term.read_password
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17: `read_secret` twice, `invalid` where the typings differ; an empty password is answered as typed, the program judging it
+
+capability term/hyperlink  a text made a link to a URL a terminal opens
+  heroes  term.hyperlink, term.write_hyperlink
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census: OSC 8, `ESC ] 8 ; ; target ST text ESC ] 8 ; ; ST`, as the terminals that follow Egmont Koblinger's proposal read it (iTerm2, kitty, GNOME's VTE, Windows Terminal, WezTerm); a byte of the target outside 32 to 126 percent-encoded, so no target can end the command or send another. `write_hyperlink` writes it where the stream is a terminal that takes sequences, and elsewhere the target said after the text, `text (target)`, so a file or a pipe keeps it; a terminal that reads no OSC 8 shows the text alone, which a program cannot ask about. No `id=` parameter: one link per call
+
+capability term/clipboard  a text put on the clipboard through the terminal, ssh included
+  heroes  term.clipboard_command, term.write_clipboard
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census: OSC 52 as xterm defines it, `ESC ] 52 ; c ; base64 ST`, the clipboard `c`, written to the program's terminal; `unsupported` with no terminal or `TERM=dumb`. Reading the clipboard back (`?` in place of the data) is not offered: a terminal answers it only where allowed, on the input, and most refuse it for safety. Whether the terminal took it, or how many bytes it keeps, no terminal tells; tmux passes it on only with `set-clipboard`
+
 capability term/text-width  how many cells a text takes on screen
   heroes  pending
   go      -

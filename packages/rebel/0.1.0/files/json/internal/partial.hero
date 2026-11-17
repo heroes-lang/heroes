@@ -1,0 +1,544 @@
+# A JSON text that has not finished arriving, read as far as it goes, for a
+# value a model streams a piece at a time. Every token that arrived whole is
+# read by `reader`, by RFC 8259 and nothing wider, so a text no more bytes can
+# turn into JSON fails here with the message `json.parse` gives. What the text
+# stopped inside is said, and read only as far as it is sure: a string up to
+# its last whole character, a number where what arrived is already one, and
+# nothing of a key, a word, or a member whose value has not begun. Every
+# container still open is then closed, so the events are those of a whole
+# value.
+
+use json/internal/event
+use json/internal/reader
+use json/internal/scan
+use json/internal/stack
+
+## What the text stopped inside
+
+# Nothing: the text is one whole value, and no byte more can change it.
+constant WHOLE: i64
+    0
+
+# Nothing but white space has arrived.
+constant EMPTY: i64
+    1
+
+# A list or an object, before its first member or after a `,` or a whole
+# member.
+constant CONTAINER: i64
+    2
+
+# An object's key that has not arrived whole.
+constant KEY: i64
+    3
+
+# A member whose key arrived whole and whose value has not begun.
+constant MEMBER: i64
+    4
+
+# A string, held as far as it arrived.
+constant TEXT: i64
+    5
+
+# A number, which a digit more may change.
+constant NUMBER: i64
+    6
+
+# `true`, `false` or `null`, cut short.
+constant WORD: i64
+    7
+
+# What `read` answers.
+record Arrived
+    # The events of the value so far, every container that was open closed.
+    events: [event.Event]
+    # What the text stopped inside: one of the constants above.
+    cut: i64
+    # The keys and indices from the whole value to the place the text stopped
+    # in: the container for `CONTAINER` and `KEY`, the member, the string, the
+    # number or the word for the others, none for `WHOLE` and `EMPTY`.
+    tokens: [str]
+
+# Where a string that begins in a text ends, or where what arrived of it is
+# cut.
+record Stop
+    # Whether the string's closing quote is in the text.
+    closed: bool
+    # The closing quote where the string is closed; otherwise the byte index
+    # where what arrived of it ends: the text's length, or the backslash of an
+    # escape that has not arrived whole.
+    at: i64
+
+# What `key_at` read.
+record Keyed
+    # `KEY` where the key has not arrived whole, `MEMBER` where it has and the
+    # `:` after it has not, `WHOLE` where both have.
+    cut: i64
+    # The key's characters, empty for `KEY`.
+    key: str
+    # Where the member's value begins, after the `:` and white space.
+    next: i64
+
+# The reading of RFC 8259 and nothing wider, as `json.strict` reads, with each
+# token kept as written so that the events write the same text back.
+function strict(max_depth: i64) -> reader.Reading
+    return reader.Reading(
+        max_depth: max_depth,
+        duplicate_keys: false,
+        control_characters: false,
+        lone_surrogates: false,
+        non_finite: false,
+        exact_integers: false,
+        read_numbers: true,
+        keep_raw: true
+    )
+
+# The value `text` holds so far, with what it stopped inside and where. Fails
+# `invalid` where no bytes after `text` would make it JSON, with the message
+# `json.parse` gives there; `does_not_fit` where a number that arrived is past
+# what an `f64` holds; `invalid` where it nests deeper than `max_depth`.
+function read(text: str, max_depth: i64) -> Arrived?
+    reading = strict(max_depth)
+    n = text.len()
+    out: [event.Event] @= []
+
+    # The key whose member's value has not begun, written only once it does.
+    waiting: [event.Event] @= []
+
+    # For each open container, the innermost at `depth - 1`: whether it is an
+    # object, the token of the member being written in it, the elements begun
+    # in it where it is a list, and the keys of the objects that hold it.
+    objects: [bool] @= []
+    names: [str] @= []
+    counts: [i64] @= []
+    held: [{str: i64}] @= []
+    seen: {str: i64} @= {}
+    depth: i64 @= 0
+    at: i64 @= scan.skip_space(text, 0)
+
+    if at == n
+        return ok(Arrived(events: [], cut: EMPTY, tokens: []))
+    wants_value: bool @= true
+
+    while true
+        if wants_value
+            if at == n
+                if objects[depth - 1]
+                    return ok(
+                        finished(events: out, objects: objects, depth: depth, cut: MEMBER, tokens: names.slice(from: 0, to: depth))
+                    )
+                return ok(
+                    finished(events: out, objects: objects, depth: depth, cut: CONTAINER, tokens: names.slice(from: 0, to: depth - 1))
+                )
+
+            if depth > 0 && !objects[depth - 1]
+                names[depth - 1] @ to_str(counts[depth - 1])
+                counts[depth - 1] @ counts[depth - 1] + 1
+            b = text[at]
+
+            if b == '[' || b == '{'
+                if depth >= max_depth
+                    return fail(
+                        code: scan.INVALID,
+                        msg: scan.said(text: text, at: at, what: f"nested deeper than {max_depth} levels, the most this reading allows")
+                    )
+                is_object = b == '{'
+
+                kind = if is_object
+                    event.BEGIN_OBJECT
+                else
+                    event.BEGIN_LIST
+                flush(out: @out, waiting: @waiting)
+                out @ out.push(placed(kind: kind, at: at))
+                stack.put(items: @objects, top: depth, item: is_object)
+                stack.put(items: @names, top: depth, item: "")
+                stack.put(items: @counts, top: depth, item: 0)
+                stack.put(items: @held, top: depth, item: seen)
+                seen @ {}
+                depth @ depth + 1
+                at @ scan.skip_space(text, at + 1)
+
+                if at < n && text[at] == reader.closing_of(is_object)
+                    depth @ depth - 1
+                    out @ out.push(placed(kind: reader.closed_by(kind), at: at))
+                    seen @ held[depth]
+                    held[depth] @ {}
+                    at @ at + 1
+                    wants_value @ false
+                else if at == n
+                    return ok(
+                        finished(events: out, objects: objects, depth: depth, cut: CONTAINER, tokens: names.slice(from: 0, to: depth - 1))
+                    )
+                else if is_object
+                    keyed = key_at(text: text, at: at, @waiting, @seen, reading: reading)?
+
+                    if keyed.cut == KEY
+                        return ok(
+                            finished(events: out, objects: objects, depth: depth, cut: KEY, tokens: names.slice(from: 0, to: depth - 1))
+                        )
+                    names[depth - 1] @ keyed.key
+
+                    if keyed.cut == MEMBER
+                        return ok(
+                            finished(events: out, objects: objects, depth: depth, cut: MEMBER, tokens: names.slice(from: 0, to: depth))
+                        )
+                    at @ keyed.next
+            else if b == '"'
+                stop = string_stop(text: text, at: at)
+
+                if stop.closed
+                    flush(out: @out, waiting: @waiting)
+                    at @ reader.read_scalar(text: text, at: at, @out, reading: reading)?
+                    wants_value @ false
+                else
+                    so_far = string_so_far(text: text, at: at, stop: stop.at)?
+                    flush(out: @out, waiting: @waiting)
+                    out @ out.push(
+                        event.Event(kind: event.TEXT, at: at, flag: false, number: 0.0, text: so_far, raw: "")
+                    )
+                    return ok(
+                        finished(events: out, objects: objects, depth: depth, cut: TEXT, tokens: names.slice(from: 0, to: depth))
+                    )
+            else if b == '-' || scan.is_digit(b)
+                match scan.number_end(text, at)
+                    .err e =>
+                        if is_number_begun(text: text, at: at)
+                            return ok(
+                                finished(events: out, objects: objects, depth: depth, cut: NUMBER, tokens: names.slice(from: 0, to: depth))
+                            )
+                        return fail(code: e.code, msg: e.msg)
+                    .ok end =>
+                        flush(out: @out, waiting: @waiting)
+                        at @ reader.read_scalar(text: text, at: at, @out, reading: reading)?
+
+                        if end == n
+                            return ok(
+                                finished(events: out, objects: objects, depth: depth, cut: NUMBER, tokens: names.slice(from: 0, to: depth))
+                            )
+                        wants_value @ false
+            else if is_word_begun(text: text, at: at)
+                return ok(
+                    finished(events: out, objects: objects, depth: depth, cut: WORD, tokens: names.slice(from: 0, to: depth))
+                )
+            else
+                flush(out: @out, waiting: @waiting)
+                at @ reader.read_scalar(text: text, at: at, @out, reading: reading)?
+                wants_value @ false
+        else
+            at @ scan.skip_space(text, at)
+
+            if depth == 0
+                if at != n
+                    return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: "the end of the text"))
+                return ok(Arrived(events: out, cut: WHOLE, tokens: []))
+
+            if at == n
+                return ok(
+                    finished(events: out, objects: objects, depth: depth, cut: CONTAINER, tokens: names.slice(from: 0, to: depth - 1))
+                )
+            is_object = objects[depth - 1]
+            closing = reader.closing_of(is_object)
+
+            if text[at] == ','
+                at @ scan.skip_space(text, at + 1)
+
+                if at == n
+                    return ok(
+                        finished(events: out, objects: objects, depth: depth, cut: CONTAINER, tokens: names.slice(from: 0, to: depth - 1))
+                    )
+
+                if text[at] == closing
+                    what = if is_object
+                        "a key after `,`: an object does not end with a comma"
+                    else
+                        "a value after `,`: a list does not end with a comma"
+                    return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+
+                if is_object
+                    keyed = key_at(text: text, at: at, @waiting, @seen, reading: reading)?
+
+                    if keyed.cut == KEY
+                        return ok(
+                            finished(events: out, objects: objects, depth: depth, cut: KEY, tokens: names.slice(from: 0, to: depth - 1))
+                        )
+                    names[depth - 1] @ keyed.key
+
+                    if keyed.cut == MEMBER
+                        return ok(
+                            finished(events: out, objects: objects, depth: depth, cut: MEMBER, tokens: names.slice(from: 0, to: depth))
+                        )
+                    at @ keyed.next
+                wants_value @ true
+            else if text[at] == closing
+                depth @ depth - 1
+
+                kind = if is_object
+                    event.END_OBJECT
+                else
+                    event.END_LIST
+                out @ out.push(placed(kind: kind, at: at))
+                seen @ held[depth]
+                held[depth] @ {}
+                at @ at + 1
+            else
+                what = if is_object
+                    "`,` or `}`"
+                else
+                    "`,` or `]`"
+                return fail(code: scan.INVALID, msg: scan.expected(text: text, at: at, what: what))
+
+# Reads the key that begins at `at` of `text`, inside an object, as far as it
+# arrived. A key that arrived whole is read by `reader.read_key`, which adds its
+# event to `waiting` and the key to `seen`, the keys of its object, so a key
+# written twice fails at once; where its `:` has not arrived, the key is read
+# with the `:` it waits for, its message's place being the same.
+function key_at(text: str, at: i64, @waiting: [event.Event], @seen: {str: i64}, reading: reader.Reading) -> Keyed?
+    if text[at] != '"'
+        return fail(
+            code: scan.INVALID,
+            msg: scan.expected(text: text, at: at, what: "a key: a string, in double quotes")
+        )
+    stop = string_stop(text: text, at: at)
+
+    if !stop.closed
+        _ = string_so_far(text: text, at: at, stop: stop.at)?
+        return ok(Keyed(cut: KEY, key: "", next: at))
+    lexeme = scan.read_string(text: text, at: at, control_characters: false, lone_surrogates: false)?
+    colon = scan.skip_space(text, lexeme.end)
+
+    if colon == text.len()
+        _ = reader.read_key(text: text + ":", at: at, @waiting, @seen, reading: reading)?
+        return ok(Keyed(cut: MEMBER, key: lexeme.value, next: colon))
+    next = reader.read_key(text: text, at: at, @waiting, @seen, reading: reading)?
+    return ok(Keyed(cut: WHOLE, key: lexeme.value, next: next))
+
+# Where the string that begins with the quote at `at` of `text` closes, or
+# where what arrived of it is cut: at the text's end, or at the backslash of an
+# escape not yet whole, a `\u` with fewer than four digits, or one of the high
+# half of a surrogate pair whose low half has not arrived. An escape that no
+# byte more can make one is walked over, for `scan.read_string` to refuse.
+function string_stop(text: str, at: i64) -> Stop
+    n = text.len()
+    i: i64 @= at + 1
+
+    while i < n
+        b = text[i]
+
+        if b == '"'
+            return Stop(closed: true, at: i)
+
+        if b != '\\'
+            i @ i + 1
+        else if i + 1 == n
+            return Stop(closed: false, at: i)
+        else if text[i + 1] != 'u'
+            i @ i + 2
+        else
+            digits = hex_digits(text: text, at: i + 2)
+
+            if digits < 4 && i + 2 + digits == n
+                return Stop(closed: false, at: i)
+
+            if digits < 4
+                i @ i + 2
+            else
+                unit = scan.hex_unit(text, i + 2).must()
+
+                if unit >= 0xd800 && unit <= 0xdbff && is_low_begun(text: text, at: i + 6)
+                    return Stop(closed: false, at: i)
+                i @ i + 6
+
+    return Stop(closed: false, at: n)
+
+# The characters of the string that begins at `at` of `text`, read up to
+# `stop` as if its closing quote stood there. Fails `invalid` as
+# `scan.read_string` does on what arrived; the bytes before `stop` are the
+# text's own, so a message names the text's own place.
+function string_so_far(text: str, at: i64, stop: i64) -> str?
+    lexeme = scan.read_string(text: text.slice(from: 0, to: stop) + "\"", at: at, control_characters: false, lone_surrogates: false)?
+    return ok(lexeme.value)
+
+# How many hexadecimal digits stand at `at` of `text`, up to four.
+function hex_digits(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && i < at + 4 && scan.is_hex_digit(text[i])
+        i @ i + 1
+
+    return i - at
+
+# Whether what follows byte `at` of `text`, to its end, is the start of the
+# escape of a low surrogate, `\udc00` to `\udfff`, or nothing at all, so that
+# the high half before it may still be completed.
+function is_low_begun(text: str, at: i64) -> bool
+    left = text.len() - at
+
+    if left >= 6
+        return false
+
+    for k in range(from: 0, to: left)
+        b = text[at + k]
+
+        fits = if k == 0
+            b == '\\'
+        else if k == 1
+            b == 'u'
+        else if k == 2
+            b == 'd' || b == 'D'
+        else if k == 3
+            b >= 'c' && b <= 'f' || b >= 'C' && b <= 'F'
+        else
+            scan.is_hex_digit(b)
+
+        if !fits
+            return false
+
+    return true
+
+# Whether the number that begins at `at` of `text` runs to the text's end
+# before it is one, as `-`, `1.` and `1e+` do. One digit more is written after
+# it: where the number then reads to that digit, the text ended it, and where
+# it does not, its fault is elsewhere and stays a fault.
+function is_number_begun(text: str, at: i64) -> bool
+    return match scan.number_end(text + "0", at)
+        .ok end => end == text.len() + 1
+        .err _  => false
+
+# Whether the text from `at` to its end is `true`, `false` or `null` cut
+# short: a part of one of the three, shorter than the word.
+function is_word_begun(text: str, at: i64) -> bool
+    left = text.len() - at
+
+    for word in ["true", "false", "null"]
+        if left < word.len() && scan.holds_at(text: word, at: 0, word: text.slice(from: at, to: text.len()))
+            return true
+
+    return false
+
+# Adds the key in `waiting`, if one waits, to `out`: its member's value has
+# begun.
+function flush(@out: [event.Event], @waiting: [event.Event])
+    for e in waiting
+        out @ out.push(e)
+
+    waiting @ []
+
+# The event of a token with no value of its own at byte `at`.
+function placed(kind: i64, at: i64) -> event.Event
+    e: event.Event @= event.mark(kind)
+    e.at @ at
+    return e
+
+# What `read` answers where the text stopped: `events` with every container
+# still open, `depth` of them, closed from the innermost out.
+function finished(events: [event.Event], objects: [bool] lent, depth: i64, cut: i64, tokens: [str]) -> Arrived
+    closed: [event.Event] @= events
+    left: i64 @= depth
+
+    while left > 0
+        left @ left - 1
+
+        kind = if objects[left]
+            event.END_OBJECT
+        else
+            event.END_LIST
+        closed @ closed.push(event.mark(kind))
+
+    return Arrived(events: closed, cut: cut, tokens: tokens)
+
+## Tests
+
+# The kinds of `got`'s events.
+function kinds(got: Arrived) -> [i64]
+    return got.events.map(kind_of)
+
+# The kind of `e`.
+function kind_of(e: event.Event) -> i64
+    return e.kind
+
+# The message `text` fails with, or "" where it is read.
+function failure_of(text: str) -> str
+    return match read(text: text, max_depth: 512)
+        .ok _  => ""
+        .err e => e.msg
+
+test "read: nothing, white space, a whole value, and a number at the end that may grow"
+    assert read(text: "", max_depth: 512).must().cut == EMPTY
+    assert read(text: " \n\t", max_depth: 512).must().cut == EMPTY
+    assert read(text: "[1, true]", max_depth: 512).must().cut == WHOLE
+    assert read(text: "\"x\" ", max_depth: 512).must().cut == WHOLE
+    assert read(text: "12 ", max_depth: 512).must().cut == WHOLE
+    twelve = read(text: "12", max_depth: 512).must()
+    assert twelve.cut == NUMBER
+    assert kinds(twelve) == [event.NUMBER]
+    assert twelve.events[0].raw == "12"
+
+test "read: a list and an object cut between members, closed, the container named"
+    got = read(text: "[1, 2,", max_depth: 512).must()
+    assert got.cut == CONTAINER
+    assert got.tokens == []
+    assert kinds(got) == [event.BEGIN_LIST, event.NUMBER, event.NUMBER, event.END_LIST]
+    nested = read(text: "{\"a\": [1, {\"b\": 2}", max_depth: 512).must()
+    assert nested.cut == CONTAINER
+    assert nested.tokens == ["a"]
+    assert kinds(nested).len() == 10
+    assert read(text: "[", max_depth: 512).must().tokens == []
+    assert kinds(read(text: "{ ", max_depth: 512).must()) == [event.BEGIN_OBJECT, event.END_OBJECT]
+
+test "read: a key cut short, a key whole with no colon, and a member whose value has not begun"
+    key = read(text: "{\"x\": 1, \"pa", max_depth: 512).must()
+    assert key.cut == KEY
+    assert key.tokens == []
+    assert kinds(key) == [event.BEGIN_OBJECT, event.KEY, event.NUMBER, event.END_OBJECT]
+
+    for text in ["{\"path\"", "{\"path\" ", "{\"path\":", "{\"path\": "]
+        member = read(text: text, max_depth: 512).must()
+        assert member.cut == MEMBER
+        assert member.tokens == ["path"]
+        assert kinds(member) == [event.BEGIN_OBJECT, event.END_OBJECT]
+
+test "read: a string cut short, an escape cut short left out, a pair's high half left out"
+    got = read(text: "{\"a\": [\"x\\n", max_depth: 512).must()
+    assert got.cut == TEXT
+    assert got.tokens == ["a", "0"]
+    assert got.events[3].text == "x\n"
+    assert read(text: "\"ab\\", max_depth: 512).must().events[0].text == "ab"
+    assert read(text: "\"ab\\u00", max_depth: 512).must().events[0].text == "ab"
+    assert read(text: "\"ab\\u00e9", max_depth: 512).must().events[0].text == "abé"
+    assert read(text: "\"ab\\ud83d", max_depth: 512).must().events[0].text == "ab"
+    assert read(text: "\"ab\\ud83d\\uDE", max_depth: 512).must().events[0].text == "ab"
+    assert read(text: "\"ab\\ud83d\\ude00", max_depth: 512).must().events[0].text == "ab😀"
+    assert read(text: "\"é", max_depth: 512).must().events[0].text == "é"
+
+test "read: a number that is one yet, one that is not, and a word cut short"
+    assert read(text: "[1, -0.5", max_depth: 512).must().events[2].raw == "-0.5"
+
+    for text in ["[1, -", "[1, 1.", "[1, 1e", "[1, 1E+"]
+        got = read(text: text, max_depth: 512).must()
+        assert got.cut == NUMBER
+        assert got.tokens == ["1"]
+        assert kinds(got) == [event.BEGIN_LIST, event.NUMBER, event.END_LIST]
+
+    for text in ["[t", "[fals", "[nul"]
+        got = read(text: text, max_depth: 512).must()
+        assert got.cut == WORD
+        assert kinds(got) == [event.BEGIN_LIST, event.END_LIST]
+
+    assert read(text: "{\"k\": tru", max_depth: 512).must().tokens == ["k"]
+
+# The message `reader.read` fails with on `text`, read whole as `json.parse`
+# reads it.
+function whole_failure_of(text: str) -> str
+    return match reader.read(text: text, from: 0, reading: strict(512))
+        .ok _  => ""
+        .err e => e.msg
+
+test "read: what no byte more can mend fails with the message the whole reader gives"
+    for text in ["[1,]", "[1 2", "[01", "[-a", "[tx", "{1", "{\"a\" 1", "\"a\\x", "\"\\ud83dx", "{\"a\": 1, \"a\""]
+        assert failure_of(text) != ""
+        assert failure_of(text) == whole_failure_of(text + "]")
+
+    assert failure_of("[1] x") == "line 1, column 5: expected the end of the text, found \"x\""
+    assert failure_of("\"\\ud83d\\u00") != ""
+    assert failure_of("[1e400") != ""
+    assert read(text: "[[[", max_depth: 2).is_err()

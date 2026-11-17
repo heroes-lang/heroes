@@ -238,11 +238,11 @@ capability cookie/jar  cookies kept across requests and sent where they match
   note    RFC 6265 §§ 5.1.3, 5.1.4, 5.3, 5.4; a `Secure` cookie is kept from an https:// response alone and sent to an https:// target alone
 
 capability cookie/public-suffix  a cookie refused for a public suffix such as co.uk
-  heroes  pending
+  heroes  http.store_cookies_by, http.Session, http.is_single_label, suffixes.is_public_suffix
   go      net/http/cookiejar.PublicSuffixList
   rust    -
   python  -
-  note    a single label is refused; a suffix of two needs the list, which no package holds
+  note    added 2026-11-17 (the list fetched 2026-11-18): the Public Suffix List is made data in the subpackage `http/suffixes`, which only a program that asks carries, about 400 KB of source, its ledger `http/suffixes.ledger`. A `Session`'s `is_public_suffix` judges each `Domain`, `is_single_label` by default as before; set to `suffixes.is_public_suffix` the list's suffixes are refused, a cookie whose `Domain` is the host itself kept for the host alone, RFC 6265 § 5.3 step 5, as Go's cookiejar does with a `PublicSuffixList`
 
 capability message/limits  the bounds a message is read within
   heroes  http.Limits, http.default_limits
@@ -415,11 +415,18 @@ capability server/compressed  a response compressed where the client accepts it
   note    gzip, else deflate (zlib), by RFC 9110 § 12.5.3's weights (`q=0` refuses, `*` accepts any); `Vary: Accept-Encoding` written either way; only where the program asks
 
 capability client/proxy  a request sent through a proxy
-  heroes  pending
+  heroes  http.Proxy, http.Client, http.no_proxy, http.proxy_from_env, http.proxy_for
   go      net/http.ProxyFromEnvironment, net/http.ProxyURL, net/http.Transport.Proxy
   rust    -
-  python  urllib.request.ProxyHandler, getproxies, getproxies_environment, getproxies_macosx_sysconf, proxy_bypass, proxy_bypass_environment, proxy_bypass_macosx_sysconf, requests' proxies, requests.exceptions.ProxyError, requests.Session.rebuild_proxies, trust_env
-  note    an https:// request through a proxy is a CONNECT tunnel with TLS over it, which needs `tls.client_over`, unsupported on macOS
+  python  urllib.request.ProxyHandler, getproxies, getproxies_environment, proxy_bypass, proxy_bypass_environment, requests' proxies, requests.exceptions.ProxyError, requests.Session.rebuild_proxies, trust_env
+  note    added 2026-11-17. An `http://` request is written to the proxy with its whole URL as its target (RFC 9112 § 3.2.2), an `https://` one through a tunnel opened at `CONNECT` (RFC 9110 § 9.3.6) with TLS over it by `tls.client_over`, the server's own name checked and no byte of the request shown to the proxy; a refused tunnel fails `failed` with the proxy's status, as requests' ProxyError. `tls.client_over` is `unsupported` on macOS, whose TLS runs only over a connection Network.framework makes, so on macOS an `https://` request through a proxy fails `unsupported` and says why, where `tls.connect_after`'s exchange before TLS cannot serve, since it checks the certificate against the host it connects to, the proxy. A proxy's user and password are sent as `Proxy-Authorization: Basic`; an `https://` or SOCKS proxy is `unsupported`. The environment is read only by `proxy_from_env`, the lower case variable first as curl and Python read it (Go reads the capitals first), `HTTP_PROXY` not read under CGI (httpoxy) as Go and Python refuse it; `NO_PROXY` as Go reads it, names, `.`-names, addresses, networks and ports, `localhost` and loopback always direct as Go sends them. Proxied requests run on this Mac against a proxy of the tests' own (the absolute-form target, the credentials, a 407, a tunnel then TLS refused `unsupported`); through a real proxy, and an `https://` one on Linux and Windows: unrun. macOS's system proxy settings (`getproxies_macosx_sysconf`, `proxy_bypass_macosx_sysconf`) are not read: a program reads them as it reads the environment, by its own choice
+
+capability client/proxy-system-settings  the proxies the system's own settings name, macOS's and Windows'
+  heroes  pending
+  go      -
+  rust    -
+  python  urllib.request.getproxies_macosx_sysconf, urllib.request.proxy_bypass_macosx_sysconf, urllib.request.getproxies_registry and urllib.request.proxy_bypass_registry (Windows alone)
+  note    macOS's SystemConfiguration and Windows' registry need doors of C; the environment's are read
 
 capability client/streaming-read  a response's body read as it comes, not held whole
   heroes  http.read_response_head, http.BodyReader, http.body_reader, http.read_piece

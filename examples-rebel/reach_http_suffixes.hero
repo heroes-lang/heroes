@@ -1,0 +1,8 @@
+# Reaches Rebel's `http/suffixes`, so that `heroes test` on this file runs the
+# subpackage's own tests (spec § 12), the list's own cases among them. It
+# prints the registrable domain of a host under `co.uk`.
+
+use <rebel>/http/suffixes
+
+function main()
+    print(suffixes.registrable_domain_of("www.example.co.uk").default("?"))

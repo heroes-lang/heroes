@@ -70,6 +70,13 @@ capability json/parse-next  one value read from the middle of a text, saying whe
   python  JSONDecoder.raw_decode
   note    so that values written one after another, a line each or not, are read in a loop; the index answered is past the white space that follows the value, where Python's is at the value's end
 
+capability json/parse-partial  the value so far of a text still arriving, as a model streams the arguments of a tool
+  heroes  json.parse_partial, json.Partial, json.Cut
+  go      -
+  rust    -
+  python  -
+  note    none of the three offers it (added 2026-11-17, from the community census). Observed against pydantic-core 2.50.4's `from_json(allow_partial="trailing-strings")` on this machine, which agrees on every text the tests hold that is a beginning of JSON: an open container closed, a string kept as far as it arrived with an escape cut short and a pair's high half left out, a key, a member not begun, a word and a number that is not one yet (`-`, `1.`, `1e+`) left out, and a number that is one kept. Where it reads past a fault this refuses as `parse` does: `[1, 2] x` (it answers [1, 2]), `1e400` (inf; here `does_not_fit`), and a key written twice (the last kept; here `invalid`, `parse`'s reading). The empty text is `Cut.empty`, where it fails. What the text stopped inside and where, a variant and an RFC 6901 pointer, is this package's own: it says whether a number may still grow, which a value alone cannot
+
 capability json/valid  whether a text is JSON
   heroes  json.is_valid
   go      Valid, jsontext.Value.IsValid

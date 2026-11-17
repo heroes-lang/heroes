@@ -1,0 +1,128 @@
+# The Public Suffix List: which part of a domain name the public registers
+# under, `co.uk` of `example.co.uk`, so that a cookie set for `co.uk` is
+# refused and the registrable domain of a host is known. Its rules are the
+# list's own, made data in this subpackage so that only a program that asks
+# carries them, about 400 KB of source; `VERSION` names the list's.
+#
+# A name is read in ASCII: a label in another script is its A-label, as
+# `url/idna`'s `to_ascii` writes it, since the rules are held so. An address
+# and a name with an empty label are no domain names.
+#
+# It fails `invalid` on a name that is no domain name, and `not_found` where
+# a name has no registrable domain, being a public suffix itself.
+#
+# A cookie jar refuses a `Domain` that is a public suffix where the session
+# is told to: `s.is_public_suffix @ suffixes.is_public_suffix`, a field of
+# `http.Session`.
+
+use http/suffixes/internal/cases
+use http/suffixes/internal/lookup
+use http/suffixes/internal/rules
+
+## The list
+
+# The version of the list the rules are made from, as it writes it: the
+# instant it was cut.
+constant VERSION: str
+    rules.VERSION
+
+# The code of a name that is no domain name.
+constant INVALID: str
+    "invalid"
+
+# The code of a name with no registrable domain.
+constant NOT_FOUND: str
+    "not_found"
+
+# A name's public suffix, and whether the list's ICANN section says it.
+record Suffix
+    # The suffix, lower case: `co.uk`, `github.io`, `com`.
+    name: str
+    # Whether the rule that decided stands in the ICANN section, as `co.uk`
+    # does; false for a private domain's, as `github.io`, and for a name
+    # under no rule, whose last label is its suffix.
+    icann: bool
+
+## Asking the list
+
+# The public suffix of `host` by the list's algorithm: the longest rule it
+# matches, a wildcard's label taken for any, an exception's rule less its
+# first label, and the last label alone where no rule matches.
+#
+# - `host`: a domain name, ASCII, in any case; a name in another script by
+#   its A-labels.
+#
+# Fails `invalid` where `host` is empty, holds an empty label (a dot at
+# either end or two together) or is an IPv4 address. See also
+# `registrable_domain_of`, `is_public_suffix`.
+function suffix_of(host: str) -> Suffix?
+    labels = lookup.labels_of(host)?
+    found = lookup.prevailing(labels)
+    return ok(Suffix(name: lookup.last_of(labels, count: found.labels), icann: found.icann))
+
+# The registrable domain of `host`: its public suffix and the one label
+# before it, `example.co.uk` of `www.example.co.uk`.
+#
+# - `host`: a domain name, as `suffix_of` takes it.
+#
+# Fails `not_found` where `host` is a public suffix itself, `co.uk`, and
+# `invalid` as `suffix_of` does. See also `suffix_of`.
+function registrable_domain_of(host: str) -> str?
+    labels = lookup.labels_of(host)?
+    found = lookup.prevailing(labels)
+
+    if found.labels >= labels.len()
+        return fail(code: NOT_FOUND, msg: f"\"{host}\" is a public suffix, under which nothing is registered")
+    return ok(lookup.last_of(labels, count: found.labels + 1))
+
+# Whether `domain` is a public suffix itself, as a cookie's `Domain` is asked
+# before it is taken: `co.uk` and `com` are, `example.co.uk` is not.
+#
+# - `domain`: a domain name, as `suffix_of` takes it; one that is no domain
+#   name, an address among them, is no public suffix.
+#
+# It is a value of `(function(str) -> bool)`, as `http.Session`'s
+# `is_public_suffix` holds one. See also `suffix_of`.
+function is_public_suffix(domain: str) -> bool
+    return match lookup.labels_of(domain)
+        .ok labels => lookup.prevailing(labels).labels >= labels.len()
+        .err _     => false
+
+## Tests
+
+test "suffix_of: ICANN's, a private domain's, a wildcard's, an exception's, and no rule"
+    assert suffix_of("www.example.co.uk").must() == Suffix(name: "co.uk", icann: true)
+    assert suffix_of("foo.github.io").must() == Suffix(name: "github.io", icann: false)
+    assert suffix_of("a.b.ck").must() == Suffix(name: "b.ck", icann: true)
+    assert suffix_of("www.ck").must() == Suffix(name: "ck", icann: true)
+    assert suffix_of("example.example").must() == Suffix(name: "example", icann: false)
+    assert suffix_of("WWW.EXAMPLE.COM").must().name == "com"
+    assert suffix_of(".com").is_err()
+
+test "is_public_suffix: a suffix of one label and of two, a registrable domain, an address and nothing"
+    assert is_public_suffix("com") && is_public_suffix("co.uk") && is_public_suffix("CO.UK")
+    assert !is_public_suffix("example.co.uk") && !is_public_suffix("192.0.2.1") && !is_public_suffix("")
+    assert is_public_suffix("unlisted") && !is_public_suffix("a.unlisted")
+
+test "registrable_domain_of: the 77 cases of the list's own test file"
+    for k in range(from: 0, to: cases.HOSTS.len())
+        got = registrable_domain_of(cases.HOSTS[k])
+
+        if cases.WANTED[k] == ""
+            assert got.is_err()
+        else
+            assert got.must() == cases.WANTED[k]
+
+## Examples
+
+# The part of a host the public registers under, and whether ICANN says so.
+test "suffix_of: a host under co.uk"
+    assert suffix_of("www.example.co.uk").must() == Suffix(name: "co.uk", icann: true)
+
+# The domain a person registered, which a site's cookies may be set for.
+test "registrable_domain_of: a host's registered domain"
+    assert registrable_domain_of("shop.example.co.uk").must() == "example.co.uk"
+
+# A cookie's domain asked before it is taken.
+test "is_public_suffix: co.uk and a domain under it"
+    assert is_public_suffix("co.uk") && !is_public_suffix("example.co.uk")

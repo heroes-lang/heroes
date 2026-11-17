@@ -12,8 +12,9 @@
 # CSRF tokens checked against the secret the server keeps; helmet's security
 # headers; the client read through the proxies the program trusts; entity
 # tags and 304 for a handler's own responses; a route refusing 406 what it
-# cannot answer; a router tried with no network; and serving ended gracefully
-# at the stop.
+# cannot answer; a router tried with no network; serving ended gracefully
+# at the stop; health and readiness answered from the program's own checks;
+# and webhooks signed and verified as Standard Webhooks signs them.
 #
 # **Why the program dispatches.** The language has no closure, and a function
 # value takes no `@` parameter (spec § 9), so no handler a router held could
@@ -55,6 +56,7 @@ use io
 use json
 use log
 use net
+use os
 use path
 use strings
 use template
@@ -67,6 +69,7 @@ use web/internal/event_stream
 use web/internal/extensions
 use web/internal/fixture
 use web/internal/folders
+use web/internal/health
 use web/internal/limiting
 use web/internal/patterns
 use web/internal/proxies
@@ -74,6 +77,7 @@ use web/internal/reading
 use web/internal/routing
 use web/internal/signing
 use web/internal/sniffing
+use web/internal/webhooks
 
 ## Codes
 
@@ -2078,6 +2082,185 @@ function exchange(r: http.Request, router: Router, handler: (function(Router, ht
 function serve_until_stopped(server: http.Server, l: net.Listener, router: Router, handler: (function(Router, http.Request) -> http.Response), grace_ms: i64) -> http.Served?
     return http.serve_until_stopped(server, l: l, state: router, handler: handler, grace_ms: grace_ms)
 
+## Health and readiness
+
+# One check a program ran for its health or its readiness: its name and what
+# it found. The program runs its checks itself, with its own state, and hands
+# what they found to `health_response`.
+record Check
+    # The check's name, as the answer lists it: `database`, `disk`.
+    name: str
+    # What it found: `ok()` where it passed; where it did not, its failure,
+    # whose message says why.
+    outcome: ()?
+
+# The answer of a health, liveness or readiness endpoint, `/healthz`,
+# `/livez` or `/readyz` as Kubernetes names them, for the checks a program
+# ran: 200 where every check passed, 503 where one did not.
+#
+# - `r`: the request. A `verbose` key in its query, with any value or none,
+#   asks for every check by name, as Kubernetes's `?verbose` does. An `Accept`
+#   that weighs `application/health+json` or `application/json` above
+#   `text/plain` asks for JSON; none, or one that accepts neither, gets text.
+# - `checks`: the checks the program ran, in the order they are listed; none
+#   at all is a pass.
+# - `detail`: whether a failed check's message is written; where not,
+#   `reason withheld` stands for it, as Kubernetes withholds it from a client
+#   it does not trust.
+#
+# Text is written as Kubernetes writes it: `ok` where every check passed and
+# no more was asked; else `[+]name ok` or `[-]name failed: message` for each
+# check, a line each, then `health check passed` or `health check failed`.
+# JSON is the IETF draft "Health Check Response Format for HTTP APIs"'s
+# `application/health+json`: `{"status":"pass","checks":{"db":[{"status":
+# "pass"}]}}`, the whole `pass` or `fail`, each name with the list of its
+# results, a failure with its `output`. Either answer is marked
+# `Cache-Control: no-store`, so no cache answers for the program.
+#
+# See also `Check`.
+function health_response(r: http.Request, checks: [Check], detail: bool) -> http.Response
+    names: [str] @= []
+    passed: [bool] @= []
+    messages: [str] @= []
+
+    for c in checks
+        names @ names.push(c.name)
+
+        match c.outcome
+            .ok _ =>
+                passed @ passed.push(true)
+                messages @ messages.push("")
+            .err e =>
+                passed @ passed.push(false)
+                messages @ messages.push(e.msg)
+
+    status = if passed.all(health.is_true)
+        http.STATUS_OK
+    else
+        http.STATUS_SERVICE_UNAVAILABLE
+    verbose @= false
+
+    for pair in http.query_of(r).default([])
+        if pair.key == "verbose"
+            verbose @ true
+
+    offered = ["text/plain", "application/health+json", "application/json"]
+    chosen = http.negotiate_type(r, offered: offered).default("text/plain")
+    answer @= http.respond_text(
+        status,
+        health.text_body(names: names, passed: passed, messages: messages, verbose: verbose, detail: detail)
+    )
+
+    if chosen != "text/plain"
+        written = json.format(health.json_body(names: names, passed: passed, messages: messages, detail: detail)).default(
+            "{}"
+        )
+        answer @ http.respond(status, content_type: "application/health+json", body: bytes.from_text(written))
+    answer.headers @ http.with_header(answer.headers, name: "Cache-Control", value: "no-store")
+    return answer
+
+## Webhooks signed as Standard Webhooks signs them
+
+# How far a webhook's timestamp may stand from the clock that reads it, in
+# seconds, either way: five minutes, as the specification's libraries allow.
+constant WEBHOOK_TOLERANCE_S: i64
+    300
+
+# A new secret for signing webhooks: `whsec_` and the standard base 64 of 32
+# bytes the system's generator draws.
+#
+# Fails as `os.random_bytes` does. See also `sign_webhook`.
+function new_webhook_secret() -> str?
+    return ok(webhooks.secret_of(os.random_bytes(webhooks.SECRET_BYTES)?))
+
+# The `webhook-signature` of `payload` sent as `id` at `timestamp_s`, by the
+# Standard Webhooks specification: `v1,` and the standard base 64 of the
+# HMAC-SHA256 of `id`, `.`, the timestamp's decimal, `.` and the payload,
+# keyed by the secret's bytes.
+#
+# - `secret`: `whsec_` and standard base 64, as `new_webhook_secret` writes
+#   one; the prefix may be left out.
+# - `id`: the message's id, unique for each message: `msg_2KWPBgLlAfxdpx2AI54pPJ85f4W`.
+# - `timestamp_s`: when it is sent, in Unix seconds.
+# - `payload`: the body, its bytes as sent.
+#
+# Fails `invalid` where `secret` is no base 64 after its prefix, or holds no
+# byte. See also `sign_webhook`, `verify_webhook`.
+function webhook_signature(secret: str, id: str, timestamp_s: i64, payload: [u8]) -> str?
+    key = webhooks.secret_bytes(secret)?
+    return ok(webhooks.signature(key: key, id: id, timestamp_s: timestamp_s, payload: payload))
+
+# The three header fields a webhook is sent with, by the Standard Webhooks
+# specification: `webhook-id`, `webhook-timestamp` and `webhook-signature`.
+#
+# - `secret`: the secret, as `webhook_signature` reads it.
+# - `id`: the message's id; a message sent again keeps its id.
+# - `sent`: when it is sent; its whole seconds are written.
+# - `payload`: the body.
+#
+# Fails `invalid` where `secret` does not read. See also `verify_webhook`.
+function sign_webhook(secret: str, id: str, sent: time.Instant, payload: [u8]) -> [http.Header]?
+    seconds = time.unix_seconds(sent)
+    signed = webhook_signature(secret: secret, id: id, timestamp_s: seconds, payload: payload)?
+    return ok(
+        [http.Header(name: "webhook-id", value: id), http.Header(name: "webhook-timestamp", value: to_str(seconds)), http.Header(name: "webhook-signature", value: signed)]
+    )
+
+# The id of the webhook `headers` and `payload` carry, where one of
+# `secrets` signed it as the Standard Webhooks specification says and it was
+# sent within `tolerance_s` of `now`.
+#
+# - `headers`: the request's header fields; `webhook-id`,
+#   `webhook-timestamp` and `webhook-signature` are read, in any case.
+# - `payload`: the body, its bytes as received, before any reading of them.
+# - `secrets`: the secrets that may have signed it, the newest first; a
+#   signature by any of them passes, so a secret rotates without a message
+#   lost.
+# - `now`: the time it is read.
+# - `tolerance_s`: how far the timestamp may stand from `now`, in seconds,
+#   either way; `WEBHOOK_TOLERANCE_S` is the specification's libraries'.
+#
+# Fails `invalid` where a field is missing or does not read, a secret does
+# not read, the timestamp is further than `tolerance_s` from `now`, or no
+# `v1` signature of the field matches one of `secrets`, compared in constant
+# time; the message says which. A signature of another version, `v1a`, is
+# passed over. A receiver keeps the id to refuse the same message twice.
+#
+# See also `sign_webhook`.
+function verify_webhook(headers: [http.Header], payload: [u8], secrets: [str], now: time.Instant, tolerance_s: i64) -> str?
+    id = match http.value_of(headers, name: "webhook-id")
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: "the webhook carries no webhook-id field")
+
+    field = match http.value_of(headers, name: "webhook-timestamp")
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: "the webhook carries no webhook-timestamp field")
+
+    signatures = match http.value_of(headers, name: "webhook-signature")
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: "the webhook carries no webhook-signature field")
+
+    sent = webhooks.timestamp_of(field)?
+    seconds = time.unix_seconds(now)
+
+    if sent < seconds - tolerance_s
+        return fail(code: INVALID, msg: f"the webhook was sent at {sent}, more than {tolerance_s} s before {seconds}")
+
+    if sent > seconds + tolerance_s
+        return fail(code: INVALID, msg: f"the webhook was sent at {sent}, more than {tolerance_s} s after {seconds}")
+
+    if !webhooks.has_v1(signatures)
+        return fail(code: INVALID, msg: "the webhook-signature field holds no v1 signature")
+    expected: [str] @= []
+
+    for secret in secrets
+        key = webhooks.secret_bytes(secret)?
+        expected @ expected.push(webhooks.signature(key: key, id: id, timestamp_s: sent, payload: payload))
+
+    if !webhooks.holds_signature(signatures, expected: expected)
+        return fail(code: INVALID, msg: f"no signature of the webhook {id} matches one of the {secrets.len()} secrets")
+    return ok(id)
+
 ## Tests
 
 test "route: a fixed segment before a parameter before a wildcard, parameters unescaped"
@@ -3002,6 +3185,90 @@ test "exchange: a route's 405 with its Allow, a refusal before the handler"
     ).must()
     assert refused.status == http.STATUS_EXPECTATION_FAILED && refused.closing
 
+test "health_response: all passed and quiet, the code and the cache said"
+    r = fixture.request_of(method: http.METHOD_GET, target: "/healthz", headers: [])
+    got = health_response(r, checks: [Check(name: "db", outcome: ok())], detail: false)
+    assert got.status == 200
+    assert bytes.to_text(got.body).must() == "ok\n"
+    assert http.value_of(got.headers, name: "Cache-Control").must() == "no-store"
+    assert http.value_of(got.headers, name: "Content-Type").must() == "text/plain; charset=utf-8"
+    none: [Check] = []
+    assert health_response(r, checks: none, detail: false).status == 200
+
+test "health_response: a failure answered 503, its message withheld or written, and verbose"
+    checks = [Check(name: "db", outcome: ok()), Check(name: "disk", outcome: fail(code: "failed", msg: "disk full"))]
+    r = fixture.request_of(method: http.METHOD_GET, target: "/readyz", headers: [])
+    withheld = health_response(r, checks: checks, detail: false)
+    assert withheld.status == 503
+    assert bytes.to_text(withheld.body).must() == "[+]db ok\n[-]disk failed: reason withheld\nhealth check failed\n"
+    told = health_response(r, checks: checks, detail: true)
+    assert bytes.to_text(told.body).must() == "[+]db ok\n[-]disk failed: disk full\nhealth check failed\n"
+    verbose = fixture.request_of(method: http.METHOD_GET, target: "/livez?verbose", headers: [])
+    assert bytes.to_text(health_response(verbose, checks: [checks[0]], detail: false).body).must() == "[+]db ok\nhealth check passed\n"
+
+test "health_response: JSON where the Accept asks it, text where it asks text or nothing it offers"
+    checks = [Check(name: "disk", outcome: fail(code: "failed", msg: "full"))]
+    wants_json = fixture.request_of(
+        method: http.METHOD_GET,
+        target: "/healthz",
+        headers: [http.Header(name: "Accept", value: "application/json")]
+    )
+    got = health_response(wants_json, checks: checks, detail: true)
+    assert http.value_of(got.headers, name: "Content-Type").must() == "application/health+json"
+    assert bytes.to_text(got.body).must() == "{\"status\":\"fail\",\"checks\":{\"disk\":[{\"status\":\"fail\",\"output\":\"full\"}]}}"
+    wants_image = fixture.request_of(
+        method: http.METHOD_GET,
+        target: "/healthz",
+        headers: [http.Header(name: "Accept", value: "image/png")]
+    )
+    assert bytes.to_text(health_response(wants_image, checks: checks, detail: false).body).must() == "[-]disk failed: reason withheld\nhealth check failed\n"
+
+test "webhook_signature: the specification's example, a secret without its prefix, and one that does not read"
+    payload = bytes.from_text("{\"test\": 2432232314}")
+    want = "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
+    assert webhook_signature(secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", timestamp_s: 1614265330, payload: payload).must() == want
+    assert webhook_signature(secret: "MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw", id: "msg_p5jXN8AQM9LWM0D4loKWxJek", timestamp_s: 1614265330, payload: payload).must() == want
+
+    match webhook_signature(secret: "whsec_%%", id: "m", timestamp_s: 0, payload: payload)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "verify_webhook: signed and verified, a rotated secret, the tolerance's edges, and what is refused"
+    old_secret = "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+    new_secret = new_webhook_secret().must()
+    assert new_secret.len() == 6 + 44
+    sent = time.from_unix(whole_seconds: 1614265330, extra_nanoseconds: 0).must()
+    payload = bytes.from_text("{\"a\":1}")
+    headers = sign_webhook(secret: old_secret, id: "msg_1", sent: sent, payload: payload).must()
+    assert verify_webhook(headers, payload: payload, secrets: [new_secret, old_secret], now: sent, tolerance_s: WEBHOOK_TOLERANCE_S).must() == "msg_1"
+    late = time.from_unix(whole_seconds: 1614265330 + 300, extra_nanoseconds: 0).must()
+    early = time.from_unix(whole_seconds: 1614265330 - 300, extra_nanoseconds: 0).must()
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: late, tolerance_s: 300).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: early, tolerance_s: 300).must() == "msg_1"
+    too_late = time.from_unix(whole_seconds: 1614265330 + 301, extra_nanoseconds: 0).must()
+    too_early = time.from_unix(whole_seconds: 1614265330 - 301, extra_nanoseconds: 0).must()
+    two = [
+        http.Header(name: "Webhook-Id", value: "msg_1")
+        http.Header(name: "webhook-timestamp", value: "1614265330")
+        http.Header(name: "webhook-signature", value: "v1a,x v1,AAAA " + http.value_of(headers, name: "webhook-signature").must())
+    ]
+    assert verify_webhook(two, payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300).must() == "msg_1"
+    refused = [
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_late, tolerance_s: 300)
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_early, tolerance_s: 300)
+        verify_webhook(headers, payload: bytes.from_text("{\"a\":2}"), secrets: [old_secret], now: sent, tolerance_s: 300)
+        verify_webhook(headers, payload: payload, secrets: [new_secret], now: sent, tolerance_s: 300)
+        verify_webhook([headers[0], headers[1]], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
+        verify_webhook([headers[0], headers[1], http.Header(name: "webhook-signature", value: "v1a,abc")], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
+        verify_webhook([headers[0], http.Header(name: "webhook-timestamp", value: "+1614265330"), headers[2]], payload: payload, secrets: [old_secret], now: sent, tolerance_s: 300)
+        verify_webhook(headers, payload: payload, secrets: ["whsec_"], now: sent, tolerance_s: 300)
+    ]
+
+    for one in refused
+        match one
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
 ## Examples
 
 # An empty router, whose errors are text.
@@ -3745,3 +4012,52 @@ test "serve_until_stopped: a listener with no client, its deadline passed"
         .err e => assert e.code == "timeout"
 
     net.close_listener(@l).must()
+
+# A readiness endpoint answering the program's own checks, one of which
+# failed.
+test "health_response: a readiness probe with a database down"
+    r = fixture.request_of(method: http.METHOD_GET, target: "/readyz", headers: [])
+    checks = [Check(name: "database", outcome: fail(code: "failed", msg: "no connection"))]
+    answer = health_response(r, checks: checks, detail: false)
+    assert answer.status == http.STATUS_SERVICE_UNAVAILABLE
+
+# A new secret, as a sender gives one to each receiver.
+test "new_webhook_secret: a secret to share with a receiver"
+    secret = new_webhook_secret().must()
+    assert strings.has_prefix(s: secret, prefix: "whsec_")
+
+# The signature the specification's own example gives.
+test "webhook_signature: the specification's example"
+    payload = bytes.from_text("{\"test\": 2432232314}")
+    signed = webhook_signature(
+        secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw",
+        id: "msg_p5jXN8AQM9LWM0D4loKWxJek",
+        timestamp_s: 1614265330,
+        payload: payload
+    )
+    assert signed.must() == "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
+
+# The fields a sender adds to its request.
+test "sign_webhook: the three fields of a message"
+    sent = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    fields = sign_webhook(
+        secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw",
+        id: "msg_1",
+        sent: sent,
+        payload: bytes.from_text("{}")
+    ).must()
+    assert fields[1] == http.Header(name: "webhook-timestamp", value: "1700000000")
+
+# A receiver checking a webhook as it arrives, against its two secrets while
+# one rotates.
+test "verify_webhook: a message received"
+    sent = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+    body = bytes.from_text("{\"type\":\"invoice.paid\"}")
+    fields = sign_webhook(
+        secret: "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw",
+        id: "msg_1",
+        sent: sent,
+        payload: body
+    ).must()
+    secrets = [new_webhook_secret().must(), "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"]
+    assert verify_webhook(fields, payload: body, secrets: secrets, now: sent, tolerance_s: WEBHOOK_TOLERANCE_S).must() == "msg_1"

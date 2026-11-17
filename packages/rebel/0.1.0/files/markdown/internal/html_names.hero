@@ -1,0 +1,121 @@
+# The HTML elements as Markdown reads them: the ones it has a form for, the
+# ones that only group what they hold, the ones a reader never sees, and the
+# ones that stand inside a line (the standard's phrasing content) rather than
+# begin a block. Names are local names in lower case.
+
+use strings
+
+# The level of the heading element `name`, `h1` to `h6`; 0 for any other.
+function heading_level(name: str) -> i64
+    if name.len() != 2 || name[0] != 'h' || name[1] < '1' || name[1] > '6'
+        return 0
+    return to_i64(name[1] - '0').must()
+
+# Whether `name` only groups what it holds and means nothing a reader sees:
+# its tags are dropped and what it holds is read, whatever the caller keeps.
+function is_grouping(name: str) -> bool
+    for one in ["html", "body", "div", "section", "article", "main", "header", "footer", "nav", "aside", "address", "hgroup", "search", "form", "fieldset", "center", "span", "font", "label", "nobr"]
+        if one == name
+            return true
+
+    return false
+
+# Whether `name` holds what a page never shows as content, its metadata:
+# dropped whole, whatever the caller keeps.
+function is_metadata(name: str) -> bool
+    for one in ["head", "title", "meta", "link", "base"]
+        if one == name
+            return true
+
+    return false
+
+# Whether what `name` holds is no text a reader sees: dropped whole where the
+# caller keeps no HTML.
+function is_hidden(name: str) -> bool
+    for one in ["script", "style", "template", "noscript", "svg", "math", "canvas", "iframe", "object", "embed"]
+        if one == name
+            return true
+
+    return false
+
+# Whether `name` stands inside a line, as the standard's phrasing content
+# does, rather than beginning a block.
+function is_phrasing(name: str) -> bool
+    for one in ["a", "abbr", "b", "bdi", "bdo", "br", "cite", "code", "data", "del", "dfn", "em", "i", "img", "input", "ins", "kbd", "label", "mark", "q", "s", "samp", "small", "span", "strong", "sub", "sup", "time", "u", "var", "wbr", "button", "select", "textarea", "output", "meter", "progress", "audio", "video", "canvas", "svg", "math", "picture", "iframe", "embed", "object", "slot", "font", "big", "tt", "strike", "nobr"]
+        if one == name
+            return true
+
+    return false
+
+# Whether `name` is a block Markdown has a form for, which ends the paragraph
+# before it.
+function is_markdown_block(name: str) -> bool
+    if heading_level(name) > 0
+        return true
+
+    for one in ["p", "blockquote", "ul", "ol", "li", "pre", "hr", "table"]
+        if one == name
+            return true
+
+    return false
+
+# The language a `class` attribute names as Markdown's renderers write it,
+# `language-go` or `lang-go`: its first such class without the prefix; empty
+# where none.
+function language_of(classes: str) -> str
+    for one in strings.words(classes)
+        for prefix in ["language-", "lang-"]
+            if one.len() > prefix.len() && strings.has_prefix(s: one, prefix: prefix)
+                return one.slice(from: prefix.len(), to: one.len())
+
+    return ""
+
+# The alignment a table cell's `align` attribute or `style` names, as the
+# tree numbers it: 1 left, 2 center, 3 right, 0 none.
+function align_of(align: str, style: str) -> i64
+    said @= strings.to_lower_ascii(strings.trim(align))
+
+    if said == ""
+        compact = strings.replace_all(s: strings.to_lower_ascii(style), old: " ", new: "")
+
+        match strings.index_of(s: compact, substr: "text-align:")
+            .err _ => _ = 0
+            .ok at =>
+                rest = compact.slice(from: at + 11, to: compact.len())
+
+                for word in ["left", "center", "right"]
+                    if strings.has_prefix(s: rest, prefix: word)
+                        said @ word
+
+    if said == "left"
+        return 1
+
+    if said == "center"
+        return 2
+
+    if said == "right"
+        return 3
+    return 0
+
+## Tests
+
+test "heading_level: h1 and h6, h7, h, and a word"
+    assert heading_level("h1") == 1 && heading_level("h6") == 6
+    assert heading_level("h7") == 0 && heading_level("h") == 0 && heading_level("hr") == 0
+
+test "is_grouping, is_metadata, is_hidden and is_phrasing: one of each and one of none"
+    assert is_grouping("div") && !is_grouping("p")
+    assert is_metadata("head") && !is_metadata("body")
+    assert is_hidden("script") && !is_hidden("em")
+    assert is_phrasing("sub") && !is_phrasing("dl")
+    assert is_markdown_block("h3") && is_markdown_block("table") && !is_markdown_block("dl")
+
+test "language_of: language- and lang-, none, and a prefix alone"
+    assert language_of("x language-go y") == "go"
+    assert language_of("lang-rust") == "rust"
+    assert language_of("plain") == "" && language_of("language-") == ""
+
+test "align_of: the attribute, the style in any case and spacing, and neither"
+    assert align_of(align: "CENTER", style: "") == 2
+    assert align_of(align: "", style: "color: red; Text-Align : right") == 3
+    assert align_of(align: "", style: "") == 0

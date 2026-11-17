@@ -36,6 +36,10 @@ extern "hero_sys.h"
     function hero_sys_home_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_cache_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_settings_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_data_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_state_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_runtime_folder(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_sys_open(target: cstr lent) -> i64
     function hero_sys_environment(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_random(@buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_sys_terminal_size(@columns: i64, @rows: i64) -> i64
@@ -125,6 +129,34 @@ function cache_folder(@buffer: [u8], n: u64) -> i64
 # Windows.
 function settings_folder(@buffer: [u8], n: u64) -> i64
     return hero_sys_settings_folder(@buffer, n: n)
+
+# How many bytes the path of the folder for the data a program makes and
+# reads again has, or -1. It is the platform's own: `Library/Application
+# Support` on Darwin, `$XDG_DATA_HOME` or `.local/share` on Linux, the roaming
+# application data on Windows.
+function data_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_data_folder(@buffer, n: n)
+
+# How many bytes the path of the folder for a program's state has, or -1:
+# `Library/Application Support` on Darwin, `$XDG_STATE_HOME` or
+# `.local/state` on Linux, the local application data on Windows.
+function state_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_state_folder(@buffer, n: n)
+
+# How many bytes the path of the user's folder for sockets and locks has, or
+# -1: the user's own temporary folder on Darwin, `$XDG_RUNTIME_DIR` on Linux,
+# where it is unset -1 with `HERO_SYS_NOT_FOUND`, and on Windows -1 with
+# `HERO_SYS_UNSUPPORTED`.
+function runtime_folder(@buffer: [u8], n: u64) -> i64
+    return hero_sys_runtime_folder(@buffer, n: n)
+
+# 0 where the system took `target`, a URL or a path, to open in the
+# application it keeps for it, or -1: `open` on Darwin, `xdg-open` on Linux,
+# run with `target` as their one argument and waited for, `ShellExecuteW` on
+# Windows. A target that begins with `-` is read as an option: the caller
+# never hands one.
+function open(target: str) -> i64
+    return hero_sys_open(target.cstr())
 
 # How many bytes every variable of the environment takes, or -1. Each is
 # written into `buffer` as its name, `=` and its value, then one zero byte.
@@ -316,6 +348,36 @@ test "home_folder, cache_folder, settings_folder: measured, then filled with a p
     short: [u8] @= []
     assert home_folder(@short, n: 1) == home_need
     assert short.len() == 1
+
+test "data_folder, state_folder, runtime_folder: measured, then filled with a path, or refused by kind"
+    none: [u8] @= []
+    data_need = data_folder(@none, n: 0)
+    state_need = state_folder(@none, n: 0)
+    assert data_need > 0 && state_need > 0
+    data: [u8] @= []
+    assert data_folder(@data, n: data_need.to_u64().must()) == data_need
+    assert data.len() == data_need && data[data_need - 1] != '/'
+    state: [u8] @= []
+    assert state_folder(@state, n: state_need.to_u64().must()) == state_need
+    assert state.len() == state_need
+    run_need = runtime_folder(@none, n: 0)
+
+    if run_need < 0
+        assert last_error() == HERO_SYS_NOT_FOUND || last_error() == HERO_SYS_UNSUPPORTED
+    else
+        run: [u8] @= []
+        assert runtime_folder(@run, n: run_need.to_u64().must()) == run_need
+        assert run.len() == run_need && run_need > 1 && run[run_need - 1] != '/'
+    short: [u8] @= []
+    assert data_folder(@short, n: 1) == data_need
+    assert short.len() == 1
+
+test "open: an empty target refused as invalid, and a path nobody has refused by the launcher, nothing opened"
+    assert open("") == -1
+    assert last_error() == HERO_SYS_INVALID
+    got = open("/rebel-no-such-folder/no-such-file.txt")
+    assert got == -1
+    assert last_error() == HERO_SYS_OTHER || last_error() == HERO_SYS_NOT_FOUND || last_error() == HERO_SYS_UNSUPPORTED
 
 test "environment: measured, then filled, every variable ended by a zero byte, PATH among them"
     none: [u8] @= []

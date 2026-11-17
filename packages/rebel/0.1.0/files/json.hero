@@ -4,12 +4,17 @@
 # a hundred thousand deep is a failure the program is told, and a value built
 # that deep is written and walked on a stack this package holds itself.
 #
+# A text that has not finished arriving, a tool's arguments as a model streams
+# them, is read as far as it goes by `parse_partial`, which never guesses
+# past what arrived.
+#
 # A record is not filled from JSON by its field names, since the language has
 # no reflection: a program reads each member out of the tree and builds its own
 # type from it.
 
 use json/internal/event
 use json/internal/order
+use json/internal/partial
 use json/internal/pointers
 use json/internal/reader
 use json/internal/scan
@@ -246,6 +251,96 @@ function parse_next(text: str, from: i64, options: ParseOptions) -> Parsed?
 # answers.
 function is_valid(text: str) -> bool
     return !parse(text).is_err()
+
+## A text still arriving
+
+# What a JSON text that has not finished arriving stopped inside, as
+# `parse_partial` says it.
+variant Cut
+    # Nothing: the text is one whole value, and no byte more can change it.
+    whole
+    # Nothing but white space has arrived, and the value is `null_value` in
+    # place of one.
+    empty
+    # A list or an object before its first member, or after a `,` or a whole
+    # member. The value holds every member that arrived, and
+    # `Partial.pointer` names the container.
+    container
+    # An object's key that has not arrived whole. Its member is not in the
+    # value, and `Partial.pointer` names the object.
+    key
+    # A member whose key arrived whole and whose value has not begun, the `:`
+    # included. It is not in the value, and `Partial.pointer` names it.
+    member
+    # A string, which the value holds as far as it arrived: an escape cut
+    # short, the high half of a surrogate pair among them, is left out.
+    text
+    # A number, which a digit more may change: `12` may grow into `123`. The
+    # value holds it where what arrived is a number already, as `12` and
+    # `-0.5` are, and leaves it out where it is not one yet, as `-`, `1.` and
+    # `1e+` are not.
+    number
+    # `true`, `false` or `null` cut short, which the value leaves out.
+    word
+
+# What `parse_partial` answers: the value a text holds so far, and where it
+# stopped.
+record Partial
+    # The value so far: every list and object still open closed where the
+    # text ends, and what has not arrived whole held or left out as `cut`
+    # says.
+    value: Value
+    # What the text stopped inside; `.whole` where it is one whole value.
+    cut: Cut
+    # The RFC 6901 pointer of the place the text stopped in: the container for
+    # `.container` and `.key`, the member, string, number or word for the
+    # others, and `` for `.whole` and `.empty`. `value_at` on `value` answers
+    # what is there so far, `not_found` where the place is left out.
+    pointer: str
+
+# The value a JSON text holds so far, where the text has not finished
+# arriving: the arguments of a tool as a model streams them, read again as
+# each piece comes.
+#
+# - `text`: what has arrived, from the start of the text; the empty text and
+#   white space are the start of every one.
+#
+# Fails `invalid` where no bytes after `text` would make it JSON as `parse`
+# reads it, with the message `parse` gives there: `[1,]`, `{1`, `[1] x`, a key
+# written twice. Fails `does_not_fit` where a number that arrived is past what
+# an `f64` holds.
+#
+# Nothing is guessed beyond what arrived: a key, a word or a number not yet
+# whole is left out, never completed, and the value holds a string only up to
+# its last whole character. A number that ends the text is said cut, since a
+# digit more may follow: where the text has finished arriving, `parse` reads
+# it. It reads the text twice, as `parse` does once.
+#
+# See also `parse`, `value_at`.
+function parse_partial(text: str) -> Partial?
+    arrived = partial.read(text: text, max_depth: DEFAULT_MAX_DEPTH)?
+    value: Value @= .null_value
+
+    if arrived.cut != partial.EMPTY
+        closed = writer.render(events: arrived.events, layout: writer.flat())?
+        value @ parse(closed)?
+    cut: Cut @= .whole
+
+    if arrived.cut == partial.EMPTY
+        cut @ .empty
+    else if arrived.cut == partial.CONTAINER
+        cut @ .container
+    else if arrived.cut == partial.KEY
+        cut @ .key
+    else if arrived.cut == partial.MEMBER
+        cut @ .member
+    else if arrived.cut == partial.TEXT
+        cut @ .text
+    else if arrived.cut == partial.NUMBER
+        cut @ .number
+    else if arrived.cut == partial.WORD
+        cut @ .word
+    return ok(Partial(value: value, cut: cut, pointer: pointers.of(arrived.tokens)))
 
 ## Writing a value
 
@@ -1085,3 +1180,93 @@ test "pointer_of and pointer_tokens: each the other's inverse, escapes included"
     assert pointer_of(nothing) == ""
     assert pointer_tokens("").must() == nothing
     assert pointer_tokens("x").is_err()
+
+test "parse_partial: nothing yet, white space, and a whole value, each said"
+    empty = parse_partial("").must()
+    assert empty.cut == .empty
+    assert is_null(empty.value)
+    assert parse_partial(" \n").must().cut == .empty
+    whole = parse_partial("{\"a\": [1, \"x\"]} ").must()
+    assert whole.cut == .whole
+    assert whole.value == parse("{\"a\": [1, \"x\"]}").must()
+    assert whole.pointer == ""
+
+test "parse_partial: lists and objects closed where they stop, as pydantic-core's from_json(allow_partial=True) closes them"
+    assert parse_partial("[").must().value == parse("[]").must()
+    two = parse_partial("[1, 2,").must()
+    assert two.value == parse("[1, 2]").must()
+    assert two.cut == .container
+    assert two.pointer == ""
+    assert parse_partial("{\"a\": 1, ").must().value == parse("{\"a\": 1}").must()
+    deep = parse_partial("{\"a\": [1, {\"b\": 2}").must()
+    assert deep.value == parse("{\"a\": [1, {\"b\": 2}]}").must()
+    assert deep.pointer == "/a"
+
+test "parse_partial: a key cut short and a member not begun are left out, as pydantic-core leaves them"
+    key = parse_partial("{\"x\": 1, \"pa").must()
+    assert key.value == parse("{\"x\": 1}").must()
+    assert key.cut == .key
+    assert key.pointer == ""
+    begun = parse_partial("{\"x\": 1, \"path\": ").must()
+    assert begun.value == parse("{\"x\": 1}").must()
+    assert begun.cut == .member
+    assert begun.pointer == "/path"
+
+    match value_at(begun.value, begun.pointer)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+test "parse_partial: a string as far as it arrived, an escape cut short left out, as pydantic-core's trailing-strings mode"
+    got = parse_partial("{\"path\": \"/usr/lo").must()
+    assert got.value == parse("{\"path\": \"/usr/lo\"}").must()
+    assert got.cut == .text
+    assert got.pointer == "/path"
+    assert parse_partial("[\"x\\").must().value == parse("[\"x\"]").must()
+    assert parse_partial("[\"x\\u00").must().value == parse("[\"x\"]").must()
+    assert parse_partial("[\"ab\\ud83d").must().value == parse("[\"ab\"]").must()
+    assert parse_partial("[\"ab\\ud83d\\ude00").must().value == parse("[\"ab😀\"]").must()
+    assert parse_partial("\"città").must().value == .text(v: "città")
+
+test "parse_partial: a number held where it is one yet and left out where not, and a word cut short left out"
+    twelve = parse_partial("{\"n\": 12").must()
+    assert twelve.value == parse("{\"n\": 12}").must()
+    assert twelve.cut == .number
+    assert twelve.pointer == "/n"
+    assert parse_partial("12").must().cut == .number
+    assert parse_partial("12 ").must().cut == .whole
+
+    for text in ["[-", "[1.", "[1e", "[1e+"]
+        cut = parse_partial(text).must()
+        assert cut.value == parse("[]").must()
+        assert cut.cut == .number
+
+    word = parse_partial("[true, nul").must()
+    assert word.value == parse("[true]").must()
+    assert word.cut == .word
+    assert word.pointer == "/1"
+
+test "parse_partial: what no byte more can mend fails as parse does, where pydantic-core reads past it"
+    refused = ["[1,]", "{1", "[1, 2] x", "{\"a\": 1, \"a\"", "[\"a\\q", repeat("[", 513)]
+
+    for text in refused
+        match parse_partial(text)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match parse_partial("[1e400")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    assert parse_partial(repeat("[", 512)).must().cut == .container
+
+## Examples
+
+# The arguments of a tool as a model streams them, read again as each piece
+# arrives: what is whole is there, the string still arriving as far as it
+# came.
+test "parse_partial: a tool's arguments half arrived"
+    got = parse_partial("{\"city\": \"Berlin\", \"note\": \"Hansa Stu").must()
+    assert member(got.value, "city").must() == .text(v: "Berlin")
+    assert member(got.value, "note").must() == .text(v: "Hansa Stu")
+    assert got.cut == .text
+    assert got.pointer == "/note"

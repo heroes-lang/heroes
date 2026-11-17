@@ -9,7 +9,14 @@
 # answer how many cells a text takes as a function of its own, which waits for
 # `unicode/segment` (the ledger says `pending`; the line editor and the tables
 # measure with a table of Unicode 17.0.0's widths kept inside this package);
-# draw windows or menus (a screen library's area).
+# draw windows (a screen library's area, `tui`'s).
+#
+# **Prompts, menus, links and the clipboard**: a question answered yes or
+# no, a menu of one choice or of several, filtered as the person types, and a
+# password typed twice are asked at the program's terminal and fail
+# `unsupported` where it has none; a link (OSC 8) is written to a terminal
+# and its target said after its text elsewhere; a text is put on the
+# clipboard (OSC 52) only through a terminal.
 #
 # **Colour falls back to plain text**: `write_styled` writes the colour only to
 # a terminal that takes it, where `NO_COLOR` is unset or empty and `TERM` is
@@ -40,6 +47,8 @@ use term/internal/draw
 use term/internal/editing
 use term/internal/failure
 use term/internal/keycodes
+use term/internal/menus
+use term/internal/osc
 use term/internal/reading
 use term/internal/sgr
 use term/internal/stream
@@ -844,6 +853,390 @@ function complete_words(state: [str], line: str, cursor: i64) -> Completions
     found = words.words_from(words: state, line: line, cursor: cursor)
     return Completions(from: found.from, candidates: found.candidates)
 
+## Prompts and menus
+
+# A menu a person answers with keys at the program's terminal: one choice or
+# several, the choices listed under a prompt, a window of them following the
+# cursor, and, where the menu filters, the characters typed keeping the
+# choices that hold them. Made by `menu`; its `prompt`, `choices` and `page`
+# may be changed directly before it is drawn.
+record Menu
+    # What the menu's first line shows, before the filter typed.
+    prompt: str
+    # The choices, in the order they are listed. A control character in one
+    # is drawn as a space, so that each stands on its own line.
+    choices: [str]
+    # Whether several may be chosen, each marked `[x]` and turned on and off
+    # by Space, or by Tab where the menu filters; else one is answered.
+    many: bool
+    # Whether the characters typed filter the choices: a choice is kept
+    # where it holds the filter, letter case set aside. Where the menu does
+    # not filter, `k` and `j` move the cursor too.
+    filtering: bool
+    # How many choices show at once, 1 or more; the window follows the
+    # cursor.
+    page: i64
+    # The cursor, the choices chosen, the filter and the lines last drawn.
+    # Only this package reads it.
+    state: menus.State
+
+# What one key did to a menu: the bytes that show it, how it left the menu,
+# and what was answered.
+record MenuPressed
+    # The bytes that draw the menu again on the terminal, to be written to it
+    # as they are; "" where nothing changed. Where the menu ends they leave
+    # one line, the prompt and what was answered.
+    draw: str
+    # Whether the menu goes on, or how it ended: `.entered` by Enter,
+    # `.interrupted` by Escape or Ctrl-C, `.closed` by Ctrl-D.
+    ending: Ending
+    # The indices of the choices answered, in the order of `choices`, where
+    # `ending` is `.entered`: one for a menu of one, any number for a menu of
+    # many.
+    chosen: [i64]
+
+# A menu of `choices` under `prompt`, showing ten choices at once, none
+# chosen, the cursor on the first.
+#
+# - `prompt`: what the first line shows; "" for nothing.
+# - `choices`: the choices, in the order they are listed; none at all is a
+#   menu `run_menu` refuses.
+# - `many`: whether several may be chosen.
+# - `filtering`: whether the characters typed filter the choices.
+#
+# See also `run_menu`, `press_menu`.
+function menu(prompt: str, choices: [str], many: bool, filtering: bool) -> Menu
+    return Menu(
+        prompt: prompt,
+        choices: choices,
+        many: many,
+        filtering: filtering,
+        page: 10,
+        state: menus.fresh(choices.len())
+    )
+
+# The bytes that draw `m` where the cursor stands, before any key: the
+# prompt, then the window of choices, the cursor's marked `>`. A program that
+# reads its own keys writes them first, then what `press_menu` answers.
+#
+# - `m`: the menu; it remembers how many lines it drew, which the next draw
+#   goes back over.
+#
+# See also `press_menu`.
+function draw_menu(@m: Menu) -> str
+    return menus.render(
+        @m.state,
+        prompt: m.prompt,
+        choices: m.choices,
+        many: m.many,
+        filtering: m.filtering,
+        page: m.page
+    )
+
+# Does `key` to the menu `m`, as `run_menu` does for each key it reads, and
+# answers what to draw and whether the menu was answered: the machine under
+# `run_menu`, for a program that reads its own keys, or a test.
+#
+# - `m`: the menu; its cursor, filter and choices chosen change.
+# - `key`: the key pressed. Up, Down, Ctrl-P and Ctrl-N move by a choice,
+#   Home and End to the first and the last, Page Up and Page Down by a
+#   window; Space (Tab where the menu filters) chooses the choice under the
+#   cursor or no longer, in a menu of many; a character is added to the
+#   filter, Backspace takes its last back and Ctrl-U empties it, where the
+#   menu filters; Enter answers, Escape and Ctrl-C give up, Ctrl-D ends the
+#   input. Every other key does nothing.
+#
+# Enter on a menu of one whose filter keeps no choice rings the bell and
+# answers nothing; a menu of many answers the choices chosen, none included.
+#
+# See also `draw_menu`, `run_menu`.
+function press_menu(@m: Menu, key: Key) -> MenuPressed
+    action @= menus.NOTHING
+    text @= ""
+
+    match key
+        .character c =>
+            action @ menus.TYPE
+            text @ c.text
+        .enter     => action @ menus.ENTER
+        .tab       => action @ menus.TOGGLE
+        .backspace => action @ menus.ERASE
+        .escape    => action @ menus.CANCEL
+        .up        => action @ menus.UP
+        .down      => action @ menus.DOWN
+        .home      => action @ menus.FIRST
+        .end       => action @ menus.LAST
+        .page_up   => action @ menus.PAGE_UP
+        .page_down => action @ menus.PAGE_DOWN
+        .control c =>
+            if c.letter == "p"
+                action @ menus.UP
+            else if c.letter == "n"
+                action @ menus.DOWN
+            else if c.letter == "u"
+                action @ menus.CLEAR
+            else if c.letter == "c"
+                action @ menus.CANCEL
+            else if c.letter == "d"
+                action @ menus.END_INPUT
+        .left | .right | .insert | .delete | .function_key _ | .other _ => _ = 0
+
+    if action == menus.TOGGLE && !m.many
+        action @ menus.NOTHING
+    done = menus.step(
+        @m.state,
+        prompt: m.prompt,
+        choices: m.choices,
+        many: m.many,
+        filtering: m.filtering,
+        page: m.page,
+        action: action,
+        text: text
+    )
+
+    ending: Ending = if done.ending == menus.ANSWERED
+        .entered
+    else if done.ending == menus.GIVEN_UP
+        .interrupted
+    else if done.ending == menus.ENDED
+        .closed
+    else
+        .editing
+    return MenuPressed(draw: done.draw, ending: ending, chosen: done.chosen)
+
+# The choices a person answers `m` with at the program's terminal: the menu
+# drawn under the cursor, each key read and done as `press_menu` does it, and
+# one line left at the end, the prompt and what was answered.
+#
+# - `m`: the menu; it is drawn as wide as the terminal allows, a longer line
+#   cut, and its state changes as the keys do.
+#
+# The indices of the choices answered, in the order of `m.choices`: one for
+# a menu of one, any number for a menu of many.
+#
+# Fails `invalid` where `m` has no choice, `stopped` where Escape or Ctrl-C
+# gave it up, `closed` where Ctrl-D ended the input or the terminal is gone,
+# `unsupported` where the program has no terminal, `failed` where the system
+# refuses. The terminal is put back as it was, whatever the end.
+#
+# See also `select_one`, `select_many`.
+function run_menu(@m: Menu) -> [i64]?
+    asked = "answering a menu"
+
+    if m.choices.len() == 0
+        return failure.of(code: INVALID, asked: asked, why: "the menu has no choice")
+    stood = hero_term.enter_keys()
+
+    if stood < 0
+        return failure.last(asked: asked)
+
+    m.state.columns @ match os.terminal_size()
+        .ok size => size.columns
+        .err _   => 0
+
+    reading.show(draw_menu(@m), stood: stood)?
+    pressed @= MenuPressed(draw: "", ending: .editing, chosen: [])
+
+    while pressed.ending == .editing
+        match read_key()
+            .err e =>
+                reading.finish(stood)
+                return fail(code: e.code, msg: e.msg)
+            .ok key =>
+                pressed @ press_menu(@m, key: key)
+                reading.show(pressed.draw, stood: stood)?
+
+    reading.finish(stood)
+
+    return match pressed.ending
+        .entered     => ok(pressed.chosen)
+        .interrupted => failure.of(code: STOPPED, asked: asked, why: "Escape or Ctrl-C was pressed")
+        .closed      => failure.of(code: CLOSED, asked: asked, why: "Ctrl-D was pressed")
+        .editing     => failure.of(code: FAILED, asked: asked, why: "the menu ended unanswered")
+
+# The index of the one choice of `choices` a person picks at the program's
+# terminal, from a menu `run_menu` draws.
+#
+# - `prompt`: what the menu's first line shows.
+# - `choices`: the choices, one or more.
+# - `filtering`: whether the characters typed filter the choices.
+#
+# Fails as `run_menu` does. See also `select_many`, `menu`.
+function select_one(prompt: str, choices: [str], filtering: bool) -> i64?
+    m @= menu(prompt, choices: choices, many: false, filtering: filtering)
+    chosen = run_menu(@m)?
+    return ok(chosen[0])
+
+# The indices of the choices of `choices` a person marks at the program's
+# terminal, in their order, from a menu `run_menu` draws; none where none was
+# marked.
+#
+# - `prompt`: what the menu's first line shows.
+# - `choices`: the choices, one or more.
+# - `filtering`: whether the characters typed filter the choices; Tab then
+#   marks, since Space is typed into the filter.
+#
+# Fails as `run_menu` does. See also `select_one`, `menu`.
+function select_many(prompt: str, choices: [str], filtering: bool) -> [i64]?
+    m @= menu(prompt, choices: choices, many: true, filtering: filtering)
+    return run_menu(@m)
+
+# Whether a person answers yes to `prompt` at the program's terminal: `y` or
+# `n` in either case, or Enter for the default, the answer then written out
+# as `yes` or `no`.
+#
+# - `prompt`: the question; ` [Y/n] ` or ` [y/N] ` is written after it, the
+#   capital the default.
+# - `default_yes`: what Enter answers.
+#
+# Fails `stopped` where Escape or Ctrl-C was pressed, `closed` where Ctrl-D
+# was or the terminal is gone, `unsupported` where the program has no
+# terminal, `failed` where the system refuses. Every other key does nothing.
+#
+# See also `select_one`.
+function confirm(prompt: str, default_yes: bool) -> bool?
+    asked = "asking for a confirmation"
+
+    hint = if default_yes
+        " [Y/n] "
+    else
+        " [y/N] "
+    stood = hero_term.enter_keys()
+
+    if stood < 0
+        return failure.last(asked: asked)
+    reading.show(prompt + hint, stood: stood)?
+    answer @= 0
+
+    while answer == 0
+        match read_key()
+            .err e =>
+                reading.finish(stood)
+                return fail(code: e.code, msg: e.msg)
+            .ok key =>
+                answer @ match key
+                    .character c =>
+                        if c.text == "y" || c.text == "Y"
+                            1
+                        else if c.text == "n" || c.text == "N"
+                            2
+                        else
+                            0
+                    .enter =>
+                        if default_yes
+                            1
+                        else
+                            2
+                    .escape => 3
+                    .control c =>
+                        if c.letter == "c"
+                            3
+                        else if c.letter == "d"
+                            4
+                        else
+                            0
+                    .tab | .backspace | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete => 0
+                    .function_key _ | .other _ => 0
+
+    said = if answer == 1
+        "yes"
+    else if answer == 2
+        "no"
+    else
+        ""
+    reading.show(said + "\r\n", stood: stood)?
+    reading.finish(stood)
+
+    if answer == 3
+        return failure.of(code: STOPPED, asked: asked, why: "Escape or Ctrl-C was pressed")
+
+    if answer == 4
+        return failure.of(code: CLOSED, asked: asked, why: "Ctrl-D was pressed")
+    return ok(answer == 1)
+
+# A password typed at the program's terminal with nothing echoed, as
+# `read_secret` reads it, and typed again to confirm it where `again` asks.
+#
+# - `prompt`: what the terminal shows first: `Password: `.
+# - `again`: what it shows before the second typing: `Again: `; "" asks
+#   once.
+#
+# Fails `invalid` where the two typings differ, which the program asks again,
+# and as `read_secret` fails. See also `read_secret`.
+function read_password(prompt: str, again: str) -> str?
+    first = read_secret(prompt)?
+
+    if again == ""
+        return ok(first)
+    second = read_secret(again)?
+
+    if first != second
+        return failure.of(code: INVALID, asked: "reading a password", why: "the two typings differ")
+    return ok(first)
+
+## Links and the clipboard
+
+# `text` made a link to `target` by OSC 8, which a terminal that reads it
+# shows as `text` and opens `target` from, and others show as `text` alone.
+#
+# - `text`: what shows; it may hold styles.
+# - `target`: where it leads, a URL: `https://example.com`,
+#   `file:///etc/hosts`. A byte outside ASCII's printable range is
+#   percent-encoded, so no byte of it ends the command.
+#
+# See also `write_hyperlink`.
+function hyperlink(text: str, target: str) -> str
+    return osc.link(text: text, target: target)
+
+# Writes `text` to `s` as a link to `target` where `s` is a terminal that
+# takes control sequences (as `write_control` asks), and elsewhere the text
+# with its target said after it, `text (target)`, so that a file or a pipe
+# loses nothing; the target alone where `text` is it or is empty.
+#
+# - `s`: the stream; it stays the caller's.
+# - `text`: what shows.
+# - `target`: where it leads, as `hyperlink` takes it.
+#
+# Fails as `io.write` fails. A terminal that reads no OSC 8 shows the text
+# alone and the target nowhere, which no program can ask a terminal about.
+#
+# See also `hyperlink`.
+function write_hyperlink(s: io.Stream, text: str, target: str) -> ()?
+    if stream.controls_on(s)
+        return io.write_text(s, text: hyperlink(text: text, target: target))
+
+    if text == "" || text == target
+        return io.write_text(s, text: target)
+    return io.write_text(s, text: f"{text} ({target})")
+
+# The OSC 52 command that puts `text` on the clipboard of the terminal that
+# reads it, as xterm defines it: the clipboard `c` and the text in base 64.
+#
+# - `text`: what the clipboard holds after; "" empties it on some
+#   terminals.
+#
+# See also `write_clipboard`.
+function clipboard_command(text: str) -> str
+    return osc.clipboard(text)
+
+# Puts `text` on the clipboard of the program's terminal by OSC 52, which
+# reaches the person's own clipboard through ssh as well.
+#
+# - `text`: what the clipboard holds after.
+#
+# Fails `unsupported` where the program has no terminal, or `TERM` is
+# `dumb`, and `failed` where the system refuses. A terminal may read no OSC
+# 52, or read it only once allowed (tmux's `set-clipboard`, a setting of
+# iTerm2's), or hold only so many bytes, and none tells a program whether it
+# did: the call succeeds where the command was written. See also
+# `clipboard_command`.
+function write_clipboard(text: str) -> ()?
+    asked = "writing to the clipboard"
+
+    if os.env("TERM").default("") == "dumb"
+        return failure.of(code: UNSUPPORTED, asked: asked, why: "TERM is dumb, a terminal that reads no command")
+    return stream.to_terminal(text: clipboard_command(text), asked: asked)
+
 ## Progress
 
 # A progress bar drawn on a stream: a label, thirty cells and the share done,
@@ -1340,3 +1733,117 @@ test "format_table: names and sizes in an ASCII box"
 # Five names laid in columns of ten cells.
 test "format_columns: five names in ten cells"
     assert format_columns(["a", "bb", "ccc", "dddd", "e"], width: 10) == "a    dddd\nbb   e\nccc\n"
+
+# A menu of three colours, one to be chosen, none chosen yet.
+test "menu: three colours, one to choose"
+    m = menu("Colour:", choices: ["red", "green", "blue"], many: false, filtering: false)
+    assert m.page == 10 && m.choices.len() == 3 && !m.many
+
+# The first draw of a menu: its prompt, then the choices, the cursor's
+# marked.
+test "draw_menu: a prompt and two choices"
+    m @= menu("Colour:", choices: ["red", "green"], many: false, filtering: false)
+    assert draw_menu(@m) == "\r\u{1b}[JColour:\r\n> red\r\n  green"
+
+# Keys handed to a menu without a terminal: down, then Enter answers the
+# second choice and leaves one line.
+test "press_menu: down and Enter"
+    m @= menu("Colour:", choices: ["red", "green"], many: false, filtering: false)
+    _ = draw_menu(@m)
+    _ = press_menu(@m, key: .down)
+    done = press_menu(@m, key: .enter)
+    assert done.ending == .entered && done.chosen == [1]
+    assert done.draw == "\r\u{1b}[2A\u{1b}[JColour: green\r\n"
+
+# A menu run at the terminal; a program with none is told, and on a terminal
+# the example asks nothing, a person being needed to answer.
+test "run_menu: unsupported with no terminal"
+    match enter_raw()
+        .ok _ => leave_raw().must()
+        .err _ =>
+            m @= menu("Colour:", choices: ["red", "green"], many: false, filtering: true)
+            assert run_menu(@m).is_err()
+
+# One choice asked for; a program with no terminal is told.
+test "select_one: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err _ => assert select_one("Colour:", choices: ["red", "green"], filtering: false).is_err()
+
+# Several choices asked for; a program with no terminal is told.
+test "select_many: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err _ => assert select_many("Toppings:", choices: ["cheese", "basil"], filtering: false).is_err()
+
+# A question asked; a program with no terminal is told.
+test "confirm: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err _ => assert confirm("Delete the file?", default_yes: false).is_err()
+
+# A password asked twice; a program with no terminal is told.
+test "read_password: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err _ => assert read_password(prompt: "Password: ", again: "Again: ").is_err()
+
+# A word made a link, as a terminal that reads OSC 8 opens it.
+test "hyperlink: a word linked to a page"
+    assert hyperlink(text: "site", target: "https://example.com") == "\u{1b}]8;;https://example.com\u{1b}\\site\u{1b}]8;;\u{1b}\\"
+
+# A link written to a pipe, where it is no terminal: the target said after
+# the text.
+test "write_hyperlink: a link said on a pipe"
+    p @= io.pipe().must()
+    write_hyperlink(p.writer, text: "site", target: "https://example.com").must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "site (https://example.com)"
+    io.close(@p.reader).must()
+
+# The command that puts a word on the clipboard.
+test "clipboard_command: a word"
+    assert clipboard_command("hi") == "\u{1b}]52;c;aGk=\u{1b}\\"
+
+# A text put on the clipboard; a program with no terminal is told.
+test "write_clipboard: unsupported with no terminal"
+    match enter_raw()
+        .ok _  => leave_raw().must()
+        .err e => assert write_clipboard("hi").is_err() && e.code == UNSUPPORTED
+
+test "press_menu: many marked with Space, filtered with Tab marking, given up and ended"
+    m @= menu("Pick:", choices: ["alpha", "beta", "gamma"], many: true, filtering: false)
+    _ = draw_menu(@m)
+    _ = press_menu(@m, key: .character(text: " "))
+    _ = press_menu(@m, key: .end)
+    _ = press_menu(@m, key: .character(text: " "))
+    assert press_menu(@m, key: .enter).chosen == [0, 2]
+    f @= menu("Pick:", choices: ["alpha", "beta", "gamma"], many: true, filtering: true)
+    _ = draw_menu(@f)
+    _ = press_menu(@f, key: .character(text: "a"))
+    _ = press_menu(@f, key: .character(text: "m"))
+    _ = press_menu(@f, key: .tab)
+    assert press_menu(@f, key: .enter).chosen == [2]
+    g @= menu("Pick:", choices: ["a"], many: false, filtering: false)
+    _ = draw_menu(@g)
+    _ = press_menu(@g, key: .tab)
+    assert press_menu(@g, key: .escape).ending == .interrupted
+    h @= menu("Pick:", choices: ["a"], many: false, filtering: false)
+    assert press_menu(@h, key: .control(letter: "d")).ending == .closed
+
+test "run_menu: a menu with no choice is invalid, terminal or none"
+    none: [str] = []
+    m @= menu("Pick:", choices: none, many: false, filtering: false)
+
+    match run_menu(@m)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "write_hyperlink: on a pipe, the target alone where the text is it or empty"
+    p @= io.pipe().must()
+    write_hyperlink(p.writer, text: "", target: "https://a.example").must()
+    write_hyperlink(p.writer, text: " ", target: "x").must()
+    write_hyperlink(p.writer, text: "https://b.example", target: "https://b.example").must()
+    io.close(@p.writer).must()
+    assert io.read_all_text(p.reader).must() == "https://a.example  (x)https://b.example"
+    io.close(@p.reader).must()

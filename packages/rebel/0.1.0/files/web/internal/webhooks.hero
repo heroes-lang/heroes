@@ -1,0 +1,123 @@
+# Webhooks signed and verified as the Standard Webhooks specification
+# (standardwebhooks.com) says: HMAC-SHA256 over the message's id, its
+# timestamp in Unix seconds and its payload, joined by `.`, keyed by the bytes
+# of a secret written `whsec_` and base 64; the signature written `v1,` and
+# base 64, several in one field parted by spaces; a timestamp refused past a
+# tolerance either way. Several secrets verify, so a secret rotates.
+
+use bytes
+use crypto
+use numbers
+use strings
+
+# The code of a secret, a field or a signature that does not read or does not
+# match.
+constant INVALID: str
+    "invalid"
+
+# The prefix a secret is written with; reading takes it off where it stands.
+constant SECRET_PREFIX: str
+    "whsec_"
+
+# The bytes of a new secret.
+constant SECRET_BYTES: i64
+    32
+
+# The bytes of the secret `secret`, `whsec_` and standard base 64, the prefix
+# optional. Fails `invalid` where the rest is no base 64 or holds no byte.
+function secret_bytes(secret: str) -> [u8]?
+    encoded = if strings.has_prefix(s: secret, prefix: SECRET_PREFIX)
+        secret.slice(from: SECRET_PREFIX.len(), to: secret.len())
+    else
+        secret
+
+    raw = match bytes.parse_base64(encoded)
+        .ok b  => b
+        .err _ => return fail(code: INVALID, msg: "the webhook secret is no base 64 after `whsec_`")
+
+    if raw.len() == 0
+        return fail(code: INVALID, msg: "the webhook secret holds no byte")
+    return ok(raw)
+
+# The secret of `raw`, as `secret_bytes` reads one.
+function secret_of(raw: [u8]) -> str
+    return SECRET_PREFIX + bytes.format_base64(raw)
+
+# The signature of `payload`, sent as `id` at `timestamp_s`, keyed by `key`:
+# `v1,` and the standard base 64 of its HMAC-SHA256.
+function signature(key: [u8], id: str, timestamp_s: i64, payload: [u8]) -> str
+    signed = bytes.concat([bytes.from_text(f"{id}.{timestamp_s}."), payload])
+    return "v1," + bytes.format_base64(crypto.hmac(.sha256, key: key, data: signed))
+
+# The timestamp a `webhook-timestamp` field writes, in Unix seconds: digits
+# alone. Fails `invalid` otherwise.
+function timestamp_of(field: str) -> i64?
+    if field.len() == 0
+        return fail(code: INVALID, msg: "the webhook-timestamp field is empty")
+
+    for c in field.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: INVALID, msg: f"the webhook-timestamp field \"{field}\" is not whole seconds")
+
+    match numbers.parse_int(field)
+        .ok n => return ok(n)
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"the webhook-timestamp field \"{field}\" is past what a number holds"
+        )
+
+# Whether `field`, a `webhook-signature` field, holds a `v1` signature equal
+# to one of `expected`, compared in constant time. Signatures of other
+# versions, `v1a` among them, are passed over.
+function holds_signature(field: str, expected: [str]) -> bool
+    found: bool @= false
+
+    for one in strings.words(field)
+        if strings.has_prefix(s: one, prefix: "v1,")
+            given = bytes.from_text(one)
+
+            for want in expected
+                if crypto.equals_constant_time(a: given, b: bytes.from_text(want))
+                    found @ true
+
+    return found
+
+# Whether `field` holds a signature of version `v1` at all.
+function has_v1(field: str) -> bool
+    for one in strings.words(field)
+        if strings.has_prefix(s: one, prefix: "v1,")
+            return true
+
+    return false
+
+## Tests
+
+test "secret_bytes: with its prefix, without, no base 64, and empty"
+    assert secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must().len() == 24
+    assert secret_bytes("MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must().len() == 24
+    assert secret_bytes("whsec_!!").is_err()
+    assert secret_bytes("whsec_").is_err()
+    assert secret_of(secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must()) == "whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw"
+
+test "signature: the specification's example, as Python's hmac computes it"
+    key = secret_bytes("whsec_MfKQ9r8GKYqrTwjUPD8ILPZIo2LaLaSw").must()
+    got = signature(
+        key: key,
+        id: "msg_p5jXN8AQM9LWM0D4loKWxJek",
+        timestamp_s: 1614265330,
+        payload: bytes.from_text("{\"test\": 2432232314}")
+    )
+    assert got == "v1,g0hM9SsE+OTPJTGt/tmIKtSyZlE3uFJELVlNIOLJ1OE="
+
+test "timestamp_of: digits, empty, a sign, a fraction, and past an i64"
+    assert timestamp_of("1614265330").must() == 1614265330
+    assert timestamp_of("").is_err()
+    assert timestamp_of("-1").is_err()
+    assert timestamp_of("1.5").is_err()
+    assert timestamp_of("99999999999999999999").is_err()
+
+test "holds_signature: one of several, another version passed over, and none"
+    assert holds_signature("v1a,xyz v1,abc v1,def", expected: ["v1,def"])
+    assert !holds_signature("v1a,def", expected: ["v1a,def"])
+    assert !holds_signature("", expected: ["v1,abc"])
+    assert has_v1("v1a,x v1,y") && !has_v1("v1a,x")

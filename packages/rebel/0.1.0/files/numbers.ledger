@@ -295,6 +295,14 @@ capability number/half-float  a float rounded to IEEE 754's binary16, the half-p
   python  struct.pack, struct.unpack, struct.calcsize (format `e`)
   note    added 2026-11-17 (queue 58), the yardstick Rust's crate half (f16::from_f32, f16::from_f64, f16::to_f32, f16::to_f64, f16::from_bits, f16::to_bits); rounded half to even from the exact value, as IEEE 754 asks and clang's `_Float16` rounds: 35 values against Python's struct and clang 21 on 2026-11-17 and every one of the 65536 halves read and written back. A value of 65520 or more is an infinity of its sign, as IEEE 754, clang and half answer, where Python's struct raises OverflowError. Every NaN becomes the quiet NaN 0x7e00, its sign and payload lost, since the language reads neither; Python and clang keep the sign (-nan is 0xfe00)
 
+
+capability number/byte-size  a count of bytes written for people, `1.2 MB` or `1.2 MiB`, and read back
+  heroes  numbers.format_size, numbers.parse_size, numbers.SizeUnits
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; none of the three standard libraries writes one (go-humanize's Bytes and IBytes and Python's humanize.naturalsize are the libraries people reach for). The caller chooses the powers of 1000 (`kB` as the SI writes the kilo) or of 1024 (`KiB`) and the digits after the point; the quotient's digits are exact and the last rounded half to even, every expected value observed with Python's `decimal` at 80 digits; a quotient that rounds to a whole unit more is written in that unit, `1.0 MB` for 999,950 bytes and not `1000.0 kB` (a decision; humanize, not on this machine, was not asked). Reading takes either case, a space or none, `B` or none, and the `i` units always as 1024s; the caller says whether `KB` is 1000 or 1024, which JEDEC and Windows read as 1024; the product is exact on `numbers`' own natural numbers and rounded half to even, past an `i64` `does_not_fit`
+
 dropped
   go      strconv.AppendBool, strconv.AppendFloat, strconv.AppendInt, strconv.AppendUint, strconv.AppendQuote, strconv.AppendQuoteRune, strconv.AppendQuoteRuneToASCII, strconv.AppendQuoteRuneToGraphic, strconv.AppendQuoteToASCII, strconv.AppendQuoteToGraphic: the same texts appended to a caller's buffer, a capacity hint; a program collects pieces and joins once
   go      strconv.IntSize: the width of Go's `int`, which no Heroes type has, every width being in its type's name

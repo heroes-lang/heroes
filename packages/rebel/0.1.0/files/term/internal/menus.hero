@@ -1,0 +1,441 @@
+# A menu answered with keys, as a machine of no terminal: the choices a
+# filter typed keeps, the one the cursor is on, the ones chosen, the window of
+# them on the screen, and the bytes that draw it again after each key. The
+# face reads the keys and writes the bytes; a test hands the keys in.
+
+use term/internal/sgr
+use term/internal/width
+use unicode
+
+# The bell, rung where Enter answers nothing.
+constant BELL: str
+    "\u{7}"
+
+## What a key does to a menu
+
+# Nothing.
+constant NOTHING: i64
+    0
+
+# The cursor one choice up.
+constant UP: i64
+    1
+
+# The cursor one choice down.
+constant DOWN: i64
+    2
+
+# The cursor to the first choice shown.
+constant FIRST: i64
+    3
+
+# The cursor to the last choice shown.
+constant LAST: i64
+    4
+
+# The cursor a window up.
+constant PAGE_UP: i64
+    5
+
+# The cursor a window down.
+constant PAGE_DOWN: i64
+    6
+
+# A character typed, added to the filter, or read as a key of its own where
+# the menu has none.
+constant TYPE: i64
+    7
+
+# The choice under the cursor chosen, or no longer.
+constant TOGGLE: i64
+    8
+
+# The filter's last character taken back.
+constant ERASE: i64
+    9
+
+# The filter emptied.
+constant CLEAR: i64
+    10
+
+# The menu answered.
+constant ENTER: i64
+    11
+
+# The menu given up: Escape or Ctrl-C.
+constant CANCEL: i64
+    12
+
+# No more input: Ctrl-D.
+constant END_INPUT: i64
+    13
+
+## How a key left the menu
+
+# The menu goes on.
+constant GOING: i64
+    0
+
+# It was answered.
+constant ANSWERED: i64
+    1
+
+# It was given up.
+constant GIVEN_UP: i64
+    2
+
+# The input ended.
+constant ENDED: i64
+    3
+
+# What a menu keeps between keys.
+record State
+    # The indices of the choices the filter keeps, in their order.
+    shown: [i64]
+    # Where the cursor is in `shown`.
+    cursor: i64
+    # The first of `shown` on the screen.
+    top: i64
+    # For each choice, whether it is chosen.
+    chosen: [bool]
+    # The filter typed.
+    typed: str
+    # How many lines the last draw took, 0 before the first.
+    drawn: i64
+    # The terminal's columns, 0 where they are not known: a longer line is
+    # cut, so that none wraps and the next draw finds its lines.
+    columns: i64
+
+# What one key did: the bytes that draw the menu again, how it left it, and
+# the choices answered.
+record Step
+    # The bytes to write to the terminal; "" where nothing changed.
+    draw: str
+    # `GOING`, `ANSWERED`, `GIVEN_UP` or `ENDED`.
+    ending: i64
+    # The indices of the choices answered, in their order, where `ending` is
+    # `ANSWERED`.
+    chosen: [i64]
+
+# The state of a menu of `count` choices, none chosen, every one shown.
+function fresh(count: i64) -> State
+    chosen: [bool] @= []
+
+    for _ in range(from: 0, to: count)
+        chosen @ chosen.push(false)
+
+    return State(shown: range(from: 0, to: count), cursor: 0, top: 0, chosen: chosen, typed: "", drawn: 0, columns: 0)
+
+# Whether `choice` holds `typed`, letter case set aside: the empty filter is
+# held by every choice.
+function holds(choice: str, typed: str) -> bool
+    if typed.len() == 0
+        return true
+    folded = lower(choice)
+    want = lower(typed)
+    last = folded.len() - want.len()
+    at @= 0
+
+    while at <= last
+        matched @= 0
+
+        while matched < want.len() && folded[at + matched] == want[matched]
+            matched @ matched + 1
+
+        if matched == want.len()
+            return true
+        at @ at + 1
+
+    return false
+
+# `s` with each character made lower case.
+function lower(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        out @ out.push(unicode.to_lower(c))
+
+    return out.join("")
+
+# Keeps in `state.shown` the choices the filter holds, the cursor on the
+# first of them.
+function refilter(@state: State, choices: [str] lent)
+    kept: [i64] @= []
+
+    for k in range(from: 0, to: choices.len())
+        if holds(choice: choices[k], typed: state.typed)
+            kept @ kept.push(k)
+
+    state.shown @ kept
+    state.cursor @ 0
+    state.top @ 0
+
+# Moves the cursor to `to`, kept among the choices shown, and the window so
+# that it shows the cursor.
+function move_to(@state: State, to: i64, page: i64)
+    last = state.shown.len() - 1
+
+    state.cursor @ if to > last
+        last
+    else
+        to
+
+    if state.cursor < 0
+        state.cursor @ 0
+
+    if state.cursor < state.top
+        state.top @ state.cursor
+
+    if state.cursor >= state.top + page
+        state.top @ state.cursor - page + 1
+
+# Does `action` to the menu, `text` the character typed for `TYPE`, and
+# answers what to draw and how it left the menu.
+function step(@state: State, prompt: str, choices: [str] lent, many: bool, filtering: bool, page: i64, action: i64, text: str) -> Step
+    window = if page < 1
+        1
+    else
+        page
+    nothing = Step(draw: "", ending: GOING, chosen: [])
+    done: i64 @= GOING
+    act @= action
+
+    if act == TYPE && !filtering
+        act @ if text == "k"
+            UP
+        else if text == "j"
+            DOWN
+        else if text == " " && many
+            TOGGLE
+        else
+            NOTHING
+
+    if act == UP || act == DOWN || act == FIRST || act == LAST || act == PAGE_UP || act == PAGE_DOWN
+        to = if act == UP
+            state.cursor - 1
+        else if act == DOWN
+            state.cursor + 1
+        else if act == FIRST
+            0
+        else if act == LAST
+            state.shown.len() - 1
+        else if act == PAGE_UP
+            state.cursor - window
+        else
+            state.cursor + window
+        move_to(@state, to: to, page: window)
+    else if act == TYPE
+        state.typed @ state.typed + text
+        refilter(@state, choices)
+    else if act == ERASE || act == CLEAR
+        if state.typed.len() == 0
+            return nothing
+        kept: [str] @= []
+
+        if act == ERASE
+            for c in state.typed.chars()
+                kept @ kept.push(c)
+
+            kept @ kept.slice(from: 0, to: kept.len() - 1)
+        state.typed @ kept.join("")
+        refilter(@state, choices)
+    else if act == TOGGLE
+        if !many || state.shown.len() == 0
+            return nothing
+        at = state.shown[state.cursor]
+        state.chosen[at] @ !state.chosen[at]
+    else if act == ENTER
+        if !many && state.shown.len() == 0
+            return Step(draw: BELL, ending: GOING, chosen: [])
+        done @ ANSWERED
+    else if act == CANCEL
+        done @ GIVEN_UP
+    else if act == END_INPUT
+        done @ ENDED
+    else
+        return nothing
+
+    if done == GOING
+        return Step(
+            draw: render(@state, prompt: prompt, choices: choices, many: many, filtering: filtering, page: window),
+            ending: GOING,
+            chosen: []
+        )
+    answered: [i64] @= []
+
+    if done == ANSWERED
+        if many
+            for k in range(from: 0, to: choices.len())
+                if state.chosen[k]
+                    answered @ answered.push(k)
+        else
+            answered @ answered.push(state.shown[state.cursor])
+    said: [str] @= []
+
+    for k in answered
+        said @ said.push(choices[k])
+
+    last_line = if done == ANSWERED
+        cut(prompt + " " + said.join(", "), columns: state.columns)
+    else
+        cut(prompt, columns: state.columns)
+    draw = back(state.drawn) + last_line + "\r\n"
+    state.drawn @ 0
+    return Step(draw: draw, ending: done, chosen: answered)
+
+# The bytes that draw the menu again where it was drawn: the prompt and the
+# filter, then the window of choices, the cursor's marked `>` and, in a menu
+# of many, each with its box.
+function render(@state: State, prompt: str, choices: [str] lent, many: bool, filtering: bool, page: i64) -> str
+    lines: [str] @= []
+
+    head = if filtering
+        prompt + " " + state.typed
+    else
+        prompt
+    lines @ lines.push(cut(head, columns: state.columns))
+
+    if state.shown.len() == 0
+        lines @ lines.push("  (no match)")
+
+    end = if state.top + page < state.shown.len()
+        state.top + page
+    else
+        state.shown.len()
+
+    for k in range(from: state.top, to: end)
+        at = state.shown[k]
+
+        marker = if k == state.cursor
+            "> "
+        else
+            "  "
+
+        box = if !many
+            ""
+        else if state.chosen[at]
+            "[x] "
+        else
+            "[ ] "
+        lines @ lines.push(cut(marker + box + plain(choices[at]), columns: state.columns))
+
+    draw = back(state.drawn) + lines.join("\r\n")
+    state.drawn @ lines.len()
+    return draw
+
+# The bytes that bring the cursor back to the start of a draw of `drawn`
+# lines and clear from there down; a carriage return and the clearing alone
+# where nothing was drawn.
+function back(drawn: i64) -> str
+    up = if drawn > 1
+        sgr.moved(drawn - 1, final: "A")
+    else
+        ""
+    return "\r" + up + sgr.CSI + "J"
+
+# `s` cut to at most `columns - 1` cells, so that it never reaches the last
+# column and wraps; as it is where `columns` is 0.
+function cut(s: str, columns: i64) -> str
+    if columns <= 1 || width.cells_of(s) < columns
+        return s
+    at @= 0
+    used @= 0
+
+    while at < s.len()
+        next = width.next_at(s, at)
+        cells = width.cells_between(s, from: at, to: next)
+
+        if used + cells > columns - 1
+            return s.slice(from: 0, to: at)
+        used @ used + cells
+        at @ next
+
+    return s
+
+# `s` with each control character, a line break or an escape among them,
+# written as a space, so that a choice draws on its one line.
+function plain(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        if c.len() == 1 && (c[0] < 0x20 || c[0] == 0x7f)
+            out @ out.push(" ")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+## Tests
+
+# The draw of `step` after `actions` on a menu of `choices`.
+function after(choices: [str], many: bool, filtering: bool, actions: [i64], texts: [str]) -> Step
+    state @= fresh(choices.len())
+    _ = render(@state, prompt: "Pick:", choices: choices, many: many, filtering: filtering, page: 3)
+    last @= Step(draw: "", ending: GOING, chosen: [])
+
+    for k in range(from: 0, to: actions.len())
+        last @ step(
+            @state,
+            prompt: "Pick:",
+            choices: choices,
+            many: many,
+            filtering: filtering,
+            page: 3,
+            action: actions[k],
+            text: texts[k]
+        )
+
+    return last
+
+test "step: down, up past the top, and enter on one choice"
+    got = after(
+        choices: ["a", "b", "c"],
+        many: false,
+        filtering: false,
+        actions: [DOWN, DOWN, UP, ENTER],
+        texts: ["", "", "", ""]
+    )
+    assert got.ending == ANSWERED && got.chosen == [1]
+    assert after(choices: ["a", "b"], many: false, filtering: false, actions: [UP, ENTER], texts: ["", ""]).chosen == [0]
+    assert after(choices: ["a", "b"], many: false, filtering: false, actions: [LAST, DOWN, ENTER], texts: ["", "", ""]).chosen == [1]
+    assert after(choices: ["a", "b"], many: false, filtering: false, actions: [TYPE, ENTER], texts: ["j", ""]).chosen == [1]
+
+test "step: many chosen by space and toggled back, answered in their order"
+    got = after(
+        choices: ["a", "b", "c"],
+        many: true,
+        filtering: false,
+        actions: [DOWN, DOWN, TOGGLE, UP, UP, TYPE, TYPE, TYPE, ENTER],
+        texts: ["", "", "", "", "", " ", "j", " ", ""]
+    )
+    assert got.chosen == [0, 1, 2]
+    assert after(choices: ["a", "b"], many: true, filtering: false, actions: [TOGGLE, TOGGLE, ENTER], texts: ["", "", ""]).chosen == []
+
+test "step: a filter typed, a choice of more than one byte, erased, and no match answering nothing"
+    choices = ["Zürich", "Berlin", "zebra"]
+    assert after(choices: choices, many: false, filtering: true, actions: [TYPE, TYPE, ENTER], texts: ["Z", "Ü", ""]).chosen == [0]
+    assert after(choices: choices, many: false, filtering: true, actions: [TYPE, DOWN, ENTER], texts: ["z", "", ""]).chosen == [2]
+    none = after(choices: choices, many: false, filtering: true, actions: [TYPE, ENTER], texts: ["q", ""])
+    assert none.ending == GOING && none.draw == BELL
+    assert after(choices: choices, many: false, filtering: true, actions: [TYPE, ERASE, LAST, ENTER], texts: ["q", "", "", ""]).chosen == [2]
+
+test "step: given up and ended, each answering nothing"
+    assert after(choices: ["a"], many: false, filtering: false, actions: [CANCEL], texts: [""]).ending == GIVEN_UP
+    assert after(choices: ["a"], many: false, filtering: false, actions: [END_INPUT], texts: [""]).ending == ENDED
+    assert after(choices: ["a"], many: false, filtering: false, actions: [NOTHING], texts: [""]).draw == ""
+
+test "render: the window around the cursor, the marker, the boxes, and a draw over the last"
+    state @= fresh(5)
+    first = render(@state, prompt: "Pick:", choices: ["a", "b", "c", "d", "e"], many: true, filtering: false, page: 2)
+    assert first == "\r" + sgr.CSI + "JPick:\r\n> [ ] a\r\n  [ ] b"
+    move_to(@state, to: 4, page: 2)
+    again = render(@state, prompt: "Pick:", choices: ["a", "b", "c", "d", "e"], many: true, filtering: false, page: 2)
+    assert again == "\r" + sgr.CSI + "2A" + sgr.CSI + "JPick:\r\n  [ ] d\r\n> [ ] e"
+
+test "cut and plain: a line cut before the last column, a wide character, and a control made a space"
+    assert cut("abcdef", columns: 4) == "abc"
+    assert cut("ab", columns: 4) == "ab"
+    assert cut("日本語", columns: 4) == "日"
+    assert cut("abcdef", columns: 0) == "abcdef"
+    assert plain("a\nb\u{1b}c") == "a b c"
+    assert holds(choice: "Zürich", typed: "üR") && !holds(choice: "Zürich", typed: "x") && holds(choice: "", typed: "")

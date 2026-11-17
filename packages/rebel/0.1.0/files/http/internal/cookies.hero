@@ -280,3 +280,9 @@ test "path_matches and default_path: RFC 6265's cases"
     assert path_matches(path: "/a", cookie_path: "/") && !path_matches(path: "/a", cookie_path: "")
     assert default_path("") == "/" && default_path("x") == "/" && default_path("/") == "/" && default_path("/a") == "/"
     assert default_path("/a/b") == "/a" && default_path("/a/b/") == "/a/b"
+
+# A test's list of public suffixes: `co.uk` and every single label, as
+# `http/suffixes` answers for them, so the face's tests need not carry the
+# list.
+function is_co_uk_suffix(domain: str) -> bool
+    return domain == "co.uk" || domain != "" && !strings.contains(s: domain, substr: ".")

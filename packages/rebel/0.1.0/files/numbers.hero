@@ -1,6 +1,6 @@
 # A number read from text and written as text: integers of every width and
-# base, floats in decimal and hexadecimal, booleans, and the width, sign and
-# grouping of a number's text.
+# base, floats in decimal and hexadecimal, booleans, sizes in bytes written
+# for people, and the width, sign and grouping of a number's text.
 #
 # Three rules hold for every function here. A text is read whole and exactly:
 # no white space is skipped and nothing may follow the number. A float read
@@ -21,6 +21,7 @@ use numbers/internal/near
 use numbers/internal/radix
 use numbers/internal/read
 use numbers/internal/read_hex
+use numbers/internal/sizes
 use numbers/internal/whole
 use numbers/internal/write
 
@@ -333,6 +334,63 @@ function f16_bits_to_f64(bits: u16) -> f64
 function f16_bits_to_f32(bits: u16) -> f32
     return to_f32(half.value_of(to_i64(bits).must()))
 
+## Sizes in bytes
+
+# How the units of a size in bytes are counted.
+variant SizeUnits
+    # Powers of 1000, the SI's: `kB`, `MB`, `GB`, `TB`, `PB`, `EB`.
+    decimal
+    # Powers of 1024, the IEC's: `KiB`, `MiB`, `GiB`, `TiB`, `PiB`, `EiB`.
+    binary
+
+# `size` bytes written for a person, in the largest unit it reaches and
+# `precision` digits after the point: `1.2 MB`, or `1.2 MiB` counted in
+# 1024s.
+#
+# - `size`: the count of bytes, any `i64`; a negative one, a difference, is
+#   written with its `-`.
+# - `units`: the powers of 1000 or of 1024.
+# - `precision`: the digits after the point, 0 or more; 0 writes none.
+#
+# Under the first unit, the count and `B`, with no point: `999 B`. The
+# digits are the quotient's exact ones, the last rounded half to even, and a
+# quotient that rounds up to a whole unit more is written in that unit:
+# 999,950 bytes at precision 1 is `1.0 MB`, not `1000.0 kB`. The kilo is `kB`
+# among the SI's units and `KiB` among the IEC's, as each writes it.
+#
+# Aborts where `precision` is negative. See also `parse_size`.
+function format_size(size: i64, units: SizeUnits, precision: i64) -> str
+    base = match units
+        .decimal => 1000
+        .binary  => 1024
+
+    return sizes.format(size: size, base: base, precision: precision)
+
+# The count of bytes a size written for a person says, `1.2 MB` or
+# `1.1 MiB`, rounded to a whole byte.
+#
+# - `s`: a number, a `-` or `+` before it where it has one and a fraction
+#   after a `.` where it has one, then spaces or none, then a unit read in
+#   any case: `B` or none for bytes; `k`, `M`, `G`, `T`, `P` or `E`, alone or
+#   followed by `B`; or the same followed by `i` or `iB`, always powers of
+#   1024.
+# - `units`: what `kB` and the units without `i` count in: powers of 1000 for
+#   `.decimal`, as the SI says, or of 1024 for `.binary`, as JEDEC and
+#   Windows write `KB`.
+#
+# The product is exact and rounded to a whole byte, half to even: `1.1 MiB`
+# is 1,153,434 bytes, and `0.5 B` is 0.
+#
+# Fails `invalid` where `s` is not so written, and the message says where;
+# `does_not_fit` where the bytes are past what an `i64` holds, as `8 EiB`
+# is. See also `format_size`.
+function parse_size(s: str, units: SizeUnits) -> i64?
+    base = match units
+        .decimal => 1000
+        .binary  => 1024
+
+    return sizes.parse(s, base: base)
+
 ## Booleans
 
 # The boolean `s` spells: `true` for "true" and `false` for "false", the two
@@ -558,3 +616,14 @@ test "f16_bits_to_f64: the largest half and the smallest above zero"
 test "f16_bits_to_f32: one and a half"
     one_and_a_half: f32 = 1.5
     assert f16_bits_to_f32(0x3e00) == one_and_a_half
+
+# A file's size written for a person, counted in thousands and in 1024s.
+test "format_size: a file of 1,234,567 bytes"
+    assert format_size(size: 1234567, units: .decimal, precision: 1) == "1.2 MB"
+    assert format_size(size: 1234567, units: .binary, precision: 1) == "1.2 MiB"
+
+# A size a person wrote, read back as bytes.
+test "parse_size: a limit written in a configuration"
+    assert parse_size("1.5 GiB", units: .decimal).must() == 1610612736
+    assert parse_size("10 MB", units: .decimal).must() == 10000000
+    assert parse_size("10 MB", units: .binary).must() == 10485760

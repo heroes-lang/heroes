@@ -1,0 +1,93 @@
+# The bodies of a health or a readiness endpoint, from the checks a program
+# ran: as text, the way Kubernetes's `/livez`, `/readyz` and `/healthz` write
+# it, and as JSON, the way the IETF's draft "Health Check Response Format for
+# HTTP APIs" writes `application/health+json`. A check is its name, whether it
+# passed and its failure's message, in three lists of one length.
+
+use json
+
+# What stands for a failure's message where it is not written.
+constant WITHHELD: str
+    "reason withheld"
+
+# The text body: `ok` where every check passed and `verbose` is not asked;
+# else a line for each check, `[+]name ok` or `[-]name failed: message`, and
+# a last line saying whether all passed. Every line ends with a line feed.
+function text_body(names: [str], passed: [bool], messages: [str], verbose: bool, detail: bool) -> str
+    all_passed = passed.all(is_true)
+
+    if all_passed && !verbose
+        return "ok\n"
+    lines: [str] @= []
+
+    for k in range(from: 0, to: names.len())
+        if passed[k]
+            lines @ lines.push(f"[+]{names[k]} ok")
+        else
+            lines @ lines.push(f"[-]{names[k]} failed: {said(messages[k], detail: detail)}")
+
+    if all_passed
+        lines @ lines.push("health check passed")
+    else
+        lines @ lines.push("health check failed")
+    return lines.join("\n") + "\n"
+
+# The JSON body: `status` `pass` or `fail` for the whole, and under `checks`
+# each name with a list of its results, in the order they were run, each a
+# `status` and, for a failure, its `output`.
+function json_body(names: [str], passed: [bool], messages: [str], detail: bool) -> json.Value
+    checks: {str: json.Value} @= {}
+
+    for k in range(from: 0, to: names.len())
+        one: {str: json.Value} @= {"status": .text(v: status_of(passed[k]))}
+
+        if !passed[k]
+            one["output"] @ .text(v: said(messages[k], detail: detail))
+
+        before: [json.Value] = match checks[names[k]]
+            .ok v  => json.items_of(v).default([])
+            .err _ => []
+
+        checks[names[k]] @ .list(items: before.push(.object(members: one)))
+
+    return .object(members: {"status": .text(v: status_of(passed.all(is_true))), "checks": .object(members: checks)})
+
+# `pass` or `fail`.
+function status_of(passed: bool) -> str
+    if passed
+        return "pass"
+    return "fail"
+
+# A failure's message as written: itself where `detail` asks, else
+# `WITHHELD`.
+function said(message: str, detail: bool) -> str
+    if detail
+        return message
+    return WITHHELD
+
+# Whether `b` is true.
+function is_true(b: bool) -> bool
+    return b
+
+## Tests
+
+test "text_body: all passed and quiet, all passed and verbose, one failed with and without its message"
+    assert text_body(names: ["db"], passed: [true], messages: [""], verbose: false, detail: false) == "ok\n"
+    assert text_body(names: ["db", "disk"], passed: [true, true], messages: ["", ""], verbose: true, detail: false) == "[+]db ok\n[+]disk ok\nhealth check passed\n"
+    failed = text_body(
+        names: ["db", "disk"],
+        passed: [true, false],
+        messages: ["", "full"],
+        verbose: false,
+        detail: true
+    )
+    assert failed == "[+]db ok\n[-]disk failed: full\nhealth check failed\n"
+    assert text_body(names: ["disk"], passed: [false], messages: ["full"], verbose: false, detail: false) == "[-]disk failed: reason withheld\nhealth check failed\n"
+    assert text_body(names: [], passed: [], messages: [], verbose: false, detail: false) == "ok\n"
+
+test "json_body: the draft's shape, a name run twice, and a failure's output"
+    got = json_body(names: ["db", "db"], passed: [true, false], messages: ["", "timeout"], detail: true)
+    assert json.format(got).must() == "{\"status\":\"fail\",\"checks\":{\"db\":[{\"status\":\"pass\"},{\"status\":\"fail\",\"output\":\"timeout\"}]}}"
+    none: [str] = []
+    flags: [bool] = []
+    assert json.format(json_body(names: none, passed: flags, messages: none, detail: false)).must() == "{\"status\":\"pass\",\"checks\":{}}"

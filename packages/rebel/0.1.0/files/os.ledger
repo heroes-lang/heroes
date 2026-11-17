@@ -132,6 +132,34 @@ capability dir/config  the folder every program keeps its settings in
   rust    -
   python  -
 
+capability dir/data  the folder every program keeps the data it makes and reads again in
+  heroes  os.data_dir
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census (the directories crate and Python's platformdirs answer it outside the standard libraries). Darwin's `Library/Application Support`, XDG's `XDG_DATA_HOME` or `.local/share`, Windows' roaming application data (`FOLDERID_RoamingAppData`), through `hero_sys_data_folder`; named and never made, as `cache_dir` and `config_dir` are
+
+capability dir/state  the folder every program keeps in what outlasts a restart but stays on the machine
+  heroes  os.state_dir
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17: XDG's `XDG_STATE_HOME` or `.local/state`; Darwin, which names no folder of state, `Library/Application Support`; Windows the local application data (`FOLDERID_LocalAppData`), which does not roam, through `hero_sys_state_folder`
+
+capability dir/runtime  the user's folder of sockets, pipes and locks, gone with the session
+  heroes  os.runtime_dir
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17: XDG's `XDG_RUNTIME_DIR` where it is absolute, `not_found` where it is unset since the specification gives no default and leaves the program to choose; Darwin the user's own temporary folder (`confstr(_CS_DARWIN_USER_TEMP_DIR)`, private to the user, its last slash left out); Windows `unsupported`, which keeps no such folder and names its pipes in a namespace of their own. Through `hero_sys_runtime_folder`
+
+capability open/default-application  a URL or a file opened in the application the user's system keeps for it
+  heroes  os.open_url, os.open_path
+  go      -
+  rust    -
+  python  webbrowser.open, webbrowser.open_new, webbrowser.open_new_tab, os.startfile (Windows alone)
+  note    added 2026-11-17, from the community census: `open` on Darwin and `xdg-open` on every other POSIX, started by `posix_spawn` with the target as their one argument, no shell between, the signals at their defaults, and waited for; `ShellExecuteW` with the verb `open` on Windows (`hero_sys_open`). A URL is checked first: `http`, `https` or `mailto` alone, since another scheme starts whatever program registered it, no white space and no control character, a host after `//`; a path must name something, asked before the launcher runs, and one that begins with `-` is handed as `./-...` so no launcher reads it as an option. Python's webbrowser chooses among browsers and falls back to a text browser; here the system's own choice is the one, and a new window or tab is the browser's to decide. Run on this Mac on a path that is not there (`open` printed its refusal and ended 1, `failed`); a URL and a file actually opened: unrun, since a test that opens a window on the machine running it is not a test to run unattended
+
 capability process/executable  the path of the program's own executable
   heroes  os.executable_path
   go      os.Executable
@@ -387,3 +415,8 @@ dropped elsewhere  near this area and another package's: `path`'s separators, `i
   go      os.IsPathSeparator, os.PathSeparator, os.PathListSeparator, os.DevNull, os.Stdin, os.Stdout, os.Stderr
   rust    -
   python  os.sep, os.altsep, os.extsep, os.pathsep, os.curdir, os.pardir, os.defpath, os.devnull, os.linesep, os.ttyname, os.ctermid, os.get_exec_path, os.getpgid, os.getpgrp, os.getsid, os.setpgid, os.setpgrp, os.setsid, os.tcgetpgrp, os.tcsetpgrp, sys.stdin, sys.stdout, sys.stderr
+
+dropped browsers  a browser chosen by its name, registered, or its window and tab chosen: the system's own choice is the one `os.open_url` hands a URL to
+  go      -
+  rust    -
+  python  webbrowser.get, webbrowser.register, webbrowser.register_standard_browsers, webbrowser.register_X_browsers, webbrowser.BaseBrowser, webbrowser.GenericBrowser, webbrowser.BackgroundBrowser, webbrowser.UnixBrowser, webbrowser.Mozilla, webbrowser.Epiphany, webbrowser.Chrome, webbrowser.Chromium, webbrowser.Edge, webbrowser.Opera, webbrowser.Elinks, webbrowser.Konqueror, webbrowser.MacOS, webbrowser.MacOSXOSAScript, webbrowser.Error, webbrowser.main, webbrowser.parse_args

@@ -1,0 +1,89 @@
+# What is checked before a URL or a path is handed to the system's launcher:
+# a URL of the schemes a browser or a mail program opens, written with no
+# white space and no control character, and a path that no launcher can read
+# as an option. The launcher is started with no shell, so no character is a
+# shell's; these checks are against the launcher's own reading.
+
+use os/internal/codes
+
+# Fails `invalid` where `url` is not one to open: empty, holding a byte at or
+# below the space or the delete, its scheme not one this opens (read without
+# regard to case): `http`, `https` and `mailto` alone, the ones a browser or
+# a mail program takes, where another scheme may start any program that
+# registered it; or an `http` or `https` one with no host after `//`.
+function check_url(url: str) -> ()?
+    if url.len() == 0
+        return fail(code: codes.INVALID, msg: "an empty URL opens nothing")
+
+    for i in range(from: 0, to: url.len())
+        if url[i] <= ' ' || url[i] == 0x7f
+            return fail(
+                code: codes.INVALID,
+                msg: f"the URL \"{url}\" holds white space or a control character at byte {i}"
+            )
+
+    colon @= 0
+
+    while colon < url.len() && is_scheme_byte(url[colon], first: colon == 0)
+        colon @ colon + 1
+
+    if colon == 0 || colon >= url.len() || url[colon] != ':'
+        return fail(code: codes.INVALID, msg: f"\"{url}\" begins with no scheme, as `https:` begins a URL")
+    scheme = lower(url.slice(from: 0, to: colon))
+
+    if scheme != "http" && scheme != "https" && scheme != "mailto"
+        return fail(code: codes.INVALID, msg: f"the scheme \"{scheme}\" is not one this opens: http, https or mailto")
+
+    if scheme != "mailto"
+        rest = url.slice(from: colon + 1, to: url.len())
+
+        if rest.len() < 3 || rest[0] != '/' || rest[1] != '/' || rest[2] == '/' || rest[2] == '?' || rest[2] == '#'
+            return fail(code: codes.INVALID, msg: f"the URL \"{url}\" names no host after `//`")
+    return ok()
+
+# Whether `b` may stand in a scheme: a letter first, then letters, digits,
+# `+`, `-` and `.`.
+function is_scheme_byte(b: u8, first: bool) -> bool
+    letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+
+    if first
+        return letter
+    return letter || b >= '0' && b <= '9' || b == '+' || b == '-' || b == '.'
+
+# `s`, ASCII, with its capitals made small.
+function lower(s: str) -> str
+    out: [u8] @= []
+
+    for i in range(from: 0, to: s.len())
+        b = s[i]
+
+        if b >= 'A' && b <= 'Z'
+            out @ out.push(b + 32)
+        else
+            out @ out.push(b)
+
+    return out.validated_bytes().default(s)
+
+# `path` as the launcher is handed it: `./` before a relative path that
+# begins with `-`, which the launcher would read as an option, and the path
+# as it is otherwise.
+function launch_target(path: str) -> str
+    if path.len() > 0 && path[0] == '-'
+        return "./" + path
+    return path
+
+## Tests
+
+test "check_url: the three schemes in any case, a host after //, and what is refused"
+    for url in ["https://example.com", "HTTP://example.com/a?b#c", "mailto:a@example.com", "https://[::1]:8080/"]
+        check_url(url).must()
+
+    for url in ["", "example.com", "https:", "https:/x", "https:///x", "https://", "ftp://example.com", "javascript:alert(1)", "file:///etc/passwd", "https://exa mple.com", "https://example.com\n", "-a https://x", "1http://x"]
+        match check_url(url)
+            .ok _  => assert false
+            .err e => assert e.code == codes.INVALID
+
+test "launch_target: a path beginning with -, a relative one, and an absolute one"
+    assert launch_target("-rf") == "./-rf"
+    assert launch_target("notes.txt") == "notes.txt"
+    assert launch_target("/tmp/-x") == "/tmp/-x"

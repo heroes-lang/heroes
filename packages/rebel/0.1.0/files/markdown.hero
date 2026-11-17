@@ -14,18 +14,25 @@
 # the open ones, inlines wait in lists, and the tree is walked and written by
 # following its links.
 #
+# A tree is written back as Markdown that reads into the same tree, and an
+# HTML page, read by `html`, is read into a tree: what Markdown has a form for
+# made its node, and what it has none for kept as raw HTML or left out, as the
+# caller asks.
+#
 # It does not read GFM's other extensions (the tag filter, footnotes),
-# Python-Markdown's or other dialects' extensions, front matter, or math; it
-# does not write Markdown back, and it reads no HTML: `html` does.
+# Python-Markdown's or other dialects' extensions, front matter, or math.
 #
 # Fails `not_found` where a node asked about has no parent or sibling, and
 # where a node is added beside one that has no parent.
 
+use html
 use markdown/internal/examples
+use markdown/internal/html_reading
 use markdown/internal/links
 use markdown/internal/pipeline
 use markdown/internal/render
 use markdown/internal/tree
+use markdown/internal/write_blocks
 
 ## Codes
 
@@ -295,6 +302,77 @@ function format_html(doc: Document, options: Options) -> str
         root: ROOT,
         style: render.Style(keep_html: options.keep_html, keep_unsafe: options.keep_unsafe_links)
     )
+
+## Writing Markdown
+
+# `doc` written back as Markdown, in forms the reader reads into the same
+# tree.
+#
+# - `doc`: the document, as read or as changed.
+#
+# A character of text that could open or close syntax is escaped with a
+# backslash, and what would begin a block at a line's start, a space there
+# included, is escaped too; a link and an image are written inline, their
+# reference definitions read into them already; a code block is fenced,
+# but where it was indented and indenting keeps it; a list keeps its marker,
+# but where the list before it has the same one, and blocks stand apart by a
+# blank line, but in a tight list.
+#
+# What Markdown cannot say is written as near as it goes and reads back
+# otherwise: an empty code span writes nothing, a break in a heading of level
+# 3 or more or in a table's cell is written as a space, and a tree a program
+# built against the reader's rules (emphasis whose text begins with a space,
+# a link inside a link) reads back as that text reads. Every example of
+# CommonMark 0.31.2 and of GFM's extensions this package's tests hold, 675
+# texts, reads back from its writing to the same HTML, and its writing read
+# and written again gives the same bytes; a test holds each.
+#
+# See also `format_html`, `parse`, `from_html`.
+function format_markdown(doc: Document) -> str
+    return write_blocks.markdown_of(doc.nodes, root: ROOT)
+
+## Reading HTML
+
+# The Markdown tree the HTML under `node` of `page` writes, as a reader sees
+# the page.
+#
+# - `page`: the HTML document, as `html.parse` reads it.
+# - `node`: the node whose content is read, itself left out: `html.ROOT` for
+#   the whole page, or an element such as the page's `main`.
+# - `keep_html`: whether an element Markdown has no form for is kept as raw
+#   HTML, whole; where it is not, the element's tags are dropped and what it
+#   holds is read, but `script`, `style`, `template`, `noscript`, `svg`,
+#   `math`, `canvas`, `iframe`, `object` and `embed`, which hold nothing a
+#   reader sees, are dropped whole.
+#
+# Headings, paragraphs, block quotes, lists and their task boxes, `pre` as a
+# fenced code block with the language its `code`'s class names, rules,
+# tables (the first row the header, every row as wide as the widest),
+# emphasis (`em`, `i`), strong emphasis (`strong`, `b`), strikethrough
+# (`del`, `s`), code (`code`, `tt`), links, images and line breaks have their
+# forms. The page's `head` is never read, and the elements that only group
+# (`div`, `section`, `span` and the like) are read through either way. White
+# space is collapsed as a browser shows it, and text standing directly in a
+# block is gathered into paragraphs. A space at the edge of emphasis is put
+# outside it, where Markdown can write it.
+#
+# Aborts where `node` is not a node of `page`. It walks the page on a stack
+# of its own, so no page is too deep for it.
+#
+# See also `parse_html`, `format_markdown`.
+function from_html(page: html.Document, node: i64, keep_html: bool) -> Document
+    return Document(nodes: html_reading.convert(page, node: node, keep_html: keep_html), refs: {})
+
+# The Markdown tree of the HTML page `text`, read by `html.parse` and then as
+# `from_html` reads it from the page's root.
+#
+# - `text`: the page, any text: HTML reading never fails.
+# - `keep_html`: whether an element Markdown has no form for is kept as raw
+#   HTML, as `from_html` says.
+#
+# See also `from_html`, `format_markdown`.
+function parse_html(text: str, keep_html: bool) -> Document
+    return from_html(html.parse(text), node: html.ROOT, keep_html: keep_html)
 
 ## Walking
 
@@ -786,3 +864,25 @@ test "set_node: a link's destination"
     link = children(doc, children(doc, ROOT)[0])[0]
     set_node(@doc, link, .link(destination: "/y", title: ""))
     assert format_html(doc, default_options()) == "<p><a href=\"/y\">a</a></p>\n"
+
+# A document read, its heading changed, and written back as Markdown.
+test "format_markdown: a heading changed and written back"
+    doc @= parse("# Heroes\n\nA *song*.\n")
+    set_node(@doc, children(doc, ROOT)[0], .heading(level: 2))
+    assert format_markdown(doc) == "## Heroes\n\nA *song*.\n"
+
+# A fragment of a page read into Markdown: its heading, emphasis, link and
+# list, the `div` around them read through.
+test "from_html: a page's main part as Markdown"
+    page = html.parse(
+        "<main><h1>Low</h1><div>An album by <a href=\"https://www.davidbowie.com\">Bowie</a>, <em>1977</em>.</div><ul><li>Speed of Life</li><li>Breaking Glass</li></ul></main>"
+    )
+    main_part = html.element_named(page, within: html.ROOT, name: "main").must()
+    written = format_markdown(from_html(page, node: main_part, keep_html: false))
+    assert written == "# Low\n\nAn album by [Bowie](https://www.davidbowie.com), *1977*.\n\n- Speed of Life\n- Breaking Glass\n"
+
+# An element Markdown has no form for, kept as raw HTML or read through, as
+# the caller asks.
+test "parse_html: a subscript kept as HTML, or its text kept alone"
+    assert format_markdown(parse_html("<p>H<sub>2</sub>O</p>", keep_html: true)) == "H<sub>2</sub>O\n"
+    assert format_markdown(parse_html("<p>H<sub>2</sub>O</p>", keep_html: false)) == "H2O\n"

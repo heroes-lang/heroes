@@ -1,0 +1,353 @@
+# A request sent through a proxy: the proxy chosen for a target, as the
+# variables `HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY` say where the program
+# asks them; an `http://` request written to the proxy with its whole URL as
+# its target (RFC 9112 § 3.2.2, absolute-form); an `https://` one sent through
+# a tunnel the proxy opens to the server at `CONNECT` (RFC 9110 § 9.3.6),
+# TLS begun over it with the server's name checked, as `tls.client_over`
+# begins it where the platform's TLS offers that.
+
+use bytes
+use http/internal/policy
+use http/internal/read
+use http/internal/syntax
+use http/internal/wire
+use http/internal/write
+use io
+use net
+use os
+use strings
+use time
+use tls
+use url
+
+# The code of a proxy that refused, or answered otherwise than a tunnel.
+constant FAILED: str
+    "failed"
+
+# Where a proxy is reached and who the program is to it.
+record Place
+    # Its host: a name, or an address without brackets.
+    host: str
+    # Its port, 1 to 65535; 80 where its URL writes none.
+    port: i64
+    # The user and the password it asks for, unescaped; both "" for none.
+    user: str
+    # The password.
+    password: str
+
+# The variables of the environment a proxy is read from, the lower case one
+# first, as curl and Python read them; `HTTP_PROXY` in capitals is not read
+# where `REQUEST_METHOD` is set, since a CGI program's variables then hold
+# the request's `Proxy` field (httpoxy).
+function env_of(name: str) -> str
+    low = os.env(strings.to_lower_ascii(name)).default("")
+
+    if low != ""
+        return low
+
+    if name == "HTTP_PROXY" && os.env("REQUEST_METHOD").default("") != ""
+        return ""
+    return os.env(name).default("")
+
+# The entries of a `NO_PROXY` value: parted by commas, white space around
+# each taken off, the empty ones left out.
+function bypass_of(value: str) -> [str]
+    out: [str] @= []
+
+    for one in strings.split(s: value, sep: ",")
+        entry = strings.trim(one)
+
+        if entry != ""
+            out @ out.push(entry)
+
+    return out
+
+# Where the proxy `proxy` is reached: `http://`, the user and the password,
+# the host and the port; a proxy written with no scheme is read as `http://`.
+# Fails `invalid` where it does not read or names no host, and
+# `unsupported` for a proxy of another scheme, which is not spoken here.
+function place_of(proxy: str) -> Place?
+    written = if strings.contains(s: proxy, substr: "://")
+        proxy
+    else
+        "http://" + proxy
+    u = url.parse(written)?
+
+    if u.scheme != "http"
+        return fail(
+            code: policy.UNSUPPORTED,
+            msg: f"the proxy {syntax.shown(url.redacted(u))} is not http://: only an HTTP proxy is spoken here"
+        )
+
+    if u.host == ""
+        return fail(code: syntax.INVALID, msg: f"the proxy {syntax.shown(url.redacted(u))} names no host")
+    port: i64 @= 80
+
+    if u.port != ""
+        port @ syntax.decimal(s: u.port, what: "reading the proxy's port")?
+
+        if port < 1 || port > 65_535
+            return fail(code: syntax.INVALID, msg: f"the proxy's port {u.port} is not 1 to 65535")
+    return ok(Place(host: u.host, port: port, user: u.user, password: u.password))
+
+# Whether a request to `host` at `port` goes directly rather than through a
+# proxy, by `bypass`, as Go's `NO_PROXY` reads it: `*` for every host; a name
+# matching itself and every name under it, one that begins with `.` the
+# names under it alone; an address, or a network such as `10.0.0.0/8`; any
+# of them followed by `:port`, then matching that port alone. `localhost`
+# and the loopback addresses always go directly, as Go sends them.
+function is_bypassed(bypass: [str], host: str, port: i64) -> bool
+    name = strings.to_lower_ascii(host)
+
+    if name == "localhost" || strings.has_suffix(s: name, suffix: ".localhost")
+        return true
+    address = net.parse_address(name)
+
+    match address
+        .ok a =>
+            if net.is_loopback(a)
+                return true
+        .err _ => _ = 0
+
+    for raw in bypass
+        entry @= strings.to_lower_ascii(raw)
+
+        if entry == "*"
+            return true
+        wanted_port: i64 @= 0
+        named: net.Address? = net.parse_address_port(entry)
+
+        match named
+            .ok both => wanted_port @ both.port
+            .err _ =>
+                match strings.split_once_last(s: entry, sep: ":")
+                    .ok halves =>
+                        if !strings.contains(s: halves.before, substr: ":") && halves.after != ""
+                            match syntax.decimal(s: halves.after, what: "a NO_PROXY port")
+                                .ok n =>
+                                    entry @ halves.before
+                                    wanted_port @ n
+                                .err _ => _ = 0
+                    .err _ => _ = 0
+
+        if wanted_port == 0 || wanted_port == port
+            if is_same_address(entry: named, host: address) || is_same_address(entry: net.parse_address(entry), host: address)
+                return true
+
+            if strings.contains(s: entry, substr: "/")
+                match net.parse_network(entry)
+                    .ok network =>
+                        match address
+                            .ok a =>
+                                if net.contains(network, a)
+                                    return true
+                            .err _ => _ = 0
+                    .err _ => _ = 0
+            else if strings.has_prefix(s: entry, prefix: ".")
+                if strings.has_suffix(s: name, suffix: entry)
+                    return true
+            else if name == entry || strings.has_suffix(s: name, suffix: "." + entry)
+                return true
+
+    return false
+
+# Whether `entry` and `host`, each an address read or its failure, are one
+# address: the same bytes, whatever their ports and the way each was written.
+function is_same_address(entry: net.Address?, host: net.Address?) -> bool
+    match entry
+        .err _ => return false
+        .ok a =>
+            match host
+                .err _ => return false
+                .ok b  => return a.bytes == b.bytes
+
+# The `Proxy-Authorization` field `place` asks for: none where it has no
+# user, else Basic's, RFC 7617.
+function credentials_of(place: Place) -> [wire.Field]
+    if place.user == "" && place.password == ""
+        return []
+    token = bytes.format_base64(bytes.from_text(place.user + ":" + place.password))
+    return [wire.Field(name: "Proxy-Authorization", value: "Basic " + token)]
+
+# The authority a `CONNECT` names: the host, in brackets where it is an IPv6
+# address, and the port, always written.
+function authority_of(host: str, port: i64) -> str
+    if strings.contains(s: host, substr: ":")
+        return f"[{host}]:{port}"
+    return f"{host}:{port}"
+
+# The response to a request of `method` for `target` sent through the proxy
+# `proxy`: for `http://` the request written to the proxy with the target
+# whole, for `https://` a tunnel opened at `CONNECT` and TLS begun over it.
+# Fails as `policy.exchange` does, `failed` where the proxy refuses the
+# tunnel (its status in the message), `invalid` where it sends bytes after
+# its answer, and `unsupported` where the platform's TLS begins no TLS over a
+# stream the program holds, as on macOS.
+function exchange(proxy: str, scheme: str, host: str, port: str, deadline_ms: i64, roots: str, method: str, target: str, host_value: str, fields: [wire.Field], content: [u8], bounds: wire.Bounds) -> read.Message?
+    place = place_of(proxy)?
+    secure = syntax.same_name(a: scheme, b: "https")
+
+    if !secure && !syntax.same_name(a: scheme, b: "http")
+        return fail(
+            code: policy.UNSUPPORTED,
+            msg: f"sending a request to {scheme}://{host}: only http:// and https:// are spoken here"
+        )
+
+    if host == ""
+        return fail(code: syntax.INVALID, msg: "sending a request: its URL names no host")
+    number: i64 @= policy.default_port(scheme)
+
+    if port != ""
+        number @ syntax.decimal(s: port, what: "reading the URL's port")?
+    began = time.mark()
+    stream = net.connect(place.host, port: place.port, deadline_ms: deadline_ms)?.stream
+    asked: [wire.Field] @= fields
+
+    for f in credentials_of(place)
+        asked @ asked.push(f)
+
+    if !secure
+        whole = "http://" + host_value + target
+        data = write.request(
+            method: method,
+            target: whole,
+            host: host_value,
+            fields: asked,
+            content: content,
+            closing: true
+        )
+        return over(stream: stream, data: data, method: method, bounds: bounds)
+    tunnel = authority_of(host, port: number)
+    knock = write.request(
+        method: "CONNECT",
+        target: tunnel,
+        host: tunnel,
+        fields: credentials_of(place),
+        content: [],
+        closing: false
+    )
+    inner @= opened(stream: stream, knock: knock, tunnel: tunnel, proxy: place, bounds: bounds)?
+
+    secured @= match tls.client_over(@inner, host: host, client: tls.Client(roots: roots, protocols: ["http/1.1"]))
+        .ok s => s
+        .err e =>
+            shut(@inner)
+
+            why = if e.code == policy.UNSUPPORTED
+                f"sending a request to https://{host} through the proxy {place.host}: TLS over the proxy's tunnel is begun by `tls.client_over`, which this platform's TLS does not offer ({e.msg})"
+            else
+                e.msg
+            return fail(code: e.code, msg: why)
+
+    if deadline_ms > 0
+        left = deadline_ms - policy.spent_ms(began)
+
+        if left <= 0
+            shut(@secured)
+            return fail(
+                code: policy.TIMEOUT,
+                msg: f"sending a request to {host} through a proxy: its {deadline_ms} ms ran out before the request"
+            )
+
+        match tls.set_deadline(secured, ms: left)
+            .ok _ => _ = 0
+            .err e =>
+                shut(@secured)
+                return fail(code: e.code, msg: e.msg)
+    data = write.request(
+        method: method,
+        target: target,
+        host: host_value,
+        fields: fields,
+        content: content,
+        closing: true
+    )
+    return over(stream: secured, data: data, method: method, bounds: bounds)
+
+# The response to `data`, a request of `method` already written as bytes or
+# its failure, on `stream`, which is closed after.
+function over(stream: io.Stream, data: [u8]?, method: str, bounds: wire.Bounds) -> read.Message?
+    reader @= io.reader(stream)
+
+    answer: read.Message? = match data
+        .ok bytes_out => policy.talk(@reader, data: bytes_out, method: method, bounds: bounds)
+        .err e        => fail(code: e.code, msg: e.msg)
+
+    shut(@reader.stream)
+    return answer
+
+# The tunnel `stream` to the proxy opens at the `CONNECT` `knock`: the
+# stream itself once a 2xx answers it, nothing read past the answer's head.
+# Fails `failed` with the proxy's status where it answers otherwise, and as
+# reading fails; the stream is closed on every failure.
+function opened(stream: io.Stream, knock: [u8]?, tunnel: str, proxy: Place, bounds: wire.Bounds) -> io.Stream?
+    reader @= io.reader(stream)
+
+    sent: ()? = match knock
+        .ok data => io.write(reader.stream, data: data)
+        .err e   => fail(code: e.code, msg: e.msg)
+
+    head: wire.Head? = match sent
+        .ok _  => read.final_head(@reader, bounds: bounds)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    match head
+        .err e =>
+            shut(@reader.stream)
+            return fail(code: e.code, msg: f"opening a tunnel to {tunnel} through the proxy {proxy.host}: {e.msg}")
+        .ok h =>
+            if h.status < 200 || h.status > 299
+                shut(@reader.stream)
+                return fail(
+                    code: FAILED,
+                    msg: f"the proxy {proxy.host}:{proxy.port} answered {h.status} {h.reason} to CONNECT {tunnel}"
+                )
+
+            if io.buffered(reader).len() > 0
+                shut(@reader.stream)
+                return fail(
+                    code: syntax.INVALID,
+                    msg: f"the proxy {proxy.host}:{proxy.port} sent bytes after its answer to CONNECT {tunnel}"
+                )
+            return ok(reader.stream)
+
+# Closes `s`, a failure to close being no news to a caller already failing.
+function shut(@s: io.Stream)
+    match io.close(@s)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+## Tests
+
+test "place_of: a scheme or none, a user and a password, the port's default, and what is refused"
+    assert place_of("http://u:p%40ss@proxy.example:3128").must() == Place(host: "proxy.example", port: 3128, user: "u", password: "p@ss")
+    assert place_of("proxy.example:8080").must() == Place(host: "proxy.example", port: 8080, user: "", password: "")
+    assert place_of("http://proxy.example").must().port == 80
+    assert place_of("socks5://proxy.example:1080").is_err()
+    assert place_of("https://proxy.example").is_err()
+    assert place_of("http://:3128").is_err()
+
+test "is_bypassed: every host, a name and the names under it, a dot, a port, an address, a network, and loopback"
+    assert is_bypassed(["*"], host: "example.com", port: 443)
+    assert is_bypassed(["example.com"], host: "example.com", port: 80)
+    assert is_bypassed(["example.com"], host: "api.EXAMPLE.com", port: 80)
+    assert !is_bypassed(["example.com"], host: "notexample.com", port: 80)
+    assert is_bypassed([".example.com"], host: "a.example.com", port: 80)
+    assert !is_bypassed([".example.com"], host: "example.com", port: 80)
+    assert is_bypassed(["example.com:8080"], host: "example.com", port: 8080)
+    assert !is_bypassed(["example.com:8080"], host: "example.com", port: 80)
+    assert is_bypassed(["10.0.0.0/8"], host: "10.1.2.3", port: 80)
+    assert !is_bypassed(["10.0.0.0/8"], host: "11.1.2.3", port: 80)
+    assert is_bypassed(["192.0.2.7"], host: "192.0.2.7", port: 80)
+    assert is_bypassed(["[2001:db8::1]:443"], host: "2001:db8::1", port: 443)
+    assert is_bypassed([], host: "localhost", port: 80)
+    assert is_bypassed([], host: "127.0.0.1", port: 80)
+    assert is_bypassed([], host: "::1", port: 80)
+    assert !is_bypassed([], host: "example.com", port: 80)
+
+test "bypass_of, credentials_of and authority_of: the parts of a value, Basic's field, and a bracketed address"
+    assert bypass_of(" a.com, ,b.com ,") == ["a.com", "b.com"]
+    assert credentials_of(Place(host: "p", port: 1, user: "", password: "")) == []
+    assert credentials_of(Place(host: "p", port: 1, user: "Aladdin", password: "open sesame"))[0].value == "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ=="
+    assert authority_of("example.com", port: 443) == "example.com:443"
+    assert authority_of("::1", port: 443) == "[::1]:443"

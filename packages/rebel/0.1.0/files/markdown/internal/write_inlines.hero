@@ -1,0 +1,407 @@
+# The inlines of one block written back as Markdown: text escaped where a
+# character would otherwise mean syntax, emphasis, code spans, links, images
+# and raw HTML written in the forms the reader reads back into the same
+# nodes. A walk in document order that follows the links and keeps no stack.
+# Line endings are soft and hard breaks alone; the block writer lays the lines
+# out.
+
+use markdown/internal/scan
+use markdown/internal/tree
+use strings
+
+# How a block's inlines are written.
+record Place
+    # Whether they stand in a table's cell, where a `|` in a code span is
+    # escaped too.
+    cell: bool
+    # Whether they are written on one line, a break written as a space: a
+    # table's cell and a heading that cannot hold a break.
+    one_line: bool
+
+# The inlines under `block`, written as Markdown; line feeds stand for its
+# breaks.
+function inlines_of(nodes: [tree.Node] lent, block: i64, place: Place) -> str
+    first = nodes[block].first
+
+    if first == tree.NONE
+        return ""
+    parts: [str] @= []
+
+    # Whether the next piece begins a line: at the block's start and after a
+    # break, where a character of text may begin a block instead.
+    line_start @= true
+    at @= first
+    down @= true
+
+    while at != block
+        n = nodes[at]
+
+        if down
+            kind = n.kind
+
+            if kind == tree.TEXT
+                ends = is_line_end(nodes, node: at, block: block)
+                piece = text_piece(n.literal, line_start: line_start, ends_line: ends)
+                parts @ parts.push(piece)
+
+                if piece.len() > 0
+                    line_start @ false
+            else if kind == tree.SOFT_BREAK || kind == tree.LINE_BREAK
+                if place.one_line
+                    parts @ parts.push(" ")
+                    line_start @ false
+                else if kind == tree.SOFT_BREAK
+                    parts @ parts.push("\n")
+                    line_start @ true
+                else
+                    parts @ parts.push("\\\n")
+                    line_start @ true
+            else
+                piece = opening_of(nodes, node: at, place: place)
+                parts @ parts.push(piece)
+
+                if piece.len() > 0
+                    line_start @ false
+
+                if n.first != tree.NONE && is_holder(kind)
+                    at @ n.first
+                    continue
+        parts @ parts.push(closing_of(nodes, node: at))
+
+        if n.next != tree.NONE
+            at @ n.next
+            down @ true
+        else
+            at @ n.parent
+            down @ false
+
+    return join(parts, "")
+
+# Whether a node of `kind` holds inlines the walk writes.
+function is_holder(kind: i64) -> bool
+    return kind == tree.EMPHASIS || kind == tree.STRONG || kind == tree.STRIKETHROUGH || kind == tree.LINK || kind == tree.IMAGE
+
+# Whether the text `node` ends a line: a break follows it, or it is the
+# block's last inline.
+function is_line_end(nodes: [tree.Node] lent, node: i64, block: i64) -> bool
+    next = nodes[node].next
+
+    if next == tree.NONE
+        return nodes[node].parent == block
+    kind = nodes[next].kind
+    return kind == tree.SOFT_BREAK || kind == tree.LINE_BREAK
+
+# What entering `node`, which is not a text or a break, writes.
+function opening_of(nodes: [tree.Node] lent, node: i64, place: Place) -> str
+    n = nodes[node]
+    kind = n.kind
+
+    if kind == tree.CODE
+        return code_span(n.literal, cell: place.cell)
+
+    if kind == tree.HTML_INLINE
+        return n.literal
+
+    if kind == tree.EMPHASIS || kind == tree.STRONG
+        return delimiter_of(nodes, node)
+
+    if kind == tree.STRIKETHROUGH
+        return "~~"
+
+    if kind == tree.LINK
+        return "["
+
+    if kind == tree.IMAGE
+        return "!["
+    return ""
+
+# What leaving `node` writes.
+function closing_of(nodes: [tree.Node] lent, node: i64) -> str
+    n = nodes[node]
+    kind = n.kind
+
+    if kind == tree.EMPHASIS || kind == tree.STRONG
+        return delimiter_of(nodes, node)
+
+    if kind == tree.STRIKETHROUGH
+        return "~~"
+
+    if kind == tree.LINK || kind == tree.IMAGE
+        title = if n.title.len() > 0
+            " " + title_text(n.title)
+        else
+            ""
+        return "](" + destination_text(n.literal) + title + ")"
+    return ""
+
+# The delimiter of the emphasis or strong emphasis `node`: `*` and `**`,
+# but `_` and `__` where the node follows another emphasis, whose closing run
+# would join its opening one, and for emphasis inside emphasis every second
+# one, since `**` would read as strong emphasis. Strong emphasis inside strong
+# emphasis keeps `**`: a run of four reads as two. The chain of emphasis
+# inside emphasis is walked up, never followed by recursion.
+function delimiter_of(nodes: [tree.Node] lent, node: i64) -> str
+    kind = nodes[node].kind
+    top @= node
+    flips @= 0
+
+    while kind == tree.EMPHASIS && nodes[top].parent != tree.NONE && nodes[nodes[top].parent].kind == tree.EMPHASIS
+        top @ nodes[top].parent
+        flips @ flips + 1
+
+    prev = nodes[top].prev
+    underscore @= prev != tree.NONE && (nodes[prev].kind == tree.EMPHASIS || nodes[prev].kind == tree.STRONG)
+
+    if flips % 2 == 1
+        underscore @ !underscore
+
+    one = if underscore
+        "_"
+    else
+        "*"
+
+    if kind == tree.STRONG
+        return one + one
+    return one
+
+# `s`, a text, escaped: every character that could open or close syntax
+# written after a backslash, a reference written so it is not read, and a
+# line ending written as a reference. At a line's start, what would begin a
+# block is escaped too; at a line's end, the last space or tab is written as
+# a reference so that it is neither taken off nor read as a hard break.
+function text_piece(s: str, line_start: bool, ends_line: bool) -> str
+    if s.len() == 0
+        return ""
+    parts: [str] @= []
+    from @= 0
+
+    if line_start
+        b = s[0]
+
+        if b == ' '
+            parts @ parts.push("&#32;")
+            from @ 1
+        else if b == '\t'
+            parts @ parts.push("&#9;")
+            from @ 1
+        else if b == '#' || b == '>' || b == '-' || b == '+' || b == '='
+            parts @ parts.push("\\")
+        else if scan.is_digit(b)
+            digits @= 0
+
+            while digits < s.len() && digits < 10 && scan.is_digit(s[digits])
+                digits @ digits + 1
+
+            if digits <= 9 && digits < s.len() && (s[digits] == '.' || s[digits] == ')')
+                parts @ parts.push(s.slice(from: 0, to: digits))
+                parts @ parts.push("\\")
+                from @ digits
+
+    last @= s.len()
+
+    if ends_line && last > from && (s[last - 1] == ' ' || s[last - 1] == '\t')
+        last @ last - 1
+
+    if last > from
+        parts @ parts.push(escaped(s, from: from, to: last))
+
+    if last < s.len()
+        if s[last] == ' '
+            parts @ parts.push("&#32;")
+        else
+            parts @ parts.push("&#9;")
+    return join(parts, "")
+
+# The bytes of `s` from `from` to `to` escaped as `text_piece` says; a
+# neighbour outside that range is read from `s` all the same, so an
+# underscore between two letters stays as it is.
+function escaped(s: str, from: i64, to: i64) -> str
+    parts: [str] @= []
+    run @= from
+    i @= from
+
+    while i < to
+        mark = needs_escape(s, at: i)
+
+        if mark != ""
+            parts @ parts.push(s.slice(from: run, to: i))
+            parts @ parts.push(mark)
+            i @ i + 1
+            run @ i
+        else
+            i @ i + 1
+
+    parts @ parts.push(s.slice(from: run, to: to))
+    return join(parts, "")
+
+# What the byte at `at` of `s` is written as where it must not be read as
+# itself: a backslash and the byte, or a reference; empty where it stands
+# as it is.
+function needs_escape(s: str, at: i64) -> str
+    b = s[at]
+
+    if b == '\\' || b == '`' || b == '*' || b == '[' || b == ']' || b == '|' || b == '~'
+        return "\\" + s.slice(from: at, to: at + 1)
+
+    if b == '_'
+        if at > 0 && at + 1 < s.len() && scan.is_alnum(s[at - 1]) && scan.is_alnum(s[at + 1])
+            return ""
+        return "\\_"
+
+    if b == '<'
+        if at + 1 < s.len() && (scan.is_letter(s[at + 1]) || s[at + 1] == '/' || s[at + 1] == '!' || s[at + 1] == '?')
+            return "\\<"
+        return ""
+
+    if b == '&'
+        if scan.reference_at(s, at).end > 0
+            return "\\&"
+        return ""
+
+    if b == '!'
+        if at + 1 == s.len()
+            return "\\!"
+        return ""
+
+    if b == '\n'
+        return "&#10;"
+
+    if b == '\r'
+        return "&#13;"
+    return ""
+
+# `s` as a code span: between runs of backticks of a length no run inside it
+# has, with a space at each end where it begins or ends with a backtick, or
+# with a space at both ends, so that the reader takes off what the writer
+# added. A line ending is written as a space; in a table's cell a `|` is
+# escaped. The empty code span has no form, and writes nothing.
+function code_span(s: str, cell: bool) -> str
+    if s.len() == 0
+        return ""
+    body @= strings.replace_all(s: s, old: "\n", new: " ")
+
+    if cell
+        body @ strings.replace_all(s: body, old: "|", new: "\\|")
+    runs: {i64: bool} @= {}
+    i @= 0
+
+    while i < body.len()
+        if body[i] == '`'
+            j @= i
+
+            while j < body.len() && body[j] == '`'
+                j @ j + 1
+
+            runs[j - i] @ true
+            i @ j
+        else
+            i @ i + 1
+
+    width @= 1
+
+    while runs[width].default(false)
+        width @ width + 1
+
+    fence = repeat("`", width.to_u64().must())
+    all_spaces = strings.trim(body).len() == 0
+
+    padded = body[0] == '`' || body[body.len() - 1] == '`' || !all_spaces && body[0] == ' ' && body[body.len() - 1] == ' '
+
+    if padded
+        return fence + " " + body + " " + fence
+    return fence + body + fence
+
+# A link's or an image's destination as written between its parentheses:
+# between `<` and `>` where it holds white space or an angle bracket, else
+# with its parentheses and backslashes escaped; a reference in it escaped
+# either way. The empty destination is written as nothing.
+function destination_text(d: str) -> str
+    angled = strings.contains_any(s: d, set: " \t\n<>")
+    parts: [str] @= []
+
+    if angled
+        parts @ parts.push("<")
+    i @= 0
+    run @= 0
+
+    while i < d.len()
+        b = d[i]
+
+        special = b == '\\' || b == '&' && scan.reference_at(d, i).end > 0 || angled && (b == '<' || b == '>') || !angled && (b == '(' || b == ')')
+
+        if special
+            parts @ parts.push(d.slice(from: run, to: i))
+            parts @ parts.push("\\")
+            run @ i
+        else if b == '\n'
+            parts @ parts.push(d.slice(from: run, to: i))
+            parts @ parts.push("%0A")
+            run @ i + 1
+        i @ i + 1
+
+    parts @ parts.push(d.slice(from: run, to: d.len()))
+
+    if angled
+        parts @ parts.push(">")
+    return join(parts, "")
+
+# A title between double quotes, its quotes, backslashes and references
+# escaped and its line endings written as references.
+function title_text(t: str) -> str
+    parts: [str] @= ["\""]
+    i @= 0
+    run @= 0
+
+    while i < t.len()
+        b = t[i]
+
+        if b == '"' || b == '\\' || b == '&' && scan.reference_at(t, i).end > 0
+            parts @ parts.push(t.slice(from: run, to: i))
+            parts @ parts.push("\\")
+            run @ i
+        else if b == '\n'
+            parts @ parts.push(t.slice(from: run, to: i))
+            parts @ parts.push("&#10;")
+            run @ i + 1
+        i @ i + 1
+
+    parts @ parts.push(t.slice(from: run, to: t.len()))
+    parts @ parts.push("\"")
+    return join(parts, "")
+
+## Tests
+
+test "text_piece: the characters of syntax escaped, an underscore inside a word kept"
+    assert text_piece("a*b_c d_ [x]`y`", line_start: false, ends_line: false) == "a\\*b_c d\\_ \\[x\\]\\`y\\`"
+    assert text_piece("a < b <c> & &amp; 2>1", line_start: false, ends_line: false) == "a < b \\<c> & \\&amp; 2>1"
+    assert text_piece("Hi!", line_start: false, ends_line: false) == "Hi\\!"
+    assert text_piece("a|b~c\\d", line_start: false, ends_line: false) == "a\\|b\\~c\\\\d"
+    assert text_piece("é_ü", line_start: false, ends_line: false) == "é\\_ü"
+    assert text_piece("", line_start: true, ends_line: true) == ""
+
+test "text_piece: at a line's start, what begins a block; at its end, the last space"
+    assert text_piece("# a", line_start: true, ends_line: false) == "\\# a"
+    assert text_piece("- a", line_start: true, ends_line: false) == "\\- a"
+    assert text_piece("12. a", line_start: true, ends_line: false) == "12\\. a"
+    assert text_piece("1234567890. a", line_start: true, ends_line: false) == "1234567890. a"
+    assert text_piece("> a", line_start: true, ends_line: false) == "\\> a"
+    assert text_piece("  a", line_start: true, ends_line: false) == "&#32; a"
+    assert text_piece("a  ", line_start: false, ends_line: true) == "a &#32;"
+    assert text_piece(" ", line_start: true, ends_line: true) == "&#32;"
+    assert text_piece("# a", line_start: false, ends_line: false) == "# a"
+
+test "code_span: a fence no run inside has, and the spaces the reader takes off"
+    assert code_span("a", cell: false) == "`a`"
+    assert code_span("a`b", cell: false) == "``a`b``"
+    assert code_span("`a", cell: false) == "`` `a ``"
+    assert code_span(" a ", cell: false) == "`  a  `"
+    assert code_span("  ", cell: false) == "`  `"
+    assert code_span("a|b", cell: true) == "`a\\|b`"
+    assert code_span("", cell: false) == ""
+
+test "destination_text and title_text: parentheses, angle brackets, quotes and references"
+    assert destination_text("/a(b)") == "/a\\(b\\)"
+    assert destination_text("a b") == "<a b>"
+    assert destination_text("") == ""
+    assert destination_text("?x=1&amp;y") == "?x=1\\&amp;y"
+    assert title_text("say \"hi\"") == "\"say \\\"hi\\\"\""

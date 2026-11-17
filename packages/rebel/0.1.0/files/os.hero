@@ -1,6 +1,8 @@
-# The process's world: its environment, its working folder, who it runs as and
-# on what machine. Files and folders by path are the package `fs`'s, and other
-# programs the package `process`'s.
+# The process's world: its environment, its working folder, the folders the
+# system keeps for a program's data, state, cache, settings and sockets, who it
+# runs as and on what machine, and a URL or a file handed to the application
+# the user's system keeps for it. Files and folders by path are the package
+# `fs`'s, and other programs the package `process`'s.
 #
 # The environment is read and never written: in C a write of it beside another
 # thread's read is undefined, so no function here sets, removes or clears a
@@ -14,6 +16,7 @@ use os/internal/codes
 use os/internal/counters
 use os/internal/expansion
 use os/internal/filled
+use os/internal/opening
 use os/internal/variables
 
 ## The codes
@@ -182,6 +185,49 @@ function cache_dir() -> str?
 function config_dir() -> str?
     return filled.text_of(.settings)
 
+# The folder every program keeps the data it makes and reads again in, each
+# under a name of its own.
+#
+# On Darwin `Library/Application Support` under the home folder; on every
+# other POSIX `XDG_DATA_HOME` where it is absolute, else `.local/share` under
+# the home folder, as the XDG Base Directory specification says; on Windows
+# the known folder of the roaming application data. It is named, never made
+# nor asked whether it is there.
+#
+# Fails as `home_dir` does. See also `state_dir`, `cache_dir`, `config_dir`.
+function data_dir() -> str?
+    return filled.text_of(.data)
+
+# The folder every program keeps in what outlasts a restart but is not worth
+# carrying to another machine, a history, a log, where a window stood, each
+# under a name of its own.
+#
+# On Darwin `Library/Application Support` under the home folder, as for
+# data: Apple names no folder of state apart; on every other POSIX
+# `XDG_STATE_HOME` where it is absolute, else `.local/state` under the home
+# folder; on Windows the known folder of the local application data, which
+# stays on the machine. It is named, never made nor asked whether it is
+# there.
+#
+# Fails as `home_dir` does. See also `data_dir`, `runtime_dir`.
+function state_dir() -> str?
+    return filled.text_of(.state)
+
+# The folder of the user's own sockets, pipes and locks, private to the user
+# and gone with the session, each program's under a name of its own.
+#
+# On Darwin the user's own temporary folder, which the system makes for each
+# user and readable by that user alone; on every other POSIX
+# `XDG_RUNTIME_DIR` where it is absolute. It is named, never made nor asked
+# whether it is there.
+#
+# Fails `not_found` where `XDG_RUNTIME_DIR` is unset, which the XDG
+# specification leaves the program to answer, `unsupported` on Windows, which
+# keeps no such folder, and `not_text` where the path is not UTF-8. See also
+# `temp_dir`, `state_dir`.
+function runtime_dir() -> str?
+    return filled.text_of(.runtime)
+
 # The path of the program's own executable, absolute and with its links
 # followed. Fails `not_found` where the machine gives none (a Linux with no
 # `/proc`), never guessing from the program's first argument, and `not_text`
@@ -200,6 +246,59 @@ function executable_path() -> str?
     if status != hero_os.HERO_OS_OK
         return fail(code: codes.FAILED, msg: f"the executable's path cannot be read (status {status})")
     return ok(exe)
+
+## Opening in the default application
+
+# Opens `url` in the application the user's system keeps for it, a browser
+# or a mail program, and returns once the system has taken it.
+#
+# - `url`: an absolute URL of the scheme `http`, `https` or `mailto`, in any
+#   case, with no white space and no control character: `https://example.com`.
+#
+# On Darwin `open` is run with `url` as its one argument, on every other
+# POSIX `xdg-open`, each with no shell between and waited for; on Windows
+# `ShellExecuteW` opens it.
+#
+# Fails `invalid` where `url` is not such a URL: another scheme may start any
+# program that registered it, so it is refused here, and a path is
+# `open_path`'s. Fails `not_found` where the launcher is not on the machine
+# (no `xdg-open`), `unsupported` where the system keeps no application for
+# it, and `failed` where the launcher ended otherwise, with its exit status.
+#
+# See also `open_path`.
+function open_url(url: str) -> ()?
+    opening.check_url(url)?
+
+    if hero_sys.open(url) != 0
+        return codes.sys_failed(asked: f"opening \"{url}\"")
+    return ok()
+
+# Opens the file or the folder `path` names in the application the user's
+# system keeps for its kind, and returns once the system has taken it.
+#
+# - `path`: absolute, or relative to the working folder; one that begins with
+#   `-` is handed as `./` and the path, so no launcher reads it as an option.
+#
+# It is opened as `open_url` opens a URL: `open`, `xdg-open` or
+# `ShellExecuteW`.
+#
+# Fails `file_not_found` where `path` names nothing, asked before the
+# launcher is, `invalid` where it is empty or holds a zero byte,
+# `unsupported` where the system keeps no application for its kind, and
+# `failed` where the launcher ended otherwise.
+#
+# See also `open_url`.
+function open_path(path: str) -> ()?
+    if path.len() == 0 || codes.has_zero(path)
+        return fail(code: codes.INVALID, msg: "an empty path, or one holding a zero byte, names nothing to open")
+    none: [i64] @= []
+
+    if hero_disk.facts_through(path, @none, n: 0) < 0
+        return codes.disk_failed(asked: f"opening \"{path}\"")
+
+    if hero_sys.open(opening.launch_target(path)) != 0
+        return codes.sys_failed(asked: f"opening \"{path}\"")
+    return ok()
 
 ## Who runs the process, and where
 
@@ -940,6 +1039,24 @@ test "network_counters: at least one interface, names not empty and not repeated
                     .err _     => _ = 0
         .err e => assert e.code == UNSUPPORTED && system() == .other
 
+test "open_url: every refusal is invalid and starts nothing"
+    for url in ["", "example.com", "ftp://example.com", "file:///etc/hosts", "https://", "https://a b", "-a"]
+        match open_url(url)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "open_path: empty and a zero byte invalid, a missing file file_not_found, nothing started"
+    zeroed: [u8] = [97, 0, 98]
+
+    for path in ["", zeroed.validated_bytes().must()]
+        match open_path(path)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match open_path("-rebel-no-such-file")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND
+
 ## Examples
 
 # The share of the machine's memory available now, as a percentage.
@@ -989,3 +1106,35 @@ test "network_counters: the bytes received on every interface"
 
             assert received >= 0
         .err e => assert e.code == UNSUPPORTED
+
+# Where a program keeps its own data, under its name, made by `fs` when it
+# first writes there.
+test "data_dir: a program's own folder of data"
+    match data_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == NOT_TEXT
+
+# Where a program keeps its history: on a machine with a home folder, a path.
+test "state_dir: where a history is kept"
+    match state_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == NOT_TEXT
+
+# Where a program puts its socket: a path, or told that the session has no
+# such folder.
+test "runtime_dir: where a socket goes"
+    match runtime_dir()
+        .ok dir => assert dir.len() > 0
+        .err e  => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+
+# A link refused before any program is started: its scheme starts programs.
+test "open_url: a scheme refused, nothing opened"
+    match open_url("javascript:alert(1)")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A file that is not there, told before any launcher runs.
+test "open_path: a file that is not there"
+    match open_path("/rebel-no-such-folder/report.pdf")
+        .ok _  => assert false
+        .err e => assert e.code == FILE_NOT_FOUND

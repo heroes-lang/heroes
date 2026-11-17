@@ -18,6 +18,9 @@ variant Door
     version
     user_name
     network
+    data
+    state
+    runtime
 
 # How many times a door is asked before an answer that keeps growing is a
 # failure: two calls suffice where nothing changes between them.
@@ -36,6 +39,9 @@ function named(door: Door) -> str
         .version     => "the system's version"
         .user_name   => "the user's name"
         .network     => "the network interfaces' counters"
+        .data        => "the data folder"
+        .state       => "the state folder"
+        .runtime     => "the runtime folder"
 
 # One call of `door` into `buffer`, `n` bytes long: the length of the whole
 # answer, or -1.
@@ -50,6 +56,9 @@ function called(door: Door, @buffer: [u8], n: u64) -> i64
         .version     => hero_sys.system_version(@buffer, n: n)
         .user_name   => hero_sys.user_name(@buffer, n: n)
         .network     => hero_sys.network_counters(@buffer, n: n)
+        .data        => hero_sys.data_folder(@buffer, n: n)
+        .state       => hero_sys.state_folder(@buffer, n: n)
+        .runtime     => hero_sys.runtime_folder(@buffer, n: n)
 
 # The whole answer of `door` as bytes. Fails with the floor's code where the
 # door refuses, and `failed` where the answer grew on every one of `TRIES`
@@ -65,7 +74,7 @@ function bytes_of(door: Door) -> [u8]?
         if got < 0
             return match door
                 .temp => codes.disk_failed(asked: named(door))
-                .host_name | .home | .cache | .settings | .environment | .version | .user_name | .network =>
+                .host_name | .home | .cache | .settings | .environment | .version | .user_name | .network | .data | .state | .runtime =>
                     codes.sys_failed(asked: named(door))
 
         if got <= room

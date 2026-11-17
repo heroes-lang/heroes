@@ -87,7 +87,10 @@
 #include <sys/random.h>
 #include <sys/resource.h>
 #include <sys/time.h>
+#include <signal.h>
+#include <spawn.h>
 #include <sys/utsname.h>
+#include <sys/wait.h>
 #include <unistd.h>
 /* The environment's list: a global of the C library, which a program
  * declares itself (POSIX); on Darwin a library may not name it, and
@@ -484,6 +487,77 @@ int64_t hero_sys_cache_folder(void *buffer, uint64_t count) {
 
 int64_t hero_sys_settings_folder(void *buffer, uint64_t count) {
     return hero_sys_known(buffer, count, &FOLDERID_RoamingAppData);
+}
+
+int64_t hero_sys_data_folder(void *buffer, uint64_t count) {
+    return hero_sys_known(buffer, count, &FOLDERID_RoamingAppData);
+}
+
+int64_t hero_sys_state_folder(void *buffer, uint64_t count) {
+    return hero_sys_known(buffer, count, &FOLDERID_LocalAppData);
+}
+
+int64_t hero_sys_runtime_folder(void *buffer, uint64_t count) {
+    if (!hero_sys_room(buffer, count)) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    return hero_sys_fail(HERO_SYS_UNSUPPORTED, 0);
+}
+
+/* ShellExecuteW answers a number above 32 where it did what it was asked, and
+ * one of its own at or below it where not (its page). COM is begun for the
+ * call where the thread had not begun it, as the page asks, since a handler
+ * may be a COM object, and ended after only where this call began it. */
+int64_t hero_sys_open(const char *target) {
+    WCHAR *wide = NULL;
+    int units = 0;
+    HRESULT began = S_OK;
+    HINSTANCE answer = NULL;
+    INT_PTR code = 0;
+
+    if (target == NULL || target[0] == '\0') {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    units = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, target, -1, NULL, 0);
+    if (units <= 0) {
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)GetLastError());
+    }
+    wide = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (SIZE_T)units * sizeof(WCHAR));
+    if (wide == NULL) {
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, target, -1, wide, units) != units) {
+        DWORD why = GetLastError();
+
+        HeapFree(GetProcessHeap(), 0, wide);
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)why);
+    }
+    began = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    answer = ShellExecuteW(NULL, L"open", wide, NULL, NULL, SW_SHOWNORMAL);
+    code = (INT_PTR)answer;
+    if (began == S_OK || began == S_FALSE) {
+        CoUninitialize();
+    }
+    HeapFree(GetProcessHeap(), 0, wide);
+    if (code > 32) {
+        hero_sys_fine();
+        return 0;
+    }
+    switch (code) {
+    case SE_ERR_FNF:
+    case SE_ERR_PNF:
+        return hero_sys_fail(HERO_SYS_NOT_FOUND, (int64_t)code);
+    case SE_ERR_ACCESSDENIED:
+        return hero_sys_fail(HERO_SYS_DENIED, (int64_t)code);
+    case 0:
+    case SE_ERR_OOM:
+        return hero_sys_fail(HERO_SYS_LIMIT, (int64_t)code);
+    case SE_ERR_NOASSOC:
+    case SE_ERR_ASSOCINCOMPLETE:
+        return hero_sys_fail(HERO_SYS_UNSUPPORTED, (int64_t)code);
+    default:
+        return hero_sys_fail(HERO_SYS_OTHER, (int64_t)code);
+    }
 }
 
 /* The block is a copy the system makes for this call, each variable ended by
@@ -1110,6 +1184,148 @@ int64_t hero_sys_settings_folder(void *buffer, uint64_t count) {
 #else
     return hero_sys_below_home(buffer, count, "XDG_CONFIG_HOME", "/.config");
 #endif
+}
+
+int64_t hero_sys_data_folder(void *buffer, uint64_t count) {
+#if defined(__APPLE__)
+    return hero_sys_below_home(buffer, count, NULL, "/Library/Application Support");
+#else
+    return hero_sys_below_home(buffer, count, "XDG_DATA_HOME", "/.local/share");
+#endif
+}
+
+int64_t hero_sys_state_folder(void *buffer, uint64_t count) {
+#if defined(__APPLE__)
+    return hero_sys_below_home(buffer, count, NULL, "/Library/Application Support");
+#else
+    return hero_sys_below_home(buffer, count, "XDG_STATE_HOME", "/.local/state");
+#endif
+}
+
+/* The room Darwin's temporary folder is read into: a path under
+ * `/var/folders`, some fifty bytes. */
+#define HERO_SYS_TEMP_ROOM 1024
+
+int64_t hero_sys_runtime_folder(void *buffer, uint64_t count) {
+    hero_sys_fill f = hero_sys_into(buffer, count);
+
+    if (!hero_sys_room(buffer, count)) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+#if defined(__APPLE__)
+    {
+        char room[HERO_SYS_TEMP_ROOM];
+        size_t needed = 0;
+        size_t length = 0;
+
+        errno = 0;
+        needed = confstr(_CS_DARWIN_USER_TEMP_DIR, room, sizeof room);
+        if (needed == 0) {
+            int why = errno;
+
+            return hero_sys_fail(why != 0 ? hero_sys_kind_of(why) : HERO_SYS_NOT_FOUND, why);
+        }
+        if (needed > sizeof room) {
+            return hero_sys_fail(HERO_SYS_LIMIT, 0);
+        }
+        length = strlen(room);
+        while (length > 1 && room[length - 1] == '/') {
+            length -= 1;
+        }
+        hero_sys_put(&f, room, length);
+    }
+#else
+    {
+        const char *named = getenv("XDG_RUNTIME_DIR");
+
+        if (named == NULL || named[0] != '/') {
+            return hero_sys_fail(HERO_SYS_NOT_FOUND, 0);
+        }
+        hero_sys_text(&f, named);
+    }
+#endif
+    return hero_sys_filled(&f);
+}
+
+/* The launcher is started with every signal at its default and none blocked,
+ * whatever the program set (a runtime that ignores SIGPIPE, a thread that
+ * blocks SIGINT), and waited for, a wait that a signal breaks asked again. */
+int64_t hero_sys_open(const char *target) {
+#if defined(__APPLE__)
+    char launcher[] = "/usr/bin/open";
+    char **environment = *_NSGetEnviron();
+#else
+    char launcher[] = "xdg-open";
+    char **environment = environ;
+#endif
+    char *arguments[3];
+    posix_spawnattr_t attributes;
+    sigset_t none;
+    sigset_t every;
+    pid_t child = 0;
+    int status = 0;
+    int refused = 0;
+
+    if (target == NULL || target[0] == '\0') {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    arguments[0] = launcher;
+    arguments[1] = (char *)(uintptr_t)target;
+    arguments[2] = NULL;
+    refused = posix_spawnattr_init(&attributes);
+    if (refused != 0) {
+        return hero_sys_fail(hero_sys_kind_of(refused), refused);
+    }
+    sigemptyset(&none);
+    sigfillset(&every);
+    sigdelset(&every, SIGKILL);
+    sigdelset(&every, SIGSTOP);
+    refused = posix_spawnattr_setsigmask(&attributes, &none);
+    if (refused == 0) {
+        refused = posix_spawnattr_setsigdefault(&attributes, &every);
+    }
+    if (refused == 0) {
+        refused = posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF);
+    }
+    if (refused == 0) {
+#if defined(__APPLE__)
+        refused = posix_spawn(&child, launcher, NULL, &attributes, arguments, environment);
+#else
+        refused = posix_spawnp(&child, launcher, NULL, &attributes, arguments, environment);
+#endif
+    }
+    (void)posix_spawnattr_destroy(&attributes);
+    if (refused != 0) {
+        return hero_sys_fail(refused == ENOENT ? HERO_SYS_NOT_FOUND : hero_sys_kind_of(refused), refused);
+    }
+    while (waitpid(child, &status, 0) < 0) {
+        int why = errno;
+
+        if (why != EINTR) {
+            return hero_sys_fail(hero_sys_kind_of(why), why);
+        }
+    }
+    if (WIFEXITED(status)) {
+        int code = WEXITSTATUS(status);
+
+        if (code == 0) {
+            hero_sys_fine();
+            return 0;
+        }
+#if !defined(__APPLE__)
+        if (code == 2) {
+            return hero_sys_fail(HERO_SYS_NOT_FOUND, code);
+        }
+        if (code == 3) {
+            return hero_sys_fail(HERO_SYS_UNSUPPORTED, code);
+        }
+#endif
+        return hero_sys_fail(HERO_SYS_OTHER, code);
+    }
+    if (WIFSIGNALED(status)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 128 + WTERMSIG(status));
+    }
+    return hero_sys_fail(HERO_SYS_OTHER, status);
 }
 
 int64_t hero_sys_environment(void *buffer, uint64_t count) {

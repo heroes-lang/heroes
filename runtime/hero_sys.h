@@ -151,6 +151,49 @@ int64_t hero_sys_cache_folder(void *buffer, uint64_t count);
  * (`...\AppData\Roaming`). Every program's, as the one above. */
 int64_t hero_sys_settings_folder(void *buffer, uint64_t count);
 
+/* The folder a program keeps the data it makes and reads again in, by the
+ * fill form (round 6). On Darwin `Library/Application Support` under the home
+ * folder; on Linux and every other POSIX `$XDG_DATA_HOME` where it is set to
+ * an absolute path, else `.local/share` under the home folder; on Windows
+ * `FOLDERID_RoamingAppData`. Every program's, as the ones above. */
+int64_t hero_sys_data_folder(void *buffer, uint64_t count);
+
+/* The folder a program keeps in what outlasts a restart but is not worth
+ * carrying to another machine (a history, a log, where a window stood), by
+ * the fill form. On Darwin `Library/Application Support` under the home
+ * folder, where Apple keeps an application's state too; on Linux and every
+ * other POSIX `$XDG_STATE_HOME` where it is set to an absolute path, else
+ * `.local/state` under the home folder; on Windows `FOLDERID_LocalAppData`,
+ * which stays on the machine. Every program's. */
+int64_t hero_sys_state_folder(void *buffer, uint64_t count);
+
+/* The folder of the user's own sockets, pipes and locks, private to the user
+ * and gone with the session, by the fill form. On Darwin the user's own
+ * temporary folder, `confstr(_CS_DARWIN_USER_TEMP_DIR)`, its last slash left
+ * out; on Linux and every other POSIX `$XDG_RUNTIME_DIR` where it is set to
+ * an absolute path, and -1 with `HERO_SYS_NOT_FOUND` where it is not, which
+ * the XDG specification leaves to the program; on Windows -1 with
+ * `HERO_SYS_UNSUPPORTED`: it keeps no such folder. */
+int64_t hero_sys_runtime_folder(void *buffer, uint64_t count);
+
+/* Opens `target`, a URL or a path, in the application the user's system
+ * keeps for it, and answers 0 once the system has taken it (round 6). On
+ * Darwin `/usr/bin/open`, on Linux and every other POSIX `xdg-open` found by
+ * `PATH`: started by `posix_spawn` with `target` as its one argument, no
+ * shell between, the signals at their defaults and none blocked, and waited
+ * for, its exit 0 the answer 0. On Windows `ShellExecuteW` with the verb
+ * `open`, COM begun on the calling thread where it was not. THE CALLER
+ * CHECKS WHAT IT HANDS: both programs read a target that begins with `-` as
+ * an option. A NULL or empty target is `HERO_SYS_INVALID`; a launcher that
+ * is not there `HERO_SYS_NOT_FOUND`; one that ended otherwise
+ * `HERO_SYS_OTHER`, its exit status (128 and the signal's number where a
+ * signal ended it) in `hero_sys_last_os_error()`, but xdg-open's 2, a file
+ * that is not there, `HERO_SYS_NOT_FOUND`, and its 3, no tool to open with,
+ * `HERO_SYS_UNSUPPORTED`. On Windows ShellExecute's own number: a file or a
+ * folder not found `HERO_SYS_NOT_FOUND`, refused `HERO_SYS_DENIED`, no
+ * application for its kind `HERO_SYS_UNSUPPORTED`. */
+int64_t hero_sys_open(const char *target);
+
 /* Every variable of the environment, by the fill form: each as its name, `=`
  * and its value, as the system holds it, followed by one zero byte, in the
  * system's order. An entry the system holds with no `=` is handed as it

@@ -206,11 +206,19 @@ capability md/math  math between dollars
   note    no shared specification; not done in this round
 
 capability md/write-markdown  a tree written back as Markdown
-  heroes  pending
+  heroes  markdown.format_markdown
   go      -
   rust    comrak::format_commonmark, comrak::format_commonmark_with_plugins, comrak::markdown_to_commonmark, comrak::ParseOptions.default_info_string
   python  -
-  note    a writer that reads back to the same tree, escaping what it must; not done in this round
+  note    added 2026-11-17. Each of the 675 examples the package's tests hold (CommonMark 0.31.2's 652 and GFM's 23) reads back from its writing to the same HTML, and the writing read and written again is the same bytes; every example's test asserts both. Escaping is by place, not every punctuation character: a character that opens or closes syntax anywhere, what begins a block at a line's start (a space there written `&#32;`), the last space of a line written `&#32;` so it is not a hard break; an underscore between two ASCII letters or digits is left as it is. Links are written inline, a code block fenced unless it was indented and indenting keeps it, a list given another marker where the list before it has the same one. What has no form is said in the face: an empty code span, a break in a heading of level 3 or more or in a cell. comrak's `default_info_string` is the reader's matter, and the writer writes the info string it holds
+
+capability md/from-html  an HTML page read into a Markdown tree, what has no form kept as HTML or left out
+  heroes  markdown.from_html, markdown.parse_html
+  go      -
+  rust    -
+  python  -
+  note    added 2026-11-17, from the community census; none of the three offers it (the libraries people reach for, Python's html2text and markdownify, Go's html-to-markdown and Rust's htmd, are none of them standard). The page is `html`'s tree, read as a browser reads it; headings, paragraphs, quotes, lists with their first number and task boxes, `pre` with its language, rules, tables (GFM's: the first row the header, every row as wide as the widest, alignment from `align` or `text-align`), emphasis, strong, strikethrough, code, links, images and breaks have forms. An element with none is kept whole as raw HTML, or its tags dropped and what it holds read, as the caller asks; `head` is never read, and `script`, `style`, `template`, `noscript`, `svg`, `math`, `canvas`, `iframe`, `object` and `embed` are dropped whole where no HTML is kept. White space collapses as a browser shows it, and a space at emphasis's edge goes outside it, where Markdown can write it. The walk holds its own stack
+
 
 capability md/xml  a tree written as CommonMark's XML
   heroes  refused: the tree is values a program walks; `xml` writes any document the program builds from it
