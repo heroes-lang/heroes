@@ -4,8 +4,8 @@
 # there is none; the face turns that into `not_found`.
 
 use containers/internal/samples
-use containers/internal/steps
-use containers/internal/tree
+use containers/ordered/internal/steps
+use containers/ordered/internal/tree
 
 # The slot of the largest key at or before `key`.
 function floor_of<K>(shape: tree.Tree lent, key_list: [K] lent, key: K, less: (function(a: K, b: K) -> bool)) -> i64

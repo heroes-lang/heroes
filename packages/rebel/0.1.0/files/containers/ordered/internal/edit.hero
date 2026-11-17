@@ -1,13 +1,13 @@
 # The writes of an ordered map or set: a key added, and a slot taken out with
-# the last slot moved into it, in the tree and in the program's lists alike.
-# A list's room past the live slots holds copies of live values, so nothing
-# taken out stays alive in it.
+# the last slot moved into it, in the tree and in the program's lists alike,
+# the lists' slots kept by `storage`.
 
 use containers/internal/codes
 use containers/internal/samples
-use containers/internal/steps
-use containers/internal/tree
-use containers/internal/walk
+use containers/internal/storage
+use containers/ordered/internal/steps
+use containers/ordered/internal/tree
+use containers/ordered/internal/walk
 
 # Where `add` left a key: its slot, and whether it was new.
 record Spot
@@ -15,29 +15,6 @@ record Spot
     slot: i64
     # Whether the key was new, its slot just claimed.
     added: bool
-
-# Writes `value` at slot `at` of `xs`, growing it by one where `at` is its
-# length.
-function store<T>(@xs: [T], at: i64, value: T)
-    if at == xs.len()
-        xs @ xs.push(value)
-    else
-        xs[at] @ value
-
-# Moves the element at `end` into `at`, which was freed, then fills `end` with
-# a copy of a live element so the one freed is let go, and cuts the list back
-# to its `count` live elements where it is empty or three quarters unused.
-function drop_slot<T>(@xs: [T], at: i64, end: i64, count: i64)
-    if at != end
-        xs[at] @ xs[end]
-
-    if count == 0
-        xs @ []
-        return
-    xs[end] @ xs[0]
-
-    if xs.len() >= tree.KEPT && count * 4 <= xs.len()
-        xs @ xs.slice(from: 0, to: count)
 
 # Ends the program where the shape is a set's and a map's write was asked,
 # or the other way, or where a list is shorter than the shape.
@@ -74,38 +51,22 @@ function add<K>(@shape: tree.Tree, @key_list: [K], key: K, less: (function(a: K,
     if candidate != tree.NONE && !less(a: key_list[candidate], b: key)
         return Spot(slot: candidate, added: false)
     slot = tree.claim(@shape)
-    store(@key_list, slot, key)
+    storage.store(@key_list, slot, key)
     tree.hang(@shape, slot: slot, under: under, on_left: on_left)
     return Spot(slot: slot, added: true)
 
 # Takes the slot `at` out of a set, its last slot moving into it.
 function take_key<K>(@shape: tree.Tree, @key_list: [K], at: i64)
     end = tree.vacate(@shape, at)
-    drop_slot(@key_list, at: at, end: end, count: shape.count)
+    storage.drop_slot(@key_list, at: at, end: end, count: shape.count)
 
 # Takes the slot `at` out of a map, its last slot moving into it.
 function take_entry<K, V>(@shape: tree.Tree, @key_list: [K], @value_list: [V], at: i64)
     end = tree.vacate(@shape, at)
-    drop_slot(@key_list, at: at, end: end, count: shape.count)
-    drop_slot(@value_list, at: at, end: end, count: shape.count)
+    storage.drop_slot(@key_list, at: at, end: end, count: shape.count)
+    storage.drop_slot(@value_list, at: at, end: end, count: shape.count)
 
 ## Tests
-
-test "store: at the end, inside, and the list's length"
-    xs: [i64] @= [1, 2]
-    store(@xs, 2, 3)
-    store(@xs, 0, 9)
-    assert xs == [9, 2, 3]
-
-test "drop_slot: the last taken, one inside, and the list emptied"
-    xs: [str] @= ["a", "b", "c"]
-    drop_slot(@xs, at: 0, end: 2, count: 2)
-    assert xs.slice(from: 0, to: 2) == ["c", "b"]
-    assert xs[2] == "c"
-    drop_slot(@xs, at: 1, end: 1, count: 1)
-    assert xs[0] == "c"
-    drop_slot(@xs, at: 0, end: 0, count: 0)
-    assert xs == []
 
 test "add: a new key, the same again, and a thousand in random order kept balanced"
     shape @= tree.empty(holds_values: false)
@@ -153,29 +114,6 @@ function model_rank(model: [i64] lent, key: i64) -> i64
 
     return at
 
-# `xs` with `value` put at `at`.
-function model_insert(xs: [i64] lent, at: i64, value: i64) -> [i64]
-    made: [i64] @= []
-
-    for place in range(from: 0, to: xs.len())
-        if place == at
-            made @ made.push(value)
-        made @ made.push(xs[place])
-
-    if at == xs.len()
-        made @ made.push(value)
-    return made
-
-# `xs` without its element at `at`.
-function model_remove(xs: [i64] lent, at: i64) -> [i64]
-    made: [i64] @= []
-
-    for place in range(from: 0, to: xs.len())
-        if place != at
-            made @ made.push(xs[place])
-
-    return made
-
 # The model's answer to a search: the index of the key found, or -1.
 function model_answer(found: i64, size: i64) -> i64
     if found < 0 || found >= size
@@ -206,27 +144,27 @@ test "add, take_entry and every search: five thousand random operations against 
         if choice < 5
             spot = add(@shape, @held, key: key, less: samples.ascending)
             assert spot.added == !present
-            store(@values, spot.slot, step)
+            storage.store(@values, spot.slot, step)
 
             if present
                 model_values[rank] @ step
             else
-                model @ model_insert(model, at: rank, value: key)
-                model_values @ model_insert(model_values, at: rank, value: step)
+                model @ samples.model_insert(model, at: rank, value: key)
+                model_values @ samples.model_insert(model_values, at: rank, value: step)
         else if choice < 8
             at = walk.exact_of(shape, held, key: key, less: samples.ascending)
             assert at != tree.NONE == present
 
             if present
                 take_entry(@shape, @held, @values, at)
-                model @ model_remove(model, rank)
-                model_values @ model_remove(model_values, rank)
+                model @ samples.model_remove(model, rank)
+                model_values @ samples.model_remove(model_values, rank)
         else if shape.count > 0
             at = samples.roll(@dice, shape.count)
             gone = walk.rank_of(shape, held, key: held[at], less: samples.ascending)
             take_entry(@shape, @held, @values, at)
-            model @ model_remove(model, gone)
-            model_values @ model_remove(model_values, gone)
+            model @ samples.model_remove(model, gone)
+            model_values @ samples.model_remove(model_values, gone)
         assert tree.holds(shape)
         assert shape.count == model.len()
         order = steps.in_order(shape)

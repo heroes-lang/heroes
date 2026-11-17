@@ -1,0 +1,379 @@
+# A cache of a capacity that forgets the entry used least recently to make
+# room and, where it has a time to live, every entry written longer ago than
+# that. Python's `functools.lru_cache` without the function it wraps, Java's
+# `LinkedHashMap` in access order.
+#
+# It does not read a clock: every call that can expire an entry takes `now`,
+# a reading of the program's own clock in any unit, and the time to live is in
+# the same unit, so a test needs no clock and the package needs no `time`. A
+# map that keeps its order and forgets nothing is `containers/indexed`'s.
+#
+# A record takes no type parameter, so a cache is in parts: a SHAPE, a
+# `Cache` of this package holding the links, and the program's own key list,
+# value list and lookup map, a `{K: i64}` naming each key's slot, lent with `@`
+# to every call that changes them. They are the cache's storage, read through
+# this package's functions; the lookup map holds `-1` for a key taken out
+# until it is rebuilt. Every call costs a constant over many calls.
+#
+# It fails with `not_found`, where no live entry stands under a key. A call
+# aborts where a capacity or a time to live is below 1, or a list or the
+# lookup map is not the cache's own.
+
+use containers/cache/internal/lru
+use containers/internal/codes
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+## The cache
+
+# The shape of a cache that holds at most its capacity of entries, forgetting
+# the one used least recently to make room and, where it has a time to live,
+# every entry written longer ago than that. A key stands at each slot of the
+# program's key list, its value at the same slot of its value list, and the
+# program's lookup map names each key's slot; the three are the cache's
+# storage, the lookup map holding `-1` for a key taken out until it is
+# rebuilt.
+#
+# Time is the program's to give: a call that may expire an entry takes `now`,
+# a reading of the program's own clock in any unit, and the time to live is
+# in the same unit; nothing here reads a clock, so a test needs none. A cache
+# without a time to live never reads `now`, and a program without a clock
+# gives 0. Made by `new` or `new_with_ttl`; every call costs a
+# constant over many calls.
+record Cache
+    # The links of the entries, held by the package itself.
+    entries: lru.Lru
+
+# An empty cache of at most `most` entries whose entries never expire.
+#
+# - `most`: the most entries it holds, from 1.
+#
+# Aborts where `most` is below 1. See also `new_with_ttl`.
+function new(most: i64) -> Cache
+    if most < 1
+        codes.abort_with(f"a cache holds at least one entry, and a capacity of {most} was asked")
+    return Cache(entries: lru.empty(capacity: most, ttl: 0))
+
+# An empty cache of at most `most` entries, each forgotten `ttl` after it
+# was last written.
+#
+# - `most`: the most entries it holds, from 1.
+# - `ttl`: how long an entry lives after it was written, in the unit of the
+#   `now` the program gives, from 1; reading an entry does not lengthen it.
+#
+# An entry written at `now` expires at `now + ttl`, past the largest `i64`
+# never. Aborts where `most` or `ttl` is below 1. See also `new`,
+# `expire`.
+function new_with_ttl(most: i64, ttl: i64) -> Cache
+    if most < 1
+        codes.abort_with(f"a cache holds at least one entry, and a capacity of {most} was asked")
+
+    if ttl < 1
+        codes.abort_with(f"a time to live is at least 1, and {ttl} was asked")
+    return Cache(entries: lru.empty(capacity: most, ttl: ttl))
+
+# How many entries a cache holds, those expired since the last call that was
+# given the time included.
+#
+# - `cache`: the shape.
+#
+# See also `capacity`, `expire`.
+function size(cache: Cache) -> i64
+    return cache.entries.count
+
+# The most entries a cache holds.
+#
+# - `cache`: the shape.
+#
+# See also `size`.
+function capacity(cache: Cache) -> i64
+    return cache.entries.capacity
+
+# Puts `value` under `key`, the entry becoming the one used last and, with a
+# time to live, written at `now`.
+#
+# - `cache`: the shape.
+# - `key_list`: the cache's keys.
+# - `value_list`: the cache's values.
+# - `lookup`: the cache's lookup map.
+# - `key`: the key; a held one has its value replaced.
+# - `value`: the value to put.
+# - `now`: the program's time, read only with a time to live.
+#
+# It first forgets the entries expired at `now`, then, where the cache is full
+# and `key` is new, the entry used least recently. Aborts where a list or the
+# lookup map is not the cache's own. See also `get`.
+function put<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V, now: i64)
+    lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.put(@cache.entries, @key_list, @value_list, @lookup, key: key, value: value, now: now)
+
+# The value under `key`, the entry becoming the one used last.
+#
+# - `cache`: the shape.
+# - `key_list`: the cache's keys.
+# - `value_list`: the cache's values.
+# - `lookup`: the cache's lookup map.
+# - `key`: the key to find.
+# - `now`: the program's time, read only with a time to live.
+#
+# It first forgets the entries expired at `now`. Fails `not_found` where the
+# cache holds no live entry under `key`. See also `peek`,
+# `put`.
+function get<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, now: i64) -> V?
+    lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.expire(@cache.entries, @key_list, @value_list, @lookup, now)
+    at = lru.slot_of(cache.entries, lookup, key)
+
+    if at == lru.NONE
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the cache's {cache.entries.count} live entries hold none under the key asked"
+        )
+    lru.unlink_use(@cache.entries, at)
+    lru.link_newest(@cache.entries, at)
+    return ok(value_list[at])
+
+# The value under `key`, the cache left as it was: no use is counted and
+# nothing is forgotten.
+#
+# - `cache`: the shape.
+# - `value_list`: the cache's values.
+# - `lookup`: the cache's lookup map.
+# - `key`: the key to find.
+# - `now`: the program's time, read only with a time to live.
+#
+# Fails `not_found` where the cache holds no entry under `key`, or holds one
+# expired at `now`. See also `get`, `contains`.
+function peek<K, V>(cache: Cache, value_list: [V] lent, lookup: {K: i64} lent, key: K, now: i64) -> V?
+    codes.require_storage(held: value_list.len(), count: cache.entries.count, what: "value list")
+    at = lru.slot_of(cache.entries, lookup, key)
+
+    if at == lru.NONE || lru.is_expired(cache.entries, at: at, now: now)
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the cache's {cache.entries.count} entries hold no live one under the key asked"
+        )
+    return ok(value_list[at])
+
+# Whether a cache holds a live entry under `key`, counting no use.
+#
+# - `cache`: the shape.
+# - `lookup`: the cache's lookup map.
+# - `key`: the key to look for.
+# - `now`: the program's time, read only with a time to live.
+#
+# False for an entry expired at `now`. See also `peek`.
+function contains<K>(cache: Cache, lookup: {K: i64} lent, key: K, now: i64) -> bool
+    at = lru.slot_of(cache.entries, lookup, key)
+    return at != lru.NONE && !lru.is_expired(cache.entries, at: at, now: now)
+
+# Takes the entry under `key` out of a cache and answers its value.
+#
+# - `cache`: the shape.
+# - `key_list`: the cache's keys; the last slot's key moves into the slot
+#   freed.
+# - `value_list`: the cache's values, moved as the keys are.
+# - `lookup`: the cache's lookup map.
+# - `key`: the key to take out.
+#
+# An entry expired and not yet forgotten is taken out and answered too.
+# Fails `not_found` where the cache holds no entry under `key`. See also
+# `clear`.
+function remove<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
+    lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    at = lru.slot_of(cache.entries, lookup, key)
+
+    if at == lru.NONE
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the cache's {cache.entries.count} entries hold none under the key to take out"
+        )
+    value = value_list[at]
+    lru.take(@cache.entries, @key_list, @value_list, @lookup, at)
+    return ok(value)
+
+# Forgets every entry expired at `now`.
+#
+# - `cache`: the shape.
+# - `key_list`: the cache's keys.
+# - `value_list`: the cache's values.
+# - `lookup`: the cache's lookup map.
+# - `now`: the program's time; a cache without a time to live forgets
+#   nothing.
+#
+# One step an entry forgotten. See also `new_with_ttl`.
+function expire<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64}, now: i64)
+    lru.require_lists(cache.entries, keys_held: key_list.len(), values_held: value_list.len())
+    lru.expire(@cache.entries, @key_list, @value_list, @lookup, now)
+
+# The slots of a cache's entries, the one used last first.
+#
+# - `cache`: the shape.
+#
+# Empty for an empty cache; entries expired and not yet forgotten are among
+# them. See also `oldest`.
+function slots(cache: Cache) -> [i64]
+    return lru.by_use(cache.entries)
+
+# The slot of the entry used least recently, the next one a full cache
+# forgets.
+#
+# - `cache`: the shape.
+#
+# Fails `not_found` where the cache is empty. See also `slots`.
+function oldest(cache: Cache) -> i64?
+    return codes.answer(at: cache.entries.oldest, msg: "an empty cache has no entry used least recently")
+
+# Empties a cache, keeping its capacity and time to live.
+#
+# - `cache`: the shape.
+# - `key_list`: the cache's keys, emptied.
+# - `value_list`: the cache's values, emptied.
+# - `lookup`: the cache's lookup map, emptied.
+#
+# See also `remove`.
+function clear<K, V>(@cache: Cache, @key_list: [K], @value_list: [V], @lookup: {K: i64})
+    cache.entries @ lru.empty(capacity: cache.entries.capacity, ttl: cache.entries.ttl)
+    key_list @ []
+    value_list @ []
+    lookup @ {}
+
+## Examples
+
+# A cache of two pages that never expire.
+test "new: a cache of two pages"
+    pages = new(2)
+    assert capacity(pages) == 2
+    assert size(pages) == 0
+
+# A cache whose entries live ten units of the program's clock.
+test "new_with_ttl: answers kept for ten seconds"
+    answers @= new_with_ttl(most: 100, ttl: 10)
+    questions: [str] @= []
+    replies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@answers, @questions, @replies, @lookup, key: "q", value: "a", now: 0)
+    assert get(@answers, @questions, @replies, @lookup, key: "q", now: 9).must() == "a"
+    assert get(@answers, @questions, @replies, @lookup, key: "q", now: 10).is_err()
+
+# How many entries a cache holds.
+test "size: two entries put in a cache of five"
+    cache @= new(5)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+    put(@cache, @held, @values, @lookup, key: 1, value: 10, now: 0)
+    put(@cache, @held, @values, @lookup, key: 2, value: 20, now: 0)
+    assert size(cache) == 2
+
+# The most entries a cache holds.
+test "capacity: a cache of three"
+    assert capacity(new_with_ttl(most: 3, ttl: 60)) == 3
+
+# The entry used longest ago forgotten when the cache is full.
+test "put: a full cache forgets the page used longest ago"
+    pages @= new(2)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
+    _ = get(@pages, @urls, @bodies, @lookup, key: "/a", now: 0).must()
+    put(@pages, @urls, @bodies, @lookup, key: "/c", value: "C", now: 0)
+    assert contains(pages, lookup, key: "/a", now: 0)
+    assert !contains(pages, lookup, key: "/b", now: 0)
+
+# A value read, the entry counted as used.
+test "get: a page read from the cache"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/", value: "home", now: 0)
+    assert get(@pages, @urls, @bodies, @lookup, key: "/", now: 0).must() == "home"
+    assert get(@pages, @urls, @bodies, @lookup, key: "/x", now: 0).is_err()
+
+# A value read without counting a use.
+test "peek: a look that leaves the order of use"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
+    assert peek(pages, bodies, lookup, key: "/a", now: 0).must() == "A"
+    assert urls[oldest(pages).must()] == "/a"
+
+# Whether a live entry is held.
+test "contains: a key held, then expired"
+    cache @= new_with_ttl(most: 4, ttl: 5)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+    put(@cache, @held, @values, @lookup, key: 1, value: 1, now: 100)
+    assert contains(cache, lookup, key: 1, now: 104)
+    assert !contains(cache, lookup, key: 1, now: 105)
+
+# An entry taken out by its key.
+test "remove: a stale page dropped"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    assert remove(@pages, @urls, @bodies, @lookup, key: "/a").must() == "A"
+    assert size(pages) == 0
+
+# Every expired entry forgotten at once.
+test "expire: the old answers forgotten"
+    cache @= new_with_ttl(most: 4, ttl: 10)
+    held: [i64] @= []
+    values: [i64] @= []
+    lookup: {i64: i64} @= {}
+    put(@cache, @held, @values, @lookup, key: 1, value: 1, now: 0)
+    put(@cache, @held, @values, @lookup, key: 2, value: 2, now: 5)
+    expire(@cache, @held, @values, @lookup, 12)
+    assert size(cache) == 1
+
+# The entries from the one used last.
+test "slots: the pages by their last use"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+
+    for url in ["/a", "/b", "/c"]
+        put(@pages, @urls, @bodies, @lookup, key: url, value: url, now: 0)
+
+    order: [str] @= []
+
+    for at in slots(pages)
+        order @ order.push(urls[at])
+
+    assert order == ["/c", "/b", "/a"]
+
+# The next entry a full cache forgets.
+test "oldest: the page used longest ago"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
+    assert urls[oldest(pages).must()] == "/a"
+
+# A cache emptied.
+test "clear: every page forgotten"
+    pages @= new(4)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    clear(@pages, @urls, @bodies, @lookup)
+    assert size(pages) == 0
+    assert !contains(pages, lookup, key: "/a", now: 0)

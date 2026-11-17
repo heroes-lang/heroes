@@ -1,118 +1,19 @@
-# The graphs of `{K: [K]}`: their nodes numbered in the order Python's
-# `graphlib` meets them (each key, then the nodes of its list not met before),
-# their edges laid out flat, out of each node and into it, and the walks the
-# face answers with: the order in stages, the cycle Python's `graphlib`
-# names, Tarjan's strongly connected components and the walk by breadth.
-# Every walk holds its stack in a list, so a deep graph never runs out of
-# stack; a list used as a stack keeps its own depth and reuses its slots,
-# since the language shortens no list in place.
+# The walks of a graph laid out by `layout`: every node in the order
+# Python's `static_order` gives it, the cycle Python's `graphlib` names,
+# Tarjan's strongly connected components and the walk by breadth. Every walk
+# holds its stack in a list, so a deep graph never runs out of stack; a list
+# used as a stack keeps its own depth and reuses its slots, since the
+# language shortens no list in place.
 
-use containers/internal/edit
-use containers/internal/samples
-
-# A graph's edges by node number. The edges out of node `n` are
-# `out_to[out_starts[n]]` to `out_to[out_starts[n + 1] - 1]`, in the order of
-# its list; the edges into it are `in_from[in_starts[n]]` onwards, in the
-# order of the keys whose lists name it.
-record Numbered
-    # How many nodes.
-    count: i64
-    # Where each node's edges out begin; one more entry than nodes.
-    out_starts: [i64]
-    # The nodes the edges out reach, back to back.
-    out_to: [i64]
-    # Where each node's edges in begin; one more entry than nodes.
-    in_starts: [i64]
-    # The nodes the edges in come from, back to back.
-    in_from: [i64]
-
-# Gives `node` the next number where it has none.
-function name<K>(@nodes: [K], @ids: {K: i64}, node: K)
-    if ids[node].is_err()
-        ids[node] @ nodes.len()
-        nodes @ nodes.push(node)
-
-# Numbers every node of `graph`: each key, then the nodes of its list not
-# met before.
-function number<K>(graph: {K: [K]} lent, @nodes: [K], @ids: {K: i64})
-    for key in keys(graph)
-        name(@nodes, @ids, key)
-
-        for node in graph[key].must()
-            name(@nodes, @ids, node)
-
-# A list of `count` zeros.
-function zeros(count: i64) -> [i64]
-    made: [i64] @= []
-
-    for _ in range(from: 0, to: count)
-        made @ made.push(0)
-
-    return made
-
-# The edges of `graph` by the numbers `number` gave.
-function links<K>(graph: {K: [K]} lent, nodes: [K] lent, ids: {K: i64} lent) -> Numbered
-    count = nodes.len()
-    out_starts: [i64] @= [0]
-    out_to: [i64] @= []
-    in_counts @= zeros(count)
-
-    for at in range(from: 0, to: count)
-        match graph[nodes[at]]
-            .ok pointed =>
-                for node in pointed
-                    target = ids[node].must()
-                    out_to @ out_to.push(target)
-                    in_counts[target] @ in_counts[target] + 1
-            .err _ => _ = 0
-
-        out_starts @ out_starts.push(out_to.len())
-
-    in_starts: [i64] @= [0]
-
-    for at in range(from: 0, to: count)
-        in_starts @ in_starts.push(in_starts[at] + in_counts[at])
-
-    in_from @= zeros(out_to.len())
-    fill @= in_starts.slice(from: 0, to: count)
-
-    for source in range(from: 0, to: count)
-        for edge in range(from: out_starts[source], to: out_starts[source + 1])
-            target = out_to[edge]
-            in_from[fill[target]] @ source
-            fill[target] @ fill[target] + 1
-
-    return Numbered(count: count, out_starts: out_starts, out_to: out_to, in_starts: in_starts, in_from: in_from)
-
-# The numbers of `graph`'s nodes and its edges, in one call.
-function numbered<K>(graph: {K: [K]} lent, @nodes: [K]) -> Numbered
-    ids: {K: i64} @= {}
-    number(graph, @nodes, @ids)
-    return links(graph, nodes, ids)
-
-# The nodes named by the numbers of `order`.
-function named<K>(nodes: [K] lent, order: [i64] lent) -> [K]
-    found: [K] @= []
-
-    for at in order
-        found @ found.push(nodes[at])
-
-    return found
-
-# How many edges leave each node: the nodes it waits on in an order.
-function out_degrees(graph: Numbered lent) -> [i64]
-    degrees: [i64] @= []
-
-    for at in range(from: 0, to: graph.count)
-        degrees @ degrees.push(graph.out_starts[at + 1] - graph.out_starts[at])
-
-    return degrees
+use graphs/internal/codes
+use graphs/internal/layout
+use graphs/internal/samples
 
 # Every node each after the nodes it points to, the nodes ready together
 # together, as Python's `static_order` hands them out; shorter than the graph
 # where a cycle stands.
-function staged_order(graph: Numbered lent) -> [i64]
-    waiting @= out_degrees(graph)
+function staged_order(graph: layout.Numbered lent) -> [i64]
+    waiting @= layout.out_degrees(graph)
     ready: [i64] @= []
 
     for at in range(from: 0, to: graph.count)
@@ -143,8 +44,8 @@ function staged_order(graph: Numbered lent) -> [i64]
 # ends at the first node met again while it is on the walk. Each node of the
 # answer is pointed to by the one after it, the first standing again at the
 # end; empty where there is none.
-function cycle(graph: Numbered lent) -> [i64]
-    seen @= zeros(graph.count)
+function cycle(graph: layout.Numbered lent) -> [i64]
+    seen @= layout.zeros(graph.count)
     place: [i64] @= []
 
     for _ in range(from: 0, to: graph.count)
@@ -158,8 +59,8 @@ function cycle(graph: Numbered lent) -> [i64]
             continue
         seen[start] @ 1
         depth @= 1
-        edit.store(@walk, 0, start)
-        edit.store(@cursor, 0, graph.in_starts[start])
+        codes.store(@walk, 0, start)
+        codes.store(@cursor, 0, graph.in_starts[start])
         place[start] @ 0
 
         while depth > 0
@@ -178,8 +79,8 @@ function cycle(graph: Numbered lent) -> [i64]
                 if seen[node] == 0
                     seen[node] @ 1
                     place[node] @ depth
-                    edit.store(@walk, depth, node)
-                    edit.store(@cursor, depth, graph.in_starts[node])
+                    codes.store(@walk, depth, node)
+                    codes.store(@cursor, depth, graph.in_starts[node])
                     depth @ depth + 1
             else
                 place[top] @ -1
@@ -191,7 +92,7 @@ function cycle(graph: Numbered lent) -> [i64]
 # The strongly connected components by Tarjan's walk along the edges out,
 # its two stacks held in lists: each component after every component it
 # points into, its nodes in number order.
-function components(graph: Numbered lent) -> [[i64]]
+function components(graph: layout.Numbered lent) -> [[i64]]
     index: [i64] @= []
     low: [i64] @= []
 
@@ -199,7 +100,7 @@ function components(graph: Numbered lent) -> [[i64]]
         index @ index.push(-1)
         low @ low.push(-1)
 
-    held @= zeros(graph.count)
+    held @= layout.zeros(graph.count)
     stack: [i64] @= []
     stack_depth @= 0
     calls: [i64] @= []
@@ -213,12 +114,12 @@ function components(graph: Numbered lent) -> [[i64]]
         index[start] @ counter
         low[start] @ counter
         counter @ counter + 1
-        edit.store(@stack, stack_depth, start)
+        codes.store(@stack, stack_depth, start)
         stack_depth @ stack_depth + 1
         held[start] @ 1
         depth @= 1
-        edit.store(@calls, 0, start)
-        edit.store(@cursor, 0, graph.out_starts[start])
+        codes.store(@calls, 0, start)
+        codes.store(@cursor, 0, graph.out_starts[start])
 
         while depth > 0
             node = calls[depth - 1]
@@ -232,11 +133,11 @@ function components(graph: Numbered lent) -> [[i64]]
                     index[target] @ counter
                     low[target] @ counter
                     counter @ counter + 1
-                    edit.store(@stack, stack_depth, target)
+                    codes.store(@stack, stack_depth, target)
                     stack_depth @ stack_depth + 1
                     held[target] @ 1
-                    edit.store(@calls, depth, target)
-                    edit.store(@cursor, depth, graph.out_starts[target])
+                    codes.store(@calls, depth, target)
+                    codes.store(@cursor, depth, graph.out_starts[target])
                     depth @ depth + 1
                 else if held[target] == 1 && index[target] < low[node]
                     low[node] @ index[target]
@@ -267,8 +168,8 @@ function components(graph: Numbered lent) -> [[i64]]
 
 # The nodes `from` reaches along the edges out, `from` first, then by
 # breadth.
-function reached(graph: Numbered lent, from: i64) -> [i64]
-    seen @= zeros(graph.count)
+function reached(graph: layout.Numbered lent, from: i64) -> [i64]
+    seen @= layout.zeros(graph.count)
     order: [i64] @= [from]
     seen[from] @ 1
     head @= 0
@@ -286,87 +187,62 @@ function reached(graph: Numbered lent, from: i64) -> [i64]
 
     return order
 
-## Tests
-
-# The graph of the face's example: a node's list the nodes it depends on.
-function sample() -> {str: [str]}
-    return {"a": ["b", "c"], "b": ["d"], "c": ["d"], "e": []}
-
-test "number: keys and their lists in the order met, each node once"
-    nodes: [str] @= []
-    ids: {str: i64} @= {}
-    number(sample(), @nodes, @ids)
-    assert nodes.join("") == "abcde"
-    empty_graph: {str: [str]} = {}
-    none: [str] @= []
-    none_ids: {str: i64} @= {}
-    number(empty_graph, @none, @none_ids)
-    assert none.len() == 0
-
-test "links: the edges out and in of each node, a node named twice counted twice"
-    nodes: [str] @= []
-    graph = numbered({"x": ["y", "y"], "y": []}, @nodes)
-    assert graph.out_starts == [0, 2, 2]
-    assert graph.out_to == [1, 1]
-    assert graph.in_starts == [0, 0, 2]
-    assert graph.in_from == [0, 0]
-
 test "staged_order: graphlib's order, a node of no edge, and one short where a cycle stands"
     nodes: [str] @= []
-    graph = numbered(sample(), @nodes)
-    assert named(nodes, staged_order(graph)).join("") == "debca"
+    graph = layout.numbered(layout.sample(), @nodes)
+    assert layout.named(nodes, staged_order(graph)).join("") == "debca"
     looped: [str] @= []
-    cyclic = numbered({"a": ["b"], "b": ["a"], "c": []}, @looped)
-    assert named(looped, staged_order(cyclic)).join("") == "c"
+    cyclic = layout.numbered({"a": ["b"], "b": ["a"], "c": []}, @looped)
+    assert layout.named(looped, staged_order(cyclic)).join("") == "c"
 
 # The cycle of `graph` as `cycle` finds it, its nodes' names joined.
 function cycle_text(graph: {str: [str]}) -> str
     nodes: [str] @= []
-    numbers = numbered(graph, @nodes)
-    return named(nodes, cycle(numbers)).join("")
+    numbers = layout.numbered(graph, @nodes)
+    return layout.named(nodes, cycle(numbers)).join("")
 
 test "cycle: graphlib's cycles, a loop on one node, and none"
     assert cycle_text({"a": ["b"], "b": ["c"], "c": ["a"]}) == "acba"
     assert cycle_text({"a": ["b"], "b": ["c"], "c": ["b"], "d": ["a"]}) == "bcb"
     assert cycle_text({"p": ["q", "r"], "q": ["r"], "r": ["s", "q"]}) == "qrq"
     assert cycle_text({"a": ["a"]}) == "aa"
-    assert cycle_text(sample()) == ""
+    assert cycle_text(layout.sample()) == ""
 
 test "components: a cycle of three, a loop, a chain, and a deep chain walked with no recursion"
     nodes: [str] @= []
-    graph = numbered({"a": ["b"], "b": ["c"], "c": ["a", "d"], "d": [], "e": ["e", "a"]}, @nodes)
+    graph = layout.numbered({"a": ["b"], "b": ["c"], "c": ["a", "d"], "d": [], "e": ["e", "a"]}, @nodes)
     found = components(graph)
     assert found.len() == 3
-    assert named(nodes, found[0]).join("") == "d"
-    assert named(nodes, found[1]).join("") == "abc"
-    assert named(nodes, found[2]).join("") == "e"
+    assert layout.named(nodes, found[0]).join("") == "d"
+    assert layout.named(nodes, found[1]).join("") == "abc"
+    assert layout.named(nodes, found[2]).join("") == "e"
     deep: {i64: [i64]} @= {}
 
     for n in range(from: 0, to: 20000)
         deep[n] @ [n + 1]
 
     numbers: [i64] @= []
-    chain = numbered(deep, @numbers)
+    chain = layout.numbered(deep, @numbers)
     assert components(chain).len() == 20001
-    assert named(numbers, components(chain)[0]) == [20000]
+    assert layout.named(numbers, components(chain)[0]) == [20000]
     assert staged_order(chain).len() == 20001
 
 test "reached: by breadth from a node, a node of no edge, and around a cycle"
     nodes: [str] @= []
-    graph = numbered({"a": ["b", "c"], "b": ["d"], "c": ["a"], "e": []}, @nodes)
-    assert named(nodes, reached(graph, 0)).join("") == "abcd"
-    assert named(nodes, reached(graph, 4)).join("") == "e"
+    graph = layout.numbered({"a": ["b", "c"], "b": ["d"], "c": ["a"], "e": []}, @nodes)
+    assert layout.named(nodes, reached(graph, 0)).join("") == "abcd"
+    assert layout.named(nodes, reached(graph, 4)).join("") == "e"
 
 # The order of `graph` as `staged_order` gives it, the nodes' names joined,
 # or `cycle` and the cycle's names where it is short of the graph.
 function order_text(graph: {str: [str]}) -> str
     nodes: [str] @= []
-    numbers = numbered(graph, @nodes)
+    numbers = layout.numbered(graph, @nodes)
     order = staged_order(numbers)
 
     if order.len() < numbers.count
-        return "cycle " + named(nodes, cycle(numbers)).join("")
-    return named(nodes, order).join("")
+        return "cycle " + layout.named(nodes, cycle(numbers)).join("")
+    return layout.named(nodes, order).join("")
 
 test "staged_order and cycle: forty random graphs, the answers Python's graphlib gave"
     assert order_text({"c": ["a", "a"], "e": ["d"], "b": ["c", "e", "c"], "a": ["b", "e", "a"]}) == "cycle cbac"
@@ -426,14 +302,14 @@ test "components: two hundred random graphs, a component the nodes that reach ea
             graph[node] @ pointed
 
         nodes: [i64] @= []
-        numbers = numbered(graph, @nodes)
+        numbers = layout.numbered(graph, @nodes)
         reach: [[i64]] @= []
 
         for node in range(from: 0, to: numbers.count)
             reach @ reach.push(sort(reached(numbers, node)))
 
         found = components(numbers)
-        place @= zeros(numbers.count)
+        place @= layout.zeros(numbers.count)
         seen_count @= 0
 
         for at in range(from: 0, to: found.len())

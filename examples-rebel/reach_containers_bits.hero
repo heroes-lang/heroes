@@ -1,0 +1,13 @@
+# Reaches Rebel's `containers/bits`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the primes below twenty as a set
+# of bits, bit 0 first: "00110101000101000101".
+
+use <rebel>/containers/bits
+
+function main()
+    primes @= bits.new(20)
+
+    for at in [2, 3, 5, 7, 11, 13, 17, 19]
+        bits.set_bit(@primes, at)
+
+    print(bits.format(primes))

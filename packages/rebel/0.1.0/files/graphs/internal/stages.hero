@@ -1,10 +1,10 @@
 # The state of a topological order handed out in stages, Python's
 # `graphlib.TopologicalSorter`'s `get_ready` and `done`: the nodes are
-# numbered as `graphs.number` numbers them, and every list is indexed by a
+# numbered as `layout.number` numbers them, and every list is indexed by a
 # node's number.
 
-use containers/internal/codes
-use containers/internal/graphs
+use graphs/internal/codes
+use graphs/internal/layout
 
 # The stages of one graph.
 record Stages
@@ -42,8 +42,8 @@ function grow(@xs: [i64], value: i64)
 
 # The stages of a graph that has no cycle, none handed out: the nodes that
 # point to none are ready, in number order.
-function prepare(graph: graphs.Numbered lent) -> Stages
-    waiting_on = graphs.out_degrees(graph)
+function prepare(graph: layout.Numbered lent) -> Stages
+    waiting_on = layout.out_degrees(graph)
     ready: [i64] @= []
     state: [i64] @= []
 
@@ -105,20 +105,20 @@ function is_active(stages: Stages lent) -> bool
 
 test "hand_out and finish: Python's stages of a small graph, then nothing active"
     nodes: [str] @= []
-    stages @= prepare(graphs.numbered({"a": ["b", "c"], "b": [], "c": ["b"]}, @nodes))
-    assert graphs.named(nodes, hand_out(@stages)).join("") == "b"
+    stages @= prepare(layout.numbered({"a": ["b", "c"], "b": [], "c": ["b"]}, @nodes))
+    assert layout.named(nodes, hand_out(@stages)).join("") == "b"
     assert hand_out(@stages).len() == 0
     assert is_active(stages)
     finish(@stages, 1).must()
-    assert graphs.named(nodes, hand_out(@stages)).join("") == "c"
+    assert layout.named(nodes, hand_out(@stages)).join("") == "c"
     finish(@stages, 2).must()
-    assert graphs.named(nodes, hand_out(@stages)).join("") == "a"
+    assert layout.named(nodes, hand_out(@stages)).join("") == "a"
     finish(@stages, 0).must()
     assert !is_active(stages)
 
 test "finish: a node not handed out, one done twice, and one that is no node"
     nodes: [str] @= []
-    stages @= prepare(graphs.numbered({"a": ["b"]}, @nodes))
+    stages @= prepare(layout.numbered({"a": ["b"]}, @nodes))
     assert finish(@stages, 0).is_err()
     _ = hand_out(@stages)
     finish(@stages, 1).must()

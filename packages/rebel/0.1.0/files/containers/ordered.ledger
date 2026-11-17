@@ -1,0 +1,165 @@
+# The ledger of `containers/ordered`: the ordered map and the ordered set, what
+# Rust 1.100's `BTreeMap` and `BTreeSet` with their cursors and entries offer
+# (Go 1.27 and Python 3.15 have none), one block per capability, and what
+# Heroes answers to each. `maps.ledger` and `sets.ledger` name `BTreeMap` and
+# `BTreeSet` too, read there as the language's map and set, which refused a
+# range for want of an order (`map/range-of-keys`, `set/range`,
+# `set/take-one`); they stand here for the structure that answers them. The
+# algebra of two sets stays `sets.ledger`'s.
+#
+# A record takes no type parameter, so the structure is a shape beside the
+# program's own lists, lent with `@`; a type parameter has no `<`, so the
+# order comes from the caller at each call.
+
+## The ordered map and the ordered set
+
+capability ordered/make  an empty ordered map or ordered set
+  heroes  ordered.new_map, ordered.new_set
+  go      -
+  rust    BTreeMap::new, BTreeMap::default, BTreeSet::new, BTreeSet::default
+  python  -
+  note    a binary search tree balanced by the sizes of its branches (weight-balanced, Hirai and Yamamoto's delta 3 and gamma 2), where the task named a B-tree or a treap: the sizes rank and select already need make the balance free, and it is deterministic, where a treap's priorities from a fixed seed can be attacked and from a random one are not reproducible. Java's TreeMap and .NET's SortedDictionary are red-black trees, Zig's treap a treap, Odin's container an AVL and a red-black tree
+
+capability ordered/put  a value put under a key of an ordered map, replacing the one held
+  heroes  ordered.put
+  go      -
+  rust    BTreeMap::insert, BTreeMap::try_insert, BTreeMap::entry, btree_map::Entry::or_insert, btree_map::Entry::or_insert_with, btree_map::Entry::or_insert_with_key, btree_map::Entry::or_default, btree_map::Entry::insert_entry, btree_map::VacantEntry::insert, btree_map::VacantEntry::insert_entry, btree_map::OccupiedEntry::insert, btree_map::Entry::and_modify
+  python  -
+  note    the key held stays and its value is replaced, as Rust's `insert` keeps the old key; Rust's `try_insert` and the entries are `ordered.slot_of` asked first, then this or a write at the slot
+
+capability ordered/add  a key added to an ordered set
+  heroes  ordered.add
+  go      -
+  rust    BTreeSet::insert, BTreeSet::get_or_insert, BTreeSet::get_or_insert_with, BTreeSet::entry, BTreeSet::replace, btree_set::Entry, btree_set::VacantEntry, btree_set::OccupiedEntry
+  python  -
+  note    answers whether the key was new, as Rust's `insert`; `replace` would put a key equal and not the same, which an order calling them equal makes the same here
+
+capability ordered/get  the value under a key of an ordered map
+  heroes  ordered.get
+  go      -
+  rust    BTreeMap::get, BTreeMap::get_mut, BTreeMap::index, BTreeMap::get_key_value, btree_map::OccupiedEntry::get, btree_map::OccupiedEntry::get_mut, btree_map::OccupiedEntry::into_mut, btree_map::OccupiedEntry::key, btree_map::VacantEntry::key, btree_map::VacantEntry::into_key, btree_map::Entry::key
+  python  -
+  note    absent is `not_found`; a value changed in place is written at the slot `ordered.slot_of` answers, the value list being the program's
+
+capability ordered/contains  whether an ordered map or set holds a key, and where
+  heroes  ordered.contains, ordered.slot_of
+  go      -
+  rust    BTreeMap::contains_key, BTreeSet::contains, BTreeSet::get
+  python  -
+  note    -
+
+capability ordered/remove  a key taken out of an ordered map or set
+  heroes  ordered.remove, ordered.discard
+  go      -
+  rust    BTreeMap::remove, BTreeMap::remove_entry, btree_map::OccupiedEntry::remove, btree_map::OccupiedEntry::remove_entry, BTreeSet::remove, BTreeSet::take
+  python  -
+  note    the map's answers the value or `not_found`, the set's whether the key was there, as Rust's two; the last slot moves into the slot freed, so the lists stay dense and nothing taken out stays alive in them
+
+capability ordered/remove-at  the entry at a slot found by a walk taken out
+  heroes  ordered.remove_at, ordered.discard_at
+  go      -
+  rust    btree_map::CursorMut::remove_next, btree_map::CursorMut::remove_prev, btree_set::CursorMut
+  python  -
+  note    a slot is the cursor here: a search answers it, and it stays good until the next call that takes something out
+
+capability ordered/first-last  the smallest and the largest key, and taking either out
+  heroes  ordered.first_slot, ordered.last_slot
+  go      -
+  rust    BTreeMap::first_key_value, BTreeMap::last_key_value, BTreeMap::first_entry, BTreeMap::last_entry, BTreeMap::pop_first, BTreeMap::pop_last, BTreeSet::first, BTreeSet::last, BTreeSet::pop_first, BTreeSet::pop_last
+  python  -
+  note    a pop is `ordered.first_slot` then `ordered.remove_at`, each logarithmic. Both ends in logarithmic time make it Zig's `PriorityDequeue` and Odin's double-ended priority queue too, a min-max heap's work
+
+capability ordered/bounds  the key at or before, at or after, strictly before and strictly after a bound
+  heroes  ordered.floor_slot, ordered.ceiling_slot, ordered.lower_slot, ordered.higher_slot
+  go      -
+  rust    BTreeMap::lower_bound, BTreeMap::upper_bound, BTreeMap::lower_bound_mut, BTreeMap::upper_bound_mut, BTreeSet::lower_bound, BTreeSet::upper_bound, BTreeSet::lower_bound_mut, BTreeSet::upper_bound_mut
+  python  -
+  note    Java's floor, ceiling, lower and higher, by name; Rust's cursors take a `Bound` and stand between two keys, which is one of these four and then a step by `ordered.next_slot` or `ordered.previous_slot`. Every one checked against a sorted list after each of five thousand random operations
+
+capability ordered/step  the key just after or just before a slot
+  heroes  ordered.next_slot, ordered.previous_slot
+  go      -
+  rust    btree_map::Cursor::next, btree_map::Cursor::prev, btree_map::Cursor::peek_next, btree_map::Cursor::peek_prev, btree_map::CursorMut::next, btree_map::CursorMut::prev, btree_map::CursorMut::peek_next, btree_map::CursorMut::peek_prev, btree_map::CursorMut::as_cursor, btree_map::CursorMutKey, btree_set::Cursor, btree_set::CursorMutKey
+  python  -
+  note    a walk from the first slot to the end costs the size in all
+
+capability ordered/range  the keys between two bounds, in order
+  heroes  ordered.slots_between
+  go      -
+  rust    BTreeMap::range, BTreeMap::range_mut, BTreeSet::range, btree_map::Range, btree_map::RangeMut, btree_set::Range
+  python  -
+  note    `from` kept and `to` left out, Rust's `a..b`; a bound of another kind is a walk by `ordered.next_slot` from `ordered.ceiling_slot` or `ordered.higher_slot`, which is how Java's headMap, tailMap and subMap with their flags are read
+
+capability ordered/rank  how many keys go before a key, and the key of a given rank
+  heroes  ordered.rank_of, ordered.slot_at_rank
+  go      -
+  rust    -
+  python  -
+  note    none of the three offers it; each node keeps the size of its subtree, so both are logarithmic. A median or a percentile of a changing set is `ordered.slot_at_rank` of the size times the fraction
+
+capability ordered/walk  every key, or every entry, in order
+  heroes  ordered.slots, ordered.to_list
+  go      -
+  rust    BTreeMap::iter, BTreeMap::iter_mut, BTreeMap::keys, BTreeMap::values, BTreeMap::values_mut, BTreeMap::into_iter, BTreeMap::into_keys, BTreeMap::into_values, BTreeSet::iter, BTreeSet::into_iter, btree_map::Iter, btree_map::IterMut, btree_map::Keys, btree_map::Values, btree_map::ValuesMut, btree_map::IntoIter, btree_map::IntoKeys, btree_map::IntoValues, btree_set::Iter, btree_set::IntoIter
+  python  -
+  note    `for at in ordered.slots(m)` reads `keys[at]` and `values[at]` together; backwards is the list read from its end, or a walk by `ordered.previous_slot`
+
+capability ordered/size  how many keys an ordered map or set holds
+  heroes  ordered.size
+  go      -
+  rust    BTreeMap::len, BTreeMap::is_empty, BTreeSet::len, BTreeSet::is_empty
+  python  -
+  note    -
+
+capability ordered/clear  an ordered map or set emptied
+  heroes  ordered.new_map
+  go      -
+  rust    BTreeMap::clear, BTreeSet::clear
+  python  -
+  note    a new shape and empty lists written over the old, which lets every key go
+
+capability ordered/keep-where  the entries a function accepts kept, or taken out and answered
+  heroes  ordered.remove_at
+  go      -
+  rust    BTreeMap::retain, BTreeMap::extract_if, BTreeSet::retain, BTreeSet::extract_if, btree_map::ExtractIf, btree_set::ExtractIf
+  python  -
+  note    a walk of `ordered.slots` noting the slots refused, then each key taken out by `ordered.remove`, since a slot moves when one is taken out; the size times its logarithm
+
+capability ordered/split-and-append  an ordered map cut in two at a key, or another one's entries added
+  heroes  ordered.slots_between
+  go      -
+  rust    BTreeMap::split_off, BTreeMap::append, BTreeSet::split_off, BTreeSet::append, BTreeMap::extend, BTreeMap::extend_one, BTreeSet::extend, BTreeSet::extend_one, BTreeMap::from, BTreeMap::from_iter, BTreeSet::from, BTreeSet::from_iter
+  python  -
+  note    the keys from the bound on, read by `ordered.slots_between` or a walk, put in a new map by `ordered.put` and taken out of the first: the moved keys times the logarithm, where Rust splits in the logarithm alone. Built from a list is a loop of `ordered.put` or `ordered.add`
+
+capability ordered/insert-beside-cursor  a key put beside a cursor's place without a search
+  heroes  refused: a key put at a place the program names, unchecked, would let the order lie; the search it saves is logarithmic, and Rust marks the unchecked forms unsafe
+  go      -
+  rust    btree_map::CursorMut::insert_after, btree_map::CursorMut::insert_before, btree_map::CursorMut::insert_after_unchecked, btree_map::CursorMut::insert_before_unchecked, btree_map::CursorMut::with_mutable_key
+  python  -
+  note    -
+
+dropped capacity  room asked ahead of the items: every structure here grows by itself and gives room back when three quarters stand empty
+  go      -
+  rust    BTreeMap::extend_reserve, BTreeSet::extend_reserve
+  python  -
+
+dropped allocators  the language has one allocator and it is not a value
+  go      -
+  rust    BTreeMap::new_in, BTreeSet::new_in
+  python  -
+
+dropped closures  an insertion whose value a closure computes and may fail to compute: the program computes the value and puts it
+  go      -
+  rust    btree_map::Entry::or_try_insert_with, btree_map::Entry::or_try_insert_with_key, btree_map::OccupiedError, btree_set::UnorderedKeyError, btree_map::UnorderedKeyError
+  python  -
+
+dropped iterator-types  a walk is a `for` over a list of items or slots, so it has no type of its own, and an iterator's adapters are `lists`'s
+  go      -
+  rust    btree_set::Difference, btree_set::Intersection, btree_set::SymmetricDifference, btree_set::Union, and on every iterator type its adapters (`map`, `filter`, `fold`, `zip`, `rev` and the rest of `Iterator` and `DoubleEndedIterator`)
+  python  -
+
+dropped traits  what an interface would have needed: a structure written for a debugger, hashed, ordered against another, dropped, converted
+  go      -
+  rust    BTreeMap::fmt, BTreeMap::hash, BTreeMap::eq, BTreeMap::cmp, BTreeMap::clone, BTreeMap::merge, BTreeSet::fmt, BTreeSet::cmp, BTreeSet::eq, BTreeSet::clone, BTreeSet::bitand, BTreeSet::bitor, BTreeSet::bitxor, BTreeSet::sub, and on all `type_id`, `borrow`, `borrow_mut`, `clone_into`, `clone_to_uninit`, `into`, `to_owned`, `try_from`, `try_into`
+  python  -

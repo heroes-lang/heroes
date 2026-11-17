@@ -1,0 +1,50 @@
+# The storage every structure of `containers` keeps in the program's lists: an
+# element written at a slot, the list growing by one where the slot is its
+# length, and a slot freed by moving the last one into it, the slot let go
+# holding a copy of a live element so nothing taken out stays alive, the list
+# cut back where three quarters of it stand unused.
+
+# Below this length a list is never cut back.
+constant KEPT: i64
+    32
+
+# Writes `value` at slot `at` of `xs`, growing it by one where `at` is its
+# length.
+function store<T>(@xs: [T], at: i64, value: T)
+    if at == xs.len()
+        xs @ xs.push(value)
+    else
+        xs[at] @ value
+
+# Moves the element at `end` into `at`, which was freed, then fills `end` with
+# a copy of a live element so the one freed is let go, and cuts the list back
+# to its `count` live elements where it is empty or three quarters unused.
+function drop_slot<T>(@xs: [T], at: i64, end: i64, count: i64)
+    if at != end
+        xs[at] @ xs[end]
+
+    if count == 0
+        xs @ []
+        return
+    xs[end] @ xs[0]
+
+    if xs.len() >= KEPT && count * 4 <= xs.len()
+        xs @ xs.slice(from: 0, to: count)
+
+## Tests
+
+test "store: at the end, inside, and the list's length"
+    xs: [i64] @= [1, 2]
+    store(@xs, 2, 3)
+    store(@xs, 0, 9)
+    assert xs == [9, 2, 3]
+
+test "drop_slot: the last taken, one inside, and the list emptied"
+    xs: [str] @= ["a", "b", "c"]
+    drop_slot(@xs, at: 0, end: 2, count: 2)
+    assert xs.slice(from: 0, to: 2) == ["c", "b"]
+    assert xs[2] == "c"
+    drop_slot(@xs, at: 1, end: 1, count: 1)
+    assert xs[0] == "c"
+    drop_slot(@xs, at: 0, end: 0, count: 0)
+    assert xs == []

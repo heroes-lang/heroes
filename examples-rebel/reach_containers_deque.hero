@@ -1,0 +1,14 @@
+# Reaches Rebel's `containers/deque`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints the last three lines of five
+# kept in a bounded deque: "c d e".
+
+use <rebel>/containers/deque
+
+function main()
+    tail @= deque.new_bounded(3)
+    lines: [str] @= []
+
+    for line in ["a", "b", "c", "d", "e"]
+        deque.push_back(@tail, @lines, line)
+
+    print(deque.to_list(tail, lines).join(" "))

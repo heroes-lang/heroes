@@ -1,0 +1,178 @@
+# A heap, the priority queue: a plain `[T]` the program owns, kept so that its
+# element at 0 is one nothing goes before by the program's order, an element
+# going in or coming out at a cost of the logarithm of the length. Go's
+# `container/heap`, Rust's `BinaryHeap`, Python's `heapq`.
+#
+# It does not keep every element in order: a structure read in order, with
+# its first and its last, is `containers/ordered`'s; the `n` smallest or
+# largest of a list, and sorted lists merged, are `lists`'s (`lists.min_n_by`,
+# `lists.max_n_by`, `lists.merge_sorted_by`), which need no heap of the
+# program's.
+#
+# A heap is a plain `[T]` whose element at 0 is one that nothing goes before
+# by an order, kept so by the functions below at a cost of the logarithm of
+# its length for each element in or out: no element goes before its parent,
+# the parent of the element at `i` standing at `(i - 1) / 2`. The program
+# owns the list, works on it through `@`, and reads it as any list; a
+# priority queue with the largest first is a heap given the opposite order.
+# Every function that changes a heap takes the order that made it, and with
+# another order its answers mean nothing, though nothing aborts. Of elements
+# equal by the order, a heap promises no order of taking.
+#
+# The language has no way to shorten a list in place, so taking an element
+# out copies the list once to drop its last slot (measured: a loop of pops by
+# `slice` is quadratic, on a plain name and on an `@` parameter alike). The
+# comparisons stay logarithmic; the copy is the cost of `pop` and
+# `remove_at` until the language shortens a list in place.
+#
+# It fails with `not_found`, where an empty heap is asked for an element. A
+# call aborts where an index names no element.
+
+use containers/heap/internal/priority
+use containers/internal/codes
+use containers/internal/samples
+
+## The codes
+
+# The code of an empty heap asked for an element, which `pop` and `peek`
+# answer.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+## The heap
+
+# Arranges `xs` as a heap by `less`, in its own place.
+#
+# - `xs`: the caller's list, any order; it holds the same elements after, as a
+#   heap. Empty or of one element, it is a heap already.
+# - `less`: the order; it is called about twice for each element.
+#
+# It is linear in the length, where pushing the elements one by one is the
+# length times its logarithm. See also `add`, `sort_in_place_by`.
+function heapify<T>(@xs: [T], less: (function(a: T, b: T) -> bool))
+    priority.heapify(xs: @xs, less: less)
+
+# Adds `value` to `heap`, which stays a heap by `less`.
+#
+# - `heap`: the caller's heap, made by `less`; it grows by one element.
+# - `value`: the element to add; one equal to an element held is added too.
+# - `less`: the order the heap was made by; it is called at most about the
+#   logarithm of the length times.
+#
+# See also `pop`, `heapify`.
+function add<T>(@heap: [T], value: T, less: (function(a: T, b: T) -> bool))
+    priority.heap_push(heap: @heap, value: value, less: less)
+
+# Takes out of `heap` and answers its first element, one that nothing in it
+# goes before by `less`.
+#
+# - `heap`: the caller's heap, made by `less`; it shrinks by one element and
+#   stays a heap.
+# - `less`: the order the heap was made by; it is called about twice the
+#   logarithm of the length times.
+#
+# Of several equal first elements, any one. Fails `not_found` where `heap` is
+# empty, and then leaves it so. It copies the list once to drop its last slot
+# (this section's heading says why). See also `peek`, `add`.
+function pop<T>(@heap: [T], less: (function(a: T, b: T) -> bool)) -> T?
+    return priority.heap_pop(heap: @heap, less: less)
+
+# The first element of `heap`, the one `pop` would take, leaving it in.
+#
+# - `heap`: a heap; it needs no order, the first element being at 0.
+#
+# Fails `not_found` where `heap` is empty. It is `first` asked of a heap.
+# See also `pop`.
+function peek<T>(heap: [T]) -> T?
+    return priority.heap_peek(heap: heap)
+
+# Puts the element at `at` of `heap` back in its place after the program
+# changed it, so the list is a heap again.
+#
+# - `heap`: the caller's heap, made by `less`, whose element at `at` alone
+#   was written since.
+# - `at`: the index of the changed element, from 0 to the length less one.
+# - `less`: the order the heap was made by.
+#
+# Aborts where `at` names no element. It costs the logarithm of the length,
+# where `heapify` costs the length. See also `remove_at`.
+function fix<T>(@heap: [T], at: i64, less: (function(a: T, b: T) -> bool))
+    priority.heap_fix(heap: @heap, at: at, less: less)
+
+# Takes out of `heap` and answers its element at `at`, the heap staying one.
+#
+# - `heap`: the caller's heap, made by `less`; it shrinks by one element.
+# - `at`: the index of the element to take, from 0 to the length less one; 0
+#   takes what `pop` takes.
+# - `less`: the order the heap was made by.
+#
+# Aborts where `at` names no element. It copies the list once to drop its last
+# slot. See also `pop`, `fix`.
+function remove_at<T>(@heap: [T], at: i64, less: (function(a: T, b: T) -> bool)) -> T
+    return priority.heap_remove_at(heap: @heap, at: at, less: less)
+
+# Sorts `xs` by `less` in its own place, with no second list.
+#
+# - `xs`: the caller's list, any order; after, the same elements in the order
+#   `less` gives.
+# - `less`: the order; it is called about twice the length times its
+#   logarithm.
+#
+# Elements equal by `less` may change places among themselves, where
+# `lists.sort_by` keeps them and copies the list. An order that contradicts
+# itself gives a list in no promised order and never aborts. See also
+# `lists.sort_by`, `heapify`.
+function sort_in_place_by<T>(@xs: [T], less: (function(a: T, b: T) -> bool))
+    priority.heap_sort_by(xs: @xs, less: less)
+
+## Examples
+
+# Tasks taken by their priority, the smallest number first.
+test "add: tasks queued by priority"
+    queue: [i64] @= []
+
+    for rank in [3, 1, 2]
+        add(heap: @queue, value: rank, less: samples.ascending)
+
+    assert peek(queue).must() == 1
+
+# The smallest element taken out, and the next.
+test "pop: the two smallest, one after the other"
+    queue: [i64] @= [5, 1, 4]
+    heapify(xs: @queue, less: samples.ascending)
+    assert pop(heap: @queue, less: samples.ascending).must() == 1
+    assert pop(heap: @queue, less: samples.ascending).must() == 4
+
+# What a heap would give next, left in it.
+test "peek: the next element of a queue"
+    queue: [i64] @= [7, 2, 9]
+    heapify(xs: @queue, less: samples.ascending)
+    assert peek(queue).must() == 2
+    assert queue.len() == 3
+
+# A list made a heap in one pass; the largest first with the opposite order.
+test "heapify: a list made a heap, the smallest first and then the largest"
+    xs: [i64] @= [5, 3, 8, 1]
+    heapify(xs: @xs, less: samples.ascending)
+    assert xs[0] == 1
+    heapify(xs: @xs, less: samples.descending)
+    assert xs[0] == 8
+
+# A heap repaired after the program changed one of its elements.
+test "fix: the first element made the largest"
+    queue: [i64] @= [1, 3, 2]
+    queue[0] @ 9
+    fix(heap: @queue, at: 0, less: samples.ascending)
+    assert peek(queue).must() == 2
+
+# An element taken out of the middle of a heap.
+test "remove_at: the element at an index taken out"
+    queue: [i64] @= [1, 3, 2]
+    assert remove_at(heap: @queue, at: 1, less: samples.ascending) == 3
+    assert queue == [1, 2]
+
+# A list sorted where it stands.
+test "sort_in_place_by: a list sorted in its own place"
+    xs: [i64] @= [3, 1, 2]
+    sort_in_place_by(xs: @xs, less: samples.ascending)
+    assert xs == [1, 2, 3]

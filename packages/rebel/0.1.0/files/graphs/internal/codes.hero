@@ -1,0 +1,30 @@
+# The codes `graphs` fails with, and the one storage helper its walks share,
+# kept in one place so that every module of the package fails alike.
+
+# The code of a search that found nothing, which the face names as
+# `graphs.NOT_FOUND`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of an input the function does not read, which the face names as
+# `graphs.INVALID`.
+constant INVALID: str
+    "invalid"
+
+# Writes `value` at slot `at` of `xs`, growing it by one where `at` is its
+# length: a list used as a stack, its depth kept apart.
+function store<T>(@xs: [T], at: i64, value: T)
+    if at == xs.len()
+        xs @ xs.push(value)
+    else
+        xs[at] @ value
+
+## Tests
+
+test "store: at the end, inside, and the codes"
+    xs: [i64] @= [1, 2]
+    store(@xs, 2, 3)
+    store(@xs, 0, 9)
+    assert xs == [9, 2, 3]
+    assert NOT_FOUND == "not_found"
+    assert INVALID == "invalid"

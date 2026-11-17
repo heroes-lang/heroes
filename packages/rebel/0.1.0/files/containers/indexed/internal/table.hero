@@ -4,8 +4,8 @@
 # since the map was last rebuilt.
 
 use containers/internal/codes
-use containers/internal/edit
 use containers/internal/samples
+use containers/internal/storage
 
 # The counts of one such map.
 record Table
@@ -60,8 +60,8 @@ function put<K, V>(@table: Table, @key_list: [K], @value_list: [V], @lookup: {K:
         value_list[held] @ value
         return held
     at = table.count
-    edit.store(@key_list, at, key)
-    edit.store(@value_list, at, value)
+    storage.store(@key_list, at, key)
+    storage.store(@value_list, at, value)
 
     if lookup[key].default(0) == GONE
         table.dead @ table.dead - 1
@@ -84,8 +84,8 @@ function swap_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], @
     key = key_list[at]
     end = table.count - 1
     table.count @ end
-    edit.drop_slot(@key_list, at: at, end: end, count: end)
-    edit.drop_slot(@value_list, at: at, end: end, count: end)
+    storage.drop_slot(@key_list, at: at, end: end, count: end)
+    storage.drop_slot(@value_list, at: at, end: end, count: end)
 
     if at != end
         lookup[key_list[at]] @ at
@@ -102,8 +102,8 @@ function shift_remove_at<K, V>(@table: Table, @key_list: [K], @value_list: [V], 
         lookup[key_list[place]] @ place
 
     table.count @ end
-    edit.drop_slot(@key_list, at: end, end: end, count: end)
-    edit.drop_slot(@value_list, at: end, end: end, count: end)
+    storage.drop_slot(@key_list, at: end, end: end, count: end)
+    storage.drop_slot(@value_list, at: end, end: end, count: end)
     forget(@table, key_list, @lookup, key)
 
 # Moves the entry at `from` to `to`, the ones between moving a place.
@@ -290,20 +290,20 @@ test "put and every removal and move: four thousand random operations against li
             last = model.len() - 1
             model[place] @ model[last]
             model_values[place] @ model_values[last]
-            model @ edit.model_remove(model, last)
-            model_values @ edit.model_remove(model_values, last)
+            model @ samples.model_remove(model, last)
+            model_values @ samples.model_remove(model_values, last)
         else if choice == 3 && place >= 0
             shift_remove_at(@table, @held, @values, @lookup, place)
-            model @ edit.model_remove(model, place)
-            model_values @ edit.model_remove(model_values, place)
+            model @ samples.model_remove(model, place)
+            model_values @ samples.model_remove(model_values, place)
         else if choice == 4 && model.len() > 0
             from = samples.roll(@dice, model.len())
             to = samples.roll(@dice, model.len())
             move(@held, @values, @lookup, from: from, to: to)
             moved_key = model[from]
             moved_value = model_values[from]
-            model @ edit.model_insert(edit.model_remove(model, from), at: to, value: moved_key)
-            model_values @ edit.model_insert(edit.model_remove(model_values, from), at: to, value: moved_value)
+            model @ samples.model_insert(samples.model_remove(model, from), at: to, value: moved_key)
+            model_values @ samples.model_insert(samples.model_remove(model_values, from), at: to, value: moved_value)
         else if model.len() > 0
             at = samples.roll(@dice, model.len())
             with = samples.roll(@dice, model.len())

@@ -185,6 +185,59 @@ notes did not read them from a clock.
     plotting), terminal UI frameworks for now, validation and mapping by
     reflection, cloud SDKs beyond S3, AI API clients, syntax highlighting,
     git.
+29. **The system's cryptography leaves a gap on macOS, kept in 0.1, and a
+    sitting follows** (2026-11-17). Measured that day by `crypto/seal`'s and
+    `crypto/keypairs`' probes: macOS offers no AES-GCM, ChaCha20-Poly1305,
+    Ed25519 or X25519 through a public C API (CryptoKit is Swift's alone), and
+    Windows' CNG has no Ed25519. Those answer `unsupported` there, said in the
+    ledgers. The author's choice among three: the gap now and a sitting after,
+    on writing those primitives in Heroes under a constant-time discipline the
+    tools check, as Go writes its own; refused were loading OpenSSL where a
+    Mac happens to have it (a premise about the machine) and the gap with no
+    sitting.
+
+    **Measured the same evening, on the author's question** (*have we ever
+    tried calling Swift from Heroes?*: never, the repository held one line of
+    design.md naming Swift's `@_cdecl` as part of the C ABI): three functions
+    of Swift over CryptoKit, exported by `@_cdecl`, built by `swiftc` 6.4.2 as
+    a static library in 2 s, were called from C (`-Werror`, the linker taking
+    CryptoKit, Foundation and the system's Swift runtime on its own) and from
+    a Heroes program through an `extern` group with `link` and `--library`,
+    plain and under `--sanitize`: the Ed25519 public key of RFC 8032's first
+    vector equal, a ChaCha20-Poly1305 seal opened back to the same bytes, a
+    bit changed refused (rebel-scratch/swiftprobe/). So CryptoKit is
+    reachable; what it would cost is the toolchain's: the platform layer
+    compiles C alone today, and a member written in Swift needs `swiftc` on
+    every Mac that builds a program using it, a change of the compiler's
+    surface the sitting decides beside the constant-time route.
+30. **`containers` split into subpackages** (2026-11-17, the author's question
+    *is it thought out, or a bit in sets, a bit in maps, a bit in lists?*,
+    answered by reading the four faces): `lists`, `maps` and `sets` work on
+    the language's own shapes and stay; `containers` had become one face of
+    122 functions whose prefixes (`ordered_`, `deque_`, `bits_`, `cache_`,
+    `indexed_`) betrayed seven structures in one place, the graphs were
+    algorithms and no container, and the heap stood in `lists`. Now
+    `containers/ordered`, `/deque`, `/bits`, `/cache`, `/indexed`, `/heap`
+    (moved from `lists`) and a package `graphs`, plain names, the same code.
+31. **Before `main`, a review of coherence and style of the whole library**
+    (2026-11-17, the author: *before going to main, a check of coherence and
+    style: redundancies, things not well organised*). It is a step of its own,
+    after the last package and before the final gate, and it is done in two
+    halves:
+    - **measured by tools first**, each an instrument of the net rather than a
+      reading: the same capability `done` in two ledgers; two public functions
+      of two packages with the same name and the same signature; a face whose
+      functions share a prefix (the smell `containers` showed); a face past a
+      size the review sets; a name the grammar of § A3 does not allow; a code
+      outside § A4's list; a package whose `use` lines break the layers; a
+      helper written twice in private modules (the same body in two packages,
+      as `cbor`'s and `msgpack`'s floats);
+    - **then read**, one reader per layer who has not written it, opening
+      each package as a stranger would: is each capability where a programmer
+      would look for it, does each package say what it does not do and where
+      that lives, do two packages answer the same question two ways. Every
+      finding is fixed or written down with its reason before the gate, and
+      the list of what moved is the review's record.
 
 ## Decided on the fly by the coordinator, for the author to turn
 

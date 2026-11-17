@@ -1,0 +1,673 @@
+# A set of bits of a fixed size: bits set, cleared and turned over one at a
+# time or a run at a time, counted, combined with another set, scanned for
+# the next set or clear one, and read and written as places, bytes, words or
+# text. Java's `BitSet`, .NET's `BitArray`, Zig's `DynamicBitSet`.
+#
+# It does not do arithmetic: the bits of one integer are `math`'s
+# (`math.count_ones`), and a number of any size is `big`'s. A set of values
+# that are not small numbers is `sets`'s.
+#
+# A `Bits` is a value, copied as any value is, its words held 64 to an `i64`
+# with the bits past its size clear, so `==` is true of two sets of one size
+# holding the same bits.
+#
+# It fails with `not_found`, where a scan finds no bit, and `invalid`, where a
+# text is not bits. A call aborts where a bit or a range lies outside the set,
+# or a size or a shift is below zero.
+
+use containers/bits/internal/bitwords
+use containers/internal/codes
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of a text that is not bits, which `parse` answers.
+constant INVALID: str
+    codes.INVALID
+
+## The set of bits
+
+# A set of bits of a fixed size, numbered from 0, held 64 to a word.
+#
+# Made by `new`, `from_indices`, `from_bytes`,
+# `from_words` or `parse`, and kept by every function with its bits
+# past the size clear, so `==` is true of two sets of one size holding the
+# same bits.
+record Bits
+    # The words, held by the package itself.
+    words: bitwords.Words
+
+# A set of `count` bits, every one clear.
+#
+# - `count`: how many bits, from 0.
+#
+# Aborts where `count` is below zero. See also `with_size`,
+# `parse`.
+function new(count: i64) -> Bits
+    return Bits(words: bitwords.clear_set(count))
+
+# How many bits a set holds, set or clear.
+#
+# - `bits`: the set.
+#
+# See also `count_ones`.
+function size(bits: Bits) -> i64
+    return bits.words.size
+
+# Whether bit `at` is set.
+#
+# - `bits`: the set.
+# - `at`: the bit, from 0 to the size less one.
+#
+# Aborts where `at` is outside the set. See also `set_bit`.
+function is_set(bits: Bits, at: i64) -> bool
+    bitwords.require_bit(bits.words, at)
+    return bitwords.is_set(bits.words, at)
+
+# Sets bit `at`.
+#
+# - `bits`: the set; one bit changes, or none where it was set.
+# - `at`: the bit, from 0 to the size less one.
+#
+# Aborts where `at` is outside the set. See also `clear_bit`, `put_bit`.
+function set_bit(@bits: Bits, at: i64)
+    bitwords.require_bit(bits.words, at)
+    bitwords.change(@bits.words, at: at / 64, mask: 1 << at % 64, how: 0)
+
+# Clears bit `at`.
+#
+# - `bits`: the set; one bit changes, or none where it was clear.
+# - `at`: the bit, from 0 to the size less one.
+#
+# Aborts where `at` is outside the set. See also `set_bit`.
+function clear_bit(@bits: Bits, at: i64)
+    bitwords.require_bit(bits.words, at)
+    bitwords.change(@bits.words, at: at / 64, mask: 1 << at % 64, how: 1)
+
+# Turns bit `at` over.
+#
+# - `bits`: the set; one bit changes.
+# - `at`: the bit, from 0 to the size less one.
+#
+# Aborts where `at` is outside the set. See also `flip_range`.
+function flip_bit(@bits: Bits, at: i64)
+    bitwords.require_bit(bits.words, at)
+    bitwords.change(@bits.words, at: at / 64, mask: 1 << at % 64, how: 2)
+
+# Sets bit `at` where `value` is true and clears it where false.
+#
+# - `bits`: the set.
+# - `at`: the bit, from 0 to the size less one.
+# - `value`: what the bit becomes.
+#
+# Aborts where `at` is outside the set. See also `set_bit`, `clear_bit`.
+function put_bit(@bits: Bits, at: i64, value: bool)
+    if value
+        set_bit(@bits, at)
+    else
+        clear_bit(@bits, at)
+
+# Sets the bits from `from` up to `to`, `to` left out.
+#
+# - `bits`: the set.
+# - `from`: the first bit, from 0.
+# - `to`: the bit after the last, at most the size; equal to `from` it sets
+#   none.
+#
+# A word at a time. Aborts where `from` is below zero, `to` past the size or
+# `from` after `to`. See also `clear_range`.
+function set_range(@bits: Bits, from: i64, to: i64)
+    bitwords.require_range(bits.words, from: from, to: to)
+    bitwords.change_range(@bits.words, from: from, to: to, how: 0)
+
+# Clears the bits from `from` up to `to`, `to` left out.
+#
+# - `bits`: the set.
+# - `from`: the first bit, from 0.
+# - `to`: the bit after the last, at most the size.
+#
+# Aborts where `from` is below zero, `to` past the size or `from` after `to`.
+# See also `set_range`.
+function clear_range(@bits: Bits, from: i64, to: i64)
+    bitwords.require_range(bits.words, from: from, to: to)
+    bitwords.change_range(@bits.words, from: from, to: to, how: 1)
+
+# Turns over the bits from `from` up to `to`, `to` left out.
+#
+# - `bits`: the set.
+# - `from`: the first bit, from 0.
+# - `to`: the bit after the last, at most the size.
+#
+# Aborts where `from` is below zero, `to` past the size or `from` after `to`.
+# See also `flip_bit`.
+function flip_range(@bits: Bits, from: i64, to: i64)
+    bitwords.require_range(bits.words, from: from, to: to)
+    bitwords.change_range(@bits.words, from: from, to: to, how: 2)
+
+# How many bits of a set are set.
+#
+# - `bits`: the set.
+#
+# A word at a time. See also `size`, `to_indices`.
+function count_ones(bits: Bits) -> i64
+    return bitwords.count_ones(bits.words)
+
+# The bits set in both sets.
+#
+# - `bits`: the first set.
+# - `other`: the second set; a shorter one reads as clear past its size.
+#
+# Of the larger of the two sizes. See also `or`, `and_not`.
+function and(bits: Bits, other: Bits) -> Bits
+    return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 0))
+
+# The bits set in either set.
+#
+# - `bits`: the first set.
+# - `other`: the second set; a shorter one reads as clear past its size.
+#
+# Of the larger of the two sizes. See also `and`, `xor`.
+function or(bits: Bits, other: Bits) -> Bits
+    return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 1))
+
+# The bits set in one set and not the other.
+#
+# - `bits`: the first set.
+# - `other`: the second set; a shorter one reads as clear past its size.
+#
+# Of the larger of the two sizes. See also `or`.
+function xor(bits: Bits, other: Bits) -> Bits
+    return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 2))
+
+# The bits set in `bits` and clear in `other`.
+#
+# - `bits`: the set to keep bits of.
+# - `other`: the bits to clear; a shorter one reads as clear past its size.
+#
+# Of the larger of the two sizes. See also `and`, `not`.
+function and_not(bits: Bits, other: Bits) -> Bits
+    return Bits(words: bitwords.combine(left: bits.words, right: other.words, how: 3))
+
+# Every bit of a set turned over, within its size.
+#
+# - `bits`: the set.
+#
+# Of the same size; the bits past it stay clear. See also `and_not`.
+function not(bits: Bits) -> Bits
+    turned @= bits.words
+    bitwords.change_range(@turned, from: 0, to: turned.size, how: 2)
+    return Bits(words: turned)
+
+# Whether no bit is set in both sets.
+#
+# - `bits`: the first set.
+# - `other`: the second set, of any size.
+#
+# True where either is empty. See also `and`, `is_subset`.
+function is_disjoint(bits: Bits, other: Bits) -> bool
+    return bitwords.count_ones(bitwords.combine(left: bits.words, right: other.words, how: 0)) == 0
+
+# Whether every bit set in `bits` is set in `other`.
+#
+# - `bits`: the set asked about.
+# - `other`: the set it may lie within, of any size: a bit of `bits` past it
+#   is not within.
+#
+# True where `bits` has no bit set. See also `is_disjoint`.
+function is_subset(bits: Bits, other: Bits) -> bool
+    return bitwords.count_ones(bitwords.combine(left: bits.words, right: other.words, how: 3)) == 0
+
+# Whether no bit of a set is set.
+#
+# - `bits`: the set.
+#
+# True for a set of size 0. See also `is_full`, `count_ones`.
+function is_clear(bits: Bits) -> bool
+    for word in bits.words.words
+        if word != 0
+            return false
+
+    return true
+
+# Whether every bit of a set is set.
+#
+# - `bits`: the set.
+#
+# True for a set of size 0. See also `is_clear`.
+function is_full(bits: Bits) -> bool
+    return bitwords.next_of(bits.words, from: 0, clear: true) == bitwords.NONE
+
+# The first set bit at or after `from`.
+#
+# - `bits`: the set.
+# - `from`: where to start; below zero starts at 0.
+#
+# Fails `not_found` where no bit at or after `from` is set, `from` at or past
+# the size included. `next_set(bits, 0)` is the first set bit. See also
+# `previous_set`, `to_indices`.
+function next_set(bits: Bits, from: i64) -> i64?
+    return codes.answer(
+        at: bitwords.next_of(bits.words, from: from, clear: false),
+        msg: f"no bit at or after {from} is set in a set of {bits.words.size}"
+    )
+
+# The first clear bit at or after `from`.
+#
+# - `bits`: the set.
+# - `from`: where to start; below zero starts at 0.
+#
+# Fails `not_found` where no bit at or after `from` is clear within the size.
+# See also `next_set`.
+function next_clear(bits: Bits, from: i64) -> i64?
+    return codes.answer(
+        at: bitwords.next_of(bits.words, from: from, clear: true),
+        msg: f"no bit at or after {from} is clear in a set of {bits.words.size}"
+    )
+
+# The last set bit at or before `from`.
+#
+# - `bits`: the set.
+# - `from`: where to start; at or past the size starts at the last bit.
+#
+# Fails `not_found` where no bit at or before `from` is set, `from` below
+# zero included. See also `next_set`.
+function previous_set(bits: Bits, from: i64) -> i64?
+    return codes.answer(
+        at: bitwords.previous_of(bits.words, from: from, clear: false),
+        msg: f"no bit at or before {from} is set in a set of {bits.words.size}"
+    )
+
+# The last clear bit at or before `from`.
+#
+# - `bits`: the set.
+# - `from`: where to start; at or past the size starts at the last bit.
+#
+# Fails `not_found` where no bit at or before `from` is clear. See also
+# `previous_set`.
+function previous_clear(bits: Bits, from: i64) -> i64?
+    return codes.answer(
+        at: bitwords.previous_of(bits.words, from: from, clear: true),
+        msg: f"no bit at or before {from} is clear in a set of {bits.words.size}"
+    )
+
+# The set bits of a set, from the smallest.
+#
+# - `bits`: the set.
+#
+# Empty where none is set. A word at a time, then one step a bit set. See
+# also `from_indices`.
+function to_indices(bits: Bits) -> [i64]
+    return bitwords.to_indices(bits.words)
+
+# A set of `count` bits with the bits of `indices` set.
+#
+# - `count`: how many bits, from 0.
+# - `indices`: the bits to set, in any order, each from 0 to `count` less
+#   one; one named twice is set once.
+#
+# Aborts where `count` is below zero or an index is outside the set. See also
+# `to_indices`.
+function from_indices(count: i64, indices: [i64]) -> Bits
+    made @= new(count)
+
+    for at in indices
+        set_bit(@made, at)
+
+    return made
+
+# The bits of a set as bytes, bit `i` in byte `i / 8` at the place of value
+# `2` to the power `i % 8`: the order of Java's `BitSet.toByteArray`.
+#
+# - `bits`: the set.
+#
+# The size divided by 8, rounded up, bytes, the last one's bits past the size
+# clear; empty for size 0. See also `from_bytes`.
+function to_bytes(bits: Bits) -> [u8]
+    data: [u8] @= []
+    count @= bits.words.size / 8
+
+    if bits.words.size % 8 > 0
+        count @ count + 1
+
+    for at in range(from: 0, to: count)
+        byte = bits.words.words[at / 8] >> at % 8 * 8 & 0xff
+        data @ data.push(to_u8(byte).must())
+
+    return data
+
+# The set of `data.len() * 8` bits whose bytes are `data`, in the order of
+# `to_bytes`.
+#
+# - `data`: the bytes; empty gives a set of size 0.
+#
+# See also `to_bytes`.
+function from_bytes(data: [u8]) -> Bits
+    made @= bitwords.clear_set(data.len() * 8)
+
+    for at in range(from: 0, to: data.len())
+        byte = to_i64(data[at]).must()
+        bitwords.change(@made, at: at / 8, mask: byte << at % 8 * 8, how: 0)
+
+    return Bits(words: made)
+
+# The words of a set, bit `i` at bit `i % 64` of word `i / 64`, the sign bit
+# being bit 63: Java's `BitSet.toLongArray` order.
+#
+# - `bits`: the set.
+#
+# The size divided by 64, rounded up, words, the bits past the size clear.
+# See also `from_words`.
+function to_words(bits: Bits) -> [i64]
+    return bits.words.words
+
+# A set of `count` bits read from `words` in the order of `to_words`.
+#
+# - `words`: the words; fewer than `count` needs read as clear past them,
+#   and their bits past `count` are dropped.
+# - `count`: how many bits, from 0.
+#
+# Aborts where `count` is below zero. See also `to_words`.
+function from_words(words: [i64], count: i64) -> Bits
+    made @= bitwords.clear_set(count)
+
+    for at in range(from: 0, to: made.words.len())
+        if at < words.len()
+            made.words[at] @ words[at]
+
+    bitwords.clip(@made)
+    return Bits(words: made)
+
+# A set written as one character a bit, `0` or `1`, bit 0 first.
+#
+# - `bits`: the set.
+#
+# Empty for size 0. See also `parse`.
+function format(bits: Bits) -> str
+    written: [str] @= []
+
+    for at in range(from: 0, to: bits.words.size)
+        if bitwords.is_set(bits.words, at)
+            written @ written.push("1")
+        else
+            written @ written.push("0")
+
+    return written.join("")
+
+# The set `text` writes, one character a bit, `0` or `1`, bit 0 first.
+#
+# - `text`: the characters; empty gives a set of size 0.
+#
+# Fails `invalid` at the first character that is neither, naming it and its
+# byte index. See also `format`.
+function parse(text: str) -> Bits?
+    read @= bitwords.clear_set(text.len())
+    at @= 0
+
+    for c in text.chars()
+        if c == "1"
+            bitwords.change(@read, at: at / 64, mask: 1 << at % 64, how: 0)
+        else if c != "0"
+            return fail(code: INVALID, msg: f"\"{c}\" at byte {at} of the text is neither 0 nor 1")
+        at @ at + 1
+
+    return ok(Bits(words: read))
+
+# A copy of a set made `count` bits long: bits added are clear, bits past
+# the new size dropped.
+#
+# - `bits`: the set.
+# - `count`: the new size, from 0.
+#
+# Aborts where `count` is below zero. See also `new`.
+function with_size(bits: Bits, count: i64) -> Bits
+    return Bits(words: bitwords.moved(bits.words, start: 0, size: count))
+
+# The bits from `from` up to `to`, `to` left out, as a set of their own whose
+# bit 0 is bit `from`.
+#
+# - `bits`: the set.
+# - `from`: the first bit, from 0.
+# - `to`: the bit after the last, at most the size.
+#
+# Of size `to - from`. Aborts where `from` is below zero, `to` past the size
+# or `from` after `to`. See also `with_size`.
+function part(bits: Bits, from: i64, to: i64) -> Bits
+    bitwords.require_range(bits.words, from: from, to: to)
+    return Bits(words: bitwords.moved(bits.words, start: from, size: to - from))
+
+# A copy of a set with each bit `i` moved to `i + by`, bits moved past the
+# size dropped and the first `by` bits clear.
+#
+# - `bits`: the set.
+# - `by`: how many places, from 0; at or past the size it clears every bit.
+#
+# Of the same size. Aborts where `by` is below zero. See also
+# `shift_down`.
+function shift_up(bits: Bits, by: i64) -> Bits
+    if by < 0
+        codes.abort_with(f"a shift moves bits from 0 places, and {by} was asked")
+
+    if by >= bits.words.size
+        return new(bits.words.size)
+    return Bits(words: bitwords.moved(bits.words, start: -by, size: bits.words.size))
+
+# A copy of a set with each bit `i` moved to `i - by`, the first `by` bits
+# dropped and the last `by` bits clear.
+#
+# - `bits`: the set.
+# - `by`: how many places, from 0; at or past the size it clears every bit.
+#
+# Of the same size. Aborts where `by` is below zero. See also
+# `shift_up`.
+function shift_down(bits: Bits, by: i64) -> Bits
+    if by < 0
+        codes.abort_with(f"a shift moves bits from 0 places, and {by} was asked")
+
+    if by >= bits.words.size
+        return new(bits.words.size)
+    return Bits(words: bitwords.moved(bits.words, start: by, size: bits.words.size))
+
+## Examples
+
+# A set of flags, all clear.
+test "new: eight clear flags"
+    flags = new(8)
+    assert count_ones(flags) == 0
+    assert size(flags) == 8
+
+# The size of a set, whatever is set.
+test "size: a hundred bits"
+    assert size(new(100)) == 100
+
+# Whether one bit is set.
+test "is_set: a seat taken and one free"
+    seats @= new(10)
+    set_bit(@seats, 3)
+    assert is_set(seats, 3)
+    assert !is_set(seats, 4)
+
+# A bit set.
+test "set_bit: the seventh day marked"
+    days @= new(31)
+    set_bit(@days, 6)
+    assert to_indices(days) == [6]
+
+# A bit cleared.
+test "clear_bit: a seat given back"
+    seats @= parse("111").must()
+    clear_bit(@seats, 1)
+    assert format(seats) == "101"
+
+# A bit turned over.
+test "flip_bit: a switch turned twice"
+    switches @= new(2)
+    flip_bit(@switches, 0)
+    assert is_set(switches, 0)
+    flip_bit(@switches, 0)
+    assert !is_set(switches, 0)
+
+# A bit set or cleared by a boolean.
+test "put_bit: a flag written from a condition"
+    flags @= new(4)
+    put_bit(@flags, 2, true)
+    put_bit(@flags, 3, false)
+    assert format(flags) == "0010"
+
+# A run of bits set at once.
+test "set_range: the working hours of a day"
+    hours @= new(24)
+    set_range(@hours, from: 9, to: 17)
+    assert count_ones(hours) == 8
+
+# A run of bits cleared at once.
+test "clear_range: a lunch hour taken out"
+    hours @= new(24)
+    set_range(@hours, from: 9, to: 17)
+    clear_range(@hours, from: 12, to: 13)
+    assert count_ones(hours) == 7
+
+# A run of bits turned over.
+test "flip_range: the first four bits turned over"
+    bits @= parse("101100").must()
+    flip_range(@bits, from: 0, to: 4)
+    assert format(bits) == "010000"
+
+# How many bits are set.
+test "count_ones: the seats taken"
+    assert count_ones(parse("1101").must()) == 3
+
+# The bits set in both.
+test "and: the days both are free"
+    ann = parse("1100").must()
+    bob = parse("0110").must()
+    assert format(and(bits: ann, other: bob)) == "0100"
+
+# The bits set in either.
+test "or: the days either is free"
+    ann = parse("1100").must()
+    bob = parse("0110").must()
+    assert format(or(bits: ann, other: bob)) == "1110"
+
+# The bits set in exactly one.
+test "xor: the days only one is free"
+    ann = parse("1100").must()
+    bob = parse("0110").must()
+    assert format(xor(bits: ann, other: bob)) == "1010"
+
+# The bits of one with those of another taken away.
+test "and_not: the days ann is free and bob is not"
+    ann = parse("1100").must()
+    bob = parse("0110").must()
+    assert format(and_not(bits: ann, other: bob)) == "1000"
+
+# Every bit turned over.
+test "not: the busy days from the free ones"
+    assert format(not(parse("1100").must())) == "0011"
+
+# Whether two sets share no bit.
+test "is_disjoint: two shifts that do not overlap"
+    morning = parse("1100").must()
+    evening = parse("0011").must()
+    assert is_disjoint(bits: morning, other: evening)
+
+# Whether one set lies within another.
+test "is_subset: the rights asked within the rights held"
+    asked = parse("0100").must()
+    held = parse("0110").must()
+    assert is_subset(bits: asked, other: held)
+    assert !is_subset(bits: held, other: asked)
+
+# Whether no bit is set.
+test "is_clear: a new set, then one bit set"
+    flags @= new(3)
+    assert is_clear(flags)
+    set_bit(@flags, 0)
+    assert !is_clear(flags)
+
+# Whether every bit is set.
+test "is_full: a full house"
+    assert is_full(parse("111").must())
+    assert !is_full(parse("101").must())
+
+# The first set bit, then the one after it.
+test "next_set: the first two seats taken"
+    seats = parse("0010010").must()
+    assert next_set(seats, 0).must() == 2
+    assert next_set(seats, 3).must() == 5
+
+# The first clear bit: a free slot.
+test "next_clear: the first free slot"
+    slots = parse("1101").must()
+    assert next_clear(slots, 0).must() == 2
+
+# The last set bit at or before a place.
+test "previous_set: the last seat taken before the aisle"
+    seats = parse("0110000").must()
+    assert previous_set(seats, 5).must() == 2
+
+# The last clear bit at or before a place.
+test "previous_clear: the last free slot from the end"
+    slots = parse("0011").must()
+    assert previous_clear(slots, 99).must() == 1
+
+# The places of the set bits.
+test "to_indices: the seats taken by number"
+    assert to_indices(parse("1001").must()) == [0, 3]
+
+# A set made from the places of its set bits.
+test "from_indices: a set of the primes below ten"
+    primes = from_indices(count: 10, indices: [2, 3, 5, 7])
+    assert format(primes) == "0011010100"
+
+# A set written as bytes, bit 0 the lowest bit of the first byte.
+test "to_bytes: ten bits in two bytes"
+    assert to_bytes(parse("1000000011").must()) == [1, 3]
+
+# A set read from bytes.
+test "from_bytes: a byte of value 5"
+    assert format(from_bytes([5])) == "10100000"
+
+# A set written as words of 64 bits.
+test "to_words: bit 63 is the sign of the first word"
+    flags @= new(65)
+    set_bit(@flags, 63)
+    set_bit(@flags, 64)
+    assert to_words(flags) == [-9_223_372_036_854_775_808, 1]
+
+# A set read from words.
+test "from_words: three bits of one word"
+    assert format(from_words(words: [6], count: 3)) == "011"
+
+# A set written as text.
+test "format: a set as zeros and ones"
+    assert format(from_indices(count: 4, indices: [1])) == "0100"
+
+# A set read from text, and a text that is not one.
+test "parse: zeros and ones, and a character that is neither"
+    assert count_ones(parse("0110").must()) == 2
+
+    match parse("01x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+# A set made longer, then shorter.
+test "with_size: a set grown and cut"
+    flags = parse("11").must()
+    assert format(with_size(flags, 4)) == "1100"
+    assert format(with_size(flags, 1)) == "1"
+
+# A part of a set as a set of its own.
+test "part: the middle four bits"
+    assert format(part(parse("00110100").must(), from: 2, to: 6)) == "1101"
+
+# Every bit moved up two places.
+test "shift_up: a pattern moved up two places"
+    assert format(shift_up(parse("1100").must(), 2)) == "0011"
+
+# Every bit moved down one place.
+test "shift_down: a pattern moved down one place"
+    assert format(shift_down(parse("0110").must(), 1)) == "1100"

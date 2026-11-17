@@ -1,0 +1,338 @@
+# The orders and the paths of a graph: a topological order, all at once or
+# handed out in stages, the cycle that forbids one, the strongly connected
+# components, the nodes a node reaches, and the paths of least weight.
+# Python's `graphlib`, with what a package manager and a build need beside it.
+#
+# A graph is a `{K: [K]}`: each key a node, and its list the nodes it points
+# to, which for an order are the nodes it depends on, as Python's
+# `TopologicalSorter` takes a node's predecessors. A node met only in a list
+# is a node pointing to none; a node named twice in one list points to it
+# once more, which changes no answer here. A weighted graph is a
+# `{K: {K: f64}}`, each node's map giving the weight of the edge to each node
+# it points to. Every function walks with a list for its stack, so a deep
+# graph never runs out of stack, and costs the nodes and edges it reads.
+#
+# It holds no graph of its own: the program's maps are the graph, and a
+# structure that changes is the program's to keep.
+#
+# It fails with `not_found`, where a node is not in the graph or a path or a
+# cycle is not there, and `invalid`, where a graph has a cycle an order
+# cannot pass, a weight is below zero, infinite or not a number, or a node
+# handed back was not handed out.
+
+use graphs/internal/codes
+use graphs/internal/layout
+use graphs/internal/paths
+use graphs/internal/stages
+use graphs/internal/walks
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of an input the function does not read: a graph with a cycle,
+# where `topological_order` and `new_sorter` answer it; a weight below zero,
+# infinite or not a number, where `shortest_path` and `distances_from` do; a
+# node handed back that was not handed out, where `done` does.
+constant INVALID: str
+    codes.INVALID
+
+## Orders, components and paths
+
+# A graph is a `{K: [K]}`: each key a node, and its list the nodes it points
+# to, which for an order are the nodes it depends on. A node met only in a
+# list is a node pointing to none; a node named twice in one list points to
+# it once more, which changes no answer here. A weighted graph is a
+# `{K: {K: f64}}`, each node's map giving the weight of the edge to each node
+# it points to. Every function walks with a list for its stack, so a deep
+# graph never runs out of stack, and costs the nodes and edges it reads.
+
+# Every node of `graph` once: each key, followed by the nodes of its list not
+# met before, in the order the graph gives them.
+#
+# - `graph`: the graph.
+#
+# The numbering `new_sorter` and its functions use: node `i` of a sorter is
+# element `i` of this list. Empty for an empty graph. See also `new_sorter`.
+function nodes_of<K>(graph: {K: [K]}) -> [K]
+    nodes: [K] @= []
+    ids: {K: i64} @= {}
+    layout.number(graph, @nodes, @ids)
+    return nodes
+
+# Every node of `graph`, each after every node it points to: a node's
+# dependencies before it.
+#
+# - `graph`: the graph.
+#
+# Where several orders hold, the one Python's
+# `graphlib.TopologicalSorter.static_order` gives for the same dictionary:
+# the nodes ready together come together, in the order they became ready.
+# Fails `invalid` where the graph has a cycle, saying how many nodes it
+# holds; `cycle_of` names them. See also `cycle_of`, `new_sorter`.
+function topological_order<K>(graph: {K: [K]}) -> [K]?
+    nodes: [K] @= []
+    numbered = layout.numbered(graph, @nodes)
+    order = walks.staged_order(numbered)
+
+    if order.len() < numbered.count
+        loop = walks.cycle(numbered)
+        return fail(
+            code: INVALID,
+            msg: f"the graph has a cycle of {loop.len() - 1} nodes, so no order puts every node after the nodes it points to; `cycle_of` names them"
+        )
+    return ok(layout.named(nodes, order))
+
+# A cycle of `graph`: nodes each pointed to by the one after it, the first
+# node standing at the end again.
+#
+# - `graph`: the graph.
+#
+# The cycle Python's `graphlib` names in its `CycleError` for the same
+# dictionary; a node that points to itself is a cycle of two entries. Fails
+# `not_found` where the graph has none. See also `topological_order`.
+function cycle_of<K>(graph: {K: [K]}) -> [K]?
+    nodes: [K] @= []
+    numbered = layout.numbered(graph, @nodes)
+    loop = walks.cycle(numbered)
+
+    if loop.len() == 0
+        return fail(code: NOT_FOUND, msg: f"the graph's {numbered.count} nodes hold no cycle")
+    return ok(layout.named(nodes, loop))
+
+# The strongly connected components of `graph`: the largest groups of nodes
+# each reaching every other one of its group.
+#
+# - `graph`: the graph.
+#
+# Every node stands in exactly one component, alone where it is on no cycle.
+# A component comes after every component it points into, so a graph with no
+# cycle gives its nodes one to a component in an order `topological_order`
+# could give; within a component the nodes stand in the order of `nodes_of`.
+# See also `topological_order`.
+function strong_components<K>(graph: {K: [K]}) -> [[K]]
+    nodes: [K] @= []
+    numbered = layout.numbered(graph, @nodes)
+    found: [[K]] @= []
+
+    for component in walks.components(numbered)
+        found @ found.push(layout.named(nodes, component))
+
+    return found
+
+# Every node `from` reaches by the edges of `graph`, `from` first, then the
+# nearer before the farther.
+#
+# - `graph`: the graph.
+# - `from`: the node to start at.
+#
+# Fails `not_found` where `from` is not a node of `graph`. See also
+# `shortest_path`.
+function reachable_from<K>(graph: {K: [K]}, from: K) -> [K]?
+    nodes: [K] @= []
+    ids: {K: i64} @= {}
+    layout.number(graph, @nodes, @ids)
+
+    match ids[from]
+        .ok start => return ok(layout.named(nodes, walks.reached(layout.links(graph, nodes, ids), start)))
+        .err _ => return fail(code: NOT_FOUND, msg: f"the node to start at is none of the graph's {nodes.len()} nodes")
+
+# The nodes of a path from `from` to `to` of the least total weight, both ends
+# included.
+#
+# - `graph`: the weighted graph; every weight is finite and zero or more.
+# - `from`: the node to start at.
+# - `to`: the node to reach; equal to `from` it gives `[from]`.
+#
+# Of several paths of the least weight, the one Dijkstra's algorithm finds
+# first, each node settled in the order of its distance. Fails `not_found`
+# where `from` or `to` is not a node or `to` cannot be reached, and `invalid`
+# where a weight is below zero, infinite or not a number. It costs the edges
+# times the logarithm of the nodes. See also `distances_from`.
+function shortest_path<K>(graph: {K: {K: f64}}, from: K, to: K) -> [K]?
+    nodes: [K] @= []
+    ids: {K: i64} @= {}
+    paths.number(graph, @nodes, @ids)
+    weighted = paths.weigh(graph, nodes, ids)?
+    start = ids[from].default(-1)
+    goal = ids[to].default(-1)
+
+    if start == -1 || goal == -1
+        return fail(code: NOT_FOUND, msg: f"an end of the path is none of the graph's {nodes.len()} nodes")
+    found = paths.settle(weighted, from: start, goal: goal)
+
+    if found.settled[goal] == 0
+        return fail(code: NOT_FOUND, msg: "no path leads from the first node to the second")
+    return ok(layout.named(nodes, paths.path_to(found, goal)))
+
+# The least total weight of a path from `from` to every node it reaches.
+#
+# - `graph`: the weighted graph; every weight is finite and zero or more.
+# - `from`: the node to start at, at distance 0.
+#
+# The nodes in the order of their distance. Fails `not_found` where `from` is
+# not a node, and `invalid` where a weight is below zero, infinite or not a
+# number. See also `shortest_path`.
+function distances_from<K>(graph: {K: {K: f64}}, from: K) -> {K: f64}?
+    nodes: [K] @= []
+    ids: {K: i64} @= {}
+    paths.number(graph, @nodes, @ids)
+    weighted = paths.weigh(graph, nodes, ids)?
+    start = ids[from].default(-1)
+
+    if start == -1
+        return fail(code: NOT_FOUND, msg: f"the node to start at is none of the graph's {nodes.len()} nodes")
+    found = paths.settle(weighted, from: start, goal: -1)
+    distances: {K: f64} @= {}
+
+    for node in found.order
+        distances[nodes[node]] @ found.best[node]
+
+    return ok(distances)
+
+# A topological order handed out in stages, for work done in parallel: the
+# nodes ready are handed out together, and a node becomes ready once every
+# node it points to is done. Python's `graphlib.TopologicalSorter` after its
+# `prepare`.
+#
+# Made by `new_sorter`. Its nodes are numbers, node `i` being element `i` of
+# `nodes_of` of the same graph.
+record Sorter
+    # The stages, held by the package itself.
+    stages: stages.Stages
+
+# A sorter of `graph`'s nodes, none handed out yet.
+#
+# - `graph`: the graph.
+#
+# Fails `invalid` where the graph has a cycle, as Python's `prepare` raises
+# `CycleError`. See also `ready`, `nodes_of`.
+function new_sorter<K>(graph: {K: [K]}) -> Sorter?
+    nodes: [K] @= []
+    numbered = layout.numbered(graph, @nodes)
+
+    if walks.staged_order(numbered).len() < numbered.count
+        loop = walks.cycle(numbered)
+        return fail(
+            code: INVALID,
+            msg: f"the graph has a cycle of {loop.len() - 1} nodes, so its nodes cannot all be handed out; `cycle_of` names them"
+        )
+    return ok(Sorter(stages: stages.prepare(numbered)))
+
+# The nodes become ready since the last call, now handed out: Python's
+# `get_ready`.
+#
+# - `sorter`: the sorter; the nodes answered count as handed out.
+#
+# Empty where none became ready, while nodes handed out are not yet done or
+# once every node is done. See also `done`.
+function ready(@sorter: Sorter) -> [i64]
+    return stages.hand_out(@sorter.stages)
+
+# Marks `node` done, so the nodes that wait on it alone become ready:
+# Python's `done`.
+#
+# - `sorter`: the sorter.
+# - `node`: a node's number, as `ready` answered it.
+#
+# Fails `invalid` where `node` was not handed out or is done already, and
+# `not_found` where it is no node's number; either way nothing changes. See
+# also `ready`, `is_active`.
+function done(@sorter: Sorter, node: i64) -> ()?
+    return stages.finish(@sorter.stages, node)
+
+# Whether a sorter has more to hand out or nodes handed out and not done:
+# Python's `is_active`.
+#
+# - `sorter`: the sorter.
+#
+# See also `ready`.
+function is_active(sorter: Sorter) -> bool
+    return stages.is_active(sorter.stages)
+
+## Examples
+
+# Every node of a graph, numbered.
+test "nodes_of: the packages of a graph of dependencies"
+    graph = {"app": ["http", "json"], "http": ["json"]}
+    assert nodes_of(graph) == ["app", "http", "json"]
+
+# Packages built after what they depend on.
+test "topological_order: packages in the order they can be built"
+    graph = {"app": ["http", "json"], "http": ["json"], "json": []}
+    assert topological_order(graph).must() == ["json", "http", "app"]
+
+# A cycle named, after the order refused it.
+test "cycle_of: two packages that depend on each other"
+    graph = {"a": ["b"], "b": ["a"]}
+    assert topological_order(graph).is_err()
+    assert cycle_of(graph).must() == ["a", "b", "a"]
+
+# The groups of nodes that reach each other.
+test "strong_components: two modules that use each other, and one alone"
+    graph = {"a": ["b"], "b": ["a", "c"], "c": []}
+    assert strong_components(graph) == [["c"], ["a", "b"]]
+
+# Every node one reaches.
+test "reachable_from: everything a package pulls in"
+    graph = {"app": ["http"], "http": ["json"], "tool": ["json"]}
+    assert reachable_from(graph, "app").must() == ["app", "http", "json"]
+
+# The cheapest route through a map of towns.
+test "shortest_path: the shorter road through a town between"
+    roads = {"a": {"b": 1.0, "c": 5.0}, "b": {"c": 1.0}}
+    assert shortest_path(roads, from: "a", to: "c").must() == ["a", "b", "c"]
+
+# The distance to every town reached.
+test "distances_from: how far each town is"
+    roads = {"a": {"b": 1.0, "c": 5.0}, "b": {"c": 1.0}}
+    distances = distances_from(roads, "a").must()
+    assert distances["c"].must() == 2.0
+    assert keys(distances) == ["a", "b", "c"]
+
+# A build in stages: what can start now, then what follows.
+test "new_sorter: a build whose first stage is the shared library"
+    graph = {"app": ["lib"], "test": ["lib"], "lib": []}
+    nodes = nodes_of(graph)
+    sorter @= new_sorter(graph).must()
+    first: [str] @= []
+
+    for node in ready(@sorter)
+        first @ first.push(nodes[node])
+
+    assert first == ["lib"]
+
+# The nodes ready, handed out together.
+test "ready: two jobs ready together once the library is done"
+    graph = {"app": ["lib"], "test": ["lib"], "lib": []}
+    nodes = nodes_of(graph)
+    sorter @= new_sorter(graph).must()
+
+    for node in ready(@sorter)
+        done(@sorter, node).must()
+
+    second: [str] @= []
+
+    for node in ready(@sorter)
+        second @ second.push(nodes[node])
+
+    assert second == ["app", "test"]
+
+# A node marked done, and one marked done twice.
+test "done: a job done once, refused the second time"
+    graph: {str: [str]} = {"a": []}
+    sorter @= new_sorter(graph).must()
+    node = ready(@sorter)[0]
+    done(@sorter, node).must()
+    assert done(@sorter, node).is_err()
+
+# Whether a sorter has more to do.
+test "is_active: active until every job is done"
+    graph: {str: [str]} = {"a": []}
+    sorter @= new_sorter(graph).must()
+    assert is_active(sorter)
+    done(@sorter, ready(@sorter)[0]).must()
+    assert !is_active(sorter)

@@ -20,7 +20,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and two packages, in layers. **A package may use any package of a layer below
+A hundred and eight packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the ones it is expected to need, not a limit. There is no cycle.
 
 | layer | package | what it holds | may use | C under it |
@@ -36,6 +36,13 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 0 | `sets` | set operations over a `{K: bool}`, since the language has no set type |  |  |
 | 0 | `errors` | context added to a failure without losing its code, several failures joined, a failure told to a person |  |  |
 | 0 | `threads` | a function run on another thread and joined: the language's own doors, made safe to call |  | `hero_os.h` |
+| 0 | `containers/ordered` | an ordered map and set: ranks, ranges, the nearest keys |  |  |
+| 0 | `containers/deque` | a double-ended queue, bounded or not |  |  |
+| 0 | `containers/bits` | a set of bits of any length, combined and searched |  |  |
+| 0 | `containers/cache` | a cache that forgets the entry used least recently, with a time to live the caller gives |  |  |
+| 0 | `containers/indexed` | a map that keeps the order its keys were first put in and answers by position |  |  |
+| 0 | `containers/heap` | a heap over the program's own list: a priority queue |  |  |
+| 0 | `graphs` | the orders, cycles, components, reachability and shortest paths of a graph |  |  |
 | 1 | `unicode/normalize` | NFC, NFD, NFKC, NFKD, case folding for comparison; its tables apart, so only its users carry them | `unicode` |  |
 | 1 | `unicode/segment` | the boundaries of graphemes, words and sentences (UAX #29), the width of a text on a screen (UAX #11) | `unicode` |  |
 | 1 | `unicode/names` | the name of a character and the character of a name, scripts, blocks | `unicode` |  |
@@ -60,6 +67,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 2 | `unicode/encodings` | the WHATWG Encoding standard's legacy encodings read and written: Windows-1252, ISO-8859, Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR; its tables apart | `unicode`, `bytes` |  |
 | 2 | `keyring` | secrets kept in the system's own keyring | `bytes`, `strings` | `hero_keyring.h` |
 | 2 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes` | `hero_crypto.h` |
+| 2 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes` | `hero_crypto.h` |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `process` | another program run, fed, read and waited for | `io`, `os`, `path`, `strings`, `unicode` | `hero_proc.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings` | `hero_net.h`, `hero_stream_net.h` |
@@ -70,7 +78,6 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 3 | `compress` | DEFLATE, gzip and zlib, written and read | `bytes`, `hash`, `io` |  |
 | 3 | `template` | text and HTML made from a template and values, escaped by context | `json`, `strings`, `unicode` |  |
 | 3 | `markdown` | CommonMark and GFM's tables read into a tree and written as HTML | `html`, `strings`, `unicode` |  |
-| 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `crypto`, `bytes` | `hero_crypto.h` |
 | 3 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `io`, `hash` |  |
 | 3 | `html/sanitize` | HTML from outside cleaned by an allow-list policy | `html`, `url` |  |
 | 3 | `json/schema` | JSON Schema 2020-12 (and draft 7) validation, every error with its place | `json`, `regex`, `url`, `numbers` |  |
@@ -90,9 +97,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `compress`, `bytes`, `hash` |  |
 | 4 | `sql` | what does not depend on the database: values, parameters, rows, results, codes | `bytes`, `time` |  |
 | 4 | `protobuf` | Protocol Buffers: the wire format, `.proto` files read at run time, dynamic messages bound to records, the JSON mapping, the well-known types | `bytes`, `json`, `maps`, `math`, `numbers`, `strings`, `time` |  |
-| 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `strings`, `bytes`, `unicode`, `time`, `io`, `numbers` |  |
-| 4 | `containers` | an ordered map and set with ranges, a double-ended queue, a set of bits, a cache that forgets the least used, a topological order | `lists`, `maps`, `sets`, `time` |  |
-| 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `bytes`, `big`, `time`, `unicode` |  |
+| 4 | `mail` | messages (RFC 5322) and MIME read and written: addresses, encoded words, parts and attachments | `bytes`, `hash`, `io`, `numbers`, `os`, `strings`, `time` |  |
+| 4 | `asn1` | ASN.1 values read and written in DER and BER, every universal type, tagged and constructed | `big`, `bytes`, `lists`, `math`, `numbers`, `time`, `unicode` |  |
 | 4 | `i18n` | message catalogs (gettext), plural rules, numbers and dates written for a language, text ordered for a language, from CLDR; its tables in subpackages | `unicode`, `time`, `strings`, `numbers` |  |
 | 4 | `dns` | a DNS client: every record kind asked and answered over UDP and TCP | `net`, `bytes`, `strings`, `time` |  |
 | 4 | `serial` | serial ports listed, opened, set and read and written as a stream | `io`, `time` | `hero_serial.h` |
@@ -106,8 +112,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `net`, `tls`, `io`, `bytes`, `strings`, `numbers` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for each database, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `io`, `net`, `tls`, `bytes`, `numbers`, `strings`, `time`, `threads`, `poll` |  |
-| 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `mail`, `net`, `tls`, `io`, `time` |  |
-| 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `pem`, `bytes`, `time`, `net` |  |
+| 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |
+| 5 | `x509` | certificates, requests and revocation lists read, their names, extensions and keys; a chain put in order | `asn1`, `big`, `bytes`, `crypto/keypairs`, `net`, `pem`, `strings`, `time` |  |
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `sql`, `bytes`, `strings`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `net`, `tls`, `strings` |  |
@@ -119,7 +125,7 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 6 | `sql/migrate` | numbered migrations applied in transactions, the versions applied kept in a table, the step back | `bytes`, `crypto`, `fs`, `numbers`, `path`, `sql`, `sql/build`, `strings`, `time` |  |
 | 6 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `fs`, `http`, `io`, `json`, `log`, `net`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 6 | `grpc` | gRPC calls of the four kinds, client and server, over `http2` and `protobuf` | `http2`, `protobuf`, `compress`, `tls`, `time` |  |
-| 6 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `http`, `tls`, `net`, `io`, `poll`, `bytes`, `crypto`, `compress`, `unicode`, `time` |  |
+| 6 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 6 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `http`, `url`, `json`, `jose`, `crypto`, `random`, `time` |  |
 | 6 | `metrics` | counters, gauges and histograms, written in Prometheus's text format and served | `strings`, `numbers`, `time`, `http` |  |
 | 6 | `xlsx` | spreadsheets of Office Open XML read and written: sheets, cells, types, styles | `archive`, `xml`, `time`, `numbers` |  |

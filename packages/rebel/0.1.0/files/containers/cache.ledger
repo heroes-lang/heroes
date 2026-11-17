@@ -1,0 +1,49 @@
+# The ledger of `containers/cache`: the cache that forgets the entry used
+# least recently, with a time to live. Python 3.15's `functools.lru_cache` and
+# `functools.cache` are the three libraries' only ones; Java's `LinkedHashMap`
+# in access order is named in the notes.
+#
+# A record takes no type parameter, so a cache is a shape beside the
+# program's own key list, value list and `{K: i64}` lookup map, lent with `@`.
+
+## The cache
+
+capability cache/make  a cache of a capacity, with a time to live or none
+  heroes  cache.new, cache.new_with_ttl, cache.capacity
+  go      -
+  rust    -
+  python  functools.lru_cache, functools.cache
+  note    time is the program's: every call that can expire takes `now` in the program's own unit and no clock is read, so a test needs none, and the package needs no `time`, whose use adds 2,098,016 bytes to a program (309,368 against 2,407,384, measured 2026-11-17). Python's `lru_cache` wraps a function; the function here is the program's, which asks `cache.get` and on `not_found` computes and calls `cache.put`. Java's LinkedHashMap in access order with `removeEldestEntry` is this
+
+capability cache/put  a value put, the least recently used forgotten where the cache is full
+  heroes  cache.put
+  go      -
+  rust    -
+  python  -
+  note    the expired entries are forgotten first; checked against a list in the order of use in eight thousand random operations, with and without a time to live
+
+capability cache/get  a value read, the entry counted as used, or only looked at
+  heroes  cache.get, cache.peek, cache.contains
+  go      -
+  rust    -
+  python  -
+  note    a read does not lengthen an entry's life, which runs from its last write
+
+capability cache/remove  an entry taken out, every expired one forgotten, or all
+  heroes  cache.remove, cache.expire, cache.clear
+  go      -
+  rust    -
+  python  -
+  note    Python's `lru_cache` offers `cache.clear` alone
+
+capability cache/inspect  the entries by their last use, the next to be forgotten, how many are held
+  heroes  cache.slots, cache.oldest, cache.size
+  go      -
+  rust    -
+  python  -
+  note    Python's `cache_info` counts hits and misses, which the program counts as it asks; `cache_parameters` is `cache.capacity`
+
+dropped traits  what an interface would have needed: a structure written for a debugger, hashed, ordered against another, dropped, converted
+  go      -
+  rust    -
+  python  functools.cached_property

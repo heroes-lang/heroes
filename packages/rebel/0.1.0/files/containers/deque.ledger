@@ -1,0 +1,129 @@
+# The ledger of `containers/deque`: the double-ended queue, what Go 1.27's
+# `container/ring`, Rust 1.100's `VecDeque` and Python 3.15's
+# `collections.deque` offer, one block per capability, and what Heroes
+# answers to each; and the list of links, Go's `container/list` and Rust's
+# `LinkedList`, which stands pending here, its two ends being the deque's.
+#
+# A record takes no type parameter, so a deque is a shape beside the
+# program's own item list, lent with `@`; no list shortens in place, so the
+# ring keeps a count and reuses its list's room.
+
+## The double-ended queue
+
+capability deque/make  an empty double-ended queue, or one over a list held
+  heroes  deque.new, deque.over
+  go      ring.New
+  rust    VecDeque::new, VecDeque::default, VecDeque::from, VecDeque::from_iter, VecDeque::try_with_capacity
+  python  collections.deque, deque.copy, deque.__copy__
+  note    a ring over the program's item list that doubles when full and is cut back when three quarters stand empty; Go's `ring.New(n)` makes n links holding nothing, which with no `nil` here is `new_bounded_deque(n)`, the use it is put to. A copy is `=` of the shape and the list
+
+capability deque/bounded  a deque that holds at most a number of items, the oldest dropped
+  heroes  deque.new_bounded, deque.limit
+  go      -
+  rust    -
+  python  deque.maxlen
+  note    Python's: a push at one end of a full deque drops the item at the other, observed (`maxlen=3` after a to e gives c d e, then `appendleft("z")` gives z c d); an insert into a full one is refused `invalid`, as Python raises
+
+capability deque/push  an item added at either end
+  heroes  deque.push_back, deque.push_front
+  go      -
+  rust    VecDeque::push_back, VecDeque::push_front, VecDeque::push_back_mut, VecDeque::push_front_mut, VecDeque::extend, VecDeque::extend_front, VecDeque::extend_one, VecDeque::append, VecDeque::prepend
+  python  deque.append, deque.appendleft, deque.extend, deque.extendleft, deque.__iadd__
+  note    many items are a loop; Python's `extendleft` reverses them, which a loop of `deque.push_front` does too
+
+capability deque/pop  an item taken from either end
+  heroes  deque.pop_back, deque.pop_front
+  go      -
+  rust    VecDeque::pop_back, VecDeque::pop_front, VecDeque::pop_back_if, VecDeque::pop_front_if
+  python  deque.pop, deque.popleft
+  note    an empty deque is `not_found`, where Python raises IndexError and Rust answers None; the slot freed takes a copy of a live item, so the item popped is let go at once. Rust's `pop_if` is `deque.first` asked first
+
+capability deque/ends  the item at either end, left in
+  heroes  deque.first, deque.last
+  go      -
+  rust    VecDeque::front, VecDeque::back, VecDeque::front_mut, VecDeque::back_mut
+  python  -
+  note    Python reads `d[0]` and `d[-1]`, which abort here past the ends where these answer `not_found`
+
+capability deque/index  an item read or written by its place from the front
+  heroes  deque.get, deque.put
+  go      ring.Next, ring.Prev, ring.Move
+  rust    VecDeque::get, VecDeque::get_mut, VecDeque::index, VecDeque::index_mut, VecDeque::swap
+  python  deque.__getitem__, deque.__setitem__
+  note    a place is from 0 and never below it, where Python counts from the end with a negative one; Go's `Move(n)` is a place n further, and a swap two reads and two writes
+
+capability deque/insert-remove  an item put at or taken from a place inside
+  heroes  deque.insert, deque.remove_at
+  go      ring.Link, ring.Unlink
+  rust    VecDeque::insert, VecDeque::insert_mut, VecDeque::remove, VecDeque::swap_remove_back, VecDeque::swap_remove_front
+  python  deque.insert, deque.__delitem__, deque.remove
+  note    each moves the items on the nearer side, at most half; Rust's swap removes are `deque.get` of the end, `deque.put` over the place and a pop. Go's `Link` and `Unlink` splice links of two rings, which is items put in or taken out at a place here. Python's `remove` by value is `lists.index_of` over `deque.to_list`, then this
+
+capability deque/rotate  the items turned round
+  heroes  deque.rotate_left, deque.rotate_right
+  go      ring.Move
+  rust    VecDeque::rotate_left, VecDeque::rotate_right
+  python  deque.rotate
+  note    Python's `rotate(1)` gives [4, 1, 2, 3] of [1, 2, 3, 4], observed, which is `deque.rotate_right` by 1; a full item list turns by moving its head alone
+
+capability deque/to-list  the items front to back as a list
+  heroes  deque.to_list
+  go      ring.Do
+  rust    VecDeque::iter, VecDeque::iter_mut, VecDeque::into_iter, VecDeque::as_slices, VecDeque::as_mut_slices, VecDeque::make_contiguous, VecDeque::range, VecDeque::range_mut, VecDeque::drain, vec_deque::Iter, vec_deque::IterMut, vec_deque::IntoIter, vec_deque::Drain
+  python  deque.__iter__, deque.__reversed__
+  note    a walk is a `for` over this list; Go's `Do` calls a function at each link, which is that walk
+
+capability deque/size  how many items a deque holds
+  heroes  deque.size
+  go      ring.Len
+  rust    VecDeque::len, VecDeque::is_empty
+  python  deque.__len__
+  note    -
+
+capability deque/clear  a deque emptied or cut
+  heroes  deque.clear
+  go      -
+  rust    VecDeque::clear, VecDeque::truncate, VecDeque::truncate_to_range
+  python  deque.clear
+  note    a cut to a length is pops from the back until it is reached
+
+capability deque/search-and-reshape  a deque searched, counted, reversed, sorted, filtered or resized
+  heroes  deque.to_list
+  go      -
+  rust    VecDeque::contains, VecDeque::binary_search, VecDeque::binary_search_by, VecDeque::binary_search_by_key, VecDeque::partition_point, VecDeque::retain, VecDeque::retain_mut, VecDeque::retain_back, VecDeque::extract_if, VecDeque::resize, VecDeque::resize_with, VecDeque::split_off, VecDeque::splice, VecDeque::extend_from_within, VecDeque::prepend_from_within, vec_deque::Splice, vec_deque::ExtractIf
+  python  deque.count, deque.index, deque.reverse, deque.__contains__, deque.__add__, deque.__mul__, deque.__imul__
+  note    the items as a list, worked on by `lists` (`lists.contains`, `lists.binary_search`, `lists.reverse`, `lists.remove_where`, `lists.resize`, `lists.cycle`) and given back by `deque.over`: each is linear in the size in Rust and Python too
+
+## The list of links
+
+capability links/list  a list of links: an item put or taken at a handle held, or moved to either end, in constant time
+  heroes  pending
+  go      list.New, list.List.Init, list.List.Len, list.List.Front, list.List.Back, list.List.PushFront, list.List.PushBack, list.List.PushFrontList, list.List.PushBackList, list.List.InsertBefore, list.List.InsertAfter, list.List.MoveToFront, list.List.MoveToBack, list.List.MoveBefore, list.List.MoveAfter, list.List.Remove, list.Element.Next, list.Element.Prev
+  rust    LinkedList::new, LinkedList::default, LinkedList::push_front, LinkedList::push_back, LinkedList::push_front_mut, LinkedList::push_back_mut, LinkedList::pop_front, LinkedList::pop_back, LinkedList::front, LinkedList::back, LinkedList::front_mut, LinkedList::back_mut, LinkedList::len, LinkedList::is_empty, LinkedList::clear, LinkedList::contains, LinkedList::append, LinkedList::split_off, LinkedList::remove, LinkedList::retain, LinkedList::extract_if, LinkedList::iter, LinkedList::iter_mut, LinkedList::into_iter, LinkedList::cursor_front, LinkedList::cursor_back, LinkedList::cursor_front_mut, LinkedList::cursor_back_mut, LinkedList::extend, LinkedList::extend_one, LinkedList::from, LinkedList::from_iter, linked_list::Cursor, linked_list::CursorMut, linked_list::Iter, linked_list::IterMut, linked_list::IntoIter, linked_list::ExtractIf
+  python  -
+  note    the cache's two lists of links are this inside; a public one needs handles that outlive a removal, slots kept stable by a free list rather than the dense slots every structure here keeps, and is not written yet. Both ends are the deque's, and a key moved to either end the indexed map's
+
+dropped capacity  room asked ahead of the items: every structure here grows by itself and gives room back when three quarters stand empty
+  go      -
+  rust    VecDeque::with_capacity, VecDeque::with_capacity_in, VecDeque::capacity, VecDeque::reserve, VecDeque::reserve_exact, VecDeque::try_reserve, VecDeque::try_reserve_exact, VecDeque::shrink_to, VecDeque::shrink_to_fit, VecDeque::extend_reserve
+  python  -
+
+dropped allocators  the language has one allocator and it is not a value
+  go      -
+  rust    VecDeque::new_in, VecDeque::allocator, LinkedList::new_in
+  python  -
+
+dropped closures  an insertion whose value a closure computes and may fail to compute: the program computes the value and puts it
+  go      -
+  rust    VecDeque::resize_with
+  python  -
+
+dropped streams  a deque read and written as a stream of bytes: `io`'s buffers do it
+  go      -
+  rust    VecDeque::read, VecDeque::read_array, VecDeque::read_be, VecDeque::read_le, VecDeque::read_buf, VecDeque::read_buf_exact, VecDeque::read_exact, VecDeque::read_line, VecDeque::read_to_end, VecDeque::read_to_string, VecDeque::read_until, VecDeque::read_vectored, VecDeque::is_read_vectored, VecDeque::fill_buf, VecDeque::consume, VecDeque::has_data_left, VecDeque::skip_until, VecDeque::split, VecDeque::lines, VecDeque::bytes, VecDeque::chain, VecDeque::take, VecDeque::by_ref, VecDeque::write, VecDeque::write_all, VecDeque::write_all_vectored, VecDeque::write_fmt, VecDeque::write_vectored, VecDeque::is_write_vectored, VecDeque::flush
+  python  -
+
+dropped traits  what an interface would have needed: a structure written for a debugger, hashed, ordered against another, dropped, converted
+  go      -
+  rust    VecDeque::fmt, VecDeque::hash, VecDeque::hash_slice, VecDeque::cmp, VecDeque::partial_cmp, VecDeque::eq, VecDeque::ne, VecDeque::lt, VecDeque::le, VecDeque::gt, VecDeque::ge, VecDeque::max, VecDeque::min, VecDeque::clamp, VecDeque::clamp_to, VecDeque::clone, VecDeque::clone_from, VecDeque::drop, VecDeque::pin_drop, LinkedList::fmt, LinkedList::hash, LinkedList::cmp, LinkedList::eq, LinkedList::clone, LinkedList::drop, and on all `type_id`, `borrow`, `borrow_mut`, `clone_into`, `clone_to_uninit`, `into`, `to_owned`, `try_from`, `try_into`
+  python  deque.__class_getitem__, deque.__repr__, deque.__reduce__, deque.__init__, deque.__new__, deque.__sizeof__, deque.__eq__, deque.__lt__, deque.__le__, deque.__gt__, deque.__ge__, deque.__ne__, deque.__hash__, deque.__bool__

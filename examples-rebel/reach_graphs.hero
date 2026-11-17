@@ -1,0 +1,9 @@
+# Reaches Rebel's `graphs`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints packages in the order they can be
+# built, each after what it depends on: "json http app".
+
+use <rebel>/graphs
+
+function main()
+    graph = {"app": ["http", "json"], "http": ["json"], "json": []}
+    print(graphs.topological_order(graph).default([]).join(" "))

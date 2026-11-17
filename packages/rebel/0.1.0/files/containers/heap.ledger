@@ -1,0 +1,85 @@
+# The ledger of `containers/heap`: the heap, the priority queue, what Go
+# 1.27's `container/heap`, Rust 1.100's `BinaryHeap` and Python 3.15's
+# `heapq` offer, one block per capability, and what Heroes answers to each.
+# Moved from `lists.ledger` with the heap itself (the author, 2026-11-17);
+# Python's `nsmallest`, `nlargest` and `merge` stay there, answered by
+# `lists.min_n_by`, `lists.max_n_by` and `lists.merge_sorted_by`, which keep
+# no heap of the program's.
+#
+# A heap is the program's own `[T]`, worked on through `@`, its order a
+# function the caller gives at each call, since a type parameter has no `<`.
+
+## The heap
+
+capability heap/make  a list arranged as a heap in one pass
+  heroes  heap.heapify
+  go      heap.Init
+  rust    BinaryHeap::from, BinaryHeap::from_iter, BinaryHeap::from_raw_vec
+  python  heapq.heapify, heapq.heapify_max
+  note    in the caller's own place, linear in the length; the layout is Go's Init's slot for slot, observed. A heap here takes its order from the caller, so Python's `_max` twins and Rust's heap of the largest first are this with the opposite order
+
+capability heap/push  an element added to a heap
+  heroes  heap.add
+  go      heap.Push
+  rust    BinaryHeap::push, BinaryHeap::extend, BinaryHeap::append
+  python  heapq.heappush, heapq.heappush_max
+  note    the layout after each push is Python's heappush's and Go's Push's, observed; many elements at once are `concat` then `heap.heapify`, Rust's `append`
+
+capability heap/pop  the first element of a heap taken out
+  heroes  heap.pop
+  go      heap.Pop
+  rust    BinaryHeap::pop, BinaryHeap::pop_if, PeekMut::pop, BinaryHeap::drain_sorted, BinaryHeap::into_iter_sorted
+  python  heapq.heappop, heapq.heappop_max, heapq.heappushpop, heapq.heappushpop_max, heapq.heapreplace, heapq.heapreplace_max
+  note    an empty heap is `not_found`, where Go panics, Python raises IndexError and Rust answers None. Python's `heappushpop` is `heap.add` then this, and `heapreplace` this then `heap.add`, the same answers in two calls; Rust's `pop_if` is `heap.peek` asked first. The language cannot shorten a list in place, so each pop copies the list to drop its last slot: the comparisons are logarithmic, but draining a heap is quadratic in copies, measured 1.28 s for 20,000 pushes and pops, 5.21 s for 40,000 and 23.60 s for 80,000, where `lists.merge_sorted_by` and `lists.min_n_by`, which keep their heap inside, are linear and n log n. It becomes logarithmic with no change to its signature once the language shortens a plain name or an `@` parameter in place, as `push` grows one
+
+capability heap/peek  the first element of a heap, left in
+  heroes  heap.peek
+  go      -
+  rust    BinaryHeap::peek
+  python  -
+  note    Go and Python read `h[0]`, which here is `heap.peek(h)` answering `not_found` on an empty heap where `h[0]` aborts
+
+capability heap/fix  a heap put in order again after one of its elements changed
+  heroes  heap.fix
+  go      heap.Fix
+  rust    BinaryHeap::peek_mut, PeekMut::refresh
+  python  -
+  note    the layouts after a larger first element and a smaller last one are Go's Fix's, observed; Rust's PeekMut changes the first alone, which is this at 0
+
+capability heap/remove-at  the element at an index of a heap taken out
+  heroes  heap.remove_at
+  go      heap.Remove
+  rust    -
+  python  -
+  note    answer and layout are Go's Remove's, observed; an index that names no element aborts, as in Go and as `lists.remove_at` does. It copies the list once, as `heap.pop` does
+
+capability heap/keep-where  a heap without the elements a function refuses
+  heroes  heap.heapify
+  go      -
+  rust    BinaryHeap::retain
+  python  -
+  note    `filter` keeps the elements, then `heap.heapify` makes them a heap again, linear like Rust's `retain`
+
+capability heap/sort  a list sorted in its own place, with no second list
+  heroes  heap.sort_in_place_by
+  go      -
+  rust    BinaryHeap::into_sorted_vec
+  python  -
+  note    not stable, which `lists.sort_by` is; its answer against the built-in `sort` over a thousand scrambled numbers and the extremes of `i64`, observed equal to Python's sorted. Go's `slices.SortFunc` and Rust's `sort_unstable_by` stand under list/sort-by, which keeps equal elements in place and so answers every program they serve
+
+capability heap/as-list  the elements of a heap read, emptied or counted
+  heroes  built-in len
+  go      -
+  rust    BinaryHeap::len, BinaryHeap::is_empty, BinaryHeap::iter, BinaryHeap::into_iter, BinaryHeap::into_vec, BinaryHeap::as_slice, BinaryHeap::as_mut_slice, BinaryHeap::drain, BinaryHeap::clear, BinaryHeap::new, BinaryHeap::default, BinaryHeap::clone, BinaryHeap::clone_from
+  python  -
+  note    a heap is a plain list, so its length, its walk, its copy and its emptying are the list's own: `h.len()`, `for x in h`, `=`, `h @ []`
+
+dropped heap-interface  a heap kept through methods its collection declares, which needs an interface: here the heap is a list and its order a function
+  go      heap.Interface and its Len, Less, Swap, Push and Pop
+  rust    -
+  python  -
+
+dropped heap-plumbing  a heap's capacity, allocator, iterator types and traits: a heap is a plain list, whose own are the runtime's or the language's
+  go      -
+  rust    BinaryHeap::with_capacity, BinaryHeap::with_capacity_in, BinaryHeap::new_in, BinaryHeap::capacity, BinaryHeap::reserve, BinaryHeap::reserve_exact, BinaryHeap::try_reserve, BinaryHeap::try_reserve_exact, BinaryHeap::shrink_to, BinaryHeap::shrink_to_fit, BinaryHeap::allocator, BinaryHeap::extend_one, BinaryHeap::extend_reserve, BinaryHeap::fmt, binary_heap::Drain, binary_heap::DrainSorted, binary_heap::IntoIter, binary_heap::IntoIterSorted, binary_heap::Iter, binary_heap::PeekMut and its deref, deref_mut, drop and pin_drop, and on BinaryHeap `type_id`, `borrow`, `borrow_mut`, `clone_to_uninit`, `into`, `to_owned`, `clone_into`, `try_from`, `try_into`
+  python  -

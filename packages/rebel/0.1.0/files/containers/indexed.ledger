@@ -1,0 +1,61 @@
+# The ledger of `containers/indexed`: the map that keeps its keys in the order
+# they were first put and answers by position, Rust's indexmap crate and
+# Python's `dict`. None of the three standard libraries has one beside
+# Python's `dict`, which `maps.ledger` holds as the language's own map; the
+# notes name indexmap's methods.
+#
+# A record takes no type parameter, so the map is a shape beside the
+# program's own key list, value list and `{K: i64}` lookup map, lent with `@`.
+
+## The map that keeps its order
+
+capability indexed/make  an empty map that keeps the order its keys were first put in
+  heroes  indexed.new, indexed.size
+  go      -
+  rust    -
+  python  -
+  note    Rust's indexmap crate, the thirteenth most downloaded, and Python's `dict`, ordered since 3.7; none of the three standard libraries has one apart from Python's `dict`, which `maps.ledger` holds as the language's own map. What this adds to that map: positions, and a key taken out in constant time
+
+capability indexed/put-get  a value put or read by its key, and a key's position
+  heroes  indexed.put, indexed.get, indexed.position_of, indexed.contains
+  go      -
+  rust    -
+  python  -
+  note    a new key goes last and a held one keeps its place, as indexmap's `insert` and Python's `dict` do
+
+capability indexed/by-position  the key and the value at a position
+  heroes  indexed.key_at, indexed.value_at
+  go      -
+  rust    -
+  python  -
+  note    indexmap's `get_index`; positions run 0 to the size less one
+
+capability indexed/remove  a key taken out swapping the last entry in, or shifting the rest forward
+  heroes  indexed.swap_remove, indexed.shift_remove, indexed.swap_remove_at, indexed.shift_remove_at
+  go      -
+  rust    -
+  python  -
+  note    indexmap's `swap_remove` and `shift_remove` and their `_index` forms; Python's `popitem` is `indexed.swap_remove_at` of the last position, and `del d[k]` keeps the order, `indexed.shift_remove`. Checked against lists in order in four thousand random operations
+
+capability indexed/move  an entry moved to another position, or two swapped
+  heroes  indexed.move, indexed.swap
+  go      -
+  rust    -
+  python  -
+  note    Python's `OrderedDict.move_to_end` is `indexed.move` to the last position, or with `last=False` to 0; indexmap's `move_index` and `swap_indices`
+
+capability indexed/sort  the entries put in the order of their keys
+  heroes  indexed.sort_by_key
+  go      -
+  rust    -
+  python  -
+  note    stable, as indexmap's `sort_keys`; a merge sort of its own, since an order cannot close over the key list here
+
+capability indexed/walk  the keys and the values in their order, and the map emptied
+  heroes  indexed.keys_in_order, indexed.values, indexed.clear
+  go      -
+  rust    -
+  python  -
+  note    -
+
+

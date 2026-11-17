@@ -11,8 +11,8 @@
 # the list to drop its last slot; every other function, `heap_sort_by`
 # included, moves elements in place.
 
-use lists/internal/codes
-use lists/internal/samples
+use containers/internal/codes
+use containers/internal/samples
 
 # Moves the element at `at` towards the root while it goes before its parent,
 # the parents it passes moving down one level each.

@@ -3,7 +3,7 @@
 # every node in order. Each walks the links with a loop, the depth staying
 # under two and a half times the logarithm of the size.
 
-use containers/internal/tree
+use containers/ordered/internal/tree
 
 # The node of the smallest key under `at`, which is not `tree.NONE`.
 function leftmost(shape: tree.Tree lent, at: i64) -> i64

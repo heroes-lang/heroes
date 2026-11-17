@@ -1,0 +1,86 @@
+# The ledger of `containers/bits`: the set of bits. None of Go 1.27, Rust
+# 1.100 and Python 3.15 has one in its standard library (Python reads an
+# `int` as bits, Go's `math/big.Int` has `Bit` and `SetBit`), so the blocks
+# name Java's `BitSet`, .NET's `BitArray` and Zig's `DynamicBitSet` in their
+# notes, from the census that chose the package (the author, 2026-11-17).
+
+## The set of bits
+
+capability bits/make  a set of bits of a size, all clear
+  heroes  bits.new, bits.size
+  go      -
+  rust    -
+  python  -
+  note    none of the three holds one (Python reads an `int` as bits, Go's `math/big.Int` has `Bit` and `SetBit`); Java's BitSet grows as bits are set, .NET's BitArray and Zig's DynamicBitSet hold a size, which is taken here, so two sets of one size and bits are `==`
+
+capability bits/one-bit  one bit read, set, cleared, turned over or written
+  heroes  bits.is_set, bits.set_bit, bits.clear_bit, bits.flip_bit, bits.put_bit
+  go      -
+  rust    -
+  python  -
+  note    a bit outside the set aborts, as an index past a list's end does; Java's `get` past the end answers false
+
+capability bits/range  a run of bits set, cleared or turned over, a word at a time
+  heroes  bits.set_range, bits.clear_range, bits.flip_range
+  go      -
+  rust    -
+  python  -
+  note    Java's `set(from, to)`, `clear(from, to)` and `flip(from, to)`, `to` left out; checked against a list of booleans in three thousand random runs
+
+capability bits/count  how many bits are set, and whether none or all are
+  heroes  bits.count_ones, bits.is_clear, bits.is_full
+  go      -
+  rust    -
+  python  -
+  note    Java's `cardinality` and `isEmpty`, .NET's `HasAllSet` and `HasAnySet`; a word counted by halves with its sign bit apart, since no operator here may overflow
+
+capability bits/algebra  two sets combined: and, or, xor, and not, and a set turned over
+  heroes  bits.and, bits.or, bits.xor, bits.and_not, bits.not
+  go      -
+  rust    -
+  python  -
+  note    each answers a new set of the larger size, the shorter read as clear past its end, where Java's `and` changes the set it is called on
+
+capability bits/compare  whether two sets share a bit, or one lies within the other
+  heroes  bits.is_disjoint, bits.is_subset
+  go      -
+  rust    -
+  python  -
+  note    Java's `intersects` is `!bits.is_disjoint`
+
+capability bits/scan  the next or previous bit set or clear from a place
+  heroes  bits.next_set, bits.next_clear, bits.previous_set, bits.previous_clear
+  go      -
+  rust    -
+  python  -
+  note    Java's four, with `not_found` where Java answers -1; a start outside the set is moved within it rather than refused. Java's `length` is `bits.previous_set` from the end, plus one
+
+capability bits/indices  the set bits as places, and a set from places
+  heroes  bits.to_indices, bits.from_indices
+  go      -
+  rust    -
+  python  -
+  note    Java's `stream`; a word at a time, then one step a set bit
+
+capability bits/bytes-and-words  a set as bytes or as 64-bit words, and back
+  heroes  bits.to_bytes, bits.from_bytes, bits.to_words, bits.from_words
+  go      -
+  rust    -
+  python  -
+  note    Java's `toByteArray`, `valueOf(byte[])`, `toLongArray` and `valueOf(long[])` order, bit 0 the lowest of the first byte, observed through Python as an integer: bits 0, 8 and 9 give `(769).to_bytes(2, "little")`, [1, 3]. Java trims the zero bytes at the end and this keeps the size
+
+capability bits/text  a set written as zeros and ones, and read back
+  heroes  bits.format, bits.parse
+  go      -
+  rust    -
+  python  -
+  note    bit 0 first, as a list of booleans reads; Java writes `{1, 3}`, which is `bits.to_indices` written
+
+capability bits/resize-and-cut  a set made longer or shorter, a part of it, its bits shifted
+  heroes  bits.with_size, bits.part, bits.shift_up, bits.shift_down
+  go      -
+  rust    -
+  python  -
+  note    Java's `get(from, to)` is `bits.part`; .NET's `LeftShift` moves bits up, which is `bits.shift_up`
+
+

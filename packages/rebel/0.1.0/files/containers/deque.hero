@@ -1,0 +1,465 @@
+# A double-ended queue: items put in and taken out at either end in constant
+# time over many calls, read and written by their place from the front, and,
+# where it is bounded, the oldest dropped as new ones come. Rust's
+# `VecDeque`, Python's `collections.deque`, Java's `ArrayDeque`.
+#
+# It does not keep an order of its own: a queue taken by priority is
+# `containers/heap`'s, a sorted one `containers/ordered`'s; reversing,
+# searching and sorting its items are `lists`'s, over `to_list`.
+#
+# A record takes no type parameter, so a deque is in two parts: a SHAPE, a
+# `Deque` of this package holding the ring, and the program's own item list,
+# lent with `@` to every call that changes it. The item list is the deque's
+# storage, read through this package's functions: its slots past the items
+# hold copies of live ones, kept as room, so nothing taken out stays alive.
+#
+# It fails with `not_found`, where a place or an end is not there, and
+# `invalid`, where an item is put into a full bounded deque. A call aborts
+# where a deque is given an item list that is not its own, or a bound below
+# 1.
+
+use containers/deque/internal/ring
+use containers/internal/codes
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+# The code of an item put into a full bounded deque, which `insert`
+# answers.
+constant INVALID: str
+    codes.INVALID
+
+## The double-ended queue
+
+# The shape of a double-ended queue: a ring over the slots of the program's
+# item list, so an item goes in or comes out at either end without the
+# others moving.
+#
+# Made by `new`, `new_bounded` or `over`, and changed only by
+# this section's functions. The item list doubles when it is full and is cut
+# back when three quarters of it stand empty, so each end costs a constant
+# over many calls. A bounded deque holds at most its limit: an item pushed at
+# one end of a full one drops the item at the other. `==` compares two shapes,
+# not their items.
+record Deque
+    # The ring, held by the package itself.
+    ring: ring.Ring
+
+# An empty deque without a bound, whose program keeps an empty item list
+# beside it.
+#
+# See also `new_bounded`, `over`.
+function new() -> Deque
+    return Deque(ring: ring.empty(0))
+
+# An empty deque that holds at most `most` items, the last ones pushed.
+#
+# - `most`: the most items it holds, from 1.
+#
+# Aborts where `most` is below 1. See also `new`, `limit`.
+function new_bounded(most: i64) -> Deque
+    if most < 1
+        codes.abort_with(f"a bounded deque holds at least one item, and {most} was asked")
+    return Deque(ring: ring.empty(most))
+
+# The shape of a deque holding `items`, the first one at the front: the list
+# the program has becomes the deque's item list.
+#
+# - `items`: the items, front to back; empty gives an empty deque.
+#
+# A deque without a bound. See also `new`, `to_list`.
+function over<T>(items: [T] lent) -> Deque
+    return Deque(ring: ring.Ring(head: 0, count: items.len(), limit: 0))
+
+# How many items a deque holds.
+#
+# - `deque`: the shape.
+#
+# See also `limit`.
+function size(deque: Deque) -> i64
+    return deque.ring.count
+
+# The most items a bounded deque holds.
+#
+# - `deque`: the shape.
+#
+# Fails `not_found` where the deque has no bound. See also
+# `new_bounded`.
+function limit(deque: Deque) -> i64?
+    if deque.ring.limit == 0
+        return fail(code: NOT_FOUND, msg: "the deque has no bound")
+    return ok(deque.ring.limit)
+
+# Adds `value` at the back of a deque.
+#
+# - `deque`: the shape; it grows by one, or, bounded and full, drops its
+#   front item.
+# - `items`: the item list.
+# - `value`: the item to add.
+#
+# See also `push_front`, `pop_back`.
+function push_back<T>(@deque: Deque, @items: [T], value: T)
+    ring.require_items(deque.ring, items.len())
+    ring.push_back(@deque.ring, @items, value)
+
+# Adds `value` at the front of a deque.
+#
+# - `deque`: the shape; it grows by one, or, bounded and full, drops its back
+#   item.
+# - `items`: the item list.
+# - `value`: the item to add.
+#
+# See also `push_back`, `pop_front`.
+function push_front<T>(@deque: Deque, @items: [T], value: T)
+    ring.require_items(deque.ring, items.len())
+    ring.push_front(@deque.ring, @items, value)
+
+# Takes the back item out of a deque and answers it.
+#
+# - `deque`: the shape; it shrinks by one.
+# - `items`: the item list.
+#
+# Fails `not_found` where the deque is empty. See also `pop_front`.
+function pop_back<T>(@deque: Deque, @items: [T]) -> T?
+    ring.require_items(deque.ring, items.len())
+
+    if deque.ring.count == 0
+        return fail(code: NOT_FOUND, msg: "an empty deque has no back item")
+    return ok(ring.pop_back(@deque.ring, @items))
+
+# Takes the front item out of a deque and answers it.
+#
+# - `deque`: the shape; it shrinks by one.
+# - `items`: the item list.
+#
+# Fails `not_found` where the deque is empty. See also `pop_back`.
+function pop_front<T>(@deque: Deque, @items: [T]) -> T?
+    ring.require_items(deque.ring, items.len())
+
+    if deque.ring.count == 0
+        return fail(code: NOT_FOUND, msg: "an empty deque has no front item")
+    return ok(ring.pop_front(@deque.ring, @items))
+
+# The front item of a deque, left in.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+#
+# Fails `not_found` where the deque is empty. See also `last`.
+function first<T>(deque: Deque, items: [T] lent) -> T?
+    return get(deque, items, 0)
+
+# The back item of a deque, left in.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+#
+# Fails `not_found` where the deque is empty. See also `first`.
+function last<T>(deque: Deque, items: [T] lent) -> T?
+    return get(deque, items, deque.ring.count - 1)
+
+# The item `index` places from the front of a deque.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+# - `index`: the place, 0 at the front.
+#
+# Fails `not_found` where `index` is below zero or at or past the size.
+# See also `put`.
+function get<T>(deque: Deque, items: [T] lent, index: i64) -> T?
+    ring.require_items(deque.ring, items.len())
+
+    if index < 0 || index >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
+    return ok(items[ring.slot_of(deque.ring, capacity: items.len(), index: index)])
+
+# Writes `value` over the item `index` places from the front of a deque.
+#
+# - `deque`: the shape, left as it was.
+# - `items`: the item list; one slot changes.
+# - `index`: the place, 0 at the front.
+# - `value`: the new item.
+#
+# Fails `not_found` where `index` is below zero or at or past the size, and
+# writes nothing. See also `get`.
+function put<T>(deque: Deque, @items: [T], index: i64, value: T) -> ()?
+    ring.require_items(deque.ring, items.len())
+
+    if index < 0 || index >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
+    at = ring.slot_of(deque.ring, capacity: items.len(), index: index)
+    items[at] @ value
+    return ok()
+
+# Puts `value` `index` places from the front of a deque, the items from there
+# on moving one place back.
+#
+# - `deque`: the shape; it grows by one.
+# - `items`: the item list.
+# - `index`: the place, from 0, the front, to the size, the back.
+# - `value`: the item to put.
+#
+# It moves the items on the nearer side of `index`, at most half of them.
+# Fails `not_found` where `index` is below zero or past the size, and
+# `invalid` where a bounded deque is full, as Python's `deque.insert` refuses;
+# either way it changes nothing. See also `remove_at`.
+function insert<T>(@deque: Deque, @items: [T], index: i64, value: T) -> ()?
+    ring.require_items(deque.ring, items.len())
+
+    if index < 0 || index > deque.ring.count
+        return fail(
+            code: NOT_FOUND,
+            msg: f"place {index} is outside 0 to {deque.ring.count}, where a deque of {deque.ring.count} items takes one"
+        )
+
+    if deque.ring.limit > 0 && deque.ring.count == deque.ring.limit
+        return fail(code: INVALID, msg: f"the deque holds its limit of {deque.ring.limit} items")
+    ring.insert(@deque.ring, @items, index, value)
+    return ok()
+
+# Takes out the item `index` places from the front of a deque and answers it,
+# the items after it moving one place forward.
+#
+# - `deque`: the shape; it shrinks by one.
+# - `items`: the item list.
+# - `index`: the place, 0 at the front.
+#
+# It moves the items on the nearer side of `index`, at most half of them.
+# Fails `not_found` where `index` is below zero or at or past the size. See
+# also `insert`.
+function remove_at<T>(@deque: Deque, @items: [T], index: i64) -> T?
+    ring.require_items(deque.ring, items.len())
+
+    if index < 0 || index >= deque.ring.count
+        return fail(code: NOT_FOUND, msg: f"place {index} is outside a deque of {deque.ring.count} items")
+    return ok(ring.remove_at(@deque.ring, @items, index))
+
+# Moves the first `by` items of a deque to its back, in their order.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+# - `by`: how many places; it counts modulo the size, and below zero turns
+#   the deque the other way.
+#
+# It moves at most half the items, and none in a full item list. An empty
+# deque stays so. See also `rotate_right`, `lists.rotate_left`.
+function rotate_left<T>(@deque: Deque, @items: [T], by: i64)
+    ring.require_items(deque.ring, items.len())
+
+    if deque.ring.count > 0
+        turn = by % deque.ring.count
+
+        if turn < 0
+            ring.rotate_left(@deque.ring, @items, turn + deque.ring.count)
+        else
+            ring.rotate_left(@deque.ring, @items, turn)
+
+# Moves the last `by` items of a deque to its front, in their order: Python's
+# `deque.rotate`.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+# - `by`: how many places; it counts modulo the size, and below zero turns
+#   the deque the other way.
+#
+# It moves at most half the items. See also `rotate_left`.
+function rotate_right<T>(@deque: Deque, @items: [T], by: i64)
+    ring.require_items(deque.ring, items.len())
+
+    if deque.ring.count > 0
+        turn = by % deque.ring.count
+
+        if turn > 0
+            ring.rotate_left(@deque.ring, @items, deque.ring.count - turn)
+        else
+            ring.rotate_left(@deque.ring, @items, -turn)
+
+# The items of a deque, front to back.
+#
+# - `deque`: the shape.
+# - `items`: the item list.
+#
+# Empty for an empty deque. A deque turned into a list, worked on by `lists`
+# and given back by `over`, is how it is reversed, searched or sorted.
+# See also `over`.
+function to_list<T>(deque: Deque, items: [T] lent) -> [T]
+    ring.require_items(deque.ring, items.len())
+    return ring.to_list(deque.ring, items)
+
+# Empties a deque, keeping its bound.
+#
+# - `deque`: the shape; it holds nothing after.
+# - `items`: the item list; it is emptied too, so nothing it held stays
+#   alive.
+#
+# See also `new`.
+function clear<T>(@deque: Deque, @items: [T])
+    deque.ring @ ring.empty(deque.ring.limit)
+    items @ []
+
+## Examples
+
+# An empty queue.
+test "new: an empty queue of tasks"
+    tasks = new()
+    assert size(tasks) == 0
+
+# The last three lines read kept, the older ones dropped.
+test "new_bounded: the last three lines of a log"
+    tail @= new_bounded(3)
+    lines: [str] @= []
+
+    for line in ["a", "b", "c", "d", "e"]
+        push_back(@tail, @lines, line)
+
+    assert to_list(tail, lines) == ["c", "d", "e"]
+
+# A list the program has, made a deque.
+test "over: a list of jobs made a queue"
+    jobs: [str] @= ["build", "test"]
+    queue @= over(jobs)
+    assert pop_front(@queue, @jobs).must() == "build"
+
+# How many items a deque holds.
+test "size: two items pushed, one popped"
+    queue @= new()
+    items: [i64] @= []
+    push_back(@queue, @items, 1)
+    push_back(@queue, @items, 2)
+    _ = pop_front(@queue, @items).must()
+    assert size(queue) == 1
+
+# The bound of a bounded deque, and none of another.
+test "limit: a bound of ten, and no bound"
+    assert limit(new_bounded(10)).must() == 10
+    assert limit(new()).is_err()
+
+# A queue served first in, first out.
+test "push_back: customers served in the order they came"
+    queue @= new()
+    names: [str] @= []
+    push_back(@queue, @names, "ann")
+    push_back(@queue, @names, "bob")
+    assert pop_front(@queue, @names).must() == "ann"
+
+# An urgent item put before the others.
+test "push_front: an urgent task put first"
+    tasks @= new()
+    names: [str] @= []
+    push_back(@tasks, @names, "later")
+    push_front(@tasks, @names, "now")
+    assert first(tasks, names).must() == "now"
+
+# A stack: the last in, the first out.
+test "pop_back: the last page visited, for going back"
+    history @= new()
+    pages: [str] @= []
+    push_back(@history, @pages, "home")
+    push_back(@history, @pages, "about")
+    assert pop_back(@history, @pages).must() == "about"
+
+# The front item taken out, and an empty deque's answer.
+test "pop_front: the next item, then none"
+    queue @= new()
+    items: [i64] @= []
+    push_back(@queue, @items, 7)
+    assert pop_front(@queue, @items).must() == 7
+    assert pop_front(@queue, @items).is_err()
+
+# The front item, left in.
+test "first: the next customer, not served yet"
+    queue @= new()
+    names: [str] @= []
+    push_back(@queue, @names, "ann")
+    assert first(queue, names).must() == "ann"
+    assert size(queue) == 1
+
+# The back item, left in.
+test "last: the newest reading"
+    readings @= new()
+    values: [i64] @= []
+    push_back(@readings, @values, 18)
+    push_back(@readings, @values, 21)
+    assert last(readings, values).must() == 21
+
+# An item by its place from the front.
+test "get: the second item of a queue"
+    queue @= new()
+    items: [str] @= []
+
+    for item in ["a", "b", "c"]
+        push_back(@queue, @items, item)
+
+    assert get(queue, items, 1).must() == "b"
+    assert get(queue, items, 3).is_err()
+
+# An item written over in place.
+test "put: a queued job given a new name"
+    queue @= new()
+    jobs: [str] @= []
+    push_back(@queue, @jobs, "draft")
+    put(queue, @jobs, 0, "final").must()
+    assert first(queue, jobs).must() == "final"
+
+# An item put in the middle.
+test "insert: a guest seated between two others"
+    row @= new()
+    guests: [str] @= []
+    push_back(@row, @guests, "ann")
+    push_back(@row, @guests, "cy")
+    insert(@row, @guests, 1, "bob").must()
+    assert to_list(row, guests) == ["ann", "bob", "cy"]
+
+# An item taken out of the middle.
+test "remove_at: a guest who left the row"
+    row @= new()
+    guests: [str] @= []
+
+    for guest in ["ann", "bob", "cy"]
+        push_back(@row, @guests, guest)
+
+    assert remove_at(@row, @guests, 1).must() == "bob"
+    assert to_list(row, guests) == ["ann", "cy"]
+
+# Turns of a round, the first player moved to the back.
+test "rotate_left: the next player's turn"
+    round @= new()
+    players: [str] @= []
+
+    for player in ["ann", "bob", "cy"]
+        push_back(@round, @players, player)
+
+    rotate_left(@round, @players, 1)
+    assert to_list(round, players) == ["bob", "cy", "ann"]
+
+# The last items brought to the front, as Python's `rotate(1)`.
+test "rotate_right: the last item brought to the front"
+    ring_of @= new()
+    numbers: [i64] @= []
+
+    for n in [1, 2, 3, 4]
+        push_back(@ring_of, @numbers, n)
+
+    rotate_right(@ring_of, @numbers, 1)
+    assert to_list(ring_of, numbers) == [4, 1, 2, 3]
+
+# A deque's items as a list.
+test "to_list: the items front to back"
+    queue @= new()
+    items: [i64] @= []
+    push_back(@queue, @items, 2)
+    push_front(@queue, @items, 1)
+    assert to_list(queue, items) == [1, 2]
+
+# A deque emptied, keeping its bound.
+test "clear: a bounded queue emptied"
+    tail @= new_bounded(2)
+    lines: [str] @= []
+    push_back(@tail, @lines, "x")
+    clear(@tail, @lines)
+    assert size(tail) == 0
+    assert limit(tail).must() == 2

@@ -1,0 +1,16 @@
+# Reaches Rebel's `containers/indexed`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints three headers in the order they
+# were first put, one of them put twice: "host accept age".
+
+use <rebel>/containers/indexed
+
+function main()
+    headers @= indexed.new()
+    names: [str] @= []
+    values: [str] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["host", "accept", "host", "age"]
+        _ = indexed.put(@headers, @names, @values, @lookup, key: name, value: "x")
+
+    print(indexed.keys_in_order(headers, names).join(" "))

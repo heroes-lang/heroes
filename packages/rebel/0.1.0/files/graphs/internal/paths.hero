@@ -1,13 +1,12 @@
-# The weighted graphs of `{K: {K: f64}}`: their nodes numbered as `graphs`
+# The weighted graphs of `{K: {K: f64}}`: their nodes numbered as `layout`
 # numbers them, their edges laid out flat with their weights, and Dijkstra's
 # walk from one node, the nodes settled nearest first, ties by number, with
 # a binary heap of its own that keeps its length in a count, since the
 # language shortens no list in place.
 
-use containers/internal/codes
-use containers/internal/edit
-use containers/internal/graphs
-use containers/internal/samples
+use graphs/internal/codes
+use graphs/internal/layout
+use graphs/internal/samples
 
 # A weighted graph's edges by node number: the edges out of node `n` are
 # `targets[starts[n]]` to `targets[starts[n + 1] - 1]`, each weighing the
@@ -45,10 +44,10 @@ record Settled
 # met before.
 function number<K>(graph: {K: {K: f64}} lent, @nodes: [K], @ids: {K: i64})
     for key in keys(graph)
-        graphs.name(@nodes, @ids, key)
+        layout.name(@nodes, @ids, key)
 
         for node in keys(graph[key].must())
-            graphs.name(@nodes, @ids, node)
+            layout.name(@nodes, @ids, node)
 
 # The edges of `graph` by the numbers `number` gave. Fails `invalid` at the
 # first weight below zero, infinite or not a number: a weight less itself is
@@ -85,7 +84,7 @@ function before(a: Reach, b: Reach) -> bool
 
 # Adds `item` to the heap of the first `count` entries of `items`.
 function heap_push(@items: [Reach], @count: i64, item: Reach)
-    edit.store(@items, count, item)
+    codes.store(@items, count, item)
     hole @= count
     count @ count + 1
 
@@ -234,8 +233,8 @@ test "settle and path_to: the shorter road taken, the unreached left, and a goal
     found = settle(graph, from: 0, goal: -1)
     assert found.best[ids["d"].must()] == 6.0
     assert found.settled[ids["e"].must()] == 0
-    assert graphs.named(nodes, path_to(found, ids["d"].must())).join("") == "abcd"
-    assert graphs.named(nodes, found.order).join("") == "abcd"
+    assert layout.named(nodes, path_to(found, ids["d"].must())).join("") == "abcd"
+    assert layout.named(nodes, found.order).join("") == "abcd"
     stopped = settle(graph, from: 0, goal: ids["b"].must())
     assert stopped.order.len() == 2
 

@@ -1,0 +1,31 @@
+# The dice the package's tests use, written once: no function of the package
+# calls them.
+
+# A generator of the same numbers every run, a xorshift of 64 bits, so a test
+# of thousands of random operations repeats exactly.
+record Dice
+    # The state, never 0.
+    state: i64
+
+# The next number of `dice`, from 0 to `below` less one.
+#
+# - `dice`: the generator; it moves on.
+# - `below`: the bound, from 1.
+function roll(@dice: Dice, below: i64) -> i64
+    x @= dice.state
+    x @ x ^ x << 13
+    x @ x ^ x >> 7 & 0x01ff_ffff_ffff_ffff
+    x @ x ^ x << 17
+    dice.state @ x
+    return (x >> 1 & 0x3fff_ffff_ffff_ffff) % below
+
+## Tests
+
+test "roll: within the bound, and the same numbers from the same seed"
+    first_dice @= Dice(state: 7)
+    second_dice @= Dice(state: 7)
+
+    for _ in range(from: 0, to: 1000)
+        a = roll(@first_dice, 10)
+        assert a >= 0 && a < 10
+        assert roll(@second_dice, 10) == a

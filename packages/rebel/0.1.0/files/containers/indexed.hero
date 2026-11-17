@@ -1,0 +1,524 @@
+# A map that keeps its keys in the order they were first put, each at a
+# position from 0, as Rust's indexmap and Python's `dict` do: an entry found by
+# its key or by its position, taken out by swapping the last one in or by
+# shifting the rest, moved, swapped and sorted.
+#
+# It is not the language's own map, which keeps that order too but takes
+# nothing out in place and answers no position: `maps` works on that one. A
+# map kept in the order of its keys is `containers/ordered`'s.
+#
+# A record takes no type parameter, so the map is in parts: a SHAPE, an
+# `Indexed` of this package holding its counts, and the program's own key
+# list, value list and lookup map, a `{K: i64}` naming each key's position,
+# lent with `@` to every call that changes them. They are the map's storage:
+# positions 0 to the size less one hold its entries, the room past them
+# copies of live ones, and the lookup map holds `-1` for a key taken out
+# until it is rebuilt. Putting, finding and taking out by swapping cost a
+# constant over many calls.
+#
+# It fails with `not_found`, where a key or a position is not there. A call
+# aborts where a position is outside the map, or a list or the lookup map is
+# not the map's own.
+
+use containers/indexed/internal/table
+use containers/internal/codes
+use containers/internal/samples
+
+## The codes
+
+# The code of a search that found nothing, which every function of this
+# package whose `Fails` names `not_found` answers.
+constant NOT_FOUND: str
+    codes.NOT_FOUND
+
+## The map that keeps its order
+
+# The shape of a map that keeps its keys in the order they were first put,
+# each at a position from 0, as Rust's indexmap and Python's `dict` do: a key
+# at each position of the program's key list, its value at the same position
+# of its value list, and the program's lookup map naming each key's position.
+# The three are the map's storage, the lookup map holding `-1` for a key taken
+# out until it is rebuilt.
+#
+# Made empty by `new`. Putting, finding and taking out by swapping
+# cost a constant over many calls; taking out by shifting and moving cost the
+# positions passed.
+record Indexed
+    # The counts, held by the package itself.
+    table: table.Table
+
+# An empty map that keeps its order, whose program keeps an empty key list, an
+# empty value list and an empty lookup map beside it.
+#
+# See also `put`.
+function new() -> Indexed
+    return Indexed(table: table.Table(count: 0, dead: 0))
+
+# How many entries a map that keeps its order holds.
+#
+# - `indexed`: the shape.
+#
+# See also `keys_in_order`.
+function size(indexed: Indexed) -> i64
+    return indexed.table.count
+
+# Puts `value` under `key` and answers its position: a new key goes last, a
+# held one keeps its place and has its value replaced.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `key`: the key.
+# - `value`: the value to put.
+#
+# Aborts where a list or the lookup map is not the map's own. See also
+# `get`, `position_of`.
+function put<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K, value: V) -> i64
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    return table.put(@indexed.table, @key_list, @value_list, @lookup, key: key, value: value)
+
+# The value under `key`.
+#
+# - `indexed`: the shape.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `key`: the key to find.
+#
+# Fails `not_found` where the map holds no entry under `key`. See also
+# `value_at`.
+function get<K, V>(indexed: Indexed, value_list: [V] lent, lookup: {K: i64} lent, key: K) -> V?
+    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+    at = table.position_of(indexed.table, lookup, key)
+
+    if at == table.GONE
+        return fail(code: NOT_FOUND, msg: f"the map's {indexed.table.count} entries hold none under the key asked")
+    return ok(value_list[at])
+
+# The position of `key`, from 0, in the order the keys were first put.
+#
+# - `indexed`: the shape.
+# - `lookup`: the map's lookup map.
+# - `key`: the key to find.
+#
+# Fails `not_found` where the map holds no entry under `key`. See also
+# `key_at`.
+function position_of<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> i64?
+    return codes.answer(
+        at: table.position_of(indexed.table, lookup, key),
+        msg: f"the map's {indexed.table.count} entries hold none under the key asked"
+    )
+
+# Whether the map holds an entry under `key`.
+#
+# - `indexed`: the shape.
+# - `lookup`: the map's lookup map.
+# - `key`: the key to look for.
+#
+# See also `position_of`.
+function contains<K>(indexed: Indexed, lookup: {K: i64} lent, key: K) -> bool
+    return table.position_of(indexed.table, lookup, key) != table.GONE
+
+# The key at position `at`.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `at`: the position, from 0.
+#
+# Fails `not_found` where `at` is below zero or at or past the size. See also
+# `value_at`.
+function key_at<K>(indexed: Indexed, key_list: [K] lent, at: i64) -> K?
+    codes.require_storage(held: key_list.len(), count: indexed.table.count, what: "key list")
+
+    if at < 0 || at >= indexed.table.count
+        return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
+    return ok(key_list[at])
+
+# The value at position `at`.
+#
+# - `indexed`: the shape.
+# - `value_list`: the map's values.
+# - `at`: the position, from 0.
+#
+# Fails `not_found` where `at` is below zero or at or past the size. See also
+# `key_at`.
+function value_at<V>(indexed: Indexed, value_list: [V] lent, at: i64) -> V?
+    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+
+    if at < 0 || at >= indexed.table.count
+        return fail(code: NOT_FOUND, msg: f"position {at} is outside a map of {indexed.table.count} entries")
+    return ok(value_list[at])
+
+# Takes `key` out and answers its value, the last entry moving into its
+# position: the order changes, and it costs a constant.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `key`: the key to take out.
+#
+# Fails `not_found` where the map holds no entry under `key`. See also
+# `shift_remove`, which keeps the order.
+function swap_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    at = table.position_of(indexed.table, lookup, key)
+
+    if at == table.GONE
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the map's {indexed.table.count} entries hold none under the key to take out"
+        )
+    value = value_list[at]
+    table.swap_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
+    return ok(value)
+
+# Takes `key` out and answers its value, every entry after it moving one
+# position forward: the order is kept, at the cost of the entries moved.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `key`: the key to take out.
+#
+# Fails `not_found` where the map holds no entry under `key`. See also
+# `swap_remove`.
+function shift_remove<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, key: K) -> V?
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    at = table.position_of(indexed.table, lookup, key)
+
+    if at == table.GONE
+        return fail(
+            code: NOT_FOUND,
+            msg: f"the map's {indexed.table.count} entries hold none under the key to take out"
+        )
+    value = value_list[at]
+    table.shift_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
+    return ok(value)
+
+# Takes the entry at position `at` out, the last entry moving into it.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `at`: the position, from 0 to the size less one; the last one takes the
+#   last entry out, Python's `dict.popitem`.
+#
+# Aborts where `at` names no position. See also `shift_remove_at`.
+function swap_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_position(indexed.table, at)
+    table.swap_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
+
+# Takes the entry at position `at` out, every entry after it moving one
+# position forward.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `at`: the position, from 0 to the size less one; 0 takes the first entry
+#   out.
+#
+# Aborts where `at` names no position. See also `swap_remove_at`.
+function shift_remove_at<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64)
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_position(indexed.table, at)
+    table.shift_remove_at(@indexed.table, @key_list, @value_list, @lookup, at)
+
+# Moves the entry at position `from` to position `to`, the entries between
+# moving one position to make room.
+#
+# - `indexed`: the shape, left as it was.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `from`: the entry's position.
+# - `to`: its position after; the size less one moves it last, Python's
+#   `OrderedDict.move_to_end`, and 0 first.
+#
+# It costs the positions between. Aborts where either names no position.
+# See also `swap`.
+function move<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, from: i64, to: i64)
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_position(indexed.table, from)
+    table.require_position(indexed.table, to)
+    table.move(@key_list, @value_list, @lookup, from: from, to: to)
+
+# Swaps the entries at positions `at` and `with`.
+#
+# - `indexed`: the shape, left as it was.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map.
+# - `at`: one position.
+# - `with`: the other; equal to `at` nothing moves.
+#
+# Aborts where either names no position. See also `move`.
+function swap<K, V>(indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, at: i64, with: i64)
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.require_position(indexed.table, at)
+    table.require_position(indexed.table, with)
+    table.swap(@key_list, @value_list, @lookup, at: at, with: with)
+
+# Puts the entries in the order of their keys by `less`, entries of equal keys
+# keeping their order.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+# - `value_list`: the map's values.
+# - `lookup`: the map's lookup map, rebuilt.
+# - `less`: the order.
+#
+# It costs the size times its logarithm, and rebuilds the lookup map. See
+# also `lists.sort_by`.
+function sort_by_key<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64}, less: (function(a: K, b: K) -> bool))
+    table.require_lists(indexed.table, keys_held: key_list.len(), values_held: value_list.len())
+    table.sort_by_key(@indexed.table, @key_list, @value_list, @lookup, less: less)
+
+# The keys in their order.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys.
+#
+# Empty for an empty map. See also `values`.
+function keys_in_order<K>(indexed: Indexed, key_list: [K] lent) -> [K]
+    codes.require_storage(held: key_list.len(), count: indexed.table.count, what: "key list")
+    return key_list.slice(from: 0, to: indexed.table.count)
+
+# The values in the order of their keys.
+#
+# - `indexed`: the shape.
+# - `value_list`: the map's values.
+#
+# Empty for an empty map. See also `keys_in_order`.
+function values<V>(indexed: Indexed, value_list: [V] lent) -> [V]
+    codes.require_storage(held: value_list.len(), count: indexed.table.count, what: "value list")
+    return value_list.slice(from: 0, to: indexed.table.count)
+
+# Empties a map that keeps its order.
+#
+# - `indexed`: the shape.
+# - `key_list`: the map's keys, emptied.
+# - `value_list`: the map's values, emptied.
+# - `lookup`: the map's lookup map, emptied.
+#
+# See also `new`.
+function clear<K, V>(@indexed: Indexed, @key_list: [K], @value_list: [V], @lookup: {K: i64})
+    indexed.table @ table.Table(count: 0, dead: 0)
+    key_list @ []
+    value_list @ []
+    lookup @ {}
+
+## Examples
+
+# An empty map that keeps its order.
+test "new: an empty map of headers"
+    headers = new()
+    assert size(headers) == 0
+
+# How many entries it holds.
+test "size: two headers, one of them put twice"
+    headers @= new()
+    names: [str] @= []
+    texts: [str] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@headers, @names, @texts, @lookup, key: "host", value: "a")
+    _ = put(@headers, @names, @texts, @lookup, key: "accept", value: "b")
+    _ = put(@headers, @names, @texts, @lookup, key: "host", value: "c")
+    assert size(headers) == 2
+
+# A new key last, a key held keeping its place.
+test "put: a header added and one replaced in place"
+    headers @= new()
+    names: [str] @= []
+    texts: [str] @= []
+    lookup: {str: i64} @= {}
+    assert put(@headers, @names, @texts, @lookup, key: "host", value: "a") == 0
+    assert put(@headers, @names, @texts, @lookup, key: "accept", value: "*") == 1
+    assert put(@headers, @names, @texts, @lookup, key: "host", value: "b") == 0
+
+# A value by its key.
+test "get: a header's value"
+    headers @= new()
+    names: [str] @= []
+    texts: [str] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@headers, @names, @texts, @lookup, key: "host", value: "example.org")
+    assert get(headers, texts, lookup, key: "host").must() == "example.org"
+    assert get(headers, texts, lookup, key: "age").is_err()
+
+# The position of a key.
+test "position_of: the place of a column by its name"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["id", "name", "email"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 10)
+
+    assert position_of(columns, lookup, key: "email").must() == 2
+
+# Whether a key is held.
+test "contains: a column held and one not"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@columns, @names, @widths, @lookup, key: "id", value: 4)
+    assert contains(columns, lookup, key: "id")
+    assert !contains(columns, lookup, key: "age")
+
+# A key by its position.
+test "key_at: the name of the second column"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["id", "name"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 8)
+
+    assert key_at(columns, names, 1).must() == "name"
+    assert key_at(columns, names, 2).is_err()
+
+# A value by its position.
+test "value_at: the width of the first column"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@columns, @names, @widths, @lookup, key: "id", value: 4)
+    assert value_at(columns, widths, 0).must() == 4
+
+# A key taken out, the last entry moving into its place.
+test "swap_remove: the first column taken out, the last moved in"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b", "c"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    _ = swap_remove(@columns, @names, @widths, @lookup, key: "a").must()
+    assert keys_in_order(columns, names) == ["c", "b"]
+
+# A key taken out, the order kept.
+test "shift_remove: the first column taken out, the order kept"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b", "c"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    _ = shift_remove(@columns, @names, @widths, @lookup, key: "a").must()
+    assert keys_in_order(columns, names) == ["b", "c"]
+
+# The last entry taken out, Python's `popitem`.
+test "swap_remove_at: the last entry popped"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    last = size(columns) - 1
+    assert names[last] == "b"
+    swap_remove_at(@columns, @names, @widths, @lookup, last)
+    assert keys_in_order(columns, names) == ["a"]
+
+# The first entry taken out, the rest moving forward.
+test "shift_remove_at: the oldest entry taken out"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b", "c"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    shift_remove_at(@columns, @names, @widths, @lookup, 0)
+    assert keys_in_order(columns, names) == ["b", "c"]
+    assert position_of(columns, lookup, key: "c").must() == 1
+
+# An entry moved to the end, Python's `move_to_end`.
+test "move: the first column moved last"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b", "c"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    move(columns, @names, @widths, @lookup, from: 0, to: 2)
+    assert keys_in_order(columns, names) == ["b", "c", "a"]
+
+# Two entries swapped.
+test "swap: the first and last columns swapped"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["a", "b", "c"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: 1)
+
+    swap(columns, @names, @widths, @lookup, at: 0, with: 2)
+    assert keys_in_order(columns, names) == ["c", "b", "a"]
+    assert position_of(columns, lookup, key: "c").must() == 0
+
+# The entries put in the order of their keys.
+test "sort_by_key: columns sorted by name"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["email", "id", "name"]
+        _ = put(@columns, @names, @widths, @lookup, key: name, value: name.len())
+
+    sort_by_key(@columns, @names, @widths, @lookup, less: samples.by_bytes)
+    assert keys_in_order(columns, names) == ["email", "id", "name"]
+    assert values(columns, widths) == [5, 2, 4]
+
+# The keys in their order.
+test "keys_in_order: the headers in the order they were put"
+    headers @= new()
+    names: [str] @= []
+    texts: [str] @= []
+    lookup: {str: i64} @= {}
+
+    for name in ["host", "accept", "age"]
+        _ = put(@headers, @names, @texts, @lookup, key: name, value: "")
+
+    assert keys_in_order(headers, names) == ["host", "accept", "age"]
+
+# The values in the order of their keys.
+test "values: the widths in the order of the columns"
+    columns @= new()
+    names: [str] @= []
+    widths: [i64] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@columns, @names, @widths, @lookup, key: "b", value: 2)
+    _ = put(@columns, @names, @widths, @lookup, key: "a", value: 1)
+    assert values(columns, widths) == [2, 1]
+
+# A map emptied.
+test "clear: every header taken out"
+    headers @= new()
+    names: [str] @= []
+    texts: [str] @= []
+    lookup: {str: i64} @= {}
+    _ = put(@headers, @names, @texts, @lookup, key: "host", value: "a")
+    clear(@headers, @names, @texts, @lookup)
+    assert size(headers) == 0
+    assert !contains(headers, lookup, key: "host")

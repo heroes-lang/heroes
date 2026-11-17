@@ -6,8 +6,8 @@
 # for a key taken out, until it is rebuilt from the live keys.
 
 use containers/internal/codes
-use containers/internal/edit
 use containers/internal/samples
+use containers/internal/storage
 
 # The link that names no slot.
 constant NONE: i64
@@ -238,8 +238,8 @@ function take<K, V>(@cache: Lru, @key_list: [K], @value_list: [V], @lookup: {K: 
     if at != end
         relocate(@cache, from: end, to: at)
     cache.count @ end
-    edit.drop_slot(@key_list, at: at, end: end, count: end)
-    edit.drop_slot(@value_list, at: at, end: end, count: end)
+    storage.drop_slot(@key_list, at: at, end: end, count: end)
+    storage.drop_slot(@value_list, at: at, end: end, count: end)
 
     if at != end
         lookup[key_list[at]] @ at
@@ -272,8 +272,8 @@ function put<K, V>(@cache: Lru, @key_list: [K], @value_list: [V], @lookup: {K: i
     if cache.count == cache.capacity
         take(@cache, @key_list, @value_list, @lookup, cache.oldest)
     slot = claim(@cache)
-    edit.store(@key_list, slot, key)
-    edit.store(@value_list, slot, value)
+    storage.store(@key_list, slot, key)
+    storage.store(@value_list, slot, value)
 
     if lookup[key].default(0) == NONE
         cache.dead @ cache.dead - 1
@@ -392,9 +392,9 @@ test "put, get, take and expire: four thousand random operations against a list 
 
                 while at < model.len()
                     if model_written[at] + ttl <= now
-                        model @ edit.model_remove(model, at)
-                        model_values @ edit.model_remove(model_values, at)
-                        model_written @ edit.model_remove(model_written, at)
+                        model @ samples.model_remove(model, at)
+                        model_values @ samples.model_remove(model_values, at)
+                        model_written @ samples.model_remove(model_written, at)
                     else
                         at @ at + 1
             place = model_place(model, key)
@@ -404,13 +404,13 @@ test "put, get, take and expire: four thousand random operations against a list 
                 written = now
 
                 if place >= 0
-                    model @ edit.model_remove(model, place)
-                    model_values @ edit.model_remove(model_values, place)
-                    model_written @ edit.model_remove(model_written, place)
+                    model @ samples.model_remove(model, place)
+                    model_values @ samples.model_remove(model_values, place)
+                    model_written @ samples.model_remove(model_written, place)
                 else if model.len() == 6
-                    model @ edit.model_remove(model, 0)
-                    model_values @ edit.model_remove(model_values, 0)
-                    model_written @ edit.model_remove(model_written, 0)
+                    model @ samples.model_remove(model, 0)
+                    model_values @ samples.model_remove(model_values, 0)
+                    model_written @ samples.model_remove(model_written, 0)
                 model @ model.push(key)
                 model_values @ model_values.push(step)
                 model_written @ model_written.push(written)
@@ -420,9 +420,9 @@ test "put, get, take and expire: four thousand random operations against a list 
                 at = slot_of(cache, lookup, key)
                 assert at != NONE
                 take(@cache, @held, @values, @lookup, at)
-                model @ edit.model_remove(model, place)
-                model_values @ edit.model_remove(model_values, place)
-                model_written @ edit.model_remove(model_written, place)
+                model @ samples.model_remove(model, place)
+                model_values @ samples.model_remove(model_values, place)
+                model_written @ samples.model_remove(model_written, place)
             assert cache.count == model.len()
             assert oldest_first(cache, held) == model
 

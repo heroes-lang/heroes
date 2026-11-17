@@ -3,7 +3,6 @@
 # end takes and gives without moving the others.
 
 use containers/internal/codes
-use containers/internal/edit
 use containers/internal/samples
 
 # The ring of one deque. The item at position `i` from the front stands at
@@ -293,27 +292,27 @@ test "every operation: four thousand random ones against a plain list, bounded a
                 model @ model.push(step)
 
                 if limit > 0 && model.len() > limit
-                    model @ edit.model_remove(model, 0)
+                    model @ samples.model_remove(model, 0)
             else if choice == 1
                 push_front(@ring, @items, step)
-                model @ edit.model_insert(model, at: 0, value: step)
+                model @ samples.model_insert(model, at: 0, value: step)
 
                 if limit > 0 && model.len() > limit
-                    model @ edit.model_remove(model, model.len() - 1)
+                    model @ samples.model_remove(model, model.len() - 1)
             else if choice == 2 && model.len() > 0
                 assert pop_front(@ring, @items) == model[0]
-                model @ edit.model_remove(model, 0)
+                model @ samples.model_remove(model, 0)
             else if choice == 3 && model.len() > 0
                 assert pop_back(@ring, @items) == model[model.len() - 1]
-                model @ edit.model_remove(model, model.len() - 1)
+                model @ samples.model_remove(model, model.len() - 1)
             else if choice == 4 && (limit == 0 || model.len() < limit)
                 index = samples.roll(@dice, model.len() + 1)
                 insert(@ring, @items, index, step)
-                model @ edit.model_insert(model, at: index, value: step)
+                model @ samples.model_insert(model, at: index, value: step)
             else if choice == 5 && model.len() > 0
                 index = samples.roll(@dice, model.len())
                 assert remove_at(@ring, @items, index) == model[index]
-                model @ edit.model_remove(model, index)
+                model @ samples.model_remove(model, index)
             else if model.len() > 0
                 by = samples.roll(@dice, model.len() + 1)
                 rotate_left(@ring, @items, by)

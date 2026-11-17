@@ -1,0 +1,16 @@
+# Reaches Rebel's `containers/cache`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It prints whether a cache of two still
+# holds the page read again and the one used least: "true false".
+
+use <rebel>/containers/cache
+
+function main()
+    pages @= cache.new(2)
+    urls: [str] @= []
+    bodies: [str] @= []
+    lookup: {str: i64} @= {}
+    cache.put(@pages, @urls, @bodies, @lookup, key: "/a", value: "A", now: 0)
+    cache.put(@pages, @urls, @bodies, @lookup, key: "/b", value: "B", now: 0)
+    _ = cache.get(@pages, @urls, @bodies, @lookup, key: "/a", now: 0).default("")
+    cache.put(@pages, @urls, @bodies, @lookup, key: "/c", value: "C", now: 0)
+    print(cache.contains(pages, lookup, key: "/a", now: 0), " ", cache.contains(pages, lookup, key: "/b", now: 0))

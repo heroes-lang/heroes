@@ -1,0 +1,21 @@
+# Reaches Rebel's `containers/heap`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It prints tasks taken by their
+# priority, the smallest number first: "1 2 3".
+
+use <rebel>/containers/heap
+
+function ascending(a: i64, b: i64) -> bool
+    return a < b
+
+function main()
+    queue: [i64] @= []
+
+    for rank in [3, 1, 2]
+        heap.add(heap: @queue, value: rank, less: ascending)
+
+    taken: [str] @= []
+
+    while queue.len() > 0
+        taken @ taken.push(f"{heap.pop(heap: @queue, less: ascending).must()}")
+
+    print(taken.join(" "))

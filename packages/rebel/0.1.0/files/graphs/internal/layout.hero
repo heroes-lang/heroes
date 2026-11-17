@@ -1,0 +1,127 @@
+# The layout of a graph of `{K: [K]}`: its nodes numbered in the order
+# Python's `graphlib` meets them (each key, then the nodes of its list not met
+# before), and its edges laid out flat by number, out of each node and into
+# it, which every walk of `walks`, `paths` and `stages` reads.
+
+# A graph's edges by node number. The edges out of node `n` are
+# `out_to[out_starts[n]]` to `out_to[out_starts[n + 1] - 1]`, in the order of
+# its list; the edges into it are `in_from[in_starts[n]]` onwards, in the
+# order of the keys whose lists name it.
+record Numbered
+    # How many nodes.
+    count: i64
+    # Where each node's edges out begin; one more entry than nodes.
+    out_starts: [i64]
+    # The nodes the edges out reach, back to back.
+    out_to: [i64]
+    # Where each node's edges in begin; one more entry than nodes.
+    in_starts: [i64]
+    # The nodes the edges in come from, back to back.
+    in_from: [i64]
+
+# Gives `node` the next number where it has none.
+function name<K>(@nodes: [K], @ids: {K: i64}, node: K)
+    if ids[node].is_err()
+        ids[node] @ nodes.len()
+        nodes @ nodes.push(node)
+
+# Numbers every node of `graph`: each key, then the nodes of its list not
+# met before.
+function number<K>(graph: {K: [K]} lent, @nodes: [K], @ids: {K: i64})
+    for key in keys(graph)
+        name(@nodes, @ids, key)
+
+        for node in graph[key].must()
+            name(@nodes, @ids, node)
+
+# A list of `count` zeros.
+function zeros(count: i64) -> [i64]
+    made: [i64] @= []
+
+    for _ in range(from: 0, to: count)
+        made @ made.push(0)
+
+    return made
+
+# The edges of `graph` by the numbers `number` gave.
+function links<K>(graph: {K: [K]} lent, nodes: [K] lent, ids: {K: i64} lent) -> Numbered
+    count = nodes.len()
+    out_starts: [i64] @= [0]
+    out_to: [i64] @= []
+    in_counts @= zeros(count)
+
+    for at in range(from: 0, to: count)
+        match graph[nodes[at]]
+            .ok pointed =>
+                for node in pointed
+                    target = ids[node].must()
+                    out_to @ out_to.push(target)
+                    in_counts[target] @ in_counts[target] + 1
+            .err _ => _ = 0
+
+        out_starts @ out_starts.push(out_to.len())
+
+    in_starts: [i64] @= [0]
+
+    for at in range(from: 0, to: count)
+        in_starts @ in_starts.push(in_starts[at] + in_counts[at])
+
+    in_from @= zeros(out_to.len())
+    fill @= in_starts.slice(from: 0, to: count)
+
+    for source in range(from: 0, to: count)
+        for edge in range(from: out_starts[source], to: out_starts[source + 1])
+            target = out_to[edge]
+            in_from[fill[target]] @ source
+            fill[target] @ fill[target] + 1
+
+    return Numbered(count: count, out_starts: out_starts, out_to: out_to, in_starts: in_starts, in_from: in_from)
+
+# The numbers of `graph`'s nodes and its edges, in one call.
+function numbered<K>(graph: {K: [K]} lent, @nodes: [K]) -> Numbered
+    ids: {K: i64} @= {}
+    number(graph, @nodes, @ids)
+    return links(graph, nodes, ids)
+
+# The nodes named by the numbers of `order`.
+function named<K>(nodes: [K] lent, order: [i64] lent) -> [K]
+    found: [K] @= []
+
+    for at in order
+        found @ found.push(nodes[at])
+
+    return found
+
+# How many edges leave each node: the nodes it waits on in an order.
+function out_degrees(graph: Numbered lent) -> [i64]
+    degrees: [i64] @= []
+
+    for at in range(from: 0, to: graph.count)
+        degrees @ degrees.push(graph.out_starts[at + 1] - graph.out_starts[at])
+
+    return degrees
+
+## Tests
+
+# The graph of the face's example: a node's list the nodes it depends on.
+function sample() -> {str: [str]}
+    return {"a": ["b", "c"], "b": ["d"], "c": ["d"], "e": []}
+
+test "number: keys and their lists in the order met, each node once"
+    nodes: [str] @= []
+    ids: {str: i64} @= {}
+    number(sample(), @nodes, @ids)
+    assert nodes.join("") == "abcde"
+    empty_graph: {str: [str]} = {}
+    none: [str] @= []
+    none_ids: {str: i64} @= {}
+    number(empty_graph, @none, @none_ids)
+    assert none.len() == 0
+
+test "links: the edges out and in of each node, a node named twice counted twice"
+    nodes: [str] @= []
+    graph = numbered({"x": ["y", "y"], "y": []}, @nodes)
+    assert graph.out_starts == [0, 2, 2]
+    assert graph.out_to == [1, 1]
+    assert graph.in_starts == [0, 0, 2]
+    assert graph.in_from == [0, 0]

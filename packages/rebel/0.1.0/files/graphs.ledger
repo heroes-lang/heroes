@@ -1,0 +1,61 @@
+# The ledger of `graphs`: the orders and the paths of a graph, what Python
+# 3.15's `graphlib` offers (Go 1.27 and Rust 1.100 have nothing in their
+# standard libraries), one block per capability, and what Heroes answers to
+# each, with the components and the paths a package manager and a build need
+# beside it.
+
+## Graphs
+
+capability graph/nodes  every node of a graph, numbered
+  heroes  graphs.nodes_of
+  go      -
+  rust    -
+  python  graphlib.TopologicalSorter.add
+  note    a graph is a `{K: [K]}`, each node to the nodes it points to, as Python's `TopologicalSorter(graph)` takes a node's predecessors; the numbering is the order graphlib meets them, each key and then its list
+
+capability graph/topological-order  every node after the nodes it points to
+  heroes  graphs.topological_order
+  go      -
+  rust    -
+  python  graphlib.TopologicalSorter, TopologicalSorter.static_order
+  note    Python's order, observed on forty random graphs written into a test with graphlib's answers; a cycle is `invalid`, as graphlib's `prepare` raises before any node
+
+capability graph/cycle  a cycle named
+  heroes  graphs.cycle_of
+  go      -
+  rust    -
+  python  graphlib.CycleError
+  note    the cycle graphlib names in `CycleError.args[1]` for the same dictionary, first node again at the end, observed on the twenty-six cyclic graphs of the same test; a node that points to itself is [a, a]
+
+capability graph/stages  a topological order handed out in stages, for work done in parallel
+  heroes  graphs.new_sorter, graphs.ready, graphs.done, graphs.is_active
+  go      -
+  rust    -
+  python  TopologicalSorter.prepare, TopologicalSorter.get_ready, TopologicalSorter.done, TopologicalSorter.is_active
+  note    nodes are numbers of `graphs.nodes_of`, since a sorter holding the program's own nodes would be a record with a type parameter; a node done that was not handed out is `invalid`, where graphlib raises ValueError
+
+capability graph/components  the strongly connected components
+  heroes  graphs.strong_components
+  go      -
+  rust    -
+  python  -
+  note    Tarjan's walk with its stacks in lists, a chain of twenty thousand nodes walked in a test; each component after those it points into, checked against mutual reachability on two hundred random graphs
+
+capability graph/reach  every node one node reaches
+  heroes  graphs.reachable_from
+  go      -
+  rust    -
+  python  -
+  note    by breadth, the start first
+
+capability graph/shortest-path  a path of least weight, and the distance to every node, on weights of zero or more
+  heroes  graphs.shortest_path, graphs.distances_from
+  go      -
+  rust    -
+  python  -
+  note    Dijkstra's walk with a heap of its own, ties by node number; a weight below zero, infinite or not a number is `invalid`, asked before it is ordered, since ordering a NaN aborts. Checked against Bellman and Ford's relaxation on two hundred random graphs
+
+dropped traits  what an interface would have needed: a structure written for a debugger, hashed, ordered against another, dropped, converted
+  go      -
+  rust    -
+  python  graphlib.GenericAlias

@@ -39,6 +39,38 @@ function roll(@dice: Dice, below: i64) -> i64
     dice.state @ x
     return (x >> 1 & 0x3fff_ffff_ffff_ffff) % below
 
+# `xs` with `value` put at `at`: the tests' plain model of an insertion.
+function model_insert(xs: [i64] lent, at: i64, value: i64) -> [i64]
+    made: [i64] @= []
+
+    for place in range(from: 0, to: xs.len())
+        if place == at
+            made @ made.push(value)
+        made @ made.push(xs[place])
+
+    if at == xs.len()
+        made @ made.push(value)
+    return made
+
+# `xs` without its element at `at`: the tests' plain model of a removal.
+function model_remove(xs: [i64] lent, at: i64) -> [i64]
+    made: [i64] @= []
+
+    for place in range(from: 0, to: xs.len())
+        if place != at
+            made @ made.push(xs[place])
+
+    return made
+
+# Whether `a` is shorter than `b`, in bytes.
+function by_length(a: str, b: str) -> bool
+    return a.len() < b.len()
+
+# An order that says every element goes before every other, which no order
+# does: what a structure is given by mistake, and must survive.
+function always(a: i64, b: i64) -> bool
+    return a == a && b == b
+
 ## Tests
 
 test "roll: within the bound, and the same numbers from the same seed"
