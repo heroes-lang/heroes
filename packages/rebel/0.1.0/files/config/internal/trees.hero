@@ -1,0 +1,209 @@
+# The work on a layer's tree the face asks for: a setting written into it, one
+# of its tables cut out as a layer of its own, settings bound one by one to
+# variables or files, and several layers merged into what `Settings` holds.
+# A layer here is its value and its origins; the face makes the record.
+
+use config/internal/assemble
+use config/internal/files
+use config/internal/held
+use config/internal/keyed
+use json
+use strings
+
+# The code of a path that is not one, or meets a value it cannot go through.
+constant INVALID: str
+    "invalid"
+
+# The code of a path a layer does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# Whether the pointer `at` is `under` or stands under it.
+function is_at_or_under(at: str, under: str) -> bool
+    if at == under || under == ""
+        return true
+    return at.len() > under.len() && at.slice(from: 0, to: under.len() + 1) == under + "/"
+
+# `value`, an object, with `fresh` at `parts`, the objects on the way made and
+# a value already there replaced in its place; `origins` without those at or
+# under `parts`. Fails `invalid` where `parts` is empty, or a key on the way
+# names a value that is not an object.
+function set_at(value: json.Value, origins: {str: str}, parts: [str], fresh: json.Value) -> assemble.Labelled?
+    if parts.len() == 0
+        return fail(code: INVALID, msg: "the empty path names the whole layer, which `from_value` makes")
+    entries: [assemble.Entry] @= []
+    placed: bool @= false
+
+    for e in assemble.flatten(value, layer: 0, origins: {}, keep_nulls: true)
+        if keyed.has_head(parts: e.keys, head: parts)
+            if !placed
+                entries @ entries.push(assemble.Entry(keys: parts, value: .object(members: {}), layer: 0, label: ""))
+                placed @ true
+        else
+            entries @ entries.push(e)
+
+    for e in assemble.flatten_under(fresh, head: parts, layer: 0, label: "", keep_nulls: true)
+        entries @ entries.push(e)
+
+    built = assemble.assemble(entries, assemble.setting())?
+    under = keyed.pointer(parts)
+    kept: {str: str} @= {}
+
+    for at in keys(origins)
+        if !is_at_or_under(at: at, under: under)
+            kept[at] @ origins[at].must()
+
+    return ok(assemble.Labelled(root: built.root, origins: kept))
+
+# The object at `parts` in `value`, the layer named `name`, and the origins
+# under it with their pointers from it. Fails `not_found` where a key names
+# nothing, `invalid` where a value on the way or at the end is not an object.
+function part_at(value: json.Value, origins: {str: str}, parts: [str], name: str) -> assemble.Labelled?
+    here: json.Value @= value
+
+    for at in range(from: 0, to: parts.len())
+        match here
+            .object o =>
+                match o.members[parts[at]]
+                    .ok found => here @ found
+                    .err _ =>
+                        return fail(
+                            code: NOT_FOUND,
+                            msg: f"no {keyed.named(parts.slice(from: 0, to: at + 1))} in the layer {json.quote(name)}"
+                        )
+            .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"{keyed.named(parts.slice(from: 0, to: at))} of the layer {json.quote(name)} is {keyed.described(here)}, which holds no key \"{parts[at]}\""
+                )
+
+    match here
+        .object _ => _ = 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(
+                code: INVALID,
+                msg: f"{keyed.named(parts)} of the layer {json.quote(name)} is {keyed.described(here)}, where a table of settings is expected"
+            )
+
+    under = keyed.pointer(parts)
+    kept: {str: str} @= {}
+
+    for at in keys(origins)
+        if is_at_or_under(at: at, under: under) && at != under
+            kept[at.slice(from: under.len(), to: at.len())] @ origins[at].must()
+
+    return ok(assemble.Labelled(root: here, origins: kept))
+
+# Checks that no path of `paths` is empty, malformed, or stands under another,
+# each named by its `labels` entry in a message. Answers each path's keys.
+function distinct_paths(paths: [str], labels: [str]) -> [[str]]?
+    checked: [assemble.Entry] @= []
+    out: [[str]] @= []
+
+    for at in range(from: 0, to: paths.len())
+        parts = keyed.keys_of(paths[at])?
+
+        if parts.len() == 0
+            return fail(code: INVALID, msg: f"{labels[at]} is bound to the empty path, which names the whole layer")
+        checked @ checked.push(assemble.Entry(keys: parts, value: .null_value, layer: 0, label: labels[at]))
+        out @ out.push(parts)
+
+    _ = assemble.assemble(checked, assemble.distinct())?
+    return ok(out)
+
+# The settings `names` binds to the variables of `env`, each a text named by
+# its variable; a variable not in `env` sets nothing.
+function bound_variables(env: {str: str}, names: {str: str}) -> assemble.Labelled?
+    paths = keys(names)
+    labels: [str] @= []
+
+    for p in paths
+        labels @ labels.push(names[p].must())
+
+    parts = distinct_paths(paths: paths, labels: labels)?
+    entries: [assemble.Entry] @= []
+
+    for at in range(from: 0, to: paths.len())
+        match env[labels[at]]
+            .ok value => entries @ entries.push(
+                assemble.Entry(keys: parts[at], value: .text(v: value), layer: 0, label: labels[at])
+            )
+            .err _    => _ = 0
+
+    return assemble.labelled(entries)
+
+# The settings `names` binds to the files of `dir`, each the file's text
+# trimmed, named by its path; a file not there sets nothing.
+function bound_files(dir: str, names: {str: str}) -> assemble.Labelled?
+    paths = keys(names)
+    labels: [str] @= []
+
+    for p in paths
+        labels @ labels.push(files.inside(dir: dir, name: names[p].must()))
+
+    parts = distinct_paths(paths: paths, labels: labels)?
+    entries: [assemble.Entry] @= []
+
+    for at in range(from: 0, to: paths.len())
+        if files.is_there(labels[at])?
+            text = strings.trim(read_file(labels[at])?)
+            entries @ entries.push(assemble.Entry(keys: parts[at], value: .text(v: text), layer: 0, label: labels[at]))
+
+    return assemble.labelled(entries)
+
+# What `Settings` holds for the layers whose values, names, origins and files
+# are given in order, each over the ones before it. Aborts where a value is
+# not an object.
+function merged(values: [json.Value], names: [str], origins: [{str: str}], layer_files: [str]) -> held.Held
+    entries: [assemble.Entry] @= []
+
+    for at in range(from: 0, to: values.len())
+        match values[at]
+            .object _                                                => _ = 0
+            .null_value | .boolean _ | .number _ | .text _ | .list _ => assert false
+
+        for e in assemble.flatten(values[at], layer: at, origins: {}, keep_nulls: false)
+            entries @ entries.push(e)
+
+    built = assemble.assemble(entries, assemble.merging()).must()
+    return held.Held(
+        root: built.root,
+        prefix: [],
+        sources: built.sources,
+        names: names,
+        origins: origins,
+        files: layer_files
+    )
+
+## Tests
+
+test "is_at_or_under: itself, under, a sibling sharing a prefix, the root"
+    assert is_at_or_under(at: "/db", under: "/db")
+    assert is_at_or_under(at: "/db/host", under: "/db")
+    assert !is_at_or_under(at: "/dbx", under: "/db")
+    assert is_at_or_under(at: "/x", under: "")
+
+test "part_at: the whole, a table with its origins, a key absent"
+    v = json.parse("{\"p\": {\"a\": 1}}").must()
+    whole = part_at(v, origins: {"/p/a": "A"}, parts: [], name: "l").must()
+    assert whole.root == v && whole.origins == {"/p/a": "A"}
+    p = part_at(v, origins: {"/p/a": "A", "/p": "P"}, parts: ["p"], name: "l").must()
+    assert p.origins == {"/a": "A"}
+    assert part_at(v, origins: {}, parts: ["q"], name: "l").is_err()
+
+test "distinct_paths: an empty path, a malformed one, one under another"
+    assert distinct_paths(paths: ["a", "b.c"], labels: ["A", "B"]).must() == [["a"], ["b", "c"]]
+    assert distinct_paths(paths: [""], labels: ["A"]).is_err()
+    assert distinct_paths(paths: ["a."], labels: ["A"]).is_err()
+    assert distinct_paths(paths: ["a", "a.b"], labels: ["A", "B"]).is_err()
+
+test "merged: no layer, two layers' sources"
+    none = merged([], names: [], origins: [], layer_files: [])
+    assert none.root == .object(members: {})
+    two = merged(
+        [json.parse("{\"a\": 1}").must(), json.parse("{\"b\": 2}").must()],
+        names: ["x", "y"],
+        origins: [{}, {}],
+        layer_files: ["", ""]
+    )
+    assert two.sources["/a"].must() == 0 && two.sources["/b"].must() == 1

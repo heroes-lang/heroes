@@ -1,0 +1,131 @@
+# Settings files found and named: the format a file's extension names, a
+# file looked for by its name among folders or in the folders above one, and
+# a relative path read from the folder of the file that held it.
+
+use path
+use strings
+
+# The code of a path whose extension names no format.
+constant INVALID: str
+    "invalid"
+
+# The code of a file in none of the folders.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code `read_file` fails with where nothing is at a path.
+constant FILE_NOT_FOUND: str
+    "file_not_found"
+
+# The extensions a settings file is looked for with, in order.
+constant EXTENSIONS: str
+    ".json .toml .yaml .yml .ini"
+
+# The format the extension of `file` names: `json`, `toml`, `yaml` or `ini`.
+# Fails `invalid` where it names none, or there is none.
+function format_word(file: str) -> str?
+    named = "\"" + file + "\" names no format of settings by its extension: .json, .toml, .yaml, .yml or .ini"
+
+    match path.ext(file)
+        .err _ => return fail(code: INVALID, msg: named)
+        .ok ext =>
+            word = strings.to_lower_ascii(ext)
+
+            if word == ".json"
+                return ok("json")
+
+            if word == ".toml"
+                return ok("toml")
+
+            if word == ".yaml" || word == ".yml"
+                return ok("yaml")
+
+            if word == ".ini"
+                return ok("ini")
+            return fail(code: INVALID, msg: named)
+
+# `name` in the folder `dir`, "" for the working folder.
+function inside(dir: str, name: str) -> str
+    if dir == ""
+        return name
+    return path.join_all([dir, name])
+
+# Whether a file is at `file`: true where `read_file` reads it, false where
+# nothing is there. Fails with `read_file`'s code where something is there it
+# cannot read.
+function is_there(file: str) -> bool?
+    match read_file(file)
+        .ok _ => return ok(true)
+        .err e =>
+            if e.code == FILE_NOT_FOUND
+                return ok(false)
+            return fail(code: e.code, msg: e.msg)
+
+# The first of `base` with each extension, in each of `dirs`, that is there.
+function find_file(base: str, dirs: [str]) -> str?
+    tried: [str] @= []
+
+    for dir in dirs
+        for ext in strings.split(s: EXTENSIONS, sep: " ")
+            file = inside(dir: dir, name: base + ext)
+
+            if is_there(file)?
+                return ok(file)
+            tried @ tried.push("\"" + file + "\"")
+
+    if tried.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no settings file \"{base}\": no folder was given to look in")
+    return fail(code: NOT_FOUND, msg: f"no settings file \"{base}\": looked at {tried.join(", ")}")
+
+# `name` in `dir` or the nearest folder above it.
+function find_upward(name: str, dir: str) -> str?
+    here: str @= dir
+
+    while true
+        file = inside(dir: here, name: name)
+
+        if is_there(file)?
+            return ok(file)
+        up = path.parent(here)
+
+        if up == here
+            return fail(code: NOT_FOUND, msg: f"no \"{name}\" in \"{dir}\" or a folder above it")
+        here @ up
+
+# `value` read from the folder of `file`, where it is relative and `file` is
+# not "".
+function relative_to(value: str, file: str) -> str
+    if file == "" || value == "" || path.is_abs(value)
+        return value
+    dir = path.parent(file)
+
+    if dir == "."
+        return value
+    return path.join_all([dir, value])
+
+## Tests
+
+test "format_word: each extension, any case, none, another"
+    assert format_word("a/b.json").must() == "json"
+    assert format_word("c.TOML").must() == "toml"
+    assert format_word("c.yml").must() == "yaml" && format_word("c.yaml").must() == "yaml"
+    assert format_word("x.ini").must() == "ini"
+    assert format_word("x").is_err() && format_word("x.env").is_err() && format_word(".json").is_err()
+
+test "relative_to: no file, an absolute value, a relative one beside its file"
+    assert relative_to(value: "certs/a.pem", file: "") == "certs/a.pem"
+    assert relative_to(value: "/etc/a.pem", file: "conf/app.toml") == "/etc/a.pem"
+    assert relative_to(value: "certs/a.pem", file: "conf/app.toml") == "conf/certs/a.pem"
+    assert relative_to(value: "a.pem", file: "app.toml") == "a.pem"
+    assert relative_to(value: "a.pem", file: "/etc/app.toml") == "/etc/a.pem"
+
+test "find_file and find_upward: nothing there, no folder given"
+    assert find_file("no-such-settings-zz", dirs: []).is_err()
+
+    match find_file("no-such-settings-zz", dirs: ["", "/nonexistent-zz"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match find_upward(name: "no-such-file-zz.env", dir: "/")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no \"no-such-file-zz.env\" in \"/\" or a folder above it"

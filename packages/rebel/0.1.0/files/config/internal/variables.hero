@@ -1,0 +1,161 @@
+# Variables read as settings: a name, its prefix taken off, split into keys at
+# a separator and lowered, its value kept as text or read as JSON.
+
+use config/internal/assemble
+use json
+use os
+use strings
+
+# The code of a variable whose name or value is not UTF-8.
+constant NOT_TEXT: str
+    "not_text"
+
+# The code of a number past what an `f64` holds, in a value read as JSON.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# How names and values are read, as `config.EnvOptions` says.
+record Rules
+    # The text a name begins with.
+    prefix: str
+    # The text that splits the rest into keys; "" for none.
+    separator: str
+    # Whether keys are lowered.
+    lower_keys: bool
+    # Whether an empty value sets nothing.
+    ignore_empty: bool
+    # Whether a value is read as JSON where it is JSON.
+    json_values: bool
+
+# The keys the variable `name` gives, or none where it is left out: its
+# prefix missing, nothing after it, or an empty key once split.
+function keys_given(name: str, rules: Rules) -> [str]
+    if !strings.has_prefix(s: name, prefix: rules.prefix) || name.len() == rules.prefix.len()
+        return []
+    rest = name.slice(from: rules.prefix.len(), to: name.len())
+
+    parts = if rules.separator == ""
+        [rest]
+    else
+        strings.split(s: rest, sep: rules.separator)
+    out: [str] @= []
+
+    for p in parts
+        if p == ""
+            return []
+
+        if rules.lower_keys
+            out @ out.push(strings.to_lower_ascii(p))
+        else
+            out @ out.push(p)
+
+    return out
+
+# Whether the bytes of `name` begin with those of `prefix`.
+function has_prefix_bytes(name: [u8], prefix: str) -> bool
+    if name.len() < prefix.len()
+        return false
+
+    for at in range(from: 0, to: prefix.len())
+        if name[at] != prefix[at]
+            return false
+
+    return true
+
+# The settings the variables of `env` give, each named by its variable, in
+# the order of `env`. Fails `does_not_fit` where a value read as JSON holds a
+# number past an `f64`.
+function entries(env: {str: str}, rules: Rules) -> [assemble.Entry]?
+    out: [assemble.Entry] @= []
+
+    for name in keys(env)
+        parts = keys_given(name, rules: rules)
+        value = env[name].must()
+
+        if parts.len() > 0 && !(rules.ignore_empty && value == "")
+            read: json.Value @= .text(v: value)
+
+            if rules.json_values
+                match json.parse(value)
+                    .ok v => read @ v
+                    .err e =>
+                        if e.code == DOES_NOT_FIT
+                            return fail(code: DOES_NOT_FIT, msg: f"the variable {name}: {e.msg}")
+
+            for e in assemble.flatten_under(read, head: parts, layer: 0, label: name, keep_nulls: false)
+                out @ out.push(e)
+
+    return ok(out)
+
+# The variables of the process whose names begin with `prefix`, each name and
+# value UTF-8; a variable whose name does not begin so is left out, UTF-8 or
+# not. Where a name stands twice its first value is kept. Fails `not_text`
+# where a name or a value read is not UTF-8, and with the system's code where
+# the environment cannot be read.
+function process_env(prefix: str) -> {str: str}?
+    env: {str: str} @= {}
+
+    for raw in os.env_all_bytes()?
+        if has_prefix_bytes(raw.name, prefix: prefix)
+            match raw.name.validated_bytes()
+                .err _ => return fail(code: NOT_TEXT, msg: f"a variable whose name begins with {prefix} is not UTF-8")
+                .ok name =>
+                    match raw.value.validated_bytes()
+                        .err _ => return fail(code: NOT_TEXT, msg: f"the value of the variable {name} is not UTF-8")
+                        .ok value =>
+                            if env[name].is_err()
+                                env[name] @ value
+
+    return ok(env)
+
+## Tests
+
+# The rules of `APP_`, nested at `__`, lowered.
+function app() -> Rules
+    return Rules(prefix: "APP_", separator: "__", lower_keys: true, ignore_empty: false, json_values: false)
+
+test "has_prefix_bytes: shorter, equal, another byte, the empty prefix"
+    name: [u8] = ['A', 'P', 'P', '_', 'X']
+    assert has_prefix_bytes(name, prefix: "APP_") && has_prefix_bytes(name, prefix: "")
+    assert !has_prefix_bytes(name, prefix: "APP_XY") && !has_prefix_bytes(name, prefix: "APQ")
+
+test "keys_given: another prefix, the prefix alone, nesting, an empty key, kept case"
+    assert keys_given("OTHER", rules: app()) == []
+    assert keys_given("APP_", rules: app()) == []
+    assert keys_given("APP_DB__HOST", rules: app()) == ["db", "host"]
+    assert keys_given("APP_SERVER_PORT", rules: app()) == ["server_port"]
+    assert keys_given("APP___X", rules: app()) == []
+    assert keys_given("APP_A__", rules: app()) == []
+    kept: Rules @= app()
+    kept.lower_keys @ false
+    kept.separator @ ""
+    assert keys_given("APP_Db__Host", rules: kept) == ["Db__Host"]
+    every: Rules @= app()
+    every.prefix @ ""
+    assert keys_given("__CF_USER_TEXT_ENCODING", rules: every) == []
+
+test "entries: texts, an empty value ignored or kept, JSON values read, a JSON object spread"
+    env = {
+        "APP_PORT": "8080"
+        "APP_E": ""
+        "APP_L": "[\"a\", \"b\"]"
+        "APP_DB": "{\"host\": \"h\"}"
+        "APP_W": "word"
+        "X": "1"
+    }
+    plain = entries(env, rules: app()).must()
+    assert plain.len() == 5 && plain[0].value == .text(v: "8080") && plain[0].label == "APP_PORT"
+    read: Rules @= app()
+    read.json_values @ true
+    read.ignore_empty @ true
+    got = entries(env, rules: read).must()
+    assert got.len() == 4
+    assert got[0].value == .number(v: 8080.0)
+    assert got[1].value == json.parse("[\"a\", \"b\"]").must()
+    assert got[2].keys == ["db", "host"] && got[2].label == "APP_DB"
+    assert got[3].value == .text(v: "word")
+    assert entries({"APP_N": "1e400"}, rules: read).is_err()
+
+test "process_env: a prefix no variable has, and every variable"
+    assert keys(process_env("REBEL_CONFIG_TEST_ZZ_").must()).len() == 0
+    assert !process_env("").is_err()

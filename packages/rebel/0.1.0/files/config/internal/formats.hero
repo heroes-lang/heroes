@@ -1,0 +1,192 @@
+# A settings text of a format read into an object of `json.Value`, and an
+# object written back in a format: JSON, TOML, YAML and INI, each by its own
+# package, the messages opening with the layer's name.
+
+use config/internal/keyed
+use ini
+use json
+use toml
+use yaml
+
+# The code of a text that is not of its format, or a value a format has no
+# form for.
+constant INVALID: str
+    "invalid"
+
+# `e`'s failure, its message opening with `name`.
+function named_failure(name: str, code: str, msg: str) -> json.Value?
+    return fail(code: code, msg: f"{name}: {msg}")
+
+# The INI text `text` as an object: its keys before the first section at the
+# top, then each section an object of texts, its own keys then the `DEFAULT`
+# section's it lacks.
+function ini_value(name: str, text: str) -> json.Value?
+    options: ini.ReadOptions @= ini.strict()
+    options.unnamed_section @ true
+    members: {str: json.Value} @= {}
+
+    match ini.parse_with(text, options)
+        .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+        .ok doc =>
+            for s in doc.sections
+                if s.name == ""
+                    for entry in s.entries
+                        members[entry.key] @ .text(v: entry.value)
+
+            for s in doc.sections
+                if s.name != "" && s.name != ini.DEFAULT_SECTION
+                    if !members[s.name].is_err()
+                        return fail(
+                            code: INVALID,
+                            msg: f"{name}: the key \"{s.name}\" before the first section names a section as well"
+                        )
+                    texts = ini.section_of(doc, s.name).must()
+                    section: {str: json.Value} @= {}
+
+                    for k in keys(texts)
+                        section[k] @ .text(v: texts[k].must())
+
+                    members[s.name] @ .object(members: section)
+
+    return ok(.object(members: members))
+
+# The settings `text` holds in the format `word`, `json`, `toml`, `yaml` or
+# `ini`, as an object; `null` is the empty object. Fails with the format's own
+# code, the message opening with `name`, and `invalid` where the document is
+# not a table.
+function parse_value(name: str, text: str, word: str) -> json.Value?
+    got: json.Value @= .null_value
+
+    if word == "json"
+        match json.parse(text)
+            .ok v  => got @ v
+            .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+    else if word == "toml"
+        match toml.parse(text)
+            .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+            .ok t =>
+                match toml.to_json(t)
+                    .ok v  => got @ v
+                    .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+    else if word == "yaml"
+        match yaml.parse(text)
+            .ok v  => got @ v
+            .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+    else
+        got @ ini_value(name: name, text: text)?
+
+    match got
+        .object _   => return ok(got)
+        .null_value => return ok(.object(members: {}))
+        .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(
+                code: INVALID,
+                msg: f"{name}: the document is {keyed.described(got)}, where a table of settings is expected"
+            )
+
+# The text INI writes for `v`, a value that is not an object or a list.
+function ini_text(v: json.Value) -> str?
+    return match v
+        .text t                                       => ok(t.v)
+        .boolean b                                    => ok(to_str(b.v))
+        .number _ | .null_value | .list _ | .object _ => json.format(v)
+
+# `v`, an object, as INI: its values that are not objects at the top, then each
+# object a section of texts. Fails `invalid` where a value is a list, or an
+# object below a section.
+function ini_document(v: json.Value) -> str?
+    members = json.members_of(v).must()
+    top: [ini.Entry] @= []
+    sections: [ini.Section] @= []
+
+    for k in keys(members)
+        value = members[k].must()
+
+        match value
+            .object o =>
+                entries: [ini.Entry] @= []
+
+                for inner in keys(o.members)
+                    held = o.members[inner].must()
+
+                    match held
+                        .object _ | .list _ =>
+                            return fail(
+                                code: INVALID,
+                                msg: f"INI has no form for {keyed.named([k, inner])}, {keyed.described(held)}: a section holds texts"
+                            )
+                        .null_value | .boolean _ | .number _ | .text _ =>
+                            entries @ entries.push(
+                                ini.Entry(key: inner, value: ini_text(held)?, bare: false, comments: [])
+                            )
+
+                sections @ sections.push(ini.Section(name: k, comments: [], entries: entries))
+            .list _ =>
+                return fail(code: INVALID, msg: f"INI has no form for {keyed.named([k])}, {keyed.described(value)}")
+            .null_value | .boolean _ | .number _ | .text _ =>
+                top @ top.push(ini.Entry(key: k, value: ini_text(value)?, bare: false, comments: []))
+
+    ordered: [ini.Section] @= []
+
+    if top.len() > 0
+        ordered @ ordered.push(ini.Section(name: "", comments: [], entries: top))
+
+    for s in sections
+        ordered @ ordered.push(s)
+
+    return ini.format(ini.Document(sections: ordered, closing: []))
+
+# `v`, an object, written in the format `word`, ending with a line break.
+function write_value(v: json.Value, word: str) -> str?
+    if word == "json"
+        return ok(json.format_indented(v, width: 2)? + "\n")
+
+    if word == "toml"
+        return toml.format(toml.from_json(v)?)
+
+    if word == "yaml"
+        return yaml.format(v)
+    return ini_document(v)
+
+## Tests
+
+test "parse_value: each format, an empty YAML document, a document that is a list"
+    assert parse_value(name: "a.json", text: "{\"x\": 1}", word: "json").must() == json.parse("{\"x\": 1}").must()
+    assert parse_value(name: "a.toml", text: "x = 1\n[s]\ny = \"z\"\n", word: "toml").must() == json.parse("{\"x\": 1, \"s\": {\"y\": \"z\"}}").must()
+    assert parse_value(name: "a.yaml", text: "x: 1\ns:\n  y: z\n", word: "yaml").must() == json.parse("{\"x\": 1, \"s\": {\"y\": \"z\"}}").must()
+    assert parse_value(name: "a.yaml", text: "", word: "yaml").must() == .object(members: {})
+
+    match parse_value(name: "a.yaml", text: "- 1\n", word: "yaml")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a.yaml: the document is a list of 1, where a table of settings is expected"
+
+test "parse_value: a TOML date becomes its text, a failure's message opens with the name"
+    got = parse_value(name: "c.toml", text: "when = 1979-05-27T07:32:00-07:00\n", word: "toml").must()
+    assert json.member(got, "when").must() == .text(v: "1979-05-27T07:32:00-07:00")
+
+    match parse_value(name: "c.json", text: "{", word: "json")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings_open(s: e.msg, head: "c.json: line 1")
+
+test "parse_value: INI's keys at the top, sections with DEFAULT's keys, DEFAULT itself left out"
+    got = parse_value(name: "a.ini", text: "top = 1\n[DEFAULT]\nd = 2\n[sec]\nk = v\n", word: "ini").must()
+    assert got == json.parse("{\"top\": \"1\", \"sec\": {\"k\": \"v\", \"d\": \"2\"}}").must()
+    assert parse_value(name: "a.ini", text: "sec = 1\n[sec]\nk = v\n", word: "ini").is_err()
+
+test "write_value: JSON indented, YAML, TOML and INI read back as the same value"
+    v = json.parse("{\"name\": \"x\", \"port\": 8080, \"on\": true, \"db\": {\"host\": \"h\", \"ratio\": 1.5}}").must()
+    assert write_value(v, word: "json").must() == "{\n  \"name\": \"x\",\n  \"port\": 8080,\n  \"on\": true,\n  \"db\": {\n    \"host\": \"h\",\n    \"ratio\": 1.5\n  }\n}\n"
+
+    for word in ["json", "toml", "yaml"]
+        assert parse_value(name: "back", text: write_value(v, word: word).must(), word: word).must() == v
+
+    ini_back = parse_value(name: "back", text: write_value(v, word: "ini").must(), word: "ini").must()
+    assert ini_back == json.parse("{\"name\": \"x\", \"port\": \"8080\", \"on\": \"true\", \"db\": {\"host\": \"h\", \"ratio\": \"1.5\"}}").must()
+
+test "write_value: INI refuses a list and an object below a section"
+    assert write_value(json.parse("{\"l\": [1]}").must(), word: "ini").is_err()
+    assert write_value(json.parse("{\"a\": {\"b\": {}}}").must(), word: "ini").is_err()
+
+# Whether `s` begins with `head`, for a test.
+function strings_open(s: str, head: str) -> bool
+    return s.len() >= head.len() && s.slice(from: 0, to: head.len()) == head

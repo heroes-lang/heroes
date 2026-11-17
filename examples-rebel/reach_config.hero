@@ -1,0 +1,25 @@
+# Reaches Rebel's `config`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a program's settings in layers,
+# defaults below the environment, and prints the port it would listen on and
+# where that came from.
+
+use <rebel>/config
+use <rebel>/json
+
+function main()
+    match json.parse("{\"server\": {\"host\": \"localhost\", \"port\": 8080}}")
+        .err e => print(e.msg)
+        .ok defaults =>
+            match config.from_value("defaults", defaults)
+                .err e => print(e.msg)
+                .ok bottom =>
+                    match config.read_env(config.env_options("REACH_CONFIG_"))
+                        .err e => print(e.msg)
+                        .ok top =>
+                            s = config.merge([bottom, top])
+
+                            match config.int_of(s, "server.port")
+                                .err e => print(e.msg)
+                                .ok port =>
+                                    from = config.source_of(s, "server.port")
+                                    print(f"port {port}, from {from.must().layer}")

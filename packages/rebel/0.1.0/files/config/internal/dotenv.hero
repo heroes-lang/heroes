@@ -1,0 +1,375 @@
+# A `.env` text read into its bindings, as godotenv and python-dotenv read
+# one: `NAME=value` a line, `export` before it, comments, values bare, between
+# double quotes with escapes or between single quotes, over several lines
+# where quoted. Each binding keeps where it stands in the text, so that one
+# can be rewritten or removed with every other line kept, and its value in
+# pieces, so that what an escape wrote is never read as `${NAME}`. Every loop
+# moves at least one byte a pass or returns.
+
+# The code of a text that is not `.env`.
+constant INVALID: str
+    "invalid"
+
+# One `NAME=value` of a text.
+record Binding
+    # The name.
+    name: str
+    # The value in pieces, in order.
+    pieces: [str]
+    # Whether each piece may hold a `${NAME}` to replace: a bare value's and
+    # the text between double quotes, but never what `\$` or single quotes
+    # wrote.
+    open: [bool]
+    # The line it begins on, from 1.
+    line: i64
+    # The byte its line begins at, white space before the name included.
+    start: i64
+    # The byte after its last character, its comment included, before the
+    # line break.
+    stop: i64
+    # The byte after the line break that ends it, or the text's length.
+    end: i64
+    # Whether `export` stood before its name.
+    exported: bool
+
+# A value read from where `at` stood: its pieces, and where the text goes on.
+record Read
+    # The pieces, as `Binding.pieces`.
+    pieces: [str]
+    # As `Binding.open`.
+    open: [bool]
+    # The byte after the value.
+    next: i64
+    # The line the value ends on.
+    line: i64
+
+# Whether `c` is a space or a tab.
+function is_blank(c: u8) -> bool
+    return c == ' ' || c == '\t'
+
+# Whether `c` begins a line break.
+function is_break(c: u8) -> bool
+    return c == '\n' || c == '\r'
+
+# Where the white space from `at` on ends.
+function past_blanks(text: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < text.len() && is_blank(text[here])
+        here @ here + 1
+
+    return here
+
+# Where the line holding `at` ends, before its break.
+function line_end(text: str, at: i64) -> i64
+    here: i64 @= at
+
+    while here < text.len() && !is_break(text[here])
+        here @ here + 1
+
+    return here
+
+# Where the line break at `at` ends: CR LF, LF or CR. `at` itself where no
+# break stands there.
+function past_break(text: str, at: i64) -> i64
+    if at < text.len() && text[at] == '\r'
+        if at + 1 < text.len() && text[at + 1] == '\n'
+            return at + 2
+        return at + 1
+
+    if at < text.len() && text[at] == '\n'
+        return at + 1
+    return at
+
+# Whether the byte at `at` ends a line: an LF, or a CR with no LF after it.
+function ends_line(text: str, at: i64) -> bool
+    if text[at] == '\n'
+        return true
+    return text[at] == '\r' && (at + 1 == text.len() || text[at + 1] != '\n')
+
+# The text an escape `\c` writes between double quotes, or "" where it is
+# none of them and the backslash stays.
+function double_escape(c: u8) -> str
+    return match c
+        'n'  => "\n"
+        'r'  => "\r"
+        't'  => "\t"
+        '"'  => "\""
+        '\\' => "\\"
+        '\'' => "'"
+        'a'  => "\u{7}"
+        'b'  => "\u{8}"
+        'f'  => "\u{c}"
+        'v'  => "\u{b}"
+        _    => ""
+
+# Adds `run`, joined, to the pieces as one piece that is `open` or not, where
+# it holds anything, and empties it.
+function flush(@pieces: [str], @open: [bool], @run: [str], is_open: bool)
+    if run.len() > 0
+        pieces @ pieces.push(run.join(""))
+        open @ open.push(is_open)
+    run @ []
+
+# The value between the quote `quote` at `at` and the one that closes it, for
+# the binding `name` begun on `line`. Fails `invalid` where it is not closed.
+function quoted(text: str, at: i64, line: i64, name: str, quote: u8) -> Read?
+    pieces: [str] @= []
+    open: [bool] @= []
+    run: [str] @= []
+    here: i64 @= at + 1
+    begin: i64 @= here
+    lines: i64 @= line
+    doubled = quote == '"'
+
+    while true
+        if here == text.len()
+            kind = if doubled
+                "double"
+            else
+                "single"
+            return fail(
+                code: INVALID,
+                msg: f"line {line}: the {kind} quote that opens the value of \"{name}\" is not closed"
+            )
+        c = text[here]
+
+        if c == quote
+            run @ run.push(text.slice(from: begin, to: here))
+            flush(pieces: @pieces, open: @open, run: @run, is_open: doubled)
+            return ok(Read(pieces: pieces, open: open, next: here + 1, line: lines))
+
+        if c == '\\' && here + 1 < text.len()
+            d = text[here + 1]
+            run @ run.push(text.slice(from: begin, to: here))
+
+            if doubled && d == '$'
+                flush(pieces: @pieces, open: @open, run: @run, is_open: true)
+                pieces @ pieces.push("$")
+                open @ open.push(false)
+                here @ here + 2
+            else if doubled && double_escape(d) != ""
+                run @ run.push(double_escape(d))
+                here @ here + 2
+            else if !doubled && (d == '\'' || d == '\\')
+                run @ run.push(text.slice(from: here + 1, to: here + 2))
+                here @ here + 2
+            else
+                run @ run.push("\\")
+                here @ here + 1
+            begin @ here
+        else
+            if ends_line(text, at: here)
+                lines @ lines + 1
+            here @ here + 1
+
+# The bare value from `at` to the end of its line, a `#` after white space
+# beginning a comment; `spaced` says whether white space stood before `at`.
+function bare(text: str, at: i64, spaced: bool) -> str
+    stop = line_end(text, at: at)
+    here: i64 @= at
+    blank_before: bool @= spaced
+
+    while here < stop
+        if text[here] == '#' && blank_before
+            return trimmed_end(text.slice(from: at, to: here))
+        blank_before @ is_blank(text[here])
+        here @ here + 1
+
+    return trimmed_end(text.slice(from: at, to: stop))
+
+# `s` without the spaces and tabs at its end.
+function trimmed_end(s: str) -> str
+    stop: i64 @= s.len()
+
+    while stop > 0 && is_blank(s[stop - 1])
+        stop @ stop - 1
+
+    return s.slice(from: 0, to: stop)
+
+# The name that begins at `at`, bare or between single quotes, and where the
+# text goes on after it. Fails `invalid` where it is empty, holds a quote, or
+# a quote that opens it is not closed on its line.
+function name_at(text: str, at: i64, line: i64) -> Read?
+    if at < text.len() && text[at] == '\''
+        stop = line_end(text, at: at)
+        here: i64 @= at + 1
+
+        while here < stop && text[here] != '\''
+            here @ here + 1
+
+        if here == stop
+            return fail(code: INVALID, msg: f"line {line}: the quote that opens a name is not closed on its line")
+        return ok(Read(pieces: [text.slice(from: at + 1, to: here)], open: [false], next: here + 1, line: line))
+    here: i64 @= at
+
+    while here < text.len() && !is_blank(text[here]) && !is_break(text[here]) && text[here] != '=' && text[here] != '#'
+        if text[here] == '"' || text[here] == '\''
+            return fail(
+                code: INVALID,
+                msg: f"line {line}: a name holds a quote, `{text.slice(from: at, to: here + 1)}`"
+            )
+        here @ here + 1
+
+    if here == at
+        return fail(code: INVALID, msg: f"line {line}: expected a name before `=`")
+    return ok(Read(pieces: [text.slice(from: at, to: here)], open: [false], next: here, line: line))
+
+# Whether `export` and white space stand at `at`.
+function is_export(text: str, at: i64) -> bool
+    word = "export"
+
+    if at + word.len() >= text.len()
+        return false
+
+    for k in range(from: 0, to: word.len())
+        if text[at + k] != word[k]
+            return false
+
+    return is_blank(text[at + word.len()])
+
+# The bindings of the `.env` text `text`, in order. Fails `invalid`, the
+# message opening `line L:`, where a line is neither empty, a comment nor a
+# binding.
+function bindings(text: str) -> [Binding]?
+    out: [Binding] @= []
+    at: i64 @= 0
+    line: i64 @= 1
+
+    if text.len() >= 3 && text[0] == 0xef && text[1] == 0xbb && text[2] == 0xbf
+        at @ 3
+
+    while at < text.len()
+        start = at
+        at @ past_blanks(text, at: at)
+
+        if at == text.len()
+            break
+
+        if is_break(text[at]) || text[at] == '#'
+            at @ past_break(text, at: line_end(text, at: at))
+            line @ line + 1
+            continue
+        exported = is_export(text, at: at)
+
+        if exported
+            at @ past_blanks(text, at: at + 6)
+        got_name = name_at(text, at: at, line: line)?
+        name = got_name.pieces[0]
+        at @ past_blanks(text, at: got_name.next)
+
+        if at == text.len() || text[at] != '='
+            return fail(code: INVALID, msg: f"line {line}: expected `=` after the name \"{name}\"")
+        at @ at + 1
+        spaced = at < text.len() && is_blank(text[at])
+        at @ past_blanks(text, at: at)
+        first_line = line
+        pieces: [str] @= []
+        open: [bool] @= []
+
+        if at < text.len() && (text[at] == '"' || text[at] == '\'')
+            value = quoted(text: text, at: at, line: line, name: name, quote: text[at])?
+            pieces @ value.pieces
+            open @ value.open
+            line @ value.line
+            at @ past_blanks(text, at: value.next)
+
+            if at < text.len() && text[at] == '#'
+                at @ line_end(text, at: at)
+
+            if at < text.len() && !is_break(text[at])
+                return fail(code: INVALID, msg: f"line {line}: text after the closing quote of \"{name}\"")
+        else
+            pieces @ [bare(text, at: at, spaced: spaced)]
+            open @ [true]
+            at @ line_end(text, at: at)
+        stop = at
+        at @ past_break(text, at: at)
+        out @ out.push(
+            Binding(name: name, pieces: pieces, open: open, line: first_line, start: start, stop: stop, end: at, exported: exported)
+        )
+        line @ line + 1
+
+    return ok(out)
+
+## Tests
+
+# The value of `b`, its pieces joined.
+function joined(b: Binding) -> str
+    return b.pieces.join("")
+
+# The values of `text`'s bindings, joined, in order, for a test.
+function values_of(text: str) -> [str]
+    return bindings(text).must().map(joined)
+
+# The names of `text`'s bindings, in order, for a test.
+function names_of(text: str) -> [str]
+    out: [str] @= []
+
+    for b in bindings(text).must()
+        out @ out.push(b.name)
+
+    return out
+
+test "bindings: the empty text, blank lines, comments, export, white space around `=`"
+    assert bindings("").must() == []
+    assert bindings("\n\n# only a comment\n   \n").must() == []
+    text = "A=1\nB = 2\n  export C=3\n# comment\n\nD=val # inline\nE=val#nocomment\nU=abc   \n"
+    assert names_of(text) == ["A", "B", "C", "D", "E", "U"]
+    assert values_of(text) == ["1", "2", "3", "val", "val#nocomment", "abc"]
+    assert bindings(text).must()[2].exported
+
+test "bindings: a `#` right after `=` is a value, after white space a comment"
+    assert values_of("A=#x\nB= #y\n") == ["#x", ""]
+
+test "bindings: double quotes, their escapes, a comment after them, an unknown escape kept"
+    text = "F=\"quoted # not comment\"\nH=\"esc\\nnew\\ttab\\\"q\\\\b\"\nV=\"abc\" # c\nA=\"a\\qb\"\nB=\"\\u00e9\"\nC=\"a\\ab\\fc\\vd\\be\"\n"
+    assert values_of(text) == ["quoted # not comment", "esc\nnew\ttab\"q\\b", "abc", "a\\qb", "\\u00e9", "a\u{7}b\u{c}c\u{b}d\u{8}e"]
+
+test "bindings: single quotes read only their two escapes, and never replace"
+    text = "G='single'\nI='no\\nesc'\nA='a\\'b'\nB='a\\\\b'\nO='${A}'\n"
+    assert values_of(text) == ["single", "no\\nesc", "a'b", "a\\b", "${A}"]
+    assert bindings(text).must()[4].open == [false]
+
+test "bindings: empty values, a value over several lines, CR LF and a last line with no break"
+    assert values_of("J=\nJ2=\"\"\nJ3=''\n") == ["", "", ""]
+    assert values_of("L=\"multi\nline\"\nM2=x\n") == ["multi\nline", "x"]
+    assert bindings("L=\"multi\nline\"\nM2=x\n").must()[1].line == 3
+    assert values_of("A=1\r\nB=\"x\"\r\n") == ["1", "x"]
+    assert values_of("A=1") == ["1"]
+
+test "bindings: `\\$` between double quotes is a closed piece, a byte order mark is skipped"
+    b = bindings("T=\"a\\$B\"\n").must()[0]
+    assert b.pieces == ["a", "$", "B"] && b.open == [true, false, true]
+    mark: [u8] = [0xef, 0xbb, 0xbf]
+    assert names_of(mark.validated_bytes().must() + "A=1\n") == ["A"]
+
+test "bindings: names of more than one byte, dots and dashes, a quoted name, a value of more than one byte"
+    assert names_of("a.b=1\na-b=2\n_x=3\n'K Q'=4\nè=5\n") == ["a.b", "a-b", "_x", "K Q", "è"]
+    assert values_of("U=città ✓\n") == ["città ✓"]
+
+test "bindings: a name with no `=`, `export` alone, `=` with no name, a colon, a space in a name"
+    for bad in ["K\nA=1\n", "export\nA=1\n", "=v\n", "X: 1\n", "MY KEY=1\n", "a\"b=1\n"]
+        assert bindings(bad).is_err()
+
+    match bindings("A=1\nK\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 2: expected `=` after the name \"K\""
+
+test "bindings: a quote not closed, text after a closing quote"
+    match bindings("A=\"abc\nB=2\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1: the double quote that opens the value of \"A\" is not closed"
+
+    match bindings("W=\"abc\" junk\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1: text after the closing quote of \"W\""
+
+    assert bindings("A=\"a\\\\\"\n").must()[0].pieces == ["a\\"]
+    assert bindings("A='x\n").is_err()
+
+test "bindings: where each binding stands, for a rewrite"
+    text = "# c\nA=1 # one\n  B=\"x\ny\"\n"
+    got = bindings(text).must()
+    assert got[0].start == 4 && got[0].stop == 13 && got[0].end == 14
+    assert got[1].start == 14 && got[1].stop == 23 && got[1].end == 24 && got[1].line == 3

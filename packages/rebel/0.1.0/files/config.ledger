@@ -1,0 +1,433 @@
+# The ledger of `config`: what Go's viper (1.20.1), godotenv (1.5.1) and
+# envconfig (1.4.0), Rust's config (0.15), dotenvy (0.15) and figment (0.10),
+# and Python's python-dotenv (1.2.4), pydantic-settings (2.16.3) and dynaconf
+# (3.2.13) let a program do with its settings, one block per capability, and
+# what Rebel answers. None of the nine is a standard library, so the lists are
+# their documentation on this machine, 2026-11-17: `go doc -all` of viper and
+# godotenv from the module cache and of envconfig fetched into the scratch
+# folder; the names of `cargo doc`'s `all.html` and of each type's page for
+# the three crates, built in the scratch folder; `dir()` of `dotenv`,
+# `dotenv.main`, `pydantic_settings`, `dynaconf` and `dynaconf.base.Settings`,
+# `SettingsConfigDict`'s keys and `inspect.signature` of python-dotenv's
+# functions. Every expected value of the package's tests that one of them
+# answers was observed from godotenv, dotenvy and python-dotenv, viper and
+# pydantic, the same day.
+
+capability config/layers  settings read from several sources and merged, each source over the ones before it
+  heroes  config.Layer, config.merge
+  go      viper.New, NewWithOptions, GetViper, Viper, Reset, MergeConfig, MergeConfigMap, MergeInConfig
+  rust    config::Config::builder, ConfigBuilder::add_source, ConfigBuilder::build, ConfigBuilder::build_cloned, figment::Figment::new, Figment::from, Figment::merge, Figment::join
+  python  pydantic_settings.BaseSettings.settings_customise_sources, InitSettingsSource, dynaconf.Dynaconf, dynaconf.LazySettings, Settings.update, Settings.execute_loaders, Settings.pre_load
+  note    a program lists its layers, the lowest first, and says the precedence by that order: viper's fixed order (override, flag, env, file, key-value store, default) and figment's `join` (the earlier wins) are both an order of the list
+
+capability config/deep-merge  an object over an object merged member by member, any other value replacing what stood
+  heroes  config.merge
+  go      MergeConfig, MergeConfigMap
+  rust    figment::Figment::merge
+  python  dynaconf merge_enabled, dynaconf_merge
+  note    an object over an object is merged key by key as viper, figment's `merge` and config-rs merge them, and any other value replaces what stood, keeping its place. A `null` sets nothing, as viper's `null` over a default or over a table: viper's merge of two files lets a `null` leaf erase the value below (observed 2026-11-17, `host: null` over `host: localhost` reads nil) while a `null` over a default does not; one rule here, so that a key with nothing under it in YAML never erases a setting
+
+capability config/list-append  a list of one source joined to the same list of the source below it
+  heroes  refused: a list is one setting, so that a message names the one layer that wrote it; a program that wants two lists joined reads each layer's list with `layer_at` and `json.items_of` and sets the joined one with `set_value`
+  go      -
+  rust    figment::Figment::adjoin, Figment::admerge
+  python  dynaconf dynaconf_merge on a list, `@merge`
+  note    -
+
+capability config/defaults  values a program gives itself, below every source
+  heroes  config.from_value, config.set_value
+  go      SetDefault
+  rust    config::ConfigBuilder::set_default, figment::providers::Serialized::defaults, Serialized::default, Serialized::globals
+  python  pydantic field defaults, dynaconf Settings.setdefault, default_settings
+  note    -
+
+capability config/override  values a program sets over every source
+  heroes  config.set_value, config.merge
+  go      Set
+  rust    config::ConfigBuilder::set_override, set_override_option
+  python  InitSettingsSource, dynaconf Settings.set, Settings.unset, Settings.unset_all
+  note    an override is the last layer a program lists; `set_value` writes it
+
+capability config/formats  a settings text in TOML, YAML, JSON or INI read into a layer
+  heroes  config.Format, config.parse_layer
+  go      SetConfigType, ReadConfig, SupportedExts, Codec, Decoder, CodecRegistry, DefaultCodecRegistry, NewCodecRegistry, WithCodecRegistry, DecoderRegistry, WithDecoderRegistry
+  rust    config::File::from_str, FileFormat, FileFormat::parse, FileSourceString, Format, FileStoredFormat, figment::providers::Toml, Json, Yaml, YamlExtended, Data::string, Format::string
+  python  TomlConfigSettingsSource, YamlConfigSettingsSource, JsonConfigSettingsSource, PyprojectTomlConfigSettingsSource, dynaconf loaders
+  note    TOML's dates become their RFC 3339 text through `toml.to_json`, read back with `instant_of`; INI's sections are objects of texts, keys before the first section at the top, `DEFAULT`'s keys filled into each section as Python's configparser reads them, viper 1.20.1 having no INI decoder compiled in (observed: `decoder not found for this format`). A program that reads TOML carries `time`, which `toml` uses: 1.66 MB more in a program of `json`, `yaml`, `ini`, `flags` and `os` (2,261,088 against 3,923,776 bytes, built 2026-11-17)
+
+capability config/formats-other  JSON5, RON, HCL and Java properties
+  heroes  refused: JSON5, RON, HCL and Java's properties have no package in Rebel; a program that reads one into a `json.Value` makes a layer of it with `from_value`
+  go      SupportedExts' hcl, tfvars, properties, props, prop
+  rust    config::FileFormat::Json5, FileFormat::Ron
+  python  -
+  note    -
+
+capability config/file  a settings file read by its path, its format from its extension
+  heroes  config.read_layer, config.format_of, config.Layer.file
+  go      SetConfigFile, ReadInConfig, ConfigFileUsed, UnsupportedConfigError, ConfigParseError
+  rust    config::File::with_name, File::new, File::format, FileSourceFile, FileFormat::file_extensions, figment::providers::Data::file, Data::file_exact
+  python  json_file, yaml_file, toml_file, json_file_encoding, yaml_file_encoding, dynaconf settings_file, Settings.load_file, Settings.load_extra_yaml
+  note    the format is the extension's, in any case: `.json`, `.toml`, `.yaml`, `.yml`, `.ini`; a file of another name is read with `read_file` and `parse_layer`
+
+capability config/file-optional  a settings file that may be absent, read as no settings
+  heroes  config.read_layer_if_present
+  go      ConfigFileNotFoundError
+  rust    config::File::required
+  python  pydantic-settings' files that are absent are skipped, dynaconf likewise
+  note    -
+
+capability config/file-search  a settings file found by its name among folders, whatever its extension
+  heroes  config.find_file
+  go      AddConfigPath, SetConfigName, Finder, Finders, WithFinder, ExperimentalFinder
+  rust    config::File::with_name
+  python  dynaconf Settings.find_file, root_path
+  note    the extensions are looked for in viper's order of `SupportedExts`, those Rebel reads: json, toml, yaml, yml, ini
+
+capability config/file-search-up  a file found in the working folder or the nearest folder above it
+  heroes  config.find_upward
+  go      -
+  rust    figment::providers::Data::file
+  python  dotenv.find_dotenv, env_file_depth, pyproject_toml_depth
+  note    python-dotenv's `find_dotenv` starts from the caller's file or the working folder; here the program names the folder, `os.working_dir()` for the working one
+
+capability config/file-section  one table of a settings file read as the whole
+  heroes  config.layer_at
+  go      -
+  rust    figment::providers::Data::nested
+  python  pyproject_toml_table_header, toml_table_header, yaml_config_section
+  note    -
+
+capability config/profiles  the settings of one profile (development, production) chosen among a file's tables, over its defaults
+  heroes  config.layer_at, config.merge
+  go      -
+  rust    figment::Profile, Profile::const_new, Figment::select, Figment::profile, Figment::profiles, Data::profile, Serialized::global, Env::global, Env::profile
+  python  dynaconf environments, Settings.from_env, using_env, current_env, setenv, loaded_envs, namespace, current_namespace, using_namespace, loaded_namespaces
+  note    a profile is a table of a file: `merge([layer_at(file, "default"), layer_at(file, "production")])` is figment's `select` and dynaconf's environments; which profile is the program's to read, from a variable or a flag
+
+capability config/env  the environment's variables of one prefix read into a layer
+  heroes  config.from_env, config.read_env, config.EnvOptions, config.env_options
+  go      SetEnvPrefix, GetEnvPrefix, AutomaticEnv
+  rust    config::Environment::with_prefix, Environment::prefix, prefix_separator, keep_prefix, Environment::source, figment::providers::Env::prefixed, Env::raw
+  python  env_prefix, env_prefix_target, EnvSettingsSource, dynaconf envvar_prefix
+  note    the prefix is taken whole and compared byte for byte, as figment's `prefixed("APP_")` and pydantic's `env_prefix` take it; pydantic compares without case by default (observed: `app_port` read under `APP_`), which a POSIX environment does not. `read_env` reads the variables at once, where viper's `AutomaticEnv` looks one up at each `Get`; a variable whose name does not begin with the prefix is left out even where it is not UTF-8
+
+capability config/env-nesting  a variable's name split into the keys of a nested setting
+  heroes  config.EnvOptions.separator
+  go      SetEnvKeyReplacer, EnvKeyReplacer, StringReplacer, KeyDelimiter
+  rust    config::Environment::separator, figment::providers::Env::split
+  python  env_nested_delimiter, env_nested_max_split
+  note    `__` by default, pydantic's `env_nested_delimiter` as its documentation writes it and config-rs's `separator`; a name giving an empty key once split, as macOS's `__CF_USER_TEXT_ENCODING` does, is left out rather than failing every program
+
+capability config/env-case  a variable's name read in lower case
+  heroes  config.EnvOptions.lower_keys
+  go      viper's keys, which it compares without case
+  rust    config::Environment::convert_case, with_convert_case, Case, figment::providers::Env::lowercase, value::Uncased, UncasedStr
+  python  case_sensitive
+  note    the keys of a file keep their case, as figment and config-rs keep them; viper lowers every key. Only a variable's keys are lowered, its ASCII letters
+
+capability config/env-empty  a variable set empty read as not set
+  heroes  config.EnvOptions.ignore_empty
+  go      AllowEmptyEnv
+  rust    config::Environment::ignore_empty
+  python  env_ignore_empty
+  note    an empty variable is set, as `os.env` says, unless asked: pydantic's and config-rs's default, where viper's `AllowEmptyEnv(false)` treats it as unset (observed: `IsSet` false)
+
+capability config/env-values  a variable's value read as a number, a boolean, a list or an object
+  heroes  config.EnvOptions.json_values
+  go      -
+  rust    config::Environment::try_parsing, list_separator, with_list_parse_key, figment::value::Value::from_str
+  python  pydantic-settings' JSON for complex fields, NoDecode, ForceDecode, enable_decoding, env_parse_none_str, env_parse_enums, dynaconf's TOML-read values
+  note    each value read as JSON where it is JSON, pydantic's reading of a complex field's variable; config-rs's `list_separator` is a JSON list here, `APP_HOSTS='["a", "b"]'`. A number or a boolean left as text is read by the typed getters all the same
+
+capability config/env-bind  a setting read from a variable the program names
+  heroes  config.bind_env
+  go      BindEnv, MustBindEnv
+  rust    figment::providers::Env::only, Env::filter, Env::map, Env::filter_map, Env::ignore, Env::iter, Env::var, Env::var_or
+  python  Field(validation_alias=), AliasChoices
+  note    one variable a setting; figment's `filter`, `map` and `ignore` are the program's own work on the map it hands to `from_env`
+
+capability config/flags  the options given on the command line as a layer
+  heroes  config.from_flags, config.FlagBinding, config.FlagKind
+  go      BindPFlag, BindPFlags, BindFlagValue, BindFlagValues, FlagValue, FlagValueSet
+  rust    -
+  python  CliSettingsSource, cli_parse_args, CliApp, CliSubCommand, CliPositionalArg, CliImplicitFlag, CliExplicitFlag, CliToggleFlag, CliDualFlag, CliSuppress, CLI_SUPPRESS, CliMutuallyExclusiveGroup, CliUnknownArgs, CliVariadicArg, get_subcommand, cli_prog_name, cli_parse_none_str, cli_hide_none_type, cli_avoid_json, cli_enforce_required, cli_use_class_docs_for_groups, cli_show_env_vars, cli_exit_on_error, cli_prefix, cli_flag_prefix_char, cli_implicit_flags, cli_ignore_unknown_args, cli_kebab_case, cli_shortcuts
+  note    a setting is bound to an argument by name, as viper's `BindPFlag`; only an argument given, on the command line or from its variable through `flags.with_env`, sets it. pydantic's CLI source is `flags` itself
+
+capability config/flag-defaults  the defaults the command line's declaration gives, as a layer below the others
+  heroes  config.from_flag_defaults
+  go      viper's flag defaults, read after every other source
+  rust    -
+  python  -
+  note    a layer of its own, which the program lists lowest, as viper reads a flag's default after every other source
+
+capability config/get  the value a dotted path names
+  heroes  config.value_of
+  go      Get
+  rust    config::Config::get, figment::Figment::find_value, value::Value::find, Value::find_ref
+  python  dynaconf Settings.get, Settings.get_fresh, attribute access
+  note    a path is keys joined by `.`, a key of digits an index where it meets a list, as viper reads `list.0`; a key holding a `.` is read with `json.member` on its parent's value
+
+capability config/is-set  whether a path names a setting
+  heroes  config.has_path
+  go      IsSet, InConfig
+  rust    figment::Figment::contains
+  python  dynaconf Settings.exists, exists_in_environ
+  note    viper's `IsSet` is false on a `null`; here a `null` sets nothing, so the two agree
+
+capability config/text  a setting read as text
+  heroes  config.text_of
+  go      GetString
+  rust    config::Config::get_string, Value::into_string, figment::value::Value::as_str, Value::into_string
+  python  pydantic `str` fields
+  note    a number is not read as text, where viper's `GetString` and config-rs's `get_string` write it: `1.10` in YAML is the number 1.1, and pydantic refuses a number for a `str` (observed)
+
+capability config/int  a setting read as an integer, from a number or a text
+  heroes  config.int_of
+  go      GetInt, GetInt32, GetInt64, GetUint, GetUint8, GetUint16, GetUint32, GetUint64
+  rust    config::Config::get_int, Value::into_int, into_int128, into_uint, into_uint128, figment::value::Value::to_i128, to_u128, to_num, to_num_lossy, Num
+  python  dynaconf Settings.as_int, pydantic `int` fields
+  note    from a number with no fraction, or a text of decimal digits with an optional sign, white space at its ends left out and zeros before it read, as pydantic reads `" 8080 "` and `"007"` (observed); `"1_000"`, `"0x1F"` and `"1.0"` refused, which pydantic reads as 1000, refuses and reads as 1. viper's `GetInt` truncates 1.5 to 1 and reads `"010"` as 8 (observed); here 1.5 is refused and `"010"` is 10
+
+capability config/float  a setting read as a number, from a number or a text
+  heroes  config.float_of
+  go      GetFloat64
+  rust    config::Config::get_float, Value::into_float, figment::value::Value::to_f64
+  python  dynaconf Settings.as_float, pydantic `float` fields
+  note    -
+
+capability config/bool  a setting read as a boolean, from a boolean, a number or a word
+  heroes  config.bool_of
+  go      GetBool
+  rust    config::Config::get_bool, Value::into_bool, figment::value::Value::to_bool, to_bool_lossy, util::bool_from_str_or_int
+  python  dynaconf Settings.as_bool, Settings.flag, pydantic `bool` fields
+  note    pydantic's words, observed: `true yes on y t 1` and `false no off n f 0` in any case, the empty text refused; viper's `GetBool` reads `yes` as false
+
+capability config/duration  a setting read as a duration
+  heroes  config.duration_of
+  go      GetDuration
+  rust    -
+  python  pydantic `timedelta` fields
+  note    Go's syntax, `time.parse_duration`'s; a number is refused, where viper reads 30 as 30ns (observed)
+
+capability config/time  a setting read as an instant
+  heroes  config.instant_of
+  go      GetTime
+  rust    -
+  python  pydantic `datetime` fields
+  note    RFC 3339 with an offset; a local date or time names no instant and is refused
+
+capability config/size  a setting read as a size in bytes, `10mb`
+  heroes  refused: whether `kb` is 1,000 or 1,024 bytes is the program's to say; it reads the text with `text_of`. viper's `GetSizeInBytes` reads `10mb` as 10,485,760 and `1.5kb` and `7b` as 0 (observed)
+  go      GetSizeInBytes
+  rust    -
+  python  -
+  note    -
+
+capability config/list  a setting read as a list, or as a list of texts
+  heroes  config.items_of, config.texts_of
+  go      GetStringSlice, GetIntSlice
+  rust    config::Config::get_array, Value::into_array, figment::value::Value::as_array, Value::into_array
+  python  pydantic `list` fields
+  note    a text is not a list of one: viper's `GetStringSlice` splits a text at white space; here a variable gives a list as JSON
+
+capability config/table  the keys of a table of settings
+  heroes  config.keys_of, config.sub
+  go      GetStringMap, GetStringMapString, GetStringMapStringSlice
+  rust    config::Config::get_table, Value::into_table, figment::value::Value::as_dict, Value::into_dict
+  python  pydantic `dict` fields, dynaconf Settings.keys, Settings.values, Settings.items
+  note    -
+
+capability config/sub  the settings under one path, read as a whole
+  heroes  config.sub
+  go      Sub, viper.Sub
+  rust    figment::Figment::focus
+  python  dynaconf's nested attribute access
+  note    a message of the answer names the whole path, `db.host`, where viper's `Sub` forgets where it stood
+
+capability config/all  every setting, as one value and as its paths
+  heroes  config.to_value, config.paths_of
+  go      AllSettings, AllKeys
+  rust    config::Config::collect, collect_to, figment::Figment::data
+  python  dynaconf Settings.to_dict, as_dict, as_json, store, BaseSettings.model_dump
+  note    a list is one path, as viper's `AllKeys` lists it
+
+capability config/source  which source gave a setting, and its name inside it
+  heroes  config.source_of, config.Source, config.format_sources
+  go      Debug, DebugTo
+  rust    config::Value::origin, figment::Metadata, Metadata::named, Metadata::source, Metadata::interpolate, Metadata::interpolater, Figment::find_metadata, Figment::get_metadata, Figment::metadata, figment::Source
+  python  dynaconf get_history, inspect_settings, Settings.loaded_by_loaders, Settings.is_overridden
+  note    -
+
+capability config/required  settings a program cannot go without, every absent one named at once
+  heroes  config.require
+  go      -
+  rust    config::ConfigError::NotFound, figment::error::Kind::MissingField
+  python  pydantic required fields, dynaconf Validator(must_exist=)
+  note    -
+
+capability config/unknown  settings no program reads, refused
+  heroes  config.check_known
+  go      UnmarshalExact, envconfig.CheckDisallowed
+  rust    figment::error::Kind::UnknownField
+  python  SettingsConfigDict extra='forbid'
+  note    -
+
+capability config/errors  a failure that names the setting's path and the source that gave it
+  heroes  config.text_of, config.int_of, config.value_of
+  go      ConfigParseError, ConfigMarshalError, ConfigFileAlreadyExistsError
+  rust    config::ConfigError, ConfigError::At, ConfigError::Type, ConfigError::PathParse, ConfigError::FileParse, ConfigError::Message, ConfigError::Foreign, ConfigError::Frozen, figment::Error, error::Kind, error::Actual, error::OneOf, error::IntoIter
+  python  SettingsError, dynaconf DynaconfParseError, DynaconfFormatError, ValidationError
+  note    every getter's failure names the path, the value found, the layer and the variable or argument that gave it: `expected an integer at "server.port", found the text "80a", set by the layer "environment" from APP_SERVER__PORT`
+
+capability config/records  settings read into a record by its fields' names
+  heroes  refused: the language has no reflection, so no record is filled by its fields' names; a program reads each setting with a getter and builds its record, and `check_known` refuses the settings it does not read
+  go      Unmarshal, UnmarshalKey, DecodeHook, DecoderConfigOption, WithDecodeHook, SetTypeByDefaultValue, ExperimentalBindStruct, envconfig.Process, envconfig.MustProcess, envconfig.Decoder, envconfig.Setter, envconfig.ParseError, envconfig.ErrInvalidSpecification
+  rust    config::Config::try_deserialize, figment::Figment::extract, extract_inner, extract_lossy, extract_inner_lossy, value::magic::Magic, value::magic::Tagged, value::magic::Either
+  python  BaseSettings, SettingsConfigDict, dynaconf Settings.populate_obj
+  note    -
+
+capability config/write  the settings written as a file
+  heroes  config.format_settings
+  go      WriteConfig, WriteConfigAs, WriteConfigTo, SafeWriteConfig, SafeWriteConfigAs, SetConfigPermissions, Encoder, EncoderRegistry, WithEncoderRegistry
+  rust    -
+  python  dynaconf loaders' write
+  note    the file is written with the built-in `write_file`; viper's `SafeWriteConfig`, which refuses a file that is there, is `fs`'s
+
+capability config/watch  a settings file watched and read again when it changes
+  heroes  refused: a file watched is `fs/watch`'s; a program that is told a file changed reads its layers again and merges them
+  go      WatchConfig, OnConfigChange, WatchRemoteConfig, WatchRemoteConfigOnChannel
+  rust    -
+  python  dynaconf Settings.reload, Settings.fresh, Settings.clean
+  note    -
+
+capability config/remote  settings read from a key-value store or a secret manager over the network
+  heroes  refused: a key-value store or a secret manager is reached by its own client, `http` or `redis`; what it answers becomes a layer with `from_value`
+  go      AddRemoteProvider, AddSecureRemoteProvider, ReadRemoteConfig, RemoteConfig, RemoteProvider, RemoteResponse, SupportedRemoteProviders, RemoteConfigError, UnsupportedRemoteProviderError
+  rust    config::AsyncSource, ConfigBuilder::add_async_source, AsyncState
+  python  AWSSecretsManagerSettingsSource, AWSSystemsManagerSettingsSource, AzureKeyVaultSettingsSource, GoogleSecretManagerSettingsSource, dynaconf's Redis and Vault loaders
+  note    -
+
+capability config/aliases  one setting read under two keys
+  heroes  refused: a setting has one path; a variable of another name is bound to it with `bind_env`
+  go      RegisterAlias
+  rust    -
+  python  AliasChoices, populate_by_name, validate_by_alias, validate_by_name
+  note    -
+
+capability config/secrets  settings read from a folder holding a file per setting, as Docker and Kubernetes give secrets
+  heroes  config.bind_files
+  go      -
+  rust    -
+  python  secrets_dir, secrets_dir_missing, secrets_dir_max_size, secrets_case_sensitive, secrets_prefix, secrets_nested_delimiter, secrets_nested_subdir, SecretsSettingsSource, NestedSecretsSettingsSource
+  note    a setting a file the program names, as pydantic-settings looks a field's file up: the text trimmed at both ends, a file or a folder that is not there setting nothing (observed). A folder holding a file nobody named is not listed, which needs `fs`
+
+capability config/templates  a setting written from other settings, `{this.host}:{this.port}`
+  heroes  refused: a setting written from others is built by the program from what it read; a text with holes filled from values is `template`'s
+  go      -
+  rust    -
+  python  dynaconf `@format`, `@jinja`, `@int`, `@json`, add_converter
+  note    -
+
+capability config/includes  a settings file that names other files to read
+  heroes  refused: a file that names others is read by the program, which reads the names and makes a layer of each with `read_layer`
+  go      -
+  rust    -
+  python  dynaconf includes, Settings.load_includes, dynaconf_include
+  note    -
+
+capability config/validators  rules a setting's value must keep, beyond its kind
+  heroes  refused: beyond its kind, `require` and `check_known`, a value is checked by the program's own `if` on what a getter answered
+  go      -
+  rust    -
+  python  dynaconf Validator, validator_conditions, pydantic field constraints
+  note    -
+
+capability config/relative-path  a path a settings file holds, read from that file's folder
+  heroes  config.path_of
+  go      -
+  rust    figment::value::magic::RelativePathBuf
+  python  dynaconf Settings.path_for
+  note    -
+
+capability dotenv/parse  a `.env` text read into its names and values
+  heroes  config.parse_dotenv
+  go      godotenv.Parse, Unmarshal, UnmarshalBytes
+  rust    dotenvy::from_read_iter, Iter, Error, Error::LineParse
+  python  dotenv.dotenv_values(stream=), dotenv.main.DotEnv, DotEnv.dict, DotEnv.get, DotEnv.parse, parse_stream, Binding
+  note    python-dotenv's reading, where the three disagree: a name holding `.` or `-` (godotenv and dotenvy refuse `-`), a quoted name, `	` and `   ` read between double quotes (godotenv writes `t`, dotenvy refuses), an unknown escape kept with its backslash, `\'` and `\` read between single quotes (godotenv keeps them), `A=#x` a value and `B= #y` empty, a byte order mark skipped. Refused where python-dotenv skips the line with a warning or reads `None`: a name with no `=`, `export` alone, `KEY: value` (godotenv reads it), text after a closing quote. A name written twice keeps its last value at its first place, as godotenv and python-dotenv answer
+
+capability dotenv/read  a `.env` file read by its path
+  heroes  config.read_dotenv
+  go      godotenv.Read
+  rust    dotenvy::from_path_iter, from_filename_iter, dotenv_iter, Error::Io
+  python  dotenv.dotenv_values(dotenv_path=), get_key
+  note    -
+
+capability dotenv/expand  `${NAME}` in a value replaced by an earlier value or a variable
+  heroes  config.parse_dotenv_with, config.DotenvOptions
+  go      godotenv's expansion, always on
+  rust    dotenvy's substitution, always on
+  python  dotenv_values(interpolate=), resolve_variables, parse_variables, dotenv.variables
+  note    only when asked, as python-dotenv's `interpolate`; `${NAME}` and `${NAME:-default}` alone, a bare `$NAME` kept as text as python-dotenv keeps it (godotenv and dotenvy replace it); never between single quotes (python-dotenv replaces there, godotenv and dotenvy do not); `\$` writes `$` (godotenv, dotenvy). A name from a line above wins over the environment, as godotenv and python-dotenv's `dotenv_values` answer (dotenvy takes the environment's). `:-` gives the default where the value is unset or empty, as POSIX's shell; python-dotenv gives it only where unset. A `${` with no `}` or no name is refused, which python-dotenv keeps as text
+
+capability dotenv/load  a `.env` file's values written into the process's environment
+  heroes  refused: the environment is read and never written (README § A5): in C a write beside another thread's read is undefined. A `.env` file's values become a layer through `from_env`, or a child's environment through `process`
+  go      godotenv.Load, Overload
+  rust    dotenvy::dotenv, dotenv_override, from_filename, from_filename_override, from_path, from_path_override, from_read, from_read_override, Iter::load, Iter::load_override, Error::EnvVar
+  python  dotenv.load_dotenv, DotEnv.set_as_environment_variables, load_ipython_extension
+  note    -
+
+capability dotenv/layer  a `.env` file's values read into the settings as the environment's are
+  heroes  config.read_dotenv, config.from_env
+  go      viper's config types `env` and `dotenv`
+  rust    -
+  python  env_file, env_file_encoding, DotEnvSettingsSource, dotenv_filtering, dynaconf load_dotenv
+  note    a `.env` file is read like the environment, its prefix and nesting the program's, as pydantic-settings reads `env_file`
+
+capability dotenv/write  names and values written as a `.env` text
+  heroes  config.format_dotenv
+  go      godotenv.Marshal, Write
+  rust    -
+  python  dotenv.set_key(quote_mode=, export=)
+  note    every value between double quotes with its escapes, `$` escaped as godotenv's `Marshal` writes it, so that a value reads back the same with expansion or without; the map's order, where godotenv sorts
+
+capability dotenv/edit  one name of a `.env` text set or removed, its other lines and comments kept
+  heroes  config.set_dotenv_value, config.remove_dotenv_value
+  go      -
+  rust    -
+  python  dotenv.set_key, unset_key, rewrite
+  note    -
+
+capability dotenv/exec  another program run with a `.env` file's values in its environment
+  heroes  refused: another program is run with an environment of the program's choosing by `process`
+  go      godotenv.Exec
+  rust    -
+  python  get_cli_string
+  note    -
+
+capability env/variable  one variable of the process's environment, or all of them
+  heroes  os.env, os.env_all
+  go      -
+  rust    dotenvy::var, vars
+  python  -
+  note    -
+
+capability env/usage  the variables a program reads, listed for its user
+  heroes  refused: the variables a program reads are its own to list, in the help `flags` writes for it (`flags.with_epilog`)
+  go      envconfig.Usage, Usagef, Usaget
+  rust    -
+  python  cli_show_env_vars
+  note    -
+
+dropped
+  go      viper.Viper, Option, Decoder, Encoder, Codec registries' interfaces beyond config/formats: the plumbing of one value a program holds; a `Settings` is a value
+  go      SetFs: an `afero` file system for tests; a test writes files under `build/`
+  go      WithLogger, Debug's writer: what is logged is the program's; `format_sources` gives the text
+  go      SetConfigPermissions: the mode of a written file is `fs`'s
+  rust    config::builder::DefaultState, BuilderState, Source, Map, Value::new, ValueKind: plumbing of a builder and of its value type, which `json.Value` is here
+  rust    figment::Provider, providers::Format, value::Dict, value::Map, value::Tag, value::Empty, value::Num beyond config/int, util::nest, util::diff_paths, util::vec_tuple_map, Profile's string methods: a provider is a `Layer`, its value a `json.Value`
+  rust    dotenvy::Result, dotenvy::Iter's iterator methods: a map is answered whole
+  python  PydanticBaseSettingsSource, SettingsConfigDict's keys that configure a pydantic model and not its settings (title, frozen, str_* , validate_*, json_schema_*, ser_*, alias_generator and the rest): a record of the program is its own
+  python  dotenv.main's imports (os, io, logging, pathlib, tempfile, OrderedDict, typing names), with_warn_for_invalid_lines, rewrite's context manager: module plumbing; a line refused fails, never warns
+  python  dynaconf DjangoDynaconf, FlaskDynaconf, contrib, hooking, post_hook, add_converter, vendor, utils, base, loaders' module names, Settings.dynaconf_banner, dynaconf_clone, logger, configure, configured, settings_module: framework glue and plumbing
+  python  encoding=, env_file_encoding, json_file_encoding, yaml_file_encoding: a settings text is UTF-8, as every text of the language

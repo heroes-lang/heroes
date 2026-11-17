@@ -1,0 +1,268 @@
+# A setting read as the kind a program asks for: a text, an integer, a number,
+# a boolean, a duration, an instant, a list or the keys of an object. A value
+# that only text can carry, from the environment, a `.env` file or INI, is
+# read from its text; a number is never written as text. Every failure names
+# the path, the value found and the layer that set it.
+
+use config/internal/held
+use config/internal/keyed
+use json
+use numbers
+use strings
+use time
+
+# The code of a value that is not of the kind asked.
+constant INVALID: str
+    "invalid"
+
+# The code of a number past what its type holds.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The words a boolean is read from, true ones then false ones, in lower case.
+constant TRUE_WORDS: str
+    "1 t true y yes on"
+
+constant FALSE_WORDS: str
+    "0 f false n no off"
+
+# The text at `path` of `h`.
+function text_at(h: held.Held lent, path: str) -> str?
+    found = held.spot(h, path)?
+
+    match found.value
+        .text t => return ok(t.v)
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: "a text", found: found))
+
+# The integer at `path`, from a number with no fraction or a decimal text.
+function int_at(h: held.Held lent, path: str) -> i64?
+    found = held.spot(h, path)?
+
+    match found.value
+        .number _ =>
+            match json.int_of(found.value)
+                .ok n => return ok(n)
+                .err e =>
+                    if e.code == DOES_NOT_FIT
+                        return fail(
+                            code: DOES_NOT_FIT,
+                            msg: f"{held.expected(h, what: "an integer", found: found)}: {e.msg}"
+                        )
+                    return fail(code: INVALID, msg: held.expected(h, what: "an integer", found: found))
+        .text t =>
+            match numbers.parse_int(strings.trim(t.v))
+                .ok n => return ok(n)
+                .err e =>
+                    if e.code == DOES_NOT_FIT
+                        return fail(
+                            code: DOES_NOT_FIT,
+                            msg: f"{held.expected(h, what: "an integer", found: found)}, which is past an i64"
+                        )
+                    return fail(code: INVALID, msg: held.expected(h, what: "an integer", found: found))
+        .null_value | .boolean _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: "an integer", found: found))
+
+# The number at `path`, from a number or a decimal text.
+function float_at(h: held.Held lent, path: str) -> f64?
+    found = held.spot(h, path)?
+
+    match found.value
+        .number n => return ok(n.v)
+        .text t =>
+            match numbers.parse_float(strings.trim(t.v))
+                .ok x  => return ok(x)
+                .err _ => return fail(code: INVALID, msg: held.expected(h, what: "a number", found: found))
+        .null_value | .boolean _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: "a number", found: found))
+
+# Whether `word`, in lower case, is one of the words of `words`, a space
+# between each two.
+function is_among(word: str, words: str) -> bool
+    for w in strings.split(s: words, sep: " ")
+        if w == word
+            return true
+
+    return false
+
+# The boolean at `path`, from a boolean, the number 0 or 1, or a word.
+function bool_at(h: held.Held lent, path: str) -> bool?
+    found = held.spot(h, path)?
+    what = "a boolean: true or false, yes or no, on or off, 1 or 0"
+
+    match found.value
+        .boolean b => return ok(b.v)
+        .number n =>
+            if n.v == 1.0
+                return ok(true)
+
+            if n.v == 0.0
+                return ok(false)
+            return fail(code: INVALID, msg: held.expected(h, what: what, found: found))
+        .text t =>
+            word = strings.to_lower_ascii(strings.trim(t.v))
+
+            if word != "" && is_among(word: word, words: TRUE_WORDS)
+                return ok(true)
+
+            if word != "" && is_among(word: word, words: FALSE_WORDS)
+                return ok(false)
+            return fail(code: INVALID, msg: held.expected(h, what: what, found: found))
+        .null_value | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: what, found: found))
+
+# The duration at `path`, from a text `time.parse_duration` reads.
+function duration_at(h: held.Held lent, path: str) -> time.Duration?
+    found = held.spot(h, path)?
+    what = "a duration such as \"30s\" or \"1h30m\""
+
+    match found.value
+        .text t =>
+            match time.parse_duration(strings.trim(t.v))
+                .ok d => return ok(d)
+                .err e =>
+                    code = if e.code == DOES_NOT_FIT
+                        DOES_NOT_FIT
+                    else
+                        INVALID
+                    return fail(code: code, msg: f"{held.expected(h, what: what, found: found)}: {e.msg}")
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: what, found: found))
+
+# The instant at `path`, from an RFC 3339 text with an offset.
+function instant_at(h: held.Held lent, path: str) -> time.Instant?
+    found = held.spot(h, path)?
+    what = "an RFC 3339 time with an offset, such as \"1979-05-27T07:32:00Z\""
+
+    match found.value
+        .text t =>
+            match time.parse(strings.trim(t.v), layout: .rfc3339)
+                .ok at => return ok(at)
+                .err e =>
+                    code = if e.code == DOES_NOT_FIT
+                        DOES_NOT_FIT
+                    else
+                        INVALID
+                    return fail(code: code, msg: f"{held.expected(h, what: what, found: found)}: {e.msg}")
+        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: what, found: found))
+
+# The elements of the list at `path`.
+function items_at(h: held.Held lent, path: str) -> [json.Value]?
+    found = held.spot(h, path)?
+
+    match found.value
+        .list l => return ok(l.items)
+        .null_value | .boolean _ | .number _ | .text _ | .object _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: "a list", found: found))
+
+# The texts of the list at `path`.
+function texts_at(h: held.Held lent, path: str) -> [str]?
+    items = items_at(h, path)?
+    found = held.spot(h, path)?
+    texts: [str] @= []
+
+    for at in range(from: 0, to: items.len())
+        match items[at]
+            .text t => texts @ texts.push(t.v)
+            .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"expected a list of texts at {keyed.named(found.reached)}, found {keyed.described(items[at])} at index {at}, set by {held.setter(h, found.reached)}"
+                )
+
+    return ok(texts)
+
+# The keys of the object at `path`, in their order.
+function keys_at(h: held.Held lent, path: str) -> [str]?
+    found = held.spot(h, path)?
+
+    match found.value
+        .object o => return ok(keys(o.members))
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: held.expected(h, what: "an object", found: found))
+
+## Tests
+
+# One layer, `test`, holding `v`, read from a text of JSON.
+function one_layer(text: str) -> held.Held
+    root = json.parse(text).must()
+    return held.Held(root: root, prefix: [], sources: {"": 0}, names: ["test"], origins: [{}], files: [""])
+
+test "text_at: a text, a number refused, a boolean refused, absent"
+    h = one_layer("{\"a\": \"x\", \"n\": 1.10, \"b\": true}")
+    assert text_at(h, "a").must() == "x"
+
+    match text_at(h, "n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected a text at \"n\", found the number 1.1, set by the layer \"test\""
+
+    assert text_at(h, "b").is_err()
+    assert text_at(h, "z").is_err()
+
+test "int_at: numbers, texts with white space and zeros, a fraction, past an i64 and past 2^53"
+    h = one_layer(
+        "{\"n\": 8080, \"t\": \" 8080 \", \"z\": \"007\", \"neg\": \"-5\", \"f\": 1.5, \"ft\": \"8080.0\", \"hex\": \"0x1F\", \"u\": \"1_000\", \"big\": \"9223372036854775808\", \"min\": \"-9223372036854775808\", \"huge\": 1e300, \"e\": \"\"}"
+    )
+    assert int_at(h, "n").must() == 8080
+    assert int_at(h, "t").must() == 8080
+    assert int_at(h, "z").must() == 7
+    assert int_at(h, "neg").must() == -5
+    assert int_at(h, "min").must() == -9223372036854775807 - 1
+
+    match int_at(h, "f")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected an integer at \"f\", found the number 1.5, set by the layer \"test\""
+
+    assert int_at(h, "ft").is_err() && int_at(h, "hex").is_err() && int_at(h, "u").is_err() && int_at(h, "e").is_err()
+
+    match int_at(h, "big")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+    match int_at(h, "huge")
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "float_at: a number, an integer, texts with an exponent, inf and a space, a word refused"
+    h = one_layer(
+        "{\"x\": 1.5, \"i\": 3, \"e\": \"1e3\", \"inf\": \"inf\", \"s\": \" 1.5\", \"w\": \"fast\", \"b\": false}"
+    )
+    assert float_at(h, "x").must() == 1.5
+    assert float_at(h, "i").must() == 3.0
+    assert float_at(h, "e").must() == 1000.0
+    assert float_at(h, "inf").must() == 1.0 / 0.0
+    assert float_at(h, "s").must() == 1.5
+    assert float_at(h, "w").is_err() && float_at(h, "b").is_err()
+
+test "bool_at: a boolean, 0 and 1, every word in any case, the empty text and 2 refused"
+    h = one_layer(
+        "{\"b\": true, \"one\": 1, \"zero\": 0, \"two\": 2, \"yes\": \"YES\", \"on\": \" on \", \"t\": \"T\", \"no\": \"No\", \"off\": \"off\", \"f\": \"f\", \"e\": \"\", \"w\": \"maybe\", \"n1\": \"1\", \"n0\": \"0\"}"
+    )
+    assert bool_at(h, "b").must() && bool_at(h, "one").must() && !bool_at(h, "zero").must()
+    assert bool_at(h, "yes").must() && bool_at(h, "on").must() && bool_at(h, "t").must() && bool_at(h, "n1").must()
+    assert !bool_at(h, "no").must() && !bool_at(h, "off").must() && !bool_at(h, "f").must() && !bool_at(h, "n0").must()
+    assert bool_at(h, "two").is_err() && bool_at(h, "e").is_err() && bool_at(h, "w").is_err()
+
+test "duration_at and instant_at: texts read, a number and a local time refused"
+    h = one_layer(
+        "{\"d\": \"1h30m\", \"n\": 30, \"bad\": \"30\", \"t\": \"1979-05-27T07:32:00-07:00\", \"local\": \"1979-05-27T07:32:00\"}"
+    )
+    assert duration_at(h, "d").must().nanoseconds == 5400000000000
+    assert duration_at(h, "n").is_err() && duration_at(h, "bad").is_err()
+    assert instant_at(h, "t").must().unix_nanoseconds == 296663520000000000
+    assert instant_at(h, "local").is_err()
+
+test "items_at, texts_at and keys_at: a list, texts, a number in the list, an object's keys in order"
+    h = one_layer("{\"l\": [\"a\", \"b\"], \"m\": [\"a\", 1], \"o\": {\"z\": 1, \"a\": 2}, \"t\": \"a,b\"}")
+    assert items_at(h, "l").must() == [.text(v: "a"), .text(v: "b")]
+    assert texts_at(h, "l").must() == ["a", "b"]
+
+    match texts_at(h, "m")
+        .ok _  => assert false
+        .err e => assert e.msg == "expected a list of texts at \"m\", found the number 1 at index 1, set by the layer \"test\""
+
+    assert texts_at(h, "t").is_err()
+    assert keys_at(h, "o").must() == ["z", "a"]
+    assert keys_at(h, "").must() == ["l", "m", "o", "t"]
+    assert keys_at(h, "l").is_err()

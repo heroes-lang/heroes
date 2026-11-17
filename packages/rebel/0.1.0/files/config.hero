@@ -1,0 +1,1443 @@
+# Settings read in layers: defaults, files in TOML, YAML, JSON or INI, `.env`
+# files, the environment and the command line, each a `Layer` holding an
+# object of `json.Value`, merged by `merge` in the order the program lists
+# them, each over the ones before it, into `Settings` read by dotted path with
+# typed getters. A getter that fails names the path, the value it found, the
+# layer that set it and the variable or the option that gave it.
+#
+# It fills no record by its fields' names, since the language has no
+# reflection: a program reads each setting with a getter and builds its own
+# record. It never writes the process's environment, which `os` only reads: a
+# `.env` file is read into a map, and from there into a layer like the
+# environment's. A file is read whole with the built-in `read_file` and written
+# with `write_file`; watching one is `fs/watch`'s. It reads TOML through
+# `toml`, so a program that uses it carries `time` as well.
+#
+# Fails `invalid` where a text is not of its format, a path is not one, or a
+# setting is not of the kind asked; `not_found` where a path names no setting
+# or a file searched for is in no folder; `does_not_fit` where a number is
+# past its type; `not_text` where a variable read is not UTF-8; and, where it
+# reads a file or a text of a format, with the code `read_file` or the
+# format's own parser fails with.
+
+use config/internal/arguments
+use config/internal/assemble
+use config/internal/dotwrite
+use config/internal/files
+use config/internal/formats
+use config/internal/held
+use config/internal/keyed
+use config/internal/reading
+use config/internal/report
+use config/internal/trees
+use config/internal/variables
+use flags
+use json
+use time
+
+## Codes
+
+# The code of a text that is not of its format, of a path that is not one, of
+# a setting that is not of the kind a getter reads, and of settings a program
+# does not know: every function that reads a text or a setting.
+constant INVALID: str
+    "invalid"
+
+# The code of a path that names no setting, `value_of` and every getter, and
+# of a file in none of the folders searched, `find_file` and `find_upward`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a number past what its type holds: an integer past an `i64`,
+# or past `json.MAX_EXACT_INT` where it must be a `json.Value`.
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+# The code of a variable of the process's environment whose name or value is
+# not UTF-8: `read_env`.
+constant NOT_TEXT: str
+    "not_text"
+
+## Layers
+
+# One source of settings: the name messages give it, its settings as an
+# object, and the name each value had inside the source. Made by the functions
+# below, or built directly with an object as `value`, which `merge` asks.
+record Layer
+    # The name messages give the layer: a file's path, `environment`,
+    # `flags`, `defaults`. Any text.
+    name: str
+    # The settings: an object, nested as deep as it is. A `null` member sets
+    # nothing, so `merge` leaves standing what a layer below gave.
+    value: json.Value
+    # The name each value had inside the source, by the value's JSON pointer
+    # in `value` as `json.pointer_of` writes it: an environment variable, an
+    # option. Empty for a file, whose values are named by their paths.
+    origins: {str: str}
+    # The path of the file the layer was read from, as given; "" where it was
+    # read from none. `path_of` reads a relative path from its folder.
+    file: str
+
+# A layer named `name` holding `value`.
+#
+# - `name`: the name messages give the layer.
+# - `value`: an object; `null` is read as the empty object.
+#
+# Fails `invalid` where `value` is a boolean, a number, a text or a list,
+# naming its kind. See also `set_value`.
+function from_value(name: str, value: json.Value) -> Layer?
+    match value
+        .object _   => return ok(Layer(name: name, value: value, origins: {}, file: ""))
+        .null_value => return ok(Layer(name: name, value: .object(members: {}), origins: {}, file: ""))
+        .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(
+                code: INVALID,
+                msg: f"the layer {json.quote(name)} is {keyed.described(value)}, where a layer's settings are an object"
+            )
+
+# Sets the setting `path` of `layer` to `value`, the objects on the way made
+# where they are not there.
+#
+# - `@layer`: the layer; its `value` gains the setting, a value already at
+#   `path` replaced in its place.
+# - `path`: a dotted path, `server.port`, as `value_of` reads one; not empty.
+# - `value`: any value; `null` sets nothing when the layer is merged.
+#
+# Fails `invalid` where `path` is empty or not a path, or where a key on the
+# way names a value that is not an object; `layer` is then as it was.
+#
+# It writes the layer whole again, so `n` settings set one by one cost time in
+# `n` squared. See also `from_value`.
+function set_value(@layer: Layer, path: str, value: json.Value) -> ()?
+    parts = keyed.keys_of(path)?
+    changed = trees.set_at(value: layer.value, origins: layer.origins, parts: parts, fresh: value)?
+    layer.value @ changed.root
+    layer.origins @ changed.origins
+    return ok()
+
+# The object at `path` in `layer`, as a layer of its own: one table of a file,
+# or one profile among several.
+#
+# - `layer`: the layer.
+# - `path`: a dotted path to an object of `layer`; "" for the whole.
+#
+# The answer is named `layer`'s name, a `:` and `path`, keeps the origins of
+# the values under `path` and the file `layer` was read from.
+#
+# Fails `not_found` where `path` names nothing in `layer`, and `invalid` where
+# it is not a path or names a value that is not an object.
+function layer_at(layer: Layer, path: str) -> Layer?
+    parts = keyed.keys_of(path)?
+    part = trees.part_at(layer.value, origins: layer.origins, parts: parts, name: layer.name)?
+
+    name = if path == ""
+        layer.name
+    else
+        f"{layer.name}:{path}"
+    return ok(Layer(name: name, value: part.root, origins: part.origins, file: layer.file))
+
+## Files
+
+# A format a settings file is written in.
+variant Format
+    # JSON, RFC 8259, as `json.parse` reads it.
+    json
+    # TOML 1.0.0, as `toml.parse` reads it; a date or a time becomes its RFC
+    # 3339 text, as `toml.to_json` writes it.
+    toml
+    # YAML 1.2, one document, as `yaml.parse` reads it.
+    yaml
+    # INI, as `ini.parse` reads it, keys before the first section allowed:
+    # each section an object of texts, those keys at the top.
+    ini
+
+# The format the extension of `path` names: `.json`, `.toml`, `.yaml` or
+# `.yml`, and `.ini`, in any case.
+#
+# - `path`: a file's path.
+#
+# Fails `invalid` where the extension is none of these, or there is none.
+function format_of(path: str) -> Format?
+    word = files.format_word(path)?
+
+    if word == "json"
+        return ok(.json)
+
+    if word == "toml"
+        return ok(.toml)
+
+    if word == "yaml"
+        return ok(.yaml)
+    return ok(.ini)
+
+# The settings `text` holds in `format`, as a layer named `name`.
+#
+# - `name`: the name messages give the layer, and the one the format's
+#   messages open with.
+# - `text`: the settings text, UTF-8.
+# - `format`: its format.
+#
+# A document of `null`, an empty YAML one included, is the empty object. An
+# INI text's sections are
+# objects, each holding its keys and then those of the section `DEFAULT` it
+# does not hold, as `ini.section_of` answers; `DEFAULT` is not an object of
+# its own, and keys before the first section stand at the top.
+#
+# Fails where the format's parser fails, with its code, the message opening
+# with `name`: `invalid` where `text` is not of the format, `does_not_fit`
+# where a number is past its type, `unsupported` where a TOML float is a `nan`
+# or an infinity or a YAML tag is not a core one, `limit` where YAML's aliases
+# copy too much. Fails `invalid` where the document is not a table.
+function parse_layer(name: str, text: str, format: Format) -> Layer?
+    word = match format
+        .json => "json"
+        .toml => "toml"
+        .yaml => "yaml"
+        .ini  => "ini"
+
+    value = formats.parse_value(name: name, text: text, word: word)?
+    return ok(Layer(name: name, value: value, origins: {}, file: ""))
+
+# The settings of the file at `path`, its format read from its extension, as
+# a layer named `path` and read from it.
+#
+# - `path`: the file's path.
+#
+# Fails where `read_file` fails, with its code, `file_not_found` where nothing
+# is there; `invalid` where `format_of` fails; and as `parse_layer` fails.
+# See also `read_layer_if_present`, `find_file`.
+function read_layer(path: str) -> Layer?
+    format = format_of(path)?
+    text = read_file(path)?
+    layer: Layer @= parse_layer(name: path, text: text, format: format)?
+    layer.file @ path
+    return ok(layer)
+
+# The settings of the file at `path` as `read_layer` reads them, or no
+# settings where the file is not there.
+#
+# - `path`: the file's path.
+#
+# Where nothing is at `path` the layer is named `path`, holds the empty object
+# and is read from no file. Fails as `read_layer` does, but never
+# `file_not_found`.
+function read_layer_if_present(path: str) -> Layer?
+    _ = format_of(path)?
+
+    if !files.is_there(path)?
+        return ok(Layer(name: path, value: .object(members: {}), origins: {}, file: ""))
+    return read_layer(path)
+
+# The path of the first settings file named `base` in the first of `dirs` that
+# holds one, whatever its format.
+#
+# - `base`: the file's name without its extension, `config`; not empty.
+# - `dirs`: the folders to look in, in order; "" is the working folder.
+#
+# In each folder it looks for `base` with `.json`, `.toml`, `.yaml`, `.yml`
+# and `.ini` after it, in that order, and answers the first one `read_file`
+# reads, joined to its folder.
+#
+# Fails `not_found` where no folder holds one, the message naming every path
+# looked at; where a file is there and `read_file` cannot read it, with its
+# code. See also `find_upward`.
+function find_file(base: str, dirs: [str]) -> str?
+    return files.find_file(base, dirs: dirs)
+
+# The path of the file `name` in the folder `dir` or in the nearest folder
+# above it that holds one, as `.env` and `pyproject.toml` are looked for.
+#
+# - `name`: the file's name, `.env`; not empty.
+# - `dir`: the folder to start in, `os.working_dir()`'s answer for the
+#   working folder.
+#
+# Fails `not_found` where neither `dir` nor a folder above it holds `name`,
+# naming `dir`; where a file is there and `read_file` cannot read it, with its
+# code. Each folder is read as its path writes it, so a relative `dir` is
+# looked at up to its first part.
+function find_upward(name: str, dir: str) -> str?
+    return files.find_upward(name: name, dir: dir)
+
+# The settings named in `names` read from the files of the folder `dir`, a
+# file a setting, as Docker and Kubernetes give secrets, as a layer named
+# `name`.
+#
+# - `name`: the name messages give the layer, `secrets`.
+# - `dir`: the folder, `/run/secrets`; "" for the working folder.
+# - `names`: a setting's dotted path to the name of the file in `dir` that
+#   gives it: `{"db.password": "db_password"}`.
+#
+# A file's text is the value, the white space at its ends left out, as
+# pydantic-settings reads it; a file that is not there sets nothing, a folder
+# that is not there included. Every value is text, and its origin is its
+# file's path.
+#
+# Fails `invalid` where a path is not one, or stands under another; where a
+# file is there and `read_file` cannot read it, with its code.
+function bind_files(name: str, dir: str, names: {str: str}) -> Layer?
+    tree = trees.bound_files(dir: dir, names: names)?
+    return ok(Layer(name: name, value: tree.root, origins: tree.origins, file: ""))
+
+## The environment
+
+# How the variables of an environment are read into a layer. `env_options`
+# answers the usual ones; a program changes the fields it needs.
+record EnvOptions
+    # The text a variable's name begins with, taken off before its keys are
+    # read: `APP_`. Compared byte for byte; "" reads every variable.
+    prefix: str
+    # The text that splits the rest of the name into nested keys: `__` reads
+    # `APP_DB__HOST` as `db.host`. "" keeps the rest one key.
+    separator: str
+    # Whether the keys are read in lower case, the ASCII letters lowered:
+    # `APP_PORT` gives `port`.
+    lower_keys: bool
+    # Whether a variable set empty sets nothing.
+    ignore_empty: bool
+    # Whether each value is read as JSON where it is JSON, `8080` a number,
+    # `true` a boolean, `["a", "b"]` a list and `{"a": 1}` an object, and as
+    # text where it is not; else every value is text.
+    json_values: bool
+
+# The options that read the variables beginning with `prefix`, nested at `__`
+# and keyed in lower case, an empty value and a value of JSON read as text.
+#
+# - `prefix`: the text every variable read begins with, `APP_`; "" for every
+#   variable.
+function env_options(prefix: str) -> EnvOptions
+    return EnvOptions(prefix: prefix, separator: "__", lower_keys: true, ignore_empty: false, json_values: false)
+
+# The variables of `env` read as `options` say, as a layer named `name`.
+#
+# - `name`: the name messages give the layer.
+# - `env`: the variables, a name to each value: `os.env_all()`'s answer, or
+#   `parse_dotenv`'s, or a map of the program's own.
+# - `options`: how a name gives keys and a value is read.
+#
+# A variable whose name does not begin with `options.prefix`, gives no key or
+# an empty key once split, as `__CF_USER_TEXT_ENCODING` does at `__`, is left
+# out. Each value's origin is its variable's name.
+#
+# Fails `invalid` where two variables give one setting, or one gives a value
+# where another gives keys under it, naming both: `APP_DB` and `APP_DB__HOST`.
+# Fails `does_not_fit` where a value read as JSON holds a number past what an
+# `f64` holds. See also `read_env`, `bind_env`.
+function from_env(name: str, env: {str: str}, options: EnvOptions) -> Layer?
+    rules = variables.Rules(
+        prefix: options.prefix,
+        separator: options.separator,
+        lower_keys: options.lower_keys,
+        ignore_empty: options.ignore_empty,
+        json_values: options.json_values
+    )
+    entries = variables.entries(env, rules: rules)?
+    tree = assemble.labelled(entries)?
+    return ok(Layer(name: name, value: tree.root, origins: tree.origins, file: ""))
+
+# The process's own environment read as `options` say, as a layer named
+# `environment`.
+#
+# - `options`: how a name gives keys and a value is read.
+#
+# A variable whose name or value is not UTF-8 is left out where its name does
+# not begin with `options.prefix`. Fails `not_text` where one that does is not
+# UTF-8, naming it; else as `from_env` fails.
+function read_env(options: EnvOptions) -> Layer?
+    env = variables.process_env(options.prefix)?
+    return from_env(name: "environment", env: env, options: options)
+
+# The settings named in `names` read from the variables they name, as a
+# layer named `name`.
+#
+# - `name`: the name messages give the layer.
+# - `env`: the variables, a name to each value.
+# - `names`: a setting's dotted path to the name of the variable that gives
+#   it: `{"db.host": "PGHOST"}`.
+#
+# A variable that is not in `env` sets nothing; one set empty sets the empty
+# text. Every value is text, and its origin is its variable's name.
+#
+# Fails `invalid` where a path is not one, or where one path stands under
+# another, as `db` and `db.host` do.
+function bind_env(name: str, env: {str: str}, names: {str: str}) -> Layer?
+    tree = trees.bound_variables(env: env, names: names)?
+    return ok(Layer(name: name, value: tree.root, origins: tree.origins, file: ""))
+
+## The command line
+
+# How an argument's value is read into a setting.
+variant FlagKind
+    # A flag of no value, read with `flags.is_on`: a boolean.
+    flag
+    # A flag counted, read with `flags.count_of`: a number.
+    count
+    # An option's or a positional's last value, read with `flags.value_of`: a
+    # text.
+    text
+    # Its value read with `flags.int_of`: a number.
+    integer
+    # Its value read with `flags.float_of`: a number.
+    float
+    # Every value given, read with `flags.values_of`: a list of texts.
+    texts
+
+# One setting read from one argument of the command line.
+record FlagBinding
+    # The setting's dotted path, `server.port`.
+    path: str
+    # The argument, named as `flags.is_given` names it: its long name, else
+    # its short name, else a positional's name.
+    name: str
+    # How its value is read; a `flag` and a `count` only for a flag.
+    kind: FlagKind
+
+# The settings `bindings` read from the arguments a parse found given, on the
+# command line or in their environment variable, as a layer named `name`.
+#
+# - `name`: the name messages give the layer, `flags`.
+# - `found`: what `flags.parse` or one of its siblings found.
+# - `bindings`: the settings and the arguments that give them.
+#
+# An argument neither given nor read from its variable sets nothing, its
+# default included: `from_flag_defaults` reads those. A flag turned off by its
+# negation sets `false`. Each value's origin is the argument's name.
+#
+# Fails `invalid` where a path is not one, or stands under another; where a
+# value of `integer` or `float` is not that number, as `flags.int_of` fails.
+# Fails `does_not_fit` where an integer is past `json.MAX_EXACT_INT`. Aborts
+# where `found`'s command declares no such argument, or where the kind is not
+# one its argument takes, as `flags` aborts.
+function from_flags(name: str, found: flags.Found, bindings: [FlagBinding]) -> Layer?
+    wanted: [arguments.Wanted] @= []
+
+    for b in bindings
+        word = match b.kind
+            .flag    => "flag"
+            .count   => "count"
+            .text    => "text"
+            .integer => "integer"
+            .float   => "float"
+            .texts   => "texts"
+
+        wanted @ wanted.push(arguments.Wanted(path: b.path, name: b.name, word: word))
+
+    entries = arguments.entries(found, wanted: wanted, defaults: false)?
+    tree = assemble.labelled(entries)?
+    return ok(Layer(name: name, value: tree.root, origins: tree.origins, file: ""))
+
+# The settings `bindings` read from the defaults of the arguments a parse found
+# not given, as a layer named `name`, which a program lists below the others.
+#
+# - `name`: the name messages give the layer, `flag defaults`.
+# - `found`: what a parse found.
+# - `bindings`: the settings and the arguments that give them.
+#
+# Only an argument that `flags.source_of` says took its default sets its
+# setting. Fails and aborts as `from_flags` does.
+function from_flag_defaults(name: str, found: flags.Found, bindings: [FlagBinding]) -> Layer?
+    wanted: [arguments.Wanted] @= []
+
+    for b in bindings
+        word = match b.kind
+            .flag    => "flag"
+            .count   => "count"
+            .text    => "text"
+            .integer => "integer"
+            .float   => "float"
+            .texts   => "texts"
+
+        wanted @ wanted.push(arguments.Wanted(path: b.path, name: b.name, word: word))
+
+    entries = arguments.entries(found, wanted: wanted, defaults: true)?
+    tree = assemble.labelled(entries)?
+    return ok(Layer(name: name, value: tree.root, origins: tree.origins, file: ""))
+
+## Merging
+
+# Settings merged from layers, read by the functions below. Made only by
+# `merge`, and narrowed by `sub`.
+record Settings
+    # The merged tree and where each value came from, read by this package.
+    held: held.Held
+
+# The settings of `layers`, each over the ones before it.
+#
+# - `layers`: the layers, the lowest first: defaults, then files, then `.env`
+#   files, the environment and the command line, in whatever order the
+#   program states; none gives settings holding nothing.
+#
+# An object over an object is merged key by key, as deep as both go; any other
+# value replaces what stood at its path, an object included, and keeps its
+# place among its siblings. A `null` sets nothing. A list is one value: a
+# list replaces a list whole.
+#
+# Aborts where a layer's `value` is not an object, which `from_value` checks.
+# The time is linear in the values of all the layers, times their depth.
+function merge(layers: [Layer]) -> Settings
+    values: [json.Value] @= []
+    names: [str] @= []
+    origins: [{str: str}] @= []
+    layer_files: [str] @= []
+
+    for layer in layers
+        values @ values.push(layer.value)
+        names @ names.push(layer.name)
+        origins @ origins.push(layer.origins)
+        layer_files @ layer_files.push(layer.file)
+
+    return Settings(held: trees.merged(values, names: names, origins: origins, layer_files: layer_files))
+
+## Reading a setting
+
+# The value `path` names in `s`.
+#
+# - `s`: the settings.
+# - `path`: keys joined by `.`, `server.port`, read from the top of `s`; a
+#   key of digits alone names an element where it meets a list, counted from
+#   0; "" names the whole. A key that holds a `.` is read from its parent's
+#   value with `json.member`.
+#
+# Fails `not_found` where no layer gives `path`, the message naming the
+# layers; `invalid` where `path` is not one, as `a..b` and `a.` are not, or
+# goes on past a value that holds nothing, naming the layer that set it.
+function value_of(s: Settings, path: str) -> json.Value?
+    return ok(held.spot(s.held, path)?.value)
+
+# Whether `path` names a value in `s`.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# True exactly where `value_of` succeeds.
+function has_path(s: Settings, path: str) -> bool
+    return !value_of(s, path).is_err()
+
+# The text at `path`.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# Fails as `value_of` does, and `invalid` where the value is not a text, the
+# message naming the path, the value and the layer that set it: a number is
+# not read as text, since `1.10` written in YAML is the number `1.1`.
+function text_of(s: Settings, path: str) -> str?
+    return reading.text_at(s.held, path)
+
+# The integer at `path`, from a number with no fraction or from a text that
+# spells one in decimal.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# A text is read with the white space at its ends left out, an optional sign
+# and decimal digits: `" 8080 "` and `"007"` are read, `"0x1F"`, `"1_000"` and
+# `"8080.0"` are not.
+#
+# Fails as `value_of` does; `invalid` where the value is neither, naming the
+# path, the value and the layer that set it; `does_not_fit` where a text's
+# number is past an `i64` or a number is past `json.MAX_EXACT_INT`.
+function int_of(s: Settings, path: str) -> i64?
+    return reading.int_at(s.held, path)
+
+# The number at `path`, from a number or from a text that spells one in
+# decimal, `nan` and `inf` included.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# A text is read with the white space at its ends left out, as
+# `numbers.parse_float` reads it. Fails as `value_of` does, and `invalid`
+# where the value is neither, naming the path, the value and the layer.
+function float_of(s: Settings, path: str) -> f64?
+    return reading.float_at(s.held, path)
+
+# The boolean at `path`, from a boolean, from the number 0 or 1, or from a
+# word: `true`, `yes`, `on`, `y`, `t` and `1` are true, `false`, `no`, `off`,
+# `n`, `f` and `0` false, in any case.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# A word is read with the white space at its ends left out; the empty text is
+# none. Fails as `value_of` does, and `invalid` where the value is none of
+# these, naming the path, the value and the layer.
+function bool_of(s: Settings, path: str) -> bool?
+    return reading.bool_at(s.held, path)
+
+# The duration at `path`, from a text `time.parse_duration` reads: `30s`,
+# `1h30m`, `250ms`.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# Fails as `value_of` does, and `invalid` where the value is not such a text,
+# a number included, whose unit no text says; `does_not_fit` where the
+# duration is past a `time.Duration`. Each message names the path and the
+# layer.
+function duration_of(s: Settings, path: str) -> time.Duration?
+    return reading.duration_at(s.held, path)
+
+# The instant at `path`, from an RFC 3339 text with an offset:
+# `1979-05-27T07:32:00-07:00`, as TOML's dates are given.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# Fails as `value_of` does, and `invalid` where the value is not such a text,
+# a date or a time without an offset included, which names no instant; each
+# message names the path and the layer. Fails `does_not_fit` where the instant
+# is outside what a `time.Instant` holds.
+function instant_of(s: Settings, path: str) -> time.Instant?
+    return reading.instant_at(s.held, path)
+
+# The path at `path`: a text, read from the folder of the file whose layer set
+# it where it is relative.
+#
+# - `s`: the settings.
+# - `path`: a path to a setting, as `value_of` reads one.
+#
+# A relative text set by a layer read from no file is answered as it is
+# written; an absolute one always is.
+#
+# Fails as `text_of` does.
+function path_of(s: Settings, path: str) -> str?
+    text = reading.text_at(s.held, path)?
+    found = held.spot(s.held, path)?
+    layer = held.source_index(s.held, found.reached)
+
+    if layer < 0
+        return ok(text)
+    return ok(files.relative_to(value: text, file: s.held.files[layer]))
+
+# The elements of the list at `path`, in order.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# Fails as `value_of` does, and `invalid` where the value is not a list,
+# naming the path, the value and the layer. See also `texts_of`.
+function items_of(s: Settings, path: str) -> [json.Value]?
+    return reading.items_at(s.held, path)
+
+# The texts of the list at `path`, in order.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one.
+#
+# Fails as `items_of` does, and `invalid` where an element is not a text,
+# naming its index; a text is not a list of one.
+function texts_of(s: Settings, path: str) -> [str]?
+    return reading.texts_at(s.held, path)
+
+# The keys of the object at `path`, in the order they were first given.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one; "" for the keys at the top.
+#
+# Fails as `value_of` does, and `invalid` where the value is not an object,
+# naming the path, the value and the layer.
+function keys_of(s: Settings, path: str) -> [str]?
+    return reading.keys_at(s.held, path)
+
+# The settings under `path`, read from their own top: `sub(s, "db")` reads
+# `db.host` as `host`.
+#
+# - `s`: the settings.
+# - `path`: a path to an object, as `value_of` reads one.
+#
+# Each message of the answer names a setting's whole path, `db.host`, and the
+# layer that set it, as `s` would.
+#
+# Fails as `value_of` does, and `invalid` where the value is not an object.
+function sub(s: Settings, path: str) -> Settings?
+    found = held.spot(s.held, path)?
+
+    match found.value
+        .object _ =>
+            narrowed: held.Held @= s.held
+            narrowed.prefix @ found.reached
+            return ok(Settings(held: narrowed))
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: INVALID, msg: held.expected(s.held, what: "an object", found: found))
+
+## Every setting
+
+# Every setting of `s` as one object.
+#
+# - `s`: the settings.
+function to_value(s: Settings) -> json.Value
+    return held.spot(s.held, "").must().value
+
+# The path of every setting of `s` that holds no other: each value that is not
+# an object, and each empty object, in the order of the tree.
+#
+# - `s`: the settings.
+#
+# A list is one setting, its elements not listed. A path is read from the top
+# of `s`; a key holding a `.` makes a path that `value_of` reads otherwise.
+function paths_of(s: Settings) -> [str]
+    out: [str] @= []
+
+    for parts in report.leaves(s.held)
+        out @ out.push(keyed.dotted(parts))
+
+    return out
+
+## Where a setting came from
+
+# Where a setting came from.
+record Source
+    # The name of the layer that set it last, as its `Layer.name` reads.
+    layer: str
+    # The name its value had inside that layer, an environment variable or an
+    # argument; "" for a value of a file or of the program.
+    origin: str
+    # The path of the file that layer was read from; "" where none.
+    file: str
+
+# Where the value at `path` came from: the last layer that set it, or, for an
+# object several layers gave keys to, the last that gave one.
+#
+# - `s`: the settings.
+# - `path`: a path, as `value_of` reads one; an element of a list comes from
+#   the layer that set the list.
+#
+# Fails as `value_of` does.
+function source_of(s: Settings, path: str) -> Source?
+    found = held.spot(s.held, path)?
+    layer = held.source_index(s.held, found.reached)
+
+    if layer < 0
+        return ok(Source(layer: "", origin: "", file: ""))
+    origin = held.origin_in(s.held, layer: layer, reached: found.reached)
+    return ok(Source(layer: s.held.names[layer], origin: origin, file: s.held.files[layer]))
+
+# Every setting of `s`, a line each in the order of `paths_of`: its path, `=`,
+# its value as JSON, and the layer and the origin that gave it.
+#
+# - `s`: the settings.
+#
+# A line reads `server.port = 8080 (environment: APP_SERVER__PORT)`. The text
+# ends with a line break, and is empty where `s` holds nothing. Every value is
+# written, a secret's included.
+function format_sources(s: Settings) -> str
+    return report.sources_text(s.held)
+
+# Checks that every path of `paths` names a value in `s`.
+#
+# - `s`: the settings.
+# - `paths`: the paths a program cannot go without, as `value_of` reads them.
+#
+# Fails `not_found` naming every path of `paths` no layer gives, in their
+# order, and the layers it looked in; `invalid` where a path is not one.
+function require(s: Settings, paths: [str]) -> ()?
+    return report.missing(s.held, paths: paths)
+
+# Checks that every setting of `s` stands at one of `paths` or under one.
+#
+# - `s`: the settings.
+# - `paths`: the paths a program reads, as `value_of` reads them; a path to an
+#   object takes every setting under it.
+#
+# Fails `invalid` naming every setting no path takes, in the order of
+# `paths_of`, each with the layer and the origin that gave it: a key misspelt
+# in a file, a variable the program does not read. Fails `invalid` where a
+# path is not one.
+function check_known(s: Settings, paths: [str]) -> ()?
+    return report.unknown(s.held, paths: paths)
+
+## Writing settings
+
+# Every setting of `s` written in `format`, ending with a line break.
+#
+# - `s`: the settings.
+# - `format`: the format to write.
+#
+# JSON is indented two spaces a level. INI writes a setting at the top before
+# any section, and each object at the top as a section holding texts, a
+# number written as JSON writes it and a boolean `true` or `false`.
+#
+# Fails `invalid` where `format` has no form for a value: INI for an object
+# below a section or a list, JSON and YAML for a `nan` or an infinity, which
+# only a flag of `Kind.float` or a text read by `float_of` gives. Fails
+# `unsupported` where TOML has no form for a `null` in a list.
+function format_settings(s: Settings, format: Format) -> str?
+    word = match format
+        .json => "json"
+        .toml => "toml"
+        .yaml => "yaml"
+        .ini  => "ini"
+
+    return formats.write_value(to_value(s), word: word)
+
+## .env files
+
+# How a `.env` text is read.
+record DotenvOptions
+    # Whether `${NAME}` and `${NAME:-default}` in a value written bare or
+    # between double quotes are replaced by `NAME`'s value: a name's value from
+    # a line above, else from `env`, else the empty text. `:-` gives `default`
+    # where the value is unset or empty. Between single quotes nothing is
+    # replaced.
+    expand: bool
+    # The variables `${NAME}` reads where no line above sets `NAME`:
+    # `os.env_all()`'s answer, or a map of the program's own; empty for none.
+    env: {str: str}
+
+# The names and values of the `.env` text `text`, nothing replaced.
+#
+# - `text`: the text: lines of `NAME=value`, LF or CR LF, a byte order mark
+#   allowed at its start.
+#
+# A line may begin with `export`; white space around the `=` is left out; a
+# `#` at the start of a line, or after white space in a bare value, begins a
+# comment. A bare value is taken as written, its ends trimmed. Between double
+# quotes `\n`, `\r`, `\t`, `\"`, `\\`, `\'`, `\$`, `\a`, `\b`, `\f` and `\v`
+# are read and any other `\` is kept; between single quotes only `\'` and
+# `\\`. A quoted value may run over several lines. A name written twice keeps
+# its last value, at its first place.
+#
+# Fails `invalid` where a line is not one of these, the message opening `line
+# L:`: a name without `=`, a name holding white space or a quote, a quote not
+# closed, text after a closing quote. See also `parse_dotenv_with`.
+function parse_dotenv(text: str) -> {str: str}?
+    return dotwrite.values_of(text, expand: false, env: {})
+
+# The names and values of the `.env` text `text`, read as `options` say.
+#
+# - `text`: the text, as `parse_dotenv` reads it.
+# - `options`: whether and from what `${NAME}` is replaced.
+#
+# A value is replaced as its line is read, so a name set on a line below is
+# not yet set, and what a replacement writes is not read again.
+#
+# Fails as `parse_dotenv` does, and `invalid` where a `${` has no `}` or holds
+# what is not a name of ASCII letters, digits and `_`.
+function parse_dotenv_with(text: str, options: DotenvOptions) -> {str: str}?
+    return dotwrite.values_of(text, expand: options.expand, env: options.env)
+
+# The names and values of the `.env` file at `path`, read as `options` say.
+#
+# - `path`: the file's path.
+# - `options`: whether and from what `${NAME}` is replaced.
+#
+# Fails where `read_file` fails, with its code, and as `parse_dotenv_with`
+# does, the message opening with `path`.
+function read_dotenv(path: str, options: DotenvOptions) -> {str: str}?
+    text = read_file(path)?
+
+    match parse_dotenv_with(text, options)
+        .ok values => return ok(values)
+        .err e     => return fail(code: e.code, msg: f"{path}: {e.msg}")
+
+# `values` written as a `.env` text, a line `NAME="value"` each, in the map's
+# order.
+#
+# - `values`: the names and their values; none gives "".
+#
+# A value is written between double quotes, `\`, `"`, `$`, a line feed, a
+# carriage return and a tab escaped, so `parse_dotenv` reads back the same
+# map, with `expand` or without.
+#
+# Fails `invalid` where a name is empty or holds white space, `=`, `#`, a
+# quote or `\`.
+function format_dotenv(values: {str: str}) -> str?
+    return dotwrite.format_values(values)
+
+# `text` with `name` set to `value`: its line rewritten in place where it
+# stands, else a line added at the end; every other line and comment kept.
+#
+# - `text`: a `.env` text that `parse_dotenv` reads.
+# - `name`: the name, as `format_dotenv` writes one.
+# - `value`: the value, written as `format_dotenv` writes it.
+#
+# Where `name` stands on several lines, the last is rewritten and the others
+# removed. Fails as `parse_dotenv` does on `text`, and as `format_dotenv` does
+# on `name`.
+function set_dotenv_value(text: str, name: str, value: str) -> str?
+    return dotwrite.set_value(text: text, name: name, value: value)
+
+# `text` without the lines that set `name`, every other line and comment kept.
+#
+# - `text`: a `.env` text that `parse_dotenv` reads.
+# - `name`: the name.
+#
+# Fails `not_found` where no line sets `name`, and as `parse_dotenv` does on
+# `text`.
+function remove_dotenv_value(text: str, name: str) -> str?
+    return dotwrite.remove_value(text: text, name: name)
+
+## Tests
+
+test "from_value: an object, null as the empty object, a list refused"
+    assert from_value("d", json.parse("{\"a\": 1}").must()).must().value == json.parse("{\"a\": 1}").must()
+    assert from_value("d", .null_value).must().value == .object(members: {})
+
+    match from_value("d", .list(items: []))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the layer \"d\" is a list of 0, where a layer's settings are an object"
+
+test "set_value: a new path made, a value replaced in its place, a path through a number refused and the layer kept"
+    layer @= from_value("d", json.parse("{\"a\": 1, \"b\": {\"x\": 1}, \"c\": 3}").must()).must()
+    set_value(@layer, path: "b", value: .text(v: "flat")).must()
+    assert json.format(layer.value).must() == "{\"a\":1,\"b\":\"flat\",\"c\":3}"
+    set_value(@layer, path: "d.e.f", value: .boolean(v: true)).must()
+    assert json.format(layer.value).must() == "{\"a\":1,\"b\":\"flat\",\"c\":3,\"d\":{\"e\":{\"f\":true}}}"
+    before = layer.value
+
+    match set_value(@layer, path: "a.z", value: .null_value)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"a\" is the number 1, which holds no key \"z\""
+
+    assert layer.value == before
+    assert set_value(@layer, path: "", value: .null_value).is_err()
+    assert set_value(@layer, path: "a..b", value: .null_value).is_err()
+
+test "set_value: an object replacing an object whole, a null kept in the layer, the origins under the path dropped"
+    layer @= Layer(
+        name: "e",
+        value: json.parse("{\"db\": {\"host\": \"h\", \"port\": \"1\"}, \"x\": \"2\"}").must(),
+        origins: {"/db/host": "APP_DB__HOST", "/db/port": "APP_DB__PORT", "/x": "APP_X"},
+        file: ""
+    )
+    set_value(@layer, path: "db", value: json.parse("{\"name\": \"n\"}").must()).must()
+    assert json.format(layer.value).must() == "{\"db\":{\"name\":\"n\"},\"x\":\"2\"}"
+    assert layer.origins == {"/x": "APP_X"}
+    set_value(@layer, path: "db.name", value: .null_value).must()
+    assert json.format(layer.value).must() == "{\"db\":{\"name\":null},\"x\":\"2\"}"
+
+test "layer_at: a table, the whole, a key absent, a value that is not a table, the origins under it"
+    layer = Layer(
+        name: "app.toml",
+        value: json.parse("{\"default\": {\"port\": 1}, \"production\": {\"port\": 2, \"db\": {\"host\": \"h\"}}, \"x\": 1}").must(),
+        origins: {"/production/db/host": "H", "/x": "X"},
+        file: "app.toml"
+    )
+    p = layer_at(layer, path: "production").must()
+    assert p.name == "app.toml:production" && p.file == "app.toml"
+    assert json.format(p.value).must() == "{\"port\":2,\"db\":{\"host\":\"h\"}}"
+    assert p.origins == {"/db/host": "H"}
+    assert layer_at(layer, path: "").must() == layer
+
+    match layer_at(layer, path: "staging")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no \"staging\" in the layer \"app.toml\""
+
+    match layer_at(layer, path: "x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"x\" of the layer \"app.toml\" is the number 1, where a table of settings is expected"
+
+    match layer_at(layer, path: "x.y")
+        .ok _  => assert false
+        .err e => assert e.msg == "\"x\" of the layer \"app.toml\" is the number 1, which holds no key \"y\""
+
+test "format_of: each extension in any case, none, another"
+    assert format_of("a.json").must() == .json
+    assert format_of("dir.d/a.TOML").must() == .toml
+    assert format_of("a.yml").must() == .yaml && format_of("a.yaml").must() == .yaml
+    assert format_of("a.ini").must() == .ini
+
+    match format_of("a.env")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert format_of("Makefile").is_err()
+
+test "parse_layer: each format into the same settings, a document that is a list, a TOML nan"
+    want = json.parse("{\"port\": 8080, \"db\": {\"host\": \"h\"}}").must()
+    assert parse_layer(name: "a", text: "{\"port\": 8080, \"db\": {\"host\": \"h\"}}", format: .json).must().value == want
+    assert parse_layer(name: "a", text: "port = 8080\n[db]\nhost = \"h\"\n", format: .toml).must().value == want
+    assert parse_layer(name: "a", text: "port: 8080\ndb:\n  host: h\n", format: .yaml).must().value == want
+    ini = parse_layer(name: "a", text: "port = 8080\n[db]\nhost = h\n", format: .ini).must()
+    assert ini.value == json.parse("{\"port\": \"8080\", \"db\": {\"host\": \"h\"}}").must()
+    assert ini.name == "a" && ini.file == "" && ini.origins == {}
+
+    match parse_layer(name: "a.json", text: "[1]", format: .json)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a.json: the document is a list of 1, where a table of settings is expected"
+
+    match parse_layer(name: "a.toml", text: "x = nan\n", format: .toml)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "read_layer and read_layer_if_present: a file read with its path, a file absent, an extension unknown"
+    write_file(path: "build/rebel-config-test.json", text: "{\"a\": 1}").must()
+    got = read_layer("build/rebel-config-test.json").must()
+    assert got.name == "build/rebel-config-test.json" && got.file == "build/rebel-config-test.json"
+    assert got.value == json.parse("{\"a\": 1}").must()
+    write_file(path: "build/rebel-config-test.yml", text: "a: [1, 2]\n").must()
+    assert read_layer("build/rebel-config-test.yml").must().value == json.parse("{\"a\": [1, 2]}").must()
+
+    match read_layer("build/rebel-config-absent-zz.toml")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    match read_layer("build/rebel-config-test.cfg")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    absent = read_layer_if_present("build/rebel-config-absent-zz.toml").must()
+    assert absent == Layer(name: "build/rebel-config-absent-zz.toml", value: .object(members: {}), origins: {}, file: "")
+    assert read_layer_if_present("build/rebel-config-test.json").must() == got
+    assert read_layer_if_present("build/rebel-config-absent-zz.cfg").is_err()
+
+test "find_file: folders and extensions in order, a folder absent, nothing found"
+    write_file(path: "build/rebel-config-find.toml", text: "a = 1\n").must()
+    write_file(path: "build/rebel-config-find.yaml", text: "a: 2\n").must()
+    assert find_file(base: "rebel-config-find", dirs: ["build/absent-zz", "build"]).must() == "build/rebel-config-find.toml"
+
+    match find_file(base: "rebel-config-zz", dirs: ["build"])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "no settings file \"rebel-config-zz\": looked at \"build/rebel-config-zz.json\", \"build/rebel-config-zz.toml\", \"build/rebel-config-zz.yaml\", \"build/rebel-config-zz.yml\", \"build/rebel-config-zz.ini\""
+
+test "find_upward: the folder itself, a folder above folders that are not there, none"
+    write_file(path: "build/rebel-config-up.env", text: "A=1\n").must()
+    assert find_upward(name: "rebel-config-up.env", dir: "build").must() == "build/rebel-config-up.env"
+    assert find_upward(name: "rebel-config-up.env", dir: "build/absent-zz/deeper").must() == "build/rebel-config-up.env"
+    assert find_upward(name: "rebel-config-up-zz.env", dir: "build/absent-zz").is_err()
+
+test "bind_files: a file read and trimmed, a file absent, a folder absent, a path under another"
+    write_file(path: "build/rebel-config-secret", text: "  s3cret\n\n").must()
+    layer = bind_files(
+        name: "secrets",
+        dir: "build",
+        names: {"db.password": "rebel-config-secret", "token": "rebel-config-absent-zz"}
+    ).must()
+    assert json.format(layer.value).must() == "{\"db\":{\"password\":\"s3cret\"}}"
+    assert layer.origins == {"/db/password": "build/rebel-config-secret"}
+    assert bind_files(name: "s", dir: "build/absent-zz", names: {"a": "b"}).must().value == .object(members: {})
+    assert bind_files(name: "s", dir: "build", names: {"a": "x", "a.b": "y"}).is_err()
+
+test "from_env: a prefix taken off, keys nested and lowered, the rest left out, each origin its variable"
+    env = {"APP_PORT": "8080", "APP_DB__HOST": "h", "APP_DB__PORT": "5432", "OTHER": "x", "APP_": "y", "APP___Z": "z"}
+    layer = from_env(name: "environment", env: env, options: env_options("APP_")).must()
+    assert json.format(layer.value).must() == "{\"port\":\"8080\",\"db\":{\"host\":\"h\",\"port\":\"5432\"}}"
+    assert layer.origins == {"/port": "APP_PORT", "/db/host": "APP_DB__HOST", "/db/port": "APP_DB__PORT"}
+    assert layer.name == "environment" && layer.file == ""
+
+test "from_env: a value and keys under it, both orders; JSON values; an empty value ignored; no separator and case kept"
+    match from_env(name: "e", env: {"APP_DB": "x", "APP_DB__HOST": "h"}, options: env_options("APP_"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"APP_DB\" and \"APP_DB__HOST\" both set \"db\", one of them a value and the other a value or keys under it"
+
+    options @= env_options("APP_")
+    options.json_values @ true
+    options.ignore_empty @ true
+    read = from_env(
+        name: "e",
+        env: {"APP_N": "8080", "APP_L": "[1, \"a\"]", "APP_E": "", "APP_W": "word", "APP_O": "{\"k\": true}"},
+        options: options
+    ).must()
+    assert json.format(read.value).must() == "{\"n\":8080,\"l\":[1,\"a\"],\"w\":\"word\",\"o\":{\"k\":true}}"
+    assert read.origins["/o/k"].must() == "APP_O"
+    kept @= env_options("")
+    kept.separator @ ""
+    kept.lower_keys @ false
+    assert json.format(from_env(name: "e", env: {"Db__Host": "h"}, options: kept).must().value).must() == "{\"Db__Host\":\"h\"}"
+
+test "read_env: a prefix no variable has, and every variable read without failing"
+    assert read_env(env_options("REBEL_CONFIG_TEST_ZZ_")).must().value == .object(members: {})
+    every @= env_options("")
+    every.separator @ ""
+    every.lower_keys @ false
+    assert read_env(every).must().name == "environment"
+
+test "bind_env: variables set, set empty and not set; a path under another refused though neither is set"
+    layer = bind_env(
+        name: "env",
+        env: {"PGHOST": "h", "PGPORT": ""},
+        names: {"db.host": "PGHOST", "db.port": "PGPORT", "x": "UNSET_ZZ"}
+    ).must()
+    assert json.format(layer.value).must() == "{\"db\":{\"host\":\"h\",\"port\":\"\"}}"
+    assert layer.origins == {"/db/host": "PGHOST", "/db/port": "PGPORT"}
+    assert bind_env(name: "env", env: {}, names: {"db": "A", "db.host": "B"}).is_err()
+    assert bind_env(name: "env", env: {}, names: {"a..b": "A"}).is_err()
+
+test "from_flags and from_flag_defaults: a negation, a count, a variable through flags, a default, a path under another"
+    c @= flags.command(name: "t", about: "")
+    flags.add(@c, flags.with_negation(flags.flag(long: "color", short: "", help: "")))
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "port", short: "p", value_name: "N", help: ""), .integer), "8080")
+    )
+    flags.add(@c, flags.with_env(flags.option(long: "host", short: "", value_name: "H", help: ""), "T_HOST"))
+    flags.add(@c, flags.flag(long: "verbose", short: "v", help: ""))
+    found = flags.parse_with_env(c, arguments: ["--no-color", "-vv"], env: {"T_HOST": "h"}).must()
+    bindings = [
+        FlagBinding(path: "color", name: "color", kind: .flag)
+        FlagBinding(path: "server.port", name: "port", kind: .integer)
+        FlagBinding(path: "server.host", name: "host", kind: .text)
+        FlagBinding(path: "verbosity", name: "verbose", kind: .count)
+    ]
+    given = from_flags(name: "flags", found: found, bindings: bindings).must()
+    assert json.format(given.value).must() == "{\"color\":false,\"server\":{\"host\":\"h\"},\"verbosity\":2}"
+    assert given.origins["/server/host"].must() == "host"
+    fallback = from_flag_defaults(name: "flag defaults", found: found, bindings: bindings).must()
+    assert json.format(fallback.value).must() == "{\"server\":{\"port\":8080}}"
+    under = [
+        FlagBinding(path: "a", name: "color", kind: .flag)
+        FlagBinding(path: "a.b", name: "verbose", kind: .count)
+    ]
+    assert from_flags(name: "f", found: found, bindings: under).is_err()
+
+test "merge: each layer over those before, keys merged, a list replaced, a null setting nothing, a key keeping its place"
+    defaults = from_value(
+        "defaults",
+        json.parse("{\"server\": {\"host\": \"localhost\", \"port\": 8080}, \"tags\": [\"a\"], \"debug\": false}").must()
+    ).must()
+    file = from_value(
+        "app.yaml",
+        json.parse("{\"server\": {\"port\": 9090, \"host\": null}, \"tags\": [\"b\", \"c\"]}").must()
+    ).must()
+    env = from_env(name: "environment", env: {"APP_DEBUG": "true"}, options: env_options("APP_")).must()
+    s = merge([defaults, file, env])
+    assert json.format(to_value(s)).must() == "{\"server\":{\"host\":\"localhost\",\"port\":9090},\"tags\":[\"b\",\"c\"],\"debug\":\"true\"}"
+    assert source_of(s, "server.host").must().layer == "defaults"
+    assert source_of(s, "server.port").must().layer == "app.yaml"
+    assert source_of(s, "tags.1").must().layer == "app.yaml"
+    assert source_of(s, "server").must().layer == "app.yaml"
+    assert source_of(s, "debug").must() == Source(layer: "environment", origin: "APP_DEBUG", file: "")
+    assert bool_of(s, "debug").must()
+
+test "merge: no layer, and a getter's message when no layer gives a path"
+    none = merge([])
+    assert to_value(none) == .object(members: {}) && paths_of(none) == []
+    assert source_of(none, "").must() == Source(layer: "", origin: "", file: "")
+
+    match value_of(none, "a")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no setting \"a\": no layer was merged"
+
+test "getters: a message naming the path, the value, the layer and the variable"
+    env = from_env(name: "environment", env: {"APP_SERVER__PORT": "80a"}, options: env_options("APP_")).must()
+    s = merge([env])
+
+    match int_of(s, "server.port")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "expected an integer at \"server.port\", found the text \"80a\", set by the layer \"environment\" from APP_SERVER__PORT"
+
+    assert has_path(s, "server.port") && !has_path(s, "server.host") && !has_path(s, "server.port.x")
+
+test "sub: a table read from its own top, its messages naming whole paths, a sub of a sub, a value refused"
+    s = merge(
+        [from_value("d", json.parse("{\"db\": {\"host\": \"h\", \"port\": \"x\", \"pool\": {\"size\": 4}}, \"n\": 1}").must()).must()]
+    )
+    db = sub(s, "db").must()
+    assert text_of(db, "host").must() == "h"
+    assert keys_of(db, "").must() == ["host", "port", "pool"]
+    assert paths_of(db) == ["host", "port", "pool.size"]
+    assert int_of(sub(db, "pool").must(), "size").must() == 4
+
+    match int_of(db, "port")
+        .ok _  => assert false
+        .err e => assert e.msg == "expected an integer at \"db.port\", found the text \"x\", set by the layer \"d\""
+
+    assert sub(s, "n").is_err() && sub(s, "z").is_err()
+
+test "paths_of and format_sources: a list one setting, an empty table, values and origins"
+    file = from_value("app.json", json.parse("{\"tags\": [1, 2], \"empty\": {}, \"ratio\": 0.5}").must()).must()
+    env = from_env(name: "environment", env: {"APP_NAME": "x"}, options: env_options("APP_")).must()
+    s = merge([file, env])
+    assert paths_of(s) == ["tags", "empty", "ratio", "name"]
+    assert format_sources(s) == "tags = [1,2] (app.json)\nempty = {} (app.json)\nratio = 0.5 (app.json)\nname = \"x\" (environment: APP_NAME)\n"
+    assert format_sources(merge([])) == ""
+
+test "require and check_known: every path missing named, every setting unknown named with its layer"
+    env = from_env(
+        name: "environment",
+        env: {"APP_DEBGU": "1", "APP_DB__HOST": "h"},
+        options: env_options("APP_")
+    ).must()
+    s = merge([env])
+    assert require(s, ["db.host"]).is_err() == false
+
+    match require(s, ["db.host", "db.port", "token"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no setting \"db.port\", \"token\": the layer \"environment\" does not give it"
+
+    match check_known(s, ["db", "debug"])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "settings no path given reads: \"debgu\", set by the layer \"environment\" from APP_DEBGU"
+
+    assert !check_known(s, ["db", "debgu"]).is_err()
+    assert check_known(s, ["a..b"]).is_err() && require(s, [".a"]).is_err()
+
+test "format_settings: each format, INI refusing a list"
+    s = merge([from_value("d", json.parse("{\"name\": \"x\", \"db\": {\"port\": 5432}}").must()).must()])
+    assert format_settings(s, .json).must() == "{\n  \"name\": \"x\",\n  \"db\": {\n    \"port\": 5432\n  }\n}\n"
+    assert format_settings(s, .yaml).must() == "name: x\ndb:\n  port: 5432\n"
+    assert format_settings(s, .toml).must() == "name = \"x\"\n\n[db]\nport = 5432\n"
+    assert format_settings(s, .ini).must() == "name = x\n\n[db]\nport = 5432\n\n"
+    listed = merge([from_value("d", json.parse("{\"l\": [1]}").must()).must()])
+    assert format_settings(listed, .ini).is_err()
+
+test "path_of: relative to the folder of a file's layer, absolute kept, from the environment as written"
+    file = Layer(
+        name: "conf/app.json",
+        value: json.parse("{\"cert\": \"certs/a.pem\", \"key\": \"/k.pem\"}").must(),
+        origins: {},
+        file: "conf/app.json"
+    )
+    env = from_env(name: "environment", env: {"APP_CA": "ca.pem"}, options: env_options("APP_")).must()
+    s = merge([file, env])
+    assert path_of(s, "cert").must() == "conf/certs/a.pem"
+    assert path_of(s, "key").must() == "/k.pem"
+    assert path_of(s, "ca").must() == "ca.pem"
+    assert source_of(s, "cert").must().file == "conf/app.json"
+
+test "read_dotenv: a file read, its failure's message opening with its path"
+    write_file(path: "build/rebel-config-test.env", text: "A=1\nB=${A}2\n").must()
+    assert read_dotenv("build/rebel-config-test.env", DotenvOptions(expand: true, env: {})).must() == {"A": "1", "B": "12"}
+    write_file(path: "build/rebel-config-bad.env", text: "A=1\nB\n").must()
+
+    match read_dotenv("build/rebel-config-bad.env", DotenvOptions(expand: false, env: {}))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "build/rebel-config-bad.env: line 2: expected `=` after the name \"B\""
+
+    assert read_dotenv("build/rebel-config-absent-zz.env", DotenvOptions(expand: false, env: {})).is_err()
+
+## Examples
+
+# A layer of defaults the program writes as JSON.
+test "from_value: defaults written as JSON"
+    defaults = from_value("defaults", json.parse("{\"port\": 8080}").must()).must()
+    assert int_of(merge([defaults]), "port").must() == 8080
+
+# A setting added to a layer by its path.
+test "set_value: a default set by its path"
+    defaults @= from_value("defaults", .null_value).must()
+    set_value(@defaults, path: "server.port", value: .number(v: 8080.0)).must()
+    assert json.format(defaults.value).must() == "{\"server\":{\"port\":8080}}"
+
+# The production profile of a file, merged over its defaults.
+test "layer_at: a profile over the defaults"
+    file = parse_layer(
+        name: "app.toml",
+        text: "[default]\nport = 80\nhost = \"a\"\n[production]\nport = 443\n",
+        format: .toml
+    ).must()
+    s = merge([layer_at(file, path: "default").must(), layer_at(file, path: "production").must()])
+    assert int_of(s, "port").must() == 443 && text_of(s, "host").must() == "a"
+
+# The format a file's name says.
+test "format_of: a YAML file"
+    assert format_of("config/app.yml").must() == .yaml
+
+# A layer read from a text of TOML.
+test "parse_layer: TOML"
+    layer = parse_layer(name: "app.toml", text: "[server]\nport = 8080\n", format: .toml).must()
+    assert int_of(merge([layer]), "server.port").must() == 8080
+
+# A settings file read by its path.
+test "read_layer: a JSON file"
+    write_file(path: "build/rebel-config-example.json", text: "{\"debug\": true}").must()
+    assert bool_of(merge([read_layer("build/rebel-config-example.json").must()]), "debug").must()
+
+# A file a user may or may not have written.
+test "read_layer_if_present: a file that is not there"
+    local = read_layer_if_present("build/rebel-config-local-zz.toml").must()
+    assert to_value(merge([local])) == .object(members: {})
+
+# The settings file of a program, whatever format it was written in.
+test "find_file: the first folder that holds one"
+    write_file(path: "build/rebel-config-app.yaml", text: "port: 1\n").must()
+    assert find_file(base: "rebel-config-app", dirs: ["build"]).must() == "build/rebel-config-app.yaml"
+
+# A `.env` file found in a folder or one above it.
+test "find_upward: from a folder below"
+    write_file(path: "build/rebel-config-example.env", text: "A=1\n").must()
+    assert find_upward(name: "rebel-config-example.env", dir: "build/below-zz").must() == "build/rebel-config-example.env"
+
+# Secrets read from the files of a folder.
+test "bind_files: a password from its file"
+    write_file(path: "build/rebel-config-example-password", text: "s3cret\n").must()
+    layer = bind_files(name: "secrets", dir: "build", names: {"db.password": "rebel-config-example-password"}).must()
+    assert text_of(merge([layer]), "db.password").must() == "s3cret"
+
+# The usual options of a program's variables.
+test "env_options: a prefix"
+    assert env_options("APP_") == EnvOptions(prefix: "APP_", separator: "__", lower_keys: true, ignore_empty: false, json_values: false)
+
+# Variables read as nested settings.
+test "from_env: a prefix and nesting"
+    layer = from_env(name: "environment", env: {"APP_DB__HOST": "db.local"}, options: env_options("APP_")).must()
+    assert text_of(merge([layer]), "db.host").must() == "db.local"
+
+# The process's own environment read as a layer.
+test "read_env: the variables of one prefix"
+    layer = read_env(env_options("REBEL_CONFIG_EXAMPLE_ZZ_")).must()
+    assert layer.name == "environment"
+
+# A setting read from a variable the program names.
+test "bind_env: PGHOST as db.host"
+    layer = bind_env(name: "environment", env: {"PGHOST": "db.local"}, names: {"db.host": "PGHOST"}).must()
+    assert source_of(merge([layer]), "db.host").must().origin == "PGHOST"
+
+# The options given on the command line, over the other layers.
+test "from_flags: an option given"
+    c @= flags.command(name: "app", about: "")
+    flags.add(@c, flags.with_kind(flags.option(long: "port", short: "p", value_name: "N", help: ""), .integer))
+    found = flags.parse(c, ["-p", "9090"]).must()
+    layer = from_flags(
+        name: "flags",
+        found: found,
+        bindings: [FlagBinding(path: "server.port", name: "port", kind: .integer)]
+    ).must()
+    assert int_of(merge([layer]), "server.port").must() == 9090
+
+# The defaults of the command line, below the other layers.
+test "from_flag_defaults: a default not given"
+    c @= flags.command(name: "app", about: "")
+    flags.add(@c, flags.with_default(flags.option(long: "host", short: "", value_name: "H", help: ""), "localhost"))
+    found = flags.parse(c, []).must()
+    layer = from_flag_defaults(
+        name: "flag defaults",
+        found: found,
+        bindings: [FlagBinding(path: "host", name: "host", kind: .text)]
+    ).must()
+    assert text_of(merge([layer]), "host").must() == "localhost"
+
+# Defaults, then a file, then the environment.
+test "merge: three layers"
+    defaults = from_value("defaults", json.parse("{\"port\": 8080, \"host\": \"localhost\"}").must()).must()
+    file = parse_layer(name: "app.yaml", text: "port: 9090\n", format: .yaml).must()
+    env = from_env(name: "environment", env: {"APP_HOST": "0.0.0.0"}, options: env_options("APP_")).must()
+    s = merge([defaults, file, env])
+    assert int_of(s, "port").must() == 9090 && text_of(s, "host").must() == "0.0.0.0"
+
+# A setting as a JSON value.
+test "value_of: a list"
+    s = merge([from_value("d", json.parse("{\"tags\": [\"a\"]}").must()).must()])
+    assert value_of(s, "tags").must() == .list(items: [.text(v: "a")])
+
+# Whether a setting was given.
+test "has_path: given and not"
+    s = merge([from_value("d", json.parse("{\"a\": 1}").must()).must()])
+    assert has_path(s, "a") && !has_path(s, "b")
+
+# A text setting.
+test "text_of: a host"
+    s = merge([from_value("d", json.parse("{\"host\": \"localhost\"}").must()).must()])
+    assert text_of(s, "host").must() == "localhost"
+
+# An integer from a variable's text.
+test "int_of: a port from the environment"
+    s = merge([from_env(name: "environment", env: {"APP_PORT": "8080"}, options: env_options("APP_")).must()])
+    assert int_of(s, "port").must() == 8080
+
+# A number setting.
+test "float_of: a ratio"
+    s = merge([from_value("d", json.parse("{\"ratio\": 0.25}").must()).must()])
+    assert float_of(s, "ratio").must() == 0.25
+
+# A boolean from a word.
+test "bool_of: yes"
+    s = merge([from_value("d", json.parse("{\"debug\": \"yes\"}").must()).must()])
+    assert bool_of(s, "debug").must()
+
+# A duration setting.
+test "duration_of: thirty seconds"
+    s = merge([from_value("d", json.parse("{\"timeout\": \"30s\"}").must()).must()])
+    assert duration_of(s, "timeout").must().nanoseconds == 30000000000
+
+# An instant from a TOML date.
+test "instant_of: a date and a time with an offset"
+    s = merge([parse_layer(name: "a.toml", text: "since = 1970-01-01T00:00:01Z\n", format: .toml).must()])
+    assert instant_of(s, "since").must().unix_nanoseconds == 1000000000
+
+# A path a file holds, read from its folder.
+test "path_of: a certificate beside its settings file"
+    file = Layer(
+        name: "conf/app.json",
+        value: json.parse("{\"cert\": \"a.pem\"}").must(),
+        origins: {},
+        file: "conf/app.json"
+    )
+    assert path_of(merge([file]), "cert").must() == "conf/a.pem"
+
+# The elements of a list setting.
+test "items_of: a list of numbers"
+    s = merge([from_value("d", json.parse("{\"ports\": [80, 443]}").must()).must()])
+    assert items_of(s, "ports").must().len() == 2
+
+# A list of texts.
+test "texts_of: hosts"
+    s = merge([from_value("d", json.parse("{\"hosts\": [\"a\", \"b\"]}").must()).must()])
+    assert texts_of(s, "hosts").must() == ["a", "b"]
+
+# The keys of a table.
+test "keys_of: the databases named"
+    s = merge([from_value("d", json.parse("{\"db\": {\"main\": {}, \"cache\": {}}}").must()).must()])
+    assert keys_of(s, "db").must() == ["main", "cache"]
+
+# One table read on its own.
+test "sub: the database's settings"
+    s = merge([from_value("d", json.parse("{\"db\": {\"host\": \"h\"}}").must()).must()])
+    assert text_of(sub(s, "db").must(), "host").must() == "h"
+
+# Every setting as one value.
+test "to_value: the merged settings"
+    s = merge(
+        [from_value("a", json.parse("{\"x\": 1}").must()).must(), from_value("b", json.parse("{\"y\": 2}").must()).must()]
+    )
+    assert json.format(to_value(s)).must() == "{\"x\":1,\"y\":2}"
+
+# The path of every setting.
+test "paths_of: nested settings"
+    s = merge([from_value("d", json.parse("{\"db\": {\"host\": \"h\", \"port\": 1}}").must()).must()])
+    assert paths_of(s) == ["db.host", "db.port"]
+
+# Where a setting came from.
+test "source_of: a variable"
+    s = merge([from_env(name: "environment", env: {"APP_PORT": "1"}, options: env_options("APP_")).must()])
+    assert source_of(s, "port").must() == Source(layer: "environment", origin: "APP_PORT", file: "")
+
+# Every setting with where it came from, to print.
+test "format_sources: one setting"
+    s = merge([from_value("defaults", json.parse("{\"port\": 8080}").must()).must()])
+    assert format_sources(s) == "port = 8080 (defaults)\n"
+
+# Settings a program cannot start without.
+test "require: a token missing"
+    s = merge([from_value("defaults", json.parse("{\"port\": 8080}").must()).must()])
+    assert require(s, ["port", "token"]).is_err()
+
+# A key misspelt in a file, refused.
+test "check_known: a misspelt key"
+    s = merge([from_value("app.json", json.parse("{\"prot\": 8080}").must()).must()])
+    assert check_known(s, ["port", "host"]).is_err()
+
+# The merged settings written as YAML.
+test "format_settings: YAML"
+    s = merge([from_value("d", json.parse("{\"port\": 8080}").must()).must()])
+    assert format_settings(s, .yaml).must() == "port: 8080\n"
+
+# A `.env` text read.
+test "parse_dotenv: names and values"
+    assert parse_dotenv("# settings\nexport A=1\nB=\"two words\"\n").must() == {"A": "1", "B": "two words"}
+
+# A `.env` text whose values name others.
+test "parse_dotenv_with: a value built from another"
+    options = DotenvOptions(expand: true, env: {"HOME": "/home/ana"})
+    assert parse_dotenv_with("DATA=${HOME}/data\n", options).must() == {"DATA": "/home/ana/data"}
+
+# A `.env` file read into a layer like the environment's.
+test "read_dotenv: a file as a layer"
+    write_file(path: "build/rebel-config-example-layer.env", text: "APP_PORT=9090\n").must()
+    values = read_dotenv("build/rebel-config-example-layer.env", DotenvOptions(expand: false, env: {})).must()
+    layer = from_env(name: ".env", env: values, options: env_options("APP_")).must()
+    assert int_of(merge([layer]), "port").must() == 9090
+
+# Names and values written as a `.env` text.
+test "format_dotenv: two names"
+    assert format_dotenv({"A": "1", "B": "x y"}).must() == "A=\"1\"\nB=\"x y\"\n"
+
+# One value of a `.env` text changed, its comments kept.
+test "set_dotenv_value: a value changed in place"
+    assert set_dotenv_value(text: "# db\nHOST=a\n", name: "HOST", value: "b").must() == "# db\nHOST=\"b\"\n"
+
+# One name of a `.env` text removed.
+test "remove_dotenv_value: a name removed"
+    assert remove_dotenv_value(text: "A=1\nB=2\n", name: "A").must() == "B=2\n"

@@ -1,0 +1,253 @@
+# What `Settings` holds: the merged tree, the part of it a `sub` narrowed to,
+# and for every value the layer that set it, with the layers' names, origins
+# and files, so that a failure can say who set what it found. A path is found
+# here, and every message that names a setting and its layer is written here.
+
+use config/internal/keyed
+use json
+use numbers
+
+# The code of a path that is not one, or that goes on past a value that holds
+# nothing.
+constant INVALID: str
+    "invalid"
+
+# The code of a path that names no setting.
+constant NOT_FOUND: str
+    "not_found"
+
+# The settings and where each value came from.
+record Held
+    # The whole merged tree, an object.
+    root: json.Value
+    # The keys from the top of `root` to the object these settings answer
+    # for; empty for the whole.
+    prefix: [str]
+    # The index of the layer that set each value, or last gave a key to each
+    # object, by its JSON pointer from the top of `root`; -1 for none.
+    sources: {str: i64}
+    # Each layer's name, in the order merged.
+    names: [str]
+    # Each layer's origins, by JSON pointer within the layer.
+    origins: [{str: str}]
+    # Each layer's file, "" where it was read from none.
+    files: [str]
+
+# A value found, and the keys that reach it from the top of the whole tree.
+record Spot
+    # The value.
+    value: json.Value
+    # The keys from the top of the whole tree, the prefix included.
+    reached: [str]
+
+# The keys `path` names from the top of the whole tree: `h`'s prefix, then
+# the path's own. Fails `invalid` where `path` is not a path.
+function keys_from_top(h: Held lent, path: str) -> [str]?
+    own = keyed.keys_of(path)?
+    whole: [str] @= h.prefix
+
+    for k in own
+        whole @ whole.push(k)
+
+    return ok(whole)
+
+# The layers of `h` named, for a message: `the layer "a"` or `the layers "a",
+# "b" and "c"`.
+function layers_named(h: Held lent) -> str
+    quoted: [str] @= []
+
+    for n in h.names
+        quoted @ quoted.push(json.quote(n))
+
+    if quoted.len() == 1
+        return f"the layer {quoted[0]}"
+    last = quoted[quoted.len() - 1]
+    return f"the layers {quoted.slice(from: 0, to: quoted.len() - 1).join(", ")} and {last}"
+
+# Why a path names nothing: no layer, one layer or several gave it.
+function none_gives(h: Held lent) -> str
+    if h.names.len() == 0
+        return "no layer was merged"
+
+    if h.names.len() == 1
+        return f"{layers_named(h)} does not give it"
+    return f"none of {layers_named(h)} gives it"
+
+# The index of the layer that set the value at `reached`, or of the nearest
+# value holding it that a layer set: a list's element comes from its list's
+# layer. -1 where no layer reached it.
+function source_index(h: Held lent, reached: [str]) -> i64
+    k: i64 @= reached.len()
+
+    while k >= 0
+        match h.sources[keyed.pointer(reached.slice(from: 0, to: k))]
+            .ok found => return found
+            .err _    => _ = 0
+
+        k @ k - 1
+
+    return -1
+
+# The name the value at `reached` had inside layer `layer`, or the nearest
+# value holding it had; "" for none.
+function origin_in(h: Held lent, layer: i64, reached: [str]) -> str
+    k: i64 @= reached.len()
+
+    while k > 0
+        match h.origins[layer][keyed.pointer(reached.slice(from: 0, to: k))]
+            .ok found => return found
+            .err _    => _ = 0
+
+        k @ k - 1
+
+    return ""
+
+# Who set the value at `reached`: `the layer "environment" from APP_PORT`, or
+# `no layer`.
+function setter(h: Held lent, reached: [str]) -> str
+    layer = source_index(h, reached)
+
+    if layer < 0
+        return "no layer"
+    origin = origin_in(h, layer: layer, reached: reached)
+
+    if origin == ""
+        return f"the layer {json.quote(h.names[layer])}"
+    return f"the layer {json.quote(h.names[layer])} from {origin}"
+
+# The message of a value at `found` that is not `what`: `expected an integer
+# at "port", found the text "x", set by the layer "environment" from
+# APP_PORT`.
+function expected(h: Held lent, what: str, found: Spot) -> str
+    return f"expected {what} at {keyed.named(found.reached)}, found {keyed.described(found.value)}, set by {setter(h, found.reached)}"
+
+# The index `token` names in a list, or -1 where it is not decimal digits or
+# is past an `i64`.
+function list_index(token: str) -> i64
+    if token == ""
+        return -1
+
+    for at in range(from: 0, to: token.len())
+        if token[at] < '0' || token[at] > '9'
+            return -1
+
+    return numbers.parse_int(token).default(-1)
+
+# The value `path` names in `h`. Fails `not_found` where no layer gives it,
+# `invalid` where `path` is not one or goes on past a value that holds nothing.
+function spot(h: Held lent, path: str) -> Spot?
+    wanted = keys_from_top(h, path)?
+    here: json.Value @= h.root
+    depth: i64 @= 0
+
+    while depth < wanted.len()
+        token = wanted[depth]
+        reached = wanted.slice(from: 0, to: depth)
+
+        match here
+            .object o =>
+                match o.members[token]
+                    .ok found => here @ found
+                    .err _    => return fail(code: NOT_FOUND, msg: f"no setting {keyed.named(wanted)}: {none_gives(h)}")
+            .list l =>
+                index = list_index(token)
+
+                if index < 0 && (token[0] < '0' || token[0] > '9')
+                    return fail(
+                        code: INVALID,
+                        msg: f"no setting {keyed.named(wanted)}: {keyed.named(reached)} is a list, set by {setter(h, reached)}, read by an index from 0 and not by \"{token}\""
+                    )
+
+                if index < 0 || index >= l.items.len()
+                    return fail(
+                        code: NOT_FOUND,
+                        msg: f"no setting {keyed.named(wanted)}: {keyed.named(reached)} is a list of {l.items.len()}, set by {setter(h, reached)}"
+                    )
+                here @ l.items[index]
+            .null_value | .boolean _ | .number _ | .text _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"no setting {keyed.named(wanted)}: {keyed.named(reached)} is {keyed.described(here)}, set by {setter(h, reached)}, which holds no key \"{token}\""
+                )
+
+        depth @ depth + 1
+
+    return ok(Spot(value: here, reached: wanted))
+
+## Tests
+
+# Settings of two layers for the tests: `defaults` gives `server.host`,
+# `server.port` and `tags`, `environment` gives `server.port` from APP_PORT.
+function two_layers() -> Held
+    root = json.parse("{\"server\": {\"host\": \"h\", \"port\": \"9090\"}, \"tags\": [\"a\", \"b\"]}").must()
+    return Held(
+        root: root,
+        prefix: [],
+        sources: {"": 1, "/server": 1, "/server/host": 0, "/server/port": 1, "/tags": 0},
+        names: ["defaults", "environment"],
+        origins: [{}, {"/server/port": "APP_PORT"}],
+        files: ["", ""]
+    )
+
+test "spot: the whole, a value, a list's element, and the prefix of a sub"
+    h = two_layers()
+    assert spot(h, "").must().value == h.root
+    assert spot(h, "server.port").must().value == .text(v: "9090")
+    assert spot(h, "tags.1").must().value == .text(v: "b")
+    narrowed: Held @= h
+    narrowed.prefix @ ["server"]
+    found = spot(narrowed, "host").must()
+    assert found.value == .text(v: "h") && found.reached == ["server", "host"]
+
+test "spot: a key absent, an index past the end, a word at a list, a key past a text"
+    h = two_layers()
+
+    match spot(h, "server.prt")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no setting \"server.prt\": none of the layers \"defaults\" and \"environment\" gives it"
+
+    match spot(h, "tags.2")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no setting \"tags.2\": \"tags\" is a list of 2, set by the layer \"defaults\""
+
+    match spot(h, "tags.x")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    match spot(h, "server.port.x")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "no setting \"server.port.x\": \"server.port\" is the text \"9090\", set by the layer \"environment\" from APP_PORT, which holds no key \"x\""
+
+    assert spot(h, "a..b").is_err()
+
+test "setter and source_index: a value, an element from its list's layer, the whole, no layer"
+    h = two_layers()
+    assert setter(h, ["server", "port"]) == "the layer \"environment\" from APP_PORT"
+    assert setter(h, ["tags", "0"]) == "the layer \"defaults\""
+    assert source_index(h, []) == 1
+    empty = Held(root: .object(members: {}), prefix: [], sources: {}, names: [], origins: [], files: [])
+    assert setter(empty, ["x"]) == "no layer"
+    assert none_gives(empty) == "no layer was merged"
+
+test "layers_named: one, two and three layers"
+    one = Held(root: .object(members: {}), prefix: [], sources: {}, names: ["a"], origins: [{}], files: [""])
+    assert none_gives(one) == "the layer \"a\" does not give it"
+    three = Held(
+        root: .object(members: {}),
+        prefix: [],
+        sources: {},
+        names: ["a", "b", "c"],
+        origins: [{}, {}, {}],
+        files: ["", "", ""]
+    )
+    assert layers_named(three) == "the layers \"a\", \"b\" and \"c\""
+
+test "list_index: digits, zeros before them, a sign, a word, past an i64"
+    assert list_index("0") == 0
+    assert list_index("007") == 7
+    assert list_index("-1") == -1
+    assert list_index("x") == -1
+    assert list_index("") == -1
+    assert list_index("99999999999999999999") == -1

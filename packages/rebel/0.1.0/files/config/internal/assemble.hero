@@ -1,0 +1,471 @@
+# A tree of settings built one path at a time: an object over an object
+# merged key by key, a value met where one stands already replaced or refused
+# as the rules say. Several layers merged are their settings assembled in
+# order; a layer read from variables is its variables assembled with every
+# meeting refused. The nodes live in lists this module holds, linked to their
+# siblings so that a value replaced keeps its place, and both the walk down a
+# value and the tree built back up hold their own stacks: no nesting is too
+# deep for them.
+
+use config/internal/keyed
+use json
+
+# The code of two settings that meet where the rules refuse it.
+constant INVALID: str
+    "invalid"
+
+# The slots of a node in `links`, five a node: its first and last child, the
+# siblings before and after it, and its parent; -1 for none.
+constant FIRST: i64
+    0
+
+constant LAST: i64
+    1
+
+constant NEXT: i64
+    2
+
+constant PREV: i64
+    3
+
+constant PARENT: i64
+    4
+
+constant SLOTS: i64
+    5
+
+# One setting: the keys of its path, its value, the layer it came from and
+# the name it had there.
+record Entry
+    # The keys from the top; never empty.
+    keys: [str]
+    # A value that is not an object, or the empty object.
+    value: json.Value
+    # The index of its layer.
+    layer: i64
+    # Its name inside the layer, a variable or an option; "" for none.
+    label: str
+
+# What `assemble` answers: the tree, and the layer of each of its nodes.
+record Assembled
+    # The tree, an object.
+    root: json.Value
+    # The layer that last set or walked through each node, by its JSON
+    # pointer; the root's under "", -1 where no setting reached it.
+    sources: {str: i64}
+
+# What `assemble` does where a setting meets a value that stands already.
+record Rules
+    # Whether a value that is not an object, met on the way to a deeper key,
+    # is replaced by an object; else the setting is refused.
+    on_the_way: bool
+    # Whether the value at the end of the path is replaced; else refused.
+    at_the_end: bool
+
+# What `grow` adds.
+record Made
+    # Whether the node is an object.
+    object: bool
+    # Its value where it is not an object.
+    value: json.Value
+    # Its layer.
+    layer: i64
+    # Its parent's index.
+    parent: i64
+    # Its key in its parent.
+    key: str
+    # The name of the setting that made it.
+    label: str
+
+# The rules of layers merged: everything replaced.
+function merging() -> Rules
+    return Rules(on_the_way: true, at_the_end: true)
+
+# The rules of one setting written into a layer: replaced at its path, refused
+# where the path goes through a value that is not an object.
+function setting() -> Rules
+    return Rules(on_the_way: false, at_the_end: true)
+
+# The rules of settings read from variables or options: every meeting refused.
+function distinct() -> Rules
+    return Rules(on_the_way: false, at_the_end: false)
+
+# Sets `items[top]` to `item`, growing `items` by one where `top` is its
+# length.
+function put<A>(@items: [A], top: i64, item: A)
+    if top < items.len()
+        items[top] @ item
+    else
+        items @ items.push(item)
+
+# Whether `v` is an object of no key.
+function is_empty_object(v: json.Value) -> bool
+    return match v
+        .object o                                                => keys(o.members).len() == 0
+        .null_value | .boolean _ | .number _ | .text _ | .list _ => false
+
+# The settings of `v`, an object, in the order of the tree: each value that is
+# not an object and each empty object, under its keys, from layer `layer`,
+# named by `origins` at its JSON pointer. A `null` is left out unless
+# `keep_nulls`; `v` itself gives nothing where it is empty.
+function flatten(v: json.Value, layer: i64, origins: {str: str}, keep_nulls: bool) -> [Entry]
+    named = keys(origins).len() > 0
+    entries: [Entry] @= []
+    values: [json.Value] @= [v]
+    trail: [[str]] @= [[]]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        here = values[top]
+        at_keys = trail[top]
+        values[top] @ .null_value
+
+        label = if named
+            origins[keyed.pointer(at_keys)].default("")
+        else
+            ""
+        leaf = Entry(keys: at_keys, value: here, layer: layer, label: label)
+
+        match here
+            .object o =>
+                names = keys(o.members)
+
+                if names.len() == 0 && at_keys.len() > 0
+                    entries @ entries.push(leaf)
+                at: i64 @= names.len()
+
+                while at > 0
+                    at @ at - 1
+                    put(@values, top, o.members[names[at]].must())
+                    put(@trail, top, at_keys.push(names[at]))
+                    top @ top + 1
+            .null_value =>
+                if keep_nulls && at_keys.len() > 0
+                    entries @ entries.push(leaf)
+            .boolean _ | .number _ | .text _ | .list _ =>
+                if at_keys.len() > 0
+                    entries @ entries.push(leaf)
+
+    return entries
+
+# The settings `v` gives under the keys `head`, each named `label`: `v`
+# itself where it is not an object or is empty, else each of its own under
+# `head`. A `null` gives itself where `keep_nulls`, else nothing.
+function flatten_under(v: json.Value, head: [str], layer: i64, label: str, keep_nulls: bool) -> [Entry]
+    one = [Entry(keys: head, value: v, layer: layer, label: label)]
+
+    match v
+        .null_value =>
+            if keep_nulls
+                return one
+            return []
+        .object o =>
+            if keys(o.members).len() == 0
+                return one
+            out: [Entry] @= []
+
+            for e in flatten(v, layer: layer, origins: {}, keep_nulls: keep_nulls)
+                whole: [str] @= head
+
+                for k in e.keys
+                    whole @ whole.push(k)
+
+                out @ out.push(Entry(keys: whole, value: e.value, layer: layer, label: label))
+
+            return out
+        .boolean _ | .number _ | .text _ | .list _ => return one
+
+# Adds the node `made` describes, its links all -1, and answers its index.
+function grow(@links: [i64], @kinds: [bool], @leaves: [json.Value], @layers: [i64], @names: [str], @labels: [str], made: Made) -> i64
+    n = kinds.len()
+
+    for _ in range(from: 0, to: SLOTS - 1)
+        links @ links.push(-1)
+
+    links @ links.push(made.parent)
+    kinds @ kinds.push(made.object)
+    leaves @ leaves.push(made.value)
+    layers @ layers.push(made.layer)
+    names @ names.push(made.key)
+    labels @ labels.push(made.label)
+    return n
+
+# Links `n` as the last child of `parent`.
+function append_child(@links: [i64], parent: i64, n: i64)
+    tail = links[parent * SLOTS + LAST]
+    links[n * SLOTS + PREV] @ tail
+
+    if tail >= 0
+        links[tail * SLOTS + NEXT] @ n
+    else
+        links[parent * SLOTS + FIRST] @ n
+    links[parent * SLOTS + LAST] @ n
+
+# Links `n` where `old` stands among its siblings, `old` left out.
+function swap_child(@links: [i64], old: i64, n: i64)
+    p = links[old * SLOTS + PARENT]
+    before = links[old * SLOTS + PREV]
+    after = links[old * SLOTS + NEXT]
+    links[n * SLOTS + PREV] @ before
+    links[n * SLOTS + NEXT] @ after
+
+    if before >= 0
+        links[before * SLOTS + NEXT] @ n
+    else
+        links[p * SLOTS + FIRST] @ n
+
+    if after >= 0
+        links[after * SLOTS + PREV] @ n
+    else
+        links[p * SLOTS + LAST] @ n
+
+# The message of `e` refused where it meets what `labels[existing]` set at
+# `keys`, whose last key stands at `depth`.
+function refusal(e: Entry, earlier: str, found: json.Value, depth: i64) -> str
+    reached = keyed.named(e.keys.slice(from: 0, to: depth + 1))
+
+    if e.label != "" && earlier != ""
+        return f"\"{earlier}\" and \"{e.label}\" both set {reached}, one of them a value and the other a value or keys under it"
+
+    if depth + 1 < e.keys.len()
+        return f"{reached} is {keyed.described(found)}, which holds no key \"{e.keys[depth + 1]}\""
+    return f"{reached} is set twice"
+
+# The tree `entries` make, each in turn, as `rules` say where one meets a value
+# that stands. Fails `invalid` where `rules` refuse a meeting, the message
+# naming both settings.
+function assemble(entries: [Entry], rules: Rules) -> Assembled?
+    links: [i64] @= [-1, -1, -1, -1, -1]
+    kinds: [bool] @= [true]
+    leaves: [json.Value] @= [.null_value]
+    layers: [i64] @= [-1]
+    names: [str] @= [""]
+    labels: [str] @= [""]
+    child: {str: i64} @= {}
+
+    for e in entries
+        node: i64 @= 0
+        layers[0] @ e.layer
+        depth: i64 @= 0
+
+        while depth < e.keys.len()
+            k = e.keys[depth]
+            ends = depth + 1 == e.keys.len()
+            slot = f"{node}/{k}"
+            existing = child[slot].default(-1)
+            object = !ends || is_empty_object(e.value)
+            fresh: i64 @= -1
+
+            if existing >= 0 && kinds[existing] && object
+                if ends && !rules.at_the_end
+                    return fail(
+                        code: INVALID,
+                        msg: refusal(e, earlier: labels[existing], found: leaves[existing], depth: depth)
+                    )
+                layers[existing] @ e.layer
+                node @ existing
+            else
+                if existing >= 0 && (ends && !rules.at_the_end || !ends && !rules.on_the_way)
+                    return fail(
+                        code: INVALID,
+                        msg: refusal(e, earlier: labels[existing], found: leaves[existing], depth: depth)
+                    )
+
+                value: json.Value = if ends
+                    e.value
+                else
+                    .null_value
+                made = Made(object: object, value: value, layer: e.layer, parent: node, key: k, label: e.label)
+                fresh @ grow(
+                    links: @links,
+                    kinds: @kinds,
+                    leaves: @leaves,
+                    layers: @layers,
+                    names: @names,
+                    labels: @labels,
+                    made: made
+                )
+
+                if existing >= 0
+                    swap_child(@links, old: existing, n: fresh)
+                else
+                    append_child(@links, parent: node, n: fresh)
+                child[slot] @ fresh
+                node @ fresh
+            depth @ depth + 1
+
+    return ok(built(links: links, kinds: kinds, leaves: leaves, layers: layers, names: names))
+
+# What `labelled` answers: a layer's tree and the name of each of its values.
+record Labelled
+    # The tree, an object.
+    root: json.Value
+    # Each entry's label by the JSON pointer of its value, where it has one.
+    origins: {str: str}
+
+# The tree `entries` make with every meeting refused, and their labels by
+# pointer. Fails `invalid` where two entries meet.
+function labelled(entries: [Entry]) -> Labelled?
+    tree = assemble(entries, distinct())?
+    origins: {str: str} @= {}
+
+    for e in entries
+        if e.label != ""
+            origins[keyed.pointer(e.keys)] @ e.label
+
+    return ok(Labelled(root: tree.root, origins: origins))
+
+# The tree the nodes make, and the layer of each node by its pointer, built
+# from the leaves up with a stack of the objects open.
+function built(links: [i64] lent, kinds: [bool] lent, leaves: [json.Value] lent, layers: [i64] lent, names: [str] lent) -> Assembled
+    pointers: [str] @= []
+
+    for _ in kinds
+        pointers @ pointers.push("")
+
+    sources: {str: i64} @= {}
+    items: [json.Value] @= []
+    item_keys: [str] @= []
+    held_items: [[json.Value]] @= []
+    held_item_keys: [[str]] @= []
+    depth: i64 @= 0
+    walk: [i64] @= [0]
+    leaving: [bool] @= [false]
+    top: i64 @= 1
+
+    while top > 0
+        top @ top - 1
+        n = walk[top]
+
+        if !leaving[top]
+            sources[pointers[n]] @ layers[n]
+
+            if kinds[n]
+                put(@held_items, top: depth, item: items)
+                put(@held_item_keys, top: depth, item: item_keys)
+                items @ []
+                item_keys @ []
+                depth @ depth + 1
+                put(@walk, top: top, item: n)
+                put(@leaving, top: top, item: true)
+                top @ top + 1
+                c: i64 @= links[n * SLOTS + LAST]
+
+                while c >= 0
+                    pointers[c] @ pointers[n] + keyed.pointer([names[c]])
+                    put(@walk, top: top, item: c)
+                    put(@leaving, top: top, item: false)
+                    top @ top + 1
+                    c @ links[c * SLOTS + PREV]
+            else
+                items @ items.push(leaves[n])
+                item_keys @ item_keys.push(names[n])
+        else
+            members: {str: json.Value} @= {}
+
+            for at in range(from: 0, to: item_keys.len())
+                members[item_keys[at]] @ items[at]
+
+            depth @ depth - 1
+            items @ held_items[depth]
+            item_keys @ held_item_keys[depth]
+            held_items[depth] @ []
+            held_item_keys[depth] @ []
+            items @ items.push(.object(members: members))
+            item_keys @ item_keys.push(names[n])
+
+    return Assembled(root: items[0], sources: sources)
+
+## Tests
+
+test "flatten: an empty object, leaves in the order of the tree, nulls left out or kept"
+    v = json.parse("{\"b\": {\"x\": 1, \"y\": {}}, \"a\": null, \"c\": [1, {\"z\": 2}]}").must()
+    got = flatten(v, layer: 3, origins: {}, keep_nulls: false)
+    assert got.map(entry_keys) == [["b", "x"], ["b", "y"], ["c"]]
+    assert got[1].value == .object(members: {}) && got[2].layer == 3
+    kept = flatten(v, layer: 0, origins: {"/a": "A"}, keep_nulls: true)
+    assert kept.map(entry_keys) == [["b", "x"], ["b", "y"], ["a"], ["c"]]
+    assert kept[2].label == "A" && kept[0].label == ""
+    assert flatten(.object(members: {}), layer: 0, origins: {}, keep_nulls: true) == []
+
+test "assemble: layers merged key by key, a value replaced in its place, a list replaced whole"
+    low = json.parse("{\"server\": {\"host\": \"a\", \"port\": 1}, \"tags\": [1, 2], \"mode\": \"x\"}").must()
+    high = json.parse("{\"server\": {\"port\": 2}, \"tags\": [3], \"mode\": {\"deep\": true}}").must()
+    entries = joined(
+        a: flatten(low, layer: 0, origins: {}, keep_nulls: false),
+        b: flatten(high, layer: 1, origins: {}, keep_nulls: false)
+    )
+    got = assemble(entries, merging()).must()
+    want = json.parse("{\"server\": {\"host\": \"a\", \"port\": 2}, \"tags\": [3], \"mode\": {\"deep\": true}}").must()
+    assert got.root == want
+    assert json.format(got.root).must() == "{\"server\":{\"host\":\"a\",\"port\":2},\"tags\":[3],\"mode\":{\"deep\":true}}"
+    assert got.sources["/server/host"].must() == 0 && got.sources["/server/port"].must() == 1
+    assert got.sources["/server"].must() == 1 && got.sources[""].must() == 1
+    assert got.sources["/mode/deep"].must() == 1
+
+test "assemble: an object over a leaf and a leaf over an object, both replaced"
+    a = json.parse("{\"k\": 1, \"o\": {\"x\": 1}}").must()
+    b = json.parse("{\"k\": {\"y\": 2}, \"o\": \"flat\"}").must()
+    entries = joined(
+        a: flatten(a, layer: 0, origins: {}, keep_nulls: false),
+        b: flatten(b, layer: 1, origins: {}, keep_nulls: false)
+    )
+    assert assemble(entries, merging()).must().root == json.parse("{\"k\": {\"y\": 2}, \"o\": \"flat\"}").must()
+
+test "assemble: no entries, and an empty object over a value and under one"
+    assert assemble([], merging()).must().root == .object(members: {})
+    one = Entry(keys: ["a"], value: .number(v: 1.0), layer: 0, label: "")
+    empty = Entry(keys: ["a"], value: .object(members: {}), layer: 1, label: "")
+    assert assemble([one, empty], merging()).must().root == json.parse("{\"a\": {}}").must()
+    deeper = Entry(keys: ["a", "b"], value: .number(v: 2.0), layer: 2, label: "")
+    assert assemble([empty, deeper, empty], merging()).must().root == json.parse("{\"a\": {\"b\": 2}}").must()
+
+test "assemble: distinct settings meeting, a value under a value and a value twice, both orders"
+    top = Entry(keys: ["db"], value: .text(v: "x"), layer: 0, label: "APP_DB")
+    under = Entry(keys: ["db", "host"], value: .text(v: "h"), layer: 0, label: "APP_DB__HOST")
+
+    match assemble([top, under], distinct())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "\"APP_DB\" and \"APP_DB__HOST\" both set \"db\", one of them a value and the other a value or keys under it"
+
+    match assemble([under, top], distinct())
+        .ok _  => assert false
+        .err e => assert e.msg == "\"APP_DB__HOST\" and \"APP_DB\" both set \"db\", one of them a value and the other a value or keys under it"
+
+    assert assemble([top, top], distinct()).is_err()
+    assert assemble([under, Entry(keys: ["db", "port"], value: .number(v: 1.0), layer: 0, label: "P")], distinct()).must().root == json.parse("{\"db\": {\"host\": \"h\", \"port\": 1}}").must()
+
+test "assemble: a setting through a value refused, at its end replaced"
+    a = Entry(keys: ["a"], value: .number(v: 1.0), layer: 0, label: "")
+    through = Entry(keys: ["a", "b"], value: .number(v: 2.0), layer: 0, label: "")
+
+    match assemble([a, through], setting())
+        .ok _  => assert false
+        .err e => assert e.msg == "\"a\" is the number 1, which holds no key \"b\""
+
+    again = Entry(keys: ["a"], value: .text(v: "z"), layer: 0, label: "")
+    assert assemble([a, again], setting()).must().root == json.parse("{\"a\": \"z\"}").must()
+
+test "assemble: nesting two thousand deep is built and walked on the module's own stacks"
+    deep: [str] @= []
+
+    for at in range(from: 0, to: 2000)
+        deep @ deep.push(f"k{at}")
+
+    got = assemble([Entry(keys: deep, value: .boolean(v: true), layer: 0, label: "")], merging()).must()
+    back = flatten(got.root, layer: 0, origins: {}, keep_nulls: false)
+    assert back.len() == 1 && back[0].keys.len() == 2000
+
+# The keys of `e`, for a test's `map`.
+function entry_keys(e: Entry) -> [str]
+    return e.keys
+
+# `a`'s entries, then `b`'s, for a test.
+function joined(a: [Entry], b: [Entry]) -> [Entry]
+    out: [Entry] @= a
+
+    for e in b
+        out @ out.push(e)
+
+    return out

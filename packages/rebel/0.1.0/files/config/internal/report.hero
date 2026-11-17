@@ -1,0 +1,139 @@
+# What the settings say of themselves: the path of every setting, every
+# setting with where it came from, the paths a program needs and does not
+# find, and the settings it does not know.
+
+use config/internal/assemble
+use config/internal/held
+use config/internal/keyed
+use json
+
+# The code of a path that is not one, or of a setting no path takes.
+constant INVALID: str
+    "invalid"
+
+# The code of a path no layer gives.
+constant NOT_FOUND: str
+    "not_found"
+
+# The keys of every setting of `h` that holds no other, from `h`'s top, in
+# the order of the tree.
+function leaves(h: held.Held lent) -> [[str]]
+    out: [[str]] @= []
+
+    for e in assemble.flatten(held.spot(h, "").must().value, layer: 0, origins: {}, keep_nulls: false)
+        out @ out.push(e.keys)
+
+    return out
+
+# `h`'s prefix, then `parts`.
+function from_top(h: held.Held lent, parts: [str]) -> [str]
+    whole: [str] @= h.prefix
+
+    for k in parts
+        whole @ whole.push(k)
+
+    return whole
+
+# Every setting of `h`, a line each: its path, its value as JSON, and its
+# layer and origin.
+function sources_text(h: held.Held lent) -> str
+    lines: [str] @= []
+    written: json.FormatOptions @= json.compact()
+    written.non_finite @ true
+
+    for parts in leaves(h)
+        path = keyed.dotted(parts)
+        whole = from_top(h, parts: parts)
+        text = json.format_with(held.spot(h, path).must().value, written).must()
+        layer = held.source_index(h, whole)
+        origin = held.origin_in(h, layer: layer, reached: whole)
+
+        if origin == ""
+            lines @ lines.push(f"{path} = {text} ({h.names[layer]})\n")
+        else
+            lines @ lines.push(f"{path} = {text} ({h.names[layer]}: {origin})\n")
+
+    return lines.join("")
+
+# Checks that every path of `paths` names a value in `h`. Fails `not_found`
+# naming those that do not, `invalid` where a path is not one.
+function missing(h: held.Held lent, paths: [str]) -> ()?
+    absent: [str] @= []
+
+    for path in paths
+        _ = keyed.keys_of(path)?
+
+        if held.spot(h, path).is_err()
+            absent @ absent.push(json.quote(path))
+
+    if absent.len() == 0
+        return ok()
+    return fail(code: NOT_FOUND, msg: f"no setting {absent.join(", ")}: {held.none_gives(h)}")
+
+# Checks that every setting of `h` stands at a path of `paths` or under one.
+# Fails `invalid` naming every one that does not, with who set it, and where a
+# path is not one.
+function unknown(h: held.Held lent, paths: [str]) -> ()?
+    known: [[str]] @= []
+
+    for path in paths
+        known @ known.push(keyed.keys_of(path)?)
+
+    strays: [str] @= []
+
+    for parts in leaves(h)
+        taken: bool @= false
+
+        for head in known
+            if keyed.has_head(parts: parts, head: head)
+                taken @ true
+
+        if !taken
+            strays @ strays.push(
+                f"{json.quote(keyed.dotted(parts))}, set by {held.setter(h, from_top(h, parts: parts))}"
+            )
+
+    if strays.len() == 0
+        return ok()
+    return fail(code: INVALID, msg: f"settings no path given reads: {strays.join("; ")}")
+
+## Tests
+
+# Two layers: `file` gives `db.host` and `tags`, `environment` gives `debgu`
+# from APP_DEBGU.
+function two() -> held.Held
+    return held.Held(
+        root: json.parse("{\"db\": {\"host\": \"h\"}, \"tags\": [1], \"debgu\": \"1\"}").must(),
+        prefix: [],
+        sources: {"": 1, "/db": 0, "/db/host": 0, "/tags": 0, "/debgu": 1},
+        names: ["file", "environment"],
+        origins: [{}, {"/debgu": "APP_DEBGU"}],
+        files: ["", ""]
+    )
+
+test "leaves and sources_text: every setting, a list as one, a sub's prefix"
+    h = two()
+    assert leaves(h) == [["db", "host"], ["tags"], ["debgu"]]
+    assert sources_text(h) == "db.host = \"h\" (file)\ntags = [1] (file)\ndebgu = \"1\" (environment: APP_DEBGU)\n"
+    narrowed: held.Held @= h
+    narrowed.prefix @ ["db"]
+    assert leaves(narrowed) == [["host"]]
+    assert sources_text(narrowed) == "host = \"h\" (file)\n"
+
+test "missing: none, one, two, a path that is not one"
+    h = two()
+    assert !missing(h, ["db.host", "tags.0"]).is_err()
+
+    match missing(h, ["db.port", "token"])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no setting \"db.port\", \"token\": none of the layers \"file\" and \"environment\" gives it"
+
+    assert missing(h, ["a..b"]).is_err()
+
+test "unknown: every setting taken, one not, a path taking a whole table"
+    h = two()
+    assert !unknown(h, ["db", "tags", "debgu"]).is_err()
+
+    match unknown(h, ["db.host", "tags"])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "settings no path given reads: \"debgu\", set by the layer \"environment\" from APP_DEBGU"

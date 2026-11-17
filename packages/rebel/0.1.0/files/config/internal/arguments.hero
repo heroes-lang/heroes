@@ -1,0 +1,116 @@
+# An argument a parse of `flags` found, read as a setting's value: a flag as a
+# boolean, a count and a number as numbers, a value as text, every value as a
+# list of texts.
+
+use config/internal/assemble
+use config/internal/trees
+use flags
+use json
+
+# The value of the argument `name` of `found`, read as `word` says: `flag`,
+# `count`, `text`, `integer`, `float` or `texts`. Fails as `flags.value_of`,
+# `flags.int_of` and `flags.float_of` fail, and `does_not_fit` where an
+# integer is past `json.MAX_EXACT_INT`. Aborts as `flags` aborts.
+function value_of(found: flags.Found, name: str, word: str) -> json.Value?
+    if word == "flag"
+        return ok(.boolean(v: flags.is_on(found, name)))
+
+    if word == "count"
+        return json.from_int(flags.count_of(found, name))
+
+    if word == "text"
+        return ok(.text(v: flags.value_of(found, name)?))
+
+    if word == "integer"
+        return json.from_int(flags.int_of(found, name)?)
+
+    if word == "float"
+        return ok(.number(v: flags.float_of(found, name)?))
+    texts: [json.Value] @= []
+
+    for v in flags.values_of(found, name)
+        texts @ texts.push(.text(v: v))
+
+    return ok(.list(items: texts))
+
+# One setting read from one argument: `config.FlagBinding` with its kind as a
+# word.
+record Wanted
+    # The setting's dotted path.
+    path: str
+    # The argument's name.
+    name: str
+    # The kind, as `value_of` reads `word`.
+    word: str
+
+# The settings `wanted` reads from `found`: those of the arguments given, on
+# the command line or from their variable, or, where `defaults`, those of the
+# arguments that took their default. Each is named by its argument. Fails
+# `invalid` where a path is not one or stands under another, and as
+# `value_of` fails.
+function entries(found: flags.Found, wanted: [Wanted], defaults: bool) -> [assemble.Entry]?
+    paths: [str] @= []
+    labels: [str] @= []
+
+    for w in wanted
+        paths @ paths.push(w.path)
+        labels @ labels.push(w.name)
+
+    parts = trees.distinct_paths(paths: paths, labels: labels)?
+    out: [assemble.Entry] @= []
+
+    for at in range(from: 0, to: wanted.len())
+        w = wanted[at]
+
+        taken = match flags.source_of(found, w.name)
+            .command_line | .environment => !defaults
+            .fallback                    => defaults
+            .absent                      => false
+
+        if taken
+            value = value_of(found, name: w.name, word: w.word)?
+            out @ out.push(assemble.Entry(keys: parts[at], value: value, layer: 0, label: w.name))
+
+    return ok(out)
+
+## Tests
+
+# A command of a flag, a count, a text, an integer, a float and a list.
+function command() -> flags.Command
+    c @= flags.command(name: "t", about: "")
+    flags.add(@c, flags.flag(long: "debug", short: "d", help: ""))
+    flags.add(@c, flags.flag(long: "verbose", short: "v", help: ""))
+    flags.add(@c, flags.option(long: "host", short: "", value_name: "H", help: ""))
+    flags.add(@c, flags.with_kind(flags.option(long: "port", short: "", value_name: "N", help: ""), .integer))
+    flags.add(@c, flags.with_kind(flags.option(long: "ratio", short: "", value_name: "X", help: ""), .float))
+    flags.add(@c, flags.option(long: "tag", short: "", value_name: "T", help: ""))
+    return c
+
+test "value_of: each word read from what a parse found"
+    found = flags.parse(
+        command(),
+        ["-d", "-vvv", "--host", "h", "--port", "8080", "--ratio", "1.5", "--tag", "a", "--tag", "b"]
+    ).must()
+    assert value_of(found, name: "debug", word: "flag").must() == .boolean(v: true)
+    assert value_of(found, name: "verbose", word: "count").must() == .number(v: 3.0)
+    assert value_of(found, name: "host", word: "text").must() == .text(v: "h")
+    assert value_of(found, name: "port", word: "integer").must() == .number(v: 8080.0)
+    assert value_of(found, name: "ratio", word: "float").must() == .number(v: 1.5)
+    assert value_of(found, name: "tag", word: "texts").must() == .list(items: [.text(v: "a"), .text(v: "b")])
+
+test "value_of: an integer past 2^53, a text not given"
+    found = flags.parse(command(), ["--port", "9007199254740993"]).must()
+    assert value_of(found, name: "port", word: "integer").is_err()
+    assert value_of(found, name: "host", word: "text").is_err()
+
+test "entries: given and defaults apart, a path under another refused"
+    c @= command()
+    flags.add(@c, flags.with_default(flags.option(long: "mode", short: "", value_name: "M", help: ""), "fast"))
+    found = flags.parse(c, ["--host", "h"]).must()
+    wanted = [Wanted(path: "host", name: "host", word: "text"), Wanted(path: "mode", name: "mode", word: "text")]
+    given = entries(found, wanted: wanted, defaults: false).must()
+    assert given.len() == 1 && given[0].keys == ["host"] && given[0].label == "host"
+    fallback = entries(found, wanted: wanted, defaults: true).must()
+    assert fallback.len() == 1 && fallback[0].value == .text(v: "fast")
+    under = [Wanted(path: "a", name: "host", word: "text"), Wanted(path: "a.b", name: "mode", word: "text")]
+    assert entries(found, wanted: under, defaults: false).is_err()

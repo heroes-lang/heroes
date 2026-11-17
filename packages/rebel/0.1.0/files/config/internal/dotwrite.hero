@@ -1,0 +1,242 @@
+# A `.env` text's values with `${NAME}` replaced, as python-dotenv replaces
+# them, and names and values written back: a whole text from a map, or one
+# name set or removed in a text with its other lines kept.
+
+use config/internal/dotenv
+
+# The code of a text, a name or a `${` that is not what `.env` holds.
+constant INVALID: str
+    "invalid"
+
+# The code of a name no line sets.
+constant NOT_FOUND: str
+    "not_found"
+
+# Whether `c` is an ASCII letter, a digit or `_`.
+function is_name_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_'
+
+# `s` with each `${NAME}` and `${NAME:-default}` replaced: by `values`' value
+# of NAME, else `env`'s, else the empty text, `default` standing where that
+# is empty. Fails `invalid` where a `${` has no `}` or holds no name.
+function replaced(s: str, values: {str: str} lent, env: {str: str} lent, line: i64) -> str?
+    out: [str] @= []
+    at: i64 @= 0
+    begin: i64 @= 0
+
+    while at < s.len()
+        if s[at] == '$' && at + 1 < s.len() && s[at + 1] == '{'
+            close: i64 @= at + 2
+
+            while close < s.len() && s[close] != '}'
+                close @ close + 1
+
+            if close == s.len()
+                return fail(code: INVALID, msg: f"line {line}: a `${{` with no `}}` to close it")
+            stop: i64 @= at + 2
+
+            while stop < close && is_name_byte(s[stop])
+                stop @ stop + 1
+
+            name = s.slice(from: at + 2, to: stop)
+            has_default = stop + 1 < close && s[stop] == ':' && s[stop + 1] == '-'
+
+            if name == "" || stop != close && !has_default
+                inner = s.slice(from: at + 2, to: close)
+                return fail(
+                    code: INVALID,
+                    msg: f"line {line}: `${{{inner}}}` names no variable: a name is ASCII letters, digits and `_`, and `:-` begins a default"
+                )
+            value: str @= values[name].default(env[name].default(""))
+
+            if has_default && value == ""
+                value @ s.slice(from: stop + 2, to: close)
+            out @ out.push(s.slice(from: begin, to: at))
+            out @ out.push(value)
+            at @ close + 1
+            begin @ at
+        else
+            at @ at + 1
+
+    out @ out.push(s.slice(from: begin, to: s.len()))
+    return ok(out.join(""))
+
+# The values of `text`'s bindings, a name written twice keeping its last value
+# at its first place, `${NAME}` replaced where `expand` asks.
+function values_of(text: str, expand: bool, env: {str: str} lent) -> {str: str}?
+    found = dotenv.bindings(text)?
+    values: {str: str} @= {}
+
+    for b in found
+        parts: [str] @= []
+
+        for at in range(from: 0, to: b.pieces.len())
+            if expand && b.open[at]
+                parts @ parts.push(replaced(b.pieces[at], values: values, env: env, line: b.line)?)
+            else
+                parts @ parts.push(b.pieces[at])
+
+        values[b.name] @ parts.join("")
+
+    return ok(values)
+
+# Checks that `name` can be written as a bare name. Fails `invalid` where it is
+# empty or holds white space, `=`, `#`, a quote or `\`.
+function check_name(name: str) -> ()?
+    if name == ""
+        return fail(code: INVALID, msg: "an empty name cannot be written")
+
+    for at in range(from: 0, to: name.len())
+        c = name[at]
+
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '=' || c == '#' || c == '"' || c == '\'' || c == '\\'
+            return fail(
+                code: INVALID,
+                msg: f"the name {quoted_value(name)} holds a character a name cannot: white space, `=`, `#`, a quote or `\\`"
+            )
+
+    return ok()
+
+# `value` between double quotes, `\`, `"`, `$`, LF, CR and tab escaped.
+function quoted_value(value: str) -> str
+    out: [str] @= ["\""]
+    begin: i64 @= 0
+
+    for at in range(from: 0, to: value.len())
+        c = value[at]
+
+        escape = match c
+            '\\' => "\\\\"
+            '"'  => "\\\""
+            '$'  => "\\$"
+            '\n' => "\\n"
+            '\r' => "\\r"
+            '\t' => "\\t"
+            _    => ""
+
+        if escape != ""
+            out @ out.push(value.slice(from: begin, to: at))
+            out @ out.push(escape)
+            begin @ at + 1
+
+    out @ out.push(value.slice(from: begin, to: value.len()))
+    out @ out.push("\"")
+    return out.join("")
+
+# `values` as a `.env` text, a line `NAME="value"` each.
+function format_values(values: {str: str}) -> str?
+    lines: [str] @= []
+
+    for name in keys(values)
+        check_name(name)?
+        lines @ lines.push(f"{name}={quoted_value(values[name].must())}\n")
+
+    return ok(lines.join(""))
+
+# `text` with every binding of `name` removed but the last, which `line`
+# replaces where `line` is not ""; `text` with `line` added where none binds
+# `name`. Fails `not_found` where none binds it and `line` is "".
+function rewritten(text: str, name: str, line: str, exported_line: str) -> str?
+    found = dotenv.bindings(text)?
+    last: i64 @= -1
+
+    for at in range(from: 0, to: found.len())
+        if found[at].name == name
+            last @ at
+
+    if last < 0
+        if line == ""
+            return fail(code: NOT_FOUND, msg: f"no line sets \"{name}\"")
+
+        if text == "" || text[text.len() - 1] == '\n' || text[text.len() - 1] == '\r'
+            return ok(text + line + "\n")
+        return ok(text + "\n" + line + "\n")
+    out: [str] @= []
+    cursor: i64 @= 0
+
+    for at in range(from: 0, to: found.len())
+        b = found[at]
+
+        if b.name == name
+            out @ out.push(text.slice(from: cursor, to: b.start))
+
+            if at == last && line != ""
+                written = if b.exported
+                    exported_line
+                else
+                    line
+                out @ out.push(written)
+                cursor @ b.stop
+            else
+                cursor @ b.end
+
+    out @ out.push(text.slice(from: cursor, to: text.len()))
+    return ok(out.join(""))
+
+# `text` with `name` set to `value`, its last line rewritten in place, `export`
+# kept, its other lines removed, or a line added at the end.
+function set_value(text: str, name: str, value: str) -> str?
+    check_name(name)?
+    line = f"{name}={quoted_value(value)}"
+    return rewritten(text: text, name: name, line: line, exported_line: "export " + line)
+
+# `text` without the lines that set `name`.
+function remove_value(text: str, name: str) -> str?
+    return rewritten(text: text, name: name, line: "", exported_line: "")
+
+## Tests
+
+test "values_of: nothing replaced unless asked"
+    got = values_of("A=1\nM=${A}x\n", expand: false, env: {}).must()
+    assert got["M"].must() == "${A}x"
+
+test "values_of: an earlier value, a variable, the file before the environment, a later line not yet set"
+    env = {"HOME_ZZ": "/h", "ZZ_A": "env"}
+    got = values_of(
+        "A=1\nM=${A}x\nN=$A\nP=\"${A}\"\nQ=${UNSET}\nH=${HOME_ZZ}\nZZ_A=file\nB=${ZZ_A}\nF=${LATER}\nLATER=1\n",
+        expand: true,
+        env: env
+    ).must()
+    assert got["M"].must() == "1x" && got["N"].must() == "$A" && got["P"].must() == "1" && got["Q"].must() == ""
+    assert got["H"].must() == "/h" && got["B"].must() == "file" && got["F"].must() == ""
+
+test "values_of: a default where unset or empty, nested ones read as text, a replacement not read again"
+    env = {"EMPTY": ""}
+    got = values_of(
+        "A=1\nR=${UNSET:-def}\nD=${EMPTY:-y}\nC=${A:-x}\nB=${UNSET:-${A}}\nS='${A}'\nT=${S}\n",
+        expand: true,
+        env: env
+    ).must()
+    assert got["R"].must() == "def" && got["D"].must() == "y" && got["C"].must() == "1"
+    assert got["B"].must() == "${A}" && got["S"].must() == "${A}" && got["T"].must() == "${A}"
+
+test "values_of: `\\$` never replaced, a name written twice, a `${` unclosed and one with no name"
+    got = values_of("A=1\nT=\"\\${A}\"\nA=2\n", expand: true, env: {}).must()
+    assert got["T"].must() == "${A}" && got["A"].must() == "2" && keys(got) == ["A", "T"]
+    assert values_of("A=${B\n", expand: true, env: {}).is_err()
+    assert values_of("A=${}\n", expand: true, env: {}).is_err()
+    assert values_of("A=${A-B}\n", expand: true, env: {}).is_err()
+
+    match values_of("A=x\nB=${A.B}\n", expand: true, env: {})
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2: `${A.B}` names no variable: a name is ASCII letters, digits and `_`, and `:-` begins a default"
+
+test "format_values: none, escapes, a name refused"
+    assert format_values({}).must() == ""
+    text = format_values({"A": "x\"y\\z\n$w\tq", "B": "12", "C": ""}).must()
+    assert text == "A=\"x\\\"y\\\\z\\n\\$w\\tq\"\nB=\"12\"\nC=\"\"\n"
+    assert values_of(text, expand: true, env: {}).must() == {"A": "x\"y\\z\n$w\tq", "B": "12", "C": ""}
+    assert format_values({"A B": "1"}).is_err() && format_values({"": "1"}).is_err() && format_values({"A=": "1"}).is_err()
+
+test "set_value: added to an empty text, to one with no last break, rewritten in place with export and comments kept"
+    assert set_value(text: "", name: "A", value: "1").must() == "A=\"1\"\n"
+    assert set_value(text: "B=2", name: "A", value: "1").must() == "B=2\nA=\"1\"\n"
+    text = "# top\nexport A=old # note\nB=2\n"
+    assert set_value(text: text, name: "A", value: "new").must() == "# top\nexport A=\"new\"\nB=2\n"
+
+test "set_value and remove_value: a name on several lines, and one that is not there"
+    text = "A=1\nB=2\nA=\"x\ny\"\nC=3"
+    assert set_value(text: text, name: "A", value: "z").must() == "B=2\nA=\"z\"\nC=3"
+    assert remove_value(text: text, name: "A").must() == "B=2\nC=3"
+    assert remove_value(text: "B=2\n", name: "A").is_err()
+    assert set_value(text: "A=\"open\n", name: "A", value: "1").is_err()

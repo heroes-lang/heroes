@@ -1,0 +1,117 @@
+# Dotted paths: the keys a path names, a path written again from its keys,
+# the JSON pointer of a list of keys, and a value described in a few words
+# for a message.
+
+use json
+use strings
+
+# The code of a path that is not one.
+constant INVALID: str
+    "invalid"
+
+# The most bytes of a text a message quotes before it cuts the text short.
+constant QUOTED_BYTES: i64
+    60
+
+# The keys of `path`: none for "", else the texts between its dots, each one
+# not empty. Fails `invalid` where a key is empty: `a..b`, `.a`, `a.`.
+function keys_of(path: str) -> [str]?
+    parts: [str] @= []
+
+    if path == ""
+        return ok(parts)
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= path.len()
+        if at == path.len() || path[at] == '.'
+            if at == start
+                return fail(code: INVALID, msg: f"the path \"{path}\" holds an empty key: keys are joined by one `.`")
+            parts @ parts.push(path.slice(from: start, to: at))
+            start @ at + 1
+        at @ at + 1
+
+    return ok(parts)
+
+# `parts` joined by dots, the path that names them.
+function dotted(parts: [str]) -> str
+    return parts.join(".")
+
+# `parts` as a JSON pointer, each after a `/`, `~` and `/` escaped.
+function pointer(parts: [str]) -> str
+    return json.pointer_of(parts)
+
+# The path of `parts` between double quotes, or `the whole` for none.
+function named(parts: [str]) -> str
+    if parts.len() == 0
+        return "the whole"
+    return f"\"{dotted(parts)}\""
+
+# Whether `parts` begins with every key of `head`, in order.
+function has_head(parts: [str], head: [str]) -> bool
+    if head.len() > parts.len()
+        return false
+
+    for at in range(from: 0, to: head.len())
+        if parts[at] != head[at]
+            return false
+
+    return true
+
+# `s` cut to at most `QUOTED_BYTES` bytes at a character's start, `...`
+# written after a text cut.
+function shortened(s: str) -> str
+    if s.len() <= QUOTED_BYTES
+        return s
+    return strings.slice_checked(s, from: 0, to: strings.floor_boundary(s, QUOTED_BYTES)).must() + "..."
+
+# `v` in a few words, for a message: `the text "abc"`, `the number 8080`,
+# `true`, `a list of 3`, `an object`, `null`.
+function described(v: json.Value) -> str
+    return match v
+        .null_value => "null"
+        .boolean b  => to_str(b.v)
+        .number n   => f"the number {json.format(v).default(to_str(n.v))}"
+        .text t     => f"the text {json.quote(shortened(t.v))}"
+        .list l     => f"a list of {l.items.len()}"
+        .object o   => f"an object of {keys(o.members).len()} keys"
+
+## Tests
+
+test "keys_of: the empty path, one key, several, and keys of more than one byte"
+    assert keys_of("").must() == []
+    assert keys_of("port").must() == ["port"]
+    assert keys_of("server.port").must() == ["server", "port"]
+    assert keys_of("città.è.0").must() == ["città", "è", "0"]
+
+test "keys_of: an empty key at the start, inside and at the end"
+    assert keys_of(".a").is_err()
+    assert keys_of("a..b").is_err()
+    assert keys_of("a.").is_err()
+    assert keys_of(".").is_err()
+
+test "dotted, pointer and named: none, one and several keys, escapes"
+    assert dotted([]) == ""
+    assert dotted(["a", "b"]) == "a.b"
+    assert pointer([]) == ""
+    assert pointer(["a/b", "c~d"]) == "/a~1b/c~0d"
+    assert named([]) == "the whole"
+    assert named(["db", "host"]) == "\"db.host\""
+
+test "has_head: empty head, equal, longer head, a different key"
+    assert has_head(parts: ["a", "b"], head: [])
+    assert has_head(parts: ["a", "b"], head: ["a", "b"])
+    assert !has_head(parts: ["a"], head: ["a", "b"])
+    assert !has_head(parts: ["a", "c"], head: ["a", "b"])
+
+test "shortened and described: each kind, a long text cut at a character"
+    assert described(.null_value) == "null"
+    assert described(.boolean(v: false)) == "false"
+    assert described(.number(v: 8080.0)) == "the number 8080"
+    assert described(.number(v: 1.5)) == "the number 1.5"
+    assert described(.text(v: "abc")) == "the text \"abc\""
+    assert described(.list(items: [.null_value])) == "a list of 1"
+    assert described(.object(members: {})) == "an object of 0 keys"
+    long = repeat("è", 40)
+    assert shortened(long) == repeat("è", 30) + "..."
+    assert shortened("short") == "short"
