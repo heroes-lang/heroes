@@ -1,0 +1,10 @@
+# Reaches Rebel's package `tracing`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12). It reads the W3C
+# Recommendation's own `traceparent` and writes it back, touching no network.
+
+use <rebel>/tracing
+
+function main()
+    match tracing.parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+        .ok c  => print(tracing.format_traceparent(c))
+        .err e => print(e.msg)

@@ -1,0 +1,178 @@
+# How a float is written in the formats of this package: the Prometheus text
+# format's way, which is Go's `strconv.FormatFloat(x, 'g', -1, 64)`, the
+# OpenMetrics way, which adds `.0` to a whole number, and StatsD's, which never
+# writes an exponent. Each takes the fewest digits that read back as `x` from
+# `numbers`, and lays them out.
+
+use numbers
+
+# The fewest digits of a finite, non-zero `x` and where its point stands:
+# `digits` with no sign and no point, and `exponent` such that `x` is
+# `0.d1d2... * 10^(exponent + 1)`, as the exponent form writes `d1.d2...e<exponent>`.
+record Digits
+    # The digits, the first never `0`.
+    digits: str
+    # The power of ten of the first digit.
+    exponent: i64
+    # Whether `x` is below zero.
+    negative: bool
+
+# The digits of `x`, finite and not zero, read from the exponent form
+# `numbers` writes.
+function digits_of(x: f64) -> Digits
+    text = numbers.format_float_exp_shortest(x)
+    negative = text[0] == '-'
+    start: i64 @= 0
+
+    if negative
+        start @ 1
+    kept: [str] @= []
+    at @= start
+
+    while at < text.len() && text[at] != 'e'
+        if text[at] != '.'
+            kept @ kept.push(text.slice(from: at, to: at + 1))
+        at @ at + 1
+
+    exponent = numbers.parse_int(text.slice(from: at + 1, to: text.len())).must()
+    return Digits(digits: kept.join(""), exponent: exponent, negative: negative)
+
+# `x` written as Go's `FormatFloat(x, 'g', -1, 64)` writes it: the fewest
+# digits, with an exponent of at least two digits where the first digit's power
+# of ten is under -4 or 6 and above. `NaN`, `+Inf` and `-Inf` as Prometheus
+# writes them, and both zeros as `0`.
+function text_form(x: f64) -> str
+    if x != x
+        return "NaN"
+
+    if x == 1.0 / 0.0
+        return "+Inf"
+
+    if x == -1.0 / 0.0
+        return "-Inf"
+
+    if x == 0.0
+        return "0"
+    d = digits_of(x)
+
+    sign = if d.negative
+        "-"
+    else
+        ""
+
+    if d.exponent < -4 || d.exponent >= 6
+        return sign + exponent_form(d)
+    return sign + fixed_form(d)
+
+# `x` written as OpenMetrics asks: as `text_form` writes it, with `.0` after a
+# number written with neither a point nor an exponent, so `1` is `1.0`.
+function openmetrics_form(x: f64) -> str
+    written = text_form(x)
+
+    for c in written.chars()
+        if c == "." || c == "e" || c == "I" || c == "N"
+            return written
+
+    return written + ".0"
+
+# `x` written with no exponent and the fewest digits, `1` for one and `0.5`
+# for a half, as Go's `FormatFloat(x, 'f', -1, 64)` writes it; `NaN`, `+Inf`
+# and `-Inf` for the three that have no digits.
+function plain_form(x: f64) -> str
+    if x != x
+        return "NaN"
+
+    if x == 1.0 / 0.0
+        return "+Inf"
+
+    if x == -1.0 / 0.0
+        return "-Inf"
+
+    if x == 0.0
+        return "0"
+    d = digits_of(x)
+
+    if d.negative
+        return "-" + fixed_form(d)
+    return fixed_form(d)
+
+# `d` in the exponent form: the first digit, a point and the rest where there
+# is a rest, `e`, a sign and at least two digits.
+function exponent_form(d: Digits) -> str
+    mantissa = if d.digits.len() == 1
+        d.digits
+    else
+        d.digits.slice(from: 0, to: 1) + "." + d.digits.slice(from: 1, to: d.digits.len())
+
+    power = if d.exponent < 0
+        -d.exponent
+    else
+        d.exponent
+
+    sign = if d.exponent < 0
+        "-"
+    else
+        "+"
+
+    padded = if power < 10
+        f"0{power}"
+    else
+        to_str(power)
+    return mantissa + "e" + sign + padded
+
+# `d` with no exponent: zeros added before the digits for a power below zero,
+# after them for one past the digits.
+function fixed_form(d: Digits) -> str
+    count = d.digits.len()
+
+    if d.exponent < 0
+        return "0." + repeat("0", to_u64(-d.exponent - 1).must()) + d.digits
+    whole = d.exponent + 1
+
+    if whole >= count
+        return d.digits + repeat("0", to_u64(whole - count).must())
+    return d.digits.slice(from: 0, to: whole) + "." + d.digits.slice(from: whole, to: count)
+
+test "text_form: the values Go's client writes for each, observed with client_golang 1.25"
+    assert text_form(0.0) == "0"
+    assert text_form(-0.0) == "0"
+    assert text_form(1.0) == "1"
+    assert text_form(-1.0) == "-1"
+    assert text_form(0.5) == "0.5"
+    assert text_form(1000000.0) == "1e+06"
+    assert text_form(1234567.0) == "1.234567e+06"
+    assert text_form(100000.0) == "100000"
+    assert text_form(0.00001) == "1e-05"
+    assert text_form(0.0001) == "0.0001"
+    assert text_form(123456789012.0) == "1.23456789012e+11"
+    assert text_form(numbers.parse_float("1e21").must()) == "1e+21"
+    assert text_form(numbers.parse_float("1e20").must()) == "1e+20"
+    assert text_form(0.00000025) == "2.5e-07"
+    assert text_form(22.227999999999998) == "22.227999999999998"
+    assert text_form(numbers.parse_float("1e15").must()) == "1e+15"
+    assert text_form(numbers.parse_float("5e-324").must()) == "5e-324"
+    assert text_form(numbers.parse_float("1.7976931348623157e308").must()) == "1.7976931348623157e+308"
+
+test "text_form: NaN and the infinities as Prometheus spells them"
+    assert text_form(0.0 / 0.0) == "NaN"
+    assert text_form(1.0 / 0.0) == "+Inf"
+    assert text_form(-1.0 / 0.0) == "-Inf"
+
+test "openmetrics_form: a whole number gains .0, an exponent and a fraction do not"
+    assert openmetrics_form(0.0) == "0.0"
+    assert openmetrics_form(-0.0) == "0.0"
+    assert openmetrics_form(1.0) == "1.0"
+    assert openmetrics_form(-1.0) == "-1.0"
+    assert openmetrics_form(100000.0) == "100000.0"
+    assert openmetrics_form(1000000.0) == "1e+06"
+    assert openmetrics_form(0.5) == "0.5"
+    assert openmetrics_form(0.0 / 0.0) == "NaN"
+    assert openmetrics_form(-1.0 / 0.0) == "-Inf"
+
+test "plain_form: no exponent at either end, whole numbers with no point"
+    assert plain_form(1.0) == "1"
+    assert plain_form(0.0) == "0"
+    assert plain_form(-2.5) == "-2.5"
+    assert plain_form(numbers.parse_float("1e21").must()) == "1000000000000000000000"
+    assert plain_form(0.00001) == "0.00001"
+    assert plain_form(123.456) == "123.456"

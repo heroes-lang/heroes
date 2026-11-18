@@ -1,0 +1,136 @@
+# One sample's line in the 0.0.4 format and in OpenMetrics, and the words of
+# `# TYPE`, from a sample's parts: what the face's `format_text` and
+# `format_openmetrics` write for each of their families.
+
+use math
+use metrics/internal/floats
+use metrics/internal/names
+use metrics/internal/store
+use numbers
+
+# Labels written `{a="1",b="2"}`, or nothing where there are none.
+function labels_text(label_names: [str], label_values: [str]) -> str
+    if label_names.len() == 0
+        return ""
+    pieces: [str] @= []
+
+    for i in range(from: 0, to: label_names.len())
+        pieces @ pieces.push(label_names[i] + "=\"" + names.escape_label_value(label_values[i]) + "\"")
+
+    return "{" + pieces.join(",") + "}"
+
+# One sample's line in the 0.0.4 format: its name, its labels, its value as Go
+# writes it, and its timestamp in milliseconds where it has one.
+function text_line(name: str, label_names: [str], label_values: [str], value: f64, has_timestamp: bool, timestamp_ms: i64) -> str
+    stamp = if has_timestamp
+        f" {timestamp_ms}"
+    else
+        ""
+    return name + labels_text(label_names: label_names, label_values: label_values) + " " + floats.text_form(value) + stamp
+
+# One sample's line in OpenMetrics, as Go writes it: a counter's sample named
+# as its family gains `_total` and an info's `_info`; `le` and `quantile` are
+# written as floats; a count of a histogram or a summary is written with no
+# point where it is whole; a timestamp in seconds.
+#
+# - `kind`: the family's kind.
+# - `family`: the family's name in the 0.0.4 format.
+# - `name`: the sample's name.
+function openmetrics_line(kind: store.Kind, family: str, name: str, label_names: [str], label_values: [str], value: f64, has_timestamp: bool, timestamp_ms: i64) -> str
+    short = store.openmetrics_name(name: family, kind: kind)
+
+    written = match kind
+        .counter =>
+            if name == family
+                short + "_total"
+            else
+                name
+        .info =>
+            if name == family
+                short + "_info"
+            else
+                name
+        .gauge | .histogram | .summary | .state_set | .unknown => name
+
+    values: [str] @= []
+
+    for i in range(from: 0, to: label_names.len())
+        v = label_values[i]
+
+        if label_names[i] == "le" || label_names[i] == "quantile"
+            match numbers.parse_float(v)
+                .ok x  => values @ values.push(floats.openmetrics_form(x))
+                .err _ => values @ values.push(v)
+        else
+            values @ values.push(v)
+
+    is_count = match kind
+        .histogram                                        => name == family + "_bucket" || name == family + "_count"
+        .summary                                          => name == family + "_count"
+        .counter | .gauge | .info | .state_set | .unknown => false
+
+    whole = value == value && value >= 0.0 && value < 18_446_744_073_709_551_616.0 && math.floor(value) == value
+
+    number = if is_count && whole
+        floats.plain_form(value)
+    else
+        floats.openmetrics_form(value)
+
+    stamp = if has_timestamp
+        " " + floats.openmetrics_form(to_f64(timestamp_ms) / 1000.0)
+    else
+        ""
+    return written + labels_text(label_names: label_names, label_values: values) + " " + number + stamp
+
+# The word of `# TYPE` in the 0.0.4 format.
+function text_type(kind: store.Kind) -> str
+    return match kind
+        .counter   => "counter"
+        .gauge     => "gauge"
+        .histogram => "histogram"
+        .summary   => "summary"
+        .info      => "gauge"
+        .state_set => "gauge"
+        .unknown   => "untyped"
+
+# The word of `# TYPE` in OpenMetrics.
+function openmetrics_type(kind: store.Kind) -> str
+    return match kind
+        .counter   => "counter"
+        .gauge     => "gauge"
+        .histogram => "histogram"
+        .summary   => "summary"
+        .info      => "info"
+        .state_set => "stateset"
+        .unknown   => "unknown"
+
+# The kind a `# TYPE` word of the 0.0.4 format names, `untyped` and any other
+# word being `unknown`.
+function kind_named(word: str) -> store.Kind
+    return match word
+        "counter"   => .counter
+        "gauge"     => .gauge
+        "histogram" => .histogram
+        "summary"   => .summary
+        _           => .unknown
+
+test "labels_text: none, one escaped, two in their order"
+    assert labels_text(label_names: [], label_values: []) == ""
+    assert labels_text(label_names: ["a"], label_values: ["\"x\""]) == "{a=\"\\\"x\\\"\"}"
+    assert labels_text(label_names: ["a", "b"], label_values: ["1", "2"]) == "{a=\"1\",b=\"2\"}"
+
+test "text_line and openmetrics_line: a timestamp in milliseconds and in seconds, a count with no point"
+    assert text_line(name: "a", label_names: [], label_values: [], value: 2.0, has_timestamp: true, timestamp_ms: 1_700_000_000_123) == "a 2 1700000000123"
+    assert openmetrics_line(kind: .gauge, family: "a", name: "a", label_names: [], label_values: [], value: 2.0, has_timestamp: true, timestamp_ms: 1_700_000_000_123) == "a 2.0 1.700000000123e+09"
+    assert openmetrics_line(kind: .histogram, family: "h", name: "h_count", label_names: [], label_values: [], value: 1_234_567.0, has_timestamp: false, timestamp_ms: 0) == "h_count 1234567"
+    assert openmetrics_line(kind: .histogram, family: "h", name: "h_sum", label_names: [], label_values: [], value: 3.0, has_timestamp: false, timestamp_ms: 0) == "h_sum 3.0"
+    assert openmetrics_line(kind: .counter, family: "c", name: "c", label_names: [], label_values: [], value: 1.0, has_timestamp: false, timestamp_ms: 0) == "c_total 1.0"
+    assert openmetrics_line(kind: .histogram, family: "h", name: "h_bucket", label_names: ["le"], label_values: ["10"], value: 1.0, has_timestamp: false, timestamp_ms: 0) == "h_bucket{le=\"10.0\"} 1"
+
+test "text_type, openmetrics_type and kind_named: every kind, untyped and an unknown word"
+    assert text_type(.state_set) == "gauge"
+    assert openmetrics_type(.state_set) == "stateset"
+    assert text_type(.unknown) == "untyped"
+    assert openmetrics_type(.unknown) == "unknown"
+    assert kind_named("untyped") == .unknown
+    assert kind_named("summary") == .summary

@@ -1,0 +1,247 @@
+# What this package sends over HTTP: a Pushgateway's group, its URL and its
+# requests; an OTLP request posted with its retries; the exporter's settings
+# read from OpenTelemetry's environment variables; and the `method` label of
+# an instrumented request.
+
+use bytes
+use compress
+use http
+use lists
+use metrics/internal/names
+use metrics/internal/otlp
+use numbers
+use os
+use strings
+use time
+use url
+
+# The code of a job, a label or a setting no request can carry.
+constant INVALID: str
+    "invalid"
+
+# The code of a server that refused.
+constant FAILED: str
+    "failed"
+
+# The code `os.env` fails with for a variable that is not set.
+constant NOT_FOUND: str
+    "not_found"
+
+# What `respond` offers the 0.0.4 format as, to `http.negotiate_type`.
+constant OFFER_TEXT: str
+    "text/plain;version=0.0.4"
+
+# What `respond` offers OpenMetrics as.
+constant OFFER_OPENMETRICS: str
+    "application/openmetrics-text;version=1.0.0"
+
+# One part of a Pushgateway's group path: `/name/value` where the value is
+# letters, digits, `-`, `.`, `_` and `~` alone, `/name@base64/<value in base 64
+# for URLs>` otherwise, and `/name@base64/=` for an empty value, as Python's
+# client writes them.
+function group_part(name: str, value: str) -> str
+    if value == ""
+        return "/" + name + "@base64/="
+
+    for at in range(from: 0, to: value.len())
+        c = value[at]
+        plain = names.is_letter(c) || names.is_digit(c) || c == '-' || c == '.' || c == '_' || c == '~'
+
+        if !plain
+            return "/" + name + "@base64/" + bytes.format_base64_url(strings.to_bytes(value))
+
+    return "/" + name + "/" + value
+
+# The URL of a Pushgateway's group. Fails `invalid` where `job` is empty or a
+# label's name is none.
+function gateway_url(gateway: str, job: str, label_names: [str], label_values: [str]) -> str?
+    if job == ""
+        return fail(code: INVALID, msg: "a Pushgateway's job needs a name")
+    parts: [str] @= [strings.trim_suffix(s: gateway, suffix: "/"), "/metrics", group_part(name: "job", value: job)]
+
+    for i in range(from: 0, to: label_names.len())
+        if !names.is_label_name(label_names[i])
+            return fail(code: INVALID, msg: f"\"{label_names[i]}\" is no label's name")
+        parts @ parts.push(group_part(name: label_names[i], value: label_values[i]))
+
+    return ok(parts.join(""))
+
+# Sends one Pushgateway request, its body in the 0.0.4 format where it has one.
+# Fails `failed` for a status other than 2xx.
+function pushed(client: http.Client, method: str, target: str, body: str, content_type: str) -> ()?
+    r @= http.request(method: method, target: target)?
+
+    if body != ""
+        r @ http.with_body(r, content_type: content_type, body: strings.to_bytes(body))
+    response = http.send(client, r: r)?
+
+    if response.status < 200 || response.status >= 300
+        return fail(
+            code: FAILED,
+            msg: f"the Pushgateway answered {method} {target} with {response.status}: {bytes.to_text_lossy(response.body)}"
+        )
+    return ok()
+
+# The value of the environment variable `name`, trimmed, "" where it is not
+# set, as OpenTelemetry reads an unset variable and an empty one alike.
+function env_text(name: str) -> str?
+    match os.env(name)
+        .ok v => return ok(strings.trim(v))
+        .err e =>
+            if e.code == NOT_FOUND
+                return ok("")
+            return fail(code: e.code, msg: e.msg)
+
+# `specific` where it is set, else `general`.
+function first_set(specific: str, general: str) -> str
+    if specific != ""
+        return specific
+    return general
+
+# The header fields of `text`, `key=value` pairs between commas, each value
+# percent-decoded and both trimmed, as OpenTelemetry's environment writes
+# them. Fails `invalid` where a pair has no `=` or an empty key.
+function env_headers(text: str) -> [http.Header]?
+    out: [http.Header] @= []
+
+    if strings.trim(text) == ""
+        return ok(out)
+
+    for pair in strings.split(s: text, sep: ",")
+        match strings.split_once(s: pair, sep: "=")
+            .ok h =>
+                key = strings.trim(h.before)
+
+                if key == ""
+                    return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" has no key")
+                out @ out.push(http.Header(name: key, value: url.unescape(strings.trim(h.after))?))
+            .err _ => return fail(code: INVALID, msg: f"the OTLP header \"{pair}\" holds no =")
+
+    return ok(out)
+
+# Whether two statuses are one.
+function same_status(left: i64, right: i64) -> bool
+    return left == right
+
+# The smaller of `a` and `b`.
+function min_i64(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+# How many milliseconds to wait before sending again: the `Retry-After` of
+# `response` in whole seconds where it names one, else `wait`, at most `most`.
+function retry_delay(response: http.Response, wait: i64, most: i64) -> i64
+    asked = match http.value_of(response.headers, name: "Retry-After")
+        .ok v =>
+            match numbers.parse_int(strings.trim(v))
+                .ok seconds =>
+                    if seconds >= 0 && seconds < 1_000_000
+                        seconds * 1_000
+                    else
+                        wait
+                .err _ => wait
+        .err _ => wait
+
+    return min_i64(a: asked, b: most)
+
+# Posts an OTLP request's `body` to `target` as `application/x-protobuf`,
+# sending again after a status of `retries.statuses`, and answers what the
+# collector says it refused. Fails `failed` for a status other than 2xx after
+# every retry.
+function post(client: http.Client, target: str, headers: [http.Header], gzip: bool, retries: http.Retries, body: [u8]) -> otlp.Partial?
+    r @= http.request(method: http.METHOD_POST, target: target)?
+
+    for h in headers
+        r.headers @ http.with_header(r.headers, name: h.name, value: h.value)
+
+    if gzip
+        r @ http.with_body(
+            r,
+            content_type: "application/x-protobuf",
+            body: compress.compress(body, options: compress.defaults(.gzip))?
+        )
+        r.headers @ http.with_header(r.headers, name: "Content-Encoding", value: "gzip")
+    else
+        r @ http.with_body(r, content_type: "application/x-protobuf", body: body)
+    attempt @= 0
+    wait @= retries.backoff_ms
+
+    while true
+        response = http.send(client, r: r)?
+
+        if response.status >= 200 && response.status < 300
+            return otlp.partial_of(response.body)
+        again = attempt < retries.count && lists.contains(retries.statuses, value: response.status, same: same_status)
+
+        if !again
+            return fail(
+                code: FAILED,
+                msg: f"the collector at {target} answered {response.status}: {otlp.status_message(response.body)}"
+            )
+        time.sleep(time.nanoseconds(retry_delay(response, wait: wait, most: retries.max_backoff_ms) * 1_000_000))
+        attempt @ attempt + 1
+        wait @ min_i64(a: wait * 2, b: retries.max_backoff_ms)
+
+# The `method` label of a request: its method in lower case where it is one
+# of RFC 9110's or `PATCH`, `unknown` otherwise.
+function method_label(method: str) -> str
+    return match method
+        "GET"     => "get"
+        "HEAD"    => "head"
+        "POST"    => "post"
+        "PUT"     => "put"
+        "DELETE"  => "delete"
+        "CONNECT" => "connect"
+        "OPTIONS" => "options"
+        "TRACE"   => "trace"
+        "PATCH"   => "patch"
+        _         => "unknown"
+
+test "group_part: plain bytes, a slash, a space, a character of two bytes and the empty value"
+    assert group_part(name: "job", value: "j-1.x_~") == "/job/j-1.x_~"
+    assert group_part(name: "job", value: "a/b") == "/job@base64/YS9i"
+    assert group_part(name: "job", value: "my job") == "/job@base64/bXkgam9i"
+    assert group_part(name: "k", value: "é x") == "/k@base64/w6kgeA=="
+    assert group_part(name: "zone", value: "") == "/zone@base64/="
+
+test "env_headers: pairs between commas, trimmed and percent-decoded, none, and a pair with no ="
+    assert env_headers("").must().len() == 0
+    headers = env_headers(" api-key = a%20b ,x=1").must()
+    assert headers.len() == 2
+    assert headers[0].name == "api-key"
+    assert headers[0].value == "a b"
+    assert headers[1].value == "1"
+    assert env_headers("novalue").is_err()
+    assert env_headers("=v").is_err()
+    assert env_headers("a=%zz").is_err()
+
+test "first_set: the specific setting over the general one"
+    assert first_set(specific: "a", general: "b") == "a"
+    assert first_set(specific: "", general: "b") == "b"
+
+test "retry_delay: Retry-After in seconds, none, a date, and the most"
+    asked = http.Response(
+        status: 429,
+        reason: "",
+        headers: [http.Header(name: "Retry-After", value: "2")],
+        body: [],
+        closing: false
+    )
+    assert retry_delay(asked, wait: 100, most: 30_000) == 2_000
+    assert retry_delay(asked, wait: 100, most: 1_500) == 1_500
+    assert retry_delay(http.respond_status(503), wait: 100, most: 30_000) == 100
+    dated = http.Response(
+        status: 503,
+        reason: "",
+        headers: [http.Header(name: "Retry-After", value: "Wed, 21 Oct 2015 07:28:00 GMT")],
+        body: [],
+        closing: false
+    )
+    assert retry_delay(dated, wait: 400, most: 30_000) == 400
+
+test "method_label: every method RFC 9110 names in lower case, and any other unknown"
+    assert method_label("GET") == "get"
+    assert method_label("PATCH") == "patch"
+    assert method_label("get") == "unknown"
+    assert method_label("BREW") == "unknown"

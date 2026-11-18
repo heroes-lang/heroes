@@ -1,0 +1,95 @@
+# Trace and span ids drawn from a generator, the sampling of a trace by its
+# id, and the list helper the face's functions append with.
+
+use random
+
+# `count` bytes from `generator`, drawn again where every one is zero, which
+# names no trace and no span.
+function new_id(@generator: random.Generator, count: i64) -> [u8]
+    while true
+        id = random.next_bytes(@generator, count: count)
+
+        for b in id
+            if b != 0
+                return id
+
+# Whether a trace of `trace_id` falls in the share `fraction`, as Go's
+# `TraceIDRatioBased` decides it: the last 8 bytes of the id as a number, its
+# lowest bit dropped, below `fraction` times 2^63; 1 and above every trace, 0
+# and below, NaN and an id not of 16 bytes none.
+function by_ratio(fraction: f64, trace_id: [u8]) -> bool
+    if fraction != fraction || trace_id.len() != 16 || fraction <= 0.0
+        return false
+
+    if fraction >= 1.0
+        return true
+    low: u64 @= 0
+
+    for at in range(from: 8, to: 16)
+        low @ low * 256 + to_u64(trace_id[at]).must()
+
+    bound = to_i64(fraction * 9_223_372_036_854_775_808.0).must()
+    return to_i64(low / 2).must() < bound
+
+# Adds `item` after the last of `list`, the caller's own, so nothing is copied.
+function append<T>(@list: [T], item: T)
+    list @ list.push(item)
+
+test "new_id: 16 and 8 bytes, never all zeros, the same from the same state"
+    g @= random.Generator(high: 1, low: 2)
+    a = new_id(@g, count: 16)
+    assert a.len() == 16
+    assert new_id(@g, count: 8).len() == 8
+    h @= random.Generator(high: 1, low: 2)
+    assert new_id(@h, count: 16) == a
+
+test "by_ratio: Go's decisions for eight ids at a half, a quarter, none, all and one in a billion"
+    ids = [
+        "0af7651916cd43dd8448eb211c80319c"
+        "0af7651916cd43dd7fffffffffffffff"
+        "0af7651916cd43dd8000000000000000"
+        "0af7651916cd43dd3fffffffffffffff"
+        "0af7651916cd43dd4000000000000001"
+        "0af7651916cd43ddffffffffffffffff"
+        "0af7651916cd43dd0000000000000001"
+        "0af7651916cd43dd0000000000000000"
+    ]
+    fractions = [0.5, 0.25, 0.0, 1.0, 0.000000001]
+
+    # TraceIDRatioBased(f).ShouldSample of go.opentelemetry.io/otel/sdk 1.47, one digit an id.
+    want = ["01011011", "00010011", "00000000", "11111111", "00000011"]
+
+    for f in range(from: 0, to: fractions.len())
+        got: [str] @= []
+
+        for id in ids
+            if by_ratio(fractions[f], trace_id: bytes_of(id))
+                got @ got.push("1")
+            else
+                got @ got.push("0")
+
+        assert got.join("") == want[f]
+
+    assert !by_ratio(0.0 / 0.0, trace_id: bytes_of(ids[0]))
+    assert !by_ratio(1.0, trace_id: [1, 2])
+
+# The bytes of 32 lowercase hexadecimal digits, for the tests.
+function bytes_of(hex: str) -> [u8]
+    out: [u8] @= []
+
+    for at in range(from: 0, to: hex.len() / 2)
+        out @ out.push(digit(hex[2 * at]) * 16 + digit(hex[2 * at + 1]))
+
+    return out
+
+# The value of one lowercase hexadecimal digit.
+function digit(c: u8) -> u8
+    if c >= 'a'
+        return c - 'a' + 10
+    return c - '0'
+
+test "append: an empty list, then two"
+    xs: [i64] @= []
+    append(@xs, item: 1)
+    append(@xs, item: 2)
+    assert xs == [1, 2]

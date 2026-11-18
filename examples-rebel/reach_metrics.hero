@@ -1,0 +1,19 @@
+# Reaches Rebel's package `metrics`, so that `heroes test` on this file runs
+# the tests of its face and its private modules (spec § 12). It counts one
+# request in a registry of its own and prints the registry in Prometheus's
+# text format, touching no network.
+
+use <rebel>/metrics
+
+function main()
+    registry @= metrics.new_registry()
+
+    match metrics.register(@registry, d: metrics.counter(name: "requests_total", help: "Requests served.", labels: ["method"]))
+        .ok _  => _ = 0
+        .err e => print(e.msg)
+
+    match metrics.inc(@registry, name: "requests_total", labels: ["GET"])
+        .ok _  => _ = 0
+        .err e => print(e.msg)
+
+    print(metrics.format_text(metrics.gather(registry)))

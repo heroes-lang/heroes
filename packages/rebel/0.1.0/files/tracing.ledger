@@ -1,0 +1,245 @@
+# The ledger of `tracing`: what OpenTelemetry's SDKs for Go, Python and Rust
+# let a program do with spans, their context and log records, one block per
+# capability, and what Rebel answers. None of the three standard libraries
+# traces, so the yardstick is the census the author chose on 2026-11-17,
+# measured on this machine on 2026-11-18: Go's `go.opentelemetry.io/otel`
+# 1.47.0 (`otel`, `trace`, `propagation`, `baggage`, `codes`, `attribute`,
+# `sdk/trace`, `sdk/resource`, `log`, `sdk/log`,
+# `exporters/otlp/otlptrace/otlptracehttp`,
+# `exporters/otlp/otlplog/otlploghttp` 0.23.0; `go doc -all`, the modules
+# fetched into the scratch folder); Python's `opentelemetry-api` and
+# `opentelemetry-sdk` 1.45.2 and `opentelemetry-exporter-otlp-proto-http`
+# (`dir()`, installed into the scratch folder); Rust's `opentelemetry`,
+# `opentelemetry_sdk` and `opentelemetry-otlp` 0.33 (their rustdoc, built into
+# the scratch folder).
+#
+# Behaviour was asked of Go's and Python's propagators on 18 `traceparent`
+# fields and 29 `tracestate` fields, of Go's ratio sampler on eight trace ids
+# at five ratios, of Python's exporter for the span flags and status it
+# writes, and of `opentelemetry-proto` 1.45 for the bytes of a spans request
+# and a logs request. Where they disagree, the note says whose answer was
+# taken and why.
+
+capability context/ids  a trace's and a span's ids, valid or not, read and written as hexadecimal
+  heroes  tracing.SpanContext, tracing.is_valid, tracing.parse_trace_id, tracing.parse_span_id, tracing.format_id
+  go      trace.TraceID, TraceID.IsValid, TraceID.String, TraceID.MarshalJSON, TraceIDFromHex, trace.SpanID, SpanID.IsValid, SpanID.String, SpanID.MarshalJSON, SpanIDFromHex, trace.SpanContext, NewSpanContext, SpanContextConfig, SpanContext.IsValid, HasTraceID, HasSpanID, TraceID, SpanID, IsRemote, Equal, WithTraceID, WithSpanID, WithRemote, MarshalJSON
+  rust    opentelemetry::TraceId, SpanId, trace::SpanContext
+  python  trace.SpanContext, SpanContext.is_valid, trace_id, span_id, is_remote, format_trace_id, format_span_id, INVALID_TRACE_ID, INVALID_SPAN_ID, INVALID_SPAN_CONTEXT
+  note    A context is a record built directly, so Go's `With` copies are a field set on a copy
+
+capability context/flags  the trace flags: sampled, and random as W3C level 2 names it
+  heroes  tracing.is_sampled, tracing.FLAG_SAMPLED, tracing.FLAG_RANDOM
+  go      trace.TraceFlags, FlagsSampled, FlagsRandom, TraceFlags.IsSampled, IsRandom, WithSampled, WithRandom, String, MarshalJSON, SpanContext.TraceFlags, SpanContext.IsSampled, SpanContext.IsRandom, SpanContext.WithTraceFlags
+  rust    opentelemetry::TraceFlags
+  python  trace.TraceFlags, DEFAULT_TRACE_OPTIONS, SpanContext.trace_flags
+
+capability context/ids-generated  new ids drawn at random, never all zeros
+  heroes  tracing.new_tracer, tracing.Tracer
+  go      sdk/trace.IDGenerator, WithIDGenerator
+  rust    opentelemetry_sdk::trace::IdGenerator, RandomIdGenerator
+  python  sdk.trace.IdGenerator, RandomIdGenerator, id_generator
+  note    A tracer's `generator`, seeded by the system's generator; a test sets one of its own, as a custom generator is set in Go and Python
+
+capability propagation/traceparent  the `traceparent` field read and written
+  heroes  tracing.parse_traceparent, tracing.format_traceparent
+  go      propagation.TraceContext, TraceContext.Extract, TraceContext.Inject, TraceContext.Fields
+  rust    opentelemetry_sdk::propagation::TraceContextPropagator
+  python  trace.propagation.tracecontext.TraceContextTextMapPropagator
+  note    Go and Python agree on 15 of 18 fields asked; where they differ: flags of `ff` are kept, as Python keeps them (Go refuses a byte above 3, while the Recommendation asks that unknown flags be ignored, not refused); a space before or after the field is refused, as Go refuses it (Python trims, and `http` has already trimmed a field's value). A version after `00` may go on after a `-`, and a version `00` field may not, as both read it
+
+capability propagation/tracestate  the `tracestate` field read, written and changed by a vendor
+  heroes  tracing.parse_tracestate, tracing.format_tracestate, tracing.with_state, tracing.without_state, tracing.state_of, tracing.StateMember
+  go      trace.TraceState, ParseTraceState, TraceState.Insert, Delete, Get, Len, Walk, String, MarshalJSON, SpanContext.TraceState, SpanContext.WithTraceState
+  rust    opentelemetry::trace::TraceState
+  python  trace.TraceState, DEFAULT_TRACE_STATE, SpanContext.trace_state
+  note    Go and Python agree on every field asked: a member that breaks the rules, a key twice or 33 members drops the whole field and keeps the context; spaces around a member and empty members are passed over
+
+capability propagation/http  a context read from a request's fields and written into them
+  heroes  tracing.extract, tracing.inject
+  go      propagation.TextMapPropagator, TextMapCarrier, HeaderCarrier, HeaderCarrier.Get, Set, Keys, Values, MapCarrier, MapCarrier.Get, Set, Keys, ValuesGetter, NewCompositeTextMapPropagator, otel.GetTextMapPropagator, otel.SetTextMapPropagator
+  rust    opentelemetry::propagation::Extractor, Injector, TextMapPropagator, FieldIter, TextMapCompositePropagator, global::get_text_map_propagator, global::set_text_map_propagator, trace::noop::NoopTextMapPropagator
+  python  propagate.extract, propagate.inject, propagate.get_global_textmap, propagate.set_global_textmap, propagate.composite, textmap, OTEL_PROPAGATORS
+  note    The fields are `http`'s `Header` list, so no carrier is needed; there is one propagator, W3C's, and no global to set
+
+capability propagation/baggage  W3C baggage: key and value pairs carried with a request
+  heroes  pending
+  go      baggage.Baggage, baggage.New, Parse, Member, NewMember, NewMemberRaw, Property, NewKeyProperty, NewKeyValueProperty, NewKeyValuePropertyRaw, Baggage.Member, Members, SetMember, DeleteMember, Len, String, ContextWithBaggage, ContextWithoutBaggage, FromContext, propagation.Baggage, Baggage.Extract, Baggage.Inject, Baggage.Fields
+  rust    opentelemetry::baggage::Baggage, BaggageExt, BaggageMetadata, KeyValueMetadata, Iter, opentelemetry_sdk::propagation::BaggagePropagator
+  python  baggage.get_all, get_baggage, set_baggage, remove_baggage, clear, baggage.propagation.W3CBaggagePropagator
+  note    Not written yet: the `baggage` field's grammar is its own
+
+capability sampling  which traces are recorded: always, never, by a ratio of the trace id, or as the parent was
+  heroes  tracing.Sampler, tracing.samples_root, tracing.samples_child
+  go      sdk/trace.Sampler, AlwaysSample, NeverSample, TraceIDRatioBased, ParentBased, SamplingParameters, SamplingResult, SamplingDecision, Drop, RecordAndSample
+  rust    opentelemetry_sdk::trace::Sampler, ShouldSample, SamplingDecision, SamplingResult, ParentBasedSampler
+  python  sdk.trace.sampling.Sampler, ALWAYS_ON, ALWAYS_OFF, DEFAULT_ON, DEFAULT_OFF, TraceIdRatioBased, ParentBased, ParentBasedTraceIdRatio, StaticSampler, Decision, SamplingResult, OTEL_TRACES_SAMPLER, OTEL_TRACES_SAMPLER_ARG
+  note    The ratio is Go's, held to its decisions on eight ids at five ratios: the last 8 bytes of the id, the lowest bit dropped, below the ratio times 2^63. Python compares all 64 bits with the ratio times 2^64, which differs at the edge of one id in 2^64
+
+capability sampling/parent-cases  a parent-based sampler with its own choice for each kind of parent
+  heroes  pending
+  go      ParentBasedSamplerOption, WithLocalParentNotSampled, WithLocalParentSampled, WithRemoteParentNotSampled, WithRemoteParentSampled
+  rust    -
+  python  ParentBased(remote_parent_sampled=, remote_parent_not_sampled=, local_parent_sampled=, local_parent_not_sampled=)
+  note    `parent_or_ratio` is OpenTelemetry's default of the four, the parent's decision kept
+
+capability sampling/record-only  a span recorded and not exported
+  heroes  pending
+  go      AlwaysRecord, RecordOnly
+  rust    SamplingDecision::RecordOnly
+  python  AlwaysRecordSampler, Decision.RECORD_ONLY
+  note    A span is a value the program holds, recorded or not; only one sampled is kept by `end`
+
+capability tracer/provider  a tracer with its resource, scope, sampler, limits and clock
+  heroes  tracing.new_tracer, tracing.with_sampler, tracing.with_resource, tracing.with_scope, tracing.with_limits, tracing.with_clock, tracing.Scope
+  go      sdk/trace.TracerProvider, NewTracerProvider, TracerProvider.Tracer, TracerProviderOption, WithSampler, WithResource, WithSpanLimits, WithRawSpanLimits, WithAttributeValueDepthLimit, trace.Tracer, TracerProvider, TracerConfig, NewTracerConfig, TracerOption, WithInstrumentationVersion, WithInstrumentationAttributes, WithInstrumentationAttributeSet, WithSchemaURL
+  rust    opentelemetry_sdk::trace::SdkTracerProvider, TracerProviderBuilder, Config, SdkTracer, Tracer, opentelemetry::trace::Tracer, TracerProvider, InstrumentationScope, InstrumentationScopeBuilder
+  python  sdk.trace.TracerProvider, TracerProvider.get_tracer, Tracer, InstrumentationScope, InstrumentationInfo
+  note    One tracer holds what a provider and its tracers hold apart; a scope's attributes and schema URL are not written
+
+capability tracer/global  a tracer set once for the whole program
+  heroes  refused: the language has no globals; the program passes its tracer `@`
+  go      otel.Tracer, otel.GetTracerProvider, otel.SetTracerProvider, trace.NewNoopTracerProvider
+  rust    opentelemetry::global::tracer, tracer_provider, tracer_with_scope, set_tracer_provider, BoxedTracer, BoxedSpan, GlobalTracerProvider, ObjectSafeTracer, ObjectSafeTracerProvider, ObjectSafeSpan
+  python  trace.get_tracer, get_tracer_provider, set_tracer_provider, ProxyTracer, ProxyTracerProvider, OTEL_PYTHON_TRACER_PROVIDER
+
+capability spans/start  a root span, and a span under a parent's context
+  heroes  tracing.start, tracing.start_child, tracing.Span, tracing.SpanKind
+  go      trace.Tracer.Start, SpanStartOption, WithSpanKind, WithNewRoot, WithLinks, WithAttributes, WithTimestamp, SpanConfig, NewSpanStartConfig, trace.SpanKind, ValidateSpanKind, SpanKind.String
+  rust    opentelemetry::trace::Tracer::start, start_with_context, build, SpanBuilder, SpanKind
+  python  Tracer.start_span, trace.SpanKind
+  note    A parent that is not valid starts a root, as Go does; the new span keeps the parent's flags but sampled, and its state
+
+capability spans/current  the span current in a context passed through calls
+  heroes  refused: no context is passed in secret and nothing is global; the program passes the span, or its `context`, to the code under it, and `start_child` names it
+  go      trace.ContextWithSpan, SpanFromContext, ContextWithSpanContext, ContextWithRemoteSpanContext, SpanContextFromContext, LinkFromContext
+  rust    opentelemetry::context::Context, ContextGuard, FutureExt, WithContext, trace::TraceContextExt, get_active_span, mark_span_as_active, FutureExt, WithContext, SpanRef
+  python  trace.get_current_span, set_span_in_context, use_span, Tracer.start_as_current_span, context
+
+capability spans/attributes  a span's attributes, a key set again replacing it
+  heroes  tracing.set_attribute, tracing.Attribute, tracing.AttributeValue
+  go      trace.Span.SetAttributes, attribute.KeyValue, attribute.Key, attribute.Value, attribute.String, Int, Int64, Float64, Bool, StringSlice, Int64Slice, Float64Slice, BoolSlice, attribute.Set, NewSet, Distinct, Filter, Iterator, Sortable
+  rust    opentelemetry::KeyValue, Key, Value, Array, StringValue, trace::Span::set_attribute, set_attributes
+  python  Span.set_attribute, Span.set_attributes, util.types.Attributes, BoundedAttributes
+  note    A list of texts is the one list kept, the others written as texts by the program; an attribute set is a list the program holds
+
+capability spans/events  an event at a moment, and an error recorded as the event `exception`
+  heroes  tracing.add_event, tracing.record_error, tracing.Event
+  go      trace.Span.AddEvent, RecordError, EventOption, EventConfig, NewEventConfig, SpanEventOption, SpanStartEventOption, SpanEndEventOption, WithStackTrace, sdk/trace.Event
+  rust    opentelemetry::trace::Span::add_event, add_event_with_timestamp, record_error, Event
+  python  Span.add_event, Span.record_exception, sdk.trace.Event, EventBase, EXCEPTION_MESSAGE, EXCEPTION_TYPE, EXCEPTION_STACKTRACE, EXCEPTION_ESCAPED
+  note    `exception.message` alone: no stack is read, and a failure has a code, not a type
+
+capability spans/links  a link to another span's context
+  heroes  tracing.add_link, tracing.Link
+  go      trace.Link, Span.AddLink, sdk/trace.Link
+  rust    opentelemetry::trace::Link, Span::add_link
+  python  trace.Link, Span.add_link
+
+capability spans/status  a span's status: unset, ok, or an error with its message
+  heroes  tracing.set_status, tracing.Status, tracing.StatusCode
+  go      trace.Span.SetStatus, codes.Code, codes.Unset, codes.Error, codes.Ok, Code.String, Code.MarshalJSON, Code.UnmarshalJSON, sdk/trace.Status
+  rust    opentelemetry::trace::Status, Span::set_status
+  python  trace.Status, StatusCode, Span.set_status
+  note    OpenTelemetry's rules: `ok` is final, `unset` never replaces another, a message is kept for `error` alone
+
+capability spans/name-and-end  a span renamed, and ended at the clock's moment
+  heroes  tracing.rename, tracing.end
+  go      trace.Span.SetName, Span.End, SpanEndOption, NewSpanEndConfig, Span.IsRecording, Span.SpanContext, Span.TracerProvider
+  rust    opentelemetry::trace::Span::update_name, end, end_with_timestamp, is_recording, span_context
+  python  Span.update_name, Span.end, Span.is_recording, Span.get_span_context
+  note    The end's moment is the tracer's clock, which a test fixes with `with_clock`
+
+capability spans/limits  how many attributes, events and links a span keeps, and how long a text
+  heroes  tracing.Limits, tracing.default_limits, tracing.with_limits
+  go      sdk/trace.SpanLimits, NewSpanLimits
+  rust    opentelemetry_sdk::trace::SpanLimits, SpanEvents, SpanLinks
+  python  sdk.trace.SpanLimits, OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT, OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT, OTEL_SPAN_EVENT_COUNT_LIMIT, OTEL_SPAN_LINK_COUNT_LIMIT, OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT, OTEL_LINK_ATTRIBUTE_COUNT_LIMIT, OTEL_ATTRIBUTE_COUNT_LIMIT, OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT, SPAN_ATTRIBUTE_COUNT_LIMIT
+  note    128 of each by default, as the three SDKs; a text is cut where it is exported, so the span keeps what the program set
+
+capability spans/http-server  a server's span from a request, with OpenTelemetry's HTTP conventions
+  heroes  tracing.start_server, tracing.set_response
+  go      -
+  rust    -
+  python  -
+  note    What Go's `otelhttp` and Python's instrumentations of the contrib repositories do, which the census did not reach: the caller's `traceparent` read, `http.request.method`, `url.path`, `url.query`, `user_agent.original`, `client.address`, `http.response.status_code`, and an error for 500 and above
+
+capability export/otlp-http  spans posted to a collector by OTLP over HTTP, with retries and the environment's settings
+  heroes  tracing.encode_spans, tracing.export_spans, tracing.otlp_to, tracing.otlp_from_env, tracing.Otlp, tracing.Exported, tracing.Signal, tracing.TRACES_URL
+  go      otlptracehttp.New, NewClient, NewUnstarted, Option, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithEncoding, Encoding, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, sdk/trace.SpanExporter, ReadOnlySpan, ReadWriteSpan
+  rust    opentelemetry_otlp::SpanExporter, SpanExporterBuilder, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_HEADERS, OTEL_EXPORTER_OTLP_TRACES_COMPRESSION, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_PROTOCOL, OTEL_EXPORTER_OTLP_TRACES_INSECURE, opentelemetry_sdk::trace::SpanData, SpanExporter, error::ExportError, OTelSdkError, OTelSdkResult
+  python  trace_exporter.OTLPSpanExporter, DEFAULT_ENDPOINT, DEFAULT_TRACES_EXPORT_PATH, DEFAULT_TIMEOUT, DEFAULT_COMPRESSION, Compression, encode_spans, OTEL_EXPORTER_OTLP_TRACES_ENDPOINT, OTEL_EXPORTER_OTLP_TRACES_HEADERS, OTEL_EXPORTER_OTLP_TRACES_COMPRESSION, OTEL_EXPORTER_OTLP_TRACES_TIMEOUT, OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE, OTEL_EXPORTER_OTLP_TRACES_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_TRACES_CLIENT_KEY, SpanExportResult, ReadableSpan, RequestPayloadTooLargeError
+  note    Held byte for byte to `opentelemetry-proto` 1.45's serialization of a server's span under a remote parent and a root: a span's `flags` say only whether its parent was remote, 256 or 768, and its status is always written, as Python's exporter fills them
+
+capability export/batch  ended spans queued and sent in batches
+  heroes  tracing.end, tracing.export_spans, tracing.Limits
+  go      sdk/trace.NewBatchSpanProcessor, BatchSpanProcessorOption, BatchSpanProcessorOptions, WithBatcher, WithMaxQueueSize, WithMaxExportBatchSize, WithBatchTimeout, WithExportTimeout, WithBlocking, TracerProvider.ForceFlush, TracerProvider.Shutdown
+  rust    opentelemetry_sdk::trace::BatchSpanProcessor, BatchSpanProcessorBuilder, BatchConfig, BatchConfigBuilder, OTEL_BSP_EXPORT_TIMEOUT, OTEL_BSP_EXPORT_TIMEOUT_DEFAULT, OTEL_BSP_MAX_EXPORT_BATCH_SIZE, OTEL_BSP_MAX_EXPORT_BATCH_SIZE_DEFAULT, OTEL_BSP_MAX_QUEUE_SIZE, OTEL_BSP_MAX_QUEUE_SIZE_DEFAULT, OTEL_BSP_SCHEDULE_DELAY, OTEL_BSP_SCHEDULE_DELAY_DEFAULT
+  python  sdk.trace.export.BatchSpanProcessor, BatchProcessor, OTEL_BSP_EXPORT_TIMEOUT, OTEL_BSP_MAX_EXPORT_BATCH_SIZE, OTEL_BSP_MAX_QUEUE_SIZE, OTEL_BSP_SCHEDULE_DELAY
+  note    The queue is the tracer's `ended`, 2048 by default, a span past it dropped and counted; 512 a request, as the SDKs default to. No timer: the program calls `export_spans` when it chooses, there being no thread that shares the tracer
+
+capability export/processors  a function called at each span's start and end, and exporters to the console or to memory
+  heroes  refused: a processor is a closure over every span, which the language has not; the spans ended are the tracer's `ended`, which the program reads, prints or keeps as it likes
+  go      sdk/trace.SpanProcessor, NewSimpleSpanProcessor, WithSpanProcessor, WithSyncer, TracerProvider.RegisterSpanProcessor, TracerProvider.UnregisterSpanProcessor, WithoutPanicRecording
+  rust    opentelemetry_sdk::trace::SpanProcessor, SimpleSpanProcessor
+  python  sdk.trace.SpanProcessor, SynchronousMultiSpanProcessor, ConcurrentMultiSpanProcessor, sdk.trace.export.SimpleSpanProcessor, ConsoleSpanExporter, SpanExporter
+
+capability export/transports  OTLP over gRPC, and OTLP/HTTP's JSON
+  heroes  pending
+  go      otlptracegrpc, otlptracehttp.WithEncoding
+  rust    opentelemetry_otlp::Protocol, OTEL_EXPORTER_OTLP_PROTOCOL_GRPC, OTEL_EXPORTER_OTLP_PROTOCOL_HTTP_JSON
+  python  -
+  note    OTLP/HTTP with protobuf, which every collector takes, is written; gRPC would stand on `grpc`, not written yet
+
+capability resource  what produced the spans, set by the program
+  heroes  tracing.with_resource, tracing.Attribute
+  go      sdk/resource.Resource, New, NewWithAttributes, NewSchemaless, Empty, Merge, Option, WithAttributes, WithSchemaURL, Resource.Attributes, Equal, Equivalent, Iter, Len, Set, String, SchemaURL, Encoded, MarshalJSON, MarshalLog
+  rust    opentelemetry_sdk::Resource, resource::ResourceBuilder, resource::Iter
+  python  sdk.resources.Resource, SERVICE_NAME, SERVICE_NAMESPACE, SERVICE_INSTANCE_ID and the other attribute names
+  note    `new_tracer` sets `service.name`; the SDKs add the SDK's own name and version and Python a random instance id
+
+capability resource/environment  a resource read from `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES`
+  heroes  tracing.resource_from_env
+  go      resource.Environment, EnvironmentWithContext, WithFromEnv
+  rust    opentelemetry_sdk::resource::EnvResourceDetector
+  python  sdk.resources.OTELResourceDetector, OTEL_RESOURCE_ATTRIBUTES, OTEL_SERVICE_NAME
+  note    Pairs trimmed and percent-decoded, an empty value kept, as Python reads them; a pair with no `=` is refused `invalid`, as Go refuses it, where Python passes it over with a warning
+
+capability resource/detected  a resource read from the host, the process and the container
+  heroes  pending
+  go      resource.Default, DefaultWithContext, Detect, Detector, StringDetector, WithDetectors, WithHost, WithHostID, WithOS, WithOSType, WithOSDescription, WithProcess, WithProcessPID, WithProcessOwner, WithProcessExecutableName, WithProcessExecutablePath, WithProcessCommandArgs, WithProcessRuntimeName, WithProcessRuntimeVersion, WithProcessRuntimeDescription, WithContainer, WithContainerID, WithService, WithTelemetrySDK
+  rust    opentelemetry_sdk::resource::ResourceDetector, SdkProvidedResourceDetector, TelemetryResourceDetector
+  python  sdk.resources.ResourceDetector, ProcessResourceDetector, OsResourceDetector, OTEL_EXPERIMENTAL_RESOURCE_DETECTORS
+  note    Not written yet: the host's name, the system, the process's id and command are `os`'s to read
+
+capability logs/record  a line of `log` as OTLP's log record, with its span's trace and id
+  heroes  tracing.log_record, tracing.LogRecord
+  go      log.Record, Record.SetBody, SetTimestamp, SetObservedTimestamp, SetSeverity, SetSeverityText, AddAttributes, Body, Timestamp, ObservedTimestamp, Severity, SeverityText, WalkAttributes, AttributesLen, Clone, EventName, SetEventName, Err, SetErr, log.Severity, sdk/log.Record, Record.SetTraceID, SetSpanID, SetTraceFlags, TraceID, SpanID, TraceFlags, Resource, InstrumentationScope, DroppedAttributes, SetAttributes
+  rust    opentelemetry::logs::LogRecord, AnyValue, Severity, opentelemetry_sdk::logs::SdkLogRecord, TraceContext
+  python  _logs.LogRecord, _logs.SeverityNumber, sdk._logs.LoggingHandler, ReadableLogRecord, ReadWriteLogRecord
+  note    A level is OpenTelemetry's severity of its name, `INFO` 9; a group's fields are written `group.key`, where Go's bridge of `slog` writes a map: an attribute's value here is no map. A duration is whole nanoseconds, an instant RFC 3339 text
+
+capability logs/trace-fields  the fields that tie a line of a log that is not OTLP to its span
+  heroes  tracing.log_fields
+  go      -
+  rust    -
+  python  -
+  note    `trace_id`, `span_id` and `trace_flags` in hexadecimal, the names of OpenTelemetry's specification for logs in other formats, which the SDKs' bridges of `slog` and `logging` write as their own
+
+capability logs/export  log records posted to a collector by OTLP over HTTP
+  heroes  tracing.encode_logs, tracing.export_logs, tracing.LOGS_URL, tracing.otlp_from_env
+  go      otlploghttp.New, Exporter, Exporter.Export, ForceFlush, Shutdown, Option, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, Version, sdk/log.Exporter
+  rust    opentelemetry_otlp::LogExporter, LogExporterBuilder, OTEL_EXPORTER_OTLP_LOGS_ENDPOINT, OTEL_EXPORTER_OTLP_LOGS_HEADERS, OTEL_EXPORTER_OTLP_LOGS_COMPRESSION, OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, OTEL_EXPORTER_OTLP_LOGS_PROTOCOL, OTEL_EXPORTER_OTLP_LOGS_INSECURE, opentelemetry_sdk::logs::LogExporter, LogBatch
+  python  _log_exporter.OTLPLogExporter, DEFAULT_LOGS_EXPORT_PATH, OTEL_EXPORTER_OTLP_LOGS_ENDPOINT, OTEL_EXPORTER_OTLP_LOGS_HEADERS, OTEL_EXPORTER_OTLP_LOGS_COMPRESSION, OTEL_EXPORTER_OTLP_LOGS_TIMEOUT, OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE, OTEL_EXPORTER_OTLP_LOGS_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_LOGS_CLIENT_KEY, LogRecordExportResult, LogRecordExporter
+  note    Held byte for byte to `opentelemetry-proto` 1.45's serialization of a record in a span and one outside
+
+capability logs/provider  a logger provider, its processors and limits, and the global one
+  heroes  refused: a provider is a global and its processors closures; `log` writes the line and `log_record` makes its record, which the program sends with `export_logs` when it chooses
+  go      log.Logger, LoggerProvider, LoggerConfig, NewLoggerConfig, LoggerOption, WithInstrumentationVersion, WithInstrumentationAttributes, WithInstrumentationAttributeSet, WithSchemaURL, EnabledParameters, otel.GetLoggerProvider, otel.SetLoggerProvider, sdk/log.LoggerProvider, NewLoggerProvider, LoggerProviderOption, WithProcessor, WithResource, WithAttributeCountLimit, WithAttributeValueLengthLimit, WithAttributeValueDepthLimit, WithAllowKeyDuplication, Processor, SimpleProcessor, NewSimpleProcessor, SimpleProcessorOption, BatchProcessor, NewBatchProcessor, BatchProcessorOption, WithExportBufferSize, WithExportInterval, WithExportMaxBatchSize, WithExportTimeout, WithMaxQueueSize
+  rust    opentelemetry::logs::Logger, LoggerProvider, NoopLoggerProvider, opentelemetry_sdk::logs::SdkLogger, SdkLoggerProvider, LoggerProviderBuilder, LogProcessor, SimpleLogProcessor, BatchLogProcessor, BatchLogProcessorBuilder, BatchConfig, BatchConfigBuilder, OTEL_BLRP_EXPORT_TIMEOUT, OTEL_BLRP_MAX_EXPORT_BATCH_SIZE, OTEL_BLRP_MAX_QUEUE_SIZE, OTEL_BLRP_SCHEDULE_DELAY and their defaults
+  python  _logs.Logger, LoggerProvider, get_logger, get_logger_provider, set_logger_provider, NoOpLogger, NoOpLoggerProvider, sdk._logs.Logger, LoggerProvider, LogRecordProcessor, SynchronousMultiLogRecordProcessor, ConcurrentMultiLogRecordProcessor, LogLimits, LogRecordLimits, export
+
+dropped  each SDK's plumbing: no-op implementations, embedded interfaces, error handlers and the getters of option structs
+  go      trace.Span's embedded interfaces, TracerProvider.Tracer of the no-op, otel.ErrorHandler, ErrorHandlerFunc, GetErrorHandler, SetErrorHandler, Handle, SetLogger, Version, every *Config's getters (Attributes, Timestamp, StackTrace, SpanKind, Links, NewRoot, InstrumentationVersion, InstrumentationAttributes, SchemaURL), sdk/trace.ReadOnlySpan's methods
+  rust    trace::noop::NoopSpan, NoopTracer, NoopTracerProvider, metrics/noop, otel_debug, otel_info, otel_warn, otel_error, trace::FutureExt, WithContext, context::FutureExt, WithContext
+  python  trace.NoOpTracer, NoOpTracerProvider, NonRecordingSpan, INVALID_SPAN, Once, deprecated, types, util, OTEL_SDK_DISABLED, OTEL_PYTHON_SDK_INTERNAL_METRICS_ENABLED, create_tracer_metrics, create_exporter_metrics, create_processor_metrics, RuleBasedConfigurator, LogDroppedAttributesWarning, LogRecordDroppedAttributesWarning, DuplicateFilter, Span.to_json, Span.instrumentation_info
+  note    A span that records nothing is one `end` does not keep; the SDKs' own metrics about themselves and their warnings are plumbing of their runtimes

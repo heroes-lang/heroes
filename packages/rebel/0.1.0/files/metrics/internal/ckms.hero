@@ -1,0 +1,286 @@
+# A summary's quantiles over a stream of observations, in bounded memory: the
+# targeted-quantiles algorithm of Cormode, Korn, Muthukrishnan and Srivastava
+# ("Effective Computation of Biased Quantiles over Data Streams", ICDE 2005),
+# written from the paper. Each target quantile `q` is answered by a value whose
+# rank is within `error * n` of `q * n`, `n` the observations so far.
+# Observations wait in a buffer of `BUFFER` and are merged sorted, as the
+# paper's batch insertion does; the samples kept grow with the logarithm of `n`.
+
+use math
+
+# How many observations wait before they are merged into the samples.
+constant BUFFER: i64
+    500
+
+# The quantiles a stream answers and how far each may be from the true rank,
+# and what it has kept: the samples, sorted by value, each with the paper's
+# `g` (the ranks it stands for) and `delta` (the uncertainty of its rank).
+record Stream
+    # The quantiles, each from 0 to 1.
+    quantiles: [f64]
+    # The error allowed for the quantile of the same place, above 0 and under 1.
+    errors: [f64]
+    # The samples' values, ascending.
+    values: [f64]
+    # Each sample's `g`.
+    widths: [i64]
+    # Each sample's `delta`.
+    deltas: [i64]
+    # Observations not yet merged, in the order they came.
+    buffer: [f64]
+    # How many observations the samples stand for.
+    count: i64
+
+# A stream answering `quantiles` within `errors`, which hold as many numbers
+# and which the caller has checked.
+function new_stream(quantiles: [f64], errors: [f64]) -> Stream
+    return Stream(quantiles: quantiles, errors: errors, values: [], widths: [], deltas: [], buffer: [], count: 0)
+
+# The paper's invariant: how far the rank of a sample at rank `r` may be from
+# the truth, among `n` observations, the tightest of every target.
+function allowed(s: Stream lent, r: f64, n: f64) -> f64
+    least @= 1.0 / 0.0
+
+    for at in range(from: 0, to: s.quantiles.len())
+        q = s.quantiles[at]
+        e = s.errors[at]
+
+        bound = if r >= q * n
+            if q == 0.0
+                1.0 / 0.0
+            else
+                2.0 * e * r / q
+        else if q == 1.0
+            1.0 / 0.0
+        else
+            2.0 * e * (n - r) / (1.0 - q)
+
+        if bound < least
+            least @ bound
+
+    return least
+
+# Adds `x`, which is no NaN, to `s`; the buffer is merged once it is full.
+function insert(@s: Stream, x: f64)
+    append(@s.buffer, x: x)
+
+    if s.buffer.len() >= BUFFER
+        flush(@s)
+
+# Adds `x` after the last value of `xs`, the caller's own list.
+function append(@xs: [f64], x: f64)
+    xs @ xs.push(x)
+
+# `x` cut toward zero to a whole number, a bound past the largest `i64` (an
+# infinite one among them) held at the largest, and NaN at 0.
+function whole_part(x: f64) -> i64
+    if x != x
+        return 0
+
+    if x >= 9_223_372_036_854_774_784.0
+        return 9_223_372_036_854_775_807
+
+    if x <= -9_223_372_036_854_774_784.0
+        return -9_223_372_036_854_775_807
+    return to_i64(x).must()
+
+# Merges the buffer of `s` into its samples, sorted, then compresses them.
+function flush(@s: Stream)
+    if s.buffer.len() == 0
+        return
+    incoming = sort(s.buffer)
+    values: [f64] @= []
+    widths: [i64] @= []
+    deltas: [i64] @= []
+    rank @= 0
+    n @= s.count
+    kept @= 0
+
+    for x in incoming
+        while kept < s.values.len() && s.values[kept] <= x
+            values @ values.push(s.values[kept])
+            widths @ widths.push(s.widths[kept])
+            deltas @ deltas.push(s.deltas[kept])
+            rank @ rank + s.widths[kept]
+            kept @ kept + 1
+
+        delta @= 0
+
+        if values.len() > 0 && kept < s.values.len()
+            delta @ whole_part(allowed(s, r: to_f64(rank), n: to_f64(n))) - 1
+
+            if delta < 0
+                delta @ 0
+
+        values @ values.push(x)
+        widths @ widths.push(1)
+        deltas @ deltas.push(delta)
+        rank @ rank + 1
+        n @ n + 1
+
+    while kept < s.values.len()
+        values @ values.push(s.values[kept])
+        widths @ widths.push(s.widths[kept])
+        deltas @ deltas.push(s.deltas[kept])
+        kept @ kept + 1
+
+    s.values @ values
+    s.widths @ widths
+    s.deltas @ deltas
+    s.buffer @ []
+    s.count @ n
+    compress(@s)
+
+# Merges each sample into its right neighbour where the paper's invariant
+# allows, walking from the largest down; the smallest and the largest stay.
+function compress(@s: Stream)
+    size = s.values.len()
+
+    if size < 3
+        return
+    before: [i64] @= []
+    sum @= 0
+
+    for w in s.widths
+        before @ before.push(sum)
+        sum @ sum + w
+
+    n = to_f64(s.count)
+    values: [f64] @= []
+    widths: [i64] @= []
+    deltas: [i64] @= []
+    right_value @= s.values[size - 1]
+    right_width @= s.widths[size - 1]
+    right_delta @= s.deltas[size - 1]
+    at @= size - 2
+
+    while at >= 0
+        merges = at > 0 && to_f64(s.widths[at] + right_width + right_delta) <= allowed(s, r: to_f64(before[at]), n: n)
+
+        if merges
+            right_width @ right_width + s.widths[at]
+        else
+            values @ values.push(right_value)
+            widths @ widths.push(right_width)
+            deltas @ deltas.push(right_delta)
+            right_value @ s.values[at]
+            right_width @ s.widths[at]
+            right_delta @ s.deltas[at]
+        at @ at - 1
+
+    values @ values.push(right_value)
+    widths @ widths.push(right_width)
+    deltas @ deltas.push(right_delta)
+    s.values @ reversed_f64(values)
+    s.widths @ reversed_i64(widths)
+    s.deltas @ reversed_i64(deltas)
+
+# `xs` from its last to its first.
+function reversed_f64(xs: [f64]) -> [f64]
+    out: [f64] @= []
+    at @= xs.len() - 1
+
+    while at >= 0
+        out @ out.push(xs[at])
+        at @ at - 1
+
+    return out
+
+# `xs` from its last to its first.
+function reversed_i64(xs: [i64]) -> [i64]
+    out: [i64] @= []
+    at @= xs.len() - 1
+
+    while at >= 0
+        out @ out.push(xs[at])
+        at @ at - 1
+
+    return out
+
+# The value `s` answers for quantile `q`: NaN where nothing was observed. The
+# buffer is merged on a copy, so `s` is not changed.
+function query(s: Stream, q: f64) -> f64
+    merged @= s
+    flush(@merged)
+    size = merged.values.len()
+
+    if size == 0
+        return 0.0 / 0.0
+
+    if q <= 0.0
+        return merged.values[0]
+
+    if q >= 1.0
+        return merged.values[size - 1]
+    n = to_f64(merged.count)
+
+    # The rank sought is the ceiling of `q * n`, so the median of 1, 2 and 3
+    # is 2, as Go's client answers it.
+    target = math.ceil(q * n)
+    goal = target + allowed(merged, r: target, n: n) / 2.0
+    rank @= 0.0
+
+    for at in range(from: 1, to: size)
+        rank @ rank + to_f64(merged.widths[at - 1])
+
+        if rank + to_f64(merged.widths[at]) + to_f64(merged.deltas[at]) > goal
+            return merged.values[at - 1]
+
+    return merged.values[size - 1]
+
+# How many observations `s` holds, the buffer's among them.
+function total(s: Stream lent) -> i64
+    return s.count + s.buffer.len()
+
+test "query: an empty stream answers NaN"
+    s = new_stream(quantiles: [0.5], errors: [0.05])
+    v = query(s, q: 0.5)
+    assert v != v
+
+test "query: the median of 1, 2 and 3 is 2, the 0 quantile the least and the 1 the greatest"
+    s @= new_stream(quantiles: [0.0, 0.5, 1.0], errors: [0.01, 0.01, 0.01])
+
+    for x in [3.0, 1.0, 2.0]
+        insert(@s, x: x)
+
+    assert query(s, q: 0.5) == 2.0
+    assert query(s, q: 0.0) == 1.0
+    assert query(s, q: 1.0) == 3.0
+
+test "query: one observation answers it for every quantile"
+    s @= new_stream(quantiles: [0.5, 0.99], errors: [0.05, 0.001])
+    insert(@s, x: 7.0)
+    assert query(s, q: 0.5) == 7.0
+    assert query(s, q: 0.99) == 7.0
+    assert total(s) == 1
+
+test "query: 1 to 100 in order, the median within 5 and the 90th within 1, Go's 50 and 90 among the answers allowed"
+    s @= new_stream(quantiles: [0.5, 0.9], errors: [0.05, 0.01])
+
+    for i in range(from: 1, to: 101)
+        insert(@s, x: to_f64(i))
+
+    median = query(s, q: 0.5)
+    ninetieth = query(s, q: 0.9)
+    assert median >= 45.0 && median <= 55.0
+    assert ninetieth >= 89.0 && ninetieth <= 91.0
+
+test "query: 20,000 observations in a scrambled order, each target within its error, and far fewer samples kept"
+    targets = [0.5, 0.9, 0.99]
+    errors = [0.05, 0.01, 0.001]
+    s @= new_stream(quantiles: targets, errors: errors)
+    n = 20_000
+
+    # 7,919 is prime and shares no factor with 20,000, so `i * 7,919 % n`
+    # takes every value from 0 to n - 1 once: the value `v + 1` has rank `v + 1`.
+    for i in range(from: 0, to: n)
+        insert(@s, x: to_f64(i * 7_919 % n + 1))
+
+    for at in range(from: 0, to: targets.len())
+        got = to_i64(query(s, q: targets[at])).must()
+        want = to_i64(targets[at] * to_f64(n)).must()
+        slack = to_i64(errors[at] * to_f64(n)).must() + 1
+        assert got >= want - slack && got <= want + slack
+
+    assert total(s) == n
+    assert s.values.len() < 2_000

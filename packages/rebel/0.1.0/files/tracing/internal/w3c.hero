@@ -1,0 +1,258 @@
+# The W3C Trace Context fields read and written: `traceparent`
+# (`version-traceid-parentid-flags`, lowercase hexadecimal) and `tracestate`
+# (up to 32 `key=value` members), as the Recommendation of 2021-11-23
+# writes them and OpenTelemetry's Go and Python propagators read them,
+# observed on the same edges.
+
+use bytes
+
+# The code of a field that is not the format.
+constant INVALID: str
+    "invalid"
+
+# The most members a `tracestate` holds.
+constant MAX_MEMBERS: i64
+    32
+
+# A `traceparent` read: its identifiers and its flags.
+record Parent
+    # The trace's 16 bytes.
+    trace_id: [u8]
+    # The parent span's 8 bytes.
+    span_id: [u8]
+    # The flags' byte.
+    flags: u8
+
+# Whether `c` is a lowercase hexadecimal digit.
+function is_lower_hex(c: u8) -> bool
+    return c >= '0' && c <= '9' || c >= 'a' && c <= 'f'
+
+# Whether every byte of `s` from `from` to `to` is a lowercase hexadecimal
+# digit.
+function all_lower_hex(s: str, from: i64, to: i64) -> bool
+    for at in range(from: from, to: to)
+        if !is_lower_hex(s[at])
+            return false
+
+    return true
+
+# Whether every byte of `b` is 0.
+function all_zero(b: [u8]) -> bool
+    for x in b
+        if x != 0
+            return false
+
+    return true
+
+# The bytes of `count` lowercase hexadecimal digits of `s` from `from`, which
+# the caller has checked.
+function hex_bytes(s: str, from: i64, count: i64) -> [u8]
+    return bytes.parse_hex(s.slice(from: from, to: from + count)).must()
+
+# The bytes of an id of `digits` lowercase hexadecimal digits, not all zeros.
+# Fails `invalid` where `s` is anything else.
+function parse_id(s: str, digits: i64) -> [u8]?
+    if s.len() != digits || !all_lower_hex(s, from: 0, to: s.len())
+        return fail(code: INVALID, msg: f"\"{s}\" is not {digits} lowercase hexadecimal digits")
+    id = hex_bytes(s, from: 0, count: digits)
+
+    if all_zero(id)
+        return fail(code: INVALID, msg: "an id of zeros names nothing")
+    return ok(id)
+
+# A `traceparent` read. Fails `invalid` where it is not 55 bytes of version
+# `00`, or at least 55 of a later version with a `-` after them; where its
+# version is `ff`; where a part is not lowercase hexadecimal of its length; or
+# where the trace or the parent span is all zeros.
+function parse_traceparent(s: str) -> Parent?
+    if s.len() < 55
+        return fail(code: INVALID, msg: f"a traceparent is 55 bytes or more, and \"{s}\" holds {s.len()}")
+
+    if !all_lower_hex(s, from: 0, to: 2) || s[2] != '-' || !all_lower_hex(s, from: 3, to: 35) || s[35] != '-' || !all_lower_hex(s, from: 36, to: 52) || s[52] != '-' || !all_lower_hex(s, from: 53, to: 55)
+        return fail(code: INVALID, msg: f"\"{s}\" is not version-traceid-parentid-flags in lowercase hexadecimal")
+    version = s.slice(from: 0, to: 2)
+
+    if version == "ff"
+        return fail(code: INVALID, msg: "the traceparent version ff is never valid")
+
+    if version == "00" && s.len() != 55
+        return fail(code: INVALID, msg: f"a traceparent of version 00 is 55 bytes, and \"{s}\" holds {s.len()}")
+
+    if version != "00" && s.len() > 55 && s[55] != '-'
+        return fail(code: INVALID, msg: f"a traceparent of a later version goes on after a -, and \"{s}\" does not")
+    trace_id = hex_bytes(s, from: 3, count: 32)
+    span_id = hex_bytes(s, from: 36, count: 16)
+
+    if all_zero(trace_id) || all_zero(span_id)
+        return fail(code: INVALID, msg: f"the traceparent \"{s}\" names a trace or a span of zeros")
+    return ok(Parent(trace_id: trace_id, span_id: span_id, flags: hex_bytes(s, from: 53, count: 2)[0]))
+
+# A `traceparent` of version `00` written.
+function format_traceparent(trace_id: [u8], span_id: [u8], flags: u8) -> str
+    return "00-" + bytes.format_hex(trace_id) + "-" + bytes.format_hex(span_id) + "-" + bytes.format_hex([flags])
+
+# Whether `c` may follow the first byte of a key: a lowercase letter, a digit,
+# `_`, `-`, `*` or `/`.
+function is_key_byte(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '_' || c == '-' || c == '*' || c == '/'
+
+# Whether `s` from `from` to `to` is a run of key bytes whose first is a
+# lowercase letter, or a digit where `digit_first`, `most` bytes at most.
+function is_key_part(s: str, from: i64, to: i64, digit_first: bool, most: i64) -> bool
+    if to <= from || to - from > most
+        return false
+    first = s[from]
+
+    if !(first >= 'a' && first <= 'z' || digit_first && first >= '0' && first <= '9')
+        return false
+
+    for at in range(from: from + 1, to: to)
+        if !is_key_byte(s[at])
+            return false
+
+    return true
+
+# Whether `key` is a `tracestate` key: a simple one, a lowercase letter then
+# up to 255 key bytes, or a tenant's, up to 241 bytes opening with a letter or
+# a digit, `@`, and a system's of up to 14 opening with a letter.
+function is_key(key: str) -> bool
+    for at in range(from: 0, to: key.len())
+        if key[at] == '@'
+            return is_key_part(key, from: 0, to: at, digit_first: true, most: 241) && is_key_part(key, from: at + 1, to: key.len(), digit_first: false, most: 14)
+
+    return is_key_part(key, from: 0, to: key.len(), digit_first: false, most: 256)
+
+# Whether `value` is a `tracestate` value: 1 to 256 bytes from space to `~`,
+# never `,` or `=`, the last no space.
+function is_value(value: str) -> bool
+    if value.len() == 0 || value.len() > 256 || value[value.len() - 1] == ' '
+        return false
+
+    for at in range(from: 0, to: value.len())
+        c = value[at]
+
+        if c < ' ' || c > '~' || c == ',' || c == '='
+            return false
+
+    return true
+
+# A `tracestate` member read: its key and its value.
+record Member
+    # The key.
+    key: str
+    # The value.
+    value: str
+
+# `s` with its spaces and tabs at either end taken off.
+function trimmed(s: str) -> str
+    from @= 0
+    to @= s.len()
+
+    while from < to && (s[from] == ' ' || s[from] == '\t')
+        from @ from + 1
+
+    while to > from && (s[to - 1] == ' ' || s[to - 1] == '\t')
+        to @ to - 1
+
+    return s.slice(from: from, to: to)
+
+# The members of a `tracestate`, in their order: each between commas, spaces
+# and tabs around it taken off, an empty one passed over. Fails `invalid` where
+# a member is not `key=value`, a key stands twice, or there are more than 32.
+function parse_tracestate(s: str) -> [Member]?
+    out: [Member] @= []
+    seen: {str: bool} @= {}
+    from @= 0
+
+    while from <= s.len()
+        to @= from
+
+        while to < s.len() && s[to] != ','
+            to @ to + 1
+
+        piece = trimmed(s.slice(from: from, to: to))
+
+        if piece != ""
+            out @ out.push(member_of(piece)?)
+            last = out[out.len() - 1].key
+
+            if seen[last].default(false)
+                return fail(code: INVALID, msg: f"the tracestate names \"{last}\" twice")
+            seen[last] @ true
+        from @ to + 1
+
+    if out.len() > MAX_MEMBERS
+        return fail(code: INVALID, msg: f"a tracestate holds {MAX_MEMBERS} members at most, and this one {out.len()}")
+    return ok(out)
+
+# One member, `key=value`, read. Fails `invalid` where the key or the value is
+# not one.
+function member_of(piece: str) -> Member?
+    for at in range(from: 0, to: piece.len())
+        if piece[at] == '='
+            key = piece.slice(from: 0, to: at)
+            value = piece.slice(from: at + 1, to: piece.len())
+
+            if !is_key(key) || !is_value(value)
+                return fail(
+                    code: INVALID,
+                    msg: f"\"{piece}\" is no tracestate member: a key of lowercase letters, digits and _-*/, and a value of printable bytes"
+                )
+            return ok(Member(key: key, value: value))
+
+    return fail(code: INVALID, msg: f"\"{piece}\" is no tracestate member: it holds no =")
+
+test "parse_id: a trace's and a span's id, uppercase, zeros and the wrong length refused"
+    assert bytes.format_hex(parse_id("0af7651916cd43dd8448eb211c80319c", digits: 32).must()) == "0af7651916cd43dd8448eb211c80319c"
+    assert parse_id("0AF7651916CD43DD8448EB211C80319C", digits: 32).is_err()
+    assert parse_id("0000000000000000", digits: 16).is_err()
+    assert parse_id("b7ad6b716920333", digits: 16).is_err()
+
+test "parse_traceparent: the Recommendation's example, flags kept whole, and Go's and Python's refusals"
+    p = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    assert bytes.format_hex(p.trace_id) == "0af7651916cd43dd8448eb211c80319c"
+    assert bytes.format_hex(p.span_id) == "b7ad6b7169203331"
+    assert p.flags == 1
+    assert parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-03").must().flags == 3
+    assert parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-ff").must().flags == 255
+
+    for bad in ["00-0AF7651916CD43DD8448EB211C80319C-B7AD6B7169203331-01", "00-00000000000000000000000000000000-b7ad6b7169203331-01", "00-0af7651916cd43dd8448eb211c80319c-0000000000000000-01", "ff-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01", "01-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01extra", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01-extra", "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-1", " 00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01", "0g-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01", "00-0af7651916cd43dd8448eb211c80319g-b7ad6b7169203331-01", "00_0af7651916cd43dd8448eb211c80319c_b7ad6b7169203331_01", ""]
+        assert parse_traceparent(bad).is_err()
+
+test "parse_traceparent: a later version, with and without more after it"
+    assert parse_traceparent("01-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must().flags == 1
+    assert parse_traceparent("01-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01-extra").must().flags == 1
+
+test "format_traceparent: version 00, lowercase"
+    p = parse_traceparent("01-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01-extra").must()
+    assert format_traceparent(trace_id: p.trace_id, span_id: p.span_id, flags: p.flags) == "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+
+test "parse_tracestate: the Recommendation's example, spaces, empty members, and every refusal Go and Python share"
+    two = parse_tracestate("rojo=00f067aa0ba902b7 , congo=t61rcWkgMzE").must()
+    assert two == [Member(key: "rojo", value: "00f067aa0ba902b7"), Member(key: "congo", value: "t61rcWkgMzE")]
+    assert parse_tracestate(",,a=1,,").must() == [Member(key: "a", value: "1")]
+    assert parse_tracestate("").must().len() == 0
+    assert parse_tracestate("k=trailing ").must()[0].value == "trailing"
+    assert parse_tracestate("k=has space").must()[0].value == "has space"
+    assert parse_tracestate("a@b=1").must()[0].key == "a@b"
+    assert parse_tracestate("0@b=v").must()[0].key == "0@b"
+    assert parse_tracestate("k=~").must()[0].value == "~"
+
+    for bad in ["rojo=1,rojo=2", "Rojo=1", "k=", "k=a,b", "a=1,b", "=1", "k=a=b", "1a=v", "a@1=v", "k=v\tx"]
+        assert parse_tracestate(bad).is_err()
+
+test "parse_tracestate: 32 members and 33, keys and values at their longest and one past"
+    members: [str] @= []
+
+    for i in range(from: 0, to: 32)
+        members @ members.push(f"k{i}=v")
+
+    assert parse_tracestate(members.join(",")).must().len() == 32
+    members @ members.push("k32=v")
+    assert parse_tracestate(members.join(",")).is_err()
+    assert parse_tracestate(repeat("a", 256) + "=v").must().len() == 1
+    assert parse_tracestate(repeat("a", 257) + "=v").is_err()
+    assert parse_tracestate("k=" + repeat("v", 256)).must().len() == 1
+    assert parse_tracestate("k=" + repeat("v", 257)).is_err()
+    assert parse_tracestate("a@" + repeat("b", 14) + "=v").must().len() == 1
+    assert parse_tracestate("a@" + repeat("b", 15) + "=v").is_err()

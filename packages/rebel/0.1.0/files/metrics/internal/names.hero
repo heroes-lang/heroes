@@ -1,0 +1,110 @@
+# What a name of the Prometheus data model may be, and how a label's value and
+# a help text are escaped in the two text formats: the rules of the classic
+# exposition format 0.0.4, which every Prometheus server reads.
+
+# Whether `c`, a byte, is an ASCII letter.
+function is_letter(c: u8) -> bool
+    return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+# Whether `c`, a byte, is an ASCII digit.
+function is_digit(c: u8) -> bool
+    return c >= '0' && c <= '9'
+
+# Whether `s` is a metric's name: `[a-zA-Z_:][a-zA-Z0-9_:]*`, never empty.
+function is_metric_name(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+        fits = is_letter(c) || c == '_' || c == ':' || at > 0 && is_digit(c)
+
+        if !fits
+            return false
+
+    return true
+
+# Whether `s` is a label's name: `[a-zA-Z_][a-zA-Z0-9_]*`, never empty. A name
+# opening with `__` is one, though the registry keeps those for Prometheus.
+function is_label_name(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+        fits = is_letter(c) || c == '_' || at > 0 && is_digit(c)
+
+        if !fits
+            return false
+
+    return true
+
+# `s` as a label's value is written between quotes: a backslash, a quote and a
+# line feed escaped, every other byte as it is.
+function escape_label_value(s: str) -> str
+    return escaped(s: s, quote: true)
+
+# `s` as the 0.0.4 format writes a help text: a backslash and a line feed
+# escaped, a quote as it is.
+function escape_help(s: str) -> str
+    return escaped(s: s, quote: false)
+
+# `s` as OpenMetrics writes a help text: a backslash, a quote and a line feed
+# escaped.
+function escape_help_openmetrics(s: str) -> str
+    return escaped(s: s, quote: true)
+
+# `s` with a backslash written `\\`, a line feed `\n`, and a quote `\"` where
+# `quote` asks; its other bytes copied between the escapes in whole runs.
+function escaped(s: str, quote: bool) -> str
+    pieces: [str] @= []
+    from @= 0
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        replacement = if c == '\\'
+            "\\\\"
+        else if c == '\n'
+            "\\n"
+        else if c == '"' && quote
+            "\\\""
+        else
+            ""
+
+        if replacement != ""
+            pieces @ pieces.push(s.slice(from: from, to: at))
+            pieces @ pieces.push(replacement)
+            from @ at + 1
+
+    pieces @ pieces.push(s.slice(from: from, to: s.len()))
+    return pieces.join("")
+
+test "is_metric_name: the empty name, a digit first, a colon, letters and digits, a dot and a character of two bytes"
+    assert !is_metric_name("")
+    assert !is_metric_name("1a")
+    assert is_metric_name(":a")
+    assert is_metric_name("http_requests_total")
+    assert is_metric_name("a:b_9")
+    assert !is_metric_name("a.b")
+    assert !is_metric_name("é")
+    assert !is_metric_name("a b")
+
+test "is_label_name: no colon, no digit first, the underscore and a name of two underscores"
+    assert !is_label_name("")
+    assert !is_label_name("a:b")
+    assert !is_label_name("9a")
+    assert is_label_name("_")
+    assert is_label_name("__name__")
+    assert is_label_name("method")
+
+test "escape_label_value: the empty text, each escape, and characters of more than one byte"
+    assert escape_label_value("") == ""
+    assert escape_label_value("/a\"b\\c\nd") == "/a\\\"b\\\\c\\nd"
+    assert escape_label_value("é€") == "é€"
+    assert escape_label_value("\\") == "\\\\"
+
+test "escape_help: a quote kept in 0.0.4 and escaped in OpenMetrics"
+    assert escape_help("Requests \\ served\nso \"far\".") == "Requests \\\\ served\\nso \"far\"."
+    assert escape_help_openmetrics("A \"quoted\" help.") == "A \\\"quoted\\\" help."
+    assert escape_help("") == ""

@@ -1,0 +1,82 @@
+# What the face's tests share: the registry `client_golang` 1.25 was given to
+# write the texts the tests hold `format_text` and `format_openmetrics` to,
+# built in a store of this package's own.
+
+use metrics/internal/recording
+use metrics/internal/store
+
+# A family described in the short, with no unit, constant label or option.
+function family(name: str, help: str, kind: store.Kind, labels: [str]) -> store.Family
+    return store.Family(
+        name: name,
+        help: help,
+        unit: "",
+        kind: kind,
+        labels: labels,
+        const_names: [],
+        const_values: [],
+        buckets: [],
+        quantiles: [],
+        errors: [],
+        states: []
+    )
+
+# The families and values the Go program of the tests recorded, alike.
+function go_store() -> store.Store
+    s @= store.new_store()
+    store.register(
+        @s,
+        f: family(name: "http_requests_total", help: "Requests \\ served\nso \"far\".", kind: .counter, labels: ["method", "path"])
+    ).must()
+    recording.add(@s, name: "http_requests_total", labels: ["GET", "/a\"b\\c\nd"], amount: 3.0, call: "add").must()
+    recording.add(@s, name: "http_requests_total", labels: ["POST", "/é"], amount: 1.0, call: "inc").must()
+    store.register(@s, f: family(name: "temp", help: "Values.", kind: .gauge, labels: ["v"])).must()
+    values = [
+        0.0
+        1.0
+        -1.0
+        0.5
+        1_000_000.0
+        1_234_567.0
+        100_000.0
+        0.00001
+        0.0001
+        123_456_789_012.0
+        1.0 / 0.0
+        -1.0 / 0.0
+        0.0 / 0.0
+        -0.0
+    ]
+
+    for i in range(from: 0, to: values.len())
+        label = if i < 10
+            f"x0{i}"
+        else
+            f"x{i}"
+        recording.set(@s, name: "temp", labels: [label], value: values[i]).must()
+
+    histogram @= family(name: "rpc_seconds", help: "Latency.", kind: .histogram, labels: [])
+    histogram.buckets @ [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+    store.register(@s, f: histogram).must()
+
+    for x in [0.003, 0.02, 0.2, 2.0, 20.0, 0.005]
+        recording.observe(@s, name: "rpc_seconds", labels: [], value: x).must()
+
+    store.register(@s, f: family(name: "plain_total", help: "", kind: .counter, labels: [])).must()
+    latency @= family(name: "lat_seconds", help: "L.", kind: .histogram, labels: ["op"])
+    latency.buckets @ [1.0, 5.0]
+    latency.const_names @ ["zone"]
+    latency.const_values @ ["eu"]
+    store.register(@s, f: latency).must()
+    recording.observe(@s, name: "lat_seconds", labels: ["w"], value: 3.0).must()
+    recording.observe(@s, name: "lat_seconds", labels: ["r"], value: 0.5).must()
+    recording.observe(@s, name: "lat_seconds", labels: ["r"], value: 7.0).must()
+    store.register(@s, f: family(name: "sz", help: "Sizes.", kind: .summary, labels: [])).must()
+    recording.observe(@s, name: "sz", labels: [], value: 2.5).must()
+    return s
+
+test "go_store: six families and the series Go's program recorded"
+    s = go_store()
+    assert s.families.len() == 6
+    assert recording.value_of(s, name: "http_requests_total", labels: ["GET", "/a\"b\\c\nd"]).must() == 3.0
+    assert recording.count_of(s, name: "lat_seconds", labels: ["r"]).must() == 2

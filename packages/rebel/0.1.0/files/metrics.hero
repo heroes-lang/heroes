@@ -1,0 +1,2681 @@
+# Counters, gauges, histograms and summaries, each with labels, kept in a
+# registry the program holds as a value; written in Prometheus's text format
+# 0.0.4 and in OpenMetrics 1.0 as Prometheus's own Go client writes them,
+# served to a scraper by `respond`, pushed to a Pushgateway, sent as StatsD
+# and DogStatsD lines over UDP, and exported to an OpenTelemetry collector as
+# OTLP over HTTP.
+#
+# **There is no default registry.** The language has no globals, so a
+# registry is a value the program makes with `new_registry`, describes its
+# families into with `register`, and passes `@` to the code that records:
+# `metrics.inc(@registry, name: "jobs_total", labels: ["ok"])`. A family is
+# named once and recorded by its name and its labels' values, in the order its
+# description lists the labels.
+#
+# **What is written is Go's `client_golang`'s**, measured against version
+# 1.25: families ordered by name, each family's series by their labels'
+# values, the labels of a sample ordered by name with `le` and `quantile` last,
+# a float as Go's `strconv` writes it (`1`, `0.5`, `1e+06`), and the default
+# buckets Go's. Python's client writes `1.0`, puts `_count` before `_sum`, and
+# has other default buckets; both are read alike by every Prometheus server.
+#
+# **What it does not do.** Spans, their context and log records are
+# `tracing`'s; the HTTP server is `http`'s, and a program serves `respond`
+# from its own loop or its router (`web`), since a handler cannot reach a
+# registry the program goes on changing. A summary's quantiles cover every
+# observation since the series began: there is no window of age, the
+# registry having no clock. The process's own CPU time and memory are not
+# read. A text in the OpenMetrics format is written, never read; the 0.0.4
+# format is read by `parse_text`.
+#
+# The codes it fails with: `invalid` (a name, a label, a value or a text no
+# format allows, a call that does not fit the family's kind), `exists` (a
+# family whose name, or one of its samples' names, is taken), `not_found` (no
+# family or no series of that name), `failed` (a Pushgateway or a collector
+# that refused), and, from the network, the codes of `http.send` and of
+# `net.send_to`.
+
+use bytes
+use http
+use math
+use metrics/internal/fixture
+use metrics/internal/gathered
+use metrics/internal/names
+use metrics/internal/otlp
+use metrics/internal/otlp_metrics
+use metrics/internal/posting
+use metrics/internal/recording
+use metrics/internal/statsd
+use metrics/internal/store
+use metrics/internal/text_read
+use metrics/internal/text_write
+use net
+use numbers
+use random
+use strings
+use time
+
+## Codes
+
+# The code of a name, a label, a value or a text that no format allows, and
+# of a call that does not fit its family's kind: `register`, every recording
+# function, `parse_text`, the StatsD functions.
+constant INVALID: str
+    "invalid"
+
+# The code of a family whose name, or the name of one of its samples, another
+# family holds already: `register`.
+constant EXISTS: str
+    "exists"
+
+# The code of a name or a series that is not there: every function that
+# takes a family's name, and `sample_value`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a Pushgateway or a collector that answered with a status other
+# than success: `push_to_gateway`, `push_add_to_gateway`, `delete_from_gateway`, `export_otlp`.
+constant FAILED: str
+    "failed"
+
+## Families described
+
+# What a family measures, which says how it is recorded and written.
+variant Kind
+    # A value that only goes up, or back to zero when the program restarts:
+    # `inc`, `add`.
+    counter
+    # A value that goes up and down: `set`, `inc`, `dec`, `add`.
+    gauge
+    # Observations counted into buckets by their size, with their sum and
+    # count: `observe`.
+    histogram
+    # Observations with their sum, count and chosen quantiles: `observe`.
+    summary
+    # Facts about the program as labels of a value that is always 1:
+    # `set_info`. Written as a gauge in the 0.0.4 format.
+    info
+    # Which of several states each series is in: `set_state`. Written as a
+    # gauge in the 0.0.4 format, one sample per state.
+    state_set
+    # A value of no kind: `untyped` in the 0.0.4 format, `unknown` in
+    # OpenMetrics; recorded as a gauge is.
+    unknown
+
+# A quantile a summary answers, and how far from it its answer may be.
+record Quantile
+    # The quantile, 0 to 1: 0.5 for the median, 0.99 for the 99th
+    # percentile.
+    quantile: f64
+    # The error allowed in its rank, above 0 and under 1: 0.01 lets the
+    # answer's rank be one hundredth of the count away from the quantile's.
+    error: f64
+
+# A label: a name and its value, as a sample carries it.
+record Label
+    # The name: `[a-zA-Z_][a-zA-Z0-9_]*`.
+    name: str
+    # The value, any text, the empty text included.
+    value: str
+
+# A family described before it is registered: its name, help, kind, the
+# names of its labels and what its kind needs. Made by `counter`, `gauge`,
+# `untyped`, `histogram`, `summary`, `info` or `state_set`, and changed by
+# `with_unit` and `with_const_labels`; `register` checks it.
+record Desc
+    # The name as the 0.0.4 format writes it: `[a-zA-Z_:][a-zA-Z0-9_:]*`. A
+    # counter's ends in `_total` by custom, which OpenMetrics takes off its
+    # family's name and puts back on its sample's.
+    name: str
+    # What it measures, in a sentence; any text, the empty text included.
+    help: str
+    # Its unit, `seconds` or `bytes`, which OpenMetrics writes; "" for none.
+    # The name must end with `_` and the unit, before a counter's `_total`.
+    unit: str
+    # Its kind.
+    kind: Kind
+    # The names of the labels every series of it has, in the order the
+    # recording functions take their values; none for a family of one series.
+    labels: [str]
+    # Labels every series carries with the same value, written with the
+    # others.
+    const_labels: [Label]
+    # A histogram's buckets' upper bounds, ascending, the `+Inf` bucket after
+    # them implied; empty for the other kinds.
+    buckets: [f64]
+    # A summary's quantiles; empty for the other kinds, and for a summary
+    # that writes only its sum and count.
+    quantiles: [Quantile]
+    # A state set's states, in their order; empty for the other kinds.
+    states: [str]
+
+# A counter's description.
+#
+# - `name`: the family's name, `http_requests_total`.
+# - `help`: what it counts.
+# - `labels`: the names of its labels, in order; none for one series.
+#
+# See also `register`, `inc`, `add`.
+function counter(name: str, help: str, labels: [str]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .counter,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: [],
+        states: []
+    )
+
+# A gauge's description.
+#
+# - `name`: the family's name, `queue_length`.
+# - `help`: what it measures.
+# - `labels`: the names of its labels, in order.
+#
+# See also `set`, `inc`, `dec`, `add`.
+function gauge(name: str, help: str, labels: [str]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .gauge,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: [],
+        states: []
+    )
+
+# The description of a family of no kind, recorded as a gauge.
+#
+# - `name`: the family's name.
+# - `help`: what it measures.
+# - `labels`: the names of its labels, in order.
+#
+# See also `gauge`.
+function untyped(name: str, help: str, labels: [str]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .unknown,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: [],
+        states: []
+    )
+
+# A histogram's description.
+#
+# - `name`: the family's name, `request_duration_seconds`; its samples are
+#   `<name>_bucket`, `<name>_sum` and `<name>_count`.
+# - `help`: what it observes.
+# - `labels`: the names of its labels, in order; `le` is the bucket's own.
+# - `buckets`: the upper bounds, strictly ascending, no NaN: `DEFAULT_BUCKETS`,
+#   `linear_buckets` or `exponential_buckets`; a last `+Inf` is taken off, the
+#   `+Inf` bucket being always there; none leaves it alone.
+#
+# See also `observe`.
+function histogram(name: str, help: str, labels: [str], buckets: [f64]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .histogram,
+        labels: labels,
+        const_labels: [],
+        buckets: buckets,
+        quantiles: [],
+        states: []
+    )
+
+# A summary's description.
+#
+# - `name`: the family's name; its samples are `<name>` with a `quantile`
+#   label, `<name>_sum` and `<name>_count`.
+# - `help`: what it observes.
+# - `labels`: the names of its labels, in order; `quantile` is the
+#   quantile's own.
+# - `quantiles`: the quantiles it answers, each from 0 to 1 and with an error
+#   above 0 and under 1, none twice; none writes only the sum and the count,
+#   as Go's default and Python's summary do.
+#
+# See also `observe`, `quantile_of`.
+function summary(name: str, help: str, labels: [str], quantiles: [Quantile]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .summary,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: quantiles,
+        states: []
+    )
+
+# An info's description: a family whose series say facts by their labels,
+# each of value 1, as Python's `Info` writes them.
+#
+# - `name`: the family's name, `build_info` by custom, which OpenMetrics
+#   writes as the family `build` of type `info`.
+# - `help`: what it tells.
+# - `labels`: the names of the facts, `version`, `revision`.
+#
+# See also `set_info`.
+function info(name: str, help: str, labels: [str]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .info,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: [],
+        states: []
+    )
+
+# A state set's description: each series is in one of `states` at a time, as
+# Python's `Enum` writes it.
+#
+# - `name`: the family's name, which is also the name of the label holding
+#   the state, so it must be a label's name as well.
+# - `help`: what the state is of.
+# - `labels`: the names of its labels, in order.
+# - `states`: the states, at least one, none twice, any text.
+#
+# See also `set_state`.
+function state_set(name: str, help: str, labels: [str], states: [str]) -> Desc
+    return Desc(
+        name: name,
+        help: help,
+        unit: "",
+        kind: .state_set,
+        labels: labels,
+        const_labels: [],
+        buckets: [],
+        quantiles: [],
+        states: states
+    )
+
+# A copy of `d` measured in `unit`, which OpenMetrics writes as `# UNIT`.
+#
+# - `d`: the description.
+# - `unit`: `seconds`, `bytes`; letters, digits and `_`. The name must end in
+#   `_<unit>`, before a counter's `_total`, which `register` checks.
+function with_unit(d: Desc, unit: str) -> Desc
+    out @= d
+    out.unit @ unit
+    return out
+
+# A copy of `d` whose every series carries `labels` too, as Go's
+# `ConstLabels` does.
+#
+# - `d`: the description.
+# - `labels`: the labels, after any `d` carries already; their names must
+#   differ from one another and from `d.labels`.
+function with_const_labels(d: Desc, labels: [Label]) -> Desc
+    out @= d
+    joined @= d.const_labels
+
+    for l in labels
+        joined @ joined.push(l)
+
+    out.const_labels @ joined
+    return out
+
+# A family's name made of its parts joined by `_`, an empty part left out, as
+# Go's `BuildFQName` makes it.
+#
+# - `namespace`: the program or the domain, `myapp`; "" for none.
+# - `subsystem`: the part of it, `http`; "" for none.
+# - `name`: the name itself, `requests_total`.
+#
+# `myapp_http_requests_total`, or "" where `name` is "".
+function full_name(namespace: str, subsystem: str, name: str) -> str
+    if name == ""
+        return ""
+    parts: [str] @= []
+
+    if namespace != ""
+        parts @ parts.push(namespace)
+
+    if subsystem != ""
+        parts @ parts.push(subsystem)
+    parts @ parts.push(name)
+    return parts.join("_")
+
+## Buckets
+
+# Go's default buckets, for a duration in seconds from 5 milliseconds to 10
+# seconds: 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10.
+constant DEFAULT_BUCKETS: [f64]
+    [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+
+# `count` bounds from `start`, each `width` above the one before.
+#
+# - `start`: the first bound, any finite number.
+# - `width`: the step, above 0.
+# - `count`: how many bounds, 1 or more.
+#
+# Each bound is `start + i * width`, as Go's `LinearBuckets` computes it, so
+# `0.1` added ten times is not quite `1`. Fails `invalid` where `count` is
+# under 1 or `width` is not above 0. See also `exponential_buckets`.
+function linear_buckets(start: f64, width: f64, count: i64) -> [f64]?
+    if count < 1 || width != width || start != start || !(width > 0.0)
+        return fail(
+            code: INVALID,
+            msg: f"linear buckets need a count of 1 or more and a width above 0: count {count}, width {width}"
+        )
+    out: [f64] @= []
+    bound @= start
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(bound)
+        bound @ bound + width
+
+    return ok(out)
+
+# `count` bounds from `start`, each `factor` times the one before.
+#
+# - `start`: the first bound, above 0.
+# - `factor`: the ratio, above 1.
+# - `count`: how many bounds, 1 or more.
+#
+# Each bound is the one before multiplied by `factor`, as Go's
+# `ExponentialBuckets` computes it. Fails `invalid` where `count` is under 1,
+# `start` is not above 0 or `factor` is not above 1. See also
+# `exponential_buckets_range`.
+function exponential_buckets(start: f64, factor: f64, count: i64) -> [f64]?
+    if count < 1 || start != start || factor != factor || !(start > 0.0) || !(factor > 1.0)
+        return fail(
+            code: INVALID,
+            msg: f"exponential buckets need a count of 1 or more, a start above 0 and a factor above 1: count {count}, start {start}, factor {factor}"
+        )
+    out: [f64] @= []
+    bound @= start
+
+    for _ in range(from: 0, to: count)
+        out @ out.push(bound)
+        bound @ bound * factor
+
+    return ok(out)
+
+# `count` bounds from `min` to `max`, each the same ratio above the one
+# before.
+#
+# - `min`: the first bound, above 0.
+# - `max`: the last, above `min`.
+# - `count`: how many bounds, 2 or more.
+#
+# The ratio is `(max / min)` to the power `1 / (count - 1)`, and bound `i` is
+# `min` times the ratio to the power `i`, as Go's `ExponentialBucketsRange`
+# computes them, with C's `pow`, which is exact where Go's is a few units off in
+# the last place: the bounds of 0.001 to 10 in 5 are 0.001, 0.01, 0.1, 1 and
+# 10 here and 1.0000000000000007 among Go's. Fails `invalid` where `count` is under 2, `min` is not above
+# 0 or `max` is not above `min`. See also `exponential_buckets`.
+function exponential_buckets_range(min: f64, max: f64, count: i64) -> [f64]?
+    if count < 2 || min != min || max != max || !(min > 0.0) || !(max > min)
+        return fail(
+            code: INVALID,
+            msg: f"exponential buckets over a range need a count of 2 or more and 0 < min < max: count {count}, min {min}, max {max}"
+        )
+    ratio = math.pow(base: max / min, exponent: 1.0 / to_f64(count - 1))
+    out: [f64] @= []
+
+    for i in range(from: 0, to: count)
+        out @ out.push(min * math.pow(base: ratio, exponent: to_f64(i)))
+
+    return ok(out)
+
+## The registry
+
+# The families a program has described and every value recorded in them:
+# made by `new_registry`, changed by `register` and the recording functions,
+# read by `gather`, `respond` and `encode_otlp`. A value like any other: a
+# copy is a snapshot, and the program passes its own `@`.
+record Registry
+    # The families, their series, and the maps that find them by name, which
+    # only this package's functions read and change.
+    store: store.Store
+
+# An empty registry.
+#
+# See also `register`.
+function new_registry() -> Registry
+    return Registry(store: store.new_store())
+
+# Adds the family `d` describes to `registry`, with no series yet.
+#
+# - `registry`: the registry, which gains the family, and its one series
+#   where it has no label: a counter or a gauge at 0, an info at 1, a state
+#   set in its first state, as Go's and Python's clients make it.
+# - `d`: the description, as `counter`, `histogram` and their kin make it.
+#
+# Fails `invalid` where a name is no metric's or label's name, a label's
+# name opens with `__`, stands twice or is the kind's own (`le`, `quantile`,
+# a state set's name), the buckets are not strictly ascending, a quantile or
+# its error is out of range, a state set has no state or one twice, or the
+# unit is not the name's end; `exists` where the family's name, or the name
+# of one of its samples, is another family's. See also `unregister`.
+function register(@registry: Registry, d: Desc) -> ()?
+    const_names: [str] @= []
+    const_values: [str] @= []
+
+    for l in d.const_labels
+        const_names @ const_names.push(l.name)
+        const_values @ const_values.push(l.value)
+
+    quantiles: [f64] @= []
+    errors: [f64] @= []
+
+    for q in d.quantiles
+        quantiles @ quantiles.push(q.quantile)
+        errors @ errors.push(q.error)
+
+    kind: store.Kind = match d.kind
+        .counter   => .counter
+        .gauge     => .gauge
+        .histogram => .histogram
+        .summary   => .summary
+        .info      => .info
+        .state_set => .state_set
+        .unknown   => .unknown
+
+    return store.register(
+        @registry.store,
+        f: store.Family(name: d.name, help: d.help, unit: d.unit, kind: kind, labels: d.labels, const_names: const_names, const_values: const_values, buckets: d.buckets, quantiles: quantiles, errors: errors, states: d.states)
+    )
+
+# Takes the family `name` and every series of it out of `registry`.
+#
+# - `registry`: the registry, which loses the family.
+# - `name`: the family's name.
+#
+# Fails `not_found` where no family has that name. See also `register`,
+# `remove_all`.
+function unregister(@registry: Registry, name: str) -> ()?
+    return store.unregister(@registry.store, name: name)
+
+# The description of the family `name`, as `register` checked it.
+#
+# - `registry`: the registry.
+# - `name`: the family's name.
+#
+# Fails `not_found` where no family has that name.
+function desc_of(registry: Registry lent, name: str) -> Desc?
+    f = store.family_named(registry.store, name: name)?
+    const_labels: [Label] @= []
+
+    for i in range(from: 0, to: f.const_names.len())
+        const_labels @ const_labels.push(Label(name: f.const_names[i], value: f.const_values[i]))
+
+    quantiles: [Quantile] @= []
+
+    for i in range(from: 0, to: f.quantiles.len())
+        quantiles @ quantiles.push(Quantile(quantile: f.quantiles[i], error: f.errors[i]))
+
+    kind: Kind = match f.kind
+        .counter   => .counter
+        .gauge     => .gauge
+        .histogram => .histogram
+        .summary   => .summary
+        .info      => .info
+        .state_set => .state_set
+        .unknown   => .unknown
+
+    return ok(
+        Desc(name: f.name, help: f.help, unit: f.unit, kind: kind, labels: f.labels, const_labels: const_labels, buckets: f.buckets, quantiles: quantiles, states: f.states)
+    )
+
+## Recording
+
+# Adds 1 to a counter's or a gauge's series.
+#
+# - `registry`: the registry, whose series changes, made at 0 where it was
+#   not there.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in the order its description names
+#   them.
+#
+# Fails `not_found` where no family has that name, `invalid` where it is no
+# counter or gauge or `labels` holds another count of values. See also `add`.
+function inc(@registry: Registry, name: str, labels: [str]) -> ()?
+    return recording.add(@registry.store, name: name, labels: labels, amount: 1.0, call: "inc")
+
+# Takes 1 from a gauge's series.
+#
+# - `registry`: the registry, whose series changes.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+#
+# Fails `not_found` where no family has that name, `invalid` where it is no
+# gauge or `labels` holds another count. See also `add`.
+function dec(@registry: Registry, name: str, labels: [str]) -> ()?
+    return recording.dec(@registry.store, name: name, labels: labels)
+
+# Adds `amount` to a counter's or a gauge's series.
+#
+# - `registry`: the registry, whose series changes, made at 0 where it was
+#   not there.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+# - `amount`: what is added: 0 or more for a counter, which never goes down,
+#   any number for a gauge, a negative one taking away.
+#
+# Fails `not_found` where no family has that name; `invalid` where it is no
+# counter or gauge, `labels` holds another count, or a counter is given a
+# negative amount or NaN, as Go's client refuses them. See also `inc`.
+function add(@registry: Registry, name: str, labels: [str], amount: f64) -> ()?
+    return recording.add(@registry.store, name: name, labels: labels, amount: amount, call: "add")
+
+# Sets a gauge's series to `value`.
+#
+# - `registry`: the registry, whose series changes, made where it was not
+#   there.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+# - `value`: any number, NaN and the infinities included.
+#
+# Fails `not_found` where no family has that name, `invalid` where it is no
+# gauge or `labels` holds another count. See also `set_to_time`.
+function set(@registry: Registry, name: str, labels: [str], value: f64) -> ()?
+    return recording.set(@registry.store, name: name, labels: labels, value: value)
+
+# Sets a gauge's series to the seconds from 1970 to `at`, as Go's
+# `SetToCurrentTime` does with the clock.
+#
+# - `registry`: the registry, whose series changes.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+# - `at`: the moment; `time.now()` for the present.
+#
+# Fails as `set` does.
+function set_to_time(@registry: Registry, name: str, labels: [str], at: time.Instant) -> ()?
+    return set(@registry, name: name, labels: labels, value: to_f64(at.unix_nanoseconds) / 1_000_000_000.0)
+
+# Adds the observation `value` to a histogram's or a summary's series.
+#
+# - `registry`: the registry, whose series changes, made where it was not
+#   there.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+# - `value`: the observation; a histogram counts it in the first bucket whose
+#   bound is `value` or above. The infinities are taken; NaN is not.
+#
+# Fails `not_found` where no family has that name, `invalid` where it is no
+# histogram or summary, `labels` holds another count, or `value` is NaN, which
+# would make the sum NaN and fits no bucket. See also `observe_duration`.
+function observe(@registry: Registry, name: str, labels: [str], value: f64) -> ()?
+    return recording.observe(@registry.store, name: name, labels: labels, value: value)
+
+# Adds the duration `d`, in seconds, as an observation, as Go's `Timer` and
+# Python's `time()` do.
+#
+# - `registry`: the registry, whose series changes.
+# - `name`: the family's name, which ends in `_seconds` by custom.
+# - `labels`: the values of its labels, in order.
+# - `d`: the duration, as `time.since` answers it; a negative one is observed
+#   as it is.
+#
+# Fails as `observe` does.
+function observe_duration(@registry: Registry, name: str, labels: [str], d: time.Duration) -> ()?
+    return observe(@registry, name: name, labels: labels, value: to_f64(d.nanoseconds) / 1_000_000_000.0)
+
+# Puts a state set's series in `state`, every other state of it at 0.
+#
+# - `registry`: the registry, whose series changes, made where it was not
+#   there.
+# - `name`: the family's name.
+# - `labels`: the values of its labels, in order.
+# - `state`: one of the family's states.
+#
+# Fails `not_found` where no family has that name, `invalid` where it is no
+# state set, `labels` holds another count, or `state` is none of its states.
+function set_state(@registry: Registry, name: str, labels: [str], state: str) -> ()?
+    return recording.set_state(@registry.store, name: name, labels: labels, state: state)
+
+# Makes an info's series, whose labels say the facts, with the value 1.
+#
+# - `registry`: the registry, which gains the series where it was not there.
+# - `name`: the family's name.
+# - `labels`: the facts, the values of its labels in order.
+#
+# A changed fact is a new series: `remove` the old one. Fails `not_found`
+# where no family has that name, `invalid` where it is no info or `labels`
+# holds another count.
+function set_info(@registry: Registry, name: str, labels: [str]) -> ()?
+    return recording.set_info(@registry.store, name: name, labels: labels)
+
+# Takes one series out of a family, as Go's `DeleteLabelValues` does.
+#
+# - `registry`: the registry, which loses the series.
+# - `name`: the family's name.
+# - `labels`: the series' labels' values, in order.
+#
+# Fails `not_found` where no family has that name or it holds no such series.
+# See also `remove_all`.
+function remove(@registry: Registry, name: str, labels: [str]) -> ()?
+    return recording.remove(@registry.store, name: name, labels: labels)
+
+# Takes out of a family every series whose labels hold `labels`, as Go's
+# `DeletePartialMatch` and Python's `remove_by_labels` do.
+#
+# - `registry`: the registry, which loses the series.
+# - `name`: the family's name.
+# - `labels`: the labels a series must hold, by name, in any order; a name
+#   that is none of the family's labels matches no series, and none matches
+#   every series.
+#
+# How many series were taken out. Fails `not_found` where no family has that
+# name. See also `remove`.
+function remove_matching(@registry: Registry, name: str, labels: [Label]) -> i64?
+    label_names: [str] @= []
+    label_values: [str] @= []
+
+    for l in labels
+        label_names @ label_names.push(l.name)
+        label_values @ label_values.push(l.value)
+
+    return recording.remove_matching(@registry.store, name: name, label_names: label_names, label_values: label_values)
+
+# Takes every series out of a family, which stays registered, as Go's `Reset`
+# and Python's `clear` do.
+#
+# - `registry`: the registry, which loses the series.
+# - `name`: the family's name.
+#
+# Fails `not_found` where no family has that name. See also `remove`,
+# `unregister`.
+function remove_all(@registry: Registry, name: str) -> ()?
+    return recording.remove_all(@registry.store, name: name)
+
+## Reading back
+
+# A counter's, a gauge's or an info's value for one series, as Go's
+# `testutil.ToFloat64` reads it.
+#
+# - `registry`: the registry.
+# - `name`: the family's name.
+# - `labels`: the series' labels' values, in order.
+#
+# Fails `not_found` where no family has that name or no such series was
+# recorded, `invalid` where the family is a histogram, a summary or a state
+# set. See also `count_of`, `sample_value`.
+function value_of(registry: Registry lent, name: str, labels: [str]) -> f64?
+    return recording.value_of(registry.store, name: name, labels: labels)
+
+# How many observations a histogram's or a summary's series holds.
+#
+# - `registry`: the registry.
+# - `name`: the family's name.
+# - `labels`: the series' labels' values, in order.
+#
+# Fails `not_found` where no family has that name or no such series was
+# recorded, `invalid` where it is no histogram or summary. See also `sum_of`.
+function count_of(registry: Registry lent, name: str, labels: [str]) -> u64?
+    return recording.count_of(registry.store, name: name, labels: labels)
+
+# The sum of a histogram's or a summary's series' observations.
+#
+# - `registry`: the registry.
+# - `name`: the family's name.
+# - `labels`: the series' labels' values, in order.
+#
+# Fails as `count_of` does.
+function sum_of(registry: Registry lent, name: str, labels: [str]) -> f64?
+    return recording.sum_of(registry.store, name: name, labels: labels)
+
+# The value a summary's series answers for one of its quantiles, within the
+# quantile's error.
+#
+# - `registry`: the registry.
+# - `name`: the summary's name.
+# - `labels`: the series' labels' values, in order.
+# - `quantile`: one of the quantiles its description names.
+#
+# NaN where nothing was observed. Fails `not_found` where no family has that
+# name or no such series was recorded, `invalid` where it is no summary or
+# does not answer `quantile`. Costs a sort of the observations not yet merged,
+# at most 500.
+function quantile_of(registry: Registry lent, name: str, labels: [str], quantile: f64) -> f64?
+    return recording.quantile_of(registry.store, name: name, labels: labels, quantile: quantile)
+
+## Gathering and the text formats
+
+# When a sample was taken, where the text says.
+variant Timestamp
+    # No time is written: the scraper's own is the sample's.
+    absent
+    # A time is written.
+    at
+        # Milliseconds since 1970-01-01T00:00:00Z.
+        ms: i64
+
+# One line of a family: a sample's name, its labels and its value.
+record Sample
+    # The name: the family's, or with `_bucket`, `_sum` or `_count` after it.
+    name: str
+    # The labels, in the order they are written.
+    labels: [Label]
+    # The value.
+    value: f64
+    # When it was taken.
+    timestamp: Timestamp
+
+# A family as it is written: its name, help, unit, kind and samples. What
+# `gather` and `parse_text` answer, and what `format_text` and
+# `format_openmetrics` write.
+record Family
+    # The name, as the 0.0.4 format writes it.
+    name: str
+    # The help, unescaped.
+    help: str
+    # The unit, "" for none; only OpenMetrics writes it.
+    unit: str
+    # The kind.
+    kind: Kind
+    # The samples, in the order they are written.
+    samples: [Sample]
+
+# Every family of `registry` with its samples, as Go's registry gathers them:
+# families ordered by name, series by their labels' values compared byte by
+# byte in the order of the labels' names, each sample's labels ordered by name
+# with `le`, `quantile` or a state set's own label last.
+#
+# - `registry`: the registry, unchanged.
+#
+# A family with no series holds no sample; a counter, a gauge or an info of no
+# labels gains its one series at 0 once something is recorded. A histogram
+# writes each bucket's count with the ones below it added, its `+Inf` bucket,
+# `_sum` and `_count`; a summary each quantile it answers, ascending, `_sum`
+# and `_count`. Costs a sort of each family's series, and of each summary's
+# waiting observations.
+function gather(registry: Registry lent) -> [Family]
+    out: [Family] @= []
+
+    for g in gathered.gather(registry.store)
+        samples: [Sample] @= []
+
+        for s in g.samples
+            labels: [Label] @= []
+
+            for i in range(from: 0, to: s.label_names.len())
+                labels @ labels.push(Label(name: s.label_names[i], value: s.label_values[i]))
+
+            samples @ samples.push(Sample(name: s.name, labels: labels, value: s.value, timestamp: .absent))
+
+        kind: Kind = match g.family.kind
+            .counter   => .counter
+            .gauge     => .gauge
+            .histogram => .histogram
+            .summary   => .summary
+            .info      => .info
+            .state_set => .state_set
+            .unknown   => .unknown
+
+        out @ out.push(
+            Family(name: g.family.name, help: g.family.help, unit: g.family.unit, kind: kind, samples: samples)
+        )
+
+    return out
+
+# `families` in Prometheus's text format 0.0.4: for each, `# HELP`, `# TYPE`
+# and its samples, a line each, every line ended by a line feed.
+#
+# - `families`: the families, written in their order.
+#
+# A label's value is escaped (`\\`, `\"`, `\n`), a help's backslash and line
+# feed too; a float is written as Go writes it, `+Inf`, `-Inf` and `NaN`
+# included; a timestamp in milliseconds after the value. An info and a state
+# set are written as gauges, a family of no kind as `untyped`. See also
+# `format_openmetrics`, `parse_text`.
+function format_text(families: [Family]) -> str
+    lines: [str] @= []
+
+    for f in families
+        kind: store.Kind = match f.kind
+            .counter   => .counter
+            .gauge     => .gauge
+            .histogram => .histogram
+            .summary   => .summary
+            .info      => .info
+            .state_set => .state_set
+            .unknown   => .unknown
+
+        lines @ lines.push(f"# HELP {f.name} {names.escape_help(f.help)}")
+        lines @ lines.push(f"# TYPE {f.name} {text_write.text_type(kind)}")
+
+        for s in f.samples
+            label_names: [str] @= []
+            label_values: [str] @= []
+
+            for l in s.labels
+                label_names @ label_names.push(l.name)
+                label_values @ label_values.push(l.value)
+
+            line = match s.timestamp
+                .absent => text_write.text_line(
+                    s.name,
+                    label_names: label_names,
+                    label_values: label_values,
+                    value: s.value,
+                    has_timestamp: false,
+                    timestamp_ms: 0
+                )
+                .at t => text_write.text_line(
+                    s.name,
+                    label_names: label_names,
+                    label_values: label_values,
+                    value: s.value,
+                    has_timestamp: true,
+                    timestamp_ms: t.ms
+                )
+
+            lines @ lines.push(line)
+
+    lines @ lines.push("")
+    return lines.join("\n")
+
+# `families` in the OpenMetrics text format 1.0, as Go's client writes it:
+# for each, `# HELP`, `# TYPE`, `# UNIT` where it has one, its samples, and
+# `# EOF` at the end.
+#
+# - `families`: the families, written in their order.
+#
+# A counter's family is named without `_total` and its samples with it, an
+# info's family without `_info` and its samples with it; a whole value is
+# written with `.0`, a count with no point, `le` and `quantile` as floats
+# (`1.0`); a help's quote is escaped too; a timestamp in seconds. See also
+# `format_text`.
+function format_openmetrics(families: [Family]) -> str
+    lines: [str] @= []
+
+    for f in families
+        kind: store.Kind = match f.kind
+            .counter   => .counter
+            .gauge     => .gauge
+            .histogram => .histogram
+            .summary   => .summary
+            .info      => .info
+            .state_set => .state_set
+            .unknown   => .unknown
+
+        family = store.openmetrics_name(name: f.name, kind: kind)
+        lines @ lines.push(f"# HELP {family} {names.escape_help_openmetrics(f.help)}")
+        lines @ lines.push(f"# TYPE {family} {text_write.openmetrics_type(kind)}")
+
+        if f.unit != ""
+            lines @ lines.push(f"# UNIT {family} {f.unit}")
+
+        for s in f.samples
+            label_names: [str] @= []
+            label_values: [str] @= []
+
+            for l in s.labels
+                label_names @ label_names.push(l.name)
+                label_values @ label_values.push(l.value)
+
+            line = match s.timestamp
+                .absent => text_write.openmetrics_line(
+                    kind,
+                    family: f.name,
+                    name: s.name,
+                    label_names: label_names,
+                    label_values: label_values,
+                    value: s.value,
+                    has_timestamp: false,
+                    timestamp_ms: 0
+                )
+                .at t => text_write.openmetrics_line(
+                    kind,
+                    family: f.name,
+                    name: s.name,
+                    label_names: label_names,
+                    label_values: label_values,
+                    value: s.value,
+                    has_timestamp: true,
+                    timestamp_ms: t.ms
+                )
+
+            lines @ lines.push(line)
+
+    lines @ lines.push("# EOF")
+    lines @ lines.push("")
+    return lines.join("\n")
+
+# The families of a text in Prometheus's text format 0.0.4, read as
+# Prometheus's own parser reads it.
+#
+# - `text`: the text; lines end with a line feed, a carriage return before it
+#   being refused as Go refuses it.
+#
+# A `# HELP` and a `# TYPE` name a family; another comment is passed over, and
+# so is an empty line. A sample belongs to the family its name names, a
+# histogram's `_bucket`, `_sum` and `_count` and a summary's `_sum` and
+# `_count` to theirs; a sample of no family named before makes an `untyped`
+# one. Families are answered in the order they first appear. Fails `invalid`
+# where a line is not one of these, a name is no name, a label is not closed,
+# an escape is not `\\`, `\"` or `\n`, a value or a timestamp is no number, a
+# family's samples are not together, or a family has two `# TYPE` or two
+# `# HELP` lines; the message names the line. See also `format_text`.
+function parse_text(text: str) -> [Family]?
+    read = text_read.parse(text)?
+    out: [Family] @= []
+
+    for f in read
+        samples: [Sample] @= []
+
+        for s in f.samples
+            labels: [Label] @= []
+
+            for i in range(from: 0, to: s.label_names.len())
+                labels @ labels.push(Label(name: s.label_names[i], value: s.label_values[i]))
+
+            stamp: Timestamp = if s.has_timestamp
+                .at(ms: s.timestamp_ms)
+            else
+                .absent
+            samples @ samples.push(Sample(name: s.name, labels: labels, value: s.value, timestamp: stamp))
+
+        kind: Kind = match text_write.kind_named(f.type_name)
+            .counter   => .counter
+            .gauge     => .gauge
+            .histogram => .histogram
+            .summary   => .summary
+            .info      => .info
+            .state_set => .state_set
+            .unknown   => .unknown
+
+        out @ out.push(Family(name: f.name, help: f.help, unit: "", kind: kind, samples: samples))
+
+    return ok(out)
+
+# The value of the sample `name` with exactly `labels`, among `families`, as
+# Python's `get_sample_value` reads one.
+#
+# - `families`: the families, as `gather` or `parse_text` answer them.
+# - `name`: the sample's name: `requests_total`, `latency_seconds_bucket`.
+# - `labels`: its labels in any order: a histogram's bucket names its `le`,
+#   written as the text writes it, `"0.5"`, `"+Inf"`.
+#
+# Fails `not_found` where no sample has that name and those labels.
+function sample_value(families: [Family], name: str, labels: [Label]) -> f64?
+    wanted: [str] @= []
+
+    for l in labels
+        wanted @ wanted.push(l.name + "=" + l.value)
+
+    wanted_sorted = sort(wanted)
+
+    for f in families
+        for s in f.samples
+            if s.name == name && s.labels.len() == labels.len()
+                held: [str] @= []
+
+                for l in s.labels
+                    held @ held.push(l.name + "=" + l.value)
+
+                if sort(held) == wanted_sorted
+                    return ok(s.value)
+
+    return fail(code: NOT_FOUND, msg: f"no sample \"{name}\" labelled {wanted.join(", ")}")
+
+# The `Content-Type` of the 0.0.4 text format.
+constant CONTENT_TYPE_TEXT: str
+    "text/plain; version=0.0.4; charset=utf-8"
+
+# The `Content-Type` of the OpenMetrics text format 1.0.
+constant CONTENT_TYPE_OPENMETRICS: str
+    "application/openmetrics-text; version=1.0.0; charset=utf-8"
+
+# Whether `s` is a family's or a sample's name: `[a-zA-Z_:][a-zA-Z0-9_:]*`.
+#
+# - `s`: the text; the empty text is none.
+#
+# See also `is_label_name`.
+function is_metric_name(s: str) -> bool
+    return names.is_metric_name(s)
+
+# Whether `s` is a label's name: `[a-zA-Z_][a-zA-Z0-9_]*`.
+#
+# - `s`: the text; the empty text is none.
+#
+# A name opening with `__` is one, though `register` keeps those for
+# Prometheus. See also `is_metric_name`.
+function is_label_name(s: str) -> bool
+    return names.is_label_name(s)
+
+## Serving
+
+# The answer to a scraper's request for `registry`'s values: the families
+# `gather` answers, in OpenMetrics where the request's `Accept` prefers it and
+# in the 0.0.4 format otherwise, compressed where the request accepts gzip.
+#
+# - `registry`: the registry, unchanged.
+# - `r`: the request, read for its method, `Accept` and `Accept-Encoding`; its
+#   path is not read, the program's own loop or router having chosen it.
+#
+# `405` with `Allow: GET, HEAD` for another method. A program with its own
+# loop answers `metrics.respond(registry, r)` for `/metrics` with the registry
+# it records into; `http.serve_with` would serve the registry as it stood
+# when the server began. See also `observe_request`.
+function respond(registry: Registry lent, r: http.Request) -> http.Response
+    if r.method != http.METHOD_GET && r.method != http.METHOD_HEAD
+        refused = http.respond_status(http.STATUS_METHOD_NOT_ALLOWED)
+        return http.Response(
+            status: refused.status,
+            reason: refused.reason,
+            headers: [http.Header(name: "Allow", value: "GET, HEAD")],
+            body: refused.body,
+            closing: refused.closing
+        )
+    chosen = http.negotiate_type(r, offered: [posting.OFFER_TEXT, posting.OFFER_OPENMETRICS]).default(
+        posting.OFFER_TEXT
+    )
+    families = gather(registry)
+
+    if chosen == posting.OFFER_OPENMETRICS
+        return http.with_compression(
+            http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_OPENMETRICS, body: strings.to_bytes(format_openmetrics(families))),
+            r: r
+        )
+    return http.with_compression(
+        http.respond(status: http.STATUS_OK, content_type: CONTENT_TYPE_TEXT, body: strings.to_bytes(format_text(families))),
+        r: r
+    )
+
+# The name of the counter `register_http` adds: requests answered, by status
+# and method.
+constant HTTP_REQUESTS: str
+    "http_requests_total"
+
+# The name of the histogram `register_http` adds: how long requests took to
+# answer, in seconds, by status and method.
+constant HTTP_DURATION: str
+    "http_request_duration_seconds"
+
+# Adds the two families `observe_request` records into: `HTTP_REQUESTS` and
+# `HTTP_DURATION`, each labelled `code` and `method`, the histogram with the
+# default buckets, as Go's `promhttp` examples name them.
+#
+# - `registry`: the registry, which gains the two families.
+#
+# Fails `exists` where either name is taken.
+function register_http(@registry: Registry) -> ()?
+    register(@registry, d: counter(name: HTTP_REQUESTS, help: "Requests answered, by status and method.", labels: ["code", "method"]))?
+    return register(
+        @registry,
+        d: histogram(name: HTTP_DURATION, help: "How long requests took to answer, in seconds, by status and method.", labels: ["code", "method"], buckets: DEFAULT_BUCKETS)
+    )
+
+# Records one request answered: 1 in `HTTP_REQUESTS` and its duration in
+# `HTTP_DURATION`, labelled by the response's status and the request's
+# method.
+#
+# - `registry`: the registry, `register_http` having added the families.
+# - `r`: the request; its method is written in lower case where it is one of
+#   RFC 9110's, `get`, and as `unknown` otherwise, so a client cannot make
+#   series without end, as Go's `promhttp` does.
+# - `response`: the response; its status is the `code`, `200`.
+# - `elapsed`: how long answering took.
+#
+# Fails `not_found` where `register_http` was not called.
+function observe_request(@registry: Registry, r: http.Request, response: http.Response, elapsed: time.Duration) -> ()?
+    labels = [to_str(response.status), posting.method_label(r.method)]
+    inc(@registry, name: HTTP_REQUESTS, labels: labels)?
+    return observe_duration(@registry, name: HTTP_DURATION, labels: labels, d: elapsed)
+
+## The Pushgateway
+
+# Replaces every family pushed under `job` and `grouping` with `families`,
+# by `PUT`, as Go's `Pusher.Push` and Python's `push_to_gateway` do.
+#
+# - `client`: how the request is sent.
+# - `gateway`: the Pushgateway's URL, `http://localhost:9091`.
+# - `job`: the job's name, any text but the empty text.
+# - `grouping`: further labels of the group, in order; a value holding more
+#   than letters, digits, `-`, `.`, `_` and `~` is written in base 64, which
+#   the Pushgateway reads back, as Python's client writes it.
+# - `families`: what is pushed, in the 0.0.4 format: `gather` answers it.
+#
+# Fails `invalid` where `job` is empty or a label's name is none; `failed`
+# where the Pushgateway answers a status other than 2xx, the message holding
+# its body; and as `http.send` fails. See also
+# `push_add_to_gateway`, `delete_from_gateway`.
+function push_to_gateway(client: http.Client, gateway: str, job: str, grouping: [Label], families: [Family]) -> ()?
+    target = gateway_url(gateway: gateway, job: job, grouping: grouping)?
+    return posting.pushed(
+        client,
+        method: http.METHOD_PUT,
+        target: target,
+        body: format_text(families),
+        content_type: CONTENT_TYPE_TEXT
+    )
+
+# Adds `families` to those pushed under `job` and `grouping`, replacing only
+# the families of the same names, by `POST`, as Go's `Pusher.Add` and Python's
+# `pushadd_to_gateway` do.
+#
+# - `client`: how the request is sent.
+# - `gateway`: the Pushgateway's URL.
+# - `job`: the job's name.
+# - `grouping`: further labels of the group, in order.
+# - `families`: what is pushed.
+#
+# Fails as `push_to_gateway` does.
+function push_add_to_gateway(client: http.Client, gateway: str, job: str, grouping: [Label], families: [Family]) -> ()?
+    target = gateway_url(gateway: gateway, job: job, grouping: grouping)?
+    return posting.pushed(
+        client,
+        method: http.METHOD_POST,
+        target: target,
+        body: format_text(families),
+        content_type: CONTENT_TYPE_TEXT
+    )
+
+# Deletes every family pushed under `job` and `grouping`, by `DELETE`, as
+# Go's `Pusher.Delete` and Python's `delete_from_gateway` do.
+#
+# - `client`: how the request is sent.
+# - `gateway`: the Pushgateway's URL.
+# - `job`: the job's name.
+# - `grouping`: further labels of the group, in order.
+#
+# Fails as `push_to_gateway` does.
+function delete_from_gateway(client: http.Client, gateway: str, job: str, grouping: [Label]) -> ()?
+    target = gateway_url(gateway: gateway, job: job, grouping: grouping)?
+    return posting.pushed(client, method: http.METHOD_DELETE, target: target, body: "", content_type: CONTENT_TYPE_TEXT)
+
+# The URL of the group `job` and `grouping` on `gateway`:
+# `<gateway>/metrics/job/<job>/<name>/<value>...`, a value holding more than
+# letters, digits, `-`, `.`, `_` and `~` written `<name>@base64/<the value in
+# base 64 for URLs>`, an empty one `<name>@base64/=`, as Python's client writes
+# them; Go's writes a space as `+`, which the Pushgateway reads as a plus.
+#
+# - `gateway`: the Pushgateway's URL; a `/` at its end is not doubled.
+# - `job`: the job's name, not empty.
+# - `grouping`: further labels of the group, in order.
+#
+# Fails `invalid` where `job` is empty or a label's name is none.
+function gateway_url(gateway: str, job: str, grouping: [Label]) -> str?
+    label_names: [str] @= []
+    label_values: [str] @= []
+
+    for l in grouping
+        label_names @ label_names.push(l.name)
+        label_values @ label_values.push(l.value)
+
+    return posting.gateway_url(gateway: gateway, job: job, label_names: label_names, label_values: label_values)
+
+## StatsD and DogStatsD
+
+# A client sending StatsD and DogStatsD lines as UDP datagrams, one line a
+# datagram, each ended by a line feed, as Datadog's Go client writes them.
+# Made by `open_statsd`; `close_statsd` closes its socket.
+record Statsd
+    # The socket the datagrams leave from.
+    socket: net.UdpSocket
+    # The server's address and port.
+    to: net.Address
+    # Written before every metric's name, `myapp.`; "" for none.
+    prefix: str
+    # Tags every line carries before its own, `env:prod` or `solo`, which
+    # only DogStatsD reads.
+    tags: [str]
+    # The generator that decides which lines a rate below 1 sends.
+    generator: random.Generator
+
+# A client sending to the StatsD or DogStatsD server at `host` and `port`.
+#
+# - `host`: an address, `127.0.0.1`, or a name the system resolves, its
+#   first IPv4 address taken where it has one.
+# - `port`: the server's port, 8125 by custom.
+#
+# Fails `invalid` where `port` is not 1 to 65535, and as `net.lookup` and
+# `net.open_udp` fail. See also `close_statsd`.
+function open_statsd(host: str, port: i64) -> Statsd?
+    if port < 1 || port > 65_535
+        return fail(code: INVALID, msg: f"the port {port} is not 1 to 65535")
+    found = net.lookup(host)?
+    chosen @= found[0]
+
+    for a in found
+        if net.is_v4(a) && !net.is_v4(chosen)
+            chosen @ a
+
+    # "0.0.0.0" and not "", which `net.open_udp` binds as IPv6's "::" on macOS
+    # (2026-11-18), so no IPv4 address could be sent to.
+    local = if net.is_v4(chosen)
+        "0.0.0.0"
+    else
+        "::"
+    socket = net.open_udp(local, port: 0)?
+    return ok(
+        Statsd(socket: socket, to: net.with_port(chosen, port: port)?, prefix: "", tags: [], generator: random.from_system()?)
+    )
+
+# Closes `client`'s socket.
+#
+# - `client`: the client, emptied.
+#
+# Fails as `net.close_udp` fails.
+function close_statsd(@client: Statsd) -> ()?
+    return net.close_udp(@client.socket)
+
+# Sends a count: `name:value|c`.
+#
+# - `client`: the client; its generator advances where `rate` is below 1.
+# - `name`: the metric's name, after the client's prefix; no `:`, `|`, `@` or
+#   line end.
+# - `value`: what is counted, negative to take away.
+# - `rate`: the share of calls that send, from 0 to 1, written `|@rate` so the
+#   server multiplies back; 1 sends every one.
+# - `tags`: the line's own tags, `name:value` or `name`, after the client's;
+#   none holds a `,`, a `|` or a line end.
+#
+# Fails `invalid` where the name or a tag cannot be written or `rate` is not
+# 0 to 1, and as `net.send_to` fails. A datagram sent is not known to arrive.
+function send_count(@client: Statsd, name: str, value: i64, rate: f64, tags: [str]) -> ()?
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: to_str(value),
+        kind: "c",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a gauge's value: `name:value|g`, the fewest digits and no exponent.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `value`: the value, finite; a negative one is written `-2`, which
+#   DogStatsD reads as the value and Etsy's StatsD as a change
+#   (`send_gauge_change`).
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_count` does, and `invalid` for NaN and the infinities.
+function send_gauge(@client: Statsd, name: str, value: f64, rate: f64, tags: [str]) -> ()?
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: statsd.float_value(value)?,
+        kind: "g",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a change to a gauge, as Etsy's StatsD reads `+3|g` and `-3|g`: the
+# sign always written.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `change`: what is added, finite.
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_gauge` does.
+function send_gauge_change(@client: Statsd, name: str, change: f64, rate: f64, tags: [str]) -> ()?
+    written = statsd.float_value(change)?
+
+    signed = if change >= 0.0
+        "+" + written
+    else
+        written
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: signed,
+        kind: "g",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a timing in milliseconds: `name:12.700000|ms`, six decimals as Go's
+# client writes them.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `d`: the duration.
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_count` does.
+function send_timing(@client: Statsd, name: str, d: time.Duration, rate: f64, tags: [str]) -> ()?
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: statsd.milliseconds_value(to_f64(d.nanoseconds) / 1_000_000.0),
+        kind: "ms",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a histogram's observation, which DogStatsD aggregates on the agent:
+# `name:value|h`.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `value`: the observation, finite.
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_gauge` does.
+function send_histogram(@client: Statsd, name: str, value: f64, rate: f64, tags: [str]) -> ()?
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: statsd.float_value(value)?,
+        kind: "h",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a distribution's observation, which DogStatsD aggregates on Datadog's
+# servers: `name:value|d`.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `value`: the observation, finite.
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_gauge` does.
+function send_distribution(@client: Statsd, name: str, value: f64, rate: f64, tags: [str]) -> ()?
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: statsd.float_value(value)?,
+        kind: "d",
+        rate: rate,
+        tags: tags
+    )
+
+# Sends a member of a set, whose distinct members the server counts:
+# `name:member|s`.
+#
+# - `client`: the client.
+# - `name`: the metric's name.
+# - `member`: the member, any text without a `|` or a line end.
+# - `rate`: the share of calls that send.
+# - `tags`: the line's own tags.
+#
+# Fails as `send_count` does, and `invalid` where `member` cannot be written.
+function send_set(@client: Statsd, name: str, member: str, rate: f64, tags: [str]) -> ()?
+    if statsd.has_tag_separator(member)
+        return fail(code: INVALID, msg: f"the set member \"{member}\" holds a bar or a line end")
+    return statsd.send_metric(
+        @client.generator,
+        socket: client.socket,
+        to: client.to,
+        prefix: client.prefix,
+        own: client.tags,
+        name: name,
+        value: member,
+        kind: "s",
+        rate: rate,
+        tags: tags
+    )
+
+# How much an event matters to DogStatsD.
+variant Priority
+    # The default; nothing is written.
+    normal
+    # Written `p:low`.
+    low
+
+# What kind of event it is to DogStatsD.
+variant AlertType
+    # The default; nothing is written.
+    info
+    # Written `t:warning`.
+    warning
+    # Written `t:error`.
+    error
+    # Written `t:success`.
+    success
+
+# An event of DogStatsD: a title, a text and what Datadog files it under.
+# Made by `event`, its fields changed by the program.
+record Event
+    # The title; a line feed in it is written `\n`.
+    title: str
+    # The text; a line feed in it is written `\n`.
+    text: str
+    # When it happened, written in seconds; `.absent` for the time it arrives.
+    timestamp: Timestamp
+    # The host it is about; "" for the agent's own.
+    host: str
+    # The key that groups events; "" for none.
+    aggregation_key: str
+    # How much it matters.
+    priority: Priority
+    # Where it comes from, `my_apps`; "" for none.
+    source_type: str
+    # Its kind.
+    alert_type: AlertType
+    # Its tags, `name:value` or `name`, after the client's.
+    tags: [str]
+
+# An event of `title` and `text` and nothing else.
+#
+# - `title`: the title.
+# - `text`: the text.
+#
+# See also `send_event`.
+function event(title: str, text: str) -> Event
+    return Event(
+        title: title,
+        text: text,
+        timestamp: .absent,
+        host: "",
+        aggregation_key: "",
+        priority: .normal,
+        source_type: "",
+        alert_type: .info,
+        tags: []
+    )
+
+# Sends `e` to DogStatsD, as Go's client writes it:
+# `_e{<title bytes>,<text bytes>}:title|text|d:..|h:..|k:..|p:..|s:..|t:..|#tags`.
+#
+# - `client`: the client; its prefix is not written.
+# - `e`: the event.
+#
+# Fails `invalid` where a part holds a `|` or a tag cannot be written, and as
+# `net.send_to` fails.
+function send_event(client: Statsd, e: Event) -> ()?
+    for part in [e.host, e.aggregation_key, e.source_type]
+        if statsd.has_tag_separator(part)
+            return fail(code: INVALID, msg: f"the event's part \"{part}\" holds a bar or a line end")
+
+    if strings.contains(s: e.title, substr: "|") || strings.contains(s: e.text, substr: "|")
+        return fail(code: INVALID, msg: "an event's title and text may not hold a bar")
+    parts: [str] @= []
+
+    match e.timestamp
+        .at t   => parts @ parts.push(f"d:{t.ms / 1000}")
+        .absent => _ = 0
+
+    if e.host != ""
+        parts @ parts.push("h:" + e.host)
+
+    if e.aggregation_key != ""
+        parts @ parts.push("k:" + e.aggregation_key)
+
+    match e.priority
+        .low    => parts @ parts.push("p:low")
+        .normal => _ = 0
+
+    if e.source_type != ""
+        parts @ parts.push("s:" + e.source_type)
+
+    match e.alert_type
+        .warning => parts @ parts.push("t:warning")
+        .error   => parts @ parts.push("t:error")
+        .success => parts @ parts.push("t:success")
+        .info    => _ = 0
+
+    line = statsd.event_line(
+        title: e.title,
+        text: e.text,
+        parts: parts,
+        tags: statsd.tags_of(own: client.tags, more: e.tags)?
+    )
+    return statsd.send_line(client.socket, to: client.to, text: line)
+
+# A service's health as DogStatsD reads it.
+variant CheckStatus
+    # 0.
+    ok
+    # 1.
+    warning
+    # 2.
+    critical
+    # 3.
+    unknown
+
+# A service check of DogStatsD. Made by `service_check`, its fields changed by
+# the program.
+record ServiceCheck
+    # The check's name; no `|` or line end.
+    name: str
+    # Its status.
+    status: CheckStatus
+    # When it was checked, written in seconds; `.absent` for when it arrives.
+    timestamp: Timestamp
+    # The host it is about; "" for the agent's own.
+    host: str
+    # A message, written last; "" for none.
+    message: str
+    # Its tags, `name:value` or `name`, after the client's.
+    tags: [str]
+
+# A service check of `name` in `status` and nothing else.
+#
+# - `name`: the check's name.
+# - `status`: its status.
+#
+# See also `send_service_check`.
+function service_check(name: str, status: CheckStatus) -> ServiceCheck
+    return ServiceCheck(name: name, status: status, timestamp: .absent, host: "", message: "", tags: [])
+
+# Sends `c` to DogStatsD, as Go's client writes it:
+# `_sc|name|status|d:..|h:..|#tags|m:message`, the message's line feeds
+# written `\n` and its `m:` written `m\:`.
+#
+# - `client`: the client; its prefix is not written.
+# - `c`: the check.
+#
+# Fails `invalid` where the name or the host holds a separator or a tag cannot
+# be written, and as `net.send_to` fails.
+function send_service_check(client: Statsd, c: ServiceCheck) -> ()?
+    if c.name == "" || statsd.has_separator(c.name) || statsd.has_tag_separator(c.host)
+        return fail(code: INVALID, msg: f"the service check \"{c.name}\" or its host holds a separator")
+    parts: [str] @= []
+
+    match c.timestamp
+        .at t   => parts @ parts.push(f"d:{t.ms / 1000}")
+        .absent => _ = 0
+
+    if c.host != ""
+        parts @ parts.push("h:" + c.host)
+
+    status = match c.status
+        .ok       => 0
+        .warning  => 1
+        .critical => 2
+        .unknown  => 3
+
+    line = statsd.service_check_line(
+        name: c.name,
+        status: status,
+        parts: parts,
+        tags: statsd.tags_of(own: client.tags, more: c.tags)?,
+        message: c.message
+    )
+    return statsd.send_line(client.socket, to: client.to, text: line)
+
+## OpenTelemetry's OTLP
+
+# What an attribute of a resource holds, as OTLP's `AnyValue` does.
+variant AttributeValue
+    # A text.
+    text
+        # The text.
+        v: str
+    # `true` or `false`.
+    boolean
+        # The value.
+        v: bool
+    # A whole number.
+    integer
+        # The number.
+        v: i64
+    # A float.
+    number
+        # The number.
+        v: f64
+    # A list of texts, `process.command_args`.
+    texts
+        # The texts, in order.
+        v: [str]
+
+# An attribute: a key and its value, `service.name` and `checkout`.
+record Attribute
+    # The key, by OpenTelemetry's semantic conventions where one names it.
+    key: str
+    # The value.
+    value: AttributeValue
+
+# The instrumentation scope a request names: the library or program that
+# recorded.
+record Scope
+    # Its name, `myapp`; "" writes none.
+    name: str
+    # Its version, `1.2.0`; "" writes none.
+    version: str
+
+# Where and how OTLP requests are sent over HTTP. Made by `otlp_to` or
+# `otlp_from_env`, its fields changed by the program.
+record Otlp
+    # How each request is sent; its own retries are not used, the method
+    # being `POST`.
+    client: http.Client
+    # The whole URL requests are posted to, `http://localhost:4318/v1/metrics`.
+    url: str
+    # Fields every request carries, an `Authorization` among them.
+    headers: [http.Header]
+    # Whether the body is sent compressed by gzip.
+    gzip: bool
+    # When a request is sent again: after a status of `statuses`, waiting
+    # `backoff_ms` doubled each time, or the `Retry-After` the collector asks,
+    # at most `max_backoff_ms`, `count` times at most.
+    retries: http.Retries
+
+# The URL OTLP's metrics are posted to where nothing else says: the
+# collector on this machine.
+constant OTLP_URL: str
+    "http://localhost:4318/v1/metrics"
+
+# An exporter posting to `url`, uncompressed, with no field of its own, sending
+# again 3 times after a status of 429, 502, 503 or 504, from 1 second doubled
+# up to 30, as OTLP's specification asks.
+#
+# - `target`: the whole URL, `OTLP_URL` or `https://collector.example/v1/metrics`.
+#
+# See also `otlp_from_env`, `export_otlp`.
+function otlp_to(target: str) -> Otlp
+    return Otlp(
+        client: http.default_client(),
+        url: target,
+        headers: [],
+        gzip: false,
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff_ms: 1_000, max_backoff_ms: 30_000)
+    )
+
+# An exporter as OpenTelemetry's environment variables describe it:
+# `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, taken as the whole URL, or
+# `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/metrics` after it, or `OTLP_URL`;
+# the fields of `OTEL_EXPORTER_OTLP_HEADERS` and its `_METRICS_` kin,
+# `key=value` pairs between commas, each percent-decoded; gzip where
+# `OTEL_EXPORTER_OTLP_COMPRESSION` or its kin says `gzip`; and the
+# milliseconds of `OTEL_EXPORTER_OTLP_TIMEOUT` or its kin as the client's
+# deadline.
+#
+# Fails `invalid` where a header pair has no `=`, the compression is neither
+# `gzip` nor `none`, or the timeout is no whole number; and as `os.env` fails
+# with a code other than `not_found`.
+function otlp_from_env() -> Otlp?
+    out @= otlp_to(OTLP_URL)
+    specific = posting.env_text("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT")?
+    general = posting.env_text("OTEL_EXPORTER_OTLP_ENDPOINT")?
+
+    if specific != ""
+        out.url @ specific
+    else if general != ""
+        out.url @ strings.trim_suffix(s: general, suffix: "/") + "/v1/metrics"
+    out.headers @ posting.env_headers(posting.first_set(specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_HEADERS")?, general: posting.env_text("OTEL_EXPORTER_OTLP_HEADERS")?))?
+    compression = posting.first_set(
+        specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_COMPRESSION")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_COMPRESSION")?
+    )
+
+    match compression
+        "gzip" => out.gzip @ true
+        "none" | "" => out.gzip @ false
+        _ => return fail(code: INVALID, msg: f"the OTLP compression \"{compression}\" is neither gzip nor none")
+
+    timeout = posting.first_set(
+        specific: posting.env_text("OTEL_EXPORTER_OTLP_METRICS_TIMEOUT")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_TIMEOUT")?
+    )
+
+    if timeout != ""
+        match numbers.parse_int(timeout)
+            .ok ms => out.client.deadline_ms @ ms
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
+            )
+    return ok(out)
+
+# The request `registry`'s values make for an OTLP collector: an
+# `ExportMetricsServiceRequest`, its bytes as protobuf writes them.
+#
+# - `registry`: the registry, unchanged.
+# - `resource`: what produced them, `service.name` above all.
+# - `scope`: the library or program that recorded them.
+# - `start`: when the values began, the program's start: every point's
+#   `start_time_unix_nano`, the temporality being cumulative.
+# - `at`: when they were read: every point's `time_unix_nano`.
+#
+# A counter is a monotonic cumulative `Sum`, a gauge, an info, a state set and
+# a family of no kind a `Gauge`, a histogram a cumulative `Histogram` with its
+# bounds and each bucket's own count, a summary a `Summary`; each series' labels
+# are its points' attributes, their values texts. A family with no series is
+# left out. See also `export_otlp`.
+function encode_otlp(registry: Registry lent, resource: [Attribute], scope: Scope, start: time.Instant, at: time.Instant) -> [u8]
+    attributes: [[u8]] @= []
+
+    for a in resource
+        value = match a.value
+            .text t    => otlp.any_text(t.v)
+            .boolean b => otlp.any_boolean(b.v)
+            .integer n => otlp.any_integer(n.v)
+            .number x  => otlp.any_number(x.v)
+            .texts ts =>
+                items: [[u8]] @= []
+
+                for t in ts.v
+                    items @ items.push(otlp.any_text(t))
+
+                otlp.any_array(items)
+
+        attributes @ attributes.push(otlp.key_value(key: a.key, value: value))
+
+    return otlp_metrics.encode(
+        registry.store,
+        resource: attributes,
+        scope_name: scope.name,
+        scope_version: scope.version,
+        begin: otlp.unix_nanoseconds(start.unix_nanoseconds),
+        now: otlp.unix_nanoseconds(at.unix_nanoseconds)
+    )
+
+# The outcome of an export a collector accepted: how much of it it refused
+# none the less, and why.
+record Exported
+    # How many points, spans or records were refused; 0 for none.
+    rejected: i64
+    # The collector's words; "" where it refused nothing.
+    message: str
+
+# Posts `body`, an OTLP request `encode_otlp` made, to `exporter`'s URL, as
+# `application/x-protobuf`.
+#
+# - `exporter`: where and how.
+# - `body`: the request's bytes.
+#
+# Fails `failed` where the collector answers a status other than 2xx after
+# every retry, the message holding its status and words; `invalid` where its
+# answer is no protobuf message; and as `http.send` fails. See also
+# `otlp_to`.
+function export_otlp(exporter: Otlp, body: [u8]) -> Exported?
+    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: body)?
+    return ok(Exported(rejected: partial.rejected, message: partial.message))
+
+## Tests
+
+test "format_text: client_golang's text for counters, gauges of every kind of float, histograms with and without labels, and a summary"
+    assert format_text(gather(Registry(store: fixture.go_store()))) == "# HELP http_requests_total Requests \\\\ served\\nso \"far\".\n# TYPE http_requests_total counter\nhttp_requests_total{method=\"GET\",path=\"/a\\\"b\\\\c\\nd\"} 3\nhttp_requests_total{method=\"POST\",path=\"/é\"} 1\n# HELP lat_seconds L.\n# TYPE lat_seconds histogram\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"1\"} 1\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"5\"} 1\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"+Inf\"} 2\nlat_seconds_sum{op=\"r\",zone=\"eu\"} 7.5\nlat_seconds_count{op=\"r\",zone=\"eu\"} 2\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"1\"} 0\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"5\"} 1\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"+Inf\"} 1\nlat_seconds_sum{op=\"w\",zone=\"eu\"} 3\nlat_seconds_count{op=\"w\",zone=\"eu\"} 1\n# HELP plain_total \n# TYPE plain_total counter\nplain_total 0\n# HELP rpc_seconds Latency.\n# TYPE rpc_seconds histogram\nrpc_seconds_bucket{le=\"0.005\"} 2\nrpc_seconds_bucket{le=\"0.01\"} 2\nrpc_seconds_bucket{le=\"0.025\"} 3\nrpc_seconds_bucket{le=\"0.05\"} 3\nrpc_seconds_bucket{le=\"0.1\"} 3\nrpc_seconds_bucket{le=\"0.25\"} 4\nrpc_seconds_bucket{le=\"0.5\"} 4\nrpc_seconds_bucket{le=\"1\"} 4\nrpc_seconds_bucket{le=\"2.5\"} 5\nrpc_seconds_bucket{le=\"5\"} 5\nrpc_seconds_bucket{le=\"10\"} 5\nrpc_seconds_bucket{le=\"+Inf\"} 6\nrpc_seconds_sum 22.227999999999998\nrpc_seconds_count 6\n# HELP sz Sizes.\n# TYPE sz summary\nsz_sum 2.5\nsz_count 1\n# HELP temp Values.\n# TYPE temp gauge\ntemp{v=\"x00\"} 0\ntemp{v=\"x01\"} 1\ntemp{v=\"x02\"} -1\ntemp{v=\"x03\"} 0.5\ntemp{v=\"x04\"} 1e+06\ntemp{v=\"x05\"} 1.234567e+06\ntemp{v=\"x06\"} 100000\ntemp{v=\"x07\"} 1e-05\ntemp{v=\"x08\"} 0.0001\ntemp{v=\"x09\"} 1.23456789012e+11\ntemp{v=\"x10\"} +Inf\ntemp{v=\"x11\"} -Inf\ntemp{v=\"x12\"} NaN\ntemp{v=\"x13\"} 0\n"
+
+test "format_openmetrics: client_golang's OpenMetrics for the same registry"
+    assert format_openmetrics(gather(Registry(store: fixture.go_store()))) == "# HELP http_requests Requests \\\\ served\\nso \\\"far\\\".\n# TYPE http_requests counter\nhttp_requests_total{method=\"GET\",path=\"/a\\\"b\\\\c\\nd\"} 3.0\nhttp_requests_total{method=\"POST\",path=\"/é\"} 1.0\n# HELP lat_seconds L.\n# TYPE lat_seconds histogram\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"1.0\"} 1\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"5.0\"} 1\nlat_seconds_bucket{op=\"r\",zone=\"eu\",le=\"+Inf\"} 2\nlat_seconds_sum{op=\"r\",zone=\"eu\"} 7.5\nlat_seconds_count{op=\"r\",zone=\"eu\"} 2\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"1.0\"} 0\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"5.0\"} 1\nlat_seconds_bucket{op=\"w\",zone=\"eu\",le=\"+Inf\"} 1\nlat_seconds_sum{op=\"w\",zone=\"eu\"} 3.0\nlat_seconds_count{op=\"w\",zone=\"eu\"} 1\n# HELP plain \n# TYPE plain counter\nplain_total 0.0\n# HELP rpc_seconds Latency.\n# TYPE rpc_seconds histogram\nrpc_seconds_bucket{le=\"0.005\"} 2\nrpc_seconds_bucket{le=\"0.01\"} 2\nrpc_seconds_bucket{le=\"0.025\"} 3\nrpc_seconds_bucket{le=\"0.05\"} 3\nrpc_seconds_bucket{le=\"0.1\"} 3\nrpc_seconds_bucket{le=\"0.25\"} 4\nrpc_seconds_bucket{le=\"0.5\"} 4\nrpc_seconds_bucket{le=\"1.0\"} 4\nrpc_seconds_bucket{le=\"2.5\"} 5\nrpc_seconds_bucket{le=\"5.0\"} 5\nrpc_seconds_bucket{le=\"10.0\"} 5\nrpc_seconds_bucket{le=\"+Inf\"} 6\nrpc_seconds_sum 22.227999999999998\nrpc_seconds_count 6\n# HELP sz Sizes.\n# TYPE sz summary\nsz_sum 2.5\nsz_count 1\n# HELP temp Values.\n# TYPE temp gauge\ntemp{v=\"x00\"} 0.0\ntemp{v=\"x01\"} 1.0\ntemp{v=\"x02\"} -1.0\ntemp{v=\"x03\"} 0.5\ntemp{v=\"x04\"} 1e+06\ntemp{v=\"x05\"} 1.234567e+06\ntemp{v=\"x06\"} 100000.0\ntemp{v=\"x07\"} 1e-05\ntemp{v=\"x08\"} 0.0001\ntemp{v=\"x09\"} 1.23456789012e+11\ntemp{v=\"x10\"} +Inf\ntemp{v=\"x11\"} -Inf\ntemp{v=\"x12\"} NaN\ntemp{v=\"x13\"} 0.0\n# EOF\n"
+
+test "format_text and format_openmetrics: an empty list of families"
+    assert format_text([]) == ""
+    assert format_openmetrics([]) == "# EOF\n"
+
+test "parse_text: the text format_text writes reads back as the same families"
+    families = gather(Registry(store: fixture.go_store()))
+    read = parse_text(format_text(families)).must()
+    assert read.len() == families.len()
+
+    for i in range(from: 0, to: read.len())
+        assert read[i].name == families[i].name
+        assert read[i].help == families[i].help
+        assert read[i].samples.len() == families[i].samples.len()
+
+    assert format_text(read) == format_text(families)
+    assert sample_value(read, name: "lat_seconds_bucket", labels: [Label(name: "le", value: "+Inf"), Label(name: "zone", value: "eu"), Label(name: "op", value: "r")]).must() == 2.0
+
+test "register: a name, a label, a reserved label, a label twice and a const label clashing refused"
+    r @= new_registry()
+    assert register(@r, d: counter(name: "", help: "", labels: [])).is_err()
+    assert register(@r, d: counter(name: "a.b", help: "", labels: [])).is_err()
+    assert register(@r, d: counter(name: "a", help: "", labels: ["x:y"])).is_err()
+    assert register(@r, d: counter(name: "a", help: "", labels: ["__x"])).is_err()
+    assert register(@r, d: counter(name: "a", help: "", labels: ["x", "x"])).is_err()
+    assert register(
+        @r,
+        d: with_const_labels(counter(name: "a", help: "", labels: ["x"]), labels: [Label(name: "x", value: "1")])
+    ).is_err()
+    assert register(@r, d: histogram(name: "h", help: "", labels: ["le"], buckets: [])).is_err()
+    assert register(@r, d: summary(name: "s", help: "", labels: ["quantile"], quantiles: [])).is_err()
+
+    match register(@r, d: counter(name: "9a", help: "", labels: []))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "register: a name taken, and a gauge named as a histogram's _count, refused exists"
+    r @= new_registry()
+    register(@r, d: histogram(name: "h", help: "", labels: [], buckets: [1.0])).must()
+
+    match register(@r, d: gauge(name: "h", help: "", labels: []))
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS
+
+    match register(@r, d: gauge(name: "h_count", help: "", labels: []))
+        .ok _ => assert false
+        .err e =>
+            assert e.code == EXISTS
+            assert e.msg == "registering \"h_count\": the name \"h_count\" is the family \"h\"'s already"
+
+    register(@r, d: gauge(name: "h_counts", help: "", labels: [])).must()
+
+test "register: buckets out of order, NaN, +Inf before the end, and a last +Inf taken off"
+    r @= new_registry()
+    assert register(@r, d: histogram(name: "a", help: "", labels: [], buckets: [2.0, 1.0])).is_err()
+    assert register(@r, d: histogram(name: "a", help: "", labels: [], buckets: [1.0, 1.0])).is_err()
+    assert register(@r, d: histogram(name: "a", help: "", labels: [], buckets: [0.0 / 0.0])).is_err()
+    assert register(@r, d: histogram(name: "a", help: "", labels: [], buckets: [1.0 / 0.0, 2.0])).is_err()
+    register(@r, d: histogram(name: "a", help: "", labels: [], buckets: [1.0, 1.0 / 0.0])).must()
+    assert desc_of(r, name: "a").must().buckets == [1.0]
+    register(@r, d: histogram(name: "b", help: "", labels: [], buckets: [])).must()
+    observe(@r, name: "b", labels: [], value: 4.0).must()
+    assert format_text(gather(r)) == "# HELP a \n# TYPE a histogram\na_bucket{le=\"1\"} 0\na_bucket{le=\"+Inf\"} 0\na_sum 0\na_count 0\n# HELP b \n# TYPE b histogram\nb_bucket{le=\"+Inf\"} 1\nb_sum 4\nb_count 1\n"
+
+test "register: quantiles out of range, an error of 0 or 1, a quantile twice, ordered ascending"
+    r @= new_registry()
+    assert register(
+        @r,
+        d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 1.5, error: 0.01)])
+    ).is_err()
+    assert register(
+        @r,
+        d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 0.5, error: 0.0)])
+    ).is_err()
+    assert register(
+        @r,
+        d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 0.5, error: 1.0)])
+    ).is_err()
+    assert register(
+        @r,
+        d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 0.5, error: 0.1), Quantile(quantile: 0.5, error: 0.01)])
+    ).is_err()
+    register(
+        @r,
+        d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 0.9, error: 0.01), Quantile(quantile: 0.5, error: 0.05)])
+    ).must()
+    assert desc_of(r, name: "s").must().quantiles[0].quantile == 0.5
+
+test "register: a unit that is the name's end, before _total for a counter, and one that is not"
+    r @= new_registry()
+    register(@r, d: with_unit(counter(name: "req_seconds_total", help: "", labels: []), unit: "seconds")).must()
+    register(@r, d: with_unit(gauge(name: "size_bytes", help: "", labels: []), unit: "bytes")).must()
+    assert register(@r, d: with_unit(gauge(name: "size", help: "", labels: []), unit: "bytes")).is_err()
+    assert register(@r, d: with_unit(gauge(name: "x_a b", help: "", labels: []), unit: "a b")).is_err()
+    assert format_openmetrics(gather(r)) == "# HELP req_seconds \n# TYPE req_seconds counter\n# UNIT req_seconds seconds\nreq_seconds_total 0.0\n# HELP size_bytes \n# TYPE size_bytes gauge\n# UNIT size_bytes bytes\nsize_bytes 0.0\n# EOF\n"
+
+test "register: a state set whose name is no label's name, with no state, or a state twice"
+    r @= new_registry()
+    assert register(@r, d: state_set(name: "a:b", help: "", labels: [], states: ["x"])).is_err()
+    assert register(@r, d: state_set(name: "s", help: "", labels: [], states: [])).is_err()
+    assert register(@r, d: state_set(name: "s", help: "", labels: [], states: ["x", "x"])).is_err()
+    assert register(@r, d: state_set(name: "s", help: "", labels: ["s"], states: ["x"])).is_err()
+
+test "add, inc, dec and set: a counter going down or NaN, the wrong kind, a missing name and a wrong count of labels"
+    r @= new_registry()
+    register(@r, d: counter(name: "c", help: "", labels: ["a"])).must()
+    register(@r, d: gauge(name: "g", help: "", labels: [])).must()
+    register(@r, d: histogram(name: "h", help: "", labels: [], buckets: [1.0])).must()
+    assert add(@r, name: "c", labels: ["x"], amount: -1.0).is_err()
+    assert add(@r, name: "c", labels: ["x"], amount: 0.0 / 0.0).is_err()
+    add(@r, name: "c", labels: ["x"], amount: 1.0 / 0.0).must()
+    assert dec(@r, name: "c", labels: ["x"]).is_err()
+    assert set(@r, name: "c", labels: ["x"], value: 1.0).is_err()
+    assert inc(@r, name: "h", labels: []).is_err()
+    assert inc(@r, name: "c", labels: []).is_err()
+    assert inc(@r, name: "c", labels: ["x", "y"]).is_err()
+
+    match inc(@r, name: "nope", labels: [])
+        .ok _ => assert false
+        .err e =>
+            assert e.code == NOT_FOUND
+            assert e.msg == "no family is named \"nope\""
+
+    dec(@r, name: "g", labels: []).must()
+    add(@r, name: "g", labels: [], amount: -2.5).must()
+    assert value_of(r, name: "g", labels: []).must() == -3.5
+    set(@r, name: "g", labels: [], value: 0.0 / 0.0).must()
+    v = value_of(r, name: "g", labels: []).must()
+    assert v != v
+    set_to_time(@r, name: "g", labels: [], at: time.from_unix_milliseconds(1_500).must()).must()
+    assert value_of(r, name: "g", labels: []).must() == 1.5
+
+test "observe and observe_duration: NaN refused, the infinities counted, a bound's own value in its bucket"
+    r @= new_registry()
+    register(@r, d: histogram(name: "h", help: "", labels: [], buckets: [1.0, 2.0])).must()
+    assert observe(@r, name: "h", labels: [], value: 0.0 / 0.0).is_err()
+    observe(@r, name: "h", labels: [], value: 1.0).must()
+    observe(@r, name: "h", labels: [], value: 1.0 / 0.0).must()
+    observe(@r, name: "h", labels: [], value: -1.0 / 0.0).must()
+    observe_duration(@r, name: "h", labels: [], d: time.milliseconds(1_500).must()).must()
+    families = gather(r)
+    assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "1")]).must() == 2.0
+    assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "2")]).must() == 3.0
+    assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "+Inf")]).must() == 4.0
+    assert count_of(r, name: "h", labels: []).must() == 4
+    total = sum_of(r, name: "h", labels: []).must()
+    assert total != total
+    assert value_of(r, name: "h", labels: []).is_err()
+
+test "quantile_of: a summary of 1 to 1,000, each quantile within its error, and one it does not answer"
+    r @= new_registry()
+    register(
+        @r,
+        d: summary(name: "s", help: "", labels: ["k"], quantiles: [Quantile(quantile: 0.5, error: 0.05), Quantile(quantile: 0.99, error: 0.001)])
+    ).must()
+
+    for i in range(from: 1, to: 1_001)
+        observe(@r, name: "s", labels: ["a"], value: to_f64(i)).must()
+
+    median = quantile_of(r, name: "s", labels: ["a"], quantile: 0.5).must()
+    assert median >= 450.0 && median <= 550.0
+    high = quantile_of(r, name: "s", labels: ["a"], quantile: 0.99).must()
+    assert high >= 989.0 && high <= 991.0
+    assert quantile_of(r, name: "s", labels: ["a"], quantile: 0.9).is_err()
+    assert quantile_of(r, name: "s", labels: ["b"], quantile: 0.5).is_err()
+    assert sum_of(r, name: "s", labels: ["a"]).must() == 500_500.0
+
+test "set_info and set_state: Python's info and enum, written as gauges and as OpenMetrics' own types"
+    r @= new_registry()
+    register(@r, d: info(name: "build_info", help: "Build.", labels: ["version", "b"])).must()
+    set_info(@r, name: "build_info", labels: ["1.2", "x"]).must()
+    register(
+        @r,
+        d: state_set(name: "state", help: "State.", labels: ["job"], states: ["starting", "running", "stopped"])
+    ).must()
+    set_state(@r, name: "state", labels: ["j1"], state: "running").must()
+    assert set_state(@r, name: "state", labels: ["j1"], state: "gone").is_err()
+    assert set_info(@r, name: "state", labels: ["j1"]).is_err()
+    families = gather(r)
+    assert format_text(families) == "# HELP build_info Build.\n# TYPE build_info gauge\nbuild_info{b=\"x\",version=\"1.2\"} 1\n# HELP state State.\n# TYPE state gauge\nstate{job=\"j1\",state=\"starting\"} 0\nstate{job=\"j1\",state=\"running\"} 1\nstate{job=\"j1\",state=\"stopped\"} 0\n"
+    assert format_openmetrics(families) == "# HELP build Build.\n# TYPE build info\nbuild_info{b=\"x\",version=\"1.2\"} 1.0\n# HELP state State.\n# TYPE state stateset\nstate{job=\"j1\",state=\"starting\"} 0.0\nstate{job=\"j1\",state=\"running\"} 1.0\nstate{job=\"j1\",state=\"stopped\"} 0.0\n# EOF\n"
+
+test "remove, remove_all and unregister: a series, every series, the family, and what is not there"
+    r @= Registry(store: fixture.go_store())
+    remove(@r, name: "http_requests_total", labels: ["GET", "/a\"b\\c\nd"]).must()
+    assert value_of(r, name: "http_requests_total", labels: ["GET", "/a\"b\\c\nd"]).is_err()
+    assert value_of(r, name: "http_requests_total", labels: ["POST", "/é"]).must() == 1.0
+    assert remove(@r, name: "http_requests_total", labels: ["GET", "x"]).is_err()
+    remove_all(@r, name: "temp").must()
+    assert value_of(r, name: "temp", labels: ["x01"]).is_err()
+    set(@r, name: "temp", labels: ["x01"], value: 4.0).must()
+    unregister(@r, name: "rpc_seconds").must()
+    assert desc_of(r, name: "rpc_seconds").is_err()
+    assert unregister(@r, name: "rpc_seconds").is_err()
+    register(@r, d: gauge(name: "rpc_seconds_count", help: "", labels: [])).must()
+    assert count_of(r, name: "lat_seconds", labels: ["r"]).must() == 2
+
+test "linear_buckets, exponential_buckets and exponential_buckets_range: client_golang's bounds bit for bit, C's pow over a range, and the refusals"
+    lb = linear_buckets(start: -1.0, width: 0.1, count: 12).must()
+    eb = exponential_buckets(start: 0.001, factor: 3.0, count: 6).must()
+    er = exponential_buckets_range(min: 0.001, max: 10.0, count: 5).must()
+    lb_bits: [u64] = [
+        13830554455654793216
+        13829653735729319117
+        13828753015803845018
+        13827852295878370919
+        13826951575952896820
+        13826050856027422721
+        13824249416176474524
+        13822447976325526326
+        13819745816549104031
+        13815242216921733540
+        13592989575310999552
+        4591870180066957712
+    ]
+    assert lb.map(numbers.f64_to_bits) == lb_bits
+    eb_bits: [u64] = [
+        4562254508917369340
+        4569063951553953530
+        4576341768551784252
+        4583439441564520154
+        4590501085780237092
+        4597923017966143670
+    ]
+    assert eb.map(numbers.f64_to_bits) == eb_bits
+
+    # Python's `math.pow`, which is C's, gives these; Go's `math.Pow` is less
+    # exact, 1.0000000000000007 where the fourth bound is 1.
+    er_bits: [u64] = [
+        4562254508917369340
+        4576918229304087675
+        4591870180066957722
+        4607182418800017408
+        4621819117588971520
+    ]
+    assert er.map(numbers.f64_to_bits) == er_bits
+    assert linear_buckets(start: 0.0, width: 0.0, count: 3).is_err()
+    assert linear_buckets(start: 0.0 / 0.0, width: 1.0, count: 3).is_err()
+    assert linear_buckets(start: 0.0, width: 0.0 / 0.0, count: 3).is_err()
+    assert exponential_buckets(start: 0.0 / 0.0, factor: 2.0, count: 3).is_err()
+    assert exponential_buckets_range(min: 1.0, max: 0.0 / 0.0, count: 3).is_err()
+    assert linear_buckets(start: 0.0, width: 1.0, count: 0).is_err()
+    assert exponential_buckets(start: 0.0, factor: 2.0, count: 3).is_err()
+    assert exponential_buckets(start: 1.0, factor: 1.0, count: 3).is_err()
+    assert exponential_buckets_range(min: 1.0, max: 1.0, count: 3).is_err()
+    assert exponential_buckets_range(min: 1.0, max: 2.0, count: 1).is_err()
+
+test "full_name: Go's BuildFQName, empty parts left out"
+    assert full_name(namespace: "myapp", subsystem: "http", name: "requests_total") == "myapp_http_requests_total"
+    assert full_name(namespace: "", subsystem: "http", name: "x") == "http_x"
+    assert full_name(namespace: "a", subsystem: "", name: "x") == "a_x"
+    assert full_name(namespace: "a", subsystem: "b", name: "") == ""
+
+test "is_metric_name and is_label_name: the face's names for the rules"
+    assert is_metric_name("a:b")
+    assert !is_label_name("a:b")
+
+test "gateway_url: Python's paths, a value in base 64 where it holds more than the plain bytes, an empty one, and a job refused"
+    assert gateway_url(gateway: "http://gw:9091/", job: "my job", grouping: [Label(name: "instance", value: "a/b"), Label(name: "k", value: "é x"), Label(name: "zone", value: "")]).must() == "http://gw:9091/metrics/job@base64/bXkgam9i/instance@base64/YS9i/k@base64/w6kgeA==/zone@base64/="
+    assert gateway_url(gateway: "http://gw:9091", job: "a/b", grouping: []).must() == "http://gw:9091/metrics/job@base64/YS9i"
+    assert gateway_url(gateway: "http://gw:9091", job: "j", grouping: [Label(name: "z", value: "1")]).must() == "http://gw:9091/metrics/job/j/z/1"
+    assert gateway_url(gateway: "http://gw", job: "", grouping: []).is_err()
+    assert gateway_url(gateway: "http://gw", job: "j", grouping: [Label(name: "a-b", value: "1")]).is_err()
+
+test "respond: the 0.0.4 format by default, OpenMetrics where Prometheus asks it, gzip where accepted, and 405 for POST"
+    r = Registry(store: fixture.go_store())
+    plain = respond(r, r: http.request(method: "GET", target: "/metrics").must())
+    assert plain.status == 200
+    assert http.value_of(plain.headers, name: "Content-Type").must() == CONTENT_TYPE_TEXT
+    assert bytes.to_text(plain.body).must() == format_text(gather(r))
+    asking @= http.request(method: "GET", target: "/metrics").must()
+    asking.headers @ [
+        http.Header(name: "Accept", value: "application/openmetrics-text;version=1.0.0,application/openmetrics-text;version=0.0.1;q=0.75,text/plain;version=0.0.4;q=0.5,*/*;q=0.1")
+    ]
+    om = respond(r, r: asking)
+    assert http.value_of(om.headers, name: "Content-Type").must() == CONTENT_TYPE_OPENMETRICS
+    assert bytes.to_text(om.body).must() == format_openmetrics(gather(r))
+    zipped @= http.request(method: "GET", target: "/metrics").must()
+    zipped.headers @ [http.Header(name: "Accept-Encoding", value: "gzip")]
+    squeezed = respond(r, r: zipped)
+    assert http.value_of(squeezed.headers, name: "Content-Encoding").must() == "gzip"
+    assert bytes.to_text(http.decode_body(squeezed, limit: 1_000_000).must().body).must() == format_text(gather(r))
+    refused = respond(r, r: http.request(method: "POST", target: "/metrics").must())
+    assert refused.status == 405
+    assert http.value_of(refused.headers, name: "Allow").must() == "GET, HEAD"
+
+test "register_http and observe_request: one request counted and timed, its method in lower case, an unknown one bounded"
+    r @= new_registry()
+    assert observe_request(
+        @r,
+        r: http.request(method: "GET", target: "/").must(),
+        response: http.respond_status(200),
+        elapsed: time.milliseconds(30).must()
+    ).is_err()
+    register_http(@r).must()
+    observe_request(
+        @r,
+        r: http.request(method: "GET", target: "/").must(),
+        response: http.respond_status(200),
+        elapsed: time.milliseconds(30).must()
+    ).must()
+    observe_request(
+        @r,
+        r: http.request(method: "BREW", target: "/").must(),
+        response: http.respond_status(418),
+        elapsed: time.milliseconds(2).must()
+    ).must()
+    assert value_of(r, name: HTTP_REQUESTS, labels: ["200", "get"]).must() == 1.0
+    assert value_of(r, name: HTTP_REQUESTS, labels: ["418", "unknown"]).must() == 1.0
+    assert count_of(r, name: HTTP_DURATION, labels: ["200", "get"]).must() == 1
+    assert sum_of(r, name: HTTP_DURATION, labels: ["200", "get"]).must() == 0.03
+
+test "send_count and its kin: datadog-go's lines, received on a socket of this machine"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    client.prefix @ "app."
+    client.tags @ ["env:prod"]
+    send_count(@client, name: "page.views", value: 5, rate: 1.0, tags: ["solo"]).must()
+    send_gauge(@client, name: "temp", value: -2.0, rate: 1.0, tags: []).must()
+    send_gauge_change(@client, name: "level", change: 3.0, rate: 1.0, tags: []).must()
+    send_timing(@client, name: "t", d: time.nanoseconds(1_500_000), rate: 1.0, tags: []).must()
+    send_histogram(@client, name: "h", value: 0.5, rate: 1.0, tags: []).must()
+    send_distribution(@client, name: "dist", value: 3.0, rate: 1.0, tags: []).must()
+    send_set(@client, name: "users", member: "alice", rate: 1.0, tags: []).must()
+    send_count(@client, name: "never", value: 1, rate: 0.0, tags: []).must()
+    want = [
+        "app.page.views:5|c|#env:prod,solo\n"
+        "app.temp:-2|g|#env:prod\n"
+        "app.level:+3|g|#env:prod\n"
+        "app.t:1.500000|ms|#env:prod\n"
+        "app.h:0.5|h|#env:prod\n"
+        "app.dist:3|d|#env:prod\n"
+        "app.users:alice|s|#env:prod\n"
+    ]
+
+    for line in want
+        assert bytes.to_text(net.receive(server).must().data).must() == line
+
+    assert send_count(@client, name: "a:b", value: 1, rate: 1.0, tags: []).is_err()
+    assert send_count(@client, name: "a", value: 1, rate: 1.5, tags: []).is_err()
+    assert send_gauge(@client, name: "a", value: 0.0 / 0.0, rate: 1.0, tags: []).is_err()
+    assert send_set(@client, name: "a", member: "x|y", rate: 1.0, tags: []).is_err()
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+test "send_event and send_service_check: datadog-go's lines, the client's prefix not written"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    client.prefix @ "app."
+    e @= event(title: "Title é", text: "Body\nline")
+    e.timestamp @ .at(ms: 1_700_000_000_000)
+    e.host @ "h1"
+    e.aggregation_key @ "k"
+    e.priority @ .low
+    e.source_type @ "src"
+    e.alert_type @ .error
+    e.tags @ ["x:y"]
+    send_event(client, e: e).must()
+    c @= service_check(name: "app.ok", status: .critical)
+    c.timestamp @ .at(ms: 1_700_000_000_000)
+    c.host @ "h"
+    c.message @ "bad|thing\nx m:y"
+    c.tags @ ["t"]
+    send_service_check(client, c: c).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "_e{8,10}:Title é|Body\\nline|d:1700000000|h:h1|k:k|p:low|s:src|t:error|#x:y\n"
+    assert bytes.to_text(net.receive(server).must().data).must() == "_sc|app.ok|2|d:1700000000|h:h|#t|m:bad|thing\\nx m\\:y\n"
+    assert send_event(client, e: event(title: "a|b", text: "")).is_err()
+    assert send_service_check(client, c: service_check(name: "a|b", status: .ok)).is_err()
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+test "encode_otlp: the bytes opentelemetry-proto 1.45 writes for every kind, the resource's every kind of value, and a scope"
+    r @= new_registry()
+    register(@r, d: info(name: "build_info", help: "B.", labels: ["v"])).must()
+    set_info(@r, name: "build_info", labels: ["1"]).must()
+    register(@r, d: counter(name: "c_total", help: "C.", labels: ["a"])).must()
+    add(@r, name: "c_total", labels: ["x"], amount: 2.0).must()
+    register(@r, d: gauge(name: "g", help: "G.", labels: [])).must()
+    set(@r, name: "g", labels: [], value: 1.5).must()
+    register(
+        @r,
+        d: with_unit(histogram(name: "h_seconds", help: "H.", labels: [], buckets: [1.0]), unit: "seconds")
+    ).must()
+    observe(@r, name: "h_seconds", labels: [], value: 0.5).must()
+    observe(@r, name: "h_seconds", labels: [], value: 3.0).must()
+    register(
+        @r,
+        d: summary(name: "s", help: "S.", labels: [], quantiles: [Quantile(quantile: 0.5, error: 0.05)])
+    ).must()
+    observe(@r, name: "s", labels: [], value: 4.0).must()
+    register(@r, d: state_set(name: "st", help: "St.", labels: [], states: ["a", "b"])).must()
+    register(@r, d: gauge(name: "unused", help: "U.", labels: ["k"])).must()
+    resource = [
+        Attribute(key: "service.name", value: .text(v: "svc"))
+        Attribute(key: "n", value: .integer(v: 7))
+        Attribute(key: "flag", value: .boolean(v: true))
+        Attribute(key: "pi", value: .number(v: 3.5))
+        Attribute(key: "args", value: .texts(v: ["a", "b"]))
+    ]
+    body = encode_otlp(
+        r,
+        resource: resource,
+        scope: Scope(name: "m", version: "1"),
+        start: time.from_unix(whole_seconds: 1, extra_nanoseconds: 0).must(),
+        at: time.from_unix(whole_seconds: 2, extra_nanoseconds: 0).must()
+    )
+    assert bytes.format_hex(body) == "0add030a530a150a0c736572766963652e6e616d6512050a037376630a070a016e120218070a0a0a04666c6167120210010a0f0a0270691209210000000000000c400a140a0461726773120c2a0a0a030a01610a030a01621285030a060a016d12013112300a0a6275696c645f696e666f1202422e2a1e0a1c19009435770000000021000000000000f03f3a080a017612030a0131123a0a07635f746f74616c1202432e3a2b0a251100ca9a3b000000001900943577000000002100000000000000403a080a016112030a017810021801121d0a01671202472e2a140a1219009435770000000021000000000000f83f125e0a09685f7365636f6e64731202482e1a077365636f6e64734a440a401100ca9a3b00000000190094357700000000210200000000000000290000000000000c403210010000000000000001000000000000003a08000000000000f03f100212430a01731202532e5a3a0a381100ca9a3b00000000190094357700000000210100000000000000290000000000001040321209000000000000e03f11000000000000104012490a027374120353742e2a3e0a1d19009435770000000021000000000000f03f3a090a02737412030a01610a1d1900943577000000002100000000000000003a090a02737412030a0162"
+
+test "export_otlp: a collector that is not there fails with the connection's code"
+    exporter @= otlp_to("http://127.0.0.1:9/v1/metrics")
+    exporter.client.deadline_ms @ 2_000
+    assert export_otlp(exporter, body: []).is_err()
+
+## Examples
+
+# A counter of requests by method, described before it is registered.
+test "counter: requests by method"
+    d = counter(name: "requests_total", help: "Requests served.", labels: ["method"])
+    assert d.kind == .counter
+    assert d.labels == ["method"]
+
+# A gauge of no label, whose one series is there once it is registered.
+test "gauge: a queue's length"
+    r @= new_registry()
+    register(@r, d: gauge(name: "queue_length", help: "Jobs waiting.", labels: [])).must()
+    assert value_of(r, name: "queue_length", labels: []).must() == 0.0
+
+# A family of no kind, written `untyped`.
+test "untyped: a value of no kind"
+    r @= new_registry()
+    register(@r, d: untyped(name: "x", help: "X.", labels: [])).must()
+    set(@r, name: "x", labels: [], value: 3.0).must()
+    assert format_text(gather(r)) == "# HELP x X.\n# TYPE x untyped\nx 3\n"
+
+# A histogram of durations with Go's default buckets.
+test "histogram: request durations in the default buckets"
+    d = histogram(name: "request_duration_seconds", help: "Durations.", labels: ["route"], buckets: DEFAULT_BUCKETS)
+    assert d.buckets.len() == 11
+
+# A summary answering its median within 5 per cent.
+test "summary: a median within 5 per cent"
+    d = summary(name: "size_bytes", help: "Sizes.", labels: [], quantiles: [Quantile(quantile: 0.5, error: 0.05)])
+    assert d.quantiles[0].quantile == 0.5
+
+# An info telling the version a program was built at.
+test "info: the build's version"
+    r @= new_registry()
+    register(@r, d: info(name: "build_info", help: "The build.", labels: ["version"])).must()
+    set_info(@r, name: "build_info", labels: ["1.2.0"]).must()
+    assert value_of(r, name: "build_info", labels: ["1.2.0"]).must() == 1.0
+
+# A state set of a job's states, in its first state once registered.
+test "state_set: a job's state"
+    r @= new_registry()
+    register(@r, d: state_set(name: "job_state", help: "The job.", labels: [], states: ["idle", "busy"])).must()
+    assert sample_value(gather(r), name: "job_state", labels: [Label(name: "job_state", value: "idle")]).must() == 1.0
+
+# A duration in seconds, its unit written by OpenMetrics.
+test "with_unit: a family in seconds"
+    assert with_unit(gauge(name: "uptime_seconds", help: "", labels: []), unit: "seconds").unit == "seconds"
+
+# Every series of a family labelled by the region it runs in.
+test "with_const_labels: a region on every series"
+    d = with_const_labels(
+        counter(name: "jobs_total", help: "", labels: []),
+        labels: [Label(name: "region", value: "eu")]
+    )
+    assert d.const_labels.len() == 1
+
+# A name made of its parts.
+test "full_name: a namespace, a subsystem and a name"
+    assert full_name(namespace: "shop", subsystem: "cart", name: "items_total") == "shop_cart_items_total"
+
+# Five bounds a second apart.
+test "linear_buckets: five bounds a second apart"
+    assert linear_buckets(start: 1.0, width: 1.0, count: 5).must() == [1.0, 2.0, 3.0, 4.0, 5.0]
+
+# Bounds doubling from a millisecond.
+test "exponential_buckets: bounds doubling"
+    assert exponential_buckets(start: 0.001, factor: 2.0, count: 3).must() == [0.001, 0.002, 0.004]
+
+# Five bounds from 1 to 10,000, each ten times the one before.
+test "exponential_buckets_range: from 1 to 10,000"
+    assert exponential_buckets_range(min: 1.0, max: 10_000.0, count: 5).must() == [1.0, 10.0, 100.0, 1_000.0, 10_000.0]
+
+# A registry with nothing in it writes nothing.
+test "new_registry: nothing to write"
+    assert format_text(gather(new_registry())) == ""
+
+# A family registered, then the same name refused.
+test "register: a counter, and its name taken"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "Jobs done.", labels: [])).must()
+    assert register(@r, d: gauge(name: "jobs_total", help: "", labels: [])).is_err()
+
+# A family taken out, its name free again.
+test "unregister: a family taken out"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "", labels: [])).must()
+    unregister(@r, name: "jobs_total").must()
+    register(@r, d: gauge(name: "jobs_total", help: "", labels: [])).must()
+
+# The description a registry keeps.
+test "desc_of: what was registered"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "Jobs.", labels: ["queue"])).must()
+    assert desc_of(r, name: "jobs_total").must().help == "Jobs."
+
+# One request counted.
+test "inc: one request"
+    r @= new_registry()
+    register(@r, d: counter(name: "requests_total", help: "", labels: ["method"])).must()
+    inc(@r, name: "requests_total", labels: ["GET"]).must()
+    assert value_of(r, name: "requests_total", labels: ["GET"]).must() == 1.0
+
+# A connection closed.
+test "dec: a connection closed"
+    r @= new_registry()
+    register(@r, d: gauge(name: "connections", help: "", labels: [])).must()
+    dec(@r, name: "connections", labels: []).must()
+    assert value_of(r, name: "connections", labels: []).must() == -1.0
+
+# Bytes sent added up.
+test "add: bytes sent"
+    r @= new_registry()
+    register(@r, d: counter(name: "sent_bytes_total", help: "", labels: [])).must()
+    add(@r, name: "sent_bytes_total", labels: [], amount: 512.0).must()
+    assert value_of(r, name: "sent_bytes_total", labels: []).must() == 512.0
+
+# A temperature set.
+test "set: a temperature"
+    r @= new_registry()
+    register(@r, d: gauge(name: "temperature_celsius", help: "", labels: ["room"])).must()
+    set(@r, name: "temperature_celsius", labels: ["kitchen"], value: 21.5).must()
+    assert value_of(r, name: "temperature_celsius", labels: ["kitchen"]).must() == 21.5
+
+# The moment a job last ran, in seconds since 1970.
+test "set_to_time: the last run"
+    r @= new_registry()
+    register(@r, d: gauge(name: "last_run_seconds", help: "", labels: [])).must()
+    set_to_time(
+        @r,
+        name: "last_run_seconds",
+        labels: [],
+        at: time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
+    ).must()
+    assert value_of(r, name: "last_run_seconds", labels: []).must() == 1_700_000_000.0
+
+# A response's size observed.
+test "observe: a response's size"
+    r @= new_registry()
+    register(@r, d: histogram(name: "response_bytes", help: "", labels: [], buckets: [100.0, 1_000.0])).must()
+    observe(@r, name: "response_bytes", labels: [], value: 350.0).must()
+    assert count_of(r, name: "response_bytes", labels: []).must() == 1
+
+# How long a query took, in seconds.
+test "observe_duration: a query's time"
+    r @= new_registry()
+    register(@r, d: histogram(name: "query_seconds", help: "", labels: [], buckets: DEFAULT_BUCKETS)).must()
+    observe_duration(@r, name: "query_seconds", labels: [], d: time.milliseconds(250).must()).must()
+    assert sum_of(r, name: "query_seconds", labels: []).must() == 0.25
+
+# A job made busy.
+test "set_state: a job made busy"
+    r @= new_registry()
+    register(@r, d: state_set(name: "job_state", help: "", labels: [], states: ["idle", "busy"])).must()
+    set_state(@r, name: "job_state", labels: [], state: "busy").must()
+    assert sample_value(gather(r), name: "job_state", labels: [Label(name: "job_state", value: "busy")]).must() == 1.0
+
+# The facts of a build.
+test "set_info: a build's version and revision"
+    r @= new_registry()
+    register(@r, d: info(name: "build_info", help: "", labels: ["version", "revision"])).must()
+    set_info(@r, name: "build_info", labels: ["1.2.0", "abc123"]).must()
+    assert value_of(r, name: "build_info", labels: ["1.2.0", "abc123"]).must() == 1.0
+
+# A series of a customer who left.
+test "remove: one series taken out"
+    r @= new_registry()
+    register(@r, d: counter(name: "orders_total", help: "", labels: ["customer"])).must()
+    inc(@r, name: "orders_total", labels: ["ada"]).must()
+    remove(@r, name: "orders_total", labels: ["ada"]).must()
+    assert value_of(r, name: "orders_total", labels: ["ada"]).is_err()
+
+# The series of one customer, whatever the other labels.
+test "remove_matching: one customer's series"
+    r @= new_registry()
+    register(@r, d: counter(name: "orders_total", help: "", labels: ["customer", "shop"])).must()
+    inc(@r, name: "orders_total", labels: ["ada", "north"]).must()
+    inc(@r, name: "orders_total", labels: ["ada", "south"]).must()
+    assert remove_matching(@r, name: "orders_total", labels: [Label(name: "customer", value: "ada")]).must() == 2
+
+# Every series of a family taken out.
+test "remove_all: every series"
+    r @= new_registry()
+    register(@r, d: counter(name: "orders_total", help: "", labels: ["customer"])).must()
+    inc(@r, name: "orders_total", labels: ["ada"]).must()
+    remove_all(@r, name: "orders_total").must()
+    assert gather(r)[0].samples.len() == 0
+
+# A counter read back.
+test "value_of: a counter read back"
+    r @= new_registry()
+    register(@r, d: counter(name: "hits_total", help: "", labels: [])).must()
+    add(@r, name: "hits_total", labels: [], amount: 3.0).must()
+    assert value_of(r, name: "hits_total", labels: []).must() == 3.0
+
+# How many observations a histogram holds.
+test "count_of: observations made"
+    r @= new_registry()
+    register(@r, d: histogram(name: "h", help: "", labels: [], buckets: [1.0])).must()
+    observe(@r, name: "h", labels: [], value: 0.5).must()
+    observe(@r, name: "h", labels: [], value: 2.0).must()
+    assert count_of(r, name: "h", labels: []).must() == 2
+
+# Their sum.
+test "sum_of: observations added"
+    r @= new_registry()
+    register(@r, d: summary(name: "s", help: "", labels: [], quantiles: [])).must()
+    observe(@r, name: "s", labels: [], value: 1.5).must()
+    assert sum_of(r, name: "s", labels: []).must() == 1.5
+
+# A summary's median of three.
+test "quantile_of: the median of three"
+    r @= new_registry()
+    register(@r, d: summary(name: "s", help: "", labels: [], quantiles: [Quantile(quantile: 0.5, error: 0.01)])).must()
+
+    for x in [1.0, 2.0, 3.0]
+        observe(@r, name: "s", labels: [], value: x).must()
+
+    assert quantile_of(r, name: "s", labels: [], quantile: 0.5).must() == 2.0
+
+# Every family with its samples.
+test "gather: one counter's samples"
+    r @= new_registry()
+    register(@r, d: counter(name: "a_total", help: "", labels: [])).must()
+    families = gather(r)
+    assert families[0].samples[0].name == "a_total"
+
+# Prometheus's text format.
+test "format_text: one counter"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "Jobs done.", labels: ["queue"])).must()
+    inc(@r, name: "jobs_total", labels: ["mail"]).must()
+    assert format_text(gather(r)) == "# HELP jobs_total Jobs done.\n# TYPE jobs_total counter\njobs_total{queue=\"mail\"} 1\n"
+
+# OpenMetrics, the family named without `_total`.
+test "format_openmetrics: one counter"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "Jobs done.", labels: [])).must()
+    assert format_openmetrics(gather(r)) == "# HELP jobs Jobs done.\n# TYPE jobs counter\njobs_total 0.0\n# EOF\n"
+
+# A scraped text read back.
+test "parse_text: a gauge read"
+    families = parse_text("# HELP up Whether it is up.\n# TYPE up gauge\nup{job=\"api\"} 1\n").must()
+    assert families[0].kind == .gauge
+    assert families[0].samples[0].labels[0].value == "api"
+
+# One sample's value among families.
+test "sample_value: a bucket's count"
+    families = parse_text("# TYPE h histogram\nh_bucket{le=\"+Inf\"} 4\nh_sum 2\nh_count 4\n").must()
+    assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "+Inf")]).must() == 4.0
+
+# A family's name checked.
+test "is_metric_name: a name with a colon"
+    assert is_metric_name("job:requests:rate5m")
+
+# A label's name checked.
+test "is_label_name: a name with a digit"
+    assert is_label_name("http2")
+
+# The answer to a scrape.
+test "respond: a scrape answered"
+    r @= new_registry()
+    register(@r, d: counter(name: "a_total", help: "", labels: [])).must()
+    answer = respond(r, r: http.request(method: "GET", target: "/metrics").must())
+    assert answer.status == 200
+
+# The two families of an instrumented server.
+test "register_http: requests and durations"
+    r @= new_registry()
+    register_http(@r).must()
+    assert desc_of(r, name: HTTP_DURATION).must().kind == .histogram
+
+# One request recorded.
+test "observe_request: a GET answered 200"
+    r @= new_registry()
+    register_http(@r).must()
+    observe_request(
+        @r,
+        r: http.request(method: "GET", target: "/").must(),
+        response: http.respond_status(200),
+        elapsed: time.milliseconds(12).must()
+    ).must()
+    assert value_of(r, name: HTTP_REQUESTS, labels: ["200", "get"]).must() == 1.0
+
+# A push to a Pushgateway that is not running here fails, telling why.
+test "push_to_gateway: no Pushgateway here"
+    c @= http.default_client()
+    c.deadline_ms @ 2_000
+    assert push_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
+
+# The same with `POST`.
+test "push_add_to_gateway: no Pushgateway here"
+    c @= http.default_client()
+    c.deadline_ms @ 2_000
+    assert push_add_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
+
+# The same with `DELETE`.
+test "delete_from_gateway: no Pushgateway here"
+    c @= http.default_client()
+    c.deadline_ms @ 2_000
+    assert delete_from_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: []).is_err()
+
+# Where a group lives.
+test "gateway_url: a job and an instance"
+    assert gateway_url(gateway: "http://localhost:9091", job: "batch", grouping: [Label(name: "instance", value: "db1")]).must() == "http://localhost:9091/metrics/job/batch/instance/db1"
+
+# A client of the StatsD server on this machine, closed.
+test "open_statsd: the agent on this machine"
+    client @= open_statsd("127.0.0.1", port: 8125).must()
+    close_statsd(@client).must()
+
+# Closing twice is told.
+test "close_statsd: a client closed"
+    client @= open_statsd("127.0.0.1", port: 8125).must()
+    close_statsd(@client).must()
+
+# One count sent, received by a socket of the test.
+test "send_count: a page view"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_count(@client, name: "page.views", value: 1, rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "page.views:1|c\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A gauge's value sent.
+test "send_gauge: a temperature"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_gauge(@client, name: "temp", value: 21.5, rate: 1.0, tags: ["room:kitchen"]).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "temp:21.5|g|#room:kitchen\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A gauge raised by 3 for Etsy's StatsD.
+test "send_gauge_change: raised by 3"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_gauge_change(@client, name: "level", change: 3.0, rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "level:+3|g\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A timing in milliseconds.
+test "send_timing: a query of 12 milliseconds"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_timing(@client, name: "db.query", d: time.milliseconds(12).must(), rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "db.query:12.000000|ms\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A histogram's observation.
+test "send_histogram: a size"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_histogram(@client, name: "size", value: 512.0, rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "size:512|h\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A distribution's observation.
+test "send_distribution: a latency"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_distribution(@client, name: "latency", value: 0.25, rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "latency:0.25|d\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A user counted once whatever the number of visits.
+test "send_set: a user seen"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_set(@client, name: "users", member: "ada", rate: 1.0, tags: []).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "users:ada|s\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# An event with a title and a text.
+test "event: a deploy"
+    e = event(title: "Deployed", text: "version 1.2.0")
+    assert e.priority == .normal
+
+# An event sent.
+test "send_event: a deploy"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_event(client, e: event(title: "Deployed", text: "1.2.0")).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "_e{8,5}:Deployed|1.2.0\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# A check that is well.
+test "service_check: a database that is up"
+    assert service_check(name: "db.up", status: .ok).status == .ok
+
+# A check sent.
+test "send_service_check: a database that is down"
+    server @= net.open_udp("127.0.0.1", port: 0).must()
+    net.set_udp_deadline(server, ms: 2_000).must()
+    client @= open_statsd("127.0.0.1", port: server.address.port).must()
+    send_service_check(client, c: service_check(name: "db.up", status: .critical)).must()
+    assert bytes.to_text(net.receive(server).must().data).must() == "_sc|db.up|2\n"
+    close_statsd(@client).must()
+    net.close_udp(@server).must()
+
+# An exporter to the collector on this machine.
+test "otlp_to: the local collector"
+    assert otlp_to(OTLP_URL).url == "http://localhost:4318/v1/metrics"
+
+# An exporter as the environment describes it, here none.
+test "otlp_from_env: what the environment says"
+    exporter = otlp_from_env().must()
+    assert exporter.url != ""
+
+# A registry's values as an OTLP request.
+test "encode_otlp: a counter"
+    r @= new_registry()
+    register(@r, d: counter(name: "jobs_total", help: "", labels: [])).must()
+    body = encode_otlp(
+        r,
+        resource: [Attribute(key: "service.name", value: .text(v: "worker"))],
+        scope: Scope(name: "worker", version: "1.0"),
+        start: time.epoch(),
+        at: time.epoch()
+    )
+    assert body.len() > 0
+
+# An export to a collector that is not running here fails, telling why.
+test "export_otlp: no collector here"
+    exporter @= otlp_to("http://127.0.0.1:9/v1/metrics")
+    exporter.client.deadline_ms @ 2_000
+    assert export_otlp(exporter, body: []).is_err()

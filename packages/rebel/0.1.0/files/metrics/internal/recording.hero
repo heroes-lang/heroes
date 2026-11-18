@@ -1,0 +1,290 @@
+# What a value recorded does to a store's series: a counter and a gauge added
+# to and set, a histogram's and a summary's observation counted, a state set's
+# state and an info's facts set, a series taken out, and each read back; every
+# call refused `invalid` where its family's kind does not take it.
+
+use metrics/internal/ckms
+use metrics/internal/store
+
+# The code of a call its family does not take.
+constant INVALID: str
+    "invalid"
+
+# Adds `amount` to a counter's or a gauge's series; `call` names the face's
+# function in a refusal.
+function add(@s: store.Store, name: str, labels: [str], amount: f64, call: str) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .counter =>
+            if amount != amount || amount < 0.0
+                return fail(code: INVALID, msg: f"adding {amount} to the counter \"{name}\": a counter only goes up")
+        .gauge | .unknown => _ = 0
+        .histogram | .summary | .info | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: call)
+        )
+
+    at = store.series_at(@s, f: f, labels: labels)?
+    s.series[at].value @ s.series[at].value + amount
+    return ok()
+
+# Takes 1 from a gauge's series.
+function dec(@s: store.Store, name: str, labels: [str]) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .counter          => return fail(code: INVALID, msg: f"\"{name}\" is a counter, which only goes up")
+        .gauge | .unknown => _ = 0
+        .histogram | .summary | .info | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "dec")
+        )
+
+    return add(@s, name: name, labels: labels, amount: -1.0, call: "dec")
+
+# Sets a gauge's series.
+function set(@s: store.Store, name: str, labels: [str], value: f64) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .gauge | .unknown => _ = 0
+        .counter | .histogram | .summary | .info | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "set")
+        )
+
+    at = store.series_at(@s, f: f, labels: labels)?
+    s.series[at].value @ value
+    return ok()
+
+# The index of the bucket `value` falls in: the first whose bound is `value`
+# or above, or the last, `+Inf`'s.
+function bucket_of(bounds: [f64], value: f64) -> i64
+    low @= 0
+    high @= bounds.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if bounds[middle] >= value
+            high @ middle
+        else
+            low @ middle + 1
+
+    return low
+
+# Adds an observation to a histogram's or a summary's series.
+function observe(@s: store.Store, name: str, labels: [str], value: f64) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .histogram | .summary => _ = 0
+        .counter | .gauge | .unknown | .info | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "observe")
+        )
+
+    if value != value
+        return fail(code: INVALID, msg: f"observing NaN in \"{name}\": an observation must be a number")
+    at = store.series_at(@s, f: f, labels: labels)?
+    s.series[at].sum @ s.series[at].sum + value
+    s.series[at].count @ s.series[at].count + 1
+
+    match f.kind
+        .histogram =>
+            bucket = bucket_of(f.buckets, value: value)
+            s.series[at].counts[bucket] @ s.series[at].counts[bucket] + 1
+        .summary                                          => ckms.insert(@s.series[at].stream, x: value)
+        .counter | .gauge | .unknown | .info | .state_set => _ = 0
+
+    return ok()
+
+# Puts a state set's series in `state`.
+function set_state(@s: store.Store, name: str, labels: [str], state: str) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .state_set => _ = 0
+        .counter | .gauge | .unknown | .histogram | .summary | .info => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "set_state")
+        )
+
+    for i in range(from: 0, to: f.states.len())
+        if f.states[i] == state
+            at = store.series_at(@s, f: f, labels: labels)?
+            s.series[at].value @ to_f64(i)
+            return ok()
+
+    return fail(code: INVALID, msg: f"\"{state}\" is none of the states of \"{name}\": {f.states.join(", ")}")
+
+# Makes an info's series, of value 1.
+function set_info(@s: store.Store, name: str, labels: [str]) -> ()?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .info => _ = 0
+        .counter | .gauge | .unknown | .histogram | .summary | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "set_info")
+        )
+
+    at = store.series_at(@s, f: f, labels: labels)?
+    s.series[at].value @ 1.0
+    return ok()
+
+# Takes one series out.
+function remove(@s: store.Store, name: str, labels: [str]) -> ()?
+    _ = store.place_of(s, name: name)?
+    _ = store.recorded(s, name: name, labels: labels)?
+    kept: [store.Series] @= []
+
+    for series in s.series
+        if series.family != name || series.values != labels
+            kept @ kept.push(series)
+
+    s.series @ kept
+    store.reindex(@s)
+    return ok()
+
+# Takes out of the family `name` every series whose labels hold every pair of
+# `label_names` and `label_values`, and answers how many it took. A name that is
+# none of the family's labels matches no series.
+function remove_matching(@s: store.Store, name: str, label_names: [str], label_values: [str]) -> i64?
+    f = store.family_named(s, name: name)?
+    places: [i64] @= []
+
+    for n in label_names
+        place @= -1
+
+        for i in range(from: 0, to: f.labels.len())
+            if f.labels[i] == n
+                place @ i
+
+        places @ places.push(place)
+
+    kept: [store.Series] @= []
+    taken @= 0
+
+    for series in s.series
+        matches @= series.family == name
+
+        for k in range(from: 0, to: places.len())
+            if matches && (places[k] < 0 || series.values[places[k]] != label_values[k])
+                matches @ false
+
+        if matches
+            taken @ taken + 1
+        else
+            kept @ kept.push(series)
+
+    s.series @ kept
+    store.reindex(@s)
+    return ok(taken)
+
+# Takes every series of a family out.
+function remove_all(@s: store.Store, name: str) -> ()?
+    _ = store.place_of(s, name: name)?
+    kept: [store.Series] @= []
+
+    for series in s.series
+        if series.family != name
+            kept @ kept.push(series)
+
+    s.series @ kept
+    store.reindex(@s)
+    return ok()
+
+# A counter's, a gauge's or an info's value.
+function value_of(s: store.Store lent, name: str, labels: [str]) -> f64?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .counter | .gauge | .unknown | .info => _ = 0
+        .histogram | .summary | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "value_of")
+        )
+
+    at = store.recorded(s, name: name, labels: labels)?
+    return ok(s.series[at].value)
+
+# The place of a histogram's or a summary's series already recorded.
+function observed(s: store.Store lent, name: str, labels: [str]) -> i64?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .histogram | .summary => _ = 0
+        .counter | .gauge | .unknown | .info | .state_set => return fail(
+            code: INVALID,
+            msg: f"\"{name}\" observes nothing: it is no histogram or summary"
+        )
+
+    return store.recorded(s, name: name, labels: labels)
+
+# A histogram's or a summary's count.
+function count_of(s: store.Store lent, name: str, labels: [str]) -> u64?
+    at = observed(s, name: name, labels: labels)?
+    return ok(s.series[at].count)
+
+# A histogram's or a summary's sum.
+function sum_of(s: store.Store lent, name: str, labels: [str]) -> f64?
+    at = observed(s, name: name, labels: labels)?
+    return ok(s.series[at].sum)
+
+# A summary's answer for one of its quantiles.
+function quantile_of(s: store.Store lent, name: str, labels: [str], quantile: f64) -> f64?
+    f = store.family_named(s, name: name)?
+
+    match f.kind
+        .summary => _ = 0
+        .counter | .gauge | .unknown | .histogram | .info | .state_set => return fail(
+            code: INVALID,
+            msg: store.kind_refusal(name: name, kind: f.kind, call: "quantile_of")
+        )
+
+    answers @= false
+
+    for q in f.quantiles
+        if q == quantile
+            answers @ true
+
+    if !answers
+        return fail(code: INVALID, msg: f"the summary \"{name}\" does not answer the quantile {quantile}")
+    at = store.recorded(s, name: name, labels: labels)?
+    return ok(ckms.query(s.series[at].stream, q: quantile))
+
+test "remove_matching: by one label of two, by none, by a label the family has not"
+    s @= store.new_store()
+    f = store.Family(
+        name: "c",
+        help: "",
+        unit: "",
+        kind: .counter,
+        labels: ["a", "b"],
+        const_names: [],
+        const_values: [],
+        buckets: [],
+        quantiles: [],
+        errors: [],
+        states: []
+    )
+    store.register(@s, f: f).must()
+    add(@s, name: "c", labels: ["1", "x"], amount: 1.0, call: "inc").must()
+    add(@s, name: "c", labels: ["1", "y"], amount: 1.0, call: "inc").must()
+    add(@s, name: "c", labels: ["2", "x"], amount: 1.0, call: "inc").must()
+    assert remove_matching(@s, name: "c", label_names: ["z"], label_values: ["1"]).must() == 0
+    assert remove_matching(@s, name: "c", label_names: ["a"], label_values: ["1"]).must() == 2
+    assert value_of(s, name: "c", labels: ["2", "x"]).must() == 1.0
+    assert remove_matching(@s, name: "c", label_names: [], label_values: []).must() == 1
+    assert remove_matching(@s, name: "nope", label_names: [], label_values: []).is_err()
+
+test "bucket_of: below the first, on a bound, between, past the last"
+    bounds = [1.0, 2.0, 5.0]
+    assert bucket_of(bounds, value: 0.5) == 0
+    assert bucket_of(bounds, value: 1.0) == 0
+    assert bucket_of(bounds, value: 1.5) == 1
+    assert bucket_of(bounds, value: 5.0) == 2
+    assert bucket_of(bounds, value: 9.0) == 3
+    assert bucket_of([], value: 9.0) == 0

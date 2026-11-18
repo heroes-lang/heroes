@@ -1,0 +1,421 @@
+# Prometheus's text format 0.0.4 read as Prometheus's own parser,
+# `expfmt.TextParser` of `prometheus/common` 0.74, reads it, observed line by
+# line: what it takes and what it refuses, each family's samples kept flat in
+# the order they came. Its records are its own; the face makes its `Family`
+# of them.
+
+use numbers
+use strings
+
+# The code of a text that is not the format.
+constant INVALID: str
+    "invalid"
+
+# One sample read.
+record ReadSample
+    # The sample's name.
+    name: str
+    # Its labels' names, in the order written.
+    label_names: [str]
+    # Its labels' values, unescaped, in the same order.
+    label_values: [str]
+    # Its value.
+    value: f64
+    # Whether a timestamp was written.
+    has_timestamp: bool
+    # The timestamp in milliseconds, 0 where none was.
+    timestamp_ms: i64
+
+# One family read.
+record ReadFamily
+    # Its name.
+    name: str
+    # Its help, unescaped; "" where none was written.
+    help: str
+    # Whether a `# HELP` line named it.
+    has_help: bool
+    # The word of its `# TYPE` line, `untyped` where none was written.
+    type_name: str
+    # Whether a `# TYPE` line named it.
+    typed: bool
+    # Its samples, in the order they came.
+    samples: [ReadSample]
+
+# Where a line is read: the text, the line's number, and the byte reached.
+record Cursor
+    # The whole text.
+    text: str
+    # The line's number, from 1.
+    line: i64
+    # The byte reached.
+    at: i64
+    # The index of the line's line feed.
+    end: i64
+
+# The families of `text`, those with no sample left out, as Go's parser
+# answers them, in the order each first appeared. Fails `invalid` naming the
+# line.
+function parse(text: str) -> [ReadFamily]?
+    families: [ReadFamily] @= []
+    places: {str: i64} @= {}
+    start @= 0
+    number @= 1
+
+    while start < text.len()
+        end = strings.index_of_from(s: text, substr: "\n", from: start).default(-1)
+
+        if end < 0
+            return fail(code: INVALID, msg: f"line {number}: the text ends without a line feed")
+        c @= Cursor(text: text, line: number, at: start, end: end)
+        skip_blanks(@c)
+
+        if c.at < c.end
+            if text[c.at] == '#'
+                comment_line(@c, @families, @places)?
+            else
+                sample_line(@c, @families, @places)?
+        start @ end + 1
+        number @ number + 1
+
+    kept: [ReadFamily] @= []
+
+    for f in families
+        if f.samples.len() > 0
+            kept @ kept.push(f)
+
+    return ok(kept)
+
+# Fails with `msg` at the cursor's line.
+function refused<T>(c: Cursor lent, msg: str) -> T?
+    return fail(code: INVALID, msg: f"line {c.line}: {msg}")
+
+# Moves past spaces and tabs.
+function skip_blanks(@c: Cursor)
+    while c.at < c.end && (c.text[c.at] == ' ' || c.text[c.at] == '\t')
+        c.at @ c.at + 1
+
+# Whether the byte at the cursor is a space or a tab.
+function at_blank(c: Cursor lent) -> bool
+    return c.at < c.end && (c.text[c.at] == ' ' || c.text[c.at] == '\t')
+
+# The bytes from the cursor to the next space, tab or line end, moved past.
+function token(@c: Cursor) -> str
+    from = c.at
+
+    while c.at < c.end && c.text[c.at] != ' ' && c.text[c.at] != '\t'
+        c.at @ c.at + 1
+
+    return c.text.slice(from: from, to: c.at)
+
+# A metric's name at the cursor, moved past. Fails where there is none.
+function metric_name(@c: Cursor) -> str?
+    from = c.at
+
+    while c.at < c.end && is_name_byte(c.text[c.at], first: c.at == from)
+        c.at @ c.at + 1
+
+    if c.at == from
+        return refused(c, msg: "a metric's name is not valid there")
+    return ok(c.text.slice(from: from, to: c.at))
+
+# Whether `b` may stand in a metric's name, first or later.
+function is_name_byte(b: u8, first: bool) -> bool
+    letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_' || b == ':'
+    return letter || !first && b >= '0' && b <= '9'
+
+# Whether `b` may stand in a label's name, first or later.
+function is_label_byte(b: u8, first: bool) -> bool
+    letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+    return letter || !first && b >= '0' && b <= '9'
+
+# The family a sample or a comment named `name` belongs to: a histogram's
+# `_bucket`, `_sum` and `_count` and a summary's `_sum` and `_count` to it,
+# anything else to the family of its own name.
+function family_of(name: str, families: [ReadFamily] lent, places: {str: i64} lent) -> str
+    for suffix in ["_bucket", "_sum", "_count"]
+        if strings.has_suffix(s: name, suffix: suffix)
+            base = name.slice(from: 0, to: name.len() - suffix.len())
+
+            match places[base]
+                .ok at =>
+                    kind = families[at].type_name
+
+                    if kind == "histogram" || kind == "summary" && suffix != "_bucket"
+                        return base
+                .err _ => _ = 0
+
+    return name
+
+# The place of the family `name`, made where it was not there.
+function family_at(@families: [ReadFamily], @places: {str: i64}, name: str) -> i64
+    match places[name]
+        .ok at => return at
+        .err _ => _ = 0
+
+    at = families.len()
+    families @ families.push(
+        ReadFamily(name: name, help: "", has_help: false, type_name: "untyped", typed: false, samples: [])
+    )
+    places[name] @ at
+    return at
+
+# A line opening with `#`: `HELP` or `TYPE` with a name, or a comment passed
+# over.
+function comment_line(@c: Cursor, @families: [ReadFamily], @places: {str: i64}) -> ()?
+    c.at @ c.at + 1
+    skip_blanks(@c)
+    word = token(@c)
+
+    if word != "HELP" && word != "TYPE"
+        return ok()
+    skip_blanks(@c)
+    named = metric_name(@c)?
+
+    if c.at < c.end && !at_blank(c)
+        return refused(c, msg: f"the name \"{named}\" runs into other bytes")
+    family = family_of(named, families, places)
+    at = family_at(@families, @places, name: family)
+
+    if word == "TYPE"
+        if families[at].typed || families[at].samples.len() > 0
+            return refused(c, msg: f"a second TYPE line for \"{named}\", or a TYPE after its samples")
+        skip_blanks(@c)
+        kind = c.text.slice(from: c.at, to: c.end)
+
+        if kind != "counter" && kind != "gauge" && kind != "histogram" && kind != "summary" && kind != "untyped"
+            return refused(c, msg: f"\"{kind}\" is no metric type")
+        families[at].type_name @ kind
+        families[at].typed @ true
+        return ok()
+
+    if families[at].has_help
+        return refused(c, msg: f"a second HELP line for \"{named}\"")
+    families[at].has_help @ true
+
+    if c.at < c.end
+        c.at @ c.at + 1
+        families[at].help @ unescaped(@c, quoted: false)?
+    return ok()
+
+# The text from the cursor to the closing quote, where `quoted`, or to the
+# line's end, each `\\`, `\"` and `\n` read as the byte it stands for. Fails on
+# any other escape, and on a quoted text the line ends inside.
+function unescaped(@c: Cursor, quoted: bool) -> str?
+    pieces: [str] @= []
+    from @= c.at
+
+    while true
+        if c.at >= c.end
+            if quoted
+                return refused(c, msg: "a label's value is not closed before the line ends")
+            pieces @ pieces.push(c.text.slice(from: from, to: c.at))
+            return ok(pieces.join(""))
+        b = c.text[c.at]
+
+        if quoted && b == '"'
+            pieces @ pieces.push(c.text.slice(from: from, to: c.at))
+            c.at @ c.at + 1
+            return ok(pieces.join(""))
+
+        if b == '\\'
+            if c.at + 1 >= c.end
+                return refused(c, msg: "a backslash ends the line")
+            pieces @ pieces.push(c.text.slice(from: from, to: c.at))
+            next = c.text[c.at + 1]
+
+            if next == '\\'
+                pieces @ pieces.push("\\")
+            else if next == '"'
+                pieces @ pieces.push("\"")
+            else if next == 'n'
+                pieces @ pieces.push("\n")
+            else
+                return refused(c, msg: "an escape that is not \\\\, \\\" or \\n")
+            c.at @ c.at + 2
+            from @ c.at
+        else
+            c.at @ c.at + 1
+
+# A sample's line: a name, labels between braces, a value and a timestamp.
+function sample_line(@c: Cursor, @families: [ReadFamily], @places: {str: i64}) -> ()?
+    name = metric_name(@c)?
+    skip_blanks(@c)
+    label_names: [str] @= []
+    label_values: [str] @= []
+
+    if c.at < c.end && c.text[c.at] == '{'
+        c.at @ c.at + 1
+        read_labels(@c, label_names: @label_names, label_values: @label_values, metric: name)?
+        skip_blanks(@c)
+
+    value_text = token(@c)
+    value = sample_value(c, text: value_text)?
+    has_timestamp @= false
+    stamp @= 0
+
+    if at_blank(c)
+        skip_blanks(@c)
+        stamp_text = token(@c)
+
+        match numbers.parse_int(stamp_text)
+            .ok ms =>
+                has_timestamp @ true
+                stamp @ ms
+            .err _ => return refused(c, msg: f"\"{stamp_text}\" is no timestamp in whole milliseconds")
+
+        if c.at < c.end
+            return refused(c, msg: f"bytes after the timestamp: \"{c.text.slice(from: c.at, to: c.end)}\"")
+    family = family_of(name, families, places)
+    at = family_at(@families, @places, name: family)
+    add_sample(
+        @families[at].samples,
+        s: ReadSample(name: name, label_names: label_names, label_values: label_values, value: value, has_timestamp: has_timestamp, timestamp_ms: stamp)
+    )
+    return ok()
+
+# Adds `s` after the last sample of `list`, the caller's own.
+function add_sample(@list: [ReadSample], s: ReadSample)
+    list @ list.push(s)
+
+# The labels after a `{`, to the `}` moved past.
+function read_labels(@c: Cursor, @label_names: [str], @label_values: [str], metric: str) -> ()?
+    while true
+        skip_blanks(@c)
+
+        if c.at >= c.end
+            return refused(c, msg: f"the labels of \"{metric}\" are not closed")
+
+        if c.text[c.at] == '}'
+            c.at @ c.at + 1
+            return ok()
+        from = c.at
+
+        while c.at < c.end && is_label_byte(c.text[c.at], first: c.at == from)
+            c.at @ c.at + 1
+
+        if c.at == from
+            return refused(c, msg: f"a label's name of \"{metric}\" is not valid there")
+        label = c.text.slice(from: from, to: c.at)
+
+        if label == "__name__"
+            return refused(c, msg: "the label name \"__name__\" is reserved")
+
+        for seen in label_names
+            if seen == label
+                return refused(c, msg: f"\"{metric}\" names the label \"{label}\" twice")
+
+        skip_blanks(@c)
+
+        if c.at >= c.end || c.text[c.at] != '='
+            return refused(c, msg: f"no = after the label \"{label}\"")
+        c.at @ c.at + 1
+        skip_blanks(@c)
+
+        if c.at >= c.end || c.text[c.at] != '"'
+            return refused(c, msg: f"the value of the label \"{label}\" does not open with a quote")
+        c.at @ c.at + 1
+        value = unescaped(@c, quoted: true)?
+        label_names @ label_names.push(label)
+        label_values @ label_values.push(value)
+        skip_blanks(@c)
+
+        if c.at < c.end && c.text[c.at] == ','
+            c.at @ c.at + 1
+        else if c.at >= c.end || c.text[c.at] != '}'
+            return refused(c, msg: f"the label \"{label}\" is followed by neither a comma nor a brace")
+
+# A sample's value: a decimal float with its sign and exponent, or `Inf`,
+# `infinity` and `NaN` in any case, as Go's `ParseFloat` reads them; a number
+# too large for an `f64` is refused as Go refuses it.
+function sample_value(c: Cursor lent, text: str) -> f64?
+    match numbers.parse_float(text)
+        .ok x =>
+            if x == 1.0 / 0.0 || x == -1.0 / 0.0
+                word = strings.to_lower_ascii(strings.trim_start_any(s: text, set: "+-"))
+
+                if word != "inf" && word != "infinity"
+                    return refused(c, msg: f"\"{text}\" is too large for a float")
+            return ok(x)
+        .err _ => return refused(c, msg: f"\"{text}\" is no float as a value")
+
+test "parse: the empty text, a sample of no family named, and a text without its last line feed"
+    assert parse("").must().len() == 0
+    one = parse("a 1\n").must()
+    assert one.len() == 1
+    assert one[0].type_name == "untyped"
+    assert one[0].samples[0].value == 1.0
+    assert parse("a 1").is_err()
+
+test "parse: a family's samples apart are joined, a family with no sample is left out"
+    split = parse("# TYPE a gauge\na 1\n# TYPE b gauge\nb 2\na 3\n").must()
+    assert split.len() == 2
+    assert split[0].samples.len() == 2
+    assert split[0].samples[1].value == 3.0
+    assert parse("# TYPE a gauge\n# HELP a y\n").must().len() == 0
+
+test "parse: a second TYPE, a TYPE after samples and a second HELP refused, a HELP after samples taken"
+    assert parse("# TYPE a gauge\n# TYPE a gauge\na 1\n").is_err()
+    assert parse("a 1\n# TYPE a gauge\n").is_err()
+    assert parse("# HELP a x\n# HELP a y\na 1\n").is_err()
+    late = parse("# TYPE a gauge\na 1\n# HELP a late\n").must()
+    assert late[0].help == "late"
+
+test "parse: escapes in labels and help, and an escape Go refuses"
+    escaped = parse("a{x=\"a\\\\b\\\"c\\nd\"} 1\n").must()
+    assert escaped[0].samples[0].label_values[0] == "a\\b\"c\nd"
+    helped = parse("# HELP a one\\\\two\\nthree\\\"q\na 1\n").must()
+    assert helped[0].help == "one\\two\nthree\"q"
+    assert parse("a{x=\"\\t\"} 1\n").is_err()
+    assert parse("# HELP a x\\ty\na 1\n").is_err()
+
+test "parse: labels with spaces, a trailing comma, none, twice, __name__ and no comma"
+    spaced = parse("a { x = \"1\" , y=\"2\" } 1\n").must()
+    assert spaced[0].samples[0].label_names == ["x", "y"]
+    assert parse("a{x=\"1\",} 1\n").must()[0].samples[0].label_values == ["1"]
+    assert parse("a{} 1\n").must()[0].samples[0].label_names.len() == 0
+    assert parse("a{x=\"1\",x=\"2\"} 1\n").is_err()
+    assert parse("a{__name__=\"b\"} 1\n").is_err()
+    assert parse("a{x=\"1\"y=\"2\"} 1\n").is_err()
+    assert parse("a{x=1} 1\n").is_err()
+    assert parse("a{x=\"1\"\n").is_err()
+    assert parse("a{1x=\"1\"} 1\n").is_err()
+
+test "parse: values Go reads and values it refuses"
+    for good in ["Inf", "+inf", "nan", "NaN", "infinity", "1e3", ".5", "-0", "+5", "1."]
+        assert !parse("a " + good + "\n").is_err()
+
+    for bad in ["0x10", "1_000", "0x1p-2", "1e400", ""]
+        assert parse("a " + bad + "\n").is_err()
+
+    assert parse("a infinity\n").must()[0].samples[0].value == 1.0 / 0.0
+
+test "parse: timestamps, a float one, bytes after, a trailing space and a carriage return"
+    stamped = parse("a 1 1700000000000\nb 2 -5\nc 3 +5\n").must()
+    assert stamped[0].samples[0].timestamp_ms == 1_700_000_000_000
+    assert stamped[1].samples[0].timestamp_ms == -5
+    assert stamped[2].samples[0].timestamp_ms == 5
+    assert parse("a 1 1.5\n").is_err()
+    assert parse("a 1 2 3\n").is_err()
+    assert parse("a 1  \n").is_err()
+    assert parse("a 1\r\n").is_err()
+    assert parse("a 1 99999999999999999999\n").is_err()
+
+test "parse: comments, blank lines, a leading space, a tab, #TYPE with no space, and an unknown type"
+    read = parse("# just a comment\n#\n\n#TYPE a counter\n a\t1\n").must()
+    assert read[0].type_name == "counter"
+    assert parse("# TYPE a foo\na 1\n").is_err()
+    assert parse("# TYPE a gauge extra\na 1\n").is_err()
+    assert parse("1a 1\n").is_err()
+
+test "parse: a histogram's and a summary's samples join their family, a counter's _total does not"
+    h = parse("# TYPE h histogram\nh_bucket{le=\"1\"} 1\nh_bucket{le=\"+Inf\"} 2\nh_sum 3\nh_count 2\n").must()
+    assert h.len() == 1
+    assert h[0].samples.len() == 4
+    s = parse("# TYPE s summary\ns_count 2\ns_sum 3\ns{quantile=\"0.9\"} 1\ns_bucket 1\n").must()
+    assert s.len() == 2
+    assert s[1].name == "s_bucket"
+    c = parse("# TYPE c counter\nc_total 1\n").must()
+    assert c.len() == 1
+    assert c[0].name == "c_total"
+    assert c[0].type_name == "untyped"
+    assert parse("# TYPE h histogram\nh_count 1\n# TYPE h_count gauge\n").is_err()

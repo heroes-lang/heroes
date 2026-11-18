@@ -1,0 +1,243 @@
+# The pieces of OpenTelemetry's protocol, OTLP 1.x, that a metrics request is
+# built from, on `protobuf`'s wire: fields written in the order of their
+# numbers, and a scalar at its default left out as proto3 leaves it out, so the
+# bytes are those Python's `opentelemetry-proto` writes for the same message.
+# Field numbers are the `.proto` files' of opentelemetry-proto 1.x, read from
+# its descriptors.
+
+use numbers
+use protobuf
+use strings
+
+# `AggregationTemporality`'s cumulative, the one a registry's values have.
+constant CUMULATIVE: u64
+    2
+
+# Writes the string `s` as field `number`, left out where it is empty.
+function put_text(@to: [u8], number: i64, s: str)
+    if s.len() == 0
+        return
+    protobuf.push_tag(@to, number: number, wire: .length_delimited)
+    protobuf.push_length_delimited(to: @to, v: strings.to_bytes(s))
+
+# Writes `b` as field `number`, the bytes of a string, of `bytes` or of a
+# message, written even where empty.
+function put_bytes(@to: [u8], number: i64, b: [u8])
+    protobuf.push_tag(@to, number: number, wire: .length_delimited)
+    protobuf.push_length_delimited(to: @to, v: b)
+
+# Writes `v` as the varint field `number`, left out where it is 0.
+function put_varint(@to: [u8], number: i64, v: u64)
+    if v == 0
+        return
+    protobuf.push_tag(@to, number: number, wire: .varint)
+    protobuf.push_varint(@to, v)
+
+# Writes `v` as the `fixed64` field `number`, left out where it is 0.
+function put_fixed64(@to: [u8], number: i64, v: u64)
+    if v == 0
+        return
+    protobuf.push_tag(@to, number: number, wire: .fixed64)
+    protobuf.push_fixed64(@to, v)
+
+# Writes `x` as the `double` field `number`, always: a oneof's member and an
+# `optional` field are written at zero too.
+function put_double(@to: [u8], number: i64, x: f64)
+    protobuf.push_tag(@to, number: number, wire: .fixed64)
+    protobuf.push_fixed64(@to, v: numbers.f64_to_bits(x))
+
+# Writes `x` as the `double` field `number`, left out where it is 0, as a plain
+# proto3 field is.
+function put_double_unless_zero(@to: [u8], number: i64, x: f64)
+    if numbers.f64_to_bits(x) == 0
+        return
+    put_double(@to, number: number, x: x)
+
+# An instant's nanoseconds since 1970 as a `fixed64`: 0 for an instant before
+# 1970, which OTLP cannot carry.
+function unix_nanoseconds(n: i64) -> u64
+    if n < 0
+        return 0
+    return to_u64(n).must()
+
+# `AnyValue` holding the string `s`: field 1, written even where empty, since
+# it is a oneof's member.
+function any_text(s: str) -> [u8]
+    out: [u8] @= []
+    put_bytes(to: @out, number: 1, b: strings.to_bytes(s))
+    return out
+
+# `AnyValue` holding the bool `b`: field 2.
+function any_boolean(b: bool) -> [u8]
+    out: [u8] @= []
+    protobuf.push_tag(@out, number: 2, wire: .varint)
+
+    if b
+        protobuf.push_varint(@out, v: 1)
+    else
+        protobuf.push_varint(@out, v: 0)
+    return out
+
+# `AnyValue` holding the `int64` `n`: field 3, a negative written in ten bytes
+# as two's complement.
+function any_integer(n: i64) -> [u8]
+    out: [u8] @= []
+    protobuf.push_tag(@out, number: 3, wire: .varint)
+    protobuf.push_varint(@out, v: twos_complement(n))
+    return out
+
+# `AnyValue` holding the `double` `x`: field 4.
+function any_number(x: f64) -> [u8]
+    out: [u8] @= []
+    put_double(@out, number: 4, x: x)
+    return out
+
+# `AnyValue` holding the bytes `b`: field 7.
+function any_bytes(b: [u8]) -> [u8]
+    out: [u8] @= []
+    put_bytes(to: @out, number: 7, b: b)
+    return out
+
+# `AnyValue` holding an `ArrayValue` of the `AnyValue`s `items`: field 5, each
+# item its field 1.
+function any_array(items: [[u8]]) -> [u8]
+    inner: [u8] @= []
+
+    for item in items
+        put_bytes(to: @inner, number: 1, b: item)
+
+    out: [u8] @= []
+    put_bytes(to: @out, number: 5, b: inner)
+    return out
+
+# `n` as the `u64` whose bits are its two's complement, as a varint writes an
+# `int64`.
+function twos_complement(n: i64) -> u64
+    if n >= 0
+        return to_u64(n).must()
+
+    # 2^64 + n, written as (2^64 - 1) - (-n - 1), which never leaves u64.
+    return 18_446_744_073_709_551_615 - to_u64(-(n + 1)).must()
+
+# A `KeyValue`: the key, field 1, and the `AnyValue` `value`, field 2.
+function key_value(key: str, value: [u8]) -> [u8]
+    out: [u8] @= []
+    put_text(@out, number: 1, s: key)
+    put_bytes(to: @out, number: 2, b: value)
+    return out
+
+# A `Resource` holding the `KeyValue`s `attributes`, each its field 1.
+function resource(attributes: [[u8]]) -> [u8]
+    out: [u8] @= []
+
+    for a in attributes
+        put_bytes(to: @out, number: 1, b: a)
+
+    return out
+
+# An `InstrumentationScope`: its name, field 1, and its version, field 2.
+function scope(name: str, version: str) -> [u8]
+    out: [u8] @= []
+    put_text(@out, number: 1, s: name)
+    put_text(@out, number: 2, s: version)
+    return out
+
+# What a collector's answer says it refused: the count of field 1 and the
+# message of field 2 of the `partial_success`, field 1 of the answer; 0 and ""
+# where the answer holds none.
+record Partial
+    # How many points, spans or records were refused.
+    rejected: i64
+    # Why, in the collector's words.
+    message: str
+
+# The `partial_success` of an `Export*ServiceResponse`, read with no schema.
+# Fails `invalid` where `body` is not a protobuf message.
+function partial_of(body: [u8]) -> Partial?
+    out @= Partial(rejected: 0, message: "")
+
+    for f in protobuf.decode_raw(body)?
+        if f.number == 1
+            match f.value
+                .length_delimited inner =>
+                    for g in protobuf.decode_raw(inner.v)?
+                        match g.value
+                            .varint n =>
+                                if g.number == 1
+                                    out.rejected @ to_i64(n.v).default(0)
+                            .length_delimited t =>
+                                if g.number == 2
+                                    out.message @ bytes_text(t.v)
+                            .fixed64 _ => _ = 0
+                            .fixed32 _ => _ = 0
+                            .group _   => _ = 0
+                .varint _  => _ = 0
+                .fixed64 _ => _ = 0
+                .fixed32 _ => _ = 0
+                .group _   => _ = 0
+
+    return ok(out)
+
+# `b` read as text, a byte that is not UTF-8 written U+FFFD.
+function bytes_text(b: [u8]) -> str
+    return b.validated_bytes().default("(a message that is not UTF-8)")
+
+# The message of a `google.rpc.Status`, field 2, as a collector answers a
+# refused request; "" where `body` holds none or is no message.
+function status_message(body: [u8]) -> str
+    match protobuf.decode_raw(body)
+        .ok fields =>
+            for f in fields
+                if f.number == 2
+                    match f.value
+                        .length_delimited t => return bytes_text(t.v)
+                        .varint _           => _ = 0
+                        .fixed64 _          => _ = 0
+                        .fixed32 _          => _ = 0
+                        .group _            => _ = 0
+        .err _ => return ""
+
+    return ""
+
+test "twos_complement: zero, the largest, -1 and the smallest i64"
+    assert twos_complement(0) == 0
+    assert twos_complement(9_223_372_036_854_775_807) == 9_223_372_036_854_775_807
+    assert twos_complement(-1) == 18_446_744_073_709_551_615
+    assert twos_complement(-9_223_372_036_854_775_807 - 1) == 9_223_372_036_854_775_808
+
+test "key_value and the AnyValues: the bytes Python's opentelemetry-proto writes for each"
+    # KeyValue(key="a", value=AnyValue(string_value="b")).SerializeToString()
+    assert key_value(key: "a", value: any_text("b")) == [10, 1, 97, 18, 3, 10, 1, 98]
+
+    # AnyValue(string_value="")
+    assert any_text("") == [10, 0]
+
+    # AnyValue(bool_value=True), AnyValue(bool_value=False)
+    assert any_boolean(true) == [16, 1]
+    assert any_boolean(false) == [16, 0]
+
+    # AnyValue(int_value=-1)
+    assert any_integer(-1) == [24, 255, 255, 255, 255, 255, 255, 255, 255, 255, 1]
+
+    # AnyValue(double_value=1.5)
+    assert any_number(1.5) == [33, 0, 0, 0, 0, 0, 0, 248, 63]
+
+    # AnyValue(array_value=ArrayValue(values=[AnyValue(int_value=1)]))
+    assert any_array([any_integer(1)]) == [42, 4, 10, 2, 24, 1]
+
+test "scope and resource: empty fields left out"
+    assert scope(name: "", version: "") == []
+    assert scope(name: "m", version: "1") == [10, 1, 109, 18, 1, 49]
+    assert resource([]) == []
+
+test "partial_of: an empty answer, and one refusing two points"
+    assert partial_of([]).must() == Partial(rejected: 0, message: "")
+
+    # ExportMetricsServiceResponse(partial_success=ExportMetricsPartialSuccess(rejected_data_points=2, error_message="no"))
+    assert partial_of([10, 6, 8, 2, 18, 2, 110, 111]).must() == Partial(rejected: 2, message: "no")
+    assert partial_of([10]).is_err()
+
+test "status_message: a Status's message, and bytes that are no message"
+    # Status(code=3, message="bad")
+    assert status_message([8, 3, 18, 3, 98, 97, 100]) == "bad"
+    assert status_message([255]) == ""

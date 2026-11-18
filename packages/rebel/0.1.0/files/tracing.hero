@@ -1,0 +1,1873 @@
+# Spans of work with a parent, attributes, events, links and a status, kept by
+# a tracer the program holds as a value; their context carried from one
+# program to the next in HTTP requests by the W3C Trace Context fields
+# `traceparent` and `tracestate`; traces sampled by a ratio of their ids; and
+# spans and log records exported to an OpenTelemetry collector as OTLP over
+# HTTP, a log record carrying the trace and the span it was written in.
+#
+# **There is no current span and no global tracer.** The language has no
+# globals and no context passed in secret, so the program holds a `Tracer`
+# made by `new_tracer`, starts each span from it `@`, passes the span (or its
+# `context`) to the code that works under it, and ends it with `end`, which
+# keeps it for `export_spans`. A child names its parent's context:
+# `tracing.start_child(@tracer, name: "query", kind: .client, parent:
+# span.context)`. A server's span starts from the request with `start_server`,
+# which reads the caller's `traceparent`; a client's request carries its span
+# with `inject`.
+#
+# **What it does not do.** Metrics are `metrics`'s and lines of a log `log`'s:
+# `log_fields` gives a `log.Logger` the fields that tie a line to its span, and
+# `log_record` makes the OTLP record of a line. Spans are not sent on their
+# own: the program calls `export_spans` when it chooses, as a batch
+# processor's timer would, and nothing here runs on another thread. The
+# baggage of W3C, the B3 and Jaeger headers, and gRPC as OTLP's transport are
+# not here.
+#
+# The codes it fails with: `invalid` (a field, an id or a setting that is not
+# the format), `not_found` (no `traceparent` in a request, no member of that
+# key), `failed` (a collector that refused), and, from the network and the
+# clock, the codes of `http.send` and `time.now`.
+
+use bytes
+use http
+use log
+use numbers
+use random
+use strings
+use time
+use tracing/internal/fixture
+use tracing/internal/ids
+use tracing/internal/otlp
+use tracing/internal/posting
+use tracing/internal/w3c
+
+## Codes
+
+# The code of a field, an id or a setting that is not the format:
+# `parse_traceparent`, `parse_tracestate`, `parse_trace_id`, `extract`,
+# `with_state`, `otlp_from_env`.
+constant INVALID: str
+    "invalid"
+
+# The code of a field or a member that is not there: `extract`, `state_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a collector that answered with a status other than success:
+# `export_spans`, `export_logs`.
+constant FAILED: str
+    "failed"
+
+## Identifiers and their context
+
+# The flag of a span that is sampled, the lowest bit of `SpanContext.flags`.
+constant FLAG_SAMPLED: u8
+    1
+
+# The flag of a trace whose id's last seven bytes are random, as W3C Trace
+# Context level 2 names it.
+constant FLAG_RANDOM: u8
+    2
+
+# One member of a `tracestate`: a vendor's key and its value.
+record StateMember
+    # The key: lowercase letters, digits and `_-*/`, or `tenant@system`.
+    key: str
+    # The value: 1 to 256 printable ASCII bytes, no `,` or `=`.
+    value: str
+
+# What identifies a span to the spans under it and to other programs: its
+# trace, itself, its flags and the vendors' state. A valid one has a trace of
+# 16 bytes and a span of 8, neither all zeros.
+record SpanContext
+    # The trace's 16 bytes, shared by every span of the trace.
+    trace_id: [u8]
+    # The span's 8 bytes.
+    span_id: [u8]
+    # The flags: `FLAG_SAMPLED`, `FLAG_RANDOM`, the others as they came.
+    flags: u8
+    # The `tracestate`'s members, in their order.
+    state: [StateMember]
+    # Whether it came from another program, by `extract`.
+    remote: bool
+
+# Whether `c` names a trace and a span: 16 and 8 bytes, neither all zeros.
+#
+# - `c`: the context.
+#
+# See also `is_sampled`.
+function is_valid(c: SpanContext) -> bool
+    return c.trace_id.len() == 16 && c.span_id.len() == 8 && !w3c.all_zero(c.trace_id) && !w3c.all_zero(c.span_id)
+
+# Whether `c`'s flags say its trace is sampled: recorded and exported.
+#
+# - `c`: the context.
+#
+# See also `FLAG_SAMPLED`.
+function is_sampled(c: SpanContext) -> bool
+    return c.flags % 2 == 1
+
+# The trace id `s` writes: 32 lowercase hexadecimal digits, not all zeros, as
+# Go's `TraceIDFromHex` reads one.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where it is anything else. See also `format_id`.
+function parse_trace_id(s: str) -> [u8]?
+    return w3c.parse_id(s, digits: 32)
+
+# The span id `s` writes: 16 lowercase hexadecimal digits, not all zeros.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where it is anything else. See also `format_id`.
+function parse_span_id(s: str) -> [u8]?
+    return w3c.parse_id(s, digits: 16)
+
+# `id`, a trace's or a span's, in lowercase hexadecimal, as Go's `String` and
+# Python's `format_trace_id` write it.
+#
+# - `id`: the bytes, any number of them.
+#
+# See also `parse_trace_id`.
+function format_id(id: [u8]) -> str
+    return bytes.format_hex(id)
+
+## W3C Trace Context
+
+# The context a `traceparent` field writes, with no state, not remote.
+#
+# - `s`: the field's value, `00-<32 digits>-<16 digits>-<2 digits>`, every digit
+#   lowercase hexadecimal; a version after `00` may go on after a `-`.
+#
+# The flags are kept as they came, unknown bits included, as Python's
+# propagator keeps them; Go's refuses a byte above 3. Fails `invalid` where
+# the version is `ff`, a part is not its length of lowercase hexadecimal, a
+# version `00` field is not 55 bytes, or the trace or the span is all zeros,
+# as Go's and Python's propagators refuse them. See also `extract`.
+function parse_traceparent(s: str) -> SpanContext?
+    p = w3c.parse_traceparent(s)?
+    return ok(SpanContext(trace_id: p.trace_id, span_id: p.span_id, flags: p.flags, state: [], remote: false))
+
+# `c` as a `traceparent` of version `00`.
+#
+# - `c`: the context, valid.
+#
+# `00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01`. See also
+# `inject`.
+function format_traceparent(c: SpanContext) -> str
+    return w3c.format_traceparent(trace_id: c.trace_id, span_id: c.span_id, flags: c.flags)
+
+# The members of a `tracestate` field, in their order.
+#
+# - `s`: the field's value; spaces and tabs around a member are taken off and
+#   an empty member is passed over.
+#
+# Fails `invalid` where a member is not `key=value` by the Recommendation's
+# rules, a key stands twice, or there are more than 32, as Go's and Python's
+# propagators refuse the whole field. See also `format_tracestate`.
+function parse_tracestate(s: str) -> [StateMember]?
+    out: [StateMember] @= []
+
+    for m in w3c.parse_tracestate(s)?
+        out @ out.push(StateMember(key: m.key, value: m.value))
+
+    return ok(out)
+
+# `members` as a `tracestate` field: `key=value` between commas, no space.
+#
+# - `members`: the members, in order; none is the empty text.
+#
+# See also `parse_tracestate`.
+function format_tracestate(members: [StateMember]) -> str
+    pieces: [str] @= []
+
+    for m in members
+        pieces @ pieces.push(m.key + "=" + m.value)
+
+    return pieces.join(",")
+
+# A copy of `members` with `key` set to `value` and put first, as a vendor
+# writes its own member, Go's `TraceState.Insert`.
+#
+# - `members`: the members.
+# - `key`: the key, by the Recommendation's rules.
+# - `value`: its value, by the same.
+#
+# The member of that key that stood before is taken out. Fails `invalid` where
+# the key or the value breaks the rules, or the state would hold more than 32
+# members. See also `without_state`, `state_of`.
+function with_state(members: [StateMember], key: str, value: str) -> [StateMember]?
+    if !w3c.is_key(key) || !w3c.is_value(value)
+        return fail(code: INVALID, msg: f"\"{key}={value}\" is no tracestate member")
+    out: [StateMember] @= [StateMember(key: key, value: value)]
+
+    for m in members
+        if m.key != key
+            out @ out.push(m)
+
+    if out.len() > w3c.MAX_MEMBERS
+        return fail(code: INVALID, msg: f"a tracestate holds {w3c.MAX_MEMBERS} members at most")
+    return ok(out)
+
+# A copy of `members` without the member of `key`.
+#
+# - `members`: the members.
+# - `key`: the key; one no member has leaves the copy as it was.
+#
+# See also `with_state`.
+function without_state(members: [StateMember], key: str) -> [StateMember]
+    out: [StateMember] @= []
+
+    for m in members
+        if m.key != key
+            out @ out.push(m)
+
+    return out
+
+# The value of the member of `key`.
+#
+# - `members`: the members.
+# - `key`: the key.
+#
+# Fails `not_found` where no member has it.
+function state_of(members: [StateMember], key: str) -> str?
+    for m in members
+        if m.key == key
+            return ok(m.value)
+
+    return fail(code: NOT_FOUND, msg: f"no tracestate member of the key \"{key}\"")
+
+# The context another program sent in `headers`: its `traceparent` and its
+# `tracestate`, marked remote.
+#
+# - `headers`: a request's or a response's fields; the first `traceparent` is
+#   read, and every `tracestate` joined by commas, as RFC 9110 joins a list.
+#
+# A `tracestate` that breaks the rules is dropped and the context kept, as Go's
+# and Python's propagators do. Fails `not_found` where there is no
+# `traceparent`, `invalid` where it is not one. See also `inject`,
+# `start_server`.
+function extract(headers: [http.Header]) -> SpanContext?
+    parent = match http.value_of(headers, name: "traceparent")
+        .ok v  => v
+        .err _ => return fail(code: NOT_FOUND, msg: "the fields hold no traceparent")
+
+    c @= parse_traceparent(parent)?
+    c.remote @ true
+    states = http.values_of(headers, name: "tracestate")
+
+    if states.len() > 0
+        c.state @ parse_tracestate(states.join(",")).default([])
+    return ok(c)
+
+# A copy of `headers` carrying `c`: its `traceparent`, and its `tracestate`
+# where it has members, each replacing a field of its name.
+#
+# - `headers`: a request's fields.
+# - `c`: the context, valid; an invalid one adds nothing and takes the two
+#   fields out, as no context is sent.
+#
+# See also `extract`.
+function inject(headers: [http.Header], c: SpanContext) -> [http.Header]
+    if !is_valid(c)
+        return http.without_header(http.without_header(headers, name: "traceparent"), name: "tracestate")
+    with_parent = http.with_header(headers, name: "traceparent", value: format_traceparent(c))
+
+    if c.state.len() == 0
+        return http.without_header(with_parent, name: "tracestate")
+    return http.with_header(with_parent, name: "tracestate", value: format_tracestate(c.state))
+
+## Sampling
+
+# How a tracer decides which traces are recorded.
+variant Sampler
+    # Every trace.
+    always_on
+    # No trace.
+    always_off
+    # A share of the traces, decided by the trace's id alone, so every program
+    # of a trace decides alike, as Go's `TraceIDRatioBased`: the last 8 bytes
+    # of the id as a number, its lowest bit dropped, below `fraction` times
+    # 2^63.
+    ratio
+        # The share, 0 to 1; 0 and below none, 1 and above all.
+        fraction: f64
+    # A child as its parent was, a root by the ratio: OpenTelemetry's default
+    # `ParentBased(TraceIdRatioBased)`, which with 1 is `ParentBased(AlwaysOn)`.
+    parent_or_ratio
+        # The share of roots, as `ratio`'s.
+        fraction: f64
+
+# Whether `sampler` records a new trace of `trace_id`.
+#
+# - `sampler`: the sampler.
+# - `trace_id`: the trace's 16 bytes.
+#
+# See also `samples_child`.
+function samples_root(sampler: Sampler, trace_id: [u8]) -> bool
+    return match sampler
+        .always_on         => true
+        .always_off        => false
+        .ratio r           => ids.by_ratio(r.fraction, trace_id: trace_id)
+        .parent_or_ratio p => ids.by_ratio(p.fraction, trace_id: trace_id)
+
+# Whether `sampler` records a span of `trace_id` whose parent is `parent`.
+#
+# - `sampler`: the sampler.
+# - `trace_id`: the trace's 16 bytes, the parent's own.
+# - `parent`: the parent's context; `parent_or_ratio` follows its sampled flag.
+#
+# See also `samples_root`.
+function samples_child(sampler: Sampler, trace_id: [u8], parent: SpanContext) -> bool
+    return match sampler
+        .always_on         => true
+        .always_off        => false
+        .ratio r           => ids.by_ratio(r.fraction, trace_id: trace_id)
+        .parent_or_ratio _ => is_sampled(parent)
+
+## The tracer
+
+# What a span keeps at most, past which more is dropped and counted, as
+# OpenTelemetry's `SpanLimits`.
+record Limits
+    # Attributes of a span, an event or a link: 128 by default.
+    attributes: i64
+    # Events of a span: 128 by default.
+    events: i64
+    # Links of a span: 128 by default.
+    links: i64
+    # Characters of a text attribute, the rest cut off; 0 for no limit, the
+    # default.
+    attribute_length: i64
+    # Spans a tracer keeps ended before `export_spans` sends them: 2048 by
+    # default, as a batch processor's queue; one more is dropped and counted.
+    queue: i64
+
+# The limits OpenTelemetry's SDKs default to.
+#
+# See also `Limits`.
+function default_limits() -> Limits
+    return Limits(attributes: 128, events: 128, links: 128, attribute_length: 0, queue: 2_048)
+
+# What an attribute holds, as OTLP's `AnyValue` does.
+variant AttributeValue
+    # A text.
+    text
+        # The text.
+        v: str
+    # `true` or `false`.
+    boolean
+        # The value.
+        v: bool
+    # A whole number.
+    integer
+        # The number.
+        v: i64
+    # A float.
+    number
+        # The number.
+        v: f64
+    # A list of texts.
+    texts
+        # The texts, in order.
+        v: [str]
+
+# An attribute: a key and its value, `http.request.method` and `GET`.
+record Attribute
+    # The key, by OpenTelemetry's semantic conventions where one names it.
+    key: str
+    # The value.
+    value: AttributeValue
+
+# The instrumentation scope: the library or program that made the spans.
+record Scope
+    # Its name, `myapp`.
+    name: str
+    # Its version, `1.2.0`; "" for none.
+    version: str
+
+# What makes spans and keeps the ended ones: the resource and scope they are
+# exported under, the sampler, the limits, the generator of ids, the clock, and
+# the spans ended and not yet exported. Made by `new_tracer`, changed by the
+# `with_` functions, passed `@` to `start` and `end`.
+record Tracer
+    # What produced the spans: `service.name` above all.
+    resource: [Attribute]
+    # The library or program that made them.
+    scope: Scope
+    # Which traces are recorded.
+    sampler: Sampler
+    # What each span keeps at most.
+    limits: Limits
+    # The generator of trace and span ids, from the system's generator.
+    generator: random.Generator
+    # The clock read at each span's start and end; `time.now` unless a test
+    # fixes it with `with_clock`.
+    clock: (function() -> time.Instant?)
+    # The spans ended and sampled, in the order they ended, which
+    # `export_spans` sends.
+    ended: [Span]
+    # How many ended spans were dropped since the queue was full.
+    dropped: i64
+
+# A tracer for the service `service`: its resource `service.name`, its scope
+# the same name, `parent_or_ratio(fraction: 1.0)` as OpenTelemetry defaults to,
+# the default limits, ids from a generator seeded by the system, and
+# `time.now`.
+#
+# - `service`: the service's name, `checkout`.
+#
+# Fails with the code of `os.random_bytes` where the system's generator
+# refuses. See also `start`.
+function new_tracer(service: str) -> Tracer?
+    return ok(
+        Tracer(resource: [Attribute(key: "service.name", value: .text(v: service))], scope: Scope(name: service, version: ""), sampler: .parent_or_ratio(fraction: 1.0), limits: default_limits(), generator: random.from_system()?, clock: time.now, ended: [], dropped: 0)
+    )
+
+# A resource as OpenTelemetry's environment variables describe it:
+# `service.name` from `OTEL_SERVICE_NAME`, else from
+# `OTEL_RESOURCE_ATTRIBUTES`, else `service`; then every other `key=value`
+# pair of `OTEL_RESOURCE_ATTRIBUTES`, between commas, trimmed and
+# percent-decoded, each a text, as Python's SDK reads them.
+#
+# - `service`: the service's name where neither variable names one.
+#
+# Fails `invalid` where a pair of `OTEL_RESOURCE_ATTRIBUTES` has no `=`, an
+# empty key or a bad escape, as Go's SDK refuses it (Python passes it over),
+# and as `os.env` fails with a code other than `not_found`. See also
+# `with_resource`.
+function resource_from_env(service: str) -> [Attribute]?
+    named @= ""
+    others: [Attribute] @= []
+
+    for h in posting.env_headers(posting.env_text("OTEL_RESOURCE_ATTRIBUTES")?)?
+        if h.name == "service.name"
+            named @ h.value
+        else
+            others @ others.push(Attribute(key: h.name, value: .text(v: h.value)))
+
+    name = posting.first_set(
+        specific: posting.env_text("OTEL_SERVICE_NAME")?,
+        general: posting.first_set(specific: named, general: service)
+    )
+    out: [Attribute] @= [Attribute(key: "service.name", value: .text(v: name))]
+
+    for a in others
+        out @ out.push(a)
+
+    return ok(out)
+
+# A copy of `tracer` sampling by `sampler`.
+#
+# - `tracer`: the tracer copied.
+# - `sampler`: the sampler.
+function with_sampler(tracer: Tracer, sampler: Sampler) -> Tracer
+    out @= tracer
+    out.sampler @ sampler
+    return out
+
+# A copy of `tracer` whose spans are exported under `resource`.
+#
+# - `tracer`: the tracer copied.
+# - `resource`: the resource's attributes, `service.name` among them by
+#   custom.
+function with_resource(tracer: Tracer, resource: [Attribute]) -> Tracer
+    out @= tracer
+    out.resource @ resource
+    return out
+
+# A copy of `tracer` whose spans are exported under `scope`.
+#
+# - `tracer`: the tracer copied.
+# - `scope`: the library or program's name and version.
+function with_scope(tracer: Tracer, scope: Scope) -> Tracer
+    out @= tracer
+    out.scope @ scope
+    return out
+
+# A copy of `tracer` whose spans keep at most what `limits` says.
+#
+# - `tracer`: the tracer copied.
+# - `limits`: the limits, each 0 or more.
+function with_limits(tracer: Tracer, limits: Limits) -> Tracer
+    out @= tracer
+    out.limits @ limits
+    return out
+
+# A copy of `tracer` reading `clock` at each start and end: how a test makes
+# every span the same on every run.
+#
+# - `tracer`: the tracer copied.
+# - `clock`: called once at each `start`, `start_child`, `start_server` and
+#   `end`; a failure it answers is theirs.
+function with_clock(tracer: Tracer, clock: (function() -> time.Instant?)) -> Tracer
+    out @= tracer
+    out.clock @ clock
+    return out
+
+## Spans
+
+# What a span stands for in a trace.
+variant SpanKind
+    # Work inside the program, the default.
+    internal
+    # The answering of a request from another program.
+    server
+    # A request to another program.
+    client
+    # A message sent to be handled later.
+    producer
+    # A message received and handled.
+    consumer
+
+# How a span's work ended.
+variant StatusCode
+    # Not said, the default.
+    unset
+    # Said to have worked; no later status replaces it.
+    ok
+    # Said to have failed.
+    error
+
+# A span's status: its code and, for an error, a message.
+record Status
+    # The code.
+    code: StatusCode
+    # Why it failed; "" for `unset` and `ok`.
+    message: str
+
+# Something that happened during a span, at a moment.
+record Event
+    # What happened, `exception` for an error.
+    name: str
+    # When.
+    at: time.Instant
+    # Its attributes.
+    attributes: [Attribute]
+    # How many attributes the limits dropped.
+    dropped_attributes: i64
+
+# A link from a span to another span's context, of this trace or another.
+record Link
+    # The context linked to.
+    context: SpanContext
+    # Its attributes.
+    attributes: [Attribute]
+    # How many attributes the limits dropped.
+    dropped_attributes: i64
+
+# A span: one piece of work of a trace, from its start to its end. Made by
+# `start`, `start_child` or `start_server`, changed by the functions below
+# with `@`, and handed to `end`.
+record Span
+    # Its context, which its children name as their parent.
+    context: SpanContext
+    # The parent span's 8 bytes; none for a root.
+    parent_span_id: [u8]
+    # Whether its parent came from another program.
+    parent_remote: bool
+    # What it does, `GET /users` or `query users`.
+    name: str
+    # What it stands for.
+    kind: SpanKind
+    # When it began.
+    start: time.Instant
+    # When it ended; its start until `end` sets it.
+    end: time.Instant
+    # Its attributes, each key once.
+    attributes: [Attribute]
+    # Its events, in order.
+    events: [Event]
+    # Its links, in order.
+    links: [Link]
+    # Its status.
+    status: Status
+    # What it keeps at most, its tracer's at its start.
+    limits: Limits
+    # How many attributes the limits dropped.
+    dropped_attributes: i64
+    # How many events the limits dropped.
+    dropped_events: i64
+    # How many links the limits dropped.
+    dropped_links: i64
+
+# A new root span of a new trace, sampled as `tracer`'s sampler decides for a
+# root, beginning now.
+#
+# - `tracer`: the tracer; its generator advances and its clock is read.
+# - `name`: what the span does.
+# - `kind`: what it stands for, `.internal` for work inside the program.
+#
+# Fails as `tracer`'s clock fails. See also `start_child`, `end`.
+function start(@tracer: Tracer, name: str, kind: SpanKind) -> Span?
+    trace_id = ids.new_id(@tracer.generator, count: 16)
+
+    flags: u8 = if samples_root(tracer.sampler, trace_id: trace_id)
+        FLAG_SAMPLED
+    else
+        0
+    read_clock = tracer.clock
+    at = read_clock()?
+    context = SpanContext(
+        trace_id: trace_id,
+        span_id: ids.new_id(@tracer.generator, count: 8),
+        flags: flags,
+        state: [],
+        remote: false
+    )
+    return ok(
+        Span(context: context, parent_span_id: [], parent_remote: false, name: name, kind: kind, start: at, end: at, attributes: [], events: [], links: [], status: Status(code: .unset, message: ""), limits: tracer.limits, dropped_attributes: 0, dropped_events: 0, dropped_links: 0)
+    )
+
+# A new span under `parent`, of its trace and with its state, sampled as
+# `tracer`'s sampler decides for a child, beginning now.
+#
+# - `tracer`: the tracer; its generator advances and its clock is read.
+# - `name`: what the span does.
+# - `kind`: what it stands for.
+# - `parent`: the parent's context, a span's own or one `extract` read; one
+#   that is not valid starts a root, as Go's tracer does.
+#
+# The flags other than sampled are the parent's. Fails as `tracer`'s clock
+# fails. See also `start`.
+function start_child(@tracer: Tracer, name: str, kind: SpanKind, parent: SpanContext) -> Span?
+    if !is_valid(parent)
+        return start(@tracer, name: name, kind: kind)
+    kept: u8 = parent.flags - parent.flags % 2
+
+    flags: u8 = if samples_child(tracer.sampler, trace_id: parent.trace_id, parent: parent)
+        kept + FLAG_SAMPLED
+    else
+        kept
+    read_clock = tracer.clock
+    at = read_clock()?
+    context = SpanContext(
+        trace_id: parent.trace_id,
+        span_id: ids.new_id(@tracer.generator, count: 8),
+        flags: flags,
+        state: parent.state,
+        remote: false
+    )
+    return ok(
+        Span(context: context, parent_span_id: parent.span_id, parent_remote: parent.remote, name: name, kind: kind, start: at, end: at, attributes: [], events: [], links: [], status: Status(code: .unset, message: ""), limits: tracer.limits, dropped_attributes: 0, dropped_events: 0, dropped_links: 0)
+    )
+
+# A server's span for the request `r`: a child of the context its
+# `traceparent` carries, or a root where it carries none or one that is not
+# valid; named by its method, of kind `.server`, with the attributes of
+# OpenTelemetry's HTTP conventions: `http.request.method`, `url.path`,
+# `url.query` where it has one, `user_agent.original` where it says one, and
+# `client.address` where the request came from a client.
+#
+# - `tracer`: the tracer.
+# - `r`: the request, as the server read it.
+#
+# Fails as `tracer`'s clock fails. See also `set_response`.
+function start_server(@tracer: Tracer, r: http.Request) -> Span?
+    span @= match extract(r.headers)
+        .ok parent => start_child(@tracer, name: r.method, kind: .server, parent: parent)?
+        .err _     => start(@tracer, name: r.method, kind: .server)?
+
+    set_attribute(@span, a: Attribute(key: "http.request.method", value: .text(v: r.method)))
+    set_attribute(@span, a: Attribute(key: "url.path", value: .text(v: r.url.path)))
+
+    if r.url.query != ""
+        set_attribute(@span, a: Attribute(key: "url.query", value: .text(v: r.url.query)))
+
+    match http.value_of(r.headers, name: "User-Agent")
+        .ok agent => set_attribute(@span, a: Attribute(key: "user_agent.original", value: .text(v: agent)))
+        .err _    => _ = 0
+
+    if r.remote != ""
+        set_attribute(@span, a: Attribute(key: "client.address", value: .text(v: r.remote)))
+    return ok(span)
+
+# Records the response a server's span answered: `http.response.status_code`,
+# and the status `error` for a status of 500 and above, as OpenTelemetry's HTTP
+# conventions say for a server; for a client's span, 400 and above.
+#
+# - `span`: the span, which gains the attribute and maybe the status.
+# - `response`: the response.
+function set_response(@span: Span, response: http.Response)
+    set_attribute(@span, a: Attribute(key: "http.response.status_code", value: .integer(v: response.status)))
+
+    floor = match span.kind
+        .client                                     => 400
+        .server | .internal | .producer | .consumer => 500
+
+    if response.status >= floor
+        set_status(@span, code: .error, message: "")
+
+# Sets one attribute of `span`, replacing one of the same key.
+#
+# - `span`: the span, which gains the attribute.
+# - `a`: the attribute; a text longer than the limits' `attribute_length` is
+#   kept whole and cut to it, a character's boundary, when it is exported.
+#
+# A new key past the limits' `attributes` is dropped and counted in
+# `dropped_attributes`.
+function set_attribute(@span: Span, a: Attribute)
+    for i in range(from: 0, to: span.attributes.len())
+        if span.attributes[i].key == a.key
+            span.attributes[i] @ a
+            return
+
+    if span.attributes.len() >= span.limits.attributes
+        span.dropped_attributes @ span.dropped_attributes + 1
+        return
+    ids.append(@span.attributes, item: a)
+
+# Adds an event to `span`.
+#
+# - `span`: the span, which gains the event.
+# - `name`: what happened.
+# - `at`: when; `time.now()` for the present.
+# - `attributes`: its attributes; past the limits' `attributes` they are
+#   dropped and counted in the event.
+#
+# An event past the limits' `events` is dropped and counted in
+# `dropped_events`. See also `record_error`.
+function add_event(@span: Span, name: str, at: time.Instant, attributes: [Attribute])
+    if span.events.len() >= span.limits.events
+        span.dropped_events @ span.dropped_events + 1
+        return
+    kept: [Attribute] @= []
+
+    for a in attributes
+        if kept.len() < span.limits.attributes
+            kept @ kept.push(a)
+
+    ids.append(
+        @span.events,
+        item: Event(name: name, at: at, attributes: kept, dropped_attributes: attributes.len() - kept.len())
+    )
+
+# Adds a link from `span` to `context`.
+#
+# - `span`: the span, which gains the link.
+# - `context`: the context linked to; one that is not valid is not linked.
+# - `attributes`: its attributes, limited as an event's are.
+#
+# A link past the limits' `links` is dropped and counted in `dropped_links`.
+function add_link(@span: Span, context: SpanContext, attributes: [Attribute])
+    if !is_valid(context)
+        return
+
+    if span.links.len() >= span.limits.links
+        span.dropped_links @ span.dropped_links + 1
+        return
+    kept: [Attribute] @= []
+
+    for a in attributes
+        if kept.len() < span.limits.attributes
+            kept @ kept.push(a)
+
+    ids.append(
+        @span.links,
+        item: Link(context: context, attributes: kept, dropped_attributes: attributes.len() - kept.len())
+    )
+
+# Adds the event `exception` OpenTelemetry's conventions name for an error,
+# with `exception.message`, as Go's `RecordError` and Python's
+# `record_exception` do; the status is left as it was.
+#
+# - `span`: the span, which gains the event.
+# - `message`: what went wrong, a failure's `e.msg`.
+# - `at`: when.
+#
+# See also `set_status`.
+function record_error(@span: Span, message: str, at: time.Instant)
+    add_event(
+        @span,
+        name: "exception",
+        at: at,
+        attributes: [Attribute(key: "exception.message", value: .text(v: message))]
+    )
+
+# Sets `span`'s status, by OpenTelemetry's rules: `ok` is final, `unset` is
+# never set over another, and only `error` keeps its message.
+#
+# - `span`: the span, whose status may change.
+# - `code`: the code.
+# - `message`: why it failed, for `error`; another code's is dropped.
+function set_status(@span: Span, code: StatusCode, message: str)
+    match span.status.code
+        .ok             => return
+        .unset | .error => _ = 0
+
+    match code
+        .unset => return
+        .ok    => span.status @ Status(code: .ok, message: "")
+        .error => span.status @ Status(code: .error, message: message)
+
+# Renames `span`, as a router does once it knows the route.
+#
+# - `span`: the span.
+# - `name`: its new name, `GET /users/{id}`.
+function rename(@span: Span, name: str)
+    span.name @ name
+
+# Ends `span` now and keeps it for `export_spans` where it is sampled.
+#
+# - `tracer`: the tracer; its clock is read and its `ended` gains the span,
+#   or its `dropped` counts it where `ended` holds the limits' `queue`.
+# - `span`: the span; a span not sampled is not kept.
+#
+# Fails as the clock fails.
+function end(@tracer: Tracer, span: Span) -> ()?
+    read_clock = tracer.clock
+    at = read_clock()?
+
+    if !is_sampled(span.context)
+        return ok()
+
+    if tracer.ended.len() >= tracer.limits.queue
+        tracer.dropped @ tracer.dropped + 1
+        return ok()
+    finished @= span
+    finished.end @ at
+    ids.append(@tracer.ended, item: finished)
+    return ok()
+
+## Exporting by OTLP
+
+# Where and how OTLP requests are sent over HTTP. Made by `otlp_to` or
+# `otlp_from_env`, its fields changed by the program.
+record Otlp
+    # How each request is sent; its own retries are not used, the method being
+    # `POST`.
+    client: http.Client
+    # The whole URL requests are posted to.
+    url: str
+    # Fields every request carries.
+    headers: [http.Header]
+    # Whether the body is sent compressed by gzip.
+    gzip: bool
+    # When a request is sent again, as `metrics`'s exporter does.
+    retries: http.Retries
+
+# The URL OTLP's spans are posted to where nothing else says.
+constant TRACES_URL: str
+    "http://localhost:4318/v1/traces"
+
+# The URL OTLP's log records are posted to where nothing else says.
+constant LOGS_URL: str
+    "http://localhost:4318/v1/logs"
+
+# Which of OTLP's signals an exporter sends.
+variant Signal
+    # Spans, to `/v1/traces`.
+    traces
+    # Log records, to `/v1/logs`.
+    logs
+
+# An exporter posting to `target`, uncompressed, with no field of its own,
+# sending again 3 times after a status of 429, 502, 503 or 504, from 1 second
+# doubled up to 30.
+#
+# - `target`: the whole URL, `TRACES_URL`, `LOGS_URL` or a collector's.
+#
+# See also `otlp_from_env`.
+function otlp_to(target: str) -> Otlp
+    return Otlp(
+        client: http.default_client(),
+        url: target,
+        headers: [],
+        gzip: false,
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff_ms: 1_000, max_backoff_ms: 30_000)
+    )
+
+# An exporter of `signal` as OpenTelemetry's environment variables describe
+# it: `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` (or `_LOGS_`) taken whole, or
+# `OTEL_EXPORTER_OTLP_ENDPOINT` with `/v1/traces` or `/v1/logs` after it; the
+# headers, the compression and the timeout of `OTEL_EXPORTER_OTLP_HEADERS`,
+# `_COMPRESSION` and `_TIMEOUT` and their kin of the signal.
+#
+# - `signal`: which signal.
+#
+# Fails `invalid` where a header pair has no `=`, the compression is neither
+# `gzip` nor `none`, or the timeout is no whole number of milliseconds; and as
+# `os.env` fails with a code other than `not_found`.
+function otlp_from_env(signal: Signal) -> Otlp?
+    word = match signal
+        .traces => "TRACES"
+        .logs   => "LOGS"
+
+    path = match signal
+        .traces => "/v1/traces"
+        .logs   => "/v1/logs"
+
+    out @= otlp_to("http://localhost:4318" + path)
+    specific = posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_ENDPOINT")?
+    general = posting.env_text("OTEL_EXPORTER_OTLP_ENDPOINT")?
+
+    if specific != ""
+        out.url @ specific
+    else if general != ""
+        out.url @ strings.trim_suffix(s: general, suffix: "/") + path
+    out.headers @ posting.env_headers(posting.first_set(specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_HEADERS")?, general: posting.env_text("OTEL_EXPORTER_OTLP_HEADERS")?))?
+    compression = posting.first_set(
+        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_COMPRESSION")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_COMPRESSION")?
+    )
+
+    match compression
+        "gzip" => out.gzip @ true
+        "none" | "" => out.gzip @ false
+        _ => return fail(code: INVALID, msg: f"the OTLP compression \"{compression}\" is neither gzip nor none")
+
+    timeout = posting.first_set(
+        specific: posting.env_text(f"OTEL_EXPORTER_OTLP_{word}_TIMEOUT")?,
+        general: posting.env_text("OTEL_EXPORTER_OTLP_TIMEOUT")?
+    )
+
+    if timeout != ""
+        match numbers.parse_int(timeout)
+            .ok ms => out.client.deadline_ms @ ms
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
+            )
+    return ok(out)
+
+# The outcome of an export a collector accepted: how much of it it refused
+# none the less, and why.
+record Exported
+    # How many spans or records were refused; 0 for none.
+    rejected: i64
+    # The collector's words; "" where it refused nothing.
+    message: str
+
+# The OTLP request `spans` make: an `ExportTraceServiceRequest`, its bytes as
+# protobuf writes them, as Python's exporter fills it.
+#
+# - `spans`: the spans, ended, in order.
+# - `resource`: what produced them.
+# - `scope`: the library or program that made them.
+#
+# Each span's `flags` say whether its parent was remote, its status is always
+# written, an empty parent, state or attribute list is left out. See also
+# `export_spans`.
+function encode_spans(spans: [Span], resource: [Attribute], scope: Scope) -> [u8]
+    # Every list of attributes the request writes, the resource's first, then
+    # each span's, its events' and its links', each with its length limit;
+    # encoded in one pass so one place reads an attribute's value.
+    groups: [[Attribute]] @= [resource]
+    lengths: [i64] @= [0]
+
+    for s in spans
+        groups @ groups.push(s.attributes)
+        lengths @ lengths.push(s.limits.attribute_length)
+
+        for e in s.events
+            groups @ groups.push(e.attributes)
+            lengths @ lengths.push(s.limits.attribute_length)
+
+        for l in s.links
+            groups @ groups.push(l.attributes)
+            lengths @ lengths.push(s.limits.attribute_length)
+
+    encoded: [[[u8]]] @= []
+
+    for g in range(from: 0, to: groups.len())
+        values: [[u8]] @= []
+
+        for a in groups[g]
+            value = match a.value
+                .text t    => otlp.any_text(otlp.cut_text(t.v, length: lengths[g]))
+                .boolean b => otlp.any_boolean(b.v)
+                .integer n => otlp.any_integer(n.v)
+                .number x  => otlp.any_number(x.v)
+                .texts ts =>
+                    items: [[u8]] @= []
+
+                    for t in ts.v
+                        items @ items.push(otlp.any_text(otlp.cut_text(t, length: lengths[g])))
+
+                    otlp.any_array(items)
+
+            values @ values.push(otlp.key_value(key: a.key, value: value))
+
+        encoded @ encoded.push(values)
+
+    scoped: [u8] @= []
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope.name, version: scope.version))
+    next @= 1
+
+    for s in spans
+        span: [u8] @= []
+        otlp.put_bytes(to: @span, number: 1, b: s.context.trace_id)
+        otlp.put_bytes(to: @span, number: 2, b: s.context.span_id)
+        otlp.put_text(@span, number: 3, s: format_tracestate(s.context.state))
+        otlp.put_bytes_unless_empty(to: @span, number: 4, b: s.parent_span_id)
+        otlp.put_text(@span, number: 5, s: s.name)
+
+        kind: u64 = match s.kind
+            .internal => 1
+            .server   => 2
+            .client   => 3
+            .producer => 4
+            .consumer => 5
+
+        otlp.put_varint(@span, number: 6, v: kind)
+        otlp.put_fixed64(@span, number: 7, v: otlp.unix_nanoseconds(s.start.unix_nanoseconds))
+        otlp.put_fixed64(@span, number: 8, v: otlp.unix_nanoseconds(s.end.unix_nanoseconds))
+
+        for kv in encoded[next]
+            otlp.put_bytes(to: @span, number: 9, b: kv)
+
+        next @ next + 1
+        otlp.put_varint(@span, number: 10, v: to_u64(s.dropped_attributes).must())
+
+        for e in s.events
+            event: [u8] @= []
+            otlp.put_fixed64(@event, number: 1, v: otlp.unix_nanoseconds(e.at.unix_nanoseconds))
+            otlp.put_text(@event, number: 2, s: e.name)
+
+            for kv in encoded[next]
+                otlp.put_bytes(to: @event, number: 3, b: kv)
+
+            next @ next + 1
+            otlp.put_varint(@event, number: 4, v: to_u64(e.dropped_attributes).must())
+            otlp.put_bytes(to: @span, number: 11, b: event)
+
+        otlp.put_varint(@span, number: 12, v: to_u64(s.dropped_events).must())
+
+        for l in s.links
+            link: [u8] @= []
+            otlp.put_bytes(to: @link, number: 1, b: l.context.trace_id)
+            otlp.put_bytes(to: @link, number: 2, b: l.context.span_id)
+            otlp.put_text(@link, number: 3, s: format_tracestate(l.context.state))
+
+            for kv in encoded[next]
+                otlp.put_bytes(to: @link, number: 4, b: kv)
+
+            next @ next + 1
+            otlp.put_varint(@link, number: 5, v: to_u64(l.dropped_attributes).must())
+
+            link_flags: u32 = if l.context.remote
+                768
+            else
+                256
+            otlp.put_fixed32(@link, number: 6, v: link_flags)
+            otlp.put_bytes(to: @span, number: 13, b: link)
+
+        otlp.put_varint(@span, number: 14, v: to_u64(s.dropped_links).must())
+        status: [u8] @= []
+        otlp.put_text(@status, number: 2, s: s.status.message)
+
+        code: u64 = match s.status.code
+            .unset => 0
+            .ok    => 1
+            .error => 2
+
+        otlp.put_varint(@status, number: 3, v: code)
+        otlp.put_bytes(to: @span, number: 15, b: status)
+
+        flags: u32 = if s.parent_remote
+            768
+        else
+            256
+        otlp.put_fixed32(@span, number: 16, v: flags)
+        otlp.put_bytes(to: @scoped, number: 2, b: span)
+
+    resourced: [u8] @= []
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(encoded[0]))
+    otlp.put_bytes(to: @resourced, number: 2, b: scoped)
+    out: [u8] @= []
+    otlp.put_bytes(to: @out, number: 1, b: resourced)
+    return out
+
+# Sends the spans `tracer` ended to `exporter`'s URL, 512 a request at most,
+# and takes out of `ended` those a collector accepted.
+#
+# - `tracer`: the tracer, whose `ended` empties as its spans are sent.
+# - `exporter`: where and how.
+#
+# What the collectors refused, added up. Fails `failed` where a collector
+# answers a status other than 2xx after every retry, the spans not sent kept;
+# `invalid` where its answer is no protobuf message; and as `http.send` fails.
+function export_spans(@tracer: Tracer, exporter: Otlp) -> Exported?
+    rejected @= 0
+    messages: [str] @= []
+
+    while tracer.ended.len() > 0
+        count = if tracer.ended.len() < 512
+            tracer.ended.len()
+        else
+            512
+        batch = tracer.ended.slice(from: 0, to: count)
+        partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: encode_spans(batch, resource: tracer.resource, scope: tracer.scope))?
+        tracer.ended @ tracer.ended.slice(from: count, to: tracer.ended.len())
+        rejected @ rejected + partial.rejected
+
+        if partial.message != ""
+            messages @ messages.push(partial.message)
+
+    return ok(Exported(rejected: rejected, message: messages.join("; ")))
+
+## Log records
+
+# A line of a log as OTLP carries it, with the trace and the span it was
+# written in. Made by `log_record`.
+record LogRecord
+    # When it was written.
+    at: time.Instant
+    # When it was observed: its `at`, as a program writing its own lines
+    # observes them.
+    observed: time.Instant
+    # Its level, written as OpenTelemetry's severity number and text.
+    level: log.Level
+    # The message.
+    body: str
+    # Its fields as attributes.
+    attributes: [Attribute]
+    # The trace's 16 bytes; none outside a span.
+    trace_id: [u8]
+    # The span's 8 bytes; none outside a span.
+    span_id: [u8]
+    # The span's flags; 0 outside a span.
+    flags: u8
+
+# The record of a line written in the span `context`, with its level, message
+# and fields, as OpenTelemetry's bridges of Go's `slog` and Python's `logging`
+# make it.
+#
+# - `context`: the span's context; one that is not valid writes no trace or
+#   span.
+# - `level`: the line's level.
+# - `msg`: the message, the record's body.
+# - `fields`: the line's fields: a text, a number and a bool as they are, a
+#   duration as whole nanoseconds, an instant as RFC 3339 text, a group's
+#   fields under `group.key`.
+# - `at`: when it was written.
+#
+# See also `log_fields`, `export_logs`.
+function log_record(context: SpanContext, level: log.Level, msg: str, fields: [log.Field], at: time.Instant) -> LogRecord
+    attributes: [Attribute] @= []
+    lists: [[log.Field]] @= [fields]
+    places: [i64] @= [0]
+    prefixes: [str] @= [""]
+
+    # The fields still to walk, one list for each group open, with where each
+    # stands and the key its fields are written under: a stack, so no nesting
+    # is too deep.
+    while lists.len() > 0
+        top = lists.len() - 1
+
+        if places[top] == lists[top].len()
+            lists @ lists.slice(from: 0, to: top)
+            places @ places.slice(from: 0, to: top)
+            prefixes @ prefixes.slice(from: 0, to: top)
+            continue
+        f = lists[top][places[top]]
+        places[top] @ places[top] + 1
+
+        key = if prefixes[top] == ""
+            f.key
+        else if f.key == ""
+            prefixes[top]
+        else
+            prefixes[top] + "." + f.key
+
+        match f.value
+            .text t     => attributes @ attributes.push(Attribute(key: key, value: .text(v: t.v)))
+            .integer n  => attributes @ attributes.push(Attribute(key: key, value: .integer(v: n.v)))
+            .number x   => attributes @ attributes.push(Attribute(key: key, value: .number(v: x.v)))
+            .boolean b  => attributes @ attributes.push(Attribute(key: key, value: .boolean(v: b.v)))
+            .duration d => attributes @ attributes.push(Attribute(key: key, value: .integer(v: d.v.nanoseconds)))
+            .instant i  => attributes @ attributes.push(
+                Attribute(key: key, value: .text(v: time.format(i.v, .rfc3339)))
+            )
+            .group g =>
+                lists @ lists.push(g.fields)
+                places @ places.push(0)
+                prefixes @ prefixes.push(key)
+
+    if !is_valid(context)
+        return LogRecord(
+            at: at,
+            observed: at,
+            level: level,
+            body: msg,
+            attributes: attributes,
+            trace_id: [],
+            span_id: [],
+            flags: 0
+        )
+    return LogRecord(
+        at: at,
+        observed: at,
+        level: level,
+        body: msg,
+        attributes: attributes,
+        trace_id: context.trace_id,
+        span_id: context.span_id,
+        flags: context.flags
+    )
+
+# The fields that tie a line of `log` to the span `context`: `trace_id`,
+# `span_id` and `trace_flags` in lowercase hexadecimal, the names
+# OpenTelemetry gives them in a log that is not OTLP.
+#
+# - `context`: the span's context; one that is not valid gives no field.
+#
+# A program hands them to `log.with_fields` for the lines of a span. See also
+# `log_record`.
+function log_fields(context: SpanContext) -> [log.Field]
+    if !is_valid(context)
+        return []
+    return [
+        log.text(key: "trace_id", value: format_id(context.trace_id))
+        log.text(key: "span_id", value: format_id(context.span_id))
+        log.text(key: "trace_flags", value: format_id([context.flags]))
+    ]
+
+# The OTLP request `records` make: an `ExportLogsServiceRequest`, its bytes as
+# protobuf writes them.
+#
+# - `records`: the records, in order.
+# - `resource`: what produced them.
+# - `scope`: the library or program that wrote them.
+#
+# A level is written as OpenTelemetry's severity: `DEBUG` 5, `INFO` 9, `WARN`
+# 13, `ERROR` 17, its text as `log.level_name` writes it. See also
+# `export_logs`.
+function encode_logs(records: [LogRecord], resource: [Attribute], scope: Scope) -> [u8]
+    groups: [[Attribute]] @= [resource]
+
+    for r in records
+        groups @ groups.push(r.attributes)
+
+    encoded: [[[u8]]] @= []
+
+    for g in range(from: 0, to: groups.len())
+        values: [[u8]] @= []
+
+        for a in groups[g]
+            value = match a.value
+                .text t    => otlp.any_text(otlp.cut_text(t.v, length: 0))
+                .boolean b => otlp.any_boolean(b.v)
+                .integer n => otlp.any_integer(n.v)
+                .number x  => otlp.any_number(x.v)
+                .texts ts =>
+                    items: [[u8]] @= []
+
+                    for t in ts.v
+                        items @ items.push(otlp.any_text(otlp.cut_text(t, length: 0)))
+
+                    otlp.any_array(items)
+
+            values @ values.push(otlp.key_value(key: a.key, value: value))
+
+        encoded @ encoded.push(values)
+
+    scoped: [u8] @= []
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope.name, version: scope.version))
+
+    for i in range(from: 0, to: records.len())
+        r = records[i]
+        entry: [u8] @= []
+        otlp.put_fixed64(@entry, number: 1, v: otlp.unix_nanoseconds(r.at.unix_nanoseconds))
+
+        severity: u64 = match r.level
+            .debug => 5
+            .info  => 9
+            .warn  => 13
+            .error => 17
+
+        otlp.put_varint(@entry, number: 2, v: severity)
+        otlp.put_text(@entry, number: 3, s: log.level_name(r.level))
+        otlp.put_bytes(to: @entry, number: 5, b: otlp.any_text(r.body))
+
+        for kv in encoded[i + 1]
+            otlp.put_bytes(to: @entry, number: 6, b: kv)
+
+        otlp.put_fixed32(@entry, number: 8, v: to_u32(r.flags).must())
+        otlp.put_bytes_unless_empty(to: @entry, number: 9, b: r.trace_id)
+        otlp.put_bytes_unless_empty(to: @entry, number: 10, b: r.span_id)
+        otlp.put_fixed64(@entry, number: 11, v: otlp.unix_nanoseconds(r.observed.unix_nanoseconds))
+        otlp.put_bytes(to: @scoped, number: 2, b: entry)
+
+    resourced: [u8] @= []
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(encoded[0]))
+    otlp.put_bytes(to: @resourced, number: 2, b: scoped)
+    out: [u8] @= []
+    otlp.put_bytes(to: @out, number: 1, b: resourced)
+    return out
+
+# Sends `records` to `exporter`'s URL, as one request.
+#
+# - `exporter`: where and how, `otlp_to(LOGS_URL)` or `otlp_from_env(.logs)`.
+# - `records`: the records; none sends nothing.
+# - `resource`: what produced them.
+# - `scope`: what wrote them.
+#
+# Fails as `export_spans` does.
+function export_logs(exporter: Otlp, records: [LogRecord], resource: [Attribute], scope: Scope) -> Exported?
+    if records.len() == 0
+        return ok(Exported(rejected: 0, message: ""))
+    partial = posting.post(exporter.client, target: exporter.url, headers: exporter.headers, gzip: exporter.gzip, retries: exporter.retries, body: encode_logs(records, resource: resource, scope: scope))?
+    return ok(Exported(rejected: partial.rejected, message: partial.message))
+
+## Tests
+
+test "extract and inject: the Recommendation's two fields, a tracestate in two fields joined, one broken dropped"
+    headers = [
+        http.Header(name: "traceparent", value: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+        http.Header(name: "tracestate", value: "rojo=00f067aa0ba902b7")
+        http.Header(name: "tracestate", value: "congo=t61rcWkgMzE")
+    ]
+    c = extract(headers).must()
+    assert c.remote
+    assert is_sampled(c)
+    assert c.state == [StateMember(key: "rojo", value: "00f067aa0ba902b7"), StateMember(key: "congo", value: "t61rcWkgMzE")]
+    out = inject([http.Header(name: "Accept", value: "*/*")], c: c)
+    assert http.value_of(out, name: "traceparent").must() == "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+    assert http.value_of(out, name: "tracestate").must() == "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+    assert http.value_of(out, name: "Accept").must() == "*/*"
+    broken = extract(
+        [http.Header(name: "traceparent", value: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00"), http.Header(name: "tracestate", value: "Rojo=1")]
+    ).must()
+    assert broken.state.len() == 0
+    assert !is_sampled(broken)
+
+    match extract([])
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match extract([http.Header(name: "traceparent", value: "00-zz")])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "inject: a context with no state takes an old tracestate out, an invalid one takes both fields out"
+    old = [http.Header(name: "traceparent", value: "x"), http.Header(name: "tracestate", value: "a=1")]
+    c = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    out = inject(old, c: c)
+    assert !http.has_header(out, name: "tracestate")
+    blank = SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false)
+    assert inject(old, c: blank).len() == 0
+
+test "with_state, without_state and state_of: a member put first, its old place taken, a bad key and 33 refused"
+    members = parse_tracestate("rojo=1,congo=2").must()
+    moved = with_state(members, key: "congo", value: "3").must()
+    assert format_tracestate(moved) == "congo=3,rojo=1"
+    assert with_state(members, key: "Bad", value: "1").is_err()
+    assert with_state(members, key: "k", value: "a,b").is_err()
+    assert format_tracestate(without_state(moved, key: "rojo")) == "congo=3"
+    assert state_of(moved, key: "rojo").must() == "1"
+    assert state_of(moved, key: "nope").is_err()
+    full: [StateMember] @= []
+
+    for i in range(from: 0, to: 32)
+        full @ with_state(full, key: f"k{i}", value: "v").must()
+
+    assert with_state(full, key: "k99", value: "v").is_err()
+    assert with_state(full, key: "k0", value: "w").must().len() == 32
+
+test "parse_trace_id, parse_span_id, format_id and is_valid: the edges"
+    assert format_id(parse_span_id("b7ad6b7169203331").must()) == "b7ad6b7169203331"
+    assert parse_trace_id("0af7651916cd43dd8448eb211c80319").is_err()
+    assert !is_valid(SpanContext(trace_id: fixture.trace_id(), span_id: [0, 0, 0, 0, 0, 0, 0, 0], flags: 1, state: [], remote: false))
+    assert is_valid(
+        SpanContext(trace_id: fixture.trace_id(), span_id: [0, 0, 0, 0, 0, 0, 0, 1], flags: 1, state: [], remote: false)
+    )
+
+test "samples_root and samples_child: each sampler, a parent sampled and not"
+    sampled = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    unsampled = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-00").must()
+    assert samples_root(.always_on, trace_id: fixture.trace_id())
+    assert !samples_root(.always_off, trace_id: fixture.trace_id())
+    assert !samples_root(.ratio(fraction: 0.5), trace_id: fixture.trace_id())
+    assert samples_root(.parent_or_ratio(fraction: 1.0), trace_id: fixture.trace_id())
+    assert samples_child(.parent_or_ratio(fraction: 0.0), trace_id: fixture.trace_id(), parent: sampled)
+    assert !samples_child(.parent_or_ratio(fraction: 1.0), trace_id: fixture.trace_id(), parent: unsampled)
+    assert samples_child(.always_on, trace_id: fixture.trace_id(), parent: unsampled)
+
+test "start, start_child and end: one trace, the parent's id and state, the clock's times, the span kept"
+    t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    root = start(@t, name: "job", kind: .internal).must()
+    assert is_valid(root.context)
+    assert is_sampled(root.context)
+    assert root.parent_span_id.len() == 0
+    assert root.start.unix_nanoseconds == 1_234_567_890_000_000_000
+    with_state_root @= root
+    with_state_root.context.state @ [StateMember(key: "a", value: "1")]
+    child = start_child(@t, name: "step", kind: .client, parent: with_state_root.context).must()
+    assert child.context.trace_id == root.context.trace_id
+    assert child.context.span_id != root.context.span_id
+    assert child.parent_span_id == root.context.span_id
+    assert child.context.state == [StateMember(key: "a", value: "1")]
+    end(@t, span: child).must()
+    end(@t, span: root).must()
+    assert t.ended.len() == 2
+    assert t.ended[0].name == "step"
+    blank = SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false)
+    orphan = start_child(@t, name: "x", kind: .internal, parent: blank).must()
+    assert orphan.context.trace_id != root.context.trace_id
+
+test "end: a span not sampled is not kept, and past the queue one is dropped and counted"
+    t @= with_sampler(with_clock(new_tracer("svc").must(), clock: fixture.clock), sampler: .always_off)
+    span = start(@t, name: "x", kind: .internal).must()
+    assert !is_sampled(span.context)
+    end(@t, span: span).must()
+    assert t.ended.len() == 0
+    small @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    small.limits.queue @ 1
+    a = start(@small, name: "a", kind: .internal).must()
+    b = start(@small, name: "b", kind: .internal).must()
+    end(@small, span: a).must()
+    end(@small, span: b).must()
+    assert small.ended.len() == 1
+    assert small.dropped == 1
+
+test "set_attribute, add_event and add_link: a key replaced, each limit counting what it drops"
+    t @= with_limits(
+        with_clock(new_tracer("svc").must(), clock: fixture.clock),
+        limits: Limits(attributes: 2, events: 1, links: 1, attribute_length: 0, queue: 10)
+    )
+    span @= start(@t, name: "x", kind: .internal).must()
+    set_attribute(@span, a: Attribute(key: "a", value: .integer(v: 1)))
+    set_attribute(@span, a: Attribute(key: "a", value: .integer(v: 2)))
+    set_attribute(@span, a: Attribute(key: "b", value: .boolean(v: true)))
+    set_attribute(@span, a: Attribute(key: "c", value: .text(v: "dropped")))
+    assert span.attributes.len() == 2
+    assert span.attributes[0].value == .integer(v: 2)
+    assert span.dropped_attributes == 1
+    at = fixture.clock().must()
+    add_event(
+        @span,
+        name: "e",
+        at: at,
+        attributes: [Attribute(key: "1", value: .text(v: "")), Attribute(key: "2", value: .text(v: "")), Attribute(key: "3", value: .text(v: ""))]
+    )
+    add_event(@span, name: "f", at: at, attributes: [])
+    assert span.events.len() == 1
+    assert span.events[0].dropped_attributes == 1
+    assert span.dropped_events == 1
+    linked = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    add_link(@span, context: linked, attributes: [])
+    add_link(@span, context: linked, attributes: [])
+    add_link(@span, context: SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false), attributes: [])
+    assert span.links.len() == 1
+    assert span.dropped_links == 1
+
+test "set_status: ok is final, unset ignored, a message kept for error alone"
+    t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    span @= start(@t, name: "x", kind: .internal).must()
+    set_status(@span, code: .unset, message: "x")
+    assert span.status == Status(code: .unset, message: "")
+    set_status(@span, code: .error, message: "bad")
+    assert span.status == Status(code: .error, message: "bad")
+    set_status(@span, code: .ok, message: "fine")
+    assert span.status == Status(code: .ok, message: "")
+    set_status(@span, code: .error, message: "late")
+    assert span.status.code == .ok
+
+test "start_server and set_response: the caller's trace, the conventions' attributes, a 500 an error and a 404 not"
+    t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    r @= http.request(method: "GET", target: "/users?id=7").must()
+    r.headers @ [
+        http.Header(name: "traceparent", value: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")
+        http.Header(name: "User-Agent", value: "curl/8")
+    ]
+    r.remote @ "192.0.2.1:5000"
+    span @= start_server(@t, r: r).must()
+    assert format_id(span.context.trace_id) == "0af7651916cd43dd8448eb211c80319c"
+    assert span.parent_remote
+    assert span.kind == .server
+    written: [str] @= []
+
+    for a in span.attributes
+        written @ written.push(a.key)
+
+    assert written == ["http.request.method", "url.path", "url.query", "user_agent.original", "client.address"]
+    set_response(@span, response: http.respond_status(404))
+    assert span.status.code == .unset
+    set_response(@span, response: http.respond_status(503))
+    assert span.status.code == .error
+    plain = start_server(@t, r: http.request(method: "POST", target: "/").must()).must()
+    assert plain.parent_span_id.len() == 0
+    assert plain.attributes.len() == 2
+
+test "encode_spans: the bytes opentelemetry-proto 1.45 writes for a server's span under a remote parent and a root, a text cut by the limit"
+    trace_id = fixture.trace_id()
+    at_start = time.from_unix(whole_seconds: 0, extra_nanoseconds: 1_000).must()
+    at_event = time.from_unix(whole_seconds: 0, extra_nanoseconds: 1_500).must()
+    at_end = time.from_unix(whole_seconds: 0, extra_nanoseconds: 2_000).must()
+    limits @= default_limits()
+    limits.attribute_length @ 3
+    linked = SpanContext(
+        trace_id: trace_id,
+        span_id: parse_span_id("1111111111111111").must(),
+        flags: 1,
+        state: [],
+        remote: false
+    )
+    server = Span(
+        context: SpanContext(trace_id: trace_id, span_id: [1, 2, 3, 4, 5, 6, 7, 8], flags: 1, state: [StateMember(key: "rojo", value: "1")], remote: false),
+        parent_span_id: parse_span_id("b7ad6b7169203331").must(),
+        parent_remote: true,
+        name: "GET",
+        kind: .server,
+        start: at_start,
+        end: at_end,
+        attributes: [Attribute(key: "a", value: .integer(v: 1)), Attribute(key: "s", value: .text(v: "abcdef"))],
+        events: [Event(name: "e", at: at_event, attributes: [Attribute(key: "x", value: .boolean(v: true))], dropped_attributes: 0)],
+        links: [Link(context: linked, attributes: [Attribute(key: "k", value: .text(v: "v"))], dropped_attributes: 0)],
+        status: Status(code: .error, message: "bad"),
+        limits: limits,
+        dropped_attributes: 2,
+        dropped_events: 0,
+        dropped_links: 0
+    )
+    root = Span(
+        context: SpanContext(trace_id: trace_id, span_id: [10, 11, 12, 13, 14, 15, 16, 17], flags: 1, state: [], remote: false),
+        parent_span_id: [],
+        parent_remote: false,
+        name: "root",
+        kind: .internal,
+        start: at_start,
+        end: at_end,
+        attributes: [],
+        events: [],
+        links: [],
+        status: Status(code: .unset, message: ""),
+        limits: default_limits(),
+        dropped_attributes: 0,
+        dropped_events: 0,
+        dropped_links: 0
+    )
+    body = encode_spans(
+        [server, root],
+        resource: [Attribute(key: "service.name", value: .text(v: "svc"))],
+        scope: Scope(name: "m", version: "1")
+    )
+    assert bytes.format_hex(body) == "0a98020a170a150a0c736572766963652e6e616d6512050a0373766312fc010a060a016d12013112b1010a100af7651916cd43dd8448eb211c80319c120801020304050607081a06726f6a6f3d312208b7ad6b71692033312a03474554300239e80300000000000041d0070000000000004a070a0161120218014a0a0a017312050a0361626350025a1509dc050000000000001201651a070a0178120210016a2b0a100af7651916cd43dd8448eb211c80319c1208111111111111111122080a016b12030a017635000100007a0712036261641802850100030000123e0a100af7651916cd43dd8448eb211c80319c12080a0b0c0d0e0f10112a04726f6f74300139e80300000000000041d0070000000000007a00850100010000"
+
+test "log_record, log_fields and encode_logs: a line in a span and one outside, groups flattened, the bytes opentelemetry-proto writes"
+    context = SpanContext(
+        trace_id: fixture.trace_id(),
+        span_id: [1, 2, 3, 4, 5, 6, 7, 8],
+        flags: 1,
+        state: [],
+        remote: false
+    )
+    blank = SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false)
+    inside = log_record(
+        context,
+        level: .info,
+        msg: "hello",
+        fields: [log.integer(key: "n", value: 3), log.group(key: "g", fields: [log.text(key: "k", value: "v")])],
+        at: time.from_unix(whole_seconds: 0, extra_nanoseconds: 1_500).must()
+    )
+    outside = log_record(
+        blank,
+        level: .warn,
+        msg: "x",
+        fields: [],
+        at: time.from_unix(whole_seconds: 0, extra_nanoseconds: 1_600).must()
+    )
+    assert inside.attributes[1].key == "g.k"
+    assert outside.trace_id.len() == 0
+    body = encode_logs(
+        [inside, outside],
+        resource: [Attribute(key: "service.name", value: .text(v: "svc"))],
+        scope: Scope(name: "m", version: "1")
+    )
+    assert bytes.format_hex(body) == "0aa0010a170a150a0c736572766963652e6e616d6512050a037376631284010a060a016d120131125909dc0500000000000010091a04494e464f2a070a0568656c6c6f32070a016e12021803320a0a03672e6b12030a017645010000004a100af7651916cd43dd8448eb211c80319c5208010203040506070859dc05000000000000121f094006000000000000100d1a045741524e2a030a0178594006000000000000"
+    fields = log_fields(context)
+    assert fields.len() == 3
+    assert fields[0].key == "trace_id"
+    assert fields[0].value == .text(v: "0af7651916cd43dd8448eb211c80319c")
+    assert fields[2].value == .text(v: "01")
+    assert log_fields(blank).len() == 0
+
+test "log_record: a duration in nanoseconds, an instant as RFC 3339, a group with no key in place, nested groups"
+    fields = [
+        log.duration(key: "d", value: time.milliseconds(2).must())
+        log.instant(key: "t", value: time.epoch())
+        log.group(key: "", fields: [log.boolean(key: "b", value: true)])
+        log.group(key: "a", fields: [log.group(key: "b", fields: [log.number(key: "c", value: 0.5)])])
+    ]
+    r = log_record(
+        SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false),
+        level: .debug,
+        msg: "m",
+        fields: fields,
+        at: time.epoch()
+    )
+    assert r.attributes == [Attribute(key: "d", value: .integer(v: 2_000_000)), Attribute(key: "t", value: .text(v: "1970-01-01T00:00:00Z")), Attribute(key: "b", value: .boolean(v: true)), Attribute(key: "a.b.c", value: .number(v: 0.5))]
+
+test "export_spans and export_logs: a collector that is not there, the spans kept, and nothing to send"
+    t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    span = start(@t, name: "x", kind: .internal).must()
+    end(@t, span: span).must()
+    exporter @= otlp_to("http://127.0.0.1:9/v1/traces")
+    exporter.client.deadline_ms @ 2_000
+    assert export_spans(@t, exporter: exporter).is_err()
+    assert t.ended.len() == 1
+    empty @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    assert export_spans(@empty, exporter: exporter).must() == Exported(rejected: 0, message: "")
+    assert export_logs(exporter, records: [], resource: [], scope: Scope(name: "", version: "")).must().rejected == 0
+
+## Examples
+
+# A context of the Recommendation's ids is valid.
+test "is_valid: the Recommendation's context"
+    assert is_valid(parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must())
+
+# Its flags say it is sampled.
+test "is_sampled: a sampled context"
+    assert is_sampled(parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must())
+
+# A trace id read from a log line.
+test "parse_trace_id: an id from a log"
+    assert parse_trace_id("0af7651916cd43dd8448eb211c80319c").must().len() == 16
+
+# A span id read.
+test "parse_span_id: a span's id"
+    assert parse_span_id("b7ad6b7169203331").must().len() == 8
+
+# An id written as hexadecimal.
+test "format_id: a span's id"
+    assert format_id([1, 2, 3, 4, 5, 6, 7, 8]) == "0102030405060708"
+
+# The field a caller sent, read.
+test "parse_traceparent: the Recommendation's example"
+    c = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    assert format_id(c.span_id) == "b7ad6b7169203331"
+
+# The same field written back.
+test "format_traceparent: written back"
+    assert format_traceparent(parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()) == "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+
+# Two vendors' members.
+test "parse_tracestate: two vendors"
+    assert parse_tracestate("rojo=00f067aa0ba902b7,congo=t61rcWkgMzE").must().len() == 2
+
+# Members written back.
+test "format_tracestate: two vendors"
+    assert format_tracestate([StateMember(key: "rojo", value: "1"), StateMember(key: "congo", value: "2")]) == "rojo=1,congo=2"
+
+# A vendor's own member put first.
+test "with_state: our member first"
+    assert format_tracestate(with_state(parse_tracestate("congo=2").must(), key: "rojo", value: "1").must()) == "rojo=1,congo=2"
+
+# A vendor's member taken out.
+test "without_state: a member taken out"
+    assert format_tracestate(without_state(parse_tracestate("rojo=1,congo=2").must(), key: "rojo")) == "congo=2"
+
+# A vendor's value read.
+test "state_of: a vendor's value"
+    assert state_of(parse_tracestate("rojo=1").must(), key: "rojo").must() == "1"
+
+# The caller's context read from a request.
+test "extract: a request's context"
+    c = extract(
+        [http.Header(name: "traceparent", value: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")]
+    ).must()
+    assert c.remote
+
+# The context written into an outgoing request.
+test "inject: an outgoing request"
+    headers = inject([], c: parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must())
+    assert http.value_of(headers, name: "traceparent").must() == "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+
+# A new trace sampled by a ratio of one half.
+test "samples_root: a ratio of one half"
+    assert !samples_root(.ratio(fraction: 0.5), trace_id: parse_trace_id("0af7651916cd43dd8448eb211c80319c").must())
+
+# A child of a sampled parent, under OpenTelemetry's default sampler.
+test "samples_child: as the parent was"
+    parent = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    assert samples_child(.parent_or_ratio(fraction: 0.1), trace_id: parent.trace_id, parent: parent)
+
+# The SDKs' limits.
+test "default_limits: 128 of each"
+    assert default_limits().attributes == 128
+
+# A tracer for a service.
+test "new_tracer: the checkout service"
+    t = new_tracer("checkout").must()
+    assert t.resource[0].value == .text(v: "checkout")
+
+# The resource the environment describes, here none but the name given.
+test "resource_from_env: a service's name"
+    assert resource_from_env("checkout").must()[0].key == "service.name"
+
+# A tracer keeping one trace in ten.
+test "with_sampler: one in ten"
+    t = with_sampler(new_tracer("svc").must(), sampler: .parent_or_ratio(fraction: 0.1))
+    assert t.sampler == .parent_or_ratio(fraction: 0.1)
+
+# A tracer under a resource of two attributes.
+test "with_resource: a name and a version"
+    t = with_resource(
+        new_tracer("svc").must(),
+        resource: [Attribute(key: "service.name", value: .text(v: "svc")), Attribute(key: "service.version", value: .text(v: "1.2.0"))]
+    )
+    assert t.resource.len() == 2
+
+# A tracer whose spans name the library that made them.
+test "with_scope: a library's name"
+    assert with_scope(new_tracer("svc").must(), scope: Scope(name: "db", version: "1.0")).scope.name == "db"
+
+# A tracer keeping 16 attributes a span.
+test "with_limits: fewer attributes"
+    limits @= default_limits()
+    limits.attributes @ 16
+    assert with_limits(new_tracer("svc").must(), limits: limits).limits.attributes == 16
+
+# A tracer whose spans all begin at one moment.
+test "with_clock: a fixed clock"
+    t @= with_clock(new_tracer("svc").must(), clock: fixture.clock)
+    span = start(@t, name: "x", kind: .internal).must()
+    assert span.start == fixture.clock().must()
+
+# A root span of a job.
+test "start: a job's span"
+    t @= new_tracer("worker").must()
+    span = start(@t, name: "nightly report", kind: .internal).must()
+    assert is_valid(span.context)
+
+# A query under the request's span.
+test "start_child: a query under a request"
+    t @= new_tracer("api").must()
+    request = start(@t, name: "GET /users", kind: .server).must()
+    query = start_child(@t, name: "select users", kind: .client, parent: request.context).must()
+    assert query.parent_span_id == request.context.span_id
+
+# A server's span for a request carrying its caller's trace.
+test "start_server: a request with a traceparent"
+    t @= new_tracer("api").must()
+    r @= http.request(method: "GET", target: "/users").must()
+    r.headers @ [http.Header(name: "traceparent", value: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01")]
+    span = start_server(@t, r: r).must()
+    assert format_id(span.parent_span_id) == "b7ad6b7169203331"
+
+# The status a server answered.
+test "set_response: a 200"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "GET", kind: .server).must()
+    set_response(@span, response: http.respond_status(200))
+    assert span.attributes[0].value == .integer(v: 200)
+
+# A user's id on a span.
+test "set_attribute: a user's id"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "x", kind: .internal).must()
+    set_attribute(@span, a: Attribute(key: "enduser.id", value: .text(v: "ada")))
+    assert span.attributes.len() == 1
+
+# A cache missed, at a moment.
+test "add_event: a cache missed"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "x", kind: .internal).must()
+    add_event(@span, name: "cache miss", at: fixture.clock().must(), attributes: [])
+    assert span.events[0].name == "cache miss"
+
+# A span linked to the trace that queued its message.
+test "add_link: the producer's span"
+    t @= new_tracer("worker").must()
+    span @= start(@t, name: "handle", kind: .consumer).must()
+    add_link(
+        @span,
+        context: parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must(),
+        attributes: []
+    )
+    assert span.links.len() == 1
+
+# A failure recorded.
+test "record_error: a timeout"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "x", kind: .internal).must()
+    record_error(@span, message: "the database did not answer", at: fixture.clock().must())
+    assert span.events[0].name == "exception"
+
+# A span that failed.
+test "set_status: an error"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "x", kind: .internal).must()
+    set_status(@span, code: .error, message: "no stock")
+    assert span.status.message == "no stock"
+
+# A span named by its route once it is known.
+test "rename: the route"
+    t @= new_tracer("api").must()
+    span @= start(@t, name: "GET", kind: .server).must()
+    rename(@span, name: "GET /users/{id}")
+    assert span.name == "GET /users/{id}"
+
+# A span ended and kept for the next export.
+test "end: kept for export"
+    t @= new_tracer("api").must()
+    span = start(@t, name: "x", kind: .internal).must()
+    end(@t, span: span).must()
+    assert t.ended.len() == 1
+
+# An exporter to the collector on this machine.
+test "otlp_to: the local collector"
+    assert otlp_to(TRACES_URL).url == "http://localhost:4318/v1/traces"
+
+# An exporter of log records as the environment says, here nothing.
+test "otlp_from_env: logs"
+    assert otlp_from_env(.logs).must().url != ""
+
+# Ended spans as an OTLP request.
+test "encode_spans: one span"
+    t @= new_tracer("api").must()
+    span = start(@t, name: "x", kind: .internal).must()
+    assert encode_spans([span], resource: t.resource, scope: t.scope).len() > 0
+
+# An export to a collector that is not running here fails, the spans kept.
+test "export_spans: no collector here"
+    t @= new_tracer("api").must()
+    span = start(@t, name: "x", kind: .internal).must()
+    end(@t, span: span).must()
+    exporter @= otlp_to("http://127.0.0.1:9/v1/traces")
+    exporter.client.deadline_ms @ 2_000
+    assert export_spans(@t, exporter: exporter).is_err()
+    assert t.ended.len() == 1
+
+# A line written in a span, as OTLP's record.
+test "log_record: a line in a span"
+    c = parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must()
+    r = log_record(
+        c,
+        level: .info,
+        msg: "paid",
+        fields: [log.integer(key: "cents", value: 1_250)],
+        at: fixture.clock().must()
+    )
+    assert r.span_id == c.span_id
+
+# A logger whose lines name their span.
+test "log_fields: a logger tied to a span"
+    fields = log_fields(parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must())
+    assert fields[1].value == .text(v: "b7ad6b7169203331")
+
+# Records as an OTLP request.
+test "encode_logs: one record"
+    r = log_record(
+        parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must(),
+        level: .warn,
+        msg: "slow",
+        fields: [],
+        at: fixture.clock().must()
+    )
+    assert encode_logs([r], resource: [], scope: Scope(name: "api", version: "")).len() > 0
+
+# An export to a collector that is not running here fails.
+test "export_logs: no collector here"
+    exporter @= otlp_to("http://127.0.0.1:9/v1/logs")
+    exporter.client.deadline_ms @ 2_000
+    r = log_record(
+        parse_traceparent("00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01").must(),
+        level: .error,
+        msg: "down",
+        fields: [],
+        at: fixture.clock().must()
+    )
+    assert export_logs(exporter, records: [r], resource: [], scope: Scope(name: "api", version: "")).is_err()

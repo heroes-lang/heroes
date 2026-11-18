@@ -1,0 +1,17 @@
+# What the face's tests share: a clock that answers one moment, and the
+# Recommendation's trace id.
+
+use time
+
+# 2009-02-13T23:31:30Z, every time it is called: the clock of the tests.
+function clock() -> time.Instant?
+    return time.from_unix(whole_seconds: 1_234_567_890, extra_nanoseconds: 0)
+
+# The trace id of W3C Trace Context's own examples,
+# `0af7651916cd43dd8448eb211c80319c`.
+function trace_id() -> [u8]
+    return [10, 247, 101, 25, 22, 205, 67, 221, 132, 72, 235, 33, 28, 128, 49, 156]
+
+test "clock and trace_id: one moment, sixteen bytes"
+    assert clock().must().unix_nanoseconds == 1_234_567_890_000_000_000
+    assert trace_id().len() == 16

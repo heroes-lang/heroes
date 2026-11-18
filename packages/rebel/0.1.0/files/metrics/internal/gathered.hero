@@ -1,0 +1,134 @@
+# A store's families as the formats write them: families ordered by name,
+# each family's series by their labels' values, each sample's labels ordered
+# by name with `le`, `quantile` or a state set's own label last, as Go's
+# registry gathers them. The face turns these into its `Family` and `Sample`.
+
+use metrics/internal/ckms
+use metrics/internal/floats
+use metrics/internal/store
+
+# One sample: a name, its labels as two lists, and its value.
+record OutSample
+    # The sample's name.
+    name: str
+    # Its labels' names, in the order written.
+    label_names: [str]
+    # Its labels' values, in the same order.
+    label_values: [str]
+    # Its value.
+    value: f64
+
+# One family and its samples.
+record OutFamily
+    # The family, as the store holds it.
+    family: store.Family
+    # Its samples, in the order written.
+    samples: [OutSample]
+
+# Every family of `s` with its samples.
+function gather(s: store.Store lent) -> [OutFamily]
+    members = store.members_of(s)
+    out: [OutFamily] @= []
+
+    for name in sort(keys(s.places))
+        place = s.places[name].must()
+        f = s.families[place]
+        out @ out.push(OutFamily(family: f, samples: samples_of(s, f: f, members: members[place])))
+
+    return out
+
+# `pairs` written as two lists, with one more pair after them where `extra`
+# names one.
+function sample(name: str, pairs: [store.Pair], extra: str, extra_value: str, value: f64) -> OutSample
+    label_names: [str] @= []
+    label_values: [str] @= []
+
+    for p in pairs
+        label_names @ label_names.push(p.name)
+        label_values @ label_values.push(p.value)
+
+    if extra != ""
+        label_names @ label_names.push(extra)
+        label_values @ label_values.push(extra_value)
+    return OutSample(name: name, label_names: label_names, label_values: label_values, value: value)
+
+# Every sample of the family `f`, its series those of `members`.
+function samples_of(s: store.Store lent, f: store.Family, members: [i64]) -> [OutSample]
+    out: [OutSample] @= []
+
+    for at in store.sorted_members(s, f: f, members: members)
+        series = s.series[at]
+        pairs = store.series_pairs(f, values: series.values)
+
+        match f.kind
+            .counter | .gauge | .unknown | .info => out @ out.push(
+                sample(name: f.name, pairs: pairs, extra: "", extra_value: "", value: series.value)
+            )
+            .state_set =>
+                for i in range(from: 0, to: f.states.len())
+                    v = if to_f64(i) == series.value
+                        1.0
+                    else
+                        0.0
+                    out @ out.push(
+                        sample(name: f.name, pairs: pairs, extra: f.name, extra_value: f.states[i], value: v)
+                    )
+            .histogram =>
+                running: u64 @= 0
+
+                for i in range(from: 0, to: f.buckets.len())
+                    running @ running + series.counts[i]
+                    out @ out.push(
+                        sample(name: f.name + "_bucket", pairs: pairs, extra: "le", extra_value: floats.text_form(f.buckets[i]), value: to_f64(running))
+                    )
+
+                running @ running + series.counts[f.buckets.len()]
+                out @ out.push(
+                    sample(name: f.name + "_bucket", pairs: pairs, extra: "le", extra_value: "+Inf", value: to_f64(running))
+                )
+                out @ out.push(
+                    sample(name: f.name + "_sum", pairs: pairs, extra: "", extra_value: "", value: series.sum)
+                )
+                out @ out.push(
+                    sample(name: f.name + "_count", pairs: pairs, extra: "", extra_value: "", value: to_f64(series.count))
+                )
+            .summary =>
+                for q in f.quantiles
+                    out @ out.push(
+                        sample(name: f.name, pairs: pairs, extra: "quantile", extra_value: floats.text_form(q), value: ckms.query(series.stream, q: q))
+                    )
+
+                out @ out.push(
+                    sample(name: f.name + "_sum", pairs: pairs, extra: "", extra_value: "", value: series.sum)
+                )
+                out @ out.push(
+                    sample(name: f.name + "_count", pairs: pairs, extra: "", extra_value: "", value: to_f64(series.count))
+                )
+
+    return out
+
+test "gather: an empty store, and a family with labels and no series"
+    s @= store.new_store()
+    assert gather(s).len() == 0
+    blank = store.Family(
+        name: "a",
+        help: "",
+        unit: "",
+        kind: .gauge,
+        labels: ["x"],
+        const_names: [],
+        const_values: [],
+        buckets: [],
+        quantiles: [],
+        errors: [],
+        states: []
+    )
+    store.register(@s, f: blank).must()
+    families = gather(s)
+    assert families.len() == 1
+    assert families[0].samples.len() == 0
+
+test "sample: no extra label, and one after the others"
+    pairs = [store.Pair(name: "a", value: "1")]
+    assert sample(name: "x", pairs: pairs, extra: "", extra_value: "", value: 2.0).label_names == ["a"]
+    assert sample(name: "x", pairs: pairs, extra: "le", extra_value: "+Inf", value: 2.0).label_values == ["1", "+Inf"]

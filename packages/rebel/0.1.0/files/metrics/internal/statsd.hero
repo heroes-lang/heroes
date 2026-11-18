@@ -1,0 +1,201 @@
+# The lines of StatsD and DogStatsD, as Datadog's Go client `datadog-go` v5
+# writes them: `name:value|type`, then `|@rate` below 1, `|#tag,tag` where
+# there are tags, `|T<seconds>` for a timestamp; events `_e{title,text}:...`
+# and service checks `_sc|...`. Each part is checked here, so no text a program
+# gives can end a line early or begin another one.
+
+use metrics/internal/floats
+use net
+use numbers
+use random
+use strings
+
+# The code of a name, a tag or a value no line can carry.
+constant INVALID: str
+    "invalid"
+
+# Whether `s` holds a byte that would end or split a line: `:`, `|`, `@`, a
+# line feed or a carriage return.
+function has_separator(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        if c == ':' || c == '|' || c == '@' || c == '\n' || c == '\r'
+            return true
+
+    return false
+
+# `prefix` and `name` as one metric's name. Fails `invalid` where it is empty
+# or holds a separator.
+function name_of(prefix: str, name: str) -> str?
+    full = prefix + name
+
+    if full == "" || has_separator(full)
+        return fail(code: INVALID, msg: f"the StatsD name \"{full}\" is empty or holds one of : | @ or a line end")
+    return ok(full)
+
+# The tags as DogStatsD writes them after `|#`, the client's first and the
+# line's own after them, each `name:value` or `name`, between commas. Fails
+# `invalid` where a tag is empty or holds a `,`, a `|` or a line end.
+function tags_of(own: [str], more: [str]) -> str?
+    written: [str] @= []
+
+    for list in [own, more]
+        for tag in list
+            if tag == "" || has_tag_separator(tag)
+                return fail(code: INVALID, msg: f"the tag \"{tag}\" is empty or holds a comma, a bar or a line end")
+            written @ written.push(tag)
+
+    return ok(written.join(","))
+
+# Whether `s` holds a `,`, a `|`, a line feed or a carriage return.
+function has_tag_separator(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        if c == ',' || c == '|' || c == '\n' || c == '\r'
+            return true
+
+    return false
+
+# One metric's line, with no line feed: `name:value|kind`, the rate where it is
+# below 1, the tags where there are some.
+#
+# - `name`: the whole name, already checked.
+# - `value`: the value as written.
+# - `kind`: `c`, `g`, `ms`, `h`, `d` or `s`.
+# - `rate`: the sample rate, from 0 to 1; 1 writes none.
+# - `tags`: the tags as `tags_of` writes them, "" for none.
+function line(name: str, value: str, kind: str, rate: f64, tags: str) -> str
+    pieces: [str] @= [name, ":", value, "|", kind]
+
+    if rate < 1.0
+        pieces @ pieces.push("|@" + floats.plain_form(rate))
+
+    if tags != ""
+        pieces @ pieces.push("|#" + tags)
+    return pieces.join("")
+
+# A float as DogStatsD's gauges, histograms and distributions write it: the
+# fewest digits and no exponent, `21.5`, `-2`, `1000000000000000000000`.
+# Fails `invalid` for NaN and the infinities, which no reader takes.
+function float_value(x: f64) -> str?
+    if x != x || x == 1.0 / 0.0 || x == -1.0 / 0.0
+        return fail(code: INVALID, msg: f"the StatsD value {x} is not a finite number")
+    return ok(floats.plain_form(x))
+
+# Milliseconds as a timing writes them, with six decimals: `12.700000`.
+function milliseconds_value(ms: f64) -> str
+    return numbers.format_float(ms, precision: 6)
+
+# `s` with a line feed written `\n`, as an event's title and text are.
+function escape_newlines(s: str) -> str
+    return strings.replace_all(s: s, old: "\n", new: "\\n")
+
+# An event's line: `_e{title bytes,text bytes}:title|text`, then each part of
+# `parts` already written (`d:`, `h:`, `k:`, `p:`, `s:`, `t:`), then the tags.
+function event_line(title: str, text: str, parts: [str], tags: str) -> str
+    t = escape_newlines(title)
+    x = escape_newlines(text)
+    pieces: [str] @= [f"_e{{{t.len()},{x.len()}}}:", t, "|", x]
+
+    for p in parts
+        pieces @ pieces.push("|" + p)
+
+    if tags != ""
+        pieces @ pieces.push("|#" + tags)
+    return pieces.join("")
+
+# A service check's line: `_sc|name|status`, the parts already written, the
+# tags, and the message last, its line feeds written `\n` and each `m:` written
+# `m\:` so it cannot be read as a part.
+function service_check_line(name: str, status: i64, parts: [str], tags: str, message: str) -> str
+    pieces: [str] @= ["_sc|", name, "|", to_str(status)]
+
+    for p in parts
+        pieces @ pieces.push("|" + p)
+
+    if tags != ""
+        pieces @ pieces.push("|#" + tags)
+
+    if message != ""
+        pieces @ pieces.push("|m:" + strings.replace_all(s: escape_newlines(message), old: "m:", new: "m\\:"))
+    return pieces.join("")
+
+# Whether a line at `rate` is sent this time: always at 1, never at 0, else
+# where the next draw of `generator` is below `rate`. Fails `invalid` where
+# `rate` is not 0 to 1.
+function sampled(@generator: random.Generator, rate: f64) -> bool?
+    if rate != rate || !(rate >= 0.0 && rate <= 1.0)
+        return fail(code: INVALID, msg: f"the rate {rate} is not 0 to 1")
+
+    if rate == 1.0
+        return ok(true)
+    return ok(random.next_f64(@generator) < rate)
+
+# Sends `text` and a line feed as one datagram from `socket` to `to`.
+function send_line(socket: net.UdpSocket, to: net.Address, text: str) -> ()?
+    return net.send_to(socket, data: strings.to_bytes(text + "\n"), to: to)
+
+# Sends one metric's line where `rate` lets it: the client's `prefix` before
+# `name`, its tags `own` before the line's `tags`.
+function send_metric(@generator: random.Generator, socket: net.UdpSocket, to: net.Address, prefix: str, own: [str], name: str, value: str, kind: str, rate: f64, tags: [str]) -> ()?
+    if !sampled(@generator, rate: rate)?
+        return ok()
+    full = name_of(prefix: prefix, name: name)?
+    written = line(name: full, value: value, kind: kind, rate: rate, tags: tags_of(own: own, more: tags)?)
+    return send_line(socket, to: to, text: written)
+
+test "name_of: a prefix joined, the empty name and each separator refused"
+    assert name_of(prefix: "app.", name: "hits").must() == "app.hits"
+    assert name_of(prefix: "", name: "").is_err()
+    assert name_of(prefix: "", name: "a:b").is_err()
+    assert name_of(prefix: "", name: "a|b").is_err()
+    assert name_of(prefix: "", name: "a@b").is_err()
+    assert name_of(prefix: "", name: "a\nb").is_err()
+    assert name_of(prefix: "é.", name: "x").must() == "é.x"
+
+test "tags_of: none, a bare tag, a tag with a value, the client's first, and a comma, a bar and the empty tag refused"
+    assert tags_of(own: [], more: []).must() == ""
+    assert tags_of(own: ["env:prod"], more: ["solo"]).must() == "env:prod,solo"
+    assert tags_of(own: [], more: ["a,b"]).is_err()
+    assert tags_of(own: [""], more: []).is_err()
+    assert tags_of(own: [], more: ["a:x|y"]).is_err()
+
+test "sampled: a rate of 1 always, of 0 never, out of range refused"
+    g @= random.Generator(high: 1, low: 2)
+    assert sampled(@g, rate: 1.0).must()
+    assert !sampled(@g, rate: 0.0).must()
+    assert sampled(@g, rate: 1.5).is_err()
+    assert sampled(@g, rate: 0.0 / 0.0).is_err()
+    sent @= 0
+
+    for _ in range(from: 0, to: 1_000)
+        if sampled(@g, rate: 0.25).must()
+            sent @ sent + 1
+
+    assert sent > 150 && sent < 350
+
+test "line: datadog-go's lines for a count, a sampled count and tags"
+    assert line(name: "page.views", value: "1", kind: "c", rate: 1.0, tags: "") == "page.views:1|c"
+    assert line(name: "r", value: "1", kind: "c", rate: 0.5, tags: "") == "r:1|c|@0.5"
+    assert line(name: "page.views", value: "5", kind: "c", rate: 1.0, tags: "env:prod,solo") == "page.views:5|c|#env:prod,solo"
+
+test "float_value and milliseconds_value: datadog-go's numbers, and NaN refused"
+    assert float_value(21.5).must() == "21.5"
+    assert float_value(-2.0).must() == "-2"
+    assert float_value(0.000001).must() == "0.000001"
+    assert float_value(numbers.parse_float("1e21").must()).must() == "1000000000000000000000"
+    assert float_value(0.0 / 0.0).is_err()
+    assert float_value(1.0 / 0.0).is_err()
+    assert milliseconds_value(12.7) == "12.700000"
+    assert milliseconds_value(1.5) == "1.500000"
+
+test "event_line: datadog-go's event with a title of two-byte characters and a line feed in the text"
+    parts = ["d:1700000000", "h:h1", "k:k", "p:low", "s:src", "t:error"]
+    assert event_line(title: "Title é", text: "Body\nline", parts: parts, tags: "x:y") == "_e{8,10}:Title é|Body\\nline|d:1700000000|h:h1|k:k|p:low|s:src|t:error|#x:y"
+    assert event_line(title: "", text: "", parts: [], tags: "") == "_e{0,0}:|"
+
+test "service_check_line: datadog-go's check, its message escaped last"
+    assert service_check_line(name: "app.ok", status: 2, parts: ["d:1700000000", "h:h"], tags: "t", message: "bad|thing\nx m:y") == "_sc|app.ok|2|d:1700000000|h:h|#t|m:bad|thing\\nx m\\:y"
+    assert service_check_line(name: "a", status: 0, parts: [], tags: "", message: "") == "_sc|a|0"

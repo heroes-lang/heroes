@@ -1,0 +1,146 @@
+# A store's values as an OTLP `ExportMetricsServiceRequest`: a counter a
+# monotonic cumulative `Sum`, a gauge, an info, a state set and a family of no
+# kind a `Gauge`, a histogram a cumulative `Histogram`, a summary a `Summary`;
+# each series' labels its points' attributes. Field numbers are
+# opentelemetry-proto 1.x's.
+
+use metrics/internal/ckms
+use metrics/internal/otlp
+use metrics/internal/store
+use numbers
+use protobuf
+
+# The request's bytes.
+#
+# - `s`: the store.
+# - `resource`: the resource's attributes, each a `KeyValue`'s bytes.
+# - `scope_name`, `scope_version`: the instrumentation scope.
+# - `begin`: every cumulative point's start, in nanoseconds since 1970.
+# - `now`: every point's time.
+function encode(s: store.Store lent, resource: [[u8]], scope_name: str, scope_version: str, begin: u64, now: u64) -> [u8]
+    members = store.members_of(s)
+    scoped: [u8] @= []
+    otlp.put_bytes(to: @scoped, number: 1, b: otlp.scope(name: scope_name, version: scope_version))
+
+    for name in sort(keys(s.places))
+        place = s.places[name].must()
+
+        if members[place].len() > 0
+            f = s.families[place]
+            metric: [u8] @= []
+            otlp.put_text(@metric, number: 1, s: f.name)
+            otlp.put_text(@metric, number: 2, s: f.help)
+            otlp.put_text(@metric, number: 3, s: f.unit)
+            points: [u8] @= []
+
+            for at in store.sorted_members(s, f: f, members: members[place])
+                put_points(@points, f: f, series: s.series[at], begin: begin, now: now)
+
+            match f.kind
+                .counter =>
+                    otlp.put_varint(@points, number: 2, v: otlp.CUMULATIVE)
+                    otlp.put_varint(@points, number: 3, v: 1)
+                    otlp.put_bytes(to: @metric, number: 7, b: points)
+                .histogram =>
+                    otlp.put_varint(@points, number: 2, v: otlp.CUMULATIVE)
+                    otlp.put_bytes(to: @metric, number: 9, b: points)
+                .summary                               => otlp.put_bytes(to: @metric, number: 11, b: points)
+                .gauge | .unknown | .info | .state_set => otlp.put_bytes(to: @metric, number: 5, b: points)
+
+            otlp.put_bytes(to: @scoped, number: 2, b: metric)
+
+    resourced: [u8] @= []
+    otlp.put_bytes(to: @resourced, number: 1, b: otlp.resource(resource))
+    otlp.put_bytes(to: @resourced, number: 2, b: scoped)
+    out: [u8] @= []
+    otlp.put_bytes(to: @out, number: 1, b: resourced)
+    return out
+
+# Writes the points of `series` of `f` at the end of `to`, each its field 1:
+# one for each state of a state set.
+function put_points(@to: [u8], f: store.Family, series: store.Series, begin: u64, now: u64)
+    pairs = store.series_pairs(f, values: series.values)
+
+    match f.kind
+        .counter => otlp.put_bytes(
+            to: @to,
+            number: 1,
+            b: number_point(pairs, extra: "", extra_value: "", begin: begin, now: now, value: series.value)
+        )
+        .gauge | .unknown | .info => otlp.put_bytes(
+            to: @to,
+            number: 1,
+            b: number_point(pairs, extra: "", extra_value: "", begin: 0, now: now, value: series.value)
+        )
+        .state_set =>
+            for i in range(from: 0, to: f.states.len())
+                v = if to_f64(i) == series.value
+                    1.0
+                else
+                    0.0
+                otlp.put_bytes(
+                    to: @to,
+                    number: 1,
+                    b: number_point(pairs, extra: f.name, extra_value: f.states[i], begin: 0, now: now, value: v)
+                )
+        .histogram =>
+            point: [u8] @= []
+            otlp.put_fixed64(@point, number: 2, v: begin)
+            otlp.put_fixed64(@point, number: 3, v: now)
+            otlp.put_fixed64(@point, number: 4, v: series.count)
+            otlp.put_double(@point, number: 5, x: series.sum)
+            counts: [u8] @= []
+
+            for c in series.counts
+                protobuf.push_fixed64(@counts, v: c)
+
+            otlp.put_bytes(to: @point, number: 6, b: counts)
+
+            if f.buckets.len() > 0
+                bounds: [u8] @= []
+
+                for b in f.buckets
+                    protobuf.push_fixed64(@bounds, v: numbers.f64_to_bits(b))
+
+                otlp.put_bytes(to: @point, number: 7, b: bounds)
+            put_attributes(@point, number: 9, pairs: pairs, extra: "", extra_value: "")
+            otlp.put_bytes(to: @to, number: 1, b: point)
+        .summary =>
+            point: [u8] @= []
+            otlp.put_fixed64(@point, number: 2, v: begin)
+            otlp.put_fixed64(@point, number: 3, v: now)
+            otlp.put_fixed64(@point, number: 4, v: series.count)
+            otlp.put_double_unless_zero(@point, number: 5, x: series.sum)
+
+            for q in f.quantiles
+                pair: [u8] @= []
+                otlp.put_double_unless_zero(@pair, number: 1, x: q)
+                otlp.put_double_unless_zero(@pair, number: 2, x: ckms.query(series.stream, q: q))
+                otlp.put_bytes(to: @point, number: 6, b: pair)
+
+            put_attributes(@point, number: 7, pairs: pairs, extra: "", extra_value: "")
+            otlp.put_bytes(to: @to, number: 1, b: point)
+
+# A `NumberDataPoint` of `value`, its start left out where `begin` is 0.
+function number_point(pairs: [store.Pair], extra: str, extra_value: str, begin: u64, now: u64, value: f64) -> [u8]
+    point: [u8] @= []
+    otlp.put_fixed64(@point, number: 2, v: begin)
+    otlp.put_fixed64(@point, number: 3, v: now)
+    otlp.put_double(@point, number: 4, x: value)
+    put_attributes(@point, number: 7, pairs: pairs, extra: extra, extra_value: extra_value)
+    return point
+
+# Writes `pairs`, and `extra` after them where it names one, as the
+# `KeyValue`s of field `number`, each value a string.
+function put_attributes(@to: [u8], number: i64, pairs: [store.Pair], extra: str, extra_value: str)
+    for p in pairs
+        otlp.put_bytes(to: @to, number: number, b: otlp.key_value(key: p.name, value: otlp.any_text(p.value)))
+
+    if extra != ""
+        otlp.put_bytes(to: @to, number: number, b: otlp.key_value(key: extra, value: otlp.any_text(extra_value)))
+
+test "encode: an empty store holds its resource and scope alone"
+    s = store.new_store()
+
+    # ExportMetricsServiceRequest(resource_metrics=[ResourceMetrics(resource=Resource(), scope_metrics=[ScopeMetrics(scope=InstrumentationScope())])])
+    assert encode(s, resource: [], scope_name: "", scope_version: "", begin: 0, now: 0) == [10, 6, 10, 0, 18, 2, 10, 0]

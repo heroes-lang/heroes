@@ -1,0 +1,507 @@
+# What a registry holds: the families described, every series recorded, and
+# the maps that find them by name; a family checked and registered, and a
+# series found or made. The face's `Registry` holds one `Store`; the types here
+# are this module's own, the face's `Desc` and `Kind` written as `Family` and
+# `Kind`. What a value recorded does to a series is `recording`'s.
+
+use lists
+use metrics/internal/ckms
+use metrics/internal/names
+use strings
+
+# The code of a call its family does not take, or a description no format
+# allows.
+constant INVALID: str
+    "invalid"
+
+# The code of a name another family holds.
+constant EXISTS: str
+    "exists"
+
+# The code of a family or a series that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# A family's kind, as the face's `Kind` names it.
+variant Kind
+    # The face's `counter`.
+    counter
+    # The face's `gauge`.
+    gauge
+    # The face's `histogram`.
+    histogram
+    # The face's `summary`.
+    summary
+    # The face's `info`.
+    info
+    # The face's `state_set`.
+    state_set
+    # The face's `unknown`.
+    unknown
+
+# A family described, as the face's `Desc` holds it, its constant labels as two
+# lists and its quantiles' targets and errors apart.
+record Family
+    # The name in the 0.0.4 format.
+    name: str
+    # The help.
+    help: str
+    # The unit, "" for none.
+    unit: str
+    # The kind.
+    kind: Kind
+    # The labels' names, in the order values are given.
+    labels: [str]
+    # The constant labels' names.
+    const_names: [str]
+    # The constant labels' values, in the same order.
+    const_values: [str]
+    # A histogram's bounds, ascending, without `+Inf`.
+    buckets: [f64]
+    # A summary's quantiles, ascending.
+    quantiles: [f64]
+    # The error of each quantile, in the same order.
+    errors: [f64]
+    # A state set's states.
+    states: [str]
+
+# One series, as the face's `Series` describes it.
+record Series
+    # Its family's name.
+    family: str
+    # Its labels' values.
+    values: [str]
+    # A counter's, a gauge's or an info's value, a state set's state's index.
+    value: f64
+    # A histogram's count in each bucket alone, the last for `+Inf`.
+    counts: [u64]
+    # A histogram's or a summary's sum.
+    sum: f64
+    # A histogram's or a summary's count.
+    count: u64
+    # A summary's estimator.
+    stream: ckms.Stream
+
+# The families and series of one registry, with the maps that find them.
+record Store
+    # The families, in the order registered.
+    families: [Family]
+    # Each family's place in `families`, by name.
+    places: {str: i64}
+    # Every series, in the order first recorded.
+    series: [Series]
+    # Each series' place in `series`, by `series_key`.
+    series_places: {str: i64}
+    # Every name a family's samples take, to the family's name.
+    taken: {str: str}
+
+# An empty store.
+function new_store() -> Store
+    return Store(families: [], places: {}, series: [], series_places: {}, taken: {})
+
+# A kind as a word of a message.
+function kind_word(kind: Kind) -> str
+    return match kind
+        .counter   => "counter"
+        .gauge     => "gauge"
+        .histogram => "histogram"
+        .summary   => "summary"
+        .info      => "info"
+        .state_set => "state set"
+        .unknown   => "family of no kind"
+
+# What a call says when the family's kind does not take it.
+function kind_refusal(name: str, kind: Kind, call: str) -> str
+    return f"\"{name}\" is a {kind_word(kind)}, which `{call}` does not take"
+
+# The names `f`'s samples take in the 0.0.4 format.
+function sample_names(f: Family) -> [str]
+    return match f.kind
+        .histogram => [f.name, f.name + "_bucket", f.name + "_sum", f.name + "_count"]
+        .summary => [f.name, f.name + "_sum", f.name + "_count"]
+        .counter | .gauge | .unknown | .info | .state_set => [f.name]
+
+# The OpenMetrics name of a family named `name` in the 0.0.4 format: a
+# counter's without `_total`, an info's without `_info`.
+function openmetrics_name(name: str, kind: Kind) -> str
+    return match kind
+        .counter                                               => strings.trim_suffix(s: name, suffix: "_total")
+        .info                                                  => strings.trim_suffix(s: name, suffix: "_info")
+        .gauge | .histogram | .summary | .state_set | .unknown => name
+
+# The key of a series in `series_places`: the family's name and each value
+# with its length before it, so no two lists of values share one.
+function series_key(family: str, values: [str]) -> str
+    pieces: [str] @= [family, "{"]
+
+    for v in values
+        pieces @ pieces.push(f"{v.len()}:{v}")
+
+    return pieces.join("")
+
+# The place of the family `name`. Fails `not_found`.
+function place_of(store: Store lent, name: str) -> i64?
+    match store.places[name]
+        .ok at => return ok(at)
+        .err _ => return fail(code: NOT_FOUND, msg: f"no family is named \"{name}\"")
+
+# The family `name`. Fails `not_found`.
+function family_named(store: Store lent, name: str) -> Family?
+    at = place_of(store, name: name)?
+    return ok(store.families[at])
+
+# Adds `f` after the last family of `list`, the caller's own.
+function push_family(@list: [Family], f: Family)
+    list @ list.push(f)
+
+# Adds `s` after the last series of `list`, the caller's own.
+function push_series(@list: [Series], s: Series)
+    list @ list.push(s)
+
+# Adds `i` after the last index of `list`, the caller's own.
+function append_index(@list: [i64], i: i64)
+    list @ list.push(i)
+
+# `f` checked as the face's `register` says, a histogram's last `+Inf` taken
+# off and a summary's quantiles ordered.
+function checked(f: Family) -> Family?
+    if !names.is_metric_name(f.name)
+        return fail(code: INVALID, msg: f"\"{f.name}\" is no metric's name: [a-zA-Z_:][a-zA-Z0-9_:]*")
+    seen: {str: bool} @= {}
+
+    for n in f.labels
+        check_label_name(@seen, family: f.name, label: n)?
+
+    for n in f.const_names
+        check_label_name(@seen, family: f.name, label: n)?
+
+    out @= f
+
+    match f.kind
+        .histogram =>
+            if seen["le"].default(false)
+                return fail(
+                    code: INVALID,
+                    msg: f"the histogram \"{f.name}\" may not have a label named le, its buckets' own"
+                )
+            out.buckets @ checked_buckets(name: f.name, bounds: f.buckets)?
+        .summary =>
+            if seen["quantile"].default(false)
+                return fail(
+                    code: INVALID,
+                    msg: f"the summary \"{f.name}\" may not have a label named quantile, its quantiles' own"
+                )
+            ordered = checked_quantiles(name: f.name, quantiles: f.quantiles, errors: f.errors)?
+            out.quantiles @ ordered.quantiles
+            out.errors @ ordered.errors
+        .state_set =>
+            if !names.is_label_name(f.name) || seen[f.name].default(false)
+                return fail(
+                    code: INVALID,
+                    msg: f"the state set \"{f.name}\" needs a name that is a label's name and none of its labels"
+                )
+
+            if f.states.len() == 0
+                return fail(code: INVALID, msg: f"the state set \"{f.name}\" has no state")
+            states: {str: bool} @= {}
+
+            for s in f.states
+                if states[s].default(false)
+                    return fail(code: INVALID, msg: f"the state set \"{f.name}\" names the state \"{s}\" twice")
+                states[s] @ true
+        .counter | .gauge | .unknown | .info => _ = 0
+
+    if f.unit != ""
+        if !is_unit(f.unit)
+            return fail(code: INVALID, msg: f"the unit \"{f.unit}\" is not letters, digits and _")
+
+        if !strings.has_suffix(s: openmetrics_name(name: f.name, kind: f.kind), suffix: "_" + f.unit)
+            return fail(code: INVALID, msg: f"the family \"{f.name}\" measured in {f.unit} must end in _{f.unit}")
+    return ok(out)
+
+# Whether `s` is letters, digits and `_`, not empty.
+function is_unit(s: str) -> bool
+    if s.len() == 0
+        return false
+
+    for at in range(from: 0, to: s.len())
+        c = s[at]
+
+        if !names.is_letter(c) && !names.is_digit(c) && c != '_'
+            return false
+
+    return true
+
+# Checks one label's name of `family` and notes it in `seen`.
+function check_label_name(@seen: {str: bool}, family: str, label: str) -> ()?
+    if !names.is_label_name(label) || strings.has_prefix(s: label, prefix: "__")
+        return fail(
+            code: INVALID,
+            msg: f"\"{label}\" of \"{family}\" is no label's name, or opens with __, which Prometheus keeps"
+        )
+
+    if seen[label].default(false)
+        return fail(code: INVALID, msg: f"\"{family}\" names the label \"{label}\" twice")
+    seen[label] @ true
+    return ok()
+
+# A histogram's bounds checked: no NaN, strictly ascending, a last `+Inf`
+# taken off.
+function checked_buckets(name: str, bounds: [f64]) -> [f64]?
+    out: [f64] @= []
+
+    for i in range(from: 0, to: bounds.len())
+        b = bounds[i]
+
+        if b != b
+            return fail(code: INVALID, msg: f"the histogram \"{name}\" has a bucket bound that is NaN")
+
+        if i > 0 && !(b > bounds[i - 1])
+            return fail(
+                code: INVALID,
+                msg: f"the histogram \"{name}\"'s bounds are not strictly ascending: {bounds[i - 1]} then {b}"
+            )
+
+        if b == 1.0 / 0.0
+            if i != bounds.len() - 1
+                return fail(code: INVALID, msg: f"the histogram \"{name}\" has +Inf before its last bound")
+        else
+            out @ out.push(b)
+
+    return ok(out)
+
+# A quantile and its error, to order them together.
+record Target
+    # The quantile.
+    quantile: f64
+    # Its error.
+    error: f64
+
+# Quantiles and their errors, in two lists of one order.
+record Targets
+    # The quantiles.
+    quantiles: [f64]
+    # Their errors.
+    errors: [f64]
+
+# Whether target `a`'s quantile is below `b`'s.
+function target_less(a: Target, b: Target) -> bool
+    return a.quantile < b.quantile
+
+# A summary's quantiles checked, then ordered ascending with their errors.
+function checked_quantiles(name: str, quantiles: [f64], errors: [f64]) -> Targets?
+    targets: [Target] @= []
+
+    for i in range(from: 0, to: quantiles.len())
+        q = quantiles[i]
+        e = errors[i]
+
+        if q != q || e != e || !(q >= 0.0 && q <= 1.0) || !(e > 0.0 && e < 1.0)
+            return fail(
+                code: INVALID,
+                msg: f"the summary \"{name}\" has the quantile {q} with the error {e}: a quantile is 0 to 1, an error above 0 and under 1"
+            )
+        targets @ targets.push(Target(quantile: q, error: e))
+
+    ordered = lists.sort_by(targets, less: target_less)
+    out_quantiles: [f64] @= []
+    out_errors: [f64] @= []
+
+    for i in range(from: 0, to: ordered.len())
+        if i > 0 && ordered[i].quantile == ordered[i - 1].quantile
+            return fail(code: INVALID, msg: f"the summary \"{name}\" names the quantile {ordered[i].quantile} twice")
+        out_quantiles @ out_quantiles.push(ordered[i].quantile)
+        out_errors @ out_errors.push(ordered[i].error)
+
+    return ok(Targets(quantiles: out_quantiles, errors: out_errors))
+
+# Adds `f` to `store`, checked, with its one series where it has no label.
+function register(@store: Store, f: Family) -> ()?
+    c = checked(f)?
+    written = sample_names(c)
+
+    for n in written
+        match store.taken[n]
+            .ok other => return fail(
+                code: EXISTS,
+                msg: f"registering \"{c.name}\": the name \"{n}\" is the family \"{other}\"'s already"
+            )
+            .err _ => _ = 0
+
+    for n in written
+        store.taken[n] @ c.name
+
+    store.places[c.name] @ store.families.len()
+    push_family(@store.families, f: c)
+
+    if c.labels.len() == 0
+        only = series_at(@store, f: c, labels: [])?
+
+        match c.kind
+            .info                                                             => store.series[only].value @ 1.0
+            .counter | .gauge | .unknown | .histogram | .summary | .state_set => _ = 0
+    return ok()
+
+# Takes the family `name` and its series out of `store`.
+function unregister(@store: Store, name: str) -> ()?
+    _ = place_of(store, name: name)?
+    kept_families: [Family] @= []
+
+    for f in store.families
+        if f.name != name
+            kept_families @ kept_families.push(f)
+
+    kept_series: [Series] @= []
+
+    for s in store.series
+        if s.family != name
+            kept_series @ kept_series.push(s)
+
+    taken: {str: str} @= {}
+
+    for f in kept_families
+        for n in sample_names(f)
+            taken[n] @ f.name
+
+    rebuilt @= Store(families: kept_families, places: {}, series: kept_series, series_places: {}, taken: taken)
+    reindex(@rebuilt)
+    store @ rebuilt
+    return ok()
+
+# Makes `store`'s two maps of places again from its lists.
+function reindex(@store: Store)
+    places: {str: i64} @= {}
+
+    for i in range(from: 0, to: store.families.len())
+        places[store.families[i].name] @ i
+
+    series_places: {str: i64} @= {}
+
+    for i in range(from: 0, to: store.series.len())
+        s = store.series[i]
+        series_places[series_key(family: s.family, values: s.values)] @ i
+
+    store.places @ places
+    store.series_places @ series_places
+
+# The place of `f`'s series of `labels`, made at zero where it was not there.
+# Fails `invalid` where `labels` holds another count of values.
+function series_at(@store: Store, f: Family, labels: [str]) -> i64?
+    if labels.len() != f.labels.len()
+        return fail(
+            code: INVALID,
+            msg: f"\"{f.name}\" has {f.labels.len()} labels ({f.labels.join(", ")}) and {labels.len()} values were given"
+        )
+    key = series_key(family: f.name, values: labels)
+
+    match store.series_places[key]
+        .ok at => return ok(at)
+        .err _ => _ = 0
+
+    counts: [u64] @= []
+
+    match f.kind
+        .histogram =>
+            for _ in range(from: 0, to: f.buckets.len() + 1)
+                counts @ counts.push(0)
+        .counter | .gauge | .unknown | .summary | .info | .state_set => _ = 0
+
+    at = store.series.len()
+    push_series(
+        @store.series,
+        s: Series(family: f.name, values: labels, value: 0.0, counts: counts, sum: 0.0, count: 0, stream: ckms.new_stream(quantiles: f.quantiles, errors: f.errors))
+    )
+    store.series_places[key] @ at
+    return ok(at)
+
+# The place of a series already recorded. Fails `not_found` where none was.
+function recorded(store: Store lent, name: str, labels: [str]) -> i64?
+    match store.series_places[series_key(family: name, values: labels)]
+        .ok at => return ok(at)
+        .err _ => return fail(code: NOT_FOUND, msg: f"\"{name}\" holds no series labelled {labels.join(", ")}")
+
+# The places of every family's series, one list a family in the order of
+# `store.families`.
+function members_of(store: Store lent) -> [[i64]]
+    members: [[i64]] @= []
+
+    for _ in store.families
+        members @ members.push([])
+
+    for i in range(from: 0, to: store.series.len())
+        place = store.places[store.series[i].family].must()
+        append_index(@members[place], i: i)
+
+    return members
+
+# A label's name and value.
+record Pair
+    # The name.
+    name: str
+    # The value.
+    value: str
+
+# Whether pair `a`'s name is below `b`'s, byte by byte.
+function pair_less(a: Pair, b: Pair) -> bool
+    return strings.compare(a: a.name, b: b.name) < 0
+
+# A series' labels as written: its own and the constant ones, ordered by
+# name.
+function series_pairs(f: Family, values: [str]) -> [Pair]
+    every: [Pair] @= []
+
+    for i in range(from: 0, to: f.labels.len())
+        every @ every.push(Pair(name: f.labels[i], value: values[i]))
+
+    for i in range(from: 0, to: f.const_names.len())
+        every @ every.push(Pair(name: f.const_names[i], value: f.const_values[i]))
+
+    return lists.sort_by(every, less: pair_less)
+
+# A series' place and its labels' values in name order, to sort by.
+record Keyed
+    # The values, in the order of the labels' names.
+    key: [str]
+    # The series' place.
+    at: i64
+
+# Whether `a`'s values come before `b`'s, compared one by one byte by byte.
+function keyed_less(a: Keyed, b: Keyed) -> bool
+    for i in range(from: 0, to: a.key.len())
+        c = strings.compare(a: a.key[i], b: b.key[i])
+
+        if c != 0
+            return c < 0
+
+    return false
+
+# The places of `members`, series of `f`, ordered by their labels' values in
+# the order of the labels' names, as Go's registry orders them.
+function sorted_members(store: Store lent, f: Family, members: [i64]) -> [i64]
+    keyed: [Keyed] @= []
+
+    for at in members
+        values: [str] @= []
+
+        for p in series_pairs(f, values: store.series[at].values)
+            values @ values.push(p.value)
+
+        keyed @ keyed.push(Keyed(key: values, at: at))
+
+    out: [i64] @= []
+
+    for k in lists.sort_by(keyed, less: keyed_less)
+        out @ out.push(k.at)
+
+    return out
+
+test "series_key: no two lists of values share a key"
+    assert series_key(family: "a", values: ["b", "c"]) != series_key(family: "a", values: ["b,c"])
+    assert series_key(family: "a", values: ["1:x"]) != series_key(family: "a", values: ["1", "x"])
+    assert series_key(family: "a", values: []) == "a{"
+
+test "is_unit: letters, digits and the underscore; the empty text and a space refused"
+    assert is_unit("seconds")
+    assert is_unit("kilo_bytes2")
+    assert !is_unit("")
+    assert !is_unit("a b")

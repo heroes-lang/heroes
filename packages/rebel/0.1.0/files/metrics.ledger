@@ -1,0 +1,372 @@
+# The ledger of `metrics`: what the metrics libraries of Go, Rust and Python
+# let a program do, one block per capability, and what Rebel answers. None of
+# the three standard libraries keeps metrics, so the yardstick is the census
+# the author chose on 2026-11-17, measured on this machine on 2026-11-18:
+# Go's `github.com/prometheus/client_golang` 1.25.0 (`prometheus`,
+# `promhttp`, `push`, `testutil`), `github.com/prometheus/common/expfmt`
+# 0.74.0, OpenTelemetry Go's `go.opentelemetry.io/otel/metric`, `sdk/metric`
+# and `exporters/otlp/otlpmetric/otlpmetrichttp` 1.47.0 and Datadog's
+# `datadog-go/v5/statsd` 5.9.1 (`go doc -all`, the modules fetched into the
+# scratch folder); Rust's `prometheus` 0.14.0, `metrics` 0.24,
+# `metrics-exporter-prometheus` 0.17, `opentelemetry` and `opentelemetry_sdk`
+# and `opentelemetry-otlp` 0.33, and `cadence` 1 (their rustdoc, built into
+# the scratch folder); Python's `prometheus_client` 0.26.0,
+# `opentelemetry-sdk` and `opentelemetry-exporter-otlp-proto-http` 1.45.2,
+# `statsd` and `datadog` (`dir()`, installed into the scratch folder).
+#
+# Behaviour was asked of the three where they speak: the exposition of one
+# registry by `client_golang` and by `prometheus_client`, byte for byte; the
+# 0.0.4 format's edges by `expfmt.TextParser`, Prometheus's own parser (no
+# `promtool` is on this machine, and `promtool check metrics` reads through
+# the same parser); the lines of `datadog-go` and of Python's `datadog` and
+# `statsd` received on a UDP socket; the Pushgateway's paths received by a
+# server of the test; OTLP's bytes as `opentelemetry-proto` 1.45 serializes
+# the same message. Where they disagree, the note says whose answer was taken
+# and why.
+
+capability registry/value  a registry the program holds and passes, no default and nothing global
+  heroes  metrics.new_registry, metrics.Registry
+  go      prometheus.NewRegistry, NewPedanticRegistry, Registry, Registerer, Gatherer, DefaultRegisterer, DefaultGatherer, promauto.With
+  rust    prometheus::Registry, Registry::new, default_registry, metrics::set_global_recorder, with_local_recorder, set_default_local_recorder, Recorder, NoopRecorder, LocalRecorderGuard, metrics_exporter_prometheus::PrometheusBuilder, PrometheusRecorder, PrometheusHandle
+  python  CollectorRegistry, REGISTRY, registry
+  note    The language has no globals, so the defaults of Go (`DefaultRegisterer`, `promauto`), Rust (`default_registry`, the global recorder of `metrics`) and Python (`REGISTRY`) have no counterpart: the program's own registry is passed `@`
+
+capability registry/register  a family described, registered, refused where its name is taken, and taken out
+  heroes  metrics.register, metrics.unregister, metrics.desc_of, metrics.Desc, metrics.Kind, metrics.EXISTS
+  go      prometheus.Register, MustRegister, Unregister, Registry.Register, Registry.MustRegister, Registry.Unregister, AlreadyRegisteredError, Desc, NewDesc, NewInvalidDesc, Opts, DescOpt, Registry.Describe, Collector.Describe
+  rust    prometheus::register, unregister, Registry::register, Registry::unregister, core::Desc, Opts, metrics::describe_counter, describe_gauge, describe_histogram, Key, KeyName, Metadata, Unit
+  python  CollectorRegistry.register, CollectorRegistry.unregister, Metric
+  note    A name is refused `exists` where it, or one of the samples it writes (a histogram's `_bucket`, `_sum`, `_count`), is another family's, as Go's registry refuses the collision when it gathers; here at once
+
+capability family/counter  a counter, with labels or none, that only goes up
+  heroes  metrics.counter, metrics.inc, metrics.add
+  go      prometheus.Counter, NewCounter, CounterOpts, CounterVec, NewCounterVec, CounterVecOpts, Counter.Inc, Counter.Add, CounterVec.WithLabelValues, CounterVec.With, CounterVec.GetMetricWith, CounterVec.GetMetricWithLabelValues, CounterVec.CurryWith, CounterVec.MustCurryWith, promauto.NewCounter, promauto.NewCounterVec, metric.Int64Counter, metric.Float64Counter
+  rust    prometheus::Counter, CounterVec, IntCounter, IntCounterVec, register_counter, register_counter_vec, register_int_counter, register_int_counter_vec, register_counter_with_registry, register_counter_vec_with_registry, register_int_counter_with_registry, register_int_counter_vec_with_registry, core::GenericCounter, core::GenericCounterVec, metrics::counter, metrics::Counter, CounterFn, opentelemetry::metrics::Counter
+  python  Counter, Counter.inc, Counter.labels, opentelemetry.metrics.Counter, Meter.create_counter
+  note    A series is named by its labels' values in the family's order, Go's `WithLabelValues`; `With` by a map and `CurryWith` would be a second way. A negative amount or NaN is refused `invalid` (Go panics, Python raises); `+Inf` is taken, as Go takes it
+
+capability family/gauge  a gauge set, raised and lowered, set to a moment
+  heroes  metrics.gauge, metrics.set, metrics.inc, metrics.dec, metrics.add, metrics.set_to_time
+  go      prometheus.Gauge, NewGauge, GaugeOpts, GaugeVec, NewGaugeVec, GaugeVecOpts, Gauge.Set, Gauge.Inc, Gauge.Dec, Gauge.Add, Gauge.Sub, Gauge.SetToCurrentTime, GaugeVec.WithLabelValues, GaugeVec.With, GaugeVec.CurryWith, GaugeVec.MustCurryWith, GaugeVec.GetMetricWith, GaugeVec.GetMetricWithLabelValues, metric.Float64Gauge, Int64Gauge, Float64UpDownCounter, Int64UpDownCounter
+  rust    prometheus::Gauge, GaugeVec, IntGauge, IntGaugeVec, register_gauge, register_gauge_vec, register_int_gauge, register_int_gauge_vec, register_gauge_with_registry, register_gauge_vec_with_registry, register_int_gauge_with_registry, register_int_gauge_vec_with_registry, core::GenericGauge, core::GenericGaugeVec, PullingGauge, metrics::gauge, Gauge, GaugeFn, GaugeValue, opentelemetry::metrics::Gauge, UpDownCounter
+  python  Gauge, Gauge.set, Gauge.inc, Gauge.dec, Gauge.set_to_current_time, Gauge.track_inprogress, Gauge.time, opentelemetry.metrics.UpDownCounter, Meter.create_gauge, Meter.create_up_down_counter
+  note    Go's `Sub` is `add` with a negative amount; Python's `track_inprogress` is `inc` before and `dec` after, since no block runs around the program's code. `set_to_time` takes the moment, the program reading `time.now`
+
+capability family/untyped  a value of no kind, `untyped` in 0.0.4 and `unknown` in OpenMetrics
+  heroes  metrics.untyped
+  go      prometheus.UntypedOpts, UntypedFunc, NewUntypedFunc, ValueType
+  rust    prometheus::proto::Untyped
+  python  -
+
+capability family/histogram  a histogram of observations in buckets, with its sum and count
+  heroes  metrics.histogram, metrics.observe, metrics.observe_duration, metrics.DEFAULT_BUCKETS
+  go      prometheus.Histogram, NewHistogram, HistogramOpts, HistogramVec, NewHistogramVec, HistogramVecOpts, Observer, ObserverFunc, Observer.Observe, ObserverVec, HistogramVec.WithLabelValues, HistogramVec.With, HistogramVec.CurryWith, HistogramVec.MustCurryWith, HistogramVec.GetMetricWith, HistogramVec.GetMetricWithLabelValues, DefBuckets, Timer, NewTimer, Timer.ObserveDuration, metric.Float64Histogram, Int64Histogram, WithExplicitBucketBoundaries
+  rust    prometheus::Histogram, HistogramOpts, HistogramVec, HistogramTimer, DEFAULT_BUCKETS, histogram_opts, register_histogram, register_histogram_vec, register_histogram_with_registry, register_histogram_vec_with_registry, metrics::histogram, Histogram, HistogramFn, opentelemetry::metrics::Histogram, HistogramBuilder
+  python  Histogram, Histogram.observe, Histogram.time, Histogram.DEFAULT_BUCKETS, opentelemetry.metrics.Histogram, Meter.create_histogram
+  note    The default buckets are Go's eleven, from 0.005 to 10; Python's has 0.075, 0.75 and 7.5 more. NaN is refused `invalid`: Go counts it in `+Inf` and Python in no bucket, and either makes the sum NaN. `observe_duration` is Go's `Timer` and Python's `time`, the program measuring with `time.mark`
+
+capability family/buckets  buckets made: evenly spaced, growing by a factor, or growing over a range
+  heroes  metrics.linear_buckets, metrics.exponential_buckets, metrics.exponential_buckets_range
+  go      prometheus.LinearBuckets, ExponentialBuckets, ExponentialBucketsRange
+  rust    prometheus::linear_buckets, exponential_buckets
+  python  -
+  note    Each bound is computed as Go computes it, bit for bit for the first two; over a range with C's `pow`, which is exact where Go's `math.Pow` is a few units off: 1 where Go writes 1.0000000000000007. A count under 1 or a width or factor out of range fails `invalid`, where Go panics
+
+capability family/summary  a summary of observations with chosen quantiles, its sum and count
+  heroes  metrics.summary, metrics.Quantile, metrics.quantile_of
+  go      prometheus.Summary, NewSummary, SummaryOpts, SummaryVec, NewSummaryVec, SummaryVecOpts, SummaryVec.WithLabelValues, SummaryVec.With, SummaryVec.CurryWith, SummaryVec.MustCurryWith, SummaryVec.GetMetricWith, SummaryVec.GetMetricWithLabelValues
+  rust    prometheus::proto::Summary, proto::Quantile
+  python  Summary, Summary.observe, Summary.time
+  note    The quantiles are estimated by the targeted algorithm of Cormode, Korn, Muthukrishnan and Srivastava (2005), written from the paper, each within its error, as Go's are; none writes only the sum and count, as Python's summary always does. The rank sought is the ceiling of `q * n`, so the median of 1, 2 and 3 is 2
+
+capability family/summary-window  a summary's quantiles over a sliding window of age
+  heroes  pending
+  go      SummaryOpts.MaxAge, SummaryOpts.AgeBuckets, SummaryOpts.BufCap
+  rust    -
+  python  -
+  note    Go forgets observations older than ten minutes by default, reading its clock at each observation. A registry is a value with no clock, so the window needs the moment of each observation given to `observe`, a second form of it; not written until it can be one form
+
+capability family/info-stateset  facts as an info's labels, and the state of something among several
+  heroes  metrics.info, metrics.set_info, metrics.state_set, metrics.set_state
+  go      -
+  rust    -
+  python  Info, Info.info, Enum, Enum.state
+  note    Python's own: written as gauges in 0.0.4 and as `info` and `stateset` in OpenMetrics, as Python writes them. A changed fact is a new series, which `remove` takes away; Python's `info` replaces the series of the same labels
+
+capability family/labels  constant labels on every series, a unit, a name made of its parts
+  heroes  metrics.with_const_labels, metrics.with_unit, metrics.full_name, metrics.Label
+  go      Opts.ConstLabels, Labels, BuildFQName, WithUnit, WrapRegistererWith, WrapRegistererWithPrefix, WrapCollectorWith, WrapCollectorWithPrefix, ConstrainableLabels, ConstrainedLabels, UnconstrainedLabels, metric.WithUnit, metric.WithDescription
+  rust    prometheus::Opts::const_labels, opts, labels, metrics::Label, IntoLabels, SharedString
+  python  namespace, subsystem, unit and labelnames of each metric's constructor
+  note    Go's wrapping of a registerer adds labels or a prefix to every family registered through it; here each description says its own, `with_const_labels` and `full_name`. A unit must end the name, as Python requires; Python adds it where it is missing
+
+capability series/remove  a series taken out, every series of a family taken out
+  heroes  metrics.remove, metrics.remove_all
+  go      MetricVec.DeleteLabelValues, MetricVec.Delete, MetricVec.Reset, CounterVec.DeleteLabelValues, CounterVec.Delete, CounterVec.Reset
+  rust    MetricVec::remove_label_values, remove, reset
+  python  Counter.remove, Counter.clear, Gauge.remove, Gauge.clear, Counter.reset
+  note    Python's `reset` puts a counter back at zero: `remove` and the next `inc` do the same
+
+capability series/remove-partial  every series whose labels hold some given values taken out
+  heroes  metrics.remove_matching
+  go      MetricVec.DeletePartialMatch
+  rust    -
+  python  remove_by_labels
+  note    A constant label is not matched, as Go matches the labels a series is made with
+
+capability series/read  a value read back from a registry or from gathered families
+  heroes  metrics.value_of, metrics.count_of, metrics.sum_of, metrics.sample_value
+  go      testutil.ToFloat64, testutil.CollectAndCount, testutil.GatherAndCount, testutil.CollectAndCompare, testutil.GatherAndCompare, testutil.ScrapeAndCompare, testutil.TransactionalGatherAndCompare, testutil.CollectAndFormat, testutil.GatherAndFormat
+  rust    -
+  python  CollectorRegistry.get_sample_value, CollectorRegistry.collect, CollectorRegistry.restricted_registry
+  note    A comparison with an expected text is `format_text(gather(r)) == text`, or `parse_text` and `sample_value` where only some samples matter
+
+capability exposition/gather  every family of a registry with its samples, in Go's order
+  heroes  metrics.gather, metrics.Family, metrics.Sample, metrics.Timestamp
+  go      Registry.Gather, Registry.MustGather, Gatherer, GathererFunc, Gatherers, TransactionalGatherer, ToTransactionalGatherer, MultiTRegistry, NewMultiTRegistry, Metric, NewConstMetric, MustNewConstMetric, NewConstHistogram, MustNewConstHistogram, NewConstSummary, MustNewConstSummary, NewMetricWithTimestamp, NewInvalidMetric, Collector, CollectorFunc, DescribeByCollect
+  rust    prometheus::gather, Registry::gather, proto::MetricFamily, proto::Metric, proto::LabelPair, proto::Counter, proto::Gauge, proto::Histogram, proto::Bucket, proto::MetricType, core::Collector, core::Metric
+  python  CollectorRegistry.collect, Metric, Sample, metrics_core, samples
+  note    Families by name and series by their labels' values, labels by name with `le` and `quantile` last, as Go's registry; Python keeps the order of registration and of labels. A constant metric of Go's is a `Family` built directly and written beside `gather`'s, the two lists joined by `lists.concat`
+
+capability exposition/text  Prometheus's text format 0.0.4 written, as Go's client writes it
+  heroes  metrics.format_text, metrics.CONTENT_TYPE_TEXT
+  go      expfmt.MetricFamilyToText, expfmt.NewEncoder, expfmt.Encoder, expfmt.Format, expfmt.NewFormat, expfmt.FormatType, expfmt.Closer
+  rust    prometheus::TextEncoder, Encoder, TEXT_FORMAT
+  python  generate_latest, CONTENT_TYPE_PLAIN_0_0_4, exposition.floatToGoString
+  note    Held byte for byte to `client_golang` 1.25 on counters, gauges of every edge of a float, histograms with and without labels, and summaries. Go writes `1` where Python writes `1.0`, and `_sum` before `_count` where Python writes them the other way; Prometheus reads both
+
+capability exposition/openmetrics  the OpenMetrics text format 1.0 written
+  heroes  metrics.format_openmetrics, metrics.CONTENT_TYPE_OPENMETRICS
+  go      expfmt.MetricFamilyToOpenMetrics, expfmt.FinalizeOpenMetrics, expfmt.NewOpenMetricsFormat, expfmt.DefaultOpenMetricsAcceptedFormats, expfmt.EncoderOption
+  rust    -
+  python  openmetrics.exposition.generate_latest, CONTENT_TYPE_LATEST, CONTENT_TYPE_PLAIN_1_0_0
+  note    Held byte for byte to Go's on the same registry, and to Python's on info and state sets. No `_created` line is written, as Go writes none unless asked (`WithCreatedLines`) and Python writes one unless told not (`disable_created_metrics`): a registry has no clock to read when a series begins
+
+capability exposition/openmetrics-2  OpenMetrics 2.0 and the formats that escape UTF-8 names
+  heroes  pending
+  go      expfmt.MetricFamilyToOpenMetrics20, Format.ToEscapingScheme, Format.WithEscapingScheme, expfmt.ExtractSamples, expfmt.DecodeOptions
+  rust    -
+  python  openmetrics.exposition.CONTENT_TYPE_LATEST_2_0, escape_metric_name, escape_label_name, ALLOWUTF8, UNDERSCORES, DOTS, VALUES
+  note    Names here are the classic `[a-zA-Z_:][a-zA-Z0-9_:]*`, which every Prometheus reads; names of any UTF-8 and their escapings are not written yet
+
+capability exposition/parse  the 0.0.4 text format read
+  heroes  metrics.parse_text
+  go      expfmt.TextParser, expfmt.NewTextParser, TextParser.TextToMetricFamilies, expfmt.NewDecoder, expfmt.Decoder, expfmt.SampleDecoder, expfmt.ParseError
+  rust    -
+  python  parser.text_string_to_metric_families, parser.text_fd_to_metric_families, parser.parse_labels
+  note    Go's `TextParser` was asked 67 texts, and the tests hold its verdicts on their edges, taken and refused alike: a family's samples apart are joined, a family with no sample is left out, `\t` refused as an escape, a carriage return and a trailing space refused. Samples are kept flat, as Python answers them
+
+capability exposition/parse-openmetrics  the OpenMetrics text format read
+  heroes  pending
+  go      -
+  rust    -
+  python  openmetrics.parser.text_string_to_metric_families, openmetrics.parser.text_fd_to_metric_families, Exemplar, Timestamp, NativeHistogram, BucketSpan
+  note    Written and not read yet
+
+capability exposition/protobuf  the protobuf exposition format, and native histograms
+  heroes  pending
+  go      expfmt.FmtProtoDelim, NewConstNativeHistogram, MustNewConstNativeHistogram, HistogramOpts.NativeHistogramBucketFactor, prometheus.Exemplar
+  rust    prometheus::ProtobufEncoder, PROTOBUF_FORMAT, proto::file_descriptor
+  python  -
+  note    Native histograms need the protobuf format or OpenMetrics 2.0; neither is written yet
+
+capability exposition/exemplars  an exemplar beside a counter's or a histogram's observation
+  heroes  pending
+  go      ExemplarAdder, ExemplarObserver, NewMetricWithExemplars, MustNewMetricWithExemplars, Timer.ObserveDurationWithExemplar, promhttp.WithExemplarFromContext, promhttp.WithExemplarFromRequest
+  rust    -
+  python  Counter.inc(exemplar=), Histogram.observe(exemplar=), openmetrics.parser.Exemplar
+  note    OpenMetrics writes them; not kept by the registry yet
+
+capability exposition/names  a metric's and a label's name checked
+  heroes  metrics.is_metric_name, metrics.is_label_name
+  go      -
+  rust    metrics_exporter_prometheus::formatting::sanitize_metric_name, sanitize_label_key, sanitize_label_value, sanitize_description, key_to_parts, write_help_line, write_type_line, write_metric_line
+  python  validation
+  note    A name is checked and refused, never rewritten: the Rust exporter's sanitizing writes another name than the program gave
+
+capability exposition/negotiate  the format a scraper's `Accept` asks for
+  heroes  metrics.respond
+  go      expfmt.Negotiate, expfmt.NegotiateIncludingOpenMetrics, expfmt.NegotiateAccept, expfmt.ResponseFormat, expfmt.DefaultAcceptedFormats
+  rust    -
+  python  exposition.choose_encoder, exposition.gzip_accepted
+  note    OpenMetrics where `Accept` weighs it above the 0.0.4 format, as Prometheus's own `Accept` does and Python answers; Go answers the 0.0.4 format unless the handler is built with `EnableOpenMetrics`
+
+capability serving/handler  the answer to a scrape of `/metrics`, compressed where accepted
+  heroes  metrics.respond
+  go      promhttp.Handler, promhttp.HandlerFor, promhttp.HandlerForTransactional, promhttp.HandlerOpts, promhttp.HandlerErrorHandling, promhttp.Compression, promhttp.InstrumentMetricHandler, promhttp.Logger
+  rust    metrics_exporter_prometheus::PrometheusHandle::render
+  python  MetricsHandler, make_wsgi_app, make_asgi_app, start_http_server, start_wsgi_server, exposition.default_handler, asgi
+  note    The server is `http`'s: a program's own loop answers `/metrics` with the registry it records into (`http.next_request` and `http.write_answer`), or its router (`web`). `start_http_server` in a thread would serve a copy the program no longer changes, the language sharing no value between threads
+
+capability serving/instrument  a server's requests counted and timed by status and method
+  heroes  metrics.register_http, metrics.observe_request, metrics.HTTP_REQUESTS, metrics.HTTP_DURATION
+  go      promhttp.InstrumentHandlerCounter, promhttp.InstrumentHandlerDuration, promhttp.InstrumentHandlerInFlight, promhttp.InstrumentHandlerRequestSize, promhttp.InstrumentHandlerResponseSize, promhttp.InstrumentHandlerTimeToWriteHeader, promhttp.Option, promhttp.WithExtraMethods, promhttp.WithLabelFromCtx, promhttp.WithLabelFromRequest, promhttp.LabelValueFromCtx, promhttp.LabelValueFromRequest
+  rust    -
+  python  -
+  note    A method is written in lower case where RFC 9110 names it and `unknown` otherwise, so a client cannot make series without end, as Go's handlers write it. Requests in flight and sizes are the program's own gauge and histogram: no handler is wrapped, the language having no closures
+
+capability serving/client-instrument  a client's requests counted and timed
+  heroes  refused: no closure wraps `http.send`, so the program records around its own call with `inc` and `observe_duration`, which is all Go's wrapper does
+  go      promhttp.InstrumentRoundTripperCounter, promhttp.InstrumentRoundTripperDuration, promhttp.InstrumentRoundTripperInFlight, promhttp.InstrumentRoundTripperTrace, promhttp.InstrumentTrace, promhttp.RoundTripperFunc
+  rust    -
+  python  -
+
+capability pushgateway  families pushed to a Pushgateway by group, added, and deleted
+  heroes  metrics.push_to_gateway, metrics.push_add_to_gateway, metrics.delete_from_gateway, metrics.gateway_url
+  go      push.New, push.Pusher, Pusher.Push, Pusher.PushContext, Pusher.Add, Pusher.AddContext, Pusher.Delete, Pusher.Grouping, Pusher.Collector, Pusher.Gatherer, Pusher.Client, Pusher.BasicAuth, Pusher.Header, Pusher.Format, Pusher.Error, push.HTTPDoer
+  rust    -
+  python  push_to_gateway, pushadd_to_gateway, delete_from_gateway, exposition.basic_auth_handler, exposition.tls_auth_handler, exposition.passthrough_redirect_handler
+  note    A value holding more than letters, digits and `-._~` is written in base 64, an empty one `=`, as Python writes them; Go writes a space as `+`, which the Pushgateway reads as a plus. The body is the 0.0.4 format, Python's; Go pushes protobuf. Any 2xx is success; Go's `Delete` wants 202 alone. Authentication and headers are the `http.Client`'s and the request's
+
+capability pushgateway/instance  the grouping key of this machine's address
+  heroes  pending
+  go      -
+  rust    -
+  python  instance_ip_grouping_key
+  note    Not written yet: the address a program would push under is `net.interfaces`'s to choose
+
+capability collectors/process  the process's own CPU time, memory, open files and start, and the runtime's
+  heroes  pending
+  go      NewProcessCollector, ProcessCollectorOpts, NewPidFileFn, NewGoCollector, NewBuildInfoCollector, NewExpvarCollector
+  rust    -
+  python  ProcessCollector, PROCESS_COLLECTOR, process_collector, PlatformCollector, PLATFORM_COLLECTOR, platform_collector, GCCollector, GC_COLLECTOR, gc_collector
+  note    No package of Rebel reads a process's CPU time and resident memory yet; a build's version is `info`
+
+capability collectors/callback  a value read by a function each time the registry is gathered
+  heroes  refused: a function the registry calls back would need the program's state, which no closure carries; the program `set`s the value before it gathers, or builds a `Family` and writes it beside `gather`'s
+  go      CounterFunc, NewCounterFunc, GaugeFunc, NewGaugeFunc, UntypedFunc, metric.Float64ObservableCounter, Float64ObservableGauge, Float64ObservableUpDownCounter, Int64ObservableCounter, Int64ObservableGauge, Int64ObservableUpDownCounter, metric.Callback, Float64Callback, Int64Callback, Registration, Observer, Float64Observer, Int64Observer, WithFloat64Callback, WithInt64Callback
+  rust    metrics::CounterFn, GaugeFn, HistogramFn, opentelemetry::metrics::ObservableCounter, ObservableGauge, ObservableUpDownCounter, AsyncInstrument, Callback
+  python  Gauge.set_function, opentelemetry.metrics.ObservableCounter, ObservableGauge, ObservableUpDownCounter, CallbackOptions, Observation, Meter.create_observable_counter, create_observable_gauge, create_observable_up_down_counter
+
+capability statsd/client  a StatsD or DogStatsD client over UDP, with a prefix and tags on every line
+  heroes  metrics.open_statsd, metrics.close_statsd, metrics.Statsd
+  go      statsd.New, statsd.NewWithWriter, statsd.Client, statsd.Client.Close, statsd.ClientInterface, statsd.CloneWithExtraOptions, statsd.WithNamespace, statsd.WithTags, statsd.Option, statsd.Options, statsd.NoOpClient, statsd.Client.IsClosed
+  rust    cadence::StatsdClient, StatsdClientBuilder, UdpMetricSink, UdpMetricSinkBuilder, MetricSink, MetricClient, NopMetricSink, DEFAULT_PORT, MetricResult, MetricError, ErrorKind
+  python  statsd.StatsClient, statsd.StatsClient.close, datadog.dogstatsd.DogStatsd, DogStatsd.constant_tags, DogStatsd.close_socket, DogStatsd.socket, DogStatsd.get_socket, DogStatsd.resolve_host
+  note    Each line is one datagram ended by a line feed, as Go's client writes it; Etsy's StatsD reads tags as part of the name, so a program for it gives none
+
+capability statsd/count  a count sent, raised or lowered
+  heroes  metrics.send_count
+  go      statsd.Client.Count, Client.Incr, Client.Decr
+  rust    cadence::Counted, CountedExt, Counter, ext::ToCounterValue
+  python  statsd.StatsClient.incr, decr, DogStatsd.increment, DogStatsd.decrement, DogStatsd.count
+  note    Go's `Decr` sends -1, Python's `decrement(2)` -2: a negative `value` does both
+
+capability statsd/gauge  a gauge's value sent, or a change to it as Etsy's StatsD reads `+3`
+  heroes  metrics.send_gauge, metrics.send_gauge_change
+  go      statsd.Client.Gauge
+  rust    cadence::Gauged, Gauge, ext::ToGaugeValue
+  python  statsd.StatsClient.gauge, DogStatsd.gauge
+  note    A value is written with the fewest digits and no exponent, Go's `21.5` and `-2`, where Python's `datadog` writes `-2.0` and `1e+21`. A negative value is sent as it is, which DogStatsD reads as the value; Python's `statsd` sends `0|g` before it, since Etsy's reads a sign as a change
+
+capability statsd/timing  a duration sent in milliseconds
+  heroes  metrics.send_timing
+  go      statsd.Client.Timing, Client.TimeInMilliseconds
+  rust    cadence::Timed, Timer, ext::ToTimerValue
+  python  statsd.StatsClient.timing, statsd.StatsClient.timer, DogStatsd.timing, DogStatsd.timed
+  note    Six decimals, `12.700000|ms`, as Go and Python's `statsd` write it
+
+capability statsd/distribution  a histogram's and a distribution's observation sent
+  heroes  metrics.send_histogram, metrics.send_distribution
+  go      statsd.Client.Histogram, Client.Distribution, ClientDirect.DistributionSamples
+  rust    cadence::Histogrammed, Histogram, Distributed, Distribution, Metered, Meter, ext::ToHistogramValue, ext::ToDistributionValue, ext::ToMeterValue
+  python  DogStatsd.histogram, DogStatsd.distribution, DogStatsd.distributed
+
+capability statsd/set  a member of a set sent
+  heroes  metrics.send_set
+  go      statsd.Client.Set
+  rust    cadence::Setted, Set, ext::ToSetValue
+  python  statsd.StatsClient.set, DogStatsd.set
+
+capability statsd/sampling  a share of the lines sent, the rate written so the server multiplies back
+  heroes  metrics.send_count
+  go      the `rate` of every method
+  rust    -
+  python  the `rate` and `sample_rate` of every method
+  note    Every `send_` function takes `rate`; the client's generator decides, seeded by the system
+
+capability statsd/events  an event and a service check sent to DogStatsD
+  heroes  metrics.event, metrics.send_event, metrics.Event, metrics.Priority, metrics.AlertType, metrics.service_check, metrics.send_service_check, metrics.ServiceCheck, metrics.CheckStatus
+  go      statsd.Event, NewEvent, Event.Check, EventAlertType, EventPriority, Client.Event, Client.SimpleEvent, statsd.ServiceCheck, NewServiceCheck, ServiceCheck.Check, ServiceCheckStatus, Client.ServiceCheck, Client.SimpleServiceCheck
+  rust    -
+  python  DogStatsd.event, DogStatsd.service_check, DogStatsd.OK, WARNING, CRITICAL, UNKNOWN
+  note    A title's and a text's lengths are their bytes, and a line feed in them is written `\n`; a check's message last with its `m:` written `m\:`, as Go writes them
+
+capability statsd/batching  several lines a datagram, flushed by size or by time, aggregated on the client
+  heroes  pending
+  go      statsd.Client.Flush, WithMaxBytesPerPayload, WithMaxMessagesPerPayload, WithBufferFlushInterval, WithBufferPoolSize, WithClientSideAggregation, WithExtendedClientSideAggregation, WithoutClientSideAggregation, WithAggregationInterval, WithAggregatorShardCount, WithChannelMode, WithMutexMode, WithSenderQueueSize, WithWorkersCount
+  rust    cadence::BufferedUdpMetricSink, BufferedUdpMetricSinkBuilder, QueuingMetricSink, QueuingMetricSinkBuilder, ext::MultiLineWriter
+  python  statsd.StatsClient.pipeline, DogStatsd.open_buffer, close_buffer, flush, flush_buffered_metrics, enable_aggregation, disable_aggregation, flush_aggregated_metrics, disable_buffering, enable_background_sender, disable_background_sender, wait_for_pending
+  note    One line a datagram is sent now; several in one, without a thread of their own, are not written yet
+
+capability statsd/timestamps  a gauge or a count sent with the moment it was taken
+  heroes  pending
+  go      statsd.Client.GaugeWithTimestamp, Client.CountWithTimestamp
+  rust    -
+  python  DogStatsd.gauge_with_timestamp, DogStatsd.count_with_timestamp
+  note    `|T<seconds>`, observed from both; not written yet
+
+capability statsd/unix-socket  DogStatsD over a Unix socket
+  heroes  refused: `net` has no Unix datagram socket, and DogStatsD's agent listens on UDP as well
+  go      statsd.New("unix://..."), WithWriteTimeout, WithConnectTimeout
+  rust    cadence::UnixMetricSink, BufferedUnixMetricSink
+  python  DogStatsd.socket_path
+
+capability otlp/encode  a registry's values as an OTLP metrics request
+  heroes  metrics.encode_otlp, metrics.Attribute, metrics.AttributeValue, metrics.Scope
+  go      otlpmetrichttp.Exporter.Export, sdk/metric.Exporter, metricdata types through ManualReader.Collect, sdk/metric.ManualReader, NewManualReader, Producer, WithProducer
+  rust    opentelemetry_sdk::metrics::data::ResourceMetrics, ScopeMetrics, Metric, MetricData, Sum, SumDataPoint, Gauge, GaugeDataPoint, Histogram, HistogramDataPoint, AggregatedMetrics, exporter::PushMetricExporter
+  python  sdk.metrics.export.MetricsData, ResourceMetrics, ScopeMetrics, Metric, Sum, Gauge, Histogram, NumberDataPoint, HistogramDataPoint, metric_exporter.encode_metrics, InMemoryMetricReader
+  note    Held byte for byte to `opentelemetry-proto` 1.45's serialization of the same message: a counter a monotonic cumulative `Sum`, a gauge, an info and a state set a `Gauge`, a histogram a cumulative `Histogram` with each bucket's own count, a summary a `Summary`
+
+capability otlp/export  a request posted to a collector over HTTP, with its retries and the environment's settings
+  heroes  metrics.export_otlp, metrics.otlp_to, metrics.otlp_from_env, metrics.Otlp, metrics.Exported, metrics.OTLP_URL
+  go      otlpmetrichttp.New, Exporter, Exporter.ForceFlush, Exporter.Shutdown, WithEndpoint, WithEndpointURL, WithURLPath, WithHeaders, WithCompression, Compression, WithRetry, RetryConfig, WithTimeout, WithInsecure, WithTLSClientConfig, WithProxy, HTTPTransportProxyFunc, WithHTTPClient, WithMaxRequestSize, WithMaxResponseSize, Version
+  rust    opentelemetry_otlp::MetricExporter, MetricExporterBuilder, WithExportConfig, WithHttpConfig, HttpExporterBuilderSet, Compression, Protocol, RetryPolicy, ExporterBuildError, OTEL_EXPORTER_OTLP_ENDPOINT, OTEL_EXPORTER_OTLP_METRICS_ENDPOINT, OTEL_EXPORTER_OTLP_HEADERS, OTEL_EXPORTER_OTLP_METRICS_HEADERS, OTEL_EXPORTER_OTLP_COMPRESSION, OTEL_EXPORTER_OTLP_METRICS_COMPRESSION, OTEL_EXPORTER_OTLP_TIMEOUT, OTEL_EXPORTER_OTLP_METRICS_TIMEOUT, OTEL_EXPORTER_OTLP_TIMEOUT_DEFAULT, OTEL_EXPORTER_OTLP_PROTOCOL, OTEL_EXPORTER_OTLP_METRICS_PROTOCOL, OTEL_EXPORTER_OTLP_PROTOCOL_HTTP_PROTOBUF, OTEL_EXPORTER_OTLP_INSECURE, OTEL_EXPORTER_OTLP_METRICS_INSECURE
+  python  OTLPMetricExporter, DEFAULT_ENDPOINT, DEFAULT_METRICS_EXPORT_PATH, DEFAULT_TIMEOUT, DEFAULT_COMPRESSION, Compression, OTEL_EXPORTER_OTLP_METRICS_ENDPOINT, OTEL_EXPORTER_OTLP_METRICS_HEADERS, OTEL_EXPORTER_OTLP_METRICS_COMPRESSION, OTEL_EXPORTER_OTLP_METRICS_TIMEOUT, OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE, OTEL_EXPORTER_OTLP_METRICS_CLIENT_CERTIFICATE, OTEL_EXPORTER_OTLP_METRICS_CLIENT_KEY, MetricExportResult, RequestPayloadTooLargeError
+  note    Sent again after 429, 502, 503 and 504, honouring `Retry-After`, as OTLP's specification asks; a partial success is answered as `Exported`, which Go and Python write to their log. Certificates are `http.Client`'s `roots`
+
+capability otlp/temporality  delta temporality, the counts since the last export
+  heroes  pending
+  go      sdk/metric.TemporalitySelector, DeltaTemporalitySelector, CumulativeTemporalitySelector, LowMemoryTemporalitySelector, DefaultTemporalitySelector, otlpmetrichttp.WithTemporalitySelector, Exporter.Temporality
+  rust    opentelemetry_sdk::metrics::Temporality, OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+  python  sdk.metrics.export.AggregationTemporality
+  note    A registry holds totals: cumulative, which every collector takes
+
+capability otlp/periodic  an export on a timer of its own
+  heroes  refused: a reader on a timer runs on another thread, which shares no registry with the program; the program calls `export_otlp` when it chooses, as `PeriodicReader` would
+  go      sdk/metric.PeriodicReader, NewPeriodicReader, WithInterval, WithTimeout, WithMaxExportBatchSize, PeriodicReader.ForceFlush, PeriodicReader.Shutdown
+  rust    opentelemetry_sdk::metrics::PeriodicReader, PeriodicReaderBuilder, OTEL_METRIC_EXPORT_INTERVAL, OTEL_METRIC_EXPORT_INTERVAL_DEFAULT
+  python  sdk.metrics.export.PeriodicExportingMetricReader, MetricReader
+
+capability otlp/sdk  OpenTelemetry's meter provider, meters, views and aggregations
+  heroes  refused: a meter provider is a global with views chosen at a distance; a registry's families are described once, with their buckets, and are the same thing
+  go      otel.GetMeterProvider, SetMeterProvider, otel.Meter, metric.Meter, MeterProvider, MeterConfig, MeterOption, sdk/metric.MeterProvider, NewMeterProvider, Option, WithReader, WithResource, WithView, NewView, View, Stream, Instrument, InstrumentKind, Aggregation, AggregationDefault, AggregationDrop, AggregationExplicitBucketHistogram, AggregationLastValue, AggregationSum, AggregationSelector, DefaultAggregationSelector, WithCardinalityLimit, CardinalityLimitSelector, WithExemplarFilter, ExemplarReservoirProviderSelector
+  rust    opentelemetry::global::meter, meter_provider, meter_with_scope, set_meter_provider, metrics::Meter, MeterProvider, InstrumentProvider, InstrumentBuilder, SyncInstrument, opentelemetry_sdk::metrics::SdkMeterProvider, MeterProviderBuilder, Aggregation, Instrument, InstrumentKind, Stream, StreamBuilder
+  python  opentelemetry.metrics.get_meter, get_meter_provider, set_meter_provider, Meter, MeterProvider, sdk.metrics.MeterProvider, view.View, Aggregation, DefaultAggregation, DropAggregation, ExplicitBucketHistogramAggregation, LastValueAggregation, SumAggregation, sdk.metrics.Exemplar, ExemplarFilter, ExemplarReservoir, AlwaysOnExemplarFilter, AlwaysOffExemplarFilter, TraceBasedExemplarFilter
+
+capability otlp/exponential-histogram  OpenTelemetry's base-2 exponential histogram
+  heroes  pending
+  go      sdk/metric.AggregationBase2ExponentialHistogram
+  rust    opentelemetry_sdk::metrics::data::ExponentialHistogram, ExponentialHistogramDataPoint, ExponentialBucket
+  python  sdk.metrics.export.ExponentialHistogram, ExponentialHistogramDataPoint, Buckets, view.ExponentialBucketHistogramAggregation
+
+capability otlp/transports  OTLP over gRPC, and OTLP/HTTP's JSON
+  heroes  pending
+  go      otlpmetricgrpc
+  rust    opentelemetry_otlp::Protocol, OTEL_EXPORTER_OTLP_PROTOCOL_GRPC, OTEL_EXPORTER_OTLP_PROTOCOL_HTTP_JSON
+  python  -
+  note    OTLP/HTTP with protobuf, which every collector takes, is written; gRPC would stand on `grpc`, not written yet
+
+capability otlp/logs  log records exported by OTLP with the trace and span of their span
+  heroes  tracing.log_record, tracing.log_fields, tracing.encode_logs, tracing.export_logs
+  go      otlploghttp (in tracing's ledger)
+  rust    opentelemetry_otlp::LogExporter (in tracing's ledger)
+  python  _log_exporter.OTLPLogExporter (in tracing's ledger)
+  note    In `tracing`, which holds a span's context: `metrics` and `tracing` stand on one layer and neither may use the other
+
+dropped  each library's plumbing: errors gathered, descriptors' strings, atomics and the generated protobuf types
+  go      MultiError, MultiError.Append, MultiError.Error, MultiError.MaybeUnwrap, SafeMultiError, Desc.Err, Desc.String, ValueType.ToDTO, MetricVec, NewMetricVec, MetricVec.Collect, MetricVec.Describe, MakeLabelPairs, ConstrainedLabel, LabelConstraint, CounterVecOpts, NewConstMetricWithCreatedTimestamp, MustNewConstMetricWithCreatedTimestamp, NewConstHistogramWithCreatedTimestamp, MustNewConstHistogramWithCreatedTimestamp, NewConstSummaryWithCreatedTimestamp, MustNewConstSummaryWithCreatedTimestamp, WriteToTextfile, testutil.CollectAndLint, testutil.GatherAndLint, metric.AddConfig, AddOption, RecordConfig, RecordOption, ObserveConfig, ObserveOption, MeasurementOption, WithAttributeSet, WithAttributes, every *Config and *Option of metric, ManualReader.MarshalLog, PeriodicReader.MarshalLog, Exporter.MarshalLog, Exporter.Aggregation
+  rust    core::Atomic, AtomicF64, AtomicI64, AtomicU64, Number, Describer, MetricVecBuilder, GenericLocalCounter, GenericLocalCounterVec, local::AFLocalCounter, AFLocalHistogram, CounterDelegator, HistogramDelegator, LocalCounter, LocalCounterVec, LocalHistogram, LocalHistogramTimer, LocalHistogramVec, LocalIntCounter, LocalIntCounterVec, LocalMetric, MayFlush, CounterWithValueType, Error, Result, metrics::atomics::AtomicU64, IntoF64, KeyHasher, Level, SetRecorderError, metrics_exporter_prometheus::BuildError, Distribution, DistributionBuilder, Matcher, cadence::SpyMetricSink, BufferedSpyMetricSink, SinkStats, ext::MetricBackend, ext::MetricValue, ext::SocketStats, Metric, MetricBuilder, prelude
+  python  mmap_dict, values, utils, context_managers, decorator, enable_created_metrics, disable_created_metrics, CollectorRegistry.get_target_info, CollectorRegistry.set_target_info, exposition.ThreadingWSGIServer, exposition.SNAPPY_AVAILABLE, statsd.StatsClient.pipeline's own plumbing, DogStatsd telemetry (enable_telemetry, disable_telemetry, telemetry_socket, bytes_dropped, packets_dropped), DogStatsd fork hooks (pre_fork, post_fork_parent, post_fork_child, stop, set_socket_timeout), DogStatsd cardinality constants
+  note    `WriteToTextfile` and `write_to_textfile` are `write_file(path:, text: metrics.format_text(...))`; a linter of names is a program's own reading of `gather`; created timestamps need a clock the registry has not; Datadog's telemetry about the client itself and its fork hooks are plumbing of their runtimes
