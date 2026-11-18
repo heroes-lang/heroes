@@ -1,0 +1,414 @@
+# Each kind of request written whole and its answer read to its end, so a
+# failure in the middle never leaves the connection out of step: a statement
+# in the text protocol (`COM_QUERY`), a statement prepared (`COM_STMT_PREPARE`),
+# run (`COM_STMT_EXECUTE`) and closed (`COM_STMT_CLOSE`), a ping
+# (`COM_PING`) and the switch of several statements in one text
+# (`COM_SET_OPTION`). An answer of several results, as `CALL` and a script
+# give, is read to its last.
+
+use bytes
+use sql
+use sql/mysql/internal/answers
+use sql/mysql/internal/codes
+use sql/mysql/internal/handshake
+use sql/mysql/internal/script as server
+use sql/mysql/internal/session
+use sql/mysql/internal/values
+use sql/mysql/internal/wire
+
+# The most columns a result may hold: MySQL's limit is 4,096, MariaDB's
+# the same; a server that announces more is out of the protocol.
+constant MOST_COLUMNS: i64
+    65535
+
+# What a request answered: the first result that has columns, with its
+# rows, and the counts of its last result.
+record Outcome
+    # The columns of the first result that has some, none where none has.
+    columns: [answers.ColumnDef]
+    # That result's rows.
+    rows: [sql.Row]
+    # The rows the last statement inserted, changed or deleted.
+    affected: i64
+    # The `AUTO_INCREMENT` value the last statement made, 0 for none.
+    last_id: i64
+
+# A statement the server prepared.
+record Prepared
+    # The server's number for it.
+    id: i64
+    # How many placeholders it has.
+    parameters: i64
+    # The columns it answers, none for a statement that answers no rows.
+    columns: [answers.ColumnDef]
+
+# Whether the session reads OK packets where EOF packets stood.
+#
+# - `s`: the session.
+function deprecate_eof(s: session.Session) -> bool
+    return s.capabilities & handshake.DEPRECATE_EOF != 0
+
+# The failure the ERR packet `p` reports, which ends the session where the
+# server calls it fatal.
+#
+# - `s`: the session.
+# - `p`: the ERR packet.
+function refused<T>(@s: session.Session, p: [u8]) -> T?
+    report = codes.read(p)?
+
+    if codes.is_fatal(report)
+        s.ended @ true
+    return codes.failure(report)
+
+# The failure of a packet the protocol does not allow where it came, which
+# ends the session.
+#
+# - `s`: the session.
+# - `p`: the packet.
+# - `waiting`: what the client waited for.
+function out_of_step<T>(@s: session.Session, p: [u8], waiting: str) -> T?
+    s.ended @ true
+
+    first = if p.len() > 0
+        wire.int_of(p[0])
+    else
+        -1
+    return fail(
+        code: sql.INVALID,
+        msg: f"{s.target} sent a packet opening with {first} while the client waited for {waiting}, and the connection was given up"
+    )
+
+# Keeps what the OK or EOF packet `done` says of the session.
+#
+# - `s`: the session, its status and warnings written.
+# - `done`: what the packet said.
+function note(@s: session.Session, done: answers.Done)
+    s.status @ done.status
+    s.warnings @ done.warnings
+
+# Runs `text` in the text protocol and reads every result it answers.
+#
+# - `s`: the session.
+# - `text`: one statement, or several where the session allows them.
+#
+# Fails with the server's failure for the first statement that fails.
+function query_text(@s: session.Session, text: str) -> Outcome?
+    payload: [u8] @= [0x03]
+    wire.push_all(out: @payload, data: bytes.from_text(text))
+    session.command(@s, payload: payload)?
+    return results(@s, binary: false)
+
+# Reads every result of a request, as `query_text` and `execute` answer.
+#
+# - `s`: the session.
+# - `binary`: whether rows come in the binary protocol.
+function results(@s: session.Session, binary: bool) -> Outcome?
+    out @= Outcome(columns: [], rows: [], affected: 0, last_id: 0)
+    seen: bool @= false
+
+    while true
+        p = session.receive(@s)?
+
+        if p.len() == 0
+            return out_of_step(@s, p: p, waiting: "a result")
+
+        if p[0] == 0x00
+            done = answers.read_ok(p)?
+            note(@s, done: done)
+            out.affected @ done.affected
+            out.last_id @ done.last_id
+
+            if done.status & answers.MORE_RESULTS == 0
+                return ok(out)
+        else if p[0] == 0xff
+            return refused(@s, p: p)
+        else if p[0] == 0xfb
+            return out_of_step(@s, p: p, waiting: "a result, never a request for a local file")
+        else
+            c @= wire.cursor(p)
+            count = wire.read_lenenc(@c)?
+
+            if count > MOST_COLUMNS
+                return out_of_step(@s, p: p, waiting: f"a result of at most {MOST_COLUMNS} columns")
+            defs = definitions(@s, count: count)?
+            rows: [sql.Row] @= []
+            names = answers.names_of(defs)
+            more: bool @= false
+
+            while true
+                row = session.receive(@s)?
+
+                if row.len() > 0 && row[0] == 0xff
+                    return refused(@s, p: row)
+
+                if answers.is_end(row)
+                    done = answers.read_end(row, deprecate_eof: deprecate_eof(s))?
+                    note(@s, done: done)
+                    more @ done.status & answers.MORE_RESULTS != 0
+                    break
+
+                cells = if binary
+                    values.binary_row(defs, payload: row)?
+                else
+                    text_row(defs, payload: row)?
+                rows @ rows.push(sql.Row(names: names, values: cells))
+
+            if !seen
+                seen @ true
+                out.columns @ defs
+                out.rows @ rows
+
+            if !more
+                return ok(out)
+
+# `count` column definitions, and the EOF packet after them where the
+# session reads EOF packets.
+#
+# - `s`: the session.
+# - `count`: how many, 0 or more.
+function definitions(@s: session.Session, count: i64) -> [answers.ColumnDef]?
+    defs: [answers.ColumnDef] @= []
+
+    for _ in range(from: 0, to: count)
+        p = session.receive(@s)?
+
+        if p.len() > 0 && p[0] == 0xff
+            return refused(@s, p: p)
+        defs @ defs.push(answers.read_column(p)?)
+
+    if count > 0 && !deprecate_eof(s)
+        p = session.receive(@s)?
+
+        if !answers.is_end(p)
+            return out_of_step(@s, p: p, waiting: "the EOF packet after the columns")
+    return ok(defs)
+
+# The values of a row of the text protocol: each a length-encoded string,
+# or `0xFB` for NULL.
+#
+# - `defs`: the row's columns.
+# - `payload`: the row's packet.
+#
+# Fails `invalid` where the row is cut short or a value does not read as its
+# column's type.
+function text_row(defs: [answers.ColumnDef], payload: [u8]) -> [sql.Value]?
+    c @= wire.cursor(payload)
+    out: [sql.Value] @= []
+
+    for d in defs
+        if !wire.at_end(c) && c.data[c.at] == 0xfb
+            c.at @ c.at + 1
+            out @ out.push(.null_value)
+        else
+            out @ out.push(values.text_value(d, cell: wire.read_lenenc_bytes(@c)?)?)
+
+    return ok(out)
+
+# `text` prepared by the server.
+#
+# - `s`: the session.
+# - `text`: one statement, its values written as `?`.
+#
+# Fails with the server's failure where it cannot prepare it.
+function prepare(@s: session.Session, text: str) -> Prepared?
+    payload: [u8] @= [0x16]
+    wire.push_all(out: @payload, data: bytes.from_text(text))
+    session.command(@s, payload: payload)?
+    p = session.receive(@s)?
+
+    if p.len() > 0 && p[0] == 0xff
+        return refused(@s, p: p)
+
+    if p.len() < 12 || p[0] != 0x00
+        return out_of_step(@s, p: p, waiting: "the answer to a prepared statement")
+    c @= wire.cursor(p)
+    _ = wire.read_u8(@c)?
+    id = wire.read_le(@c, 4)?
+    columns = wire.read_le(@c, 2)?
+    parameters = wire.read_le(@c, 2)?
+    _ = definitions(@s, count: parameters)?
+    defs = definitions(@s, count: columns)?
+    return ok(Prepared(id: id, parameters: parameters, columns: defs))
+
+# Runs the prepared statement `id` with `params` bound, and reads every
+# result it answers.
+#
+# - `s`: the session.
+# - `id`: the statement's number.
+# - `params`: as many values as its placeholders, in order.
+function execute(@s: session.Session, id: i64, params: [sql.Value]) -> Outcome?
+    payload: [u8] @= [0x17]
+    wire.push_le(@payload, n: id, width: 4)
+    payload @ payload.push(0)
+    wire.push_le(@payload, n: 1, width: 4)
+    wire.push_all(out: @payload, data: values.params_block(params))
+    session.command(@s, payload: payload)?
+    return results(@s, binary: true)
+
+# Ends the prepared statement `id` on the server, which answers nothing.
+#
+# - `s`: the session.
+# - `id`: the statement's number.
+function close_statement(@s: session.Session, id: i64) -> ()?
+    payload: [u8] @= [0x19]
+    wire.push_le(@payload, n: id, width: 4)
+    return session.command(@s, payload: payload)
+
+# Runs `text` with `params` bound, through a statement prepared, run and
+# closed.
+#
+# - `s`: the session.
+# - `text`: one statement, its values written as `?`.
+# - `params`: the placeholders' values.
+#
+# Fails `invalid` where `params` holds more or fewer values than the
+# statement's placeholders, and with the server's failure.
+function run(@s: session.Session, text: str, params: [sql.Value]) -> Outcome?
+    if params.len() == 0
+        return query_text(@s, text: text)
+    p = prepare(@s, text: text)?
+
+    if p.parameters != params.len()
+        _ = close_statement(@s, id: p.id).is_err()
+        return fail(code: sql.INVALID, msg: count_message(given: params.len(), wanted: p.parameters))
+    made = execute(@s, id: p.id, params: params)
+    _ = close_statement(@s, id: p.id).is_err()
+    return made
+
+# The message of a count of values that differs from a statement's count of
+# placeholders.
+#
+# - `given`: the values given.
+# - `wanted`: the placeholders.
+function count_message(given: i64, wanted: i64) -> str
+    return f"{given} values were given for a statement of {wanted} placeholders"
+
+# The `sql.Result` of an outcome: its count, and its id where the statement
+# made one, failing `not_found` where it made none.
+#
+# - `o`: the outcome.
+function result_of(o: Outcome) -> sql.Result
+    if o.last_id > 0
+        return sql.Result(rows_affected: o.affected, last_id: ok(o.last_id))
+    return sql.Result(
+        rows_affected: o.affected,
+        last_id: fail(code: sql.NOT_FOUND, msg: "the statement made no AUTO_INCREMENT value")
+    )
+
+# Checks that the prepared statement `id` is open and takes `given` values.
+#
+# - `id`: its number, 0 once closed.
+# - `given`: the values given.
+# - `wanted`: its placeholders.
+function checked_run(id: i64, given: i64, wanted: i64) -> ()?
+    if id == 0
+        return fail(code: sql.CLOSED, msg: "the prepared statement was closed already")
+
+    if given != wanted
+        return fail(code: sql.INVALID, msg: count_message(given: given, wanted: wanted))
+    return ok()
+
+# Asks the server whether the connection works.
+#
+# - `s`: the session.
+function ping(@s: session.Session) -> ()?
+    session.command(@s, payload: [0x0e])?
+    p = session.receive(@s)?
+
+    if p.len() > 0 && p[0] == 0xff
+        return refused(@s, p: p)
+    note(@s, done: answers.read_ok(p)?)
+    return ok()
+
+# Allows several statements in one text, or forbids them again.
+#
+# - `s`: the session.
+# - `on`: whether they are allowed.
+function set_multiple(@s: session.Session, on: bool) -> ()?
+    option: u8 = if on
+        0
+    else
+        1
+    session.command(@s, payload: [0x1b, option, 0])?
+    p = session.receive(@s)?
+
+    if p.len() > 0 && p[0] == 0xff
+        return refused(@s, p: p)
+
+    if p.len() > 0 && p[0] == 0xfe && p.len() < 9
+        note(@s, done: answers.read_eof(p)?)
+        return ok()
+    note(@s, done: answers.read_ok(p)?)
+    return ok()
+
+test "run: a statement with a value prepared, run in the binary protocol and closed, every byte as the documentation lays it out"
+    prepared: [u8] = [0x00, 0x05, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00]
+    answer = server.joined(
+        [server.packet(seq: 1, payload: prepared), server.packet(seq: 2, payload: server.column(name: "?", charset: 63, kind: 253)), server.packet(seq: 3, payload: server.column(name: "name", charset: 45, kind: 253)), server.packet(seq: 1, payload: [1]), server.packet(seq: 2, payload: server.column(name: "name", charset: 45, kind: 253)), server.packet(seq: 3, payload: [0x00, 0x00, 0x02, 'h', 'i']), server.packet(seq: 4, payload: server.end_payload(status: 2))]
+    )
+    t @= server.scripted(answer, capabilities: server.modern())
+    o = run(@t.session, text: "SELECT ? AS name", params: [.text(v: "hi")]).must()
+    assert o.rows == [sql.Row(names: ["name"], values: [.text(v: "hi")])]
+    assert answers.columns_of(o.columns) == [sql.Column(name: "name", type_name: "VARCHAR")]
+    written = server.finish(@t)
+    prepare_bytes: [u8] @= [0x16]
+    wire.push_all(out: @prepare_bytes, data: bytes.from_text("SELECT ? AS name"))
+    execute_bytes: [u8] = [0x17, 0x05, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 254, 0, 2, 'h', 'i']
+    assert written == server.joined([server.command(prepare_bytes), server.command(execute_bytes), server.command([0x19, 0x05, 0x00, 0x00, 0x00]), server.command([0x01])])
+
+test "run: a count of values that differs closes the statement and fails invalid"
+    prepared: [u8] = [0x00, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00]
+    answer = server.joined(
+        [server.packet(seq: 1, payload: prepared), server.packet(seq: 2, payload: server.column(name: "?", charset: 63, kind: 253)), server.packet(seq: 3, payload: server.column(name: "?", charset: 63, kind: 253))]
+    )
+    t @= server.scripted(answer, capabilities: server.modern())
+
+    match run(@t.session, text: "DO ? + ?", params: [.integer(v: 1)])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "1 values were given for a statement of 2 placeholders"
+
+    written = server.finish(@t)
+    assert written.slice(from: written.len() - 14, to: written.len()) == server.joined([server.command([0x19, 0x09, 0x00, 0x00, 0x00]), server.command([0x01])])
+
+test "query_text: the older EOF packets, several results of a CALL, and an error in the middle of rows"
+    old = server.joined(
+        [server.packet(seq: 1, payload: [1]), server.packet(seq: 2, payload: server.column(name: "n", charset: 63, kind: 3)), server.packet(seq: 3, payload: [0xfe, 0, 0, 2, 0]), server.packet(seq: 4, payload: server.text_row(["7"])), server.packet(seq: 5, payload: [0xfe, 0, 0, 10, 0]), server.packet(seq: 6, payload: server.ok_payload(affected: 4, last_id: 0, status: 2))]
+    )
+    t @= server.scripted(old, capabilities: handshake.PROTOCOL_41)
+    o = query_text(@t.session, text: "CALL p()").must()
+    assert o.rows == [sql.Row(names: ["n"], values: [.integer(v: 7)])] && o.affected == 4
+    _ = server.finish(@t)
+    refusal: [u8] @= [0xff, 0xbd, 0x04, '#', '4', '0', '0', '0', '1']
+    wire.push_all(out: @refusal, data: bytes.from_text("Deadlock found when trying to get lock"))
+    broken = server.joined(
+        [server.packet(seq: 1, payload: [1]), server.packet(seq: 2, payload: server.column(name: "n", charset: 63, kind: 3)), server.packet(seq: 3, payload: server.text_row(["7"])), server.packet(seq: 4, payload: refusal)]
+    )
+    b @= server.scripted(broken, capabilities: server.modern())
+
+    match query_text(@b.session, text: "SELECT n FROM t FOR UPDATE")
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && e.msg == "[1213] Deadlock found when trying to get lock (SQLSTATE 40001)"
+
+    assert !b.session.ended
+    _ = server.finish(@b)
+
+test "ping and set_multiple: an OK, an EOF, and a packet that is no OK"
+    t @= server.scripted(
+        server.joined([server.packet(seq: 1, payload: server.ok_payload(affected: 0, last_id: 0, status: 2)), server.packet(seq: 1, payload: [0xfe, 0, 0, 2, 0]), server.packet(seq: 1, payload: server.ok_payload(affected: 0, last_id: 0, status: 2)), server.packet(seq: 1, payload: [0x07])]),
+        capabilities: server.modern()
+    )
+    ping(@t.session).must()
+    set_multiple(@t.session, on: true).must()
+    set_multiple(@t.session, on: false).must()
+    assert ping(@t.session).is_err()
+    written = server.finish(@t)
+    assert written == server.joined([server.command([0x0e]), server.command([0x1b, 0, 0]), server.command([0x1b, 1, 0]), server.command([0x0e]), server.command([0x01])])
+
+test "results: a result announcing more columns than any server holds ends the connection, before any is read"
+    t @= server.scripted(server.packet(seq: 1, payload: [0xfd, 0, 0, 1]), capabilities: server.modern())
+
+    match query_text(@t.session, text: "SELECT 1")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "test:3306/db sent a packet opening with 253 while the client waited for a result of at most 65535 columns, and the connection was given up"
+
+    _ = server.finish(@t)

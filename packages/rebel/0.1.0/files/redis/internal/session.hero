@@ -1,0 +1,357 @@
+# The conversation with the server: the connection, the bytes read and not
+# yet given out, and one whole reply read at a time, its bytes checked as
+# RESP token by token with an explicit stack of the aggregates still open,
+# so a reply nested deep never deepens the program's own stack. A lost
+# connection or bytes that are no RESP end the session; every later request
+# then fails `closed`.
+
+use io
+use net
+use redis/internal/resp
+use tls
+
+constant CLOSED: str
+    "closed"
+
+constant INVALID: str
+    "invalid"
+
+constant LIMIT: str
+    "limit"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The most bytes one reply may hold, 1 GiB.
+constant MOST_REPLY: i64
+    1073741824
+
+# The most aggregates one reply may nest inside each other. Redis's deepest
+# replies nest a handful; a deeper one is refused before it is built.
+constant MOST_DEPTH: i64
+    128
+
+# The bytes asked of the connection at a time.
+constant CHUNK: i64
+    65536
+
+# What carries the conversation.
+variant Link
+    # A TCP connection of `net`, whose deadline `net` moves.
+    plain
+        # The connection.
+        conn: net.Conn
+    # A TLS stream of `tls`, whose deadline `tls` moves.
+    secured
+    # Two pipes of a test's scripted server, with no deadline.
+    scripted
+
+# A session's state, which the face's `Client` holds.
+record Session
+    # The stream requests are written to.
+    out: io.Stream
+    # The stream replies are read from; the same stream but in a test.
+    input: io.Stream
+    # What carries the conversation.
+    link: Link
+    # How messages name the server: `host:port`.
+    target: str
+    # The bytes read and not yet given out, from `at` on.
+    buf: [u8]
+    # Where the next reply begins in `buf`.
+    at: i64
+    # The protocol the server speaks with this client: 2 or 3.
+    protocol: i64
+    # The channels subscribed to.
+    channels: [str]
+    # The patterns subscribed to.
+    patterns: [str]
+    # The out-of-band replies read while the client waited for another,
+    # oldest first, from `pending_at` on: messages of the channels
+    # subscribed to.
+    pending: [[u8]]
+    # Where the oldest reply kept and not yet given out stands in `pending`.
+    pending_at: i64
+    # Whether the session is over.
+    ended: bool
+
+# A session over `out` and `input`, before any command.
+#
+# - `out`: where requests go.
+# - `input`: where replies come from; the same stream but in a test.
+# - `link`: what carries them.
+# - `target`: how messages name the server.
+function over(out: io.Stream, input: io.Stream, link: Link, target: str) -> Session
+    return Session(
+        out: out,
+        input: input,
+        link: link,
+        target: target,
+        buf: [],
+        at: 0,
+        protocol: 2,
+        channels: [],
+        patterns: [],
+        pending: [],
+        pending_at: 0,
+        ended: false
+    )
+
+# The failure of a request on a session that is over.
+#
+# - `s`: the session.
+function closed_failure<T>(s: Session) -> T?
+    return fail(code: CLOSED, msg: f"the connection to {s.target} is closed")
+
+# Writes `data` to the server.
+#
+# - `s`: the session, ended where the write fails.
+# - `data`: whole commands.
+function send(@s: Session, data: [u8]) -> ()?
+    if s.ended
+        return closed_failure(s)
+
+    match io.write(s.out, data: data)
+        .ok _ => return ok()
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: f"writing to {s.target}: {e.msg}")
+
+# Adds every byte of `data` to `out`.
+#
+# - `out`: the bytes being written.
+# - `data`: the bytes added.
+function append(@out: [u8], data: [u8])
+    for b in data
+        out @ out.push(b)
+
+# Reads more of the server's bytes into `s`.
+#
+# - `s`: the session, its bytes grown, ended where the read fails or the
+#   connection ends.
+function fill(@s: Session) -> ()?
+    match io.read(s.input, most: CHUNK)
+        .ok got =>
+            if got.len() == 0
+                s.ended @ true
+                return fail(code: CLOSED, msg: f"{s.target} closed the connection")
+            append(out: @s.buf, data: got)
+            return ok()
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: f"reading from {s.target}: {e.msg}")
+
+# The bytes of the next whole reply the server sends, an attribute before it
+# included, waiting until they have come.
+#
+# - `s`: the session, past the reply; ended where the read fails or the
+#   bytes are no RESP.
+#
+# Fails `closed` where the connection ends first, `invalid` where the bytes
+# are no RESP or nest past `MOST_DEPTH`, `limit` where the reply passes
+# `MOST_REPLY`, and as the read fails.
+function frame(@s: Session) -> [u8]?
+    if s.ended
+        return closed_failure(s)
+
+    if s.at == s.buf.len()
+        s.buf @ []
+        s.at @ 0
+    else if s.at > CHUNK && s.at * 2 > s.buf.len()
+        s.buf @ s.buf.slice(from: s.at, to: s.buf.len())
+        s.at @ 0
+    start = s.at
+    pos: i64 @= start
+    wants: [i64] @= []
+    attributes: [bool] @= []
+    depth: i64 @= 0
+
+    while true
+        scanned = match resp.scan(s.buf, at: pos)
+            .ok got => got
+            .err e =>
+                s.ended @ true
+                return fail(code: e.code, msg: f"{s.target} sent {e.msg}, and the connection was given up")
+
+        if !scanned.complete
+            if s.buf.len() - start > MOST_REPLY
+                s.ended @ true
+                return fail(
+                    code: LIMIT,
+                    msg: f"{s.target} sent a reply past {MOST_REPLY} bytes, and the connection was given up"
+                )
+            fill(@s)?
+        else
+            t = scanned.token
+            pos @ t.next
+
+            if resp.is_open(t)
+                if depth >= MOST_DEPTH
+                    s.ended @ true
+                    return fail(
+                        code: INVALID,
+                        msg: f"{s.target} sent a reply nested past {MOST_DEPTH} levels, and the connection was given up"
+                    )
+
+                if depth == wants.len()
+                    wants @ wants.push(0)
+                    attributes @ attributes.push(false)
+                wants[depth] @ resp.elements_of(t)
+                attributes[depth] @ t.kind == '|'
+                depth @ depth + 1
+            else
+                whole: bool @= false
+                climbing: bool @= true
+
+                while climbing
+                    if depth == 0
+                        whole @ true
+                        climbing @ false
+                    else
+                        wants[depth - 1] @ wants[depth - 1] - 1
+
+                        if wants[depth - 1] > 0
+                            climbing @ false
+                        else
+                            depth @ depth - 1
+
+                            if attributes[depth]
+                                climbing @ false
+
+                if whole
+                    s.at @ pos
+                    return ok(s.buf.slice(from: start, to: pos))
+
+# The most out-of-band replies kept unread; past it the oldest are lost, as
+# a server drops the messages of a client that does not read them.
+constant MOST_PENDING: i64
+    65536
+
+# How many out-of-band replies are kept and not yet given out.
+#
+# - `s`: the session.
+function pending_count(s: Session) -> i64
+    return s.pending.len() - s.pending_at
+
+# Adds `reply` to `list`, the caller's own list, so nothing is copied.
+#
+# - `list`: the replies, grown by one.
+# - `reply`: a reply's bytes.
+function put_reply(@list: [[u8]], reply: [u8])
+    list @ list.push(reply)
+
+# Keeps `reply`, an out-of-band reply, to be given out later; past
+# `MOST_PENDING` unread, the oldest is lost.
+#
+# - `s`: the session.
+# - `reply`: the reply's bytes.
+function keep(@s: Session, reply: [u8])
+    if pending_count(s) >= MOST_PENDING
+        s.pending_at @ s.pending_at + 1
+
+    if s.pending_at > 0 && s.pending_at * 2 >= s.pending.len()
+        s.pending @ s.pending.slice(from: s.pending_at, to: s.pending.len())
+        s.pending_at @ 0
+    put_reply(@s.pending, reply: reply)
+
+# The oldest out-of-band reply kept, taken out.
+#
+# - `s`: the session.
+#
+# Fails `invalid` where none is kept.
+function take(@s: Session) -> [u8]?
+    if pending_count(s) == 0
+        return fail(code: INVALID, msg: "no reply is kept")
+    first = s.pending[s.pending_at]
+    s.pending_at @ s.pending_at + 1
+
+    if s.pending_at == s.pending.len()
+        s.pending @ []
+        s.pending_at @ 0
+    return ok(first)
+
+# Follows a confirmation of a subscription: adds `target` to the channels or
+# patterns subscribed to, or takes it away.
+#
+# - `s`: the session, its channels or patterns changed.
+# - `kind`: `subscribe`, `psubscribe`, `unsubscribe` or `punsubscribe`.
+# - `target`: the channel or the pattern; "" for none, as an `UNSUBSCRIBE`
+#   of nothing confirms.
+function confirm(@s: Session, kind: str, target: str)
+    if kind == "subscribe" || kind == "unsubscribe"
+        s.channels @ changed(s.channels, target: target, adding: kind == "subscribe")
+    else if kind == "psubscribe" || kind == "punsubscribe"
+        s.patterns @ changed(s.patterns, target: target, adding: kind == "psubscribe")
+
+# `names` with `target` added where `adding` and absent, or taken away.
+#
+# - `names`: the names.
+# - `target`: the name; "" changes nothing.
+# - `adding`: whether it is added.
+function changed(names: [str], target: str, adding: bool) -> [str]
+    if target == ""
+        return names
+    out: [str] @= []
+
+    for n in names
+        if n != target
+            out @ out.push(n)
+
+    if adding
+        out @ out.push(target)
+    return out
+
+# Moves the deadline of `s`'s connection to `ms` milliseconds from now.
+#
+# - `s`: the session.
+# - `ms`: milliseconds, 0 for none.
+#
+# Fails as `net.set_deadline` and `tls.set_deadline` fail, and
+# `unsupported` for a test's scripted server.
+function set_deadline(s: Session, ms: i64) -> ()?
+    if s.ended
+        return closed_failure(s)
+
+    match s.link
+        .plain p  => return net.set_deadline(p.conn, ms: ms)
+        .secured  => return tls.set_deadline(s.out, ms: ms)
+        .scripted => return fail(code: UNSUPPORTED, msg: "a scripted server has no deadline")
+
+# Closes the connection's stream and ends the session.
+#
+# - `s`: the session, ended.
+#
+# Fails `closed` where the stream is closed already.
+function close(@s: Session) -> ()?
+    s.ended @ true
+
+    if io.is_closed(s.out)
+        return fail(code: CLOSED, msg: f"the connection to {s.target} is closed already")
+    return io.close(@s.out)
+
+test "confirm: channels added once, taken away, and patterns apart"
+    s @= over(out: io.stdout(), input: io.stdin(), link: .scripted, target: "t")
+    confirm(@s, kind: "subscribe", target: "a")
+    confirm(@s, kind: "subscribe", target: "a")
+    confirm(@s, kind: "psubscribe", target: "b*")
+    confirm(@s, kind: "subscribe", target: "c")
+    confirm(@s, kind: "unsubscribe", target: "a")
+    confirm(@s, kind: "unsubscribe", target: "")
+    assert s.channels == ["c"] && s.patterns == ["b*"]
+
+test "keep and take: oldest first, a hundred thousand kept and taken in time linear in their count, and the oldest lost past the bound"
+    s @= over(out: io.stdout(), input: io.stdin(), link: .scripted, target: "t")
+    assert take(@s).is_err()
+
+    for i in range(from: 0, to: 100000)
+        keep(@s, reply: [to_u8(i % 256).must()])
+
+    assert pending_count(s) == MOST_PENDING
+    assert take(@s).must() == [to_u8((100000 - MOST_PENDING) % 256).must()]
+    taken: i64 @= 1
+
+    while pending_count(s) > 0
+        _ = take(@s).must()
+        taken @ taken + 1
+
+    assert taken == MOST_PENDING && s.pending == [] && s.pending_at == 0

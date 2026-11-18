@@ -1,0 +1,18 @@
+# Reaches Rebel's `redis`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a server's options from a URL
+# and, where a server answers there, asks it for a PONG and closes the
+# connection; where none answers it says why.
+
+use <rebel>/redis
+
+function main()
+    match redis.parse_url("redis://localhost:6379/0")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match redis.open(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    c @= first
+                    pong = redis.call(@c, ["PING"])
+                    print(redis.text_of(pong.default(.null_value)).default("?"))
+                    print(redis.close(@c).is_err())

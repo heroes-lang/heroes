@@ -1,0 +1,146 @@
+# A connection's URL, in the form MySQL Shell and Connector/J read one:
+# `mysql://user:password@host:port/database?ssl-mode=DISABLED`, or
+# `mariadb://`, each part percent-decoded, a part left out taking its
+# default.
+
+use strings
+use url
+
+constant INVALID: str
+    "invalid"
+
+constant UNSUPPORTED: str
+    "unsupported"
+
+# What a URL names, every field filled.
+record Target
+    # The host, without brackets, `localhost` where the URL names none.
+    host: str
+    # The port, 3306 where the URL names none.
+    port: i64
+    # The user, "" where the URL names none.
+    user: str
+    # The password, "" where the URL names none.
+    password: str
+    # The database, "" where the URL names none.
+    database: str
+    # Whether TLS is asked for: true unless `ssl-mode=DISABLED`.
+    secure: bool
+    # The path of a file of PEM authorities, `ssl-ca`, "" where the URL
+    # names none.
+    roots_path: str
+
+# What `text` names.
+#
+# - `text`: a `mysql://` or `mariadb://` URL.
+#
+# Fails `invalid` where it is not one, names a key not read here, a port out
+# of range or an `ssl-mode` MySQL does not know, or a path of more than one
+# part; `unsupported` where `ssl-mode` is `PREFERRED`, `REQUIRED` or
+# `VERIFY_CA`, which each let whoever sits between the two ends read the
+# connection or pose as the server.
+function read(text: str) -> Target?
+    u = match url.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{text}\" is no URL: {e.msg}")
+
+    if u.scheme != "mysql" && u.scheme != "mariadb"
+        return fail(code: INVALID, msg: f"\"{text}\" opens with neither mysql:// nor mariadb://")
+    port: i64 @= 3306
+
+    if u.port != ""
+        match url.port_of(u)
+            .ok p  => port @ p
+            .err _ => return fail(code: INVALID, msg: f"the port {u.port} of \"{text}\" is outside 1 to 65535")
+
+    if port < 1 || port > 65535
+        return fail(code: INVALID, msg: f"the port {u.port} of \"{text}\" is outside 1 to 65535")
+
+    host = if u.host == ""
+        "localhost"
+    else
+        u.host
+
+    parts = match url.parse_path(u.path)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the path of \"{text}\": {e.msg}")
+
+    database: str @= ""
+
+    if parts.len() > 1 || parts.len() == 1 && strings.contains(s: u.path.slice(from: 1, to: u.path.len()), substr: "/")
+        return fail(code: INVALID, msg: f"the path of \"{text}\" names more than a database")
+
+    if parts.len() == 1
+        database @ parts[0]
+    t @= Target(
+        host: host,
+        port: port,
+        user: u.user,
+        password: u.password,
+        database: database,
+        secure: true,
+        roots_path: ""
+    )
+
+    pairs = match url.parse_query(u.query)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the query of \"{text}\": {e.msg}")
+
+    for pair in pairs
+        keyed(@t, key: pair.key, value: pair.value)?
+
+    return ok(t)
+
+# Reads one key of the query into `t`.
+#
+# - `t`: the target.
+# - `key`: the key, `ssl-mode` or `ssl-ca`.
+# - `value`: its value.
+function keyed(@t: Target, key: str, value: str) -> ()?
+    if key == "ssl-ca"
+        t.roots_path @ value
+        return ok()
+
+    if key != "ssl-mode"
+        return fail(code: INVALID, msg: f"the key \"{key}\" is none this driver reads: it reads ssl-mode and ssl-ca")
+    mode = strings.to_upper(value)
+
+    if mode == "DISABLED"
+        t.secure @ false
+        return ok()
+
+    if mode == "VERIFY_IDENTITY"
+        t.secure @ true
+        return ok()
+
+    if mode == "PREFERRED" || mode == "REQUIRED" || mode == "VERIFY_CA"
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"ssl-mode={value} is refused: PREFERRED falls back to plain text in silence, and REQUIRED and VERIFY_CA do not check that the certificate names the host; VERIFY_IDENTITY, the default here, checks both"
+        )
+    return fail(code: INVALID, msg: f"ssl-mode={value} is none MySQL knows")
+
+test "read: a whole URL, the defaults, MariaDB's scheme and an IPv6 host"
+    t = read("mysql://ana:s%40cret@db.lan:3307/shop?ssl-mode=disabled").must()
+    assert t == Target(host: "db.lan", port: 3307, user: "ana", password: "s@cret", database: "shop", secure: false, roots_path: "")
+    d = read("mariadb://root@/").must()
+    assert d == Target(host: "localhost", port: 3306, user: "root", password: "", database: "", secure: true, roots_path: "")
+    v6 = read("mysql://u@[::1]/x?ssl-ca=%2Fetc%2Fca.pem").must()
+    assert v6.host == "::1" && v6.roots_path == "/etc/ca.pem" && v6.secure
+
+test "read: another scheme, a port out of range, a key unknown, a mode refused and one unknown"
+    assert read("postgres://u@h/d").is_err()
+    assert read("mysql://u@h:70000/d").is_err()
+    assert read("mysql://u@h/d/e").is_err()
+
+    match read("mysql://u@h/d?timeout=5")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    match read("mysql://u@h/d?ssl-mode=REQUIRED")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    match read("mysql://u@h/d?ssl-mode=SOMETIMES")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "ssl-mode=SOMETIMES is none MySQL knows"

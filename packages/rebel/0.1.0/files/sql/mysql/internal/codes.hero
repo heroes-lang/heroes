@@ -1,0 +1,125 @@
+# A failure the server reports, an ERR packet, read and told with `sql`'s
+# codes: the server's error number chooses the code, its SQLSTATE's class
+# where the number is not one named here, and the message keeps the number,
+# the server's words and the SQLSTATE, `[1062] Duplicate entry '1' for key
+# 'PRIMARY' (SQLSTATE 23000)`, so `sql.database_code_of` reads the number
+# back. The numbers are those of MySQL's and MariaDB's "Server Error Message
+# Reference".
+
+use bytes
+use sql
+use sql/mysql/internal/wire
+
+# What an ERR packet says.
+record Report
+    # The server's error number, 1000 and up; 2000 and up are a client's.
+    number: i64
+    # The SQLSTATE, five characters, or "" where the packet carries none, as
+    # an error sent before the login's first answer does.
+    state: str
+    # The server's words.
+    message: str
+
+# The report an ERR packet's payload holds, its `0xFF` first.
+#
+# - `payload`: the packet's payload.
+#
+# Fails `invalid` where it is not one.
+function read(payload: [u8]) -> Report?
+    c @= wire.cursor(payload)
+    head = wire.read_u8(@c)?
+
+    if head != 0xff
+        return fail(code: sql.INVALID, msg: f"the server's packet opens with {head} where an error's 255 was due")
+    number = wire.read_le(@c, 2)?
+    state: str @= ""
+
+    if !wire.at_end(c) && c.data[c.at] == '#'
+        c.at @ c.at + 1
+        state @ bytes.to_text_lossy(wire.read_n(@c, 5)?)
+    message = bytes.to_text_lossy(wire.read_rest(@c))
+    return ok(Report(number: number, state: state, message: message))
+
+# The code `report` is told with.
+#
+# - `report`: the server's report.
+function code_of(report: Report) -> str
+    n = report.number
+
+    match n
+        1022 | 1050 | 1060 | 1061 | 1062 | 1007 | 1304 | 1359 | 1586 | 1859               => return sql.EXISTS
+        1049 | 1051 | 1054 | 1091 | 1128 | 1146 | 1176 | 1243 | 1305 | 1360 | 1449 | 1630 => return sql.NOT_FOUND
+        1044 | 1045 | 1129 | 1130 | 1142 | 1143 | 1227 | 1290 | 1370 | 1698 | 1792 | 1820 | 1862 | 3159 => return sql.PERMISSION
+        1264 | 1406 | 1441 | 1690 => return sql.DOES_NOT_FIT
+        1021 | 1037 | 1038 | 1040 | 1041 | 1114 | 1118 | 1135 | 1153 | 1203 | 1206 | 1226 | 1301 => return sql.LIMIT
+        1205 | 1969 | 3024 => return sql.TIMEOUT
+        1028 | 1317 => return sql.STOPPED
+        1047 | 1178 | 1235 | 1251 | 1289 | 1295 => return sql.UNSUPPORTED
+        1043 | 1053 | 1152 | 1158 | 1159 | 1160 | 1161 | 1184 | 1927 | 4031 => return sql.CLOSED
+        1213 => return sql.FAILED
+        _ => _ = 0
+
+    if report.state.len() == 5
+        family = report.state.slice(from: 0, to: 2)
+
+        if family == "08"
+            return sql.CLOSED
+
+        if family == "22" || family == "23" || family == "42"
+            return sql.INVALID
+    return sql.FAILED
+
+# Whether `report` ends the connection: the server is shutting down, the
+# connection was killed or timed out, or its class is 08.
+#
+# - `report`: the server's report.
+function is_fatal(report: Report) -> bool
+    return code_of(report) == sql.CLOSED
+
+# The message `report` is told with: its number in brackets, the server's
+# words, then the SQLSTATE where it carries one.
+#
+# - `report`: the server's report.
+function message_of(report: Report) -> str
+    if report.state == ""
+        return sql.failure_message(database_code: to_str(report.number), message: report.message)
+    return sql.failure_message(
+        database_code: to_str(report.number),
+        message: f"{report.message} (SQLSTATE {report.state})"
+    )
+
+# The failure `report` tells.
+#
+# - `report`: the server's report.
+function failure<T>(report: Report) -> T?
+    return fail(code: code_of(report), msg: message_of(report))
+
+test "read: an ERR packet with its SQLSTATE, one without, and a packet that is not one"
+    dup: [u8] @= [0xff, 0x26, 0x04, '#', '2', '3', '0', '0', '0']
+    wire.push_all(out: @dup, data: bytes.from_text("Duplicate entry '1' for key 'PRIMARY'"))
+    r = read(dup).must()
+    assert r == Report(number: 1062, state: "23000", message: "Duplicate entry '1' for key 'PRIMARY'")
+    assert code_of(r) == "exists"
+    assert message_of(r) == "[1062] Duplicate entry '1' for key 'PRIMARY' (SQLSTATE 23000)"
+    host: [u8] @= [0xff, 0x6a, 0x04]
+    wire.push_all(out: @host, data: bytes.from_text("Host 'x' is not allowed to connect"))
+    h = read(host).must()
+    assert h.state == "" && h.number == 1130 && code_of(h) == "permission"
+    assert message_of(h) == "[1130] Host 'x' is not allowed to connect"
+    assert read([0x00, 1]).is_err()
+    assert read([0xff, 1]).is_err()
+
+test "code_of: numbers named, a class read where the number is not, and the rest failed"
+    assert code_of(Report(number: 1146, state: "42S02", message: "")) == "not_found"
+    assert code_of(Report(number: 1045, state: "28000", message: "")) == "permission"
+    assert code_of(Report(number: 1406, state: "22001", message: "")) == "does_not_fit"
+    assert code_of(Report(number: 1064, state: "42000", message: "")) == "invalid"
+    assert code_of(Report(number: 1048, state: "23000", message: "")) == "invalid"
+    assert code_of(Report(number: 1213, state: "40001", message: "")) == "failed"
+    assert code_of(Report(number: 1205, state: "HY000", message: "")) == "timeout"
+    assert code_of(Report(number: 1317, state: "70100", message: "")) == "stopped"
+    assert code_of(Report(number: 1040, state: "08004", message: "")) == "limit"
+    assert code_of(Report(number: 9999, state: "08S01", message: "")) == "closed"
+    assert code_of(Report(number: 9999, state: "HY000", message: "")) == "failed"
+    assert is_fatal(Report(number: 1927, state: "70100", message: "Connection was killed"))
+    assert !is_fatal(Report(number: 1062, state: "23000", message: ""))

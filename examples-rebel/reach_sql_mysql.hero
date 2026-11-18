@@ -1,0 +1,19 @@
+# Reaches Rebel's `sql/mysql`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It reads a connection's options from a URL
+# and, where a server answers there, asks it for its version and closes the
+# connection; where none answers it says why.
+
+use <rebel>/sql
+use <rebel>/sql/mysql
+
+function main()
+    match mysql.parse_url("mysql://root@localhost:3306/?ssl-mode=DISABLED")
+        .err e => print(e.code, ": ", e.msg)
+        .ok opts =>
+            match mysql.open(opts)
+                .err e => print("no server: ", e.code, ": ", e.msg)
+                .ok first =>
+                    db @= first
+                    row = mysql.query_one(@db, "SELECT VERSION() AS v", [])
+                    print(sql.text_named(row.default(sql.Row(names: [], values: [])), "v").default("?"))
+                    print(mysql.close(@db).is_err())

@@ -1,0 +1,54 @@
+# A scripted server for the tests: the server's replies written into a pipe
+# before the client reads, that pipe's writing end closed so that a missing
+# reply ends the read instead of waiting, and the client's commands kept in
+# another pipe to be compared with the bytes the documentation lays out.
+
+use bytes
+use io
+use redis/internal/resp
+use redis/internal/session
+
+# A session whose server is a script.
+record Script
+    # The client's session.
+    session: session.Session
+    # The reading end of what the client wrote.
+    requests: io.Stream
+    # The reading end the client's replies come from, closed by `finish`.
+    replies: io.Stream
+
+# A session over a server that answers `server`, written beforehand, which
+# speaks `protocol`.
+#
+# - `server`: every byte the server sends.
+# - `protocol`: 2 or 3.
+function scripted(server: str, protocol: i64) -> Script
+    to_server = io.pipe().must()
+    to_client = io.pipe().must()
+    io.write(to_client.writer, data: bytes.from_text(server)).must()
+    end @= to_client.writer
+    io.close(@end).must()
+    s @= session.over(out: to_server.writer, input: to_client.reader, link: .scripted, target: "test:6379")
+    s.protocol @ protocol
+    return Script(session: s, requests: to_server.reader, replies: to_client.reader)
+
+# Closes the script's ends and answers every byte the client wrote, as text.
+#
+# - `t`: the script, every end closed.
+function finish(@t: Script) -> str
+    _ = session.close(@t.session).is_err()
+    written = io.read_all(t.requests).must()
+    io.close(@t.requests).must()
+    io.close(@t.replies).must()
+    return bytes.to_text_lossy(written)
+
+# The bytes of the command `words`, as text.
+#
+# - `words`: the command's name and arguments.
+function command(words: [str]) -> str
+    parts: [[u8]] @= []
+
+    for a in words
+        parts @ parts.push(bytes.from_text(a))
+
+    return bytes.to_text_lossy(resp.command(parts))

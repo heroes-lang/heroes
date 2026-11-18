@@ -1,0 +1,337 @@
+# The ledger of `sql/mysql`: what a program does with a connection to MySQL
+# or MariaDB, and what their client/server protocol offers, measured against
+# Go's `github.com/go-sql-driver/mysql` v1 (its `go doc -all`, the module
+# fetched into the scratch folder on 2026-11-18) and Python's PyMySQL 1.2.4,
+# a PEP 249 driver (`dir()` of `pymysql`, its `Connection` and its `Cursor`,
+# installed into the scratch folder the same day). Rust's standard library
+# has no database, so its line is `-` in every block. What does not depend on
+# the database (values, rows, results, failure codes) is the ledger of `sql`;
+# what `database/sql` itself offers (a pool, `Stmt`, `Tx`) is stated there.
+#
+# Every expected value of the tests was observed or written from the
+# protocol's documentation: the packets' bytes from MySQL's "Client/Server
+# Protocol" pages (HandshakeV10, HandshakeResponse41, SSLRequest, OK, ERR,
+# EOF, ColumnDefinition41, the text and binary result sets, COM_STMT_PREPARE,
+# COM_STMT_EXECUTE, COM_STMT_CLOSE, COM_SET_OPTION), the two scrambles from
+# PyMySQL's `_auth.scramble_native_password` and `_auth.scramble_caching_sha2`.
+
+capability sql-mysql/open  a connection opened and logged in
+  heroes  mysql.open, mysql.options, mysql.Options, mysql.DEFAULT_PORT
+  go      NewConnector, NewConfig, Config, MySQLDriver, MySQLDriver.Open, MySQLDriver.OpenConnector
+  rust    -
+  python  connect, Connect, Connection, Connection.connect
+  note    one connection, which the program owes a `close`; no pool (the ledger of `sql`)
+
+capability sql-mysql/url  a connection's options read from a URL
+  heroes  mysql.parse_url
+  go      ParseDSN
+  rust    -
+  python  -
+  note    MySQL Shell's and Connector/J's URI form, `mysql://user:password@host:port/database?ssl-mode=...&ssl-ca=...`, and `mariadb://`; Go's own DSN form, `user:password@tcp(host:port)/database?param=value`, is a block of its own below
+
+capability sql-mysql/go-dsn  options read from Go's own DSN text, `user:password@tcp(host:port)/database`
+  heroes  refused: a second spelling of the URL's fields that only Go's driver reads; MySQL's own URI form is read, and `Options` names every field
+  go      ParseDSN
+  rust    -
+  python  -
+  note    -
+
+capability sql-mysql/format-url  a connection's options written back as a URL
+  heroes  pending
+  go      Config.FormatDSN
+  rust    -
+  python  -
+  note    `url`'s escapes would write each part; the password would stand in the text
+
+capability sql-mysql/login  a password answered as the server's plugin asks: caching_sha2_password or mysql_native_password
+  heroes  mysql.open
+  go      Config.AllowNativePasswords, ErrNativePassword, ErrUnknownPlugin
+  rust    -
+  python  Connection (auth_plugin_map)
+  note    the scrambles from `crypto`'s SHA-1 and SHA-256; a switch of plugin (AuthSwitchRequest) followed at most eight times; Go's driver refuses `mysql_native_password` unless `AllowNativePasswords`, where here it is spoken always, MariaDB's default being it
+
+capability sql-mysql/clear-password  the password itself sent where the server asks for it, over TLS alone
+  heroes  mysql.open
+  go      Config.AllowCleartextPasswords, ErrCleartextPassword
+  rust    -
+  python  -
+  note    `caching_sha2_password`'s full exchange, `sha256_password` and `mysql_clear_password` send the password and a zero byte over TLS; without TLS the login fails `unsupported`, where Go's driver sends it in clear when allowed
+
+capability sql-mysql/rsa-password  the password encrypted to the server's RSA key where the connection has no TLS
+  heroes  pending
+  go      RegisterServerPubKey, DeregisterServerPubKey, Config.ServerPubKey
+  rust    -
+  python  Connection (server_public_key)
+  note    MySQL encrypts by RSA-OAEP with SHA-1 and MGF1 over SHA-1; `crypto/keypairs.encrypt` offers SHA-256's OAEP alone. A login over TLS once fills the server's cache, after which the fast answer serves without TLS
+
+capability sql-mysql/old-password  MySQL 4.0's password scheme
+  heroes  refused: the scheme is broken (a hash of 64 bits, recovered in seconds), and MySQL removed it in 5.7.5
+  go      Config.AllowOldPasswords, ErrOldPassword
+  rust    -
+  python  -
+  note    -
+
+capability sql-mysql/mariadb-plugins  MariaDB's own plugins, client_ed25519 and parsec
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `client_ed25519` signs with a key whose seed is the password of any length, which no Ed25519 of `crypto/keypairs` takes; `parsec` (MariaDB 11.6) derives a seed by PBKDF2 and signs with Ed25519, which macOS's own cryptography lacks
+
+capability sql-mysql/tls  TLS begun after the greeting, the server's certificate checked for its authority and host
+  heroes  mysql.open, mysql.Security, mysql.parse_url
+  go      RegisterTLSConfig, DeregisterTLSConfig, Config.TLS, Config.TLSConfig, ErrNoTLS
+  rust    -
+  python  Connection (ssl, ssl_ca, ssl_verify_cert, ssl_verify_identity, ssl_disabled)
+  note    the default, `ssl-mode=VERIFY_IDENTITY`; through `tls.client_over`, so on Linux and Windows. `PREFERRED`, `REQUIRED` and `VERIFY_CA` are refused (below)
+
+capability sql-mysql/tls-macos  TLS to MySQL on macOS
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `tls` begins TLS on macOS only over a connection it makes, after fixed steps; MySQL's TLS begins after the server's greeting, a packet of a length it writes itself. A step of `tls` that reads one packet by its length (three bytes, the lowest first) would carry it
+
+capability sql-mysql/tls-weaker  TLS that falls back to plain text, or does not check the host
+  heroes  refused: `PREFERRED` falls back to plain text in silence, `REQUIRED` and `VERIFY_CA` accept whoever presents a certificate; each lets whoever sits between read the connection or pose as the server
+  go      Config.AllowFallbackToPlaintext
+  rust    -
+  python  Connection (ssl_verify_cert=False)
+  note    -
+
+capability sql-mysql/tls-client-certificate  a client's own certificate presented to the server
+  heroes  pending
+  go      Config.TLS
+  rust    -
+  python  Connection (ssl_cert, ssl_key, ssl_key_password)
+  note    `tls.Client` holds no certificate of the client's
+
+capability sql-mysql/close  a connection closed, and asked whether it is
+  heroes  mysql.close, mysql.is_closed
+  go      ErrInvalidConn
+  rust    -
+  python  Connection.close, Connection.open
+  note    `COM_QUIT`, then the socket closed
+
+capability sql-mysql/ping  a connection asked whether it still works
+  heroes  mysql.ping
+  go      Config.CheckConnLiveness
+  rust    -
+  python  Connection.ping
+  note    `COM_PING`; PyMySQL's `ping(reconnect=True)` reconnects, which here is `open` again
+
+capability sql-mysql/exec  a statement that changes rows run with its values bound, its count and id read
+  heroes  mysql.exec
+  go      Result, Result.AllRowsAffected, Result.AllLastInsertIds
+  rust    -
+  python  Cursor.execute, Connection.affected_rows, Connection.insert_id
+  note    with values, prepared, run and closed (`COM_STMT_PREPARE`, `COM_STMT_EXECUTE`, `COM_STMT_CLOSE`); without, `COM_QUERY`. `last_id` fails `not_found` where the statement made no `AUTO_INCREMENT` value, where Go and Python answer 0
+
+capability sql-mysql/query  a statement's rows read into values by their column's type
+  heroes  mysql.query, mysql.query_one
+  go      NullTime, NullTime.Scan, NullTime.Value
+  rust    -
+  python  Cursor.execute, Cursor.fetchone, Cursor.fetchall, Cursor.fetchmany, Connection.query
+  note    every row read before it answers; the same value from the text and the binary protocols, a `FLOAT` rounded to its single in both (Go and Python read the text's decimal as a double)
+
+capability sql-mysql/stream-rows  rows read one at a time as the server sends them, never all held
+  heroes  pending
+  go      -
+  rust    -
+  python  Cursor.scroll
+  note    PyMySQL's `SSCursor`; `LIMIT` and `OFFSET` read a page meanwhile
+
+capability sql-mysql/several-results  every result of a statement that answers several, as `CALL` does
+  heroes  pending
+  go      Result.AllRowsAffected, Result.AllLastInsertIds
+  rust    -
+  python  Cursor.nextset, Connection.next_result
+  note    every result is read, so the connection stays in step; `query` answers the first that has columns and `exec` the counts of the last
+
+capability sql-mysql/exec-script  several statements separated by semicolons run as one text
+  heroes  mysql.exec_script
+  go      Config.MultiStatements, ErrPktSyncMul
+  rust    -
+  python  Connection (client_flag=MULTI_STATEMENTS)
+  note    allowed for this call alone by `COM_SET_OPTION`, so `exec` and `query` never run a second statement smuggled into the first
+
+capability sql-mysql/prepare  a statement prepared once and run many times
+  heroes  mysql.prepare, mysql.exec_prepared, mysql.query_prepared, mysql.close_statement, mysql.Statement
+  go      -
+  rust    -
+  python  Cursor.executemany
+  note    `database/sql`'s `Stmt` is the ledger of `sql`'s; PyMySQL prepares nothing and interpolates every value
+
+capability sql-mysql/interpolate  values written into the statement's text by the client
+  heroes  refused: a value never enters the text of a statement; it travels as a parameter of the binary protocol
+  go      Config.InterpolateParams
+  rust    -
+  python  Connection.escape, Connection.literal, Cursor.mogrify
+  note    -
+
+capability sql-mysql/long-data  a parameter's bytes sent in pieces before the statement runs
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    `COM_STMT_SEND_LONG_DATA`; a value is sent whole, up to the server's `max_allowed_packet`
+
+capability sql-mysql/transactions  a transaction opened, committed and rolled back, and its state read
+  heroes  mysql.begin, mysql.commit, mysql.rollback, mysql.transaction_of
+  go      -
+  rust    -
+  python  Connection.begin, Connection.commit, Connection.rollback
+  note    the state from the server's status flag `SERVER_STATUS_IN_TRANS`
+
+capability sql-mysql/autocommit  each statement left uncommitted until a commit, by the session's setting
+  heroes  refused: `begin` opens a transaction where one is wanted, so a statement never stays uncommitted by a setting nobody sees; `exec(@db, "SET autocommit = 0", [])` remains the server's to run
+  go      -
+  rust    -
+  python  Connection.autocommit, Connection.get_autocommit
+  note    PEP 249 opens a transaction implicitly; Go's `database/sql` does not
+
+capability sql-mysql/charset  the connection's character set and collation chosen
+  heroes  refused: the connection speaks `utf8mb4`, the one set that holds every character a Heroes `str` holds; a column of another set is converted by the server
+  go      Charset, Config.Collation
+  rust    -
+  python  Connection (charset, collation), Connection.set_character_set, Connection.set_charset, Connection.character_set_name, charset
+  note    collation 45, `utf8mb4_general_ci`, which MySQL 5.5 to 9 and MariaDB know
+
+capability sql-mysql/time-zone  instants read and written in UTC whatever the server's zone
+  heroes  mysql.open
+  go      Config.Loc, Config.ParseTime, TimeTruncate
+  rust    -
+  python  Connection (init_command)
+  note    the session's `time_zone` is set to `+00:00` on opening, so a `TIMESTAMP` comes in UTC; a `DATETIME`, which holds no zone, is read as UTC
+
+capability sql-mysql/server  the server's version, kind and number for the connection
+  heroes  mysql.server_version_of, mysql.is_mariadb, mysql.connection_id_of
+  go      -
+  rust    -
+  python  Connection.get_server_info, Connection.get_proto_info, Connection.get_host_info, Connection.thread_id
+  note    from the greeting
+
+capability sql-mysql/warnings  the warnings a statement raised
+  heroes  mysql.warning_count_of
+  go      -
+  rust    -
+  python  Connection.show_warnings
+  note    their count from the statement's answer; `query(@db, "SHOW WARNINGS", [])` reads them
+
+capability sql-mysql/cancel  a running statement stopped from another connection
+  heroes  mysql.connection_id_of
+  go      -
+  rust    -
+  python  Connection.kill
+  note    `exec(@other, "KILL QUERY ?", [.integer(v: id)])` from a second connection; the statement stopped fails `stopped`
+
+capability sql-mysql/select-database  the connection's default database changed
+  heroes  mysql.exec
+  go      -
+  rust    -
+  python  Connection.select_db
+  note    `exec(@db, "USE shop", [])`
+
+capability sql-mysql/session-settings  system variables set as the connection opens
+  heroes  mysql.exec
+  go      Config.Params
+  rust    -
+  python  Connection (sql_mode, init_command)
+  note    `exec(@db, "SET SESSION sql_mode = ?", [.text(v: ...)])` after `open`
+
+capability sql-mysql/errors  a failure told by its code, its number and its SQLSTATE kept in the message
+  heroes  sql.database_code_of, sql.FAILED
+  go      MySQLError, MySQLError.Error, MySQLError.Is, ErrMalformPkt, ErrPktSync, ErrPktTooLarge, ErrBusyBuffer, ErrOldProtocol
+  rust    -
+  python  Error, Warning, InterfaceError, DatabaseError, DataError, OperationalError, IntegrityError, InternalError, ProgrammingError, NotSupportedError, MySQLError, err
+  note    the number chooses the code (the module's comment), the SQLSTATE's class where the number is not named; PEP 249's classes map onto the codes as the ledger of `sql` says
+
+capability sql-mysql/deadline  every wait on a connection bounded in time
+  heroes  mysql.Options
+  go      Config.Timeout, Config.ReadTimeout, Config.WriteTimeout
+  rust    -
+  python  Connection (connect_timeout, read_timeout, write_timeout)
+  note    one deadline, `deadline_ms`, from the connection on, as `net.connect` gives it
+
+capability sql-mysql/attributes  the connection's attributes told to the server
+  heroes  mysql.Options
+  go      Config.ConnectionAttributes
+  rust    -
+  python  Connection (program_name)
+  note    `application_name` goes as `program_name` where the server offers attributes
+
+capability sql-mysql/found-rows  the rows a statement matched counted, rather than those it changed
+  heroes  pending
+  go      Config.ClientFoundRows
+  rust    -
+  python  Connection (client_flag=FOUND_ROWS)
+  note    the capability `CLIENT_FOUND_ROWS` at the login
+
+capability sql-mysql/column-table  a column's table named beside its name
+  heroes  pending
+  go      Config.ColumnsWithAlias
+  rust    -
+  python  -
+  note    the column definition carries its table and original names; `sql.Column` holds a name and a type
+
+capability sql-mysql/compression  the connection's bytes compressed
+  heroes  pending
+  go      EnableCompression
+  rust    -
+  python  Connection (compress)
+  note    zlib's or zstd's compressed packets, from `compress`
+
+capability sql-mysql/local-infile  a local file sent for `LOAD DATA LOCAL INFILE`
+  heroes  refused: the server chooses the file, so a server or a statement not the program's could read any file the program can; rows go in with `INSERT`
+  go      RegisterLocalFile, DeregisterLocalFile, RegisterReaderHandler, DeregisterReaderHandler, Config.AllowAllFiles
+  rust    -
+  python  Connection (local_infile)
+  note    the capability is never asked for, and a request for a file ends the connection
+
+capability sql-mysql/unix-socket  a connection over a Unix socket or a Windows named pipe
+  heroes  pending
+  go      Config.Net
+  rust    -
+  python  Connection (unix_socket, named_pipe)
+  note    `net` connects over TCP alone
+
+capability sql-mysql/option-files  options read from `my.cnf`
+  heroes  refused: a package does not read files behind its caller; a program reads what it wants and puts it in `Options`
+  go      -
+  rust    -
+  python  Connection (read_default_file, read_default_group), optionfile
+  note    -
+
+capability sql-mysql/read-only  a connection refused where the server is a read-only replica
+  heroes  refused: a write to a replica fails `permission` (1290), which the program reads; a pool's retry is the ledger of `sql`'s
+  go      Config.RejectReadOnly
+  rust    -
+  python  -
+  note    -
+
+capability sql-mysql/replication  the binary log read as a replica reads it
+  heroes  refused: a replication client, not a driver; outside what a program asks of its database
+  go      -
+  rust    -
+  python  -
+  note    -
+
+capability sql-mysql/x-protocol  MySQL's X Protocol on port 33060
+  heroes  refused: a second protocol of MySQL alone, of Protocol Buffers, which MariaDB does not speak; the classic protocol reaches both
+  go      -
+  rust    -
+  python  -
+  note    -
+
+dropped
+  go      Config.Clone, Config.Apply, Option, BeforeConnect: plumbing of Go's options
+  go      RegisterDial, RegisterDialContext, DeregisterDialContext, DialFunc, DialContextFunc, Config.DialFunc, Config.Addr, Config.User, Config.Passwd, Config.DBName: a dialer is an interface; the address and the user are `Options`' fields
+  go      Config.MaxAllowedPacket: the client reads an answer of up to 1 GiB, MySQL's own largest packet, and sends what the server takes
+  go      SetLogger, Logger, NopLogger, NopLogger.Print, Config.Logger: no logger stands inside a package
+  python  BINARY, Binary, DATE, DATETIME, Date, DateFromTicks, NUMBER, ROWID, STRING, TIME, TIMESTAMP, Time, TimeFromTicks, Timestamp, TimestampFromTicks, DBAPISet, FIELD_TYPE, converters, constants, times, NULL: PEP 249's type objects and constructors, stated in the ledger of `sql`; a value's case is its type here
+  python  apilevel, paramstyle, threadsafety, thread_safe, get_client_info, install_as_MySQLdb, VERSION, VERSION_STRING, version_info, protocol, connections, cursors, sys: the module's own description and plumbing
+  python  Connection.cursor, Cursor.close: the connection is its own cursor here
+  python  Cursor.setinputsizes, Cursor.setoutputsizes, Cursor.max_stmt_length: hints, a parameter's type being its value's case here
+  python  Cursor.callproc: a procedure runs with `CALL` through `query`, and the ledger of `sql` refuses output parameters
+  python  Connection.write_packet, Connection (client_flag, conv, cursorclass, use_unicode, binary_prefix, bind_address, defer_connect, max_allowed_packet): plumbing of the protocol, a converter or a cursor class
+  python  Connection (user, password, host, database, port, db, passwd): `Options`' fields

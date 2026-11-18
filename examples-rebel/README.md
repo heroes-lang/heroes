@@ -124,8 +124,8 @@ its own**; the column "may use" names the ones it is expected to need, not a lim
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |
 | 5 | `sql/postgres` | PostgreSQL over its own protocol, written in Heroes; the API every driver keeps | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `sql`, `strings`, `threads`, `time`, `tls` |  |
 | 5 | `sql/sqlite` | SQLite over its library, the same API name for name; only its users need the library | `sql`, `strings`, `time` | `sqlite3.h` |
-| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `sql`, `net`, `crypto`, `tls`, `io`, `bytes`, `strings`, `numbers`, `time` |  |
-| 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `net`, `tls`, `io`, `bytes`, `strings`, `numbers` |  |
+| 5 | `sql/mysql` | MySQL and MariaDB over their own protocol, written in Heroes; the same API as the other two drivers | `bytes`, `crypto`, `io`, `net`, `numbers`, `os`, `protobuf`, `sql`, `strings`, `time`, `tls`, `url` |  |
+| 5 | `redis` | a Redis client over its protocol (RESP2 and RESP3): commands, pipelines, publish and subscribe | `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `sql/build` | queries as values composed by functions, placeholders for each database, values only as parameters, a row read into a record by its field names; the ORM itself refused, with the reason | `sql`, `strings` |  |
 | 5 | `http2` | HTTP/2 and HPACK, client and server, beneath `http` and knowing nothing of it | `io`, `net`, `tls`, `bytes`, `numbers`, `strings`, `time`, `threads`, `poll` |  |
 | 5 | `mail/smtp` | mail sent: SMTP with STARTTLS or TLS, authentication, the extensions | `bytes`, `crypto`, `io`, `mail`, `net`, `numbers`, `strings`, `threads`, `time`, `tls` |  |

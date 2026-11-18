@@ -1,0 +1,129 @@
+# An error reply read and told with Rebel's codes. Redis opens an error's
+# text with a word in capitals that names its kind, `ERR`, `WRONGTYPE`,
+# `NOAUTH`, as its "Protocol specification" says; that word chooses the
+# code, and the message keeps it in brackets before the server's words,
+# `[WRONGTYPE] Operation against a key holding the wrong kind of value`, so
+# a program reads it back.
+
+use strings
+
+# What an error reply says.
+record Said
+    # The word in capitals that opens it, "" where it opens with none.
+    prefix: str
+    # The server's words after that word.
+    words: str
+
+# What the error text `line` says: its first word where it is capitals,
+# digits and `_` alone, then the rest.
+#
+# - `line`: the error's text, without its `-` and its line's end.
+function said(line: str) -> Said
+    cut = match strings.split_once(s: line, sep: " ")
+        .ok h  => h
+        .err _ => strings.Halves(before: line, after: "")
+
+    if cut.before == "" || !is_capitals(cut.before)
+        return Said(prefix: "", words: line)
+    return Said(prefix: cut.before, words: cut.after)
+
+# Whether `word` holds capitals, digits and `_` alone, and at least one
+# capital.
+#
+# - `word`: the word.
+function is_capitals(word: str) -> bool
+    capitals: i64 @= 0
+    at: i64 @= 0
+
+    while at < word.len()
+        c = word[at]
+
+        if c >= 'A' && c <= 'Z'
+            capitals @ capitals + 1
+        else if !(c >= '0' && c <= '9' || c == '_')
+            return false
+        at @ at + 1
+
+    return capitals > 0
+
+# The code an error that opens with `prefix` is told with, its words read
+# where the prefix is the general `ERR`.
+#
+# - `prefix`: the error's word in capitals.
+# - `words`: the server's words after it.
+function code_of(prefix: str, words: str) -> str
+    match prefix
+        "WRONGTYPE" | "EXECABORT"                      => return "invalid"
+        "NOAUTH" | "NOPERM" | "WRONGPASS" | "READONLY" => return "permission"
+        "NOSCRIPT" | "NOGROUP"                         => return "not_found"
+        "BUSYGROUP"                                    => return "exists"
+        "OOM"                                          => return "limit"
+        "MOVED" | "ASK" | "CROSSSLOT" | "NOPROTO"      => return "unsupported"
+        "ERR" =>
+            lower = strings.to_lower(words)
+
+            if strings.has_prefix(s: lower, prefix: "unknown command")
+                return "unsupported"
+
+            if strings.has_prefix(s: lower, prefix: "max number of clients")
+                return "limit"
+
+            if strings.contains(s: lower, substr: "invalid password") || strings.contains(s: lower, substr: "invalid username-password")
+                return "permission"
+            return "invalid"
+        _ => return "failed"
+
+# The message an error reply is told with: its word in brackets, then the
+# server's words.
+#
+# - `s`: what the error says.
+function message_of(s: Said) -> str
+    if s.prefix == ""
+        return s.words
+    return "[" + s.prefix + "] " + s.words
+
+# The failure of a reply that is not of the kind asked for: `not_found`
+# where it is null, `invalid` otherwise.
+#
+# - `null_reply`: whether the reply is null.
+# - `kind`: the reply's kind, as a message names it.
+# - `wanted`: what was asked for, as a message names it.
+function not_kind<T>(null_reply: bool, kind: str, wanted: str) -> T?
+    if null_reply
+        return fail(code: "not_found", msg: f"the reply is null where {wanted} was asked for")
+    return fail(code: "invalid", msg: f"the reply is {kind} where {wanted} was asked for")
+
+test "said: a word in capitals, a word that is not, and an error of one word"
+    assert said("WRONGTYPE Operation against a key holding the wrong kind of value") == Said(prefix: "WRONGTYPE", words: "Operation against a key holding the wrong kind of value")
+    assert said("Something went wrong") == Said(prefix: "", words: "Something went wrong")
+    assert said("ERR") == Said(prefix: "ERR", words: "")
+    assert said("") == Said(prefix: "", words: "")
+    assert said("NOT_FOUND2 x").prefix == "NOT_FOUND2"
+
+test "code_of: each word, ERR read by its words, and a word unknown"
+    assert code_of(prefix: "WRONGTYPE", words: "") == "invalid"
+    assert code_of(prefix: "NOAUTH", words: "Authentication required.") == "permission"
+    assert code_of(prefix: "WRONGPASS", words: "invalid username-password pair or user is disabled.") == "permission"
+    assert code_of(prefix: "NOSCRIPT", words: "No matching script.") == "not_found"
+    assert code_of(prefix: "BUSYGROUP", words: "Consumer Group name already exists") == "exists"
+    assert code_of(prefix: "OOM", words: "command not allowed when used memory > 'maxmemory'.") == "limit"
+    assert code_of(prefix: "MOVED", words: "3999 127.0.0.1:6381") == "unsupported"
+    assert code_of(prefix: "ERR", words: "unknown command 'FOO', with args beginning with: ") == "unsupported"
+    assert code_of(prefix: "ERR", words: "max number of clients reached") == "limit"
+    assert code_of(prefix: "ERR", words: "wrong number of arguments for 'get' command") == "invalid"
+    assert code_of(prefix: "LOADING", words: "Redis is loading the dataset in memory") == "failed"
+    assert message_of(said("ERR syntax error")) == "[ERR] syntax error"
+    assert message_of(said("odd")) == "odd"
+
+test "not_kind: a null and a reply of another kind"
+    got: i64? = not_kind(null_reply: true, kind: "null", wanted: "an integer")
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "the reply is null where an integer was asked for"
+
+    other: str? = not_kind(null_reply: false, kind: "a map", wanted: "text")
+
+    match other
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the reply is a map where text was asked for"

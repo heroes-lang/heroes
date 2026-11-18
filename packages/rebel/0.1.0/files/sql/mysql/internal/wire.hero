@@ -1,0 +1,392 @@
+# The bytes of MySQL's client/server protocol: integers written
+# little-endian at 1, 2, 3, 4 and 8 bytes, the length-encoded integers and
+# strings of the protocol's "Basic Data Types", strings ended by a zero byte,
+# and a cursor that reads them back out of a packet's payload, failing
+# `invalid` where the payload ends early. Every packet of the protocol is
+# made of these.
+
+use bytes
+
+constant INVALID: str
+    "invalid"
+
+# The largest payload one packet carries; a longer one continues in the
+# next packet, and one of exactly this length is followed by an empty one.
+constant MOST_PAYLOAD: i64
+    16777215
+
+# A place in a packet's payload, read forward.
+record Cursor
+    # The payload.
+    data: [u8]
+    # The byte index of the next byte to read.
+    at: i64
+
+# A cursor at the start of `data`.
+#
+# - `data`: a packet's payload.
+function cursor(data: [u8]) -> Cursor
+    return Cursor(data: data, at: 0)
+
+# `b` as a number from 0 to 255.
+#
+# - `b`: the byte.
+function int_of(b: u8) -> i64
+    return to_i64(b).must()
+
+# Adds the `width` lowest bytes of `n` to `out`, the lowest first.
+#
+# - `out`: the bytes being written.
+# - `n`: the number; a negative one is written in two's complement, so its
+#   eight bytes are those of an `i64`.
+# - `width`: 1 to 8 bytes.
+#
+# Aborts where `width` is outside 1 to 8.
+function push_le(@out: [u8], n: i64, width: i64)
+    assert width >= 1 && width <= 8
+    at: i64 @= 0
+
+    while at < width
+        out @ out.push(to_u8(n >> 8 * at & 255).must())
+        at @ at + 1
+
+# Adds `n` to `out` as a length-encoded integer: one byte below 251, else
+# `0xFC` and two bytes, `0xFD` and three, or `0xFE` and eight.
+#
+# - `out`: the bytes being written.
+# - `n`: 0 or more.
+#
+# Aborts where `n` is below 0: a writer of the protocol has counted it.
+function push_lenenc(@out: [u8], n: i64)
+    assert n >= 0
+
+    if n < 251
+        out @ out.push(to_u8(n).must())
+    else if n < 65536
+        out @ out.push(0xfc)
+        push_le(@out, n: n, width: 2)
+    else if n < 16777216
+        out @ out.push(0xfd)
+        push_le(@out, n: n, width: 3)
+    else
+        out @ out.push(0xfe)
+        push_le(@out, n: n, width: 8)
+
+# Adds `data` to `out` as a length-encoded string: its length, then its
+# bytes.
+#
+# - `out`: the bytes being written.
+# - `data`: the bytes.
+function push_lenenc_bytes(@out: [u8], data: [u8])
+    push_lenenc(@out, data.len())
+    push_all(out: @out, data: data)
+
+# Adds the bytes of `s` and a zero byte to `out`.
+#
+# - `out`: the bytes being written.
+# - `s`: text with no zero byte, which `has_zero` tells.
+#
+# Aborts where `s` holds a zero byte: the caller refuses such a text first.
+function push_cstr(@out: [u8], s: str)
+    at: i64 @= 0
+
+    while at < s.len()
+        assert s[at] != 0
+        out @ out.push(s[at])
+        at @ at + 1
+
+    out @ out.push(0)
+
+# Adds every byte of `data` to `out`.
+#
+# - `out`: the bytes being written.
+# - `data`: the bytes added.
+function push_all(@out: [u8], data: [u8])
+    for b in data
+        out @ out.push(b)
+
+# Whether `s` holds a zero byte, which a string of the protocol ended by one
+# cannot carry.
+#
+# - `s`: the text asked about.
+function has_zero(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return true
+        at @ at + 1
+
+    return false
+
+# The packets that carry `payload`: each a header of three bytes of length
+# and one of sequence, then at most `MOST_PAYLOAD` bytes; a payload of
+# exactly that length, or of a multiple of it, ends with an empty packet.
+#
+# - `seq`: the first packet's sequence number, 0 to 255; each next one adds
+#   1, from 255 to 0.
+# - `payload`: the bytes carried.
+#
+# Aborts where `seq` is outside 0 to 255.
+function framed(seq: i64, payload: [u8]) -> [u8]
+    assert seq >= 0 && seq <= 255
+    out: [u8] @= []
+    at: i64 @= 0
+    number: i64 @= seq
+
+    while true
+        n = if payload.len() - at > MOST_PAYLOAD
+            MOST_PAYLOAD
+        else
+            payload.len() - at
+        push_le(@out, n: n, width: 3)
+        out @ out.push(to_u8(number).must())
+        number @ (number + 1) % 256
+        end = at + n
+
+        while at < end
+            out @ out.push(payload[at])
+            at @ at + 1
+
+        if n < MOST_PAYLOAD
+            return out
+
+# The failure of a payload that ended before what was due.
+#
+# - `c`: the cursor.
+# - `due`: what was due, as the message names it.
+function ended<T>(c: Cursor, due: str) -> T?
+    return fail(code: INVALID, msg: f"the server's packet ended at byte {c.at}, where {due} was due")
+
+# Whether `c` has read every byte.
+#
+# - `c`: the cursor.
+function at_end(c: Cursor) -> bool
+    return c.at >= c.data.len()
+
+# The next byte of `c`.
+#
+# - `c`: the cursor, moved past it.
+#
+# Fails `invalid` where the payload has ended.
+function read_u8(@c: Cursor) -> u8?
+    if c.at >= c.data.len()
+        return ended(c, due: "a byte")
+    b = c.data[c.at]
+    c.at @ c.at + 1
+    return ok(b)
+
+# The next `width` bytes of `c` as an unsigned number, the lowest first.
+#
+# - `c`: the cursor, moved past them.
+# - `width`: 1 to 7 bytes, so the number stays below 2^56.
+#
+# Fails `invalid` where fewer are left. Aborts where `width` is outside 1
+# to 7.
+function read_le(@c: Cursor, width: i64) -> i64?
+    assert width >= 1 && width <= 7
+
+    if c.data.len() - c.at < width
+        return ended(c, due: f"a number of {width} bytes")
+    n: i64 @= 0
+    k: i64 @= width - 1
+
+    while k >= 0
+        n @ n << 8 | int_of(c.data[c.at + k])
+        k @ k - 1
+
+    c.at @ c.at + width
+    return ok(n)
+
+# The next eight bytes of `c` as an `i64` in two's complement, the lowest
+# first: a negative number where the highest bit is set.
+#
+# - `c`: the cursor, moved past them.
+#
+# Fails `invalid` where fewer than eight are left.
+function read_i64(@c: Cursor) -> i64?
+    if c.data.len() - c.at < 8
+        return ended(c, due: "a number of 8 bytes")
+    n: i64 @= 0
+    k: i64 @= 7
+
+    while k >= 0
+        n @ n << 8 | int_of(c.data[c.at + k])
+        k @ k - 1
+
+    c.at @ c.at + 8
+    return ok(n)
+
+# The next length-encoded integer of `c`.
+#
+# - `c`: the cursor, moved past it.
+#
+# Fails `invalid` where the payload ends inside it, where its first byte is
+# `0xFB` (a NULL, which the caller reads first where one may stand) or
+# `0xFF`, and where its eight bytes write a number past an `i64`.
+function read_lenenc(@c: Cursor) -> i64?
+    first = int_of(read_u8(@c)?)
+
+    if first < 251
+        return ok(first)
+
+    if first == 0xfc
+        return read_le(@c, 2)
+
+    if first == 0xfd
+        return read_le(@c, 3)
+
+    if first == 0xfe
+        n = read_i64(@c)?
+
+        if n < 0
+            return fail(code: INVALID, msg: f"the server's packet writes at byte {c.at - 9} a length past 2^63")
+        return ok(n)
+    return fail(
+        code: INVALID,
+        msg: f"the server's packet holds at byte {c.at - 1} the byte {first}, which begins no length"
+    )
+
+# The next `n` bytes of `c`.
+#
+# - `c`: the cursor, moved past them.
+# - `n`: how many, 0 or more.
+#
+# Fails `invalid` where `n` is below 0 or fewer are left.
+function read_n(@c: Cursor, n: i64) -> [u8]?
+    if n < 0 || c.data.len() - c.at < n
+        return ended(c, due: f"{n} bytes")
+    out = c.data.slice(from: c.at, to: c.at + n)
+    c.at @ c.at + n
+    return ok(out)
+
+# The next length-encoded string of `c`, as bytes.
+#
+# - `c`: the cursor, moved past it.
+#
+# Fails as `read_lenenc` and `read_n` fail.
+function read_lenenc_bytes(@c: Cursor) -> [u8]?
+    n = read_lenenc(@c)?
+    return read_n(@c, n)
+
+# The next length-encoded string of `c`, as text.
+#
+# - `c`: the cursor, moved past it.
+#
+# Fails as `read_lenenc_bytes` does, and `invalid` where its bytes are not
+# UTF-8.
+function read_lenenc_text(@c: Cursor) -> str?
+    at = c.at
+    data = read_lenenc_bytes(@c)?
+
+    match bytes.to_text(data)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: INVALID, msg: f"the server sent a string at byte {at} that is not UTF-8")
+
+# The bytes of `c` up to its next zero byte, without it, or to the end of
+# the payload where none comes: a few servers end the packet instead.
+#
+# - `c`: the cursor, moved past the zero byte.
+function read_cstr_bytes(@c: Cursor) -> [u8]
+    end: i64 @= c.at
+
+    while end < c.data.len() && c.data[end] != 0
+        end @ end + 1
+
+    out = c.data.slice(from: c.at, to: end)
+
+    c.at @ if end < c.data.len()
+        end + 1
+    else
+        end
+    return out
+
+# The bytes of `c` up to its next zero byte, as text.
+#
+# - `c`: the cursor, moved past the zero byte.
+#
+# Fails `invalid` where the bytes are not UTF-8.
+function read_cstr(@c: Cursor) -> str?
+    at = c.at
+
+    match bytes.to_text(read_cstr_bytes(@c))
+        .ok s  => return ok(s)
+        .err _ => return fail(code: INVALID, msg: f"the server sent a string at byte {at} that is not UTF-8")
+
+# The bytes of `c` from where it stands to its end.
+#
+# - `c`: the cursor, moved to the end.
+function read_rest(@c: Cursor) -> [u8]
+    out = c.data.slice(from: c.at, to: c.data.len())
+    c.at @ c.data.len()
+    return out
+
+test "push_le and read_le: one to eight bytes, a negative, and a payload that ends early"
+    out: [u8] @= []
+    push_le(@out, n: 0x0a, width: 1)
+    push_le(@out, n: 0x1234, width: 2)
+    push_le(@out, n: 0xffffff, width: 3)
+    push_le(@out, n: -1, width: 8)
+    assert out == [0x0a, 0x34, 0x12, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+    c @= cursor(out)
+    assert read_le(@c, 1).must() == 10
+    assert read_le(@c, 2).must() == 0x1234
+    assert read_le(@c, 3).must() == 16777215
+    assert read_i64(@c).must() == -1
+
+    match read_le(@c, 1)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the server's packet ended at byte 14, where a number of 1 bytes was due"
+
+test "push_lenenc and read_lenenc: each width at its edges, a NULL's byte refused, and past an i64"
+    out: [u8] @= []
+    push_lenenc(@out, 0)
+    push_lenenc(@out, 250)
+    push_lenenc(@out, 251)
+    push_lenenc(@out, 65535)
+    push_lenenc(@out, 65536)
+    push_lenenc(@out, 16777215)
+    push_lenenc(@out, 16777216)
+    assert out == [0, 250, 0xfc, 251, 0, 0xfc, 255, 255, 0xfd, 0, 0, 1, 0xfd, 255, 255, 255, 0xfe, 0, 0, 0, 1, 0, 0, 0, 0]
+    c @= cursor(out)
+
+    for want in [0, 250, 251, 65535, 65536, 16777215, 16777216]
+        assert read_lenenc(@c).must() == want
+
+    marker @= cursor([0xfb])
+    assert read_lenenc(@marker).is_err()
+    huge @= cursor([0xfe, 0, 0, 0, 0, 0, 0, 0, 0x80])
+
+    match read_lenenc(@huge)
+        .ok _  => assert false
+        .err e => assert e.msg == "the server's packet writes at byte 0 a length past 2^63"
+
+test "push_lenenc_bytes, read_lenenc_text and read_cstr: empty, more than one byte, unended and not UTF-8"
+    out: [u8] @= []
+    push_lenenc_bytes(out: @out, data: [])
+    push_lenenc_bytes(out: @out, data: bytes.from_text("città"))
+    push_cstr(@out, "def")
+    out @ out.push('x')
+    c @= cursor(out)
+    assert read_lenenc_text(@c).must() == ""
+    assert read_lenenc_text(@c).must() == "città"
+    assert read_cstr(@c).must() == "def"
+    assert read_cstr(@c).must() == "x" && at_end(c)
+    bad @= cursor([2, 0xc3, 0x28])
+    assert read_lenenc_text(@bad).is_err()
+    short @= cursor([3, 'a'])
+    assert read_lenenc_bytes(@short).is_err()
+    assert has_zero("a\u{1}b") == false
+
+test "framed: an empty payload, a COM_PING, and a payload of exactly the largest length ends with an empty packet"
+    assert framed(seq: 0, payload: []) == [0, 0, 0, 0]
+    assert framed(seq: 0, payload: [0x0e]) == [1, 0, 0, 0, 0x0e]
+    big: [u8] @= []
+
+    for _ in range(from: 0, to: MOST_PAYLOAD)
+        big @ big.push(7)
+
+    out = framed(seq: 255, payload: big)
+    assert out.len() == MOST_PAYLOAD + 8
+    assert out.slice(from: 0, to: 4) == [255, 255, 255, 255]
+    assert out.slice(from: MOST_PAYLOAD + 4, to: MOST_PAYLOAD + 8) == [0, 0, 0, 0]

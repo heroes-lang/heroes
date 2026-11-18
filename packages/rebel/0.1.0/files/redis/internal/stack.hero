@@ -1,0 +1,16 @@
+# The lists a reply is built in, grown in the caller's own place: a function
+# of any element's type, so the face's replies are gathered here without
+# this module naming them.
+
+# Adds `item` to `items`, the caller's own list, so nothing is copied.
+#
+# - `items`: the list, grown by one.
+# - `item`: the element added.
+function put<T>(@items: [T], item: T)
+    items @ items.push(item)
+
+test "put: a list grown in place"
+    xs: [i64] @= []
+    put(@xs, item: 1)
+    put(@xs, item: 2)
+    assert xs == [1, 2]

@@ -1,0 +1,284 @@
+# The server's answers that end a request or describe its columns: the OK
+# packet, the older EOF packet, and the column definition of protocol 4.1,
+# as "Generic Response Packets" and "Text Resultset" of MySQL's client/server
+# protocol lay them out; and each column's type named in SQL's words.
+
+use bytes
+use sql
+use sql/mysql/internal/wire
+
+# The status flag of a transaction open on the connection.
+constant IN_TRANSACTION: i64
+    1
+
+# The status flag of another result following this one.
+constant MORE_RESULTS: i64
+    8
+
+# The character set number of binary bytes: a column of it holds bytes, not
+# text.
+constant BINARY_CHARSET: i64
+    63
+
+# The column flag of an integer with no sign.
+constant UNSIGNED_FLAG: i64
+    32
+
+# The column flag of an `ENUM`.
+constant ENUM_FLAG: i64
+    256
+
+# The column flag of a `SET`.
+constant SET_FLAG: i64
+    2048
+
+# What an OK packet, or an EOF packet, says of the request it ends.
+record Done
+    # The rows the statement inserted, changed or deleted.
+    affected: i64
+    # The `AUTO_INCREMENT` value the statement made, 0 for none.
+    last_id: i64
+    # The server's status flags: `IN_TRANSACTION`, `MORE_RESULTS`, ...
+    status: i64
+    # How many warnings the statement raised.
+    warnings: i64
+
+# One column of an answer, as its definition packet describes it.
+record ColumnDef
+    # The column's name, or its alias.
+    name: str
+    # Its character set's number; `BINARY_CHARSET` for bytes.
+    charset: i64
+    # Its declared length.
+    length: i64
+    # Its type's byte: 1 for `TINYINT`, 3 for `INT`, 253 for `VARCHAR`, ...
+    kind: i64
+    # Its flags: `UNSIGNED_FLAG`, `ENUM_FLAG`, `SET_FLAG`, ...
+    flags: i64
+    # The digits after the point of a decimal or a time, 0 to 31.
+    decimals: i64
+
+# Whether `payload` ends a list of rows, or a list of definitions: an EOF
+# packet, or the OK packet that stands for one, both opening with `0xFE` and
+# shorter than a full packet. A row that opens with `0xFE` writes a string of
+# at least 2^24 bytes, so it is never that short.
+#
+# - `payload`: a packet's payload.
+function is_end(payload: [u8]) -> bool
+    return payload.len() > 0 && payload[0] == 0xfe && payload.len() < wire.MOST_PAYLOAD
+
+# What an OK packet says: its `0x00`, or the `0xFE` of one that ends rows.
+#
+# - `payload`: the packet's payload.
+#
+# Fails `invalid` where it is not one.
+function read_ok(payload: [u8]) -> Done?
+    c @= wire.cursor(payload)
+    head = wire.read_u8(@c)?
+
+    if head != 0x00 && head != 0xfe
+        return fail(code: sql.INVALID, msg: f"the server's packet opens with {head} where an OK packet's 0 was due")
+    affected = wire.read_lenenc(@c)?
+    last_id = wire.read_lenenc(@c)?
+    status = wire.read_le(@c, 2)?
+    warnings = wire.read_le(@c, 2)?
+    return ok(Done(affected: affected, last_id: last_id, status: status, warnings: warnings))
+
+# What an EOF packet says: its `0xFE`, its warnings, its status.
+#
+# - `payload`: the packet's payload.
+#
+# Fails `invalid` where it is not one.
+function read_eof(payload: [u8]) -> Done?
+    c @= wire.cursor(payload)
+    head = wire.read_u8(@c)?
+
+    if head != 0xfe
+        return fail(code: sql.INVALID, msg: f"the server's packet opens with {head} where an EOF packet's 254 was due")
+    warnings = wire.read_le(@c, 2)?
+    status = wire.read_le(@c, 2)?
+    return ok(Done(affected: 0, last_id: 0, status: status, warnings: warnings))
+
+# What the packet that ends rows says: an OK packet where the client asked
+# for no EOF packets (`CLIENT_DEPRECATE_EOF`), an EOF packet otherwise.
+#
+# - `payload`: the packet's payload.
+# - `deprecate_eof`: whether the client asked for no EOF packets.
+#
+# Fails `invalid` where it is neither.
+function read_end(payload: [u8], deprecate_eof: bool) -> Done?
+    if deprecate_eof
+        return read_ok(payload)
+    return read_eof(payload)
+
+# The column a definition packet describes.
+#
+# - `payload`: the packet's payload.
+#
+# Fails `invalid` where it is not one.
+function read_column(payload: [u8]) -> ColumnDef?
+    c @= wire.cursor(payload)
+    _ = wire.read_lenenc_bytes(@c)?
+    _ = wire.read_lenenc_bytes(@c)?
+    _ = wire.read_lenenc_bytes(@c)?
+    _ = wire.read_lenenc_bytes(@c)?
+    name = wire.read_lenenc_text(@c)?
+    _ = wire.read_lenenc_bytes(@c)?
+    fixed = wire.read_lenenc(@c)?
+
+    if fixed < 12
+        return fail(
+            code: sql.INVALID,
+            msg: f"the server's column definition holds {fixed} bytes of fixed fields, where 12 were due"
+        )
+    charset = wire.read_le(@c, 2)?
+    length = wire.read_le(@c, 4)?
+    kind = wire.int_of(wire.read_u8(@c)?)
+    flags = wire.read_le(@c, 2)?
+    decimals = wire.int_of(wire.read_u8(@c)?)
+    return ok(ColumnDef(name: name, charset: charset, length: length, kind: kind, flags: flags, decimals: decimals))
+
+# Whether `d` holds bytes rather than text: a string, a blob or a `BIT` of
+# the binary character set.
+#
+# - `d`: the column.
+function is_binary(d: ColumnDef) -> bool
+    return d.charset == BINARY_CHARSET && d.kind != 245
+
+# The type of `d` in SQL's words, as `information_schema` writes it in upper
+# case: `INT`, `BIGINT UNSIGNED`, `VARCHAR`, `VARBINARY`, `TEXT`, `BLOB`,
+# `DATETIME`, `DECIMAL`, `JSON`.
+#
+# - `d`: the column.
+function type_name(d: ColumnDef) -> str
+    unsigned = if d.flags & UNSIGNED_FLAG != 0
+        " UNSIGNED"
+    else
+        ""
+    binary = is_binary(d)
+
+    match d.kind
+        0 | 246 => return "DECIMAL" + unsigned
+        1       => return "TINYINT" + unsigned
+        2       => return "SMALLINT" + unsigned
+        3       => return "INT" + unsigned
+        4       => return "FLOAT" + unsigned
+        5       => return "DOUBLE" + unsigned
+        6       => return "NULL"
+        7       => return "TIMESTAMP"
+        8       => return "BIGINT" + unsigned
+        9       => return "MEDIUMINT" + unsigned
+        10 | 14 => return "DATE"
+        11      => return "TIME"
+        12      => return "DATETIME"
+        13      => return "YEAR"
+        16      => return "BIT"
+        242     => return "VECTOR"
+        245     => return "JSON"
+        247     => return "ENUM"
+        248     => return "SET"
+        249 | 250 | 251 | 252 =>
+            if binary
+                return "BLOB"
+            return "TEXT"
+        15 | 253 =>
+            if binary
+                return "VARBINARY"
+            return "VARCHAR"
+        254 =>
+            if d.flags & ENUM_FLAG != 0
+                return "ENUM"
+
+            if d.flags & SET_FLAG != 0
+                return "SET"
+
+            if binary
+                return "BINARY"
+            return "CHAR"
+        255 => return "GEOMETRY"
+        _   => return f"TYPE {d.kind}"
+
+# The column `d` as `sql` names one.
+#
+# - `d`: the column.
+function column_of(d: ColumnDef) -> sql.Column
+    return sql.Column(name: d.name, type_name: type_name(d))
+
+# Each of `defs` as `sql` names one, in order.
+#
+# - `defs`: the columns.
+function columns_of(defs: [ColumnDef]) -> [sql.Column]
+    out: [sql.Column] @= []
+
+    for d in defs
+        out @ out.push(column_of(d))
+
+    return out
+
+# The names of `defs`, in order.
+#
+# - `defs`: the columns.
+function names_of(defs: [ColumnDef]) -> [str]
+    out: [str] @= []
+
+    for d in defs
+        out @ out.push(d.name)
+
+    return out
+
+# A column definition's payload, for the tests: the catalog `def`, a schema,
+# a table and the name twice, then the fixed fields.
+#
+# - `name`: the column's name.
+# - `charset`: its character set.
+# - `kind`: its type's byte.
+# - `flags`: its flags.
+# - `decimals`: its digits after the point.
+function definition(name: str, charset: i64, kind: i64, flags: i64, decimals: i64) -> [u8]
+    out: [u8] @= []
+
+    for part in ["def", "test", "t", "t", name, name]
+        wire.push_lenenc_bytes(out: @out, data: bytes.from_text(part))
+
+    out @ out.push(0x0c)
+    wire.push_le(@out, n: charset, width: 2)
+    wire.push_le(@out, n: 255, width: 4)
+    out @ out.push(to_u8(kind).must())
+    wire.push_le(@out, n: flags, width: 2)
+    out @ out.push(to_u8(decimals).must())
+    out @ out.push(0)
+    out @ out.push(0)
+    return out
+
+test "read_ok, read_eof and read_end: the documentation's OK, an OK with an id, an EOF, and a packet of neither"
+    assert read_ok([0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]).must() == Done(affected: 0, last_id: 0, status: 2, warnings: 0)
+    assert read_ok([0x00, 0x01, 0xfc, 0x01, 0x01, 0x03, 0x00, 0x01, 0x00]).must() == Done(affected: 1, last_id: 257, status: 3, warnings: 1)
+    assert read_eof([0xfe, 0x00, 0x00, 0x02, 0x00]).must() == Done(affected: 0, last_id: 0, status: 2, warnings: 0)
+    assert read_end([0xfe, 0x00, 0x00, 0x22, 0x00, 0x00, 0x00], deprecate_eof: true).must().status == 0x22
+    assert read_ok([0xff, 0x00]).is_err()
+    assert read_eof([0x00]).is_err()
+    assert read_ok([0x00, 0x01]).is_err()
+
+test "is_end: an EOF, an OK standing for one, a row of a long string, and nothing"
+    assert is_end([0xfe, 0, 0, 2, 0])
+    assert is_end([0xfe, 0, 0, 2, 0, 0, 0])
+    assert !is_end([0x00, 0, 0, 2, 0, 0, 0])
+    assert !is_end([])
+
+test "read_column: the documentation's column, its type named, and one cut short"
+    d = read_column(definition(name: "id", charset: 63, kind: 8, flags: 32 | 2 | 1, decimals: 0)).must()
+    assert d == ColumnDef(name: "id", charset: 63, length: 255, kind: 8, flags: 35, decimals: 0)
+    assert type_name(d) == "BIGINT UNSIGNED"
+    assert column_of(d) == sql.Column(name: "id", type_name: "BIGINT UNSIGNED")
+    whole = definition(name: "n", charset: 45, kind: 253, flags: 0, decimals: 0)
+    assert read_column(whole.slice(from: 0, to: whole.len() - 4)).is_err()
+
+test "type_name: text and bytes told by the character set, ENUM and SET by their flags, JSON and an unknown type"
+    assert type_name(ColumnDef(name: "", charset: 45, length: 0, kind: 252, flags: 16, decimals: 0)) == "TEXT"
+    assert type_name(ColumnDef(name: "", charset: 63, length: 0, kind: 252, flags: 16 | 128, decimals: 0)) == "BLOB"
+    assert type_name(ColumnDef(name: "", charset: 63, length: 0, kind: 253, flags: 128, decimals: 0)) == "VARBINARY"
+    assert type_name(ColumnDef(name: "", charset: 45, length: 0, kind: 254, flags: 256, decimals: 0)) == "ENUM"
+    assert type_name(ColumnDef(name: "", charset: 45, length: 0, kind: 254, flags: 2048, decimals: 0)) == "SET"
+    assert type_name(ColumnDef(name: "", charset: 63, length: 0, kind: 245, flags: 0, decimals: 0)) == "JSON"
+    assert !is_binary(ColumnDef(name: "", charset: 63, length: 0, kind: 245, flags: 0, decimals: 0))
+    assert type_name(ColumnDef(name: "", charset: 63, length: 0, kind: 200, flags: 0, decimals: 0)) == "TYPE 200"

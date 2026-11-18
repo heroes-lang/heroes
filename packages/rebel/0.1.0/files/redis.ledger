@@ -1,0 +1,401 @@
+# The ledger of `redis`: what a program does with a Redis server, measured
+# against Go's `github.com/redis/go-redis/v9` v9.23.0 (its `go doc -all`, the
+# module fetched into the scratch folder on 2026-11-18, every method of its
+# `*Cmdable` interfaces) and Python's redis-py 8.1.0 (`dir(redis.Redis)`,
+# `redis.client.Pipeline`, `redis.client.PubSub` and `redis.lock.Lock`,
+# installed into the scratch folder the same day). Rust's standard library
+# has no Redis client, so its line is `-` in every block.
+#
+# Both libraries give a typed function to each of Redis's commands; here a
+# command is a list of arguments (`call`, `call_bytes`) and its reply a
+# `Reply`, read by `text_of`, `integer_of`, `float_of`, `boolean_of`,
+# `list_of`, `texts_of` and `entries_of`, which read RESP2's and RESP3's
+# answers alike. So a family of commands is one capability, done by `call`;
+# its typed function in Go and Python is named in its block, and a typed
+# record of one command's answer is dropped below. A handful of the commonest
+# have a function of their own (`get`, `set`, `set_for`, `delete`,
+# `incr_by`, `publish`).
+#
+# Every expected value of the tests was written from Redis's "Protocol
+# specification" (RESP2 and RESP3) and "Redis serialization protocol" pages:
+# the bytes of a command, of each type of reply, of an attribute, of a push,
+# and the confirmations of a subscription. The live run, on 2026-11-18,
+# reached Redis 8.0.2 in a container of this Mac, in plain text and over
+# TLS (the certificates of `tls`'s tests), RESP3 and RESP2.
+
+capability redis/open  a connection opened, logged in, its protocol agreed and its database selected
+  heroes  redis.open, redis.options, redis.Options, redis.Client, redis.DEFAULT_PORT
+  go      NewClient, Options, Client, Conn, Client.Conn, Client.Options, Options.NewDialer, NewDialer
+  rust    -
+  python  Redis, StrictRedis, Connection, from_pool
+  note    one connection, which the program owes a `close`; a pool is refused below
+
+capability redis/url  a connection's options read from a `redis://` or `rediss://` URL
+  heroes  redis.parse_url
+  go      ParseURL
+  rust    -
+  python  from_url
+  note    its path is the database; `protocol` and `client_name` read from its query; `unix://` fails `unsupported`
+
+capability redis/close  a connection closed, and asked whether it is
+  heroes  redis.close, redis.is_closed
+  go      Client.Close, Conn.Close
+  rust    -
+  python  close
+  note    the socket closed; Redis 7.2 deprecates `QUIT`, so none is sent
+
+capability redis/protocol  RESP3 asked for, RESP2 where the server knows no HELLO
+  heroes  redis.open, redis.protocol_of
+  go      Options (Protocol)
+  rust    -
+  python  Redis (protocol)
+  note    `HELLO 3` with the login and the name in it; go-redis falls back the same way, redis-py asks RESP2 unless told
+
+capability redis/login  a password and a user of Redis 6's access lists sent at opening
+  heroes  redis.open, redis.Options
+  go      Options (Username, Password, CredentialsProvider), Auth, AuthACL, Select, SwapDB, ClientSetName, ClientSetInfo, Hello
+  rust    -
+  python  auth, credentials, CredentialProvider, UsernamePasswordCredentialProvider, auth, client_setinfo, client_setname, hello, select, swapdb, reset
+  note    `HELLO 3 AUTH user password`, or `AUTH` over RESP2; `SELECT` and `CLIENT SETNAME` after it; `SWAPDB` and `RESET` run through `call`
+
+capability redis/tls  TLS from the first byte, the server's certificate checked for its authority and its host
+  heroes  redis.Security, redis.open, redis.parse_url
+  go      Options (TLSConfig)
+  rust    -
+  python  SSLConnection
+  note    `rediss://`; through `tls.connect`, so on macOS, Linux and Windows alike
+
+capability redis/tls-client-certificate  a client's own certificate presented to the server
+  heroes  pending
+  go      Options (TLSConfig)
+  rust    -
+  python  Redis (ssl_certfile, ssl_keyfile)
+  note    `tls.Client` holds no certificate of the client's; Redis asks for one where `tls-auth-clients` is on
+
+capability redis/deadline  every wait on a connection bounded in time, and the bound moved
+  heroes  redis.Options, redis.set_deadline
+  go      Options (DialTimeout, ReadTimeout, WriteTimeout), Client.WithTimeout
+  rust    -
+  python  Redis (socket_timeout, socket_connect_timeout)
+  note    one deadline from the connection on, moved by `set_deadline`, which bounds a `receive`
+
+capability redis/command  any command run, its arguments a list never joined into text
+  heroes  redis.call, redis.call_bytes, redis.send, redis.read_reply, redis.checked
+  go      Client.Do, Client.Process, Client.DoRaw, Conn.Do, Conn.Process, Conn.DoRaw, Cmd, NewCmd, ExtractCommandValue
+  rust    -
+  python  execute_command
+  note    an error reply fails with its code from `call`, and comes as `.error` from `read_reply`, which `checked` turns into a failure
+
+capability redis/replies  a reply read into a variant of RESP3's types, and read as text, bytes, numbers, truths, lists and maps
+  heroes  redis.Reply, redis.Entry, redis.text_of, redis.bytes_of, redis.integer_of, redis.float_of, redis.boolean_of, redis.list_of, redis.texts_of, redis.entries_of, redis.is_null, redis.kind_of
+  go      Cmd.Result, Cmd.Text, Cmd.Int64, Cmd.Float64, Cmd.Bool, Cmd.Slice, Nil
+  rust    -
+  python  parse_response, set_response_callback
+  note    the readers read RESP2's strings of digits and flat arrays as RESP3's numbers and maps; a null is `not_found`, where Go answers `redis.Nil`
+
+capability redis/decode  the bytes of a reply read without a connection, and a command written as bytes
+  heroes  redis.decode, redis.decode_next, redis.Decoded, redis.encode_command
+  go      -
+  rust    -
+  python  -
+  note    its own stack, a reply nested past 128 aggregates refused; an attribute (`|`) read and dropped
+
+capability redis/attributes  RESP3's attributes kept beside the reply they describe
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    read and dropped; Redis sends one only for `CLIENT TRACKING` with its options and in tests of the protocol
+
+capability redis/errors  an error reply told by a code, its word kept and read back
+  heroes  redis.error_code_of, redis.checked, redis.INVALID, redis.NOT_FOUND, redis.EXISTS, redis.PERMISSION, redis.CLOSED, redis.TIMEOUT, redis.STOPPED, redis.LIMIT, redis.UNSUPPORTED, redis.FAILED
+  go      Error, HasErrorPrefix, IsAuthError, IsPermissionError, IsReadOnlyError, IsOOMError, IsLoadingError, IsExecAbortError, IsMovedError, IsAskError, IsClusterDownError, IsTryAgainError, IsMasterDownError, IsMaxClientsError, IsNoReplicasError
+  rust    -
+  python  RedisError, ResponseError, AuthenticationError, AuthenticationWrongNumberOfArgsError, ConnectionError, TimeoutError, BusyLoadingError, DataError, OutOfMemoryError, ReadOnlyError, PubSubError, InvalidResponse, MaxConnectionsError, ChildDeadlockedError, CrossSlotTransactionError, InvalidPipelineStack, RedisClusterException, exceptions
+  note    the word chooses the code (the module's comment); `error_code_of` answers the word, as Go's predicates ask it
+
+capability redis/strings  strings: GET, SET, INCR, APPEND, GETRANGE, MGET, ...
+  heroes  redis.call, redis.get, redis.set, redis.set_for, redis.incr_by
+  go      Append, Decr, DecrBy, DelExArgs, Digest, Get, GetRange, GetSet, GetEx, GetDel, GetToBuffer, Incr, IncrBy, IncrByFloat, IncrEXInt, IncrEXFloat, LCS, MGet, MSet, MSetNX, MSetEX, Set, SetArgs, SetEx, SetFromBuffer, SetIFEQ, SetIFEQGet, SetIFNE, SetIFNEGet, SetIFDEQ, SetIFDEQGet, SetIFDNE, SetIFDNEGet, SetNX, SetXX, SetRange, StrLen
+  rust    -
+  python  append, decr, decrby, digest, get, getdel, getex, getrange, getset, incr, incrby, incrbyfloat, lcs, mget, mset, msetex, msetnx, set, setex, setnx, setrange, strlen, psetex, substr, stralgo, delex, digest_local, increx
+  note    every option of SET (NX, XX, EX, PX, KEEPTTL, GET) is an argument of `call`; Redis 8.2's DELEX, DIGEST and INCREX the same
+
+capability redis/keys  keys: DEL, EXISTS, EXPIRE, TTL, TYPE, RENAME, SCAN, SORT, DUMP, ...
+  heroes  redis.call, redis.delete
+  go      Del, Dump, Exists, Expire, ExpireAt, ExpireTime, ExpireNX, ExpireXX, ExpireGT, ExpireLT, Keys, Migrate, Move, ObjectFreq, ObjectRefCount, ObjectEncoding, ObjectIdleTime, Persist, PExpire, PExpireAt, PExpireTime, PTTL, RandomKey, Rename, RenameNX, Restore, RestoreReplace, Sort, SortRO, SortStore, SortInterfaces, Touch, TTL, Type, Copy, Scan, ScanType
+  rust    -
+  python  copy, dump, exists, expire, expireat, expiretime, keys, migrate, move, persist, pexpire, pexpireat, pexpiretime, pttl, randomkey, rename, renamenx, restore, scan, sort, sort_ro, touch, ttl, type, object, wait, waitaof
+  note    `SCAN` answers a cursor and a list, `list_of` reads both
+
+capability redis/hashes  hashes: HSET, HGET, HGETALL, HINCRBY, HSCAN, the fields' times to live, ...
+  heroes  redis.call
+  go      HDel, HExists, HGet, HGetAll, HGetDel, HGetEX, HGetEXWithArgs, HIncrBy, HIncrByFloat, HKeys, HLen, HMGet, HSet, HMSet, HSetEX, HSetEXWithArgs, HSetNX, HScan, HScanNoValues, HVals, HRandField, HRandFieldWithValues, HStrLen, HExpire, HExpireWithArgs, HPExpire, HPExpireWithArgs, HExpireAt, HExpireAtWithArgs, HPExpireAt, HPExpireAtWithArgs, HPersist, HExpireTime, HPExpireTime, HTTL, HPTTL, HImportPrepare, HImportSet, HImportDiscard, HImportDiscardAll
+  rust    -
+  python  hdel, hexists, hexpire, hexpireat, hexpiretime, hget, hgetall, hgetdel, hgetex, himport_discard, himport_discard_all, himport_prepare, himport_set, hincrby, hincrbyfloat, hkeys, hlen, hmget, hmset, hpersist, hpexpire, hpexpireat, hpexpiretime, hpttl, hrandfield, hscan, hset, hsetex, hsetnx, hstrlen, httl, hvals, himport_discard_all_internal, himport_discard_internal, himport_prepare_internal, himport_registry
+  note    `entries_of` reads `HGETALL` from RESP2 and RESP3 alike
+
+capability redis/lists  lists: LPUSH, RPOP, LRANGE, BLPOP, LMOVE, ...
+  heroes  redis.call
+  go      BLPop, BLMPop, BRPop, BRPopLPush, LIndex, LInsert, LInsertBefore, LInsertAfter, LLen, LMPop, LPop, LPopCount, LPos, LPosCount, LPush, LPushX, LRange, LRem, LSet, LTrim, RPop, RPopCount, RPopLPush, RPush, RPushX, LMove, BLMove, LMoveM, BLMoveM
+  rust    -
+  python  blmove, blmovem, blmpop, blpop, brpop, brpoplpush, lindex, linsert, llen, lmove, lmovem, lmpop, lpop, lpos, lpush, lpushx, lrange, lrem, lset, ltrim, rpop, rpoplpush, rpush, rpushx
+  note    a blocking pop waits as long as its own timeout, within the client's deadline
+
+capability redis/sets  sets: SADD, SMEMBERS, SINTER, SSCAN, ...
+  heroes  redis.call
+  go      SAdd, SCard, SDiff, SDiffCard, SDiffStore, SInter, SInterCard, SInterStore, SIsMember, SMIsMember, SMembers, SMembersMap, SMove, SPop, SPopN, SRandMember, SRandMemberN, SRem, SScan, SUnion, SUnionCard, SUnionStore
+  rust    -
+  python  sadd, scard, sdiff, sdiffcard, sdiffstore, sinter, sintercard, sinterstore, sismember, smembers, smismember, smove, spop, srandmember, srem, sscan, sunion, sunioncard, sunionstore
+  note    RESP3 answers a set (`~`), RESP2 an array; `texts_of` reads both
+
+capability redis/sorted-sets  sorted sets: ZADD, ZRANGE, ZSCORE, ZPOPMIN, BZPOPMIN, ...
+  heroes  redis.call
+  go      BZPopMax, BZPopMin, BZMPop, ZAdd, ZAddLT, ZAddGT, ZAddNX, ZAddXX, ZAddArgs, ZAddArgsIncr, ZCard, ZCount, ZLexCount, ZIncrBy, ZInter, ZInterWithScores, ZInterCard, ZInterStore, ZMPop, ZMScore, ZPopMax, ZPopMin, ZRange, ZRangeWithScores, ZRangeByScore, ZRangeByLex, ZRangeByScoreWithScores, ZRangeArgs, ZRangeArgsWithScores, ZRangeStore, ZRank, ZRankWithScore, ZRem, ZRemRangeByRank, ZRemRangeByScore, ZRemRangeByLex, ZRevRange, ZRevRangeWithScores, ZRevRangeByScore, ZRevRangeByLex, ZRevRangeByScoreWithScores, ZRevRank, ZRevRankWithScore, ZScore, ZUnionStore, ZRandMember, ZRandMemberWithScores, ZUnion, ZUnionWithScores, ZDiff, ZDiffWithScores, ZDiffStore, ZScan
+  rust    -
+  python  bzmpop, bzpopmax, bzpopmin, zadd, zcard, zcount, zdiff, zdiffstore, zincrby, zinter, zintercard, zinterstore, zlexcount, zmpop, zmscore, zpopmax, zpopmin, zrandmember, zrange, zrangebylex, zrangebyscore, zrangestore, zrank, zrem, zremrangebylex, zremrangebyrank, zremrangebyscore, zrevrange, zrevrangebylex, zrevrangebyscore, zrevrank, zscan, zscore, zunion, zunionstore
+  note    `float_of` reads a score from RESP3's double and RESP2's text, `inf` included
+
+capability redis/streams  streams: XADD, XREAD, XREADGROUP, XACK, XCLAIM, XPENDING, ...
+  heroes  redis.call
+  go      XAdd, XAckDel, XDel, XDelEx, XLen, XRange, XRangeN, XRevRange, XRevRangeN, XRead, XReadStreams, XGroupCreate, XGroupCreateMkStream, XGroupSetID, XGroupDestroy, XGroupCreateConsumer, XGroupDelConsumer, XReadGroup, XAck, XNack, XPending, XPendingExt, XClaim, XClaimJustID, XAutoClaim, XAutoClaimWithDeleted, XAutoClaimJustID, XTrimMaxLen, XTrimMaxLenApprox, XTrimMaxLenMode, XTrimMaxLenApproxMode, XTrimMinID, XTrimMinIDApprox, XTrimMinIDMode, XTrimMinIDApproxMode, XInfoGroups, XInfoStream, XInfoStreamFull, XInfoConsumers, XCfgSet
+  rust    -
+  python  xack, xackdel, xadd, xautoclaim, xcfgset, xclaim, xdel, xdelex, xgroup_create, xgroup_createconsumer, xgroup_delconsumer, xgroup_destroy, xgroup_setid, xinfo_consumers, xinfo_groups, xinfo_stream, xlen, xnack, xpending, xrange, xread, xreadgroup, xrevrange, xpending_range, xtrim
+  note    an entry comes as nested arrays, read by `list_of` and `entries_of`
+
+capability redis/geo  geospatial indexes: GEOADD, GEOSEARCH, GEODIST, ...
+  heroes  redis.call
+  go      GeoAdd, GeoPos, GeoRadius, GeoRadiusStore, GeoRadiusByMember, GeoRadiusByMemberStore, GeoSearch, GeoSearchLocation, GeoSearchStore, GeoDist, GeoHash
+  rust    -
+  python  geoadd, geodist, geohash, geopos, georadius, georadiusbymember, geosearch, geosearchstore
+  note    -
+
+capability redis/hyperloglog  HyperLogLog: PFADD, PFCOUNT, PFMERGE
+  heroes  redis.call
+  go      PFAdd, PFCount, PFMerge
+  rust    -
+  python  pfadd, pfcount, pfmerge
+  note    -
+
+capability redis/bitmaps  bitmaps and bit fields: SETBIT, BITCOUNT, BITOP, BITFIELD, ...
+  heroes  redis.call
+  go      GetBit, SetBit, BitCount, BitOpAnd, BitOpOr, BitOpXor, BitOpDiff, BitOpDiff1, BitOpAndOr, BitOpOne, BitOpNot, BitPos, BitPosSpan, BitField, BitFieldRO
+  rust    -
+  python  bitcount, bitfield, bitfield_ro, bitpos, getbit, setbit, bitop
+  note    -
+
+capability redis/scripting  Lua scripts and functions: EVAL, EVALSHA, SCRIPT LOAD, FCALL, FUNCTION LOAD, ...
+  heroes  redis.call
+  go      Eval, EvalSha, EvalRO, EvalShaRO, ScriptExists, ScriptFlush, ScriptKill, ScriptLoad, FunctionLoad, FunctionLoadReplace, FunctionDelete, FunctionFlush, FunctionKill, FunctionFlushAsync, FunctionList, FunctionDump, FunctionRestore, FunctionStats, FCall, FCallRo, FCallRO
+  rust    -
+  python  eval, eval_ro, evalsha, evalsha_ro, fcall, fcall_ro, function_delete, function_dump, function_flush, function_kill, function_list, function_load, function_restore, function_stats, script_exists, script_flush, script_kill, script_load, register_script
+  note    the lock's scripts run through `EVAL`; a script cached by its SHA is the block below
+
+capability redis/pubsub-commands  publish and the questions of publish and subscribe: PUBLISH, PUBSUB CHANNELS, PUBSUB NUMSUB, ...
+  heroes  redis.publish, redis.call
+  go      Publish, SPublish, PubSubChannels, PubSubNumSub, PubSubNumPat, PubSubShardChannels, PubSubShardNumSub
+  rust    -
+  python  publish, pubsub_channels, pubsub_numpat, pubsub_numsub, pubsub_shardchannels, pubsub_shardnumsub, spublish
+  note    -
+
+capability redis/acl  access lists: ACL SETUSER, ACL LIST, ACL WHOAMI, ...
+  heroes  redis.call
+  go      ACLDryRun, ACLLog, ACLLogReset, ACLGenPass, ACLSetUser, ACLDelUser, ACLUsers, ACLWhoAmI, ACLList, ACLCat, ACLCatArgs
+  rust    -
+  python  acl_cat, acl_deluser, acl_dryrun, acl_genpass, acl_list, acl_log, acl_log_reset, acl_setuser, acl_users, acl_whoami, acl_getuser, acl_help, acl_load, acl_save
+  note    -
+
+capability redis/server  the server and the connection: INFO, CONFIG, CLIENT, DBSIZE, FLUSHDB, TIME, SLOWLOG, MEMORY, LATENCY, ...
+  heroes  redis.call
+  go      Pipeline, Pipelined, TxPipelined, TxPipeline, Command, CommandList, CommandGetKeys, CommandGetKeysAndFlags, ClientGetName, Echo, Ping, Quit, Unlink, BgRewriteAOF, BgSave, ClientKill, ClientKillByFilter, ClientList, ClientInfo, ClientPause, ClientUnpause, ClientID, ClientUnblock, ClientUnblockWithError, ClientMaintNotifications, ClientTracking, ClientTrackingOn, ClientTrackingOff, ConfigGet, ConfigResetStat, ConfigSet, ConfigRewrite, DBSize, FlushAll, FlushAllAsync, FlushDB, FlushDBAsync, Info, InfoMap, LastSave, Save, Shutdown, ShutdownSave, ShutdownNoSave, SlaveOf, ReplicaOf, SlowLogGet, SlowLogLen, SlowLogReset, Time, DebugObject, MemoryUsage, Latency, LatencyReset, ModuleLoadex
+  rust    -
+  python  bgrewriteaof, bgsave, client_getname, client_id, client_info, client_kill, client_list, client_pause, client_tracking, client_tracking_off, client_tracking_on, client_unblock, client_unpause, command, command_getkeys, command_getkeysandflags, command_list, config_get, config_resetstat, config_rewrite, config_set, dbsize, debug_object, echo, flushall, flushdb, info, lastsave, latency_reset, memory_usage, module_loadex, ping, pipeline, quit, replicaof, save, shutdown, slaveof, slowlog_get, slowlog_len, slowlog_reset, time, unlink, client, client_getredir, client_kill_filter, client_no_evict, client_no_touch, client_reply, client_trackinginfo, command_count, command_docs, command_info, debug_segfault, failover, hotkeys_get, hotkeys_reset, hotkeys_start, hotkeys_stop, latency_doctor, latency_graph, latency_histogram, latency_history, latency_latest, lolwut, memory_doctor, memory_help, memory_malloc_stats, memory_purge, memory_stats, module_list, module_load, module_unload, role, psync, sync
+  note    `PING`, `ECHO`, `CLIENT LIST` and the rest through `call`; `CLIENT TRACKING` turns invalidations on, which are dropped (the block of the client's cache)
+
+capability redis/cluster-commands  the commands that describe and change a cluster: CLUSTER SLOTS, CLUSTER NODES, READONLY, ...
+  heroes  redis.call
+  go      ClusterMyShardID, ClusterMyID, ClusterSlots, ClusterShards, ClusterLinks, ClusterNodes, ClusterMeet, ClusterForget, ClusterReplicate, ClusterResetSoft, ClusterResetHard, ClusterInfo, ClusterKeySlot, ClusterGetKeysInSlot, ClusterCountFailureReports, ClusterCountKeysInSlot, ClusterDelSlots, ClusterDelSlotsRange, ClusterSaveConfig, ClusterSlaves, ClusterFailover, ClusterAddSlots, ClusterAddSlotsRange, ReadOnly, ReadWrite
+  rust    -
+  python  readonly, readwrite, cluster
+  note    run on one node; following a cluster's redirections is the block below
+
+capability redis/json  RedisJSON, in Redis 8 and Redis Stack: JSON.SET, JSON.GET, ...
+  heroes  redis.call
+  go      JSONArrAppend, JSONArrIndex, JSONArrIndexWithArgs, JSONArrInsert, JSONArrLen, JSONArrPop, JSONArrTrim, JSONArrTrimWithArgs, JSONClear, JSONDebugMemory, JSONDel, JSONForget, JSONGet, JSONGetWithArgs, JSONMerge, JSONMSetArgs, JSONMSet, JSONMGet, JSONNumIncrBy, JSONObjKeys, JSONObjLen, JSONSet, JSONSetMode, JSONSetWithArgs, JSONStrAppend, JSONStrLen, JSONToggle, JSONType
+  rust    -
+  python  json
+  note    its text read by `text_of` and parsed by `json`; no typed function
+
+capability redis/search  the Redis Query Engine: FT.CREATE, FT.SEARCH, FT.AGGREGATE, ...
+  heroes  redis.call
+  go      FTAggregate, FTAggregateWithArgs, FTAliasAdd, FTAliasDel, FTAliasList, FTAliasUpdate, FTAlter, FTConfigGet, FTConfigSet, FTCreate, FTCursorDel, FTCursorRead, FTDictAdd, FTDictDel, FTDictDump, FTDropIndex, FTDropIndexWithArgs, FTExplain, FTExplainWithArgs, FTHybrid, FTHybridWithArgs, FTInfo, FTSpellCheck, FTSpellCheckWithArgs, FTSearch, FTSearchWithArgs, FTSynDump, FTSynUpdate, FTSynUpdateWithArgs, FTTagVals
+  rust    -
+  python  ft
+  note    its answers read as `Reply`; no builder of queries and no typed record of results
+
+capability redis/timeseries  time series: TS.ADD, TS.RANGE, ...
+  heroes  redis.call
+  go      TSAdd, TSAddWithArgs, TSCreate, TSCreateWithArgs, TSAlter, TSCreateRule, TSCreateRuleWithArgs, TSIncrBy, TSIncrByWithArgs, TSDecrBy, TSDecrByWithArgs, TSDel, TSDeleteRule, TSGet, TSGetWithArgs, TSInfo, TSInfoWithArgs, TSMAdd, TSQueryIndex, TSQueryLabels, TSQueryLabelValues, TSRevRange, TSRevRangeWithArgs, TSRange, TSRangeWithArgs, TSMRange, TSMRangeWithArgs, TSMRevRange, TSMRevRangeWithArgs, TSMGet, TSMGetWithArgs, TSNRange, TSNRangeWithArgs, TSNRevRange, TSNRevRangeWithArgs, TSRead, TSReadWithArgs
+  rust    -
+  python  ts
+  note    -
+
+capability redis/probabilistic  Bloom and cuckoo filters, count-min sketches, t-digests, top-k: BF.ADD, CF.ADD, CMS.INCRBY, TDIGEST.ADD, TOPK.ADD, ...
+  heroes  redis.call
+  go      BFAdd, BFCard, BFExists, BFInfo, BFInfoArg, BFInfoCapacity, BFInfoSize, BFInfoFilters, BFInfoItems, BFInfoExpansion, BFInsert, BFMAdd, BFMExists, BFReserve, BFReserveExpansion, BFReserveNonScaling, BFReserveWithArgs, BFScanDump, BFLoadChunk, CFAdd, CFAddNX, CFCount, CFDel, CFExists, CFInfo, CFInsert, CFInsertNX, CFMExists, CFReserve, CFReserveWithArgs, CFReserveExpansion, CFReserveBucketSize, CFReserveMaxIterations, CFScanDump, CFLoadChunk, CMSIncrBy, CMSInfo, CMSInitByDim, CMSInitByProb, CMSMerge, CMSMergeWithWeight, CMSQuery, TopKAdd, TopKCount, TopKIncrBy, TopKInfo, TopKList, TopKListWithCount, TopKQuery, TopKReserve, TopKReserveWithOptions, TDigestAdd, TDigestByRank, TDigestByRevRank, TDigestCDF, TDigestCreate, TDigestCreateWithCompression, TDigestInfo, TDigestMax, TDigestMin, TDigestMerge, TDigestQuantile, TDigestRank, TDigestReset, TDigestRevRank, TDigestTrimmedMean
+  rust    -
+  python  bf, cf, cms, tdigest, topk
+  note    -
+
+capability redis/vector-sets  Redis 8's vector sets: VADD, VSIM, ...
+  heroes  redis.call
+  go      VAdd, VAddWithArgs, VCard, VDim, VEmb, VGetAttr, VInfo, VLinks, VLinksWithScores, VRandMember, VRandMemberCount, VRem, VSetAttr, VClearAttributes, VSim, VSimWithScores, VSimWithArgs, VSimWithArgsWithScores, VSimWithArgsWithAttribs, VSimWithArgsWithScoresWithAttribs, VRange, VIsMember
+  rust    -
+  python  vset
+  note    -
+
+capability redis/arrays  Redis's arrays: ARSET, ARGET, ARRING, AROP, ...
+  heroes  redis.call
+  go      ARSet, ARGet, ARGetRange, ARMGet, ARMSet, ARInsert, ARDel, ARDelRange, ARLen, ARCount, ARNext, ARSeek, ARInfo, ARInfoFull, ARScan, AROpSum, AROpMin, AROpMax, AROpAnd, AROpOr, AROpXor, AROpMatch, AROpUsed, ARGrep, ARGrepWithValues, ARRing, ARLastItems
+  rust    -
+  python  arcount, ardel, ardelrange, arget, argetrange, argrep, arinfo, arinsert, arlastitems, arlen, armget, armset, arnext, arring, arscan, arseek, arset, arop
+  note    -
+
+capability redis/scan-iterator  every key, field or member walked by SCAN, HSCAN, SSCAN or ZSCAN, its cursor followed
+  heroes  pending
+  go      ScanIterator, ScanIterator.Next, ScanIterator.Val, ScanIterator.Err
+  rust    -
+  python  scan_iter, hscan_iter, sscan_iter, zscan_iter
+  note    `call` runs each step and `list_of` reads its cursor and its page; no iterator follows the cursor for the program
+
+capability redis/script-cache  a script sent once and run by its SHA-1 thereafter, sent again where the server forgot it
+  heroes  pending
+  go      Script, NewScript, NewScriptServerSHA, Script.Hash, Script.Load, Script.Run, Script.RunRO, Scripter
+  rust    -
+  python  register_script, script_debug
+  note    `EVAL` sends the script each time; `EVALSHA` through `call` fails `not_found` (`NOSCRIPT`) where the server forgot it
+
+capability redis/pipeline  many commands written in one round trip and their replies read in order
+  heroes  redis.pipeline, redis.send, redis.read_reply
+  go      Client.Pipeline, Client.Pipelined, Pipeline, Pipeliner, Pipeline.Exec, Pipeline.Cmds, Pipeline.Len, Pipeline.Discard, Pipeline.Do, Pipeline.Process, Pipeline.BatchProcess
+  rust    -
+  python  pipeline, Pipeline.execute, Pipeline.pipeline_execute_command, Pipeline.immediate_execute_command, Pipeline.raise_first_error, Pipeline.annotate_exception
+  note    an error reply stays in its place as `.error`; `checked` turns it into a failure
+
+capability redis/transaction  commands run as one, MULTI and EXEC, and none where a watched key changed
+  heroes  redis.transaction, redis.Transaction, redis.watch, redis.unwatch
+  go      Client.TxPipeline, Client.TxPipelined, Client.Watch, Tx, Tx.Watch, Tx.Unwatch, Tx.Close, Tx.Do, Tx.Process
+  rust    -
+  python  transaction, watch, unwatch, WatchError, Pipeline.multi, Pipeline.discard, Pipeline.UNWATCH_COMMANDS
+  note    `MULTI` read before the commands are sent, so a refused `MULTI` never lets them run alone; a watched key changed answers `committed` false, where redis-py raises `WatchError`; a command refused before it runs fails the whole with its code
+
+capability redis/subscribe  channels and patterns subscribed to, and their messages received
+  heroes  redis.subscribe, redis.psubscribe, redis.unsubscribe, redis.punsubscribe, redis.receive, redis.Message, redis.message_of
+  go      Client.Subscribe, Client.PSubscribe, PubSub, PubSub.Subscribe, PubSub.PSubscribe, PubSub.Unsubscribe, PubSub.PUnsubscribe, PubSub.Receive, PubSub.ReceiveMessage, PubSub.ReceiveTimeout, PubSub.Close, Message, Subscription, Pong
+  rust    -
+  python  pubsub, PubSub, PubSub.subscribe, PubSub.psubscribe, PubSub.unsubscribe, PubSub.punsubscribe, PubSub.get_message, PubSub.listen, PubSub.ping, PubSub.close, PubSub.reset, PubSub.subscribed, PubSub.handle_message, PubSub.parse_response, PubSub.execute_command, PubSub.on_connect, PubSub.check_health, PubSub.is_health_check_response, PubSub.clean_health_check_responses, PubSub.PUBLISH_MESSAGE_TYPES, PubSub.UNSUBSCRIBE_MESSAGE_TYPES, PubSub.HEALTH_CHECK_MESSAGE
+  note    RESP2's arrays and RESP3's pushes read alike; a message that comes while a reply is awaited is kept for `receive`; `set_deadline` bounds a wait, where Go's ReceiveTimeout and Python's get_message(timeout) take one
+
+capability redis/subscribe-channel  messages delivered on a channel of their own, read by another thread
+  heroes  refused: the language moves a function and one value between threads (spec § 13), so the program runs `receive` on the thread it chooses
+  go      PubSub.Channel, PubSub.ChannelSize, PubSub.ChannelWithSubscriptions, ChannelOption, WithChannelHealthCheckInterval, WithChannelPingTimeout, WithChannelReconnectTimeout, WithChannelSendTimeout, WithChannelSize
+  rust    -
+  python  PubSub.run_in_thread
+  note    -
+
+capability redis/sharded-pubsub  sharded channels of a cluster: SSUBSCRIBE and SPUBLISH
+  heroes  pending
+  go      Client.SSubscribe, PubSub.SSubscribe, PubSub.SUnsubscribe
+  rust    -
+  python  PubSub.ssubscribe, PubSub.sunsubscribe, PubSub.get_sharded_message
+  note    a `smessage` is read as a message; subscribing to a shard's channel waits for the cluster's routing
+
+capability redis/keyspace-notifications  the server's notices of keys changed, read as messages
+  heroes  redis.psubscribe, redis.receive
+  go      ClusterKeyspaceNotifications
+  rust    -
+  python  keyspace_notifications, KeyspaceNotifications, KeyspaceNotificationsInterface, KeyspaceChannel, KeyeventChannel, SubkeyspaceChannel, SubkeyeventChannel, SubkeyspaceeventChannel, SubkeyspaceitemChannel, KeyNotification, KeyspaceWorkerThread, ChannelType, get_channel_type, EventType
+  note    `CONFIG SET notify-keyspace-events` through `call`, then `psubscribe(@c, ["__keyspace@0__:*"])`; no typed record of a notice
+
+capability redis/monitor  every command the server runs, read as it runs
+  heroes  redis.send, redis.read_reply
+  go      Client.Monitor, MonitorStatus
+  rust    -
+  python  monitor
+  note    `send` of `MONITOR`, then `read_reply` in a loop
+
+capability redis/lock  a lock on one server: a random token, a time to live, a release that deletes only its own token, renewal, a fencing number
+  heroes  redis.try_lock, redis.lock, redis.unlock, redis.renew, redis.is_held, redis.Lock
+  go      -
+  rust    -
+  python  lock, Lock, Lock.acquire, Lock.release, Lock.extend, Lock.reacquire, Lock.locked, Lock.owned, Lock.do_acquire, Lock.do_release, Lock.do_extend, Lock.do_reacquire, Lock.register_scripts, Lock.lua_release, Lock.lua_extend, Lock.lua_reacquire, Lock.LUA_RELEASE_SCRIPT, Lock.LUA_EXTEND_SCRIPT, Lock.LUA_REACQUIRE_SCRIPT
+  note    the token from `os.random_bytes`; release and renewal by a script that compares it, as redis-py's; the fencing number, which neither library gives, so the resource refuses a holder whose lock expired (the module's comment says what a lock does not promise)
+
+capability redis/redlock  a lock on a majority of independent servers (Redlock)
+  heroes  refused: it still needs fencing and clocks that drift little to be safe (Kleppmann, 2016), so it buys no correctness one server's lock with a fencing number lacks; correctness belongs to a system of consensus or the database's own locks
+  go      -
+  rust    -
+  python  -
+  note    Go's `redsync` and Python's `pottery` are libraries of their own, not of these two
+
+capability redis/cluster  a cluster's slots followed: MOVED and ASK obeyed, each key's node found
+  heroes  pending
+  go      ClusterClient, NewClusterClient, ClusterOptions, ParseClusterURL, NewFailoverClusterClient, ClusterNode, ClusterSlot, ClusterShard, ClusterLink, SlotRange, ConsistentHash, NewCommandInfoResolver, NewDefaultCommandPolicyResolver, CommandInfoResolveFunc
+  rust    -
+  python  RedisCluster, cluster, crc
+  note    `MOVED`, `ASK` and `CROSSSLOT` fail `unsupported`, the node named in the message
+
+capability redis/sentinel  the master found through Sentinel, and followed when it fails over
+  heroes  pending
+  go      NewFailoverClient, FailoverOptions, ParseFailoverURL, SentinelClient, NewSentinelClient
+  rust    -
+  python  Sentinel, SentinelConnectionPool, SentinelManagedConnection, SentinelManagedSSLConnection, sentinel, sentinel_ckquorum, sentinel_failover, sentinel_flushconfig, sentinel_get_master_addr_by_name, sentinel_master, sentinel_masters, sentinel_monitor, sentinel_remove, sentinel_reset, sentinel_sentinels, sentinel_set, sentinel_slaves
+  note    `SENTINEL GET-MASTER-ADDR-BY-NAME` runs through `call` on a Sentinel, and `open` reaches the address it answers
+
+capability redis/ring  keys spread over several servers by a hash of each key
+  heroes  refused: a ring moves keys when a server is added or lost, so a key's value vanishes in silence; a cluster spreads keys with their slots
+  go      Ring, NewRing, RingOptions, UniversalClient, NewUniversalClient, UniversalOptions
+  rust    -
+  python  -
+  note    -
+
+capability redis/pool  a pool of connections shared by threads
+  heroes  refused: one connection per client, owned by the program, which keeps as many as its threads need; a pool is the program's, as `sql` refuses one
+  go      Options (PoolSize, MinIdleConns, MaxIdleConns, ConnMaxIdleTime, ConnMaxLifetime, PoolTimeout), PoolStats, Client.PoolStats, Pooler, PubSubPooler, Client.EphemeralConn, Limiter
+  rust    -
+  python  ConnectionPool, BlockingConnectionPool, get_connection_kwargs
+  note    -
+
+capability redis/client-cache  keys cached on the client and dropped when the server says they changed (RESP3's tracking)
+  heroes  pending
+  go      Cache, CacheConfig, LocalCache, NewLocalCache, ClientSideCacheConfig, CSCStats, CSCRefreshStats, CSCStrategy, CacheSizer, Client.CSCStats, Client.CSCRefreshStats, Client.RegisterPushNotificationHandler, Client.GetPushNotificationHandler, NewPushNotificationProcessor, NewVoidPushNotificationProcessor
+  rust    -
+  python  cache, get_cache
+  note    the invalidations RESP3 pushes are dropped
+
+capability redis/auto-pipeline  commands from many threads gathered into pipelines by the client
+  heroes  refused: the client is one place a thread owns; gathering needs it shared between threads, which the language does not share
+  go      AutoPipeliner, AutoFuture, Client.AutoPipeline, Client.AutoPipelineWithOptions, Client.AsyncAutoPipeline, Client.AsyncAutoPipelineWithOptions, DefaultAutoPipelineOptions, DefaultBlockingAutoPipelineOptions
+  rust    -
+  python  -
+  note    -
+
+capability redis/unix-socket  a connection over a Unix socket
+  heroes  pending
+  go      Options (Network)
+  rust    -
+  python  UnixDomainSocketConnection
+  note    `net` connects over TCP alone
+
+capability redis/retry  a command retried, and a connection made again, after a failure
+  heroes  refused: a command retried may run twice (an INCR, a push), so whether to retry is the program's, which knows the command
+  go      Options (MaxRetries, MinRetryBackoff, MaxRetryBackoff), DialRetryBackoffConstant, DialRetryBackoffExponential
+  rust    -
+  python  retry, backoff, default_backoff, set_retry, get_retry
+  note    -
+
+dropped
+  go      every type named `*Cmd` and its constructor `New*Cmd` and `New*Result` (StringCmd, IntCmd, SliceCmd, MapStringStringCmd, XStreamSliceCmd, ...): a typed answer per command; here every answer is a `Reply`
+  go      the records of one command's arguments or answer (Z, ZRangeBy, ZStore, ZWithKey, XMessage, XStream, XPending, XPendingExt, XInfoStream, XInfoGroup, XInfoConsumer, GeoLocation, GeoPos, GeoRadiusQuery, GeoSearchQuery, GeoSearchLocationQuery, GeoSearchStoreQuery, BitCount, LCSQuery, LCSMatch, LCSMatchedPosition, LCSPosition, Sort, SetCondition, ExpirationMode, ExpirationOption, HSetEXCondition, HSetEXExpirationType, HGetEXExpirationType, KeyValue, KeyFlags, SlowLog, Function, FunctionListQuery, FunctionStats, Library, RunningScript, Engine, ACLLogEntry, ModuleLoadexConfig, LMoveMMode, LMoveMOrder, RankScore, Vector, VectorRef, VectorValues, VectorScore, VectorAttrib, VectorScoreAttrib, HotKeysKeyEntry, HotKeysMetric, HotKeysSlotRange, ScanDump, TSTimestampValue, TSNRangePivotRow, AREntry, ARGrepPredicate, ARGrepPredicateType, ARRange, Document, IndexDefinition, IndexErrors, FieldSchema, FieldStatistic, SearchFieldType, SearchQuery, AggregateQuery, AggregateRow, CollectColumn, CollectEntry, CursorStats, GCStats, SpellCheckSuggestion, SpellCheckTerms, FilterBy, FPHAType, and every type named `FT*` or `*Builder`, NewCollectReducer, FTAggregateQuery, FTSearchQuery, ProcessAggregateResult, Client.FT, Client.FTExplainCli, Client.New*Builder): the arguments are a list of texts and the answer a `Reply`
+  go      Hook, ProcessHook, ProcessPipelineHook, DialHook, Client.AddHook, Conn.AddHook, Tx.AddHook, OTelRecorder, OTelConnectionCounter, OTelPoolRegistrar, SetOTelRecorder, SetLogger, SetLogLevel, Version, LibraryInfo, WithLibraryName, WithLibraryVersion, CmdType, CmdTyper, CmdTypeGetter, Cmder, Client.String, Conn.String, Tx.String, Message.String, Pong.String, PubSub.String, Subscription.String, Client.NodeAddress, Client.GetMaintNotificationsManager, Client.DoRawWriteTo, Client.Sync, Client.Wait, Client.WaitAOF, Client.HotKeysGet, Client.HotKeysReset, Client.HotKeysStart, Client.HotKeysStop: hooks, telemetry, descriptions and plumbing; `WAIT`, `WAITAOF` and `HOTKEYS` run through `call`
+  python  get_encoder, load_external_module, VERSION, asyncio, client, commands, connection, event, observability, driver_info, DriverInfo, maint_notifications, typing, utils, himport, int_or_str, EventType: plumbing, the module's description, and asyncio's twin of the client

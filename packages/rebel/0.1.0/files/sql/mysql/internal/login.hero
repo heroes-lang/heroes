@@ -1,0 +1,278 @@
+# The login: the server's greeting read, TLS begun over the same connection
+# where it is asked for, the client's answer, then each exchange the server
+# asks for until it answers OK: a turn to another plugin, the more data of
+# `caching_sha2_password`. A failure ends the session.
+
+use bytes
+use io
+use sql
+use sql/mysql/internal/answers
+use sql/mysql/internal/auth
+use sql/mysql/internal/codes
+use sql/mysql/internal/handshake
+use sql/mysql/internal/script as server
+use sql/mysql/internal/session
+use sql/mysql/internal/wire
+use tls
+
+# The most exchanges a login takes after the client's answer before it is
+# given up.
+constant MOST_ROUNDS: i64
+    8
+
+# Who logs in, where, and how the connection is secured.
+record Who
+    # The user.
+    user: str
+    # The password, "" for none.
+    password: str
+    # The database to open, "" for none.
+    database: str
+    # The program's name sent as the attribute `program_name`, "" for none.
+    program: str
+    # Whether TLS begins after the greeting.
+    secure: bool
+    # The name the server's certificate must name.
+    host: str
+    # The PEM of the only authorities trusted, "" for the system's store.
+    roots: str
+
+# Logs `who` in on `s`.
+#
+# - `s`: the session, its stream replaced by TLS's where `who.secure`; its
+#   capabilities, status and server written.
+# - `who`: who logs in.
+#
+# Fails with the server's failure where it refuses the login (`permission`,
+# `not_found` for a database it does not know); `unsupported` where it
+# offers no TLS that was asked for, or asks for a plugin not spoken here;
+# `invalid` where it answers out of the protocol; as `tls.client_over` fails.
+function login(@s: session.Session, who: Who) -> ()?
+    match conversation(@s, who: who)
+        .ok _ => return ok()
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: e.msg)
+
+# The login's exchanges, as `login` describes them.
+#
+# - `s`: the session.
+# - `who`: who logs in.
+function conversation(@s: session.Session, who: Who) -> ()?
+    greeting = handshake.read_greeting(session.receive(@s)?)?
+    s.server_version @ greeting.server_version
+    s.connection_id @ greeting.connection_id
+
+    attributes: [str] = if who.program == ""
+        []
+    else
+        ["program_name", who.program]
+    caps = handshake.chosen(
+        server: greeting.capabilities,
+        database: who.database,
+        attributes: attributes.len() > 0,
+        secure: who.secure
+    )
+
+    if who.secure
+        if greeting.capabilities & handshake.SSL == 0
+            return fail(
+                code: sql.UNSUPPORTED,
+                msg: f"{s.target}: the server {greeting.server_version} offers no TLS; Security.plain connects in plain text, readable by whoever sits between"
+            )
+        session.send(@s, payload: handshake.ssl_request(caps))?
+        secured(@s, who: who)?
+    s.capabilities @ caps
+    plugin: str @= greeting.plugin
+
+    answer = match auth.first_answer(plugin: plugin, password: who.password, scramble: greeting.scramble, secure: who.secure)
+        .ok a => a
+        .err _ =>
+            plugin @ auth.NATIVE
+            auth.native(who.password, scramble: greeting.scramble)
+
+    session.send(@s, payload: handshake.response(capabilities: caps, user: who.user, auth: answer, database: who.database, plugin: plugin, attributes: attributes))?
+    rounds: i64 @= 0
+
+    while rounds < MOST_ROUNDS
+        rounds @ rounds + 1
+        p = session.receive(@s)?
+
+        if p.len() == 0
+            return fail(code: sql.INVALID, msg: f"{s.target} answered the login with an empty packet")
+
+        if p[0] == 0x00
+            done = answers.read_ok(p)?
+            s.status @ done.status
+            return ok()
+
+        if p[0] == 0xff
+            return codes.failure(codes.read(p)?)
+
+        if p[0] == 0xfe
+            if p.len() == 1
+                return fail(
+                    code: sql.UNSUPPORTED,
+                    msg: f"{s.target} asks for the password scheme of MySQL 4.0, which is refused: it is broken"
+                )
+            c @= wire.cursor(p.slice(from: 1, to: p.len()))
+            plugin @ wire.read_cstr(@c)?
+            scramble = handshake.without_last_zero(wire.read_rest(@c))
+            session.send(@s, payload: auth.first_answer(plugin: plugin, password: who.password, scramble: scramble, secure: who.secure)?)?
+        else if p[0] == 0x01 && plugin == auth.CACHING_SHA2 && p.len() == 2
+            if p[1] == auth.FULL_AUTH
+                if !who.secure
+                    return fail(code: sql.UNSUPPORTED, msg: auth.in_clear(plugin))
+                session.send(@s, payload: auth.clear(who.password))?
+            else if p[1] != auth.FAST_AUTH_SUCCESS
+                return fail(
+                    code: sql.INVALID,
+                    msg: f"{s.target} sent {p[1]} where caching_sha2_password's 3 or 4 was due"
+                )
+        else
+            return fail(code: sql.INVALID, msg: f"{s.target} answered the login with a packet that opens with {p[0]}")
+
+    return fail(code: sql.INVALID, msg: f"{s.target} asked for more than {MOST_ROUNDS} exchanges of the login")
+
+# Begins TLS over `s`'s connection, as the client of `who.host`, and reads
+# and writes the session through it from then on.
+#
+# - `s`: the session, its streams replaced, `secure` set.
+# - `who`: the host and the roots.
+#
+# Fails as `tls.client_over` fails; `unsupported` on macOS, where `tls` does
+# not begin TLS over a connection the program holds.
+function secured(@s: session.Session, who: Who) -> ()?
+    plain @= s.out
+
+    match tls.client_over(@plain, host: who.host, client: tls.Client(roots: who.roots, protocols: []))
+        .ok stream =>
+            s.out @ stream
+            s.input @ io.reader(stream)
+            s.secure @ true
+            return ok()
+        .err e =>
+            if e.code == sql.UNSUPPORTED
+                return fail(
+                    code: sql.UNSUPPORTED,
+                    msg: f"{s.target}: TLS begins after MySQL's greeting, over the connection already made, which `tls` does not do on this system ({e.msg}); Security.plain connects in plain text"
+                )
+            return fail(code: e.code, msg: e.msg)
+
+# A plain session over a scripted server, and who logs into it.
+#
+# - `sent`: the server's bytes.
+function scripted_login(sent: [u8]) -> server.Script
+    return server.scripted(sent, capabilities: 0)
+
+# Who logs in in the tests: `ana`, password `secret`, database `shop`.
+#
+# - `secure`: whether TLS is asked for.
+function ana(secure: bool) -> Who
+    return Who(
+        user: "ana",
+        password: "secret",
+        database: "shop",
+        program: "",
+        secure: secure,
+        host: "localhost",
+        roots: ""
+    )
+
+test "login: mysql_native_password answered once and accepted, the bytes as the documentation lays them out"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    caps = 0xdfffffff
+    greeting = handshake.greeting_bytes(
+        version: "5.5.5-10.11.6-MariaDB",
+        capabilities: caps,
+        plugin: auth.NATIVE,
+        scramble: scramble
+    )
+    t @= scripted_login(
+        server.joined([server.packet(seq: 0, payload: greeting), server.packet(seq: 2, payload: server.ok_payload(affected: 0, last_id: 0, status: 2))])
+    )
+    login(@t.session, who: ana(false)).must()
+    assert t.session.server_version == "5.5.5-10.11.6-MariaDB" && t.session.connection_id == 42 && t.session.status == 2
+    chosen = handshake.chosen(server: caps, database: "shop", attributes: false, secure: false)
+    assert t.session.capabilities == chosen
+    written = server.finish(@t)
+    answer = handshake.response(
+        capabilities: chosen,
+        user: "ana",
+        auth: auth.native("secret", scramble: scramble),
+        database: "shop",
+        plugin: auth.NATIVE,
+        attributes: []
+    )
+    assert written == server.joined([server.packet(seq: 1, payload: answer), server.command([0x01])])
+
+test "login: caching_sha2_password's fast answer accepted, then a turn to mysql_native_password with a new scramble"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    greeting = handshake.greeting_bytes(
+        version: "8.4.3",
+        capabilities: 0xdfffffff,
+        plugin: auth.CACHING_SHA2,
+        scramble: scramble
+    )
+    fast @= scripted_login(
+        server.joined([server.packet(seq: 0, payload: greeting), server.packet(seq: 2, payload: [0x01, 0x03]), server.packet(seq: 3, payload: server.ok_payload(affected: 0, last_id: 0, status: 2))])
+    )
+    login(@fast.session, who: ana(false)).must()
+    _ = server.finish(@fast)
+    other = bytes.from_text("ABCDEFGHIJKLMNOPQRST")
+    turn: [u8] @= [0xfe]
+    wire.push_cstr(@turn, auth.NATIVE)
+    wire.push_all(out: @turn, data: other)
+    turn @ turn.push(0)
+    moved @= scripted_login(
+        server.joined([server.packet(seq: 0, payload: greeting), server.packet(seq: 2, payload: turn), server.packet(seq: 4, payload: server.ok_payload(affected: 0, last_id: 0, status: 2))])
+    )
+    login(@moved.session, who: ana(false)).must()
+    written = server.finish(@moved)
+    assert written.slice(from: written.len() - 29, to: written.len() - 5) == server.packet(seq: 3, payload: auth.native("secret", scramble: other))
+
+test "login: the full exchange refused without TLS, a password refused, and TLS asked of a server that offers none"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    greeting = handshake.greeting_bytes(
+        version: "8.4.3",
+        capabilities: 0xdfffffff,
+        plugin: auth.CACHING_SHA2,
+        scramble: scramble
+    )
+    full @= scripted_login(
+        server.joined([server.packet(seq: 0, payload: greeting), server.packet(seq: 2, payload: [0x01, 0x04])])
+    )
+
+    match login(@full.session, who: ana(false))
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == auth.in_clear(auth.CACHING_SHA2)
+
+    assert full.session.ended
+    _ = server.finish(@full)
+    refusal: [u8] @= [0xff, 0x15, 0x04, '#', '2', '8', '0', '0', '0']
+    wire.push_all(
+        out: @refusal,
+        data: bytes.from_text("Access denied for user 'ana'@'localhost' (using password: YES)")
+    )
+    denied @= scripted_login(
+        server.joined([server.packet(seq: 0, payload: greeting), server.packet(seq: 2, payload: refusal)])
+    )
+
+    match login(@denied.session, who: ana(false))
+        .ok _  => assert false
+        .err e => assert e.code == "permission" && e.msg == "[1045] Access denied for user 'ana'@'localhost' (using password: YES) (SQLSTATE 28000)"
+
+    _ = server.finish(@denied)
+    bare = handshake.greeting_bytes(
+        version: "8.4.3",
+        capabilities: 0xdfffffff - handshake.SSL,
+        plugin: auth.CACHING_SHA2,
+        scramble: scramble
+    )
+    plain @= scripted_login(server.packet(seq: 0, payload: bare))
+
+    match login(@plain.session, who: ana(true))
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "test:3306/db: the server 8.4.3 offers no TLS; Security.plain connects in plain text, readable by whoever sits between"
+
+    _ = server.finish(@plain)

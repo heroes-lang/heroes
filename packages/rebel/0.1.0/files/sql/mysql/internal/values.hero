@@ -1,0 +1,520 @@
+# A value as it travels to MySQL and back: a cell of the text protocol and a
+# row of the binary protocol read into `sql.Value` by the column's type, and
+# the parameters of a prepared statement written as "COM_STMT_EXECUTE" lays
+# them out. Both protocols answer the same value for the same column: a
+# `FLOAT` read as text is rounded to the single it holds, as the binary
+# protocol sends it.
+#
+# A float's bits are read and written by `protobuf`'s functions, the one
+# package below this one that offers them.
+
+use bytes
+use numbers
+use protobuf
+use sql
+use sql/mysql/internal/answers
+use sql/mysql/internal/wire
+use time
+
+# The type byte of a parameter sent as `NULL`.
+constant NULL_TYPE: i64
+    6
+
+# The value a text cell `cell` of the column `d` holds.
+#
+# - `d`: the column.
+# - `cell`: the cell's bytes, as the server wrote them.
+#
+# Fails `invalid` where a number does not read as one, or text is not UTF-8.
+function text_value(d: answers.ColumnDef, cell: [u8]) -> sql.Value?
+    match d.kind
+        6              => return ok(.null_value)
+        16 | 242 | 255 => return ok(.blob(v: cell))
+        _              => _ = 0
+
+    if answers.is_binary(d) && is_stringy(d.kind)
+        return ok(.blob(v: cell))
+    s = text_of(cell)?
+
+    match d.kind
+        1 | 2 | 3 | 8 | 9 | 13 =>
+            match numbers.parse_int(s)
+                .ok n => return ok(.integer(v: n))
+                .err e =>
+                    if d.flags & answers.UNSIGNED_FLAG != 0 && e.code == "does_not_fit"
+                        return ok(.text(v: s))
+                    return fail(code: sql.INVALID, msg: f"the server sent \"{s}\" for the integer column \"{d.name}\"")
+        4 | 5 =>
+            match numbers.parse_float(s)
+                .ok x =>
+                    if d.kind == 4
+                        return ok(.float(v: to_f64(to_f32(x))))
+                    return ok(.float(v: x))
+                .err _ => return fail(
+                    code: sql.INVALID,
+                    msg: f"the server sent \"{s}\" for the float column \"{d.name}\""
+                )
+        7 | 12  => return ok(instant_or_text(s, date_only: false))
+        10 | 14 => return ok(instant_or_text(s, date_only: true))
+        _       => return ok(.text(v: s))
+
+# Whether a column of type `kind` holds a string, so its character set says
+# whether its bytes are text.
+#
+# - `kind`: the type's byte.
+function is_stringy(kind: i64) -> bool
+    return kind == 15 || kind == 253 || kind == 254 || kind >= 249 && kind <= 252
+
+# `cell` as text.
+#
+# - `cell`: bytes the server sent as text.
+#
+# Fails `invalid` where they are not UTF-8.
+function text_of(cell: [u8]) -> str?
+    match bytes.to_text(cell)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: sql.INVALID, msg: "the server sent text that is not UTF-8")
+
+# The instant `s` writes, `YYYY-MM-DD` or `YYYY-MM-DD HH:MM:SS[.ffffff]` in
+# UTC, or `s` as text where it writes none an `Instant` holds: a zero date,
+# a year past 2262.
+#
+# - `s`: the text.
+# - `date_only`: whether `s` is a date.
+function instant_or_text(s: str, date_only: bool) -> sql.Value
+    match parsed_instant(s, date_only: date_only)
+        .ok t  => return .instant(v: t)
+        .err _ => return .text(v: s)
+
+# The instant `s` writes, as `instant_or_text` reads it.
+#
+# - `s`: the text.
+# - `date_only`: whether `s` is a date.
+#
+# Fails `invalid` where `s` is not such a text, and as `time.from_date_time`
+# fails.
+function parsed_instant(s: str, date_only: bool) -> time.Instant?
+    if s.len() < 10 || s[4] != '-' || s[7] != '-'
+        return fail(code: sql.INVALID, msg: f"\"{s}\" is no date")
+    year = digits(s, from: 0, count: 4)?
+    month = digits(s, from: 5, count: 2)?
+    day = digits(s, from: 8, count: 2)?
+
+    if date_only
+        if s.len() != 10
+            return fail(code: sql.INVALID, msg: f"\"{s}\" is no date")
+        return time.date(year: year, month: month, day: day)
+
+    if s.len() < 19 || s[10] != ' ' || s[13] != ':' || s[16] != ':'
+        return fail(code: sql.INVALID, msg: f"\"{s}\" is no date and time")
+    nano: i64 @= 0
+
+    if s.len() > 19
+        if s[19] != '.' || s.len() > 26 || s.len() == 20
+            return fail(code: sql.INVALID, msg: f"\"{s}\" is no date and time")
+        fraction = digits(s, from: 20, count: s.len() - 20)?
+        scale: i64 @= 1
+
+        for _ in range(from: 0, to: 9 - (s.len() - 20))
+            scale @ scale * 10
+
+        nano @ fraction * scale
+    return time.from_date_time(
+        time.DateTime(year: year, month: month, day: day, hour: digits(s, from: 11, count: 2)?, minute: digits(s, from: 14, count: 2)?, second: digits(s, from: 17, count: 2)?, nanosecond: nano)
+    )
+
+# The number the `count` ASCII digits of `s` at `from` write.
+#
+# - `s`: the text.
+# - `from`: the first digit's byte index.
+# - `count`: how many, 1 to 9.
+#
+# Fails `invalid` where one is not a digit or `s` ends first.
+function digits(s: str, from: i64, count: i64) -> i64?
+    if from + count > s.len()
+        return fail(code: sql.INVALID, msg: f"\"{s}\" ends where a digit was due")
+    n: i64 @= 0
+
+    for i in range(from: from, to: from + count)
+        if s[i] < '0' || s[i] > '9'
+            return fail(code: sql.INVALID, msg: f"\"{s}\" holds no digit at byte {i}")
+        n @ n * 10 + wire.int_of(s[i] - '0')
+
+    return ok(n)
+
+# `n` written with at least `width` digits, zeros before.
+#
+# - `n`: 0 or more.
+# - `width`: the least digits.
+function padded(n: i64, width: i64) -> str
+    s = to_str(n)
+
+    if s.len() >= width
+        return s
+    return repeat("0", to_u64(width - s.len()).must()) + s
+
+# The fraction of a second `micro` microseconds write, with `decimals`
+# digits after a point, or "" for none.
+#
+# - `micro`: 0 to 999,999.
+# - `decimals`: the column's digits, 0 to 6; others count as 0.
+function fraction_text(micro: i64, decimals: i64) -> str
+    if decimals < 1 || decimals > 6
+        return ""
+    whole = padded(n: micro, width: 6)
+    return "." + whole.slice(from: 0, to: decimals)
+
+# The values of a row of the binary protocol: its `0x00`, a bitmap of the
+# NULLs counted from bit 2, then each value that is not NULL as its column's
+# type writes it.
+#
+# - `defs`: the row's columns.
+# - `payload`: the row's packet.
+#
+# Fails `invalid` where the row is cut short or holds a value of no form.
+function binary_row(defs: [answers.ColumnDef], payload: [u8]) -> [sql.Value]?
+    c @= wire.cursor(payload)
+    head = wire.read_u8(@c)?
+
+    if head != 0x00
+        return fail(code: sql.INVALID, msg: f"the server's row opens with {head} where 0 was due")
+    bitmap = wire.read_n(@c, (defs.len() + 9) / 8)?
+    out: [sql.Value] @= []
+    i: i64 @= 0
+
+    for d in defs
+        bit = i + 2
+
+        if wire.int_of(bitmap[bit / 8]) >> bit % 8 & 1 == 1
+            out @ out.push(.null_value)
+        else
+            out @ out.push(binary_value(d, c: @c)?)
+        i @ i + 1
+
+    return ok(out)
+
+# The next value of `c`, of the column `d`, in the binary protocol.
+#
+# - `d`: the column.
+# - `c`: the row's cursor, moved past the value.
+#
+# Fails `invalid` where the row is cut short.
+function binary_value(d: answers.ColumnDef, @c: wire.Cursor) -> sql.Value?
+    unsigned = d.flags & answers.UNSIGNED_FLAG != 0
+
+    match d.kind
+        1      => return ok(.integer(v: signed(n: wire.read_le(@c, 1)?, width: 1, unsigned: unsigned)))
+        2 | 13 => return ok(.integer(v: signed(n: wire.read_le(@c, 2)?, width: 2, unsigned: unsigned)))
+        3 | 9  => return ok(.integer(v: signed(n: wire.read_le(@c, 4)?, width: 4, unsigned: unsigned)))
+        8 =>
+            at = c.at
+            n = wire.read_i64(@c)?
+
+            if unsigned && n < 0
+                return ok(.text(v: to_str(u64_at(c.data, at: at))))
+            return ok(.integer(v: n))
+        4 =>
+            bits = wire.read_le(@c, 4)?
+            return ok(.float(v: to_f64(protobuf.float_of_bits(to_u32(bits).must()))))
+        5 =>
+            at = c.at
+            _ = wire.read_n(@c, 8)?
+            return ok(.float(v: protobuf.double_of_bits(u64_at(c.data, at: at))))
+        6                => return ok(.null_value)
+        7 | 10 | 12 | 14 => return ok(binary_instant(d, c: @c)?)
+        11               => return ok(.text(v: binary_time(d, c: @c)?))
+        _                => return text_value(d, cell: wire.read_lenenc_bytes(@c)?)
+
+# `n`, read from `width` bytes, as the signed number its bits write, or as
+# itself where the column has no sign.
+#
+# - `n`: the bytes' number, 0 to 2^(8 * width) - 1.
+# - `width`: 1, 2 or 4.
+# - `unsigned`: whether the column has no sign.
+function signed(n: i64, width: i64, unsigned: bool) -> i64
+    top = 1 << 8 * width
+
+    if !unsigned && n >= top / 2
+        return n - top
+    return n
+
+# The eight bytes of `data` at `at` as an unsigned number, the lowest first.
+#
+# - `data`: the bytes, eight of them at `at`.
+# - `at`: where they begin.
+function u64_at(data: [u8], at: i64) -> u64
+    n: u64 @= 0
+    k: i64 @= 7
+
+    while k >= 0
+        n @ n * 256 + to_u64(data[at + k]).must()
+        k @ k - 1
+
+    return n
+
+# A `DATE`, `DATETIME` or `TIMESTAMP` of the binary protocol: a length of 0,
+# 4, 7 or 11 bytes, then the year, month, day, hour, minute, second and
+# microsecond, as an `instant`, or as text where no `Instant` holds it.
+#
+# - `d`: the column.
+# - `c`: the row's cursor, moved past the value.
+#
+# Fails `invalid` where the length is none of those or the row is cut short.
+function binary_instant(d: answers.ColumnDef, @c: wire.Cursor) -> sql.Value?
+    n = wire.int_of(wire.read_u8(@c)?)
+
+    if n != 0 && n != 4 && n != 7 && n != 11
+        return fail(code: sql.INVALID, msg: f"the server sent a date of {n} bytes")
+    year: i64 @= 0
+    month: i64 @= 0
+    day: i64 @= 0
+    hour: i64 @= 0
+    minute: i64 @= 0
+    second: i64 @= 0
+    micro: i64 @= 0
+
+    if n >= 4
+        year @ wire.read_le(@c, 2)?
+        month @ wire.int_of(wire.read_u8(@c)?)
+        day @ wire.int_of(wire.read_u8(@c)?)
+
+    if n >= 7
+        hour @ wire.int_of(wire.read_u8(@c)?)
+        minute @ wire.int_of(wire.read_u8(@c)?)
+        second @ wire.int_of(wire.read_u8(@c)?)
+
+    if n == 11
+        micro @ wire.read_le(@c, 4)?
+    date_text = f"{padded(n: year, width: 4)}-{padded(n: month, width: 2)}-{padded(n: day, width: 2)}"
+
+    if d.kind == 10 || d.kind == 14
+        match time.date(year: year, month: month, day: day)
+            .ok t  => return ok(.instant(v: t))
+            .err _ => return ok(.text(v: date_text))
+    made = time.from_date_time(
+        time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: micro * 1000)
+    )
+
+    match made
+        .ok t => return ok(.instant(v: t))
+        .err _ => return ok(
+            .text(v: f"{date_text} {padded(n: hour, width: 2)}:{padded(n: minute, width: 2)}:{padded(n: second, width: 2)}{fraction_text(micro: micro, decimals: d.decimals)}")
+        )
+
+# A `TIME` of the binary protocol as the text protocol writes it,
+# `[-]HH:MM:SS[.ffffff]`, its hours counting its days: a length of 0, 8 or
+# 12 bytes, then its sign, days, hours, minutes, seconds and microseconds.
+#
+# - `d`: the column.
+# - `c`: the row's cursor, moved past the value.
+#
+# Fails `invalid` where the length is none of those or the row is cut short.
+function binary_time(d: answers.ColumnDef, @c: wire.Cursor) -> str?
+    n = wire.int_of(wire.read_u8(@c)?)
+
+    if n != 0 && n != 8 && n != 12
+        return fail(code: sql.INVALID, msg: f"the server sent a time of {n} bytes")
+    negative: i64 @= 0
+    days: i64 @= 0
+    hour: i64 @= 0
+    minute: i64 @= 0
+    second: i64 @= 0
+    micro: i64 @= 0
+
+    if n >= 8
+        negative @ wire.int_of(wire.read_u8(@c)?)
+        days @ wire.read_le(@c, 4)?
+        hour @ wire.int_of(wire.read_u8(@c)?)
+        minute @ wire.int_of(wire.read_u8(@c)?)
+        second @ wire.int_of(wire.read_u8(@c)?)
+
+    if n == 12
+        micro @ wire.read_le(@c, 4)?
+
+    sign = if negative == 1
+        "-"
+    else
+        ""
+
+    if days > 100000
+        return fail(code: sql.INVALID, msg: f"the server sent a time of {days} days")
+    return ok(
+        f"{sign}{padded(n: days * 24 + hour, width: 2)}:{padded(n: minute, width: 2)}:{padded(n: second, width: 2)}{fraction_text(micro: micro, decimals: d.decimals)}"
+    )
+
+# The block of `COM_STMT_EXECUTE` that binds `params`: the bitmap of NULLs,
+# the flag that types follow, each value's type, then each value that is
+# not NULL. Empty where `params` is.
+#
+# - `params`: the values, in the placeholders' order.
+#
+# An integer goes as a `BIGINT`, a float as a `DOUBLE`, a boolean as a
+# `TINYINT`, a text as a string, a blob as a `BLOB`, which MySQL reads in the
+# binary character set, and an instant as a `DATETIME` in UTC to the
+# microsecond.
+function params_block(params: [sql.Value]) -> [u8]
+    if params.len() == 0
+        return []
+    bitmap: [u8] @= []
+
+    for _ in range(from: 0, to: (params.len() + 7) / 8)
+        bitmap @ bitmap.push(0)
+
+    types: [u8] @= []
+    data: [u8] @= []
+    i: i64 @= 0
+
+    for p in params
+        kind: i64 = match p
+            .null_value =>
+                bitmap[i / 8] @ to_u8(wire.int_of(bitmap[i / 8]) | 1 << i % 8).must()
+                NULL_TYPE
+            .boolean b =>
+                truth: u8 = if b.v
+                    1
+                else
+                    0
+                data @ data.push(truth)
+                1
+            .integer n =>
+                wire.push_le(@data, n: n.v, width: 8)
+                8
+            .float x =>
+                push_u64(@data, n: protobuf.bits_of_double(x.v))
+                5
+            .text t =>
+                wire.push_lenenc_bytes(out: @data, data: bytes.from_text(t.v))
+                254
+            .blob b =>
+                wire.push_lenenc_bytes(out: @data, data: b.v)
+                252
+            .instant t =>
+                push_datetime(@data, t: t.v)
+                12
+
+        types @ types.push(to_u8(kind).must())
+        types @ types.push(0)
+        i @ i + 1
+
+    out: [u8] @= bitmap
+    out @ out.push(1)
+    wire.push_all(out: @out, data: types)
+    wire.push_all(out: @out, data: data)
+    return out
+
+# Adds `n` to `out` as eight bytes, the lowest first.
+#
+# - `out`: the bytes being written.
+# - `n`: the number.
+function push_u64(@out: [u8], n: u64)
+    rest: u64 @= n
+
+    for _ in range(from: 0, to: 8)
+        out @ out.push(to_u8(rest % 256).must())
+        rest @ rest / 256
+
+# Adds `t` to `out` as a `DATETIME` of the binary protocol, in UTC: eleven
+# bytes after their length.
+#
+# - `out`: the bytes being written.
+# - `t`: the instant; its nanoseconds past the microsecond are dropped.
+function push_datetime(@out: [u8], t: time.Instant)
+    dt = time.to_date_time(t)
+    out @ out.push(11)
+    wire.push_le(@out, n: dt.year, width: 2)
+
+    for part in [dt.month, dt.day, dt.hour, dt.minute, dt.second]
+        out @ out.push(to_u8(part).must())
+
+    wire.push_le(@out, n: dt.nanosecond / 1000, width: 4)
+
+test "text_value: integers, an unsigned past an i64, floats as each protocol reads them, NULL and bytes"
+    int8 = answers.ColumnDef(name: "n", charset: 63, length: 20, kind: 8, flags: 0, decimals: 0)
+    assert text_value(int8, cell: bytes.from_text("-9223372036854775808")).must() == .integer(v: -9223372036854775808)
+    assert text_value(int8, cell: bytes.from_text("x")).is_err()
+    big = answers.ColumnDef(name: "u", charset: 63, length: 20, kind: 8, flags: 32, decimals: 0)
+    assert text_value(big, cell: bytes.from_text("18446744073709551615")).must() == .text(v: "18446744073709551615")
+    single = answers.ColumnDef(name: "f", charset: 63, length: 12, kind: 4, flags: 0, decimals: 31)
+    assert text_value(single, cell: bytes.from_text("1.1")).must() == .float(v: 1.100000023841858)
+    double = answers.ColumnDef(name: "d", charset: 63, length: 22, kind: 5, flags: 0, decimals: 31)
+    assert text_value(double, cell: bytes.from_text("2.5e3")).must() == .float(v: 2500.0)
+    assert text_value(answers.ColumnDef(name: "z", charset: 63, length: 0, kind: 6, flags: 0, decimals: 0), cell: []).must() == .null_value
+    blob = answers.ColumnDef(name: "b", charset: 63, length: 0, kind: 252, flags: 144, decimals: 0)
+    assert text_value(blob, cell: [0, 255]).must() == .blob(v: [0, 255])
+    words = answers.ColumnDef(name: "t", charset: 45, length: 0, kind: 252, flags: 16, decimals: 0)
+    assert text_value(words, cell: bytes.from_text("città")).must() == .text(v: "città")
+    assert text_value(words, cell: [255]).is_err()
+
+test "text_value: a date, a time with microseconds, a zero date and a decimal kept as text"
+    date = answers.ColumnDef(name: "d", charset: 63, length: 10, kind: 10, flags: 0, decimals: 0)
+    assert text_value(date, cell: bytes.from_text("2006-01-02")).must() == .instant(v: time.date(year: 2006, month: 1, day: 2).must())
+    stamp = answers.ColumnDef(name: "s", charset: 63, length: 26, kind: 12, flags: 0, decimals: 6)
+    t = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456000).must()
+    assert text_value(stamp, cell: bytes.from_text("2006-01-02 15:04:05.123456")).must() == .instant(v: t)
+    assert text_value(stamp, cell: bytes.from_text("0000-00-00 00:00:00")).must() == .text(v: "0000-00-00 00:00:00")
+    assert text_value(stamp, cell: bytes.from_text("9999-12-31 23:59:59")).must() == .text(v: "9999-12-31 23:59:59")
+    money = answers.ColumnDef(name: "m", charset: 63, length: 12, kind: 246, flags: 0, decimals: 2)
+    assert text_value(money, cell: bytes.from_text("-12345678901234567890.25")).must() == .text(v: "-12345678901234567890.25")
+
+test "binary_row: the documentation's row of NULLs, integers of each width and sign, a double and a string"
+    defs = [
+        answers.ColumnDef(name: "a", charset: 63, length: 4, kind: 1, flags: 0, decimals: 0)
+        answers.ColumnDef(name: "b", charset: 63, length: 4, kind: 2, flags: 32, decimals: 0)
+        answers.ColumnDef(name: "c", charset: 63, length: 4, kind: 3, flags: 0, decimals: 0)
+        answers.ColumnDef(name: "d", charset: 63, length: 4, kind: 8, flags: 32, decimals: 0)
+        answers.ColumnDef(name: "e", charset: 63, length: 4, kind: 5, flags: 0, decimals: 31)
+        answers.ColumnDef(name: "f", charset: 45, length: 4, kind: 253, flags: 0, decimals: 0)
+        answers.ColumnDef(name: "g", charset: 45, length: 4, kind: 253, flags: 0, decimals: 0)
+    ]
+    row: [u8] @= [0x00, 0x00, 0x01, 0xff, 0xff, 0xff, 0xfe, 0xff, 0xff, 0xff]
+    wire.push_all(out: @row, data: [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+    wire.push_all(out: @row, data: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f])
+    wire.push_all(out: @row, data: [0x02, 'h', 'i'])
+    got = binary_row(defs, payload: row).must()
+    want: [sql.Value] = [
+        .integer(v: -1)
+        .integer(v: 65535)
+        .integer(v: -2)
+        .text(v: "18446744073709551615")
+        .float(v: 1.0)
+        .text(v: "hi")
+        .null_value
+    ]
+    assert got == want
+    assert binary_row(defs, payload: row.slice(from: 0, to: row.len() - 1)).is_err()
+    assert binary_row(defs, payload: [0x01]).is_err()
+
+test "binary_row: a DATETIME of 11 bytes, a DATE of 4, a zero one of 0, and a negative TIME past a day"
+    defs = [
+        answers.ColumnDef(name: "a", charset: 63, length: 26, kind: 12, flags: 0, decimals: 6)
+        answers.ColumnDef(name: "b", charset: 63, length: 10, kind: 10, flags: 0, decimals: 0)
+        answers.ColumnDef(name: "c", charset: 63, length: 19, kind: 12, flags: 0, decimals: 0)
+        answers.ColumnDef(name: "d", charset: 63, length: 17, kind: 11, flags: 0, decimals: 3)
+    ]
+    row: [u8] @= [0x00, 0x00]
+    wire.push_all(out: @row, data: [11, 0xd6, 0x07, 1, 2, 15, 4, 5, 0x40, 0xe2, 0x01, 0x00])
+    wire.push_all(out: @row, data: [4, 0xd6, 0x07, 1, 2])
+    wire.push_all(out: @row, data: [0])
+    wire.push_all(out: @row, data: [12, 1, 1, 0, 0, 0, 2, 3, 4, 0x40, 0xe2, 0x01, 0x00])
+    got = binary_row(defs, payload: row).must()
+    t = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456000).must()
+    want: [sql.Value] = [
+        .instant(v: t)
+        .instant(v: time.date(year: 2006, month: 1, day: 2).must())
+        .text(v: "0000-00-00 00:00:00")
+        .text(v: "-26:03:04.123")
+    ]
+    assert got == want
+
+test "params_block: none, then a NULL, an integer, a float, a boolean, a text, a blob and an instant"
+    assert params_block([]) == []
+    t = time.from_unix(whole_seconds: 1136214245, extra_nanoseconds: 123456789).must()
+    got = params_block(
+        [.null_value, .integer(v: -2), .float(v: 1.0), .boolean(v: true), .text(v: "é"), .blob(v: [0]), .instant(v: t)]
+    )
+    want: [u8] @= [0x01, 0x01, 6, 0, 8, 0, 5, 0, 1, 0, 254, 0, 252, 0, 12, 0]
+    wire.push_all(out: @want, data: [0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff])
+    wire.push_all(out: @want, data: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x3f])
+    wire.push_all(out: @want, data: [1, 2, 0xc3, 0xa9, 1, 0])
+    wire.push_all(out: @want, data: [11, 0xd6, 0x07, 1, 2, 15, 4, 5, 0x40, 0xe2, 0x01, 0x00])
+    assert got == want

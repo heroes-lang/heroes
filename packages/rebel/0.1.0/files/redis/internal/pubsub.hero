@@ -1,0 +1,128 @@
+# Publish and subscribe below the face: what kind of out-of-band reply a
+# reply's bytes are, read from its first tokens without building it, and a
+# command of subscription sent with its confirmations read, the messages
+# that come meanwhile kept for `receive`. RESP2 writes a confirmation and a
+# message as an array, RESP3 as a push; both are read alike.
+
+use bytes
+use redis/internal/failures
+use redis/internal/resp
+use redis/internal/session
+use strings
+
+constant INVALID: str
+    "invalid"
+
+# What a reply's first elements say.
+record Seen
+    # Its first element in lower case where it is an array or a push of
+    # three or four elements: `message`, `pmessage`, `subscribe`, ...; ""
+    # otherwise.
+    kind: str
+    # Its second element as text, the channel or the pattern; "" where it
+    # is null.
+    target: str
+
+# What the reply `frame` is, read from its first tokens.
+#
+# - `frame`: a whole reply's bytes.
+#
+# Fails with the error's own code where `frame` is an error reply.
+function classify(frame: [u8]) -> Seen?
+    none = Seen(kind: "", target: "")
+    head = resp.scan(frame, at: 0)?.token
+
+    if head.kind == '-' || head.kind == '!'
+        said = failures.said(bytes.to_text_lossy(head.data))
+        return fail(code: failures.code_of(prefix: said.prefix, words: said.words), msg: failures.message_of(said))
+
+    if head.kind != '*' && head.kind != '>' || head.count != 3 && head.count != 4
+        return ok(none)
+    first = resp.scan(frame, at: head.next)?.token
+
+    if first.kind != '$' && first.kind != '+'
+        return ok(none)
+    second = resp.scan(frame, at: first.next)?.token
+    target: str @= ""
+
+    if second.kind == '$' && second.count != -1 || second.kind == '+'
+        target @ bytes.to_text_lossy(second.data)
+    return ok(Seen(kind: strings.to_lower(bytes.to_text_lossy(first.data)), target: target))
+
+# Whether `kind` names a message of a channel.
+#
+# - `kind`: a reply's kind, as `classify` reads it.
+function is_message(kind: str) -> bool
+    return kind == "message" || kind == "pmessage" || kind == "smessage"
+
+# Whether `kind` names a confirmation of a subscription.
+#
+# - `kind`: a reply's kind, as `classify` reads it.
+function is_confirmation(kind: str) -> bool
+    return kind == "subscribe" || kind == "psubscribe" || kind == "unsubscribe" || kind == "punsubscribe"
+
+# Sends `name` with `targets` and reads its confirmations, one per target,
+# or one per channel or pattern held where `targets` is empty and the
+# command ends subscriptions, or one where none is held; the messages that
+# come meanwhile are kept.
+#
+# - `s`: the session, its channels or patterns followed.
+# - `name`: `SUBSCRIBE`, `PSUBSCRIBE`, `UNSUBSCRIBE` or `PUNSUBSCRIBE`.
+# - `targets`: its channels or patterns.
+# - `confirming`: the kind of each confirmation, `name` in lower case.
+#
+# Fails `invalid` where a subscription names nothing or the server answers
+# with a reply that confirms nothing, with the error's code where it answers
+# one, and as the session fails.
+function subscription(@s: session.Session, name: str, targets: [str], confirming: str) -> ()?
+    if (confirming == "subscribe" || confirming == "psubscribe") && targets.len() == 0
+        return fail(code: INVALID, msg: f"{name} needs at least one channel or pattern")
+
+    held = if confirming == "unsubscribe"
+        s.channels.len()
+    else
+        s.patterns.len()
+
+    expected = if targets.len() > 0
+        targets.len()
+    else if held > 0
+        held
+    else
+        1
+    words: [[u8]] @= [bytes.from_text(name)]
+
+    for t in targets
+        words @ words.push(bytes.from_text(t))
+
+    session.send(@s, data: resp.command(words))?
+    seen: i64 @= 0
+
+    while seen < expected
+        frame = session.frame(@s)?
+        got = classify(frame)?
+
+        if is_message(got.kind)
+            session.keep(@s, reply: frame)
+        else if is_confirmation(got.kind)
+            session.confirm(@s, kind: got.kind, target: got.target)
+
+            if got.kind == confirming
+                seen @ seen + 1
+        else
+            return fail(code: INVALID, msg: f"{s.target} answered {name} with a reply that confirms nothing")
+
+    return ok()
+
+test "classify: a confirmation of RESP2, a message of RESP3, an unsubscription of nothing, an error and a reply of another kind"
+    assert classify(bytes.from_text("*3\r\n$9\r\nsubscribe\r\n$1\r\na\r\n:1\r\n")).must() == Seen(kind: "subscribe", target: "a")
+    assert classify(bytes.from_text(">3\r\n$7\r\nmessage\r\n$2\r\nch\r\n$2\r\nhi\r\n")).must() == Seen(kind: "message", target: "ch")
+    assert classify(bytes.from_text("*3\r\n$11\r\nunsubscribe\r\n$-1\r\n:0\r\n")).must() == Seen(kind: "unsubscribe", target: "")
+    assert classify(bytes.from_text(":1\r\n")).must() == Seen(kind: "", target: "")
+
+    match classify(bytes.from_text("-NOPERM this user has no permissions to access the channel\r\n"))
+        .ok _  => assert false
+        .err e => assert e.code == "permission"
+
+test "is_message and is_confirmation: each kind, and a kind of neither"
+    assert is_message("pmessage") && !is_message("subscribe")
+    assert is_confirmation("punsubscribe") && !is_confirmation("message") && !is_confirmation("")

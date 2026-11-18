@@ -1,0 +1,188 @@
+# The conversation with the server: the session's state, and packets
+# written and read with their sequence numbers, a payload longer than one
+# packet joined from its pieces. A command begins a new sequence at 0; every
+# packet of its answer follows on, and one out of order ends the session.
+# A lost connection, a packet out of order and a failure the server calls
+# fatal end the session; every later request then fails `closed`.
+
+use io
+use sql
+use sql/mysql/internal/wire
+
+# The largest answer the client reads in one payload, 1 GiB, MySQL's own
+# largest `max_allowed_packet`.
+constant MOST_ANSWER: i64
+    1073741824
+
+# A session's state, which the face's `Db` holds.
+record Session
+    # The stream requests are written to.
+    out: io.Stream
+    # The reader of the server's answers.
+    input: io.Reader
+    # How messages name the server: `host:port/database`.
+    target: str
+    # The sequence number of the next packet, written or read.
+    seq: i64
+    # The capability flags both sides agreed on at the login.
+    capabilities: i64
+    # The server's status flags, as its last OK or EOF packet said them.
+    status: i64
+    # The warnings the last statement raised.
+    warnings: i64
+    # The server's version as its greeting wrote it: `8.4.3`,
+    # `5.5.5-10.11.6-MariaDB`.
+    server_version: str
+    # The server's number for this connection.
+    connection_id: i64
+    # Whether the connection runs over TLS.
+    secure: bool
+    # Whether the session is over.
+    ended: bool
+
+# A session over `out` and `input`, before its login.
+#
+# - `out`: where requests go; for a TCP connection, its stream.
+# - `input`: the stream answers come from; the same stream for TCP.
+# - `target`: how messages name the server.
+function over(out: io.Stream, input: io.Stream, target: str) -> Session
+    return Session(
+        out: out,
+        input: io.reader(input),
+        target: target,
+        seq: 0,
+        capabilities: 0,
+        status: 0,
+        warnings: 0,
+        server_version: "",
+        connection_id: 0,
+        secure: false,
+        ended: false
+    )
+
+# The failure of a request on a session that is over.
+#
+# - `s`: the session.
+function closed_failure<T>(s: Session) -> T?
+    return fail(code: sql.CLOSED, msg: f"the connection to {s.target} is closed")
+
+# Writes `payload` as the next packets of the conversation.
+#
+# - `s`: the session, its sequence moved on, ended where the write fails.
+# - `payload`: the bytes, split into packets where longer than one holds.
+function send(@s: Session, payload: [u8]) -> ()?
+    if s.ended
+        return closed_failure(s)
+    data = wire.framed(seq: s.seq, payload: payload)
+    s.seq @ (s.seq + payload.len() / wire.MOST_PAYLOAD + 1) % 256
+
+    match io.write(s.out, data: data)
+        .ok _ => return ok()
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: f"writing to {s.target}: {e.msg}")
+
+# Writes `payload` as a new command: its sequence begins at 0.
+#
+# - `s`: the session.
+# - `payload`: the command's byte, then its arguments.
+function command(@s: Session, payload: [u8]) -> ()?
+    s.seq @ 0
+    return send(@s, payload: payload)
+
+# The next payload the server sends, joined from as many packets as carry
+# it.
+#
+# - `s`: the session, its sequence moved on, ended where the read fails.
+#
+# Fails `closed` where the connection ends first, `invalid` where a packet
+# comes out of its sequence, and `limit` where the payload passes
+# `MOST_ANSWER`; each ends the session.
+function receive(@s: Session) -> [u8]?
+    if s.ended
+        return closed_failure(s)
+    out: [u8] @= []
+    pieces: i64 @= 0
+
+    while true
+        header = read_exactly(@s, n: 4)?
+        n = wire.int_of(header[0]) | wire.int_of(header[1]) << 8 | wire.int_of(header[2]) << 16
+        number = wire.int_of(header[3])
+
+        if number != s.seq
+            s.ended @ true
+            return fail(
+                code: sql.INVALID,
+                msg: f"{s.target} sent the packet numbered {number} where {s.seq} was due, and the connection was given up"
+            )
+        s.seq @ (s.seq + 1) % 256
+
+        if out.len() + n > MOST_ANSWER
+            s.ended @ true
+            return fail(
+                code: sql.LIMIT,
+                msg: f"{s.target} sent an answer past {MOST_ANSWER} bytes, and the connection was given up"
+            )
+        piece = read_exactly(@s, n: n)?
+        pieces @ pieces + 1
+
+        if n < wire.MOST_PAYLOAD && pieces == 1
+            return ok(piece)
+        wire.push_all(out: @out, data: piece)
+
+        if n < wire.MOST_PAYLOAD
+            return ok(out)
+
+# Exactly `n` bytes of the server's answers.
+#
+# - `s`: the session, ended where the read fails or ends first.
+# - `n`: how many, 0 or more.
+function read_exactly(@s: Session, n: i64) -> [u8]?
+    match io.read_n(@s.input, n)
+        .ok got =>
+            if got.len() < n
+                s.ended @ true
+                return fail(code: sql.CLOSED, msg: f"{s.target} closed the connection in the middle of an answer")
+            return ok(got)
+        .err e =>
+            s.ended @ true
+            return fail(code: e.code, msg: f"reading from {s.target}: {e.msg}")
+
+# Tells the server the client is leaving (`COM_QUIT`), where the session is
+# not over, and closes the connection's stream.
+#
+# - `s`: the session, ended.
+#
+# Fails `closed` where the stream is closed already.
+function close(@s: Session) -> ()?
+    if !s.ended
+        _ = command(@s, payload: [0x01]).is_err()
+    s.ended @ true
+
+    if io.is_closed(s.out)
+        return fail(code: sql.CLOSED, msg: f"the connection to {s.target} is closed already")
+    return io.close(@s.out)
+
+test "send and receive: sequence numbers kept, a packet out of order and an answer cut short end the session"
+    to_server = io.pipe().must()
+    to_client = io.pipe().must()
+    io.write(to_client.writer, data: [1, 0, 0, 1, 0xaa, 1, 0, 0, 7, 0xbb]).must()
+    end @= to_client.writer
+    io.close(@end).must()
+    s @= over(out: to_server.writer, input: to_client.reader, target: "test:3306/db")
+    command(@s, payload: [0x0e]).must()
+    assert s.seq == 1
+    assert receive(@s).must() == [0xaa]
+
+    match receive(@s)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "test:3306/db sent the packet numbered 7 where 2 was due, and the connection was given up"
+
+    assert s.ended
+    close(@s).must()
+    wrote = io.read_all(to_server.reader).must()
+    assert wrote == [1, 0, 0, 0, 0x0e]
+    r @= to_server.reader
+    io.close(@r).must()
+    a @= to_client.reader
+    io.close(@a).must()

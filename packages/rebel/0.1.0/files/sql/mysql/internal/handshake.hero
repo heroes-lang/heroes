@@ -1,0 +1,305 @@
+# The first exchange of a connection, as "Connection Phase" of MySQL's
+# client/server protocol lays it out: the server's greeting (Protocol::
+# HandshakeV10), the capabilities the client chooses from those it offers,
+# the request for TLS (Protocol::SSLRequest) and the client's answer
+# (Protocol::HandshakeResponse41). MariaDB speaks the same; the four bytes
+# of its own capabilities in the greeting's reserved bytes are not read.
+
+use bytes
+use sql
+use sql/mysql/internal/codes
+use sql/mysql/internal/wire
+
+# Passwords longer than eight bytes.
+constant LONG_PASSWORD: i64
+    1
+
+# The column flags of two bytes.
+constant LONG_FLAG: i64
+    4
+
+# A database named in the login.
+constant CONNECT_WITH_DB: i64
+    8
+
+# Protocol 4.1, the only one spoken here.
+constant PROTOCOL_41: i64
+    512
+
+# TLS, asked for by the request for it.
+constant SSL: i64
+    2048
+
+# Transactions told in the status flags.
+constant TRANSACTIONS: i64
+    8192
+
+# The scramble of 20 bytes in two parts.
+constant SECURE_CONNECTION: i64
+    32768
+
+# Several results to one statement, as `CALL` answers.
+constant MULTI_RESULTS: i64
+    131072
+
+# Several results to one prepared statement.
+constant PS_MULTI_RESULTS: i64
+    262144
+
+# Authentication by named plugins.
+constant PLUGIN_AUTH: i64
+    524288
+
+# Attributes of the connection sent at the login.
+constant CONNECT_ATTRS: i64
+    1048576
+
+# An authentication answer of any length.
+constant PLUGIN_AUTH_LENENC: i64
+    2097152
+
+# OK packets where EOF packets stood.
+constant DEPRECATE_EOF: i64
+    16777216
+
+# The character set the client speaks: utf8mb4_general_ci, which MySQL and
+# MariaDB both know.
+constant CHARSET: i64
+    45
+
+# The largest packet the client says it sends: 16 MiB.
+constant MOST_PACKET: i64
+    16777216
+
+# What the server's greeting says.
+record Greeting
+    # The server's version: `8.4.3`, or `5.5.5-10.11.6-MariaDB`.
+    server_version: str
+    # The server's number for this connection.
+    connection_id: i64
+    # The scramble the authentication answers, 20 bytes.
+    scramble: [u8]
+    # The capabilities the server offers.
+    capabilities: i64
+    # The server's status flags.
+    status: i64
+    # The authentication plugin the server names first:
+    # `caching_sha2_password`, `mysql_native_password`.
+    plugin: str
+
+# What the greeting `payload` says.
+#
+# - `payload`: the server's first packet.
+#
+# Fails with the server's own failure where it is an ERR packet (a host it
+# refuses, too many connections), `unsupported` where it speaks another
+# protocol than 10 or not 4.1, and `invalid` where it is cut short.
+function read_greeting(payload: [u8]) -> Greeting?
+    if payload.len() > 0 && payload[0] == 0xff
+        return codes.failure(codes.read(payload)?)
+    c @= wire.cursor(payload)
+    version = wire.int_of(wire.read_u8(@c)?)
+
+    if version != 10
+        return fail(code: sql.UNSUPPORTED, msg: f"the server speaks protocol {version}, where this driver speaks 10")
+    server_version = wire.read_cstr(@c)?
+    connection_id = wire.read_le(@c, 4)?
+    scramble: [u8] @= wire.read_n(@c, 8)?
+    _ = wire.read_u8(@c)?
+    capabilities: i64 @= wire.read_le(@c, 2)?
+
+    if wire.at_end(c)
+        return fail(code: sql.UNSUPPORTED, msg: f"the server {server_version} does not speak protocol 4.1")
+    _ = wire.read_u8(@c)?
+    status = wire.read_le(@c, 2)?
+    capabilities @ capabilities | wire.read_le(@c, 2)? << 16
+    data_length = wire.int_of(wire.read_u8(@c)?)
+    _ = wire.read_n(@c, 10)?
+
+    if capabilities & PROTOCOL_41 == 0 || capabilities & SECURE_CONNECTION == 0
+        return fail(code: sql.UNSUPPORTED, msg: f"the server {server_version} does not speak protocol 4.1")
+
+    more = if data_length - 8 > 13
+        data_length - 8
+    else
+        13
+    left = c.data.len() - c.at
+
+    count = if more < left
+        more
+    else
+        left
+    second = wire.read_n(@c, count)?
+    wire.push_all(out: @scramble, data: without_last_zero(second))
+    plugin: str @= "mysql_native_password"
+
+    if capabilities & PLUGIN_AUTH != 0 && !wire.at_end(c)
+        plugin @ wire.read_cstr(@c)?
+    return ok(
+        Greeting(server_version: server_version, connection_id: connection_id, scramble: scramble, capabilities: capabilities, status: status, plugin: plugin)
+    )
+
+# `data` without its last byte where that byte is zero, as a scramble's
+# ends.
+#
+# - `data`: the bytes.
+function without_last_zero(data: [u8]) -> [u8]
+    if data.len() > 0 && data[data.len() - 1] == 0
+        return data.slice(from: 0, to: data.len() - 1)
+    return data
+
+# The capabilities the client asks for: those it speaks that the server
+# offers, `CONNECT_WITH_DB` where it names a database, `CONNECT_ATTRS` where
+# it sends attributes, `SSL` where it asks for TLS.
+#
+# - `server`: the capabilities the server offers.
+# - `database`: the database named, "" for none.
+# - `attributes`: whether attributes are sent.
+# - `secure`: whether TLS is asked for.
+function chosen(server: i64, database: str, attributes: bool, secure: bool) -> i64
+    wanted: i64 @= LONG_PASSWORD | LONG_FLAG | PROTOCOL_41 | TRANSACTIONS | SECURE_CONNECTION | MULTI_RESULTS | PS_MULTI_RESULTS | PLUGIN_AUTH | PLUGIN_AUTH_LENENC | DEPRECATE_EOF
+
+    if database != ""
+        wanted @ wanted | CONNECT_WITH_DB
+
+    if attributes
+        wanted @ wanted | CONNECT_ATTRS
+
+    if secure
+        wanted @ wanted | SSL
+    return wanted & server
+
+# The fixed head both the request for TLS and the answer open with: the
+# capabilities, the largest packet, the character set, 23 zero bytes.
+#
+# - `capabilities`: the capabilities chosen.
+function head(capabilities: i64) -> [u8]
+    out: [u8] @= []
+    wire.push_le(@out, n: capabilities, width: 4)
+    wire.push_le(@out, n: MOST_PACKET, width: 4)
+    out @ out.push(to_u8(CHARSET).must())
+
+    for _ in range(from: 0, to: 23)
+        out @ out.push(0)
+
+    return out
+
+# The request for TLS: the answer's head alone, `SSL` among its
+# capabilities.
+#
+# - `capabilities`: the capabilities chosen, `SSL` among them.
+function ssl_request(capabilities: i64) -> [u8]
+    return head(capabilities)
+
+# The client's answer to the greeting.
+#
+# - `capabilities`: the capabilities chosen.
+# - `user`: the user, with no zero byte.
+# - `auth`: the authentication plugin's answer.
+# - `database`: the database, "" for none, with no zero byte.
+# - `plugin`: the plugin `auth` answers for.
+# - `attributes`: names and values in turn, sent where `CONNECT_ATTRS` is
+#   chosen.
+function response(capabilities: i64, user: str, auth: [u8], database: str, plugin: str, attributes: [str]) -> [u8]
+    out: [u8] @= head(capabilities)
+    wire.push_cstr(@out, user)
+
+    if capabilities & PLUGIN_AUTH_LENENC != 0
+        wire.push_lenenc_bytes(out: @out, data: auth)
+    else
+        out @ out.push(to_u8(auth.len()).must())
+        wire.push_all(out: @out, data: auth)
+
+    if capabilities & CONNECT_WITH_DB != 0
+        wire.push_cstr(@out, database)
+
+    if capabilities & PLUGIN_AUTH != 0
+        wire.push_cstr(@out, plugin)
+
+    if capabilities & CONNECT_ATTRS != 0
+        pairs: [u8] @= []
+
+        for a in attributes
+            wire.push_lenenc_bytes(out: @pairs, data: bytes.from_text(a))
+
+        wire.push_lenenc_bytes(out: @out, data: pairs)
+    return out
+
+# A greeting as MySQL 8.4 sends one, for the tests.
+#
+# - `version`: the server's version.
+# - `capabilities`: the capabilities offered.
+# - `plugin`: the plugin named.
+# - `scramble`: 20 bytes.
+function greeting_bytes(version: str, capabilities: i64, plugin: str, scramble: [u8]) -> [u8]
+    out: [u8] @= [10]
+    wire.push_cstr(@out, version)
+    wire.push_le(@out, n: 42, width: 4)
+    wire.push_all(out: @out, data: scramble.slice(from: 0, to: 8))
+    out @ out.push(0)
+    wire.push_le(@out, n: capabilities & 65535, width: 2)
+    out @ out.push(255)
+    wire.push_le(@out, n: 2, width: 2)
+    wire.push_le(@out, n: capabilities >> 16, width: 2)
+    out @ out.push(21)
+
+    for _ in range(from: 0, to: 10)
+        out @ out.push(0)
+
+    wire.push_all(out: @out, data: scramble.slice(from: 8, to: 20))
+    out @ out.push(0)
+    wire.push_cstr(@out, plugin)
+    return out
+
+test "read_greeting: MySQL 8's greeting, the scramble joined from its two parts, and the plugin named"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    caps = 0xdfffffff
+    g = read_greeting(
+        greeting_bytes(version: "8.4.3", capabilities: caps, plugin: "caching_sha2_password", scramble: scramble)
+    ).must()
+    assert g == Greeting(server_version: "8.4.3", connection_id: 42, scramble: scramble, capabilities: caps, status: 2, plugin: "caching_sha2_password")
+
+test "read_greeting: an ERR packet told as the server's failure, protocol 9 unsupported, and a greeting cut short"
+    refusal: [u8] @= [0xff, 0x10, 0x04]
+    wire.push_all(out: @refusal, data: bytes.from_text("Too many connections"))
+
+    match read_greeting(refusal)
+        .ok _  => assert false
+        .err e => assert e.code == "limit" && e.msg == "[1040] Too many connections"
+
+    match read_greeting([9, 0])
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+    whole = greeting_bytes(
+        version: "8.4.3",
+        capabilities: 0xdfffffff,
+        plugin: "x",
+        scramble: bytes.from_text("abcdefghijklmnopqrst")
+    )
+    assert read_greeting(whole.slice(from: 0, to: 20)).is_err()
+
+test "chosen, ssl_request and response: the documentation's fields in order, a database, attributes and TLS"
+    caps = chosen(server: 0xdfffffff, database: "shop", attributes: true, secure: true)
+    assert caps & (CONNECT_WITH_DB | CONNECT_ATTRS | SSL | DEPRECATE_EOF | PROTOCOL_41) == CONNECT_WITH_DB | CONNECT_ATTRS | SSL | DEPRECATE_EOF | PROTOCOL_41
+    assert chosen(server: PROTOCOL_41, database: "", attributes: false, secure: false) == PROTOCOL_41
+    request = ssl_request(caps)
+    assert request.len() == 32 && request[8] == 45
+    got = response(
+        capabilities: caps,
+        user: "ana",
+        auth: [1, 2],
+        database: "shop",
+        plugin: "mysql_native_password",
+        attributes: ["program_name", "app"]
+    )
+    want: [u8] @= head(caps)
+    wire.push_all(out: @want, data: ['a', 'n', 'a', 0, 2, 1, 2, 's', 'h', 'o', 'p', 0])
+    wire.push_all(out: @want, data: bytes.from_text("mysql_native_password"))
+    want @ want.push(0)
+    want @ want.push(17)
+    want @ want.push(12)
+    wire.push_all(out: @want, data: bytes.from_text("program_name"))
+    want @ want.push(3)
+    wire.push_all(out: @want, data: bytes.from_text("app"))
+    assert got == want

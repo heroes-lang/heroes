@@ -1,0 +1,2192 @@
+# A Redis client written in Heroes: it speaks RESP, the Redis serialization
+# protocol, versions 2 and 3, over a TCP connection of `net` or a TLS
+# connection of `tls`, and links no library. A command is a list of
+# arguments, each sent as a bulk string, so a value never enters the text of
+# a command and no argument needs quoting; a reply is a `Reply`, one case per
+# type RESP writes. It logs in (`AUTH`, or `HELLO` with RESP3), selects a
+# database, runs commands one at a time, in pipelines and in transactions
+# (`MULTI` and `EXEC`, `WATCH`), publishes and subscribes, and holds a lock
+# on one Redis server.
+#
+# **RESP3 by default**: `open` asks for it with `HELLO 3`, which Redis 6 and
+# later speak, and falls back to RESP2 where the server knows no `HELLO`.
+# RESP3 tells a map, a set, a double, a boolean and a null apart, where RESP2
+# answers arrays and strings; the readers (`text_of`, `integer_of`,
+# `entries_of`, ...) read either, so a program reads one way whatever the
+# protocol. An attribute (`|`) is read and dropped.
+#
+# **TLS** begins from the first byte, as Redis serves it (`rediss://`); the
+# server's certificate is checked for its authority and its host.
+# `options` asks for TLS; a server on this machine that serves none, as
+# Redis by default, is reached with `Security.plain`.
+#
+# It does not follow a cluster's redirections (`MOVED` and `ASK` fail
+# `unsupported`), find a master through Sentinel, cache keys on the client
+# (RESP3's invalidations are dropped), keep a pool of connections, or give a
+# typed function to each of Redis's four hundred commands: `call` runs every
+# one, and a handful of the commonest have their own. The ledger says so of
+# each.
+#
+# ## The lock
+#
+# `try_lock` and `lock` take a lock on one Redis server: a key set only where
+# it is absent (`SET key token NX PX ttl`), holding a token of 20 random
+# bytes that only this holder knows, which expires after its time to live
+# unless `renew` extends it; `unlock` deletes the key only where it still
+# holds this holder's token, by a script the server runs whole. Each
+# acquisition also takes a **fencing number**, which grows with every
+# acquisition of the key.
+#
+# **What it does not promise**, which the program must weigh before it lets a
+# lock guard anything that must not be done twice:
+#
+# - **A holder may lose the lock without knowing it.** A process paused past
+#   the time to live (a long collection of garbage, a machine swapping, a
+#   process stopped) wakes believing it holds a lock that expired and that
+#   another took. Only the resource can refuse the late holder: let it
+#   remember the highest fencing number it has seen and refuse a smaller one.
+# - **One server is one point of failure.** Where Redis replicates to a
+#   replica and fails over, the replica may not have the key yet, and a
+#   second holder takes it.
+# - **Redlock is not here.** Redis's documentation describes a lock taken on
+#   a majority of five independent servers; it still assumes clocks that
+#   drift little and processes that pause little, and still needs fencing
+#   to be safe, as Martin Kleppmann's analysis of 2016 showed. Where
+#   correctness depends on the lock, use a system built on consensus
+#   (etcd, ZooKeeper) or the database's own locks; this lock serves where a
+#   rare double run costs work and not truth.
+#
+# ## Failures
+#
+# A call fails with the codes below. An error the server replies keeps its
+# word in brackets before its words, `[WRONGTYPE] Operation against a key
+# holding the wrong kind of value`, and `error_code_of` reads the word back.
+# The word chooses the code: `invalid` for `WRONGTYPE`, `EXECABORT` and a
+# general `ERR` (a syntax error, a wrong number of arguments, a value that
+# is no number); `permission` for `NOAUTH`, `NOPERM`, `WRONGPASS` and
+# `READONLY`; `not_found` for `NOSCRIPT` and `NOGROUP`; `exists` for
+# `BUSYGROUP`; `limit` for `OOM` and too many clients; `unsupported` for a
+# command the server does not know and a cluster's `MOVED`, `ASK` and
+# `CROSSSLOT`; and `failed` for every other, `LOADING` and `BUSY` among them.
+# A connection lost, or bytes that are no RESP, end the client: every later
+# call fails `closed`.
+
+use bytes
+use net
+use numbers
+use os
+use redis/internal/failures
+use redis/internal/pubsub
+use redis/internal/resp
+use redis/internal/script as server
+use redis/internal/session
+use redis/internal/stack
+use strings
+use time
+use tls
+use url
+
+## Codes
+
+# The code of an argument refused, a reply that is not of the kind asked
+# for, bytes that are no RESP, and an error the server replies for a command
+# it could not run as written: `call`, the readers, `decode`.
+constant INVALID: str
+    "invalid"
+
+# The code of a key or a reply that holds nothing (`get`, the readers on a
+# null), of a script or a group the server does not know, and of a lock
+# that is no longer this holder's (`unlock`, `renew`).
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a lock another holds (`try_lock`) and of a consumer group that
+# exists already.
+constant EXISTS: str
+    "exists"
+
+# The code of a login refused and of a command the user may not run.
+constant PERMISSION: str
+    "permission"
+
+# The code of a client that is closed, or whose connection the server or the
+# network closed while the call waited.
+constant CLOSED: str
+    "closed"
+
+# The code of a call whose deadline passed, and of `lock` waiting past its
+# time.
+constant TIMEOUT: str
+    "timeout"
+
+# The code of a call that ended because the program was asked to stop.
+constant STOPPED: str
+    "stopped"
+
+# The code of a server that has no more memory or connections, and of a
+# reply past what the client reads.
+constant LIMIT: str
+    "limit"
+
+# The code of a command the server does not know, a cluster's redirection,
+# and a protocol the server does not speak.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The code of every other error the server replies; the message carries its
+# word and its words.
+constant FAILED: str
+    "failed"
+
+## Connecting
+
+# The port Redis listens on unless told another.
+constant DEFAULT_PORT: i64
+    6379
+
+# How the connection to the server is secured.
+variant Security
+    # Nothing encrypted and nothing checked: whoever sits between the two
+    # ends reads every byte, the password included. Redis's own default.
+    plain
+    # TLS from the first byte, the server's certificate checked for its
+    # authority and its host: `rediss://`.
+    checked
+        # The PEM of the only authorities trusted; "" for the system's own
+        # store.
+        roots: str
+
+# Where a server is and how to log in. `options` makes one; a program
+# changes the fields it needs with `@`, or `parse_url` reads one from a URL.
+record Options
+    # The server's name or address, without brackets: `localhost`, `::1`.
+    host: str
+    # The server's TCP port, from 1 to 65535; `DEFAULT_PORT` unless told.
+    port: i64
+    # The user of Redis 6's access lists, "" for the `default` user.
+    username: str
+    # The password, "" where the server asks for none.
+    password: str
+    # The database selected, 0 to the server's count less one; 0 by default.
+    database: i64
+    # The protocol asked for: 3, RESP3, falling back to 2 where the server
+    # knows no `HELLO`; or 2, RESP2 alone.
+    protocol: i64
+    # The name the server shows for this connection in `CLIENT LIST`, "" for
+    # none.
+    client_name: str
+    # Milliseconds from when the connection is made by which every later
+    # wait on it ends, failing `timeout`, as `net.connect` takes it; 0, the
+    # default, for none. `set_deadline` moves it.
+    deadline_ms: i64
+    # How the connection is secured: `.checked(roots: "")` unless the
+    # program asks for `.plain`.
+    security: Security
+
+# The options of a connection to `host` at `DEFAULT_PORT`, as the `default`
+# user with no password, database 0, RESP3, no name and no deadline, over TLS
+# checked against the system's own store.
+#
+# - `host`: the server's name or address, without brackets.
+#
+# See also `parse_url`, `open`.
+function options(host: str) -> Options
+    return Options(
+        host: host,
+        port: DEFAULT_PORT,
+        username: "",
+        password: "",
+        database: 0,
+        protocol: 3,
+        client_name: "",
+        deadline_ms: 0,
+        security: .checked(roots: "")
+    )
+
+# The options a `redis://` or `rediss://` URL names, as redis-py and
+# go-redis read one: `redis://user:password@host:port/database`.
+#
+# - `text`: the URL. `redis://` is plain, `rediss://` TLS. Its user and
+#   password are percent-decoded, `:password@` naming a password alone; a
+#   host in brackets is an IPv6 address, `localhost` where none is written;
+#   its path is the database's number, 0 where none is written. Its query
+#   may name `protocol` (2 or 3) and `client_name`.
+#
+# Fails `invalid` where `url` is not such a URL, or names another key, a
+# port outside 1 to 65535, a database that is no number of 0 or more, or a
+# protocol other than 2 or 3, the message saying which part; `unsupported`
+# for `unix://`, which `net` does not reach. See also `options`.
+function parse_url(text: str) -> Options?
+    u = match url.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{text}\" is no URL: {e.msg}")
+
+    if u.scheme == "unix"
+        return fail(code: UNSUPPORTED, msg: f"\"{text}\" names a Unix socket, which `net` does not reach")
+
+    if u.scheme != "redis" && u.scheme != "rediss"
+        return fail(code: INVALID, msg: f"\"{text}\" opens with neither redis:// nor rediss://")
+
+    host = if u.host == ""
+        "localhost"
+    else
+        u.host
+    opts @= options(host)
+
+    if u.scheme == "redis"
+        opts.security @ .plain
+    opts.username @ u.user
+    opts.password @ u.password
+
+    if u.port != ""
+        match url.port_of(u)
+            .ok p =>
+                if p < 1 || p > 65535
+                    return fail(code: INVALID, msg: f"the port {u.port} of \"{text}\" is outside 1 to 65535")
+                opts.port @ p
+            .err _ => return fail(code: INVALID, msg: f"the port {u.port} of \"{text}\" is outside 1 to 65535")
+    path = strings.trim_prefix(s: u.path, prefix: "/")
+
+    if path != ""
+        match numbers.parse_int(path)
+            .ok n =>
+                if n < 0
+                    return fail(code: INVALID, msg: f"the database {path} of \"{text}\" is below 0")
+                opts.database @ n
+            .err _ => return fail(code: INVALID, msg: f"the path of \"{text}\" names no database's number")
+
+    pairs = match url.parse_query(u.query)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the query of \"{text}\": {e.msg}")
+
+    for pair in pairs
+        if pair.key == "protocol"
+            if pair.value != "2" && pair.value != "3"
+                return fail(code: INVALID, msg: f"protocol={pair.value} is neither 2 nor 3")
+            opts.protocol @ numbers.parse_int(pair.value).must()
+        else if pair.key == "client_name"
+            opts.client_name @ pair.value
+        else
+            return fail(
+                code: INVALID,
+                msg: f"the key \"{pair.key}\" is none this client reads: it reads protocol and client_name"
+            )
+
+    return ok(opts)
+
+# A connection to the server `opts` names, logged in, its protocol agreed and
+# its database selected.
+#
+# - `opts`: where the server is and how to log in.
+#
+# The program owes the client a `close`. With `opts.protocol` 3 it sends
+# `HELLO 3`, the login and the name with it; where the server knows no
+# `HELLO` it speaks RESP2 and logs in with `AUTH`.
+#
+# Fails as `net.connect` fails where nothing answers, as `tls.connect` fails
+# over TLS (`invalid` where the certificate is refused); `permission` where
+# the server refuses the login, or asks for one and none was given;
+# `invalid` where `opts.port`, `opts.database` or `opts.protocol` is out of
+# range, or the database is past the server's count; `closed` where the
+# server ends the connection. See also `close`, `options`.
+function open(opts: Options) -> Client?
+    if opts.port < 1 || opts.port > 65535
+        return fail(code: INVALID, msg: f"the port {opts.port} is outside 1 to 65535")
+
+    if opts.database < 0
+        return fail(code: INVALID, msg: f"the database {opts.database} is below 0")
+
+    if opts.protocol != 2 && opts.protocol != 3
+        return fail(code: INVALID, msg: f"the protocol {opts.protocol} is neither 2 nor 3")
+    target = f"{opts.host}:{opts.port}"
+
+    s = match opts.security
+        .plain =>
+            conn = net.connect(opts.host, port: opts.port, deadline_ms: opts.deadline_ms)?
+            session.over(out: conn.stream, input: conn.stream, link: .plain(conn: conn), target: target)
+        .checked k =>
+            stream = tls.connect(host: opts.host, port: opts.port, deadline_ms: opts.deadline_ms, client: tls.Client(roots: k.roots, protocols: []))?
+            session.over(out: stream, input: stream, link: .secured, target: target)
+
+    c @= Client(session: s)
+
+    match opts.security
+        .plain => _ = 0
+        .checked _ =>
+            if opts.deadline_ms > 0
+                match session.set_deadline(c.session, ms: opts.deadline_ms)
+                    .ok _ => _ = 0
+                    .err e =>
+                        _ = session.close(@c.session).is_err()
+                        return fail(code: e.code, msg: e.msg)
+
+    setup: [[str]] @= []
+
+    if opts.protocol == 3
+        hello: [str] @= ["HELLO", "3"]
+
+        if opts.password != ""
+            user = if opts.username == ""
+                "default"
+            else
+                opts.username
+            hello @ hello.push("AUTH")
+            hello @ hello.push(user)
+            hello @ hello.push(opts.password)
+
+        if opts.client_name != ""
+            hello @ hello.push("SETNAME")
+            hello @ hello.push(opts.client_name)
+        said = call(@c, hello)
+
+        match said
+            .ok _ => c.session.protocol @ 3
+            .err e =>
+                if e.code != UNSUPPORTED || c.session.ended
+                    _ = session.close(@c.session).is_err()
+                    return fail(code: e.code, msg: e.msg)
+
+    if c.session.protocol == 2
+        if opts.password != "" && opts.username != ""
+            setup @ setup.push(["AUTH", opts.username, opts.password])
+        else if opts.password != ""
+            setup @ setup.push(["AUTH", opts.password])
+
+        if opts.client_name != ""
+            setup @ setup.push(["CLIENT", "SETNAME", opts.client_name])
+
+    if opts.database != 0
+        setup @ setup.push(["SELECT", to_str(opts.database)])
+
+    for words in setup
+        match call(@c, words)
+            .ok _ => _ = 0
+            .err e =>
+                _ = session.close(@c.session).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+    return ok(c)
+
+# Closes the connection and empties the client, so every later call through
+# it fails `closed`.
+#
+# - `c`: the client, emptied.
+#
+# Fails `closed` where it is closed already. See also `open`, `is_closed`.
+function close(@c: Client) -> ()?
+    return session.close(@c.session)
+
+# Whether `close` has emptied `c`, or a lost connection or bytes that are no
+# RESP have ended it.
+#
+# - `c`: the client asked about.
+#
+# See also `close`.
+function is_closed(c: Client) -> bool
+    return c.session.ended
+
+# The protocol the server speaks with `c`: 3 for RESP3, 2 for RESP2.
+#
+# - `c`: the client asked about.
+#
+# See also `Options`.
+function protocol_of(c: Client) -> i64
+    return c.session.protocol
+
+# Moves the deadline of `c`'s connection: every later wait on it, a
+# `receive` among them, ends by `ms` milliseconds from now, failing
+# `timeout`.
+#
+# - `c`: the client.
+# - `ms`: milliseconds from now; 0 takes the deadline away, below 0 fails
+#   `invalid`.
+#
+# A wait that ends `timeout` leaves the client in step only where no reply
+# was owed: after `receive`, never in the middle of a command's reply, which
+# ends the client. Fails `closed` where `c` is closed. See also `receive`.
+function set_deadline(c: Client, ms: i64) -> ()?
+    return session.set_deadline(c.session, ms: ms)
+
+## The client
+
+# A connection to a Redis server, which `open` makes and `close` ends. Its
+# one field is the conversation's private state: the socket, the bytes read
+# and not yet given out, the protocol, the channels subscribed to and the
+# messages that came while a reply was awaited. Every call works on the
+# caller's own place, through `@`. A program keeps one place per connection.
+record Client
+    # The conversation's state, which only this package reads and writes.
+    session: session.Session
+
+## Replies
+
+# A reply, as RESP writes one: each case one of its types. RESP2 writes the
+# first six; RESP3 all of them.
+variant Reply
+    # A simple string, `+OK`.
+    simple
+        # Its text.
+        v: str
+    # An error, `-ERR ...`, or a blob error, `!`.
+    error
+        # The word in capitals that opens it, `ERR`, `WRONGTYPE`; "" where
+        # it opens with none.
+        code: str
+        # The server's words after that word.
+        message: str
+    # An integer, `:1000`.
+    integer
+        # The number.
+        v: i64
+    # A bulk string, `$5\r\nhello`: any bytes.
+    bulk
+        # The bytes, which may be empty.
+        v: [u8]
+    # Nothing: RESP3's null, `_`, and RESP2's null bulk string and null
+    # array, `$-1` and `*-1`.
+    null_value
+    # An array, `*`: its elements in order.
+    array
+        # The elements.
+        items: [Reply]
+    # RESP3's map, `%`: its entries in the order the server wrote them.
+    mapping
+        # The entries.
+        entries: [Entry]
+    # RESP3's set, `~`: its elements, none twice.
+    set
+        # The elements, in the server's order.
+        items: [Reply]
+    # RESP3's double, `,1.23`, `,inf`, `,nan`.
+    double
+        # The number.
+        v: f64
+    # RESP3's boolean, `#t` or `#f`.
+    boolean
+        # The truth value.
+        v: bool
+    # RESP3's big number, `(`: an integer of any size.
+    big_number
+        # Its digits, a `-` before them where it is negative.
+        v: str
+    # RESP3's verbatim string, `=`: text with its format.
+    verbatim
+        # The format's three characters: `txt` for plain text, `mkd` for
+        # Markdown.
+        format: str
+        # The text.
+        v: str
+    # RESP3's push, `>`: a message out of band, as a channel's message.
+    pushed
+        # The elements; the first names the push's kind.
+        items: [Reply]
+
+# One entry of a map.
+record Entry
+    # The key.
+    key: Reply
+    # Its value.
+    value: Reply
+
+# A reply read from bytes, and where the bytes after it begin.
+record Decoded
+    # The reply.
+    reply: Reply
+    # The byte index of the first byte after it.
+    next: i64
+
+# The one reply `data` holds, with nothing after it.
+#
+# - `data`: the bytes of a reply as RESP2 or RESP3 writes it.
+#
+# Fails `invalid` where `data` is no reply, ends inside one, holds bytes
+# after it, or nests past 128 aggregates; `limit` where a string or a line
+# passes the client's bounds; `unsupported` for a streamed string or
+# aggregate. See also `decode_next`.
+function decode(data: [u8]) -> Reply?
+    d = decode_next(data, from: 0)?
+
+    if d.next != data.len()
+        return fail(code: INVALID, msg: f"the reply ends at byte {d.next} of {data.len()}")
+    return ok(d.reply)
+
+# The reply that begins at byte `from` of `data`, and where the next begins.
+# An attribute before it is read and dropped.
+#
+# - `data`: bytes holding replies one after another.
+# - `from`: where the reply begins, 0 to `data`'s length.
+#
+# It holds its own stack, so a reply nested deep never deepens the
+# program's. Fails as `decode` does, but for bytes after the reply.
+function decode_next(data: [u8], from: i64) -> Decoded?
+    levels: [[Reply]] @= []
+    kinds: [u8] @= []
+    wants: [i64] @= []
+    depth: i64 @= 0
+    at: i64 @= from
+
+    while true
+        scanned = resp.scan(data, at: at)?
+
+        if !scanned.complete
+            return fail(code: INVALID, msg: f"the bytes end inside a reply that begins at byte {from}")
+        t = scanned.token
+        at @ t.next
+
+        if resp.is_open(t)
+            if depth >= session.MOST_DEPTH
+                return fail(code: INVALID, msg: f"the reply nests past {session.MOST_DEPTH} levels")
+
+            if depth == levels.len()
+                levels @ levels.push([])
+                kinds @ kinds.push(0)
+                wants @ wants.push(0)
+            levels[depth] @ []
+            kinds[depth] @ t.kind
+            wants[depth] @ resp.elements_of(t)
+            depth @ depth + 1
+        else
+            value: Reply @= .null_value
+            built: u8 @= 0
+            items: [Reply] @= []
+
+            if t.count == -1 || t.kind == '_'
+                value @ .null_value
+            else if t.kind == '+'
+                value @ .simple(v: resp.text_of(t.data)?)
+            else if t.kind == '-' || t.kind == '!'
+                said = failures.said(bytes.to_text_lossy(t.data))
+                value @ .error(code: said.prefix, message: said.words)
+            else if t.kind == ':'
+                value @ .integer(v: resp.number(t.data, from: 0, to: t.data.len())?)
+            else if t.kind == '$'
+                value @ .bulk(v: t.data)
+            else if t.kind == '#'
+                value @ .boolean(v: t.data[0] == 't')
+            else if t.kind == ','
+                value @ .double(v: resp.double_of(resp.text_of(t.data)?)?)
+            else if t.kind == '('
+                value @ .big_number(v: resp.big_number_of(t.data)?)
+            else if t.kind == '='
+                whole = resp.text_of(t.data)?
+                value @ .verbatim(format: whole.slice(from: 0, to: 3), v: whole.slice(from: 4, to: whole.len()))
+            else
+                built @ t.kind
+            climbing: bool @= true
+
+            while climbing
+                if built == '|'
+                    climbing @ false
+                else
+                    if built == '%'
+                        entries: [Entry] @= []
+                        i: i64 @= 0
+
+                        while i + 1 < items.len()
+                            entries @ entries.push(Entry(key: items[i], value: items[i + 1]))
+                            i @ i + 2
+
+                        value @ .mapping(entries: entries)
+                    else if built == '~'
+                        value @ .set(items: items)
+                    else if built == '>'
+                        value @ .pushed(items: items)
+                    else if built != 0
+                        value @ .array(items: items)
+
+                    if depth == 0
+                        return ok(Decoded(reply: value, next: at))
+                    stack.put(@levels[depth - 1], item: value)
+                    wants[depth - 1] @ wants[depth - 1] - 1
+
+                    if wants[depth - 1] > 0
+                        climbing @ false
+                    else
+                        depth @ depth - 1
+                        items @ levels[depth]
+                        levels[depth] @ []
+                        built @ kinds[depth]
+
+# The bytes of the command `words` as RESP writes one: an array of bulk
+# strings, which every version of Redis reads.
+#
+# - `words`: the command's name, then its arguments, each any bytes; the
+#   name in any case.
+#
+# See also `call_bytes`.
+function encode_command(words: [[u8]]) -> [u8]
+    return resp.command(words)
+
+# `r` itself where it is no error, else the failure the error tells: its
+# code chosen by its word, its message its word in brackets and its words.
+#
+# - `r`: a reply, as `read_reply` and `pipeline` answer one.
+#
+# See also `error_code_of`.
+function checked(r: Reply) -> Reply?
+    match r
+        .error e =>
+            said = failures.Said(prefix: e.code, words: e.message)
+            return fail(code: failures.code_of(prefix: e.code, words: e.message), msg: failures.message_of(said))
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return ok(
+            r
+        )
+
+# The word an error reply's failure was told with: `WRONGTYPE` in
+# `[WRONGTYPE] Operation against a key holding the wrong kind of value`.
+#
+# - `msg`: a failure's message, as `e.msg` holds it.
+#
+# Fails `not_found` where `msg` does not open with a word in brackets. See
+# also `checked`.
+function error_code_of(msg: str) -> str?
+    if !strings.has_prefix(s: msg, prefix: "[")
+        return fail(code: NOT_FOUND, msg: f"\"{msg}\" opens with no word in brackets")
+
+    match strings.split_once(s: msg.slice(from: 1, to: msg.len()), sep: "] ")
+        .ok h =>
+            if failures.is_capitals(h.before)
+                return ok(h.before)
+            return fail(code: NOT_FOUND, msg: f"\"{msg}\" opens with no word in brackets")
+        .err _ => return fail(code: NOT_FOUND, msg: f"\"{msg}\" opens with no word in brackets")
+
+# The name of the case `r` is, as a failure's message names it: `a simple
+# string`, `an integer`, `a map`.
+#
+# - `r`: the reply.
+function kind_of(r: Reply) -> str
+    return match r
+        .simple _     => "a simple string"
+        .error _      => "an error"
+        .integer _    => "an integer"
+        .bulk _       => "a bulk string"
+        .null_value   => "null"
+        .array _      => "an array"
+        .mapping _    => "a map"
+        .set _        => "a set"
+        .double _     => "a double"
+        .boolean _    => "a boolean"
+        .big_number _ => "a big number"
+        .verbatim _   => "a verbatim string"
+        .pushed _     => "a push"
+
+# Whether `r` is null: RESP3's null, or RESP2's null bulk string or null
+# array, as `GET` of a key that is not there answers.
+#
+# - `r`: the reply.
+function is_null(r: Reply) -> bool
+    return r == .null_value
+
+# The text `r` holds: a simple string, a bulk string's bytes, a verbatim
+# string's text, a big number's digits.
+#
+# - `r`: the reply.
+#
+# Fails `not_found` where `r` is null, `invalid` where it is of another kind
+# or a bulk string that is not UTF-8, and with its own failure where it is
+# an error. See also `bytes_of`, `texts_of`.
+function text_of(r: Reply) -> str?
+    _ = checked(r)?
+
+    match r
+        .simple s     => return ok(s.v)
+        .bulk b       => return resp.text_of(b.v)
+        .verbatim v   => return ok(v.v)
+        .big_number n => return ok(n.v)
+        .error _ | .integer _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "text"
+        )
+
+# The bytes `r` holds: a bulk string's, or the text of a simple string, a
+# verbatim string or a big number.
+#
+# - `r`: the reply.
+#
+# Fails as `text_of` does, but never for bytes that are not UTF-8.
+function bytes_of(r: Reply) -> [u8]?
+    _ = checked(r)?
+
+    match r
+        .bulk b       => return ok(b.v)
+        .simple s     => return ok(bytes.from_text(s.v))
+        .verbatim v   => return ok(bytes.from_text(v.v))
+        .big_number n => return ok(bytes.from_text(n.v))
+        .error _ | .integer _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "bytes"
+        )
+
+# The integer `r` holds: an integer, or a string of decimal digits, as
+# RESP2 answers `HGET` of a counter.
+#
+# - `r`: the reply.
+#
+# Fails `not_found` where `r` is null, `invalid` where it is of another kind
+# or writes no number of an `i64`, and with its own failure where it is an
+# error.
+function integer_of(r: Reply) -> i64?
+    _ = checked(r)?
+
+    match r
+        .integer n => return ok(n.v)
+        .simple _ | .bulk _ =>
+            data = bytes_of(r)?
+            return resp.number(data, from: 0, to: data.len())
+        .error _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "an integer"
+        )
+
+# The number `r` holds: a double, an integer, or a string that writes one,
+# as RESP2 answers `ZSCORE` and `INCRBYFLOAT`, `inf` and `-inf` included.
+#
+# - `r`: the reply.
+#
+# Fails as `integer_of` does.
+function float_of(r: Reply) -> f64?
+    _ = checked(r)?
+
+    match r
+        .double d           => return ok(d.v)
+        .integer n          => return ok(to_f64(n.v))
+        .simple _ | .bulk _ => return resp.double_of(text_of(r)?)
+        .error _ | .null_value | .array _ | .mapping _ | .set _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "a number"
+        )
+
+# The truth `r` holds: a boolean, or the integer 0 or 1, as RESP2 answers
+# `EXPIRE` and `SISMEMBER`.
+#
+# - `r`: the reply.
+#
+# Fails as `integer_of` does, and `invalid` for an integer other than 0
+# and 1.
+function boolean_of(r: Reply) -> bool?
+    _ = checked(r)?
+
+    match r
+        .boolean b => return ok(b.v)
+        .integer n =>
+            if n.v == 0 || n.v == 1
+                return ok(n.v == 1)
+            return fail(code: INVALID, msg: f"the reply is the integer {n.v} where 0 or 1 was asked for")
+        .simple _ | .error _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .big_number _ | .verbatim _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "a boolean"
+        )
+
+# The elements `r` holds: an array's, a set's or a push's, in order.
+#
+# - `r`: the reply.
+#
+# Fails `not_found` where `r` is null, as RESP2 answers an array that is
+# none; `invalid` where it is of another kind; with its own failure where it
+# is an error. See also `texts_of`, `entries_of`.
+function list_of(r: Reply) -> [Reply]?
+    _ = checked(r)?
+
+    match r
+        .array a  => return ok(a.items)
+        .set s    => return ok(s.items)
+        .pushed p => return ok(p.items)
+        .simple _ | .error _ | .integer _ | .bulk _ | .null_value | .mapping _ | .double _ | .boolean _ | .big_number _ | .verbatim _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "a list"
+        )
+
+# The text of each element `r` holds, as `list_of` and `text_of` read them:
+# what `KEYS`, `SMEMBERS` and `LRANGE` answer.
+#
+# - `r`: the reply.
+#
+# Fails as `list_of` fails, and as `text_of` fails on an element, a null one
+# (`MGET` of a key that is not there) failing `not_found`.
+function texts_of(r: Reply) -> [str]?
+    out: [str] @= []
+
+    for item in list_of(r)?
+        out @ out.push(text_of(item)?)
+
+    return ok(out)
+
+# The entries `r` holds: a map's, or the keys and values in turn of an array
+# or a set of even length, as RESP2 answers `HGETALL` and `CONFIG GET`.
+#
+# - `r`: the reply.
+#
+# Fails `invalid` where an array holds an odd count, and as `list_of` does.
+function entries_of(r: Reply) -> [Entry]?
+    _ = checked(r)?
+
+    match r
+        .mapping m => return ok(m.entries)
+        .array _ | .set _ =>
+            items = list_of(r)?
+
+            if items.len() % 2 != 0
+                return fail(
+                    code: INVALID,
+                    msg: f"the reply holds {items.len()} elements, an odd count, where keys and values were asked for"
+                )
+            out: [Entry] @= []
+            i: i64 @= 0
+
+            while i < items.len()
+                out @ out.push(Entry(key: items[i], value: items[i + 1]))
+                i @ i + 2
+
+            return ok(out)
+        .simple _ | .error _ | .integer _ | .bulk _ | .null_value | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return failures.not_kind(
+            null_reply: is_null(r),
+            kind: kind_of(r),
+            wanted: "a map"
+        )
+
+## Commands
+
+# Writes the command `words` to the server without reading its reply, which
+# `read_reply` reads: a pipeline written by hand.
+#
+# - `c`: the client.
+# - `words`: the command's name, then its arguments, each any bytes; at
+#   least the name.
+#
+# Fails `invalid` where `words` is empty, and `closed` where the client is.
+# See also `read_reply`, `pipeline`.
+function send(@c: Client, words: [[u8]]) -> ()?
+    if words.len() == 0
+        return fail(code: INVALID, msg: "a command needs at least its name")
+    return session.send(@c.session, data: resp.command(words))
+
+# The next reply the server sends, waiting until it comes; an error reply
+# is answered as `.error`, not a failure. A RESP3 push that comes first, a
+# message of a channel subscribed to, is kept for `receive`, at most 65,536
+# of them unread, past which the oldest are lost; any other push, as an
+# invalidation of the client's cache, is dropped.
+#
+# - `c`: the client.
+#
+# Fails `closed` where the connection ends, `timeout` where the deadline
+# passes, and `invalid` where the bytes are no RESP, each ending the client.
+# See also `send`, `checked`.
+function read_reply(@c: Client) -> Reply?
+    while true
+        frame = session.frame(@c.session)?
+
+        if c.session.protocol == 3 && frame[0] == '>'
+            seen = pubsub.classify(frame)?
+
+            if pubsub.is_message(seen.kind) || pubsub.is_confirmation(seen.kind)
+                session.keep(@c.session, reply: frame)
+        else
+            match decode(frame)
+                .ok r => return ok(r)
+                .err e =>
+                    c.session.ended @ true
+                    return fail(code: e.code, msg: f"{c.session.target} sent {e.msg}")
+
+# Runs the command `words` and answers its reply.
+#
+# - `c`: the client.
+# - `words`: the command's name, then its arguments: `["SET", "k", "v"]`.
+#   Each is sent as it is, so none needs quoting.
+#
+# Fails with the error the server replies (the module's comment); `invalid`
+# where `words` is empty, or where the client is subscribed over RESP2 and
+# the command is not one a subscribed connection runs; `closed` where the
+# connection is lost. See also `call_bytes`, `pipeline`.
+function call(@c: Client, words: [str]) -> Reply?
+    data: [[u8]] @= []
+
+    for a in words
+        data @ data.push(bytes.from_text(a))
+
+    return call_bytes(@c, data)
+
+# Runs the command `words`, arguments of any bytes, and answers its reply.
+#
+# - `c`: the client.
+# - `words`: the command's name, then its arguments, each any bytes.
+#
+# Fails as `call` does. See also `call`.
+function call_bytes(@c: Client, words: [[u8]]) -> Reply?
+    if words.len() > 0 && c.session.protocol == 2 && c.session.channels.len() + c.session.patterns.len() > 0
+        name = strings.to_upper(bytes.to_text_lossy(words[0]))
+
+        if !(name == "SUBSCRIBE" || name == "PSUBSCRIBE" || name == "UNSUBSCRIBE" || name == "PUNSUBSCRIBE" || name == "PING" || name == "RESET")
+            return fail(
+                code: INVALID,
+                msg: f"the client is subscribed over RESP2, where {name} does not run; RESP3 runs every command"
+            )
+    send(@c, words)?
+    return checked(read_reply(@c)?)
+
+# The text `key` holds (`GET`).
+#
+# - `c`: the client.
+# - `key`: the key.
+#
+# Fails `not_found` where the key is not there, `invalid` where it holds
+# bytes that are not UTF-8 (`call_bytes` reads them), and as `call` does,
+# `invalid` where the key holds no string.
+function get(@c: Client, key: str) -> str?
+    return text_of(call(@c, ["GET", key])?)
+
+# Sets `key` to `value`, with no time to live (`SET`).
+#
+# - `c`: the client.
+# - `key`: the key.
+# - `value`: the text.
+#
+# Fails as `call` does. See also `set_for`.
+function set(@c: Client, key: str, value: str) -> ()?
+    _ = call(@c, ["SET", key, value])?
+    return ok()
+
+# Sets `key` to `value` for `ttl_ms` milliseconds, after which it is gone
+# (`SET key value PX ttl`).
+#
+# - `c`: the client.
+# - `key`: the key.
+# - `value`: the text.
+# - `ttl_ms`: milliseconds, 1 or more.
+#
+# Fails `invalid` where `ttl_ms` is below 1, and as `call` does.
+function set_for(@c: Client, key: str, value: str, ttl_ms: i64) -> ()?
+    if ttl_ms < 1
+        return fail(code: INVALID, msg: f"the time to live {ttl_ms} is below 1 millisecond")
+    _ = call(@c, ["SET", key, value, "PX", to_str(ttl_ms)])?
+    return ok()
+
+# Deletes each of `names`, and answers how many were there (`DEL`).
+#
+# - `c`: the client.
+# - `names`: the keys, at least one.
+#
+# Fails `invalid` where `names` is empty, and as `call` does.
+function delete(@c: Client, names: [str]) -> i64?
+    if names.len() == 0
+        return fail(code: INVALID, msg: "DEL needs at least one key")
+    words: [str] @= ["DEL"]
+
+    for k in names
+        words @ words.push(k)
+
+    return integer_of(call(@c, words)?)
+
+# Adds `by` to the integer `key` holds, 0 where it is not there, and answers
+# the sum (`INCRBY`).
+#
+# - `c`: the client.
+# - `key`: the key.
+# - `by`: the amount, negative to subtract.
+#
+# Fails `invalid` where the key holds no integer or the sum passes an
+# `i64`, and as `call` does.
+function incr_by(@c: Client, key: str, by: i64) -> i64?
+    return integer_of(call(@c, ["INCRBY", key, to_str(by)])?)
+
+## Pipelines and transactions
+
+# Runs every command of `commands` in one round trip, all written before any
+# reply is read, and answers their replies in order. An error reply is
+# answered as `.error` in its place; `checked` turns one into a failure.
+#
+# - `c`: the client.
+# - `commands`: the commands, each a name and its arguments; [] answers [].
+#
+# The commands are not a transaction: another client's commands may run
+# between them. Fails `invalid` where a command is empty, `closed` where the
+# connection is lost. See also `transaction`, `send`.
+function pipeline(@c: Client, commands: [[str]]) -> [Reply]?
+    data: [u8] @= []
+
+    for words in commands
+        if words.len() == 0
+            return fail(code: INVALID, msg: "a command of the pipeline is empty")
+        parts: [[u8]] @= []
+
+        for a in words
+            parts @ parts.push(bytes.from_text(a))
+
+        session.append(out: @data, data: resp.command(parts))
+
+    session.send(@c.session, data: data)?
+    out: [Reply] @= []
+
+    for _ in commands
+        out @ out.push(read_reply(@c)?)
+
+    return ok(out)
+
+# What a transaction answered.
+record Transaction
+    # Whether it ran: false where a key `watch` named changed before `EXEC`,
+    # and then no command ran.
+    committed: bool
+    # Each command's reply in order where it ran, an error in its place
+    # where one failed as it ran; none where it did not run.
+    replies: [Reply]
+
+# Runs every command of `commands` as one transaction (`MULTI`, the
+# commands, `EXEC`): no other client's command runs between them, and none
+# of them runs where a key `watch` named has changed.
+#
+# - `c`: the client.
+# - `commands`: the commands, each a name and its arguments.
+#
+# A command that fails as it runs fails alone: the others run, and its
+# reply is an `.error` in its place, since Redis does not roll back. Fails
+# `invalid` where a command is empty, or where the server refuses one before
+# it runs (an unknown command, a wrong number of arguments), when none runs;
+# as `call` fails where `MULTI` is refused. See also `watch`.
+function transaction(@c: Client, commands: [[str]]) -> Transaction?
+    for words in commands
+        if words.len() == 0
+            return fail(code: INVALID, msg: "a command of the transaction is empty")
+
+    _ = call(@c, ["MULTI"])?
+    queued: [[str]] @= commands
+    queued @ queued.push(["EXEC"])
+    replies = pipeline(@c, queued)?
+    first_error: Reply @= .null_value
+
+    for r in replies.slice(from: 0, to: commands.len())
+        match r
+            .error _ =>
+                if first_error == .null_value
+                    first_error @ r
+            .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => _ = 0
+
+    done = replies[commands.len()]
+
+    match done
+        .error e =>
+            if first_error != .null_value
+                _ = checked(first_error)?
+            return fail(
+                code: failures.code_of(prefix: e.code, words: e.message),
+                msg: failures.message_of(failures.Said(prefix: e.code, words: e.message))
+            )
+        .null_value => return ok(Transaction(committed: false, replies: []))
+        .simple _ | .integer _ | .bulk _ | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return ok(
+            Transaction(committed: true, replies: list_of(done)?)
+        )
+
+# Watches `names`: the next `transaction` on this client runs none of its
+# commands where another client has changed one of them since (`WATCH`).
+#
+# - `c`: the client.
+# - `names`: the keys, at least one.
+#
+# Fails `invalid` where `names` is empty, and as `call` does. See also
+# `unwatch`, `transaction`.
+function watch(@c: Client, names: [str]) -> ()?
+    if names.len() == 0
+        return fail(code: INVALID, msg: "WATCH needs at least one key")
+    words: [str] @= ["WATCH"]
+
+    for k in names
+        words @ words.push(k)
+
+    _ = call(@c, words)?
+    return ok()
+
+# Forgets the keys `watch` named (`UNWATCH`); a transaction does the same
+# when it ends.
+#
+# - `c`: the client.
+#
+# Fails as `call` does. See also `watch`.
+function unwatch(@c: Client) -> ()?
+    _ = call(@c, ["UNWATCH"])?
+    return ok()
+
+## Publish and subscribe
+
+# A message published to a channel the client is subscribed to.
+record Message
+    # How it came: `message` for a channel subscribed to by name,
+    # `pmessage` by a pattern, `smessage` by a shard channel.
+    kind: str
+    # The pattern it matched, "" but for `pmessage`.
+    pattern: str
+    # The channel it was published to.
+    channel: str
+    # The message's bytes.
+    payload: [u8]
+
+# Posts `message` to `channel`, and answers how many clients received it
+# (`PUBLISH`).
+#
+# - `c`: the client; a client subscribed over RESP2 cannot publish.
+# - `channel`: the channel.
+# - `message`: the text posted.
+#
+# Fails as `call` does. See also `subscribe`.
+function publish(@c: Client, channel: str, message: str) -> i64?
+    return integer_of(call(@c, ["PUBLISH", channel, message])?)
+
+# Subscribes to `channels`, waiting until the server confirms each
+# (`SUBSCRIBE`); `receive` then reads their messages.
+#
+# - `c`: the client. Over RESP2 a subscribed client runs no command but
+#   these four and `PING`; over RESP3 it runs every one.
+# - `channels`: the channels' names, at least one.
+#
+# Messages that come before the last confirmation are kept for `receive`.
+# Fails `invalid` where `channels` is empty, and as `call` does. See also
+# `psubscribe`, `unsubscribe`, `receive`.
+function subscribe(@c: Client, channels: [str]) -> ()?
+    return pubsub.subscription(@c.session, name: "SUBSCRIBE", targets: channels, confirming: "subscribe")
+
+# Subscribes to every channel whose name matches one of `patterns`, as
+# `subscribe` does by name (`PSUBSCRIBE`).
+#
+# - `c`: the client.
+# - `patterns`: glob patterns, at least one: `news.*`.
+#
+# Fails as `subscribe` does. See also `punsubscribe`.
+function psubscribe(@c: Client, patterns: [str]) -> ()?
+    return pubsub.subscription(@c.session, name: "PSUBSCRIBE", targets: patterns, confirming: "psubscribe")
+
+# Ends the subscriptions to `channels`, or to every channel where it is
+# empty, waiting until the server confirms each (`UNSUBSCRIBE`).
+#
+# - `c`: the client.
+# - `channels`: the channels' names; [] for all.
+#
+# Fails as `call` does. See also `subscribe`.
+function unsubscribe(@c: Client, channels: [str]) -> ()?
+    return pubsub.subscription(@c.session, name: "UNSUBSCRIBE", targets: channels, confirming: "unsubscribe")
+
+# Ends the subscriptions to `patterns`, or to every pattern where it is
+# empty (`PUNSUBSCRIBE`).
+#
+# - `c`: the client.
+# - `patterns`: the patterns; [] for all.
+#
+# Fails as `call` does. See also `psubscribe`.
+function punsubscribe(@c: Client, patterns: [str]) -> ()?
+    return pubsub.subscription(@c.session, name: "PUNSUBSCRIBE", targets: patterns, confirming: "punsubscribe")
+
+# The message a reply carries: a push of RESP3, or an array of RESP2 read
+# while subscribed, whose first element names it `message`, `pmessage` or
+# `smessage`.
+#
+# - `r`: the reply.
+#
+# Fails `invalid` where `r` carries no message.
+function message_of(r: Reply) -> Message?
+    items = match r
+        .array a  => a.items
+        .pushed p => p.items
+        .simple _ | .error _ | .integer _ | .bulk _ | .null_value | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ => return fail(
+            code: INVALID,
+            msg: f"the reply is {kind_of(r)}, which carries no message"
+        )
+
+    if items.len() == 3 || items.len() == 4
+        kind = strings.to_lower(text_of(items[0]).default(""))
+
+        if (kind == "message" || kind == "smessage") && items.len() == 3
+            return ok(Message(kind: kind, pattern: "", channel: text_of(items[1])?, payload: bytes_of(items[2])?))
+
+        if kind == "pmessage" && items.len() == 4
+            return ok(
+                Message(kind: kind, pattern: text_of(items[1])?, channel: text_of(items[2])?, payload: bytes_of(items[3])?)
+            )
+    return fail(code: INVALID, msg: "the reply carries no message")
+
+# The next message of a channel the client is subscribed to, waiting until
+# one comes; one kept while a reply was awaited comes first.
+#
+# - `c`: the client.
+#
+# A confirmation and a `PING`'s answer that come meanwhile are read and
+# passed. `set_deadline` bounds the wait. Fails `invalid` where the client is
+# subscribed to nothing and keeps no message, so no message could come;
+# `timeout` where the deadline passes; `closed` where the connection is lost.
+# See also `subscribe`, `set_deadline`.
+function receive(@c: Client) -> Message?
+    while true
+        frame: [u8] @= []
+
+        if session.pending_count(c.session) > 0
+            frame @ session.take(@c.session)?
+        else
+            if c.session.channels.len() + c.session.patterns.len() == 0
+                return fail(code: INVALID, msg: "the client is subscribed to nothing, so no message can come")
+            frame @ session.frame(@c.session)?
+        seen = pubsub.classify(frame)?
+
+        if pubsub.is_message(seen.kind)
+            return message_of(decode(frame)?)
+
+        if pubsub.is_confirmation(seen.kind)
+            session.confirm(@c.session, kind: seen.kind, target: seen.target)
+
+## Locks
+
+# A lock `try_lock` or `lock` took, which `unlock` gives back.
+record Lock
+    # The key that holds it.
+    key: str
+    # The token only this holder knows: 40 hexadecimal digits of 20 random
+    # bytes.
+    token: str
+    # The time to live it was taken for, and `renew` extends it by, in
+    # milliseconds.
+    ttl_ms: i64
+    # The fencing number: it grows with every acquisition of the key, so
+    # the resource refuses a holder whose number is below the highest it
+    # has seen (the module's comment).
+    fence: i64
+
+# The script that takes a lock: sets the key to the token where it is
+# absent, for the time to live, and counts the acquisition in the fencing
+# key.
+constant ACQUIRE_SCRIPT: str
+    "if redis.call('set', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then return redis.call('incr', KEYS[2]) else return false end"
+
+# The script that gives a lock back: deletes the key only where it holds
+# the token.
+constant RELEASE_SCRIPT: str
+    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
+
+# The script that extends a lock: sets the time to live again only where the
+# key holds the token.
+constant RENEW_SCRIPT: str
+    "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('pexpire', KEYS[1], ARGV[2]) else return 0 end"
+
+# Takes the lock `key` where nobody holds it, for `ttl_ms` milliseconds,
+# trying once.
+#
+# - `c`: the client.
+# - `key`: the key that holds the lock; the key `key` followed by `:fence`
+#   counts its acquisitions.
+# - `ttl_ms`: milliseconds after which the lock is gone unless `renew`
+#   extends it, 1 or more: longer than the work it guards, by a margin.
+#
+# Fails `exists` where another holds it, `invalid` where `ttl_ms` is below
+# 1, and as `call` does; `failed` where the system gives no random bytes
+# for the token. See also `lock`, `unlock`, and the module's comment for
+# what a lock does not promise.
+function try_lock(@c: Client, key: str, ttl_ms: i64) -> Lock?
+    if ttl_ms < 1
+        return fail(code: INVALID, msg: f"the time to live {ttl_ms} is below 1 millisecond")
+    token = bytes.format_hex(os.random_bytes(20)?)
+    r = call(@c, ["EVAL", ACQUIRE_SCRIPT, "2", key, key + ":fence", token, to_str(ttl_ms)])?
+
+    if is_null(r) || r == .boolean(v: false)
+        return fail(code: EXISTS, msg: f"the lock \"{key}\" is held by another")
+    return ok(Lock(key: key, token: token, ttl_ms: ttl_ms, fence: integer_of(r)?))
+
+# Takes the lock `key`, trying again until `wait_ms` milliseconds have
+# passed, each wait after a refusal longer than the one before, from 10 to
+# 250 milliseconds, with a random part so two waiters do not try together.
+#
+# - `c`: the client.
+# - `key`: the key that holds the lock.
+# - `ttl_ms`: as `try_lock` takes it.
+# - `wait_ms`: milliseconds to keep trying, 0 or more; 0 tries once.
+#
+# Fails `timeout` where another holds the lock all that time, and as
+# `try_lock` does. See also `try_lock`.
+function lock(@c: Client, key: str, ttl_ms: i64, wait_ms: i64) -> Lock?
+    if wait_ms < 0
+        return fail(code: INVALID, msg: f"the wait {wait_ms} is below 0")
+    start = time.mark()?
+    pause: i64 @= 10
+
+    while true
+        match try_lock(@c, key, ttl_ms: ttl_ms)
+            .ok held => return ok(held)
+            .err e =>
+                if e.code != EXISTS
+                    return fail(code: e.code, msg: e.msg)
+
+        waited = time.to_units(time.elapsed(start)?, unit: .millisecond)
+
+        if waited >= wait_ms
+            return fail(
+                code: TIMEOUT,
+                msg: f"the lock \"{key}\" was held by another for the {wait_ms} milliseconds waited"
+            )
+        jitter = to_i64(os.random_bytes(1)?[0]).must() % (pause / 2 + 1)
+        left = wait_ms - waited
+
+        nap = if pause + jitter < left
+            pause + jitter
+        else
+            left
+        time.sleep(time.milliseconds(nap)?)
+
+        pause @ if pause * 2 < 250
+            pause * 2
+        else
+            250
+
+# Gives `held` back: deletes its key, only where it still holds this
+# holder's token, by a script the server runs whole.
+#
+# - `c`: the client.
+# - `held`: the lock, from `try_lock` or `lock`.
+#
+# Fails `not_found` where the lock had expired, so another may hold it now,
+# and as `call` does. See also `renew`.
+function unlock(@c: Client, held: Lock) -> ()?
+    r = call(@c, ["EVAL", RELEASE_SCRIPT, "1", held.key, held.token])?
+
+    if integer_of(r)? == 0
+        return fail(code: NOT_FOUND, msg: f"the lock \"{held.key}\" had expired and is no longer this holder's")
+    return ok()
+
+# Extends `held` by its time to live, from now, only where it still holds
+# this holder's token.
+#
+# - `c`: the client.
+# - `held`: the lock.
+#
+# Fails `not_found` where the lock had expired, and as `call` does. See also
+# `unlock`.
+function renew(@c: Client, held: Lock) -> ()?
+    r = call(@c, ["EVAL", RENEW_SCRIPT, "1", held.key, held.token, to_str(held.ttl_ms)])?
+
+    if integer_of(r)? == 0
+        return fail(code: NOT_FOUND, msg: f"the lock \"{held.key}\" had expired and is no longer this holder's")
+    return ok()
+
+# Whether `held`'s key still holds this holder's token: true until it
+# expires or is given back.
+#
+# - `c`: the client.
+# - `held`: the lock.
+#
+# The answer may be stale the moment it comes. Fails as `call` does. See
+# also `renew`.
+function is_held(@c: Client, held: Lock) -> bool?
+    r = call(@c, ["GET", held.key])?
+
+    if is_null(r)
+        return ok(false)
+    return ok(text_of(r)? == held.token)
+
+## Tests
+
+test "decode: each type of the documentation, RESP2's nulls, a map, nested arrays and an attribute dropped"
+    assert decode(bytes.from_text("+OK\r\n")).must() == .simple(v: "OK")
+    assert decode(bytes.from_text("-WRONGTYPE Operation against a key\r\n")).must() == .error(code: "WRONGTYPE", message: "Operation against a key")
+    assert decode(bytes.from_text(":-7\r\n")).must() == .integer(v: -7)
+    assert decode(bytes.from_text("$5\r\nhello\r\n")).must() == .bulk(v: bytes.from_text("hello"))
+    assert decode(bytes.from_text("$-1\r\n")).must() == .null_value
+    assert decode(bytes.from_text("*-1\r\n")).must() == .null_value
+    assert decode(bytes.from_text("*0\r\n")).must() == .array(items: [])
+    assert decode(bytes.from_text("_\r\n")).must() == .null_value
+    assert decode(bytes.from_text(",-inf\r\n")).must() == .double(v: -1.0 / 0.0)
+    assert decode(bytes.from_text(",1.5e3\r\n")).must() == .double(v: 1500.0)
+    assert decode(bytes.from_text("#f\r\n")).must() == .boolean(v: false)
+    assert decode(bytes.from_text("(-3492890328409238509324850943850943825024385\r\n")).must() == .big_number(v: "-3492890328409238509324850943850943825024385")
+    assert decode(bytes.from_text("!21\r\nSYNTAX invalid syntax\r\n")).must() == .error(code: "SYNTAX", message: "invalid syntax")
+    assert decode(bytes.from_text("=15\r\ntxt:Some string\r\n")).must() == .verbatim(format: "txt", v: "Some string")
+    pairs = decode(bytes.from_text("%2\r\n+first\r\n:1\r\n+second\r\n:2\r\n")).must()
+    assert pairs == .mapping(entries: [Entry(key: .simple(v: "first"), value: .integer(v: 1)), Entry(key: .simple(v: "second"), value: .integer(v: 2))])
+    nested = decode(bytes.from_text("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n")).must()
+    assert nested == .array(items: [.array(items: [.integer(v: 1), .integer(v: 2), .integer(v: 3)]), .array(items: [.simple(v: "Hello"), .error(code: "", message: "World")])])
+    noted = decode(
+        bytes.from_text("|1\r\n+key-popularity\r\n%2\r\n$1\r\na\r\n,0.1923\r\n$1\r\nb\r\n,0.0012\r\n*2\r\n:2039123\r\n:9543892\r\n")
+    ).must()
+    assert noted == .array(items: [.integer(v: 2039123), .integer(v: 9543892)])
+    assert decode(bytes.from_text("~2\r\n+a\r\n+b\r\n")).must() == .set(items: [.simple(v: "a"), .simple(v: "b")])
+    assert decode(bytes.from_text(">3\r\n+message\r\n+ch\r\n+hi\r\n")).must() == .pushed(items: [.simple(v: "message"), .simple(v: "ch"), .simple(v: "hi")])
+
+test "decode and decode_next: bytes after a reply, a reply cut short, nesting past the bound, and two replies in turn"
+    assert decode(bytes.from_text("+OK\r\n+OK\r\n")).is_err()
+    assert decode(bytes.from_text("*2\r\n:1\r\n")).is_err()
+    assert decode(bytes.from_text(",1.2.3\r\n")).is_err()
+    assert decode(bytes.from_text("(12a\r\n")).is_err()
+    deep: [u8] @= []
+
+    for _ in range(from: 0, to: 129)
+        session.append(out: @deep, data: bytes.from_text("*1\r\n"))
+
+    session.append(out: @deep, data: bytes.from_text(":1\r\n"))
+
+    match decode(deep)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the reply nests past 128 levels"
+
+    two = bytes.from_text(":1\r\n$2\r\nhi\r\n")
+    first = decode_next(two, from: 0).must()
+    assert first.reply == .integer(v: 1) && first.next == 4
+    assert decode_next(two, from: first.next).must().reply == .bulk(v: bytes.from_text("hi"))
+
+test "decode: an array of a hundred thousand elements, read in time linear in its length"
+    big: [u8] @= bytes.from_text("*100000\r\n")
+
+    for _ in range(from: 0, to: 100000)
+        session.append(out: @big, data: bytes.from_text(":7\r\n"))
+
+    got = list_of(decode(big).must()).must()
+    assert got.len() == 100000 && got[99999] == .integer(v: 7)
+
+test "readers: text, bytes, integers and floats from either protocol, nulls not_found, errors told with their code"
+    assert text_of(.bulk(v: bytes.from_text("città"))).must() == "città"
+    assert text_of(.bulk(v: [255])).is_err()
+    assert bytes_of(.bulk(v: [255])).must() == [255]
+    assert integer_of(.bulk(v: bytes.from_text("42"))).must() == 42
+    assert float_of(.bulk(v: bytes.from_text("inf"))).must() == 1.0 / 0.0
+    assert float_of(.integer(v: 3)).must() == 3.0
+    assert boolean_of(.integer(v: 1)).must() && !boolean_of(.boolean(v: false)).must()
+    assert boolean_of(.integer(v: 2)).is_err()
+
+    match text_of(.null_value)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    match integer_of(.error(code: "WRONGTYPE", message: "Operation against a key holding the wrong kind of value"))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "[WRONGTYPE] Operation against a key holding the wrong kind of value" && error_code_of(e.msg).must() == "WRONGTYPE"
+
+    assert texts_of(.array(items: [.bulk(v: bytes.from_text("a")), .simple(v: "b")])).must() == ["a", "b"]
+    assert texts_of(.array(items: [.null_value])).is_err()
+    flat = entries_of(.array(items: [.bulk(v: bytes.from_text("f")), .bulk(v: bytes.from_text("1"))])).must()
+    assert flat == [Entry(key: .bulk(v: bytes.from_text("f")), value: .bulk(v: bytes.from_text("1")))]
+    assert entries_of(.array(items: [.integer(v: 1)])).is_err()
+    assert error_code_of("no word").is_err()
+
+test "call: the bytes of a command, its reply, an error told with its code, and a reply cut short ends the client"
+    t @= server.scripted("+OK\r\n-WRONGTYPE Operation against a key holding the wrong kind of value\r\n:3", protocol: 2)
+    c @= Client(session: t.session)
+    assert call(@c, ["SET", "k", "v w"]).must() == .simple(v: "OK")
+
+    match call(@c, ["LPUSH", "k", "x"])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && error_code_of(e.msg).must() == "WRONGTYPE"
+
+    match call(@c, ["INCR", "n"])
+        .ok _  => assert false
+        .err e => assert e.code == "closed"
+
+    assert is_closed(c)
+    assert call(@c, []).is_err()
+    t.session @ c.session
+    written = server.finish(@t)
+    assert written == server.command(["SET", "k", "v w"]) + server.command(["LPUSH", "k", "x"]) + server.command(["INCR", "n"])
+
+test "pipeline and transaction: replies in order with an error in its place, a transaction run, aborted by a watch, and refused when queued"
+    t @= server.scripted(
+        "+OK\r\n-ERR value is not an integer or out of range\r\n$1\r\n1\r\n+OK\r\n+QUEUED\r\n+QUEUED\r\n*2\r\n:1\r\n:2\r\n+OK\r\n+QUEUED\r\n_\r\n+OK\r\n-ERR unknown command 'NOPE'\r\n-EXECABORT Transaction discarded because of previous errors.\r\n",
+        protocol: 3
+    )
+    c @= Client(session: t.session)
+    replies = pipeline(@c, [["SET", "a", "1"], ["INCR", "s"], ["GET", "a"]]).must()
+    assert replies.len() == 3 && replies[0] == .simple(v: "OK") && checked(replies[1]).is_err() && text_of(replies[2]).must() == "1"
+    done = transaction(@c, [["INCR", "a"], ["INCR", "b"]]).must()
+    assert done == Transaction(committed: true, replies: [.integer(v: 1), .integer(v: 2)])
+    aborted = transaction(@c, [["INCR", "a"]]).must()
+    assert !aborted.committed && aborted.replies == []
+
+    match transaction(@c, [["NOPE"]])
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == "[ERR] unknown command 'NOPE'"
+
+    t.session @ c.session
+    written = server.finish(@t)
+    assert written == server.command(["SET", "a", "1"]) + server.command(["INCR", "s"]) + server.command(["GET", "a"]) + server.command(["MULTI"]) + server.command(["INCR", "a"]) + server.command(["INCR", "b"]) + server.command(["EXEC"]) + server.command(["MULTI"]) + server.command(["INCR", "a"]) + server.command(["EXEC"]) + server.command(["MULTI"]) + server.command(["NOPE"]) + server.command(["EXEC"])
+
+test "subscribe and receive over RESP2: confirmations counted, a message before the last kept, a pattern's message, and commands refused while subscribed"
+    t @= server.scripted(
+        "*3\r\n$9\r\nsubscribe\r\n$1\r\na\r\n:1\r\n*3\r\n$7\r\nmessage\r\n$1\r\na\r\n$2\r\nhi\r\n*3\r\n$9\r\nsubscribe\r\n$1\r\nb\r\n:2\r\n*4\r\n$8\r\npmessage\r\n$2\r\nb*\r\n$2\r\nbe\r\n$1\r\nx\r\n*3\r\n$11\r\nunsubscribe\r\n$1\r\na\r\n:1\r\n*3\r\n$11\r\nunsubscribe\r\n$1\r\nb\r\n:0\r\n",
+        protocol: 2
+    )
+    c @= Client(session: t.session)
+    subscribe(@c, ["a", "b"]).must()
+    assert c.session.channels == ["a", "b"]
+
+    match call(@c, ["GET", "k"])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert receive(@c).must() == Message(kind: "message", pattern: "", channel: "a", payload: bytes.from_text("hi"))
+    assert receive(@c).must() == Message(kind: "pmessage", pattern: "b*", channel: "be", payload: bytes.from_text("x"))
+    unsubscribe(@c, []).must()
+    assert c.session.channels == []
+
+    match receive(@c)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    t.session @ c.session
+    written = server.finish(@t)
+    assert written == server.command(["SUBSCRIBE", "a", "b"]) + server.command(["UNSUBSCRIBE"])
+
+test "read_reply over RESP3: a push that comes before a reply is kept for receive"
+    t @= server.scripted(">3\r\n$7\r\nmessage\r\n$2\r\nch\r\n$3\r\nyes\r\n:5\r\n", protocol: 3)
+    c @= Client(session: t.session)
+    c.session.channels @ ["ch"]
+    assert publish(@c, channel: "other", message: "x").must() == 5
+    assert receive(@c).must() == Message(kind: "message", pattern: "", channel: "ch", payload: bytes.from_text("yes"))
+    t.session @ c.session
+    _ = server.finish(@t)
+
+test "try_lock, unlock and renew: the scripts sent, a lock taken, held by another, lost, given back"
+    t @= server.scripted(":1\r\n_\r\n:1\r\n:0\r\n:0\r\n", protocol: 3)
+    c @= Client(session: t.session)
+    held = try_lock(@c, "job", ttl_ms: 30000).must()
+    assert held.key == "job" && held.token.len() == 40 && held.fence == 1 && held.ttl_ms == 30000
+
+    match try_lock(@c, "job", ttl_ms: 30000)
+        .ok _  => assert false
+        .err e => assert e.code == "exists"
+
+    renew(@c, held).must()
+
+    match renew(@c, held)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    match unlock(@c, held)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+    assert try_lock(@c, "job", ttl_ms: 0).is_err()
+    t.session @ c.session
+    written = server.finish(@t)
+    assert strings.has_prefix(
+        s: written,
+        prefix: server.command(["EVAL", ACQUIRE_SCRIPT, "2", "job", "job:fence", held.token, "30000"])
+    )
+    assert strings.contains(s: written, substr: server.command(["EVAL", RELEASE_SCRIPT, "1", "job", held.token]))
+
+test "parse_url: plain and TLS, a password alone, a database, the protocol, and the refusals"
+    plain = parse_url("redis://localhost:6380/2").must()
+    assert plain.port == 6380 && plain.database == 2 && plain.security == .plain && plain.protocol == 3
+    tls_url = parse_url("rediss://ana:s%3Acret@cache.lan?protocol=2&client_name=app").must()
+    assert tls_url.security == .checked(roots: "") && tls_url.username == "ana" && tls_url.password == "s:cret" && tls_url.protocol == 2 && tls_url.client_name == "app"
+    alone = parse_url("redis://:pw@h").must()
+    assert alone.username == "" && alone.password == "pw" && alone.host == "h"
+    assert parse_url("redis://h/x").is_err()
+    assert parse_url("redis://h?protocol=4").is_err()
+    assert parse_url("redis://h?timeout=1").is_err()
+    assert parse_url("http://h").is_err()
+
+    match parse_url("unix:///tmp/redis.sock")
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"
+
+test "open: a port, a database and a protocol out of range, refused before connecting"
+    bad @= options("localhost")
+    bad.port @ 0
+    assert open(bad).is_err()
+    bad.port @ 6379
+    bad.database @ -1
+    assert open(bad).is_err()
+    bad.database @ 0
+    bad.protocol @ 4
+    assert open(bad).is_err()
+
+test "open live, against the server REBEL_REDIS_URL names: both protocols, values, pipelines, transactions, a watch, messages, locks and failures"
+    match os.env("REBEL_REDIS_URL")
+        .err _ => print("open live: skipped, REBEL_REDIS_URL names no server")
+        .ok text =>
+            opts = parse_url(text).must()
+            c @= open(opts).must()
+            assert protocol_of(c) == 3
+            two_opts @= opts
+            two_opts.protocol @ 2
+            old @= open(two_opts).must()
+            assert protocol_of(old) == 2
+            assert text_of(call(@c, ["PING"]).must()).must() == "PONG"
+            set(@c, key: "live:s", value: "città 🎸").must()
+            assert get(@c, "live:s").must() == "città 🎸" && get(@old, "live:s").must() == "città 🎸"
+
+            match get(@c, "live:none")
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            _ = call_bytes(@c, [bytes.from_text("SET"), bytes.from_text("live:b"), [0, 255, 13, 10]]).must()
+            assert bytes_of(call(@old, ["GET", "live:b"]).must()).must() == [0, 255, 13, 10]
+            _ = delete(@c, ["live:n", "live:h", "live:z", "live:l", "live:w"]).must()
+            assert incr_by(@c, "live:n", by: 5).must() == 5 && incr_by(@old, "live:n", by: -7).must() == -2
+            _ = call(@c, ["HSET", "live:h", "f1", "1", "f2", "2"]).must()
+            three = entries_of(call(@c, ["HGETALL", "live:h"]).must()).must()
+            two = entries_of(call(@old, ["HGETALL", "live:h"]).must()).must()
+            assert three.len() == 2 && two.len() == 2 && text_of(three[0].key).must() == text_of(two[0].key).must()
+            _ = call(@c, ["ZADD", "live:z", "1.5", "a"]).must()
+            assert float_of(call(@c, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
+            assert float_of(call(@old, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
+            assert boolean_of(call(@c, ["EXISTS", "live:z"]).must()).must()
+            set_for(@c, key: "live:t", value: "x", ttl_ms: 60000).must()
+            assert integer_of(call(@c, ["PTTL", "live:t"]).must()).must() > 0
+            big: [str] @= ["RPUSH", "live:l"]
+
+            for i in range(from: 0, to: 10000)
+                big @ big.push(to_str(i))
+
+            assert integer_of(call(@c, big).must()).must() == 10000
+            assert texts_of(call(@c, ["LRANGE", "live:l", "0", "-1"]).must()).must().len() == 10000
+            large = repeat("é", 1000000)
+            set(@c, key: "live:large", value: large).must()
+            assert get(@old, "live:large").must() == large
+            many: [[str]] @= []
+
+            for _ in range(from: 0, to: 1000)
+                many @ many.push(["INCR", "live:p"])
+
+            replies = pipeline(@c, many).must()
+            assert replies.len() == 1000 && integer_of(replies[999]).must() == integer_of(replies[0]).must() + 999
+            done = transaction(@c, [["SET", "live:w", "1"], ["INCR", "live:w"], ["LPUSH", "live:w", "x"]]).must()
+            assert done.committed && done.replies.len() == 3 && checked(done.replies[2]).is_err()
+            watch(@c, ["live:w"]).must()
+            set(@old, key: "live:w", value: "changed").must()
+            aborted = transaction(@c, [["SET", "live:w", "mine"]]).must()
+            assert !aborted.committed && get(@c, "live:w").must() == "changed"
+
+            match call(@c, ["LPUSH", "live:s", "x"])
+                .ok _  => assert false
+                .err e => assert e.code == "invalid" && error_code_of(e.msg).must() == "WRONGTYPE"
+
+            match call(@c, ["NOSUCHCOMMAND"])
+                .ok _  => assert false
+                .err e => assert e.code == "unsupported"
+
+            listener @= open(opts).must()
+            old_listener @= open(two_opts).must()
+            subscribe(@listener, ["live-chat"]).must()
+            psubscribe(@old_listener, ["live-*"]).must()
+            assert publish(@c, channel: "live-chat", message: "hi").must() == 2
+            assert receive(@listener).must() == Message(kind: "message", pattern: "", channel: "live-chat", payload: bytes.from_text("hi"))
+            assert receive(@old_listener).must() == Message(kind: "pmessage", pattern: "live-*", channel: "live-chat", payload: bytes.from_text("hi"))
+            assert text_of(call(@listener, ["GET", "live:s"]).must()).must() == "città 🎸"
+            set_deadline(listener, ms: 200).must()
+
+            match receive(@listener)
+                .ok _  => assert false
+                .err e => assert e.code == "timeout"
+
+            close(@listener).must()
+            punsubscribe(@old_listener, []).must()
+            close(@old_listener).must()
+            _ = delete(@c, ["live:lock"]).must()
+            first = try_lock(@c, "live:lock", ttl_ms: 300).must()
+            assert is_held(@c, first).must()
+
+            match try_lock(@old, "live:lock", ttl_ms: 300)
+                .ok _  => assert false
+                .err e => assert e.code == "exists"
+
+            renew(@c, first).must()
+            second = lock(@old, "live:lock", ttl_ms: 5000, wait_ms: 3000).must()
+            assert second.fence == first.fence + 1 && !is_held(@c, first).must()
+
+            match unlock(@c, first)
+                .ok _  => assert false
+                .err e => assert e.code == "not_found"
+
+            unlock(@old, second).must()
+            assert !is_held(@old, second).must()
+            close(@old).must()
+            close(@c).must()
+            wrong @= opts
+            wrong.password @ "not the password"
+
+            match open(wrong)
+                .ok _  => assert false
+                .err e => assert e.code == "permission"
+
+            print(
+                f"open live: RESP3 and RESP2, 10000 elements, 2 MB, 1000 in a pipeline, a watch, messages and a lock fenced {second.fence}"
+            )
+
+test "open live over TLS, against the server REBEL_REDIS_TLS_PORT names on localhost, its certificate signed by tls's test authority"
+    match os.env("REBEL_REDIS_TLS_PORT")
+        .err _ => print("open live over TLS: skipped, REBEL_REDIS_TLS_PORT names no server")
+        .ok port =>
+            opts @= options("localhost")
+            opts.port @ numbers.parse_int(port).must()
+            opts.password @ os.env("REBEL_REDIS_PASSWORD").default("")
+            opts.security @ .checked(roots: tls.TEST_ROOT)
+            c @= open(opts).must()
+            assert text_of(call(@c, ["PING"]).must()).must() == "PONG"
+            print(
+                f"open live over TLS: RESP{protocol_of(c)} over TLS version {tls.version_of(c.session.out).default(0)}"
+            )
+            close(@c).must()
+
+## Examples
+
+# The options of a server on this machine, which serves no TLS, as Redis by
+# default.
+test "options: a local server in plain text"
+    opts @= options("localhost")
+    opts.security @ .plain
+    assert opts.port == 6379 && opts.protocol == 3
+
+# The options a URL names.
+test "parse_url: a password, a host and a database"
+    opts = parse_url("redis://:s3cret@cache.lan:6380/1").must()
+    assert opts.password == "s3cret" && opts.host == "cache.lan" && opts.port == 6380 && opts.database == 1
+
+# A client opened and closed, where a server answers on this machine in
+# plain text; elsewhere it shows nothing.
+test "open: a connection to a local server"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+
+# A client closed, after which every call fails `closed`.
+test "close: the end of a connection"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            close(@c).must()
+            assert call(@c, ["PING"]).is_err()
+
+# Whether a client is still open.
+test "is_closed: before and after close"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert !is_closed(c)
+            close(@c).must()
+            assert is_closed(c)
+
+# The protocol a local server agreed.
+test "protocol_of: RESP3 where the server speaks it"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert protocol_of(c) == 2 || protocol_of(c) == 3
+            close(@c).must()
+
+# A wait for a message bounded to a tenth of a second.
+test "set_deadline: a receive that times out"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            subscribe(@c, ["rebel-quiet"]).must()
+            set_deadline(c, ms: 100).must()
+            assert receive(@c).is_err()
+            close(@c).must()
+
+# A reply read from its bytes.
+test "decode: a bulk string"
+    assert decode(bytes.from_text("$5\r\nhello\r\n")).must() == .bulk(v: bytes.from_text("hello"))
+
+# Two replies read one after the other.
+test "decode_next: an integer then a simple string"
+    data = bytes.from_text(":1\r\n+OK\r\n")
+    first = decode_next(data, from: 0).must()
+    assert decode_next(data, from: first.next).must().reply == .simple(v: "OK")
+
+# The bytes of a command.
+test "encode_command: GET of a key"
+    assert encode_command([bytes.from_text("GET"), bytes.from_text("k")]) == bytes.from_text("*2\r\n$3\r\nGET\r\n$1\r\nk\r\n")
+
+# An error reply turned into a failure.
+test "checked: an error and a reply that is none"
+    assert checked(.simple(v: "OK")).must() == .simple(v: "OK")
+    assert checked(.error(code: "ERR", message: "syntax error")).is_err()
+
+# The word of an error's failure.
+test "error_code_of: the word of a WRONGTYPE"
+    assert error_code_of("[WRONGTYPE] Operation against a key holding the wrong kind of value").must() == "WRONGTYPE"
+
+# What a reply is, as a message names it.
+test "kind_of: a map"
+    assert kind_of(.mapping(entries: [])) == "a map"
+
+# A null reply.
+test "is_null: GET of a key not there"
+    assert is_null(.null_value) && !is_null(.integer(v: 0))
+
+# Text read from a bulk string.
+test "text_of: a bulk string's text"
+    assert text_of(.bulk(v: bytes.from_text("hello"))).must() == "hello"
+
+# Bytes read from a bulk string.
+test "bytes_of: bytes that are not text"
+    assert bytes_of(.bulk(v: [0, 255])).must() == [0, 255]
+
+# An integer read from RESP2's string of digits.
+test "integer_of: a counter read by HGET"
+    assert integer_of(.bulk(v: bytes.from_text("12"))).must() == 12
+
+# A score read from a double.
+test "float_of: a score"
+    assert float_of(.double(v: 1.5)).must() == 1.5
+
+# A truth read from RESP2's integer.
+test "boolean_of: EXISTS of a key"
+    assert boolean_of(.integer(v: 1)).must()
+
+# The elements of an array.
+test "list_of: an array of two"
+    assert list_of(.array(items: [.integer(v: 1), .integer(v: 2)])).must().len() == 2
+
+# The texts of an array.
+test "texts_of: the members of a set"
+    assert texts_of(.set(items: [.simple(v: "a")])).must() == ["a"]
+
+# The entries of a map.
+test "entries_of: a field and its value"
+    got = entries_of(.mapping(entries: [Entry(key: .simple(v: "f"), value: .integer(v: 1))])).must()
+    assert got[0].value == .integer(v: 1)
+
+# A command and its reply, written and read by hand.
+test "send: a PING written"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            send(@c, [bytes.from_text("PING")]).must()
+            assert text_of(read_reply(@c).must()).must() == "PONG"
+            close(@c).must()
+
+# The reply to a command written by `send`.
+test "read_reply: the answer of an ECHO"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            send(@c, [bytes.from_text("ECHO"), bytes.from_text("hi")]).must()
+            assert text_of(read_reply(@c).must()).must() == "hi"
+            close(@c).must()
+
+# A command run.
+test "call: SET then GET"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = call(@c, ["SET", "rebel:example", "Ziggy"]).must()
+            assert text_of(call(@c, ["GET", "rebel:example"]).must()).must() == "Ziggy"
+            close(@c).must()
+
+# A command whose argument is bytes.
+test "call_bytes: a value that is not text"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = call_bytes(@c, [bytes.from_text("SET"), bytes.from_text("rebel:raw"), [0, 255]]).must()
+            assert bytes_of(call(@c, ["GET", "rebel:raw"]).must()).must() == [0, 255]
+            close(@c).must()
+
+# A key read.
+test "get: a key's text"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            set(@c, key: "rebel:get", value: "x").must()
+            assert get(@c, "rebel:get").must() == "x"
+            close(@c).must()
+
+# A key written.
+test "set: a key's text"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            set(@c, key: "rebel:set", value: "y").must()
+            close(@c).must()
+
+# A key written for a minute.
+test "set_for: a key that expires"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            set_for(@c, key: "rebel:session", value: "z", ttl_ms: 60000).must()
+            close(@c).must()
+
+# Keys deleted.
+test "delete: a key and one not there"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            set(@c, key: "rebel:gone", value: "1").must()
+            assert delete(@c, ["rebel:gone", "rebel:never"]).must() == 1
+            close(@c).must()
+
+# A counter moved.
+test "incr_by: a counter moved by five"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            _ = delete(@c, ["rebel:count"]).must()
+            assert incr_by(@c, "rebel:count", by: 5).must() == 5
+            close(@c).must()
+
+# Three commands in one round trip.
+test "pipeline: three commands"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            replies = pipeline(@c, [["SET", "rebel:p", "1"], ["INCR", "rebel:p"], ["GET", "rebel:p"]]).must()
+            assert text_of(replies[2]).must() == "2"
+            close(@c).must()
+
+# Two commands run as one.
+test "transaction: two counters moved together"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            done = transaction(@c, [["INCR", "rebel:a"], ["INCR", "rebel:b"]]).must()
+            assert done.committed && done.replies.len() == 2
+            close(@c).must()
+
+# A key watched before a transaction.
+test "watch: a check-and-set"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            watch(@c, ["rebel:balance"]).must()
+            done = transaction(@c, [["INCRBY", "rebel:balance", "10"]]).must()
+            assert done.committed
+            close(@c).must()
+
+# Keys watched, then forgotten.
+test "unwatch: a watch given up"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            watch(@c, ["rebel:balance"]).must()
+            unwatch(@c).must()
+            close(@c).must()
+
+# A message posted to a channel.
+test "publish: a message nobody hears"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            assert publish(@c, channel: "rebel-nobody", message: "hello").must() >= 0
+            close(@c).must()
+
+# A channel subscribed to, then left.
+test "subscribe: a channel"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            subscribe(@c, ["rebel-news"]).must()
+            unsubscribe(@c, []).must()
+            close(@c).must()
+
+# Channels subscribed to by a pattern.
+test "psubscribe: every channel of a family"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            psubscribe(@c, ["rebel-news.*"]).must()
+            punsubscribe(@c, []).must()
+            close(@c).must()
+
+# A subscription ended.
+test "unsubscribe: every channel"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            subscribe(@c, ["rebel-a", "rebel-b"]).must()
+            unsubscribe(@c, ["rebel-a"]).must()
+            unsubscribe(@c, []).must()
+            close(@c).must()
+
+# A pattern's subscription ended.
+test "punsubscribe: one pattern"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            psubscribe(@c, ["rebel-x.*"]).must()
+            punsubscribe(@c, ["rebel-x.*"]).must()
+            close(@c).must()
+
+# A message received from another client's publish.
+test "receive: a message published by another client"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            listener @= first
+            speaker @= open(opts).must()
+            subscribe(@listener, ["rebel-chat"]).must()
+            _ = publish(@speaker, channel: "rebel-chat", message: "hi").must()
+            assert receive(@listener).must().payload == bytes.from_text("hi")
+            close(@speaker).must()
+            close(@listener).must()
+
+# The message of a push.
+test "message_of: a push of a channel's message"
+    m = message_of(
+        .pushed(items: [.bulk(v: bytes.from_text("message")), .bulk(v: bytes.from_text("ch")), .bulk(v: bytes.from_text("hi"))])
+    ).must()
+    assert m.channel == "ch" && m.payload == bytes.from_text("hi")
+
+# A lock taken once and given back.
+test "try_lock: a job run by one worker"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+
+            match try_lock(@c, "rebel:job", ttl_ms: 30000)
+                .err _   => _ = 0
+                .ok held => unlock(@c, held).must()
+
+            close(@c).must()
+
+# A lock waited for.
+test "lock: waiting a second at most"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            held = lock(@c, "rebel:report", ttl_ms: 10000, wait_ms: 1000).must()
+            unlock(@c, held).must()
+            close(@c).must()
+
+# A lock given back.
+test "unlock: the end of the work"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            held = lock(@c, "rebel:unlock", ttl_ms: 10000, wait_ms: 1000).must()
+            unlock(@c, held).must()
+            assert !is_held(@c, held).must()
+            close(@c).must()
+
+# A lock extended while the work goes on.
+test "renew: a lock kept"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            held = lock(@c, "rebel:renew", ttl_ms: 10000, wait_ms: 1000).must()
+            renew(@c, held).must()
+            unlock(@c, held).must()
+            close(@c).must()
+
+# Whether a lock is still held.
+test "is_held: a lock before and after it is given back"
+    opts @= options("localhost")
+    opts.security @ .plain
+
+    match open(opts)
+        .err _ => _ = 0
+        .ok first =>
+            c @= first
+            held = lock(@c, "rebel:held", ttl_ms: 10000, wait_ms: 1000).must()
+            assert is_held(@c, held).must()
+            unlock(@c, held).must()
+            close(@c).must()

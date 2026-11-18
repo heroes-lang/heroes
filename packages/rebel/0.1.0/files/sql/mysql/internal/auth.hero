@@ -1,0 +1,151 @@
+# The client's side of MySQL's authentication plugins, as "Authentication
+# Methods" of MySQL's client/server protocol writes them:
+# `mysql_native_password`'s SHA-1 answer, `caching_sha2_password`'s SHA-256
+# answer and its exchange after it, and the password itself, with a zero
+# byte, where the connection is TLS and the plugin asks for it in clear.
+# A password is used as its UTF-8 bytes.
+
+use bytes
+use crypto
+use sql
+
+# The plugin of SHA-1 answers, MySQL's older default and MariaDB's.
+constant NATIVE: str
+    "mysql_native_password"
+
+# The plugin of SHA-256 answers and a cache of them on the server, MySQL's
+# default since 8.0.
+constant CACHING_SHA2: str
+    "caching_sha2_password"
+
+# The plugin that takes the password in clear.
+constant CLEAR: str
+    "mysql_clear_password"
+
+# The plugin of SHA-256 with no cache, which takes the password in clear over
+# TLS.
+constant SHA256: str
+    "sha256_password"
+
+# The byte of `caching_sha2_password`'s more data that says the cached
+# answer was accepted.
+constant FAST_AUTH_SUCCESS: u8
+    3
+
+# The byte of `caching_sha2_password`'s more data that asks for the
+# password itself.
+constant FULL_AUTH: u8
+    4
+
+# The bytes of `a` each joined by exclusive or with the byte of `b` at the
+# same place, `b` repeated where it is shorter.
+#
+# - `a`: the bytes.
+# - `b`: at least one byte.
+function xored(a: [u8], b: [u8]) -> [u8]
+    out: [u8] @= []
+    i: i64 @= 0
+
+    for x in a
+        out @ out.push(to_u8(to_i64(x).must() ^ to_i64(b[i % b.len()]).must()).must())
+        i @ i + 1
+
+    return out
+
+# The answer of `mysql_native_password`:
+# SHA1(password) XOR SHA1(scramble + SHA1(SHA1(password))), and no bytes for
+# an empty password.
+#
+# - `password`: the password.
+# - `scramble`: the server's 20 bytes.
+function native(password: str, scramble: [u8]) -> [u8]
+    if password == ""
+        return []
+    once = crypto.sha1(bytes.from_text(password))
+    twice = crypto.sha1(once)
+    joined: [u8] @= scramble
+
+    for b in twice
+        joined @ joined.push(b)
+
+    return xored(a: once, b: crypto.sha1(joined))
+
+# The answer of `caching_sha2_password`:
+# SHA256(password) XOR SHA256(SHA256(SHA256(password)) + scramble), and no
+# bytes for an empty password.
+#
+# - `password`: the password.
+# - `scramble`: the server's 20 bytes.
+function caching_sha2(password: str, scramble: [u8]) -> [u8]
+    if password == ""
+        return []
+    once = crypto.sha256(bytes.from_text(password))
+    joined: [u8] @= crypto.sha256(once)
+
+    for b in scramble
+        joined @ joined.push(b)
+
+    return xored(a: once, b: crypto.sha256(joined))
+
+# The password and a zero byte, as a plugin that takes it in clear reads it.
+#
+# - `password`: the password.
+function clear(password: str) -> [u8]
+    out: [u8] @= bytes.from_text(password)
+    out @ out.push(0)
+    return out
+
+# The first answer `plugin` gives to `scramble`.
+#
+# - `plugin`: the plugin the server names.
+# - `password`: the password.
+# - `scramble`: the server's bytes.
+# - `secure`: whether the connection runs over TLS.
+#
+# Fails `unsupported` where `plugin` is none spoken here, or takes the
+# password in clear and the connection is not TLS, the message saying why.
+function first_answer(plugin: str, password: str, scramble: [u8], secure: bool) -> [u8]?
+    if plugin == NATIVE
+        return ok(native(password, scramble: scramble))
+
+    if plugin == CACHING_SHA2
+        return ok(caching_sha2(password, scramble: scramble))
+
+    if plugin == CLEAR || plugin == SHA256
+        if !secure
+            return fail(code: sql.UNSUPPORTED, msg: in_clear(plugin))
+        return ok(clear(password))
+    return fail(
+        code: sql.UNSUPPORTED,
+        msg: f"the server asks for the authentication plugin \"{plugin}\", which this driver does not speak: it speaks {NATIVE}, {CACHING_SHA2}, and over TLS {CLEAR} and {SHA256}"
+    )
+
+# Why the password is not sent for `plugin` without TLS.
+#
+# - `plugin`: the plugin.
+function in_clear(plugin: str) -> str
+    if plugin == CLEAR
+        return f"the server asks for the password in clear ({CLEAR}), which this driver sends only over TLS: whoever sits between the two ends would read it"
+    return f"the server asks for the password itself ({plugin}), which this driver sends only over TLS: without it MySQL wants it encrypted by RSA-OAEP with SHA-1, which `crypto/keypairs` does not offer; Security.checked connects over TLS"
+
+test "native and caching_sha2: answers PyMySQL gives for one scramble, and none for an empty password"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    assert native("secret", scramble: scramble) == [136, 23, 197, 15, 167, 121, 218, 239, 1, 14, 231, 87, 120, 37, 176, 132, 125, 249, 132, 46]
+    assert caching_sha2("secret", scramble: scramble) == [199, 110, 40, 152, 97, 42, 76, 240, 66, 199, 127, 168, 196, 112, 44, 76, 100, 192, 194, 197, 87, 197, 60, 77, 117, 89, 90, 170, 106, 186, 232, 9]
+    assert caching_sha2("città", scramble: scramble) == [228, 87, 30, 99, 87, 70, 182, 2, 227, 152, 144, 205, 153, 15, 192, 133, 126, 120, 90, 224, 253, 36, 10, 98, 214, 160, 238, 157, 206, 123, 153, 161]
+    assert native("", scramble: scramble) == [] && caching_sha2("", scramble: scramble) == []
+
+test "first_answer: each plugin, the password in clear only over TLS, and a plugin not spoken"
+    scramble = bytes.from_text("abcdefghijklmnopqrst")
+    assert first_answer(plugin: NATIVE, password: "secret", scramble: scramble, secure: false).must().len() == 20
+    assert first_answer(plugin: CACHING_SHA2, password: "secret", scramble: scramble, secure: false).must().len() == 32
+    assert first_answer(plugin: CLEAR, password: "pw", scramble: scramble, secure: true).must() == ['p', 'w', 0]
+    assert first_answer(plugin: SHA256, password: "pw", scramble: scramble, secure: true).must() == ['p', 'w', 0]
+
+    match first_answer(plugin: CLEAR, password: "pw", scramble: scramble, secure: false)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported" && e.msg == in_clear(CLEAR)
+
+    match first_answer(plugin: "client_ed25519", password: "pw", scramble: scramble, secure: true)
+        .ok _  => assert false
+        .err e => assert e.code == "unsupported"

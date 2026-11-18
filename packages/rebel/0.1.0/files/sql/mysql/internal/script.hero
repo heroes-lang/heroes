@@ -1,0 +1,124 @@
+# A scripted server for the tests: the server's packets written into a pipe
+# before the client reads, that pipe's writing end closed so that a missing
+# answer ends the read instead of waiting, and the client's requests kept in
+# another pipe to be compared with the bytes the documentation lays out.
+
+use bytes
+use io
+use sql/mysql/internal/answers
+use sql/mysql/internal/handshake
+use sql/mysql/internal/session
+use sql/mysql/internal/wire
+
+# A session whose server is a script.
+record Script
+    # The client's session.
+    session: session.Session
+    # The reading end of what the client wrote.
+    requests: io.Stream
+    # The reading end the client's answers come from, closed by `finish`.
+    answers: io.Stream
+
+# A session over a server that answers `server`, bytes written beforehand,
+# as if logged in with `capabilities`.
+#
+# - `server`: every byte the server sends, whole packets.
+# - `capabilities`: the capabilities the session agreed.
+function scripted(server: [u8], capabilities: i64) -> Script
+    to_server = io.pipe().must()
+    to_client = io.pipe().must()
+    io.write(to_client.writer, data: server).must()
+    end @= to_client.writer
+    io.close(@end).must()
+    s @= session.over(out: to_server.writer, input: to_client.reader, target: "test:3306/db")
+    s.capabilities @ capabilities
+    return Script(session: s, requests: to_server.reader, answers: to_client.reader)
+
+# The capabilities of a session with MySQL 8: OK packets where EOF packets
+# stood.
+function modern() -> i64
+    return handshake.PROTOCOL_41 | handshake.DEPRECATE_EOF | handshake.PLUGIN_AUTH | handshake.SECURE_CONNECTION | handshake.TRANSACTIONS
+
+# Closes the script's ends and answers every byte the client wrote, its
+# `COM_QUIT` included where the session was not over.
+#
+# - `t`: the script, every end closed.
+function finish(@t: Script) -> [u8]
+    _ = session.close(@t.session).is_err()
+    written = io.read_all(t.requests).must()
+    io.close(@t.requests).must()
+    io.close(@t.answers).must()
+    return written
+
+# A packet numbered `seq` carrying `payload`.
+#
+# - `seq`: its sequence number.
+# - `payload`: its bytes.
+function packet(seq: i64, payload: [u8]) -> [u8]
+    return wire.framed(seq: seq, payload: payload)
+
+# An OK packet's payload.
+#
+# - `affected`: the rows changed.
+# - `last_id`: the id made.
+# - `status`: the status flags.
+function ok_payload(affected: i64, last_id: i64, status: i64) -> [u8]
+    out: [u8] @= [0x00]
+    wire.push_lenenc(@out, affected)
+    wire.push_lenenc(@out, last_id)
+    wire.push_le(@out, n: status, width: 2)
+    wire.push_le(@out, n: 0, width: 2)
+    return out
+
+# The OK packet that ends rows where EOF packets are deprecated.
+#
+# - `status`: the status flags.
+function end_payload(status: i64) -> [u8]
+    out: [u8] @= [0xfe, 0, 0]
+    wire.push_le(@out, n: status, width: 2)
+    wire.push_le(@out, n: 0, width: 2)
+    return out
+
+# A text row's payload of `cells`.
+#
+# - `cells`: each cell's text.
+function text_row(cells: [str]) -> [u8]
+    out: [u8] @= []
+
+    for c in cells
+        wire.push_lenenc_bytes(out: @out, data: bytes.from_text(c))
+
+    return out
+
+# A column definition's payload, as `answers.definition` writes one.
+#
+# - `name`: the column's name.
+# - `charset`: its character set.
+# - `kind`: its type's byte.
+function column(name: str, charset: i64, kind: i64) -> [u8]
+    return answers.definition(name: name, charset: charset, kind: kind, flags: 0, decimals: 0)
+
+# The bytes of a command as the client writes it, numbered 0.
+#
+# - `payload`: the command's byte and its arguments.
+function command(payload: [u8]) -> [u8]
+    return wire.framed(seq: 0, payload: payload)
+
+# A `COM_QUERY` of `text`, as the client writes it.
+#
+# - `text`: the statement.
+function query(text: str) -> [u8]
+    payload: [u8] @= [0x03]
+    wire.push_all(out: @payload, data: bytes.from_text(text))
+    return command(payload)
+
+# The bytes of several packets, in order.
+#
+# - `parts`: the packets.
+function joined(parts: [[u8]]) -> [u8]
+    out: [u8] @= []
+
+    for p in parts
+        wire.push_all(out: @out, data: p)
+
+    return out
